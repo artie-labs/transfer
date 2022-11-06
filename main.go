@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/clients/snowflake"
-	"github.com/artie-labs/transfer/lib/checkpoint"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/processes/kafka"
 	"github.com/artie-labs/transfer/processes/pool"
@@ -24,11 +23,6 @@ func main() {
 	logger.InjectLoggerIntoCtx(logger.NewLogger(), ctx)
 	snowflake.InitSnowflake(ctx, nil)
 	models.InitMemoryDB()
-
-	err := checkpoint.StartRedisClient(config.GetSettings().Config)
-	if err != nil {
-		logger.FromContext(ctx).WithError(err).Fatalf("err starting redis client")
-	}
 
 	var wg sync.WaitGroup
 	wg.Add(1)

@@ -1,4 +1,17 @@
-# db-to-dwh
+# Transfer by Artie
+
+
+## Architecture
+
+## Set up
+
+## Build
+[![Go tests](https://github.com/artie-labs/transfer/actions/workflows/gha-go-test.yml/badge.svg)](https://github.com/artie-labs/transfer/actions/workflows/gha-go-test.yml)
+
+## Tests
+
+
+## Disorganized atm
 
 ## Installing pre-reqs
 ```bash
