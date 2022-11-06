@@ -1,0 +1,29 @@
+package db
+
+import (
+	"context"
+
+	"database/sql"
+
+	"github.com/artie-labs/transfer/lib/logger"
+)
+
+type Store interface {
+	Exec(query string, args ...any) (sql.Result, error)
+	Query(query string, args ...any) (*sql.Rows, error)
+}
+
+func Open(ctx context.Context, driverName, dsn string) Store {
+	db, err := sql.Open(driverName, dsn)
+
+	if err != nil {
+		logger.FromContext(ctx).Fatalf("failed to start a SQL client, err: %v", err)
+	}
+
+	err = db.Ping()
+	if err != nil {
+		logger.FromContext(ctx).Fatalf("failed to ping DB, err: %v", err)
+	}
+
+	return db
+}

@@ -1,0 +1,16 @@
+kafka:
+  bootstrapServer: localhost:9092
+  groupID: 123
+  username: foo
+  password: bar
+  topicConfigs:
+    - db: "customers"
+      tableName: "customer"
+      schema: "public"
+      topic: "customers"
+snowflake:
+  account: 123
+  username: foo
+  password: bar
+  warehouse: dwh
+  region: us-east-2.aws

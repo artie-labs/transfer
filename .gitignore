@@ -1,0 +1,10 @@
+*.mock.go
+.envrc-personal
+
+# Terraform stuff
+config/.terraform*
+
+
+## Actual config
+config.yaml
+
