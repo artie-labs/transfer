@@ -1,15 +1,14 @@
 package config
 
 import (
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"gopkg.in/yaml.v3"
 	"io"
 	"os"
-	"time"
-
-	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
 type Config struct {
+	// TODO: Add more validation to the config part.
 	Kafka struct {
 		BootstrapServer string                 `yaml:"bootstrapServer"`
 		GroupID         string                 `yaml:"groupID"`
@@ -25,19 +24,6 @@ type Config struct {
 		Warehouse string `yaml:"warehouse"`
 		Region    string `yaml:"region"`
 	}
-
-	Redis Redis `yaml:"redis"`
-}
-
-type Redis struct {
-	Address  string `yaml:"address"`
-	Password string `yaml:"password"`
-	Database int    `yaml:"db"`
-	TTLHours int    `yaml:"ttlHours"`
-}
-
-func (r *Redis) TTLDuration() time.Duration {
-	return time.Duration(r.TTLHours) * time.Hour
 }
 
 func (c *Config) IsValid() bool {
