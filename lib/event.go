@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/artie-labs/transfer/lib/logger"
+	"time"
 )
 
 type Event struct {
@@ -57,4 +58,8 @@ type Source struct {
 	Database  string `json:"db"`
 	Schema    string `json:"schema"`
 	Table     string `json:"table"`
+}
+
+func (s Source) GetExecutionTime() time.Time {
+	return time.UnixMilli(s.TsMs).UTC()
 }

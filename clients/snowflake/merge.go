@@ -63,14 +63,14 @@ func merge(tableData *optimization.TableData) (string, error) {
 	// We should not need idempotency key for DELETE
 	// This is based on the assumption that the primary key would be atomically increasing or UUID based
 	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
-	// If this assumption is wrong in the future, we can revisit.
+	// However, there may be edge cases where folks end up restoring deleted rows (which will contain the same PK).
 
 	// We also need to do staged table's idempotency key is GTE target table's idempotency key
 	// This is because Snowflake does not respect NS granularity.
 	return fmt.Sprintf(`
 			MERGE INTO %s c using (%s) as cc on c.%s = cc.%s
-				when matched AND cc.%s = true then DELETE
-				when matched AND IFNULL(cc.%s, false) = false and cc.%s >= c.%s then UPDATE
+				when matched AND cc.%s AND cc.%s >= c.%s = true then DELETE
+				when matched AND IFNULL(cc.%s, false) = false AND cc.%s >= c.%s then UPDATE
 					SET %s
 				when not matched AND IFNULL(cc.%s, false) = false then INSERT
 					(
@@ -81,8 +81,11 @@ func merge(tableData *optimization.TableData) (string, error) {
 						%s
 					);
 		`, tableData.ToFqName(), subQuery, tableData.PrimaryKey, tableData.PrimaryKey,
-		config.DeleteColumnMarker, config.DeleteColumnMarker, tableData.IdempotentKey,
-		tableData.IdempotentKey, array.ColumnsUpdateQuery(cols, "cc"),
+		// Delete
+		config.DeleteColumnMarker, tableData.IdempotentKey, tableData.IdempotentKey,
+		// Update
+		config.DeleteColumnMarker, tableData.IdempotentKey, tableData.IdempotentKey, array.ColumnsUpdateQuery(cols, "cc"),
+		// Insert
 		config.DeleteColumnMarker, strings.Join(cols, ","),
 		array.StringsJoinAddPrefix(cols, ",", "cc.")), nil
 }

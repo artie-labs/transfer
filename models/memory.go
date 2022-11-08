@@ -26,19 +26,21 @@ type Event struct {
 	ExecutionTime   time.Time              // When the SQL command was executed
 }
 
-func ToMemoryEvent(event lib.Event, pkName string, pkValue interface{}) Event {
+func ToMemoryEvent(event lib.Event, pkName string, pkValue interface{}, topicConfig kafkalib.TopicConfig) Event {
 	evt := Event{
 		Table:           event.Source.Table,
 		PrimaryKeyName:  pkName,
 		PrimaryKeyValue: pkValue,
-		ExecutionTime:   time.UnixMilli(event.Source.TsMs),
+		ExecutionTime:   event.Source.GetExecutionTime(),
 	}
 
 	if len(event.After) == 0 {
+
 		// This is a delete event, so mark it as deleted.
 		evt.Data = map[string]interface{}{
 			config.DeleteColumnMarker: true,
 			evt.PrimaryKeyName:        evt.PrimaryKeyValue,
+			topicConfig.IdempotentKey: evt.ExecutionTime.Format(time.RFC3339),
 		}
 	} else {
 		evt.Data = event.After

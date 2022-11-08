@@ -107,13 +107,13 @@ func StartConsumer(ctx context.Context) {
 				log.WithFields(logFields).WithError(err).Warn("cannot unmarshall event")
 				continue
 			} else {
-				evt := models.ToMemoryEvent(event, pkName, pkValue)
 				topicConfig, isOk := topicToConfigMap[*msg.TopicPartition.Topic]
 				if !isOk {
 					log.WithFields(logFields).Warn("Failed to get topic Name")
 					continue
 				}
 
+				evt := models.ToMemoryEvent(event, pkName, pkValue, topicConfig)
 				err = evt.Save(&topicConfig, msg.TopicPartition.Partition, msg.TopicPartition.Offset.String())
 				if err != nil {
 					log.WithFields(logFields).WithError(err).Warn("Event failed to save")
