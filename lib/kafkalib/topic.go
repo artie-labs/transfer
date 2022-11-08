@@ -3,10 +3,11 @@ package kafkalib
 import "fmt"
 
 type TopicConfig struct {
-	Database  string `yaml:"db"`
-	TableName string `yaml:"tableName"`
-	Schema    string `yaml:"schema"`
-	Topic     string `yaml:"topic"`
+	Database      string `yaml:"db"`
+	TableName     string `yaml:"tableName"`
+	Schema        string `yaml:"schema"`
+	Topic         string `yaml:"topic"`
+	IdempotentKey string `yaml:"idempotentKey"`
 }
 
 func (t *TopicConfig) ToCacheKey(partition int32) string {
