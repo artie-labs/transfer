@@ -7,6 +7,10 @@ import (
 	"os"
 )
 
+type Sentry struct {
+	DSN string `yaml:"dsn"`
+}
+
 type Config struct {
 	// TODO: Add more validation to the config part.
 	Kafka struct {
@@ -23,6 +27,10 @@ type Config struct {
 		Password  string `yaml:"password"`
 		Warehouse string `yaml:"warehouse"`
 		Region    string `yaml:"region"`
+	}
+
+	Reporting struct {
+		Sentry *Sentry `yaml:"sentry"`
 	}
 }
 

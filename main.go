@@ -16,11 +16,9 @@ import (
 
 func main() {
 	// Parse args into settings.
-	ctx := context.Background()
 	config.ParseArgs(os.Args)
 
-	// TODO: allow passing sentry hooks (from config)
-	logger.InjectLoggerIntoCtx(logger.NewLogger(), ctx)
+	ctx := logger.InjectLoggerIntoCtx(logger.NewLogger(config.GetSettings()), context.Background())
 	snowflake.InitSnowflake(ctx, nil)
 	models.InitMemoryDB()
 
