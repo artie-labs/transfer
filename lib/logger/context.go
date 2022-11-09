@@ -17,12 +17,13 @@ func FromContext(ctx context.Context) *logrus.Logger {
 	logVal := ctx.Value(loggerKey)
 	if logVal == nil {
 		// Inject this back into context, so we don't need to initialize this again
-		return FromContext(InjectLoggerIntoCtx(NewLogger(), ctx))
+		// TODO:
+		return FromContext(InjectLoggerIntoCtx(NewLogger(nil), ctx))
 	}
 
 	log, isOk := logVal.(*logrus.Logger)
 	if !isOk {
-		return FromContext(InjectLoggerIntoCtx(NewLogger(), ctx))
+		return FromContext(InjectLoggerIntoCtx(NewLogger(nil), ctx))
 	}
 
 	return log

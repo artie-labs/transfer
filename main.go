@@ -16,11 +16,9 @@ import (
 
 func main() {
 	// Parse args into settings.
-	ctx := context.Background()
 	config.ParseArgs(os.Args)
 
-	// TODO: allow passing sentry hooks (from config)
-	logger.InjectLoggerIntoCtx(logger.NewLogger(), ctx)
+	ctx := logger.InjectLoggerIntoCtx(logger.NewLogger(config.GetSettings()), context.Background())
 	snowflake.InitSnowflake(ctx, nil)
 	models.InitMemoryDB()
 
@@ -28,16 +26,16 @@ func main() {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go func() {
+	go func(ctx context.Context) {
 		defer wg.Done()
 		pool.StartPool(ctx, 10*time.Second, flushChan)
-	}()
+	}(ctx)
 
 	wg.Add(1)
-	go func() {
+	go func(ctx context.Context) {
 		defer wg.Done()
 		kafka.StartConsumer(ctx, flushChan)
-	}()
+	}(ctx)
 
 	wg.Wait()
 }
