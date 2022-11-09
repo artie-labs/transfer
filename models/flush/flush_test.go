@@ -28,10 +28,36 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 				"hi":                      "hello",
 			},
 		}
-
-		assert.Nil(f.T(), event.Save(topicConfig, 1, "1"))
+		_, err := event.Save(topicConfig, 1, "1")
+		assert.Nil(f.T(), err)
 		assert.Equal(f.T(), len(models.GetTableConfig("foo")), i+1)
 	}
+}
+
+func (f *FlushTestSuite) TestShouldFlush() {
+	var flush bool
+	for i := 0; i < config.SnowflakeArraySize*1.5; i++ {
+		event := models.Event{
+			Table:           "postgres",
+			PrimaryKeyValue: fmt.Sprintf("pk-%d", i),
+			Data: map[string]interface{}{
+				config.DeleteColumnMarker: true,
+				"pk":                      fmt.Sprintf("pk-%d", i),
+				"foo":                     "bar",
+				"cat":                     "dog",
+			},
+		}
+
+		var err error
+		flush, err = event.Save(topicConfig, 1, fmt.Sprint(i))
+		assert.Nil(f.T(), err)
+
+		if flush {
+			break
+		}
+	}
+
+	assert.True(f.T(), flush, "Flush successfully triggered via pool size.")
 }
 
 func (f *FlushTestSuite) TestMemoryConcurrency() {
@@ -55,7 +81,8 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 					},
 				}
 
-				assert.Nil(f.T(), event.Save(topicConfig, 1, fmt.Sprint(i)))
+				_, err := event.Save(topicConfig, 1, fmt.Sprint(i))
+				assert.Nil(f.T(), err)
 			}
 
 		}(tableNames[idx])

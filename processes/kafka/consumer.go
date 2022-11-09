@@ -41,7 +41,7 @@ func CommitOffset(topic string, partitionsToOffset map[int32]string) error {
 	return err
 }
 
-func StartConsumer(ctx context.Context) {
+func StartConsumer(ctx context.Context, flushChan chan bool) {
 	log := logger.FromContext(ctx)
 	log.Info("Starting Kafka consumer...", config.GetSettings().Config.Kafka)
 	var err error
@@ -75,6 +75,7 @@ func StartConsumer(ctx context.Context) {
 	}
 
 	for {
+		// TODO: Break this out into a separate function & test.
 		msg, err := kafkaConsumer.ReadMessage(-1)
 		if msg == nil {
 			log.Info("Msg is nil, skipping...")
@@ -114,9 +115,14 @@ func StartConsumer(ctx context.Context) {
 				}
 
 				evt := models.ToMemoryEvent(event, pkName, pkValue, topicConfig)
-				err = evt.Save(&topicConfig, msg.TopicPartition.Partition, msg.TopicPartition.Offset.String())
+				var shouldFlush bool
+				shouldFlush, err = evt.Save(&topicConfig, msg.TopicPartition.Partition, msg.TopicPartition.Offset.String())
 				if err != nil {
 					log.WithFields(logFields).WithError(err).Warn("Event failed to save")
+				}
+
+				if shouldFlush {
+					flushChan <- true
 				}
 			}
 		} else {

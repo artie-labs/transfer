@@ -214,6 +214,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		RowsData:    rowsData,
 		TopicConfig: topicConfig,
 		PrimaryKey:  "id",
+		Rows:        1,
 	}
 
 	mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()] = &snowflakeTableConfig{
@@ -224,4 +225,18 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	assert.Nil(s.T(), err)
 	s.fakeStore.ExecReturns(nil, nil)
 	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 1, "called merge")
+}
+
+func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
+	err := ExecuteMerge(context.Background(), &optimization.TableData{
+		Columns:            nil,
+		RowsData:           nil,
+		PrimaryKey:         "",
+		TopicConfig:        kafkalib.TopicConfig{},
+		PartitionsToOffset: nil,
+		LatestCDCTs:        time.Time{},
+		Rows:               0,
+	})
+
+	assert.Nil(s.T(), err)
 }
