@@ -9,5 +9,5 @@ const (
 
 	// SnowflakeArraySize is used because Snowflake has a max of 16,384 elements in an expression,
 	// https://github.com/snowflakedb/snowflake-connector-python/issues/37
-	SnowflakeArraySize = 2
+	SnowflakeArraySize = 15000
 )
