@@ -97,7 +97,6 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, partition int32, offset 
 			PrimaryKey:         e.PrimaryKeyName,
 			TopicConfig:        *topicConfig,
 			PartitionsToOffset: map[int32]string{},
-			Rows:               0,
 		}
 	}
 
