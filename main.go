@@ -26,16 +26,16 @@ func main() {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go func(ctx context.Context) {
+	go func() {
 		defer wg.Done()
 		pool.StartPool(ctx, 10*time.Second, flushChan)
-	}(ctx)
+	}()
 
 	wg.Add(1)
-	go func(ctx context.Context) {
+	go func() {
 		defer wg.Done()
 		kafka.StartConsumer(ctx, flushChan)
-	}(ctx)
+	}()
 
 	wg.Wait()
 }
