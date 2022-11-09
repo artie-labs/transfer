@@ -75,6 +75,7 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 	}
 
 	for {
+		// TODO: Break this out into a separate function & test.
 		msg, err := kafkaConsumer.ReadMessage(-1)
 		if msg == nil {
 			log.Info("Msg is nil, skipping...")
