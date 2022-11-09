@@ -214,6 +214,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		RowsData:    rowsData,
 		TopicConfig: topicConfig,
 		PrimaryKey:  "id",
+		Rows:        1,
 	}
 
 	mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()] = &snowflakeTableConfig{
