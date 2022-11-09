@@ -21,8 +21,8 @@ func main() {
 
 	// TODO: allow passing sentry hooks (from config)
 	logger.InjectLoggerIntoCtx(logger.NewLogger(), ctx)
-	snowflake.InitSnowflake(ctx, nil)
-	models.InitMemoryDB()
+	snowflake.LoadSnowflake(ctx, nil)
+	models.LoadMemoryDB()
 
 	flushChan := make(chan bool)
 

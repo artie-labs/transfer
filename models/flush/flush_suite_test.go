@@ -22,8 +22,8 @@ func (f *FlushTestSuite) SetupTest() {
 	store := db.Store(f.fakeStore)
 
 	ctx := context.Background()
-	snowflake.InitSnowflake(ctx, &store)
-	models.InitMemoryDB()
+	snowflake.LoadSnowflake(ctx, &store)
+	models.LoadMemoryDB()
 
 	f.fakeConsumer = &mocks.FakeConsumer{}
 	kafka.SetKafkaConsumer(f.fakeConsumer)

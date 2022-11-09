@@ -45,6 +45,7 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 	log := logger.FromContext(ctx)
 	log.Info("Starting Kafka consumer...", config.GetSettings().Config.Kafka)
 	var err error
+
 	kafkaConsumer, err = kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": config.GetSettings().Config.Kafka.BootstrapServer,
 		"sasl.mechanisms":   "PLAIN",

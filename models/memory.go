@@ -3,72 +3,32 @@ package models
 import (
 	"errors"
 	"fmt"
-	"sync"
-	"time"
-
-	"github.com/artie-labs/transfer/lib"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
+	"sync"
 )
 
-type databaseData struct {
+type DatabaseData struct {
 	TableData map[string]*optimization.TableData
 	sync.Mutex
 }
 
-type Event struct {
-	Table           string
-	PrimaryKeyName  string
-	PrimaryKeyValue interface{}
-	Data            map[string]interface{} // json serialized column data
-	ExecutionTime   time.Time              // When the SQL command was executed
+func GetMemoryDB() *DatabaseData {
+	return inMemoryDB
 }
 
-func ToMemoryEvent(event lib.Event, pkName string, pkValue interface{}, topicConfig kafkalib.TopicConfig) Event {
-	evt := Event{
-		Table:           event.Source.Table,
-		PrimaryKeyName:  pkName,
-		PrimaryKeyValue: pkValue,
-		ExecutionTime:   event.Source.GetExecutionTime(),
-	}
+// TODO: We should be able to swap out inMemoryDB per flush and make that non-blocking.
+var inMemoryDB *DatabaseData
 
-	if len(event.After) == 0 {
-
-		// This is a delete event, so mark it as deleted.
-		evt.Data = map[string]interface{}{
-			config.DeleteColumnMarker: true,
-			evt.PrimaryKeyName:        evt.PrimaryKeyValue,
-			topicConfig.IdempotentKey: evt.ExecutionTime.Format(time.RFC3339),
-		}
-	} else {
-		evt.Data = event.After
-		evt.Data[config.DeleteColumnMarker] = false
-	}
-
-	return evt
+func (d *DatabaseData) GetTableConfig(tableName string) map[string]map[string]interface{} {
+	return d.TableData[tableName].RowsData
 }
 
-var InMemoryDB *databaseData
-
-func GetTableConfig(tableName string) map[string]map[string]interface{} {
-	return InMemoryDB.TableData[tableName].RowsData
-}
-
-func (d *databaseData) ClearTableConfig(tableName string) {
+func (d *DatabaseData) ClearTableConfig(tableName string) {
 	// WARNING: before you call this, LOCK the table.
 	delete(d.TableData, tableName)
-}
-
-func (e *Event) IsValid() bool {
-	// Check if delete flag exists.
-	_, isOk := e.Data[config.DeleteColumnMarker]
-	if !isOk {
-		return false
-	}
-
-	return true
 }
 
 // Save will save the event into our in memory event
@@ -81,17 +41,17 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, partition int32, offset 
 		return false, errors.New("topicConfig is missing")
 	}
 
-	InMemoryDB.Lock()
-	defer InMemoryDB.Unlock()
+	inMemoryDB.Lock()
+	defer inMemoryDB.Unlock()
 
 	if !e.IsValid() {
 		return false, errors.New("event not valid")
 	}
 
 	// Does the table exist?
-	_, isOk := InMemoryDB.TableData[e.Table]
+	_, isOk := inMemoryDB.TableData[e.Table]
 	if !isOk {
-		InMemoryDB.TableData[e.Table] = &optimization.TableData{
+		inMemoryDB.TableData[e.Table] = &optimization.TableData{
 			RowsData:           map[string]map[string]interface{}{},
 			Columns:            map[string]typing.Kind{},
 			PrimaryKey:         e.PrimaryKeyName,
@@ -101,18 +61,18 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, partition int32, offset 
 	}
 
 	// Update the key, offset and TS
-	InMemoryDB.TableData[e.Table].RowsData[fmt.Sprint(e.PrimaryKeyValue)] = e.Data
-	InMemoryDB.TableData[e.Table].PartitionsToOffset[partition] = offset
-	InMemoryDB.TableData[e.Table].LatestCDCTs = e.ExecutionTime
+	inMemoryDB.TableData[e.Table].RowsData[fmt.Sprint(e.PrimaryKeyValue)] = e.Data
+	inMemoryDB.TableData[e.Table].PartitionsToOffset[partition] = offset
+	inMemoryDB.TableData[e.Table].LatestCDCTs = e.ExecutionTime
 
 	// Increment row count
-	InMemoryDB.TableData[e.Table].Rows += 1
+	inMemoryDB.TableData[e.Table].Rows += 1
 
 	// Update col if necessary
 	for col, val := range e.Data {
-		colType, isOk := InMemoryDB.TableData[e.Table].Columns[col]
+		colType, isOk := inMemoryDB.TableData[e.Table].Columns[col]
 		if !isOk {
-			InMemoryDB.TableData[e.Table].Columns[col] = typing.ParseValue(val)
+			inMemoryDB.TableData[e.Table].Columns[col] = typing.ParseValue(val)
 		} else {
 			if colType == typing.Invalid {
 				// If colType is Invalid, let's see if we can update it to a better type
@@ -120,17 +80,17 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, partition int32, offset 
 				// However, it's important to create a column even if it's nil.
 				// This is because we don't want to think that it's okay to drop a column in DWH
 				if kind := typing.ParseValue(val); kind != typing.Invalid {
-					InMemoryDB.TableData[e.Table].Columns[col] = kind
+					inMemoryDB.TableData[e.Table].Columns[col] = kind
 				}
 			}
 		}
 	}
 
-	return InMemoryDB.TableData[e.Table].Rows > config.SnowflakeArraySize, nil
+	return inMemoryDB.TableData[e.Table].Rows > config.SnowflakeArraySize, nil
 }
 
-func InitMemoryDB() {
-	InMemoryDB = &databaseData{
+func LoadMemoryDB() {
+	inMemoryDB = &DatabaseData{
 		TableData: map[string]*optimization.TableData{},
 	}
 }
