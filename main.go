@@ -24,17 +24,19 @@ func main() {
 	snowflake.InitSnowflake(ctx, nil)
 	models.InitMemoryDB()
 
+	flushChan := make(chan bool)
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		pool.StartPool(ctx, 10*time.Second)
+		pool.StartPool(ctx, 10*time.Second, flushChan)
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		kafka.StartConsumer(ctx)
+		kafka.StartConsumer(ctx, flushChan)
 	}()
 
 	wg.Wait()

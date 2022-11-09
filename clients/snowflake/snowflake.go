@@ -70,6 +70,11 @@ func alterTable(fqTableName string, columnOp columnOperation, cdcTime time.Time,
 }
 
 func ExecuteMerge(ctx context.Context, tableData *optimization.TableData) error {
+	if tableData.Rows == 0 {
+		// There's no rows. Let's skip.
+		return nil
+	}
+
 	fqName := tableData.ToFqName()
 	tableConfig, err := GetTableConfig(ctx, fqName)
 	if err != nil {

@@ -28,8 +28,8 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 				"hi":                      "hello",
 			},
 		}
-
-		assert.Nil(f.T(), event.Save(topicConfig, 1, "1"))
+		_, err := event.Save(topicConfig, 1, "1")
+		assert.Nil(f.T(), err)
 		assert.Equal(f.T(), len(models.GetTableConfig("foo")), i+1)
 	}
 }
@@ -55,7 +55,8 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 					},
 				}
 
-				assert.Nil(f.T(), event.Save(topicConfig, 1, fmt.Sprint(i)))
+				_, err := event.Save(topicConfig, 1, fmt.Sprint(i))
+				assert.Nil(f.T(), err)
 			}
 
 		}(tableNames[idx])

@@ -71,16 +71,21 @@ func (e *Event) IsValid() bool {
 	return true
 }
 
-func (e *Event) Save(topicConfig *kafkalib.TopicConfig, partition int32, offset string) error {
+// Save will save the event into our in memory event
+// It will return two values, a boolean and error
+// The boolean signifies whether we should flush immediately or not. This is because Snowflake has a constraint
+// On the number of elements within an expression.
+// The other, error - is returned to see if anything went awry.
+func (e *Event) Save(topicConfig *kafkalib.TopicConfig, partition int32, offset string) (bool, error) {
 	if topicConfig == nil {
-		return errors.New("topicConfig is missing")
+		return false, errors.New("topicConfig is missing")
 	}
 
 	InMemoryDB.Lock()
 	defer InMemoryDB.Unlock()
 
 	if !e.IsValid() {
-		return errors.New("event not valid")
+		return false, errors.New("event not valid")
 	}
 
 	// Does the table exist?
@@ -92,6 +97,7 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, partition int32, offset 
 			PrimaryKey:         e.PrimaryKeyName,
 			TopicConfig:        *topicConfig,
 			PartitionsToOffset: map[int32]string{},
+			Rows:               0,
 		}
 	}
 
@@ -99,6 +105,9 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, partition int32, offset 
 	InMemoryDB.TableData[e.Table].RowsData[fmt.Sprint(e.PrimaryKeyValue)] = e.Data
 	InMemoryDB.TableData[e.Table].PartitionsToOffset[partition] = offset
 	InMemoryDB.TableData[e.Table].LatestCDCTs = e.ExecutionTime
+
+	// Increment row count
+	InMemoryDB.TableData[e.Table].Rows += 1
 
 	// Update col if necessary
 	for col, val := range e.Data {
@@ -116,10 +125,9 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, partition int32, offset 
 				}
 			}
 		}
-
 	}
 
-	return nil
+	return InMemoryDB.TableData[e.Table].Rows > config.SnowflakeArraySize, nil
 }
 
 func InitMemoryDB() {
