@@ -9,6 +9,10 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
+type Sentry struct {
+	DSN string `yaml:"dsn"`
+}
+
 type Config struct {
 	Kafka struct {
 		BootstrapServer string                 `yaml:"bootstrapServer"`
@@ -24,6 +28,10 @@ type Config struct {
 		Password  string `yaml:"password"`
 		Warehouse string `yaml:"warehouse"`
 		Region    string `yaml:"region"`
+	}
+
+	Reporting struct {
+		Sentry *Sentry `yaml:"sentry"`
 	}
 }
 

@@ -12,12 +12,12 @@ type Settings struct {
 
 var settings *Settings
 
-func GetSettings() Settings {
+func GetSettings() *Settings {
 	if settings == nil {
 		log.Fatal("Settings is empty, we need to initialize.")
 	}
 
-	return *settings
+	return settings
 }
 
 func ParseArgs(args []string) {
