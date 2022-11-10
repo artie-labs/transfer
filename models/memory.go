@@ -22,10 +22,6 @@ func GetMemoryDB() *DatabaseData {
 // TODO: We should be able to swap out inMemoryDB per flush and make that non-blocking.
 var inMemoryDB *DatabaseData
 
-func (d *DatabaseData) GetTableConfig(tableName string) map[string]map[string]interface{} {
-	return d.TableData[tableName].RowsData
-}
-
 func (d *DatabaseData) ClearTableConfig(tableName string) {
 	// WARNING: before you call this, LOCK the table.
 	delete(d.TableData, tableName)
