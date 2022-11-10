@@ -35,7 +35,6 @@ type Config struct {
 	}
 }
 
-// TODO: Test this function.
 func readFileToConfig(pathToConfig string) (*Config, error) {
 	file, err := os.Open(pathToConfig)
 	defer file.Close()

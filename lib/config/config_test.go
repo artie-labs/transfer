@@ -10,6 +10,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestReadNonExistentFile(t *testing.T) {
+	config, err := readFileToConfig("/tmp/213213231312")
+	assert.Error(t, err)
+	assert.Nil(t, config)
+}
+
+func TestReadFileNotYAML(t *testing.T) {
+	randomFile := fmt.Sprintf("/tmp/%s", time.Now().String())
+	defer os.Remove(randomFile)
+
+	file, err := os.Create(randomFile)
+	assert.Nil(t, err)
+
+	io.WriteString(file, "foo foo")
+
+	config, err := readFileToConfig(randomFile)
+	assert.Nil(t, config)
+	assert.Error(t, err, "failed to read config file, because it's not proper yaml.")
+}
+
 func TestReadFileToConfig(t *testing.T) {
 	randomFile := fmt.Sprintf("/tmp/%s", time.Now().String())
 	defer os.Remove(randomFile)
@@ -30,6 +50,7 @@ func TestReadFileToConfig(t *testing.T) {
 		snowflakePassword = "password"
 		warehouse         = "warehouse"
 		region            = "region"
+		sentryDSN         = "sentry_url"
 	)
 
 	_, err = io.WriteString(file, fmt.Sprintf(
@@ -49,8 +70,13 @@ snowflake:
  password: %s
  warehouse: %s
  region: %s
+
+reporting:
+ sentry:
+  dsn: %s
+
 `, bootstrapServer, groupID, username, password, snowflakeAccount,
-		snowflakeUser, snowflakePassword, warehouse, region))
+		snowflakeUser, snowflakePassword, warehouse, region, sentryDSN))
 	assert.Nil(t, err)
 
 	// Now read it!
@@ -88,4 +114,5 @@ snowflake:
 	assert.Equal(t, config.Snowflake.AccountID, snowflakeAccount)
 	assert.Equal(t, config.Snowflake.Warehouse, warehouse)
 	assert.Equal(t, config.Snowflake.Region, region)
+	assert.Equal(t, config.Reporting.Sentry.DSN, sentryDSN)
 }

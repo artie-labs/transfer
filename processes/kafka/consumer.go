@@ -45,7 +45,6 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 	log := logger.FromContext(ctx)
 	log.Info("Starting Kafka consumer...", config.GetSettings().Config.Kafka)
 	var err error
-
 	kafkaConsumer, err = kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": config.GetSettings().Config.Kafka.BootstrapServer,
 		"sasl.mechanisms":   "PLAIN",
@@ -62,7 +61,6 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 	}
 
 	defer kafkaConsumer.Close()
-
 	topicToConfigMap := make(map[string]kafkalib.TopicConfig)
 	var topics []string
 	for _, topicConfig := range config.GetSettings().Config.Kafka.TopicConfigs {
@@ -119,7 +117,7 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 				var shouldFlush bool
 				shouldFlush, err = evt.Save(&topicConfig, msg.TopicPartition.Partition, msg.TopicPartition.Offset.String())
 				if err != nil {
-					log.WithFields(logFields).WithError(err).Warn("Event failed to save")
+					log.WithFields(logFields).WithError(err).Error("Event failed to save")
 				}
 
 				if shouldFlush {
