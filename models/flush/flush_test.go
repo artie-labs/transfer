@@ -30,7 +30,7 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 		}
 		_, err := event.Save(topicConfig, 1, "1")
 		assert.Nil(f.T(), err)
-		assert.Equal(f.T(), len(models.GetTableConfig("foo")), i+1)
+		assert.Equal(f.T(), len(models.GetMemoryDB().GetTableConfig("foo")), i+1)
 	}
 }
 
@@ -92,7 +92,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 
 	// Verify all the tables exist.
 	for idx := range tableNames {
-		tableConfig := models.GetTableConfig(tableNames[idx])
+		tableConfig := models.GetMemoryDB().GetTableConfig(tableNames[idx])
 		assert.Equal(f.T(), len(tableConfig), 5)
 	}
 

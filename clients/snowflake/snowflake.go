@@ -110,7 +110,7 @@ func ExecuteMerge(ctx context.Context, tableData *optimization.TableData) error 
 	return err
 }
 
-func InitSnowflake(ctx context.Context, _store *db.Store) {
+func LoadSnowflake(ctx context.Context, _store *db.Store) {
 	if _store != nil {
 		// Used for tests.
 		store = *_store

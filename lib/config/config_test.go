@@ -54,7 +54,7 @@ snowflake:
 	assert.Nil(t, err)
 
 	// Now read it!
-	config, err := ReadFileToConfig(randomFile)
+	config, err := readFileToConfig(randomFile)
 	assert.Nil(t, err)
 	assert.NotNil(t, config)
 

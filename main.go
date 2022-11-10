@@ -2,14 +2,14 @@ package main
 
 import (
 	"context"
-	"github.com/artie-labs/transfer/lib/logger"
-	"github.com/artie-labs/transfer/models"
 	"os"
 	"sync"
 	"time"
 
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/processes/kafka"
 	"github.com/artie-labs/transfer/processes/pool"
 )
@@ -19,8 +19,8 @@ func main() {
 	config.ParseArgs(os.Args)
 
 	ctx := logger.InjectLoggerIntoCtx(logger.NewLogger(config.GetSettings()), context.Background())
-	snowflake.InitSnowflake(ctx, nil)
-	models.InitMemoryDB()
+	snowflake.LoadSnowflake(ctx, nil)
+	models.LoadMemoryDB()
 
 	flushChan := make(chan bool)
 

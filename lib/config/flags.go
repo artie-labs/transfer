@@ -1,8 +1,9 @@
 package config
 
 import (
-	"github.com/jessevdk/go-flags"
 	"log"
+
+	"github.com/jessevdk/go-flags"
 )
 
 type Settings struct {
@@ -19,11 +20,11 @@ func GetSettings() *Settings {
 	return settings
 }
 
-var opts struct {
-	ConfigFilePath string `short:"c" long:"config" description:"path to the config file"`
-}
-
 func ParseArgs(args []string) {
+	var opts struct {
+		ConfigFilePath string `short:"c" long:"config" description:"path to the config file"`
+	}
+
 	if settings != nil {
 		return
 	}
@@ -33,7 +34,7 @@ func ParseArgs(args []string) {
 		log.Fatalf("Failed to parse args, err: %v", err)
 	}
 
-	config, err := ReadFileToConfig(opts.ConfigFilePath)
+	config, err := readFileToConfig(opts.ConfigFilePath)
 	if err != nil {
 		log.Fatalf("Failed to parse config file. Please check your config, err: %v", err)
 	}

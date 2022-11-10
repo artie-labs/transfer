@@ -9,16 +9,16 @@ import (
 )
 
 func Flush(ctx context.Context) error {
-	if models.InMemoryDB == nil {
+	if models.GetMemoryDB() == nil {
 		return nil
 	}
 
 	log := logger.FromContext(ctx)
-	models.InMemoryDB.Lock()
-	defer models.InMemoryDB.Unlock()
+	models.GetMemoryDB().Lock()
+	defer models.GetMemoryDB().Unlock()
 
 	// Flush will take everything in memory and call Snowflake to create temp tables.
-	for tableName, tableData := range models.InMemoryDB.TableData {
+	for tableName, tableData := range models.GetMemoryDB().TableData {
 		logFields := map[string]interface{}{
 			"tableName": tableName,
 		}
@@ -30,7 +30,7 @@ func Flush(ctx context.Context) error {
 			log.WithFields(logFields).Info("Merge success, clearing memory...")
 			commitErr := kafka.CommitOffset(tableData.Topic, tableData.PartitionsToOffset)
 			if commitErr == nil {
-				models.InMemoryDB.ClearTableConfig(tableName)
+				models.GetMemoryDB().ClearTableConfig(tableName)
 			} else {
 				log.WithError(commitErr).Warn("commit error...")
 			}

@@ -20,7 +20,7 @@ func (s *SnowflakeTestSuite) SetupTest() {
 
 	s.fakeStore = &mocks.FakeStore{}
 	store := db.Store(s.fakeStore)
-	InitSnowflake(ctx, &store)
+	LoadSnowflake(ctx, &store)
 
 	mdConfig = &metadataConfig{
 		snowflakeTableToConfig: make(map[string]*snowflakeTableConfig),

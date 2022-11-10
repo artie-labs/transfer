@@ -1,10 +1,12 @@
 package config
 
 import (
-	"github.com/artie-labs/transfer/lib/kafkalib"
-	"gopkg.in/yaml.v3"
 	"io"
 	"os"
+
+	"gopkg.in/yaml.v3"
+
+	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
 type Sentry struct {
@@ -12,7 +14,6 @@ type Sentry struct {
 }
 
 type Config struct {
-	// TODO: Add more validation to the config part.
 	Kafka struct {
 		BootstrapServer string                 `yaml:"bootstrapServer"`
 		GroupID         string                 `yaml:"groupID"`
@@ -34,15 +35,8 @@ type Config struct {
 	}
 }
 
-func (c *Config) IsValid() bool {
-	if c == nil {
-		return false
-	}
-
-	return true
-}
-
-func ReadFileToConfig(pathToConfig string) (*Config, error) {
+// TODO: Test this function.
+func readFileToConfig(pathToConfig string) (*Config, error) {
 	file, err := os.Open(pathToConfig)
 	defer file.Close()
 
