@@ -1,11 +1,11 @@
 package models
 
 import (
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"time"
 
-	"github.com/artie-labs/transfer/lib"
+	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
 type Event struct {
@@ -16,27 +16,14 @@ type Event struct {
 	ExecutionTime   time.Time              // When the SQL command was executed
 }
 
-func ToMemoryEvent(event lib.Event, pkName string, pkValue interface{}, topicConfig kafkalib.TopicConfig) Event {
-	evt := Event{
-		Table:           event.Source.Table,
+func ToMemoryEvent(event cdc.Event, pkName string, pkValue interface{}, tc kafkalib.TopicConfig) Event {
+	return Event{
+		Table:           event.Table(),
 		PrimaryKeyName:  pkName,
 		PrimaryKeyValue: pkValue,
-		ExecutionTime:   event.Source.GetExecutionTime(),
+		ExecutionTime:   event.GetExecutionTime(),
+		Data:            event.GetData(pkName, pkValue, tc),
 	}
-
-	if len(event.After) == 0 {
-		// This is a delete event, so mark it as deleted.
-		evt.Data = map[string]interface{}{
-			config.DeleteColumnMarker: true,
-			evt.PrimaryKeyName:        evt.PrimaryKeyValue,
-			topicConfig.IdempotentKey: evt.ExecutionTime.Format(time.RFC3339),
-		}
-	} else {
-		evt.Data = event.After
-		evt.Data[config.DeleteColumnMarker] = false
-	}
-
-	return evt
 }
 
 func (e *Event) IsValid() bool {

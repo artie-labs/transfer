@@ -10,4 +10,7 @@ const (
 	// SnowflakeArraySize is used because Snowflake has a max of 16,384 elements in an expression,
 	// https://github.com/snowflakedb/snowflake-connector-python/issues/37
 	SnowflakeArraySize = 15000
+
+	// DBZPostgresFormat is the only supported CDC format right now
+	DBZPostgresFormat = "debezium.postgres.wal2json"
 )
