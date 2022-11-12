@@ -129,6 +129,18 @@ func (s *SnowflakeTestSuite) TestAlterTableDeleteDryRun() {
 			fmt.Sprintf("Col not found: %s, actual list: %v, expected list: %v",
 				col, tableConfig.ColumnsToDelete, cols))
 	}
+
+	colToActuallyDelete := cols[0].Name
+
+	// Now let's check the timestamp
+	assert.True(s.T(), tableConfig.ColumnsToDelete[colToActuallyDelete].After(time.Now()))
+	// Now let's actually try to dial the time back, and it should actually try to delete.
+	tableConfig.ColumnsToDelete[colToActuallyDelete] = time.Now().Add(-1 * time.Hour)
+	err = alterTable(fqTable, Delete, time.Now().UTC(), cols...)
+	assert.Nil(s.T(), err)
+	assert.Equal(s.T(), 1, s.fakeStore.ExecCallCount(), "tried to delete one column")
+	execArg, _ := s.fakeStore.ExecArgsForCall(0)
+	assert.Equal(s.T(), execArg, fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTable, Delete, colToActuallyDelete))
 }
 
 func (s *SnowflakeTestSuite) TestAlterTableDelete() {
