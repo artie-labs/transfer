@@ -33,7 +33,6 @@ func (m *ModelsTestSuite) SaveEvent() {
 	assert.Nil(m.T(), err)
 
 	optimization := GetMemoryDB().TableData["foo"]
-
 	// Check the in-memory DB columns.
 	var found int
 	for col := range optimization.Columns {

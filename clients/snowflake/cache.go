@@ -30,6 +30,10 @@ func shouldDeleteColumn(fqName string, col typing.Column, cdcTime time.Time) boo
 		return cdcTime.After(ts)
 	}
 
+	if mdConfig.snowflakeTableToConfig[fqName].ColumnsToDelete == nil {
+		mdConfig.snowflakeTableToConfig[fqName].ColumnsToDelete = make(map[string]time.Time)
+	}
+
 	// Doesn't exist just yet, so let's add it to the cache.
 	mdConfig.snowflakeTableToConfig[fqName].ColumnsToDelete[col.Name] =
 		time.Now().UTC().Add(config.DeletionConfidencePadding)
