@@ -16,12 +16,16 @@ func (m *ModelsTestSuite) SaveEvent() {
 	expectedCol := "rOBiN TaNG"
 	expectedLowerCol := "robin tang"
 
+	anotherCol := "DuStY tHE MINI aussie"
+	anotherLowerCol := "dusty the mini aussie"
+
 	event := Event{
 		Table:           "foo",
 		PrimaryKeyValue: "123",
 		Data: map[string]interface{}{
 			config.DeleteColumnMarker: true,
 			expectedCol:               "dusty",
+			anotherCol:                13.37,
 		},
 	}
 
@@ -31,13 +35,16 @@ func (m *ModelsTestSuite) SaveEvent() {
 	optimization := GetMemoryDB().TableData["foo"]
 
 	// Check the in-memory DB columns.
-	var found bool
+	var found int
 	for col := range optimization.Columns {
-		found = col == expectedLowerCol
-		if found {
+		if col == expectedLowerCol || col == anotherLowerCol {
+			found += 1
+		}
+
+		if found == 2 {
 			break
 		}
 	}
 
-	assert.True(m.T(), found, optimization.Columns)
+	assert.Equal(m.T(), 2, found, optimization.Columns)
 }
