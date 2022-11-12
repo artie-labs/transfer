@@ -88,7 +88,6 @@ func (e *Event) Table() string {
 	return e.Source.Table
 }
 
-// GetData TODO: Test
 func (e *Event) GetData(pkName string, pkVal interface{}, tc kafkalib.TopicConfig) map[string]interface{} {
 	retMap := make(map[string]interface{})
 	if len(e.After) == 0 {

@@ -65,9 +65,61 @@ func (p *PostgresTestSuite) TestGetDataTestInsert() {
 }
 
 func (p *PostgresTestSuite) TestGetDataTestDelete() {
+	tc := kafkalib.TopicConfig{
+		IdempotentKey: "updated_at",
+	}
 
+	now := time.Now().UTC()
+	evt := Event{
+		Before:    nil,
+		After:     nil,
+		Operation: "c",
+		Source:    Source{TsMs: now.UnixMilli()},
+	}
+
+	evtData := evt.GetData("pk", 1, tc)
+	shouldDelete, isOk := evtData[config.DeleteColumnMarker]
+	assert.True(p.T(), isOk)
+	assert.True(p.T(), shouldDelete.(bool))
+
+	assert.Equal(p.T(), 3, len(evtData), evtData)
+	assert.Equal(p.T(), evtData["pk"], 1)
+	assert.Equal(p.T(), evtData[tc.IdempotentKey], now.Format(time.RFC3339))
 }
 
 func (p *PostgresTestSuite) TestGetDataTestUpdate() {
+	before := map[string]interface{}{
+		"pk":           1,
+		"foo":          "bar",
+		"name":         "dusty",
+		"favoriteFood": "apples",
+		"age":          1,
+		"weight_lbs":   25,
+	}
 
+	after := map[string]interface{}{
+		"pk":           1,
+		"foo":          "bar",
+		"name":         "dusty",
+		"favoriteFood": "jerky",
+		"age":          2,
+		"weight_lbs":   33,
+	}
+
+	var tc kafkalib.TopicConfig
+	evt := Event{
+		Before:    before,
+		After:     after,
+		Operation: "c",
+	}
+
+	evtData := evt.GetData("pk", 1, tc)
+	assert.Equal(p.T(), len(after)+1, len(evtData), "has deletion flag")
+
+	deletionFlag, isOk := evtData[config.DeleteColumnMarker]
+	assert.True(p.T(), isOk)
+	assert.False(p.T(), deletionFlag.(bool))
+
+	delete(evtData, config.DeleteColumnMarker)
+	assert.Equal(p.T(), after, evtData)
 }
