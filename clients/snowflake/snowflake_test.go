@@ -129,6 +129,18 @@ func (s *SnowflakeTestSuite) TestAlterTableDeleteDryRun() {
 			fmt.Sprintf("Col not found: %s, actual list: %v, expected list: %v",
 				col, tableConfig.ColumnsToDelete, cols))
 	}
+
+	colToActuallyDelete := cols[0].Name
+
+	// Now let's check the timestamp
+	assert.True(s.T(), tableConfig.ColumnsToDelete[colToActuallyDelete].After(time.Now()))
+	// Now let's actually try to dial the time back, and it should actually try to delete.
+	tableConfig.ColumnsToDelete[colToActuallyDelete] = time.Now().Add(-1 * time.Hour)
+	err = alterTable(fqTable, Delete, time.Now().UTC(), cols...)
+	assert.Nil(s.T(), err)
+	assert.Equal(s.T(), 1, s.fakeStore.ExecCallCount(), "tried to delete one column")
+	execArg, _ := s.fakeStore.ExecArgsForCall(0)
+	assert.Equal(s.T(), execArg, fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTable, Delete, colToActuallyDelete))
 }
 
 func (s *SnowflakeTestSuite) TestAlterTableDelete() {
@@ -225,6 +237,84 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	assert.Nil(s.T(), err)
 	s.fakeStore.ExecReturns(nil, nil)
 	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 1, "called merge")
+}
+
+// TestExecuteMergeDeletionFlagRemoval is going to run execute merge twice.
+// First time, we will try to delete a column
+// Second time, we'll simulate the data catching up (column exists) and it should now
+// Remove it from the in-memory store.
+func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
+	topicConfig := kafkalib.TopicConfig{
+		Database:  "customer",
+		TableName: "orders",
+		Schema:    "public",
+	}
+
+	defer delete(mdConfig.snowflakeTableToConfig, topicConfig.ToFqName())
+	rowsData := make(map[string]map[string]interface{})
+	for i := 0; i < 5; i++ {
+		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]interface{}{
+			"id":         fmt.Sprintf("pk-%d", i),
+			"created_at": time.Now().String(),
+			"name":       fmt.Sprintf("Robin-%d", i),
+		}
+	}
+
+	columns := map[string]typing.Kind{
+		"id":                      typing.Integer,
+		"created_at":              typing.DateTime,
+		"name":                    typing.String,
+		config.DeleteColumnMarker: typing.Boolean,
+	}
+
+	tableData := &optimization.TableData{
+		Columns:     columns,
+		RowsData:    rowsData,
+		TopicConfig: topicConfig,
+		PrimaryKey:  "id",
+		Rows:        1,
+	}
+
+	sflkColumns := map[string]typing.Kind{
+		"id":                      typing.Integer,
+		"created_at":              typing.DateTime,
+		"name":                    typing.String,
+		config.DeleteColumnMarker: typing.Boolean,
+	}
+
+	sflkColumns["new"] = typing.String
+
+	mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()] = &snowflakeTableConfig{
+		Columns: sflkColumns,
+	}
+
+	err := ExecuteMerge(context.Background(), tableData)
+	assert.Nil(s.T(), err)
+	s.fakeStore.ExecReturns(nil, nil)
+	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 1, "called merge")
+
+	// Check the temp deletion table now.
+	assert.Equal(s.T(), len(mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()].ColumnsToDelete), 1,
+		mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()].ColumnsToDelete)
+
+	_, isOk := mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()].ColumnsToDelete["new"]
+	assert.True(s.T(), isOk)
+
+	// Now try to execute merge where 1 of the rows have the column now
+	for _, pkMap := range tableData.RowsData {
+		pkMap["new"] = "123"
+		tableData.Columns = sflkColumns
+		break
+	}
+
+	err = ExecuteMerge(context.Background(), tableData)
+	assert.NoError(s.T(), err)
+	s.fakeStore.ExecReturns(nil, nil)
+	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 2, "called merge again")
+
+	// Caught up now, so columns should be 0.
+	assert.Equal(s.T(), len(mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()].ColumnsToDelete), 0,
+		mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()].ColumnsToDelete)
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {

@@ -8,6 +8,7 @@ type TopicConfig struct {
 	Schema        string `yaml:"schema"`
 	Topic         string `yaml:"topic"`
 	IdempotentKey string `yaml:"idempotentKey"`
+	CDCFormat     string `yaml:"cdc_format"`
 }
 
 func (t *TopicConfig) ToCacheKey(partition int32) string {

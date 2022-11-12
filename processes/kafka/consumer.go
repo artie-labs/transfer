@@ -2,18 +2,23 @@ package kafka
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/artie-labs/transfer/lib/cdc"
+	"github.com/artie-labs/transfer/lib/cdc/format"
 	"strconv"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 
-	"github.com/artie-labs/transfer/lib"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/models"
 )
+
+type TopicConfigFormatter struct {
+	tc kafkalib.TopicConfig
+	cdc.Format
+}
 
 var kafkaConsumer kafkalib.Consumer
 
@@ -61,10 +66,13 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 	}
 
 	defer kafkaConsumer.Close()
-	topicToConfigMap := make(map[string]kafkalib.TopicConfig)
+	topicToConfigFmtMap := make(map[string]TopicConfigFormatter)
 	var topics []string
 	for _, topicConfig := range config.GetSettings().Config.Kafka.TopicConfigs {
-		topicToConfigMap[topicConfig.Topic] = topicConfig
+		topicToConfigFmtMap[topicConfig.Topic] = TopicConfigFormatter{
+			tc:     topicConfig,
+			Format: format.GetFormatParser(ctx, topicConfig.CDCFormat),
+		}
 		topics = append(topics, topicConfig.Topic)
 	}
 
@@ -84,6 +92,7 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 		logFields := map[string]interface{}{
 			"topicPartition": msg.TopicPartition.String(),
 			"key":            string(msg.Key),
+			"value":          string(msg.Value),
 		}
 
 		if err != nil {
@@ -91,41 +100,35 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 			continue
 		}
 
-		logFields["value"] = string(msg.Value)
-		if err == nil {
-			pkName, pkValue, err := lib.GetPrimaryKey(ctx, msg.Key)
-			if err != nil {
-				log.WithError(err).WithFields(logFields).Warn("cannot unmarshall key")
-				continue
-			}
+		topicConfig, isOk := topicToConfigFmtMap[*msg.TopicPartition.Topic]
+		if !isOk {
+			log.WithFields(logFields).Warn("Failed to get topic Name")
+			continue
+		}
 
-			var event lib.Event
-			err = json.Unmarshal(msg.Value, &event)
-			if err != nil {
-				// A tombstone event will be sent to Kafka when a DELETE happens.
-				// Which causes marshalling error.
-				log.WithFields(logFields).WithError(err).Warn("cannot unmarshall event")
-				continue
-			} else {
-				topicConfig, isOk := topicToConfigMap[*msg.TopicPartition.Topic]
-				if !isOk {
-					log.WithFields(logFields).Warn("Failed to get topic Name")
-					continue
-				}
+		pkName, pkValue, err := topicConfig.GetPrimaryKey(ctx, msg.Key)
+		if err != nil {
+			log.WithError(err).WithFields(logFields).Warn("cannot unmarshall key")
+			continue
+		}
 
-				evt := models.ToMemoryEvent(event, pkName, pkValue, topicConfig)
-				var shouldFlush bool
-				shouldFlush, err = evt.Save(&topicConfig, msg.TopicPartition.Partition, msg.TopicPartition.Offset.String())
-				if err != nil {
-					log.WithFields(logFields).WithError(err).Error("Event failed to save")
-				}
+		event, err := topicConfig.GetEventFromBytes(ctx, msg.Value)
+		if err != nil {
+			// A tombstone event will be sent to Kafka when a DELETE happens.
+			// Which causes marshalling error.
+			log.WithFields(logFields).WithError(err).Warn("cannot unmarshall event")
+			continue
+		}
 
-				if shouldFlush {
-					flushChan <- true
-				}
-			}
-		} else {
-			log.Fatalf("Consumer error: %v", err)
+		evt := models.ToMemoryEvent(event, pkName, pkValue, topicConfig.tc)
+		var shouldFlush bool
+		shouldFlush, err = evt.Save(&topicConfig.tc, msg.TopicPartition.Partition, msg.TopicPartition.Offset.String())
+		if err != nil {
+			log.WithFields(logFields).WithError(err).Error("Event failed to save")
+		}
+
+		if shouldFlush {
+			flushChan <- true
 		}
 	}
 }
