@@ -25,7 +25,6 @@ func ToMemoryEvent(event lib.Event, pkName string, pkValue interface{}, topicCon
 	}
 
 	if len(event.After) == 0 {
-
 		// This is a delete event, so mark it as deleted.
 		evt.Data = map[string]interface{}{
 			config.DeleteColumnMarker: true,
