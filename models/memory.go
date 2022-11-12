@@ -67,9 +67,7 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, partition int32, offset 
 
 	// Update col if necessary
 	for col, val := range e.Data {
-		// TODO: Test case sensitive.
 		col = strings.ToLower(col)
-
 		colType, isOk := inMemoryDB.TableData[e.Table].Columns[col]
 		if !isOk {
 			inMemoryDB.TableData[e.Table].Columns[col] = typing.ParseValue(val)
