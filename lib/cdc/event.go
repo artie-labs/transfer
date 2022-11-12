@@ -14,7 +14,7 @@ type Format interface {
 }
 
 type Event interface {
-	GetExecutionTime() time.Time
 	Table() string
+	GetExecutionTime() time.Time
 	GetData(pkName string, pkVal interface{}, config kafkalib.TopicConfig) map[string]interface{}
 }

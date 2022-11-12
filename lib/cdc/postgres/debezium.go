@@ -3,9 +3,9 @@ package postgres
 import (
 	"context"
 	"encoding/json"
-	"github.com/artie-labs/transfer/lib/cdc"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"

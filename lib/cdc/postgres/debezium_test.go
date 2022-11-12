@@ -3,6 +3,8 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -33,4 +35,39 @@ func (p *PostgresTestSuite) TestSource_GetExecutionTime() {
 	event := &Event{Source: source}
 	assert.Equal(p.T(), time.Date(2022, time.October,
 		11, 3, 19, 24, 942000000, time.UTC), event.GetExecutionTime())
+}
+
+func (p *PostgresTestSuite) TestGetDataTestInsert() {
+	after := map[string]interface{}{
+		"pk":           1,
+		"foo":          "bar",
+		"name":         "dusty",
+		"favoriteFood": "jerky",
+	}
+
+	var tc kafkalib.TopicConfig
+
+	evt := Event{
+		Before:    nil,
+		After:     after,
+		Operation: "c",
+	}
+
+	evtData := evt.GetData("pk", 1, tc)
+	assert.Equal(p.T(), len(after)+1, len(evtData), "has deletion flag")
+
+	deletionFlag, isOk := evtData[config.DeleteColumnMarker]
+	assert.True(p.T(), isOk)
+	assert.False(p.T(), deletionFlag.(bool))
+
+	delete(evtData, config.DeleteColumnMarker)
+	assert.Equal(p.T(), after, evtData)
+}
+
+func (p *PostgresTestSuite) TestGetDataTestDelete() {
+
+}
+
+func (p *PostgresTestSuite) TestGetDataTestUpdate() {
+
 }
