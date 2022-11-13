@@ -48,7 +48,7 @@ func alterTable(fqTableName string, columnOp columnOperation, cdcTime time.Time,
 
 		switch columnOp {
 		case Add:
-			colSQLPart = fmt.Sprintf("%s %s", col.Name, col.Kind)
+			colSQLPart = fmt.Sprintf("%s %s", col.Name, typing.KindToSnowflake(col.Kind))
 		case Delete:
 			colSQLPart = fmt.Sprintf("%s", col.Name)
 		}
@@ -58,6 +58,7 @@ func alterTable(fqTableName string, columnOp columnOperation, cdcTime time.Time,
 			// Snowflake doesn't have CREATE COLUMN IF NOT EXISTS (idempotent)
 			err = nil
 		} else if err != nil {
+			fmt.Println(fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTableName, columnOp, colSQLPart))
 			return err
 		}
 	}

@@ -1,6 +1,7 @@
 package typing
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -35,6 +36,25 @@ var supportedDateTimeLayouts = []string{
 	time.RFC3339,
 }
 
+func EscapeString(val string) string {
+	return strings.ReplaceAll(fmt.Sprint(val), "'", `\\'`)
+}
+
+// IsJSON - We also need to check if the string is a JSON string or not
+// If it could be one, it will start with { and end with }.
+// Once there, we will then check if it's a JSON string or not.
+// This is an optimization since JSON string checking is expensive.
+func IsJSON(str string) bool {
+	// TODO: Test
+	valStringChars := []rune(str)
+	if string(valStringChars[0]) == "{" && string(valStringChars[len(valStringChars)-1]) == "}" {
+		var js json.RawMessage
+		return json.Unmarshal([]byte(str), &js) == nil
+	}
+
+	return false
+}
+
 func ParseValue(val interface{}) Kind {
 	// Check if it's a number first.
 	switch val.(type) {
@@ -58,6 +78,10 @@ func ParseValue(val interface{}) Kind {
 					return DateTime
 				}
 			}
+		}
+
+		if IsJSON(valString) {
+			return Struct
 		}
 
 		return String

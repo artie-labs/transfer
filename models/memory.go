@@ -70,6 +70,7 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, partition int32, offset 
 		col = strings.ToLower(col)
 		colType, isOk := inMemoryDB.TableData[e.Table].Columns[col]
 		if !isOk {
+			fmt.Println("val", val, "typing", typing.ParseValue(val))
 			inMemoryDB.TableData[e.Table].Columns[col] = typing.ParseValue(val)
 		} else {
 			if colType == typing.Invalid {

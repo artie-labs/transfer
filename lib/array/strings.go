@@ -19,9 +19,11 @@ func StringsJoinAddPrefix(vals []string, separator string, prefix string) string
 // ColumnsUpdateQuery will take a list of columns + tablePrefix and return
 // columnA = tablePrefix.columnA, columnB = tablePrefix.columnB. This is the Update syntax that Snowflake requires
 func ColumnsUpdateQuery(columns []string, tablePrefix string) string {
+	// NOTE: columns and sflkCols must be the same.
 	var _columns []string
 
 	for _, column := range columns {
+		// This is to make it look like: objCol = cc.objCol::variant
 		_columns = append(_columns, fmt.Sprintf("%s = %s.%s", column, tablePrefix, column))
 	}
 

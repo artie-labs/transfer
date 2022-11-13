@@ -96,3 +96,11 @@ func TestString(t *testing.T) {
 		assert.Equal(t, ParseValue(possibleString), String)
 	}
 }
+
+func TestEscapeString(t *testing.T) {
+	val := "Robin O'Smith"
+	escapedString := EscapeString(val)
+
+	fmt.Println("escapedString", escapedString)
+	assert.Equal(t, escapedString, val)
+}

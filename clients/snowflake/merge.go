@@ -3,7 +3,6 @@ package snowflake
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/array"
@@ -17,6 +16,8 @@ func merge(tableData *optimization.TableData) (string, error) {
 	var tableValues []string
 	var artieDeleteMetadataIdx *int
 	var cols []string
+	var sflkCols []string
+
 	// Given all the columns, diff this against SFLK.
 	for col, kind := range tableData.Columns {
 		if kind == typing.Invalid {
@@ -24,7 +25,14 @@ func merge(tableData *optimization.TableData) (string, error) {
 			continue
 		}
 
+		sflkCol := col
+		switch kind {
+		case typing.Struct, typing.Array:
+			sflkCol = fmt.Sprintf("PARSE_JSON(%s) %s", col, col)
+		}
+
 		cols = append(cols, col)
+		sflkCols = append(sflkCols, sflkCol)
 	}
 
 	for _, value := range tableData.RowsData {
@@ -36,11 +44,15 @@ func merge(tableData *optimization.TableData) (string, error) {
 				artieDeleteMetadataIdx = ptr.ToInt(idx)
 			}
 
+			colKind := tableData.Columns[col]
 			colVal := value[col]
 			if colVal != nil {
-				// TODO: Test some gnarly string.
-				if reflect.TypeOf(colVal).String() == "string" {
-					colVal = fmt.Sprintf("'%s'", strings.Replace(fmt.Sprint(colVal), "'", `\'`, -1))
+				switch colKind {
+				// All the other types do not need string wrapping.
+				case typing.String, typing.DateTime, typing.Array, typing.Struct:
+					// Escape line breaks, JSON_PARSE does not like it.
+					colVal = strings.ReplaceAll(fmt.Sprint(colVal), `\n`, `\\n`)
+					colVal = fmt.Sprintf("'%s'", strings.ReplaceAll(fmt.Sprint(colVal), "'", `\\'`))
 				}
 			} else {
 				colVal = "null"
@@ -52,14 +64,16 @@ func merge(tableData *optimization.TableData) (string, error) {
 		tableValues = append(tableValues, fmt.Sprintf("(%s) ", strings.Join(rowValues, ",")))
 	}
 
-	subQuery := fmt.Sprintf("SELECT * FROM (values %s) as %s(%s)", strings.Join(tableValues, ","),
-		tableData.TopicConfig.TableName, strings.Join(cols, ","))
+	subQuery := fmt.Sprintf("SELECT %s FROM (values %s) as %s(%s)", strings.Join(sflkCols, ","),
+		strings.Join(tableValues, ","), tableData.TopicConfig.TableName, strings.Join(cols, ","))
 
 	if artieDeleteMetadataIdx == nil {
 		return "", errors.New("artie delete flag doesn't exist")
 	}
 
+	// Hide the deletion flag
 	cols = append(cols[:*artieDeleteMetadataIdx], cols[*artieDeleteMetadataIdx+1:]...)
+
 	// We should not need idempotency key for DELETE
 	// This is based on the assumption that the primary key would be atomically increasing or UUID based
 	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
