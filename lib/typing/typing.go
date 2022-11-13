@@ -59,6 +59,9 @@ func ParseValue(val interface{}) Kind {
 	case uint, int, uint8, uint16, uint32, uint64, int8, int16, int32, int64:
 		return Integer
 	case float32, float64:
+		// Integers will be parsed as Floats if they come from JSON
+		// This is a limitation with wal2json and JSON in general
+		// See: https://github.com/golang/go/issues/56719
 		return Float
 	case bool:
 		return Boolean
