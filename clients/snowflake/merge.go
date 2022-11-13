@@ -1,6 +1,7 @@
 package snowflake
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -49,11 +50,20 @@ func merge(tableData *optimization.TableData) (string, error) {
 			if colVal != nil {
 				switch colKind {
 				// All the other types do not need string wrapping.
-				case typing.String, typing.DateTime, typing.Array, typing.Struct:
+				case typing.String, typing.DateTime, typing.Struct:
 					// Escape line breaks, JSON_PARSE does not like it.
 					colVal = strings.ReplaceAll(fmt.Sprint(colVal), `\n`, `\\n`)
 					// The normal string escape is to do for O'Reilly is O\\'Reilly, but Snowflake escapes via \'
 					colVal = fmt.Sprintf("'%s'", strings.ReplaceAll(fmt.Sprint(colVal), "'", `\'`))
+				case typing.Array:
+					// We need to marshall, so we can escape the strings.
+					// https://go.dev/play/p/BcCwUSCeTmT
+					colValBytes, err := json.Marshal(colVal)
+					if err != nil {
+						return "", err
+					}
+
+					colVal = fmt.Sprintf("'%s'", strings.ReplaceAll(string(colValBytes), "'", `\'`))
 				}
 			} else {
 				colVal = "null"
