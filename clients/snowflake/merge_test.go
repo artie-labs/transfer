@@ -68,12 +68,16 @@ func (s *SnowflakeTestSuite) TestMerge() {
 	// Check if MERGE INTO FQ Table exists.
 	assert.True(s.T(), strings.Contains(mergeSQL, "MERGE INTO shop.public.customer c"))
 	for _, rowData := range tableData.RowsData {
-		for _, val := range rowData {
-			if typing.ParseValue(val) == typing.String {
+		for col, val := range rowData {
+			switch cols[col] {
+			case typing.String, typing.DateTime, typing.Array, typing.Struct:
 				val = fmt.Sprintf("'%v'", val)
 			}
 
-			assert.True(s.T(), strings.Contains(mergeSQL, fmt.Sprint(val)))
+			assert.True(s.T(), strings.Contains(mergeSQL, fmt.Sprint(val)), map[string]interface{}{
+				"merge": mergeSQL,
+				"val":   val,
+			})
 		}
 	}
 }
