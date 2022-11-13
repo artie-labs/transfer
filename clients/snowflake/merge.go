@@ -52,7 +52,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 				case typing.String, typing.DateTime, typing.Array, typing.Struct:
 					// Escape line breaks, JSON_PARSE does not like it.
 					colVal = strings.ReplaceAll(fmt.Sprint(colVal), `\n`, `\\n`)
-					colVal = fmt.Sprintf("'%s'", strings.ReplaceAll(fmt.Sprint(colVal), "'", `\\'`))
+					colVal = fmt.Sprintf("'%s'", strings.ReplaceAll(fmt.Sprint(colVal), "'", `\'`))
 				}
 			} else {
 				colVal = "null"
