@@ -1,0 +1,31 @@
+output_source: snowflake
+
+kafka:
+  bootstrapServer: localhost:9092
+  groupID: 123
+  username: foo
+  password: bar
+  topicConfigs:
+    - db: customers
+      tableName: customer
+      schema: public
+      topic: customers
+      idempotentKey: updated_at
+      cdc_format: debezium.postgres.wal2json
+    - db: customers
+      tableName: orders
+      schema: public
+      topic: orders
+      idempotent_key: updated_at
+      cdc_format: debezium.postgres.wal2json
+
+snowflake:
+  account: 123
+  username: foo
+  password: bar
+  warehouse: dwh
+  region: us-east-2.aws
+
+reporting:
+  sentry:
+    dsn: https://docs.sentry.io/product/sentry-basics/dsn-explainer/

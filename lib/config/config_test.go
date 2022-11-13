@@ -16,6 +16,28 @@ func TestReadNonExistentFile(t *testing.T) {
 	assert.Nil(t, config)
 }
 
+func TestReadSentryDSN(t *testing.T) {
+	randomFile := fmt.Sprintf("/tmp/%s_sentry_dsn", time.Now().String())
+	defer os.Remove(randomFile)
+
+	file, err := os.Create(randomFile)
+	assert.Nil(t, err)
+
+	defer file.Close()
+
+	_, err = io.WriteString(file,
+		`
+reporting:
+ sentry:
+  dsn: abc123
+`)
+	assert.Nil(t, err)
+
+	config, err := readFileToConfig(randomFile)
+	assert.Nil(t, err, "failed to read config file")
+	assert.Equal(t, config.Reporting.Sentry.DSN, "abc123", config)
+}
+
 func TestReadFileNotYAML(t *testing.T) {
 	randomFile := fmt.Sprintf("/tmp/%s", time.Now().String())
 	defer os.Remove(randomFile)
@@ -23,7 +45,10 @@ func TestReadFileNotYAML(t *testing.T) {
 	file, err := os.Create(randomFile)
 	assert.Nil(t, err)
 
-	io.WriteString(file, "foo foo")
+	defer file.Close()
+
+	_, err = io.WriteString(file, "foo foo")
+	assert.Nil(t, err)
 
 	config, err := readFileToConfig(randomFile)
 	assert.Nil(t, config)
