@@ -53,13 +53,21 @@ func IsJSON(str string) bool {
 
 func ParseValue(val interface{}) Kind {
 	// Check if it's a number first.
-	switch val.(type) {
+	switch val := val.(type) {
 	case nil:
 		return Invalid
-	case uint, int, uint8, uint16, uint32, uint64, int8, int16, int32, int64:
+	case uint, int, uint8, uint16, uint32, uint64, int8, int16, int32, int64, float32, float64:
+		// There's a Float vs. Integer casting issue with encoding/json and typing
+		// See: https://github.com/golang/go/issues/56719
+
+		// We will test to see if this is a floating-point number by
+		// checking for the presence of a decimal
+		valString := fmt.Sprint(val)
+		if strings.Contains(valString, ".") {
+			return Float
+		}
+
 		return Integer
-	case float32, float64:
-		return Float
 	case bool:
 		return Boolean
 	case string:
