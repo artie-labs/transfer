@@ -36,10 +36,6 @@ var supportedDateTimeLayouts = []string{
 	time.RFC3339,
 }
 
-func EscapeString(val string) string {
-	return strings.ReplaceAll(fmt.Sprint(val), "'", `\\'`)
-}
-
 // IsJSON - We also need to check if the string is a JSON string or not
 // If it could be one, it will start with { and end with }.
 // Once there, we will then check if it's a JSON string or not.
