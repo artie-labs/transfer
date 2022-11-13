@@ -5,8 +5,30 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"math"
+	"strings"
 	"testing"
 )
+
+func TestJSONString(t *testing.T) {
+	assert.Equal(t, true, IsJSON(`{"hello": "world"}`))
+	assert.Equal(t, true, IsJSON(`{}`))
+	assert.Equal(t, true, IsJSON(strings.TrimSpace(`
+	{
+		"hello": {
+			"world": {
+				"nested_value": true
+			}
+		},
+		"add_a_list_here": [1, 2, 3, 4],
+		"number": 7.5,
+		"integerNum": 7
+	}
+	`)))
+
+	assert.Equal(t, false, IsJSON(`{null`))
+	assert.Equal(t, false, IsJSON(`{null}`))
+	assert.Equal(t, false, IsJSON(`{abc: def}`))
+}
 
 func TestParseValueBasic(t *testing.T) {
 	// Floats

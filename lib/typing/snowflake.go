@@ -63,3 +63,14 @@ func SnowflakeTypeToKind(snowflakeType string) Kind {
 		return Invalid
 	}
 }
+
+func KindToSnowflake(kind Kind) string {
+	switch kind {
+	case Struct:
+		// Snowflake doesn't recognize struct.
+		// Must be either OBJECT or VARIANT. However, VARIANT is more versatile.
+		return "variant"
+	}
+
+	return string(kind)
+}

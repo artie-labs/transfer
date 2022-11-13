@@ -48,7 +48,7 @@ func alterTable(fqTableName string, columnOp columnOperation, cdcTime time.Time,
 
 		switch columnOp {
 		case Add:
-			colSQLPart = fmt.Sprintf("%s %s", col.Name, col.Kind)
+			colSQLPart = fmt.Sprintf("%s %s", col.Name, typing.KindToSnowflake(col.Kind))
 		case Delete:
 			colSQLPart = fmt.Sprintf("%s", col.Name)
 		}

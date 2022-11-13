@@ -14,6 +14,35 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
+func (s *SnowflakeTestSuite) TestAlterComplexObjects() {
+	// Test Structs and Arrays
+	cols := []typing.Column{
+		{
+			Name: "preferences",
+			Kind: typing.Struct,
+		},
+		{
+			Name: "array_col",
+			Kind: typing.Array,
+		},
+	}
+
+	fqTable := "shop.public.complex_columns"
+	mdConfig.snowflakeTableToConfig[fqTable] = &snowflakeTableConfig{
+		Columns: map[string]typing.Kind{},
+	}
+
+	err := alterTable(fqTable, Add, time.Now().UTC(), cols...)
+	execQuery, _ := s.fakeStore.ExecArgsForCall(0)
+	assert.Equal(s.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN preferences variant", fqTable), execQuery)
+
+	execQuery, _ = s.fakeStore.ExecArgsForCall(1)
+	assert.Equal(s.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN array_col array", fqTable), execQuery)
+
+	assert.Equal(s.T(), len(cols), s.fakeStore.ExecCallCount(), "called SFLK the same amt to create cols")
+	assert.NoError(s.T(), err)
+}
+
 func (s *SnowflakeTestSuite) TestAlterIdempotency() {
 	cols := []typing.Column{
 		{

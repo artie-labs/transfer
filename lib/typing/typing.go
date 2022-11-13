@@ -1,6 +1,7 @@
 package typing
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -35,6 +36,21 @@ var supportedDateTimeLayouts = []string{
 	time.RFC3339,
 }
 
+// IsJSON - We also need to check if the string is a JSON string or not
+// If it could be one, it will start with { and end with }.
+// Once there, we will then check if it's a JSON string or not.
+// This is an optimization since JSON string checking is expensive.
+func IsJSON(str string) bool {
+	// Shouldn't need to strings.TrimSpace(...).
+	valStringChars := []rune(str)
+	if string(valStringChars[0]) == "{" && string(valStringChars[len(valStringChars)-1]) == "}" {
+		var js json.RawMessage
+		return json.Unmarshal([]byte(str), &js) == nil
+	}
+
+	return false
+}
+
 func ParseValue(val interface{}) Kind {
 	// Check if it's a number first.
 	switch val.(type) {
@@ -43,6 +59,9 @@ func ParseValue(val interface{}) Kind {
 	case uint, int, uint8, uint16, uint32, uint64, int8, int16, int32, int64:
 		return Integer
 	case float32, float64:
+		// Integers will be parsed as Floats if they come from JSON
+		// This is a limitation with wal2json and JSON in general
+		// See: https://github.com/golang/go/issues/56719
 		return Float
 	case bool:
 		return Boolean
@@ -58,6 +77,10 @@ func ParseValue(val interface{}) Kind {
 					return DateTime
 				}
 			}
+		}
+
+		if IsJSON(valString) {
+			return Struct
 		}
 
 		return String
