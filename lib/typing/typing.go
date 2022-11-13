@@ -41,7 +41,7 @@ var supportedDateTimeLayouts = []string{
 // Once there, we will then check if it's a JSON string or not.
 // This is an optimization since JSON string checking is expensive.
 func IsJSON(str string) bool {
-	// TODO: Test
+	// Shouldn't need to strings.TrimSpace(...).
 	valStringChars := []rune(str)
 	if string(valStringChars[0]) == "{" && string(valStringChars[len(valStringChars)-1]) == "}" {
 		var js json.RawMessage
