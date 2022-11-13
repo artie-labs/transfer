@@ -1,7 +1,6 @@
 package typing
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
@@ -13,7 +12,7 @@ func TestParseValueBasic(t *testing.T) {
 	// Floats
 	assert.Equal(t, ParseValue(7.5), Float)
 	assert.Equal(t, ParseValue(-7.4999999), Float)
-	assert.Equal(t, ParseValue(7.01), Float)
+	assert.Equal(t, ParseValue(7.0), Float)
 
 	// Integers
 	assert.Equal(t, ParseValue(9), Integer)
@@ -96,19 +95,4 @@ func TestString(t *testing.T) {
 	for _, possibleString := range possibleStrings {
 		assert.Equal(t, ParseValue(possibleString), String)
 	}
-}
-
-func TestParseValueInt(t *testing.T) {
-	var jsonBody map[string]interface{}
-
-	err := json.Unmarshal([]byte(`
-	{
-		"foo": "bar",
-		"numInt": 123,
-		"numFloat": 123.456
-	}`), &jsonBody)
-
-	assert.Nil(t, err)
-	assert.Equal(t, ParseValue(jsonBody["numInt"]), Integer, jsonBody["numInt"])
-	assert.Equal(t, ParseValue(jsonBody["numFloat"]), Float, jsonBody["numFloat"])
 }
