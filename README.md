@@ -6,9 +6,15 @@
 
 ## Set up
 
-## Build
+## Build 
 
+## Release
 
+```
+docker build .
+docker tag IMAGE_ID artielabs/transfer:0.1
+docker push artielabs/transfer:0.1
+```
 
 ## Tests
 

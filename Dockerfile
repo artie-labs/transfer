@@ -3,6 +3,8 @@ FROM golang:1.19-alpine AS builder
 ENV PATH="/go/bin:${PATH}"
 ENV GO111MODULE=on
 ENV CGO_ENABLED=1
+
+### Commenting this out for now, see: https://github.com/confluentinc/confluent-kafka-go/issues/898
 # ENV GOOS=linux
 # ENV GOARCH=amd64
 
