@@ -35,6 +35,72 @@ If you are having trouble setting up CDC, please see the examples folder on how 
 
 ## <a name="running"></a>Running
 
+### Locally
+There are multiple ways to get an image of Transfer:
+1. Pull the image from [Dockerhub](https://hub.docker.com/r/artielabs/transfer)
+1. Git clone the repo and run `go build`
+1. `go get github.com/artie-labs/transfer`
+
+_Once you have the image, provide a configuration file and run `transfer --config config.yaml`_
+
+### Docker / Kubernetes
+
+Simply define a Kubernetes deployment, pull the [Docker image](https://hub.docker.com/r/artielabs/transfer) and provide a configuration file. See the examples folder for k8 references. See this [Dockerfile](https://github.com/artie-labs/transfer/tree/master/docker_postres) under `/examples` for a sample Dockerfile, you'd simply need to redefine your `config.yaml` and away you go.
+
+## What is currently supported?
+Transfer is aimed to provide coverage across all OTLPs and OLAPs. Currently, Transfer provides:
+
+- OLAPs:
+    - Snowflake
+- OTLPs:
+    - MongoDB (Debezium with CES)
+    - Postgres (Debezium w/ wal2json)
+
+_If the database you are using is not on the list, feel free to file for a [feature request](https://github.com/artie-labs/transfer/issues/new)._
+
+## Configuration File
+
+Note: Keys here are formatted in dot notation for readability purposes, please ensure that the proper nesting is done when dumping this into config.yaml. Take a look at the [example config.yaml](https://github.com/artie-labs/transfer/blob/master/examples/postgres_config.yaml) for additional reference. 
+
+
+For example a.b: foo` should be rewritten as
+```yaml
+# Wrong
+a.b: foo
+
+# Correct
+a:
+   b: foo
+```
+
+| Key| Type | Optional | Description |
+| ------------ | --- | - | ---------------------|
+| output_source | String | N | This is the destination. <br/> Supported values are currently: `snowflake` |
+| kafka | Object | N | This is the parent object, please see below |
+| kafka.bootstrapServer | String | N | URL to the Kafka server, including the port number. Example: `localhost:9092` |
+| kafka.groupID | String | N | Kafka consumer group ID |
+| kafka.username | String | N | Kafka username (we currently only support user/password auth) |
+| kafka.password | String | N | Kafka password |
+| kafka.topicConfigs | Array | N | TopicConfigs is an array of TopicConfig objects, please see below on what each topicConfig object looks like. |
+| kafka.topicConfigs[0].db | String | N | Name of the database in Snowflake |
+| kafka.topicConfigs[0].tableName | String | N | Name of the table in Snowflake |
+| kafka.topicConfigs[0].schema | String | N | Name of the schema in Snowflake |
+| kafka.topicConfigs[0].topic | String | N | Name of the Kafka topic |
+| kafka.topicConfigs[0].idempotentKey | String | N | Name of the column that is used for idempotency. <br/> For example: `updated_at` or another timestamp column. |
+| kafka.topicConfigs[0].cdc_format | String | N | Name of the CDC connector (thus format) we should be expecting to parse against. <br/> Currently, the supported values are: `debezium.postgres.wal2json` |
+| snowflake | Object | N | This is the parent object, please see below |
+| snowflake.account | String | N | Snowflake Account ID |
+| snowflake.username | String | N | Snowflake username |
+| snowflake.password | String | N | Snowflake password |
+| snowflake.warehouse | String | N | Snowflake warehouse name |
+| snowflake.region | String | N | Snowflake region |
+| reporting.sentry.dsn | String| Y | DSN for Sentry alerts. If blank, will just go to standard out. |
+
+
+
+
+
+
 ## Build
 
 
