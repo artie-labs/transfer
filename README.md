@@ -5,7 +5,7 @@
   <b><a target="_blank" href="https://artie.so" >Learn more »</a></b>
 </div>
 
-[![Go tests](https://github.com/artie-labs/transfer/actions/workflows/gha-go-test.yml/badge.svg)](https://github.com/artie-labs/transfer/actions/workflows/gha-go-test.yml) [![ELv2](https://user-images.githubusercontent.com/4412200/201544613-a7197bc4-8b61-4fc5-bf09-68ee10133fd7.svg)](https://github.com/artie-labs/transfer/LICENSE.txt)
+[![Go tests](https://github.com/artie-labs/transfer/actions/workflows/gha-go-test.yml/badge.svg)](https://github.com/artie-labs/transfer/actions/workflows/gha-go-test.yml) [![ELv2](https://user-images.githubusercontent.com/4412200/201544613-a7197bc4-8b61-4fc5-bf09-68ee10133fd7.svg)](https://github.com/artie-labs/transfer/blob/master/LICENSE.txt)
 
 <br/>
 
@@ -105,6 +105,18 @@ make generate
 make test
 ```
 
+## License
+
+Transfer is licensed under ELv2. Please see the [LICENSE](https://github.com/artie-labs/transfer/blob/master/LICENSE.txt) file for additional information. If you have any licensing questions please email hi@artie.so.
+
+
+
+
+
+
+
+
+
 ## Installing pre-reqs
 ```bash
 # Installs
@@ -120,7 +132,3 @@ brew services restart postgresql@14
 brew services restart zookeeper
 brew services restart kafka
 ```
-
-## License
-
-Transfer is licensed under ELv2. Please see the [LICENSE](https://github.com/artie-labs/transfer/LICENSE.txt) file for additional information. If you have any licensing questions please email hi@artie.so.
