@@ -1,8 +1,8 @@
 <div align="center">
   <img src="https://user-images.githubusercontent.com/4412200/201717557-17c79b66-2303-4141-bea2-87382fb02613.png" />
   <h3>Transfer by Artie</h3>
-  <p>⚡️ Blazing fast data replication between OLTP and OLAP databases⚡️</p>
-  <b><a href="https://artie.so">Learn more »</a></b>
+  <p>⚡️ Blazing fast data replication between OLTP and OLAP databases ⚡️</p>
+  <b><a target="_blank" href="https://artie.so" >Learn more »</a></b>
 </div>
 
 [![Go tests](https://github.com/artie-labs/transfer/actions/workflows/gha-go-test.yml/badge.svg)](https://github.com/artie-labs/transfer/actions/workflows/gha-go-test.yml) [![ELv2](https://user-images.githubusercontent.com/4412200/201544613-a7197bc4-8b61-4fc5-bf09-68ee10133fd7.svg)](https://github.com/artie-labs/transfer/LICENSE.txt)
@@ -22,7 +22,7 @@ Take a look at the [Running section](#running) on how you would be able to run T
 ## Architecture
 <div align="center">
   <img src="https://user-images.githubusercontent.com/4412200/201719978-d9659515-6305-440f-b14a-f5d577a15457.png"/>
- </div>
+</div>
 
 ### Pre-requisites
 As you can see from the architecture above , Transfer sits behind Kafka and expects CDC messages to be in a particular format. Please see the currently supported section on what sources and destinations are supported.
@@ -96,19 +96,14 @@ a:
 | snowflake.region | String | N | Snowflake region |
 | reporting.sentry.dsn | String| Y | DSN for Sentry alerts. If blank, will just go to standard out. |
 
-
-
-
-
-
-## Build
-
-
-
 ## Tests
+Transfer is written in Go and uses [counterfeiter](https://github.com/maxbrunsfeld/counterfeiter) to mock. 
+To run the tests, run the following commands:
 
-
-## Disorganized atm
+```
+make generate
+make test
+```
 
 ## Installing pre-reqs
 ```bash
