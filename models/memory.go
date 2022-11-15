@@ -7,6 +7,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/segmentio/kafka-go"
 	"strings"
 	"sync"
 )
@@ -33,7 +34,7 @@ func (d *DatabaseData) ClearTableConfig(tableName string) {
 // The boolean signifies whether we should flush immediately or not. This is because Snowflake has a constraint
 // On the number of elements within an expression.
 // The other, error - is returned to see if anything went awry.
-func (e *Event) Save(topicConfig *kafkalib.TopicConfig, partition int32, offset string) (bool, error) {
+func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message kafka.Message) (bool, error) {
 	if topicConfig == nil {
 		return false, errors.New("topicConfig is missing")
 	}
@@ -49,17 +50,17 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, partition int32, offset 
 	_, isOk := inMemoryDB.TableData[e.Table]
 	if !isOk {
 		inMemoryDB.TableData[e.Table] = &optimization.TableData{
-			RowsData:           map[string]map[string]interface{}{},
-			Columns:            map[string]typing.Kind{},
-			PrimaryKey:         e.PrimaryKeyName,
-			TopicConfig:        *topicConfig,
-			PartitionsToOffset: map[int32]string{},
+			RowsData:                map[string]map[string]interface{}{},
+			Columns:                 map[string]typing.Kind{},
+			PrimaryKey:              e.PrimaryKeyName,
+			TopicConfig:             *topicConfig,
+			PartitionsToLastMessage: map[int]kafka.Message{},
 		}
 	}
 
 	// Update the key, offset and TS
 	inMemoryDB.TableData[e.Table].RowsData[fmt.Sprint(e.PrimaryKeyValue)] = e.Data
-	inMemoryDB.TableData[e.Table].PartitionsToOffset[partition] = offset
+	inMemoryDB.TableData[e.Table].PartitionsToLastMessage[message.Partition] = message
 	inMemoryDB.TableData[e.Table].LatestCDCTs = e.ExecutionTime
 
 	// Increment row count

@@ -1,6 +1,7 @@
 package optimization
 
 import (
+	"github.com/segmentio/kafka-go"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -14,7 +15,7 @@ type TableData struct {
 
 	kafkalib.TopicConfig
 	// Partition to the latest offset.
-	PartitionsToOffset map[int32]string
+	PartitionsToLastMessage map[int]kafka.Message
 
 	// This is used for the automatic schema detection
 	LatestCDCTs time.Time

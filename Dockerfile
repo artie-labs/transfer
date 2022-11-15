@@ -20,8 +20,8 @@ RUN git clone https://github.com/edenhill/librdkafka.git && cd librdkafka && ./c
 
 COPY . .
 
-RUN go build -tags dynamic --ldflags "-extldflags -static" -o transfer .
+# RUN go build -tags dynamic --ldflags "-extldflags -static" -o transfer .
 
-FROM alpine:3.16 AS runner
+# FROM alpine:3.16 AS runner
 
-COPY --from=builder /go/src/transfer /
+# COPY --from=builder /go/src/transfer /

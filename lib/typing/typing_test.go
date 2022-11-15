@@ -53,7 +53,7 @@ func TestParseValueBasic(t *testing.T) {
 func TestParseValueArrays(t *testing.T) {
 	assert.Equal(t, ParseValue([]string{"a", "b", "c"}), Array)
 	assert.Equal(t, ParseValue([]interface{}{"a", 123, "c"}), Array)
-	assert.Equal(t, ParseValue([]int32{1}), Array)
+	assert.Equal(t, ParseValue([]int64{1}), Array)
 	assert.Equal(t, ParseValue([]bool{false}), Array)
 }
 
