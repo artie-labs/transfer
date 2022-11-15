@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,7 +30,7 @@ func (m *ModelsTestSuite) SaveEvent() {
 		},
 	}
 
-	_, err := event.Save(topicConfig, 1, "1")
+	_, err := event.Save(topicConfig, kafka.Message{})
 	assert.Nil(m.T(), err)
 
 	optimization := GetMemoryDB().TableData["foo"]

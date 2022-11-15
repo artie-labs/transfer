@@ -49,11 +49,6 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 		Password: config.GetSettings().Config.Kafka.Password,
 	}
 
-	log.WithFields(map[string]interface{}{
-		"user":     config.GetSettings().Config.Kafka.Username,
-		"password": config.GetSettings().Config.Kafka.Password,
-	}).Info("hello")
-
 	dialer := &kafka.Dialer{
 		Timeout:       10 * time.Second,
 		DualStack:     true,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/db"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/processes/kafka"
@@ -26,7 +27,7 @@ func (f *FlushTestSuite) SetupTest() {
 	models.LoadMemoryDB()
 
 	f.fakeConsumer = &mocks.FakeConsumer{}
-	kafka.SetKafkaConsumer(f.fakeConsumer)
+	kafka.SetKafkaConsumer(map[string]kafkalib.Consumer{"foo": f.fakeConsumer})
 }
 
 func TestFlushTestSuite(t *testing.T) {

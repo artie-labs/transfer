@@ -348,13 +348,13 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
 	err := ExecuteMerge(context.Background(), &optimization.TableData{
-		Columns:            nil,
-		RowsData:           nil,
-		PrimaryKey:         "",
-		TopicConfig:        kafkalib.TopicConfig{},
-		PartitionsToOffset: nil,
-		LatestCDCTs:        time.Time{},
-		Rows:               0,
+		Columns:                 nil,
+		RowsData:                nil,
+		PrimaryKey:              "",
+		TopicConfig:             kafkalib.TopicConfig{},
+		PartitionsToLastMessage: nil,
+		LatestCDCTs:             time.Time{},
+		Rows:                    0,
 	})
 
 	assert.Nil(s.T(), err)

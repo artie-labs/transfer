@@ -3,6 +3,7 @@ package flush
 import (
 	"context"
 	"fmt"
+	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
 	"sync"
 
@@ -15,6 +16,7 @@ var topicConfig = &kafkalib.TopicConfig{
 	Database:  "customer",
 	TableName: "users",
 	Schema:    "public",
+	Topic:     "foo",
 }
 
 func (f *FlushTestSuite) TestMemoryBasic() {
@@ -28,7 +30,7 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 				"hi":                      "hello",
 			},
 		}
-		_, err := event.Save(topicConfig, 1, "1")
+		_, err := event.Save(topicConfig, kafka.Message{Partition: 1, Offset: 1})
 		assert.Nil(f.T(), err)
 		assert.Equal(f.T(), len(models.GetMemoryDB().TableData["foo"].RowsData), i+1)
 	}
@@ -49,7 +51,7 @@ func (f *FlushTestSuite) TestShouldFlush() {
 		}
 
 		var err error
-		flush, err = event.Save(topicConfig, 1, fmt.Sprint(i))
+		flush, err = event.Save(topicConfig, kafka.Message{Partition: 1, Offset: int64(i)})
 		assert.Nil(f.T(), err)
 
 		if flush {
@@ -81,7 +83,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 					},
 				}
 
-				_, err := event.Save(topicConfig, 1, fmt.Sprint(i))
+				_, err := event.Save(topicConfig, kafka.Message{Partition: 1, Offset: int64(i)})
 				assert.Nil(f.T(), err)
 			}
 
@@ -100,11 +102,11 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 	assert.Equal(f.T(), f.fakeConsumer.CommitOffsetsCallCount(), len(tableNames)) // Commit 3 times because 3 topics.
 
 	for i := 0; i < len(tableNames); i++ {
-		topicPartitions := f.fakeConsumer.CommitOffsetsArgsForCall(i)
-		assert.Equal(f.T(), len(topicPartitions), 1) // There's only 1 partition right now
+		_, kafkaMessages := f.fakeConsumer.CommitOffsetsArgsForCall(i)
+		assert.Equal(f.T(), len(kafkaMessages), 1) // There's only 1 partition right now
 
 		// Within each partition, the offset should be 4 (i < 5 from above).
-		assert.Equal(f.T(), topicPartitions[0].Offset.String(), "4")
+		assert.Equal(f.T(), kafkaMessages[0].Offset, int64(4))
 	}
 
 }
