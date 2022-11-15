@@ -120,3 +120,7 @@ brew services restart postgresql@14
 brew services restart zookeeper
 brew services restart kafka
 ```
+
+## License
+
+Transfer is licensed under ELv2. Please see the [LICENSE](https://github.com/artie-labs/transfer/LICENSE.txt) file for additional information. If you have any licensing questions please email hi@artie.so.
