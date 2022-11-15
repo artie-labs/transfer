@@ -38,8 +38,14 @@ If you are having trouble setting up CDC, please see the examples folder on how 
 ### Locally
 There are multiple ways to get an image of Transfer:
 1. Pull the image from [Dockerhub](https://hub.docker.com/r/artielabs/transfer)
-1. Git clone the repo and run `go build`
-1. `go get github.com/artie-labs/transfer`
+1. Git clone the repo and run 
+```sh
+go build
+```
+3. Download via `go`
+```sh
+go get github.com/artie-labs/transfer
+```
 
 _Once you have the image, provide a configuration file and run `transfer --config config.yaml`_
 
@@ -100,14 +106,14 @@ a:
 Transfer is written in Go and uses [counterfeiter](https://github.com/maxbrunsfeld/counterfeiter) to mock. 
 To run the tests, run the following commands:
 
-```
+```sh
 make generate
 make test
 ```
 
 ## Release
 
-```
+```sh
 docker build .
 docker tag IMAGE_ID artielabs/transfer:0.1
 docker push artielabs/transfer:0.1
