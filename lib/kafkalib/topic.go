@@ -11,11 +11,11 @@ type TopicConfig struct {
 	CDCFormat     string `yaml:"cdc_format"`
 }
 
-func (t *TopicConfig) ToCacheKey(partition int32) string {
+func (t *TopicConfig) ToCacheKey(partition int64) string {
 	return fmt.Sprintf("%s#%d", t.Topic, partition)
 }
 
-func ToCacheKey(topic string, partition int32) string {
+func ToCacheKey(topic string, partition int64) string {
 	return fmt.Sprintf("%s#%d", topic, partition)
 }
 

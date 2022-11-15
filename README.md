@@ -105,6 +105,15 @@ make generate
 make test
 ```
 
+## Release
+
+```
+docker build .
+docker tag IMAGE_ID artielabs/transfer:0.1
+docker push artielabs/transfer:0.1
+```
+
+
 ## License
 
 Transfer is licensed under ELv2. Please see the [LICENSE](https://github.com/artie-labs/transfer/blob/master/LICENSE.txt) file for additional information. If you have any licensing questions please email hi@artie.so.

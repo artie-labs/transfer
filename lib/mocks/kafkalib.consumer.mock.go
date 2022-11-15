@@ -2,11 +2,11 @@
 package mocks
 
 import (
+	"context"
 	"sync"
-	"time"
 
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	kafka "github.com/segmentio/kafka-go"
 )
 
 type FakeConsumer struct {
@@ -20,43 +20,30 @@ type FakeConsumer struct {
 	closeReturnsOnCall map[int]struct {
 		result1 error
 	}
-	CommitOffsetsStub        func([]kafka.TopicPartition) ([]kafka.TopicPartition, error)
-	commitOffsetsMutex       sync.RWMutex
-	commitOffsetsArgsForCall []struct {
-		arg1 []kafka.TopicPartition
+	CommitMessagesStub        func(context.Context, ...kafka.Message) error
+	commitMessagesMutex       sync.RWMutex
+	commitMessagesArgsForCall []struct {
+		arg1 context.Context
+		arg2 []kafka.Message
 	}
-	commitOffsetsReturns struct {
-		result1 []kafka.TopicPartition
-		result2 error
+	commitMessagesReturns struct {
+		result1 error
 	}
-	commitOffsetsReturnsOnCall map[int]struct {
-		result1 []kafka.TopicPartition
-		result2 error
+	commitMessagesReturnsOnCall map[int]struct {
+		result1 error
 	}
-	ReadMessageStub        func(time.Duration) (*kafka.Message, error)
+	ReadMessageStub        func(context.Context) (kafka.Message, error)
 	readMessageMutex       sync.RWMutex
 	readMessageArgsForCall []struct {
-		arg1 time.Duration
+		arg1 context.Context
 	}
 	readMessageReturns struct {
-		result1 *kafka.Message
+		result1 kafka.Message
 		result2 error
 	}
 	readMessageReturnsOnCall map[int]struct {
-		result1 *kafka.Message
+		result1 kafka.Message
 		result2 error
-	}
-	SubscribeTopicsStub        func([]string, kafka.RebalanceCb) error
-	subscribeTopicsMutex       sync.RWMutex
-	subscribeTopicsArgsForCall []struct {
-		arg1 []string
-		arg2 kafka.RebalanceCb
-	}
-	subscribeTopicsReturns struct {
-		result1 error
-	}
-	subscribeTopicsReturnsOnCall map[int]struct {
-		result1 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -115,80 +102,73 @@ func (fake *FakeConsumer) CloseReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeConsumer) CommitOffsets(arg1 []kafka.TopicPartition) ([]kafka.TopicPartition, error) {
-	var arg1Copy []kafka.TopicPartition
-	if arg1 != nil {
-		arg1Copy = make([]kafka.TopicPartition, len(arg1))
-		copy(arg1Copy, arg1)
-	}
-	fake.commitOffsetsMutex.Lock()
-	ret, specificReturn := fake.commitOffsetsReturnsOnCall[len(fake.commitOffsetsArgsForCall)]
-	fake.commitOffsetsArgsForCall = append(fake.commitOffsetsArgsForCall, struct {
-		arg1 []kafka.TopicPartition
-	}{arg1Copy})
-	stub := fake.CommitOffsetsStub
-	fakeReturns := fake.commitOffsetsReturns
-	fake.recordInvocation("CommitOffsets", []interface{}{arg1Copy})
-	fake.commitOffsetsMutex.Unlock()
+func (fake *FakeConsumer) CommitMessages(arg1 context.Context, arg2 ...kafka.Message) error {
+	fake.commitMessagesMutex.Lock()
+	ret, specificReturn := fake.commitMessagesReturnsOnCall[len(fake.commitMessagesArgsForCall)]
+	fake.commitMessagesArgsForCall = append(fake.commitMessagesArgsForCall, struct {
+		arg1 context.Context
+		arg2 []kafka.Message
+	}{arg1, arg2})
+	stub := fake.CommitMessagesStub
+	fakeReturns := fake.commitMessagesReturns
+	fake.recordInvocation("CommitMessages", []interface{}{arg1, arg2})
+	fake.commitMessagesMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2...)
 	}
 	if specificReturn {
-		return ret.result1, ret.result2
+		return ret.result1
 	}
-	return fakeReturns.result1, fakeReturns.result2
+	return fakeReturns.result1
 }
 
-func (fake *FakeConsumer) CommitOffsetsCallCount() int {
-	fake.commitOffsetsMutex.RLock()
-	defer fake.commitOffsetsMutex.RUnlock()
-	return len(fake.commitOffsetsArgsForCall)
+func (fake *FakeConsumer) CommitMessagesCallCount() int {
+	fake.commitMessagesMutex.RLock()
+	defer fake.commitMessagesMutex.RUnlock()
+	return len(fake.commitMessagesArgsForCall)
 }
 
-func (fake *FakeConsumer) CommitOffsetsCalls(stub func([]kafka.TopicPartition) ([]kafka.TopicPartition, error)) {
-	fake.commitOffsetsMutex.Lock()
-	defer fake.commitOffsetsMutex.Unlock()
-	fake.CommitOffsetsStub = stub
+func (fake *FakeConsumer) CommitMessagesCalls(stub func(context.Context, ...kafka.Message) error) {
+	fake.commitMessagesMutex.Lock()
+	defer fake.commitMessagesMutex.Unlock()
+	fake.CommitMessagesStub = stub
 }
 
-func (fake *FakeConsumer) CommitOffsetsArgsForCall(i int) []kafka.TopicPartition {
-	fake.commitOffsetsMutex.RLock()
-	defer fake.commitOffsetsMutex.RUnlock()
-	argsForCall := fake.commitOffsetsArgsForCall[i]
-	return argsForCall.arg1
+func (fake *FakeConsumer) CommitMessagesArgsForCall(i int) (context.Context, []kafka.Message) {
+	fake.commitMessagesMutex.RLock()
+	defer fake.commitMessagesMutex.RUnlock()
+	argsForCall := fake.commitMessagesArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeConsumer) CommitOffsetsReturns(result1 []kafka.TopicPartition, result2 error) {
-	fake.commitOffsetsMutex.Lock()
-	defer fake.commitOffsetsMutex.Unlock()
-	fake.CommitOffsetsStub = nil
-	fake.commitOffsetsReturns = struct {
-		result1 []kafka.TopicPartition
-		result2 error
-	}{result1, result2}
+func (fake *FakeConsumer) CommitMessagesReturns(result1 error) {
+	fake.commitMessagesMutex.Lock()
+	defer fake.commitMessagesMutex.Unlock()
+	fake.CommitMessagesStub = nil
+	fake.commitMessagesReturns = struct {
+		result1 error
+	}{result1}
 }
 
-func (fake *FakeConsumer) CommitOffsetsReturnsOnCall(i int, result1 []kafka.TopicPartition, result2 error) {
-	fake.commitOffsetsMutex.Lock()
-	defer fake.commitOffsetsMutex.Unlock()
-	fake.CommitOffsetsStub = nil
-	if fake.commitOffsetsReturnsOnCall == nil {
-		fake.commitOffsetsReturnsOnCall = make(map[int]struct {
-			result1 []kafka.TopicPartition
-			result2 error
+func (fake *FakeConsumer) CommitMessagesReturnsOnCall(i int, result1 error) {
+	fake.commitMessagesMutex.Lock()
+	defer fake.commitMessagesMutex.Unlock()
+	fake.CommitMessagesStub = nil
+	if fake.commitMessagesReturnsOnCall == nil {
+		fake.commitMessagesReturnsOnCall = make(map[int]struct {
+			result1 error
 		})
 	}
-	fake.commitOffsetsReturnsOnCall[i] = struct {
-		result1 []kafka.TopicPartition
-		result2 error
-	}{result1, result2}
+	fake.commitMessagesReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
 }
 
-func (fake *FakeConsumer) ReadMessage(arg1 time.Duration) (*kafka.Message, error) {
+func (fake *FakeConsumer) ReadMessage(arg1 context.Context) (kafka.Message, error) {
 	fake.readMessageMutex.Lock()
 	ret, specificReturn := fake.readMessageReturnsOnCall[len(fake.readMessageArgsForCall)]
 	fake.readMessageArgsForCall = append(fake.readMessageArgsForCall, struct {
-		arg1 time.Duration
+		arg1 context.Context
 	}{arg1})
 	stub := fake.ReadMessageStub
 	fakeReturns := fake.readMessageReturns
@@ -209,110 +189,43 @@ func (fake *FakeConsumer) ReadMessageCallCount() int {
 	return len(fake.readMessageArgsForCall)
 }
 
-func (fake *FakeConsumer) ReadMessageCalls(stub func(time.Duration) (*kafka.Message, error)) {
+func (fake *FakeConsumer) ReadMessageCalls(stub func(context.Context) (kafka.Message, error)) {
 	fake.readMessageMutex.Lock()
 	defer fake.readMessageMutex.Unlock()
 	fake.ReadMessageStub = stub
 }
 
-func (fake *FakeConsumer) ReadMessageArgsForCall(i int) time.Duration {
+func (fake *FakeConsumer) ReadMessageArgsForCall(i int) context.Context {
 	fake.readMessageMutex.RLock()
 	defer fake.readMessageMutex.RUnlock()
 	argsForCall := fake.readMessageArgsForCall[i]
 	return argsForCall.arg1
 }
 
-func (fake *FakeConsumer) ReadMessageReturns(result1 *kafka.Message, result2 error) {
+func (fake *FakeConsumer) ReadMessageReturns(result1 kafka.Message, result2 error) {
 	fake.readMessageMutex.Lock()
 	defer fake.readMessageMutex.Unlock()
 	fake.ReadMessageStub = nil
 	fake.readMessageReturns = struct {
-		result1 *kafka.Message
+		result1 kafka.Message
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeConsumer) ReadMessageReturnsOnCall(i int, result1 *kafka.Message, result2 error) {
+func (fake *FakeConsumer) ReadMessageReturnsOnCall(i int, result1 kafka.Message, result2 error) {
 	fake.readMessageMutex.Lock()
 	defer fake.readMessageMutex.Unlock()
 	fake.ReadMessageStub = nil
 	if fake.readMessageReturnsOnCall == nil {
 		fake.readMessageReturnsOnCall = make(map[int]struct {
-			result1 *kafka.Message
+			result1 kafka.Message
 			result2 error
 		})
 	}
 	fake.readMessageReturnsOnCall[i] = struct {
-		result1 *kafka.Message
+		result1 kafka.Message
 		result2 error
 	}{result1, result2}
-}
-
-func (fake *FakeConsumer) SubscribeTopics(arg1 []string, arg2 kafka.RebalanceCb) error {
-	var arg1Copy []string
-	if arg1 != nil {
-		arg1Copy = make([]string, len(arg1))
-		copy(arg1Copy, arg1)
-	}
-	fake.subscribeTopicsMutex.Lock()
-	ret, specificReturn := fake.subscribeTopicsReturnsOnCall[len(fake.subscribeTopicsArgsForCall)]
-	fake.subscribeTopicsArgsForCall = append(fake.subscribeTopicsArgsForCall, struct {
-		arg1 []string
-		arg2 kafka.RebalanceCb
-	}{arg1Copy, arg2})
-	stub := fake.SubscribeTopicsStub
-	fakeReturns := fake.subscribeTopicsReturns
-	fake.recordInvocation("SubscribeTopics", []interface{}{arg1Copy, arg2})
-	fake.subscribeTopicsMutex.Unlock()
-	if stub != nil {
-		return stub(arg1, arg2)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fakeReturns.result1
-}
-
-func (fake *FakeConsumer) SubscribeTopicsCallCount() int {
-	fake.subscribeTopicsMutex.RLock()
-	defer fake.subscribeTopicsMutex.RUnlock()
-	return len(fake.subscribeTopicsArgsForCall)
-}
-
-func (fake *FakeConsumer) SubscribeTopicsCalls(stub func([]string, kafka.RebalanceCb) error) {
-	fake.subscribeTopicsMutex.Lock()
-	defer fake.subscribeTopicsMutex.Unlock()
-	fake.SubscribeTopicsStub = stub
-}
-
-func (fake *FakeConsumer) SubscribeTopicsArgsForCall(i int) ([]string, kafka.RebalanceCb) {
-	fake.subscribeTopicsMutex.RLock()
-	defer fake.subscribeTopicsMutex.RUnlock()
-	argsForCall := fake.subscribeTopicsArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
-}
-
-func (fake *FakeConsumer) SubscribeTopicsReturns(result1 error) {
-	fake.subscribeTopicsMutex.Lock()
-	defer fake.subscribeTopicsMutex.Unlock()
-	fake.SubscribeTopicsStub = nil
-	fake.subscribeTopicsReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeConsumer) SubscribeTopicsReturnsOnCall(i int, result1 error) {
-	fake.subscribeTopicsMutex.Lock()
-	defer fake.subscribeTopicsMutex.Unlock()
-	fake.SubscribeTopicsStub = nil
-	if fake.subscribeTopicsReturnsOnCall == nil {
-		fake.subscribeTopicsReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.subscribeTopicsReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
 }
 
 func (fake *FakeConsumer) Invocations() map[string][][]interface{} {
@@ -320,12 +233,10 @@ func (fake *FakeConsumer) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.closeMutex.RLock()
 	defer fake.closeMutex.RUnlock()
-	fake.commitOffsetsMutex.RLock()
-	defer fake.commitOffsetsMutex.RUnlock()
+	fake.commitMessagesMutex.RLock()
+	defer fake.commitMessagesMutex.RUnlock()
 	fake.readMessageMutex.RLock()
 	defer fake.readMessageMutex.RUnlock()
-	fake.subscribeTopicsMutex.RLock()
-	defer fake.subscribeTopicsMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
