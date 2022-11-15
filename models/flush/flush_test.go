@@ -99,10 +99,10 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 	}
 
 	assert.Nil(f.T(), Flush(context.Background()), "flush failed")
-	assert.Equal(f.T(), f.fakeConsumer.CommitOffsetsCallCount(), len(tableNames)) // Commit 3 times because 3 topics.
+	assert.Equal(f.T(), f.fakeConsumer.CommitMessagesCallCount(), len(tableNames)) // Commit 3 times because 3 topics.
 
 	for i := 0; i < len(tableNames); i++ {
-		_, kafkaMessages := f.fakeConsumer.CommitOffsetsArgsForCall(i)
+		_, kafkaMessages := f.fakeConsumer.CommitMessagesArgsForCall(i)
 		assert.Equal(f.T(), len(kafkaMessages), 1) // There's only 1 partition right now
 
 		// Within each partition, the offset should be 4 (i < 5 from above).

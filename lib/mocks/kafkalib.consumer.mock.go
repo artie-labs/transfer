@@ -20,29 +20,29 @@ type FakeConsumer struct {
 	closeReturnsOnCall map[int]struct {
 		result1 error
 	}
-	CommitOffsetsStub        func(context.Context, ...kafka.Message) error
-	commitOffsetsMutex       sync.RWMutex
-	commitOffsetsArgsForCall []struct {
+	CommitMessagesStub        func(context.Context, ...kafka.Message) error
+	commitMessagesMutex       sync.RWMutex
+	commitMessagesArgsForCall []struct {
 		arg1 context.Context
 		arg2 []kafka.Message
 	}
-	commitOffsetsReturns struct {
+	commitMessagesReturns struct {
 		result1 error
 	}
-	commitOffsetsReturnsOnCall map[int]struct {
+	commitMessagesReturnsOnCall map[int]struct {
 		result1 error
 	}
-	ReadMessageStub        func(context.Context) (*kafka.Message, error)
+	ReadMessageStub        func(context.Context) (kafka.Message, error)
 	readMessageMutex       sync.RWMutex
 	readMessageArgsForCall []struct {
 		arg1 context.Context
 	}
 	readMessageReturns struct {
-		result1 *kafka.Message
+		result1 kafka.Message
 		result2 error
 	}
 	readMessageReturnsOnCall map[int]struct {
-		result1 *kafka.Message
+		result1 kafka.Message
 		result2 error
 	}
 	invocations      map[string][][]interface{}
@@ -102,17 +102,17 @@ func (fake *FakeConsumer) CloseReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeConsumer) CommitOffsets(arg1 context.Context, arg2 ...kafka.Message) error {
-	fake.commitOffsetsMutex.Lock()
-	ret, specificReturn := fake.commitOffsetsReturnsOnCall[len(fake.commitOffsetsArgsForCall)]
-	fake.commitOffsetsArgsForCall = append(fake.commitOffsetsArgsForCall, struct {
+func (fake *FakeConsumer) CommitMessages(arg1 context.Context, arg2 ...kafka.Message) error {
+	fake.commitMessagesMutex.Lock()
+	ret, specificReturn := fake.commitMessagesReturnsOnCall[len(fake.commitMessagesArgsForCall)]
+	fake.commitMessagesArgsForCall = append(fake.commitMessagesArgsForCall, struct {
 		arg1 context.Context
 		arg2 []kafka.Message
 	}{arg1, arg2})
-	stub := fake.CommitOffsetsStub
-	fakeReturns := fake.commitOffsetsReturns
-	fake.recordInvocation("CommitOffsets", []interface{}{arg1, arg2})
-	fake.commitOffsetsMutex.Unlock()
+	stub := fake.CommitMessagesStub
+	fakeReturns := fake.commitMessagesReturns
+	fake.recordInvocation("CommitMessages", []interface{}{arg1, arg2})
+	fake.commitMessagesMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2...)
 	}
@@ -122,49 +122,49 @@ func (fake *FakeConsumer) CommitOffsets(arg1 context.Context, arg2 ...kafka.Mess
 	return fakeReturns.result1
 }
 
-func (fake *FakeConsumer) CommitOffsetsCallCount() int {
-	fake.commitOffsetsMutex.RLock()
-	defer fake.commitOffsetsMutex.RUnlock()
-	return len(fake.commitOffsetsArgsForCall)
+func (fake *FakeConsumer) CommitMessagesCallCount() int {
+	fake.commitMessagesMutex.RLock()
+	defer fake.commitMessagesMutex.RUnlock()
+	return len(fake.commitMessagesArgsForCall)
 }
 
-func (fake *FakeConsumer) CommitOffsetsCalls(stub func(context.Context, ...kafka.Message) error) {
-	fake.commitOffsetsMutex.Lock()
-	defer fake.commitOffsetsMutex.Unlock()
-	fake.CommitOffsetsStub = stub
+func (fake *FakeConsumer) CommitMessagesCalls(stub func(context.Context, ...kafka.Message) error) {
+	fake.commitMessagesMutex.Lock()
+	defer fake.commitMessagesMutex.Unlock()
+	fake.CommitMessagesStub = stub
 }
 
-func (fake *FakeConsumer) CommitOffsetsArgsForCall(i int) (context.Context, []kafka.Message) {
-	fake.commitOffsetsMutex.RLock()
-	defer fake.commitOffsetsMutex.RUnlock()
-	argsForCall := fake.commitOffsetsArgsForCall[i]
+func (fake *FakeConsumer) CommitMessagesArgsForCall(i int) (context.Context, []kafka.Message) {
+	fake.commitMessagesMutex.RLock()
+	defer fake.commitMessagesMutex.RUnlock()
+	argsForCall := fake.commitMessagesArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeConsumer) CommitOffsetsReturns(result1 error) {
-	fake.commitOffsetsMutex.Lock()
-	defer fake.commitOffsetsMutex.Unlock()
-	fake.CommitOffsetsStub = nil
-	fake.commitOffsetsReturns = struct {
+func (fake *FakeConsumer) CommitMessagesReturns(result1 error) {
+	fake.commitMessagesMutex.Lock()
+	defer fake.commitMessagesMutex.Unlock()
+	fake.CommitMessagesStub = nil
+	fake.commitMessagesReturns = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *FakeConsumer) CommitOffsetsReturnsOnCall(i int, result1 error) {
-	fake.commitOffsetsMutex.Lock()
-	defer fake.commitOffsetsMutex.Unlock()
-	fake.CommitOffsetsStub = nil
-	if fake.commitOffsetsReturnsOnCall == nil {
-		fake.commitOffsetsReturnsOnCall = make(map[int]struct {
+func (fake *FakeConsumer) CommitMessagesReturnsOnCall(i int, result1 error) {
+	fake.commitMessagesMutex.Lock()
+	defer fake.commitMessagesMutex.Unlock()
+	fake.CommitMessagesStub = nil
+	if fake.commitMessagesReturnsOnCall == nil {
+		fake.commitMessagesReturnsOnCall = make(map[int]struct {
 			result1 error
 		})
 	}
-	fake.commitOffsetsReturnsOnCall[i] = struct {
+	fake.commitMessagesReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *FakeConsumer) ReadMessage(arg1 context.Context) (*kafka.Message, error) {
+func (fake *FakeConsumer) ReadMessage(arg1 context.Context) (kafka.Message, error) {
 	fake.readMessageMutex.Lock()
 	ret, specificReturn := fake.readMessageReturnsOnCall[len(fake.readMessageArgsForCall)]
 	fake.readMessageArgsForCall = append(fake.readMessageArgsForCall, struct {
@@ -189,7 +189,7 @@ func (fake *FakeConsumer) ReadMessageCallCount() int {
 	return len(fake.readMessageArgsForCall)
 }
 
-func (fake *FakeConsumer) ReadMessageCalls(stub func(context.Context) (*kafka.Message, error)) {
+func (fake *FakeConsumer) ReadMessageCalls(stub func(context.Context) (kafka.Message, error)) {
 	fake.readMessageMutex.Lock()
 	defer fake.readMessageMutex.Unlock()
 	fake.ReadMessageStub = stub
@@ -202,28 +202,28 @@ func (fake *FakeConsumer) ReadMessageArgsForCall(i int) context.Context {
 	return argsForCall.arg1
 }
 
-func (fake *FakeConsumer) ReadMessageReturns(result1 *kafka.Message, result2 error) {
+func (fake *FakeConsumer) ReadMessageReturns(result1 kafka.Message, result2 error) {
 	fake.readMessageMutex.Lock()
 	defer fake.readMessageMutex.Unlock()
 	fake.ReadMessageStub = nil
 	fake.readMessageReturns = struct {
-		result1 *kafka.Message
+		result1 kafka.Message
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeConsumer) ReadMessageReturnsOnCall(i int, result1 *kafka.Message, result2 error) {
+func (fake *FakeConsumer) ReadMessageReturnsOnCall(i int, result1 kafka.Message, result2 error) {
 	fake.readMessageMutex.Lock()
 	defer fake.readMessageMutex.Unlock()
 	fake.ReadMessageStub = nil
 	if fake.readMessageReturnsOnCall == nil {
 		fake.readMessageReturnsOnCall = make(map[int]struct {
-			result1 *kafka.Message
+			result1 kafka.Message
 			result2 error
 		})
 	}
 	fake.readMessageReturnsOnCall[i] = struct {
-		result1 *kafka.Message
+		result1 kafka.Message
 		result2 error
 	}{result1, result2}
 }
@@ -233,8 +233,8 @@ func (fake *FakeConsumer) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.closeMutex.RLock()
 	defer fake.closeMutex.RUnlock()
-	fake.commitOffsetsMutex.RLock()
-	defer fake.commitOffsetsMutex.RUnlock()
+	fake.commitMessagesMutex.RLock()
+	defer fake.commitMessagesMutex.RUnlock()
 	fake.readMessageMutex.RLock()
 	defer fake.readMessageMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

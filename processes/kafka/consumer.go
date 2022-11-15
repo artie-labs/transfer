@@ -31,7 +31,7 @@ func SetKafkaConsumer(_topicToConsumer map[string]kafkalib.Consumer) {
 func CommitOffset(ctx context.Context, topic string, partitionsToOffset map[int]kafka.Message) error {
 	var err error
 	for _, msg := range partitionsToOffset {
-		err = topicToConsumer[topic].CommitOffsets(ctx, msg)
+		err = topicToConsumer[topic].CommitMessages(ctx, msg)
 		if err != nil {
 			return err
 		}
@@ -57,6 +57,7 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 	}
 
 	topicToConfigFmtMap := make(map[string]TopicConfigFormatter)
+	topicToConsumer = make(map[string]kafkalib.Consumer)
 	var topics []string
 	for _, topicConfig := range config.GetSettings().Config.Kafka.TopicConfigs {
 		topicToConfigFmtMap[topicConfig.Topic] = TopicConfigFormatter{
@@ -71,13 +72,14 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 		wg.Add(1)
 		go func(topic string) {
 			defer wg.Done()
-
 			kafkaConsumer := kafka.NewReader(kafka.ReaderConfig{
 				Brokers: []string{config.GetSettings().Config.Kafka.BootstrapServer},
 				GroupID: config.GetSettings().Config.Kafka.GroupID,
 				Dialer:  dialer,
 				Topic:   topic,
 			})
+
+			topicToConsumer[topic] = kafkaConsumer
 
 			for {
 				msg, err := kafkaConsumer.FetchMessage(ctx)
