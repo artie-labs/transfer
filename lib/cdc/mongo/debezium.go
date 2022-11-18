@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/globalsign/mgo/bson"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
@@ -27,7 +28,7 @@ func (d *Mongo) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Event,
 	if event.Before != nil {
 		var before map[string]interface{}
 		fmt.Println("before", *event.Before)
-		err = bson.Unmarshal([]byte(*event.Before), &before)
+		err = bson.UnmarshalExtJSON([]byte(*event.Before), false, &before)
 		if err != nil {
 			fmt.Println("here??")
 			return nil, err
@@ -39,7 +40,7 @@ func (d *Mongo) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Event,
 	if event.After != nil {
 		var after map[string]interface{}
 		fmt.Println("after", *event.After)
-		err = bson.Unmarshal([]byte(*event.After), &after)
+		err = bson.UnmarshalExtJSON([]byte(*event.After), false, &after)
 		if err != nil {
 			fmt.Println("there??")
 			return nil, err

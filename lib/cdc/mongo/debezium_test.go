@@ -3,11 +3,12 @@ package mongo
 import (
 	"context"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/globalsign/mgo/bson"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson"
+
+	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
 func (p *MongoTestSuite) TestGetPrimaryKey() {
@@ -32,19 +33,11 @@ func (p *MongoTestSuite) TestSource_GetExecutionTime() {
 func (p *MongoTestSuite) TestBsonTypes() {
 	var tsMap map[string]interface{}
 	bsonData := []byte(`
-{"_id": {"$numberLong": "10004"},"order_date": {"$date": 1456012800000},"purchaser_id": {"$numberLong": "1003"},"quantity": 1,"product_id": {"$numberLong": "107"}}
-
+{"_id": {"$numberLong": "10004"}, "order_date": {"$date": 1456012800000},"purchaser_id": {"$numberLong": "1003"},"quantity": 1,"product_id": {"$numberLong": "107"}}
 `)
-	err := bson.UnmarshalJSON(bsonData, &tsMap)
 
+	err := bson.UnmarshalExtJSON(bsonData, false, &tsMap)
 	assert.NoError(p.T(), err)
-
-	for k, v := range tsMap {
-		fmt.Println("key", k, "value", v)
-	}
-
-	fmt.Println("tsMap", tsMap, "err", err)
-	assert.True(p.T(), false)
 }
 
 func (p *MongoTestSuite) TestMongoDBEventOrder() {
@@ -79,7 +72,6 @@ func (p *MongoTestSuite) TestMongoDBEventOrder() {
 	evt, err := p.Mongo.GetEventFromBytes(ctx, []byte(payload))
 	assert.NoError(p.T(), err)
 	assert.Equal(p.T(), evt.Table(), "orders")
-	fmt.Println("### evt orders", evt)
 }
 
 func (p *MongoTestSuite) TestMongoDBEventCustomer() {
