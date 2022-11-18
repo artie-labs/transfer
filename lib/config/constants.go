@@ -13,4 +13,5 @@ const (
 
 	// DBZPostgresFormat is the only supported CDC format right now
 	DBZPostgresFormat = "debezium.postgres.wal2json"
+	DBZMongoFormat    = "debezium.mongodb"
 )

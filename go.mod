@@ -34,6 +34,7 @@ require (
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible // indirect
 	github.com/gabriel-vasile/mimetype v1.4.1 // indirect
 	github.com/getsentry/raven-go v0.2.0 // indirect
+	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8 // indirect
 	github.com/google/flatbuffers v22.9.29+incompatible // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
@@ -44,6 +45,7 @@ require (
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	go.mongodb.org/mongo-driver v1.11.0 // indirect
 	golang.org/x/crypto v0.0.0-20221012134737-56aed061732a // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
 	golang.org/x/net v0.0.0-20221012135044-0b7e1fb9d458 // indirect

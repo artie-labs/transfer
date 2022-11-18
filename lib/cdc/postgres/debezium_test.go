@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -160,7 +159,6 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
 }
 `
 
-	var event Event
-	err := json.Unmarshal([]byte(payload), &event)
+	_, err := p.Debezium.GetEventFromBytes(context.Background(), []byte(payload))
 	assert.Nil(p.T(), err)
 }
