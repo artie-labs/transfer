@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/mongo"
 	"strings"
 	"time"
@@ -36,6 +37,19 @@ func (d *Mongo) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Event,
 		after, err := mongo.JSONEToMap([]byte(*event.After))
 		if err != nil {
 			return nil, err
+		}
+
+		// Now, we need to iterate over each key and if the value is JSON
+		// We need to parse the JSON into a string format
+		for key, value := range after {
+			if typing.ParseValue(value) == typing.Struct {
+				valBytes, err := json.Marshal(value)
+				if err != nil {
+					return nil, err
+				}
+
+				after[key] = string(valBytes)
+			}
 		}
 
 		event.AfterMap = after
@@ -139,6 +153,6 @@ func (e *Event) GetData(pkName string, pkVal interface{}, tc kafkalib.TopicConfi
 		retMap[pkName] = pkVal
 		retMap[config.DeleteColumnMarker] = false
 	}
-	
+
 	return retMap
 }

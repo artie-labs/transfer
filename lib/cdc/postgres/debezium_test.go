@@ -137,7 +137,10 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
     "price": {
       "scale": 2,
       "value": "AKyI"
-    }
+    },
+	"nested": {
+		"object": "foo"
+	}
   },
   "source": {
     "version": "1.9.6.Final",
@@ -159,6 +162,8 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
 }
 `
 
-	_, err := p.Debezium.GetEventFromBytes(context.Background(), []byte(payload))
+	evt, err := p.Debezium.GetEventFromBytes(context.Background(), []byte(payload))
 	assert.Nil(p.T(), err)
+
+	assert.True(p.T(), false, evt.GetData("id", 1, kafkalib.TopicConfig{}))
 }

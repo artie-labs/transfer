@@ -55,6 +55,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 					colVal = strings.ReplaceAll(fmt.Sprint(colVal), `\n`, `\\n`)
 					// The normal string escape is to do for O'Reilly is O\\'Reilly, but Snowflake escapes via \'
 					colVal = fmt.Sprintf("'%s'", strings.ReplaceAll(fmt.Sprint(colVal), "'", `\'`))
+					fmt.Println("colVal", colVal)
 				case typing.Array:
 					// We need to marshall, so we can escape the strings.
 					// https://go.dev/play/p/BcCwUSCeTmT
