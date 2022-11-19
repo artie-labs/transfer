@@ -5,6 +5,4 @@
 config/.terraform*
 
 
-## Actual config
-config.yaml
-
+.personal/

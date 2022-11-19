@@ -12,7 +12,7 @@ import (
 )
 
 func (p *MongoTestSuite) TestGetPrimaryKey() {
-	valString := `{"id": 10004}`
+	valString := `Struct{"id": 10004}`
 	pkName, pkVal, err := p.GetPrimaryKey(context.Background(), []byte(valString))
 	assert.Equal(p.T(), pkName, "id")
 	assert.Equal(p.T(), fmt.Sprint(pkVal), fmt.Sprint(10004)) // Don't have to deal with float and int conversion

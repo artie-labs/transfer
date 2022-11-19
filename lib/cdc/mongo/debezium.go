@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/artie-labs/transfer/lib/typing/mongo"
 	"time"
 
@@ -92,10 +93,16 @@ func (d *Mongo) Label() string {
 }
 
 // GetPrimaryKey - We need the Kafka Topic to provide the key in a JSON format for the key.
-// It'll look like this: {id=47}
+// It'll look like this: Struct{id=47}
 func (d *Mongo) GetPrimaryKey(ctx context.Context, key []byte) (pkName string, pkValue interface{}, err error) {
 	var pkStruct map[string]interface{}
-	err = json.Unmarshal(key, &pkStruct)
+	keyString := string(key)
+	if len(keyString) < 6 {
+		return "", "",
+			fmt.Errorf("key length too short, actual: %v, key: %s", len(keyString), keyString)
+	}
+
+	err = json.Unmarshal([]byte(keyString[6:]), &pkStruct)
 	if err != nil {
 		logger.FromContext(ctx).WithError(err).
 			WithField("key", string(key)).Warn("cannot unmarshall PK")
