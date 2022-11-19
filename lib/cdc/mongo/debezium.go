@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/artie-labs/transfer/lib/typing/mongo"
+	"strings"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/logger"
 )
 
 type Mongo string
@@ -95,28 +95,19 @@ func (d *Mongo) Label() string {
 // GetPrimaryKey - We need the Kafka Topic to provide the key in a JSON format for the key.
 // It'll look like this: Struct{id=47}
 func (d *Mongo) GetPrimaryKey(ctx context.Context, key []byte) (pkName string, pkValue interface{}, err error) {
-	var pkStruct map[string]interface{}
 	keyString := string(key)
-	if len(keyString) < 6 {
+	if len(keyString) < 8 {
 		return "", "",
 			fmt.Errorf("key length too short, actual: %v, key: %s", len(keyString), keyString)
 	}
 
-	err = json.Unmarshal([]byte(keyString[6:]), &pkStruct)
-	if err != nil {
-		logger.FromContext(ctx).WithError(err).
-			WithField("key", string(key)).Warn("cannot unmarshall PK")
-		return
+	// Strip out the leading Struct{ and trailing }
+	pkParts := strings.Split(keyString[7:len(keyString)-1], "=")
+	if len(pkParts) != 2 {
+		return "", "", fmt.Errorf("key length incorrect, actual: %v, key: %s", len(keyString), keyString)
 	}
 
-	// Given that this is the format, we will only have 1 key in here.
-	for k, v := range pkStruct {
-		pkName = k
-		pkValue = v
-		break
-	}
-
-	return
+	return pkParts[0], pkParts[1], nil
 }
 
 func (e *Event) GetExecutionTime() time.Time {
