@@ -33,7 +33,16 @@ func TestMarshal(t *testing.T) {
 	"test_decimal": {"$numberDecimal": "13.37"},
 	"test_decimal_2": 13.37,
 	"test_int": 1337,
-	"test_list": [1.0,2.0,3.0,4.0,"hello"]}
+	"test_foo": "bar",
+	"test_null": null,
+	"test_list": [1.0,2.0,3.0,4.0,"hello"],
+	"test_nested_object": {
+		"a": {
+			"b": {
+				"c": "hello"
+			}
+		}
+	}
 }
 `)
 	result, err := JSONEToMap(bsonData)
@@ -52,7 +61,5 @@ func TestMarshal(t *testing.T) {
 	assert.Equal(t, result["test_decimal_2"], float64(13.37))
 	assert.Equal(t, result["test_int"], float64(1337))
 	assert.Equal(t, result["test_list"], []interface{}{float64(1), float64(2), float64(3), float64(4), "hello"})
-
-	assert.True(t, false, result)
-
+	assert.Equal(t, result["test_nested_object"], map[string]interface{}{"a": map[string]interface{}{"b": map[string]interface{}{"c": "hello"}}})
 }

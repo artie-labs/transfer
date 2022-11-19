@@ -3,10 +3,8 @@ package mongo
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"github.com/artie-labs/transfer/lib/typing/mongo"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
@@ -20,17 +18,13 @@ func (d *Mongo) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Event,
 	var event Event
 	err := json.Unmarshal(bytes, &event)
 	if err != nil {
-		fmt.Println("or way before??")
 		return nil, err
 	}
 
 	// Now marshal before & after string.
 	if event.Before != nil {
-		var before map[string]interface{}
-		fmt.Println("before", *event.Before)
-		err = bson.UnmarshalExtJSON([]byte(*event.Before), false, &before)
+		before, err := mongo.JSONEToMap([]byte(*event.Before))
 		if err != nil {
-			fmt.Println("here??")
 			return nil, err
 		}
 
@@ -38,11 +32,8 @@ func (d *Mongo) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Event,
 	}
 
 	if event.After != nil {
-		var after map[string]interface{}
-		fmt.Println("after", *event.After)
-		err = bson.UnmarshalExtJSON([]byte(*event.After), false, &after)
+		after, err := mongo.JSONEToMap([]byte(*event.After))
 		if err != nil {
-			fmt.Println("there??")
 			return nil, err
 		}
 
