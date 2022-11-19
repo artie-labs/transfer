@@ -26,7 +26,14 @@ func TestMarshal(t *testing.T) {
 		"$binary": "hW5W/8uwQR6FWpiwi4dRQA==",
 		"$type": "04"
 	},
-	"full_name": "Robin Tang"
+	"full_name": "Robin Tang",
+	"test_bool_false": false,
+	"test_bool_true": true,
+	"object_id": {"$oid": "63793b4014f7f28f570c524e"},
+	"test_decimal": {"$numberDecimal": "13.37"},
+	"test_decimal_2": 13.37,
+	"test_int": 1337,
+	"test_list": [1.0,2.0,3.0,4.0,"hello"]}
 }
 `)
 	result, err := JSONEToMap(bsonData)
@@ -38,6 +45,13 @@ func TestMarshal(t *testing.T) {
 	assert.Equal(t, result["quantity"], float64(1))
 	assert.Equal(t, result["unique_id"], "856e56ff-cbb0-411e-855a-98b08b875140")
 	assert.Equal(t, result["full_name"], "Robin Tang")
+	assert.Equal(t, result["test_bool_false"], false)
+	assert.Equal(t, result["test_bool_true"], true)
+	assert.Equal(t, result["object_id"], "63793b4014f7f28f570c524e")
+	assert.Equal(t, result["test_decimal"], float64(13.37))
+	assert.Equal(t, result["test_decimal_2"], float64(13.37))
+	assert.Equal(t, result["test_int"], float64(1337))
+	assert.Equal(t, result["test_list"], []interface{}{float64(1), float64(2), float64(3), float64(4), "hello"})
 
 	assert.True(t, false, result)
 

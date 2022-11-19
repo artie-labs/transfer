@@ -3,15 +3,17 @@ package mongo
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/typing"
+	"reflect"
+	"strconv"
+	"time"
+
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/bson/bsonrw"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"reflect"
-	"strconv"
-	"time"
+
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 // JSONEToMap will take JSONE data in bytes, parse all the custom types
@@ -38,7 +40,26 @@ var (
 	tDateTime = reflect.TypeOf(primitive.DateTime(0))
 	tOID      = reflect.TypeOf(primitive.ObjectID{})
 	tBinary   = reflect.TypeOf(primitive.Binary{})
+	tDecimal  = reflect.TypeOf(primitive.Decimal128{})
 )
+
+func decimalEncodeValue(_ bsoncodec.EncodeContext, vw bsonrw.ValueWriter, val reflect.Value) error {
+	if !val.IsValid() || val.Type() != tDecimal {
+		return bsoncodec.ValueEncoderError{Name: "Decimal128EncodeValue", Types: []reflect.Type{tDecimal}, Received: val}
+	}
+
+	s, isOk := val.Interface().(primitive.Decimal128)
+	if !isOk {
+		return bsoncodec.ValueEncoderError{Name: "ObjectIDEncodeValue not objectID", Types: []reflect.Type{tOID}, Received: val}
+	}
+
+	parsedFloat, err := strconv.ParseFloat(s.String(), 64)
+	if err != nil {
+		return err
+	}
+
+	return vw.WriteDouble(parsedFloat)
+}
 
 func dateTimeEncodeValue(_ bsoncodec.EncodeContext, vw bsonrw.ValueWriter, val reflect.Value) error {
 	if !val.IsValid() || val.Type() != tDateTime {
@@ -51,7 +72,6 @@ func dateTimeEncodeValue(_ bsoncodec.EncodeContext, vw bsonrw.ValueWriter, val r
 	}
 
 	t := time.Unix(0, int64(ints)*1000000).UTC()
-
 	return vw.WriteString(t.Format(typing.ISO8601))
 }
 
@@ -95,6 +115,7 @@ func createCustomRegistry() *bsoncodec.RegistryBuilder {
 	rb.RegisterTypeEncoder(tDateTime, bsoncodec.ValueEncoderFunc(dateTimeEncodeValue))
 	rb.RegisterTypeEncoder(tOID, bsoncodec.ValueEncoderFunc(objectIDEncodeValue))
 	rb.RegisterTypeEncoder(tBinary, bsoncodec.ValueEncoderFunc(binaryEncodeValue))
+	rb.RegisterTypeEncoder(tDecimal, bsoncodec.ValueEncoderFunc(decimalEncodeValue))
 	primitiveCodecs.RegisterPrimitiveCodecs(rb)
 	return rb
 }
