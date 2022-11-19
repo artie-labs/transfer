@@ -134,8 +134,11 @@ func (e *Event) GetData(pkName string, pkVal interface{}, tc kafkalib.TopicConfi
 		}
 	} else {
 		retMap = e.AfterMap
+		// We need this because there's an edge case with Debezium
+		// Where _id gets rewritten as id in the partition key.
+		retMap[pkName] = pkVal
 		retMap[config.DeleteColumnMarker] = false
 	}
-
+	
 	return retMap
 }
