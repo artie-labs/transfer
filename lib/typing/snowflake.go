@@ -70,6 +70,8 @@ func KindToSnowflake(kind Kind) string {
 		// Snowflake doesn't recognize struct.
 		// Must be either OBJECT or VARIANT. However, VARIANT is more versatile.
 		return "variant"
+	case Boolean:
+		return "boolean"
 	}
 
 	return string(kind)

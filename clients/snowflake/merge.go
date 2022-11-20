@@ -92,6 +92,31 @@ func merge(tableData *optimization.TableData) (string, error) {
 
 	// We also need to do staged table's idempotency key is GTE target table's idempotency key
 	// This is because Snowflake does not respect NS granularity.
+
+	if tableData.IdempotentKey == "" {
+		return fmt.Sprintf(`
+			MERGE INTO %s c using (%s) as cc on c.%s = cc.%s
+				when matched AND cc.%s then DELETE
+				when matched AND IFNULL(cc.%s, false) = false then UPDATE
+					SET %s
+				when not matched AND IFNULL(cc.%s, false) = false then INSERT
+					(
+						%s
+					)
+					VALUES
+					(
+						%s
+					);
+		`, tableData.ToFqName(), subQuery, tableData.PrimaryKey, tableData.PrimaryKey,
+			// Delete
+			config.DeleteColumnMarker,
+			// Update
+			config.DeleteColumnMarker, array.ColumnsUpdateQuery(cols, "cc"),
+			// Insert
+			config.DeleteColumnMarker, strings.Join(cols, ","),
+			array.StringsJoinAddPrefix(cols, ",", "cc.")), nil
+	}
+
 	return fmt.Sprintf(`
 			MERGE INTO %s c using (%s) as cc on c.%s = cc.%s
 				when matched AND cc.%s AND cc.%s >= c.%s = true then DELETE

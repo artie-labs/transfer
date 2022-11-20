@@ -21,9 +21,11 @@ const (
 	Struct   Kind = "struct"
 	DateTime Kind = "datetime"
 	String   Kind = "string"
+	ISO8601       = "2006-01-02T15:04:05-07:00"
 )
 
 var supportedDateTimeLayouts = []string{
+	ISO8601,
 	time.Layout,
 	time.ANSIC,
 	time.UnixDate,

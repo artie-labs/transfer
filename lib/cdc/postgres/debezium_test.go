@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -138,7 +137,10 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
     "price": {
       "scale": 2,
       "value": "AKyI"
-    }
+    },
+	"nested": {
+		"object": "foo"
+	}
   },
   "source": {
     "version": "1.9.6.Final",
@@ -160,7 +162,14 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
 }
 `
 
-	var event Event
-	err := json.Unmarshal([]byte(payload), &event)
+	evt, err := p.Debezium.GetEventFromBytes(context.Background(), []byte(payload))
 	assert.Nil(p.T(), err)
+
+	evtData := evt.GetData("id", 59, kafkalib.TopicConfig{})
+	assert.Equal(p.T(), evtData["id"], float64(59))
+
+	assert.Equal(p.T(), evtData["item"], "Barings Participation Investors")
+	assert.Equal(p.T(), evtData["nested"], map[string]interface{}{"object": "foo"})
+
+	assert.Equal(p.T(), evt.Table(), "orders")
 }
