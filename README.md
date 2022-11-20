@@ -3,6 +3,7 @@
   <h3>Transfer by Artie</h3>
   <p>⚡️ Blazing fast data replication between OLTP and OLAP databases ⚡️</p>
   <b><a target="_blank" href="https://artie.so" >Learn more »</a></b>
+  <br/>
 </div>
 
 [![Go tests](https://github.com/artie-labs/transfer/actions/workflows/gha-go-test.yml/badge.svg)](https://github.com/artie-labs/transfer/actions/workflows/gha-go-test.yml) [![ELv2](https://user-images.githubusercontent.com/4412200/201544613-a7197bc4-8b61-4fc5-bf09-68ee10133fd7.svg)](https://github.com/artie-labs/transfer/blob/master/LICENSE.txt)
@@ -10,7 +11,8 @@
 
 <br/>
 
-Depending on where you work, the latency within your data warehouse is often several hours to days old. This problem gets exacerbated as data volumes grow. Transfer reads from the change data capture (CDC) stream and provides an easy out of the box solution that only requires a simple configuration file and supports the following features:
+Depending on where you work, the latency within your data warehouse is often several hours to days old. This problem gets exacerbated as data volumes grow. <br/>
+Transfer reads from the change data capture (CDC) stream and provides an easy out of the box solution that only requires a simple configuration file and will replicate this to your data warehouse. To do this, Transfer has the following features built-in:
 
 - Automatic retries & idempotency. We take reliability seriously and it's feature 0. Latency reduction is nice, but doesn't matter if the data is wrong. We provide automatic retries and idempotency such that we will always achieve eventual consistency.
 - Error reporting. Provide your Sentry API key and errors from data processing will appear in your Sentry project.
