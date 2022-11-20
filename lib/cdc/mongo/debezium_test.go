@@ -2,12 +2,14 @@ package mongo
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
@@ -79,7 +81,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 	payload := `
 {
 	"before": null,
-	"after": "{\"_id\": {\"$numberLong\": \"1003\"},\"first_name\": \"Edward\",\"last_name\": \"Walker\",\"email\": \"ed@walker.com\"}",
+	"after": "{\"_id\": {\"$numberLong\": \"1003\"},\"first_name\": \"Robin\",\"last_name\": \"Tang\",\"email\": \"robin@artie.so\", \"nested\": {\"object\": \"foo\"}}",
 	"patch": null,
 	"filter": null,
 	"updateDescription": null,
@@ -108,7 +110,60 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 	evtData := evt.GetData("_id", 1003, kafkalib.TopicConfig{})
 
 	assert.Equal(p.T(), evtData["_id"], 1003)
-	assert.Equal(p.T(), evtData["first_name"], "Edward")
-	assert.Equal(p.T(), evtData["last_name"], "Walker")
-	assert.Equal(p.T(), evtData["email"], "ed@walker.com")
+	assert.Equal(p.T(), evtData["first_name"], "Robin")
+	assert.Equal(p.T(), evtData["last_name"], "Tang")
+	assert.Equal(p.T(), evtData["email"], "robin@artie.so")
+
+	var nestedData map[string]interface{}
+
+	err = json.Unmarshal([]byte(evtData["nested"].(string)), &nestedData)
+	assert.NoError(p.T(), err)
+
+	assert.Equal(p.T(), nestedData["object"], "foo")
+	assert.Equal(p.T(), evtData[config.DeleteColumnMarker], false)
+
+	assert.Equal(p.T(), evt.Table(), "customers")
+	assert.Equal(p.T(), evt.GetExecutionTime(),
+		time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
+}
+
+func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
+	ctx := context.Background()
+	payload := `
+{
+	"before": null,
+	"after": null,
+	"patch": null,
+	"filter": null,
+	"updateDescription": null,
+	"source": {
+		"version": "2.0.0.Final",
+		"connector": "mongodb",
+		"name": "dbserver1",
+		"ts_ms": 1668753321000,
+		"snapshot": "true",
+		"db": "inventory",
+		"sequence": null,
+		"rs": "rs0",
+		"collection": "customers123",
+		"ord": 29,
+		"lsid": null,
+		"txnNumber": null
+	},
+	"op": "d",
+	"ts_ms": 1668753329387,
+	"transaction": null
+}
+`
+
+	evt, err := p.Mongo.GetEventFromBytes(ctx, []byte(payload))
+	assert.NoError(p.T(), err)
+	evtData := evt.GetData("_id", 1003, kafkalib.TopicConfig{})
+
+	assert.Equal(p.T(), evtData["_id"], 1003)
+	assert.Equal(p.T(), evtData[config.DeleteColumnMarker], true)
+
+	assert.Equal(p.T(), evt.Table(), "customers123")
+	assert.Equal(p.T(), evt.GetExecutionTime(),
+		time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
 }
