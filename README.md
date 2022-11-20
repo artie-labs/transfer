@@ -59,7 +59,7 @@ Transfer is aimed to provide coverage across all OTLPs and OLAPs. Currently, Tra
 - OLAPs:
     - Snowflake
 - OTLPs:
-    - MongoDB (Debezium with CES)
+    - MongoDB (Debezium)
     - Postgres (Debezium w/ wal2json)
 
 _If the database you are using is not on the list, feel free to file for a [feature request](https://github.com/artie-labs/transfer/issues/new)._
@@ -92,7 +92,7 @@ a:
 | kafka.topicConfigs[0].tableName | String | N | Name of the table in Snowflake |
 | kafka.topicConfigs[0].schema | String | N | Name of the schema in Snowflake |
 | kafka.topicConfigs[0].topic | String | N | Name of the Kafka topic |
-| kafka.topicConfigs[0].idempotentKey | String | N | Name of the column that is used for idempotency. <br/> For example: `updated_at` or another timestamp column. |
+| kafka.topicConfigs[0].idempotentKey | String | Y | Name of the column that is used for idempotency. This field is highly recommended. <br/> For example: `updated_at` or another timestamp column. |
 | kafka.topicConfigs[0].cdc_format | String | N | Name of the CDC connector (thus format) we should be expecting to parse against. <br/> Currently, the supported values are: `debezium.postgres.wal2json` |
 | snowflake | Object | N | This is the parent object, please see below |
 | snowflake.account | String | N | Snowflake Account ID |
@@ -129,27 +129,3 @@ docker push artielabs/transfer:0.1
 ## License
 
 Transfer is licensed under ELv2. Please see the [LICENSE](https://github.com/artie-labs/transfer/blob/master/LICENSE.txt) file for additional information. If you have any licensing questions please email hi@artie.so.
-
-
-
-
-
-
-
-
-
-## Installing pre-reqs
-```bash
-# Installs
-brew install direnv
-echo 'eval "$(direnv hook bash)"' >> ~/.bash_profile
-
-brew install postgresql
-brew install zookeeper
-brew install kafka
-
-# Starting svcs
-brew services restart postgresql@14
-brew services restart zookeeper
-brew services restart kafka
-```
