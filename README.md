@@ -6,6 +6,7 @@
 </div>
 
 [![Go tests](https://github.com/artie-labs/transfer/actions/workflows/gha-go-test.yml/badge.svg)](https://github.com/artie-labs/transfer/actions/workflows/gha-go-test.yml) [![ELv2](https://user-images.githubusercontent.com/4412200/201544613-a7197bc4-8b61-4fc5-bf09-68ee10133fd7.svg)](https://github.com/artie-labs/transfer/blob/master/LICENSE.txt)
+[<img src="https://img.shields.io/badge/slack-@artie-blue.svg?logo=slack">](https://join.slack.com/t/artie-labs/shared_invite/zt-1k28i8nja-W7G24qrRcJKeySDFLecFUg) 
 
 <br/>
 
