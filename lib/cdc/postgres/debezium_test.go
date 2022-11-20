@@ -165,5 +165,11 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
 	evt, err := p.Debezium.GetEventFromBytes(context.Background(), []byte(payload))
 	assert.Nil(p.T(), err)
 
-	assert.True(p.T(), false, evt.GetData("id", 1, kafkalib.TopicConfig{}))
+	evtData := evt.GetData("id", 59, kafkalib.TopicConfig{})
+	assert.Equal(p.T(), evtData["id"], float64(59))
+
+	assert.Equal(p.T(), evtData["item"], "Barings Participation Investors")
+	assert.Equal(p.T(), evtData["nested"], map[string]interface{}{"object": "foo"})
+
+	assert.Equal(p.T(), evt.Table(), "orders")
 }

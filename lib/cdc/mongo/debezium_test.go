@@ -107,7 +107,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 	assert.NoError(p.T(), err)
 	evtData := evt.GetData("_id", 1003, kafkalib.TopicConfig{})
 
-	assert.Equal(p.T(), evtData["_id"], float64(1003))
+	assert.Equal(p.T(), evtData["_id"], 1003)
 	assert.Equal(p.T(), evtData["first_name"], "Edward")
 	assert.Equal(p.T(), evtData["last_name"], "Walker")
 	assert.Equal(p.T(), evtData["email"], "ed@walker.com")
