@@ -87,7 +87,7 @@ a:
 
 | Key| Type | Optional | Description |
 | ------------ | --- | - | ---------------------|
-| output_source | String | N | This is the destination. <br/> Supported values are currently: `snowflake` |
+| outputSource | String | N | This is the destination. <br/> Supported values are currently: `snowflake` |
 | kafka | Object | N | This is the parent object, please see below |
 | kafka.bootstrapServer | String | N | URL to the Kafka server, including the port number. Example: `localhost:9092` |
 | kafka.groupID | String | N | Kafka consumer group ID |
@@ -99,7 +99,7 @@ a:
 | kafka.topicConfigs[0].schema | String | N | Name of the schema in Snowflake |
 | kafka.topicConfigs[0].topic | String | N | Name of the Kafka topic |
 | kafka.topicConfigs[0].idempotentKey | String | Y | Name of the column that is used for idempotency. This field is highly recommended. <br/> For example: `updated_at` or another timestamp column. |
-| kafka.topicConfigs[0].cdc_format | String | N | Name of the CDC connector (thus format) we should be expecting to parse against. <br/> Currently, the supported values are: `debezium.postgres.wal2json` |
+| kafka.topicConfigs[0].cdcFormat | String | N | Name of the CDC connector (thus format) we should be expecting to parse against. <br/> Currently, the supported values are: `debezium.postgres.wal2json`, `debezium.mongodb` |
 | snowflake | Object | N | This is the parent object, please see below |
 | snowflake.account | String | N | Snowflake Account ID |
 | snowflake.username | String | N | Snowflake username |

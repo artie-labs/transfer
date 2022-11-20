@@ -14,6 +14,8 @@ type Sentry struct {
 }
 
 type Config struct {
+	Output string `yaml:"outputSource"`
+
 	Kafka struct {
 		BootstrapServer string                 `yaml:"bootstrapServer"`
 		GroupID         string                 `yaml:"groupID"`
