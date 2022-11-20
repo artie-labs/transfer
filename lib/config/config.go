@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+	"github.com/artie-labs/transfer/lib/array"
 	"io"
 	"os"
 
@@ -9,11 +11,16 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
+var (
+	validOutputSources = []string{"snowflake", "test"}
+)
+
 type Sentry struct {
 	DSN string `yaml:"dsn"`
 }
 
 type Config struct {
+	// TODO: Test outputSource.
 	Output string `yaml:"outputSource"`
 
 	Kafka struct {
@@ -57,4 +64,14 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 	}
 
 	return &config, nil
+}
+
+func (c *Config) Validate() error {
+	// TODO: Test
+	// TODO: Add more validation
+	if !array.StringContains(validOutputSources, c.Output) {
+		return fmt.Errorf("output: %s is invalid, the valid sources are: %v", c.Output, validOutputSources)
+	}
+
+	return nil
 }

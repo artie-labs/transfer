@@ -29,3 +29,14 @@ func ColumnsUpdateQuery(columns []string, tablePrefix string) string {
 
 	return strings.Join(_columns, ",")
 }
+
+func StringContains(list []string, element string) bool {
+	for _, v := range list {
+		if element == v {
+			return true
+		}
+	}
+
+	return false
+
+}
