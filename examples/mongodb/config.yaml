@@ -1,4 +1,4 @@
-output_source: test
+outputSource: test
 
 kafka:
   bootstrapServer: localhost:9092
@@ -8,7 +8,7 @@ kafka:
       tableName: customers
       schema: public
       topic: dbserver1.inventory.customers
-      cdc_format: debezium.mongodb
+      cdcFormat: debezium.mongodb
 
 snowflake:
   account: 123
