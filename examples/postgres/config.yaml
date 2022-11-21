@@ -4,11 +4,11 @@ kafka:
   bootstrapServer: kafka:9092
   groupID: abc1234
   topicConfigs:
-    - db: customers_mongo
+    - db: customers
       tableName: customers
       schema: public
       topic: "dbserver1.inventory.customers"
-      cdcFormat: debezium.mongodb
+      cdcFormat: debezium.postgres.wal2json
 
 snowflake:
   account: 123
