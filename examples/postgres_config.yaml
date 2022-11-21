@@ -1,4 +1,4 @@
-output_source: snowflake
+outputSource: snowflake
 
 kafka:
   bootstrapServer: localhost:9092
@@ -11,13 +11,13 @@ kafka:
       schema: public
       topic: customers
       idempotentKey: updated_at
-      cdc_format: debezium.postgres.wal2json
+      cdcFormat: debezium.postgres.wal2json
     - db: customers
       tableName: orders
       schema: public
       topic: orders
       idempotent_key: updated_at
-      cdc_format: debezium.postgres.wal2json
+      cdcFormat: debezium.postgres.wal2json
 
 snowflake:
   account: 123

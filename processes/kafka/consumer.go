@@ -44,16 +44,21 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 	log := logger.FromContext(ctx)
 	log.Info("Starting Kafka consumer...", config.GetSettings().Config.Kafka)
 
-	mechanism := plain.Mechanism{
-		Username: config.GetSettings().Config.Kafka.Username,
-		Password: config.GetSettings().Config.Kafka.Password,
+	dialer := &kafka.Dialer{
+		Timeout:   10 * time.Second,
+		DualStack: true,
 	}
 
-	dialer := &kafka.Dialer{
-		Timeout:       10 * time.Second,
-		DualStack:     true,
-		SASLMechanism: mechanism,
-		TLS:           &tls.Config{},
+	// If username or password is set, then let's enable PLAIN.
+	// By default, we will support no auth (local testing) and PLAIN SASL.
+	if config.GetSettings().Config.Kafka.Username != "" {
+		mechanism := plain.Mechanism{
+			Username: config.GetSettings().Config.Kafka.Username,
+			Password: config.GetSettings().Config.Kafka.Password,
+		}
+
+		dialer.SASLMechanism = mechanism
+		dialer.TLS = &tls.Config{}
 	}
 
 	topicToConfigFmtMap := make(map[string]TopicConfigFormatter)
