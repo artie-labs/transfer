@@ -51,6 +51,10 @@ go get github.com/artie-labs/transfer
 
 _Once you have the image, provide a configuration file and run `transfer --config config.yaml`_
 
+_Optional Flags_
+* You may also pass in `-v` and Transfer will emit debug level logs.
+
+
 ### Docker and examples
 
 The Transfer base image is published to Docker Hub and can be viewed [here](https://hub.docker.com/r/artielabs/transfer). 

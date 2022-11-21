@@ -7,7 +7,8 @@ import (
 )
 
 type Settings struct {
-	Config *Config
+	Config         *Config
+	VerboseLogging bool
 }
 
 var settings *Settings
@@ -23,6 +24,8 @@ func GetSettings() *Settings {
 func ParseArgs(args []string) {
 	var opts struct {
 		ConfigFilePath string `short:"c" long:"config" description:"path to the config file"`
+		// TODO test verbose
+		Verbose bool `short:"v" long:"verbose" description:"debug logging" optional:"true"`
 	}
 
 	if settings != nil {
@@ -40,6 +43,7 @@ func ParseArgs(args []string) {
 	}
 
 	settings = &Settings{
-		Config: config,
+		Config:         config,
+		VerboseLogging: opts.Verbose,
 	}
 }

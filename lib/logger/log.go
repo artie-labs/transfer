@@ -13,6 +13,10 @@ func NewLogger(settings *config.Settings) *logrus.Logger {
 	log := logrus.New()
 	log.SetOutput(os.Stdout)
 
+	if settings != nil && settings.VerboseLogging {
+		log.SetLevel(logrus.DebugLevel)
+	}
+
 	if settings != nil && settings.Config != nil && settings.Config.Reporting.Sentry != nil && settings.Config.Reporting.Sentry.DSN != "" {
 		hook, err := logrus_sentry.NewSentryHook(settings.Config.Reporting.Sentry.DSN, []logrus.Level{
 			logrus.PanicLevel,

@@ -122,7 +122,7 @@ func ExecuteMerge(ctx context.Context, tableData *optimization.TableData) error 
 		return err
 	}
 
-	fmt.Println("Query looks like this", query)
+	log.WithField("query", query).Debug("executing...")
 	_, err = store.Exec(query)
 	return err
 }
