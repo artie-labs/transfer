@@ -10,7 +10,7 @@
 
 <br/>
 
-Depending on where you work, the latency within your data warehouse is often several hours to days old. This problem gets exacerbated as data volumes grow. <br/>
+Depending on where you work, the latency within your data warehouse is often several hours to days old. This problem gets exacerbated as data volumes grow. <br/><br/>
 Transfer reads from the change data capture (CDC) stream and provides an easy out of the box solution that only requires a simple configuration file and will replicate this to your data warehouse. To do this, Transfer has the following features built-in:
 
 - Automatic retries & idempotency. We take reliability seriously and it's feature 0. Latency reduction is nice, but doesn't matter if the data is wrong. We provide automatic retries and idempotency such that we will always achieve eventual consistency.
@@ -53,11 +53,11 @@ _Once you have the image, provide a configuration file and run `transfer --confi
 
 ### Docker and examples
 
-The Transfer base image is published to Docker Hub and can be viewed [here](https://hub.docker.com/r/artielabs/transfer). 
+The Transfer base image is published on Docker Hub and can be viewed [here](https://hub.docker.com/r/artielabs/transfer). 
 
-Take a look at the [examples folder](https://github.com/artie-labs/transfer/tree/master/examples) to see end-end example on how Transfer would work.
+Take a look at the [examples folder](https://github.com/artie-labs/transfer/tree/master/examples) to see end-end examples on how Transfer works.
 
-#### Kubernetes
+### Kubernetes
 Simply define a K8 deployment, use Transfer as the base image and provide a configuration file. Then you'll need to run 
 ```sh
 ./transfer --config path_to_config
