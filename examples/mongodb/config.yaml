@@ -1,13 +1,13 @@
 outputSource: test
 
 kafka:
-  bootstrapServer: localhost:9092
-  groupID: abc123
+  bootstrapServer: kafka:9092
+  groupID: abc1234
   topicConfigs:
     - db: customers_mongo
       tableName: customers
       schema: public
-      topic: dbserver1.inventory.customers
+      topic: "dbserver1.inventory.customers"
       cdcFormat: debezium.mongodb
 
 snowflake:

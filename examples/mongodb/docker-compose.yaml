@@ -1,13 +1,13 @@
 version: '2'
 services:
   zookeeper:
-    image: quay.io/debezium/zookeeper:${DEBEZIUM_VERSION}
+    image: quay.io/debezium/zookeeper:2.0
     ports:
      - 2181:2181
      - 2888:2888
      - 3888:3888
   kafka:
-    image: quay.io/debezium/kafka:${DEBEZIUM_VERSION}
+    image: quay.io/debezium/kafka:2.0
     ports:
      - 9092:9092
     links:
@@ -15,7 +15,7 @@ services:
     environment:
      - ZOOKEEPER_CONNECT=zookeeper:2181
   mongodb:
-    image: quay.io/debezium/example-mongodb:${DEBEZIUM_VERSION}
+    image: quay.io/debezium/example-mongodb:2.0
     hostname: mongodb
     ports:
      - 27017:27017
@@ -23,7 +23,7 @@ services:
      - MONGODB_USER=debezium
      - MONGODB_PASSWORD=dbz
   connect:
-    image: quay.io/debezium/connect:${DEBEZIUM_VERSION}
+    image: quay.io/debezium/connect:2.0
     ports:
      - 8083:8083
     links:
@@ -35,7 +35,10 @@ services:
      - CONFIG_STORAGE_TOPIC=my_connect_configs
      - OFFSET_STORAGE_TOPIC=my_connect_offsets
      - STATUS_STORAGE_TOPIC=my_connect_statuses
-# For testing newer connector versions, unpack the connector archive into this
-# directory and uncomment the lines below
-#    volumes:
-#     - ./debezium-connector-mongodb:/kafka/connect/debezium-connector-mongodb
+  transfer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    links:
+     - kafka
+
