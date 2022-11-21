@@ -60,7 +60,7 @@ Take a look at the [examples folder](https://github.com/artie-labs/transfer/tree
 #### Kubernetes
 Simply define a K8 deployment, use Transfer as the base image and provide a configuration file. Then you'll need to run 
 ```sh
-./transfer --config path_to_configl
+./transfer --config path_to_config
 ```
 
 See [here for an example](https://github.com/artie-labs/transfer/blob/master/examples/mongodb/Dockerfile) 
