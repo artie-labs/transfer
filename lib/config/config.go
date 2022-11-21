@@ -94,7 +94,7 @@ func (c *Config) Validate() error {
 	// Kafka config
 	// Username and password are not required (if it's within the same VPC or connecting locally
 	if array.Empty([]string{c.Kafka.GroupID, c.Kafka.BootstrapServer}) {
-		return fmt.Errorf("kafka settings is invalid, kafak: %s", c.Kafka.String())
+		return fmt.Errorf("kafka settings is invalid, kafka: %s", c.Kafka.String())
 	}
 
 	return nil
