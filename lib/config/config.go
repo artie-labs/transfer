@@ -20,7 +20,6 @@ type Sentry struct {
 }
 
 type Config struct {
-	// TODO: Test outputSource.
 	Output string `yaml:"outputSource"`
 
 	Kafka struct {
@@ -66,10 +65,22 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 	return &config, nil
 }
 
+// Validate will check the output source validity
+// It will also check if a topic exists + iterate over each topic to make sure it's valid.
+// The actual output source (like Snowflake) and CDC parser will be loaded and checked by other funcs.
 func (c *Config) Validate() error {
-	// TODO: Add more validation
 	if !array.StringContains(validOutputSources, c.Output) {
 		return fmt.Errorf("output: %s is invalid, the valid sources are: %v", c.Output, validOutputSources)
+	}
+
+	if len(c.Kafka.TopicConfigs) == 0 {
+		return fmt.Errorf("no kafka topic configs, kafka: %v", c.Kafka)
+	}
+
+	for _, topicConfig := range c.Kafka.TopicConfigs {
+		if valid := topicConfig.Valid(); !valid {
+			return fmt.Errorf("topic config is invalid, tc: %s", topicConfig.String())
+		}
 	}
 
 	return nil

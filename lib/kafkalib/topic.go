@@ -11,6 +11,24 @@ type TopicConfig struct {
 	CDCFormat     string `yaml:"cdcFormat"`
 }
 
+func (t *TopicConfig) String() string {
+	// TODO test
+
+	if t == nil {
+		return ""
+	}
+
+	return fmt.Sprintf(
+		"db=%s, tableName=%s, schema=%s, topic=%s, idempotentKey=%s, cdcFormat=%s",
+		t.Database, t.TableName, t.Schema, t.Topic, t.IdempotentKey, t.CDCFormat)
+}
+
+func (t *TopicConfig) Valid() bool {
+	// TODO test
+	
+	return true
+}
+
 func (t *TopicConfig) ToCacheKey(partition int64) string {
 	return fmt.Sprintf("%s#%d", t.Topic, partition)
 }
