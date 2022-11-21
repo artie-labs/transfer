@@ -110,9 +110,13 @@ a:
 
 ## Limitations
 **Postgres Debezium wal2json** <br/>
-`decimal.handling.mode` only works for `double` or `string`.<br/>
+* `decimal.handling.mode` only works for `double` or `string`.<br/>
 The default value is `precise` which will cast the value in `java.math.BigDecimal` and Transfer does not know how to decode that yet.
 For further information on how to set this to be `string` or `double, please [click here](https://docs.confluent.io/cloud/current/connectors/cc-postgresql-cdc-source-debezium.html#connector-details).
+
+**MongoDB Debezium** <br/>
+* `key.converter` needs to be in `org.apache.kafka.connect.storage.StringConverter` format
+* `key.converter.schemas.enable` and `value.converter.schemas.enable` both need to be set to `false`
 
 ## Tests
 Transfer is written in Go and uses [counterfeiter](https://github.com/maxbrunsfeld/counterfeiter) to mock. 
