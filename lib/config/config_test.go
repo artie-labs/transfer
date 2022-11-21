@@ -11,6 +11,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	validKafkaTopic = `
+kafka:
+ bootstrapServer: kafka:9092
+ groupID: 123
+ username: foo
+ password: bar
+ topicConfigs:
+  - { db: customer, tableName: orders, schema: public}
+  - { db: customer, tableName: customer, schema: public}
+`
+)
+
 func TestReadNonExistentFile(t *testing.T) {
 	config, err := readFileToConfig("/tmp/213213231312")
 	assert.Error(t, err)
@@ -26,10 +39,11 @@ func TestOutputSourceValid(t *testing.T) {
 
 	defer file.Close()
 
-	_, err = io.WriteString(file,
+	_, err = io.WriteString(file, fmt.Sprintf(
 		`
 outputSource: snowflake
-`)
+%s
+`, validKafkaTopic))
 	assert.Nil(t, err)
 
 	config, err := readFileToConfig(randomFile)
@@ -178,7 +192,7 @@ reporting:
 	assert.True(t, foundCustomer)
 	assert.True(t, foundOrder)
 
-	// Verify Snowflake config
+	// Verify Sno3wflake config
 	assert.Equal(t, config.Snowflake.Username, snowflakeUser)
 	assert.Equal(t, config.Snowflake.Password, snowflakePassword)
 	assert.Equal(t, config.Snowflake.AccountID, snowflakeAccount)

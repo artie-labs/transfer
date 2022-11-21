@@ -30,6 +30,18 @@ func ColumnsUpdateQuery(columns []string, tablePrefix string) string {
 	return strings.Join(_columns, ",")
 }
 
+// Empty will iterate over a list, if one of the item in the list is empty, it will return true
+// This is useful to check the presence of a setting.
+func Empty(list []string) bool {
+	for _, v := range list {
+		if empty := v == ""; empty {
+			return true
+		}
+	}
+
+	return false
+}
+
 func StringContains(list []string, element string) bool {
 	for _, v := range list {
 		if element == v {
