@@ -67,7 +67,6 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 }
 
 func (c *Config) Validate() error {
-	// TODO: Test
 	// TODO: Add more validation
 	if !array.StringContains(validOutputSources, c.Output) {
 		return fmt.Errorf("output: %s is invalid, the valid sources are: %v", c.Output, validOutputSources)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -14,6 +15,50 @@ func TestReadNonExistentFile(t *testing.T) {
 	config, err := readFileToConfig("/tmp/213213231312")
 	assert.Error(t, err)
 	assert.Nil(t, config)
+}
+
+func TestOutputSourceValid(t *testing.T) {
+	randomFile := fmt.Sprintf("/tmp/%s_output_source_valid", time.Now().String())
+	defer os.Remove(randomFile)
+
+	file, err := os.Create(randomFile)
+	assert.Nil(t, err)
+
+	defer file.Close()
+
+	_, err = io.WriteString(file,
+		`
+outputSource: snowflake
+`)
+	assert.Nil(t, err)
+
+	config, err := readFileToConfig(randomFile)
+	assert.Nil(t, err)
+
+	assert.Nil(t, config.Validate())
+}
+
+func TestOutputSourceInvalid(t *testing.T) {
+	randomFile := fmt.Sprintf("/tmp/%s_output_source", time.Now().String())
+	defer os.Remove(randomFile)
+
+	file, err := os.Create(randomFile)
+	assert.Nil(t, err)
+
+	defer file.Close()
+
+	_, err = io.WriteString(file,
+		`
+outputSource: none
+`)
+	assert.Nil(t, err)
+
+	config, err := readFileToConfig(randomFile)
+	assert.Nil(t, err)
+
+	validErr := config.Validate()
+	assert.Error(t, validErr)
+	assert.True(t, strings.Contains(validErr.Error(), "is invalid"), validErr.Error())
 }
 
 func TestReadSentryDSN(t *testing.T) {
