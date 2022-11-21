@@ -1,0 +1,18 @@
+outputSource: test
+
+kafka:
+  bootstrapServer: kafka:9092
+  groupID: abc1234
+  topicConfigs:
+    - db: customers
+      tableName: customers
+      schema: public
+      topic: "dbserver1.inventory.customers"
+      cdcFormat: debezium.postgres.wal2json
+
+snowflake:
+  account: 123
+  username: foo
+  password: bar
+  warehouse: dwh
+  region: us-east-2.aws
