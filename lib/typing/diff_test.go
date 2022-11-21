@@ -66,3 +66,15 @@ func TestDiffDelta2(t *testing.T) {
 	assert.Equal(t, len(srcKeyMissing), 1)  // Missing cc
 	assert.Equal(t, len(targKeyMissing), 3) // Missing a, c, d
 }
+
+func TestCopyColMap(t *testing.T) {
+	oneMap := map[string]Kind{
+		"hello":      String,
+		"created_at": DateTime,
+		"updated_at": DateTime,
+	}
+
+	anotherMap := CopyColMap(oneMap)
+	delete(anotherMap, "hello")
+	assert.NotEqual(t, oneMap, anotherMap)
+}
