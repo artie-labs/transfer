@@ -6,5 +6,12 @@ import (
 )
 
 func TestParseArgs(t *testing.T) {
-	assert.Panics(t, func() { ParseArgs([]string{}) }, "no args")
+	ParseArgs([]string{}, false)
+	settings := GetSettings()
+
+	assert.Equal(t, settings.VerboseLogging, false)
+	assert.Nil(t, settings.Config)
+
+	ParseArgs([]string{"-v"}, false)
+	assert.Equal(t, GetSettings().VerboseLogging, true)
 }

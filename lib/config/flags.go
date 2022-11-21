@@ -21,15 +21,12 @@ func GetSettings() *Settings {
 	return settings
 }
 
-func ParseArgs(args []string) {
+// ParseArgs will take the flags and then parse
+// loadConfig is optional for testing purposes.
+func ParseArgs(args []string, loadConfig bool) {
 	var opts struct {
 		ConfigFilePath string `short:"c" long:"config" description:"path to the config file"`
-		// TODO test verbose
-		Verbose bool `short:"v" long:"verbose" description:"debug logging" optional:"true"`
-	}
-
-	if settings != nil {
-		return
+		Verbose        bool   `short:"v" long:"verbose" description:"debug logging" optional:"true"`
 	}
 
 	_, err := flags.ParseArgs(&opts, args)
@@ -37,9 +34,12 @@ func ParseArgs(args []string) {
 		log.Fatalf("Failed to parse args, err: %v", err)
 	}
 
-	config, err := readFileToConfig(opts.ConfigFilePath)
-	if err != nil {
-		log.Fatalf("Failed to parse config file. Please check your config, err: %v", err)
+	var config *Config
+	if loadConfig {
+		config, err = readFileToConfig(opts.ConfigFilePath)
+		if err != nil {
+			log.Fatalf("Failed to parse config file. Please check your config, err: %v", err)
+		}
 	}
 
 	settings = &Settings{
