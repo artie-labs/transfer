@@ -6,11 +6,7 @@
 </div>
 <br/>
 
-
 [![Go tests](https://github.com/artie-labs/transfer/actions/workflows/gha-go-test.yml/badge.svg)](https://github.com/artie-labs/transfer/actions/workflows/gha-go-test.yml) [![ELv2](https://user-images.githubusercontent.com/4412200/201544613-a7197bc4-8b61-4fc5-bf09-68ee10133fd7.svg)](https://github.com/artie-labs/transfer/blob/master/LICENSE.txt) [<img src="https://img.shields.io/badge/slack-@artie-blue.svg?logo=slack">](https://join.slack.com/t/artie-labs/shared_invite/zt-1k28i8nja-W7G24qrRcJKeySDFLecFUg) 
-
-
-
 
 <br/>
 
@@ -55,9 +51,19 @@ go get github.com/artie-labs/transfer
 
 _Once you have the image, provide a configuration file and run `transfer --config config.yaml`_
 
-### Docker / Kubernetes
+### Docker and examples
 
-Simply define a Kubernetes deployment, pull the [Docker image](https://hub.docker.com/r/artielabs/transfer) and provide a configuration file. See the examples folder for k8 references. See this [Dockerfile](https://github.com/artie-labs/transfer/tree/master/docker_postres) under `/examples` for a sample Dockerfile, you'd simply need to redefine your `config.yaml` and away you go.
+The Transfer base image is published to Docker Hub and can be viewed [here](https://hub.docker.com/r/artielabs/transfer). 
+
+Take a look at the [examples folder](https://github.com/artie-labs/transfer/tree/master/examples) to see end-end example on how Transfer would work.
+
+#### Kubernetes
+Simply define a K8 deployment, use Transfer as the base image and provide a configuration file. Then you'll need to run 
+```sh
+./transfer --config path_to_configl
+```
+
+See [here for an example](https://github.com/artie-labs/transfer/blob/master/examples/mongodb/Dockerfile) 
 
 ## What is currently supported?
 Transfer is aimed to provide coverage across all OTLPs and OLAPs. Currently, Transfer provides:
@@ -73,7 +79,6 @@ _If the database you are using is not on the list, feel free to file for a [feat
 ## Configuration File
 
 Note: Keys here are formatted in dot notation for readability purposes, please ensure that the proper nesting is done when dumping this into config.yaml. Take a look at the [example config.yaml](https://github.com/artie-labs/transfer/blob/master/examples/postgres_config.yaml) for additional reference. 
-
 
 For example a.b: foo` should be rewritten as
 ```yaml
