@@ -1,0 +1,18 @@
+outputSource: test
+
+kafka:
+  bootstrapServer: kafka:9092
+  groupID: abc1234
+  topicConfigs:
+    - db: customers_mongo
+      tableName: customers
+      schema: public
+      topic: "dbserver1.inventory.customers"
+      cdcFormat: debezium.mongodb
+
+snowflake:
+  account: 123
+  username: foo
+  password: bar
+  warehouse: dwh
+  region: us-east-2.aws
