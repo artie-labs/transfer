@@ -24,6 +24,28 @@ kafka:
 `
 )
 
+func TestKafka_String(t *testing.T) {
+	k := Kafka{
+		BootstrapServer: "server",
+		GroupID:         "group-id",
+		Username:        "",
+		Password:        "",
+	}
+
+	assert.Contains(t, k.String(), k.BootstrapServer, k.String())
+	assert.Contains(t, k.String(), k.GroupID, k.String())
+	assert.Contains(t, k.String(), "pass_set=false", k.String())
+	assert.Contains(t, k.String(), "user_set=false", k.String())
+
+	k.Username = "foo"
+	assert.Contains(t, k.String(), "user_set=true", k.String())
+	assert.Contains(t, k.String(), "pass_set=false", k.String())
+
+	k.Password = "bar"
+	assert.Contains(t, k.String(), "user_set=true", k.String())
+	assert.Contains(t, k.String(), "pass_set=true", k.String())
+}
+
 func TestReadNonExistentFile(t *testing.T) {
 	config, err := readFileToConfig("/tmp/213213231312")
 	assert.Error(t, err)

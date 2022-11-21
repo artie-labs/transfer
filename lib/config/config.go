@@ -19,17 +19,23 @@ type Sentry struct {
 	DSN string `yaml:"dsn"`
 }
 
+type Kafka struct {
+	BootstrapServer string                 `yaml:"bootstrapServer"`
+	GroupID         string                 `yaml:"groupID"`
+	Username        string                 `yaml:"username"`
+	Password        string                 `yaml:"password"`
+	TopicConfigs    []kafkalib.TopicConfig `yaml:"topicConfigs"`
+}
+
+func (k *Kafka) String() string {
+	// Don't log credentials.
+	return fmt.Sprintf("bootstrapServer=%s, groupID=%s, user_set=%v, pass_set=%v",
+		k.BootstrapServer, k.GroupID, k.Username != "", k.Password != "")
+}
+
 type Config struct {
-	Output string `yaml:"outputSource"`
-
-	Kafka struct {
-		BootstrapServer string                 `yaml:"bootstrapServer"`
-		GroupID         string                 `yaml:"groupID"`
-		Username        string                 `yaml:"username"`
-		Password        string                 `yaml:"password"`
-		TopicConfigs    []kafkalib.TopicConfig `yaml:"topicConfigs"`
-	}
-
+	Output    string `yaml:"outputSource"`
+	Kafka     Kafka
 	Snowflake struct {
 		AccountID string `yaml:"account"`
 		Username  string `yaml:"username"`
@@ -86,6 +92,10 @@ func (c *Config) Validate() error {
 	}
 
 	// Kafka config
+	// Username and password are not required (if it's within the same VPC or connecting locally
+	if array.Empty([]string{c.Kafka.GroupID, c.Kafka.BootstrapServer}) {
+		return fmt.Errorf("kafka settings is invalid, kafak: %s", c.Kafka.String())
+	}
 
 	return nil
 }
