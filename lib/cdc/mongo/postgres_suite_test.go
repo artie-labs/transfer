@@ -7,12 +7,12 @@ import (
 
 type MongoTestSuite struct {
 	suite.Suite
-	*Mongo
+	*Debezium
 }
 
 func (p *MongoTestSuite) SetupTest() {
-	var debezium Mongo
-	p.Mongo = &debezium
+	var debezium Debezium
+	p.Debezium = &debezium
 }
 
 func TestPostgresTestSuite(t *testing.T) {

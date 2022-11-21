@@ -2,26 +2,28 @@ package format
 
 import (
 	"context"
+
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/cdc/mongo"
 	"github.com/artie-labs/transfer/lib/cdc/postgres"
 	"github.com/artie-labs/transfer/lib/logger"
 )
 
-func GetFormatParser(ctx context.Context, label string) cdc.Format {
-	var d postgres.Debezium
-	var m mongo.Mongo
+var (
+	d postgres.Debezium
+	m mongo.Debezium
+)
 
-	if d.Label() == label {
-		logger.FromContext(ctx).WithField("label", d.Label()).
-			Info("Loaded CDC Format parser...")
-		return &d
+func GetFormatParser(ctx context.Context, label string) cdc.Format {
+	validFormats := []cdc.Format{
+		&d, &m,
 	}
 
-	if m.Label() == label {
-		logger.FromContext(ctx).WithField("label", m.Label()).
-			Info("Loaded CDC Format parser...")
-		return &m
+	for _, validFormat := range validFormats {
+		if validFormat.Label() == label {
+			logger.FromContext(ctx).WithField("label", d.Label()).Info("Loaded CDC Format parser...")
+			return validFormat
+		}
 	}
 
 	logger.FromContext(ctx).WithField("label", label).

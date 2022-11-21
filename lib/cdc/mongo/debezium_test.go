@@ -71,7 +71,7 @@ func (p *MongoTestSuite) TestMongoDBEventOrder() {
 }
 `
 
-	evt, err := p.Mongo.GetEventFromBytes(ctx, []byte(payload))
+	evt, err := p.Debezium.GetEventFromBytes(ctx, []byte(payload))
 	assert.NoError(p.T(), err)
 	assert.Equal(p.T(), evt.Table(), "orders")
 }
@@ -105,7 +105,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 }
 `
 
-	evt, err := p.Mongo.GetEventFromBytes(ctx, []byte(payload))
+	evt, err := p.Debezium.GetEventFromBytes(ctx, []byte(payload))
 	assert.NoError(p.T(), err)
 	evtData := evt.GetData("_id", 1003, kafkalib.TopicConfig{})
 
@@ -156,7 +156,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 }
 `
 
-	evt, err := p.Mongo.GetEventFromBytes(ctx, []byte(payload))
+	evt, err := p.Debezium.GetEventFromBytes(ctx, []byte(payload))
 	assert.NoError(p.T(), err)
 	evtData := evt.GetData("_id", 1003, kafkalib.TopicConfig{})
 
