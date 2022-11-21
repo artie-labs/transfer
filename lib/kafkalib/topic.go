@@ -15,7 +15,6 @@ type TopicConfig struct {
 }
 
 func (t *TopicConfig) String() string {
-	// TODO test
 	if t == nil {
 		return ""
 	}
@@ -27,7 +26,6 @@ func (t *TopicConfig) String() string {
 
 func (t *TopicConfig) Valid() bool {
 	// IdempotentKey is optional.
-
 	return !array.Empty([]string{t.Database, t.TableName, t.Schema, t.Topic, t.CDCFormat})
 }
 

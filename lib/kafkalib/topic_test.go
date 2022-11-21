@@ -34,3 +34,18 @@ func TestTopicConfig_String(t *testing.T) {
 	assert.True(t, strings.Contains(tc.String(), tc.IdempotentKey), tc.String())
 	assert.True(t, strings.Contains(tc.String(), tc.CDCFormat), tc.String())
 }
+
+func TestTopicConfig_Validate(t *testing.T) {
+	var tc TopicConfig
+	assert.False(t, tc.Valid(), tc.String())
+
+	tc = TopicConfig{
+		Database:  "12",
+		TableName: "34",
+		Schema:    "56",
+		Topic:     "78",
+		CDCFormat: "aa",
+	}
+
+	assert.True(t, tc.Valid(), tc.String())
+}

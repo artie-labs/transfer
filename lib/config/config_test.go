@@ -75,6 +75,50 @@ outputSource: none
 	assert.True(t, strings.Contains(validErr.Error(), "is invalid"), validErr.Error())
 }
 
+func TestConfig_Validate_ErrorTopicConfigInvalid(t *testing.T) {
+	randomFile := fmt.Sprintf("/tmp/%s_output_source_invalid_tc", time.Now().String())
+	defer os.Remove(randomFile)
+
+	file, err := os.Create(randomFile)
+	assert.Nil(t, err)
+
+	defer file.Close()
+
+	_, err = io.WriteString(file,
+		`
+outputSource: test
+`)
+	assert.Nil(t, err)
+
+	config, err := readFileToConfig(randomFile)
+	assert.Nil(t, err)
+
+	validErr := config.Validate()
+	assert.Error(t, validErr)
+	assert.True(t, strings.Contains(validErr.Error(), "no kafka"), validErr.Error())
+
+	_, err = io.WriteString(file, `
+kafka:
+ bootstrapServer: kafka:9092
+ groupID: 123
+ username: foo
+ password: bar
+ topicConfigs:
+  - { db: "", tableName: orders, schema: public, topic: orders, cdcFormat: debezium.mongodb}
+  - { db: customer, tableName: customer, schema: public, topic: customer, cdcFormat: debezium.mongodb}
+`)
+
+	assert.Nil(t, err)
+
+	config, err = readFileToConfig(randomFile)
+	assert.Nil(t, err)
+
+	validErr = config.Validate()
+	assert.Error(t, validErr)
+	assert.True(t, strings.Contains(validErr.Error(), "topic config is invalid"), validErr.Error())
+
+}
+
 func TestReadSentryDSN(t *testing.T) {
 	randomFile := fmt.Sprintf("/tmp/%s_sentry_dsn", time.Now().String())
 	defer os.Remove(randomFile)

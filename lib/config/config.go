@@ -69,10 +69,12 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 // It will also check if a topic exists + iterate over each topic to make sure it's valid.
 // The actual output source (like Snowflake) and CDC parser will be loaded and checked by other funcs.
 func (c *Config) Validate() error {
+	// Output sources
 	if !array.StringContains(validOutputSources, c.Output) {
 		return fmt.Errorf("output: %s is invalid, the valid sources are: %v", c.Output, validOutputSources)
 	}
 
+	// TopicConfigs
 	if len(c.Kafka.TopicConfigs) == 0 {
 		return fmt.Errorf("no kafka topic configs, kafka: %v", c.Kafka)
 	}
@@ -82,6 +84,8 @@ func (c *Config) Validate() error {
 			return fmt.Errorf("topic config is invalid, tc: %s", topicConfig.String())
 		}
 	}
+
+	// Kafka config
 
 	return nil
 }
