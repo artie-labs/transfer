@@ -1,6 +1,9 @@
 package kafkalib
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/artie-labs/transfer/lib/array"
+)
 
 type TopicConfig struct {
 	Database      string `yaml:"db"`
@@ -13,7 +16,6 @@ type TopicConfig struct {
 
 func (t *TopicConfig) String() string {
 	// TODO test
-
 	if t == nil {
 		return ""
 	}
@@ -24,9 +26,9 @@ func (t *TopicConfig) String() string {
 }
 
 func (t *TopicConfig) Valid() bool {
-	// TODO test
-	
-	return true
+	// IdempotentKey is optional.
+
+	return !array.Empty([]string{t.Database, t.TableName, t.Schema, t.Topic, t.CDCFormat})
 }
 
 func (t *TopicConfig) ToCacheKey(partition int64) string {

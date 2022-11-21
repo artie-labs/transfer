@@ -19,8 +19,8 @@ kafka:
  username: foo
  password: bar
  topicConfigs:
-  - { db: customer, tableName: orders, schema: public}
-  - { db: customer, tableName: customer, schema: public}
+  - { db: customer, tableName: orders, schema: public, topic: orders, cdcFormat: debezium.mongodb}
+  - { db: customer, tableName: customer, schema: public, topic: customer, cdcFormat: debezium.mongodb}
 `
 )
 
