@@ -108,6 +108,9 @@ func (d *Mongo) Label() string {
 
 // GetPrimaryKey - We need the Kafka Topic to provide the key in a JSON format for the key.
 // It'll look like this: Struct{id=47}
+// TODO: This should support both:
+// key.converter=org.apache.kafka.connect.storage.JSONConverter
+// AND key.converter.schemas.enable=true
 func (d *Mongo) GetPrimaryKey(ctx context.Context, key []byte) (pkName string, pkValue interface{}, err error) {
 	keyString := string(key)
 	if len(keyString) < 8 {

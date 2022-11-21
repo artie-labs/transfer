@@ -23,7 +23,9 @@ services:
      - MONGODB_USER=debezium
      - MONGODB_PASSWORD=dbz
   connect:
-    image: quay.io/debezium/connect:2.0
+    build:
+      context: ./connect
+      dockerfile: Dockerfile-connect
     ports:
      - 8083:8083
     links:
