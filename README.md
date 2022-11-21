@@ -33,7 +33,7 @@ Kafka topic per table. Partition key must be the primary key for the row.
 CDC connector (refer to supported section on supported connectors)
 Supported OLTP & OLAP
 
-If you are having trouble setting up CDC, please see the examples folder on how to configure a test database to emit CDC messages to Kafka.
+If you are having trouble setting up CDC, please see the [examples folder](https://github.com/artie-labs/transfer/tree/master/examples) on how to configure a test database to emit CDC messages to Kafka.
 
 ## <a name="running"></a>Running
 
