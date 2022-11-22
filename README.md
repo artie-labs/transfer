@@ -117,7 +117,6 @@ For further information on how to set this to be `string` or `double`, please [c
 
 
 **MongoDB Debezium** <br/>
-* `key.converter` needs to be in `org.apache.kafka.connect.storage.StringConverter` format
 * `key.converter.schemas.enable` and `value.converter.schemas.enable` both need to be set to `false`
 
 ## Tests
