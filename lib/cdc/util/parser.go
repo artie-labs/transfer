@@ -29,7 +29,6 @@ func ParseStringKey(key []byte) (pkName string, pkValue interface{}, err error) 
 }
 
 func ParseJSONKey(key []byte) (pkName string, pkValue interface{}, err error) {
-	// TODO test nil
 	if len(key) == 0 {
 		err = fmt.Errorf("key is nil")
 		return
