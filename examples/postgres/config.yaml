@@ -9,6 +9,10 @@ kafka:
       schema: public
       topic: "dbserver1.inventory.customers"
       cdcFormat: debezium.postgres.wal2json
+      # cdcKeyFormat: org.apache.kafka.connect.json.JsonConverter
+      # If you turn this on, make sure to check connect-distributed.properties for key.converter
+      cdcKeyFormat: org.apache.kafka.connect.storage.StringConverter
+
 
 snowflake:
   account: 123
