@@ -78,7 +78,7 @@ _If the database you are using is not on the list, feel free to file for a [feat
 
 ## Configuration File
 
-Note: Keys here are formatted in dot notation for readability purposes, please ensure that the proper nesting is done when dumping this into config.yaml. Take a look at the [example config.yaml](https://github.com/artie-labs/transfer/blob/master/examples/postgres_config.yaml) for additional reference. 
+Note: Keys here are formatted in dot notation for readability purposes, please ensure that the proper nesting is done when dumping this into config.yaml. Take a look at the [example config.yaml](https://github.com/artie-labs/transfer/blob/master/examples/mongodb/config.yaml) for additional reference. 
 
 For example a.b: foo` should be rewritten as
 ```yaml
