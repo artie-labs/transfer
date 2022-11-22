@@ -1,4 +1,4 @@
-# MongoDB Example
+# Postgres Example
 
 ## Running
 
@@ -6,8 +6,8 @@ To run this, you'll need to install Docker. We will be running 5 images.
 
 1. zookeeper
 2. kafka
-3. MongoDB
-4. Debezium (pulling the data from Mongo and publishing to Kafka)
+3. Postgres
+4. Debezium (pulling the data from Postgres and publishing to Kafka)
 5. Transfer (pulling Kafka and writing against a test DB)
 
 _Note: Snowflake does not have a development Docker image, so the Mock DB will just output the function calls_
