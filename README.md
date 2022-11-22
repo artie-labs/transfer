@@ -10,8 +10,8 @@
 
 <br/>
 
-Depending on where you work, the latency within your data warehouse is often several hours to days old. This problem gets exacerbated as data volumes grow. <br/><br/>
-Transfer reads from the change data capture (CDC) stream and provides an easy out of the box solution that only requires a simple configuration file and will replicate this to your data warehouse. To do this, Transfer has the following features built-in:
+Depending on where you work, the latency in your data warehouse is often several hours to days old. This problem gets exacerbated as data volumes grow. <br/><br/>
+Transfer reads from the change data capture (CDC) stream and provides an easy out of the box solution that only requires a simple configuration file and will replicate the data in your transactional database to your data warehouse. To do this, Transfer has the following features built-in:
 
 - Automatic retries & idempotency. We take reliability seriously and it's feature 0. Latency reduction is nice, but doesn't matter if the data is wrong. We provide automatic retries and idempotency such that we will always achieve eventual consistency.
 - Error reporting. Provide your Sentry API key and errors from data processing will appear in your Sentry project.
@@ -27,9 +27,9 @@ Take a look at the [Running section](#running) on how you would be able to run T
 </div>
 
 ### Pre-requisites
-As you can see from the architecture above , Transfer sits behind Kafka and expects CDC messages to be in a particular format. Please see the currently supported section on what sources and destinations are supported.
+As you can see from the architecture above, Transfer sits behind Kafka and expects CDC messages to be in a particular format. Please see the currently supported section on what sources and destinations are supported.
 
-Kafka topic per table. Partition key must be the primary key for the row.
+Kafka topic per table. The partition key must be the primary key for the row.
 CDC connector (refer to supported section on supported connectors)
 Supported OLTP & OLAP
 
@@ -62,7 +62,7 @@ The Transfer base image is published on Docker Hub and can be viewed [here](http
 Take a look at the [examples folder](https://github.com/artie-labs/transfer/tree/master/examples) to see end-end examples on how Transfer works.
 
 ### Kubernetes
-Simply define a K8 deployment, use Transfer as the base image and provide a configuration file. Then you'll need to run 
+Simply define a K8 deployment, use Transfer as the base image and provide a configuration file. Then you will need to run 
 ```sh
 ./transfer --config path_to_config
 ```
@@ -70,7 +70,7 @@ Simply define a K8 deployment, use Transfer as the base image and provide a conf
 See [here for an example](https://github.com/artie-labs/transfer/blob/master/examples/mongodb/Dockerfile) 
 
 ## What is currently supported?
-Transfer is aimed to provide coverage across all OLTPs and OLAPs. Currently, Transfer provides:
+Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Currently Transfer supports:
 
 - OLAPs:
     - Snowflake
