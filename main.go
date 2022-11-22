@@ -19,7 +19,7 @@ import (
 
 func main() {
 	// Parse args into settings.
-	config.ParseArgs(os.Args)
+	config.ParseArgs(os.Args, true)
 	ctx := logger.InjectLoggerIntoCtx(logger.NewLogger(config.GetSettings()), context.Background())
 
 	if config.GetSettings().Config.Output == "test" {

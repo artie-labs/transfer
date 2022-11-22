@@ -4,16 +4,184 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	validKafkaTopic = `
+kafka:
+ bootstrapServer: kafka:9092
+ groupID: 123
+ username: foo
+ password: bar
+ topicConfigs:
+  - { db: customer, tableName: orders, schema: public, topic: orders, cdcFormat: debezium.mongodb}
+  - { db: customer, tableName: customer, schema: public, topic: customer, cdcFormat: debezium.mongodb}
+`
+)
+
+func TestKafka_String(t *testing.T) {
+	k := Kafka{
+		BootstrapServer: "server",
+		GroupID:         "group-id",
+		Username:        "",
+		Password:        "",
+	}
+
+	assert.Contains(t, k.String(), k.BootstrapServer, k.String())
+	assert.Contains(t, k.String(), k.GroupID, k.String())
+	assert.Contains(t, k.String(), "pass_set=false", k.String())
+	assert.Contains(t, k.String(), "user_set=false", k.String())
+
+	k.Username = "foo"
+	assert.Contains(t, k.String(), "user_set=true", k.String())
+	assert.Contains(t, k.String(), "pass_set=false", k.String())
+
+	k.Password = "bar"
+	assert.Contains(t, k.String(), "user_set=true", k.String())
+	assert.Contains(t, k.String(), "pass_set=true", k.String())
+}
+
 func TestReadNonExistentFile(t *testing.T) {
 	config, err := readFileToConfig("/tmp/213213231312")
 	assert.Error(t, err)
 	assert.Nil(t, config)
+}
+
+func TestOutputSourceValid(t *testing.T) {
+	randomFile := fmt.Sprintf("/tmp/%s_output_source_valid", time.Now().String())
+	defer os.Remove(randomFile)
+
+	file, err := os.Create(randomFile)
+	assert.Nil(t, err)
+
+	defer file.Close()
+
+	_, err = io.WriteString(file, fmt.Sprintf(
+		`
+outputSource: snowflake
+%s
+`, validKafkaTopic))
+	assert.Nil(t, err)
+
+	config, err := readFileToConfig(randomFile)
+	assert.Nil(t, err)
+
+	assert.Nil(t, config.Validate())
+}
+
+func TestOutputSourceInvalid(t *testing.T) {
+	randomFile := fmt.Sprintf("/tmp/%s_output_source", time.Now().String())
+	defer os.Remove(randomFile)
+
+	file, err := os.Create(randomFile)
+	assert.Nil(t, err)
+
+	defer file.Close()
+
+	_, err = io.WriteString(file,
+		`
+outputSource: none
+`)
+	assert.Nil(t, err)
+
+	config, err := readFileToConfig(randomFile)
+	assert.Nil(t, err)
+
+	validErr := config.Validate()
+	assert.Error(t, validErr)
+	assert.True(t, strings.Contains(validErr.Error(), "is invalid"), validErr.Error())
+}
+
+func TestConfig_Validate_ErrorTopicConfigInvalid(t *testing.T) {
+	randomFile := fmt.Sprintf("/tmp/%s_output_source_invalid_tc", time.Now().String())
+	defer os.Remove(randomFile)
+
+	file, err := os.Create(randomFile)
+	assert.Nil(t, err)
+
+	defer file.Close()
+
+	_, err = io.WriteString(file,
+		`
+outputSource: test
+`)
+	assert.Nil(t, err)
+
+	config, err := readFileToConfig(randomFile)
+	assert.Nil(t, err)
+
+	validErr := config.Validate()
+	assert.Error(t, validErr)
+	assert.True(t, strings.Contains(validErr.Error(), "no kafka"), validErr.Error())
+
+	_, err = io.WriteString(file, `
+kafka:
+ bootstrapServer: kafka:9092
+ groupID: 123
+ username: foo
+ password: bar
+ topicConfigs:
+  - { db: "", tableName: orders, schema: public, topic: orders, cdcFormat: debezium.mongodb}
+  - { db: customer, tableName: customer, schema: public, topic: customer, cdcFormat: debezium.mongodb}
+`)
+
+	assert.Nil(t, err)
+
+	config, err = readFileToConfig(randomFile)
+	assert.Nil(t, err)
+
+	validErr = config.Validate()
+	assert.Error(t, validErr)
+	assert.True(t, strings.Contains(validErr.Error(), "topic config is invalid"), validErr.Error())
+}
+
+func TestConfig_Validate_ErrorKafkaInvalid(t *testing.T) {
+	randomFile := fmt.Sprintf("/tmp/%s_output_source_invalid_tc", time.Now().String())
+	defer os.Remove(randomFile)
+
+	file, err := os.Create(randomFile)
+	assert.Nil(t, err)
+
+	defer file.Close()
+
+	_, err = io.WriteString(file,
+		`
+outputSource: test
+`)
+	assert.Nil(t, err)
+
+	config, err := readFileToConfig(randomFile)
+	assert.Nil(t, err)
+
+	validErr := config.Validate()
+	assert.Error(t, validErr)
+	assert.True(t, strings.Contains(validErr.Error(), "no kafka"), validErr.Error())
+
+	_, err = io.WriteString(file, `
+kafka:
+ bootstrapServer: 
+ groupID: 123
+ username: foo
+ password: bar
+ topicConfigs:
+  - { db: customer, tableName: orders, schema: public, topic: orders, cdcFormat: debezium.mongodb}
+  - { db: customer, tableName: customer, schema: public, topic: customer, cdcFormat: debezium.mongodb}
+`)
+
+	assert.Nil(t, err)
+
+	config, err = readFileToConfig(randomFile)
+	assert.Nil(t, err)
+
+	validErr = config.Validate()
+	assert.Error(t, validErr)
+	assert.True(t, strings.Contains(validErr.Error(), "kafka settings is invalid"), validErr.Error())
+
 }
 
 func TestReadSentryDSN(t *testing.T) {
@@ -133,7 +301,7 @@ reporting:
 	assert.True(t, foundCustomer)
 	assert.True(t, foundOrder)
 
-	// Verify Snowflake config
+	// Verify Sno3wflake config
 	assert.Equal(t, config.Snowflake.Username, snowflakeUser)
 	assert.Equal(t, config.Snowflake.Password, snowflakePassword)
 	assert.Equal(t, config.Snowflake.AccountID, snowflakeAccount)

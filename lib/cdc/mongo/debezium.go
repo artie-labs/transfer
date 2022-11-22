@@ -14,9 +14,9 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/mongo"
 )
 
-type Mongo string
+type Debezium string
 
-func (d *Mongo) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Event, error) {
+func (d *Debezium) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Event, error) {
 	var event Event
 	err := json.Unmarshal(bytes, &event)
 	if err != nil {
@@ -102,7 +102,7 @@ type Source struct {
 	Collection string `json:"collection"`
 }
 
-func (d *Mongo) Label() string {
+func (d *Debezium) Label() string {
 	return config.DBZMongoFormat
 }
 
@@ -111,7 +111,7 @@ func (d *Mongo) Label() string {
 // TODO: This should support both:
 // key.converter=org.apache.kafka.connect.storage.JSONConverter
 // AND key.converter.schemas.enable=true
-func (d *Mongo) GetPrimaryKey(ctx context.Context, key []byte) (pkName string, pkValue interface{}, err error) {
+func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte) (pkName string, pkValue interface{}, err error) {
 	keyString := string(key)
 	if len(keyString) < 8 {
 		return "", "",

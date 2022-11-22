@@ -8,6 +8,8 @@ import (
 func TestReverse(t *testing.T) {
 	val := "hello"
 	assert.Equal(t, Reverse(val), "olleh")
+
+	assert.Equal(t, Reverse("alone"), "enola")
 }
 
 func TestReverseComplex(t *testing.T) {
