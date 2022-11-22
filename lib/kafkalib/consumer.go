@@ -2,7 +2,7 @@ package kafkalib
 
 import (
 	"context"
-	kafka "github.com/segmentio/kafka-go"
+	"github.com/segmentio/kafka-go"
 )
 
 type Consumer interface {

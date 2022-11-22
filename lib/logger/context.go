@@ -5,9 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	loggerKey = "_log"
-)
+const loggerKey = "_log"
 
 func InjectLoggerIntoCtx(logger *logrus.Logger, ctx context.Context) context.Context {
 	return context.WithValue(ctx, loggerKey, logger)

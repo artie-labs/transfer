@@ -106,9 +106,8 @@ func (d *Debezium) Label() string {
 	return config.DBZMongoFormat
 }
 
-// GetPrimaryKey - We need the Kafka Topic to provide the key in a JSON format for the key.
-// TODO: This should support:
-// AND key.converter.schemas.enable=true
+// GetPrimaryKey - Will read from the Kafka message's partition key to get the primary key for the row.
+// TODO: This should support: key.converter.schemas.enable=true
 func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (pkName string, pkValue interface{}, err error) {
 	switch tc.CDCKeyFormat {
 	case "org.apache.kafka.connect.json.JsonConverter":

@@ -23,6 +23,7 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 	for i := 0; i < 5; i++ {
 		event := models.Event{
 			Table:           "foo",
+			PrimaryKeyName:  "id",
 			PrimaryKeyValue: fmt.Sprintf("pk-%d", i),
 			Data: map[string]interface{}{
 				config.DeleteColumnMarker: true,
@@ -41,6 +42,7 @@ func (f *FlushTestSuite) TestShouldFlush() {
 	for i := 0; i < config.SnowflakeArraySize*1.5; i++ {
 		event := models.Event{
 			Table:           "postgres",
+			PrimaryKeyName:  "id",
 			PrimaryKeyValue: fmt.Sprintf("pk-%d", i),
 			Data: map[string]interface{}{
 				config.DeleteColumnMarker: true,
@@ -74,6 +76,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 			for i := 0; i < 5; i++ {
 				event := models.Event{
 					Table:           tableName,
+					PrimaryKeyName:  "id",
 					PrimaryKeyValue: fmt.Sprintf("pk-%d", i),
 					Data: map[string]interface{}{
 						config.DeleteColumnMarker: true,

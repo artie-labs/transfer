@@ -2,18 +2,16 @@ package config
 
 import (
 	"fmt"
-	"github.com/artie-labs/transfer/lib/array"
 	"io"
 	"os"
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
-var (
-	validOutputSources = []string{"snowflake", "test"}
-)
+var validOutputSources = []string{"snowflake", "test"}
 
 type Sentry struct {
 	DSN string `yaml:"dsn"`
@@ -75,6 +73,10 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 // It will also check if a topic exists + iterate over each topic to make sure it's valid.
 // The actual output source (like Snowflake) and CDC parser will be loaded and checked by other funcs.
 func (c *Config) Validate() error {
+	if c == nil {
+		return fmt.Errorf("config is nil")
+	}
+
 	// Output sources
 	if !array.StringContains(validOutputSources, c.Output) {
 		return fmt.Errorf("output: %s is invalid, the valid sources are: %v", c.Output, validOutputSources)

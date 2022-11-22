@@ -86,7 +86,7 @@ Note: Keys here are formatted in dot notation for readability purposes, please e
 
 | Key| Type | Optional | Description |
 | ------------ | --- | - | ---------------------|
-| outputSource | String | N | This is the destination. <br/> Supported values are currently: `snowflake` |
+| outputSource | String | N | This is the destination. <br/> Supported values are currently: `snowflake`, `test` |
 | kafka | Object | N | This is the parent object, please see below |
 | kafka.bootstrapServer | String | N | URL to the Kafka server, including the port number. Example: `localhost:9092` |
 | kafka.groupID | String | N | Kafka consumer group ID |
