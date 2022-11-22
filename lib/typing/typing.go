@@ -43,7 +43,8 @@ var supportedDateTimeLayouts = []string{
 // Once there, we will then check if it's a JSON string or not.
 // This is an optimization since JSON string checking is expensive.
 func IsJSON(str string) bool {
-	if len(str) <= 2 {
+	if len(str) < 2 {
+		// Not LTE 2 because {} is a valid JSON object.
 		return false
 	}
 
