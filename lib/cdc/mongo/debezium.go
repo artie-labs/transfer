@@ -107,8 +107,7 @@ func (d *Debezium) Label() string {
 }
 
 // GetPrimaryKey - We need the Kafka Topic to provide the key in a JSON format for the key.
-// TODO: This should support both:
-// key.converter=org.apache.kafka.connect.storage.JSONConverter
+// TODO: This should support:
 // AND key.converter.schemas.enable=true
 func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc kafkalib.TopicConfig) (pkName string, pkValue interface{}, err error) {
 	// TODO: test
