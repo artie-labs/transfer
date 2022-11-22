@@ -35,7 +35,6 @@ func (t *TopicConfig) String() string {
 }
 
 func (t *TopicConfig) Valid() bool {
-	// TODO: Test more.
 	if t == nil {
 		return false
 	}

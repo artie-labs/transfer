@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/cdc/util"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/cdc"
+	"github.com/artie-labs/transfer/lib/cdc/util"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -110,7 +110,6 @@ func (d *Debezium) Label() string {
 // TODO: This should support:
 // AND key.converter.schemas.enable=true
 func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc kafkalib.TopicConfig) (pkName string, pkValue interface{}, err error) {
-	// TODO: test
 	switch tc.CDCKeyFormat {
 	case "org.apache.kafka.connect.json.JsonConverter":
 		return util.ParseJSONKey(key)
