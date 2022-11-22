@@ -9,7 +9,7 @@ import (
 
 type Format interface {
 	Label() string
-	GetPrimaryKey(ctx context.Context, key []byte) (string, interface{}, error)
+	GetPrimaryKey(ctx context.Context, key []byte, tc kafkalib.TopicConfig) (string, interface{}, error)
 	GetEventFromBytes(ctx context.Context, bytes []byte) (Event, error)
 }
 

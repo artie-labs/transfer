@@ -106,7 +106,7 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 					continue
 				}
 
-				pkName, pkValue, err := topicConfig.GetPrimaryKey(ctx, msg.Key)
+				pkName, pkValue, err := topicConfig.GetPrimaryKey(ctx, msg.Key, topicConfig.tc)
 				if err != nil {
 					log.WithError(err).WithFields(logFields).Warn("cannot unmarshall key")
 					continue

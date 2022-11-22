@@ -12,7 +12,17 @@ type TopicConfig struct {
 	Topic         string `yaml:"topic"`
 	IdempotentKey string `yaml:"idempotentKey"`
 	CDCFormat     string `yaml:"cdcFormat"`
+	CDCKeyFormat  string `yaml:"cdcKeyFormat"`
 }
+
+const (
+	defaultKeyFormat = "org.apache.kafka.connect.storage.StringConverter"
+)
+
+var (
+	validKeyFormats = []string{"org.apache.kafka.connect.json.JsonConverter",
+		"org.apache.kafka.connect.storage.StringConverter"}
+)
 
 func (t *TopicConfig) String() string {
 	if t == nil {
@@ -25,8 +35,27 @@ func (t *TopicConfig) String() string {
 }
 
 func (t *TopicConfig) Valid() bool {
+	// TODO: Test more.
+	if t == nil {
+		return false
+	}
+
 	// IdempotentKey is optional.
-	return !array.Empty([]string{t.Database, t.TableName, t.Schema, t.Topic, t.CDCFormat})
+	empty := array.Empty([]string{t.Database, t.TableName, t.Schema, t.Topic, t.CDCFormat})
+	if empty {
+		return false
+	}
+
+	if t.CDCKeyFormat == "" {
+		t.CDCKeyFormat = defaultKeyFormat
+	}
+
+	contains := array.StringContains(validKeyFormats, t.CDCKeyFormat)
+	if !contains {
+		return false
+	}
+
+	return true
 }
 
 func (t *TopicConfig) ToCacheKey(partition int64) string {
