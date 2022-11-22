@@ -70,7 +70,7 @@ Simply define a K8 deployment, use Transfer as the base image and provide a conf
 See [here for an example](https://github.com/artie-labs/transfer/blob/master/examples/mongodb/Dockerfile) 
 
 ## What is currently supported?
-Transfer is aimed to provide coverage across all OTLPs and OLAPs. Currently, Transfer provides:
+Transfer is aimed to provide coverage across all OLTPs and OLAPs. Currently, Transfer provides:
 
 - OLAPs:
     - Snowflake
