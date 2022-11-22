@@ -74,7 +74,7 @@ Transfer is aimed to provide coverage across all OTLPs and OLAPs. Currently, Tra
 
 - OLAPs:
     - Snowflake
-- OTLPs:
+- OLTPs:
     - MongoDB (Debezium)
     - Postgres (Debezium w/ wal2json)
 
