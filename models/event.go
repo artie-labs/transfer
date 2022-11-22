@@ -1,12 +1,12 @@
 package models
 
 import (
-	"github.com/artie-labs/transfer/lib/array"
-	"github.com/artie-labs/transfer/lib/kafkalib"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
 type Event struct {
