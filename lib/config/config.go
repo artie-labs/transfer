@@ -20,11 +20,11 @@ type Sentry struct {
 }
 
 type Kafka struct {
-	BootstrapServer string                 `yaml:"bootstrapServer"`
-	GroupID         string                 `yaml:"groupID"`
-	Username        string                 `yaml:"username"`
-	Password        string                 `yaml:"password"`
-	TopicConfigs    []kafkalib.TopicConfig `yaml:"topicConfigs"`
+	BootstrapServer string                  `yaml:"bootstrapServer"`
+	GroupID         string                  `yaml:"groupID"`
+	Username        string                  `yaml:"username"`
+	Password        string                  `yaml:"password"`
+	TopicConfigs    []*kafkalib.TopicConfig `yaml:"topicConfigs"`
 }
 
 func (k *Kafka) String() string {
@@ -35,7 +35,7 @@ func (k *Kafka) String() string {
 
 type Config struct {
 	Output    string `yaml:"outputSource"`
-	Kafka     Kafka
+	Kafka     *Kafka
 	Snowflake struct {
 		AccountID string `yaml:"account"`
 		Username  string `yaml:"username"`
@@ -81,7 +81,7 @@ func (c *Config) Validate() error {
 	}
 
 	// TopicConfigs
-	if len(c.Kafka.TopicConfigs) == 0 {
+	if c.Kafka == nil || len(c.Kafka.TopicConfigs) == 0 {
 		return fmt.Errorf("no kafka topic configs, kafka: %v", c.Kafka)
 	}
 

@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/cdc"
+	"github.com/artie-labs/transfer/lib/cdc/util"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -107,24 +107,19 @@ func (d *Debezium) Label() string {
 }
 
 // GetPrimaryKey - We need the Kafka Topic to provide the key in a JSON format for the key.
-// It'll look like this: Struct{id=47}
-// TODO: This should support both:
-// key.converter=org.apache.kafka.connect.storage.JSONConverter
+// TODO: This should support:
 // AND key.converter.schemas.enable=true
-func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte) (pkName string, pkValue interface{}, err error) {
-	keyString := string(key)
-	if len(keyString) < 8 {
-		return "", "",
-			fmt.Errorf("key length too short, actual: %v, key: %s", len(keyString), keyString)
+func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (pkName string, pkValue interface{}, err error) {
+	switch tc.CDCKeyFormat {
+	case "org.apache.kafka.connect.json.JsonConverter":
+		return util.ParseJSONKey(key)
+	case "org.apache.kafka.connect.storage.StringConverter":
+		return util.ParseStringKey(key)
+	default:
+		err = fmt.Errorf("format: %s is not supported", tc.CDCKeyFormat)
 	}
 
-	// Strip out the leading Struct{ and trailing }
-	pkParts := strings.Split(keyString[7:len(keyString)-1], "=")
-	if len(pkParts) != 2 {
-		return "", "", fmt.Errorf("key length incorrect, actual: %v, key: %s", len(keyString), keyString)
-	}
-
-	return pkParts[0], pkParts[1], nil
+	return
 }
 
 func (e *Event) GetExecutionTime() time.Time {
@@ -136,7 +131,7 @@ func (e *Event) Table() string {
 	return e.Source.Collection
 }
 
-func (e *Event) GetData(pkName string, pkVal interface{}, tc kafkalib.TopicConfig) map[string]interface{} {
+func (e *Event) GetData(pkName string, pkVal interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
 	retMap := make(map[string]interface{})
 
 	if len(e.AfterMap) == 0 {

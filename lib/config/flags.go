@@ -40,6 +40,11 @@ func ParseArgs(args []string, loadConfig bool) {
 		if err != nil {
 			log.Fatalf("Failed to parse config file. Please check your config, err: %v", err)
 		}
+
+		err = config.Validate()
+		if err != nil {
+			log.Fatalf("Failed to validate config, err: %v", err)
+		}
 	}
 
 	settings = &Settings{

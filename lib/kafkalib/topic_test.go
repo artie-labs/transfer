@@ -48,4 +48,12 @@ func TestTopicConfig_Validate(t *testing.T) {
 	}
 
 	assert.True(t, tc.Valid(), tc.String())
+
+	tc.CDCKeyFormat = "non_existent"
+	assert.False(t, tc.Valid(), tc.String())
+
+	for _, validKeyFormat := range validKeyFormats {
+		tc.CDCKeyFormat = validKeyFormat
+		assert.True(t, tc.Valid(), tc.String())
+	}
 }

@@ -3,12 +3,13 @@ package postgres
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/cdc"
+	"github.com/artie-labs/transfer/lib/cdc/util"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/logger"
 )
 
 type Debezium string
@@ -60,21 +61,15 @@ func (d *Debezium) Label() string {
 }
 
 // GetPrimaryKey - We need the Kafka Topic to provide the key in a JSON format for the key.
-// It'll look like this: {id=47}
-func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte) (pkName string, pkValue interface{}, err error) {
-	var pkStruct map[string]interface{}
-	err = json.Unmarshal(key, &pkStruct)
-	if err != nil {
-		logger.FromContext(ctx).WithError(err).
-			WithField("key", string(key)).Warn("cannot unmarshall PK")
-		return
-	}
-
-	// Given that this is the format, we will only have 1 key in here.
-	for k, v := range pkStruct {
-		pkName = k
-		pkValue = v
-		break
+// It'll look like this: {id: 47}
+func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (pkName string, pkValue interface{}, err error) {
+	switch tc.CDCKeyFormat {
+	case "org.apache.kafka.connect.json.JsonConverter":
+		return util.ParseJSONKey(key)
+	case "org.apache.kafka.connect.storage.StringConverter":
+		return util.ParseStringKey(key)
+	default:
+		err = fmt.Errorf("format: %s is not supported", tc.CDCKeyFormat)
 	}
 
 	return
@@ -88,7 +83,7 @@ func (e *Event) Table() string {
 	return e.Source.Table
 }
 
-func (e *Event) GetData(pkName string, pkVal interface{}, tc kafkalib.TopicConfig) map[string]interface{} {
+func (e *Event) GetData(pkName string, pkVal interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
 	retMap := make(map[string]interface{})
 	if len(e.After) == 0 {
 		// This is a delete event, so mark it as deleted.

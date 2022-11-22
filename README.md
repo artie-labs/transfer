@@ -99,6 +99,7 @@ Note: Keys here are formatted in dot notation for readability purposes, please e
 | kafka.topicConfigs[0].topic | String | N | Name of the Kafka topic |
 | kafka.topicConfigs[0].idempotentKey | String | Y | Name of the column that is used for idempotency. This field is highly recommended. <br/> For example: `updated_at` or another timestamp column. |
 | kafka.topicConfigs[0].cdcFormat | String | N | Name of the CDC connector (thus format) we should be expecting to parse against. <br/> Currently, the supported values are: `debezium.postgres.wal2json`, `debezium.mongodb` |
+| kafka.topicConfigs[0].cdcKeyFormat | String | Y | Format for what Kafka Connect will the key to be. This is called `key.converter` in the Kafka Connect properties file. <br/> The supported values are: `org.apache.kafka.connect.storage.StringConverter`, `org.apache.kafka.connect.json.JsonConverter` <br/> If not provided, the default value will be `org.apache.kafka.connect.storage.StringConverter`|
 | snowflake | Object | N | This is the parent object, please see below |
 | snowflake.account | String | N | Snowflake Account ID |
 | snowflake.username | String | N | Snowflake username |
@@ -112,12 +113,10 @@ Note: Keys here are formatted in dot notation for readability purposes, please e
 * `decimal.handling.mode` only works for `double` or `string`.<br/>
 The default value is `precise` which will cast the value in `java.math.BigDecimal` and Transfer does not know how to decode that yet.
 For further information on how to set this to be `string` or `double`, please [click here](https://docs.confluent.io/cloud/current/connectors/cc-postgresql-cdc-source-debezium.html#connector-details).
-* `key.converter` needs to be in `org.apache.kafka.connect.json.JsonConverter` format
 * `key.converter.schemas.enable` and `value.converter.schemas.enable` both need to be set to `false`
 
 
 **MongoDB Debezium** <br/>
-* `key.converter` needs to be in `org.apache.kafka.connect.storage.StringConverter` format
 * `key.converter.schemas.enable` and `value.converter.schemas.enable` both need to be set to `false`
 
 ## Tests
