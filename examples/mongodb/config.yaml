@@ -9,6 +9,8 @@ kafka:
       schema: public
       topic: "dbserver1.inventory.customers"
       cdcFormat: debezium.mongodb
+#      Turn this on if you plan to use JSON converter (see connect-distributed.properties)
+#      cdcKeyFormat: org.apache.kafka.connect.json.JsonConverter
 
 snowflake:
   account: 123
