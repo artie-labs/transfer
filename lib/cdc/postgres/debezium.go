@@ -60,8 +60,6 @@ func (d *Debezium) Label() string {
 	return config.DBZPostgresFormat
 }
 
-// GetPrimaryKey - We need the Kafka Topic to provide the key in a JSON format for the key.
-// It'll look like this: {id: 47}
 func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (pkName string, pkValue interface{}, err error) {
 	switch tc.CDCKeyFormat {
 	case "org.apache.kafka.connect.json.JsonConverter":

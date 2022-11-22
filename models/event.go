@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"time"
 
@@ -27,6 +28,15 @@ func ToMemoryEvent(event cdc.Event, pkName string, pkValue interface{}, tc *kafk
 }
 
 func (e *Event) IsValid() bool {
+	// Does it have a PK or table set?
+	if array.Empty([]string{e.Table, e.PrimaryKeyName}) {
+		return false
+	}
+
+	if e.PrimaryKeyValue == nil {
+		return false
+	}
+
 	// Check if delete flag exists.
 	_, isOk := e.Data[config.DeleteColumnMarker]
 	if !isOk {

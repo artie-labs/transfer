@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-
 	"database/sql"
 
 	"github.com/artie-labs/transfer/lib/logger"

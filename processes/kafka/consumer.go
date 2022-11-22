@@ -3,13 +3,14 @@ package kafka
 import (
 	"context"
 	"crypto/tls"
-	"github.com/artie-labs/transfer/lib/cdc"
-	"github.com/artie-labs/transfer/lib/cdc/format"
-	kafka "github.com/segmentio/kafka-go"
-	"github.com/segmentio/kafka-go/sasl/plain"
 	"sync"
 	"time"
 
+	"github.com/segmentio/kafka-go"
+	"github.com/segmentio/kafka-go/sasl/plain"
+
+	"github.com/artie-labs/transfer/lib/cdc"
+	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
