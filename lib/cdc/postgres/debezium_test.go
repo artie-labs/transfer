@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var validTc = kafkalib.TopicConfig{
+var validTc = &kafkalib.TopicConfig{
 	CDCKeyFormat: "org.apache.kafka.connect.json.JsonConverter",
 }
 
@@ -58,7 +58,7 @@ func (p *PostgresTestSuite) TestGetDataTestInsert() {
 		Operation: "c",
 	}
 
-	evtData := evt.GetData("pk", 1, tc)
+	evtData := evt.GetData("pk", 1, &tc)
 	assert.Equal(p.T(), len(after), len(evtData), "has deletion flag")
 
 	deletionFlag, isOk := evtData[config.DeleteColumnMarker]
@@ -70,7 +70,7 @@ func (p *PostgresTestSuite) TestGetDataTestInsert() {
 }
 
 func (p *PostgresTestSuite) TestGetDataTestDelete() {
-	tc := kafkalib.TopicConfig{
+	tc := &kafkalib.TopicConfig{
 		IdempotentKey: "updated_at",
 	}
 
@@ -118,7 +118,7 @@ func (p *PostgresTestSuite) TestGetDataTestUpdate() {
 		Operation: "c",
 	}
 
-	evtData := evt.GetData("pk", 1, tc)
+	evtData := evt.GetData("pk", 1, &tc)
 	assert.Equal(p.T(), len(after), len(evtData), "has deletion flag")
 
 	deletionFlag, isOk := evtData[config.DeleteColumnMarker]
@@ -170,7 +170,7 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
 	evt, err := p.Debezium.GetEventFromBytes(context.Background(), []byte(payload))
 	assert.Nil(p.T(), err)
 
-	evtData := evt.GetData("id", 59, kafkalib.TopicConfig{})
+	evtData := evt.GetData("id", 59, &kafkalib.TopicConfig{})
 	assert.Equal(p.T(), evtData["id"], float64(59))
 
 	assert.Equal(p.T(), evtData["item"], "Barings Participation Investors")

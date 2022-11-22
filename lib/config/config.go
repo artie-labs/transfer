@@ -35,7 +35,7 @@ func (k *Kafka) String() string {
 
 type Config struct {
 	Output    string `yaml:"outputSource"`
-	Kafka     Kafka
+	Kafka     *Kafka
 	Snowflake struct {
 		AccountID string `yaml:"account"`
 		Username  string `yaml:"username"`
@@ -81,7 +81,7 @@ func (c *Config) Validate() error {
 	}
 
 	// TopicConfigs
-	if len(c.Kafka.TopicConfigs) == 0 {
+	if c.Kafka == nil || len(c.Kafka.TopicConfigs) == 0 {
 		return fmt.Errorf("no kafka topic configs, kafka: %v", c.Kafka)
 	}
 

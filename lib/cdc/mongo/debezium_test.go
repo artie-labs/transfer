@@ -15,7 +15,7 @@ import (
 
 func (p *MongoTestSuite) TestGetPrimaryKey() {
 	valString := `Struct{id=1001}`
-	tc := kafkalib.TopicConfig{
+	tc := &kafkalib.TopicConfig{
 		CDCKeyFormat: "org.apache.kafka.connect.storage.StringConverter",
 	}
 
@@ -111,7 +111,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 
 	evt, err := p.Debezium.GetEventFromBytes(ctx, []byte(payload))
 	assert.NoError(p.T(), err)
-	evtData := evt.GetData("_id", 1003, kafkalib.TopicConfig{})
+	evtData := evt.GetData("_id", 1003, &kafkalib.TopicConfig{})
 
 	assert.Equal(p.T(), evtData["_id"], 1003)
 	assert.Equal(p.T(), evtData["first_name"], "Robin")
@@ -162,7 +162,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 
 	evt, err := p.Debezium.GetEventFromBytes(ctx, []byte(payload))
 	assert.NoError(p.T(), err)
-	evtData := evt.GetData("_id", 1003, kafkalib.TopicConfig{})
+	evtData := evt.GetData("_id", 1003, &kafkalib.TopicConfig{})
 
 	assert.Equal(p.T(), evtData["_id"], 1003)
 	assert.Equal(p.T(), evtData[config.DeleteColumnMarker], true)
