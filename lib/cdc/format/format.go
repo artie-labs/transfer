@@ -21,7 +21,7 @@ func GetFormatParser(ctx context.Context, label string) cdc.Format {
 
 	for _, validFormat := range validFormats {
 		if validFormat.Label() == label {
-			logger.FromContext(ctx).WithField("label", d.Label()).Info("Loaded CDC Format parser...")
+			logger.FromContext(ctx).WithField("label", validFormat.Label()).Info("Loaded CDC Format parser...")
 			return validFormat
 		}
 	}
