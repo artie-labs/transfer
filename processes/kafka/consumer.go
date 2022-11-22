@@ -17,7 +17,7 @@ import (
 )
 
 type TopicConfigFormatter struct {
-	tc kafkalib.TopicConfig
+	tc *kafkalib.TopicConfig
 	cdc.Format
 }
 
@@ -122,7 +122,7 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 
 				evt := models.ToMemoryEvent(event, pkName, pkValue, topicConfig.tc)
 				var shouldFlush bool
-				shouldFlush, err = evt.Save(&topicConfig.tc, msg)
+				shouldFlush, err = evt.Save(topicConfig.tc, msg)
 				if err != nil {
 					log.WithFields(logFields).WithError(err).Error("Event failed to save")
 				}

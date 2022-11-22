@@ -16,7 +16,7 @@ type Event struct {
 	ExecutionTime   time.Time              // When the SQL command was executed
 }
 
-func ToMemoryEvent(event cdc.Event, pkName string, pkValue interface{}, tc kafkalib.TopicConfig) Event {
+func ToMemoryEvent(event cdc.Event, pkName string, pkValue interface{}, tc *kafkalib.TopicConfig) Event {
 	return Event{
 		Table:           event.Table(),
 		PrimaryKeyName:  pkName,

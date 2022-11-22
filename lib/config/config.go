@@ -20,11 +20,11 @@ type Sentry struct {
 }
 
 type Kafka struct {
-	BootstrapServer string                 `yaml:"bootstrapServer"`
-	GroupID         string                 `yaml:"groupID"`
-	Username        string                 `yaml:"username"`
-	Password        string                 `yaml:"password"`
-	TopicConfigs    []kafkalib.TopicConfig `yaml:"topicConfigs"`
+	BootstrapServer string                  `yaml:"bootstrapServer"`
+	GroupID         string                  `yaml:"groupID"`
+	Username        string                  `yaml:"username"`
+	Password        string                  `yaml:"password"`
+	TopicConfigs    []*kafkalib.TopicConfig `yaml:"topicConfigs"`
 }
 
 func (k *Kafka) String() string {

@@ -9,12 +9,12 @@ import (
 
 type Format interface {
 	Label() string
-	GetPrimaryKey(ctx context.Context, key []byte, tc kafkalib.TopicConfig) (string, interface{}, error)
+	GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (string, interface{}, error)
 	GetEventFromBytes(ctx context.Context, bytes []byte) (Event, error)
 }
 
 type Event interface {
 	Table() string
 	GetExecutionTime() time.Time
-	GetData(pkName string, pkVal interface{}, config kafkalib.TopicConfig) map[string]interface{}
+	GetData(pkName string, pkVal interface{}, config *kafkalib.TopicConfig) map[string]interface{}
 }

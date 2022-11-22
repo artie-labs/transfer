@@ -109,7 +109,7 @@ func (d *Debezium) Label() string {
 // GetPrimaryKey - We need the Kafka Topic to provide the key in a JSON format for the key.
 // TODO: This should support:
 // AND key.converter.schemas.enable=true
-func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc kafkalib.TopicConfig) (pkName string, pkValue interface{}, err error) {
+func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (pkName string, pkValue interface{}, err error) {
 	switch tc.CDCKeyFormat {
 	case "org.apache.kafka.connect.json.JsonConverter":
 		return util.ParseJSONKey(key)
@@ -131,7 +131,7 @@ func (e *Event) Table() string {
 	return e.Source.Collection
 }
 
-func (e *Event) GetData(pkName string, pkVal interface{}, tc kafkalib.TopicConfig) map[string]interface{} {
+func (e *Event) GetData(pkName string, pkVal interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
 	retMap := make(map[string]interface{})
 
 	if len(e.AfterMap) == 0 {
