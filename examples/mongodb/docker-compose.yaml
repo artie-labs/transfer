@@ -25,7 +25,7 @@ services:
   connect:
     build:
       context: ./connect
-      dockerfile: Dockerfile-connect
+      dockerfile: Dockerfile
     ports:
      - 8083:8083
     links:

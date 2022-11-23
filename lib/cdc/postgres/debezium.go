@@ -91,7 +91,11 @@ func (e *Event) GetData(pkName string, pkVal interface{}, tc *kafkalib.TopicConf
 		retMap = map[string]interface{}{
 			config.DeleteColumnMarker: true,
 			pkName:                    pkVal,
-			tc.IdempotentKey:          e.GetExecutionTime().Format(time.RFC3339),
+		}
+
+		// If idempotency key is an empty string, don't put it in the event data
+		if tc.IdempotentKey != "" {
+			retMap[tc.IdempotentKey] = e.GetExecutionTime().Format(time.RFC3339)
 		}
 	} else {
 		retMap = e.After

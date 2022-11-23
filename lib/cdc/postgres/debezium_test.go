@@ -90,6 +90,11 @@ func (p *PostgresTestSuite) TestGetDataTestDelete() {
 	assert.Equal(p.T(), 3, len(evtData), evtData)
 	assert.Equal(p.T(), evtData["pk"], 1)
 	assert.Equal(p.T(), evtData[tc.IdempotentKey], now.Format(time.RFC3339))
+
+	tc.IdempotentKey = ""
+	evtData = evt.GetData("pk", 1, tc)
+	_, isOk = evtData[tc.IdempotentKey]
+	assert.False(p.T(), isOk, evtData)
 }
 
 func (p *PostgresTestSuite) TestGetDataTestUpdate() {
