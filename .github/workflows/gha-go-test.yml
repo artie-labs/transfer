@@ -1,0 +1,14 @@
+name: Go tests
+run-name: Running tests 🚀
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3 # Checks out the code
+      - name: Setting Go up
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+      - name: test
+        run: make test
