@@ -14,7 +14,7 @@ Depending on where you work, the latency in your data warehouse is often several
 Transfer reads from the change data capture (CDC) stream and provides an easy out of the box solution that only requires a simple configuration file and will replicate the data in your transactional database to your data warehouse. To do this, Transfer has the following features built-in:
 
 - Automatic retries & idempotency. We take reliability seriously and it's feature 0. Latency reduction is nice, but doesn't matter if the data is wrong. We provide automatic retries and idempotency such that we will always achieve eventual consistency.
-- Automatic table creation. Transfer will create the table in the designated database if it does not exist.
+- Automatic table creation. Transfer will create the table in the designated database if the table doesn't exist.
 - Error reporting. Provide your Sentry API key and errors from data processing will appear in your Sentry project.
 - Schema detection. Transfer will automatically detect column changes and apply them to the destination.
 - Scalable architecture. Transfer's architecture stays the same whether we’re dealing with  1GB or 100+ TB of data.
