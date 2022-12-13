@@ -32,7 +32,7 @@ func (s *SnowflakeTestSuite) TestAlterComplexObjects() {
 		Columns: map[string]typing.Kind{},
 	}
 
-	err := alterTable(fqTable, Add, time.Now().UTC(), cols...)
+	err := alterTable(fqTable, false, Add, time.Now().UTC(), cols...)
 	execQuery, _ := s.fakeStore.ExecArgsForCall(0)
 	assert.Equal(s.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN preferences variant", fqTable), execQuery)
 
@@ -65,12 +65,12 @@ func (s *SnowflakeTestSuite) TestAlterIdempotency() {
 	}
 
 	s.fakeStore.ExecReturns(nil, errors.New("column 'order_name' already exists"))
-	err := alterTable(fqTable, Add, time.Now().UTC(), cols...)
+	err := alterTable(fqTable, false, Add, time.Now().UTC(), cols...)
 	assert.Equal(s.T(), len(cols), s.fakeStore.ExecCallCount(), "called SFLK the same amt to create cols")
 	assert.NoError(s.T(), err)
 
 	s.fakeStore.ExecReturns(nil, errors.New("table does not exist"))
-	err = alterTable(fqTable, Add, time.Now().UTC(), cols...)
+	err = alterTable(fqTable, false, Add, time.Now().UTC(), cols...)
 	assert.Error(s.T(), err)
 }
 
@@ -96,7 +96,7 @@ func (s *SnowflakeTestSuite) TestAlterTableAdd() {
 		Columns: map[string]typing.Kind{},
 	}
 
-	err := alterTable(fqTable, Add, time.Now().UTC(), cols...)
+	err := alterTable(fqTable, false, Add, time.Now().UTC(), cols...)
 	assert.Equal(s.T(), len(cols), s.fakeStore.ExecCallCount(), "called SFLK the same amt to create cols")
 	assert.NoError(s.T(), err)
 
@@ -140,7 +140,7 @@ func (s *SnowflakeTestSuite) TestAlterTableDeleteDryRun() {
 		ColumnsToDelete: map[string]time.Time{},
 	}
 
-	err := alterTable(fqTable, Delete, time.Now().UTC(), cols...)
+	err := alterTable(fqTable, false, Delete, time.Now().UTC(), cols...)
 	assert.Equal(s.T(), 0, s.fakeStore.ExecCallCount(), "tried to delete, but not yet.")
 	assert.NoError(s.T(), err)
 
@@ -165,7 +165,7 @@ func (s *SnowflakeTestSuite) TestAlterTableDeleteDryRun() {
 	assert.True(s.T(), tableConfig.ColumnsToDelete[colToActuallyDelete].After(time.Now()))
 	// Now let's actually try to dial the time back, and it should actually try to delete.
 	tableConfig.ColumnsToDelete[colToActuallyDelete] = time.Now().Add(-1 * time.Hour)
-	err = alterTable(fqTable, Delete, time.Now().UTC(), cols...)
+	err = alterTable(fqTable, false, Delete, time.Now().UTC(), cols...)
 	assert.Nil(s.T(), err)
 	assert.Equal(s.T(), 1, s.fakeStore.ExecCallCount(), "tried to delete one column")
 	execArg, _ := s.fakeStore.ExecArgsForCall(0)
@@ -206,7 +206,7 @@ func (s *SnowflakeTestSuite) TestAlterTableDelete() {
 		},
 	}
 
-	err := alterTable(fqTable, Delete, time.Now(), cols...)
+	err := alterTable(fqTable, false, Delete, time.Now(), cols...)
 	assert.Equal(s.T(), 2, s.fakeStore.ExecCallCount(), "tried to delete, but not yet.")
 	assert.NoError(s.T(), err)
 

@@ -44,7 +44,7 @@ func shouldDeleteColumn(fqName string, col typing.Column, cdcTime time.Time) boo
 
 // mutateColumnsWithMemoryCache will modify the SFLK table cache to include columns
 // That we have already added to Snowflake. That way, we do not need to continually refresh the cache
-func mutateColumnsWithMemoryCache(fqName string, columnOp columnOperation, cols ...typing.Column) {
+func mutateColumnsWithMemoryCache(fqName string, createTable bool, columnOp columnOperation, cols ...typing.Column) {
 	tableConfig, isOk := mdConfig.snowflakeTableToConfig[fqName]
 	if !isOk {
 		return
@@ -59,15 +59,15 @@ func mutateColumnsWithMemoryCache(fqName string, columnOp columnOperation, cols 
 			delete(tableConfig.ColumnsToDelete, col.Name)
 		}
 
+		tableConfig.CreateTable = createTable
+
 	case Delete:
 		for _, col := range cols {
 			delete(table, col.Name)
 			// Delete from the permissions table
 			delete(tableConfig.ColumnsToDelete, col.Name)
 		}
-	case Create:
-		// Table has now been created
-		tableConfig.CreateTable = false
+
 	}
 
 	return

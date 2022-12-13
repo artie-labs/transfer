@@ -24,15 +24,11 @@ const (
 	describeNameCol = "name"
 	describeTypeCol = "type"
 
-	// Modify is not supported initially because Snowflake has limited to no support for modify col types.
 	Add    columnOperation = "add"
 	Delete columnOperation = "drop"
-
-	// Create will create the actual table if it doesn't exist.
-	Create columnOperation = "create"
 )
 
-func alterTable(fqTableName string, tableExists bool, columnOp columnOperation, cdcTime time.Time, cols ...typing.Column) error {
+func alterTable(fqTableName string, createTable bool, columnOp columnOperation, cdcTime time.Time, cols ...typing.Column) error {
 	var colSQLPart string
 	var err error
 	var mutateCol []typing.Column
@@ -58,10 +54,15 @@ func alterTable(fqTableName string, tableExists bool, columnOp columnOperation, 
 		}
 
 		// If the table does not exist, create it.
+		sqlQuery := fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTableName, columnOp, colSQLPart)
+		if createTable {
+			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", fqTableName, colSQLPart)
+			createTable = false
+		}
 
-		_, err = store.Exec(fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTableName, columnOp, colSQLPart))
+		_, err = store.Exec(sqlQuery)
 		if err != nil && strings.Contains(err.Error(), "already exists") {
-			// Snowflake doesn't have CREATE COLUMN IF NOT EXISTS (idempotent)
+			// Snowflake doesn't have column mutations (IF NOT EXISTS)
 			err = nil
 		} else if err != nil {
 			return err
@@ -69,7 +70,7 @@ func alterTable(fqTableName string, tableExists bool, columnOp columnOperation, 
 	}
 
 	if err == nil {
-		mutateColumnsWithMemoryCache(fqTableName, columnOp, mutateCol...)
+		mutateColumnsWithMemoryCache(fqTableName, createTable, columnOp, mutateCol...)
 	}
 
 	return nil
@@ -92,13 +93,15 @@ func ExecuteMerge(ctx context.Context, tableData *optimization.TableData) error 
 	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.Columns, tableConfig.Columns)
 
 	// Keys that exist in CDC stream, but not in Snowflake
-	err = alterTable(fqName, false, Add, tableData.LatestCDCTs, targetKeysMissing...)
+	err = alterTable(fqName, tableConfig.CreateTable, Add, tableData.LatestCDCTs, targetKeysMissing...)
 	if err != nil {
 		log.WithError(err).Warn("failed to apply alter table")
 		return err
 	}
 
 	// Keys that exist in Snowflake, but don't exist in our CDC stream.
+	// createTable is set to false because table creation requires a column to be added
+	// Which means, we'll only do it upon Add columns.
 	err = alterTable(fqName, false, Delete, tableData.LatestCDCTs, srcKeysMissing...)
 	if err != nil {
 		log.WithError(err).Warn("failed to apply alter table")
