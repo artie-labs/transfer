@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -14,6 +15,36 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
+func (s *SnowflakeTestSuite) TestCreateTable() {
+	cols := []typing.Column{
+		{
+			Name: "key",
+			Kind: typing.String,
+		},
+		{
+			Name: "enabled",
+			Kind: typing.Boolean,
+		},
+	}
+
+	fqTable := "demo.public.experiments"
+	mdConfig.snowflakeTableToConfig[fqTable] = &snowflakeTableConfig{
+		Columns:     map[string]typing.Kind{},
+		CreateTable: true,
+	}
+
+	err := alterTable(fqTable, mdConfig.snowflakeTableToConfig[fqTable].CreateTable, Add, time.Now().UTC(), cols...)
+	assert.NoError(s.T(), err)
+
+	execQuery, _ := s.fakeStore.ExecArgsForCall(0)
+	assert.Equal(s.T(), strings.Contains(execQuery, "CREATE TABLE IF NOT EXISTS"), true, execQuery)
+
+	execQuery, _ = s.fakeStore.ExecArgsForCall(1)
+	assert.Equal(s.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN enabled boolean", fqTable), execQuery, execQuery)
+
+	assert.Equal(s.T(), mdConfig.snowflakeTableToConfig[fqTable].CreateTable, false,
+		mdConfig.snowflakeTableToConfig[fqTable])
+}
 func (s *SnowflakeTestSuite) TestAlterComplexObjects() {
 	// Test Structs and Arrays
 	cols := []typing.Column{

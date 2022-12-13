@@ -1,6 +1,8 @@
 package snowflake
 
 import (
+	"context"
+	"fmt"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -87,4 +89,20 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 		time.Now().Add(2*config.DeletionConfidencePadding))
 
 	assert.Equal(s.T(), allowed, true, "should now be allowed to delete")
+}
+
+func (s *SnowflakeTestSuite) TestGetTableConfig() {
+	// If the table does not exist, snowflakeTableConfig should say so.
+	fqName := "customers.public.orders22"
+	ctx := context.Background()
+
+	s.fakeStore.QueryReturns(nil,
+		fmt.Errorf("Table '%s' does not exist or not authorized", fqName))
+
+	tableConfig, err := GetTableConfig(ctx, fqName)
+	assert.NotNil(s.T(), tableConfig, "config is nil")
+	assert.NoError(s.T(), err)
+
+	assert.True(s.T(), tableConfig.CreateTable)
+	assert.Equal(s.T(), len(tableConfig.Columns), 0)
 }
