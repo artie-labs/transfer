@@ -15,6 +15,7 @@ import (
 type snowflakeTableConfig struct {
 	Columns         map[string]typing.Kind
 	ColumnsToDelete map[string]time.Time // column --> when to delete
+	CreateTable     bool
 }
 
 type metadataConfig struct {
@@ -64,6 +65,9 @@ func mutateColumnsWithMemoryCache(fqName string, columnOp columnOperation, cols 
 			// Delete from the permissions table
 			delete(tableConfig.ColumnsToDelete, col.Name)
 		}
+	case Create:
+		// Table has now been created
+		tableConfig.CreateTable = false
 	}
 
 	return
@@ -87,15 +91,20 @@ func GetTableConfig(ctx context.Context, fqName string) (*snowflakeTableConfig, 
 				log.WithError(err).Warn("Failed to close the row")
 			}
 		}
-
 	}()
 
+	var tableMissing bool
 	if err != nil {
-		return nil, err
+		if TableDoesNotExistErr(err) {
+			// Swallow the error, make sure all the metadata is created
+			tableMissing = true
+			err = nil
+		} else {
+			return nil, err
+		}
 	}
 
 	tableToColumnTypes := make(map[string]typing.Kind)
-
 	// TODO: Remove nil check on rows. I added it because having a hard time returning *sql.Rows
 	for rows != nil && rows.Next() {
 		// figure out what columns were returned
@@ -135,6 +144,7 @@ func GetTableConfig(ctx context.Context, fqName string) (*snowflakeTableConfig, 
 	sflkTableConfig := &snowflakeTableConfig{
 		Columns:         tableToColumnTypes,
 		ColumnsToDelete: make(map[string]time.Time),
+		CreateTable:     tableMissing,
 	}
 
 	if mdConfig == nil {
