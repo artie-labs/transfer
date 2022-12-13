@@ -6,3 +6,4 @@ config/.terraform*
 
 
 .personal/
+scratch/

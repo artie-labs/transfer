@@ -15,6 +15,7 @@ import (
 type snowflakeTableConfig struct {
 	Columns         map[string]typing.Kind
 	ColumnsToDelete map[string]time.Time // column --> when to delete
+	CreateTable     bool
 }
 
 type metadataConfig struct {
@@ -43,7 +44,7 @@ func shouldDeleteColumn(fqName string, col typing.Column, cdcTime time.Time) boo
 
 // mutateColumnsWithMemoryCache will modify the SFLK table cache to include columns
 // That we have already added to Snowflake. That way, we do not need to continually refresh the cache
-func mutateColumnsWithMemoryCache(fqName string, columnOp columnOperation, cols ...typing.Column) {
+func mutateColumnsWithMemoryCache(fqName string, createTable bool, columnOp columnOperation, cols ...typing.Column) {
 	tableConfig, isOk := mdConfig.snowflakeTableToConfig[fqName]
 	if !isOk {
 		return
@@ -58,12 +59,15 @@ func mutateColumnsWithMemoryCache(fqName string, columnOp columnOperation, cols 
 			delete(tableConfig.ColumnsToDelete, col.Name)
 		}
 
+		tableConfig.CreateTable = createTable
+
 	case Delete:
 		for _, col := range cols {
 			delete(table, col.Name)
 			// Delete from the permissions table
 			delete(tableConfig.ColumnsToDelete, col.Name)
 		}
+
 	}
 
 	return
@@ -87,15 +91,20 @@ func GetTableConfig(ctx context.Context, fqName string) (*snowflakeTableConfig, 
 				log.WithError(err).Warn("Failed to close the row")
 			}
 		}
-
 	}()
 
+	var tableMissing bool
 	if err != nil {
-		return nil, err
+		if TableDoesNotExistErr(err) {
+			// Swallow the error, make sure all the metadata is created
+			tableMissing = true
+			err = nil
+		} else {
+			return nil, err
+		}
 	}
 
 	tableToColumnTypes := make(map[string]typing.Kind)
-
 	// TODO: Remove nil check on rows. I added it because having a hard time returning *sql.Rows
 	for rows != nil && rows.Next() {
 		// figure out what columns were returned
@@ -135,6 +144,7 @@ func GetTableConfig(ctx context.Context, fqName string) (*snowflakeTableConfig, 
 	sflkTableConfig := &snowflakeTableConfig{
 		Columns:         tableToColumnTypes,
 		ColumnsToDelete: make(map[string]time.Time),
+		CreateTable:     tableMissing,
 	}
 
 	if mdConfig == nil {
