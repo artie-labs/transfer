@@ -18,7 +18,7 @@ func TestGetSampleRate(t *testing.T) {
 func TestGetTags(t *testing.T) {
 	assert.Equal(t, getTags(nil), []string{})
 	assert.Equal(t, getTags([]string{}), []string{})
-	assert.Equal(t, getTags([]string{"env:bar", "a:b"}), []string{"env:bar", "a:b"})
+	assert.Equal(t, getTags([]interface{}{"env:bar", "a:b"}), []string{"env:bar", "a:b"})
 }
 
 func TestNewDatadogClient(t *testing.T) {

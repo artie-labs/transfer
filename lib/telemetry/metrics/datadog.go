@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/DataDog/datadog-go/statsd"
+	"gopkg.in/yaml.v3"
 
 	"github.com/artie-labs/transfer/lib/maputil"
 )
@@ -48,12 +49,23 @@ func getSampleRate(val interface{}) float64 {
 }
 
 func getTags(tags interface{}) []string {
-	retTags, isOk := tags.([]string)
-	if !isOk {
+	// Yaml parses lists as a sequence, so we'll unpack it again with the same library.
+	if tags == nil {
 		return []string{}
 	}
 
-	return retTags
+	yamlBytes, err := yaml.Marshal(tags)
+	if err != nil {
+		return []string{}
+	}
+
+	var retTagStrings []string
+	err = yaml.Unmarshal(yamlBytes, &retTagStrings)
+	if err != nil {
+		return []string{}
+	}
+
+	return retTagStrings
 }
 
 func NewDatadogClient(ctx context.Context, settings map[string]interface{}) (context.Context, error) {

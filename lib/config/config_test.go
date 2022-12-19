@@ -206,6 +206,8 @@ telemetry:
    foo: bar
    bar: true
    aNumber: 0.88
+   tags:
+    - env:bar
 `)
 	assert.Nil(t, err)
 
@@ -218,6 +220,7 @@ telemetry:
 		"foo":     "bar",
 		"bar":     true,
 		"aNumber": 0.88,
+		"tags":    []interface{}{"env:bar"},
 	})
 }
 
