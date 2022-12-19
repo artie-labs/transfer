@@ -1,13 +1,8 @@
-package stats
+package metrics
 
 import (
 	"context"
 	"github.com/artie-labs/transfer/lib/config"
-	"log"
-
-	datadog "github.com/DataDog/opencensus-go-exporter-datadog"
-	"go.opencensus.io/stats/view"
-
 	"github.com/artie-labs/transfer/lib/logger"
 )
 
@@ -25,22 +20,19 @@ func exporterKindValid(kind config.ExporterKind) bool {
 	return valid
 }
 
-func LoadExporter(ctx context.Context, kind config.ExporterKind, settings map[string]interface{}) {
+func LoadExporter(ctx context.Context, kind config.ExporterKind, settings map[string]interface{}) error {
 	// TODO: support settings
 	if !exporterKindValid(kind) {
 		logger.FromContext(ctx).WithFields(map[string]interface{}{
 			"exporterKind": kind,
 		}).Info("invalid or no exporter kind passed in, skipping...")
-		return
+		return nil
 	}
 
 	switch kind {
 	case config.Datadog:
-		exporter, err := datadog.NewExporter(datadog.Options{})
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		view.RegisterExporter(exporter)
+		return NewDatadogClient(ctx, settings)
 	}
+
+	return nil
 }

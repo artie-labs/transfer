@@ -199,7 +199,7 @@ reporting:
  sentry:
   dsn: abc123
 telemetry:
- metrics:
+ telemetry:
   provider: datadog
 `)
 	assert.Nil(t, err)

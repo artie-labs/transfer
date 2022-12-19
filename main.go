@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"github.com/artie-labs/transfer/lib/metrics/stats"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"os"
 	"sync"
 	"time"
@@ -24,7 +24,7 @@ func main() {
 	ctx := logger.InjectLoggerIntoCtx(logger.NewLogger(config.GetSettings()), context.Background())
 
 	// Loading Telemetry
-	stats.LoadExporter(ctx, config.GetSettings().Config.Telemetry.Metrics.Provider,
+	metrics.LoadExporter(ctx, config.GetSettings().Config.Telemetry.Metrics.Provider,
 		config.GetSettings().Config.Telemetry.Metrics.Settings)
 
 	// Loading the destination
