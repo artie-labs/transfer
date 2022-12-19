@@ -13,7 +13,6 @@ func InjectMetricsClientIntoCtx(ctx context.Context, metricsClient Client) conte
 func FromContext(ctx context.Context) Client {
 	metricsClientVal := ctx.Value(metricsClientKey)
 	if metricsClientVal == nil {
-		// TODO: Test.
 		return NullMetricsProvider{}
 	}
 
