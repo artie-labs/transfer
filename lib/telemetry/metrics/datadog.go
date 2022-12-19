@@ -12,19 +12,21 @@ type statsClient struct {
 	rate   float64
 }
 
-func NewDatadogClient(ctx context.Context, settings map[string]interface{}) error {
+func NewDatadogClient(ctx context.Context, settings map[string]interface{}) (context.Context, error) {
 	// TODO: template
 	statsd, err := statsd.New("127.0.0.1:8125")
 	if err != nil {
-		return err
+		return ctx, err
 	}
 
-	InjectMetricsClientIntoCtx(ctx, &statsClient{
+	statsd.Namespace = "transfer."
+
+	ctx = InjectMetricsClientIntoCtx(ctx, &statsClient{
 		client: statsd,
 		// TODO: allow sampling later.
 		rate: 1,
 	})
-	return nil
+	return ctx, nil
 }
 
 func toDatadogTags(tags map[string]string) []string {

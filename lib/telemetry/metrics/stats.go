@@ -20,19 +20,24 @@ func exporterKindValid(kind config.ExporterKind) bool {
 	return valid
 }
 
-func LoadExporter(ctx context.Context, kind config.ExporterKind, settings map[string]interface{}) error {
+func LoadExporter(ctx context.Context, kind config.ExporterKind, settings map[string]interface{}) context.Context {
 	// TODO: support settings
 	if !exporterKindValid(kind) {
 		logger.FromContext(ctx).WithFields(map[string]interface{}{
 			"exporterKind": kind,
 		}).Info("invalid or no exporter kind passed in, skipping...")
-		return nil
 	}
 
 	switch kind {
 	case config.Datadog:
-		return NewDatadogClient(ctx, settings)
+		var exportErr error
+		ctx, exportErr = NewDatadogClient(ctx, settings)
+		if exportErr != nil {
+			logger.FromContext(ctx).WithField("provider", kind).Error(exportErr)
+		} else {
+			logger.FromContext(ctx).WithField("provider", kind).Info("Metrics client loaded")
+		}
 	}
 
-	return nil
+	return ctx
 }

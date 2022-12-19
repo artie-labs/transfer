@@ -24,7 +24,7 @@ func main() {
 	ctx := logger.InjectLoggerIntoCtx(logger.NewLogger(config.GetSettings()), context.Background())
 
 	// Loading Telemetry
-	metrics.LoadExporter(ctx, config.GetSettings().Config.Telemetry.Metrics.Provider,
+	ctx = metrics.LoadExporter(ctx, config.GetSettings().Config.Telemetry.Metrics.Provider,
 		config.GetSettings().Config.Telemetry.Metrics.Settings)
 
 	// Loading the destination
