@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/logger"
 )
@@ -21,7 +22,6 @@ func exporterKindValid(kind config.ExporterKind) bool {
 }
 
 func LoadExporter(ctx context.Context, kind config.ExporterKind, settings map[string]interface{}) context.Context {
-	// TODO: support settings
 	if !exporterKindValid(kind) {
 		logger.FromContext(ctx).WithFields(map[string]interface{}{
 			"exporterKind": kind,

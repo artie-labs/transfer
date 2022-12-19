@@ -3,8 +3,9 @@ package metrics
 import (
 	"context"
 	"fmt"
-	"github.com/DataDog/datadog-go/statsd"
 	"time"
+
+	"github.com/DataDog/datadog-go/statsd"
 )
 
 type statsClient struct {

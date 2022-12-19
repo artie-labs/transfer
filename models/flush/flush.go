@@ -2,12 +2,13 @@ package flush
 
 import (
 	"context"
+	"time"
+
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/processes/kafka"
-	"time"
 )
 
 func Flush(ctx context.Context) error {

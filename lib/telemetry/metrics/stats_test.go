@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -20,5 +21,24 @@ func TestExporterKindValid(t *testing.T) {
 	for exporterKind, expectedResults := range exporterKindToResultsMap {
 		assert.Equal(t, expectedResults, exporterKindValid(exporterKind),
 			fmt.Sprintf("kind: %v should have been %v", exporterKind, expectedResults))
+	}
+}
+
+func TestLoadExporter(t *testing.T) {
+	// Datadog should not be a NullMetricsProvider
+	exporterKindToResultMap := map[config.ExporterKind]bool{
+		config.Datadog:                 false,
+		config.ExporterKind("invalid"): true,
+	}
+
+	for kind, result := range exporterKindToResultMap {
+		// Wipe and create a new ctx per run
+		ctx := context.Background()
+		ctx = LoadExporter(ctx, kind, map[string]interface{}{
+			"url": "localhost:8125",
+		})
+
+		_, isOk := FromContext(ctx).(NullMetricsProvider)
+		assert.Equal(t, result, isOk)
 	}
 }
