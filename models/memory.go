@@ -68,6 +68,15 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message kafka.Message) (
 
 	// Update col if necessary
 	for col, val := range e.Data {
+		if val == "__debezium_unavailable_value" {
+			// This is an edge case within Postgres & ORCL
+			// TL;DR - Sometimes a column that is unchanged within a DML will not be emitted
+			// DBZ has stubbed it out by providing this value, so we will skip it when we see it.
+			// See: https://issues.redhat.com/browse/DBZ-4276
+			delete(e.Data, col)
+			continue
+		}
+
 		col = strings.ToLower(col)
 		colType, isOk := inMemoryDB.TableData[e.Table].Columns[col]
 		if !isOk {
