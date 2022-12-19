@@ -15,3 +15,10 @@ const (
 	DBZPostgresFormat = "debezium.postgres.wal2json"
 	DBZMongoFormat    = "debezium.mongodb"
 )
+
+// ExporterKind is used for the Telemetry package
+type ExporterKind string
+
+const (
+	Datadog ExporterKind = "datadog"
+)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/artie-labs/transfer/lib/metrics/stats"
 	"os"
 	"sync"
 	"time"
@@ -22,6 +23,11 @@ func main() {
 	config.ParseArgs(os.Args, true)
 	ctx := logger.InjectLoggerIntoCtx(logger.NewLogger(config.GetSettings()), context.Background())
 
+	// Loading Telemetry
+	stats.LoadExporter(ctx, config.GetSettings().Config.Telemetry.Metrics.Provider,
+		config.GetSettings().Config.Telemetry.Metrics.Settings)
+
+	// Loading the destination
 	if config.GetSettings().Config.Output == "test" {
 		store := db.Store(&mock.DB{
 			Fake: mocks.FakeStore{},
