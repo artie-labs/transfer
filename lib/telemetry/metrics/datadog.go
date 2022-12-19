@@ -3,9 +3,27 @@ package metrics
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/DataDog/datadog-go/statsd"
+
+	"github.com/artie-labs/transfer/lib/maputil"
+)
+
+const (
+	Tags     = "tags"
+	Sampling = "sampling"
+	// DefaultSampleRate will make sure we do not sample by measuring 100% of our metrics
+	DefaultSampleRate = 1
+
+	Namespace = "namespace"
+	// DefaultNamespace will be prefixed with "transfer."
+	DefaultNamespace = "transfer."
+
+	DatadogAddr = "addr"
+	// DefaultAddr is the default address for where the DD agent would be running on a single host machine
+	DefaultAddr = "127.0.0.1:8125"
 )
 
 type statsClient struct {
@@ -13,20 +31,43 @@ type statsClient struct {
 	rate   float64
 }
 
+// getSampleRate will first parse the val to get a float
+// Then it will check if float is a valid sample rate.
+// If it's invalid, it will return the default sample, else the passed in rate
+func getSampleRate(val interface{}) float64 {
+	floatVal, err := strconv.ParseFloat(fmt.Sprint(val), 64)
+	if err != nil {
+		return DefaultSampleRate
+	}
+
+	if floatVal > 1 || floatVal < 0 {
+		return DefaultSampleRate
+	}
+
+	return floatVal
+}
+
+func getTags(tags interface{}) []string {
+	retTags, isOk := tags.([]string)
+	if !isOk {
+		return nil
+	}
+
+	return retTags
+}
+
 func NewDatadogClient(ctx context.Context, settings map[string]interface{}) (context.Context, error) {
-	// TODO: template
-	datadogClient, err := statsd.New("127.0.0.1:8125")
+	datadogClient, err := statsd.New(fmt.Sprint(maputil.GetKeyFromMap(settings, DatadogAddr, DefaultAddr)))
 	if err != nil {
 		return ctx, err
 	}
 
-	// This is the default namespace.
-	datadogClient.Namespace = "transfer."
+	datadogClient.Namespace = fmt.Sprint(maputil.GetKeyFromMap(settings, Namespace, DefaultNamespace))
+	datadogClient.Tags = getTags(maputil.GetKeyFromMap(settings, Tags, []string{}))
 
 	ctx = InjectMetricsClientIntoCtx(ctx, &statsClient{
 		client: datadogClient,
-		// TODO: allow sampling later.
-		rate: 1,
+		rate:   getSampleRate(maputil.GetKeyFromMap(settings, Sampling, DefaultSampleRate)),
 	})
 	return ctx, nil
 }
