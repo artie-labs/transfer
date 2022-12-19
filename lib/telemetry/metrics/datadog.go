@@ -14,15 +14,16 @@ type statsClient struct {
 
 func NewDatadogClient(ctx context.Context, settings map[string]interface{}) (context.Context, error) {
 	// TODO: template
-	statsd, err := statsd.New("127.0.0.1:8125")
+	datadogClient, err := statsd.New("127.0.0.1:8125")
 	if err != nil {
 		return ctx, err
 	}
 
-	statsd.Namespace = "transfer."
+	// This is the default namespace.
+	datadogClient.Namespace = "transfer."
 
 	ctx = InjectMetricsClientIntoCtx(ctx, &statsClient{
-		client: statsd,
+		client: datadogClient,
 		// TODO: allow sampling later.
 		rate: 1,
 	})
