@@ -201,6 +201,11 @@ reporting:
 telemetry:
  metrics:
   provider: datadog
+  settings:
+   a: b
+   foo: bar
+   bar: true
+   aNumber: 0.88
 `)
 	assert.Nil(t, err)
 
@@ -208,6 +213,12 @@ telemetry:
 	assert.Nil(t, err, "failed to read config file")
 	assert.Equal(t, config.Reporting.Sentry.DSN, "abc123", config)
 	assert.Equal(t, string(config.Telemetry.Metrics.Provider), "datadog")
+	assert.Equal(t, config.Telemetry.Metrics.Settings, map[string]interface{}{
+		"a":       "b",
+		"foo":     "bar",
+		"bar":     true,
+		"aNumber": 0.88,
+	})
 }
 
 func TestReadFileNotYAML(t *testing.T) {

@@ -49,7 +49,7 @@ type Config struct {
 	Telemetry struct {
 		Metrics struct {
 			Provider ExporterKind           `yaml:"provider"`
-			Settings map[string]interface{} `yaml:"settings"`
+			Settings map[string]interface{} `yaml:"settings,omitempty"`
 		}
 	}
 }

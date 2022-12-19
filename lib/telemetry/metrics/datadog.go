@@ -40,7 +40,7 @@ func getSampleRate(val interface{}) float64 {
 		return DefaultSampleRate
 	}
 
-	if floatVal > 1 || floatVal < 0 {
+	if floatVal > 1 || floatVal <= 0 {
 		return DefaultSampleRate
 	}
 
@@ -50,7 +50,7 @@ func getSampleRate(val interface{}) float64 {
 func getTags(tags interface{}) []string {
 	retTags, isOk := tags.([]string)
 	if !isOk {
-		return nil
+		return []string{}
 	}
 
 	return retTags
