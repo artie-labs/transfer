@@ -112,10 +112,9 @@ Note: Keys here are formatted in dot notation for readability purposes, please e
 | telemetry.metrics | Object | Y | This is the parent object for metrics, see below |
 | telemetry.metrics.provider | String | Y | Provider to export metrics to. Transfer currently only supports: `datadog`. |
 | telemetry.metrics.settings | Object | Y | Additional settings block, see below |
-| telemetry.metrics.settings.tags | Array | Y | Tags that will appear for every metrics like: env:production |
+| telemetry.metrics.settings.tags | Array | Y | Tags that will appear for every metrics like: `env:production`, `company:foo` |
 | telemetry.metrics.settings.namespace | String | Y | Optional namespace prefix for metrics. Defaults to `transfer.` if none is provided. |
 | telemetry.metrics.settings.addr | String | Y | Address for where the statsD agent is running. Defaults to `127.0.0.1:8125` if none is provided. |
-
 
 
 ## Limitations
@@ -130,6 +129,14 @@ For further information on how to set this to be `string` or `double`, please [c
 **MongoDB Debezium** <br/>
 * `key.converter.schemas.enable` and `value.converter.schemas.enable` both need to be set to `false`
 * `value.converter` must be set to `org.apache.kafka.connect.json.JsonConverter`
+
+## Telemetry
+The Telemetry package aims to bring a high level of visiblity into the Transfer application by providing metrics and tracing. 
+
+| Feature | Supported | Documentation |
+| Metrics | Y | Please refer to this section for all the available metrics. |
+| Tracing | N | - |
+
 
 ## Tests
 Transfer is written in Go and uses [counterfeiter](https://github.com/maxbrunsfeld/counterfeiter) to mock. 
