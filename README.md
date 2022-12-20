@@ -108,6 +108,15 @@ Note: Keys here are formatted in dot notation for readability purposes, please e
 | snowflake.warehouse | String | N | Snowflake warehouse name |
 | snowflake.region | String | N | Snowflake region |
 | reporting.sentry.dsn | String| Y | DSN for Sentry alerts. If blank, will just go to standard out. |
+| telemetry | Object | Y | This is the parent object, please see below |
+| telemetry.metrics | Object | Y | This is the parent object for metrics, see below |
+| telemetry.metrics.provider | String | Y | Provider to export metrics to. Transfer currently only supports: `datadog`. |
+| telemetry.metrics.settings | Object | Y | Additional settings block, see below |
+| telemetry.metrics.settings.tags | Array | Y | Tags that will appear for every metrics like: env:production |
+| telemetry.metrics.settings.namespace | String | Y | Optional namespace prefix for metrics. Defaults to `transfer.` if none is provided. |
+| telemetry.metrics.settings.addr | String | Y | Address for where the statsD agent is running. Defaults to `127.0.0.1:8125` if none is provided. |
+
+
 
 ## Limitations
 **Postgres Debezium wal2json** <br/>
