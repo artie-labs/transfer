@@ -132,7 +132,7 @@ For further information on how to set this to be `string` or `double`, please [c
 * `value.converter` must be set to `org.apache.kafka.connect.json.JsonConverter`
 
 ## Telemetry
-Click [here](https://github.com/artie-labs/transfer/blob/master/examples/mongodb/config.yaml) to read more about Transfer's telemetry feature.
+Click [here](https://github.com/artie-labs/transfer/blob/master/lib/telemetry/README.md) to read more about Transfer's telemetry feature.
 
 ## Tests
 Transfer is written in Go and uses [counterfeiter](https://github.com/maxbrunsfeld/counterfeiter) to mock. 
