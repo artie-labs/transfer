@@ -14,7 +14,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
-	"github.com/artie-labs/transfer/models"
 )
 
 type TopicConfigFormatter struct {
@@ -101,31 +100,9 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 					continue
 				}
 
-				topicConfig, isOk := topicToConfigFmtMap[msg.Topic]
-				if !isOk {
-					log.WithFields(logFields).Warn("Failed to get topic Name")
-					continue
-				}
-
-				pkName, pkValue, err := topicConfig.GetPrimaryKey(ctx, msg.Key, topicConfig.tc)
-				if err != nil {
-					log.WithError(err).WithFields(logFields).Warn("cannot unmarshall key")
-					continue
-				}
-
-				event, err := topicConfig.GetEventFromBytes(ctx, msg.Value)
-				if err != nil {
-					// A tombstone event will be sent to Kafka when a DELETE happens.
-					// Which causes marshalling error.
-					log.WithFields(logFields).WithError(err).Warn("cannot unmarshall event")
-					continue
-				}
-
-				evt := models.ToMemoryEvent(event, pkName, pkValue, topicConfig.tc)
-				var shouldFlush bool
-				shouldFlush, err = evt.Save(topicConfig.tc, msg)
-				if err != nil {
-					log.WithFields(logFields).WithError(err).Error("Event failed to save")
+				shouldFlush, processErr := processMessage(ctx, msg, topicToConfigFmtMap, kafkaConsumer.Config().GroupID)
+				if processErr != nil {
+					log.WithError(err).WithFields(logFields).Warn("skipping message...")
 				}
 
 				if shouldFlush {

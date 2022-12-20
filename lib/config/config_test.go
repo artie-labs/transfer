@@ -184,7 +184,7 @@ kafka:
 
 }
 
-func TestReadSentryDSN(t *testing.T) {
+func TestReadSentryDSNAndTelemetry(t *testing.T) {
 	randomFile := fmt.Sprintf("/tmp/%s_sentry_dsn", time.Now().String())
 	defer os.Remove(randomFile)
 
@@ -198,12 +198,30 @@ func TestReadSentryDSN(t *testing.T) {
 reporting:
  sentry:
   dsn: abc123
+telemetry:
+ metrics:
+  provider: datadog
+  settings:
+   a: b
+   foo: bar
+   bar: true
+   aNumber: 0.88
+   tags:
+    - env:bar
 `)
 	assert.Nil(t, err)
 
 	config, err := readFileToConfig(randomFile)
 	assert.Nil(t, err, "failed to read config file")
 	assert.Equal(t, config.Reporting.Sentry.DSN, "abc123", config)
+	assert.Equal(t, string(config.Telemetry.Metrics.Provider), "datadog")
+	assert.Equal(t, config.Telemetry.Metrics.Settings, map[string]interface{}{
+		"a":       "b",
+		"foo":     "bar",
+		"bar":     true,
+		"aNumber": 0.88,
+		"tags":    []interface{}{"env:bar"},
+	})
 }
 
 func TestReadFileNotYAML(t *testing.T) {

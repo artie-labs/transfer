@@ -45,6 +45,13 @@ type Config struct {
 	Reporting struct {
 		Sentry *Sentry `yaml:"sentry"`
 	}
+
+	Telemetry struct {
+		Metrics struct {
+			Provider ExporterKind           `yaml:"provider"`
+			Settings map[string]interface{} `yaml:"settings,omitempty"`
+		}
+	}
 }
 
 func readFileToConfig(pathToConfig string) (*Config, error) {

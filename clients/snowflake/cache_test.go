@@ -3,11 +3,13 @@ package snowflake
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/stretchr/testify/assert"
-	"time"
 )
 
 func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {

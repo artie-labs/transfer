@@ -108,6 +108,15 @@ Note: Keys here are formatted in dot notation for readability purposes, please e
 | snowflake.warehouse | String | N | Snowflake warehouse name |
 | snowflake.region | String | N | Snowflake region |
 | reporting.sentry.dsn | String| Y | DSN for Sentry alerts. If blank, will just go to standard out. |
+| telemetry | Object | Y | This is the parent object, please see below |
+| telemetry.metrics | Object | Y | This is the parent object for metrics, see below |
+| telemetry.metrics.provider | String | Y | Provider to export metrics to. Transfer currently only supports: `datadog`. |
+| telemetry.metrics.settings | Object | Y | Additional settings block, see below |
+| telemetry.metrics.settings.tags | Array | Y | Tags that will appear for every metrics like: `env:production`, `company:foo` |
+| telemetry.metrics.settings.namespace | String | Y | Optional namespace prefix for metrics. Defaults to `transfer.` if none is provided. |
+| telemetry.metrics.settings.addr | String | Y | Address for where the statsD agent is running. Defaults to `127.0.0.1:8125` if none is provided. |
+| telemetry.metrics.settings.sampling | Number | Y | Percentage of data to send. Provide a number between 0 and 1. Defaults to `1` if none is provided. Refer to [this](https://docs.datadoghq.com/metrics/custom_metrics/dogstatsd_metrics_submission/#sample-rates) for additional information. |
+
 
 ## Limitations
 **Postgres Debezium wal2json** <br/>
@@ -121,6 +130,9 @@ For further information on how to set this to be `string` or `double`, please [c
 **MongoDB Debezium** <br/>
 * `key.converter.schemas.enable` and `value.converter.schemas.enable` both need to be set to `false`
 * `value.converter` must be set to `org.apache.kafka.connect.json.JsonConverter`
+
+## Telemetry
+Click [here](https://github.com/artie-labs/transfer/blob/master/lib/telemetry/README.md) to read more about Transfer's telemetry feature.
 
 ## Tests
 Transfer is written in Go and uses [counterfeiter](https://github.com/maxbrunsfeld/counterfeiter) to mock. 
