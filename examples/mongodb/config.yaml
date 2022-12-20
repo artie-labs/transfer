@@ -18,3 +18,12 @@ snowflake:
   password: bar
   warehouse: dwh
   region: us-east-2.aws
+
+telemetry:
+  metrics:
+    provider: datadog
+    settings:
+      tags:
+       - env:production
+      namespace: "transfer."
+      addr: "127.0.0.1:8125"
