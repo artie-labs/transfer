@@ -40,8 +40,8 @@ If you are having trouble setting up CDC, please see the [examples folder](https
 
 ### Locally
 There are multiple ways to get an image of Transfer:
-1. Pull the image from [Dockerhub](https://hub.docker.com/r/artielabs/transfer)
-1. Git clone the repo and run 
+1. Pull the image from [Dockerhub](https://hub.docker.com/r/artielabs/transfer), or
+1. Git clone the repo and run, or
 ```sh
 go build
 ```
