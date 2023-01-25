@@ -16,7 +16,7 @@ type DataWarehouse interface {
 	Merge(ctx context.Context, tableData *optimization.TableData) error
 }
 
-func LoadDataWarehouse(ctx context.Context) DataWarehouse {
+func LoadDataWarehouse(ctx context.Context, store *db.Store) DataWarehouse {
 	switch config.GetSettings().Config.Output {
 	// TODO "test", "snowflake", "bigquery" should all be valid labels and variables.
 	case "test":
@@ -26,7 +26,7 @@ func LoadDataWarehouse(ctx context.Context) DataWarehouse {
 		// TODO: When we create mock DWH interfaces, instantiate a mock DWH store
 		return snowflake.LoadSnowflake(ctx, &store)
 	case "snowflake":
-		return snowflake.LoadSnowflake(ctx, nil)
+		return snowflake.LoadSnowflake(ctx, store)
 	case "bigquery":
 		return bigquery.LoadBigQuery(ctx)
 	}

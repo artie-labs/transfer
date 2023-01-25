@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/db"
+	"github.com/artie-labs/transfer/lib/dwh"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/models"
@@ -16,6 +17,8 @@ type FlushTestSuite struct {
 	suite.Suite
 	fakeStore    *mocks.FakeStore
 	fakeConsumer *mocks.FakeConsumer
+
+	ctx context.Context
 }
 
 func (f *FlushTestSuite) SetupTest() {
@@ -23,7 +26,11 @@ func (f *FlushTestSuite) SetupTest() {
 	store := db.Store(f.fakeStore)
 
 	ctx := context.Background()
-	snowflake.LoadSnowflake(ctx, &store)
+
+	// Not using LoadDataWarehouse here because config.GetSettings() is not initialized in this test
+	// TODO: Address ^
+	f.ctx = dwh.InjectDwhIntoCtx(snowflake.LoadSnowflake(ctx, &store), ctx)
+
 	models.LoadMemoryDB()
 
 	f.fakeConsumer = &mocks.FakeConsumer{}
