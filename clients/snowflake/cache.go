@@ -73,7 +73,7 @@ func mutateColumnsWithMemoryCache(fqName string, createTable bool, columnOp colu
 	return
 }
 
-func GetTableConfig(ctx context.Context, fqName string) (*snowflakeTableConfig, error) {
+func (s *SnowflakeStore) getTableConfig(ctx context.Context, fqName string) (*snowflakeTableConfig, error) {
 	// Check if it already exists in cache
 	if mdConfig != nil {
 		tableConfig, isOk := mdConfig.snowflakeTableToConfig[fqName]
@@ -83,7 +83,7 @@ func GetTableConfig(ctx context.Context, fqName string) (*snowflakeTableConfig, 
 	}
 
 	log := logger.FromContext(ctx)
-	rows, err := store.Query(fmt.Sprintf("DESC table %s;", fqName))
+	rows, err := s.store.Query(fmt.Sprintf("DESC table %s;", fqName))
 	defer func() {
 		if rows != nil {
 			err = rows.Close()

@@ -2,9 +2,9 @@ package flush
 
 import (
 	"context"
+	"github.com/artie-labs/transfer/lib/dwh"
 	"time"
 
-	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"
@@ -34,7 +34,7 @@ func Flush(ctx context.Context) error {
 			"schema":   tableData.Schema,
 		}
 
-		err := snowflake.ExecuteMerge(ctx, tableData)
+		err := dwh.FromContext(ctx).Merge(ctx, tableData)
 		if err != nil {
 			tags["what"] = "merge_fail"
 			log.WithError(err).WithFields(logFields).Warn("Failed to execute merge...not going to flush memory")

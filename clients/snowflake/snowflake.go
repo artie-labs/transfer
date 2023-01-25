@@ -15,7 +15,9 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-var store db.Store
+type SnowflakeStore struct {
+	store db.Store
+}
 
 type columnOperation string
 
@@ -28,7 +30,7 @@ const (
 	Delete columnOperation = "drop"
 )
 
-func alterTable(fqTableName string, createTable bool, columnOp columnOperation, cdcTime time.Time, cols ...typing.Column) error {
+func (s *SnowflakeStore) alterTable(fqTableName string, createTable bool, columnOp columnOperation, cdcTime time.Time, cols ...typing.Column) error {
 	var colSQLPart string
 	var err error
 	var mutateCol []typing.Column
@@ -60,7 +62,7 @@ func alterTable(fqTableName string, createTable bool, columnOp columnOperation, 
 			createTable = false
 		}
 
-		_, err = store.Exec(sqlQuery)
+		_, err = s.store.Exec(sqlQuery)
 		if err != nil && strings.Contains(err.Error(), "already exists") {
 			// Snowflake doesn't have column mutations (IF NOT EXISTS)
 			err = nil
@@ -76,14 +78,14 @@ func alterTable(fqTableName string, createTable bool, columnOp columnOperation, 
 	return nil
 }
 
-func ExecuteMerge(ctx context.Context, tableData *optimization.TableData) error {
+func (s *SnowflakeStore) Merge(ctx context.Context, tableData *optimization.TableData) error {
 	if tableData.Rows == 0 {
 		// There's no rows. Let's skip.
 		return nil
 	}
 
 	fqName := tableData.ToFqName()
-	tableConfig, err := GetTableConfig(ctx, fqName)
+	tableConfig, err := s.getTableConfig(ctx, fqName)
 	if err != nil {
 		return err
 	}
@@ -93,7 +95,7 @@ func ExecuteMerge(ctx context.Context, tableData *optimization.TableData) error 
 	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.Columns, tableConfig.Columns)
 
 	// Keys that exist in CDC stream, but not in Snowflake
-	err = alterTable(fqName, tableConfig.CreateTable, Add, tableData.LatestCDCTs, targetKeysMissing...)
+	err = s.alterTable(fqName, tableConfig.CreateTable, Add, tableData.LatestCDCTs, targetKeysMissing...)
 	if err != nil {
 		log.WithError(err).Warn("failed to apply alter table")
 		return err
@@ -102,7 +104,7 @@ func ExecuteMerge(ctx context.Context, tableData *optimization.TableData) error 
 	// Keys that exist in Snowflake, but don't exist in our CDC stream.
 	// createTable is set to false because table creation requires a column to be added
 	// Which means, we'll only do it upon Add columns.
-	err = alterTable(fqName, false, Delete, tableData.LatestCDCTs, srcKeysMissing...)
+	err = s.alterTable(fqName, false, Delete, tableData.LatestCDCTs, srcKeysMissing...)
 	if err != nil {
 		log.WithError(err).Warn("failed to apply alter table")
 		return err
@@ -132,15 +134,14 @@ func ExecuteMerge(ctx context.Context, tableData *optimization.TableData) error 
 	}
 
 	log.WithField("query", query).Debug("executing...")
-	_, err = store.Exec(query)
+	_, err = s.store.Exec(query)
 	return err
 }
 
-func LoadSnowflake(ctx context.Context, _store *db.Store) {
+func LoadSnowflake(ctx context.Context, _store *db.Store) *SnowflakeStore {
 	if _store != nil {
 		// Used for tests.
-		store = *_store
-		return
+		return &SnowflakeStore{store: *_store}
 	}
 
 	dsn, err := gosnowflake.DSN(&gosnowflake.Config{
@@ -155,6 +156,5 @@ func LoadSnowflake(ctx context.Context, _store *db.Store) {
 		logger.FromContext(ctx).Fatalf("failed to get snowflake dsn, err: %v", err)
 	}
 
-	store = db.Open(ctx, "snowflake", dsn)
-	return
+	return &SnowflakeStore{store: db.Open(ctx, "snowflake", dsn)}
 }

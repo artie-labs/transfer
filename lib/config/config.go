@@ -11,7 +11,8 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
-var validOutputSources = []string{"snowflake", "test"}
+// TODO "test", "snowflake", "bigquery" should all be valid labels and variables.
+var validOutputSources = []string{"snowflake", "test", "bigquery"}
 
 type Sentry struct {
 	DSN string `yaml:"dsn"`
@@ -32,8 +33,18 @@ func (k *Kafka) String() string {
 }
 
 type Config struct {
-	Output    string `yaml:"outputSource"`
-	Kafka     *Kafka
+	Output string `yaml:"outputSource"`
+	Kafka  *Kafka
+
+	BigQuery struct {
+		// PathToCredentials is _optional_ if you have GOOGLE_APPLICATION_CREDENTIALS set as an env var
+		//  Links to credentials: https://cloud.google.com/bigquery/docs/quickstarts/quickstart-client-libraries
+		PathToCredentials string `yaml:"pathToCredentials"`
+
+		ProjectID string `yaml:"projectID"`
+		Dataset   string `yaml:"dataset"`
+	}
+
 	Snowflake struct {
 		AccountID string `yaml:"account"`
 		Username  string `yaml:"username"`

@@ -2,17 +2,14 @@ package main
 
 import (
 	"context"
+	"github.com/artie-labs/transfer/lib/dwh"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"os"
 	"sync"
 	"time"
 
-	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/db"
-	"github.com/artie-labs/transfer/lib/db/mock"
 	"github.com/artie-labs/transfer/lib/logger"
-	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/processes/kafka"
 	"github.com/artie-labs/transfer/processes/pool"
@@ -27,20 +24,11 @@ func main() {
 	ctx = metrics.LoadExporter(ctx, config.GetSettings().Config.Telemetry.Metrics.Provider,
 		config.GetSettings().Config.Telemetry.Metrics.Settings)
 
-	// Loading the destination
-	if config.GetSettings().Config.Output == "test" {
-		store := db.Store(&mock.DB{
-			Fake: mocks.FakeStore{},
-		})
-		snowflake.LoadSnowflake(ctx, &store)
-	} else {
-		snowflake.LoadSnowflake(ctx, nil)
-	}
+	ctx = dwh.InjectDwhIntoCtx(dwh.LoadDataWarehouse(ctx), ctx)
 
 	models.LoadMemoryDB()
 
 	flushChan := make(chan bool)
-
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
