@@ -3,7 +3,6 @@ module github.com/artie-labs/transfer
 go 1.19
 
 require (
-	cloud.google.com/go/bigquery v1.45.0
 	github.com/DataDog/datadog-go v4.8.3+incompatible
 	github.com/evalphobia/logrus_sentry v0.8.2
 	github.com/google/uuid v1.3.0
@@ -12,15 +11,14 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/snowflakedb/gosnowflake v1.6.13
 	github.com/stretchr/testify v1.8.1
+	github.com/viant/bigquery v0.2.0
 	go.mongodb.org/mongo-driver v1.11.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	cloud.google.com/go v0.107.0 // indirect
 	cloud.google.com/go/compute v1.13.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.1 // indirect
-	cloud.google.com/go/iam v0.8.0 // indirect
 	github.com/Azure/azure-pipeline-go v0.2.3 // indirect
 	github.com/Azure/azure-storage-blob-go v0.15.0 // indirect
 	github.com/Microsoft/go-winio v0.6.0 // indirect
@@ -48,7 +46,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/flatbuffers v22.9.29+incompatible // indirect
-	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.7.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
@@ -59,7 +56,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/viant/afs v1.16.1-0.20220601210902-dc23d64dda15 // indirect
-	github.com/viant/bigquery v0.2.0 // indirect
 	github.com/viant/scy v0.3.0 // indirect
 	github.com/viant/toolbox v0.34.5 // indirect
 	github.com/viant/xunsafe v0.8.0 // indirect
