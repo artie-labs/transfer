@@ -1,42 +1,38 @@
 package typing
 
-import (
-	"strings"
-)
+import "strings"
 
-type SnowflakeKind string
-
-// https://docs.snowflake.com/en/sql-reference/intro-summary-data-types.html
-
-func SnowflakeTypeToKind(snowflakeType string) Kind {
-	snowflakeType = strings.ToLower(snowflakeType)
+func BigQueryTypeToKind(bqType string) Kind {
+	// TODO: test every single type.
+	
+	bqType = strings.ToLower(bqType)
 
 	// We need to strip away the variable
 	// For example, a Column can look like: TEXT, or Number(38, 0) or VARCHAR(255).
 	// We need to strip out all the content from ( ... )
-	if len(snowflakeType) == 0 {
+	if len(bqType) == 0 {
 		return Invalid
 	}
 
-	idxStop := len(snowflakeType)
-	if idx := strings.Index(snowflakeType, "("); idx > 0 {
+	idxStop := len(bqType)
+	if idx := strings.Index(bqType, "("); idx > 0 {
 		idxStop = idx
 	}
 
 	// Geography, geometry date, time, varbinary, binary are currently not supported.
-	switch strings.TrimSpace(strings.ToLower(snowflakeType[:idxStop])) {
+	switch strings.TrimSpace(strings.ToLower(bqType[:idxStop])) {
 	case "number":
 		// Number is a tricky one, we need to look at the scale to see if it's an integer or not
 		// Number is represented as Number(scale, precision)
 		// If precision > 0, then float. Else int.
-		idxEnd := strings.Index(snowflakeType, ")")
+		idxEnd := strings.Index(bqType, ")")
 		if idxStop >= idxEnd {
 			// This may happen, because ')' is missing, and the index is -1.
 			// idxStop is going to be the whole list, if it doesn't exist.
 			return Invalid
 		}
 
-		values := strings.Split(snowflakeType[idxStop+1:idxEnd], ",")
+		values := strings.Split(bqType[idxStop+1:idxEnd], ",")
 		if len(values) != 2 {
 			return Invalid
 		}
@@ -64,17 +60,4 @@ func SnowflakeTypeToKind(snowflakeType string) Kind {
 	default:
 		return Invalid
 	}
-}
-
-func KindToSnowflake(kind Kind) string {
-	switch kind {
-	case Struct:
-		// Snowflake doesn't recognize struct.
-		// Must be either OBJECT or VARIANT. However, VARIANT is more versatile.
-		return "variant"
-	case Boolean:
-		return "boolean"
-	}
-
-	return string(kind)
 }
