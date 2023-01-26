@@ -2,16 +2,28 @@ package bigquery
 
 import (
 	"fmt"
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestParseSchemaQuery(t *testing.T) {
-	rows := map[string]interface{}{
-		"ddl": "CREATE TABLE `artie-labs.mock.customers`(string_field_0 STRING,string_field_1 STRING)OPTIONS(expiration_timestamp=TIMESTAMP \"2023-03-26T20:03:44.504Z\");",
+	basicQueries := []string{
+		"CREATE TABLE `artie-labs.mock.customers`(string_field_0 STRING,string_field_1 STRING) OPTIONS(expiration_timestamp=TIMESTAMP);",
+		"CREATE TABLE `artie-labs.mock.customers`(string_field_0 STRING,string_field_1 STRING)OPTIONS(expiration_timestamp=TIMESTAMP);", // No spacing
+		"CREATE TABLE `artie-labs.mock.customers`(string_field_0 STRING,string_field_1 STRING);",                                        // No OPTIONS
 	}
 
-	tableConfig, err := ParseSchemaQuery(rows)
-	fmt.Print("tableConfig", tableConfig, "err", err)
-	assert.False(t, true)
+	for _, basicQuery := range basicQueries {
+		tableConfig, err := ParseSchemaQuery(map[string]interface{}{
+			"ddl": basicQuery,
+		})
+
+		assert.NoError(t, err, err)
+
+		assert.Equal(t, len(tableConfig.Columns), 2, tableConfig.Columns)
+		for col, kind := range tableConfig.Columns {
+			assert.Equal(t, kind, typing.String, fmt.Sprintf("col: %s, kind: %v incorrect", col, kind))
+		}
+	}
 }
