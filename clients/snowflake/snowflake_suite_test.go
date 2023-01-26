@@ -2,6 +2,7 @@ package snowflake
 
 import (
 	"context"
+	"github.com/artie-labs/transfer/lib/dwh/types"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -24,7 +25,7 @@ func (s *SnowflakeTestSuite) SetupTest() {
 	s.store = LoadSnowflake(ctx, &store)
 
 	mdConfig = &metadataConfig{
-		snowflakeTableToConfig: make(map[string]*snowflakeTableConfig),
+		snowflakeTableToConfig: make(map[string]*types.DwhTableConfig),
 	}
 }
 

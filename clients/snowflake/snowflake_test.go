@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/dwh/types"
 	"strings"
 	"time"
 
@@ -28,7 +29,7 @@ func (s *SnowflakeTestSuite) TestCreateTable() {
 	}
 
 	fqTable := "demo.public.experiments"
-	mdConfig.snowflakeTableToConfig[fqTable] = &snowflakeTableConfig{
+	mdConfig.snowflakeTableToConfig[fqTable] = &types.DwhTableConfig{
 		Columns:     map[string]typing.Kind{},
 		CreateTable: true,
 	}
@@ -59,7 +60,7 @@ func (s *SnowflakeTestSuite) TestAlterComplexObjects() {
 	}
 
 	fqTable := "shop.public.complex_columns"
-	mdConfig.snowflakeTableToConfig[fqTable] = &snowflakeTableConfig{
+	mdConfig.snowflakeTableToConfig[fqTable] = &types.DwhTableConfig{
 		Columns: map[string]typing.Kind{},
 	}
 
@@ -91,7 +92,7 @@ func (s *SnowflakeTestSuite) TestAlterIdempotency() {
 	}
 
 	fqTable := "shop.public.orders"
-	mdConfig.snowflakeTableToConfig[fqTable] = &snowflakeTableConfig{
+	mdConfig.snowflakeTableToConfig[fqTable] = &types.DwhTableConfig{
 		Columns: map[string]typing.Kind{},
 	}
 
@@ -123,7 +124,7 @@ func (s *SnowflakeTestSuite) TestAlterTableAdd() {
 	}
 
 	fqTable := "shop.public.orders"
-	mdConfig.snowflakeTableToConfig[fqTable] = &snowflakeTableConfig{
+	mdConfig.snowflakeTableToConfig[fqTable] = &types.DwhTableConfig{
 		Columns: map[string]typing.Kind{},
 	}
 
@@ -166,7 +167,7 @@ func (s *SnowflakeTestSuite) TestAlterTableDeleteDryRun() {
 	}
 
 	fqTable := "shop.public.users"
-	mdConfig.snowflakeTableToConfig[fqTable] = &snowflakeTableConfig{
+	mdConfig.snowflakeTableToConfig[fqTable] = &types.DwhTableConfig{
 		Columns:         map[string]typing.Kind{},
 		ColumnsToDelete: map[string]time.Time{},
 	}
@@ -229,7 +230,7 @@ func (s *SnowflakeTestSuite) TestAlterTableDelete() {
 	}
 
 	fqTable := "shop.public.users1"
-	mdConfig.snowflakeTableToConfig[fqTable] = &snowflakeTableConfig{
+	mdConfig.snowflakeTableToConfig[fqTable] = &types.DwhTableConfig{
 		Columns: map[string]typing.Kind{},
 		ColumnsToDelete: map[string]time.Time{
 			"col_to_delete": time.Now().Add(-2 * config.DeletionConfidencePadding),
@@ -289,7 +290,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		Rows:        1,
 	}
 
-	mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()] = &snowflakeTableConfig{
+	mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()] = &types.DwhTableConfig{
 		Columns: columns,
 	}
 
@@ -344,7 +345,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 	sflkColumns["new"] = typing.String
 
-	mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()] = &snowflakeTableConfig{
+	mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()] = &types.DwhTableConfig{
 		Columns: sflkColumns,
 	}
 

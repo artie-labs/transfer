@@ -3,6 +3,7 @@ package snowflake
 import (
 	"context"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/dwh/types"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -19,7 +20,7 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 		Schema:    "public",
 	}
 
-	mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()] = &snowflakeTableConfig{
+	mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()] = &types.DwhTableConfig{
 		Columns: map[string]typing.Kind{
 			"id":          typing.Integer,
 			"customer_id": typing.Integer,
@@ -53,7 +54,7 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 		Schema:    "public",
 	}
 
-	mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()] = &snowflakeTableConfig{
+	mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()] = &types.DwhTableConfig{
 		Columns: map[string]typing.Kind{
 			"id":          typing.Integer,
 			"customer_id": typing.Integer,

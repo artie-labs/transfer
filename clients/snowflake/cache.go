@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/dwh/types"
 	"strings"
 	"time"
 
@@ -12,16 +13,11 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-type snowflakeTableConfig struct {
-	Columns         map[string]typing.Kind
-	ColumnsToDelete map[string]time.Time // column --> when to delete
-	CreateTable     bool
-}
-
 type metadataConfig struct {
-	snowflakeTableToConfig map[string]*snowflakeTableConfig
+	snowflakeTableToConfig map[string]*types.DwhTableConfig
 }
 
+// TODO migrate this to be under the Snowflake type.
 var mdConfig *metadataConfig
 
 func shouldDeleteColumn(fqName string, col typing.Column, cdcTime time.Time) bool {
@@ -73,7 +69,7 @@ func mutateColumnsWithMemoryCache(fqName string, createTable bool, columnOp colu
 	return
 }
 
-func (s *SnowflakeStore) getTableConfig(ctx context.Context, fqName string) (*snowflakeTableConfig, error) {
+func (s *SnowflakeStore) getTableConfig(ctx context.Context, fqName string) (*types.DwhTableConfig, error) {
 	// Check if it already exists in cache
 	if mdConfig != nil {
 		tableConfig, isOk := mdConfig.snowflakeTableToConfig[fqName]
@@ -141,7 +137,7 @@ func (s *SnowflakeStore) getTableConfig(ctx context.Context, fqName string) (*sn
 		tableToColumnTypes[row[describeNameCol]] = typing.SnowflakeTypeToKind(row[describeTypeCol])
 	}
 
-	sflkTableConfig := &snowflakeTableConfig{
+	sflkTableConfig := &types.DwhTableConfig{
 		Columns:         tableToColumnTypes,
 		ColumnsToDelete: make(map[string]time.Time),
 		CreateTable:     tableMissing,
@@ -149,7 +145,7 @@ func (s *SnowflakeStore) getTableConfig(ctx context.Context, fqName string) (*sn
 
 	if mdConfig == nil {
 		mdConfig = &metadataConfig{
-			snowflakeTableToConfig: map[string]*snowflakeTableConfig{
+			snowflakeTableToConfig: map[string]*types.DwhTableConfig{
 				fqName: sflkTableConfig,
 			},
 		}

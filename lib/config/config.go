@@ -38,7 +38,7 @@ type Config struct {
 
 	BigQuery struct {
 		// PathToCredentials is _optional_ if you have GOOGLE_APPLICATION_CREDENTIALS set as an env var
-		//  Links to credentials: https://cloud.google.com/bigquery/docs/quickstarts/quickstart-client-libraries
+		//  Links to credentials: https://cloud.google.com/docs/authentication/application-default-credentials#GAC
 		PathToCredentials string `yaml:"pathToCredentials"`
 
 		ProjectID string `yaml:"projectID"`
