@@ -13,10 +13,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-type metadataConfig struct {
-	snowflakeTableToConfig map[string]*types.DwhTableConfig
-}
-
 func (s *Store) shouldDeleteColumn(ctx context.Context, fqName string, col typing.Column, cdcTime time.Time) bool {
 	tc := s.configMap.TableConfig(fqName)
 	if tc == nil {
@@ -42,7 +38,7 @@ func (s *Store) shouldDeleteColumn(ctx context.Context, fqName string, col typin
 
 // mutateColumnsWithMemoryCache will modify the SFLK table cache to include columns
 // That we have already added to Snowflake. That way, we do not need to continually refresh the cache
-func (s *Store) mutateColumnsWithMemoryCache(fqName string, createTable bool, columnOp columnOperation, cols ...typing.Column) {
+func (s *Store) mutateColumnsWithMemoryCache(fqName string, createTable bool, columnOp config.ColumnOperation, cols ...typing.Column) {
 	tc := s.configMap.TableConfig(fqName)
 	if tc == nil {
 		return
@@ -50,7 +46,7 @@ func (s *Store) mutateColumnsWithMemoryCache(fqName string, createTable bool, co
 
 	table := tc.Columns()
 	switch columnOp {
-	case Add:
+	case config.Add:
 		for _, col := range cols {
 			table[col.Name] = col.Kind
 			// Delete from the permissions table, if exists.
@@ -58,7 +54,7 @@ func (s *Store) mutateColumnsWithMemoryCache(fqName string, createTable bool, co
 		}
 
 		tc.CreateTable = createTable
-	case Delete:
+	case config.Delete:
 		for _, col := range cols {
 			delete(table, col.Name)
 			// Delete from the permissions table

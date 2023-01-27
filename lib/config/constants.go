@@ -22,3 +22,11 @@ type ExporterKind string
 const (
 	Datadog ExporterKind = "datadog"
 )
+
+// ColumnOperation is a type used for DDL operations
+type ColumnOperation string
+
+const (
+	Add    ColumnOperation = "add"
+	Delete ColumnOperation = "drop"
+)

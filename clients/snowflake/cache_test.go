@@ -40,7 +40,7 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 	assert.Equal(s.T(), len(s.store.configMap.TableConfig(topicConfig.ToFqName()).ColumnsToDelete()), 1)
 
 	// Now let's try to add this column back, it should delete it from the cache.
-	s.store.mutateColumnsWithMemoryCache(topicConfig.ToFqName(), false, Add, nameCol)
+	s.store.mutateColumnsWithMemoryCache(topicConfig.ToFqName(), false, config.Add, nameCol)
 	assert.Equal(s.T(), len(s.store.configMap.TableConfig(topicConfig.ToFqName()).ColumnsToDelete()), 0)
 }
 

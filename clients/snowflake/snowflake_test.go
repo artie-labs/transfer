@@ -32,7 +32,7 @@ func (s *SnowflakeTestSuite) TestCreateTable() {
 	fqTable := "demo.public.experiments"
 	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.Kind{}, nil, true))
 
-	err := s.store.alterTable(ctx, fqTable, s.store.configMap.TableConfig(fqTable).CreateTable, Add, time.Now().UTC(), cols...)
+	err := s.store.alterTable(ctx, fqTable, s.store.configMap.TableConfig(fqTable).CreateTable, config.Add, time.Now().UTC(), cols...)
 	assert.NoError(s.T(), err)
 
 	execQuery, _ := s.fakeStore.ExecArgsForCall(0)
@@ -59,7 +59,7 @@ func (s *SnowflakeTestSuite) TestAlterComplexObjects() {
 	fqTable := "shop.public.complex_columns"
 	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.Kind{}, nil, false))
 
-	err := s.store.alterTable(ctx, fqTable, false, Add, time.Now().UTC(), cols...)
+	err := s.store.alterTable(ctx, fqTable, false, config.Add, time.Now().UTC(), cols...)
 	execQuery, _ := s.fakeStore.ExecArgsForCall(0)
 	assert.Equal(s.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN preferences variant", fqTable), execQuery)
 
@@ -92,12 +92,12 @@ func (s *SnowflakeTestSuite) TestAlterIdempotency() {
 	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.Kind{}, nil, false))
 
 	s.fakeStore.ExecReturns(nil, errors.New("column 'order_name' already exists"))
-	err := s.store.alterTable(ctx, fqTable, false, Add, time.Now().UTC(), cols...)
+	err := s.store.alterTable(ctx, fqTable, false, config.Add, time.Now().UTC(), cols...)
 	assert.Equal(s.T(), len(cols), s.fakeStore.ExecCallCount(), "called SFLK the same amt to create cols")
 	assert.NoError(s.T(), err)
 
 	s.fakeStore.ExecReturns(nil, errors.New("table does not exist"))
-	err = s.store.alterTable(ctx, fqTable, false, Add, time.Now().UTC(), cols...)
+	err = s.store.alterTable(ctx, fqTable, false, config.Add, time.Now().UTC(), cols...)
 	assert.Error(s.T(), err)
 }
 
@@ -122,7 +122,7 @@ func (s *SnowflakeTestSuite) TestAlterTableAdd() {
 	fqTable := "shop.public.orders"
 	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.Kind{}, nil, false))
 
-	err := s.store.alterTable(ctx, fqTable, false, Add, time.Now().UTC(), cols...)
+	err := s.store.alterTable(ctx, fqTable, false, config.Add, time.Now().UTC(), cols...)
 	assert.Equal(s.T(), len(cols), s.fakeStore.ExecCallCount(), "called SFLK the same amt to create cols")
 	assert.NoError(s.T(), err)
 
@@ -164,7 +164,7 @@ func (s *SnowflakeTestSuite) TestAlterTableDeleteDryRun() {
 	fqTable := "shop.public.users"
 	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.Kind{}, nil, false))
 
-	err := s.store.alterTable(ctx, fqTable, false, Delete, time.Now().UTC(), cols...)
+	err := s.store.alterTable(ctx, fqTable, false, config.Delete, time.Now().UTC(), cols...)
 	assert.Equal(s.T(), 0, s.fakeStore.ExecCallCount(), "tried to delete, but not yet.")
 	assert.NoError(s.T(), err)
 
@@ -189,11 +189,11 @@ func (s *SnowflakeTestSuite) TestAlterTableDeleteDryRun() {
 	// Now let's actually try to dial the time back, and it should actually try to delete.
 	tableConfig.AddColumnsToDelete(colToActuallyDelete, time.Now().Add(-1*time.Hour))
 
-	err = s.store.alterTable(ctx, fqTable, false, Delete, time.Now().UTC(), cols...)
+	err = s.store.alterTable(ctx, fqTable, false, config.Delete, time.Now().UTC(), cols...)
 	assert.Nil(s.T(), err)
 	assert.Equal(s.T(), 1, s.fakeStore.ExecCallCount(), "tried to delete one column")
 	execArg, _ := s.fakeStore.ExecArgsForCall(0)
-	assert.Equal(s.T(), execArg, fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTable, Delete, colToActuallyDelete))
+	assert.Equal(s.T(), execArg, fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTable, config.Delete, colToActuallyDelete))
 }
 
 func (s *SnowflakeTestSuite) TestAlterTableDelete() {
@@ -229,7 +229,7 @@ func (s *SnowflakeTestSuite) TestAlterTableDelete() {
 		"answers":       time.Now().Add(-2 * config.DeletionConfidencePadding),
 	}, false))
 
-	err := s.store.alterTable(ctx, fqTable, false, Delete, time.Now(), cols...)
+	err := s.store.alterTable(ctx, fqTable, false, config.Delete, time.Now(), cols...)
 	assert.Equal(s.T(), 2, s.fakeStore.ExecCallCount(), "tried to delete, but not yet.")
 	assert.NoError(s.T(), err)
 

@@ -21,18 +21,13 @@ type Store struct {
 	configMap *types.DwhToTablesConfigMap
 }
 
-type columnOperation string
-
 const (
 	// Column names from the output of DESC table;
 	describeNameCol = "name"
 	describeTypeCol = "type"
-
-	Add    columnOperation = "add"
-	Delete columnOperation = "drop"
 )
 
-func (s *Store) alterTable(ctx context.Context, fqTableName string, createTable bool, columnOp columnOperation, cdcTime time.Time, cols ...typing.Column) error {
+func (s *Store) alterTable(ctx context.Context, fqTableName string, createTable bool, columnOp config.ColumnOperation, cdcTime time.Time, cols ...typing.Column) error {
 	var colSQLPart string
 	var err error
 	var mutateCol []typing.Column
@@ -43,7 +38,7 @@ func (s *Store) alterTable(ctx context.Context, fqTableName string, createTable 
 			continue
 		}
 
-		if columnOp == Delete && !s.shouldDeleteColumn(ctx, fqTableName, col, cdcTime) {
+		if columnOp == config.Delete && !s.shouldDeleteColumn(ctx, fqTableName, col, cdcTime) {
 			// Don't delete yet.
 			continue
 		}
@@ -51,9 +46,9 @@ func (s *Store) alterTable(ctx context.Context, fqTableName string, createTable 
 		mutateCol = append(mutateCol, col)
 
 		switch columnOp {
-		case Add:
+		case config.Add:
 			colSQLPart = fmt.Sprintf("%s %s", col.Name, typing.KindToSnowflake(col.Kind))
-		case Delete:
+		case config.Delete:
 			colSQLPart = fmt.Sprintf("%s", col.Name)
 		}
 
@@ -97,7 +92,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.Columns, tableConfig.Columns())
 
 	// Keys that exist in CDC stream, but not in Snowflake
-	err = s.alterTable(ctx, fqName, tableConfig.CreateTable, Add, tableData.LatestCDCTs, targetKeysMissing...)
+	err = s.alterTable(ctx, fqName, tableConfig.CreateTable, config.Add, tableData.LatestCDCTs, targetKeysMissing...)
 	if err != nil {
 		log.WithError(err).Warn("failed to apply alter table")
 		return err
@@ -106,7 +101,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	// Keys that exist in Snowflake, but don't exist in our CDC stream.
 	// createTable is set to false because table creation requires a column to be added
 	// Which means, we'll only do it upon Add columns.
-	err = s.alterTable(ctx, fqName, false, Delete, tableData.LatestCDCTs, srcKeysMissing...)
+	err = s.alterTable(ctx, fqName, false, config.Delete, tableData.LatestCDCTs, srcKeysMissing...)
 	if err != nil {
 		log.WithError(err).Warn("failed to apply alter table")
 		return err
