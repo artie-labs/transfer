@@ -19,16 +19,14 @@ const GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
 type BQStore struct {
 	store db.Store
 
-	tablesConfig types.DwhToTablesConfigMap
+	configMap *types.DwhToTablesConfigMap
 }
 
 func (b *BQStore) GetTableConfig(ctx context.Context, dataset, table string) (*types.DwhTableConfig, error) {
 	fqName := fmt.Sprintf("%s.%s", dataset, table)
-	if b.tablesConfig.FQNameToDwhTableConfig != nil {
-		tableConfig, isOk := b.tablesConfig.FQNameToDwhTableConfig[fqName]
-		if isOk {
-			return tableConfig, nil
-		}
+	tc := b.configMap.TableConfig(fqName)
+	if tc != nil {
+		return tc, nil
 	}
 
 	log := logger.FromContext(ctx)
@@ -42,16 +40,10 @@ func (b *BQStore) GetTableConfig(ctx context.Context, dataset, table string) (*t
 		}
 	}()
 
-	//var tableMissing bool
 	if err != nil {
-		// TODO fill
-		//if TableDoesNotExistErr(err) {
-		//	// Swallow the error, make sure all the metadata is created
-		//	tableMissing = true
-		//	err = nil
-		//} else {
-		//	return nil, err
-		//}
+		// The query will not fail if the table doesn't exist. It will simply return 0 rows.
+		// It WILL fail if the dataset doesn't exist or if it encounters any other forms of error.
+		return nil, err
 	}
 
 	row := make(map[string]string)
@@ -90,24 +82,14 @@ func (b *BQStore) GetTableConfig(ctx context.Context, dataset, table string) (*t
 		break
 	}
 
-	tableConfig, err := ParseSchemaQuery(row)
+	// Table doesn't exist if the information schema query returned nothing.
+	tableConfig, err := ParseSchemaQuery(row, len(row) == 0)
 	if err != nil {
 		return nil, err
 	}
 
-	b.tablesConfig.Lock()
-	defer b.tablesConfig.Unlock()
-	if b.tablesConfig.FQNameToDwhTableConfig == nil {
-		b.tablesConfig = types.DwhToTablesConfigMap{
-			FQNameToDwhTableConfig: map[string]*types.DwhTableConfig{
-				fqName: tableConfig,
-			},
-		}
-	} else {
-		b.tablesConfig.FQNameToDwhTableConfig[fqName] = tableConfig
-	}
-
-	return b.tablesConfig.FQNameToDwhTableConfig[fqName], nil
+	b.configMap.AddTableToConfig(fqName, tableConfig)
+	return tableConfig, nil
 }
 
 func (b *BQStore) Merge(ctx context.Context, tableData *optimization.TableData) error {
@@ -137,6 +119,7 @@ func LoadBigQuery(ctx context.Context) *BQStore {
 	fmt.Println("bigqueryDSN", bigqueryDSN)
 
 	return &BQStore{
-		store: db.Open(ctx, "bigquery", bigqueryDSN),
+		store:     db.Open(ctx, "bigquery", bigqueryDSN),
+		configMap: &types.DwhToTablesConfigMap{},
 	}
 }

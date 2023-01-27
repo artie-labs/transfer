@@ -1,10 +1,12 @@
 package typing
 
 import (
+	"fmt"
 	"strings"
 )
 
 func BigQueryTypeToKind(bqType string) Kind {
+	fmt.Println("bqType", bqType)
 	// TODO: test every single type.
 
 	bqType = strings.ToLower(bqType)
@@ -44,7 +46,7 @@ func BigQueryTypeToKind(bqType string) Kind {
 		return Struct
 	case "array":
 		return Array
-	case "datetime", "timestamp", "time":
+	case "datetime", "timestamp", "time", "date":
 		return DateTime
 	default:
 		return Invalid

@@ -17,51 +17,52 @@ type metadataConfig struct {
 	snowflakeTableToConfig map[string]*types.DwhTableConfig
 }
 
-// TODO migrate this to be under the Snowflake type.
-var mdConfig *metadataConfig
+func (s *Store) shouldDeleteColumn(ctx context.Context, fqName string, col typing.Column, cdcTime time.Time) bool {
+	tc := s.configMap.TableConfig(fqName)
+	if tc == nil {
+		logger.FromContext(ctx).WithFields(map[string]interface{}{
+			"fqName": fqName,
+			"col":    col.Name,
+		}).Error("tableConfig is missing when trying to delete column")
 
-func shouldDeleteColumn(fqName string, col typing.Column, cdcTime time.Time) bool {
-	ts, isOk := mdConfig.snowflakeTableToConfig[fqName].ColumnsToDelete[col.Name]
+		// Return false just to be safe. Let's also log this to Sentry.
+		return false
+	}
+
+	// TODO test panic
+	ts, isOk := tc.ColumnsToDelete()[col.Name]
 	if isOk {
 		// If the CDC time is greater than this timestamp, then we should delete it.
 		return cdcTime.After(ts)
 	}
 
-	if mdConfig.snowflakeTableToConfig[fqName].ColumnsToDelete == nil {
-		mdConfig.snowflakeTableToConfig[fqName].ColumnsToDelete = make(map[string]time.Time)
-	}
-
-	// Doesn't exist just yet, so let's add it to the cache.
-	mdConfig.snowflakeTableToConfig[fqName].ColumnsToDelete[col.Name] =
-		time.Now().UTC().Add(config.DeletionConfidencePadding)
-
+	tc.AddColumnsToDelete(col.Name, time.Now().UTC().Add(config.DeletionConfidencePadding))
 	return false
 }
 
 // mutateColumnsWithMemoryCache will modify the SFLK table cache to include columns
 // That we have already added to Snowflake. That way, we do not need to continually refresh the cache
-func mutateColumnsWithMemoryCache(fqName string, createTable bool, columnOp columnOperation, cols ...typing.Column) {
-	tableConfig, isOk := mdConfig.snowflakeTableToConfig[fqName]
-	if !isOk {
+func (s *Store) mutateColumnsWithMemoryCache(fqName string, createTable bool, columnOp columnOperation, cols ...typing.Column) {
+	tc := s.configMap.TableConfig(fqName)
+	if tc == nil {
 		return
 	}
 
-	table := tableConfig.Columns
+	table := tc.Columns()
 	switch columnOp {
 	case Add:
 		for _, col := range cols {
 			table[col.Name] = col.Kind
 			// Delete from the permissions table, if exists.
-			delete(tableConfig.ColumnsToDelete, col.Name)
+			tc.ClearColumnsToDeleteByColName(col.Name)
 		}
 
-		tableConfig.CreateTable = createTable
-
+		tc.CreateTable = createTable
 	case Delete:
 		for _, col := range cols {
 			delete(table, col.Name)
 			// Delete from the permissions table
-			delete(tableConfig.ColumnsToDelete, col.Name)
+			tc.ClearColumnsToDeleteByColName(col.Name)
 		}
 
 	}
@@ -69,13 +70,11 @@ func mutateColumnsWithMemoryCache(fqName string, createTable bool, columnOp colu
 	return
 }
 
-func (s *SnowflakeStore) getTableConfig(ctx context.Context, fqName string) (*types.DwhTableConfig, error) {
+func (s *Store) getTableConfig(ctx context.Context, fqName string) (*types.DwhTableConfig, error) {
 	// Check if it already exists in cache
-	if mdConfig != nil {
-		tableConfig, isOk := mdConfig.snowflakeTableToConfig[fqName]
-		if isOk {
-			return tableConfig, nil
-		}
+	tableConfig := s.configMap.TableConfig(fqName)
+	if tableConfig != nil {
+		return tableConfig, nil
 	}
 
 	log := logger.FromContext(ctx)
@@ -137,22 +136,8 @@ func (s *SnowflakeStore) getTableConfig(ctx context.Context, fqName string) (*ty
 		tableToColumnTypes[row[describeNameCol]] = typing.SnowflakeTypeToKind(row[describeTypeCol])
 	}
 
-	sflkTableConfig := &types.DwhTableConfig{
-		Columns:         tableToColumnTypes,
-		ColumnsToDelete: make(map[string]time.Time),
-		CreateTable:     tableMissing,
-	}
-
-	if mdConfig == nil {
-		//  TODO refactor to use FQNameToDwhTableConfig and lock.
-		mdConfig = &metadataConfig{
-			snowflakeTableToConfig: map[string]*types.DwhTableConfig{
-				fqName: sflkTableConfig,
-			},
-		}
-	} else {
-		mdConfig.snowflakeTableToConfig[fqName] = sflkTableConfig
-	}
+	sflkTableConfig := types.NewDwhTableConfig(tableToColumnTypes, nil, tableMissing)
+	s.configMap.AddTableToConfig(fqName, types.NewDwhTableConfig(tableToColumnTypes, nil, tableMissing))
 
 	return sflkTableConfig, nil
 }

@@ -17,6 +17,7 @@ import (
 )
 
 func (s *SnowflakeTestSuite) TestCreateTable() {
+	ctx := context.Background()
 	cols := []typing.Column{
 		{
 			Name: "key",
@@ -29,12 +30,9 @@ func (s *SnowflakeTestSuite) TestCreateTable() {
 	}
 
 	fqTable := "demo.public.experiments"
-	mdConfig.snowflakeTableToConfig[fqTable] = &types.DwhTableConfig{
-		Columns:     map[string]typing.Kind{},
-		CreateTable: true,
-	}
+	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.Kind{}, nil, true))
 
-	err := s.store.alterTable(fqTable, mdConfig.snowflakeTableToConfig[fqTable].CreateTable, Add, time.Now().UTC(), cols...)
+	err := s.store.alterTable(ctx, fqTable, s.store.configMap.TableConfig(fqTable).CreateTable, Add, time.Now().UTC(), cols...)
 	assert.NoError(s.T(), err)
 
 	execQuery, _ := s.fakeStore.ExecArgsForCall(0)
@@ -42,11 +40,10 @@ func (s *SnowflakeTestSuite) TestCreateTable() {
 
 	execQuery, _ = s.fakeStore.ExecArgsForCall(1)
 	assert.Equal(s.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN enabled boolean", fqTable), execQuery, execQuery)
-
-	assert.Equal(s.T(), mdConfig.snowflakeTableToConfig[fqTable].CreateTable, false,
-		mdConfig.snowflakeTableToConfig[fqTable])
+	assert.Equal(s.T(), s.store.configMap.TableConfig(fqTable).CreateTable, false, s.store.configMap.TableConfig(fqTable))
 }
 func (s *SnowflakeTestSuite) TestAlterComplexObjects() {
+	ctx := context.Background()
 	// Test Structs and Arrays
 	cols := []typing.Column{
 		{
@@ -60,11 +57,9 @@ func (s *SnowflakeTestSuite) TestAlterComplexObjects() {
 	}
 
 	fqTable := "shop.public.complex_columns"
-	mdConfig.snowflakeTableToConfig[fqTable] = &types.DwhTableConfig{
-		Columns: map[string]typing.Kind{},
-	}
+	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.Kind{}, nil, false))
 
-	err := s.store.alterTable(fqTable, false, Add, time.Now().UTC(), cols...)
+	err := s.store.alterTable(ctx, fqTable, false, Add, time.Now().UTC(), cols...)
 	execQuery, _ := s.fakeStore.ExecArgsForCall(0)
 	assert.Equal(s.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN preferences variant", fqTable), execQuery)
 
@@ -76,6 +71,7 @@ func (s *SnowflakeTestSuite) TestAlterComplexObjects() {
 }
 
 func (s *SnowflakeTestSuite) TestAlterIdempotency() {
+	ctx := context.Background()
 	cols := []typing.Column{
 		{
 			Name: "created_at",
@@ -92,21 +88,21 @@ func (s *SnowflakeTestSuite) TestAlterIdempotency() {
 	}
 
 	fqTable := "shop.public.orders"
-	mdConfig.snowflakeTableToConfig[fqTable] = &types.DwhTableConfig{
-		Columns: map[string]typing.Kind{},
-	}
+
+	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.Kind{}, nil, false))
 
 	s.fakeStore.ExecReturns(nil, errors.New("column 'order_name' already exists"))
-	err := s.store.alterTable(fqTable, false, Add, time.Now().UTC(), cols...)
+	err := s.store.alterTable(ctx, fqTable, false, Add, time.Now().UTC(), cols...)
 	assert.Equal(s.T(), len(cols), s.fakeStore.ExecCallCount(), "called SFLK the same amt to create cols")
 	assert.NoError(s.T(), err)
 
 	s.fakeStore.ExecReturns(nil, errors.New("table does not exist"))
-	err = s.store.alterTable(fqTable, false, Add, time.Now().UTC(), cols...)
+	err = s.store.alterTable(ctx, fqTable, false, Add, time.Now().UTC(), cols...)
 	assert.Error(s.T(), err)
 }
 
 func (s *SnowflakeTestSuite) TestAlterTableAdd() {
+	ctx := context.Background()
 	// Test adding a bunch of columns
 	cols := []typing.Column{
 		{
@@ -124,17 +120,15 @@ func (s *SnowflakeTestSuite) TestAlterTableAdd() {
 	}
 
 	fqTable := "shop.public.orders"
-	mdConfig.snowflakeTableToConfig[fqTable] = &types.DwhTableConfig{
-		Columns: map[string]typing.Kind{},
-	}
+	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.Kind{}, nil, false))
 
-	err := s.store.alterTable(fqTable, false, Add, time.Now().UTC(), cols...)
+	err := s.store.alterTable(ctx, fqTable, false, Add, time.Now().UTC(), cols...)
 	assert.Equal(s.T(), len(cols), s.fakeStore.ExecCallCount(), "called SFLK the same amt to create cols")
 	assert.NoError(s.T(), err)
 
 	// Check the table config
-	tableConfig := mdConfig.snowflakeTableToConfig[fqTable]
-	for col, kind := range tableConfig.Columns {
+	tableConfig := s.store.configMap.TableConfig(fqTable)
+	for col, kind := range tableConfig.Columns() {
 		var found bool
 		for _, expCol := range cols {
 			if found = col == expCol.Name; found {
@@ -145,11 +139,12 @@ func (s *SnowflakeTestSuite) TestAlterTableAdd() {
 
 		assert.True(s.T(), found,
 			fmt.Sprintf("Col not found: %s, actual list: %v, expected list: %v",
-				col, tableConfig.Columns, cols))
+				col, tableConfig.Columns(), cols))
 	}
 }
 
 func (s *SnowflakeTestSuite) TestAlterTableDeleteDryRun() {
+	ctx := context.Background()
 	// Test adding a bunch of columns
 	cols := []typing.Column{
 		{
@@ -167,18 +162,15 @@ func (s *SnowflakeTestSuite) TestAlterTableDeleteDryRun() {
 	}
 
 	fqTable := "shop.public.users"
-	mdConfig.snowflakeTableToConfig[fqTable] = &types.DwhTableConfig{
-		Columns:         map[string]typing.Kind{},
-		ColumnsToDelete: map[string]time.Time{},
-	}
+	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.Kind{}, nil, false))
 
-	err := s.store.alterTable(fqTable, false, Delete, time.Now().UTC(), cols...)
+	err := s.store.alterTable(ctx, fqTable, false, Delete, time.Now().UTC(), cols...)
 	assert.Equal(s.T(), 0, s.fakeStore.ExecCallCount(), "tried to delete, but not yet.")
 	assert.NoError(s.T(), err)
 
 	// Check the table config
-	tableConfig := mdConfig.snowflakeTableToConfig[fqTable]
-	for col := range tableConfig.ColumnsToDelete {
+	tableConfig := s.store.configMap.TableConfig(fqTable)
+	for col := range tableConfig.ColumnsToDelete() {
 		var found bool
 		for _, expCol := range cols {
 			if found = col == expCol.Name; found {
@@ -188,16 +180,16 @@ func (s *SnowflakeTestSuite) TestAlterTableDeleteDryRun() {
 
 		assert.True(s.T(), found,
 			fmt.Sprintf("Col not found: %s, actual list: %v, expected list: %v",
-				col, tableConfig.ColumnsToDelete, cols))
+				col, tableConfig.ColumnsToDelete(), cols))
 	}
 
 	colToActuallyDelete := cols[0].Name
-
 	// Now let's check the timestamp
-	assert.True(s.T(), tableConfig.ColumnsToDelete[colToActuallyDelete].After(time.Now()))
+	assert.True(s.T(), tableConfig.ColumnsToDelete()[colToActuallyDelete].After(time.Now()))
 	// Now let's actually try to dial the time back, and it should actually try to delete.
-	tableConfig.ColumnsToDelete[colToActuallyDelete] = time.Now().Add(-1 * time.Hour)
-	err = s.store.alterTable(fqTable, false, Delete, time.Now().UTC(), cols...)
+	tableConfig.AddColumnsToDelete(colToActuallyDelete, time.Now().Add(-1*time.Hour))
+
+	err = s.store.alterTable(ctx, fqTable, false, Delete, time.Now().UTC(), cols...)
 	assert.Nil(s.T(), err)
 	assert.Equal(s.T(), 1, s.fakeStore.ExecCallCount(), "tried to delete one column")
 	execArg, _ := s.fakeStore.ExecArgsForCall(0)
@@ -205,6 +197,7 @@ func (s *SnowflakeTestSuite) TestAlterTableDeleteDryRun() {
 }
 
 func (s *SnowflakeTestSuite) TestAlterTableDelete() {
+	ctx := context.Background()
 	// Test adding a bunch of columns
 	cols := []typing.Column{
 		{
@@ -230,21 +223,19 @@ func (s *SnowflakeTestSuite) TestAlterTableDelete() {
 	}
 
 	fqTable := "shop.public.users1"
-	mdConfig.snowflakeTableToConfig[fqTable] = &types.DwhTableConfig{
-		Columns: map[string]typing.Kind{},
-		ColumnsToDelete: map[string]time.Time{
-			"col_to_delete": time.Now().Add(-2 * config.DeletionConfidencePadding),
-			"answers":       time.Now().Add(-2 * config.DeletionConfidencePadding),
-		},
-	}
 
-	err := s.store.alterTable(fqTable, false, Delete, time.Now(), cols...)
+	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.Kind{}, map[string]time.Time{
+		"col_to_delete": time.Now().Add(-2 * config.DeletionConfidencePadding),
+		"answers":       time.Now().Add(-2 * config.DeletionConfidencePadding),
+	}, false))
+
+	err := s.store.alterTable(ctx, fqTable, false, Delete, time.Now(), cols...)
 	assert.Equal(s.T(), 2, s.fakeStore.ExecCallCount(), "tried to delete, but not yet.")
 	assert.NoError(s.T(), err)
 
 	// Check the table config
-	tableConfig := mdConfig.snowflakeTableToConfig[fqTable]
-	for col := range tableConfig.ColumnsToDelete {
+	tableConfig := s.store.configMap.TableConfig(fqTable)
+	for col := range tableConfig.ColumnsToDelete() {
 		var found bool
 		for _, expCol := range cols {
 			if found = col == expCol.Name; found {
@@ -254,7 +245,7 @@ func (s *SnowflakeTestSuite) TestAlterTableDelete() {
 
 		assert.True(s.T(), found,
 			fmt.Sprintf("Col not found: %s, actual list: %v, expected list: %v",
-				col, tableConfig.ColumnsToDelete, cols))
+				col, tableConfig.ColumnsToDelete(), cols))
 	}
 }
 
@@ -290,10 +281,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		Rows:        1,
 	}
 
-	mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()] = &types.DwhTableConfig{
-		Columns: columns,
-	}
-
+	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(), types.NewDwhTableConfig(columns, nil, false))
 	err := s.store.Merge(context.Background(), tableData)
 	assert.Nil(s.T(), err)
 	s.fakeStore.ExecReturns(nil, nil)
@@ -311,7 +299,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		Schema:    "public",
 	}
 
-	defer delete(mdConfig.snowflakeTableToConfig, topicConfig.ToFqName())
+	defer s.store.configMap.RemoveTableFromConfig(topicConfig.ToFqName())
 	rowsData := make(map[string]map[string]interface{})
 	for i := 0; i < 5; i++ {
 		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]interface{}{
@@ -345,9 +333,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 	sflkColumns["new"] = typing.String
 
-	mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()] = &types.DwhTableConfig{
-		Columns: sflkColumns,
-	}
+	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(), types.NewDwhTableConfig(sflkColumns, nil, false))
 
 	err := s.store.Merge(context.Background(), tableData)
 	assert.Nil(s.T(), err)
@@ -355,10 +341,10 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 1, "called merge")
 
 	// Check the temp deletion table now.
-	assert.Equal(s.T(), len(mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()].ColumnsToDelete), 1,
-		mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()].ColumnsToDelete)
+	assert.Equal(s.T(), len(s.store.configMap.TableConfig(topicConfig.ToFqName()).ColumnsToDelete()), 1,
+		s.store.configMap.TableConfig(topicConfig.ToFqName()).ColumnsToDelete())
 
-	_, isOk := mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()].ColumnsToDelete["new"]
+	_, isOk := s.store.configMap.TableConfig(topicConfig.ToFqName()).ColumnsToDelete()["new"]
 	assert.True(s.T(), isOk)
 
 	// Now try to execute merge where 1 of the rows have the column now
@@ -374,8 +360,8 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 2, "called merge again")
 
 	// Caught up now, so columns should be 0.
-	assert.Equal(s.T(), len(mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()].ColumnsToDelete), 0,
-		mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()].ColumnsToDelete)
+	assert.Equal(s.T(), len(s.store.configMap.TableConfig(topicConfig.ToFqName()).ColumnsToDelete()), 0,
+		s.store.configMap.TableConfig(topicConfig.ToFqName()).ColumnsToDelete())
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {

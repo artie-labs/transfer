@@ -3,6 +3,7 @@ package snowflake
 import (
 	"context"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/dwh/types"
 	"strings"
 	"time"
 
@@ -15,8 +16,9 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-type SnowflakeStore struct {
-	store db.Store
+type Store struct {
+	store     db.Store
+	configMap *types.DwhToTablesConfigMap
 }
 
 type columnOperation string
@@ -30,7 +32,7 @@ const (
 	Delete columnOperation = "drop"
 )
 
-func (s *SnowflakeStore) alterTable(fqTableName string, createTable bool, columnOp columnOperation, cdcTime time.Time, cols ...typing.Column) error {
+func (s *Store) alterTable(ctx context.Context, fqTableName string, createTable bool, columnOp columnOperation, cdcTime time.Time, cols ...typing.Column) error {
 	var colSQLPart string
 	var err error
 	var mutateCol []typing.Column
@@ -41,7 +43,7 @@ func (s *SnowflakeStore) alterTable(fqTableName string, createTable bool, column
 			continue
 		}
 
-		if columnOp == Delete && !shouldDeleteColumn(fqTableName, col, cdcTime) {
+		if columnOp == Delete && !s.shouldDeleteColumn(ctx, fqTableName, col, cdcTime) {
 			// Don't delete yet.
 			continue
 		}
@@ -72,13 +74,13 @@ func (s *SnowflakeStore) alterTable(fqTableName string, createTable bool, column
 	}
 
 	if err == nil {
-		mutateColumnsWithMemoryCache(fqTableName, createTable, columnOp, mutateCol...)
+		s.mutateColumnsWithMemoryCache(fqTableName, createTable, columnOp, mutateCol...)
 	}
 
 	return nil
 }
 
-func (s *SnowflakeStore) Merge(ctx context.Context, tableData *optimization.TableData) error {
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
 	if tableData.Rows == 0 {
 		// There's no rows. Let's skip.
 		return nil
@@ -92,10 +94,10 @@ func (s *SnowflakeStore) Merge(ctx context.Context, tableData *optimization.Tabl
 
 	log := logger.FromContext(ctx)
 	// Check if all the columns exist in Snowflake
-	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.Columns, tableConfig.Columns)
+	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.Columns, tableConfig.Columns())
 
 	// Keys that exist in CDC stream, but not in Snowflake
-	err = s.alterTable(fqName, tableConfig.CreateTable, Add, tableData.LatestCDCTs, targetKeysMissing...)
+	err = s.alterTable(ctx, fqName, tableConfig.CreateTable, Add, tableData.LatestCDCTs, targetKeysMissing...)
 	if err != nil {
 		log.WithError(err).Warn("failed to apply alter table")
 		return err
@@ -104,7 +106,7 @@ func (s *SnowflakeStore) Merge(ctx context.Context, tableData *optimization.Tabl
 	// Keys that exist in Snowflake, but don't exist in our CDC stream.
 	// createTable is set to false because table creation requires a column to be added
 	// Which means, we'll only do it upon Add columns.
-	err = s.alterTable(fqName, false, Delete, tableData.LatestCDCTs, srcKeysMissing...)
+	err = s.alterTable(ctx, fqName, false, Delete, tableData.LatestCDCTs, srcKeysMissing...)
 	if err != nil {
 		log.WithError(err).Warn("failed to apply alter table")
 		return err
@@ -112,7 +114,7 @@ func (s *SnowflakeStore) Merge(ctx context.Context, tableData *optimization.Tabl
 
 	// Make sure we are still trying to delete it.
 	// If not, then we should assume the column is good and then remove it from our in-mem store.
-	for colToDelete := range tableConfig.ColumnsToDelete {
+	for colToDelete := range tableConfig.ColumnsToDelete() {
 		var found bool
 		for _, col := range srcKeysMissing {
 			if found = col.Name == colToDelete; found {
@@ -123,7 +125,7 @@ func (s *SnowflakeStore) Merge(ctx context.Context, tableData *optimization.Tabl
 
 		if !found {
 			// Only if it is NOT found shall we try to delete from in-memory (because we caught up)
-			delete(tableConfig.ColumnsToDelete, colToDelete)
+			tableConfig.ClearColumnsToDeleteByColName(colToDelete)
 		}
 	}
 
@@ -138,10 +140,13 @@ func (s *SnowflakeStore) Merge(ctx context.Context, tableData *optimization.Tabl
 	return err
 }
 
-func LoadSnowflake(ctx context.Context, _store *db.Store) *SnowflakeStore {
+func LoadSnowflake(ctx context.Context, _store *db.Store) *Store {
 	if _store != nil {
 		// Used for tests.
-		return &SnowflakeStore{store: *_store}
+		return &Store{
+			store:     *_store,
+			configMap: &types.DwhToTablesConfigMap{},
+		}
 	}
 
 	dsn, err := gosnowflake.DSN(&gosnowflake.Config{
@@ -156,5 +161,8 @@ func LoadSnowflake(ctx context.Context, _store *db.Store) *SnowflakeStore {
 		logger.FromContext(ctx).Fatalf("failed to get snowflake dsn, err: %v", err)
 	}
 
-	return &SnowflakeStore{store: db.Open(ctx, "snowflake", dsn)}
+	return &Store{
+		store:     db.Open(ctx, "snowflake", dsn),
+		configMap: &types.DwhToTablesConfigMap{},
+	}
 }
