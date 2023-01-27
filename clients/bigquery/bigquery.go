@@ -2,9 +2,11 @@ package bigquery
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/db"
+	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	_ "github.com/viant/bigquery"
@@ -16,14 +18,21 @@ const GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
 
 type BQStore struct {
 	store db.Store
+
+	tablesConfig types.DwhToTablesConfigMap
 }
 
-func (b *BQStore) GetTableConfig(ctx context.Context, dataset, table string) {
-	fmt.Println("here")
+func (b *BQStore) GetTableConfig(ctx context.Context, dataset, table string) (*types.DwhTableConfig, error) {
+	fqName := fmt.Sprintf("%s.%s", dataset, table)
+	if b.tablesConfig.FQNameToDwhTableConfig != nil {
+		tableConfig, isOk := b.tablesConfig.FQNameToDwhTableConfig[fqName]
+		if isOk {
+			return tableConfig, nil
+		}
+	}
 
 	log := logger.FromContext(ctx)
-
-	rows, err := b.store.Query(fmt.Sprintf("SELECT ddl FROM %s.INFORMATION_SCHEMA.TABLES where table_name = '%s';", dataset, table))
+	rows, err := b.store.Query(fmt.Sprintf("SELECT ddl FROM %s.INFORMATION_SCHEMA.TABLES where table_name = '%s' LIMIT 1;", dataset, table))
 	defer func() {
 		if rows != nil {
 			err = rows.Close()
@@ -33,16 +42,25 @@ func (b *BQStore) GetTableConfig(ctx context.Context, dataset, table string) {
 		}
 	}()
 
-	fmt.Println("err", err)
+	//var tableMissing bool
+	if err != nil {
+		// TODO fill
+		//if TableDoesNotExistErr(err) {
+		//	// Swallow the error, make sure all the metadata is created
+		//	tableMissing = true
+		//	err = nil
+		//} else {
+		//	return nil, err
+		//}
+	}
 
+	row := make(map[string]string)
 	for rows != nil && rows.Next() {
 		// figure out what columns were returned
 		// the column names will be the JSON object field keys
 		columns, err := rows.ColumnTypes()
 		if err != nil {
-			fmt.Println("err1", err)
-			return
-			//return nil, err
+			return nil, err
 		}
 
 		var columnNameList []string
@@ -56,28 +74,44 @@ func (b *BQStore) GetTableConfig(ctx context.Context, dataset, table string) {
 
 		err = rows.Scan(values...)
 		if err != nil {
-			fmt.Println("err2", err)
-			return
-			//return nil, err
+			return nil, err
 		}
 
-		row := make(map[string]string)
 		for idx, val := range values {
 			interfaceVal, isOk := val.(*interface{})
 			if !isOk || interfaceVal == nil {
-				//return nil, errors.New("invalid value")
-				fmt.Println("err3", err)
-				return
+				return nil, errors.New("invalid value")
 			}
 
 			row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
 		}
-		fmt.Println("row", row)
+
+		// There's only one row, so breaking. We also need to use QueryRows() so we can inspect columnTypes
+		break
 	}
-	return
+
+	tableConfig, err := ParseSchemaQuery(row)
+	if err != nil {
+		return nil, err
+	}
+
+	b.tablesConfig.Lock()
+	defer b.tablesConfig.Unlock()
+	if b.tablesConfig.FQNameToDwhTableConfig == nil {
+		b.tablesConfig = types.DwhToTablesConfigMap{
+			FQNameToDwhTableConfig: map[string]*types.DwhTableConfig{
+				fqName: tableConfig,
+			},
+		}
+	} else {
+		b.tablesConfig.FQNameToDwhTableConfig[fqName] = tableConfig
+	}
+
+	return b.tablesConfig.FQNameToDwhTableConfig[fqName], nil
 }
 
 func (b *BQStore) Merge(ctx context.Context, tableData *optimization.TableData) error {
+	// TODO
 	if tableData.Rows == 0 {
 		return nil
 	}

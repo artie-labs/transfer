@@ -144,6 +144,7 @@ func (s *SnowflakeStore) getTableConfig(ctx context.Context, fqName string) (*ty
 	}
 
 	if mdConfig == nil {
+		//  TODO refactor to use FQNameToDwhTableConfig and lock.
 		mdConfig = &metadataConfig{
 			snowflakeTableToConfig: map[string]*types.DwhTableConfig{
 				fqName: sflkTableConfig,

@@ -2,14 +2,15 @@ package bigquery
 
 import (
 	"fmt"
-	"github.com/artie-labs/transfer/lib/dwh/types"
-	"github.com/artie-labs/transfer/lib/typing"
 	"strings"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/dwh/types"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 // ParseSchemaQuery is to parse out the results from this query: https://cloud.google.com/bigquery/docs/information-schema-tables#example_1
-func ParseSchemaQuery(rows map[string]interface{}) (*types.DwhTableConfig, error) {
+func ParseSchemaQuery(rows map[string]string) (*types.DwhTableConfig, error) {
 	ddlVal, isOk := rows["ddl"]
 	if !isOk {
 		return nil, fmt.Errorf("missing ddl column")
@@ -23,11 +24,11 @@ func ParseSchemaQuery(rows map[string]interface{}) (*types.DwhTableConfig, error
 		return nil, fmt.Errorf("malformed DDL string: %s", ddlString)
 	}
 
-	// TODO test when there's no options.
 	// Sometimes the DDL statement has OPTIONS, sometimes it doesn't.
-	// The two cases we need to care for:
+	// The cases we need to care for:
 	// 1) CREATE TABLE `foo` (col_1 string, col_2 string) OPTIONS (...);
-	// 2) CREATE TABLE `foo` (col_1 string, col_2 string);
+	// 2) CREATE TABLE `foo` (col_1 string, col_2 string)OPTIONS (...);
+	// 3) CREATE TABLE `foo` (col_1 string, col_2 string);
 
 	optionsIdx := strings.Index(ddlString, "OPTIONS")
 	if optionsIdx < 0 {
@@ -56,11 +57,11 @@ func ParseSchemaQuery(rows map[string]interface{}) (*types.DwhTableConfig, error
 	columnsToTypes := strings.Split(ddlString, ",")
 	for _, colType := range columnsToTypes {
 		parts := strings.Split(colType, " ")
-		if len(parts) != 2 {
+		if len(parts) < 2 {
 			return nil, fmt.Errorf("unexpected colType, colType: %s, parts: %v", colType, parts)
 		}
 
-		dwhTableConfig.Columns[parts[0]] = typing.BigQueryTypeToKind(parts[1])
+		dwhTableConfig.Columns[parts[0]] = typing.BigQueryTypeToKind(strings.Join(parts[1:], " "))
 	}
 
 	return dwhTableConfig, nil

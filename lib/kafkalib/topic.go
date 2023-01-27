@@ -67,5 +67,7 @@ func ToCacheKey(topic string, partition int64) string {
 
 // ToFqName is the fully-qualified table name in DWH
 func (t *TopicConfig) ToFqName() string {
+	// TODO BQ doesn't have a schema in the fully qualified name
+	
 	return fmt.Sprintf("%s.%s.%s", t.Database, t.Schema, t.TableName)
 }
