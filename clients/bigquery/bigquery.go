@@ -2,108 +2,86 @@ package bigquery
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/typing"
 	_ "github.com/viant/bigquery"
 	"os"
-	"strings"
 )
 
 const GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
 
-type BQStore struct {
+type Store struct {
 	store db.Store
 
 	configMap *types.DwhToTablesConfigMap
 }
 
-func (b *BQStore) GetTableConfig(ctx context.Context, dataset, table string) (*types.DwhTableConfig, error) {
-	fqName := fmt.Sprintf("%s.%s", dataset, table)
-	tc := b.configMap.TableConfig(fqName)
-	if tc != nil {
-		return tc, nil
-	}
-
-	log := logger.FromContext(ctx)
-	rows, err := b.store.Query(fmt.Sprintf("SELECT ddl FROM %s.INFORMATION_SCHEMA.TABLES where table_name = '%s' LIMIT 1;", dataset, table))
-	defer func() {
-		if rows != nil {
-			err = rows.Close()
-			if err != nil {
-				log.WithError(err).Warn("Failed to close the row")
-			}
-		}
-	}()
-
-	if err != nil {
-		// The query will not fail if the table doesn't exist. It will simply return 0 rows.
-		// It WILL fail if the dataset doesn't exist or if it encounters any other forms of error.
-		return nil, err
-	}
-
-	row := make(map[string]string)
-	for rows != nil && rows.Next() {
-		// figure out what columns were returned
-		// the column names will be the JSON object field keys
-		columns, err := rows.ColumnTypes()
-		if err != nil {
-			return nil, err
-		}
-
-		var columnNameList []string
-		// Scan needs an array of pointers to the values it is setting
-		// This creates the object and sets the values correctly
-		values := make([]interface{}, len(columns))
-		for idx, column := range columns {
-			values[idx] = new(interface{})
-			columnNameList = append(columnNameList, strings.ToLower(column.Name()))
-		}
-
-		err = rows.Scan(values...)
-		if err != nil {
-			return nil, err
-		}
-
-		for idx, val := range values {
-			interfaceVal, isOk := val.(*interface{})
-			if !isOk || interfaceVal == nil {
-				return nil, errors.New("invalid value")
-			}
-
-			row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
-		}
-
-		// There's only one row, so breaking. We also need to use QueryRows() so we can inspect columnTypes
-		break
-	}
-
-	// Table doesn't exist if the information schema query returned nothing.
-	tableConfig, err := ParseSchemaQuery(row, len(row) == 0)
-	if err != nil {
-		return nil, err
-	}
-
-	b.configMap.AddTableToConfig(fqName, tableConfig)
-	return tableConfig, nil
-}
-
-func (b *BQStore) Merge(ctx context.Context, tableData *optimization.TableData) error {
-	// TODO
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
 	if tableData.Rows == 0 {
+		// There's no rows. Let's skip.
 		return nil
 	}
 
-	b.GetTableConfig(ctx, tableData.Database, tableData.TableName)
+	fqName := tableData.ToFqName()
+	tableConfig, err := s.getTableConfig(ctx, tableData.Database, tableData.TableName)
+	if err != nil {
+		return err
+	}
 
-	return nil
+	log := logger.FromContext(ctx)
+	// Check if all the columns exist in Snowflake
+	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.Columns, tableConfig.Columns())
+
+	// Keys that exist in CDC stream, but not in Snowflake
+	err = s.alterTable(fqName, tableConfig.CreateTable, config.Add, tableData.LatestCDCTs, targetKeysMissing...)
+	if err != nil {
+		log.WithError(err).Warn("failed to apply alter table")
+		return err
+	}
+
+	// Keys that exist in Snowflake, but don't exist in our CDC stream.
+	// createTable is set to false because table creation requires a column to be added
+	// Which means, we'll only do it upon Add columns.
+	err = s.alterTable(fqName, false, config.Delete, tableData.LatestCDCTs, srcKeysMissing...)
+	if err != nil {
+		log.WithError(err).Warn("failed to apply alter table")
+		return err
+	}
+
+	// Make sure we are still trying to delete it.
+	// If not, then we should assume the column is good and then remove it from our in-mem store.
+	for colToDelete := range tableConfig.ColumnsToDelete() {
+		var found bool
+		for _, col := range srcKeysMissing {
+			if found = col.Name == colToDelete; found {
+				// Found it.
+				break
+			}
+		}
+
+		if !found {
+			// Only if it is NOT found shall we try to delete from in-memory (because we caught up)
+			tableConfig.ClearColumnsToDeleteByColName(colToDelete)
+		}
+	}
+	
+	//query, err := merge(tableData)
+	//if err != nil {
+	//	log.WithError(err).Warn("failed to generate the merge query")
+	//	return err
+	//}
+	//
+	//log.WithField("query", query).Debug("executing...")
+	//_, err = s.store.Exec(query)
+	return err
 }
 
-func LoadBigQuery(ctx context.Context) *BQStore {
+func LoadBigQuery(ctx context.Context) *Store {
 	if credPath := config.GetSettings().Config.BigQuery.PathToCredentials; credPath != "" {
 		// If the credPath is set, let's set it into the env var.
 		err := os.Setenv(GooglePathToCredentialsEnvKey, credPath)
@@ -118,7 +96,7 @@ func LoadBigQuery(ctx context.Context) *BQStore {
 
 	fmt.Println("bigqueryDSN", bigqueryDSN)
 
-	return &BQStore{
+	return &Store{
 		store:     db.Open(ctx, "bigquery", bigqueryDSN),
 		configMap: &types.DwhToTablesConfigMap{},
 	}

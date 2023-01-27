@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/artie-labs/transfer/lib/dwh/types"
-	"strings"
 	"time"
 
 	"github.com/snowflakedb/gosnowflake"
@@ -27,24 +26,27 @@ const (
 	describeTypeCol = "type"
 )
 
-func (s *Store) alterTable(ctx context.Context, fqTableName string, createTable bool, columnOp config.ColumnOperation, cdcTime time.Time, cols ...typing.Column) error {
+func (s *Store) alterTable(fqTableName string, createTable bool, columnOp config.ColumnOperation, cdcTime time.Time, cols ...typing.Column) error {
+	tc := s.configMap.TableConfig(fqTableName)
+	if tc == nil {
+		return fmt.Errorf("tableConfig is empty when trying to alter table, tableName: %s", fqTableName)
+	}
+
 	var colSQLPart string
 	var err error
 	var mutateCol []typing.Column
-
 	for _, col := range cols {
 		if col.Kind == typing.Invalid {
 			// Let's not modify the table if it's not accurate.
 			continue
 		}
 
-		if columnOp == config.Delete && !s.shouldDeleteColumn(ctx, fqTableName, col, cdcTime) {
+		if columnOp == config.Delete && !tc.ShouldDeleteColumn(col.Name, cdcTime) {
 			// Don't delete yet.
 			continue
 		}
 
 		mutateCol = append(mutateCol, col)
-
 		switch columnOp {
 		case config.Add:
 			colSQLPart = fmt.Sprintf("%s %s", col.Name, typing.KindToSnowflake(col.Kind))
@@ -60,7 +62,7 @@ func (s *Store) alterTable(ctx context.Context, fqTableName string, createTable 
 		}
 
 		_, err = s.store.Exec(sqlQuery)
-		if err != nil && strings.Contains(err.Error(), "already exists") {
+		if err != nil && ColumnAlreadyExistErr(err) {
 			// Snowflake doesn't have column mutations (IF NOT EXISTS)
 			err = nil
 		} else if err != nil {
@@ -69,7 +71,7 @@ func (s *Store) alterTable(ctx context.Context, fqTableName string, createTable 
 	}
 
 	if err == nil {
-		s.mutateColumnsWithMemoryCache(fqTableName, createTable, columnOp, mutateCol...)
+		tc.MutateColumnsWithMemCache(createTable, columnOp, mutateCol...)
 	}
 
 	return nil
@@ -92,7 +94,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.Columns, tableConfig.Columns())
 
 	// Keys that exist in CDC stream, but not in Snowflake
-	err = s.alterTable(ctx, fqName, tableConfig.CreateTable, config.Add, tableData.LatestCDCTs, targetKeysMissing...)
+	err = s.alterTable(fqName, tableConfig.CreateTable, config.Add, tableData.LatestCDCTs, targetKeysMissing...)
 	if err != nil {
 		log.WithError(err).Warn("failed to apply alter table")
 		return err
@@ -101,7 +103,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	// Keys that exist in Snowflake, but don't exist in our CDC stream.
 	// createTable is set to false because table creation requires a column to be added
 	// Which means, we'll only do it upon Add columns.
-	err = s.alterTable(ctx, fqName, false, config.Delete, tableData.LatestCDCTs, srcKeysMissing...)
+	err = s.alterTable(fqName, false, config.Delete, tableData.LatestCDCTs, srcKeysMissing...)
 	if err != nil {
 		log.WithError(err).Warn("failed to apply alter table")
 		return err

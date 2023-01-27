@@ -1,11 +1,138 @@
 package bigquery
 
 import (
+	"context"
+	"errors"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/dwh/types"
-	"github.com/artie-labs/transfer/lib/typing"
 	"strings"
+	"time"
+
+	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/dwh/types"
+	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/artie-labs/transfer/lib/typing"
 )
+
+func (s *Store) alterTable(fqTableName string, createTable bool, columnOp config.ColumnOperation, cdcTime time.Time, cols ...typing.Column) error {
+	tc := s.configMap.TableConfig(fqTableName)
+	if tc == nil {
+		return fmt.Errorf("tableConfig is empty when trying to alter table, tableName: %s", fqTableName)
+	}
+
+	var mutateCol []typing.Column
+	var colSQLPart string
+	var err error
+	for _, col := range cols {
+		if col.Kind == typing.Invalid {
+			// Let's not modify the table if the column kind is invalid
+			continue
+		}
+
+		if columnOp == config.Delete && !tc.ShouldDeleteColumn(col.Name, cdcTime) {
+			// Don't delete yet, we can evaluate when we consume more messages.
+			continue
+		}
+
+		mutateCol = append(mutateCol, col)
+		switch columnOp {
+		case config.Add:
+			colSQLPart = fmt.Sprintf("%s %s", col.Name, typing.KindToBigQuery(col.Kind))
+		case config.Delete:
+			colSQLPart = fmt.Sprintf("%s", col.Name)
+		}
+
+		// If the table does not exist, create it.
+		sqlQuery := fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTableName, columnOp, colSQLPart)
+		if createTable {
+			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", fqTableName, colSQLPart)
+			createTable = false
+		}
+
+		_, err = s.store.Exec(sqlQuery)
+		if err != nil && ColumnAlreadyExistErr(err) {
+			// Snowflake doesn't have column mutations (IF NOT EXISTS)
+			err = nil
+		} else if err != nil {
+			return err
+		}
+	}
+
+	if err == nil {
+		tc.MutateColumnsWithMemCache(createTable, columnOp, mutateCol...)
+	}
+
+	return nil
+}
+
+func (s *Store) getTableConfig(ctx context.Context, dataset, table string) (*types.DwhTableConfig, error) {
+	fqName := fmt.Sprintf("%s.%s", dataset, table)
+	tc := s.configMap.TableConfig(fqName)
+	if tc != nil {
+		return tc, nil
+	}
+
+	log := logger.FromContext(ctx)
+	rows, err := s.store.Query(fmt.Sprintf("SELECT ddl FROM %s.INFORMATION_SCHEMA.TABLES where table_name = '%s' LIMIT 1;", dataset, table))
+	defer func() {
+		if rows != nil {
+			err = rows.Close()
+			if err != nil {
+				log.WithError(err).Warn("Failed to close the row")
+			}
+		}
+	}()
+
+	if err != nil {
+		// The query will not fail if the table doesn't exist. It will simply return 0 rows.
+		// It WILL fail if the dataset doesn't exist or if it encounters any other forms of error.
+		return nil, err
+	}
+
+	row := make(map[string]string)
+	for rows != nil && rows.Next() {
+		// figure out what columns were returned
+		// the column names will be the JSON object field keys
+		columns, err := rows.ColumnTypes()
+		if err != nil {
+			return nil, err
+		}
+
+		var columnNameList []string
+		// Scan needs an array of pointers to the values it is setting
+		// This creates the object and sets the values correctly
+		values := make([]interface{}, len(columns))
+		for idx, column := range columns {
+			values[idx] = new(interface{})
+			columnNameList = append(columnNameList, strings.ToLower(column.Name()))
+		}
+
+		err = rows.Scan(values...)
+		if err != nil {
+			return nil, err
+		}
+
+		for idx, val := range values {
+			interfaceVal, isOk := val.(*interface{})
+			if !isOk || interfaceVal == nil {
+				return nil, errors.New("invalid value")
+			}
+
+			row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
+		}
+
+		// There's only one row, so breaking. We also need to use QueryRows() so we can inspect columnTypes
+		break
+	}
+
+	// Table doesn't exist if the information schema query returned nothing.
+	tableConfig, err := ParseSchemaQuery(row, len(row) == 0)
+	if err != nil {
+		return nil, err
+	}
+
+	s.configMap.AddTableToConfig(fqName, tableConfig)
+	return tableConfig, nil
+}
 
 // ParseSchemaQuery is to parse out the results from this query: https://cloud.google.com/bigquery/docs/information-schema-tables#example_1
 func ParseSchemaQuery(rows map[string]string, createTable bool) (*types.DwhTableConfig, error) {

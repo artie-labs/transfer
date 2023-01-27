@@ -52,3 +52,9 @@ func BigQueryTypeToKind(bqType string) Kind {
 		return Invalid
 	}
 }
+
+func KindToBigQuery(kind Kind) string {
+	// Doesn't look like we need to do any special type mapping.
+
+	return string(kind)
+}

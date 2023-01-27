@@ -14,8 +14,6 @@ import (
 )
 
 func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
-	ctx := context.Background()
-
 	topicConfig := kafkalib.TopicConfig{
 		Database:  "coffee_shop",
 		TableName: "orders",
@@ -35,17 +33,18 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 		Kind: typing.String,
 	}
 
-	val := s.store.shouldDeleteColumn(ctx, topicConfig.ToFqName(), nameCol, time.Now().Add(-1*6*time.Hour))
+	tc := s.store.configMap.TableConfig(topicConfig.ToFqName())
+
+	val := tc.ShouldDeleteColumn(nameCol.Name, time.Now().Add(-1*6*time.Hour))
 	assert.False(s.T(), val, "should not try to delete this column")
 	assert.Equal(s.T(), len(s.store.configMap.TableConfig(topicConfig.ToFqName()).ColumnsToDelete()), 1)
 
 	// Now let's try to add this column back, it should delete it from the cache.
-	s.store.mutateColumnsWithMemoryCache(topicConfig.ToFqName(), false, config.Add, nameCol)
+	tc.MutateColumnsWithMemCache(false, config.Add, nameCol)
 	assert.Equal(s.T(), len(s.store.configMap.TableConfig(topicConfig.ToFqName()).ColumnsToDelete()), 0)
 }
 
 func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
-	ctx := context.Background()
 	topicConfig := kafkalib.TopicConfig{
 		Database:  "coffee_shop",
 		TableName: "orders",
@@ -66,24 +65,21 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 	}
 
 	// Let's try to delete name.
-	allowed := s.store.shouldDeleteColumn(ctx, topicConfig.ToFqName(), nameCol,
-		time.Now().Add(-1*(6*time.Hour)))
+	allowed := s.store.configMap.TableConfig(topicConfig.ToFqName()).ShouldDeleteColumn(nameCol.Name, time.Now().Add(-1*(6*time.Hour)))
 
 	assert.Equal(s.T(), allowed, false, "should not be allowed to delete")
 
 	// Process tried to delete, but it's lagged.
-	allowed = s.store.shouldDeleteColumn(ctx, topicConfig.ToFqName(), nameCol,
-		time.Now().Add(-1*(6*time.Hour)))
+	allowed = s.store.configMap.TableConfig(topicConfig.ToFqName()).ShouldDeleteColumn(nameCol.Name, time.Now().Add(-1*(6*time.Hour)))
 
 	assert.Equal(s.T(), allowed, false, "should not be allowed to delete")
 
 	// Process now caught up, and is asking if we can delete, should still be no.
-	allowed = s.store.shouldDeleteColumn(ctx, topicConfig.ToFqName(), nameCol,
-		time.Now())
+	allowed = s.store.configMap.TableConfig(topicConfig.ToFqName()).ShouldDeleteColumn(nameCol.Name, time.Now())
 	assert.Equal(s.T(), allowed, false, "should not be allowed to delete still")
 
 	// Process is finally ahead, has permission to delete now.
-	allowed = s.store.shouldDeleteColumn(ctx, topicConfig.ToFqName(), nameCol,
+	allowed = s.store.configMap.TableConfig(topicConfig.ToFqName()).ShouldDeleteColumn(nameCol.Name,
 		time.Now().Add(2*config.DeletionConfidencePadding))
 
 	assert.Equal(s.T(), allowed, true, "should now be allowed to delete")

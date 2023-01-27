@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/artie-labs/transfer/lib/config"
 	"sync"
 	"time"
 
@@ -26,7 +27,38 @@ func NewDwhTableConfig(columns map[string]typing.Kind, colsToDelete map[string]t
 }
 
 func (tc *DwhTableConfig) Columns() map[string]typing.Kind {
+	if tc == nil {
+		return nil
+	}
+
 	return tc.columns
+}
+
+func (tc *DwhTableConfig) MutateColumnsWithMemCache(createTable bool, columnOp config.ColumnOperation, cols ...typing.Column) {
+	if tc == nil {
+		return
+	}
+
+	tc.Lock()
+	defer tc.Unlock()
+
+	table := tc.columns
+	switch columnOp {
+	case config.Add:
+		for _, col := range cols {
+			table[col.Name] = col.Kind
+			// Delete from the permissions table, if exists.
+			delete(tc.columnsToDelete, col.Name)
+		}
+
+		tc.CreateTable = createTable
+	case config.Delete:
+		for _, col := range cols {
+			// Delete from the permissions and in-memory table
+			delete(table, col.Name)
+			delete(tc.columnsToDelete, col.Name)
+		}
+	}
 }
 
 func (tc *DwhTableConfig) ColumnsToDelete() map[string]time.Time {
@@ -34,10 +66,33 @@ func (tc *DwhTableConfig) ColumnsToDelete() map[string]time.Time {
 		return nil
 	}
 
+	tc.Lock()
+	defer tc.Unlock()
+
 	return tc.columnsToDelete
 }
 
+func (tc *DwhTableConfig) ShouldDeleteColumn(colName string, cdcTime time.Time) bool {
+	if tc == nil {
+		// Avoid a panic and default to FALSE.
+		return false
+	}
+
+	ts, isOk := tc.ColumnsToDelete()[colName]
+	if isOk {
+		// If the CDC time is greater than this timestamp, then we should delete it.
+		return cdcTime.After(ts)
+	}
+
+	tc.AddColumnsToDelete(colName, time.Now().UTC().Add(config.DeletionConfidencePadding))
+	return false
+}
+
 func (tc *DwhTableConfig) AddColumnsToDelete(colName string, ts time.Time) {
+	if tc == nil {
+		return
+	}
+
 	tc.Lock()
 	defer tc.Unlock()
 
@@ -50,6 +105,10 @@ func (tc *DwhTableConfig) AddColumnsToDelete(colName string, ts time.Time) {
 }
 
 func (tc *DwhTableConfig) ClearColumnsToDeleteByColName(colName string) {
+	if tc == nil {
+		return
+	}
+
 	tc.Lock()
 	defer tc.Unlock()
 

@@ -5,66 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/artie-labs/transfer/lib/dwh/types"
-	"strings"
-	"time"
-
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/typing"
+	"strings"
 )
-
-func (s *Store) shouldDeleteColumn(ctx context.Context, fqName string, col typing.Column, cdcTime time.Time) bool {
-	tc := s.configMap.TableConfig(fqName)
-	if tc == nil {
-		logger.FromContext(ctx).WithFields(map[string]interface{}{
-			"fqName": fqName,
-			"col":    col.Name,
-		}).Error("tableConfig is missing when trying to delete column")
-
-		// Return false just to be safe. Let's also log this to Sentry.
-		return false
-	}
-
-	// TODO test panic
-	ts, isOk := tc.ColumnsToDelete()[col.Name]
-	if isOk {
-		// If the CDC time is greater than this timestamp, then we should delete it.
-		return cdcTime.After(ts)
-	}
-
-	tc.AddColumnsToDelete(col.Name, time.Now().UTC().Add(config.DeletionConfidencePadding))
-	return false
-}
-
-// mutateColumnsWithMemoryCache will modify the SFLK table cache to include columns
-// That we have already added to Snowflake. That way, we do not need to continually refresh the cache
-func (s *Store) mutateColumnsWithMemoryCache(fqName string, createTable bool, columnOp config.ColumnOperation, cols ...typing.Column) {
-	tc := s.configMap.TableConfig(fqName)
-	if tc == nil {
-		return
-	}
-
-	table := tc.Columns()
-	switch columnOp {
-	case config.Add:
-		for _, col := range cols {
-			table[col.Name] = col.Kind
-			// Delete from the permissions table, if exists.
-			tc.ClearColumnsToDeleteByColName(col.Name)
-		}
-
-		tc.CreateTable = createTable
-	case config.Delete:
-		for _, col := range cols {
-			delete(table, col.Name)
-			// Delete from the permissions table
-			tc.ClearColumnsToDeleteByColName(col.Name)
-		}
-
-	}
-
-	return
-}
 
 func (s *Store) getTableConfig(ctx context.Context, fqName string) (*types.DwhTableConfig, error) {
 	// Check if it already exists in cache
