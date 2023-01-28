@@ -58,6 +58,13 @@ func KindToBigQuery(kind Kind) string {
 	switch kind {
 	case Float:
 		return "float64"
+	case Array:
+		// This is because BigQuery requires typing within the element of an array
+		// IMO, a string type is the least controversial data type (others being bool, number, struct).
+		// With String, we can always type cast the child elements.
+		// BQ does this because 2d+ arrays are not allowed. See: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#array_type
+		// TODO: Once we support schemas within the CDC event, we can explore having dynamic array types.
+		return "array<string>"
 	}
 	return string(kind)
 }

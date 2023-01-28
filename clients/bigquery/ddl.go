@@ -49,6 +49,8 @@ func (s *Store) alterTable(ctx context.Context, fqTableName string, createTable 
 			createTable = false
 		}
 
+		fmt.Println("sqlQuery", sqlQuery)
+
 		_, err = s.c.Query(sqlQuery).Read(ctx)
 		if err != nil && ColumnAlreadyExistErr(err) {
 			// Snowflake doesn't have column mutations (IF NOT EXISTS)

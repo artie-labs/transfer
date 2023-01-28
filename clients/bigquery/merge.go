@@ -15,7 +15,6 @@ import (
 
 func merge(tableData *optimization.TableData) (string, error) {
 	fqName := fmt.Sprintf("%s.%s", tableData.Database, tableData.TableName)
-
 	var artieDeleteMetadataIdx *int
 	var cols []string
 	var sflkCols []string
@@ -67,6 +66,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 					// The normal string escape is to do for O'Reilly is O\\'Reilly, but Snowflake escapes via \'
 					colVal = fmt.Sprintf("'%s'", strings.ReplaceAll(fmt.Sprint(colVal), "'", `\'`))
 				case typing.Array:
+					fmt.Println("array colVal", colVal)
 					// We need to marshall, so we can escape the strings.
 					// https://go.dev/play/p/BcCwUSCeTmT
 					colValBytes, err := json.Marshal(colVal)
@@ -74,7 +74,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 						return "", err
 					}
 
-					colVal = fmt.Sprintf("'%s'", strings.ReplaceAll(string(colValBytes), "'", `\'`))
+					colVal = fmt.Sprintf("%s", strings.ReplaceAll(string(colValBytes), "'", `\'`))
 				}
 			} else {
 				colVal = "null"
