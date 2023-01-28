@@ -77,6 +77,8 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message kafka.Message) (
 			continue
 		}
 
+		fmt.Println("val", val)
+
 		col = strings.ToLower(col)
 		colType, isOk := inMemoryDB.TableData[e.Table].Columns[col]
 		if !isOk {

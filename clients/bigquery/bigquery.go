@@ -33,8 +33,6 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
-	fmt.Println("tableConfig", tableConfig.CreateTable)
-
 	log := logger.FromContext(ctx)
 	// Check if all the columns exist in Snowflake
 	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.Columns, tableConfig.Columns())
