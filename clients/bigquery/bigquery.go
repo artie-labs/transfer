@@ -1,6 +1,7 @@
 package bigquery
 
 import (
+	"cloud.google.com/go/bigquery"
 	"context"
 	"fmt"
 	"github.com/artie-labs/transfer/lib/config"
@@ -9,14 +10,13 @@ import (
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
-	_ "github.com/viant/bigquery"
 	"os"
 )
 
 const GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
 
 type Store struct {
-	store db.Store
+	c *bigquery.Client
 
 	configMap *types.DwhToTablesConfigMap
 }
@@ -28,7 +28,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	fqName := fmt.Sprintf("%s.%s", tableData.Database, tableData.TableName)
-	tableConfig, err := s.getTableConfig(ctx, tableData.Database, tableData.TableName)
+	tableConfig, err := s.GetTableConfig(ctx, tableData.Database, tableData.TableName)
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.Columns, tableConfig.Columns())
 
 	// Keys that exist in CDC stream, but not in Snowflake
-	err = s.alterTable(fqName, tableConfig.CreateTable, config.Add, tableData.LatestCDCTs, targetKeysMissing...)
+	err = s.alterTable(ctx, fqName, tableConfig.CreateTable, config.Add, tableData.LatestCDCTs, targetKeysMissing...)
 	if err != nil {
 		log.WithError(err).Warn("failed to apply alter table")
 		return err
@@ -49,7 +49,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	// Keys that exist in Snowflake, but don't exist in our CDC stream.
 	// createTable is set to false because table creation requires a column to be added
 	// Which means, we'll only do it upon Add columns.
-	err = s.alterTable(fqName, false, config.Delete, tableData.LatestCDCTs, srcKeysMissing...)
+	err = s.alterTable(ctx, fqName, false, config.Delete, tableData.LatestCDCTs, srcKeysMissing...)
 	if err != nil {
 		log.WithError(err).Warn("failed to apply alter table")
 		return err
@@ -81,8 +81,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	fmt.Println("query", query)
 
 	log.WithField("query", query).Debug("executing...")
-	_, err = s.store.Exec(query)
-
+	_, err = s.c.Query(query).Read(ctx)
 	fmt.Println("err", err)
 	return err
 }
@@ -91,7 +90,7 @@ func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			store:     *_store,
+			//store:     *_store,
 			configMap: &types.DwhToTablesConfigMap{},
 		}
 	}
@@ -104,6 +103,13 @@ func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
 		}
 	}
 
+	// TODO wrap bqClient in an interface so we can mock in tests.
+	bqClient, err := bigquery.NewClient(ctx, config.GetSettings().Config.BigQuery.ProjectID)
+	if err != nil {
+		logger.FromContext(ctx).WithError(err).Fatalf("failed to start bigquery client, err: %v", err)
+		// TODO: Handle error.
+	}
+
 	// TODO - Can we get away with specifying datasets and have this available at the kafkaTopic level?
 	bigqueryDSN := fmt.Sprintf("bigquery://%s/%s", config.GetSettings().Config.BigQuery.ProjectID,
 		config.GetSettings().Config.BigQuery.Dataset)
@@ -111,7 +117,7 @@ func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
 	fmt.Println("bigqueryDSN", bigqueryDSN)
 
 	return &Store{
-		store:     db.Open(ctx, "bigquery", bigqueryDSN),
+		c:         bqClient,
 		configMap: &types.DwhToTablesConfigMap{},
 	}
 }

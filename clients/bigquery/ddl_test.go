@@ -15,9 +15,7 @@ func TestParseSchemaQuery(t *testing.T) {
 	}
 
 	for _, basicQuery := range basicQueries {
-		tableConfig, err := ParseSchemaQuery(map[string]string{
-			"ddl": basicQuery,
-		}, false)
+		tableConfig, err := ParseSchemaQuery(basicQuery, false)
 
 		assert.NoError(t, err, err)
 
@@ -30,9 +28,8 @@ func TestParseSchemaQuery(t *testing.T) {
 
 func TestParseSchemaQueryComplex(t *testing.T) {
 	// This test will test every single data type.
-	tableConfig, err := ParseSchemaQuery(map[string]string{
-		"ddl": "CREATE TABLE `artie-labs.mock.customers`(string_field_0 STRING,string_field_1 STRING,field2 INT64,field3 ARRAY<INT64>,field4 FLOAT64,field5 NUMERIC,field6 BIGNUMERIC,field7 BOOL,field8 TIMESTAMP,field9 DATE,field10 TIME,field11 DATETIME,field12 STRUCT<foo STRING>,field13 JSON)OPTIONS(expiration_timestamp=TIMESTAMP 2023-03-26T20:03:44.504Z);",
-	}, false)
+	tableConfig, err := ParseSchemaQuery("CREATE TABLE `artie-labs.mock.customers`(string_field_0 STRING,string_field_1 STRING,field2 INT64,field3 ARRAY<INT64>,field4 FLOAT64,field5 NUMERIC,field6 BIGNUMERIC,field7 BOOL,field8 TIMESTAMP,field9 DATE,field10 TIME,field11 DATETIME,field12 STRUCT<foo STRING>,field13 JSON)OPTIONS(expiration_timestamp=TIMESTAMP 2023-03-26T20:03:44.504Z);",
+		false)
 
 	assert.NoError(t, err, err)
 	assert.Equal(t, len(tableConfig.Columns()), 14, tableConfig.Columns)
