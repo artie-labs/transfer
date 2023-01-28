@@ -10,7 +10,6 @@ import (
 
 type DwhTableConfig struct {
 	// Making these private variables to avoid concurrent R/W panics.
-
 	columns         map[string]typing.Kind
 	columnsToDelete map[string]time.Time // column --> when to delete
 	CreateTable     bool
@@ -19,6 +18,14 @@ type DwhTableConfig struct {
 }
 
 func NewDwhTableConfig(columns map[string]typing.Kind, colsToDelete map[string]time.Time, createTable bool) *DwhTableConfig {
+	if len(columns) == 0 {
+		columns = make(map[string]typing.Kind)
+	}
+
+	if len(colsToDelete) == 0 {
+		colsToDelete = make(map[string]time.Time)
+	}
+
 	return &DwhTableConfig{
 		columns:         columns,
 		columnsToDelete: colsToDelete,
@@ -41,7 +48,6 @@ func (tc *DwhTableConfig) MutateColumnsWithMemCache(createTable bool, columnOp c
 
 	tc.Lock()
 	defer tc.Unlock()
-
 	table := tc.columns
 	switch columnOp {
 	case config.Add:

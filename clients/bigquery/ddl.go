@@ -14,6 +14,7 @@ import (
 )
 
 func (s *Store) alterTable(fqTableName string, createTable bool, columnOp config.ColumnOperation, cdcTime time.Time, cols ...typing.Column) error {
+	fmt.Println("fqTableName", fqTableName)
 	tc := s.configMap.TableConfig(fqTableName)
 	if tc == nil {
 		return fmt.Errorf("tableConfig is empty when trying to alter table, tableName: %s", fqTableName)
@@ -47,6 +48,8 @@ func (s *Store) alterTable(fqTableName string, createTable bool, columnOp config
 			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", fqTableName, colSQLPart)
 			createTable = false
 		}
+
+		fmt.Println("sqlQuery", sqlQuery)
 
 		_, err = s.store.Exec(sqlQuery)
 		if err != nil && ColumnAlreadyExistErr(err) {
@@ -140,9 +143,7 @@ func ParseSchemaQuery(rows map[string]string, createTable bool) (*types.DwhTable
 	if !isOk {
 		// If the rows don't exist, that's normal if the table doesn't exist.
 		if createTable {
-			return &types.DwhTableConfig{
-				CreateTable: createTable,
-			}, nil
+			return types.NewDwhTableConfig(nil, nil, createTable), nil
 		}
 
 		return nil, fmt.Errorf("missing ddl column")

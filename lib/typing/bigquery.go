@@ -55,6 +55,9 @@ func BigQueryTypeToKind(bqType string) Kind {
 
 func KindToBigQuery(kind Kind) string {
 	// Doesn't look like we need to do any special type mapping.
-
+	switch kind {
+	case Float:
+		return "float64"
+	}
 	return string(kind)
 }

@@ -30,7 +30,7 @@ func LoadDataWarehouse(ctx context.Context, store *db.Store) DataWarehouse {
 	case "snowflake":
 		return snowflake.LoadSnowflake(ctx, store)
 	case "bigquery":
-		return bigquery.LoadBigQuery(ctx)
+		return bigquery.LoadBigQuery(ctx, store)
 	}
 
 	logger.FromContext(ctx).WithFields(map[string]interface{}{

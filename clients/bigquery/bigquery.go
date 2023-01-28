@@ -27,11 +27,13 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return nil
 	}
 
-	fqName := tableData.ToFqName()
+	fqName := fmt.Sprintf("%s.%s", tableData.Database, tableData.TableName)
 	tableConfig, err := s.getTableConfig(ctx, tableData.Database, tableData.TableName)
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("tableConfig", tableConfig.CreateTable)
 
 	log := logger.FromContext(ctx)
 	// Check if all the columns exist in Snowflake
@@ -69,19 +71,31 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 			tableConfig.ClearColumnsToDeleteByColName(colToDelete)
 		}
 	}
-	
-	//query, err := merge(tableData)
-	//if err != nil {
-	//	log.WithError(err).Warn("failed to generate the merge query")
-	//	return err
-	//}
-	//
-	//log.WithField("query", query).Debug("executing...")
-	//_, err = s.store.Exec(query)
+
+	query, err := merge(tableData)
+	if err != nil {
+		log.WithError(err).Warn("failed to generate the merge query")
+		return err
+	}
+
+	fmt.Println("query", query)
+
+	log.WithField("query", query).Debug("executing...")
+	_, err = s.store.Exec(query)
+
+	fmt.Println("err", err)
 	return err
 }
 
-func LoadBigQuery(ctx context.Context) *Store {
+func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
+	if _store != nil {
+		// Used for tests.
+		return &Store{
+			store:     *_store,
+			configMap: &types.DwhToTablesConfigMap{},
+		}
+	}
+
 	if credPath := config.GetSettings().Config.BigQuery.PathToCredentials; credPath != "" {
 		// If the credPath is set, let's set it into the env var.
 		err := os.Setenv(GooglePathToCredentialsEnvKey, credPath)
