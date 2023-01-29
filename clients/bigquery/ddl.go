@@ -157,7 +157,14 @@ func ParseSchemaQuery(row string, createTable bool) (*types.DwhTableConfig, erro
 	columnsToTypes := strings.Split(ddlString, ",")
 	for _, colType := range columnsToTypes {
 		// TrimSpace will clear spaces, \t, \n for both L+R side of the string.
-		parts := strings.Split(strings.TrimSpace(colType), " ")
+		colType = strings.TrimSpace(colType)
+		if colType == "" {
+			// This is because the schema can have a trailing `,` at the end of the list.
+			// BigQuery is inconsistent in this manner.
+			continue
+		}
+
+		parts := strings.Split(colType, " ")
 		if len(parts) < 2 {
 			return nil, fmt.Errorf("unexpected colType, colType: %s, parts: %v", colType, parts)
 		}

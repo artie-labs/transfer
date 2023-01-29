@@ -60,13 +60,16 @@ func IsJSON(str string) bool {
 
 func ParseDateTime(dtString string) (time.Time, error) {
 	var err error
+	var ts time.Time
 	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
-		ts, err := time.Parse(supportedDateTimeLayout, dtString)
+		ts, err = time.Parse(supportedDateTimeLayout, dtString)
 		if err == nil {
 			fmt.Println("supportedDateTimeLayout", supportedDateTimeLayout)
 			return ts, nil
 		}
 	}
+
+	fmt.Println("here", dtString, "err", err)
 
 	return time.Time{}, err
 }

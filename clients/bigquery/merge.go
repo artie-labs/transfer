@@ -17,23 +17,15 @@ func merge(tableData *optimization.TableData) (string, error) {
 	fqName := fmt.Sprintf("%s.%s", tableData.Database, tableData.TableName)
 	var artieDeleteMetadataIdx *int
 	var cols []string
-	var sflkCols []string
 
 	// Given all the columns, diff this against SFLK.
 	for col, kind := range tableData.Columns {
 		if kind == typing.Invalid {
-			// Don't update Snowflake
+			// Don't update BQ
 			continue
 		}
 
-		sflkCol := col
-		switch kind {
-		case typing.Struct, typing.Array:
-			sflkCol = fmt.Sprintf("PARSE_JSON(%s) %s", col, col)
-		}
-
 		cols = append(cols, col)
-		sflkCols = append(sflkCols, sflkCol)
 	}
 
 	var rowValues []string
@@ -65,6 +57,10 @@ func merge(tableData *optimization.TableData) (string, error) {
 					colVal = strings.ReplaceAll(fmt.Sprint(colVal), `\n`, `\\n`)
 					// The normal string escape is to do for O'Reilly is O\\'Reilly, but Snowflake escapes via \'
 					colVal = fmt.Sprintf("'%s'", strings.ReplaceAll(fmt.Sprint(colVal), "'", `\'`))
+					if colKind == typing.Struct {
+						// This is how you cast string -> JSON
+						colVal = fmt.Sprintf("JSON %s", colVal)
+					}
 				case typing.Array:
 					fmt.Println("array colVal", colVal)
 					// We need to marshall, so we can escape the strings.

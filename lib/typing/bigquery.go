@@ -43,6 +43,7 @@ func BigQueryTypeToKind(bqType string) Kind {
 	case "bool", "boolean":
 		return Boolean
 	case "struct", "json", "record":
+		// Record is a legacy BQ object that maps to a JSON.
 		return Struct
 	case "array":
 		return Array
@@ -65,6 +66,9 @@ func KindToBigQuery(kind Kind) string {
 		// BQ does this because 2d+ arrays are not allowed. See: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#array_type
 		// TODO: Once we support schemas within the CDC event, we can explore having dynamic array types.
 		return "array<string>"
+	case Struct:
+		// Struct is a tighter version of JSON that requires type casting like Struct<int64>
+		return "json"
 	}
 	return string(kind)
 }
