@@ -2,7 +2,7 @@ package bigquery
 
 import (
 	"context"
-	"github.com/artie-labs/transfer/lib/db"
+	"github.com/artie-labs/transfer/clients/bigquery/clients"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/stretchr/testify/suite"
 	"testing"
@@ -10,16 +10,15 @@ import (
 
 type BigQueryTestSuite struct {
 	suite.Suite
-	fakeStore *mocks.FakeStore
-	store     *Store
+	fakeClient *mocks.FakeClient
+	store      *Store
 }
 
 func (b *BigQueryTestSuite) SetupTest() {
 	ctx := context.Background()
-
-	b.fakeStore = &mocks.FakeStore{}
-	store := db.Store(b.fakeStore)
-	b.store = LoadBigQuery(ctx, &store)
+	b.fakeClient = &mocks.FakeClient{}
+	fakeClient := clients.Client(b.fakeClient)
+	b.store = LoadBigQuery(ctx, fakeClient)
 }
 
 func TestBigQueryTestSuite(t *testing.T) {

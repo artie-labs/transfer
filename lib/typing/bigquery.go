@@ -1,12 +1,10 @@
 package typing
 
 import (
-	"fmt"
 	"strings"
 )
 
 func BigQueryTypeToKind(bqType string) Kind {
-	fmt.Println("bqType", bqType)
 	// TODO: test every single type.
 
 	bqType = strings.ToLower(bqType)

@@ -12,6 +12,12 @@ func TestBigQueryTypeToKind(t *testing.T) {
 		"sTriNG":             String,
 		"STRING (10)":        String,
 		"STRUCT<foo STRING>": Struct,
+		"array<string>":      Array,
+		"bool":               Boolean,
+		"record":             Struct,
+		"json":               Struct,
+		"datetime":           DateTime,
+		"timestamp":          DateTime,
 	}
 
 	for bqCol, expectedKind := range bqColToExpectedKind {

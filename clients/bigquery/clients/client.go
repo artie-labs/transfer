@@ -1,4 +1,4 @@
-package bigquery
+package clients
 
 import (
 	"cloud.google.com/go/bigquery"

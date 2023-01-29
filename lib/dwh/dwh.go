@@ -3,6 +3,7 @@ package dwh
 import (
 	"context"
 	"github.com/artie-labs/transfer/clients/bigquery"
+	"github.com/artie-labs/transfer/clients/bigquery/clients"
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/db"
@@ -18,14 +19,15 @@ type DataWarehouse interface {
 	// FQName() should be done at the DWH level.
 }
 
-func LoadDataWarehouse(ctx context.Context, store *db.Store, bqClient bigquery.Client) DataWarehouse {
+func LoadDataWarehouse(ctx context.Context, store *db.Store, bqClient clients.Client) DataWarehouse {
 	switch config.GetSettings().Config.Output {
-	// TODO "test", "snowflake", "bigquery" should all be valid labels and variables.
 	case "test":
+		// TODO - In the future, we can create a fake store that follows the MERGE syntax for SQL standard.
+		// Problem though, is that each DWH seems to implement MERGE differently.
+		// So for now, the fake store will just output the merge command by following Snowflake's syntax.
 		store := db.Store(&mock.DB{
 			Fake: mocks.FakeStore{},
 		})
-		// TODO: When we create mock DWH interfaces, instantiate a mock DWH store
 		return snowflake.LoadSnowflake(ctx, &store)
 	case "snowflake":
 		return snowflake.LoadSnowflake(ctx, store)

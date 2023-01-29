@@ -2,6 +2,7 @@ package bigquery
 
 import (
 	"context"
+	"github.com/artie-labs/transfer/clients/bigquery/clients"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/logger"
@@ -12,10 +13,10 @@ const GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
 
 type Store struct {
 	configMap *types.DwhToTablesConfigMap
-	Client
+	clients.Client
 }
 
-func LoadBigQuery(ctx context.Context, _client Client) *Store {
+func LoadBigQuery(ctx context.Context, _client clients.Client) *Store {
 	if _client != nil {
 		// Used for tests.
 		return &Store{
@@ -33,7 +34,7 @@ func LoadBigQuery(ctx context.Context, _client Client) *Store {
 	}
 
 	return &Store{
-		Client:    NewClient(ctx, config.GetSettings().Config.BigQuery.ProjectID),
+		Client:    clients.NewClient(ctx, config.GetSettings().Config.BigQuery.ProjectID),
 		configMap: &types.DwhToTablesConfigMap{},
 	}
 }
