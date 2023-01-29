@@ -257,6 +257,48 @@ func (s *SnowflakeTestSuite) TestAlterTableDelete() {
 	}
 }
 
+func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
+	// This test was written for https://github.com/artie-labs/transfer/pull/26
+	// Say the column first_name already exists in Snowflake as "STRING"
+	// I want to delete the value, so I update Postgres and set the cell to be null
+	// TableData will think the column is invalid and tableConfig will think column = string
+	// Before we call merge, it should reconcile it.
+	columns := map[string]typing.Kind{
+		"first_name":              typing.Invalid,
+		config.DeleteColumnMarker: typing.Boolean,
+	}
+
+	rowsData := map[string]map[string]interface{}{
+		"pk-1": {
+			"first_name": nil,
+		},
+	}
+
+	topicConfig := kafkalib.TopicConfig{
+		Database:  "customer",
+		TableName: "orders",
+		Schema:    "public",
+	}
+
+	tableData := &optimization.TableData{
+		Columns:     columns,
+		RowsData:    rowsData,
+		TopicConfig: topicConfig,
+		PrimaryKey:  "id",
+		Rows:        1,
+	}
+
+	mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()] = &snowflakeTableConfig{
+		Columns: map[string]typing.Kind{
+			"first_name":              typing.String,
+			config.DeleteColumnMarker: typing.Boolean,
+		},
+	}
+
+	ExecuteMerge(context.Background(), tableData)
+	assert.Equal(s.T(), tableData.Columns["first_name"], typing.String)
+}
+
 func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	columns := map[string]typing.Kind{
 		"id":                      typing.Integer,
