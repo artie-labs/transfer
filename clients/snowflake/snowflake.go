@@ -128,7 +128,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	// We now need to merge the two columns from tableData (which is constructed in-memory) and tableConfig (coming from the describe statement)
 	// Cannot do a full swap because tableData is a super-set of tableConfig (it contains the temp deletion flag and other columns with the __artie prefix).
-	for tcCol, tcKind := range tableConfig.Columns {
+	for tcCol, tcKind := range tableConfig.Columns() {
 		tableData.Columns[tcCol] = tcKind
 	}
 	query, err := merge(tableData)

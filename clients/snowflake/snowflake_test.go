@@ -274,14 +274,13 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		Rows:        1,
 	}
 
-	mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()] = &snowflakeTableConfig{
-		Columns: map[string]typing.Kind{
+	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(), types.NewDwhTableConfig(
+		map[string]typing.Kind{
 			"first_name":              typing.String,
 			config.DeleteColumnMarker: typing.Boolean,
-		},
-	}
+		}, nil, false))
 
-	ExecuteMerge(context.Background(), tableData)
+	s.store.Merge(context.Background(), tableData)
 	assert.Equal(s.T(), tableData.Columns["first_name"], typing.String)
 }
 
