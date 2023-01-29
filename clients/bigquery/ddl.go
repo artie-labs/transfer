@@ -51,7 +51,7 @@ func (s *Store) alterTable(ctx context.Context, fqTableName string, createTable 
 
 		fmt.Println("sqlQuery", sqlQuery)
 
-		_, err = s.c.Query(sqlQuery).Read(ctx)
+		_, err = s.Query(sqlQuery).Read(ctx)
 		if err != nil && ColumnAlreadyExistErr(err) {
 			// Snowflake doesn't have column mutations (IF NOT EXISTS)
 			err = nil
@@ -75,7 +75,7 @@ func (s *Store) GetTableConfig(ctx context.Context, dataset, table string) (*typ
 	}
 
 	//log := logger.FromContext(ctx)
-	rows, err := s.c.Query(fmt.Sprintf("SELECT ddl FROM %s.INFORMATION_SCHEMA.TABLES where table_name = '%s' LIMIT 1;", dataset, table)).Read(ctx)
+	rows, err := s.Query(fmt.Sprintf("SELECT ddl FROM %s.INFORMATION_SCHEMA.TABLES where table_name = '%s' LIMIT 1;", dataset, table)).Read(ctx)
 	if err != nil {
 		// The query will not fail if the table doesn't exist. It will simply return 0 rows.
 		// It WILL fail if the dataset doesn't exist or if it encounters any other forms of error.

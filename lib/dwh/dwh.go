@@ -18,7 +18,7 @@ type DataWarehouse interface {
 	// FQName() should be done at the DWH level.
 }
 
-func LoadDataWarehouse(ctx context.Context, store *db.Store) DataWarehouse {
+func LoadDataWarehouse(ctx context.Context, store *db.Store, bqClient bigquery.Client) DataWarehouse {
 	switch config.GetSettings().Config.Output {
 	// TODO "test", "snowflake", "bigquery" should all be valid labels and variables.
 	case "test":
@@ -30,7 +30,7 @@ func LoadDataWarehouse(ctx context.Context, store *db.Store) DataWarehouse {
 	case "snowflake":
 		return snowflake.LoadSnowflake(ctx, store)
 	case "bigquery":
-		return bigquery.LoadBigQuery(ctx, store)
+		return bigquery.LoadBigQuery(ctx, bqClient)
 	}
 
 	logger.FromContext(ctx).WithFields(map[string]interface{}{

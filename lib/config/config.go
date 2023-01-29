@@ -42,7 +42,6 @@ type Config struct {
 		PathToCredentials string `yaml:"pathToCredentials"`
 
 		ProjectID string `yaml:"projectID"`
-		Dataset   string `yaml:"dataset"`
 	}
 
 	Snowflake struct {

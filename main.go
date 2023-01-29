@@ -24,7 +24,7 @@ func main() {
 	ctx = metrics.LoadExporter(ctx, config.GetSettings().Config.Telemetry.Metrics.Provider,
 		config.GetSettings().Config.Telemetry.Metrics.Settings)
 
-	ctx = dwh.InjectDwhIntoCtx(dwh.LoadDataWarehouse(ctx, nil), ctx)
+	ctx = dwh.InjectDwhIntoCtx(dwh.LoadDataWarehouse(ctx, nil, nil), ctx)
 
 	models.LoadMemoryDB()
 
