@@ -284,7 +284,11 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	evtData := evt.GetData("id", 1001, &kafkalib.TopicConfig{})
 	assert.Equal(p.T(), evtData["id"], float64(1001))
 	assert.Equal(p.T(), evtData["email"], "sally.thomas@acme.com")
-	assert.Equal(p.T(), evtData["ts_no_tz1"], "2023-02-02T09:51:35-08:00")
+
+	// assert.Equal(p.T(), time.Date(2022, time.November,
+	//		18, 6, 35, 21, 0, time.UTC), event.GetExecutionTime())
+	td := time.Date(2023, time.February, 2, 17, 51, 35, 0, time.UTC)
+	assert.Equal(p.T(), evtData["ts_no_tz1"], td.Format(time.RFC3339))
 	assert.Equal(p.T(), evt.Table(), "customers")
 }
 

@@ -23,7 +23,8 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) time
 	// https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-temporal-types
 	switch supportedType {
 	case MicroTimestamp:
-		return time.UnixMicro(val)
+		// Cast the TZ in UTC. By default, it would be in local (machine) TZ.
+		return time.UnixMicro(val).In(time.UTC)
 
 	}
 
