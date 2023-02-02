@@ -119,17 +119,24 @@ Note: Keys here are formatted in dot notation for readability purposes, please e
 
 
 ## Limitations
+_Note: If any of these limitations are blocking you from using Transfer. Feel free to contribute or file a bug and we'll get this prioritized!</br>
+The long term goal for Artie Transfer is to be able to extend the service to have as little of these limitations as possible.
+
 **Postgres Debezium wal2json** <br/>
 * `decimal.handling.mode` only works for `double` or `string`.<br/>
 The default value is `precise` which will cast the value in `java.math.BigDecimal` and Transfer does not know how to decode that yet.
 For further information on how to set this to be `string` or `double`, please [click here](https://docs.confluent.io/cloud/current/connectors/cc-postgresql-cdc-source-debezium.html#connector-details)
-* `key.converter.schemas.enable` and `value.converter.schemas.enable` both need to be set to `false`
+* `value.converter.schemas.enable` must be set to `true`
+* `key.converter.schemas.enable` must be set to `false`
 * `value.converter` must be set to `org.apache.kafka.connect.json.JsonConverter`
+* Transfer only supports `time.precision.mode=adaptive` which is the default value.
 
 
 **MongoDB Debezium** <br/>
-* `key.converter.schemas.enable` and `value.converter.schemas.enable` both need to be set to `false`
 * `value.converter` must be set to `org.apache.kafka.connect.json.JsonConverter`
+* `key.converter.schemas.enable` and `value.converter.schemas.enable` both need to be set to `false`
+_Supporting `value.converter.schemas.enable` is currently in our backlog_ 
+
 
 ## Telemetry
 Click [here](https://github.com/artie-labs/transfer/blob/master/lib/telemetry/README.md) to read more about Transfer's telemetry feature.
