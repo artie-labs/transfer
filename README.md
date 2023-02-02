@@ -120,7 +120,7 @@ Note: Keys here are formatted in dot notation for readability purposes, please e
 
 ## Limitations
 _Note: If any of these limitations are blocking you from using Transfer. Feel free to contribute or file a bug and we'll get this prioritized!</br>
-The long term goal for Artie Transfer is to be able to extend the service to have as little of these limitations as possible.
+The long term goal for Artie Transfer is to be able to extend the service to have as little of these limitations as possible._
 
 **Postgres Debezium wal2json** <br/>
 * `decimal.handling.mode` only works for `double` or `string`.<br/>
