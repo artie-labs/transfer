@@ -25,7 +25,6 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) time
 	case MicroTimestamp:
 		// Cast the TZ in UTC. By default, it would be in local (machine) TZ.
 		return time.UnixMicro(val).In(time.UTC)
-
 	}
 
 	return time.Time{}
