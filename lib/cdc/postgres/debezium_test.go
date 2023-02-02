@@ -195,4 +195,97 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
 	assert.Equal(p.T(), evt.Table(), "orders")
 }
 
+func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
+	payload := `
+{
+	"schema": {
+		"type": "struct",
+		"fields": [{
+			"type": "struct",
+			"fields": [{
+				"type": "int32",
+				"optional": false,
+				"default": 0,
+				"field": "id"
+			}, {
+				"type": "string",
+				"optional": false,
+				"field": "first_name"
+			}, {
+				"type": "string",
+				"optional": false,
+				"field": "last_name"
+			}, {
+				"type": "string",
+				"optional": false,
+				"field": "email"
+			}, {
+				"type": "int64",
+				"optional": true,
+				"name": "io.debezium.time.MicroTimestamp",
+				"version": 1,
+				"field": "ts_no_tz1"
+			}, {
+				"type": "int64",
+				"optional": true,
+				"name": "io.debezium.time.MicroTimestamp",
+				"version": 1,
+				"field": "ts_no_tz2"
+			}, {
+				"type": "int64",
+				"optional": true,
+				"name": "io.debezium.time.MicroTimestamp",
+				"version": 1,
+				"field": "ts_no_tz3"
+			}],
+			"optional": true,
+			"name": "dbserver1.inventory.customers.Value",
+			"field": "after"
+		}],
+		"optional": false,
+		"name": "dbserver1.inventory.customers.Envelope",
+		"version": 1
+	},
+	"payload": {
+		"before": {},
+		"after": {
+			"id": 1001,
+			"first_name": "Sally",
+			"last_name": "Thomas",
+			"email": "sally.thomas@acme.com",
+			"ts_no_tz1": 1675360295175445,
+			"ts_no_tz2": 1675360392604675,
+			"ts_no_tz3": 1675360451434545
+		},
+		"source": {
+			"version": "2.0.0.Final",
+			"connector": "postgresql",
+			"name": "dbserver1",
+			"ts_ms": 1675360451451,
+			"snapshot": "false",
+			"db": "postgres",
+			"sequence": "[\"36972496\",\"36972496\"]",
+			"schema": "inventory",
+			"table": "customers",
+			"txId": 771,
+			"lsn": 36972496,
+			"xmin": null
+		},
+		"op": "u",
+		"ts_ms": 1675360451732,
+		"transaction": null
+	}
+}
+`
+
+	evt, err := p.Debezium.GetEventFromBytes(context.Background(), []byte(payload))
+	assert.Nil(p.T(), err)
+
+	evtData := evt.GetData("id", 1001, &kafkalib.TopicConfig{})
+	assert.Equal(p.T(), evtData["id"], float64(1001))
+	assert.Equal(p.T(), evtData["email"], "sally.thomas@acme.com")
+	assert.Equal(p.T(), evtData["ts_no_tz1"], "2023-02-02T09:51:35-08:00")
+	assert.Equal(p.T(), evt.Table(), "customers")
+}
+
 // TODO: Add a test related to schema and the microtimestamp format.
