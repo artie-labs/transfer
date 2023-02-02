@@ -37,7 +37,7 @@ func (p *PostgresTestSuite) TestSource_GetExecutionTime() {
 		TsMs:      1665458364942, // Tue Oct 11 2022 03:19:24
 	}
 
-	event := &Event{Source: source}
+	event := &payload{Source: source}
 	assert.Equal(p.T(), time.Date(2022, time.October,
 		11, 3, 19, 24, 942000000, time.UTC), event.GetExecutionTime())
 }
@@ -52,7 +52,7 @@ func (p *PostgresTestSuite) TestGetDataTestInsert() {
 
 	var tc kafkalib.TopicConfig
 
-	evt := Event{
+	evt := payload{
 		Before:    nil,
 		After:     after,
 		Operation: "c",
@@ -75,7 +75,7 @@ func (p *PostgresTestSuite) TestGetDataTestDelete() {
 	}
 
 	now := time.Now().UTC()
-	evt := Event{
+	evt := payload{
 		Before:    nil,
 		After:     nil,
 		Operation: "c",
@@ -117,7 +117,7 @@ func (p *PostgresTestSuite) TestGetDataTestUpdate() {
 	}
 
 	var tc kafkalib.TopicConfig
-	evt := Event{
+	evt := payload{
 		Before:    before,
 		After:     after,
 		Operation: "c",

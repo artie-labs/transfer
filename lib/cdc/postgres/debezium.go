@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/debezium"
+	"strconv"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -15,45 +17,13 @@ import (
 type Debezium string
 
 func (d *Debezium) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Event, error) {
-	var event Event
+	var event SchemaEventPayload
 	err := json.Unmarshal(bytes, &event)
 	if err != nil {
 		return nil, err
 	}
 
 	return &event, nil
-}
-
-type Event struct {
-	Before    map[string]interface{} `json:"before"`
-	After     map[string]interface{} `json:"after"`
-	Source    Source                 `json:"source"`
-	Operation string                 `json:"op"`
-}
-
-/*
-	{ "source": {
-			"version": "1.9.6.Final",
-			"connector": "postgresql",
-			"name": "customers.cdf39pfs1qnp.us-east-1.rds.amazonaws.com",
-			"ts_ms": 1665458364942,
-			"snapshot": "false",
-			"db": "demo",
-			"sequence": "[\"24159204096\",\"24226299944\"]",
-			"schema": "public",
-			"table": "customers",
-			"txId": 3089,
-			"lsn": 24226299944,
-			"xmin": null
-		}
-	}
-*/
-type Source struct {
-	Connector string `json:"connector"`
-	TsMs      int64  `json:"ts_ms"`
-	Database  string `json:"db"`
-	Schema    string `json:"schema"`
-	Table     string `json:"table"`
 }
 
 func (d *Debezium) Label() string {
@@ -73,18 +43,18 @@ func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.T
 	return
 }
 
-func (e *Event) GetExecutionTime() time.Time {
-	return time.UnixMilli(e.Source.TsMs).UTC()
+func (s *SchemaEventPayload) GetExecutionTime() time.Time {
+	return time.UnixMilli(s.Payload.Source.TsMs).UTC()
 }
 
-func (e *Event) Table() string {
-	return e.Source.Table
+func (s *SchemaEventPayload) Table() string {
+	return s.Payload.Source.Table
 }
 
-func (e *Event) GetData(pkName string, pkVal interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
+func (s *SchemaEventPayload) GetData(pkName string, pkVal interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
 	retMap := make(map[string]interface{})
-	if len(e.After) == 0 {
-		// This is a delete event, so mark it as deleted.
+	if len(s.Payload.After) == 0 {
+		// This is a delete payload, so mark it as deleted.
 		// And we need to reconstruct the data bit since it will be empty.
 		// We _can_ rely on *before* since even without running replicate identity, it will still copy over
 		// the PK. We can explore simplifying this interface in the future by leveraging before.
@@ -93,13 +63,31 @@ func (e *Event) GetData(pkName string, pkVal interface{}, tc *kafkalib.TopicConf
 			pkName:                    pkVal,
 		}
 
-		// If idempotency key is an empty string, don't put it in the event data
+		// If idempotency key is an empty string, don't put it in the payload data
 		if tc.IdempotentKey != "" {
-			retMap[tc.IdempotentKey] = e.GetExecutionTime().Format(time.RFC3339)
+			retMap[tc.IdempotentKey] = s.GetExecutionTime().Format(time.RFC3339)
 		}
 	} else {
-		retMap = e.After
+		retMap = s.Payload.After
 		retMap[config.DeleteColumnMarker] = false
+	}
+
+	// Iterate over the schema and identify if there are any fields that require extra care.
+	afterSchemaObject := s.Schema.GetSchemaFromLabel(cdc.After)
+	if afterSchemaObject != nil {
+		for _, field := range afterSchemaObject.Fields {
+			if valid, supportedType := debezium.RequiresSpecialTypeCasting(field.DebeziumType); valid {
+				val, isOk := retMap[field.FieldName]
+				if isOk {
+					// Need to cast this as a FLOAT first because the number may come out in scientific notation
+					// ParseFloat is apt to handle it, and ParseInt is not, see: https://github.com/golang/go/issues/19288
+					floatVal, castErr := strconv.ParseFloat(fmt.Sprint(val), 64)
+					if castErr == nil {
+						retMap[field.FieldName] = debezium.FromDebeziumTypeToTime(supportedType, int64(floatVal)).Format(time.RFC3339)
+					}
+				}
+			}
+		}
 	}
 
 	return retMap

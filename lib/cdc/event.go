@@ -18,3 +18,15 @@ type Event interface {
 	GetExecutionTime() time.Time
 	GetData(pkName string, pkVal interface{}, config *kafkalib.TopicConfig) map[string]interface{}
 }
+
+// FieldLabelKind is used when the schema is turned on. Each schema object will be labelled.
+type FieldLabelKind string
+
+const (
+	Before      FieldLabelKind = "before"
+	After       FieldLabelKind = "after"
+	Source      FieldLabelKind = "source"
+	Op          FieldLabelKind = "op"
+	TsMs        FieldLabelKind = "ts_ms"
+	Transaction FieldLabelKind = "transaction"
+)
