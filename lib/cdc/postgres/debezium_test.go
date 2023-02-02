@@ -37,9 +37,12 @@ func (p *PostgresTestSuite) TestSource_GetExecutionTime() {
 		TsMs:      1665458364942, // Tue Oct 11 2022 03:19:24
 	}
 
-	event := &payload{Source: source}
+	schemaEventPayload := &SchemaEventPayload{
+		Payload: payload{Source: source},
+	}
+
 	assert.Equal(p.T(), time.Date(2022, time.October,
-		11, 3, 19, 24, 942000000, time.UTC), event.GetExecutionTime())
+		11, 3, 19, 24, 942000000, time.UTC), schemaEventPayload.GetExecutionTime())
 }
 
 func (p *PostgresTestSuite) TestGetDataTestInsert() {
@@ -51,14 +54,15 @@ func (p *PostgresTestSuite) TestGetDataTestInsert() {
 	}
 
 	var tc kafkalib.TopicConfig
-
-	evt := payload{
-		Before:    nil,
-		After:     after,
-		Operation: "c",
+	schemaEventPayload := SchemaEventPayload{
+		Payload: payload{
+			Before:    nil,
+			After:     after,
+			Operation: "c",
+		},
 	}
 
-	evtData := evt.GetData("pk", 1, &tc)
+	evtData := schemaEventPayload.GetData("pk", 1, &tc)
 	assert.Equal(p.T(), len(after), len(evtData), "has deletion flag")
 
 	deletionFlag, isOk := evtData[config.DeleteColumnMarker]
@@ -75,14 +79,16 @@ func (p *PostgresTestSuite) TestGetDataTestDelete() {
 	}
 
 	now := time.Now().UTC()
-	evt := payload{
-		Before:    nil,
-		After:     nil,
-		Operation: "c",
-		Source:    Source{TsMs: now.UnixMilli()},
+	schemaEventPayload := SchemaEventPayload{
+		Payload: payload{
+			Before:    nil,
+			After:     nil,
+			Operation: "c",
+			Source:    Source{TsMs: now.UnixMilli()},
+		},
 	}
 
-	evtData := evt.GetData("pk", 1, tc)
+	evtData := schemaEventPayload.GetData("pk", 1, tc)
 	shouldDelete, isOk := evtData[config.DeleteColumnMarker]
 	assert.True(p.T(), isOk)
 	assert.True(p.T(), shouldDelete.(bool))
@@ -92,7 +98,7 @@ func (p *PostgresTestSuite) TestGetDataTestDelete() {
 	assert.Equal(p.T(), evtData[tc.IdempotentKey], now.Format(time.RFC3339))
 
 	tc.IdempotentKey = ""
-	evtData = evt.GetData("pk", 1, tc)
+	evtData = schemaEventPayload.GetData("pk", 1, tc)
 	_, isOk = evtData[tc.IdempotentKey]
 	assert.False(p.T(), isOk, evtData)
 }
@@ -117,13 +123,15 @@ func (p *PostgresTestSuite) TestGetDataTestUpdate() {
 	}
 
 	var tc kafkalib.TopicConfig
-	evt := payload{
-		Before:    before,
-		After:     after,
-		Operation: "c",
+	schemaEventPayload := SchemaEventPayload{
+		Payload: payload{
+			Before:    before,
+			After:     after,
+			Operation: "c",
+		},
 	}
 
-	evtData := evt.GetData("pk", 1, &tc)
+	evtData := schemaEventPayload.GetData("pk", 1, &tc)
 	assert.Equal(p.T(), len(after), len(evtData), "has deletion flag")
 
 	deletionFlag, isOk := evtData[config.DeleteColumnMarker]
@@ -137,38 +145,41 @@ func (p *PostgresTestSuite) TestGetDataTestUpdate() {
 func (p *PostgresTestSuite) TestPostgresEvent() {
 	payload := `
 {
-  "before": null,
-  "after": {
-    "id": 59,
-    "created_at": "2022-11-16T04:01:53.173228Z",
-    "updated_at": "2022-11-16T04:01:53.173228Z",
-    "deleted_at": null,
-    "item": "Barings Participation Investors",
-    "price": {
-      "scale": 2,
-      "value": "AKyI"
-    },
-	"nested": {
-		"object": "foo"
+	"schema": {},
+	"payload": {
+		"before": null,
+		"after": {
+			"id": 59,
+			"created_at": "2022-11-16T04:01:53.173228Z",
+			"updated_at": "2022-11-16T04:01:53.173228Z",
+			"deleted_at": null,
+			"item": "Barings Participation Investors",
+			"price": {
+				"scale": 2,
+				"value": "AKyI"
+			},
+			"nested": {
+				"object": "foo"
+			}
+		},
+		"source": {
+			"version": "1.9.6.Final",
+			"connector": "postgresql",
+			"name": "customers.cdf39pfs1qnp.us-east-1.rds.amazonaws.com",
+			"ts_ms": 1668571313308,
+			"snapshot": "false",
+			"db": "demo",
+			"sequence": "[\"720078286536\",\"720078286816\"]",
+			"schema": "public",
+			"table": "orders",
+			"txId": 36968,
+			"lsn": 720078286816,
+			"xmin": null
+		},
+		"op": "c",
+		"ts_ms": 1668571313827,
+		"transaction": null
 	}
-  },
-  "source": {
-    "version": "1.9.6.Final",
-    "connector": "postgresql",
-    "name": "customers.cdf39pfs1qnp.us-east-1.rds.amazonaws.com",
-    "ts_ms": 1668571313308,
-    "snapshot": "false",
-    "db": "demo",
-    "sequence": "[\"720078286536\",\"720078286816\"]",
-    "schema": "public",
-    "table": "orders",
-    "txId": 36968,
-    "lsn": 720078286816,
-    "xmin": null
-  },
-  "op": "c",
-  "ts_ms": 1668571313827,
-  "transaction": null
 }
 `
 
@@ -183,3 +194,5 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
 
 	assert.Equal(p.T(), evt.Table(), "orders")
 }
+
+// TODO: Add a test related to schema and the microtimestamp format.
