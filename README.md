@@ -126,16 +126,16 @@ The long term goal for Artie Transfer is to be able to extend the service to hav
 * `decimal.handling.mode` only works for `double` or `string`.<br/>
 The default value is `precise` which will cast the value in `java.math.BigDecimal` and Transfer does not know how to decode that yet.
 For further information on how to set this to be `string` or `double`, please [click here](https://docs.confluent.io/cloud/current/connectors/cc-postgresql-cdc-source-debezium.html#connector-details)
+* `value.converter` must be set to `org.apache.kafka.connect.json.JsonConverter`
 * `value.converter.schemas.enable` must be set to `true`
 * `key.converter.schemas.enable` must be set to `false`
-* `value.converter` must be set to `org.apache.kafka.connect.json.JsonConverter`
 * Transfer only supports `time.precision.mode=adaptive` which is the default value.
 
 
 **MongoDB Debezium** <br/>
 * `value.converter` must be set to `org.apache.kafka.connect.json.JsonConverter`
-* `key.converter.schemas.enable` and `value.converter.schemas.enable` both need to be set to `false`
-_Supporting `value.converter.schemas.enable` is currently in our backlog_ 
+* `value.converter.schemas.enable` must be set to `true`
+* `key.converter.schemas.enable` must be set to `false` 
 
 
 ## Telemetry
