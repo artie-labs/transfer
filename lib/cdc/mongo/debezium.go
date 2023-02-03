@@ -16,7 +16,7 @@ import (
 
 type Debezium string
 
-func (d *Debezium) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Event, error) {
+func (d *Debezium) GetEventFromBytes(_ context.Context, bytes []byte) (cdc.Event, error) {
 	var schemaEventPayload SchemaEventPayload
 	err := json.Unmarshal(bytes, &schemaEventPayload)
 	if err != nil {
