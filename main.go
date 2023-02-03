@@ -2,14 +2,14 @@ package main
 
 import (
 	"context"
-	"github.com/artie-labs/transfer/lib/dwh"
-	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"os"
 	"sync"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/dwh"
 	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/processes/kafka"
 	"github.com/artie-labs/transfer/processes/pool"

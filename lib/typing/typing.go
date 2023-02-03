@@ -58,17 +58,16 @@ func IsJSON(str string) bool {
 	return false
 }
 
-func ParseDateTime(dtString string) (time.Time, error) {
-	var err error
-	var ts time.Time
+func ParseDateTime(dtString string) (ts time.Time, err error) {
+	// TODO Test
 	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
 		ts, err = time.Parse(supportedDateTimeLayout, dtString)
 		if err == nil {
-			return ts, nil
+			return
 		}
 	}
 
-	return time.Time{}, err
+	return
 }
 
 func ParseValue(val interface{}) Kind {
