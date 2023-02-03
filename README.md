@@ -105,7 +105,7 @@ Note: Keys here are formatted in dot notation for readability purposes, please e
 | bigquery.pathToCredentials | String | Y<br/>You can directly inject `GOOGLE_APPLICATION_CREDENTIALS` ENV VAR, else Transfer will set it for you based on this value. | Path to the credentials file for Google |
 | bigquery.projectID | String | N | Google Cloud Project ID |
 | bigquery.defaultDataset | String | N | The default dataset used. This just allows us to connect to BigQuery using database string notation. One deployment can support multiple datasets, specified by kafka.topicConfigs |
-| snowflake | Object | N, `if outputSource == 'snowflake` | This is the parent object, please see below |
+| snowflake | Object | N<br/>`if outputSource == 'snowflake` | This is the parent object, please see below |
 | snowflake.account | String | N | Snowflake Account ID |
 | snowflake.username | String | N | Snowflake username |
 | snowflake.password | String | N | Snowflake password |
