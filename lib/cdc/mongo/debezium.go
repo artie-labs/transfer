@@ -17,8 +17,6 @@ import (
 type Debezium string
 
 func (d *Debezium) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Event, error) {
-	fmt.Println("evt", string(bytes))
-
 	var schemaEventPayload SchemaEventPayload
 	err := json.Unmarshal(bytes, &schemaEventPayload)
 	if err != nil {
@@ -90,7 +88,6 @@ func (s *SchemaEventPayload) Table() string {
 
 func (s *SchemaEventPayload) GetData(pkName string, pkVal interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
 	retMap := make(map[string]interface{})
-
 	if len(s.Payload.AfterMap) == 0 {
 		// This is a delete event, so mark it as deleted.
 		// And we need to reconstruct the data bit since it will be empty.
@@ -112,8 +109,6 @@ func (s *SchemaEventPayload) GetData(pkName string, pkVal interface{}, tc *kafka
 		retMap[pkName] = pkVal
 		retMap[config.DeleteColumnMarker] = false
 	}
-
-	fmt.Println("retMap", retMap)
 
 	return retMap
 }

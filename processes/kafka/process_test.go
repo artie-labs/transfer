@@ -68,28 +68,31 @@ func TestProcessMessageFailures(t *testing.T) {
 
 	msg.Value = []byte(`
 {
-	"before": null,
-	"after": "{\"_id\": {\"$numberLong\": \"1004\"},\"first_name\": \"Anne\",\"last_name\": \"Kretchmar\",\"email\": \"annek@noanswer.org\"}",
-	"patch": null,
-	"filter": null,
-	"updateDescription": null,
-	"source": {
-		"version": "2.0.0.Final",
-		"connector": "mongodb",
-		"name": "dbserver1",
-		"ts_ms": 1668753321000,
-		"snapshot": "true",
-		"db": "inventory",
-		"sequence": null,
-		"rs": "rs0",
-		"collection": "customers",
-		"ord": 29,
-		"lsid": null,
-		"txnNumber": null
-	},
-	"op": "r",
-	"ts_ms": 1668753329387,
-	"transaction": null
+	"schema": {},
+	"payload": {
+		"before": null,
+		"after": "{\"_id\": {\"$numberLong\": \"1004\"},\"first_name\": \"Anne\",\"last_name\": \"Kretchmar\",\"email\": \"annek@noanswer.org\"}",
+		"patch": null,
+		"filter": null,
+		"updateDescription": null,
+		"source": {
+			"version": "2.0.0.Final",
+			"connector": "mongodb",
+			"name": "dbserver1",
+			"ts_ms": 1668753321000,
+			"snapshot": "true",
+			"db": "inventory",
+			"sequence": null,
+			"rs": "rs0",
+			"collection": "customers",
+			"ord": 29,
+			"lsid": null,
+			"txnNumber": null
+		},
+		"op": "r",
+		"ts_ms": 1668753329387,
+		"transaction": null
+	}
 }`)
 
 	// Worked!
