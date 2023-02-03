@@ -17,24 +17,26 @@ import (
 type Debezium string
 
 func (d *Debezium) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Event, error) {
-	var event Event
-	err := json.Unmarshal(bytes, &event)
+	fmt.Println("evt", string(bytes))
+
+	var schemaEventPayload SchemaEventPayload
+	err := json.Unmarshal(bytes, &schemaEventPayload)
 	if err != nil {
 		return nil, err
 	}
 
 	// Now marshal before & after string.
-	if event.Before != nil {
-		before, err := mongo.JSONEToMap([]byte(*event.Before))
+	if schemaEventPayload.Payload.Before != nil {
+		before, err := mongo.JSONEToMap([]byte(*schemaEventPayload.Payload.Before))
 		if err != nil {
 			return nil, err
 		}
 
-		event.BeforeMap = before
+		schemaEventPayload.Payload.BeforeMap = before
 	}
 
-	if event.After != nil {
-		after, err := mongo.JSONEToMap([]byte(*event.After))
+	if schemaEventPayload.Payload.After != nil {
+		after, err := mongo.JSONEToMap([]byte(*schemaEventPayload.Payload.After))
 		if err != nil {
 			return nil, err
 		}
@@ -52,54 +54,10 @@ func (d *Debezium) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Eve
 			}
 		}
 
-		event.AfterMap = after
+		schemaEventPayload.Payload.AfterMap = after
 	}
 
-	return &event, nil
-}
-
-/*
-{
-	"before": null,
-	"after": "{\"_id\": {\"$numberLong\": \"1004\"},\"first_name\": \"Anne\",\"last_name\": \"Kretchmar\",\"email\": \"annek@noanswer.org\"}",
-	"patch": null,
-	"filter": null,
-	"updateDescription": null,
-	"source": {
-		"version": "2.0.0.Final",
-		"connector": "mongodb",
-		"name": "dbserver1",
-		"ts_ms": 1668753321000,
-		"snapshot": "true",
-		"db": "inventory",
-		"sequence": null,
-		"rs": "rs0",
-		"collection": "customers",
-		"ord": 29,
-		"lsid": null,
-		"txnNumber": null
-	},
-	"op": "r",
-	"ts_ms": 1668753329387,
-	"transaction": null
-}
-
-*/
-
-type Event struct {
-	Before    *string `json:"before"`
-	After     *string `json:"after"`
-	BeforeMap map[string]interface{}
-	AfterMap  map[string]interface{}
-	Source    Source `json:"source"`
-	Operation string `json:"op"`
-}
-
-type Source struct {
-	Connector  string `json:"connector"`
-	TsMs       int64  `json:"ts_ms"`
-	Database   string `json:"db"`
-	Collection string `json:"collection"`
+	return &schemaEventPayload, nil
 }
 
 func (d *Debezium) Label() string {
@@ -121,19 +79,19 @@ func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.T
 	return
 }
 
-func (e *Event) GetExecutionTime() time.Time {
-	return time.UnixMilli(e.Source.TsMs).UTC()
+func (s *SchemaEventPayload) GetExecutionTime() time.Time {
+	return time.UnixMilli(s.Payload.Source.TsMs).UTC()
 }
 
-func (e *Event) Table() string {
+func (s *SchemaEventPayload) Table() string {
 	// MongoDB calls a table a collection.
-	return e.Source.Collection
+	return s.Payload.Source.Collection
 }
 
-func (e *Event) GetData(pkName string, pkVal interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
+func (s *SchemaEventPayload) GetData(pkName string, pkVal interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
 	retMap := make(map[string]interface{})
 
-	if len(e.AfterMap) == 0 {
+	if len(s.Payload.AfterMap) == 0 {
 		// This is a delete event, so mark it as deleted.
 		// And we need to reconstruct the data bit since it will be empty.
 		// We _can_ rely on *before* since even without running replicate identity, it will still copy over
@@ -145,15 +103,17 @@ func (e *Event) GetData(pkName string, pkVal interface{}, tc *kafkalib.TopicConf
 
 		// If idempotency key is an empty string, don't put it in the event data
 		if tc.IdempotentKey != "" {
-			retMap[tc.IdempotentKey] = e.GetExecutionTime().Format(time.RFC3339)
+			retMap[tc.IdempotentKey] = s.GetExecutionTime().Format(time.RFC3339)
 		}
 	} else {
-		retMap = e.AfterMap
+		retMap = s.Payload.AfterMap
 		// We need this because there's an edge case with Debezium
 		// Where _id gets rewritten as id in the partition key.
 		retMap[pkName] = pkVal
 		retMap[config.DeleteColumnMarker] = false
 	}
+
+	fmt.Println("retMap", retMap)
 
 	return retMap
 }

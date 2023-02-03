@@ -131,6 +131,8 @@ func ExecuteMerge(ctx context.Context, tableData *optimization.TableData) error 
 		tableData.Columns[tcCol] = tcKind
 	}
 	query, err := merge(tableData)
+	fmt.Println("query", query)
+
 	if err != nil {
 		log.WithError(err).Warn("failed to generate the merge query")
 		return err
