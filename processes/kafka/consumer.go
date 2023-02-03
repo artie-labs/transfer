@@ -102,7 +102,7 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 
 				shouldFlush, processErr := processMessage(ctx, msg, topicToConfigFmtMap, kafkaConsumer.Config().GroupID)
 				if processErr != nil {
-					log.WithError(err).WithFields(logFields).Warn("skipping message...")
+					log.WithError(processErr).WithFields(logFields).Warn("skipping message...")
 				}
 
 				if shouldFlush {
