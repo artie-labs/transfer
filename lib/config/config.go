@@ -40,8 +40,8 @@ type Config struct {
 		// PathToCredentials is _optional_ if you have GOOGLE_APPLICATION_CREDENTIALS set as an env var
 		//  Links to credentials: https://cloud.google.com/docs/authentication/application-default-credentials#GAC
 		PathToCredentials string `yaml:"pathToCredentials"`
-
-		ProjectID string `yaml:"projectID"`
+		DefaultDataset    string `yaml:"defaultDataset"`
+		ProjectID         string `yaml:"projectID"`
 	}
 
 	Snowflake struct {

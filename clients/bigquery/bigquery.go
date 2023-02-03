@@ -39,9 +39,8 @@ func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
 	}
 
 	return &Store{
-		// TODO Allow specify data set
-		Store: db.Open(ctx, "bigquery", fmt.Sprintf("bigquery://%s/customers_robin",
-			config.GetSettings().Config.BigQuery.ProjectID)),
+		Store: db.Open(ctx, "bigquery", fmt.Sprintf("bigquery://%s/%s",
+			config.GetSettings().Config.BigQuery.ProjectID, config.GetSettings().Config.BigQuery.DefaultDataset)),
 		configMap: &types.DwhToTablesConfigMap{},
 	}
 }
