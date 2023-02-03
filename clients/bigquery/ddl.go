@@ -1,10 +1,8 @@
 package bigquery
 
 import (
-	"cloud.google.com/go/bigquery"
 	"context"
 	"fmt"
-	"google.golang.org/api/iterator"
 	"strings"
 	"time"
 
@@ -51,7 +49,7 @@ func (s *Store) alterTable(ctx context.Context, fqTableName string, createTable 
 
 		fmt.Println("sqlQuery", sqlQuery)
 
-		_, err = s.Query(sqlQuery).Read(ctx)
+		_, err = s.Exec(sqlQuery)
 		if err != nil && ColumnAlreadyExistErr(err) {
 			// Snowflake doesn't have column mutations (IF NOT EXISTS)
 			err = nil
@@ -67,15 +65,14 @@ func (s *Store) alterTable(ctx context.Context, fqTableName string, createTable 
 	return nil
 }
 
-func (s *Store) GetTableConfig(ctx context.Context, dataset, table string) (*types.DwhTableConfig, error) {
+func (s *Store) GetTableConfig(_ context.Context, dataset, table string) (*types.DwhTableConfig, error) {
 	fqName := fmt.Sprintf("%s.%s", dataset, table)
 	tc := s.configMap.TableConfig(fqName)
 	if tc != nil {
 		return tc, nil
 	}
 
-	//log := logger.FromContext(ctx)
-	rows, err := s.Query(fmt.Sprintf("SELECT ddl FROM %s.INFORMATION_SCHEMA.TABLES where table_name = '%s' LIMIT 1;", dataset, table)).Read(ctx)
+	rows, err := s.Query(fmt.Sprintf("SELECT ddl FROM %s.INFORMATION_SCHEMA.TABLES where table_name = '%s' LIMIT 1;", dataset, table))
 	if err != nil {
 		// The query will not fail if the table doesn't exist. It will simply return 0 rows.
 		// It WILL fail if the dataset doesn't exist or if it encounters any other forms of error.
@@ -83,21 +80,14 @@ func (s *Store) GetTableConfig(ctx context.Context, dataset, table string) (*typ
 	}
 
 	var sqlRow string
-	for rows != nil {
-		var row []bigquery.Value
-		err = rows.Next(&row)
-		if err == iterator.Done {
-			// Done reading
-			break
-		} else if err != nil {
+	for rows != nil && rows.Next() {
+		var row string
+		err = rows.Scan(&row)
+		if err != nil {
 			return nil, err
 		}
 
-		if len(row) > 0 {
-			// We only care about the first row.
-			sqlRow = fmt.Sprint(row[0])
-		}
-
+		sqlRow = row
 		break
 	}
 
@@ -116,8 +106,6 @@ func ParseSchemaQuery(row string, createTable bool) (*types.DwhTableConfig, erro
 	if createTable {
 		return types.NewDwhTableConfig(nil, nil, createTable), nil
 	}
-
-	fmt.Println("row", row, "createTable", createTable)
 
 	// TrimSpace only does the L + R side.
 	ddlString := strings.TrimSpace(row)

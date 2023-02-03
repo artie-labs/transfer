@@ -210,7 +210,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	fmt.Println("query", query)
 
 	log.WithField("query", query).Debug("executing...")
-	_, err = s.Query(query).Read(ctx)
+	_, err = s.Exec(query)
 	fmt.Println("err", err)
 	return err
 }

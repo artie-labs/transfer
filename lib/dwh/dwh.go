@@ -3,7 +3,6 @@ package dwh
 import (
 	"context"
 	"github.com/artie-labs/transfer/clients/bigquery"
-	"github.com/artie-labs/transfer/clients/bigquery/clients"
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/db"
@@ -19,7 +18,7 @@ type DataWarehouse interface {
 	// FQName() should be done at the DWH level.
 }
 
-func LoadDataWarehouse(ctx context.Context, store *db.Store, bqClient clients.Client) DataWarehouse {
+func LoadDataWarehouse(ctx context.Context) DataWarehouse {
 	switch config.GetSettings().Config.Output {
 	case "test":
 		// TODO - In the future, we can create a fake store that follows the MERGE syntax for SQL standard.
@@ -30,9 +29,9 @@ func LoadDataWarehouse(ctx context.Context, store *db.Store, bqClient clients.Cl
 		})
 		return snowflake.LoadSnowflake(ctx, &store)
 	case "snowflake":
-		return snowflake.LoadSnowflake(ctx, store)
+		return snowflake.LoadSnowflake(ctx, nil)
 	case "bigquery":
-		return bigquery.LoadBigQuery(ctx, bqClient)
+		return bigquery.LoadBigQuery(ctx, nil)
 	}
 
 	logger.FromContext(ctx).WithFields(map[string]interface{}{

@@ -2,30 +2,34 @@ package bigquery
 
 import (
 	"context"
-	"github.com/artie-labs/transfer/clients/bigquery/clients"
+	"fmt"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/logger"
 	"os"
+
+	_ "github.com/viant/bigquery"
 )
 
 const GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
 
 type Store struct {
 	configMap *types.DwhToTablesConfigMap
-	clients.Client
+	db.Store
 }
 
-func LoadBigQuery(ctx context.Context, _client clients.Client) *Store {
-	if _client != nil {
+func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
+	if _store != nil {
 		// Used for tests.
 		return &Store{
-			Client:    _client,
+			Store:     *_store,
 			configMap: &types.DwhToTablesConfigMap{},
 		}
 	}
 
 	if credPath := config.GetSettings().Config.BigQuery.PathToCredentials; credPath != "" {
+		logger.FromContext(ctx).Debug("writing the path to BQ credentials to env var for google auth")
 		// If the credPath is set, let's set it into the env var.
 		err := os.Setenv(GooglePathToCredentialsEnvKey, credPath)
 		if err != nil {
@@ -34,7 +38,9 @@ func LoadBigQuery(ctx context.Context, _client clients.Client) *Store {
 	}
 
 	return &Store{
-		Client:    clients.NewClient(ctx, config.GetSettings().Config.BigQuery.ProjectID),
+		// TODO Allow specify data set
+		Store: db.Open(ctx, "bigquery", fmt.Sprintf("bigquery://%s/customers_robin",
+			config.GetSettings().Config.BigQuery.ProjectID)),
 		configMap: &types.DwhToTablesConfigMap{},
 	}
 }
