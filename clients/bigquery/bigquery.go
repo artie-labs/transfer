@@ -3,13 +3,14 @@ package bigquery
 import (
 	"context"
 	"fmt"
+	"os"
+
+	_ "github.com/viant/bigquery"
+
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/logger"
-	"os"
-
-	_ "github.com/viant/bigquery"
 )
 
 const GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
@@ -29,8 +30,8 @@ func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
 	}
 
 	if credPath := config.GetSettings().Config.BigQuery.PathToCredentials; credPath != "" {
-		logger.FromContext(ctx).Debug("writing the path to BQ credentials to env var for google auth")
 		// If the credPath is set, let's set it into the env var.
+		logger.FromContext(ctx).Debug("writing the path to BQ credentials to env var for google auth")
 		err := os.Setenv(GooglePathToCredentialsEnvKey, credPath)
 		if err != nil {
 			logger.FromContext(ctx).WithError(err).Fatalf("error setting env var for %s", GooglePathToCredentialsEnvKey)

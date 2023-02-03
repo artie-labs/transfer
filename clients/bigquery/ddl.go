@@ -12,7 +12,6 @@ import (
 )
 
 func (s *Store) alterTable(ctx context.Context, fqTableName string, createTable bool, columnOp config.ColumnOperation, cdcTime time.Time, cols ...typing.Column) error {
-	fmt.Println("fqTableName", fqTableName)
 	tc := s.configMap.TableConfig(fqTableName)
 	if tc == nil {
 		return fmt.Errorf("tableConfig is empty when trying to alter table, tableName: %s", fqTableName)
@@ -46,8 +45,6 @@ func (s *Store) alterTable(ctx context.Context, fqTableName string, createTable 
 			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", fqTableName, colSQLPart)
 			createTable = false
 		}
-
-		fmt.Println("sqlQuery", sqlQuery)
 
 		_, err = s.Exec(sqlQuery)
 		if err != nil && ColumnAlreadyExistErr(err) {

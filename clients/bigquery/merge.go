@@ -64,7 +64,6 @@ func merge(tableData *optimization.TableData) (string, error) {
 						colVal = fmt.Sprintf("JSON %s", colVal)
 					}
 				case typing.Array:
-					fmt.Println("array colVal", colVal)
 					// We need to marshall, so we can escape the strings.
 					// https://go.dev/play/p/BcCwUSCeTmT
 					colValBytes, err := json.Marshal(colVal)
@@ -207,10 +206,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
-	fmt.Println("query", query)
-
 	log.WithField("query", query).Debug("executing...")
 	_, err = s.Exec(query)
-	fmt.Println("err", err)
 	return err
 }
