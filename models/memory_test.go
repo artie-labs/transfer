@@ -36,7 +36,7 @@ func (m *ModelsTestSuite) SaveEvent() {
 	optimization := GetMemoryDB().TableData["foo"]
 	// Check the in-memory DB columns.
 	var found int
-	for col := range optimization.Columns {
+	for col := range optimization.InMemoryColumns {
 		if col == expectedLowerCol || col == anotherLowerCol {
 			found += 1
 		}
@@ -46,5 +46,5 @@ func (m *ModelsTestSuite) SaveEvent() {
 		}
 	}
 
-	assert.Equal(m.T(), 2, found, optimization.Columns)
+	assert.Equal(m.T(), 2, found, optimization.InMemoryColumns)
 }

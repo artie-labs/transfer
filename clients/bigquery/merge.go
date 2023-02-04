@@ -19,7 +19,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 	var artieDeleteMetadataIdx *int
 	var cols []string
 	// Given all the columns, diff this against SFLK.
-	for col, kind := range tableData.Columns {
+	for col, kind := range tableData.InMemoryColumns {
 		if kind == typing.Invalid {
 			// Don't update BQ
 			continue
@@ -39,7 +39,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 				artieDeleteMetadataIdx = ptr.ToInt(idx)
 			}
 
-			colKind := tableData.Columns[col]
+			colKind := tableData.InMemoryColumns[col]
 			colVal := value[col]
 			if colVal != nil {
 				switch colKind {
@@ -162,7 +162,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	log := logger.FromContext(ctx)
 	// Check if all the columns exist in Snowflake
-	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.Columns, tableConfig.Columns())
+	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.InMemoryColumns, tableConfig.Columns())
 
 	// Keys that exist in CDC stream, but not in Snowflake
 	err = s.alterTable(ctx, tableData.ToFqName(constants.BigQuery), tableConfig.CreateTable, constants.Add, tableData.LatestCDCTs, targetKeysMissing...)

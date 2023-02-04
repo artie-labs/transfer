@@ -56,7 +56,7 @@ func Diff(source map[string]Kind, target map[string]Kind) (srcKeyMissing []Colum
 func CopyColMap(source map[string]Kind) map[string]Kind {
 	retVal := make(map[string]Kind)
 	for k, v := range source {
-		retVal[k] = v
+		retVal[strings.ToLower(k)] = v
 	}
 
 	return retVal

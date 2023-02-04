@@ -10,9 +10,9 @@ import (
 )
 
 type TableData struct {
-	Columns    map[string]typing.Kind            // list of columns
-	RowsData   map[string]map[string]interface{} // pk -> { col -> val }
-	PrimaryKey string
+	InMemoryColumns map[string]typing.Kind            // list of columns
+	RowsData        map[string]map[string]interface{} // pk -> { col -> val }
+	PrimaryKey      string
 
 	kafkalib.TopicConfig
 	// Partition to the latest offset.
