@@ -54,17 +54,22 @@ func TestDiffDelta2(t *testing.T) {
 		"b":  Boolean,
 		"c":  Struct,
 		"d":  String,
+		"CC": String,
+		"cC": String,
+		"Cc": String,
 	}
 
 	target := map[string]Kind{
 		"aa": String,
 		"b":  Boolean,
 		"cc": String,
+		"CC": String,
+		"dd": String,
 	}
 
 	srcKeyMissing, targKeyMissing := Diff(source, target)
-	assert.Equal(t, len(srcKeyMissing), 1)  // Missing cc
-	assert.Equal(t, len(targKeyMissing), 3) // Missing a, c, d
+	assert.Equal(t, len(srcKeyMissing), 1, srcKeyMissing)   // Missing dd
+	assert.Equal(t, len(targKeyMissing), 3, targKeyMissing) // Missing a, c, d
 }
 
 func TestCopyColMap(t *testing.T) {

@@ -134,7 +134,7 @@ func ExecuteMerge(ctx context.Context, tableData *optimization.TableData) error 
 			tableData.InMemoryColumns[inMemCol] = tcKind
 		}
 	}
-	
+
 	query, err := merge(tableData)
 	if err != nil {
 		log.WithError(err).Warn("failed to generate the merge query")
