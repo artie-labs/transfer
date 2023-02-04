@@ -19,11 +19,11 @@ func (s *SnowflakeTestSuite) TestMergeNoDeleteFlag() {
 	}
 
 	tableData := &optimization.TableData{
-		Columns:     cols,
-		RowsData:    nil,
-		PrimaryKey:  "id",
-		TopicConfig: kafkalib.TopicConfig{},
-		LatestCDCTs: time.Time{},
+		InMemoryColumns: cols,
+		RowsData:        nil,
+		PrimaryKey:      "id",
+		TopicConfig:     kafkalib.TopicConfig{},
+		LatestCDCTs:     time.Time{},
 	}
 
 	_, err := merge(tableData)
@@ -55,11 +55,11 @@ func (s *SnowflakeTestSuite) TestMerge() {
 	}
 
 	tableData := &optimization.TableData{
-		Columns:     cols,
-		RowsData:    rowData,
-		PrimaryKey:  "id",
-		TopicConfig: topicConfig,
-		LatestCDCTs: time.Time{},
+		InMemoryColumns: cols,
+		RowsData:        rowData,
+		PrimaryKey:      "id",
+		TopicConfig:     topicConfig,
+		LatestCDCTs:     time.Time{},
 	}
 
 	mergeSQL, err := merge(tableData)

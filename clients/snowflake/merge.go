@@ -20,7 +20,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 	var sflkCols []string
 
 	// Given all the columns, diff this against SFLK.
-	for col, kind := range tableData.Columns {
+	for col, kind := range tableData.InMemoryColumns {
 		if kind == typing.Invalid {
 			// Don't update Snowflake
 			continue
@@ -45,7 +45,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 				artieDeleteMetadataIdx = ptr.ToInt(idx)
 			}
 
-			colKind := tableData.Columns[col]
+			colKind := tableData.InMemoryColumns[col]
 			colVal := value[col]
 			if colVal != nil {
 				switch colKind {
