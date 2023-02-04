@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/array"
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -41,7 +41,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 		for idx, col := range cols {
 			// Hasn't been set yet and the column is the DELETE flag. We want to remove this from
 			// the final table because this is a flag, not an actual column.
-			if artieDeleteMetadataIdx == nil && col == config.DeleteColumnMarker {
+			if artieDeleteMetadataIdx == nil && col == constants.DeleteColumnMarker {
 				artieDeleteMetadataIdx = ptr.ToInt(idx)
 			}
 
@@ -107,13 +107,13 @@ func merge(tableData *optimization.TableData) (string, error) {
 					(
 						%s
 					);
-		`, tableData.ToFqName(), subQuery, tableData.PrimaryKey, tableData.PrimaryKey,
+		`, tableData.ToFqName(constants.Snowflake), subQuery, tableData.PrimaryKey, tableData.PrimaryKey,
 			// Delete
-			config.DeleteColumnMarker,
+			constants.DeleteColumnMarker,
 			// Update
-			config.DeleteColumnMarker, array.ColumnsUpdateQuery(cols, "cc"),
+			constants.DeleteColumnMarker, array.ColumnsUpdateQuery(cols, "cc"),
 			// Insert
-			config.DeleteColumnMarker, strings.Join(cols, ","),
+			constants.DeleteColumnMarker, strings.Join(cols, ","),
 			array.StringsJoinAddPrefix(cols, ",", "cc.")), nil
 	}
 
@@ -130,12 +130,12 @@ func merge(tableData *optimization.TableData) (string, error) {
 					(
 						%s
 					);
-		`, tableData.ToFqName(), subQuery, tableData.PrimaryKey, tableData.PrimaryKey,
+		`, tableData.ToFqName(constants.Snowflake), subQuery, tableData.PrimaryKey, tableData.PrimaryKey,
 		// Delete
-		config.DeleteColumnMarker, tableData.IdempotentKey, tableData.IdempotentKey,
+		constants.DeleteColumnMarker, tableData.IdempotentKey, tableData.IdempotentKey,
 		// Update
-		config.DeleteColumnMarker, tableData.IdempotentKey, tableData.IdempotentKey, array.ColumnsUpdateQuery(cols, "cc"),
+		constants.DeleteColumnMarker, tableData.IdempotentKey, tableData.IdempotentKey, array.ColumnsUpdateQuery(cols, "cc"),
 		// Insert
-		config.DeleteColumnMarker, strings.Join(cols, ","),
+		constants.DeleteColumnMarker, strings.Join(cols, ","),
 		array.StringsJoinAddPrefix(cols, ",", "cc.")), nil
 }

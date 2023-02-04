@@ -3,6 +3,7 @@ package kafkalib
 import (
 	"fmt"
 	"github.com/artie-labs/transfer/lib/array"
+	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
 type TopicConfig struct {
@@ -66,8 +67,12 @@ func ToCacheKey(topic string, partition int64) string {
 }
 
 // ToFqName is the fully-qualified table name in DWH
-func (t *TopicConfig) ToFqName() string {
-	// TODO BQ doesn't have a schema in the fully qualified name
-	
-	return fmt.Sprintf("%s.%s.%s", t.Database, t.Schema, t.TableName)
+func (t *TopicConfig) ToFqName(kind constants.DestinationKind) string {
+	switch kind {
+	case constants.BigQuery:
+		// BigQuery doesn't use schema
+		return fmt.Sprintf("%s.%s", t.Database, t.TableName)
+	default:
+		return fmt.Sprintf("%s.%s.%s", t.Database, t.Schema, t.TableName)
+	}
 }

@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
@@ -24,9 +24,9 @@ func (m *ModelsTestSuite) SaveEvent() {
 		Table:           "foo",
 		PrimaryKeyValue: "123",
 		Data: map[string]interface{}{
-			config.DeleteColumnMarker: true,
-			expectedCol:               "dusty",
-			anotherCol:                13.37,
+			constants.DeleteColumnMarker: true,
+			expectedCol:                  "dusty",
+			anotherCol:                   13.37,
 		},
 	}
 

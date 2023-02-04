@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"sync"
 	"time"
 
@@ -41,7 +41,7 @@ func (tc *DwhTableConfig) Columns() map[string]typing.Kind {
 	return tc.columns
 }
 
-func (tc *DwhTableConfig) MutateColumnsWithMemCache(createTable bool, columnOp config.ColumnOperation, cols ...typing.Column) {
+func (tc *DwhTableConfig) MutateColumnsWithMemCache(createTable bool, columnOp constants.ColumnOperation, cols ...typing.Column) {
 	if tc == nil {
 		return
 	}
@@ -50,7 +50,7 @@ func (tc *DwhTableConfig) MutateColumnsWithMemCache(createTable bool, columnOp c
 	defer tc.Unlock()
 	table := tc.columns
 	switch columnOp {
-	case config.Add:
+	case constants.Add:
 		for _, col := range cols {
 			table[col.Name] = col.Kind
 			// Delete from the permissions table, if exists.
@@ -58,7 +58,7 @@ func (tc *DwhTableConfig) MutateColumnsWithMemCache(createTable bool, columnOp c
 		}
 
 		tc.CreateTable = createTable
-	case config.Delete:
+	case constants.Delete:
 		for _, col := range cols {
 			// Delete from the permissions and in-memory table
 			delete(table, col.Name)
@@ -90,7 +90,7 @@ func (tc *DwhTableConfig) ShouldDeleteColumn(colName string, cdcTime time.Time) 
 		return cdcTime.After(ts)
 	}
 
-	tc.AddColumnsToDelete(colName, time.Now().UTC().Add(config.DeletionConfidencePadding))
+	tc.AddColumnsToDelete(colName, time.Now().UTC().Add(constants.DeletionConfidencePadding))
 	return false
 }
 

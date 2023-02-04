@@ -1,4 +1,4 @@
-package config
+package constants
 
 import "time"
 
@@ -30,3 +30,27 @@ const (
 	Add    ColumnOperation = "add"
 	Delete ColumnOperation = "drop"
 )
+
+type DestinationKind string
+
+const (
+	Snowflake DestinationKind = "snowflake"
+	Test      DestinationKind = "test"
+	BigQuery  DestinationKind = "bigquery"
+)
+
+var validDestinations = []DestinationKind{
+	BigQuery,
+	Snowflake,
+	Test,
+}
+
+func IsValidDestination(destination DestinationKind) bool {
+	for _, validDest := range validDestinations {
+		if destination == validDest {
+			return true
+		}
+	}
+
+	return false
+}

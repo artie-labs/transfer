@@ -8,16 +8,34 @@ import (
 
 func TestBigQueryTypeToKind(t *testing.T) {
 	bqColToExpectedKind := map[string]Kind{
-		"string":             String,
-		"sTriNG":             String,
-		"STRING (10)":        String,
+		// Integer
+		"int":     Integer,
+		"integer": Integer,
+		"inT64":   Integer,
+		// String
+		"varchar":     String,
+		"string":      String,
+		"sTriNG":      String,
+		"STRING (10)": String,
+		// Array
+		"array<integer>": Array,
+		"array<string>":  Array,
+		// Boolean
+		"bool":    Boolean,
+		"boolean": Boolean,
+		// Struct
 		"STRUCT<foo STRING>": Struct,
-		"array<string>":      Array,
-		"bool":               Boolean,
 		"record":             Struct,
 		"json":               Struct,
-		"datetime":           DateTime,
-		"timestamp":          DateTime,
+		// Datetime
+		"datetime":  DateTime,
+		"timestamp": DateTime,
+		"time":      DateTime,
+		"date":      DateTime,
+		//Invalid
+		"foo":    Invalid,
+		"foofoo": Invalid,
+		"":       Invalid,
 	}
 
 	for bqCol, expectedKind := range bqColToExpectedKind {

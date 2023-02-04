@@ -3,12 +3,12 @@ package snowflake
 import (
 	"context"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 )
@@ -20,7 +20,7 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 		Schema:    "public",
 	}
 
-	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(), types.NewDwhTableConfig(map[string]typing.Kind{
+	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), types.NewDwhTableConfig(map[string]typing.Kind{
 		"id":          typing.Integer,
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
@@ -33,15 +33,15 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 		Kind: typing.String,
 	}
 
-	tc := s.store.configMap.TableConfig(topicConfig.ToFqName())
+	tc := s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake))
 
 	val := tc.ShouldDeleteColumn(nameCol.Name, time.Now().Add(-1*6*time.Hour))
 	assert.False(s.T(), val, "should not try to delete this column")
-	assert.Equal(s.T(), len(s.store.configMap.TableConfig(topicConfig.ToFqName()).ColumnsToDelete()), 1)
+	assert.Equal(s.T(), len(s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ColumnsToDelete()), 1)
 
 	// Now let's try to add this column back, it should delete it from the cache.
-	tc.MutateColumnsWithMemCache(false, config.Add, nameCol)
-	assert.Equal(s.T(), len(s.store.configMap.TableConfig(topicConfig.ToFqName()).ColumnsToDelete()), 0)
+	tc.MutateColumnsWithMemCache(false, constants.Add, nameCol)
+	assert.Equal(s.T(), len(s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ColumnsToDelete()), 0)
 }
 
 func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
@@ -51,7 +51,7 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 		Schema:    "public",
 	}
 
-	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(), types.NewDwhTableConfig(map[string]typing.Kind{
+	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), types.NewDwhTableConfig(map[string]typing.Kind{
 		"id":          typing.Integer,
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
@@ -65,22 +65,22 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 	}
 
 	// Let's try to delete name.
-	allowed := s.store.configMap.TableConfig(topicConfig.ToFqName()).ShouldDeleteColumn(nameCol.Name, time.Now().Add(-1*(6*time.Hour)))
+	allowed := s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ShouldDeleteColumn(nameCol.Name, time.Now().Add(-1*(6*time.Hour)))
 
 	assert.Equal(s.T(), allowed, false, "should not be allowed to delete")
 
 	// Process tried to delete, but it's lagged.
-	allowed = s.store.configMap.TableConfig(topicConfig.ToFqName()).ShouldDeleteColumn(nameCol.Name, time.Now().Add(-1*(6*time.Hour)))
+	allowed = s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ShouldDeleteColumn(nameCol.Name, time.Now().Add(-1*(6*time.Hour)))
 
 	assert.Equal(s.T(), allowed, false, "should not be allowed to delete")
 
 	// Process now caught up, and is asking if we can delete, should still be no.
-	allowed = s.store.configMap.TableConfig(topicConfig.ToFqName()).ShouldDeleteColumn(nameCol.Name, time.Now())
+	allowed = s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ShouldDeleteColumn(nameCol.Name, time.Now())
 	assert.Equal(s.T(), allowed, false, "should not be allowed to delete still")
 
 	// Process is finally ahead, has permission to delete now.
-	allowed = s.store.configMap.TableConfig(topicConfig.ToFqName()).ShouldDeleteColumn(nameCol.Name,
-		time.Now().Add(2*config.DeletionConfidencePadding))
+	allowed = s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ShouldDeleteColumn(nameCol.Name,
+		time.Now().Add(2*constants.DeletionConfidencePadding))
 
 	assert.Equal(s.T(), allowed, true, "should now be allowed to delete")
 }

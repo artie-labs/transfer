@@ -3,15 +3,16 @@ package bigquery
 import (
 	"context"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/optimization"
 	"strings"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (s *Store) alterTable(ctx context.Context, fqTableName string, createTable bool, columnOp config.ColumnOperation, cdcTime time.Time, cols ...typing.Column) error {
+func (s *Store) alterTable(ctx context.Context, fqTableName string, createTable bool, columnOp constants.ColumnOperation, cdcTime time.Time, cols ...typing.Column) error {
 	tc := s.configMap.TableConfig(fqTableName)
 	if tc == nil {
 		return fmt.Errorf("tableConfig is empty when trying to alter table, tableName: %s", fqTableName)
@@ -26,16 +27,16 @@ func (s *Store) alterTable(ctx context.Context, fqTableName string, createTable 
 			continue
 		}
 
-		if columnOp == config.Delete && !tc.ShouldDeleteColumn(col.Name, cdcTime) {
+		if columnOp == constants.Delete && !tc.ShouldDeleteColumn(col.Name, cdcTime) {
 			// Don't delete yet, we can evaluate when we consume more messages.
 			continue
 		}
 
 		mutateCol = append(mutateCol, col)
 		switch columnOp {
-		case config.Add:
+		case constants.Add:
 			colSQLPart = fmt.Sprintf("%s %s", col.Name, typing.KindToBigQuery(col.Kind))
-		case config.Delete:
+		case constants.Delete:
 			colSQLPart = fmt.Sprintf("%s", col.Name)
 		}
 
@@ -62,14 +63,15 @@ func (s *Store) alterTable(ctx context.Context, fqTableName string, createTable 
 	return nil
 }
 
-func (s *Store) GetTableConfig(_ context.Context, dataset, table string) (*types.DwhTableConfig, error) {
-	fqName := fmt.Sprintf("%s.%s", dataset, table)
+func (s *Store) GetTableConfig(_ context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+	fqName := tableData.ToFqName(constants.BigQuery)
 	tc := s.configMap.TableConfig(fqName)
 	if tc != nil {
 		return tc, nil
 	}
 
-	rows, err := s.Query(fmt.Sprintf("SELECT ddl FROM %s.INFORMATION_SCHEMA.TABLES where table_name = '%s' LIMIT 1;", dataset, table))
+	rows, err := s.Query(fmt.Sprintf("SELECT ddl FROM %s.INFORMATION_SCHEMA.TABLES where table_name = '%s' LIMIT 1;",
+		tableData.Database, tableData.TableName))
 	if err != nil {
 		// The query will not fail if the table doesn't exist. It will simply return 0 rows.
 		// It WILL fail if the dataset doesn't exist or if it encounters any other forms of error.
@@ -124,17 +126,17 @@ func ParseSchemaQuery(row string, createTable bool) (*types.DwhTableConfig, erro
 	}
 
 	if optionsIdx < 0 {
-		return nil, fmt.Errorf("malformed DDL string1, %s", ddlString)
+		return nil, fmt.Errorf("malformed DDL string: missing options, %s", ddlString)
 	}
 
 	if leftBracketIdx == optionsIdx {
-		return nil, fmt.Errorf("malformed DDL string2, %s", ddlString)
+		return nil, fmt.Errorf("malformed DDL string: position of ( and options are the same, %s", ddlString)
 	}
 
 	ddlString = ddlString[leftBracketIdx+1 : optionsIdx]
 	endOfStatement := strings.LastIndex(ddlString, ")")
 	if endOfStatement < 0 || (endOfStatement-1) < 0 {
-		return nil, fmt.Errorf("malformed DDL string3, %s", ddlString)
+		return nil, fmt.Errorf("malformed DDL string: missing (, %s", ddlString)
 	}
 
 	tableToColumnTypes := make(map[string]typing.Kind)

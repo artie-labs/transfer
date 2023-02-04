@@ -3,7 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -94,7 +94,7 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message kafka.Message) (
 		}
 	}
 
-	return inMemoryDB.TableData[e.Table].Rows > config.SnowflakeArraySize, nil
+	return inMemoryDB.TableData[e.Table].Rows > constants.SnowflakeArraySize, nil
 }
 
 func LoadMemoryDB() {

@@ -2,12 +2,12 @@ package snowflake
 
 import (
 	"fmt"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"strings"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -33,18 +33,18 @@ func (s *SnowflakeTestSuite) TestMergeNoDeleteFlag() {
 
 func (s *SnowflakeTestSuite) TestMerge() {
 	cols := map[string]typing.Kind{
-		"id":                      typing.Integer,
-		"name":                    typing.String,
-		config.DeleteColumnMarker: typing.Boolean,
+		"id":                         typing.Integer,
+		"name":                       typing.String,
+		constants.DeleteColumnMarker: typing.Boolean,
 	}
 
 	rowData := make(map[string]map[string]interface{})
 	for idx, name := range []string{"robin", "jacqueline", "dusty"} {
 		pk := fmt.Sprint(idx + 1)
 		rowData[pk] = map[string]interface{}{
-			"id":                      pk,
-			"name":                    name,
-			config.DeleteColumnMarker: false,
+			"id":                         pk,
+			"name":                       name,
+			constants.DeleteColumnMarker: false,
 		}
 	}
 

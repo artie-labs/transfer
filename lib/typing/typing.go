@@ -59,7 +59,6 @@ func IsJSON(str string) bool {
 }
 
 func ParseDateTime(dtString string) (ts time.Time, err error) {
-	// TODO Test
 	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
 		ts, err = time.Parse(supportedDateTimeLayout, dtString)
 		if err == nil {

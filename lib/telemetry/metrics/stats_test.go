@@ -3,19 +3,18 @@ package metrics
 import (
 	"context"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/artie-labs/transfer/lib/config"
 )
 
 func TestExporterKindValid(t *testing.T) {
-	exporterKindToResultsMap := map[config.ExporterKind]bool{
-		config.Datadog:                      true,
-		config.ExporterKind("daaaa"):        false,
-		config.ExporterKind("daaaa231321"):  false,
-		config.ExporterKind("honeycomb.io"): false,
+	exporterKindToResultsMap := map[constants.ExporterKind]bool{
+		constants.Datadog:                      true,
+		constants.ExporterKind("daaaa"):        false,
+		constants.ExporterKind("daaaa231321"):  false,
+		constants.ExporterKind("honeycomb.io"): false,
 	}
 
 	for exporterKind, expectedResults := range exporterKindToResultsMap {
@@ -26,9 +25,9 @@ func TestExporterKindValid(t *testing.T) {
 
 func TestLoadExporter(t *testing.T) {
 	// Datadog should not be a NullMetricsProvider
-	exporterKindToResultMap := map[config.ExporterKind]bool{
-		config.Datadog:                 false,
-		config.ExporterKind("invalid"): true,
+	exporterKindToResultMap := map[constants.ExporterKind]bool{
+		constants.Datadog:                 false,
+		constants.ExporterKind("invalid"): true,
 	}
 
 	for kind, result := range exporterKindToResultMap {

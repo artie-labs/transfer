@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/artie-labs/transfer/lib/array"
-	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -16,10 +16,8 @@ import (
 )
 
 func merge(tableData *optimization.TableData) (string, error) {
-	fqName := fmt.Sprintf("%s.%s", tableData.Database, tableData.TableName)
 	var artieDeleteMetadataIdx *int
 	var cols []string
-
 	// Given all the columns, diff this against SFLK.
 	for col, kind := range tableData.Columns {
 		if kind == typing.Invalid {
@@ -37,7 +35,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 		for idx, col := range cols {
 			// Hasn't been set yet and the column is the DELETE flag. We want to remove this from
 			// the final table because this is a flag, not an actual column.
-			if artieDeleteMetadataIdx == nil && col == config.DeleteColumnMarker {
+			if artieDeleteMetadataIdx == nil && col == constants.DeleteColumnMarker {
 				artieDeleteMetadataIdx = ptr.ToInt(idx)
 			}
 
@@ -118,13 +116,13 @@ func merge(tableData *optimization.TableData) (string, error) {
 					(
 						%s
 					);
-		`, fqName, subQuery, tableData.PrimaryKey, tableData.PrimaryKey,
+		`, tableData.ToFqName(constants.BigQuery), subQuery, tableData.PrimaryKey, tableData.PrimaryKey,
 			// Delete
-			config.DeleteColumnMarker,
+			constants.DeleteColumnMarker,
 			// Update
-			config.DeleteColumnMarker, array.ColumnsUpdateQuery(cols, "cc"),
+			constants.DeleteColumnMarker, array.ColumnsUpdateQuery(cols, "cc"),
 			// Insert
-			config.DeleteColumnMarker, strings.Join(cols, ","),
+			constants.DeleteColumnMarker, strings.Join(cols, ","),
 			array.StringsJoinAddPrefix(cols, ",", "cc.")), nil
 	}
 
@@ -141,13 +139,13 @@ func merge(tableData *optimization.TableData) (string, error) {
 					(
 						%s
 					);
-		`, fqName, subQuery, tableData.PrimaryKey, tableData.PrimaryKey,
+		`, tableData.ToFqName(constants.BigQuery), subQuery, tableData.PrimaryKey, tableData.PrimaryKey,
 		// Delete
-		config.DeleteColumnMarker, tableData.IdempotentKey, tableData.IdempotentKey,
+		constants.DeleteColumnMarker, tableData.IdempotentKey, tableData.IdempotentKey,
 		// Update
-		config.DeleteColumnMarker, tableData.IdempotentKey, tableData.IdempotentKey, array.ColumnsUpdateQuery(cols, "cc"),
+		constants.DeleteColumnMarker, tableData.IdempotentKey, tableData.IdempotentKey, array.ColumnsUpdateQuery(cols, "cc"),
 		// Insert
-		config.DeleteColumnMarker, strings.Join(cols, ","),
+		constants.DeleteColumnMarker, strings.Join(cols, ","),
 		array.StringsJoinAddPrefix(cols, ",", "cc.")), nil
 }
 
@@ -157,8 +155,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return nil
 	}
 
-	fqName := fmt.Sprintf("%s.%s", tableData.Database, tableData.TableName)
-	tableConfig, err := s.GetTableConfig(ctx, tableData.Database, tableData.TableName)
+	tableConfig, err := s.GetTableConfig(ctx, tableData)
 	if err != nil {
 		return err
 	}
@@ -168,7 +165,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.Columns, tableConfig.Columns())
 
 	// Keys that exist in CDC stream, but not in Snowflake
-	err = s.alterTable(ctx, fqName, tableConfig.CreateTable, config.Add, tableData.LatestCDCTs, targetKeysMissing...)
+	err = s.alterTable(ctx, tableData.ToFqName(constants.BigQuery), tableConfig.CreateTable, constants.Add, tableData.LatestCDCTs, targetKeysMissing...)
 	if err != nil {
 		log.WithError(err).Warn("failed to apply alter table")
 		return err
@@ -177,7 +174,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	// Keys that exist in Snowflake, but don't exist in our CDC stream.
 	// createTable is set to false because table creation requires a column to be added
 	// Which means, we'll only do it upon Add columns.
-	err = s.alterTable(ctx, fqName, false, config.Delete, tableData.LatestCDCTs, srcKeysMissing...)
+	err = s.alterTable(ctx, tableData.ToFqName(constants.BigQuery), false, constants.Delete, tableData.LatestCDCTs, srcKeysMissing...)
 	if err != nil {
 		log.WithError(err).Warn("failed to apply alter table")
 		return err

@@ -1,9 +1,8 @@
 package typing
 
 import (
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"strings"
-
-	"github.com/artie-labs/transfer/lib/config"
 )
 
 type Column struct {
@@ -28,7 +27,7 @@ func Diff(source map[string]Kind, target map[string]Kind) (srcKeyMissing []Colum
 	}
 
 	for name, kind := range src {
-		if strings.Contains(name, config.ArtiePrefix) {
+		if strings.Contains(name, constants.ArtiePrefix) {
 			// Ignore artie metadata
 			continue
 		}
@@ -40,7 +39,7 @@ func Diff(source map[string]Kind, target map[string]Kind) (srcKeyMissing []Colum
 	}
 
 	for name, kind := range targ {
-		if strings.Contains(name, config.ArtiePrefix) {
+		if strings.Contains(name, constants.ArtiePrefix) {
 			// Ignore artie metadata
 			continue
 		}

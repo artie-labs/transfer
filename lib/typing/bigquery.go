@@ -5,13 +5,7 @@ import (
 )
 
 func BigQueryTypeToKind(bqType string) Kind {
-	// TODO: test every single type.
-
 	bqType = strings.ToLower(bqType)
-
-	// We need to strip away the variable
-	// For example, a Column can look like: TEXT, or Number(38, 0) or VARCHAR(255).
-	// We need to strip out all the content from ( ... )
 	if len(bqType) == 0 {
 		return Invalid
 	}

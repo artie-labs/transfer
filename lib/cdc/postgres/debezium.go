@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
 	"strconv"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/cdc/util"
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
@@ -27,7 +27,7 @@ func (d *Debezium) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Eve
 }
 
 func (d *Debezium) Label() string {
-	return config.DBZPostgresFormat
+	return constants.DBZPostgresFormat
 }
 
 func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (pkName string, pkValue interface{}, err error) {
@@ -59,8 +59,8 @@ func (s *SchemaEventPayload) GetData(pkName string, pkVal interface{}, tc *kafka
 		// We _can_ rely on *before* since even without running replicate identity, it will still copy over
 		// the PK. We can explore simplifying this interface in the future by leveraging before.
 		retMap = map[string]interface{}{
-			config.DeleteColumnMarker: true,
-			pkName:                    pkVal,
+			constants.DeleteColumnMarker: true,
+			pkName:                       pkVal,
 		}
 
 		// If idempotency key is an empty string, don't put it in the payload data
@@ -69,7 +69,7 @@ func (s *SchemaEventPayload) GetData(pkName string, pkVal interface{}, tc *kafka
 		}
 	} else {
 		retMap = s.Payload.After
-		retMap[config.DeleteColumnMarker] = false
+		retMap[constants.DeleteColumnMarker] = false
 	}
 
 	// Iterate over the schema and identify if there are any fields that require extra care.

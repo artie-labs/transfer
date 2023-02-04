@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,6 +19,6 @@ func (m *ModelsTestSuite) TestEvent_IsValid() {
 	assert.False(m.T(), e.IsValid())
 
 	e.Data = make(map[string]interface{})
-	e.Data[config.DeleteColumnMarker] = false
+	e.Data[constants.DeleteColumnMarker] = false
 	assert.True(m.T(), e.IsValid(), e)
 }
