@@ -75,6 +75,7 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
 
 - OLAPs:
     - Snowflake
+    - BigQuery
 - OLTPs:
     - MongoDB (Debezium)
     - Postgres (Debezium w/ wal2json)
