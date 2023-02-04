@@ -34,6 +34,8 @@ func NewDwhTableConfig(columns map[string]typing.Kind, colsToDelete map[string]t
 }
 
 func (tc *DwhTableConfig) Columns() map[string]typing.Kind {
+	// TODO in the future, columns should be wrapped with a type that has mutex support to avoid concurrent r/w panics
+	// or consider using sync.Map
 	if tc == nil {
 		return nil
 	}
@@ -41,7 +43,7 @@ func (tc *DwhTableConfig) Columns() map[string]typing.Kind {
 	return tc.columns
 }
 
-func (tc *DwhTableConfig) MutateColumnsWithMemCache(createTable bool, columnOp constants.ColumnOperation, cols ...typing.Column) {
+func (tc *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp constants.ColumnOperation, cols ...typing.Column) {
 	if tc == nil {
 		return
 	}

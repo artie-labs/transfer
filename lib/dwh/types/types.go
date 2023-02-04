@@ -10,7 +10,7 @@ type DwhToTablesConfigMap struct {
 }
 
 func (d *DwhToTablesConfigMap) TableConfig(fqName string) *DwhTableConfig {
-	if d.fqNameToDwhTableConfig == nil {
+	if d == nil || d.fqNameToDwhTableConfig == nil {
 		return nil
 	}
 
@@ -23,12 +23,20 @@ func (d *DwhToTablesConfigMap) TableConfig(fqName string) *DwhTableConfig {
 }
 
 func (d *DwhToTablesConfigMap) RemoveTableFromConfig(fqName string) {
+	if d == nil || d.fqNameToDwhTableConfig == nil {
+		return
+	}
+
 	d.Lock()
 	defer d.Unlock()
 	delete(d.fqNameToDwhTableConfig, fqName)
 }
 
 func (d *DwhToTablesConfigMap) AddTableToConfig(fqName string, config *DwhTableConfig) {
+	if d == nil {
+		return
+	}
+
 	d.Lock()
 	defer d.Unlock()
 
@@ -37,6 +45,5 @@ func (d *DwhToTablesConfigMap) AddTableToConfig(fqName string, config *DwhTableC
 	}
 
 	d.fqNameToDwhTableConfig[fqName] = config
-
 	return
 }

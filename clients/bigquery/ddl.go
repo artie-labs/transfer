@@ -57,7 +57,7 @@ func (s *Store) alterTable(ctx context.Context, fqTableName string, createTable 
 	}
 
 	if err == nil {
-		tc.MutateColumnsWithMemCache(createTable, columnOp, mutateCol...)
+		tc.MutateInMemoryColumns(createTable, columnOp, mutateCol...)
 	}
 
 	return nil
