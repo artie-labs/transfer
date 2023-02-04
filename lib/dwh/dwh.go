@@ -14,8 +14,6 @@ import (
 
 type DataWarehouse interface {
 	Merge(ctx context.Context, tableData *optimization.TableData) error
-	// TODO - we can further refactor the boilerplate-ness of Merge.
-	// FQName() should be done at the DWH level.
 }
 
 func LoadDataWarehouse(ctx context.Context) DataWarehouse {

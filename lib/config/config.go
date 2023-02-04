@@ -70,7 +70,8 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 		return nil, err
 	}
 
-	bytes, err := io.ReadAll(file)
+	var bytes []byte
+	bytes, err = io.ReadAll(file)
 	if err != nil {
 		return nil, err
 	}
