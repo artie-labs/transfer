@@ -205,11 +205,25 @@ func (b *BigQueryTestSuite) TestParseSchemaQueryComplex() {
 
 	anticipatedColumns := map[string]typing.Kind{
 		"string_field_0": typing.String,
+		"string_field_1": typing.String,
+		"field2":         typing.Integer,
+		"field3":         typing.Array,
+		"field4":         typing.Float,
+		"field5":         typing.Float,
+		"field6":         typing.Float,
+		"field7":         typing.Boolean,
+		"field8":         typing.DateTime,
+		"field9":         typing.DateTime,
+		"field10":        typing.DateTime,
+		"field11":        typing.DateTime,
+		"field12":        typing.Struct,
+		"field13":        typing.Struct,
 	}
 
 	for anticipatedCol, anticipatedKind := range anticipatedColumns {
 		kind, isOk := tableConfig.Columns()[anticipatedCol]
 		assert.True(b.T(), isOk)
-		assert.Equal(b.T(), kind, anticipatedKind)
+		assert.Equal(b.T(), kind, anticipatedKind, fmt.Sprintf("expected kind: %v, got: col: %s, kind: %v mismatched.", kind,
+			anticipatedCol, anticipatedKind))
 	}
 }
