@@ -2,6 +2,8 @@ package bigquery
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/types"
@@ -11,15 +13,149 @@ import (
 )
 
 func (b *BigQueryTestSuite) TestAlterTableDropColumns() {
-	// TODO
+	fqName := "mock_dataset.delete_col"
+	ctx := context.Background()
+	ts := time.Now()
+	columns := map[string]typing.Kind{
+		"foo": typing.String,
+		"bar": typing.String,
+	}
+
+	originalColumnLength := len(columns)
+	b.store.configMap.AddTableToConfig(fqName, types.NewDwhTableConfig(columns, nil, false))
+
+	// Prior to deletion, there should be no colsToDelete
+	assert.Equal(b.T(), 0, len(b.store.configMap.TableConfig(fqName).ColumnsToDelete()), b.store.configMap.TableConfig(fqName).ColumnsToDelete())
+	for name, kind := range columns {
+		err := b.store.alterTable(ctx, fqName, b.store.configMap.TableConfig(fqName).CreateTable, constants.Delete, ts,
+			typing.Column{
+				Name: name,
+				Kind: kind,
+			})
+
+		assert.NoError(b.T(), err)
+	}
+
+	// Have not deleted, but tried to!
+	assert.Equal(b.T(), originalColumnLength, len(b.store.configMap.TableConfig(fqName).ColumnsToDelete()), b.store.configMap.TableConfig(fqName).ColumnsToDelete())
+	// Columns have not been deleted yet.
+	assert.Equal(b.T(), originalColumnLength, len(b.store.configMap.TableConfig(fqName).Columns()), b.store.configMap.TableConfig(fqName).Columns())
+
+	// Now try to delete again and with an increased TS. It should now be all deleted.
+	var callIdx int
+	for name, kind := range columns {
+		err := b.store.alterTable(ctx, fqName, b.store.configMap.TableConfig(fqName).CreateTable, constants.Delete, ts.Add(2*constants.DeletionConfidencePadding),
+			typing.Column{
+				Name: name,
+				Kind: kind,
+			})
+
+		query, _ := b.fakeStore.ExecArgsForCall(callIdx)
+		assert.Equal(b.T(), fmt.Sprintf("ALTER TABLE %s drop COLUMN %s", fqName, name), query)
+		assert.NoError(b.T(), err)
+		callIdx += 1
+	}
+
+	// Columns have now been deleted.
+	assert.Equal(b.T(), 0, len(b.store.configMap.TableConfig(fqName).ColumnsToDelete()), b.store.configMap.TableConfig(fqName).ColumnsToDelete())
+	// Columns have not been deleted yet.
+	assert.Equal(b.T(), 0, len(b.store.configMap.TableConfig(fqName).Columns()), b.store.configMap.TableConfig(fqName).Columns())
+	assert.Equal(b.T(), originalColumnLength, b.fakeStore.ExecCallCount())
 }
 
 func (b *BigQueryTestSuite) TestAlterTableAddColumns() {
-	// TODO
+	fqName := "mock_dataset.add_cols"
+	ctx := context.Background()
+	ts := time.Now()
+	existingCols := map[string]typing.Kind{
+		"foo": typing.String,
+		"bar": typing.String,
+	}
+	existingColsLen := len(existingCols)
+
+	newCols := map[string]typing.Kind{
+		"dusty":      typing.String,
+		"jacqueline": typing.Integer,
+		"charlie":    typing.Boolean,
+		"robin":      typing.Float,
+	}
+	newColsLen := len(newCols)
+
+	b.store.configMap.AddTableToConfig(fqName, types.NewDwhTableConfig(existingCols, nil, false))
+	// Prior to adding, there should be no colsToDelete
+	assert.Equal(b.T(), 0, len(b.store.configMap.TableConfig(fqName).ColumnsToDelete()), b.store.configMap.TableConfig(fqName).ColumnsToDelete())
+	assert.Equal(b.T(), len(existingCols), len(b.store.configMap.TableConfig(fqName).Columns()), b.store.configMap.TableConfig(fqName).Columns())
+
+	var callIdx int
+	for name, kind := range newCols {
+		err := b.store.alterTable(ctx, fqName, b.store.configMap.TableConfig(fqName).CreateTable, constants.Add, ts,
+			typing.Column{
+				Name: name,
+				Kind: kind,
+			})
+
+		assert.NoError(b.T(), err)
+		query, _ := b.fakeStore.ExecArgsForCall(callIdx)
+		assert.Equal(b.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, name, typing.KindToBigQuery(kind)), query)
+		callIdx += 1
+	}
+
+	// Check all the columns, make sure it's correct. (length)
+	assert.Equal(b.T(), newColsLen+existingColsLen, len(b.store.configMap.TableConfig(fqName).Columns()), b.store.configMap.TableConfig(fqName).Columns())
+	// Check by iterating over the columns
+	for tableCol, tableColKind := range b.store.configMap.TableConfig(fqName).Columns() {
+		var isOk bool
+		var kind typing.Kind
+		kind, isOk = existingCols[tableCol]
+		if !isOk {
+			kind, isOk = newCols[tableCol]
+		}
+
+		assert.Equal(b.T(), tableColKind, kind)
+		assert.True(b.T(), isOk)
+	}
 }
 
 func (b *BigQueryTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
-	// TODO
+	fqName := "mock_dataset.add_cols"
+	ctx := context.Background()
+	ts := time.Now()
+	existingCols := map[string]typing.Kind{
+		"foo": typing.String,
+		"bar": typing.String,
+	}
+	existingColsLen := len(existingCols)
+
+	b.store.configMap.AddTableToConfig(fqName, types.NewDwhTableConfig(existingCols, nil, false))
+	// Prior to adding, there should be no colsToDelete
+	assert.Equal(b.T(), 0, len(b.store.configMap.TableConfig(fqName).ColumnsToDelete()), b.store.configMap.TableConfig(fqName).ColumnsToDelete())
+	assert.Equal(b.T(), len(existingCols), len(b.store.configMap.TableConfig(fqName).Columns()), b.store.configMap.TableConfig(fqName).Columns())
+
+	var callIdx int
+	for name, kind := range existingCols {
+		var sqlResult sql.Result
+		// BQ returning the same error because the column already exists.
+		b.fakeStore.ExecReturnsOnCall(0, sqlResult, errors.New("Column already exists: _string at [1:39]"))
+		err := b.store.alterTable(ctx, fqName, b.store.configMap.TableConfig(fqName).CreateTable, constants.Add, ts,
+			typing.Column{
+				Name: name,
+				Kind: kind,
+			})
+
+		assert.NoError(b.T(), err)
+		query, _ := b.fakeStore.ExecArgsForCall(callIdx)
+		assert.Equal(b.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, name, typing.KindToBigQuery(kind)), query)
+		callIdx += 1
+	}
+
+	// Check all the columns, make sure it's correct. (length)
+	assert.Equal(b.T(), existingColsLen, len(b.store.configMap.TableConfig(fqName).Columns()), b.store.configMap.TableConfig(fqName).Columns())
+	// Check by iterating over the columns
+	for tableCol, tableColKind := range b.store.configMap.TableConfig(fqName).Columns() {
+		kind, isOk := existingCols[tableCol]
+		assert.Equal(b.T(), tableColKind, kind)
+		assert.True(b.T(), isOk)
+	}
 }
 
 func (b *BigQueryTestSuite) TestAlterTableCreateTable() {
@@ -46,7 +182,7 @@ func (b *BigQueryTestSuite) TestParseSchemaQuery() {
 	}
 
 	for _, basicQuery := range basicQueries {
-		tableConfig, err := ParseSchemaQuery(basicQuery, false)
+		tableConfig, err := parseSchemaQuery(basicQuery, false)
 
 		assert.NoError(b.T(), err, err)
 
@@ -59,7 +195,7 @@ func (b *BigQueryTestSuite) TestParseSchemaQuery() {
 
 func (b *BigQueryTestSuite) TestParseSchemaQueryComplex() {
 	// This test will test every single data type.
-	tableConfig, err := ParseSchemaQuery("CREATE TABLE `artie-labs.mock.customers`(string_field_0 STRING,string_field_1 STRING,field2 INT64,field3 ARRAY<INT64>,field4 FLOAT64,field5 NUMERIC,field6 BIGNUMERIC,field7 BOOL,field8 TIMESTAMP,field9 DATE,field10 TIME,field11 DATETIME,field12 STRUCT<foo STRING>,field13 JSON)OPTIONS(expiration_timestamp=TIMESTAMP 2023-03-26T20:03:44.504Z);",
+	tableConfig, err := parseSchemaQuery("CREATE TABLE `artie-labs.mock.customers`(string_field_0 STRING,string_field_1 STRING,field2 INT64,field3 ARRAY<INT64>,field4 FLOAT64,field5 NUMERIC,field6 BIGNUMERIC,field7 BOOL,field8 TIMESTAMP,field9 DATE,field10 TIME,field11 DATETIME,field12 STRUCT<foo STRING>,field13 JSON)OPTIONS(expiration_timestamp=TIMESTAMP 2023-03-26T20:03:44.504Z);",
 		false)
 
 	assert.NoError(b.T(), err, err)

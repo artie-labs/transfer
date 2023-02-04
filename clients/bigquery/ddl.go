@@ -65,7 +65,7 @@ func (s *Store) alterTable(_ context.Context, fqTableName string, createTable bo
 
 func (s *Store) GetTableConfig(_ context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	// TODO: Test
-	
+
 	fqName := tableData.ToFqName(constants.BigQuery)
 	tc := s.configMap.TableConfig(fqName)
 	if tc != nil {
@@ -93,7 +93,7 @@ func (s *Store) GetTableConfig(_ context.Context, tableData *optimization.TableD
 	}
 
 	// Table doesn't exist if the information schema query returned nothing.
-	tableConfig, err := ParseSchemaQuery(sqlRow, len(sqlRow) == 0)
+	tableConfig, err := parseSchemaQuery(sqlRow, len(sqlRow) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -102,8 +102,8 @@ func (s *Store) GetTableConfig(_ context.Context, tableData *optimization.TableD
 	return tableConfig, nil
 }
 
-// ParseSchemaQuery is to parse out the results from this query: https://cloud.google.com/bigquery/docs/information-schema-tables#example_1
-func ParseSchemaQuery(row string, createTable bool) (*types.DwhTableConfig, error) {
+// parseSchemaQuery is to parse out the results from this query: https://cloud.google.com/bigquery/docs/information-schema-tables#example_1
+func parseSchemaQuery(row string, createTable bool) (*types.DwhTableConfig, error) {
 	if createTable {
 		return types.NewDwhTableConfig(nil, nil, createTable), nil
 	}
