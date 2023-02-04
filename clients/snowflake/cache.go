@@ -40,7 +40,6 @@ func (s *Store) getTableConfig(ctx context.Context, fqName string) (*types.DwhTa
 	}
 
 	tableToColumnTypes := make(map[string]typing.Kind)
-	// TODO: Remove nil check on rows. I added it because having a hard time returning *sql.Rows
 	for rows != nil && rows.Next() {
 		// figure out what columns were returned
 		// the column names will be the JSON object field keys

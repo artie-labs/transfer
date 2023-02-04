@@ -285,11 +285,7 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	assert.Equal(p.T(), evtData["id"], float64(1001))
 	assert.Equal(p.T(), evtData["email"], "sally.thomas@acme.com")
 
-	// assert.Equal(p.T(), time.Date(2022, time.November,
-	//		18, 6, 35, 21, 0, time.UTC), event.GetExecutionTime())
 	td := time.Date(2023, time.February, 2, 17, 51, 35, 0, time.UTC)
 	assert.Equal(p.T(), evtData["ts_no_tz1"], td.Format(time.RFC3339))
 	assert.Equal(p.T(), evt.Table(), "customers")
 }
-
-// TODO: Add a test related to schema and the microtimestamp format.

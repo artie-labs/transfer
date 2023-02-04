@@ -30,9 +30,11 @@ Take a look at the [Running section](#running) on how you would be able to run T
 ### Pre-requisites
 As you can see from the architecture above, Transfer sits behind Kafka and expects CDC messages to be in a particular format. Please see the currently supported section on what sources and destinations are supported.
 
-Kafka topic per table. The partition key must be the primary key for the row.
-CDC connector (refer to supported section on supported connectors)
-Supported OLTP & OLAP
+The optimal set-up looks something like this:
+* Kafka topic per table (so we can toggle number of partitions based on throughput)
+* Partition key is the primary key for the table (so we avoid out-of-order writes at the row level)
+
+To see the current supported databases, check out the [Supported section](#what-is-currently-supported)
 
 If you are having trouble setting up CDC, please see the [examples folder](https://github.com/artie-labs/transfer/tree/master/examples) on how to configure a test database to emit CDC messages to Kafka.
 

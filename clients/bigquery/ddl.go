@@ -64,8 +64,6 @@ func (s *Store) alterTable(_ context.Context, fqTableName string, createTable bo
 }
 
 func (s *Store) GetTableConfig(_ context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	// TODO: Test
-
 	fqName := tableData.ToFqName(constants.BigQuery)
 	tc := s.configMap.TableConfig(fqName)
 	if tc != nil {

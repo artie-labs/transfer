@@ -5,11 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/stretchr/testify/assert"
-	"time"
 )
 
 func (b *BigQueryTestSuite) TestAlterTableDropColumns() {
@@ -201,6 +203,13 @@ func (b *BigQueryTestSuite) TestParseSchemaQueryComplex() {
 	assert.NoError(b.T(), err, err)
 	assert.Equal(b.T(), len(tableConfig.Columns()), 14, tableConfig.Columns)
 
-	// TODO test and iterate over every column
+	anticipatedColumns := map[string]typing.Kind{
+		"string_field_0": typing.String,
+	}
 
+	for anticipatedCol, anticipatedKind := range anticipatedColumns {
+		kind, isOk := tableConfig.Columns()[anticipatedCol]
+		assert.True(b.T(), isOk)
+		assert.Equal(b.T(), kind, anticipatedKind)
+	}
 }
