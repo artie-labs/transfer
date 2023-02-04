@@ -19,11 +19,11 @@ func (s *SnowflakeTestSuite) TestMergeNoDeleteFlag() {
 	}
 
 	tableData := &optimization.TableData{
-		Columns:     cols,
-		RowsData:    nil,
-		PrimaryKey:  "id",
-		TopicConfig: kafkalib.TopicConfig{},
-		LatestCDCTs: time.Time{},
+		InMemoryColumns: cols,
+		RowsData:        nil,
+		PrimaryKey:      "id",
+		TopicConfig:     kafkalib.TopicConfig{},
+		LatestCDCTs:     time.Time{},
 	}
 
 	_, err := merge(tableData)
@@ -34,7 +34,7 @@ func (s *SnowflakeTestSuite) TestMergeNoDeleteFlag() {
 func (s *SnowflakeTestSuite) TestMerge() {
 	cols := map[string]typing.Kind{
 		"id":                      typing.Integer,
-		"name":                    typing.String,
+		"NAME":                    typing.String,
 		config.DeleteColumnMarker: typing.Boolean,
 	}
 
@@ -43,7 +43,7 @@ func (s *SnowflakeTestSuite) TestMerge() {
 		pk := fmt.Sprint(idx + 1)
 		rowData[pk] = map[string]interface{}{
 			"id":                      pk,
-			"name":                    name,
+			"NAME":                    name,
 			config.DeleteColumnMarker: false,
 		}
 	}
@@ -55,15 +55,19 @@ func (s *SnowflakeTestSuite) TestMerge() {
 	}
 
 	tableData := &optimization.TableData{
-		Columns:     cols,
-		RowsData:    rowData,
-		PrimaryKey:  "id",
-		TopicConfig: topicConfig,
-		LatestCDCTs: time.Time{},
+		InMemoryColumns: cols,
+		RowsData:        rowData,
+		PrimaryKey:      "id",
+		TopicConfig:     topicConfig,
+		LatestCDCTs:     time.Time{},
 	}
 
 	mergeSQL, err := merge(tableData)
 	assert.NoError(s.T(), err, "merge failed")
+	assert.Contains(s.T(), mergeSQL, "robin")
+	assert.Contains(s.T(), mergeSQL, "false")
+	assert.Contains(s.T(), mergeSQL, "1")
+	assert.Contains(s.T(), mergeSQL, "NAME")
 
 	// Check if MERGE INTO FQ Table exists.
 	assert.True(s.T(), strings.Contains(mergeSQL, "MERGE INTO shop.public.customer c"))

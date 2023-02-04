@@ -8,7 +8,6 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/segmentio/kafka-go"
-	"strings"
 	"sync"
 )
 
@@ -51,7 +50,7 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message kafka.Message) (
 	if !isOk {
 		inMemoryDB.TableData[e.Table] = &optimization.TableData{
 			RowsData:                map[string]map[string]interface{}{},
-			Columns:                 map[string]typing.Kind{},
+			InMemoryColumns:         map[string]typing.Kind{},
 			PrimaryKey:              e.PrimaryKeyName,
 			TopicConfig:             *topicConfig,
 			PartitionsToLastMessage: map[int]kafka.Message{},
@@ -77,10 +76,9 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message kafka.Message) (
 			continue
 		}
 
-		col = strings.ToLower(col)
-		colType, isOk := inMemoryDB.TableData[e.Table].Columns[col]
+		colType, isOk := inMemoryDB.TableData[e.Table].InMemoryColumns[col]
 		if !isOk {
-			inMemoryDB.TableData[e.Table].Columns[col] = typing.ParseValue(val)
+			inMemoryDB.TableData[e.Table].InMemoryColumns[col] = typing.ParseValue(val)
 		} else {
 			if colType == typing.Invalid {
 				// If colType is Invalid, let's see if we can update it to a better type
@@ -88,7 +86,7 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message kafka.Message) (
 				// However, it's important to create a column even if it's nil.
 				// This is because we don't want to think that it's okay to drop a column in DWH
 				if kind := typing.ParseValue(val); kind != typing.Invalid {
-					inMemoryDB.TableData[e.Table].Columns[col] = kind
+					inMemoryDB.TableData[e.Table].InMemoryColumns[col] = kind
 				}
 			}
 		}

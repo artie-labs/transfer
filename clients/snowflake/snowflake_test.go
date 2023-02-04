@@ -281,11 +281,11 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	}
 
 	tableData := &optimization.TableData{
-		Columns:     columns,
-		RowsData:    rowsData,
-		TopicConfig: topicConfig,
-		PrimaryKey:  "id",
-		Rows:        1,
+		InMemoryColumns: columns,
+		RowsData:        rowsData,
+		TopicConfig:     topicConfig,
+		PrimaryKey:      "id",
+		Rows:            1,
 	}
 
 	mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()] = &snowflakeTableConfig{
@@ -296,7 +296,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	}
 
 	ExecuteMerge(context.Background(), tableData)
-	assert.Equal(s.T(), tableData.Columns["first_name"], typing.String)
+	assert.Equal(s.T(), tableData.InMemoryColumns["first_name"], typing.String)
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMerge() {
@@ -324,11 +324,11 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	}
 
 	tableData := &optimization.TableData{
-		Columns:     columns,
-		RowsData:    rowsData,
-		TopicConfig: topicConfig,
-		PrimaryKey:  "id",
-		Rows:        1,
+		InMemoryColumns: columns,
+		RowsData:        rowsData,
+		TopicConfig:     topicConfig,
+		PrimaryKey:      "id",
+		Rows:            1,
 	}
 
 	mdConfig.snowflakeTableToConfig[topicConfig.ToFqName()] = &snowflakeTableConfig{
@@ -370,11 +370,11 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	}
 
 	tableData := &optimization.TableData{
-		Columns:     columns,
-		RowsData:    rowsData,
-		TopicConfig: topicConfig,
-		PrimaryKey:  "id",
-		Rows:        1,
+		InMemoryColumns: columns,
+		RowsData:        rowsData,
+		TopicConfig:     topicConfig,
+		PrimaryKey:      "id",
+		Rows:            1,
 	}
 
 	sflkColumns := map[string]typing.Kind{
@@ -405,7 +405,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	// Now try to execute merge where 1 of the rows have the column now
 	for _, pkMap := range tableData.RowsData {
 		pkMap["new"] = "123"
-		tableData.Columns = sflkColumns
+		tableData.InMemoryColumns = sflkColumns
 		break
 	}
 
@@ -421,7 +421,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
 	err := ExecuteMerge(context.Background(), &optimization.TableData{
-		Columns:                 nil,
+		InMemoryColumns:         nil,
 		RowsData:                nil,
 		PrimaryKey:              "",
 		TopicConfig:             kafkalib.TopicConfig{},

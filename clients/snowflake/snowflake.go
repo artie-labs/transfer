@@ -90,7 +90,7 @@ func ExecuteMerge(ctx context.Context, tableData *optimization.TableData) error 
 
 	log := logger.FromContext(ctx)
 	// Check if all the columns exist in Snowflake
-	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.Columns, tableConfig.Columns)
+	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.InMemoryColumns, tableConfig.Columns)
 
 	// Keys that exist in CDC stream, but not in Snowflake
 	err = alterTable(fqName, tableConfig.CreateTable, Add, tableData.LatestCDCTs, targetKeysMissing...)
@@ -127,9 +127,14 @@ func ExecuteMerge(ctx context.Context, tableData *optimization.TableData) error 
 
 	// We now need to merge the two columns from tableData (which is constructed in-memory) and tableConfig (coming from the describe statement)
 	// Cannot do a full swap because tableData is a super-set of tableConfig (it contains the temp deletion flag and other columns with the __artie prefix).
-	for tcCol, tcKind := range tableConfig.Columns {
-		tableData.Columns[tcCol] = tcKind
+	// We are swapping the order and iterating over InMemoryColumns instead, as the columns are case-sensitive.
+	for inMemCol := range tableData.InMemoryColumns {
+		tcKind, isOk := tableConfig.Columns[strings.ToLower(inMemCol)]
+		if isOk {
+			tableData.InMemoryColumns[inMemCol] = tcKind
+		}
 	}
+
 	query, err := merge(tableData)
 	if err != nil {
 		log.WithError(err).Warn("failed to generate the merge query")
