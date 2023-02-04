@@ -1,19 +1,17 @@
-package snowflake
+package bigquery
 
 import (
 	"fmt"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"strings"
-	"time"
-
-	"github.com/stretchr/testify/assert"
-
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/stretchr/testify/assert"
+	"strings"
+	"time"
 )
 
-func (s *SnowflakeTestSuite) TestMergeNoDeleteFlag() {
+func (b *BigQueryTestSuite) TestMergeNoDeleteFlag() {
 	cols := map[string]typing.Kind{
 		"id": typing.Integer,
 	}
@@ -27,14 +25,13 @@ func (s *SnowflakeTestSuite) TestMergeNoDeleteFlag() {
 	}
 
 	_, err := merge(tableData)
-	assert.Error(s.T(), err, "merge failed")
-
+	assert.Error(b.T(), err, "merge failed")
 }
 
-func (s *SnowflakeTestSuite) TestMerge() {
+func (b *BigQueryTestSuite) TestMerge() {
 	cols := map[string]typing.Kind{
 		"id":                         typing.Integer,
-		"NAME":                       typing.String,
+		"name":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
 	}
 
@@ -43,8 +40,8 @@ func (s *SnowflakeTestSuite) TestMerge() {
 		pk := fmt.Sprint(idx + 1)
 		rowData[pk] = map[string]interface{}{
 			"id":                         pk,
+			"name":                       name,
 			constants.DeleteColumnMarker: false,
-			"NAME":                       name,
 		}
 	}
 
@@ -63,14 +60,10 @@ func (s *SnowflakeTestSuite) TestMerge() {
 	}
 
 	mergeSQL, err := merge(tableData)
-	assert.NoError(s.T(), err, "merge failed")
-	assert.Contains(s.T(), mergeSQL, "robin")
-	assert.Contains(s.T(), mergeSQL, "false")
-	assert.Contains(s.T(), mergeSQL, "1")
-	assert.Contains(s.T(), mergeSQL, "NAME")
 
+	assert.NoError(b.T(), err, "merge failed")
 	// Check if MERGE INTO FQ Table exists.
-	assert.True(s.T(), strings.Contains(mergeSQL, "MERGE INTO shop.public.customer c"))
+	assert.True(b.T(), strings.Contains(mergeSQL, "MERGE INTO shop.customer c"), mergeSQL)
 	for _, rowData := range tableData.RowsData {
 		for col, val := range rowData {
 			switch cols[col] {
@@ -78,7 +71,7 @@ func (s *SnowflakeTestSuite) TestMerge() {
 				val = fmt.Sprintf("'%v'", val)
 			}
 
-			assert.True(s.T(), strings.Contains(mergeSQL, fmt.Sprint(val)), map[string]interface{}{
+			assert.True(b.T(), strings.Contains(mergeSQL, fmt.Sprint(val)), map[string]interface{}{
 				"merge": mergeSQL,
 				"val":   val,
 			})

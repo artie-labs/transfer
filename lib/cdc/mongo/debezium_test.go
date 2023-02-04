@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/artie-labs/transfer/lib/cdc"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
@@ -137,7 +137,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 	assert.NoError(p.T(), err)
 
 	assert.Equal(p.T(), nestedData["object"], "foo")
-	assert.Equal(p.T(), evtData[config.DeleteColumnMarker], false)
+	assert.Equal(p.T(), evtData[constants.DeleteColumnMarker], false)
 
 	assert.Equal(p.T(), evt.Table(), "customers")
 	assert.Equal(p.T(), evt.GetExecutionTime(),
@@ -181,7 +181,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 	evtData := evt.GetData("_id", 1003, &kafkalib.TopicConfig{})
 
 	assert.Equal(p.T(), evtData["_id"], 1003)
-	assert.Equal(p.T(), evtData[config.DeleteColumnMarker], true)
+	assert.Equal(p.T(), evtData[constants.DeleteColumnMarker], true)
 
 	assert.Equal(p.T(), evt.Table(), "customers123")
 	assert.Equal(p.T(), evt.GetExecutionTime(),

@@ -8,10 +8,9 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/artie-labs/transfer/lib/array"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
-
-var validOutputSources = []string{"snowflake", "test"}
 
 type Sentry struct {
 	DSN string `yaml:"dsn"`
@@ -32,8 +31,17 @@ func (k *Kafka) String() string {
 }
 
 type Config struct {
-	Output    string `yaml:"outputSource"`
-	Kafka     *Kafka
+	Output constants.DestinationKind `yaml:"outputSource"`
+	Kafka  *Kafka
+
+	BigQuery struct {
+		// PathToCredentials is _optional_ if you have GOOGLE_APPLICATION_CREDENTIALS set as an env var
+		// Links to credentials: https://cloud.google.com/docs/authentication/application-default-credentials#GAC
+		PathToCredentials string `yaml:"pathToCredentials"`
+		DefaultDataset    string `yaml:"defaultDataset"`
+		ProjectID         string `yaml:"projectID"`
+	}
+
 	Snowflake struct {
 		AccountID string `yaml:"account"`
 		Username  string `yaml:"username"`
@@ -48,7 +56,7 @@ type Config struct {
 
 	Telemetry struct {
 		Metrics struct {
-			Provider ExporterKind           `yaml:"provider"`
+			Provider constants.ExporterKind `yaml:"provider"`
 			Settings map[string]interface{} `yaml:"settings,omitempty"`
 		}
 	}
@@ -62,7 +70,8 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 		return nil, err
 	}
 
-	bytes, err := io.ReadAll(file)
+	var bytes []byte
+	bytes, err = io.ReadAll(file)
 	if err != nil {
 		return nil, err
 	}
@@ -84,9 +93,8 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("config is nil")
 	}
 
-	// Output sources
-	if !array.StringContains(validOutputSources, c.Output) {
-		return fmt.Errorf("output: %s is invalid, the valid sources are: %v", c.Output, validOutputSources)
+	if !constants.IsValidDestination(c.Output) {
+		return fmt.Errorf("output: %s is invalid", c.Output)
 	}
 
 	// TopicConfigs

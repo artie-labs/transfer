@@ -58,6 +58,17 @@ func IsJSON(str string) bool {
 	return false
 }
 
+func ParseDateTime(dtString string) (ts time.Time, err error) {
+	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
+		ts, err = time.Parse(supportedDateTimeLayout, dtString)
+		if err == nil {
+			return
+		}
+	}
+
+	return
+}
+
 func ParseValue(val interface{}) Kind {
 	// Check if it's a number first.
 	switch val.(type) {
@@ -78,11 +89,9 @@ func ParseValue(val interface{}) Kind {
 		// This way, we don't penalize every string into going through this loop
 		// In the future, we can have specific layout RFCs run depending on the char
 		if strings.Contains(valString, " ") || strings.Contains(valString, "-") {
-			for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
-				_, err := time.Parse(supportedDateTimeLayout, valString)
-				if err == nil {
-					return DateTime
-				}
+			_, err := ParseDateTime(valString)
+			if err == nil {
+				return DateTime
 			}
 		}
 

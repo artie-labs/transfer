@@ -1,11 +1,11 @@
 package models
 
 import (
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/cdc"
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
@@ -38,7 +38,7 @@ func (e *Event) IsValid() bool {
 	}
 
 	// Check if delete flag exists.
-	_, isOk := e.Data[config.DeleteColumnMarker]
+	_, isOk := e.Data[constants.DeleteColumnMarker]
 	if !isOk {
 		return false
 	}

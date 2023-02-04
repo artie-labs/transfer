@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/cdc/util"
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/mongo"
@@ -59,7 +59,7 @@ func (d *Debezium) GetEventFromBytes(_ context.Context, bytes []byte) (cdc.Event
 }
 
 func (d *Debezium) Label() string {
-	return config.DBZMongoFormat
+	return constants.DBZMongoFormat
 }
 
 // GetPrimaryKey - Will read from the Kafka message's partition key to get the primary key for the row.
@@ -94,8 +94,8 @@ func (s *SchemaEventPayload) GetData(pkName string, pkVal interface{}, tc *kafka
 		// We _can_ rely on *before* since even without running replicate identity, it will still copy over
 		// the PK. We can explore simplifying this interface in the future by leveraging before.
 		retMap = map[string]interface{}{
-			config.DeleteColumnMarker: true,
-			pkName:                    pkVal,
+			constants.DeleteColumnMarker: true,
+			pkName:                       pkVal,
 		}
 
 		// If idempotency key is an empty string, don't put it in the event data
@@ -107,7 +107,7 @@ func (s *SchemaEventPayload) GetData(pkName string, pkVal interface{}, tc *kafka
 		// We need this because there's an edge case with Debezium
 		// Where _id gets rewritten as id in the partition key.
 		retMap[pkName] = pkVal
-		retMap[config.DeleteColumnMarker] = false
+		retMap[constants.DeleteColumnMarker] = false
 	}
 
 	return retMap

@@ -2,14 +2,14 @@ package metrics
 
 import (
 	"context"
+	"github.com/artie-labs/transfer/lib/config/constants"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/logger"
 )
 
-var supportedExporterKinds = []config.ExporterKind{config.Datadog}
+var supportedExporterKinds = []constants.ExporterKind{constants.Datadog}
 
-func exporterKindValid(kind config.ExporterKind) bool {
+func exporterKindValid(kind constants.ExporterKind) bool {
 	var valid bool
 	for _, supportedExporterKind := range supportedExporterKinds {
 		valid = kind == supportedExporterKind
@@ -21,7 +21,7 @@ func exporterKindValid(kind config.ExporterKind) bool {
 	return valid
 }
 
-func LoadExporter(ctx context.Context, kind config.ExporterKind, settings map[string]interface{}) context.Context {
+func LoadExporter(ctx context.Context, kind constants.ExporterKind, settings map[string]interface{}) context.Context {
 	if !exporterKindValid(kind) {
 		logger.FromContext(ctx).WithFields(map[string]interface{}{
 			"exporterKind": kind,
@@ -29,7 +29,7 @@ func LoadExporter(ctx context.Context, kind config.ExporterKind, settings map[st
 	}
 
 	switch kind {
-	case config.Datadog:
+	case constants.Datadog:
 		var exportErr error
 		ctx, exportErr = NewDatadogClient(ctx, settings)
 		if exportErr != nil {

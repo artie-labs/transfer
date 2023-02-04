@@ -30,9 +30,11 @@ Take a look at the [Running section](#running) on how you would be able to run T
 ### Pre-requisites
 As you can see from the architecture above, Transfer sits behind Kafka and expects CDC messages to be in a particular format. Please see the currently supported section on what sources and destinations are supported.
 
-Kafka topic per table. The partition key must be the primary key for the row.
-CDC connector (refer to supported section on supported connectors)
-Supported OLTP & OLAP
+The optimal set-up looks something like this:
+* Kafka topic per table (so we can toggle number of partitions based on throughput)
+* Partition key is the primary key for the table (so we avoid out-of-order writes at the row level)
+
+To see the current supported databases, check out the [Supported section](#what-is-currently-supported)
 
 If you are having trouble setting up CDC, please see the [examples folder](https://github.com/artie-labs/transfer/tree/master/examples) on how to configure a test database to emit CDC messages to Kafka.
 
@@ -75,6 +77,7 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
 
 - OLAPs:
     - Snowflake
+    - BigQuery
 - OLTPs:
     - MongoDB (Debezium)
     - Postgres (Debezium w/ wal2json)
@@ -87,21 +90,25 @@ Note: Keys here are formatted in dot notation for readability purposes, please e
 
 | Key| Type | Optional | Description |
 | ------------ | --- | - | ---------------------|
-| outputSource | String | N | This is the destination. <br/> Supported values are currently: `snowflake`, `test` |
+| outputSource | String | N | This is the destination. <br/> Supported values are currently: `snowflake`, `test`, `bigquery` |
 | kafka | Object | N | This is the parent object, please see below |
 | kafka.bootstrapServer | String | N | URL to the Kafka server, including the port number. Example: `localhost:9092` |
 | kafka.groupID | String | N | Kafka consumer group ID |
 | kafka.username | String | Y | Kafka username (Transfer currently only supports plain SASL or no auth) |
 | kafka.password | String | Y | Kafka password |
 | kafka.topicConfigs | Array | N | TopicConfigs is an array of TopicConfig objects, please see below on what each topicConfig object looks like. |
-| kafka.topicConfigs[0].db | String | N | Name of the database in Snowflake |
-| kafka.topicConfigs[0].tableName | String | N | Name of the table in Snowflake |
-| kafka.topicConfigs[0].schema | String | N | Name of the schema in Snowflake |
+| kafka.topicConfigs[0].db | String | N | Name of the database in Snowflake, or<br/> Dataset in BigQuery |
+| kafka.topicConfigs[0].tableName | String | N | Name of the table in destination |
+| kafka.topicConfigs[0].schema | String | Varies by destination | Name of the schema in Snowflake (required).<br/>Not needed for BigQuery |
 | kafka.topicConfigs[0].topic | String | N | Name of the Kafka topic |
 | kafka.topicConfigs[0].idempotentKey | String | Y | Name of the column that is used for idempotency. This field is highly recommended. <br/> For example: `updated_at` or another timestamp column. |
 | kafka.topicConfigs[0].cdcFormat | String | N | Name of the CDC connector (thus format) we should be expecting to parse against. <br/> Currently, the supported values are: `debezium.postgres.wal2json`, `debezium.mongodb` |
 | kafka.topicConfigs[0].cdcKeyFormat | String | Y | Format for what Kafka Connect will the key to be. This is called `key.converter` in the Kafka Connect properties file. <br/> The supported values are: `org.apache.kafka.connect.storage.StringConverter`, `org.apache.kafka.connect.json.JsonConverter` <br/> If not provided, the default value will be `org.apache.kafka.connect.storage.StringConverter`|
-| snowflake | Object | N | This is the parent object, please see below |
+| bigquery | Object | N<br/>`if outputSource == 'bigquery'` | This is the parent object, please see below |
+| bigquery.pathToCredentials | String | Y<br/>You can directly inject `GOOGLE_APPLICATION_CREDENTIALS` ENV VAR, else Transfer will set it for you based on this value. | Path to the credentials file for Google |
+| bigquery.projectID | String | N | Google Cloud Project ID |
+| bigquery.defaultDataset | String | N | The default dataset used. This just allows us to connect to BigQuery using database string notation. One deployment can support multiple datasets, specified by kafka.topicConfigs |
+| snowflake | Object | N<br/>`if outputSource == 'snowflake` | This is the parent object, please see below |
 | snowflake.account | String | N | Snowflake Account ID |
 | snowflake.username | String | N | Snowflake username |
 | snowflake.password | String | N | Snowflake password |

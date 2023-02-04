@@ -1,43 +1,37 @@
-package snowflake
+package bigquery
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/config/constants"
-	"strings"
-
 	"github.com/artie-labs/transfer/lib/array"
+	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
+	"strings"
+	"time"
 )
 
 func merge(tableData *optimization.TableData) (string, error) {
-	var tableValues []string
 	var artieDeleteMetadataIdx *int
 	var cols []string
-	var sflkCols []string
-
 	// Given all the columns, diff this against SFLK.
 	for col, kind := range tableData.InMemoryColumns {
 		if kind == typing.Invalid {
-			// Don't update Snowflake
+			// Don't update BQ
 			continue
 		}
 
-		sflkCol := col
-		switch kind {
-		case typing.Struct, typing.Array:
-			sflkCol = fmt.Sprintf("PARSE_JSON(%s) %s", col, col)
-		}
-
 		cols = append(cols, col)
-		sflkCols = append(sflkCols, sflkCol)
 	}
 
+	var rowValues []string
+	firstRow := true
 	for _, value := range tableData.RowsData {
-		var rowValues []string
+		var colVals []string
 		for idx, col := range cols {
 			// Hasn't been set yet and the column is the DELETE flag. We want to remove this from
 			// the final table because this is a flag, not an actual column.
@@ -49,12 +43,24 @@ func merge(tableData *optimization.TableData) (string, error) {
 			colVal := value[col]
 			if colVal != nil {
 				switch colKind {
+				case typing.DateTime:
+					ts, err := typing.ParseDateTime(fmt.Sprint(colVal))
+					if err != nil {
+						return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
+					}
+
+					// We need to re-cast the timestamp INTO ISO-8601.
+					colVal = fmt.Sprintf("PARSE_DATETIME('%s', '%v')", RFC3339Format, ts.Format(time.RFC3339Nano))
 				// All the other types do not need string wrapping.
-				case typing.String, typing.DateTime, typing.Struct:
+				case typing.String, typing.Struct:
 					// Escape line breaks, JSON_PARSE does not like it.
 					colVal = strings.ReplaceAll(fmt.Sprint(colVal), `\n`, `\\n`)
 					// The normal string escape is to do for O'Reilly is O\\'Reilly, but Snowflake escapes via \'
 					colVal = fmt.Sprintf("'%s'", strings.ReplaceAll(fmt.Sprint(colVal), "'", `\'`))
+					if colKind == typing.Struct {
+						// This is how you cast string -> JSON
+						colVal = fmt.Sprintf("JSON %s", colVal)
+					}
 				case typing.Array:
 					// We need to marshall, so we can escape the strings.
 					// https://go.dev/play/p/BcCwUSCeTmT
@@ -63,20 +69,24 @@ func merge(tableData *optimization.TableData) (string, error) {
 						return "", err
 					}
 
-					colVal = fmt.Sprintf("'%s'", strings.ReplaceAll(string(colValBytes), "'", `\'`))
+					colVal = fmt.Sprintf("%s", strings.ReplaceAll(string(colValBytes), "'", `\'`))
 				}
 			} else {
 				colVal = "null"
 			}
 
-			rowValues = append(rowValues, fmt.Sprint(colVal))
+			if firstRow {
+				colVal = fmt.Sprintf("%v as %s", colVal, col)
+			}
+
+			colVals = append(colVals, fmt.Sprint(colVal))
 		}
 
-		tableValues = append(tableValues, fmt.Sprintf("(%s) ", strings.Join(rowValues, ",")))
+		firstRow = false
+		rowValues = append(rowValues, fmt.Sprintf("SELECT %s", strings.Join(colVals, ",")))
 	}
 
-	subQuery := fmt.Sprintf("SELECT %s FROM (values %s) as %s(%s)", strings.Join(sflkCols, ","),
-		strings.Join(tableValues, ","), tableData.TopicConfig.TableName, strings.Join(cols, ","))
+	subQuery := strings.Join(rowValues, " UNION ALL ")
 
 	if artieDeleteMetadataIdx == nil {
 		return "", errors.New("artie delete flag doesn't exist")
@@ -92,7 +102,6 @@ func merge(tableData *optimization.TableData) (string, error) {
 
 	// We also need to do staged table's idempotency key is GTE target table's idempotency key
 	// This is because Snowflake does not respect NS granularity.
-
 	if tableData.IdempotentKey == "" {
 		return fmt.Sprintf(`
 			MERGE INTO %s c using (%s) as cc on c.%s = cc.%s
@@ -107,7 +116,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 					(
 						%s
 					);
-		`, tableData.ToFqName(constants.Snowflake), subQuery, tableData.PrimaryKey, tableData.PrimaryKey,
+		`, tableData.ToFqName(constants.BigQuery), subQuery, tableData.PrimaryKey, tableData.PrimaryKey,
 			// Delete
 			constants.DeleteColumnMarker,
 			// Update
@@ -130,7 +139,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 					(
 						%s
 					);
-		`, tableData.ToFqName(constants.Snowflake), subQuery, tableData.PrimaryKey, tableData.PrimaryKey,
+		`, tableData.ToFqName(constants.BigQuery), subQuery, tableData.PrimaryKey, tableData.PrimaryKey,
 		// Delete
 		constants.DeleteColumnMarker, tableData.IdempotentKey, tableData.IdempotentKey,
 		// Update
@@ -138,4 +147,63 @@ func merge(tableData *optimization.TableData) (string, error) {
 		// Insert
 		constants.DeleteColumnMarker, strings.Join(cols, ","),
 		array.StringsJoinAddPrefix(cols, ",", "cc.")), nil
+}
+
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
+	if tableData.Rows == 0 {
+		// There's no rows. Let's skip.
+		return nil
+	}
+
+	tableConfig, err := s.GetTableConfig(ctx, tableData)
+	if err != nil {
+		return err
+	}
+
+	log := logger.FromContext(ctx)
+	// Check if all the columns exist in Snowflake
+	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.InMemoryColumns, tableConfig.Columns())
+
+	// Keys that exist in CDC stream, but not in Snowflake
+	err = s.alterTable(ctx, tableData.ToFqName(constants.BigQuery), tableConfig.CreateTable, constants.Add, tableData.LatestCDCTs, targetKeysMissing...)
+	if err != nil {
+		log.WithError(err).Warn("failed to apply alter table")
+		return err
+	}
+
+	// Keys that exist in Snowflake, but don't exist in our CDC stream.
+	// createTable is set to false because table creation requires a column to be added
+	// Which means, we'll only do it upon Add columns.
+	err = s.alterTable(ctx, tableData.ToFqName(constants.BigQuery), false, constants.Delete, tableData.LatestCDCTs, srcKeysMissing...)
+	if err != nil {
+		log.WithError(err).Warn("failed to apply alter table")
+		return err
+	}
+
+	// Make sure we are still trying to delete it.
+	// If not, then we should assume the column is good and then remove it from our in-mem store.
+	for colToDelete := range tableConfig.ColumnsToDelete() {
+		var found bool
+		for _, col := range srcKeysMissing {
+			if found = col.Name == colToDelete; found {
+				// Found it.
+				break
+			}
+		}
+
+		if !found {
+			// Only if it is NOT found shall we try to delete from in-memory (because we caught up)
+			tableConfig.ClearColumnsToDeleteByColName(colToDelete)
+		}
+	}
+
+	query, err := merge(tableData)
+	if err != nil {
+		log.WithError(err).Warn("failed to generate the merge query")
+		return err
+	}
+
+	log.WithField("query", query).Debug("executing...")
+	_, err = s.Exec(query)
+	return err
 }

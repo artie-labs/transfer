@@ -3,7 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"time"
 
@@ -65,11 +65,11 @@ func (p *PostgresTestSuite) TestGetDataTestInsert() {
 	evtData := schemaEventPayload.GetData("pk", 1, &tc)
 	assert.Equal(p.T(), len(after), len(evtData), "has deletion flag")
 
-	deletionFlag, isOk := evtData[config.DeleteColumnMarker]
+	deletionFlag, isOk := evtData[constants.DeleteColumnMarker]
 	assert.True(p.T(), isOk)
 	assert.False(p.T(), deletionFlag.(bool))
 
-	delete(evtData, config.DeleteColumnMarker)
+	delete(evtData, constants.DeleteColumnMarker)
 	assert.Equal(p.T(), after, evtData)
 }
 
@@ -89,7 +89,7 @@ func (p *PostgresTestSuite) TestGetDataTestDelete() {
 	}
 
 	evtData := schemaEventPayload.GetData("pk", 1, tc)
-	shouldDelete, isOk := evtData[config.DeleteColumnMarker]
+	shouldDelete, isOk := evtData[constants.DeleteColumnMarker]
 	assert.True(p.T(), isOk)
 	assert.True(p.T(), shouldDelete.(bool))
 
@@ -134,11 +134,11 @@ func (p *PostgresTestSuite) TestGetDataTestUpdate() {
 	evtData := schemaEventPayload.GetData("pk", 1, &tc)
 	assert.Equal(p.T(), len(after), len(evtData), "has deletion flag")
 
-	deletionFlag, isOk := evtData[config.DeleteColumnMarker]
+	deletionFlag, isOk := evtData[constants.DeleteColumnMarker]
 	assert.True(p.T(), isOk)
 	assert.False(p.T(), deletionFlag.(bool))
 
-	delete(evtData, config.DeleteColumnMarker)
+	delete(evtData, constants.DeleteColumnMarker)
 	assert.Equal(p.T(), after, evtData)
 }
 
@@ -285,11 +285,7 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	assert.Equal(p.T(), evtData["id"], float64(1001))
 	assert.Equal(p.T(), evtData["email"], "sally.thomas@acme.com")
 
-	// assert.Equal(p.T(), time.Date(2022, time.November,
-	//		18, 6, 35, 21, 0, time.UTC), event.GetExecutionTime())
 	td := time.Date(2023, time.February, 2, 17, 51, 35, 0, time.UTC)
 	assert.Equal(p.T(), evtData["ts_no_tz1"], td.Format(time.RFC3339))
 	assert.Equal(p.T(), evt.Table(), "customers")
 }
-
-// TODO: Add a test related to schema and the microtimestamp format.

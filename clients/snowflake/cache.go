@@ -4,86 +4,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
-	"time"
-
-	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/typing"
+	"strings"
 )
 
-type snowflakeTableConfig struct {
-	Columns         map[string]typing.Kind
-	ColumnsToDelete map[string]time.Time // column --> when to delete
-	CreateTable     bool
-}
-
-type metadataConfig struct {
-	snowflakeTableToConfig map[string]*snowflakeTableConfig
-}
-
-var mdConfig *metadataConfig
-
-func shouldDeleteColumn(fqName string, col typing.Column, cdcTime time.Time) bool {
-	ts, isOk := mdConfig.snowflakeTableToConfig[fqName].ColumnsToDelete[col.Name]
-	if isOk {
-		// If the CDC time is greater than this timestamp, then we should delete it.
-		return cdcTime.After(ts)
-	}
-
-	if mdConfig.snowflakeTableToConfig[fqName].ColumnsToDelete == nil {
-		mdConfig.snowflakeTableToConfig[fqName].ColumnsToDelete = make(map[string]time.Time)
-	}
-
-	// Doesn't exist just yet, so let's add it to the cache.
-	mdConfig.snowflakeTableToConfig[fqName].ColumnsToDelete[col.Name] =
-		time.Now().UTC().Add(config.DeletionConfidencePadding)
-
-	return false
-}
-
-// mutateColumnsWithMemoryCache will modify the SFLK table cache to include columns
-// That we have already added to Snowflake. That way, we do not need to continually refresh the cache
-func mutateColumnsWithMemoryCache(fqName string, createTable bool, columnOp columnOperation, cols ...typing.Column) {
-	tableConfig, isOk := mdConfig.snowflakeTableToConfig[fqName]
-	if !isOk {
-		return
-	}
-
-	table := tableConfig.Columns
-	switch columnOp {
-	case Add:
-		for _, col := range cols {
-			table[col.Name] = col.Kind
-			// Delete from the permissions table, if exists.
-			delete(tableConfig.ColumnsToDelete, col.Name)
-		}
-
-		tableConfig.CreateTable = createTable
-
-	case Delete:
-		for _, col := range cols {
-			delete(table, col.Name)
-			// Delete from the permissions table
-			delete(tableConfig.ColumnsToDelete, col.Name)
-		}
-
-	}
-
-	return
-}
-
-func GetTableConfig(ctx context.Context, fqName string) (*snowflakeTableConfig, error) {
+func (s *Store) getTableConfig(ctx context.Context, fqName string) (*types.DwhTableConfig, error) {
 	// Check if it already exists in cache
-	if mdConfig != nil {
-		tableConfig, isOk := mdConfig.snowflakeTableToConfig[fqName]
-		if isOk {
-			return tableConfig, nil
-		}
+	tableConfig := s.configMap.TableConfig(fqName)
+	if tableConfig != nil {
+		return tableConfig, nil
 	}
 
 	log := logger.FromContext(ctx)
-	rows, err := store.Query(fmt.Sprintf("DESC table %s;", fqName))
+	rows, err := s.store.Query(fmt.Sprintf("DESC table %s;", fqName))
 	defer func() {
 		if rows != nil {
 			err = rows.Close()
@@ -105,7 +40,6 @@ func GetTableConfig(ctx context.Context, fqName string) (*snowflakeTableConfig, 
 	}
 
 	tableToColumnTypes := make(map[string]typing.Kind)
-	// TODO: Remove nil check on rows. I added it because having a hard time returning *sql.Rows
 	for rows != nil && rows.Next() {
 		// figure out what columns were returned
 		// the column names will be the JSON object field keys
@@ -141,21 +75,8 @@ func GetTableConfig(ctx context.Context, fqName string) (*snowflakeTableConfig, 
 		tableToColumnTypes[row[describeNameCol]] = typing.SnowflakeTypeToKind(row[describeTypeCol])
 	}
 
-	sflkTableConfig := &snowflakeTableConfig{
-		Columns:         tableToColumnTypes,
-		ColumnsToDelete: make(map[string]time.Time),
-		CreateTable:     tableMissing,
-	}
-
-	if mdConfig == nil {
-		mdConfig = &metadataConfig{
-			snowflakeTableToConfig: map[string]*snowflakeTableConfig{
-				fqName: sflkTableConfig,
-			},
-		}
-	} else {
-		mdConfig.snowflakeTableToConfig[fqName] = sflkTableConfig
-	}
+	sflkTableConfig := types.NewDwhTableConfig(tableToColumnTypes, nil, tableMissing)
+	s.configMap.AddTableToConfig(fqName, types.NewDwhTableConfig(tableToColumnTypes, nil, tableMissing))
 
 	return sflkTableConfig, nil
 }

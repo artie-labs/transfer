@@ -1,13 +1,12 @@
 package flush
 
 import (
-	"context"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
 	"sync"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/models"
 )
@@ -26,9 +25,9 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 			PrimaryKeyName:  "id",
 			PrimaryKeyValue: fmt.Sprintf("pk-%d", i),
 			Data: map[string]interface{}{
-				config.DeleteColumnMarker: true,
-				"abc":                     "def",
-				"hi":                      "hello",
+				constants.DeleteColumnMarker: true,
+				"abc":                        "def",
+				"hi":                         "hello",
 			},
 		}
 		_, err := event.Save(topicConfig, kafka.Message{Partition: 1, Offset: 1})
@@ -39,16 +38,16 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 
 func (f *FlushTestSuite) TestShouldFlush() {
 	var flush bool
-	for i := 0; i < config.SnowflakeArraySize*1.5; i++ {
+	for i := 0; i < constants.SnowflakeArraySize*1.5; i++ {
 		event := models.Event{
 			Table:           "postgres",
 			PrimaryKeyName:  "id",
 			PrimaryKeyValue: fmt.Sprintf("pk-%d", i),
 			Data: map[string]interface{}{
-				config.DeleteColumnMarker: true,
-				"pk":                      fmt.Sprintf("pk-%d", i),
-				"foo":                     "bar",
-				"cat":                     "dog",
+				constants.DeleteColumnMarker: true,
+				"pk":                         fmt.Sprintf("pk-%d", i),
+				"foo":                        "bar",
+				"cat":                        "dog",
 			},
 		}
 
@@ -79,10 +78,10 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 					PrimaryKeyName:  "id",
 					PrimaryKeyValue: fmt.Sprintf("pk-%d", i),
 					Data: map[string]interface{}{
-						config.DeleteColumnMarker: true,
-						"pk":                      fmt.Sprintf("pk-%d", i),
-						"foo":                     "bar",
-						"cat":                     "dog",
+						constants.DeleteColumnMarker: true,
+						"pk":                         fmt.Sprintf("pk-%d", i),
+						"foo":                        "bar",
+						"cat":                        "dog",
 					},
 				}
 
@@ -101,7 +100,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 		assert.Equal(f.T(), len(tableConfig), 5)
 	}
 
-	assert.Nil(f.T(), Flush(context.Background()), "flush failed")
+	assert.Nil(f.T(), Flush(f.ctx), "flush failed")
 	assert.Equal(f.T(), f.fakeConsumer.CommitMessagesCallCount(), len(tableNames)) // Commit 3 times because 3 topics.
 
 	for i := 0; i < len(tableNames); i++ {

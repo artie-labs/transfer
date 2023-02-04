@@ -1,4 +1,4 @@
-package config
+package constants
 
 import "time"
 
@@ -22,3 +22,35 @@ type ExporterKind string
 const (
 	Datadog ExporterKind = "datadog"
 )
+
+// ColumnOperation is a type used for DDL operations
+type ColumnOperation string
+
+const (
+	Add    ColumnOperation = "add"
+	Delete ColumnOperation = "drop"
+)
+
+type DestinationKind string
+
+const (
+	Snowflake DestinationKind = "snowflake"
+	Test      DestinationKind = "test"
+	BigQuery  DestinationKind = "bigquery"
+)
+
+var validDestinations = []DestinationKind{
+	BigQuery,
+	Snowflake,
+	Test,
+}
+
+func IsValidDestination(destination DestinationKind) bool {
+	for _, validDest := range validDestinations {
+		if destination == validDest {
+			return true
+		}
+	}
+
+	return false
+}

@@ -9,6 +9,8 @@ type SnowflakeKind string
 // https://docs.snowflake.com/en/sql-reference/intro-summary-data-types.html
 
 func SnowflakeTypeToKind(snowflakeType string) Kind {
+	snowflakeType = strings.ToLower(snowflakeType)
+
 	// We need to strip away the variable
 	// For example, a Column can look like: TEXT, or Number(38, 0) or VARCHAR(255).
 	// We need to strip out all the content from ( ... )
