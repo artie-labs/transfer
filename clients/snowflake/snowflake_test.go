@@ -250,13 +250,14 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	// TableData will think the column is invalid and tableConfig will think column = string
 	// Before we call merge, it should reconcile it.
 	columns := map[string]typing.Kind{
-		"first_name":                 typing.Invalid,
+		"first_name":                 typing.String,
+		"invalid_column":             typing.Invalid,
 		constants.DeleteColumnMarker: typing.Boolean,
 	}
 
 	rowsData := map[string]map[string]interface{}{
 		"pk-1": {
-			"first_name": nil,
+			"first_name": "bob",
 		},
 	}
 
