@@ -197,6 +197,14 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		}
 	}
 
+	// We are swapping the order and iterating over InMemoryColumns instead, as the columns are case-sensitive.
+	for inMemCol := range tableData.InMemoryColumns {
+		tcKind, isOk := tableConfig.Columns()[strings.ToLower(inMemCol)]
+		if isOk {
+			tableData.InMemoryColumns[inMemCol] = tcKind
+		}
+	}
+
 	query, err := merge(tableData)
 	if err != nil {
 		log.WithError(err).Warn("failed to generate the merge query")
