@@ -132,7 +132,15 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	// Cannot do a full swap because tableData is a super-set of tableConfig (it contains the temp deletion flag and other columns with the __artie prefix).
 
 	// We are swapping the order and iterating over InMemoryColumns instead, as the columns are case-sensitive.
-	for inMemCol := range tableData.InMemoryColumns {
+	for inMemCol, inMemoryKind := range tableData.InMemoryColumns {
+		if inMemoryKind == typing.Invalid {
+			// Don't copy this over.
+			// The being that the rows within tableData probably have the wrong colVal
+			// So it's better to skip even attempting to create this column from memory values.
+			// Whenever we get the first value that's a not-nil or invalid, this column type will be updated.
+			continue
+		}
+
 		tcKind, isOk := tableConfig.Columns()[strings.ToLower(inMemCol)]
 		if isOk {
 			tableData.InMemoryColumns[inMemCol] = tcKind
