@@ -1,0 +1,49 @@
+# Examples
+
+## Introduction
+
+Below, you can see sample configuration files to describe different workloads. To see all the available settings, please see. [options.md](options.md "mention")
+
+## Postgres --> Snowflake
+
+```yaml
+outputSource: snowflake
+kafka:
+  bootstrapServer: kafka:9092
+  groupID: group_abc
+  topicConfigs:
+    - db: shop
+      tableName: customers
+      schema: inventory
+      topic: "dbserver1.inventory.customers"
+      cdcFormat: debezium.postgres.wal2json
+      cdcKeyFormat: org.apache.kafka.connect.storage.StringConverter
+snowflake:
+  account: ACCOUNT_ID
+  username: USER
+  password: PASSWORD
+  warehouse: DWH_NAME
+  region: us-east-2.aws
+```
+
+## MongoDB --> Snowflake
+
+```yaml
+outputSource: snowflake
+kafka:
+  bootstrapServer: kafka:9092
+  groupID: abc1234
+  topicConfigs:
+    - db: shop
+      tableName: customers
+      schema: inventory
+      topic: "dbserver1.inventory.customers"
+      cdcFormat: debezium.mongodb
+      cdcKeyFormat: org.apache.kafka.connect.storage.StringConverter
+snowflake:
+  account: ACCOUNT_ID
+  username: USER
+  password: PASSWORD
+  warehouse: DWH_NAME
+  region: us-east-2.aws
+```
