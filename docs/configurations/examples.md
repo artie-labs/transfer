@@ -26,13 +26,33 @@ snowflake:
   region: us-east-2.aws
 ```
 
+## Postgres --> BigQuery
+
+```yaml
+outputSource: bigquery
+kafka:
+  bootstrapServer: kafka:9092
+  groupID: group_abc
+  topicConfigs:
+    - db: shop
+      tableName: customers
+      schema: inventory
+      topic: "dbserver1.inventory.customers"
+      cdcFormat: debezium.postgres.wal2json
+      cdcKeyFormat: org.apache.kafka.connect.storage.StringConverter
+bigquery:
+  pathToCredentials: PATH_TO_CREDENTIALS
+  projectID: PROJECT_ID
+  defaultDataset: DEFAULT_DATASET
+```
+
 ## MongoDB --> Snowflake
 
 ```yaml
 outputSource: snowflake
 kafka:
   bootstrapServer: kafka:9092
-  groupID: abc1234
+  groupID: group_abc
   topicConfigs:
     - db: shop
       tableName: customers
@@ -46,4 +66,24 @@ snowflake:
   password: PASSWORD
   warehouse: DWH_NAME
   region: us-east-2.aws
+```
+
+## MongoDB --> BigQuery
+
+```yaml
+outputSource: bigquery
+kafka:
+  bootstrapServer: kafka:9092
+  groupID: group_abc
+  topicConfigs:
+    - db: shop
+      tableName: customers
+      schema: inventory
+      topic: "dbserver1.inventory.customers"
+      cdcFormat: debezium.mongodb
+      cdcKeyFormat: org.apache.kafka.connect.storage.StringConverter
+bigquery:
+  pathToCredentials: PATH_TO_CREDENTIALS
+  projectID: PROJECT_ID
+  defaultDataset: DEFAULT_DATASET
 ```
