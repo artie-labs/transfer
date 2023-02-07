@@ -3,4 +3,4 @@
 ## Configurations
 
 * [Configurations](README.md)
-* [Page 1](configurations/page-1.md)
+* [Options](configurations/options.md)
