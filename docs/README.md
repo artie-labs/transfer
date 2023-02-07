@@ -6,6 +6,31 @@ description: >-
 
 # Configurations
 
+### What is a configuration file?
+
+The configuration file is used to inform each Transfer deployment of the workload(s) required. Inside of the configuration file, we can specify things like:
+
+* Which Kafka server should Transfer connect to?
+* What is the format of the partition key?
+* What does the message format look like?
+* Which destination is it going to?
+
+### How do I specify the configuration file?
+
+Whether you are running Transfer locally, using a Docker image or within your Kubernetes cluster...you can specify the configuration file by using the `--config` option.
+
+**Running this as a standalone binary (Docker / Kubernetes)**
+
+```bash
+/transfer --config config.yaml
+```
+
+**Running this as a Go project**
+
+```go
+go run main.go --config config.yaml
+```
+
 ### Configuration Options
 
 _Note: Keys here are formatted in dot notation for readability purposes, please ensure that the proper nesting is done when writing this into your configuration file. Take a look at the_ [_example config.yaml_](https://github.com/artie-labs/transfer/blob/master/examples/mongodb/config.yaml) _for additional reference._
