@@ -4,5 +4,8 @@ description: >-
   provide various examples depending on the set up.
 ---
 
-# ConfigMaps
+# How configurations are generated
 
+```
+hi test
+```

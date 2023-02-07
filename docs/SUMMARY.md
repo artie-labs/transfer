@@ -1,3 +1,3 @@
 # Table of contents
 
-* [ConfigMaps](README.md)
+* [How configurations are generated](README.md)
