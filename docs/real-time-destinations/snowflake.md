@@ -1,6 +1,10 @@
-# Snowflake
+---
+description: >-
+  In this section, we will go over how to retrieve your Snowflake settings and
+  outline the typing support.
+---
 
-Introduction
+# Snowflake
 
 ## How to retrieve your credentials
 
