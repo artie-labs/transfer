@@ -4,7 +4,24 @@ description: >-
   Transfer configuration and provide examples for how to get started.
 ---
 
-# Configurations
+# Overview
+
+### How do I install Transfer?
+
+There are three ways to install Transfer.
+
+1. Download the [image from Dockerhub](https://hub.docker.com/r/artielabs/transfer/tags)
+2. Git clone the repo and run `go build`
+3. &#x20;`go get github.com/artie-labs/transfer` inside of your Go project
+
+Soon, we will use a release manager CI and also have it published alongside our Github project.
+
+## Available runtime flags
+
+When running Transfer (as a binary or as a Go application), you can pass in the following flags:
+
+* `-v` or `--verbose` to have additional logging emitted from Transfer
+* `-c` or `--config` (see below) to specify the path of the configuration file.
 
 ### What is a configuration file?
 
@@ -14,6 +31,8 @@ The configuration file is used to inform each Transfer deployment of the workloa
 * What is the format of the partition key?
 * What does the message format look like?
 * Which destination is it going to?
+
+> Transfer expects the configuration file to be in [YAML](https://yaml.org/) format.
 
 ### How do I specify the configuration file?
 
@@ -35,6 +54,6 @@ go run main.go --config config.yaml
 
 To see the available settings within a configuration file, please click on the link below to continue.
 
-{% content-ref url="configurations/options.md" %}
-[options.md](configurations/options.md)
+{% content-ref url="running-transfer/options.md" %}
+[options.md](running-transfer/options.md)
 {% endcontent-ref %}

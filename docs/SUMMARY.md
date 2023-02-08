@@ -1,10 +1,10 @@
 # Table of contents
 
-## Configurations
+## Running Transfer
 
 * [Overview](README.md)
-* [Options](configurations/options.md)
-* [Examples](configurations/examples.md)
+* [Options](running-transfer/options.md)
+* [Examples](running-transfer/examples.md)
 
 ## Telemetry
 

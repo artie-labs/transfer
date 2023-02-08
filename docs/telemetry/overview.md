@@ -10,7 +10,7 @@ We also plan to support application tracing such that we can directly plug into 
 
 ## Metrics
 
-> You can specify additional tags and namespace in the configuration file and it will apply to every metric that Transfer emits. See [options.md](../configurations/options.md "mention") for more details.
+> You can specify additional tags and namespace in the configuration file and it will apply to every metric that Transfer emits. See [options.md](../running-transfer/options.md "mention") for more details.
 
 | Name                                    | Description                                    | Unit  | Tags                                                                    |
 | --------------------------------------- | ---------------------------------------------- | ----- | ----------------------------------------------------------------------- |

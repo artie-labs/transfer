@@ -110,4 +110,17 @@ Transfer is using a vendor neutral logging library, so file a [feature request](
 
 ### Telemetry
 
-TODO
+Visit the [Broken link](broken-reference "mention") page to see all the metrics that Transfer emits.
+
+```yaml
+telemetry:
+  metrics:
+    provider: datadog
+    settings:
+      tags:
+       - env:production
+       - customer:artie.so
+      namespace: "transfer."
+      addr: "127.0.0.1:8125"
+```
+
