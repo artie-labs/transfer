@@ -58,8 +58,8 @@ func (d *Debezium) GetEventFromBytes(_ context.Context, bytes []byte) (cdc.Event
 	return &schemaEventPayload, nil
 }
 
-func (d *Debezium) Label() string {
-	return constants.DBZMongoFormat
+func (d *Debezium) Labels() []string {
+	return []string{constants.DBZMongoFormat}
 }
 
 // GetPrimaryKey - Will read from the Kafka message's partition key to get the primary key for the row.

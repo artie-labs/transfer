@@ -26,8 +26,8 @@ func (d *Debezium) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Eve
 	return &event, nil
 }
 
-func (d *Debezium) Label() string {
-	return constants.DBZPostgresFormat
+func (d *Debezium) Labels() []string {
+	return []string{constants.DBZPostgresFormat, constants.DBZPostgresAltFormat}
 }
 
 func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (pkName string, pkValue interface{}, err error) {
