@@ -12,8 +12,9 @@ const (
 	SnowflakeArraySize = 15000
 
 	// DBZPostgresFormat is the only supported CDC format right now
-	DBZPostgresFormat = "debezium.postgres.wal2json"
-	DBZMongoFormat    = "debezium.mongodb"
+	DBZPostgresFormat    = "debezium.postgres"
+	DBZPostgresAltFormat = "debezium.postgres.wal2json"
+	DBZMongoFormat       = "debezium.mongodb"
 )
 
 // ExporterKind is used for the Telemetry package

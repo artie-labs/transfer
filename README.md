@@ -79,8 +79,8 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
     - Snowflake
     - BigQuery
 - OLTPs:
-    - MongoDB (Debezium)
-    - Postgres (Debezium w/ wal2json)
+    - MongoDB (w/ Debezium)
+    - Postgres (w/ Debezium), we support the following replication slot plug-ins: `pgoutput`, `decoderbufs` and `wal2json`
 
 _If the database you are using is not on the list, feel free to file for a [feature request](https://github.com/artie-labs/transfer/issues/new)._
 
@@ -102,7 +102,7 @@ Note: Keys here are formatted in dot notation for readability purposes, please e
 | kafka.topicConfigs[0].schema | String | Varies by destination | Name of the schema in Snowflake (required).<br/>Not needed for BigQuery |
 | kafka.topicConfigs[0].topic | String | N | Name of the Kafka topic |
 | kafka.topicConfigs[0].idempotentKey | String | Y | Name of the column that is used for idempotency. This field is highly recommended. <br/> For example: `updated_at` or another timestamp column. |
-| kafka.topicConfigs[0].cdcFormat | String | N | Name of the CDC connector (thus format) we should be expecting to parse against. <br/> Currently, the supported values are: `debezium.postgres.wal2json`, `debezium.mongodb` |
+| kafka.topicConfigs[0].cdcFormat | String | N | Name of the CDC connector (thus format) we should be expecting to parse against. <br/> Currently, the supported values are: `debezium.postgres`, `debezium.postgres.wal2json`, `debezium.mongodb` |
 | kafka.topicConfigs[0].cdcKeyFormat | String | Y | Format for what Kafka Connect will the key to be. This is called `key.converter` in the Kafka Connect properties file. <br/> The supported values are: `org.apache.kafka.connect.storage.StringConverter`, `org.apache.kafka.connect.json.JsonConverter` <br/> If not provided, the default value will be `org.apache.kafka.connect.storage.StringConverter`|
 | bigquery | Object | N<br/>`if outputSource == 'bigquery'` | This is the parent object, please see below |
 | bigquery.pathToCredentials | String | Y<br/>You can directly inject `GOOGLE_APPLICATION_CREDENTIALS` ENV VAR, else Transfer will set it for you based on this value. | Path to the credentials file for Google |
@@ -129,7 +129,7 @@ Note: Keys here are formatted in dot notation for readability purposes, please e
 _Note: If any of these limitations are blocking you from using Transfer. Feel free to contribute or file a bug and we'll get this prioritized!</br>
 The long term goal for Artie Transfer is to be able to extend the service to have as little of these limitations as possible._
 
-**Postgres Debezium wal2json** <br/>
+**Postgres Debezium** <br/>
 * `decimal.handling.mode` only works for `double` or `string`.<br/>
 The default value is `precise` which will cast the value in `java.math.BigDecimal` and Transfer does not know how to decode that yet.
 For further information on how to set this to be `string` or `double`, please [click here](https://docs.confluent.io/cloud/current/connectors/cc-postgresql-cdc-source-debezium.html#connector-details)
