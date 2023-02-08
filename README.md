@@ -79,7 +79,7 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
     - Snowflake
     - BigQuery
 - OLTPs:
-    - MongoDB (Debezium)
+    - MongoDB (w/ Debezium)
     - Postgres (w/ Debezium), we support the following replication slot plug-ins: `pgoutput`, `decoderbufs` and `wal2json`
 
 _If the database you are using is not on the list, feel free to file for a [feature request](https://github.com/artie-labs/transfer/issues/new)._

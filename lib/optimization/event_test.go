@@ -2,7 +2,7 @@ package optimization
 
 import (
 	"testing"
-	
+
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
 )

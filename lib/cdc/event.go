@@ -8,7 +8,7 @@ import (
 )
 
 type Format interface {
-	Labels() []string
+	Labels() []string // Labels() to return a list of strings to maintain backward compatibility.
 	GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (string, interface{}, error)
 	GetEventFromBytes(ctx context.Context, bytes []byte) (Event, error)
 }
