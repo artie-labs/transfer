@@ -10,8 +10,8 @@
 
 * [Overview](telemetry/overview.md)
 
-## Sources
+## Real-time Sources
 
-* [\[WIP\] Overview](sources/wip-overview.md)
-* [PostgreSQL](sources/postgresql.md)
-* [MongoDB](sources/mongodb.md)
+* [\[WIP\] Overview](real-time-sources/wip-overview.md)
+* [PostgreSQL](real-time-sources/postgresql.md)
+* [MongoDB](real-time-sources/mongodb.md)
