@@ -4,7 +4,9 @@
 
 Below, you can see sample configuration files to describe different workloads. To see all the available settings, please see. [options.md](options.md "mention")
 
-## Postgres --> Snowflake
+## Postgres options
+
+### Postgres --> Snowflake
 
 ```yaml
 outputSource: snowflake
@@ -26,7 +28,7 @@ snowflake:
   region: us-east-2.aws
 ```
 
-## Postgres --> BigQuery
+### Postgres --> BigQuery
 
 ```yaml
 outputSource: bigquery
@@ -46,7 +48,9 @@ bigquery:
   defaultDataset: DEFAULT_DATASET
 ```
 
-## MongoDB --> Snowflake
+## MongoDB options
+
+### MongoDB --> Snowflake
 
 ```yaml
 outputSource: snowflake
@@ -68,7 +72,7 @@ snowflake:
   region: us-east-2.aws
 ```
 
-## MongoDB --> BigQuery
+### MongoDB --> BigQuery
 
 ```yaml
 outputSource: bigquery
@@ -87,3 +91,23 @@ bigquery:
   projectID: PROJECT_ID
   defaultDataset: DEFAULT_DATASET
 ```
+
+## Optional Blocks
+
+### Error Reporting to Sentry
+
+If you provide your Sentry DSN; Artie Transfer will automatically report any errors during processing into your Sentry project.&#x20;
+
+Visit this [link](https://docs.sentry.io/product/sentry-basics/dsn-explainer/) to see how you can find your Sentry DSN.
+
+```
+reporting:
+  sentry:
+    dsn: https://docs.sentry.io/product/sentry-basics/dsn-explainer/    
+```
+
+Transfer is using a vendor neutral logging library, so file a [feature request](https://github.com/artie-labs/transfer/issues/new) if you use Rollbar, or another vendor!&#x20;
+
+### Telemetry
+
+TODO
