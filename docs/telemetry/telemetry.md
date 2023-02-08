@@ -10,18 +10,18 @@ We also plan to support application tracing such that we can directly plug into 
 
 ## Metrics
 
-| Name                                    | Description                                    | Unit  | Available tags                           |
-| --------------------------------------- | ---------------------------------------------- | ----- | ---------------------------------------- |
-| `transfer.process.message.count`        | How many rows has Transfer processed.          | Count | `database, schema, table, what, groupid` |
-| `transfer.process.message.95percentile` | p95 of how long each row process takes         | `ms`  | `database, schema, table, what, groupid` |
-| `transfer.process.message.avg`          | Avg of how long each row process takes         | `ms`  | `database, schema, table, what, groupid` |
-| `transfer.process.message.max`          | Max of how long each row process takes         | `ms`  | `database, schema, table, what, groupid` |
-| `transfer.process.message.median`       | Median of how long each row process takes      | `ms`  | `database, schema, table, what, groupid` |
-| `transfer.flush.count`                  | How many flush operations have been performed. | Count | `database, schema, table, what`          |
-| `transfer.flush.95percentile`           | p95 of how long each flush process takes       | `ms`  | `database, schema, table, what`          |
-| `transfer.flush.avg`                    | Avg of how long each flush process takes       | `ms`  | `database, schema, table, what`          |
-| `transfer.flush.max`                    | Max of how long each flush process takes       | `ms`  | `database, schema, table, what`          |
-| `transfer.flush.median`                 | Median of how long each flush process takes    | `ms`  | `database, schema, table, what`          |
+| Name                                    | Description                                    | Unit  | Tags                                                                    |
+| --------------------------------------- | ---------------------------------------------- | ----- | ----------------------------------------------------------------------- |
+| `transfer.process.message.count`        | How many rows has Transfer processed.          | Count | <ul><li>database</li><li>schema</li><li>table</li><li>groupid</li></ul> |
+| `transfer.process.message.95percentile` | p95 of how long each row process takes         | `ms`  | <ul><li>database</li><li>schema</li><li>table</li><li>groupid</li></ul> |
+| `transfer.process.message.avg`          | Avg of how long each row process takes         | `ms`  | <ul><li>database</li><li>schema</li><li>table</li><li>groupid</li></ul> |
+| `transfer.process.message.max`          | Max of how long each row process takes         | `ms`  | <ul><li>database</li><li>schema</li><li>table</li><li>groupid</li></ul> |
+| `transfer.process.message.median`       | Median of how long each row process takes      | `ms`  | <ul><li>database</li><li>schema</li><li>table</li><li>groupid</li></ul> |
+| `transfer.flush.count`                  | How many flush operations have been performed. | Count | <ul><li>database</li><li>schema</li><li>table</li><li>what</li></ul>    |
+| `transfer.flush.95percentile`           | p95 of how long each flush process takes       | `ms`  | <ul><li>database</li><li>schema</li><li>table</li><li>what</li></ul>    |
+| `transfer.flush.avg`                    | Avg of how long each flush process takes       | `ms`  | <ul><li>database</li><li>schema</li><li>table</li><li>what</li></ul>    |
+| `transfer.flush.max`                    | Max of how long each flush process takes       | `ms`  | <ul><li>database</li><li>schema</li><li>table</li><li>what</li></ul>    |
+| `transfer.flush.median`                 | Median of how long each flush process takes    | `ms`  | <ul><li>database</li><li>schema</li><li>table</li><li>what</li></ul>    |
 
 
 
