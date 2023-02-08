@@ -1,12 +1,10 @@
 ---
-description: >-
-  In this section, we will go over how to retrieve your Snowflake settings and
-  outline the typing support.
+description: Going over how to find your Snowflake settings and outline the typing support.
 ---
 
 # Snowflake
 
-## How to retrieve your credentials
+## Finding your Snowflake settings
 
 ### Getting your username and password
 
@@ -26,7 +24,7 @@ Consider creating a new virtual data warehouse for Transfer so that you can size
 For the most optimal usage, consider leveraging warehouse suspension policies and size your warehouse appropriately depending on your workloads. Click [here to learn more](https://docs.snowflake.com/en/user-guide/warehouses-overview.html#warehouse-size) from Snowflake's website.
 {% endhint %}
 
-<figure><img src="../.gitbook/assets/image.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (3).png" alt=""><figcaption></figcaption></figure>
 
 
 

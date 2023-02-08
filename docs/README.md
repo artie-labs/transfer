@@ -23,14 +23,16 @@ When running Transfer (as a binary or as a Go application), you can pass in the 
 
 ## What is a configuration file?
 
+{% hint style="info" %}
+Transfer expects the configuration file to be in [YAML](https://yaml.org/) format.
+{% endhint %}
+
 The configuration file is used to inform each Transfer deployment of the workload(s) required. Inside of the configuration file, we can specify things like:
 
 * Which Kafka server should Transfer connect to?
 * What is the format of the partition key?
 * What does the message format look like?
 * Which destination is it going to?
-
-> Transfer expects the configuration file to be in [YAML](https://yaml.org/) format.
 
 ## How do I specify the configuration file?
 

@@ -18,5 +18,10 @@
 
 ## Real-time Destinations
 
-* [\[WIP\] Overview](real-time-destinations/wip-overview.md)
+* [Overview](real-time-destinations/overview.md)
 * [Snowflake](real-time-destinations/snowflake.md)
+* [BigQuery](real-time-destinations/bigquery.md)
+
+***
+
+* [More ways for support](more-ways-for-support.md)
