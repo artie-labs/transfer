@@ -12,7 +12,7 @@
 
 ## Real-time Sources
 
-* [\[WIP\] Overview](real-time-sources/wip-overview.md)
+* [Overview](real-time-sources/overview.md)
 * [PostgreSQL](real-time-sources/postgresql.md)
 * [MongoDB](real-time-sources/mongodb.md)
 
