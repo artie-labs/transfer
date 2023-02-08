@@ -34,7 +34,7 @@ The configuration file is used to inform each Transfer deployment of the workloa
 
 ## How do I specify the configuration file?
 
-Whether you are running Transfer locally, using a Docker image or within your Kubernetes cluster...you can specify the configuration file by using the `--config` option.
+Whether you are running Transfer locally, using a Docker image or within your Kubernetes cluster. You can specify the configuration file by using the `--config` option.
 
 **Running this as a standalone binary (Docker / Kubernetes)**
 
