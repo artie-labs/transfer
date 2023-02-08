@@ -2,10 +2,10 @@
 
 ## Configurations
 
-* [Configurations](README.md)
+* [Overview](README.md)
 * [Options](configurations/options.md)
 * [Examples](configurations/examples.md)
 
 ## Telemetry
 
-* [Telemetry](telemetry/telemetry.md)
+* [Overview](telemetry/overview.md)
