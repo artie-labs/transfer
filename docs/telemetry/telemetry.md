@@ -23,5 +23,16 @@ We also plan to support application tracing such that we can directly plug into 
 | `transfer.flush.max`                    | Max of how long each flush process takes       | `ms`  | <ul><li>database</li><li>schema</li><li>table</li><li>what</li></ul>    |
 | `transfer.flush.median`                 | Median of how long each flush process takes    | `ms`  | <ul><li>database</li><li>schema</li><li>table</li><li>what</li></ul>    |
 
+## The what tag explained
+
+The `what` tag aims to provide a high level of visibility into whether an attempt has succeeded or not. And if it did not succeed, it will provide additional visibility into which particular operation failed (vs just providing a generic error state).
+
+Transfer will provide `what:success` if the attempt failed and different reasoning depending on the error state. This way, our monitors and response to failures can be more actionable and we can jump straight to the offending code block.
+
+<figure><img src="../.gitbook/assets/image.png" alt=""><figcaption><p>Here's a visualization of what this looks like</p></figcaption></figure>
+
+###
+
+\
 
 
