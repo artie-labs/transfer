@@ -2,7 +2,7 @@
 
 Below, these are the various options that can be specified within a configuration file.
 
-_Note: Keys here are formatted in dot notation for readability purposes, please ensure that the proper nesting is done when writing this into your configuration file. Take a look at the_ [_example config.yaml_](https://github.com/artie-labs/transfer/blob/master/examples/mongodb/config.yaml) _for additional reference._
+_Note: Keys here are formatted in dot notation for readability purposes, please ensure that the proper nesting is done when writing this into your configuration file. To see sample configuration files, visit the_ [examples.md](examples.md "mention") page.
 
 | Key                                    | Type   | Optional | Description                                                                                                                                                                                                                                                                                                                                                                                               |
 | -------------------------------------- | ------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -39,7 +39,3 @@ _Note: Keys here are formatted in dot notation for readability purposes, please 
 | `telemetry.metrics.settings.namespace` | String | Y        | Optional namespace prefix for metrics. Defaults to `transfer.` if none is provided.                                                                                                                                                                                                                                                                                                                       |
 | `telemetry.metrics.settings.addr`      | String | Y        | Address for where the statsD agent is running. Defaults to `127.0.0.1:8125` if none is provided.                                                                                                                                                                                                                                                                                                          |
 | `telemetry.metrics.settings.sampling`  | Number | Y        | Percentage of data to send. Provide a number between 0 and 1. Defaults to `1` if none is provided. Refer to [this](https://docs.datadoghq.com/metrics/custom\_metrics/dogstatsd\_metrics\_submission/#sample-rates) for additional information.                                                                                                                                                           |
-
-## Putting things together
-
-To see examples of various configuration files, check out the [examples.md](examples.md "mention") page.

@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Below, you can see sample configuration files to describe different workloads. To see all the available settings, please see. [options.md](options.md "mention")
+Below, you can see sample configuration files to describe different workloads. To see all the available settings, please see the [options.md](options.md "mention") page.
 
 ## Postgres options
 

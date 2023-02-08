@@ -1,14 +1,12 @@
 ---
-description: >-
-  In this section, we will explore the various options available within the
-  Transfer configuration and provide examples for how to get started.
+description: In this section, we will go over how to install and run Artie Transfer.
 ---
 
 # Overview
 
-### How do I install Transfer?
+## Install
 
-There are three ways to install Transfer.
+There are three ways to install Transfer:
 
 1. Download the [image from Dockerhub](https://hub.docker.com/r/artielabs/transfer/tags)
 2. Git clone the repo and run `go build`
@@ -23,7 +21,7 @@ When running Transfer (as a binary or as a Go application), you can pass in the 
 * `-v` or `--verbose` to have additional logging emitted from Transfer
 * `-c` or `--config` (see below) to specify the path of the configuration file.
 
-### What is a configuration file?
+## What is a configuration file?
 
 The configuration file is used to inform each Transfer deployment of the workload(s) required. Inside of the configuration file, we can specify things like:
 
@@ -34,7 +32,7 @@ The configuration file is used to inform each Transfer deployment of the workloa
 
 > Transfer expects the configuration file to be in [YAML](https://yaml.org/) format.
 
-### How do I specify the configuration file?
+## How do I specify the configuration file?
 
 Whether you are running Transfer locally, using a Docker image or within your Kubernetes cluster...you can specify the configuration file by using the `--config` option.
 
@@ -50,9 +48,9 @@ Whether you are running Transfer locally, using a Docker image or within your Ku
 go run main.go --config config.yaml
 ```
 
-### Next
+## Next
 
-To see the available settings within a configuration file, please click on the link below to continue.
+To see all the available settings, please click on the link below to continue.
 
 {% content-ref url="running-transfer/options.md" %}
 [options.md](running-transfer/options.md)

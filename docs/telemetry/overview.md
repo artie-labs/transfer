@@ -4,7 +4,7 @@ In this section, we will go over the metrics that Artie Transfer emits and the f
 
 ## Today
 
-Artie Transfer's currently only supports metrics and integrates with Datadog. We are committed to being vendor neutral, but not at the cost of reliability. As such, we will be using [OpenTelemetry](https://github.com/open-telemetry/opentelemetry-go#project-status) when the library is stable.&#x20;
+Artie Transfer's currently only supports metrics and integrates with Datadog. We are committed to being vendor neutral, but not at the cost of stability and reliability. As such, we will be using [OpenTelemetry](https://github.com/open-telemetry/opentelemetry-go#project-status) when the library is stable.&#x20;
 
 We also plan to support application tracing such that we can directly plug into your APM provider.
 
