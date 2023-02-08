@@ -15,3 +15,8 @@
 * [\[WIP\] Overview](real-time-sources/wip-overview.md)
 * [PostgreSQL](real-time-sources/postgresql.md)
 * [MongoDB](real-time-sources/mongodb.md)
+
+## Real-time Destinations
+
+* [\[WIP\] Overview](real-time-destinations/wip-overview.md)
+* [Snowflake](real-time-destinations/snowflake.md)
