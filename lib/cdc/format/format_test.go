@@ -2,11 +2,13 @@ package format
 
 import (
 	"context"
-	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"os/exec"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
 func TestGetFormatParser(t *testing.T) {
