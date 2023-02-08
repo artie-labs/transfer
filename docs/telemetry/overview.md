@@ -1,4 +1,4 @@
-# Telemetry
+# Overview
 
 In this section, we will go over the metrics that Artie Transfer emits and the future roadmap.
 
@@ -9,6 +9,8 @@ Artie Transfer's currently only supports metrics and integrates with Datadog. We
 We also plan to support application tracing such that we can directly plug into your APM provider.
 
 ## Metrics
+
+> You can specify additional tags and namespace in the configuration file and it will apply to every metric that Transfer emits. See [options.md](../configurations/options.md "mention") for more details.
 
 | Name                                    | Description                                    | Unit  | Tags                                                                    |
 | --------------------------------------- | ---------------------------------------------- | ----- | ----------------------------------------------------------------------- |
