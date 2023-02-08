@@ -31,8 +31,3 @@ Transfer will provide `what:success` if the attempt failed and different reasoni
 
 <figure><img src="../.gitbook/assets/image.png" alt=""><figcaption><p>Here's a visualization of what this looks like</p></figcaption></figure>
 
-###
-
-\
-
-
