@@ -22,4 +22,4 @@ build:
 
 .PHONY: release
 release:
-	goreleaser release
+	goreleaser release --clean
