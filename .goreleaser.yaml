@@ -15,8 +15,8 @@ builds:
 
 dockers:
 - image_templates:
-    - "artie-labs/transfer:latest"
-    - "artie-labs/transfer:{{ .Tag }}"
+    - "artielabs/transfer:latest"
+    - "artielabs/transfer:{{ .Tag }}"
   # You can have multiple Docker images.
   # GOOS of the built binaries/packages that should be used.
   # Default: `linux`.
