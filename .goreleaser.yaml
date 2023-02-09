@@ -1,0 +1,67 @@
+project_name: artie-transfer
+
+# .goreleaser.yaml
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+
+dockers:
+- # You can have multiple Docker images.
+  # GOOS of the built binaries/packages that should be used.
+  # Default: `linux`.
+  goos: linux
+
+  # GOARCH of the built binaries/packages that should be used.
+  # Default: `amd64`.
+  goarch: amd64
+
+  # Skips the docker push.
+  skip_push: false
+
+  # Path to the Dockerfile (from the project root).
+  # Defaults to `Dockerfile`.
+  dockerfile: Dockerfile
+
+  # Set the "backend" for the Docker pipe.
+  # Valid options are: docker, buildx, podman.
+  # Defaults to docker.
+  use: docker
+
+
+archives:
+  - format: tar.gz
+    # this name template makes the OS and Arch compatible with the results of uname.
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    # use zip for windows archives
+    format_overrides:
+    - goos: windows
+      format: zip
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+# The lines beneath this are called `modelines`. See `:help modeline`
+# Feel free to remove those if you don't want/use them.
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
