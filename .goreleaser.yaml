@@ -13,7 +13,10 @@ builds:
       - darwin
 
 dockers:
-- # You can have multiple Docker images.
+- image_templates:
+    - "artie-labs/transfer:latest"
+    - "artie-labs/transfer:{{ .Tag }}"
+  # You can have multiple Docker images.
   # GOOS of the built binaries/packages that should be used.
   # Default: `linux`.
   goos: linux
