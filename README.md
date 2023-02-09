@@ -83,12 +83,7 @@ make test
 
 ## Release
 
-```sh
-docker build .
-docker tag IMAGE_ID artielabs/transfer:0.1
-docker push artielabs/transfer:0.1
-```
-
+Artie Transfer is released through [GoReleaser](https://goreleaser.com/), and we use it to cross-compile our binaries on the [releases](https://github.com/artie-labs/transfer/releases) as well as our Dockerhub. If your operating system or architecture is not supported, please file a feature request!
 
 ## License
 

@@ -1,3 +1,6 @@
+# GoReleaser
+dist/*
+
 *.mock.go
 .envrc-personal
 
