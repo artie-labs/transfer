@@ -386,6 +386,7 @@ func (p *MongoTestSuite) TestMongoDBEventWithSchema() {
 		Optional:     false,
 		FieldName:    "version",
 		DebeziumType: "",
+		Type:         "string",
 	})
 
 }

@@ -76,6 +76,15 @@ func (s *SchemaEventPayload) GetData(pkName string, pkVal interface{}, tc *kafka
 	afterSchemaObject := s.Schema.GetSchemaFromLabel(cdc.After)
 	if afterSchemaObject != nil {
 		for _, field := range afterSchemaObject.Fields {
+			// Check if the field is an integer and requires us to cast it as such.
+			if field.IsInteger() {
+				valFloat, isOk := retMap[field.FieldName].(float64)
+				if isOk {
+					retMap[field.FieldName] = int(valFloat)
+					continue
+				}
+			}
+
 			if valid, supportedType := debezium.RequiresSpecialTypeCasting(field.DebeziumType); valid {
 				val, isOk := retMap[field.FieldName]
 				if isOk {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/typing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -208,6 +209,11 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 				"default": 0,
 				"field": "id"
 			}, {
+				"type": "int32",
+				"optional": false,
+				"default": 0,
+				"field": "another_id"
+			}, {
 				"type": "string",
 				"optional": false,
 				"field": "first_name"
@@ -250,6 +256,7 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 		"before": {},
 		"after": {
 			"id": 1001,
+			"another_id": 333,
 			"first_name": "Sally",
 			"last_name": "Thomas",
 			"email": "sally.thomas@acme.com",
@@ -282,7 +289,12 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	assert.Nil(p.T(), err)
 
 	evtData := evt.GetData("id", 1001, &kafkalib.TopicConfig{})
-	assert.Equal(p.T(), evtData["id"], float64(1001))
+
+	// Testing typing.
+	assert.Equal(p.T(), evtData["id"], 1001)
+	assert.Equal(p.T(), evtData["another_id"], 333)
+	assert.Equal(p.T(), typing.ParseValue(evtData["another_id"]), typing.Integer)
+
 	assert.Equal(p.T(), evtData["email"], "sally.thomas@acme.com")
 
 	td := time.Date(2023, time.February, 2, 17, 51, 35, 0, time.UTC)
