@@ -78,7 +78,9 @@ func ParseValue(val interface{}) Kind {
 		return Integer
 	case float32, float64:
 		// Integers will be parsed as Floats if they come from JSON
-		// This is a limitation with JSON, https://github.com/golang/go/issues/56719
+		// This is a limitation with JSON - https://github.com/golang/go/issues/56719
+		// UNLESS Transfer is provided with a schema object, and we deliberately typecast the value to an integer
+		// before calling ParseValue().
 		return Float
 	case bool:
 		return Boolean
