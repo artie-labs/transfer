@@ -5,14 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
-	"strings"
-	"time"
 )
 
 func merge(tableData *optimization.TableData) (string, error) {
@@ -43,14 +44,19 @@ func merge(tableData *optimization.TableData) (string, error) {
 			colVal := value[col]
 			if colVal != nil {
 				switch colKind {
-				case typing.DateTime:
-					ts, err := typing.ParseDateTime(fmt.Sprint(colVal))
-					if err != nil {
-						return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
+				case typing.ETime:
+					eTime, isOk := colVal.(*typing.ExtendedTime)
+					if !isOk {
+						var err error
+						eTime, err = typing.ParseExtendedDateTime(fmt.Sprint(colVal))
+						if err != nil {
+							return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
+						}
 					}
 
 					// We need to re-cast the timestamp INTO ISO-8601.
-					colVal = fmt.Sprintf("PARSE_DATETIME('%s', '%v')", RFC3339Format, ts.Format(time.RFC3339Nano))
+					// TODO: We need a separate typing support for BigQuery
+					colVal = fmt.Sprintf("PARSE_DATETIME('%s', '%v')", RFC3339Format, eTime.String(time.RFC3339Nano))
 				// All the other types do not need string wrapping.
 				case typing.String, typing.Struct:
 					// Escape line breaks, JSON_PARSE does not like it.

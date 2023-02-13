@@ -8,7 +8,7 @@ type SnowflakeKind string
 
 // https://docs.snowflake.com/en/sql-reference/intro-summary-data-types.html
 
-func SnowflakeTypeToKind(snowflakeType string) Kind {
+func SnowflakeTypeToKind(snowflakeType string) KindDetails {
 	snowflakeType = strings.ToLower(snowflakeType)
 
 	// We need to strip away the variable
@@ -60,21 +60,34 @@ func SnowflakeTypeToKind(snowflakeType string) Kind {
 	case "array":
 		return Array
 	case "datetime", "timestamp", "timestamp_ltz", "timestamp_ntz", "timestamp_tz":
-		return DateTime
+		return NewKindDetailsFromTemplate(ETime, DateTimeKindType)
+	case "time":
+		return NewKindDetailsFromTemplate(ETime, TimeKindType)
+	case "date":
+		return NewKindDetailsFromTemplate(ETime, DateKindType)
 	default:
 		return Invalid
 	}
 }
 
-func KindToSnowflake(kind Kind) string {
-	switch kind {
-	case Struct:
+func KindToSnowflake(kindDetails KindDetails) string {
+	switch kindDetails.Kind {
+	case Struct.Kind:
 		// Snowflake doesn't recognize struct.
 		// Must be either OBJECT or VARIANT. However, VARIANT is more versatile.
 		return "variant"
-	case Boolean:
+	case Boolean.Kind:
 		return "boolean"
+	case ETime.Kind:
+		switch ETime.ExtendedTimeDetails.Type {
+		case DateTimeKindType:
+			return "datetime"
+		case DateKindType:
+			return "date"
+		case TimeKindType:
+			return "time"
+		}
 	}
 
-	return string(kind)
+	return kindDetails.Kind
 }

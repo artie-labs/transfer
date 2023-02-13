@@ -50,7 +50,7 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message kafka.Message) (
 	if !isOk {
 		inMemoryDB.TableData[e.Table] = &optimization.TableData{
 			RowsData:                map[string]map[string]interface{}{},
-			InMemoryColumns:         map[string]typing.Kind{},
+			InMemoryColumns:         map[string]typing.KindDetails{},
 			PrimaryKey:              e.PrimaryKeyName,
 			TopicConfig:             *topicConfig,
 			PartitionsToLastMessage: map[int]kafka.Message{},

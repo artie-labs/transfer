@@ -2,6 +2,7 @@ package debezium
 
 import (
 	"fmt"
+	"github.com/artie-labs/transfer/lib/typing"
 	"time"
 )
 
@@ -11,6 +12,7 @@ const (
 	Invalid        SupportedDebeziumType = "invalid"
 	MicroTimestamp SupportedDebeziumType = "io.debezium.time.MicroTimestamp"
 	Date           SupportedDebeziumType = "io.debezium.time.Date"
+	Time           SupportedDebeziumType = "io.debezium.time.Time"
 )
 
 var supportedTypes = []SupportedDebeziumType{
@@ -28,17 +30,19 @@ func RequiresSpecialTypeCasting(typeLabel string) (bool, SupportedDebeziumType) 
 	return false, Invalid
 }
 
-func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) time.Time {
+func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*typing.ExtendedTime, error) {
 	// https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-temporal-types
 	switch supportedType {
 	case MicroTimestamp:
 		// Cast the TZ in UTC. By default, it would be in local (machine) TZ.
-		return time.UnixMicro(val).In(time.UTC)
+		return typing.NewExtendedTime(time.UnixMicro(val).In(time.UTC), typing.DateTimeKindType, "")
 	case Date:
 		// Represents the number of days since the epoch.
-		fmt.Println("time.UnixMicro(0).AddDate(0, 0, int(val))", time.UnixMicro(0).AddDate(0, 0, int(val)))
-		return time.UnixMicro(0).AddDate(0, 0, int(val)).In(time.UTC)
+		return typing.NewExtendedTime(time.UnixMicro(0).AddDate(0, 0, int(val)).In(time.UTC), typing.DateKindType, "")
+	case Time:
+		// Represents the number of milliseconds past midnight, and does not include timezone information.
+		return typing.NewExtendedTime(time.UnixMicro(val).In(time.UTC), typing.TimeKindType, "")
 	}
 
-	return time.Time{}
+	return nil, fmt.Errorf("supportedType: %s, val: %v failed to be matched", supportedType, val)
 }

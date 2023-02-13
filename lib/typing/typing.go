@@ -8,21 +8,63 @@ import (
 	"time"
 )
 
-type Kind string
+type KindDetails struct {
+	Kind string
+
+	ExtendedTimeDetails *ExtendedTimeKind
+}
+
+const (
+	ISO8601                     = "2006-01-02T15:04:05-07:00"
+	PostgresDateFormat          = "2006-01-02"
+	PostgresTimeWithoutTZFormat = "15:04:05.999999" // microsecond precision
+)
 
 // Summarized this from Snowflake + Reflect.
 // In the future, we can support Geo objects.
-const (
-	Invalid  Kind = "invalid"
-	Float    Kind = "float"
-	Integer  Kind = "int"
-	Boolean  Kind = "bool"
-	Array    Kind = "array"
-	Struct   Kind = "struct"
-	DateTime Kind = "datetime"
-	String   Kind = "string"
-	ISO8601       = "2006-01-02T15:04:05-07:00"
+var (
+	Invalid = KindDetails{
+		Kind: "invalid",
+	}
+
+	Float = KindDetails{
+		Kind: "float",
+	}
+
+	Integer = KindDetails{
+		Kind: "int",
+	}
+
+	Boolean = KindDetails{
+		Kind: "bool",
+	}
+
+	Array = KindDetails{
+		Kind: "array",
+	}
+
+	Struct = KindDetails{
+		Kind: "struct",
+	}
+
+	String = KindDetails{
+		Kind: "string",
+	}
+
+	ETime = KindDetails{
+		Kind: "extended_time",
+	}
 )
+
+// TODO - Test.
+func NewKindDetailsFromTemplate(details KindDetails, extendedType ExtendedTimeKindType) KindDetails {
+	if details.ExtendedTimeDetails == nil {
+		details.ExtendedTimeDetails = &ExtendedTimeKind{}
+	}
+
+	details.ExtendedTimeDetails.Type = extendedType
+	return details
+}
 
 var supportedDateTimeLayouts = []string{
 	ISO8601,
@@ -36,6 +78,14 @@ var supportedDateTimeLayouts = []string{
 	time.RFC1123,
 	time.RFC1123Z,
 	time.RFC3339,
+}
+
+var supportedDateFormats = []string{
+	PostgresDateFormat,
+}
+
+var supportedTimeWithoutTZFormats = []string{
+	PostgresTimeWithoutTZFormat,
 }
 
 // IsJSON - We also need to check if the string is a JSON string or not
@@ -58,18 +108,45 @@ func IsJSON(str string) bool {
 	return false
 }
 
-func ParseDateTime(dtString string) (ts time.Time, err error) {
+// ParseExtendedDateTime will take a string and check if the string is of the following types:
+// - Timestamp w/ timezone
+// - Timestamp w/o timezone
+// - Date
+// - Time w/ timezone
+// - Time w/o timezone
+// It will then return an extended Time object from Transfer which allows us to build additional functionality
+// on top of Golang's time.Time library by preserving original format and replaying to the destination without
+// overlaying or mutating any format and timezone shifts.
+func ParseExtendedDateTime(dtString string) (*ExtendedTime, error) {
+	// Check all the timestamp formats
 	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
-		ts, err = time.Parse(supportedDateTimeLayout, dtString)
+		ts, err := time.Parse(supportedDateTimeLayout, dtString)
 		if err == nil {
-			return
+			return NewExtendedTime(ts, DateTimeKindType, supportedDateTimeLayout)
 		}
 	}
 
-	return
+	// Now check dates
+	for _, supportedDateFormat := range supportedDateFormats {
+		date, err := time.Parse(supportedDateFormat, dtString)
+		if err == nil {
+			return NewExtendedTime(date, DateKindType, supportedDateFormat)
+		}
+	}
+
+	// Now check time w/o TZ
+	for _, supportedTimeFormat := range supportedTimeWithoutTZFormats {
+		_time, err := time.Parse(supportedTimeFormat, dtString)
+		if err == nil {
+			return NewExtendedTime(_time, TimeKindType, supportedTimeFormat)
+		}
+	}
+
+	// TODO: What about time w/ TZ?
+	return nil, fmt.Errorf("dtString: %s is not supported", dtString)
 }
 
-func ParseValue(val interface{}) Kind {
+func ParseValue(val interface{}) KindDetails {
 	// Check if it's a number first.
 	switch val.(type) {
 	case nil:
@@ -90,9 +167,9 @@ func ParseValue(val interface{}) Kind {
 		// This way, we don't penalize every string into going through this loop
 		// In the future, we can have specific layout RFCs run depending on the char
 		if strings.Contains(valString, " ") || strings.Contains(valString, "-") {
-			_, err := ParseDateTime(valString)
+			_, err := ParseExtendedDateTime(valString)
 			if err == nil {
-				return DateTime
+				return ETime
 			}
 		}
 

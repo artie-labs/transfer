@@ -11,7 +11,7 @@ import (
 )
 
 type TableData struct {
-	InMemoryColumns map[string]typing.Kind            // list of columns
+	InMemoryColumns map[string]typing.KindDetails     // list of columns
 	RowsData        map[string]map[string]interface{} // pk -> { col -> val }
 	PrimaryKey      string
 
@@ -31,7 +31,7 @@ type TableData struct {
 // Prior to merging, we will need to treat `tableConfig` as the source-of-truth and whenever there's discrepancies
 // We will prioritize using the values coming from (2) TableConfig. We also cannot simply do a replacement, as we have in-memory columns
 // That carry metadata for Artie Transfer. They are prefixed with __artie.
-func (t *TableData) UpdateInMemoryColumns(cols map[string]typing.Kind) {
+func (t *TableData) UpdateInMemoryColumns(cols map[string]typing.KindDetails) {
 	if t == nil {
 		return
 	}
@@ -50,7 +50,10 @@ func (t *TableData) UpdateInMemoryColumns(cols map[string]typing.Kind) {
 		tcKind, isOk := cols[strings.ToLower(inMemCol)]
 		if isOk {
 			// Update in-memory column type with whatever is specified by the destination.
-			t.InMemoryColumns[inMemCol] = tcKind
+			// Do not update ExtendedTimeDetails
+			// TODO - Test ^
+			inMemKind.Kind = tcKind.Kind
+			t.InMemoryColumns[inMemCol] = inMemKind
 		}
 	}
 

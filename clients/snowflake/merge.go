@@ -13,6 +13,13 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
+func stringWrapping(colVal interface{}) string {
+	// Escape line breaks, JSON_PARSE does not like it.
+	colVal = strings.ReplaceAll(fmt.Sprint(colVal), `\n`, `\\n`)
+	// The normal string escape is to do for O'Reilly is O\\'Reilly, but Snowflake escapes via \'
+	return fmt.Sprintf("'%s'", strings.ReplaceAll(fmt.Sprint(colVal), "'", `\'`))
+}
+
 func merge(tableData *optimization.TableData) (string, error) {
 	var tableValues []string
 	var artieDeleteMetadataIdx *int
@@ -50,11 +57,19 @@ func merge(tableData *optimization.TableData) (string, error) {
 			if colVal != nil {
 				switch colKind {
 				// All the other types do not need string wrapping.
-				case typing.String, typing.DateTime, typing.Struct:
-					// Escape line breaks, JSON_PARSE does not like it.
-					colVal = strings.ReplaceAll(fmt.Sprint(colVal), `\n`, `\\n`)
-					// The normal string escape is to do for O'Reilly is O\\'Reilly, but Snowflake escapes via \'
-					colVal = fmt.Sprintf("'%s'", strings.ReplaceAll(fmt.Sprint(colVal), "'", `\'`))
+				case typing.ETime:
+					eTime, isOk := colVal.(*typing.ExtendedTime)
+					if !isOk {
+						var err error
+						eTime, err = typing.ParseExtendedDateTime(fmt.Sprint(colVal))
+						if err != nil {
+							return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
+						}
+					}
+
+					colVal = stringWrapping(eTime.String(""))
+				case typing.String, typing.Struct:
+					colVal = stringWrapping(colVal)
 				case typing.Array:
 					// We need to marshall, so we can escape the strings.
 					// https://go.dev/play/p/BcCwUSCeTmT

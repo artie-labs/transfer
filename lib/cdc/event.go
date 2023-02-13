@@ -16,7 +16,7 @@ type Format interface {
 type Event interface {
 	Table() string
 	GetExecutionTime() time.Time
-	GetData(pkName string, pkVal interface{}, config *kafkalib.TopicConfig) map[string]interface{}
+	GetData(ctx context.Context, pkName string, pkVal interface{}, config *kafkalib.TopicConfig) map[string]interface{}
 }
 
 // FieldLabelKind is used when the schema is turned on. Each schema object will be labelled.

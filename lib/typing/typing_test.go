@@ -106,12 +106,12 @@ func TestDateTime(t *testing.T) {
 		assert.Equal(t, ParseValue(possibleDate), DateTime, fmt.Sprintf("Failed format, value is: %v", possibleDate))
 
 		// Test the parseDT function as well.
-		ts, err := ParseDateTime(fmt.Sprint(possibleDate))
+		ts, err := ParseExtendedDateTime(fmt.Sprint(possibleDate))
 		assert.NoError(t, err, err)
 		assert.False(t, ts.IsZero(), ts)
 	}
 
-	ts, err := ParseDateTime("random")
+	ts, err := ParseExtendedDateTime("random")
 	assert.Error(t, err, err)
 	assert.True(t, ts.IsZero(), ts)
 }

@@ -1,25 +1,25 @@
 package types
 
 import (
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"sync"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
 type DwhTableConfig struct {
 	// Making these private variables to avoid concurrent R/W panics.
-	columns         map[string]typing.Kind
+	columns         map[string]typing.KindDetails
 	columnsToDelete map[string]time.Time // column --> when to delete
 	CreateTable     bool
 
 	sync.Mutex
 }
 
-func NewDwhTableConfig(columns map[string]typing.Kind, colsToDelete map[string]time.Time, createTable bool) *DwhTableConfig {
+func NewDwhTableConfig(columns map[string]typing.KindDetails, colsToDelete map[string]time.Time, createTable bool) *DwhTableConfig {
 	if len(columns) == 0 {
-		columns = make(map[string]typing.Kind)
+		columns = make(map[string]typing.KindDetails)
 	}
 
 	if len(colsToDelete) == 0 {
@@ -33,7 +33,7 @@ func NewDwhTableConfig(columns map[string]typing.Kind, colsToDelete map[string]t
 	}
 }
 
-func (tc *DwhTableConfig) Columns() map[string]typing.Kind {
+func (tc *DwhTableConfig) Columns() map[string]typing.KindDetails {
 	// TODO in the future, columns should be wrapped with a type that has mutex support to avoid concurrent r/w panics
 	// or consider using sync.Map
 	if tc == nil {
