@@ -27,15 +27,15 @@ func merge(tableData *optimization.TableData) (string, error) {
 	var sflkCols []string
 
 	// Given all the columns, diff this against SFLK.
-	for col, kind := range tableData.InMemoryColumns {
-		if kind == typing.Invalid {
+	for col, kindDetails := range tableData.InMemoryColumns {
+		if kindDetails.Kind == typing.Invalid.Kind {
 			// Don't update Snowflake
 			continue
 		}
 
 		sflkCol := col
-		switch kind {
-		case typing.Struct, typing.Array:
+		switch kindDetails.Kind {
+		case typing.Struct.Kind, typing.Array.Kind:
 			sflkCol = fmt.Sprintf("PARSE_JSON(%s) %s", col, col)
 		}
 
@@ -55,9 +55,9 @@ func merge(tableData *optimization.TableData) (string, error) {
 			colKind := tableData.InMemoryColumns[col]
 			colVal := value[col]
 			if colVal != nil {
-				switch colKind {
+				switch colKind.Kind {
 				// All the other types do not need string wrapping.
-				case typing.ETime:
+				case typing.ETime.Kind:
 					eTime, isOk := colVal.(*typing.ExtendedTime)
 					if !isOk {
 						var err error
@@ -68,9 +68,9 @@ func merge(tableData *optimization.TableData) (string, error) {
 					}
 
 					colVal = stringWrapping(eTime.String(""))
-				case typing.String, typing.Struct:
+				case typing.String.Kind, typing.Struct.Kind:
 					colVal = stringWrapping(colVal)
-				case typing.Array:
+				case typing.Array.Kind:
 					// We need to marshall, so we can escape the strings.
 					// https://go.dev/play/p/BcCwUSCeTmT
 					colValBytes, err := json.Marshal(colVal)

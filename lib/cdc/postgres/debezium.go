@@ -18,7 +18,6 @@ import (
 type Debezium string
 
 func (d *Debezium) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Event, error) {
-	fmt.Println("event", string(bytes))
 	var event SchemaEventPayload
 	err := json.Unmarshal(bytes, &event)
 	if err != nil {
@@ -87,7 +86,6 @@ func (s *SchemaEventPayload) GetData(ctx context.Context, pkName string, pkVal i
 				}
 			}
 
-			fmt.Println("field", field.DebeziumType, "field", field)
 			if valid, supportedType := debezium.RequiresSpecialTypeCasting(field.DebeziumType); valid {
 				val, isOk := retMap[field.FieldName]
 				if isOk {
@@ -97,7 +95,7 @@ func (s *SchemaEventPayload) GetData(ctx context.Context, pkName string, pkVal i
 					if castErr == nil {
 						extendedTime, err := debezium.FromDebeziumTypeToTime(supportedType, int64(floatVal))
 						if err == nil {
-							retMap[field.FieldName] = *extendedTime
+							retMap[field.FieldName] = extendedTime
 						} else {
 							logger.FromContext(ctx).WithFields(map[string]interface{}{
 								"err":           err,

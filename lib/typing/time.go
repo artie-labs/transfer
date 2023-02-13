@@ -20,7 +20,7 @@ type ExtendedTimeKind struct {
 var (
 	DateTime = ExtendedTimeKind{
 		Type:   DateTimeKindType,
-		Format: ISO8601,
+		Format: time.RFC3339Nano,
 	}
 
 	Date = ExtendedTimeKind{
@@ -29,8 +29,8 @@ var (
 	}
 
 	Time = ExtendedTimeKind{
-		Type: TimeKindType,
-		// TODO - what's the default fmt?
+		Type:   TimeKindType,
+		Format: PostgresTimeWithoutTZFormat,
 	}
 )
 
@@ -38,7 +38,7 @@ var (
 // and only allows timestamp expressions.
 type ExtendedTime struct {
 	time.Time
-	kind ExtendedTimeKind
+	extendedTimeKind ExtendedTimeKind
 }
 
 func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat string) (*ExtendedTime, error) {
@@ -58,7 +58,7 @@ func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat 
 
 	return &ExtendedTime{
 		Time: t,
-		kind: ExtendedTimeKind{
+		extendedTimeKind: ExtendedTimeKind{
 			Type:   kindType,
 			Format: originalFormat,
 		},
@@ -70,5 +70,5 @@ func (e *ExtendedTime) String(overrideFormat string) string {
 		return e.Time.Format(overrideFormat)
 	}
 
-	return e.Time.Format(e.kind.Format)
+	return e.Time.Format(e.extendedTimeKind.Format)
 }

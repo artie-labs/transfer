@@ -36,8 +36,8 @@ func (t *TableData) UpdateInMemoryColumns(cols map[string]typing.KindDetails) {
 		return
 	}
 
-	for inMemCol, inMemKind := range t.InMemoryColumns {
-		if inMemKind == typing.Invalid {
+	for inMemCol, inMemKindDetails := range t.InMemoryColumns {
+		if inMemKindDetails.Kind == typing.Invalid.Kind {
 			// Don't copy this over.
 			// The being that the rows within tableData probably have the wrong colVal
 			// So it's better to skip even attempting to create this column from memory values.
@@ -52,8 +52,8 @@ func (t *TableData) UpdateInMemoryColumns(cols map[string]typing.KindDetails) {
 			// Update in-memory column type with whatever is specified by the destination.
 			// Do not update ExtendedTimeDetails
 			// TODO - Test ^
-			inMemKind.Kind = tcKind.Kind
-			t.InMemoryColumns[inMemCol] = inMemKind
+			inMemKindDetails.Kind = tcKind.Kind
+			t.InMemoryColumns[inMemCol] = inMemKindDetails
 		}
 	}
 

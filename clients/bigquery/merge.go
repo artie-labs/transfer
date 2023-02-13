@@ -43,8 +43,8 @@ func merge(tableData *optimization.TableData) (string, error) {
 			colKind := tableData.InMemoryColumns[col]
 			colVal := value[col]
 			if colVal != nil {
-				switch colKind {
-				case typing.ETime:
+				switch colKind.Kind {
+				case typing.ETime.Kind:
 					eTime, isOk := colVal.(*typing.ExtendedTime)
 					if !isOk {
 						var err error
@@ -58,7 +58,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 					// TODO: We need a separate typing support for BigQuery
 					colVal = fmt.Sprintf("PARSE_DATETIME('%s', '%v')", RFC3339Format, eTime.String(time.RFC3339Nano))
 				// All the other types do not need string wrapping.
-				case typing.String, typing.Struct:
+				case typing.String.Kind, typing.Struct.Kind:
 					// Escape line breaks, JSON_PARSE does not like it.
 					colVal = strings.ReplaceAll(fmt.Sprint(colVal), `\n`, `\\n`)
 					// The normal string escape is to do for O'Reilly is O\\'Reilly, but Snowflake escapes via \'
@@ -67,7 +67,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 						// This is how you cast string -> JSON
 						colVal = fmt.Sprintf("JSON %s", colVal)
 					}
-				case typing.Array:
+				case typing.Array.Kind:
 					// We need to marshall, so we can escape the strings.
 					// https://go.dev/play/p/BcCwUSCeTmT
 					colValBytes, err := json.Marshal(colVal)

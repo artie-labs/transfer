@@ -166,10 +166,13 @@ func ParseValue(val interface{}) KindDetails {
 		// If it contains space or -, then we must check against date time.
 		// This way, we don't penalize every string into going through this loop
 		// In the future, we can have specific layout RFCs run depending on the char
-		if strings.Contains(valString, " ") || strings.Contains(valString, "-") {
-			_, err := ParseExtendedDateTime(valString)
+		if strings.Contains(valString, ":") || strings.Contains(valString, "-") {
+			extendedKind, err := ParseExtendedDateTime(valString)
 			if err == nil {
-				return ETime
+				return KindDetails{
+					Kind:                ETime.Kind,
+					ExtendedTimeDetails: &extendedKind.extendedTimeKind,
+				}
 			}
 		}
 
@@ -179,6 +182,15 @@ func ParseValue(val interface{}) KindDetails {
 
 		return String
 	default:
+		// Check if the val is one of our custom-types
+		extendedKind, isOk := val.(*ExtendedTime)
+		if isOk {
+			return KindDetails{
+				Kind:                ETime.Kind,
+				ExtendedTimeDetails: &extendedKind.extendedTimeKind,
+			}
+		}
+
 		if reflect.TypeOf(val).Kind() == reflect.Slice {
 			return Array
 		} else if reflect.TypeOf(val).Kind() == reflect.Map {

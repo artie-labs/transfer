@@ -79,7 +79,7 @@ func KindToSnowflake(kindDetails KindDetails) string {
 	case Boolean.Kind:
 		return "boolean"
 	case ETime.Kind:
-		switch ETime.ExtendedTimeDetails.Type {
+		switch kindDetails.ExtendedTimeDetails.Type {
 		case DateTimeKindType:
 			return "datetime"
 		case DateKindType:
