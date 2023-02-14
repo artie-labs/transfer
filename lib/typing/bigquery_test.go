@@ -7,7 +7,7 @@ import (
 )
 
 func TestBigQueryTypeToKind(t *testing.T) {
-	bqColToExpectedKind := map[string]Kind{
+	bqColToExpectedKind := map[string]KindDetails{
 		// Integer
 		"int":     Integer,
 		"integer": Integer,
@@ -28,10 +28,10 @@ func TestBigQueryTypeToKind(t *testing.T) {
 		"record":             Struct,
 		"json":               Struct,
 		// Datetime
-		"datetime":  DateTime,
-		"timestamp": DateTime,
-		"time":      DateTime,
-		"date":      DateTime,
+		"datetime":  NewKindDetailsFromTemplate(ETime, DateTimeKindType),
+		"timestamp": NewKindDetailsFromTemplate(ETime, DateTimeKindType),
+		"time":      NewKindDetailsFromTemplate(ETime, TimeKindType),
+		"date":      NewKindDetailsFromTemplate(ETime, DateKindType),
 		//Invalid
 		"foo":    Invalid,
 		"foofoo": Invalid,

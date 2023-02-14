@@ -4,13 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/config/constants"
-	"strings"
-
 	"github.com/artie-labs/transfer/lib/array"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
+	"strings"
 )
 
 func stringWrapping(colVal interface{}) string {
@@ -67,7 +66,13 @@ func merge(tableData *optimization.TableData) (string, error) {
 						}
 					}
 
-					colVal = stringWrapping(eTime.String(""))
+					switch eTime.NestedKind.Type {
+					case typing.TimeKindType:
+						colVal = stringWrapping(eTime.String(typing.PostgresTimeFormatNoTZ))
+					default:
+						colVal = stringWrapping(eTime.String(""))
+					}
+
 				case typing.String.Kind, typing.Struct.Kind:
 					colVal = stringWrapping(colVal)
 				case typing.Array.Kind:

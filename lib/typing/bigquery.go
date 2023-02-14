@@ -66,7 +66,7 @@ func KindToBigQuery(kindDetails KindDetails) string {
 		// Struct is a tighter version of JSON that requires type casting like Struct<int64>
 		return "json"
 	case ETime.Kind:
-		switch ETime.ExtendedTimeDetails.Type {
+		switch kindDetails.ExtendedTimeDetails.Type {
 		case DateTimeKindType:
 			return "datetime"
 		case DateKindType:

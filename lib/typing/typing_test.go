@@ -103,7 +103,7 @@ func TestDateTime(t *testing.T) {
 	}
 
 	for _, possibleDate := range possibleDates {
-		assert.Equal(t, ParseValue(possibleDate), DateTime, fmt.Sprintf("Failed format, value is: %v", possibleDate))
+		assert.Equal(t, ParseValue(possibleDate).ExtendedTimeDetails.Type, DateTime.Type, fmt.Sprintf("Failed format, value is: %v", possibleDate))
 
 		// Test the parseDT function as well.
 		ts, err := ParseExtendedDateTime(fmt.Sprint(possibleDate))
@@ -113,7 +113,13 @@ func TestDateTime(t *testing.T) {
 
 	ts, err := ParseExtendedDateTime("random")
 	assert.Error(t, err, err)
-	assert.True(t, ts.IsZero(), ts)
+	assert.Nil(t, ts)
+}
+
+func TestTime(t *testing.T) {
+	kindDetails := ParseValue("00:18:11.13116+00")
+	assert.Equal(t, ETime.Kind, kindDetails.Kind)
+	assert.Equal(t, TimeKindType, kindDetails.ExtendedTimeDetails.Type)
 }
 
 func TestString(t *testing.T) {

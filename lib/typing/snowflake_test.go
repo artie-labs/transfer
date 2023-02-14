@@ -42,7 +42,7 @@ func TestSnowflakeTypeToKindOther(t *testing.T) {
 func TestSnowflakeTypeToKindDateTime(t *testing.T) {
 	expectedDateTimes := []string{"DATETIME", "TIMESTAMP", "TIMESTAMP_LTZ", "TIMESTAMP_NTZ(9)", "TIMESTAMP_TZ"}
 	for _, expectedDateTime := range expectedDateTimes {
-		assert.Equal(t, SnowflakeTypeToKind(expectedDateTime), DateTime, expectedDateTime)
+		assert.Equal(t, SnowflakeTypeToKind(expectedDateTime).ExtendedTimeDetails.Type, DateTime.Type, expectedDateTime)
 	}
 }
 

@@ -12,25 +12,25 @@ const (
 	TimeKindType     ExtendedTimeKindType = "time"
 )
 
-type ExtendedTimeKind struct {
+type NestedKind struct {
 	Type   ExtendedTimeKindType
 	Format string
 }
 
 var (
-	DateTime = ExtendedTimeKind{
+	DateTime = NestedKind{
 		Type:   DateTimeKindType,
 		Format: time.RFC3339Nano,
 	}
 
-	Date = ExtendedTimeKind{
+	Date = NestedKind{
 		Type:   DateKindType,
 		Format: PostgresDateFormat,
 	}
 
-	Time = ExtendedTimeKind{
+	Time = NestedKind{
 		Type:   TimeKindType,
-		Format: PostgresTimeWithoutTZFormat,
+		Format: PostgresTimeFormat,
 	}
 )
 
@@ -38,7 +38,7 @@ var (
 // and only allows timestamp expressions.
 type ExtendedTime struct {
 	time.Time
-	extendedTimeKind ExtendedTimeKind
+	NestedKind NestedKind
 }
 
 func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat string) (*ExtendedTime, error) {
@@ -58,7 +58,7 @@ func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat 
 
 	return &ExtendedTime{
 		Time: t,
-		extendedTimeKind: ExtendedTimeKind{
+		NestedKind: NestedKind{
 			Type:   kindType,
 			Format: originalFormat,
 		},
@@ -70,5 +70,5 @@ func (e *ExtendedTime) String(overrideFormat string) string {
 		return e.Time.Format(overrideFormat)
 	}
 
-	return e.Time.Format(e.extendedTimeKind.Format)
+	return e.Time.Format(e.NestedKind.Format)
 }

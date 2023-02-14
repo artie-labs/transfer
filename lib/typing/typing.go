@@ -11,13 +11,16 @@ import (
 type KindDetails struct {
 	Kind string
 
-	ExtendedTimeDetails *ExtendedTimeKind
+	ExtendedTimeDetails *NestedKind
 }
 
 const (
-	ISO8601                     = "2006-01-02T15:04:05-07:00"
-	PostgresDateFormat          = "2006-01-02"
-	PostgresTimeWithoutTZFormat = "15:04:05.999999" // microsecond precision
+	ISO8601            = "2006-01-02T15:04:05-07:00"
+	PostgresDateFormat = "2006-01-02"
+	
+	PostgresTimeFormat = "15:04:05.999999-07" // microsecond precision
+	// PostgresTimeFormatNoTZ has been created because certain destinations do not like `Time` specifying time zone locale.
+	PostgresTimeFormatNoTZ = "15:04:05.999999" // microsecond precision
 )
 
 // Summarized this from Snowflake + Reflect.
@@ -59,7 +62,7 @@ var (
 // TODO - Test.
 func NewKindDetailsFromTemplate(details KindDetails, extendedType ExtendedTimeKindType) KindDetails {
 	if details.ExtendedTimeDetails == nil {
-		details.ExtendedTimeDetails = &ExtendedTimeKind{}
+		details.ExtendedTimeDetails = &NestedKind{}
 	}
 
 	details.ExtendedTimeDetails.Type = extendedType
@@ -84,8 +87,9 @@ var supportedDateFormats = []string{
 	PostgresDateFormat,
 }
 
-var supportedTimeWithoutTZFormats = []string{
-	PostgresTimeWithoutTZFormat,
+var supportedTimeFormats = []string{
+	PostgresTimeFormat,
+	PostgresTimeFormatNoTZ,
 }
 
 // IsJSON - We also need to check if the string is a JSON string or not
@@ -135,8 +139,9 @@ func ParseExtendedDateTime(dtString string) (*ExtendedTime, error) {
 	}
 
 	// Now check time w/o TZ
-	for _, supportedTimeFormat := range supportedTimeWithoutTZFormats {
+	for _, supportedTimeFormat := range supportedTimeFormats {
 		_time, err := time.Parse(supportedTimeFormat, dtString)
+		fmt.Println("supportedTimeFormat", supportedTimeFormat, "dtString", dtString, "err", err)
 		if err == nil {
 			return NewExtendedTime(_time, TimeKindType, supportedTimeFormat)
 		}
@@ -168,10 +173,11 @@ func ParseValue(val interface{}) KindDetails {
 		// In the future, we can have specific layout RFCs run depending on the char
 		if strings.Contains(valString, ":") || strings.Contains(valString, "-") {
 			extendedKind, err := ParseExtendedDateTime(valString)
+			fmt.Println("extendedKind", extendedKind, "err", err)
 			if err == nil {
 				return KindDetails{
 					Kind:                ETime.Kind,
-					ExtendedTimeDetails: &extendedKind.extendedTimeKind,
+					ExtendedTimeDetails: &extendedKind.NestedKind,
 				}
 			}
 		}
@@ -187,7 +193,7 @@ func ParseValue(val interface{}) KindDetails {
 		if isOk {
 			return KindDetails{
 				Kind:                ETime.Kind,
-				ExtendedTimeDetails: &extendedKind.extendedTimeKind,
+				ExtendedTimeDetails: &extendedKind.NestedKind,
 			}
 		}
 

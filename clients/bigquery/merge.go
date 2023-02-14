@@ -54,9 +54,16 @@ func merge(tableData *optimization.TableData) (string, error) {
 						}
 					}
 
-					// We need to re-cast the timestamp INTO ISO-8601.
-					// TODO: We need a separate typing support for BigQuery
-					colVal = fmt.Sprintf("PARSE_DATETIME('%s', '%v')", RFC3339Format, eTime.String(time.RFC3339Nano))
+					switch eTime.NestedKind.Type {
+					case typing.DateTimeKindType:
+						// We need to re-cast the timestamp INTO ISO-8601.
+						// TODO: We need a separate typing support for BigQuery
+						colVal = fmt.Sprintf("PARSE_DATETIME('%s', '%v')", RFC3339Format, eTime.String(time.RFC3339Nano))
+					case typing.DateKindType:
+						colVal = fmt.Sprintf("PARSE_DATE('%s', '%v')", PostgresDateFormat, eTime.String(typing.Date.Format))
+					case typing.TimeKindType:
+						colVal = fmt.Sprintf("PARSE_TIME('%s', '%v')", PostgresTimeFormatNoTZ, eTime.String(typing.PostgresTimeFormatNoTZ))
+					}
 				// All the other types do not need string wrapping.
 				case typing.String.Kind, typing.Struct.Kind:
 					// Escape line breaks, JSON_PARSE does not like it.
@@ -205,6 +212,8 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	tableData.UpdateInMemoryColumns(tableConfig.Columns())
 	query, err := merge(tableData)
+	fmt.Println("query", query)
+
 	if err != nil {
 		log.WithError(err).Warn("failed to generate the merge query")
 		return err
