@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/array"
@@ -12,6 +11,7 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func stringWrapping(colVal interface{}) string {

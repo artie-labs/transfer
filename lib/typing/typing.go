@@ -9,8 +9,7 @@ import (
 )
 
 type KindDetails struct {
-	Kind string
-
+	Kind                string
 	ExtendedTimeDetails *ext.NestedKind
 }
 
@@ -50,7 +49,6 @@ var (
 	}
 )
 
-// TODO - Test.
 func NewKindDetailsFromTemplate(details KindDetails, extendedType ext.ExtendedTimeKindType) KindDetails {
 	if details.ExtendedTimeDetails == nil {
 		details.ExtendedTimeDetails = &ext.NestedKind{}

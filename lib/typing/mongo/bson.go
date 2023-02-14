@@ -3,7 +3,6 @@ package mongo
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"reflect"
 	"strconv"
 	"time"
@@ -13,6 +12,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/bson/bsonrw"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 // JSONEToMap will take JSONE data in bytes, parse all the custom types

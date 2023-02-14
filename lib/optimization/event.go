@@ -1,7 +1,6 @@
 package optimization
 
 import (
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"strings"
 	"time"
 
@@ -9,6 +8,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type TableData struct {
