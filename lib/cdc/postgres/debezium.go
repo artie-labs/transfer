@@ -95,7 +95,6 @@ func (s *SchemaEventPayload) GetData(ctx context.Context, pkName string, pkVal i
 					if castErr == nil {
 						extendedTime, err := debezium.FromDebeziumTypeToTime(supportedType, int64(floatVal))
 						if err == nil {
-							fmt.Println("fieldName", field.FieldName, "extendedTime", extendedTime)
 							retMap[field.FieldName] = extendedTime
 						} else {
 							logger.FromContext(ctx).WithFields(map[string]interface{}{

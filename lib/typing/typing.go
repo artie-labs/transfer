@@ -17,10 +17,10 @@ type KindDetails struct {
 const (
 	ISO8601            = "2006-01-02T15:04:05-07:00"
 	PostgresDateFormat = "2006-01-02"
-	
-	PostgresTimeFormat = "15:04:05.999999-07" // microsecond precision
-	// PostgresTimeFormatNoTZ has been created because certain destinations do not like `Time` specifying time zone locale.
-	PostgresTimeFormatNoTZ = "15:04:05.999999" // microsecond precision
+
+	PostgresTimeFormat     = "15:04:05.999999-07" // microsecond precision
+	AdditionalTimeFormat   = "15:04:05.999999Z07"
+	PostgresTimeFormatNoTZ = "15:04:05.999999" // microsecond precision, used because certain destinations do not like `Time` types to specify tz locale
 )
 
 // Summarized this from Snowflake + Reflect.
@@ -90,6 +90,7 @@ var supportedDateFormats = []string{
 var supportedTimeFormats = []string{
 	PostgresTimeFormat,
 	PostgresTimeFormatNoTZ,
+	AdditionalTimeFormat,
 }
 
 // IsJSON - We also need to check if the string is a JSON string or not
@@ -141,7 +142,6 @@ func ParseExtendedDateTime(dtString string) (*ExtendedTime, error) {
 	// Now check time w/o TZ
 	for _, supportedTimeFormat := range supportedTimeFormats {
 		_time, err := time.Parse(supportedTimeFormat, dtString)
-		fmt.Println("supportedTimeFormat", supportedTimeFormat, "dtString", dtString, "err", err)
 		if err == nil {
 			return NewExtendedTime(_time, TimeKindType, supportedTimeFormat)
 		}
@@ -173,7 +173,6 @@ func ParseValue(val interface{}) KindDetails {
 		// In the future, we can have specific layout RFCs run depending on the char
 		if strings.Contains(valString, ":") || strings.Contains(valString, "-") {
 			extendedKind, err := ParseExtendedDateTime(valString)
-			fmt.Println("extendedKind", extendedKind, "err", err)
 			if err == nil {
 				return KindDetails{
 					Kind:                ETime.Kind,

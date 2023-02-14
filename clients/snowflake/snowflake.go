@@ -50,7 +50,6 @@ func (s *Store) alterTable(fqTableName string, createTable bool, columnOp consta
 		mutateCol = append(mutateCol, col)
 		switch columnOp {
 		case constants.Add:
-			fmt.Println("col", col)
 			colSQLPart = fmt.Sprintf("%s %s", col.Name, typing.KindToSnowflake(col.Kind))
 		case constants.Delete:
 			colSQLPart = fmt.Sprintf("%s", col.Name)
@@ -130,8 +129,6 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	tableData.UpdateInMemoryColumns(tableConfig.Columns())
 	query, err := merge(tableData)
-	fmt.Println("query", query)
-
 	if err != nil {
 		log.WithError(err).Warn("failed to generate the merge query")
 		return err

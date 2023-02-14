@@ -118,6 +118,7 @@ func TestDateTime(t *testing.T) {
 
 func TestTime(t *testing.T) {
 	kindDetails := ParseValue("00:18:11.13116+00")
+	// 00:42:26.693631Z
 	assert.Equal(t, ETime.Kind, kindDetails.Kind)
 	assert.Equal(t, TimeKindType, kindDetails.ExtendedTimeDetails.Type)
 }
