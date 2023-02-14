@@ -9,16 +9,16 @@ import (
 
 func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 	tableData := &TableData{
-		InMemoryColumns: map[string]typing.Kind{
+		InMemoryColumns: map[string]typing.KindDetails{
 			"FOO":       typing.String,
 			"bar":       typing.Invalid,
 			"CHANGE_me": typing.String,
 		},
 	}
 
-	tableData.UpdateInMemoryColumns(map[string]typing.Kind{
+	tableData.UpdateInMemoryColumns(map[string]typing.KindDetails{
 		"foo":       typing.String,
-		"change_me": typing.DateTime,
+		"change_me": typing.NewKindDetailsFromTemplate(typing.ETime, typing.DateTimeKindType),
 		"bar":       typing.Boolean,
 	})
 
@@ -30,7 +30,7 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 	assert.True(t, isOk)
 
 	colType, _ := tableData.InMemoryColumns["CHANGE_me"]
-	assert.Equal(t, typing.DateTime, colType)
+	assert.Equal(t, typing.DateTime.Type, colType.ExtendedTimeDetails.Type)
 
 	colType, _ = tableData.InMemoryColumns["bar"]
 	assert.Equal(t, typing.Invalid, colType)

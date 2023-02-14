@@ -14,7 +14,7 @@ import (
 )
 
 func (s *SnowflakeTestSuite) TestMergeNoDeleteFlag() {
-	cols := map[string]typing.Kind{
+	cols := map[string]typing.KindDetails{
 		"id": typing.Integer,
 	}
 
@@ -32,7 +32,7 @@ func (s *SnowflakeTestSuite) TestMergeNoDeleteFlag() {
 }
 
 func (s *SnowflakeTestSuite) TestMerge() {
-	cols := map[string]typing.Kind{
+	cols := map[string]typing.KindDetails{
 		"id":                         typing.Integer,
 		"NAME":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
@@ -74,7 +74,7 @@ func (s *SnowflakeTestSuite) TestMerge() {
 	for _, rowData := range tableData.RowsData {
 		for col, val := range rowData {
 			switch cols[col] {
-			case typing.String, typing.DateTime, typing.Array, typing.Struct:
+			case typing.String, typing.Array, typing.Struct:
 				val = fmt.Sprintf("'%v'", val)
 			}
 

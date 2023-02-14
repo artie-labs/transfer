@@ -20,12 +20,12 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 		Schema:    "public",
 	}
 
-	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), types.NewDwhTableConfig(map[string]typing.Kind{
+	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), types.NewDwhTableConfig(map[string]typing.KindDetails{
 		"id":          typing.Integer,
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
 		"name":        typing.String,
-		"created_at":  typing.DateTime,
+		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, typing.DateTimeKindType),
 	}, nil, false))
 
 	nameCol := typing.Column{
@@ -51,12 +51,12 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 		Schema:    "public",
 	}
 
-	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), types.NewDwhTableConfig(map[string]typing.Kind{
+	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), types.NewDwhTableConfig(map[string]typing.KindDetails{
 		"id":          typing.Integer,
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
 		"name":        typing.String,
-		"created_at":  typing.DateTime,
+		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, typing.DateTimeKindType),
 	}, nil, false))
 
 	nameCol := typing.Column{

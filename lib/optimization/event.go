@@ -53,6 +53,15 @@ func (t *TableData) UpdateInMemoryColumns(cols map[string]typing.KindDetails) {
 			// Do not update ExtendedTimeDetails
 			// TODO - Test ^
 			inMemKindDetails.Kind = tcKind.Kind
+			if tcKind.ExtendedTimeDetails != nil {
+				if inMemKindDetails.ExtendedTimeDetails == nil {
+					inMemKindDetails.ExtendedTimeDetails = &typing.NestedKind{}
+				}
+
+				// Don't have tcKind.ExtendedTimeDetails update the format since the DWH will not have that.
+				inMemKindDetails.ExtendedTimeDetails.Type = tcKind.ExtendedTimeDetails.Type
+			}
+
 			t.InMemoryColumns[inMemCol] = inMemKindDetails
 		}
 	}

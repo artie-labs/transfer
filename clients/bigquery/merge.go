@@ -56,8 +56,6 @@ func merge(tableData *optimization.TableData) (string, error) {
 
 					switch eTime.NestedKind.Type {
 					case typing.DateTimeKindType:
-						// We need to re-cast the timestamp INTO ISO-8601.
-						// TODO: We need a separate typing support for BigQuery
 						colVal = fmt.Sprintf("PARSE_DATETIME('%s', '%v')", RFC3339Format, eTime.String(time.RFC3339Nano))
 					case typing.DateKindType:
 						colVal = fmt.Sprintf("PARSE_DATE('%s', '%v')", PostgresDateFormat, eTime.String(typing.Date.Format))
