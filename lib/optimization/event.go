@@ -50,9 +50,7 @@ func (t *TableData) UpdateInMemoryColumns(cols map[string]typing.KindDetails) {
 		// Snowflake and BigQuery consider: NaMe, NAME, name as the same value. Whereas JSON considers these as 3 distinct values.
 		tcKind, isOk := cols[strings.ToLower(inMemCol)]
 		if isOk {
-			// Update in-memory column type with whatever is specified by the destination.
-			// Do not update ExtendedTimeDetails
-			// TODO - Test ^
+			// Update in-memory column type with whatever is specified by the destination
 			inMemKindDetails.Kind = tcKind.Kind
 			if tcKind.ExtendedTimeDetails != nil {
 				if inMemKindDetails.ExtendedTimeDetails == nil {
