@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"strings"
 	"time"
 
@@ -45,22 +46,18 @@ func merge(tableData *optimization.TableData) (string, error) {
 			if colVal != nil {
 				switch colKind.Kind {
 				case typing.ETime.Kind:
-					eTime, isOk := colVal.(*typing.ExtendedTime)
-					if !isOk {
-						var err error
-						eTime, err = typing.ParseExtendedDateTime(fmt.Sprint(colVal))
-						if err != nil {
-							return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
-						}
+					extTime, err := ext.ParseFromInterface(colVal)
+					if err != nil {
+						return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
 					}
 
-					switch eTime.NestedKind.Type {
-					case typing.DateTimeKindType:
-						colVal = fmt.Sprintf("PARSE_DATETIME('%s', '%v')", RFC3339Format, eTime.String(time.RFC3339Nano))
-					case typing.DateKindType:
-						colVal = fmt.Sprintf("PARSE_DATE('%s', '%v')", PostgresDateFormat, eTime.String(typing.Date.Format))
-					case typing.TimeKindType:
-						colVal = fmt.Sprintf("PARSE_TIME('%s', '%v')", PostgresTimeFormatNoTZ, eTime.String(typing.PostgresTimeFormatNoTZ))
+					switch extTime.NestedKind.Type {
+					case ext.DateTimeKindType:
+						colVal = fmt.Sprintf("PARSE_DATETIME('%s', '%v')", RFC3339Format, extTime.String(time.RFC3339Nano))
+					case ext.DateKindType:
+						colVal = fmt.Sprintf("PARSE_DATE('%s', '%v')", PostgresDateFormat, extTime.String(ext.Date.Format))
+					case ext.TimeKindType:
+						colVal = fmt.Sprintf("PARSE_TIME('%s', '%v')", PostgresTimeFormatNoTZ, extTime.String(ext.PostgresTimeFormatNoTZ))
 					}
 				// All the other types do not need string wrapping.
 				case typing.String.Kind, typing.Struct.Kind:

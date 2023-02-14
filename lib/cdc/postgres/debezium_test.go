@@ -6,6 +6,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -299,10 +300,10 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 
 	// Datetime without TZ is emitted in microseconds which is 1000x larger than nanoseconds.
 	td := time.Date(2023, time.February, 2, 17, 51, 35, 175445*1000, time.UTC)
-	assert.Equal(p.T(), evtData["ts_no_tz1"], &typing.ExtendedTime{
+	assert.Equal(p.T(), evtData["ts_no_tz1"], &ext.ExtendedTime{
 		Time: td,
-		NestedKind: typing.NestedKind{
-			Type:   typing.DateTimeKindType,
+		NestedKind: ext.NestedKind{
+			Type:   ext.DateTimeKindType,
 			Format: time.RFC3339Nano,
 		},
 	})

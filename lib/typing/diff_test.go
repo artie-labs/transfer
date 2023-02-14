@@ -1,6 +1,7 @@
 package typing
 
 import (
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -75,8 +76,8 @@ func TestDiffDelta2(t *testing.T) {
 func TestCopyColMap(t *testing.T) {
 	oneMap := map[string]KindDetails{
 		"hello":      String,
-		"created_at": NewKindDetailsFromTemplate(ETime, DateTimeKindType),
-		"updated_at": NewKindDetailsFromTemplate(ETime, DateTimeKindType),
+		"created_at": NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType),
+		"updated_at": NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType),
 	}
 
 	anotherMap := CopyColMap(oneMap)

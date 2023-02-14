@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/typing/ext"
+	"strings"
+
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
-	"strings"
 )
 
 func stringWrapping(colVal interface{}) string {
@@ -57,20 +59,16 @@ func merge(tableData *optimization.TableData) (string, error) {
 				switch colKind.Kind {
 				// All the other types do not need string wrapping.
 				case typing.ETime.Kind:
-					eTime, isOk := colVal.(*typing.ExtendedTime)
-					if !isOk {
-						var err error
-						eTime, err = typing.ParseExtendedDateTime(fmt.Sprint(colVal))
-						if err != nil {
-							return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
-						}
+					extTime, err := ext.ParseFromInterface(colVal)
+					if err != nil {
+						return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
 					}
 
-					switch eTime.NestedKind.Type {
-					case typing.TimeKindType:
-						colVal = stringWrapping(eTime.String(typing.PostgresTimeFormatNoTZ))
+					switch extTime.NestedKind.Type {
+					case ext.TimeKindType:
+						colVal = stringWrapping(extTime.String(ext.PostgresTimeFormatNoTZ))
 					default:
-						colVal = stringWrapping(eTime.String(""))
+						colVal = stringWrapping(extTime.String(""))
 					}
 
 				case typing.String.Kind, typing.Struct.Kind:

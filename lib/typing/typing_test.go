@@ -3,6 +3,7 @@ package typing
 import (
 	"errors"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 	"math"
 	"strings"
@@ -103,15 +104,15 @@ func TestDateTime(t *testing.T) {
 	}
 
 	for _, possibleDate := range possibleDates {
-		assert.Equal(t, ParseValue(possibleDate).ExtendedTimeDetails.Type, DateTime.Type, fmt.Sprintf("Failed format, value is: %v", possibleDate))
+		assert.Equal(t, ParseValue(possibleDate).ExtendedTimeDetails.Type, ext.DateTime.Type, fmt.Sprintf("Failed format, value is: %v", possibleDate))
 
 		// Test the parseDT function as well.
-		ts, err := ParseExtendedDateTime(fmt.Sprint(possibleDate))
+		ts, err := ext.ParseExtendedDateTime(fmt.Sprint(possibleDate))
 		assert.NoError(t, err, err)
 		assert.False(t, ts.IsZero(), ts)
 	}
 
-	ts, err := ParseExtendedDateTime("random")
+	ts, err := ext.ParseExtendedDateTime("random")
 	assert.Error(t, err, err)
 	assert.Nil(t, ts)
 }
@@ -120,7 +121,7 @@ func TestTime(t *testing.T) {
 	kindDetails := ParseValue("00:18:11.13116+00")
 	// 00:42:26.693631Z
 	assert.Equal(t, ETime.Kind, kindDetails.Kind)
-	assert.Equal(t, TimeKindType, kindDetails.ExtendedTimeDetails.Type)
+	assert.Equal(t, ext.TimeKindType, kindDetails.ExtendedTimeDetails.Type)
 }
 
 func TestString(t *testing.T) {

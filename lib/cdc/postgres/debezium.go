@@ -4,15 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/debezium"
-	"github.com/artie-labs/transfer/lib/logger"
 	"strconv"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/cdc/util"
+	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/debezium"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/logger"
 )
 
 type Debezium string

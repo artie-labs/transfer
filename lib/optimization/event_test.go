@@ -1,6 +1,7 @@
 package optimization
 
 import (
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/typing"
@@ -18,7 +19,7 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 
 	tableData.UpdateInMemoryColumns(map[string]typing.KindDetails{
 		"foo":       typing.String,
-		"change_me": typing.NewKindDetailsFromTemplate(typing.ETime, typing.DateTimeKindType),
+		"change_me": typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		"bar":       typing.Boolean,
 	})
 
@@ -30,7 +31,7 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 	assert.True(t, isOk)
 
 	colType, _ := tableData.InMemoryColumns["CHANGE_me"]
-	assert.Equal(t, typing.DateTime.Type, colType.ExtendedTimeDetails.Type)
+	assert.Equal(t, ext.DateTime.Type, colType.ExtendedTimeDetails.Type)
 
 	colType, _ = tableData.InMemoryColumns["bar"]
 	assert.Equal(t, typing.Invalid, colType)

@@ -1,8 +1,6 @@
-package typing
+package ext
 
-import (
-	"time"
-)
+import "time"
 
 type ExtendedTimeKindType string
 

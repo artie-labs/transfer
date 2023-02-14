@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/types"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -25,7 +26,7 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
 		"name":        typing.String,
-		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, typing.DateTimeKindType),
+		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 	}, nil, false))
 
 	nameCol := typing.Column{
@@ -56,7 +57,7 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
 		"name":        typing.String,
-		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, typing.DateTimeKindType),
+		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 	}, nil, false))
 
 	nameCol := typing.Column{

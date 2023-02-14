@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -212,13 +213,13 @@ func (b *BigQueryTestSuite) TestParseSchemaQueryComplex() {
 		"field5":         typing.Float,
 		"field6":         typing.Float,
 		"field7":         typing.Boolean,
-		"field8":         typing.NewKindDetailsFromTemplate(typing.ETime, typing.DateTimeKindType),
-		"field9":         typing.NewKindDetailsFromTemplate(typing.ETime, typing.DateKindType),
-		"field10":        typing.NewKindDetailsFromTemplate(typing.ETime, typing.TimeKindType),
-		"field11":        typing.NewKindDetailsFromTemplate(typing.ETime, typing.DateTimeKindType),
+		"field8":         typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
+		"field9":         typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType),
+		"field10":        typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
+		"field11":        typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		"field12":        typing.Struct,
 		"field13":        typing.Struct,
-		"field14":        typing.NewKindDetailsFromTemplate(typing.ETime, typing.TimeKindType),
+		"field14":        typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
 	}
 
 	for anticipatedCol, anticipatedKind := range anticipatedColumns {

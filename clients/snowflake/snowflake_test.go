@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/types"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"strings"
 	"time"
 
@@ -72,7 +73,7 @@ func (s *SnowflakeTestSuite) TestAlterIdempotency() {
 	cols := []typing.Column{
 		{
 			Name: "created_at",
-			Kind: typing.NewKindDetailsFromTemplate(typing.ETime, typing.DateTimeKindType),
+			Kind: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},
 		{
 			Name: "id",
@@ -103,7 +104,7 @@ func (s *SnowflakeTestSuite) TestAlterTableAdd() {
 	cols := []typing.Column{
 		{
 			Name: "created_at",
-			Kind: typing.NewKindDetailsFromTemplate(typing.ETime, typing.DateTimeKindType),
+			Kind: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},
 		{
 			Name: "id",
@@ -144,7 +145,7 @@ func (s *SnowflakeTestSuite) TestAlterTableDeleteDryRun() {
 	cols := []typing.Column{
 		{
 			Name: "created_at",
-			Kind: typing.NewKindDetailsFromTemplate(typing.ETime, typing.DateTimeKindType),
+			Kind: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},
 		{
 			Name: "id",
@@ -196,7 +197,7 @@ func (s *SnowflakeTestSuite) TestAlterTableDelete() {
 	cols := []typing.Column{
 		{
 			Name: "created_at",
-			Kind: typing.NewKindDetailsFromTemplate(typing.ETime, typing.DateTimeKindType),
+			Kind: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},
 		{
 			Name: "id",
@@ -365,7 +366,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 	sflkColumns := map[string]typing.KindDetails{
 		"id":                         typing.Integer,
-		"created_at":                 typing.NewKindDetailsFromTemplate(typing.ETime, typing.DateTimeKindType),
+		"created_at":                 typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		"name":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
 	}

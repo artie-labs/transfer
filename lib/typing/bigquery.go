@@ -1,6 +1,7 @@
 package typing
 
 import (
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"strings"
 )
 
@@ -40,11 +41,11 @@ func BigQueryTypeToKind(bqType string) KindDetails {
 	case "array":
 		return Array
 	case "datetime", "timestamp":
-		return NewKindDetailsFromTemplate(ETime, DateTimeKindType)
+		return NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType)
 	case "time":
-		return NewKindDetailsFromTemplate(ETime, TimeKindType)
+		return NewKindDetailsFromTemplate(ETime, ext.TimeKindType)
 	case "date":
-		return NewKindDetailsFromTemplate(ETime, DateKindType)
+		return NewKindDetailsFromTemplate(ETime, ext.DateKindType)
 	default:
 		return Invalid
 	}
@@ -67,11 +68,11 @@ func KindToBigQuery(kindDetails KindDetails) string {
 		return "json"
 	case ETime.Kind:
 		switch kindDetails.ExtendedTimeDetails.Type {
-		case DateTimeKindType:
+		case ext.DateTimeKindType:
 			return "datetime"
-		case DateKindType:
+		case ext.DateKindType:
 			return "date"
-		case TimeKindType:
+		case ext.TimeKindType:
 			return "time"
 		}
 	}

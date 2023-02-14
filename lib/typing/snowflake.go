@@ -1,6 +1,7 @@
 package typing
 
 import (
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"strings"
 )
 
@@ -60,11 +61,11 @@ func SnowflakeTypeToKind(snowflakeType string) KindDetails {
 	case "array":
 		return Array
 	case "datetime", "timestamp", "timestamp_ltz", "timestamp_ntz", "timestamp_tz":
-		return NewKindDetailsFromTemplate(ETime, DateTimeKindType)
+		return NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType)
 	case "time":
-		return NewKindDetailsFromTemplate(ETime, TimeKindType)
+		return NewKindDetailsFromTemplate(ETime, ext.TimeKindType)
 	case "date":
-		return NewKindDetailsFromTemplate(ETime, DateKindType)
+		return NewKindDetailsFromTemplate(ETime, ext.DateKindType)
 	default:
 		return Invalid
 	}
@@ -80,11 +81,11 @@ func KindToSnowflake(kindDetails KindDetails) string {
 		return "boolean"
 	case ETime.Kind:
 		switch kindDetails.ExtendedTimeDetails.Type {
-		case DateTimeKindType:
+		case ext.DateTimeKindType:
 			return "datetime"
-		case DateKindType:
+		case ext.DateKindType:
 			return "date"
-		case TimeKindType:
+		case ext.TimeKindType:
 			return "time"
 		}
 	}

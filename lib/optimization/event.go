@@ -1,6 +1,7 @@
 package optimization
 
 import (
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"strings"
 	"time"
 
@@ -55,7 +56,7 @@ func (t *TableData) UpdateInMemoryColumns(cols map[string]typing.KindDetails) {
 			inMemKindDetails.Kind = tcKind.Kind
 			if tcKind.ExtendedTimeDetails != nil {
 				if inMemKindDetails.ExtendedTimeDetails == nil {
-					inMemKindDetails.ExtendedTimeDetails = &typing.NestedKind{}
+					inMemKindDetails.ExtendedTimeDetails = &ext.NestedKind{}
 				}
 
 				// Don't have tcKind.ExtendedTimeDetails update the format since the DWH will not have that.
