@@ -86,7 +86,7 @@ func (s *SchemaEventPayload) Table() string {
 	return s.Payload.Source.Collection
 }
 
-func (s *SchemaEventPayload) GetData(pkName string, pkVal interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
+func (s *SchemaEventPayload) GetData(ctx context.Context, pkName string, pkVal interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
 	retMap := make(map[string]interface{})
 	if len(s.Payload.AfterMap) == 0 {
 		// This is a delete event, so mark it as deleted.

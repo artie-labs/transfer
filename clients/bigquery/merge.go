@@ -5,14 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
-	"strings"
-	"time"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func merge(tableData *optimization.TableData) (string, error) {
@@ -42,17 +44,23 @@ func merge(tableData *optimization.TableData) (string, error) {
 			colKind := tableData.InMemoryColumns[col]
 			colVal := value[col]
 			if colVal != nil {
-				switch colKind {
-				case typing.DateTime:
-					ts, err := typing.ParseDateTime(fmt.Sprint(colVal))
+				switch colKind.Kind {
+				case typing.ETime.Kind:
+					extTime, err := ext.ParseFromInterface(colVal)
 					if err != nil {
 						return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
 					}
 
-					// We need to re-cast the timestamp INTO ISO-8601.
-					colVal = fmt.Sprintf("PARSE_DATETIME('%s', '%v')", RFC3339Format, ts.Format(time.RFC3339Nano))
+					switch extTime.NestedKind.Type {
+					case ext.DateTimeKindType:
+						colVal = fmt.Sprintf("PARSE_DATETIME('%s', '%v')", RFC3339Format, extTime.String(time.RFC3339Nano))
+					case ext.DateKindType:
+						colVal = fmt.Sprintf("PARSE_DATE('%s', '%v')", PostgresDateFormat, extTime.String(ext.Date.Format))
+					case ext.TimeKindType:
+						colVal = fmt.Sprintf("PARSE_TIME('%s', '%v')", PostgresTimeFormatNoTZ, extTime.String(ext.PostgresTimeFormatNoTZ))
+					}
 				// All the other types do not need string wrapping.
-				case typing.String, typing.Struct:
+				case typing.String.Kind, typing.Struct.Kind:
 					// Escape line breaks, JSON_PARSE does not like it.
 					colVal = strings.ReplaceAll(fmt.Sprint(colVal), `\n`, `\\n`)
 					// The normal string escape is to do for O'Reilly is O\\'Reilly, but Snowflake escapes via \'
@@ -61,7 +69,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 						// This is how you cast string -> JSON
 						colVal = fmt.Sprintf("JSON %s", colVal)
 					}
-				case typing.Array:
+				case typing.Array.Kind:
 					// We need to marshall, so we can escape the strings.
 					// https://go.dev/play/p/BcCwUSCeTmT
 					colValBytes, err := json.Marshal(colVal)

@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/debezium"
 	"strconv"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/cdc/util"
+	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/debezium"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/logger"
 )
 
 type Debezium string
@@ -51,7 +52,7 @@ func (s *SchemaEventPayload) Table() string {
 	return s.Payload.Source.Table
 }
 
-func (s *SchemaEventPayload) GetData(pkName string, pkVal interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
+func (s *SchemaEventPayload) GetData(ctx context.Context, pkName string, pkVal interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
 	retMap := make(map[string]interface{})
 	if len(s.Payload.After) == 0 {
 		// This is a delete payload, so mark it as deleted.
@@ -92,7 +93,22 @@ func (s *SchemaEventPayload) GetData(pkName string, pkVal interface{}, tc *kafka
 					// ParseFloat is apt to handle it, and ParseInt is not, see: https://github.com/golang/go/issues/19288
 					floatVal, castErr := strconv.ParseFloat(fmt.Sprint(val), 64)
 					if castErr == nil {
-						retMap[field.FieldName] = debezium.FromDebeziumTypeToTime(supportedType, int64(floatVal)).Format(time.RFC3339)
+						extendedTime, err := debezium.FromDebeziumTypeToTime(supportedType, int64(floatVal))
+						if err == nil {
+							retMap[field.FieldName] = extendedTime
+						} else {
+							logger.FromContext(ctx).WithFields(map[string]interface{}{
+								"err":           err,
+								"supportedType": supportedType,
+								"val":           val,
+							}).Debug("skipped casting dbz type due to an error")
+						}
+					} else {
+						logger.FromContext(ctx).WithFields(map[string]interface{}{
+							"err":           castErr,
+							"supportedType": supportedType,
+							"val":           val,
+						}).Debug("skipped casting because we failed to parse the float")
 					}
 				}
 			}

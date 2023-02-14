@@ -45,7 +45,7 @@ func processMessage(ctx context.Context, msg kafka.Message, topicToConfigFmtMap 
 		return false, fmt.Errorf("cannot unmarshall event, err: %v", err)
 	}
 
-	evt := models.ToMemoryEvent(event, pkName, pkValue, topicConfig.tc)
+	evt := models.ToMemoryEvent(ctx, event, pkName, pkValue, topicConfig.tc)
 	shouldFlush, err = evt.Save(topicConfig.tc, msg)
 	if err != nil {
 		tags["what"] = "save_fail"

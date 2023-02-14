@@ -4,14 +4,22 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/array"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
+
+func stringWrapping(colVal interface{}) string {
+	// Escape line breaks, JSON_PARSE does not like it.
+	colVal = strings.ReplaceAll(fmt.Sprint(colVal), `\n`, `\\n`)
+	// The normal string escape is to do for O'Reilly is O\\'Reilly, but Snowflake escapes via \'
+	return fmt.Sprintf("'%s'", strings.ReplaceAll(fmt.Sprint(colVal), "'", `\'`))
+}
 
 func merge(tableData *optimization.TableData) (string, error) {
 	var tableValues []string
@@ -20,15 +28,15 @@ func merge(tableData *optimization.TableData) (string, error) {
 	var sflkCols []string
 
 	// Given all the columns, diff this against SFLK.
-	for col, kind := range tableData.InMemoryColumns {
-		if kind == typing.Invalid {
+	for col, kindDetails := range tableData.InMemoryColumns {
+		if kindDetails.Kind == typing.Invalid.Kind {
 			// Don't update Snowflake
 			continue
 		}
 
 		sflkCol := col
-		switch kind {
-		case typing.Struct, typing.Array:
+		switch kindDetails.Kind {
+		case typing.Struct.Kind, typing.Array.Kind:
 			sflkCol = fmt.Sprintf("PARSE_JSON(%s) %s", col, col)
 		}
 
@@ -48,14 +56,24 @@ func merge(tableData *optimization.TableData) (string, error) {
 			colKind := tableData.InMemoryColumns[col]
 			colVal := value[col]
 			if colVal != nil {
-				switch colKind {
+				switch colKind.Kind {
 				// All the other types do not need string wrapping.
-				case typing.String, typing.DateTime, typing.Struct:
-					// Escape line breaks, JSON_PARSE does not like it.
-					colVal = strings.ReplaceAll(fmt.Sprint(colVal), `\n`, `\\n`)
-					// The normal string escape is to do for O'Reilly is O\\'Reilly, but Snowflake escapes via \'
-					colVal = fmt.Sprintf("'%s'", strings.ReplaceAll(fmt.Sprint(colVal), "'", `\'`))
-				case typing.Array:
+				case typing.ETime.Kind:
+					extTime, err := ext.ParseFromInterface(colVal)
+					if err != nil {
+						return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
+					}
+
+					switch extTime.NestedKind.Type {
+					case ext.TimeKindType:
+						colVal = stringWrapping(extTime.String(ext.PostgresTimeFormatNoTZ))
+					default:
+						colVal = stringWrapping(extTime.String(""))
+					}
+
+				case typing.String.Kind, typing.Struct.Kind:
+					colVal = stringWrapping(colVal)
+				case typing.Array.Kind:
 					// We need to marshall, so we can escape the strings.
 					// https://go.dev/play/p/BcCwUSCeTmT
 					colValBytes, err := json.Marshal(colVal)

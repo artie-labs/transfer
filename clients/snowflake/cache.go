@@ -39,7 +39,7 @@ func (s *Store) getTableConfig(ctx context.Context, fqName string) (*types.DwhTa
 		}
 	}
 
-	tableToColumnTypes := make(map[string]typing.Kind)
+	tableToColumnTypes := make(map[string]typing.KindDetails)
 	for rows != nil && rows.Next() {
 		// figure out what columns were returned
 		// the column names will be the JSON object field keys

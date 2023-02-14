@@ -139,7 +139,7 @@ func parseSchemaQuery(row string, createTable bool) (*types.DwhTableConfig, erro
 		return nil, fmt.Errorf("malformed DDL string: missing (, %s", ddlString)
 	}
 
-	tableToColumnTypes := make(map[string]typing.Kind)
+	tableToColumnTypes := make(map[string]typing.KindDetails)
 	ddlString = ddlString[:endOfStatement]
 	columnsToTypes := strings.Split(ddlString, ",")
 	for _, colType := range columnsToTypes {

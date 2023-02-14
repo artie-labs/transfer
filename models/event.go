@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"time"
 
@@ -17,13 +18,13 @@ type Event struct {
 	ExecutionTime   time.Time              // When the SQL command was executed
 }
 
-func ToMemoryEvent(event cdc.Event, pkName string, pkValue interface{}, tc *kafkalib.TopicConfig) Event {
+func ToMemoryEvent(ctx context.Context, event cdc.Event, pkName string, pkValue interface{}, tc *kafkalib.TopicConfig) Event {
 	return Event{
 		Table:           event.Table(),
 		PrimaryKeyName:  pkName,
 		PrimaryKeyValue: pkValue,
 		ExecutionTime:   event.GetExecutionTime(),
-		Data:            event.GetData(pkName, pkValue, tc),
+		Data:            event.GetData(ctx, pkName, pkValue, tc),
 	}
 }
 

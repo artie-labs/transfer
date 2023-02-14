@@ -1,10 +1,11 @@
 package typing
 
 import (
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"strings"
 )
 
-func BigQueryTypeToKind(bqType string) Kind {
+func BigQueryTypeToKind(bqType string) KindDetails {
 	bqType = strings.ToLower(bqType)
 	if len(bqType) == 0 {
 		return Invalid
@@ -39,28 +40,42 @@ func BigQueryTypeToKind(bqType string) Kind {
 		return Struct
 	case "array":
 		return Array
-	case "datetime", "timestamp", "time", "date":
-		return DateTime
+	case "datetime", "timestamp":
+		return NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType)
+	case "time":
+		return NewKindDetailsFromTemplate(ETime, ext.TimeKindType)
+	case "date":
+		return NewKindDetailsFromTemplate(ETime, ext.DateKindType)
 	default:
 		return Invalid
 	}
 }
 
-func KindToBigQuery(kind Kind) string {
+func KindToBigQuery(kindDetails KindDetails) string {
 	// Doesn't look like we need to do any special type mapping.
-	switch kind {
-	case Float:
+	switch kindDetails.Kind {
+	case Float.Kind:
 		return "float64"
-	case Array:
+	case Array.Kind:
 		// This is because BigQuery requires typing within the element of an array
 		// IMO, a string type is the least controversial data type (others being bool, number, struct).
 		// With String, we can always type cast the child elements.
 		// BQ does this because 2d+ arrays are not allowed. See: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#array_type
 		// TODO: Once we support schemas within the CDC event, we can explore having dynamic array types.
 		return "array<string>"
-	case Struct:
+	case Struct.Kind:
 		// Struct is a tighter version of JSON that requires type casting like Struct<int64>
 		return "json"
+	case ETime.Kind:
+		switch kindDetails.ExtendedTimeDetails.Type {
+		case ext.DateTimeKindType:
+			return "datetime"
+		case ext.DateKindType:
+			return "date"
+		case ext.TimeKindType:
+			return "time"
+		}
 	}
-	return string(kind)
+
+	return kindDetails.Kind
 }

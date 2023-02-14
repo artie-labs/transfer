@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/types"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"strings"
 	"time"
 
@@ -29,7 +30,7 @@ func (s *SnowflakeTestSuite) TestCreateTable() {
 	}
 
 	fqTable := "demo.public.experiments"
-	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.Kind{}, nil, true))
+	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, true))
 
 	err := s.store.alterTable(fqTable, s.store.configMap.TableConfig(fqTable).CreateTable, constants.Add, time.Now().UTC(), cols...)
 	assert.NoError(s.T(), err)
@@ -55,7 +56,7 @@ func (s *SnowflakeTestSuite) TestAlterComplexObjects() {
 	}
 
 	fqTable := "shop.public.complex_columns"
-	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.Kind{}, nil, false))
+	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, false))
 
 	err := s.store.alterTable(fqTable, false, constants.Add, time.Now().UTC(), cols...)
 	execQuery, _ := s.fakeStore.ExecArgsForCall(0)
@@ -72,7 +73,7 @@ func (s *SnowflakeTestSuite) TestAlterIdempotency() {
 	cols := []typing.Column{
 		{
 			Name: "created_at",
-			Kind: typing.DateTime,
+			Kind: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},
 		{
 			Name: "id",
@@ -86,7 +87,7 @@ func (s *SnowflakeTestSuite) TestAlterIdempotency() {
 
 	fqTable := "shop.public.orders"
 
-	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.Kind{}, nil, false))
+	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, false))
 
 	s.fakeStore.ExecReturns(nil, errors.New("column 'order_name' already exists"))
 	err := s.store.alterTable(fqTable, false, constants.Add, time.Now().UTC(), cols...)
@@ -103,7 +104,7 @@ func (s *SnowflakeTestSuite) TestAlterTableAdd() {
 	cols := []typing.Column{
 		{
 			Name: "created_at",
-			Kind: typing.DateTime,
+			Kind: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},
 		{
 			Name: "id",
@@ -116,7 +117,7 @@ func (s *SnowflakeTestSuite) TestAlterTableAdd() {
 	}
 
 	fqTable := "shop.public.orders"
-	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.Kind{}, nil, false))
+	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, false))
 
 	err := s.store.alterTable(fqTable, false, constants.Add, time.Now().UTC(), cols...)
 	assert.Equal(s.T(), len(cols), s.fakeStore.ExecCallCount(), "called SFLK the same amt to create cols")
@@ -144,7 +145,7 @@ func (s *SnowflakeTestSuite) TestAlterTableDeleteDryRun() {
 	cols := []typing.Column{
 		{
 			Name: "created_at",
-			Kind: typing.DateTime,
+			Kind: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},
 		{
 			Name: "id",
@@ -157,7 +158,7 @@ func (s *SnowflakeTestSuite) TestAlterTableDeleteDryRun() {
 	}
 
 	fqTable := "shop.public.users"
-	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.Kind{}, nil, false))
+	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, false))
 
 	err := s.store.alterTable(fqTable, false, constants.Delete, time.Now().UTC(), cols...)
 	assert.Equal(s.T(), 0, s.fakeStore.ExecCallCount(), "tried to delete, but not yet.")
@@ -196,7 +197,7 @@ func (s *SnowflakeTestSuite) TestAlterTableDelete() {
 	cols := []typing.Column{
 		{
 			Name: "created_at",
-			Kind: typing.DateTime,
+			Kind: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},
 		{
 			Name: "id",
@@ -218,7 +219,7 @@ func (s *SnowflakeTestSuite) TestAlterTableDelete() {
 
 	fqTable := "shop.public.users1"
 
-	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.Kind{}, map[string]time.Time{
+	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, map[string]time.Time{
 		"col_to_delete": time.Now().Add(-2 * constants.DeletionConfidencePadding),
 		"answers":       time.Now().Add(-2 * constants.DeletionConfidencePadding),
 	}, false))
@@ -249,7 +250,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	// I want to delete the value, so I update Postgres and set the cell to be null
 	// TableData will think the column is invalid and tableConfig will think column = string
 	// Before we call merge, it should reconcile it.
-	columns := map[string]typing.Kind{
+	columns := map[string]typing.KindDetails{
 		"first_name":                 typing.String,
 		"invalid_column":             typing.Invalid,
 		constants.DeleteColumnMarker: typing.Boolean,
@@ -276,22 +277,23 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	}
 
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), types.NewDwhTableConfig(
-		map[string]typing.Kind{
+		map[string]typing.KindDetails{
 			"first_name":                 typing.String,
 			constants.DeleteColumnMarker: typing.Boolean,
 		}, nil, false))
 
-	s.store.Merge(context.Background(), tableData)
+	err := s.store.Merge(context.Background(), tableData)
 	assert.Equal(s.T(), tableData.InMemoryColumns["first_name"], typing.String)
-
+	assert.NoError(s.T(), err)
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMerge() {
-	columns := map[string]typing.Kind{
+	columns := map[string]typing.KindDetails{
 		"id":                         typing.Integer,
-		"created_at":                 typing.DateTime,
 		"name":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
+		// Add kindDetails to created_at
+		"created_at": typing.ParseValue(time.Now().Format(time.RFC3339Nano)),
 	}
 
 	rowsData := make(map[string]map[string]interface{})
@@ -299,7 +301,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	for i := 0; i < 5; i++ {
 		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]interface{}{
 			"id":         fmt.Sprintf("pk-%d", i),
-			"created_at": time.Now().String(),
+			"created_at": time.Now().Format(time.RFC3339Nano),
 			"name":       fmt.Sprintf("Robin-%d", i),
 		}
 	}
@@ -341,16 +343,17 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	for i := 0; i < 5; i++ {
 		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]interface{}{
 			"id":         fmt.Sprintf("pk-%d", i),
-			"created_at": time.Now().String(),
+			"created_at": time.Now().Format(time.RFC3339Nano),
 			"name":       fmt.Sprintf("Robin-%d", i),
 		}
 	}
 
-	columns := map[string]typing.Kind{
+	columns := map[string]typing.KindDetails{
 		"id":                         typing.Integer,
-		"created_at":                 typing.DateTime,
 		"name":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
+		// Add kindDetails to created_at
+		"created_at": typing.ParseValue(time.Now().Format(time.RFC3339Nano)),
 	}
 
 	tableData := &optimization.TableData{
@@ -361,15 +364,14 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		Rows:            1,
 	}
 
-	sflkColumns := map[string]typing.Kind{
+	sflkColumns := map[string]typing.KindDetails{
 		"id":                         typing.Integer,
-		"created_at":                 typing.DateTime,
+		"created_at":                 typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		"name":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
 	}
 
 	sflkColumns["new"] = typing.String
-
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), types.NewDwhTableConfig(sflkColumns, nil, false))
 
 	err := s.store.Merge(context.Background(), tableData)
@@ -388,6 +390,9 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	for _, pkMap := range tableData.RowsData {
 		pkMap["new"] = "123"
 		tableData.InMemoryColumns = sflkColumns
+
+		// Since sflkColumns overwrote the format, let's set it correctly again.
+		tableData.InMemoryColumns["created_at"] = typing.ParseValue(time.Now().Format(time.RFC3339Nano))
 		break
 	}
 

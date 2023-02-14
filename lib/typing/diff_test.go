@@ -1,26 +1,27 @@
 package typing
 
 import (
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestDiffTargNil(t *testing.T) {
-	source := map[string]Kind{"foo": Invalid}
+	source := map[string]KindDetails{"foo": Invalid}
 	srcKeyMissing, targKeyMissing := Diff(source, nil)
 	assert.Equal(t, len(srcKeyMissing), 0)
 	assert.Equal(t, len(targKeyMissing), 1)
 }
 
 func TestDiffSourceNil(t *testing.T) {
-	targ := map[string]Kind{"foo": Invalid}
+	targ := map[string]KindDetails{"foo": Invalid}
 	srcKeyMissing, targKeyMissing := Diff(nil, targ)
 	assert.Equal(t, len(srcKeyMissing), 1)
 	assert.Equal(t, len(targKeyMissing), 0)
 }
 
 func TestDiffBasic(t *testing.T) {
-	source := map[string]Kind{
+	source := map[string]KindDetails{
 		"a": Integer,
 	}
 
@@ -30,13 +31,13 @@ func TestDiffBasic(t *testing.T) {
 }
 
 func TestDiffDelta1(t *testing.T) {
-	source := map[string]Kind{
+	source := map[string]KindDetails{
 		"a": String,
 		"b": Boolean,
 		"c": Struct,
 	}
 
-	target := map[string]Kind{
+	target := map[string]KindDetails{
 		"aa": String,
 		"b":  Boolean,
 		"cc": String,
@@ -48,7 +49,7 @@ func TestDiffDelta1(t *testing.T) {
 }
 
 func TestDiffDelta2(t *testing.T) {
-	source := map[string]Kind{
+	source := map[string]KindDetails{
 		"a":  String,
 		"aa": String,
 		"b":  Boolean,
@@ -59,7 +60,7 @@ func TestDiffDelta2(t *testing.T) {
 		"Cc": String,
 	}
 
-	target := map[string]Kind{
+	target := map[string]KindDetails{
 		"aa": String,
 		"b":  Boolean,
 		"cc": String,
@@ -73,10 +74,10 @@ func TestDiffDelta2(t *testing.T) {
 }
 
 func TestCopyColMap(t *testing.T) {
-	oneMap := map[string]Kind{
+	oneMap := map[string]KindDetails{
 		"hello":      String,
-		"created_at": DateTime,
-		"updated_at": DateTime,
+		"created_at": NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType),
+		"updated_at": NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType),
 	}
 
 	anotherMap := CopyColMap(oneMap)

@@ -6,6 +6,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -63,7 +64,7 @@ func (p *PostgresTestSuite) TestGetDataTestInsert() {
 		},
 	}
 
-	evtData := schemaEventPayload.GetData("pk", 1, &tc)
+	evtData := schemaEventPayload.GetData(context.Background(), "pk", 1, &tc)
 	assert.Equal(p.T(), len(after), len(evtData), "has deletion flag")
 
 	deletionFlag, isOk := evtData[constants.DeleteColumnMarker]
@@ -89,7 +90,7 @@ func (p *PostgresTestSuite) TestGetDataTestDelete() {
 		},
 	}
 
-	evtData := schemaEventPayload.GetData("pk", 1, tc)
+	evtData := schemaEventPayload.GetData(context.Background(), "pk", 1, tc)
 	shouldDelete, isOk := evtData[constants.DeleteColumnMarker]
 	assert.True(p.T(), isOk)
 	assert.True(p.T(), shouldDelete.(bool))
@@ -99,7 +100,7 @@ func (p *PostgresTestSuite) TestGetDataTestDelete() {
 	assert.Equal(p.T(), evtData[tc.IdempotentKey], now.Format(time.RFC3339))
 
 	tc.IdempotentKey = ""
-	evtData = schemaEventPayload.GetData("pk", 1, tc)
+	evtData = schemaEventPayload.GetData(context.Background(), "pk", 1, tc)
 	_, isOk = evtData[tc.IdempotentKey]
 	assert.False(p.T(), isOk, evtData)
 }
@@ -132,7 +133,7 @@ func (p *PostgresTestSuite) TestGetDataTestUpdate() {
 		},
 	}
 
-	evtData := schemaEventPayload.GetData("pk", 1, &tc)
+	evtData := schemaEventPayload.GetData(context.Background(), "pk", 1, &tc)
 	assert.Equal(p.T(), len(after), len(evtData), "has deletion flag")
 
 	deletionFlag, isOk := evtData[constants.DeleteColumnMarker]
@@ -187,7 +188,7 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
 	evt, err := p.Debezium.GetEventFromBytes(context.Background(), []byte(payload))
 	assert.Nil(p.T(), err)
 
-	evtData := evt.GetData("id", 59, &kafkalib.TopicConfig{})
+	evtData := evt.GetData(context.Background(), "id", 59, &kafkalib.TopicConfig{})
 	assert.Equal(p.T(), evtData["id"], float64(59))
 
 	assert.Equal(p.T(), evtData["item"], "Barings Participation Investors")
@@ -288,7 +289,7 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	evt, err := p.Debezium.GetEventFromBytes(context.Background(), []byte(payload))
 	assert.Nil(p.T(), err)
 
-	evtData := evt.GetData("id", 1001, &kafkalib.TopicConfig{})
+	evtData := evt.GetData(context.Background(), "id", 1001, &kafkalib.TopicConfig{})
 
 	// Testing typing.
 	assert.Equal(p.T(), evtData["id"], 1001)
@@ -297,7 +298,14 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 
 	assert.Equal(p.T(), evtData["email"], "sally.thomas@acme.com")
 
-	td := time.Date(2023, time.February, 2, 17, 51, 35, 0, time.UTC)
-	assert.Equal(p.T(), evtData["ts_no_tz1"], td.Format(time.RFC3339))
+	// Datetime without TZ is emitted in microseconds which is 1000x larger than nanoseconds.
+	td := time.Date(2023, time.February, 2, 17, 51, 35, 175445*1000, time.UTC)
+	assert.Equal(p.T(), evtData["ts_no_tz1"], &ext.ExtendedTime{
+		Time: td,
+		NestedKind: ext.NestedKind{
+			Type:   ext.DateTimeKindType,
+			Format: time.RFC3339Nano,
+		},
+	})
 	assert.Equal(p.T(), evt.Table(), "customers")
 }

@@ -12,7 +12,7 @@ import (
 )
 
 func (b *BigQueryTestSuite) TestMergeNoDeleteFlag() {
-	cols := map[string]typing.Kind{
+	cols := map[string]typing.KindDetails{
 		"id": typing.Integer,
 	}
 
@@ -29,7 +29,7 @@ func (b *BigQueryTestSuite) TestMergeNoDeleteFlag() {
 }
 
 func (b *BigQueryTestSuite) TestMerge() {
-	cols := map[string]typing.Kind{
+	cols := map[string]typing.KindDetails{
 		"id":                         typing.Integer,
 		"name":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
@@ -67,7 +67,7 @@ func (b *BigQueryTestSuite) TestMerge() {
 	for _, rowData := range tableData.RowsData {
 		for col, val := range rowData {
 			switch cols[col] {
-			case typing.String, typing.DateTime, typing.Array, typing.Struct:
+			case typing.String, typing.Array, typing.Struct:
 				val = fmt.Sprintf("'%v'", val)
 			}
 

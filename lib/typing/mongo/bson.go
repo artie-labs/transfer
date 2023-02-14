@@ -13,7 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/bsonrw"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
-	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 // JSONEToMap will take JSONE data in bytes, parse all the custom types
@@ -72,7 +72,7 @@ func dateTimeEncodeValue(_ bsoncodec.EncodeContext, vw bsonrw.ValueWriter, val r
 	}
 
 	t := time.Unix(0, int64(ints)*1000000).UTC()
-	return vw.WriteString(t.Format(typing.ISO8601))
+	return vw.WriteString(t.Format(ext.ISO8601))
 }
 
 func objectIDEncodeValue(_ bsoncodec.EncodeContext, vw bsonrw.ValueWriter, val reflect.Value) error {

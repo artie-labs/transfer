@@ -1,6 +1,7 @@
 package typing
 
 import (
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"strings"
 )
 
@@ -8,7 +9,7 @@ type SnowflakeKind string
 
 // https://docs.snowflake.com/en/sql-reference/intro-summary-data-types.html
 
-func SnowflakeTypeToKind(snowflakeType string) Kind {
+func SnowflakeTypeToKind(snowflakeType string) KindDetails {
 	snowflakeType = strings.ToLower(snowflakeType)
 
 	// We need to strip away the variable
@@ -60,21 +61,34 @@ func SnowflakeTypeToKind(snowflakeType string) Kind {
 	case "array":
 		return Array
 	case "datetime", "timestamp", "timestamp_ltz", "timestamp_ntz", "timestamp_tz":
-		return DateTime
+		return NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType)
+	case "time":
+		return NewKindDetailsFromTemplate(ETime, ext.TimeKindType)
+	case "date":
+		return NewKindDetailsFromTemplate(ETime, ext.DateKindType)
 	default:
 		return Invalid
 	}
 }
 
-func KindToSnowflake(kind Kind) string {
-	switch kind {
-	case Struct:
+func KindToSnowflake(kindDetails KindDetails) string {
+	switch kindDetails.Kind {
+	case Struct.Kind:
 		// Snowflake doesn't recognize struct.
 		// Must be either OBJECT or VARIANT. However, VARIANT is more versatile.
 		return "variant"
-	case Boolean:
+	case Boolean.Kind:
 		return "boolean"
+	case ETime.Kind:
+		switch kindDetails.ExtendedTimeDetails.Type {
+		case ext.DateTimeKindType:
+			return "datetime"
+		case ext.DateKindType:
+			return "date"
+		case ext.TimeKindType:
+			return "time"
+		}
 	}
 
-	return string(kind)
+	return kindDetails.Kind
 }

@@ -50,7 +50,7 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message kafka.Message) (
 	if !isOk {
 		inMemoryDB.TableData[e.Table] = &optimization.TableData{
 			RowsData:                map[string]map[string]interface{}{},
-			InMemoryColumns:         map[string]typing.Kind{},
+			InMemoryColumns:         map[string]typing.KindDetails{},
 			PrimaryKey:              e.PrimaryKeyName,
 			TopicConfig:             *topicConfig,
 			PartitionsToLastMessage: map[int]kafka.Message{},
@@ -76,17 +76,17 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message kafka.Message) (
 			continue
 		}
 
-		colType, isOk := inMemoryDB.TableData[e.Table].InMemoryColumns[col]
+		colTypeDetails, isOk := inMemoryDB.TableData[e.Table].InMemoryColumns[col]
 		if !isOk {
 			inMemoryDB.TableData[e.Table].InMemoryColumns[col] = typing.ParseValue(val)
 		} else {
-			if colType == typing.Invalid {
+			if colTypeDetails.Kind == typing.Invalid.Kind {
 				// If colType is Invalid, let's see if we can update it to a better type
 				// If everything is nil, we don't need to add a column
 				// However, it's important to create a column even if it's nil.
 				// This is because we don't want to think that it's okay to drop a column in DWH
-				if kind := typing.ParseValue(val); kind != typing.Invalid {
-					inMemoryDB.TableData[e.Table].InMemoryColumns[col] = kind
+				if kindDetails := typing.ParseValue(val); kindDetails.Kind != typing.Invalid.Kind {
+					inMemoryDB.TableData[e.Table].InMemoryColumns[col] = kindDetails
 				}
 			}
 		}

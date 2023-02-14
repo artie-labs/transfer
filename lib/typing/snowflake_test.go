@@ -1,6 +1,7 @@
 package typing
 
 import (
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -42,7 +43,7 @@ func TestSnowflakeTypeToKindOther(t *testing.T) {
 func TestSnowflakeTypeToKindDateTime(t *testing.T) {
 	expectedDateTimes := []string{"DATETIME", "TIMESTAMP", "TIMESTAMP_LTZ", "TIMESTAMP_NTZ(9)", "TIMESTAMP_TZ"}
 	for _, expectedDateTime := range expectedDateTimes {
-		assert.Equal(t, SnowflakeTypeToKind(expectedDateTime), DateTime, expectedDateTime)
+		assert.Equal(t, SnowflakeTypeToKind(expectedDateTime).ExtendedTimeDetails.Type, ext.DateTime.Type, expectedDateTime)
 	}
 }
 
@@ -59,4 +60,19 @@ func TestSnowflakeTypeToKindComplex(t *testing.T) {
 func TestSnowflakeTypeToKindErrors(t *testing.T) {
 	assert.Equal(t, SnowflakeTypeToKind(""), Invalid)
 	assert.Equal(t, SnowflakeTypeToKind("abc123"), Invalid)
+}
+
+func TestSnowflakeTypeNoDataLoss(t *testing.T) {
+	kindDetails := []KindDetails{
+		NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType),
+		NewKindDetailsFromTemplate(ETime, ext.TimeKindType),
+		NewKindDetailsFromTemplate(ETime, ext.DateKindType),
+		String,
+		Boolean,
+		Struct,
+	}
+
+	for _, kindDetail := range kindDetails {
+		assert.Equal(t, kindDetail, SnowflakeTypeToKind(KindToSnowflake(kindDetail)))
+	}
 }

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -18,7 +19,7 @@ func (b *BigQueryTestSuite) TestAlterTableDropColumns() {
 	fqName := "mock_dataset.delete_col"
 	ctx := context.Background()
 	ts := time.Now()
-	columns := map[string]typing.Kind{
+	columns := map[string]typing.KindDetails{
 		"foo": typing.String,
 		"bar": typing.String,
 	}
@@ -69,13 +70,13 @@ func (b *BigQueryTestSuite) TestAlterTableAddColumns() {
 	fqName := "mock_dataset.add_cols"
 	ctx := context.Background()
 	ts := time.Now()
-	existingCols := map[string]typing.Kind{
+	existingCols := map[string]typing.KindDetails{
 		"foo": typing.String,
 		"bar": typing.String,
 	}
 	existingColsLen := len(existingCols)
 
-	newCols := map[string]typing.Kind{
+	newCols := map[string]typing.KindDetails{
 		"dusty":      typing.String,
 		"jacqueline": typing.Integer,
 		"charlie":    typing.Boolean,
@@ -107,7 +108,7 @@ func (b *BigQueryTestSuite) TestAlterTableAddColumns() {
 	// Check by iterating over the columns
 	for tableCol, tableColKind := range b.store.configMap.TableConfig(fqName).Columns() {
 		var isOk bool
-		var kind typing.Kind
+		var kind typing.KindDetails
 		kind, isOk = existingCols[tableCol]
 		if !isOk {
 			kind, isOk = newCols[tableCol]
@@ -122,7 +123,7 @@ func (b *BigQueryTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 	fqName := "mock_dataset.add_cols"
 	ctx := context.Background()
 	ts := time.Now()
-	existingCols := map[string]typing.Kind{
+	existingCols := map[string]typing.KindDetails{
 		"foo": typing.String,
 		"bar": typing.String,
 	}
@@ -197,13 +198,13 @@ func (b *BigQueryTestSuite) TestParseSchemaQuery() {
 
 func (b *BigQueryTestSuite) TestParseSchemaQueryComplex() {
 	// This test will test every single data type.
-	tableConfig, err := parseSchemaQuery("CREATE TABLE `artie-labs.mock.customers`(string_field_0 STRING,string_field_1 STRING,field2 INT64,field3 ARRAY<INT64>,field4 FLOAT64,field5 NUMERIC,field6 BIGNUMERIC,field7 BOOL,field8 TIMESTAMP,field9 DATE,field10 TIME,field11 DATETIME,field12 STRUCT<foo STRING>,field13 JSON)OPTIONS(expiration_timestamp=TIMESTAMP 2023-03-26T20:03:44.504Z);",
+	tableConfig, err := parseSchemaQuery("CREATE TABLE `artie-labs.mock.customers`(string_field_0 STRING,string_field_1 STRING,field2 INT64,field3 ARRAY<INT64>,field4 FLOAT64,field5 NUMERIC,field6 BIGNUMERIC,field7 BOOL,field8 TIMESTAMP,field9 DATE,field10 TIME,field11 DATETIME,field12 STRUCT<foo STRING>,field13 JSON, field14 TIME)OPTIONS(expiration_timestamp=TIMESTAMP 2023-03-26T20:03:44.504Z);",
 		false)
 
 	assert.NoError(b.T(), err, err)
-	assert.Equal(b.T(), len(tableConfig.Columns()), 14, tableConfig.Columns)
+	assert.Equal(b.T(), len(tableConfig.Columns()), 15, tableConfig.Columns)
 
-	anticipatedColumns := map[string]typing.Kind{
+	anticipatedColumns := map[string]typing.KindDetails{
 		"string_field_0": typing.String,
 		"string_field_1": typing.String,
 		"field2":         typing.Integer,
@@ -212,18 +213,24 @@ func (b *BigQueryTestSuite) TestParseSchemaQueryComplex() {
 		"field5":         typing.Float,
 		"field6":         typing.Float,
 		"field7":         typing.Boolean,
-		"field8":         typing.DateTime,
-		"field9":         typing.DateTime,
-		"field10":        typing.DateTime,
-		"field11":        typing.DateTime,
+		"field8":         typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
+		"field9":         typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType),
+		"field10":        typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
+		"field11":        typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		"field12":        typing.Struct,
 		"field13":        typing.Struct,
+		"field14":        typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
 	}
 
 	for anticipatedCol, anticipatedKind := range anticipatedColumns {
-		kind, isOk := tableConfig.Columns()[anticipatedCol]
+		kindDetails, isOk := tableConfig.Columns()[anticipatedCol]
 		assert.True(b.T(), isOk)
-		assert.Equal(b.T(), kind, anticipatedKind, fmt.Sprintf("expected kind: %v, got: col: %s, kind: %v mismatched.", kind,
+		assert.Equal(b.T(), kindDetails.Kind, anticipatedKind.Kind, fmt.Sprintf("expected kind: %v, got: col: %s, kind: %v mismatched.", kindDetails.Kind,
 			anticipatedCol, anticipatedKind))
+
+		if kindDetails.Kind == typing.ETime.Kind {
+			assert.Equal(b.T(), kindDetails.ExtendedTimeDetails.Type, anticipatedKind.ExtendedTimeDetails.Type)
+		}
+
 	}
 }
