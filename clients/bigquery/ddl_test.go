@@ -25,7 +25,10 @@ func (b *BigQueryTestSuite) TestAlterTableDropColumns() {
 	}
 
 	originalColumnLength := len(columns)
-	b.store.configMap.AddTableToConfig(fqName, types.NewDwhTableConfig(columns, nil, false))
+	config := types.NewDwhTableConfig(columns, nil, false)
+	config.DropDeletedColumns = true
+
+	b.store.configMap.AddTableToConfig(fqName, config)
 
 	// Prior to deletion, there should be no colsToDelete
 	assert.Equal(b.T(), 0, len(b.store.configMap.TableConfig(fqName).ColumnsToDelete()), b.store.configMap.TableConfig(fqName).ColumnsToDelete())

@@ -158,7 +158,9 @@ func (s *SnowflakeTestSuite) TestAlterTableDeleteDryRun() {
 	}
 
 	fqTable := "shop.public.users"
-	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, false))
+	config := types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, false)
+	config.DropDeletedColumns = true
+	s.store.configMap.AddTableToConfig(fqTable, config)
 
 	err := s.store.alterTable(fqTable, false, constants.Delete, time.Now().UTC(), cols...)
 	assert.Equal(s.T(), 0, s.fakeStore.ExecCallCount(), "tried to delete, but not yet.")
@@ -218,11 +220,12 @@ func (s *SnowflakeTestSuite) TestAlterTableDelete() {
 	}
 
 	fqTable := "shop.public.users1"
-
-	s.store.configMap.AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, map[string]time.Time{
+	config := types.NewDwhTableConfig(map[string]typing.KindDetails{}, map[string]time.Time{
 		"col_to_delete": time.Now().Add(-2 * constants.DeletionConfidencePadding),
 		"answers":       time.Now().Add(-2 * constants.DeletionConfidencePadding),
-	}, false))
+	}, false)
+	config.DropDeletedColumns = true
+	s.store.configMap.AddTableToConfig(fqTable, config)
 
 	err := s.store.alterTable(fqTable, false, constants.Delete, time.Now(), cols...)
 	assert.Equal(s.T(), 2, s.fakeStore.ExecCallCount(), "tried to delete, but not yet.")
@@ -372,7 +375,10 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	}
 
 	sflkColumns["new"] = typing.String
-	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), types.NewDwhTableConfig(sflkColumns, nil, false))
+	config := types.NewDwhTableConfig(sflkColumns, nil, false)
+	config.DropDeletedColumns = true
+
+	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), config)
 
 	err := s.store.Merge(context.Background(), tableData)
 	assert.Nil(s.T(), err)
