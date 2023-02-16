@@ -23,6 +23,9 @@ type TableData struct {
 	// This is used for the automatic schema detection
 	LatestCDCTs time.Time
 
+	// Configuration
+	DropDeletedColumns bool
+
 	Rows uint
 }
 

@@ -14,6 +14,9 @@ type DwhTableConfig struct {
 	columnsToDelete map[string]time.Time // column --> when to delete
 	CreateTable     bool
 
+	// Whether to drop deleted columns in the destination or not.
+	DropDeletedColumns bool
+
 	sync.Mutex
 }
 

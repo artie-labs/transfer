@@ -96,6 +96,7 @@ func (s *Store) GetTableConfig(_ context.Context, tableData *optimization.TableD
 		return nil, err
 	}
 
+	tableConfig.DropDeletedColumns = tableData.DropDeletedColumns
 	s.configMap.AddTableToConfig(fqName, tableConfig)
 	return tableConfig, nil
 }

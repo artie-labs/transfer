@@ -25,7 +25,6 @@ func main() {
 		config.GetSettings().Config.Telemetry.Metrics.Settings)
 
 	ctx = dwh.InjectDwhIntoCtx(dwh.LoadDataWarehouse(ctx), ctx)
-
 	models.LoadMemoryDB()
 
 	flushChan := make(chan bool)

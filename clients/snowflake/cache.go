@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
 	"strings"
 )
 
-func (s *Store) getTableConfig(ctx context.Context, fqName string) (*types.DwhTableConfig, error) {
+func (s *Store) getTableConfig(ctx context.Context, fqName string, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	// Check if it already exists in cache
 	tableConfig := s.configMap.TableConfig(fqName)
 	if tableConfig != nil {
@@ -76,7 +77,9 @@ func (s *Store) getTableConfig(ctx context.Context, fqName string) (*types.DwhTa
 	}
 
 	sflkTableConfig := types.NewDwhTableConfig(tableToColumnTypes, nil, tableMissing)
-	s.configMap.AddTableToConfig(fqName, types.NewDwhTableConfig(tableToColumnTypes, nil, tableMissing))
+	sflkTableConfig.DropDeletedColumns = tableData.DropDeletedColumns
+
+	s.configMap.AddTableToConfig(fqName, sflkTableConfig)
 
 	return sflkTableConfig, nil
 }
