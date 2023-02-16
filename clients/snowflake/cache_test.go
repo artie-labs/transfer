@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/types"
+	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"time"
 
@@ -93,10 +94,11 @@ func (s *SnowflakeTestSuite) TestGetTableConfig() {
 
 	s.fakeStore.QueryReturns(nil, fmt.Errorf("Table '%s' does not exist or not authorized", fqName))
 
-	tableConfig, err := s.store.getTableConfig(ctx, fqName)
+	tableConfig, err := s.store.getTableConfig(ctx, fqName, &optimization.TableData{})
 	assert.NotNil(s.T(), tableConfig, "config is nil")
 	assert.NoError(s.T(), err)
 
 	assert.True(s.T(), tableConfig.CreateTable)
 	assert.Equal(s.T(), len(tableConfig.Columns()), 0)
+	assert.False(s.T(), tableConfig.DropDeletedColumns)
 }
