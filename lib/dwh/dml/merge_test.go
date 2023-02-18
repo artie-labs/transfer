@@ -33,7 +33,6 @@ func TestMergeStatement(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
 	assert.False(t, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")), fmt.Sprintf("Idempotency key: %s", mergeSQL))
-	assert.False(t, true)
 }
 
 func TestMergeStatementIdempotentKey(t *testing.T) {
