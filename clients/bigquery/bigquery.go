@@ -8,6 +8,7 @@ import (
 	_ "github.com/viant/bigquery"
 
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/logger"
@@ -18,6 +19,18 @@ const GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
 type Store struct {
 	configMap *types.DwhToTablesConfigMap
 	db.Store
+}
+
+func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
+	if s == nil {
+		return nil
+	}
+
+	return s.configMap
+}
+
+func (s *Store) Label() constants.DestinationKind {
+	return constants.BigQuery
 }
 
 func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {

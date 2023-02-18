@@ -3,6 +3,7 @@ package typing
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"reflect"
 	"strings"
@@ -133,4 +134,15 @@ func ParseValue(val interface{}) KindDetails {
 	}
 
 	return Invalid
+}
+
+func KindToDWHType(kd KindDetails, dwh constants.DestinationKind) string {
+	switch dwh {
+	case constants.Snowflake:
+		return kindToSnowflake(kd)
+	case constants.BigQuery:
+		return kindToBigQuery(kd)
+	}
+
+	return ""
 }

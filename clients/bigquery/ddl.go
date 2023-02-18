@@ -3,65 +3,13 @@ package bigquery
 import (
 	"context"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/optimization"
 	"strings"
-	"time"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/types"
+	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
 )
-
-func (s *Store) alterTable(_ context.Context, fqTableName string, createTable bool, columnOp constants.ColumnOperation, cdcTime time.Time, cols ...typing.Column) error {
-	tc := s.configMap.TableConfig(fqTableName)
-	if tc == nil {
-		return fmt.Errorf("tableConfig is empty when trying to alter table, tableName: %s", fqTableName)
-	}
-
-	var mutateCol []typing.Column
-	var colSQLPart string
-	var err error
-	for _, col := range cols {
-		if col.Kind == typing.Invalid {
-			// Let's not modify the table if the column kind is invalid
-			continue
-		}
-
-		if columnOp == constants.Delete && !tc.ShouldDeleteColumn(col.Name, cdcTime) {
-			// Don't delete yet, we can evaluate when we consume more messages.
-			continue
-		}
-
-		mutateCol = append(mutateCol, col)
-		switch columnOp {
-		case constants.Add:
-			colSQLPart = fmt.Sprintf("%s %s", col.Name, typing.KindToBigQuery(col.Kind))
-		case constants.Delete:
-			colSQLPart = fmt.Sprintf("%s", col.Name)
-		}
-
-		// If the table does not exist, create it.
-		sqlQuery := fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTableName, columnOp, colSQLPart)
-		if createTable {
-			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", fqTableName, colSQLPart)
-			createTable = false
-		}
-
-		_, err = s.Exec(sqlQuery)
-		if err != nil && ColumnAlreadyExistErr(err) {
-			// Snowflake doesn't have column mutations (IF NOT EXISTS)
-			err = nil
-		} else if err != nil {
-			return err
-		}
-	}
-
-	if err == nil {
-		tc.MutateInMemoryColumns(createTable, columnOp, mutateCol...)
-	}
-
-	return nil
-}
 
 func (s *Store) GetTableConfig(_ context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	fqName := tableData.ToFqName(constants.BigQuery)

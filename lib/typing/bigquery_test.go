@@ -55,6 +55,6 @@ func TestBigQueryTypeNoDataLoss(t *testing.T) {
 	}
 
 	for _, kindDetail := range kindDetails {
-		assert.Equal(t, kindDetail, BigQueryTypeToKind(KindToBigQuery(kindDetail)))
+		assert.Equal(t, kindDetail, BigQueryTypeToKind(kindToBigQuery(kindDetail)))
 	}
 }
