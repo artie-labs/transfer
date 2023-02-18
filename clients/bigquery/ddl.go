@@ -3,11 +3,12 @@ package bigquery
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
-	"strings"
 )
 
 func (s *Store) GetTableConfig(_ context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
