@@ -169,7 +169,7 @@ kafka:
  username: foo
  password: bar
  topicConfigs:
-  - { db: customer, tableName: orders, schema: public, topic: orders, cdcFormat: debezium.mongodb}
+  - { db: customer, tableName: orders, schema: public, topic: orders, cdcFormat: debezium.mongodb, dropDeletedColumns: true}
   - { db: customer, tableName: customer, schema: public, topic: customer, cdcFormat: debezium.mongodb}
 `)
 
@@ -181,6 +181,14 @@ kafka:
 	validErr = config.Validate()
 	assert.Error(t, validErr)
 	assert.True(t, strings.Contains(validErr.Error(), "kafka settings is invalid"), validErr.Error())
+
+	for _, tc := range config.Kafka.TopicConfigs {
+		if tc.TableName == "orders" {
+			assert.Equal(t, tc.DropDeletedColumns, true)
+		} else {
+			assert.Equal(t, tc.DropDeletedColumns, false)
+		}
+	}
 
 }
 

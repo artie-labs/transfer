@@ -175,3 +175,51 @@ func (d *DDLTestSuite) TestAlterTableCreateTable() {
 	assert.NoError(d.T(), err, err)
 	assert.Equal(d.T(), false, d.bigQueryStore.GetConfigMap().TableConfig(fqName).CreateTable)
 }
+
+func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
+	ctx := context.Background()
+	ts := time.Now()
+
+	td := &optimization.TableData{
+		TopicConfig: kafkalib.TopicConfig{
+			Database:  "mock_dataset",
+			TableName: "delete_col",
+		},
+	}
+
+	columns := map[string]typing.KindDetails{
+		"foo": typing.String,
+		"bar": typing.String,
+	}
+
+	fqName := td.ToFqName(constants.BigQuery)
+
+	originalColumnLength := len(columns)
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(columns, nil, false, false))
+	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
+
+	// Prior to deletion, there should be no colsToDelete
+	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete())
+	for name, kind := range columns {
+		err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Delete, ts, typing.Column{Name: name, Kind: kind})
+		assert.NoError(d.T(), err)
+	}
+
+	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete()))
+	assert.Equal(d.T(), originalColumnLength, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns()))
+
+	// Now try to delete again and with an increased TS. It should now be all deleted.
+	for name, kind := range columns {
+		err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Delete, ts.Add(2*constants.DeletionConfidencePadding),
+			typing.Column{
+				Name: name,
+				Kind: kind,
+			})
+		assert.NoError(d.T(), err)
+		assert.Equal(d.T(), 0, d.fakeBigQueryStore.ExecCallCount())
+	}
+
+	// Columns still exist
+	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete()))
+	assert.Equal(d.T(), originalColumnLength, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns()))
+}
