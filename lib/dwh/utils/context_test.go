@@ -1,13 +1,15 @@
-package dwh
+package utils
 
 import (
 	"context"
+	dwh2 "github.com/artie-labs/transfer/lib/dwh"
+	"testing"
+
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/db/mock"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestInjectDwhIntoCtx(t *testing.T) {
@@ -21,7 +23,7 @@ func TestInjectDwhIntoCtx(t *testing.T) {
 	dwhVal := ctx.Value(dwhKey)
 	assert.Nil(t, dwhVal)
 
-	var dwh DataWarehouse
+	var dwh dwh2.DataWarehouse
 	dwh = snowflake.LoadSnowflake(ctx, &store)
 
 	ctx = InjectDwhIntoCtx(dwh, ctx)

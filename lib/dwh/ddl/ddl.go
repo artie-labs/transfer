@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"time"
-	
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh"
 	"github.com/artie-labs/transfer/lib/dwh/types"
@@ -29,7 +29,7 @@ func AlterTable(_ context.Context, dwh dwh.DataWarehouse, tc *types.DwhTableConf
 		mutateCol = append(mutateCol, col)
 		switch columnOp {
 		case constants.Add:
-			colSQLPart = fmt.Sprintf("%s %s", col.Name, typing.KindToBigQuery(col.Kind))
+			colSQLPart = fmt.Sprintf("%s %s", col.Name, typing.KindToDWHType(col.Kind, dwh.Label()))
 		case constants.Delete:
 			colSQLPart = fmt.Sprintf("%s", col.Name)
 		}

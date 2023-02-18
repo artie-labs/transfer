@@ -1,8 +1,9 @@
 package ddl
 
 import (
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"strings"
+
+	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
 func ColumnAlreadyExistErr(err error, kind constants.DestinationKind) bool {

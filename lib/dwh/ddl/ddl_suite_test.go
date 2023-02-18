@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/artie-labs/transfer/clients/bigquery"
+	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/stretchr/testify/suite"
@@ -12,15 +13,25 @@ import (
 
 type DDLTestSuite struct {
 	suite.Suite
+	ctx               context.Context
 	fakeBigQueryStore *mocks.FakeStore
 	bigQueryStore     *bigquery.Store
+
+	fakeSnowflakeStore *mocks.FakeStore
+	snowflakeStore     *snowflake.Store
 }
 
 func (d *DDLTestSuite) SetupTest() {
 	ctx := context.Background()
+	d.ctx = ctx
+
 	d.fakeBigQueryStore = &mocks.FakeStore{}
-	store := db.Store(d.fakeBigQueryStore)
-	d.bigQueryStore = bigquery.LoadBigQuery(ctx, &store)
+	bqStore := db.Store(d.fakeBigQueryStore)
+	d.bigQueryStore = bigquery.LoadBigQuery(ctx, &bqStore)
+
+	d.fakeSnowflakeStore = &mocks.FakeStore{}
+	sflkStore := db.Store(d.fakeSnowflakeStore)
+	d.snowflakeStore = snowflake.LoadSnowflake(ctx, &sflkStore)
 }
 
 func TestDDLTestSuite(t *testing.T) {

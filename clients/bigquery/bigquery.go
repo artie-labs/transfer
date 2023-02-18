@@ -3,12 +3,12 @@ package bigquery
 import (
 	"context"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"os"
 
 	_ "github.com/viant/bigquery"
 
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/logger"

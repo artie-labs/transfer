@@ -11,11 +11,3 @@ func TableDoesNotExistErr(err error) bool {
 
 	return strings.Contains(err.Error(), "does not exist or not authorized")
 }
-
-func ColumnAlreadyExistErr(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	return strings.Contains(err.Error(), "already exists")
-}

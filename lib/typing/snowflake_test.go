@@ -73,6 +73,6 @@ func TestSnowflakeTypeNoDataLoss(t *testing.T) {
 	}
 
 	for _, kindDetail := range kindDetails {
-		assert.Equal(t, kindDetail, SnowflakeTypeToKind(KindToSnowflake(kindDetail)))
+		assert.Equal(t, kindDetail, SnowflakeTypeToKind(kindToSnowflake(kindDetail)))
 	}
 }
