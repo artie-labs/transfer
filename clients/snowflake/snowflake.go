@@ -28,6 +28,7 @@ const (
 )
 
 func (s *Store) alterTable(fqTableName string, createTable bool, columnOp constants.ColumnOperation, cdcTime time.Time, cols ...typing.Column) error {
+	// TODO - test alterTable
 	tc := s.configMap.TableConfig(fqTableName)
 	if tc == nil {
 		return fmt.Errorf("tableConfig is empty when trying to alter table, tableName: %s", fqTableName)

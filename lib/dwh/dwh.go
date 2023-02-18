@@ -2,6 +2,7 @@ package dwh
 
 import (
 	"context"
+	"database/sql"
 	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/config"
@@ -14,6 +15,7 @@ import (
 
 type DataWarehouse interface {
 	Merge(ctx context.Context, tableData *optimization.TableData) error
+	Exec(query string, args ...any) (sql.Result, error)
 }
 
 func LoadDataWarehouse(ctx context.Context) DataWarehouse {

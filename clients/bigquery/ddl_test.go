@@ -199,6 +199,10 @@ func (b *BigQueryTestSuite) TestParseSchemaQuery() {
 	}
 }
 
+func (b *BigQueryTestSuite) TestAlterTableDropColumnSafety() {
+
+}
+
 func (b *BigQueryTestSuite) TestParseSchemaQueryComplex() {
 	// This test will test every single data type.
 	tableConfig, err := parseSchemaQuery("CREATE TABLE `artie-labs.mock.customers`(string_field_0 STRING,string_field_1 STRING,field2 INT64,field3 ARRAY<INT64>,field4 FLOAT64,field5 NUMERIC,field6 BIGNUMERIC,field7 BOOL,field8 TIMESTAMP,field9 DATE,field10 TIME,field11 DATETIME,field12 STRUCT<foo STRING>,field13 JSON, field14 TIME)OPTIONS(expiration_timestamp=TIMESTAMP 2023-03-26T20:03:44.504Z);",
