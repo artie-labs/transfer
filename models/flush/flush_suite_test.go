@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/db"
-	"github.com/artie-labs/transfer/lib/dwh"
+	"github.com/artie-labs/transfer/lib/dwh/utils"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/models"
@@ -29,7 +29,7 @@ func (f *FlushTestSuite) SetupTest() {
 
 	// Not using LoadDataWarehouse here because config.GetSettings() is not initialized in this test
 	// TODO: Address ^
-	f.ctx = dwh.InjectDwhIntoCtx(snowflake.LoadSnowflake(ctx, &store), ctx)
+	f.ctx = utils.InjectDwhIntoCtx(snowflake.LoadSnowflake(ctx, &store), ctx)
 
 	models.LoadMemoryDB()
 

@@ -71,7 +71,7 @@ func SnowflakeTypeToKind(snowflakeType string) KindDetails {
 	}
 }
 
-func KindToSnowflake(kindDetails KindDetails) string {
+func kindToSnowflake(kindDetails KindDetails) string {
 	switch kindDetails.Kind {
 	case Struct.Kind:
 		// Snowflake doesn't recognize struct.

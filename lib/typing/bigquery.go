@@ -51,7 +51,7 @@ func BigQueryTypeToKind(bqType string) KindDetails {
 	}
 }
 
-func KindToBigQuery(kindDetails KindDetails) string {
+func kindToBigQuery(kindDetails KindDetails) string {
 	// Doesn't look like we need to do any special type mapping.
 	switch kindDetails.Kind {
 	case Float.Kind:

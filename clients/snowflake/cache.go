@@ -19,7 +19,7 @@ func (s *Store) getTableConfig(ctx context.Context, fqName string, tableData *op
 	}
 
 	log := logger.FromContext(ctx)
-	rows, err := s.store.Query(fmt.Sprintf("DESC table %s;", fqName))
+	rows, err := s.Query(fmt.Sprintf("DESC table %s;", fqName))
 	defer func() {
 		if rows != nil {
 			err = rows.Close()
