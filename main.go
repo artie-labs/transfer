@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"github.com/artie-labs/transfer/lib/dwh/utils"
 	"os"
 	"sync"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/dwh/utils"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"
@@ -23,7 +23,6 @@ func main() {
 	// Loading Telemetry
 	ctx = metrics.LoadExporter(ctx, config.GetSettings().Config.Telemetry.Metrics.Provider,
 		config.GetSettings().Config.Telemetry.Metrics.Settings)
-
 	ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(ctx), ctx)
 
 	models.LoadMemoryDB()

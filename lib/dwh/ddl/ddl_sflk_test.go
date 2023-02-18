@@ -30,7 +30,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 	}
 
 	fqTable := "demo.public.experiments"
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, true))
+	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, true, true))
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
 
 	err := ddl.AlterTable(ctx, d.snowflakeStore, tc, fqTable, tc.CreateTable, constants.Add, time.Now().UTC(), cols...)
@@ -58,7 +58,7 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 	}
 
 	fqTable := "shop.public.complex_columns"
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, false))
+	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, false, true))
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
 
 	err := ddl.AlterTable(ctx, d.snowflakeStore, tc, fqTable, false, constants.Add, time.Now().UTC(), cols...)
@@ -91,7 +91,7 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 
 	fqTable := "shop.public.orders"
 
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, false))
+	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, false, true))
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
 
 	d.fakeSnowflakeStore.ExecReturns(nil, errors.New("column 'order_name' already exists"))
@@ -122,7 +122,7 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 	}
 
 	fqTable := "shop.public.orders"
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, false))
+	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, false, true))
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
 
 	err := ddl.AlterTable(d.ctx, d.snowflakeStore, tc, fqTable, false, constants.Add, time.Now().UTC(), cols...)
@@ -164,7 +164,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	}
 
 	fqTable := "shop.public.users"
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, false))
+	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, false, true))
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
 
 	err := ddl.AlterTable(d.ctx, d.snowflakeStore, tc, fqTable, false, constants.Delete, time.Now().UTC(), cols...)
@@ -228,7 +228,7 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, map[string]time.Time{
 		"col_to_delete": time.Now().Add(-2 * constants.DeletionConfidencePadding),
 		"answers":       time.Now().Add(-2 * constants.DeletionConfidencePadding),
-	}, false))
+	}, false, true))
 
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
 

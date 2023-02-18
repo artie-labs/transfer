@@ -21,13 +21,15 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 		Schema:    "public",
 	}
 
-	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), types.NewDwhTableConfig(map[string]typing.KindDetails{
+	config := types.NewDwhTableConfig(map[string]typing.KindDetails{
 		"id":          typing.Integer,
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
 		"name":        typing.String,
 		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-	}, nil, false))
+	}, nil, false, true)
+
+	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), config)
 
 	nameCol := typing.Column{
 		Name: "name",
@@ -52,13 +54,15 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 		Schema:    "public",
 	}
 
-	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), types.NewDwhTableConfig(map[string]typing.KindDetails{
+	config := types.NewDwhTableConfig(map[string]typing.KindDetails{
 		"id":          typing.Integer,
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
 		"name":        typing.String,
 		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-	}, nil, false))
+	}, nil, false, true)
+
+	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), config)
 
 	nameCol := typing.Column{
 		Name: "name",
@@ -86,6 +90,21 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 	assert.Equal(s.T(), allowed, true, "should now be allowed to delete")
 }
 
+func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
+	tc := types.NewDwhTableConfig(map[string]typing.KindDetails{
+		"id":          typing.Integer,
+		"customer_id": typing.Integer,
+		"price":       typing.Float,
+		"name":        typing.String,
+		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
+	}, map[string]time.Time{
+		"customer_id": time.Now(),
+	}, false, false)
+
+	assert.Equal(s.T(), len(tc.ColumnsToDelete()), 1)
+	assert.False(s.T(), tc.ShouldDeleteColumn("customer_id", time.Now().Add(24*time.Hour)))
+}
+
 func (s *SnowflakeTestSuite) TestGetTableConfig() {
 	// If the table does not exist, snowflakeTableConfig should say so.
 	fqName := "customers.public.orders22"
@@ -93,10 +112,11 @@ func (s *SnowflakeTestSuite) TestGetTableConfig() {
 
 	s.fakeStore.QueryReturns(nil, fmt.Errorf("Table '%s' does not exist or not authorized", fqName))
 
-	tableConfig, err := s.store.getTableConfig(ctx, fqName)
+	tableConfig, err := s.store.getTableConfig(ctx, fqName, false)
 	assert.NotNil(s.T(), tableConfig, "config is nil")
 	assert.NoError(s.T(), err)
 
 	assert.True(s.T(), tableConfig.CreateTable)
 	assert.Equal(s.T(), len(tableConfig.Columns()), 0)
+	assert.False(s.T(), tableConfig.DropDeletedColumns())
 }

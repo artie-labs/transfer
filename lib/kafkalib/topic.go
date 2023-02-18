@@ -7,13 +7,14 @@ import (
 )
 
 type TopicConfig struct {
-	Database      string `yaml:"db"`
-	TableName     string `yaml:"tableName"`
-	Schema        string `yaml:"schema"`
-	Topic         string `yaml:"topic"`
-	IdempotentKey string `yaml:"idempotentKey"`
-	CDCFormat     string `yaml:"cdcFormat"`
-	CDCKeyFormat  string `yaml:"cdcKeyFormat"`
+	Database           string `yaml:"db"`
+	TableName          string `yaml:"tableName"`
+	Schema             string `yaml:"schema"`
+	Topic              string `yaml:"topic"`
+	IdempotentKey      string `yaml:"idempotentKey"`
+	CDCFormat          string `yaml:"cdcFormat"`
+	CDCKeyFormat       string `yaml:"cdcKeyFormat"`
+	DropDeletedColumns bool   `yaml:"dropDeletedColumns"`
 }
 
 const (
@@ -31,8 +32,8 @@ func (t *TopicConfig) String() string {
 	}
 
 	return fmt.Sprintf(
-		"db=%s, tableName=%s, schema=%s, topic=%s, idempotentKey=%s, cdcFormat=%s",
-		t.Database, t.TableName, t.Schema, t.Topic, t.IdempotentKey, t.CDCFormat)
+		"db=%s, tableName=%s, schema=%s, topic=%s, idempotentKey=%s, cdcFormat=%s, dropDeletedColumns=%v",
+		t.Database, t.TableName, t.Schema, t.Topic, t.IdempotentKey, t.CDCFormat, t.DropDeletedColumns)
 }
 
 func (t *TopicConfig) Valid() bool {

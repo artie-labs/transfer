@@ -45,7 +45,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	fqName := tableData.ToFqName(constants.Snowflake)
-	tableConfig, err := s.getTableConfig(ctx, fqName)
+	tableConfig, err := s.getTableConfig(ctx, fqName, tableData.DropDeletedColumns)
 	if err != nil {
 		return err
 	}

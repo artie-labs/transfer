@@ -14,10 +14,13 @@ type DwhTableConfig struct {
 	columnsToDelete map[string]time.Time // column --> when to delete
 	CreateTable     bool
 
+	// Whether to drop deleted columns in the destination or not.
+	dropDeletedColumns bool
+
 	sync.Mutex
 }
 
-func NewDwhTableConfig(columns map[string]typing.KindDetails, colsToDelete map[string]time.Time, createTable bool) *DwhTableConfig {
+func NewDwhTableConfig(columns map[string]typing.KindDetails, colsToDelete map[string]time.Time, createTable, dropDeletedColumns bool) *DwhTableConfig {
 	if len(columns) == 0 {
 		columns = make(map[string]typing.KindDetails)
 	}
@@ -27,10 +30,15 @@ func NewDwhTableConfig(columns map[string]typing.KindDetails, colsToDelete map[s
 	}
 
 	return &DwhTableConfig{
-		columns:         columns,
-		columnsToDelete: colsToDelete,
-		CreateTable:     createTable,
+		columns:            columns,
+		columnsToDelete:    colsToDelete,
+		CreateTable:        createTable,
+		dropDeletedColumns: dropDeletedColumns,
 	}
+}
+
+func (tc *DwhTableConfig) DropDeletedColumns() bool {
+	return tc.dropDeletedColumns
 }
 
 func (tc *DwhTableConfig) Columns() map[string]typing.KindDetails {
@@ -83,6 +91,11 @@ func (tc *DwhTableConfig) ColumnsToDelete() map[string]time.Time {
 func (tc *DwhTableConfig) ShouldDeleteColumn(colName string, cdcTime time.Time) bool {
 	if tc == nil {
 		// Avoid a panic and default to FALSE.
+		return false
+	}
+
+	if tc.dropDeletedColumns == false {
+		// Never delete
 		return false
 	}
 

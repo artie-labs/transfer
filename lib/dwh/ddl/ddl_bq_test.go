@@ -36,8 +36,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	fqName := td.ToFqName(constants.BigQuery)
 
 	originalColumnLength := len(columns)
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(columns, nil, false))
-
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(columns, nil, false, true))
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
 
 	// Prior to deletion, there should be no colsToDelete
@@ -92,7 +91,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 	}
 	newColsLen := len(newCols)
 
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(existingCols, nil, false))
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(existingCols, nil, false, true))
 	// Prior to adding, there should be no colsToDelete
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete())
 	assert.Equal(d.T(), len(existingCols), len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns())
@@ -133,8 +132,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 	}
 
 	existingColsLen := len(existingCols)
-
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(existingCols, nil, false))
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(existingCols, nil, false, true))
 	// Prior to adding, there should be no colsToDelete
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete())
 	assert.Equal(d.T(), len(existingCols), len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns())
@@ -164,7 +162,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 
 func (d *DDLTestSuite) TestAlterTableCreateTable() {
 	fqName := "mock_dataset.mock_table"
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(nil, nil, true))
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(nil, nil, true, true))
 
 	ctx := context.Background()
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
@@ -176,4 +174,52 @@ func (d *DDLTestSuite) TestAlterTableCreateTable() {
 	assert.Equal(d.T(), query, fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (name string)", fqName), query)
 	assert.NoError(d.T(), err, err)
 	assert.Equal(d.T(), false, d.bigQueryStore.GetConfigMap().TableConfig(fqName).CreateTable)
+}
+
+func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
+	ctx := context.Background()
+	ts := time.Now()
+
+	td := &optimization.TableData{
+		TopicConfig: kafkalib.TopicConfig{
+			Database:  "mock_dataset",
+			TableName: "delete_col",
+		},
+	}
+
+	columns := map[string]typing.KindDetails{
+		"foo": typing.String,
+		"bar": typing.String,
+	}
+
+	fqName := td.ToFqName(constants.BigQuery)
+
+	originalColumnLength := len(columns)
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(columns, nil, false, false))
+	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
+
+	// Prior to deletion, there should be no colsToDelete
+	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete())
+	for name, kind := range columns {
+		err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Delete, ts, typing.Column{Name: name, Kind: kind})
+		assert.NoError(d.T(), err)
+	}
+
+	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete()))
+	assert.Equal(d.T(), originalColumnLength, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns()))
+
+	// Now try to delete again and with an increased TS. It should now be all deleted.
+	for name, kind := range columns {
+		err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Delete, ts.Add(2*constants.DeletionConfidencePadding),
+			typing.Column{
+				Name: name,
+				Kind: kind,
+			})
+		assert.NoError(d.T(), err)
+		assert.Equal(d.T(), 0, d.fakeBigQueryStore.ExecCallCount())
+	}
+
+	// Columns still exist
+	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete()))
+	assert.Equal(d.T(), originalColumnLength, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns()))
 }

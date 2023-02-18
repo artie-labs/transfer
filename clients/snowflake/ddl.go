@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func (s *Store) getTableConfig(ctx context.Context, fqName string) (*types.DwhTableConfig, error) {
+func (s *Store) getTableConfig(ctx context.Context, fqName string, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
 	// Check if it already exists in cache
 	tableConfig := s.configMap.TableConfig(fqName)
 	if tableConfig != nil {
@@ -75,8 +75,8 @@ func (s *Store) getTableConfig(ctx context.Context, fqName string) (*types.DwhTa
 		tableToColumnTypes[row[describeNameCol]] = typing.SnowflakeTypeToKind(row[describeTypeCol])
 	}
 
-	sflkTableConfig := types.NewDwhTableConfig(tableToColumnTypes, nil, tableMissing)
-	s.configMap.AddTableToConfig(fqName, types.NewDwhTableConfig(tableToColumnTypes, nil, tableMissing))
+	sflkTableConfig := types.NewDwhTableConfig(tableToColumnTypes, nil, tableMissing, dropDeletedColumns)
+	s.configMap.AddTableToConfig(fqName, sflkTableConfig)
 
 	return sflkTableConfig, nil
 }

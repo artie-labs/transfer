@@ -58,6 +58,5 @@ func ParseExtendedDateTime(dtString string) (*ExtendedTime, error) {
 		}
 	}
 
-	// TODO: What about time w/ TZ?
 	return nil, fmt.Errorf("dtString: %s is not supported", dtString)
 }

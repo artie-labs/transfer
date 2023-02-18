@@ -85,7 +85,6 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 			})
 
 			topicToConsumer[topic] = kafkaConsumer
-
 			for {
 				msg, err := kafkaConsumer.FetchMessage(ctx)
 				logFields := map[string]interface{}{
