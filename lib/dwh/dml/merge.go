@@ -16,34 +16,15 @@ func MergeStatement(fqTableName, subQuery, pk, idempotentKey string, cols []stri
 	// We also need to do staged table's idempotency key is GTE target table's idempotency key
 	// This is because Snowflake does not respect NS granularity.
 
-	if idempotentKey == "" {
-		return fmt.Sprintf(`
-			MERGE INTO %s c using (%s) as cc on c.%s = cc.%s
-				when matched AND cc.%s then DELETE
-				when matched AND IFNULL(cc.%s, false) = false then UPDATE
-					SET %s
-				when not matched AND IFNULL(cc.%s, false) = false then INSERT
-					(
-						%s
-					)
-					VALUES
-					(
-						%s
-					);
-		`, fqTableName, subQuery, pk, pk,
-			// Delete
-			constants.DeleteColumnMarker,
-			// Update
-			constants.DeleteColumnMarker, array.ColumnsUpdateQuery(cols, "cc"),
-			// Insert
-			constants.DeleteColumnMarker, strings.Join(cols, ","),
-			array.StringsJoinAddPrefix(cols, ",", "cc."))
+	var idempotentClause string
+	if idempotentKey != "" {
+		idempotentClause = fmt.Sprintf("AND cc.%s >= c.%s ", idempotentKey, idempotentKey)
 	}
 
 	return fmt.Sprintf(`
 			MERGE INTO %s c using (%s) as cc on c.%s = cc.%s
-				when matched AND cc.%s AND cc.%s >= c.%s = true then DELETE
-				when matched AND IFNULL(cc.%s, false) = false AND cc.%s >= c.%s then UPDATE
+				when matched AND cc.%s then DELETE
+				when matched AND IFNULL(cc.%s, false) = false %s then UPDATE
 					SET %s
 				when not matched AND IFNULL(cc.%s, false) = false then INSERT
 					(
@@ -55,9 +36,9 @@ func MergeStatement(fqTableName, subQuery, pk, idempotentKey string, cols []stri
 					);
 		`, fqTableName, subQuery, pk, pk,
 		// Delete
-		constants.DeleteColumnMarker, idempotentKey, idempotentKey,
+		constants.DeleteColumnMarker,
 		// Update
-		constants.DeleteColumnMarker, idempotentKey, idempotentKey, array.ColumnsUpdateQuery(cols, "cc"),
+		constants.DeleteColumnMarker, idempotentClause, array.ColumnsUpdateQuery(cols, "cc"),
 		// Insert
 		constants.DeleteColumnMarker, strings.Join(cols, ","),
 		array.StringsJoinAddPrefix(cols, ",", "cc."))
