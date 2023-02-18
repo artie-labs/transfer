@@ -3,7 +3,6 @@ package bigquery
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -13,13 +12,11 @@ import (
 	"github.com/artie-labs/transfer/lib/dwh/dml"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func merge(tableData *optimization.TableData) (string, error) {
-	var artieDeleteMetadataIdx *int
 	var cols []string
 	// Given all the columns, diff this against SFLK.
 	for col, kind := range tableData.InMemoryColumns {
@@ -35,13 +32,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 	firstRow := true
 	for _, value := range tableData.RowsData {
 		var colVals []string
-		for idx, col := range cols {
-			// Hasn't been set yet and the column is the DELETE flag. We want to remove this from
-			// the final table because this is a flag, not an actual column.
-			if artieDeleteMetadataIdx == nil && col == constants.DeleteColumnMarker {
-				artieDeleteMetadataIdx = ptr.ToInt(idx)
-			}
-
+		for _, col := range cols {
 			colKind := tableData.InMemoryColumns[col]
 			colVal := value[col]
 			if colVal != nil {
@@ -96,16 +87,8 @@ func merge(tableData *optimization.TableData) (string, error) {
 	}
 
 	subQuery := strings.Join(rowValues, " UNION ALL ")
-
-	if artieDeleteMetadataIdx == nil {
-		return "", errors.New("artie delete flag doesn't exist")
-	}
-
-	// Hide the deletion flag
-	cols = append(cols[:*artieDeleteMetadataIdx], cols[*artieDeleteMetadataIdx+1:]...)
-
 	return dml.MergeStatement(tableData.ToFqName(constants.BigQuery), subQuery,
-		tableData.PrimaryKey, tableData.IdempotentKey, cols), nil
+		tableData.PrimaryKey, tableData.IdempotentKey, cols)
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {

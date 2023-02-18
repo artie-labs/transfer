@@ -2,14 +2,12 @@ package snowflake
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/dml"
 	"github.com/artie-labs/transfer/lib/optimization"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
@@ -23,7 +21,6 @@ func stringWrapping(colVal interface{}) string {
 
 func merge(tableData *optimization.TableData) (string, error) {
 	var tableValues []string
-	var artieDeleteMetadataIdx *int
 	var cols []string
 	var sflkCols []string
 
@@ -46,13 +43,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 
 	for _, value := range tableData.RowsData {
 		var rowValues []string
-		for idx, col := range cols {
-			// Hasn't been set yet and the column is the DELETE flag. We want to remove this from
-			// the final table because this is a flag, not an actual column.
-			if artieDeleteMetadataIdx == nil && col == constants.DeleteColumnMarker {
-				artieDeleteMetadataIdx = ptr.ToInt(idx)
-			}
-
+		for _, col := range cols {
 			colKind := tableData.InMemoryColumns[col]
 			colVal := value[col]
 			if colVal != nil {
@@ -96,12 +87,6 @@ func merge(tableData *optimization.TableData) (string, error) {
 	subQuery := fmt.Sprintf("SELECT %s FROM (values %s) as %s(%s)", strings.Join(sflkCols, ","),
 		strings.Join(tableValues, ","), tableData.TopicConfig.TableName, strings.Join(cols, ","))
 
-	if artieDeleteMetadataIdx == nil {
-		return "", errors.New("artie delete flag doesn't exist")
-	}
-
-	// Hide the deletion flag
-	cols = append(cols[:*artieDeleteMetadataIdx], cols[*artieDeleteMetadataIdx+1:]...)
 	return dml.MergeStatement(tableData.ToFqName(constants.Snowflake), subQuery,
-		tableData.PrimaryKey, tableData.IdempotentKey, cols), nil
+		tableData.PrimaryKey, tableData.IdempotentKey, cols)
 }
