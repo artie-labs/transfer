@@ -166,6 +166,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	fqTable := "shop.public.users"
 	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, false))
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
+	tc.DropDeletedColumns = true
 
 	err := ddl.AlterTable(d.ctx, d.snowflakeStore, tc, fqTable, false, constants.Delete, time.Now().UTC(), cols...)
 	assert.Equal(d.T(), 0, d.fakeSnowflakeStore.ExecCallCount(), "tried to delete, but not yet.")
@@ -231,6 +232,7 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 	}, false))
 
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
+	tc.DropDeletedColumns = true
 
 	err := ddl.AlterTable(d.ctx, d.snowflakeStore, tc, fqTable, false, constants.Delete, time.Now(), cols...)
 	assert.Equal(d.T(), 2, d.fakeSnowflakeStore.ExecCallCount(), "tried to delete, but not yet.")

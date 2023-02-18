@@ -39,6 +39,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(columns, nil, false))
 
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
+	tc.DropDeletedColumns = true
 
 	// Prior to deletion, there should be no colsToDelete
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete())
