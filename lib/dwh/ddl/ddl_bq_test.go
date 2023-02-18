@@ -36,10 +36,8 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	fqName := td.ToFqName(constants.BigQuery)
 
 	originalColumnLength := len(columns)
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(columns, nil, false))
-
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(columns, nil, false, true))
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
-	tc.DropDeletedColumns = true
 
 	// Prior to deletion, there should be no colsToDelete
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete())
@@ -93,7 +91,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 	}
 	newColsLen := len(newCols)
 
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(existingCols, nil, false))
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(existingCols, nil, false, true))
 	// Prior to adding, there should be no colsToDelete
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete())
 	assert.Equal(d.T(), len(existingCols), len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns())
@@ -134,8 +132,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 	}
 
 	existingColsLen := len(existingCols)
-
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(existingCols, nil, false))
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(existingCols, nil, false, true))
 	// Prior to adding, there should be no colsToDelete
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete())
 	assert.Equal(d.T(), len(existingCols), len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns())
@@ -165,7 +162,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 
 func (d *DDLTestSuite) TestAlterTableCreateTable() {
 	fqName := "mock_dataset.mock_table"
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(nil, nil, true))
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(nil, nil, true, true))
 
 	ctx := context.Background()
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)

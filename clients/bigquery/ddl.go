@@ -11,7 +11,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (s *Store) GetTableConfig(_ context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+func (s *Store) getTableConfig(_ context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	fqName := tableData.ToFqName(constants.BigQuery)
 	tc := s.configMap.TableConfig(fqName)
 	if tc != nil {
@@ -39,20 +39,19 @@ func (s *Store) GetTableConfig(_ context.Context, tableData *optimization.TableD
 	}
 
 	// Table doesn't exist if the information schema query returned nothing.
-	tableConfig, err := parseSchemaQuery(sqlRow, len(sqlRow) == 0)
+	tableConfig, err := parseSchemaQuery(sqlRow, len(sqlRow) == 0, tableData.DropDeletedColumns)
 	if err != nil {
 		return nil, err
 	}
 
-	tableConfig.DropDeletedColumns = tableData.DropDeletedColumns
 	s.configMap.AddTableToConfig(fqName, tableConfig)
 	return tableConfig, nil
 }
 
 // parseSchemaQuery is to parse out the results from this query: https://cloud.google.com/bigquery/docs/information-schema-tables#example_1
-func parseSchemaQuery(row string, createTable bool) (*types.DwhTableConfig, error) {
+func parseSchemaQuery(row string, createTable, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
 	if createTable {
-		return types.NewDwhTableConfig(nil, nil, createTable), nil
+		return types.NewDwhTableConfig(nil, nil, createTable, dropDeletedColumns), nil
 	}
 
 	// TrimSpace only does the L + R side.
@@ -108,5 +107,5 @@ func parseSchemaQuery(row string, createTable bool) (*types.DwhTableConfig, erro
 		tableToColumnTypes[parts[0]] = typing.BigQueryTypeToKind(strings.Join(parts[1:], " "))
 	}
 
-	return types.NewDwhTableConfig(tableToColumnTypes, nil, createTable), nil
+	return types.NewDwhTableConfig(tableToColumnTypes, nil, createTable, dropDeletedColumns), nil
 }

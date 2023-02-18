@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/types"
-	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"time"
 
@@ -28,8 +27,7 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 		"price":       typing.Float,
 		"name":        typing.String,
 		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-	}, nil, false)
-	config.DropDeletedColumns = true
+	}, nil, false, true)
 
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), config)
 
@@ -62,8 +60,7 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 		"price":       typing.Float,
 		"name":        typing.String,
 		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-	}, nil, false)
-	config.DropDeletedColumns = true
+	}, nil, false, true)
 
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), config)
 
@@ -100,11 +97,11 @@ func (s *SnowflakeTestSuite) TestGetTableConfig() {
 
 	s.fakeStore.QueryReturns(nil, fmt.Errorf("Table '%s' does not exist or not authorized", fqName))
 
-	tableConfig, err := s.store.getTableConfig(ctx, fqName, &optimization.TableData{})
+	tableConfig, err := s.store.getTableConfig(ctx, fqName, false)
 	assert.NotNil(s.T(), tableConfig, "config is nil")
 	assert.NoError(s.T(), err)
 
 	assert.True(s.T(), tableConfig.CreateTable)
 	assert.Equal(s.T(), len(tableConfig.Columns()), 0)
-	assert.False(s.T(), tableConfig.DropDeletedColumns)
+	assert.False(s.T(), tableConfig.DropDeletedColumns())
 }

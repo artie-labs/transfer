@@ -7,10 +7,14 @@ import (
 )
 
 func TestDwhTableConfig_ShouldDeleteColumn(t *testing.T) {
-	dwhTableConfig := NewDwhTableConfig(nil, nil, false)
+	dwhTableConfig := NewDwhTableConfig(nil, nil, false, false)
 	results := dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC())
 	assert.False(t, results)
 	assert.Equal(t, len(dwhTableConfig.ColumnsToDelete()), 0)
 
-	dwhTableConfig.DropDeletedColumns = true
+	// Once the flag is turned on.
+	dwhTableConfig.dropDeletedColumns = true
+	results = dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC())
+	assert.False(t, results)
+	assert.Equal(t, len(dwhTableConfig.ColumnsToDelete()), 1)
 }

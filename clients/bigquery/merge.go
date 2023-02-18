@@ -164,7 +164,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return nil
 	}
 
-	tableConfig, err := s.GetTableConfig(ctx, tableData)
+	tableConfig, err := s.getTableConfig(ctx, tableData)
 	if err != nil {
 		return err
 	}

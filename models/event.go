@@ -11,22 +11,20 @@ import (
 )
 
 type Event struct {
-	Table              string
-	PrimaryKeyName     string
-	PrimaryKeyValue    interface{}
-	Data               map[string]interface{} // json serialized column data
-	ExecutionTime      time.Time              // When the SQL command was executed
-	DropDeletedColumns bool                   // Should we drop deleted columns in the destination?
+	Table           string
+	PrimaryKeyName  string
+	PrimaryKeyValue interface{}
+	Data            map[string]interface{} // json serialized column data
+	ExecutionTime   time.Time              // When the SQL command was executed
 }
 
 func ToMemoryEvent(ctx context.Context, event cdc.Event, pkName string, pkValue interface{}, tc *kafkalib.TopicConfig) Event {
 	return Event{
-		Table:              event.Table(),
-		PrimaryKeyName:     pkName,
-		PrimaryKeyValue:    pkValue,
-		ExecutionTime:      event.GetExecutionTime(),
-		Data:               event.GetData(ctx, pkName, pkValue, tc),
-		DropDeletedColumns: tc.DropDeletedColumns,
+		Table:           event.Table(),
+		PrimaryKeyName:  pkName,
+		PrimaryKeyValue: pkValue,
+		ExecutionTime:   event.GetExecutionTime(),
+		Data:            event.GetData(ctx, pkName, pkValue, tc),
 	}
 }
 

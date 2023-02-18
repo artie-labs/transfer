@@ -3,16 +3,16 @@ package snowflake
 import (
 	"context"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/dwh/types"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
@@ -51,7 +51,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		map[string]typing.KindDetails{
 			"first_name":                 typing.String,
 			constants.DeleteColumnMarker: typing.Boolean,
-		}, nil, false))
+		}, nil, false, true))
 
 	err := s.store.Merge(context.Background(), tableData)
 	assert.Equal(s.T(), tableData.InMemoryColumns["first_name"], typing.String)
@@ -91,7 +91,8 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		Rows:            1,
 	}
 
-	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), types.NewDwhTableConfig(columns, nil, false))
+	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake),
+		types.NewDwhTableConfig(columns, nil, false, true))
 	err := s.store.Merge(context.Background(), tableData)
 	assert.Nil(s.T(), err)
 	s.fakeStore.ExecReturns(nil, nil)
@@ -143,9 +144,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	}
 
 	sflkColumns["new"] = typing.String
-	config := types.NewDwhTableConfig(sflkColumns, nil, false)
-	config.DropDeletedColumns = true
-
+	config := types.NewDwhTableConfig(sflkColumns, nil, false, true)
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), config)
 
 	err := s.store.Merge(context.Background(), tableData)
