@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/artie-labs/transfer/lib/dwh/load"
 	"os"
 	"sync"
 	"time"
@@ -24,7 +25,7 @@ func main() {
 	ctx = metrics.LoadExporter(ctx, config.GetSettings().Config.Telemetry.Metrics.Provider,
 		config.GetSettings().Config.Telemetry.Metrics.Settings)
 
-	ctx = dwh.InjectDwhIntoCtx(dwh.LoadDataWarehouse(ctx), ctx)
+	ctx = dwh.InjectDwhIntoCtx(load.DataWarehouse(ctx), ctx)
 
 	models.LoadMemoryDB()
 

@@ -17,7 +17,7 @@ import (
 )
 
 type Store struct {
-	store     db.Store
+	db.Store
 	configMap *types.DwhToTablesConfigMap
 }
 
@@ -26,6 +26,18 @@ const (
 	describeNameCol = "name"
 	describeTypeCol = "type"
 )
+
+func (s *Store) Label() constants.DestinationKind {
+	return constants.Snowflake
+}
+
+func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
+	if s == nil {
+		return nil
+	}
+
+	return s.configMap
+}
 
 func (s *Store) alterTable(fqTableName string, createTable bool, columnOp constants.ColumnOperation, cdcTime time.Time, cols ...typing.Column) error {
 	tc := s.configMap.TableConfig(fqTableName)
@@ -62,7 +74,7 @@ func (s *Store) alterTable(fqTableName string, createTable bool, columnOp consta
 			createTable = false
 		}
 
-		_, err = s.store.Exec(sqlQuery)
+		_, err = s.Exec(sqlQuery)
 		if err != nil && ColumnAlreadyExistErr(err) {
 			// Snowflake doesn't have column mutations (IF NOT EXISTS)
 			err = nil
@@ -135,7 +147,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	log.WithField("query", query).Debug("executing...")
-	_, err = s.store.Exec(query)
+	_, err = s.Exec(query)
 	return err
 }
 
@@ -143,7 +155,7 @@ func LoadSnowflake(ctx context.Context, _store *db.Store) *Store {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			store:     *_store,
+			Store:     *_store,
 			configMap: &types.DwhToTablesConfigMap{},
 		}
 	}
@@ -161,7 +173,7 @@ func LoadSnowflake(ctx context.Context, _store *db.Store) *Store {
 	}
 
 	return &Store{
-		store:     db.Open(ctx, "snowflake", dsn),
+		Store:     db.Open(ctx, "snowflake", dsn),
 		configMap: &types.DwhToTablesConfigMap{},
 	}
 }
