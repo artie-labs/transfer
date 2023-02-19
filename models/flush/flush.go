@@ -38,7 +38,6 @@ func Flush(ctx context.Context) error {
 		if err != nil {
 			tags["what"] = "merge_fail"
 			log.WithError(err).WithFields(logFields).Warn("Failed to execute merge...not going to flush memory")
-
 		} else {
 			log.WithFields(logFields).Info("Merge success, clearing memory...")
 			commitErr := kafka.CommitOffset(ctx, tableData.Topic, tableData.PartitionsToLastMessage)
