@@ -15,6 +15,7 @@ type TopicConfig struct {
 	CDCFormat          string `yaml:"cdcFormat"`
 	CDCKeyFormat       string `yaml:"cdcKeyFormat"`
 	DropDeletedColumns bool   `yaml:"dropDeletedColumns"`
+	SoftDelete         bool   `yaml:"softDelete"`
 }
 
 const (

@@ -170,7 +170,8 @@ kafka:
  password: bar
  topicConfigs:
   - { db: customer, tableName: orders, schema: public, topic: orders, cdcFormat: debezium.mongodb, dropDeletedColumns: true}
-  - { db: customer, tableName: customer, schema: public, topic: customer, cdcFormat: debezium.mongodb}
+  - { db: customer, tableName: customer, schema: public, topic: customer, cdcFormat: debezium.mongodb, softDelete: true}
+  - { db: customer, tableName: customer55, schema: public, topic: customer55, cdcFormat: debezium.mongodb, dropDeletedColumns: false, softDelete: true}
 `)
 
 	assert.Nil(t, err)
@@ -185,8 +186,10 @@ kafka:
 	for _, tc := range config.Kafka.TopicConfigs {
 		if tc.TableName == "orders" {
 			assert.Equal(t, tc.DropDeletedColumns, true)
+			assert.Equal(t, tc.SoftDelete, false)
 		} else {
 			assert.Equal(t, tc.DropDeletedColumns, false)
+			assert.Equal(t, tc.SoftDelete, true)
 		}
 	}
 

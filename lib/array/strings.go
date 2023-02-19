@@ -24,7 +24,7 @@ func ColumnsUpdateQuery(columns []string, tablePrefix string) string {
 
 	for _, column := range columns {
 		// This is to make it look like: objCol = cc.objCol::variant
-		_columns = append(_columns, fmt.Sprintf("%s = %s.%s", column, tablePrefix, column))
+		_columns = append(_columns, fmt.Sprintf("%s=%s.%s", column, tablePrefix, column))
 	}
 
 	return strings.Join(_columns, ",")

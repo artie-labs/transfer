@@ -9,7 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
-func MergeStatement(fqTableName, subQuery, pk, idempotentKey string, cols []string) (string, error) {
+func MergeStatement(fqTableName, subQuery, pk, idempotentKey string, cols []string, softDelete bool) (string, error) {
 	// We should not need idempotency key for DELETE
 	// This is based on the assumption that the primary key would be atomically increasing or UUID based
 	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
@@ -20,6 +20,27 @@ func MergeStatement(fqTableName, subQuery, pk, idempotentKey string, cols []stri
 	var idempotentClause string
 	if idempotentKey != "" {
 		idempotentClause = fmt.Sprintf("AND cc.%s >= c.%s ", idempotentKey, idempotentKey)
+	}
+
+	if softDelete {
+		return fmt.Sprintf(`
+			MERGE INTO %s c using (%s) as cc on c.%s = cc.%s
+				when matched %sthen UPDATE
+					SET %s
+				when not matched AND IFNULL(cc.%s, false) = false then INSERT
+					(
+						%s
+					)
+					VALUES
+					(
+						%s
+					);
+		`, fqTableName, subQuery, pk, pk,
+			// Update + Soft Deletion
+			idempotentClause, array.ColumnsUpdateQuery(cols, "cc"),
+			// Insert
+			constants.DeleteColumnMarker, strings.Join(cols, ","),
+			array.StringsJoinAddPrefix(cols, ",", "cc.")), nil
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
@@ -39,7 +60,7 @@ func MergeStatement(fqTableName, subQuery, pk, idempotentKey string, cols []stri
 	return fmt.Sprintf(`
 			MERGE INTO %s c using (%s) as cc on c.%s = cc.%s
 				when matched AND cc.%s then DELETE
-				when matched AND IFNULL(cc.%s, false) = false %s then UPDATE
+				when matched AND IFNULL(cc.%s, false) = false %sthen UPDATE
 					SET %s
 				when not matched AND IFNULL(cc.%s, false) = false then INSERT
 					(
@@ -57,4 +78,5 @@ func MergeStatement(fqTableName, subQuery, pk, idempotentKey string, cols []stri
 		// Insert
 		constants.DeleteColumnMarker, strings.Join(cols, ","),
 		array.StringsJoinAddPrefix(cols, ",", "cc.")), nil
+
 }
