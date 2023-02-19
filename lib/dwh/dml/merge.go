@@ -22,6 +22,27 @@ func MergeStatement(fqTableName, subQuery, pk, idempotentKey string, cols []stri
 		idempotentClause = fmt.Sprintf("AND cc.%s >= c.%s ", idempotentKey, idempotentKey)
 	}
 
+	if softDelete {
+		return fmt.Sprintf(`
+			MERGE INTO %s c using (%s) as cc on c.%s = cc.%s
+				when matched %sthen UPDATE
+					SET %s
+				when not matched AND IFNULL(cc.%s, false) = false then INSERT
+					(
+						%s
+					)
+					VALUES
+					(
+						%s
+					);
+		`, fqTableName, subQuery, pk, pk,
+			// Update + Soft Deletion
+			idempotentClause, array.ColumnsUpdateQuery(cols, "cc"),
+			// Insert
+			constants.DeleteColumnMarker, strings.Join(cols, ","),
+			array.StringsJoinAddPrefix(cols, ",", "cc.")), nil
+	}
+
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
 	for idx, col := range cols {
@@ -39,7 +60,7 @@ func MergeStatement(fqTableName, subQuery, pk, idempotentKey string, cols []stri
 	return fmt.Sprintf(`
 			MERGE INTO %s c using (%s) as cc on c.%s = cc.%s
 				when matched AND cc.%s then DELETE
-				when matched AND IFNULL(cc.%s, false) = false %s then UPDATE
+				when matched AND IFNULL(cc.%s, false) = false %sthen UPDATE
 					SET %s
 				when not matched AND IFNULL(cc.%s, false) = false then INSERT
 					(
@@ -57,4 +78,5 @@ func MergeStatement(fqTableName, subQuery, pk, idempotentKey string, cols []stri
 		// Insert
 		constants.DeleteColumnMarker, strings.Join(cols, ","),
 		array.StringsJoinAddPrefix(cols, ",", "cc.")), nil
+
 }
