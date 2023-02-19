@@ -29,7 +29,7 @@ func TestMergeStatement(t *testing.T) {
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
-	mergeSQL, err := MergeStatement(fqTable, subQuery, "id", "", cols)
+	mergeSQL, err := MergeStatement(fqTable, subQuery, "id", "", cols, false)
 	assert.NoError(t, err)
 	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
 	assert.False(t, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")), fmt.Sprintf("Idempotency key: %s", mergeSQL))
@@ -55,7 +55,7 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
-	mergeSQL, err := MergeStatement(fqTable, subQuery, "id", "updated_at", cols)
+	mergeSQL, err := MergeStatement(fqTable, subQuery, "id", "updated_at", cols, false)
 	assert.NoError(t, err)
 	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
 	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")), fmt.Sprintf("Idempotency key: %s", mergeSQL))

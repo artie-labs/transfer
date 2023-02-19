@@ -11,11 +11,26 @@ type Column struct {
 	Kind KindDetails
 }
 
+// shouldSkipColumn takes the `colName` and `softDelete` and will return whether we should skip this column when calculating the diff.
+func shouldSkipColumn(colName string, softDelete bool) bool {
+	if colName == constants.DeleteColumnMarker && softDelete {
+		// We need this column to be created if soft deletion is turned on.
+		return false
+	}
+
+	if strings.Contains(colName, constants.ArtiePrefix) {
+		return true
+	}
+
+	return false
+}
+
 // Diff - when given 2 maps, a source and target
 // It will provide a diff in the form of 2 variables
+// The other argument `softDelete` is used on whether we should ignore Artie's soft delete column.
 // srcKeyMissing - which key are missing from source that are present in target
 // targKeyMissing - which key are missing from target that are present in source
-func Diff(source map[string]KindDetails, target map[string]KindDetails) (srcKeyMissing []Column, targKeyMissing []Column) {
+func Diff(source map[string]KindDetails, target map[string]KindDetails, softDelete bool) (srcKeyMissing []Column, targKeyMissing []Column) {
 	src := CopyColMap(source)
 	targ := CopyColMap(target)
 
@@ -28,8 +43,7 @@ func Diff(source map[string]KindDetails, target map[string]KindDetails) (srcKeyM
 	}
 
 	for name, kind := range src {
-		if strings.Contains(name, constants.ArtiePrefix) {
-			// Ignore artie metadata
+		if shouldSkipColumn(name, softDelete) {
 			continue
 		}
 
@@ -40,8 +54,7 @@ func Diff(source map[string]KindDetails, target map[string]KindDetails) (srcKeyM
 	}
 
 	for name, kind := range targ {
-		if strings.Contains(name, constants.ArtiePrefix) {
-			// Ignore artie metadata
+		if shouldSkipColumn(name, softDelete) {
 			continue
 		}
 
