@@ -85,3 +85,69 @@ func (s *SnowflakeTestSuite) TestMerge() {
 		}
 	}
 }
+
+func (s *SnowflakeTestSuite) TestMergeWithSingleQuote() {
+	cols := map[string]typing.KindDetails{
+		"id":                         typing.Integer,
+		"NAME":                       typing.String,
+		constants.DeleteColumnMarker: typing.Boolean,
+	}
+
+	rowData := make(map[string]map[string]interface{})
+	rowData["0"] = map[string]interface{}{
+		"id":                         "0",
+		constants.DeleteColumnMarker: false,
+		"NAME":                       "I can't fail",
+	}
+
+	topicConfig := kafkalib.TopicConfig{
+		Database:  "shop",
+		TableName: "customer",
+		Schema:    "public",
+	}
+
+	tableData := &optimization.TableData{
+		InMemoryColumns: cols,
+		RowsData:        rowData,
+		PrimaryKey:      "id",
+		TopicConfig:     topicConfig,
+		LatestCDCTs:     time.Time{},
+	}
+
+	mergeSQL, err := merge(tableData)
+	assert.NoError(s.T(), err, "merge failed")
+	assert.Contains(s.T(), mergeSQL, `I can\'t fail`)
+}
+
+func (s *SnowflakeTestSuite) TestMergeJson() {
+	cols := map[string]typing.KindDetails{
+		"id":                         typing.Integer,
+		"meta":                       typing.Struct,
+		constants.DeleteColumnMarker: typing.Boolean,
+	}
+
+	rowData := make(map[string]map[string]interface{})
+	rowData["0"] = map[string]interface{}{
+		"id":                         "0",
+		constants.DeleteColumnMarker: false,
+		"meta":                       `{"fields": [{"label": "2\" pipe"}]}`,
+	}
+
+	topicConfig := kafkalib.TopicConfig{
+		Database:  "shop",
+		TableName: "customer",
+		Schema:    "public",
+	}
+
+	tableData := &optimization.TableData{
+		InMemoryColumns: cols,
+		RowsData:        rowData,
+		PrimaryKey:      "id",
+		TopicConfig:     topicConfig,
+		LatestCDCTs:     time.Time{},
+	}
+
+	mergeSQL, err := merge(tableData)
+	assert.NoError(s.T(), err, "merge failed")
+	assert.Contains(s.T(), mergeSQL, `"label": "2\\" pipe"`)
+}
