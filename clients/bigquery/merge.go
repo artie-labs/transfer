@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/stringutil"
 	"strings"
 	"time"
 
@@ -53,10 +54,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 					}
 				// All the other types do not need string wrapping.
 				case typing.String.Kind, typing.Struct.Kind:
-					// Escape line breaks, JSON_PARSE does not like it.
-					colVal = strings.ReplaceAll(fmt.Sprint(colVal), `\n`, `\\n`)
-					// The normal string escape is to do for O'Reilly is O\\'Reilly, but Snowflake escapes via \'
-					colVal = fmt.Sprintf("'%s'", strings.ReplaceAll(fmt.Sprint(colVal), "'", `\'`))
+					colVal = stringutil.Wrap(colVal)
 					if colKind == typing.Struct {
 						// This is how you cast string -> JSON
 						colVal = fmt.Sprintf("JSON %s", colVal)

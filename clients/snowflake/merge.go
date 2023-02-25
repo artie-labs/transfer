@@ -8,16 +8,10 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/dml"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
-
-func stringWrapping(colVal interface{}) string {
-	// Escape line breaks, JSON_PARSE does not like it.
-	colVal = strings.ReplaceAll(fmt.Sprint(colVal), `\`, `\\`)
-	// The normal string escape is to do for O'Reilly is O\\'Reilly, but Snowflake escapes via \'
-	return fmt.Sprintf("'%s'", strings.ReplaceAll(fmt.Sprint(colVal), "'", `\'`))
-}
 
 func merge(tableData *optimization.TableData) (string, error) {
 	var tableValues []string
@@ -57,13 +51,13 @@ func merge(tableData *optimization.TableData) (string, error) {
 
 					switch extTime.NestedKind.Type {
 					case ext.TimeKindType:
-						colVal = stringWrapping(extTime.String(ext.PostgresTimeFormatNoTZ))
+						colVal = stringutil.Wrap(extTime.String(ext.PostgresTimeFormatNoTZ))
 					default:
-						colVal = stringWrapping(extTime.String(""))
+						colVal = stringutil.Wrap(extTime.String(""))
 					}
 
 				case typing.String.Kind, typing.Struct.Kind:
-					colVal = stringWrapping(colVal)
+					colVal = stringutil.Wrap(colVal)
 				case typing.Array.Kind:
 					// We need to marshall, so we can escape the strings.
 					// https://go.dev/play/p/BcCwUSCeTmT
