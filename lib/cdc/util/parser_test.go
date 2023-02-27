@@ -53,3 +53,26 @@ func TestParseJSONKey(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "unexpected end of JSON")
 }
+
+func TestParseJSONKeyWithSchema(t *testing.T) {
+	pkName, pkVal, err := ParseJSONKey([]byte(`{
+	"schema": {
+		"type": "struct",
+		"fields": [{
+			"type": "int32",
+			"optional": false,
+			"default": 0,
+			"field": "id"
+		}],
+		"optional": false,
+		"name": "dbserver1.inventory.customers.Key"
+	},
+	"payload": {
+		"id": 1002
+	}
+}`))
+
+	assert.NoError(t, err)
+	assert.Equal(t, "id", pkName)
+	assert.Equal(t, float64(1002), pkVal)
+}
