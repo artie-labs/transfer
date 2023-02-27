@@ -36,4 +36,3 @@ _We are also actively working on reducing the amount of considerations required 
 
 * `value.converter` must be set to `org.apache.kafka.connect.json.JsonConverter`
 * `value.converter.schemas.enable` must be set to `true`
-* `key.converter.schemas.enable` must be set to `false`
