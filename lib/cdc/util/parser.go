@@ -43,7 +43,7 @@ func ParseJSONKey(key []byte) (pkName string, pkValue interface{}, err error) {
 	_, isOk := pkStruct["payload"]
 	if isOk {
 		var castOk bool
-		// update pkStruct such that we can remove the schema
+		// strip the schema and focus in on payload
 		pkStruct, castOk = pkStruct["payload"].(map[string]interface{})
 		if !castOk {
 			return "", "", fmt.Errorf("key object is malformated")
