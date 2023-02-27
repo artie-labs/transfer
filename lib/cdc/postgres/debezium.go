@@ -32,6 +32,8 @@ func (d *Debezium) Labels() []string {
 }
 
 func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (pkName string, pkValue interface{}, err error) {
+	fmt.Println("key", string(key))
+
 	switch tc.CDCKeyFormat {
 	case "org.apache.kafka.connect.json.JsonConverter":
 		return util.ParseJSONKey(key)

@@ -31,6 +31,8 @@ func processMessage(ctx context.Context, msg kafka.Message, topicToConfigFmtMap 
 	tags["table"] = topicConfig.tc.TableName
 
 	pkName, pkValue, err := topicConfig.GetPrimaryKey(ctx, msg.Key, topicConfig.tc)
+	fmt.Println("pkName", pkName, "pkValue", pkValue, "err", err, "msg key", string(msg.Key))
+
 	if err != nil {
 		tags["what"] = "marshall_pk_err"
 		return false, fmt.Errorf("cannot unmarshall key, key: %s, err: %v", string(msg.Key), err)
