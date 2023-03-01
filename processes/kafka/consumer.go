@@ -3,6 +3,7 @@ package kafka
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"sync"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 )
 
 type TopicConfigFormatter struct {
@@ -98,6 +100,12 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 					log.WithError(err).WithFields(logFields).Warn("failed to read kafka message")
 					continue
 				}
+
+				metrics.FromContext(ctx).Timing("ingestion.lag", time.Since(msg.Time), map[string]string{
+					"groupID":   kafkaConsumer.Config().GroupID,
+					"topic":     msg.Topic,
+					"partition": fmt.Sprint(msg.Partition),
+				})
 
 				shouldFlush, processErr := processMessage(ctx, msg, topicToConfigFmtMap, kafkaConsumer.Config().GroupID)
 				if processErr != nil {
