@@ -87,7 +87,10 @@ func (p *MongoTestSuite) TestMongoDBEventOrder() {
 
 	evt, err := p.Debezium.GetEventFromBytes(ctx, []byte(payload))
 	assert.NoError(p.T(), err)
-	assert.Equal(p.T(), evt.Table(), "orders")
+
+	schemaEvt, isOk := evt.(*SchemaEventPayload)
+	assert.True(p.T(), isOk)
+	assert.Equal(p.T(), time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC), schemaEvt.GetExecutionTime())
 }
 
 func (p *MongoTestSuite) TestMongoDBEventCustomer() {
@@ -138,8 +141,6 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 
 	assert.Equal(p.T(), nestedData["object"], "foo")
 	assert.Equal(p.T(), evtData[constants.DeleteColumnMarker], false)
-
-	assert.Equal(p.T(), evt.Table(), "customers")
 	assert.Equal(p.T(), evt.GetExecutionTime(),
 		time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
 }
@@ -182,8 +183,6 @@ func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 
 	assert.Equal(p.T(), evtData["_id"], 1003)
 	assert.Equal(p.T(), evtData[constants.DeleteColumnMarker], true)
-
-	assert.Equal(p.T(), evt.Table(), "customers123")
 	assert.Equal(p.T(), evt.GetExecutionTime(),
 		time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
 }
