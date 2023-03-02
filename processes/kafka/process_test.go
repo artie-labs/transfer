@@ -109,7 +109,6 @@ func TestProcessMessageFailures(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Check that there are corresponding row(s) in the memory DB
-		fmt.Println("memoryDB.TableData[table].RowsData", memoryDB.TableData[table].RowsData)
 		assert.Equal(t, len(memoryDB.TableData[table].RowsData), idx)
 	}
 

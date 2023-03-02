@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
 )
@@ -47,4 +48,22 @@ func (m *ModelsTestSuite) SaveEvent() {
 	}
 
 	assert.Equal(m.T(), 2, found, optimization.InMemoryColumns)
+
+	badColumn := "other"
+	edgeCaseEvent := Event{
+		Table:           "foo",
+		PrimaryKeyValue: "12344",
+		Data: map[string]interface{}{
+			constants.DeleteColumnMarker: true,
+			expectedCol:                  "dusty",
+			anotherCol:                   13.37,
+			badColumn:                    "__debezium_unavailable_value",
+		},
+	}
+
+	_, err = edgeCaseEvent.Save(topicConfig, kafka.Message{})
+	assert.NoError(m.T(), err)
+	val, isOk := GetMemoryDB().TableData["foo"].InMemoryColumns[badColumn]
+	assert.True(m.T(), isOk)
+	assert.Equal(m.T(), val, typing.Invalid)
 }
