@@ -193,8 +193,8 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
 
 	assert.Equal(p.T(), evtData["item"], "Barings Participation Investors")
 	assert.Equal(p.T(), evtData["nested"], map[string]interface{}{"object": "foo"})
-
-	assert.Equal(p.T(), evt.Table(), "orders")
+	assert.Equal(p.T(), time.Date(2022, time.November, 16,
+		4, 1, 53, 308000000, time.UTC), evt.GetExecutionTime())
 }
 
 func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
@@ -307,5 +307,7 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 			Format: time.RFC3339Nano,
 		},
 	})
-	assert.Equal(p.T(), evt.Table(), "customers")
+
+	assert.Equal(p.T(), time.Date(2023, time.February, 2,
+		17, 54, 11, 451000000, time.UTC), evt.GetExecutionTime())
 }
