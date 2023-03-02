@@ -90,7 +90,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	tableData.UpdateInMemoryColumns(tableConfig.Columns())
 	query, err := merge(tableData)
 	if err != nil {
-		// Check the error message
+		log.WithError(err).Warn("failed to generate the merge query")
 		return err
 	}
 
@@ -98,27 +98,27 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	_, err = s.Exec(query)
 	if AuthenticationExpirationErr(err) {
 		log.WithError(err).Warn("authentication has expired, will reload the Snowflake store")
-		s.Store = getStore(ctx)
+		s.ReestablishConnection(ctx)
 	}
 
 	return err
 }
 
-func getStore(ctx context.Context) db.Store {
+func (s *Store) ReestablishConnection(ctx context.Context) {
 	dsn, err := gosnowflake.DSN(&gosnowflake.Config{
-		Account:          config.GetSettings().Config.Snowflake.AccountID,
-		User:             config.GetSettings().Config.Snowflake.Username,
-		Password:         config.GetSettings().Config.Snowflake.Password,
-		Warehouse:        config.GetSettings().Config.Snowflake.Warehouse,
-		Region:           config.GetSettings().Config.Snowflake.Region,
-		KeepSessionAlive: true,
+		Account:   config.GetSettings().Config.Snowflake.AccountID,
+		User:      config.GetSettings().Config.Snowflake.Username,
+		Password:  config.GetSettings().Config.Snowflake.Password,
+		Warehouse: config.GetSettings().Config.Snowflake.Warehouse,
+		Region:    config.GetSettings().Config.Snowflake.Region,
 	})
 
 	if err != nil {
 		logger.FromContext(ctx).Fatalf("failed to get snowflake dsn, err: %v", err)
 	}
 
-	return db.Open(ctx, "snowflake", dsn)
+	s.Store = db.Open(ctx, "snowflake", dsn)
+	return
 }
 
 func LoadSnowflake(ctx context.Context, _store *db.Store) *Store {
@@ -130,8 +130,10 @@ func LoadSnowflake(ctx context.Context, _store *db.Store) *Store {
 		}
 	}
 
-	return &Store{
-		Store:     getStore(ctx),
+	s := &Store{
 		configMap: &types.DwhToTablesConfigMap{},
 	}
+
+	s.ReestablishConnection(ctx)
+	return s
 }
