@@ -37,7 +37,6 @@ func (m *ModelsTestSuite) TestEvent_IsValid() {
 }
 
 func (m *ModelsTestSuite) TestEvent_TableName() {
-	//var evt postgres.SchemaEventPayload
 	var f fakeEvent
 	evt := ToMemoryEvent(context.Background(), f, "id", "123", &kafkalib.TopicConfig{
 		TableName: "orders",
