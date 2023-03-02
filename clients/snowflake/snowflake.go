@@ -106,11 +106,12 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 func getStore(ctx context.Context) db.Store {
 	dsn, err := gosnowflake.DSN(&gosnowflake.Config{
-		Account:   config.GetSettings().Config.Snowflake.AccountID,
-		User:      config.GetSettings().Config.Snowflake.Username,
-		Password:  config.GetSettings().Config.Snowflake.Password,
-		Warehouse: config.GetSettings().Config.Snowflake.Warehouse,
-		Region:    config.GetSettings().Config.Snowflake.Region,
+		Account:          config.GetSettings().Config.Snowflake.AccountID,
+		User:             config.GetSettings().Config.Snowflake.Username,
+		Password:         config.GetSettings().Config.Snowflake.Password,
+		Warehouse:        config.GetSettings().Config.Snowflake.Warehouse,
+		Region:           config.GetSettings().Config.Snowflake.Region,
+		KeepSessionAlive: true,
 	})
 
 	if err != nil {
