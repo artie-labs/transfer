@@ -3,13 +3,16 @@ package metrics
 import (
 	"context"
 	"fmt"
+	"os"
 	"strconv"
 	"time"
 
 	"github.com/DataDog/datadog-go/statsd"
 	"gopkg.in/yaml.v3"
 
+	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/maputil"
+	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
 const (
@@ -69,7 +72,15 @@ func getTags(tags interface{}) []string {
 }
 
 func NewDatadogClient(ctx context.Context, settings map[string]interface{}) (context.Context, error) {
-	datadogClient, err := statsd.New(fmt.Sprint(maputil.GetKeyFromMap(settings, DatadogAddr, DefaultAddr)))
+	address := fmt.Sprint(maputil.GetKeyFromMap(settings, DatadogAddr, DefaultAddr))
+	host := os.Getenv("TELEMETRY_HOST")
+	port := os.Getenv("TELEMETRY_PORT")
+	if !stringutil.Empty(host, port) {
+		address = fmt.Sprintf("%s:%s", host, port)
+		logger.FromContext(ctx).WithField("address", address).Info("overriding telemetry address with env vars")
+	}
+
+	datadogClient, err := statsd.New(address)
 	if err != nil {
 		return ctx, err
 	}
