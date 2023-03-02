@@ -18,6 +18,11 @@ type Debezium string
 
 func (d *Debezium) GetEventFromBytes(_ context.Context, bytes []byte) (cdc.Event, error) {
 	var schemaEventPayload SchemaEventPayload
+	if len(bytes) == 0 {
+		// This is a Kafka Tombstone event.
+		return &schemaEventPayload, nil
+	}
+
 	err := json.Unmarshal(bytes, &schemaEventPayload)
 	if err != nil {
 		return nil, err

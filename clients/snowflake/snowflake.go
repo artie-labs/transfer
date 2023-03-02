@@ -2,7 +2,6 @@ package snowflake
 
 import (
 	"context"
-
 	"github.com/snowflakedb/gosnowflake"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -51,6 +50,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	log := logger.FromContext(ctx)
+
 	// Check if all the columns exist in Snowflake
 	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.InMemoryColumns, tableConfig.Columns(), tableData.SoftDelete)
 

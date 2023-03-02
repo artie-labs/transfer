@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/artie-labs/transfer/lib/cdc/mongo"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/models"
 	"github.com/segmentio/kafka-go"
@@ -61,12 +62,10 @@ func TestProcessMessageFailures(t *testing.T) {
 	assert.True(t, strings.Contains(err.Error(), "cannot unmarshall key"), err.Error())
 
 	topicToConfigFmtMap[msg.Topic].tc.CDCKeyFormat = "org.apache.kafka.connect.storage.StringConverter"
-	msg.Key = []byte("Struct{id=14}")
-	shouldFlush, err = processMessage(ctx, msg, topicToConfigFmtMap, "foo")
-	assert.False(t, shouldFlush)
-	assert.True(t, strings.Contains(err.Error(), "cannot unmarshall event, err"), err.Error())
 
-	msg.Value = []byte(`
+	vals := []string{
+		"",
+		`
 {
 	"schema": {},
 	"payload": {
@@ -93,14 +92,39 @@ func TestProcessMessageFailures(t *testing.T) {
 		"ts_ms": 1668753329387,
 		"transaction": null
 	}
-}`)
+}`,
+	}
 
-	// Worked!
-	shouldFlush, err = processMessage(ctx, msg, topicToConfigFmtMap, "foo")
-	assert.NoError(t, err)
-	assert.False(t, shouldFlush)
-
-	// Check that there's one row in the memory DB
+	idx := 0
 	memoryDB := models.GetMemoryDB()
-	assert.Equal(t, len(memoryDB.TableData), 1)
+	for _, val := range vals {
+		idx += 1
+		msg.Key = []byte(fmt.Sprintf("Struct{id=%v}", idx))
+		if val != "" {
+			msg.Value = []byte(val)
+		}
+
+		shouldFlush, err := processMessage(ctx, msg, topicToConfigFmtMap, "foo")
+		assert.False(t, shouldFlush)
+		assert.NoError(t, err)
+
+		// Check that there are corresponding row(s) in the memory DB
+		assert.Equal(t, len(memoryDB.TableData[table].RowsData), idx)
+	}
+
+	// Tombstone means deletion
+	val, isOk := memoryDB.TableData[table].RowsData["1"][constants.DeleteColumnMarker]
+	assert.True(t, isOk)
+	assert.True(t, val.(bool))
+
+	// Non tombstone = no delete.
+	val, isOk = memoryDB.TableData[table].RowsData["2"][constants.DeleteColumnMarker]
+	assert.True(t, isOk)
+	assert.False(t, val.(bool))
+
+	msg.Value = []byte("not a json object")
+	shouldFlush, err = processMessage(ctx, msg, topicToConfigFmtMap, "foo")
+	assert.False(t, shouldFlush)
+	assert.Error(t, err)
+
 }

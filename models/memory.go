@@ -73,6 +73,11 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message kafka.Message) (
 			// DBZ has stubbed it out by providing this value, so we will skip it when we see it.
 			// See: https://issues.redhat.com/browse/DBZ-4276
 			delete(e.Data, col)
+
+			// We are directly adding this column to our in-memory database
+			// This ensures that this column exists, we just have an invalid value (so we will not replicate over).
+			// However, this will ensure that we do not drop the column within the destination
+			inMemoryDB.TableData[e.Table].InMemoryColumns[col] = typing.Invalid
 			continue
 		}
 
