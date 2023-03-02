@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/artie-labs/transfer/lib/cdc/mongo"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/models"
 	"github.com/segmentio/kafka-go"
@@ -95,6 +96,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	}
 
 	idx := 0
+	memoryDB := models.GetMemoryDB()
 	for _, val := range vals {
 		idx += 1
 		msg.Key = []byte(fmt.Sprintf("Struct{id=%v}", idx))
@@ -107,10 +109,19 @@ func TestProcessMessageFailures(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Check that there are corresponding row(s) in the memory DB
-		memoryDB := models.GetMemoryDB()
 		fmt.Println("memoryDB.TableData[table].RowsData", memoryDB.TableData[table].RowsData)
 		assert.Equal(t, len(memoryDB.TableData[table].RowsData), idx)
 	}
+
+	// Tombstone means deletion
+	val, isOk := memoryDB.TableData[table].RowsData["1"][constants.DeleteColumnMarker]
+	assert.True(t, isOk)
+	assert.True(t, val.(bool))
+
+	// Non tombstone = no delete.
+	val, isOk = memoryDB.TableData[table].RowsData["2"][constants.DeleteColumnMarker]
+	assert.True(t, isOk)
+	assert.False(t, val.(bool))
 
 	msg.Value = []byte("not a json object")
 	shouldFlush, err = processMessage(ctx, msg, topicToConfigFmtMap, "foo")
