@@ -21,3 +21,13 @@ func Wrap(colVal interface{}) string {
 	// The normal string escape is to do for O'Reilly is O\\'Reilly, but Snowflake escapes via \'
 	return fmt.Sprintf("'%s'", strings.ReplaceAll(fmt.Sprint(colVal), "'", `\'`))
 }
+
+func Empty(vals ...string) bool {
+	for _, val := range vals {
+		if val == "" {
+			return true
+		}
+	}
+
+	return false
+}
