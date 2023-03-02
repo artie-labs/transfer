@@ -20,7 +20,7 @@ type Event struct {
 
 func ToMemoryEvent(ctx context.Context, event cdc.Event, pkName string, pkValue interface{}, tc *kafkalib.TopicConfig) Event {
 	return Event{
-		Table:           event.Table(),
+		Table:           tc.TableName,
 		PrimaryKeyName:  pkName,
 		PrimaryKeyValue: pkValue,
 		ExecutionTime:   event.GetExecutionTime(),

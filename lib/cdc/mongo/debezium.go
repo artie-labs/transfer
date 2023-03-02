@@ -81,11 +81,6 @@ func (s *SchemaEventPayload) GetExecutionTime() time.Time {
 	return time.UnixMilli(s.Payload.Source.TsMs).UTC()
 }
 
-func (s *SchemaEventPayload) Table() string {
-	// MongoDB calls a table a collection.
-	return s.Payload.Source.Collection
-}
-
 func (s *SchemaEventPayload) GetData(ctx context.Context, pkName string, pkVal interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
 	retMap := make(map[string]interface{})
 	if len(s.Payload.AfterMap) == 0 {
