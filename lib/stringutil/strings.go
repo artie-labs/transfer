@@ -31,3 +31,8 @@ func Empty(vals ...string) bool {
 
 	return false
 }
+
+func EscapeSpaces(col string) (escaped bool, newString string) {
+	subStr := " "
+	return strings.Contains(col, subStr), strings.ReplaceAll(col, subStr, "__")
+}
