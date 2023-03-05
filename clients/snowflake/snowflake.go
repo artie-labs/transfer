@@ -2,6 +2,7 @@ package snowflake
 
 import (
 	"context"
+	"fmt"
 	"github.com/snowflakedb/gosnowflake"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -89,6 +90,8 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	tableData.UpdateInMemoryColumns(tableConfig.Columns())
 	query, err := merge(tableData)
+	fmt.Println("query", query)
+
 	if err != nil {
 		log.WithError(err).Warn("failed to generate the merge query")
 		return err

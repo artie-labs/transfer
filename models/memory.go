@@ -9,6 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/segmentio/kafka-go"
+	"strings"
 	"sync"
 )
 
@@ -68,15 +69,17 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message kafka.Message) (
 
 	// Update col if necessary
 	for col, val := range e.Data {
+		// columns need to all be normalized and lower cased.
+		col = strings.ToLower(col)
+
 		// Columns here could contain spaces. Every destination treats spaces in a column differently.
 		// So far, Snowflake accepts them when escaped properly, however BigQuery does not accept it.
 		// Instead of making this more complicated for future destinations, we will escape the spaces by having double underscore `__`
 		// So, if customers want to retrieve spaces again, they can replace `__`.
-
 		var containsSpace bool
 		containsSpace, col = stringutil.EscapeSpaces(col)
 		if containsSpace {
-			// Write the message back if the column has changed.
+			// Write the new message
 			e.Data[col] = val
 		}
 
