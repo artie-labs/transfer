@@ -6,6 +6,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/segmentio/kafka-go"
 	"sync"
@@ -67,6 +68,18 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message kafka.Message) (
 
 	// Update col if necessary
 	for col, val := range e.Data {
+		// Columns here could contain spaces. Every destination treats spaces in a column differently.
+		// So far, Snowflake accepts them when escaped properly, however BigQuery does not accept it.
+		// Instead of making this more complicated for future destinations, we will escape the spaces by having double underscore `__`
+		// So, if customers want to retrieve spaces again, they can replace `__`.
+
+		var containsSpace bool
+		containsSpace, col = stringutil.EscapeSpaces(col)
+		if containsSpace {
+			// Write the message back if the column has changed.
+			e.Data[col] = val
+		}
+
 		if val == "__debezium_unavailable_value" {
 			// This is an edge case within Postgres & ORCL
 			// TL;DR - Sometimes a column that is unchanged within a DML will not be emitted
