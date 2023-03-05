@@ -79,7 +79,7 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message kafka.Message) (
 		var containsSpace bool
 		containsSpace, col = stringutil.EscapeSpaces(col)
 		if containsSpace {
-			// Write the new message
+			// Write the message back if the column has changed.
 			e.Data[col] = val
 		}
 
