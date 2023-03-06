@@ -1,7 +1,7 @@
 package optimization
 
 import (
-	"github.com/artie-labs/transfer/processes/consumer"
+	"github.com/artie-labs/transfer/lib/artie"
 	"strings"
 	"time"
 
@@ -17,7 +17,7 @@ type TableData struct {
 
 	kafkalib.TopicConfig
 	// Partition to the latest offset.
-	PartitionsToLastMessage map[string]consumer.Message
+	PartitionsToLastMessage map[string]artie.Message
 
 	// This is used for the automatic schema detection
 	LatestCDCTs time.Time

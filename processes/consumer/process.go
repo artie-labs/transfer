@@ -3,12 +3,13 @@ package consumer
 import (
 	"context"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"
 	"time"
 )
 
-func processMessage(ctx context.Context, msg Message, topicToConfigFmtMap map[string]TopicConfigFormatter, groupID string) (shouldFlush bool, err error) {
+func processMessage(ctx context.Context, msg artie.Message, topicToConfigFmtMap map[string]TopicConfigFormatter, groupID string) (shouldFlush bool, err error) {
 	tags := map[string]string{
 		"groupID": groupID,
 		"topic":   msg.Topic(),
@@ -25,11 +26,11 @@ func processMessage(ctx context.Context, msg Message, topicToConfigFmtMap map[st
 		return false, fmt.Errorf("failed to get topic name: %s", msg.Topic)
 	}
 
-	tags["database"] = topicConfig.Tc.Database
-	tags["schema"] = topicConfig.Tc.Schema
-	tags["table"] = topicConfig.Tc.TableName
+	tags["database"] = topicConfig.tc.Database
+	tags["schema"] = topicConfig.tc.Schema
+	tags["table"] = topicConfig.tc.TableName
 
-	pkName, pkValue, err := topicConfig.GetPrimaryKey(ctx, msg.Key(), topicConfig.Tc)
+	pkName, pkValue, err := topicConfig.GetPrimaryKey(ctx, msg.Key(), topicConfig.tc)
 	if err != nil {
 		tags["what"] = "marshall_pk_err"
 		return false, fmt.Errorf("cannot unmarshall key, key: %s, err: %v", string(msg.Key()), err)
@@ -44,8 +45,8 @@ func processMessage(ctx context.Context, msg Message, topicToConfigFmtMap map[st
 		return false, fmt.Errorf("cannot unmarshall event, err: %v", err)
 	}
 
-	evt := models.ToMemoryEvent(ctx, event, pkName, pkValue, topicConfig.Tc)
-	shouldFlush, err = evt.Save(topicConfig.Tc, msg)
+	evt := models.ToMemoryEvent(ctx, event, pkName, pkValue, topicConfig.tc)
+	shouldFlush, err = evt.Save(topicConfig.tc, msg)
 	if err != nil {
 		tags["what"] = "save_fail"
 		err = fmt.Errorf("event failed to save, err: %v", err)

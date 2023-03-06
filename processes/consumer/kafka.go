@@ -3,6 +3,7 @@ package consumer
 import (
 	"context"
 	"crypto/tls"
+	"github.com/artie-labs/transfer/lib/artie"
 	"sync"
 	"time"
 
@@ -49,7 +50,7 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 	var topics []string
 	for _, topicConfig := range config.GetSettings().Config.Kafka.TopicConfigs {
 		topicToConfigFmtMap[topicConfig.Topic] = TopicConfigFormatter{
-			Tc:     topicConfig,
+			tc:     topicConfig,
 			Format: format.GetFormatParser(ctx, topicConfig.CDCFormat),
 		}
 		topics = append(topics, topicConfig.Topic)
@@ -70,7 +71,7 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 			topicToConsumer[topic] = kafkaConsumer
 			for {
 				kafkaMsg, err := kafkaConsumer.FetchMessage(ctx)
-				msg := NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)
+				msg := artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)
 				logFields := map[string]interface{}{
 					"topic":  msg.Topic,
 					"offset": kafkaMsg.Offset,
