@@ -10,6 +10,7 @@ const (
 	// SnowflakeArraySize is used because Snowflake has a max of 16,384 elements in an expression,
 	// https://github.com/snowflakedb/snowflake-connector-python/issues/37
 	SnowflakeArraySize = 15000
+	FlushTimeInterval  = 10 * time.Second
 
 	// DBZPostgresFormat is the only supported CDC format right now
 	DBZPostgresFormat    = "debezium.postgres"
@@ -30,6 +31,13 @@ type ColumnOperation string
 const (
 	Add    ColumnOperation = "add"
 	Delete ColumnOperation = "drop"
+)
+
+type QueueKind string
+
+const (
+	Kafka  QueueKind = "kafka"
+	PubSub QueueKind = "pubsub"
 )
 
 type DestinationKind string

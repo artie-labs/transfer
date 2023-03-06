@@ -1,10 +1,9 @@
 package optimization
 
 import (
+	"github.com/artie-labs/transfer/processes/consumer"
 	"strings"
 	"time"
-
-	"github.com/segmentio/kafka-go"
 
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -18,7 +17,7 @@ type TableData struct {
 
 	kafkalib.TopicConfig
 	// Partition to the latest offset.
-	PartitionsToLastMessage map[int]kafka.Message
+	PartitionsToLastMessage map[string]consumer.Message
 
 	// This is used for the automatic schema detection
 	LatestCDCTs time.Time

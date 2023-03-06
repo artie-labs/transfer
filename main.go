@@ -2,17 +2,16 @@ package main
 
 import (
 	"context"
-	"os"
-	"sync"
-	"time"
-
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/utils"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"
-	"github.com/artie-labs/transfer/processes/kafka"
+	"github.com/artie-labs/transfer/processes/consumer"
 	"github.com/artie-labs/transfer/processes/pool"
+	"os"
+	"sync"
 )
 
 func main() {
@@ -32,13 +31,13 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		pool.StartPool(ctx, 10*time.Second, flushChan)
+		pool.StartPool(ctx, constants.FlushTimeInterval, flushChan)
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		kafka.StartConsumer(ctx, flushChan)
+		consumer.StartConsumer(ctx, flushChan)
 	}()
 
 	wg.Wait()
