@@ -3,12 +3,12 @@ package models
 import (
 	"errors"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/processes/consumer"
 	"strings"
 	"sync"
 )
@@ -35,7 +35,7 @@ func (d *DatabaseData) ClearTableConfig(tableName string) {
 // The boolean signifies whether we should flush immediately or not. This is because Snowflake has a constraint
 // On the number of elements within an expression.
 // The other, error - is returned to see if anything went awry.
-func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message consumer.Message) (bool, error) {
+func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message artie.Message) (bool, error) {
 	if topicConfig == nil {
 		return false, errors.New("topicConfig is missing")
 	}
@@ -55,7 +55,7 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message consumer.Message
 			InMemoryColumns:         map[string]typing.KindDetails{},
 			PrimaryKey:              e.PrimaryKeyName,
 			TopicConfig:             *topicConfig,
-			PartitionsToLastMessage: map[string]consumer.Message{},
+			PartitionsToLastMessage: map[string]artie.Message{},
 		}
 	}
 
