@@ -1,0 +1,31 @@
+outputSource: test
+
+kafka:
+  bootstrapServer: kafka:9092
+  groupID: abc1234
+  topicConfigs:
+    - db: customers
+      tableName: customers
+      schema: public
+      topic: "dbserver1.inventory.customers"
+      cdcFormat: debezium.postgres.wal2json
+      # cdcKeyFormat: org.apache.kafka.connect.json.JsonConverter
+      # If you turn this on, make sure to check connect-distributed.properties for key.converter
+      cdcKeyFormat: org.apache.kafka.connect.storage.StringConverter
+
+
+snowflake:
+  account: 123
+  username: foo
+  password: bar
+  warehouse: dwh
+  region: us-east-2.aws
+
+telemetry:
+  metrics:
+    provider: datadog
+    settings:
+      tags:
+       - env:production
+      namespace: "transfer."
+      addr: "127.0.0.1:8125"
