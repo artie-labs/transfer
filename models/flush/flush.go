@@ -3,12 +3,11 @@ package flush
 import (
 	"context"
 	"github.com/artie-labs/transfer/lib/dwh/utils"
-	"time"
-
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"
-	"github.com/artie-labs/transfer/processes/kafka"
+	"github.com/artie-labs/transfer/processes/consumer"
+	"time"
 )
 
 func Flush(ctx context.Context) error {
@@ -40,7 +39,7 @@ func Flush(ctx context.Context) error {
 			log.WithError(err).WithFields(logFields).Warn("Failed to execute merge...not going to flush memory")
 		} else {
 			log.WithFields(logFields).Info("Merge success, clearing memory...")
-			commitErr := kafka.CommitOffset(ctx, tableData.Topic, tableData.PartitionsToLastMessage)
+			commitErr := consumer.CommitOffset(ctx, tableData.Topic, tableData.PartitionsToLastMessage)
 			if commitErr == nil {
 				models.GetMemoryDB().ClearTableConfig(tableName)
 			} else {

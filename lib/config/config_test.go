@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"io"
 	"os"
 	"strings"
@@ -337,4 +339,35 @@ reporting:
 	assert.Equal(t, config.Snowflake.Warehouse, warehouse)
 	assert.Equal(t, config.Snowflake.Region, region)
 	assert.Equal(t, config.Reporting.Sentry.DSN, sentryDSN)
+}
+
+func TestConfig_Validate(t *testing.T) {
+	pubsub := &Pubsub{}
+	cfg := &Config{
+		Pubsub: pubsub,
+	}
+
+	assert.Contains(t, cfg.Validate().Error(), "is invalid")
+
+	cfg.Output = constants.Snowflake
+	cfg.Queue = constants.PubSub
+	assert.Contains(t, cfg.Validate().Error(), "no pubsub topic configs")
+
+	pubsub.TopicConfigs = []*kafkalib.TopicConfig{
+		{
+			Database:  "db",
+			TableName: "table",
+			Schema:    "schema",
+			Topic:     "topic",
+		},
+	}
+
+	assert.Contains(t, cfg.Validate().Error(), "topic config is invalid")
+	pubsub.TopicConfigs[0].CDCFormat = constants.DBZPostgresAltFormat
+	pubsub.TopicConfigs[0].CDCKeyFormat = "org.apache.kafka.connect.json.JsonConverter"
+	assert.Contains(t, cfg.Validate().Error(), "pubsub settings is invalid")
+
+	pubsub.ProjectID = "project_id"
+	pubsub.PathToCredentials = "/tmp/abc"
+	assert.Nil(t, cfg.Validate())
 }

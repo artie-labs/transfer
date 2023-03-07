@@ -4,14 +4,14 @@ import (
 	"context"
 	"os"
 	"sync"
-	"time"
 
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/utils"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"
-	"github.com/artie-labs/transfer/processes/kafka"
+	"github.com/artie-labs/transfer/processes/consumer"
 	"github.com/artie-labs/transfer/processes/pool"
 )
 
@@ -32,14 +32,25 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		pool.StartPool(ctx, 10*time.Second, flushChan)
+		pool.StartPool(ctx, constants.FlushTimeInterval, flushChan)
 	}()
 
 	wg.Add(1)
-	go func() {
+	go func(ctx context.Context) {
 		defer wg.Done()
-		kafka.StartConsumer(ctx, flushChan)
-	}()
+
+		switch config.GetSettings().Config.Queue {
+		case constants.Kafka:
+			consumer.StartConsumer(ctx, flushChan)
+			break
+		case constants.PubSub:
+			consumer.StartSubscriber(ctx, flushChan)
+			break
+		default:
+			logger.FromContext(ctx).Fatalf("message queue: %s not supported", config.GetSettings().Config.Queue)
+		}
+
+	}(ctx)
 
 	wg.Wait()
 }

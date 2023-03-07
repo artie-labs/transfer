@@ -16,12 +16,22 @@ type Sentry struct {
 	DSN string `yaml:"dsn"`
 }
 
+type Pubsub struct {
+	ProjectID         string                  `yaml:"projectID"`
+	TopicConfigs      []*kafkalib.TopicConfig `yaml:"topicConfigs"`
+	PathToCredentials string                  `yaml:"pathToCredentials"`
+}
+
 type Kafka struct {
 	BootstrapServer string                  `yaml:"bootstrapServer"`
 	GroupID         string                  `yaml:"groupID"`
 	Username        string                  `yaml:"username"`
 	Password        string                  `yaml:"password"`
 	TopicConfigs    []*kafkalib.TopicConfig `yaml:"topicConfigs"`
+}
+
+func (p *Pubsub) String() string {
+	return fmt.Sprintf("project_id=%s, pathToCredentials=%s", p.ProjectID, p.PathToCredentials)
 }
 
 func (k *Kafka) String() string {
@@ -32,6 +42,9 @@ func (k *Kafka) String() string {
 
 type Config struct {
 	Output constants.DestinationKind `yaml:"outputSource"`
+	Queue  constants.QueueKind       `yaml:"queue"`
+
+	Pubsub *Pubsub
 	Kafka  *Kafka
 
 	BigQuery struct {
@@ -83,6 +96,11 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 		return nil, err
 	}
 
+	if config.Queue == "" {
+		// We default to Kafka for backwards compatibility
+		config.Queue = constants.Kafka
+	}
+
 	return &config, nil
 }
 
@@ -98,21 +116,37 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("output: %s is invalid", c.Output)
 	}
 
-	// TopicConfigs
-	if c.Kafka == nil || len(c.Kafka.TopicConfigs) == 0 {
-		return fmt.Errorf("no kafka topic configs, kafka: %v", c.Kafka)
-	}
+	if c.Queue == constants.Kafka {
+		if c.Kafka == nil || len(c.Kafka.TopicConfigs) == 0 {
+			return fmt.Errorf("no kafka topic configs, kafka: %v", c.Kafka)
+		}
 
-	for _, topicConfig := range c.Kafka.TopicConfigs {
-		if valid := topicConfig.Valid(); !valid {
-			return fmt.Errorf("topic config is invalid, tc: %s", topicConfig.String())
+		for _, topicConfig := range c.Kafka.TopicConfigs {
+			if valid := topicConfig.Valid(); !valid {
+				return fmt.Errorf("topic config is invalid, tc: %s", topicConfig.String())
+			}
+		}
+
+		// Username and password are not required (if it's within the same VPC or connecting locally
+		if array.Empty([]string{c.Kafka.GroupID, c.Kafka.BootstrapServer}) {
+			return fmt.Errorf("kafka settings is invalid, kafka: %s", c.Kafka.String())
 		}
 	}
 
-	// Kafka config
-	// Username and password are not required (if it's within the same VPC or connecting locally
-	if array.Empty([]string{c.Kafka.GroupID, c.Kafka.BootstrapServer}) {
-		return fmt.Errorf("kafka settings is invalid, kafka: %s", c.Kafka.String())
+	if c.Queue == constants.PubSub {
+		if c.Pubsub == nil || len(c.Pubsub.TopicConfigs) == 0 {
+			return fmt.Errorf("no pubsub topic configs, pubsub: %v", c.Pubsub)
+		}
+
+		for _, topicConfig := range c.Pubsub.TopicConfigs {
+			if valid := topicConfig.Valid(); !valid {
+				return fmt.Errorf("topic config is invalid, tc: %s", topicConfig.String())
+			}
+		}
+
+		if array.Empty([]string{c.Pubsub.ProjectID, c.Pubsub.PathToCredentials}) {
+			return fmt.Errorf("pubsub settings is invalid, pubsub: %s", c.Pubsub.String())
+		}
 	}
 
 	return nil

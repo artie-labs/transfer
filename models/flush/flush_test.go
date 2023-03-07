@@ -2,6 +2,7 @@ package flush
 
 import (
 	"fmt"
+	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +31,9 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 				"hi":                         "hello",
 			},
 		}
-		_, err := event.Save(topicConfig, kafka.Message{Partition: 1, Offset: 1})
+
+		kafkaMsg := kafka.Message{Partition: 1, Offset: 1}
+		_, err := event.Save(topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 		assert.Nil(f.T(), err)
 		assert.Equal(f.T(), len(models.GetMemoryDB().TableData["foo"].RowsData), i+1)
 	}
@@ -52,7 +55,8 @@ func (f *FlushTestSuite) TestShouldFlush() {
 		}
 
 		var err error
-		flush, err = event.Save(topicConfig, kafka.Message{Partition: 1, Offset: int64(i)})
+		kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
+		flush, err = event.Save(topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 		assert.Nil(f.T(), err)
 
 		if flush {
@@ -85,7 +89,8 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 					},
 				}
 
-				_, err := event.Save(topicConfig, kafka.Message{Partition: 1, Offset: int64(i)})
+				kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
+				_, err := event.Save(topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 				assert.Nil(f.T(), err)
 			}
 

@@ -1,10 +1,9 @@
 package optimization
 
 import (
+	"github.com/artie-labs/transfer/lib/artie"
 	"strings"
 	"time"
-
-	"github.com/segmentio/kafka-go"
 
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -17,8 +16,10 @@ type TableData struct {
 	PrimaryKey      string
 
 	kafkalib.TopicConfig
-	// Partition to the latest offset.
-	PartitionsToLastMessage map[int]kafka.Message
+	// Partition to the latest offset(s).
+	// For Kafka, we only need the last message to commit the offset
+	// However, pub/sub requires every single message to be acked
+	PartitionsToLastMessage map[string][]artie.Message
 
 	// This is used for the automatic schema detection
 	LatestCDCTs time.Time

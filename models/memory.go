@@ -3,12 +3,12 @@ package models
 import (
 	"errors"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/segmentio/kafka-go"
 	"strings"
 	"sync"
 )
@@ -35,7 +35,7 @@ func (d *DatabaseData) ClearTableConfig(tableName string) {
 // The boolean signifies whether we should flush immediately or not. This is because Snowflake has a constraint
 // On the number of elements within an expression.
 // The other, error - is returned to see if anything went awry.
-func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message kafka.Message) (bool, error) {
+func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message artie.Message) (bool, error) {
 	if topicConfig == nil {
 		return false, errors.New("topicConfig is missing")
 	}
@@ -55,13 +55,21 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message kafka.Message) (
 			InMemoryColumns:         map[string]typing.KindDetails{},
 			PrimaryKey:              e.PrimaryKeyName,
 			TopicConfig:             *topicConfig,
-			PartitionsToLastMessage: map[int]kafka.Message{},
+			PartitionsToLastMessage: map[string][]artie.Message{},
 		}
 	}
 
 	// Update the key, offset and TS
 	inMemoryDB.TableData[e.Table].RowsData[fmt.Sprint(e.PrimaryKeyValue)] = e.Data
-	inMemoryDB.TableData[e.Table].PartitionsToLastMessage[message.Partition] = message
+
+	// If the message is Kafka, then we only need the latest one
+	// If it's pubsub, we will store all of them in memory. This is because GCP pub/sub REQUIRES us to ack every single message
+	if message.Kind() == artie.Kafka {
+		inMemoryDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()] = []artie.Message{message}
+	} else {
+		inMemoryDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()] = append(inMemoryDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()], message)
+	}
+
 	inMemoryDB.TableData[e.Table].LatestCDCTs = e.ExecutionTime
 
 	// Increment row count
