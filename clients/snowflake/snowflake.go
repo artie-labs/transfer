@@ -105,14 +105,21 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 }
 
 func (s *Store) ReestablishConnection(ctx context.Context) {
-	dsn, err := gosnowflake.DSN(&gosnowflake.Config{
+	cfg := &gosnowflake.Config{
 		Account:   config.GetSettings().Config.Snowflake.AccountID,
 		User:      config.GetSettings().Config.Snowflake.Username,
 		Password:  config.GetSettings().Config.Snowflake.Password,
 		Warehouse: config.GetSettings().Config.Snowflake.Warehouse,
 		Region:    config.GetSettings().Config.Snowflake.Region,
-	})
+	}
 
+	if config.GetSettings().Config.Snowflake.Host != "" {
+		// If the host is specified
+		cfg.Host = config.GetSettings().Config.Snowflake.Host
+		cfg.Region = ""
+	}
+
+	dsn, err := gosnowflake.DSN(cfg)
 	if err != nil {
 		logger.FromContext(ctx).Fatalf("failed to get snowflake dsn, err: %v", err)
 	}

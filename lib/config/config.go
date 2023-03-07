@@ -48,6 +48,7 @@ type Config struct {
 		Password  string `yaml:"password"`
 		Warehouse string `yaml:"warehouse"`
 		Region    string `yaml:"region"`
+		Host      string `yaml:"host"`
 	}
 
 	Reporting struct {
