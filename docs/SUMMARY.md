@@ -22,6 +22,10 @@
 * [Snowflake](real-time-destinations/snowflake.md)
 * [BigQuery](real-time-destinations/bigquery.md)
 
+## 👨💻 WIP Tutorials
+
+* [Setting up Pub/Sub](wip-tutorials/setting-up-pub-sub.md)
+
 ***
 
 * [More ways for support](more-ways-for-support.md)

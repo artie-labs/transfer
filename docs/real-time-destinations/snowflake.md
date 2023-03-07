@@ -8,7 +8,7 @@ description: Going over how to find your Snowflake settings and outline the typi
 
 ### Getting your username and password
 
-<figure><img src="../.gitbook/assets/image (1).png" alt=""><figcaption><p>Create a service account for Transfer to use</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (1) (2).png" alt=""><figcaption><p>Create a service account for Transfer to use</p></figcaption></figure>
 
 ### Getting the Snowflake account identifier
 
