@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"os"
+	"sync"
+
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/utils"
@@ -10,8 +13,6 @@ import (
 	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/processes/consumer"
 	"github.com/artie-labs/transfer/processes/pool"
-	"os"
-	"sync"
 )
 
 func main() {
@@ -35,10 +36,21 @@ func main() {
 	}()
 
 	wg.Add(1)
-	go func() {
+	go func(ctx context.Context) {
 		defer wg.Done()
-		consumer.StartConsumer(ctx, flushChan)
-	}()
+
+		switch config.GetSettings().Config.Queue {
+		case constants.Kafka:
+			consumer.StartConsumer(ctx, flushChan)
+			break
+		case constants.PubSub:
+			consumer.StartSubscriber(ctx, flushChan)
+			break
+		default:
+			logger.FromContext(ctx).Fatalf("message queue: %s not supported", config.GetSettings().Config.Queue)
+		}
+
+	}(ctx)
 
 	wg.Wait()
 }

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -31,7 +32,8 @@ func (m *ModelsTestSuite) SaveEvent() {
 		},
 	}
 
-	_, err := event.Save(topicConfig, kafka.Message{})
+	kafkaMsg := kafka.Message{}
+	_, err := event.Save(topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(m.T(), err)
 
 	optimization := GetMemoryDB().TableData["foo"]
@@ -61,7 +63,8 @@ func (m *ModelsTestSuite) SaveEvent() {
 		},
 	}
 
-	_, err = edgeCaseEvent.Save(topicConfig, kafka.Message{})
+	newKafkaMsg := kafka.Message{}
+	_, err = edgeCaseEvent.Save(topicConfig, artie.NewMessage(&newKafkaMsg, nil, newKafkaMsg.Topic))
 	assert.NoError(m.T(), err)
 	val, isOk := GetMemoryDB().TableData["foo"].InMemoryColumns[badColumn]
 	assert.True(m.T(), isOk)

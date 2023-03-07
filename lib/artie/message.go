@@ -2,7 +2,9 @@ package artie
 
 import (
 	"cloud.google.com/go/pubsub"
+	"context"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/segmentio/kafka-go"
 	"time"
 )
@@ -18,13 +20,28 @@ type Message struct {
 }
 
 func NewMessage(kafkaMsg *kafka.Message, pubsubMsg *pubsub.Message, topic string) Message {
-	return Message{
-		KafkaMsg: kafkaMsg,
-		PubSub: &pubsubWrapper{
-			Message: pubsubMsg,
-			topic:   topic,
-		},
+	var msg Message
+	if kafkaMsg != nil {
+		msg.KafkaMsg = kafkaMsg
 	}
+
+	if pubsubMsg != nil {
+		msg.PubSub = &pubsubWrapper{
+			topic:   topic,
+			Message: pubsubMsg,
+		}
+	}
+
+	return msg
+
+}
+
+func (m *Message) EmitIngestionLag(ctx context.Context, groupID string) {
+	metrics.FromContext(ctx).Timing("ingestion.lag", time.Since(m.PublishTime()), map[string]string{
+		"groupID":   groupID,
+		"topic":     m.Topic(),
+		"partition": m.Partition(),
+	})
 }
 
 func (m *Message) PublishTime() time.Time {

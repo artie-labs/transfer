@@ -4,12 +4,13 @@ import (
 	gcp_pubsub "cloud.google.com/go/pubsub"
 	"context"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/artie"
+	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/logger"
-	"github.com/artie-labs/transfer/lib/telemetry/metrics"
+	"google.golang.org/api/option"
 	"sync"
-	"time"
 )
 
 func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, topic, subID string) (*gcp_pubsub.Subscription, error) {
@@ -47,11 +48,21 @@ func StartSubscriber(ctx context.Context, flushChan chan bool) {
 	// TODO: Publish documentation regarding PubSub on our docs.
 	log := logger.FromContext(ctx)
 
-	// TODO need to inject credentials into ENV_VAR
 	// TODO - Is this going to run into a problem with BQ credentials if they are different?
-	client, err := gcp_pubsub.NewClient(ctx, config.GetSettings().Config.Pubsub.ProjectID)
-	if err != nil {
-		log.Fatalf("failed to create a pubsub client, err: %v", err)
+	client, clientErr := gcp_pubsub.NewClient(ctx, config.GetSettings().Config.Pubsub.ProjectID,
+		option.WithCredentialsFile(config.GetSettings().Config.Pubsub.PathToCredentials))
+	if clientErr != nil {
+		log.Fatalf("failed to create a pubsub client, err: %v", clientErr)
+	}
+
+	topicToConfigFmtMap := make(map[string]TopicConfigFormatter)
+	var topics []string
+	for _, topicConfig := range config.GetSettings().Config.Pubsub.TopicConfigs {
+		topicToConfigFmtMap[topicConfig.Topic] = TopicConfigFormatter{
+			tc:     topicConfig,
+			Format: format.GetFormatParser(ctx, topicConfig.CDCFormat),
+		}
+		topics = append(topics, topicConfig.Topic)
 	}
 
 	var wg sync.WaitGroup
@@ -65,13 +76,24 @@ func StartSubscriber(ctx context.Context, flushChan chan bool) {
 				log.Fatalf("failed to find or create subscription, err: %v", err)
 			}
 
-			err = sub.Receive(ctx, func(_ context.Context, msg *gcp_pubsub.Message) {
-				// do stuff
-				metrics.FromContext(ctx).Timing("ingestion.lag", time.Since(msg.PublishTime), map[string]string{
-					"topic":        topic,
-					"subscription": subID,
-				})
+			err = sub.Receive(ctx, func(_ context.Context, pubsubMsg *gcp_pubsub.Message) {
+				msg := artie.NewMessage(nil, pubsubMsg, topic)
+				msg.EmitIngestionLag(ctx, subID)
+				logFields := map[string]interface{}{
+					"topic": msg.Topic(),
+					"msgID": msg.PubSub.ID,
+					"key":   string(msg.Key()),
+					"value": string(msg.Value()),
+				}
 
+				shouldFlush, processErr := processMessage(ctx, msg, topicToConfigFmtMap, subID)
+				if processErr != nil {
+					log.WithError(processErr).WithFields(logFields).Warn("skipping message...")
+				}
+
+				if shouldFlush {
+					flushChan <- true
+				}
 			})
 
 			if err != nil {

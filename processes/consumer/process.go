@@ -23,7 +23,7 @@ func processMessage(ctx context.Context, msg artie.Message, topicToConfigFmtMap 
 	topicConfig, isOk := topicToConfigFmtMap[msg.Topic()]
 	if !isOk {
 		tags["what"] = "failed_topic_lookup"
-		return false, fmt.Errorf("failed to get topic name: %s", msg.Topic)
+		return false, fmt.Errorf("failed to get topic name: %s", msg.Topic())
 	}
 
 	tags["database"] = topicConfig.tc.Database

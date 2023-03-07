@@ -14,7 +14,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
-	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 )
 
 var topicToConsumer map[string]kafkalib.Consumer
@@ -84,12 +83,7 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 					continue
 				}
 
-				metrics.FromContext(ctx).Timing("ingestion.lag", time.Since(msg.PublishTime()), map[string]string{
-					"groupID":   kafkaConsumer.Config().GroupID,
-					"topic":     msg.Topic(),
-					"partition": msg.Partition(),
-				})
-
+				msg.EmitIngestionLag(ctx, kafkaConsumer.Config().GroupID)
 				shouldFlush, processErr := processMessage(ctx, msg, topicToConfigFmtMap, kafkaConsumer.Config().GroupID)
 				if processErr != nil {
 					log.WithError(processErr).WithFields(logFields).Warn("skipping message...")
