@@ -342,12 +342,7 @@ reporting:
 }
 
 func TestConfig_Validate(t *testing.T) {
-	pubsub := &Pubsub{
-		ProjectID:         "",
-		TopicConfigs:      nil,
-		PathToCredentials: "",
-	}
-
+	pubsub := &Pubsub{}
 	cfg := &Config{
 		Pubsub: pubsub,
 	}
