@@ -47,8 +47,6 @@ func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, to
 func StartSubscriber(ctx context.Context, flushChan chan bool) {
 	// TODO: Publish documentation regarding PubSub on our docs.
 	log := logger.FromContext(ctx)
-
-	// TODO - Is this going to run into a problem with BQ credentials if they are different?
 	client, clientErr := gcp_pubsub.NewClient(ctx, config.GetSettings().Config.Pubsub.ProjectID,
 		option.WithCredentialsFile(config.GetSettings().Config.Pubsub.PathToCredentials))
 	if clientErr != nil {
@@ -70,7 +68,7 @@ func StartSubscriber(ctx context.Context, flushChan chan bool) {
 		wg.Add(1)
 		go func(ctx context.Context, client *gcp_pubsub.Client, topic string) {
 			defer wg.Done()
-			subID := fmt.Sprintf("transfer_%s", config.GetSettings().Config.Pubsub)
+			subID := fmt.Sprintf("transfer_%s", topic)
 			sub, err := findOrCreateSubscription(ctx, client, topic, subID)
 			if err != nil {
 				log.Fatalf("failed to find or create subscription, err: %v", err)
