@@ -30,6 +30,10 @@ type Kafka struct {
 	TopicConfigs    []*kafkalib.TopicConfig `yaml:"topicConfigs"`
 }
 
+func (p *Pubsub) String() string {
+	return fmt.Sprintf("project_id=%s, pathToCredentials=%s", p.ProjectID, p.PathToCredentials)
+}
+
 func (k *Kafka) String() string {
 	// Don't log credentials.
 	return fmt.Sprintf("bootstrapServer=%s, groupID=%s, user_set=%v, pass_set=%v",
@@ -122,7 +126,6 @@ func (c *Config) Validate() error {
 			}
 		}
 
-		// Kafka config
 		// Username and password are not required (if it's within the same VPC or connecting locally
 		if array.Empty([]string{c.Kafka.GroupID, c.Kafka.BootstrapServer}) {
 			return fmt.Errorf("kafka settings is invalid, kafka: %s", c.Kafka.String())
@@ -130,7 +133,19 @@ func (c *Config) Validate() error {
 	}
 
 	if c.Queue == constants.PubSub {
-		// TODO - validate pubsub
+		if c.Pubsub == nil || len(c.Pubsub.TopicConfigs) == 0 {
+			return fmt.Errorf("no pubsub topic configs, pubsub: %v", c.Pubsub)
+		}
+
+		for _, topicConfig := range c.Pubsub.TopicConfigs {
+			if valid := topicConfig.Valid(); !valid {
+				return fmt.Errorf("topic config is invalid, tc: %s", topicConfig.String())
+			}
+		}
+
+		if array.Empty([]string{c.Pubsub.ProjectID, c.Pubsub.PathToCredentials}) {
+			return fmt.Errorf("pubsub settings is invalid, pubsub: %s", c.Pubsub.String())
+		}
 	}
 
 	return nil

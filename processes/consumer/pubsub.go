@@ -35,6 +35,8 @@ func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, to
 		sub, err = client.CreateSubscription(ctx, subID, gcp_pubsub.SubscriptionConfig{
 			Topic:       gcpTopic,
 			AckDeadline: defaultAckDeadline,
+			// Enable ordering given the `partition key` which is known as ordering key in Pub/Sub
+			EnableMessageOrdering: true,
 		})
 
 		if err != nil {
