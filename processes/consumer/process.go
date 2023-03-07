@@ -38,9 +38,6 @@ func processMessage(ctx context.Context, msg artie.Message, topicToConfigFmtMap 
 
 	event, err := topicConfig.GetEventFromBytes(ctx, msg.Value())
 	if err != nil {
-		// TODO: Can we filter tombstone events?
-		// A tombstone event will be sent to Kafka when a DELETE happens.
-		// Which causes marshalling error.
 		tags["what"] = "marshall_value_err"
 		return false, fmt.Errorf("cannot unmarshall event, err: %v", err)
 	}
