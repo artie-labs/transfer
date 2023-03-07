@@ -9,6 +9,14 @@ import (
 	"time"
 )
 
+type Kind int
+
+const (
+	Invalid Kind = iota
+	Kafka
+	PubSub
+)
+
 type pubsubWrapper struct {
 	topic string
 	*pubsub.Message
@@ -33,7 +41,18 @@ func NewMessage(kafkaMsg *kafka.Message, pubsubMsg *pubsub.Message, topic string
 	}
 
 	return msg
+}
 
+func (m *Message) Kind() Kind {
+	if m.KafkaMsg != nil {
+		return Kafka
+	}
+
+	if m.PubSub != nil {
+		return PubSub
+	}
+
+	return Invalid
 }
 
 func (m *Message) EmitIngestionLag(ctx context.Context, groupID string) {

@@ -55,13 +55,21 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message artie.Message) (
 			InMemoryColumns:         map[string]typing.KindDetails{},
 			PrimaryKey:              e.PrimaryKeyName,
 			TopicConfig:             *topicConfig,
-			PartitionsToLastMessage: map[string]artie.Message{},
+			PartitionsToLastMessage: map[string][]artie.Message{},
 		}
 	}
 
 	// Update the key, offset and TS
 	inMemoryDB.TableData[e.Table].RowsData[fmt.Sprint(e.PrimaryKeyValue)] = e.Data
-	inMemoryDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()] = message
+
+	// If the message is Kafka, then we only need the latest one
+	// If it's pubsub, we will store all of them in memory. This is because GCP pub/sub REQUIRES us to ack every single message
+	if message.Kind() == artie.Kafka {
+		inMemoryDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()] = []artie.Message{message}
+	} else {
+		inMemoryDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()] = append(inMemoryDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()], message)
+	}
+
 	inMemoryDB.TableData[e.Table].LatestCDCTs = e.ExecutionTime
 
 	// Increment row count

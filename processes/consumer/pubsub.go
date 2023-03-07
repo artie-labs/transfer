@@ -85,7 +85,6 @@ func StartSubscriber(ctx context.Context, flushChan chan bool) {
 					"key":   string(msg.Key()),
 					"value": string(msg.Value()),
 				}
-
 				shouldFlush, processErr := processMessage(ctx, msg, topicToConfigFmtMap, subID)
 				if processErr != nil {
 					log.WithError(processErr).WithFields(logFields).Warn("skipping message...")

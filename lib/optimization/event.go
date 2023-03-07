@@ -17,7 +17,7 @@ type TableData struct {
 
 	kafkalib.TopicConfig
 	// Partition to the latest offset.
-	PartitionsToLastMessage map[string]artie.Message
+	PartitionsToLastMessage map[string][]artie.Message
 
 	// This is used for the automatic schema detection
 	LatestCDCTs time.Time
