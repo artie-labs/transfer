@@ -47,9 +47,14 @@ To run Artie Transfer's stack locally, please refer to the [examples folder](htt
 ## What is currently supported?
 Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Currently Transfer supports:
 
+- Message Queues
+  - Kafka (default)
+  - Google Pub/Sub
+
 - [Destinations](https://docs.artie.so/configurations/real-time-destinations/overview):
     - Snowflake
     - BigQuery
+
 - [Sources](https://docs.artie.so/configurations/real-time-sources/overview):
     - MongoDB (w/ Debezium)
     - Postgres (w/ Debezium), we support the following replication slot plug-ins: `pgoutput, decoderbufs, wal2json`
