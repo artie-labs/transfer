@@ -7,15 +7,16 @@ import (
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/logger"
 	"google.golang.org/api/option"
 	"sync"
+	"time"
 )
+
+const defaultAckDeadline = 5 * time.Minute
 
 func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, topic, subID string) (*gcp_pubsub.Subscription, error) {
 	log := logger.FromContext(ctx)
-	// Check if subscription exists
 	sub := client.Subscription(subID)
 	exists, err := sub.Exists(ctx)
 	if err != nil {
@@ -33,11 +34,11 @@ func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, to
 
 		sub, err = client.CreateSubscription(ctx, subID, gcp_pubsub.SubscriptionConfig{
 			Topic:       gcpTopic,
-			AckDeadline: constants.FlushTimeInterval * 2,
+			AckDeadline: defaultAckDeadline,
 		})
 
 		if err != nil {
-			return nil, fmt.Errorf("failed to create subscription, err: %v", err)
+			return nil, fmt.Errorf("failed to create subscription, subID: %s, err: %v", subID, err)
 		}
 	}
 
@@ -45,7 +46,6 @@ func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, to
 }
 
 func StartSubscriber(ctx context.Context, flushChan chan bool) {
-	// TODO: Publish documentation regarding PubSub on our docs.
 	log := logger.FromContext(ctx)
 	client, clientErr := gcp_pubsub.NewClient(ctx, config.GetSettings().Config.Pubsub.ProjectID,
 		option.WithCredentialsFile(config.GetSettings().Config.Pubsub.PathToCredentials))

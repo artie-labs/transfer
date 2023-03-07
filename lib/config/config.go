@@ -112,7 +112,6 @@ func (c *Config) Validate() error {
 	}
 
 	if c.Queue == constants.Kafka {
-		// TopicConfigs
 		if c.Kafka == nil || len(c.Kafka.TopicConfigs) == 0 {
 			return fmt.Errorf("no kafka topic configs, kafka: %v", c.Kafka)
 		}
