@@ -1,0 +1,22 @@
+outputSource: test
+queue: pubsub
+
+pubsub:
+  projectID: artie-labs
+  pathToCredentials: /tmp/credentials/service-account.json
+  topicConfigs:
+    - db: customers
+      tableName: customers
+      schema: public
+      topic: "dbserver1.inventory.customers"
+      cdcFormat: debezium.postgres.wal2json
+      cdcKeyFormat: org.apache.kafka.connect.json.JsonConverter
+
+telemetry:
+  metrics:
+    provider: datadog
+    settings:
+      tags:
+       - env:production
+      namespace: "transfer."
+      addr: "127.0.0.1:8125"
