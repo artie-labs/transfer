@@ -2,7 +2,7 @@ outputSource: test
 queue: pubsub
 
 pubsub:
-  projectID: artie-labs
+  projectID: project-id
   pathToCredentials: /tmp/credentials/service-account.json
   topicConfigs:
     - db: customers
