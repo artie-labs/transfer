@@ -1,25 +1,16 @@
 outputSource: test
+queue: pubsub
 
-kafka:
-  bootstrapServer: kafka:9092
-  groupID: abc1234
+pubsub:
+  projectID: artie-labs
+  pathToCredentials: /tmp/credentials/service-account.json
   topicConfigs:
     - db: customers
       tableName: customers
       schema: public
       topic: "dbserver1.inventory.customers"
       cdcFormat: debezium.postgres.wal2json
-      # cdcKeyFormat: org.apache.kafka.connect.json.JsonConverter
-      # If you turn this on, make sure to check connect-distributed.properties for key.converter
-      cdcKeyFormat: org.apache.kafka.connect.storage.StringConverter
-
-
-snowflake:
-  account: 123
-  username: foo
-  password: bar
-  warehouse: dwh
-  region: us-east-2.aws
+      cdcKeyFormat: org.apache.kafka.connect.json.JsonConverter
 
 telemetry:
   metrics:

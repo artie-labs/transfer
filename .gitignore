@@ -10,3 +10,10 @@ config/.terraform*
 
 .personal/
 scratch/
+
+# Local .terraform directories
+**/.terraform.lock.hcl
+**/.terraform/*
+# .tfstate files
+*.tfstate
+*.tfstate.*
