@@ -4,7 +4,7 @@
 # 3) Creating a subscription
 # Note: - We require a topic per table that we want to replicate from.
 locals {
-  project = "artie-labs"
+  project = "PROJECT_ID"
   role = "roles/pubsub.editor"
 }
 
