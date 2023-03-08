@@ -6,7 +6,7 @@ In this tutorial, we will learn how to run Debezium Server with Pub/Sub sink and
 
 <figure><img src="../.gitbook/assets/image (5).png" alt=""><figcaption></figcaption></figure>
 
-## Pre-requisites
+## Prerequisites
 
 * Terraform
 * Docker
