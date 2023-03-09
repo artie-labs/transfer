@@ -26,8 +26,8 @@ func (s *SnowflakeTestSuite) TestMergeNoDeleteFlag() {
 		LatestCDCTs:     time.Time{},
 	}
 
-	_, err := merge(tableData)
-	assert.Error(s.T(), err, "merge failed")
+	_, err := getMergeStatement(tableData)
+	assert.Error(s.T(), err, "getMergeStatement failed")
 
 }
 
@@ -62,8 +62,8 @@ func (s *SnowflakeTestSuite) TestMerge() {
 		LatestCDCTs:     time.Time{},
 	}
 
-	mergeSQL, err := merge(tableData)
-	assert.NoError(s.T(), err, "merge failed")
+	mergeSQL, err := getMergeStatement(tableData)
+	assert.NoError(s.T(), err, "getMergeStatement failed")
 	assert.Contains(s.T(), mergeSQL, "robin")
 	assert.Contains(s.T(), mergeSQL, "false")
 	assert.Contains(s.T(), mergeSQL, "1")
@@ -114,8 +114,8 @@ func (s *SnowflakeTestSuite) TestMergeWithSingleQuote() {
 		LatestCDCTs:     time.Time{},
 	}
 
-	mergeSQL, err := merge(tableData)
-	assert.NoError(s.T(), err, "merge failed")
+	mergeSQL, err := getMergeStatement(tableData)
+	assert.NoError(s.T(), err, "getMergeStatement failed")
 	assert.Contains(s.T(), mergeSQL, `I can\'t fail`)
 }
 
@@ -147,7 +147,7 @@ func (s *SnowflakeTestSuite) TestMergeJson() {
 		LatestCDCTs:     time.Time{},
 	}
 
-	mergeSQL, err := merge(tableData)
-	assert.NoError(s.T(), err, "merge failed")
+	mergeSQL, err := getMergeStatement(tableData)
+	assert.NoError(s.T(), err, "getMergeStatement failed")
 	assert.Contains(s.T(), mergeSQL, `"label": "2\\" pipe"`)
 }

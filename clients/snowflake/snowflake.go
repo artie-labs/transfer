@@ -16,6 +16,7 @@ import (
 
 type Store struct {
 	db.Store
+	testDB    bool // Used for testing
 	configMap *types.DwhToTablesConfigMap
 }
 
@@ -38,6 +39,16 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
+	err := s.merge(ctx, tableData)
+	if AuthenticationExpirationErr(err) {
+		logger.FromContext(ctx).WithError(err).Warn("authentication has expired, will reload the Snowflake store")
+		s.ReestablishConnection(ctx)
+	}
+
+	return err
+}
+
+func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) error {
 	if tableData.Rows == 0 {
 		// There's no rows. Let's skip.
 		return nil
@@ -88,23 +99,23 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	tableData.UpdateInMemoryColumns(tableConfig.Columns())
-	query, err := merge(tableData)
+	query, err := getMergeStatement(tableData)
 	if err != nil {
-		log.WithError(err).Warn("failed to generate the merge query")
+		log.WithError(err).Warn("failed to generate the getMergeStatement query")
 		return err
 	}
 
 	log.WithField("query", query).Debug("executing...")
 	_, err = s.Exec(query)
-	if AuthenticationExpirationErr(err) {
-		log.WithError(err).Warn("authentication has expired, will reload the Snowflake store")
-		s.ReestablishConnection(ctx)
-	}
-
 	return err
 }
 
 func (s *Store) ReestablishConnection(ctx context.Context) {
+	if s.testDB {
+		// Don't actually re-establish for tests.
+		return
+	}
+
 	cfg := &gosnowflake.Config{
 		Account:   config.GetSettings().Config.Snowflake.AccountID,
 		User:      config.GetSettings().Config.Snowflake.Username,
@@ -132,6 +143,7 @@ func LoadSnowflake(ctx context.Context, _store *db.Store) *Store {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
+			testDB:    true,
 			Store:     *_store,
 			configMap: &types.DwhToTablesConfigMap{},
 		}

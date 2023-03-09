@@ -13,7 +13,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func merge(tableData *optimization.TableData) (string, error) {
+func getMergeStatement(tableData *optimization.TableData) (string, error) {
 	var tableValues []string
 	var cols []string
 	var sflkCols []string
