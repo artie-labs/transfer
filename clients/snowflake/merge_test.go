@@ -79,8 +79,8 @@ func (s *SnowflakeTestSuite) TestMerge() {
 			}
 
 			assert.True(s.T(), strings.Contains(mergeSQL, fmt.Sprint(val)), map[string]interface{}{
-				"getMergeStatement": mergeSQL,
-				"val":               val,
+				"merge": mergeSQL,
+				"val":   val,
 			})
 		}
 	}
