@@ -58,6 +58,52 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	assert.NoError(s.T(), err)
 }
 
+func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
+	columns := map[string]typing.KindDetails{
+		"id":                         typing.Integer,
+		"name":                       typing.String,
+		constants.DeleteColumnMarker: typing.Boolean,
+		// Add kindDetails to created_at
+		"created_at": typing.ParseValue(time.Now().Format(time.RFC3339Nano)),
+	}
+
+	rowsData := make(map[string]map[string]interface{})
+
+	for i := 0; i < 5; i++ {
+		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]interface{}{
+			"id":         fmt.Sprintf("pk-%d", i),
+			"created_at": time.Now().Format(time.RFC3339Nano),
+			"name":       fmt.Sprintf("Robin-%d", i),
+		}
+	}
+
+	topicConfig := kafkalib.TopicConfig{
+		Database:  "customer",
+		TableName: "orders",
+		Schema:    "public",
+	}
+
+	tableData := &optimization.TableData{
+		InMemoryColumns: columns,
+		RowsData:        rowsData,
+		TopicConfig:     topicConfig,
+		PrimaryKey:      "id",
+		Rows:            1,
+	}
+
+	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake),
+		types.NewDwhTableConfig(columns, nil, false, true))
+
+	s.fakeStore.ExecReturnsOnCall(0, nil, fmt.Errorf("390114: Authentication token has expired. The user must authenticate again."))
+	err := s.store.Merge(context.Background(), tableData)
+	assert.True(s.T(), AuthenticationExpirationErr(err), err)
+
+	s.fakeStore.ExecReturnsOnCall(1, nil, nil)
+	assert.Nil(s.T(), s.store.Merge(context.Background(), tableData))
+	s.fakeStore.ExecReturns(nil, nil)
+	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 2, "called merge")
+}
+
 func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	columns := map[string]typing.KindDetails{
 		"id":                         typing.Integer,

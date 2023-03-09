@@ -16,6 +16,7 @@ import (
 
 type Store struct {
 	db.Store
+	testDB    bool // Used for testing
 	configMap *types.DwhToTablesConfigMap
 }
 
@@ -110,6 +111,11 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) er
 }
 
 func (s *Store) ReestablishConnection(ctx context.Context) {
+	if s.testDB {
+		// Don't actually re-establish for tests.
+		return
+	}
+
 	cfg := &gosnowflake.Config{
 		Account:   config.GetSettings().Config.Snowflake.AccountID,
 		User:      config.GetSettings().Config.Snowflake.Username,
@@ -137,6 +143,7 @@ func LoadSnowflake(ctx context.Context, _store *db.Store) *Store {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
+			testDB:    true,
 			Store:     *_store,
 			configMap: &types.DwhToTablesConfigMap{},
 		}
