@@ -20,7 +20,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	// Say the column first_name already exists in Snowflake as "STRING"
 	// I want to delete the value, so I update Postgres and set the cell to be null
 	// TableData will think the column is invalid and tableConfig will think column = string
-	// Before we call merge, it should reconcile it.
+	// Before we call getMergeStatement, it should reconcile it.
 	columns := map[string]typing.KindDetails{
 		"first_name":                 typing.String,
 		"invalid_column":             typing.Invalid,
@@ -96,10 +96,10 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	err := s.store.Merge(context.Background(), tableData)
 	assert.Nil(s.T(), err)
 	s.fakeStore.ExecReturns(nil, nil)
-	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 1, "called merge")
+	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 1, "called getMergeStatement")
 }
 
-// TestExecuteMergeDeletionFlagRemoval is going to run execute merge twice.
+// TestExecuteMergeDeletionFlagRemoval is going to run execute getMergeStatement twice.
 // First time, we will try to delete a column
 // Second time, we'll simulate the data catching up (column exists) and it should now
 // Remove it from the in-memory store.
@@ -150,7 +150,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	err := s.store.Merge(context.Background(), tableData)
 	assert.Nil(s.T(), err)
 	s.fakeStore.ExecReturns(nil, nil)
-	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 1, "called merge")
+	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 1, "called getMergeStatement")
 
 	// Check the temp deletion table now.
 	assert.Equal(s.T(), len(s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ColumnsToDelete()), 1,
@@ -159,7 +159,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	_, isOk := s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ColumnsToDelete()["new"]
 	assert.True(s.T(), isOk)
 
-	// Now try to execute merge where 1 of the rows have the column now
+	// Now try to execute getMergeStatement where 1 of the rows have the column now
 	for _, pkMap := range tableData.RowsData {
 		pkMap["new"] = "123"
 		tableData.InMemoryColumns = sflkColumns
@@ -172,7 +172,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	err = s.store.Merge(context.Background(), tableData)
 	assert.NoError(s.T(), err)
 	s.fakeStore.ExecReturns(nil, nil)
-	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 2, "called merge again")
+	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 2, "called getMergeStatement again")
 
 	// Caught up now, so columns should be 0.
 	assert.Equal(s.T(), len(s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ColumnsToDelete()), 0,
