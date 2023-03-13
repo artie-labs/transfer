@@ -63,11 +63,8 @@ func (s *SchemaEventPayload) GetData(ctx context.Context, pkName string, pkVal i
 	if afterSchemaObject != nil {
 		for _, field := range afterSchemaObject.Fields {
 			// Check if the field is an integer and requires us to cast it as such.
-			fmt.Println("before", retMap[field.FieldName])
 			if field.IsInteger() {
 				valFloat, isOk := retMap[field.FieldName].(float64)
-				fmt.Println("after", valFloat)
-				fmt.Println("afterCast", int64(valFloat))
 				if isOk {
 					retMap[field.FieldName] = int(valFloat)
 					continue

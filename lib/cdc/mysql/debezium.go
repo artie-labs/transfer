@@ -13,8 +13,6 @@ import (
 type Debezium string
 
 func (d *Debezium) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Event, error) {
-	fmt.Println("string", string(bytes))
-
 	var event util.SchemaEventPayload
 	if len(bytes) == 0 {
 		// This is a Kafka Tombstone event.
@@ -25,8 +23,6 @@ func (d *Debezium) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Eve
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("event", event.Payload.After)
 
 	return &event, nil
 }
