@@ -1,4 +1,4 @@
-package postgres
+package mysql
 
 import (
 	"context"
@@ -13,6 +13,8 @@ import (
 type Debezium string
 
 func (d *Debezium) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Event, error) {
+	fmt.Println("string", string(bytes))
+
 	var event util.SchemaEventPayload
 	if len(bytes) == 0 {
 		// This is a Kafka Tombstone event.
@@ -24,11 +26,13 @@ func (d *Debezium) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Eve
 		return nil, err
 	}
 
+	fmt.Println("event", event.Payload.After)
+
 	return &event, nil
 }
 
 func (d *Debezium) Labels() []string {
-	return []string{constants.DBZPostgresFormat, constants.DBZPostgresAltFormat}
+	return []string{constants.DBZMySQLFormat}
 }
 
 func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (pkName string, pkValue interface{}, err error) {

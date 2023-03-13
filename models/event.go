@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"fmt"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"time"
 
@@ -19,6 +20,7 @@ type Event struct {
 }
 
 func ToMemoryEvent(ctx context.Context, event cdc.Event, pkName string, pkValue interface{}, tc *kafkalib.TopicConfig) Event {
+	fmt.Println("ToMemoryEvent", event.GetData(ctx, pkName, pkValue, tc))
 	return Event{
 		Table:           tc.TableName,
 		PrimaryKeyName:  pkName,
