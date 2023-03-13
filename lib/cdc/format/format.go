@@ -2,6 +2,7 @@ package format
 
 import (
 	"context"
+	"github.com/artie-labs/transfer/lib/cdc/mysql"
 
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/cdc/mongo"
@@ -10,13 +11,14 @@ import (
 )
 
 var (
-	d postgres.Debezium
-	m mongo.Debezium
+	d     postgres.Debezium
+	m     mongo.Debezium
+	mySQL mysql.Debezium
 )
 
 func GetFormatParser(ctx context.Context, label string) cdc.Format {
 	validFormats := []cdc.Format{
-		&d, &m,
+		&d, &m, &mySQL,
 	}
 
 	for _, validFormat := range validFormats {

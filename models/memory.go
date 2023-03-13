@@ -104,7 +104,7 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message artie.Message) (
 			inMemoryDB.TableData[e.Table].InMemoryColumns[col] = typing.Invalid
 			continue
 		}
-
+		
 		colTypeDetails, isOk := inMemoryDB.TableData[e.Table].InMemoryColumns[col]
 		if !isOk {
 			inMemoryDB.TableData[e.Table].InMemoryColumns[col] = typing.ParseValue(val)
