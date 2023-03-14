@@ -4,7 +4,7 @@ description: >-
   your MySQL to start providing CDC logs.
 ---
 
-# WIP - MySQL
+# MySQL
 
 ## Finding your MySQL settings
 

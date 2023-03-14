@@ -14,7 +14,7 @@
 
 * [Overview](real-time-sources/wip-overview.md)
 * [PostgreSQL](real-time-sources/postgresql.md)
-* [WIP - MySQL](real-time-sources/wip-mysql.md)
+* [MySQL](real-time-sources/mysql.md)
 * [MongoDB](real-time-sources/mongodb.md)
 
 ## Real-time Destinations
