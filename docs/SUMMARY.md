@@ -13,7 +13,8 @@
 ## Real-time Sources
 
 * [Overview](real-time-sources/wip-overview.md)
-* [PostgreSQL](real-time-sources/postgresql.md)
+* [PostgreSQL](real-time-sources/postgresql/README.md)
+  * [PostgreSQL on GCP](real-time-sources/postgresql/postgresql-on-gcp.md)
 * [MySQL](real-time-sources/mysql.md)
 * [MongoDB](real-time-sources/mongodb.md)
 
