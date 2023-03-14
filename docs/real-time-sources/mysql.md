@@ -22,43 +22,35 @@ We will need the following:
 
 ### Supported types
 
-* BOOLEAN / BOOL
-* BIT(1)
-* TINYINT
-* SMALLINT\[(M)]
-* MEDIUMINT\[(M)]
-* INT, INTEGER\[(M)]
-* BIGINT\[(M)]
-* REAL\[(M, D)]
-* FLOAT\[(P)]
-* FLOAT(M, D)
-* NUMERIC\[(M\[,D])]
-* DECIMAL\[M\[,D])]
-* DOUBLE\[(M, D)]
-* CHAR(M)
-* VARCHAR(M)
-* TINYTEXT
-* TEXT
-* MEDIUMTEXT
-* LONGTEXT
-* JSON
-* ENUM
-* SET
-* YEAR\[(2|4)]
-* TIMESTAMP\[(M)]
-* DATE
-* TIME\[(M)]
-* DATETIME, DATETIME(M)
+* `BOOLEAN` / `BOOL`
+* `BIT(1)`
+* `TINYINT`
+* `SMALLINT[(M)]`
+* `MEDIUMINT[(M)]`
+* `INT, INTEGER[(M)]`
+* `BIGINT[(M)]`
+* `REAL[(M, D)]`
+* `FLOAT[(P)]`
+* `FLOAT(M, D)`
+* `NUMERIC[(M[,D])]`
+* `DECIMAL[M[,D])]`
+* `DOUBLE[(M, D)]`
+* `CHAR(M)`
+* `VARCHAR(M)`
+* `TINYTEXT`
+* `TEXT`
+* `MEDIUMTEXT`
+* `LONGTEXT`
+* `JSON`
+* `ENUM`
+* `SET`
+* `YEAR[(2|4)]`
+* `TIMESTAMP[(M)]`
+* `DATE`
+* `TIME[(M)]`
+* `DATETIME, DATETIME(M)`
 
-## Running Debezium and Transfer yourself
-
-### Sample Debezium Configuration
-
-{% hint style="info" %}
-If you plan to run your own Debezium connector to capture these logs, you can pass in additional parameters, write them to a file and use it to create the Debezium connector. Click [here to see an example](https://github.com/artie-labs/transfer/blob/master/examples/postgres/register-postgres-connector.json).
-{% endhint %}
-
-#### Self-hosted notes:
+## Running it yourself
 
 {% hint style="info" %}
 These considerations are automatically handled for you if Artie Transfer is running a Debezium connector for you.&#x20;
@@ -71,3 +63,4 @@ _We are also actively working on reducing the amount of considerations required 
 * `value.converter` must be set to `org.apache.kafka.connect.json.JsonConverter`
 * `value.converter.schemas.enable` must be set to `true`
 * Transfer only supports `time.precision.mode=adaptive` which is the default value
+* [Example Debezium connector settings](https://github.com/artie-labs/transfer/blob/master/examples/postgres/register-postgres-connector.json)

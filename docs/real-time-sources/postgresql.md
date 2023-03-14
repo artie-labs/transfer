@@ -20,35 +20,7 @@ We will need the following:
 | Database Password  | Password for authentication into your database.                | No default    |
 | Database Name      | The name of the database that you want to capture changes for. | No default.   |
 
-## Running Debezium and Transfer yourself
-
-### Sample Debezium Configuration
-
-{% hint style="info" %}
-If you plan to run your own Debezium connector to capture these logs, you can pass in additional parameters, write them to a file and use it to create the Debezium connector. Click [here to see an example](https://github.com/artie-labs/transfer/blob/master/examples/postgres/register-postgres-connector.json).
-{% endhint %}
-
-## Creating your replication slot
-
-By running Debezium we support 2 different plugins, which are `pgoutput` and `decoderbufs`.
-
-* `pgoutput` is a default plug-in for PostgreSQL 10+. This is also what PostgreSQL uses for its own logical replication.
-* `decoderbufs` is based on Protobuf and is maintained by the Debezium community. To use this, you would need to configure additional libraries.
-
-{% hint style="info" %}
-There is also a third option, `wal2json`, which is a deprecated plugin that has been removed from Debezium 2.0.&#x20;
-
-If you have a hard requirement on using this, please get in touch with us.
-{% endhint %}
-
-```sql
--- Creating a replication slot, see here for more details:
--- https://www.postgresql.org/docs/9.4/catalog-pg-replication-slots.html
-SELECT * FROM pg_create_logical_replication_slot('debezium', 'pgoutput');
-
--- List all the available replication slots
-SELECT * FROM pg_replication_slots;
-```
+## Running it yourself
 
 #### Self-hosted notes:
 
@@ -63,3 +35,4 @@ _We are also actively working on reducing the amount of considerations required 
 * `value.converter` must be set to `org.apache.kafka.connect.json.JsonConverter`
 * `value.converter.schemas.enable` must be set to `true`
 * Transfer only supports `time.precision.mode=adaptive` which is the default value
+* [Example Debezium connector settings](https://github.com/artie-labs/transfer/blob/master/examples/postgres/register-postgres-connector.json)
