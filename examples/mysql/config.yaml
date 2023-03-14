@@ -1,7 +1,7 @@
 outputSource: test
 
 kafka:
-  bootstrapServer: 0.0.0.0:29092
+  bootstrapServer: kafka:9092
   groupID: abc1234
   topicConfigs:
     - db: customers

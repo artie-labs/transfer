@@ -45,3 +45,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    links:
+      - kafka
+      - mysql
