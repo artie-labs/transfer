@@ -56,8 +56,9 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
     - BigQuery
 
 - [Sources](https://docs.artie.so/configurations/real-time-sources/overview):
-    - MongoDB (w/ Debezium)
-    - Postgres (w/ Debezium), we support the following replication slot plug-ins: `pgoutput, decoderbufs, wal2json`
+    - MongoDB
+    - PostgreSQL, we support the following replication slot plug-ins: `pgoutput, decoderbufs, wal2json`
+    - MySQL
 
 _If the database you are using is not on the list, feel free to file for a [feature request](https://github.com/artie-labs/transfer/issues/new)._
 
@@ -71,6 +72,7 @@ _Note: If any of these limitations are blocking you from using Transfer. Feel fr
 The long term goal for Artie Transfer is to be able to extend the service to have as little of these limitations as possible._
 
 * [PostgreSQL](https://docs.artie.so/configurations/real-time-sources/postgresql#things-to-note-if-you-are-running-your-own-debezium)
+* [MySQL](https://docs.artie.so/configurations/real-time-sources/mysql#things-to-note-if-you-are-running-your-own-debezium)
 * [MongoDB](https://docs.artie.so/configurations/real-time-sources/mongodb#things-to-note-if-you-are-running-your-own-debezium)
 
 ## Telemetry
