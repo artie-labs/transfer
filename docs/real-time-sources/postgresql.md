@@ -20,6 +20,43 @@ We will need the following:
 | Database Password  | Password for authentication into your database.                | No default    |
 | Database Name      | The name of the database that you want to capture changes for. | No default.   |
 
+### Supported types
+
+* `BOOLEAN` / `BOOL`
+* `BIT(1)`
+* `SMALLINT`, `SMALLSERIAL`
+* `INTEGER`, `SERIAL`
+* `BIGINT`, `BIGSERIAL`
+* `REAL`
+* `DOUBLE PRECISION`
+* `NUMERIC[(M, [,D])]`
+* `DECIMAL[(M, [,D])]`
+* `MONEY`
+* `CHAR[(M)]`
+* `CHARACTER[(M)]`
+* `CHARACTER VARYING[(M)]`
+* `DATE`
+* `TIMESTAMP(M)`
+* `TIMESTAMP WITH TIME ZONE`
+* `TIME(M)`
+* `TIME WITH TIME ZONE`
+* `INTERVAL [P]`, we store this in microseconds.
+* `JSON`, `JSONB`
+* `XML`
+* `UUID`
+* `CITEXT`
+* `INET`
+* `CIDR`
+* `MACADDR`
+* `MACADDR8`
+* `INT4RANGE`
+* `INT8RANGE`
+* `NUMRANGE`
+* `TSRANGE`
+* `TSTZRANGE`
+* `DATERANGE`
+* `ENUM`
+
 ## Running it yourself
 
 #### Self-hosted notes:
