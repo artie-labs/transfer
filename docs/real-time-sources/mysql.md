@@ -50,11 +50,15 @@ We will need the following:
 * TIME\[(M)]
 * DATETIME, DATETIME(M)
 
+## Running Debezium and Transfer yourself
+
+### Sample Debezium Configuration
+
 {% hint style="info" %}
-If you plan to your own Debezium connector to capture these logs, you can pass in additional parameters, write them to a file and use it to create the Debezium connector. Click [here to see an example](https://github.com/artie-labs/transfer/blob/master/examples/postgres/register-postgres-connector.json).
+If you plan to run your own Debezium connector to capture these logs, you can pass in additional parameters, write them to a file and use it to create the Debezium connector. Click [here to see an example](https://github.com/artie-labs/transfer/blob/master/examples/postgres/register-postgres-connector.json).
 {% endhint %}
 
-## Things to note if you are running your own Debezium
+#### Self-hosted notes:
 
 {% hint style="info" %}
 These considerations are automatically handled for you if Artie Transfer is running a Debezium connector for you.&#x20;
