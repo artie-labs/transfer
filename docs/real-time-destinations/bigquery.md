@@ -10,7 +10,7 @@ description: Going over how to find your BigQuery settings and outline the typin
 
 When you are in your GCP project, you can see your GCP project ID at the top of the navigation bar.
 
-<figure><img src="../.gitbook/assets/image.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (5).png" alt=""><figcaption></figcaption></figure>
 
 ### Getting your default dataset
 

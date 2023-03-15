@@ -14,7 +14,8 @@
 
 * [Overview](real-time-sources/wip-overview.md)
 * [PostgreSQL](real-time-sources/postgresql/README.md)
-  * [PostgreSQL on GCP](real-time-sources/postgresql/postgresql-on-gcp.md)
+  * [GCP CloudSQL - PostgreSQL](real-time-sources/postgresql/gcp-cloudsql-postgresql.md)
+  * [Amazon RDS - PostgreSQL](real-time-sources/postgresql/amazon-rds-postgresql.md)
 * [MySQL](real-time-sources/mysql.md)
 * [MongoDB](real-time-sources/mongodb.md)
 

@@ -1,12 +1,12 @@
 ---
 description: >-
-  In this page, we'll go over how to enable write-ahead log (WAL) for your
-  PostgreSQL instance running on GCP with Cloud SQL.
+  In this page, we'll go over how to enable write-ahead log (WAL) for your GCP
+  CloudSQL instance running PostgreSQL
 ---
 
-# PostgreSQL on GCP
+# GCP CloudSQL - PostgreSQL
 
-## Enabling Logical Decoding Flag
+## Turning on Logical Decoding Flag
 
 We'll need this flag to be turned on so that we are able to use replication slots. To turn this on, click `Edit`, then `Flags` and enable `cloudsql.logical_decoding` to be ON.
 
