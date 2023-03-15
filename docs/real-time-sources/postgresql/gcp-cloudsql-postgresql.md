@@ -1,7 +1,7 @@
 ---
 description: >-
   In this page, we'll go over how to enable write-ahead log (WAL) for your GCP
-  CloudSQL instance running PostgreSQL
+  CloudSQL instance running PostgreSQL.
 ---
 
 # GCP CloudSQL - PostgreSQL

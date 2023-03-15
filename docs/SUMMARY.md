@@ -17,7 +17,8 @@
   * [GCP CloudSQL - PostgreSQL](real-time-sources/postgresql/gcp-cloudsql-postgresql.md)
   * [Amazon RDS - PostgreSQL](real-time-sources/postgresql/amazon-rds-postgresql.md)
 * [MySQL](real-time-sources/mysql.md)
-* [MongoDB](real-time-sources/mongodb.md)
+* [MongoDB](real-time-sources/mongodb/README.md)
+  * [Atlas - MongoDB](real-time-sources/mongodb/atlas-mongodb.md)
 
 ## Real-time Destinations
 
