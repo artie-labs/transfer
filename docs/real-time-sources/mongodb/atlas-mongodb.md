@@ -14,7 +14,6 @@ In this section, we will need to gather the following values:
 * Password
 * Authentication Database
 
-\
 Also, to allow Artie Transfer to read the change event stream, the MongoDB cluster must be running in a Replica Set. If you have any questions about how to set that up, get in touch with us at [hi@artie.so](mailto:hi@artie.so)!
 {% endhint %}
 
