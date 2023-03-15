@@ -23,7 +23,7 @@ Find the `rds.logical_replication` parameter and set it to `1`.
 Now, go to your database, modify the instance to attach the newly created parameter group and then restart your database.
 
 {% hint style="info" %}
-Note that this is a [static](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Appendix.PostgreSQL.CommonDBATasks.Parameters.html) parameter, which requires a reboot of the DB instance.
+Note **`rds.logical_replication`**is a [static](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Appendix.PostgreSQL.CommonDBATasks.Parameters.html) parameter, which requires DB reboot to have effect.
 {% endhint %}
 
 <figure><img src="../../.gitbook/assets/image (6).png" alt=""><figcaption></figcaption></figure>
