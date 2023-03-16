@@ -37,10 +37,11 @@ func JSONEToMap(val []byte) (map[string]interface{}, error) {
 }
 
 var (
-	tDateTime = reflect.TypeOf(primitive.DateTime(0))
-	tOID      = reflect.TypeOf(primitive.ObjectID{})
-	tBinary   = reflect.TypeOf(primitive.Binary{})
-	tDecimal  = reflect.TypeOf(primitive.Decimal128{})
+	tDateTime  = reflect.TypeOf(primitive.DateTime(0))
+	tOID       = reflect.TypeOf(primitive.ObjectID{})
+	tBinary    = reflect.TypeOf(primitive.Binary{})
+	tDecimal   = reflect.TypeOf(primitive.Decimal128{})
+	tTimestamp = reflect.TypeOf(primitive.Timestamp{})
 )
 
 func decimalEncodeValue(_ bsoncodec.EncodeContext, vw bsonrw.ValueWriter, val reflect.Value) error {
@@ -106,6 +107,19 @@ func binaryEncodeValue(_ bsoncodec.EncodeContext, vw bsonrw.ValueWriter, val ref
 	return vw.WriteString(parsedUUID.String())
 }
 
+func timestampEncodeValue(_ bsoncodec.EncodeContext, vw bsonrw.ValueWriter, val reflect.Value) error {
+	if !val.IsValid() || val.Type() != tTimestamp {
+		return bsoncodec.ValueEncoderError{Name: "ObjectIDEncodeValue", Types: []reflect.Type{tBinary}, Received: val}
+	}
+
+	s, isOk := val.Interface().(primitive.Timestamp)
+	if !isOk {
+		return bsoncodec.ValueEncoderError{Name: "ObjectIDEncodeValue not Binary", Types: []reflect.Type{tBinary}, Received: val}
+	}
+
+	return vw.WriteString(time.Unix(int64(s.T), 0).UTC().Format(ext.ISO8601))
+}
+
 func createCustomRegistry() *bsoncodec.RegistryBuilder {
 	var primitiveCodecs bson.PrimitiveCodecs
 	rb := bsoncodec.NewRegistryBuilder()
@@ -116,6 +130,7 @@ func createCustomRegistry() *bsoncodec.RegistryBuilder {
 	rb.RegisterTypeEncoder(tOID, bsoncodec.ValueEncoderFunc(objectIDEncodeValue))
 	rb.RegisterTypeEncoder(tBinary, bsoncodec.ValueEncoderFunc(binaryEncodeValue))
 	rb.RegisterTypeEncoder(tDecimal, bsoncodec.ValueEncoderFunc(decimalEncodeValue))
+	rb.RegisterTypeEncoder(tTimestamp, bsoncodec.ValueEncoderFunc(timestampEncodeValue))
 	primitiveCodecs.RegisterPrimitiveCodecs(rb)
 	return rb
 }
