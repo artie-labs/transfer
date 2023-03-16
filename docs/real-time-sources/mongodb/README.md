@@ -26,7 +26,29 @@ This is necessary so that we are able to run a Debezium deployment to subscribe 
 | MongoDB Password          | Password for authentication into your database.                                                                                                                                                                                                                                                                                             | No default    |
 | MongoDB Auth Database     | MongoDB [authSource](https://www.mongodb.com/docs/manual/reference/connection-string/#mongodb-urioption-urioption.authSource) (which database should we authenticate against)                                                                                                                                                               | admin         |
 
-## Things to note if you are running your own Debezium
+### Supported types
+
+_Types are sourced from the_ [_MongoDB extended JSON specification_](https://github.com/mongodb/specifications/blob/master/source/extended-json.rst#canonical-extended-json-example)_._
+
+* Array
+* Binary
+* Array
+* Boolean
+* ObjectID
+* Int32
+* Int64
+* Double
+* Decimal128
+* Code
+* CodeWScope
+* RegEx
+* Datetime
+* Timestamp
+* String
+
+## Running it yourself
+
+#### Self-hosted notes:
 
 {% hint style="info" %}
 These considerations are automatically handled for you if Artie Transfer is running a Debezium connector for you.&#x20;
@@ -36,3 +58,4 @@ _We are also actively working on reducing the amount of considerations required 
 
 * `value.converter` must be set to `org.apache.kafka.connect.json.JsonConverter`
 * `value.converter.schemas.enable` must be set to `true`
+* [Example Debezium connector settings](https://github.com/artie-labs/transfer/blob/master/examples/mongodb/register-mongodb-connector.json)
