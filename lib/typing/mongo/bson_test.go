@@ -42,7 +42,10 @@ func TestMarshal(t *testing.T) {
 				"c": "hello"
 			}
 		}
-	}
+	},
+	"test_timestamp": {
+       "$timestamp": { "t": 1678929517, "i": 1 }
+   	}
 }
 `)
 	result, err := JSONEToMap(bsonData)
@@ -62,4 +65,5 @@ func TestMarshal(t *testing.T) {
 	assert.Equal(t, result["test_int"], float64(1337))
 	assert.Equal(t, result["test_list"], []interface{}{float64(1), float64(2), float64(3), float64(4), "hello"})
 	assert.Equal(t, result["test_nested_object"], map[string]interface{}{"a": map[string]interface{}{"b": map[string]interface{}{"c": "hello"}}})
+	assert.Equal(t, "2023-03-16T01:18:37+00:00", result["test_timestamp"])
 }
