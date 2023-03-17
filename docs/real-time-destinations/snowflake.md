@@ -53,3 +53,54 @@ For the most optimal usage, consider leveraging warehouse suspension policies an
 | Geography                                                     | 🟠 Currently not supported. |
 | Geometry                                                      | 🟠 Currently not supported. |
 
+## Creating a service account for Artie
+
+Paste and modify the variables to create an account for Artie.
+
+```sql
+BEGIN TRANSACTION;
+    USE ROLE ACCOUNTADMIN; -- This combines both SYSADMIN and SECURITYADMIN
+
+    -- IMPORTANT, PLEASE FILL THIS OUT AND SAVE THIS --
+    SET ROLE_NAME = 'ARTIE_TRANSFER_ROLE';
+    SET SERVICE_USER = 'ARTIE';
+    SET SERVICE_PW = 'PASSWORD';
+    -- NOTE: If you already have a DWH, you can use that, or create a separate one for Artie
+    -- If your default DWH is a larger size, you may consider creating a dedicated one for Artie that's a smaller size
+    -- To optimize your spend. See https://docs.artie.so/configurations/real-time-destinations/snowflake#which-data-warehouse-to-use for more details.
+    SET DWH_NAME = UPPER('DWH');
+    SET DB_NAME = UPPER('DB_NAME');
+    SET SCHEMA_NAME = UPPER('public');
+    -- END IMPORTANT --
+    SET DB_SCHEMA_NAME = CONCAT($DB_NAME, '.', $SCHEMA_NAME);
+
+    CREATE ROLE IF NOT EXISTS identifier($ROLE_NAME);
+    CREATE USER IF NOT EXISTS identifier($SERVICE_USER)
+        password = $SERVICE_PW
+        default_role = $ROLE_NAME;
+    GRANT ROLE identifier($role_name) to USER identifier($SERVICE_USER);
+    CREATE WAREHOUSE IF NOT EXISTS identifier($DWH_NAME)
+        warehouse_size = xsmall
+        warehouse_type = standard
+        auto_suspend = 10
+        auto_resume = true
+        initially_suspended = true;
+
+    GRANT USAGE ON WAREHOUSE identifier($DWH_NAME) TO ROLE identifier($ROLE_NAME);
+    GRANT USAGE ON DATABASE identifier($DB_NAME) TO ROLE identifier($ROLE_NAME);
+    GRANT ALL PRIVILEGES ON SCHEMA identifier($DB_SCHEMA_NAME) TO ROLE IDENTIFIER($ROLE_NAME);
+
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA identifier($DB_SCHEMA_NAME) TO ROLE IDENTIFIER($ROLE_NAME);
+    GRANT ALL PRIVILEGES ON FUTURE TABLES IN SCHEMA identifier($DB_SCHEMA_NAME) TO ROLE IDENTIFIER($ROLE_NAME);
+COMMIT;
+
+```
+
+## Troubleshooting
+
+### Why am I not able to query or operate table?
+
+Snowflake's native RBAC makes it so that the account that created the resource is the native owner. To change this, assign the ARTIE service account's role to your account and you will be able to operate on the table. See the GIF below on how to fix this problem! \[[source](https://community.snowflake.com/s/question/0D50Z00008GUDFlSAP/insufficient-privileges-to-operate-on-table-even-running-as-accountadmin)]
+
+<figure><img src="../.gitbook/assets/SFLK.gif" alt=""><figcaption></figcaption></figure>
+
