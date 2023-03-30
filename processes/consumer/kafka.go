@@ -4,16 +4,18 @@ import (
 	"context"
 	"crypto/tls"
 	"github.com/artie-labs/transfer/lib/artie"
+	awsCfg "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/segmentio/kafka-go/sasl"
+	"github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2"
+	"github.com/segmentio/kafka-go/sasl/plain"
 	"sync"
 	"time"
-
-	"github.com/segmentio/kafka-go"
-	"github.com/segmentio/kafka-go/sasl/plain"
 
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/segmentio/kafka-go"
 )
 
 var topicToConsumer map[string]kafkalib.Consumer
@@ -32,17 +34,30 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 		DualStack: true,
 	}
 
+	var mech sasl.Mechanism
+
+	// If using AWS MSK IAM, we expect this to be set in the ENV VAR (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+	if config.GetSettings().Config.Kafka.EnableAWSMSKIAM {
+		cfg, err := awsCfg.LoadDefaultConfig(ctx)
+		if err != nil {
+			log.WithError(err).Fatal("failed to load aws configuration")
+		}
+
+		mech = aws_msk_iam_v2.NewMechanism(cfg)
+
+	}
+
 	// If username or password is set, then let's enable PLAIN.
 	// By default, we will support no auth (local testing) and PLAIN SASL.
 	if config.GetSettings().Config.Kafka.Username != "" {
-		mechanism := plain.Mechanism{
+		mech = plain.Mechanism{
 			Username: config.GetSettings().Config.Kafka.Username,
 			Password: config.GetSettings().Config.Kafka.Password,
 		}
 
-		dialer.SASLMechanism = mechanism
-		dialer.TLS = &tls.Config{}
 	}
+	dialer.SASLMechanism = mech
+	dialer.TLS = &tls.Config{}
 
 	topicToConfigFmtMap := make(map[string]TopicConfigFormatter)
 	topicToConsumer = make(map[string]kafkalib.Consumer)

@@ -27,6 +27,7 @@ type Kafka struct {
 	GroupID         string                  `yaml:"groupID"`
 	Username        string                  `yaml:"username"`
 	Password        string                  `yaml:"password"`
+	EnableAWSMSKIAM bool                    `yaml:"enableAWSMKSIAM"`
 	TopicConfigs    []*kafkalib.TopicConfig `yaml:"topicConfigs"`
 }
 
