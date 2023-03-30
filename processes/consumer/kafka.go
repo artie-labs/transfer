@@ -36,7 +36,8 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 
 	var mech sasl.Mechanism
 
-	// If using AWS MSK IAM, we expect this to be set in the ENV VAR (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+	// If using AWS MSK IAM, we expect this to be set in the ENV VAR
+	// (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, or the AWS Profile should be called default.)
 	if config.GetSettings().Config.Kafka.EnableAWSMSKIAM {
 		cfg, err := awsCfg.LoadDefaultConfig(ctx)
 		if err != nil {
