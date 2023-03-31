@@ -12,12 +12,13 @@ _Note: Keys here are formatted in dot notation for readability purposes, please 
 
 ### Kafka
 
-| Key                     | Optional | Description                                                                                               |
-| ----------------------- | -------- | --------------------------------------------------------------------------------------------------------- |
-| `kafka.bootstrapServer` | N        | <p>URL to the Kafka broker, including the port number.<br><br>Example:<br><code>localhost:9092</code></p> |
-| `kafka.groupID`         | N        | Consumer group ID                                                                                         |
-| `kafka.username`        | Y        | Username (Transfer correctly only supports Plain SASL or no authentication).                              |
-| `kafka.password`        | Y        | Password                                                                                                  |
+| Key                     | Optional | Description                                                                                                                                                                                                                                                                            |
+| ----------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kafka.bootstrapServer` | N        | <p>URL to the Kafka broker, including the port number.<br><br>Example:<br><code>localhost:9092</code></p>                                                                                                                                                                              |
+| `kafka.groupID`         | N        | Consumer group ID                                                                                                                                                                                                                                                                      |
+| `kafka.username`        | Y        | Username (Transfer correctly only supports Plain SASL or no authentication).                                                                                                                                                                                                           |
+| `kafka.password`        | Y        | Password                                                                                                                                                                                                                                                                               |
+| `kafka.enableAWSMKSIAM` | Y        | <p>Defaults to <code>false</code>, turn this on if you want to use IAM authentication for communicating with Amazon MSK. <br><br>Make sure to unset username and password and provide: <code>AWS_REGION</code>, <code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code></p> |
 
 ### Topic Configs
 
