@@ -71,6 +71,7 @@ func (s *SnowflakeTestSuite) TestMerge() {
 
 	// Check if MERGE INTO FQ Table exists.
 	assert.True(s.T(), strings.Contains(mergeSQL, "MERGE INTO shop.public.customer c"))
+	assert.True(s.T(), strings.Contains(mergeSQL, fmt.Sprintf("c.%s = cc.%s", tableData.PrimaryKey, tableData.PrimaryKey)))
 	for _, rowData := range tableData.RowsData {
 		for col, val := range rowData {
 			switch cols[col] {
