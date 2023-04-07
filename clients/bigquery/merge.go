@@ -151,8 +151,6 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
-	fmt.Println("query", query)
-
 	log.WithField("query", query).Debug("executing...")
 	_, err = s.Exec(query)
 	return err
