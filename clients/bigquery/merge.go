@@ -85,8 +85,15 @@ func merge(tableData *optimization.TableData) (string, error) {
 	}
 
 	subQuery := strings.Join(rowValues, " UNION ALL ")
+
+	var specialCastForPrimaryKey bool
+	pkType, isOk := tableData.InMemoryColumns[tableData.PrimaryKey]
+	if isOk {
+		specialCastForPrimaryKey = pkType.Kind == typing.Struct.Kind
+	}
+
 	return dml.MergeStatement(tableData.ToFqName(constants.BigQuery), subQuery,
-		tableData.PrimaryKey, tableData.IdempotentKey, cols, tableData.SoftDelete)
+		tableData.PrimaryKey, tableData.IdempotentKey, cols, tableData.SoftDelete, specialCastForPrimaryKey)
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
@@ -143,6 +150,8 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		log.WithError(err).Warn("failed to generate the merge query")
 		return err
 	}
+
+	fmt.Println("query", query)
 
 	log.WithField("query", query).Debug("executing...")
 	_, err = s.Exec(query)
