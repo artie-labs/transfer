@@ -13,7 +13,7 @@ func TestLogger(t *testing.T) {
 		Level: logrus.DebugLevel,
 	}
 
-	assert.Equal(t, log.Level, FromContext(InjectLoggerIntoCtx(log, ctx)).Level)
+	assert.Equal(t, log.Level, FromContext(InjectLoggerIntoCtx(ctx)).Level)
 }
 
 func TestLoggerNil(t *testing.T) {
@@ -34,7 +34,6 @@ func TestLoggerSubsequent(t *testing.T) {
 	assert.NotNil(t, log)
 
 	log.Level = logrus.DebugLevel
-	ctx = InjectLoggerIntoCtx(log, ctx)
-
+	ctx = InjectLoggerIntoCtx(ctx)
 	assert.Equal(t, FromContext(ctx).Level, log.Level)
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 )
 
-func NewLogger(settings *config.Settings) *logrus.Logger {
+func new(settings *config.Settings) *logrus.Logger {
 	log := logrus.New()
 	log.SetOutput(os.Stdout)
 

@@ -3,6 +3,7 @@ package metrics
 import (
 	"context"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"testing"
 
@@ -33,8 +34,25 @@ func TestLoadExporter(t *testing.T) {
 	for kind, result := range exporterKindToResultMap {
 		// Wipe and create a new ctx per run
 		ctx := context.Background()
-		ctx = LoadExporter(ctx, kind, map[string]interface{}{
-			"url": "localhost:8125",
+		ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{
+			Config: &config.Config{
+				Telemetry: struct {
+					Metrics struct {
+						Provider constants.ExporterKind `yaml:"provider"`
+						Settings map[string]interface{} `yaml:"settings,omitempty"`
+					}
+				}{
+					Metrics: struct {
+						Provider constants.ExporterKind `yaml:"provider"`
+						Settings map[string]interface{} `yaml:"settings,omitempty"`
+					}{
+						Provider: kind,
+						Settings: map[string]interface{}{
+							"url": "localhost:8125",
+						},
+					},
+				},
+			},
 		})
 
 		_, isOk := FromContext(ctx).(NullMetricsProvider)
