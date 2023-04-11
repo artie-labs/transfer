@@ -7,7 +7,7 @@ const (
 	DeleteColumnMarker        = ArtiePrefix + "_delete"
 	DeletionConfidencePadding = 4 * time.Hour
 
-	// SnowflakeArraySize is used because Snowflake has a max of 16,384 elements in an expression,
+	// SnowflakeArraySize is used because Snowflake has a max of 16,384 (2^14) elements in an expression,
 	// https://github.com/snowflakedb/snowflake-connector-python/issues/37
 	SnowflakeArraySize = 15000
 	FlushTimeInterval  = 10 * time.Second
