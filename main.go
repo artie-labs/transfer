@@ -22,7 +22,7 @@ func main() {
 
 	// Loading Telemetry
 	ctx = metrics.LoadExporter(ctx)
-	ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(ctx), ctx)
+	ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(ctx, nil), ctx)
 
 	models.LoadMemoryDB()
 

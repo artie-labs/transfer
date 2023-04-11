@@ -2,7 +2,6 @@ package flush
 
 import (
 	"context"
-	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/dwh/utils"
@@ -28,14 +27,14 @@ func (f *FlushTestSuite) SetupTest() {
 
 	f.ctx = context.Background()
 
-	// Not using LoadDataWarehouse here because config.GetSettings() is not initialized in this test
-	// TODO: Address ^
 	f.ctx = config.InjectSettingsIntoContext(f.ctx, &config.Settings{
-		Config:         nil,
+		Config: &config.Config{
+			Output: "snowflake",
+		},
 		VerboseLogging: false,
 	})
 
-	f.ctx = utils.InjectDwhIntoCtx(snowflake.LoadSnowflake(f.ctx, &store), f.ctx)
+	f.ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(f.ctx, &store), f.ctx)
 
 	models.LoadMemoryDB()
 

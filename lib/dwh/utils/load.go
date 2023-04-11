@@ -12,7 +12,7 @@ import (
 	"github.com/artie-labs/transfer/lib/mocks"
 )
 
-func DataWarehouse(ctx context.Context) dwh.DataWarehouse {
+func DataWarehouse(ctx context.Context, store *db.Store) dwh.DataWarehouse {
 	settings := config.FromContext(ctx)
 
 	switch settings.Config.Output {
@@ -27,9 +27,9 @@ func DataWarehouse(ctx context.Context) dwh.DataWarehouse {
 		})
 		return snowflake.LoadSnowflake(ctx, &store)
 	case "snowflake":
-		return snowflake.LoadSnowflake(ctx, nil)
+		return snowflake.LoadSnowflake(ctx, store)
 	case "bigquery":
-		return bigquery.LoadBigQuery(ctx, nil)
+		return bigquery.LoadBigQuery(ctx, store)
 	}
 
 	logger.FromContext(ctx).WithFields(map[string]interface{}{
