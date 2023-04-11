@@ -12,8 +12,10 @@ import (
 	"github.com/artie-labs/transfer/lib/mocks"
 )
 
-func DataWarehouse(ctx context.Context) dwh.DataWarehouse {
-	switch config.GetSettings().Config.Output {
+func DataWarehouse(ctx context.Context, store *db.Store) dwh.DataWarehouse {
+	settings := config.FromContext(ctx)
+
+	switch settings.Config.Output {
 	case "test":
 		// TODO - In the future, we can create a fake store that follows the MERGE syntax for SQL standard.
 		// Also, the fake library not only needs to support MERGE, but needs to be able to make it easy for us to return
@@ -25,13 +27,13 @@ func DataWarehouse(ctx context.Context) dwh.DataWarehouse {
 		})
 		return snowflake.LoadSnowflake(ctx, &store)
 	case "snowflake":
-		return snowflake.LoadSnowflake(ctx, nil)
+		return snowflake.LoadSnowflake(ctx, store)
 	case "bigquery":
-		return bigquery.LoadBigQuery(ctx, nil)
+		return bigquery.LoadBigQuery(ctx, store)
 	}
 
 	logger.FromContext(ctx).WithFields(map[string]interface{}{
-		"source": config.GetSettings().Config.Output,
+		"source": settings.Config.Output,
 	}).Fatal("No valid output sources specified.")
 
 	return nil

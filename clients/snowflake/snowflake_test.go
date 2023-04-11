@@ -1,7 +1,6 @@
 package snowflake
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -53,7 +52,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 			constants.DeleteColumnMarker: typing.Boolean,
 		}, nil, false, true))
 
-	err := s.store.Merge(context.Background(), tableData)
+	err := s.store.Merge(s.ctx, tableData)
 	assert.Equal(s.T(), tableData.InMemoryColumns["first_name"], typing.String)
 	assert.NoError(s.T(), err)
 }
@@ -95,11 +94,11 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		types.NewDwhTableConfig(columns, nil, false, true))
 
 	s.fakeStore.ExecReturnsOnCall(0, nil, fmt.Errorf("390114: Authentication token has expired. The user must authenticate again."))
-	err := s.store.Merge(context.Background(), tableData)
+	err := s.store.Merge(s.ctx, tableData)
 	assert.True(s.T(), AuthenticationExpirationErr(err), err)
 
 	s.fakeStore.ExecReturnsOnCall(1, nil, nil)
-	assert.Nil(s.T(), s.store.Merge(context.Background(), tableData))
+	assert.Nil(s.T(), s.store.Merge(s.ctx, tableData))
 	s.fakeStore.ExecReturns(nil, nil)
 	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 2, "called merge")
 }
@@ -139,7 +138,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake),
 		types.NewDwhTableConfig(columns, nil, false, true))
-	err := s.store.Merge(context.Background(), tableData)
+	err := s.store.Merge(s.ctx, tableData)
 	assert.Nil(s.T(), err)
 	s.fakeStore.ExecReturns(nil, nil)
 	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 1, "called merge")
@@ -193,7 +192,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	config := types.NewDwhTableConfig(sflkColumns, nil, false, true)
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), config)
 
-	err := s.store.Merge(context.Background(), tableData)
+	err := s.store.Merge(s.ctx, tableData)
 	assert.Nil(s.T(), err)
 	s.fakeStore.ExecReturns(nil, nil)
 	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 1, "called merge")
@@ -215,7 +214,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		break
 	}
 
-	err = s.store.Merge(context.Background(), tableData)
+	err = s.store.Merge(s.ctx, tableData)
 	assert.NoError(s.T(), err)
 	s.fakeStore.ExecReturns(nil, nil)
 	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 2, "called merge again")
@@ -226,7 +225,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
-	err := s.store.Merge(context.Background(), &optimization.TableData{
+	err := s.store.Merge(s.ctx, &optimization.TableData{
 		InMemoryColumns:         nil,
 		RowsData:                nil,
 		PrimaryKey:              "",

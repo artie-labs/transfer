@@ -116,17 +116,19 @@ func (s *Store) ReestablishConnection(ctx context.Context) {
 		return
 	}
 
+	settings := config.FromContext(ctx)
+
 	cfg := &gosnowflake.Config{
-		Account:   config.GetSettings().Config.Snowflake.AccountID,
-		User:      config.GetSettings().Config.Snowflake.Username,
-		Password:  config.GetSettings().Config.Snowflake.Password,
-		Warehouse: config.GetSettings().Config.Snowflake.Warehouse,
-		Region:    config.GetSettings().Config.Snowflake.Region,
+		Account:   settings.Config.Snowflake.AccountID,
+		User:      settings.Config.Snowflake.Username,
+		Password:  settings.Config.Snowflake.Password,
+		Warehouse: settings.Config.Snowflake.Warehouse,
+		Region:    settings.Config.Snowflake.Region,
 	}
 
-	if config.GetSettings().Config.Snowflake.Host != "" {
+	if settings.Config.Snowflake.Host != "" {
 		// If the host is specified
-		cfg.Host = config.GetSettings().Config.Snowflake.Host
+		cfg.Host = settings.Config.Snowflake.Host
 		cfg.Region = ""
 	}
 

@@ -2,6 +2,7 @@ package format
 
 import (
 	"context"
+	"github.com/artie-labs/transfer/lib/config"
 	"os"
 	"os/exec"
 	"testing"
@@ -13,6 +14,10 @@ import (
 
 func TestGetFormatParser(t *testing.T) {
 	ctx := context.Background()
+	ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{
+		VerboseLogging: true,
+	})
+
 	validFormats := []string{constants.DBZPostgresAltFormat, constants.DBZPostgresFormat, constants.DBZMongoFormat}
 	for _, validFormat := range validFormats {
 		assert.NotNil(t, GetFormatParser(ctx, validFormat))

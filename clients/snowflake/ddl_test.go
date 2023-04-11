@@ -1,7 +1,6 @@
 package snowflake
 
 import (
-	"context"
 	"fmt"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/types"
@@ -108,11 +107,9 @@ func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
 func (s *SnowflakeTestSuite) TestGetTableConfig() {
 	// If the table does not exist, snowflakeTableConfig should say so.
 	fqName := "customers.public.orders22"
-	ctx := context.Background()
-
 	s.fakeStore.QueryReturns(nil, fmt.Errorf("Table '%s' does not exist or not authorized", fqName))
 
-	tableConfig, err := s.store.getTableConfig(ctx, fqName, false)
+	tableConfig, err := s.store.getTableConfig(s.ctx, fqName, false)
 	assert.NotNil(s.T(), tableConfig, "config is nil")
 	assert.NoError(s.T(), err)
 
