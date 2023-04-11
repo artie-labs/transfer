@@ -13,13 +13,15 @@ import (
 )
 
 const (
-	// maxSnowflakeArraySize is used because Snowflake has a max of 16,384 (2^14) elements in an expression,
-	// https://github.com/snowflakedb/snowflake-connector-python/issues/37
-	maxSnowflakeArraySize   = 15000
 	defaultFlushTimeSeconds = 10
 
 	flushIntervalSecondsStart = 5
 	flushIntervalSecondsEnd   = 6 * 60 * 60
+
+	bufferPoolSizeStart = 5
+	// Snowflake has a limit of 2^14 elements within an expression.
+	// https://github.com/snowflakedb/snowflake-connector-python/issues/37
+	bufferPoolSizeEnd = 15000
 )
 
 type Sentry struct {
@@ -118,7 +120,7 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 	}
 
 	if config.BufferRows == 0 {
-		config.BufferRows = maxSnowflakeArraySize
+		config.BufferRows = bufferPoolSizeEnd
 	}
 
 	return &config, nil
@@ -137,7 +139,10 @@ func (c *Config) Validate() error {
 			c.FlushIntervalSeconds, flushIntervalSecondsStart, flushIntervalSecondsEnd)
 	}
 
-	// TODO validate seconds and buffer.
+	if !numbers.BetweenEq(bufferPoolSizeStart, bufferPoolSizeEnd, int(c.BufferRows)) {
+		return fmt.Errorf("buffer pool is outside of our range: %v, expected start: %v, end: %v",
+			c.BufferRows, bufferPoolSizeStart, bufferPoolSizeEnd)
+	}
 
 	if !constants.IsValidDestination(c.Output) {
 		return fmt.Errorf("output: %s is invalid", c.Output)

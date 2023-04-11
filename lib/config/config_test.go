@@ -348,6 +348,7 @@ func TestConfig_Validate(t *testing.T) {
 	cfg := &Config{
 		Pubsub:               pubsub,
 		FlushIntervalSeconds: 5,
+		BufferRows:           500,
 	}
 
 	assert.Contains(t, cfg.Validate().Error(), "is invalid")
