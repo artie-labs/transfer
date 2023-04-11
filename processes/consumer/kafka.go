@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"github.com/artie-labs/transfer/lib/artie"
 	awsCfg "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/segmentio/kafka-go/sasl"
 	"github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2"
 	"github.com/segmentio/kafka-go/sasl/plain"
 	"sync"
@@ -35,8 +34,6 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 		DualStack: true,
 	}
 
-	var mech sasl.Mechanism
-
 	// If using AWS MSK IAM, we expect this to be set in the ENV VAR
 	// (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, or the AWS Profile should be called default.)
 	if settings.Config.Kafka.EnableAWSMSKIAM {
@@ -45,21 +42,20 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 			log.WithError(err).Fatal("failed to load aws configuration")
 		}
 
-		mech = aws_msk_iam_v2.NewMechanism(cfg)
-
+		dialer.SASLMechanism = aws_msk_iam_v2.NewMechanism(cfg)
+		dialer.TLS = &tls.Config{}
 	}
 
 	// If username or password is set, then let's enable PLAIN.
 	// By default, we will support no auth (local testing) and PLAIN SASL.
 	if settings.Config.Kafka.Username != "" {
-		mech = plain.Mechanism{
+		dialer.SASLMechanism = plain.Mechanism{
 			Username: settings.Config.Kafka.Username,
 			Password: settings.Config.Kafka.Password,
 		}
 
+		dialer.TLS = &tls.Config{}
 	}
-	dialer.SASLMechanism = mech
-	dialer.TLS = &tls.Config{}
 
 	topicToConfigFmtMap := make(map[string]TopicConfigFormatter)
 	topicToConsumer = make(map[string]kafkalib.Consumer)
