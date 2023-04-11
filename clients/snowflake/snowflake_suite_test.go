@@ -2,6 +2,7 @@ package snowflake
 
 import (
 	"context"
+	"github.com/artie-labs/transfer/lib/config"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -14,14 +15,18 @@ type SnowflakeTestSuite struct {
 	suite.Suite
 	fakeStore *mocks.FakeStore
 	store     *Store
+	ctx       context.Context
 }
 
 func (s *SnowflakeTestSuite) SetupTest() {
-	ctx := context.Background()
+	s.ctx = config.InjectSettingsIntoContext(context.Background(), &config.Settings{
+		VerboseLogging: false,
+	})
 
 	s.fakeStore = &mocks.FakeStore{}
 	store := db.Store(s.fakeStore)
-	s.store = LoadSnowflake(ctx, &store)
+	s.store = LoadSnowflake(s.ctx, &store)
+
 }
 
 func TestSnowflakeTestSuite(t *testing.T) {

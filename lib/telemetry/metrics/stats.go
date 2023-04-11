@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/artie-labs/transfer/lib/logger"
@@ -21,7 +22,11 @@ func exporterKindValid(kind constants.ExporterKind) bool {
 	return valid
 }
 
-func LoadExporter(ctx context.Context, kind constants.ExporterKind, settings map[string]interface{}) context.Context {
+func LoadExporter(ctx context.Context) context.Context {
+	settings := config.FromContext(ctx)
+	kind := settings.Config.Telemetry.Metrics.Provider
+	ddSettings := settings.Config.Telemetry.Metrics.Settings
+
 	if !exporterKindValid(kind) {
 		logger.FromContext(ctx).WithFields(map[string]interface{}{
 			"exporterKind": kind,
@@ -31,7 +36,7 @@ func LoadExporter(ctx context.Context, kind constants.ExporterKind, settings map
 	switch kind {
 	case constants.Datadog:
 		var exportErr error
-		ctx, exportErr = NewDatadogClient(ctx, settings)
+		ctx, exportErr = NewDatadogClient(ctx, ddSettings)
 		if exportErr != nil {
 			logger.FromContext(ctx).WithField("provider", kind).Error(exportErr)
 		} else {

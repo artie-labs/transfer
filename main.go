@@ -17,13 +17,12 @@ import (
 
 func main() {
 	// Parse args into settings.
-	config.ParseArgs(os.Args, true)
-	ctx := logger.InjectLoggerIntoCtx(logger.NewLogger(config.GetSettings()), context.Background())
+	ctx := config.InitializeCfgIntoContext(context.Background(), os.Args, true)
+	ctx = logger.InjectLoggerIntoCtx(ctx)
 
 	// Loading Telemetry
-	ctx = metrics.LoadExporter(ctx, config.GetSettings().Config.Telemetry.Metrics.Provider,
-		config.GetSettings().Config.Telemetry.Metrics.Settings)
-	ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(ctx), ctx)
+	ctx = metrics.LoadExporter(ctx)
+	ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(ctx, nil), ctx)
 
 	models.LoadMemoryDB()
 
@@ -35,11 +34,12 @@ func main() {
 		pool.StartPool(ctx, constants.FlushTimeInterval, flushChan)
 	}()
 
+	settings := config.FromContext(ctx)
 	wg.Add(1)
 	go func(ctx context.Context) {
 		defer wg.Done()
 
-		switch config.GetSettings().Config.Queue {
+		switch settings.Config.Queue {
 		case constants.Kafka:
 			consumer.StartConsumer(ctx, flushChan)
 			break
@@ -47,7 +47,7 @@ func main() {
 			consumer.StartSubscriber(ctx, flushChan)
 			break
 		default:
-			logger.FromContext(ctx).Fatalf("message queue: %s not supported", config.GetSettings().Config.Queue)
+			logger.FromContext(ctx).Fatalf("message queue: %s not supported", settings.Config.Queue)
 		}
 
 	}(ctx)
