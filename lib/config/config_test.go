@@ -66,12 +66,17 @@ func TestOutputSourceValid(t *testing.T) {
 	_, err = io.WriteString(file, fmt.Sprintf(
 		`
 outputSource: snowflake
+flushIntervalSeconds: 15
+bufferRows: 10
 %s
 `, validKafkaTopic))
 	assert.Nil(t, err)
 
 	config, err := readFileToConfig(randomFile)
 	assert.Nil(t, err)
+
+	assert.Equal(t, config.FlushIntervalSeconds, 15)
+	assert.Equal(t, int(config.BufferRows), 10)
 
 	assert.Nil(t, config.Validate())
 }
@@ -180,6 +185,9 @@ kafka:
 
 	config, err = readFileToConfig(randomFile)
 	assert.Nil(t, err)
+
+	assert.Equal(t, config.FlushIntervalSeconds, defaultFlushTimeSeconds)
+	assert.Equal(t, int(config.BufferRows), bufferPoolSizeEnd)
 
 	validErr = config.Validate()
 	assert.Error(t, validErr)
