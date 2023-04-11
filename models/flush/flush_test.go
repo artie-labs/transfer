@@ -3,6 +3,7 @@ package flush
 import (
 	"fmt"
 	"github.com/artie-labs/transfer/lib/artie"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
@@ -41,7 +42,9 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 
 func (f *FlushTestSuite) TestShouldFlush() {
 	var flush bool
-	for i := 0; i < constants.SnowflakeArraySize*1.5; i++ {
+	cfg := config.FromContext(f.ctx)
+
+	for i := 0; i < int(float64(cfg.Config.BufferRows)*1.5); i++ {
 		event := models.Event{
 			Table:           "postgres",
 			PrimaryKeyName:  "id",

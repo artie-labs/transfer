@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -25,16 +26,16 @@ func main() {
 	ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(ctx, nil), ctx)
 
 	models.LoadMemoryDB()
+	settings := config.FromContext(ctx)
 
 	flushChan := make(chan bool)
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		pool.StartPool(ctx, constants.FlushTimeInterval, flushChan)
+		pool.StartPool(ctx, time.Duration(settings.Config.FlushIntervalSeconds)*time.Second, flushChan)
 	}()
 
-	settings := config.FromContext(ctx)
 	wg.Add(1)
 	go func(ctx context.Context) {
 		defer wg.Done()

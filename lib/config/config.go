@@ -2,14 +2,24 @@ package config
 
 import (
 	"fmt"
+	"github.com/artie-labs/transfer/lib/numbers"
+	"gopkg.in/yaml.v3"
 	"io"
 	"os"
-
-	"gopkg.in/yaml.v3"
 
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+)
+
+const (
+	// maxSnowflakeArraySize is used because Snowflake has a max of 16,384 (2^14) elements in an expression,
+	// https://github.com/snowflakedb/snowflake-connector-python/issues/37
+	maxSnowflakeArraySize   = 15000
+	defaultFlushTimeSeconds = 10
+
+	flushIntervalSecondsStart = 5
+	flushIntervalSecondsEnd   = 6 * 60 * 60
 )
 
 type Sentry struct {
@@ -42,11 +52,12 @@ func (k *Kafka) String() string {
 }
 
 type Config struct {
-	Output constants.DestinationKind `yaml:"outputSource"`
-	Queue  constants.QueueKind       `yaml:"queue"`
-
-	Pubsub *Pubsub
-	Kafka  *Kafka
+	Output               constants.DestinationKind `yaml:"outputSource"`
+	Queue                constants.QueueKind       `yaml:"queue"`
+	FlushIntervalSeconds int                       `yaml:"flushIntervalSeconds"`
+	BufferRows           uint                      `yaml:"bufferRows"`
+	Pubsub               *Pubsub
+	Kafka                *Kafka
 
 	BigQuery struct {
 		// PathToCredentials is _optional_ if you have GOOGLE_APPLICATION_CREDENTIALS set as an env var
@@ -102,6 +113,14 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 		config.Queue = constants.Kafka
 	}
 
+	if config.FlushIntervalSeconds == 0 {
+		config.FlushIntervalSeconds = defaultFlushTimeSeconds
+	}
+
+	if config.BufferRows == 0 {
+		config.BufferRows = maxSnowflakeArraySize
+	}
+
 	return &config, nil
 }
 
@@ -112,6 +131,13 @@ func (c *Config) Validate() error {
 	if c == nil {
 		return fmt.Errorf("config is nil")
 	}
+
+	if !numbers.BetweenEq(flushIntervalSecondsStart, flushIntervalSecondsEnd, c.FlushIntervalSeconds) {
+		return fmt.Errorf("flush interval is outside of our range, seconds: %v, expected start: %v, end: %v",
+			c.FlushIntervalSeconds, flushIntervalSecondsStart, flushIntervalSecondsEnd)
+	}
+
+	// TODO validate seconds and buffer.
 
 	if !constants.IsValidDestination(c.Output) {
 		return fmt.Errorf("output: %s is invalid", c.Output)

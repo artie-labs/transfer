@@ -29,7 +29,8 @@ func (f *FlushTestSuite) SetupTest() {
 
 	f.ctx = config.InjectSettingsIntoContext(f.ctx, &config.Settings{
 		Config: &config.Config{
-			Output: "snowflake",
+			Output:     "snowflake",
+			BufferRows: 500,
 		},
 		VerboseLogging: false,
 	})
