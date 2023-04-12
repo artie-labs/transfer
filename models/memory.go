@@ -1,10 +1,11 @@
 package models
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/artie-labs/transfer/lib/artie"
-	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/stringutil"
@@ -35,7 +36,7 @@ func (d *DatabaseData) ClearTableConfig(tableName string) {
 // The boolean signifies whether we should flush immediately or not. This is because Snowflake has a constraint
 // On the number of elements within an expression.
 // The other, error - is returned to see if anything went awry.
-func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message artie.Message) (bool, error) {
+func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, message artie.Message) (bool, error) {
 	if topicConfig == nil {
 		return false, errors.New("topicConfig is missing")
 	}
@@ -104,7 +105,7 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message artie.Message) (
 			inMemoryDB.TableData[e.Table].InMemoryColumns[col] = typing.Invalid
 			continue
 		}
-		
+
 		colTypeDetails, isOk := inMemoryDB.TableData[e.Table].InMemoryColumns[col]
 		if !isOk {
 			inMemoryDB.TableData[e.Table].InMemoryColumns[col] = typing.ParseValue(val)
@@ -121,7 +122,8 @@ func (e *Event) Save(topicConfig *kafkalib.TopicConfig, message artie.Message) (
 		}
 	}
 
-	return inMemoryDB.TableData[e.Table].Rows > constants.SnowflakeArraySize, nil
+	settings := config.FromContext(ctx)
+	return inMemoryDB.TableData[e.Table].Rows > settings.Config.BufferRows, nil
 }
 
 func LoadMemoryDB() {

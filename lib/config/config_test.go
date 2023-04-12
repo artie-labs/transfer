@@ -66,12 +66,17 @@ func TestOutputSourceValid(t *testing.T) {
 	_, err = io.WriteString(file, fmt.Sprintf(
 		`
 outputSource: snowflake
+flushIntervalSeconds: 15
+bufferRows: 10
 %s
 `, validKafkaTopic))
 	assert.Nil(t, err)
 
 	config, err := readFileToConfig(randomFile)
 	assert.Nil(t, err)
+
+	assert.Equal(t, config.FlushIntervalSeconds, 15)
+	assert.Equal(t, int(config.BufferRows), 10)
 
 	assert.Nil(t, config.Validate())
 }
@@ -180,6 +185,9 @@ kafka:
 
 	config, err = readFileToConfig(randomFile)
 	assert.Nil(t, err)
+
+	assert.Equal(t, config.FlushIntervalSeconds, defaultFlushTimeSeconds)
+	assert.Equal(t, int(config.BufferRows), bufferPoolSizeEnd)
 
 	validErr = config.Validate()
 	assert.Error(t, validErr)
@@ -346,7 +354,9 @@ reporting:
 func TestConfig_Validate(t *testing.T) {
 	pubsub := &Pubsub{}
 	cfg := &Config{
-		Pubsub: pubsub,
+		Pubsub:               pubsub,
+		FlushIntervalSeconds: 5,
+		BufferRows:           500,
 	}
 
 	assert.Contains(t, cfg.Validate().Error(), "is invalid")
@@ -371,5 +381,22 @@ func TestConfig_Validate(t *testing.T) {
 
 	pubsub.ProjectID = "project_id"
 	pubsub.PathToCredentials = "/tmp/abc"
+	assert.Nil(t, cfg.Validate())
+
+	// Test the various flush error settings.
+	for _, count := range []int{0, 5000000} {
+		// Reset buffer rows.
+		cfg.BufferRows = 500
+		cfg.FlushIntervalSeconds = count
+		assert.Contains(t, cfg.Validate().Error(), "flush interval is outside of our range")
+
+		// Reset Flush
+		cfg.FlushIntervalSeconds = 20
+		cfg.BufferRows = uint(count)
+		assert.Contains(t, cfg.Validate().Error(), "buffer pool is outside of our range")
+	}
+
+	cfg.BufferRows = 500
+	cfg.FlushIntervalSeconds = 600
 	assert.Nil(t, cfg.Validate())
 }

@@ -3,6 +3,7 @@ package flush
 import (
 	"fmt"
 	"github.com/artie-labs/transfer/lib/artie"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +34,7 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 		}
 
 		kafkaMsg := kafka.Message{Partition: 1, Offset: 1}
-		_, err := event.Save(topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+		_, err := event.Save(f.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 		assert.Nil(f.T(), err)
 		assert.Equal(f.T(), len(models.GetMemoryDB().TableData["foo"].RowsData), i+1)
 	}
@@ -41,7 +42,9 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 
 func (f *FlushTestSuite) TestShouldFlush() {
 	var flush bool
-	for i := 0; i < constants.SnowflakeArraySize*1.5; i++ {
+	cfg := config.FromContext(f.ctx)
+
+	for i := 0; i < int(float64(cfg.Config.BufferRows)*1.5); i++ {
 		event := models.Event{
 			Table:           "postgres",
 			PrimaryKeyName:  "id",
@@ -56,7 +59,7 @@ func (f *FlushTestSuite) TestShouldFlush() {
 
 		var err error
 		kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
-		flush, err = event.Save(topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+		flush, err = event.Save(f.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 		assert.Nil(f.T(), err)
 
 		if flush {
@@ -90,7 +93,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 				}
 
 				kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
-				_, err := event.Save(topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+				_, err := event.Save(f.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 				assert.Nil(f.T(), err)
 			}
 

@@ -33,7 +33,7 @@ func (m *ModelsTestSuite) SaveEvent() {
 	}
 
 	kafkaMsg := kafka.Message{}
-	_, err := event.Save(topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	_, err := event.Save(m.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(m.T(), err)
 
 	optimization := GetMemoryDB().TableData["foo"]
@@ -64,7 +64,7 @@ func (m *ModelsTestSuite) SaveEvent() {
 	}
 
 	newKafkaMsg := kafka.Message{}
-	_, err = edgeCaseEvent.Save(topicConfig, artie.NewMessage(&newKafkaMsg, nil, newKafkaMsg.Topic))
+	_, err = edgeCaseEvent.Save(m.ctx, topicConfig, artie.NewMessage(&newKafkaMsg, nil, newKafkaMsg.Topic))
 	assert.NoError(m.T(), err)
 	val, isOk := GetMemoryDB().TableData["foo"].InMemoryColumns[badColumn]
 	assert.True(m.T(), isOk)

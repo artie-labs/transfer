@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc/mongo"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/models"
@@ -19,6 +20,14 @@ func TestProcessMessageFailures(t *testing.T) {
 	models.LoadMemoryDB()
 
 	ctx := context.Background()
+	ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{
+		Config: &config.Config{
+			FlushIntervalSeconds: 10,
+			BufferRows:           10,
+		},
+		VerboseLogging: false,
+	})
+
 	kafkaMsg := kafka.Message{
 		Topic:         "foo",
 		Partition:     0,
@@ -128,5 +137,4 @@ func TestProcessMessageFailures(t *testing.T) {
 	shouldFlush, err = processMessage(ctx, msg, topicToConfigFmtMap, "foo")
 	assert.False(t, shouldFlush)
 	assert.Error(t, err)
-
 }

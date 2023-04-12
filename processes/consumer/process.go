@@ -43,7 +43,7 @@ func processMessage(ctx context.Context, msg artie.Message, topicToConfigFmtMap 
 	}
 
 	evt := models.ToMemoryEvent(ctx, event, pkName, pkValue, topicConfig.tc)
-	shouldFlush, err = evt.Save(topicConfig.tc, msg)
+	shouldFlush, err = evt.Save(ctx, topicConfig.tc, msg)
 	if err != nil {
 		tags["what"] = "save_fail"
 		err = fmt.Errorf("event failed to save, err: %v", err)
