@@ -384,11 +384,19 @@ func TestConfig_Validate(t *testing.T) {
 	assert.Nil(t, cfg.Validate())
 
 	// Test the various flush error settings.
-	cfg.FlushIntervalSeconds = 0
-	assert.Contains(t, cfg.Validate().Error(), "flush interval is outside of our range")
+	for _, count := range []int{0, 5000000} {
+		// Reset buffer rows.
+		cfg.BufferRows = 500
+		cfg.FlushIntervalSeconds = count
+		assert.Contains(t, cfg.Validate().Error(), "flush interval is outside of our range")
+
+		// Reset Flush
+		cfg.FlushIntervalSeconds = 20
+		cfg.BufferRows = uint(count)
+		assert.Contains(t, cfg.Validate().Error(), "buffer pool is outside of our range")
+	}
+
+	cfg.BufferRows = 500
 	cfg.FlushIntervalSeconds = 600
 	assert.Nil(t, cfg.Validate())
-
-	cfg.BufferRows = 0
-	assert.Contains(t, cfg.Validate().Error(), "buffer pool is outside of our range")
 }
