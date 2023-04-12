@@ -137,5 +137,4 @@ func TestProcessMessageFailures(t *testing.T) {
 	shouldFlush, err = processMessage(ctx, msg, topicToConfigFmtMap, "foo")
 	assert.False(t, shouldFlush)
 	assert.Error(t, err)
-
 }

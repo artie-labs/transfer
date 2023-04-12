@@ -382,4 +382,13 @@ func TestConfig_Validate(t *testing.T) {
 	pubsub.ProjectID = "project_id"
 	pubsub.PathToCredentials = "/tmp/abc"
 	assert.Nil(t, cfg.Validate())
+
+	// Test the various flush error settings.
+	cfg.FlushIntervalSeconds = 0
+	assert.Contains(t, cfg.Validate().Error(), "flush interval is outside of our range")
+	cfg.FlushIntervalSeconds = 600
+	assert.Nil(t, cfg.Validate())
+
+	cfg.BufferRows = 0
+	assert.Contains(t, cfg.Validate().Error(), "buffer pool is outside of our range")
 }
