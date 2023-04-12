@@ -27,6 +27,10 @@ func main() {
 
 	models.LoadMemoryDB()
 	settings := config.FromContext(ctx)
+	logger.FromContext(ctx).WithFields(map[string]interface{}{
+		"flush_interval_seconds": settings.Config.FlushIntervalSeconds,
+		"buffer_pool_size":       settings.Config.BufferRows,
+	}).Info("config is loaded")
 
 	flushChan := make(chan bool)
 	var wg sync.WaitGroup
