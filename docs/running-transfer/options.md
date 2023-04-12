@@ -9,6 +9,8 @@ _Note: Keys here are formatted in dot notation for readability purposes, please 
 | `outputSource`         | N        | <p>This is the destination.<br>Supported values are currently: <code>snowflake</code>, <code>test</code>, <code>bigquery</code><br><br>If Snowflake or BigQuery is filled out, please see the respective section for what is required.</p> |
 | `queue`                | Y        | <p>Defaults to <code>kafka</code>.</p><p>Other valid options are <code>kafka</code> and <code>pubsub</code>. </p><p></p><p>Please check the respective sections below on what else is required.</p>                                        |
 | `reporting.sentry.dsn` | Y        | DSN for Sentry alerts. If blank, will just go to standard out.                                                                                                                                                                             |
+| `flushIntervalSeconds` | Y        | <p>Defaults to <code>10</code>.<br><br>Valid range is between <code>5 seconds</code> to <code>6 hours</code>.</p>                                                                                                                          |
+| `bufferRows`           | Y        | <p>Defaults to <code>15000</code>.<br><br>Valid range is between <code>5-15000</code></p>                                                                                                                                                  |
 
 ### Kafka
 
