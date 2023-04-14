@@ -1,17 +1,8 @@
-# Fixed IP Addresses
+# Start Here
 
-To ensure that Artie is able to subscribe to your sources and push data to your destination, please refer to this page to add all of Artie's IP addresses to your allowlist.
+### Hi! Welcome to Artie's documentation!&#x20;
 
-Today, we support the following cloud providers:
-
-* Google Cloud Platform
-* Amazon Web Services
-
-{% hint style="info" %}
-Please reach out to **hi@artie.so** if your cloud provider is not listed!&#x20;
-{% endhint %}
-
-## IP Ranges (in CIDR format)
-
-* `24.199.76.121/32`
-* `143.198.244.128/32`
+* Please click here [wip-overview.md](real-time-sources/wip-overview.md "mention")to see a list of our supported sources.
+* Please click here [overview.md](real-time-destinations/overview.md "mention")to see a list of our supported destinations.
+* For Artie Cloud users, please see [Broken link](broken-reference "mention")
+* For open-source users, please see [Broken link](broken-reference "mention")

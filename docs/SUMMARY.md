@@ -1,18 +1,10 @@
 # Table of contents
 
+* [Start Here](README.md)
+
 ## Artie Cloud
 
-* [Fixed IP Addresses](README.md)
-
-## Running Transfer
-
-* [Overview](<README (1).md>)
-* [Options](running-transfer/options.md)
-* [Examples](running-transfer/examples.md)
-
-## Telemetry
-
-* [Overview](telemetry/overview.md)
+* [Fixed IP Addresses](artie-cloud/fixed-ip-addresses.md)
 
 ## Real-time Sources
 
@@ -29,6 +21,16 @@
 * [Overview](real-time-destinations/overview.md)
 * [Snowflake](real-time-destinations/snowflake.md)
 * [BigQuery](real-time-destinations/bigquery.md)
+
+## Running Transfer
+
+* [Overview](<README (1).md>)
+* [Options](running-transfer/options.md)
+* [Examples](running-transfer/examples.md)
+
+## Telemetry
+
+* [Overview](telemetry/overview.md)
 
 ## 👨💻 Tutorials
 
