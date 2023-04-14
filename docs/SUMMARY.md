@@ -1,8 +1,12 @@
 # Table of contents
 
+## Artie Cloud
+
+* [Fixed IP Addresses](README.md)
+
 ## Running Transfer
 
-* [Overview](README.md)
+* [Overview](<README (1).md>)
 * [Options](running-transfer/options.md)
 * [Examples](running-transfer/examples.md)
 
