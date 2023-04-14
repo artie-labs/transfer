@@ -1,6 +1,6 @@
 # Table of contents
 
-* [Start Here](README.md)
+* [Start here](README.md)
 
 ## Artie Cloud
 
