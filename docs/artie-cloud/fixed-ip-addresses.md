@@ -13,5 +13,8 @@ Please reach out to **hi@artie.so** if your cloud provider is not listed!&#x20;
 
 ## IP Ranges (CIDR format)
 
-* `24.199.76.121/32`
 * `143.198.244.128/32`
+* `147.182.226.70/32`
+* `164.92.90.51/32`
+* `24.199.76.93/32`
+* `24.199.76.121/32`
