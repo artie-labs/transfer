@@ -20,6 +20,14 @@ We will need the following:
 | Database Password  | Password for authentication into your database.                | No default    |
 | Database Name      | The name of the database that you want to capture changes for. | No default.   |
 
+### Creating a new user
+
+```sql
+CREATE USER <username> WITH PASSWORD '<password>';
+GRANT SELECT ON ALL TABLES IN SCHEMA <schema> TO <username>;
+ALTER USER <user> REPLICATION;
+```
+
 ### Supported types
 
 * `BOOLEAN` / `BOOL`
