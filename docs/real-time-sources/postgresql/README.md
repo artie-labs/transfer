@@ -25,7 +25,13 @@ We will need the following:
 ```sql
 CREATE USER <username> WITH PASSWORD '<password>';
 GRANT SELECT ON ALL TABLES IN SCHEMA <schema> TO <username>;
+
+-- Add the replication role to your user (look below for AWS RDS specific)
 ALTER USER <user> REPLICATION;
+
+-- RDS has their own internal permissioning, so we will grant the rds_replication role instead.
+-- More information: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Appendix.PostgreSQL.CommonDBATasks.Roles.html
+GRANT rds_replication to <user>;
 ```
 
 ### Supported types
