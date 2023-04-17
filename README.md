@@ -3,7 +3,7 @@
   <h3>Artie Transfer</h3>
   <p><b>⚡️ Blazing fast data replication between OLTP and OLAP databases ⚡️</b></p>
   <a href="https://artie.so/slack"><img src="https://img.shields.io/badge/slack-@artie-blue.svg?logo=slack"/></a>
-  <a href="https://docs.artie.so/configurations/running-transfer/overview"><img src="https://user-images.githubusercontent.com/4412200/226736695-6b8b9abd-c227-41c7-89a1-805a04c90d08.png"/></a>
+  <a href="https://docs.artie.so/running-transfer/overview"><img src="https://user-images.githubusercontent.com/4412200/226736695-6b8b9abd-c227-41c7-89a1-805a04c90d08.png"/></a>
   <a href="https://github.com/artie-labs/transfer/blob/master/LICENSE.txt"><img src="https://user-images.githubusercontent.com/4412200/201544613-a7197bc4-8b61-4fc5-bf09-68ee10133fd7.svg"/></a>
   <img src="https://github.com/artie-labs/transfer/actions/workflows/gha-go-test.yml/badge.svg"/>
   <br/>
@@ -43,7 +43,7 @@ To run Artie Transfer's stack locally, please refer to the [examples folder](htt
 
 ## <a name="getting-started"></a>Getting started
 
-[Getting started guide](https://docs.artie.so/configurations/running-transfer/overview)
+[Getting started guide](https://docs.artie.so/running-transfer/overview)
 
 ## What is currently supported?
 Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Currently Transfer supports:
@@ -52,11 +52,11 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
   - Kafka (default)
   - Google Pub/Sub
 
-- [Destinations](https://docs.artie.so/configurations/real-time-destinations/overview):
+- [Destinations](https://docs.artie.so/real-time-destinations/overview):
     - Snowflake
     - BigQuery
 
-- [Sources](https://docs.artie.so/configurations/real-time-sources/overview):
+- [Sources](https://docs.artie.so/real-time-sources/overview):
     - MongoDB
     - PostgreSQL, we support the following replication slot plug-ins: `pgoutput, decoderbufs, wal2json`
     - MySQL
@@ -64,21 +64,21 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
 _If the database you are using is not on the list, feel free to file for a [feature request](https://github.com/artie-labs/transfer/issues/new)._
 
 ## Configuration File
-* [Artie Transfer configuration file guide](https://docs.artie.so/configurations/running-transfer/options)
-* [Examples of configuration files](https://docs.artie.so/configurations/running-transfer/examples)
+* [Artie Transfer configuration file guide](https://docs.artie.so/running-transfer/options)
+* [Examples of configuration files](https://docs.artie.so/running-transfer/examples)
 
 
 ## Limitations
 _Note: If any of these limitations are blocking you from using Transfer. Feel free to contribute or file a bug and we'll get this prioritized!</br>
 The long term goal for Artie Transfer is to be able to extend the service to have as little of these limitations as possible._
 
-* [PostgreSQL](https://docs.artie.so/configurations/real-time-sources/postgresql#things-to-note-if-you-are-running-your-own-debezium)
-* [MySQL](https://docs.artie.so/configurations/real-time-sources/mysql#things-to-note-if-you-are-running-your-own-debezium)
-* [MongoDB](https://docs.artie.so/configurations/real-time-sources/mongodb#things-to-note-if-you-are-running-your-own-debezium)
+* [PostgreSQL](https://docs.artie.so/real-time-sources/postgresql#running-it-yourself)
+* [MySQL](https://docs.artie.so/real-time-sources/mysql#running-it-yourself)
+* [MongoDB](https://docs.artie.so/real-time-sources/mongodb#running-it-yourself)
 
 ## Telemetry
 
-[Artie Transfer's telemetry guide](https://docs.artie.so/configurations/telemetry/overview)
+[Artie Transfer's telemetry guide](https://docs.artie.so/telemetry/overview)
 
 ## Tests
 Transfer is written in Go and uses [counterfeiter](https://github.com/maxbrunsfeld/counterfeiter) to mock. 
