@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"fmt"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"time"
 
@@ -11,30 +12,32 @@ import (
 )
 
 type Event struct {
-	Table           string
-	PrimaryKeyName  string
-	PrimaryKeyValue interface{}
-	Data            map[string]interface{} // json serialized column data
-	ExecutionTime   time.Time              // When the SQL command was executed
+	Table         string
+	PrimaryKeyMap map[string]interface{}
+	Data          map[string]interface{} // json serialized column data
+	ExecutionTime time.Time              // When the SQL command was executed
 }
 
-func ToMemoryEvent(ctx context.Context, event cdc.Event, pkName string, pkValue interface{}, tc *kafkalib.TopicConfig) Event {
+func ToMemoryEvent(ctx context.Context, event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) Event {
 	return Event{
-		Table:           tc.TableName,
-		PrimaryKeyName:  pkName,
-		PrimaryKeyValue: pkValue,
-		ExecutionTime:   event.GetExecutionTime(),
-		Data:            event.GetData(ctx, pkName, pkValue, tc),
+		Table:         tc.TableName,
+		PrimaryKeyMap: pkMap,
+		ExecutionTime: event.GetExecutionTime(),
+		Data:          event.GetData(ctx, pkMap, tc),
 	}
 }
 
 func (e *Event) IsValid() bool {
 	// Does it have a PK or table set?
-	if array.Empty([]string{e.Table, e.PrimaryKeyName}) {
+	if array.Empty([]string{e.Table}) {
 		return false
 	}
 
-	if e.PrimaryKeyValue == nil {
+	if len(e.PrimaryKeyMap) == 0 {
+		return false
+	}
+
+	if len(e.Data) == 0 {
 		return false
 	}
 
@@ -45,4 +48,24 @@ func (e *Event) IsValid() bool {
 	}
 
 	return true
+}
+
+func (e *Event) PrimaryKeys() []string {
+	// TODO - Test
+	var keys []string
+	for key := range e.PrimaryKeyMap {
+		keys = append(keys, key)
+	}
+
+	return keys
+}
+
+func (e *Event) PrimaryKeyValue() string {
+	// TODO - Test
+	var key string
+	for k, v := range e.PrimaryKeyMap {
+		key += fmt.Sprintf("%s=%v", k, v)
+	}
+
+	return key
 }

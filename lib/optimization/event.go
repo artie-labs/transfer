@@ -13,7 +13,7 @@ import (
 type TableData struct {
 	InMemoryColumns map[string]typing.KindDetails     // list of columns
 	RowsData        map[string]map[string]interface{} // pk -> { col -> val }
-	PrimaryKey      string
+	PrimaryKeys     []string
 
 	kafkalib.TopicConfig
 	// Partition to the latest offset(s).

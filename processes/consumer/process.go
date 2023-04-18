@@ -30,7 +30,7 @@ func processMessage(ctx context.Context, msg artie.Message, topicToConfigFmtMap 
 	tags["schema"] = topicConfig.tc.Schema
 	tags["table"] = topicConfig.tc.TableName
 
-	pkName, pkValue, err := topicConfig.GetPrimaryKey(ctx, msg.Key(), topicConfig.tc)
+	pkMap, err := topicConfig.GetPrimaryKey(ctx, msg.Key(), topicConfig.tc)
 	if err != nil {
 		tags["what"] = "marshall_pk_err"
 		return false, fmt.Errorf("cannot unmarshall key, key: %s, err: %v", string(msg.Key()), err)
@@ -42,7 +42,7 @@ func processMessage(ctx context.Context, msg artie.Message, topicToConfigFmtMap 
 		return false, fmt.Errorf("cannot unmarshall event, err: %v", err)
 	}
 
-	evt := models.ToMemoryEvent(ctx, event, pkName, pkValue, topicConfig.tc)
+	evt := models.ToMemoryEvent(ctx, event, pkMap, topicConfig.tc)
 	shouldFlush, err = evt.Save(ctx, topicConfig.tc, msg)
 	if err != nil {
 		tags["what"] = "save_fail"

@@ -3,7 +3,6 @@ package models
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -54,14 +53,14 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 		inMemoryDB.TableData[e.Table] = &optimization.TableData{
 			RowsData:                map[string]map[string]interface{}{},
 			InMemoryColumns:         map[string]typing.KindDetails{},
-			PrimaryKey:              e.PrimaryKeyName,
+			PrimaryKeys:             e.PrimaryKeys(),
 			TopicConfig:             *topicConfig,
 			PartitionsToLastMessage: map[string][]artie.Message{},
 		}
 	}
 
 	// Update the key, offset and TS
-	inMemoryDB.TableData[e.Table].RowsData[fmt.Sprint(e.PrimaryKeyValue)] = e.Data
+	inMemoryDB.TableData[e.Table].RowsData[e.PrimaryKeyValue()] = e.Data
 
 	// If the message is Kafka, then we only need the latest one
 	// If it's pubsub, we will store all of them in memory. This is because GCP pub/sub REQUIRES us to ack every single message

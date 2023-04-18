@@ -78,4 +78,6 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, kv["id"], float64(1002))
+
+	// TODO provide a test case for composite keys.
 }

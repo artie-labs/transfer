@@ -50,7 +50,6 @@ func parsePartitionKeyString(key []byte) (map[string]interface{}, error) {
 	parsedKeyString := keyString[len(stringPrefix) : len(keyString)-1]
 	for _, kvPartString := range strings.Split(parsedKeyString, ",") {
 		kvParts := strings.Split(kvPartString, "=")
-		fmt.Println("len(kvParts)", kvParts)
 		if len(kvParts) < 2 {
 			return nil, fmt.Errorf("malformed key value pair: %s", kvPartString)
 		}
