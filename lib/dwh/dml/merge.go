@@ -9,7 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
-func MergeStatement(fqTableName, subQuery, pk, idempotentKey string, cols []string, softDelete bool, specialStructCastMergeKey bool) (string, error) {
+func MergeStatement(fqTableName, subQuery, idempotentKey string, pk, cols []string, softDelete bool, specialStructCastMergeKey bool) (string, error) {
 	// We should not need idempotency key for DELETE
 	// This is based on the assumption that the primary key would be atomically increasing or UUID based
 	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
