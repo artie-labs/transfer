@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/debezium"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -69,12 +70,12 @@ func (d *Debezium) Labels() []string {
 
 // GetPrimaryKey - Will read from the Kafka message's partition key to get the primary key for the row.
 // TODO: This should support: key.converter.schemas.enable=true
-func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (pkName string, pkValue interface{}, err error) {
+func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (pkValMap map[string]interface{}, err error) {
 	switch tc.CDCKeyFormat {
 	case "org.apache.kafka.connect.json.JsonConverter":
 		return util.ParseJSONKey(key)
 	case "org.apache.kafka.connect.storage.StringConverter":
-		return util.ParseStringKey(key)
+		return debezium.ParsePartitionKeyString(key)
 	default:
 		err = fmt.Errorf("format: %s is not supported", tc.CDCKeyFormat)
 	}

@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// Struct{quarter_id=1,course_id=course1,student_id=1}
 // ParseStringKey expects the key format to look like Struct{id=47}
 func ParseStringKey(key []byte) (pkName string, pkValue interface{}, err error) {
 	if len(key) == 0 {
