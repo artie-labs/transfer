@@ -58,4 +58,24 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 	kv, err = parsePartitionKeyStruct([]byte(`{"uuid": "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c"}`))
 	assert.Nil(t, err)
 	assert.Equal(t, kv["uuid"], "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c")
+
+	kv, err = parsePartitionKeyStruct([]byte(`{
+	"schema": {
+		"type": "struct",
+		"fields": [{
+			"type": "int32",
+			"optional": false,
+			"default": 0,
+			"field": "id"
+		}],
+		"optional": false,
+		"name": "dbserver1.inventory.customers.Key"
+	},
+	"payload": {
+		"id": 1002
+	}
+}`))
+
+	assert.NoError(t, err)
+	assert.Equal(t, kv["id"], float64(1002))
 }
