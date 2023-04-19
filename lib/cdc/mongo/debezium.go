@@ -3,12 +3,11 @@ package mongo
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/debezium"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/cdc"
-	"github.com/artie-labs/transfer/lib/cdc/util"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/mongo"
@@ -67,26 +66,15 @@ func (d *Debezium) Labels() []string {
 	return []string{constants.DBZMongoFormat}
 }
 
-// GetPrimaryKey - Will read from the Kafka message's partition key to get the primary key for the row.
-// TODO: This should support: key.converter.schemas.enable=true
-func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (pkName string, pkValue interface{}, err error) {
-	switch tc.CDCKeyFormat {
-	case "org.apache.kafka.connect.json.JsonConverter":
-		return util.ParseJSONKey(key)
-	case "org.apache.kafka.connect.storage.StringConverter":
-		return util.ParseStringKey(key)
-	default:
-		err = fmt.Errorf("format: %s is not supported", tc.CDCKeyFormat)
-	}
-
-	return
+func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (kvMap map[string]interface{}, err error) {
+	return debezium.ParsePartitionKey(key, tc.CDCKeyFormat)
 }
 
 func (s *SchemaEventPayload) GetExecutionTime() time.Time {
 	return time.UnixMilli(s.Payload.Source.TsMs).UTC()
 }
 
-func (s *SchemaEventPayload) GetData(ctx context.Context, pkName string, pkVal interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
+func (s *SchemaEventPayload) GetData(ctx context.Context, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
 	retMap := make(map[string]interface{})
 	if len(s.Payload.AfterMap) == 0 {
 		// This is a delete event, so mark it as deleted.
@@ -95,7 +83,10 @@ func (s *SchemaEventPayload) GetData(ctx context.Context, pkName string, pkVal i
 		// the PK. We can explore simplifying this interface in the future by leveraging before.
 		retMap = map[string]interface{}{
 			constants.DeleteColumnMarker: true,
-			pkName:                       pkVal,
+		}
+
+		for k, v := range pkMap {
+			retMap[k] = v
 		}
 
 		// If idempotency key is an empty string, don't put it in the event data
@@ -106,7 +97,10 @@ func (s *SchemaEventPayload) GetData(ctx context.Context, pkName string, pkVal i
 		retMap = s.Payload.AfterMap
 		// We need this because there's an edge case with Debezium
 		// Where _id gets rewritten as id in the partition key.
-		retMap[pkName] = pkVal
+		for k, v := range pkMap {
+			retMap[k] = v
+		}
+
 		retMap[constants.DeleteColumnMarker] = false
 	}
 

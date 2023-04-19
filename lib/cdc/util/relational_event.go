@@ -37,7 +37,7 @@ func (s *SchemaEventPayload) GetExecutionTime() time.Time {
 	return time.UnixMilli(s.Payload.Source.TsMs).UTC()
 }
 
-func (s *SchemaEventPayload) GetData(ctx context.Context, pkName string, pkVal interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
+func (s *SchemaEventPayload) GetData(ctx context.Context, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
 	retMap := make(map[string]interface{})
 	if len(s.Payload.After) == 0 {
 		// This is a delete payload, so mark it as deleted.
@@ -46,7 +46,10 @@ func (s *SchemaEventPayload) GetData(ctx context.Context, pkName string, pkVal i
 		// the PK. We can explore simplifying this interface in the future by leveraging before.
 		retMap = map[string]interface{}{
 			constants.DeleteColumnMarker: true,
-			pkName:                       pkVal,
+		}
+
+		for k, v := range pkMap {
+			retMap[k] = v
 		}
 
 		// If idempotency key is an empty string, don't put it in the payload data

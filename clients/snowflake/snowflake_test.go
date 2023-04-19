@@ -21,6 +21,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	// TableData will think the column is invalid and tableConfig will think column = string
 	// Before we call merge, it should reconcile it.
 	columns := map[string]typing.KindDetails{
+		"id":                         typing.String,
 		"first_name":                 typing.String,
 		"invalid_column":             typing.Invalid,
 		constants.DeleteColumnMarker: typing.Boolean,
@@ -42,12 +43,13 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		InMemoryColumns: columns,
 		RowsData:        rowsData,
 		TopicConfig:     topicConfig,
-		PrimaryKey:      "id",
+		PrimaryKeys:     []string{"id"},
 		Rows:            1,
 	}
 
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), types.NewDwhTableConfig(
 		map[string]typing.KindDetails{
+			"id":                         typing.String,
 			"first_name":                 typing.String,
 			constants.DeleteColumnMarker: typing.Boolean,
 		}, nil, false, true))
@@ -86,7 +88,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		InMemoryColumns: columns,
 		RowsData:        rowsData,
 		TopicConfig:     topicConfig,
-		PrimaryKey:      "id",
+		PrimaryKeys:     []string{"id"},
 		Rows:            1,
 	}
 
@@ -132,7 +134,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		InMemoryColumns: columns,
 		RowsData:        rowsData,
 		TopicConfig:     topicConfig,
-		PrimaryKey:      "id",
+		PrimaryKeys:     []string{"id"},
 		Rows:            1,
 	}
 
@@ -177,7 +179,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		InMemoryColumns: columns,
 		RowsData:        rowsData,
 		TopicConfig:     topicConfig,
-		PrimaryKey:      "id",
+		PrimaryKeys:     []string{"id"},
 		Rows:            1,
 	}
 
@@ -228,7 +230,6 @@ func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
 	err := s.store.Merge(s.ctx, &optimization.TableData{
 		InMemoryColumns:         nil,
 		RowsData:                nil,
-		PrimaryKey:              "",
 		TopicConfig:             kafkalib.TopicConfig{},
 		PartitionsToLastMessage: nil,
 		LatestCDCTs:             time.Time{},

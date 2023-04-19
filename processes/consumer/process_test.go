@@ -124,12 +124,12 @@ func TestProcessMessageFailures(t *testing.T) {
 	}
 
 	// Tombstone means deletion
-	val, isOk := memoryDB.TableData[table].RowsData["1"][constants.DeleteColumnMarker]
+	val, isOk := memoryDB.TableData[table].RowsData["id=1"][constants.DeleteColumnMarker]
 	assert.True(t, isOk)
 	assert.True(t, val.(bool))
 
 	// Non tombstone = no delete.
-	val, isOk = memoryDB.TableData[table].RowsData["2"][constants.DeleteColumnMarker]
+	val, isOk = memoryDB.TableData[table].RowsData["id=2"][constants.DeleteColumnMarker]
 	assert.True(t, isOk)
 	assert.False(t, val.(bool))
 

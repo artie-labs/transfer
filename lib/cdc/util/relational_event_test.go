@@ -40,7 +40,7 @@ func TestGetDataTestInsert(t *testing.T) {
 		},
 	}
 
-	evtData := schemaEventPayload.GetData(context.Background(), "pk", 1, &tc)
+	evtData := schemaEventPayload.GetData(context.Background(), map[string]interface{}{"pk": 1}, &tc)
 	assert.Equal(t, len(after), len(evtData), "has deletion flag")
 
 	deletionFlag, isOk := evtData[constants.DeleteColumnMarker]
@@ -66,7 +66,8 @@ func TestGetDataTestDelete(t *testing.T) {
 		},
 	}
 
-	evtData := schemaEventPayload.GetData(context.Background(), "pk", 1, tc)
+	kvMap := map[string]interface{}{"pk": 1}
+	evtData := schemaEventPayload.GetData(context.Background(), kvMap, tc)
 	shouldDelete, isOk := evtData[constants.DeleteColumnMarker]
 	assert.True(t, isOk)
 	assert.True(t, shouldDelete.(bool))
@@ -76,7 +77,7 @@ func TestGetDataTestDelete(t *testing.T) {
 	assert.Equal(t, evtData[tc.IdempotentKey], now.Format(time.RFC3339))
 
 	tc.IdempotentKey = ""
-	evtData = schemaEventPayload.GetData(context.Background(), "pk", 1, tc)
+	evtData = schemaEventPayload.GetData(context.Background(), kvMap, tc)
 	_, isOk = evtData[tc.IdempotentKey]
 	assert.False(t, isOk, evtData)
 }
@@ -109,7 +110,9 @@ func TestGetDataTestUpdate(t *testing.T) {
 		},
 	}
 
-	evtData := schemaEventPayload.GetData(context.Background(), "pk", 1, &tc)
+	kvMap := map[string]interface{}{"pk": 1}
+
+	evtData := schemaEventPayload.GetData(context.Background(), kvMap, &tc)
 	assert.Equal(t, len(after), len(evtData), "has deletion flag")
 
 	deletionFlag, isOk := evtData[constants.DeleteColumnMarker]

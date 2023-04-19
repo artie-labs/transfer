@@ -289,7 +289,10 @@ func (m *MySQLTestSuite) TestGetEventFromBytes() {
 	assert.NoError(m.T(), err)
 	assert.Equal(m.T(), time.Date(2023, time.March, 13, 19, 19, 24, 0, time.UTC), evt.GetExecutionTime())
 
-	evtData := evt.GetData(context.Background(), "id", 1001, &kafkalib.TopicConfig{})
+	kvMap := map[string]interface{}{
+		"id": 1001,
+	}
+	evtData := evt.GetData(context.Background(), kvMap, &kafkalib.TopicConfig{})
 	assert.Equal(m.T(), evtData["id"], 1001)
 	assert.Equal(m.T(), evtData["first_name"], "Sally")
 	assert.Equal(m.T(), evtData["bool_test"], false)

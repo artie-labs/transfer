@@ -3,13 +3,29 @@ package dml
 import (
 	"errors"
 	"fmt"
+	"github.com/artie-labs/transfer/lib/typing"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
-func MergeStatement(fqTableName, subQuery, pk, idempotentKey string, cols []string, softDelete bool, specialStructCastMergeKey bool) (string, error) {
+type MergeArgument struct {
+	// TODO: Test
+	FqTableName   string
+	SubQuery      string
+	IdempotentKey string
+	PrimaryKeys   []string
+	Columns       []string
+	ColumnToType  map[string]typing.KindDetails
+
+	// SpecialCastingRequired - This is used for columns that have JSON value. This is required for BigQuery
+	// We will be casting the value in this column as such: `TO_JSON_STRING(<columnName>)`
+	SpecialCastingRequired bool
+	SoftDelete             bool
+}
+
+func MergeStatement(m MergeArgument) (string, error) {
 	// We should not need idempotency key for DELETE
 	// This is based on the assumption that the primary key would be atomically increasing or UUID based
 	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
@@ -18,17 +34,27 @@ func MergeStatement(fqTableName, subQuery, pk, idempotentKey string, cols []stri
 	// We also need to do staged table's idempotency key is GTE target table's idempotency key
 	// This is because Snowflake does not respect NS granularity.
 	var idempotentClause string
-	if idempotentKey != "" {
-		idempotentClause = fmt.Sprintf("AND cc.%s >= c.%s ", idempotentKey, idempotentKey)
+	if m.IdempotentKey != "" {
+		idempotentClause = fmt.Sprintf("AND cc.%s >= c.%s ", m.IdempotentKey, m.IdempotentKey)
 	}
 
-	equalitySQL := fmt.Sprintf("c.%s = cc.%s", pk, pk)
-	if specialStructCastMergeKey {
-		// BigQuery requires special casting to compare two JSON objects.
-		equalitySQL = fmt.Sprintf("TO_JSON_STRING(c.%s) = TO_JSON_STRING(cc.%s)", pk, pk)
+	var equalitySQLParts []string
+	for _, primaryKey := range m.PrimaryKeys {
+		equalitySQL := fmt.Sprintf("c.%s = cc.%s", primaryKey, primaryKey)
+		typeKind, isOk := m.ColumnToType[primaryKey]
+		if !isOk {
+			return "", fmt.Errorf("error: column: %s does not exist in columnToType: %v", primaryKey, m.ColumnToType)
+		}
+
+		if typeKind.Kind == typing.Struct.Kind {
+			// BigQuery requires special casting to compare two JSON objects.
+			equalitySQL = fmt.Sprintf("TO_JSON_STRING(c.%s) = TO_JSON_STRING(cc.%s)", primaryKey, primaryKey)
+		}
+
+		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	if softDelete {
+	if m.SoftDelete {
 		return fmt.Sprintf(`
 			MERGE INTO %s c using (%s) as cc on %s
 				when matched %sthen UPDATE
@@ -41,19 +67,19 @@ func MergeStatement(fqTableName, subQuery, pk, idempotentKey string, cols []stri
 					(
 						%s
 					);
-		`, fqTableName, subQuery, equalitySQL,
+		`, m.FqTableName, m.SubQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, array.ColumnsUpdateQuery(cols, "cc"),
+			idempotentClause, array.ColumnsUpdateQuery(m.Columns, "cc"),
 			// Insert
-			constants.DeleteColumnMarker, strings.Join(cols, ","),
-			array.StringsJoinAddPrefix(cols, ",", "cc.")), nil
+			constants.DeleteColumnMarker, strings.Join(m.Columns, ","),
+			array.StringsJoinAddPrefix(m.Columns, ",", "cc.")), nil
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
-	for idx, col := range cols {
+	for idx, col := range m.Columns {
 		if col == constants.DeleteColumnMarker {
-			cols = append(cols[:idx], cols[idx+1:]...)
+			m.Columns = append(m.Columns[:idx], m.Columns[idx+1:]...)
 			removed = true
 			break
 		}
@@ -76,13 +102,13 @@ func MergeStatement(fqTableName, subQuery, pk, idempotentKey string, cols []stri
 					(
 						%s
 					);
-		`, fqTableName, subQuery, equalitySQL,
+		`, m.FqTableName, m.SubQuery, strings.Join(equalitySQLParts, " and "),
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update
-		constants.DeleteColumnMarker, idempotentClause, array.ColumnsUpdateQuery(cols, "cc"),
+		constants.DeleteColumnMarker, idempotentClause, array.ColumnsUpdateQuery(m.Columns, "cc"),
 		// Insert
-		constants.DeleteColumnMarker, strings.Join(cols, ","),
-		array.StringsJoinAddPrefix(cols, ",", "cc.")), nil
+		constants.DeleteColumnMarker, strings.Join(m.Columns, ","),
+		array.StringsJoinAddPrefix(m.Columns, ",", "cc.")), nil
 
 }

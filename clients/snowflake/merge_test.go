@@ -21,7 +21,7 @@ func (s *SnowflakeTestSuite) TestMergeNoDeleteFlag() {
 	tableData := &optimization.TableData{
 		InMemoryColumns: cols,
 		RowsData:        nil,
-		PrimaryKey:      "id",
+		PrimaryKeys:     []string{"id"},
 		TopicConfig:     kafkalib.TopicConfig{},
 		LatestCDCTs:     time.Time{},
 	}
@@ -54,10 +54,11 @@ func (s *SnowflakeTestSuite) TestMerge() {
 		Schema:    "public",
 	}
 
+	primaryKeys := []string{"id"}
 	tableData := &optimization.TableData{
 		InMemoryColumns: cols,
 		RowsData:        rowData,
-		PrimaryKey:      "id",
+		PrimaryKeys:     primaryKeys,
 		TopicConfig:     topicConfig,
 		LatestCDCTs:     time.Time{},
 	}
@@ -71,7 +72,11 @@ func (s *SnowflakeTestSuite) TestMerge() {
 
 	// Check if MERGE INTO FQ Table exists.
 	assert.True(s.T(), strings.Contains(mergeSQL, "MERGE INTO shop.public.customer c"))
-	assert.True(s.T(), strings.Contains(mergeSQL, fmt.Sprintf("c.%s = cc.%s", tableData.PrimaryKey, tableData.PrimaryKey)))
+
+	for _, primaryKey := range primaryKeys {
+		assert.True(s.T(), strings.Contains(mergeSQL, fmt.Sprintf("c.%s = cc.%s", primaryKey, primaryKey)))
+	}
+
 	for _, rowData := range tableData.RowsData {
 		for col, val := range rowData {
 			switch cols[col] {
@@ -110,7 +115,7 @@ func (s *SnowflakeTestSuite) TestMergeWithSingleQuote() {
 	tableData := &optimization.TableData{
 		InMemoryColumns: cols,
 		RowsData:        rowData,
-		PrimaryKey:      "id",
+		PrimaryKeys:     []string{"id"},
 		TopicConfig:     topicConfig,
 		LatestCDCTs:     time.Time{},
 	}
@@ -143,7 +148,7 @@ func (s *SnowflakeTestSuite) TestMergeJson() {
 	tableData := &optimization.TableData{
 		InMemoryColumns: cols,
 		RowsData:        rowData,
-		PrimaryKey:      "id",
+		PrimaryKeys:     []string{"id"},
 		TopicConfig:     topicConfig,
 		LatestCDCTs:     time.Time{},
 	}

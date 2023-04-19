@@ -23,9 +23,10 @@ var topicConfig = &kafkalib.TopicConfig{
 func (f *FlushTestSuite) TestMemoryBasic() {
 	for i := 0; i < 5; i++ {
 		event := models.Event{
-			Table:           "foo",
-			PrimaryKeyName:  "id",
-			PrimaryKeyValue: fmt.Sprintf("pk-%d", i),
+			Table: "foo",
+			PrimaryKeyMap: map[string]interface{}{
+				"id": fmt.Sprintf("pk-%d", i),
+			},
 			Data: map[string]interface{}{
 				constants.DeleteColumnMarker: true,
 				"abc":                        "def",
@@ -46,9 +47,10 @@ func (f *FlushTestSuite) TestShouldFlush() {
 
 	for i := 0; i < int(float64(cfg.Config.BufferRows)*1.5); i++ {
 		event := models.Event{
-			Table:           "postgres",
-			PrimaryKeyName:  "id",
-			PrimaryKeyValue: fmt.Sprintf("pk-%d", i),
+			Table: "postgres",
+			PrimaryKeyMap: map[string]interface{}{
+				"id": fmt.Sprintf("pk-%d", i),
+			},
 			Data: map[string]interface{}{
 				constants.DeleteColumnMarker: true,
 				"pk":                         fmt.Sprintf("pk-%d", i),
@@ -81,10 +83,12 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 			defer wg.Done()
 			for i := 0; i < 5; i++ {
 				event := models.Event{
-					Table:           tableName,
-					PrimaryKeyName:  "id",
-					PrimaryKeyValue: fmt.Sprintf("pk-%d", i),
+					Table: tableName,
+					PrimaryKeyMap: map[string]interface{}{
+						"id": fmt.Sprintf("pk-%d", i),
+					},
 					Data: map[string]interface{}{
+						"id":                         fmt.Sprintf("pk-%d", i),
 						constants.DeleteColumnMarker: true,
 						"pk":                         fmt.Sprintf("pk-%d", i),
 						"foo":                        "bar",

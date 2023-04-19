@@ -3,10 +3,10 @@ package postgres
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/cdc/util"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/debezium"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
@@ -31,15 +31,6 @@ func (d *Debezium) Labels() []string {
 	return []string{constants.DBZPostgresFormat, constants.DBZPostgresAltFormat}
 }
 
-func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (pkName string, pkValue interface{}, err error) {
-	switch tc.CDCKeyFormat {
-	case "org.apache.kafka.connect.json.JsonConverter":
-		return util.ParseJSONKey(key)
-	case "org.apache.kafka.connect.storage.StringConverter":
-		return util.ParseStringKey(key)
-	default:
-		err = fmt.Errorf("format: %s is not supported", tc.CDCKeyFormat)
-	}
-
-	return
+func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (kvMap map[string]interface{}, err error) {
+	return debezium.ParsePartitionKey(key, tc.CDCKeyFormat)
 }
