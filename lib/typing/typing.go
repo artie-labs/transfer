@@ -80,7 +80,6 @@ func IsJSON(str string) bool {
 }
 
 func ParseValue(key string, optionalSchema map[string]KindDetails, val interface{}) KindDetails {
-	// TODO test nil schema
 	if len(optionalSchema) > 0 {
 		// If the column exists in the schema, let's early exit.
 		kindDetail, isOk := optionalSchema[key]
