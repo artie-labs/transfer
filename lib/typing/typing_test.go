@@ -33,29 +33,29 @@ func TestJSONString(t *testing.T) {
 
 func TestParseValueBasic(t *testing.T) {
 	// Floats
-	assert.Equal(t, ParseValue(7.5), Float)
-	assert.Equal(t, ParseValue(-7.4999999), Float)
-	assert.Equal(t, ParseValue(7.0), Float)
+	assert.Equal(t, ParseValue("", nil,7.5), Float)
+	assert.Equal(t, ParseValue("", nil, -7.4999999), Float)
+	assert.Equal(t, ParseValue("", nil,7.0), Float)
 
 	// Integers
-	assert.Equal(t, ParseValue(9), Integer)
-	assert.Equal(t, ParseValue(math.MaxInt), Integer)
-	assert.Equal(t, ParseValue(-1*math.MaxInt), Integer)
+	assert.Equal(t, ParseValue("", nil, 9), Integer)
+	assert.Equal(t, ParseValue("", nil, math.MaxInt), Integer)
+	assert.Equal(t, ParseValue("", nil, -1*math.MaxInt), Integer)
 
 	// Invalid
-	assert.Equal(t, ParseValue(nil), Invalid)
-	assert.Equal(t, ParseValue(errors.New("hello")), Invalid)
+	assert.Equal(t, ParseValue("", nil, nil), Invalid)
+	assert.Equal(t, ParseValue("", nil, errors.New("hello")), Invalid)
 
 	// Boolean
-	assert.Equal(t, ParseValue(true), Boolean)
-	assert.Equal(t, ParseValue(false), Boolean)
+	assert.Equal(t, ParseValue("", nil, true), Boolean)
+	assert.Equal(t, ParseValue("", nil, false), Boolean)
 }
 
 func TestParseValueArrays(t *testing.T) {
-	assert.Equal(t, ParseValue([]string{"a", "b", "c"}), Array)
-	assert.Equal(t, ParseValue([]interface{}{"a", 123, "c"}), Array)
-	assert.Equal(t, ParseValue([]int64{1}), Array)
-	assert.Equal(t, ParseValue([]bool{false}), Array)
+	assert.Equal(t, ParseValue("", nil, []string{"a", "b", "c"}), Array)
+	assert.Equal(t, ParseValue("", nil, []interface{}{"a", 123, "c"}), Array)
+	assert.Equal(t, ParseValue("", nil, []int64{1}), Array)
+	assert.Equal(t, ParseValue("", nil, []bool{false}), Array)
 }
 
 func TestParseValueMaps(t *testing.T) {
@@ -84,7 +84,7 @@ func TestParseValueMaps(t *testing.T) {
 	}
 
 	for _, randomMap := range randomMaps {
-		assert.Equal(t, ParseValue(randomMap), Struct, fmt.Sprintf("Failed message is: %v", randomMap))
+		assert.Equal(t, ParseValue("", nil, randomMap), Struct, fmt.Sprintf("Failed message is: %v", randomMap))
 	}
 }
 
@@ -104,7 +104,7 @@ func TestDateTime(t *testing.T) {
 	}
 
 	for _, possibleDate := range possibleDates {
-		assert.Equal(t, ParseValue(possibleDate).ExtendedTimeDetails.Type, ext.DateTime.Type, fmt.Sprintf("Failed format, value is: %v", possibleDate))
+		assert.Equal(t, ParseValue("", nil, possibleDate).ExtendedTimeDetails.Type, ext.DateTime.Type, fmt.Sprintf("Failed format, value is: %v", possibleDate))
 
 		// Test the parseDT function as well.
 		ts, err := ext.ParseExtendedDateTime(fmt.Sprint(possibleDate))
@@ -118,7 +118,7 @@ func TestDateTime(t *testing.T) {
 }
 
 func TestTime(t *testing.T) {
-	kindDetails := ParseValue("00:18:11.13116+00")
+	kindDetails := ParseValue("", nil, "00:18:11.13116+00")
 	// 00:42:26.693631Z
 	assert.Equal(t, ETime.Kind, kindDetails.Kind)
 	assert.Equal(t, ext.TimeKindType, kindDetails.ExtendedTimeDetails.Type)
@@ -132,6 +132,6 @@ func TestString(t *testing.T) {
 	}
 
 	for _, possibleString := range possibleStrings {
-		assert.Equal(t, ParseValue(possibleString), String)
+		assert.Equal(t, ParseValue("", nil, possibleString), String)
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
 	"time"
 )
@@ -16,6 +17,10 @@ var idMap = map[string]interface{}{
 
 func (f fakeEvent) GetExecutionTime() time.Time {
 	return time.Now()
+}
+
+func (f fakeEvent) GetOptionalSchema(ctx  context.Context) map[string]typing.KindDetails {
+	return nil
 }
 
 func (f fakeEvent) GetData(ctx context.Context, pkMap map[string]interface{}, config *kafkalib.TopicConfig) map[string]interface{} {
