@@ -135,3 +135,25 @@ func TestString(t *testing.T) {
 		assert.Equal(t, ParseValue("", nil, possibleString), String)
 	}
 }
+
+func TestOptionalSchema(t *testing.T) {
+	kd := ParseValue("", nil, true)
+	assert.Equal(t, kd, Boolean)
+
+	// Key in a nil-schema
+	kd = ParseValue("key", nil, true)
+	assert.Equal(t, kd, Boolean)
+
+	// Non-existent key in the schema.
+	optionalSchema := map[string]KindDetails{
+		"created_at": String,
+	}
+
+	// Parse it as a date since it doesn't exist in the optional schema.
+	kd = ParseValue("updated_at", optionalSchema, "2023-01-01")
+	assert.Equal(t, ext.Date.Type, kd.ExtendedTimeDetails.Type)
+
+	// Respecting the optional schema
+	kd = ParseValue("created_at", optionalSchema, "2023-01-01")
+	assert.Equal(t, String, kd)
+}
