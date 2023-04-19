@@ -23,8 +23,10 @@ func (m *ModelsTestSuite) SaveEvent() {
 	anotherLowerCol := "dusty the mini aussie"
 
 	event := Event{
-		Table:           "foo",
-		PrimaryKeyValue: "123",
+		Table: "foo",
+		PrimaryKeyMap: map[string]interface{}{
+			"id": "123",
+		},
 		Data: map[string]interface{}{
 			constants.DeleteColumnMarker: true,
 			expectedCol:                  "dusty",
@@ -53,8 +55,10 @@ func (m *ModelsTestSuite) SaveEvent() {
 
 	badColumn := "other"
 	edgeCaseEvent := Event{
-		Table:           "foo",
-		PrimaryKeyValue: "12344",
+		Table: "foo",
+		PrimaryKeyMap: map[string]interface{}{
+			"id": "12344",
+		},
 		Data: map[string]interface{}{
 			constants.DeleteColumnMarker: true,
 			expectedCol:                  "dusty",

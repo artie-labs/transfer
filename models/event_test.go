@@ -10,11 +10,15 @@ import (
 
 type fakeEvent struct{}
 
+var idMap = map[string]interface{}{
+	"id": 123,
+}
+
 func (f fakeEvent) GetExecutionTime() time.Time {
 	return time.Now()
 }
 
-func (f fakeEvent) GetData(ctx context.Context, pkName string, pkVal interface{}, config *kafkalib.TopicConfig) map[string]interface{} {
+func (f fakeEvent) GetData(ctx context.Context, pkMap map[string]interface{}, config *kafkalib.TopicConfig) map[string]interface{} {
 	return map[string]interface{}{constants.DeleteColumnMarker: false}
 }
 
@@ -25,10 +29,7 @@ func (m *ModelsTestSuite) TestEvent_IsValid() {
 	e.Table = "foo"
 	assert.False(m.T(), e.IsValid())
 
-	e.PrimaryKeyName = "id"
-	assert.False(m.T(), e.IsValid())
-
-	e.PrimaryKeyValue = 123
+	e.PrimaryKeyMap = idMap
 	assert.False(m.T(), e.IsValid())
 
 	e.Data = make(map[string]interface{})
@@ -38,7 +39,7 @@ func (m *ModelsTestSuite) TestEvent_IsValid() {
 
 func (m *ModelsTestSuite) TestEvent_TableName() {
 	var f fakeEvent
-	evt := ToMemoryEvent(context.Background(), f, "id", "123", &kafkalib.TopicConfig{
+	evt := ToMemoryEvent(context.Background(), f, idMap, &kafkalib.TopicConfig{
 		TableName: "orders",
 	})
 

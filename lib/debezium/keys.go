@@ -15,6 +15,7 @@ const (
 )
 
 func ParsePartitionKey(key []byte, cdcKeyFormat string) (map[string]interface{}, error) {
+	fmt.Println("key", string(key))
 	switch cdcKeyFormat {
 	case KeyFormatJSON:
 		return parsePartitionKeyStruct(key)
@@ -38,7 +39,7 @@ func parsePartitionKeyString(key []byte) (map[string]interface{}, error) {
 	}
 
 	keyString := string(key)
-	if len("Struct{}") >= len(keyString) {
+	if len(stringPrefix+stringSuffix) >= len(keyString) {
 		return nil, fmt.Errorf("key is too short")
 	}
 

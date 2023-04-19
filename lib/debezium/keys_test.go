@@ -79,5 +79,36 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, kv["id"], float64(1002))
 
-	// TODO provide a test case for composite keys.
+	// Composite key
+	compositeKeyString := `{
+	"schema": {
+		"type": "struct",
+		"fields": [{
+			"type": "int32",
+			"optional": false,
+			"field": "quarter_id"
+		}, {
+			"type": "string",
+			"optional": false,
+			"field": "course_id"
+		}, {
+			"type": "int32",
+			"optional": false,
+			"field": "student_id"
+		}],
+		"optional": false,
+		"name": "dbserver1.inventory.course_grades.Key"
+	},
+	"payload": {
+		"quarter_id": 1,
+		"course_id": "course1",
+		"student_id": 1
+	}
+}`
+
+	kv, err = parsePartitionKeyStruct([]byte(compositeKeyString))
+	assert.NoError(t, err)
+	assert.Equal(t, kv["quarter_id"], float64(1))
+	assert.Equal(t, kv["student_id"], float64(1))
+	assert.Equal(t, kv["course_id"], "course1")
 }

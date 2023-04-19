@@ -97,11 +97,10 @@ func (s *SchemaEventPayload) GetData(ctx context.Context, pkMap map[string]inter
 		retMap = s.Payload.AfterMap
 		// We need this because there's an edge case with Debezium
 		// Where _id gets rewritten as id in the partition key.
-
 		for k, v := range pkMap {
 			retMap[k] = v
 		}
-		
+
 		retMap[constants.DeleteColumnMarker] = false
 	}
 

@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"fmt"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -18,17 +17,20 @@ var validTc = &kafkalib.TopicConfig{
 func (p *PostgresTestSuite) TestGetPrimaryKey() {
 	valString := `{"id": 47}`
 
-	pkName, pkVal, err := p.GetPrimaryKey(context.Background(), []byte(valString), validTc)
-	assert.Equal(p.T(), pkName, "id")
-	assert.Equal(p.T(), fmt.Sprint(pkVal), fmt.Sprint(47)) // Don't have to deal with float and int conversion
+	pkMap, err := p.GetPrimaryKey(context.Background(), []byte(valString), validTc)
+
+	val, isOk := pkMap["id"]
+	assert.True(p.T(), isOk)
+	assert.Equal(p.T(), val, float64(47))
 	assert.Equal(p.T(), err, nil)
 }
 
 func (p *PostgresTestSuite) TestGetPrimaryKeyUUID() {
 	valString := `{"uuid": "ca0cefe9-45cf-44fa-a2ab-ec5e7e5522a3"}`
-	pkName, pkVal, err := p.GetPrimaryKey(context.Background(), []byte(valString), validTc)
-	assert.Equal(p.T(), pkName, "uuid")
-	assert.Equal(p.T(), fmt.Sprint(pkVal), "ca0cefe9-45cf-44fa-a2ab-ec5e7e5522a3")
+	pkMap, err := p.GetPrimaryKey(context.Background(), []byte(valString), validTc)
+	val, isOk := pkMap["uuid"]
+	assert.True(p.T(), isOk)
+	assert.Equal(p.T(), val, "ca0cefe9-45cf-44fa-a2ab-ec5e7e5522a3")
 	assert.Equal(p.T(), err, nil)
 }
 
@@ -76,7 +78,7 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
 	evt, err := p.Debezium.GetEventFromBytes(context.Background(), []byte(payload))
 	assert.Nil(p.T(), err)
 
-	evtData := evt.GetData(context.Background(), "id", 59, &kafkalib.TopicConfig{})
+	evtData := evt.GetData(context.Background(), map[string]interface{}{"id": 59}, &kafkalib.TopicConfig{})
 	assert.Equal(p.T(), evtData["id"], float64(59))
 
 	assert.Equal(p.T(), evtData["item"], "Barings Participation Investors")
@@ -177,7 +179,7 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	evt, err := p.Debezium.GetEventFromBytes(context.Background(), []byte(payload))
 	assert.Nil(p.T(), err)
 
-	evtData := evt.GetData(context.Background(), "id", 1001, &kafkalib.TopicConfig{})
+	evtData := evt.GetData(context.Background(), map[string]interface{}{"id": 1001}, &kafkalib.TopicConfig{})
 
 	// Testing typing.
 	assert.Equal(p.T(), evtData["id"], 1001)

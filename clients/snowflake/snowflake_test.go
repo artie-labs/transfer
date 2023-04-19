@@ -42,7 +42,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		InMemoryColumns: columns,
 		RowsData:        rowsData,
 		TopicConfig:     topicConfig,
-		PrimaryKey:      "id",
+		PrimaryKeys:     []string{"id"},
 		Rows:            1,
 	}
 
@@ -86,7 +86,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		InMemoryColumns: columns,
 		RowsData:        rowsData,
 		TopicConfig:     topicConfig,
-		PrimaryKey:      "id",
+		PrimaryKeys:     []string{"id"},
 		Rows:            1,
 	}
 
@@ -132,7 +132,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		InMemoryColumns: columns,
 		RowsData:        rowsData,
 		TopicConfig:     topicConfig,
-		PrimaryKey:      "id",
+		PrimaryKeys:     []string{"id"},
 		Rows:            1,
 	}
 
@@ -177,7 +177,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		InMemoryColumns: columns,
 		RowsData:        rowsData,
 		TopicConfig:     topicConfig,
-		PrimaryKey:      "id",
+		PrimaryKeys:     []string{"id"},
 		Rows:            1,
 	}
 
@@ -228,7 +228,6 @@ func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
 	err := s.store.Merge(s.ctx, &optimization.TableData{
 		InMemoryColumns:         nil,
 		RowsData:                nil,
-		PrimaryKey:              "",
 		TopicConfig:             kafkalib.TopicConfig{},
 		PartitionsToLastMessage: nil,
 		LatestCDCTs:             time.Time{},
