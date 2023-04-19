@@ -59,35 +59,18 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 		}
 	}
 
-	// Update the key, offset and TS
-	inMemoryDB.TableData[e.Table].RowsData[e.PrimaryKeyValue()] = e.Data
-
-	// If the message is Kafka, then we only need the latest one
-	// If it's pubsub, we will store all of them in memory. This is because GCP pub/sub REQUIRES us to ack every single message
-	if message.Kind() == artie.Kafka {
-		inMemoryDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()] = []artie.Message{message}
-	} else {
-		inMemoryDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()] = append(inMemoryDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()], message)
-	}
-
-	inMemoryDB.TableData[e.Table].LatestCDCTs = e.ExecutionTime
-
-	// Increment row count
-	inMemoryDB.TableData[e.Table].Rows += 1
-
-	// TODO: Test.
 	// Update col if necessary
 	sanitizedData := make(map[string]interface{})
-	for col, val := range e.Data {
+	for _col, val := range e.Data {
 		// columns need to all be normalized and lower cased.
-		newColName := strings.ToLower(col)
+		newColName := strings.ToLower(_col)
 
 		// Columns here could contain spaces. Every destination treats spaces in a column differently.
 		// So far, Snowflake accepts them when escaped properly, however BigQuery does not accept it.
 		// Instead of making this more complicated for future destinations, we will escape the spaces by having double underscore `__`
 		// So, if customers want to retrieve spaces again, they can replace `__`.
 		var containsSpace bool
-		containsSpace, col = stringutil.EscapeSpaces(col)
+		containsSpace, newColName = stringutil.EscapeSpaces(newColName)
 		if containsSpace {
 			// Write the message back if the column has changed.
 			sanitizedData[newColName] = val
@@ -101,13 +84,13 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 			// We are directly adding this column to our in-memory database
 			// This ensures that this column exists, we just have an invalid value (so we will not replicate over).
 			// However, this will ensure that we do not drop the column within the destination
-			inMemoryDB.TableData[e.Table].InMemoryColumns[col] = typing.Invalid
+			inMemoryDB.TableData[e.Table].InMemoryColumns[newColName] = typing.Invalid
 			continue
 		}
 
-		colTypeDetails, isOk := inMemoryDB.TableData[e.Table].InMemoryColumns[col]
+		colTypeDetails, isOk := inMemoryDB.TableData[e.Table].InMemoryColumns[newColName]
 		if !isOk {
-			inMemoryDB.TableData[e.Table].InMemoryColumns[col] = typing.ParseValue(val)
+			inMemoryDB.TableData[e.Table].InMemoryColumns[newColName] = typing.ParseValue(val)
 		} else {
 			if colTypeDetails.Kind == typing.Invalid.Kind {
 				// If colType is Invalid, let's see if we can update it to a better type
@@ -115,7 +98,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 				// However, it's important to create a column even if it's nil.
 				// This is because we don't want to think that it's okay to drop a column in DWH
 				if kindDetails := typing.ParseValue(val); kindDetails.Kind != typing.Invalid.Kind {
-					inMemoryDB.TableData[e.Table].InMemoryColumns[col] = kindDetails
+					inMemoryDB.TableData[e.Table].InMemoryColumns[newColName] = kindDetails
 				}
 			}
 		}
@@ -125,6 +108,19 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 
 	// Swap out sanitizedData <> data.
 	e.Data = sanitizedData
+	inMemoryDB.TableData[e.Table].RowsData[e.PrimaryKeyValue()] = e.Data
+	// If the message is Kafka, then we only need the latest one
+	// If it's pubsub, we will store all of them in memory. This is because GCP pub/sub REQUIRES us to ack every single message
+	if message.Kind() == artie.Kafka {
+		inMemoryDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()] = []artie.Message{message}
+	} else {
+		inMemoryDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()] = append(inMemoryDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()], message)
+	}
+
+	inMemoryDB.TableData[e.Table].LatestCDCTs = e.ExecutionTime
+
+	// Increment row count
+	inMemoryDB.TableData[e.Table].Rows += 1
 
 	settings := config.FromContext(ctx)
 	return inMemoryDB.TableData[e.Table].Rows > settings.Config.BufferRows, nil

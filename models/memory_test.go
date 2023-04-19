@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -15,12 +16,12 @@ var topicConfig = &kafkalib.TopicConfig{
 	Schema:    "public",
 }
 
-func (m *ModelsTestSuite) SaveEvent() {
+func (m *ModelsTestSuite) TestSaveEvent() {
 	expectedCol := "rOBiN TaNG"
-	expectedLowerCol := "robin tang"
+	expectedLowerCol := "robin__tang"
 
 	anotherCol := "DuStY tHE MINI aussie"
-	anotherLowerCol := "dusty the mini aussie"
+	anotherLowerCol := "dusty__the__mini__aussie"
 
 	event := Event{
 		Table: "foo",
@@ -73,32 +74,30 @@ func (m *ModelsTestSuite) SaveEvent() {
 	val, isOk := GetMemoryDB().TableData["foo"].InMemoryColumns[badColumn]
 	assert.True(m.T(), isOk)
 	assert.Equal(m.T(), val, typing.Invalid)
-
-	assert.False(m.T(), true)
 }
 
-//func (m *ModelsTestSuite) TestEvent_SaveCasing() {
-//	assert.True(m.T(), false)
-//
-//	event := Event{
-//		Table: "foo",
-//		PrimaryKeyMap: map[string]interface{}{
-//			"id": "123",
-//		},
-//		Data: map[string]interface{}{
-//			constants.DeleteColumnMarker: true,
-//			"randomCol":                  "dusty",
-//			"anotherCOL":                 13.37,
-//		},
-//	}
-//
-//	kafkaMsg := kafka.Message{}
-//	_, err := event.Save(m.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
-//
-//	fmt.Println("inMemoryDB", inMemoryDB.TableData["foo"].RowsData)
-//	fmt.Println("here", event.Data)
-//
-//	assert.False(m.T(), true)
-//
-//	assert.Nil(m.T(), err)
-//}
+func (m *ModelsTestSuite) TestEvent_SaveCasing() {
+	event := Event{
+		Table: "foo",
+		PrimaryKeyMap: map[string]interface{}{
+			"id": "123",
+		},
+		Data: map[string]interface{}{
+			constants.DeleteColumnMarker: true,
+			"randomCol":                  "dusty",
+			"anotherCOL":                 13.37,
+		},
+	}
+
+	kafkaMsg := kafka.Message{}
+	_, err := event.Save(m.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+
+	rowData := inMemoryDB.TableData["foo"].RowsData[event.PrimaryKeyValue()]
+	expectedColumns := []string{"randomcol", "anothercol"}
+	for _, expectedColumn := range expectedColumns {
+		_, isOk := rowData[expectedColumn]
+		assert.True(m.T(), isOk, fmt.Sprintf("expected col: %s, rowsData: %v", expectedColumn, rowData))
+	}
+
+	assert.Nil(m.T(), err)
+}
