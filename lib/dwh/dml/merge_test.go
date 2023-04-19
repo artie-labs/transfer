@@ -3,6 +3,7 @@ package dml
 import (
 	"fmt"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
@@ -30,7 +31,16 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
 	for _, idempotentKey := range []string{"", "updated_at"} {
-		mergeSQL, err := MergeStatement(fqTable, subQuery, "id", idempotentKey, cols, true, false)
+		mergeSQL, err := MergeStatement(MergeArgument{
+			FqTableName:            fqTable,
+			SubQuery:               subQuery,
+			IdempotentKey:          idempotentKey,
+			PrimaryKeys:            []string{"id"},
+			Columns:                cols,
+			ColumnToType:           map[string]typing.KindDetails{"id": typing.String},
+			SpecialCastingRequired: false,
+			SoftDelete:             true,
+		})
 		assert.NoError(t, err)
 		assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
 		// Soft deletion flag being passed.
@@ -60,8 +70,16 @@ func TestMergeStatement(t *testing.T) {
 	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
-
-	mergeSQL, err := MergeStatement(fqTable, subQuery, "id", "", cols, false, false)
+	mergeSQL, err := MergeStatement(MergeArgument{
+		FqTableName:            fqTable,
+		SubQuery:               subQuery,
+		IdempotentKey:          "",
+		PrimaryKeys:            []string{"id"},
+		Columns:                cols,
+		ColumnToType:           map[string]typing.KindDetails{"id": typing.String},
+		SpecialCastingRequired: false,
+		SoftDelete:             false,
+	})
 	assert.NoError(t, err)
 	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
 	assert.False(t, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")), fmt.Sprintf("Idempotency key: %s", mergeSQL))
@@ -86,7 +104,16 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
-	mergeSQL, err := MergeStatement(fqTable, subQuery, "id", "updated_at", cols, false, false)
+	mergeSQL, err := MergeStatement(MergeArgument{
+		FqTableName:            fqTable,
+		SubQuery:               subQuery,
+		IdempotentKey:          "updated_at",
+		PrimaryKeys:            []string{"id"},
+		Columns:                cols,
+		ColumnToType:           map[string]typing.KindDetails{"id": typing.String},
+		SpecialCastingRequired: false,
+		SoftDelete:             false,
+	})
 	assert.NoError(t, err)
 	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
 	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")), fmt.Sprintf("Idempotency key: %s", mergeSQL))

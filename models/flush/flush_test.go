@@ -88,6 +88,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 						"id": fmt.Sprintf("pk-%d", i),
 					},
 					Data: map[string]interface{}{
+						"id":                         fmt.Sprintf("pk-%d", i),
 						constants.DeleteColumnMarker: true,
 						"pk":                         fmt.Sprintf("pk-%d", i),
 						"foo":                        "bar",

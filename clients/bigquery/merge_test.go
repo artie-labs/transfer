@@ -19,7 +19,7 @@ func (b *BigQueryTestSuite) TestMergeNoDeleteFlag() {
 	tableData := &optimization.TableData{
 		InMemoryColumns: cols,
 		RowsData:        nil,
-		PrimaryKey:      "id",
+		PrimaryKeys:     []string{"id"},
 		TopicConfig:     kafkalib.TopicConfig{},
 		LatestCDCTs:     time.Time{},
 	}
@@ -29,6 +29,8 @@ func (b *BigQueryTestSuite) TestMergeNoDeleteFlag() {
 }
 
 func (b *BigQueryTestSuite) TestMerge() {
+	primaryKeys := []string{"id"}
+
 	cols := map[string]typing.KindDetails{
 		"id":                         typing.Integer,
 		"name":                       typing.String,
@@ -54,7 +56,7 @@ func (b *BigQueryTestSuite) TestMerge() {
 	tableData := &optimization.TableData{
 		InMemoryColumns: cols,
 		RowsData:        rowData,
-		PrimaryKey:      "id",
+		PrimaryKeys:     primaryKeys,
 		TopicConfig:     topicConfig,
 		LatestCDCTs:     time.Time{},
 	}
@@ -65,7 +67,11 @@ func (b *BigQueryTestSuite) TestMerge() {
 	// Check if MERGE INTO FQ Table exists.
 	assert.True(b.T(), strings.Contains(mergeSQL, "MERGE INTO shop.customer c"), mergeSQL)
 	// Check for equality merge
-	assert.True(b.T(), strings.Contains(mergeSQL, fmt.Sprintf("c.%s = cc.%s", tableData.PrimaryKey, tableData.PrimaryKey)))
+
+	for _, pk := range primaryKeys {
+		assert.True(b.T(), strings.Contains(mergeSQL, fmt.Sprintf("c.%s = cc.%s", pk, pk)))
+	}
+
 	for _, rowData := range tableData.RowsData {
 		for col, val := range rowData {
 			switch cols[col] {
@@ -107,10 +113,12 @@ func (b *BigQueryTestSuite) TestMergeJSONKey() {
 		Schema:    "public",
 	}
 
+	primaryKeys := []string{"id"}
+
 	tableData := &optimization.TableData{
 		InMemoryColumns: cols,
 		RowsData:        rowData,
-		PrimaryKey:      "id",
+		PrimaryKeys:     primaryKeys,
 		TopicConfig:     topicConfig,
 		LatestCDCTs:     time.Time{},
 	}
@@ -121,7 +129,11 @@ func (b *BigQueryTestSuite) TestMergeJSONKey() {
 	// Check if MERGE INTO FQ Table exists.
 	assert.True(b.T(), strings.Contains(mergeSQL, "MERGE INTO shop.customer c"), mergeSQL)
 	// Check for equality merge
-	assert.True(b.T(), strings.Contains(mergeSQL, fmt.Sprintf("TO_JSON_STRING(c.%s) = TO_JSON_STRING(cc.%s)", tableData.PrimaryKey, tableData.PrimaryKey)))
+
+	for _, primaryKey := range primaryKeys {
+		assert.True(b.T(), strings.Contains(mergeSQL, fmt.Sprintf("TO_JSON_STRING(c.%s) = TO_JSON_STRING(cc.%s)", primaryKey, primaryKey)))
+	}
+
 	for _, rowData := range tableData.RowsData {
 		for col, val := range rowData {
 			switch cols[col] {
