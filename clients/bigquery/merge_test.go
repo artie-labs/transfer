@@ -148,3 +148,133 @@ func (b *BigQueryTestSuite) TestMergeJSONKey() {
 		}
 	}
 }
+
+func (b *BigQueryTestSuite) TestMergeSimpleCompositeKey() {
+	cols := map[string]typing.KindDetails{
+		"id":                         typing.String,
+		"idA":                        typing.String,
+		"name":                       typing.String,
+		constants.DeleteColumnMarker: typing.Boolean,
+	}
+
+	rowData := make(map[string]map[string]interface{})
+	for idx, name := range []string{"robin", "jacqueline", "dusty"} {
+		pkVal := fmt.Sprint(map[string]interface{}{
+			"$oid": fmt.Sprintf("640127e4beeb1ccfc821c25c++%v", idx),
+		})
+
+		rowData[pkVal] = map[string]interface{}{
+			"id":                         pkVal,
+			"name":                       name,
+			constants.DeleteColumnMarker: false,
+		}
+	}
+
+	topicConfig := kafkalib.TopicConfig{
+		Database:  "shop",
+		TableName: "customer",
+		Schema:    "public",
+	}
+
+	primaryKeys := []string{"id", "idA"}
+	tableData := &optimization.TableData{
+		InMemoryColumns: cols,
+		RowsData:        rowData,
+		PrimaryKeys:     primaryKeys,
+		TopicConfig:     topicConfig,
+		LatestCDCTs:     time.Time{},
+	}
+
+	mergeSQL, err := merge(tableData)
+
+	assert.NoError(b.T(), err, "merge failed")
+	// Check if MERGE INTO FQ Table exists.
+	assert.True(b.T(), strings.Contains(mergeSQL, "MERGE INTO shop.customer c"), mergeSQL)
+	// Check for equality merge
+	for _, primaryKey := range primaryKeys {
+		assert.True(b.T(), strings.Contains(mergeSQL, fmt.Sprintf("c.%s = cc.%s", primaryKey, primaryKey)))
+	}
+
+	assert.True(b.T(), strings.Contains(mergeSQL, fmt.Sprintf("c.%s = cc.%s and c.%s = cc.%s", "id", "id", "idA", "idA")), mergeSQL)
+	for _, rowData := range tableData.RowsData {
+		for col, val := range rowData {
+			switch cols[col] {
+			case typing.String, typing.Array, typing.Struct:
+				val = fmt.Sprintf("'%v'", val)
+			}
+
+			assert.True(b.T(), strings.Contains(mergeSQL, fmt.Sprint(val)), map[string]interface{}{
+				"merge": mergeSQL,
+				"val":   val,
+			})
+		}
+	}
+}
+
+func (b *BigQueryTestSuite) TestMergeJSONKeyAndCompositeHybrid() {
+	cols := map[string]typing.KindDetails{
+		"id":                         typing.Struct,
+		"idA":                        typing.String,
+		"idB":                        typing.String,
+		"idC":                        typing.Struct,
+		"name":                       typing.String,
+		constants.DeleteColumnMarker: typing.Boolean,
+	}
+
+	rowData := make(map[string]map[string]interface{})
+	for idx, name := range []string{"robin", "jacqueline", "dusty"} {
+		pkVal := fmt.Sprint(map[string]interface{}{
+			"$oid": fmt.Sprintf("640127e4beeb1ccfc821c25c++%v", idx),
+		})
+
+		rowData[pkVal] = map[string]interface{}{
+			"id":                         pkVal,
+			"name":                       name,
+			constants.DeleteColumnMarker: false,
+		}
+	}
+
+	topicConfig := kafkalib.TopicConfig{
+		Database:  "shop",
+		TableName: "customer",
+		Schema:    "public",
+	}
+
+	primaryKeys := []string{"id", "idA", "idB", "idC"}
+
+	tableData := &optimization.TableData{
+		InMemoryColumns: cols,
+		RowsData:        rowData,
+		PrimaryKeys:     primaryKeys,
+		TopicConfig:     topicConfig,
+		LatestCDCTs:     time.Time{},
+	}
+
+	mergeSQL, err := merge(tableData)
+
+	assert.NoError(b.T(), err, "merge failed")
+	// Check if MERGE INTO FQ Table exists.
+	assert.True(b.T(), strings.Contains(mergeSQL, "MERGE INTO shop.customer c"), mergeSQL)
+	// Check for equality merge
+	for _, primaryKey := range []string{"id", "idC"} {
+		assert.True(b.T(), strings.Contains(mergeSQL, fmt.Sprintf("TO_JSON_STRING(c.%s) = TO_JSON_STRING(cc.%s)", primaryKey, primaryKey)), mergeSQL)
+	}
+
+	for _, primaryKey := range []string{"idA", "idB"} {
+		assert.True(b.T(), strings.Contains(mergeSQL, fmt.Sprintf("c.%s = cc.%s", primaryKey, primaryKey)))
+	}
+
+	for _, rowData := range tableData.RowsData {
+		for col, val := range rowData {
+			switch cols[col] {
+			case typing.String, typing.Array, typing.Struct:
+				val = fmt.Sprintf("'%v'", val)
+			}
+
+			assert.True(b.T(), strings.Contains(mergeSQL, fmt.Sprint(val)), map[string]interface{}{
+				"merge": mergeSQL,
+				"val":   val,
+			})
+		}
+	}
+}
