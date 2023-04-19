@@ -75,10 +75,12 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	// Increment row count
 	inMemoryDB.TableData[e.Table].Rows += 1
 
+	// TODO: Test.
 	// Update col if necessary
+	sanitizedData := make(map[string]interface{})
 	for col, val := range e.Data {
 		// columns need to all be normalized and lower cased.
-		col = strings.ToLower(col)
+		newColName := strings.ToLower(col)
 
 		// Columns here could contain spaces. Every destination treats spaces in a column differently.
 		// So far, Snowflake accepts them when escaped properly, however BigQuery does not accept it.
@@ -88,7 +90,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 		containsSpace, col = stringutil.EscapeSpaces(col)
 		if containsSpace {
 			// Write the message back if the column has changed.
-			e.Data[col] = val
+			sanitizedData[newColName] = val
 		}
 
 		if val == "__debezium_unavailable_value" {
@@ -96,8 +98,6 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 			// TL;DR - Sometimes a column that is unchanged within a DML will not be emitted
 			// DBZ has stubbed it out by providing this value, so we will skip it when we see it.
 			// See: https://issues.redhat.com/browse/DBZ-4276
-			delete(e.Data, col)
-
 			// We are directly adding this column to our in-memory database
 			// This ensures that this column exists, we just have an invalid value (so we will not replicate over).
 			// However, this will ensure that we do not drop the column within the destination
@@ -119,7 +119,12 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 				}
 			}
 		}
+
+		sanitizedData[newColName] = val
 	}
+
+	// Swap out sanitizedData <> data.
+	e.Data = sanitizedData
 
 	settings := config.FromContext(ctx)
 	return inMemoryDB.TableData[e.Table].Rows > settings.Config.BufferRows, nil
