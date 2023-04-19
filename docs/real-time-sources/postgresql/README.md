@@ -22,16 +22,21 @@ We will need the following:
 
 ### Creating a new user
 
+{% hint style="info" %}
+Using Amazon RDS? RDS has its own internal permissioning model. Run this command instead of `ALTER USER REPLICATION`!
+
+`GRANT rds_replication to username;`
+{% endhint %}
+
 ```sql
-CREATE USER <username> WITH PASSWORD '<password>';
-GRANT SELECT ON ALL TABLES IN SCHEMA <schema> TO <username>;
+CREATE USER username WITH PASSWORD 'password';
+-- Grant read-only access to future tables
+ALTER DEFAULT PRIVILEGES IN SCHEMA schema_name GRANT SELECT ON TABLES TO username;
+-- Grant access to existing tables
+GRANT SELECT ON ALL TABLES IN SCHEMA schema_name TO username;
 
--- Add the replication role to your user (look below for AWS RDS specific)
-ALTER USER <user> REPLICATION;
-
--- RDS has their own internal permissioning, so we will grant the rds_replication role instead.
--- More information: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Appendix.PostgreSQL.CommonDBATasks.Roles.html
-GRANT rds_replication to <user>;
+-- Add the replication role to your user (not needed for Amazon RDS)
+ALTER USER username REPLICATION;
 ```
 
 ### Supported types
