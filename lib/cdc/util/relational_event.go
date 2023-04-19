@@ -48,8 +48,7 @@ func (s *SchemaEventPayload) GetOptionalSchema(ctx context.Context) map[string]t
 		// (b) All the ZonedTimestamps where the actual casting is from a string will be handled by our typing library
 		// We are explicitly adding this for string types where the value may be of time/date kind but
 		// the actual column type in the source database is STRING.
-		switch field.Type {
-		case "string":
+		if field.Type == "string" && field.DebeziumType == "" {
 			schema[field.FieldName] = typing.String
 		}
 	}
