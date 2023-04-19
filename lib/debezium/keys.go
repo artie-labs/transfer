@@ -15,7 +15,7 @@ const (
 )
 
 func ParsePartitionKey(key []byte, cdcKeyFormat string) (map[string]interface{}, error) {
-	fmt.Println("key", string(key))
+	fmt.Println("key", string(key), "cdcKeyFormat", cdcKeyFormat)
 	switch cdcKeyFormat {
 	case KeyFormatJSON:
 		return parsePartitionKeyStruct(key)

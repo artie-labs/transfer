@@ -86,15 +86,17 @@ func merge(tableData *optimization.TableData) (string, error) {
 
 	subQuery := strings.Join(rowValues, " UNION ALL ")
 
-	// TODO - Fix
-	var specialCastForPrimaryKey bool
-	//pkType, isOk := tableData.InMemoryColumns[tableData.PrimaryKey]
-	//if isOk {
-	//	specialCastForPrimaryKey = pkType.Kind == typing.Struct.Kind
-	//}
-
-	return dml.MergeStatement(tableData.ToFqName(constants.BigQuery), subQuery,
-		tableData.IdempotentKey, tableData.PrimaryKeys, cols, tableData.SoftDelete, specialCastForPrimaryKey)
+	return dml.MergeStatement(dml.MergeArgument{
+		FqTableName:   tableData.ToFqName(constants.BigQuery),
+		SubQuery:      subQuery,
+		IdempotentKey: tableData.IdempotentKey,
+		PrimaryKeys:   tableData.PrimaryKeys,
+		Columns:       cols,
+		ColumnToType:  tableData.InMemoryColumns,
+		SoftDelete:    tableData.SoftDelete,
+		// BigQuery specifically needs it.
+		SpecialCastingRequired: true,
+	})
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
