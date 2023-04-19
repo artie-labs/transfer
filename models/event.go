@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/typing"
 	"sort"
 	"time"
 
@@ -16,6 +17,7 @@ type Event struct {
 	Table         string
 	PrimaryKeyMap map[string]interface{}
 	Data          map[string]interface{} // json serialized column data
+	OptiomalSchema map[string]typing.KindDetails
 	ExecutionTime time.Time              // When the SQL command was executed
 }
 
@@ -24,6 +26,7 @@ func ToMemoryEvent(ctx context.Context, event cdc.Event, pkMap map[string]interf
 		Table:         tc.TableName,
 		PrimaryKeyMap: pkMap,
 		ExecutionTime: event.GetExecutionTime(),
+		OptiomalSchema: event.GetOptionalSchema(ctx),
 		Data:          event.GetData(ctx, pkMap, tc),
 	}
 }

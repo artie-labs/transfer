@@ -8,6 +8,7 @@ import (
 	"github.com/artie-labs/transfer/lib/debezium"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/artie-labs/transfer/lib/typing"
 	"strconv"
 	"time"
 )
@@ -31,6 +32,29 @@ type Source struct {
 	Database  string `json:"db"`
 	Schema    string `json:"schema"`
 	Table     string `json:"table"`
+}
+
+func (s *SchemaEventPayload) GetOptionalSchema(ctx context.Context) map[string]typing.KindDetails {
+	fieldsObject := s.Schema.GetSchemaFromLabel(cdc.After)
+	if fieldsObject == nil {
+		// AFTER schema does not exist.
+		return nil
+	}
+
+	schema := make(map[string]typing.KindDetails)
+	for _, field := range fieldsObject.Fields {
+		// So far, we should only need to add a string type.
+		// (a) All the special Debezium types will be handled by our Debezium library and casted accordingly.
+		// (b) All the ZonedTimestamps where the actual casting is from a string will be handled by our typing library
+		// We are explicitly adding this for string types where the value may be of time/date kind but
+		// the actual column type in the source database is STRING.
+		switch field.Type {
+		case "string":
+			schema[field.FieldName] = typing.String
+		}
+	}
+
+	return schema
 }
 
 func (s *SchemaEventPayload) GetExecutionTime() time.Time {
