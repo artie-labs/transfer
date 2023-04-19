@@ -79,5 +79,38 @@ func (m *ModelsTestSuite) TestEventPrimaryKeys() {
 		},
 	}
 
-	assert.Equal(m.T(), anotherEvt.PrimaryKeyValue(), "id=1course_id=2")
+	var found bool
+	possibilities := []string{"course_id=2id=1"}
+	pkVal := anotherEvt.PrimaryKeyValue()
+	for _, possibility := range possibilities {
+		if found = possibility == pkVal; found {
+			break
+		}
+	}
+
+	assert.True(m.T(), found, anotherEvt.PrimaryKeyValue())
+
+	// Make sure the ordering for the pk is deterministic.
+	partsMap := make(map[string]bool)
+	for i := 0; i < 100; i++ {
+		partsMap[anotherEvt.PrimaryKeyValue()] = true
+	}
+
+	assert.Equal(m.T(), len(partsMap), 1)
+}
+
+func (m *ModelsTestSuite) TestPrimaryKeyValueDeterministic() {
+	evt := &Event{
+		PrimaryKeyMap: map[string]interface{}{
+			"aa":    1,
+			"bb":    5,
+			"zz":    "ff",
+			"gg":    "artie",
+			"dusty": "mini aussie",
+		},
+	}
+
+	for i := 0; i < 500*1000; i++ {
+		assert.Equal(m.T(), evt.PrimaryKeyValue(), "aa=1bb=5dusty=mini aussiegg=artiezz=ff")
+	}
 }

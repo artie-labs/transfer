@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"sort"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/array"
@@ -50,21 +51,24 @@ func (e *Event) IsValid() bool {
 	return true
 }
 
+// PrimaryKeys is returned in a sorted manner to be safe.
+// We use PrimaryKeyValue() as our internal identifier within our db
+// It is critical to make sure `PrimaryKeyValue()` is a deterministic call.
 func (e *Event) PrimaryKeys() []string {
-	// TODO - Test
 	var keys []string
 	for key := range e.PrimaryKeyMap {
 		keys = append(keys, key)
 	}
 
+	sort.Strings(keys)
 	return keys
 }
 
+// PrimaryKeyValue - as per above, this needs to return a deterministic k/v string.
 func (e *Event) PrimaryKeyValue() string {
-	// TODO - Test
 	var key string
-	for k, v := range e.PrimaryKeyMap {
-		key += fmt.Sprintf("%s=%v", k, v)
+	for _, pk := range e.PrimaryKeys() {
+		key += fmt.Sprintf("%s=%v", pk, e.PrimaryKeyMap[pk])
 	}
 
 	return key
