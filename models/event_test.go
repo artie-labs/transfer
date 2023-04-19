@@ -45,3 +45,39 @@ func (m *ModelsTestSuite) TestEvent_TableName() {
 
 	assert.Equal(m.T(), "orders", evt.Table)
 }
+
+func (m *ModelsTestSuite) TestEventPrimaryKeys() {
+	evt := &Event{
+		Table: "foo",
+		PrimaryKeyMap: map[string]interface{}{
+			"id":  true,
+			"id1": true,
+			"id2": true,
+			"id3": true,
+			"id4": true,
+		},
+	}
+
+	requiredKeys := []string{"id", "id1", "id2", "id3", "id4"}
+	for _, requiredKey := range requiredKeys {
+		var found bool
+		for _, primaryKey := range evt.PrimaryKeys() {
+			found = requiredKey == primaryKey
+			if found {
+				break
+			}
+		}
+
+		assert.True(m.T(), found, requiredKey)
+	}
+
+	anotherEvt := &Event{
+		Table: "foo",
+		PrimaryKeyMap: map[string]interface{}{
+			"id":        1,
+			"course_id": 2,
+		},
+	}
+
+	assert.Equal(m.T(), anotherEvt.PrimaryKeyValue(), "id=1course_id=2")
+}

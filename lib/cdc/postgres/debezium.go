@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/cdc/util"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -19,8 +18,6 @@ func (d *Debezium) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Eve
 		// This is a Kafka Tombstone event.
 		return &event, nil
 	}
-
-	fmt.Println("event", string(bytes))
 
 	err := json.Unmarshal(bytes, &event)
 	if err != nil {
