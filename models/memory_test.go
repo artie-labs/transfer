@@ -114,10 +114,13 @@ func (m *ModelsTestSuite) TestEventSaveOptionalSchema() {
 			"anotherCOL":                 13.37,
 			"created_at_date_string": "2023-01-01",
 			"created_at_date_no_schema": "2023-01-01",
+			"json_object_string": `{"foo": "bar"}`,
+			"json_object_no_schema": `{"foo": "bar"}`,
 		},
 		OptiomalSchema: map[string]typing.KindDetails{
 			// Explicitly casting this as a string.
 			"created_at_date_string": typing.String,
+			"json_object_string": typing.String,
 		},
 	}
 
@@ -132,4 +135,12 @@ func (m *ModelsTestSuite) TestEventSaveOptionalSchema() {
 	kind, isOk = inMemoryDB.TableData["foo"].InMemoryColumns["created_at_date_no_schema"]
 	assert.True(m.T(), isOk)
 	assert.Equal(m.T(), kind.ExtendedTimeDetails.Type, ext.Date.Type)
+
+	kind, isOk = inMemoryDB.TableData["foo"].InMemoryColumns["json_object_string"]
+	assert.True(m.T(), isOk)
+	assert.Equal(m.T(), kind, typing.String)
+
+	kind, isOk = inMemoryDB.TableData["foo"].InMemoryColumns["json_object_no_schema"]
+	assert.True(m.T(), isOk)
+	assert.Equal(m.T(), kind, typing.Struct)
 }
