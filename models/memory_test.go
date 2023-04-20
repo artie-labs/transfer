@@ -6,6 +6,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
 )
@@ -91,7 +92,7 @@ func (m *ModelsTestSuite) TestEvent_SaveCasing() {
 
 	kafkaMsg := kafka.Message{}
 	_, err := event.Save(m.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
-
+	assert.Nil(m.T(), err)
 	rowData := inMemoryDB.TableData["foo"].RowsData[event.PrimaryKeyValue()]
 	expectedColumns := []string{"randomcol", "anothercol"}
 	for _, expectedColumn := range expectedColumns {
@@ -99,5 +100,47 @@ func (m *ModelsTestSuite) TestEvent_SaveCasing() {
 		assert.True(m.T(), isOk, fmt.Sprintf("expected col: %s, rowsData: %v", expectedColumn, rowData))
 	}
 
+}
+
+func (m *ModelsTestSuite) TestEventSaveOptionalSchema() {
+	event := Event{
+		Table: "foo",
+		PrimaryKeyMap: map[string]interface{}{
+			"id": "123",
+		},
+		Data: map[string]interface{}{
+			constants.DeleteColumnMarker: true,
+			"randomCol":                  "dusty",
+			"anotherCOL":                 13.37,
+			"created_at_date_string": "2023-01-01",
+			"created_at_date_no_schema": "2023-01-01",
+			"json_object_string": `{"foo": "bar"}`,
+			"json_object_no_schema": `{"foo": "bar"}`,
+		},
+		OptiomalSchema: map[string]typing.KindDetails{
+			// Explicitly casting this as a string.
+			"created_at_date_string": typing.String,
+			"json_object_string": typing.String,
+		},
+	}
+
+	kafkaMsg := kafka.Message{}
+	_, err := event.Save(m.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(m.T(), err)
+
+	kind, isOk := inMemoryDB.TableData["foo"].InMemoryColumns["created_at_date_string"]
+	assert.True(m.T(), isOk)
+	assert.Equal(m.T(), kind, typing.String)
+
+	kind, isOk = inMemoryDB.TableData["foo"].InMemoryColumns["created_at_date_no_schema"]
+	assert.True(m.T(), isOk)
+	assert.Equal(m.T(), kind.ExtendedTimeDetails.Type, ext.Date.Type)
+
+	kind, isOk = inMemoryDB.TableData["foo"].InMemoryColumns["json_object_string"]
+	assert.True(m.T(), isOk)
+	assert.Equal(m.T(), kind, typing.String)
+
+	kind, isOk = inMemoryDB.TableData["foo"].InMemoryColumns["json_object_no_schema"]
+	assert.True(m.T(), isOk)
+	assert.Equal(m.T(), kind, typing.Struct)
 }

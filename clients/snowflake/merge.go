@@ -66,7 +66,7 @@ func getMergeStatement(tableData *optimization.TableData) (string, error) {
 						return "", err
 					}
 
-					colVal = fmt.Sprintf("'%s'", strings.ReplaceAll(string(colValBytes), "'", `\'`))
+					colVal = stringutil.Wrap(string(colValBytes))
 				}
 			} else {
 				colVal = "null"

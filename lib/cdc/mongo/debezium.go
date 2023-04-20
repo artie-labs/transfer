@@ -46,7 +46,7 @@ func (d *Debezium) GetEventFromBytes(_ context.Context, bytes []byte) (cdc.Event
 		// Now, we need to iterate over each key and if the value is JSON
 		// We need to parse the JSON into a string format
 		for key, value := range after {
-			if typing.ParseValue(value) == typing.Struct {
+			if typing.ParseValue(key, nil, value) == typing.Struct {
 				valBytes, err := json.Marshal(value)
 				if err != nil {
 					return nil, err
@@ -72,6 +72,11 @@ func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.T
 
 func (s *SchemaEventPayload) GetExecutionTime() time.Time {
 	return time.UnixMilli(s.Payload.Source.TsMs).UTC()
+}
+
+func (s *SchemaEventPayload) GetOptionalSchema(ctx context.Context) map[string]typing.KindDetails {
+	// MongoDB does not have a schema at the database level.
+	return nil
 }
 
 func (s *SchemaEventPayload) GetData(ctx context.Context, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {

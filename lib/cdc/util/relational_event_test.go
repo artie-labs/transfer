@@ -2,12 +2,70 @@ package util
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
+
+func TestSource_GetOptionalSchema(t *testing.T) {
+	ctx := context.Background()
+	var schemaEventPayload SchemaEventPayload
+	err := json.Unmarshal([]byte(`{
+	"schema": {
+		"type": "struct",
+		"fields": [{
+			"type": "struct",
+			"fields": [{
+				"type": "string",
+				"optional": true,
+				"name": "io.debezium.time.ZonedTimestamp",
+				"version": 1,
+				"field": "zoned_timestamp_column"
+			}, {
+				"type": "int32",
+				"optional": true,
+				"field": "int_column"
+			}, {
+				"type": "boolean",
+				"optional": false,
+				"default": false,
+				"field": "boolean_column"
+			}, {
+				"type": "string",
+				"optional": true,
+				"field": "url"
+			}, {
+				"type": "string",
+				"optional": true,
+				"field": "etag"
+			}, {
+				"type": "string",
+				"optional": true,
+				"field": "last_modified"
+			}],
+			"optional": true,
+			"name": "Value",
+			"field": "after"
+		}]
+	},
+	"payload": {}
+}`), &schemaEventPayload)
+
+	assert.NoError(t, err)
+	optionalSchema := schemaEventPayload.GetOptionalSchema(ctx)
+	value, isOk := optionalSchema["last_modified"]
+	assert.True(t, isOk)
+	assert.Equal(t, value, typing.String)
+
+	// OptionalColumn does not pick up custom data types.
+	_, isOk = optionalSchema["zoned_timestamp_column"]
+	assert.False(t, isOk)
+}
+
 
 func TestSource_GetExecutionTime(t *testing.T) {
 	source := Source{

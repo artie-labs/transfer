@@ -79,7 +79,16 @@ func IsJSON(str string) bool {
 	return false
 }
 
-func ParseValue(val interface{}) KindDetails {
+func ParseValue(key string, optionalSchema map[string]KindDetails, val interface{}) KindDetails {
+	if len(optionalSchema) > 0 {
+		// If the column exists in the schema, let's early exit.
+		kindDetail, isOk := optionalSchema[key]
+		if isOk {
+			// If the schema exists, use it as sot.
+			return kindDetail
+		}
+	}
+
 	// Check if it's a number first.
 	switch val.(type) {
 	case nil:

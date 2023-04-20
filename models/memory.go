@@ -62,6 +62,8 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	// Update col if necessary
 	sanitizedData := make(map[string]interface{})
 	for _col, val := range e.Data {
+		// TODO test _col case sensitive operation.
+
 		// columns need to all be normalized and lower cased.
 		newColName := strings.ToLower(_col)
 
@@ -90,14 +92,14 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 
 		colTypeDetails, isOk := inMemoryDB.TableData[e.Table].InMemoryColumns[newColName]
 		if !isOk {
-			inMemoryDB.TableData[e.Table].InMemoryColumns[newColName] = typing.ParseValue(val)
+			inMemoryDB.TableData[e.Table].InMemoryColumns[newColName] = typing.ParseValue(_col, e.OptiomalSchema, val)
 		} else {
 			if colTypeDetails.Kind == typing.Invalid.Kind {
 				// If colType is Invalid, let's see if we can update it to a better type
 				// If everything is nil, we don't need to add a column
 				// However, it's important to create a column even if it's nil.
 				// This is because we don't want to think that it's okay to drop a column in DWH
-				if kindDetails := typing.ParseValue(val); kindDetails.Kind != typing.Invalid.Kind {
+				if kindDetails := typing.ParseValue(_col, e.OptiomalSchema, val); kindDetails.Kind != typing.Invalid.Kind {
 					inMemoryDB.TableData[e.Table].InMemoryColumns[newColName] = kindDetails
 				}
 			}
