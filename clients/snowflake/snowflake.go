@@ -49,7 +49,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 }
 
 func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) error {
-	if tableData.Rows == 0 {
+	if tableData.Rows() == 0 {
 		// There's no rows. Let's skip.
 		return nil
 	}
