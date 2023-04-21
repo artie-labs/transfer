@@ -134,7 +134,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	// If not, then we should assume the column is good and then remove it from our in-mem store.
 	for colToDelete := range tableConfig.ColumnsToDelete() {
 		var found bool
-		for _, col := range srcKeysMissing.GetColumns() {
+		for _, col := range srcKeysMissing {
 			if found = col.Name == colToDelete; found {
 				// Found it.
 				break
@@ -147,7 +147,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		}
 	}
 
-	tableData.UpdateInMemoryColumns(tableConfig.Columns()....)
+	tableData.UpdateInMemoryColumns(tableConfig.Columns().GetColumns()...)
 	query, err := merge(tableData)
 	if err != nil {
 		log.WithError(err).Warn("failed to generate the merge query")

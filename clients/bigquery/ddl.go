@@ -51,7 +51,7 @@ func (s *Store) getTableConfig(_ context.Context, tableData *optimization.TableD
 // parseSchemaQuery is to parse out the results from this query: https://cloud.google.com/bigquery/docs/information-schema-tables#example_1
 func parseSchemaQuery(row string, createTable, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
 	if createTable {
-		return types.NewDwhTableConfig(nil, nil, createTable, dropDeletedColumns), nil
+		return types.NewDwhTableConfig(typing.Columns{}, nil, createTable, dropDeletedColumns), nil
 	}
 
 	// TrimSpace only does the L + R side.
@@ -87,7 +87,7 @@ func parseSchemaQuery(row string, createTable, dropDeletedColumns bool) (*types.
 		return nil, fmt.Errorf("malformed DDL string: missing (, %s", ddlString)
 	}
 
-	tableToColumnTypes := make(map[string]typing.KindDetails)
+	var bigQueryColumns typing.Columns
 	ddlString = ddlString[:endOfStatement]
 	columnsToTypes := strings.Split(ddlString, ",")
 	for _, colType := range columnsToTypes {
@@ -104,8 +104,11 @@ func parseSchemaQuery(row string, createTable, dropDeletedColumns bool) (*types.
 			return nil, fmt.Errorf("unexpected colType, colType: %s, parts: %v", colType, parts)
 		}
 
-		tableToColumnTypes[parts[0]] = typing.BigQueryTypeToKind(strings.Join(parts[1:], " "))
+		bigQueryColumns.AddColumn(typing.Column{
+			Name:        parts[0],
+			KindDetails: typing.BigQueryTypeToKind(strings.Join(parts[1:], " ")),
+		})
 	}
 
-	return types.NewDwhTableConfig(tableToColumnTypes, nil, createTable, dropDeletedColumns), nil
+	return types.NewDwhTableConfig(bigQueryColumns, nil, createTable, dropDeletedColumns), nil
 }

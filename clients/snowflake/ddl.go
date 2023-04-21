@@ -39,7 +39,7 @@ func (s *Store) getTableConfig(ctx context.Context, fqName string, dropDeletedCo
 		}
 	}
 
-	tableToColumnTypes := make(map[string]typing.KindDetails)
+	var snowflakeColumns typing.Columns
 	for rows != nil && rows.Next() {
 		// figure out what columns were returned
 		// the column names will be the JSON object field keys
@@ -72,10 +72,13 @@ func (s *Store) getTableConfig(ctx context.Context, fqName string, dropDeletedCo
 			row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
 		}
 
-		tableToColumnTypes[row[describeNameCol]] = typing.SnowflakeTypeToKind(row[describeTypeCol])
+		snowflakeColumns.AddColumn(typing.Column{
+			Name:        row[describeNameCol],
+			KindDetails: typing.SnowflakeTypeToKind(row[describeTypeCol]),
+		})
 	}
 
-	sflkTableConfig := types.NewDwhTableConfig(tableToColumnTypes, nil, tableMissing, dropDeletedColumns)
+	sflkTableConfig := types.NewDwhTableConfig(snowflakeColumns, nil, tableMissing, dropDeletedColumns)
 	s.configMap.AddTableToConfig(fqName, sflkTableConfig)
 
 	return sflkTableConfig, nil

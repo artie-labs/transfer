@@ -66,7 +66,7 @@ func (tc *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp const
 	case constants.Delete:
 		for _, col := range cols {
 			// Delete from the permissions and in-memory table
-			tc.Columns().DeleteColumn(col.Name)
+			tc.columns.DeleteColumn(col.Name)
 			delete(tc.columnsToDelete, col.Name)
 		}
 	}
