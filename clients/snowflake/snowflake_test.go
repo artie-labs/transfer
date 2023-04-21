@@ -44,7 +44,6 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		RowsData:        rowsData,
 		TopicConfig:     topicConfig,
 		PrimaryKeys:     []string{"id"},
-		Rows:            1,
 	}
 
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), types.NewDwhTableConfig(
@@ -89,7 +88,6 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		RowsData:        rowsData,
 		TopicConfig:     topicConfig,
 		PrimaryKeys:     []string{"id"},
-		Rows:            1,
 	}
 
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake),
@@ -135,7 +133,6 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		RowsData:        rowsData,
 		TopicConfig:     topicConfig,
 		PrimaryKeys:     []string{"id"},
-		Rows:            1,
 	}
 
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake),
@@ -180,7 +177,6 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		RowsData:        rowsData,
 		TopicConfig:     topicConfig,
 		PrimaryKeys:     []string{"id"},
-		Rows:            1,
 	}
 
 	sflkColumns := map[string]typing.KindDetails{
@@ -233,7 +229,6 @@ func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
 		TopicConfig:             kafkalib.TopicConfig{},
 		PartitionsToLastMessage: nil,
 		LatestCDCTs:             time.Time{},
-		Rows:                    0,
 	})
 
 	assert.Nil(s.T(), err)
