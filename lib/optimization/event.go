@@ -23,8 +23,14 @@ type TableData struct {
 
 	// This is used for the automatic schema detection
 	LatestCDCTs time.Time
+}
 
-	Rows uint
+func (t *TableData) Rows() uint {
+	if t == nil {
+		return 0
+	}
+
+	return uint(len(t.RowsData))
 }
 
 // UpdateInMemoryColumns - When running Transfer, we will have 2 column types.

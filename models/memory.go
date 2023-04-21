@@ -121,11 +121,8 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 
 	inMemoryDB.TableData[e.Table].LatestCDCTs = e.ExecutionTime
 
-	// Increment row count
-	inMemoryDB.TableData[e.Table].Rows += 1
-
 	settings := config.FromContext(ctx)
-	return inMemoryDB.TableData[e.Table].Rows > settings.Config.BufferRows, nil
+	return inMemoryDB.TableData[e.Table].Rows() > settings.Config.BufferRows, nil
 }
 
 func LoadMemoryDB() {
