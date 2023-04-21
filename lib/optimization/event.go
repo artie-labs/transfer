@@ -3,6 +3,7 @@ package optimization
 import (
 	"github.com/artie-labs/transfer/lib/artie"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -11,29 +12,69 @@ import (
 )
 
 type TableData struct {
-	InMemoryColumns map[string]typing.KindDetails     // list of columns
-	RowsData        map[string]map[string]interface{} // pk -> { col -> val }
-	PrimaryKeys     []string
+	inMemoryColumns map[string]typing.KindDetails     // list of columns
+	rowsData        map[string]map[string]interface{} // pk -> { col -> val }
+	primaryKeys     []string
 
-	kafkalib.TopicConfig
+	topicConfig kafkalib.TopicConfig
 	// Partition to the latest offset(s).
 	// For Kafka, we only need the last message to commit the offset
 	// However, pub/sub requires every single message to be acked
-	PartitionsToLastMessage map[string][]artie.Message
+	partitionsToLastMessage map[string][]artie.Message
 
 	// This is used for the automatic schema detection
-	LatestCDCTs time.Time
+	latestCDCTs time.Time
+
+	// Mutex should be at the table level.
+	sync.Mutex
+}
+
+// UpdatePartitionsToLastMessage is used to commit the offset when flush is successful
+// If it's pubsub, we will store all of them in memory. This is because GCP pub/sub REQUIRES us to ack every single message
+func (t *TableData) UpdatePartitionsToLastMessage(message artie.Message, cdcTs time.Time) {
+	t.Lock()
+	defer t.Unlock()
+
+	if message.Kind() == artie.Kafka {
+		t.partitionsToLastMessage[message.Partition()] = []artie.Message{message}
+	} else {
+		t.partitionsToLastMessage[message.Partition()] = append(t.partitionsToLastMessage[message.Partition()], message)
+	}
+
+	// This is a metadata used for column detection.
+	t.latestCDCTs = cdcTs
+}
+
+func (t *TableData) AddRowData(primaryKey string, rowData map[string]interface{}) {
+	t.Lock()
+	defer t.Unlock()
+
+	t.rowsData[primaryKey] = rowData
+}
+
+func (t *TableData) InMemoryColumns() map[string]typing.KindDetails {
+	t.Lock()
+	defer t.Unlock()
+	return t.inMemoryColumns
 }
 
 func (t *TableData) Rows() uint {
+	// TODO: Is this concurrent safe?
 	if t == nil {
 		return 0
 	}
 
-	return uint(len(t.RowsData))
+	return uint(len(t.rowsData))
+}
+
+func (t *TableData) ModifyColumnType(name string, kindDetails typing.KindDetails) {
+	t.Lock()
+	defer t.Unlock()
+	t.inMemoryColumns[name] = kindDetails
 }
 
 // UpdateInMemoryColumns - When running Transfer, we will have 2 column types.
+// TODO: This needs to be more clear
 // 1) TableData (constructed in-memory)
 // 2) TableConfig (coming from the SQL DESCRIBE or equivalent statement) from the destination
 // Prior to merging, we will need to treat `tableConfig` as the source-of-truth and whenever there's discrepancies
@@ -44,7 +85,10 @@ func (t *TableData) UpdateInMemoryColumns(cols map[string]typing.KindDetails) {
 		return
 	}
 
-	for inMemCol, inMemKindDetails := range t.InMemoryColumns {
+	t.Lock()
+	defer t.Unlock()
+
+	for inMemCol, inMemKindDetails := range t.inMemoryColumns {
 		if inMemKindDetails.Kind == typing.Invalid.Kind {
 			// Don't copy this over.
 			// The being that the rows within tableData probably have the wrong colVal
@@ -68,7 +112,7 @@ func (t *TableData) UpdateInMemoryColumns(cols map[string]typing.KindDetails) {
 				inMemKindDetails.ExtendedTimeDetails.Type = tcKind.ExtendedTimeDetails.Type
 			}
 
-			t.InMemoryColumns[inMemCol] = inMemKindDetails
+			t.inMemoryColumns[inMemCol] = inMemKindDetails
 		}
 	}
 
