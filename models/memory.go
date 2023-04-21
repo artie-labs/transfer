@@ -52,7 +52,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	if !isOk {
 		inMemoryDB.TableData[e.Table] = &optimization.TableData{
 			RowsData:                map[string]map[string]interface{}{},
-			InMemoryColumns:         typing.Columns{},
+			InMemoryColumns:         &typing.Columns{},
 			PrimaryKeys:             e.PrimaryKeys(),
 			TopicConfig:             *topicConfig,
 			PartitionsToLastMessage: map[string][]artie.Message{},

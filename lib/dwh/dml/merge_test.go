@@ -30,6 +30,12 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
+	var _cols typing.Columns
+	_cols.AddColumn(typing.Column{
+		Name:        "id",
+		KindDetails: typing.String,
+	})
+
 	for _, idempotentKey := range []string{"", "updated_at"} {
 		mergeSQL, err := MergeStatement(MergeArgument{
 			FqTableName:            fqTable,
@@ -37,7 +43,7 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 			IdempotentKey:          idempotentKey,
 			PrimaryKeys:            []string{"id"},
 			Columns:                cols,
-			ColumnToType:           map[string]typing.KindDetails{"id": typing.String},
+			ColumnToType:           _cols,
 			SpecialCastingRequired: false,
 			SoftDelete:             true,
 		})
@@ -67,6 +73,12 @@ func TestMergeStatement(t *testing.T) {
 		fmt.Sprintf("('%s', '%s', '%v', false)", "3", "dd", time.Now().Round(0).UTC()),
 	}
 
+	var _cols typing.Columns
+	_cols.AddColumn(typing.Column{
+		Name:        "id",
+		KindDetails: typing.String,
+	})
+
 	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
@@ -76,7 +88,7 @@ func TestMergeStatement(t *testing.T) {
 		IdempotentKey:          "",
 		PrimaryKeys:            []string{"id"},
 		Columns:                cols,
-		ColumnToType:           map[string]typing.KindDetails{"id": typing.String},
+		ColumnToType:           _cols,
 		SpecialCastingRequired: false,
 		SoftDelete:             false,
 	})
@@ -104,13 +116,19 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
+	var _cols typing.Columns
+	_cols.AddColumn(typing.Column{
+		Name:        "id",
+		KindDetails: typing.String,
+	})
+
 	mergeSQL, err := MergeStatement(MergeArgument{
 		FqTableName:            fqTable,
 		SubQuery:               subQuery,
 		IdempotentKey:          "updated_at",
 		PrimaryKeys:            []string{"id"},
 		Columns:                cols,
-		ColumnToType:           map[string]typing.KindDetails{"id": typing.String},
+		ColumnToType:           _cols,
 		SpecialCastingRequired: false,
 		SoftDelete:             false,
 	})
@@ -139,13 +157,23 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
+	var _cols typing.Columns
+	_cols.AddColumn(typing.Column{
+		Name:        "id",
+		KindDetails: typing.String,
+	})
+	_cols.AddColumn(typing.Column{
+		Name:        "another_id",
+		KindDetails: typing.String,
+	})
+
 	mergeSQL, err := MergeStatement(MergeArgument{
 		FqTableName:            fqTable,
 		SubQuery:               subQuery,
 		IdempotentKey:          "updated_at",
 		PrimaryKeys:            []string{"id", "another_id"},
 		Columns:                cols,
-		ColumnToType:           map[string]typing.KindDetails{"id": typing.String, "another_id": typing.String},
+		ColumnToType:           _cols,
 		SpecialCastingRequired: false,
 		SoftDelete:             false,
 	})

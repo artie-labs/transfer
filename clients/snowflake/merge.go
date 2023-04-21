@@ -87,7 +87,7 @@ func getMergeStatement(tableData *optimization.TableData) (string, error) {
 		IdempotentKey: tableData.IdempotentKey,
 		PrimaryKeys:   tableData.PrimaryKeys,
 		Columns:       cols,
-		ColumnToType:  tableData.InMemoryColumns,
+		ColumnToType:  *tableData.InMemoryColumns,
 		SoftDelete:    tableData.SoftDelete,
 	})
 }

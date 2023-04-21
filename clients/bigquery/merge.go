@@ -92,7 +92,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 		IdempotentKey: tableData.IdempotentKey,
 		PrimaryKeys:   tableData.PrimaryKeys,
 		Columns:       cols,
-		ColumnToType:  tableData.InMemoryColumns,
+		ColumnToType:  *tableData.InMemoryColumns,
 		SoftDelete:    tableData.SoftDelete,
 		// BigQuery specifically needs it.
 		SpecialCastingRequired: true,
@@ -100,8 +100,8 @@ func merge(tableData *optimization.TableData) (string, error) {
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
-	if tableData.Rows() == 0 {
-		// There's no rows. Let's skip.
+	if tableData.Rows() == 0 || tableData.InMemoryColumns == nil {
+		// There's no rows or columns. Let's skip.
 		return nil
 	}
 
@@ -117,7 +117,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	log := logger.FromContext(ctx)
 	// Check if all the columns exist in Snowflake
-	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.InMemoryColumns, targetColumns, tableData.SoftDelete)
+	srcKeysMissing, targetKeysMissing := typing.Diff(*tableData.InMemoryColumns, targetColumns, tableData.SoftDelete)
 
 	// Keys that exist in CDC stream, but not in Snowflake
 	err = ddl.AlterTable(ctx, s, tableConfig, tableData.ToFqName(constants.BigQuery), tableConfig.CreateTable, constants.Add, tableData.LatestCDCTs, targetKeysMissing...)

@@ -13,6 +13,7 @@ type Columns struct {
 
 func (c *Columns) AddColumn(col Column) {
 	// TODO Test uniqueness
+	// What if there's no name
 	c.columns = append(c.columns, col)
 }
 

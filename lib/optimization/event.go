@@ -11,7 +11,7 @@ import (
 )
 
 type TableData struct {
-	InMemoryColumns typing.Columns                    // list of columns
+	InMemoryColumns *typing.Columns                   // list of columns
 	RowsData        map[string]map[string]interface{} // pk -> { col -> val }
 	PrimaryKeys     []string
 
@@ -71,5 +71,6 @@ func (t *TableData) UpdateInMemoryColumns(cols ...typing.Column) {
 		}
 		t.InMemoryColumns.UpdateColumn(inMemoryCol)
 	}
+
 	return
 }

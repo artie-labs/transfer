@@ -49,7 +49,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 }
 
 func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) error {
-	if tableData.Rows() == 0 {
+	if tableData.Rows() == 0 || tableData.InMemoryColumns == nil {
 		// There's no rows. Let's skip.
 		return nil
 	}
@@ -68,7 +68,7 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	// Check if all the columns exist in Snowflake
-	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.InMemoryColumns, targetColumns, tableData.SoftDelete)
+	srcKeysMissing, targetKeysMissing := typing.Diff(*tableData.InMemoryColumns, targetColumns, tableData.SoftDelete)
 
 	// Keys that exist in CDC stream, but not in Snowflake
 	err = ddl.AlterTable(ctx, s, tableConfig, fqName, tableConfig.CreateTable, constants.Add, tableData.LatestCDCTs, targetKeysMissing...)
