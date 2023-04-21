@@ -14,12 +14,14 @@ import (
 )
 
 func (s *SnowflakeTestSuite) TestMergeNoDeleteFlag() {
-	cols := map[string]typing.KindDetails{
-		"id": typing.Integer,
-	}
+	var cols typing.Columns
+	cols.AddColumn(typing.Column{
+		Name:        "id",
+		KindDetails: typing.Integer,
+	})
 
 	tableData := &optimization.TableData{
-		InMemoryColumns: cols,
+		InMemoryColumns: &cols,
 		RowsData:        nil,
 		PrimaryKeys:     []string{"id"},
 		TopicConfig:     kafkalib.TopicConfig{},
@@ -32,10 +34,16 @@ func (s *SnowflakeTestSuite) TestMergeNoDeleteFlag() {
 }
 
 func (s *SnowflakeTestSuite) TestMerge() {
-	cols := map[string]typing.KindDetails{
+	var cols typing.Columns
+	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":                         typing.Integer,
 		"NAME":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
+	} {
+		cols.AddColumn(typing.Column{
+			Name:        colName,
+			KindDetails: kindDetails,
+		})
 	}
 
 	rowData := make(map[string]map[string]interface{})
@@ -56,7 +64,7 @@ func (s *SnowflakeTestSuite) TestMerge() {
 
 	primaryKeys := []string{"id"}
 	tableData := &optimization.TableData{
-		InMemoryColumns: cols,
+		InMemoryColumns: &cols,
 		RowsData:        rowData,
 		PrimaryKeys:     primaryKeys,
 		TopicConfig:     topicConfig,
@@ -79,7 +87,7 @@ func (s *SnowflakeTestSuite) TestMerge() {
 
 	for _, rowData := range tableData.RowsData {
 		for col, val := range rowData {
-			switch cols[col] {
+			switch cols.GetColumn(col).KindDetails {
 			case typing.String, typing.Array, typing.Struct:
 				val = fmt.Sprintf("'%v'", val)
 			}
@@ -93,10 +101,16 @@ func (s *SnowflakeTestSuite) TestMerge() {
 }
 
 func (s *SnowflakeTestSuite) TestMergeWithSingleQuote() {
-	cols := map[string]typing.KindDetails{
+	var cols typing.Columns
+	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":                         typing.Integer,
 		"NAME":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
+	} {
+		cols.AddColumn(typing.Column{
+			Name:        colName,
+			KindDetails: kindDetails,
+		})
 	}
 
 	rowData := make(map[string]map[string]interface{})
@@ -113,7 +127,7 @@ func (s *SnowflakeTestSuite) TestMergeWithSingleQuote() {
 	}
 
 	tableData := &optimization.TableData{
-		InMemoryColumns: cols,
+		InMemoryColumns: &cols,
 		RowsData:        rowData,
 		PrimaryKeys:     []string{"id"},
 		TopicConfig:     topicConfig,
@@ -126,10 +140,16 @@ func (s *SnowflakeTestSuite) TestMergeWithSingleQuote() {
 }
 
 func (s *SnowflakeTestSuite) TestMergeJson() {
-	cols := map[string]typing.KindDetails{
+	var cols typing.Columns
+	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":                         typing.Integer,
 		"meta":                       typing.Struct,
 		constants.DeleteColumnMarker: typing.Boolean,
+	} {
+		cols.AddColumn(typing.Column{
+			Name:        colName,
+			KindDetails: kindDetails,
+		})
 	}
 
 	rowData := make(map[string]map[string]interface{})
@@ -146,7 +166,7 @@ func (s *SnowflakeTestSuite) TestMergeJson() {
 	}
 
 	tableData := &optimization.TableData{
-		InMemoryColumns: cols,
+		InMemoryColumns: &cols,
 		RowsData:        rowData,
 		PrimaryKeys:     []string{"id"},
 		TopicConfig:     topicConfig,

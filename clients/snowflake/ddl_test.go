@@ -20,13 +20,21 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 		Schema:    "public",
 	}
 
-	config := types.NewDwhTableConfig(map[string]typing.KindDetails{
+	var cols typing.Columns
+	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":          typing.Integer,
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
 		"name":        typing.String,
 		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-	}, nil, false, true)
+	} {
+		cols.AddColumn(typing.Column{
+			Name:        colName,
+			KindDetails: kindDetails,
+		})
+	}
+
+	config := types.NewDwhTableConfig(cols, nil, false, true)
 
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), config)
 
@@ -53,14 +61,21 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 		Schema:    "public",
 	}
 
-	config := types.NewDwhTableConfig(map[string]typing.KindDetails{
+	var cols typing.Columns
+	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":          typing.Integer,
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
 		"name":        typing.String,
 		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-	}, nil, false, true)
+	} {
+		cols.AddColumn(typing.Column{
+			Name:        colName,
+			KindDetails: kindDetails,
+		})
+	}
 
+	config := types.NewDwhTableConfig(cols, nil, false, true)
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), config)
 
 	nameCol := typing.Column{
@@ -90,13 +105,21 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 }
 
 func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
-	tc := types.NewDwhTableConfig(map[string]typing.KindDetails{
+	var cols typing.Columns
+	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":          typing.Integer,
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
 		"name":        typing.String,
 		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-	}, map[string]time.Time{
+	} {
+		cols.AddColumn(typing.Column{
+			Name:        colName,
+			KindDetails: kindDetails,
+		})
+	}
+
+	tc := types.NewDwhTableConfig(cols, map[string]time.Time{
 		"customer_id": time.Now(),
 	}, false, false)
 
@@ -114,6 +137,6 @@ func (s *SnowflakeTestSuite) TestGetTableConfig() {
 	assert.NoError(s.T(), err)
 
 	assert.True(s.T(), tableConfig.CreateTable)
-	assert.Equal(s.T(), len(tableConfig.Columns()), 0)
+	assert.Equal(s.T(), len(tableConfig.Columns().GetColumns()), 0)
 	assert.False(s.T(), tableConfig.DropDeletedColumns())
 }
