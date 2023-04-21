@@ -27,12 +27,9 @@ func shouldSkipColumn(colName string, softDelete bool) bool {
 
 // Diff - when given 2 maps, a source and target
 // It will provide a diff in the form of 2 variables
-// The other argument `softDelete` is used on whether we should ignore Artie's soft delete column.
-// srcKeyMissing - which key are missing from source that are present in target
-// targKeyMissing - which key are missing from target that are present in source
-func Diff(source map[string]KindDetails, target map[string]KindDetails, softDelete bool) (srcKeyMissing []Column, targKeyMissing []Column) {
-	src := CopyColMap(source)
-	targ := CopyColMap(target)
+func Diff(columnsInSource map[string]KindDetails, columnsInDestination map[string]KindDetails, softDelete bool) (srcKeyMissing []Column, targKeyMissing []Column) {
+	src := CopyColMap(columnsInSource)
+	targ := CopyColMap(columnsInDestination)
 
 	for key := range src {
 		_, isOk := targ[key]

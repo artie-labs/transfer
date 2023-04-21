@@ -95,6 +95,29 @@ func TestDiffDelta2(t *testing.T) {
 	assert.Equal(t, len(targKeyMissing), 3, targKeyMissing) // Missing a, c, d
 }
 
+func TestDiffDeterministic(t *testing.T) {
+	retMap := map[string]bool{}
+	source := map[string]KindDetails{
+		"id":   Integer,
+		"name": String,
+	}
+
+	target := map[string]KindDetails{}
+	for i := 0; i < 500; i++ {
+		keysMissing, targetKeysMissing := Diff(source, target, false)
+		assert.Equal(t, 0, len(keysMissing), keysMissing)
+
+		var key string
+		for _, targetKeyMissing := range targetKeysMissing {
+			key += targetKeyMissing.Name
+		}
+
+		retMap[key] = false
+	}
+
+	assert.Equal(t, 1, len(retMap), retMap)
+}
+
 func TestCopyColMap(t *testing.T) {
 	oneMap := map[string]KindDetails{
 		"hello":      String,
