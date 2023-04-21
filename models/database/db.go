@@ -2,10 +2,8 @@ package database
 
 import (
 	"context"
-	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
-	"github.com/artie-labs/transfer/lib/typing"
 	"log"
 	"sync"
 )
@@ -33,6 +31,26 @@ func FromContext(ctx context.Context) *Database {
 	return db
 }
 
+type TableDataWrapper struct {
+	Name string
+	*optimization.TableData
+}
+
+func (d *Database) GetTables() []*TableDataWrapper {
+	d.Lock()
+	defer d.Unlock()
+
+	var tables []*TableDataWrapper
+	for tableName, table := range d.tableData {
+		tables = append(tables, &TableDataWrapper{
+			Name:      tableName,
+			TableData: table,
+		})
+	}
+
+	return tables
+}
+
 func (d *Database) GetTable(name string) *optimization.TableData {
 	d.Lock()
 	defer d.Unlock()
@@ -52,17 +70,10 @@ func (d *Database) WipeTable(name string) {
 	delete(d.tableData, name)
 }
 
-func (d *Database) NewTable(name string, primaryKeys []string, topicConfig kafkalib.TopicConfig) *optimization.TableData {
+func (d *Database) NewTable(name string, primaryKeys []string, topicConfig *kafkalib.TopicConfig) *optimization.TableData {
 	d.Lock()
 	defer d.Unlock()
 
-	d.tableData[name] = &optimization.TableData{
-		RowsData:                map[string]map[string]interface{}{},
-		InMemoryColumns:         map[string]typing.KindDetails{},
-		PrimaryKeys:             primaryKeys,
-		TopicConfig:             topicConfig,
-		PartitionsToLastMessage: map[string][]artie.Message{},
-	}
-
+	d.tableData[name] = optimization.NewTableData(primaryKeys, topicConfig)
 	return d.tableData[name]
 }

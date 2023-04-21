@@ -54,8 +54,8 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) er
 		return nil
 	}
 
-	fqName := tableData.ToFqName(constants.Snowflake)
-	tableConfig, err := s.getTableConfig(ctx, fqName, tableData.DropDeletedColumns)
+	fqName := tableData.TopicConfig.ToFqName(constants.Snowflake)
+	tableConfig, err := s.getTableConfig(ctx, fqName, tableData.TopicConfig.DropDeletedColumns)
 	if err != nil {
 		return err
 	}
@@ -63,10 +63,10 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) er
 	log := logger.FromContext(ctx)
 
 	// Check if all the columns exist in Snowflake
-	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.InMemoryColumns, tableConfig.Columns(), tableData.SoftDelete)
+	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.InMemoryColumns(), tableConfig.Columns(), tableData.TopicConfig.SoftDelete)
 
 	// Keys that exist in CDC stream, but not in Snowflake
-	err = ddl.AlterTable(ctx, s, tableConfig, fqName, tableConfig.CreateTable, constants.Add, tableData.LatestCDCTs, targetKeysMissing...)
+	err = ddl.AlterTable(ctx, s, tableConfig, fqName, tableConfig.CreateTable, constants.Add, tableData.LatestCDCTs(), targetKeysMissing...)
 	if err != nil {
 		log.WithError(err).Warn("failed to apply alter table")
 		return err
@@ -75,7 +75,7 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) er
 	// Keys that exist in Snowflake, but don't exist in our CDC stream.
 	// createTable is set to false because table creation requires a column to be added
 	// Which means, we'll only do it upon Add columns.
-	err = ddl.AlterTable(ctx, s, tableConfig, fqName, false, constants.Delete, tableData.LatestCDCTs, srcKeysMissing...)
+	err = ddl.AlterTable(ctx, s, tableConfig, fqName, false, constants.Delete, tableData.LatestCDCTs(), srcKeysMissing...)
 	if err != nil {
 		log.WithError(err).Warn("failed to apply alter table")
 		return err

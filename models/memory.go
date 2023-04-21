@@ -30,7 +30,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	table := db.GetTable(e.Table)
 	// Does the table exist?
 	if table == nil {
-		table = db.NewTable(e.Table, e.PrimaryKeys(), *topicConfig)
+		table = db.NewTable(e.Table, e.PrimaryKeys(), topicConfig)
 	}
 
 	// Update col if necessary

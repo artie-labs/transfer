@@ -16,7 +16,7 @@ type TableData struct {
 	rowsData        map[string]map[string]interface{} // pk -> { col -> val }
 	primaryKeys     []string
 
-	topicConfig kafkalib.TopicConfig
+	TopicConfig *kafkalib.TopicConfig
 	// Partition to the latest offset(s).
 	// For Kafka, we only need the last message to commit the offset
 	// However, pub/sub requires every single message to be acked
@@ -27,6 +27,27 @@ type TableData struct {
 
 	// Mutex should be at the table level.
 	sync.Mutex
+}
+
+func NewTableData(primaryKeys []string, tc *kafkalib.TopicConfig) *TableData {
+	return &TableData{
+		rowsData:                map[string]map[string]interface{}{},
+		inMemoryColumns:         map[string]typing.KindDetails{},
+		primaryKeys:             primaryKeys,
+		TopicConfig:             tc,
+		partitionsToLastMessage: map[string][]artie.Message{},
+	}
+}
+
+func (t *TableData) GetPartitionsToLastMessage() {
+
+}
+
+func (t *TableData) RowsData() map[string]map[string]interface{} {
+	t.Lock()
+	defer t.Unlock()
+
+	return t.rowsData
 }
 
 // UpdatePartitionsToLastMessage is used to commit the offset when flush is successful
@@ -43,6 +64,14 @@ func (t *TableData) UpdatePartitionsToLastMessage(message artie.Message, cdcTs t
 
 	// This is a metadata used for column detection.
 	t.latestCDCTs = cdcTs
+}
+
+func (t *TableData) LatestCDCTs() time.Time {
+	return t.latestCDCTs
+}
+
+func (t *TableData) PrimaryKeys() []string {
+	return t.primaryKeys
 }
 
 func (t *TableData) AddRowData(primaryKey string, rowData map[string]interface{}) {

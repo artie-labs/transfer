@@ -19,7 +19,7 @@ func getMergeStatement(tableData *optimization.TableData) (string, error) {
 	var sflkCols []string
 
 	// Given all the columns, diff this against SFLK.
-	for col, kindDetails := range tableData.InMemoryColumns {
+	for col, kindDetails := range tableData.InMemoryColumns() {
 		if kindDetails.Kind == typing.Invalid.Kind {
 			// Don't update Snowflake
 			continue
@@ -35,10 +35,10 @@ func getMergeStatement(tableData *optimization.TableData) (string, error) {
 		sflkCols = append(sflkCols, sflkCol)
 	}
 
-	for _, value := range tableData.RowsData {
+	for _, value := range tableData.RowsData() {
 		var rowValues []string
 		for _, col := range cols {
-			colKind := tableData.InMemoryColumns[col]
+			colKind := tableData.InMemoryColumns()[col]
 			colVal := value[col]
 			if colVal != nil {
 				switch colKind.Kind {
@@ -82,12 +82,12 @@ func getMergeStatement(tableData *optimization.TableData) (string, error) {
 		strings.Join(tableValues, ","), tableData.TopicConfig.TableName, strings.Join(cols, ","))
 
 	return dml.MergeStatement(dml.MergeArgument{
-		FqTableName:   tableData.ToFqName(constants.Snowflake),
+		FqTableName:   tableData.TopicConfig.ToFqName(constants.Snowflake),
 		SubQuery:      subQuery,
-		IdempotentKey: tableData.IdempotentKey,
-		PrimaryKeys:   tableData.PrimaryKeys,
+		IdempotentKey: tableData.TopicConfig.IdempotentKey,
+		PrimaryKeys:   tableData.PrimaryKeys(),
 		Columns:       cols,
-		ColumnToType:  tableData.InMemoryColumns,
-		SoftDelete:    tableData.SoftDelete,
+		ColumnToType:  tableData.InMemoryColumns(),
+		SoftDelete:    tableData.TopicConfig.SoftDelete,
 	})
 }

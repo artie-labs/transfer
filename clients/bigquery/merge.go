@@ -20,7 +20,7 @@ import (
 func merge(tableData *optimization.TableData) (string, error) {
 	var cols []string
 	// Given all the columns, diff this against SFLK.
-	for col, kind := range tableData.InMemoryColumns {
+	for col, kind := range tableData.InMemoryColumns() {
 		if kind == typing.Invalid {
 			// Don't update BQ
 			continue
@@ -31,10 +31,10 @@ func merge(tableData *optimization.TableData) (string, error) {
 
 	var rowValues []string
 	firstRow := true
-	for _, value := range tableData.RowsData {
+	for _, value := range tableData.RowsData() {
 		var colVals []string
 		for _, col := range cols {
-			colKind := tableData.InMemoryColumns[col]
+			colKind := tableData.InMemoryColumns()[col]
 			colVal := value[col]
 			if colVal != nil {
 				switch colKind.Kind {
@@ -87,13 +87,13 @@ func merge(tableData *optimization.TableData) (string, error) {
 	subQuery := strings.Join(rowValues, " UNION ALL ")
 
 	return dml.MergeStatement(dml.MergeArgument{
-		FqTableName:   tableData.ToFqName(constants.BigQuery),
+		FqTableName:   tableData.TopicConfig.ToFqName(constants.BigQuery),
 		SubQuery:      subQuery,
-		IdempotentKey: tableData.IdempotentKey,
-		PrimaryKeys:   tableData.PrimaryKeys,
+		IdempotentKey: tableData.TopicConfig.IdempotentKey,
+		PrimaryKeys:   tableData.PrimaryKeys(),
 		Columns:       cols,
-		ColumnToType:  tableData.InMemoryColumns,
-		SoftDelete:    tableData.SoftDelete,
+		ColumnToType:  tableData.InMemoryColumns(),
+		SoftDelete:    tableData.TopicConfig.SoftDelete,
 		// BigQuery specifically needs it.
 		SpecialCastingRequired: true,
 	})
@@ -112,10 +112,10 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	log := logger.FromContext(ctx)
 	// Check if all the columns exist in Snowflake
-	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.InMemoryColumns, tableConfig.Columns(), tableData.SoftDelete)
+	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.InMemoryColumns(), tableConfig.Columns(), tableData.TopicConfig.SoftDelete)
 
 	// Keys that exist in CDC stream, but not in Snowflake
-	err = ddl.AlterTable(ctx, s, tableConfig, tableData.ToFqName(constants.BigQuery), tableConfig.CreateTable, constants.Add, tableData.LatestCDCTs, targetKeysMissing...)
+	err = ddl.AlterTable(ctx, s, tableConfig, tableData.TopicConfig.ToFqName(constants.BigQuery), tableConfig.CreateTable, constants.Add, tableData.LatestCDCTs(), targetKeysMissing...)
 	if err != nil {
 		log.WithError(err).Warn("failed to apply alter table")
 		return err
@@ -124,7 +124,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	// Keys that exist in Snowflake, but don't exist in our CDC stream.
 	// createTable is set to false because table creation requires a column to be added
 	// Which means, we'll only do it upon Add columns.
-	err = ddl.AlterTable(ctx, s, tableConfig, tableData.ToFqName(constants.BigQuery), false, constants.Delete, tableData.LatestCDCTs, srcKeysMissing...)
+	err = ddl.AlterTable(ctx, s, tableConfig, tableData.TopicConfig.ToFqName(constants.BigQuery), false, constants.Delete, tableData.LatestCDCTs(), srcKeysMissing...)
 	if err != nil {
 		log.WithError(err).Warn("failed to apply alter table")
 		return err
