@@ -28,6 +28,10 @@ func (c *Columns) GetColumn(name string) *Column {
 }
 
 func (c *Columns) GetColumns() []Column {
+	if c == nil {
+		return []Column{}
+	}
+
 	return c.columns
 }
 

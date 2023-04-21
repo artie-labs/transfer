@@ -20,9 +20,9 @@ func (b *BigQueryTestSuite) TestParseSchemaQuery() {
 		assert.NoError(b.T(), err, err)
 
 		assert.Equal(b.T(), true, tableConfig.DropDeletedColumns())
-		assert.Equal(b.T(), len(tableConfig.Columns()), 2, tableConfig.Columns)
-		for col, kind := range tableConfig.Columns() {
-			assert.Equal(b.T(), kind, typing.String, fmt.Sprintf("col: %s, kind: %v incorrect", col, kind))
+		assert.Equal(b.T(), len(tableConfig.Columns().GetColumns()), 2, tableConfig.Columns)
+		for _, col := range tableConfig.Columns().GetColumns() {
+			assert.Equal(b.T(), col.KindDetails, typing.String, fmt.Sprintf("col: %s, kind: %v incorrect", col.Name, col.KindDetails))
 		}
 	}
 }
@@ -34,7 +34,7 @@ func (b *BigQueryTestSuite) TestParseSchemaQueryComplex() {
 
 	assert.NoError(b.T(), err, err)
 	assert.Equal(b.T(), false, tableConfig.DropDeletedColumns())
-	assert.Equal(b.T(), len(tableConfig.Columns()), 15, tableConfig.Columns)
+	assert.Equal(b.T(), len(tableConfig.Columns().GetColumns()), 15, tableConfig.Columns)
 
 	anticipatedColumns := map[string]typing.KindDetails{
 		"string_field_0": typing.String,
@@ -55,13 +55,13 @@ func (b *BigQueryTestSuite) TestParseSchemaQueryComplex() {
 	}
 
 	for anticipatedCol, anticipatedKind := range anticipatedColumns {
-		kindDetails, isOk := tableConfig.Columns()[anticipatedCol]
-		assert.True(b.T(), isOk)
-		assert.Equal(b.T(), kindDetails.Kind, anticipatedKind.Kind, fmt.Sprintf("expected kind: %v, got: col: %s, kind: %v mismatched.", kindDetails.Kind,
+		col := tableConfig.Columns().GetColumn(anticipatedCol)
+		assert.NotNil(b.T(), col)
+		assert.Equal(b.T(), col.KindDetails.Kind, anticipatedKind.Kind, fmt.Sprintf("expected kind: %v, got: col: %s, kind: %v mismatched.", col.KindDetails.Kind,
 			anticipatedCol, anticipatedKind))
 
-		if kindDetails.Kind == typing.ETime.Kind {
-			assert.Equal(b.T(), kindDetails.ExtendedTimeDetails.Type, anticipatedKind.ExtendedTimeDetails.Type)
+		if col.KindDetails.Kind == typing.ETime.Kind {
+			assert.Equal(b.T(), col.KindDetails.ExtendedTimeDetails.Type, anticipatedKind.ExtendedTimeDetails.Type)
 		}
 
 	}

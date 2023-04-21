@@ -29,23 +29,38 @@ func TestShouldSkipColumn(t *testing.T) {
 }
 
 func TestDiffTargNil(t *testing.T) {
-	source := map[string]KindDetails{"foo": Invalid}
-	srcKeyMissing, targKeyMissing := Diff(source, nil, false)
+	var sourceCols Columns
+	var targCols Columns
+
+	sourceCols.AddColumn(Column{
+		Name:        "foo",
+		KindDetails: Invalid,
+	})
+	srcKeyMissing, targKeyMissing := Diff(sourceCols, targCols, false)
 	assert.Equal(t, len(srcKeyMissing), 0)
 	assert.Equal(t, len(targKeyMissing), 1)
 }
 
 func TestDiffSourceNil(t *testing.T) {
-	targ := map[string]KindDetails{"foo": Invalid}
-	srcKeyMissing, targKeyMissing := Diff(nil, targ, false)
+	var sourceCols Columns
+	var targCols Columns
+
+	targCols.AddColumn(Column{
+		Name:        "foo",
+		KindDetails: Invalid,
+	})
+
+	srcKeyMissing, targKeyMissing := Diff(sourceCols, targCols, false)
 	assert.Equal(t, len(srcKeyMissing), 1)
 	assert.Equal(t, len(targKeyMissing), 0)
 }
 
 func TestDiffBasic(t *testing.T) {
-	source := map[string]KindDetails{
-		"a": Integer,
-	}
+	var source Columns
+	source.AddColumn(Column{
+		Name:        "a",
+		KindDetails: Integer,
+	})
 
 	srcKeyMissing, targKeyMissing := Diff(source, source, false)
 	assert.Equal(t, len(srcKeyMissing), 0)
@@ -53,25 +68,46 @@ func TestDiffBasic(t *testing.T) {
 }
 
 func TestDiffDelta1(t *testing.T) {
-	source := map[string]KindDetails{
+	var sourceCols Columns
+	var targCols Columns
+
+	sourceCols.AddColumn(Column{
+		Name:        "",
+		KindDetails: KindDetails{},
+	})
+
+	for colName, kindDetails := range map[string]KindDetails{
 		"a": String,
 		"b": Boolean,
 		"c": Struct,
+	} {
+		sourceCols.AddColumn(Column{
+			Name:        colName,
+			KindDetails: kindDetails,
+		})
 	}
 
-	target := map[string]KindDetails{
+	for colName, kindDetails := range map[string]KindDetails{
 		"aa": String,
 		"b":  Boolean,
 		"cc": String,
+	} {
+		targCols.AddColumn(Column{
+			Name:        colName,
+			KindDetails: kindDetails,
+		})
 	}
 
-	srcKeyMissing, targKeyMissing := Diff(source, target, false)
+	srcKeyMissing, targKeyMissing := Diff(sourceCols, targCols, false)
 	assert.Equal(t, len(srcKeyMissing), 2)  // Missing aa, cc
 	assert.Equal(t, len(targKeyMissing), 2) // Missing aa, cc
 }
 
 func TestDiffDelta2(t *testing.T) {
-	source := map[string]KindDetails{
+	var sourceCols Columns
+	var targetCols Columns
+
+	for colName, kindDetails := range map[string]KindDetails{
 		"a":  String,
 		"aa": String,
 		"b":  Boolean,
@@ -80,31 +116,49 @@ func TestDiffDelta2(t *testing.T) {
 		"CC": String,
 		"cC": String,
 		"Cc": String,
+	} {
+		sourceCols.AddColumn(Column{
+			Name:        colName,
+			KindDetails: kindDetails,
+		})
 	}
 
-	target := map[string]KindDetails{
+	for colName, kindDetails := range map[string]KindDetails{
 		"aa": String,
 		"b":  Boolean,
 		"cc": String,
 		"CC": String,
 		"dd": String,
+	} {
+		targetCols.AddColumn(Column{
+			Name:        colName,
+			KindDetails: kindDetails,
+		})
 	}
 
-	srcKeyMissing, targKeyMissing := Diff(source, target, false)
+	srcKeyMissing, targKeyMissing := Diff(sourceCols, targetCols, false)
 	assert.Equal(t, len(srcKeyMissing), 1, srcKeyMissing)   // Missing dd
 	assert.Equal(t, len(targKeyMissing), 3, targKeyMissing) // Missing a, c, d
 }
 
 func TestDiffDeterministic(t *testing.T) {
 	retMap := map[string]bool{}
-	source := map[string]KindDetails{
-		"id":   Integer,
-		"name": String,
-	}
 
-	target := map[string]KindDetails{}
+	var sourceCols Columns
+	var targCols Columns
+
+	sourceCols.AddColumn(Column{
+		Name:        "id",
+		KindDetails: Integer,
+	})
+
+	sourceCols.AddColumn(Column{
+		Name:        "name",
+		KindDetails: String,
+	})
+
 	for i := 0; i < 500; i++ {
-		keysMissing, targetKeysMissing := Diff(source, target, false)
+		keysMissing, targetKeysMissing := Diff(sourceCols, targCols, false)
 		assert.Equal(t, 0, len(keysMissing), keysMissing)
 
 		var key string
@@ -119,13 +173,24 @@ func TestDiffDeterministic(t *testing.T) {
 }
 
 func TestCopyColMap(t *testing.T) {
-	oneMap := map[string]KindDetails{
-		"hello":      String,
-		"created_at": NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType),
-		"updated_at": NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType),
-	}
+	var cols Columns
+	cols.AddColumn(Column{
+		Name:        "hello",
+		KindDetails: String,
+	})
+	cols.AddColumn(Column{
+		Name:        "created_at",
+		KindDetails: NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType),
+	})
+	cols.AddColumn(Column{
+		Name:        "updated_at",
+		KindDetails: NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType),
+	})
 
-	anotherMap := CopyColMap(oneMap)
-	delete(anotherMap, "hello")
-	assert.NotEqual(t, oneMap, anotherMap)
+	copiedCols := CloneColumns(cols)
+	assert.Equal(t, copiedCols, cols)
+
+	// Delete a row from copiedCols
+	copiedCols.columns = copiedCols.columns[1:]
+	assert.NotEqual(t, copiedCols, cols)
 }
