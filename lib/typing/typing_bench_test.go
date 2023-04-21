@@ -17,6 +17,23 @@ func BenchmarkLargeMapLengthQuery(b *testing.B) {
 	}
 }
 
+func BenchmarkLargeMapLengthQuery_WithMassiveValues(b *testing.B) {
+	retMap := make(map[string]interface{})
+	for i := 0; i < 15000; i++ {
+		retMap[fmt.Sprintf("key-%v", i)] = map[string]interface{}{
+			"foo":   "bar",
+			"hello": "world",
+			"true":  true,
+			"false": false,
+			"array": []string{"abc", "def"},
+		}
+	}
+
+	for n := 0; n < b.N; n++ {
+		_ = uint(len(retMap))
+	}
+}
+
 func BenchmarkParseValueIntegerArtie(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		ParseValue("", nil, 45456312)
