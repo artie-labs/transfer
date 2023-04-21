@@ -31,8 +31,8 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), config)
 
 	nameCol := typing.Column{
-		Name: "name",
-		Kind: typing.String,
+		Name:        "name",
+		KindDetails: typing.String,
 	}
 
 	tc := s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake))
@@ -64,8 +64,8 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), config)
 
 	nameCol := typing.Column{
-		Name: "name",
-		Kind: typing.String,
+		Name:        "name",
+		KindDetails: typing.String,
 	}
 
 	// Let's try to delete name.

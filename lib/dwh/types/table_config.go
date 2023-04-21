@@ -62,7 +62,7 @@ func (tc *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp const
 	switch columnOp {
 	case constants.Add:
 		for _, col := range cols {
-			table[col.Name] = col.Kind
+			table[col.Name] = col.KindDetails
 			// Delete from the permissions table, if exists.
 			delete(tc.columnsToDelete, col.Name)
 		}

@@ -42,7 +42,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	// Prior to deletion, there should be no colsToDelete
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete())
 	for name, kind := range columns {
-		err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Delete, ts, typing.Column{Name: name, Kind: kind})
+		err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Delete, ts, typing.Column{Name: name, KindDetails: kind})
 		assert.NoError(d.T(), err)
 	}
 
@@ -56,8 +56,8 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	for name, kind := range columns {
 		err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Delete, ts.Add(2*constants.DeletionConfidencePadding),
 			typing.Column{
-				Name: name,
-				Kind: kind,
+				Name:        name,
+				KindDetails: kind,
 			})
 
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
@@ -99,7 +99,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 	var callIdx int
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
 	for name, kind := range newCols {
-		err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Add, ts, typing.Column{Name: name, Kind: kind})
+		err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Add, ts, typing.Column{Name: name, KindDetails: kind})
 		assert.NoError(d.T(), err)
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, name, typing.KindToDWHType(kind, d.bigQueryStore.Label())), query)
@@ -143,7 +143,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 		var sqlResult sql.Result
 		// BQ returning the same error because the column already exists.
 		d.fakeBigQueryStore.ExecReturnsOnCall(0, sqlResult, errors.New("Column already exists: _string at [1:39]"))
-		err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Add, ts, typing.Column{Name: name, Kind: kind})
+		err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Add, ts, typing.Column{Name: name, KindDetails: kind})
 		assert.NoError(d.T(), err)
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, name, typing.KindToDWHType(kind, d.bigQueryStore.Label())), query)
@@ -167,7 +167,7 @@ func (d *DDLTestSuite) TestAlterTableCreateTable() {
 	ctx := context.Background()
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
 
-	err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Add, time.Time{}, typing.Column{Name: "name", Kind: typing.String})
+	err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Add, time.Time{}, typing.Column{Name: "name", KindDetails: typing.String})
 	assert.Equal(d.T(), 1, d.fakeBigQueryStore.ExecCallCount())
 
 	query, _ := d.fakeBigQueryStore.ExecArgsForCall(0)
@@ -201,7 +201,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 	// Prior to deletion, there should be no colsToDelete
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete())
 	for name, kind := range columns {
-		err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Delete, ts, typing.Column{Name: name, Kind: kind})
+		err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Delete, ts, typing.Column{Name: name, KindDetails: kind})
 		assert.NoError(d.T(), err)
 	}
 
@@ -212,8 +212,8 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 	for name, kind := range columns {
 		err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Delete, ts.Add(2*constants.DeletionConfidencePadding),
 			typing.Column{
-				Name: name,
-				Kind: kind,
+				Name:        name,
+				KindDetails: kind,
 			})
 		assert.NoError(d.T(), err)
 		assert.Equal(d.T(), 0, d.fakeBigQueryStore.ExecCallCount())

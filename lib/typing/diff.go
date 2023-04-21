@@ -6,11 +6,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
-type Column struct {
-	Name string
-	Kind KindDetails
-}
-
 // shouldSkipColumn takes the `colName` and `softDelete` and will return whether we should skip this column when calculating the diff.
 func shouldSkipColumn(colName string, softDelete bool) bool {
 	if colName == constants.DeleteColumnMarker && softDelete {
@@ -45,8 +40,8 @@ func Diff(columnsInSource map[string]KindDetails, columnsInDestination map[strin
 		}
 
 		targKeyMissing = append(targKeyMissing, Column{
-			Name: name,
-			Kind: kind,
+			Name:        name,
+			KindDetails: kind,
 		})
 	}
 
@@ -56,8 +51,8 @@ func Diff(columnsInSource map[string]KindDetails, columnsInDestination map[strin
 		}
 
 		srcKeyMissing = append(srcKeyMissing, Column{
-			Name: name,
-			Kind: kind,
+			Name:        name,
+			KindDetails: kind,
 		})
 	}
 

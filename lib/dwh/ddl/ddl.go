@@ -16,7 +16,7 @@ func AlterTable(_ context.Context, dwh dwh.DataWarehouse, tc *types.DwhTableConf
 	var colSQLPart string
 	var err error
 	for _, col := range cols {
-		if col.Kind == typing.Invalid {
+		if col.KindDetails == typing.Invalid {
 			// Let's not modify the table if the column kind is invalid
 			continue
 		}
@@ -29,7 +29,7 @@ func AlterTable(_ context.Context, dwh dwh.DataWarehouse, tc *types.DwhTableConf
 		mutateCol = append(mutateCol, col)
 		switch columnOp {
 		case constants.Add:
-			colSQLPart = fmt.Sprintf("%s %s", col.Name, typing.KindToDWHType(col.Kind, dwh.Label()))
+			colSQLPart = fmt.Sprintf("%s %s", col.Name, typing.KindToDWHType(col.KindDetails, dwh.Label()))
 		case constants.Delete:
 			colSQLPart = fmt.Sprintf("%s", col.Name)
 		}

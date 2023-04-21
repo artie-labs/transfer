@@ -20,12 +20,12 @@ func (d *DDLTestSuite) TestCreateTable() {
 	ctx := context.Background()
 	cols := []typing.Column{
 		{
-			Name: "key",
-			Kind: typing.String,
+			Name:        "key",
+			KindDetails: typing.String,
 		},
 		{
-			Name: "enabled",
-			Kind: typing.Boolean,
+			Name:        "enabled",
+			KindDetails: typing.Boolean,
 		},
 	}
 
@@ -48,12 +48,12 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 	// Test Structs and Arrays
 	cols := []typing.Column{
 		{
-			Name: "preferences",
-			Kind: typing.Struct,
+			Name:        "preferences",
+			KindDetails: typing.Struct,
 		},
 		{
-			Name: "array_col",
-			Kind: typing.Array,
+			Name:        "array_col",
+			KindDetails: typing.Array,
 		},
 	}
 
@@ -76,16 +76,16 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 	ctx := context.Background()
 	cols := []typing.Column{
 		{
-			Name: "created_at",
-			Kind: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
+			Name:        "created_at",
+			KindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},
 		{
-			Name: "id",
-			Kind: typing.Integer,
+			Name:        "id",
+			KindDetails: typing.Integer,
 		},
 		{
-			Name: "order_name",
-			Kind: typing.String,
+			Name:        "order_name",
+			KindDetails: typing.String,
 		},
 	}
 
@@ -108,16 +108,16 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 	// Test adding a bunch of columns
 	cols := []typing.Column{
 		{
-			Name: "created_at",
-			Kind: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
+			Name:        "created_at",
+			KindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},
 		{
-			Name: "id",
-			Kind: typing.Integer,
+			Name:        "id",
+			KindDetails: typing.Integer,
 		},
 		{
-			Name: "order_name",
-			Kind: typing.String,
+			Name:        "order_name",
+			KindDetails: typing.String,
 		},
 	}
 
@@ -135,7 +135,7 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 		var found bool
 		for _, expCol := range cols {
 			if found = col == expCol.Name; found {
-				assert.Equal(d.T(), kind, expCol.Kind, fmt.Sprintf("wrong col kind, col: %s", col))
+				assert.Equal(d.T(), kind, expCol.KindDetails, fmt.Sprintf("wrong col kind, col: %s", col))
 				break
 			}
 		}
@@ -150,16 +150,16 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	// Test adding a bunch of columns
 	cols := []typing.Column{
 		{
-			Name: "created_at",
-			Kind: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
+			Name:        "created_at",
+			KindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},
 		{
-			Name: "id",
-			Kind: typing.Integer,
+			Name:        "id",
+			KindDetails: typing.Integer,
 		},
 		{
-			Name: "name",
-			Kind: typing.String,
+			Name:        "name",
+			KindDetails: typing.String,
 		},
 	}
 
@@ -202,24 +202,24 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 	// Test adding a bunch of columns
 	cols := []typing.Column{
 		{
-			Name: "created_at",
-			Kind: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
+			Name:        "created_at",
+			KindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},
 		{
-			Name: "id",
-			Kind: typing.Integer,
+			Name:        "id",
+			KindDetails: typing.Integer,
 		},
 		{
-			Name: "name",
-			Kind: typing.String,
+			Name:        "name",
+			KindDetails: typing.String,
 		},
 		{
-			Name: "col_to_delete",
-			Kind: typing.String,
+			Name:        "col_to_delete",
+			KindDetails: typing.String,
 		},
 		{
-			Name: "answers",
-			Kind: typing.String,
+			Name:        "answers",
+			KindDetails: typing.String,
 		},
 	}
 
