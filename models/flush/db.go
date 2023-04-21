@@ -1,4 +1,4 @@
-package database
+package flush
 
 import (
 	"context"
@@ -16,7 +16,6 @@ type Database struct {
 const databaseKey = "_db"
 
 // TODO build inject
-
 func FromContext(ctx context.Context) *Database {
 	dbVal := ctx.Value(databaseKey)
 	if dbVal == nil {

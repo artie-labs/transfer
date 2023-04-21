@@ -8,7 +8,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/models/database"
+	"github.com/artie-labs/transfer/models/flush"
 	"strings"
 )
 
@@ -22,7 +22,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 		return false, errors.New("topicConfig is missing")
 	}
 
-	db := database.FromContext(ctx)
+	db := flush.FromContext(ctx)
 	if !e.IsValid() {
 		return false, errors.New("event not valid")
 	}

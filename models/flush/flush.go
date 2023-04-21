@@ -5,13 +5,12 @@ import (
 	"github.com/artie-labs/transfer/lib/dwh/utils"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
-	"github.com/artie-labs/transfer/models/database"
 	"github.com/artie-labs/transfer/processes/consumer"
 	"time"
 )
 
 func Flush(ctx context.Context) error {
-	tables := database.FromContext(ctx).GetTables()
+	tables := FromContext(ctx).GetTables()
 	log := logger.FromContext(ctx)
 
 	for _, table := range tables {
@@ -36,7 +35,7 @@ func Flush(ctx context.Context) error {
 			log.WithFields(logFields).Info("Merge success, clearing memory...")
 			commitErr := consumer.CommitOffset(ctx, table.TopicConfig.Topic, table.PartitionsToLastMessage)
 			if commitErr == nil {
-				database.FromContext(ctx).WipeTable(table.Name)
+				FromContext(ctx).WipeTable(table.Name)
 			} else {
 				tags["what"] = "commit_fail"
 				log.WithError(commitErr).Warn("commit error...")
