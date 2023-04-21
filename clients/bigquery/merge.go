@@ -110,9 +110,14 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
+	var targetColumns typing.Columns
+	if tableConfig.Columns() != nil {
+		targetColumns = *tableConfig.Columns()
+	}
+
 	log := logger.FromContext(ctx)
 	// Check if all the columns exist in Snowflake
-	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.InMemoryColumns, tableConfig.Columns(), tableData.SoftDelete)
+	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.InMemoryColumns, targetColumns, tableData.SoftDelete)
 
 	// Keys that exist in CDC stream, but not in Snowflake
 	err = ddl.AlterTable(ctx, s, tableConfig, tableData.ToFqName(constants.BigQuery), tableConfig.CreateTable, constants.Add, tableData.LatestCDCTs, targetKeysMissing...)

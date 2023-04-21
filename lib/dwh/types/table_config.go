@@ -37,14 +37,14 @@ func (tc *DwhTableConfig) DropDeletedColumns() bool {
 	return tc.dropDeletedColumns
 }
 
-func (tc *DwhTableConfig) Columns() typing.Columns {
+func (tc *DwhTableConfig) Columns() *typing.Columns {
 	// TODO in the future, columns should be wrapped with a type that has mutex support to avoid concurrent r/w panics
 	// or consider using sync.Map
 	if tc == nil {
-		return typing.Columns{}
+		return nil
 	}
 
-	return *tc.columns
+	return tc.columns
 }
 
 func (tc *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp constants.ColumnOperation, cols ...typing.Column) {
