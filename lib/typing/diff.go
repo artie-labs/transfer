@@ -22,48 +22,46 @@ func shouldSkipColumn(colName string, softDelete bool) bool {
 
 // Diff - when given 2 maps, a source and target
 // It will provide a diff in the form of 2 variables
-func Diff(columnsInSource map[string]KindDetails, columnsInDestination map[string]KindDetails, softDelete bool) (srcKeyMissing []Column, targKeyMissing []Column) {
-	src := CopyColMap(columnsInSource)
-	targ := CopyColMap(columnsInDestination)
-
-	for key := range src {
-		_, isOk := targ[key]
-		if isOk {
-			delete(src, key)
-			delete(targ, key)
+// TODO Fix
+func Diff(columnsInSource Columns, columnsInDestination Columns, softDelete bool) (sourceColumnsMissing []Column, targetColumnsMissing []Column) {
+	src := CloneColumns(columnsInSource)
+	targ := CloneColumns(columnsInDestination)
+	for _, col := range src.GetColumns() {
+		targetCol := targ.GetColumn(col.Name)
+		if targetCol != nil {
+			src.DeleteColumn(col.Name)
+			targ.DeleteColumn(col.Name)
 		}
 	}
 
-	for name, kind := range src {
-		if shouldSkipColumn(name, softDelete) {
+	var sourceColumnsMissingWrapper Columns
+	var targetColumnsMissingWrapper Columns
+
+	for _, col := range src.GetColumns() {
+		if shouldSkipColumn(col.Name, softDelete) {
 			continue
 		}
 
-		targKeyMissing = append(targKeyMissing, Column{
-			Name:        name,
-			KindDetails: kind,
-		})
+		targetColumnsMissingWrapper.AddColumn(col)
 	}
 
-	for name, kind := range targ {
-		if shouldSkipColumn(name, softDelete) {
+	for _, col := range targ.GetColumns() {
+		if shouldSkipColumn(col.Name, softDelete) {
 			continue
 		}
 
-		srcKeyMissing = append(srcKeyMissing, Column{
-			Name:        name,
-			KindDetails: kind,
-		})
+		sourceColumnsMissingWrapper.AddColumn(col)
 	}
 
-	return
+	return sourceColumnsMissingWrapper.GetColumns(), targetColumnsMissingWrapper.GetColumns()
 }
 
-func CopyColMap(source map[string]KindDetails) map[string]KindDetails {
-	retVal := make(map[string]KindDetails)
-	for k, v := range source {
-		retVal[strings.ToLower(k)] = v
+func CloneColumns(cols Columns) Columns {
+	var newCols Columns
+	for _, col := range cols.GetColumns() {
+		col.Name = strings.ToLower(col.Name)
+		newCols.AddColumn(col)
 	}
 
-	return retVal
+	return newCols
 }

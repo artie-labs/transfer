@@ -10,7 +10,7 @@ import (
 
 type DwhTableConfig struct {
 	// Making these private variables to avoid concurrent R/W panics.
-	columns         map[string]typing.KindDetails
+	columns         *typing.Columns
 	columnsToDelete map[string]time.Time // column --> when to delete
 	CreateTable     bool
 
@@ -20,17 +20,13 @@ type DwhTableConfig struct {
 	sync.Mutex
 }
 
-func NewDwhTableConfig(columns map[string]typing.KindDetails, colsToDelete map[string]time.Time, createTable, dropDeletedColumns bool) *DwhTableConfig {
-	if len(columns) == 0 {
-		columns = make(map[string]typing.KindDetails)
-	}
-
+func NewDwhTableConfig(columns typing.Columns, colsToDelete map[string]time.Time, createTable, dropDeletedColumns bool) *DwhTableConfig {
 	if len(colsToDelete) == 0 {
 		colsToDelete = make(map[string]time.Time)
 	}
 
 	return &DwhTableConfig{
-		columns:            columns,
+		columns:            &columns,
 		columnsToDelete:    colsToDelete,
 		CreateTable:        createTable,
 		dropDeletedColumns: dropDeletedColumns,
@@ -41,14 +37,14 @@ func (tc *DwhTableConfig) DropDeletedColumns() bool {
 	return tc.dropDeletedColumns
 }
 
-func (tc *DwhTableConfig) Columns() map[string]typing.KindDetails {
+func (tc *DwhTableConfig) Columns() typing.Columns {
 	// TODO in the future, columns should be wrapped with a type that has mutex support to avoid concurrent r/w panics
 	// or consider using sync.Map
 	if tc == nil {
-		return nil
+		return typing.Columns{}
 	}
 
-	return tc.columns
+	return *tc.columns
 }
 
 func (tc *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp constants.ColumnOperation, cols ...typing.Column) {
@@ -58,11 +54,10 @@ func (tc *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp const
 
 	tc.Lock()
 	defer tc.Unlock()
-	table := tc.columns
 	switch columnOp {
 	case constants.Add:
 		for _, col := range cols {
-			table[col.Name] = col.KindDetails
+			tc.columns.AddColumn(col)
 			// Delete from the permissions table, if exists.
 			delete(tc.columnsToDelete, col.Name)
 		}
@@ -71,7 +66,7 @@ func (tc *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp const
 	case constants.Delete:
 		for _, col := range cols {
 			// Delete from the permissions and in-memory table
-			delete(table, col.Name)
+			tc.Columns().DeleteColumn(col.Name)
 			delete(tc.columnsToDelete, col.Name)
 		}
 	}

@@ -44,7 +44,7 @@ func (t *TableData) UpdateInMemoryColumns(cols ...typing.Column) {
 		return
 	}
 
-	for index, inMemoryCol := range t.InMemoryColumns.GetColumns() {
+	for _, inMemoryCol := range t.InMemoryColumns.GetColumns() {
 		if inMemoryCol.KindDetails.Kind == typing.Invalid.Kind {
 			// Don't copy this over because tableData has the wrong colVal
 			continue
@@ -69,7 +69,7 @@ func (t *TableData) UpdateInMemoryColumns(cols ...typing.Column) {
 				inMemoryCol.KindDetails.ExtendedTimeDetails.Type = foundColumn.KindDetails.ExtendedTimeDetails.Type
 			}
 		}
-		t.InMemoryColumns.UpdateColumn(index, inMemoryCol)
+		t.InMemoryColumns.UpdateColumn(inMemoryCol)
 	}
 	return
 }

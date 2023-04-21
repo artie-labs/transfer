@@ -20,13 +20,13 @@ import (
 func merge(tableData *optimization.TableData) (string, error) {
 	var cols []string
 	// Given all the columns, diff this against SFLK.
-	for col, kind := range tableData.InMemoryColumns {
-		if kind == typing.Invalid {
+	for _, col := range tableData.InMemoryColumns.GetColumns() {
+		if col.KindDetails == typing.Invalid {
 			// Don't update BQ
 			continue
 		}
 
-		cols = append(cols, col)
+		cols = append(cols, col.Name)
 	}
 
 	var rowValues []string
@@ -34,10 +34,10 @@ func merge(tableData *optimization.TableData) (string, error) {
 	for _, value := range tableData.RowsData {
 		var colVals []string
 		for _, col := range cols {
-			colKind := tableData.InMemoryColumns[col]
+			colKind := tableData.InMemoryColumns.GetColumn(col)
 			colVal := value[col]
 			if colVal != nil {
-				switch colKind.Kind {
+				switch colKind.KindDetails.Kind {
 				case typing.ETime.Kind:
 					extTime, err := ext.ParseFromInterface(colVal)
 					if err != nil {
@@ -55,7 +55,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 				// All the other types do not need string wrapping.
 				case typing.String.Kind, typing.Struct.Kind:
 					colVal = stringutil.Wrap(colVal)
-					if colKind == typing.Struct {
+					if colKind.KindDetails == typing.Struct {
 						// This is how you cast string -> JSON
 						colVal = fmt.Sprintf("JSON %s", colVal)
 					}
@@ -134,7 +134,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	// If not, then we should assume the column is good and then remove it from our in-mem store.
 	for colToDelete := range tableConfig.ColumnsToDelete() {
 		var found bool
-		for _, col := range srcKeysMissing {
+		for _, col := range srcKeysMissing.GetColumns() {
 			if found = col.Name == colToDelete; found {
 				// Found it.
 				break
@@ -147,7 +147,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		}
 	}
 
-	tableData.UpdateInMemoryColumns(tableConfig.Columns())
+	tableData.UpdateInMemoryColumns(tableConfig.Columns()....)
 	query, err := merge(tableData)
 	if err != nil {
 		log.WithError(err).Warn("failed to generate the merge query")

@@ -52,7 +52,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	if !isOk {
 		inMemoryDB.TableData[e.Table] = &optimization.TableData{
 			RowsData:                map[string]map[string]interface{}{},
-			InMemoryColumns:         map[string]typing.KindDetails{},
+			InMemoryColumns:         typing.Columns{},
 			PrimaryKeys:             e.PrimaryKeys(),
 			TopicConfig:             *topicConfig,
 			PartitionsToLastMessage: map[string][]artie.Message{},
@@ -66,7 +66,6 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 
 		// columns need to all be normalized and lower cased.
 		newColName := strings.ToLower(_col)
-
 		// Columns here could contain spaces. Every destination treats spaces in a column differently.
 		// So far, Snowflake accepts them when escaped properly, however BigQuery does not accept it.
 		// Instead of making this more complicated for future destinations, we will escape the spaces by having double underscore `__`
@@ -86,21 +85,30 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 			// We are directly adding this column to our in-memory database
 			// This ensures that this column exists, we just have an invalid value (so we will not replicate over).
 			// However, this will ensure that we do not drop the column within the destination
-			inMemoryDB.TableData[e.Table].InMemoryColumns[newColName] = typing.Invalid
+			inMemoryDB.TableData[e.Table].InMemoryColumns.UpdateColumn(typing.Column{
+				Name:        newColName,
+				KindDetails: typing.Invalid,
+			})
 			continue
 		}
 
-		colTypeDetails, isOk := inMemoryDB.TableData[e.Table].InMemoryColumns[newColName]
-		if !isOk {
-			inMemoryDB.TableData[e.Table].InMemoryColumns[newColName] = typing.ParseValue(_col, e.OptiomalSchema, val)
+		retrievedColumn := inMemoryDB.TableData[e.Table].InMemoryColumns.GetColumn(newColName)
+		if retrievedColumn == nil {
+			inMemoryDB.TableData[e.Table].InMemoryColumns.AddColumn(typing.Column{
+				Name:        newColName,
+				KindDetails: typing.ParseValue(_col, e.OptiomalSchema, val),
+			})
 		} else {
-			if colTypeDetails.Kind == typing.Invalid.Kind {
+			if retrievedColumn.KindDetails.Kind == typing.Invalid.Kind {
 				// If colType is Invalid, let's see if we can update it to a better type
 				// If everything is nil, we don't need to add a column
 				// However, it's important to create a column even if it's nil.
 				// This is because we don't want to think that it's okay to drop a column in DWH
 				if kindDetails := typing.ParseValue(_col, e.OptiomalSchema, val); kindDetails.Kind != typing.Invalid.Kind {
-					inMemoryDB.TableData[e.Table].InMemoryColumns[newColName] = kindDetails
+					inMemoryDB.TableData[e.Table].InMemoryColumns.UpdateColumn(typing.Column{
+						Name:        newColName,
+						KindDetails: kindDetails,
+					})
 				}
 			}
 		}

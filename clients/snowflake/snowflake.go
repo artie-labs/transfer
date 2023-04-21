@@ -98,7 +98,7 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) er
 		}
 	}
 
-	tableData.UpdateInMemoryColumns(tableConfig.Columns())
+	tableData.UpdateInMemoryColumns(tableConfig.Columns().GetColumns()...)
 	query, err := getMergeStatement(tableData)
 	if err != nil {
 		log.WithError(err).Warn("failed to generate the getMergeStatement query")

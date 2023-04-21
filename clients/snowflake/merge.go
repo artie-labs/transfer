@@ -19,29 +19,29 @@ func getMergeStatement(tableData *optimization.TableData) (string, error) {
 	var sflkCols []string
 
 	// Given all the columns, diff this against SFLK.
-	for col, kindDetails := range tableData.InMemoryColumns {
-		if kindDetails.Kind == typing.Invalid.Kind {
+	for _, column := range tableData.InMemoryColumns.GetColumns() {
+		if column.KindDetails.Kind == typing.Invalid.Kind {
 			// Don't update Snowflake
 			continue
 		}
 
-		sflkCol := col
-		switch kindDetails.Kind {
+		sflkCol := column.Name
+		switch column.KindDetails.Kind {
 		case typing.Struct.Kind, typing.Array.Kind:
-			sflkCol = fmt.Sprintf("PARSE_JSON(%s) %s", col, col)
+			sflkCol = fmt.Sprintf("PARSE_JSON(%s) %s", column.Name, column.Name)
 		}
 
-		cols = append(cols, col)
+		cols = append(cols, column.Name)
 		sflkCols = append(sflkCols, sflkCol)
 	}
 
 	for _, value := range tableData.RowsData {
 		var rowValues []string
 		for _, col := range cols {
-			colKind := tableData.InMemoryColumns[col]
+			colKind := tableData.InMemoryColumns.GetColumn(col)
 			colVal := value[col]
 			if colVal != nil {
-				switch colKind.Kind {
+				switch colKind.KindDetails.Kind {
 				// All the other types do not need string wrapping.
 				case typing.ETime.Kind:
 					extTime, err := ext.ParseFromInterface(colVal)
