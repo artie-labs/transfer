@@ -43,8 +43,8 @@ func (m *ModelsTestSuite) TestSaveEvent() {
 	optimization := GetMemoryDB().TableData["foo"]
 	// Check the in-memory DB columns.
 	var found int
-	for col := range optimization.InMemoryColumns {
-		if col == expectedLowerCol || col == anotherLowerCol {
+	for _, col := range optimization.InMemoryColumns.GetColumns() {
+		if col.Name == expectedLowerCol || col.Name == anotherLowerCol {
 			found += 1
 		}
 
@@ -72,9 +72,9 @@ func (m *ModelsTestSuite) TestSaveEvent() {
 	newKafkaMsg := kafka.Message{}
 	_, err = edgeCaseEvent.Save(m.ctx, topicConfig, artie.NewMessage(&newKafkaMsg, nil, newKafkaMsg.Topic))
 	assert.NoError(m.T(), err)
-	val, isOk := GetMemoryDB().TableData["foo"].InMemoryColumns[badColumn]
-	assert.True(m.T(), isOk)
-	assert.Equal(m.T(), val, typing.Invalid)
+	inMemoryCol := GetMemoryDB().TableData["foo"].InMemoryColumns.GetColumn(badColumn)
+	assert.NotNil(m.T(), inMemoryCol)
+	assert.Equal(m.T(), typing.Invalid, inMemoryCol.KindDetails)
 }
 
 func (m *ModelsTestSuite) TestEvent_SaveCasing() {
@@ -112,15 +112,15 @@ func (m *ModelsTestSuite) TestEventSaveOptionalSchema() {
 			constants.DeleteColumnMarker: true,
 			"randomCol":                  "dusty",
 			"anotherCOL":                 13.37,
-			"created_at_date_string": "2023-01-01",
-			"created_at_date_no_schema": "2023-01-01",
-			"json_object_string": `{"foo": "bar"}`,
-			"json_object_no_schema": `{"foo": "bar"}`,
+			"created_at_date_string":     "2023-01-01",
+			"created_at_date_no_schema":  "2023-01-01",
+			"json_object_string":         `{"foo": "bar"}`,
+			"json_object_no_schema":      `{"foo": "bar"}`,
 		},
 		OptiomalSchema: map[string]typing.KindDetails{
 			// Explicitly casting this as a string.
 			"created_at_date_string": typing.String,
-			"json_object_string": typing.String,
+			"json_object_string":     typing.String,
 		},
 	}
 
@@ -128,19 +128,19 @@ func (m *ModelsTestSuite) TestEventSaveOptionalSchema() {
 	_, err := event.Save(m.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(m.T(), err)
 
-	kind, isOk := inMemoryDB.TableData["foo"].InMemoryColumns["created_at_date_string"]
-	assert.True(m.T(), isOk)
-	assert.Equal(m.T(), kind, typing.String)
+	column := inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("created_at_date_string")
+	assert.NotNil(m.T(), column)
+	assert.Equal(m.T(), typing.String, column.KindDetails)
 
-	kind, isOk = inMemoryDB.TableData["foo"].InMemoryColumns["created_at_date_no_schema"]
-	assert.True(m.T(), isOk)
-	assert.Equal(m.T(), kind.ExtendedTimeDetails.Type, ext.Date.Type)
+	column = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("created_at_date_no_schema")
+	assert.NotNil(m.T(), column)
+	assert.Equal(m.T(), ext.Date.Type, column.KindDetails)
 
-	kind, isOk = inMemoryDB.TableData["foo"].InMemoryColumns["json_object_string"]
-	assert.True(m.T(), isOk)
-	assert.Equal(m.T(), kind, typing.String)
+	column = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("json_object_string")
+	assert.NotNil(m.T(), column)
+	assert.Equal(m.T(), typing.String, column.KindDetails)
 
-	kind, isOk = inMemoryDB.TableData["foo"].InMemoryColumns["json_object_no_schema"]
-	assert.True(m.T(), isOk)
-	assert.Equal(m.T(), kind, typing.Struct)
+	column = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("json_object_no_schema")
+	assert.NotNil(m.T(), column)
+	assert.Equal(m.T(), typing.Struct, column.KindDetails)
 }

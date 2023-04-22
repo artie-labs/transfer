@@ -24,7 +24,7 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 	}
 
 	tableData := &TableData{
-		InMemoryColumns: _cols,
+		InMemoryColumns: &_cols,
 	}
 
 	extCol := tableData.InMemoryColumns.GetColumn("do_not_change_format")
