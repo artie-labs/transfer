@@ -11,15 +11,12 @@ import (
 )
 
 type MergeArgument struct {
-	FqTableName   string
-	SubQuery      string
-	IdempotentKey string
-	PrimaryKeys   []string
-	// TODO refactor columns -> parsedColumns
-	Columns []string
-
-	//  TODO rename columnToType --> columns
-	ColumnToType typing.Columns
+	FqTableName    string
+	SubQuery       string
+	IdempotentKey  string
+	PrimaryKeys    []string
+	Columns        []string
+	ColumnsToTypes typing.Columns
 
 	// SpecialCastingRequired - This is used for columns that have JSON value. This is required for BigQuery
 	// We will be casting the value in this column as such: `TO_JSON_STRING(<columnName>)`
@@ -43,9 +40,9 @@ func MergeStatement(m MergeArgument) (string, error) {
 	var equalitySQLParts []string
 	for _, primaryKey := range m.PrimaryKeys {
 		equalitySQL := fmt.Sprintf("c.%s = cc.%s", primaryKey, primaryKey)
-		pkCol, isOk := m.ColumnToType.GetColumn(primaryKey)
+		pkCol, isOk := m.ColumnsToTypes.GetColumn(primaryKey)
 		if !isOk {
-			return "", fmt.Errorf("error: column: %s does not exist in columnToType: %v", primaryKey, m.ColumnToType)
+			return "", fmt.Errorf("error: column: %s does not exist in columnToType: %v", primaryKey, m.ColumnsToTypes)
 		}
 
 		if pkCol.KindDetails.Kind == typing.Struct.Kind {

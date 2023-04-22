@@ -87,13 +87,13 @@ func merge(tableData *optimization.TableData) (string, error) {
 	subQuery := strings.Join(rowValues, " UNION ALL ")
 
 	return dml.MergeStatement(dml.MergeArgument{
-		FqTableName:   tableData.ToFqName(constants.BigQuery),
-		SubQuery:      subQuery,
-		IdempotentKey: tableData.IdempotentKey,
-		PrimaryKeys:   tableData.PrimaryKeys,
-		Columns:       cols,
-		ColumnToType:  *tableData.InMemoryColumns,
-		SoftDelete:    tableData.SoftDelete,
+		FqTableName:    tableData.ToFqName(constants.BigQuery),
+		SubQuery:       subQuery,
+		IdempotentKey:  tableData.IdempotentKey,
+		PrimaryKeys:    tableData.PrimaryKeys,
+		Columns:        cols,
+		ColumnsToTypes: *tableData.InMemoryColumns,
+		SoftDelete:     tableData.SoftDelete,
 		// BigQuery specifically needs it.
 		SpecialCastingRequired: true,
 	})

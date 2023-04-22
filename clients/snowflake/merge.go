@@ -82,12 +82,12 @@ func getMergeStatement(tableData *optimization.TableData) (string, error) {
 		strings.Join(tableValues, ","), tableData.TopicConfig.TableName, strings.Join(cols, ","))
 
 	return dml.MergeStatement(dml.MergeArgument{
-		FqTableName:   tableData.ToFqName(constants.Snowflake),
-		SubQuery:      subQuery,
-		IdempotentKey: tableData.IdempotentKey,
-		PrimaryKeys:   tableData.PrimaryKeys,
-		Columns:       cols,
-		ColumnToType:  *tableData.InMemoryColumns,
-		SoftDelete:    tableData.SoftDelete,
+		FqTableName:    tableData.ToFqName(constants.Snowflake),
+		SubQuery:       subQuery,
+		IdempotentKey:  tableData.IdempotentKey,
+		PrimaryKeys:    tableData.PrimaryKeys,
+		Columns:        cols,
+		ColumnsToTypes: *tableData.InMemoryColumns,
+		SoftDelete:     tableData.SoftDelete,
 	})
 }

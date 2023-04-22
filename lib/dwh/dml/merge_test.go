@@ -43,7 +43,7 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 			IdempotentKey:          idempotentKey,
 			PrimaryKeys:            []string{"id"},
 			Columns:                cols,
-			ColumnToType:           _cols,
+			ColumnsToTypes:         _cols,
 			SpecialCastingRequired: false,
 			SoftDelete:             true,
 		})
@@ -88,7 +88,7 @@ func TestMergeStatement(t *testing.T) {
 		IdempotentKey:          "",
 		PrimaryKeys:            []string{"id"},
 		Columns:                cols,
-		ColumnToType:           _cols,
+		ColumnsToTypes:         _cols,
 		SpecialCastingRequired: false,
 		SoftDelete:             false,
 	})
@@ -128,7 +128,7 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 		IdempotentKey:          "updated_at",
 		PrimaryKeys:            []string{"id"},
 		Columns:                cols,
-		ColumnToType:           _cols,
+		ColumnsToTypes:         _cols,
 		SpecialCastingRequired: false,
 		SoftDelete:             false,
 	})
@@ -173,7 +173,7 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 		IdempotentKey:          "updated_at",
 		PrimaryKeys:            []string{"id", "another_id"},
 		Columns:                cols,
-		ColumnToType:           _cols,
+		ColumnsToTypes:         _cols,
 		SpecialCastingRequired: false,
 		SoftDelete:             false,
 	})
