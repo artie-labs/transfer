@@ -79,6 +79,27 @@ func (s *SchemaEventPayload) GetOptionalSchema(ctx context.Context) map[string]t
 	return nil
 }
 
+func (s *SchemaEventPayload) GetColumns() *typing.Columns {
+	// TODO Test
+	fieldsObject := s.Schema.GetSchemaFromLabel(cdc.After)
+	if fieldsObject == nil {
+		// AFTER schema does not exist.
+		return nil
+	}
+
+	var cols typing.Columns
+	for _, field := range fieldsObject.Fields {
+		cols.AddColumn(typing.Column{
+			Name: field.FieldName,
+			// We are purposefully doing this to ensure that the correct typing is set
+			// When we invoke event.Save()
+			KindDetails: typing.Invalid,
+		})
+	}
+
+	return &cols
+}
+
 func (s *SchemaEventPayload) GetData(ctx context.Context, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
 	retMap := make(map[string]interface{})
 	if len(s.Payload.AfterMap) == 0 {

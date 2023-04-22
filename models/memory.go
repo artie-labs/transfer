@@ -50,13 +50,27 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	// Does the table exist?
 	_, isOk := inMemoryDB.TableData[e.Table]
 	if !isOk {
+		columns := &typing.Columns{}
+		if e.Columns != nil {
+			columns = e.Columns
+		}
+
 		inMemoryDB.TableData[e.Table] = &optimization.TableData{
 			RowsData:                map[string]map[string]interface{}{},
-			InMemoryColumns:         &typing.Columns{},
+			InMemoryColumns:         columns,
 			PrimaryKeys:             e.PrimaryKeys(),
 			TopicConfig:             *topicConfig,
 			PartitionsToLastMessage: map[string][]artie.Message{},
 		}
+	} else {
+		// TODO test
+		if e.Columns != nil {
+			// Iterate over this again just in case.
+			for _, col := range e.Columns.GetColumns() {
+				inMemoryDB.TableData[e.Table].InMemoryColumns.AddColumn(col)
+			}
+		}
+
 	}
 
 	// Update col if necessary
@@ -92,6 +106,8 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 
 		retrievedColumn, isOk := inMemoryDB.TableData[e.Table].InMemoryColumns.GetColumn(newColName)
 		if !isOk {
+			//  TOD: Test.
+			// This would only happen if the columns did not get passed in initially.
 			inMemoryDB.TableData[e.Table].InMemoryColumns.AddColumn(typing.Column{
 				Name:        newColName,
 				KindDetails: typing.ParseValue(_col, e.OptiomalSchema, val),

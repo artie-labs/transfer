@@ -17,7 +17,9 @@ type Format interface {
 type Event interface {
 	GetExecutionTime() time.Time
 	GetData(ctx context.Context, pkMap map[string]interface{}, config *kafkalib.TopicConfig) map[string]interface{}
-	GetOptionalSchema(ctx  context.Context) map[string]typing.KindDetails
+	GetOptionalSchema(ctx context.Context) map[string]typing.KindDetails
+	// GetColumns will inspect the envelope's payload right now and return.
+	GetColumns() *typing.Columns
 }
 
 // FieldLabelKind is used when the schema is turned on. Each schema object will be labelled.

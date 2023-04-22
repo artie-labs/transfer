@@ -34,6 +34,26 @@ type Source struct {
 	Table     string `json:"table"`
 }
 
+func (s *SchemaEventPayload) GetColumns() *typing.Columns {
+	fieldsObject := s.Schema.GetSchemaFromLabel(cdc.After)
+	if fieldsObject == nil {
+		// AFTER schema does not exist.
+		return nil
+	}
+
+	var cols typing.Columns
+	for _, field := range fieldsObject.Fields {
+		cols.AddColumn(typing.Column{
+			Name: field.FieldName,
+			// We are purposefully doing this to ensure that the correct typing is set
+			// When we invoke event.Save()
+			KindDetails: typing.Invalid,
+		})
+	}
+
+	return &cols
+}
+
 func (s *SchemaEventPayload) GetOptionalSchema(ctx context.Context) map[string]typing.KindDetails {
 	fieldsObject := s.Schema.GetSchemaFromLabel(cdc.After)
 	if fieldsObject == nil {

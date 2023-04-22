@@ -19,7 +19,11 @@ func (f fakeEvent) GetExecutionTime() time.Time {
 	return time.Now()
 }
 
-func (f fakeEvent) GetOptionalSchema(ctx  context.Context) map[string]typing.KindDetails {
+func (f fakeEvent) GetOptionalSchema(ctx context.Context) map[string]typing.KindDetails {
+	return nil
+}
+
+func (f fakeEvent) GetColumns() *typing.Columns {
 	return nil
 }
 
