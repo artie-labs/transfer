@@ -11,7 +11,6 @@ import (
 )
 
 type MergeArgument struct {
-	// TODO: Test
 	FqTableName   string
 	SubQuery      string
 	IdempotentKey string

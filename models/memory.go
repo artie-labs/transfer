@@ -62,8 +62,6 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	// Update col if necessary
 	sanitizedData := make(map[string]interface{})
 	for _col, val := range e.Data {
-		// TODO test _col case sensitive operation.
-
 		// columns need to all be normalized and lower cased.
 		newColName := strings.ToLower(_col)
 		// Columns here could contain spaces. Every destination treats spaces in a column differently.
