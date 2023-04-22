@@ -63,14 +63,12 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 			PartitionsToLastMessage: map[string][]artie.Message{},
 		}
 	} else {
-		// TODO test
 		if e.Columns != nil {
 			// Iterate over this again just in case.
 			for _, col := range e.Columns.GetColumns() {
 				inMemoryDB.TableData[e.Table].InMemoryColumns.AddColumn(col)
 			}
 		}
-
 	}
 
 	// Update col if necessary
@@ -106,14 +104,13 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 
 		retrievedColumn, isOk := inMemoryDB.TableData[e.Table].InMemoryColumns.GetColumn(newColName)
 		if !isOk {
-			//  TOD: Test.
 			// This would only happen if the columns did not get passed in initially.
 			inMemoryDB.TableData[e.Table].InMemoryColumns.AddColumn(typing.Column{
 				Name:        newColName,
 				KindDetails: typing.ParseValue(_col, e.OptiomalSchema, val),
 			})
 		} else {
-			if retrievedColumn.KindDetails.Kind == typing.Invalid.Kind {
+			if retrievedColumn.KindDetails == typing.Invalid {
 				// If colType is Invalid, let's see if we can update it to a better type
 				// If everything is nil, we don't need to add a column
 				// However, it's important to create a column even if it's nil.

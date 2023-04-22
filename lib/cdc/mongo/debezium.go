@@ -80,7 +80,6 @@ func (s *SchemaEventPayload) GetOptionalSchema(ctx context.Context) map[string]t
 }
 
 func (s *SchemaEventPayload) GetColumns() *typing.Columns {
-	// TODO Test
 	fieldsObject := s.Schema.GetSchemaFromLabel(cdc.After)
 	if fieldsObject == nil {
 		// AFTER schema does not exist.
