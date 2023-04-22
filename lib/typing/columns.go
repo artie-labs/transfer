@@ -1,7 +1,5 @@
 package typing
 
-// TODO Test this whole file.
-
 type Column struct {
 	Name        string
 	KindDetails KindDetails
@@ -12,7 +10,6 @@ type Columns struct {
 }
 
 func (c *Columns) AddColumn(col Column) {
-	// TODO: Test
 	if col.Name == "" {
 		return
 	}
