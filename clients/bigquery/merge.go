@@ -70,7 +70,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 					colVal = stringutil.Wrap(string(colValBytes))
 				}
 			} else {
-				if colKind == typing.String {
+				if colKind.KindDetails == typing.String {
 					// BigQuery does not like null as a string for CTEs.
 					// It throws this error: Value of type INT64 cannot be assigned to column name, which has type STRING
 					colVal = "''"
