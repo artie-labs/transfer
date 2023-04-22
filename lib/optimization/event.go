@@ -33,15 +33,13 @@ func (t *TableData) Rows() uint {
 	return uint(len(t.RowsData))
 }
 
-// UpdateInMemoryColumns - When running Transfer, we will have 2 column types.
+// UpdateInMemoryColumnsFromDestination - When running Transfer, we will have 2 column types.
 // 1) TableData (constructed in-memory)
 // 2) TableConfig (coming from the SQL DESCRIBE or equivalent statement) from the destination
 // Prior to merging, we will need to treat `tableConfig` as the source-of-truth and whenever there's discrepancies
 // We will prioritize using the values coming from (2) TableConfig. We also cannot simply do a replacement, as we have in-memory columns
 // That carry metadata for Artie Transfer. They are prefixed with __artie.
-
-// TODO rewrite this whole function
-func (t *TableData) UpdateInMemoryColumns(cols ...typing.Column) {
+func (t *TableData) UpdateInMemoryColumnsFromDestination(cols ...typing.Column) {
 	if t == nil {
 		return
 	}
@@ -52,16 +50,18 @@ func (t *TableData) UpdateInMemoryColumns(cols ...typing.Column) {
 			continue
 		}
 
-		var foundColumn *typing.Column
+		var foundColumn typing.Column
+		var found bool
 		for _, col := range cols {
 			if col.Name == strings.ToLower(inMemoryCol.Name) {
-				foundColumn = &col
+				foundColumn = col
+				found = true
 				break
 			}
 		}
 
-		if foundColumn != nil {
-			inMemoryCol.KindDetails = foundColumn.KindDetails
+		if found {
+			inMemoryCol.KindDetails.Kind = foundColumn.KindDetails.Kind
 			if foundColumn.KindDetails.ExtendedTimeDetails != nil {
 				if inMemoryCol.KindDetails.ExtendedTimeDetails == nil {
 					inMemoryCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{}
@@ -70,8 +70,9 @@ func (t *TableData) UpdateInMemoryColumns(cols ...typing.Column) {
 				// Don't have tcKind.ExtendedTimeDetails update the format since the DWH will not have that.
 				inMemoryCol.KindDetails.ExtendedTimeDetails.Type = foundColumn.KindDetails.ExtendedTimeDetails.Type
 			}
+
+			t.InMemoryColumns.UpdateColumn(inMemoryCol)
 		}
-		t.InMemoryColumns.UpdateColumn(inMemoryCol)
 	}
 
 	return

@@ -54,7 +54,6 @@ func (m *ModelsTestSuite) TestSaveEvent() {
 	}
 
 	assert.Equal(m.T(), 2, found, optimization.InMemoryColumns)
-
 	badColumn := "other"
 	edgeCaseEvent := Event{
 		Table: "foo",
@@ -134,7 +133,7 @@ func (m *ModelsTestSuite) TestEventSaveOptionalSchema() {
 
 	column, isOk = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("created_at_date_no_schema")
 	assert.True(m.T(), isOk)
-	assert.Equal(m.T(), ext.Date.Type, column.KindDetails)
+	assert.Equal(m.T(), ext.Date.Type, column.KindDetails.ExtendedTimeDetails.Type)
 
 	column, isOk = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("json_object_string")
 	assert.True(m.T(), isOk)

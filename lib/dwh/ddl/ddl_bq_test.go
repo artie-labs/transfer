@@ -85,7 +85,6 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 		"foo": typing.String,
 		"bar": typing.String,
 	}
-	existingColsLen := len(existingColNameToKindDetailsMap)
 
 	newCols := map[string]typing.KindDetails{
 		"dusty":      typing.String,
@@ -93,8 +92,9 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 		"charlie":    typing.Boolean,
 		"robin":      typing.Float,
 	}
-	newColsLen := len(newCols)
 
+	newColsLen := len(newCols)
+	existingColsLen := len(existingColNameToKindDetailsMap)
 	var existingCols typing.Columns
 	for colName, kindDetails := range existingColNameToKindDetailsMap {
 		existingCols.AddColumn(typing.Column{Name: colName, KindDetails: kindDetails})
@@ -120,8 +120,13 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 	// Check by iterating over the columns
 	for _, column := range d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns() {
 		existingCol, isOk := existingCols.GetColumn(column.Name)
+		if !isOk {
+			// Check new cols?
+			existingCol.KindDetails, isOk = newCols[column.Name]
+		}
+
 		assert.True(d.T(), isOk)
-		assert.Equal(d.T(), existingCol.KindDetails, column.KindDetails)
+		assert.Equal(d.T(), existingCol.KindDetails, column.KindDetails, existingCol)
 	}
 }
 

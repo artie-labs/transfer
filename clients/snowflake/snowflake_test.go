@@ -232,7 +232,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 	var sflkCols typing.Columns
 	for colName, colKind := range snowflakeColToKindDetailsMap {
-		cols.AddColumn(typing.Column{
+		sflkCols.AddColumn(typing.Column{
 			Name:        colName,
 			KindDetails: colKind,
 		})

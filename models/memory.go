@@ -85,7 +85,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 			// We are directly adding this column to our in-memory database
 			// This ensures that this column exists, we just have an invalid value (so we will not replicate over).
 			// However, this will ensure that we do not drop the column within the destination
-			inMemoryDB.TableData[e.Table].InMemoryColumns.UpdateColumn(typing.Column{
+			inMemoryDB.TableData[e.Table].InMemoryColumns.AddColumn(typing.Column{
 				Name:        newColName,
 				KindDetails: typing.Invalid,
 			})

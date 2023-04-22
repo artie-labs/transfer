@@ -1,12 +1,11 @@
 package optimization
 
 import (
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
-
-	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestTableData_UpdateInMemoryColumns(t *testing.T) {
@@ -42,7 +41,7 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 		"bar":                  typing.Boolean,
 		"do_not_change_format": typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 	} {
-		tableData.UpdateInMemoryColumns(typing.Column{
+		tableData.UpdateInMemoryColumnsFromDestination(typing.Column{
 			Name:        name,
 			KindDetails: colKindDetails,
 		})
@@ -50,7 +49,7 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 
 	// It's saved back in the original format.
 	_, isOk = tableData.InMemoryColumns.GetColumn("foo")
-	assert.True(t, isOk)
+	assert.False(t, isOk)
 
 	_, isOk = tableData.InMemoryColumns.GetColumn("FOO")
 	assert.True(t, isOk)
