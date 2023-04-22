@@ -72,8 +72,8 @@ func (m *ModelsTestSuite) TestSaveEvent() {
 	newKafkaMsg := kafka.Message{}
 	_, err = edgeCaseEvent.Save(m.ctx, topicConfig, artie.NewMessage(&newKafkaMsg, nil, newKafkaMsg.Topic))
 	assert.NoError(m.T(), err)
-	inMemoryCol := GetMemoryDB().TableData["foo"].InMemoryColumns.GetColumn(badColumn)
-	assert.NotNil(m.T(), inMemoryCol)
+	inMemoryCol, isOk := GetMemoryDB().TableData["foo"].InMemoryColumns.GetColumn(badColumn)
+	assert.True(m.T(), isOk)
 	assert.Equal(m.T(), typing.Invalid, inMemoryCol.KindDetails)
 }
 
@@ -128,19 +128,19 @@ func (m *ModelsTestSuite) TestEventSaveOptionalSchema() {
 	_, err := event.Save(m.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(m.T(), err)
 
-	column := inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("created_at_date_string")
-	assert.NotNil(m.T(), column)
+	column, isOk := inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("created_at_date_string")
+	assert.True(m.T(), isOk)
 	assert.Equal(m.T(), typing.String, column.KindDetails)
 
-	column = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("created_at_date_no_schema")
-	assert.NotNil(m.T(), column)
+	column, isOk = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("created_at_date_no_schema")
+	assert.True(m.T(), isOk)
 	assert.Equal(m.T(), ext.Date.Type, column.KindDetails)
 
-	column = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("json_object_string")
-	assert.NotNil(m.T(), column)
+	column, isOk = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("json_object_string")
+	assert.True(m.T(), isOk)
 	assert.Equal(m.T(), typing.String, column.KindDetails)
 
-	column = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("json_object_no_schema")
-	assert.NotNil(m.T(), column)
+	column, isOk = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("json_object_no_schema")
+	assert.True(m.T(), isOk)
 	assert.Equal(m.T(), typing.Struct, column.KindDetails)
 }

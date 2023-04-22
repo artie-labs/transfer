@@ -12,19 +12,27 @@ type Columns struct {
 }
 
 func (c *Columns) AddColumn(col Column) {
-	// TODO Test uniqueness
-	// What if there's no name
+	// TODO: Test
+	if col.Name == "" {
+		return
+	}
+
+	if _, isOk := c.GetColumn(col.Name); isOk {
+		// Column exists.
+		return
+	}
+
 	c.columns = append(c.columns, col)
 }
 
-func (c *Columns) GetColumn(name string) *Column {
+func (c *Columns) GetColumn(name string) (Column, bool) {
 	for _, column := range c.columns {
 		if column.Name == name {
-			return &column
+			return column, true
 		}
 	}
 
-	return nil
+	return Column{}, false
 }
 
 func (c *Columns) GetColumns() []Column {

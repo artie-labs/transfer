@@ -92,8 +92,8 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 			continue
 		}
 
-		retrievedColumn := inMemoryDB.TableData[e.Table].InMemoryColumns.GetColumn(newColName)
-		if retrievedColumn == nil {
+		retrievedColumn, isOk := inMemoryDB.TableData[e.Table].InMemoryColumns.GetColumn(newColName)
+		if !isOk {
 			inMemoryDB.TableData[e.Table].InMemoryColumns.AddColumn(typing.Column{
 				Name:        newColName,
 				KindDetails: typing.ParseValue(_col, e.OptiomalSchema, val),

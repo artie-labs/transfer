@@ -39,6 +39,8 @@ func (t *TableData) Rows() uint {
 // Prior to merging, we will need to treat `tableConfig` as the source-of-truth and whenever there's discrepancies
 // We will prioritize using the values coming from (2) TableConfig. We also cannot simply do a replacement, as we have in-memory columns
 // That carry metadata for Artie Transfer. They are prefixed with __artie.
+
+// TODO rewrite this whole function
 func (t *TableData) UpdateInMemoryColumns(cols ...typing.Column) {
 	if t == nil {
 		return

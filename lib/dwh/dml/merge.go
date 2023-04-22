@@ -44,8 +44,8 @@ func MergeStatement(m MergeArgument) (string, error) {
 	var equalitySQLParts []string
 	for _, primaryKey := range m.PrimaryKeys {
 		equalitySQL := fmt.Sprintf("c.%s = cc.%s", primaryKey, primaryKey)
-		pkCol := m.ColumnToType.GetColumn(primaryKey)
-		if pkCol == nil {
+		pkCol, isOk := m.ColumnToType.GetColumn(primaryKey)
+		if !isOk {
 			return "", fmt.Errorf("error: column: %s does not exist in columnToType: %v", primaryKey, m.ColumnToType)
 		}
 

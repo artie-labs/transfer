@@ -119,12 +119,9 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 	assert.Equal(d.T(), newColsLen+existingColsLen, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns())
 	// Check by iterating over the columns
 	for _, column := range d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns() {
-		existingCol := existingCols.GetColumn(column.Name)
-		assert.NotNil(d.T(), existingCol)
+		existingCol, isOk := existingCols.GetColumn(column.Name)
+		assert.True(d.T(), isOk)
 		assert.Equal(d.T(), existingCol.KindDetails, column.KindDetails)
-		if existingCol == nil {
-
-		}
 	}
 }
 
@@ -165,8 +162,8 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 	assert.Equal(d.T(), existingColsLen, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns())
 	// Check by iterating over the columns
 	for _, column := range d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns() {
-		existingCol := existingCols.GetColumn(column.Name)
-		assert.NotNil(d.T(), existingCol)
+		existingCol, isOk := existingCols.GetColumn(column.Name)
+		assert.True(d.T(), isOk)
 		assert.Equal(d.T(), column.KindDetails, existingCol.KindDetails)
 	}
 }

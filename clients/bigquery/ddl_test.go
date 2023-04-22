@@ -55,8 +55,8 @@ func (b *BigQueryTestSuite) TestParseSchemaQueryComplex() {
 	}
 
 	for anticipatedCol, anticipatedKind := range anticipatedColumns {
-		col := tableConfig.Columns().GetColumn(anticipatedCol)
-		assert.NotNil(b.T(), col)
+		col, isOk := tableConfig.Columns().GetColumn(anticipatedCol)
+		assert.True(b.T(), isOk)
 		assert.Equal(b.T(), col.KindDetails.Kind, anticipatedKind.Kind, fmt.Sprintf("expected kind: %v, got: col: %s, kind: %v mismatched.", col.KindDetails.Kind,
 			anticipatedCol, anticipatedKind))
 

@@ -70,12 +70,6 @@ func TestDiffBasic(t *testing.T) {
 func TestDiffDelta1(t *testing.T) {
 	var sourceCols Columns
 	var targCols Columns
-
-	sourceCols.AddColumn(Column{
-		Name:        "",
-		KindDetails: KindDetails{},
-	})
-
 	for colName, kindDetails := range map[string]KindDetails{
 		"a": String,
 		"b": Boolean,
@@ -99,8 +93,8 @@ func TestDiffDelta1(t *testing.T) {
 	}
 
 	srcKeyMissing, targKeyMissing := Diff(sourceCols, targCols, false)
-	assert.Equal(t, len(srcKeyMissing), 2)  // Missing aa, cc
-	assert.Equal(t, len(targKeyMissing), 2) // Missing aa, cc
+	assert.Equal(t, len(srcKeyMissing), 2, srcKeyMissing)   // Missing aa, cc
+	assert.Equal(t, len(targKeyMissing), 2, targKeyMissing) // Missing aa, cc
 }
 
 func TestDiffDelta2(t *testing.T) {
@@ -190,7 +184,7 @@ func TestCopyColMap(t *testing.T) {
 	copiedCols := CloneColumns(cols)
 	assert.Equal(t, copiedCols, cols)
 
-	// Delete a row from copiedCols
-	copiedCols.columns = copiedCols.columns[1:]
+	//Delete a row from copiedCols
+	copiedCols.columns = append(copiedCols.columns[1:])
 	assert.NotEqual(t, copiedCols, cols)
 }

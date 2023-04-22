@@ -82,7 +82,7 @@ func (b *BigQueryTestSuite) TestMerge() {
 
 	for _, rowData := range tableData.RowsData {
 		for col, val := range rowData {
-			switch cols.GetColumn(col).KindDetails {
+			switch _col, _ := cols.GetColumn(col); _col.KindDetails {
 			case typing.String, typing.Array, typing.Struct:
 				val = fmt.Sprintf("'%v'", val)
 			}
@@ -150,7 +150,7 @@ func (b *BigQueryTestSuite) TestMergeJSONKey() {
 
 	for _, rowData := range tableData.RowsData {
 		for col, val := range rowData {
-			switch cols.GetColumn(col).KindDetails {
+			switch _col, _ := cols.GetColumn(col); _col.KindDetails {
 			case typing.String, typing.Array, typing.Struct:
 				val = fmt.Sprintf("'%v'", val)
 			}
@@ -218,7 +218,7 @@ func (b *BigQueryTestSuite) TestMergeSimpleCompositeKey() {
 	assert.True(b.T(), strings.Contains(mergeSQL, fmt.Sprintf("c.%s = cc.%s and c.%s = cc.%s", "id", "id", "idA", "idA")), mergeSQL)
 	for _, rowData := range tableData.RowsData {
 		for col, val := range rowData {
-			switch cols.GetColumn(col).KindDetails {
+			switch _col, _ := cols.GetColumn(col); _col.KindDetails {
 			case typing.String, typing.Array, typing.Struct:
 				val = fmt.Sprintf("'%v'", val)
 			}
@@ -293,7 +293,7 @@ func (b *BigQueryTestSuite) TestMergeJSONKeyAndCompositeHybrid() {
 
 	for _, rowData := range tableData.RowsData {
 		for col, val := range rowData {
-			switch cols.GetColumn(col).KindDetails {
+			switch _col, _ := cols.GetColumn(col); _col.KindDetails {
 			case typing.String, typing.Array, typing.Struct:
 				val = fmt.Sprintf("'%v'", val)
 			}

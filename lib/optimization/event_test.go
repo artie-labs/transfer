@@ -27,9 +27,11 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 		InMemoryColumns: &_cols,
 	}
 
-	extCol := tableData.InMemoryColumns.GetColumn("do_not_change_format")
+	extCol, isOk := tableData.InMemoryColumns.GetColumn("do_not_change_format")
+	assert.True(t, isOk)
+
 	extCol.KindDetails.ExtendedTimeDetails.Format = time.RFC3339Nano
-	tableData.UpdateInMemoryColumns(typing.Column{
+	tableData.InMemoryColumns.UpdateColumn(typing.Column{
 		Name:        extCol.Name,
 		KindDetails: extCol.KindDetails,
 	})
@@ -47,19 +49,22 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 	}
 
 	// It's saved back in the original format.
-	col := tableData.InMemoryColumns.GetColumn("foo")
-	assert.Nil(t, col)
+	_, isOk = tableData.InMemoryColumns.GetColumn("foo")
+	assert.True(t, isOk)
 
-	col = tableData.InMemoryColumns.GetColumn("FOO")
-	assert.NotNil(t, col)
+	_, isOk = tableData.InMemoryColumns.GetColumn("FOO")
+	assert.True(t, isOk)
 
-	col = tableData.InMemoryColumns.GetColumn("CHANGE_me")
+	col, isOk := tableData.InMemoryColumns.GetColumn("CHANGE_me")
+	assert.True(t, isOk)
 	assert.Equal(t, ext.DateTime.Type, col.KindDetails.ExtendedTimeDetails.Type)
 
-	col = tableData.InMemoryColumns.GetColumn("bar")
+	col, isOk = tableData.InMemoryColumns.GetColumn("bar")
+	assert.True(t, isOk)
 	assert.Equal(t, typing.Invalid, col.KindDetails)
 
-	col = tableData.InMemoryColumns.GetColumn("do_not_change_format")
+	col, isOk = tableData.InMemoryColumns.GetColumn("do_not_change_format")
+	assert.True(t, isOk)
 	assert.Equal(t, col.KindDetails.Kind, typing.ETime.Kind)
 	assert.Equal(t, col.KindDetails.ExtendedTimeDetails.Type, ext.DateTimeKindType, "correctly mapped type")
 	assert.Equal(t, col.KindDetails.ExtendedTimeDetails.Format, time.RFC3339Nano, "format has been preserved")

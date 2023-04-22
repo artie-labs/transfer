@@ -22,38 +22,43 @@ func shouldSkipColumn(colName string, softDelete bool) bool {
 
 // Diff - when given 2 maps, a source and target
 // It will provide a diff in the form of 2 variables
-// TODO Fix
-func Diff(columnsInSource Columns, columnsInDestination Columns, softDelete bool) (sourceColumnsMissing []Column, targetColumnsMissing []Column) {
+func Diff(columnsInSource Columns, columnsInDestination Columns, softDelete bool) ([]Column, []Column) {
 	src := CloneColumns(columnsInSource)
 	targ := CloneColumns(columnsInDestination)
+	var colsToDelete []Column
 	for _, col := range src.GetColumns() {
-		targetCol := targ.GetColumn(col.Name)
-		if targetCol != nil {
-			src.DeleteColumn(col.Name)
-			targ.DeleteColumn(col.Name)
+		_, isOk := targ.GetColumn(col.Name)
+		if isOk {
+			colsToDelete = append(colsToDelete, col)
+
 		}
 	}
 
-	var sourceColumnsMissingWrapper Columns
-	var targetColumnsMissingWrapper Columns
+	// We cannot delete inside a for-loop that is iterating over src.GetColumns() because we are messing up the array order.
+	for _, colToDelete := range colsToDelete {
+		src.DeleteColumn(colToDelete.Name)
+		targ.DeleteColumn(colToDelete.Name)
+	}
 
+	var targetColumnsMissing Columns
 	for _, col := range src.GetColumns() {
 		if shouldSkipColumn(col.Name, softDelete) {
 			continue
 		}
 
-		targetColumnsMissingWrapper.AddColumn(col)
+		targetColumnsMissing.AddColumn(col)
 	}
 
+	var sourceColumnsMissing Columns
 	for _, col := range targ.GetColumns() {
 		if shouldSkipColumn(col.Name, softDelete) {
 			continue
 		}
 
-		sourceColumnsMissingWrapper.AddColumn(col)
+		sourceColumnsMissing.AddColumn(col)
 	}
 
-	return sourceColumnsMissingWrapper.GetColumns(), targetColumnsMissingWrapper.GetColumns()
+	return sourceColumnsMissing.GetColumns(), targetColumnsMissing.GetColumns()
 }
 
 func CloneColumns(cols Columns) Columns {

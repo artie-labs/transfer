@@ -72,7 +72,9 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		types.NewDwhTableConfig(anotherCols, nil, false, true))
 
 	err := s.store.Merge(s.ctx, tableData)
-	assert.Equal(s.T(), tableData.InMemoryColumns.GetColumn("first_name").KindDetails, typing.String)
+	_col, isOk := tableData.InMemoryColumns.GetColumn("first_name")
+	assert.True(s.T(), isOk)
+	assert.Equal(s.T(), _col.KindDetails, typing.String)
 	assert.NoError(s.T(), err)
 }
 
@@ -174,7 +176,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	err := s.store.Merge(s.ctx, tableData)
 	assert.Nil(s.T(), err)
 	s.fakeStore.ExecReturns(nil, nil)
-	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 1, "called merge")
+	assert.Equal(s.T(), 1, s.fakeStore.ExecCallCount(), "called merge")
 }
 
 // TestExecuteMergeDeletionFlagRemoval is going to run execute merge twice.
