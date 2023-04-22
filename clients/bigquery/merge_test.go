@@ -154,6 +154,7 @@ func (b *BigQueryTestSuite) TestMergeSimpleCompositeKey() {
 		"id":                         typing.String,
 		"idA":                        typing.String,
 		"name":                       typing.String,
+		"nullable_string":            typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
 	}
 
@@ -186,7 +187,6 @@ func (b *BigQueryTestSuite) TestMergeSimpleCompositeKey() {
 	}
 
 	mergeSQL, err := merge(tableData)
-
 	assert.NoError(b.T(), err, "merge failed")
 	// Check if MERGE INTO FQ Table exists.
 	assert.True(b.T(), strings.Contains(mergeSQL, "MERGE INTO shop.customer c"), mergeSQL)
@@ -209,6 +209,9 @@ func (b *BigQueryTestSuite) TestMergeSimpleCompositeKey() {
 			})
 		}
 	}
+
+	// Check null string fix.
+	assert.True(b.T(), strings.Contains(mergeSQL, fmt.Sprintf(`'' as nullable_string`)), mergeSQL)
 }
 
 func (b *BigQueryTestSuite) TestMergeJSONKeyAndCompositeHybrid() {
