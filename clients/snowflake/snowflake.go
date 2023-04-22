@@ -2,6 +2,7 @@ package snowflake
 
 import (
 	"context"
+	"github.com/artie-labs/transfer/models/flush"
 	"github.com/snowflakedb/gosnowflake"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -10,7 +11,6 @@ import (
 	"github.com/artie-labs/transfer/lib/dwh/ddl"
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/logger"
-	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
@@ -38,7 +38,7 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 	return s.configMap
 }
 
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
+func (s *Store) Merge(ctx context.Context, tableData *flush.TableData) error {
 	err := s.merge(ctx, tableData)
 	if AuthenticationExpirationErr(err) {
 		logger.FromContext(ctx).WithError(err).Warn("authentication has expired, will reload the Snowflake store")
@@ -48,7 +48,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	return err
 }
 
-func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) error {
+func (s *Store) merge(ctx context.Context, tableData *flush.TableData) error {
 	if tableData.Rows() == 0 {
 		// There's no rows. Let's skip.
 		return nil

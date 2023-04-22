@@ -2,6 +2,7 @@ package snowflake
 
 import (
 	"fmt"
+	"github.com/artie-labs/transfer/models/flush"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -9,7 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
@@ -39,7 +39,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		Schema:    "public",
 	}
 
-	tableData := &optimization.TableData{
+	tableData := &flush.TableData{
 		InMemoryColumns: columns,
 		RowsData:        rowsData,
 		TopicConfig:     topicConfig,
@@ -83,7 +83,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		Schema:    "public",
 	}
 
-	tableData := &optimization.TableData{
+	tableData := &flush.TableData{
 		InMemoryColumns: columns,
 		RowsData:        rowsData,
 		TopicConfig:     topicConfig,
@@ -128,7 +128,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		Schema:    "public",
 	}
 
-	tableData := &optimization.TableData{
+	tableData := &flush.TableData{
 		InMemoryColumns: columns,
 		RowsData:        rowsData,
 		TopicConfig:     topicConfig,
@@ -172,7 +172,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		"created_at": typing.ParseValue("", nil, time.Now().Format(time.RFC3339Nano)),
 	}
 
-	tableData := &optimization.TableData{
+	tableData := &flush.TableData{
 		InMemoryColumns: columns,
 		RowsData:        rowsData,
 		TopicConfig:     topicConfig,
@@ -223,7 +223,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
-	err := s.store.Merge(s.ctx, &optimization.TableData{
+	err := s.store.Merge(s.ctx, &flush.TableData{
 		InMemoryColumns:         nil,
 		RowsData:                nil,
 		TopicConfig:             kafkalib.TopicConfig{},

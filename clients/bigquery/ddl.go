@@ -3,15 +3,15 @@ package bigquery
 import (
 	"context"
 	"fmt"
+	"github.com/artie-labs/transfer/models/flush"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/types"
-	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (s *Store) getTableConfig(_ context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+func (s *Store) getTableConfig(_ context.Context, tableData *flush.TableData) (*types.DwhTableConfig, error) {
 	fqName := tableData.TopicConfig.ToFqName(constants.BigQuery)
 	tc := s.configMap.TableConfig(fqName)
 	if tc != nil {

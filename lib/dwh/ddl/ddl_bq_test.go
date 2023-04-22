@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/artie-labs/transfer/models/flush"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -13,7 +14,6 @@ import (
 	"github.com/artie-labs/transfer/lib/dwh/ddl"
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
@@ -21,7 +21,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	ctx := context.Background()
 	ts := time.Now()
 
-	td := &optimization.TableData{
+	td := &flush.TableData{
 		TopicConfig: kafkalib.TopicConfig{
 			Database:  "mock_dataset",
 			TableName: "delete_col",
@@ -180,7 +180,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 	ctx := context.Background()
 	ts := time.Now()
 
-	td := &optimization.TableData{
+	td := &flush.TableData{
 		TopicConfig: kafkalib.TopicConfig{
 			Database:  "mock_dataset",
 			TableName: "delete_col",

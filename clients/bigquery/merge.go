@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/artie-labs/transfer/lib/stringutil"
+	"github.com/artie-labs/transfer/models/flush"
 	"strings"
 	"time"
 
@@ -12,12 +13,11 @@ import (
 	"github.com/artie-labs/transfer/lib/dwh/ddl"
 	"github.com/artie-labs/transfer/lib/dwh/dml"
 	"github.com/artie-labs/transfer/lib/logger"
-	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func merge(tableData *optimization.TableData) (string, error) {
+func merge(tableData *flush.TableData) (string, error) {
 	var cols []string
 	// Given all the columns, diff this against SFLK.
 	for col, kind := range tableData.InMemoryColumns() {
@@ -99,7 +99,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 	})
 }
 
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
+func (s *Store) Merge(ctx context.Context, tableData *flush.TableData) error {
 	if tableData.Rows() == 0 {
 		// There's no rows. Let's skip.
 		return nil

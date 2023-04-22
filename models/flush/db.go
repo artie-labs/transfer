@@ -3,13 +3,12 @@ package flush
 import (
 	"context"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/optimization"
 	"log"
 	"sync"
 )
 
 type Database struct {
-	tableData map[string]*optimization.TableData
+	tableData map[string]*TableData
 	sync.Mutex
 }
 
@@ -32,7 +31,7 @@ func FromContext(ctx context.Context) *Database {
 
 type TableDataWrapper struct {
 	Name string
-	*optimization.TableData
+	*TableData
 }
 
 func (d *Database) GetTables() []*TableDataWrapper {
@@ -50,7 +49,7 @@ func (d *Database) GetTables() []*TableDataWrapper {
 	return tables
 }
 
-func (d *Database) GetTable(name string) *optimization.TableData {
+func (d *Database) GetTable(name string) *TableData {
 	d.Lock()
 	defer d.Unlock()
 
@@ -69,10 +68,10 @@ func (d *Database) WipeTable(name string) {
 	delete(d.tableData, name)
 }
 
-func (d *Database) NewTable(name string, primaryKeys []string, topicConfig *kafkalib.TopicConfig) *optimization.TableData {
+func (d *Database) NewTable(name string, primaryKeys []string, topicConfig *kafkalib.TopicConfig) *TableData {
 	d.Lock()
 	defer d.Unlock()
 
-	d.tableData[name] = optimization.NewTableData(primaryKeys, topicConfig)
+	d.tableData[name] = NewTableData(primaryKeys, topicConfig)
 	return d.tableData[name]
 }

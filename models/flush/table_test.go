@@ -1,4 +1,4 @@
-package optimization
+package flush
 
 import (
 	"github.com/artie-labs/transfer/lib/typing/ext"

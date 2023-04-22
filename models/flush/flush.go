@@ -33,7 +33,7 @@ func Flush(ctx context.Context) error {
 			log.WithError(err).WithFields(logFields).Warn("Failed to execute merge...not going to flush memory")
 		} else {
 			log.WithFields(logFields).Info("Merge success, clearing memory...")
-			commitErr := consumer.CommitOffset(ctx, table.TopicConfig.Topic, table.PartitionsToLastMessage)
+			commitErr := consumer.CommitOffset(ctx, table.TopicConfig.Topic, table.partitionsToLastMessage)
 			if commitErr == nil {
 				FromContext(ctx).WipeTable(table.Name)
 			} else {

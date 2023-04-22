@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/models/flush"
 	"github.com/stretchr/testify/assert"
 	"strings"
 	"time"
@@ -16,7 +16,7 @@ func (b *BigQueryTestSuite) TestMergeNoDeleteFlag() {
 		"id": typing.Integer,
 	}
 
-	tableData := &optimization.TableData{
+	tableData := &flush.TableData{
 		InMemoryColumns: cols,
 		RowsData:        nil,
 		PrimaryKeys:     []string{"id"},
@@ -53,7 +53,7 @@ func (b *BigQueryTestSuite) TestMerge() {
 		Schema:    "public",
 	}
 
-	tableData := &optimization.TableData{
+	tableData := &flush.TableData{
 		InMemoryColumns: cols,
 		RowsData:        rowData,
 		PrimaryKeys:     primaryKeys,
@@ -115,7 +115,7 @@ func (b *BigQueryTestSuite) TestMergeJSONKey() {
 
 	primaryKeys := []string{"id"}
 
-	tableData := &optimization.TableData{
+	tableData := &flush.TableData{
 		InMemoryColumns: cols,
 		RowsData:        rowData,
 		PrimaryKeys:     primaryKeys,
@@ -177,7 +177,7 @@ func (b *BigQueryTestSuite) TestMergeSimpleCompositeKey() {
 	}
 
 	primaryKeys := []string{"id", "idA"}
-	tableData := &optimization.TableData{
+	tableData := &flush.TableData{
 		InMemoryColumns: cols,
 		RowsData:        rowData,
 		PrimaryKeys:     primaryKeys,
@@ -242,7 +242,7 @@ func (b *BigQueryTestSuite) TestMergeJSONKeyAndCompositeHybrid() {
 
 	primaryKeys := []string{"id", "idA", "idB", "idC"}
 
-	tableData := &optimization.TableData{
+	tableData := &flush.TableData{
 		InMemoryColumns: cols,
 		RowsData:        rowData,
 		PrimaryKeys:     primaryKeys,

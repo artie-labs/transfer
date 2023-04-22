@@ -3,17 +3,17 @@ package snowflake
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/artie-labs/transfer/models/flush"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/dml"
-	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func getMergeStatement(tableData *optimization.TableData) (string, error) {
+func getMergeStatement(tableData *flush.TableData) (string, error) {
 	var tableValues []string
 	var cols []string
 	var sflkCols []string

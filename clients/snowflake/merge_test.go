@@ -3,13 +3,13 @@ package snowflake
 import (
 	"fmt"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/models/flush"
 	"strings"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
@@ -18,7 +18,7 @@ func (s *SnowflakeTestSuite) TestMergeNoDeleteFlag() {
 		"id": typing.Integer,
 	}
 
-	tableData := &optimization.TableData{
+	tableData := &flush.TableData{
 		InMemoryColumns: cols,
 		RowsData:        nil,
 		PrimaryKeys:     []string{"id"},
@@ -55,7 +55,7 @@ func (s *SnowflakeTestSuite) TestMerge() {
 	}
 
 	primaryKeys := []string{"id"}
-	tableData := &optimization.TableData{
+	tableData := &flush.TableData{
 		InMemoryColumns: cols,
 		RowsData:        rowData,
 		PrimaryKeys:     primaryKeys,
@@ -112,7 +112,7 @@ func (s *SnowflakeTestSuite) TestMergeWithSingleQuote() {
 		Schema:    "public",
 	}
 
-	tableData := &optimization.TableData{
+	tableData := &flush.TableData{
 		InMemoryColumns: cols,
 		RowsData:        rowData,
 		PrimaryKeys:     []string{"id"},
@@ -145,7 +145,7 @@ func (s *SnowflakeTestSuite) TestMergeJson() {
 		Schema:    "public",
 	}
 
-	tableData := &optimization.TableData{
+	tableData := &flush.TableData{
 		InMemoryColumns: cols,
 		RowsData:        rowData,
 		PrimaryKeys:     []string{"id"},
