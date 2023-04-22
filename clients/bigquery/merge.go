@@ -20,13 +20,13 @@ import (
 func merge(tableData *optimization.TableData) (string, error) {
 	var cols []string
 	// Given all the columns, diff this against SFLK.
-	for col, kind := range tableData.InMemoryColumns {
-		if kind == typing.Invalid {
+	for _, col := range tableData.InMemoryColumns.GetColumns() {
+		if col.KindDetails == typing.Invalid {
 			// Don't update BQ
 			continue
 		}
 
-		cols = append(cols, col)
+		cols = append(cols, col.Name)
 	}
 
 	var rowValues []string
@@ -34,10 +34,10 @@ func merge(tableData *optimization.TableData) (string, error) {
 	for _, value := range tableData.RowsData {
 		var colVals []string
 		for _, col := range cols {
-			colKind := tableData.InMemoryColumns[col]
+			colKind, _ := tableData.InMemoryColumns.GetColumn(col)
 			colVal := value[col]
 			if colVal != nil {
-				switch colKind.Kind {
+				switch colKind.KindDetails.Kind {
 				case typing.ETime.Kind:
 					extTime, err := ext.ParseFromInterface(colVal)
 					if err != nil {
@@ -55,7 +55,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 				// All the other types do not need string wrapping.
 				case typing.String.Kind, typing.Struct.Kind:
 					colVal = stringutil.Wrap(colVal)
-					if colKind == typing.Struct {
+					if colKind.KindDetails == typing.Struct {
 						// This is how you cast string -> JSON
 						colVal = fmt.Sprintf("JSON %s", colVal)
 					}
@@ -70,7 +70,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 					colVal = stringutil.Wrap(string(colValBytes))
 				}
 			} else {
-				if colKind == typing.String {
+				if colKind.KindDetails == typing.String {
 					// BigQuery does not like null as a string for CTEs.
 					// It throws this error: Value of type INT64 cannot be assigned to column name, which has type STRING
 					colVal = "''"
@@ -93,21 +93,21 @@ func merge(tableData *optimization.TableData) (string, error) {
 	subQuery := strings.Join(rowValues, " UNION ALL ")
 
 	return dml.MergeStatement(dml.MergeArgument{
-		FqTableName:   tableData.ToFqName(constants.BigQuery),
-		SubQuery:      subQuery,
-		IdempotentKey: tableData.IdempotentKey,
-		PrimaryKeys:   tableData.PrimaryKeys,
-		Columns:       cols,
-		ColumnToType:  tableData.InMemoryColumns,
-		SoftDelete:    tableData.SoftDelete,
+		FqTableName:    tableData.ToFqName(constants.BigQuery),
+		SubQuery:       subQuery,
+		IdempotentKey:  tableData.IdempotentKey,
+		PrimaryKeys:    tableData.PrimaryKeys,
+		Columns:        cols,
+		ColumnsToTypes: *tableData.InMemoryColumns,
+		SoftDelete:     tableData.SoftDelete,
 		// BigQuery specifically needs it.
 		SpecialCastingRequired: true,
 	})
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
-	if tableData.Rows() == 0 {
-		// There's no rows. Let's skip.
+	if tableData.Rows() == 0 || tableData.InMemoryColumns == nil {
+		// There's no rows or columns. Let's skip.
 		return nil
 	}
 
@@ -116,9 +116,14 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
+	var targetColumns typing.Columns
+	if tableConfig.Columns() != nil {
+		targetColumns = *tableConfig.Columns()
+	}
+
 	log := logger.FromContext(ctx)
 	// Check if all the columns exist in Snowflake
-	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.InMemoryColumns, tableConfig.Columns(), tableData.SoftDelete)
+	srcKeysMissing, targetKeysMissing := typing.Diff(*tableData.InMemoryColumns, targetColumns, tableData.SoftDelete)
 
 	// Keys that exist in CDC stream, but not in Snowflake
 	err = ddl.AlterTable(ctx, s, tableConfig, tableData.ToFqName(constants.BigQuery), tableConfig.CreateTable, constants.Add, tableData.LatestCDCTs, targetKeysMissing...)
@@ -153,7 +158,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		}
 	}
 
-	tableData.UpdateInMemoryColumns(tableConfig.Columns())
+	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 	query, err := merge(tableData)
 	if err != nil {
 		log.WithError(err).Warn("failed to generate the merge query")

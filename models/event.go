@@ -14,20 +14,22 @@ import (
 )
 
 type Event struct {
-	Table         string
-	PrimaryKeyMap map[string]interface{}
-	Data          map[string]interface{} // json serialized column data
+	Table          string
+	PrimaryKeyMap  map[string]interface{}
+	Data           map[string]interface{} // json serialized column data
 	OptiomalSchema map[string]typing.KindDetails
-	ExecutionTime time.Time              // When the SQL command was executed
+	Columns        *typing.Columns
+	ExecutionTime  time.Time // When the SQL command was executed
 }
 
 func ToMemoryEvent(ctx context.Context, event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) Event {
 	return Event{
-		Table:         tc.TableName,
-		PrimaryKeyMap: pkMap,
-		ExecutionTime: event.GetExecutionTime(),
+		Table:          tc.TableName,
+		PrimaryKeyMap:  pkMap,
+		ExecutionTime:  event.GetExecutionTime(),
 		OptiomalSchema: event.GetOptionalSchema(ctx),
-		Data:          event.GetData(ctx, pkMap, tc),
+		Columns:        event.GetColumns(),
+		Data:           event.GetData(ctx, pkMap, tc),
 	}
 }
 

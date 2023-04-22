@@ -49,7 +49,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 }
 
 func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) error {
-	if tableData.Rows() == 0 {
+	if tableData.Rows() == 0 || tableData.InMemoryColumns == nil {
 		// There's no rows. Let's skip.
 		return nil
 	}
@@ -62,8 +62,13 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) er
 
 	log := logger.FromContext(ctx)
 
+	var targetColumns typing.Columns
+	if tableConfig.Columns() != nil {
+		targetColumns = *tableConfig.Columns()
+	}
+
 	// Check if all the columns exist in Snowflake
-	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.InMemoryColumns, tableConfig.Columns(), tableData.SoftDelete)
+	srcKeysMissing, targetKeysMissing := typing.Diff(*tableData.InMemoryColumns, targetColumns, tableData.SoftDelete)
 
 	// Keys that exist in CDC stream, but not in Snowflake
 	err = ddl.AlterTable(ctx, s, tableConfig, fqName, tableConfig.CreateTable, constants.Add, tableData.LatestCDCTs, targetKeysMissing...)
@@ -98,7 +103,7 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) er
 		}
 	}
 
-	tableData.UpdateInMemoryColumns(tableConfig.Columns())
+	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 	query, err := getMergeStatement(tableData)
 	if err != nil {
 		log.WithError(err).Warn("failed to generate the getMergeStatement query")

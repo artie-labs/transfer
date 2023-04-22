@@ -12,12 +12,14 @@ import (
 )
 
 func (b *BigQueryTestSuite) TestMergeNoDeleteFlag() {
-	cols := map[string]typing.KindDetails{
-		"id": typing.Integer,
-	}
+	var cols typing.Columns
+	cols.AddColumn(typing.Column{
+		Name:        "id",
+		KindDetails: typing.Integer,
+	})
 
 	tableData := &optimization.TableData{
-		InMemoryColumns: cols,
+		InMemoryColumns: &cols,
 		RowsData:        nil,
 		PrimaryKeys:     []string{"id"},
 		TopicConfig:     kafkalib.TopicConfig{},
@@ -31,10 +33,16 @@ func (b *BigQueryTestSuite) TestMergeNoDeleteFlag() {
 func (b *BigQueryTestSuite) TestMerge() {
 	primaryKeys := []string{"id"}
 
-	cols := map[string]typing.KindDetails{
+	var cols typing.Columns
+	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":                         typing.Integer,
 		"name":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
+	} {
+		cols.AddColumn(typing.Column{
+			Name:        colName,
+			KindDetails: kindDetails,
+		})
 	}
 
 	rowData := make(map[string]map[string]interface{})
@@ -54,7 +62,7 @@ func (b *BigQueryTestSuite) TestMerge() {
 	}
 
 	tableData := &optimization.TableData{
-		InMemoryColumns: cols,
+		InMemoryColumns: &cols,
 		RowsData:        rowData,
 		PrimaryKeys:     primaryKeys,
 		TopicConfig:     topicConfig,
@@ -74,7 +82,7 @@ func (b *BigQueryTestSuite) TestMerge() {
 
 	for _, rowData := range tableData.RowsData {
 		for col, val := range rowData {
-			switch cols[col] {
+			switch _col, _ := cols.GetColumn(col); _col.KindDetails {
 			case typing.String, typing.Array, typing.Struct:
 				val = fmt.Sprintf("'%v'", val)
 			}
@@ -88,10 +96,16 @@ func (b *BigQueryTestSuite) TestMerge() {
 }
 
 func (b *BigQueryTestSuite) TestMergeJSONKey() {
-	cols := map[string]typing.KindDetails{
+	var cols typing.Columns
+	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":                         typing.Struct,
 		"name":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
+	} {
+		cols.AddColumn(typing.Column{
+			Name:        colName,
+			KindDetails: kindDetails,
+		})
 	}
 
 	rowData := make(map[string]map[string]interface{})
@@ -116,7 +130,7 @@ func (b *BigQueryTestSuite) TestMergeJSONKey() {
 	primaryKeys := []string{"id"}
 
 	tableData := &optimization.TableData{
-		InMemoryColumns: cols,
+		InMemoryColumns: &cols,
 		RowsData:        rowData,
 		PrimaryKeys:     primaryKeys,
 		TopicConfig:     topicConfig,
@@ -136,7 +150,7 @@ func (b *BigQueryTestSuite) TestMergeJSONKey() {
 
 	for _, rowData := range tableData.RowsData {
 		for col, val := range rowData {
-			switch cols[col] {
+			switch _col, _ := cols.GetColumn(col); _col.KindDetails {
 			case typing.String, typing.Array, typing.Struct:
 				val = fmt.Sprintf("'%v'", val)
 			}
@@ -150,12 +164,18 @@ func (b *BigQueryTestSuite) TestMergeJSONKey() {
 }
 
 func (b *BigQueryTestSuite) TestMergeSimpleCompositeKey() {
-	cols := map[string]typing.KindDetails{
+	var cols typing.Columns
+	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":                         typing.String,
 		"idA":                        typing.String,
 		"name":                       typing.String,
 		"nullable_string":            typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
+	} {
+		cols.AddColumn(typing.Column{
+			Name:        colName,
+			KindDetails: kindDetails,
+		})
 	}
 
 	rowData := make(map[string]map[string]interface{})
@@ -179,7 +199,7 @@ func (b *BigQueryTestSuite) TestMergeSimpleCompositeKey() {
 
 	primaryKeys := []string{"id", "idA"}
 	tableData := &optimization.TableData{
-		InMemoryColumns: cols,
+		InMemoryColumns: &cols,
 		RowsData:        rowData,
 		PrimaryKeys:     primaryKeys,
 		TopicConfig:     topicConfig,
@@ -198,7 +218,7 @@ func (b *BigQueryTestSuite) TestMergeSimpleCompositeKey() {
 	assert.True(b.T(), strings.Contains(mergeSQL, fmt.Sprintf("c.%s = cc.%s and c.%s = cc.%s", "id", "id", "idA", "idA")), mergeSQL)
 	for _, rowData := range tableData.RowsData {
 		for col, val := range rowData {
-			switch cols[col] {
+			switch _col, _ := cols.GetColumn(col); _col.KindDetails {
 			case typing.String, typing.Array, typing.Struct:
 				val = fmt.Sprintf("'%v'", val)
 			}
@@ -215,13 +235,20 @@ func (b *BigQueryTestSuite) TestMergeSimpleCompositeKey() {
 }
 
 func (b *BigQueryTestSuite) TestMergeJSONKeyAndCompositeHybrid() {
-	cols := map[string]typing.KindDetails{
+	var cols typing.Columns
+
+	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":                         typing.Struct,
 		"idA":                        typing.String,
 		"idB":                        typing.String,
 		"idC":                        typing.Struct,
 		"name":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
+	} {
+		cols.AddColumn(typing.Column{
+			Name:        colName,
+			KindDetails: kindDetails,
+		})
 	}
 
 	rowData := make(map[string]map[string]interface{})
@@ -246,7 +273,7 @@ func (b *BigQueryTestSuite) TestMergeJSONKeyAndCompositeHybrid() {
 	primaryKeys := []string{"id", "idA", "idB", "idC"}
 
 	tableData := &optimization.TableData{
-		InMemoryColumns: cols,
+		InMemoryColumns: &cols,
 		RowsData:        rowData,
 		PrimaryKeys:     primaryKeys,
 		TopicConfig:     topicConfig,
@@ -269,7 +296,7 @@ func (b *BigQueryTestSuite) TestMergeJSONKeyAndCompositeHybrid() {
 
 	for _, rowData := range tableData.RowsData {
 		for col, val := range rowData {
-			switch cols[col] {
+			switch _col, _ := cols.GetColumn(col); _col.KindDetails {
 			case typing.String, typing.Array, typing.Struct:
 				val = fmt.Sprintf("'%v'", val)
 			}

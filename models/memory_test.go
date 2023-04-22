@@ -9,6 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
+	"strconv"
 )
 
 var topicConfig = &kafkalib.TopicConfig{
@@ -43,8 +44,8 @@ func (m *ModelsTestSuite) TestSaveEvent() {
 	optimization := GetMemoryDB().TableData["foo"]
 	// Check the in-memory DB columns.
 	var found int
-	for col := range optimization.InMemoryColumns {
-		if col == expectedLowerCol || col == anotherLowerCol {
+	for _, col := range optimization.InMemoryColumns.GetColumns() {
+		if col.Name == expectedLowerCol || col.Name == anotherLowerCol {
 			found += 1
 		}
 
@@ -54,7 +55,6 @@ func (m *ModelsTestSuite) TestSaveEvent() {
 	}
 
 	assert.Equal(m.T(), 2, found, optimization.InMemoryColumns)
-
 	badColumn := "other"
 	edgeCaseEvent := Event{
 		Table: "foo",
@@ -72,9 +72,9 @@ func (m *ModelsTestSuite) TestSaveEvent() {
 	newKafkaMsg := kafka.Message{}
 	_, err = edgeCaseEvent.Save(m.ctx, topicConfig, artie.NewMessage(&newKafkaMsg, nil, newKafkaMsg.Topic))
 	assert.NoError(m.T(), err)
-	val, isOk := GetMemoryDB().TableData["foo"].InMemoryColumns[badColumn]
+	inMemoryCol, isOk := GetMemoryDB().TableData["foo"].InMemoryColumns.GetColumn(badColumn)
 	assert.True(m.T(), isOk)
-	assert.Equal(m.T(), val, typing.Invalid)
+	assert.Equal(m.T(), typing.Invalid, inMemoryCol.KindDetails)
 }
 
 func (m *ModelsTestSuite) TestEvent_SaveCasing() {
@@ -112,15 +112,15 @@ func (m *ModelsTestSuite) TestEventSaveOptionalSchema() {
 			constants.DeleteColumnMarker: true,
 			"randomCol":                  "dusty",
 			"anotherCOL":                 13.37,
-			"created_at_date_string": "2023-01-01",
-			"created_at_date_no_schema": "2023-01-01",
-			"json_object_string": `{"foo": "bar"}`,
-			"json_object_no_schema": `{"foo": "bar"}`,
+			"created_at_date_string":     "2023-01-01",
+			"created_at_date_no_schema":  "2023-01-01",
+			"json_object_string":         `{"foo": "bar"}`,
+			"json_object_no_schema":      `{"foo": "bar"}`,
 		},
 		OptiomalSchema: map[string]typing.KindDetails{
 			// Explicitly casting this as a string.
 			"created_at_date_string": typing.String,
-			"json_object_string": typing.String,
+			"json_object_string":     typing.String,
 		},
 	}
 
@@ -128,19 +128,123 @@ func (m *ModelsTestSuite) TestEventSaveOptionalSchema() {
 	_, err := event.Save(m.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(m.T(), err)
 
-	kind, isOk := inMemoryDB.TableData["foo"].InMemoryColumns["created_at_date_string"]
+	column, isOk := inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("created_at_date_string")
 	assert.True(m.T(), isOk)
-	assert.Equal(m.T(), kind, typing.String)
+	assert.Equal(m.T(), typing.String, column.KindDetails)
 
-	kind, isOk = inMemoryDB.TableData["foo"].InMemoryColumns["created_at_date_no_schema"]
+	column, isOk = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("created_at_date_no_schema")
 	assert.True(m.T(), isOk)
-	assert.Equal(m.T(), kind.ExtendedTimeDetails.Type, ext.Date.Type)
+	assert.Equal(m.T(), ext.Date.Type, column.KindDetails.ExtendedTimeDetails.Type)
 
-	kind, isOk = inMemoryDB.TableData["foo"].InMemoryColumns["json_object_string"]
+	column, isOk = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("json_object_string")
 	assert.True(m.T(), isOk)
-	assert.Equal(m.T(), kind, typing.String)
+	assert.Equal(m.T(), typing.String, column.KindDetails)
 
-	kind, isOk = inMemoryDB.TableData["foo"].InMemoryColumns["json_object_no_schema"]
+	column, isOk = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("json_object_no_schema")
 	assert.True(m.T(), isOk)
-	assert.Equal(m.T(), kind, typing.Struct)
+	assert.Equal(m.T(), typing.Struct, column.KindDetails)
+}
+
+func (m *ModelsTestSuite) TestEvent_SaveColumnsNoData() {
+	var cols typing.Columns
+	for i := 0; i < 50; i++ {
+		cols.AddColumn(typing.Column{Name: fmt.Sprint(i), KindDetails: typing.Invalid})
+	}
+
+	evt := Event{
+		Table:   "non_existent",
+		Columns: &cols,
+		Data: map[string]interface{}{
+			"1":                          "123",
+			constants.DeleteColumnMarker: true,
+		},
+		PrimaryKeyMap: map[string]interface{}{
+			"1": "123",
+		},
+	}
+	kafkaMsg := kafka.Message{}
+	_, err := evt.Save(m.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	assert.NoError(m.T(), err)
+
+	var prevKey string
+	for _, col := range inMemoryDB.TableData["non_existent"].InMemoryColumns.GetColumns() {
+		if col.Name == constants.DeleteColumnMarker {
+			continue
+		}
+
+		if prevKey == "" {
+			prevKey = col.Name
+			continue
+		}
+
+		currentKeyParsed, err := strconv.Atoi(col.Name)
+		assert.NoError(m.T(), err)
+
+		prevKeyParsed, err := strconv.Atoi(prevKey)
+		assert.NoError(m.T(), err)
+
+		// Testing ordering.
+		assert.True(m.T(), currentKeyParsed > prevKeyParsed, fmt.Sprintf("current key: %v, prevKey: %v", currentKeyParsed, prevKeyParsed))
+	}
+
+	// Now let's add more keys.
+	evt.Columns.AddColumn(typing.Column{Name: "foo", KindDetails: typing.Invalid})
+	var index int
+	for idx, col := range evt.Columns.GetColumns() {
+		if col.Name == "foo" {
+			index = idx
+		}
+	}
+
+	assert.Equal(m.T(), len(evt.Columns.GetColumns())-1, index, "new column inserted to the end")
+}
+
+func (m *ModelsTestSuite) TestEventSaveColumns() {
+	var cols typing.Columns
+	cols.AddColumn(typing.Column{
+		Name:        "randomCol",
+		KindDetails: typing.Invalid,
+	})
+	cols.AddColumn(typing.Column{
+		Name:        "anotherCOL",
+		KindDetails: typing.Invalid,
+	})
+	cols.AddColumn(typing.Column{
+		Name:        "created_at_date_string",
+		KindDetails: typing.Invalid,
+	})
+
+	event := Event{
+		Table:   "foo",
+		Columns: &cols,
+		PrimaryKeyMap: map[string]interface{}{
+			"id": "123",
+		},
+		Data: map[string]interface{}{
+			constants.DeleteColumnMarker: true,
+			"randomCol":                  "dusty",
+			"anotherCOL":                 13.37,
+			"created_at_date_string":     "2023-01-01",
+		},
+	}
+
+	kafkaMsg := kafka.Message{}
+	_, err := event.Save(m.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	assert.Nil(m.T(), err)
+
+	column, isOk := inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("randomcol")
+	assert.True(m.T(), isOk)
+	assert.Equal(m.T(), typing.String, column.KindDetails)
+
+	column, isOk = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("anothercol")
+	assert.True(m.T(), isOk)
+	assert.Equal(m.T(), typing.Float, column.KindDetails)
+
+	column, isOk = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("created_at_date_string")
+	assert.True(m.T(), isOk)
+	assert.Equal(m.T(), ext.DateKindType, column.KindDetails.ExtendedTimeDetails.Type)
+
+	column, isOk = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn(constants.DeleteColumnMarker)
+	assert.True(m.T(), isOk)
+	assert.Equal(m.T(), typing.Boolean, column.KindDetails)
 }

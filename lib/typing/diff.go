@@ -6,11 +6,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
-type Column struct {
-	Name string
-	Kind KindDetails
-}
-
 // shouldSkipColumn takes the `colName` and `softDelete` and will return whether we should skip this column when calculating the diff.
 func shouldSkipColumn(colName string, softDelete bool) bool {
 	if colName == constants.DeleteColumnMarker && softDelete {
@@ -27,51 +22,51 @@ func shouldSkipColumn(colName string, softDelete bool) bool {
 
 // Diff - when given 2 maps, a source and target
 // It will provide a diff in the form of 2 variables
-// The other argument `softDelete` is used on whether we should ignore Artie's soft delete column.
-// srcKeyMissing - which key are missing from source that are present in target
-// targKeyMissing - which key are missing from target that are present in source
-func Diff(source map[string]KindDetails, target map[string]KindDetails, softDelete bool) (srcKeyMissing []Column, targKeyMissing []Column) {
-	src := CopyColMap(source)
-	targ := CopyColMap(target)
-
-	for key := range src {
-		_, isOk := targ[key]
+func Diff(columnsInSource Columns, columnsInDestination Columns, softDelete bool) ([]Column, []Column) {
+	src := CloneColumns(columnsInSource)
+	targ := CloneColumns(columnsInDestination)
+	var colsToDelete []Column
+	for _, col := range src.GetColumns() {
+		_, isOk := targ.GetColumn(col.Name)
 		if isOk {
-			delete(src, key)
-			delete(targ, key)
+			colsToDelete = append(colsToDelete, col)
+
 		}
 	}
 
-	for name, kind := range src {
-		if shouldSkipColumn(name, softDelete) {
+	// We cannot delete inside a for-loop that is iterating over src.GetColumns() because we are messing up the array order.
+	for _, colToDelete := range colsToDelete {
+		src.DeleteColumn(colToDelete.Name)
+		targ.DeleteColumn(colToDelete.Name)
+	}
+
+	var targetColumnsMissing Columns
+	for _, col := range src.GetColumns() {
+		if shouldSkipColumn(col.Name, softDelete) {
 			continue
 		}
 
-		targKeyMissing = append(targKeyMissing, Column{
-			Name: name,
-			Kind: kind,
-		})
+		targetColumnsMissing.AddColumn(col)
 	}
 
-	for name, kind := range targ {
-		if shouldSkipColumn(name, softDelete) {
+	var sourceColumnsMissing Columns
+	for _, col := range targ.GetColumns() {
+		if shouldSkipColumn(col.Name, softDelete) {
 			continue
 		}
 
-		srcKeyMissing = append(srcKeyMissing, Column{
-			Name: name,
-			Kind: kind,
-		})
+		sourceColumnsMissing.AddColumn(col)
 	}
 
-	return
+	return sourceColumnsMissing.GetColumns(), targetColumnsMissing.GetColumns()
 }
 
-func CopyColMap(source map[string]KindDetails) map[string]KindDetails {
-	retVal := make(map[string]KindDetails)
-	for k, v := range source {
-		retVal[strings.ToLower(k)] = v
+func CloneColumns(cols Columns) Columns {
+	var newCols Columns
+	for _, col := range cols.GetColumns() {
+		col.Name = strings.ToLower(col.Name)
+		newCols.AddColumn(col)
 	}
 
-	return retVal
+	return newCols
 }

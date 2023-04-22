@@ -20,11 +20,19 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	// I want to delete the value, so I update Postgres and set the cell to be null
 	// TableData will think the column is invalid and tableConfig will think column = string
 	// Before we call merge, it should reconcile it.
-	columns := map[string]typing.KindDetails{
+	colToKindDetailsMap := map[string]typing.KindDetails{
 		"id":                         typing.String,
 		"first_name":                 typing.String,
 		"invalid_column":             typing.Invalid,
 		constants.DeleteColumnMarker: typing.Boolean,
+	}
+
+	var cols typing.Columns
+	for colName, colKind := range colToKindDetailsMap {
+		cols.AddColumn(typing.Column{
+			Name:        colName,
+			KindDetails: colKind,
+		})
 	}
 
 	rowsData := map[string]map[string]interface{}{
@@ -40,31 +48,51 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	}
 
 	tableData := &optimization.TableData{
-		InMemoryColumns: columns,
+		InMemoryColumns: &cols,
 		RowsData:        rowsData,
 		TopicConfig:     topicConfig,
 		PrimaryKeys:     []string{"id"},
 	}
 
-	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), types.NewDwhTableConfig(
-		map[string]typing.KindDetails{
-			"id":                         typing.String,
-			"first_name":                 typing.String,
-			constants.DeleteColumnMarker: typing.Boolean,
-		}, nil, false, true))
+	anotherColToKindDetailsMap := map[string]typing.KindDetails{
+		"id":                         typing.String,
+		"first_name":                 typing.String,
+		constants.DeleteColumnMarker: typing.Boolean,
+	}
+
+	var anotherCols typing.Columns
+	for colName, kindDetails := range anotherColToKindDetailsMap {
+		anotherCols.AddColumn(typing.Column{
+			Name:        colName,
+			KindDetails: kindDetails,
+		})
+	}
+
+	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake),
+		types.NewDwhTableConfig(anotherCols, nil, false, true))
 
 	err := s.store.Merge(s.ctx, tableData)
-	assert.Equal(s.T(), tableData.InMemoryColumns["first_name"], typing.String)
+	_col, isOk := tableData.InMemoryColumns.GetColumn("first_name")
+	assert.True(s.T(), isOk)
+	assert.Equal(s.T(), _col.KindDetails, typing.String)
 	assert.NoError(s.T(), err)
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
-	columns := map[string]typing.KindDetails{
+	colToKindDetailsMap := map[string]typing.KindDetails{
 		"id":                         typing.Integer,
 		"name":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
 		// Add kindDetails to created_at
 		"created_at": typing.ParseValue("", nil, time.Now().Format(time.RFC3339Nano)),
+	}
+
+	var cols typing.Columns
+	for colName, colKind := range colToKindDetailsMap {
+		cols.AddColumn(typing.Column{
+			Name:        colName,
+			KindDetails: colKind,
+		})
 	}
 
 	rowsData := make(map[string]map[string]interface{})
@@ -84,14 +112,14 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 	}
 
 	tableData := &optimization.TableData{
-		InMemoryColumns: columns,
+		InMemoryColumns: &cols,
 		RowsData:        rowsData,
 		TopicConfig:     topicConfig,
 		PrimaryKeys:     []string{"id"},
 	}
 
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake),
-		types.NewDwhTableConfig(columns, nil, false, true))
+		types.NewDwhTableConfig(cols, nil, false, true))
 
 	s.fakeStore.ExecReturnsOnCall(0, nil, fmt.Errorf("390114: Authentication token has expired. The user must authenticate again."))
 	err := s.store.Merge(s.ctx, tableData)
@@ -104,12 +132,20 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMerge() {
-	columns := map[string]typing.KindDetails{
+	colToKindDetailsMap := map[string]typing.KindDetails{
 		"id":                         typing.Integer,
 		"name":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
 		// Add kindDetails to created_at
 		"created_at": typing.ParseValue("", nil, time.Now().Format(time.RFC3339Nano)),
+	}
+
+	var cols typing.Columns
+	for colName, colKind := range colToKindDetailsMap {
+		cols.AddColumn(typing.Column{
+			Name:        colName,
+			KindDetails: colKind,
+		})
 	}
 
 	rowsData := make(map[string]map[string]interface{})
@@ -129,18 +165,18 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	}
 
 	tableData := &optimization.TableData{
-		InMemoryColumns: columns,
+		InMemoryColumns: &cols,
 		RowsData:        rowsData,
 		TopicConfig:     topicConfig,
 		PrimaryKeys:     []string{"id"},
 	}
 
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake),
-		types.NewDwhTableConfig(columns, nil, false, true))
+		types.NewDwhTableConfig(cols, nil, false, true))
 	err := s.store.Merge(s.ctx, tableData)
 	assert.Nil(s.T(), err)
 	s.fakeStore.ExecReturns(nil, nil)
-	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 1, "called merge")
+	assert.Equal(s.T(), 1, s.fakeStore.ExecCallCount(), "called merge")
 }
 
 // TestExecuteMergeDeletionFlagRemoval is going to run execute merge twice.
@@ -164,7 +200,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		}
 	}
 
-	columns := map[string]typing.KindDetails{
+	colToKindDetailsMap := map[string]typing.KindDetails{
 		"id":                         typing.Integer,
 		"name":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
@@ -172,22 +208,42 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		"created_at": typing.ParseValue("", nil, time.Now().Format(time.RFC3339Nano)),
 	}
 
+	var cols typing.Columns
+	for colName, colKind := range colToKindDetailsMap {
+		cols.AddColumn(typing.Column{
+			Name:        colName,
+			KindDetails: colKind,
+		})
+	}
+
 	tableData := &optimization.TableData{
-		InMemoryColumns: columns,
+		InMemoryColumns: &cols,
 		RowsData:        rowsData,
 		TopicConfig:     topicConfig,
 		PrimaryKeys:     []string{"id"},
 	}
 
-	sflkColumns := map[string]typing.KindDetails{
+	snowflakeColToKindDetailsMap := map[string]typing.KindDetails{
 		"id":                         typing.Integer,
 		"created_at":                 typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		"name":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
 	}
 
-	sflkColumns["new"] = typing.String
-	config := types.NewDwhTableConfig(sflkColumns, nil, false, true)
+	var sflkCols typing.Columns
+	for colName, colKind := range snowflakeColToKindDetailsMap {
+		sflkCols.AddColumn(typing.Column{
+			Name:        colName,
+			KindDetails: colKind,
+		})
+	}
+
+	sflkCols.AddColumn(typing.Column{
+		Name:        "new",
+		KindDetails: typing.String,
+	})
+
+	config := types.NewDwhTableConfig(sflkCols, nil, false, true)
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), config)
 
 	err := s.store.Merge(s.ctx, tableData)
@@ -205,10 +261,13 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	// Now try to execute merge where 1 of the rows have the column now
 	for _, pkMap := range tableData.RowsData {
 		pkMap["new"] = "123"
-		tableData.InMemoryColumns = sflkColumns
+		tableData.InMemoryColumns = &sflkCols
 
 		// Since sflkColumns overwrote the format, let's set it correctly again.
-		tableData.InMemoryColumns["created_at"] = typing.ParseValue("", nil, time.Now().Format(time.RFC3339Nano))
+		tableData.InMemoryColumns.UpdateColumn(typing.Column{
+			Name:        "created_at",
+			KindDetails: typing.ParseValue("", nil, time.Now().Format(time.RFC3339Nano)),
+		})
 		break
 	}
 

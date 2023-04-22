@@ -18,20 +18,20 @@ import (
 
 func (d *DDLTestSuite) TestCreateTable() {
 	ctx := context.Background()
+	fqTable := "demo.public.experiments"
+	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(typing.Columns{}, nil, true, true))
+	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
+
 	cols := []typing.Column{
 		{
-			Name: "key",
-			Kind: typing.String,
+			Name:        "key",
+			KindDetails: typing.String,
 		},
 		{
-			Name: "enabled",
-			Kind: typing.Boolean,
+			Name:        "enabled",
+			KindDetails: typing.Boolean,
 		},
 	}
-
-	fqTable := "demo.public.experiments"
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, true, true))
-	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
 
 	err := ddl.AlterTable(ctx, d.snowflakeStore, tc, fqTable, tc.CreateTable, constants.Add, time.Now().UTC(), cols...)
 	assert.NoError(d.T(), err)
@@ -48,17 +48,17 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 	// Test Structs and Arrays
 	cols := []typing.Column{
 		{
-			Name: "preferences",
-			Kind: typing.Struct,
+			Name:        "preferences",
+			KindDetails: typing.Struct,
 		},
 		{
-			Name: "array_col",
-			Kind: typing.Array,
+			Name:        "array_col",
+			KindDetails: typing.Array,
 		},
 	}
 
 	fqTable := "shop.public.complex_columns"
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, false, true))
+	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(typing.Columns{}, nil, false, true))
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
 
 	err := ddl.AlterTable(ctx, d.snowflakeStore, tc, fqTable, false, constants.Add, time.Now().UTC(), cols...)
@@ -76,22 +76,22 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 	ctx := context.Background()
 	cols := []typing.Column{
 		{
-			Name: "created_at",
-			Kind: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
+			Name:        "created_at",
+			KindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},
 		{
-			Name: "id",
-			Kind: typing.Integer,
+			Name:        "id",
+			KindDetails: typing.Integer,
 		},
 		{
-			Name: "order_name",
-			Kind: typing.String,
+			Name:        "order_name",
+			KindDetails: typing.String,
 		},
 	}
 
 	fqTable := "shop.public.orders"
 
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, false, true))
+	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(typing.Columns{}, nil, false, true))
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
 
 	d.fakeSnowflakeStore.ExecReturns(nil, errors.New("column 'order_name' already exists"))
@@ -108,21 +108,21 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 	// Test adding a bunch of columns
 	cols := []typing.Column{
 		{
-			Name: "created_at",
-			Kind: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
+			Name:        "created_at",
+			KindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},
 		{
-			Name: "id",
-			Kind: typing.Integer,
+			Name:        "id",
+			KindDetails: typing.Integer,
 		},
 		{
-			Name: "order_name",
-			Kind: typing.String,
+			Name:        "order_name",
+			KindDetails: typing.String,
 		},
 	}
 
 	fqTable := "shop.public.orders"
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, false, true))
+	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(typing.Columns{}, nil, false, true))
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
 
 	err := ddl.AlterTable(d.ctx, d.snowflakeStore, tc, fqTable, false, constants.Add, time.Now().UTC(), cols...)
@@ -131,18 +131,18 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 
 	// Check the table config
 	tableConfig := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
-	for col, kind := range tableConfig.Columns() {
+	for _, column := range tableConfig.Columns().GetColumns() {
 		var found bool
 		for _, expCol := range cols {
-			if found = col == expCol.Name; found {
-				assert.Equal(d.T(), kind, expCol.Kind, fmt.Sprintf("wrong col kind, col: %s", col))
+			if found = column.Name == expCol.Name; found {
+				assert.Equal(d.T(), column.KindDetails, expCol.KindDetails, fmt.Sprintf("wrong col kind, col: %s", column.Name))
 				break
 			}
 		}
 
 		assert.True(d.T(), found,
 			fmt.Sprintf("Col not found: %s, actual list: %v, expected list: %v",
-				col, tableConfig.Columns(), cols))
+				column.Name, tableConfig.Columns(), cols))
 	}
 }
 
@@ -150,21 +150,21 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	// Test adding a bunch of columns
 	cols := []typing.Column{
 		{
-			Name: "created_at",
-			Kind: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
+			Name:        "created_at",
+			KindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},
 		{
-			Name: "id",
-			Kind: typing.Integer,
+			Name:        "id",
+			KindDetails: typing.Integer,
 		},
 		{
-			Name: "name",
-			Kind: typing.String,
+			Name:        "name",
+			KindDetails: typing.String,
 		},
 	}
 
 	fqTable := "shop.public.users"
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, nil, false, true))
+	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(typing.Columns{}, nil, false, true))
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
 
 	err := ddl.AlterTable(d.ctx, d.snowflakeStore, tc, fqTable, false, constants.Delete, time.Now().UTC(), cols...)
@@ -202,30 +202,30 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 	// Test adding a bunch of columns
 	cols := []typing.Column{
 		{
-			Name: "created_at",
-			Kind: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
+			Name:        "created_at",
+			KindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},
 		{
-			Name: "id",
-			Kind: typing.Integer,
+			Name:        "id",
+			KindDetails: typing.Integer,
 		},
 		{
-			Name: "name",
-			Kind: typing.String,
+			Name:        "name",
+			KindDetails: typing.String,
 		},
 		{
-			Name: "col_to_delete",
-			Kind: typing.String,
+			Name:        "col_to_delete",
+			KindDetails: typing.String,
 		},
 		{
-			Name: "answers",
-			Kind: typing.String,
+			Name:        "answers",
+			KindDetails: typing.String,
 		},
 	}
 
 	fqTable := "shop.public.users1"
 
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(map[string]typing.KindDetails{}, map[string]time.Time{
+	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(typing.Columns{}, map[string]time.Time{
 		"col_to_delete": time.Now().Add(-2 * constants.DeletionConfidencePadding),
 		"answers":       time.Now().Add(-2 * constants.DeletionConfidencePadding),
 	}, false, true))

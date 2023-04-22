@@ -1,48 +1,70 @@
 package optimization
 
 import (
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
-
-	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestTableData_UpdateInMemoryColumns(t *testing.T) {
-	tableData := &TableData{
-		InMemoryColumns: map[string]typing.KindDetails{
-			"FOO":                  typing.String,
-			"bar":                  typing.Invalid,
-			"CHANGE_me":            typing.String,
-			"do_not_change_format": typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType),
-		},
+	var _cols typing.Columns
+	for colName, colKind := range map[string]typing.KindDetails{
+		"FOO":                  typing.String,
+		"bar":                  typing.Invalid,
+		"CHANGE_me":            typing.String,
+		"do_not_change_format": typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType),
+	} {
+		_cols.AddColumn(typing.Column{
+			Name:        colName,
+			KindDetails: colKind,
+		})
 	}
 
-	tableData.InMemoryColumns["do_not_change_format"].ExtendedTimeDetails.Format = time.RFC3339Nano
+	tableData := &TableData{
+		InMemoryColumns: &_cols,
+	}
 
-	tableData.UpdateInMemoryColumns(map[string]typing.KindDetails{
+	extCol, isOk := tableData.InMemoryColumns.GetColumn("do_not_change_format")
+	assert.True(t, isOk)
+
+	extCol.KindDetails.ExtendedTimeDetails.Format = time.RFC3339Nano
+	tableData.InMemoryColumns.UpdateColumn(typing.Column{
+		Name:        extCol.Name,
+		KindDetails: extCol.KindDetails,
+	})
+
+	for name, colKindDetails := range map[string]typing.KindDetails{
 		"foo":                  typing.String,
 		"change_me":            typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		"bar":                  typing.Boolean,
 		"do_not_change_format": typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-	})
+	} {
+		tableData.UpdateInMemoryColumnsFromDestination(typing.Column{
+			Name:        name,
+			KindDetails: colKindDetails,
+		})
+	}
 
 	// It's saved back in the original format.
-	_, isOk := tableData.InMemoryColumns["foo"]
+	_, isOk = tableData.InMemoryColumns.GetColumn("foo")
 	assert.False(t, isOk)
 
-	_, isOk = tableData.InMemoryColumns["FOO"]
+	_, isOk = tableData.InMemoryColumns.GetColumn("FOO")
 	assert.True(t, isOk)
 
-	colType, _ := tableData.InMemoryColumns["CHANGE_me"]
-	assert.Equal(t, ext.DateTime.Type, colType.ExtendedTimeDetails.Type)
+	col, isOk := tableData.InMemoryColumns.GetColumn("CHANGE_me")
+	assert.True(t, isOk)
+	assert.Equal(t, ext.DateTime.Type, col.KindDetails.ExtendedTimeDetails.Type)
 
-	colType, _ = tableData.InMemoryColumns["bar"]
-	assert.Equal(t, typing.Invalid, colType)
+	col, isOk = tableData.InMemoryColumns.GetColumn("bar")
+	assert.True(t, isOk)
+	assert.Equal(t, typing.Invalid, col.KindDetails)
 
-	colType, _ = tableData.InMemoryColumns["do_not_change_format"]
-	assert.Equal(t, colType.Kind, typing.ETime.Kind)
-	assert.Equal(t, colType.ExtendedTimeDetails.Type, ext.DateTimeKindType, "correctly mapped type")
-	assert.Equal(t, colType.ExtendedTimeDetails.Format, time.RFC3339Nano, "format has been preserved")
+	col, isOk = tableData.InMemoryColumns.GetColumn("do_not_change_format")
+	assert.True(t, isOk)
+	assert.Equal(t, col.KindDetails.Kind, typing.ETime.Kind)
+	assert.Equal(t, col.KindDetails.ExtendedTimeDetails.Type, ext.DateTimeKindType, "correctly mapped type")
+	assert.Equal(t, col.KindDetails.ExtendedTimeDetails.Format, time.RFC3339Nano, "format has been preserved")
 }
