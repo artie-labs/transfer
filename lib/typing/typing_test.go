@@ -33,9 +33,9 @@ func TestJSONString(t *testing.T) {
 
 func TestParseValueBasic(t *testing.T) {
 	// Floats
-	assert.Equal(t, ParseValue("", nil,7.5), Float)
+	assert.Equal(t, ParseValue("", nil, 7.5), Float)
 	assert.Equal(t, ParseValue("", nil, -7.4999999), Float)
-	assert.Equal(t, ParseValue("", nil,7.0), Float)
+	assert.Equal(t, ParseValue("", nil, 7.0), Float)
 
 	// Integers
 	assert.Equal(t, ParseValue("", nil, 9), Integer)
@@ -108,6 +108,7 @@ func TestDateTime(t *testing.T) {
 
 		// Test the parseDT function as well.
 		ts, err := ext.ParseExtendedDateTime(fmt.Sprint(possibleDate))
+		fmt.Println("possibleDate", possibleDate, "ts", ts)
 		assert.NoError(t, err, err)
 		assert.False(t, ts.IsZero(), ts)
 	}

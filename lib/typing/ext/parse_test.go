@@ -1,7 +1,6 @@
 package ext
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -54,14 +53,8 @@ func TestParseFromInterfaceDateTime(t *testing.T) {
 		assert.Equal(t, et.NestedKind.Type, DateTimeKindType)
 
 		// There's a known edge case between Ruby and Unix Date for single digit day formats and both layouts conform.
-		var layout string
-		if supportedDateTimeLayout == time.UnixDate || supportedDateTimeLayout == time.RubyDate {
-			layout = supportedDateTimeLayout
-		}
-
-		fmt.Println("layout", layout, "supportedDateTimeLayout", supportedDateTimeLayout)
 		// Without passing an override format, this should return the same preserved dt format.
-		assert.Equal(t, et.String(layout), now.Format(supportedDateTimeLayout))
+		assert.Equal(t, et.String(supportedDateTimeLayout), now.Format(supportedDateTimeLayout))
 	}
 }
 
