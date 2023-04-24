@@ -51,10 +51,7 @@ func TestParseFromInterfaceDateTime(t *testing.T) {
 		et, err := ParseFromInterface(now.Format(supportedDateTimeLayout))
 		assert.NoError(t, err)
 		assert.Equal(t, et.NestedKind.Type, DateTimeKindType)
-
-		// There's a known edge case between Ruby and Unix Date for single digit day formats and both layouts conform.
-		// Without passing an override format, this should return the same preserved dt format.
-		assert.Equal(t, et.String(supportedDateTimeLayout), now.Format(supportedDateTimeLayout))
+		assert.Equal(t, et.String(""), now.Format(supportedDateTimeLayout))
 	}
 }
 
