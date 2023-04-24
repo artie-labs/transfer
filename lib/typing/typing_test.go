@@ -117,6 +117,13 @@ func TestDateTime(t *testing.T) {
 	assert.Nil(t, ts)
 }
 
+func TestDateTime_Fallback(t *testing.T) {
+	dtString := "Mon Jan 02 15:04:05.69944 -0700 2006"
+	ts, err := ext.ParseExtendedDateTime(dtString)
+	assert.NoError(t, err)
+	assert.NotEqual(t, ts.String(""), dtString)
+}
+
 func TestTime(t *testing.T) {
 	kindDetails := ParseValue("", nil, "00:18:11.13116+00")
 	// 00:42:26.693631Z
