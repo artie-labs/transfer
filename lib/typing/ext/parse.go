@@ -51,7 +51,6 @@ func ParseExtendedDateTime(dtString string) (*ExtendedTime, error) {
 	}
 
 	if potentialFormat != "" {
-		// TODO test
 		return NewExtendedTime(potentialTime, DateTimeKindType, potentialFormat)
 	}
 
