@@ -33,9 +33,9 @@ func TestJSONString(t *testing.T) {
 
 func TestParseValueBasic(t *testing.T) {
 	// Floats
-	assert.Equal(t, ParseValue("", nil,7.5), Float)
+	assert.Equal(t, ParseValue("", nil, 7.5), Float)
 	assert.Equal(t, ParseValue("", nil, -7.4999999), Float)
-	assert.Equal(t, ParseValue("", nil,7.0), Float)
+	assert.Equal(t, ParseValue("", nil, 7.0), Float)
 
 	// Integers
 	assert.Equal(t, ParseValue("", nil, 9), Integer)
@@ -115,6 +115,13 @@ func TestDateTime(t *testing.T) {
 	ts, err := ext.ParseExtendedDateTime("random")
 	assert.Error(t, err, err)
 	assert.Nil(t, ts)
+}
+
+func TestDateTime_Fallback(t *testing.T) {
+	dtString := "Mon Jan 02 15:04:05.69944 -0700 2006"
+	ts, err := ext.ParseExtendedDateTime(dtString)
+	assert.NoError(t, err)
+	assert.NotEqual(t, ts.String(""), dtString)
 }
 
 func TestTime(t *testing.T) {
