@@ -43,6 +43,23 @@ type Kafka struct {
 	TopicConfigs    []*kafkalib.TopicConfig `yaml:"topicConfigs"`
 }
 
+type BigQuery struct {
+	// PathToCredentials is _optional_ if you have GOOGLE_APPLICATION_CREDENTIALS set as an env var
+	// Links to credentials: https://cloud.google.com/docs/authentication/application-default-credentials#GAC
+	PathToCredentials string `yaml:"pathToCredentials"`
+	DefaultDataset    string `yaml:"defaultDataset"`
+	ProjectID         string `yaml:"projectID"`
+}
+
+type Snowflake struct {
+	AccountID string `yaml:"account"`
+	Username  string `yaml:"username"`
+	Password  string `yaml:"password"`
+	Warehouse string `yaml:"warehouse"`
+	Region    string `yaml:"region"`
+	Host      string `yaml:"host"`
+}
+
 func (p *Pubsub) String() string {
 	return fmt.Sprintf("project_id=%s, pathToCredentials=%s", p.ProjectID, p.PathToCredentials)
 }
@@ -61,22 +78,8 @@ type Config struct {
 	Pubsub               *Pubsub
 	Kafka                *Kafka
 
-	BigQuery struct {
-		// PathToCredentials is _optional_ if you have GOOGLE_APPLICATION_CREDENTIALS set as an env var
-		// Links to credentials: https://cloud.google.com/docs/authentication/application-default-credentials#GAC
-		PathToCredentials string `yaml:"pathToCredentials"`
-		DefaultDataset    string `yaml:"defaultDataset"`
-		ProjectID         string `yaml:"projectID"`
-	}
-
-	Snowflake struct {
-		AccountID string `yaml:"account"`
-		Username  string `yaml:"username"`
-		Password  string `yaml:"password"`
-		Warehouse string `yaml:"warehouse"`
-		Region    string `yaml:"region"`
-		Host      string `yaml:"host"`
-	}
+	BigQuery  *BigQuery  `yaml:"bigquery"`
+	Snowflake *Snowflake `yaml:"snowflake"`
 
 	Reporting struct {
 		Sentry *Sentry `yaml:"sentry"`
