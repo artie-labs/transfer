@@ -262,7 +262,7 @@ func TestReadFileNotYAML(t *testing.T) {
 	assert.Error(t, err, "failed to read config file, because it's not proper yaml.")
 }
 
-func TestReadFileToConfig(t *testing.T) {
+func TestReadFileToConfig_Snowflake(t *testing.T) {
 	randomFile := fmt.Sprintf("/tmp/%s", time.Now().String())
 	defer os.Remove(randomFile)
 
@@ -342,13 +342,62 @@ reporting:
 	assert.True(t, foundCustomer)
 	assert.True(t, foundOrder)
 
-	// Verify Sno3wflake config
+	// Verify Snowflake config
 	assert.Equal(t, config.Snowflake.Username, snowflakeUser)
 	assert.Equal(t, config.Snowflake.Password, snowflakePassword)
 	assert.Equal(t, config.Snowflake.AccountID, snowflakeAccount)
 	assert.Equal(t, config.Snowflake.Warehouse, warehouse)
 	assert.Equal(t, config.Snowflake.Region, region)
 	assert.Equal(t, config.Reporting.Sentry.DSN, sentryDSN)
+}
+
+func TestReadFileToConfig_BigQuery(t *testing.T) {
+	randomFile := fmt.Sprintf("/tmp/bq-%s", time.Now().String())
+	defer os.Remove(randomFile)
+
+	file, err := os.Create(randomFile)
+	assert.Nil(t, err)
+
+	defer file.Close()
+
+	const (
+		bootstrapServer = "server"
+		groupID         = "group-id"
+		username        = "user"
+		password        = "dusty"
+
+		pathToCredentials = "/tmp/bq.json"
+		dataset           = "dataset"
+		projectID         = "artie"
+	)
+
+	_, err = io.WriteString(file, fmt.Sprintf(
+		`
+kafka:
+ bootstrapServer: %s
+ groupID: %s
+ enableAWSMKSIAM: %v
+ username: %s
+ password: %s
+ topicConfigs:
+  - { db: customer, tableName: orders, schema: public}
+
+bigquery:
+ pathToCredentials: %s
+ defaultDataset: %s
+ projectID: %s
+`, bootstrapServer, groupID, true, username, password, pathToCredentials, dataset, projectID))
+	assert.Nil(t, err)
+
+	// Now read it!
+	config, err := readFileToConfig(randomFile)
+	assert.Nil(t, err)
+	assert.NotNil(t, config)
+
+	// Verify BigQuery config
+	assert.Equal(t, config.BigQuery.PathToCredentials, pathToCredentials)
+	assert.Equal(t, config.BigQuery.DefaultDataset, dataset)
+	assert.Equal(t, config.BigQuery.ProjectID, projectID)
 }
 
 func TestConfig_Validate(t *testing.T) {
