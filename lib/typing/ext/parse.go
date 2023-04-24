@@ -36,12 +36,12 @@ func ParseFromInterface(val interface{}) (*ExtendedTime, error) {
 func ParseExtendedDateTime(dtString string) (*ExtendedTime, error) {
 	// Check all the timestamp formats
 	var potentialFormat string
-	var ts time.Time
-	var err error
+	var potentialTime time.Time
 	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
-		ts, err = time.Parse(supportedDateTimeLayout, dtString)
+		ts, err := time.Parse(supportedDateTimeLayout, dtString)
 		if err == nil {
 			potentialFormat = supportedDateTimeLayout
+			potentialTime = ts
 			// Now let's parse ts back with the original layout.
 			// Does it match exactly with the dtString? If so, then it's identical.
 			if ts.Format(supportedDateTimeLayout) == dtString {
@@ -51,8 +51,9 @@ func ParseExtendedDateTime(dtString string) (*ExtendedTime, error) {
 	}
 
 	if potentialFormat != "" {
+		fmt.Println("here?")
 		// TODO test
-		return NewExtendedTime(ts, DateTimeKindType, potentialFormat)
+		return NewExtendedTime(potentialTime, DateTimeKindType, potentialFormat)
 	}
 
 	// Now check dates

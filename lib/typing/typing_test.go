@@ -108,7 +108,7 @@ func TestDateTime(t *testing.T) {
 
 		// Test the parseDT function as well.
 		ts, err := ext.ParseExtendedDateTime(fmt.Sprint(possibleDate))
-		fmt.Println("possibleDate", possibleDate, "ts", ts)
+		fmt.Println("possibleDate", possibleDate, "ts", ts, "err", err)
 		assert.NoError(t, err, err)
 		assert.False(t, ts.IsZero(), ts)
 	}

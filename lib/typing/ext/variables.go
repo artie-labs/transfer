@@ -13,7 +13,7 @@ const (
 // 2023-04-24 17:20:16.625612+00
 
 var supportedDateTimeLayouts = []string{
-	//time.RFC3339Nano,
+	time.RFC3339Nano,
 	ISO8601,
 	time.Layout,
 	time.ANSIC,
