@@ -1,6 +1,7 @@
 package ext
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -58,6 +59,7 @@ func TestParseFromInterfaceDateTime(t *testing.T) {
 			layout = supportedDateTimeLayout
 		}
 
+		fmt.Println("layout", layout, "supportedDateTimeLayout", supportedDateTimeLayout)
 		// Without passing an override format, this should return the same preserved dt format.
 		assert.Equal(t, et.String(layout), now.Format(supportedDateTimeLayout))
 	}
@@ -84,4 +86,11 @@ func TestParseFromInterfaceDate(t *testing.T) {
 		// Without passing an override format, this should return the same preserved dt format.
 		assert.Equal(t, et.String(""), now.Format(supportedDateFormat))
 	}
+}
+
+func TestParseExtendedDateTime_Timestamp(t *testing.T) {
+	tsString := "2023-04-24T17:29:05.69944Z"
+	extTime, err := ParseExtendedDateTime(tsString)
+	assert.NoError(t, err)
+	assert.Equal(t, "2023-04-24T17:29:05.69944Z", extTime.String(""))
 }
