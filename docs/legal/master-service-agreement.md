@@ -1,6 +1,6 @@
 # Master Service Agreement
 
-Effective April 25, 2023
+Last updated: April 25, 2023
 
 This Artie Master Service Agreement (“_**Agreement**_”) is entered into by and between Artie Technologies Inc. (“_**Artie**_” or “_**We**_”) and the entity or person placing an order for or accessing the Artie Services (“_**Customer**_” or “_**you**_”).  This Agreement consists of the terms and conditions set forth below, any terms referenced herein and any Artie Order Forms, online sign-up, or subscription flow that references this Agreement (the “_**Order Form**_”). If you are accessing or using the Artie Services on behalf of your company, you represent that you are authorized to accept this Agreement on behalf of your company, and all references to “you” or “Customer” reference your company. &#x20;
 

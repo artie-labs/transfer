@@ -1,6 +1,6 @@
 # Data Processing Addendum
 
-Effective April 25, 2023
+Last updated: April 25, 2023
 
 This Data Processing Addendum (“**DPA**”) amends and forms part of the written agreement between Customer and Artie Technologies Inc. (“**Artie**”) (collectively, “**the parties**”) for the provision of services to Customer (the “**Agreement**”). This DPA prevails over any conflicting term of the Agreement but does not otherwise modify the Agreement.
 
