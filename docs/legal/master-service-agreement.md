@@ -10,15 +10,21 @@ THIS AGREEMENT CONTAINS A BINDING, INDIVIDUAL ARBITRATION AND CLASS-ACTION WAIVE
 
 BY INDICATING YOUR ACCEPTANCE OF THIS AGREEMENT OR ACCESSING OR USING THE ARTIE SERVICES, YOU ARE AGREEING TO BE BOUND BY ALL TERMS, CONDITIONS AND NOTICES CONTAINED OR REFERENCED IN THIS AGREEMENT. IF YOU DO NOT AGREE TO THIS AGREEMENT, PLEASE DO NOT USE THE ARTIE SERVICES. FOR CLARITY, EACH PARTY EXPRESSLY AGREES THAT THIS AGREEMENT IS LEGALLY BINDING UPON IT.
 
+
+
 1\.  **Artie Services Overview**. The “_**Artie Services**_” is a technology platform that allows you to manage, monitor and automate your data integration pipelines through use of one or more Artie Connectors (SaaS or On-Prem) or OS Connectors along with related services.  The “_**Artie Connectors**_” are those source connectors and destination connectors listed on our website located at artie.so (the “_**Site**_”), as well as any custom connectors we may agree to build for you, all of which are and shall be licensed to you pursuant to either the Elv2 License Addendum (attached if applicable), or the terms and conditions of this Agreement. In addition, you may be able to use third party connectors that are available from the open source community (“_**OS Connectors**_”), which may be subject to the terms of a third party open source license or other terms and conditions governing their use.  You are always free to use the Artie OS Connectors on without use of additional Artie Services. Additional descriptions concerning the functionality of the Artie Services are available at the Site.
 
 a. ‍**On-Prem Software License**. With respect to any Order Form that includes on premise-installed data integration software product (“_**On-Prem Software**_”), subject to the terms of this Agreement, Artie grants to Customer a limited, personal, non-exclusive, non-transferable (except as part of a permitted assignment of this Agreement), non-sublicensable license during the subscription term of such Order Form to install, integrate and use for its own internal business purposes such On-Prem Software on the permitted type and number of computer hardware systems, storage platforms and computer frameworks. &#x20;
+
+
 
 2\. **General Eligibility Requirements**. &#x20;
 
 a. The individual signing on behalf of the Customer represents and warrants that he/she has the authority to bind the Customer to the Agreement.  By accepting this Agreement, Customer represents and warrants to us: (i) that the Customer, if an individual, is at least 18 years of age; (ii) that the Customer has not previously been suspended or removed from using any portion of the Artie Services; and (iii) that the Customer’s registration and use of Artie Services is, and will continue to be, in compliance with any and all applicable laws and regulations. Moreover, Customer may not access the Artie Services if Customer is located in a territory where U.S. businesses are prohibited from engaging in business (such as Cuba, Iran, North Korea, Sudan, Syria) or if the Customer has been designated a Specially Designated National, Denied Person, or Denied Entity by the U.S. government.
 
 b. In order to access and use the Artie Services, Customer will need to register and create an account (“_**Account**_”). Customer agrees to provide accurate, current and complete information about the Account, which includes all individual sub-accounts (each an “_**Authorized User Account**_”) established for individuals who have been authorized by the Customer to access the Account and assigned a unique username-password combination to access and use the Artie Services on behalf of Customer (each an “_**Authorized User**_”).  For more information on how Artie handles registration information, such as name, location, e-mail address or other contact information, and billing information, relating to Customer and any Authorized Users (“_**Registration Information**_”), please visit the Artie [Privacy Policy](https://docs.artie.so/legal/privacy-policy).  Artie reserves the right to suspend or terminate the Account or any individual Authorized User Account at any time if any information provided during the registration process or thereafter is or becomes inaccurate, false or misleading. In case Artie suspends or terminates the Account or any individual User Account, Artie shall provide Customer with notice of such suspension or termination and shall reinstate the Account or individual Authorized User Account once Customer demonstrates that the cause for suspension or termination has been cured. Customer is responsible for maintaining the confidentiality of Customer’s passwords and Customer’s Account, including all user names and passwords information assigned to its Authorized Users with respect to each Authorized User Account, and agrees to notify Artie if any of the passwords is lost, stolen, or disclosed to an unauthorized third-party, or otherwise may have been compromised. Customer is responsible for all activities that occur under the Account, including the activities carried out by individual employees, contractors or others.
+
+
 
 3\.  **Permission to Use the Service**.
 
@@ -31,6 +37,8 @@ c. **Use Outside of the United States**. Artie and the Artie Services are operat
 d. **Modification of the Artie Services**.  We reserve the right to modify or discontinue certain features of the Artie Services at any time.  Artie shall provide notice to Customer of any such modifications.&#x20;
 
 e.  **Additional Terms**. Your use of certain features of Artie Services may be subject to additional terms and conditions that Artie will disclose to you through the Artie Services or that you otherwise acknowledge as part of your downloading of any applicable software or applications related to the Artie Services (the “_**Additional Terms**_”), such terms and conditions for any downloadable software or applications that Artie may offer and service level agreements concerning the Artie Services (“_**SLAs**_”).&#x20;
+
+
 
 4\.  **Fees and Payment**. &#x20;
 
@@ -149,6 +157,8 @@ c. SOME JURISDICTIONS DO NOT ALLOW THE EXCLUSION OR LIMITATION OF LIABILITY FOR 
 ‍
 
 17\.  **Governing Law; Forum**. This Agreement shall be governed by the laws of the State of California without regard to conflict of law principles. To the extent that any lawsuit or court proceeding is permitted hereunder (and not deemed subject to arbitration pursuant to Section 19), you and Artie agree to submit to the personal and exclusive jurisdiction of the state courts and federal courts located within San Francisco, California for the purpose of litigating all disputes.
+
+
 
 18\. **Dispute Resolution US and Canadian Residents**.   If there is a dispute, our user support team is happy to try to resolve the issue.  If that does not work and your principal place of business is in the United States or Canada, your options in the case of a dispute arising out of or related to this Agreement are to (a) go to small claims court (if applicable) or (b) bring a claim in binding arbitration as described in this Section 18; you may not bring that claim in another court or participate in a non-individual class action claim against Artie.  This Dispute Resolution section applies only if Customer that have a principal place of business in the United States or Canada or, if the Customer is an individual, if you live in the United States of Canada.  For all other Customers, Section 20 hereof shall apply in lieu of this Section 18. &#x20;
 
