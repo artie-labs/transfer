@@ -39,3 +39,7 @@
 ***
 
 * [More ways for support](more-ways-for-support.md)
+
+## Legal
+
+* [Master Service Agreement](legal/master-service-agreement.md)
