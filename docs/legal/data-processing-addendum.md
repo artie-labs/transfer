@@ -59,7 +59,7 @@ e. upon termination of the Agreement, as instructed by Customer, to the extent t
 
 5\. **Subprocessing**
 
-5.1 Customer agrees that Artie may use the third-party suppliers listed on its website at this link to Process Personal Data on its behalf for the provision of the services under the Agreement (each a “_**Subprocessor**_”).&#x20;
+5.1 Customer agrees that Artie may use the third-party suppliers listed on its website at [https://docs.artie.so/legal/subprocessors](https://docs.artie.so/legal/subprocessors) to Process Personal Data on its behalf for the provision of the services under the Agreement (each a “_**Subprocessor**_”).&#x20;
 
 5.2 Artie will maintain a list of Subprocessors and, prior to authorizing any new Subprocessor to access Personal Data, Artie will update the list of Subprocessors. Customer can receive notification of any changes to the list of Subprocessors by subscribing at the link above.  If Customer objects to the appointment of such Subprocessor within ten (10) days, it may terminate the portion of the services that cannot be provided without such Subprocessor on written notice to Artie that includes Customer’s legitimate and documented grounds for non-approval.&#x20;
 
