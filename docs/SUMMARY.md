@@ -45,4 +45,5 @@
 * [Master Service Agreement](legal/master-service-agreement.md)
 * [Data Processing Addendum](legal/data-processing-addendum.md)
 * [Privacy Policy](legal/privacy-policy.md)
+* [Subprocessors](legal/subprocessors.md)
 * [ELv2 License Addendum](legal/elv2-license-addendum.md)
