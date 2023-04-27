@@ -1,6 +1,6 @@
 # ELv2 License Addendum
 
-**Transfer by Artie uses Elastic License 2.0**
+Transfer by Artie uses Elastic License 2.0
 
 
 
