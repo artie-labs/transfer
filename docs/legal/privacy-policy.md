@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated: Dec 28, 2022**
+Last updated: Dec 28, 2022
 
 This notice is to inform visitors on how Artie Technologies Inc. (“Artie”) collects, use, and process the personal information we collect about you in the course of business on Artie’s website; artie.so and within our product dashboard, app.artie.so (“Websites”).\
 \
