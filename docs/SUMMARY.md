@@ -2,7 +2,7 @@
 
 * [Start here](README.md)
 
-## Artie Cloud
+## ☁ Artie Cloud
 
 * [Fixed IP Addresses](artie-cloud/fixed-ip-addresses.md)
 
