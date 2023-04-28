@@ -40,7 +40,7 @@
 
 * [More ways for support](more-ways-for-support.md)
 
-## Legal
+## ⚖ Legal
 
 * [Master Service Agreement](legal/master-service-agreement.md)
 * [Data Processing Addendum](legal/data-processing-addendum.md)
