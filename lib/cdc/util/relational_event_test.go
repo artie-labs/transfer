@@ -52,7 +52,7 @@ func TestSource_GetOptionalSchema(t *testing.T) {
 			"field": "after"
 		}]
 	},
-	"Payload": {}
+	"payload": {}
 }`), &schemaEventPayload)
 
 	assert.NoError(t, err)
