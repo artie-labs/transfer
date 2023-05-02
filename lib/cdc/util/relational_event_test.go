@@ -66,7 +66,6 @@ func TestSource_GetOptionalSchema(t *testing.T) {
 	assert.False(t, isOk)
 }
 
-
 func TestSource_GetExecutionTime(t *testing.T) {
 	source := Source{
 		Connector: "postgresql",
@@ -74,7 +73,7 @@ func TestSource_GetExecutionTime(t *testing.T) {
 	}
 
 	schemaEventPayload := &SchemaEventPayload{
-		Payload: payload{Source: source},
+		Payload: Payload{Source: source},
 	}
 
 	assert.Equal(t, time.Date(2022, time.October,
@@ -91,7 +90,7 @@ func TestGetDataTestInsert(t *testing.T) {
 
 	var tc kafkalib.TopicConfig
 	schemaEventPayload := SchemaEventPayload{
-		Payload: payload{
+		Payload: Payload{
 			Before:    nil,
 			After:     after,
 			Operation: "c",
@@ -116,7 +115,7 @@ func TestGetDataTestDelete(t *testing.T) {
 
 	now := time.Now().UTC()
 	schemaEventPayload := SchemaEventPayload{
-		Payload: payload{
+		Payload: Payload{
 			Before:    nil,
 			After:     nil,
 			Operation: "c",
@@ -161,7 +160,7 @@ func TestGetDataTestUpdate(t *testing.T) {
 
 	var tc kafkalib.TopicConfig
 	schemaEventPayload := SchemaEventPayload{
-		Payload: payload{
+		Payload: Payload{
 			Before:    before,
 			After:     after,
 			Operation: "c",
