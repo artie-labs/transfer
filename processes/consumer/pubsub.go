@@ -7,6 +7,7 @@ import (
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/jitter"
 	"github.com/artie-labs/transfer/lib/logger"
 	"google.golang.org/api/option"
 	"sync"
@@ -94,6 +95,11 @@ func StartSubscriber(ctx context.Context, flushChan chan bool) {
 
 				if shouldFlush {
 					flushChan <- true
+					// Jitter-sleep is necessary to allow the flush process to acquire the table lock
+					// If it doesn't then the flush process may be over-exhausted since the lock got acquired by `processMessage(...)`.
+					// This then leads us to make unnecessary flushes.
+					jitterDuration := jitter.Jitter(3, 1)
+					time.Sleep(time.Duration(jitterDuration) * time.Second)
 				}
 			})
 

@@ -16,6 +16,7 @@ require (
 	github.com/stretchr/testify v1.8.1
 	github.com/viant/bigquery v0.2.1-0.20230129024722-24ed6fd5555f
 	go.mongodb.org/mongo-driver v1.11.0
+	golang.org/x/exp v0.0.0-20191002040644-a1355ae1e2c3
 	google.golang.org/api v0.103.0
 	gopkg.in/yaml.v3 v3.0.1
 )
