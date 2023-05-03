@@ -3,7 +3,6 @@ package mock
 import (
 	"database/sql"
 	"fmt"
-
 	"github.com/artie-labs/transfer/lib/mocks"
 )
 
