@@ -3,7 +3,6 @@ package consumer
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/jitter"
 	awsCfg "github.com/aws/aws-sdk-go-v2/config"
@@ -109,9 +108,8 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 					// Jitter-sleep is necessary to allow the flush process to acquire the table lock
 					// If it doesn't then the flush process may be over-exhausted since the lock got acquired by `processMessage(...)`.
 					// This then leads us to make unnecessary flushes.
-					jitterDuration := jitter.Jitter(3, 1)
-					fmt.Println("jitterDuration", jitterDuration)
-					time.Sleep(time.Duration(jitterDuration) * time.Second)
+					jitterDuration := jitter.JitterMs(500, 1)
+					time.Sleep(time.Duration(jitterDuration) * time.Millisecond)
 				}
 			}
 		}(topic)

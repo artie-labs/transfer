@@ -98,8 +98,8 @@ func StartSubscriber(ctx context.Context, flushChan chan bool) {
 					// Jitter-sleep is necessary to allow the flush process to acquire the table lock
 					// If it doesn't then the flush process may be over-exhausted since the lock got acquired by `processMessage(...)`.
 					// This then leads us to make unnecessary flushes.
-					jitterDuration := jitter.Jitter(3, 1)
-					time.Sleep(time.Duration(jitterDuration) * time.Second)
+					jitterDuration := jitter.JitterMs(500, 1)
+					time.Sleep(time.Duration(jitterDuration) * time.Millisecond)
 				}
 			})
 
