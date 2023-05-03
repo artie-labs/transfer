@@ -45,7 +45,7 @@ func MergeStatement(m MergeArgument) (string, error) {
 			return "", fmt.Errorf("error: column: %s does not exist in columnToType: %v", primaryKey, m.ColumnsToTypes)
 		}
 
-		if pkCol.KindDetails.Kind == typing.Struct.Kind {
+		if m.SpecialCastingRequired && pkCol.KindDetails.Kind == typing.Struct.Kind {
 			// BigQuery requires special casting to compare two JSON objects.
 			equalitySQL = fmt.Sprintf("TO_JSON_STRING(c.%s) = TO_JSON_STRING(cc.%s)", primaryKey, primaryKey)
 		}

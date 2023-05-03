@@ -177,3 +177,60 @@ func (s *SnowflakeTestSuite) TestMergeJson() {
 	assert.NoError(s.T(), err, "getMergeStatement failed")
 	assert.Contains(s.T(), mergeSQL, `"label": "2\\" pipe"`)
 }
+
+// TestMergeJSONKey - This test is to confirm that we are changing equality strings for Snowflake
+// Since this is only required for BigQuery.
+func (s *SnowflakeTestSuite) TestMergeJSONKey() {
+	var cols typing.Columns
+	for colName, kindDetails := range map[string]typing.KindDetails{
+		"id":                         typing.Struct,
+		"name":                       typing.String,
+		constants.DeleteColumnMarker: typing.Boolean,
+	} {
+		cols.AddColumn(typing.Column{
+			Name:        colName,
+			KindDetails: kindDetails,
+		})
+	}
+
+	rowData := make(map[string]map[string]interface{})
+	for idx, name := range []string{"robin", "jacqueline", "dusty"} {
+		pkVal := fmt.Sprint(map[string]interface{}{
+			"$oid": fmt.Sprintf("640127e4beeb1ccfc821c25c++%v", idx),
+		})
+
+		rowData[pkVal] = map[string]interface{}{
+			"id":                         pkVal,
+			"name":                       name,
+			constants.DeleteColumnMarker: false,
+		}
+	}
+
+	topicConfig := kafkalib.TopicConfig{
+		Database:  "shop",
+		TableName: "customer",
+		Schema:    "public",
+	}
+
+	primaryKeys := []string{"id"}
+
+	tableData := &optimization.TableData{
+		InMemoryColumns: &cols,
+		RowsData:        rowData,
+		PrimaryKeys:     primaryKeys,
+		TopicConfig:     topicConfig,
+		LatestCDCTs:     time.Time{},
+	}
+
+	mergeSQL, err := getMergeStatement(tableData)
+
+	assert.NoError(s.T(), err, "merge failed")
+	// Check if MERGE INTO FQ Table exists.
+	assert.True(s.T(), strings.Contains(mergeSQL, "MERGE INTO shop.public.customer c"), mergeSQL)
+	// Check for equality merge
+
+	for _, primaryKey := range primaryKeys {
+		assert.True(s.T(), strings.Contains(mergeSQL, fmt.Sprintf("c.%s = cc.%s", primaryKey, primaryKey)))
+	}
+
+}
