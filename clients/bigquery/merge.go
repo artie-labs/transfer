@@ -55,6 +55,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 				// All the other types do not need string wrapping.
 				case typing.String.Kind, typing.Struct.Kind:
 					colVal = stringutil.Wrap(colVal)
+					colVal = stringutil.LineBreaksToCarriageReturns(fmt.Sprint(colVal))
 					if colKind.KindDetails == typing.Struct {
 						// This is how you cast string -> JSON
 						colVal = fmt.Sprintf("JSON %s", colVal)

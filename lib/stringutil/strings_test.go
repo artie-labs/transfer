@@ -40,3 +40,24 @@ func TestEscapeSpaces(t *testing.T) {
 		assert.Equal(t, expected["space"], containsSpace)
 	}
 }
+
+func TestLineBreaksToCarriageReturns(t *testing.T) {
+	paragraph := `Dog
+walked
+over
+the
+hill
+`
+	text := LineBreaksToCarriageReturns(paragraph)
+	assert.Equal(t, `Dog\nwalked\nover\nthe\nhill\n`, text, paragraph)
+
+	nonParagraphs := []string{
+		"foo", "思翰", "Gene Capron", "aba4195bde80192dff98f2cab0ecdca954482826",
+		"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAFzSURBVDjLY/j//z8DPlxYWFgAxA9ANDZ5BiIMeASlH5BswPz58+uampo2kuUCkGYgPg/EQvgsweZk5rlz5zYSoxnDAKBmprq6umONjY1vsmdeamvd9Pzc1N2vv/Zse/k0a/6jZWGT7hWGTLhrEdR7hwOrAfPmzWtob29/XlRc9qdjw8P76fMeTU2c9WBi5LQH7UB6ftS0B9MDe+7k+XfeCvRpu6Xr1XJTEMPP2TMvlkzZ8fhn9JSb+ujO9e+6ZebbcSvMu/Wmm2fzDSv3hmuGsHh+BAptkJ9Llj3e2LDu2SVcfvZqucHm0XhD163+mplLzVVtjHgGar7asO75bUKB51R9Vdih4ooqRkprXPfsXsfm558JGQDCtqWXmDAEi5Y+PjNhx4v/QL8aE2MIhkD8zAcbJ+189d+z5UYOWQZ4t9xsnLjj5f/A3ltLyDIAGDXe7Zue/89b/OiZY8UVNpINAEaNUOWqp38qVj3+DwykQEIGAABS5b0Ghvs3EQAAAABJRU5ErkJggg==",
+		"64529513d746ff455a986505", "gcapron6x@gizmodo.com",
+	}
+
+	for _, nonParagraph := range nonParagraphs {
+		assert.Equal(t, nonParagraph, LineBreaksToCarriageReturns(nonParagraph))
+	}
+}
