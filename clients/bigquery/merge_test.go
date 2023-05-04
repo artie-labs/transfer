@@ -37,6 +37,7 @@ func (b *BigQueryTestSuite) TestMerge() {
 	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":                         typing.Integer,
 		"name":                       typing.String,
+		"multiline":                  typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
 	} {
 		cols.AddColumn(typing.Column{
@@ -49,8 +50,13 @@ func (b *BigQueryTestSuite) TestMerge() {
 	for idx, name := range []string{"robin", "jacqueline", "dusty"} {
 		pk := fmt.Sprint(idx + 1)
 		rowData[pk] = map[string]interface{}{
-			"id":                         pk,
-			"name":                       name,
+			"id":   pk,
+			"name": name,
+			"multiline": `artie
+dusty
+robin
+jacqueline
+charlie`,
 			constants.DeleteColumnMarker: false,
 		}
 	}
@@ -75,7 +81,6 @@ func (b *BigQueryTestSuite) TestMerge() {
 	// Check if MERGE INTO FQ Table exists.
 	assert.True(b.T(), strings.Contains(mergeSQL, "MERGE INTO shop.customer c"), mergeSQL)
 	// Check for equality merge
-
 	for _, pk := range primaryKeys {
 		assert.True(b.T(), strings.Contains(mergeSQL, fmt.Sprintf("c.%s = cc.%s", pk, pk)))
 	}
@@ -84,7 +89,13 @@ func (b *BigQueryTestSuite) TestMerge() {
 		for col, val := range rowData {
 			switch _col, _ := cols.GetColumn(col); _col.KindDetails {
 			case typing.String, typing.Array, typing.Struct:
-				val = fmt.Sprintf("'%v'", val)
+				if col == "multiline" {
+					// Check the multiline string was escaped properly
+					val = strings.Join([]string{"artie", "dusty", "robin", "jacqueline", "charlie"}, `\n`)
+				} else {
+					val = fmt.Sprintf("'%v'", val)
+				}
+
 			}
 
 			assert.True(b.T(), strings.Contains(mergeSQL, fmt.Sprint(val)), map[string]interface{}{

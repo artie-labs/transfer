@@ -36,3 +36,7 @@ func EscapeSpaces(col string) (escaped bool, newString string) {
 	subStr := " "
 	return strings.Contains(col, subStr), strings.ReplaceAll(col, subStr, "__")
 }
+
+func LineBreaksToCarriageReturns(paragraph string) string {
+	return strings.ReplaceAll(paragraph, "\n", `\n`)
+}
