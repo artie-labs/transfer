@@ -1,6 +1,16 @@
+---
+description: >-
+  This page describes the available configuration settings for Artie Transfer to
+  use.
+---
+
 # Options
 
-Below, these are the various options that can be specified within a configuration file.
+Below, these are the various options that can be specified within a configuration file. Once it has been created, you can run Artie Transfer like this:
+
+```bash
+/transfer -c /path/to/config.yaml
+```
 
 _Note: Keys here are formatted in dot notation for readability purposes, please ensure that the proper nesting is done when writing this into your configuration file. To see sample configuration files, visit the_ [examples.md](examples.md "mention") page.
 
