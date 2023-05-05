@@ -24,50 +24,63 @@ func ParseFromInterface(val interface{}) (*ExtendedTime, error) {
 	return extendedTime, nil
 }
 
-// ParseExtendedDateTime will take a string and check if the string is of the following types:
+// ParseTimeExactMatch is a wrapper around time.Parse() and will return an extra boolean to indicate if it was an exact match or not.
+// Parameters: layout, potentialDateTimeString
+// Returns: time.Time object, exactLayout (boolean), error
+func ParseTimeExactMatch(layout, potentialDateTimeString string) (time.Time, bool, error) {
+	ts, err := time.Parse(layout, potentialDateTimeString)
+	if err != nil {
+		return ts, false, err
+	}
+
+	return ts, ts.Format(layout) == potentialDateTimeString, nil
+}
+
+// ParseExtendedDateTime  will take a string and check if the string is of the following types:
 // - Timestamp w/ timezone
 // - Timestamp w/o timezone
 // - Date
 // - Time w/ timezone
 // - Time w/o timezone
-// It will then return an extended Time object from Transfer which allows us to build additional functionality
-// on top of Golang's time.Time library by preserving original format and replaying to the destination without
-// overlaying or mutating any format and timezone shifts.
+// It will attempt to find the exact layout that parses without precision loss in the form of `ExtendedTime` object which is built to solve:
+// 1) Precision loss in translation
+// 2) Original format preservation (with tz locale).
+// If it cannot find it, then it will give you the next best thing.
 func ParseExtendedDateTime(dtString string) (*ExtendedTime, error) {
 	// Check all the timestamp formats
 	var potentialFormat string
 	var potentialTime time.Time
 	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
-		ts, err := time.Parse(supportedDateTimeLayout, dtString)
+		ts, exactMatch, err := ParseTimeExactMatch(supportedDateTimeLayout, dtString)
 		if err == nil {
 			potentialFormat = supportedDateTimeLayout
 			potentialTime = ts
-			// Now let's parse ts back with the original layout.
-			// Does it match exactly with the dtString? If so, then it's identical.
-			if ts.Format(supportedDateTimeLayout) == dtString {
+			if exactMatch {
 				return NewExtendedTime(ts, DateTimeKindType, supportedDateTimeLayout)
 			}
 		}
 	}
 
+	// Now check DATE formats
+	for _, supportedDateFormat := range supportedDateFormats {
+		ts, exactMatch, err := ParseTimeExactMatch(supportedDateFormat, dtString)
+		if err == nil && exactMatch {
+			return NewExtendedTime(ts, DateKindType, supportedDateFormat)
+		}
+	}
+
+	// Now check TIME formats
+	for _, supportedTimeFormat := range supportedTimeFormats {
+		ts, exactMatch, err := ParseTimeExactMatch(supportedTimeFormat, dtString)
+		if err == nil && exactMatch {
+			return NewExtendedTime(ts, TimeKindType, supportedTimeFormat)
+
+		}
+	}
+
+	// If nothing fits, return the next best thing.
 	if potentialFormat != "" {
 		return NewExtendedTime(potentialTime, DateTimeKindType, potentialFormat)
-	}
-
-	// Now check dates
-	for _, supportedDateFormat := range supportedDateFormats {
-		date, err := time.Parse(supportedDateFormat, dtString)
-		if err == nil {
-			return NewExtendedTime(date, DateKindType, supportedDateFormat)
-		}
-	}
-
-	// Now check time w/o TZ
-	for _, supportedTimeFormat := range supportedTimeFormats {
-		_time, err := time.Parse(supportedTimeFormat, dtString)
-		if err == nil {
-			return NewExtendedTime(_time, TimeKindType, supportedTimeFormat)
-		}
 	}
 
 	return nil, fmt.Errorf("dtString: %s is not supported", dtString)
