@@ -51,13 +51,11 @@ func ParseExtendedDateTime(dtString string) (*ExtendedTime, error) {
 	var potentialFormat string
 	var potentialTime time.Time
 	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
-		ts, err := time.Parse(supportedDateTimeLayout, dtString)
+		ts, exactMatch, err := ParseTimeExactMatch(dtString, supportedDateTimeLayout)
 		if err == nil {
 			potentialFormat = supportedDateTimeLayout
 			potentialTime = ts
-			// Now let's parse ts back with the original layout.
-			// Does it match exactly with the dtString? If so, then it's identical.
-			if ts.Format(supportedDateTimeLayout) == dtString {
+			if exactMatch {
 				return NewExtendedTime(ts, DateTimeKindType, supportedDateTimeLayout)
 			}
 		}
@@ -65,17 +63,18 @@ func ParseExtendedDateTime(dtString string) (*ExtendedTime, error) {
 
 	// Now check DATE formats
 	for _, supportedDateFormat := range supportedDateFormats {
-		date, err := time.Parse(supportedDateFormat, dtString)
-		if err == nil {
-			return NewExtendedTime(date, DateKindType, supportedDateFormat)
+		ts, exactMatch, err := ParseTimeExactMatch(dtString, supportedDateFormat)
+		if err == nil && exactMatch {
+			return NewExtendedTime(ts, DateKindType, supportedDateFormat)
 		}
 	}
 
 	// Now check TIME formats
 	for _, supportedTimeFormat := range supportedTimeFormats {
-		_time, err := time.Parse(supportedTimeFormat, dtString)
-		if err == nil {
-			return NewExtendedTime(_time, TimeKindType, supportedTimeFormat)
+		ts, exactMatch, err := ParseTimeExactMatch(dtString, supportedTimeFormat)
+		if err == nil && exactMatch {
+			return NewExtendedTime(ts, TimeKindType, supportedTimeFormat)
+
 		}
 	}
 
