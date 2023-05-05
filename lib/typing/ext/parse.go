@@ -25,15 +25,15 @@ func ParseFromInterface(val interface{}) (*ExtendedTime, error) {
 }
 
 // ParseTimeExactMatch is a wrapper around time.Parse() and will return an extra boolean to indicate if it was an exact match or not.
-// Parameters: potentialDateTimeString, layout
+// Parameters: layout, potentialDateTimeString
 // Returns: time.Time object, exactLayout (boolean), error
-func ParseTimeExactMatch(potentialDateTimeStr, layout string) (time.Time, bool, error) {
-	ts, err := time.Parse(potentialDateTimeStr, layout)
+func ParseTimeExactMatch(layout, potentialDateTimeString string) (time.Time, bool, error) {
+	ts, err := time.Parse(layout, potentialDateTimeString)
 	if err != nil {
 		return ts, false, err
 	}
 
-	return ts, ts.Format(layout) == potentialDateTimeStr, nil
+	return ts, ts.Format(layout) == potentialDateTimeString, nil
 }
 
 // ParseExtendedDateTime  will take a string and check if the string is of the following types:
@@ -51,7 +51,7 @@ func ParseExtendedDateTime(dtString string) (*ExtendedTime, error) {
 	var potentialFormat string
 	var potentialTime time.Time
 	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
-		ts, exactMatch, err := ParseTimeExactMatch(dtString, supportedDateTimeLayout)
+		ts, exactMatch, err := ParseTimeExactMatch(supportedDateTimeLayout, dtString)
 		if err == nil {
 			potentialFormat = supportedDateTimeLayout
 			potentialTime = ts
@@ -63,7 +63,7 @@ func ParseExtendedDateTime(dtString string) (*ExtendedTime, error) {
 
 	// Now check DATE formats
 	for _, supportedDateFormat := range supportedDateFormats {
-		ts, exactMatch, err := ParseTimeExactMatch(dtString, supportedDateFormat)
+		ts, exactMatch, err := ParseTimeExactMatch(supportedDateFormat, dtString)
 		if err == nil && exactMatch {
 			return NewExtendedTime(ts, DateKindType, supportedDateFormat)
 		}
@@ -71,7 +71,7 @@ func ParseExtendedDateTime(dtString string) (*ExtendedTime, error) {
 
 	// Now check TIME formats
 	for _, supportedTimeFormat := range supportedTimeFormats {
-		ts, exactMatch, err := ParseTimeExactMatch(dtString, supportedTimeFormat)
+		ts, exactMatch, err := ParseTimeExactMatch(supportedTimeFormat, dtString)
 		if err == nil && exactMatch {
 			return NewExtendedTime(ts, TimeKindType, supportedTimeFormat)
 
