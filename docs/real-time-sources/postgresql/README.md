@@ -75,6 +75,7 @@ ALTER USER username REPLICATION;
 * `TSTZRANGE`
 * `DATERANGE`
 * `ENUM`
+* `LTREE`
 
 ## Running it yourself
 
