@@ -24,15 +24,28 @@ func ParseFromInterface(val interface{}) (*ExtendedTime, error) {
 	return extendedTime, nil
 }
 
-// ParseExtendedDateTime will take a string and check if the string is of the following types:
+// ParseTimeExactMatch is a wrapper around time.Parse() and will return an extra boolean to indicate if it was an exact match or not.
+// Parameters: potentialDateTimeString, layout
+// Returns: time.Time object, exactLayout (boolean), error
+func ParseTimeExactMatch(potentialDateTimeStr, layout string) (time.Time, bool, error) {
+	ts, err := time.Parse(potentialDateTimeStr, layout)
+	if err != nil {
+		return ts, false, err
+	}
+
+	return ts, ts.Format(layout) == potentialDateTimeStr, nil
+}
+
+// ParseExtendedDateTime  will take a string and check if the string is of the following types:
 // - Timestamp w/ timezone
 // - Timestamp w/o timezone
 // - Date
 // - Time w/ timezone
 // - Time w/o timezone
-// It will then return an extended Time object from Transfer which allows us to build additional functionality
-// on top of Golang's time.Time library by preserving original format and replaying to the destination without
-// overlaying or mutating any format and timezone shifts.
+// It will attempt to find the exact layout that parses without precision loss in the form of `ExtendedTime` object which is built to solve:
+// 1) Precision loss in translation
+// 2) Original format preservation (with tz locale).
+// If it cannot find it, then it will give you the next best thing.
 func ParseExtendedDateTime(dtString string) (*ExtendedTime, error) {
 	// Check all the timestamp formats
 	var potentialFormat string
@@ -50,11 +63,7 @@ func ParseExtendedDateTime(dtString string) (*ExtendedTime, error) {
 		}
 	}
 
-	if potentialFormat != "" {
-		return NewExtendedTime(potentialTime, DateTimeKindType, potentialFormat)
-	}
-
-	// Now check dates
+	// Now check DATE formats
 	for _, supportedDateFormat := range supportedDateFormats {
 		date, err := time.Parse(supportedDateFormat, dtString)
 		if err == nil {
@@ -62,12 +71,17 @@ func ParseExtendedDateTime(dtString string) (*ExtendedTime, error) {
 		}
 	}
 
-	// Now check time w/o TZ
+	// Now check TIME formats
 	for _, supportedTimeFormat := range supportedTimeFormats {
 		_time, err := time.Parse(supportedTimeFormat, dtString)
 		if err == nil {
 			return NewExtendedTime(_time, TimeKindType, supportedTimeFormat)
 		}
+	}
+
+	// If nothing fits, return the next best thing.
+	if potentialFormat != "" {
+		return NewExtendedTime(potentialTime, DateTimeKindType, potentialFormat)
 	}
 
 	return nil, fmt.Errorf("dtString: %s is not supported", dtString)
