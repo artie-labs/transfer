@@ -17,10 +17,7 @@ func BenchmarkCrossedThreshold_TallTable(b *testing.B) {
 	}
 
 	for n := 0; n < b.N; n ++ {
-		_, err := CrossedThreshold(rowsData, 900)
-		if err != nil {
-			b.Errorf("failed to check crossed threshold, err: %v", err)
-		}
+		GetApproxSize(rowsData)
 	}
 }
 
@@ -61,9 +58,6 @@ func BenchmarkCrossedThreshold_WideTable(b *testing.B) {
 	}
 
 	for n := 0; n < b.N; n ++ {
-		_, err := CrossedThreshold(rowsData, 900)
-		if err != nil {
-			b.Errorf("failed to check crossed threshold, err: %v", err)
-		}
+		GetApproxSize(rowsData)
 	}
 }

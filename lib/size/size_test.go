@@ -28,20 +28,7 @@ func TestVariableToBytes(t *testing.T) {
 	stat, err := os.Stat(filePath)
 	assert.NoError(t, err)
 
-	size, err := getRealSizeOf(rowsData)
+	size := GetApproxSize(rowsData)
 	assert.NoError(t, err)
 	assert.Equal(t, int(stat.Size()), size)
-
-	// This file should be 75 kb, so let's test the limit.
-	sizeToCrossedMap := map[int]bool{
-		100: false,
-		50: true,
-		30: true,
-	}
-
-	for thresholdSize, crossed := range sizeToCrossedMap {
-		actuallyCrossed, err := CrossedThreshold(rowsData, thresholdSize)
-		assert.NoError(t, err)
-		assert.Equal(t, crossed, actuallyCrossed)
-	}
 }

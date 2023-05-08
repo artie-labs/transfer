@@ -1,8 +1,11 @@
 package optimization
 
 import (
+	"context"
 	"github.com/artie-labs/transfer/lib/artie"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/size"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"strings"
@@ -22,6 +25,8 @@ type TableData struct {
 
 	// This is used for the automatic schema detection
 	LatestCDCTs time.Time
+
+	approxSize int
 }
 
 func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicConfig kafkalib.TopicConfig) *TableData {
@@ -36,6 +41,17 @@ func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicCo
 }
 
 func (t *TableData) InsertRow(pk string, rowData map[string]interface{}) {
+	// TODO: Test.
+	newRowSize := size.GetApproxSize(rowData)
+	prevRow, isOk := t.rowsData[pk]
+	if isOk {
+		// Since the new row is taking over, let's update the approx size.
+		prevSize := size.GetApproxSize(prevRow)
+		t.approxSize += newRowSize - prevSize
+	} else {
+		t.approxSize += newRowSize
+	}
+
 	t.rowsData[pk] = rowData
 	return
 }
@@ -56,6 +72,13 @@ func (t *TableData) Rows() uint {
 	}
 
 	return uint(len(t.rowsData))
+}
+
+func (t *TableData) ShouldFlush(ctx context.Context) bool {
+	// TODO Test
+	settings := config.FromContext(ctx)
+
+	return t.Rows() > settings.Config.BufferRows || t.approxSize > settings.Config.FlushSizeKb * 1024
 }
 
 // UpdateInMemoryColumnsFromDestination - When running Transfer, we will have 2 column types.
