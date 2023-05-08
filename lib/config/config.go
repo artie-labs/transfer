@@ -14,7 +14,7 @@ import (
 
 const (
 	defaultFlushTimeSeconds = 10
-	defaultFlushSizeKb = 10 * 1024 // 10 mb
+	defaultFlushSizeKb = 25 * 1024 // 25 mb
 
 	flushIntervalSecondsStart = 5
 	flushIntervalSecondsEnd   = 6 * 60 * 60
