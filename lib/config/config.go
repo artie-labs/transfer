@@ -14,7 +14,7 @@ import (
 
 const (
 	defaultFlushTimeSeconds = 10
-	defaultFlushSizeKb = 900
+	defaultFlushSizeKb = 10 * 1024 // 10 mb
 
 	flushIntervalSecondsStart = 5
 	flushIntervalSecondsEnd   = 6 * 60 * 60
@@ -75,13 +75,16 @@ type Config struct {
 	Output constants.DestinationKind `yaml:"outputSource"`
 	Queue  constants.QueueKind       `yaml:"queue"`
 
+	// Flush rules
 	FlushIntervalSeconds int  `yaml:"flushIntervalSeconds"`
 	FlushSizeKb          int  `yaml:"flushSizeKb"`
 	BufferRows           uint `yaml:"bufferRows"`
 
+	// Supported message queues
 	Pubsub *Pubsub
 	Kafka  *Kafka
 
+	// Supported destinations
 	BigQuery  *BigQuery  `yaml:"bigquery"`
 	Snowflake *Snowflake `yaml:"snowflake"`
 
