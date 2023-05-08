@@ -30,6 +30,7 @@ func main() {
 	logger.FromContext(ctx).WithFields(map[string]interface{}{
 		"flush_interval_seconds": settings.Config.FlushIntervalSeconds,
 		"buffer_pool_size":       settings.Config.BufferRows,
+		"flush_pool_size (kb)": settings.Config.FlushSizeKb,
 	}).Info("config is loaded")
 
 	flushChan := make(chan bool)
