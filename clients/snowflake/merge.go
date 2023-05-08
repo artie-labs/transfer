@@ -35,7 +35,7 @@ func getMergeStatement(tableData *optimization.TableData) (string, error) {
 		sflkCols = append(sflkCols, sflkCol)
 	}
 
-	for _, value := range tableData.RowsData {
+	for _, value := range tableData.RowsData() {
 		var rowValues []string
 		for _, col := range cols {
 			colKind, _ := tableData.InMemoryColumns.GetColumn(col)

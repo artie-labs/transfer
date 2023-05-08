@@ -37,7 +37,7 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 		kafkaMsg := kafka.Message{Partition: 1, Offset: 1}
 		_, err := event.Save(f.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 		assert.Nil(f.T(), err)
-		assert.Equal(f.T(), len(models.GetMemoryDB().TableData["foo"].RowsData), i+1)
+		assert.Equal(f.T(), int(models.GetMemoryDB().TableData["foo"].Rows()), i+1)
 	}
 }
 
@@ -108,7 +108,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 
 	// Verify all the tables exist.
 	for idx := range tableNames {
-		tableConfig := models.GetMemoryDB().TableData[tableNames[idx]].RowsData
+		tableConfig := models.GetMemoryDB().TableData[tableNames[idx]].RowsData()
 		assert.Equal(f.T(), len(tableConfig), 5)
 	}
 
