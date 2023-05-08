@@ -77,7 +77,6 @@ func (t *TableData) Rows() uint {
 func (t *TableData) ShouldFlush(ctx context.Context) bool {
 	// TODO Test
 	settings := config.FromContext(ctx)
-
 	return t.Rows() > settings.Config.BufferRows || t.approxSize > settings.Config.FlushSizeKb * 1024
 }
 

@@ -28,3 +28,4 @@ release:
 .PHONY: bench_size
 bench_size:
 	go test ./lib/size -bench=Bench -benchtime=10s
+	go test ./lib/optimization -bench=Bench -benchtime=10s
