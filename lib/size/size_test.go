@@ -48,8 +48,6 @@ func TestVariableToBytes(t *testing.T) {
 	for thresholdSize, crossed := range sizeToCrossedMap {
 		actuallyCrossed, err := CrossedThreshold(rowsData, thresholdSize)
 		assert.NoError(t, err)
-
-		fmt.Println("crossed", crossed, "actuallyCrossed", actuallyCrossed, "size", size, "thresholdSize", thresholdSize)
 		assert.Equal(t, crossed, actuallyCrossed)
 	}
 }
