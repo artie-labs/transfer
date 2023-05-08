@@ -3,10 +3,8 @@ package snowflake
 import (
 	"fmt"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"strings"
-	"time"
-
 	"github.com/stretchr/testify/assert"
+	"strings"
 
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -20,14 +18,7 @@ func (s *SnowflakeTestSuite) TestMergeNoDeleteFlag() {
 		KindDetails: typing.Integer,
 	})
 
-	tableData := &optimization.TableData{
-		InMemoryColumns: &cols,
-		RowsData:        nil,
-		PrimaryKeys:     []string{"id"},
-		TopicConfig:     kafkalib.TopicConfig{},
-		LatestCDCTs:     time.Time{},
-	}
-
+	tableData := optimization.NewTableData(&cols, []string{"id"}, kafkalib.TopicConfig{})
 	_, err := getMergeStatement(tableData)
 	assert.Error(s.T(), err, "getMergeStatement failed")
 
@@ -63,12 +54,9 @@ func (s *SnowflakeTestSuite) TestMerge() {
 	}
 
 	primaryKeys := []string{"id"}
-	tableData := &optimization.TableData{
-		InMemoryColumns: &cols,
-		RowsData:        rowData,
-		PrimaryKeys:     primaryKeys,
-		TopicConfig:     topicConfig,
-		LatestCDCTs:     time.Time{},
+	tableData := optimization.NewTableData(&cols, primaryKeys, topicConfig)
+	for pk, row := range rowData {
+		tableData.InsertRow(pk, row)
 	}
 
 	mergeSQL, err := getMergeStatement(tableData)
@@ -85,8 +73,8 @@ func (s *SnowflakeTestSuite) TestMerge() {
 		assert.True(s.T(), strings.Contains(mergeSQL, fmt.Sprintf("c.%s = cc.%s", primaryKey, primaryKey)))
 	}
 
-	for _, rowData := range tableData.RowsData {
-		for col, val := range rowData {
+	for _, _rowData := range tableData.RowsData() {
+		for col, val := range _rowData {
 			switch _col, _ := cols.GetColumn(col); _col.KindDetails {
 			case typing.String, typing.Array, typing.Struct:
 				val = fmt.Sprintf("'%v'", val)
@@ -126,12 +114,9 @@ func (s *SnowflakeTestSuite) TestMergeWithSingleQuote() {
 		Schema:    "public",
 	}
 
-	tableData := &optimization.TableData{
-		InMemoryColumns: &cols,
-		RowsData:        rowData,
-		PrimaryKeys:     []string{"id"},
-		TopicConfig:     topicConfig,
-		LatestCDCTs:     time.Time{},
+	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig)
+	for pk, row := range rowData {
+		tableData.InsertRow(pk, row)
 	}
 
 	mergeSQL, err := getMergeStatement(tableData)
@@ -165,12 +150,9 @@ func (s *SnowflakeTestSuite) TestMergeJson() {
 		Schema:    "public",
 	}
 
-	tableData := &optimization.TableData{
-		InMemoryColumns: &cols,
-		RowsData:        rowData,
-		PrimaryKeys:     []string{"id"},
-		TopicConfig:     topicConfig,
-		LatestCDCTs:     time.Time{},
+	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig)
+	for pk, row := range rowData {
+		tableData.InsertRow(pk, row)
 	}
 
 	mergeSQL, err := getMergeStatement(tableData)
@@ -213,17 +195,12 @@ func (s *SnowflakeTestSuite) TestMergeJSONKey() {
 	}
 
 	primaryKeys := []string{"id"}
-
-	tableData := &optimization.TableData{
-		InMemoryColumns: &cols,
-		RowsData:        rowData,
-		PrimaryKeys:     primaryKeys,
-		TopicConfig:     topicConfig,
-		LatestCDCTs:     time.Time{},
+	tableData := optimization.NewTableData(&cols, primaryKeys, topicConfig)
+	for pk, row := range rowData {
+		tableData.InsertRow(pk, row)
 	}
 
 	mergeSQL, err := getMergeStatement(tableData)
-
 	assert.NoError(s.T(), err, "merge failed")
 	// Check if MERGE INTO FQ Table exists.
 	assert.True(s.T(), strings.Contains(mergeSQL, "MERGE INTO shop.public.customer c"), mergeSQL)

@@ -31,7 +31,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 
 	var rowValues []string
 	firstRow := true
-	for _, value := range tableData.RowsData {
+	for _, value := range tableData.RowsData() {
 		var colVals []string
 		for _, col := range cols {
 			colKind, _ := tableData.InMemoryColumns.GetColumn(col)

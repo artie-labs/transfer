@@ -93,7 +93,8 @@ func (m *ModelsTestSuite) TestEvent_SaveCasing() {
 	kafkaMsg := kafka.Message{}
 	_, err := event.Save(m.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(m.T(), err)
-	rowData := inMemoryDB.TableData["foo"].RowsData[event.PrimaryKeyValue()]
+	
+	rowData := inMemoryDB.TableData["foo"].RowsData()[event.PrimaryKeyValue()]
 	expectedColumns := []string{"randomcol", "anothercol"}
 	for _, expectedColumn := range expectedColumns {
 		_, isOk := rowData[expectedColumn]
