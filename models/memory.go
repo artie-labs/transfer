@@ -144,6 +144,9 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 
 	settings := config.FromContext(ctx)
 	shouldFlushBasedOnRows := inMemoryDB.TableData[e.Table].Rows() > settings.Config.BufferRows
+
+	// Note this function adds anywhere from 5 to 58ms overhead depending on how wide the table is (when pool rows is at 5k)
+	// We _could_ optimize this by only looking at the newest row added, but it's error-prone (because it could just update an exising row or delete).
 	shouldFlushBasedOnSize, err := size.CrossedThreshold(inMemoryDB.TableData[e.Table].RowsData, settings.Config.FlushSizeKb)
 	if err != nil {
 		logger.FromContext(ctx).WithError(err).Warn("failed to calculate threshold")
