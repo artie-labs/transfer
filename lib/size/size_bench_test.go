@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func BenchmarkCrossedThreshold_TallTable(b *testing.B) {
+func BenchmarkGetApproxSize_TallTable(b *testing.B) {
 	rowsData := make(map[string]map[string]interface{})
 	for i := 0; i < 5000; i ++ {
 		rowsData[fmt.Sprint(i)] = map[string]interface{}{
@@ -21,7 +21,7 @@ func BenchmarkCrossedThreshold_TallTable(b *testing.B) {
 	}
 }
 
-func BenchmarkCrossedThreshold_WideTable(b *testing.B) {
+func BenchmarkGetApproxSize_WideTable(b *testing.B) {
 	rowsData := make(map[string]map[string]interface{})
 	for i := 0; i < 5000; i ++ {
 		rowsData[fmt.Sprint(i)] = map[string]interface{}{

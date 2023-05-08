@@ -2,6 +2,7 @@ package optimization
 
 import (
 	"context"
+	"fmt"
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -25,7 +26,6 @@ type TableData struct {
 
 	// This is used for the automatic schema detection
 	LatestCDCTs time.Time
-
 	approxSize int
 }
 
@@ -41,13 +41,13 @@ func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicCo
 }
 
 func (t *TableData) InsertRow(pk string, rowData map[string]interface{}) {
-	// TODO: Test.
 	newRowSize := size.GetApproxSize(rowData)
 	prevRow, isOk := t.rowsData[pk]
 	if isOk {
 		// Since the new row is taking over, let's update the approx size.
-		prevSize := size.GetApproxSize(prevRow)
-		t.approxSize += newRowSize - prevSize
+		prevRowSize := size.GetApproxSize(prevRow)
+		fmt.Println("prevSize", prevRowSize, "newRowSize", newRowSize, "approxSize", t.approxSize)
+		t.approxSize += newRowSize - prevRowSize
 	} else {
 		t.approxSize += newRowSize
 	}
