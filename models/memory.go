@@ -6,7 +6,9 @@ import (
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/size"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"strings"
@@ -141,7 +143,13 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	inMemoryDB.TableData[e.Table].LatestCDCTs = e.ExecutionTime
 
 	settings := config.FromContext(ctx)
-	return inMemoryDB.TableData[e.Table].Rows() > settings.Config.BufferRows, nil
+	shouldFlushBasedOnRows := inMemoryDB.TableData[e.Table].Rows() > settings.Config.BufferRows
+	shouldFlushBasedOnSize, err := size.CrossedThreshold(inMemoryDB.TableData[e.Table].RowsData, settings.Config.FlushSizeKb)
+	if err != nil {
+		logger.FromContext(ctx).WithError(err).Warn("failed to calculate threshold")
+	}
+
+	return shouldFlushBasedOnRows || shouldFlushBasedOnSize, nil
 }
 
 func LoadMemoryDB() {
