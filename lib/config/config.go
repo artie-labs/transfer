@@ -14,6 +14,7 @@ import (
 
 const (
 	defaultFlushTimeSeconds = 10
+	defaultFlushSizeKb = 900
 
 	flushIntervalSecondsStart = 5
 	flushIntervalSecondsEnd   = 6 * 60 * 60
@@ -71,12 +72,15 @@ func (k *Kafka) String() string {
 }
 
 type Config struct {
-	Output               constants.DestinationKind `yaml:"outputSource"`
-	Queue                constants.QueueKind       `yaml:"queue"`
-	FlushIntervalSeconds int                       `yaml:"flushIntervalSeconds"`
-	BufferRows           uint                      `yaml:"bufferRows"`
-	Pubsub               *Pubsub
-	Kafka                *Kafka
+	Output constants.DestinationKind `yaml:"outputSource"`
+	Queue  constants.QueueKind       `yaml:"queue"`
+
+	FlushIntervalSeconds int  `yaml:"flushIntervalSeconds"`
+	FlushSizeKb          int  `yaml:"flushSizeKb"`
+	BufferRows           uint `yaml:"bufferRows"`
+
+	Pubsub *Pubsub
+	Kafka  *Kafka
 
 	BigQuery  *BigQuery  `yaml:"bigquery"`
 	Snowflake *Snowflake `yaml:"snowflake"`
@@ -126,6 +130,10 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 		config.BufferRows = bufferPoolSizeEnd
 	}
 
+	if config.FlushSizeKb == 0 {
+		config.FlushSizeKb = defaultFlushSizeKb
+	}
+
 	return &config, nil
 }
 
@@ -137,50 +145,54 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("config is nil")
 	}
 
+	if c.FlushSizeKb <= 0 {
+		return fmt.Errorf("config is invalid, flush size pool has to be a positive number, current value: %v", c.FlushSizeKb)
+	}
+
 	if !numbers.BetweenEq(flushIntervalSecondsStart, flushIntervalSecondsEnd, c.FlushIntervalSeconds) {
-		return fmt.Errorf("flush interval is outside of our range, seconds: %v, expected start: %v, end: %v",
+		return fmt.Errorf("config is invalid, flush interval is outside of our range, seconds: %v, expected start: %v, end: %v",
 			c.FlushIntervalSeconds, flushIntervalSecondsStart, flushIntervalSecondsEnd)
 	}
 
 	if !numbers.BetweenEq(bufferPoolSizeStart, bufferPoolSizeEnd, int(c.BufferRows)) {
-		return fmt.Errorf("buffer pool is outside of our range: %v, expected start: %v, end: %v",
+		return fmt.Errorf("config is invalid, buffer pool is outside of our range: %v, expected start: %v, end: %v",
 			c.BufferRows, bufferPoolSizeStart, bufferPoolSizeEnd)
 	}
 
 	if !constants.IsValidDestination(c.Output) {
-		return fmt.Errorf("output: %s is invalid", c.Output)
+		return fmt.Errorf("config is invalid, output: %s is invalid", c.Output)
 	}
 
 	if c.Queue == constants.Kafka {
 		if c.Kafka == nil || len(c.Kafka.TopicConfigs) == 0 {
-			return fmt.Errorf("no kafka topic configs, kafka: %v", c.Kafka)
+			return fmt.Errorf("config is invalid, no kafka topic configs, kafka: %v", c.Kafka)
 		}
 
 		for _, topicConfig := range c.Kafka.TopicConfigs {
 			if valid := topicConfig.Valid(); !valid {
-				return fmt.Errorf("topic config is invalid, tc: %s", topicConfig.String())
+				return fmt.Errorf("config is invalid, topic config is invalid, tc: %s", topicConfig.String())
 			}
 		}
 
 		// Username and password are not required (if it's within the same VPC or connecting locally
 		if array.Empty([]string{c.Kafka.GroupID, c.Kafka.BootstrapServer}) {
-			return fmt.Errorf("kafka settings is invalid, kafka: %s", c.Kafka.String())
+			return fmt.Errorf("config is invalid, kafka settings is invalid, kafka: %s", c.Kafka.String())
 		}
 	}
 
 	if c.Queue == constants.PubSub {
 		if c.Pubsub == nil || len(c.Pubsub.TopicConfigs) == 0 {
-			return fmt.Errorf("no pubsub topic configs, pubsub: %v", c.Pubsub)
+			return fmt.Errorf("config is invalid, no pubsub topic configs, pubsub: %v", c.Pubsub)
 		}
 
 		for _, topicConfig := range c.Pubsub.TopicConfigs {
 			if valid := topicConfig.Valid(); !valid {
-				return fmt.Errorf("topic config is invalid, tc: %s", topicConfig.String())
+				return fmt.Errorf("config is invalid, topic config is invalid, tc: %s", topicConfig.String())
 			}
 		}
 
 		if array.Empty([]string{c.Pubsub.ProjectID, c.Pubsub.PathToCredentials}) {
-			return fmt.Errorf("pubsub settings is invalid, pubsub: %s", c.Pubsub.String())
+			return fmt.Errorf("config is invalid, pubsub settings is invalid, pubsub: %s", c.Pubsub.String())
 		}
 	}
 
