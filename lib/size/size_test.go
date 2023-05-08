@@ -1,6 +1,8 @@
 package size
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -22,19 +24,18 @@ func TestVariableToBytes(t *testing.T) {
 		}
 	}
 
+	b := new(bytes.Buffer)
+	err := gob.NewEncoder(b).Encode(rowsData)
+	assert.NoError(t, err)
 
-
-	err := os.WriteFile(filePath, []byte(fmt.Sprint(rowsData)), os.ModePerm)
+	err = os.WriteFile(filePath, b.Bytes(), os.ModePerm)
 	assert.NoError(t, err)
 
 	stat, err := os.Stat(filePath)
 	assert.NoError(t, err)
 
-	fmt.Println("stat", stat.Size())
-
-	bytes, err := GetRealSizeOf(rowsData)
+	size, err := GetRealSizeOf(rowsData)
 	assert.NoError(t, err)
-	fmt.Println("GetRealSizeOf", bytes)
 
-	assert.False(t, true)
+	assert.Equal(t, int(stat.Size()), size)
 }

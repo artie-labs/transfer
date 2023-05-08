@@ -26,3 +26,7 @@ func CrossedThreshold(value interface{}, bytesLimit int) (bool, error) {
 
 	return bytesLimit > valBytes, nil
 }
+
+func KilobytesToBytes(kbNum int) int {
+	return kbNum * 1024
+}
