@@ -21,7 +21,7 @@ _Note: Keys here are formatted in dot notation for readability purposes, please 
 | `reporting.sentry.dsn` | Y        | DSN for Sentry alerts. If blank, will just go to standard out.                                                                                                                                                                             |
 | `flushIntervalSeconds` | Y        | <p>Defaults to <code>10</code>.<br><br>Valid range is between <code>5 seconds</code> to <code>6 hours</code>.</p>                                                                                                                          |
 | `bufferRows`           | Y        | <p>Defaults to <code>15000</code>.<br><br>Valid range is between <code>5-15000</code></p>                                                                                                                                                  |
-| `flushSizeKb`          | Y        | <p>Defaults to <code>15 mb</code>.<br><br>When the in-memory database is greater than this value, it will trigger a flush cycle.</p>                                                                                                       |
+| `flushSizeKb`          | Y        | <p>Defaults to <code>25mb</code>.<br><br>When the in-memory database is greater than this value, it will trigger a flush cycle.</p>                                                                                                        |
 
 ### Kafka
 
