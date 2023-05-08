@@ -1,21 +1,16 @@
 package size
 
 import (
-	"bytes"
-	"encoding/gob"
-	//"fmt"
-	//"unsafe"
+	"fmt"
 )
 
-// getRealSizeOf will encode the actual variable into bytes and then check the length
-// We chose not to use unsafe.SizeOf or reflect.Type.Size (both are akin) because they do not do recursive traversal
-// Lifted this from: https://stackoverflow.com/a/60508928
+// getRealSizeOf will encode the actual variable into bytes and then check the length (approx) by using string encoding.
+// We chose not to use unsafe.SizeOf or reflect.Type.Size (both are akin) because they do not do recursive traversal.
+// We also chose not to use gob.NewEncoder because it does not work for all data types and had a huge computational overhead.
 func getRealSizeOf(v interface{}) (int, error) {
-	b := new(bytes.Buffer)
-	if err := gob.NewEncoder(b).Encode(v); err != nil {
-		return 0, err
-	}
-	return b.Len(), nil
+	valString := fmt.Sprint(v)
+
+	return len([]byte(valString)), nil
 }
 
 func CrossedThreshold(value interface{}, kbLimit int) (bool, error) {

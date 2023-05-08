@@ -24,6 +24,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		Config: &config.Config{
 			FlushIntervalSeconds: 10,
 			BufferRows:           10,
+			FlushSizeKb:          900,
 		},
 		VerboseLogging: false,
 	})

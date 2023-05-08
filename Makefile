@@ -24,3 +24,7 @@ build:
 .PHONY: release
 release:
 	goreleaser release --clean
+
+.PHONY: bench_size
+bench_size:
+	go test ./lib/size -bench=Bench -benchtime=10s
