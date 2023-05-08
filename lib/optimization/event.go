@@ -40,8 +40,14 @@ func (t *TableData) InsertRow(pk string, rowData map[string]interface{}) {
 	return
 }
 
+// RowsData returns a read only map of tableData's rowData.
 func (t *TableData) RowsData() map[string]map[string]interface{} {
-	return t.rowsData
+	_rowsData := make(map[string]map[string]interface{}, len(t.rowsData))
+	for k, v := range t.rowsData {
+		_rowsData[k] = v
+	}
+
+	return _rowsData
 }
 
 func (t *TableData) Rows() uint {
