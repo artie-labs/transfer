@@ -2,17 +2,16 @@ package optimization
 
 import (
 	"github.com/artie-labs/transfer/lib/artie"
-	"strings"
-	"time"
-
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
+	"strings"
+	"time"
 )
 
 type TableData struct {
 	InMemoryColumns *typing.Columns                   // list of columns
-	RowsData        map[string]map[string]interface{} // pk -> { col -> val }
+	rowsData        map[string]map[string]interface{} // pk -> { col -> val }
 	PrimaryKeys     []string
 
 	kafkalib.TopicConfig
@@ -25,12 +24,38 @@ type TableData struct {
 	LatestCDCTs time.Time
 }
 
+func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicConfig kafkalib.TopicConfig) *TableData {
+	return &TableData{
+		InMemoryColumns:         inMemoryColumns,
+		rowsData:                map[string]map[string]interface{}{},
+		PrimaryKeys:             primaryKeys,
+		TopicConfig:             topicConfig,
+		PartitionsToLastMessage: map[string][]artie.Message{},
+	}
+
+}
+
+func (t *TableData) InsertRow(pk string, rowData map[string]interface{}) {
+	t.rowsData[pk] = rowData
+	return
+}
+
+// RowsData returns a read only map of tableData's rowData.
+func (t *TableData) RowsData() map[string]map[string]interface{} {
+	_rowsData := make(map[string]map[string]interface{}, len(t.rowsData))
+	for k, v := range t.rowsData {
+		_rowsData[k] = v
+	}
+
+	return _rowsData
+}
+
 func (t *TableData) Rows() uint {
 	if t == nil {
 		return 0
 	}
 
-	return uint(len(t.RowsData))
+	return uint(len(t.rowsData))
 }
 
 // UpdateInMemoryColumnsFromDestination - When running Transfer, we will have 2 column types.

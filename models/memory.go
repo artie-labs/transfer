@@ -57,13 +57,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 			columns = e.Columns
 		}
 
-		inMemoryDB.TableData[e.Table] = &optimization.TableData{
-			RowsData:                map[string]map[string]interface{}{},
-			InMemoryColumns:         columns,
-			PrimaryKeys:             e.PrimaryKeys(),
-			TopicConfig:             *topicConfig,
-			PartitionsToLastMessage: map[string][]artie.Message{},
-		}
+		inMemoryDB.TableData[e.Table] = optimization.NewTableData(columns, e.PrimaryKeys(), *topicConfig)
 	} else {
 		if e.Columns != nil {
 			// Iterate over this again just in case.
@@ -131,7 +125,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 
 	// Swap out sanitizedData <> data.
 	e.Data = sanitizedData
-	inMemoryDB.TableData[e.Table].RowsData[e.PrimaryKeyValue()] = e.Data
+	inMemoryDB.TableData[e.Table].InsertRow(e.PrimaryKeyValue(), e.Data)
 	// If the message is Kafka, then we only need the latest one
 	// If it's pubsub, we will store all of them in memory. This is because GCP pub/sub REQUIRES us to ack every single message
 	if message.Kind() == artie.Kafka {

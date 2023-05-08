@@ -1,12 +1,32 @@
 package optimization
 
 import (
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
+
+func TestTableData_InsertRow(t *testing.T) {
+	td := NewTableData(nil, nil, kafkalib.TopicConfig{})
+	assert.Equal(t, 0, int(td.Rows()))
+
+	// See if we can add rows to the private method.
+	td.RowsData()["foo"] = map[string]interface{}{
+		"foo": "bar",
+	}
+
+	assert.Equal(t, 0, int(td.Rows()))
+
+	// Now insert the right way.
+	td.InsertRow("foo", map[string]interface{}{
+		"foo": "bar",
+	})
+
+	assert.Equal(t, 1, int(td.Rows()))
+}
 
 func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 	var _cols typing.Columns

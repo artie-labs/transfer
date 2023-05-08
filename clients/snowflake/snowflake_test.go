@@ -47,11 +47,9 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		Schema:    "public",
 	}
 
-	tableData := &optimization.TableData{
-		InMemoryColumns: &cols,
-		RowsData:        rowsData,
-		TopicConfig:     topicConfig,
-		PrimaryKeys:     []string{"id"},
+	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig)
+	for pk, row := range rowsData {
+		tableData.InsertRow(pk, row)
 	}
 
 	anotherColToKindDetailsMap := map[string]typing.KindDetails{
@@ -111,11 +109,9 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		Schema:    "public",
 	}
 
-	tableData := &optimization.TableData{
-		InMemoryColumns: &cols,
-		RowsData:        rowsData,
-		TopicConfig:     topicConfig,
-		PrimaryKeys:     []string{"id"},
+	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig)
+	for pk, row := range rowsData {
+		tableData.InsertRow(pk, row)
 	}
 
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake),
@@ -164,11 +160,9 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		Schema:    "public",
 	}
 
-	tableData := &optimization.TableData{
-		InMemoryColumns: &cols,
-		RowsData:        rowsData,
-		TopicConfig:     topicConfig,
-		PrimaryKeys:     []string{"id"},
+	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig)
+	for pk, row := range rowsData {
+		tableData.InsertRow(pk ,row)
 	}
 
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake),
@@ -216,11 +210,9 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		})
 	}
 
-	tableData := &optimization.TableData{
-		InMemoryColumns: &cols,
-		RowsData:        rowsData,
-		TopicConfig:     topicConfig,
-		PrimaryKeys:     []string{"id"},
+	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig)
+	for pk, row := range rowsData {
+		tableData.InsertRow(pk, row)
 	}
 
 	snowflakeColToKindDetailsMap := map[string]typing.KindDetails{
@@ -259,7 +251,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	assert.True(s.T(), isOk)
 
 	// Now try to execute merge where 1 of the rows have the column now
-	for _, pkMap := range tableData.RowsData {
+	for _, pkMap := range tableData.RowsData() {
 		pkMap["new"] = "123"
 		tableData.InMemoryColumns = &sflkCols
 
@@ -282,13 +274,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
-	err := s.store.Merge(s.ctx, &optimization.TableData{
-		InMemoryColumns:         nil,
-		RowsData:                nil,
-		TopicConfig:             kafkalib.TopicConfig{},
-		PartitionsToLastMessage: nil,
-		LatestCDCTs:             time.Time{},
-	})
-
+	tableData := optimization.NewTableData(nil, nil, kafkalib.TopicConfig{})
+	err := s.store.Merge(s.ctx, tableData)
 	assert.Nil(s.T(), err)
 }

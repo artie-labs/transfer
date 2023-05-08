@@ -8,7 +8,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
 	"strings"
-	"time"
 )
 
 func (b *BigQueryTestSuite) TestMergeNoDeleteFlag() {
@@ -18,14 +17,7 @@ func (b *BigQueryTestSuite) TestMergeNoDeleteFlag() {
 		KindDetails: typing.Integer,
 	})
 
-	tableData := &optimization.TableData{
-		InMemoryColumns: &cols,
-		RowsData:        nil,
-		PrimaryKeys:     []string{"id"},
-		TopicConfig:     kafkalib.TopicConfig{},
-		LatestCDCTs:     time.Time{},
-	}
-
+	tableData := optimization.NewTableData(&cols, []string{"id"}, kafkalib.TopicConfig{})
 	_, err := merge(tableData)
 	assert.Error(b.T(), err, "merge failed")
 }
@@ -67,12 +59,9 @@ charlie`,
 		Schema:    "public",
 	}
 
-	tableData := &optimization.TableData{
-		InMemoryColumns: &cols,
-		RowsData:        rowData,
-		PrimaryKeys:     primaryKeys,
-		TopicConfig:     topicConfig,
-		LatestCDCTs:     time.Time{},
+	tableData := optimization.NewTableData(&cols, primaryKeys, topicConfig)
+	for pk, row := range rowData {
+		tableData.InsertRow(pk, row)
 	}
 
 	mergeSQL, err := merge(tableData)
@@ -85,7 +74,7 @@ charlie`,
 		assert.True(b.T(), strings.Contains(mergeSQL, fmt.Sprintf("c.%s = cc.%s", pk, pk)))
 	}
 
-	for _, rowData := range tableData.RowsData {
+	for _, rowData := range tableData.RowsData() {
 		for col, val := range rowData {
 			switch _col, _ := cols.GetColumn(col); _col.KindDetails {
 			case typing.String, typing.Array, typing.Struct:
@@ -139,17 +128,12 @@ func (b *BigQueryTestSuite) TestMergeJSONKey() {
 	}
 
 	primaryKeys := []string{"id"}
-
-	tableData := &optimization.TableData{
-		InMemoryColumns: &cols,
-		RowsData:        rowData,
-		PrimaryKeys:     primaryKeys,
-		TopicConfig:     topicConfig,
-		LatestCDCTs:     time.Time{},
+	tableData := optimization.NewTableData(&cols, primaryKeys, topicConfig)
+	for pk, row := range rowData {
+		tableData.InsertRow(pk, row)
 	}
 
 	mergeSQL, err := merge(tableData)
-
 	assert.NoError(b.T(), err, "merge failed")
 	// Check if MERGE INTO FQ Table exists.
 	assert.True(b.T(), strings.Contains(mergeSQL, "MERGE INTO shop.customer c"), mergeSQL)
@@ -159,7 +143,7 @@ func (b *BigQueryTestSuite) TestMergeJSONKey() {
 		assert.True(b.T(), strings.Contains(mergeSQL, fmt.Sprintf("TO_JSON_STRING(c.%s) = TO_JSON_STRING(cc.%s)", primaryKey, primaryKey)))
 	}
 
-	for _, rowData := range tableData.RowsData {
+	for _, rowData := range tableData.RowsData() {
 		for col, val := range rowData {
 			switch _col, _ := cols.GetColumn(col); _col.KindDetails {
 			case typing.String, typing.Array, typing.Struct:
@@ -209,12 +193,9 @@ func (b *BigQueryTestSuite) TestMergeSimpleCompositeKey() {
 	}
 
 	primaryKeys := []string{"id", "idA"}
-	tableData := &optimization.TableData{
-		InMemoryColumns: &cols,
-		RowsData:        rowData,
-		PrimaryKeys:     primaryKeys,
-		TopicConfig:     topicConfig,
-		LatestCDCTs:     time.Time{},
+	tableData := optimization.NewTableData(&cols, primaryKeys, topicConfig)
+	for pk, row := range rowData {
+		tableData.InsertRow(pk, row)
 	}
 
 	mergeSQL, err := merge(tableData)
@@ -227,7 +208,7 @@ func (b *BigQueryTestSuite) TestMergeSimpleCompositeKey() {
 	}
 
 	assert.True(b.T(), strings.Contains(mergeSQL, fmt.Sprintf("c.%s = cc.%s and c.%s = cc.%s", "id", "id", "idA", "idA")), mergeSQL)
-	for _, rowData := range tableData.RowsData {
+	for _, rowData := range tableData.RowsData() {
 		for col, val := range rowData {
 			switch _col, _ := cols.GetColumn(col); _col.KindDetails {
 			case typing.String, typing.Array, typing.Struct:
@@ -283,16 +264,12 @@ func (b *BigQueryTestSuite) TestMergeJSONKeyAndCompositeHybrid() {
 
 	primaryKeys := []string{"id", "idA", "idB", "idC"}
 
-	tableData := &optimization.TableData{
-		InMemoryColumns: &cols,
-		RowsData:        rowData,
-		PrimaryKeys:     primaryKeys,
-		TopicConfig:     topicConfig,
-		LatestCDCTs:     time.Time{},
+	tableData := optimization.NewTableData(&cols, primaryKeys, topicConfig)
+	for pk, row := range rowData {
+		tableData.InsertRow(pk, row)
 	}
 
 	mergeSQL, err := merge(tableData)
-
 	assert.NoError(b.T(), err, "merge failed")
 	// Check if MERGE INTO FQ Table exists.
 	assert.True(b.T(), strings.Contains(mergeSQL, "MERGE INTO shop.customer c"), mergeSQL)
@@ -305,7 +282,7 @@ func (b *BigQueryTestSuite) TestMergeJSONKeyAndCompositeHybrid() {
 		assert.True(b.T(), strings.Contains(mergeSQL, fmt.Sprintf("c.%s = cc.%s", primaryKey, primaryKey)))
 	}
 
-	for _, rowData := range tableData.RowsData {
+	for _, rowData := range tableData.RowsData() {
 		for col, val := range rowData {
 			switch _col, _ := cols.GetColumn(col); _col.KindDetails {
 			case typing.String, typing.Array, typing.Struct:
