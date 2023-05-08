@@ -1,6 +1,9 @@
 package optimization
 
 import (
+	"context"
+	"fmt"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -8,25 +11,6 @@ import (
 	"testing"
 	"time"
 )
-
-func TestTableData_InsertRow(t *testing.T) {
-	td := NewTableData(nil, nil, kafkalib.TopicConfig{})
-	assert.Equal(t, 0, int(td.Rows()))
-
-	// See if we can add rows to the private method.
-	td.RowsData()["foo"] = map[string]interface{}{
-		"foo": "bar",
-	}
-
-	assert.Equal(t, 0, int(td.Rows()))
-
-	// Now insert the right way.
-	td.InsertRow("foo", map[string]interface{}{
-		"foo": "bar",
-	})
-
-	assert.Equal(t, 1, int(td.Rows()))
-}
 
 func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 	var _cols typing.Columns
@@ -87,4 +71,58 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 	assert.Equal(t, col.KindDetails.Kind, typing.ETime.Kind)
 	assert.Equal(t, col.KindDetails.ExtendedTimeDetails.Type, ext.DateTimeKindType, "correctly mapped type")
 	assert.Equal(t, col.KindDetails.ExtendedTimeDetails.Format, time.RFC3339Nano, "format has been preserved")
+}
+
+func TestTableData_ShouldFlushRowLength(t *testing.T) {
+	ctx := context.Background()
+	ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{Config: &config.Config{
+		FlushSizeKb:          500,
+		BufferRows:           2,
+	}})
+
+	// Insert 3 rows and confirm that we need to flush.
+	td := NewTableData(nil, nil, kafkalib.TopicConfig{})
+	for i := 0; i < 3; i ++ {
+		assert.False(t, td.ShouldFlush(ctx))
+		td.InsertRow(fmt.Sprint(i), map[string]interface{}{
+			"foo": "bar",
+		})
+	}
+
+	assert.True(t, td.ShouldFlush(ctx))
+}
+
+func TestTableData_ShouldFlushRowSize(t *testing.T) {
+	ctx := context.Background()
+	ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{Config: &config.Config{
+		FlushSizeKb:          5,
+		BufferRows:           20000,
+	}})
+
+	// Insert 3 rows and confirm that we need to flush.
+	td := NewTableData(nil, nil, kafkalib.TopicConfig{})
+	for i := 0; i < 45; i ++ {
+		assert.False(t, td.ShouldFlush(ctx))
+		td.InsertRow(fmt.Sprint(i), map[string]interface{}{
+			"foo": "bar",
+			"array": []string{"foo", "bar", "dusty", "the aussie", "robin", "jacqueline", "charlie"},
+			"true": true,
+			"false": false,
+			"nested": map[string]interface{}{
+				"foo": "bar",
+			},
+		})
+	}
+
+	td.InsertRow("33333", map[string]interface{}{
+		"foo": "bar",
+		"array": []string{"foo", "bar", "dusty", "the aussie", "robin", "jacqueline", "charlie"},
+		"true": true,
+		"false": false,
+		"nested": map[string]interface{}{
+			"foo": "bar",
+		},
+	})
+
+	assert.True(t, td.ShouldFlush(ctx))
 }

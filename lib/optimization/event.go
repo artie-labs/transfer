@@ -1,8 +1,11 @@
 package optimization
 
 import (
+	"context"
 	"github.com/artie-labs/transfer/lib/artie"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/size"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"strings"
@@ -22,6 +25,7 @@ type TableData struct {
 
 	// This is used for the automatic schema detection
 	LatestCDCTs time.Time
+	approxSize int
 }
 
 func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicConfig kafkalib.TopicConfig) *TableData {
@@ -35,7 +39,20 @@ func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicCo
 
 }
 
+// InsertRow creates a single entrypoint for how rows get added to TableData
+// This is important to avoid concurrent r/w, but also the ability for us to add or decrement row size by keeping a running total
+// With this, we are able to reduce the latency by 500x+ on a 5k row table. See event_bench_test.go vs. size_bench_test.go
 func (t *TableData) InsertRow(pk string, rowData map[string]interface{}) {
+	newRowSize := size.GetApproxSize(rowData)
+	prevRow, isOk := t.rowsData[pk]
+	var prevRowSize int
+	if isOk {
+		// Since the new row is taking over, let's update the approx size.
+		prevRowSize = size.GetApproxSize(prevRow)
+	}
+
+	// If prevRow doesn't exist, it'll be 0, which is a no-op.
+	t.approxSize += newRowSize - prevRowSize
 	t.rowsData[pk] = rowData
 	return
 }
@@ -56,6 +73,11 @@ func (t *TableData) Rows() uint {
 	}
 
 	return uint(len(t.rowsData))
+}
+
+func (t *TableData) ShouldFlush(ctx context.Context) bool {
+	settings := config.FromContext(ctx)
+	return t.Rows() > settings.Config.BufferRows || t.approxSize > settings.Config.FlushSizeKb * 1024
 }
 
 // UpdateInMemoryColumnsFromDestination - When running Transfer, we will have 2 column types.

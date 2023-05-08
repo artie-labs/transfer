@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"github.com/artie-labs/transfer/lib/artie"
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/stringutil"
@@ -133,9 +132,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	}
 
 	inMemoryDB.TableData[e.Table].LatestCDCTs = e.ExecutionTime
-
-	settings := config.FromContext(ctx)
-	return inMemoryDB.TableData[e.Table].Rows() > settings.Config.BufferRows, nil
+	return inMemoryDB.TableData[e.Table].ShouldFlush(ctx), nil
 }
 
 func LoadMemoryDB() {

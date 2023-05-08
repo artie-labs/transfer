@@ -412,6 +412,7 @@ func TestConfig_Validate(t *testing.T) {
 
 	cfg.Output = constants.Snowflake
 	cfg.Queue = constants.PubSub
+	cfg.FlushSizeKb = 5
 	assert.Contains(t, cfg.Validate().Error(), "no pubsub topic configs")
 
 	pubsub.TopicConfigs = []*kafkalib.TopicConfig{
@@ -448,4 +449,10 @@ func TestConfig_Validate(t *testing.T) {
 	cfg.BufferRows = 500
 	cfg.FlushIntervalSeconds = 600
 	assert.Nil(t, cfg.Validate())
+
+	for _, num := range []int{-500, -300, -5, 0} {
+		cfg.FlushSizeKb = num
+		assert.Contains(t, cfg.Validate().Error(), "config is invalid, flush size pool has to be a positive number")
+	}
+
 }
