@@ -35,8 +35,13 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA schema_name GRANT SELECT ON TABLES TO usernam
 -- Grant access to existing tables
 GRANT SELECT ON ALL TABLES IN SCHEMA schema_name TO username;
 
+-- The replication role does not have enough permissions to create publications. 
+-- So you will need to create this as well.
+CREATE PUBLICATION dbz_publication FOR ALL TABLES;
+
 -- Add the replication role to your user (not needed for Amazon RDS)
 ALTER USER username REPLICATION;
+
 ```
 
 ### Supported types
