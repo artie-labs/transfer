@@ -12,11 +12,12 @@ import (
 )
 
 type AlterTableArgs struct {
-	Dwh         dwh.DataWarehouse
-	Tc          *types.DwhTableConfig
-	FqTableName string
-	CreateTable bool
-	ColumnOp constants.ColumnOperation
+	Dwh            dwh.DataWarehouse
+	Tc             *types.DwhTableConfig
+	FqTableName    string
+	CreateTable    bool
+	TemporaryTable bool
+	ColumnOp       constants.ColumnOperation
 
 	CdcTime time.Time
 }
@@ -47,7 +48,17 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) e
 		// If the table does not exist, create it.
 		sqlQuery := fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", args.FqTableName, args.ColumnOp, colSQLPart)
 		if args.CreateTable {
-			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, colSQLPart)
+			if args.TemporaryTable {
+				// Snowflake has this feature too, but we don't need it as our CTE approach with Snowflake is extremely performant.
+				if args.Dwh.Label() != constants.BigQuery {
+					return fmt.Errorf("unexpected temporary table for destination: %v", args.Dwh.Label())
+				}
+
+				// https://cloud.google.com/bigquery/docs/multi-statement-queries#create_temporary_table
+				sqlQuery = fmt.Sprintf("CREATE TEMP TABLE IF NOT EXISTS %s (%s)", args.FqTableName, colSQLPart)
+			} else {
+				sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, colSQLPart)
+			}
 			args.CreateTable = false
 		}
 

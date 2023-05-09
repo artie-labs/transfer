@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/stringutil"
 	"strings"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/stringutil"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/ddl"
@@ -175,6 +176,21 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 			// Only if it is NOT found shall we try to delete from in-memory (because we caught up)
 			tableConfig.ClearColumnsToDeleteByColName(colToDelete)
 		}
+	}
+
+	/// Before we merge, we need to create a temporary table, so we can write our results.
+	tempAlterTableArgs := ddl.AlterTableArgs{
+		Dwh: s,
+		Tc:  tableConfig,
+		// TODO
+		//FqTableName:    ,
+		CreateTable:    true,
+		TemporaryTable: true,
+		ColumnOp:       constants.Add,
+	}
+
+	if err = ddl.AlterTable(ctx, tempAlterTableArgs, tableConfig.Columns().GetColumns()...); err != nil {
+		return fmt.Errorf("failed to create temp table, error: %v", err)
 	}
 
 	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
