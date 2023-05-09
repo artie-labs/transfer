@@ -34,6 +34,7 @@
 
 ## 👨💻 Tutorials
 
+* [\[WIP\] Deep-dive into Artie's typing library](tutorials/wip-deep-dive-into-arties-typing-library.md)
 * [Setting up Pub/Sub](tutorials/setting-up-pub-sub.md)
 
 ***
