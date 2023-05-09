@@ -50,7 +50,16 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	// Prior to deletion, there should be no colsToDelete
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete())
 	for _, column := range cols.GetColumns() {
-		err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Delete, ts, column)
+		alterTableArgs := ddl.AlterTableArgs{
+			Dwh:         d.bigQueryStore,
+			Tc:          tc,
+			FqTableName: fqName,
+			CreateTable: tc.CreateTable,
+			ColumnOp:    constants.Delete,
+			CdcTime:     ts,
+		}
+
+		err := ddl.AlterTable(ctx, alterTableArgs, column)
 		assert.NoError(d.T(), err)
 	}
 
@@ -62,7 +71,16 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	// Now try to delete again and with an increased TS. It should now be all deleted.
 	var callIdx int
 	for _, column := range cols.GetColumns() {
-		err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Delete, ts.Add(2*constants.DeletionConfidencePadding), column)
+		alterTableArgs := ddl.AlterTableArgs{
+			Dwh:         d.bigQueryStore,
+			Tc:          tc,
+			FqTableName: fqName,
+			CreateTable: tc.CreateTable,
+			ColumnOp:    constants.Delete,
+			CdcTime:     ts.Add(2 * constants.DeletionConfidencePadding),
+		}
+
+		err := ddl.AlterTable(ctx, alterTableArgs, column)
 
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s drop COLUMN %s", fqName, column.Name), query)
@@ -108,7 +126,15 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 	var callIdx int
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
 	for name, kind := range newCols {
-		err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Add, ts, typing.Column{Name: name, KindDetails: kind})
+		alterTableArgs := ddl.AlterTableArgs{
+			Dwh:         d.bigQueryStore,
+			Tc:          tc,
+			FqTableName: fqName,
+			CreateTable: tc.CreateTable,
+			ColumnOp:    constants.Add,
+			CdcTime:     ts,
+		}
+		err := ddl.AlterTable(ctx, alterTableArgs, typing.Column{Name: name, KindDetails: kind})
 		assert.NoError(d.T(), err)
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, name, typing.KindToDWHType(kind, d.bigQueryStore.Label())), query)
@@ -156,7 +182,15 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 		var sqlResult sql.Result
 		// BQ returning the same error because the column already exists.
 		d.fakeBigQueryStore.ExecReturnsOnCall(0, sqlResult, errors.New("Column already exists: _string at [1:39]"))
-		err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Add, ts, column)
+		alterTableArgs := ddl.AlterTableArgs{
+			Dwh:         d.bigQueryStore,
+			Tc:          tc,
+			FqTableName: fqName,
+			CreateTable: tc.CreateTable,
+			ColumnOp:    constants.Add,
+			CdcTime:     ts,
+		}
+		err := ddl.AlterTable(ctx, alterTableArgs, column)
 		assert.NoError(d.T(), err)
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, column.Name, typing.KindToDWHType(column.KindDetails, d.bigQueryStore.Label())), query)
@@ -180,7 +214,15 @@ func (d *DDLTestSuite) TestAlterTableCreateTable() {
 	ctx := context.Background()
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
 
-	err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Add, time.Time{}, typing.Column{Name: "name", KindDetails: typing.String})
+	alterTableArgs := ddl.AlterTableArgs{
+		Dwh:         d.bigQueryStore,
+		Tc:          tc,
+		FqTableName: fqName,
+		CreateTable: tc.CreateTable,
+		ColumnOp:    constants.Add,
+	}
+
+	err := ddl.AlterTable(ctx, alterTableArgs, typing.Column{Name: "name", KindDetails: typing.String})
 	assert.Equal(d.T(), 1, d.fakeBigQueryStore.ExecCallCount())
 
 	query, _ := d.fakeBigQueryStore.ExecArgsForCall(0)
@@ -219,7 +261,15 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 	// Prior to deletion, there should be no colsToDelete
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ColumnsToDelete())
 	for _, column := range columns.GetColumns() {
-		err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Delete, ts, column)
+		alterTableArgs := ddl.AlterTableArgs{
+			Dwh:         d.bigQueryStore,
+			Tc:          tc,
+			FqTableName: fqName,
+			CreateTable: tc.CreateTable,
+			ColumnOp:    constants.Delete,
+			CdcTime:     ts,
+		}
+		err := ddl.AlterTable(ctx, alterTableArgs, column)
 		assert.NoError(d.T(), err)
 	}
 
@@ -228,7 +278,16 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 
 	// Now try to delete again and with an increased TS. It should now be all deleted.
 	for _, column := range columns.GetColumns() {
-		err := ddl.AlterTable(ctx, d.bigQueryStore, tc, fqName, tc.CreateTable, constants.Delete, ts.Add(2*constants.DeletionConfidencePadding), column)
+		alterTableArgs := ddl.AlterTableArgs{
+			Dwh:         d.bigQueryStore,
+			Tc:          tc,
+			FqTableName: fqName,
+			CreateTable: tc.CreateTable,
+			ColumnOp:    constants.Delete,
+			CdcTime:     ts.Add(2*constants.DeletionConfidencePadding),
+		}
+
+		err := ddl.AlterTable(ctx, alterTableArgs, column)
 		assert.NoError(d.T(), err)
 		assert.Equal(d.T(), 0, d.fakeBigQueryStore.ExecCallCount())
 	}

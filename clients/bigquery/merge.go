@@ -126,8 +126,17 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	// Check if all the columns exist in Snowflake
 	srcKeysMissing, targetKeysMissing := typing.Diff(*tableData.InMemoryColumns, targetColumns, tableData.SoftDelete)
 
+	createAlterTableArgs := ddl.AlterTableArgs{
+		Dwh:         s,
+		Tc:          tableConfig,
+		FqTableName: tableData.ToFqName(constants.BigQuery),
+		CreateTable: tableConfig.CreateTable,
+		ColumnOp:    constants.Add,
+		CdcTime:     tableData.LatestCDCTs,
+	}
+
 	// Keys that exist in CDC stream, but not in Snowflake
-	err = ddl.AlterTable(ctx, s, tableConfig, tableData.ToFqName(constants.BigQuery), tableConfig.CreateTable, constants.Add, tableData.LatestCDCTs, targetKeysMissing...)
+	err = ddl.AlterTable(ctx, createAlterTableArgs, targetKeysMissing...)
 	if err != nil {
 		log.WithError(err).Warn("failed to apply alter table")
 		return err
@@ -136,7 +145,16 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	// Keys that exist in Snowflake, but don't exist in our CDC stream.
 	// createTable is set to false because table creation requires a column to be added
 	// Which means, we'll only do it upon Add columns.
-	err = ddl.AlterTable(ctx, s, tableConfig, tableData.ToFqName(constants.BigQuery), false, constants.Delete, tableData.LatestCDCTs, srcKeysMissing...)
+	deleteAlterTableArgs := ddl.AlterTableArgs{
+		Dwh:         s,
+		Tc:          tableConfig,
+		FqTableName: tableData.ToFqName(constants.BigQuery),
+		CreateTable: false,
+		ColumnOp:    constants.Delete,
+		CdcTime:     tableData.LatestCDCTs,
+	}
+
+	err = ddl.AlterTable(ctx, deleteAlterTableArgs, srcKeysMissing...)
 	if err != nil {
 		log.WithError(err).Warn("failed to apply alter table")
 		return err
