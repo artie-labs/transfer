@@ -33,7 +33,15 @@ func (d *DDLTestSuite) TestCreateTable() {
 		},
 	}
 
-	err := ddl.AlterTable(ctx, d.snowflakeStore, tc, fqTable, tc.CreateTable, constants.Add, time.Now().UTC(), cols...)
+	alterTableArgs := ddl.AlterTableArgs{
+		Dwh:         d.snowflakeStore,
+		Tc:          tc,
+		FqTableName: fqTable,
+		CreateTable: tc.CreateTable,
+		ColumnOp:    constants.Add,
+		CdcTime:     time.Now().UTC(),
+	}
+	err := ddl.AlterTable(ctx, alterTableArgs, cols...)
 	assert.NoError(d.T(), err)
 
 	execQuery, _ := d.fakeSnowflakeStore.ExecArgsForCall(0)
@@ -61,7 +69,14 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(typing.Columns{}, nil, false, true))
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
 
-	err := ddl.AlterTable(ctx, d.snowflakeStore, tc, fqTable, false, constants.Add, time.Now().UTC(), cols...)
+	alterTableArgs := ddl.AlterTableArgs{
+		Dwh:         d.snowflakeStore,
+		Tc:          tc,
+		FqTableName: fqTable,
+		ColumnOp:    constants.Add,
+		CdcTime:     time.Now().UTC(),
+	}
+	err := ddl.AlterTable(ctx, alterTableArgs, cols...)
 	execQuery, _ := d.fakeSnowflakeStore.ExecArgsForCall(0)
 	assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN preferences variant", fqTable), execQuery)
 
@@ -95,12 +110,20 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
 
 	d.fakeSnowflakeStore.ExecReturns(nil, errors.New("column 'order_name' already exists"))
-	err := ddl.AlterTable(ctx, d.snowflakeStore, tc, fqTable, false, constants.Add, time.Now().UTC(), cols...)
+	alterTableArgs := ddl.AlterTableArgs{
+		Dwh:         d.snowflakeStore,
+		Tc:          tc,
+		FqTableName: fqTable,
+		ColumnOp:    constants.Add,
+		CdcTime:     time.Now().UTC(),
+	}
+
+	err := ddl.AlterTable(ctx, alterTableArgs, cols...)
 	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStore.ExecCallCount(), "called SFLK the same amt to create cols")
 	assert.NoError(d.T(), err)
 
 	d.fakeSnowflakeStore.ExecReturns(nil, errors.New("table does not exist"))
-	err = ddl.AlterTable(ctx, d.snowflakeStore, tc, fqTable, false, constants.Add, time.Now().UTC(), cols...)
+	err = ddl.AlterTable(ctx, alterTableArgs, cols...)
 	assert.Error(d.T(), err)
 }
 
@@ -125,7 +148,14 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(typing.Columns{}, nil, false, true))
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
 
-	err := ddl.AlterTable(d.ctx, d.snowflakeStore, tc, fqTable, false, constants.Add, time.Now().UTC(), cols...)
+	alterTableArgs := ddl.AlterTableArgs{
+		Dwh:         d.snowflakeStore,
+		Tc:          tc,
+		FqTableName: fqTable,
+		ColumnOp:    constants.Add,
+		CdcTime:     time.Now().UTC(),
+	}
+	err := ddl.AlterTable(d.ctx, alterTableArgs, cols...)
 	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStore.ExecCallCount(), "called SFLK the same amt to create cols")
 	assert.NoError(d.T(), err)
 
@@ -166,8 +196,14 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	fqTable := "shop.public.users"
 	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(typing.Columns{}, nil, false, true))
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
-
-	err := ddl.AlterTable(d.ctx, d.snowflakeStore, tc, fqTable, false, constants.Delete, time.Now().UTC(), cols...)
+	alterTableArgs := ddl.AlterTableArgs{
+		Dwh:         d.snowflakeStore,
+		Tc:          tc,
+		FqTableName: fqTable,
+		ColumnOp:    constants.Delete,
+		CdcTime:     time.Now().UTC(),
+	}
+	err := ddl.AlterTable(d.ctx, alterTableArgs, cols...)
 	assert.Equal(d.T(), 0, d.fakeSnowflakeStore.ExecCallCount(), "tried to delete, but not yet.")
 	assert.NoError(d.T(), err)
 
@@ -191,7 +227,8 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	assert.True(d.T(), tableConfig.ColumnsToDelete()[colToActuallyDelete].After(time.Now()))
 	// Now let's actually try to dial the time back, and it should actually try to delete.
 	tableConfig.AddColumnsToDelete(colToActuallyDelete, time.Now().Add(-1*time.Hour))
-	err = ddl.AlterTable(d.ctx, d.snowflakeStore, tableConfig, fqTable, false, constants.Delete, time.Now().UTC(), cols...)
+
+	err = ddl.AlterTable(d.ctx, alterTableArgs, cols...)
 	assert.Nil(d.T(), err)
 	assert.Equal(d.T(), 1, d.fakeSnowflakeStore.ExecCallCount(), "tried to delete one column")
 	execArg, _ := d.fakeSnowflakeStore.ExecArgsForCall(0)
@@ -231,8 +268,14 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 	}, false, true))
 
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
-
-	err := ddl.AlterTable(d.ctx, d.snowflakeStore, tc, fqTable, false, constants.Delete, time.Now(), cols...)
+	alterTableArgs := ddl.AlterTableArgs{
+		Dwh:         d.snowflakeStore,
+		Tc:          tc,
+		FqTableName: fqTable,
+		ColumnOp:    constants.Delete,
+		CdcTime:     time.Now(),
+	}
+	err := ddl.AlterTable(d.ctx, alterTableArgs, cols...)
 	assert.Equal(d.T(), 2, d.fakeSnowflakeStore.ExecCallCount(), "tried to delete, but not yet.")
 	assert.NoError(d.T(), err)
 

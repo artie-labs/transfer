@@ -11,7 +11,17 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func AlterTable(_ context.Context, dwh dwh.DataWarehouse, tc *types.DwhTableConfig, fqTableName string, createTable bool, columnOp constants.ColumnOperation, cdcTime time.Time, cols ...typing.Column) error {
+type AlterTableArgs struct {
+	Dwh         dwh.DataWarehouse
+	Tc          *types.DwhTableConfig
+	FqTableName string
+	CreateTable bool
+	ColumnOp constants.ColumnOperation
+
+	CdcTime time.Time
+}
+
+func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) error {
 	var mutateCol []typing.Column
 	var colSQLPart string
 	var err error
@@ -21,28 +31,28 @@ func AlterTable(_ context.Context, dwh dwh.DataWarehouse, tc *types.DwhTableConf
 			continue
 		}
 
-		if columnOp == constants.Delete && !tc.ShouldDeleteColumn(col.Name, cdcTime) {
+		if args.ColumnOp == constants.Delete && !args.Tc.ShouldDeleteColumn(col.Name, args.CdcTime) {
 			// Don't delete yet, we can evaluate when we consume more messages.
 			continue
 		}
 
 		mutateCol = append(mutateCol, col)
-		switch columnOp {
+		switch args.ColumnOp {
 		case constants.Add:
-			colSQLPart = fmt.Sprintf("%s %s", col.Name, typing.KindToDWHType(col.KindDetails, dwh.Label()))
+			colSQLPart = fmt.Sprintf("%s %s", col.Name, typing.KindToDWHType(col.KindDetails, args.Dwh.Label()))
 		case constants.Delete:
 			colSQLPart = fmt.Sprintf("%s", col.Name)
 		}
 
 		// If the table does not exist, create it.
-		sqlQuery := fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTableName, columnOp, colSQLPart)
-		if createTable {
-			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", fqTableName, colSQLPart)
-			createTable = false
+		sqlQuery := fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", args.FqTableName, args.ColumnOp, colSQLPart)
+		if args.CreateTable {
+			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, colSQLPart)
+			args.CreateTable = false
 		}
 
-		_, err = dwh.Exec(sqlQuery)
-		if err != nil && ColumnAlreadyExistErr(err, dwh.Label()) {
+		_, err = args.Dwh.Exec(sqlQuery)
+		if err != nil && ColumnAlreadyExistErr(err, args.Dwh.Label()) {
 			err = nil
 		} else if err != nil {
 			return err
@@ -50,7 +60,7 @@ func AlterTable(_ context.Context, dwh dwh.DataWarehouse, tc *types.DwhTableConf
 	}
 
 	if err == nil {
-		tc.MutateInMemoryColumns(createTable, columnOp, mutateCol...)
+		args.Tc.MutateInMemoryColumns(args.CreateTable, args.ColumnOp, mutateCol...)
 	}
 
 	return nil
