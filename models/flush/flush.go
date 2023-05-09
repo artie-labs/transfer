@@ -2,12 +2,15 @@ package flush
 
 import (
 	"context"
+	"sync"
+	"time"
+
 	"github.com/artie-labs/transfer/lib/dwh/utils"
 	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/processes/consumer"
-	"time"
 )
 
 func Flush(ctx context.Context) error {
@@ -19,36 +22,43 @@ func Flush(ctx context.Context) error {
 	models.GetMemoryDB().Lock()
 	defer models.GetMemoryDB().Unlock()
 
+	var wg sync.WaitGroup
 	// Flush will take everything in memory and call Snowflake to create temp tables.
 	for tableName, tableData := range models.GetMemoryDB().TableData {
-		start := time.Now()
-		logFields := map[string]interface{}{
-			"tableName": tableName,
-		}
+		wg.Add(1)
 
-		tags := map[string]string{
-			"what":     "success",
-			"table":    tableName,
-			"database": tableData.Database,
-			"schema":   tableData.Schema,
-		}
-
-		err := utils.FromContext(ctx).Merge(ctx, tableData)
-		if err != nil {
-			tags["what"] = "merge_fail"
-			log.WithError(err).WithFields(logFields).Warn("Failed to execute merge...not going to flush memory")
-		} else {
-			log.WithFields(logFields).Info("Merge success, clearing memory...")
-			commitErr := consumer.CommitOffset(ctx, tableData.Topic, tableData.PartitionsToLastMessage)
-			if commitErr == nil {
-				models.GetMemoryDB().ClearTableConfig(tableName)
-			} else {
-				tags["what"] = "commit_fail"
-				log.WithError(commitErr).Warn("commit error...")
+		go func(_tableName string, _tableData *optimization.TableData) {
+			defer wg.Done()
+			start := time.Now()
+			logFields := map[string]interface{}{
+				"tableName": _tableName,
 			}
-		}
 
-		metrics.FromContext(ctx).Timing("flush", time.Since(start), tags)
+			tags := map[string]string{
+				"what":     "success",
+				"table":    _tableName,
+				"database": _tableData.Database,
+				"schema":   _tableData.Schema,
+			}
+
+			err := utils.FromContext(ctx).Merge(ctx, _tableData)
+			if err != nil {
+				tags["what"] = "merge_fail"
+				log.WithError(err).WithFields(logFields).Warn("Failed to execute merge...not going to flush memory")
+			} else {
+				log.WithFields(logFields).Info("Merge success, clearing memory...")
+				commitErr := consumer.CommitOffset(ctx, _tableData.Topic, _tableData.PartitionsToLastMessage)
+				if commitErr == nil {
+					models.GetMemoryDB().ClearTableConfig(_tableName)
+				} else {
+					tags["what"] = "commit_fail"
+					log.WithError(commitErr).Warn("commit error...")
+				}
+			}
+			metrics.FromContext(ctx).Timing("flush", time.Since(start), tags)
+		}(tableName, tableData)
+
+		wg.Wait()
 	}
 
 	return nil
