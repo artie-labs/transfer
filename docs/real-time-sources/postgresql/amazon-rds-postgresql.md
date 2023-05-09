@@ -14,7 +14,7 @@ Make sure you select the right DB family group. Use `postgres10` if your databas
 
 <figure><img src="../../.gitbook/assets/image (1) (4).png" alt=""><figcaption></figcaption></figure>
 
-<figure><img src="../../.gitbook/assets/image.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (4).png" alt=""><figcaption></figcaption></figure>
 
 Find the `rds.logical_replication` parameter and set it to `1`.
 

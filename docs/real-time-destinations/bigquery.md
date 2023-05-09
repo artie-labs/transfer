@@ -20,7 +20,7 @@ In order for Transfer to connect to BigQuery, we will need to specify a default 
 The default dataset is only meant to establish the initial connection with BigQuery. The actual dataset specified within `topicConfig` can be different from the default dataset!
 {% endhint %}
 
-<figure><img src="../.gitbook/assets/image (4).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (4) (2).png" alt=""><figcaption></figcaption></figure>
 
 ### Retrieving your credentials
 
