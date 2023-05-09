@@ -3,8 +3,9 @@ package dml
 import (
 	"errors"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/typing"
 	"strings"
+
+	"github.com/artie-labs/transfer/lib/typing"
 
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -17,6 +18,9 @@ type MergeArgument struct {
 	PrimaryKeys    []string
 	Columns        []string
 	ColumnsToTypes typing.Columns
+
+	// This is only used for BigQuery temporary tables because the code will not compile without it.
+	EscapeParentheses bool
 
 	// SpecialCastingRequired - This is used for columns that have JSON value. This is required for BigQuery
 	// We will be casting the value in this column as such: `TO_JSON_STRING(<columnName>)`
@@ -53,9 +57,14 @@ func MergeStatement(m MergeArgument) (string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
+	subQuery := fmt.Sprintf("( %s )", m.SubQuery)
+	if m.EscapeParentheses {
+		subQuery = m.SubQuery
+	}
+
 	if m.SoftDelete {
 		return fmt.Sprintf(`
-			MERGE INTO %s c using (%s) as cc on %s
+			MERGE INTO %s c using %s as cc on %s
 				when matched %sthen UPDATE
 					SET %s
 				when not matched AND IFNULL(cc.%s, false) = false then INSERT
@@ -66,7 +75,7 @@ func MergeStatement(m MergeArgument) (string, error) {
 					(
 						%s
 					);
-		`, m.FqTableName, m.SubQuery, strings.Join(equalitySQLParts, " and "),
+		`, m.FqTableName, subQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
 			idempotentClause, array.ColumnsUpdateQuery(m.Columns, "cc"),
 			// Insert
@@ -89,7 +98,7 @@ func MergeStatement(m MergeArgument) (string, error) {
 	}
 
 	return fmt.Sprintf(`
-			MERGE INTO %s c using (%s) as cc on %s
+			MERGE INTO %s c using %s as cc on %s
 				when matched AND cc.%s then DELETE
 				when matched AND IFNULL(cc.%s, false) = false %sthen UPDATE
 					SET %s
@@ -101,7 +110,7 @@ func MergeStatement(m MergeArgument) (string, error) {
 					(
 						%s
 					);
-		`, m.FqTableName, m.SubQuery, strings.Join(equalitySQLParts, " and "),
+		`, m.FqTableName, subQuery, strings.Join(equalitySQLParts, " and "),
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update

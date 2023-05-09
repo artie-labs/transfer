@@ -2,14 +2,15 @@ package optimization
 
 import (
 	"context"
+	"strings"
+	"time"
+
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/size"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
-	"strings"
-	"time"
 )
 
 type TableData struct {
@@ -25,7 +26,10 @@ type TableData struct {
 
 	// This is used for the automatic schema detection
 	LatestCDCTs time.Time
-	approxSize int
+	approxSize  int
+
+	// BigQuery specific. We are creating a temporary table to execute a merge, in order to avoid in-memory tables via UNION ALL.
+	temporaryTableSuffix string
 }
 
 func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicConfig kafkalib.TopicConfig) *TableData {
@@ -35,6 +39,8 @@ func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicCo
 		PrimaryKeys:             primaryKeys,
 		TopicConfig:             topicConfig,
 		PartitionsToLastMessage: map[string][]artie.Message{},
+		// TODO: randomize this.
+		temporaryTableSuffix: "foo",
 	}
 
 }
@@ -75,9 +81,13 @@ func (t *TableData) Rows() uint {
 	return uint(len(t.rowsData))
 }
 
+func (t *TableData) TempTableSuffix() string {
+	return t.temporaryTableSuffix
+}
+
 func (t *TableData) ShouldFlush(ctx context.Context) bool {
 	settings := config.FromContext(ctx)
-	return t.Rows() > settings.Config.BufferRows || t.approxSize > settings.Config.FlushSizeKb * 1024
+	return t.Rows() > settings.Config.BufferRows || t.approxSize > settings.Config.FlushSizeKb*1024
 }
 
 // UpdateInMemoryColumnsFromDestination - When running Transfer, we will have 2 column types.

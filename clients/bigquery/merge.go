@@ -7,18 +7,19 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/dwh/dml"
+
 	"github.com/artie-labs/transfer/lib/stringutil"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/ddl"
-	"github.com/artie-labs/transfer/lib/dwh/dml"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func merge(tableData *optimization.TableData) (string, error) {
+func merge(tableData *optimization.TableData) ([]string, error) {
 	var cols []string
 	// Given all the columns, diff this against SFLK.
 	for _, col := range tableData.InMemoryColumns.GetColumns() {
@@ -31,7 +32,6 @@ func merge(tableData *optimization.TableData) (string, error) {
 	}
 
 	var rowValues []string
-	firstRow := true
 	for _, value := range tableData.RowsData() {
 		var colVals []string
 		for _, col := range cols {
@@ -42,7 +42,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 				case typing.ETime.Kind:
 					extTime, err := ext.ParseFromInterface(colVal)
 					if err != nil {
-						return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
+						return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
 					}
 
 					switch extTime.NestedKind.Type {
@@ -66,7 +66,7 @@ func merge(tableData *optimization.TableData) (string, error) {
 					// https://go.dev/play/p/BcCwUSCeTmT
 					colValBytes, err := json.Marshal(colVal)
 					if err != nil {
-						return "", err
+						return nil, err
 					}
 
 					colVal = stringutil.Wrap(string(colValBytes))
@@ -81,30 +81,13 @@ func merge(tableData *optimization.TableData) (string, error) {
 				}
 			}
 
-			if firstRow {
-				colVal = fmt.Sprintf("%v as %s", colVal, col)
-			}
-
 			colVals = append(colVals, fmt.Sprint(colVal))
 		}
 
-		firstRow = false
-		rowValues = append(rowValues, fmt.Sprintf("SELECT %s", strings.Join(colVals, ",")))
+		rowValues = append(rowValues, fmt.Sprintf("( %s )", strings.Join(colVals, ",")))
 	}
 
-	subQuery := strings.Join(rowValues, " UNION ALL ")
-
-	return dml.MergeStatement(dml.MergeArgument{
-		FqTableName:    tableData.ToFqName(constants.BigQuery),
-		SubQuery:       subQuery,
-		IdempotentKey:  tableData.IdempotentKey,
-		PrimaryKeys:    tableData.PrimaryKeys,
-		Columns:        cols,
-		ColumnsToTypes: *tableData.InMemoryColumns,
-		SoftDelete:     tableData.SoftDelete,
-		// BigQuery specifically needs it.
-		SpecialCastingRequired: true,
-	})
+	return rowValues, nil
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
@@ -130,7 +113,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
 		Tc:          tableConfig,
-		FqTableName: tableData.ToFqName(constants.BigQuery),
+		FqTableName: tableData.ToFqName(s.Label()),
 		CreateTable: tableConfig.CreateTable,
 		ColumnOp:    constants.Add,
 		CdcTime:     tableData.LatestCDCTs,
@@ -149,7 +132,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	deleteAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
 		Tc:          tableConfig,
-		FqTableName: tableData.ToFqName(constants.BigQuery),
+		FqTableName: tableData.ToFqName(s.Label()),
 		CreateTable: false,
 		ColumnOp:    constants.Delete,
 		CdcTime:     tableData.LatestCDCTs,
@@ -178,29 +161,63 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		}
 	}
 
-	/// Before we merge, we need to create a temporary table, so we can write our results.
+	// Start temporary table creation
 	tempAlterTableArgs := ddl.AlterTableArgs{
-		Dwh: s,
-		Tc:  tableConfig,
-		// TODO
-		//FqTableName:    ,
+		Dwh:            s,
+		Tc:             tableConfig,
+		FqTableName:    fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label()), tableData.TempTableSuffix()),
 		CreateTable:    true,
 		TemporaryTable: true,
 		ColumnOp:       constants.Add,
 	}
 
-	if err = ddl.AlterTable(ctx, tempAlterTableArgs, tableConfig.Columns().GetColumns()...); err != nil {
+	if err = ddl.AlterTable(ctx, tempAlterTableArgs, tableData.InMemoryColumns.GetColumns()...); err != nil {
 		return fmt.Errorf("failed to create temp table, error: %v", err)
 	}
 
+	// End temporary table creation
+
 	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
-	query, err := merge(tableData)
+	rows, err := merge(tableData)
 	if err != nil {
 		log.WithError(err).Warn("failed to generate the merge query")
 		return err
 	}
 
-	log.WithField("query", query).Debug("executing...")
-	_, err = s.Exec(query)
+	var cols []string
+	for _, col := range tableData.InMemoryColumns.GetColumns() {
+		cols = append(cols, col.Name)
+	}
+
+	err = s.Insert(InsertArgs{
+		Rows:      rows,
+		Cols:      cols,
+		TableName: tempAlterTableArgs.FqTableName,
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to insert into temp table, error: %v", err)
+	}
+
+	mergeQuery, err := dml.MergeStatement(dml.MergeArgument{
+		FqTableName:       tableData.ToFqName(constants.BigQuery),
+		SubQuery:          tempAlterTableArgs.FqTableName,
+		IdempotentKey:     tableData.IdempotentKey,
+		PrimaryKeys:       tableData.PrimaryKeys,
+		Columns:           cols,
+		ColumnsToTypes:    *tableData.InMemoryColumns,
+		SoftDelete:        tableData.SoftDelete,
+		EscapeParentheses: true,
+		// BigQuery specifically needs it.
+		SpecialCastingRequired: true,
+	})
+
+	fmt.Println("mergeQuery", mergeQuery)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = s.Exec(mergeQuery)
 	return err
 }

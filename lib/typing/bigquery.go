@@ -1,8 +1,10 @@
 package typing
 
 import (
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"strings"
+	"time"
+
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func BigQueryTypeToKind(bqType string) KindDetails {
@@ -77,4 +79,11 @@ func kindToBigQuery(kindDetails KindDetails) string {
 	}
 
 	return kindDetails.Kind
+}
+
+func BigQueryDate(time time.Time) string {
+	// BigQuery expects the timestamp to look in this format: 2023-01-01 00:00:00 UTC
+	// This is used as part of table options.
+	layout := "2006-01-02 15:04:05 MST"
+	return time.Format(layout)
 }

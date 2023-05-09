@@ -2,6 +2,7 @@ package snowflake
 
 import (
 	"context"
+
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"

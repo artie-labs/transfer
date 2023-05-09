@@ -54,11 +54,13 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) e
 					return fmt.Errorf("unexpected temporary table for destination: %v", args.Dwh.Label())
 				}
 
-				// https://cloud.google.com/bigquery/docs/multi-statement-queries#create_temporary_table
-				sqlQuery = fmt.Sprintf("CREATE TEMP TABLE IF NOT EXISTS %s (%s)", args.FqTableName, colSQLPart)
+				expiry := time.Now().UTC().Add(6 * time.Hour)
+				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
+					args.FqTableName, colSQLPart, typing.BigQueryDate(expiry))
 			} else {
 				sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, colSQLPart)
 			}
+
 			args.CreateTable = false
 		}
 
