@@ -16,7 +16,6 @@ type ModelsTestSuite struct {
 }
 
 func (m *ModelsTestSuite) SetupTest() {
-
 	m.ctx = context.Background()
 	m.ctx = config.InjectSettingsIntoContext(m.ctx, &config.Settings{
 		Config: &config.Config{

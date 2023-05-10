@@ -1,12 +1,13 @@
-package models
+package event
 
 import (
 	"context"
+	"time"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
-	"time"
 )
 
 type fakeEvent struct{}
@@ -31,31 +32,31 @@ func (f fakeEvent) GetData(ctx context.Context, pkMap map[string]interface{}, co
 	return map[string]interface{}{constants.DeleteColumnMarker: false}
 }
 
-func (m *ModelsTestSuite) TestEvent_IsValid() {
-	var e Event
-	assert.False(m.T(), e.IsValid())
+func (e *EventsTestSuite) TestEvent_IsValid() {
+	var _evt Event
+	assert.False(e.T(), _evt.IsValid())
 
-	e.Table = "foo"
-	assert.False(m.T(), e.IsValid())
+	_evt.Table = "foo"
+	assert.False(e.T(), _evt.IsValid())
 
-	e.PrimaryKeyMap = idMap
-	assert.False(m.T(), e.IsValid())
+	_evt.PrimaryKeyMap = idMap
+	assert.False(e.T(), _evt.IsValid())
 
-	e.Data = make(map[string]interface{})
-	e.Data[constants.DeleteColumnMarker] = false
-	assert.True(m.T(), e.IsValid(), e)
+	_evt.Data = make(map[string]interface{})
+	_evt.Data[constants.DeleteColumnMarker] = false
+	assert.True(e.T(), _evt.IsValid(), _evt)
 }
 
-func (m *ModelsTestSuite) TestEvent_TableName() {
+func (e *EventsTestSuite) TestEvent_TableName() {
 	var f fakeEvent
 	evt := ToMemoryEvent(context.Background(), f, idMap, &kafkalib.TopicConfig{
 		TableName: "orders",
 	})
 
-	assert.Equal(m.T(), "orders", evt.Table)
+	assert.Equal(e.T(), "orders", evt.Table)
 }
 
-func (m *ModelsTestSuite) TestEventPrimaryKeys() {
+func (e *EventsTestSuite) TestEventPrimaryKeys() {
 	evt := &Event{
 		Table: "foo",
 		PrimaryKeyMap: map[string]interface{}{
@@ -77,7 +78,7 @@ func (m *ModelsTestSuite) TestEventPrimaryKeys() {
 			}
 		}
 
-		assert.True(m.T(), found, requiredKey)
+		assert.True(e.T(), found, requiredKey)
 	}
 
 	anotherEvt := &Event{
@@ -97,7 +98,7 @@ func (m *ModelsTestSuite) TestEventPrimaryKeys() {
 		}
 	}
 
-	assert.True(m.T(), found, anotherEvt.PrimaryKeyValue())
+	assert.True(e.T(), found, anotherEvt.PrimaryKeyValue())
 
 	// Make sure the ordering for the pk is deterministic.
 	partsMap := make(map[string]bool)
@@ -105,10 +106,10 @@ func (m *ModelsTestSuite) TestEventPrimaryKeys() {
 		partsMap[anotherEvt.PrimaryKeyValue()] = true
 	}
 
-	assert.Equal(m.T(), len(partsMap), 1)
+	assert.Equal(e.T(), len(partsMap), 1)
 }
 
-func (m *ModelsTestSuite) TestPrimaryKeyValueDeterministic() {
+func (e *EventsTestSuite) TestPrimaryKeyValueDeterministic() {
 	evt := &Event{
 		PrimaryKeyMap: map[string]interface{}{
 			"aa":    1,
@@ -120,6 +121,6 @@ func (m *ModelsTestSuite) TestPrimaryKeyValueDeterministic() {
 	}
 
 	for i := 0; i < 500*1000; i++ {
-		assert.Equal(m.T(), evt.PrimaryKeyValue(), "aa=1bb=5dusty=mini aussiegg=artiezz=ff")
+		assert.Equal(e.T(), evt.PrimaryKeyValue(), "aa=1bb=5dusty=mini aussiegg=artiezz=ff")
 	}
 }
