@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/artie-labs/transfer/models/event"
+
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -23,7 +25,7 @@ var topicConfig = &kafkalib.TopicConfig{
 
 func (f *FlushTestSuite) TestMemoryBasic() {
 	for i := 0; i < 5; i++ {
-		event := models.Event{
+		event := event.Event{
 			Table: "foo",
 			PrimaryKeyMap: map[string]interface{}{
 				"id": fmt.Sprintf("pk-%d", i),
@@ -47,7 +49,7 @@ func (f *FlushTestSuite) TestShouldFlush() {
 	cfg := config.FromContext(f.ctx)
 
 	for i := 0; i < int(float64(cfg.Config.BufferRows)*1.5); i++ {
-		event := models.Event{
+		event := event.Event{
 			Table: "postgres",
 			PrimaryKeyMap: map[string]interface{}{
 				"id": fmt.Sprintf("pk-%d", i),
@@ -83,7 +85,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 		go func(tableName string) {
 			defer wg.Done()
 			for i := 0; i < 5; i++ {
-				event := models.Event{
+				event := event.Event{
 					Table: tableName,
 					PrimaryKeyMap: map[string]interface{}{
 						"id": fmt.Sprintf("pk-%d", i),
