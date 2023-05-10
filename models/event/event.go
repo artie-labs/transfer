@@ -8,17 +8,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artie-labs/transfer/models"
-
+	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/artie"
+	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
-
-	"github.com/artie-labs/transfer/lib/array"
-	"github.com/artie-labs/transfer/lib/cdc"
-	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/models"
 )
 
 type Event struct {
