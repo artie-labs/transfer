@@ -2,6 +2,7 @@ package flush
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -23,11 +24,12 @@ func Flush(ctx context.Context) error {
 	defer models.GetMemoryDB(ctx).Unlock()
 
 	var wg sync.WaitGroup
+
+	flushChan := make(chan string, len(models.GetMemoryDB(ctx).TableData))
 	// Flush will take everything in memory and call Snowflake to create temp tables.
 	for tableName, tableData := range models.GetMemoryDB(ctx).TableData {
 		wg.Add(1)
-
-		go func(_tableName string, _tableData *optimization.TableData) {
+		go func(_tableName string, _tableData *optimization.TableData, flushChan chan string) {
 			defer wg.Done()
 			start := time.Now()
 			logFields := map[string]interface{}{
@@ -49,16 +51,22 @@ func Flush(ctx context.Context) error {
 				log.WithFields(logFields).Info("Merge success, clearing memory...")
 				commitErr := consumer.CommitOffset(ctx, _tableData.Topic, _tableData.PartitionsToLastMessage)
 				if commitErr == nil {
-					models.GetMemoryDB(ctx).ClearTableConfig(_tableName)
+					flushChan <- _tableName
 				} else {
 					tags["what"] = "commit_fail"
 					log.WithError(commitErr).Warn("commit error...")
 				}
 			}
 			metrics.FromContext(ctx).Timing("flush", time.Since(start), tags)
-		}(tableName, tableData)
+		}(tableName, tableData, flushChan)
 
-		wg.Wait()
+	}
+	wg.Wait()
+	close(flushChan)
+
+	for tableName := range flushChan {
+		fmt.Println("clearing tablename", tableName)
+		models.GetMemoryDB(ctx).ClearTableConfig(tableName)
 	}
 
 	return nil
