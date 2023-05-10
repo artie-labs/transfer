@@ -13,11 +13,11 @@ We created our own [typing library](https://github.com/artie-labs/transfer/tree/
 
 ## Integers vs. Floats
 
-When in doubt, we follow the same logic as `JSON encoding` which is to default to `FLOAT` whenever we are in doubt. We then have an ability to allow sources to [specify an optional schema](https://github.com/artie-labs/transfer/blob/a30cf5c67a699ba8bcf1e483aa7535ad818b6af9/lib/debezium/schema.go#L44-L51) that will override our typing library in thinking this is a `INT` when there is a schema available. This is automatically supported for all of our sources.
+Our schema conforms directly to the source (Postgres, MySQL and MongoDB), so we will preserve integers vs. floats.
 
 > What happens if the number is `5` vs `"5`"?
 
-The first one, `5` will get casted as a `FLOAT` and the second one will be casted a `STRING`.&#x20;
+The first one, `5` , will be casted as a `INT` and the second one will be casted a `STRING`.&#x20;
 
 ## JSON objects
 
@@ -31,11 +31,11 @@ As part of our values to preserve data integrity, we will provide the JSON objec
 
 Our typing library will try to run values through our JSON parser and label this value as a JSON object if it passes our parsing test.&#x20;
 
-If you explicitly want this to be stored as a `JSON string`, you [can also explicitly specify](https://github.com/artie-labs/transfer/blob/a30cf5c67a699ba8bcf1e483aa7535ad818b6af9/lib/typing/typing.go#L83-L89) this column to be a `STRING`. This is automatically supported for our all of our sources.
+If you explicitly want this to be stored as a `JSON string`, you [can also explicitly specify](https://github.com/artie-labs/transfer/blob/a30cf5c67a699ba8bcf1e483aa7535ad818b6af9/lib/typing/typing.go#L83-L89) this column to be a `STRING`. This is automatically supported for all of our sources.
 
 ## Arrays
 
-Arrays also have a first-class support and we support the following:
+Arrays also have first-class support and we support the following:
 
 * Normal arrays
 * Nested arrays
@@ -46,9 +46,9 @@ Arrays also have a first-class support and we support the following:
 
 ## Timestamp, Date and Time
 
-We support \~15 [different formats](https://github.com/artie-labs/transfer/blob/master/lib/typing/ext/variables.go#L13) across the these data types with zero precision loss. We also have our own `time.Time` object which keeps your original layout which is used when replaying this to your destination.&#x20;
+We support \~15 [different formats](https://github.com/artie-labs/transfer/blob/master/lib/typing/ext/variables.go#L13) across these data types with zero precision loss. We also have our own `time.Time` object which keeps your original layout when replaying to your destination.&#x20;
 
-Similar to JSON objects, if you would like the Typing library to not try to infer your string value as a `TIMESTAMP`, `DATE` or `TIME`, then simply pass the preferred data type as part of the optional schema. This is automatically supported with all of our sources.
+Similar to JSON objects, if you do not want the Typing library to infer your string value as a `TIMESTAMP`, `DATE` or `TIME`, then simply pass the preferred data type as part of the optional schema. This is automatically supported with all of our sources.
 
 ## Is your question not listed here?
 
