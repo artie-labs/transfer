@@ -1,7 +1,7 @@
 ---
 description: >-
-  Curious how Artie's typing library works? You're at the right place! In this
-  section, we will discuss how Artie's internal typing library works and how we
+  Curious how Artie's typing library works? You've come to the right place!
+  Here, we will discuss how Artie's internal typing library works and how we
   ensure source-data integrity.
 ---
 
@@ -9,13 +9,15 @@ description: >-
 
 ## Context
 
-We created our own [typing library](https://github.com/artie-labs/transfer/tree/master/lib/typing) that empowers Artie to provide schema evolution support and ensure the data you see in your [source](broken-reference) looks exactly the same in your [destination](broken-reference).
+We created our own [typing library](https://github.com/artie-labs/transfer/tree/master/lib/typing) that empowers Artie to provide schema evolution support and ensure the data you see in your [source](broken-reference) looks exactly the same in your [destination](broken-reference).&#x20;
 
-## Integers vs. Floats
+At a high level, Transfer will detect missing columns and automatically add them to the destination and set the correct types. When we get the first `NOT NULL` value, we will run this through our typing library so that we can infer the correct data type. Transfer strives to maintain source-data integrity and as a result, we do not apply any transforms. The second objective with our typing library is also performance, as a slow typing library may incur additional overhead for row processing. We are happy to report that our [typing library is 2x faster](https://github.com/artie-labs/transfer/tree/master/lib/typing) than Go's Reflect library.
 
-Our schema conforms directly to the source (Postgres, MySQL and MongoDB), so we will preserve integers vs. floats.
+## Numbers
 
-> What happens if the number is `5` vs `"5`"?
+Our schema conforms directly to the source (Postgres, MySQL and MongoDB), so we will set the data type (whether it be a FLOAT or INT) correctly to our destination.
+
+> What happens if the value is `5` vs `"5`"?
 
 The first one, `5` , will be casted as a `INT` and the second one will be casted a `STRING`.&#x20;
 
