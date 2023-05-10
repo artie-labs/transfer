@@ -2,7 +2,6 @@ package flush
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -25,7 +24,9 @@ func Flush(ctx context.Context) error {
 
 	var wg sync.WaitGroup
 
+	// Create a channel where the buffer is the number of tables, so it doesn't block.
 	flushChan := make(chan string, len(models.GetMemoryDB(ctx).TableData))
+
 	// Flush will take everything in memory and call Snowflake to create temp tables.
 	for tableName, tableData := range models.GetMemoryDB(ctx).TableData {
 		wg.Add(1)
@@ -62,10 +63,12 @@ func Flush(ctx context.Context) error {
 
 	}
 	wg.Wait()
+
+	// Close the channel so no more rows can be added.
 	close(flushChan)
 
 	for tableName := range flushChan {
-		fmt.Println("clearing tablename", tableName)
+		// Now drain the channel.
 		models.GetMemoryDB(ctx).ClearTableConfig(tableName)
 	}
 
