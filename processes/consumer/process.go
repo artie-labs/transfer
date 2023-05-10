@@ -3,10 +3,11 @@ package consumer
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
-	"github.com/artie-labs/transfer/models"
-	"time"
+	"github.com/artie-labs/transfer/models/event"
 )
 
 func processMessage(ctx context.Context, msg artie.Message, topicToConfigFmtMap map[string]TopicConfigFormatter, groupID string) (shouldFlush bool, err error) {
@@ -36,13 +37,13 @@ func processMessage(ctx context.Context, msg artie.Message, topicToConfigFmtMap 
 		return false, fmt.Errorf("cannot unmarshall key, key: %s, err: %v", string(msg.Key()), err)
 	}
 
-	event, err := topicConfig.GetEventFromBytes(ctx, msg.Value())
+	_event, err := topicConfig.GetEventFromBytes(ctx, msg.Value())
 	if err != nil {
 		tags["what"] = "marshall_value_err"
 		return false, fmt.Errorf("cannot unmarshall event, err: %v", err)
 	}
 
-	evt := models.ToMemoryEvent(ctx, event, pkMap, topicConfig.tc)
+	evt := event.ToMemoryEvent(ctx, _event, pkMap, topicConfig.tc)
 	shouldFlush, err = evt.Save(ctx, topicConfig.tc, msg)
 	if err != nil {
 		tags["what"] = "save_fail"

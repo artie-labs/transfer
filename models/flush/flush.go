@@ -14,17 +14,17 @@ import (
 )
 
 func Flush(ctx context.Context) error {
-	if models.GetMemoryDB() == nil {
+	if models.GetMemoryDB(ctx) == nil {
 		return nil
 	}
 
 	log := logger.FromContext(ctx)
-	models.GetMemoryDB().Lock()
-	defer models.GetMemoryDB().Unlock()
+	models.GetMemoryDB(ctx).Lock()
+	defer models.GetMemoryDB(ctx).Unlock()
 
 	var wg sync.WaitGroup
 	// Flush will take everything in memory and call Snowflake to create temp tables.
-	for tableName, tableData := range models.GetMemoryDB().TableData {
+	for tableName, tableData := range models.GetMemoryDB(ctx).TableData {
 		wg.Add(1)
 
 		go func(_tableName string, _tableData *optimization.TableData) {
@@ -49,7 +49,7 @@ func Flush(ctx context.Context) error {
 				log.WithFields(logFields).Info("Merge success, clearing memory...")
 				commitErr := consumer.CommitOffset(ctx, _tableData.Topic, _tableData.PartitionsToLastMessage)
 				if commitErr == nil {
-					models.GetMemoryDB().ClearTableConfig(_tableName)
+					models.GetMemoryDB(ctx).ClearTableConfig(_tableName)
 				} else {
 					tags["what"] = "commit_fail"
 					log.WithError(commitErr).Warn("commit error...")
