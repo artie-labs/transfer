@@ -3,6 +3,10 @@ package consumer
 import (
 	"context"
 	"fmt"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc/mongo"
 	"github.com/artie-labs/transfer/lib/config"
@@ -11,14 +15,9 @@ import (
 	"github.com/artie-labs/transfer/models"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
-	"strings"
-	"testing"
-	"time"
 )
 
 func TestProcessMessageFailures(t *testing.T) {
-	models.LoadMemoryDB()
-
 	ctx := context.Background()
 	ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{
 		Config: &config.Config{
@@ -29,6 +28,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		VerboseLogging: false,
 	})
 
+	ctx = models.LoadMemoryDB(ctx)
 	kafkaMsg := kafka.Message{
 		Topic:         "foo",
 		Partition:     0,
@@ -108,7 +108,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	}
 
 	idx := 0
-	memoryDB := models.GetMemoryDB()
+	memoryDB := models.GetMemoryDB(ctx)
 	for _, val := range vals {
 		idx += 1
 		msg.KafkaMsg.Key = []byte(fmt.Sprintf("Struct{id=%v}", idx))
