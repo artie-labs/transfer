@@ -33,3 +33,23 @@ Our typing library will try to run values through our JSON parser and label this
 
 If you explicitly want this to be stored as a `JSON string`, you [can also explicitly specify](https://github.com/artie-labs/transfer/blob/a30cf5c67a699ba8bcf1e483aa7535ad818b6af9/lib/typing/typing.go#L83-L89) this column to be a `STRING`. This is automatically supported for our all of our sources.
 
+## Arrays
+
+Arrays also have a first-class support and we support the following:
+
+* Normal arrays
+* Nested arrays
+
+<figure><img src="../.gitbook/assets/image (7).png" alt=""><figcaption><p>Normal array</p></figcaption></figure>
+
+<figure><img src="../.gitbook/assets/image (1).png" alt=""><figcaption><p>Array with nested objects</p></figcaption></figure>
+
+## Timestamp, Date and Time
+
+We support \~15 [different formats](https://github.com/artie-labs/transfer/blob/master/lib/typing/ext/variables.go#L13) across the these data types with zero precision loss. We also have our own `time.Time` object which keeps your original layout which is used when replaying this to your destination.&#x20;
+
+Similar to JSON objects, if you would like the Typing library to not try infer your string value as a `TIMESTAMP`, `DATE` or `TIME`, then simply pass the preferred data type as part of the optional schema. This is automatically supported with all of our sources.
+
+## Is your question not listed here?
+
+If your question is not answered by this page, please reach out to [hi@artie.so](mailto:hi@artie.so)!

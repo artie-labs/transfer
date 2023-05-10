@@ -21,7 +21,7 @@ Also, to allow Artie Transfer to read the change event stream, the MongoDB clust
 
 Provide a comma separated list of hosts within the Replica Set. We recommend this approach since Debezium relies on the primary node within the cluster to stream changes. If the cluster undergoes an election process and elects a new primary, Debezium will automatically re-establish the underlying connection.
 
-<figure><img src="../../.gitbook/assets/image (1).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (1) (5).png" alt=""><figcaption></figcaption></figure>
 
 ## Authentication
 
