@@ -1,8 +1,8 @@
 ---
 description: >-
-  Ever wonder how Artie's typing library works? You've found the right article!
-  In this section, we will discuss how Artie's internal typing library works and
-  how we ensure source-data integrity.
+  Curious how Artie's typing library works? You're at the right place! In this
+  section, we will discuss how Artie's internal typing library works and how we
+  ensure source-data integrity.
 ---
 
 # \[WIP] Deep-dive into Artie's typing library
@@ -11,9 +11,9 @@ description: >-
 
 We created our own [typing library](https://github.com/artie-labs/transfer/tree/master/lib/typing) that empowers Artie to provide schema evolution support and ensure the data you see in your [source](broken-reference) looks exactly the same in your [destination](broken-reference).
 
-## Ints vs. Floats
+## Integers vs. Floats
 
-When in doubt, we follow the same logic as `JSON encoding` which is to default to `FLOAT` whenever we are in-doubt. We then have an ability to allow sources to [specify an optional schema](https://github.com/artie-labs/transfer/blob/a30cf5c67a699ba8bcf1e483aa7535ad818b6af9/lib/debezium/schema.go#L44-L51) that will override our typing library in thinking this is a `INT` when there is a schema available. This is automatically supported for all of our sources.
+When in doubt, we follow the same logic as `JSON encoding` which is to default to `FLOAT` whenever we are in doubt. We then have an ability to allow sources to [specify an optional schema](https://github.com/artie-labs/transfer/blob/a30cf5c67a699ba8bcf1e483aa7535ad818b6af9/lib/debezium/schema.go#L44-L51) that will override our typing library in thinking this is a `INT` when there is a schema available. This is automatically supported for all of our sources.
 
 > What happens if the number is `5` vs `"5`"?
 
@@ -48,7 +48,7 @@ Arrays also have a first-class support and we support the following:
 
 We support \~15 [different formats](https://github.com/artie-labs/transfer/blob/master/lib/typing/ext/variables.go#L13) across the these data types with zero precision loss. We also have our own `time.Time` object which keeps your original layout which is used when replaying this to your destination.&#x20;
 
-Similar to JSON objects, if you would like the Typing library to not try infer your string value as a `TIMESTAMP`, `DATE` or `TIME`, then simply pass the preferred data type as part of the optional schema. This is automatically supported with all of our sources.
+Similar to JSON objects, if you would like the Typing library to not try to infer your string value as a `TIMESTAMP`, `DATE` or `TIME`, then simply pass the preferred data type as part of the optional schema. This is automatically supported with all of our sources.
 
 ## Is your question not listed here?
 
