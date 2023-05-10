@@ -2,12 +2,13 @@ package flush
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
-	"sync"
 
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/models"
@@ -37,7 +38,7 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 		kafkaMsg := kafka.Message{Partition: 1, Offset: 1}
 		_, err := event.Save(f.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 		assert.Nil(f.T(), err)
-		assert.Equal(f.T(), int(models.GetMemoryDB().TableData["foo"].Rows()), i+1)
+		assert.Equal(f.T(), int(models.GetMemoryDB(f.ctx).TableData["foo"].Rows()), i+1)
 	}
 }
 
@@ -108,7 +109,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 
 	// Verify all the tables exist.
 	for idx := range tableNames {
-		tableConfig := models.GetMemoryDB().TableData[tableNames[idx]].RowsData()
+		tableConfig := models.GetMemoryDB(f.ctx).TableData[tableNames[idx]].RowsData()
 		assert.Equal(f.T(), len(tableConfig), 5)
 	}
 

@@ -3,26 +3,44 @@ package models
 import (
 	"context"
 	"errors"
+	"strings"
+	"sync"
+
+	"github.com/artie-labs/transfer/lib/logger"
+
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
-	"strings"
-	"sync"
 )
+
+const dbKey = "__db"
 
 type DatabaseData struct {
 	TableData map[string]*optimization.TableData
 	sync.Mutex
 }
 
-func GetMemoryDB() *DatabaseData {
-	return inMemoryDB
+func LoadMemoryDB(ctx context.Context) context.Context {
+	return context.WithValue(ctx, dbKey, &DatabaseData{
+		TableData: map[string]*optimization.TableData{},
+	})
 }
 
-// TODO: We should be able to swap out inMemoryDB per flush and make that non-blocking.
-var inMemoryDB *DatabaseData
+func GetMemoryDB(ctx context.Context) *DatabaseData {
+	dbValue := ctx.Value(dbKey)
+	if dbValue == nil {
+		logger.FromContext(ctx).Fatalf("failed to retrieve database from context")
+	}
+
+	db, isOk := dbValue.(*DatabaseData)
+	if !isOk {
+		logger.FromContext(ctx).Fatalf("database data is not the right type *DatabaseData")
+	}
+
+	return db
+}
 
 func (d *DatabaseData) ClearTableConfig(tableName string) {
 	// WARNING: before you call this, LOCK the table.
@@ -39,27 +57,29 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 		return false, errors.New("topicConfig is missing")
 	}
 
-	inMemoryDB.Lock()
-	defer inMemoryDB.Unlock()
+	inMemDB := GetMemoryDB(ctx)
+
+	inMemDB.Lock()
+	defer inMemDB.Unlock()
 
 	if !e.IsValid() {
 		return false, errors.New("event not valid")
 	}
 
 	// Does the table exist?
-	_, isOk := inMemoryDB.TableData[e.Table]
+	_, isOk := inMemDB.TableData[e.Table]
 	if !isOk {
 		columns := &typing.Columns{}
 		if e.Columns != nil {
 			columns = e.Columns
 		}
 
-		inMemoryDB.TableData[e.Table] = optimization.NewTableData(columns, e.PrimaryKeys(), *topicConfig)
+		inMemDB.TableData[e.Table] = optimization.NewTableData(columns, e.PrimaryKeys(), *topicConfig)
 	} else {
 		if e.Columns != nil {
 			// Iterate over this again just in case.
 			for _, col := range e.Columns.GetColumns() {
-				inMemoryDB.TableData[e.Table].InMemoryColumns.AddColumn(col)
+				inMemDB.TableData[e.Table].InMemoryColumns.AddColumn(col)
 			}
 		}
 	}
@@ -88,17 +108,17 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 			// We are directly adding this column to our in-memory database
 			// This ensures that this column exists, we just have an invalid value (so we will not replicate over).
 			// However, this will ensure that we do not drop the column within the destination
-			inMemoryDB.TableData[e.Table].InMemoryColumns.AddColumn(typing.Column{
+			inMemDB.TableData[e.Table].InMemoryColumns.AddColumn(typing.Column{
 				Name:        newColName,
 				KindDetails: typing.Invalid,
 			})
 			continue
 		}
 
-		retrievedColumn, isOk := inMemoryDB.TableData[e.Table].InMemoryColumns.GetColumn(newColName)
+		retrievedColumn, isOk := inMemDB.TableData[e.Table].InMemoryColumns.GetColumn(newColName)
 		if !isOk {
 			// This would only happen if the columns did not get passed in initially.
-			inMemoryDB.TableData[e.Table].InMemoryColumns.AddColumn(typing.Column{
+			inMemDB.TableData[e.Table].InMemoryColumns.AddColumn(typing.Column{
 				Name:        newColName,
 				KindDetails: typing.ParseValue(_col, e.OptiomalSchema, val),
 			})
@@ -109,7 +129,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 				// However, it's important to create a column even if it's nil.
 				// This is because we don't want to think that it's okay to drop a column in DWH
 				if kindDetails := typing.ParseValue(_col, e.OptiomalSchema, val); kindDetails.Kind != typing.Invalid.Kind {
-					inMemoryDB.TableData[e.Table].InMemoryColumns.UpdateColumn(typing.Column{
+					inMemDB.TableData[e.Table].InMemoryColumns.UpdateColumn(typing.Column{
 						Name:        newColName,
 						KindDetails: kindDetails,
 					})
@@ -122,21 +142,15 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 
 	// Swap out sanitizedData <> data.
 	e.Data = sanitizedData
-	inMemoryDB.TableData[e.Table].InsertRow(e.PrimaryKeyValue(), e.Data)
+	inMemDB.TableData[e.Table].InsertRow(e.PrimaryKeyValue(), e.Data)
 	// If the message is Kafka, then we only need the latest one
 	// If it's pubsub, we will store all of them in memory. This is because GCP pub/sub REQUIRES us to ack every single message
 	if message.Kind() == artie.Kafka {
-		inMemoryDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()] = []artie.Message{message}
+		inMemDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()] = []artie.Message{message}
 	} else {
-		inMemoryDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()] = append(inMemoryDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()], message)
+		inMemDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()] = append(inMemDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()], message)
 	}
 
-	inMemoryDB.TableData[e.Table].LatestCDCTs = e.ExecutionTime
-	return inMemoryDB.TableData[e.Table].ShouldFlush(ctx), nil
-}
-
-func LoadMemoryDB() {
-	inMemoryDB = &DatabaseData{
-		TableData: map[string]*optimization.TableData{},
-	}
+	inMemDB.TableData[e.Table].LatestCDCTs = e.ExecutionTime
+	return inMemDB.TableData[e.Table].ShouldFlush(ctx), nil
 }

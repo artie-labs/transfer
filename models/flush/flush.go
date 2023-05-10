@@ -2,25 +2,26 @@ package flush
 
 import (
 	"context"
+	"time"
+
 	"github.com/artie-labs/transfer/lib/dwh/utils"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/processes/consumer"
-	"time"
 )
 
 func Flush(ctx context.Context) error {
-	if models.GetMemoryDB() == nil {
+	if models.GetMemoryDB(ctx) == nil {
 		return nil
 	}
 
 	log := logger.FromContext(ctx)
-	models.GetMemoryDB().Lock()
-	defer models.GetMemoryDB().Unlock()
+	models.GetMemoryDB(ctx).Lock()
+	defer models.GetMemoryDB(ctx).Unlock()
 
 	// Flush will take everything in memory and call Snowflake to create temp tables.
-	for tableName, tableData := range models.GetMemoryDB().TableData {
+	for tableName, tableData := range models.GetMemoryDB(ctx).TableData {
 		start := time.Now()
 		logFields := map[string]interface{}{
 			"tableName": tableName,
@@ -41,7 +42,7 @@ func Flush(ctx context.Context) error {
 			log.WithFields(logFields).Info("Merge success, clearing memory...")
 			commitErr := consumer.CommitOffset(ctx, tableData.Topic, tableData.PartitionsToLastMessage)
 			if commitErr == nil {
-				models.GetMemoryDB().ClearTableConfig(tableName)
+				models.GetMemoryDB(ctx).ClearTableConfig(tableName)
 			} else {
 				tags["what"] = "commit_fail"
 				log.WithError(commitErr).Warn("commit error...")

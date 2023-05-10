@@ -2,6 +2,8 @@ package models
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -9,7 +11,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
-	"strconv"
 )
 
 var topicConfig = &kafkalib.TopicConfig{
@@ -41,7 +42,7 @@ func (m *ModelsTestSuite) TestSaveEvent() {
 	_, err := event.Save(m.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(m.T(), err)
 
-	optimization := GetMemoryDB().TableData["foo"]
+	optimization := GetMemoryDB(m.ctx).TableData["foo"]
 	// Check the in-memory DB columns.
 	var found int
 	for _, col := range optimization.InMemoryColumns.GetColumns() {
@@ -72,7 +73,7 @@ func (m *ModelsTestSuite) TestSaveEvent() {
 	newKafkaMsg := kafka.Message{}
 	_, err = edgeCaseEvent.Save(m.ctx, topicConfig, artie.NewMessage(&newKafkaMsg, nil, newKafkaMsg.Topic))
 	assert.NoError(m.T(), err)
-	inMemoryCol, isOk := GetMemoryDB().TableData["foo"].InMemoryColumns.GetColumn(badColumn)
+	inMemoryCol, isOk := GetMemoryDB(m.ctx).TableData["foo"].InMemoryColumns.GetColumn(badColumn)
 	assert.True(m.T(), isOk)
 	assert.Equal(m.T(), typing.Invalid, inMemoryCol.KindDetails)
 }
@@ -93,8 +94,8 @@ func (m *ModelsTestSuite) TestEvent_SaveCasing() {
 	kafkaMsg := kafka.Message{}
 	_, err := event.Save(m.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(m.T(), err)
-	
-	rowData := inMemoryDB.TableData["foo"].RowsData()[event.PrimaryKeyValue()]
+
+	rowData := GetMemoryDB(m.ctx).TableData["foo"].RowsData()[event.PrimaryKeyValue()]
 	expectedColumns := []string{"randomcol", "anothercol"}
 	for _, expectedColumn := range expectedColumns {
 		_, isOk := rowData[expectedColumn]
@@ -129,19 +130,19 @@ func (m *ModelsTestSuite) TestEventSaveOptionalSchema() {
 	_, err := event.Save(m.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(m.T(), err)
 
-	column, isOk := inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("created_at_date_string")
+	column, isOk := GetMemoryDB(m.ctx).TableData["foo"].InMemoryColumns.GetColumn("created_at_date_string")
 	assert.True(m.T(), isOk)
 	assert.Equal(m.T(), typing.String, column.KindDetails)
 
-	column, isOk = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("created_at_date_no_schema")
+	column, isOk = GetMemoryDB(m.ctx).TableData["foo"].InMemoryColumns.GetColumn("created_at_date_no_schema")
 	assert.True(m.T(), isOk)
 	assert.Equal(m.T(), ext.Date.Type, column.KindDetails.ExtendedTimeDetails.Type)
 
-	column, isOk = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("json_object_string")
+	column, isOk = GetMemoryDB(m.ctx).TableData["foo"].InMemoryColumns.GetColumn("json_object_string")
 	assert.True(m.T(), isOk)
 	assert.Equal(m.T(), typing.String, column.KindDetails)
 
-	column, isOk = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("json_object_no_schema")
+	column, isOk = GetMemoryDB(m.ctx).TableData["foo"].InMemoryColumns.GetColumn("json_object_no_schema")
 	assert.True(m.T(), isOk)
 	assert.Equal(m.T(), typing.Struct, column.KindDetails)
 }
@@ -168,7 +169,7 @@ func (m *ModelsTestSuite) TestEvent_SaveColumnsNoData() {
 	assert.NoError(m.T(), err)
 
 	var prevKey string
-	for _, col := range inMemoryDB.TableData["non_existent"].InMemoryColumns.GetColumns() {
+	for _, col := range GetMemoryDB(m.ctx).TableData["non_existent"].InMemoryColumns.GetColumns() {
 		if col.Name == constants.DeleteColumnMarker {
 			continue
 		}
@@ -233,19 +234,19 @@ func (m *ModelsTestSuite) TestEventSaveColumns() {
 	_, err := event.Save(m.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(m.T(), err)
 
-	column, isOk := inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("randomcol")
+	column, isOk := GetMemoryDB(m.ctx).TableData["foo"].InMemoryColumns.GetColumn("randomcol")
 	assert.True(m.T(), isOk)
 	assert.Equal(m.T(), typing.String, column.KindDetails)
 
-	column, isOk = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("anothercol")
+	column, isOk = GetMemoryDB(m.ctx).TableData["foo"].InMemoryColumns.GetColumn("anothercol")
 	assert.True(m.T(), isOk)
 	assert.Equal(m.T(), typing.Float, column.KindDetails)
 
-	column, isOk = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn("created_at_date_string")
+	column, isOk = GetMemoryDB(m.ctx).TableData["foo"].InMemoryColumns.GetColumn("created_at_date_string")
 	assert.True(m.T(), isOk)
 	assert.Equal(m.T(), ext.DateKindType, column.KindDetails.ExtendedTimeDetails.Type)
 
-	column, isOk = inMemoryDB.TableData["foo"].InMemoryColumns.GetColumn(constants.DeleteColumnMarker)
+	column, isOk = GetMemoryDB(m.ctx).TableData["foo"].InMemoryColumns.GetColumn(constants.DeleteColumnMarker)
 	assert.True(m.T(), isOk)
 	assert.Equal(m.T(), typing.Boolean, column.KindDetails)
 }
