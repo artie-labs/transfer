@@ -2,10 +2,11 @@ package config
 
 import (
 	"fmt"
-	"github.com/artie-labs/transfer/lib/numbers"
-	"gopkg.in/yaml.v3"
 	"io"
 	"os"
+
+	"github.com/artie-labs/transfer/lib/numbers"
+	"gopkg.in/yaml.v3"
 
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -14,7 +15,7 @@ import (
 
 const (
 	defaultFlushTimeSeconds = 10
-	defaultFlushSizeKb = 25 * 1024 // 25 mb
+	defaultFlushSizeKb      = 25 * 1024 // 25 mb
 
 	flushIntervalSecondsStart = 5
 	flushIntervalSecondsEnd   = 6 * 60 * 60
@@ -36,6 +37,9 @@ type Pubsub struct {
 }
 
 type Kafka struct {
+	// Comma-separated Kafka servers to port.
+	// e.g. host1:port1,host2:port2,...
+	// Following kafka's spec mentioned here: https://kafka.apache.org/documentation/#producerconfigs_bootstrap.servers
 	BootstrapServer string                  `yaml:"bootstrapServer"`
 	GroupID         string                  `yaml:"groupID"`
 	Username        string                  `yaml:"username"`
