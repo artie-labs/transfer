@@ -2,13 +2,14 @@ package config
 
 import (
 	"fmt"
-	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/kafkalib"
 	"io"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -454,5 +455,23 @@ func TestConfig_Validate(t *testing.T) {
 		cfg.FlushSizeKb = num
 		assert.Contains(t, cfg.Validate().Error(), "config is invalid, flush size pool has to be a positive number")
 	}
+}
 
+func TestCfg_KafkaBootstrapServers(t *testing.T) {
+	kafka := Kafka{
+		BootstrapServer: "localhost:9092",
+	}
+
+	assert.Equal(t, []string{"localhost:9092"}, strings.Split(kafka.BootstrapServer, ","))
+
+	kafkaWithMultipleBrokers := Kafka{
+		BootstrapServer: "a:9092,b:9093,c:9094",
+	}
+
+	var brokers []string
+	for _, broker := range strings.Split(kafkaWithMultipleBrokers.BootstrapServer, ",") {
+		brokers = append(brokers, broker)
+	}
+
+	assert.Equal(t, []string{"a:9092", "b:9093", "c:9094"}, brokers)
 }

@@ -3,13 +3,15 @@ package consumer
 import (
 	"context"
 	"crypto/tls"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/jitter"
 	awsCfg "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2"
 	"github.com/segmentio/kafka-go/sasl/plain"
-	"sync"
-	"time"
 
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
@@ -74,13 +76,19 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 		wg.Add(1)
 		go func(topic string) {
 			defer wg.Done()
-			kafkaConsumer := kafka.NewReader(kafka.ReaderConfig{
-				Brokers: []string{settings.Config.Kafka.BootstrapServer},
+
+			kafkaCfg := kafka.ReaderConfig{
 				GroupID: settings.Config.Kafka.GroupID,
 				Dialer:  dialer,
 				Topic:   topic,
-			})
+			}
+			var brokers []string
+			for _, bootstrapServer := range strings.Split(settings.Config.Kafka.BootstrapServer, ",") {
+				brokers = append(brokers, bootstrapServer)
+			}
 
+			kafkaCfg.Brokers = brokers
+			kafkaConsumer := kafka.NewReader(kafkaCfg)
 			topicToConsumer[topic] = kafkaConsumer
 			for {
 				kafkaMsg, err := kafkaConsumer.FetchMessage(ctx)
