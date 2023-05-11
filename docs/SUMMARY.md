@@ -34,7 +34,7 @@
 
 ## 👨💻 Tutorials
 
-* [⌨ Deep-dive into Artie's typing library](tutorials/deep-dive-into-arties-typing-library.md)
+* [Deep-dive into Artie's typing library](tutorials/deep-dive-into-arties-typing-library.md)
 * [Setting up Pub/Sub](tutorials/setting-up-pub-sub.md)
 
 ***
