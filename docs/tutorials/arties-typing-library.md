@@ -5,7 +5,7 @@ description: >-
   ensure source-data integrity.
 ---
 
-# ⌨ Deep-dive into Artie's typing library
+# Artie's typing library
 
 ## Context
 
