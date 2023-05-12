@@ -40,13 +40,13 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	}
 
 	kafkaMsg := kafka.Message{}
-	_, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	_, _, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(e.T(), err)
 
 	optimization := models.GetMemoryDB(e.ctx).TableData["foo"]
 	// Check the in-memory DB columns.
 	var found int
-	for _, col := range optimization.InMemoryColumns.GetColumns() {
+	for _, col := range optimization.ReadOnlyInMemoryCols().GetColumns() {
 		if col.Name == expectedLowerCol || col.Name == anotherLowerCol {
 			found += 1
 		}
@@ -56,7 +56,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 		}
 	}
 
-	assert.Equal(e.T(), 2, found, optimization.InMemoryColumns)
+	assert.Equal(e.T(), 2, found, optimization.ReadOnlyInMemoryCols)
 	badColumn := "other"
 	edgeCaseEvent := Event{
 		Table: "foo",
@@ -72,9 +72,9 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	}
 
 	newKafkaMsg := kafka.Message{}
-	_, err = edgeCaseEvent.Save(e.ctx, topicConfig, artie.NewMessage(&newKafkaMsg, nil, newKafkaMsg.Topic))
+	_, _, err = edgeCaseEvent.Save(e.ctx, topicConfig, artie.NewMessage(&newKafkaMsg, nil, newKafkaMsg.Topic))
 	assert.NoError(e.T(), err)
-	inMemoryCol, isOk := models.GetMemoryDB(e.ctx).TableData["foo"].InMemoryColumns.GetColumn(badColumn)
+	inMemoryCol, isOk := models.GetMemoryDB(e.ctx).TableData["foo"].ReadOnlyInMemoryCols().GetColumn(badColumn)
 	assert.True(e.T(), isOk)
 	assert.Equal(e.T(), typing.Invalid, inMemoryCol.KindDetails)
 }
@@ -93,7 +93,7 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 	}
 
 	kafkaMsg := kafka.Message{}
-	_, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	_, _, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(e.T(), err)
 
 	rowData := models.GetMemoryDB(e.ctx).TableData["foo"].RowsData()[event.PrimaryKeyValue()]
@@ -128,22 +128,22 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 	}
 
 	kafkaMsg := kafka.Message{}
-	_, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	_, _, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(e.T(), err)
 
-	column, isOk := models.GetMemoryDB(e.ctx).TableData["foo"].InMemoryColumns.GetColumn("created_at_date_string")
+	column, isOk := models.GetMemoryDB(e.ctx).TableData["foo"].ReadOnlyInMemoryCols().GetColumn("created_at_date_string")
 	assert.True(e.T(), isOk)
 	assert.Equal(e.T(), typing.String, column.KindDetails)
 
-	column, isOk = models.GetMemoryDB(e.ctx).TableData["foo"].InMemoryColumns.GetColumn("created_at_date_no_schema")
+	column, isOk = models.GetMemoryDB(e.ctx).TableData["foo"].ReadOnlyInMemoryCols().GetColumn("created_at_date_no_schema")
 	assert.True(e.T(), isOk)
 	assert.Equal(e.T(), ext.Date.Type, column.KindDetails.ExtendedTimeDetails.Type)
 
-	column, isOk = models.GetMemoryDB(e.ctx).TableData["foo"].InMemoryColumns.GetColumn("json_object_string")
+	column, isOk = models.GetMemoryDB(e.ctx).TableData["foo"].ReadOnlyInMemoryCols().GetColumn("json_object_string")
 	assert.True(e.T(), isOk)
 	assert.Equal(e.T(), typing.String, column.KindDetails)
 
-	column, isOk = models.GetMemoryDB(e.ctx).TableData["foo"].InMemoryColumns.GetColumn("json_object_no_schema")
+	column, isOk = models.GetMemoryDB(e.ctx).TableData["foo"].ReadOnlyInMemoryCols().GetColumn("json_object_no_schema")
 	assert.True(e.T(), isOk)
 	assert.Equal(e.T(), typing.Struct, column.KindDetails)
 }
@@ -166,11 +166,11 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 		},
 	}
 	kafkaMsg := kafka.Message{}
-	_, err := evt.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	_, _, err := evt.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.NoError(e.T(), err)
 
 	var prevKey string
-	for _, col := range models.GetMemoryDB(e.ctx).TableData["non_existent"].InMemoryColumns.GetColumns() {
+	for _, col := range models.GetMemoryDB(e.ctx).TableData["non_existent"].ReadOnlyInMemoryCols().GetColumns() {
 		if col.Name == constants.DeleteColumnMarker {
 			continue
 		}
@@ -232,22 +232,22 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 	}
 
 	kafkaMsg := kafka.Message{}
-	_, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	_, _, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(e.T(), err)
 
-	column, isOk := models.GetMemoryDB(e.ctx).TableData["foo"].InMemoryColumns.GetColumn("randomcol")
+	column, isOk := models.GetMemoryDB(e.ctx).TableData["foo"].ReadOnlyInMemoryCols().GetColumn("randomcol")
 	assert.True(e.T(), isOk)
 	assert.Equal(e.T(), typing.String, column.KindDetails)
 
-	column, isOk = models.GetMemoryDB(e.ctx).TableData["foo"].InMemoryColumns.GetColumn("anothercol")
+	column, isOk = models.GetMemoryDB(e.ctx).TableData["foo"].ReadOnlyInMemoryCols().GetColumn("anothercol")
 	assert.True(e.T(), isOk)
 	assert.Equal(e.T(), typing.Float, column.KindDetails)
 
-	column, isOk = models.GetMemoryDB(e.ctx).TableData["foo"].InMemoryColumns.GetColumn("created_at_date_string")
+	column, isOk = models.GetMemoryDB(e.ctx).TableData["foo"].ReadOnlyInMemoryCols().GetColumn("created_at_date_string")
 	assert.True(e.T(), isOk)
 	assert.Equal(e.T(), ext.DateKindType, column.KindDetails.ExtendedTimeDetails.Type)
 
-	column, isOk = models.GetMemoryDB(e.ctx).TableData["foo"].InMemoryColumns.GetColumn(constants.DeleteColumnMarker)
+	column, isOk = models.GetMemoryDB(e.ctx).TableData["foo"].ReadOnlyInMemoryCols().GetColumn(constants.DeleteColumnMarker)
 	assert.True(e.T(), isOk)
 	assert.Equal(e.T(), typing.Boolean, column.KindDetails)
 }

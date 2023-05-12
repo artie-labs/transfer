@@ -39,12 +39,14 @@ func (t *TableData) AddInMemoryCol(column typing.Column) {
 	return
 }
 
-func (t *TableData) InMemoryColumns() *typing.Columns {
+func (t *TableData) ReadOnlyInMemoryCols() *typing.Columns {
 	var cols typing.Columns
 	if t.inMemoryColumns != nil {
 		for _, col := range t.inMemoryColumns.GetColumns() {
 			cols.AddColumn(col)
 		}
+	} else {
+		return nil
 	}
 
 	return &cols

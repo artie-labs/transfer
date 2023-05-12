@@ -123,7 +123,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	}
 
 	// Table columns
-	inMemoryColumns := inMemDB.TableData[e.Table].InMemoryColumns()
+	inMemoryColumns := inMemDB.TableData[e.Table].ReadOnlyInMemoryCols()
 
 	// Update col if necessary
 	sanitizedData := make(map[string]interface{})
