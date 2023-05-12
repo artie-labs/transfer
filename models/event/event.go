@@ -157,6 +157,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 					// We will flush, then next message will be toastColumn = true.
 					return true, true, nil
 				} else {
+					// If the column exists, update the type and toast value just to be safe.
 					inMemoryColumns.UpdateColumn(typing.Column{
 						Name:        newColName,
 						KindDetails: typing.Invalid,
@@ -164,6 +165,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 					})
 				}
 			} else {
+				// If column doesn't exist, add it.
 				inMemoryColumns.AddColumn(typing.Column{
 					Name:        newColName,
 					KindDetails: typing.Invalid,
@@ -174,7 +176,6 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 		}
 
 		retrievedColumn, isOk := inMemoryColumns.GetColumn(newColName)
-		fmt.Println("eventData", e.Data, "retrievedCol", retrievedColumn, "isOk", isOk)
 		if !isOk {
 			// This would only happen if the columns did not get passed in initially.
 			inMemoryColumns.AddColumn(typing.Column{
