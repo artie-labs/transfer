@@ -7,13 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/stringutil"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/ddl"
 	"github.com/artie-labs/transfer/lib/dwh/dml"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )

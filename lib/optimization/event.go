@@ -40,13 +40,13 @@ func (t *TableData) AddInMemoryCol(column typing.Column) {
 }
 
 func (t *TableData) ReadOnlyInMemoryCols() *typing.Columns {
-	var cols typing.Columns
-	if t.inMemoryColumns != nil {
-		for _, col := range t.inMemoryColumns.GetColumns() {
-			cols.AddColumn(col)
-		}
-	} else {
+	if t.inMemoryColumns == nil {
 		return nil
+	}
+
+	var cols typing.Columns
+	for _, col := range t.inMemoryColumns.GetColumns() {
+		cols.AddColumn(col)
 	}
 
 	return &cols

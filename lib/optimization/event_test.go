@@ -13,6 +13,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestTableData_ReadOnlyInMemoryCols(t *testing.T) {
+	// Making sure the columns are actually read only.
+	var cols typing.Columns
+	cols.AddColumn(typing.Column{
+		Name:        "name",
+		KindDetails: typing.String,
+	})
+
+	td := NewTableData(&cols, nil, kafkalib.TopicConfig{})
+	readOnlyCols := td.ReadOnlyInMemoryCols()
+	readOnlyCols.AddColumn(typing.Column{
+		Name:        "last_name",
+		KindDetails: typing.String,
+	})
+
+	// Check if last_name actually exists.
+	_, isOk := td.ReadOnlyInMemoryCols().GetColumn("last_name")
+	assert.False(t, isOk)
+
+	// Check length is 1.
+	assert.Equal(t, 1, len(td.ReadOnlyInMemoryCols().GetColumns()))
+}
+
 func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 	var _cols typing.Columns
 	for colName, colKind := range map[string]typing.KindDetails{
