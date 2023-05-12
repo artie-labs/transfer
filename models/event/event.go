@@ -87,16 +87,15 @@ func (e *Event) PrimaryKeyValue() string {
 
 // Save will save the event into our in memory event
 // It will return:
-// 1) Whether to flush immediately or not
-// 2) Should we re-process this row?
-// 3) Error
+//  1. Whether to flush immediately or not
+//  2. Should we re-process this row?
+//  3. Error
 func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, message artie.Message) (bool, bool, error) {
 	if topicConfig == nil {
 		return false, false, errors.New("topicConfig is missing")
 	}
 
 	inMemDB := models.GetMemoryDB(ctx)
-
 	inMemDB.Lock()
 	defer inMemDB.Unlock()
 
@@ -142,11 +141,10 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 		}
 
 		if val == "__debezium_unavailable_value" {
-			// Check if the column already exists.
-			// Early return to reprocess if the column exists and toastColumn = false.
-			// And the column type is not invalid.
 			col, isOk := inMemoryColumns.GetColumn(newColName)
 			if isOk && col.KindDetails != typing.Invalid && col.ToastColumn == false {
+				// Early return if the column exists, value is not invalid and is not marked as a TOAST column
+				// We will flush, then next message will be toastColumn = true.
 				return true, true, nil
 			}
 
@@ -180,8 +178,8 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 				// This is because we don't want to think that it's okay to drop a column in DWH
 				if kindDetails := typing.ParseValue(_col, e.OptiomalSchema, val); kindDetails.Kind != typing.Invalid.Kind {
 					if retrievedColumn.ToastColumn {
-						// Now that we are here, this means that we have a row that has a value for this toast column
-						// In order to prevent a mismatch, we will now force a flush and a re-process.
+						// To prevent a mismatch, we are early returning here because by getting here.
+						// Since by getting here, this row has a real value back from a TOAST column.
 						return true, true, nil
 					}
 

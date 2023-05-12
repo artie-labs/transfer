@@ -3,6 +3,9 @@ package typing
 type Column struct {
 	Name        string
 	KindDetails KindDetails
+	// ToastColumn indicates that the source column is a TOAST column and the value is unavailable
+	// We have stripped this out.
+	// Whenever we see the same column where there's an opposite value in `toastColumn`, we will trigger a flush
 	ToastColumn bool
 }
 

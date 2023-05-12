@@ -71,7 +71,7 @@ func processMessage(ctx context.Context, processArgs ProcessArgs) error {
 	}
 
 	if reprocessRow {
-		logger.FromContext(ctx).WithField("key", string(processArgs.Msg.Key())).Info("reprocessing this row")
+		logger.FromContext(ctx).WithField("key", string(processArgs.Msg.Key())).Info("this row was skipped to prevent a TOAST mismatch, re-processing this row...")
 		return processMessage(ctx, processArgs)
 	}
 	return nil
