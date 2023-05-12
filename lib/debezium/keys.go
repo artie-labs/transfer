@@ -7,6 +7,8 @@ import (
 )
 
 const (
+	ToastUnavailableValuePlaceholder = "__debezium_unavailable_value"
+
 	KeyFormatJSON   = "org.apache.kafka.connect.json.JsonConverter"
 	KeyFormatString = "org.apache.kafka.connect.storage.StringConverter"
 

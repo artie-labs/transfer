@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/artie-labs/transfer/lib/debezium"
+
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -67,7 +69,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 			constants.DeleteColumnMarker: true,
 			expectedCol:                  "dusty",
 			anotherCol:                   13.37,
-			badColumn:                    "__debezium_unavailable_value",
+			badColumn:                    debezium.ToastUnavailableValuePlaceholder,
 		},
 	}
 

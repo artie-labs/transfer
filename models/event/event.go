@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/debezium"
+
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -140,14 +142,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 			sanitizedData[newColName] = val
 		}
 
-		if val == "__debezium_unavailable_value" {
-			col, isOk := inMemoryColumns.GetColumn(newColName)
-			if isOk && col.KindDetails != typing.Invalid && col.ToastColumn == false {
-				// Early return if the column exists, value is not invalid and is not marked as a TOAST column
-				// We will flush, then next message will be toastColumn = true.
-				return true, true, nil
-			}
-
+		if val == debezium.ToastUnavailableValuePlaceholder {
 			// This is an edge case within Postgres & ORCL
 			// TL;DR - Sometimes a column that is unchanged within a DML will not be emitted
 			// DBZ has stubbed it out by providing this value, so we will skip it when we see it.
@@ -155,15 +150,31 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 			// We are directly adding this column to our in-memory database
 			// This ensures that this column exists, we just have an invalid value (so we will not replicate over).
 			// However, this will ensure that we do not drop the column within the destination
-			inMemoryColumns.AddColumn(typing.Column{
-				Name:        newColName,
-				KindDetails: typing.Invalid,
-				ToastColumn: true,
-			})
+			col, isOk := inMemoryColumns.GetColumn(newColName)
+			if isOk {
+				if col.KindDetails != typing.Invalid && col.ToastColumn == false {
+					// Early return if the column exists, value is not invalid and is not marked as a TOAST column
+					// We will flush, then next message will be toastColumn = true.
+					return true, true, nil
+				} else {
+					inMemoryColumns.UpdateColumn(typing.Column{
+						Name:        newColName,
+						KindDetails: typing.Invalid,
+						ToastColumn: true,
+					})
+				}
+			} else {
+				inMemoryColumns.AddColumn(typing.Column{
+					Name:        newColName,
+					KindDetails: typing.Invalid,
+					ToastColumn: true,
+				})
+			}
 			continue
 		}
 
 		retrievedColumn, isOk := inMemoryColumns.GetColumn(newColName)
+		fmt.Println("eventData", e.Data, "retrievedCol", retrievedColumn, "isOk", isOk)
 		if !isOk {
 			// This would only happen if the columns did not get passed in initially.
 			inMemoryColumns.AddColumn(typing.Column{

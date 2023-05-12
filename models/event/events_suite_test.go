@@ -24,7 +24,7 @@ func (e *EventsTestSuite) SetupTest() {
 		Config: &config.Config{
 			FlushIntervalSeconds: 10,
 			FlushSizeKb:          1024,
-			BufferRows:           10,
+			BufferRows:           1000,
 		},
 	})
 
