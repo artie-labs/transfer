@@ -117,7 +117,6 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 		if e.Columns != nil {
 			// Iterate over this again just in case.
 			for _, col := range e.Columns.GetColumns() {
-				fmt.Println("Are you getting added here?", col.Name, col.KindDetails.Kind)
 				inMemDB.TableData[e.Table].AddInMemoryCol(col)
 			}
 		}
@@ -148,7 +147,6 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 			// And the column type is not invalid.
 			col, isOk := inMemoryColumns.GetColumn(newColName)
 			if isOk && col.KindDetails != typing.Invalid && col.ToastColumn == false {
-				fmt.Println("early return here.", newColName)
 				return true, true, nil
 			}
 
@@ -168,7 +166,6 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 		}
 
 		retrievedColumn, isOk := inMemoryColumns.GetColumn(newColName)
-		fmt.Println("newColName", newColName, "retrievedColumnKind", retrievedColumn.KindDetails.Kind, "name", retrievedColumn.Name)
 		if !isOk {
 			// This would only happen if the columns did not get passed in initially.
 			inMemoryColumns.AddColumn(typing.Column{
@@ -183,7 +180,6 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 				// This is because we don't want to think that it's okay to drop a column in DWH
 				if kindDetails := typing.ParseValue(_col, e.OptiomalSchema, val); kindDetails.Kind != typing.Invalid.Kind {
 					if retrievedColumn.ToastColumn {
-						fmt.Println("or here?")
 						// Now that we are here, this means that we have a row that has a value for this toast column
 						// In order to prevent a mismatch, we will now force a flush and a re-process.
 						return true, true, nil

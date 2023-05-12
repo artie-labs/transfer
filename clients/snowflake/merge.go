@@ -20,7 +20,6 @@ func getMergeStatement(tableData *optimization.TableData) (string, error) {
 
 	// Given all the columns, diff this against SFLK.
 	for _, column := range tableData.InMemoryColumns().GetColumns() {
-		fmt.Println("snowflake column", column, "kind", column.KindDetails.Kind)
 		if column.KindDetails.Kind == typing.Invalid.Kind {
 			// Don't update Snowflake
 			continue
