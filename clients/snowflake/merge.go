@@ -19,7 +19,8 @@ func getMergeStatement(tableData *optimization.TableData) (string, error) {
 	var sflkCols []string
 
 	// Given all the columns, diff this against SFLK.
-	for _, column := range tableData.InMemoryColumns.GetColumns() {
+	for _, column := range tableData.InMemoryColumns().GetColumns() {
+		fmt.Println("snowflake column", column, "kind", column.KindDetails.Kind)
 		if column.KindDetails.Kind == typing.Invalid.Kind {
 			// Don't update Snowflake
 			continue
@@ -38,7 +39,7 @@ func getMergeStatement(tableData *optimization.TableData) (string, error) {
 	for _, value := range tableData.RowsData() {
 		var rowValues []string
 		for _, col := range cols {
-			colKind, _ := tableData.InMemoryColumns.GetColumn(col)
+			colKind, _ := tableData.InMemoryColumns().GetColumn(col)
 			colVal := value[col]
 			if colVal != nil {
 				switch colKind.KindDetails.Kind {
@@ -87,7 +88,7 @@ func getMergeStatement(tableData *optimization.TableData) (string, error) {
 		IdempotentKey:  tableData.IdempotentKey,
 		PrimaryKeys:    tableData.PrimaryKeys,
 		Columns:        cols,
-		ColumnsToTypes: *tableData.InMemoryColumns,
+		ColumnsToTypes: *tableData.InMemoryColumns(),
 		SoftDelete:     tableData.SoftDelete,
 	})
 }
