@@ -23,6 +23,7 @@ func (e *EventsTestSuite) SetupTest() {
 	e.ctx = config.InjectSettingsIntoContext(e.ctx, &config.Settings{
 		Config: &config.Config{
 			FlushIntervalSeconds: 10,
+			FlushSizeKb:          1024,
 			BufferRows:           10,
 		},
 	})
