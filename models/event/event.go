@@ -86,13 +86,13 @@ func (e *Event) PrimaryKeyValue() string {
 }
 
 // Save will save the event into our in memory event
-// It will return two values, a boolean and error
-// The boolean signifies whether we should flush immediately or not. This is because Snowflake has a constraint
-// On the number of elements within an expression.
-// The other, error - is returned to see if anything went awry.
-func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, message artie.Message) (bool, error) {
+// It will return:
+// 1) Whether to flush immediately or not
+// 2) Should we re-process this row?
+// 3) Error
+func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, message artie.Message) (bool, bool, error) {
 	if topicConfig == nil {
-		return false, errors.New("topicConfig is missing")
+		return false, false, errors.New("topicConfig is missing")
 	}
 
 	inMemDB := models.GetMemoryDB(ctx)
@@ -101,7 +101,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	defer inMemDB.Unlock()
 
 	if !e.IsValid() {
-		return false, errors.New("event not valid")
+		return false, false, errors.New("event not valid")
 	}
 
 	// Does the table exist?
@@ -149,6 +149,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 			inMemDB.TableData[e.Table].InMemoryColumns.AddColumn(typing.Column{
 				Name:        newColName,
 				KindDetails: typing.Invalid,
+				ToastColumn: true,
 			})
 			continue
 		}
@@ -167,6 +168,12 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 				// However, it's important to create a column even if it's nil.
 				// This is because we don't want to think that it's okay to drop a column in DWH
 				if kindDetails := typing.ParseValue(_col, e.OptiomalSchema, val); kindDetails.Kind != typing.Invalid.Kind {
+					if retrievedColumn.ToastColumn {
+						// Now that we are here, this means that we have a row that has a value for this toast column
+						// In order to prevent a mismatch, we will now force a flush and a re-process.
+						return true, true, nil
+					}
+
 					inMemDB.TableData[e.Table].InMemoryColumns.UpdateColumn(typing.Column{
 						Name:        newColName,
 						KindDetails: kindDetails,
@@ -190,5 +197,5 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	}
 
 	inMemDB.TableData[e.Table].LatestCDCTs = e.ExecutionTime
-	return inMemDB.TableData[e.Table].ShouldFlush(ctx), nil
+	return inMemDB.TableData[e.Table].ShouldFlush(ctx), false, nil
 }

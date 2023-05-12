@@ -1,17 +1,17 @@
 package consumer
 
 import (
-	gcp_pubsub "cloud.google.com/go/pubsub"
 	"context"
 	"fmt"
+	"sync"
+	"time"
+
+	gcp_pubsub "cloud.google.com/go/pubsub"
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/jitter"
 	"github.com/artie-labs/transfer/lib/logger"
 	"google.golang.org/api/option"
-	"sync"
-	"time"
 )
 
 const defaultAckDeadline = 5 * time.Minute
@@ -88,18 +88,14 @@ func StartSubscriber(ctx context.Context, flushChan chan bool) {
 					"value": string(msg.Value()),
 				}
 
-				shouldFlush, processErr := processMessage(ctx, msg, topicToConfigFmtMap, subName)
+				processErr := processMessage(ctx, ProcessArgs{
+					Msg:                    msg,
+					GroupID:                subName,
+					TopicToConfigFormatMap: topicToConfigFmtMap,
+					FlushChannel:           flushChan,
+				})
 				if processErr != nil {
 					log.WithError(processErr).WithFields(logFields).Warn("skipping message...")
-				}
-
-				if shouldFlush {
-					flushChan <- true
-					// Jitter-sleep is necessary to allow the flush process to acquire the table lock
-					// If it doesn't then the flush process may be over-exhausted since the lock got acquired by `processMessage(...)`.
-					// This then leads us to make unnecessary flushes.
-					jitterDuration := jitter.JitterMs(500, 1)
-					time.Sleep(time.Duration(jitterDuration) * time.Millisecond)
 				}
 			})
 

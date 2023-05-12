@@ -3,6 +3,7 @@ package typing
 type Column struct {
 	Name        string
 	KindDetails KindDetails
+	ToastColumn bool
 }
 
 type Columns struct {

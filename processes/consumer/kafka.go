@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/artie"
-	"github.com/artie-labs/transfer/lib/jitter"
 	awsCfg "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2"
 	"github.com/segmentio/kafka-go/sasl/plain"
@@ -106,18 +105,14 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 				}
 
 				msg.EmitIngestionLag(ctx, kafkaConsumer.Config().GroupID)
-				shouldFlush, processErr := processMessage(ctx, msg, topicToConfigFmtMap, kafkaConsumer.Config().GroupID)
+				processErr := processMessage(ctx, ProcessArgs{
+					Msg:                    msg,
+					GroupID:                kafkaConsumer.Config().GroupID,
+					TopicToConfigFormatMap: topicToConfigFmtMap,
+					FlushChannel:           flushChan,
+				})
 				if processErr != nil {
 					log.WithError(processErr).WithFields(logFields).Warn("skipping message...")
-				}
-
-				if shouldFlush {
-					flushChan <- true
-					// Jitter-sleep is necessary to allow the flush process to acquire the table lock
-					// If it doesn't then the flush process may be over-exhausted since the lock got acquired by `processMessage(...)`.
-					// This then leads us to make unnecessary flushes.
-					jitterDuration := jitter.JitterMs(500, 1)
-					time.Sleep(time.Duration(jitterDuration) * time.Millisecond)
 				}
 			}
 		}(topic)
