@@ -52,3 +52,14 @@ func StringContains(list []string, element string) bool {
 
 	return false
 }
+
+func RemoveElement(list []string, elementToRemove string) []string {
+	// TODO - test
+	for index, element := range list {
+		if element == elementToRemove {
+			return append(list[:index], list[index+1:]...)
+		}
+	}
+
+	return list
+}

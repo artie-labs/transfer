@@ -3,8 +3,9 @@ package dml
 import (
 	"errors"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/typing"
 	"strings"
+
+	"github.com/artie-labs/transfer/lib/typing"
 
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
