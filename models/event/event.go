@@ -190,6 +190,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 				// This is because we don't want to think that it's okay to drop a column in DWH
 				if kindDetails := typing.ParseValue(_col, e.OptiomalSchema, val); kindDetails.Kind != typing.Invalid.Kind {
 					if retrievedColumn.ToastColumn {
+						fmt.Println("Returning here #2", retrievedColumn.ToastColumn, retrievedColumn.Name, retrievedColumn.KindDetails.Kind, kindDetails.Kind, "val", val, "val is nil", val == nil)
 						// To prevent a mismatch, we are early returning here because by getting here.
 						// Since by getting here, this row has a real value back from a TOAST column.
 						return true, true, nil
