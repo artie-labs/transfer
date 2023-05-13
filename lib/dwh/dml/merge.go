@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/typing"
-
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 type MergeArgument struct {
@@ -42,21 +41,36 @@ func (m *MergeArgument) generateMatchClause() string {
 	}
 
 	matchedString := "when matched"
+	if m.SoftDelete {
+		matchedString = fmt.Sprintf("%s AND IFNULL(cc.%s, false) = false", matchedString, constants.DeleteColumnMarker)
+	}
+
 	// We also need to do staged table's idempotency key is GTE target table's idempotency key
 	// This is because Snowflake does not respect NS granularity.
 	if m.IdempotentKey != "" {
 		matchedString = fmt.Sprintf("%s AND cc.%s >= c.%s", matchedString, m.IdempotentKey, m.IdempotentKey)
 	}
 
+	mainMatchedClause := fmt.Sprintf("%s then UPDATE SET %s ", matchedString, array.ColumnsUpdateQuery(m.Columns, "cc"))
+
 	if len(toastedCols) > 0 {
 		// We will need to escape TOASTED columns.
-		//matchedString = fmt.Sprintf("%s AND %s", array.StringsJoinAddPrefix(toastedCols, ""))
+		args := array.StringsJoinAddPrefixArgs{
+			Vals:      toastedCols,
+			Separator: " AND ",
+			Prefix:    "cc.",
+			Suffix:    fmt.Sprintf("!='%s'", constants.ToastUnavailableValuePlaceholder),
+		}
+
+		matchedString = fmt.Sprintf("%s AND %s", matchedString, array.StringsJoinAddPrefix(args))
 	}
 
-	return matchedString
+	return mainMatchedClause
 }
 
 func MergeStatement(m MergeArgument) (string, error) {
+	// TODO - explore getting rid of IFNULL since that's a pre-req.
+
 	// We should not need idempotency key for DELETE
 	// This is based on the assumption that the primary key would be atomically increasing or UUID based
 	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
