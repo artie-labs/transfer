@@ -70,7 +70,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		types.NewDwhTableConfig(anotherCols, nil, false, true))
 
 	err := s.store.Merge(s.ctx, tableData)
-	_col, isOk := tableData.InMemoryColumns.GetColumn("first_name")
+	_col, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("first_name")
 	assert.True(s.T(), isOk)
 	assert.Equal(s.T(), _col.KindDetails, typing.String)
 	assert.NoError(s.T(), err)
@@ -162,7 +162,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 
 	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig)
 	for pk, row := range rowsData {
-		tableData.InsertRow(pk ,row)
+		tableData.InsertRow(pk, row)
 	}
 
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake),
@@ -253,13 +253,16 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	// Now try to execute merge where 1 of the rows have the column now
 	for _, pkMap := range tableData.RowsData() {
 		pkMap["new"] = "123"
-		tableData.InMemoryColumns = &sflkCols
+		tableData.SetInMemoryColumns(&sflkCols)
 
+		inMemColumns := tableData.ReadOnlyInMemoryCols()
 		// Since sflkColumns overwrote the format, let's set it correctly again.
-		tableData.InMemoryColumns.UpdateColumn(typing.Column{
+		inMemColumns.UpdateColumn(typing.Column{
 			Name:        "created_at",
 			KindDetails: typing.ParseValue("", nil, time.Now().Format(time.RFC3339Nano)),
 		})
+
+		tableData.SetInMemoryColumns(inMemColumns)
 		break
 	}
 

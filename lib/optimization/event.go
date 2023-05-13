@@ -2,18 +2,19 @@ package optimization
 
 import (
 	"context"
+	"strings"
+	"time"
+
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/size"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
-	"strings"
-	"time"
 )
 
 type TableData struct {
-	InMemoryColumns *typing.Columns                   // list of columns
+	inMemoryColumns *typing.Columns                   // list of columns
 	rowsData        map[string]map[string]interface{} // pk -> { col -> val }
 	PrimaryKeys     []string
 
@@ -25,12 +26,35 @@ type TableData struct {
 
 	// This is used for the automatic schema detection
 	LatestCDCTs time.Time
-	approxSize int
+	approxSize  int
+}
+
+func (t *TableData) SetInMemoryColumns(columns *typing.Columns) {
+	t.inMemoryColumns = columns
+	return
+}
+
+func (t *TableData) AddInMemoryCol(column typing.Column) {
+	t.inMemoryColumns.AddColumn(column)
+	return
+}
+
+func (t *TableData) ReadOnlyInMemoryCols() *typing.Columns {
+	if t.inMemoryColumns == nil {
+		return nil
+	}
+
+	var cols typing.Columns
+	for _, col := range t.inMemoryColumns.GetColumns() {
+		cols.AddColumn(col)
+	}
+
+	return &cols
 }
 
 func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicConfig kafkalib.TopicConfig) *TableData {
 	return &TableData{
-		InMemoryColumns:         inMemoryColumns,
+		inMemoryColumns:         inMemoryColumns,
 		rowsData:                map[string]map[string]interface{}{},
 		PrimaryKeys:             primaryKeys,
 		TopicConfig:             topicConfig,
@@ -77,7 +101,7 @@ func (t *TableData) Rows() uint {
 
 func (t *TableData) ShouldFlush(ctx context.Context) bool {
 	settings := config.FromContext(ctx)
-	return t.Rows() > settings.Config.BufferRows || t.approxSize > settings.Config.FlushSizeKb * 1024
+	return t.Rows() > settings.Config.BufferRows || t.approxSize > settings.Config.FlushSizeKb*1024
 }
 
 // UpdateInMemoryColumnsFromDestination - When running Transfer, we will have 2 column types.
@@ -91,7 +115,7 @@ func (t *TableData) UpdateInMemoryColumnsFromDestination(cols ...typing.Column) 
 		return
 	}
 
-	for _, inMemoryCol := range t.InMemoryColumns.GetColumns() {
+	for _, inMemoryCol := range t.inMemoryColumns.GetColumns() {
 		if inMemoryCol.KindDetails.Kind == typing.Invalid.Kind {
 			// Don't copy this over because tableData has the wrong colVal
 			continue
@@ -118,7 +142,7 @@ func (t *TableData) UpdateInMemoryColumnsFromDestination(cols ...typing.Column) 
 				inMemoryCol.KindDetails.ExtendedTimeDetails.Type = foundColumn.KindDetails.ExtendedTimeDetails.Type
 			}
 
-			t.InMemoryColumns.UpdateColumn(inMemoryCol)
+			t.inMemoryColumns.UpdateColumn(inMemoryCol)
 		}
 	}
 

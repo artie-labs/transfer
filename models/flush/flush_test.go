@@ -25,7 +25,7 @@ var topicConfig = &kafkalib.TopicConfig{
 
 func (f *FlushTestSuite) TestMemoryBasic() {
 	for i := 0; i < 5; i++ {
-		event := event.Event{
+		evt := event.Event{
 			Table: "foo",
 			PrimaryKeyMap: map[string]interface{}{
 				"id": fmt.Sprintf("pk-%d", i),
@@ -38,7 +38,7 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 		}
 
 		kafkaMsg := kafka.Message{Partition: 1, Offset: 1}
-		_, err := event.Save(f.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+		_, _, err := evt.Save(f.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 		assert.Nil(f.T(), err)
 		assert.Equal(f.T(), int(models.GetMemoryDB(f.ctx).TableData["foo"].Rows()), i+1)
 	}
@@ -49,7 +49,7 @@ func (f *FlushTestSuite) TestShouldFlush() {
 	cfg := config.FromContext(f.ctx)
 
 	for i := 0; i < int(float64(cfg.Config.BufferRows)*1.5); i++ {
-		event := event.Event{
+		evt := event.Event{
 			Table: "postgres",
 			PrimaryKeyMap: map[string]interface{}{
 				"id": fmt.Sprintf("pk-%d", i),
@@ -64,7 +64,7 @@ func (f *FlushTestSuite) TestShouldFlush() {
 
 		var err error
 		kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
-		flush, err = event.Save(f.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+		flush, _, err = evt.Save(f.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 		assert.Nil(f.T(), err)
 
 		if flush {
@@ -85,7 +85,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 		go func(tableName string) {
 			defer wg.Done()
 			for i := 0; i < 5; i++ {
-				event := event.Event{
+				evt := event.Event{
 					Table: tableName,
 					PrimaryKeyMap: map[string]interface{}{
 						"id": fmt.Sprintf("pk-%d", i),
@@ -100,7 +100,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 				}
 
 				kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
-				_, err := event.Save(f.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+				_, _, err := evt.Save(f.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 				assert.Nil(f.T(), err)
 			}
 
