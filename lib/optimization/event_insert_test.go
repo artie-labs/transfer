@@ -2,11 +2,119 @@ package optimization
 
 import (
 	"fmt"
+	"testing"
+
+	"github.com/artie-labs/transfer/lib/debezium"
+
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/size"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
+
+func TestInsertRow_Toast(t *testing.T) {
+	type testCaseStruct struct {
+		name             string
+		primaryKey       string
+		rowsDataToUpdate []map[string]interface{}
+		expectedFinalRow map[string]interface{}
+	}
+
+	testCases := []testCaseStruct{
+		{
+			name:       "happy path",
+			primaryKey: "123",
+			rowsDataToUpdate: []map[string]interface{}{
+				{
+					"foo":   "bar",
+					"dusty": "the mini aussie",
+					"artie": "transfer",
+				},
+			},
+			expectedFinalRow: map[string]interface{}{
+				"foo":   "bar",
+				"dusty": "the mini aussie",
+				"artie": "transfer",
+			},
+		},
+		{
+			name:       "row that is followed by a TOASTED value (we skip) and drops an old column",
+			primaryKey: "123",
+			rowsDataToUpdate: []map[string]interface{}{
+				{
+					"foo":                        "bar",
+					"dusty":                      "the mini aussie",
+					"artie":                      "transfer",
+					"this_row_should_be_deleted": true,
+				},
+				{
+					"foo":   "bar",
+					"dusty": debezium.ToastUnavailableValuePlaceholder,
+					"artie": "transfer5",
+				},
+			},
+			expectedFinalRow: map[string]interface{}{
+				"foo":   "bar",
+				"dusty": "the mini aussie",
+				"artie": "transfer5",
+			},
+		},
+		{
+			name:       "row that starts with TOASTED value",
+			primaryKey: "123",
+			rowsDataToUpdate: []map[string]interface{}{
+				{
+					"foo":   "bar",
+					"dusty": debezium.ToastUnavailableValuePlaceholder,
+					"artie": "transfer5",
+				},
+			},
+			expectedFinalRow: map[string]interface{}{
+				"foo":   "bar",
+				"dusty": debezium.ToastUnavailableValuePlaceholder,
+				"artie": "transfer5",
+			},
+		},
+		{
+			name:       "row that starts with a TOASTED value, then another update comes in with a new value AND new column",
+			primaryKey: "123",
+			rowsDataToUpdate: []map[string]interface{}{
+				{
+					"foo":   "bar",
+					"dusty": debezium.ToastUnavailableValuePlaceholder,
+					"artie": "transfer5",
+				},
+				{
+					"foo":     "bar",
+					"dusty":   "the aussie",
+					"artie":   "transfer5",
+					"new_col": true,
+				},
+			},
+			expectedFinalRow: map[string]interface{}{
+				"foo":     "bar",
+				"dusty":   "the aussie",
+				"artie":   "transfer5",
+				"new_col": true,
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		// Wipe the table data per test run.
+		td := NewTableData(nil, nil, kafkalib.TopicConfig{})
+		for _, rowData := range testCase.rowsDataToUpdate {
+			td.InsertRow(testCase.primaryKey, rowData)
+		}
+
+		var actualSize int
+		for _, rowData := range td.RowsData() {
+			actualSize += size.GetApproxSize(rowData)
+		}
+
+		assert.Equal(t, td.approxSize, actualSize, testCase.name)                                   // Check size calculation is accurate
+		assert.Equal(t, td.rowsData[testCase.primaryKey], testCase.expectedFinalRow, testCase.name) // Check data accuracy
+	}
+}
 
 func TestTableData_InsertRow(t *testing.T) {
 	td := NewTableData(nil, nil, kafkalib.TopicConfig{})
@@ -36,14 +144,14 @@ func TestTableData_InsertRowApproxSize(t *testing.T) {
 	numUpdateRows := 420
 	numDeleteRows := 250
 
-	for i := 0; i < numInsertRows; i ++ {
+	for i := 0; i < numInsertRows; i++ {
 		td.InsertRow(fmt.Sprint(i), map[string]interface{}{
-			"foo": "bar",
-			"array": []int{1, 2, 3, 4, 5},
+			"foo":     "bar",
+			"array":   []int{1, 2, 3, 4, 5},
 			"boolean": true,
 			"nested_object": map[string]interface{}{
 				"nested": map[string]interface{}{
-					"foo": "bar",
+					"foo":  "bar",
 					"true": false,
 				},
 			},

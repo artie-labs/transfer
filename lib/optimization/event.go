@@ -68,8 +68,6 @@ func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicCo
 // This is important to avoid concurrent r/w, but also the ability for us to add or decrement row size by keeping a running total
 // With this, we are able to reduce the latency by 500x+ on a 5k row table. See event_bench_test.go vs. size_bench_test.go
 func (t *TableData) InsertRow(pk string, rowData map[string]interface{}) {
-	// TODO - test all scenarios.
-
 	var prevRowSize int
 	prevRow, isOk := t.rowsData[pk]
 	if isOk {
