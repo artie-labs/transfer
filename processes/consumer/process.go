@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/jitter"
-	"github.com/artie-labs/transfer/lib/logger"
-
 	"github.com/artie-labs/transfer/lib/artie"
+	"github.com/artie-labs/transfer/lib/jitter"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models/event"
 )
@@ -54,13 +52,12 @@ func processMessage(ctx context.Context, processArgs ProcessArgs) error {
 	}
 
 	evt := event.ToMemoryEvent(ctx, _event, pkMap, topicConfig.tc)
-	shouldFlush, reprocessRow, err := evt.Save(ctx, topicConfig.tc, processArgs.Msg)
+	shouldFlush, err := evt.Save(ctx, topicConfig.tc, processArgs.Msg)
 	if err != nil {
 		tags["what"] = "save_fail"
 		err = fmt.Errorf("event failed to save, err: %v", err)
 	}
 
-	// Flush first, then reprocess row.
 	if shouldFlush {
 		processArgs.FlushChannel <- true
 		// Jitter-sleep is necessary to allow the flush process to acquire the table lock
@@ -70,9 +67,5 @@ func processMessage(ctx context.Context, processArgs ProcessArgs) error {
 		time.Sleep(time.Duration(jitterDuration) * time.Millisecond)
 	}
 
-	if reprocessRow {
-		logger.FromContext(ctx).WithField("key", string(processArgs.Msg.Key())).Info("this row was skipped to prevent a TOAST mismatch, re-processing this row...")
-		return processMessage(ctx, processArgs)
-	}
 	return nil
 }
