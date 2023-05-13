@@ -3,12 +3,19 @@ package typing
 import (
 	"errors"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/typing/ext"
-	"github.com/stretchr/testify/assert"
 	"math"
 	"strings"
 	"testing"
+
+	"github.com/artie-labs/transfer/lib/typing/ext"
+	"github.com/stretchr/testify/assert"
 )
+
+func TestNil(t *testing.T) {
+	assert.Equal(t, ParseValue("", nil, ""), String)
+	assert.Equal(t, ParseValue("", nil, "nil"), String)
+	assert.Equal(t, ParseValue("", nil, nil), Invalid)
+}
 
 func TestJSONString(t *testing.T) {
 	assert.Equal(t, true, IsJSON(`{"hello": "world"}`))

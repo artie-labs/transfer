@@ -3,10 +3,11 @@ package typing
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"reflect"
 	"strings"
+
+	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type KindDetails struct {
@@ -80,6 +81,10 @@ func IsJSON(str string) bool {
 }
 
 func ParseValue(key string, optionalSchema map[string]KindDetails, val interface{}) KindDetails {
+	if val == nil {
+		return Invalid
+	}
+
 	if len(optionalSchema) > 0 {
 		// If the column exists in the schema, let's early exit.
 		kindDetail, isOk := optionalSchema[key]
