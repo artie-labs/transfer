@@ -1,8 +1,10 @@
 package array
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,7 +15,29 @@ func TestStringsJoinAddPrefix(t *testing.T) {
 		"ggg",
 	}
 
-	assert.Equal(t, StringsJoinAddPrefix(foo, ", ", "ARTIE"), "ARTIEabc, ARTIEdef, ARTIEggg")
+	args := StringsJoinAddPrefixArgs{
+		Vals:      foo,
+		Separator: ", ",
+		Prefix:    "ARTIE",
+	}
+
+	assert.Equal(t, StringsJoinAddPrefix(args), "ARTIEabc, ARTIEdef, ARTIEggg")
+}
+
+func TestStringsJoinAddPrefix_ToastedColumns(t *testing.T) {
+	toastedCols := []string{
+		"toast_test",
+		"toast_test_2",
+	}
+
+	args := StringsJoinAddPrefixArgs{
+		Vals:      toastedCols,
+		Separator: " AND ",
+		Prefix:    "cc.",
+		Suffix:    fmt.Sprintf("!='%s'", constants.ToastUnavailableValuePlaceholder),
+	}
+
+	assert.Equal(t, StringsJoinAddPrefix(args), "cc.toast_test!='__debezium_unavailable_value' AND cc.toast_test_2!='__debezium_unavailable_value'")
 }
 
 func TestNotEmpty(t *testing.T) {

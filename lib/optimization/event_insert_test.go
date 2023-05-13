@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/debezium"
+	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/size"
@@ -48,7 +48,7 @@ func TestInsertRow_Toast(t *testing.T) {
 				},
 				{
 					"foo":   "bar",
-					"dusty": debezium.ToastUnavailableValuePlaceholder,
+					"dusty": constants.ToastUnavailableValuePlaceholder,
 					"artie": "transfer5",
 				},
 			},
@@ -64,13 +64,13 @@ func TestInsertRow_Toast(t *testing.T) {
 			rowsDataToUpdate: []map[string]interface{}{
 				{
 					"foo":   "bar",
-					"dusty": debezium.ToastUnavailableValuePlaceholder,
+					"dusty": constants.ToastUnavailableValuePlaceholder,
 					"artie": "transfer5",
 				},
 			},
 			expectedFinalRow: map[string]interface{}{
 				"foo":   "bar",
-				"dusty": debezium.ToastUnavailableValuePlaceholder,
+				"dusty": constants.ToastUnavailableValuePlaceholder,
 				"artie": "transfer5",
 			},
 		},
@@ -80,7 +80,7 @@ func TestInsertRow_Toast(t *testing.T) {
 			rowsDataToUpdate: []map[string]interface{}{
 				{
 					"foo":   "bar",
-					"dusty": debezium.ToastUnavailableValuePlaceholder,
+					"dusty": constants.ToastUnavailableValuePlaceholder,
 					"artie": "transfer5",
 				},
 				{

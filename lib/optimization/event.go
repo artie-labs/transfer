@@ -5,10 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/debezium"
-
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/size"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -73,7 +72,7 @@ func (t *TableData) InsertRow(pk string, rowData map[string]interface{}) {
 	if isOk {
 		prevRowSize = size.GetApproxSize(prevRow)
 		for key, val := range rowData {
-			if val == debezium.ToastUnavailableValuePlaceholder {
+			if val == constants.ToastUnavailableValuePlaceholder {
 				// Copy it from prevRow.
 				prevVal, isOk := prevRow[key]
 				if !isOk {

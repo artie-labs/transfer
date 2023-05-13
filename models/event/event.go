@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/debezium"
-
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -141,7 +139,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 			sanitizedData[newColName] = val
 		}
 
-		if val == debezium.ToastUnavailableValuePlaceholder {
+		if val == constants.ToastUnavailableValuePlaceholder {
 			inMemoryColumns.UpsertColumn(newColName, true)
 		} else {
 			retrievedColumn, isOk := inMemoryColumns.GetColumn(newColName)

@@ -5,15 +5,22 @@ import (
 	"strings"
 )
 
+type StringsJoinAddPrefixArgs struct {
+	Vals      []string
+	Separator string
+	Prefix    string
+	Suffix    string
+}
+
 // StringsJoinAddPrefix will add a prefix to vals, then join all the parts together via the separator
 // Use case for this is to add a prefix for the tableName to all the columns
-func StringsJoinAddPrefix(vals []string, separator string, prefix string) string {
+func StringsJoinAddPrefix(args StringsJoinAddPrefixArgs) string {
 	var retVals []string
-	for _, val := range vals {
-		retVals = append(retVals, prefix+val)
+	for _, val := range args.Vals {
+		retVals = append(retVals, args.Prefix+val+args.Suffix)
 	}
 
-	return strings.Join(retVals, separator)
+	return strings.Join(retVals, args.Separator)
 }
 
 // ColumnsUpdateQuery will take a list of columns + tablePrefix and return
@@ -54,12 +61,10 @@ func StringContains(list []string, element string) bool {
 }
 
 func RemoveElement(list []string, elementToRemove string) []string {
-	// TODO - test
 	for index, element := range list {
 		if element == elementToRemove {
 			return append(list[:index], list[index+1:]...)
 		}
 	}
-
 	return list
 }
