@@ -68,7 +68,7 @@ func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicCo
 // This is important to avoid concurrent r/w, but also the ability for us to add or decrement row size by keeping a running total
 // With this, we are able to reduce the latency by 500x+ on a 5k row table. See event_bench_test.go vs. size_bench_test.go
 func (t *TableData) InsertRow(pk string, rowData map[string]interface{}) {
-	// TODO - test
+	// TODO - test all scenarios.
 
 	var prevRowSize int
 	prevRow, isOk := t.rowsData[pk]
@@ -76,16 +76,19 @@ func (t *TableData) InsertRow(pk string, rowData map[string]interface{}) {
 		prevRowSize = size.GetApproxSize(prevRow)
 		for key, val := range rowData {
 			if val == debezium.ToastUnavailableValuePlaceholder {
-				// Don't copy this since it's incorrect.
-				continue
+				// Copy it from prevRow.
+				prevVal, isOk := prevRow[key]
+				if !isOk {
+					continue
+				}
+
+				// If we got back a TOASTED value, we need to use the previous row.
+				rowData[key] = prevVal
 			}
-			t.rowsData[pk][key] = val
 		}
-	} else {
-		t.rowsData[pk] = rowData
 	}
 
-	newRowSize := size.GetApproxSize(t.rowsData[pk])
+	newRowSize := size.GetApproxSize(rowData)
 	// If prevRow doesn't exist, it'll be 0, which is a no-op.
 	t.approxSize += newRowSize - prevRowSize
 	t.rowsData[pk] = rowData
