@@ -89,6 +89,14 @@ func TestColumnsUpdateQuery(t *testing.T) {
 			tablePrefix:    "cc",
 			expectedString: "a1= CASE WHEN cc.a1 != {'key': '__debezium_unavailable_value'} THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN cc.b2 != '__debezium_unavailable_value' THEN cc.b2 ELSE c.b2 END,c3=cc.c3",
 		},
+		{
+			name:           "struct, string and toast string (bigquery)",
+			columns:        lastCaseCols,
+			columnsToTypes: lastCaseColTypes,
+			tablePrefix:    "cc",
+			bigQuery:       true,
+			expectedString: `a1= CASE WHEN TO_JSON_STRING(cc.a1) != '{"key": "__debezium_unavailable_value"}' THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN cc.b2 != '__debezium_unavailable_value' THEN cc.b2 ELSE c.b2 END,c3=cc.c3`,
+		},
 	}
 
 	for _, _testCase := range testCases {
