@@ -19,10 +19,10 @@ type MergeArgument struct {
 	Columns        []string
 	ColumnsToTypes typing.Columns
 
-	// SpecialCastingRequired - This is used for columns that have JSON value. This is required for BigQuery
+	// BigQueryTypeCasting - This is used for columns that have JSON value. This is required for BigQuery
 	// We will be casting the value in this column as such: `TO_JSON_STRING(<columnName>)`
-	SpecialCastingRequired bool
-	SoftDelete             bool
+	BigQueryTypeCasting bool
+	SoftDelete          bool
 }
 
 func MergeStatement(m MergeArgument) (string, error) {
@@ -46,7 +46,7 @@ func MergeStatement(m MergeArgument) (string, error) {
 			return "", fmt.Errorf("error: column: %s does not exist in columnToType: %v", primaryKey, m.ColumnsToTypes)
 		}
 
-		if m.SpecialCastingRequired && pkCol.KindDetails.Kind == typing.Struct.Kind {
+		if m.BigQueryTypeCasting && pkCol.KindDetails.Kind == typing.Struct.Kind {
 			// BigQuery requires special casting to compare two JSON objects.
 			equalitySQL = fmt.Sprintf("TO_JSON_STRING(c.%s) = TO_JSON_STRING(cc.%s)", primaryKey, primaryKey)
 		}
@@ -69,7 +69,7 @@ func MergeStatement(m MergeArgument) (string, error) {
 					);
 		`, m.FqTableName, m.SubQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, array.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, "cc"),
+			idempotentClause, array.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, "cc", m.BigQueryTypeCasting),
 			// Insert
 			constants.DeleteColumnMarker, strings.Join(m.Columns, ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -110,7 +110,7 @@ func MergeStatement(m MergeArgument) (string, error) {
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update
-		constants.DeleteColumnMarker, idempotentClause, array.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, "cc"),
+		constants.DeleteColumnMarker, idempotentClause, array.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, "cc", m.BigQueryTypeCasting),
 		// Insert
 		constants.DeleteColumnMarker, strings.Join(m.Columns, ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{

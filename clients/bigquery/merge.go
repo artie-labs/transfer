@@ -31,6 +31,8 @@ func merge(tableData *optimization.TableData) (string, error) {
 
 	var rowValues []string
 	firstRow := true
+
+	// TODO - Reduce complexity.
 	for _, value := range tableData.RowsData() {
 		var colVals []string
 		for _, col := range cols {
@@ -57,8 +59,12 @@ func merge(tableData *optimization.TableData) (string, error) {
 					colVal = stringutil.Wrap(colVal)
 					colVal = stringutil.LineBreaksToCarriageReturns(fmt.Sprint(colVal))
 					if colKind.KindDetails == typing.Struct {
-						// This is how you cast string -> JSON
-						colVal = fmt.Sprintf("JSON %s", colVal)
+						if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
+							colVal = typing.BigQueryJSON(fmt.Sprintf(`{"key": "%s"}`, constants.ToastUnavailableValuePlaceholder))
+						} else {
+							// This is how you cast string -> JSON
+							colVal = fmt.Sprintf("JSON %s", colVal)
+						}
 					}
 				case typing.Array.Kind:
 					// We need to marshall, so we can escape the strings.
@@ -94,15 +100,14 @@ func merge(tableData *optimization.TableData) (string, error) {
 	subQuery := strings.Join(rowValues, " UNION ALL ")
 
 	return dml.MergeStatement(dml.MergeArgument{
-		FqTableName:    tableData.ToFqName(constants.BigQuery),
-		SubQuery:       subQuery,
-		IdempotentKey:  tableData.IdempotentKey,
-		PrimaryKeys:    tableData.PrimaryKeys,
-		Columns:        cols,
-		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
-		SoftDelete:     tableData.SoftDelete,
-		// BigQuery specifically needs it.
-		SpecialCastingRequired: true,
+		FqTableName:         tableData.ToFqName(constants.BigQuery),
+		SubQuery:            subQuery,
+		IdempotentKey:       tableData.IdempotentKey,
+		PrimaryKeys:         tableData.PrimaryKeys,
+		Columns:             cols,
+		ColumnsToTypes:      *tableData.ReadOnlyInMemoryCols(),
+		SoftDelete:          tableData.SoftDelete,
+		BigQueryTypeCasting: true,
 	})
 }
 

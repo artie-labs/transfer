@@ -28,7 +28,7 @@ func StringsJoinAddPrefix(args StringsJoinAddPrefixArgs) string {
 
 // ColumnsUpdateQuery will take a list of columns + tablePrefix and return
 // columnA = tablePrefix.columnA, columnB = tablePrefix.columnB. This is the Update syntax that Snowflake requires
-func ColumnsUpdateQuery(columns []string, columnsToTypes typing.Columns, tablePrefix string) string {
+func ColumnsUpdateQuery(columns []string, columnsToTypes typing.Columns, tablePrefix string, bigQueryTypeCasting bool) string {
 	// TODO - deprecate tablePrefix as an arg (it's redundant).
 
 	// NOTE: columns and sflkCols must be the same.
@@ -37,10 +37,18 @@ func ColumnsUpdateQuery(columns []string, columnsToTypes typing.Columns, tablePr
 		columnType, isOk := columnsToTypes.GetColumn(column)
 		if isOk && columnType.ToastColumn {
 			if columnType.KindDetails == typing.Struct {
-				_columns = append(_columns,
-					fmt.Sprintf("%s= CASE WHEN %s.%s != {'key': '%s'} THEN %s.%s ELSE c.%s END",
-						column, tablePrefix, column,
-						constants.ToastUnavailableValuePlaceholder, tablePrefix, column, column))
+				if bigQueryTypeCasting {
+					_columns = append(_columns,
+						fmt.Sprintf("%s= CASE WHEN TO_JSON_STRING(%s.%s) != %s THEN %s.%s ELSE c.%s END",
+							column, tablePrefix, column,
+							fmt.Sprintf(`'{"key": "%s"}'`, constants.ToastUnavailableValuePlaceholder),
+							tablePrefix, column, column))
+				} else {
+					_columns = append(_columns,
+						fmt.Sprintf("%s= CASE WHEN %s.%s != {'key': '%s'} THEN %s.%s ELSE c.%s END",
+							column, tablePrefix, column,
+							constants.ToastUnavailableValuePlaceholder, tablePrefix, column, column))
+				}
 			} else {
 				// t.column3 = CASE WHEN t.column3 != '__debezium_unavailable_value' THEN t.column3 ELSE s.column3 END
 				_columns = append(_columns,

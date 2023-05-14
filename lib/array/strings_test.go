@@ -17,6 +17,7 @@ func TestColumnsUpdateQuery(t *testing.T) {
 		columnsToTypes typing.Columns
 		tablePrefix    string
 		expectedString string
+		bigQuery       bool
 	}
 
 	fooBarCols := []string{"foo", "bar"}
@@ -91,7 +92,7 @@ func TestColumnsUpdateQuery(t *testing.T) {
 	}
 
 	for _, _testCase := range testCases {
-		actualQuery := ColumnsUpdateQuery(_testCase.columns, _testCase.columnsToTypes, _testCase.tablePrefix)
+		actualQuery := ColumnsUpdateQuery(_testCase.columns, _testCase.columnsToTypes, _testCase.tablePrefix, _testCase.bigQuery)
 		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
 	}
 
