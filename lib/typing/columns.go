@@ -16,7 +16,6 @@ type Columns struct {
 // UpsertColumn - just a wrapper around UpdateColumn and AddColumn
 // If it doesn't find a column, it'll add one where the kind = Invalid.
 func (c *Columns) UpsertColumn(colName string, toastColumn bool) {
-	// TODO - test
 	if colName == "" {
 		return
 	}

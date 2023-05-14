@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
