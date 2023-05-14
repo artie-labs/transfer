@@ -29,9 +29,10 @@ func StringsJoinAddPrefix(args StringsJoinAddPrefixArgs) string {
 // ColumnsUpdateQuery will take a list of columns + tablePrefix and return
 // columnA = tablePrefix.columnA, columnB = tablePrefix.columnB. This is the Update syntax that Snowflake requires
 func ColumnsUpdateQuery(columns []string, columnsToTypes typing.Columns, tablePrefix string) string {
+	// TODO - deprecate tablePrefix as an arg (it's redundant).
+
 	// NOTE: columns and sflkCols must be the same.
 	var _columns []string
-
 	for _, column := range columns {
 		columnType, isOk := columnsToTypes.GetColumn(column)
 		if isOk && columnType.ToastColumn {
