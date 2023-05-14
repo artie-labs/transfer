@@ -29,9 +29,12 @@ func getMergeStatement(tableData *optimization.TableData) (string, error) {
 		switch column.KindDetails.Kind {
 		case typing.Struct.Kind, typing.Array.Kind:
 			if column.ToastColumn {
-				//  CASE WHEN col = 'unavail' THEN col ELSE PARSE_JSON(col) END col
-				sflkCol = fmt.Sprintf("CASE WHEN %s = '%s' THEN {'key': '%s'} ELSE PARSE_JSON(%s) END %s", column.Name,
-					constants.ToastUnavailableValuePlaceholder, constants.ToastUnavailableValuePlaceholder,
+				sflkCol = fmt.Sprintf("CASE WHEN %s = '%s' THEN {'key': '%s'} ELSE PARSE_JSON(%s) END %s",
+					// Comparing the column against placeholder
+					column.Name, constants.ToastUnavailableValuePlaceholder,
+					// Casting placeholder as a JSON object
+					constants.ToastUnavailableValuePlaceholder,
+					// Regular parsing.
 					column.Name, column.Name)
 			} else {
 				sflkCol = fmt.Sprintf("PARSE_JSON(%s) %s", column.Name, column.Name)
