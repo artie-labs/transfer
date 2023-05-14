@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/debezium"
-
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -28,6 +26,7 @@ type Event struct {
 	OptiomalSchema map[string]typing.KindDetails
 	Columns        *typing.Columns
 	ExecutionTime  time.Time // When the SQL command was executed
+
 }
 
 func ToMemoryEvent(ctx context.Context, event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) Event {
@@ -89,12 +88,11 @@ func (e *Event) PrimaryKeyValue() string {
 
 // Save will save the event into our in memory event
 // It will return:
-//  1. Whether to flush immediately or not
-//  2. Should we re-process this row?
-//  3. Error
-func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, message artie.Message) (bool, bool, error) {
+//   - Whether to flush immediately or not
+//   - Error
+func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, message artie.Message) (bool, error) {
 	if topicConfig == nil {
-		return false, false, errors.New("topicConfig is missing")
+		return false, errors.New("topicConfig is missing")
 	}
 
 	inMemDB := models.GetMemoryDB(ctx)
@@ -102,7 +100,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	defer inMemDB.Unlock()
 
 	if !e.IsValid() {
-		return false, false, errors.New("event not valid")
+		return false, errors.New("event not valid")
 	}
 
 	// Does the table exist?
@@ -125,7 +123,6 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 
 	// Table columns
 	inMemoryColumns := inMemDB.TableData[e.Table].ReadOnlyInMemoryCols()
-
 	// Update col if necessary
 	sanitizedData := make(map[string]interface{})
 	for _col, val := range e.Data {
@@ -142,63 +139,26 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 			sanitizedData[newColName] = val
 		}
 
-		if val == debezium.ToastUnavailableValuePlaceholder {
-			// This is an edge case within Postgres & ORCL
-			// TL;DR - Sometimes a column that is unchanged within a DML will not be emitted
-			// DBZ has stubbed it out by providing this value, so we will skip it when we see it.
-			// See: https://issues.redhat.com/browse/DBZ-4276
-			// We are directly adding this column to our in-memory database
-			// This ensures that this column exists, we just have an invalid value (so we will not replicate over).
-			// However, this will ensure that we do not drop the column within the destination
-			col, isOk := inMemoryColumns.GetColumn(newColName)
-			if isOk {
-				if col.KindDetails != typing.Invalid && col.ToastColumn == false {
-					// Early return if the column exists, value is not invalid and is not marked as a TOAST column
-					// We will flush, then next message will be toastColumn = true.
-					return true, true, nil
-				} else {
-					// If the column exists, update the type and toast value just to be safe.
-					inMemoryColumns.UpdateColumn(typing.Column{
-						Name:        newColName,
-						KindDetails: typing.Invalid,
-						ToastColumn: true,
-					})
-				}
-			} else {
-				// If column doesn't exist, add it.
+		if val == constants.ToastUnavailableValuePlaceholder {
+			inMemoryColumns.UpsertColumn(newColName, true)
+		} else {
+			retrievedColumn, isOk := inMemoryColumns.GetColumn(newColName)
+			if !isOk {
+				// This would only happen if the columns did not get passed in initially.
 				inMemoryColumns.AddColumn(typing.Column{
 					Name:        newColName,
-					KindDetails: typing.Invalid,
-					ToastColumn: true,
+					KindDetails: typing.ParseValue(_col, e.OptiomalSchema, val),
 				})
-			}
-			continue
-		}
-
-		retrievedColumn, isOk := inMemoryColumns.GetColumn(newColName)
-		if !isOk {
-			// This would only happen if the columns did not get passed in initially.
-			inMemoryColumns.AddColumn(typing.Column{
-				Name:        newColName,
-				KindDetails: typing.ParseValue(_col, e.OptiomalSchema, val),
-			})
-		} else {
-			if retrievedColumn.KindDetails == typing.Invalid {
-				// If colType is Invalid, let's see if we can update it to a better type
-				// If everything is nil, we don't need to add a column
-				// However, it's important to create a column even if it's nil.
-				// This is because we don't want to think that it's okay to drop a column in DWH
-				if kindDetails := typing.ParseValue(_col, e.OptiomalSchema, val); kindDetails.Kind != typing.Invalid.Kind {
-					if retrievedColumn.ToastColumn {
-						// To prevent a mismatch, we are early returning here because by getting here.
-						// Since by getting here, this row has a real value back from a TOAST column.
-						return true, true, nil
+			} else {
+				if retrievedColumn.KindDetails == typing.Invalid {
+					// If colType is Invalid, let's see if we can update it to a better type
+					// If everything is nil, we don't need to add a column
+					// However, it's important to create a column even if it's nil.
+					// This is because we don't want to think that it's okay to drop a column in DWH
+					if kindDetails := typing.ParseValue(_col, e.OptiomalSchema, val); kindDetails.Kind != typing.Invalid.Kind {
+						retrievedColumn.KindDetails = kindDetails
+						inMemoryColumns.UpdateColumn(retrievedColumn)
 					}
-
-					inMemoryColumns.UpdateColumn(typing.Column{
-						Name:        newColName,
-						KindDetails: kindDetails,
-					})
 				}
 			}
 		}
@@ -221,5 +181,5 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	}
 
 	inMemDB.TableData[e.Table].LatestCDCTs = e.ExecutionTime
-	return inMemDB.TableData[e.Table].ShouldFlush(ctx), false, nil
+	return inMemDB.TableData[e.Table].ShouldFlush(ctx), nil
 }

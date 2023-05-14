@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/artie-labs/transfer/lib/debezium"
-
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -42,7 +40,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	}
 
 	kafkaMsg := kafka.Message{}
-	_, _, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	_, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(e.T(), err)
 
 	optimization := models.GetMemoryDB(e.ctx).TableData["foo"]
@@ -69,12 +67,12 @@ func (e *EventsTestSuite) TestSaveEvent() {
 			constants.DeleteColumnMarker: true,
 			expectedCol:                  "dusty",
 			anotherCol:                   13.37,
-			badColumn:                    debezium.ToastUnavailableValuePlaceholder,
+			badColumn:                    constants.ToastUnavailableValuePlaceholder,
 		},
 	}
 
 	newKafkaMsg := kafka.Message{}
-	_, _, err = edgeCaseEvent.Save(e.ctx, topicConfig, artie.NewMessage(&newKafkaMsg, nil, newKafkaMsg.Topic))
+	_, err = edgeCaseEvent.Save(e.ctx, topicConfig, artie.NewMessage(&newKafkaMsg, nil, newKafkaMsg.Topic))
 	assert.NoError(e.T(), err)
 	inMemoryCol, isOk := models.GetMemoryDB(e.ctx).TableData["foo"].ReadOnlyInMemoryCols().GetColumn(badColumn)
 	assert.True(e.T(), isOk)
@@ -95,7 +93,7 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 	}
 
 	kafkaMsg := kafka.Message{}
-	_, _, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	_, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(e.T(), err)
 
 	rowData := models.GetMemoryDB(e.ctx).TableData["foo"].RowsData()[event.PrimaryKeyValue()]
@@ -130,7 +128,7 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 	}
 
 	kafkaMsg := kafka.Message{}
-	_, _, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	_, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(e.T(), err)
 
 	column, isOk := models.GetMemoryDB(e.ctx).TableData["foo"].ReadOnlyInMemoryCols().GetColumn("created_at_date_string")
@@ -168,7 +166,7 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 		},
 	}
 	kafkaMsg := kafka.Message{}
-	_, _, err := evt.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	_, err := evt.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.NoError(e.T(), err)
 
 	var prevKey string
@@ -234,7 +232,7 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 	}
 
 	kafkaMsg := kafka.Message{}
-	_, _, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	_, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(e.T(), err)
 
 	column, isOk := models.GetMemoryDB(e.ctx).TableData["foo"].ReadOnlyInMemoryCols().GetColumn("randomcol")

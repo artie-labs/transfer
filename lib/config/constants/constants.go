@@ -3,6 +3,8 @@ package constants
 import "time"
 
 const (
+	ToastUnavailableValuePlaceholder = "__debezium_unavailable_value"
+
 	ArtiePrefix               = "__artie"
 	DeleteColumnMarker        = ArtiePrefix + "_delete"
 	DeletionConfidencePadding = 4 * time.Hour

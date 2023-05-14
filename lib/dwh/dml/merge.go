@@ -3,8 +3,9 @@ package dml
 import (
 	"errors"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/typing"
 	"strings"
+
+	"github.com/artie-labs/transfer/lib/typing"
 
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -68,10 +69,14 @@ func MergeStatement(m MergeArgument) (string, error) {
 					);
 		`, m.FqTableName, m.SubQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, array.ColumnsUpdateQuery(m.Columns, "cc"),
+			idempotentClause, array.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, "cc"),
 			// Insert
 			constants.DeleteColumnMarker, strings.Join(m.Columns, ","),
-			array.StringsJoinAddPrefix(m.Columns, ",", "cc.")), nil
+			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
+				Vals:      m.Columns,
+				Separator: ",",
+				Prefix:    "cc.",
+			})), nil
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
@@ -105,9 +110,13 @@ func MergeStatement(m MergeArgument) (string, error) {
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update
-		constants.DeleteColumnMarker, idempotentClause, array.ColumnsUpdateQuery(m.Columns, "cc"),
+		constants.DeleteColumnMarker, idempotentClause, array.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, "cc"),
 		// Insert
 		constants.DeleteColumnMarker, strings.Join(m.Columns, ","),
-		array.StringsJoinAddPrefix(m.Columns, ",", "cc.")), nil
+		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
+			Vals:      m.Columns,
+			Separator: ",",
+			Prefix:    "cc.",
+		})), nil
 
 }

@@ -1,9 +1,52 @@
 package typing
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
+
+func TestColumns_UpsertColumns(t *testing.T) {
+	keys := []string{"a", "b", "c", "d", "e"}
+	var cols Columns
+	for _, key := range keys {
+		cols.AddColumn(Column{
+			Name:        key,
+			KindDetails: String,
+		})
+	}
+
+	// Now inspect prior to change.
+	for _, col := range cols.GetColumns() {
+		assert.False(t, col.ToastColumn)
+	}
+
+	// Now selectively update only a, b
+	for _, key := range []string{"a", "b"} {
+		cols.UpsertColumn(key, true)
+
+		// Now inspect.
+		col, _ := cols.GetColumn(key)
+		assert.True(t, col.ToastColumn)
+	}
+
+	cols.UpsertColumn("zzz", false)
+	zzzCol, _ := cols.GetColumn("zzz")
+	assert.False(t, zzzCol.ToastColumn)
+	assert.Equal(t, zzzCol.KindDetails, Invalid)
+
+	cols.UpsertColumn("aaa", false)
+	aaaCol, _ := cols.GetColumn("aaa")
+	assert.False(t, aaaCol.ToastColumn)
+	assert.Equal(t, aaaCol.KindDetails, Invalid)
+
+	length := len(cols.columns)
+	for i := 0; i < 500; i++ {
+		cols.UpsertColumn("", false)
+	}
+
+	assert.Equal(t, length, len(cols.columns))
+}
 
 func TestColumns_Add_Duplicate(t *testing.T) {
 	var cols Columns
