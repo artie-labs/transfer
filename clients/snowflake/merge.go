@@ -17,7 +17,6 @@ import (
 // 1) colsToUpdate - list of columns to update
 // 2) list of columns to update (escaped).
 func escapeCols(cols []typing.Column) (colsToUpdate []string, colsToUpdateEscaped []string) {
-	// Given all the columns, diff this against SFLK.
 	for _, column := range cols {
 		if column.KindDetails.Kind == typing.Invalid.Kind {
 			// Don't update Snowflake
