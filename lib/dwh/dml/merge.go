@@ -5,18 +5,17 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/typing"
+
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/typing"
 )
 
 type MergeArgument struct {
-	FqTableName   string
-	SubQuery      string
-	IdempotentKey string
-	PrimaryKeys   []string
-	// Columns has been stripped to remove any invalid columns.
-	// TODO - Do we need both?
+	FqTableName    string
+	SubQuery       string
+	IdempotentKey  string
+	PrimaryKeys    []string
 	Columns        []string
 	ColumnsToTypes typing.Columns
 
@@ -26,55 +25,18 @@ type MergeArgument struct {
 	SoftDelete             bool
 }
 
-// generateMatchClause - TODO add comment
-func (m *MergeArgument) generateMatchClause() string {
-	var toastedCols []string
-	// We'll need to iterate over potential columns and check if any of the columns contain TOAST values
-	// If they do, then we'll need to update our MATCH statement to include and exclude them.
-	for _, col := range m.Columns {
-		colKind, isOk := m.ColumnsToTypes.GetColumn(col)
-		if isOk {
-			if colKind.ToastColumn {
-				toastedCols = append(toastedCols, col)
-			}
-		}
-	}
-
-	matchedString := "when matched"
-	if m.SoftDelete {
-		matchedString = fmt.Sprintf("%s AND IFNULL(cc.%s, false) = false", matchedString, constants.DeleteColumnMarker)
-	}
-
-	// We also need to do staged table's idempotency key is GTE target table's idempotency key
-	// This is because Snowflake does not respect NS granularity.
-	if m.IdempotentKey != "" {
-		matchedString = fmt.Sprintf("%s AND cc.%s >= c.%s", matchedString, m.IdempotentKey, m.IdempotentKey)
-	}
-
-	mainMatchedClause := fmt.Sprintf("%s then UPDATE SET %s ", matchedString, array.ColumnsUpdateQuery(m.Columns, "cc"))
-
-	if len(toastedCols) > 0 {
-		// We will need to escape TOASTED columns.
-		args := array.StringsJoinAddPrefixArgs{
-			Vals:      toastedCols,
-			Separator: " AND ",
-			Prefix:    "cc.",
-			Suffix:    fmt.Sprintf("!='%s'", constants.ToastUnavailableValuePlaceholder),
-		}
-
-		matchedString = fmt.Sprintf("%s AND %s", matchedString, array.StringsJoinAddPrefix(args))
-	}
-
-	return mainMatchedClause
-}
-
 func MergeStatement(m MergeArgument) (string, error) {
-	// TODO - explore getting rid of IFNULL since that's a pre-req.
-
 	// We should not need idempotency key for DELETE
 	// This is based on the assumption that the primary key would be atomically increasing or UUID based
 	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
 	// However, there may be edge cases where folks end up restoring deleted rows (which will contain the same PK).
+
+	// We also need to do staged table's idempotency key is GTE target table's idempotency key
+	// This is because Snowflake does not respect NS granularity.
+	var idempotentClause string
+	if m.IdempotentKey != "" {
+		idempotentClause = fmt.Sprintf("AND cc.%s >= c.%s ", m.IdempotentKey, m.IdempotentKey)
+	}
 
 	var equalitySQLParts []string
 	for _, primaryKey := range m.PrimaryKeys {
@@ -95,7 +57,8 @@ func MergeStatement(m MergeArgument) (string, error) {
 	if m.SoftDelete {
 		return fmt.Sprintf(`
 			MERGE INTO %s c using (%s) as cc on %s
-				%s
+				when matched %sthen UPDATE
+					SET %s
 				when not matched AND IFNULL(cc.%s, false) = false then INSERT
 					(
 						%s
@@ -106,16 +69,14 @@ func MergeStatement(m MergeArgument) (string, error) {
 					);
 		`, m.FqTableName, m.SubQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			m.generateMatchClause(),
+			idempotentClause, array.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, "cc"),
 			// Insert
 			constants.DeleteColumnMarker, strings.Join(m.Columns, ","),
-			array.StringsJoinAddPrefix(
-				array.StringsJoinAddPrefixArgs{
-					Vals:      m.Columns,
-					Separator: ",",
-					Prefix:    "cc.",
-				}),
-		), nil
+			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
+				Vals:      m.Columns,
+				Separator: ",",
+				Prefix:    "cc.",
+			})), nil
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
@@ -135,7 +96,8 @@ func MergeStatement(m MergeArgument) (string, error) {
 	return fmt.Sprintf(`
 			MERGE INTO %s c using (%s) as cc on %s
 				when matched AND cc.%s then DELETE
-				%s
+				when matched AND IFNULL(cc.%s, false) = false %sthen UPDATE
+					SET %s
 				when not matched AND IFNULL(cc.%s, false) = false then INSERT
 					(
 						%s
@@ -148,15 +110,13 @@ func MergeStatement(m MergeArgument) (string, error) {
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update
-		m.generateMatchClause(),
+		constants.DeleteColumnMarker, idempotentClause, array.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, "cc"),
 		// Insert
 		constants.DeleteColumnMarker, strings.Join(m.Columns, ","),
-		array.StringsJoinAddPrefix(
-			array.StringsJoinAddPrefixArgs{
-				Vals:      m.Columns,
-				Separator: ",",
-				Prefix:    "cc.",
-			}),
-	), nil
+		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
+			Vals:      m.Columns,
+			Separator: ",",
+			Prefix:    "cc.",
+		})), nil
 
 }
