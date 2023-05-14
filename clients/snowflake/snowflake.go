@@ -2,6 +2,7 @@ package snowflake
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -124,12 +125,16 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) er
 	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 	query, err := getMergeStatement(tableData)
 	if err != nil {
+		fmt.Println("query", query)
 		log.WithError(err).Warn("failed to generate the getMergeStatement query")
 		return err
 	}
 
 	log.WithField("query", query).Debug("executing...")
 	_, err = s.Exec(query)
+	if err != nil {
+		fmt.Println("query", query)
+	}
 	return err
 }
 

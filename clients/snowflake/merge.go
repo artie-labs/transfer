@@ -28,7 +28,14 @@ func getMergeStatement(tableData *optimization.TableData) (string, error) {
 		sflkCol := column.Name
 		switch column.KindDetails.Kind {
 		case typing.Struct.Kind, typing.Array.Kind:
-			sflkCol = fmt.Sprintf("PARSE_JSON(%s) %s", column.Name, column.Name)
+			if column.ToastColumn {
+				//  CASE WHEN col = 'unavail' THEN col ELSE PARSE_JSON(col) END col
+				sflkCol = fmt.Sprintf("CASE WHEN %s = '%s' THEN {'key': '%s'} ELSE PARSE_JSON(%s) END %s", column.Name,
+					constants.ToastUnavailableValuePlaceholder, constants.ToastUnavailableValuePlaceholder,
+					column.Name, column.Name)
+			} else {
+				sflkCol = fmt.Sprintf("PARSE_JSON(%s) %s", column.Name, column.Name)
+			}
 		}
 
 		cols = append(cols, column.Name)

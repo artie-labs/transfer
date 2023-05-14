@@ -35,10 +35,18 @@ func ColumnsUpdateQuery(columns []string, columnsToTypes typing.Columns, tablePr
 	for _, column := range columns {
 		columnType, isOk := columnsToTypes.GetColumn(column)
 		if isOk && columnType.ToastColumn {
-			// t.column3 = CASE WHEN t.column3 != '__debezium_unavailable_value' THEN t.column3 ELSE s.column3 END
-			_columns = append(_columns,
-				fmt.Sprintf("%s= CASE WHEN %s.%s != '%s' THEN %s.%s ELSE c.%s END", column, tablePrefix, column,
-					constants.ToastUnavailableValuePlaceholder, tablePrefix, column, column))
+			if columnType.KindDetails == typing.Struct {
+				_columns = append(_columns,
+					fmt.Sprintf("%s= CASE WHEN %s.%s != {'key': '%s'} THEN %s.%s ELSE c.%s END",
+						column, tablePrefix, column,
+						constants.ToastUnavailableValuePlaceholder, tablePrefix, column, column))
+			} else {
+				// t.column3 = CASE WHEN t.column3 != '__debezium_unavailable_value' THEN t.column3 ELSE s.column3 END
+				_columns = append(_columns,
+					fmt.Sprintf("%s= CASE WHEN %s.%s != '%s' THEN %s.%s ELSE c.%s END", column, tablePrefix, column,
+						constants.ToastUnavailableValuePlaceholder, tablePrefix, column, column))
+			}
+
 		} else {
 			// This is to make it look like: objCol = cc.objCol::variant
 			_columns = append(_columns, fmt.Sprintf("%s=%s.%s", column, tablePrefix, column))
