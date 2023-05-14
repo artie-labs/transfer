@@ -2,10 +2,16 @@ package typing
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
+
+func TestBigQueryJSON(t *testing.T) {
+	jsonString := `{"foo": "bar"}`
+	assert.Equal(t, `JSON '{"foo": "bar"}'`, BigQueryJSON(jsonString))
+}
 
 func TestBigQueryTypeToKind(t *testing.T) {
 	bqColToExpectedKind := map[string]KindDetails{

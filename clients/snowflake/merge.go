@@ -13,31 +13,45 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func getMergeStatement(tableData *optimization.TableData) (string, error) {
-	var tableValues []string
-	var cols []string
-	var sflkCols []string
-
-	// Given all the columns, diff this against SFLK.
-	for _, column := range tableData.ReadOnlyInMemoryCols().GetColumns() {
+// escapeCols will return the following arguments:
+// 1) colsToUpdate - list of columns to update
+// 2) list of columns to update (escaped).
+func escapeCols(cols []typing.Column) (colsToUpdate []string, colsToUpdateEscaped []string) {
+	for _, column := range cols {
 		if column.KindDetails.Kind == typing.Invalid.Kind {
 			// Don't update Snowflake
 			continue
 		}
 
-		sflkCol := column.Name
+		escapedCol := column.Name
 		switch column.KindDetails.Kind {
 		case typing.Struct.Kind, typing.Array.Kind:
-			sflkCol = fmt.Sprintf("PARSE_JSON(%s) %s", column.Name, column.Name)
+			if column.ToastColumn {
+				escapedCol = fmt.Sprintf("CASE WHEN %s = '%s' THEN {'key': '%s'} ELSE PARSE_JSON(%s) END %s",
+					// Comparing the column against placeholder
+					column.Name, constants.ToastUnavailableValuePlaceholder,
+					// Casting placeholder as a JSON object
+					constants.ToastUnavailableValuePlaceholder,
+					// Regular parsing.
+					column.Name, column.Name)
+			} else {
+				escapedCol = fmt.Sprintf("PARSE_JSON(%s) %s", column.Name, column.Name)
+			}
 		}
 
-		cols = append(cols, column.Name)
-		sflkCols = append(sflkCols, sflkCol)
+		colsToUpdate = append(colsToUpdate, column.Name)
+		colsToUpdateEscaped = append(colsToUpdateEscaped, escapedCol)
 	}
 
+	return
+}
+
+func getMergeStatement(tableData *optimization.TableData) (string, error) {
+	var tableValues []string
+	colsToUpdate, colsToUpdateEscaped := escapeCols(tableData.ReadOnlyInMemoryCols().GetColumns())
 	for _, value := range tableData.RowsData() {
 		var rowValues []string
-		for _, col := range cols {
+		for _, col := range colsToUpdate {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal := value[col]
 			if colVal != nil {
@@ -78,15 +92,15 @@ func getMergeStatement(tableData *optimization.TableData) (string, error) {
 		tableValues = append(tableValues, fmt.Sprintf("(%s) ", strings.Join(rowValues, ",")))
 	}
 
-	subQuery := fmt.Sprintf("SELECT %s FROM (values %s) as %s(%s)", strings.Join(sflkCols, ","),
-		strings.Join(tableValues, ","), tableData.TopicConfig.TableName, strings.Join(cols, ","))
+	subQuery := fmt.Sprintf("SELECT %s FROM (values %s) as %s(%s)", strings.Join(colsToUpdateEscaped, ","),
+		strings.Join(tableValues, ","), tableData.TopicConfig.TableName, strings.Join(colsToUpdate, ","))
 
 	return dml.MergeStatement(dml.MergeArgument{
 		FqTableName:    tableData.ToFqName(constants.Snowflake),
 		SubQuery:       subQuery,
 		IdempotentKey:  tableData.IdempotentKey,
 		PrimaryKeys:    tableData.PrimaryKeys,
-		Columns:        cols,
+		Columns:        colsToUpdate,
 		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:     tableData.SoftDelete,
 	})

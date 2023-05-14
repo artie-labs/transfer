@@ -2,14 +2,126 @@ package snowflake
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/stretchr/testify/assert"
-	"strings"
 
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
 )
+
+func (s *SnowflakeTestSuite) TestEscapeCols() {
+	type _testCase struct {
+		name                string
+		cols                []typing.Column
+		expectedCols        []string
+		expectedColsEscaped []string
+	}
+
+	var (
+		happyPathCols                           typing.Columns
+		happyPathStructCols                     typing.Columns
+		happyPathStructArrayCols                typing.Columns
+		happyPathStructArrayWithToastStructCols typing.Columns
+	)
+
+	for _, col := range []string{"foo", "bar"} {
+		happyPathCols.AddColumn(typing.Column{
+			Name:        col,
+			KindDetails: typing.String,
+			ToastColumn: false,
+		})
+	}
+
+	for _, col := range []string{"foo", "bar", "xyz"} {
+		kd := typing.String
+		if col == "xyz" {
+			kd = typing.Struct
+		}
+
+		happyPathStructCols.AddColumn(typing.Column{
+			Name:        col,
+			KindDetails: kd,
+			ToastColumn: false,
+		})
+	}
+
+	for _, col := range []string{"foo", "bar", "xyz", "abc"} {
+		kd := typing.String
+		if col == "xyz" {
+			kd = typing.Struct
+		}
+
+		if col == "abc" {
+			kd = typing.Array
+		}
+
+		happyPathStructArrayCols.AddColumn(typing.Column{
+			Name:        col,
+			KindDetails: kd,
+			ToastColumn: false,
+		})
+	}
+
+	for _, col := range []string{"foo", "bar", "xyz", "abc", "dusty"} {
+		var toast bool
+		kd := typing.String
+		if col == "xyz" {
+			kd = typing.Struct
+		}
+
+		if col == "abc" {
+			kd = typing.Array
+		}
+
+		if col == "dusty" {
+			toast = true
+			kd = typing.Struct
+		}
+
+		happyPathStructArrayWithToastStructCols.AddColumn(typing.Column{
+			Name:        col,
+			KindDetails: kd,
+			ToastColumn: toast,
+		})
+	}
+
+	testCases := []_testCase{
+		{
+			name:                "happy path",
+			cols:                happyPathCols.GetColumns(),
+			expectedCols:        []string{"foo", "bar"},
+			expectedColsEscaped: []string{"foo", "bar"},
+		},
+		{
+			name:                "happy path w/ struct",
+			cols:                happyPathStructCols.GetColumns(),
+			expectedCols:        []string{"foo", "bar", "xyz"},
+			expectedColsEscaped: []string{"foo", "bar", "PARSE_JSON(xyz) xyz"},
+		},
+		{
+			name:                "happy path w/ struct + array",
+			cols:                happyPathStructArrayCols.GetColumns(),
+			expectedCols:        []string{"foo", "bar", "xyz", "abc"},
+			expectedColsEscaped: []string{"foo", "bar", "PARSE_JSON(xyz) xyz", "PARSE_JSON(abc) abc"},
+		},
+		{
+			name:         "happy path w/ struct + array + toasted struct",
+			cols:         happyPathStructArrayWithToastStructCols.GetColumns(),
+			expectedCols: []string{"foo", "bar", "xyz", "abc", "dusty"},
+			expectedColsEscaped: []string{"foo", "bar", "PARSE_JSON(xyz) xyz", "PARSE_JSON(abc) abc",
+				"CASE WHEN dusty = '__debezium_unavailable_value' THEN {'key': '__debezium_unavailable_value'} ELSE PARSE_JSON(dusty) END dusty"},
+		},
+	}
+
+	for _, testCase := range testCases {
+		_cols, _escapedCols := escapeCols(testCase.cols)
+		assert.Equal(s.T(), _cols, testCase.expectedCols, testCase.name)
+		assert.Equal(s.T(), _escapedCols, testCase.expectedColsEscaped, testCase.name)
+	}
+}
 
 func (s *SnowflakeTestSuite) TestMergeNoDeleteFlag() {
 	var cols typing.Columns

@@ -1,9 +1,15 @@
 package typing
 
 import (
-	"github.com/artie-labs/transfer/lib/typing/ext"
+	"fmt"
 	"strings"
+
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
+
+func BigQueryJSON(json interface{}) string {
+	return fmt.Sprintf(`JSON '%v'`, json)
+}
 
 func BigQueryTypeToKind(bqType string) KindDetails {
 	bqType = strings.ToLower(bqType)
