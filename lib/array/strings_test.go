@@ -15,7 +15,6 @@ func TestColumnsUpdateQuery(t *testing.T) {
 		name           string
 		columns        []string
 		columnsToTypes typing.Columns
-		tablePrefix    string
 		expectedString string
 		bigQuery       bool
 	}
@@ -72,35 +71,31 @@ func TestColumnsUpdateQuery(t *testing.T) {
 			name:           "happy path",
 			columns:        fooBarCols,
 			columnsToTypes: happyPathCols,
-			tablePrefix:    "cc",
 			expectedString: "foo=cc.foo,bar=cc.bar",
 		},
 		{
 			name:           "string and toast",
 			columns:        fooBarCols,
 			columnsToTypes: stringAndToastCols,
-			tablePrefix:    "cc",
 			expectedString: "foo= CASE WHEN cc.foo != '__debezium_unavailable_value' THEN cc.foo ELSE c.foo END,bar=cc.bar",
 		},
 		{
 			name:           "struct, string and toast string",
 			columns:        lastCaseCols,
 			columnsToTypes: lastCaseColTypes,
-			tablePrefix:    "cc",
 			expectedString: "a1= CASE WHEN cc.a1 != {'key': '__debezium_unavailable_value'} THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN cc.b2 != '__debezium_unavailable_value' THEN cc.b2 ELSE c.b2 END,c3=cc.c3",
 		},
 		{
 			name:           "struct, string and toast string (bigquery)",
 			columns:        lastCaseCols,
 			columnsToTypes: lastCaseColTypes,
-			tablePrefix:    "cc",
 			bigQuery:       true,
 			expectedString: `a1= CASE WHEN TO_JSON_STRING(cc.a1) != '{"key": "__debezium_unavailable_value"}' THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN cc.b2 != '__debezium_unavailable_value' THEN cc.b2 ELSE c.b2 END,c3=cc.c3`,
 		},
 	}
 
 	for _, _testCase := range testCases {
-		actualQuery := ColumnsUpdateQuery(_testCase.columns, _testCase.columnsToTypes, _testCase.tablePrefix, _testCase.bigQuery)
+		actualQuery := ColumnsUpdateQuery(_testCase.columns, _testCase.columnsToTypes, _testCase.bigQuery)
 		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
 	}
 

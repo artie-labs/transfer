@@ -26,10 +26,12 @@ func StringsJoinAddPrefix(args StringsJoinAddPrefixArgs) string {
 	return strings.Join(retVals, args.Separator)
 }
 
-// ColumnsUpdateQuery will take a list of columns + tablePrefix and return
-// columnA = tablePrefix.columnA, columnB = tablePrefix.columnB. This is the Update syntax that Snowflake requires
+// ColumnsUpdateQuery takes:
+// columns - list of columns to iterate
+// columnsToTypes - given that list, provide the types (separate list because this list may contain invalid columns
+// bigQueryTypeCasting - We'll need to escape the column comparison if the column's a struct.
+// It then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email
 func ColumnsUpdateQuery(columns []string, columnsToTypes typing.Columns, bigQueryTypeCasting bool) string {
-	// NOTE: columns and sflkCols must be the same.
 	var _columns []string
 	for _, column := range columns {
 		columnType, isOk := columnsToTypes.GetColumn(column)
@@ -44,7 +46,7 @@ func ColumnsUpdateQuery(columns []string, columnsToTypes typing.Columns, bigQuer
 							column, column))
 				} else {
 					_columns = append(_columns,
-						fmt.Sprintf("%s= CASE WHEN cc.%s != {'key': '%s'} THEN %s.%s ELSE c.%s END",
+						fmt.Sprintf("%s= CASE WHEN cc.%s != {'key': '%s'} THEN cc.%s ELSE c.%s END",
 							// col CASE WHEN cc.col
 							column, column,
 							// { 'key': TOAST_UNAVAILABLE_VALUE } THEN cc.col ELSE c.col END",
