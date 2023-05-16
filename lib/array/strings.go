@@ -2,11 +2,30 @@ package array
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 )
+
+func ToArrayString(val interface{}) []string {
+	var vals []string
+	if val == nil {
+		return vals
+	}
+
+	list := reflect.ValueOf(val)
+	if list.Kind() != reflect.Slice {
+		return vals
+	}
+
+	for i := 0; i < list.Len(); i++ {
+		vals = append(vals, fmt.Sprint(list.Index(i).Interface()))
+	}
+
+	return vals
+}
 
 type StringsJoinAddPrefixArgs struct {
 	Vals      []string

@@ -41,7 +41,7 @@ func TestCastColVal(t *testing.T) {
 			name:           "array",
 			colVal:         []int{1, 2, 3, 4, 5},
 			colKind:        typing.Column{KindDetails: typing.Array},
-			expectedString: `'[1,2,3,4,5]'`,
+			expectedString: `[1 2 3 4 5]`,
 		},
 	}
 

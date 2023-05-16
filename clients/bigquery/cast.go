@@ -1,10 +1,11 @@
 package bigquery
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/array"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/stringutil"
@@ -43,14 +44,7 @@ func CastColVal(colVal interface{}, colKind typing.Column) (string, error) {
 				}
 			}
 		case typing.Array.Kind:
-			// We need to marshall, so we can escape the strings.
-			// https://go.dev/play/p/BcCwUSCeTmT
-			colValBytes, err := json.Marshal(colVal)
-			if err != nil {
-				return "", err
-			}
-
-			colVal = string(colValBytes)
+			colVal = array.ToArrayString(colVal)
 		}
 	} else {
 		if colKind.KindDetails == typing.String {

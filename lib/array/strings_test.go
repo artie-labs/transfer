@@ -10,6 +10,41 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestToArrayString(t *testing.T) {
+	type _testCase struct {
+		name string
+		val  interface{}
+
+		expectedList []string
+	}
+
+	testCases := []_testCase{
+		{
+			name: "nil",
+		},
+		{
+			name:         "list of numbers",
+			val:          []int{1, 2, 3, 4, 5},
+			expectedList: []string{"1", "2", "3", "4", "5"},
+		},
+		{
+			name:         "list of strings",
+			val:          []string{"abc", "def", "ghi"},
+			expectedList: []string{"abc", "def", "ghi"},
+		},
+		{
+			name:         "list of bools",
+			val:          []bool{true, false, true},
+			expectedList: []string{"true", "false", "true"},
+		},
+	}
+
+	for _, testCase := range testCases {
+		assert.Equal(t, testCase.expectedList, ToArrayString(testCase.val), testCase.name)
+	}
+
+}
+
 func TestColumnsUpdateQuery(t *testing.T) {
 	type testCase struct {
 		name           string
