@@ -1,31 +1,54 @@
 package array
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/stringutil"
 	"reflect"
 	"strings"
+
+	"github.com/artie-labs/transfer/lib/stringutil"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func InterfaceToArrayStringEscaped(val interface{}) string {
+func InterfaceToArrayStringEscaped(val interface{}) (string, error) {
 	if val == nil {
-		return ""
+		return "", nil
 	}
 
 	list := reflect.ValueOf(val)
 	if list.Kind() != reflect.Slice {
-		return ""
+		return "", fmt.Errorf("wrong data type")
 	}
 
 	var vals []string
 	for i := 0; i < list.Len(); i++ {
-		vals = append(vals, stringutil.Wrap(list.Index(i).Interface()))
+		kind := list.Index(i).Kind()
+		value := list.Index(i).Interface()
+		var shouldParse bool
+		if kind == reflect.Interface {
+			valMap, isOk := value.(map[string]interface{})
+			if isOk {
+				value = valMap
+			}
+
+			shouldParse = true
+		}
+
+		if kind == reflect.Map || kind == reflect.Struct || shouldParse {
+			bytes, err := json.Marshal(value)
+			if err != nil {
+				return "", err
+			}
+
+			vals = append(vals, stringutil.Wrap(string(bytes)))
+		} else {
+			vals = append(vals, stringutil.Wrap(value))
+		}
 	}
 
-	return fmt.Sprintf("[%s]", strings.Join(vals, ","))
+	return fmt.Sprintf("[%s]", strings.Join(vals, ",")), nil
 }
 
 type StringsJoinAddPrefixArgs struct {
