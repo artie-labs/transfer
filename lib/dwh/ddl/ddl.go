@@ -16,7 +16,7 @@ type AlterTableArgs struct {
 	Tc          *types.DwhTableConfig
 	FqTableName string
 	CreateTable bool
-	ColumnOp constants.ColumnOperation
+	ColumnOp    constants.ColumnOperation
 
 	CdcTime time.Time
 }

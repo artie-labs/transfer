@@ -50,7 +50,7 @@ func CastColVal(colVal interface{}, colKind typing.Column) (string, error) {
 				return "", err
 			}
 
-			colVal = stringutil.Wrap(string(colValBytes))
+			colVal = string(colValBytes)
 		}
 	} else {
 		if colKind.KindDetails == typing.String {
