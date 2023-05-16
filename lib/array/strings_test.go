@@ -10,12 +10,79 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestToArrayString(t *testing.T) {
+	type _testCase struct {
+		name string
+		val  interface{}
+
+		expectedList string
+		expectedErr  error
+	}
+
+	testCases := []_testCase{
+		{
+			name: "nil",
+		},
+		{
+			name:         "wrong data type",
+			val:          true,
+			expectedList: "",
+			expectedErr:  fmt.Errorf("wrong data type"),
+		},
+		{
+			name:         "list of numbers",
+			val:          []int{1, 2, 3, 4, 5},
+			expectedList: "['1','2','3','4','5']",
+		},
+		{
+			name:         "list of strings",
+			val:          []string{"abc", "def", "ghi"},
+			expectedList: "['abc','def','ghi']",
+		},
+		{
+			name:         "list of bools",
+			val:          []bool{true, false, true},
+			expectedList: "['true','false','true']",
+		},
+		{
+			name: "array of nested objects",
+			val: []map[string]interface{}{
+				{
+					"foo": "bar",
+				},
+				{
+					"hello": "world",
+				},
+			},
+			expectedList: `['{"foo":"bar"}','{"hello":"world"}']`,
+		},
+		{
+			name: "array of nested lists",
+			val: [][]string{
+				{
+					"foo", "bar",
+				},
+				{
+					"abc", "def",
+				},
+			},
+			expectedList: `['[foo bar]','[abc def]']`,
+		},
+	}
+
+	for _, testCase := range testCases {
+		actualString, actualErr := InterfaceToArrayStringEscaped(testCase.val)
+		assert.Equal(t, testCase.expectedList, actualString, testCase.name)
+		assert.Equal(t, testCase.expectedErr, actualErr, testCase.name)
+	}
+
+}
+
 func TestColumnsUpdateQuery(t *testing.T) {
 	type testCase struct {
 		name           string
 		columns        []string
 		columnsToTypes typing.Columns
-		tablePrefix    string
 		expectedString string
 		bigQuery       bool
 	}
@@ -72,35 +139,31 @@ func TestColumnsUpdateQuery(t *testing.T) {
 			name:           "happy path",
 			columns:        fooBarCols,
 			columnsToTypes: happyPathCols,
-			tablePrefix:    "cc",
 			expectedString: "foo=cc.foo,bar=cc.bar",
 		},
 		{
 			name:           "string and toast",
 			columns:        fooBarCols,
 			columnsToTypes: stringAndToastCols,
-			tablePrefix:    "cc",
 			expectedString: "foo= CASE WHEN cc.foo != '__debezium_unavailable_value' THEN cc.foo ELSE c.foo END,bar=cc.bar",
 		},
 		{
 			name:           "struct, string and toast string",
 			columns:        lastCaseCols,
 			columnsToTypes: lastCaseColTypes,
-			tablePrefix:    "cc",
 			expectedString: "a1= CASE WHEN cc.a1 != {'key': '__debezium_unavailable_value'} THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN cc.b2 != '__debezium_unavailable_value' THEN cc.b2 ELSE c.b2 END,c3=cc.c3",
 		},
 		{
 			name:           "struct, string and toast string (bigquery)",
 			columns:        lastCaseCols,
 			columnsToTypes: lastCaseColTypes,
-			tablePrefix:    "cc",
 			bigQuery:       true,
 			expectedString: `a1= CASE WHEN TO_JSON_STRING(cc.a1) != '{"key": "__debezium_unavailable_value"}' THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN cc.b2 != '__debezium_unavailable_value' THEN cc.b2 ELSE c.b2 END,c3=cc.c3`,
 		},
 	}
 
 	for _, _testCase := range testCases {
-		actualQuery := ColumnsUpdateQuery(_testCase.columns, _testCase.columnsToTypes, _testCase.tablePrefix, _testCase.bigQuery)
+		actualQuery := ColumnsUpdateQuery(_testCase.columns, _testCase.columnsToTypes, _testCase.bigQuery)
 		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
 	}
 

@@ -2,19 +2,15 @@ package bigquery
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/ddl"
 	"github.com/artie-labs/transfer/lib/dwh/dml"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
-	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func merge(tableData *optimization.TableData) (string, error) {
@@ -32,65 +28,20 @@ func merge(tableData *optimization.TableData) (string, error) {
 	var rowValues []string
 	firstRow := true
 
-	// TODO - Reduce complexity.
 	for _, value := range tableData.RowsData() {
 		var colVals []string
 		for _, col := range cols {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
-			colVal := value[col]
-			if colVal != nil {
-				switch colKind.KindDetails.Kind {
-				case typing.ETime.Kind:
-					extTime, err := ext.ParseFromInterface(colVal)
-					if err != nil {
-						return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
-					}
-
-					switch extTime.NestedKind.Type {
-					case ext.DateTimeKindType:
-						colVal = fmt.Sprintf("PARSE_DATETIME('%s', '%v')", RFC3339Format, extTime.String(time.RFC3339Nano))
-					case ext.DateKindType:
-						colVal = fmt.Sprintf("PARSE_DATE('%s', '%v')", PostgresDateFormat, extTime.String(ext.Date.Format))
-					case ext.TimeKindType:
-						colVal = fmt.Sprintf("PARSE_TIME('%s', '%v')", PostgresTimeFormatNoTZ, extTime.String(ext.PostgresTimeFormatNoTZ))
-					}
-				// All the other types do not need string wrapping.
-				case typing.String.Kind, typing.Struct.Kind:
-					colVal = stringutil.Wrap(colVal)
-					colVal = stringutil.LineBreaksToCarriageReturns(fmt.Sprint(colVal))
-					if colKind.KindDetails == typing.Struct {
-						if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
-							colVal = typing.BigQueryJSON(fmt.Sprintf(`{"key": "%s"}`, constants.ToastUnavailableValuePlaceholder))
-						} else {
-							// This is how you cast string -> JSON
-							colVal = fmt.Sprintf("JSON %s", colVal)
-						}
-					}
-				case typing.Array.Kind:
-					// We need to marshall, so we can escape the strings.
-					// https://go.dev/play/p/BcCwUSCeTmT
-					colValBytes, err := json.Marshal(colVal)
-					if err != nil {
-						return "", err
-					}
-
-					colVal = stringutil.Wrap(string(colValBytes))
-				}
-			} else {
-				if colKind.KindDetails == typing.String {
-					// BigQuery does not like null as a string for CTEs.
-					// It throws this error: Value of type INT64 cannot be assigned to column name, which has type STRING
-					colVal = "''"
-				} else {
-					colVal = "null"
-				}
+			colVal, err := CastColVal(value[col], colKind)
+			if err != nil {
+				return "", err
 			}
 
 			if firstRow {
 				colVal = fmt.Sprintf("%v as %s", colVal, col)
 			}
 
-			colVals = append(colVals, fmt.Sprint(colVal))
+			colVals = append(colVals, colVal)
 		}
 
 		firstRow = false

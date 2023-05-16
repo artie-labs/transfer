@@ -1,12 +1,55 @@
 package array
 
 import (
+	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
+
+	"github.com/artie-labs/transfer/lib/stringutil"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 )
+
+func InterfaceToArrayStringEscaped(val interface{}) (string, error) {
+	if val == nil {
+		return "", nil
+	}
+
+	list := reflect.ValueOf(val)
+	if list.Kind() != reflect.Slice {
+		return "", fmt.Errorf("wrong data type")
+	}
+
+	var vals []string
+	for i := 0; i < list.Len(); i++ {
+		kind := list.Index(i).Kind()
+		value := list.Index(i).Interface()
+		var shouldParse bool
+		if kind == reflect.Interface {
+			valMap, isOk := value.(map[string]interface{})
+			if isOk {
+				value = valMap
+			}
+
+			shouldParse = true
+		}
+
+		if kind == reflect.Map || kind == reflect.Struct || shouldParse {
+			bytes, err := json.Marshal(value)
+			if err != nil {
+				return "", err
+			}
+
+			vals = append(vals, stringutil.Wrap(string(bytes)))
+		} else {
+			vals = append(vals, stringutil.Wrap(value))
+		}
+	}
+
+	return fmt.Sprintf("[%s]", strings.Join(vals, ",")), nil
+}
 
 type StringsJoinAddPrefixArgs struct {
 	Vals      []string
@@ -26,12 +69,12 @@ func StringsJoinAddPrefix(args StringsJoinAddPrefixArgs) string {
 	return strings.Join(retVals, args.Separator)
 }
 
-// ColumnsUpdateQuery will take a list of columns + tablePrefix and return
-// columnA = tablePrefix.columnA, columnB = tablePrefix.columnB. This is the Update syntax that Snowflake requires
-func ColumnsUpdateQuery(columns []string, columnsToTypes typing.Columns, tablePrefix string, bigQueryTypeCasting bool) string {
-	// TODO - deprecate tablePrefix as an arg (it's redundant).
-
-	// NOTE: columns and sflkCols must be the same.
+// ColumnsUpdateQuery takes:
+// columns - list of columns to iterate
+// columnsToTypes - given that list, provide the types (separate list because this list may contain invalid columns
+// bigQueryTypeCasting - We'll need to escape the column comparison if the column's a struct.
+// It then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email
+func ColumnsUpdateQuery(columns []string, columnsToTypes typing.Columns, bigQueryTypeCasting bool) string {
 	var _columns []string
 	for _, column := range columns {
 		columnType, isOk := columnsToTypes.GetColumn(column)
@@ -39,26 +82,32 @@ func ColumnsUpdateQuery(columns []string, columnsToTypes typing.Columns, tablePr
 			if columnType.KindDetails == typing.Struct {
 				if bigQueryTypeCasting {
 					_columns = append(_columns,
-						fmt.Sprintf("%s= CASE WHEN TO_JSON_STRING(%s.%s) != %s THEN %s.%s ELSE c.%s END",
-							column, tablePrefix, column,
-							fmt.Sprintf(`'{"key": "%s"}'`, constants.ToastUnavailableValuePlaceholder),
-							tablePrefix, column, column))
+						fmt.Sprintf(`%s= CASE WHEN TO_JSON_STRING(cc.%s) != '{"key": "%s"}' THEN cc.%s ELSE c.%s END`,
+							// col CASE when TO_JSON_STRING(cc.col) != { 'key': TOAST_UNAVAILABLE_VALUE }
+							column, column, constants.ToastUnavailableValuePlaceholder,
+							// cc.col ELSE c.col END
+							column, column))
 				} else {
 					_columns = append(_columns,
-						fmt.Sprintf("%s= CASE WHEN %s.%s != {'key': '%s'} THEN %s.%s ELSE c.%s END",
-							column, tablePrefix, column,
-							constants.ToastUnavailableValuePlaceholder, tablePrefix, column, column))
+						fmt.Sprintf("%s= CASE WHEN cc.%s != {'key': '%s'} THEN cc.%s ELSE c.%s END",
+							// col CASE WHEN cc.col
+							column, column,
+							// { 'key': TOAST_UNAVAILABLE_VALUE } THEN cc.col ELSE c.col END",
+							constants.ToastUnavailableValuePlaceholder, column, column))
 				}
 			} else {
 				// t.column3 = CASE WHEN t.column3 != '__debezium_unavailable_value' THEN t.column3 ELSE s.column3 END
 				_columns = append(_columns,
-					fmt.Sprintf("%s= CASE WHEN %s.%s != '%s' THEN %s.%s ELSE c.%s END", column, tablePrefix, column,
-						constants.ToastUnavailableValuePlaceholder, tablePrefix, column, column))
+					fmt.Sprintf("%s= CASE WHEN cc.%s != '%s' THEN cc.%s ELSE c.%s END",
+						// col = CASE WHEN cc.col != TOAST_UNAVAILABLE_VALUE
+						column, column, constants.ToastUnavailableValuePlaceholder,
+						// THEN cc.col ELSE c.col END
+						column, column))
 			}
 
 		} else {
-			// This is to make it look like: objCol = cc.objCol::variant
-			_columns = append(_columns, fmt.Sprintf("%s=%s.%s", column, tablePrefix, column))
+			// This is to make it look like: objCol = cc.objCol
+			_columns = append(_columns, fmt.Sprintf("%s=cc.%s", column, column))
 		}
 
 	}
