@@ -2,6 +2,7 @@ package array
 
 import (
 	"fmt"
+	"github.com/artie-labs/transfer/lib/stringutil"
 	"reflect"
 	"strings"
 
@@ -9,22 +10,22 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func ToArrayString(val interface{}) []string {
-	var vals []string
+func InterfaceToArrayStringEscaped(val interface{}) string {
 	if val == nil {
-		return vals
+		return ""
 	}
 
 	list := reflect.ValueOf(val)
 	if list.Kind() != reflect.Slice {
-		return vals
+		return ""
 	}
 
+	var vals []string
 	for i := 0; i < list.Len(); i++ {
-		vals = append(vals, fmt.Sprint(list.Index(i).Interface()))
+		vals = append(vals, stringutil.Wrap(list.Index(i).Interface()))
 	}
 
-	return vals
+	return fmt.Sprintf("[%s]", strings.Join(vals, ","))
 }
 
 type StringsJoinAddPrefixArgs struct {

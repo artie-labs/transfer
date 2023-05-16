@@ -15,7 +15,7 @@ func TestToArrayString(t *testing.T) {
 		name string
 		val  interface{}
 
-		expectedList []string
+		expectedList string
 	}
 
 	testCases := []_testCase{
@@ -25,22 +25,22 @@ func TestToArrayString(t *testing.T) {
 		{
 			name:         "list of numbers",
 			val:          []int{1, 2, 3, 4, 5},
-			expectedList: []string{"1", "2", "3", "4", "5"},
+			expectedList: "['1','2','3','4','5']",
 		},
 		{
 			name:         "list of strings",
 			val:          []string{"abc", "def", "ghi"},
-			expectedList: []string{"abc", "def", "ghi"},
+			expectedList: "['abc','def','ghi']",
 		},
 		{
 			name:         "list of bools",
 			val:          []bool{true, false, true},
-			expectedList: []string{"true", "false", "true"},
+			expectedList: "['true','false','true']",
 		},
 	}
 
 	for _, testCase := range testCases {
-		assert.Equal(t, testCase.expectedList, ToArrayString(testCase.val), testCase.name)
+		assert.Equal(t, testCase.expectedList, InterfaceToArrayStringEscaped(testCase.val), testCase.name)
 	}
 
 }

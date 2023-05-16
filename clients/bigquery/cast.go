@@ -44,7 +44,7 @@ func CastColVal(colVal interface{}, colKind typing.Column) (string, error) {
 				}
 			}
 		case typing.Array.Kind:
-			colVal = array.ToArrayString(colVal)
+			colVal = array.InterfaceToArrayStringEscaped(colVal)
 		}
 	} else {
 		if colKind.KindDetails == typing.String {
