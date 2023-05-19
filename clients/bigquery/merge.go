@@ -144,7 +144,6 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	if err = ddl.AlterTable(ctx, tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
 		return fmt.Errorf("failed to create temp table, error: %v", err)
 	}
-
 	// End temporary table creation
 
 	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
@@ -175,8 +174,6 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		EscapeParentheses:   true,
 		BigQueryTypeCasting: true,
 	})
-
-	fmt.Println("mergeQuery", mergeQuery)
 
 	if err != nil {
 		return err

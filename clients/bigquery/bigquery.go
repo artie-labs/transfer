@@ -46,7 +46,6 @@ func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 }
 
 func (s *Store) PutTable(ctx context.Context, dataset, tableName string, rows []*Row) error {
-	fmt.Println("dataset", dataset, "table", tableName)
 	client := s.GetClient(ctx)
 	defer client.Close()
 
