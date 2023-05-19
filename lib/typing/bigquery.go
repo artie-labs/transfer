@@ -8,6 +8,10 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
+const (
+	StreamingTimeFormat = "15:04:05"
+)
+
 func BigQueryJSON(json interface{}) string {
 	return fmt.Sprintf(`JSON '%v'`, json)
 }

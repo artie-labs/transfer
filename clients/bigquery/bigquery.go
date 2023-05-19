@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"cloud.google.com/go/bigquery"
-
 	_ "github.com/viant/bigquery"
 
 	"github.com/artie-labs/transfer/lib/config"

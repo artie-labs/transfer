@@ -24,12 +24,13 @@ func CastColVal(colVal interface{}, colKind typing.Column) (string, error) {
 			}
 
 			switch extTime.NestedKind.Type {
+			// https://cloud.google.com/bigquery/docs/streaming-data-into-bigquery#sending_datetime_data
 			case ext.DateTimeKindType:
 				colVal = fmt.Sprintf("PARSE_DATETIME('%s', '%v')", RFC3339Format, extTime.String(time.RFC3339Nano))
 			case ext.DateKindType:
 				colVal = fmt.Sprintf("PARSE_DATE('%s', '%v')", PostgresDateFormat, extTime.String(ext.Date.Format))
 			case ext.TimeKindType:
-				colVal = fmt.Sprintf("PARSE_TIME('%s', '%v')", PostgresTimeFormatNoTZ, extTime.String(ext.PostgresTimeFormatNoTZ))
+				colVal = extTime.String(typing.StreamingTimeFormat)
 			}
 		// All the other types do not need string wrapping.
 		case typing.String.Kind, typing.Struct.Kind:
