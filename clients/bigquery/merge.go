@@ -159,7 +159,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		cols = append(cols, col.Name)
 	}
 
-	err = s.PutTable(ctx, tableData.Database, tableData.TableName, rows)
+	err = s.PutTable(ctx, tableData.Database, fmt.Sprintf("%s_%s", tableData.TableName, tableData.TempTableSuffix()), rows)
 	if err != nil {
 		return fmt.Errorf("failed to insert into temp table, error: %v", err)
 	}

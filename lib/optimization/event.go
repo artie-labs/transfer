@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -63,8 +65,7 @@ func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicCo
 		PrimaryKeys:             primaryKeys,
 		TopicConfig:             topicConfig,
 		PartitionsToLastMessage: map[string][]artie.Message{},
-		// TODO: randomize this.
-		temporaryTableSuffix: "foo",
+		temporaryTableSuffix:    uuid.New().String(),
 	}
 }
 
@@ -116,7 +117,7 @@ func (t *TableData) Rows() uint {
 }
 
 func (t *TableData) TempTableSuffix() string {
-	return t.temporaryTableSuffix
+	return strings.ReplaceAll(t.temporaryTableSuffix, "-", "_")
 }
 
 func (t *TableData) ShouldFlush(ctx context.Context) bool {
