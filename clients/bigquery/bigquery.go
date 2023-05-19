@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"cloud.google.com/go/bigquery"
+
 	_ "github.com/viant/bigquery"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -31,6 +33,25 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 
 func (s *Store) Label() constants.DestinationKind {
 	return constants.BigQuery
+}
+
+func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
+	settings := config.FromContext(ctx)
+	client, err := bigquery.NewClient(ctx, settings.Config.BigQuery.ProjectID)
+	if err != nil {
+		logger.FromContext(ctx).WithError(err).Fatalf("failed to get bigquery client")
+	}
+
+	return client
+}
+
+func (s *Store) PutTable(ctx context.Context, dataset, tableName string, rows []*Row) error {
+	fmt.Println("dataset", dataset, "table", tableName)
+	client := s.GetClient(ctx)
+	defer client.Close()
+
+	inserter := client.Dataset(dataset).Table(tableName).Inserter()
+	return inserter.Put(ctx, rows)
 }
 
 func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {

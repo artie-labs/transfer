@@ -3,7 +3,8 @@ package bigquery
 import (
 	"context"
 	"fmt"
-	"strings"
+
+	"cloud.google.com/go/bigquery"
 
 	"github.com/artie-labs/transfer/lib/dwh/dml"
 
@@ -14,7 +15,21 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func merge(tableData *optimization.TableData) ([]string, error) {
+type Row struct {
+	data map[string]bigquery.Value
+}
+
+func NewRow(data map[string]bigquery.Value) *Row {
+	return &Row{
+		data: data,
+	}
+}
+
+func (r *Row) Save() (map[string]bigquery.Value, string, error) {
+	return r.data, bigquery.NoDedupeID, nil
+}
+
+func merge(tableData *optimization.TableData) ([]*Row, error) {
 	var cols []string
 	// Given all the columns, diff this against SFLK.
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
@@ -26,11 +41,9 @@ func merge(tableData *optimization.TableData) ([]string, error) {
 		cols = append(cols, col.Name)
 	}
 
-	var rowValues []string
-	firstRow := true
-
+	var rows []*Row
 	for _, value := range tableData.RowsData() {
-		var colVals []string
+		data := make(map[string]bigquery.Value)
 		for _, col := range cols {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal, err := CastColVal(value[col], colKind)
@@ -38,17 +51,13 @@ func merge(tableData *optimization.TableData) ([]string, error) {
 				return nil, err
 			}
 
-			if firstRow {
-				colVal = fmt.Sprintf("%v as %s", colVal, col)
-			}
-
-			colVals = append(colVals, colVal)
+			data[col] = colVal
 		}
 
-		rowValues = append(rowValues, fmt.Sprintf("( %s )", strings.Join(colVals, ",")))
+		rows = append(rows, NewRow(data))
 	}
 
-	return rowValues, nil
+	return rows, nil
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
@@ -150,12 +159,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		cols = append(cols, col.Name)
 	}
 
-	err = s.Insert(InsertArgs{
-		Rows:      rows,
-		Cols:      cols,
-		TableName: tempAlterTableArgs.FqTableName,
-	})
-
+	err = s.PutTable(ctx, tableData.Database, tableData.TableName, rows)
 	if err != nil {
 		return fmt.Errorf("failed to insert into temp table, error: %v", err)
 	}

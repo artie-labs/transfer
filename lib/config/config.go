@@ -23,7 +23,8 @@ const (
 	bufferPoolSizeStart = 5
 	// Snowflake has a limit of 2^14 elements within an expression.
 	// https://github.com/snowflakedb/snowflake-connector-python/issues/37
-	bufferPoolSizeEnd = 15000
+	// TODO warn
+	bufferPoolSizeEnd = 150000
 )
 
 type Sentry struct {
