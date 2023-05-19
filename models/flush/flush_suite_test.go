@@ -2,6 +2,8 @@ package flush
 
 import (
 	"context"
+	"testing"
+
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/dwh/utils"
@@ -10,7 +12,6 @@ import (
 	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/processes/consumer"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 type FlushTestSuite struct {
@@ -37,7 +38,7 @@ func (f *FlushTestSuite) SetupTest() {
 
 	f.ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(f.ctx, &store), f.ctx)
 
-	models.LoadMemoryDB()
+	f.ctx = models.LoadMemoryDB(f.ctx)
 
 	f.fakeConsumer = &mocks.FakeConsumer{}
 	consumer.SetKafkaConsumer(map[string]kafkalib.Consumer{"foo": f.fakeConsumer})

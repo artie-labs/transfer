@@ -1,8 +1,8 @@
 package jitter
 
 import (
-	"golang.org/x/exp/rand"
 	"math"
+	"math/rand"
 )
 
 const maxMilliSeconds = 3500

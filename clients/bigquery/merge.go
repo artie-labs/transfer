@@ -2,27 +2,22 @@ package bigquery
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/artie-labs/transfer/lib/dwh/dml"
-
-	"github.com/artie-labs/transfer/lib/stringutil"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/ddl"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func merge(tableData *optimization.TableData) ([]string, error) {
 	var cols []string
 	// Given all the columns, diff this against SFLK.
-	for _, col := range tableData.InMemoryColumns.GetColumns() {
+	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
 		if col.KindDetails == typing.Invalid {
 			// Don't update BQ
 			continue
@@ -32,56 +27,22 @@ func merge(tableData *optimization.TableData) ([]string, error) {
 	}
 
 	var rowValues []string
+	firstRow := true
+
 	for _, value := range tableData.RowsData() {
 		var colVals []string
 		for _, col := range cols {
-			colKind, _ := tableData.InMemoryColumns.GetColumn(col)
-			colVal := value[col]
-			if colVal != nil {
-				switch colKind.KindDetails.Kind {
-				case typing.ETime.Kind:
-					extTime, err := ext.ParseFromInterface(colVal)
-					if err != nil {
-						return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
-					}
-
-					switch extTime.NestedKind.Type {
-					case ext.DateTimeKindType:
-						colVal = fmt.Sprintf("PARSE_DATETIME('%s', '%v')", RFC3339Format, extTime.String(time.RFC3339Nano))
-					case ext.DateKindType:
-						colVal = fmt.Sprintf("PARSE_DATE('%s', '%v')", PostgresDateFormat, extTime.String(ext.Date.Format))
-					case ext.TimeKindType:
-						colVal = fmt.Sprintf("PARSE_TIME('%s', '%v')", PostgresTimeFormatNoTZ, extTime.String(ext.PostgresTimeFormatNoTZ))
-					}
-				// All the other types do not need string wrapping.
-				case typing.String.Kind, typing.Struct.Kind:
-					colVal = stringutil.Wrap(colVal)
-					colVal = stringutil.LineBreaksToCarriageReturns(fmt.Sprint(colVal))
-					if colKind.KindDetails == typing.Struct {
-						// This is how you cast string -> JSON
-						colVal = fmt.Sprintf("JSON %s", colVal)
-					}
-				case typing.Array.Kind:
-					// We need to marshall, so we can escape the strings.
-					// https://go.dev/play/p/BcCwUSCeTmT
-					colValBytes, err := json.Marshal(colVal)
-					if err != nil {
-						return nil, err
-					}
-
-					colVal = stringutil.Wrap(string(colValBytes))
-				}
-			} else {
-				if colKind.KindDetails == typing.String {
-					// BigQuery does not like null as a string for CTEs.
-					// It throws this error: Value of type INT64 cannot be assigned to column name, which has type STRING
-					colVal = "''"
-				} else {
-					colVal = "null"
-				}
+			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
+			colVal, err := CastColVal(value[col], colKind)
+			if err != nil {
+				return nil, err
 			}
 
-			colVals = append(colVals, fmt.Sprint(colVal))
+			if firstRow {
+				colVal = fmt.Sprintf("%v as %s", colVal, col)
+			}
+
+			colVals = append(colVals, colVal)
 		}
 
 		rowValues = append(rowValues, fmt.Sprintf("( %s )", strings.Join(colVals, ",")))
@@ -91,7 +52,7 @@ func merge(tableData *optimization.TableData) ([]string, error) {
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
-	if tableData.Rows() == 0 || tableData.InMemoryColumns == nil {
+	if tableData.Rows() == 0 || tableData.ReadOnlyInMemoryCols() == nil {
 		// There's no rows or columns. Let's skip.
 		return nil
 	}
@@ -108,7 +69,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	log := logger.FromContext(ctx)
 	// Check if all the columns exist in Snowflake
-	srcKeysMissing, targetKeysMissing := typing.Diff(*tableData.InMemoryColumns, targetColumns, tableData.SoftDelete)
+	srcKeysMissing, targetKeysMissing := typing.Diff(*tableData.ReadOnlyInMemoryCols(), targetColumns, tableData.SoftDelete)
 
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
@@ -171,7 +132,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		ColumnOp:       constants.Add,
 	}
 
-	if err = ddl.AlterTable(ctx, tempAlterTableArgs, tableData.InMemoryColumns.GetColumns()...); err != nil {
+	if err = ddl.AlterTable(ctx, tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
 		return fmt.Errorf("failed to create temp table, error: %v", err)
 	}
 
@@ -185,7 +146,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	var cols []string
-	for _, col := range tableData.InMemoryColumns.GetColumns() {
+	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
 		cols = append(cols, col.Name)
 	}
 
@@ -200,16 +161,15 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	mergeQuery, err := dml.MergeStatement(dml.MergeArgument{
-		FqTableName:       tableData.ToFqName(constants.BigQuery),
-		SubQuery:          tempAlterTableArgs.FqTableName,
-		IdempotentKey:     tableData.IdempotentKey,
-		PrimaryKeys:       tableData.PrimaryKeys,
-		Columns:           cols,
-		ColumnsToTypes:    *tableData.InMemoryColumns,
-		SoftDelete:        tableData.SoftDelete,
-		EscapeParentheses: true,
-		// BigQuery specifically needs it.
-		SpecialCastingRequired: true,
+		FqTableName:         tableData.ToFqName(constants.BigQuery),
+		SubQuery:            tempAlterTableArgs.FqTableName,
+		IdempotentKey:       tableData.IdempotentKey,
+		PrimaryKeys:         tableData.PrimaryKeys,
+		Columns:             cols,
+		ColumnsToTypes:      *tableData.ReadOnlyInMemoryCols(),
+		SoftDelete:          tableData.SoftDelete,
+		EscapeParentheses:   true,
+		BigQueryTypeCasting: true,
 	})
 
 	fmt.Println("mergeQuery", mergeQuery)

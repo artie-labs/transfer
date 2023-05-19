@@ -3,6 +3,10 @@ package consumer
 import (
 	"context"
 	"fmt"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc/mongo"
 	"github.com/artie-labs/transfer/lib/config"
@@ -11,14 +15,9 @@ import (
 	"github.com/artie-labs/transfer/models"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
-	"strings"
-	"testing"
-	"time"
 )
 
 func TestProcessMessageFailures(t *testing.T) {
-	models.LoadMemoryDB()
-
 	ctx := context.Background()
 	ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{
 		Config: &config.Config{
@@ -29,6 +28,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		VerboseLogging: false,
 	})
 
+	ctx = models.LoadMemoryDB(ctx)
 	kafkaMsg := kafka.Message{
 		Topic:         "foo",
 		Partition:     0,
@@ -40,9 +40,18 @@ func TestProcessMessageFailures(t *testing.T) {
 		Time:          time.Time{},
 	}
 
+	flushChan := make(chan bool)
+
 	msg := artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)
-	shouldFlush, err := processMessage(ctx, msg, nil, "foo")
-	assert.False(t, shouldFlush)
+	processArgs := ProcessArgs{
+		Msg:                    msg,
+		GroupID:                "foo",
+		TopicToConfigFormatMap: nil,
+		FlushChannel:           flushChan,
+	}
+
+	err := processMessage(ctx, processArgs)
+	assert.Equal(t, 0, len(flushChan))
 	assert.True(t, strings.Contains(err.Error(), "failed to get topic"), err.Error())
 
 	var mgo mongo.Debezium
@@ -67,8 +76,16 @@ func TestProcessMessageFailures(t *testing.T) {
 		},
 	}
 
-	shouldFlush, err = processMessage(ctx, msg, topicToConfigFmtMap, "foo")
-	assert.False(t, shouldFlush)
+	flushChan = make(chan bool)
+	processArgs = ProcessArgs{
+		Msg:                    msg,
+		GroupID:                "foo",
+		TopicToConfigFormatMap: topicToConfigFmtMap,
+		FlushChannel:           flushChan,
+	}
+
+	err = processMessage(ctx, processArgs)
+	assert.Equal(t, 0, len(flushChan))
 	assert.True(t, strings.Contains(err.Error(),
 		fmt.Sprintf("err: format: %s is not supported", topicToConfigFmtMap[msg.Topic()].tc.CDCKeyFormat)), err.Error())
 	assert.True(t, strings.Contains(err.Error(), "cannot unmarshall key"), err.Error())
@@ -108,7 +125,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	}
 
 	idx := 0
-	memoryDB := models.GetMemoryDB()
+	memoryDB := models.GetMemoryDB(ctx)
 	for _, val := range vals {
 		idx += 1
 		msg.KafkaMsg.Key = []byte(fmt.Sprintf("Struct{id=%v}", idx))
@@ -116,8 +133,16 @@ func TestProcessMessageFailures(t *testing.T) {
 			msg.KafkaMsg.Value = []byte(val)
 		}
 
-		shouldFlush, err := processMessage(ctx, msg, topicToConfigFmtMap, "foo")
-		assert.False(t, shouldFlush)
+		flushChan = make(chan bool)
+		processArgs = ProcessArgs{
+			Msg:                    msg,
+			GroupID:                "foo",
+			TopicToConfigFormatMap: topicToConfigFmtMap,
+			FlushChannel:           flushChan,
+		}
+
+		err = processMessage(ctx, processArgs)
+		assert.Equal(t, 0, len(flushChan))
 		assert.NoError(t, err)
 
 		// Check that there are corresponding row(s) in the memory DB
@@ -135,7 +160,15 @@ func TestProcessMessageFailures(t *testing.T) {
 	assert.False(t, val.(bool))
 
 	msg.KafkaMsg.Value = []byte("not a json object")
-	shouldFlush, err = processMessage(ctx, msg, topicToConfigFmtMap, "foo")
-	assert.False(t, shouldFlush)
+	flushChan = make(chan bool)
+	processArgs = ProcessArgs{
+		Msg:                    msg,
+		GroupID:                "foo",
+		TopicToConfigFormatMap: topicToConfigFmtMap,
+		FlushChannel:           flushChan,
+	}
+
+	err = processMessage(ctx, processArgs)
+	assert.Equal(t, 0, len(flushChan))
 	assert.Error(t, err)
 }

@@ -3,10 +3,35 @@ package typing
 type Column struct {
 	Name        string
 	KindDetails KindDetails
+	// ToastColumn indicates that the source column is a TOAST column and the value is unavailable
+	// We have stripped this out.
+	// Whenever we see the same column where there's an opposite value in `toastColumn`, we will trigger a flush
+	ToastColumn bool
 }
 
 type Columns struct {
 	columns []Column
+}
+
+// UpsertColumn - just a wrapper around UpdateColumn and AddColumn
+// If it doesn't find a column, it'll add one where the kind = Invalid.
+func (c *Columns) UpsertColumn(colName string, toastColumn bool) {
+	if colName == "" {
+		return
+	}
+
+	if col, isOk := c.GetColumn(colName); isOk {
+		col.ToastColumn = toastColumn
+		c.UpdateColumn(col)
+		return
+	}
+
+	c.AddColumn(Column{
+		Name:        colName,
+		KindDetails: Invalid,
+		ToastColumn: toastColumn,
+	})
+	return
 }
 
 func (c *Columns) AddColumn(col Column) {
