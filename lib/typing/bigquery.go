@@ -1,20 +1,13 @@
 package typing
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-const (
-	StreamingTimeFormat = "15:04:05"
-)
-
-func BigQueryJSON(json interface{}) string {
-	return fmt.Sprintf(`%v`, json)
-}
+const StreamingTimeFormat = "15:04:05"
 
 func BigQueryTypeToKind(bqType string) KindDetails {
 	bqType = strings.ToLower(bqType)

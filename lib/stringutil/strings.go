@@ -26,7 +26,7 @@ func Wrap(colVal interface{}) string {
 	// Escape line breaks, JSON_PARSE does not like it.
 	colVal = strings.ReplaceAll(fmt.Sprint(colVal), `\`, `\\`)
 	// The normal string escape is to do for O'Reilly is O\\'Reilly, but Snowflake escapes via \'
-	return fmt.Sprintf("'%s'", strings.ReplaceAll(fmt.Sprint(colVal), "'", `\'`))
+	return strings.ReplaceAll(fmt.Sprint(colVal), "'", `\'`)
 }
 
 func Empty(vals ...string) bool {
