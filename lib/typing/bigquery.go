@@ -13,7 +13,7 @@ const (
 )
 
 func BigQueryJSON(json interface{}) string {
-	return fmt.Sprintf(`JSON '%v'`, json)
+	return fmt.Sprintf(`%v`, json)
 }
 
 func BigQueryTypeToKind(bqType string) KindDetails {

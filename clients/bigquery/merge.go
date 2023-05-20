@@ -26,6 +26,7 @@ func NewRow(data map[string]bigquery.Value) *Row {
 }
 
 func (r *Row) Save() (map[string]bigquery.Value, string, error) {
+	fmt.Println("saving", r.data)
 	return r.data, bigquery.NoDedupeID, nil
 }
 
@@ -51,7 +52,9 @@ func merge(tableData *optimization.TableData) ([]*Row, error) {
 				return nil, err
 			}
 
-			data[col] = colVal
+			if colVal != nil {
+				data[col] = colVal
+			}
 		}
 
 		rows = append(rows, NewRow(data))
