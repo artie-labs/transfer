@@ -23,7 +23,7 @@ func TestCastColVal(t *testing.T) {
 			name:           "escaping string",
 			colVal:         "foo",
 			colKind:        typing.Column{KindDetails: typing.String},
-			expectedString: "'foo'",
+			expectedString: "foo",
 		},
 		{
 			name:           "123 as int",
@@ -35,7 +35,7 @@ func TestCastColVal(t *testing.T) {
 			name:           "struct",
 			colVal:         `{"hello": "world"}`,
 			colKind:        typing.Column{KindDetails: typing.Struct},
-			expectedString: `JSON '{"hello": "world"}'`,
+			expectedString: `{"hello": "world"}`,
 		},
 		{
 			name:           "array",
@@ -48,6 +48,6 @@ func TestCastColVal(t *testing.T) {
 	for _, testCase := range testCases {
 		actualString, actualErr := CastColVal(testCase.colVal, testCase.colKind)
 		assert.Equal(t, testCase.expectedErr, actualErr, testCase.name)
-		assert.Equal(t, testCase.expectedString, actualString, testCase.name)
+		assert.Equal(t, testCase.expectedString, *actualString, testCase.name)
 	}
 }

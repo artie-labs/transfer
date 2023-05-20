@@ -8,11 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBigQueryJSON(t *testing.T) {
-	jsonString := `{"foo": "bar"}`
-	assert.Equal(t, `JSON '{"foo": "bar"}'`, BigQueryJSON(jsonString))
-}
-
 func TestBigQueryTypeToKind(t *testing.T) {
 	bqColToExpectedKind := map[string]KindDetails{
 		// Integer
