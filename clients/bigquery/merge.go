@@ -26,7 +26,6 @@ func NewRow(data map[string]bigquery.Value) *Row {
 }
 
 func (r *Row) Save() (map[string]bigquery.Value, string, error) {
-	fmt.Println("saving", r.data)
 	return r.data, bigquery.NoDedupeID, nil
 }
 
@@ -161,9 +160,10 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		cols = append(cols, col.Name)
 	}
 
-	err = s.PutTable(ctx, tableData.Database, fmt.Sprintf("%s_%s", tableData.TableName, tableData.TempTableSuffix()), rows)
+	tableName := fmt.Sprintf("%s_%s", tableData.TableName, tableData.TempTableSuffix())
+	err = s.PutTable(ctx, tableData.Database, tableName, rows)
 	if err != nil {
-		return fmt.Errorf("failed to insert into temp table, error: %v", err)
+		return fmt.Errorf("failed to insert into temp table: %s, error: %v", tableName, err)
 	}
 
 	mergeQuery, err := dml.MergeStatement(dml.MergeArgument{

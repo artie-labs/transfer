@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/ptr"
-
 	"github.com/artie-labs/transfer/lib/array"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -14,7 +12,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func CastColVal(colVal interface{}, colKind typing.Column) (*string, error) {
+func CastColVal(colVal interface{}, colKind typing.Column) (interface{}, error) {
 	if colVal != nil {
 		switch colKind.KindDetails.Kind {
 		case typing.ETime.Kind:
@@ -49,9 +47,11 @@ func CastColVal(colVal interface{}, colKind typing.Column) (*string, error) {
 			if err != nil {
 				return nil, err
 			}
+
+			return colVal, nil
 		}
 
-		return ptr.ToString(fmt.Sprint(colVal)), nil
+		return fmt.Sprint(colVal), nil
 	}
 
 	return nil, nil
