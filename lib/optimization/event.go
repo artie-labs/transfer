@@ -2,10 +2,11 @@ package optimization
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/artie-labs/transfer/lib/stringutil"
 
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config"
@@ -65,7 +66,7 @@ func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicCo
 		PrimaryKeys:             primaryKeys,
 		TopicConfig:             topicConfig,
 		PartitionsToLastMessage: map[string][]artie.Message{},
-		temporaryTableSuffix:    uuid.New().String(),
+		temporaryTableSuffix:    fmt.Sprintf("%s_%s", constants.ArtiePrefix, stringutil.Random(10)),
 	}
 }
 
@@ -117,7 +118,7 @@ func (t *TableData) Rows() uint {
 }
 
 func (t *TableData) TempTableSuffix() string {
-	return strings.ReplaceAll(t.temporaryTableSuffix, "-", "_")
+	return t.temporaryTableSuffix
 }
 
 func (t *TableData) ShouldFlush(ctx context.Context) bool {

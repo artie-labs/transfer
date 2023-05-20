@@ -9,6 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh"
 	"github.com/artie-labs/transfer/lib/dwh/types"
+	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
@@ -21,6 +22,17 @@ type AlterTableArgs struct {
 	ColumnOp       constants.ColumnOperation
 
 	CdcTime time.Time
+}
+
+func DropTemporaryTable(ctx context.Context, dwh dwh.DataWarehouse, fqTableName string) {
+	if strings.Contains(fqTableName, constants.ArtiePrefix) {
+		// https://cloud.google.com/bigquery/docs/reference/standard-sql/data-definition-language#drop_table_statement
+		_, err := dwh.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", fqTableName))
+		if err != nil {
+			logger.FromContext(ctx).WithError(err).Warn("failed to drop temporary table, it will get garbage collected by the TTL...")
+		}
+	}
+	return
 }
 
 func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) error {
