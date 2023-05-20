@@ -32,8 +32,6 @@ func CastColVal(colVal interface{}, colKind typing.Column) (interface{}, error) 
 			}
 		// All the other types do not need string wrapping.
 		case typing.String.Kind, typing.Struct.Kind:
-			//colVal = stringutil.Wrap(colVal)
-			//colVal = stringutil.LineBreaksToCarriageReturns(fmt.Sprint(colVal))
 			if colKind.KindDetails == typing.Struct {
 				if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
 					colVal = map[string]interface{}{
