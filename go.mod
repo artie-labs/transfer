@@ -3,6 +3,7 @@ module github.com/artie-labs/transfer
 go 1.19
 
 require (
+	cloud.google.com/go/bigquery v1.51.2
 	cloud.google.com/go/pubsub v1.30.0
 	github.com/DataDog/datadog-go v4.8.3+incompatible
 	github.com/aws/aws-sdk-go-v2/config v1.17.8
@@ -22,7 +23,6 @@ require (
 
 require (
 	cloud.google.com/go v0.110.0 // indirect
-	cloud.google.com/go/bigquery v1.51.2 // indirect
 	cloud.google.com/go/compute v1.19.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/iam v0.13.0 // indirect
