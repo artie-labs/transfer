@@ -12,7 +12,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func InterfaceToArrayStringEscaped(val interface{}) ([]string, error) {
+func InterfaceToArrayString(val interface{}) ([]string, error) {
 	if val == nil {
 		return nil, nil
 	}

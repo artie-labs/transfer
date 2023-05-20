@@ -2,6 +2,9 @@ package bigquery
 
 import (
 	"testing"
+	"time"
+
+	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/stretchr/testify/assert"
 
@@ -17,6 +20,24 @@ func TestCastColVal(t *testing.T) {
 		expectedErr   error
 		expectedValue interface{}
 	}
+
+	tsKind := typing.ETime
+	tsKind.ExtendedTimeDetails = &ext.DateTime
+
+	dateKind := typing.ETime
+	dateKind.ExtendedTimeDetails = &ext.Date
+
+	birthday := time.Date(2022, time.September, 6, 3, 19, 24, 942000000, time.UTC)
+	birthdayTSExt, err := ext.NewExtendedTime(birthday, tsKind.ExtendedTimeDetails.Type, "")
+	assert.NoError(t, err)
+
+	birthdayDateExt, err := ext.NewExtendedTime(birthday, dateKind.ExtendedTimeDetails.Type, "")
+	assert.NoError(t, err)
+
+	timeKind := typing.ETime
+	timeKind.ExtendedTimeDetails = &ext.Time
+	birthdayTimeExt, err := ext.NewExtendedTime(birthday, timeKind.ExtendedTimeDetails.Type, "")
+	assert.NoError(t, err)
 
 	testCases := []_testCase{
 		{
@@ -42,6 +63,24 @@ func TestCastColVal(t *testing.T) {
 			colVal:        []int{1, 2, 3, 4, 5},
 			colKind:       typing.Column{KindDetails: typing.Array},
 			expectedValue: []string{"1", "2", "3", "4", "5"},
+		},
+		{
+			name:          "timestamp",
+			colVal:        birthdayTSExt,
+			colKind:       typing.Column{KindDetails: tsKind},
+			expectedValue: "2022-09-06 03:19:24.942",
+		},
+		{
+			name:          "date",
+			colVal:        birthdayDateExt,
+			colKind:       typing.Column{KindDetails: dateKind},
+			expectedValue: "2022-09-06",
+		},
+		{
+			name:          "time",
+			colVal:        birthdayTimeExt,
+			colKind:       typing.Column{KindDetails: timeKind},
+			expectedValue: "03:19:24",
 		},
 	}
 

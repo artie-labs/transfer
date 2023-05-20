@@ -71,7 +71,7 @@ func TestToArrayString(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		actualString, actualErr := InterfaceToArrayStringEscaped(testCase.val)
+		actualString, actualErr := InterfaceToArrayString(testCase.val)
 		assert.Equal(t, testCase.expectedList, actualString, testCase.name)
 		assert.Equal(t, testCase.expectedErr, actualErr, testCase.name)
 	}
