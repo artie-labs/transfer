@@ -3,28 +3,47 @@ package ddl
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh"
 	"github.com/artie-labs/transfer/lib/dwh/types"
+	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
 type AlterTableArgs struct {
-	Dwh         dwh.DataWarehouse
-	Tc          *types.DwhTableConfig
-	FqTableName string
-	CreateTable bool
-	ColumnOp    constants.ColumnOperation
+	Dwh            dwh.DataWarehouse
+	Tc             *types.DwhTableConfig
+	FqTableName    string
+	CreateTable    bool
+	TemporaryTable bool
+	ColumnOp       constants.ColumnOperation
 
 	CdcTime time.Time
 }
 
+func DropTemporaryTable(ctx context.Context, dwh dwh.DataWarehouse, fqTableName string) {
+	if strings.Contains(fqTableName, constants.ArtiePrefix) {
+		// https://cloud.google.com/bigquery/docs/reference/standard-sql/data-definition-language#drop_table_statement
+		_, err := dwh.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", fqTableName))
+		if err != nil {
+			logger.FromContext(ctx).WithError(err).Warn("failed to drop temporary table, it will get garbage collected by the TTL...")
+		}
+	}
+	return
+}
+
 func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) error {
+	// You can't DROP a column and try to create a table at the same time.
+	if args.ColumnOp == constants.Delete && args.CreateTable {
+		return fmt.Errorf("incompatiable operation - cannot drop columns and create table at the asme time, args: %v", args)
+	}
+
 	var mutateCol []typing.Column
-	var colSQLPart string
-	var err error
+	// It's okay to combine since args.ColumnOp only takes one of: `Delete` or `Add`
+	var colSQLParts []string
 	for _, col := range cols {
 		if col.KindDetails == typing.Invalid {
 			// Let's not modify the table if the column kind is invalid
@@ -39,28 +58,48 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) e
 		mutateCol = append(mutateCol, col)
 		switch args.ColumnOp {
 		case constants.Add:
-			colSQLPart = fmt.Sprintf("%s %s", col.Name, typing.KindToDWHType(col.KindDetails, args.Dwh.Label()))
+			colSQLParts = append(colSQLParts, fmt.Sprintf("%s %s", col.Name, typing.KindToDWHType(col.KindDetails, args.Dwh.Label())))
 		case constants.Delete:
-			colSQLPart = fmt.Sprintf("%s", col.Name)
+			colSQLParts = append(colSQLParts, fmt.Sprintf("%s", col.Name))
 		}
+	}
 
-		// If the table does not exist, create it.
-		sqlQuery := fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", args.FqTableName, args.ColumnOp, colSQLPart)
-		if args.CreateTable {
-			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, colSQLPart)
-			args.CreateTable = false
+	var err error
+	if args.CreateTable {
+		var sqlQuery string
+		if args.TemporaryTable {
+			// Snowflake has this feature too, but we don't need it as our CTE approach with Snowflake is extremely performant.
+			if args.Dwh.Label() != constants.BigQuery {
+				return fmt.Errorf("unexpected temporary table for destination: %v", args.Dwh.Label())
+			}
+			expiry := time.Now().UTC().Add(constants.BigQueryTempTableTTL)
+			sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
+				args.FqTableName, strings.Join(colSQLParts, ","), typing.BigQueryDate(expiry))
+		} else {
+			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
 		}
 
 		_, err = args.Dwh.Exec(sqlQuery)
-		if err != nil && ColumnAlreadyExistErr(err, args.Dwh.Label()) {
+		if ColumnAlreadyExistErr(err, args.Dwh.Label()) {
 			err = nil
 		} else if err != nil {
 			return err
 		}
+	} else {
+		for _, colSQLPart := range colSQLParts {
+			sqlQuery := fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", args.FqTableName, args.ColumnOp, colSQLPart)
+			_, err = args.Dwh.Exec(sqlQuery)
+			if ColumnAlreadyExistErr(err, args.Dwh.Label()) {
+				err = nil
+			} else if err != nil {
+				return err
+			}
+		}
 	}
 
 	if err == nil {
-		args.Tc.MutateInMemoryColumns(args.CreateTable, args.ColumnOp, mutateCol...)
+		// createTable = false since it all successfully updated.
+		args.Tc.MutateInMemoryColumns(false, args.ColumnOp, mutateCol...)
 	}
 
 	return nil

@@ -3,66 +3,57 @@ package bigquery
 import (
 	"context"
 	"fmt"
-	"strings"
+
+	"cloud.google.com/go/bigquery"
+
+	"github.com/artie-labs/transfer/lib/dwh/dml"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/ddl"
-	"github.com/artie-labs/transfer/lib/dwh/dml"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func merge(tableData *optimization.TableData) (string, error) {
-	var cols []string
-	// Given all the columns, diff this against SFLK.
-	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
-		if col.KindDetails == typing.Invalid {
-			// Don't update BQ
-			continue
-		}
+type Row struct {
+	data map[string]bigquery.Value
+}
 
-		cols = append(cols, col.Name)
+func NewRow(data map[string]bigquery.Value) *Row {
+	return &Row{
+		data: data,
 	}
+}
 
-	var rowValues []string
-	firstRow := true
+func (r *Row) Save() (map[string]bigquery.Value, string, error) {
+	return r.data, bigquery.NoDedupeID, nil
+}
 
+func merge(tableData *optimization.TableData) ([]*Row, error) {
+	var rows []*Row
 	for _, value := range tableData.RowsData() {
-		var colVals []string
-		for _, col := range cols {
+		data := make(map[string]bigquery.Value)
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate() {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal, err := CastColVal(value[col], colKind)
 			if err != nil {
-				return "", err
+				return nil, err
 			}
 
-			if firstRow {
-				colVal = fmt.Sprintf("%v as %s", colVal, col)
+			if colVal != nil {
+				data[col] = colVal
 			}
-
-			colVals = append(colVals, colVal)
 		}
 
-		firstRow = false
-		rowValues = append(rowValues, fmt.Sprintf("SELECT %s", strings.Join(colVals, ",")))
+		rows = append(rows, NewRow(data))
 	}
 
-	subQuery := strings.Join(rowValues, " UNION ALL ")
-
-	return dml.MergeStatement(dml.MergeArgument{
-		FqTableName:         tableData.ToFqName(constants.BigQuery),
-		SubQuery:            subQuery,
-		IdempotentKey:       tableData.IdempotentKey,
-		PrimaryKeys:         tableData.PrimaryKeys,
-		Columns:             cols,
-		ColumnsToTypes:      *tableData.ReadOnlyInMemoryCols(),
-		SoftDelete:          tableData.SoftDelete,
-		BigQueryTypeCasting: true,
-	})
+	return rows, nil
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
+	// TODO - write test for this.
+
 	if tableData.Rows() == 0 || tableData.ReadOnlyInMemoryCols() == nil {
 		// There's no rows or columns. Let's skip.
 		return nil
@@ -85,7 +76,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
 		Tc:          tableConfig,
-		FqTableName: tableData.ToFqName(constants.BigQuery),
+		FqTableName: tableData.ToFqName(s.Label()),
 		CreateTable: tableConfig.CreateTable,
 		ColumnOp:    constants.Add,
 		CdcTime:     tableData.LatestCDCTs,
@@ -104,7 +95,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	deleteAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
 		Tc:          tableConfig,
-		FqTableName: tableData.ToFqName(constants.BigQuery),
+		FqTableName: tableData.ToFqName(s.Label()),
 		CreateTable: false,
 		ColumnOp:    constants.Delete,
 		CdcTime:     tableData.LatestCDCTs,
@@ -133,14 +124,54 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		}
 	}
 
+	// Start temporary table creation
+	tempAlterTableArgs := ddl.AlterTableArgs{
+		Dwh:            s,
+		Tc:             tableConfig,
+		FqTableName:    fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label()), tableData.TempTableSuffix()),
+		CreateTable:    true,
+		TemporaryTable: true,
+		ColumnOp:       constants.Add,
+	}
+
+	if err = ddl.AlterTable(ctx, tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
+		return fmt.Errorf("failed to create temp table, error: %v", err)
+	}
+	// End temporary table creation
+
 	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
-	query, err := merge(tableData)
+	rows, err := merge(tableData)
 	if err != nil {
 		log.WithError(err).Warn("failed to generate the merge query")
 		return err
 	}
 
-	log.WithField("query", query).Debug("executing...")
-	_, err = s.Exec(query)
-	return err
+	tableName := fmt.Sprintf("%s_%s", tableData.TableName, tableData.TempTableSuffix())
+	err = s.PutTable(ctx, tableData.Database, tableName, rows)
+	if err != nil {
+		return fmt.Errorf("failed to insert into temp table: %s, error: %v", tableName, err)
+	}
+
+	mergeQuery, err := dml.MergeStatement(dml.MergeArgument{
+		FqTableName:    tableData.ToFqName(constants.BigQuery),
+		SubQuery:       tempAlterTableArgs.FqTableName,
+		IdempotentKey:  tableData.IdempotentKey,
+		PrimaryKeys:    tableData.PrimaryKeys,
+		Columns:        tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(),
+		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
+		SoftDelete:     tableData.SoftDelete,
+		BigQuery:       true,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	_, err = s.Exec(mergeQuery)
+	if err != nil {
+		return err
+	}
+
+	ddl.DropTemporaryTable(ctx, s, tempAlterTableArgs.FqTableName)
+	return nil
 }

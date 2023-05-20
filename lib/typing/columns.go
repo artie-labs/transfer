@@ -57,6 +57,24 @@ func (c *Columns) GetColumn(name string) (Column, bool) {
 	return Column{}, false
 }
 
+// GetColumnsToUpdate will filter all the `Invalid` columns so that we do not update it.
+func (c *Columns) GetColumnsToUpdate() []string {
+	if c == nil {
+		return []string{}
+	}
+
+	var cols []string
+	for _, col := range c.columns {
+		if col.KindDetails == Invalid {
+			continue
+		}
+
+		cols = append(cols, col.Name)
+	}
+
+	return cols
+}
+
 func (c *Columns) GetColumns() []Column {
 	if c == nil {
 		return []Column{}

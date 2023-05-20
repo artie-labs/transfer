@@ -12,14 +12,14 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func InterfaceToArrayStringEscaped(val interface{}) (string, error) {
+func InterfaceToArrayString(val interface{}) ([]string, error) {
 	if val == nil {
-		return "", nil
+		return nil, nil
 	}
 
 	list := reflect.ValueOf(val)
 	if list.Kind() != reflect.Slice {
-		return "", fmt.Errorf("wrong data type")
+		return nil, fmt.Errorf("wrong data type")
 	}
 
 	var vals []string
@@ -39,16 +39,16 @@ func InterfaceToArrayStringEscaped(val interface{}) (string, error) {
 		if kind == reflect.Map || kind == reflect.Struct || shouldParse {
 			bytes, err := json.Marshal(value)
 			if err != nil {
-				return "", err
+				return nil, err
 			}
 
-			vals = append(vals, stringutil.Wrap(string(bytes)))
+			vals = append(vals, string(bytes))
 		} else {
-			vals = append(vals, stringutil.Wrap(value))
+			vals = append(vals, stringutil.WrapNoQuotes(value))
 		}
 	}
 
-	return fmt.Sprintf("[%s]", strings.Join(vals, ",")), nil
+	return vals, nil
 }
 
 type StringsJoinAddPrefixArgs struct {

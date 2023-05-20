@@ -2,6 +2,7 @@ package kafkalib
 
 import (
 	"fmt"
+
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 )

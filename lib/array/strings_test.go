@@ -15,7 +15,7 @@ func TestToArrayString(t *testing.T) {
 		name string
 		val  interface{}
 
-		expectedList string
+		expectedList []string
 		expectedErr  error
 	}
 
@@ -26,23 +26,23 @@ func TestToArrayString(t *testing.T) {
 		{
 			name:         "wrong data type",
 			val:          true,
-			expectedList: "",
+			expectedList: nil,
 			expectedErr:  fmt.Errorf("wrong data type"),
 		},
 		{
 			name:         "list of numbers",
 			val:          []int{1, 2, 3, 4, 5},
-			expectedList: "['1','2','3','4','5']",
+			expectedList: []string{"1", "2", "3", "4", "5"},
 		},
 		{
 			name:         "list of strings",
 			val:          []string{"abc", "def", "ghi"},
-			expectedList: "['abc','def','ghi']",
+			expectedList: []string{"abc", "def", "ghi"},
 		},
 		{
 			name:         "list of bools",
 			val:          []bool{true, false, true},
-			expectedList: "['true','false','true']",
+			expectedList: []string{"true", "false", "true"},
 		},
 		{
 			name: "array of nested objects",
@@ -54,7 +54,7 @@ func TestToArrayString(t *testing.T) {
 					"hello": "world",
 				},
 			},
-			expectedList: `['{"foo":"bar"}','{"hello":"world"}']`,
+			expectedList: []string{`{"foo":"bar"}`, `{"hello":"world"}`},
 		},
 		{
 			name: "array of nested lists",
@@ -66,12 +66,12 @@ func TestToArrayString(t *testing.T) {
 					"abc", "def",
 				},
 			},
-			expectedList: `['[foo bar]','[abc def]']`,
+			expectedList: []string{"[foo bar]", "[abc def]"},
 		},
 	}
 
 	for _, testCase := range testCases {
-		actualString, actualErr := InterfaceToArrayStringEscaped(testCase.val)
+		actualString, actualErr := InterfaceToArrayString(testCase.val)
 		assert.Equal(t, testCase.expectedList, actualString, testCase.name)
 		assert.Equal(t, testCase.expectedErr, actualErr, testCase.name)
 	}

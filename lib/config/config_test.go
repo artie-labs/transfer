@@ -434,17 +434,26 @@ func TestConfig_Validate(t *testing.T) {
 	pubsub.PathToCredentials = "/tmp/abc"
 	assert.Nil(t, cfg.Validate())
 
+	// Check Snowflake and BigQuery for large rows
+	// Snowflake should error, BigQuery will not.
+	cfg.Output = constants.Snowflake
+	cfg.BufferRows = bufferPoolSizeEnd + 1
+	assert.Contains(t, cfg.Validate().Error(), "snowflake does not allow more than 15k rows")
+
+	cfg.Output = constants.BigQuery
+	assert.Nil(t, cfg.Validate())
+
 	// Test the various flush error settings.
-	for _, count := range []int{0, 5000000} {
+	for i := 0; i < bufferPoolSizeStart; i++ {
 		// Reset buffer rows.
 		cfg.BufferRows = 500
-		cfg.FlushIntervalSeconds = count
+		cfg.FlushIntervalSeconds = i
 		assert.Contains(t, cfg.Validate().Error(), "flush interval is outside of our range")
 
 		// Reset Flush
 		cfg.FlushIntervalSeconds = 20
-		cfg.BufferRows = uint(count)
-		assert.Contains(t, cfg.Validate().Error(), "buffer pool is outside of our range")
+		cfg.BufferRows = uint(i)
+		assert.Contains(t, cfg.Validate().Error(), "buffer pool is too small")
 	}
 
 	cfg.BufferRows = 500

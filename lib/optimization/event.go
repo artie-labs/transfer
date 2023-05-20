@@ -2,8 +2,11 @@ package optimization
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/stringutil"
 
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config"
@@ -28,6 +31,9 @@ type TableData struct {
 	// This is used for the automatic schema detection
 	LatestCDCTs time.Time
 	approxSize  int
+
+	// BigQuery specific. We are creating a temporary table to execute a merge, in order to avoid in-memory tables via UNION ALL.
+	temporaryTableSuffix string
 }
 
 func (t *TableData) SetInMemoryColumns(columns *typing.Columns) {
@@ -60,6 +66,7 @@ func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicCo
 		PrimaryKeys:             primaryKeys,
 		TopicConfig:             topicConfig,
 		PartitionsToLastMessage: map[string][]artie.Message{},
+		temporaryTableSuffix:    fmt.Sprintf("%s_%s", constants.ArtiePrefix, stringutil.Random(10)),
 	}
 }
 
@@ -108,6 +115,10 @@ func (t *TableData) Rows() uint {
 	}
 
 	return uint(len(t.rowsData))
+}
+
+func (t *TableData) TempTableSuffix() string {
+	return t.temporaryTableSuffix
 }
 
 func (t *TableData) ShouldFlush(ctx context.Context) bool {

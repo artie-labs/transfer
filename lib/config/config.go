@@ -161,9 +161,12 @@ func (c *Config) Validate() error {
 			c.FlushIntervalSeconds, flushIntervalSecondsStart, flushIntervalSecondsEnd)
 	}
 
-	if !numbers.BetweenEq(bufferPoolSizeStart, bufferPoolSizeEnd, int(c.BufferRows)) {
-		return fmt.Errorf("config is invalid, buffer pool is outside of our range: %v, expected start: %v, end: %v",
-			c.BufferRows, bufferPoolSizeStart, bufferPoolSizeEnd)
+	if bufferPoolSizeStart > int(c.BufferRows) {
+		return fmt.Errorf("config is invalid, buffer pool is too small, min value: %v, actual: %v", bufferPoolSizeStart, int(c.BufferRows))
+	}
+
+	if c.Output == constants.Snowflake && int(c.BufferRows) > bufferPoolSizeEnd {
+		return fmt.Errorf("snowflake does not allow more than 15k rows, actual: %v", int(c.BufferRows))
 	}
 
 	if !constants.IsValidDestination(c.Output) {

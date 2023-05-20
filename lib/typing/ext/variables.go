@@ -3,6 +3,7 @@ package ext
 import "time"
 
 const (
+	BigQueryDateTimeFormat = "2006-01-02 15:04:05.999999"
 	ISO8601                = "2006-01-02T15:04:05-07:00"
 	PostgresDateFormat     = "2006-01-02"
 	PostgresTimeFormat     = "15:04:05.999999-07" // microsecond precision

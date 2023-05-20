@@ -2,7 +2,9 @@ package stringutil
 
 import (
 	"fmt"
+	"math/rand"
 	"strings"
+	"time"
 )
 
 func Reverse(val string) string {
@@ -13,6 +15,13 @@ func Reverse(val string) string {
 	}
 
 	return string(reverseParts)
+}
+
+func WrapNoQuotes(colVal interface{}) string {
+	// Escape line breaks, JSON_PARSE does not like it.
+	colVal = strings.ReplaceAll(fmt.Sprint(colVal), `\`, `\\`)
+	// The normal string escape is to do for O'Reilly is O\\'Reilly, but Snowflake escapes via \'
+	return strings.ReplaceAll(fmt.Sprint(colVal), "'", `\'`)
 }
 
 func Wrap(colVal interface{}) string {
@@ -39,4 +48,17 @@ func EscapeSpaces(col string) (escaped bool, newString string) {
 
 func LineBreaksToCarriageReturns(paragraph string) string {
 	return strings.ReplaceAll(paragraph, "\n", `\n`)
+}
+
+func stringWithCharset(length int, charset string) string {
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[rand.Intn(len(charset))]
+	}
+	return string(b)
+}
+
+func Random(length int) string {
+	rand.Seed(time.Now().UnixNano())
+	return stringWithCharset(length, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 }
