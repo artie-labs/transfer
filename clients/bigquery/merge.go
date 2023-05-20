@@ -52,6 +52,8 @@ func merge(tableData *optimization.TableData) ([]*Row, error) {
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
+	// TODO - write test for this.
+
 	if tableData.Rows() == 0 || tableData.ReadOnlyInMemoryCols() == nil {
 		// There's no rows or columns. Let's skip.
 		return nil
@@ -151,15 +153,14 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	mergeQuery, err := dml.MergeStatement(dml.MergeArgument{
-		FqTableName:         tableData.ToFqName(constants.BigQuery),
-		SubQuery:            tempAlterTableArgs.FqTableName,
-		IdempotentKey:       tableData.IdempotentKey,
-		PrimaryKeys:         tableData.PrimaryKeys,
-		Columns:             tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(),
-		ColumnsToTypes:      *tableData.ReadOnlyInMemoryCols(),
-		SoftDelete:          tableData.SoftDelete,
-		EscapeParentheses:   true,
-		BigQueryTypeCasting: true,
+		FqTableName:    tableData.ToFqName(constants.BigQuery),
+		SubQuery:       tempAlterTableArgs.FqTableName,
+		IdempotentKey:  tableData.IdempotentKey,
+		PrimaryKeys:    tableData.PrimaryKeys,
+		Columns:        tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(),
+		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
+		SoftDelete:     tableData.SoftDelete,
+		BigQuery:       true,
 	})
 
 	if err != nil {

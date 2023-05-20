@@ -19,12 +19,11 @@ type MergeArgument struct {
 	Columns        []string
 	ColumnsToTypes typing.Columns
 
-	// This is only used for BigQuery temporary tables because the code will not compile without it.
-	EscapeParentheses bool
-
-	// BigQueryTypeCasting - This is used for columns that have JSON value. This is required for BigQuery
-	BigQueryTypeCasting bool
-	SoftDelete          bool
+	// BigQuery is used to:
+	// 1) escape JSON columns
+	// 2) merge temp table vs. subquery
+	BigQuery   bool
+	SoftDelete bool
 }
 
 func MergeStatement(m MergeArgument) (string, error) {
@@ -48,7 +47,7 @@ func MergeStatement(m MergeArgument) (string, error) {
 			return "", fmt.Errorf("error: column: %s does not exist in columnToType: %v", primaryKey, m.ColumnsToTypes)
 		}
 
-		if m.BigQueryTypeCasting && pkCol.KindDetails.Kind == typing.Struct.Kind {
+		if m.BigQuery && pkCol.KindDetails.Kind == typing.Struct.Kind {
 			// BigQuery requires special casting to compare two JSON objects.
 			equalitySQL = fmt.Sprintf("TO_JSON_STRING(c.%s) = TO_JSON_STRING(cc.%s)", primaryKey, primaryKey)
 		}
@@ -57,7 +56,7 @@ func MergeStatement(m MergeArgument) (string, error) {
 	}
 
 	subQuery := fmt.Sprintf("( %s )", m.SubQuery)
-	if m.EscapeParentheses {
+	if m.BigQuery {
 		subQuery = m.SubQuery
 	}
 
@@ -76,7 +75,7 @@ func MergeStatement(m MergeArgument) (string, error) {
 					);
 		`, m.FqTableName, subQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, array.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.BigQueryTypeCasting),
+			idempotentClause, array.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.BigQuery),
 			// Insert
 			constants.DeleteColumnMarker, strings.Join(m.Columns, ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -117,7 +116,7 @@ func MergeStatement(m MergeArgument) (string, error) {
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update
-		constants.DeleteColumnMarker, idempotentClause, array.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.BigQueryTypeCasting),
+		constants.DeleteColumnMarker, idempotentClause, array.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.BigQuery),
 		// Insert
 		constants.DeleteColumnMarker, strings.Join(m.Columns, ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{

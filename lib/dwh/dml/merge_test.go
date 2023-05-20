@@ -39,14 +39,14 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 
 	for _, idempotentKey := range []string{"", "updated_at"} {
 		mergeSQL, err := MergeStatement(MergeArgument{
-			FqTableName:         fqTable,
-			SubQuery:            subQuery,
-			IdempotentKey:       idempotentKey,
-			PrimaryKeys:         []string{"id"},
-			Columns:             cols,
-			ColumnsToTypes:      _cols,
-			BigQueryTypeCasting: false,
-			SoftDelete:          true,
+			FqTableName:    fqTable,
+			SubQuery:       subQuery,
+			IdempotentKey:  idempotentKey,
+			PrimaryKeys:    []string{"id"},
+			Columns:        cols,
+			ColumnsToTypes: _cols,
+			BigQuery:       false,
+			SoftDelete:     true,
 		})
 		assert.NoError(t, err)
 		assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
@@ -84,14 +84,14 @@ func TestMergeStatement(t *testing.T) {
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 	mergeSQL, err := MergeStatement(MergeArgument{
-		FqTableName:         fqTable,
-		SubQuery:            subQuery,
-		IdempotentKey:       "",
-		PrimaryKeys:         []string{"id"},
-		Columns:             cols,
-		ColumnsToTypes:      _cols,
-		BigQueryTypeCasting: false,
-		SoftDelete:          false,
+		FqTableName:    fqTable,
+		SubQuery:       subQuery,
+		IdempotentKey:  "",
+		PrimaryKeys:    []string{"id"},
+		Columns:        cols,
+		ColumnsToTypes: _cols,
+		BigQuery:       false,
+		SoftDelete:     false,
 	})
 	assert.NoError(t, err)
 	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
@@ -124,14 +124,14 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 	})
 
 	mergeSQL, err := MergeStatement(MergeArgument{
-		FqTableName:         fqTable,
-		SubQuery:            subQuery,
-		IdempotentKey:       "updated_at",
-		PrimaryKeys:         []string{"id"},
-		Columns:             cols,
-		ColumnsToTypes:      _cols,
-		BigQueryTypeCasting: false,
-		SoftDelete:          false,
+		FqTableName:    fqTable,
+		SubQuery:       subQuery,
+		IdempotentKey:  "updated_at",
+		PrimaryKeys:    []string{"id"},
+		Columns:        cols,
+		ColumnsToTypes: _cols,
+		BigQuery:       false,
+		SoftDelete:     false,
 	})
 	assert.NoError(t, err)
 	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
@@ -169,14 +169,14 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 	})
 
 	mergeSQL, err := MergeStatement(MergeArgument{
-		FqTableName:         fqTable,
-		SubQuery:            subQuery,
-		IdempotentKey:       "updated_at",
-		PrimaryKeys:         []string{"id", "another_id"},
-		Columns:             cols,
-		ColumnsToTypes:      _cols,
-		BigQueryTypeCasting: false,
-		SoftDelete:          false,
+		FqTableName:    fqTable,
+		SubQuery:       subQuery,
+		IdempotentKey:  "updated_at",
+		PrimaryKeys:    []string{"id", "another_id"},
+		Columns:        cols,
+		ColumnsToTypes: _cols,
+		BigQuery:       false,
+		SoftDelete:     false,
 	})
 	assert.NoError(t, err)
 	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
