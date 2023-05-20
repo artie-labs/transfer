@@ -23,8 +23,7 @@ const (
 	bufferPoolSizeStart = 5
 	// Snowflake has a limit of 2^14 elements within an expression.
 	// https://github.com/snowflakedb/snowflake-connector-python/issues/37
-	// TODO warn
-	bufferPoolSizeEnd = 150000
+	bufferPoolSizeEnd = 15000
 )
 
 type Sentry struct {
@@ -162,9 +161,12 @@ func (c *Config) Validate() error {
 			c.FlushIntervalSeconds, flushIntervalSecondsStart, flushIntervalSecondsEnd)
 	}
 
-	if !numbers.BetweenEq(bufferPoolSizeStart, bufferPoolSizeEnd, int(c.BufferRows)) {
-		return fmt.Errorf("config is invalid, buffer pool is outside of our range: %v, expected start: %v, end: %v",
-			c.BufferRows, bufferPoolSizeStart, bufferPoolSizeEnd)
+	if bufferPoolSizeStart > int(c.BufferRows) {
+		return fmt.Errorf("config is invalid, buffer pool is too small, min value: %v, actual: %v", bufferPoolSizeStart, int(c.BufferRows))
+	}
+
+	if c.Output == constants.Snowflake && int(c.BufferRows) > bufferPoolSizeEnd {
+		return fmt.Errorf("snowflake does not allow more than 15k rows, actual: %v", int(c.BufferRows))
 	}
 
 	if !constants.IsValidDestination(c.Output) {
