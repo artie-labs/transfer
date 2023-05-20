@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -17,39 +16,93 @@ import (
 )
 
 func (d *DDLTestSuite) TestCreateTable() {
-	ctx := context.Background()
-	fqTable := "demo.public.experiments"
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(typing.Columns{}, nil, true, true))
-	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
+	type _testCase struct {
+		name string
+		cols []typing.Column
 
-	cols := []typing.Column{
+		expectedQuery string
+	}
+
+	var (
+		happyPathCols = []typing.Column{
+			{
+				Name:        "user_id",
+				KindDetails: typing.String,
+			},
+		}
+		twoCols = []typing.Column{
+			{
+				Name:        "user_id",
+				KindDetails: typing.String,
+			},
+			{
+				Name:        "enabled",
+				KindDetails: typing.Boolean,
+			},
+		}
+		bunchOfCols = []typing.Column{
+			{
+				Name:        "user_id",
+				KindDetails: typing.String,
+			},
+			{
+				Name:        "enabled_boolean",
+				KindDetails: typing.Boolean,
+			},
+			{
+				Name:        "array",
+				KindDetails: typing.Array,
+			},
+			{
+				Name:        "struct",
+				KindDetails: typing.Struct,
+			},
+		}
+	)
+
+	testCases := []_testCase{
 		{
-			Name:        "key",
-			KindDetails: typing.String,
+			name:          "happy path",
+			cols:          happyPathCols,
+			expectedQuery: "CREATE TABLE IF NOT EXISTS demo.public.experiments (user_id string)",
 		},
 		{
-			Name:        "enabled",
-			KindDetails: typing.Boolean,
+			name:          "happy path + enabled",
+			cols:          twoCols,
+			expectedQuery: "CREATE TABLE IF NOT EXISTS demo.public.experiments (user_id string,enabled boolean)",
+		},
+		{
+			name:          "complex table creation",
+			cols:          bunchOfCols,
+			expectedQuery: "CREATE TABLE IF NOT EXISTS demo.public.experiments (user_id string,enabled_boolean boolean,array array,struct variant)",
 		},
 	}
 
-	alterTableArgs := ddl.AlterTableArgs{
-		Dwh:         d.snowflakeStore,
-		Tc:          tc,
-		FqTableName: fqTable,
-		CreateTable: tc.CreateTable,
-		ColumnOp:    constants.Add,
-		CdcTime:     time.Now().UTC(),
+	for index, testCase := range testCases {
+		ctx := context.Background()
+		fqTable := "demo.public.experiments"
+		d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(typing.Columns{}, nil, true, true))
+		tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
+
+		alterTableArgs := ddl.AlterTableArgs{
+			Dwh:         d.snowflakeStore,
+			Tc:          tc,
+			FqTableName: fqTable,
+			CreateTable: tc.CreateTable,
+			ColumnOp:    constants.Add,
+			CdcTime:     time.Now().UTC(),
+		}
+
+		err := ddl.AlterTable(ctx, alterTableArgs, testCase.cols...)
+		assert.NoError(d.T(), err, testCase.name)
+
+		execQuery, _ := d.fakeSnowflakeStore.ExecArgsForCall(index)
+		assert.Equal(d.T(), testCase.expectedQuery, execQuery, testCase.name)
+
+		// Check if the table is now marked as created where `CreateTable = false`.
+		assert.Equal(d.T(), d.snowflakeStore.GetConfigMap().TableConfig(fqTable).CreateTable,
+			false, d.snowflakeStore.GetConfigMap().TableConfig(fqTable), testCase.name)
 	}
-	err := ddl.AlterTable(ctx, alterTableArgs, cols...)
-	assert.NoError(d.T(), err)
-
-	execQuery, _ := d.fakeSnowflakeStore.ExecArgsForCall(0)
-	assert.Equal(d.T(), strings.Contains(execQuery, "CREATE TABLE IF NOT EXISTS"), true, execQuery)
-
-	execQuery, _ = d.fakeSnowflakeStore.ExecArgsForCall(1)
-	assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN enabled boolean", fqTable), execQuery, execQuery)
-	assert.Equal(d.T(), d.snowflakeStore.GetConfigMap().TableConfig(fqTable).CreateTable, false, d.snowflakeStore.GetConfigMap().TableConfig(fqTable))
 }
 func (d *DDLTestSuite) TestAlterComplexObjects() {
 	ctx := context.Background()

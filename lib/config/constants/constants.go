@@ -14,6 +14,8 @@ const (
 	DBZPostgresAltFormat = "debezium.postgres.wal2json"
 	DBZMongoFormat       = "debezium.mongodb"
 	DBZMySQLFormat       = "debezium.mysql"
+
+	BigQueryTempTableTTL = 6 * time.Hour
 )
 
 // ExporterKind is used for the Telemetry package
