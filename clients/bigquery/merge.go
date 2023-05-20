@@ -157,6 +157,11 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	var cols []string
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
+		if col.KindDetails == typing.Invalid {
+			// Don't update BQ
+			continue
+		}
+
 		cols = append(cols, col.Name)
 	}
 
