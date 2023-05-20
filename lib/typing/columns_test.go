@@ -1,6 +1,7 @@
 package typing
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,10 +27,23 @@ func TestColumns_GetColumnsToUpdate(t *testing.T) {
 		}
 	)
 
+	extraCols := happyPathCols
+	for i := 0; i < 100; i++ {
+		extraCols = append(extraCols, Column{
+			Name:        fmt.Sprintf("hello_%v", i),
+			KindDetails: Invalid,
+		})
+	}
+
 	testCases := []_testCase{
 		{
 			name:         "happy path",
 			cols:         happyPathCols,
+			expectedCols: []string{"hi", "bye"},
+		},
+		{
+			name:         "happy path + extra col",
+			cols:         extraCols,
 			expectedCols: []string{"hi", "bye"},
 		},
 	}
