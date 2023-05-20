@@ -30,21 +30,10 @@ func (r *Row) Save() (map[string]bigquery.Value, string, error) {
 }
 
 func merge(tableData *optimization.TableData) ([]*Row, error) {
-	var cols []string
-	// Given all the columns, diff this against SFLK.
-	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
-		if col.KindDetails == typing.Invalid {
-			// Don't update BQ
-			continue
-		}
-
-		cols = append(cols, col.Name)
-	}
-
 	var rows []*Row
 	for _, value := range tableData.RowsData() {
 		data := make(map[string]bigquery.Value)
-		for _, col := range cols {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate() {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal, err := CastColVal(value[col], colKind)
 			if err != nil {
@@ -155,16 +144,6 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
-	var cols []string
-	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
-		if col.KindDetails == typing.Invalid {
-			// Don't update BQ
-			continue
-		}
-
-		cols = append(cols, col.Name)
-	}
-
 	tableName := fmt.Sprintf("%s_%s", tableData.TableName, tableData.TempTableSuffix())
 	err = s.PutTable(ctx, tableData.Database, tableName, rows)
 	if err != nil {
@@ -176,7 +155,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		SubQuery:            tempAlterTableArgs.FqTableName,
 		IdempotentKey:       tableData.IdempotentKey,
 		PrimaryKeys:         tableData.PrimaryKeys,
-		Columns:             cols,
+		Columns:             tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(),
 		ColumnsToTypes:      *tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:          tableData.SoftDelete,
 		EscapeParentheses:   true,
