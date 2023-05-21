@@ -18,7 +18,7 @@ Make sure you select the right DB family group. Use `postgres10` if your databas
 
 Find the `rds.logical_replication` parameter and set it to `1`.
 
-<figure><img src="../../.gitbook/assets/image (2) (2).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (2) (2) (1).png" alt=""><figcaption></figcaption></figure>
 
 Now, go to your database, modify the instance to attach the newly created parameter group and then restart your database.
 
