@@ -18,12 +18,12 @@ MongoDB server **must** be in a replica set. If your deployment only has a `stan
 
 This is necessary so that we are able to run a Debezium deployment to subscribe to Change Events within your MongoDB cluster. To see additional configuration properties, please click [here](https://debezium.io/documentation/reference/2.0/connectors/mongodb.html#mongodb-connector-properties) to see Debezium's documentation.
 
-| Name                  | Description                                                                                                                                                                   | Default value |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| Connection string     | Click [here](https://www.mongodb.com/docs/manual/reference/connection-string/) to see how to retrieve this.                                                                   | No default.   |
-| Username              | Username for authentication into your database.                                                                                                                               | No default    |
-| Password              | Password for authentication into your database.                                                                                                                               | No default    |
-| Authentication source | MongoDB [authSource](https://www.mongodb.com/docs/manual/reference/connection-string/#mongodb-urioption-urioption.authSource) (which database should we authenticate against) | admin         |
+| Name                  | Description                                                                                                                                                                      | Default value |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| Connection string     | <p>Click <a href="https://www.mongodb.com/docs/manual/reference/connection-string/">here</a> to see how to retrieve this.<br><br>Note: We are using <code>mongosh 3.4</code></p> | No default.   |
+| Username              | Username for authentication into your database.                                                                                                                                  | No default    |
+| Password              | Password for authentication into your database.                                                                                                                                  | No default    |
+| Authentication source | MongoDB [authSource](https://www.mongodb.com/docs/manual/reference/connection-string/#mongodb-urioption-urioption.authSource) (which database should we authenticate against)    | admin         |
 
 ### Supported types
 
