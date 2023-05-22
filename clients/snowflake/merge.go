@@ -1,20 +1,16 @@
 package snowflake
 
 import (
-	"context"
-	"encoding/csv"
+	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/logger"
-
-	"github.com/artie-labs/transfer/lib/dwh/types"
-
-	"github.com/artie-labs/transfer/lib/dwh/ddl"
+	"github.com/artie-labs/transfer/lib/dwh/dml"
+	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/stringutil"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
@@ -51,79 +47,62 @@ func escapeCols(cols []typing.Column) (colsToUpdate []string, colsToUpdateEscape
 	return
 }
 
-// PrepareTemporaryTable does the following:
-// 1) Create the temporary table
-// 2) Load in-memory table -> CSV
-// 3) Runs PUT to upload CSV to Snowflake staging (auto-compression with GZIP)
-// 4) Runs COPY INTO with the columns specified into temporary table
-// 5) Deletes CSV generated from (2)
-func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string) error {
-	// TODO - how do I delete staging table?
-
-	tempAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:            s,
-		Tc:             tableConfig,
-		FqTableName:    tempTableName,
-		CreateTable:    true,
-		TemporaryTable: true,
-		ColumnOp:       constants.Add,
-	}
-
-	if err := ddl.AlterTable(ctx, tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
-		return fmt.Errorf("failed to create temp table, error: %v", err)
-	}
-
-	fp, err := s.loadTemporaryTable(tableData, tempTableName)
-	if err != nil {
-		return fmt.Errorf("failed to load temporary table, err: %v", err)
-	}
-
-	fmt.Println("###", fmt.Sprintf("PUT file://%s @%s AUTO_COMPRESS=TRUE", fp, AddPrefixToTableName(tempTableName, "%")))
-
-	if _, err = s.Exec(fmt.Sprintf("PUT file://%s @%s AUTO_COMPRESS=TRUE", fp, AddPrefixToTableName(tempTableName, "%"))); err != nil {
-		return fmt.Errorf("failed to run PUT for temporary table, err: %v", err)
-	}
-
-	if _, err = s.Exec(fmt.Sprintf("COPY INTO %s (%s)", tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(), ","))); err != nil {
-		return fmt.Errorf("failed to load staging file into temporary table, err: %v", err)
-	}
-
-	if deleteErr := os.RemoveAll(fp); deleteErr != nil {
-		logger.FromContext(ctx).WithError(deleteErr).WithField("filePath", fp).Warn("failed to delete temp file")
-	}
-
-	return nil
-}
-
-// loadTemporaryTable will write the data into /tmp/newTableName.csv
-// This way, another function can call this and then invoke a Snowflake PUT.
-// Returns the file path and potential error
-func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableName string) (string, error) {
-	filePath := fmt.Sprintf("/tmp/%s.csv", newTableName)
-	file, err := os.Create(filePath)
-	if err != nil {
-		return "", err
-	}
-
-	defer file.Close()
-	writer := csv.NewWriter(file)
-	writer.Comma = '\t'
+func getMergeStatement(tableData *optimization.TableData) (string, error) {
+	var tableValues []string
+	colsToUpdate, colsToUpdateEscaped := escapeCols(tableData.ReadOnlyInMemoryCols().GetColumns())
 	for _, value := range tableData.RowsData() {
-		var row []string
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate() {
-			row = append(row, fmt.Sprint(value[col]))
+		var rowValues []string
+		for _, col := range colsToUpdate {
+			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
+			colVal := value[col]
+			if colVal != nil {
+				switch colKind.KindDetails.Kind {
+				// All the other types do not need string wrapping.
+				case typing.ETime.Kind:
+					extTime, err := ext.ParseFromInterface(colVal)
+					if err != nil {
+						return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
+					}
+
+					switch extTime.NestedKind.Type {
+					case ext.TimeKindType:
+						colVal = stringutil.Wrap(extTime.String(ext.PostgresTimeFormatNoTZ))
+					default:
+						colVal = stringutil.Wrap(extTime.String(""))
+					}
+
+				case typing.String.Kind, typing.Struct.Kind:
+					colVal = stringutil.Wrap(colVal)
+				case typing.Array.Kind:
+					// We need to marshall, so we can escape the strings.
+					// https://go.dev/play/p/BcCwUSCeTmT
+					colValBytes, err := json.Marshal(colVal)
+					if err != nil {
+						return "", err
+					}
+
+					colVal = stringutil.Wrap(string(colValBytes))
+				}
+			} else {
+				colVal = "null"
+			}
+
+			rowValues = append(rowValues, fmt.Sprint(colVal))
 		}
 
-		if err = writer.Write(row); err != nil {
-			return "", fmt.Errorf("failed to write to csv, err: %v", err)
-		}
+		tableValues = append(tableValues, fmt.Sprintf("(%s) ", strings.Join(rowValues, ",")))
 	}
 
-	writer.Flush()
-	return filePath, writer.Error()
-}
+	subQuery := fmt.Sprintf("SELECT %s FROM (values %s) as %s(%s)", strings.Join(colsToUpdateEscaped, ","),
+		strings.Join(tableValues, ","), tableData.TopicConfig.TableName, strings.Join(colsToUpdate, ","))
 
-func (s *Store) deleteTemporaryFile(tableName string) error {
-	// TODO - test
-	return os.RemoveAll(fmt.Sprintf("/tmp/%s.csv", tableName))
+	return dml.MergeStatement(dml.MergeArgument{
+		FqTableName:    tableData.ToFqName(constants.Snowflake),
+		SubQuery:       subQuery,
+		IdempotentKey:  tableData.IdempotentKey,
+		PrimaryKeys:    tableData.PrimaryKeys,
+		Columns:        colsToUpdate,
+		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
+		SoftDelete:     tableData.SoftDelete,
+	})
 }

@@ -31,7 +31,7 @@ func (d *DDLTestSuite) SetupTest() {
 
 	d.fakeSnowflakeStore = &mocks.FakeStore{}
 	sflkStore := db.Store(d.fakeSnowflakeStore)
-	d.snowflakeStore = snowflake.LoadSnowflake(ctx, &sflkStore)
+	d.snowflakeStore = snowflake.LoadSnowflake(ctx, &sflkStore, false)
 }
 
 func TestDDLTestSuite(t *testing.T) {

@@ -2,8 +2,9 @@ package snowflake
 
 import (
 	"context"
-	"github.com/artie-labs/transfer/lib/config"
 	"testing"
+
+	"github.com/artie-labs/transfer/lib/config"
 
 	"github.com/stretchr/testify/suite"
 
@@ -25,7 +26,7 @@ func (s *SnowflakeTestSuite) SetupTest() {
 
 	s.fakeStore = &mocks.FakeStore{}
 	store := db.Store(s.fakeStore)
-	s.store = LoadSnowflake(s.ctx, &store)
+	s.store = LoadSnowflake(s.ctx, &store, false)
 
 }
 

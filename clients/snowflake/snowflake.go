@@ -2,9 +2,6 @@ package snowflake
 
 import (
 	"context"
-	"fmt"
-
-	"github.com/artie-labs/transfer/lib/dwh/dml"
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -21,6 +18,8 @@ type Store struct {
 	db.Store
 	testDB    bool // Used for testing
 	configMap *types.DwhToTablesConfigMap
+
+	useStaging bool
 }
 
 const (
@@ -42,7 +41,13 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
-	err := s.merge(ctx, tableData)
+	var err error
+	if s.useStaging {
+		err = s.mergeWithStages(ctx, tableData)
+	} else {
+		err = s.merge(ctx, tableData)
+	}
+
 	if AuthenticationExpirationErr(err) {
 		logger.FromContext(ctx).WithError(err).Warn("authentication has expired, will reload the Snowflake store")
 		s.ReestablishConnection(ctx)
@@ -125,30 +130,14 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
-	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label()), tableData.TempTableSuffix())
-	if err = s.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {
-		return err
-	}
-
-	// Prepare merge statement
-	mergeQuery, err := dml.MergeStatement(dml.MergeArgument{
-		FqTableName:    tableData.ToFqName(constants.Snowflake),
-		SubQuery:       temporaryTableName,
-		IdempotentKey:  tableData.IdempotentKey,
-		PrimaryKeys:    tableData.PrimaryKeys,
-		Columns:        tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(),
-		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
-		SoftDelete:     tableData.SoftDelete,
-		BigQuery:       true,
-	})
-
-	log.WithField("query", mergeQuery).Debug("executing...")
-	_, err = s.Exec(mergeQuery)
+	query, err := getMergeStatement(tableData)
 	if err != nil {
+		log.WithError(err).Warn("failed to generate the getMergeStatement query")
 		return err
 	}
 
-	ddl.DropTemporaryTable(ctx, s, temporaryTableName)
+	log.WithField("query", query).Debug("executing...")
+	_, err = s.Exec(query)
 	return err
 }
 
@@ -183,18 +172,20 @@ func (s *Store) ReestablishConnection(ctx context.Context) {
 	return
 }
 
-func LoadSnowflake(ctx context.Context, _store *db.Store) *Store {
+func LoadSnowflake(ctx context.Context, _store *db.Store, stages bool) *Store {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			testDB:    true,
-			Store:     *_store,
-			configMap: &types.DwhToTablesConfigMap{},
+			testDB:     true,
+			Store:      *_store,
+			configMap:  &types.DwhToTablesConfigMap{},
+			useStaging: stages,
 		}
 	}
 
 	s := &Store{
-		configMap: &types.DwhToTablesConfigMap{},
+		configMap:  &types.DwhToTablesConfigMap{},
+		useStaging: stages,
 	}
 
 	s.ReestablishConnection(ctx)

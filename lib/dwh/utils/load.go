@@ -2,9 +2,11 @@ package utils
 
 import (
 	"context"
+
 	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/db/mock"
 	"github.com/artie-labs/transfer/lib/dwh"
@@ -25,10 +27,12 @@ func DataWarehouse(ctx context.Context, store *db.Store) dwh.DataWarehouse {
 		store := db.Store(&mock.DB{
 			Fake: mocks.FakeStore{},
 		})
-		return snowflake.LoadSnowflake(ctx, &store)
-	case "snowflake":
-		return snowflake.LoadSnowflake(ctx, store)
-	case "bigquery":
+		return snowflake.LoadSnowflake(ctx, &store, false)
+	case constants.Snowflake:
+		return snowflake.LoadSnowflake(ctx, store, false)
+	case constants.SnowflakeStages:
+		return snowflake.LoadSnowflake(ctx, store, true)
+	case constants.BigQuery:
 		return bigquery.LoadBigQuery(ctx, store)
 	}
 
