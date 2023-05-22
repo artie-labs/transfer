@@ -27,10 +27,13 @@ type AlterTableArgs struct {
 func DropTemporaryTable(ctx context.Context, dwh dwh.DataWarehouse, fqTableName string) {
 	if strings.Contains(fqTableName, constants.ArtiePrefix) {
 		// https://cloud.google.com/bigquery/docs/reference/standard-sql/data-definition-language#drop_table_statement
+		// https://docs.snowflake.com/en/sql-reference/sql/drop-table
 		_, err := dwh.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", fqTableName))
 		if err != nil {
 			logger.FromContext(ctx).WithError(err).Warn("failed to drop temporary table, it will get garbage collected by the TTL...")
 		}
+	} else {
+		logger.FromContext(ctx).Warn(fmt.Sprintf("skipped dropping table: %s because it does not contain the artie prefix", fqTableName))
 	}
 	return
 }
@@ -68,15 +71,19 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) e
 	if args.CreateTable {
 		var sqlQuery string
 		if args.TemporaryTable {
-			// Snowflake has this feature too, but we don't need it as our CTE approach with Snowflake is extremely performant.
-			if args.Dwh.Label() != constants.BigQuery {
-				return fmt.Errorf("unexpected temporary table for destination: %v", args.Dwh.Label())
+			switch args.Dwh.Label() {
+			case constants.BigQuery:
+				expiry := time.Now().UTC().Add(constants.BigQueryTempTableTTL)
+				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
+					args.FqTableName, strings.Join(colSQLParts, ","), typing.BigQueryDate(expiry))
+			case constants.Snowflake:
+				break
+			default:
+				return fmt.Errorf("unexpected dwh: %v trying to create a temporary table", args.Dwh.Label())
 			}
-			expiry := time.Now().UTC().Add(constants.BigQueryTempTableTTL)
-			sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
-				args.FqTableName, strings.Join(colSQLParts, ","), typing.BigQueryDate(expiry))
+
 		} else {
-			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
+			sqlQuery = fmt.Sprintf(`CREATE TABLE  %s (%s) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' );`, args.FqTableName, strings.Join(colSQLParts, ","))
 		}
 
 		_, err = args.Dwh.Exec(sqlQuery)

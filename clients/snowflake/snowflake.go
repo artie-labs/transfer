@@ -2,6 +2,9 @@ package snowflake
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/artie-labs/transfer/lib/dwh/dml"
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -122,14 +125,46 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
-	query, err := getMergeStatement(tableData)
+
+	// Start temporary table creation
+	tempAlterTableArgs := ddl.AlterTableArgs{
+		Dwh:            s,
+		Tc:             tableConfig,
+		FqTableName:    fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label()), tableData.TempTableSuffix()),
+		CreateTable:    true,
+		TemporaryTable: true,
+		ColumnOp:       constants.Add,
+	}
+
+	if err = ddl.AlterTable(ctx, tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
+		return fmt.Errorf("failed to create temp table, error: %v", err)
+	}
+	// End
+
+	err = s.loadTemporaryTable(ctx, tableData)
 	if err != nil {
-		log.WithError(err).Warn("failed to generate the getMergeStatement query")
+		return fmt.Errorf("failed to load temporay table, err: %v", err)
+	}
+
+	// Prepare merge statement
+	mergeQuery, err := dml.MergeStatement(dml.MergeArgument{
+		FqTableName:    tableData.ToFqName(constants.Snowflake),
+		SubQuery:       tempAlterTableArgs.FqTableName,
+		IdempotentKey:  tableData.IdempotentKey,
+		PrimaryKeys:    tableData.PrimaryKeys,
+		Columns:        tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(),
+		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
+		SoftDelete:     tableData.SoftDelete,
+		BigQuery:       true,
+	})
+
+	log.WithField("query", mergeQuery).Debug("executing...")
+	_, err = s.Exec(mergeQuery)
+	if err != nil {
 		return err
 	}
 
-	log.WithField("query", query).Debug("executing...")
-	_, err = s.Exec(query)
+	ddl.DropTemporaryTable(ctx, s, tempAlterTableArgs.FqTableName)
 	return err
 }
 

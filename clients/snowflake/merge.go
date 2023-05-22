@@ -1,16 +1,13 @@
 package snowflake
 
 import (
-	"encoding/json"
+	"encoding/csv"
 	"fmt"
-	"strings"
+	"os"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/dwh/dml"
 	"github.com/artie-labs/transfer/lib/optimization"
-	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 // escapeCols will return the following arguments:
@@ -46,62 +43,34 @@ func escapeCols(cols []typing.Column) (colsToUpdate []string, colsToUpdateEscape
 	return
 }
 
-func getMergeStatement(tableData *optimization.TableData) (string, error) {
-	var tableValues []string
-	colsToUpdate, colsToUpdateEscaped := escapeCols(tableData.ReadOnlyInMemoryCols().GetColumns())
-	for _, value := range tableData.RowsData() {
-		var rowValues []string
-		for _, col := range colsToUpdate {
-			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
-			colVal := value[col]
-			if colVal != nil {
-				switch colKind.KindDetails.Kind {
-				// All the other types do not need string wrapping.
-				case typing.ETime.Kind:
-					extTime, err := ext.ParseFromInterface(colVal)
-					if err != nil {
-						return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
-					}
-
-					switch extTime.NestedKind.Type {
-					case ext.TimeKindType:
-						colVal = stringutil.Wrap(extTime.String(ext.PostgresTimeFormatNoTZ))
-					default:
-						colVal = stringutil.Wrap(extTime.String(""))
-					}
-
-				case typing.String.Kind, typing.Struct.Kind:
-					colVal = stringutil.Wrap(colVal)
-				case typing.Array.Kind:
-					// We need to marshall, so we can escape the strings.
-					// https://go.dev/play/p/BcCwUSCeTmT
-					colValBytes, err := json.Marshal(colVal)
-					if err != nil {
-						return "", err
-					}
-
-					colVal = stringutil.Wrap(string(colValBytes))
-				}
-			} else {
-				colVal = "null"
-			}
-
-			rowValues = append(rowValues, fmt.Sprint(colVal))
-		}
-
-		tableValues = append(tableValues, fmt.Sprintf("(%s) ", strings.Join(rowValues, ",")))
+// loadTemporaryTable will write the data into /tmp/newTableName.csv
+// This way, another function can call this and then invoke a Snowflake PUT.
+func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableName string) error {
+	// TODO - test
+	file, err := os.Create(fmt.Sprintf("/tmp/%s.csv", newTableName))
+	if err != nil {
+		return err
 	}
 
-	subQuery := fmt.Sprintf("SELECT %s FROM (values %s) as %s(%s)", strings.Join(colsToUpdateEscaped, ","),
-		strings.Join(tableValues, ","), tableData.TopicConfig.TableName, strings.Join(colsToUpdate, ","))
+	defer file.Close()
+	writer := csv.NewWriter(file)
+	writer.Comma = '\t'
+	for _, value := range tableData.RowsData() {
+		var row []string
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate() {
+			row = append(row, fmt.Sprint(value[col]))
+		}
 
-	return dml.MergeStatement(dml.MergeArgument{
-		FqTableName:    tableData.ToFqName(constants.Snowflake),
-		SubQuery:       subQuery,
-		IdempotentKey:  tableData.IdempotentKey,
-		PrimaryKeys:    tableData.PrimaryKeys,
-		Columns:        colsToUpdate,
-		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
-		SoftDelete:     tableData.SoftDelete,
-	})
+		if err = writer.Write(row); err != nil {
+			return fmt.Errorf("failed to write to csv, err: %v", err)
+		}
+	}
+
+	writer.Flush()
+	return writer.Error()
+}
+
+func (s *Store) deleteTemporaryFile(tableName string) error {
+	// TODO - test
+	return os.RemoveAll(fmt.Sprintf("/tmp/%s.csv", tableName))
 }

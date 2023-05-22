@@ -172,6 +172,5 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
-	ddl.DropTemporaryTable(ctx, s, tempAlterTableArgs.FqTableName)
 	return nil
 }
