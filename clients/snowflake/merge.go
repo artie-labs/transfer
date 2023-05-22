@@ -78,7 +78,9 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		return fmt.Errorf("failed to load temporary table, err: %v", err)
 	}
 
-	if _, err = s.Exec(fmt.Sprintf("PUT file://%s @%s AUTO_COMPRESS=TRUE", fp, tempTableName)); err != nil {
+	fmt.Println("###", fmt.Sprintf("PUT file://%s @%s AUTO_COMPRESS=TRUE", fp, AddPrefixToTableName(tempTableName, "%")))
+
+	if _, err = s.Exec(fmt.Sprintf("PUT file://%s @%s AUTO_COMPRESS=TRUE", fp, AddPrefixToTableName(tempTableName, "%"))); err != nil {
 		return fmt.Errorf("failed to run PUT for temporary table, err: %v", err)
 	}
 
