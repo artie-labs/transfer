@@ -77,13 +77,14 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) e
 				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
 					args.FqTableName, strings.Join(colSQLParts, ","), typing.BigQueryDate(expiry))
 			case constants.Snowflake:
-				break
+				// https://docs.snowflake.com/en/sql-reference/sql/create-table
+				sqlQuery = fmt.Sprintf(`CREATE TEMP TABLE IF NOT EXISTS %s (%s) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' )`,
+					args.FqTableName, strings.Join(colSQLParts, ","))
 			default:
 				return fmt.Errorf("unexpected dwh: %v trying to create a temporary table", args.Dwh.Label())
 			}
-
 		} else {
-			sqlQuery = fmt.Sprintf(`CREATE TABLE  %s (%s) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' );`, args.FqTableName, strings.Join(colSQLParts, ","))
+			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
 		}
 
 		_, err = args.Dwh.Exec(sqlQuery)

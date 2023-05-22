@@ -125,31 +125,15 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
-
-	// Start temporary table creation
-	tempAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:            s,
-		Tc:             tableConfig,
-		FqTableName:    fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label()), tableData.TempTableSuffix()),
-		CreateTable:    true,
-		TemporaryTable: true,
-		ColumnOp:       constants.Add,
-	}
-
-	if err = ddl.AlterTable(ctx, tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
-		return fmt.Errorf("failed to create temp table, error: %v", err)
-	}
-	// End
-
-	err = s.loadTemporaryTable(ctx, tableData)
-	if err != nil {
-		return fmt.Errorf("failed to load temporay table, err: %v", err)
+	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label()), tableData.TempTableSuffix())
+	if err = s.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {
+		return err
 	}
 
 	// Prepare merge statement
 	mergeQuery, err := dml.MergeStatement(dml.MergeArgument{
 		FqTableName:    tableData.ToFqName(constants.Snowflake),
-		SubQuery:       tempAlterTableArgs.FqTableName,
+		SubQuery:       temporaryTableName,
 		IdempotentKey:  tableData.IdempotentKey,
 		PrimaryKeys:    tableData.PrimaryKeys,
 		Columns:        tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(),
@@ -164,7 +148,7 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
-	ddl.DropTemporaryTable(ctx, s, tempAlterTableArgs.FqTableName)
+	ddl.DropTemporaryTable(ctx, s, temporaryTableName)
 	return err
 }
 
