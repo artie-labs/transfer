@@ -16,7 +16,7 @@ func ColumnAlreadyExistErr(err error, kind constants.DestinationKind) bool {
 		// Error ends up looking like something like this: Column already exists: _string at [1:39]
 		return strings.Contains(err.Error(), "Column already exists")
 
-	case constants.Snowflake:
+	case constants.Snowflake, constants.SnowflakeStages:
 		// Snowflake doesn't have column mutations (IF NOT EXISTS)
 		return strings.Contains(err.Error(), "already exists")
 	}

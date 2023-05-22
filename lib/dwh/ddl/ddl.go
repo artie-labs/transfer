@@ -76,7 +76,7 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) e
 				expiry := time.Now().UTC().Add(constants.BigQueryTempTableTTL)
 				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
 					args.FqTableName, strings.Join(colSQLParts, ","), typing.BigQueryDate(expiry))
-			case constants.Snowflake:
+			case constants.SnowflakeStages: // Not enabled for constants.Snowflake yet
 				// https://docs.snowflake.com/en/sql-reference/sql/create-table
 				sqlQuery = fmt.Sprintf(`CREATE TEMP TABLE IF NOT EXISTS %s (%s) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' )`,
 					args.FqTableName, strings.Join(colSQLParts, ","))
