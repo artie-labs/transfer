@@ -29,6 +29,10 @@ const (
 )
 
 func (s *Store) Label() constants.DestinationKind {
+	if s.useStaging {
+		return constants.SnowflakeStages
+	}
+
 	return constants.Snowflake
 }
 

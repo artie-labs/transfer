@@ -4,6 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/logger"
+
 	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/db"
@@ -22,7 +25,11 @@ type DDLTestSuite struct {
 }
 
 func (d *DDLTestSuite) SetupTest() {
-	ctx := context.Background()
+	ctx := config.InjectSettingsIntoContext(context.Background(), &config.Settings{
+		VerboseLogging: true,
+	})
+
+	ctx = logger.InjectLoggerIntoCtx(ctx)
 	d.ctx = ctx
 
 	d.fakeBigQueryStore = &mocks.FakeStore{}
