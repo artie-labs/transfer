@@ -44,7 +44,7 @@ func InterfaceToArrayString(val interface{}) ([]string, error) {
 
 			vals = append(vals, string(bytes))
 		} else {
-			vals = append(vals, stringutil.WrapNoQuotes(value))
+			vals = append(vals, stringutil.Wrap(value, true))
 		}
 	}
 
