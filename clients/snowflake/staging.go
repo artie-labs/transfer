@@ -42,13 +42,17 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 		return fmt.Errorf("failed to load temporary table, err: %v", err)
 	}
 
-	fmt.Println("###", fmt.Sprintf("PUT file://%s @%s AUTO_COMPRESS=TRUE", fp, AddPrefixToTableName(tempTableName, "%")))
-
 	if _, err = s.Exec(fmt.Sprintf("PUT file://%s @%s AUTO_COMPRESS=TRUE", fp, AddPrefixToTableName(tempTableName, "%"))); err != nil {
 		return fmt.Errorf("failed to run PUT for temporary table, err: %v", err)
 	}
 
-	if _, err = s.Exec(fmt.Sprintf("COPY INTO %s (%s)", tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(), ","))); err != nil {
+	_, err = s.Exec(fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
+		// Copy into temporary tables (column ...)
+		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(), ","),
+		// Escaped columns, TABLE NAME
+		EscapeColumns(tableData.ReadOnlyInMemoryCols(), ","), AddPrefixToTableName(tempTableName, "%")))
+
+	if err != nil {
 		return fmt.Errorf("failed to load staging file into temporary table, err: %v", err)
 	}
 
@@ -75,7 +79,20 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 	for _, value := range tableData.RowsData() {
 		var row []string
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate() {
-			row = append(row, fmt.Sprint(value[col]))
+			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
+			colVal := value[col]
+			if colVal != nil {
+				// Check
+				castedValue, castErr := CastColValStaging(colVal, colKind)
+				if castErr != nil {
+					return "", castErr
+				}
+
+				fmt.Println("castedValue", castedValue)
+				row = append(row, castedValue)
+			} else {
+				row = append(row, "")
+			}
 		}
 
 		if err = writer.Write(row); err != nil {

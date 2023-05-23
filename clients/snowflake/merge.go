@@ -66,13 +66,13 @@ func getMergeStatement(tableData *optimization.TableData) (string, error) {
 
 					switch extTime.NestedKind.Type {
 					case ext.TimeKindType:
-						colVal = stringutil.Wrap(extTime.String(ext.PostgresTimeFormatNoTZ))
+						colVal = stringutil.Wrap(extTime.String(ext.PostgresTimeFormatNoTZ), false)
 					default:
-						colVal = stringutil.Wrap(extTime.String(""))
+						colVal = stringutil.Wrap(extTime.String(""), false)
 					}
 
 				case typing.String.Kind, typing.Struct.Kind:
-					colVal = stringutil.Wrap(colVal)
+					colVal = stringutil.Wrap(colVal, false)
 				case typing.Array.Kind:
 					// We need to marshall, so we can escape the strings.
 					// https://go.dev/play/p/BcCwUSCeTmT
@@ -81,7 +81,7 @@ func getMergeStatement(tableData *optimization.TableData) (string, error) {
 						return "", err
 					}
 
-					colVal = stringutil.Wrap(string(colValBytes))
+					colVal = stringutil.Wrap(string(colValBytes), false)
 				}
 			} else {
 				colVal = "null"

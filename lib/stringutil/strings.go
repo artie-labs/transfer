@@ -24,11 +24,17 @@ func WrapNoQuotes(colVal interface{}) string {
 	return strings.ReplaceAll(fmt.Sprint(colVal), "'", `\'`)
 }
 
-func Wrap(colVal interface{}) string {
+func Wrap(colVal interface{}, noQuotes bool) string {
+	// TODO - test
 	// Escape line breaks, JSON_PARSE does not like it.
 	colVal = strings.ReplaceAll(fmt.Sprint(colVal), `\`, `\\`)
 	// The normal string escape is to do for O'Reilly is O\\'Reilly, but Snowflake escapes via \'
+	if noQuotes {
+		return strings.ReplaceAll(fmt.Sprint(colVal), "'", `\'`)
+	}
+
 	return fmt.Sprintf("'%s'", strings.ReplaceAll(fmt.Sprint(colVal), "'", `\'`))
+
 }
 
 func Empty(vals ...string) bool {
