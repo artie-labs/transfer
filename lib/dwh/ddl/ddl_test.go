@@ -3,11 +3,10 @@ package ddl_test
 import (
 	"fmt"
 
-	"github.com/artie-labs/transfer/lib/dwh"
-	"github.com/artie-labs/transfer/lib/mocks"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/dwh"
 	"github.com/artie-labs/transfer/lib/dwh/ddl"
+	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
