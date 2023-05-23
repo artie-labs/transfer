@@ -13,6 +13,8 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
+// CastColValStaging - takes `colVal` interface{} and `colKind` typing.Column and converts the value into a string value
+// This is necessary because CSV writers require values to in `string`.
 func CastColValStaging(colVal interface{}, colKind typing.Column) (string, error) {
 	if colVal == nil {
 		return "", fmt.Errorf("colVal is nil")
