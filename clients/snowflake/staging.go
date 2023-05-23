@@ -17,13 +17,13 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 )
 
-// PrepareTemporaryTable does the following:
+// prepareTempTable does the following:
 // 1) Create the temporary table
 // 2) Load in-memory table -> CSV
 // 3) Runs PUT to upload CSV to Snowflake staging (auto-compression with GZIP)
 // 4) Runs COPY INTO with the columns specified into temporary table
 // 5) Deletes CSV generated from (2)
-func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string) error {
+func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string) error {
 	tempAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:            s,
 		Tc:             tableConfig,
@@ -162,7 +162,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 
 	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label()), tableData.TempTableSuffix())
-	if err = s.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {
+	if err = s.prepareTempTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {
 		return err
 	}
 

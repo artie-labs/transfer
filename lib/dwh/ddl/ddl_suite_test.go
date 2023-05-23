@@ -22,6 +22,9 @@ type DDLTestSuite struct {
 
 	fakeSnowflakeStore *mocks.FakeStore
 	snowflakeStore     *snowflake.Store
+
+	fakeSnowflakeStagesStore *mocks.FakeStore
+	snowflakeStagesStore     *snowflake.Store
 }
 
 func (d *DDLTestSuite) SetupTest() {
@@ -39,6 +42,10 @@ func (d *DDLTestSuite) SetupTest() {
 	d.fakeSnowflakeStore = &mocks.FakeStore{}
 	sflkStore := db.Store(d.fakeSnowflakeStore)
 	d.snowflakeStore = snowflake.LoadSnowflake(ctx, &sflkStore, false)
+
+	d.fakeSnowflakeStagesStore = &mocks.FakeStore{}
+	snowflakeStagesStore := db.Store(d.fakeSnowflakeStagesStore)
+	d.snowflakeStagesStore = snowflake.LoadSnowflake(ctx, &snowflakeStagesStore, true)
 }
 
 func TestDDLTestSuite(t *testing.T) {

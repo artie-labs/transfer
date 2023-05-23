@@ -25,6 +25,11 @@ type AlterTableArgs struct {
 }
 
 func DropTemporaryTable(ctx context.Context, dwh dwh.DataWarehouse, fqTableName string) {
+	if dwh.Label() == constants.Snowflake {
+		// Snowflake does not have this feature enabled.
+		return
+	}
+
 	if strings.Contains(fqTableName, constants.ArtiePrefix) {
 		// https://cloud.google.com/bigquery/docs/reference/standard-sql/data-definition-language#drop_table_statement
 		// https://docs.snowflake.com/en/sql-reference/sql/drop-table

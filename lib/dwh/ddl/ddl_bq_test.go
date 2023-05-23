@@ -17,32 +17,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (d *DDLTestSuite) TestDropTemporaryTable() {
-	doNotDropTables := []string{
-		"foo",
-		"bar",
-		"abcd",
-		"customers.customers",
-	}
-
-	for _, doNotDropTable := range doNotDropTables {
-		ddl.DropTemporaryTable(d.ctx, d.bigQueryStore, doNotDropTable)
-		assert.Equal(d.T(), 0, d.fakeBigQueryStore.ExecCallCount())
-	}
-
-	for index, table := range doNotDropTables {
-		fullTableName := fmt.Sprintf("%s_%s", table, constants.ArtiePrefix)
-		ddl.DropTemporaryTable(d.ctx, d.bigQueryStore, fullTableName)
-
-		count := index + 1
-		assert.Equal(d.T(), count, d.fakeBigQueryStore.ExecCallCount())
-
-		query, _ := d.fakeBigQueryStore.ExecArgsForCall(index)
-		assert.Equal(d.T(), fmt.Sprintf("DROP TABLE IF EXISTS %s", fullTableName), query)
-
-	}
-}
-
 func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	ctx := context.Background()
 	ts := time.Now()
