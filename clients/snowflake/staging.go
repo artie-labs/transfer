@@ -88,7 +88,6 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 					return "", castErr
 				}
 
-				fmt.Println("castedValue", castedValue)
 				row = append(row, castedValue)
 			} else {
 				row = append(row, "")

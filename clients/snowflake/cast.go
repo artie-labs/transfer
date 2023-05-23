@@ -42,7 +42,6 @@ func CastColValStaging(colVal interface{}, colKind typing.Column) (string, error
 				}
 			}
 
-			fmt.Println("colVal", colVal, "reflect.TypeOf(colVal).Kind()", reflect.TypeOf(colVal).Kind())
 			if reflect.TypeOf(colVal).Kind() == reflect.String {
 				colValString = stringutil.Wrap(colValString, true)
 			} else {
@@ -52,7 +51,6 @@ func CastColValStaging(colVal interface{}, colKind typing.Column) (string, error
 				}
 
 				colValString = string(colValBytes)
-				fmt.Println("or here?", colValString)
 			}
 		}
 	case typing.Array.Kind:

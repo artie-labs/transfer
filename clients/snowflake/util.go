@@ -24,9 +24,6 @@ func EscapeColumns(columns *typing.Columns, delimiter string) string {
 	var escapedCols []string
 	for index, col := range columns.GetColumnsToUpdate() {
 		colKind, _ := columns.GetColumn(col)
-
-		fmt.Println("colKind", colKind.KindDetails, "col", col)
-
 		escapedCol := fmt.Sprintf("$%d", index+1)
 		switch colKind.KindDetails {
 		case typing.Struct:
