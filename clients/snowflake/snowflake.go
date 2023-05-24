@@ -74,13 +74,8 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) er
 
 	log := logger.FromContext(ctx)
 
-	var targetColumns typing.Columns
-	if tableConfig.Columns() != nil {
-		targetColumns = *tableConfig.Columns()
-	}
-
 	// Check if all the columns exist in Snowflake
-	srcKeysMissing, targetKeysMissing := typing.Diff(*tableData.ReadOnlyInMemoryCols(), targetColumns, tableData.SoftDelete)
+	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(), tableData.SoftDelete)
 
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,

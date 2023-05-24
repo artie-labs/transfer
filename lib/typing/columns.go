@@ -13,7 +13,7 @@ type Column struct {
 
 type Columns struct {
 	columns []Column
-	sync.Mutex
+	sync.RWMutex
 }
 
 // UpsertColumn - just a wrapper around UpdateColumn and AddColumn
@@ -47,10 +47,16 @@ func (c *Columns) AddColumn(col Column) {
 		return
 	}
 
+	c.Lock()
+	defer c.Unlock()
+
 	c.columns = append(c.columns, col)
 }
 
 func (c *Columns) GetColumn(name string) (Column, bool) {
+	c.RLock()
+	c.RUnlock()
+
 	for _, column := range c.columns {
 		if column.Name == name {
 			return column, true
@@ -65,6 +71,9 @@ func (c *Columns) GetColumnsToUpdate() []string {
 	if c == nil {
 		return []string{}
 	}
+
+	c.RLock()
+	defer c.RUnlock()
 
 	var cols []string
 	for _, col := range c.columns {
@@ -83,7 +92,15 @@ func (c *Columns) GetColumns() []Column {
 		return []Column{}
 	}
 
-	return c.columns
+	c.RLock()
+	defer c.RUnlock()
+
+	var cols []Column
+	for _, col := range c.columns {
+		cols = append(cols, col)
+	}
+
+	return cols
 }
 
 func (c *Columns) UpdateColumn(updateCol Column) {
@@ -99,6 +116,9 @@ func (c *Columns) UpdateColumn(updateCol Column) {
 }
 
 func (c *Columns) DeleteColumn(name string) {
+	c.Lock()
+	defer c.Unlock()
+
 	for idx, column := range c.columns {
 		if column.Name == name {
 			c.columns = append(c.columns[:idx], c.columns[idx+1:]...)
