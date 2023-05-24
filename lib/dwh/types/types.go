@@ -10,6 +10,7 @@ type DwhToTablesConfigMap struct {
 }
 
 func (d *DwhToTablesConfigMap) TableConfig(fqName string) *DwhTableConfig {
+	// TODO test
 	d.RLock()
 	defer d.RUnlock()
 
@@ -22,12 +23,14 @@ func (d *DwhToTablesConfigMap) TableConfig(fqName string) *DwhTableConfig {
 }
 
 func (d *DwhToTablesConfigMap) RemoveTableFromConfig(fqName string) {
+	// TODO test
 	d.Lock()
 	defer d.Unlock()
 	delete(d.fqNameToDwhTableConfig, fqName)
 }
 
 func (d *DwhToTablesConfigMap) AddTableToConfig(fqName string, config *DwhTableConfig) {
+	// TODO test
 	d.Lock()
 	defer d.Unlock()
 
