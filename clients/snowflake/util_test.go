@@ -40,7 +40,7 @@ func TestAddPrefixToTableName(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		assert.Equal(t, AddPrefixToTableName(testCase.fqTableName, prefix), testCase.expectedFqTableName, testCase.name)
+		assert.Equal(t, addPrefixToTableName(testCase.fqTableName, prefix), testCase.expectedFqTableName, testCase.name)
 	}
 }
 
@@ -97,7 +97,7 @@ func TestEscapeColumns(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		actualString := EscapeColumns(testCase.cols, ",")
+		actualString := escapeColumns(testCase.cols, ",")
 		assert.Equal(t, testCase.expectedString, actualString, testCase.name)
 	}
 }

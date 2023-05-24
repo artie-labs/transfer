@@ -7,10 +7,10 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-// AddPrefixToTableName will take the fully qualified table name and add a prefix in front of the table
+// addPrefixToTableName will take the fully qualified table name and add a prefix in front of the table
 // This is necessary for `PUT` commands. The fq name looks like <namespace>.<tableName>
 // Namespace may contain both database and schema.
-func AddPrefixToTableName(fqTableName string, prefix string) string {
+func addPrefixToTableName(fqTableName string, prefix string) string {
 	tableParts := strings.Split(fqTableName, ".")
 	if len(tableParts) == 1 {
 		return prefix + fqTableName
@@ -20,9 +20,9 @@ func AddPrefixToTableName(fqTableName string, prefix string) string {
 		strings.Join(tableParts[0:len(tableParts)-1], "."), prefix, tableParts[len(tableParts)-1])
 }
 
-// EscapeColumns will take the columns that are passed in, escape them and return them in the ordered received.
+// escapeColumns will take the columns that are passed in, escape them and return them in the ordered received.
 // It'll return like this: $1, $2, $3
-func EscapeColumns(columns *typing.Columns, delimiter string) string {
+func escapeColumns(columns *typing.Columns, delimiter string) string {
 	var escapedCols []string
 	for index, col := range columns.GetColumnsToUpdate() {
 		colKind, _ := columns.GetColumn(col)

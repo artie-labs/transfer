@@ -42,7 +42,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 		return fmt.Errorf("failed to load temporary table, err: %v", err)
 	}
 
-	if _, err = s.Exec(fmt.Sprintf("PUT file://%s @%s AUTO_COMPRESS=TRUE", fp, AddPrefixToTableName(tempTableName, "%"))); err != nil {
+	if _, err = s.Exec(fmt.Sprintf("PUT file://%s @%s AUTO_COMPRESS=TRUE", fp, addPrefixToTableName(tempTableName, "%"))); err != nil {
 		return fmt.Errorf("failed to run PUT for temporary table, err: %v", err)
 	}
 
@@ -50,7 +50,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 		// Copy into temporary tables (column ...)
 		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(), ","),
 		// Escaped columns, TABLE NAME
-		EscapeColumns(tableData.ReadOnlyInMemoryCols(), ","), AddPrefixToTableName(tempTableName, "%")))
+		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableName, "%")))
 
 	if err != nil {
 		return fmt.Errorf("failed to load staging file into temporary table, err: %v", err)
