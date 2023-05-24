@@ -104,6 +104,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 }
 
 func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.TableData) error {
+	// TODO - better test coverage for `mergeWithStages`
 	if tableData.Rows() == 0 || tableData.ReadOnlyInMemoryCols() == nil {
 		// There's no rows. Let's skip.
 		return nil
@@ -191,7 +192,6 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		Columns:        tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(),
 		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:     tableData.SoftDelete,
-		BigQuery:       true,
 	})
 
 	log.WithField("query", mergeQuery).Debug("executing...")
