@@ -22,7 +22,7 @@ func shouldSkipColumn(colName string, softDelete bool) bool {
 
 // Diff - when given 2 maps, a source and target
 // It will provide a diff in the form of 2 variables
-func Diff(columnsInSource Columns, columnsInDestination Columns, softDelete bool) ([]Column, []Column) {
+func Diff(columnsInSource *Columns, columnsInDestination *Columns, softDelete bool) ([]Column, []Column) {
 	src := CloneColumns(columnsInSource)
 	targ := CloneColumns(columnsInDestination)
 	var colsToDelete []Column
@@ -61,12 +61,12 @@ func Diff(columnsInSource Columns, columnsInDestination Columns, softDelete bool
 	return sourceColumnsMissing.GetColumns(), targetColumnsMissing.GetColumns()
 }
 
-func CloneColumns(cols Columns) Columns {
+func CloneColumns(cols *Columns) *Columns {
 	var newCols Columns
 	for _, col := range cols.GetColumns() {
 		col.Name = strings.ToLower(col.Name)
 		newCols.AddColumn(col)
 	}
 
-	return newCols
+	return &newCols
 }

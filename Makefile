@@ -8,6 +8,10 @@ all:
 test:
 	go test ./...
 
+.PHONY: race
+race:
+	go test -race ./...
+
 .PHONY: clean
 clean:
 	go clean -testcache

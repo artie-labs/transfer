@@ -44,7 +44,7 @@ func generateTableData(rows int) (string, *optimization.TableData) {
 
 func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	tempTableName, tableData := generateTableData(10)
-	s.stageStore.GetConfigMap().AddTableToConfig(tempTableName, types.NewDwhTableConfig(typing.Columns{}, nil, true, true))
+	s.stageStore.GetConfigMap().AddTableToConfig(tempTableName, types.NewDwhTableConfig(&typing.Columns{}, nil, true, true))
 	sflkTc := s.stageStore.GetConfigMap().TableConfig(tempTableName)
 
 	assert.NoError(s.T(), s.stageStore.prepareTempTable(s.ctx, tableData, sflkTc, tempTableName))
@@ -70,8 +70,6 @@ func (s *SnowflakeTestSuite) TestLoadTemporaryTable() {
 	tempTableName, tableData := generateTableData(100)
 	fp, err := s.store.loadTemporaryTable(tableData, tempTableName)
 	assert.NoError(s.T(), err)
-	fmt.Println("fp", fp)
-
 	// Read the CSV and confirm.
 	csvfile, err := os.Open(fp)
 	assert.NoError(s.T(), err)

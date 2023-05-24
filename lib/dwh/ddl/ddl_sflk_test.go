@@ -30,7 +30,7 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 	}
 
 	fqTable := "shop.public.complex_columns"
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(typing.Columns{}, nil, false, true))
+	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&typing.Columns{}, nil, false, true))
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
 
 	alterTableArgs := ddl.AlterTableArgs{
@@ -70,7 +70,7 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 
 	fqTable := "shop.public.orders"
 
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(typing.Columns{}, nil, false, true))
+	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&typing.Columns{}, nil, false, true))
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
 
 	d.fakeSnowflakeStore.ExecReturns(nil, errors.New("column 'order_name' already exists"))
@@ -109,7 +109,7 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 	}
 
 	fqTable := "shop.public.orders"
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(typing.Columns{}, nil, false, true))
+	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&typing.Columns{}, nil, false, true))
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
 
 	alterTableArgs := ddl.AlterTableArgs{
@@ -158,7 +158,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	}
 
 	fqTable := "shop.public.users"
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(typing.Columns{}, nil, false, true))
+	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&typing.Columns{}, nil, false, true))
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
 	alterTableArgs := ddl.AlterTableArgs{
 		Dwh:         d.snowflakeStore,
@@ -173,7 +173,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 
 	// Check the table config
 	tableConfig := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
-	for col := range tableConfig.ColumnsToDelete() {
+	for col := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, expCol := range cols {
 			if found = col == expCol.Name; found {
@@ -183,12 +183,12 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 
 		assert.True(d.T(), found,
 			fmt.Sprintf("Col not found: %s, actual list: %v, expected list: %v",
-				col, tableConfig.ColumnsToDelete(), cols))
+				col, tableConfig.ReadOnlyColumnsToDelete(), cols))
 	}
 
 	colToActuallyDelete := cols[0].Name
 	// Now let's check the timestamp
-	assert.True(d.T(), tableConfig.ColumnsToDelete()[colToActuallyDelete].After(time.Now()))
+	assert.True(d.T(), tableConfig.ReadOnlyColumnsToDelete()[colToActuallyDelete].After(time.Now()))
 	// Now let's actually try to dial the time back, and it should actually try to delete.
 	tableConfig.AddColumnsToDelete(colToActuallyDelete, time.Now().Add(-1*time.Hour))
 
@@ -226,7 +226,7 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 
 	fqTable := "shop.public.users1"
 
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(typing.Columns{}, map[string]time.Time{
+	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&typing.Columns{}, map[string]time.Time{
 		"col_to_delete": time.Now().Add(-2 * constants.DeletionConfidencePadding),
 		"answers":       time.Now().Add(-2 * constants.DeletionConfidencePadding),
 	}, false, true))
@@ -245,7 +245,7 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 
 	// Check the table config
 	tableConfig := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
-	for col := range tableConfig.ColumnsToDelete() {
+	for col := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, expCol := range cols {
 			if found = col == expCol.Name; found {
@@ -255,6 +255,6 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 
 		assert.True(d.T(), found,
 			fmt.Sprintf("Col not found: %s, actual list: %v, expected list: %v",
-				col, tableConfig.ColumnsToDelete(), cols))
+				col, tableConfig.ReadOnlyColumnsToDelete(), cols))
 	}
 }

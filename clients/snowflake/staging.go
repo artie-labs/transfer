@@ -117,15 +117,8 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 	}
 
 	log := logger.FromContext(ctx)
-
-	var targetColumns typing.Columns
-	if tableConfig.Columns() != nil {
-		targetColumns = *tableConfig.Columns()
-	}
-
 	// Check if all the columns exist in Snowflake
-	srcKeysMissing, targetKeysMissing := typing.Diff(*tableData.ReadOnlyInMemoryCols(), targetColumns, tableData.SoftDelete)
-
+	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(), tableData.SoftDelete)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
 		Tc:          tableConfig,
@@ -162,7 +155,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 
 	// Make sure we are still trying to delete it.
 	// If not, then we should assume the column is good and then remove it from our in-mem store.
-	for colToDelete := range tableConfig.ColumnsToDelete() {
+	for colToDelete := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, col := range srcKeysMissing {
 			if found = col.Name == colToDelete; found {

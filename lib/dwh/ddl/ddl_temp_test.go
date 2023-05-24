@@ -26,7 +26,7 @@ func (d *DDLTestSuite) TestValidate_AlterTableArgs() {
 
 func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 	fqName := "mock_dataset.mock_table"
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(typing.Columns{}, nil, true, true))
+	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&typing.Columns{}, nil, true, true))
 	snowflakeTc := d.snowflakeStore.GetConfigMap().TableConfig(fqName)
 	args := ddl.AlterTableArgs{
 		Dwh:            d.snowflakeStore,
@@ -46,7 +46,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 	assert.Contains(d.T(), err.Error(), "incompatible operation - cannot drop columns and create table at the same time")
 
 	// Change it to SFLK + Stage
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(typing.Columns{}, nil, true, true))
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&typing.Columns{}, nil, true, true))
 	snowflakeStagesTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqName)
 	args.Dwh = d.snowflakeStagesStore
 	args.Tc = snowflakeStagesTc
@@ -59,7 +59,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 func (d *DDLTestSuite) TestCreateTemporaryTable() {
 	fqName := "db.schema.tempTableName"
 	// Snowflake Stage
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(typing.Columns{}, nil, true, true))
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&typing.Columns{}, nil, true, true))
 	sflkStageTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqName)
 	args := ddl.AlterTableArgs{
 		Dwh:            d.snowflakeStagesStore,
@@ -87,7 +87,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 		query)
 
 	// BigQuery
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(typing.Columns{}, nil, true, true))
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&typing.Columns{}, nil, true, true))
 	bqTc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
 	args.Dwh = d.bigQueryStore
 	args.Tc = bqTc

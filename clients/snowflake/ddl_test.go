@@ -2,10 +2,11 @@ package snowflake
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/typing/ext"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -34,7 +35,7 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 		})
 	}
 
-	config := types.NewDwhTableConfig(cols, nil, false, true)
+	config := types.NewDwhTableConfig(&cols, nil, false, true)
 
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), config)
 
@@ -47,11 +48,11 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 
 	val := tc.ShouldDeleteColumn(nameCol.Name, time.Now().Add(-1*6*time.Hour))
 	assert.False(s.T(), val, "should not try to delete this column")
-	assert.Equal(s.T(), len(s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ColumnsToDelete()), 1)
+	assert.Equal(s.T(), len(s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ReadOnlyColumnsToDelete()), 1)
 
 	// Now let's try to add this column back, it should delete it from the cache.
 	tc.MutateInMemoryColumns(false, constants.Add, nameCol)
-	assert.Equal(s.T(), len(s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ColumnsToDelete()), 0)
+	assert.Equal(s.T(), len(s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ReadOnlyColumnsToDelete()), 0)
 }
 
 func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
@@ -75,7 +76,7 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 		})
 	}
 
-	config := types.NewDwhTableConfig(cols, nil, false, true)
+	config := types.NewDwhTableConfig(&cols, nil, false, true)
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), config)
 
 	nameCol := typing.Column{
@@ -119,11 +120,11 @@ func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
 		})
 	}
 
-	tc := types.NewDwhTableConfig(cols, map[string]time.Time{
+	tc := types.NewDwhTableConfig(&cols, map[string]time.Time{
 		"customer_id": time.Now(),
 	}, false, false)
 
-	assert.Equal(s.T(), len(tc.ColumnsToDelete()), 1)
+	assert.Equal(s.T(), len(tc.ReadOnlyColumnsToDelete()), 1)
 	assert.False(s.T(), tc.ShouldDeleteColumn("customer_id", time.Now().Add(24*time.Hour)))
 }
 

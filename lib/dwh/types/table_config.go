@@ -16,17 +16,16 @@ type DwhTableConfig struct {
 
 	// Whether to drop deleted columns in the destination or not.
 	dropDeletedColumns bool
-
-	sync.Mutex
+	sync.RWMutex
 }
 
-func NewDwhTableConfig(columns typing.Columns, colsToDelete map[string]time.Time, createTable, dropDeletedColumns bool) *DwhTableConfig {
+func NewDwhTableConfig(columns *typing.Columns, colsToDelete map[string]time.Time, createTable, dropDeletedColumns bool) *DwhTableConfig {
 	if len(colsToDelete) == 0 {
 		colsToDelete = make(map[string]time.Time)
 	}
 
 	return &DwhTableConfig{
-		columns:            &columns,
+		columns:            columns,
 		columnsToDelete:    colsToDelete,
 		CreateTable:        createTable,
 		dropDeletedColumns: dropDeletedColumns,
@@ -46,10 +45,6 @@ func (tc *DwhTableConfig) Columns() *typing.Columns {
 }
 
 func (tc *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp constants.ColumnOperation, cols ...typing.Column) {
-	if tc == nil {
-		return
-	}
-
 	tc.Lock()
 	defer tc.Unlock()
 	switch columnOp {
@@ -70,15 +65,16 @@ func (tc *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp const
 	}
 }
 
-func (tc *DwhTableConfig) ColumnsToDelete() map[string]time.Time {
-	if tc == nil {
-		return nil
+// ReadOnlyColumnsToDelete returns a read only version of the columns that need to be deleted.
+func (tc *DwhTableConfig) ReadOnlyColumnsToDelete() map[string]time.Time {
+	tc.RLock()
+	defer tc.RUnlock()
+	colsToDelete := make(map[string]time.Time)
+	for k, v := range tc.columnsToDelete {
+		colsToDelete[k] = v
 	}
 
-	tc.Lock()
-	defer tc.Unlock()
-
-	return tc.columnsToDelete
+	return colsToDelete
 }
 
 func (tc *DwhTableConfig) ShouldDeleteColumn(colName string, cdcTime time.Time) bool {
@@ -92,7 +88,8 @@ func (tc *DwhTableConfig) ShouldDeleteColumn(colName string, cdcTime time.Time) 
 		return false
 	}
 
-	ts, isOk := tc.ColumnsToDelete()[colName]
+	colsToDelete := tc.ReadOnlyColumnsToDelete()
+	ts, isOk := colsToDelete[colName]
 	if isOk {
 		// If the CDC time is greater than this timestamp, then we should delete it.
 		return cdcTime.After(ts)
@@ -103,10 +100,6 @@ func (tc *DwhTableConfig) ShouldDeleteColumn(colName string, cdcTime time.Time) 
 }
 
 func (tc *DwhTableConfig) AddColumnsToDelete(colName string, ts time.Time) {
-	if tc == nil {
-		return
-	}
-
 	tc.Lock()
 	defer tc.Unlock()
 
@@ -119,10 +112,6 @@ func (tc *DwhTableConfig) AddColumnsToDelete(colName string, ts time.Time) {
 }
 
 func (tc *DwhTableConfig) ClearColumnsToDeleteByColName(colName string) {
-	if tc == nil {
-		return
-	}
-
 	tc.Lock()
 	defer tc.Unlock()
 

@@ -16,9 +16,9 @@ import (
 
 func (d *DDLTestSuite) Test_CreateTable() {
 	fqName := "mock_dataset.mock_table"
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(typing.Columns{}, nil, true, true))
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(typing.Columns{}, nil, true, true))
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(typing.Columns{}, nil, true, true))
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&typing.Columns{}, nil, true, true))
+	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&typing.Columns{}, nil, true, true))
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&typing.Columns{}, nil, true, true))
 
 	ctx := context.Background()
 
@@ -133,7 +133,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 	for index, testCase := range testCases {
 		ctx := context.Background()
 		fqTable := "demo.public.experiments"
-		d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(typing.Columns{}, nil, true, true))
+		d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&typing.Columns{}, nil, true, true))
 		tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
 
 		alterTableArgs := ddl.AlterTableArgs{
