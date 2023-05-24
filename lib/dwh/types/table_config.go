@@ -88,7 +88,8 @@ func (tc *DwhTableConfig) ShouldDeleteColumn(colName string, cdcTime time.Time) 
 		return false
 	}
 
-	ts, isOk := tc.columnsToDelete[colName]
+	colsToDelete := tc.ReadOnlyColumnsToDelete()
+	ts, isOk := colsToDelete[colName]
 	if isOk {
 		// If the CDC time is greater than this timestamp, then we should delete it.
 		return cdcTime.After(ts)
