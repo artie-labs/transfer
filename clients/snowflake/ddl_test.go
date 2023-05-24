@@ -35,7 +35,7 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 		})
 	}
 
-	config := types.NewDwhTableConfig(cols, nil, false, true)
+	config := types.NewDwhTableConfig(&cols, nil, false, true)
 
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), config)
 
@@ -76,7 +76,7 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 		})
 	}
 
-	config := types.NewDwhTableConfig(cols, nil, false, true)
+	config := types.NewDwhTableConfig(&cols, nil, false, true)
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), config)
 
 	nameCol := typing.Column{
@@ -120,7 +120,7 @@ func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
 		})
 	}
 
-	tc := types.NewDwhTableConfig(cols, map[string]time.Time{
+	tc := types.NewDwhTableConfig(&cols, map[string]time.Time{
 		"customer_id": time.Now(),
 	}, false, false)
 

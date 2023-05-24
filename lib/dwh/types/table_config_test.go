@@ -10,7 +10,7 @@ import (
 )
 
 func TestDwhTableConfig_ShouldDeleteColumn(t *testing.T) {
-	dwhTableConfig := NewDwhTableConfig(typing.Columns{}, nil, false, false)
+	dwhTableConfig := NewDwhTableConfig(&typing.Columns{}, nil, false, false)
 	results := dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC())
 	assert.False(t, results)
 	assert.Equal(t, len(dwhTableConfig.ReadOnlyColumnsToDelete()), 0)
@@ -39,7 +39,7 @@ func TestDwhTableConfig_ColumnsConcurrency(t *testing.T) {
 		KindDetails: typing.Boolean,
 	})
 
-	dwhTableCfg := NewDwhTableConfig(cols, nil, false, false)
+	dwhTableCfg := NewDwhTableConfig(&cols, nil, false, false)
 
 	var wg sync.WaitGroup
 	for i := 0; i < 5; i++ {

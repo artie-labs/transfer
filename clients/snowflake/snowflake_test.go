@@ -67,7 +67,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	}
 
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake),
-		types.NewDwhTableConfig(anotherCols, nil, false, true))
+		types.NewDwhTableConfig(&anotherCols, nil, false, true))
 
 	err := s.store.Merge(s.ctx, tableData)
 	_col, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("first_name")
@@ -115,7 +115,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 	}
 
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake),
-		types.NewDwhTableConfig(cols, nil, false, true))
+		types.NewDwhTableConfig(&cols, nil, false, true))
 
 	s.fakeStore.ExecReturnsOnCall(0, nil, fmt.Errorf("390114: Authentication token has expired. The user must authenticate again."))
 	err := s.store.Merge(s.ctx, tableData)
@@ -166,7 +166,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	}
 
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake),
-		types.NewDwhTableConfig(cols, nil, false, true))
+		types.NewDwhTableConfig(&cols, nil, false, true))
 	err := s.store.Merge(s.ctx, tableData)
 	assert.Nil(s.T(), err)
 	s.fakeStore.ExecReturns(nil, nil)
@@ -235,7 +235,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		KindDetails: typing.String,
 	})
 
-	config := types.NewDwhTableConfig(sflkCols, nil, false, true)
+	config := types.NewDwhTableConfig(&sflkCols, nil, false, true)
 	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), config)
 
 	err := s.store.Merge(s.ctx, tableData)
