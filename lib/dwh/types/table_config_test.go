@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
+
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
 )
@@ -63,4 +65,32 @@ func TestDwhTableConfig_ColumnsConcurrency(t *testing.T) {
 	}
 
 	wg.Wait()
+}
+
+func TestDwhTableConfig_MutateInMemoryColumns(t *testing.T) {
+	tc := NewDwhTableConfig(&typing.Columns{}, nil, false, false)
+	for _, col := range []string{"a", "b", "c", "d", "e"} {
+		tc.MutateInMemoryColumns(false, constants.Add, typing.Column{Name: col, KindDetails: typing.String})
+	}
+
+	assert.Equal(t, 5, len(tc.columns.GetColumns()))
+	var wg sync.WaitGroup
+	for _, addCol := range []string{"aa", "bb", "cc", "dd", "ee", "ff"} {
+		wg.Add(1)
+		go func(colName string) {
+			defer wg.Done()
+			tc.MutateInMemoryColumns(false, constants.Add, typing.Column{Name: colName, KindDetails: typing.String})
+		}(addCol)
+	}
+
+	for _, removeCol := range []string{"a", "b", "c", "d", "e"} {
+		wg.Add(1)
+		go func(colName string) {
+			defer wg.Done()
+			tc.MutateInMemoryColumns(false, constants.Delete, typing.Column{Name: colName})
+		}(removeCol)
+	}
+
+	wg.Wait()
+	assert.Equal(t, 6, len(tc.columns.GetColumns()))
 }

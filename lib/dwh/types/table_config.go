@@ -17,7 +17,7 @@ type DwhTableConfig struct {
 	// Whether to drop deleted columns in the destination or not.
 	dropDeletedColumns bool
 
-	sync.Mutex
+	sync.RWMutex
 }
 
 func NewDwhTableConfig(columns *typing.Columns, colsToDelete map[string]time.Time, createTable, dropDeletedColumns bool) *DwhTableConfig {
@@ -46,8 +46,6 @@ func (tc *DwhTableConfig) Columns() *typing.Columns {
 }
 
 func (tc *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp constants.ColumnOperation, cols ...typing.Column) {
-	// TODO test
-
 	tc.Lock()
 	defer tc.Unlock()
 	switch columnOp {
@@ -70,9 +68,8 @@ func (tc *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp const
 
 // ReadOnlyColumnsToDelete returns a read only version of the columns that need to be deleted.
 func (tc *DwhTableConfig) ReadOnlyColumnsToDelete() map[string]time.Time {
-	// TODO - test concurrency
-	tc.Lock()
-	defer tc.Unlock()
+	tc.RLock()
+	defer tc.RUnlock()
 	colsToDelete := make(map[string]time.Time)
 	for k, v := range tc.columnsToDelete {
 		colsToDelete[k] = v
@@ -116,7 +113,6 @@ func (tc *DwhTableConfig) AddColumnsToDelete(colName string, ts time.Time) {
 
 func (tc *DwhTableConfig) ClearColumnsToDeleteByColName(colName string) {
 	// TODO - test
-
 	tc.Lock()
 	defer tc.Unlock()
 
