@@ -1,5 +1,7 @@
 package typing
 
+import "sync"
+
 type Column struct {
 	Name        string
 	KindDetails KindDetails
@@ -11,6 +13,7 @@ type Column struct {
 
 type Columns struct {
 	columns []Column
+	sync.Mutex
 }
 
 // UpsertColumn - just a wrapper around UpdateColumn and AddColumn
@@ -84,6 +87,9 @@ func (c *Columns) GetColumns() []Column {
 }
 
 func (c *Columns) UpdateColumn(updateCol Column) {
+	c.Lock()
+	defer c.Unlock()
+
 	for index, col := range c.columns {
 		if col.Name == updateCol.Name {
 			c.columns[index] = updateCol

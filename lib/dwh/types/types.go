@@ -6,13 +6,12 @@ import (
 
 type DwhToTablesConfigMap struct {
 	fqNameToDwhTableConfig map[string]*DwhTableConfig
-	sync.Mutex
+	sync.RWMutex
 }
 
 func (d *DwhToTablesConfigMap) TableConfig(fqName string) *DwhTableConfig {
-	if d == nil || d.fqNameToDwhTableConfig == nil {
-		return nil
-	}
+	d.RLock()
+	defer d.RUnlock()
 
 	tableConfig, isOk := d.fqNameToDwhTableConfig[fqName]
 	if !isOk {
@@ -23,20 +22,12 @@ func (d *DwhToTablesConfigMap) TableConfig(fqName string) *DwhTableConfig {
 }
 
 func (d *DwhToTablesConfigMap) RemoveTableFromConfig(fqName string) {
-	if d == nil || d.fqNameToDwhTableConfig == nil {
-		return
-	}
-
 	d.Lock()
 	defer d.Unlock()
 	delete(d.fqNameToDwhTableConfig, fqName)
 }
 
 func (d *DwhToTablesConfigMap) AddTableToConfig(fqName string, config *DwhTableConfig) {
-	if d == nil {
-		return
-	}
-
 	d.Lock()
 	defer d.Unlock()
 
