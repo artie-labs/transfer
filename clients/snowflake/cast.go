@@ -8,7 +8,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 
-	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
@@ -31,9 +30,9 @@ func CastColValStaging(colVal interface{}, colKind typing.Column) (string, error
 
 		switch extTime.NestedKind.Type {
 		case ext.TimeKindType:
-			colValString = stringutil.Wrap(extTime.String(ext.PostgresTimeFormatNoTZ), true)
+			colValString = extTime.String(ext.PostgresTimeFormatNoTZ)
 		default:
-			colValString = stringutil.Wrap(extTime.String(""), true)
+			colValString = extTime.String("")
 		}
 
 	case typing.Struct.Kind:
@@ -44,9 +43,7 @@ func CastColValStaging(colVal interface{}, colKind typing.Column) (string, error
 				}
 			}
 
-			if reflect.TypeOf(colVal).Kind() == reflect.String {
-				colValString = stringutil.Wrap(colValString, true)
-			} else {
+			if reflect.TypeOf(colVal).Kind() != reflect.String {
 				colValBytes, err := json.Marshal(colVal)
 				if err != nil {
 					return "", err
@@ -61,7 +58,7 @@ func CastColValStaging(colVal interface{}, colKind typing.Column) (string, error
 			return "", err
 		}
 
-		colValString = stringutil.Wrap(string(colValBytes), true)
+		colValString = string(colValBytes)
 	}
 
 	return colValString, nil

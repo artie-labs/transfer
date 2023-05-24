@@ -49,7 +49,7 @@ func DropTemporaryTable(ctx context.Context, dwh dwh.DataWarehouse, fqTableName 
 func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) error {
 	// You can't DROP a column and try to create a table at the same time.
 	if args.ColumnOp == constants.Delete && args.CreateTable {
-		return fmt.Errorf("incompatiable operation - cannot drop columns and create table at the asme time, args: %v", args)
+		return fmt.Errorf("incompatible operation - cannot drop columns and create table at the same time, args: %v", args)
 	}
 
 	var mutateCol []typing.Column
@@ -84,10 +84,12 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) e
 				expiry := time.Now().UTC().Add(constants.BigQueryTempTableTTL)
 				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
 					args.FqTableName, strings.Join(colSQLParts, ","), typing.BigQueryDate(expiry))
-			case constants.SnowflakeStages: // Not enabled for constants.Snowflake yet
-				// https://docs.snowflake.com/en/sql-reference/sql/create-table
-				// TODO - Document this.
-				sqlQuery = fmt.Sprintf(`CREATE TEMP TABLE IF NOT EXISTS %s (%s) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"')`,
+			// Not enabled for constants.Snowflake yet
+			case constants.SnowflakeStages:
+				// TEMPORARY Table syntax - https://docs.snowflake.com/en/sql-reference/sql/create-table
+				// PURGE syntax - https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#purging-files-after-loading
+				// FIELD_OPTIONALLY_ENCLOSED_BY - is needed because CSV will try to escape any values that have `"`
+				sqlQuery = fmt.Sprintf(`CREATE TEMP TABLE IF NOT EXISTS %s (%s) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"')`,
 					args.FqTableName, strings.Join(colSQLParts, ","))
 			default:
 				return fmt.Errorf("unexpected dwh: %v trying to create a temporary table", args.Dwh.Label())
