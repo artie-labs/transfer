@@ -173,7 +173,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 
 	// Check the table config
 	tableConfig := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
-	for col := range tableConfig.ColumnsToDelete() {
+	for col := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, expCol := range cols {
 			if found = col == expCol.Name; found {
@@ -183,12 +183,12 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 
 		assert.True(d.T(), found,
 			fmt.Sprintf("Col not found: %s, actual list: %v, expected list: %v",
-				col, tableConfig.ColumnsToDelete(), cols))
+				col, tableConfig.ReadOnlyColumnsToDelete(), cols))
 	}
 
 	colToActuallyDelete := cols[0].Name
 	// Now let's check the timestamp
-	assert.True(d.T(), tableConfig.ColumnsToDelete()[colToActuallyDelete].After(time.Now()))
+	assert.True(d.T(), tableConfig.ReadOnlyColumnsToDelete()[colToActuallyDelete].After(time.Now()))
 	// Now let's actually try to dial the time back, and it should actually try to delete.
 	tableConfig.AddColumnsToDelete(colToActuallyDelete, time.Now().Add(-1*time.Hour))
 
@@ -245,7 +245,7 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 
 	// Check the table config
 	tableConfig := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
-	for col := range tableConfig.ColumnsToDelete() {
+	for col := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, expCol := range cols {
 			if found = col == expCol.Name; found {
@@ -255,6 +255,6 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 
 		assert.True(d.T(), found,
 			fmt.Sprintf("Col not found: %s, actual list: %v, expected list: %v",
-				col, tableConfig.ColumnsToDelete(), cols))
+				col, tableConfig.ReadOnlyColumnsToDelete(), cols))
 	}
 }

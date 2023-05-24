@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/typing"
-	"strings"
 )
 
 func (s *Store) getTableConfig(ctx context.Context, fqName string, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
@@ -78,7 +79,7 @@ func (s *Store) getTableConfig(ctx context.Context, fqName string, dropDeletedCo
 		})
 	}
 
-	sflkTableConfig := types.NewDwhTableConfig(snowflakeColumns, nil, tableMissing, dropDeletedColumns)
+	sflkTableConfig := types.NewDwhTableConfig(&snowflakeColumns, nil, tableMissing, dropDeletedColumns)
 	s.configMap.AddTableToConfig(fqName, sflkTableConfig)
 
 	return sflkTableConfig, nil

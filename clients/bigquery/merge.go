@@ -109,7 +109,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	// Make sure we are still trying to delete it.
 	// If not, then we should assume the column is good and then remove it from our in-mem store.
-	for colToDelete := range tableConfig.ColumnsToDelete() {
+	for colToDelete := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, col := range srcKeysMissing {
 			if found = col.Name == colToDelete; found {
