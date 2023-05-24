@@ -184,7 +184,6 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		Schema:    "public",
 	}
 
-	defer s.store.configMap.RemoveTableFromConfig(topicConfig.ToFqName(constants.Snowflake))
 	rowsData := make(map[string]map[string]interface{})
 	for i := 0; i < 5; i++ {
 		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]interface{}{

@@ -39,10 +39,6 @@ func TestDwhToTablesConfigMap_TableConfigBasic(t *testing.T) {
 	fqName := "database.schema.tableName"
 	dwh.AddTableToConfig(fqName, dwhTableConfig)
 	assert.Equal(t, *dwhTableConfig, *dwh.TableConfig(fqName))
-
-	dwh.RemoveTableFromConfig(fqName)
-	assert.Nil(t, dwh.TableConfig(fqName))
-	dwh.RemoveTableFromConfig("non_existent_name")
 }
 
 // TestDwhToTablesConfigMap_Concurrency - has a bunch of concurrent go-routines that are rapidly adding and reading from the tableConfig.
