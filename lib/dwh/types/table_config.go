@@ -46,6 +46,8 @@ func (tc *DwhTableConfig) Columns() *typing.Columns {
 }
 
 func (tc *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp constants.ColumnOperation, cols ...typing.Column) {
+	// TODO test
+
 	tc.Lock()
 	defer tc.Unlock()
 	switch columnOp {
@@ -68,6 +70,7 @@ func (tc *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp const
 
 // ReadOnlyColumnsToDelete returns a read only version of the columns that need to be deleted.
 func (tc *DwhTableConfig) ReadOnlyColumnsToDelete() map[string]time.Time {
+	// TODO - test concurrency
 	tc.Lock()
 	defer tc.Unlock()
 	colsToDelete := make(map[string]time.Time)
@@ -112,6 +115,8 @@ func (tc *DwhTableConfig) AddColumnsToDelete(colName string, ts time.Time) {
 }
 
 func (tc *DwhTableConfig) ClearColumnsToDeleteByColName(colName string) {
+	// TODO - test
+
 	tc.Lock()
 	defer tc.Unlock()
 

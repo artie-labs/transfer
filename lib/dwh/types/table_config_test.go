@@ -62,5 +62,5 @@ func TestDwhTableConfig_ColumnsConcurrency(t *testing.T) {
 		}(dwhTableCfg)
 	}
 
-	wg.Done()
+	wg.Wait()
 }
