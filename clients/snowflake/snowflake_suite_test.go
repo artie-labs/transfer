@@ -2,8 +2,9 @@ package snowflake
 
 import (
 	"context"
-	"github.com/artie-labs/transfer/lib/config"
 	"testing"
+
+	"github.com/artie-labs/transfer/lib/config"
 
 	"github.com/stretchr/testify/suite"
 
@@ -13,9 +14,11 @@ import (
 
 type SnowflakeTestSuite struct {
 	suite.Suite
-	fakeStore *mocks.FakeStore
-	store     *Store
-	ctx       context.Context
+	fakeStore      *mocks.FakeStore
+	fakeStageStore *mocks.FakeStore
+	store          *Store
+	stageStore     *Store
+	ctx            context.Context
 }
 
 func (s *SnowflakeTestSuite) SetupTest() {
@@ -25,7 +28,11 @@ func (s *SnowflakeTestSuite) SetupTest() {
 
 	s.fakeStore = &mocks.FakeStore{}
 	store := db.Store(s.fakeStore)
-	s.store = LoadSnowflake(s.ctx, &store)
+	s.store = LoadSnowflake(s.ctx, &store, false)
+
+	s.fakeStageStore = &mocks.FakeStore{}
+	stageStore := db.Store(s.fakeStageStore)
+	s.stageStore = LoadSnowflake(s.ctx, &stageStore, true)
 
 }
 

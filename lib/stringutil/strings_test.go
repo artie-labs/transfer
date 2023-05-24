@@ -1,20 +1,78 @@
 package stringutil
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
+
+func TestWrap(t *testing.T) {
+	type _testCase struct {
+		name           string
+		colVal         interface{}
+		noQuotes       bool
+		expectedString string
+	}
+
+	testCases := []_testCase{
+		{
+			name:           "string",
+			colVal:         "hello",
+			expectedString: "'hello'",
+		},
+		{
+			name:           "string (no quotes)",
+			colVal:         "hello",
+			noQuotes:       true,
+			expectedString: "hello",
+		},
+		{
+			name:           "string that requires escaping",
+			colVal:         "bobby o'reilly",
+			expectedString: `'bobby o\'reilly'`,
+		},
+		{
+			name:           "string that requires escaping (no quotes)",
+			colVal:         "bobby o'reilly",
+			expectedString: `bobby o\'reilly`,
+			noQuotes:       true,
+		},
+		{
+			name:           "string with line breaks",
+			colVal:         "line1 \n line 2",
+			expectedString: "'line1 \n line 2'",
+		},
+		{
+			name:           "string with line breaks (no quotes)",
+			colVal:         "line1 \n line 2",
+			expectedString: "line1 \n line 2",
+			noQuotes:       true,
+		},
+		{
+			name:           "string with existing backslash",
+			colVal:         `hello \ there \ hh`,
+			expectedString: `'hello \\ there \\ hh'`,
+		},
+		{
+			name:           "string with existing backslash (no quotes)",
+			colVal:         `hello \ there \ hh`,
+			expectedString: `hello \\ there \\ hh`,
+			noQuotes:       true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		assert.Equal(t, testCase.expectedString, Wrap(testCase.colVal, testCase.noQuotes), testCase.name)
+	}
+}
 
 func TestReverse(t *testing.T) {
 	val := "hello"
 	assert.Equal(t, Reverse(val), "olleh")
 
 	assert.Equal(t, Reverse("alone"), "enola")
-}
 
-func TestReverseComplex(t *testing.T) {
-	val := "foo12345k321k3okldsadsa"
-
+	val = "foo12345k321k3okldsadsa"
 	assert.Equal(t, Reverse(val), Reverse(Reverse(Reverse(val))))
 	assert.Equal(t, val, Reverse(Reverse(val)))
 }

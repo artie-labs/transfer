@@ -18,6 +18,8 @@ type Store struct {
 	db.Store
 	testDB    bool // Used for testing
 	configMap *types.DwhToTablesConfigMap
+
+	useStaging bool
 }
 
 const (
@@ -27,6 +29,10 @@ const (
 )
 
 func (s *Store) Label() constants.DestinationKind {
+	if s.useStaging {
+		return constants.SnowflakeStages
+	}
+
 	return constants.Snowflake
 }
 
@@ -39,7 +45,13 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
-	err := s.merge(ctx, tableData)
+	var err error
+	if s.useStaging {
+		err = s.mergeWithStages(ctx, tableData)
+	} else {
+		err = s.merge(ctx, tableData)
+	}
+
 	if AuthenticationExpirationErr(err) {
 		logger.FromContext(ctx).WithError(err).Warn("authentication has expired, will reload the Snowflake store")
 		s.ReestablishConnection(ctx)
@@ -164,18 +176,20 @@ func (s *Store) ReestablishConnection(ctx context.Context) {
 	return
 }
 
-func LoadSnowflake(ctx context.Context, _store *db.Store) *Store {
+func LoadSnowflake(ctx context.Context, _store *db.Store, stages bool) *Store {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			testDB:    true,
-			Store:     *_store,
-			configMap: &types.DwhToTablesConfigMap{},
+			testDB:     true,
+			Store:      *_store,
+			configMap:  &types.DwhToTablesConfigMap{},
+			useStaging: stages,
 		}
 	}
 
 	s := &Store{
-		configMap: &types.DwhToTablesConfigMap{},
+		configMap:  &types.DwhToTablesConfigMap{},
+		useStaging: stages,
 	}
 
 	s.ReestablishConnection(ctx)

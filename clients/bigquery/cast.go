@@ -31,6 +31,7 @@ func CastColVal(colVal interface{}, colKind typing.Column) (interface{}, error) 
 				colVal = extTime.String(typing.StreamingTimeFormat)
 			}
 		// All the other types do not need string wrapping.
+		// TODO - what does typing.String.Kind do?
 		case typing.String.Kind, typing.Struct.Kind:
 			if colKind.KindDetails == typing.Struct {
 				if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {

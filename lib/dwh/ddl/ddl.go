@@ -13,6 +13,28 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
+// DropTemporaryTable - this will drop the temporary table from Snowflake w/ stages and BigQuery
+// It has a safety check to make sure the tableName contains the `constants.ArtiePrefix` key.
+// Temporary tables look like this: database.schema.tableName__artie__RANDOM_STRING(10)
+func DropTemporaryTable(ctx context.Context, dwh dwh.DataWarehouse, fqTableName string) {
+	if dwh.Label() == constants.Snowflake {
+		// Snowflake does not have this feature enabled.
+		return
+	}
+
+	if strings.Contains(fqTableName, constants.ArtiePrefix) {
+		// https://cloud.google.com/bigquery/docs/reference/standard-sql/data-definition-language#drop_table_statement
+		// https://docs.snowflake.com/en/sql-reference/sql/drop-table
+		_, err := dwh.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", fqTableName))
+		if err != nil {
+			logger.FromContext(ctx).WithError(err).Warn("failed to drop temporary table, it will get garbage collected by the TTL...")
+		}
+	} else {
+		logger.FromContext(ctx).Warn(fmt.Sprintf("skipped dropping table: %s because it does not contain the artie prefix", fqTableName))
+	}
+	return
+}
+
 type AlterTableArgs struct {
 	Dwh            dwh.DataWarehouse
 	Tc             *types.DwhTableConfig
@@ -24,21 +46,25 @@ type AlterTableArgs struct {
 	CdcTime time.Time
 }
 
-func DropTemporaryTable(ctx context.Context, dwh dwh.DataWarehouse, fqTableName string) {
-	if strings.Contains(fqTableName, constants.ArtiePrefix) {
-		// https://cloud.google.com/bigquery/docs/reference/standard-sql/data-definition-language#drop_table_statement
-		_, err := dwh.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", fqTableName))
-		if err != nil {
-			logger.FromContext(ctx).WithError(err).Warn("failed to drop temporary table, it will get garbage collected by the TTL...")
+func (a *AlterTableArgs) Validate() error {
+	// You can't DROP a column and try to create a table at the same time.
+	if a.ColumnOp == constants.Delete && a.CreateTable {
+		return fmt.Errorf("incompatible operation - cannot drop columns and create table at the same time")
+	}
+
+	// Temporary tables should only be created, not altered.
+	if a.TemporaryTable {
+		if !a.CreateTable {
+			return fmt.Errorf("incompatible operation - we should not be altering temporary tables, only create")
 		}
 	}
-	return
+
+	return nil
 }
 
 func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) error {
-	// You can't DROP a column and try to create a table at the same time.
-	if args.ColumnOp == constants.Delete && args.CreateTable {
-		return fmt.Errorf("incompatiable operation - cannot drop columns and create table at the asme time, args: %v", args)
+	if err := args.Validate(); err != nil {
+		return err
 	}
 
 	var mutateCol []typing.Column
@@ -68,13 +94,21 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) e
 	if args.CreateTable {
 		var sqlQuery string
 		if args.TemporaryTable {
-			// Snowflake has this feature too, but we don't need it as our CTE approach with Snowflake is extremely performant.
-			if args.Dwh.Label() != constants.BigQuery {
-				return fmt.Errorf("unexpected temporary table for destination: %v", args.Dwh.Label())
+			switch args.Dwh.Label() {
+			case constants.BigQuery:
+				expiry := time.Now().UTC().Add(constants.BigQueryTempTableTTL)
+				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
+					args.FqTableName, strings.Join(colSQLParts, ","), typing.BigQueryDate(expiry))
+			// Not enabled for constants.Snowflake yet
+			case constants.SnowflakeStages:
+				// TEMPORARY Table syntax - https://docs.snowflake.com/en/sql-reference/sql/create-table
+				// PURGE syntax - https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#purging-files-after-loading
+				// FIELD_OPTIONALLY_ENCLOSED_BY - is needed because CSV will try to escape any values that have `"`
+				sqlQuery = fmt.Sprintf(`CREATE TEMP TABLE IF NOT EXISTS %s (%s) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"')`,
+					args.FqTableName, strings.Join(colSQLParts, ","))
+			default:
+				return fmt.Errorf("unexpected dwh: %v trying to create a temporary table", args.Dwh.Label())
 			}
-			expiry := time.Now().UTC().Add(constants.BigQueryTempTableTTL)
-			sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
-				args.FqTableName, strings.Join(colSQLParts, ","), typing.BigQueryDate(expiry))
 		} else {
 			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
 		}

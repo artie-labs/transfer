@@ -43,14 +43,16 @@ const (
 type DestinationKind string
 
 const (
-	Snowflake DestinationKind = "snowflake"
-	Test      DestinationKind = "test"
-	BigQuery  DestinationKind = "bigquery"
+	SnowflakeStages DestinationKind = "snowflake_stage"
+	Snowflake       DestinationKind = "snowflake"
+	Test            DestinationKind = "test"
+	BigQuery        DestinationKind = "bigquery"
 )
 
 var validDestinations = []DestinationKind{
 	BigQuery,
 	Snowflake,
+	SnowflakeStages,
 	Test,
 }
 

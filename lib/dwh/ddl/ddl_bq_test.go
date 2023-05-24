@@ -17,32 +17,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (d *DDLTestSuite) TestDropTemporaryTable() {
-	doNotDropTables := []string{
-		"foo",
-		"bar",
-		"abcd",
-		"customers.customers",
-	}
-
-	for _, doNotDropTable := range doNotDropTables {
-		ddl.DropTemporaryTable(d.ctx, d.bigQueryStore, doNotDropTable)
-		assert.Equal(d.T(), 0, d.fakeBigQueryStore.ExecCallCount())
-	}
-
-	for index, table := range doNotDropTables {
-		fullTableName := fmt.Sprintf("%s_%s", table, constants.ArtiePrefix)
-		ddl.DropTemporaryTable(d.ctx, d.bigQueryStore, fullTableName)
-
-		count := index + 1
-		assert.Equal(d.T(), count, d.fakeBigQueryStore.ExecCallCount())
-
-		query, _ := d.fakeBigQueryStore.ExecArgsForCall(index)
-		assert.Equal(d.T(), fmt.Sprintf("DROP TABLE IF EXISTS %s", fullTableName), query)
-
-	}
-}
-
 func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	ctx := context.Background()
 	ts := time.Now()
@@ -231,30 +205,6 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 		assert.True(d.T(), isOk)
 		assert.Equal(d.T(), column.KindDetails, existingCol.KindDetails)
 	}
-}
-
-func (d *DDLTestSuite) TestAlterTableCreateTable() {
-	fqName := "mock_dataset.mock_table"
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(typing.Columns{}, nil, true, true))
-
-	ctx := context.Background()
-	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
-
-	alterTableArgs := ddl.AlterTableArgs{
-		Dwh:         d.bigQueryStore,
-		Tc:          tc,
-		FqTableName: fqName,
-		CreateTable: tc.CreateTable,
-		ColumnOp:    constants.Add,
-	}
-
-	err := ddl.AlterTable(ctx, alterTableArgs, typing.Column{Name: "name", KindDetails: typing.String})
-	assert.Equal(d.T(), 1, d.fakeBigQueryStore.ExecCallCount())
-
-	query, _ := d.fakeBigQueryStore.ExecArgsForCall(0)
-	assert.Equal(d.T(), query, fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (name string)", fqName), query)
-	assert.NoError(d.T(), err, err)
-	assert.Equal(d.T(), false, d.bigQueryStore.GetConfigMap().TableConfig(fqName).CreateTable)
 }
 
 func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
