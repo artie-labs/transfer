@@ -13,17 +13,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-type AlterTableArgs struct {
-	Dwh            dwh.DataWarehouse
-	Tc             *types.DwhTableConfig
-	FqTableName    string
-	CreateTable    bool
-	TemporaryTable bool
-	ColumnOp       constants.ColumnOperation
-
-	CdcTime time.Time
-}
-
 // DropTemporaryTable - this will drop the temporary table from Snowflake w/ stages and BigQuery
 // It has a safety check to make sure the tableName contains the `constants.ArtiePrefix` key.
 // Temporary tables look like this: database.schema.tableName__artie__RANDOM_STRING(10)
@@ -46,10 +35,36 @@ func DropTemporaryTable(ctx context.Context, dwh dwh.DataWarehouse, fqTableName 
 	return
 }
 
-func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) error {
+type AlterTableArgs struct {
+	Dwh            dwh.DataWarehouse
+	Tc             *types.DwhTableConfig
+	FqTableName    string
+	CreateTable    bool
+	TemporaryTable bool
+	ColumnOp       constants.ColumnOperation
+
+	CdcTime time.Time
+}
+
+func (a *AlterTableArgs) Validate() error {
 	// You can't DROP a column and try to create a table at the same time.
-	if args.ColumnOp == constants.Delete && args.CreateTable {
-		return fmt.Errorf("incompatible operation - cannot drop columns and create table at the same time, args: %v", args)
+	if a.ColumnOp == constants.Delete && a.CreateTable {
+		return fmt.Errorf("incompatible operation - cannot drop columns and create table at the same time")
+	}
+
+	// Temporary tables should only be created, not altered.
+	if a.TemporaryTable {
+		if !a.CreateTable {
+			return fmt.Errorf("incompatible operation - we should not be altering temporary tables, only create")
+		}
+	}
+
+	return nil
+}
+
+func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) error {
+	if err := args.Validate(); err != nil {
+		return err
 	}
 
 	var mutateCol []typing.Column
