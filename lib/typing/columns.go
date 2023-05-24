@@ -55,7 +55,7 @@ func (c *Columns) AddColumn(col Column) {
 
 func (c *Columns) GetColumn(name string) (Column, bool) {
 	c.RLock()
-	c.RUnlock()
+	defer c.RUnlock()
 
 	for _, column := range c.columns {
 		if column.Name == name {
