@@ -30,7 +30,6 @@ func evaluateTestCase(t *testing.T, testCase _testCase) {
 		assert.NoError(t, actualErr, testCase.name)
 	}
 
-	fmt.Println("actualString", actualString, testCase.name)
 	assert.Equal(t, testCase.expectedString, actualString, testCase.name)
 }
 
