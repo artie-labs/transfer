@@ -26,34 +26,71 @@ func TestShouldSkipColumn(t *testing.T) {
 	for col, expected := range colsToExpectation {
 		assert.Equal(t, shouldSkipColumn(col, true), expected)
 	}
-
 }
 
-func TestDiffTargNil(t *testing.T) {
-	var sourceCols Columns
-	var targCols Columns
+func TestDiff_VariousNils(t *testing.T) {
+	type _testCase struct {
+		name       string
+		sourceCols *Columns
+		targCols   *Columns
 
-	sourceCols.AddColumn(Column{
+		expectedSrcKeyLength  int
+		expectedTargKeyLength int
+	}
+
+	var sourceColsNotNil Columns
+	var targColsNotNil Columns
+	sourceColsNotNil.AddColumn(Column{
 		Name:        "foo",
 		KindDetails: Invalid,
 	})
-	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targCols, false)
-	assert.Equal(t, len(srcKeyMissing), 0)
-	assert.Equal(t, len(targKeyMissing), 1)
-}
-
-func TestDiffSourceNil(t *testing.T) {
-	var sourceCols Columns
-	var targCols Columns
-
-	targCols.AddColumn(Column{
+	targColsNotNil.AddColumn(Column{
 		Name:        "foo",
 		KindDetails: Invalid,
 	})
 
-	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targCols, false)
-	assert.Equal(t, len(srcKeyMissing), 1)
-	assert.Equal(t, len(targKeyMissing), 0)
+	testCases := []_testCase{
+		{
+			name:       "both &Columns{}",
+			sourceCols: &Columns{},
+			targCols:   &Columns{},
+		},
+		{
+			name:                  "only targ is &Columns{}",
+			sourceCols:            &sourceColsNotNil,
+			targCols:              &Columns{},
+			expectedTargKeyLength: 1,
+		},
+		{
+			name:                 "only source is &Columns{}",
+			sourceCols:           &Columns{},
+			targCols:             &targColsNotNil,
+			expectedSrcKeyLength: 1,
+		},
+		{
+			name:       "both nil",
+			sourceCols: nil,
+			targCols:   nil,
+		},
+		{
+			name:                  "only targ is nil",
+			sourceCols:            &sourceColsNotNil,
+			targCols:              nil,
+			expectedTargKeyLength: 1,
+		},
+		{
+			name:                 "only source is nil",
+			sourceCols:           nil,
+			targCols:             &targColsNotNil,
+			expectedSrcKeyLength: 1,
+		},
+	}
+
+	for _, testCase := range testCases {
+		actualSrcKeysMissing, actualTargKeysMissing := Diff(testCase.sourceCols, testCase.targCols, false)
+		assert.Equal(t, testCase.expectedSrcKeyLength, len(actualSrcKeysMissing), testCase.name)
+		assert.Equal(t, testCase.expectedTargKeyLength, len(actualTargKeysMissing), testCase.name)
+	}
 }
 
 func TestDiffBasic(t *testing.T) {
@@ -188,4 +225,39 @@ func TestCopyColMap(t *testing.T) {
 	//Delete a row from copiedCols
 	copiedCols.columns = append(copiedCols.columns[1:])
 	assert.NotEqual(t, *copiedCols, cols)
+}
+
+func TestCloneColumns(t *testing.T) {
+	type _testCase struct {
+		name         string
+		cols         *Columns
+		expectedCols *Columns
+	}
+
+	var cols Columns
+	cols.AddColumn(Column{Name: "foo", KindDetails: String})
+	cols.AddColumn(Column{Name: "bar", KindDetails: String})
+	cols.AddColumn(Column{Name: "xyz", KindDetails: String})
+	cols.AddColumn(Column{Name: "abc", KindDetails: String})
+	testCases := []_testCase{
+		{
+			name:         "nil col",
+			expectedCols: &Columns{},
+		},
+		{
+			name:         "&Columns{}",
+			cols:         &Columns{},
+			expectedCols: &Columns{},
+		},
+		{
+			name:         "copying columns",
+			cols:         &cols,
+			expectedCols: &cols,
+		},
+	}
+
+	for _, testCase := range testCases {
+		actualCols := CloneColumns(testCase.cols)
+		assert.Equal(t, *testCase.expectedCols, *actualCols, testCase.name)
+	}
 }

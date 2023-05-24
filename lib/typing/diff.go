@@ -62,7 +62,6 @@ func Diff(columnsInSource *Columns, columnsInDestination *Columns, softDelete bo
 }
 
 func CloneColumns(cols *Columns) *Columns {
-	// TODO test nil
 	var newCols Columns
 	for _, col := range cols.GetColumns() {
 		col.Name = strings.ToLower(col.Name)
