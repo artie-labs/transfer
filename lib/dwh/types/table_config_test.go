@@ -1,9 +1,12 @@
 package types
 
 import (
+	"fmt"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/jitter"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 
@@ -93,4 +96,50 @@ func TestDwhTableConfig_MutateInMemoryColumns(t *testing.T) {
 
 	wg.Wait()
 	assert.Equal(t, 6, len(tc.columns.GetColumns()))
+}
+
+func TestDwhTableConfig_ReadOnlyColumnsToDelete(t *testing.T) {
+	colsToDelete := make(map[string]time.Time)
+	for _, colToDelete := range []string{"a", "b", "c", "d"} {
+		colsToDelete[colToDelete] = time.Now()
+	}
+
+	tc := NewDwhTableConfig(nil, colsToDelete, false, false)
+	var wg sync.WaitGroup
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		go func() {
+			time.Sleep(time.Duration(jitter.JitterMs(50, 1)) * time.Millisecond)
+			defer wg.Done()
+			actualColsToDelete := tc.ReadOnlyColumnsToDelete()
+			assert.Equal(t, colsToDelete, actualColsToDelete)
+		}()
+	}
+	wg.Wait()
+}
+
+func TestDwhTableConfig_ClearColumnsToDeleteByColName(t *testing.T) {
+	colsToDelete := make(map[string]time.Time)
+	for _, colToDelete := range []string{"a", "b", "c", "d"} {
+		colsToDelete[colToDelete] = time.Now()
+	}
+
+	tc := NewDwhTableConfig(nil, colsToDelete, false, false)
+	var wg sync.WaitGroup
+
+	assert.Equal(t, 4, len(tc.columnsToDelete))
+	for colToDelete := range tc.columnsToDelete {
+		fmt.Println("deleting col", colToDelete)
+		for i := 0; i < 100; i++ {
+			wg.Add(1)
+			go func(colName string) {
+				time.Sleep(time.Duration(jitter.JitterMs(50, 1)) * time.Millisecond)
+				defer wg.Done()
+				tc.ClearColumnsToDeleteByColName(colName)
+			}(colToDelete)
+		}
+	}
+
+	wg.Wait()
+	assert.Equal(t, 0, len(tc.columnsToDelete))
 }

@@ -16,7 +16,6 @@ type DwhTableConfig struct {
 
 	// Whether to drop deleted columns in the destination or not.
 	dropDeletedColumns bool
-
 	sync.RWMutex
 }
 
@@ -112,7 +111,6 @@ func (tc *DwhTableConfig) AddColumnsToDelete(colName string, ts time.Time) {
 }
 
 func (tc *DwhTableConfig) ClearColumnsToDeleteByColName(colName string) {
-	// TODO - test
 	tc.Lock()
 	defer tc.Unlock()
 
