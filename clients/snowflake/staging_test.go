@@ -70,8 +70,6 @@ func (s *SnowflakeTestSuite) TestLoadTemporaryTable() {
 	tempTableName, tableData := generateTableData(100)
 	fp, err := s.store.loadTemporaryTable(tableData, tempTableName)
 	assert.NoError(s.T(), err)
-	fmt.Println("fp", fp)
-
 	// Read the CSV and confirm.
 	csvfile, err := os.Open(fp)
 	assert.NoError(s.T(), err)

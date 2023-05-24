@@ -1,7 +1,6 @@
 package types
 
 import (
-	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -126,10 +125,8 @@ func TestDwhTableConfig_ClearColumnsToDeleteByColName(t *testing.T) {
 
 	tc := NewDwhTableConfig(nil, colsToDelete, false, false)
 	var wg sync.WaitGroup
-
 	assert.Equal(t, 4, len(tc.columnsToDelete))
-	for colToDelete := range tc.columnsToDelete {
-		fmt.Println("deleting col", colToDelete)
+	for _, colToDelete := range []string{"a", "b", "c", "d"} {
 		for i := 0; i < 100; i++ {
 			wg.Add(1)
 			go func(colName string) {
