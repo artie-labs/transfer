@@ -123,7 +123,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		Dwh:         s,
 		Tc:          tableConfig,
 		FqTableName: fqName,
-		CreateTable: tableConfig.CreateTable,
+		CreateTable: tableConfig.CreateTable(),
 		ColumnOp:    constants.Add,
 		CdcTime:     tableData.LatestCDCTs,
 	}

@@ -54,7 +54,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 			Dwh:         d.bigQueryStore,
 			Tc:          tc,
 			FqTableName: fqName,
-			CreateTable: tc.CreateTable,
+			CreateTable: tc.CreateTable(),
 			ColumnOp:    constants.Delete,
 			CdcTime:     ts,
 		}
@@ -75,7 +75,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 			Dwh:         d.bigQueryStore,
 			Tc:          tc,
 			FqTableName: fqName,
-			CreateTable: tc.CreateTable,
+			CreateTable: tc.CreateTable(),
 			ColumnOp:    constants.Delete,
 			CdcTime:     ts.Add(2 * constants.DeletionConfidencePadding),
 		}
@@ -130,7 +130,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 			Dwh:         d.bigQueryStore,
 			Tc:          tc,
 			FqTableName: fqName,
-			CreateTable: tc.CreateTable,
+			CreateTable: tc.CreateTable(),
 			ColumnOp:    constants.Add,
 			CdcTime:     ts,
 		}
@@ -186,7 +186,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 			Dwh:         d.bigQueryStore,
 			Tc:          tc,
 			FqTableName: fqName,
-			CreateTable: tc.CreateTable,
+			CreateTable: tc.CreateTable(),
 			ColumnOp:    constants.Add,
 			CdcTime:     ts,
 		}
@@ -241,7 +241,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 			Dwh:         d.bigQueryStore,
 			Tc:          tc,
 			FqTableName: fqName,
-			CreateTable: tc.CreateTable,
+			CreateTable: tc.CreateTable(),
 			ColumnOp:    constants.Delete,
 			CdcTime:     ts,
 		}
@@ -258,7 +258,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 			Dwh:         d.bigQueryStore,
 			Tc:          tc,
 			FqTableName: fqName,
-			CreateTable: tc.CreateTable,
+			CreateTable: tc.CreateTable(),
 			ColumnOp:    constants.Delete,
 			CdcTime:     ts.Add(2 * constants.DeletionConfidencePadding),
 		}
