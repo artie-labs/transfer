@@ -33,6 +33,9 @@ func NewDwhTableConfig(columns *typing.Columns, colsToDelete map[string]time.Tim
 }
 
 func (tc *DwhTableConfig) DropDeletedColumns() bool {
+	tc.RLock()
+	defer tc.RUnlock()
+
 	return tc.dropDeletedColumns
 }
 
