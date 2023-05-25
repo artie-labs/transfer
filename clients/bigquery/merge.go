@@ -71,7 +71,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		Dwh:         s,
 		Tc:          tableConfig,
 		FqTableName: tableData.ToFqName(s.Label()),
-		CreateTable: tableConfig.CreateTable,
+		CreateTable: tableConfig.CreateTable(),
 		ColumnOp:    constants.Add,
 		CdcTime:     tableData.LatestCDCTs,
 	}

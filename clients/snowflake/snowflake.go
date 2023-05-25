@@ -80,7 +80,7 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) er
 		Dwh:         s,
 		Tc:          tableConfig,
 		FqTableName: fqName,
-		CreateTable: tableConfig.CreateTable,
+		CreateTable: tableConfig.CreateTable(),
 		ColumnOp:    constants.Add,
 		CdcTime:     tableData.LatestCDCTs,
 	}

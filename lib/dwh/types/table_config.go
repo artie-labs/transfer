@@ -12,7 +12,7 @@ type DwhTableConfig struct {
 	// Making these private variables to avoid concurrent R/W panics.
 	columns         *typing.Columns
 	columnsToDelete map[string]time.Time // column --> when to delete
-	CreateTable     bool
+	createTable     bool
 
 	// Whether to drop deleted columns in the destination or not.
 	dropDeletedColumns bool
@@ -27,12 +27,22 @@ func NewDwhTableConfig(columns *typing.Columns, colsToDelete map[string]time.Tim
 	return &DwhTableConfig{
 		columns:            columns,
 		columnsToDelete:    colsToDelete,
-		CreateTable:        createTable,
+		createTable:        createTable,
 		dropDeletedColumns: dropDeletedColumns,
 	}
 }
 
+func (tc *DwhTableConfig) CreateTable() bool {
+	tc.RLock()
+	defer tc.RUnlock()
+
+	return tc.createTable
+}
+
 func (tc *DwhTableConfig) DropDeletedColumns() bool {
+	tc.RLock()
+	defer tc.RUnlock()
+
 	return tc.dropDeletedColumns
 }
 
@@ -55,7 +65,7 @@ func (tc *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp const
 			delete(tc.columnsToDelete, col.Name)
 		}
 
-		tc.CreateTable = createTable
+		tc.createTable = createTable
 	case constants.Delete:
 		for _, col := range cols {
 			// Delete from the permissions and in-memory table

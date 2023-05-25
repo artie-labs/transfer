@@ -137,7 +137,7 @@ func (s *SnowflakeTestSuite) TestGetTableConfig() {
 	assert.NotNil(s.T(), tableConfig, "config is nil")
 	assert.NoError(s.T(), err)
 
-	assert.True(s.T(), tableConfig.CreateTable)
+	assert.True(s.T(), tableConfig.CreateTable())
 	assert.Equal(s.T(), len(tableConfig.Columns().GetColumns()), 0)
 	assert.False(s.T(), tableConfig.DropDeletedColumns())
 }

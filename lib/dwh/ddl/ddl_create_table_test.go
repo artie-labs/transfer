@@ -53,7 +53,7 @@ func (d *DDLTestSuite) Test_CreateTable() {
 			Dwh:         dwhTc._dwh,
 			Tc:          dwhTc._tableConfig,
 			FqTableName: fqName,
-			CreateTable: dwhTc._tableConfig.CreateTable,
+			CreateTable: dwhTc._tableConfig.CreateTable(),
 			ColumnOp:    constants.Add,
 		}
 
@@ -63,7 +63,7 @@ func (d *DDLTestSuite) Test_CreateTable() {
 		query, _ := dwhTc._fakeStore.ExecArgsForCall(0)
 		assert.Equal(d.T(), query, fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (name string)", fqName), query)
 		assert.NoError(d.T(), err, err)
-		assert.Equal(d.T(), false, dwhTc._tableConfig.CreateTable)
+		assert.Equal(d.T(), false, dwhTc._tableConfig.CreateTable())
 	}
 }
 
@@ -140,7 +140,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 			Dwh:         d.snowflakeStore,
 			Tc:          tc,
 			FqTableName: fqTable,
-			CreateTable: tc.CreateTable,
+			CreateTable: tc.CreateTable(),
 			ColumnOp:    constants.Add,
 			CdcTime:     time.Now().UTC(),
 		}
@@ -152,7 +152,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 		assert.Equal(d.T(), testCase.expectedQuery, execQuery, testCase.name)
 
 		// Check if the table is now marked as created where `CreateTable = false`.
-		assert.Equal(d.T(), d.snowflakeStore.GetConfigMap().TableConfig(fqTable).CreateTable,
+		assert.Equal(d.T(), d.snowflakeStore.GetConfigMap().TableConfig(fqTable).CreateTable(),
 			false, d.snowflakeStore.GetConfigMap().TableConfig(fqTable), testCase.name)
 	}
 }
