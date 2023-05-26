@@ -3,6 +3,7 @@ package typing
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
@@ -57,5 +58,22 @@ func TestBigQueryTypeNoDataLoss(t *testing.T) {
 
 	for _, kindDetail := range kindDetails {
 		assert.Equal(t, kindDetail, BigQueryTypeToKind(kindToBigQuery(kindDetail)))
+	}
+}
+
+func TestExpiresDate(t *testing.T) {
+	// We should be able to go back and forth.
+	// Note: The format does not have ns precision because we don't need it.
+	birthday := time.Date(2022, time.September, 6, 3, 19, 24, 0, time.UTC)
+	for i := 0; i < 5; i++ {
+		tsString := ExpiresDate(birthday)
+		ts, err := FromExpiresDateStringToTime(tsString)
+		assert.NoError(t, err)
+		assert.Equal(t, birthday, ts)
+	}
+
+	for _, badString := range []string{"foo", "bad_string", " 2022-09-01"} {
+		_, err := FromExpiresDateStringToTime(badString)
+		assert.Error(t, err, badString)
 	}
 }
