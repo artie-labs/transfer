@@ -16,23 +16,29 @@ import (
 // DropTemporaryTable - this will drop the temporary table from Snowflake w/ stages and BigQuery
 // It has a safety check to make sure the tableName contains the `constants.ArtiePrefix` key.
 // Temporary tables look like this: database.schema.tableName__artie__RANDOM_STRING(10)
-func DropTemporaryTable(ctx context.Context, dwh dwh.DataWarehouse, fqTableName string) {
+func DropTemporaryTable(ctx context.Context, dwh dwh.DataWarehouse, fqTableName string, shouldReturnError bool) error {
 	if dwh.Label() == constants.Snowflake {
 		// Snowflake does not have this feature enabled.
-		return
+		return nil
 	}
 
+	// Need to lower it because Snowflake uppercases.
+	fqTableName = strings.ToLower(fqTableName)
 	if strings.Contains(fqTableName, constants.ArtiePrefix) {
 		// https://cloud.google.com/bigquery/docs/reference/standard-sql/data-definition-language#drop_table_statement
 		// https://docs.snowflake.com/en/sql-reference/sql/drop-table
 		_, err := dwh.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", fqTableName))
 		if err != nil {
 			logger.FromContext(ctx).WithError(err).Warn("failed to drop temporary table, it will get garbage collected by the TTL...")
+			if shouldReturnError {
+				return fmt.Errorf("failed to drop temp table - err %v", err)
+			}
 		}
 	} else {
 		logger.FromContext(ctx).Warn(fmt.Sprintf("skipped dropping table: %s because it does not contain the artie prefix", fqTableName))
 	}
-	return
+
+	return nil
 }
 
 type AlterTableArgs struct {
@@ -94,18 +100,20 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) e
 	if args.CreateTable {
 		var sqlQuery string
 		if args.TemporaryTable {
+			expiryString := typing.ExpiresDate(time.Now().UTC().Add(constants.BigQueryTempTableTTL))
 			switch args.Dwh.Label() {
 			case constants.BigQuery:
-				expiry := time.Now().UTC().Add(constants.BigQueryTempTableTTL)
 				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
-					args.FqTableName, strings.Join(colSQLParts, ","), typing.BigQueryDate(expiry))
+					args.FqTableName, strings.Join(colSQLParts, ","), expiryString)
 			// Not enabled for constants.Snowflake yet
 			case constants.SnowflakeStages:
 				// TEMPORARY Table syntax - https://docs.snowflake.com/en/sql-reference/sql/create-table
 				// PURGE syntax - https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#purging-files-after-loading
 				// FIELD_OPTIONALLY_ENCLOSED_BY - is needed because CSV will try to escape any values that have `"`
-				sqlQuery = fmt.Sprintf(`CREATE TEMP TABLE IF NOT EXISTS %s (%s) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"')`,
-					args.FqTableName, strings.Join(colSQLParts, ","))
+				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"') COMMENT='%s'`,
+					args.FqTableName, strings.Join(colSQLParts, ","),
+					// Comment on the table
+					fmt.Sprintf("%s%s", constants.SnowflakeExpireCommentPrefix, expiryString))
 			default:
 				return fmt.Errorf("unexpected dwh: %v trying to create a temporary table", args.Dwh.Label())
 			}

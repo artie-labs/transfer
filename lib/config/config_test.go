@@ -80,6 +80,13 @@ bufferRows: 10
 	assert.Equal(t, int(config.BufferRows), 10)
 
 	assert.Nil(t, config.Validate())
+
+	tcs, err := config.TopicConfigs()
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(tcs))
+	for _, tc := range tcs {
+		assert.Equal(t, "customer", tc.Database)
+	}
 }
 
 func TestOutputSourceInvalid(t *testing.T) {
@@ -416,14 +423,14 @@ func TestConfig_Validate(t *testing.T) {
 	cfg.FlushSizeKb = 5
 	assert.Contains(t, cfg.Validate().Error(), "no pubsub topic configs")
 
-	pubsub.TopicConfigs = []*kafkalib.TopicConfig{
-		{
-			Database:  "db",
-			TableName: "table",
-			Schema:    "schema",
-			Topic:     "topic",
-		},
+	tc := kafkalib.TopicConfig{
+		Database:  "db",
+		TableName: "table",
+		Schema:    "schema",
+		Topic:     "topic",
 	}
+
+	pubsub.TopicConfigs = []*kafkalib.TopicConfig{&tc}
 
 	assert.Contains(t, cfg.Validate().Error(), "topic config is invalid")
 	pubsub.TopicConfigs[0].CDCFormat = constants.DBZPostgresAltFormat
@@ -433,6 +440,11 @@ func TestConfig_Validate(t *testing.T) {
 	pubsub.ProjectID = "project_id"
 	pubsub.PathToCredentials = "/tmp/abc"
 	assert.Nil(t, cfg.Validate())
+
+	tcs, err := cfg.TopicConfigs()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(tcs))
+	assert.Equal(t, tc, *tcs[0])
 
 	// Check Snowflake and BigQuery for large rows
 	// Snowflake should error, BigQuery will not.

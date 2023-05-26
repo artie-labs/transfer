@@ -1,10 +1,101 @@
 package kafkalib
 
 import (
-	"github.com/stretchr/testify/assert"
+	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
+
+func TestGetUniqueDatabaseAndSchema(t *testing.T) {
+	type _testCase struct {
+		name          string
+		tcs           []*TopicConfig
+		expectedPairs []DatabaseSchemaPair
+	}
+
+	testCases := []_testCase{
+		{
+			name: "happy path",
+			tcs: []*TopicConfig{
+				{
+					Database: "db",
+					Schema:   "schema",
+				},
+			},
+			expectedPairs: []DatabaseSchemaPair{
+				{
+					Database: "db",
+					Schema:   "schema",
+				},
+			},
+		},
+		{
+			name: "1 database and 2 schemas",
+			tcs: []*TopicConfig{
+				{
+					Database: "db",
+					Schema:   "schema_uno",
+				},
+				{
+					Database: "db",
+					Schema:   "schema_deux",
+				},
+			},
+			expectedPairs: []DatabaseSchemaPair{
+				{
+					Database: "db",
+					Schema:   "schema_uno",
+				},
+				{
+					Database: "db",
+					Schema:   "schema_deux",
+				},
+			},
+		},
+		{
+			name: "multiple topic configs with same db",
+			tcs: []*TopicConfig{
+				{
+					Database:  "db",
+					Schema:    "schema",
+					TableName: "foo",
+				},
+				{
+					Database:  "db",
+					Schema:    "schema",
+					TableName: "bar",
+				},
+				{
+					Database:  "db",
+					Schema:    "schema",
+					TableName: "dusty",
+				},
+			},
+			expectedPairs: []DatabaseSchemaPair{
+				{
+					Database: "db",
+					Schema:   "schema",
+				},
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		actualPairs := GetUniqueDatabaseAndSchema(testCase.tcs)
+		assert.Equal(t, len(testCase.expectedPairs), len(actualPairs), testCase.name)
+		for _, actualPair := range actualPairs {
+			var found bool
+			for _, expectedPair := range testCase.expectedPairs {
+				if found = actualPair == expectedPair; found {
+					break
+				}
+			}
+			assert.True(t, found, fmt.Sprintf("missingPair=%s, testName=%s", actualPair, testCase.name))
+		}
+	}
+}
 
 func TestToCacheKey(t *testing.T) {
 	topicCfg := &TopicConfig{

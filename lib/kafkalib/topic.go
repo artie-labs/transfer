@@ -7,6 +7,30 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
+type DatabaseSchemaPair struct {
+	Database string
+	Schema   string
+}
+
+// GetUniqueDatabaseAndSchema - does not guarantee ordering.
+func GetUniqueDatabaseAndSchema(tcs []*TopicConfig) []DatabaseSchemaPair {
+	dbMap := make(map[string]DatabaseSchemaPair)
+	for _, tc := range tcs {
+		key := fmt.Sprintf("%s###%s", tc.Database, tc.Schema)
+		dbMap[key] = DatabaseSchemaPair{
+			Database: tc.Database,
+			Schema:   tc.Schema,
+		}
+	}
+
+	var pairs []DatabaseSchemaPair
+	for _, pair := range dbMap {
+		pairs = append(pairs, pair)
+	}
+
+	return pairs
+}
+
 type TopicConfig struct {
 	Database           string `yaml:"db"`
 	TableName          string `yaml:"tableName"`

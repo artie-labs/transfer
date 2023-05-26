@@ -193,6 +193,6 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		return err
 	}
 
-	ddl.DropTemporaryTable(ctx, s, temporaryTableName)
+	_ = ddl.DropTemporaryTable(ctx, s, temporaryTableName, false)
 	return err
 }

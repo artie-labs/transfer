@@ -83,9 +83,14 @@ func kindToBigQuery(kindDetails KindDetails) string {
 	return kindDetails.Kind
 }
 
-func BigQueryDate(time time.Time) string {
+const bqLayout = "2006-01-02 15:04:05 MST"
+
+func ExpiresDate(time time.Time) string {
 	// BigQuery expects the timestamp to look in this format: 2023-01-01 00:00:00 UTC
 	// This is used as part of table options.
-	layout := "2006-01-02 15:04:05 MST"
-	return time.Format(layout)
+	return time.Format(bqLayout)
+}
+
+func FromExpiresDateStringToTime(tsString string) (time.Time, error) {
+	return time.Parse(bqLayout, tsString)
 }

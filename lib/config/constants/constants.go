@@ -5,9 +5,10 @@ import "time"
 const (
 	ToastUnavailableValuePlaceholder = "__debezium_unavailable_value"
 
-	ArtiePrefix               = "__artie"
-	DeleteColumnMarker        = ArtiePrefix + "_delete"
-	DeletionConfidencePadding = 4 * time.Hour
+	SnowflakeExpireCommentPrefix = "expires:"
+	ArtiePrefix                  = "__artie"
+	DeleteColumnMarker           = ArtiePrefix + "_delete"
+	DeletionConfidencePadding    = 4 * time.Hour
 
 	// DBZPostgresFormat is the only supported CDC format right now
 	DBZPostgresFormat    = "debezium.postgres"
