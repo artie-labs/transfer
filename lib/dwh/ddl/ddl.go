@@ -113,7 +113,7 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) e
 				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"') COMMENT='%s'`,
 					args.FqTableName, strings.Join(colSQLParts, ","),
 					// Comment on the table
-					fmt.Sprintf("%s:%s", constants.SnowflakeExpireCommentPrefix, expiryString))
+					fmt.Sprintf("%s%s", constants.SnowflakeExpireCommentPrefix, expiryString))
 			default:
 				return fmt.Errorf("unexpected dwh: %v trying to create a temporary table", args.Dwh.Label())
 			}

@@ -21,8 +21,8 @@ func (d *DDLTestSuite) Test_DropTemporaryTable() {
 	// Should not do anything to Snowflake since it's not supported.
 	for _, table := range doNotDropTables {
 		tableWithSuffix := fmt.Sprintf("%s_%s", table, constants.ArtiePrefix)
-		ddl.DropTemporaryTable(d.ctx, d.snowflakeStore, table)
-		ddl.DropTemporaryTable(d.ctx, d.snowflakeStore, tableWithSuffix)
+		_ = ddl.DropTemporaryTable(d.ctx, d.snowflakeStore, table, false)
+		_ = ddl.DropTemporaryTable(d.ctx, d.snowflakeStore, tableWithSuffix, false)
 		assert.Equal(d.T(), 0, d.fakeSnowflakeStore.ExecCallCount())
 	}
 
@@ -35,14 +35,14 @@ func (d *DDLTestSuite) Test_DropTemporaryTable() {
 		}
 
 		for _, doNotDropTable := range doNotDropTables {
-			ddl.DropTemporaryTable(d.ctx, _dwh, doNotDropTable)
+			_ = ddl.DropTemporaryTable(d.ctx, _dwh, doNotDropTable, false)
 
 			assert.Equal(d.T(), 0, fakeStore.ExecCallCount())
 		}
 
 		for index, table := range doNotDropTables {
 			fullTableName := fmt.Sprintf("%s_%s", table, constants.ArtiePrefix)
-			ddl.DropTemporaryTable(d.ctx, _dwh, fullTableName)
+			_ = ddl.DropTemporaryTable(d.ctx, _dwh, fullTableName, false)
 
 			count := index + 1
 			assert.Equal(d.T(), count, fakeStore.ExecCallCount())

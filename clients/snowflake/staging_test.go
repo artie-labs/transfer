@@ -54,7 +54,8 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	// First call is to create the temp table
 	createQuery, _ := s.fakeStageStore.ExecArgsForCall(0)
 
-	prefixQuery := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (user_id string,first_name string,last_name string) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"')`, tempTableName)
+	prefixQuery := fmt.Sprintf(
+		`CREATE TABLE IF NOT EXISTS %s (user_id string,first_name string,last_name string) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"') COMMENT=`, tempTableName)
 	containsPrefix := strings.HasPrefix(createQuery, prefixQuery)
 	assert.True(s.T(), containsPrefix, fmt.Sprintf("createQuery:%v, prefixQuery:%s", createQuery, prefixQuery))
 	resourceName := addPrefixToTableName(tempTableName, "%")
