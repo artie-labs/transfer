@@ -75,6 +75,21 @@ func (k *Kafka) String() string {
 		k.BootstrapServer, k.GroupID, k.Username != "", k.Password != "")
 }
 
+func (c *Config) TopicConfigs() ([]*kafkalib.TopicConfig, error) {
+	if err := c.Validate(); err != nil {
+		return nil, err
+	}
+
+	switch c.Queue {
+	case constants.Kafka:
+		return c.Kafka.TopicConfigs, nil
+	case constants.PubSub:
+		return c.Pubsub.TopicConfigs, nil
+	}
+
+	return nil, fmt.Errorf("unsupported queue: %v", c.Queue)
+}
+
 type Config struct {
 	Output constants.DestinationKind `yaml:"outputSource"`
 	Queue  constants.QueueKind       `yaml:"queue"`

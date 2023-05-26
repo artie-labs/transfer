@@ -94,24 +94,26 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) e
 	if args.CreateTable {
 		var sqlQuery string
 		if args.TemporaryTable {
+			expiryString := typing.BigQueryDate(time.Now().UTC().Add(constants.BigQueryTempTableTTL))
 			switch args.Dwh.Label() {
 			case constants.BigQuery:
-				expiry := time.Now().UTC().Add(constants.BigQueryTempTableTTL)
 				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
-					args.FqTableName, strings.Join(colSQLParts, ","), typing.BigQueryDate(expiry))
+					args.FqTableName, strings.Join(colSQLParts, ","), expiryString)
 			// Not enabled for constants.Snowflake yet
 			case constants.SnowflakeStages:
 				// TEMPORARY Table syntax - https://docs.snowflake.com/en/sql-reference/sql/create-table
 				// PURGE syntax - https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#purging-files-after-loading
 				// FIELD_OPTIONALLY_ENCLOSED_BY - is needed because CSV will try to escape any values that have `"`
-				sqlQuery = fmt.Sprintf(`CREATE TEMP TABLE IF NOT EXISTS %s (%s) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"')`,
-					args.FqTableName, strings.Join(colSQLParts, ","))
+				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"') COMMENT='%s'`,
+					args.FqTableName, strings.Join(colSQLParts, ","), fmt.Sprintf("expires:%s", expiryString))
 			default:
 				return fmt.Errorf("unexpected dwh: %v trying to create a temporary table", args.Dwh.Label())
 			}
 		} else {
 			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
 		}
+
+		fmt.Println("sqlQuery", sqlQuery)
 
 		_, err = args.Dwh.Exec(sqlQuery)
 		if ColumnAlreadyExistErr(err, args.Dwh.Label()) {
