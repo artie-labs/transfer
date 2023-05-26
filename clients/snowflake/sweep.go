@@ -33,6 +33,10 @@ func shouldDelete(comment string) (shouldDelete bool) {
 }
 
 func (s *Store) Sweep(ctx context.Context) error {
+	if !s.useStaging {
+		return nil
+	}
+
 	logger.FromContext(ctx).Info("looking to see if there are any dangling artie temporary tables to delete...")
 	// Find all the database and schema pairings
 	// Then iterate over information schema
@@ -56,7 +60,7 @@ func (s *Store) Sweep(ctx context.Context) error {
 			return err
 		}
 
-		for rows.Next() {
+		for rows != nil && rows.Next() {
 			var tableName, comment string
 			err = rows.Scan(&tableName, &comment)
 			if err != nil {
