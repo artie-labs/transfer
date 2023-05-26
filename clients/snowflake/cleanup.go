@@ -19,7 +19,7 @@ func shouldDelete(comment string) (shouldDelete bool) {
 	// expires:2023-05-26 05:57:48 UTC
 	if strings.HasPrefix(comment, constants.SnowflakeExpireCommentPrefix) {
 		trimmedComment := strings.TrimPrefix(comment, constants.SnowflakeExpireCommentPrefix)
-		ts, err := typing.FromBigQueryDateString(trimmedComment)
+		ts, err := typing.FromExpiresDateStringToTime(trimmedComment)
 		if err != nil {
 			return false
 		}
