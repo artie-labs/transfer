@@ -16,23 +16,29 @@ import (
 // DropTemporaryTable - this will drop the temporary table from Snowflake w/ stages and BigQuery
 // It has a safety check to make sure the tableName contains the `constants.ArtiePrefix` key.
 // Temporary tables look like this: database.schema.tableName__artie__RANDOM_STRING(10)
-func DropTemporaryTable(ctx context.Context, dwh dwh.DataWarehouse, fqTableName string) {
+func DropTemporaryTable(ctx context.Context, dwh dwh.DataWarehouse, fqTableName string, shouldReturnError bool) error {
 	if dwh.Label() == constants.Snowflake {
 		// Snowflake does not have this feature enabled.
-		return
+		return nil
 	}
 
+	// Need to lower it because Snowflake uppercases.
+	fqTableName = strings.ToLower(fqTableName)
 	if strings.Contains(fqTableName, constants.ArtiePrefix) {
 		// https://cloud.google.com/bigquery/docs/reference/standard-sql/data-definition-language#drop_table_statement
 		// https://docs.snowflake.com/en/sql-reference/sql/drop-table
 		_, err := dwh.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", fqTableName))
 		if err != nil {
 			logger.FromContext(ctx).WithError(err).Warn("failed to drop temporary table, it will get garbage collected by the TTL...")
+			if shouldReturnError {
+				return fmt.Errorf("failed to drop temp table - err %v", err)
+			}
 		}
 	} else {
 		logger.FromContext(ctx).Warn(fmt.Sprintf("skipped dropping table: %s because it does not contain the artie prefix", fqTableName))
 	}
-	return
+
+	return nil
 }
 
 type AlterTableArgs struct {
@@ -114,8 +120,6 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) e
 		} else {
 			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
 		}
-
-		fmt.Println("sqlQuery", sqlQuery)
 
 		_, err = args.Dwh.Exec(sqlQuery)
 		if ColumnAlreadyExistErr(err, args.Dwh.Label()) {
