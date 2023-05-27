@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/stringutil"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/artie-labs/transfer/lib/typing"
@@ -35,6 +37,8 @@ func CastColValStaging(colVal interface{}, colKind typing.Column) (string, error
 			colValString = extTime.String("")
 		}
 
+	case typing.String.Kind:
+		colValString = stringutil.Wrap(colVal, true)
 	case typing.Struct.Kind:
 		if colKind.KindDetails == typing.Struct {
 			if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
