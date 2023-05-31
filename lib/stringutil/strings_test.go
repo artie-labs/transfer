@@ -27,6 +27,12 @@ func TestWrap(t *testing.T) {
 			expectedString: "hello",
 		},
 		{
+			name:           "string (no quotes)",
+			colVal:         "bobby o'reilly",
+			noQuotes:       true,
+			expectedString: "bobby o'reilly",
+		},
+		{
 			name:           "string that requires escaping",
 			colVal:         "bobby o'reilly",
 			expectedString: `'bobby o\'reilly'`,
@@ -34,7 +40,7 @@ func TestWrap(t *testing.T) {
 		{
 			name:           "string that requires escaping (no quotes)",
 			colVal:         "bobby o'reilly",
-			expectedString: `bobby o\'reilly`,
+			expectedString: `bobby o'reilly`,
 			noQuotes:       true,
 		},
 		{
