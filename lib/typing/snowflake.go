@@ -87,7 +87,7 @@ func kindToSnowflake(kindDetails KindDetails) string {
 			// It ends up trying to parse this data into a TIMESTAMP_TZ and messes with the join order.
 			// Specifically, if my location is in SF, it'll try to parse TIMESTAMP_NTZ into PST then into UTC.
 			// When it was already stored as UTC.
-			return "timestamp with time zone"
+			return "timestamp_tz"
 		case ext.DateKindType:
 			return "date"
 		case ext.TimeKindType:
