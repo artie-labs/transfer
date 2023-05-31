@@ -1,8 +1,9 @@
 package typing
 
 import (
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"strings"
+
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type SnowflakeKind string
@@ -82,7 +83,11 @@ func kindToSnowflake(kindDetails KindDetails) string {
 	case ETime.Kind:
 		switch kindDetails.ExtendedTimeDetails.Type {
 		case ext.DateTimeKindType:
-			return "datetime"
+			// We are not using `TIMESTAMP_NTZ` because Snowflake does not join on this data very well.
+			// It ends up trying to parse this data into a TIMESTAMP_TZ and messes with the join order.
+			// Specifically, if my location is in SF, it'll try to parse TIMESTAMP_NTZ into PST then into UTC.
+			// When it was already stored as UTC.
+			return "timestamp_tz"
 		case ext.DateKindType:
 			return "date"
 		case ext.TimeKindType:
