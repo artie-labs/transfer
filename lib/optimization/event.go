@@ -22,7 +22,7 @@ type TableData struct {
 	rowsData        map[string]map[string]interface{} // pk -> { col -> val }
 	PrimaryKeys     []string
 
-	kafkalib.TopicConfig
+	TopicConfig kafkalib.TopicConfig
 	// Partition to the latest offset(s).
 	// For Kafka, we only need the last message to commit the offset
 	// However, pub/sub requires every single message to be acked
@@ -36,10 +36,17 @@ type TableData struct {
 	temporaryTableSuffix string
 
 	// Name of the table in the destination
+	// Prefer calling .Name() everywhere
 	name string
 }
 
+// TODO - test
 func (t *TableData) Name() string {
+	// Check override first
+	if t.TopicConfig.TableName != "" {
+		return t.TopicConfig.TableName
+	}
+
 	return t.name
 }
 
@@ -127,9 +134,9 @@ func (t *TableData) ToFqName(kind constants.DestinationKind) string {
 	switch kind {
 	case constants.BigQuery:
 		// BigQuery doesn't use schema
-		return fmt.Sprintf("%s.%s", t.Database, t.name)
+		return fmt.Sprintf("%s.%s", t.TopicConfig.Database, t.Name())
 	default:
-		return fmt.Sprintf("%s.%s.%s", t.Database, t.Schema, t.name)
+		return fmt.Sprintf("%s.%s.%s", t.TopicConfig.Database, t.TopicConfig.Schema, t.Name())
 	}
 }
 

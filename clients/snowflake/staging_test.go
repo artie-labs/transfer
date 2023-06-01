@@ -28,7 +28,7 @@ func generateTableData(rows int) (string, *optimization.TableData) {
 		})
 	}
 
-	td := optimization.NewTableData(cols, []string{"user_id"}, kafkalib.TopicConfig{}, "foo")
+	td := optimization.NewTableData(cols, []string{"user_id"}, kafkalib.TopicConfig{}, "")
 	for i := 0; i < rows; i++ {
 		key := fmt.Sprint(i)
 		rowData := map[string]interface{}{

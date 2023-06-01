@@ -99,10 +99,10 @@ func getMergeStatement(tableData *optimization.TableData) (string, error) {
 	return dml.MergeStatement(dml.MergeArgument{
 		FqTableName:    tableData.ToFqName(constants.Snowflake),
 		SubQuery:       subQuery,
-		IdempotentKey:  tableData.IdempotentKey,
+		IdempotentKey:  tableData.TopicConfig.IdempotentKey,
 		PrimaryKeys:    tableData.PrimaryKeys,
 		Columns:        colsToUpdate,
 		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
-		SoftDelete:     tableData.SoftDelete,
+		SoftDelete:     tableData.TopicConfig.SoftDelete,
 	})
 }

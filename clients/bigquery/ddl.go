@@ -19,7 +19,7 @@ func (s *Store) getTableConfig(_ context.Context, tableData *optimization.TableD
 	}
 
 	rows, err := s.Query(fmt.Sprintf("SELECT ddl FROM %s.INFORMATION_SCHEMA.TABLES where table_name = '%s' LIMIT 1;",
-		tableData.Database, tableData.Name()))
+		tableData.TopicConfig.Database, tableData.Name()))
 	if err != nil {
 		// The query will not fail if the table doesn't exist. It will simply return 0 rows.
 		// It WILL fail if the dataset doesn't exist or if it encounters any other forms of error.
@@ -39,7 +39,7 @@ func (s *Store) getTableConfig(_ context.Context, tableData *optimization.TableD
 	}
 
 	// Table doesn't exist if the information schema query returned nothing.
-	tableConfig, err := parseSchemaQuery(sqlRow, len(sqlRow) == 0, tableData.DropDeletedColumns)
+	tableConfig, err := parseSchemaQuery(sqlRow, len(sqlRow) == 0, tableData.TopicConfig.DropDeletedColumns)
 	if err != nil {
 		return nil, err
 	}

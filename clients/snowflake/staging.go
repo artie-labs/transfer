@@ -107,14 +107,14 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 	}
 
 	fqName := tableData.ToFqName(constants.Snowflake)
-	tableConfig, err := s.getTableConfig(ctx, fqName, tableData.DropDeletedColumns)
+	tableConfig, err := s.getTableConfig(ctx, fqName, tableData.TopicConfig.DropDeletedColumns)
 	if err != nil {
 		return err
 	}
 
 	log := logger.FromContext(ctx)
 	// Check if all the columns exist in Snowflake
-	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(), tableData.SoftDelete)
+	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(), tableData.TopicConfig.SoftDelete)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
 		Tc:          tableConfig,
@@ -176,11 +176,11 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 	mergeQuery, err := dml.MergeStatement(dml.MergeArgument{
 		FqTableName:    tableData.ToFqName(constants.Snowflake),
 		SubQuery:       temporaryTableName,
-		IdempotentKey:  tableData.IdempotentKey,
+		IdempotentKey:  tableData.TopicConfig.IdempotentKey,
 		PrimaryKeys:    tableData.PrimaryKeys,
 		Columns:        tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(),
 		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
-		SoftDelete:     tableData.SoftDelete,
+		SoftDelete:     tableData.TopicConfig.SoftDelete,
 	})
 
 	log.WithField("query", mergeQuery).Debug("executing...")

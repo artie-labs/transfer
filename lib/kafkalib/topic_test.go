@@ -118,12 +118,12 @@ func TestTopicConfig_String(t *testing.T) {
 		CDCFormat:     "f",
 	}
 
-	assert.True(t, strings.Contains(tc.String(), tc.TableName), tc.String())
-	assert.True(t, strings.Contains(tc.String(), tc.Database), tc.String())
-	assert.True(t, strings.Contains(tc.String(), tc.Schema), tc.String())
-	assert.True(t, strings.Contains(tc.String(), tc.Topic), tc.String())
-	assert.True(t, strings.Contains(tc.String(), tc.IdempotentKey), tc.String())
-	assert.True(t, strings.Contains(tc.String(), tc.CDCFormat), tc.String())
+	assert.True(t, strings.Contains(tc.String(), fmt.Sprintf("tableNameOverride=%s", tc.TableName)), tc.String())
+	assert.True(t, strings.Contains(tc.String(), fmt.Sprintf("db=%s", tc.Database)), tc.String())
+	assert.True(t, strings.Contains(tc.String(), fmt.Sprintf("schema=%s", tc.Schema)), tc.String())
+	assert.True(t, strings.Contains(tc.String(), fmt.Sprintf("topic=%s", tc.Topic)), tc.String())
+	assert.True(t, strings.Contains(tc.String(), fmt.Sprintf("idempotentKey=%s", tc.IdempotentKey)), tc.String())
+	assert.True(t, strings.Contains(tc.String(), fmt.Sprintf("cdcFormat=%s", tc.CDCFormat)), tc.String())
 }
 
 func TestTopicConfig_Validate(t *testing.T) {
