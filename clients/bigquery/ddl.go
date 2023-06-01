@@ -12,14 +12,14 @@ import (
 )
 
 func (s *Store) getTableConfig(_ context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	fqName := tableData.ToFqName(constants.BigQuery)
+	fqName := tableData.ToFqName(constants.BigQuery, tableData.Name())
 	tc := s.configMap.TableConfig(fqName)
 	if tc != nil {
 		return tc, nil
 	}
 
 	rows, err := s.Query(fmt.Sprintf("SELECT ddl FROM %s.INFORMATION_SCHEMA.TABLES where table_name = '%s' LIMIT 1;",
-		tableData.Database, tableData.TableName))
+		tableData.Database, tableData.Name()))
 	if err != nil {
 		// The query will not fail if the table doesn't exist. It will simply return 0 rows.
 		// It WILL fail if the dataset doesn't exist or if it encounters any other forms of error.

@@ -32,8 +32,8 @@ func GetUniqueDatabaseAndSchema(tcs []*TopicConfig) []DatabaseSchemaPair {
 }
 
 type TopicConfig struct {
-	Database           string `yaml:"db"`
-	TableName          string `yaml:"tableName"`
+	Database string `yaml:"db"`
+	//TableName          string `yaml:"tableName"`
 	Schema             string `yaml:"schema"`
 	Topic              string `yaml:"topic"`
 	IdempotentKey      string `yaml:"idempotentKey"`
@@ -58,8 +58,8 @@ func (t *TopicConfig) String() string {
 	}
 
 	return fmt.Sprintf(
-		"db=%s, tableName=%s, schema=%s, topic=%s, idempotentKey=%s, cdcFormat=%s, dropDeletedColumns=%v",
-		t.Database, t.TableName, t.Schema, t.Topic, t.IdempotentKey, t.CDCFormat, t.DropDeletedColumns)
+		"db=%s, schema=%s, topic=%s, idempotentKey=%s, cdcFormat=%s, dropDeletedColumns=%v",
+		t.Database, t.Schema, t.Topic, t.IdempotentKey, t.CDCFormat, t.DropDeletedColumns)
 }
 
 func (t *TopicConfig) Valid() bool {
@@ -68,7 +68,7 @@ func (t *TopicConfig) Valid() bool {
 	}
 
 	// IdempotentKey is optional.
-	empty := array.Empty([]string{t.Database, t.TableName, t.Schema, t.Topic, t.CDCFormat})
+	empty := array.Empty([]string{t.Database, t.Schema, t.Topic, t.CDCFormat})
 	if empty {
 		return false
 	}
@@ -94,12 +94,12 @@ func ToCacheKey(topic string, partition int64) string {
 }
 
 // ToFqName is the fully-qualified table name in DWH
-func (t *TopicConfig) ToFqName(kind constants.DestinationKind) string {
+func (t *TopicConfig) ToFqName(kind constants.DestinationKind, tableName string) string {
 	switch kind {
 	case constants.BigQuery:
 		// BigQuery doesn't use schema
-		return fmt.Sprintf("%s.%s", t.Database, t.TableName)
+		return fmt.Sprintf("%s.%s", t.Database, tableName)
 	default:
-		return fmt.Sprintf("%s.%s.%s", t.Database, t.Schema, t.TableName)
+		return fmt.Sprintf("%s.%s.%s", t.Database, t.Schema, tableName)
 	}
 }

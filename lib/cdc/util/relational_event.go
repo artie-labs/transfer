@@ -3,14 +3,15 @@ package util
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/typing"
-	"strconv"
-	"time"
 )
 
 // SchemaEventPayload is our struct for an event with schema enabled. For reference, this is an example payload https://gist.github.com/Tang8330/3b9989ed8c659771958fe481f248397a
@@ -78,6 +79,10 @@ func (s *SchemaEventPayload) GetOptionalSchema(ctx context.Context) map[string]t
 
 func (s *SchemaEventPayload) GetExecutionTime() time.Time {
 	return time.UnixMilli(s.Payload.Source.TsMs).UTC()
+}
+
+func (s *SchemaEventPayload) GetTableName() string {
+	return s.Payload.Source.Table
 }
 
 func (s *SchemaEventPayload) GetData(ctx context.Context, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {

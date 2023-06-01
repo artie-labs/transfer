@@ -30,7 +30,7 @@ type Event struct {
 
 func ToMemoryEvent(ctx context.Context, event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) Event {
 	return Event{
-		Table:          tc.TableName,
+		Table:          event.GetTableName(),
 		PrimaryKeyMap:  pkMap,
 		ExecutionTime:  event.GetExecutionTime(),
 		OptionalSchema: event.GetOptionalSchema(ctx),
@@ -110,7 +110,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 			columns = e.Columns
 		}
 
-		inMemDB.TableData[e.Table] = optimization.NewTableData(columns, e.PrimaryKeys(), *topicConfig)
+		inMemDB.TableData[e.Table] = optimization.NewTableData(columns, e.PrimaryKeys(), *topicConfig, e.Table)
 	} else {
 		if e.Columns != nil {
 			// Iterate over this again just in case.

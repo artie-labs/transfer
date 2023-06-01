@@ -34,6 +34,12 @@ type TableData struct {
 
 	// BigQuery specific. We are creating a temporary table to execute a merge, in order to avoid in-memory tables via UNION ALL.
 	temporaryTableSuffix string
+
+	name string
+}
+
+func (t *TableData) Name() string {
+	return t.name
 }
 
 func (t *TableData) SetInMemoryColumns(columns *typing.Columns) {
@@ -59,7 +65,7 @@ func (t *TableData) ReadOnlyInMemoryCols() *typing.Columns {
 	return &cols
 }
 
-func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicConfig kafkalib.TopicConfig) *TableData {
+func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicConfig kafkalib.TopicConfig, name string) *TableData {
 	return &TableData{
 		inMemoryColumns:         inMemoryColumns,
 		rowsData:                map[string]map[string]interface{}{},
@@ -67,6 +73,7 @@ func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicCo
 		TopicConfig:             topicConfig,
 		PartitionsToLastMessage: map[string][]artie.Message{},
 		temporaryTableSuffix:    fmt.Sprintf("%s_%s", constants.ArtiePrefix, stringutil.Random(10)),
+		name:                    name,
 	}
 }
 

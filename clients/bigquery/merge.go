@@ -53,7 +53,6 @@ func merge(tableData *optimization.TableData) ([]*Row, error) {
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
 	// TODO - write test for this.
-
 	if tableData.Rows() == 0 || tableData.ReadOnlyInMemoryCols() == nil {
 		// There's no rows or columns. Let's skip.
 		return nil
@@ -70,7 +69,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
 		Tc:          tableConfig,
-		FqTableName: tableData.ToFqName(s.Label()),
+		FqTableName: tableData.ToFqName(s.Label(), tableData.Name()),
 		CreateTable: tableConfig.CreateTable(),
 		ColumnOp:    constants.Add,
 		CdcTime:     tableData.LatestCDCTs,
@@ -89,7 +88,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	deleteAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
 		Tc:          tableConfig,
-		FqTableName: tableData.ToFqName(s.Label()),
+		FqTableName: tableData.ToFqName(s.Label(), tableData.Name()),
 		CreateTable: false,
 		ColumnOp:    constants.Delete,
 		CdcTime:     tableData.LatestCDCTs,
@@ -122,7 +121,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	tempAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:            s,
 		Tc:             tableConfig,
-		FqTableName:    fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label()), tableData.TempTableSuffix()),
+		FqTableName:    fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), tableData.Name()), tableData.TempTableSuffix()),
 		CreateTable:    true,
 		TemporaryTable: true,
 		ColumnOp:       constants.Add,
@@ -140,14 +139,14 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
-	tableName := fmt.Sprintf("%s_%s", tableData.TableName, tableData.TempTableSuffix())
+	tableName := fmt.Sprintf("%s_%s", tableData.Name(), tableData.TempTableSuffix())
 	err = s.PutTable(ctx, tableData.Database, tableName, rows)
 	if err != nil {
 		return fmt.Errorf("failed to insert into temp table: %s, error: %v", tableName, err)
 	}
 
 	mergeQuery, err := dml.MergeStatement(dml.MergeArgument{
-		FqTableName:    tableData.ToFqName(constants.BigQuery),
+		FqTableName:    tableData.ToFqName(constants.BigQuery, tableData.Name()),
 		SubQuery:       tempAlterTableArgs.FqTableName,
 		IdempotentKey:  tableData.IdempotentKey,
 		PrimaryKeys:    tableData.PrimaryKeys,

@@ -106,7 +106,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		return nil
 	}
 
-	fqName := tableData.ToFqName(constants.Snowflake)
+	fqName := tableData.ToFqName(constants.Snowflake, tableData.Name())
 	tableConfig, err := s.getTableConfig(ctx, fqName, tableData.DropDeletedColumns)
 	if err != nil {
 		return err
@@ -167,14 +167,14 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 	}
 
 	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
-	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label()), tableData.TempTableSuffix())
+	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), tableData.Name()), tableData.TempTableSuffix())
 	if err = s.prepareTempTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {
 		return err
 	}
 
 	// Prepare merge statement
 	mergeQuery, err := dml.MergeStatement(dml.MergeArgument{
-		FqTableName:    tableData.ToFqName(constants.Snowflake),
+		FqTableName:    tableData.ToFqName(constants.Snowflake, tableData.Name()),
 		SubQuery:       temporaryTableName,
 		IdempotentKey:  tableData.IdempotentKey,
 		PrimaryKeys:    tableData.PrimaryKeys,

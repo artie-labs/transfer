@@ -94,10 +94,10 @@ func getMergeStatement(tableData *optimization.TableData) (string, error) {
 	}
 
 	subQuery := fmt.Sprintf("SELECT %s FROM (values %s) as %s(%s)", strings.Join(colsToUpdateEscaped, ","),
-		strings.Join(tableValues, ","), tableData.TopicConfig.TableName, strings.Join(colsToUpdate, ","))
+		strings.Join(tableValues, ","), tableData.Name(), strings.Join(colsToUpdate, ","))
 
 	return dml.MergeStatement(dml.MergeArgument{
-		FqTableName:    tableData.ToFqName(constants.Snowflake),
+		FqTableName:    tableData.ToFqName(constants.Snowflake, tableData.Name()),
 		SubQuery:       subQuery,
 		IdempotentKey:  tableData.IdempotentKey,
 		PrimaryKeys:    tableData.PrimaryKeys,
