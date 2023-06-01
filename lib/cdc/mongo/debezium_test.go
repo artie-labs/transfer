@@ -3,10 +3,11 @@ package mongo
 import (
 	"context"
 	"encoding/json"
+	"time"
+
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
@@ -91,6 +92,7 @@ func (p *MongoTestSuite) TestMongoDBEventOrder() {
 	schemaEvt, isOk := evt.(*SchemaEventPayload)
 	assert.True(p.T(), isOk)
 	assert.Equal(p.T(), time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC), schemaEvt.GetExecutionTime())
+	assert.Equal(p.T(), "orders", schemaEvt.GetTableName())
 }
 
 func (p *MongoTestSuite) TestMongoDBEventCustomer() {
@@ -143,6 +145,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 	assert.Equal(p.T(), evtData[constants.DeleteColumnMarker], false)
 	assert.Equal(p.T(), evt.GetExecutionTime(),
 		time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
+	assert.Equal(p.T(), "customers", evt.GetTableName())
 }
 
 func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
@@ -180,6 +183,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 	evt, err := p.Debezium.GetEventFromBytes(ctx, []byte(payload))
 	assert.NoError(p.T(), err)
 	evtData := evt.GetData(context.Background(), map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{})
+	assert.Equal(p.T(), "customers123", evt.GetTableName())
 
 	assert.Equal(p.T(), evtData["_id"], 1003)
 	assert.Equal(p.T(), evtData[constants.DeleteColumnMarker], true)
