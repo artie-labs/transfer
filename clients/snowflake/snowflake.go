@@ -67,7 +67,7 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	fqName := tableData.ToFqName(constants.Snowflake)
-	tableConfig, err := s.getTableConfig(ctx, fqName, tableData.DropDeletedColumns)
+	tableConfig, err := s.getTableConfig(ctx, fqName, tableData.TopicConfig.DropDeletedColumns)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) er
 	log := logger.FromContext(ctx)
 
 	// Check if all the columns exist in Snowflake
-	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(), tableData.SoftDelete)
+	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(), tableData.TopicConfig.SoftDelete)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
 		Tc:          tableConfig,

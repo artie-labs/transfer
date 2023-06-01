@@ -2,6 +2,7 @@ package format
 
 import (
 	"context"
+
 	"github.com/artie-labs/transfer/lib/cdc/mysql"
 
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -16,7 +17,7 @@ var (
 	mySQL mysql.Debezium
 )
 
-func GetFormatParser(ctx context.Context, label string) cdc.Format {
+func GetFormatParser(ctx context.Context, label, topic string) cdc.Format {
 	validFormats := []cdc.Format{
 		&d, &m, &mySQL,
 	}
@@ -24,7 +25,10 @@ func GetFormatParser(ctx context.Context, label string) cdc.Format {
 	for _, validFormat := range validFormats {
 		for _, fmtLabel := range validFormat.Labels() {
 			if fmtLabel == label {
-				logger.FromContext(ctx).WithField("label", fmtLabel).Info("Loaded CDC Format parser...")
+				logger.FromContext(ctx).WithFields(map[string]interface{}{
+					"label": label,
+					"topic": topic,
+				}).Info("Loaded CDC Format parser...")
 				return validFormat
 			}
 		}

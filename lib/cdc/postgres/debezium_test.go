@@ -2,10 +2,11 @@ package postgres
 
 import (
 	"context"
+	"time"
+
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -85,6 +86,7 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
 	assert.Equal(p.T(), evtData["nested"], map[string]interface{}{"object": "foo"})
 	assert.Equal(p.T(), time.Date(2022, time.November, 16,
 		4, 1, 53, 308000000, time.UTC), evt.GetExecutionTime())
+	assert.Equal(p.T(), "orders", evt.GetTableName())
 }
 
 func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
@@ -200,4 +202,5 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 
 	assert.Equal(p.T(), time.Date(2023, time.February, 2,
 		17, 54, 11, 451000000, time.UTC), evt.GetExecutionTime())
+	assert.Equal(p.T(), "customers", evt.GetTableName())
 }

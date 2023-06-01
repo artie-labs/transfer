@@ -62,7 +62,7 @@ func StartSubscriber(ctx context.Context, flushChan chan bool) {
 	for _, topicConfig := range settings.Config.Pubsub.TopicConfigs {
 		topicToConfigFmtMap[topicConfig.Topic] = TopicConfigFormatter{
 			tc:     topicConfig,
-			Format: format.GetFormatParser(ctx, topicConfig.CDCFormat),
+			Format: format.GetFormatParser(ctx, topicConfig.CDCFormat, topicConfig.Topic),
 		}
 		topics = append(topics, topicConfig.Topic)
 	}

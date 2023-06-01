@@ -10,16 +10,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
 func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
-	topicConfig := kafkalib.TopicConfig{
-		Database:  "coffee_shop",
-		TableName: "orders",
-		Schema:    "public",
-	}
+	fqName := "coffee_shop.public.orders"
 
 	var cols typing.Columns
 	for colName, kindDetails := range map[string]typing.KindDetails{
@@ -37,30 +32,26 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 
 	config := types.NewDwhTableConfig(&cols, nil, false, true)
 
-	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), config)
+	s.store.configMap.AddTableToConfig(fqName, config)
 
 	nameCol := typing.Column{
 		Name:        "name",
 		KindDetails: typing.String,
 	}
 
-	tc := s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake))
+	tc := s.store.configMap.TableConfig(fqName)
 
 	val := tc.ShouldDeleteColumn(nameCol.Name, time.Now().Add(-1*6*time.Hour))
 	assert.False(s.T(), val, "should not try to delete this column")
-	assert.Equal(s.T(), len(s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ReadOnlyColumnsToDelete()), 1)
+	assert.Equal(s.T(), len(s.store.configMap.TableConfig(fqName).ReadOnlyColumnsToDelete()), 1)
 
 	// Now let's try to add this column back, it should delete it from the cache.
 	tc.MutateInMemoryColumns(false, constants.Add, nameCol)
-	assert.Equal(s.T(), len(s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ReadOnlyColumnsToDelete()), 0)
+	assert.Equal(s.T(), len(s.store.configMap.TableConfig(fqName).ReadOnlyColumnsToDelete()), 0)
 }
 
 func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
-	topicConfig := kafkalib.TopicConfig{
-		Database:  "coffee_shop",
-		TableName: "orders",
-		Schema:    "public",
-	}
+	fqName := "coffee_shop.orders.public"
 
 	var cols typing.Columns
 	for colName, kindDetails := range map[string]typing.KindDetails{
@@ -77,7 +68,7 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 	}
 
 	config := types.NewDwhTableConfig(&cols, nil, false, true)
-	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), config)
+	s.store.configMap.AddTableToConfig(fqName, config)
 
 	nameCol := typing.Column{
 		Name:        "name",
@@ -85,21 +76,21 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 	}
 
 	// Let's try to delete name.
-	allowed := s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ShouldDeleteColumn(nameCol.Name, time.Now().Add(-1*(6*time.Hour)))
+	allowed := s.store.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name, time.Now().Add(-1*(6*time.Hour)))
 
 	assert.Equal(s.T(), allowed, false, "should not be allowed to delete")
 
 	// Process tried to delete, but it's lagged.
-	allowed = s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ShouldDeleteColumn(nameCol.Name, time.Now().Add(-1*(6*time.Hour)))
+	allowed = s.store.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name, time.Now().Add(-1*(6*time.Hour)))
 
 	assert.Equal(s.T(), allowed, false, "should not be allowed to delete")
 
 	// Process now caught up, and is asking if we can delete, should still be no.
-	allowed = s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ShouldDeleteColumn(nameCol.Name, time.Now())
+	allowed = s.store.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name, time.Now())
 	assert.Equal(s.T(), allowed, false, "should not be allowed to delete still")
 
 	// Process is finally ahead, has permission to delete now.
-	allowed = s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ShouldDeleteColumn(nameCol.Name,
+	allowed = s.store.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name,
 		time.Now().Add(2*constants.DeletionConfidencePadding))
 
 	assert.Equal(s.T(), allowed, true, "should now be allowed to delete")

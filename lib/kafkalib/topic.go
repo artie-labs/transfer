@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/artie-labs/transfer/lib/array"
-	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
 type DatabaseSchemaPair struct {
@@ -58,8 +57,8 @@ func (t *TopicConfig) String() string {
 	}
 
 	return fmt.Sprintf(
-		"db=%s, tableName=%s, schema=%s, topic=%s, idempotentKey=%s, cdcFormat=%s, dropDeletedColumns=%v",
-		t.Database, t.TableName, t.Schema, t.Topic, t.IdempotentKey, t.CDCFormat, t.DropDeletedColumns)
+		"db=%s, schema=%s, tableNameOverride=%s, topic=%s, idempotentKey=%s, cdcFormat=%s, dropDeletedColumns=%v",
+		t.Database, t.Schema, t.TableName, t.Topic, t.IdempotentKey, t.CDCFormat, t.DropDeletedColumns)
 }
 
 func (t *TopicConfig) Valid() bool {
@@ -68,7 +67,7 @@ func (t *TopicConfig) Valid() bool {
 	}
 
 	// IdempotentKey is optional.
-	empty := array.Empty([]string{t.Database, t.TableName, t.Schema, t.Topic, t.CDCFormat})
+	empty := array.Empty([]string{t.Database, t.Schema, t.Topic, t.CDCFormat})
 	if empty {
 		return false
 	}
@@ -91,15 +90,4 @@ func (t *TopicConfig) ToCacheKey(partition int64) string {
 
 func ToCacheKey(topic string, partition int64) string {
 	return fmt.Sprintf("%s#%d", topic, partition)
-}
-
-// ToFqName is the fully-qualified table name in DWH
-func (t *TopicConfig) ToFqName(kind constants.DestinationKind) string {
-	switch kind {
-	case constants.BigQuery:
-		// BigQuery doesn't use schema
-		return fmt.Sprintf("%s.%s", t.Database, t.TableName)
-	default:
-		return fmt.Sprintf("%s.%s.%s", t.Database, t.Schema, t.TableName)
-	}
 }

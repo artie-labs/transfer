@@ -22,7 +22,7 @@ type TableData struct {
 	rowsData        map[string]map[string]interface{} // pk -> { col -> val }
 	PrimaryKeys     []string
 
-	kafkalib.TopicConfig
+	TopicConfig kafkalib.TopicConfig
 	// Partition to the latest offset(s).
 	// For Kafka, we only need the last message to commit the offset
 	// However, pub/sub requires every single message to be acked
@@ -34,6 +34,14 @@ type TableData struct {
 
 	// BigQuery specific. We are creating a temporary table to execute a merge, in order to avoid in-memory tables via UNION ALL.
 	temporaryTableSuffix string
+
+	// Name of the table in the destination
+	// Prefer calling .Name() everywhere
+	name string
+}
+
+func (t *TableData) Name() string {
+	return t.name
 }
 
 func (t *TableData) SetInMemoryColumns(columns *typing.Columns) {
@@ -59,7 +67,7 @@ func (t *TableData) ReadOnlyInMemoryCols() *typing.Columns {
 	return &cols
 }
 
-func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicConfig kafkalib.TopicConfig) *TableData {
+func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicConfig kafkalib.TopicConfig, name string) *TableData {
 	return &TableData{
 		inMemoryColumns:         inMemoryColumns,
 		rowsData:                map[string]map[string]interface{}{},
@@ -67,6 +75,7 @@ func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicCo
 		TopicConfig:             topicConfig,
 		PartitionsToLastMessage: map[string][]artie.Message{},
 		temporaryTableSuffix:    fmt.Sprintf("%s_%s", constants.ArtiePrefix, stringutil.Random(10)),
+		name:                    stringutil.Override(name, topicConfig.TableName),
 	}
 }
 
@@ -107,6 +116,16 @@ func (t *TableData) RowsData() map[string]map[string]interface{} {
 	}
 
 	return _rowsData
+}
+
+func (t *TableData) ToFqName(kind constants.DestinationKind) string {
+	switch kind {
+	case constants.BigQuery:
+		// BigQuery doesn't use schema
+		return fmt.Sprintf("%s.%s", t.TopicConfig.Database, t.Name())
+	default:
+		return fmt.Sprintf("%s.%s.%s", t.TopicConfig.Database, t.TopicConfig.Schema, t.Name())
+	}
 }
 
 func (t *TableData) Rows() uint {

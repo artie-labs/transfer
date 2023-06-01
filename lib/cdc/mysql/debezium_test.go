@@ -3,12 +3,13 @@ package mysql
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
-	"strings"
-	"time"
 )
 
 func (m *MySQLTestSuite) TestGetEventFromBytes() {
@@ -292,6 +293,7 @@ func (m *MySQLTestSuite) TestGetEventFromBytes() {
 	evt, err := m.Debezium.GetEventFromBytes(context.Background(), []byte(payload))
 	assert.NoError(m.T(), err)
 	assert.Equal(m.T(), time.Date(2023, time.March, 13, 19, 19, 24, 0, time.UTC), evt.GetExecutionTime())
+	assert.Equal(m.T(), "customers", evt.GetTableName())
 
 	kvMap := map[string]interface{}{
 		"id": 1001,
@@ -300,7 +302,6 @@ func (m *MySQLTestSuite) TestGetEventFromBytes() {
 	assert.Equal(m.T(), evtData["id"], 1001)
 	assert.Equal(m.T(), evtData["first_name"], "Sally")
 	assert.Equal(m.T(), evtData["bool_test"], false)
-
 	cols := evt.GetColumns()
 	assert.NotNil(m.T(), cols)
 

@@ -53,7 +53,6 @@ func merge(tableData *optimization.TableData) ([]*Row, error) {
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
 	// TODO - write test for this.
-
 	if tableData.Rows() == 0 || tableData.ReadOnlyInMemoryCols() == nil {
 		// There's no rows or columns. Let's skip.
 		return nil
@@ -66,7 +65,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	log := logger.FromContext(ctx)
 	// Check if all the columns exist in Snowflake
-	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(), tableData.SoftDelete)
+	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(), tableData.TopicConfig.SoftDelete)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
 		Tc:          tableConfig,
@@ -140,8 +139,8 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
-	tableName := fmt.Sprintf("%s_%s", tableData.TableName, tableData.TempTableSuffix())
-	err = s.PutTable(ctx, tableData.Database, tableName, rows)
+	tableName := fmt.Sprintf("%s_%s", tableData.Name(), tableData.TempTableSuffix())
+	err = s.PutTable(ctx, tableData.TopicConfig.Database, tableName, rows)
 	if err != nil {
 		return fmt.Errorf("failed to insert into temp table: %s, error: %v", tableName, err)
 	}
@@ -149,11 +148,11 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	mergeQuery, err := dml.MergeStatement(dml.MergeArgument{
 		FqTableName:    tableData.ToFqName(constants.BigQuery),
 		SubQuery:       tempAlterTableArgs.FqTableName,
-		IdempotentKey:  tableData.IdempotentKey,
+		IdempotentKey:  tableData.TopicConfig.IdempotentKey,
 		PrimaryKeys:    tableData.PrimaryKeys,
 		Columns:        tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(),
 		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
-		SoftDelete:     tableData.SoftDelete,
+		SoftDelete:     tableData.TopicConfig.SoftDelete,
 		BigQuery:       true,
 	})
 

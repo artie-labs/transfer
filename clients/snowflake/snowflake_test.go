@@ -47,7 +47,9 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		Schema:    "public",
 	}
 
-	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig)
+	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, "foo")
+	assert.Equal(s.T(), topicConfig.TableName, tableData.Name(), "override is working")
+
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row)
 	}
@@ -66,7 +68,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		})
 	}
 
-	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake),
+	s.store.configMap.AddTableToConfig(tableData.ToFqName(constants.Snowflake),
 		types.NewDwhTableConfig(&anotherCols, nil, false, true))
 
 	err := s.store.Merge(s.ctx, tableData)
@@ -109,12 +111,12 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		Schema:    "public",
 	}
 
-	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig)
+	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, "foo")
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row)
 	}
 
-	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake),
+	s.store.configMap.AddTableToConfig(tableData.ToFqName(constants.Snowflake),
 		types.NewDwhTableConfig(&cols, nil, false, true))
 
 	s.fakeStore.ExecReturnsOnCall(0, nil, fmt.Errorf("390114: Authentication token has expired. The user must authenticate again."))
@@ -160,12 +162,12 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		Schema:    "public",
 	}
 
-	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig)
+	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, "foo")
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row)
 	}
 
-	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake),
+	s.store.configMap.AddTableToConfig(tableData.ToFqName(constants.Snowflake),
 		types.NewDwhTableConfig(&cols, nil, false, true))
 	err := s.store.Merge(s.ctx, tableData)
 	assert.Nil(s.T(), err)
@@ -209,7 +211,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		})
 	}
 
-	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig)
+	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, "foo")
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row)
 	}
@@ -235,7 +237,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	})
 
 	config := types.NewDwhTableConfig(&sflkCols, nil, false, true)
-	s.store.configMap.AddTableToConfig(topicConfig.ToFqName(constants.Snowflake), config)
+	s.store.configMap.AddTableToConfig(tableData.ToFqName(constants.Snowflake), config)
 
 	err := s.store.Merge(s.ctx, tableData)
 	assert.Nil(s.T(), err)
@@ -243,10 +245,10 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 1, "called merge")
 
 	// Check the temp deletion table now.
-	assert.Equal(s.T(), len(s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ReadOnlyColumnsToDelete()), 1,
-		s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ReadOnlyColumnsToDelete())
+	assert.Equal(s.T(), len(s.store.configMap.TableConfig(tableData.ToFqName(constants.Snowflake)).ReadOnlyColumnsToDelete()), 1,
+		s.store.configMap.TableConfig(tableData.ToFqName(constants.Snowflake)).ReadOnlyColumnsToDelete())
 
-	_, isOk := s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ReadOnlyColumnsToDelete()["new"]
+	_, isOk := s.store.configMap.TableConfig(tableData.ToFqName(constants.Snowflake)).ReadOnlyColumnsToDelete()["new"]
 	assert.True(s.T(), isOk)
 
 	// Now try to execute merge where 1 of the rows have the column now
@@ -271,12 +273,12 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 2, "called merge again")
 
 	// Caught up now, so columns should be 0.
-	assert.Equal(s.T(), len(s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ReadOnlyColumnsToDelete()), 0,
-		s.store.configMap.TableConfig(topicConfig.ToFqName(constants.Snowflake)).ReadOnlyColumnsToDelete())
+	assert.Equal(s.T(), len(s.store.configMap.TableConfig(tableData.ToFqName(constants.Snowflake)).ReadOnlyColumnsToDelete()), 0,
+		s.store.configMap.TableConfig(tableData.ToFqName(constants.Snowflake)).ReadOnlyColumnsToDelete())
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
-	tableData := optimization.NewTableData(nil, nil, kafkalib.TopicConfig{})
+	tableData := optimization.NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
 	err := s.store.Merge(s.ctx, tableData)
 	assert.Nil(s.T(), err)
 }

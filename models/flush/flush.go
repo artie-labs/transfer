@@ -40,8 +40,8 @@ func Flush(ctx context.Context) error {
 			tags := map[string]string{
 				"what":     "success",
 				"table":    _tableName,
-				"database": _tableData.Database,
-				"schema":   _tableData.Schema,
+				"database": _tableData.TopicConfig.Database,
+				"schema":   _tableData.TopicConfig.Schema,
 			}
 
 			err := utils.FromContext(ctx).Merge(ctx, _tableData)
@@ -50,7 +50,7 @@ func Flush(ctx context.Context) error {
 				log.WithError(err).WithFields(logFields).Warn("Failed to execute merge...not going to flush memory")
 			} else {
 				log.WithFields(logFields).Info("Merge success, clearing memory...")
-				commitErr := consumer.CommitOffset(ctx, _tableData.Topic, _tableData.PartitionsToLastMessage)
+				commitErr := consumer.CommitOffset(ctx, _tableData.TopicConfig.Topic, _tableData.PartitionsToLastMessage)
 				if commitErr == nil {
 					flushChan <- _tableName
 				} else {

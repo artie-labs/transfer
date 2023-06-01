@@ -3,9 +3,10 @@ package mongo
 import (
 	"context"
 	"encoding/json"
+	"time"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
-	"time"
 
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -72,6 +73,10 @@ func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.T
 
 func (s *SchemaEventPayload) GetExecutionTime() time.Time {
 	return time.UnixMilli(s.Payload.Source.TsMs).UTC()
+}
+
+func (s *SchemaEventPayload) GetTableName() string {
+	return s.Payload.Source.Collection
 }
 
 func (s *SchemaEventPayload) GetOptionalSchema(ctx context.Context) map[string]typing.KindDetails {
