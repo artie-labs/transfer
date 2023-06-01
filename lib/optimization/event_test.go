@@ -6,12 +6,52 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
+
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestNewTableData_TableName(t *testing.T) {
+	type _testCase struct {
+		name                    string
+		tableName               string
+		overrideName            string
+		expectedName            string
+		expectedSnowflakeFqName string
+		expectedBigQueryFqName  string
+	}
+
+	testCases := []_testCase{
+		{
+			name:                    "no override is provided",
+			tableName:               "food",
+			expectedName:            "food",
+			expectedSnowflakeFqName: "..food",
+			expectedBigQueryFqName:  ".food",
+		},
+		{
+			name:                    "override is provided",
+			tableName:               "food",
+			overrideName:            "drinks",
+			expectedName:            "drinks",
+			expectedSnowflakeFqName: "..drinks", // db, schema
+			expectedBigQueryFqName:  ".drinks",  // data set only
+		},
+	}
+
+	for _, testCase := range testCases {
+		td := NewTableData(nil, nil, kafkalib.TopicConfig{TableName: testCase.overrideName}, testCase.tableName)
+		assert.Equal(t, testCase.expectedName, td.Name(), testCase.name)
+		assert.Equal(t, testCase.expectedName, td.name, testCase.name)
+		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(constants.SnowflakeStages))
+		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(constants.Snowflake))
+		assert.Equal(t, testCase.expectedBigQueryFqName, td.ToFqName(constants.BigQuery))
+	}
+}
 
 func TestTableData_ReadOnlyInMemoryCols(t *testing.T) {
 	// Making sure the columns are actually read only.
