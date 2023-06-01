@@ -36,6 +36,24 @@ func evaluateTestCase(t *testing.T, testCase _testCase) {
 func (s *SnowflakeTestSuite) TestCastColValStaging_Basic() {
 	testCases := []_testCase{
 		{
+			name:   "empty string",
+			colVal: "",
+			colKind: typing.Column{
+				KindDetails: typing.String,
+			},
+
+			expectedString: "",
+		},
+		{
+			name:   "null value (string, not that it matters)",
+			colVal: nil,
+			colKind: typing.Column{
+				KindDetails: typing.String,
+			},
+
+			expectedString: `\\N`,
+		},
+		{
 			name:   "string",
 			colVal: "foo",
 			colKind: typing.Column{
