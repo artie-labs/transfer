@@ -120,7 +120,7 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 			"json_object_string":         `{"foo": "bar"}`,
 			"json_object_no_schema":      `{"foo": "bar"}`,
 		},
-		OptiomalSchema: map[string]typing.KindDetails{
+		OptionalSchema: map[string]typing.KindDetails{
 			// Explicitly casting this as a string.
 			"created_at_date_string": typing.String,
 			"json_object_string":     typing.String,

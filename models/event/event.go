@@ -23,10 +23,9 @@ type Event struct {
 	Table          string
 	PrimaryKeyMap  map[string]interface{}
 	Data           map[string]interface{} // json serialized column data
-	OptiomalSchema map[string]typing.KindDetails
+	OptionalSchema map[string]typing.KindDetails
 	Columns        *typing.Columns
 	ExecutionTime  time.Time // When the SQL command was executed
-
 }
 
 func ToMemoryEvent(ctx context.Context, event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) Event {
@@ -34,7 +33,7 @@ func ToMemoryEvent(ctx context.Context, event cdc.Event, pkMap map[string]interf
 		Table:          tc.TableName,
 		PrimaryKeyMap:  pkMap,
 		ExecutionTime:  event.GetExecutionTime(),
-		OptiomalSchema: event.GetOptionalSchema(ctx),
+		OptionalSchema: event.GetOptionalSchema(ctx),
 		Columns:        event.GetColumns(),
 		Data:           event.GetData(ctx, pkMap, tc),
 	}
@@ -147,7 +146,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 				// This would only happen if the columns did not get passed in initially.
 				inMemoryColumns.AddColumn(typing.Column{
 					Name:        newColName,
-					KindDetails: typing.ParseValue(_col, e.OptiomalSchema, val),
+					KindDetails: typing.ParseValue(_col, e.OptionalSchema, val),
 				})
 			} else {
 				if retrievedColumn.KindDetails == typing.Invalid {
@@ -155,7 +154,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 					// If everything is nil, we don't need to add a column
 					// However, it's important to create a column even if it's nil.
 					// This is because we don't want to think that it's okay to drop a column in DWH
-					if kindDetails := typing.ParseValue(_col, e.OptiomalSchema, val); kindDetails.Kind != typing.Invalid.Kind {
+					if kindDetails := typing.ParseValue(_col, e.OptionalSchema, val); kindDetails.Kind != typing.Invalid.Kind {
 						retrievedColumn.KindDetails = kindDetails
 						inMemoryColumns.UpdateColumn(retrievedColumn)
 					}
