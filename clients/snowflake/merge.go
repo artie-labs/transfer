@@ -97,7 +97,7 @@ func getMergeStatement(tableData *optimization.TableData) (string, error) {
 		strings.Join(tableValues, ","), tableData.Name(), strings.Join(colsToUpdate, ","))
 
 	return dml.MergeStatement(dml.MergeArgument{
-		FqTableName:    tableData.ToFqName(constants.Snowflake, tableData.Name()),
+		FqTableName:    tableData.ToFqName(constants.Snowflake),
 		SubQuery:       subQuery,
 		IdempotentKey:  tableData.IdempotentKey,
 		PrimaryKeys:    tableData.PrimaryKeys,

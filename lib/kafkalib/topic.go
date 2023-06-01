@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/artie-labs/transfer/lib/array"
-	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
 type DatabaseSchemaPair struct {
@@ -91,15 +90,4 @@ func (t *TopicConfig) ToCacheKey(partition int64) string {
 
 func ToCacheKey(topic string, partition int64) string {
 	return fmt.Sprintf("%s#%d", topic, partition)
-}
-
-// ToFqName is the fully-qualified table name in DWH
-func (t *TopicConfig) ToFqName(kind constants.DestinationKind, tableName string) string {
-	switch kind {
-	case constants.BigQuery:
-		// BigQuery doesn't use schema
-		return fmt.Sprintf("%s.%s", t.Database, tableName)
-	default:
-		return fmt.Sprintf("%s.%s.%s", t.Database, t.Schema, tableName)
-	}
 }

@@ -35,6 +35,7 @@ type TableData struct {
 	// BigQuery specific. We are creating a temporary table to execute a merge, in order to avoid in-memory tables via UNION ALL.
 	temporaryTableSuffix string
 
+	// Name of the table in the destination
 	name string
 }
 
@@ -114,6 +115,16 @@ func (t *TableData) RowsData() map[string]map[string]interface{} {
 	}
 
 	return _rowsData
+}
+
+func (t *TableData) ToFqName(kind constants.DestinationKind) string {
+	switch kind {
+	case constants.BigQuery:
+		// BigQuery doesn't use schema
+		return fmt.Sprintf("%s.%s", t.Database, t.name)
+	default:
+		return fmt.Sprintf("%s.%s.%s", t.Database, t.Schema, t.name)
+	}
 }
 
 func (t *TableData) Rows() uint {

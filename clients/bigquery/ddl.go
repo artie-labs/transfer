@@ -12,7 +12,7 @@ import (
 )
 
 func (s *Store) getTableConfig(_ context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	fqName := tableData.ToFqName(constants.BigQuery, tableData.Name())
+	fqName := tableData.ToFqName(constants.BigQuery)
 	tc := s.configMap.TableConfig(fqName)
 	if tc != nil {
 		return tc, nil
