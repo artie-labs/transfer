@@ -81,17 +81,13 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate() {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal := value[col]
-			if colVal != nil {
-				// Check
-				castedValue, castErr := CastColValStaging(colVal, colKind)
-				if castErr != nil {
-					return "", castErr
-				}
-
-				row = append(row, castedValue)
-			} else {
-				row = append(row, "")
+			// Check
+			castedValue, castErr := CastColValStaging(colVal, colKind)
+			if castErr != nil {
+				return "", castErr
 			}
+
+			row = append(row, castedValue)
 		}
 
 		if err = writer.Write(row); err != nil {

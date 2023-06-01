@@ -82,9 +82,10 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 	assert.NoError(d.T(), err)
 	assert.Equal(d.T(), 1, d.fakeSnowflakeStagesStore.ExecCallCount())
 	query, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(0)
+
 	assert.Contains(d.T(),
 		query,
-		`CREATE TABLE IF NOT EXISTS db.schema.tempTableName (foo string,bar float) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"') COMMENT=`,
+		`CREATE TABLE IF NOT EXISTS db.schema.tempTableName (foo string,bar float) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE) COMMENT=`,
 		query)
 
 	// BigQuery

@@ -18,7 +18,8 @@ import (
 // This is necessary because CSV writers require values to in `string`.
 func CastColValStaging(colVal interface{}, colKind typing.Column) (string, error) {
 	if colVal == nil {
-		return "", fmt.Errorf("colVal is nil")
+		// \\N needs to match NULL_IF(...) from ddl.go
+		return `\\N`, nil
 	}
 
 	colValString := fmt.Sprint(colVal)
