@@ -2,10 +2,11 @@ package format
 
 import (
 	"context"
-	"github.com/artie-labs/transfer/lib/config"
 	"os"
 	"os/exec"
 	"testing"
+
+	"github.com/artie-labs/transfer/lib/config"
 
 	"github.com/stretchr/testify/assert"
 
@@ -20,7 +21,7 @@ func TestGetFormatParser(t *testing.T) {
 
 	validFormats := []string{constants.DBZPostgresAltFormat, constants.DBZPostgresFormat, constants.DBZMongoFormat}
 	for _, validFormat := range validFormats {
-		assert.NotNil(t, GetFormatParser(ctx, validFormat))
+		assert.NotNil(t, GetFormatParser(ctx, validFormat, "topicA"))
 	}
 }
 
@@ -43,6 +44,6 @@ func testOsExit(t *testing.T, testFunc func(*testing.T)) {
 func TestGetFormatParserFatal(t *testing.T) {
 	// This test cannot be iterated because it forks a separate process to do `go test -test.run=...`
 	testOsExit(t, func(t *testing.T) {
-		GetFormatParser(context.Background(), "foo")
+		GetFormatParser(context.Background(), "foo", "topicB")
 	})
 }

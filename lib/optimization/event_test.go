@@ -21,7 +21,7 @@ func TestTableData_ReadOnlyInMemoryCols(t *testing.T) {
 		KindDetails: typing.String,
 	})
 
-	td := NewTableData(&cols, nil, kafkalib.TopicConfig{})
+	td := NewTableData(&cols, nil, kafkalib.TopicConfig{}, "foo")
 	readOnlyCols := td.ReadOnlyInMemoryCols()
 	readOnlyCols.AddColumn(typing.Column{
 		Name:        "last_name",
@@ -105,7 +105,7 @@ func TestTableData_ShouldFlushRowLength(t *testing.T) {
 	}})
 
 	// Insert 3 rows and confirm that we need to flush.
-	td := NewTableData(nil, nil, kafkalib.TopicConfig{})
+	td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
 	for i := 0; i < 3; i++ {
 		assert.False(t, td.ShouldFlush(ctx))
 		td.InsertRow(fmt.Sprint(i), map[string]interface{}{
@@ -124,7 +124,7 @@ func TestTableData_ShouldFlushRowSize(t *testing.T) {
 	}})
 
 	// Insert 3 rows and confirm that we need to flush.
-	td := NewTableData(nil, nil, kafkalib.TopicConfig{})
+	td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
 	for i := 0; i < 45; i++ {
 		assert.False(t, td.ShouldFlush(ctx))
 		td.InsertRow(fmt.Sprint(i), map[string]interface{}{

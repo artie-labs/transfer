@@ -20,6 +20,10 @@ func (f fakeEvent) GetExecutionTime() time.Time {
 	return time.Now()
 }
 
+func (f fakeEvent) GetTableName() string {
+	return "foo"
+}
+
 func (f fakeEvent) GetOptionalSchema(ctx context.Context) map[string]typing.KindDetails {
 	return nil
 }

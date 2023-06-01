@@ -130,7 +130,7 @@ func (s *SnowflakeTestSuite) TestMergeNoDeleteFlag() {
 		KindDetails: typing.Integer,
 	})
 
-	tableData := optimization.NewTableData(&cols, []string{"id"}, kafkalib.TopicConfig{})
+	tableData := optimization.NewTableData(&cols, []string{"id"}, kafkalib.TopicConfig{}, "foo")
 	_, err := getMergeStatement(tableData)
 	assert.Error(s.T(), err, "getMergeStatement failed")
 
@@ -166,7 +166,7 @@ func (s *SnowflakeTestSuite) TestMerge() {
 	}
 
 	primaryKeys := []string{"id"}
-	tableData := optimization.NewTableData(&cols, primaryKeys, topicConfig)
+	tableData := optimization.NewTableData(&cols, primaryKeys, topicConfig, "bar")
 	for pk, row := range rowData {
 		tableData.InsertRow(pk, row)
 	}
@@ -226,7 +226,7 @@ func (s *SnowflakeTestSuite) TestMergeWithSingleQuote() {
 		Schema:    "public",
 	}
 
-	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig)
+	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, "abc")
 	for pk, row := range rowData {
 		tableData.InsertRow(pk, row)
 	}
@@ -262,7 +262,7 @@ func (s *SnowflakeTestSuite) TestMergeJson() {
 		Schema:    "public",
 	}
 
-	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig)
+	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, "def")
 	for pk, row := range rowData {
 		tableData.InsertRow(pk, row)
 	}
@@ -307,7 +307,7 @@ func (s *SnowflakeTestSuite) TestMergeJSONKey() {
 	}
 
 	primaryKeys := []string{"id"}
-	tableData := optimization.NewTableData(&cols, primaryKeys, topicConfig)
+	tableData := optimization.NewTableData(&cols, primaryKeys, topicConfig, "ghi")
 	for pk, row := range rowData {
 		tableData.InsertRow(pk, row)
 	}

@@ -31,8 +31,8 @@ func GetUniqueDatabaseAndSchema(tcs []*TopicConfig) []DatabaseSchemaPair {
 }
 
 type TopicConfig struct {
-	Database string `yaml:"db"`
-	//TableName          string `yaml:"tableName"`
+	Database           string `yaml:"db"`
+	TableName          string `yaml:"tableName"`
 	Schema             string `yaml:"schema"`
 	Topic              string `yaml:"topic"`
 	IdempotentKey      string `yaml:"idempotentKey"`
@@ -57,8 +57,8 @@ func (t *TopicConfig) String() string {
 	}
 
 	return fmt.Sprintf(
-		"db=%s, schema=%s, topic=%s, idempotentKey=%s, cdcFormat=%s, dropDeletedColumns=%v",
-		t.Database, t.Schema, t.Topic, t.IdempotentKey, t.CDCFormat, t.DropDeletedColumns)
+		"db=%s, schema=%s, tableNameOverride=%s, topic=%s, idempotentKey=%s, cdcFormat=%s, dropDeletedColumns=%v",
+		t.Database, t.Schema, t.TableName, t.Topic, t.IdempotentKey, t.CDCFormat, t.DropDeletedColumns)
 }
 
 func (t *TopicConfig) Valid() bool {

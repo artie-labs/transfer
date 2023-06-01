@@ -2,13 +2,14 @@ package optimization
 
 import (
 	"fmt"
-	"github.com/artie-labs/transfer/lib/kafkalib"
 	"testing"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
 func BenchmarkTableData_ApproxSize_TallTable(b *testing.B) {
-	td := NewTableData(nil, nil, kafkalib.TopicConfig{})
+	td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "tallTable")
 	for n := 0; n < b.N; n++ {
 		td.InsertRow(fmt.Sprint(n), map[string]interface{}{
 			"id":   n,
@@ -19,7 +20,7 @@ func BenchmarkTableData_ApproxSize_TallTable(b *testing.B) {
 }
 
 func BenchmarkTableData_ApproxSize_WideTable(b *testing.B) {
-	td := NewTableData(nil, nil, kafkalib.TopicConfig{})
+	td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "wideTable")
 	for n := 0; n < b.N; n++ {
 		td.InsertRow(fmt.Sprint(n), map[string]interface{}{
 			"id":                 n,
