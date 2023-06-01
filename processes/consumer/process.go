@@ -37,7 +37,6 @@ func processMessage(ctx context.Context, processArgs ProcessArgs) error {
 
 	tags["database"] = topicConfig.tc.Database
 	tags["schema"] = topicConfig.tc.Schema
-	//tags["table"] = topicConfig.tc.TableName
 
 	pkMap, err := topicConfig.GetPrimaryKey(ctx, processArgs.Msg.Key(), topicConfig.tc)
 	if err != nil {
@@ -52,6 +51,8 @@ func processMessage(ctx context.Context, processArgs ProcessArgs) error {
 	}
 
 	evt := event.ToMemoryEvent(ctx, _event, pkMap, topicConfig.tc)
+	// Table name is only available after event has been casted
+	tags["table"] = evt.Table
 	shouldFlush, err := evt.Save(ctx, topicConfig.tc, processArgs.Msg)
 	if err != nil {
 		tags["what"] = "save_fail"
