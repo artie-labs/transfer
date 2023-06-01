@@ -8,13 +8,20 @@ Today, we support the following cloud providers:
 * Amazon Web Services
 
 {% hint style="info" %}
-Please reach out to **hi@artie.so** if your cloud provider is not listed!&#x20;
+Please reach out to **hi@artie.so** if your cloud provider or region is not listed!
 {% endhint %}
 
 ## IP Ranges (CIDR format)
 
-* `143.198.244.128/32`
-* `147.182.226.70/32`
-* `164.92.90.51/32`
-* `24.199.76.93/32`
-* `24.199.76.121/32`
+**AWS US-East-1**
+
+* 3.215.55.30/32
+* 3.216.86.119/32
+* 3.234.42.107/32
+* 3.209.157.160/32
+* 3.212.233.181/32
+* 3.216.214.184/32
+* 34.225.190.48/32
+* 54.165.47.156/32
+* 44.216.116.232/32
+* 54.164.238.160/32
