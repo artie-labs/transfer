@@ -7,6 +7,22 @@ import (
 	"time"
 )
 
+// Override - pass in a list of vals, the right most value that is not empty will override.
+func Override(vals ...string) string {
+	if len(vals) == 0 {
+		return ""
+	}
+
+	var retVal string
+	for _, val := range vals {
+		if val != "" {
+			retVal = val
+		}
+	}
+
+	return retVal
+}
+
 func Reverse(val string) string {
 	var reverseParts []rune
 	valRune := []rune(val)

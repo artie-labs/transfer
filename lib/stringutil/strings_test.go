@@ -6,6 +6,56 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestOverride(t *testing.T) {
+	type _testCase struct {
+		name        string
+		vals        []string
+		expectedVal string
+	}
+
+	testCases := []_testCase{
+		{
+			name:        "empty",
+			expectedVal: "",
+		},
+		{
+			name:        "empty (empty list)",
+			vals:        []string{},
+			expectedVal: "",
+		},
+		{
+			name:        "empty (list w/ empty val)",
+			vals:        []string{""},
+			expectedVal: "",
+		},
+		{
+			name:        "one value",
+			vals:        []string{"hi"},
+			expectedVal: "hi",
+		},
+		{
+			name:        "override (2 vals)",
+			vals:        []string{"hi", "latest"},
+			expectedVal: "latest",
+		},
+		{
+			name:        "override (3 vals)",
+			vals:        []string{"hi", "", "latest"},
+			expectedVal: "latest",
+		},
+		{
+			name:        "override (all empty)",
+			vals:        []string{"hii", "", ""},
+			expectedVal: "hii",
+		},
+	}
+
+	for _, testCase := range testCases {
+		actualVal := Override(testCase.vals...)
+		assert.Equal(t, testCase.expectedVal, actualVal, testCase.name)
+	}
+}
+
 func TestWrap(t *testing.T) {
 	type _testCase struct {
 		name           string

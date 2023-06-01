@@ -29,14 +29,8 @@ type Event struct {
 }
 
 func ToMemoryEvent(ctx context.Context, event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) Event {
-	table := event.GetTableName()
-	if tc.TableName != "" {
-		// Overwritten by topicConfig
-		table = tc.TableName
-	}
-
 	return Event{
-		Table:          table,
+		Table:          stringutil.Override(event.GetTableName(), tc.TableName),
 		PrimaryKeyMap:  pkMap,
 		ExecutionTime:  event.GetExecutionTime(),
 		OptionalSchema: event.GetOptionalSchema(ctx),

@@ -40,13 +40,7 @@ type TableData struct {
 	name string
 }
 
-// TODO - test
 func (t *TableData) Name() string {
-	// Check override first
-	if t.TopicConfig.TableName != "" {
-		return t.TopicConfig.TableName
-	}
-
 	return t.name
 }
 
@@ -74,12 +68,6 @@ func (t *TableData) ReadOnlyInMemoryCols() *typing.Columns {
 }
 
 func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicConfig kafkalib.TopicConfig, name string) *TableData {
-	tableName := name
-	if topicConfig.TableName != "" {
-		// TableName override.
-		tableName = topicConfig.TableName
-	}
-
 	return &TableData{
 		inMemoryColumns:         inMemoryColumns,
 		rowsData:                map[string]map[string]interface{}{},
@@ -87,7 +75,7 @@ func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicCo
 		TopicConfig:             topicConfig,
 		PartitionsToLastMessage: map[string][]artie.Message{},
 		temporaryTableSuffix:    fmt.Sprintf("%s_%s", constants.ArtiePrefix, stringutil.Random(10)),
-		name:                    tableName,
+		name:                    stringutil.Override(name, topicConfig.TableName),
 	}
 }
 
