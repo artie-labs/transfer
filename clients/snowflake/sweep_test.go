@@ -101,7 +101,6 @@ func (s *SnowflakeTestSuite) TestSweep() {
 	})
 
 	assert.NoError(s.T(), s.stageStore.Sweep(s.ctx))
-	fmt.Println(s.fakeStageStore.QueryCallCount())
 	query, _ := s.fakeStageStore.QueryArgsForCall(0)
 	assert.Equal(s.T(), `SELECT table_name, comment FROM db.information_schema.tables where table_name ILIKE '%__artie%' AND table_schema = UPPER('schema')`, query)
 }

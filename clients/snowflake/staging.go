@@ -90,7 +90,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 
 				row = append(row, castedValue)
 			} else {
-				row = append(row, "")
+				row = append(row, `\\N`)
 			}
 		}
 

@@ -110,7 +110,7 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) e
 				// TEMPORARY Table syntax - https://docs.snowflake.com/en/sql-reference/sql/create-table
 				// PURGE syntax - https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#purging-files-after-loading
 				// FIELD_OPTIONALLY_ENCLOSED_BY - is needed because CSV will try to escape any values that have `"`
-				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"') COMMENT='%s'`,
+				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE) COMMENT='%s'`,
 					args.FqTableName, strings.Join(colSQLParts, ","),
 					// Comment on the table
 					fmt.Sprintf("%s%s", constants.SnowflakeExpireCommentPrefix, expiryString))
