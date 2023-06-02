@@ -72,7 +72,9 @@ func kindToBigQuery(kindDetails KindDetails) string {
 	case ETime.Kind:
 		switch kindDetails.ExtendedTimeDetails.Type {
 		case ext.DateTimeKindType:
-			return "datetime"
+			// https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#datetime_type
+			// We should be using TIMESTAMP since it's an absolute point in time.
+			return "timestamp"
 		case ext.DateKindType:
 			return "date"
 		case ext.TimeKindType:
