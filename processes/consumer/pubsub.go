@@ -14,7 +14,7 @@ import (
 	"google.golang.org/api/option"
 )
 
-const defaultAckDeadline = 5 * time.Minute
+const defaultAckDeadline = 10 * time.Minute
 
 func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, topic, subName string) (*gcp_pubsub.Subscription, error) {
 	log := logger.FromContext(ctx)
@@ -44,6 +44,9 @@ func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, to
 			return nil, fmt.Errorf("failed to create subscription, topic: %s, err: %v", topic, err)
 		}
 	}
+
+	// This needs to be higher because the default is 1k, so our process does not get blocked.
+	sub.ReceiveSettings.MaxOutstandingMessages = int(config.FromContext(ctx).Config.BufferRows) * 2
 
 	return sub, err
 }
