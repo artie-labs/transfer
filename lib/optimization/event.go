@@ -118,11 +118,11 @@ func (t *TableData) RowsData() map[string]map[string]interface{} {
 	return _rowsData
 }
 
-func (t *TableData) ToFqName(kind constants.DestinationKind) string {
+func (t *TableData) ToFqName(ctx context.Context, kind constants.DestinationKind) string {
 	switch kind {
 	case constants.BigQuery:
 		// BigQuery doesn't use schema
-		return fmt.Sprintf("%s.%s", t.TopicConfig.Database, t.Name())
+		return fmt.Sprintf("%s.%s.%s", config.FromContext(ctx).Config.BigQuery.ProjectID, t.TopicConfig.Database, t.Name())
 	default:
 		return fmt.Sprintf("%s.%s.%s", t.TopicConfig.Database, t.TopicConfig.Schema, t.Name())
 	}

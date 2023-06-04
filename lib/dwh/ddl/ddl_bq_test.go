@@ -41,7 +41,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 		})
 	}
 
-	fqName := td.ToFqName(constants.BigQuery)
+	fqName := td.ToFqName(ctx, constants.BigQuery)
 
 	originalColumnLength := len(cols.GetColumns())
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, true))

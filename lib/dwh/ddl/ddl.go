@@ -121,7 +121,6 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) e
 			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
 		}
 
-		fmt.Println("sqlQuery", sqlQuery)
 		_, err = args.Dwh.Exec(sqlQuery)
 		if ColumnAlreadyExistErr(err, args.Dwh.Label()) {
 			err = nil
