@@ -48,9 +48,9 @@ func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, to
 	// This should be the same as our buffer rows so we don't limit our processing throughput
 	sub.ReceiveSettings.MaxOutstandingMessages = int(config.FromContext(ctx).Config.BufferRows) + 1
 
-	// When it spawns 10 additional Go-routines per subscription, it actually does not make the process faster. Rather, it creates more coordination overhead
-	// Our process message is already extremely fast (~100-200 ns).
-	// This overhead is not worth it.
+	// By default, the pub/sub library will try to spawns 10 additional Go-routines per subscription,
+	// it actually does not make the process faster. Rather, it creates more coordination overhead.
+	// Our process message is already extremely fast (~100-200 ns), so we're reducing this down to 1.
 	sub.ReceiveSettings.NumGoroutines = 1
 	return sub, err
 }
