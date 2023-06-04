@@ -157,11 +157,13 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	})
 
 	if err != nil {
+		fmt.Println("failed to generate merge", err)
 		return err
 	}
 
 	_, err = s.Exec(mergeQuery)
 	if err != nil {
+		fmt.Println("failed to execute merge", err, mergeQuery)
 		return err
 	}
 

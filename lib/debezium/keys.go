@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
 const (
@@ -56,7 +58,8 @@ func parsePartitionKeyString(key []byte) (map[string]interface{}, error) {
 
 		retMap[kvParts[0]] = strings.Join(kvParts[1:], "=")
 	}
-
+	// Skip this key.
+	delete(retMap, constants.DebeziumTopicRoutingKey)
 	return retMap, nil
 }
 
@@ -86,5 +89,7 @@ func parsePartitionKeyStruct(key []byte) (map[string]interface{}, error) {
 		return nil, fmt.Errorf("key object is malformated")
 	}
 
+	// Skip this key.
+	delete(pkStruct, constants.DebeziumTopicRoutingKey)
 	return pkStruct, nil
 }
