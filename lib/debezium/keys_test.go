@@ -1,8 +1,9 @@
 package debezium
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParsePartitionKeyString(t *testing.T) {
@@ -18,6 +19,11 @@ func TestParsePartitionKeyString(t *testing.T) {
 	kv, err = parsePartitionKeyString([]byte("Struct{id=47}"))
 	assert.NoError(t, err)
 	assert.Equal(t, kv["id"], "47")
+
+	kv, err = parsePartitionKeyString([]byte("Struct{id=47,__dbz__physicalTableIdentifier=dbserver1.inventory.customers}"))
+	assert.NoError(t, err)
+	assert.Equal(t, kv["id"], "47")
+	assert.Equal(t, 1, len(kv))
 
 	kv, err = parsePartitionKeyString([]byte("Struct{uuid=d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c}"))
 	assert.Nil(t, err)
@@ -111,4 +117,32 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 	assert.Equal(t, kv["quarter_id"], float64(1))
 	assert.Equal(t, kv["student_id"], float64(1))
 	assert.Equal(t, kv["course_id"], "course1")
+
+	// Normal key with Debezium change event key (SMT)
+	smtKey := `{
+	"schema": {
+		"type": "struct",
+		"fields": [{
+			"type": "int32",
+			"optional": false,
+			"default": 0,
+			"field": "id"
+		}, {
+			"type": "string",
+			"optional": false,
+			"field": "__dbz__physicalTableIdentifier"
+		}],
+		"optional": false,
+		"name": "dbserver1.inventory.all_tables.Key"
+	},
+	"payload": {
+		"id": 1001,
+		"__dbz__physicalTableIdentifier": "dbserver1.inventory.customers"
+	}
+}`
+
+	kv, err = parsePartitionKeyStruct([]byte(smtKey))
+	assert.NoError(t, err)
+	assert.Equal(t, kv["id"], float64(1001))
+	assert.Equal(t, 1, len(kv))
 }

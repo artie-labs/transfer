@@ -30,7 +30,7 @@ func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, to
 		exists, err = gcpTopic.Exists(ctx)
 		if !exists || err != nil {
 			// We error out if the topic does not exist or there's an error.
-			return nil, fmt.Errorf("failed to fetch gcp topic, exists: %v, err: %v", exists, err)
+			return nil, fmt.Errorf("failed to fetch gcp topic, topic exists: %v, err: %v", exists, err)
 		}
 
 		sub, err = client.CreateSubscription(ctx, subName, gcp_pubsub.SubscriptionConfig{
