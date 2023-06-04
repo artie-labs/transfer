@@ -36,6 +36,7 @@
 
 * [Artie's typing library](tutorials/arties-typing-library.md)
 * [Setting up Pub/Sub](tutorials/setting-up-pub-sub.md)
+* [Debezium Topic Reroute SMT](tutorials/debezium-topic-reroute-smt.md)
 
 ***
 
