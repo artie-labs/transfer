@@ -1,7 +1,6 @@
 package ddl_test
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -18,7 +17,6 @@ import (
 )
 
 func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
-	ctx := context.Background()
 	ts := time.Now()
 
 	td := &optimization.TableData{
@@ -41,7 +39,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 		})
 	}
 
-	fqName := td.ToFqName(ctx, constants.BigQuery)
+	fqName := td.ToFqName(d.bqCtx, constants.BigQuery)
 
 	originalColumnLength := len(cols.GetColumns())
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, true))
@@ -59,7 +57,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 			CdcTime:     ts,
 		}
 
-		err := ddl.AlterTable(ctx, alterTableArgs, column)
+		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
 		assert.NoError(d.T(), err)
 	}
 
@@ -80,7 +78,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 			CdcTime:     ts.Add(2 * constants.DeletionConfidencePadding),
 		}
 
-		err := ddl.AlterTable(ctx, alterTableArgs, column)
+		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
 
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s drop COLUMN %s", fqName, column.Name), query)
@@ -97,7 +95,6 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 
 func (d *DDLTestSuite) TestAlterTableAddColumns() {
 	fqName := "mock_dataset.add_cols"
-	ctx := context.Background()
 	ts := time.Now()
 	existingColNameToKindDetailsMap := map[string]typing.KindDetails{
 		"foo": typing.String,
@@ -134,7 +131,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 			ColumnOp:    constants.Add,
 			CdcTime:     ts,
 		}
-		err := ddl.AlterTable(ctx, alterTableArgs, typing.Column{Name: name, KindDetails: kind})
+		err := ddl.AlterTable(d.bqCtx, alterTableArgs, typing.Column{Name: name, KindDetails: kind})
 		assert.NoError(d.T(), err)
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, name, typing.KindToDWHType(kind, d.bigQueryStore.Label())), query)
@@ -158,7 +155,6 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 
 func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 	fqName := "mock_dataset.add_cols"
-	ctx := context.Background()
 	ts := time.Now()
 	existingColNameToKindDetailsMap := map[string]typing.KindDetails{
 		"foo": typing.String,
@@ -190,7 +186,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 			ColumnOp:    constants.Add,
 			CdcTime:     ts,
 		}
-		err := ddl.AlterTable(ctx, alterTableArgs, column)
+		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
 		assert.NoError(d.T(), err)
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, column.Name, typing.KindToDWHType(column.KindDetails, d.bigQueryStore.Label())), query)
@@ -208,9 +204,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 }
 
 func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
-	ctx := context.Background()
 	ts := time.Now()
-
 	td := &optimization.TableData{
 		TopicConfig: kafkalib.TopicConfig{
 			Database:  "mock_dataset",
@@ -228,7 +222,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 		columns.AddColumn(typing.Column{Name: colName, KindDetails: kindDetails})
 	}
 
-	fqName := td.ToFqName(constants.BigQuery)
+	fqName := td.ToFqName(d.bqCtx, constants.BigQuery)
 
 	originalColumnLength := len(columnNameToKindDetailsMap)
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns, nil, false, false))
@@ -245,7 +239,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 			ColumnOp:    constants.Delete,
 			CdcTime:     ts,
 		}
-		err := ddl.AlterTable(ctx, alterTableArgs, column)
+		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
 		assert.NoError(d.T(), err)
 	}
 
@@ -263,7 +257,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 			CdcTime:     ts.Add(2 * constants.DeletionConfidencePadding),
 		}
 
-		err := ddl.AlterTable(ctx, alterTableArgs, column)
+		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
 		assert.NoError(d.T(), err)
 		assert.Equal(d.T(), 0, d.fakeBigQueryStore.ExecCallCount())
 	}

@@ -17,6 +17,7 @@ import (
 type DDLTestSuite struct {
 	suite.Suite
 	ctx               context.Context
+	bqCtx             context.Context
 	fakeBigQueryStore *mocks.FakeStore
 	bigQueryStore     *bigquery.Store
 
@@ -32,8 +33,19 @@ func (d *DDLTestSuite) SetupTest() {
 		VerboseLogging: true,
 	})
 
+	bqCtx := config.InjectSettingsIntoContext(context.Background(), &config.Settings{
+		VerboseLogging: true,
+		Config: &config.Config{
+			BigQuery: &config.BigQuery{
+				ProjectID: "artie-project",
+			},
+		},
+	})
+
+	bqCtx = logger.InjectLoggerIntoCtx(bqCtx)
 	ctx = logger.InjectLoggerIntoCtx(ctx)
 	d.ctx = ctx
+	d.bqCtx = bqCtx
 
 	d.fakeBigQueryStore = &mocks.FakeStore{}
 	bqStore := db.Store(d.fakeBigQueryStore)

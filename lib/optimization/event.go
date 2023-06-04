@@ -121,7 +121,7 @@ func (t *TableData) RowsData() map[string]map[string]interface{} {
 func (t *TableData) ToFqName(ctx context.Context, kind constants.DestinationKind) string {
 	switch kind {
 	case constants.BigQuery:
-		// BigQuery doesn't use schema
+		// The fully qualified name for BigQuery is: project_id.dataset.tableName.
 		return fmt.Sprintf("%s.%s.%s", config.FromContext(ctx).Config.BigQuery.ProjectID, t.TopicConfig.Database, t.Name())
 	default:
 		return fmt.Sprintf("%s.%s.%s", t.TopicConfig.Database, t.TopicConfig.Schema, t.Name())
