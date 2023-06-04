@@ -79,7 +79,7 @@ func StartSubscriber(ctx context.Context, flushChan chan bool) {
 		wg.Add(1)
 		go func(ctx context.Context, client *gcp_pubsub.Client, topic string) {
 			defer wg.Done()
-			subName := fmt.Sprintf("transfer__%s", topic)
+			subName := fmt.Sprintf("transfer_%s", topic)
 			sub, err := findOrCreateSubscription(ctx, client, topic, subName)
 			if err != nil {
 				log.Fatalf("failed to find or create subscription, err: %v", err)
