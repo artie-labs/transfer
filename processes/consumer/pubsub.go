@@ -14,7 +14,7 @@ import (
 	"google.golang.org/api/option"
 )
 
-const defaultAckDeadline = 5 * time.Minute
+const defaultAckDeadline = 10 * time.Minute
 
 func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, topic, subName string) (*gcp_pubsub.Subscription, error) {
 	log := logger.FromContext(ctx)
@@ -30,7 +30,7 @@ func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, to
 		exists, err = gcpTopic.Exists(ctx)
 		if !exists || err != nil {
 			// We error out if the topic does not exist or there's an error.
-			return nil, fmt.Errorf("failed to fetch gcp topic, exists: %v, err: %v", exists, err)
+			return nil, fmt.Errorf("failed to fetch gcp topic, topic exists: %v, err: %v", exists, err)
 		}
 
 		sub, err = client.CreateSubscription(ctx, subName, gcp_pubsub.SubscriptionConfig{
@@ -45,6 +45,13 @@ func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, to
 		}
 	}
 
+	// This should be the same as our buffer rows so we don't limit our processing throughput
+	sub.ReceiveSettings.MaxOutstandingMessages = int(config.FromContext(ctx).Config.BufferRows) + 1
+
+	// By default, the pub/sub library will try to spawns 10 additional Go-routines per subscription,
+	// it actually does not make the process faster. Rather, it creates more coordination overhead.
+	// Our process message is already extremely fast (~100-200 ns), so we're reducing this down to 1.
+	sub.ReceiveSettings.NumGoroutines = 1
 	return sub, err
 }
 
@@ -78,30 +85,33 @@ func StartSubscriber(ctx context.Context, flushChan chan bool) {
 				log.Fatalf("failed to find or create subscription, err: %v", err)
 			}
 
-			err = sub.Receive(ctx, func(_ context.Context, pubsubMsg *gcp_pubsub.Message) {
-				msg := artie.NewMessage(nil, pubsubMsg, topic)
-				msg.EmitIngestionLag(ctx, subName)
-				logFields := map[string]interface{}{
-					"topic": msg.Topic(),
-					"msgID": msg.PubSub.ID,
-					"key":   string(msg.Key()),
-					"value": string(msg.Value()),
-				}
+			for {
+				err = sub.Receive(ctx, func(_ context.Context, pubsubMsg *gcp_pubsub.Message) {
+					msg := artie.NewMessage(nil, pubsubMsg, topic)
+					msg.EmitIngestionLag(ctx, subName)
+					logFields := map[string]interface{}{
+						"topic": msg.Topic(),
+						"msgID": msg.PubSub.ID,
+						"key":   string(msg.Key()),
+						"value": string(msg.Value()),
+					}
 
-				processErr := processMessage(ctx, ProcessArgs{
-					Msg:                    msg,
-					GroupID:                subName,
-					TopicToConfigFormatMap: topicToConfigFmtMap,
-					FlushChannel:           flushChan,
+					processErr := processMessage(ctx, ProcessArgs{
+						Msg:                    msg,
+						GroupID:                subName,
+						TopicToConfigFormatMap: topicToConfigFmtMap,
+						FlushChannel:           flushChan,
+					})
+					if processErr != nil {
+						log.WithError(processErr).WithFields(logFields).Warn("skipping message...")
+					}
 				})
-				if processErr != nil {
-					log.WithError(processErr).WithFields(logFields).Warn("skipping message...")
-				}
-			})
 
-			if err != nil {
-				log.Fatalf("sub receive error, err: %v", err)
+				if err != nil {
+					log.Fatalf("sub receive error, err: %v", err)
+				}
 			}
+
 		}(ctx, client, topicConfig.Topic)
 
 	}

@@ -11,8 +11,8 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (s *Store) getTableConfig(_ context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	fqName := tableData.ToFqName(constants.BigQuery)
+func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+	fqName := tableData.ToFqName(ctx, constants.BigQuery)
 	tc := s.configMap.TableConfig(fqName)
 	if tc != nil {
 		return tc, nil

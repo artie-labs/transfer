@@ -66,7 +66,7 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) er
 		return nil
 	}
 
-	fqName := tableData.ToFqName(constants.Snowflake)
+	fqName := tableData.ToFqName(ctx, constants.Snowflake)
 	tableConfig, err := s.getTableConfig(ctx, fqName, tableData.TopicConfig.DropDeletedColumns)
 	if err != nil {
 		return err
@@ -128,7 +128,7 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
-	query, err := getMergeStatement(tableData)
+	query, err := getMergeStatement(ctx, tableData)
 	if err != nil {
 		log.WithError(err).Warn("failed to generate the getMergeStatement query")
 		return err

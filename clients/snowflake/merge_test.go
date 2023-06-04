@@ -131,7 +131,7 @@ func (s *SnowflakeTestSuite) TestMergeNoDeleteFlag() {
 	})
 
 	tableData := optimization.NewTableData(&cols, []string{"id"}, kafkalib.TopicConfig{}, "")
-	_, err := getMergeStatement(tableData)
+	_, err := getMergeStatement(s.ctx, tableData)
 	assert.Error(s.T(), err, "getMergeStatement failed")
 
 }
@@ -171,7 +171,7 @@ func (s *SnowflakeTestSuite) TestMerge() {
 		tableData.InsertRow(pk, row)
 	}
 
-	mergeSQL, err := getMergeStatement(tableData)
+	mergeSQL, err := getMergeStatement(s.ctx, tableData)
 	assert.NoError(s.T(), err, "getMergeStatement failed")
 	assert.Contains(s.T(), mergeSQL, "robin")
 	assert.Contains(s.T(), mergeSQL, "false")
@@ -231,7 +231,7 @@ func (s *SnowflakeTestSuite) TestMergeWithSingleQuote() {
 		tableData.InsertRow(pk, row)
 	}
 
-	mergeSQL, err := getMergeStatement(tableData)
+	mergeSQL, err := getMergeStatement(s.ctx, tableData)
 	assert.NoError(s.T(), err, "getMergeStatement failed")
 	assert.Contains(s.T(), mergeSQL, `I can\'t fail`)
 }
@@ -267,7 +267,7 @@ func (s *SnowflakeTestSuite) TestMergeJson() {
 		tableData.InsertRow(pk, row)
 	}
 
-	mergeSQL, err := getMergeStatement(tableData)
+	mergeSQL, err := getMergeStatement(s.ctx, tableData)
 	assert.NoError(s.T(), err, "getMergeStatement failed")
 	assert.Contains(s.T(), mergeSQL, `"label": "2\\" pipe"`)
 }
@@ -312,7 +312,7 @@ func (s *SnowflakeTestSuite) TestMergeJSONKey() {
 		tableData.InsertRow(pk, row)
 	}
 
-	mergeSQL, err := getMergeStatement(tableData)
+	mergeSQL, err := getMergeStatement(s.ctx, tableData)
 	assert.NoError(s.T(), err, "merge failed")
 	// Check if MERGE INTO FQ Table exists.
 	assert.True(s.T(), strings.Contains(mergeSQL, "MERGE INTO shop.public.customer c"), mergeSQL)

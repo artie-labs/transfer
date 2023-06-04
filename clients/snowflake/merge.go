@@ -1,6 +1,7 @@
 package snowflake
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -47,7 +48,7 @@ func escapeCols(cols []typing.Column) (colsToUpdate []string, colsToUpdateEscape
 	return
 }
 
-func getMergeStatement(tableData *optimization.TableData) (string, error) {
+func getMergeStatement(ctx context.Context, tableData *optimization.TableData) (string, error) {
 	var tableValues []string
 	colsToUpdate, colsToUpdateEscaped := escapeCols(tableData.ReadOnlyInMemoryCols().GetColumns())
 	for _, value := range tableData.RowsData() {
@@ -97,7 +98,7 @@ func getMergeStatement(tableData *optimization.TableData) (string, error) {
 		strings.Join(tableValues, ","), tableData.Name(), strings.Join(colsToUpdate, ","))
 
 	return dml.MergeStatement(dml.MergeArgument{
-		FqTableName:    tableData.ToFqName(constants.Snowflake),
+		FqTableName:    tableData.ToFqName(ctx, constants.Snowflake),
 		SubQuery:       subQuery,
 		IdempotentKey:  tableData.TopicConfig.IdempotentKey,
 		PrimaryKeys:    tableData.PrimaryKeys,

@@ -69,7 +69,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
 		Tc:          tableConfig,
-		FqTableName: tableData.ToFqName(s.Label()),
+		FqTableName: tableData.ToFqName(ctx, s.Label()),
 		CreateTable: tableConfig.CreateTable(),
 		ColumnOp:    constants.Add,
 		CdcTime:     tableData.LatestCDCTs,
@@ -88,7 +88,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	deleteAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
 		Tc:          tableConfig,
-		FqTableName: tableData.ToFqName(s.Label()),
+		FqTableName: tableData.ToFqName(ctx, s.Label()),
 		CreateTable: false,
 		ColumnOp:    constants.Delete,
 		CdcTime:     tableData.LatestCDCTs,
@@ -121,7 +121,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	tempAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:            s,
 		Tc:             tableConfig,
-		FqTableName:    fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label()), tableData.TempTableSuffix()),
+		FqTableName:    fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label()), tableData.TempTableSuffix()),
 		CreateTable:    true,
 		TemporaryTable: true,
 		ColumnOp:       constants.Add,
@@ -146,7 +146,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	mergeQuery, err := dml.MergeStatement(dml.MergeArgument{
-		FqTableName:    tableData.ToFqName(constants.BigQuery),
+		FqTableName:    tableData.ToFqName(ctx, constants.BigQuery),
 		SubQuery:       tempAlterTableArgs.FqTableName,
 		IdempotentKey:  tableData.TopicConfig.IdempotentKey,
 		PrimaryKeys:    tableData.PrimaryKeys,

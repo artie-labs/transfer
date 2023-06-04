@@ -31,25 +31,33 @@ func TestNewTableData_TableName(t *testing.T) {
 			tableName:               "food",
 			expectedName:            "food",
 			expectedSnowflakeFqName: "..food",
-			expectedBigQueryFqName:  ".food",
+			expectedBigQueryFqName:  "artie..food",
 		},
 		{
 			name:                    "override is provided",
 			tableName:               "food",
 			overrideName:            "drinks",
 			expectedName:            "drinks",
-			expectedSnowflakeFqName: "..drinks", // db, schema
-			expectedBigQueryFqName:  ".drinks",  // data set only
+			expectedSnowflakeFqName: "..drinks",      // db, schema
+			expectedBigQueryFqName:  "artie..drinks", // data set only
 		},
 	}
+
+	ctx := config.InjectSettingsIntoContext(context.Background(), &config.Settings{
+		Config: &config.Config{
+			BigQuery: &config.BigQuery{
+				ProjectID: "artie",
+			},
+		},
+	})
 
 	for _, testCase := range testCases {
 		td := NewTableData(nil, nil, kafkalib.TopicConfig{TableName: testCase.overrideName}, testCase.tableName)
 		assert.Equal(t, testCase.expectedName, td.Name(), testCase.name)
 		assert.Equal(t, testCase.expectedName, td.name, testCase.name)
-		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(constants.SnowflakeStages))
-		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(constants.Snowflake))
-		assert.Equal(t, testCase.expectedBigQueryFqName, td.ToFqName(constants.BigQuery))
+		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.SnowflakeStages))
+		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.Snowflake))
+		assert.Equal(t, testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery))
 	}
 }
 
