@@ -45,9 +45,13 @@ func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, to
 		}
 	}
 
-	// This needs to be higher because the default is 1k, so our process does not get blocked.
-	sub.ReceiveSettings.MaxOutstandingMessages = int(config.FromContext(ctx).Config.BufferRows) * 2
+	// This should be the same as our buffer rows so we don't limit our processing throughput
+	sub.ReceiveSettings.MaxOutstandingMessages = int(config.FromContext(ctx).Config.BufferRows) + 1
 
+	// When it spawns 10 additional Go-routines per subscription, it actually does not make the process faster. Rather, it creates more coordination overhead
+	// Our process message is already extremely fast (~100-200 ns).
+	// This overhead is not worth it.
+	sub.ReceiveSettings.NumGoroutines = 1
 	return sub, err
 }
 
@@ -75,36 +79,39 @@ func StartSubscriber(ctx context.Context, flushChan chan bool) {
 		wg.Add(1)
 		go func(ctx context.Context, client *gcp_pubsub.Client, topic string) {
 			defer wg.Done()
-			subName := fmt.Sprintf("transfer_%s", topic)
+			subName := fmt.Sprintf("transfer__%s", topic)
 			sub, err := findOrCreateSubscription(ctx, client, topic, subName)
 			if err != nil {
 				log.Fatalf("failed to find or create subscription, err: %v", err)
 			}
 
-			err = sub.Receive(ctx, func(_ context.Context, pubsubMsg *gcp_pubsub.Message) {
-				msg := artie.NewMessage(nil, pubsubMsg, topic)
-				msg.EmitIngestionLag(ctx, subName)
-				logFields := map[string]interface{}{
-					"topic": msg.Topic(),
-					"msgID": msg.PubSub.ID,
-					"key":   string(msg.Key()),
-					"value": string(msg.Value()),
-				}
+			for {
+				err = sub.Receive(ctx, func(_ context.Context, pubsubMsg *gcp_pubsub.Message) {
+					msg := artie.NewMessage(nil, pubsubMsg, topic)
+					msg.EmitIngestionLag(ctx, subName)
+					logFields := map[string]interface{}{
+						"topic": msg.Topic(),
+						"msgID": msg.PubSub.ID,
+						"key":   string(msg.Key()),
+						"value": string(msg.Value()),
+					}
 
-				processErr := processMessage(ctx, ProcessArgs{
-					Msg:                    msg,
-					GroupID:                subName,
-					TopicToConfigFormatMap: topicToConfigFmtMap,
-					FlushChannel:           flushChan,
+					processErr := processMessage(ctx, ProcessArgs{
+						Msg:                    msg,
+						GroupID:                subName,
+						TopicToConfigFormatMap: topicToConfigFmtMap,
+						FlushChannel:           flushChan,
+					})
+					if processErr != nil {
+						log.WithError(processErr).WithFields(logFields).Warn("skipping message...")
+					}
 				})
-				if processErr != nil {
-					log.WithError(processErr).WithFields(logFields).Warn("skipping message...")
-				}
-			})
 
-			if err != nil {
-				log.Fatalf("sub receive error, err: %v", err)
+				if err != nil {
+					log.Fatalf("sub receive error, err: %v", err)
+				}
 			}
+
 		}(ctx, client, topicConfig.Topic)
 
 	}
