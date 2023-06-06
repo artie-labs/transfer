@@ -31,4 +31,4 @@ To grab the connection string, follow these steps:
 
 Please see the diagram below. To get here, go into your Atlas console, make sure you are on the right project and then select "Database Access".
 
-<figure><img src="../../.gitbook/assets/image (2) (2).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (2) (2) (1).png" alt=""><figcaption></figcaption></figure>
