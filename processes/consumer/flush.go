@@ -17,6 +17,9 @@ type Args struct {
 	SpecificTable string
 }
 
+// Flush will merge and commit the offset on the specified topics within `args.SpecificTable`.
+// If the table list is empty, it'll flush everything. This is the default behavior for the time duration based flush.
+// Table specific flushes will be triggered based on the size of the pool (length and size wise).
 func Flush(args Args) error {
 	if models.GetMemoryDB(args.Context) == nil {
 		return nil
