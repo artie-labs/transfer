@@ -7,6 +7,36 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestColumn_EscapeName(t *testing.T) {
+	type _testCase struct {
+		colName      string
+		expectedName string
+	}
+
+	testCases := []_testCase{
+		{
+			colName:      "start",
+			expectedName: `"start"`, // since this is a reserved word.
+		},
+		{
+			colName:      "foo",
+			expectedName: "foo",
+		},
+		{
+			colName:      "bar",
+			expectedName: "bar",
+		},
+	}
+
+	for _, testCase := range testCases {
+		c := &Column{
+			Name: testCase.colName,
+		}
+
+		assert.Equal(t, testCase.expectedName, c.EscapeName(), testCase.colName)
+	}
+}
+
 func TestColumns_GetColumnsToUpdate(t *testing.T) {
 	type _testCase struct {
 		name         string
@@ -150,4 +180,94 @@ func TestColumns_Mutation(t *testing.T) {
 	assert.Equal(t, len(cols.GetColumns()), 1)
 	cols.DeleteColumn("bar")
 	assert.Equal(t, len(cols.GetColumns()), 0)
+}
+
+func TestColumnsUpdateQuery(t *testing.T) {
+	type testCase struct {
+		name           string
+		columns        []string
+		columnsToTypes Columns
+		expectedString string
+		bigQuery       bool
+	}
+
+	fooBarCols := []string{"foo", "bar"}
+
+	var (
+		happyPathCols      Columns
+		stringAndToastCols Columns
+		lastCaseColTypes   Columns
+	)
+	for _, col := range fooBarCols {
+		happyPathCols.AddColumn(Column{
+			Name:        col,
+			KindDetails: String,
+			ToastColumn: false,
+		})
+	}
+	for _, col := range fooBarCols {
+		var toastCol bool
+		if col == "foo" {
+			toastCol = true
+		}
+
+		stringAndToastCols.AddColumn(Column{
+			Name:        col,
+			KindDetails: String,
+			ToastColumn: toastCol,
+		})
+	}
+
+	lastCaseCols := []string{"a1", "b2", "c3"}
+
+	for _, lastCaseCol := range lastCaseCols {
+		kd := String
+		var toast bool
+		// a1 - struct + toast, b2 - string + toast, c3 = regular string.
+		if lastCaseCol == "a1" {
+			kd = Struct
+			toast = true
+		} else if lastCaseCol == "b2" {
+			toast = true
+		}
+
+		lastCaseColTypes.AddColumn(Column{
+			Name:        lastCaseCol,
+			KindDetails: kd,
+			ToastColumn: toast,
+		})
+	}
+
+	testCases := []testCase{
+		{
+			name:           "happy path",
+			columns:        fooBarCols,
+			columnsToTypes: happyPathCols,
+			expectedString: "foo=cc.foo,bar=cc.bar",
+		},
+		{
+			name:           "string and toast",
+			columns:        fooBarCols,
+			columnsToTypes: stringAndToastCols,
+			expectedString: "foo= CASE WHEN cc.foo != '__debezium_unavailable_value' THEN cc.foo ELSE c.foo END,bar=cc.bar",
+		},
+		{
+			name:           "struct, string and toast string",
+			columns:        lastCaseCols,
+			columnsToTypes: lastCaseColTypes,
+			expectedString: "a1= CASE WHEN cc.a1 != {'key': '__debezium_unavailable_value'} THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN cc.b2 != '__debezium_unavailable_value' THEN cc.b2 ELSE c.b2 END,c3=cc.c3",
+		},
+		{
+			name:           "struct, string and toast string (bigquery)",
+			columns:        lastCaseCols,
+			columnsToTypes: lastCaseColTypes,
+			bigQuery:       true,
+			expectedString: `a1= CASE WHEN TO_JSON_STRING(cc.a1) != '{"key": "__debezium_unavailable_value"}' THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN cc.b2 != '__debezium_unavailable_value' THEN cc.b2 ELSE c.b2 END,c3=cc.c3`,
+		},
+	}
+
+	for _, _testCase := range testCases {
+		actualQuery := ColumnsUpdateQuery(_testCase.columns, _testCase.columnsToTypes, _testCase.bigQuery)
+		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
+	}
 }

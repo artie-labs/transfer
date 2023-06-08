@@ -24,6 +24,11 @@ const (
 	BigQueryTempTableTTL = 6 * time.Hour
 )
 
+var ReservedKeywords = []string{
+	"start",
+	"select",
+}
+
 // ExporterKind is used for the Telemetry package
 type ExporterKind string
 

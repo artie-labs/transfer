@@ -90,9 +90,9 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) e
 		mutateCol = append(mutateCol, col)
 		switch args.ColumnOp {
 		case constants.Add:
-			colSQLParts = append(colSQLParts, fmt.Sprintf("%s %s", col.Name, typing.KindToDWHType(col.KindDetails, args.Dwh.Label())))
+			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, col.Name, typing.KindToDWHType(col.KindDetails, args.Dwh.Label())))
 		case constants.Delete:
-			colSQLParts = append(colSQLParts, fmt.Sprintf("%s", col.Name))
+			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s`, col.Name))
 		}
 	}
 
@@ -121,6 +121,7 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) e
 			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
 		}
 
+		fmt.Println("sqlQuery", sqlQuery)
 		_, err = args.Dwh.Exec(sqlQuery)
 		if ColumnAlreadyExistErr(err, args.Dwh.Label()) {
 			err = nil
@@ -130,6 +131,7 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) e
 	} else {
 		for _, colSQLPart := range colSQLParts {
 			sqlQuery := fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", args.FqTableName, args.ColumnOp, colSQLPart)
+			fmt.Println("sqlQuery", sqlQuery)
 			_, err = args.Dwh.Exec(sqlQuery)
 			if ColumnAlreadyExistErr(err, args.Dwh.Label()) {
 				err = nil
