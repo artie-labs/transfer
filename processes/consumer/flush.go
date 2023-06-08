@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -18,6 +19,7 @@ type Args struct {
 }
 
 func Flush(args Args) error {
+	fmt.Println("flush args", args.SpecificTable)
 	if models.GetMemoryDB(args.Context) == nil {
 		return nil
 	}
@@ -29,18 +31,18 @@ func Flush(args Args) error {
 	allTables := models.GetMemoryDB(args.Context).TableData()
 	models.GetMemoryDB(args.Context).RUnlock()
 
-	// Create a channel where the buffer is the number of tables, so it doesn't block.
-	flushChan := make(chan string, len(allTables))
-
 	// Flush will take everything in memory and call Snowflake to create temp tables.
 	for tableName, tableData := range allTables {
 		if args.SpecificTable != "" && tableName != args.SpecificTable {
+			fmt.Println("skip flushing table", tableName)
 			// If the table is specified within args and the table does not match the database, skip this flush.
 			continue
 		}
 
+		fmt.Println("flushing table", tableName)
+
 		wg.Add(1)
-		go func(_tableName string, _tableData *models.TableData, flushChan chan string) {
+		go func(_tableName string, _tableData *models.TableData) {
 			// Lock the tables when executing merge.
 			_tableData.Lock()
 			defer _tableData.Unlock()
@@ -66,24 +68,17 @@ func Flush(args Args) error {
 				log.WithFields(logFields).Info("Merge success, clearing memory...")
 				commitErr := CommitOffset(args.Context, _tableData.TopicConfig.Topic, _tableData.PartitionsToLastMessage)
 				if commitErr == nil {
-					flushChan <- _tableName
+					models.GetMemoryDB(args.Context).ClearTableConfig(_tableName)
 				} else {
 					tags["what"] = "commit_fail"
 					log.WithError(commitErr).Warn("commit error...")
 				}
 			}
 			metrics.FromContext(args.Context).Timing("flush", time.Since(start), tags)
-		}(tableName, tableData, flushChan)
+
+		}(tableName, tableData)
 	}
 	wg.Wait()
-
-	// Close the channel so no more rows can be added.
-	close(flushChan)
-
-	for tableName := range flushChan {
-		// Now drain the channel, will lock and clear.
-		models.GetMemoryDB(args.Context).ClearTableConfig(tableName)
-	}
 
 	return nil
 }
