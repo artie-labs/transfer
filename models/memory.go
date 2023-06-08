@@ -10,14 +10,20 @@ import (
 
 const dbKey = "__db"
 
+type TableData struct {
+	*optimization.TableData
+	sync.RWMutex
+}
+
 type DatabaseData struct {
-	TableData map[string]*optimization.TableData
-	sync.Mutex
+	tableData map[string]*TableData
+	sync.RWMutex
 }
 
 func LoadMemoryDB(ctx context.Context) context.Context {
+	tableData := make(map[string]*TableData)
 	return context.WithValue(ctx, dbKey, &DatabaseData{
-		TableData: map[string]*optimization.TableData{},
+		tableData: tableData,
 	})
 }
 
@@ -35,7 +41,30 @@ func GetMemoryDB(ctx context.Context) *DatabaseData {
 	return db
 }
 
+func (d *DatabaseData) GetTableData(tableName string) (*TableData, bool) {
+	d.RLock()
+	defer d.RUnlock()
+	td, isOk := d.tableData[tableName]
+	return td, isOk
+}
+
+func (d *DatabaseData) NewTableData(tableName string, td *optimization.TableData) {
+	d.Lock()
+	defer d.Unlock()
+
+	d.tableData[tableName] = &TableData{
+		TableData: td,
+	}
+	return
+}
+
 func (d *DatabaseData) ClearTableConfig(tableName string) {
-	// WARNING: before you call this, LOCK the table.
-	delete(d.TableData, tableName)
+	d.Lock()
+	defer d.Unlock()
+	delete(d.tableData, tableName)
+	return
+}
+
+func (d *DatabaseData) TableData() map[string]*TableData {
+	return d.tableData
 }

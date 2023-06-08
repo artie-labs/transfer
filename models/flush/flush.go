@@ -7,7 +7,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/dwh/utils"
 	"github.com/artie-labs/transfer/lib/logger"
-	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/processes/consumer"
@@ -19,18 +18,25 @@ func Flush(ctx context.Context) error {
 	}
 
 	log := logger.FromContext(ctx)
-	models.GetMemoryDB(ctx).Lock()
-	defer models.GetMemoryDB(ctx).Unlock()
 
 	var wg sync.WaitGroup
 
+	// Read lock to examine the map of tables
+	models.GetMemoryDB(ctx).RLock()
+	defer models.GetMemoryDB(ctx).RUnlock()
+	allTables := models.GetMemoryDB(ctx).TableData()
+
 	// Create a channel where the buffer is the number of tables, so it doesn't block.
-	flushChan := make(chan string, len(models.GetMemoryDB(ctx).TableData))
+	flushChan := make(chan string, len(allTables))
 
 	// Flush will take everything in memory and call Snowflake to create temp tables.
-	for tableName, tableData := range models.GetMemoryDB(ctx).TableData {
+	for tableName, tableData := range allTables {
 		wg.Add(1)
-		go func(_tableName string, _tableData *optimization.TableData, flushChan chan string) {
+		go func(_tableName string, _tableData *models.TableData, flushChan chan string) {
+			// Lock the tables when executing merge.
+			_tableData.Lock()
+			defer _tableData.Unlock()
+
 			defer wg.Done()
 			start := time.Now()
 			logFields := map[string]interface{}{
@@ -44,7 +50,7 @@ func Flush(ctx context.Context) error {
 				"schema":   _tableData.TopicConfig.Schema,
 			}
 
-			err := utils.FromContext(ctx).Merge(ctx, _tableData)
+			err := utils.FromContext(ctx).Merge(ctx, _tableData.TableData)
 			if err != nil {
 				tags["what"] = "merge_fail"
 				log.WithError(err).WithFields(logFields).Warn("Failed to execute merge...not going to flush memory")
@@ -60,7 +66,6 @@ func Flush(ctx context.Context) error {
 			}
 			metrics.FromContext(ctx).Timing("flush", time.Since(start), tags)
 		}(tableName, tableData, flushChan)
-
 	}
 	wg.Wait()
 
@@ -68,7 +73,7 @@ func Flush(ctx context.Context) error {
 	close(flushChan)
 
 	for tableName := range flushChan {
-		// Now drain the channel.
+		// Now drain the channel, will lock and clear.
 		models.GetMemoryDB(ctx).ClearTableConfig(tableName)
 	}
 
