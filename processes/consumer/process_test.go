@@ -49,6 +49,7 @@ func TestProcessMessageFailures(t *testing.T) {
 
 	err := processMessage(ctx, processArgs)
 	assert.True(t, strings.Contains(err.Error(), "failed to get topic"), err.Error())
+	assert.Equal(t, 0, len(models.GetMemoryDB(ctx).TableData()))
 
 	var mgo mongo.Debezium
 	const (
@@ -82,6 +83,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	assert.True(t, strings.Contains(err.Error(),
 		fmt.Sprintf("err: format: %s is not supported", topicToConfigFmtMap[msg.Topic()].tc.CDCKeyFormat)), err.Error())
 	assert.True(t, strings.Contains(err.Error(), "cannot unmarshall key"), err.Error())
+	assert.Equal(t, 0, len(models.GetMemoryDB(ctx).TableData()))
 
 	topicToConfigFmtMap[msg.Topic()].tc.CDCKeyFormat = "org.apache.kafka.connect.storage.StringConverter"
 
@@ -136,8 +138,6 @@ func TestProcessMessageFailures(t *testing.T) {
 		assert.NoError(t, err)
 
 		td := memoryDB.GetOrCreateTableData(table)
-		// TODO: figure out how to check if it tried to flush
-
 		// Check that there are corresponding row(s) in the memory DB
 		assert.Equal(t, len(td.RowsData()), idx)
 	}
@@ -163,5 +163,5 @@ func TestProcessMessageFailures(t *testing.T) {
 
 	err = processMessage(ctx, processArgs)
 	assert.Error(t, err)
-	// TODO: figure out how to check if it tried to flush
+	assert.True(t, td.Rows() > 0)
 }
