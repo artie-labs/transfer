@@ -135,16 +135,14 @@ func TestProcessMessageFailures(t *testing.T) {
 		err = processMessage(ctx, processArgs)
 		assert.NoError(t, err)
 
-		td, isOk := memoryDB.GetTableData(table)
-		assert.True(t, isOk)
+		td := memoryDB.GetOrCreateTableData(table)
 		// TODO: figure out how to check if it tried to flush
 
 		// Check that there are corresponding row(s) in the memory DB
 		assert.Equal(t, len(td.RowsData()), idx)
 	}
 
-	td, isOk := memoryDB.GetTableData(table)
-	assert.True(t, isOk)
+	td := memoryDB.GetOrCreateTableData(table)
 
 	// Tombstone means deletion
 	val, isOk := td.RowsData()["id=1"][constants.DeleteColumnMarker]

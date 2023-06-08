@@ -114,9 +114,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 		if e.Columns != nil {
 			// Iterate over this again just in case.
 			for _, col := range e.Columns.GetColumns() {
-				//td.Lock()
 				td.AddInMemoryCol(col)
-				//td.Unlock()
 			}
 		}
 	}

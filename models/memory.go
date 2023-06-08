@@ -10,14 +10,12 @@ import (
 
 const dbKey = "__db"
 
+// TableData is a wrapper around *optimization.TableData which stores the actual underlying tableData.
+// The wrapper here is just to have a mutex. Any of the ptr methods on *TableData will require callers to use their own locks.
+// We did this because certain operations require different locking patterns
 type TableData struct {
 	*optimization.TableData
 	sync.Mutex
-}
-
-type DatabaseData struct {
-	tableData map[string]*TableData
-	sync.RWMutex
 }
 
 func (t *TableData) Wipe() {
@@ -31,6 +29,11 @@ func (t *TableData) Empty() bool {
 func (t *TableData) SetTableData(td *optimization.TableData) {
 	t.TableData = td
 	return
+}
+
+type DatabaseData struct {
+	tableData map[string]*TableData
+	sync.RWMutex
 }
 
 func LoadMemoryDB(ctx context.Context) context.Context {
