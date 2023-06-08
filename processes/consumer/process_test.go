@@ -145,17 +145,23 @@ func TestProcessMessageFailures(t *testing.T) {
 		assert.Equal(t, 0, len(flushChan))
 		assert.NoError(t, err)
 
+		td, isOk := memoryDB.GetTableData(table)
+		assert.True(t, isOk)
+
 		// Check that there are corresponding row(s) in the memory DB
-		assert.Equal(t, len(memoryDB.TableData[table].RowsData()), idx)
+		assert.Equal(t, len(td.RowsData()), idx)
 	}
 
+	td, isOk := memoryDB.GetTableData(table)
+	assert.True(t, isOk)
+
 	// Tombstone means deletion
-	val, isOk := memoryDB.TableData[table].RowsData()["id=1"][constants.DeleteColumnMarker]
+	val, isOk := td.RowsData()["id=1"][constants.DeleteColumnMarker]
 	assert.True(t, isOk)
 	assert.True(t, val.(bool))
 
 	// Non tombstone = no delete.
-	val, isOk = memoryDB.TableData[table].RowsData()["id=2"][constants.DeleteColumnMarker]
+	val, isOk = td.RowsData()["id=2"][constants.DeleteColumnMarker]
 	assert.True(t, isOk)
 	assert.False(t, val.(bool))
 

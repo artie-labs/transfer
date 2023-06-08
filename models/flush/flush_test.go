@@ -40,7 +40,10 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 		kafkaMsg := kafka.Message{Partition: 1, Offset: 1}
 		_, err := evt.Save(f.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 		assert.Nil(f.T(), err)
-		assert.Equal(f.T(), int(models.GetMemoryDB(f.ctx).TableData["foo"].Rows()), i+1)
+
+		td, isOk := models.GetMemoryDB(f.ctx).GetTableData("foo")
+		assert.True(f.T(), isOk)
+		assert.Equal(f.T(), int(td.Rows()), i+1)
 	}
 }
 
@@ -103,7 +106,6 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 				_, err := evt.Save(f.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 				assert.Nil(f.T(), err)
 			}
-
 		}(tableNames[idx])
 	}
 
@@ -111,7 +113,9 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 
 	// Verify all the tables exist.
 	for idx := range tableNames {
-		tableConfig := models.GetMemoryDB(f.ctx).TableData[tableNames[idx]].RowsData()
+		td, isOk := models.GetMemoryDB(f.ctx).GetTableData(tableNames[idx])
+		assert.True(f.T(), isOk)
+		tableConfig := td.RowsData()
 		assert.Equal(f.T(), len(tableConfig), 5)
 	}
 
@@ -125,5 +129,4 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 		// Within each partition, the offset should be 4 (i < 5 from above).
 		assert.Equal(f.T(), kafkaMessages[0].Offset, int64(4))
 	}
-
 }

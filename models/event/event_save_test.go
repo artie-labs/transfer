@@ -43,7 +43,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	_, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(e.T(), err)
 
-	optimization := models.GetMemoryDB(e.ctx).TableData["foo"]
+	optimization, _ := models.GetMemoryDB(e.ctx).GetTableData("foo")
 	// Check the in-memory DB columns.
 	var found int
 	for _, col := range optimization.ReadOnlyInMemoryCols().GetColumns() {
@@ -74,9 +74,13 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	newKafkaMsg := kafka.Message{}
 	_, err = edgeCaseEvent.Save(e.ctx, topicConfig, artie.NewMessage(&newKafkaMsg, nil, newKafkaMsg.Topic))
 	assert.NoError(e.T(), err)
-	inMemoryCol, isOk := models.GetMemoryDB(e.ctx).TableData["foo"].ReadOnlyInMemoryCols().GetColumn(badColumn)
+
+	td, isOk := models.GetMemoryDB(e.ctx).GetTableData("foo")
 	assert.True(e.T(), isOk)
-	assert.Equal(e.T(), typing.Invalid, inMemoryCol.KindDetails)
+
+	inMemCol, isOk := td.ReadOnlyInMemoryCols().GetColumn(badColumn)
+	assert.True(e.T(), isOk)
+	assert.Equal(e.T(), typing.Invalid, inMemCol.KindDetails)
 }
 
 func (e *EventsTestSuite) TestEvent_SaveCasing() {
@@ -96,7 +100,10 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 	_, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(e.T(), err)
 
-	rowData := models.GetMemoryDB(e.ctx).TableData["foo"].RowsData()[event.PrimaryKeyValue()]
+	td, isOk := models.GetMemoryDB(e.ctx).GetTableData("foo")
+	assert.True(e.T(), isOk)
+
+	rowData := td.RowsData()[event.PrimaryKeyValue()]
 	expectedColumns := []string{"randomcol", "anothercol"}
 	for _, expectedColumn := range expectedColumns {
 		_, isOk := rowData[expectedColumn]
@@ -131,19 +138,22 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 	_, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(e.T(), err)
 
-	column, isOk := models.GetMemoryDB(e.ctx).TableData["foo"].ReadOnlyInMemoryCols().GetColumn("created_at_date_string")
+	td, isOk := models.GetMemoryDB(e.ctx).GetTableData("foo")
+	assert.True(e.T(), isOk)
+
+	column, isOk := td.ReadOnlyInMemoryCols().GetColumn("created_at_date_string")
 	assert.True(e.T(), isOk)
 	assert.Equal(e.T(), typing.String, column.KindDetails)
 
-	column, isOk = models.GetMemoryDB(e.ctx).TableData["foo"].ReadOnlyInMemoryCols().GetColumn("created_at_date_no_schema")
+	column, isOk = td.ReadOnlyInMemoryCols().GetColumn("created_at_date_no_schema")
 	assert.True(e.T(), isOk)
 	assert.Equal(e.T(), ext.Date.Type, column.KindDetails.ExtendedTimeDetails.Type)
 
-	column, isOk = models.GetMemoryDB(e.ctx).TableData["foo"].ReadOnlyInMemoryCols().GetColumn("json_object_string")
+	column, isOk = td.ReadOnlyInMemoryCols().GetColumn("json_object_string")
 	assert.True(e.T(), isOk)
 	assert.Equal(e.T(), typing.String, column.KindDetails)
 
-	column, isOk = models.GetMemoryDB(e.ctx).TableData["foo"].ReadOnlyInMemoryCols().GetColumn("json_object_no_schema")
+	column, isOk = td.ReadOnlyInMemoryCols().GetColumn("json_object_no_schema")
 	assert.True(e.T(), isOk)
 	assert.Equal(e.T(), typing.Struct, column.KindDetails)
 }
@@ -169,8 +179,10 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	_, err := evt.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.NoError(e.T(), err)
 
+	td, isOk := models.GetMemoryDB(e.ctx).GetTableData("non_existent")
+	assert.True(e.T(), isOk)
 	var prevKey string
-	for _, col := range models.GetMemoryDB(e.ctx).TableData["non_existent"].ReadOnlyInMemoryCols().GetColumns() {
+	for _, col := range td.ReadOnlyInMemoryCols().GetColumns() {
 		if col.Name == constants.DeleteColumnMarker {
 			continue
 		}
@@ -235,19 +247,22 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 	_, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.Nil(e.T(), err)
 
-	column, isOk := models.GetMemoryDB(e.ctx).TableData["foo"].ReadOnlyInMemoryCols().GetColumn("randomcol")
+	td, isOk := models.GetMemoryDB(e.ctx).GetTableData("foo")
+	assert.True(e.T(), isOk)
+
+	column, isOk := td.ReadOnlyInMemoryCols().GetColumn("randomcol")
 	assert.True(e.T(), isOk)
 	assert.Equal(e.T(), typing.String, column.KindDetails)
 
-	column, isOk = models.GetMemoryDB(e.ctx).TableData["foo"].ReadOnlyInMemoryCols().GetColumn("anothercol")
+	column, isOk = td.ReadOnlyInMemoryCols().GetColumn("anothercol")
 	assert.True(e.T(), isOk)
 	assert.Equal(e.T(), typing.Float, column.KindDetails)
 
-	column, isOk = models.GetMemoryDB(e.ctx).TableData["foo"].ReadOnlyInMemoryCols().GetColumn("created_at_date_string")
+	column, isOk = td.ReadOnlyInMemoryCols().GetColumn("created_at_date_string")
 	assert.True(e.T(), isOk)
 	assert.Equal(e.T(), ext.DateKindType, column.KindDetails.ExtendedTimeDetails.Type)
 
-	column, isOk = models.GetMemoryDB(e.ctx).TableData["foo"].ReadOnlyInMemoryCols().GetColumn(constants.DeleteColumnMarker)
+	column, isOk = td.ReadOnlyInMemoryCols().GetColumn(constants.DeleteColumnMarker)
 	assert.True(e.T(), isOk)
 	assert.Equal(e.T(), typing.Boolean, column.KindDetails)
 }
