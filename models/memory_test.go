@@ -26,9 +26,17 @@ func TestTableData_Complete(t *testing.T) {
 	assert.True(t, isOk)
 
 	// Add the td struct
-	td.TableData = &optimization.TableData{}
+	td.SetTableData(&optimization.TableData{})
 	assert.False(t, td.Empty())
 
+	// Wipe via tableData.Wipe()
 	td.Wipe()
+	assert.True(t, td.Empty())
+
+	// Wipe via ClearTableConfig(...)
+	td.SetTableData(&optimization.TableData{})
+	assert.False(t, td.Empty())
+
+	db.ClearTableConfig(tableName)
 	assert.True(t, td.Empty())
 }
