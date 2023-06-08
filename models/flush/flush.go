@@ -23,8 +23,8 @@ func Flush(ctx context.Context) error {
 
 	// Read lock to examine the map of tables
 	models.GetMemoryDB(ctx).RLock()
-	defer models.GetMemoryDB(ctx).RUnlock()
 	allTables := models.GetMemoryDB(ctx).TableData()
+	models.GetMemoryDB(ctx).RUnlock()
 
 	// Create a channel where the buffer is the number of tables, so it doesn't block.
 	flushChan := make(chan string, len(allTables))
