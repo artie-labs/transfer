@@ -25,23 +25,23 @@ func escapeCols(cols []typing.Column) (colsToUpdate []string, colsToUpdateEscape
 			continue
 		}
 
-		escapedCol := column.Name
+		escapedCol := column.Name(true)
 		switch column.KindDetails.Kind {
 		case typing.Struct.Kind, typing.Array.Kind:
 			if column.ToastColumn {
 				escapedCol = fmt.Sprintf("CASE WHEN %s = '%s' THEN {'key': '%s'} ELSE PARSE_JSON(%s) END %s",
 					// Comparing the column against placeholder
-					column.Name, constants.ToastUnavailableValuePlaceholder,
+					column.Name(true), constants.ToastUnavailableValuePlaceholder,
 					// Casting placeholder as a JSON object
 					constants.ToastUnavailableValuePlaceholder,
 					// Regular parsing.
-					column.Name, column.Name)
+					column.Name(true), column.Name(true))
 			} else {
-				escapedCol = fmt.Sprintf("PARSE_JSON(%s) %s", column.Name, column.Name)
+				escapedCol = fmt.Sprintf("PARSE_JSON(%s) %s", column.Name(true), column.Name(true))
 			}
 		}
 
-		colsToUpdate = append(colsToUpdate, column.Name)
+		colsToUpdate = append(colsToUpdate, column.Name(false))
 		colsToUpdateEscaped = append(colsToUpdateEscaped, escapedCol)
 	}
 

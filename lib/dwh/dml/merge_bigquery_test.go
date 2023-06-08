@@ -12,18 +12,9 @@ import (
 
 func TestMergeStatement_TempTable(t *testing.T) {
 	var cols typing.Columns
-	cols.AddColumn(typing.Column{
-		Name:        "order_id",
-		KindDetails: typing.Integer,
-	})
-	cols.AddColumn(typing.Column{
-		Name:        "name",
-		KindDetails: typing.String,
-	})
-	cols.AddColumn(typing.Column{
-		Name:        constants.DeleteColumnMarker,
-		KindDetails: typing.Boolean,
-	})
+	cols.AddColumn(typing.NewColumn("order_id", typing.Integer))
+	cols.AddColumn(typing.NewColumn("name", typing.String))
+	cols.AddColumn(typing.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	mergeArg := MergeArgument{
 		FqTableName:    "customers.orders",
@@ -43,18 +34,9 @@ func TestMergeStatement_TempTable(t *testing.T) {
 
 func TestMergeStatement_JSONKey(t *testing.T) {
 	var cols typing.Columns
-	cols.AddColumn(typing.Column{
-		Name:        "order_oid",
-		KindDetails: typing.Struct,
-	})
-	cols.AddColumn(typing.Column{
-		Name:        "name",
-		KindDetails: typing.String,
-	})
-	cols.AddColumn(typing.Column{
-		Name:        constants.DeleteColumnMarker,
-		KindDetails: typing.Boolean,
-	})
+	cols.AddColumn(typing.NewColumn("order_oid", typing.Struct))
+	cols.AddColumn(typing.NewColumn("name", typing.String))
+	cols.AddColumn(typing.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	mergeArg := MergeArgument{
 		FqTableName:    "customers.orders",

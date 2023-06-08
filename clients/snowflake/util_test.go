@@ -57,26 +57,14 @@ func TestEscapeColumns(t *testing.T) {
 		happyPathAndJSONAndArrayCols typing.Columns
 	)
 
-	happyPathCols.AddColumn(typing.Column{
-		Name:        "foo",
-		KindDetails: typing.String,
-	})
-	happyPathCols.AddColumn(typing.Column{
-		Name:        "bar",
-		KindDetails: typing.String,
-	})
+	happyPathCols.AddColumn(typing.NewColumn("foo", typing.String))
+	happyPathCols.AddColumn(typing.NewColumn("bar", typing.String))
 
 	happyPathAndJSONCols = happyPathCols
-	happyPathAndJSONCols.AddColumn(typing.Column{
-		Name:        "struct",
-		KindDetails: typing.Struct,
-	})
+	happyPathAndJSONCols.AddColumn(typing.NewColumn("struct", typing.Struct))
 
 	happyPathAndJSONAndArrayCols = happyPathAndJSONCols
-	happyPathAndJSONAndArrayCols.AddColumn(typing.Column{
-		Name:        "array",
-		KindDetails: typing.Array,
-	})
+	happyPathAndJSONAndArrayCols.AddColumn(typing.NewColumn("array", typing.Array))
 
 	testCases := []_testCase{
 		{

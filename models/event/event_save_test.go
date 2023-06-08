@@ -47,7 +47,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	// Check the in-memory DB columns.
 	var found int
 	for _, col := range optimization.ReadOnlyInMemoryCols().GetColumns() {
-		if col.Name == expectedLowerCol || col.Name == anotherLowerCol {
+		if col.Name(false) == expectedLowerCol || col.Name(false) == anotherLowerCol {
 			found += 1
 		}
 
@@ -155,7 +155,7 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	var cols typing.Columns
 	for i := 0; i < 50; i++ {
-		cols.AddColumn(typing.Column{Name: fmt.Sprint(i), KindDetails: typing.Invalid})
+		cols.AddColumn(typing.NewColumn(fmt.Sprint(i), typing.Invalid))
 	}
 
 	evt := Event{
@@ -176,16 +176,16 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	td := models.GetMemoryDB(e.ctx).GetOrCreateTableData("non_existent")
 	var prevKey string
 	for _, col := range td.ReadOnlyInMemoryCols().GetColumns() {
-		if col.Name == constants.DeleteColumnMarker {
+		if col.Name(false) == constants.DeleteColumnMarker {
 			continue
 		}
 
 		if prevKey == "" {
-			prevKey = col.Name
+			prevKey = col.Name(false)
 			continue
 		}
 
-		currentKeyParsed, err := strconv.Atoi(col.Name)
+		currentKeyParsed, err := strconv.Atoi(col.Name(false))
 		assert.NoError(e.T(), err)
 
 		prevKeyParsed, err := strconv.Atoi(prevKey)
@@ -196,10 +196,10 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	}
 
 	// Now let's add more keys.
-	evt.Columns.AddColumn(typing.Column{Name: "foo", KindDetails: typing.Invalid})
+	evt.Columns.AddColumn(typing.NewColumn("foo", typing.Invalid))
 	var index int
 	for idx, col := range evt.Columns.GetColumns() {
-		if col.Name == "foo" {
+		if col.Name(false) == "foo" {
 			index = idx
 		}
 	}
@@ -209,19 +209,9 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 
 func (e *EventsTestSuite) TestEventSaveColumns() {
 	var cols typing.Columns
-	cols.AddColumn(typing.Column{
-		Name:        "randomCol",
-		KindDetails: typing.Invalid,
-	})
-	cols.AddColumn(typing.Column{
-		Name:        "anotherCOL",
-		KindDetails: typing.Invalid,
-	})
-	cols.AddColumn(typing.Column{
-		Name:        "created_at_date_string",
-		KindDetails: typing.Invalid,
-	})
-
+	cols.AddColumn(typing.NewColumn("randomCol", typing.Invalid))
+	cols.AddColumn(typing.NewColumn("anotherCOL", typing.Invalid))
+	cols.AddColumn(typing.NewColumn("created_at_date_string", typing.Invalid))
 	event := Event{
 		Table:   "foo",
 		Columns: &cols,

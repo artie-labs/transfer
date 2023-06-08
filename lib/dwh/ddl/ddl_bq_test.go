@@ -33,10 +33,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 
 	var cols typing.Columns
 	for colName, kindDetails := range colNameToKindDetailsMap {
-		cols.AddColumn(typing.Column{
-			Name:        colName,
-			KindDetails: kindDetails,
-		})
+		cols.AddColumn(typing.NewColumn(colName, kindDetails))
 	}
 
 	fqName := td.ToFqName(d.bqCtx, constants.BigQuery)
@@ -81,7 +78,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
 
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s drop COLUMN %s", fqName, column.Name), query)
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s drop COLUMN %s", fqName, column.Name(true)), query)
 		assert.NoError(d.T(), err)
 		callIdx += 1
 	}
@@ -112,7 +109,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 	existingColsLen := len(existingColNameToKindDetailsMap)
 	var existingCols typing.Columns
 	for colName, kindDetails := range existingColNameToKindDetailsMap {
-		existingCols.AddColumn(typing.Column{Name: colName, KindDetails: kindDetails})
+		existingCols.AddColumn(typing.NewColumn(colName, kindDetails))
 	}
 
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&existingCols, nil, false, true))
@@ -131,7 +128,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 			ColumnOp:    constants.Add,
 			CdcTime:     ts,
 		}
-		err := ddl.AlterTable(d.bqCtx, alterTableArgs, typing.Column{Name: name, KindDetails: kind})
+		err := ddl.AlterTable(d.bqCtx, alterTableArgs, typing.NewColumn(name, kind))
 		assert.NoError(d.T(), err)
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, name, typing.KindToDWHType(kind, d.bigQueryStore.Label())), query)
@@ -142,10 +139,10 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 	assert.Equal(d.T(), newColsLen+existingColsLen, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns())
 	// Check by iterating over the columns
 	for _, column := range d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns() {
-		existingCol, isOk := existingCols.GetColumn(column.Name)
+		existingCol, isOk := existingCols.GetColumn(column.Name(false))
 		if !isOk {
 			// Check new cols?
-			existingCol.KindDetails, isOk = newCols[column.Name]
+			existingCol.KindDetails, isOk = newCols[column.Name(false)]
 		}
 
 		assert.True(d.T(), isOk)
@@ -164,7 +161,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 	existingColsLen := len(existingColNameToKindDetailsMap)
 	var existingCols typing.Columns
 	for colName, kindDetails := range existingColNameToKindDetailsMap {
-		existingCols.AddColumn(typing.Column{Name: colName, KindDetails: kindDetails})
+		existingCols.AddColumn(typing.NewColumn(colName, kindDetails))
 	}
 
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&existingCols, nil, false, true))
@@ -189,7 +186,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
 		assert.NoError(d.T(), err)
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, column.Name, typing.KindToDWHType(column.KindDetails, d.bigQueryStore.Label())), query)
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, column.Name(true), typing.KindToDWHType(column.KindDetails, d.bigQueryStore.Label())), query)
 		callIdx += 1
 	}
 
@@ -197,7 +194,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 	assert.Equal(d.T(), existingColsLen, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns())
 	// Check by iterating over the columns
 	for _, column := range d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns() {
-		existingCol, isOk := existingCols.GetColumn(column.Name)
+		existingCol, isOk := existingCols.GetColumn(column.Name(false))
 		assert.True(d.T(), isOk)
 		assert.Equal(d.T(), column.KindDetails, existingCol.KindDetails)
 	}
@@ -219,7 +216,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 
 	var columns typing.Columns
 	for colName, kindDetails := range columnNameToKindDetailsMap {
-		columns.AddColumn(typing.Column{Name: colName, KindDetails: kindDetails})
+		columns.AddColumn(typing.NewColumn(colName, kindDetails))
 	}
 
 	fqName := td.ToFqName(d.bqCtx, constants.BigQuery)

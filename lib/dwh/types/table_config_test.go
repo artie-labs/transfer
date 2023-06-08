@@ -30,18 +30,9 @@ func TestDwhTableConfig_ShouldDeleteColumn(t *testing.T) {
 // In this test, we spin up 5 parallel Go-routines each making 100 calls to .Columns() and assert the validity of the data.
 func TestDwhTableConfig_ColumnsConcurrency(t *testing.T) {
 	var cols typing.Columns
-	cols.AddColumn(typing.Column{
-		Name:        "foo",
-		KindDetails: typing.Struct,
-	})
-	cols.AddColumn(typing.Column{
-		Name:        "bar",
-		KindDetails: typing.String,
-	})
-	cols.AddColumn(typing.Column{
-		Name:        "boolean",
-		KindDetails: typing.Boolean,
-	})
+	cols.AddColumn(typing.NewColumn("foo", typing.Struct))
+	cols.AddColumn(typing.NewColumn("bar", typing.String))
+	cols.AddColumn(typing.NewColumn("boolean", typing.Boolean))
 
 	dwhTableCfg := NewDwhTableConfig(&cols, nil, false, false)
 
@@ -57,10 +48,7 @@ func TestDwhTableConfig_ColumnsConcurrency(t *testing.T) {
 				if (j % 2) == 0 {
 					kindDetails = typing.Array
 				}
-				tableCfg.Columns().UpdateColumn(typing.Column{
-					Name:        "foo",
-					KindDetails: kindDetails,
-				})
+				tableCfg.Columns().UpdateColumn(typing.NewColumn("foo", kindDetails))
 				assert.Equal(t, 3, len(tableCfg.Columns().GetColumns()), tableCfg.Columns().GetColumns())
 			}
 		}(dwhTableCfg)
@@ -72,7 +60,7 @@ func TestDwhTableConfig_ColumnsConcurrency(t *testing.T) {
 func TestDwhTableConfig_MutateInMemoryColumns(t *testing.T) {
 	tc := NewDwhTableConfig(&typing.Columns{}, nil, false, false)
 	for _, col := range []string{"a", "b", "c", "d", "e"} {
-		tc.MutateInMemoryColumns(false, constants.Add, typing.Column{Name: col, KindDetails: typing.String})
+		tc.MutateInMemoryColumns(false, constants.Add, typing.NewColumn(col, typing.String))
 	}
 
 	assert.Equal(t, 5, len(tc.columns.GetColumns()))
@@ -81,7 +69,7 @@ func TestDwhTableConfig_MutateInMemoryColumns(t *testing.T) {
 		wg.Add(1)
 		go func(colName string) {
 			defer wg.Done()
-			tc.MutateInMemoryColumns(false, constants.Add, typing.Column{Name: colName, KindDetails: typing.String})
+			tc.MutateInMemoryColumns(false, constants.Add, typing.NewColumn(colName, typing.String))
 		}(addCol)
 	}
 
@@ -89,7 +77,7 @@ func TestDwhTableConfig_MutateInMemoryColumns(t *testing.T) {
 		wg.Add(1)
 		go func(colName string) {
 			defer wg.Done()
-			tc.MutateInMemoryColumns(false, constants.Delete, typing.Column{Name: colName})
+			tc.MutateInMemoryColumns(false, constants.Delete, typing.NewColumn(colName, typing.Invalid))
 		}(removeCol)
 	}
 

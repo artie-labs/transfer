@@ -93,12 +93,9 @@ func (s *SchemaEventPayload) GetColumns() *typing.Columns {
 
 	var cols typing.Columns
 	for _, field := range fieldsObject.Fields {
-		cols.AddColumn(typing.Column{
-			Name: field.FieldName,
-			// We are purposefully doing this to ensure that the correct typing is set
-			// When we invoke event.Save()
-			KindDetails: typing.Invalid,
-		})
+		// We are purposefully doing this to ensure that the correct typing is set
+		// When we invoke event.Save()
+		cols.AddColumn(typing.NewColumn(field.FieldName, typing.Invalid))
 	}
 
 	return &cols

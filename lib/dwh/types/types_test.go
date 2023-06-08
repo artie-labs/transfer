@@ -20,10 +20,7 @@ func generateDwhTableCfg() *DwhTableConfig {
 	}
 
 	for _, col := range []string{"a", "b", "c", "d"} {
-		cols.AddColumn(typing.Column{
-			Name:        col,
-			KindDetails: typing.String,
-		})
+		cols.AddColumn(typing.NewColumn(col, typing.String))
 	}
 
 	return &DwhTableConfig{

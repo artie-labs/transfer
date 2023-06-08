@@ -7,33 +7,39 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestColumn_EscapeName(t *testing.T) {
+func TestColumn_Name(t *testing.T) {
 	type _testCase struct {
-		colName      string
-		expectedName string
+		colName string
+
+		expectedNameEsc string
+		expectedName    string
 	}
 
 	testCases := []_testCase{
 		{
-			colName:      "start",
-			expectedName: `"start"`, // since this is a reserved word.
+			colName:         "start",
+			expectedName:    "start",
+			expectedNameEsc: `"start"`, // since this is a reserved word.
 		},
 		{
-			colName:      "foo",
-			expectedName: "foo",
+			colName:         "foo",
+			expectedName:    "foo",
+			expectedNameEsc: "foo",
 		},
 		{
-			colName:      "bar",
-			expectedName: "bar",
+			colName:         "bar",
+			expectedName:    "bar",
+			expectedNameEsc: "bar",
 		},
 	}
 
 	for _, testCase := range testCases {
 		c := &Column{
-			Name: testCase.colName,
+			name: testCase.colName,
 		}
 
-		assert.Equal(t, testCase.expectedName, c.EscapeName(), testCase.colName)
+		assert.Equal(t, testCase.expectedName, c.Name(false), testCase.colName)
+		assert.Equal(t, testCase.expectedNameEsc, c.Name(true), testCase.colName)
 	}
 }
 
@@ -47,11 +53,11 @@ func TestColumns_GetColumnsToUpdate(t *testing.T) {
 	var (
 		happyPathCols = []Column{
 			{
-				Name:        "hi",
+				name:        "hi",
 				KindDetails: String,
 			},
 			{
-				Name:        "bye",
+				name:        "bye",
 				KindDetails: String,
 			},
 		}
@@ -60,7 +66,7 @@ func TestColumns_GetColumnsToUpdate(t *testing.T) {
 	extraCols := happyPathCols
 	for i := 0; i < 100; i++ {
 		extraCols = append(extraCols, Column{
-			Name:        fmt.Sprintf("hello_%v", i),
+			name:        fmt.Sprintf("hello_%v", i),
 			KindDetails: Invalid,
 		})
 	}
@@ -92,7 +98,7 @@ func TestColumns_UpsertColumns(t *testing.T) {
 	var cols Columns
 	for _, key := range keys {
 		cols.AddColumn(Column{
-			Name:        key,
+			name:        key,
 			KindDetails: String,
 		})
 	}
@@ -131,7 +137,7 @@ func TestColumns_UpsertColumns(t *testing.T) {
 
 func TestColumns_Add_Duplicate(t *testing.T) {
 	var cols Columns
-	duplicateColumns := []Column{{Name: "foo"}, {Name: "foo"}, {Name: "foo"}, {Name: "foo"}, {Name: "foo"}, {Name: "foo"}}
+	duplicateColumns := []Column{{name: "foo"}, {name: "foo"}, {name: "foo"}, {name: "foo"}, {name: "foo"}, {name: "foo"}}
 	for _, duplicateColumn := range duplicateColumns {
 		cols.AddColumn(duplicateColumn)
 	}
@@ -141,7 +147,7 @@ func TestColumns_Add_Duplicate(t *testing.T) {
 
 func TestColumns_Mutation(t *testing.T) {
 	var cols Columns
-	colsToAdd := []Column{{Name: "foo", KindDetails: String}, {Name: "bar", KindDetails: Struct}}
+	colsToAdd := []Column{{name: "foo", KindDetails: String}, {name: "bar", KindDetails: Struct}}
 	// Insert
 	for _, colToAdd := range colsToAdd {
 		cols.AddColumn(colToAdd)
@@ -158,12 +164,12 @@ func TestColumns_Mutation(t *testing.T) {
 
 	// Update
 	cols.UpdateColumn(Column{
-		Name:        "foo",
+		name:        "foo",
 		KindDetails: Integer,
 	})
 
 	cols.UpdateColumn(Column{
-		Name:        "bar",
+		name:        "bar",
 		KindDetails: Boolean,
 	})
 
@@ -200,7 +206,7 @@ func TestColumnsUpdateQuery(t *testing.T) {
 	)
 	for _, col := range fooBarCols {
 		happyPathCols.AddColumn(Column{
-			Name:        col,
+			name:        col,
 			KindDetails: String,
 			ToastColumn: false,
 		})
@@ -212,7 +218,7 @@ func TestColumnsUpdateQuery(t *testing.T) {
 		}
 
 		stringAndToastCols.AddColumn(Column{
-			Name:        col,
+			name:        col,
 			KindDetails: String,
 			ToastColumn: toastCol,
 		})
@@ -232,7 +238,7 @@ func TestColumnsUpdateQuery(t *testing.T) {
 		}
 
 		lastCaseColTypes.AddColumn(Column{
-			Name:        lastCaseCol,
+			name:        lastCaseCol,
 			KindDetails: kd,
 			ToastColumn: toast,
 		})

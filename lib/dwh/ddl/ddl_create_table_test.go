@@ -57,7 +57,7 @@ func (d *DDLTestSuite) Test_CreateTable() {
 			ColumnOp:    constants.Add,
 		}
 
-		err := ddl.AlterTable(ctx, alterTableArgs, typing.Column{Name: "name", KindDetails: typing.String})
+		err := ddl.AlterTable(ctx, alterTableArgs, typing.NewColumn("name", typing.String))
 		assert.Equal(d.T(), 1, dwhTc._fakeStore.ExecCallCount())
 
 		query, _ := dwhTc._fakeStore.ExecArgsForCall(0)
@@ -77,38 +77,17 @@ func (d *DDLTestSuite) TestCreateTable() {
 
 	var (
 		happyPathCols = []typing.Column{
-			{
-				Name:        "user_id",
-				KindDetails: typing.String,
-			},
+			typing.NewColumn("user_id", typing.String),
 		}
 		twoCols = []typing.Column{
-			{
-				Name:        "user_id",
-				KindDetails: typing.String,
-			},
-			{
-				Name:        "enabled",
-				KindDetails: typing.Boolean,
-			},
+			typing.NewColumn("user_id", typing.String),
+			typing.NewColumn("enabled", typing.Boolean),
 		}
 		bunchOfCols = []typing.Column{
-			{
-				Name:        "user_id",
-				KindDetails: typing.String,
-			},
-			{
-				Name:        "enabled_boolean",
-				KindDetails: typing.Boolean,
-			},
-			{
-				Name:        "array",
-				KindDetails: typing.Array,
-			},
-			{
-				Name:        "struct",
-				KindDetails: typing.Struct,
-			},
+			typing.NewColumn("user_id", typing.String),
+			typing.NewColumn("enabled_boolean", typing.Boolean),
+			typing.NewColumn("array", typing.Array),
+			typing.NewColumn("struct", typing.Struct),
 		}
 	)
 

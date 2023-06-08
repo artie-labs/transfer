@@ -22,10 +22,7 @@ func generateTableData(rows int) (string, *optimization.TableData) {
 	randomTableName := fmt.Sprintf("temp_%s_%s", constants.ArtiePrefix, stringutil.Random(10))
 	cols := &typing.Columns{}
 	for _, col := range []string{"user_id", "first_name", "last_name"} {
-		cols.AddColumn(typing.Column{
-			Name:        col,
-			KindDetails: typing.String,
-		})
+		cols.AddColumn(typing.NewColumn(col, typing.String))
 	}
 
 	td := optimization.NewTableData(cols, []string{"user_id"}, kafkalib.TopicConfig{}, "")

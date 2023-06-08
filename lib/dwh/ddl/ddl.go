@@ -82,7 +82,7 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) e
 			continue
 		}
 
-		if args.ColumnOp == constants.Delete && !args.Tc.ShouldDeleteColumn(col.Name, args.CdcTime) {
+		if args.ColumnOp == constants.Delete && !args.Tc.ShouldDeleteColumn(col.Name(false), args.CdcTime) {
 			// Don't delete yet, we can evaluate when we consume more messages.
 			continue
 		}
@@ -90,9 +90,9 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) e
 		mutateCol = append(mutateCol, col)
 		switch args.ColumnOp {
 		case constants.Add:
-			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, col.Name, typing.KindToDWHType(col.KindDetails, args.Dwh.Label())))
+			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, col.Name(true), typing.KindToDWHType(col.KindDetails, args.Dwh.Label())))
 		case constants.Delete:
-			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s`, col.Name))
+			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s`, col.Name(true)))
 		}
 	}
 

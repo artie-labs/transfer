@@ -10,7 +10,7 @@ import (
 )
 
 type Column struct {
-	Name        string
+	name        string
 	KindDetails KindDetails
 	// ToastColumn indicates that the source column is a TOAST column and the value is unavailable
 	// We have stripped this out.
@@ -18,13 +18,28 @@ type Column struct {
 	ToastColumn bool
 }
 
-// EscapeName will escape specific reserved words from destinations. Change from `start` => `"start"` as suggested by Snowflake.
-func (c *Column) EscapeName() string {
-	if array.StringContains(constants.ReservedKeywords, c.Name) {
-		return fmt.Sprintf(`"%s"`, c.Name)
+func NewColumn(name string, kd KindDetails) Column {
+	return Column{
+		name:        name,
+		KindDetails: kd,
 	}
 
-	return c.Name
+}
+
+func (c *Column) ToLowerName() {
+	c.name = strings.ToLower(c.name)
+	return
+}
+
+// Name will give you c.name
+// However, if you pass in escape, we will escape if the column name is part of the reserved words from destinations.
+// If so, it'll change from `start` => `"start"` as suggested by Snowflake.
+func (c *Column) Name(escape bool) string {
+	if escape && array.StringContains(constants.ReservedKeywords, c.name) {
+		return fmt.Sprintf(`"%s"`, c.name)
+	}
+
+	return c.name
 }
 
 type Columns struct {
@@ -46,7 +61,7 @@ func (c *Columns) UpsertColumn(colName string, toastColumn bool) {
 	}
 
 	c.AddColumn(Column{
-		Name:        colName,
+		name:        colName,
 		KindDetails: Invalid,
 		ToastColumn: toastColumn,
 	})
@@ -54,11 +69,11 @@ func (c *Columns) UpsertColumn(colName string, toastColumn bool) {
 }
 
 func (c *Columns) AddColumn(col Column) {
-	if col.Name == "" {
+	if col.name == "" {
 		return
 	}
 
-	if _, isOk := c.GetColumn(col.Name); isOk {
+	if _, isOk := c.GetColumn(col.name); isOk {
 		// Column exists.
 		return
 	}
@@ -74,7 +89,7 @@ func (c *Columns) GetColumn(name string) (Column, bool) {
 	defer c.RUnlock()
 
 	for _, column := range c.columns {
-		if column.Name == name {
+		if column.name == name {
 			return column, true
 		}
 	}
@@ -97,7 +112,7 @@ func (c *Columns) GetColumnsToUpdate() []string {
 			continue
 		}
 
-		cols = append(cols, col.Name)
+		cols = append(cols, col.name)
 	}
 
 	return cols
@@ -124,7 +139,7 @@ func (c *Columns) UpdateColumn(updateCol Column) {
 	defer c.Unlock()
 
 	for index, col := range c.columns {
-		if col.Name == updateCol.Name {
+		if col.name == updateCol.name {
 			c.columns[index] = updateCol
 			return
 		}
@@ -136,7 +151,7 @@ func (c *Columns) DeleteColumn(name string) {
 	defer c.Unlock()
 
 	for idx, column := range c.columns {
-		if column.Name == name {
+		if column.name == name {
 			c.columns = append(c.columns[:idx], c.columns[idx+1:]...)
 			return
 		}

@@ -28,11 +28,10 @@ func (s *SnowflakeTestSuite) TestEscapeCols() {
 	)
 
 	for _, col := range []string{"foo", "bar"} {
-		happyPathCols.AddColumn(typing.Column{
-			Name:        col,
-			KindDetails: typing.String,
-			ToastColumn: false,
-		})
+		_col := typing.NewColumn(col, typing.String)
+		_col.ToastColumn = false
+
+		happyPathCols.AddColumn(_col)
 	}
 
 	for _, col := range []string{"foo", "bar", "xyz"} {
@@ -41,11 +40,9 @@ func (s *SnowflakeTestSuite) TestEscapeCols() {
 			kd = typing.Struct
 		}
 
-		happyPathStructCols.AddColumn(typing.Column{
-			Name:        col,
-			KindDetails: kd,
-			ToastColumn: false,
-		})
+		_col := typing.NewColumn(col, kd)
+		_col.ToastColumn = false
+		happyPathStructCols.AddColumn(_col)
 	}
 
 	for _, col := range []string{"foo", "bar", "xyz", "abc"} {
@@ -58,11 +55,10 @@ func (s *SnowflakeTestSuite) TestEscapeCols() {
 			kd = typing.Array
 		}
 
-		happyPathStructArrayCols.AddColumn(typing.Column{
-			Name:        col,
-			KindDetails: kd,
-			ToastColumn: false,
-		})
+		_col := typing.NewColumn(col, kd)
+		_col.ToastColumn = false
+
+		happyPathStructArrayCols.AddColumn(_col)
 	}
 
 	for _, col := range []string{"foo", "bar", "xyz", "abc", "dusty"} {
@@ -81,11 +77,10 @@ func (s *SnowflakeTestSuite) TestEscapeCols() {
 			kd = typing.Struct
 		}
 
-		happyPathStructArrayWithToastStructCols.AddColumn(typing.Column{
-			Name:        col,
-			KindDetails: kd,
-			ToastColumn: toast,
-		})
+		_col := typing.NewColumn(col, kd)
+		_col.ToastColumn = toast
+
+		happyPathStructArrayWithToastStructCols.AddColumn(_col)
 	}
 
 	testCases := []_testCase{
@@ -125,10 +120,7 @@ func (s *SnowflakeTestSuite) TestEscapeCols() {
 
 func (s *SnowflakeTestSuite) TestMergeNoDeleteFlag() {
 	var cols typing.Columns
-	cols.AddColumn(typing.Column{
-		Name:        "id",
-		KindDetails: typing.Integer,
-	})
+	cols.AddColumn(typing.NewColumn("id", typing.Integer))
 
 	tableData := optimization.NewTableData(&cols, []string{"id"}, kafkalib.TopicConfig{}, "")
 	_, err := getMergeStatement(s.ctx, tableData)
@@ -143,10 +135,7 @@ func (s *SnowflakeTestSuite) TestMerge() {
 		"NAME":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
 	} {
-		cols.AddColumn(typing.Column{
-			Name:        colName,
-			KindDetails: kindDetails,
-		})
+		cols.AddColumn(typing.NewColumn(colName, kindDetails))
 	}
 
 	rowData := make(map[string]map[string]interface{})
@@ -207,10 +196,7 @@ func (s *SnowflakeTestSuite) TestMergeWithSingleQuote() {
 		"NAME":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
 	} {
-		cols.AddColumn(typing.Column{
-			Name:        colName,
-			KindDetails: kindDetails,
-		})
+		cols.AddColumn(typing.NewColumn(colName, kindDetails))
 	}
 
 	rowData := make(map[string]map[string]interface{})
@@ -243,10 +229,7 @@ func (s *SnowflakeTestSuite) TestMergeJson() {
 		"meta":                       typing.Struct,
 		constants.DeleteColumnMarker: typing.Boolean,
 	} {
-		cols.AddColumn(typing.Column{
-			Name:        colName,
-			KindDetails: kindDetails,
-		})
+		cols.AddColumn(typing.NewColumn(colName, kindDetails))
 	}
 
 	rowData := make(map[string]map[string]interface{})
@@ -281,10 +264,7 @@ func (s *SnowflakeTestSuite) TestMergeJSONKey() {
 		"name":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
 	} {
-		cols.AddColumn(typing.Column{
-			Name:        colName,
-			KindDetails: kindDetails,
-		})
+		cols.AddColumn(typing.NewColumn(colName, kindDetails))
 	}
 
 	rowData := make(map[string]map[string]interface{})

@@ -71,13 +71,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 		CdcTime:        time.Time{},
 	}
 
-	err := ddl.AlterTable(d.ctx, args, typing.Column{
-		Name:        "foo",
-		KindDetails: typing.String,
-	}, typing.Column{
-		Name:        "bar",
-		KindDetails: typing.Float,
-	})
+	err := ddl.AlterTable(d.ctx, args, typing.NewColumn("foo", typing.String), typing.NewColumn("bar", typing.Float))
 
 	assert.NoError(d.T(), err)
 	assert.Equal(d.T(), 1, d.fakeSnowflakeStagesStore.ExecCallCount())
@@ -94,13 +88,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 	args.Dwh = d.bigQueryStore
 	args.Tc = bqTc
 
-	err = ddl.AlterTable(d.ctx, args, typing.Column{
-		Name:        "foo",
-		KindDetails: typing.String,
-	}, typing.Column{
-		Name:        "bar",
-		KindDetails: typing.Float,
-	})
+	err = ddl.AlterTable(d.ctx, args, typing.NewColumn("foo", typing.String), typing.NewColumn("bar", typing.Float))
 	assert.NoError(d.T(), err)
 	assert.Equal(d.T(), 1, d.fakeBigQueryStore.ExecCallCount())
 	bqQuery, _ := d.fakeBigQueryStore.ExecArgsForCall(0)

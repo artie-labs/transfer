@@ -32,10 +32,7 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
 	var _cols typing.Columns
-	_cols.AddColumn(typing.Column{
-		Name:        "id",
-		KindDetails: typing.String,
-	})
+	_cols.AddColumn(typing.NewColumn("id", typing.String))
 
 	for _, idempotentKey := range []string{"", "updated_at"} {
 		mergeSQL, err := MergeStatement(MergeArgument{
@@ -75,10 +72,7 @@ func TestMergeStatement(t *testing.T) {
 	}
 
 	var _cols typing.Columns
-	_cols.AddColumn(typing.Column{
-		Name:        "id",
-		KindDetails: typing.String,
-	})
+	_cols.AddColumn(typing.NewColumn("id", typing.String))
 
 	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
@@ -118,10 +112,7 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
 	var _cols typing.Columns
-	_cols.AddColumn(typing.Column{
-		Name:        "id",
-		KindDetails: typing.String,
-	})
+	_cols.AddColumn(typing.NewColumn("id", typing.String))
 
 	mergeSQL, err := MergeStatement(MergeArgument{
 		FqTableName:    fqTable,
@@ -159,14 +150,8 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
 	var _cols typing.Columns
-	_cols.AddColumn(typing.Column{
-		Name:        "id",
-		KindDetails: typing.String,
-	})
-	_cols.AddColumn(typing.Column{
-		Name:        "another_id",
-		KindDetails: typing.String,
-	})
+	_cols.AddColumn(typing.NewColumn("id", typing.String))
+	_cols.AddColumn(typing.NewColumn("another_id", typing.String))
 
 	mergeSQL, err := MergeStatement(MergeArgument{
 		FqTableName:    fqTable,

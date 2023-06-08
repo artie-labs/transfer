@@ -115,7 +115,7 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) er
 	for colToDelete := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, col := range srcKeysMissing {
-			if found = col.Name == colToDelete; found {
+			if found = col.Name(false) == colToDelete; found {
 				// Found it.
 				break
 			}

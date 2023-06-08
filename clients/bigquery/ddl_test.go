@@ -2,6 +2,7 @@ package bigquery
 
 import (
 	"fmt"
+
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
@@ -22,7 +23,7 @@ func (b *BigQueryTestSuite) TestParseSchemaQuery() {
 		assert.Equal(b.T(), true, tableConfig.DropDeletedColumns())
 		assert.Equal(b.T(), len(tableConfig.Columns().GetColumns()), 2, tableConfig.Columns)
 		for _, col := range tableConfig.Columns().GetColumns() {
-			assert.Equal(b.T(), col.KindDetails, typing.String, fmt.Sprintf("col: %s, kind: %v incorrect", col.Name, col.KindDetails))
+			assert.Equal(b.T(), col.KindDetails, typing.String, fmt.Sprintf("col: %s, kind: %v incorrect", col.Name(false), col.KindDetails))
 		}
 	}
 }

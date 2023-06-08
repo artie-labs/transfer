@@ -19,14 +19,8 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 	ctx := context.Background()
 	// Test Structs and Arrays
 	cols := []typing.Column{
-		{
-			Name:        "preferences",
-			KindDetails: typing.Struct,
-		},
-		{
-			Name:        "array_col",
-			KindDetails: typing.Array,
-		},
+		typing.NewColumn("preferences", typing.Struct),
+		typing.NewColumn("array_col", typing.Array),
 	}
 
 	fqTable := "shop.public.complex_columns"
@@ -54,18 +48,9 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 func (d *DDLTestSuite) TestAlterIdempotency() {
 	ctx := context.Background()
 	cols := []typing.Column{
-		{
-			Name:        "created_at",
-			KindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-		},
-		{
-			Name:        "id",
-			KindDetails: typing.Integer,
-		},
-		{
-			Name:        "order_name",
-			KindDetails: typing.String,
-		},
+		typing.NewColumn("created_at", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)),
+		typing.NewColumn("id", typing.Integer),
+		typing.NewColumn("order_name", typing.String),
 	}
 
 	fqTable := "shop.public.orders"
@@ -94,18 +79,9 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 func (d *DDLTestSuite) TestAlterTableAdd() {
 	// Test adding a bunch of columns
 	cols := []typing.Column{
-		{
-			Name:        "created_at",
-			KindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-		},
-		{
-			Name:        "id",
-			KindDetails: typing.Integer,
-		},
-		{
-			Name:        "order_name",
-			KindDetails: typing.String,
-		},
+		typing.NewColumn("created_at", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)),
+		typing.NewColumn("id", typing.Integer),
+		typing.NewColumn("order_name", typing.String),
 	}
 
 	fqTable := "shop.public.orders"
@@ -128,33 +104,24 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 	for _, column := range tableConfig.Columns().GetColumns() {
 		var found bool
 		for _, expCol := range cols {
-			if found = column.Name == expCol.Name; found {
-				assert.Equal(d.T(), column.KindDetails, expCol.KindDetails, fmt.Sprintf("wrong col kind, col: %s", column.Name))
+			if found = column.Name(false) == expCol.Name(false); found {
+				assert.Equal(d.T(), column.KindDetails, expCol.KindDetails, fmt.Sprintf("wrong col kind, col: %s", column.Name(false)))
 				break
 			}
 		}
 
 		assert.True(d.T(), found,
 			fmt.Sprintf("Col not found: %s, actual list: %v, expected list: %v",
-				column.Name, tableConfig.Columns(), cols))
+				column.Name(false), tableConfig.Columns(), cols))
 	}
 }
 
 func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	// Test adding a bunch of columns
 	cols := []typing.Column{
-		{
-			Name:        "created_at",
-			KindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-		},
-		{
-			Name:        "id",
-			KindDetails: typing.Integer,
-		},
-		{
-			Name:        "name",
-			KindDetails: typing.String,
-		},
+		typing.NewColumn("created_at", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)),
+		typing.NewColumn("id", typing.Integer),
+		typing.NewColumn("name", typing.String),
 	}
 
 	fqTable := "shop.public.users"
@@ -176,7 +143,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	for col := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, expCol := range cols {
-			if found = col == expCol.Name; found {
+			if found = col == expCol.Name(false); found {
 				break
 			}
 		}
@@ -186,7 +153,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 				col, tableConfig.ReadOnlyColumnsToDelete(), cols))
 	}
 
-	colToActuallyDelete := cols[0].Name
+	colToActuallyDelete := cols[0].Name(false)
 	// Now let's check the timestamp
 	assert.True(d.T(), tableConfig.ReadOnlyColumnsToDelete()[colToActuallyDelete].After(time.Now()))
 	// Now let's actually try to dial the time back, and it should actually try to delete.
@@ -202,26 +169,11 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 func (d *DDLTestSuite) TestAlterTableDelete() {
 	// Test adding a bunch of columns
 	cols := []typing.Column{
-		{
-			Name:        "created_at",
-			KindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-		},
-		{
-			Name:        "id",
-			KindDetails: typing.Integer,
-		},
-		{
-			Name:        "name",
-			KindDetails: typing.String,
-		},
-		{
-			Name:        "col_to_delete",
-			KindDetails: typing.String,
-		},
-		{
-			Name:        "answers",
-			KindDetails: typing.String,
-		},
+		typing.NewColumn("created_at", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)),
+		typing.NewColumn("id", typing.Integer),
+		typing.NewColumn("name", typing.String),
+		typing.NewColumn("col_to_delete", typing.String),
+		typing.NewColumn("answers", typing.String),
 	}
 
 	fqTable := "shop.public.users1"
@@ -248,7 +200,7 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 	for col := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, expCol := range cols {
-			if found = col == expCol.Name; found {
+			if found = col == expCol.Name(false); found {
 				break
 			}
 		}

@@ -64,17 +64,11 @@ func TestNewTableData_TableName(t *testing.T) {
 func TestTableData_ReadOnlyInMemoryCols(t *testing.T) {
 	// Making sure the columns are actually read only.
 	var cols typing.Columns
-	cols.AddColumn(typing.Column{
-		Name:        "name",
-		KindDetails: typing.String,
-	})
+	cols.AddColumn(typing.NewColumn("name", typing.String))
 
 	td := NewTableData(&cols, nil, kafkalib.TopicConfig{}, "foo")
 	readOnlyCols := td.ReadOnlyInMemoryCols()
-	readOnlyCols.AddColumn(typing.Column{
-		Name:        "last_name",
-		KindDetails: typing.String,
-	})
+	readOnlyCols.AddColumn(typing.NewColumn("last_name", typing.String))
 
 	// Check if last_name actually exists.
 	_, isOk := td.ReadOnlyInMemoryCols().GetColumn("last_name")
@@ -92,10 +86,7 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 		"CHANGE_me":            typing.String,
 		"do_not_change_format": typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType),
 	} {
-		_cols.AddColumn(typing.Column{
-			Name:        colName,
-			KindDetails: colKind,
-		})
+		_cols.AddColumn(typing.NewColumn(colName, colKind))
 	}
 
 	tableData := &TableData{
@@ -106,10 +97,7 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 	assert.True(t, isOk)
 
 	extCol.KindDetails.ExtendedTimeDetails.Format = time.RFC3339Nano
-	tableData.inMemoryColumns.UpdateColumn(typing.Column{
-		Name:        extCol.Name,
-		KindDetails: extCol.KindDetails,
-	})
+	tableData.inMemoryColumns.UpdateColumn(typing.NewColumn(extCol.Name(false), extCol.KindDetails))
 
 	for name, colKindDetails := range map[string]typing.KindDetails{
 		"foo":                  typing.String,
@@ -117,10 +105,7 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 		"bar":                  typing.Boolean,
 		"do_not_change_format": typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 	} {
-		tableData.UpdateInMemoryColumnsFromDestination(typing.Column{
-			Name:        name,
-			KindDetails: colKindDetails,
-		})
+		tableData.UpdateInMemoryColumnsFromDestination(typing.NewColumn(name, colKindDetails))
 	}
 
 	// It's saved back in the original format.
