@@ -2,7 +2,6 @@ package consumer
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -19,7 +18,6 @@ type Args struct {
 }
 
 func Flush(args Args) error {
-	fmt.Println("flush args", args.SpecificTable)
 	if models.GetMemoryDB(args.Context) == nil {
 		return nil
 	}
@@ -34,20 +32,21 @@ func Flush(args Args) error {
 	// Flush will take everything in memory and call Snowflake to create temp tables.
 	for tableName, tableData := range allTables {
 		if args.SpecificTable != "" && tableName != args.SpecificTable {
-			fmt.Println("skip flushing table", tableName)
 			// If the table is specified within args and the table does not match the database, skip this flush.
 			continue
 		}
-
-		fmt.Println("flushing table", tableName)
 
 		wg.Add(1)
 		go func(_tableName string, _tableData *models.TableData) {
 			// Lock the tables when executing merge.
 			_tableData.Lock()
 			defer _tableData.Unlock()
-
 			defer wg.Done()
+
+			if _tableData.Empty() {
+				return
+			}
+
 			start := time.Now()
 			logFields := map[string]interface{}{
 				"tableName": _tableName,

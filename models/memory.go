@@ -54,15 +54,19 @@ func GetMemoryDB(ctx context.Context) *DatabaseData {
 	return db
 }
 
-func (d *DatabaseData) GetTableData(tableName string) *TableData {
-	d.RLock()
-	defer d.RUnlock()
-	_, isOk := d.tableData[tableName]
-	if !isOk {
-		d.tableData[tableName] = &TableData{}
+func (d *DatabaseData) GetOrCreateTableData(tableName string) *TableData {
+	d.Lock()
+	defer d.Unlock()
+
+	table, exists := d.tableData[tableName]
+	if !exists {
+		table = &TableData{
+			Mutex: sync.Mutex{},
+		}
+		d.tableData[tableName] = table
 	}
 
-	return d.tableData[tableName]
+	return table
 }
 
 func (d *DatabaseData) ClearTableConfig(tableName string) {

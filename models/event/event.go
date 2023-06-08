@@ -100,10 +100,9 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 
 	inMemDB := models.GetMemoryDB(ctx)
 	// Does the table exist?
-	td := inMemDB.GetTableData(e.Table)
+	td := inMemDB.GetOrCreateTableData(e.Table)
 	td.Lock()
 	defer td.Unlock()
-
 	if td.Empty() {
 		columns := &typing.Columns{}
 		if e.Columns != nil {
@@ -115,9 +114,9 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 		if e.Columns != nil {
 			// Iterate over this again just in case.
 			for _, col := range e.Columns.GetColumns() {
-				td.Lock()
+				//td.Lock()
 				td.AddInMemoryCol(col)
-				td.Unlock()
+				//td.Unlock()
 			}
 		}
 	}
