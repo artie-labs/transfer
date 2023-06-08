@@ -24,39 +24,35 @@ func main() {
 	// Loading Telemetry
 	ctx = metrics.LoadExporter(ctx)
 	ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(ctx, nil), ctx)
-
 	ctx = models.LoadMemoryDB(ctx)
-
 	settings := config.FromContext(ctx)
+
 	logger.FromContext(ctx).WithFields(map[string]interface{}{
 		"flush_interval_seconds": settings.Config.FlushIntervalSeconds,
 		"buffer_pool_size":       settings.Config.BufferRows,
 		"flush_pool_size (kb)":   settings.Config.FlushSizeKb,
 	}).Info("config is loaded")
 
-	flushChan := make(chan bool)
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		pool.StartPool(ctx, time.Duration(settings.Config.FlushIntervalSeconds)*time.Second, flushChan)
+		pool.StartPool(ctx, time.Duration(settings.Config.FlushIntervalSeconds)*time.Second)
 	}()
 
 	wg.Add(1)
 	go func(ctx context.Context) {
 		defer wg.Done()
-
 		switch settings.Config.Queue {
 		case constants.Kafka:
-			consumer.StartConsumer(ctx, flushChan)
+			consumer.StartConsumer(ctx)
 			break
 		case constants.PubSub:
-			consumer.StartSubscriber(ctx, flushChan)
+			consumer.StartSubscriber(ctx)
 			break
 		default:
 			logger.FromContext(ctx).Fatalf("message queue: %s not supported", settings.Config.Queue)
 		}
-
 	}(ctx)
 
 	wg.Wait()

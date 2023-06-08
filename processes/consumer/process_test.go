@@ -40,18 +40,14 @@ func TestProcessMessageFailures(t *testing.T) {
 		Time:          time.Time{},
 	}
 
-	flushChan := make(chan bool)
-
 	msg := artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)
 	processArgs := ProcessArgs{
 		Msg:                    msg,
 		GroupID:                "foo",
 		TopicToConfigFormatMap: nil,
-		FlushChannel:           flushChan,
 	}
 
 	err := processMessage(ctx, processArgs)
-	assert.Equal(t, 0, len(flushChan))
 	assert.True(t, strings.Contains(err.Error(), "failed to get topic"), err.Error())
 
 	var mgo mongo.Debezium
@@ -76,16 +72,13 @@ func TestProcessMessageFailures(t *testing.T) {
 		},
 	}
 
-	flushChan = make(chan bool)
 	processArgs = ProcessArgs{
 		Msg:                    msg,
 		GroupID:                "foo",
 		TopicToConfigFormatMap: topicToConfigFmtMap,
-		FlushChannel:           flushChan,
 	}
 
 	err = processMessage(ctx, processArgs)
-	assert.Equal(t, 0, len(flushChan))
 	assert.True(t, strings.Contains(err.Error(),
 		fmt.Sprintf("err: format: %s is not supported", topicToConfigFmtMap[msg.Topic()].tc.CDCKeyFormat)), err.Error())
 	assert.True(t, strings.Contains(err.Error(), "cannot unmarshall key"), err.Error())
@@ -133,20 +126,18 @@ func TestProcessMessageFailures(t *testing.T) {
 			msg.KafkaMsg.Value = []byte(val)
 		}
 
-		flushChan = make(chan bool)
 		processArgs = ProcessArgs{
 			Msg:                    msg,
 			GroupID:                "foo",
 			TopicToConfigFormatMap: topicToConfigFmtMap,
-			FlushChannel:           flushChan,
 		}
 
 		err = processMessage(ctx, processArgs)
-		assert.Equal(t, 0, len(flushChan))
 		assert.NoError(t, err)
 
 		td, isOk := memoryDB.GetTableData(table)
 		assert.True(t, isOk)
+		// TODO: figure out how to check if it tried to flush
 
 		// Check that there are corresponding row(s) in the memory DB
 		assert.Equal(t, len(td.RowsData()), idx)
@@ -166,15 +157,13 @@ func TestProcessMessageFailures(t *testing.T) {
 	assert.False(t, val.(bool))
 
 	msg.KafkaMsg.Value = []byte("not a json object")
-	flushChan = make(chan bool)
 	processArgs = ProcessArgs{
 		Msg:                    msg,
 		GroupID:                "foo",
 		TopicToConfigFormatMap: topicToConfigFmtMap,
-		FlushChannel:           flushChan,
 	}
 
 	err = processMessage(ctx, processArgs)
-	assert.Equal(t, 0, len(flushChan))
 	assert.Error(t, err)
+	// TODO: figure out how to check if it tried to flush
 }

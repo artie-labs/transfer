@@ -1,4 +1,4 @@
-package flush
+package consumer
 
 import (
 	"fmt"
@@ -119,7 +119,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 		assert.Equal(f.T(), len(tableConfig), 5)
 	}
 
-	assert.Nil(f.T(), Flush(f.ctx), "flush failed")
+	assert.Nil(f.T(), Flush(Args{Context: f.ctx}), "flush failed")
 	assert.Equal(f.T(), f.fakeConsumer.CommitMessagesCallCount(), len(tableNames)) // Commit 3 times because 3 topics.
 
 	for i := 0; i < len(tableNames); i++ {
