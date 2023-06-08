@@ -201,6 +201,13 @@ func TestCloneColumns(t *testing.T) {
 	cols.AddColumn(NewColumn("bar", String))
 	cols.AddColumn(NewColumn("xyz", String))
 	cols.AddColumn(NewColumn("abc", String))
+
+	var mixedCaseCols Columns
+	mixedCaseCols.AddColumn(NewColumn("foo", String))
+	mixedCaseCols.AddColumn(NewColumn("bAr", String))
+	mixedCaseCols.AddColumn(NewColumn("XYZ", String))
+	mixedCaseCols.AddColumn(NewColumn("aBC", String))
+
 	testCases := []_testCase{
 		{
 			name:         "nil col",
@@ -214,6 +221,11 @@ func TestCloneColumns(t *testing.T) {
 		{
 			name:         "copying columns",
 			cols:         &cols,
+			expectedCols: &cols,
+		},
+		{
+			name:         "mixed case cols",
+			cols:         &mixedCaseCols,
 			expectedCols: &cols,
 		},
 	}
