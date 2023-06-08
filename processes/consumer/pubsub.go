@@ -55,7 +55,7 @@ func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, to
 	return sub, err
 }
 
-func StartSubscriber(ctx context.Context, flushChan chan bool) {
+func StartSubscriber(ctx context.Context) {
 	log := logger.FromContext(ctx)
 	settings := config.FromContext(ctx)
 	client, clientErr := gcp_pubsub.NewClient(ctx, settings.Config.Pubsub.ProjectID,
@@ -100,7 +100,6 @@ func StartSubscriber(ctx context.Context, flushChan chan bool) {
 						Msg:                    msg,
 						GroupID:                subName,
 						TopicToConfigFormatMap: topicToConfigFmtMap,
-						FlushChannel:           flushChan,
 					})
 					if processErr != nil {
 						log.WithError(processErr).WithFields(logFields).Warn("skipping message...")

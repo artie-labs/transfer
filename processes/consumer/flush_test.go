@@ -1,4 +1,4 @@
-package flush
+package consumer
 
 import (
 	"fmt"
@@ -40,7 +40,9 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 		kafkaMsg := kafka.Message{Partition: 1, Offset: 1}
 		_, err := evt.Save(f.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 		assert.Nil(f.T(), err)
-		assert.Equal(f.T(), int(models.GetMemoryDB(f.ctx).TableData["foo"].Rows()), i+1)
+
+		td := models.GetMemoryDB(f.ctx).GetOrCreateTableData("foo")
+		assert.Equal(f.T(), int(td.Rows()), i+1)
 	}
 }
 
@@ -103,7 +105,6 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 				_, err := evt.Save(f.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 				assert.Nil(f.T(), err)
 			}
-
 		}(tableNames[idx])
 	}
 
@@ -111,11 +112,12 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 
 	// Verify all the tables exist.
 	for idx := range tableNames {
-		tableConfig := models.GetMemoryDB(f.ctx).TableData[tableNames[idx]].RowsData()
+		td := models.GetMemoryDB(f.ctx).GetOrCreateTableData(tableNames[idx])
+		tableConfig := td.RowsData()
 		assert.Equal(f.T(), len(tableConfig), 5)
 	}
 
-	assert.Nil(f.T(), Flush(f.ctx), "flush failed")
+	assert.Nil(f.T(), Flush(Args{Context: f.ctx}), "flush failed")
 	assert.Equal(f.T(), f.fakeConsumer.CommitMessagesCallCount(), len(tableNames)) // Commit 3 times because 3 topics.
 
 	for i := 0; i < len(tableNames); i++ {
@@ -125,5 +127,4 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 		// Within each partition, the offset should be 4 (i < 5 from above).
 		assert.Equal(f.T(), kafkaMessages[0].Offset, int64(4))
 	}
-
 }

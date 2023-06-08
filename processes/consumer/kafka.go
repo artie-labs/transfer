@@ -26,7 +26,7 @@ func SetKafkaConsumer(_topicToConsumer map[string]kafkalib.Consumer) {
 	topicToConsumer = _topicToConsumer
 }
 
-func StartConsumer(ctx context.Context, flushChan chan bool) {
+func StartConsumer(ctx context.Context) {
 	log := logger.FromContext(ctx)
 	settings := config.FromContext(ctx)
 	log.Info("Starting Kafka consumer...", settings.Config.Kafka)
@@ -109,7 +109,6 @@ func StartConsumer(ctx context.Context, flushChan chan bool) {
 					Msg:                    msg,
 					GroupID:                kafkaConsumer.Config().GroupID,
 					TopicToConfigFormatMap: topicToConfigFmtMap,
-					FlushChannel:           flushChan,
 				})
 				if processErr != nil {
 					log.WithError(processErr).WithFields(logFields).Warn("skipping message...")

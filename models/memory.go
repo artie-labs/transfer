@@ -10,14 +10,36 @@ import (
 
 const dbKey = "__db"
 
-type DatabaseData struct {
-	TableData map[string]*optimization.TableData
+// TableData is a wrapper around *optimization.TableData which stores the actual underlying tableData.
+// The wrapper here is just to have a mutex. Any of the ptr methods on *TableData will require callers to use their own locks.
+// We did this because certain operations require different locking patterns
+type TableData struct {
+	*optimization.TableData
 	sync.Mutex
 }
 
+func (t *TableData) Wipe() {
+	t.TableData = nil
+}
+
+func (t *TableData) Empty() bool {
+	return t.TableData == nil
+}
+
+func (t *TableData) SetTableData(td *optimization.TableData) {
+	t.TableData = td
+	return
+}
+
+type DatabaseData struct {
+	tableData map[string]*TableData
+	sync.RWMutex
+}
+
 func LoadMemoryDB(ctx context.Context) context.Context {
+	tableData := make(map[string]*TableData)
 	return context.WithValue(ctx, dbKey, &DatabaseData{
-		TableData: map[string]*optimization.TableData{},
+		tableData: tableData,
 	})
 }
 
@@ -35,7 +57,29 @@ func GetMemoryDB(ctx context.Context) *DatabaseData {
 	return db
 }
 
+func (d *DatabaseData) GetOrCreateTableData(tableName string) *TableData {
+	d.Lock()
+	defer d.Unlock()
+
+	table, exists := d.tableData[tableName]
+	if !exists {
+		table = &TableData{
+			Mutex: sync.Mutex{},
+		}
+		d.tableData[tableName] = table
+	}
+
+	return table
+}
+
 func (d *DatabaseData) ClearTableConfig(tableName string) {
-	// WARNING: before you call this, LOCK the table.
-	delete(d.TableData, tableName)
+	d.Lock()
+	defer d.Unlock()
+
+	d.tableData[tableName].Wipe()
+	return
+}
+
+func (d *DatabaseData) TableData() map[string]*TableData {
+	return d.tableData
 }

@@ -40,19 +40,16 @@ func TestProcessMessageFailures(t *testing.T) {
 		Time:          time.Time{},
 	}
 
-	flushChan := make(chan bool)
-
 	msg := artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)
 	processArgs := ProcessArgs{
 		Msg:                    msg,
 		GroupID:                "foo",
 		TopicToConfigFormatMap: nil,
-		FlushChannel:           flushChan,
 	}
 
 	err := processMessage(ctx, processArgs)
-	assert.Equal(t, 0, len(flushChan))
 	assert.True(t, strings.Contains(err.Error(), "failed to get topic"), err.Error())
+	assert.Equal(t, 0, len(models.GetMemoryDB(ctx).TableData()))
 
 	var mgo mongo.Debezium
 	const (
@@ -76,19 +73,17 @@ func TestProcessMessageFailures(t *testing.T) {
 		},
 	}
 
-	flushChan = make(chan bool)
 	processArgs = ProcessArgs{
 		Msg:                    msg,
 		GroupID:                "foo",
 		TopicToConfigFormatMap: topicToConfigFmtMap,
-		FlushChannel:           flushChan,
 	}
 
 	err = processMessage(ctx, processArgs)
-	assert.Equal(t, 0, len(flushChan))
 	assert.True(t, strings.Contains(err.Error(),
 		fmt.Sprintf("err: format: %s is not supported", topicToConfigFmtMap[msg.Topic()].tc.CDCKeyFormat)), err.Error())
 	assert.True(t, strings.Contains(err.Error(), "cannot unmarshall key"), err.Error())
+	assert.Equal(t, 0, len(models.GetMemoryDB(ctx).TableData()))
 
 	topicToConfigFmtMap[msg.Topic()].tc.CDCKeyFormat = "org.apache.kafka.connect.storage.StringConverter"
 
@@ -133,42 +128,40 @@ func TestProcessMessageFailures(t *testing.T) {
 			msg.KafkaMsg.Value = []byte(val)
 		}
 
-		flushChan = make(chan bool)
 		processArgs = ProcessArgs{
 			Msg:                    msg,
 			GroupID:                "foo",
 			TopicToConfigFormatMap: topicToConfigFmtMap,
-			FlushChannel:           flushChan,
 		}
 
 		err = processMessage(ctx, processArgs)
-		assert.Equal(t, 0, len(flushChan))
 		assert.NoError(t, err)
 
+		td := memoryDB.GetOrCreateTableData(table)
 		// Check that there are corresponding row(s) in the memory DB
-		assert.Equal(t, len(memoryDB.TableData[table].RowsData()), idx)
+		assert.Equal(t, len(td.RowsData()), idx)
 	}
 
+	td := memoryDB.GetOrCreateTableData(table)
+
 	// Tombstone means deletion
-	val, isOk := memoryDB.TableData[table].RowsData()["id=1"][constants.DeleteColumnMarker]
+	val, isOk := td.RowsData()["id=1"][constants.DeleteColumnMarker]
 	assert.True(t, isOk)
 	assert.True(t, val.(bool))
 
 	// Non tombstone = no delete.
-	val, isOk = memoryDB.TableData[table].RowsData()["id=2"][constants.DeleteColumnMarker]
+	val, isOk = td.RowsData()["id=2"][constants.DeleteColumnMarker]
 	assert.True(t, isOk)
 	assert.False(t, val.(bool))
 
 	msg.KafkaMsg.Value = []byte("not a json object")
-	flushChan = make(chan bool)
 	processArgs = ProcessArgs{
 		Msg:                    msg,
 		GroupID:                "foo",
 		TopicToConfigFormatMap: topicToConfigFmtMap,
-		FlushChannel:           flushChan,
 	}
 
 	err = processMessage(ctx, processArgs)
-	assert.Equal(t, 0, len(flushChan))
 	assert.Error(t, err)
+	assert.True(t, td.Rows() > 0)
 }

@@ -1,4 +1,4 @@
-package flush
+package consumer
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/models"
-	"github.com/artie-labs/transfer/processes/consumer"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -41,7 +40,7 @@ func (f *FlushTestSuite) SetupTest() {
 	f.ctx = models.LoadMemoryDB(f.ctx)
 
 	f.fakeConsumer = &mocks.FakeConsumer{}
-	consumer.SetKafkaConsumer(map[string]kafkalib.Consumer{"foo": f.fakeConsumer})
+	SetKafkaConsumer(map[string]kafkalib.Consumer{"foo": f.fakeConsumer})
 }
 
 func TestFlushTestSuite(t *testing.T) {

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/artie"
-	"github.com/artie-labs/transfer/lib/jitter"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models/event"
 )
@@ -15,7 +14,6 @@ type ProcessArgs struct {
 	Msg                    artie.Message
 	GroupID                string
 	TopicToConfigFormatMap map[string]TopicConfigFormatter
-	FlushChannel           chan bool
 }
 
 func processMessage(ctx context.Context, processArgs ProcessArgs) error {
@@ -60,12 +58,10 @@ func processMessage(ctx context.Context, processArgs ProcessArgs) error {
 	}
 
 	if shouldFlush {
-		processArgs.FlushChannel <- true
-		// Jitter-sleep is necessary to allow the flush process to acquire the table lock
-		// If it doesn't then the flush process may be over-exhausted since the lock got acquired by `processMessage(...)`.
-		// This then leads us to make unnecessary flushes.
-		jitterDuration := jitter.JitterMs(500, 1)
-		time.Sleep(time.Duration(jitterDuration) * time.Millisecond)
+		return Flush(Args{
+			Context:       ctx,
+			SpecificTable: evt.Table,
+		})
 	}
 
 	return nil

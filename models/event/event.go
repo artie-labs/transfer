@@ -94,34 +94,33 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 		return false, errors.New("topicConfig is missing")
 	}
 
-	inMemDB := models.GetMemoryDB(ctx)
-	inMemDB.Lock()
-	defer inMemDB.Unlock()
-
 	if !e.IsValid() {
 		return false, errors.New("event not valid")
 	}
 
+	inMemDB := models.GetMemoryDB(ctx)
 	// Does the table exist?
-	_, isOk := inMemDB.TableData[e.Table]
-	if !isOk {
+	td := inMemDB.GetOrCreateTableData(e.Table)
+	td.Lock()
+	defer td.Unlock()
+	if td.Empty() {
 		columns := &typing.Columns{}
 		if e.Columns != nil {
 			columns = e.Columns
 		}
 
-		inMemDB.TableData[e.Table] = optimization.NewTableData(columns, e.PrimaryKeys(), *topicConfig, e.Table)
+		td.SetTableData(optimization.NewTableData(columns, e.PrimaryKeys(), *topicConfig, e.Table))
 	} else {
 		if e.Columns != nil {
 			// Iterate over this again just in case.
 			for _, col := range e.Columns.GetColumns() {
-				inMemDB.TableData[e.Table].AddInMemoryCol(col)
+				td.AddInMemoryCol(col)
 			}
 		}
 	}
 
 	// Table columns
-	inMemoryColumns := inMemDB.TableData[e.Table].ReadOnlyInMemoryCols()
+	inMemoryColumns := td.ReadOnlyInMemoryCols()
 	// Update col if necessary
 	sanitizedData := make(map[string]interface{})
 	for _col, val := range e.Data {
@@ -166,19 +165,19 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	}
 
 	// Now we commit the table columns.
-	inMemDB.TableData[e.Table].SetInMemoryColumns(inMemoryColumns)
+	td.SetInMemoryColumns(inMemoryColumns)
 
 	// Swap out sanitizedData <> data.
 	e.Data = sanitizedData
-	inMemDB.TableData[e.Table].InsertRow(e.PrimaryKeyValue(), e.Data)
+	td.InsertRow(e.PrimaryKeyValue(), e.Data)
 	// If the message is Kafka, then we only need the latest one
 	// If it's pubsub, we will store all of them in memory. This is because GCP pub/sub REQUIRES us to ack every single message
 	if message.Kind() == artie.Kafka {
-		inMemDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()] = []artie.Message{message}
+		td.PartitionsToLastMessage[message.Partition()] = []artie.Message{message}
 	} else {
-		inMemDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()] = append(inMemDB.TableData[e.Table].PartitionsToLastMessage[message.Partition()], message)
+		td.PartitionsToLastMessage[message.Partition()] = append(td.PartitionsToLastMessage[message.Partition()], message)
 	}
 
-	inMemDB.TableData[e.Table].LatestCDCTs = e.ExecutionTime
-	return inMemDB.TableData[e.Table].ShouldFlush(ctx), nil
+	td.LatestCDCTs = e.ExecutionTime
+	return td.ShouldFlush(ctx), nil
 }
