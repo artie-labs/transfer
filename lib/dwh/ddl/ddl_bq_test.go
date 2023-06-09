@@ -27,8 +27,10 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	}
 
 	colNameToKindDetailsMap := map[string]typing.KindDetails{
-		"foo": typing.String,
-		"bar": typing.String,
+		"foo":    typing.String,
+		"bar":    typing.String,
+		"select": typing.String,
+		"start":  typing.String,
 	}
 
 	var cols typing.Columns
@@ -103,6 +105,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 		"jacqueline": typing.Integer,
 		"charlie":    typing.Boolean,
 		"robin":      typing.Float,
+		"start":      typing.String,
 	}
 
 	newColsLen := len(newCols)
@@ -128,10 +131,14 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 			ColumnOp:    constants.Add,
 			CdcTime:     ts,
 		}
-		err := ddl.AlterTable(d.bqCtx, alterTableArgs, typing.NewColumn(name, kind))
+
+		col := typing.NewColumn(name, kind)
+
+		err := ddl.AlterTable(d.bqCtx, alterTableArgs, col)
 		assert.NoError(d.T(), err)
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, name, typing.KindToDWHType(kind, d.bigQueryStore.Label())), query)
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, col.Name(true),
+			typing.KindToDWHType(kind, d.bigQueryStore.Label())), query)
 		callIdx += 1
 	}
 
@@ -154,8 +161,9 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 	fqName := "mock_dataset.add_cols"
 	ts := time.Now()
 	existingColNameToKindDetailsMap := map[string]typing.KindDetails{
-		"foo": typing.String,
-		"bar": typing.String,
+		"foo":   typing.String,
+		"bar":   typing.String,
+		"start": typing.String,
 	}
 
 	existingColsLen := len(existingColNameToKindDetailsMap)
@@ -186,7 +194,8 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
 		assert.NoError(d.T(), err)
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, column.Name(true), typing.KindToDWHType(column.KindDetails, d.bigQueryStore.Label())), query)
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, column.Name(true),
+			typing.KindToDWHType(column.KindDetails, d.bigQueryStore.Label())), query)
 		callIdx += 1
 	}
 

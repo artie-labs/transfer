@@ -71,7 +71,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 		CdcTime:        time.Time{},
 	}
 
-	err := ddl.AlterTable(d.ctx, args, typing.NewColumn("foo", typing.String), typing.NewColumn("bar", typing.Float))
+	err := ddl.AlterTable(d.ctx, args, typing.NewColumn("foo", typing.String), typing.NewColumn("bar", typing.Float), typing.NewColumn("start", typing.String))
 
 	assert.NoError(d.T(), err)
 	assert.Equal(d.T(), 1, d.fakeSnowflakeStagesStore.ExecCallCount())
@@ -79,7 +79,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 
 	assert.Contains(d.T(),
 		query,
-		`CREATE TABLE IF NOT EXISTS db.schema.tempTableName (foo string,bar float) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE) COMMENT=`,
+		`CREATE TABLE IF NOT EXISTS db.schema.tempTableName (foo string,bar float,"start" string) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE) COMMENT=`,
 		query)
 
 	// BigQuery
@@ -88,10 +88,10 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 	args.Dwh = d.bigQueryStore
 	args.Tc = bqTc
 
-	err = ddl.AlterTable(d.ctx, args, typing.NewColumn("foo", typing.String), typing.NewColumn("bar", typing.Float))
+	err = ddl.AlterTable(d.ctx, args, typing.NewColumn("foo", typing.String), typing.NewColumn("bar", typing.Float), typing.NewColumn("select", typing.String))
 	assert.NoError(d.T(), err)
 	assert.Equal(d.T(), 1, d.fakeBigQueryStore.ExecCallCount())
 	bqQuery, _ := d.fakeBigQueryStore.ExecArgsForCall(0)
 	// Cutting off the expiration_timestamp since it's time based.
-	assert.Contains(d.T(), bqQuery, `CREATE TABLE IF NOT EXISTS db.schema.tempTableName (foo string,bar float64) OPTIONS (expiration_timestamp =`)
+	assert.Contains(d.T(), bqQuery, `CREATE TABLE IF NOT EXISTS db.schema.tempTableName (foo string,bar float64,"select" string) OPTIONS (expiration_timestamp =`)
 }

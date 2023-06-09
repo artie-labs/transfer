@@ -22,7 +22,9 @@ func (s *SnowflakeTestSuite) TestEscapeCols() {
 
 	var (
 		happyPathCols                           typing.Columns
+		reservedKeywordsCols                    typing.Columns
 		happyPathStructCols                     typing.Columns
+		reservedKeywordsStructCols              typing.Columns
 		happyPathStructArrayCols                typing.Columns
 		happyPathStructArrayWithToastStructCols typing.Columns
 	)
@@ -34,6 +36,13 @@ func (s *SnowflakeTestSuite) TestEscapeCols() {
 		happyPathCols.AddColumn(_col)
 	}
 
+	for _, col := range []string{"foo", "bar", "start", "select"} {
+		_col := typing.NewColumn(col, typing.String)
+		_col.ToastColumn = false
+
+		reservedKeywordsCols.AddColumn(_col)
+	}
+
 	for _, col := range []string{"foo", "bar", "xyz"} {
 		kd := typing.String
 		if col == "xyz" {
@@ -43,6 +52,17 @@ func (s *SnowflakeTestSuite) TestEscapeCols() {
 		_col := typing.NewColumn(col, kd)
 		_col.ToastColumn = false
 		happyPathStructCols.AddColumn(_col)
+	}
+
+	for _, col := range []string{"foo", "bar", "xyz", "select"} {
+		kd := typing.String
+		if col == "select" {
+			kd = typing.Struct
+		}
+
+		_col := typing.NewColumn(col, kd)
+		_col.ToastColumn = false
+		reservedKeywordsStructCols.AddColumn(_col)
 	}
 
 	for _, col := range []string{"foo", "bar", "xyz", "abc"} {
@@ -91,10 +111,22 @@ func (s *SnowflakeTestSuite) TestEscapeCols() {
 			expectedColsEscaped: []string{"foo", "bar"},
 		},
 		{
+			name:                "happy path + reserved kw cols",
+			cols:                reservedKeywordsCols.GetColumns(),
+			expectedCols:        []string{"foo", "bar", "start", "select"},
+			expectedColsEscaped: []string{"foo", "bar", `"start"`, `"select"`},
+		},
+		{
 			name:                "happy path w/ struct",
 			cols:                happyPathStructCols.GetColumns(),
 			expectedCols:        []string{"foo", "bar", "xyz"},
 			expectedColsEscaped: []string{"foo", "bar", "PARSE_JSON(xyz) xyz"},
+		},
+		{
+			name:                "happy path w/ reserved kw col",
+			cols:                reservedKeywordsStructCols.GetColumns(),
+			expectedCols:        []string{"foo", "bar", "xyz", "select"},
+			expectedColsEscaped: []string{"foo", "bar", "xyz", `PARSE_JSON("select") "select"`},
 		},
 		{
 			name:                "happy path w/ struct + array",
