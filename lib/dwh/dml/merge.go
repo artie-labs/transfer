@@ -12,10 +12,13 @@ import (
 )
 
 type MergeArgument struct {
-	FqTableName    string
-	SubQuery       string
-	IdempotentKey  string
-	PrimaryKeys    []string
+	FqTableName   string
+	SubQuery      string
+	IdempotentKey string
+	PrimaryKeys   []string
+
+	// Note columns is already escaped.
+	// ColumnsToTypes also needs to be escaped.
 	Columns        []string
 	ColumnsToTypes typing.Columns
 

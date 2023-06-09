@@ -104,7 +104,8 @@ func parseSchemaQuery(row string, createTable, dropDeletedColumns bool) (*types.
 			return nil, fmt.Errorf("unexpected colType, colType: %s, parts: %v", colType, parts)
 		}
 
-		bigQueryColumns.AddColumn(typing.NewColumn(parts[0], typing.BigQueryTypeToKind(strings.Join(parts[1:], " "))))
+		// TODO: test - BigQuery will return the column back escaped.
+		bigQueryColumns.AddColumn(typing.NewColumn(typing.UnescapeColumnName(parts[0], constants.BigQuery), typing.BigQueryTypeToKind(strings.Join(parts[1:], " "))))
 	}
 
 	return types.NewDwhTableConfig(&bigQueryColumns, nil, createTable, dropDeletedColumns), nil

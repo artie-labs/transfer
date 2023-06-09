@@ -1,8 +1,11 @@
 package bigquery
 
 import (
+	"fmt"
 	"testing"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
 
@@ -57,6 +60,12 @@ func TestCastColVal(t *testing.T) {
 			colVal:        `{"hello": "world"}`,
 			colKind:       typing.Column{KindDetails: typing.Struct},
 			expectedValue: `{"hello": "world"}`,
+		},
+		{
+			name:          "struct w/ toast",
+			colVal:        constants.ToastUnavailableValuePlaceholder,
+			colKind:       typing.Column{KindDetails: typing.Struct},
+			expectedValue: fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder),
 		},
 		{
 			name:          "array",
