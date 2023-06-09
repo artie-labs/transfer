@@ -25,29 +25,35 @@ func escapeCols(cols []typing.Column) (colsToUpdate []string, colsToUpdateEscape
 			continue
 		}
 
-		escapedCol := column.Name
+		nameArgs := &typing.NameArgs{
+			Escape:   true,
+			DestKind: constants.SnowflakeStages,
+		}
+
+		escapedCol := column.Name(nameArgs)
 		switch column.KindDetails.Kind {
 		case typing.Struct.Kind, typing.Array.Kind:
 			if column.ToastColumn {
 				escapedCol = fmt.Sprintf("CASE WHEN %s = '%s' THEN {'key': '%s'} ELSE PARSE_JSON(%s) END %s",
 					// Comparing the column against placeholder
-					column.Name, constants.ToastUnavailableValuePlaceholder,
+					column.Name(nameArgs), constants.ToastUnavailableValuePlaceholder,
 					// Casting placeholder as a JSON object
 					constants.ToastUnavailableValuePlaceholder,
 					// Regular parsing.
-					column.Name, column.Name)
+					column.Name(nameArgs), column.Name(nameArgs))
 			} else {
-				escapedCol = fmt.Sprintf("PARSE_JSON(%s) %s", column.Name, column.Name)
+				escapedCol = fmt.Sprintf("PARSE_JSON(%s) %s", column.Name(nameArgs), column.Name(nameArgs))
 			}
 		}
 
-		colsToUpdate = append(colsToUpdate, column.Name)
+		colsToUpdate = append(colsToUpdate, column.Name(nil))
 		colsToUpdateEscaped = append(colsToUpdateEscaped, escapedCol)
 	}
 
 	return
 }
 
+// TODO - this needs to be patched to support keyword substitution.
 func getMergeStatement(ctx context.Context, tableData *optimization.TableData) (string, error) {
 	var tableValues []string
 	colsToUpdate, colsToUpdateEscaped := escapeCols(tableData.ReadOnlyInMemoryCols().GetColumns())

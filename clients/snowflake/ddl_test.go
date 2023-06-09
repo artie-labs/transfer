@@ -24,24 +24,17 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 		"name":        typing.String,
 		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 	} {
-		cols.AddColumn(typing.Column{
-			Name:        colName,
-			KindDetails: kindDetails,
-		})
+		cols.AddColumn(typing.NewColumn(colName, kindDetails))
 	}
 
 	config := types.NewDwhTableConfig(&cols, nil, false, true)
 
 	s.store.configMap.AddTableToConfig(fqName, config)
 
-	nameCol := typing.Column{
-		Name:        "name",
-		KindDetails: typing.String,
-	}
-
+	nameCol := typing.NewColumn("name", typing.String)
 	tc := s.store.configMap.TableConfig(fqName)
 
-	val := tc.ShouldDeleteColumn(nameCol.Name, time.Now().Add(-1*6*time.Hour))
+	val := tc.ShouldDeleteColumn(nameCol.Name(nil), time.Now().Add(-1*6*time.Hour))
 	assert.False(s.T(), val, "should not try to delete this column")
 	assert.Equal(s.T(), len(s.store.configMap.TableConfig(fqName).ReadOnlyColumnsToDelete()), 1)
 
@@ -61,36 +54,29 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 		"name":        typing.String,
 		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 	} {
-		cols.AddColumn(typing.Column{
-			Name:        colName,
-			KindDetails: kindDetails,
-		})
+		cols.AddColumn(typing.NewColumn(colName, kindDetails))
 	}
 
 	config := types.NewDwhTableConfig(&cols, nil, false, true)
 	s.store.configMap.AddTableToConfig(fqName, config)
 
-	nameCol := typing.Column{
-		Name:        "name",
-		KindDetails: typing.String,
-	}
-
+	nameCol := typing.NewColumn("name", typing.String)
 	// Let's try to delete name.
-	allowed := s.store.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name, time.Now().Add(-1*(6*time.Hour)))
+	allowed := s.store.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name(nil), time.Now().Add(-1*(6*time.Hour)))
 
 	assert.Equal(s.T(), allowed, false, "should not be allowed to delete")
 
 	// Process tried to delete, but it's lagged.
-	allowed = s.store.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name, time.Now().Add(-1*(6*time.Hour)))
+	allowed = s.store.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name(nil), time.Now().Add(-1*(6*time.Hour)))
 
 	assert.Equal(s.T(), allowed, false, "should not be allowed to delete")
 
 	// Process now caught up, and is asking if we can delete, should still be no.
-	allowed = s.store.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name, time.Now())
+	allowed = s.store.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name(nil), time.Now())
 	assert.Equal(s.T(), allowed, false, "should not be allowed to delete still")
 
 	// Process is finally ahead, has permission to delete now.
-	allowed = s.store.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name,
+	allowed = s.store.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name(nil),
 		time.Now().Add(2*constants.DeletionConfidencePadding))
 
 	assert.Equal(s.T(), allowed, true, "should now be allowed to delete")
@@ -105,10 +91,7 @@ func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
 		"name":        typing.String,
 		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 	} {
-		cols.AddColumn(typing.Column{
-			Name:        colName,
-			KindDetails: kindDetails,
-		})
+		cols.AddColumn(typing.NewColumn(colName, kindDetails))
 	}
 
 	tc := types.NewDwhTableConfig(&cols, map[string]time.Time{

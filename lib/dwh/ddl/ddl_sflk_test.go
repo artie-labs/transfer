@@ -19,14 +19,9 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 	ctx := context.Background()
 	// Test Structs and Arrays
 	cols := []typing.Column{
-		{
-			Name:        "preferences",
-			KindDetails: typing.Struct,
-		},
-		{
-			Name:        "array_col",
-			KindDetails: typing.Array,
-		},
+		typing.NewColumn("preferences", typing.Struct),
+		typing.NewColumn("array_col", typing.Array),
+		typing.NewColumn("select", typing.String),
 	}
 
 	fqTable := "shop.public.complex_columns"
@@ -40,12 +35,17 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 		ColumnOp:    constants.Add,
 		CdcTime:     time.Now().UTC(),
 	}
-	err := ddl.AlterTable(ctx, alterTableArgs, cols...)
-	execQuery, _ := d.fakeSnowflakeStore.ExecArgsForCall(0)
-	assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN preferences variant", fqTable), execQuery)
 
-	execQuery, _ = d.fakeSnowflakeStore.ExecArgsForCall(1)
-	assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN array_col array", fqTable), execQuery)
+	err := ddl.AlterTable(ctx, alterTableArgs, cols...)
+
+	for i := 0; i < len(cols); i++ {
+		execQuery, _ := d.fakeSnowflakeStore.ExecArgsForCall(i)
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN %s %s", fqTable, cols[i].Name(&typing.NameArgs{
+			Escape:   true,
+			DestKind: d.snowflakeStore.Label(),
+		}),
+			typing.KindToDWHType(cols[i].KindDetails, d.snowflakeStore.Label())), execQuery)
+	}
 
 	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStore.ExecCallCount(), "called SFLK the same amt to create cols")
 	assert.NoError(d.T(), err)
@@ -54,22 +54,13 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 func (d *DDLTestSuite) TestAlterIdempotency() {
 	ctx := context.Background()
 	cols := []typing.Column{
-		{
-			Name:        "created_at",
-			KindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-		},
-		{
-			Name:        "id",
-			KindDetails: typing.Integer,
-		},
-		{
-			Name:        "order_name",
-			KindDetails: typing.String,
-		},
+		typing.NewColumn("created_at", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)),
+		typing.NewColumn("id", typing.Integer),
+		typing.NewColumn("order_name", typing.String),
+		typing.NewColumn("start", typing.String),
 	}
 
 	fqTable := "shop.public.orders"
-
 	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&typing.Columns{}, nil, false, true))
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
 
@@ -94,18 +85,10 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 func (d *DDLTestSuite) TestAlterTableAdd() {
 	// Test adding a bunch of columns
 	cols := []typing.Column{
-		{
-			Name:        "created_at",
-			KindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-		},
-		{
-			Name:        "id",
-			KindDetails: typing.Integer,
-		},
-		{
-			Name:        "order_name",
-			KindDetails: typing.String,
-		},
+		typing.NewColumn("created_at", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)),
+		typing.NewColumn("id", typing.Integer),
+		typing.NewColumn("order_name", typing.String),
+		typing.NewColumn("start", typing.String),
 	}
 
 	fqTable := "shop.public.orders"
@@ -128,33 +111,25 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 	for _, column := range tableConfig.Columns().GetColumns() {
 		var found bool
 		for _, expCol := range cols {
-			if found = column.Name == expCol.Name; found {
-				assert.Equal(d.T(), column.KindDetails, expCol.KindDetails, fmt.Sprintf("wrong col kind, col: %s", column.Name))
+			if found = column.Name(nil) == expCol.Name(nil); found {
+				assert.Equal(d.T(), column.KindDetails, expCol.KindDetails, fmt.Sprintf("wrong col kind, col: %s", column.Name(nil)))
 				break
 			}
 		}
 
 		assert.True(d.T(), found,
 			fmt.Sprintf("Col not found: %s, actual list: %v, expected list: %v",
-				column.Name, tableConfig.Columns(), cols))
+				column.Name(nil), tableConfig.Columns(), cols))
 	}
 }
 
 func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	// Test adding a bunch of columns
 	cols := []typing.Column{
-		{
-			Name:        "created_at",
-			KindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-		},
-		{
-			Name:        "id",
-			KindDetails: typing.Integer,
-		},
-		{
-			Name:        "name",
-			KindDetails: typing.String,
-		},
+		typing.NewColumn("created_at", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)),
+		typing.NewColumn("id", typing.Integer),
+		typing.NewColumn("name", typing.String),
+		typing.NewColumn("start", typing.String),
 	}
 
 	fqTable := "shop.public.users"
@@ -176,7 +151,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	for col := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, expCol := range cols {
-			if found = col == expCol.Name; found {
+			if found = col == expCol.Name(nil); found {
 				break
 			}
 		}
@@ -186,42 +161,34 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 				col, tableConfig.ReadOnlyColumnsToDelete(), cols))
 	}
 
-	colToActuallyDelete := cols[0].Name
-	// Now let's check the timestamp
-	assert.True(d.T(), tableConfig.ReadOnlyColumnsToDelete()[colToActuallyDelete].After(time.Now()))
-	// Now let's actually try to dial the time back, and it should actually try to delete.
-	tableConfig.AddColumnsToDelete(colToActuallyDelete, time.Now().Add(-1*time.Hour))
+	for i := 0; i < len(cols); i++ {
+		colToActuallyDelete := cols[i].Name(nil)
+		// Now let's check the timestamp
+		assert.True(d.T(), tableConfig.ReadOnlyColumnsToDelete()[colToActuallyDelete].After(time.Now()))
+		// Now let's actually try to dial the time back, and it should actually try to delete.
+		tableConfig.AddColumnsToDelete(colToActuallyDelete, time.Now().Add(-1*time.Hour))
 
-	err = ddl.AlterTable(d.ctx, alterTableArgs, cols...)
-	assert.Nil(d.T(), err)
-	assert.Equal(d.T(), 1, d.fakeSnowflakeStore.ExecCallCount(), "tried to delete one column")
-	execArg, _ := d.fakeSnowflakeStore.ExecArgsForCall(0)
-	assert.Equal(d.T(), execArg, fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTable, constants.Delete, colToActuallyDelete))
+		err = ddl.AlterTable(d.ctx, alterTableArgs, cols...)
+		assert.Nil(d.T(), err)
+		assert.Equal(d.T(), i+1, d.fakeSnowflakeStore.ExecCallCount(), "tried to delete one column")
+
+		execArg, _ := d.fakeSnowflakeStore.ExecArgsForCall(i)
+		assert.Equal(d.T(), execArg, fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTable, constants.Delete, cols[i].Name(&typing.NameArgs{
+			Escape:   true,
+			DestKind: d.snowflakeStore.Label(),
+		})))
+	}
 }
 
 func (d *DDLTestSuite) TestAlterTableDelete() {
 	// Test adding a bunch of columns
 	cols := []typing.Column{
-		{
-			Name:        "created_at",
-			KindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-		},
-		{
-			Name:        "id",
-			KindDetails: typing.Integer,
-		},
-		{
-			Name:        "name",
-			KindDetails: typing.String,
-		},
-		{
-			Name:        "col_to_delete",
-			KindDetails: typing.String,
-		},
-		{
-			Name:        "answers",
-			KindDetails: typing.String,
-		},
+		typing.NewColumn("created_at", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)),
+		typing.NewColumn("id", typing.Integer),
+		typing.NewColumn("name", typing.String),
+		typing.NewColumn("col_to_delete", typing.String),
+		typing.NewColumn("answers", typing.String),
+		typing.NewColumn("start", typing.String),
 	}
 
 	fqTable := "shop.public.users1"
@@ -229,6 +196,7 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&typing.Columns{}, map[string]time.Time{
 		"col_to_delete": time.Now().Add(-2 * constants.DeletionConfidencePadding),
 		"answers":       time.Now().Add(-2 * constants.DeletionConfidencePadding),
+		"start":         time.Now().Add(-2 * constants.DeletionConfidencePadding),
 	}, false, true))
 
 	tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
@@ -240,7 +208,7 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 		CdcTime:     time.Now(),
 	}
 	err := ddl.AlterTable(d.ctx, alterTableArgs, cols...)
-	assert.Equal(d.T(), 2, d.fakeSnowflakeStore.ExecCallCount(), "tried to delete, but not yet.")
+	assert.Equal(d.T(), 3, d.fakeSnowflakeStore.ExecCallCount(), "tried to delete, but not yet.")
 	assert.NoError(d.T(), err)
 
 	// Check the table config
@@ -248,7 +216,7 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 	for col := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, expCol := range cols {
-			if found = col == expCol.Name; found {
+			if found = col == expCol.Name(nil); found {
 				break
 			}
 		}

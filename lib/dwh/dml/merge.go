@@ -12,10 +12,13 @@ import (
 )
 
 type MergeArgument struct {
-	FqTableName    string
-	SubQuery       string
-	IdempotentKey  string
-	PrimaryKeys    []string
+	FqTableName   string
+	SubQuery      string
+	IdempotentKey string
+	PrimaryKeys   []string
+
+	// Note columns is already escaped.
+	// ColumnsToTypes also needs to be escaped.
 	Columns        []string
 	ColumnsToTypes typing.Columns
 
@@ -75,7 +78,7 @@ func MergeStatement(m MergeArgument) (string, error) {
 					);
 		`, m.FqTableName, subQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, array.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.BigQuery),
+			idempotentClause, typing.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.BigQuery),
 			// Insert
 			constants.DeleteColumnMarker, strings.Join(m.Columns, ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -116,7 +119,7 @@ func MergeStatement(m MergeArgument) (string, error) {
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update
-		constants.DeleteColumnMarker, idempotentClause, array.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.BigQuery),
+		constants.DeleteColumnMarker, idempotentClause, typing.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.BigQuery),
 		// Insert
 		constants.DeleteColumnMarker, strings.Join(m.Columns, ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{

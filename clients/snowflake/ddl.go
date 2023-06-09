@@ -73,10 +73,7 @@ func (s *Store) getTableConfig(ctx context.Context, fqName string, dropDeletedCo
 			row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
 		}
 
-		snowflakeColumns.AddColumn(typing.Column{
-			Name:        row[describeNameCol],
-			KindDetails: typing.SnowflakeTypeToKind(row[describeTypeCol]),
-		})
+		snowflakeColumns.AddColumn(typing.NewColumn(row[describeNameCol], typing.SnowflakeTypeToKind(row[describeTypeCol])))
 	}
 
 	sflkTableConfig := types.NewDwhTableConfig(&snowflakeColumns, nil, tableMissing, dropDeletedColumns)

@@ -143,10 +143,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 			retrievedColumn, isOk := inMemoryColumns.GetColumn(newColName)
 			if !isOk {
 				// This would only happen if the columns did not get passed in initially.
-				inMemoryColumns.AddColumn(typing.Column{
-					Name:        newColName,
-					KindDetails: typing.ParseValue(_col, e.OptionalSchema, val),
-				})
+				inMemoryColumns.AddColumn(typing.NewColumn(newColName, typing.ParseValue(_col, e.OptionalSchema, val)))
 			} else {
 				if retrievedColumn.KindDetails == typing.Invalid {
 					// If colType is Invalid, let's see if we can update it to a better type

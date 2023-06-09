@@ -1,9 +1,16 @@
 package typing
 
-import "sync"
+import (
+	"fmt"
+	"strings"
+	"sync"
+
+	"github.com/artie-labs/transfer/lib/array"
+	"github.com/artie-labs/transfer/lib/config/constants"
+)
 
 type Column struct {
-	Name        string
+	name        string
 	KindDetails KindDetails
 	// ToastColumn indicates that the source column is a TOAST column and the value is unavailable
 	// We have stripped this out.
@@ -11,9 +18,65 @@ type Column struct {
 	ToastColumn bool
 }
 
+func UnescapeColumnName(escapedName string, destKind constants.DestinationKind) string {
+	if destKind == constants.BigQuery {
+		return strings.ReplaceAll(escapedName, "`", "")
+	} else {
+		// Snowflake does not return escaping.
+		return escapedName
+	}
+}
+
+func NewColumn(name string, kd KindDetails) Column {
+	return Column{
+		name:        name,
+		KindDetails: kd,
+	}
+}
+
+func (c *Column) ToLowerName() {
+	c.name = strings.ToLower(c.name)
+	return
+}
+
+type NameArgs struct {
+	Escape   bool
+	DestKind constants.DestinationKind
+}
+
+// Name will give you c.name
+// However, if you pass in escape, we will escape if the column name is part of the reserved words from destinations.
+// If so, it'll change from `start` => `"start"` as suggested by Snowflake.
+func (c *Column) Name(args *NameArgs) string {
+	var escape bool
+	if args != nil {
+		escape = args.Escape
+	}
+
+	if escape && array.StringContains(constants.ReservedKeywords, c.name) {
+		if args != nil && args.DestKind == constants.BigQuery {
+			// BigQuery needs backticks to escape.
+			return fmt.Sprintf("`%s`", c.name)
+		} else {
+			// Snowflake uses quotes.
+			return fmt.Sprintf(`"%s"`, c.name)
+		}
+	}
+
+	return c.name
+}
+
 type Columns struct {
 	columns []Column
 	sync.RWMutex
+}
+
+func (c *Columns) EscapeName(args *NameArgs) {
+	for idx := range c.columns {
+		c.columns[idx].name = c.columns[idx].Name(args)
+	}
+
+	return
 }
 
 // UpsertColumn - just a wrapper around UpdateColumn and AddColumn
@@ -30,7 +93,7 @@ func (c *Columns) UpsertColumn(colName string, toastColumn bool) {
 	}
 
 	c.AddColumn(Column{
-		Name:        colName,
+		name:        colName,
 		KindDetails: Invalid,
 		ToastColumn: toastColumn,
 	})
@@ -38,11 +101,11 @@ func (c *Columns) UpsertColumn(colName string, toastColumn bool) {
 }
 
 func (c *Columns) AddColumn(col Column) {
-	if col.Name == "" {
+	if col.name == "" {
 		return
 	}
 
-	if _, isOk := c.GetColumn(col.Name); isOk {
+	if _, isOk := c.GetColumn(col.name); isOk {
 		// Column exists.
 		return
 	}
@@ -58,7 +121,7 @@ func (c *Columns) GetColumn(name string) (Column, bool) {
 	defer c.RUnlock()
 
 	for _, column := range c.columns {
-		if column.Name == name {
+		if column.name == name {
 			return column, true
 		}
 	}
@@ -67,7 +130,8 @@ func (c *Columns) GetColumn(name string) (Column, bool) {
 }
 
 // GetColumnsToUpdate will filter all the `Invalid` columns so that we do not update it.
-func (c *Columns) GetColumnsToUpdate() []string {
+// It also has an option to escape the returned columns or not. This is used mostly for the SQL MERGE queries.
+func (c *Columns) GetColumnsToUpdate(args *NameArgs) []string {
 	if c == nil {
 		return []string{}
 	}
@@ -81,7 +145,7 @@ func (c *Columns) GetColumnsToUpdate() []string {
 			continue
 		}
 
-		cols = append(cols, col.Name)
+		cols = append(cols, col.Name(args))
 	}
 
 	return cols
@@ -108,7 +172,7 @@ func (c *Columns) UpdateColumn(updateCol Column) {
 	defer c.Unlock()
 
 	for index, col := range c.columns {
-		if col.Name == updateCol.Name {
+		if col.name == updateCol.name {
 			c.columns[index] = updateCol
 			return
 		}
@@ -120,9 +184,65 @@ func (c *Columns) DeleteColumn(name string) {
 	defer c.Unlock()
 
 	for idx, column := range c.columns {
-		if column.Name == name {
+		if column.name == name {
 			c.columns = append(c.columns[:idx], c.columns[idx+1:]...)
 			return
 		}
 	}
+}
+
+// ColumnsUpdateQuery takes:
+// columns - list of columns to iterate
+// columnsToTypes - given that list, provide the types (separate list because this list may contain invalid columns
+// bigQueryTypeCasting - We'll need to escape the column comparison if the column's a struct.
+// It then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email
+func ColumnsUpdateQuery(columns []string, columnsToTypes Columns, bigQueryTypeCasting bool) string {
+	destKind := constants.Snowflake
+	if bigQueryTypeCasting {
+		destKind = constants.BigQuery
+	}
+
+	columnsToTypes.EscapeName(&NameArgs{
+		Escape:   true,
+		DestKind: destKind,
+	})
+
+	var _columns []string
+	for _, column := range columns {
+		columnType, isOk := columnsToTypes.GetColumn(column)
+		if isOk && columnType.ToastColumn {
+			if columnType.KindDetails == Struct {
+				if bigQueryTypeCasting {
+					_columns = append(_columns,
+						fmt.Sprintf(`%s= CASE WHEN TO_JSON_STRING(cc.%s) != '{"key":"%s"}' THEN cc.%s ELSE c.%s END`,
+							// col CASE when TO_JSON_STRING(cc.col) != { 'key': TOAST_UNAVAILABLE_VALUE }
+							column, column, constants.ToastUnavailableValuePlaceholder,
+							// cc.col ELSE c.col END
+							column, column))
+				} else {
+					_columns = append(_columns,
+						fmt.Sprintf("%s= CASE WHEN cc.%s != {'key': '%s'} THEN cc.%s ELSE c.%s END",
+							// col CASE WHEN cc.col
+							column, column,
+							// { 'key': TOAST_UNAVAILABLE_VALUE } THEN cc.col ELSE c.col END",
+							constants.ToastUnavailableValuePlaceholder, column, column))
+				}
+			} else {
+				// t.column3 = CASE WHEN t.column3 != '__debezium_unavailable_value' THEN t.column3 ELSE s.column3 END
+				_columns = append(_columns,
+					fmt.Sprintf("%s= CASE WHEN cc.%s != '%s' THEN cc.%s ELSE c.%s END",
+						// col = CASE WHEN cc.col != TOAST_UNAVAILABLE_VALUE
+						column, column, constants.ToastUnavailableValuePlaceholder,
+						// THEN cc.col ELSE c.col END
+						column, column))
+			}
+
+		} else {
+			// This is to make it look like: objCol = cc.objCol
+			_columns = append(_columns, fmt.Sprintf("%s=cc.%s", column, column))
+		}
+
+	}
+
+	return strings.Join(_columns, ",")
 }

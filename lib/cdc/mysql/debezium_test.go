@@ -312,6 +312,6 @@ func (m *MySQLTestSuite) TestGetEventFromBytes() {
 
 		col, isOk := cols.GetColumn(key)
 		assert.Equal(m.T(), true, isOk)
-		assert.Equal(m.T(), typing.Invalid, col.KindDetails, fmt.Sprintf("colName: %v, evtData key: %v", col.Name, key))
+		assert.Equal(m.T(), typing.Invalid, col.KindDetails, fmt.Sprintf("colName: %v, evtData key: %v", col.Name(nil), key))
 	}
 }

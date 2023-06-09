@@ -33,7 +33,7 @@ func merge(tableData *optimization.TableData) ([]*Row, error) {
 	var rows []*Row
 	for _, value := range tableData.RowsData() {
 		data := make(map[string]bigquery.Value)
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate() {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal, err := CastColVal(value[col], colKind)
 			if err != nil {
@@ -64,7 +64,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	log := logger.FromContext(ctx)
-	// Check if all the columns exist in Snowflake
+	// Check if all the columns exist in BigQuery
 	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(), tableData.TopicConfig.SoftDelete)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
@@ -75,14 +75,14 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		CdcTime:     tableData.LatestCDCTs,
 	}
 
-	// Keys that exist in CDC stream, but not in Snowflake
+	// Keys that exist in CDC stream, but not in BigQuery
 	err = ddl.AlterTable(ctx, createAlterTableArgs, targetKeysMissing...)
 	if err != nil {
 		log.WithError(err).Warn("failed to apply alter table")
 		return err
 	}
 
-	// Keys that exist in Snowflake, but don't exist in our CDC stream.
+	// Keys that exist in BigQuery, but don't exist in our CDC stream.
 	// createTable is set to false because table creation requires a column to be added
 	// Which means, we'll only do it upon Add columns.
 	deleteAlterTableArgs := ddl.AlterTableArgs{
@@ -105,7 +105,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	for colToDelete := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, col := range srcKeysMissing {
-			if found = col.Name == colToDelete; found {
+			if found = col.Name(nil) == colToDelete; found {
 				// Found it.
 				break
 			}
@@ -116,6 +116,9 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 			tableConfig.ClearColumnsToDeleteByColName(colToDelete)
 		}
 	}
+
+	// Infer the right data types from BigQuery before temp table creation.
+	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 
 	// Start temporary table creation
 	tempAlterTableArgs := ddl.AlterTableArgs{
@@ -132,7 +135,6 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 	// End temporary table creation
 
-	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 	rows, err := merge(tableData)
 	if err != nil {
 		log.WithError(err).Warn("failed to generate the merge query")
@@ -146,11 +148,14 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	mergeQuery, err := dml.MergeStatement(dml.MergeArgument{
-		FqTableName:    tableData.ToFqName(ctx, constants.BigQuery),
-		SubQuery:       tempAlterTableArgs.FqTableName,
-		IdempotentKey:  tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys:    tableData.PrimaryKeys,
-		Columns:        tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(),
+		FqTableName:   tableData.ToFqName(ctx, constants.BigQuery),
+		SubQuery:      tempAlterTableArgs.FqTableName,
+		IdempotentKey: tableData.TopicConfig.IdempotentKey,
+		PrimaryKeys:   tableData.PrimaryKeys,
+		Columns: tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(&typing.NameArgs{
+			Escape:   true,
+			DestKind: s.Label(),
+		}),
 		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:     tableData.TopicConfig.SoftDelete,
 		BigQuery:       true,

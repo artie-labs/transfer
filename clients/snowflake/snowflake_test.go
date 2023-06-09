@@ -29,10 +29,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 
 	var cols typing.Columns
 	for colName, colKind := range colToKindDetailsMap {
-		cols.AddColumn(typing.Column{
-			Name:        colName,
-			KindDetails: colKind,
-		})
+		cols.AddColumn(typing.NewColumn(colName, colKind))
 	}
 
 	rowsData := map[string]map[string]interface{}{
@@ -62,10 +59,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 
 	var anotherCols typing.Columns
 	for colName, kindDetails := range anotherColToKindDetailsMap {
-		anotherCols.AddColumn(typing.Column{
-			Name:        colName,
-			KindDetails: kindDetails,
-		})
+		anotherCols.AddColumn(typing.NewColumn(colName, kindDetails))
 	}
 
 	s.store.configMap.AddTableToConfig(tableData.ToFqName(s.ctx, constants.Snowflake),
@@ -89,10 +83,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 
 	var cols typing.Columns
 	for colName, colKind := range colToKindDetailsMap {
-		cols.AddColumn(typing.Column{
-			Name:        colName,
-			KindDetails: colKind,
-		})
+		cols.AddColumn(typing.NewColumn(colName, colKind))
 	}
 
 	rowsData := make(map[string]map[string]interface{})
@@ -140,10 +131,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 
 	var cols typing.Columns
 	for colName, colKind := range colToKindDetailsMap {
-		cols.AddColumn(typing.Column{
-			Name:        colName,
-			KindDetails: colKind,
-		})
+		cols.AddColumn(typing.NewColumn(colName, colKind))
 	}
 
 	rowsData := make(map[string]map[string]interface{})
@@ -205,10 +193,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 	var cols typing.Columns
 	for colName, colKind := range colToKindDetailsMap {
-		cols.AddColumn(typing.Column{
-			Name:        colName,
-			KindDetails: colKind,
-		})
+		cols.AddColumn(typing.NewColumn(colName, colKind))
 	}
 
 	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, "foo")
@@ -225,17 +210,10 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 	var sflkCols typing.Columns
 	for colName, colKind := range snowflakeColToKindDetailsMap {
-		sflkCols.AddColumn(typing.Column{
-			Name:        colName,
-			KindDetails: colKind,
-		})
+		sflkCols.AddColumn(typing.NewColumn(colName, colKind))
 	}
 
-	sflkCols.AddColumn(typing.Column{
-		Name:        "new",
-		KindDetails: typing.String,
-	})
-
+	sflkCols.AddColumn(typing.NewColumn("new", typing.String))
 	config := types.NewDwhTableConfig(&sflkCols, nil, false, true)
 	s.store.configMap.AddTableToConfig(tableData.ToFqName(s.ctx, constants.Snowflake), config)
 
@@ -258,11 +236,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 		inMemColumns := tableData.ReadOnlyInMemoryCols()
 		// Since sflkColumns overwrote the format, let's set it correctly again.
-		inMemColumns.UpdateColumn(typing.Column{
-			Name:        "created_at",
-			KindDetails: typing.ParseValue("", nil, time.Now().Format(time.RFC3339Nano)),
-		})
-
+		inMemColumns.UpdateColumn(typing.NewColumn("created_at", typing.ParseValue("", nil, time.Now().Format(time.RFC3339Nano))))
 		tableData.SetInMemoryColumns(inMemColumns)
 		break
 	}

@@ -40,15 +40,8 @@ func TestDiff_VariousNils(t *testing.T) {
 
 	var sourceColsNotNil Columns
 	var targColsNotNil Columns
-	sourceColsNotNil.AddColumn(Column{
-		Name:        "foo",
-		KindDetails: Invalid,
-	})
-	targColsNotNil.AddColumn(Column{
-		Name:        "foo",
-		KindDetails: Invalid,
-	})
-
+	sourceColsNotNil.AddColumn(NewColumn("foo", Invalid))
+	targColsNotNil.AddColumn(NewColumn("foo", Invalid))
 	testCases := []_testCase{
 		{
 			name:       "both &Columns{}",
@@ -95,10 +88,7 @@ func TestDiff_VariousNils(t *testing.T) {
 
 func TestDiffBasic(t *testing.T) {
 	var source Columns
-	source.AddColumn(Column{
-		Name:        "a",
-		KindDetails: Integer,
-	})
+	source.AddColumn(NewColumn("a", Integer))
 
 	srcKeyMissing, targKeyMissing := Diff(&source, &source, false)
 	assert.Equal(t, len(srcKeyMissing), 0)
@@ -113,10 +103,7 @@ func TestDiffDelta1(t *testing.T) {
 		"b": Boolean,
 		"c": Struct,
 	} {
-		sourceCols.AddColumn(Column{
-			Name:        colName,
-			KindDetails: kindDetails,
-		})
+		sourceCols.AddColumn(NewColumn(colName, kindDetails))
 	}
 
 	for colName, kindDetails := range map[string]KindDetails{
@@ -124,10 +111,7 @@ func TestDiffDelta1(t *testing.T) {
 		"b":  Boolean,
 		"cc": String,
 	} {
-		targCols.AddColumn(Column{
-			Name:        colName,
-			KindDetails: kindDetails,
-		})
+		targCols.AddColumn(NewColumn(colName, kindDetails))
 	}
 
 	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targCols, false)
@@ -149,10 +133,7 @@ func TestDiffDelta2(t *testing.T) {
 		"cC": String,
 		"Cc": String,
 	} {
-		sourceCols.AddColumn(Column{
-			Name:        colName,
-			KindDetails: kindDetails,
-		})
+		sourceCols.AddColumn(NewColumn(colName, kindDetails))
 	}
 
 	for colName, kindDetails := range map[string]KindDetails{
@@ -162,10 +143,7 @@ func TestDiffDelta2(t *testing.T) {
 		"CC": String,
 		"dd": String,
 	} {
-		targetCols.AddColumn(Column{
-			Name:        colName,
-			KindDetails: kindDetails,
-		})
+		targetCols.AddColumn(NewColumn(colName, kindDetails))
 	}
 
 	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targetCols, false)
@@ -179,15 +157,8 @@ func TestDiffDeterministic(t *testing.T) {
 	var sourceCols Columns
 	var targCols Columns
 
-	sourceCols.AddColumn(Column{
-		Name:        "id",
-		KindDetails: Integer,
-	})
-
-	sourceCols.AddColumn(Column{
-		Name:        "name",
-		KindDetails: String,
-	})
+	sourceCols.AddColumn(NewColumn("id", Integer))
+	sourceCols.AddColumn(NewColumn("name", String))
 
 	for i := 0; i < 500; i++ {
 		keysMissing, targetKeysMissing := Diff(&sourceCols, &targCols, false)
@@ -195,7 +166,7 @@ func TestDiffDeterministic(t *testing.T) {
 
 		var key string
 		for _, targetKeyMissing := range targetKeysMissing {
-			key += targetKeyMissing.Name
+			key += targetKeyMissing.Name(nil)
 		}
 
 		retMap[key] = false
@@ -206,18 +177,9 @@ func TestDiffDeterministic(t *testing.T) {
 
 func TestCopyColMap(t *testing.T) {
 	var cols Columns
-	cols.AddColumn(Column{
-		Name:        "hello",
-		KindDetails: String,
-	})
-	cols.AddColumn(Column{
-		Name:        "created_at",
-		KindDetails: NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType),
-	})
-	cols.AddColumn(Column{
-		Name:        "updated_at",
-		KindDetails: NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType),
-	})
+	cols.AddColumn(NewColumn("hello", String))
+	cols.AddColumn(NewColumn("created_at", NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType)))
+	cols.AddColumn(NewColumn("updated_at", NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType)))
 
 	copiedCols := CloneColumns(&cols)
 	assert.Equal(t, *copiedCols, cols)
@@ -235,10 +197,17 @@ func TestCloneColumns(t *testing.T) {
 	}
 
 	var cols Columns
-	cols.AddColumn(Column{Name: "foo", KindDetails: String})
-	cols.AddColumn(Column{Name: "bar", KindDetails: String})
-	cols.AddColumn(Column{Name: "xyz", KindDetails: String})
-	cols.AddColumn(Column{Name: "abc", KindDetails: String})
+	cols.AddColumn(NewColumn("foo", String))
+	cols.AddColumn(NewColumn("bar", String))
+	cols.AddColumn(NewColumn("xyz", String))
+	cols.AddColumn(NewColumn("abc", String))
+
+	var mixedCaseCols Columns
+	mixedCaseCols.AddColumn(NewColumn("foo", String))
+	mixedCaseCols.AddColumn(NewColumn("bAr", String))
+	mixedCaseCols.AddColumn(NewColumn("XYZ", String))
+	mixedCaseCols.AddColumn(NewColumn("aBC", String))
+
 	testCases := []_testCase{
 		{
 			name:         "nil col",
@@ -252,6 +221,11 @@ func TestCloneColumns(t *testing.T) {
 		{
 			name:         "copying columns",
 			cols:         &cols,
+			expectedCols: &cols,
+		},
+		{
+			name:         "mixed case cols",
+			cols:         &mixedCaseCols,
 			expectedCols: &cols,
 		},
 	}

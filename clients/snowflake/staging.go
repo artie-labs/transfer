@@ -48,7 +48,10 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 
 	_, err = s.Exec(fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
 		// Copy into temporary tables (column ...)
-		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(), ","),
+		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(&typing.NameArgs{
+			Escape:   true,
+			DestKind: s.Label(),
+		}), ","),
 		// Escaped columns, TABLE NAME
 		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableName, "%")))
 
@@ -78,7 +81,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 	writer.Comma = '\t'
 	for _, value := range tableData.RowsData() {
 		var row []string
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate() {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal := value[col]
 			// Check
@@ -154,7 +157,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 	for colToDelete := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, col := range srcKeysMissing {
-			if found = col.Name == colToDelete; found {
+			if found = col.Name(nil) == colToDelete; found {
 				// Found it.
 				break
 			}
@@ -174,11 +177,14 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 
 	// Prepare merge statement
 	mergeQuery, err := dml.MergeStatement(dml.MergeArgument{
-		FqTableName:    tableData.ToFqName(ctx, constants.Snowflake),
-		SubQuery:       temporaryTableName,
-		IdempotentKey:  tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys:    tableData.PrimaryKeys,
-		Columns:        tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(),
+		FqTableName:   tableData.ToFqName(ctx, constants.Snowflake),
+		SubQuery:      temporaryTableName,
+		IdempotentKey: tableData.TopicConfig.IdempotentKey,
+		PrimaryKeys:   tableData.PrimaryKeys,
+		Columns: tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(&typing.NameArgs{
+			Escape:   true,
+			DestKind: s.Label(),
+		}),
 		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:     tableData.TopicConfig.SoftDelete,
 	})
