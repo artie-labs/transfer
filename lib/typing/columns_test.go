@@ -9,10 +9,41 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestUnescapeColumnName(t *testing.T) {
+	type _testCase struct {
+		escapedName           string
+		expectedBigQueryName  string
+		expectedSnowflakeName string
+		expectedOtherName     string
+	}
+
+	testCases := []_testCase{
+		{
+			escapedName:           "foo",
+			expectedBigQueryName:  "foo",
+			expectedSnowflakeName: "foo",
+			expectedOtherName:     "foo",
+		},
+		{
+			escapedName: "`start`",
+			// Should only escape BigQuery
+			expectedBigQueryName:  "start",
+			expectedSnowflakeName: "`start`",
+			expectedOtherName:     "`start`",
+		},
+	}
+
+	for _, testCase := range testCases {
+		assert.Equal(t, testCase.expectedBigQueryName, UnescapeColumnName(testCase.escapedName, constants.BigQuery))
+		assert.Equal(t, testCase.expectedSnowflakeName, UnescapeColumnName(testCase.escapedName, constants.Snowflake))
+		assert.Equal(t, testCase.expectedSnowflakeName, UnescapeColumnName(testCase.escapedName, constants.SnowflakeStages))
+		assert.Equal(t, testCase.expectedOtherName, UnescapeColumnName(testCase.escapedName, ""))
+	}
+}
+
 func TestColumn_Name(t *testing.T) {
 	type _testCase struct {
-		colName string
-
+		colName      string
 		expectedName string
 		// Snowflake
 		expectedNameEsc string

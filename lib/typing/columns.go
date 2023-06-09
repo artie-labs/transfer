@@ -23,8 +23,8 @@ func UnescapeColumnName(escapedName string, destKind constants.DestinationKind) 
 	if destKind == constants.BigQuery {
 		return strings.ReplaceAll(escapedName, "`", "")
 	} else {
-		// TODO not sure if Snowflake needs this.
-		return strings.ReplaceAll(escapedName, `"`, "")
+		// Snowflake does not return escaping.
+		return escapedName
 	}
 }
 
