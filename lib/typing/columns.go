@@ -19,7 +19,6 @@ type Column struct {
 }
 
 func UnescapeColumnName(escapedName string, destKind constants.DestinationKind) string {
-	// TODO test
 	if destKind == constants.BigQuery {
 		return strings.ReplaceAll(escapedName, "`", "")
 	} else {
