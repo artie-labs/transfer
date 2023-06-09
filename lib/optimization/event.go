@@ -165,7 +165,7 @@ func (t *TableData) UpdateInMemoryColumnsFromDestination(cols ...typing.Column) 
 		var foundColumn typing.Column
 		var found bool
 		for _, col := range cols {
-			if col.Name(false) == strings.ToLower(inMemoryCol.Name(false)) {
+			if col.Name(nil) == strings.ToLower(inMemoryCol.Name(nil)) {
 				foundColumn = col
 				found = true
 				break

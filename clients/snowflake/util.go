@@ -24,7 +24,7 @@ func addPrefixToTableName(fqTableName string, prefix string) string {
 // It'll return like this: $1, $2, $3
 func escapeColumns(columns *typing.Columns, delimiter string) string {
 	var escapedCols []string
-	for index, col := range columns.GetColumnsToUpdate(false) {
+	for index, col := range columns.GetColumnsToUpdate(nil) {
 		colKind, _ := columns.GetColumn(col)
 		escapedCol := fmt.Sprintf("$%d", index+1)
 		switch colKind.KindDetails {

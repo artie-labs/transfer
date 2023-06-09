@@ -23,7 +23,7 @@ func (b *BigQueryTestSuite) TestParseSchemaQuery() {
 		assert.Equal(b.T(), true, tableConfig.DropDeletedColumns())
 		assert.Equal(b.T(), len(tableConfig.Columns().GetColumns()), 2, tableConfig.Columns)
 		for _, col := range tableConfig.Columns().GetColumns() {
-			assert.Equal(b.T(), col.KindDetails, typing.String, fmt.Sprintf("col: %s, kind: %v incorrect", col.Name(false), col.KindDetails))
+			assert.Equal(b.T(), col.KindDetails, typing.String, fmt.Sprintf("col: %s, kind: %v incorrect", col.Name(nil), col.KindDetails))
 		}
 	}
 }

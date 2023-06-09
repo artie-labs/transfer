@@ -33,7 +33,7 @@ func merge(tableData *optimization.TableData) ([]*Row, error) {
 	var rows []*Row
 	for _, value := range tableData.RowsData() {
 		data := make(map[string]bigquery.Value)
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(false) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal, err := CastColVal(value[col], colKind)
 			if err != nil {
@@ -105,7 +105,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	for colToDelete := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, col := range srcKeysMissing {
-			if found = col.Name(false) == colToDelete; found {
+			if found = col.Name(nil) == colToDelete; found {
 				// Found it.
 				break
 			}
@@ -146,11 +146,14 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	mergeQuery, err := dml.MergeStatement(dml.MergeArgument{
-		FqTableName:    tableData.ToFqName(ctx, constants.BigQuery),
-		SubQuery:       tempAlterTableArgs.FqTableName,
-		IdempotentKey:  tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys:    tableData.PrimaryKeys,
-		Columns:        tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(true),
+		FqTableName:   tableData.ToFqName(ctx, constants.BigQuery),
+		SubQuery:      tempAlterTableArgs.FqTableName,
+		IdempotentKey: tableData.TopicConfig.IdempotentKey,
+		PrimaryKeys:   tableData.PrimaryKeys,
+		Columns: tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(&typing.NameArgs{
+			Escape:   true,
+			DestKind: s.Label(),
+		}),
 		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:     tableData.TopicConfig.SoftDelete,
 		BigQuery:       true,

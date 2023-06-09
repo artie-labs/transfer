@@ -83,11 +83,13 @@ func TestMergeStatement(t *testing.T) {
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 	mergeSQL, err := MergeStatement(MergeArgument{
-		FqTableName:    fqTable,
-		SubQuery:       subQuery,
-		IdempotentKey:  "",
-		PrimaryKeys:    []string{"id"},
-		Columns:        _cols.GetColumnsToUpdate(true),
+		FqTableName:   fqTable,
+		SubQuery:      subQuery,
+		IdempotentKey: "",
+		PrimaryKeys:   []string{"id"},
+		Columns: _cols.GetColumnsToUpdate(&typing.NameArgs{
+			Escape: true,
+		}),
 		ColumnsToTypes: _cols,
 		BigQuery:       false,
 		SoftDelete:     false,

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -11,25 +13,31 @@ func TestColumn_Name(t *testing.T) {
 	type _testCase struct {
 		colName string
 
+		expectedName string
+		// Snowflake
 		expectedNameEsc string
-		expectedName    string
+		// BigQuery
+		expectedNameEscBq string
 	}
 
 	testCases := []_testCase{
 		{
-			colName:         "start",
-			expectedName:    "start",
-			expectedNameEsc: `"start"`, // since this is a reserved word.
+			colName:           "start",
+			expectedName:      "start",
+			expectedNameEsc:   `"start"`, // since this is a reserved word.
+			expectedNameEscBq: "`start`", // BQ escapes via backticks.
 		},
 		{
-			colName:         "foo",
-			expectedName:    "foo",
-			expectedNameEsc: "foo",
+			colName:           "foo",
+			expectedName:      "foo",
+			expectedNameEsc:   "foo",
+			expectedNameEscBq: "foo",
 		},
 		{
-			colName:         "bar",
-			expectedName:    "bar",
-			expectedNameEsc: "bar",
+			colName:           "bar",
+			expectedName:      "bar",
+			expectedNameEsc:   "bar",
+			expectedNameEscBq: "bar",
 		},
 	}
 
@@ -38,8 +46,15 @@ func TestColumn_Name(t *testing.T) {
 			name: testCase.colName,
 		}
 
-		assert.Equal(t, testCase.expectedName, c.Name(false), testCase.colName)
-		assert.Equal(t, testCase.expectedNameEsc, c.Name(true), testCase.colName)
+		assert.Equal(t, testCase.expectedName, c.Name(nil), testCase.colName)
+		assert.Equal(t, testCase.expectedNameEsc, c.Name(&NameArgs{
+			Escape:   true,
+			DestKind: constants.Snowflake,
+		}), testCase.colName)
+		assert.Equal(t, testCase.expectedNameEscBq, c.Name(&NameArgs{
+			Escape:   true,
+			DestKind: constants.BigQuery,
+		}), testCase.colName)
 	}
 }
 
@@ -96,8 +111,11 @@ func TestColumns_GetColumnsToUpdate(t *testing.T) {
 			columns: testCase.cols,
 		}
 
-		assert.Equal(t, testCase.expectedCols, cols.GetColumnsToUpdate(false), testCase.name)
-		assert.Equal(t, testCase.expectedColsEsc, cols.GetColumnsToUpdate(true), testCase.name)
+		assert.Equal(t, testCase.expectedCols, cols.GetColumnsToUpdate(nil), testCase.name)
+		assert.Equal(t, testCase.expectedColsEsc, cols.GetColumnsToUpdate(&NameArgs{
+			Escape:   true,
+			DestKind: constants.Snowflake,
+		}), testCase.name)
 	}
 }
 

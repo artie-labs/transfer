@@ -31,12 +31,28 @@ func (c *Column) ToLowerName() {
 	return
 }
 
+type NameArgs struct {
+	Escape   bool
+	DestKind constants.DestinationKind
+}
+
 // Name will give you c.name
 // However, if you pass in escape, we will escape if the column name is part of the reserved words from destinations.
 // If so, it'll change from `start` => `"start"` as suggested by Snowflake.
-func (c *Column) Name(escape bool) string {
+func (c *Column) Name(args *NameArgs) string {
+	var escape bool
+	if args != nil {
+		escape = args.Escape
+	}
+
 	if escape && array.StringContains(constants.ReservedKeywords, c.name) {
-		return fmt.Sprintf(`"%s"`, c.name)
+		if args != nil && args.DestKind == constants.BigQuery {
+			// BigQuery needs backticks to escape.
+			return fmt.Sprintf("`%s`", c.name)
+		} else {
+			// Snowflake uses quotes.
+			return fmt.Sprintf(`"%s"`, c.name)
+		}
 	}
 
 	return c.name
@@ -99,7 +115,7 @@ func (c *Columns) GetColumn(name string) (Column, bool) {
 
 // GetColumnsToUpdate will filter all the `Invalid` columns so that we do not update it.
 // It also has an option to escape the returned columns or not. This is used mostly for the SQL MERGE queries.
-func (c *Columns) GetColumnsToUpdate(escape bool) []string {
+func (c *Columns) GetColumnsToUpdate(args *NameArgs) []string {
 	if c == nil {
 		return []string{}
 	}
@@ -113,7 +129,7 @@ func (c *Columns) GetColumnsToUpdate(escape bool) []string {
 			continue
 		}
 
-		cols = append(cols, col.Name(escape))
+		cols = append(cols, col.Name(args))
 	}
 
 	return cols

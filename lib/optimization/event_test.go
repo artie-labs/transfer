@@ -97,7 +97,7 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 	assert.True(t, isOk)
 
 	extCol.KindDetails.ExtendedTimeDetails.Format = time.RFC3339Nano
-	tableData.inMemoryColumns.UpdateColumn(typing.NewColumn(extCol.Name(false), extCol.KindDetails))
+	tableData.inMemoryColumns.UpdateColumn(typing.NewColumn(extCol.Name(nil), extCol.KindDetails))
 
 	for name, colKindDetails := range map[string]typing.KindDetails{
 		"foo":                  typing.String,

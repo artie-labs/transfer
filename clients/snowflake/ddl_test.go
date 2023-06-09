@@ -34,7 +34,7 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 	nameCol := typing.NewColumn("name", typing.String)
 	tc := s.store.configMap.TableConfig(fqName)
 
-	val := tc.ShouldDeleteColumn(nameCol.Name(false), time.Now().Add(-1*6*time.Hour))
+	val := tc.ShouldDeleteColumn(nameCol.Name(nil), time.Now().Add(-1*6*time.Hour))
 	assert.False(s.T(), val, "should not try to delete this column")
 	assert.Equal(s.T(), len(s.store.configMap.TableConfig(fqName).ReadOnlyColumnsToDelete()), 1)
 
@@ -62,21 +62,21 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 
 	nameCol := typing.NewColumn("name", typing.String)
 	// Let's try to delete name.
-	allowed := s.store.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name(false), time.Now().Add(-1*(6*time.Hour)))
+	allowed := s.store.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name(nil), time.Now().Add(-1*(6*time.Hour)))
 
 	assert.Equal(s.T(), allowed, false, "should not be allowed to delete")
 
 	// Process tried to delete, but it's lagged.
-	allowed = s.store.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name(false), time.Now().Add(-1*(6*time.Hour)))
+	allowed = s.store.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name(nil), time.Now().Add(-1*(6*time.Hour)))
 
 	assert.Equal(s.T(), allowed, false, "should not be allowed to delete")
 
 	// Process now caught up, and is asking if we can delete, should still be no.
-	allowed = s.store.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name(false), time.Now())
+	allowed = s.store.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name(nil), time.Now())
 	assert.Equal(s.T(), allowed, false, "should not be allowed to delete still")
 
 	// Process is finally ahead, has permission to delete now.
-	allowed = s.store.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name(false),
+	allowed = s.store.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name(nil),
 		time.Now().Add(2*constants.DeletionConfidencePadding))
 
 	assert.Equal(s.T(), allowed, true, "should now be allowed to delete")

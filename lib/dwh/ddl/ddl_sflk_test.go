@@ -40,7 +40,10 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 
 	for i := 0; i < len(cols); i++ {
 		execQuery, _ := d.fakeSnowflakeStore.ExecArgsForCall(i)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN %s %s", fqTable, cols[i].Name(true),
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN %s %s", fqTable, cols[i].Name(&typing.NameArgs{
+			Escape:   true,
+			DestKind: d.snowflakeStore.Label(),
+		}),
 			typing.KindToDWHType(cols[i].KindDetails, d.snowflakeStore.Label())), execQuery)
 	}
 
@@ -108,15 +111,15 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 	for _, column := range tableConfig.Columns().GetColumns() {
 		var found bool
 		for _, expCol := range cols {
-			if found = column.Name(false) == expCol.Name(false); found {
-				assert.Equal(d.T(), column.KindDetails, expCol.KindDetails, fmt.Sprintf("wrong col kind, col: %s", column.Name(false)))
+			if found = column.Name(nil) == expCol.Name(nil); found {
+				assert.Equal(d.T(), column.KindDetails, expCol.KindDetails, fmt.Sprintf("wrong col kind, col: %s", column.Name(nil)))
 				break
 			}
 		}
 
 		assert.True(d.T(), found,
 			fmt.Sprintf("Col not found: %s, actual list: %v, expected list: %v",
-				column.Name(false), tableConfig.Columns(), cols))
+				column.Name(nil), tableConfig.Columns(), cols))
 	}
 }
 
@@ -148,7 +151,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	for col := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, expCol := range cols {
-			if found = col == expCol.Name(false); found {
+			if found = col == expCol.Name(nil); found {
 				break
 			}
 		}
@@ -159,7 +162,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	}
 
 	for i := 0; i < len(cols); i++ {
-		colToActuallyDelete := cols[i].Name(false)
+		colToActuallyDelete := cols[i].Name(nil)
 		// Now let's check the timestamp
 		assert.True(d.T(), tableConfig.ReadOnlyColumnsToDelete()[colToActuallyDelete].After(time.Now()))
 		// Now let's actually try to dial the time back, and it should actually try to delete.
@@ -170,7 +173,10 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 		assert.Equal(d.T(), i+1, d.fakeSnowflakeStore.ExecCallCount(), "tried to delete one column")
 
 		execArg, _ := d.fakeSnowflakeStore.ExecArgsForCall(i)
-		assert.Equal(d.T(), execArg, fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTable, constants.Delete, cols[i].Name(true)))
+		assert.Equal(d.T(), execArg, fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTable, constants.Delete, cols[i].Name(&typing.NameArgs{
+			Escape:   true,
+			DestKind: d.snowflakeStore.Label(),
+		})))
 	}
 }
 
@@ -210,7 +216,7 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 	for col := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, expCol := range cols {
-			if found = col == expCol.Name(false); found {
+			if found = col == expCol.Name(nil); found {
 				break
 			}
 		}
