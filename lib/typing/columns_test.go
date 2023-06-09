@@ -296,6 +296,9 @@ func TestColumnsUpdateQuery(t *testing.T) {
 			toast = true
 		} else if lastCaseColEsc == "b2" {
 			toast = true
+		} else if lastCaseColEsc == "`start`" {
+			kd = Struct
+			toast = true
 		}
 
 		name := lastCaseColEsc
@@ -310,6 +313,8 @@ func TestColumnsUpdateQuery(t *testing.T) {
 			ToastColumn: toast,
 		})
 	}
+
+	key := `{"key":"__debezium_unavailable_value"}`
 
 	testCases := []testCase{
 		{
@@ -342,7 +347,8 @@ func TestColumnsUpdateQuery(t *testing.T) {
 			columns:        lastCaseColsEsc,
 			columnsToTypes: lastCaseEscapeTypes,
 			bigQuery:       true,
-			expectedString: fmt.Sprintf(`a1= CASE WHEN TO_JSON_STRING(cc.a1) != '{"key":"__debezium_unavailable_value"}' THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN cc.b2 != '__debezium_unavailable_value' THEN cc.b2 ELSE c.b2 END,c3=cc.c3,%s,%s`, "`start`=cc.`start`", "`select`=cc.`select`"),
+			expectedString: fmt.Sprintf(`a1= CASE WHEN TO_JSON_STRING(cc.a1) != '%s' THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN cc.b2 != '__debezium_unavailable_value' THEN cc.b2 ELSE c.b2 END,c3=cc.c3,%s,%s`,
+				key, fmt.Sprintf("`start`= CASE WHEN TO_JSON_STRING(cc.`start`) != '%s' THEN cc.`start` ELSE c.`start` END", key), "`select`=cc.`select`"),
 		},
 	}
 
