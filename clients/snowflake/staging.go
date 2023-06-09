@@ -48,7 +48,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 
 	_, err = s.Exec(fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
 		// Copy into temporary tables (column ...)
-		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(), ","),
+		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(true), ","),
 		// Escaped columns, TABLE NAME
 		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableName, "%")))
 
@@ -78,7 +78,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 	writer.Comma = '\t'
 	for _, value := range tableData.RowsData() {
 		var row []string
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate() {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(false) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal := value[col]
 			// Check
@@ -178,7 +178,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		SubQuery:       temporaryTableName,
 		IdempotentKey:  tableData.TopicConfig.IdempotentKey,
 		PrimaryKeys:    tableData.PrimaryKeys,
-		Columns:        tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(),
+		Columns:        tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(true),
 		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:     tableData.TopicConfig.SoftDelete,
 	})

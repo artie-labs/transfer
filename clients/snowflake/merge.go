@@ -48,6 +48,7 @@ func escapeCols(cols []typing.Column) (colsToUpdate []string, colsToUpdateEscape
 	return
 }
 
+// TODO - this needs to be patched to support keyword substitution.
 func getMergeStatement(ctx context.Context, tableData *optimization.TableData) (string, error) {
 	var tableValues []string
 	colsToUpdate, colsToUpdateEscaped := escapeCols(tableData.ReadOnlyInMemoryCols().GetColumns())

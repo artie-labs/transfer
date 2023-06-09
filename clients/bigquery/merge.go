@@ -33,7 +33,7 @@ func merge(tableData *optimization.TableData) ([]*Row, error) {
 	var rows []*Row
 	for _, value := range tableData.RowsData() {
 		data := make(map[string]bigquery.Value)
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate() {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(false) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal, err := CastColVal(value[col], colKind)
 			if err != nil {
@@ -150,7 +150,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		SubQuery:       tempAlterTableArgs.FqTableName,
 		IdempotentKey:  tableData.TopicConfig.IdempotentKey,
 		PrimaryKeys:    tableData.PrimaryKeys,
-		Columns:        tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(),
+		Columns:        tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(true),
 		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:     tableData.TopicConfig.SoftDelete,
 		BigQuery:       true,

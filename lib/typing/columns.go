@@ -31,6 +31,23 @@ func (c *Column) ToLowerName() {
 	return
 }
 
+func (c *Column) NameReplacePrefix(escape bool) string {
+	if escape && array.StringContains(constants.ReservedKeywords, c.name) {
+		return fmt.Sprintf(`%s_%s`, c.name, constants.ArtiePrefix)
+	}
+
+	return c.name
+}
+
+// TODO: document
+func (c *Column) NameEscapePrefix(escape bool) string {
+	if escape && array.StringContains(constants.ReservedKeywords, c.name) {
+		return fmt.Sprintf(`%s_%s as "%s"`, c.name, constants.ArtiePrefix, c.name)
+	}
+
+	return c.name
+}
+
 // Name will give you c.name
 // However, if you pass in escape, we will escape if the column name is part of the reserved words from destinations.
 // If so, it'll change from `start` => `"start"` as suggested by Snowflake.
@@ -98,7 +115,8 @@ func (c *Columns) GetColumn(name string) (Column, bool) {
 }
 
 // GetColumnsToUpdate will filter all the `Invalid` columns so that we do not update it.
-func (c *Columns) GetColumnsToUpdate() []string {
+func (c *Columns) GetColumnsToUpdate(escape bool) []string {
+	// TODO: test & document.
 	if c == nil {
 		return []string{}
 	}
@@ -112,7 +130,7 @@ func (c *Columns) GetColumnsToUpdate() []string {
 			continue
 		}
 
-		cols = append(cols, col.name)
+		cols = append(cols, col.Name(escape))
 	}
 
 	return cols
