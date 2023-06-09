@@ -45,9 +45,10 @@ func TestColumn_Name(t *testing.T) {
 
 func TestColumns_GetColumnsToUpdate(t *testing.T) {
 	type _testCase struct {
-		name         string
-		cols         []Column
-		expectedCols []string
+		name            string
+		cols            []Column
+		expectedCols    []string
+		expectedColsEsc []string
 	}
 
 	var (
@@ -58,6 +59,10 @@ func TestColumns_GetColumnsToUpdate(t *testing.T) {
 			},
 			{
 				name:        "bye",
+				KindDetails: String,
+			},
+			{
+				name:        "start",
 				KindDetails: String,
 			},
 		}
@@ -73,14 +78,16 @@ func TestColumns_GetColumnsToUpdate(t *testing.T) {
 
 	testCases := []_testCase{
 		{
-			name:         "happy path",
-			cols:         happyPathCols,
-			expectedCols: []string{"hi", "bye"},
+			name:            "happy path",
+			cols:            happyPathCols,
+			expectedCols:    []string{"hi", "bye", "start"},
+			expectedColsEsc: []string{"hi", "bye", `"start"`},
 		},
 		{
-			name:         "happy path + extra col",
-			cols:         extraCols,
-			expectedCols: []string{"hi", "bye"},
+			name:            "happy path + extra col",
+			cols:            extraCols,
+			expectedCols:    []string{"hi", "bye", "start"},
+			expectedColsEsc: []string{"hi", "bye", `"start"`},
 		},
 	}
 
@@ -89,7 +96,8 @@ func TestColumns_GetColumnsToUpdate(t *testing.T) {
 			columns: testCase.cols,
 		}
 
-		assert.Equal(t, testCase.expectedCols, cols.GetColumnsToUpdate(), testCase.name)
+		assert.Equal(t, testCase.expectedCols, cols.GetColumnsToUpdate(false), testCase.name)
+		assert.Equal(t, testCase.expectedColsEsc, cols.GetColumnsToUpdate(true), testCase.name)
 	}
 }
 
