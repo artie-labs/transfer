@@ -242,9 +242,10 @@ func TestColumnsUpdateQuery(t *testing.T) {
 	fooBarCols := []string{"foo", "bar"}
 
 	var (
-		happyPathCols      Columns
-		stringAndToastCols Columns
-		lastCaseColTypes   Columns
+		happyPathCols       Columns
+		stringAndToastCols  Columns
+		lastCaseColTypes    Columns
+		lastCaseEscapeTypes Columns
 	)
 	for _, col := range fooBarCols {
 		happyPathCols.AddColumn(Column{
@@ -267,7 +268,6 @@ func TestColumnsUpdateQuery(t *testing.T) {
 	}
 
 	lastCaseCols := []string{"a1", "b2", "c3"}
-
 	for _, lastCaseCol := range lastCaseCols {
 		kd := String
 		var toast bool
@@ -281,6 +281,31 @@ func TestColumnsUpdateQuery(t *testing.T) {
 
 		lastCaseColTypes.AddColumn(Column{
 			name:        lastCaseCol,
+			KindDetails: kd,
+			ToastColumn: toast,
+		})
+	}
+
+	lastCaseColsEsc := []string{"a1", "b2", "c3", "`start`", "`select`"}
+	for _, lastCaseColEsc := range lastCaseColsEsc {
+		kd := String
+		var toast bool
+		// a1 - struct + toast, b2 - string + toast, c3 = regular string.
+		if lastCaseColEsc == "a1" {
+			kd = Struct
+			toast = true
+		} else if lastCaseColEsc == "b2" {
+			toast = true
+		}
+
+		name := lastCaseColEsc
+		if name == "`select`" {
+			// Unescape (to test that this function escapes it).
+			name = "select"
+		}
+
+		lastCaseEscapeTypes.AddColumn(Column{
+			name:        name,
 			KindDetails: kd,
 			ToastColumn: toast,
 		})
@@ -311,6 +336,13 @@ func TestColumnsUpdateQuery(t *testing.T) {
 			columnsToTypes: lastCaseColTypes,
 			bigQuery:       true,
 			expectedString: `a1= CASE WHEN TO_JSON_STRING(cc.a1) != '{"key":"__debezium_unavailable_value"}' THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN cc.b2 != '__debezium_unavailable_value' THEN cc.b2 ELSE c.b2 END,c3=cc.c3`,
+		},
+		{
+			name:           "struct, string and toast string (bigquery) w/ reserved keywords",
+			columns:        lastCaseColsEsc,
+			columnsToTypes: lastCaseEscapeTypes,
+			bigQuery:       true,
+			expectedString: fmt.Sprintf(`a1= CASE WHEN TO_JSON_STRING(cc.a1) != '{"key":"__debezium_unavailable_value"}' THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN cc.b2 != '__debezium_unavailable_value' THEN cc.b2 ELSE c.b2 END,c3=cc.c3,%s,%s`, "`start`=cc.`start`", "`select`=cc.`select`"),
 		},
 	}
 
