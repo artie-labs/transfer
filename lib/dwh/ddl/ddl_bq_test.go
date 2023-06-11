@@ -234,20 +234,20 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 		"bar": typing.String,
 	}
 
-	var columns columns.Columns
+	var cols columns.Columns
 	for colName, kindDetails := range columnNameToKindDetailsMap {
-		columns.AddColumn(columns.NewColumn(colName, kindDetails))
+		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
 	fqName := td.ToFqName(d.bqCtx, constants.BigQuery)
 
 	originalColumnLength := len(columnNameToKindDetailsMap)
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns, nil, false, false))
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, false))
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
 
 	// Prior to deletion, there should be no colsToDelete
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumnsToDelete())
-	for _, column := range columns.GetColumns() {
+	for _, column := range cols.GetColumns() {
 		alterTableArgs := ddl.AlterTableArgs{
 			Dwh:         d.bigQueryStore,
 			Tc:          tc,
@@ -264,7 +264,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 	assert.Equal(d.T(), originalColumnLength, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns()))
 
 	// Now try to delete again and with an increased TS. It should now be all deleted.
-	for _, column := range columns.GetColumns() {
+	for _, column := range cols.GetColumns() {
 		alterTableArgs := ddl.AlterTableArgs{
 			Dwh:         d.bigQueryStore,
 			Tc:          tc,

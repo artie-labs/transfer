@@ -21,7 +21,7 @@ func TestMergeStatement_TempTable(t *testing.T) {
 	mergeArg := MergeArgument{
 		FqTableName:    "customers.orders",
 		SubQuery:       "customers.orders_tmp",
-		PrimaryKeys:    []string{"order_id"},
+		PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("order_id", typing.Invalid), nil)},
 		Columns:        []string{"order_id", "name", constants.DeleteColumnMarker},
 		ColumnsToTypes: cols,
 		BigQuery:       true,
@@ -43,7 +43,7 @@ func TestMergeStatement_JSONKey(t *testing.T) {
 	mergeArg := MergeArgument{
 		FqTableName:    "customers.orders",
 		SubQuery:       "customers.orders_tmp",
-		PrimaryKeys:    []string{"order_oid"},
+		PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("order_oid", typing.Invalid), nil)},
 		Columns:        []string{"order_oid", "name", constants.DeleteColumnMarker},
 		ColumnsToTypes: cols,
 		BigQuery:       true,

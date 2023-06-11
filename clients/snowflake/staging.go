@@ -193,7 +193,6 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 	})
 
 	log.WithField("query", mergeQuery).Debug("executing...")
-	fmt.Println("mergeQuery", mergeQuery, "err", err)
 	_, err = s.Exec(mergeQuery)
 	if err != nil {
 		return err

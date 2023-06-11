@@ -41,7 +41,7 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 			FqTableName:    fqTable,
 			SubQuery:       subQuery,
 			IdempotentKey:  idempotentKey,
-			PrimaryKeys:    []string{"id"},
+			PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil)},
 			Columns:        cols,
 			ColumnsToTypes: _cols,
 			BigQuery:       false,
@@ -88,7 +88,7 @@ func TestMergeStatement(t *testing.T) {
 		FqTableName:   fqTable,
 		SubQuery:      subQuery,
 		IdempotentKey: "",
-		PrimaryKeys:   []string{"id"},
+		PrimaryKeys:   []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil)},
 		Columns: _cols.GetColumnsToUpdate(&columns.NameArgs{
 			Escape: true,
 		}),
@@ -135,7 +135,7 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 		FqTableName:    fqTable,
 		SubQuery:       subQuery,
 		IdempotentKey:  "updated_at",
-		PrimaryKeys:    []string{"id"},
+		PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil)},
 		Columns:        cols,
 		ColumnsToTypes: _cols,
 		BigQuery:       false,
@@ -171,10 +171,11 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 	_cols.AddColumn(columns.NewColumn("another_id", typing.String))
 
 	mergeSQL, err := MergeStatement(MergeArgument{
-		FqTableName:    fqTable,
-		SubQuery:       subQuery,
-		IdempotentKey:  "updated_at",
-		PrimaryKeys:    []string{"id", "another_id"},
+		FqTableName:   fqTable,
+		SubQuery:      subQuery,
+		IdempotentKey: "updated_at",
+		PrimaryKeys: []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil),
+			columns.NewWrapper(columns.NewColumn("another_id", typing.Invalid), nil)},
 		Columns:        cols,
 		ColumnsToTypes: _cols,
 		BigQuery:       false,
