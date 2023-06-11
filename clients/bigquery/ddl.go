@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -51,7 +53,7 @@ func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.Tabl
 // parseSchemaQuery is to parse out the results from this query: https://cloud.google.com/bigquery/docs/information-schema-tables#example_1
 func parseSchemaQuery(row string, createTable, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
 	if createTable {
-		return types.NewDwhTableConfig(&typing.Columns{}, nil, createTable, dropDeletedColumns), nil
+		return types.NewDwhTableConfig(&columns.Columns{}, nil, createTable, dropDeletedColumns), nil
 	}
 
 	// TrimSpace only does the L + R side.
@@ -87,7 +89,7 @@ func parseSchemaQuery(row string, createTable, dropDeletedColumns bool) (*types.
 		return nil, fmt.Errorf("malformed DDL string: missing (, %s", ddlString)
 	}
 
-	var bigQueryColumns typing.Columns
+	var bigQueryColumns columns.Columns
 	ddlString = ddlString[:endOfStatement]
 	columnsToTypes := strings.Split(ddlString, ",")
 	for _, colType := range columnsToTypes {
@@ -104,7 +106,7 @@ func parseSchemaQuery(row string, createTable, dropDeletedColumns bool) (*types.
 			return nil, fmt.Errorf("unexpected colType, colType: %s, parts: %v", colType, parts)
 		}
 
-		bigQueryColumns.AddColumn(typing.NewColumn(typing.UnescapeColumnName(parts[0], constants.BigQuery), typing.BigQueryTypeToKind(strings.Join(parts[1:], " "))))
+		bigQueryColumns.AddColumn(columns.NewColumn(columns.UnescapeColumnName(parts[0], constants.BigQuery), typing.BigQueryTypeToKind(strings.Join(parts[1:], " "))))
 	}
 
 	return types.NewDwhTableConfig(&bigQueryColumns, nil, createTable, dropDeletedColumns), nil

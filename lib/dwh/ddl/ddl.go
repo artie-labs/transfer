@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh"
 	"github.com/artie-labs/transfer/lib/dwh/types"
@@ -68,12 +70,12 @@ func (a *AlterTableArgs) Validate() error {
 	return nil
 }
 
-func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) error {
+func AlterTable(_ context.Context, args AlterTableArgs, cols ...columns.Column) error {
 	if err := args.Validate(); err != nil {
 		return err
 	}
 
-	var mutateCol []typing.Column
+	var mutateCol []columns.Column
 	// It's okay to combine since args.ColumnOp only takes one of: `Delete` or `Add`
 	var colSQLParts []string
 	for _, col := range cols {
@@ -90,12 +92,12 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...typing.Column) e
 		mutateCol = append(mutateCol, col)
 		switch args.ColumnOp {
 		case constants.Add:
-			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, col.Name(&typing.NameArgs{
+			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, col.Name(&columns.NameArgs{
 				Escape:   true,
 				DestKind: args.Dwh.Label(),
 			}), typing.KindToDWHType(col.KindDetails, args.Dwh.Label())))
 		case constants.Delete:
-			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s`, col.Name(&typing.NameArgs{
+			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s`, col.Name(&columns.NameArgs{
 				Escape:   true,
 				DestKind: args.Dwh.Label(),
 			})))

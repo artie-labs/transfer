@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -16,7 +18,7 @@ import (
 func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 	fqName := "coffee_shop.public.orders"
 
-	var cols typing.Columns
+	var cols columns.Columns
 	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":          typing.Integer,
 		"customer_id": typing.Integer,
@@ -24,14 +26,14 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 		"name":        typing.String,
 		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 	} {
-		cols.AddColumn(typing.NewColumn(colName, kindDetails))
+		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
 	config := types.NewDwhTableConfig(&cols, nil, false, true)
 
 	s.store.configMap.AddTableToConfig(fqName, config)
 
-	nameCol := typing.NewColumn("name", typing.String)
+	nameCol := columns.NewColumn("name", typing.String)
 	tc := s.store.configMap.TableConfig(fqName)
 
 	val := tc.ShouldDeleteColumn(nameCol.Name(nil), time.Now().Add(-1*6*time.Hour))
@@ -46,7 +48,7 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 	fqName := "coffee_shop.orders.public"
 
-	var cols typing.Columns
+	var cols columns.Columns
 	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":          typing.Integer,
 		"customer_id": typing.Integer,
@@ -54,13 +56,13 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 		"name":        typing.String,
 		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 	} {
-		cols.AddColumn(typing.NewColumn(colName, kindDetails))
+		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
 	config := types.NewDwhTableConfig(&cols, nil, false, true)
 	s.store.configMap.AddTableToConfig(fqName, config)
 
-	nameCol := typing.NewColumn("name", typing.String)
+	nameCol := columns.NewColumn("name", typing.String)
 	// Let's try to delete name.
 	allowed := s.store.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name(nil), time.Now().Add(-1*(6*time.Hour)))
 
@@ -83,7 +85,7 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 }
 
 func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
-	var cols typing.Columns
+	var cols columns.Columns
 	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":          typing.Integer,
 		"customer_id": typing.Integer,
@@ -91,7 +93,7 @@ func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
 		"name":        typing.String,
 		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 	} {
-		cols.AddColumn(typing.NewColumn(colName, kindDetails))
+		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
 	tc := types.NewDwhTableConfig(&cols, map[string]time.Time{

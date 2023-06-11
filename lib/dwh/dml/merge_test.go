@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
@@ -31,15 +33,15 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
-	var _cols typing.Columns
-	_cols.AddColumn(typing.NewColumn("id", typing.String))
+	var _cols columns.Columns
+	_cols.AddColumn(columns.NewColumn("id", typing.String))
 
 	for _, idempotentKey := range []string{"", "updated_at"} {
 		mergeSQL, err := MergeStatement(MergeArgument{
 			FqTableName:    fqTable,
 			SubQuery:       subQuery,
 			IdempotentKey:  idempotentKey,
-			PrimaryKeys:    []string{"id"},
+			PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil)},
 			Columns:        cols,
 			ColumnsToTypes: _cols,
 			BigQuery:       false,
@@ -68,9 +70,9 @@ func TestMergeStatement(t *testing.T) {
 
 	// This feels a bit round about, but this is because iterating over a map is not deterministic.
 	cols := []string{"id", "bar", "updated_at", "start", constants.DeleteColumnMarker}
-	var _cols typing.Columns
+	var _cols columns.Columns
 	for _, col := range cols {
-		_cols.AddColumn(typing.NewColumn(col, colToTypes[col]))
+		_cols.AddColumn(columns.NewColumn(col, colToTypes[col]))
 	}
 
 	tableValues := []string{
@@ -86,8 +88,8 @@ func TestMergeStatement(t *testing.T) {
 		FqTableName:   fqTable,
 		SubQuery:      subQuery,
 		IdempotentKey: "",
-		PrimaryKeys:   []string{"id"},
-		Columns: _cols.GetColumnsToUpdate(&typing.NameArgs{
+		PrimaryKeys:   []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil)},
+		Columns: _cols.GetColumnsToUpdate(&columns.NameArgs{
 			Escape: true,
 		}),
 		ColumnsToTypes: _cols,
@@ -126,14 +128,14 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
-	var _cols typing.Columns
-	_cols.AddColumn(typing.NewColumn("id", typing.String))
+	var _cols columns.Columns
+	_cols.AddColumn(columns.NewColumn("id", typing.String))
 
 	mergeSQL, err := MergeStatement(MergeArgument{
 		FqTableName:    fqTable,
 		SubQuery:       subQuery,
 		IdempotentKey:  "updated_at",
-		PrimaryKeys:    []string{"id"},
+		PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil)},
 		Columns:        cols,
 		ColumnsToTypes: _cols,
 		BigQuery:       false,
@@ -164,15 +166,16 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
-	var _cols typing.Columns
-	_cols.AddColumn(typing.NewColumn("id", typing.String))
-	_cols.AddColumn(typing.NewColumn("another_id", typing.String))
+	var _cols columns.Columns
+	_cols.AddColumn(columns.NewColumn("id", typing.String))
+	_cols.AddColumn(columns.NewColumn("another_id", typing.String))
 
 	mergeSQL, err := MergeStatement(MergeArgument{
-		FqTableName:    fqTable,
-		SubQuery:       subQuery,
-		IdempotentKey:  "updated_at",
-		PrimaryKeys:    []string{"id", "another_id"},
+		FqTableName:   fqTable,
+		SubQuery:      subQuery,
+		IdempotentKey: "updated_at",
+		PrimaryKeys: []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil),
+			columns.NewWrapper(columns.NewColumn("another_id", typing.Invalid), nil)},
 		Columns:        cols,
 		ColumnsToTypes: _cols,
 		BigQuery:       false,
@@ -183,4 +186,65 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")), fmt.Sprintf("Idempotency key: %s", mergeSQL))
 
 	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("cc on c.id = cc.id and c.another_id = cc.another_id")))
+}
+
+func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
+	// No idempotent key
+	fqTable := "database.schema.table"
+	colToTypes := map[string]typing.KindDetails{
+		"id":                         typing.String,
+		"group":                      typing.String,
+		"updated_at":                 typing.String,
+		"start":                      typing.String,
+		constants.DeleteColumnMarker: typing.Boolean,
+	}
+
+	// This feels a bit round about, but this is because iterating over a map is not deterministic.
+	cols := []string{"id", "group", "updated_at", "start", constants.DeleteColumnMarker}
+	var _cols columns.Columns
+	for _, col := range cols {
+		_cols.AddColumn(columns.NewColumn(col, colToTypes[col]))
+	}
+
+	tableValues := []string{
+		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "1", "456", "foo", time.Now().Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "2", "bb", "bar", time.Now().Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "3", "dd", "world", time.Now().Round(0).UTC()),
+	}
+
+	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
+	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
+		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
+	mergeSQL, err := MergeStatement(MergeArgument{
+		FqTableName:   fqTable,
+		SubQuery:      subQuery,
+		IdempotentKey: "",
+		PrimaryKeys: []columns.Wrapper{
+			columns.NewWrapper(columns.NewColumn("id", typing.Invalid), &columns.NameArgs{
+				Escape:   true,
+				DestKind: constants.Snowflake,
+			}),
+			columns.NewWrapper(columns.NewColumn("group", typing.Invalid), &columns.NameArgs{
+				Escape:   true,
+				DestKind: constants.Snowflake,
+			}),
+		},
+		Columns: _cols.GetColumnsToUpdate(&columns.NameArgs{
+			Escape: true,
+		}),
+		ColumnsToTypes: _cols,
+		BigQuery:       false,
+		SoftDelete:     false,
+	})
+	assert.NoError(t, err)
+	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
+	assert.False(t, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")), fmt.Sprintf("Idempotency key: %s", mergeSQL))
+	// Check primary keys clause
+	assert.True(t, strings.Contains(mergeSQL, `as cc on c.id = cc.id and c."group" = cc."group"`), mergeSQL)
+
+	// Check setting for update
+	assert.True(t, strings.Contains(mergeSQL, `SET id=cc.id,"group"=cc."group",updated_at=cc.updated_at,"start"=cc."start"`), mergeSQL)
+	// Check for INSERT
+	assert.True(t, strings.Contains(mergeSQL, `id,"group",updated_at,"start"`), mergeSQL)
+	assert.True(t, strings.Contains(mergeSQL, `cc.id,cc."group",cc.updated_at,cc."start"`), mergeSQL)
 }

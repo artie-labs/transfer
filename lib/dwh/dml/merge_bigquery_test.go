@@ -3,6 +3,8 @@ package dml
 import (
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/stretchr/testify/assert"
@@ -11,15 +13,15 @@ import (
 )
 
 func TestMergeStatement_TempTable(t *testing.T) {
-	var cols typing.Columns
-	cols.AddColumn(typing.NewColumn("order_id", typing.Integer))
-	cols.AddColumn(typing.NewColumn("name", typing.String))
-	cols.AddColumn(typing.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
+	var cols columns.Columns
+	cols.AddColumn(columns.NewColumn("order_id", typing.Integer))
+	cols.AddColumn(columns.NewColumn("name", typing.String))
+	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	mergeArg := MergeArgument{
 		FqTableName:    "customers.orders",
 		SubQuery:       "customers.orders_tmp",
-		PrimaryKeys:    []string{"order_id"},
+		PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("order_id", typing.Invalid), nil)},
 		Columns:        []string{"order_id", "name", constants.DeleteColumnMarker},
 		ColumnsToTypes: cols,
 		BigQuery:       true,
@@ -33,15 +35,15 @@ func TestMergeStatement_TempTable(t *testing.T) {
 }
 
 func TestMergeStatement_JSONKey(t *testing.T) {
-	var cols typing.Columns
-	cols.AddColumn(typing.NewColumn("order_oid", typing.Struct))
-	cols.AddColumn(typing.NewColumn("name", typing.String))
-	cols.AddColumn(typing.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
+	var cols columns.Columns
+	cols.AddColumn(columns.NewColumn("order_oid", typing.Struct))
+	cols.AddColumn(columns.NewColumn("name", typing.String))
+	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	mergeArg := MergeArgument{
 		FqTableName:    "customers.orders",
 		SubQuery:       "customers.orders_tmp",
-		PrimaryKeys:    []string{"order_oid"},
+		PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("order_oid", typing.Invalid), nil)},
 		Columns:        []string{"order_oid", "name", constants.DeleteColumnMarker},
 		ColumnsToTypes: cols,
 		BigQuery:       true,

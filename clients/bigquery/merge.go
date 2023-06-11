@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"cloud.google.com/go/bigquery"
 
 	"github.com/artie-labs/transfer/lib/dwh/dml"
@@ -12,7 +14,6 @@ import (
 	"github.com/artie-labs/transfer/lib/dwh/ddl"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
-	"github.com/artie-labs/transfer/lib/typing"
 )
 
 type Row struct {
@@ -65,7 +66,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	log := logger.FromContext(ctx)
 	// Check if all the columns exist in BigQuery
-	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(), tableData.TopicConfig.SoftDelete)
+	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(), tableData.TopicConfig.SoftDelete)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
 		Tc:          tableConfig,
@@ -151,8 +152,11 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		FqTableName:   tableData.ToFqName(ctx, constants.BigQuery),
 		SubQuery:      tempAlterTableArgs.FqTableName,
 		IdempotentKey: tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys:   tableData.PrimaryKeys,
-		Columns: tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(&typing.NameArgs{
+		PrimaryKeys: tableData.PrimaryKeys(&columns.NameArgs{
+			Escape:   true,
+			DestKind: s.Label(),
+		}),
+		Columns: tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(&columns.NameArgs{
 			Escape:   true,
 			DestKind: s.Label(),
 		}),

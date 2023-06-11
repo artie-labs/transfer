@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -18,7 +20,7 @@ func TestCastColVal(t *testing.T) {
 	type _testCase struct {
 		name    string
 		colVal  interface{}
-		colKind typing.Column
+		colKind columns.Column
 
 		expectedErr   error
 		expectedValue interface{}
@@ -46,49 +48,49 @@ func TestCastColVal(t *testing.T) {
 		{
 			name:          "escaping string",
 			colVal:        "foo",
-			colKind:       typing.Column{KindDetails: typing.String},
+			colKind:       columns.Column{KindDetails: typing.String},
 			expectedValue: "foo",
 		},
 		{
 			name:          "123 as int",
 			colVal:        123,
-			colKind:       typing.Column{KindDetails: typing.Integer},
+			colKind:       columns.Column{KindDetails: typing.Integer},
 			expectedValue: "123",
 		},
 		{
 			name:          "struct",
 			colVal:        `{"hello": "world"}`,
-			colKind:       typing.Column{KindDetails: typing.Struct},
+			colKind:       columns.Column{KindDetails: typing.Struct},
 			expectedValue: `{"hello": "world"}`,
 		},
 		{
 			name:          "struct w/ toast",
 			colVal:        constants.ToastUnavailableValuePlaceholder,
-			colKind:       typing.Column{KindDetails: typing.Struct},
+			colKind:       columns.Column{KindDetails: typing.Struct},
 			expectedValue: fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder),
 		},
 		{
 			name:          "array",
 			colVal:        []int{1, 2, 3, 4, 5},
-			colKind:       typing.Column{KindDetails: typing.Array},
+			colKind:       columns.Column{KindDetails: typing.Array},
 			expectedValue: []string{"1", "2", "3", "4", "5"},
 		},
 		{
 			name:          "timestamp",
 			colVal:        birthdayTSExt,
-			colKind:       typing.Column{KindDetails: tsKind},
+			colKind:       columns.Column{KindDetails: tsKind},
 			expectedValue: "2022-09-06 03:19:24.942",
 		},
 		{
 			name:          "date",
 			colVal:        birthdayDateExt,
-			colKind:       typing.Column{KindDetails: dateKind},
+			colKind:       columns.Column{KindDetails: dateKind},
 			expectedValue: "2022-09-06",
 		},
 		{
 			name:          "time",
 			colVal:        birthdayTimeExt,
-			colKind:       typing.Column{KindDetails: timeKind},
+			colKind:       columns.Column{KindDetails: timeKind},
 			expectedValue: "03:19:24",
 		},
 	}

@@ -1,8 +1,10 @@
-package typing
+package columns
 
 import (
 	"fmt"
 	"testing"
+
+	"github.com/artie-labs/transfer/lib/typing"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 
@@ -106,15 +108,15 @@ func TestColumns_GetColumnsToUpdate(t *testing.T) {
 		happyPathCols = []Column{
 			{
 				name:        "hi",
-				KindDetails: String,
+				KindDetails: typing.String,
 			},
 			{
 				name:        "bye",
-				KindDetails: String,
+				KindDetails: typing.String,
 			},
 			{
 				name:        "start",
-				KindDetails: String,
+				KindDetails: typing.String,
 			},
 		}
 	)
@@ -123,7 +125,7 @@ func TestColumns_GetColumnsToUpdate(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		extraCols = append(extraCols, Column{
 			name:        fmt.Sprintf("hello_%v", i),
-			KindDetails: Invalid,
+			KindDetails: typing.Invalid,
 		})
 	}
 
@@ -172,7 +174,7 @@ func TestColumns_UpsertColumns(t *testing.T) {
 	for _, key := range keys {
 		cols.AddColumn(Column{
 			name:        key,
-			KindDetails: String,
+			KindDetails: typing.String,
 		})
 	}
 
@@ -193,12 +195,12 @@ func TestColumns_UpsertColumns(t *testing.T) {
 	cols.UpsertColumn("zzz", false)
 	zzzCol, _ := cols.GetColumn("zzz")
 	assert.False(t, zzzCol.ToastColumn)
-	assert.Equal(t, zzzCol.KindDetails, Invalid)
+	assert.Equal(t, zzzCol.KindDetails, typing.Invalid)
 
 	cols.UpsertColumn("aaa", false)
 	aaaCol, _ := cols.GetColumn("aaa")
 	assert.False(t, aaaCol.ToastColumn)
-	assert.Equal(t, aaaCol.KindDetails, Invalid)
+	assert.Equal(t, aaaCol.KindDetails, typing.Invalid)
 
 	length := len(cols.columns)
 	for i := 0; i < 500; i++ {
@@ -220,7 +222,7 @@ func TestColumns_Add_Duplicate(t *testing.T) {
 
 func TestColumns_Mutation(t *testing.T) {
 	var cols Columns
-	colsToAdd := []Column{{name: "foo", KindDetails: String}, {name: "bar", KindDetails: Struct}}
+	colsToAdd := []Column{{name: "foo", KindDetails: typing.String}, {name: "bar", KindDetails: typing.Struct}}
 	// Insert
 	for _, colToAdd := range colsToAdd {
 		cols.AddColumn(colToAdd)
@@ -229,30 +231,30 @@ func TestColumns_Mutation(t *testing.T) {
 	assert.Equal(t, len(cols.GetColumns()), 2)
 	fooCol, isOk := cols.GetColumn("foo")
 	assert.True(t, isOk)
-	assert.Equal(t, String, fooCol.KindDetails)
+	assert.Equal(t, typing.String, fooCol.KindDetails)
 
 	barCol, isOk := cols.GetColumn("bar")
 	assert.True(t, isOk)
-	assert.Equal(t, Struct, barCol.KindDetails)
+	assert.Equal(t, typing.Struct, barCol.KindDetails)
 
 	// Update
 	cols.UpdateColumn(Column{
 		name:        "foo",
-		KindDetails: Integer,
+		KindDetails: typing.Integer,
 	})
 
 	cols.UpdateColumn(Column{
 		name:        "bar",
-		KindDetails: Boolean,
+		KindDetails: typing.Boolean,
 	})
 
 	fooCol, isOk = cols.GetColumn("foo")
 	assert.True(t, isOk)
-	assert.Equal(t, Integer, fooCol.KindDetails)
+	assert.Equal(t, typing.Integer, fooCol.KindDetails)
 
 	barCol, isOk = cols.GetColumn("bar")
 	assert.True(t, isOk)
-	assert.Equal(t, Boolean, barCol.KindDetails)
+	assert.Equal(t, typing.Boolean, barCol.KindDetails)
 
 	// Delete
 	cols.DeleteColumn("foo")
@@ -281,7 +283,7 @@ func TestColumnsUpdateQuery(t *testing.T) {
 	for _, col := range fooBarCols {
 		happyPathCols.AddColumn(Column{
 			name:        col,
-			KindDetails: String,
+			KindDetails: typing.String,
 			ToastColumn: false,
 		})
 	}
@@ -293,18 +295,18 @@ func TestColumnsUpdateQuery(t *testing.T) {
 
 		stringAndToastCols.AddColumn(Column{
 			name:        col,
-			KindDetails: String,
+			KindDetails: typing.String,
 			ToastColumn: toastCol,
 		})
 	}
 
 	lastCaseCols := []string{"a1", "b2", "c3"}
 	for _, lastCaseCol := range lastCaseCols {
-		kd := String
+		kd := typing.String
 		var toast bool
 		// a1 - struct + toast, b2 - string + toast, c3 = regular string.
 		if lastCaseCol == "a1" {
-			kd = Struct
+			kd = typing.Struct
 			toast = true
 		} else if lastCaseCol == "b2" {
 			toast = true
@@ -319,16 +321,16 @@ func TestColumnsUpdateQuery(t *testing.T) {
 
 	lastCaseColsEsc := []string{"a1", "b2", "c3", "`start`", "`select`"}
 	for _, lastCaseColEsc := range lastCaseColsEsc {
-		kd := String
+		kd := typing.String
 		var toast bool
 		// a1 - struct + toast, b2 - string + toast, c3 = regular string.
 		if lastCaseColEsc == "a1" {
-			kd = Struct
+			kd = typing.Struct
 			toast = true
 		} else if lastCaseColEsc == "b2" {
 			toast = true
 		} else if lastCaseColEsc == "`start`" {
-			kd = Struct
+			kd = typing.Struct
 			toast = true
 		}
 

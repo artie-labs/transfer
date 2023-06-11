@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/typing"
 
 	"github.com/artie-labs/transfer/lib/array"
@@ -15,12 +17,12 @@ type MergeArgument struct {
 	FqTableName   string
 	SubQuery      string
 	IdempotentKey string
-	PrimaryKeys   []string
+	PrimaryKeys   []columns.Wrapper
 
 	// Note columns is already escaped.
 	// ColumnsToTypes also needs to be escaped.
 	Columns        []string
-	ColumnsToTypes typing.Columns
+	ColumnsToTypes columns.Columns
 
 	// BigQuery is used to:
 	// 1) escape JSON columns
@@ -29,6 +31,8 @@ type MergeArgument struct {
 	SoftDelete bool
 }
 
+// TODO - add validation to merge argument
+// TODO - simplify the whole escape / unescape columns logic.
 func MergeStatement(m MergeArgument) (string, error) {
 	// We should not need idempotency key for DELETE
 	// This is based on the assumption that the primary key would be atomically increasing or UUID based
@@ -44,15 +48,17 @@ func MergeStatement(m MergeArgument) (string, error) {
 
 	var equalitySQLParts []string
 	for _, primaryKey := range m.PrimaryKeys {
-		equalitySQL := fmt.Sprintf("c.%s = cc.%s", primaryKey, primaryKey)
-		pkCol, isOk := m.ColumnsToTypes.GetColumn(primaryKey)
+		// We'll need to escape the primary key as well.
+
+		equalitySQL := fmt.Sprintf("c.%s = cc.%s", primaryKey.EscapedName(), primaryKey.EscapedName())
+		pkCol, isOk := m.ColumnsToTypes.GetColumn(primaryKey.RawName())
 		if !isOk {
-			return "", fmt.Errorf("error: column: %s does not exist in columnToType: %v", primaryKey, m.ColumnsToTypes)
+			return "", fmt.Errorf("error: column: %s does not exist in columnToType: %v", primaryKey.RawName(), m.ColumnsToTypes)
 		}
 
 		if m.BigQuery && pkCol.KindDetails.Kind == typing.Struct.Kind {
 			// BigQuery requires special casting to compare two JSON objects.
-			equalitySQL = fmt.Sprintf("TO_JSON_STRING(c.%s) = TO_JSON_STRING(cc.%s)", primaryKey, primaryKey)
+			equalitySQL = fmt.Sprintf("TO_JSON_STRING(c.%s) = TO_JSON_STRING(cc.%s)", primaryKey.EscapedName(), primaryKey.EscapedName())
 		}
 
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
@@ -78,7 +84,7 @@ func MergeStatement(m MergeArgument) (string, error) {
 					);
 		`, m.FqTableName, subQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, typing.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.BigQuery),
+			idempotentClause, columns.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.BigQuery),
 			// Insert
 			constants.DeleteColumnMarker, strings.Join(m.Columns, ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -119,7 +125,7 @@ func MergeStatement(m MergeArgument) (string, error) {
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update
-		constants.DeleteColumnMarker, idempotentClause, typing.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.BigQuery),
+		constants.DeleteColumnMarker, idempotentClause, columns.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.BigQuery),
 		// Insert
 		constants.DeleteColumnMarker, strings.Join(m.Columns, ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{

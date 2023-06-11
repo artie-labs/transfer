@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/jitter"
 
 	"github.com/stretchr/testify/assert"
@@ -13,14 +15,14 @@ import (
 )
 
 func generateDwhTableCfg() *DwhTableConfig {
-	cols := &typing.Columns{}
+	cols := &columns.Columns{}
 	colsToDelete := make(map[string]time.Time)
 	for _, col := range []string{"foo", "bar", "abc", "xyz"} {
 		colsToDelete[col] = time.Now()
 	}
 
 	for _, col := range []string{"a", "b", "c", "d"} {
-		cols.AddColumn(typing.NewColumn(col, typing.String))
+		cols.AddColumn(columns.NewColumn(col, typing.String))
 	}
 
 	return &DwhTableConfig{

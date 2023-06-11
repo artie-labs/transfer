@@ -7,11 +7,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/dwh/dml"
-	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/ddl"
+	"github.com/artie-labs/transfer/lib/dwh/dml"
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -48,7 +48,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 
 	_, err = s.Exec(fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
 		// Copy into temporary tables (column ...)
-		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(&typing.NameArgs{
+		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(&columns.NameArgs{
 			Escape:   true,
 			DestKind: s.Label(),
 		}), ","),
@@ -117,7 +117,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 
 	log := logger.FromContext(ctx)
 	// Check if all the columns exist in Snowflake
-	srcKeysMissing, targetKeysMissing := typing.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(), tableData.TopicConfig.SoftDelete)
+	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(), tableData.TopicConfig.SoftDelete)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
 		Tc:          tableConfig,
@@ -180,8 +180,11 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		FqTableName:   tableData.ToFqName(ctx, constants.Snowflake),
 		SubQuery:      temporaryTableName,
 		IdempotentKey: tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys:   tableData.PrimaryKeys,
-		Columns: tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(&typing.NameArgs{
+		PrimaryKeys: tableData.PrimaryKeys(&columns.NameArgs{
+			Escape:   true,
+			DestKind: s.Label(),
+		}),
+		Columns: tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(&columns.NameArgs{
 			Escape:   true,
 			DestKind: s.Label(),
 		}),

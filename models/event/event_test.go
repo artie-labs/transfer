@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -28,7 +30,7 @@ func (f fakeEvent) GetOptionalSchema(ctx context.Context) map[string]typing.Kind
 	return nil
 }
 
-func (f fakeEvent) GetColumns() *typing.Columns {
+func (f fakeEvent) GetColumns() *columns.Columns {
 	return nil
 }
 

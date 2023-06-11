@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -33,9 +35,9 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 		"start":  typing.String,
 	}
 
-	var cols typing.Columns
+	var cols columns.Columns
 	for colName, kindDetails := range colNameToKindDetailsMap {
-		cols.AddColumn(typing.NewColumn(colName, kindDetails))
+		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
 	fqName := td.ToFqName(d.bqCtx, constants.BigQuery)
@@ -80,7 +82,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
 
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s drop COLUMN %s", fqName, column.Name(&typing.NameArgs{
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s drop COLUMN %s", fqName, column.Name(&columns.NameArgs{
 			Escape:   true,
 			DestKind: d.bigQueryStore.Label(),
 		})), query)
@@ -113,9 +115,9 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 
 	newColsLen := len(newCols)
 	existingColsLen := len(existingColNameToKindDetailsMap)
-	var existingCols typing.Columns
+	var existingCols columns.Columns
 	for colName, kindDetails := range existingColNameToKindDetailsMap {
-		existingCols.AddColumn(typing.NewColumn(colName, kindDetails))
+		existingCols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&existingCols, nil, false, true))
@@ -135,12 +137,12 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 			CdcTime:     ts,
 		}
 
-		col := typing.NewColumn(name, kind)
+		col := columns.NewColumn(name, kind)
 
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, col)
 		assert.NoError(d.T(), err)
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, col.Name(&typing.NameArgs{
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, col.Name(&columns.NameArgs{
 			Escape:   true,
 			DestKind: d.bigQueryStore.Label(),
 		}),
@@ -173,9 +175,9 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 	}
 
 	existingColsLen := len(existingColNameToKindDetailsMap)
-	var existingCols typing.Columns
+	var existingCols columns.Columns
 	for colName, kindDetails := range existingColNameToKindDetailsMap {
-		existingCols.AddColumn(typing.NewColumn(colName, kindDetails))
+		existingCols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&existingCols, nil, false, true))
@@ -200,7 +202,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
 		assert.NoError(d.T(), err)
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, column.Name(&typing.NameArgs{
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, column.Name(&columns.NameArgs{
 			Escape:   true,
 			DestKind: d.bigQueryStore.Label(),
 		}),
@@ -232,20 +234,20 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 		"bar": typing.String,
 	}
 
-	var columns typing.Columns
+	var cols columns.Columns
 	for colName, kindDetails := range columnNameToKindDetailsMap {
-		columns.AddColumn(typing.NewColumn(colName, kindDetails))
+		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
 	fqName := td.ToFqName(d.bqCtx, constants.BigQuery)
 
 	originalColumnLength := len(columnNameToKindDetailsMap)
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns, nil, false, false))
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, false))
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
 
 	// Prior to deletion, there should be no colsToDelete
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumnsToDelete())
-	for _, column := range columns.GetColumns() {
+	for _, column := range cols.GetColumns() {
 		alterTableArgs := ddl.AlterTableArgs{
 			Dwh:         d.bigQueryStore,
 			Tc:          tc,
@@ -262,7 +264,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 	assert.Equal(d.T(), originalColumnLength, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns()))
 
 	// Now try to delete again and with an increased TS. It should now be all deleted.
-	for _, column := range columns.GetColumns() {
+	for _, column := range cols.GetColumns() {
 		alterTableArgs := ddl.AlterTableArgs{
 			Dwh:         d.bigQueryStore,
 			Tc:          tc,

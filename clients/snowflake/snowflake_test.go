@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -27,9 +29,9 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		constants.DeleteColumnMarker: typing.Boolean,
 	}
 
-	var cols typing.Columns
+	var cols columns.Columns
 	for colName, colKind := range colToKindDetailsMap {
-		cols.AddColumn(typing.NewColumn(colName, colKind))
+		cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
 
 	rowsData := map[string]map[string]interface{}{
@@ -57,9 +59,9 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		constants.DeleteColumnMarker: typing.Boolean,
 	}
 
-	var anotherCols typing.Columns
+	var anotherCols columns.Columns
 	for colName, kindDetails := range anotherColToKindDetailsMap {
-		anotherCols.AddColumn(typing.NewColumn(colName, kindDetails))
+		anotherCols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
 	s.store.configMap.AddTableToConfig(tableData.ToFqName(s.ctx, constants.Snowflake),
@@ -81,9 +83,9 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		"created_at": typing.ParseValue("", nil, time.Now().Format(time.RFC3339Nano)),
 	}
 
-	var cols typing.Columns
+	var cols columns.Columns
 	for colName, colKind := range colToKindDetailsMap {
-		cols.AddColumn(typing.NewColumn(colName, colKind))
+		cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
 
 	rowsData := make(map[string]map[string]interface{})
@@ -129,9 +131,9 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		"created_at": typing.ParseValue("", nil, time.Now().Format(time.RFC3339Nano)),
 	}
 
-	var cols typing.Columns
+	var cols columns.Columns
 	for colName, colKind := range colToKindDetailsMap {
-		cols.AddColumn(typing.NewColumn(colName, colKind))
+		cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
 
 	rowsData := make(map[string]map[string]interface{})
@@ -191,9 +193,9 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		"created_at": typing.ParseValue("", nil, time.Now().Format(time.RFC3339Nano)),
 	}
 
-	var cols typing.Columns
+	var cols columns.Columns
 	for colName, colKind := range colToKindDetailsMap {
-		cols.AddColumn(typing.NewColumn(colName, colKind))
+		cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
 
 	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, "foo")
@@ -208,12 +210,12 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		constants.DeleteColumnMarker: typing.Boolean,
 	}
 
-	var sflkCols typing.Columns
+	var sflkCols columns.Columns
 	for colName, colKind := range snowflakeColToKindDetailsMap {
-		sflkCols.AddColumn(typing.NewColumn(colName, colKind))
+		sflkCols.AddColumn(columns.NewColumn(colName, colKind))
 	}
 
-	sflkCols.AddColumn(typing.NewColumn("new", typing.String))
+	sflkCols.AddColumn(columns.NewColumn("new", typing.String))
 	config := types.NewDwhTableConfig(&sflkCols, nil, false, true)
 	s.store.configMap.AddTableToConfig(tableData.ToFqName(s.ctx, constants.Snowflake), config)
 
@@ -236,7 +238,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 		inMemColumns := tableData.ReadOnlyInMemoryCols()
 		// Since sflkColumns overwrote the format, let's set it correctly again.
-		inMemColumns.UpdateColumn(typing.NewColumn("created_at", typing.ParseValue("", nil, time.Now().Format(time.RFC3339Nano))))
+		inMemColumns.UpdateColumn(columns.NewColumn("created_at", typing.ParseValue("", nil, time.Now().Format(time.RFC3339Nano))))
 		tableData.SetInMemoryColumns(inMemColumns)
 		break
 	}
