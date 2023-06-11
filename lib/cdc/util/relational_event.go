@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
@@ -35,18 +37,18 @@ type Source struct {
 	Table     string `json:"table"`
 }
 
-func (s *SchemaEventPayload) GetColumns() *typing.Columns {
+func (s *SchemaEventPayload) GetColumns() *columns.Columns {
 	fieldsObject := s.Schema.GetSchemaFromLabel(cdc.After)
 	if fieldsObject == nil {
 		// AFTER schema does not exist.
 		return nil
 	}
 
-	var cols typing.Columns
+	var cols columns.Columns
 	for _, field := range fieldsObject.Fields {
 		// We are purposefully doing this to ensure that the correct typing is set
 		// When we invoke event.Save()
-		cols.AddColumn(typing.NewColumn(field.FieldName, typing.Invalid))
+		cols.AddColumn(columns.NewColumn(field.FieldName, typing.Invalid))
 	}
 
 	return &cols

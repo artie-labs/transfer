@@ -3,6 +3,8 @@ package ddl_test
 import (
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/ddl"
 	"github.com/artie-labs/transfer/lib/dwh/types"
@@ -26,7 +28,7 @@ func (d *DDLTestSuite) TestValidate_AlterTableArgs() {
 
 func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 	fqName := "mock_dataset.mock_table"
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&typing.Columns{}, nil, true, true))
+	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	snowflakeTc := d.snowflakeStore.GetConfigMap().TableConfig(fqName)
 	args := ddl.AlterTableArgs{
 		Dwh:            d.snowflakeStore,
@@ -46,7 +48,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 	assert.Contains(d.T(), err.Error(), "incompatible operation - cannot drop columns and create table at the same time")
 
 	// Change it to SFLK + Stage
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&typing.Columns{}, nil, true, true))
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	snowflakeStagesTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqName)
 	args.Dwh = d.snowflakeStagesStore
 	args.Tc = snowflakeStagesTc
@@ -59,7 +61,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 func (d *DDLTestSuite) TestCreateTemporaryTable() {
 	fqName := "db.schema.tempTableName"
 	// Snowflake Stage
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&typing.Columns{}, nil, true, true))
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	sflkStageTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqName)
 	args := ddl.AlterTableArgs{
 		Dwh:            d.snowflakeStagesStore,
@@ -71,7 +73,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 		CdcTime:        time.Time{},
 	}
 
-	err := ddl.AlterTable(d.ctx, args, typing.NewColumn("foo", typing.String), typing.NewColumn("bar", typing.Float), typing.NewColumn("start", typing.String))
+	err := ddl.AlterTable(d.ctx, args, columns.NewColumn("foo", typing.String), columns.NewColumn("bar", typing.Float), columns.NewColumn("start", typing.String))
 
 	assert.NoError(d.T(), err)
 	assert.Equal(d.T(), 1, d.fakeSnowflakeStagesStore.ExecCallCount())
@@ -83,12 +85,12 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 		query)
 
 	// BigQuery
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&typing.Columns{}, nil, true, true))
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	bqTc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
 	args.Dwh = d.bigQueryStore
 	args.Tc = bqTc
 
-	err = ddl.AlterTable(d.ctx, args, typing.NewColumn("foo", typing.String), typing.NewColumn("bar", typing.Float), typing.NewColumn("select", typing.String))
+	err = ddl.AlterTable(d.ctx, args, columns.NewColumn("foo", typing.String), columns.NewColumn("bar", typing.Float), columns.NewColumn("select", typing.String))
 	assert.NoError(d.T(), err)
 	assert.Equal(d.T(), 1, d.fakeBigQueryStore.ExecCallCount())
 	bqQuery, _ := d.fakeBigQueryStore.ExecArgsForCall(0)

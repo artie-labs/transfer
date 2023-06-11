@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -16,7 +18,7 @@ import (
 type _testCase struct {
 	name    string
 	colVal  interface{}
-	colKind typing.Column
+	colKind columns.Column
 
 	expectedString string
 	expectErr      bool
@@ -38,7 +40,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Basic() {
 		{
 			name:   "empty string",
 			colVal: "",
-			colKind: typing.Column{
+			colKind: columns.Column{
 				KindDetails: typing.String,
 			},
 
@@ -47,7 +49,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Basic() {
 		{
 			name:   "null value (string, not that it matters)",
 			colVal: nil,
-			colKind: typing.Column{
+			colKind: columns.Column{
 				KindDetails: typing.String,
 			},
 
@@ -56,7 +58,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Basic() {
 		{
 			name:   "string",
 			colVal: "foo",
-			colKind: typing.Column{
+			colKind: columns.Column{
 				KindDetails: typing.String,
 			},
 
@@ -65,7 +67,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Basic() {
 		{
 			name:   "integer",
 			colVal: 7,
-			colKind: typing.Column{
+			colKind: columns.Column{
 				KindDetails: typing.Integer,
 			},
 			expectedString: "7",
@@ -73,7 +75,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Basic() {
 		{
 			name:   "boolean",
 			colVal: true,
-			colKind: typing.Column{
+			colKind: columns.Column{
 				KindDetails: typing.Boolean,
 			},
 			expectedString: "true",
@@ -81,7 +83,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Basic() {
 		{
 			name:   "array",
 			colVal: []string{"hello", "there"},
-			colKind: typing.Column{
+			colKind: columns.Column{
 				KindDetails: typing.Array,
 			},
 			expectedString: `["hello","there"]`,
@@ -89,7 +91,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Basic() {
 		{
 			name:   "JSON string",
 			colVal: `{"hello": "world"}`,
-			colKind: typing.Column{
+			colKind: columns.Column{
 				KindDetails: typing.Struct,
 			},
 			expectedString: `{"hello": "world"}`,
@@ -97,7 +99,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Basic() {
 		{
 			name:   "JSON struct",
 			colVal: map[string]string{"hello": "world"},
-			colKind: typing.Column{
+			colKind: columns.Column{
 				KindDetails: typing.Struct,
 			},
 			expectedString: `{"hello":"world"}`,
@@ -114,14 +116,14 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Array() {
 		{
 			name:   "array w/ numbers",
 			colVal: []int{1, 2, 3, 4, 5},
-			colKind: typing.Column{
+			colKind: columns.Column{
 				KindDetails: typing.Array,
 			},
 			expectedString: `[1,2,3,4,5]`,
 		},
 		{
 			name: "array w/ nested objects (JSON)",
-			colKind: typing.Column{
+			colKind: columns.Column{
 				KindDetails: typing.Array,
 			},
 			colVal: []map[string]interface{}{
@@ -139,7 +141,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Array() {
 		},
 		{
 			name: "array w/ bools",
-			colKind: typing.Column{
+			colKind: columns.Column{
 				KindDetails: typing.Array,
 			},
 			colVal: []bool{
@@ -184,7 +186,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Time() {
 		{
 			name:   "date",
 			colVal: birthdate,
-			colKind: typing.Column{
+			colKind: columns.Column{
 				KindDetails: dateKind,
 			},
 			expectedString: "2022-09-06",
@@ -192,7 +194,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Time() {
 		{
 			name:   "time",
 			colVal: birthTime,
-			colKind: typing.Column{
+			colKind: columns.Column{
 				KindDetails: timeKind,
 			},
 			expectedString: "03:19:24.942",
@@ -200,7 +202,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Time() {
 		{
 			name:   "datetime",
 			colVal: birthDateTime,
-			colKind: typing.Column{
+			colKind: columns.Column{
 				KindDetails: dateTimeKind,
 			},
 			expectedString: "2022-09-06T03:19:24.942Z",
@@ -219,7 +221,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_TOAST() {
 		{
 			name:   "struct with TOAST value",
 			colVal: constants.ToastUnavailableValuePlaceholder,
-			colKind: typing.Column{
+			colKind: columns.Column{
 				KindDetails: typing.Struct,
 			},
 			expectedString: fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder),

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/dwh/dml"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/stringutil"
@@ -18,14 +20,14 @@ import (
 // escapeCols will return the following arguments:
 // 1) colsToUpdate - list of columns to update
 // 2) list of columns to update (escaped).
-func escapeCols(cols []typing.Column) (colsToUpdate []string, colsToUpdateEscaped []string) {
+func escapeCols(cols []columns.Column) (colsToUpdate []string, colsToUpdateEscaped []string) {
 	for _, column := range cols {
 		if column.KindDetails.Kind == typing.Invalid.Kind {
 			// Don't update Snowflake
 			continue
 		}
 
-		nameArgs := &typing.NameArgs{
+		nameArgs := &columns.NameArgs{
 			Escape:   true,
 			DestKind: constants.SnowflakeStages,
 		}
@@ -104,10 +106,13 @@ func getMergeStatement(ctx context.Context, tableData *optimization.TableData) (
 		strings.Join(tableValues, ","), tableData.Name(), strings.Join(colsToUpdate, ","))
 
 	return dml.MergeStatement(dml.MergeArgument{
-		FqTableName:    tableData.ToFqName(ctx, constants.Snowflake),
-		SubQuery:       subQuery,
-		IdempotentKey:  tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys:    tableData.PrimaryKeys,
+		FqTableName:   tableData.ToFqName(ctx, constants.Snowflake),
+		SubQuery:      subQuery,
+		IdempotentKey: tableData.TopicConfig.IdempotentKey,
+		PrimaryKeys: tableData.PrimaryKeys(&columns.NameArgs{
+			Escape:   true,
+			DestKind: constants.Snowflake,
+		}),
 		Columns:        colsToUpdate,
 		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:     tableData.TopicConfig.SoftDelete,

@@ -1,4 +1,4 @@
-package typing
+package columns
 
 import (
 	"strings"

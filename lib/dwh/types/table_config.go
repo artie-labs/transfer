@@ -4,13 +4,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/typing"
 )
 
 type DwhTableConfig struct {
 	// Making these private variables to avoid concurrent R/W panics.
-	columns         *typing.Columns
+	columns         *columns.Columns
 	columnsToDelete map[string]time.Time // column --> when to delete
 	createTable     bool
 
@@ -19,7 +20,7 @@ type DwhTableConfig struct {
 	sync.RWMutex
 }
 
-func NewDwhTableConfig(columns *typing.Columns, colsToDelete map[string]time.Time, createTable, dropDeletedColumns bool) *DwhTableConfig {
+func NewDwhTableConfig(columns *columns.Columns, colsToDelete map[string]time.Time, createTable, dropDeletedColumns bool) *DwhTableConfig {
 	if len(colsToDelete) == 0 {
 		colsToDelete = make(map[string]time.Time)
 	}
@@ -46,7 +47,7 @@ func (tc *DwhTableConfig) DropDeletedColumns() bool {
 	return tc.dropDeletedColumns
 }
 
-func (tc *DwhTableConfig) Columns() *typing.Columns {
+func (tc *DwhTableConfig) Columns() *columns.Columns {
 	if tc == nil {
 		return nil
 	}
@@ -54,7 +55,7 @@ func (tc *DwhTableConfig) Columns() *typing.Columns {
 	return tc.columns
 }
 
-func (tc *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp constants.ColumnOperation, cols ...typing.Column) {
+func (tc *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp constants.ColumnOperation, cols ...columns.Column) {
 	tc.Lock()
 	defer tc.Unlock()
 	switch columnOp {

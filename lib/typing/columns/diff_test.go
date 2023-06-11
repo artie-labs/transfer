@@ -1,8 +1,10 @@
-package typing
+package columns
 
 import (
 	"fmt"
 	"testing"
+
+	"github.com/artie-labs/transfer/lib/typing"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -40,8 +42,8 @@ func TestDiff_VariousNils(t *testing.T) {
 
 	var sourceColsNotNil Columns
 	var targColsNotNil Columns
-	sourceColsNotNil.AddColumn(NewColumn("foo", Invalid))
-	targColsNotNil.AddColumn(NewColumn("foo", Invalid))
+	sourceColsNotNil.AddColumn(NewColumn("foo", typing.Invalid))
+	targColsNotNil.AddColumn(NewColumn("foo", typing.Invalid))
 	testCases := []_testCase{
 		{
 			name:       "both &Columns{}",
@@ -88,7 +90,7 @@ func TestDiff_VariousNils(t *testing.T) {
 
 func TestDiffBasic(t *testing.T) {
 	var source Columns
-	source.AddColumn(NewColumn("a", Integer))
+	source.AddColumn(NewColumn("a", typing.Integer))
 
 	srcKeyMissing, targKeyMissing := Diff(&source, &source, false)
 	assert.Equal(t, len(srcKeyMissing), 0)
@@ -98,18 +100,18 @@ func TestDiffBasic(t *testing.T) {
 func TestDiffDelta1(t *testing.T) {
 	var sourceCols Columns
 	var targCols Columns
-	for colName, kindDetails := range map[string]KindDetails{
-		"a": String,
-		"b": Boolean,
-		"c": Struct,
+	for colName, kindDetails := range map[string]typing.KindDetails{
+		"a": typing.String,
+		"b": typing.Boolean,
+		"c": typing.Struct,
 	} {
 		sourceCols.AddColumn(NewColumn(colName, kindDetails))
 	}
 
-	for colName, kindDetails := range map[string]KindDetails{
-		"aa": String,
-		"b":  Boolean,
-		"cc": String,
+	for colName, kindDetails := range map[string]typing.KindDetails{
+		"aa": typing.String,
+		"b":  typing.Boolean,
+		"cc": typing.String,
 	} {
 		targCols.AddColumn(NewColumn(colName, kindDetails))
 	}
@@ -123,25 +125,25 @@ func TestDiffDelta2(t *testing.T) {
 	var sourceCols Columns
 	var targetCols Columns
 
-	for colName, kindDetails := range map[string]KindDetails{
-		"a":  String,
-		"aa": String,
-		"b":  Boolean,
-		"c":  Struct,
-		"d":  String,
-		"CC": String,
-		"cC": String,
-		"Cc": String,
+	for colName, kindDetails := range map[string]typing.KindDetails{
+		"a":  typing.String,
+		"aa": typing.String,
+		"b":  typing.Boolean,
+		"c":  typing.Struct,
+		"d":  typing.String,
+		"CC": typing.String,
+		"cC": typing.String,
+		"Cc": typing.String,
 	} {
 		sourceCols.AddColumn(NewColumn(colName, kindDetails))
 	}
 
-	for colName, kindDetails := range map[string]KindDetails{
-		"aa": String,
-		"b":  Boolean,
-		"cc": String,
-		"CC": String,
-		"dd": String,
+	for colName, kindDetails := range map[string]typing.KindDetails{
+		"aa": typing.String,
+		"b":  typing.Boolean,
+		"cc": typing.String,
+		"CC": typing.String,
+		"dd": typing.String,
 	} {
 		targetCols.AddColumn(NewColumn(colName, kindDetails))
 	}
@@ -157,8 +159,8 @@ func TestDiffDeterministic(t *testing.T) {
 	var sourceCols Columns
 	var targCols Columns
 
-	sourceCols.AddColumn(NewColumn("id", Integer))
-	sourceCols.AddColumn(NewColumn("name", String))
+	sourceCols.AddColumn(NewColumn("id", typing.Integer))
+	sourceCols.AddColumn(NewColumn("name", typing.String))
 
 	for i := 0; i < 500; i++ {
 		keysMissing, targetKeysMissing := Diff(&sourceCols, &targCols, false)
@@ -177,9 +179,9 @@ func TestDiffDeterministic(t *testing.T) {
 
 func TestCopyColMap(t *testing.T) {
 	var cols Columns
-	cols.AddColumn(NewColumn("hello", String))
-	cols.AddColumn(NewColumn("created_at", NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType)))
-	cols.AddColumn(NewColumn("updated_at", NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType)))
+	cols.AddColumn(NewColumn("hello", typing.String))
+	cols.AddColumn(NewColumn("created_at", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)))
+	cols.AddColumn(NewColumn("updated_at", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)))
 
 	copiedCols := CloneColumns(&cols)
 	assert.Equal(t, *copiedCols, cols)
@@ -197,16 +199,16 @@ func TestCloneColumns(t *testing.T) {
 	}
 
 	var cols Columns
-	cols.AddColumn(NewColumn("foo", String))
-	cols.AddColumn(NewColumn("bar", String))
-	cols.AddColumn(NewColumn("xyz", String))
-	cols.AddColumn(NewColumn("abc", String))
+	cols.AddColumn(NewColumn("foo", typing.String))
+	cols.AddColumn(NewColumn("bar", typing.String))
+	cols.AddColumn(NewColumn("xyz", typing.String))
+	cols.AddColumn(NewColumn("abc", typing.String))
 
 	var mixedCaseCols Columns
-	mixedCaseCols.AddColumn(NewColumn("foo", String))
-	mixedCaseCols.AddColumn(NewColumn("bAr", String))
-	mixedCaseCols.AddColumn(NewColumn("XYZ", String))
-	mixedCaseCols.AddColumn(NewColumn("aBC", String))
+	mixedCaseCols.AddColumn(NewColumn("foo", typing.String))
+	mixedCaseCols.AddColumn(NewColumn("bAr", typing.String))
+	mixedCaseCols.AddColumn(NewColumn("XYZ", typing.String))
+	mixedCaseCols.AddColumn(NewColumn("aBC", typing.String))
 
 	testCases := []_testCase{
 		{

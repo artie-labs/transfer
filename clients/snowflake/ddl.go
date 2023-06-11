@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -40,11 +42,11 @@ func (s *Store) getTableConfig(ctx context.Context, fqName string, dropDeletedCo
 		}
 	}
 
-	var snowflakeColumns typing.Columns
+	var snowflakeColumns columns.Columns
 	for rows != nil && rows.Next() {
 		// figure out what columns were returned
 		// the column names will be the JSON object field keys
-		columns, err := rows.ColumnTypes()
+		cols, err := rows.ColumnTypes()
 		if err != nil {
 			return nil, err
 		}
@@ -52,8 +54,8 @@ func (s *Store) getTableConfig(ctx context.Context, fqName string, dropDeletedCo
 		var columnNameList []string
 		// Scan needs an array of pointers to the values it is setting
 		// This creates the object and sets the values correctly
-		values := make([]interface{}, len(columns))
-		for idx, column := range columns {
+		values := make([]interface{}, len(cols))
+		for idx, column := range cols {
 			values[idx] = new(interface{})
 			columnNameList = append(columnNameList, strings.ToLower(column.Name()))
 		}
@@ -73,7 +75,7 @@ func (s *Store) getTableConfig(ctx context.Context, fqName string, dropDeletedCo
 			row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
 		}
 
-		snowflakeColumns.AddColumn(typing.NewColumn(row[describeNameCol], typing.SnowflakeTypeToKind(row[describeTypeCol])))
+		snowflakeColumns.AddColumn(columns.NewColumn(row[describeNameCol], typing.SnowflakeTypeToKind(row[describeTypeCol])))
 	}
 
 	sflkTableConfig := types.NewDwhTableConfig(&snowflakeColumns, nil, tableMissing, dropDeletedColumns)

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
@@ -22,7 +24,7 @@ func addPrefixToTableName(fqTableName string, prefix string) string {
 
 // escapeColumns will take the columns that are passed in, escape them and return them in the ordered received.
 // It'll return like this: $1, $2, $3
-func escapeColumns(columns *typing.Columns, delimiter string) string {
+func escapeColumns(columns *columns.Columns, delimiter string) string {
 	var escapedCols []string
 	for index, col := range columns.GetColumnsToUpdate(nil) {
 		colKind, _ := columns.GetColumn(col)

@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/stringutil"
 
 	"github.com/artie-labs/transfer/lib/artie"
@@ -18,9 +20,9 @@ import (
 )
 
 type TableData struct {
-	inMemoryColumns *typing.Columns                   // list of columns
+	inMemoryColumns *columns.Columns                  // list of columns
 	rowsData        map[string]map[string]interface{} // pk -> { col -> val }
-	PrimaryKeys     []string
+	primaryKeys     []string
 
 	TopicConfig kafkalib.TopicConfig
 	// Partition to the latest offset(s).
@@ -40,26 +42,36 @@ type TableData struct {
 	name string
 }
 
+func (t *TableData) PrimaryKeys(args *columns.NameArgs) []columns.Wrapper {
+	var primaryKeysEscaped []columns.Wrapper
+	for _, pk := range t.primaryKeys {
+		col := columns.NewColumn(pk, typing.Invalid)
+		primaryKeysEscaped = append(primaryKeysEscaped, columns.NewWrapper(col, args))
+	}
+
+	return primaryKeysEscaped
+}
+
 func (t *TableData) Name() string {
 	return t.name
 }
 
-func (t *TableData) SetInMemoryColumns(columns *typing.Columns) {
+func (t *TableData) SetInMemoryColumns(columns *columns.Columns) {
 	t.inMemoryColumns = columns
 	return
 }
 
-func (t *TableData) AddInMemoryCol(column typing.Column) {
+func (t *TableData) AddInMemoryCol(column columns.Column) {
 	t.inMemoryColumns.AddColumn(column)
 	return
 }
 
-func (t *TableData) ReadOnlyInMemoryCols() *typing.Columns {
+func (t *TableData) ReadOnlyInMemoryCols() *columns.Columns {
 	if t.inMemoryColumns == nil {
 		return nil
 	}
 
-	var cols typing.Columns
+	var cols columns.Columns
 	for _, col := range t.inMemoryColumns.GetColumns() {
 		cols.AddColumn(col)
 	}
@@ -67,11 +79,11 @@ func (t *TableData) ReadOnlyInMemoryCols() *typing.Columns {
 	return &cols
 }
 
-func NewTableData(inMemoryColumns *typing.Columns, primaryKeys []string, topicConfig kafkalib.TopicConfig, name string) *TableData {
+func NewTableData(inMemoryColumns *columns.Columns, primaryKeys []string, topicConfig kafkalib.TopicConfig, name string) *TableData {
 	return &TableData{
 		inMemoryColumns:         inMemoryColumns,
 		rowsData:                map[string]map[string]interface{}{},
-		PrimaryKeys:             primaryKeys,
+		primaryKeys:             primaryKeys,
 		TopicConfig:             topicConfig,
 		PartitionsToLastMessage: map[string][]artie.Message{},
 		temporaryTableSuffix:    fmt.Sprintf("%s_%s", constants.ArtiePrefix, stringutil.Random(10)),
@@ -151,7 +163,7 @@ func (t *TableData) ShouldFlush(ctx context.Context) bool {
 // Prior to merging, we will need to treat `tableConfig` as the source-of-truth and whenever there's discrepancies
 // We will prioritize using the values coming from (2) TableConfig. We also cannot simply do a replacement, as we have in-memory columns
 // That carry metadata for Artie Transfer. They are prefixed with __artie.
-func (t *TableData) UpdateInMemoryColumnsFromDestination(cols ...typing.Column) {
+func (t *TableData) UpdateInMemoryColumnsFromDestination(cols ...columns.Column) {
 	if t == nil {
 		return
 	}
@@ -162,7 +174,7 @@ func (t *TableData) UpdateInMemoryColumnsFromDestination(cols ...typing.Column) 
 			continue
 		}
 
-		var foundColumn typing.Column
+		var foundColumn columns.Column
 		var found bool
 		for _, col := range cols {
 			if col.Name(nil) == strings.ToLower(inMemoryCol.Name(nil)) {

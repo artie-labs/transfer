@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/dwh/types"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -20,9 +22,9 @@ import (
 // generateTableData - returns tableName and tableData
 func generateTableData(rows int) (string, *optimization.TableData) {
 	randomTableName := fmt.Sprintf("temp_%s_%s", constants.ArtiePrefix, stringutil.Random(10))
-	cols := &typing.Columns{}
+	cols := &columns.Columns{}
 	for _, col := range []string{"user_id", "first_name", "last_name"} {
-		cols.AddColumn(typing.NewColumn(col, typing.String))
+		cols.AddColumn(columns.NewColumn(col, typing.String))
 	}
 
 	td := optimization.NewTableData(cols, []string{"user_id"}, kafkalib.TopicConfig{}, "")
@@ -42,7 +44,7 @@ func generateTableData(rows int) (string, *optimization.TableData) {
 
 func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	tempTableName, tableData := generateTableData(10)
-	s.stageStore.GetConfigMap().AddTableToConfig(tempTableName, types.NewDwhTableConfig(&typing.Columns{}, nil, true, true))
+	s.stageStore.GetConfigMap().AddTableToConfig(tempTableName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	sflkTc := s.stageStore.GetConfigMap().TableConfig(tempTableName)
 
 	assert.NoError(s.T(), s.stageStore.prepareTempTable(s.ctx, tableData, sflkTc, tempTableName))

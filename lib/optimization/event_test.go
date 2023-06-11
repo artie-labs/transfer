@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -63,12 +65,12 @@ func TestNewTableData_TableName(t *testing.T) {
 
 func TestTableData_ReadOnlyInMemoryCols(t *testing.T) {
 	// Making sure the columns are actually read only.
-	var cols typing.Columns
-	cols.AddColumn(typing.NewColumn("name", typing.String))
+	var cols columns.Columns
+	cols.AddColumn(columns.NewColumn("name", typing.String))
 
 	td := NewTableData(&cols, nil, kafkalib.TopicConfig{}, "foo")
 	readOnlyCols := td.ReadOnlyInMemoryCols()
-	readOnlyCols.AddColumn(typing.NewColumn("last_name", typing.String))
+	readOnlyCols.AddColumn(columns.NewColumn("last_name", typing.String))
 
 	// Check if last_name actually exists.
 	_, isOk := td.ReadOnlyInMemoryCols().GetColumn("last_name")
@@ -79,14 +81,14 @@ func TestTableData_ReadOnlyInMemoryCols(t *testing.T) {
 }
 
 func TestTableData_UpdateInMemoryColumns(t *testing.T) {
-	var _cols typing.Columns
+	var _cols columns.Columns
 	for colName, colKind := range map[string]typing.KindDetails{
 		"FOO":                  typing.String,
 		"bar":                  typing.Invalid,
 		"CHANGE_me":            typing.String,
 		"do_not_change_format": typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType),
 	} {
-		_cols.AddColumn(typing.NewColumn(colName, colKind))
+		_cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
 
 	tableData := &TableData{
@@ -97,7 +99,7 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 	assert.True(t, isOk)
 
 	extCol.KindDetails.ExtendedTimeDetails.Format = time.RFC3339Nano
-	tableData.inMemoryColumns.UpdateColumn(typing.NewColumn(extCol.Name(nil), extCol.KindDetails))
+	tableData.inMemoryColumns.UpdateColumn(columns.NewColumn(extCol.Name(nil), extCol.KindDetails))
 
 	for name, colKindDetails := range map[string]typing.KindDetails{
 		"foo":                  typing.String,
@@ -105,7 +107,7 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 		"bar":                  typing.Boolean,
 		"do_not_change_format": typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 	} {
-		tableData.UpdateInMemoryColumnsFromDestination(typing.NewColumn(name, colKindDetails))
+		tableData.UpdateInMemoryColumnsFromDestination(columns.NewColumn(name, colKindDetails))
 	}
 
 	// It's saved back in the original format.

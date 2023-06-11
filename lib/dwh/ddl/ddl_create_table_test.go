@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh"
 	"github.com/artie-labs/transfer/lib/dwh/ddl"
@@ -16,9 +18,9 @@ import (
 
 func (d *DDLTestSuite) Test_CreateTable() {
 	fqName := "mock_dataset.mock_table"
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&typing.Columns{}, nil, true, true))
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&typing.Columns{}, nil, true, true))
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&typing.Columns{}, nil, true, true))
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
+	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 
 	ctx := context.Background()
 
@@ -57,7 +59,7 @@ func (d *DDLTestSuite) Test_CreateTable() {
 			ColumnOp:    constants.Add,
 		}
 
-		err := ddl.AlterTable(ctx, alterTableArgs, typing.NewColumn("name", typing.String))
+		err := ddl.AlterTable(ctx, alterTableArgs, columns.NewColumn("name", typing.String))
 		assert.Equal(d.T(), 1, dwhTc._fakeStore.ExecCallCount())
 
 		query, _ := dwhTc._fakeStore.ExecArgsForCall(0)
@@ -70,24 +72,24 @@ func (d *DDLTestSuite) Test_CreateTable() {
 func (d *DDLTestSuite) TestCreateTable() {
 	type _testCase struct {
 		name string
-		cols []typing.Column
+		cols []columns.Column
 
 		expectedQuery string
 	}
 
 	var (
-		happyPathCols = []typing.Column{
-			typing.NewColumn("user_id", typing.String),
+		happyPathCols = []columns.Column{
+			columns.NewColumn("user_id", typing.String),
 		}
-		twoCols = []typing.Column{
-			typing.NewColumn("user_id", typing.String),
-			typing.NewColumn("enabled", typing.Boolean),
+		twoCols = []columns.Column{
+			columns.NewColumn("user_id", typing.String),
+			columns.NewColumn("enabled", typing.Boolean),
 		}
-		bunchOfCols = []typing.Column{
-			typing.NewColumn("user_id", typing.String),
-			typing.NewColumn("enabled_boolean", typing.Boolean),
-			typing.NewColumn("array", typing.Array),
-			typing.NewColumn("struct", typing.Struct),
+		bunchOfCols = []columns.Column{
+			columns.NewColumn("user_id", typing.String),
+			columns.NewColumn("enabled_boolean", typing.Boolean),
+			columns.NewColumn("array", typing.Array),
+			columns.NewColumn("struct", typing.Struct),
 		}
 	)
 
@@ -112,7 +114,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 	for index, testCase := range testCases {
 		ctx := context.Background()
 		fqTable := "demo.public.experiments"
-		d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&typing.Columns{}, nil, true, true))
+		d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 		tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
 
 		alterTableArgs := ddl.AlterTableArgs{

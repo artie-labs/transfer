@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -153,9 +155,9 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 }
 
 func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
-	var cols typing.Columns
+	var cols columns.Columns
 	for i := 0; i < 50; i++ {
-		cols.AddColumn(typing.NewColumn(fmt.Sprint(i), typing.Invalid))
+		cols.AddColumn(columns.NewColumn(fmt.Sprint(i), typing.Invalid))
 	}
 
 	evt := Event{
@@ -196,7 +198,7 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	}
 
 	// Now let's add more keys.
-	evt.Columns.AddColumn(typing.NewColumn("foo", typing.Invalid))
+	evt.Columns.AddColumn(columns.NewColumn("foo", typing.Invalid))
 	var index int
 	for idx, col := range evt.Columns.GetColumns() {
 		if col.Name(nil) == "foo" {
@@ -208,10 +210,10 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 }
 
 func (e *EventsTestSuite) TestEventSaveColumns() {
-	var cols typing.Columns
-	cols.AddColumn(typing.NewColumn("randomCol", typing.Invalid))
-	cols.AddColumn(typing.NewColumn("anotherCOL", typing.Invalid))
-	cols.AddColumn(typing.NewColumn("created_at_date_string", typing.Invalid))
+	var cols columns.Columns
+	cols.AddColumn(columns.NewColumn("randomCol", typing.Invalid))
+	cols.AddColumn(columns.NewColumn("anotherCOL", typing.Invalid))
+	cols.AddColumn(columns.NewColumn("created_at_date_string", typing.Invalid))
 	event := Event{
 		Table:   "foo",
 		Columns: &cols,

@@ -3,6 +3,8 @@ package snowflake
 import (
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/typing"
 
 	"github.com/stretchr/testify/assert"
@@ -47,24 +49,24 @@ func TestAddPrefixToTableName(t *testing.T) {
 func TestEscapeColumns(t *testing.T) {
 	type _testCase struct {
 		name           string
-		cols           *typing.Columns
+		cols           *columns.Columns
 		expectedString string
 	}
 
 	var (
-		happyPathCols                typing.Columns
-		happyPathAndJSONCols         typing.Columns
-		happyPathAndJSONAndArrayCols typing.Columns
+		happyPathCols                columns.Columns
+		happyPathAndJSONCols         columns.Columns
+		happyPathAndJSONAndArrayCols columns.Columns
 	)
 
-	happyPathCols.AddColumn(typing.NewColumn("foo", typing.String))
-	happyPathCols.AddColumn(typing.NewColumn("bar", typing.String))
+	happyPathCols.AddColumn(columns.NewColumn("foo", typing.String))
+	happyPathCols.AddColumn(columns.NewColumn("bar", typing.String))
 
 	happyPathAndJSONCols = happyPathCols
-	happyPathAndJSONCols.AddColumn(typing.NewColumn("struct", typing.Struct))
+	happyPathAndJSONCols.AddColumn(columns.NewColumn("struct", typing.Struct))
 
 	happyPathAndJSONAndArrayCols = happyPathAndJSONCols
-	happyPathAndJSONAndArrayCols.AddColumn(typing.NewColumn("array", typing.Array))
+	happyPathAndJSONAndArrayCols.AddColumn(columns.NewColumn("array", typing.Array))
 
 	testCases := []_testCase{
 		{

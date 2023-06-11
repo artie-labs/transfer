@@ -1,9 +1,11 @@
-package typing
+package columns
 
 import (
 	"fmt"
 	"strings"
 	"sync"
+
+	"github.com/artie-labs/transfer/lib/typing"
 
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -11,7 +13,7 @@ import (
 
 type Column struct {
 	name        string
-	KindDetails KindDetails
+	KindDetails typing.KindDetails
 	// ToastColumn indicates that the source column is a TOAST column and the value is unavailable
 	// We have stripped this out.
 	// Whenever we see the same column where there's an opposite value in `toastColumn`, we will trigger a flush
@@ -27,7 +29,7 @@ func UnescapeColumnName(escapedName string, destKind constants.DestinationKind) 
 	}
 }
 
-func NewColumn(name string, kd KindDetails) Column {
+func NewColumn(name string, kd typing.KindDetails) Column {
 	return Column{
 		name:        name,
 		KindDetails: kd,
@@ -94,7 +96,7 @@ func (c *Columns) UpsertColumn(colName string, toastColumn bool) {
 
 	c.AddColumn(Column{
 		name:        colName,
-		KindDetails: Invalid,
+		KindDetails: typing.Invalid,
 		ToastColumn: toastColumn,
 	})
 	return
@@ -141,7 +143,7 @@ func (c *Columns) GetColumnsToUpdate(args *NameArgs) []string {
 
 	var cols []string
 	for _, col := range c.columns {
-		if col.KindDetails == Invalid {
+		if col.KindDetails == typing.Invalid {
 			continue
 		}
 
@@ -211,7 +213,7 @@ func ColumnsUpdateQuery(columns []string, columnsToTypes Columns, bigQueryTypeCa
 	for _, column := range columns {
 		columnType, isOk := columnsToTypes.GetColumn(column)
 		if isOk && columnType.ToastColumn {
-			if columnType.KindDetails == Struct {
+			if columnType.KindDetails == typing.Struct {
 				if bigQueryTypeCasting {
 					_columns = append(_columns,
 						fmt.Sprintf(`%s= CASE WHEN TO_JSON_STRING(cc.%s) != '{"key":"%s"}' THEN cc.%s ELSE c.%s END`,

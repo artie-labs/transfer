@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -24,7 +26,7 @@ type Event struct {
 	PrimaryKeyMap  map[string]interface{}
 	Data           map[string]interface{} // json serialized column data
 	OptionalSchema map[string]typing.KindDetails
-	Columns        *typing.Columns
+	Columns        *columns.Columns
 	ExecutionTime  time.Time // When the SQL command was executed
 }
 
@@ -104,7 +106,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	td.Lock()
 	defer td.Unlock()
 	if td.Empty() {
-		columns := &typing.Columns{}
+		columns := &columns.Columns{}
 		if e.Columns != nil {
 			columns = e.Columns
 		}
@@ -143,7 +145,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 			retrievedColumn, isOk := inMemoryColumns.GetColumn(newColName)
 			if !isOk {
 				// This would only happen if the columns did not get passed in initially.
-				inMemoryColumns.AddColumn(typing.NewColumn(newColName, typing.ParseValue(_col, e.OptionalSchema, val)))
+				inMemoryColumns.AddColumn(columns.NewColumn(newColName, typing.ParseValue(_col, e.OptionalSchema, val)))
 			} else {
 				if retrievedColumn.KindDetails == typing.Invalid {
 					// If colType is Invalid, let's see if we can update it to a better type
