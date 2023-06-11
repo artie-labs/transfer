@@ -13,14 +13,30 @@ import (
 func TestWrapper_Complete(t *testing.T) {
 	type _testCase struct {
 		name                  string
-		args                  *NameArgs
 		expectedRawName       string
 		expectedEscapedName   string
 		expectedEscapedNameBQ string
 	}
 
 	testCases := []_testCase{
-		{},
+		{
+			name:                  "happy",
+			expectedRawName:       "happy",
+			expectedEscapedName:   "happy",
+			expectedEscapedNameBQ: "happy",
+		},
+		{
+			name:                  "user_id",
+			expectedRawName:       "user_id",
+			expectedEscapedName:   "user_id",
+			expectedEscapedNameBQ: "user_id",
+		},
+		{
+			name:                  "group",
+			expectedRawName:       "group",
+			expectedEscapedName:   `"group"`,
+			expectedEscapedNameBQ: "`group`",
+		},
 	}
 
 	for _, testCase := range testCases {
