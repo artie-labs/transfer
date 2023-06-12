@@ -13,10 +13,14 @@ import (
 type ProcessArgs struct {
 	Msg                    artie.Message
 	GroupID                string
-	TopicToConfigFormatMap map[string]TopicConfigFormatter
+	TopicToConfigFormatMap *TcFmtMap
 }
 
 func processMessage(ctx context.Context, processArgs ProcessArgs) error {
+	if processArgs.TopicToConfigFormatMap == nil {
+		return fmt.Errorf("failed to process, topicConfig is nil")
+	}
+
 	tags := map[string]string{
 		"groupID": processArgs.GroupID,
 		"topic":   processArgs.Msg.Topic(),
@@ -27,7 +31,7 @@ func processMessage(ctx context.Context, processArgs ProcessArgs) error {
 		metrics.FromContext(ctx).Timing("process.message", time.Since(st), tags)
 	}()
 
-	topicConfig, isOk := processArgs.TopicToConfigFormatMap[processArgs.Msg.Topic()]
+	topicConfig, isOk := processArgs.TopicToConfigFormatMap.GetTopicFmt(processArgs.Msg.Topic())
 	if !isOk {
 		tags["what"] = "failed_topic_lookup"
 		return fmt.Errorf("failed to get topic name: %s", processArgs.Msg.Topic())

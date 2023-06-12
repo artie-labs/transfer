@@ -42,12 +42,15 @@ func TestProcessMessageFailures(t *testing.T) {
 
 	msg := artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)
 	processArgs := ProcessArgs{
-		Msg:                    msg,
-		GroupID:                "foo",
-		TopicToConfigFormatMap: nil,
+		Msg:     msg,
+		GroupID: "foo",
 	}
 
 	err := processMessage(ctx, processArgs)
+	assert.True(t, strings.Contains(err.Error(), "failed to process, topicConfig is nil"), err.Error())
+
+	processArgs.TopicToConfigFormatMap = NewTcFmtMap()
+	err = processMessage(ctx, processArgs)
 	assert.True(t, strings.Contains(err.Error(), "failed to get topic"), err.Error())
 	assert.Equal(t, 0, len(models.GetMemoryDB(ctx).TableData()))
 
@@ -58,34 +61,48 @@ func TestProcessMessageFailures(t *testing.T) {
 		table  = "orders"
 	)
 
-	topicToConfigFmtMap := map[string]TopicConfigFormatter{
-		msg.Topic(): {
-			tc: &kafkalib.TopicConfig{
-				Database:      db,
-				TableName:     table,
-				Schema:        schema,
-				Topic:         msg.Topic(),
-				IdempotentKey: "",
-				CDCFormat:     "",
-				CDCKeyFormat:  "",
-			},
-			Format: &mgo,
+	tcFmtMap := NewTcFmtMap()
+	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
+		tc: &kafkalib.TopicConfig{
+			Database:      db,
+			TableName:     table,
+			Schema:        schema,
+			Topic:         msg.Topic(),
+			IdempotentKey: "",
+			CDCFormat:     "",
+			CDCKeyFormat:  "",
 		},
-	}
+		Format: &mgo,
+	})
 
 	processArgs = ProcessArgs{
 		Msg:                    msg,
 		GroupID:                "foo",
-		TopicToConfigFormatMap: topicToConfigFmtMap,
+		TopicToConfigFormatMap: tcFmtMap,
 	}
+
+	tcFmt, isOk := tcFmtMap.GetTopicFmt(msg.Topic())
+	assert.True(t, isOk)
 
 	err = processMessage(ctx, processArgs)
 	assert.True(t, strings.Contains(err.Error(),
-		fmt.Sprintf("err: format: %s is not supported", topicToConfigFmtMap[msg.Topic()].tc.CDCKeyFormat)), err.Error())
+		fmt.Sprintf("err: format: %s is not supported", tcFmt.tc.CDCKeyFormat)), err.Error())
 	assert.True(t, strings.Contains(err.Error(), "cannot unmarshall key"), err.Error())
 	assert.Equal(t, 0, len(models.GetMemoryDB(ctx).TableData()))
 
-	topicToConfigFmtMap[msg.Topic()].tc.CDCKeyFormat = "org.apache.kafka.connect.storage.StringConverter"
+	// Add will just replace the prev setting.
+	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
+		tc: &kafkalib.TopicConfig{
+			Database:      db,
+			TableName:     table,
+			Schema:        schema,
+			Topic:         msg.Topic(),
+			IdempotentKey: "",
+			CDCFormat:     "",
+			CDCKeyFormat:  "org.apache.kafka.connect.storage.StringConverter",
+		},
+		Format: &mgo,
+	})
 
 	vals := []string{
 		"",
@@ -131,7 +148,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		processArgs = ProcessArgs{
 			Msg:                    msg,
 			GroupID:                "foo",
-			TopicToConfigFormatMap: topicToConfigFmtMap,
+			TopicToConfigFormatMap: tcFmtMap,
 		}
 
 		err = processMessage(ctx, processArgs)
@@ -158,7 +175,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	processArgs = ProcessArgs{
 		Msg:                    msg,
 		GroupID:                "foo",
-		TopicToConfigFormatMap: topicToConfigFmtMap,
+		TopicToConfigFormatMap: tcFmtMap,
 	}
 
 	err = processMessage(ctx, processArgs)
