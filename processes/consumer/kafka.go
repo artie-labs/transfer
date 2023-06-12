@@ -59,14 +59,14 @@ func StartConsumer(ctx context.Context) {
 		dialer.TLS = &tls.Config{}
 	}
 
-	topicToConfigFmtMap := make(map[string]TopicConfigFormatter)
+	tcFmtMap := NewTcFmtMap()
 	topicToConsumer = make(map[string]kafkalib.Consumer)
 	var topics []string
 	for _, topicConfig := range settings.Config.Kafka.TopicConfigs {
-		topicToConfigFmtMap[topicConfig.Topic] = TopicConfigFormatter{
+		tcFmtMap.Add(topicConfig.Topic, TopicConfigFormatter{
 			tc:     topicConfig,
 			Format: format.GetFormatParser(ctx, topicConfig.CDCFormat, topicConfig.Topic),
-		}
+		})
 		topics = append(topics, topicConfig.Topic)
 	}
 
@@ -108,7 +108,7 @@ func StartConsumer(ctx context.Context) {
 				processErr := processMessage(ctx, ProcessArgs{
 					Msg:                    msg,
 					GroupID:                kafkaConsumer.Config().GroupID,
-					TopicToConfigFormatMap: topicToConfigFmtMap,
+					TopicToConfigFormatMap: tcFmtMap,
 				})
 				if processErr != nil {
 					log.WithError(processErr).WithFields(logFields).Warn("skipping message...")

@@ -64,13 +64,14 @@ func StartSubscriber(ctx context.Context) {
 		log.Fatalf("failed to create a pubsub client, err: %v", clientErr)
 	}
 
-	topicToConfigFmtMap := make(map[string]TopicConfigFormatter)
+	tcFmtMap := NewTcFmtMap()
 	var topics []string
 	for _, topicConfig := range settings.Config.Pubsub.TopicConfigs {
-		topicToConfigFmtMap[topicConfig.Topic] = TopicConfigFormatter{
+		tcFmtMap.Add(topicConfig.Topic, TopicConfigFormatter{
 			tc:     topicConfig,
 			Format: format.GetFormatParser(ctx, topicConfig.CDCFormat, topicConfig.Topic),
-		}
+		})
+
 		topics = append(topics, topicConfig.Topic)
 	}
 
@@ -99,7 +100,7 @@ func StartSubscriber(ctx context.Context) {
 					processErr := processMessage(ctx, ProcessArgs{
 						Msg:                    msg,
 						GroupID:                subName,
-						TopicToConfigFormatMap: topicToConfigFmtMap,
+						TopicToConfigFormatMap: tcFmtMap,
 					})
 					if processErr != nil {
 						log.WithError(processErr).WithFields(logFields).Warn("skipping message...")
