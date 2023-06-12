@@ -62,4 +62,14 @@ func TestIsScientificNumber(t *testing.T) {
 			assert.NotEmpty(t, sha, testCase.name)
 		}
 	}
+
+	// Now iterate over the same thing and make sure it's deterministic.
+	results := make(map[string]bool)
+	for i := 0; i < 100; i++ {
+		res, err := ToSha256(float64(58569102859845154622791691858438258688))
+		assert.NoError(t, err)
+		results[res] = true
+	}
+
+	assert.Equal(t, 1, len(results))
 }

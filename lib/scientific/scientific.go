@@ -9,7 +9,6 @@ import (
 )
 
 func IsScientificNumber(val interface{}) bool {
-	fmt.Println("val", val)
 	str := fmt.Sprint(val)
 	// Check if there are 'e' within the string.
 	if strings.Contains(str, "e") {
