@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/scientific"
+
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/array"
@@ -81,7 +83,16 @@ func (e *Event) PrimaryKeys() []string {
 func (e *Event) PrimaryKeyValue() string {
 	var key string
 	for _, pk := range e.PrimaryKeys() {
-		key += fmt.Sprintf("%s=%v", pk, e.PrimaryKeyMap[pk])
+		// if the value of the primary key is a scientific number, store a hash instead of the string version of the value.
+		val := e.PrimaryKeyMap[pk]
+		if scientific.IsScientificNumber(val) {
+			sha256, err := scientific.ToSha256(val)
+			if err == nil {
+				val = sha256
+			}
+		}
+
+		key += fmt.Sprintf("%s=%v", pk, val)
 	}
 
 	return key
@@ -153,6 +164,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 					// However, it's important to create a column even if it's nil.
 					// This is because we don't want to think that it's okay to drop a column in DWH
 					if kindDetails := typing.ParseValue(_col, e.OptionalSchema, val); kindDetails.Kind != typing.Invalid.Kind {
+						fmt.Println("kindDetails", kindDetails, "col", _col)
 						retrievedColumn.KindDetails = kindDetails
 						inMemoryColumns.UpdateColumn(retrievedColumn)
 					}
