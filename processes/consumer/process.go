@@ -17,6 +17,10 @@ type ProcessArgs struct {
 }
 
 func processMessage(ctx context.Context, processArgs ProcessArgs) error {
+	if processArgs.TopicToConfigFormatMap == nil {
+		return fmt.Errorf("failed to process, topicConfig is nil")
+	}
+
 	tags := map[string]string{
 		"groupID": processArgs.GroupID,
 		"topic":   processArgs.Msg.Topic(),

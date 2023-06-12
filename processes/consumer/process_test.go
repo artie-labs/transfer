@@ -42,12 +42,15 @@ func TestProcessMessageFailures(t *testing.T) {
 
 	msg := artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)
 	processArgs := ProcessArgs{
-		Msg:                    msg,
-		GroupID:                "foo",
-		TopicToConfigFormatMap: NewTcFmtMap(),
+		Msg:     msg,
+		GroupID: "foo",
 	}
 
 	err := processMessage(ctx, processArgs)
+	assert.True(t, strings.Contains(err.Error(), "failed to process, topicConfig is nil"), err.Error())
+
+	processArgs.TopicToConfigFormatMap = NewTcFmtMap()
+	err = processMessage(ctx, processArgs)
 	assert.True(t, strings.Contains(err.Error(), "failed to get topic"), err.Error())
 	assert.Equal(t, 0, len(models.GetMemoryDB(ctx).TableData()))
 
