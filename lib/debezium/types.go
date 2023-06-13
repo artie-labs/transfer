@@ -87,7 +87,7 @@ func DecodeDecimal(encoded string, parameters map[string]interface{}) (*decimal.
 		return nil, scaleErr
 	}
 
-	precision, precisionErr := maputil.GetIntegerFromMap(parameters, "precision")
+	precision, precisionErr := maputil.GetIntegerFromMap(parameters, "connect.decimal.precision")
 	if precisionErr != nil {
 		return nil, precisionErr
 	}

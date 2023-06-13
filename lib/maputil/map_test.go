@@ -29,10 +29,12 @@ func TestGetKeyFromMap(t *testing.T) {
 
 func TestGetIntegerFromMap(t *testing.T) {
 	object := map[string]interface{}{
-		"abc": 123,
-		"def": true,
-		"ghi": "hello",
-		"123": -321,
+		"abc":          "123",
+		"abc (number)": 123,
+		"def":          true,
+		"ghi":          "hello",
+		"123":          "-321",
+		"123 (number)": -321,
 	}
 
 	type _testCase struct {
