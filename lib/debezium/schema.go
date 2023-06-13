@@ -32,11 +32,12 @@ type FieldsObject struct {
 }
 
 type Field struct {
-	Type         string      `json:"type"`
-	Optional     bool        `json:"optional"`
-	Default      interface{} `json:"default"`
-	FieldName    string      `json:"field"`
-	DebeziumType string      `json:"name"`
+	Type         string                 `json:"type"`
+	Optional     bool                   `json:"optional"`
+	Default      interface{}            `json:"default"`
+	FieldName    string                 `json:"field"`
+	DebeziumType string                 `json:"name"`
+	Parameters   map[string]interface{} `json:"parameters"`
 }
 
 // IsInteger inspects the field object within the schema object, a field is classified as an int

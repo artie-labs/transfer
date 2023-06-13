@@ -6,6 +6,10 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/decimal"
+
+	"github.com/artie-labs/transfer/lib/maputil"
+
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
@@ -22,6 +26,8 @@ const (
 	DateKafkaConnect     SupportedDebeziumType = "org.apache.kafka.connect.data.Date"
 	TimeKafkaConnect     SupportedDebeziumType = "org.apache.kafka.connect.data.Time"
 	DateTimeKafkaConnect SupportedDebeziumType = "org.apache.kafka.connect.data.Timestamp"
+
+	KafkaDecimalType SupportedDebeziumType = "org.apache.kafka.connect.data.Decimal"
 )
 
 var supportedTypes = []SupportedDebeziumType{
@@ -33,6 +39,7 @@ var supportedTypes = []SupportedDebeziumType{
 	DateKafkaConnect,
 	TimeKafkaConnect,
 	DateTimeKafkaConnect,
+	KafkaDecimalType,
 }
 
 func RequiresSpecialTypeCasting(typeLabel string) (bool, SupportedDebeziumType) {
@@ -71,10 +78,23 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ex
 }
 
 // DecodeDecimal is used to handle `org.apache.kafka.connect.data.Decimal` where this would be emitted by Debezium when the `decimal.handling.mode` is `precise`
-func DecodeDecimal(encoded string, scale int) *big.Float {
+// Encoded - takes the encoded value
+// Parameters - which contains: `scale` and `connect.decimal.precision`
+// TODO: test.
+func DecodeDecimal(encoded string, parameters map[string]interface{}) (*decimal.Decimal, error) {
+	scale, scaleErr := maputil.GetIntegerFromMap(parameters, "scale")
+	if scaleErr != nil {
+		return nil, scaleErr
+	}
+
+	precision, precisionErr := maputil.GetIntegerFromMap(parameters, "precision")
+	if precisionErr != nil {
+		return nil, precisionErr
+	}
+
 	data, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to bae64 decode, err: %v", err)
 	}
 
 	bigInt := new(big.Int)
@@ -89,5 +109,5 @@ func DecodeDecimal(encoded string, scale int) *big.Float {
 
 	bigFloat.Quo(bigFloat, divisor)
 
-	return bigFloat
+	return decimal.NewDecimal(scale, precision, bigFloat), nil
 }
