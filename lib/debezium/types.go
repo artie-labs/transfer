@@ -1,9 +1,12 @@
 package debezium
 
 import (
+	"encoding/base64"
 	"fmt"
-	"github.com/artie-labs/transfer/lib/typing/ext"
+	"math/big"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type SupportedDebeziumType string
@@ -65,4 +68,26 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ex
 	}
 
 	return nil, fmt.Errorf("supportedType: %s, val: %v failed to be matched", supportedType, val)
+}
+
+// DecodeDecimal is used to handle `org.apache.kafka.connect.data.Decimal` where this would be emitted by Debezium when the `decimal.handling.mode` is `precise`
+func DecodeDecimal(encoded string, scale int) *big.Float {
+	data, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		panic(err)
+	}
+
+	bigInt := new(big.Int)
+	bigInt.SetBytes(data)
+
+	// Convert the big integer to a big float, and divide it by 10^scale
+	bigFloat := new(big.Float).SetInt(bigInt)
+	divisor := new(big.Float).SetFloat64(float64(1))
+	for i := 0; i < scale; i++ {
+		divisor.Mul(divisor, big.NewFloat(float64(10)))
+	}
+
+	bigFloat.Quo(bigFloat, divisor)
+
+	return bigFloat
 }
