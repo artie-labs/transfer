@@ -93,6 +93,8 @@ func kindToSnowflake(kindDetails KindDetails) string {
 		case ext.TimeKindType:
 			return "time"
 		}
+	case EDecimal.Kind:
+		return kindDetails.ExtendedDecimalDetails.SnowflakeKind()
 	}
 
 	return kindDetails.Kind

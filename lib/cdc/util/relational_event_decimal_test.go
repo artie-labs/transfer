@@ -15,8 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// This whole test file is created to test every possible combination of a number.
-
 func TestSchemaEventPayload_MiscNumbers_GetData(t *testing.T) {
 	file, err := os.Open("./numbers.json")
 	assert.NoError(t, err)
@@ -98,4 +96,30 @@ func TestSchemaEventPayload_Decimal_GetData(t *testing.T) {
 	assert.Equal(t, "58569102859845154622791691858438258688", retMap["decimal_test_39"].(*decimal.Decimal).Value(), "decimal_test_39")
 	assert.Equal(t, "585691028598451546227916918584382586.22", retMap["decimal_test_39_2"].(*decimal.Decimal).Value(), "decimal_test_39_2")
 	assert.Equal(t, "585691028598451546227916918584388.123456", retMap["decimal_test_39_6"].(*decimal.Decimal).Value(), "decimal_test_39_6")
+}
+
+func TestSchemaEventPayload_Money_GetData(t *testing.T) {
+	file, err := os.Open("./money.json")
+	assert.NoError(t, err)
+	bytes, err := io.ReadAll(file)
+	assert.NoError(t, err)
+
+	ctx := context.Background()
+	ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{Config: nil, VerboseLogging: true})
+	var schemaEventPayload SchemaEventPayload
+	err = json.Unmarshal(bytes, &schemaEventPayload)
+	assert.NoError(t, err)
+	retMap := schemaEventPayload.GetData(ctx, nil, nil)
+
+	decimalWithScaleMap := map[string]string{
+		"money_test": "123456.78",
+	}
+
+	for key, expectedValue := range decimalWithScaleMap {
+		// Numeric data types that actually have scale fails when comparing *big.Float using `.Cmp`, so we are using STRING() instead.
+		_, isOk := retMap[key].(*decimal.Decimal).Value().(*big.Float)
+		assert.True(t, isOk)
+		// Now, we know the data type is *big.Float, let's check the .String() value.
+		assert.Equal(t, expectedValue, retMap[key].(*decimal.Decimal).String(), key)
+	}
 }

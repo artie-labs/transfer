@@ -6,13 +6,16 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/typing/decimal"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type KindDetails struct {
-	Kind                string
-	ExtendedTimeDetails *ext.NestedKind
+	Kind                   string
+	ExtendedTimeDetails    *ext.NestedKind
+	ExtendedDecimalDetails *decimal.Decimal
 }
 
 // Summarized this from Snowflake + Reflect.
@@ -28,6 +31,10 @@ var (
 
 	Integer = KindDetails{
 		Kind: "int",
+	}
+
+	EDecimal = KindDetails{
+		Kind: "decimal",
 	}
 
 	Boolean = KindDetails{
@@ -128,8 +135,16 @@ func ParseValue(key string, optionalSchema map[string]KindDetails, val interface
 		}
 
 		return String
-	default:
-		// Check if the val is one of our custom-types
+
+	case *decimal.Decimal:
+		extendedKind, isOk := val.(*decimal.Decimal)
+		if isOk {
+			return KindDetails{
+				Kind:                   EDecimal.Kind,
+				ExtendedDecimalDetails: extendedKind,
+			}
+		}
+	case *ext.ExtendedTime:
 		extendedKind, isOk := val.(*ext.ExtendedTime)
 		if isOk {
 			return KindDetails{
@@ -137,7 +152,8 @@ func ParseValue(key string, optionalSchema map[string]KindDetails, val interface
 				ExtendedTimeDetails: &extendedKind.NestedKind,
 			}
 		}
-
+	default:
+		// Check if the val is one of our custom-types
 		if reflect.TypeOf(val).Kind() == reflect.Slice {
 			return Array
 		} else if reflect.TypeOf(val).Kind() == reflect.Map {

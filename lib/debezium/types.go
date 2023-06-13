@@ -29,6 +29,8 @@ const (
 
 	KafkaDecimalType         SupportedDebeziumType = "org.apache.kafka.connect.data.Decimal"
 	KafkaVariableNumericType SupportedDebeziumType = "io.debezium.data.VariableScaleDecimal"
+
+	KafkaDecimalPrecisionKey = "connect.decimal.precision"
 )
 
 var supportedTypes = []SupportedDebeziumType{
@@ -80,16 +82,22 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ex
 }
 
 // DecodeDecimal is used to handle `org.apache.kafka.connect.data.Decimal` where this would be emitted by Debezium when the `decimal.handling.mode` is `precise`
-// Encoded - takes the encoded value
-// Parameters - which contains: `scale` and `connect.decimal.precision`
-// TODO: test.
+// * Encoded - takes the base64 encoded value
+// * Parameters - which contains:
+//   - `scale` (number of digits following decimal point)
+//   - `connect.decimal.precision` which is an optional parameter. (If -1, then it's variable and .Value() will be in STRING).
 func DecodeDecimal(encoded string, parameters map[string]interface{}) (*decimal.Decimal, error) {
+	// TODO: test
 	scale, scaleErr := maputil.GetIntegerFromMap(parameters, "scale")
 	if scaleErr != nil {
 		return nil, scaleErr
 	}
 
-	precision, precisionErr := maputil.GetIntegerFromMap(parameters, "connect.decimal.precision")
+	if _, isOk := parameters[KafkaDecimalPrecisionKey]; !isOk {
+		parameters[KafkaDecimalPrecisionKey] = decimal.MaxPrecisionBeforeString
+	}
+
+	precision, precisionErr := maputil.GetIntegerFromMap(parameters, KafkaDecimalPrecisionKey)
 	if precisionErr != nil {
 		return nil, precisionErr
 	}
