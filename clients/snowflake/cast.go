@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/typing/decimal"
+
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/stringutil"
@@ -66,6 +68,14 @@ func CastColValStaging(colVal interface{}, colKind columns.Column) (string, erro
 		}
 
 		colValString = string(colValBytes)
+
+	case typing.EDecimal.Kind:
+		val, isOk := colVal.(*decimal.Decimal)
+		if !isOk {
+			return "", fmt.Errorf("colVal is not *decimal.Decimal type")
+		}
+
+		return val.String(), nil
 	}
 
 	return colValString, nil
