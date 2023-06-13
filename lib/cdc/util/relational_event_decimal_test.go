@@ -3,7 +3,9 @@ package util
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"math/big"
+	"os"
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -16,248 +18,16 @@ import (
 // This whole test file is created to test every possible combination of a number.
 
 func TestSchemaEventPayload_MiscNumbers_GetData(t *testing.T) {
-	ctx := context.Background()
-	var schemaEventPayload SchemaEventPayload
-	err := json.Unmarshal([]byte(`{
-	"schema": {
-		"type": "struct",
-		"fields": [{
-			"type": "struct",
-			"fields": [{
-				"type": "int32",
-				"optional": false,
-				"default": 0,
-				"field": "id"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "first_name"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "last_name"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "email"
-			}, {
-				"type": "int16",
-				"optional": true,
-				"field": "smallint_test"
-			}, {
-				"type": "int16",
-				"optional": false,
-				"default": 0,
-				"field": "smallserial_test"
-			}, {
-				"type": "int32",
-				"optional": true,
-				"field": "int_test"
-			}, {
-				"type": "int32",
-				"optional": true,
-				"field": "integer_test"
-			}, {
-				"type": "int32",
-				"optional": false,
-				"default": 0,
-				"field": "serial_test"
-			}, {
-				"type": "int64",
-				"optional": true,
-				"field": "bigint_test"
-			}, {
-				"type": "int64",
-				"optional": false,
-				"default": 0,
-				"field": "bigserial_test"
-			}],
-			"optional": true,
-			"name": "dbserver1.inventory.customers.Value",
-			"field": "before"
-		}, {
-			"type": "struct",
-			"fields": [{
-				"type": "int32",
-				"optional": false,
-				"default": 0,
-				"field": "id"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "first_name"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "last_name"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "email"
-			}, {
-				"type": "int16",
-				"optional": true,
-				"field": "smallint_test"
-			}, {
-				"type": "int16",
-				"optional": false,
-				"default": 0,
-				"field": "smallserial_test"
-			}, {
-				"type": "int32",
-				"optional": true,
-				"field": "int_test"
-			}, {
-				"type": "int32",
-				"optional": true,
-				"field": "integer_test"
-			}, {
-				"type": "int32",
-				"optional": false,
-				"default": 0,
-				"field": "serial_test"
-			}, {
-				"type": "int64",
-				"optional": true,
-				"field": "bigint_test"
-			}, {
-				"type": "int64",
-				"optional": false,
-				"default": 0,
-				"field": "bigserial_test"
-			}],
-			"optional": true,
-			"name": "dbserver1.inventory.customers.Value",
-			"field": "after"
-		}, {
-			"type": "struct",
-			"fields": [{
-				"type": "string",
-				"optional": false,
-				"field": "version"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "connector"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "name"
-			}, {
-				"type": "int64",
-				"optional": false,
-				"field": "ts_ms"
-			}, {
-				"type": "string",
-				"optional": true,
-				"name": "io.debezium.data.Enum",
-				"version": 1,
-				"parameters": {
-					"allowed": "true,last,false,incremental"
-				},
-				"default": "false",
-				"field": "snapshot"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "db"
-			}, {
-				"type": "string",
-				"optional": true,
-				"field": "sequence"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "schema"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "table"
-			}, {
-				"type": "int64",
-				"optional": true,
-				"field": "txId"
-			}, {
-				"type": "int64",
-				"optional": true,
-				"field": "lsn"
-			}, {
-				"type": "int64",
-				"optional": true,
-				"field": "xmin"
-			}],
-			"optional": false,
-			"name": "io.debezium.connector.postgresql.Source",
-			"field": "source"
-		}, {
-			"type": "string",
-			"optional": false,
-			"field": "op"
-		}, {
-			"type": "int64",
-			"optional": true,
-			"field": "ts_ms"
-		}, {
-			"type": "struct",
-			"fields": [{
-				"type": "string",
-				"optional": false,
-				"field": "id"
-			}, {
-				"type": "int64",
-				"optional": false,
-				"field": "total_order"
-			}, {
-				"type": "int64",
-				"optional": false,
-				"field": "data_collection_order"
-			}],
-			"optional": true,
-			"name": "event.block",
-			"version": 1,
-			"field": "transaction"
-		}],
-		"optional": false,
-		"name": "dbserver1.inventory.customers.Envelope",
-		"version": 1
-	},
-	"payload": {
-		"before": null,
-		"after": {
-			"id": 1001,
-			"first_name": "Sally",
-			"last_name": "Thomas",
-			"email": "sally.thomas@acme.com",
-			"smallint_test": 1,
-			"smallserial_test": 2,
-			"int_test": 3,
-			"integer_test": 4,
-			"serial_test": 1,
-			"bigint_test": 2305843009213693952,
-			"bigserial_test": 2305843009213693952
-		},
-		"source": {
-			"version": "2.2.0.Final",
-			"connector": "postgresql",
-			"name": "dbserver1",
-			"ts_ms": 1686682458381,
-			"snapshot": "false",
-			"db": "postgres",
-			"sequence": "[null,\"34712664\"]",
-			"schema": "inventory",
-			"table": "customers",
-			"txId": 766,
-			"lsn": 34712664,
-			"xmin": null
-		},
-		"op": "u",
-		"ts_ms": 1686682459636,
-		"transaction": null
-	}
-}`), &schemaEventPayload)
+	file, err := os.Open("./numbers.json")
+	assert.NoError(t, err)
+	bytes, err := io.ReadAll(file)
 	assert.NoError(t, err)
 
-	retMap := schemaEventPayload.GetData(ctx, nil, nil)
+	var schemaEventPayload SchemaEventPayload
+	err = json.Unmarshal(bytes, &schemaEventPayload)
+	assert.NoError(t, err)
+
+	retMap := schemaEventPayload.GetData(context.Background(), nil, nil)
 	assert.Equal(t, retMap["smallint_test"], 1)
 	assert.Equal(t, retMap["smallserial_test"], 2)
 	assert.Equal(t, retMap["int_test"], 3)
@@ -268,362 +38,15 @@ func TestSchemaEventPayload_MiscNumbers_GetData(t *testing.T) {
 }
 
 func TestSchemaEventPayload_Numeric_GetData(t *testing.T) {
-	ctx := context.Background()
-	ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{Config: nil, VerboseLogging: true})
-	var schemaEventPayload SchemaEventPayload
-	err := json.Unmarshal([]byte(`{
-	"schema": {
-		"type": "struct",
-		"fields": [{
-			"type": "struct",
-			"fields": [{
-				"type": "int32",
-				"optional": false,
-				"default": 0,
-				"field": "id"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "first_name"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "last_name"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "email"
-			}, {
-				"type": "struct",
-				"fields": [{
-					"type": "int32",
-					"optional": false,
-					"field": "scale"
-				}, {
-					"type": "bytes",
-					"optional": false,
-					"field": "value"
-				}],
-				"optional": true,
-				"name": "io.debezium.data.VariableScaleDecimal",
-				"version": 1,
-				"doc": "Variable scaled decimal",
-				"field": "numeric_test"
-			}, {
-				"type": "bytes",
-				"optional": true,
-				"name": "org.apache.kafka.connect.data.Decimal",
-				"version": 1,
-				"parameters": {
-					"scale": "0",
-					"connect.decimal.precision": "5"
-				},
-				"field": "numeric_5"
-			}, {
-				"type": "bytes",
-				"optional": true,
-				"name": "org.apache.kafka.connect.data.Decimal",
-				"version": 1,
-				"parameters": {
-					"scale": "2",
-					"connect.decimal.precision": "5"
-				},
-				"field": "numeric_5_2"
-			}, {
-				"type": "bytes",
-				"optional": true,
-				"name": "org.apache.kafka.connect.data.Decimal",
-				"version": 1,
-				"parameters": {
-					"scale": "6",
-					"connect.decimal.precision": "5"
-				},
-				"field": "numeric_5_6"
-			}, {
-				"type": "bytes",
-				"optional": true,
-				"name": "org.apache.kafka.connect.data.Decimal",
-				"version": 1,
-				"parameters": {
-					"scale": "0",
-					"connect.decimal.precision": "5"
-				},
-				"field": "numeric_5_0"
-			}, {
-				"type": "bytes",
-				"optional": true,
-				"name": "org.apache.kafka.connect.data.Decimal",
-				"version": 1,
-				"parameters": {
-					"scale": "0",
-					"connect.decimal.precision": "39"
-				},
-				"field": "numeric_39_0"
-			}, {
-				"type": "bytes",
-				"optional": true,
-				"name": "org.apache.kafka.connect.data.Decimal",
-				"version": 1,
-				"parameters": {
-					"scale": "2",
-					"connect.decimal.precision": "39"
-				},
-				"field": "numeric_39_2"
-			}, {
-				"type": "bytes",
-				"optional": true,
-				"name": "org.apache.kafka.connect.data.Decimal",
-				"version": 1,
-				"parameters": {
-					"scale": "6",
-					"connect.decimal.precision": "39"
-				},
-				"field": "numeric_39_6"
-			}],
-			"optional": true,
-			"name": "dbserver1.inventory.customers.Value",
-			"field": "before"
-		}, {
-			"type": "struct",
-			"fields": [{
-				"type": "int32",
-				"optional": false,
-				"default": 0,
-				"field": "id"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "first_name"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "last_name"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "email"
-			}, {
-				"type": "struct",
-				"fields": [{
-					"type": "int32",
-					"optional": false,
-					"field": "scale"
-				}, {
-					"type": "bytes",
-					"optional": false,
-					"field": "value"
-				}],
-				"optional": true,
-				"name": "io.debezium.data.VariableScaleDecimal",
-				"version": 1,
-				"doc": "Variable scaled decimal",
-				"field": "numeric_test"
-			}, {
-				"type": "bytes",
-				"optional": true,
-				"name": "org.apache.kafka.connect.data.Decimal",
-				"version": 1,
-				"parameters": {
-					"scale": "0",
-					"connect.decimal.precision": "5"
-				},
-				"field": "numeric_5"
-			}, {
-				"type": "bytes",
-				"optional": true,
-				"name": "org.apache.kafka.connect.data.Decimal",
-				"version": 1,
-				"parameters": {
-					"scale": "2",
-					"connect.decimal.precision": "5"
-				},
-				"field": "numeric_5_2"
-			}, {
-				"type": "bytes",
-				"optional": true,
-				"name": "org.apache.kafka.connect.data.Decimal",
-				"version": 1,
-				"parameters": {
-					"scale": "6",
-					"connect.decimal.precision": "5"
-				},
-				"field": "numeric_5_6"
-			}, {
-				"type": "bytes",
-				"optional": true,
-				"name": "org.apache.kafka.connect.data.Decimal",
-				"version": 1,
-				"parameters": {
-					"scale": "0",
-					"connect.decimal.precision": "5"
-				},
-				"field": "numeric_5_0"
-			}, {
-				"type": "bytes",
-				"optional": true,
-				"name": "org.apache.kafka.connect.data.Decimal",
-				"version": 1,
-				"parameters": {
-					"scale": "0",
-					"connect.decimal.precision": "39"
-				},
-				"field": "numeric_39_0"
-			}, {
-				"type": "bytes",
-				"optional": true,
-				"name": "org.apache.kafka.connect.data.Decimal",
-				"version": 1,
-				"parameters": {
-					"scale": "2",
-					"connect.decimal.precision": "39"
-				},
-				"field": "numeric_39_2"
-			}, {
-				"type": "bytes",
-				"optional": true,
-				"name": "org.apache.kafka.connect.data.Decimal",
-				"version": 1,
-				"parameters": {
-					"scale": "6",
-					"connect.decimal.precision": "39"
-				},
-				"field": "numeric_39_6"
-			}],
-			"optional": true,
-			"name": "dbserver1.inventory.customers.Value",
-			"field": "after"
-		}, {
-			"type": "struct",
-			"fields": [{
-				"type": "string",
-				"optional": false,
-				"field": "version"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "connector"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "name"
-			}, {
-				"type": "int64",
-				"optional": false,
-				"field": "ts_ms"
-			}, {
-				"type": "string",
-				"optional": true,
-				"name": "io.debezium.data.Enum",
-				"version": 1,
-				"parameters": {
-					"allowed": "true,last,false,incremental"
-				},
-				"default": "false",
-				"field": "snapshot"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "db"
-			}, {
-				"type": "string",
-				"optional": true,
-				"field": "sequence"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "schema"
-			}, {
-				"type": "string",
-				"optional": false,
-				"field": "table"
-			}, {
-				"type": "int64",
-				"optional": true,
-				"field": "txId"
-			}, {
-				"type": "int64",
-				"optional": true,
-				"field": "lsn"
-			}, {
-				"type": "int64",
-				"optional": true,
-				"field": "xmin"
-			}],
-			"optional": false,
-			"name": "io.debezium.connector.postgresql.Source",
-			"field": "source"
-		}, {
-			"type": "string",
-			"optional": false,
-			"field": "op"
-		}, {
-			"type": "int64",
-			"optional": true,
-			"field": "ts_ms"
-		}, {
-			"type": "struct",
-			"fields": [{
-				"type": "string",
-				"optional": false,
-				"field": "id"
-			}, {
-				"type": "int64",
-				"optional": false,
-				"field": "total_order"
-			}, {
-				"type": "int64",
-				"optional": false,
-				"field": "data_collection_order"
-			}],
-			"optional": true,
-			"name": "event.block",
-			"version": 1,
-			"field": "transaction"
-		}],
-		"optional": false,
-		"name": "dbserver1.inventory.customers.Envelope",
-		"version": 1
-	},
-	"payload": {
-		"before": null,
-		"after": {
-			"id": 1001,
-			"first_name": "Sally",
-			"last_name": "Thomas",
-			"email": "sally.thomas@acme.com",
-			"numeric_test": {
-				"scale": 3,
-				"value": "B1vNFQ=="
-			},
-			"numeric_5": "BNI=",
-			"numeric_5_2": "AN3h",
-			"numeric_5_6": "W6A=",
-			"numeric_5_0": "BQ==",
-			"numeric_39_0": "LA//uAAAAAAAAAAAAAAAAA==",
-			"numeric_39_2": "Abif/S///////////////8Y=",
-			"numeric_39_6": "Abif/TAAAAAAAJOB7H4r4kA="
-		},
-		"source": {
-			"version": "2.2.0.Final",
-			"connector": "postgresql",
-			"name": "dbserver1",
-			"ts_ms": 1686688855364,
-			"snapshot": "false",
-			"db": "postgres",
-			"sequence": "[null,\"34393728\"]",
-			"schema": "inventory",
-			"table": "customers",
-			"txId": 765,
-			"lsn": 34393728,
-			"xmin": null
-		},
-		"op": "u",
-		"ts_ms": 1686688856118,
-		"transaction": null
-	}
-}`), &schemaEventPayload)
+	file, err := os.Open("./numeric.json")
 	assert.NoError(t, err)
-	retMap := schemaEventPayload.GetData(ctx, nil, nil)
+	bytes, err := io.ReadAll(file)
+	assert.NoError(t, err)
+
+	var schemaEventPayload SchemaEventPayload
+	err = json.Unmarshal(bytes, &schemaEventPayload)
+	assert.NoError(t, err)
+	retMap := schemaEventPayload.GetData(context.Background(), nil, nil)
 
 	assert.Equal(t, "123456.789", retMap["numeric_test"].(*decimal.Decimal).Value())
 	assert.Equal(t, 0, big.NewFloat(1234).Cmp(retMap["numeric_5"].(*decimal.Decimal).Value().(*big.Float)))
@@ -644,4 +67,35 @@ func TestSchemaEventPayload_Numeric_GetData(t *testing.T) {
 	assert.Equal(t, "58569102859845154622791691858438258688", retMap["numeric_39_0"].(*decimal.Decimal).Value())
 	assert.Equal(t, "5856910285984515462279169185843825868.22", retMap["numeric_39_2"].(*decimal.Decimal).Value())
 	assert.Equal(t, "585691028598451546227958438258688.123456", retMap["numeric_39_6"].(*decimal.Decimal).Value())
+}
+
+func TestSchemaEventPayload_Decimal_GetData(t *testing.T) {
+	file, err := os.Open("./decimal.json")
+	assert.NoError(t, err)
+	bytes, err := io.ReadAll(file)
+	assert.NoError(t, err)
+
+	ctx := context.Background()
+	ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{Config: nil, VerboseLogging: true})
+	var schemaEventPayload SchemaEventPayload
+	err = json.Unmarshal(bytes, &schemaEventPayload)
+	assert.NoError(t, err)
+	retMap := schemaEventPayload.GetData(ctx, nil, nil)
+	assert.Equal(t, "123.45", retMap["decimal_test"].(*decimal.Decimal).Value())
+	decimalWithScaleMap := map[string]string{
+		"decimal_test_5":   "123",
+		"decimal_test_5_2": "123.45",
+	}
+
+	for key, expectedValue := range decimalWithScaleMap {
+		// Numeric data types that actually have scale fails when comparing *big.Float using `.Cmp`, so we are using STRING() instead.
+		_, isOk := retMap[key].(*decimal.Decimal).Value().(*big.Float)
+		assert.True(t, isOk)
+		// Now, we know the data type is *big.Float, let's check the .String() value.
+		assert.Equal(t, expectedValue, retMap[key].(*decimal.Decimal).String(), key)
+	}
+
+	assert.Equal(t, "58569102859845154622791691858438258688", retMap["decimal_test_39"].(*decimal.Decimal).Value(), "decimal_test_39")
+	assert.Equal(t, "585691028598451546227916918584382586.22", retMap["decimal_test_39_2"].(*decimal.Decimal).Value(), "decimal_test_39_2")
+	assert.Equal(t, "585691028598451546227916918584388.123456", retMap["decimal_test_39_6"].(*decimal.Decimal).Value(), "decimal_test_39_6")
 }
