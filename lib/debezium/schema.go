@@ -47,6 +47,6 @@ func (f *Field) IsInteger() (valid bool) {
 		return
 	}
 
-	validIntegerType := f.Type == "int32" || f.Type == "int64"
+	validIntegerType := f.Type == "int16" || f.Type == "int32" || f.Type == "int64"
 	return validIntegerType && f.DebeziumType == ""
 }
