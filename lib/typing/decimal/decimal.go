@@ -42,7 +42,7 @@ func (d *Decimal) String() string {
 func (d *Decimal) Value() interface{} {
 	// -1 precision is used for variable scaled decimal
 	// We are opting to emit this as a STRING because the value is technically unbounded (can get to ~1 GB).
-	if d.precision > MaxPrecisionBeforeString || d.precision == -1 {
+	if d.precision > MaxPrecisionBeforeString || d.precision == -1 || d.scale > d.precision {
 		return d.String()
 	}
 
@@ -51,7 +51,8 @@ func (d *Decimal) Value() interface{} {
 }
 
 func (d *Decimal) SnowflakeKind() string {
-	if d.precision > MaxPrecisionBeforeString || d.precision == -1 {
+	// TODO: document NUMERIC(p, s)
+	if d.precision > MaxPrecisionBeforeString || d.precision == -1 || d.scale > d.precision {
 		return "STRING"
 	}
 
@@ -59,7 +60,7 @@ func (d *Decimal) SnowflakeKind() string {
 }
 
 func (d *Decimal) BigQueryKind() string {
-	if d.precision > MaxPrecisionBeforeString || d.precision == -1 || d.scale > MaxScaleBeforeStringBigQuery {
+	if d.precision > MaxPrecisionBeforeString || d.precision == -1 || d.scale > MaxScaleBeforeStringBigQuery || d.scale > d.precision {
 		return "STRING"
 	}
 
