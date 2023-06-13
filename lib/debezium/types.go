@@ -27,7 +27,8 @@ const (
 	TimeKafkaConnect     SupportedDebeziumType = "org.apache.kafka.connect.data.Time"
 	DateTimeKafkaConnect SupportedDebeziumType = "org.apache.kafka.connect.data.Timestamp"
 
-	KafkaDecimalType SupportedDebeziumType = "org.apache.kafka.connect.data.Decimal"
+	KafkaDecimalType         SupportedDebeziumType = "org.apache.kafka.connect.data.Decimal"
+	KafkaVariableNumericType SupportedDebeziumType = "io.debezium.data.VariableScaleDecimal"
 )
 
 var supportedTypes = []SupportedDebeziumType{
@@ -40,6 +41,7 @@ var supportedTypes = []SupportedDebeziumType{
 	TimeKafkaConnect,
 	DateTimeKafkaConnect,
 	KafkaDecimalType,
+	KafkaVariableNumericType,
 }
 
 func RequiresSpecialTypeCasting(typeLabel string) (bool, SupportedDebeziumType) {
@@ -108,6 +110,27 @@ func DecodeDecimal(encoded string, parameters map[string]interface{}) (*decimal.
 	}
 
 	bigFloat.Quo(bigFloat, divisor)
-
 	return decimal.NewDecimal(scale, precision, bigFloat), nil
+}
+
+func DecodeDebeziumVariableDecimal(value interface{}) (*decimal.Decimal, error) {
+	valueStruct, isOk := value.(map[string]interface{})
+	if !isOk {
+		return nil, fmt.Errorf("value is not map[string]interface{} type")
+	}
+
+	scale, err := maputil.GetIntegerFromMap(valueStruct, "scale")
+	if err != nil {
+		return nil, err
+	}
+
+	val, isOk := valueStruct["value"]
+	if !isOk {
+		return nil, fmt.Errorf("encoded value does not exist")
+	}
+
+	return DecodeDecimal(fmt.Sprint(val), map[string]interface{}{
+		"scale":                     scale,
+		"connect.decimal.precision": "-1",
+	})
 }

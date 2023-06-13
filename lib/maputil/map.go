@@ -19,7 +19,6 @@ func GetKeyFromMap(obj map[string]interface{}, key string, defaultValue interfac
 }
 
 func GetIntegerFromMap(obj map[string]interface{}, key string) (int, error) {
-	// TODO test.
 	if len(obj) == 0 {
 		return 0, fmt.Errorf("object is empty")
 	}

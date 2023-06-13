@@ -623,11 +623,10 @@ func TestSchemaEventPayload_Numeric_GetData(t *testing.T) {
 	}
 }`), &schemaEventPayload)
 	assert.NoError(t, err)
-
 	retMap := schemaEventPayload.GetData(ctx, nil, nil)
 
+	assert.Equal(t, "123456.789", retMap["numeric_test"].(*decimal.Decimal).Value())
 	assert.Equal(t, 0, big.NewFloat(1234).Cmp(retMap["numeric_5"].(*decimal.Decimal).Value().(*big.Float)))
-
 	numericWithScaleMap := map[string]string{
 		"numeric_5_2": "568.01",
 		"numeric_5_6": "0.023456",
@@ -642,7 +641,7 @@ func TestSchemaEventPayload_Numeric_GetData(t *testing.T) {
 		assert.Equal(t, expectedValue, retMap[key].(*decimal.Decimal).String())
 	}
 
-	assert.Equal(t, retMap["numeric_39_0"].(*decimal.Decimal).Value(), "58569102859845154622791691858438258688")
-	assert.Equal(t, retMap["numeric_39_2"].(*decimal.Decimal).Value(), "5856910285984515462279169185843825868.22")
-	assert.Equal(t, retMap["numeric_39_6"].(*decimal.Decimal).Value(), "585691028598451546227958438258688.123456")
+	assert.Equal(t, "58569102859845154622791691858438258688", retMap["numeric_39_0"].(*decimal.Decimal).Value())
+	assert.Equal(t, "5856910285984515462279169185843825868.22", retMap["numeric_39_2"].(*decimal.Decimal).Value())
+	assert.Equal(t, "585691028598451546227958438258688.123456", retMap["numeric_39_6"].(*decimal.Decimal).Value())
 }

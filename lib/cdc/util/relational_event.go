@@ -140,6 +140,17 @@ func (s *SchemaEventPayload) GetData(ctx context.Context, pkMap map[string]inter
 							"val":           val,
 						}).Debug("skipped casting dbz type due to an error")
 					}
+				case debezium.KafkaVariableNumericType:
+					variableNumericVal, err := debezium.DecodeDebeziumVariableDecimal(val)
+					if err == nil {
+						retMap[field.FieldName] = variableNumericVal
+					} else {
+						logger.FromContext(ctx).WithFields(map[string]interface{}{
+							"err":           err,
+							"supportedType": supportedType,
+							"val":           val,
+						}).Debug("skipped casting dbz type due to an error")
+					}
 				default:
 					// Need to cast this as a FLOAT first because the number may come out in scientific notation
 					// ParseFloat is apt to handle it, and ParseInt is not, see: https://github.com/golang/go/issues/19288

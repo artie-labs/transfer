@@ -35,7 +35,9 @@ func (d *Decimal) String() string {
 }
 
 func (d *Decimal) Value() interface{} {
-	if d.precision > maxPrecisionBeforeString {
+	// -1 precision is used for variable scaled decimal
+	// We are opting to emit this as a STRING because the value is technically unbounded (can get to ~1 GB).
+	if d.precision > maxPrecisionBeforeString || d.precision == -1 {
 		return d.String()
 	}
 
