@@ -9,7 +9,8 @@ import (
 
 const StreamingTimeFormat = "15:04:05"
 
-func BigQueryTypeToKind(bqType string) KindDetails {
+func BigQueryTypeToKind(rawBqType string) KindDetails {
+	bqType := rawBqType
 	bqType = strings.ToLower(bqType)
 	if len(bqType) == 0 {
 		return Invalid
@@ -32,13 +33,13 @@ func BigQueryTypeToKind(bqType string) KindDetails {
 	// Geography, geometry date, time, varbinary, binary are currently not supported.
 	switch strings.TrimSpace(strings.ToLower(bqType[:idxStop])) {
 	case "numeric":
-		if bqType == "numeric" {
+		if rawBqType == "numeric" {
 			// This is a specific thing to BigQuery
 			// A `NUMERIC` type without precision or scale specified is NUMERIC(38, 9)
 			return EDecimal
 		}
 
-		return ParseNumeric(defaultPrefix, bqType)
+		return ParseNumeric(defaultPrefix, rawBqType)
 	case "decimal", "float", "float64", "bignumeric", "bigdecimal":
 		return Float
 	case "int", "integer", "int64":

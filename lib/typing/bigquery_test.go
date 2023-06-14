@@ -12,9 +12,11 @@ import (
 func TestBigQueryTypeToKind(t *testing.T) {
 	bqColToExpectedKind := map[string]KindDetails{
 		//// Number
-		//"numeric(5)":    Integer,
-		//"numeric(5, 2)": EDecimal,
-		//"numeric(8, 6)": EDecimal,
+		"numeric":       EDecimal,
+		"numeric(5)":    Integer,
+		"numeric(5, 0)": Integer,
+		"numeric(5, 2)": EDecimal,
+		"numeric(8, 6)": EDecimal,
 
 		// Integer
 		"int":     Integer,
@@ -47,7 +49,7 @@ func TestBigQueryTypeToKind(t *testing.T) {
 	}
 
 	for bqCol, expectedKind := range bqColToExpectedKind {
-		assert.Equal(t, BigQueryTypeToKind(bqCol), expectedKind, fmt.Sprintf("bqCol: %s did not match", bqCol))
+		assert.Equal(t, expectedKind, BigQueryTypeToKind(bqCol), fmt.Sprintf("bqCol: %s did not match", bqCol))
 	}
 }
 

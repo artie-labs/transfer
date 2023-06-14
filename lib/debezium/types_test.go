@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/typing/decimal"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -39,11 +37,12 @@ func TestDecodeDecimal(t *testing.T) {
 		encoded string
 		params  map[string]interface{}
 
-		expectedValue     string
-		expectedPrecision int
-		expectedScale     int
-		expectBigFloat    bool
-		expectError       bool
+		expectedValue         string
+		expectedPrecision     int
+		expectNilPtrPrecision bool
+		expectedScale         int
+		expectBigFloat        bool
+		expectError           bool
 	}
 
 	testCases := []_testCase{
@@ -190,10 +189,10 @@ func TestDecodeDecimal(t *testing.T) {
 			params: map[string]interface{}{
 				"scale": "2",
 			},
-			expectBigFloat:    true,
-			expectedValue:     "123456.98",
-			expectedPrecision: decimal.MaxPrecisionBeforeString,
-			expectedScale:     2,
+			expectBigFloat:        true,
+			expectedValue:         "123456.98",
+			expectNilPtrPrecision: true,
+			expectedScale:         2,
 		},
 	}
 
@@ -209,7 +208,12 @@ func TestDecodeDecimal(t *testing.T) {
 		_, isOk := decVal.(*big.Float)
 		assert.Equal(t, testCase.expectBigFloat, isOk, testCase.name)
 		assert.Equal(t, testCase.expectedValue, dec.String(), testCase.name)
-		assert.Equal(t, testCase.expectedPrecision, dec.Precision(), testCase.name)
+
+		if testCase.expectNilPtrPrecision {
+			assert.Nil(t, dec.Precision(), testCase.name)
+		} else {
+			assert.Equal(t, testCase.expectedPrecision, *dec.Precision(), testCase.name)
+		}
 		assert.Equal(t, testCase.expectedScale, dec.Scale(), testCase.name)
 	}
 }
@@ -274,7 +278,7 @@ func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 		// It should be a string instead.
 		_, isOk = dec.Value().(string)
 		assert.True(t, isOk, testCase.name)
-		assert.Equal(t, -1, dec.Precision(), testCase.name)
+		assert.Equal(t, -1, *dec.Precision(), testCase.name)
 		assert.Equal(t, testCase.expectScale, dec.Scale(), testCase.name)
 		assert.Equal(t, testCase.expectValue, dec.Value(), testCase.name)
 	}

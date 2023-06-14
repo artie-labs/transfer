@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/ptr"
+
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -108,7 +110,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Basic() {
 		},
 		{
 			name:   "numeric data types (backwards compatibility)",
-			colVal: decimal.NewDecimal(2, 5, big.NewFloat(55.22)),
+			colVal: decimal.NewDecimal(2, ptr.ToInt(5), big.NewFloat(55.22)),
 			colKind: columns.Column{
 				KindDetails: typing.Float,
 			},
@@ -117,7 +119,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Basic() {
 		},
 		{
 			name:   "numeric data types",
-			colVal: decimal.NewDecimal(2, 38, big.NewFloat(585692791691858.25)),
+			colVal: decimal.NewDecimal(2, ptr.ToInt(38), big.NewFloat(585692791691858.25)),
 			colKind: columns.Column{
 				KindDetails: typing.EDecimal,
 			},
