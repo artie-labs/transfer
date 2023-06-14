@@ -48,6 +48,25 @@ func TestDecodeDecimal(t *testing.T) {
 
 	testCases := []_testCase{
 		{
+			name:        "No scale (nil map)",
+			expectError: true,
+		},
+		{
+			name: "No scale (not provided)",
+			params: map[string]interface{}{
+				"connect.decimal.precision": "5",
+			},
+			expectError: true,
+		},
+		{
+			name: "Precision is not an integer",
+			params: map[string]interface{}{
+				"scale":                     "2",
+				"connect.decimal.precision": "abc",
+			},
+			expectError: true,
+		},
+		{
 			name:    "NUMERIC(5,0)",
 			encoded: "BQ==",
 			params: map[string]interface{}{
@@ -181,7 +200,7 @@ func TestDecodeDecimal(t *testing.T) {
 	for _, testCase := range testCases {
 		dec, err := DecodeDecimal(testCase.encoded, testCase.params)
 		if testCase.expectError {
-			assert.Error(t, err)
+			assert.Error(t, err, testCase.name)
 			continue
 		}
 
@@ -193,4 +212,71 @@ func TestDecodeDecimal(t *testing.T) {
 		assert.Equal(t, testCase.expectedPrecision, dec.Precision(), testCase.name)
 		assert.Equal(t, testCase.expectedScale, dec.Scale(), testCase.name)
 	}
+}
+
+func TestDecodeDebeziumVariableDecimal(t *testing.T) {
+	type _testCase struct {
+		name        string
+		value       interface{}
+		expectValue string
+		expectError bool
+		expectScale int
+	}
+
+	testCases := []_testCase{
+		{
+			name:        "empty val (nil)",
+			expectError: true,
+		},
+		{
+			name:        "empty map",
+			value:       map[string]interface{}{},
+			expectError: true,
+		},
+		{
+			name: "scale is not an integer",
+			value: map[string]interface{}{
+				"scale": "foo",
+			},
+			expectError: true,
+		},
+		{
+			name: "value exists (scale 3)",
+			value: map[string]interface{}{
+				"scale": 3,
+				"value": "SOx4FQ==",
+			},
+			expectValue: "1223456.789",
+			expectScale: 3,
+		},
+		{
+			name: "value exists (scale 2)",
+			value: map[string]interface{}{
+				"scale": 2,
+				"value": "MDk=",
+			},
+			expectValue: "123.45",
+			expectScale: 2,
+		},
+	}
+
+	for _, testCase := range testCases {
+		dec, err := DecodeDebeziumVariableDecimal(testCase.value)
+		if testCase.expectError {
+			assert.Error(t, err, testCase.name)
+			continue
+		}
+
+		// It should never be a *big.Float
+		_, isOk := dec.Value().(*big.Float)
+		assert.False(t, isOk, testCase.name)
+
+		// It should be a string instead.
+		_, isOk = dec.Value().(string)
+		assert.True(t, isOk, testCase.name)
+		assert.Equal(t, -1, dec.Precision(), testCase.name)
+		assert.Equal(t, testCase.expectScale, dec.Scale(), testCase.name)
+		assert.Equal(t, testCase.expectValue, dec.Value(), testCase.name)
+	}
+
 }

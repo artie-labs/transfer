@@ -87,7 +87,6 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ex
 //   - `scale` (number of digits following decimal point)
 //   - `connect.decimal.precision` which is an optional parameter. (If -1, then it's variable and .Value() will be in STRING).
 func DecodeDecimal(encoded string, parameters map[string]interface{}) (*decimal.Decimal, error) {
-	// TODO: test
 	scale, scaleErr := maputil.GetIntegerFromMap(parameters, "scale")
 	if scaleErr != nil {
 		return nil, scaleErr
