@@ -19,11 +19,37 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-var topicToConsumer map[string]kafkalib.Consumer
+var topicToConsumer *TopicToConsumer
+
+func NewTopicToConsumer() *TopicToConsumer {
+	return &TopicToConsumer{
+		topicToConsumer: make(map[string]kafkalib.Consumer),
+	}
+}
+
+type TopicToConsumer struct {
+	topicToConsumer map[string]kafkalib.Consumer
+	sync.RWMutex
+}
+
+func (t *TopicToConsumer) Add(topic string, consumer kafkalib.Consumer) {
+	t.Lock()
+	defer t.Unlock()
+	t.topicToConsumer[topic] = consumer
+	return
+}
+
+func (t *TopicToConsumer) Get(topic string) kafkalib.Consumer {
+	t.RLock()
+	defer t.RUnlock()
+	return t.topicToConsumer[topic]
+}
 
 // SetKafkaConsumer - This is used for tests.
 func SetKafkaConsumer(_topicToConsumer map[string]kafkalib.Consumer) {
-	topicToConsumer = _topicToConsumer
+	topicToConsumer = &TopicToConsumer{
+		topicToConsumer: _topicToConsumer,
+	}
 }
 
 func StartConsumer(ctx context.Context) {
@@ -60,7 +86,7 @@ func StartConsumer(ctx context.Context) {
 	}
 
 	tcFmtMap := NewTcFmtMap()
-	topicToConsumer = make(map[string]kafkalib.Consumer)
+	topicToConsumer = NewTopicToConsumer()
 	var topics []string
 	for _, topicConfig := range settings.Config.Kafka.TopicConfigs {
 		tcFmtMap.Add(topicConfig.Topic, TopicConfigFormatter{
@@ -88,7 +114,7 @@ func StartConsumer(ctx context.Context) {
 
 			kafkaCfg.Brokers = brokers
 			kafkaConsumer := kafka.NewReader(kafkaCfg)
-			topicToConsumer[topic] = kafkaConsumer
+			topicToConsumer.Add(topic, kafkaConsumer)
 			for {
 				kafkaMsg, err := kafkaConsumer.FetchMessage(ctx)
 				msg := artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)

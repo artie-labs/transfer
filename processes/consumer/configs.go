@@ -44,7 +44,7 @@ func CommitOffset(ctx context.Context, topic string, partitionsToOffset map[stri
 	for _, msgs := range partitionsToOffset {
 		for _, msg := range msgs {
 			if msg.KafkaMsg != nil {
-				err = topicToConsumer[topic].CommitMessages(ctx, *msg.KafkaMsg)
+				err = topicToConsumer.Get(topic).CommitMessages(ctx, *msg.KafkaMsg)
 				if err != nil {
 					return err
 				}
