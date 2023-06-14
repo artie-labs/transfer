@@ -6,6 +6,8 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/ptr"
+
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 
 	"github.com/artie-labs/transfer/lib/maputil"
@@ -92,13 +94,14 @@ func DecodeDecimal(encoded string, parameters map[string]interface{}) (*decimal.
 		return nil, scaleErr
 	}
 
-	if _, isOk := parameters[KafkaDecimalPrecisionKey]; !isOk {
-		parameters[KafkaDecimalPrecisionKey] = decimal.MaxPrecisionBeforeString
-	}
+	var precPtr *int
+	if _, isOk := parameters[KafkaDecimalPrecisionKey]; isOk {
+		precision, precisionErr := maputil.GetIntegerFromMap(parameters, KafkaDecimalPrecisionKey)
+		if precisionErr != nil {
+			return nil, precisionErr
+		}
 
-	precision, precisionErr := maputil.GetIntegerFromMap(parameters, KafkaDecimalPrecisionKey)
-	if precisionErr != nil {
-		return nil, precisionErr
+		precPtr = ptr.ToInt(precision)
 	}
 
 	data, err := base64.StdEncoding.DecodeString(encoded)
@@ -120,7 +123,7 @@ func DecodeDecimal(encoded string, parameters map[string]interface{}) (*decimal.
 
 	// Perform the division
 	bigFloat.Quo(bigFloat, divisorFloat)
-	return decimal.NewDecimal(scale, precision, bigFloat), nil
+	return decimal.NewDecimal(scale, precPtr, bigFloat), nil
 }
 
 func DecodeDebeziumVariableDecimal(value interface{}) (*decimal.Decimal, error) {

@@ -89,7 +89,7 @@ func kindToBigQuery(kindDetails KindDetails) string {
 			return "time"
 		}
 	case EDecimal.Kind:
-		return kindDetails.ExtendedDecimalDetails.SnowflakeKind()
+		return kindDetails.ExtendedDecimalDetails.BigQueryKind()
 	}
 
 	return kindDetails.Kind
