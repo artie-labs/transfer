@@ -1,28 +1,37 @@
 package typing
 
 import (
+	"testing"
+
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestSnowflakeTypeToKindNumber(t *testing.T) {
-	expectedIntegers := []string{"number(38, 0)", "number(2, 0)", "number (3, 0)"}
+	expectedIntegers := []string{"number(38, 0)", "number(2, 0)", "number(3, 0)"}
 	for _, expectedInteger := range expectedIntegers {
 		assert.Equal(t, SnowflakeTypeToKind(expectedInteger), Integer, expectedInteger)
 	}
 
-	expectedFloats := []string{"number(38, 1)", "number(2, 2)", "number (2, 30)"}
+	expectedFloats := []string{"number(38, 1)", "number(2, 2)", "number(2, 30)"}
 	for _, expectedFloat := range expectedFloats {
-		assert.Equal(t, SnowflakeTypeToKind(expectedFloat), Float, expectedFloat)
+		assert.Equal(t, SnowflakeTypeToKind(expectedFloat), EDecimal, expectedFloat)
 	}
 }
 
 func TestSnowflakeTypeToKindFloats(t *testing.T) {
-	expectedFloats := []string{"NUMBER(38, 2)", "DECIMAL", "NUMERIC", "FLOAT", "FLOAT4", "FLOAT8", "DOUBLE",
+	expectedFloats := []string{"FLOAT", "FLOAT4", "FLOAT8", "DOUBLE",
 		"DOUBLE PRECISION", "REAL"}
 	for _, expectedFloat := range expectedFloats {
 		assert.Equal(t, SnowflakeTypeToKind(expectedFloat), Float, expectedFloat)
+	}
+
+	// Invalid because precision nor scale is included.
+	assert.Equal(t, SnowflakeTypeToKind("NUMERIC"), Invalid)
+
+	expectedNumerics := []string{"NUMERIC(38, 2)", "NUMBER(38, 2)", "DECIMAL"}
+	for _, expectedNumeric := range expectedNumerics {
+		assert.Equal(t, SnowflakeTypeToKind(expectedNumeric), EDecimal, expectedNumeric)
 	}
 }
 

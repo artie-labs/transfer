@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/typing/decimal"
+
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/array"
@@ -17,6 +19,13 @@ import (
 func CastColVal(colVal interface{}, colKind columns.Column) (interface{}, error) {
 	if colVal != nil {
 		switch colKind.KindDetails.Kind {
+		case typing.EDecimal.Kind:
+			val, isOk := colVal.(*decimal.Decimal)
+			if !isOk {
+				return nil, fmt.Errorf("colVal is not type *decimal.Decimal")
+			}
+
+			return val.Value(), nil
 		case typing.ETime.Kind:
 			extTime, err := ext.ParseFromInterface(colVal)
 			if err != nil {

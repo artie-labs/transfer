@@ -142,7 +142,7 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...columns.Column) 
 			if ColumnAlreadyExistErr(err, args.Dwh.Label()) {
 				err = nil
 			} else if err != nil {
-				return err
+				return fmt.Errorf("failed to apply ddl, sql: %v, err: %v", sqlQuery, err)
 			}
 		}
 	}

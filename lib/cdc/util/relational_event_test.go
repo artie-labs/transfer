@@ -3,12 +3,13 @@ package util
 import (
 	"context"
 	"encoding/json"
+	"testing"
+	"time"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestSource_GetOptionalSchema(t *testing.T) {

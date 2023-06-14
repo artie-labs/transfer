@@ -2,18 +2,29 @@ package debezium
 
 import (
 	"encoding/json"
+	"testing"
+
+	"github.com/artie-labs/transfer/lib/array"
+
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestField_IsInteger(t *testing.T) {
-	payload := `
-{
+	payload := `{
 	"type": "struct",
 	"fields": [{
 		"type": "struct",
 		"fields": [{
+			"type": "int16",
+			"optional": true,
+			"field": "smallint_test"
+		}, {
+			"type": "int16",
+			"optional": false,
+			"default": 0,
+			"field": "smallserial_test"
+		}, {
 			"type": "int32",
 			"optional": false,
 			"default": 0,
@@ -38,22 +49,34 @@ func TestField_IsInteger(t *testing.T) {
 	"optional": false,
 	"name": "dbserver1.inventory.customers.Envelope",
 	"version": 1
-}
-`
+}`
 
 	var schema Schema
 	err := json.Unmarshal([]byte(payload), &schema)
 	assert.NoError(t, err)
 
-	var checked bool
+	integerKeys := []string{"id", "smallserial_test", "smallint_test"}
+	var foundIntKeys []string
+	var foundNonIntKeys []string
+
 	for _, field := range schema.GetSchemaFromLabel(cdc.After).Fields {
-		if field.FieldName == "id" {
-			assert.True(t, field.IsInteger())
-			checked = true
+		if field.IsInteger() {
+			foundIntKeys = append(foundIntKeys, field.FieldName)
 		} else {
-			assert.False(t, field.IsInteger())
+			foundNonIntKeys = append(foundNonIntKeys, field.FieldName)
 		}
 	}
 
-	assert.True(t, checked)
+	assert.True(t, len(foundIntKeys) > 0)
+	assert.True(t, len(foundNonIntKeys) > 0)
+
+	for _, key := range foundIntKeys {
+		// Make sure these flagged keys are specified within integerKeys.
+		assert.True(t, array.StringContains(integerKeys, key))
+	}
+
+	for _, key := range foundNonIntKeys {
+		// Make sure these flagged keys are specified within integerKeys.
+		assert.False(t, array.StringContains(integerKeys, key))
+	}
 }

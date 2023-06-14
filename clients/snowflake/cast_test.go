@@ -2,8 +2,13 @@ package snowflake
 
 import (
 	"fmt"
+	"math/big"
 	"testing"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/ptr"
+
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
@@ -31,7 +36,6 @@ func evaluateTestCase(t *testing.T, testCase _testCase) {
 	} else {
 		assert.NoError(t, actualErr, testCase.name)
 	}
-
 	assert.Equal(t, testCase.expectedString, actualString, testCase.name)
 }
 
@@ -103,6 +107,23 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Basic() {
 				KindDetails: typing.Struct,
 			},
 			expectedString: `{"hello":"world"}`,
+		},
+		{
+			name:   "numeric data types (backwards compatibility)",
+			colVal: decimal.NewDecimal(2, ptr.ToInt(5), big.NewFloat(55.22)),
+			colKind: columns.Column{
+				KindDetails: typing.Float,
+			},
+
+			expectedString: "55.22",
+		},
+		{
+			name:   "numeric data types",
+			colVal: decimal.NewDecimal(2, ptr.ToInt(38), big.NewFloat(585692791691858.25)),
+			colKind: columns.Column{
+				KindDetails: typing.EDecimal,
+			},
+			expectedString: "585692791691858.25",
 		},
 	}
 

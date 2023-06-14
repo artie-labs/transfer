@@ -33,3 +33,8 @@ release:
 bench_size:
 	go test ./lib/size -bench=Bench -benchtime=10s
 	go test ./lib/optimization -bench=Bench -benchtime=10s
+
+.PHONY: bench_typing
+bench_typing:
+	go test ./lib/typing -bench=Bench -benchtime=20s
+	go test ./lib/debezium -bench=Bench -benchtime=20s

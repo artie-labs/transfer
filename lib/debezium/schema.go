@@ -32,11 +32,12 @@ type FieldsObject struct {
 }
 
 type Field struct {
-	Type         string      `json:"type"`
-	Optional     bool        `json:"optional"`
-	Default      interface{} `json:"default"`
-	FieldName    string      `json:"field"`
-	DebeziumType string      `json:"name"`
+	Type         string                 `json:"type"`
+	Optional     bool                   `json:"optional"`
+	Default      interface{}            `json:"default"`
+	FieldName    string                 `json:"field"`
+	DebeziumType string                 `json:"name"`
+	Parameters   map[string]interface{} `json:"parameters"`
 }
 
 // IsInteger inspects the field object within the schema object, a field is classified as an int
@@ -46,6 +47,6 @@ func (f *Field) IsInteger() (valid bool) {
 		return
 	}
 
-	validIntegerType := f.Type == "int32" || f.Type == "int64"
+	validIntegerType := f.Type == "int16" || f.Type == "int32" || f.Type == "int64"
 	return validIntegerType && f.DebeziumType == ""
 }
