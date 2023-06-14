@@ -5,6 +5,7 @@ import (
 	"math/big"
 )
 
+// Decimal is Artie's wrapper around *big.Float which can store large numbers w/ no precision loss.
 type Decimal struct {
 	scale     int
 	precision int
@@ -20,6 +21,14 @@ const MaxPrecisionBeforeString = 38
 const MaxScaleBeforeStringBigQuery = 9
 
 func NewDecimal(scale, precision int, value *big.Float) *Decimal {
+	if scale > precision && precision != -1 {
+		// Note: -1 precision means it's not specified.
+
+		// This is typically not possible, but Postgres has a design flaw that allows you to do things like: NUMERIC(5, 6) which actually equates to NUMERIC(5, 7)
+		// We are adding `2` to precision because we'll need to account for the leading zero and decimal point.
+		precision += 2
+	}
+
 	return &Decimal{
 		scale:     scale,
 		precision: precision,
@@ -42,7 +51,7 @@ func (d *Decimal) String() string {
 func (d *Decimal) Value() interface{} {
 	// -1 precision is used for variable scaled decimal
 	// We are opting to emit this as a STRING because the value is technically unbounded (can get to ~1 GB).
-	if d.precision > MaxPrecisionBeforeString || d.precision == -1 || d.scale > d.precision {
+	if d.precision > MaxPrecisionBeforeString || d.precision == -1 {
 		return d.String()
 	}
 
@@ -51,8 +60,7 @@ func (d *Decimal) Value() interface{} {
 }
 
 func (d *Decimal) SnowflakeKind() string {
-	// TODO: document NUMERIC(p, s)
-	if d.precision > MaxPrecisionBeforeString || d.precision == -1 || d.scale > d.precision {
+	if d.precision > MaxPrecisionBeforeString || d.precision == -1 {
 		return "STRING"
 	}
 
@@ -60,7 +68,7 @@ func (d *Decimal) SnowflakeKind() string {
 }
 
 func (d *Decimal) BigQueryKind() string {
-	if d.precision > MaxPrecisionBeforeString || d.precision == -1 || d.scale > MaxScaleBeforeStringBigQuery || d.scale > d.precision {
+	if d.precision > MaxPrecisionBeforeString || d.precision == -1 || d.scale > MaxScaleBeforeStringBigQuery {
 		return "STRING"
 	}
 

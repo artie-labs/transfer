@@ -46,9 +46,10 @@ func SnowflakeTypeToKind(snowflakeType string) KindDetails {
 		if strings.TrimSpace(values[1]) == "0" {
 			return Integer
 		}
-
-		return Float
-	case "decimal", "numeric", "float", "float4",
+		return EDecimal
+	case "numeric", "decimal":
+		return EDecimal
+	case "float", "float4",
 		"float8", "double", "double precision", "real":
 		return Float
 	case "int", "integer", "bigint", "smallint", "tinyint", "byteint":

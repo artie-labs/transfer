@@ -1,9 +1,10 @@
 package typing
 
 import (
+	"testing"
+
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestSnowflakeTypeToKindNumber(t *testing.T) {
@@ -14,15 +15,20 @@ func TestSnowflakeTypeToKindNumber(t *testing.T) {
 
 	expectedFloats := []string{"number(38, 1)", "number(2, 2)", "number (2, 30)"}
 	for _, expectedFloat := range expectedFloats {
-		assert.Equal(t, SnowflakeTypeToKind(expectedFloat), Float, expectedFloat)
+		assert.Equal(t, SnowflakeTypeToKind(expectedFloat), EDecimal, expectedFloat)
 	}
 }
 
 func TestSnowflakeTypeToKindFloats(t *testing.T) {
-	expectedFloats := []string{"NUMBER(38, 2)", "DECIMAL", "NUMERIC", "FLOAT", "FLOAT4", "FLOAT8", "DOUBLE",
+	expectedFloats := []string{"FLOAT", "FLOAT4", "FLOAT8", "DOUBLE",
 		"DOUBLE PRECISION", "REAL"}
 	for _, expectedFloat := range expectedFloats {
 		assert.Equal(t, SnowflakeTypeToKind(expectedFloat), Float, expectedFloat)
+	}
+
+	expectedNumerics := []string{"NUMERIC", "NUMBER(38, 2)", "DECIMAL"}
+	for _, expectedNumeric := range expectedNumerics {
+		assert.Equal(t, SnowflakeTypeToKind(expectedNumeric), EDecimal, expectedNumeric)
 	}
 }
 
