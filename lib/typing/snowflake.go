@@ -28,26 +28,10 @@ func SnowflakeTypeToKind(snowflakeType string) KindDetails {
 	// Geography, geometry date, time, varbinary, binary are currently not supported.
 	switch strings.TrimSpace(strings.ToLower(snowflakeType[:idxStop])) {
 	case "number":
-		// Number is a tricky one, we need to look at the scale to see if it's an integer or not
-		// Number is represented as Number(scale, precision)
-		// If precision > 0, then float. Else int.
-		idxEnd := strings.Index(snowflakeType, ")")
-		if idxStop >= idxEnd {
-			// This may happen, because ')' is missing, and the index is -1.
-			// idxStop is going to be the whole list, if it doesn't exist.
-			return Invalid
-		}
-
-		values := strings.Split(snowflakeType[idxStop+1:idxEnd], ",")
-		if len(values) != 2 {
-			return Invalid
-		}
-
-		if strings.TrimSpace(values[1]) == "0" {
-			return Integer
-		}
-		return EDecimal
-	case "numeric", "decimal":
+		return ParseNumeric("number", snowflakeType)
+	case "numeric":
+		return ParseNumeric(defaultPrefix, snowflakeType)
+	case "decimal":
 		return EDecimal
 	case "float", "float4",
 		"float8", "double", "double precision", "real":

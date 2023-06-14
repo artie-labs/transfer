@@ -5,13 +5,78 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+
+	"github.com/artie-labs/transfer/lib/logger"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/optimization"
-	"github.com/artie-labs/transfer/lib/typing"
 )
+
+const (
+	// Column names from SELECT column_name, data_type FROM  `project.INFORMATION_SCHEMA.COLUMNS` WHERE table_name="table";
+	describeNameCol = "column_name"
+	describeTypeCol = "data_type"
+)
+
+func (s *Store) describeTable(ctx context.Context, tableData *optimization.TableData) (map[string]string, error) {
+	log := logger.FromContext(ctx)
+	rows, err := s.Query(fmt.Sprintf("SELECT column_name, data_type FROM  `%s.INFORMATION_SCHEMA.COLUMNS` WHERE table_name='%s';",
+		tableData.TopicConfig.Database, tableData.Name()))
+	defer func() {
+		if rows != nil {
+			err = rows.Close()
+			if err != nil {
+				log.WithError(err).Warn("Failed to close the row")
+			}
+		}
+	}()
+
+	if err != nil {
+		// The query will not fail if the table doesn't exist. It will simply return 0 rows.
+		// It WILL fail if the dataset doesn't exist or if it encounters any other forms of error.
+		return nil, err
+	}
+
+	retMap := make(map[string]string)
+	for rows != nil && rows.Next() {
+		// figure out what columns were returned
+		// the column names will be the JSON object field keys
+		cols, err := rows.ColumnTypes()
+		if err != nil {
+			return nil, err
+		}
+
+		var columnNameList []string
+		// Scan needs an array of pointers to the values it is setting
+		// This creates the object and sets the values correctly
+		values := make([]interface{}, len(cols))
+		for idx, column := range cols {
+			values[idx] = new(interface{})
+			columnNameList = append(columnNameList, strings.ToLower(column.Name()))
+		}
+
+		err = rows.Scan(values...)
+		if err != nil {
+			return nil, err
+		}
+		row := make(map[string]string)
+		for idx, val := range values {
+			interfaceVal, isOk := val.(*interface{})
+			if !isOk || interfaceVal == nil {
+				return nil, fmt.Errorf("invalid value")
+			}
+
+			row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
+		}
+
+		retMap[row[describeNameCol]] = row[describeTypeCol]
+	}
+
+	return retMap, nil
+}
 
 func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	fqName := tableData.ToFqName(ctx, constants.BigQuery)
@@ -20,94 +85,18 @@ func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.Tabl
 		return tc, nil
 	}
 
-	rows, err := s.Query(fmt.Sprintf("SELECT ddl FROM %s.INFORMATION_SCHEMA.TABLES where table_name = '%s' LIMIT 1;",
-		tableData.TopicConfig.Database, tableData.Name()))
+	retMap, err := s.describeTable(ctx, tableData)
 	if err != nil {
-		// The query will not fail if the table doesn't exist. It will simply return 0 rows.
-		// It WILL fail if the dataset doesn't exist or if it encounters any other forms of error.
-		return nil, err
+		return nil, fmt.Errorf("failed to describe table, err: %v", err)
 	}
 
-	var sqlRow string
-	for rows != nil && rows.Next() {
-		var row string
-		err = rows.Scan(&row)
-		if err != nil {
-			return nil, err
-		}
-
-		sqlRow = row
-		break
+	var bqColumns columns.Columns
+	for column, columnType := range retMap {
+		bqColumns.AddColumn(columns.NewColumn(column, typing.BigQueryTypeToKind(columnType)))
 	}
 
-	// Table doesn't exist if the information schema query returned nothing.
-	tableConfig, err := parseSchemaQuery(sqlRow, len(sqlRow) == 0, tableData.TopicConfig.DropDeletedColumns)
-	if err != nil {
-		return nil, err
-	}
-
+	// If retMap is empty, it'll create a new table.
+	tableConfig := types.NewDwhTableConfig(&bqColumns, nil, len(retMap) == 0, tableData.TopicConfig.DropDeletedColumns)
 	s.configMap.AddTableToConfig(fqName, tableConfig)
 	return tableConfig, nil
-}
-
-// parseSchemaQuery is to parse out the results from this query: https://cloud.google.com/bigquery/docs/information-schema-tables#example_1
-func parseSchemaQuery(row string, createTable, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
-	if createTable {
-		return types.NewDwhTableConfig(&columns.Columns{}, nil, createTable, dropDeletedColumns), nil
-	}
-
-	// TrimSpace only does the L + R side.
-	ddlString := strings.TrimSpace(row)
-
-	leftBracketIdx := strings.Index(ddlString, "(")
-	if leftBracketIdx < 0 || (leftBracketIdx+1) > len(ddlString) {
-		return nil, fmt.Errorf("malformed DDL string: %s", ddlString)
-	}
-
-	// Sometimes the DDL statement has OPTIONS, sometimes it doesn't.
-	// The cases we need to care for:
-	// 1) CREATE TABLE `foo` (col_1 string, col_2 string) OPTIONS (...);
-	// 2) CREATE TABLE `foo` (col_1 string, col_2 string)OPTIONS (...);
-	// 3) CREATE TABLE `foo` (col_1 string, col_2 string);
-	optionsIdx := strings.Index(ddlString, "OPTIONS")
-	if optionsIdx < 0 {
-		// This means, optionsIdx doesn't exist, so let's defer to finding the end of the statement (;).
-		optionsIdx = len(ddlString)
-	}
-
-	if optionsIdx < 0 {
-		return nil, fmt.Errorf("malformed DDL string: missing options, %s", ddlString)
-	}
-
-	if leftBracketIdx == optionsIdx {
-		return nil, fmt.Errorf("malformed DDL string: position of ( and options are the same, %s", ddlString)
-	}
-
-	ddlString = ddlString[leftBracketIdx+1 : optionsIdx]
-	endOfStatement := strings.LastIndex(ddlString, ")")
-	if endOfStatement < 0 || (endOfStatement-1) < 0 {
-		return nil, fmt.Errorf("malformed DDL string: missing (, %s", ddlString)
-	}
-
-	var bigQueryColumns columns.Columns
-	ddlString = ddlString[:endOfStatement]
-	columnsToTypes := strings.Split(ddlString, ",")
-	for _, colType := range columnsToTypes {
-		// TrimSpace will clear spaces, \t, \n for both L+R side of the string.
-		colType = strings.TrimSpace(colType)
-		if colType == "" {
-			// This is because the schema can have a trailing `,` at the end of the list.
-			// BigQuery is inconsistent in this manner.
-			continue
-		}
-
-		parts := strings.Split(colType, " ")
-		if len(parts) < 2 {
-			return nil, fmt.Errorf("unexpected colType, colType: %s, parts: %v", colType, parts)
-		}
-
-		bigQueryColumns.AddColumn(columns.NewColumn(columns.UnescapeColumnName(parts[0], constants.BigQuery), typing.BigQueryTypeToKind(strings.Join(parts[1:], " "))))
-	}
-
-	return types.NewDwhTableConfig(&bigQueryColumns, nil, createTable, dropDeletedColumns), nil
 }
