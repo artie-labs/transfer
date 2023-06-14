@@ -109,14 +109,17 @@ func DecodeDecimal(encoded string, parameters map[string]interface{}) (*decimal.
 	bigInt := new(big.Int)
 	bigInt.SetBytes(data)
 
-	// Convert the big integer to a big float, and divide it by 10^scale
+	// Convert the big integer to a big float
 	bigFloat := new(big.Float).SetInt(bigInt)
-	divisor := new(big.Float).SetFloat64(float64(1))
-	for i := 0; i < scale; i++ {
-		divisor.Mul(divisor, big.NewFloat(float64(10)))
-	}
 
-	bigFloat.Quo(bigFloat, divisor)
+	// Compute divisor as 10^scale with big.Int's Exp, then convert to big.Float
+	scaleInt := big.NewInt(int64(scale))
+	ten := big.NewInt(10)
+	divisorInt := new(big.Int).Exp(ten, scaleInt, nil)
+	divisorFloat := new(big.Float).SetInt(divisorInt)
+
+	// Perform the division
+	bigFloat.Quo(bigFloat, divisorFloat)
 	return decimal.NewDecimal(scale, precision, bigFloat), nil
 }
 
