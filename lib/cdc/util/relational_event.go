@@ -129,7 +129,6 @@ func (s *SchemaEventPayload) GetData(ctx context.Context, pkMap map[string]inter
 
 				switch debezium.SupportedDebeziumType(field.DebeziumType) {
 				case debezium.KafkaDecimalType:
-					// TODO pass precision
 					decimalVal, err := debezium.DecodeDecimal(fmt.Sprint(val), field.Parameters)
 					if err == nil {
 						retMap[field.FieldName] = decimalVal
