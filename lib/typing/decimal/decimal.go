@@ -44,6 +44,9 @@ func (d *Decimal) Precision() int {
 	return d.precision
 }
 
+// String() is used to override fmt.Sprint(val), where val type is *decimal.Decimal
+// This is particularly useful for Snowflake because we're writing all the values as STRINGS into TSV format.
+// This function guarantees backwards compatibility.
 func (d *Decimal) String() string {
 	return d.value.Text('f', d.scale)
 }
