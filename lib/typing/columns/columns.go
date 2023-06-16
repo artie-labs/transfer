@@ -31,17 +31,24 @@ func UnescapeColumnName(escapedName string, destKind constants.DestinationKind) 
 	}
 }
 
-func NewColumn(name string, kd typing.KindDetails, defaultValue interface{}) Column {
+func NewColumn(name string, kd typing.KindDetails) Column {
 	return Column{
-		name:         name,
-		KindDetails:  kd,
-		DefaultValue: defaultValue,
+		name:        name,
+		KindDetails: kd,
 	}
+}
+
+func (c *Column) SetDefaultValue(value interface{}) {
+	c.DefaultValue = value
 }
 
 func (c *Column) ToLowerName() {
 	c.name = strings.ToLower(c.name)
 	return
+}
+
+func (c *Column) ShouldBackfill() bool {
+	return c.shouldBackfill
 }
 
 type NameArgs struct {
@@ -172,12 +179,19 @@ func (c *Columns) GetColumns() []Column {
 	return cols
 }
 
+// UpdateColumn will update the column and also preserve the `defaultValue` from the previous column if the new column does not have one.
 func (c *Columns) UpdateColumn(updateCol Column) {
+	//TODO: Test
 	c.Lock()
 	defer c.Unlock()
 
 	for index, col := range c.columns {
 		if col.name == updateCol.name {
+			if col.DefaultValue != nil && updateCol.DefaultValue == nil {
+				updateCol.DefaultValue = col.DefaultValue
+				updateCol.shouldBackfill = true
+			}
+
 			c.columns[index] = updateCol
 			return
 		}

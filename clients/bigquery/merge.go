@@ -136,6 +136,9 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 	// End temporary table creation
 
+	// Backfill columns if necessary
+
+	// Perform actual merge now
 	rows, err := merge(tableData)
 	if err != nil {
 		log.WithError(err).Warn("failed to generate the merge query")
