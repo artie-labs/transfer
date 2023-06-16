@@ -185,7 +185,11 @@ func (t *TableData) UpdateInMemoryColumnsFromDestination(cols ...columns.Column)
 		}
 
 		if found {
+			// We should take `kindDetails.kind`, `defaultValue` and `shouldBackfill` from foundCol
 			inMemoryCol.KindDetails.Kind = foundColumn.KindDetails.Kind
+			inMemoryCol.DefaultValue = foundColumn.DefaultValue
+			inMemoryCol.SetShouldBackfill(foundColumn.ShouldBackfill())
+
 			if foundColumn.KindDetails.ExtendedTimeDetails != nil {
 				if inMemoryCol.KindDetails.ExtendedTimeDetails == nil {
 					inMemoryCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{}

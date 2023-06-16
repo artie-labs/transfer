@@ -13,6 +13,7 @@ import (
 
 type Column struct {
 	name        string
+	primaryKey  bool
 	KindDetails typing.KindDetails
 	// ToastColumn indicates that the source column is a TOAST column and the value is unavailable
 	// We have stripped this out.
@@ -47,7 +48,16 @@ func (c *Column) ToLowerName() {
 	return
 }
 
+func (c *Column) SetShouldBackfill(val bool) {
+	c.shouldBackfill = val
+	return
+}
 func (c *Column) ShouldBackfill() bool {
+	if c.primaryKey {
+		// Never need to backfill primary key.
+		return false
+	}
+
 	return c.shouldBackfill
 }
 
@@ -187,6 +197,7 @@ func (c *Columns) UpdateColumn(updateCol Column) {
 
 	for index, col := range c.columns {
 		if col.name == updateCol.name {
+			fmt.Println("name", col.name, "col", col.DefaultValue, "updateCol", updateCol.DefaultValue)
 			if col.DefaultValue != nil && updateCol.DefaultValue == nil {
 				updateCol.DefaultValue = col.DefaultValue
 				updateCol.shouldBackfill = true

@@ -63,7 +63,9 @@ func (s *Store) backfillColumn(ctx context.Context, column *columns.Column, valu
 
 	fqTableName = strings.ToLower(fqTableName)
 	escapedCol := column.Name(&columns.NameArgs{Escape: true, DestKind: s.Label()})
-	query := fmt.Sprintf(`BEGIN; UPDATE %s SET %s = %v WHERE %s IS NULL; ALTER TABLE %s ALTER COLUMN %s SET OPTIONS (description="%s"); COMMIT;`,
+	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;
+
+	ALTER TABLE %s ALTER COLUMN %s SET OPTIONS (description="%s"); COMMIT;`,
 		// UPDATE table SET col = default_val WHERE col IS NULL
 		fqTableName, escapedCol, value, escapedCol,
 		// ALTER TABLE table ALTER COLUMN col set OPTIONS (description=...)

@@ -7,8 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/dwh"
-
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -21,22 +19,29 @@ import (
 
 // BackfillColumn will perform a backfill to the destination and also update the comment within a transaction.
 // Source: https://docs.snowflake.com/en/sql-reference/sql/comment
-func (s *Store) backfillColumn(ctx context.Context, dwh dwh.DataWarehouse, column *columns.Column, value interface{}, fqTableName string) error {
+func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTableName string) error {
 	if !column.ShouldBackfill() {
 		// If we don't need to backfill, don't backfill.
 		return nil
 	}
 
 	fqTableName = strings.ToLower(fqTableName)
-	escapedCol := column.Name(&columns.NameArgs{Escape: true, DestKind: dwh.Label()})
-	query := fmt.Sprintf(`BEGIN; UPDATE %s SET %s = %v WHERE %s IS NULL; COMMENT ON COLUMN %s.%s IS '%v'; COMMIT;`,
+	escapedCol := column.Name(&columns.NameArgs{Escape: true, DestKind: s.Label()})
+	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
 		// UPDATE table SET col = default_val WHERE col IS NULL
-		fqTableName, escapedCol, value, escapedCol,
-		// COMMENT on col table.col IS ...
-		fqTableName, escapedCol, `{"backfilled": true}`,
+		fqTableName, escapedCol, column.DefaultValue, escapedCol,
 	)
 
-	_, err := dwh.Exec(query)
+	fmt.Println("query", query)
+
+	_, err := s.Exec(query)
+	if err != nil {
+		return fmt.Errorf("failed to backfill, err: %v", err)
+	}
+
+	query = fmt.Sprintf(`COMMENT ON COLUMN %s.%s IS '%v';`, fqTableName, escapedCol, `{"backfilled": true}`)
+	fmt.Println("query", query)
+	_, err = s.Exec(query)
 	return err
 }
 
@@ -196,6 +201,14 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label()), tableData.TempTableSuffix())
 	if err = s.prepareTempTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {
 		return err
+	}
+
+	// Now iterate over all the in-memory cols and see which one requires backfill.
+	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
+		err = s.backfillColumn(ctx, col, tableData.ToFqName(ctx, s.Label()))
+		if err != nil {
+			return fmt.Errorf("failed to backfill col: %v, default value: %v, error: %v", col.Name(nil), col.DefaultValue, err)
+		}
 	}
 
 	// Prepare merge statement
