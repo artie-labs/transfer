@@ -92,7 +92,7 @@ func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.Tabl
 
 	var bqColumns columns.Columns
 	for column, columnType := range retMap {
-		bqColumns.AddColumn(columns.NewColumn(column, typing.BigQueryTypeToKind(columnType)))
+		bqColumns.AddColumn(columns.NewColumn(column, typing.BigQueryTypeToKind(columnType), nil))
 	}
 
 	// If retMap is empty, it'll create a new table.

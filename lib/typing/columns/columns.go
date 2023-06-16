@@ -17,7 +17,9 @@ type Column struct {
 	// ToastColumn indicates that the source column is a TOAST column and the value is unavailable
 	// We have stripped this out.
 	// Whenever we see the same column where there's an opposite value in `toastColumn`, we will trigger a flush
-	ToastColumn bool
+	ToastColumn    bool
+	DefaultValue   interface{}
+	shouldBackfill bool
 }
 
 func UnescapeColumnName(escapedName string, destKind constants.DestinationKind) string {
@@ -29,10 +31,11 @@ func UnescapeColumnName(escapedName string, destKind constants.DestinationKind) 
 	}
 }
 
-func NewColumn(name string, kd typing.KindDetails) Column {
+func NewColumn(name string, kd typing.KindDetails, defaultValue interface{}) Column {
 	return Column{
-		name:        name,
-		KindDetails: kd,
+		name:         name,
+		KindDetails:  kd,
+		DefaultValue: defaultValue,
 	}
 }
 
