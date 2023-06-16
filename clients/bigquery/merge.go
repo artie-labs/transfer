@@ -3,6 +3,7 @@ package bigquery
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
@@ -50,6 +51,27 @@ func merge(tableData *optimization.TableData) ([]*Row, error) {
 	}
 
 	return rows, nil
+}
+
+// BackfillColumn will perform a backfill to the destination and also update the comment within a transaction.
+// Source: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-definition-language#column_set_options_list
+func (s *Store) backfillColumn(ctx context.Context, column *columns.Column, value interface{}, fqTableName string) error {
+	if !column.ShouldBackfill() {
+		// If we don't need to backfill, don't backfill.
+		return nil
+	}
+
+	fqTableName = strings.ToLower(fqTableName)
+	escapedCol := column.Name(&columns.NameArgs{Escape: true, DestKind: s.Label()})
+	query := fmt.Sprintf(`BEGIN; UPDATE %s SET %s = %v WHERE %s IS NULL; ALTER TABLE %s ALTER COLUMN %s SET OPTIONS (description="%s"); COMMIT;`,
+		// UPDATE table SET col = default_val WHERE col IS NULL
+		fqTableName, escapedCol, value, escapedCol,
+		// ALTER TABLE table ALTER COLUMN col set OPTIONS (description=...)
+		fqTableName, `{"backfilled": true}`,
+	)
+
+	_, err := s.Exec(query)
+	return err
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {

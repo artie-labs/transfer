@@ -15,28 +15,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-// BackfillColumn will perform a backfill to the destination and also update the comment within a transaction.
-func BackfillColumn(ctx context.Context, dwh dwh.DataWarehouse, column *columns.Column, value interface{}, fqTableName string) error {
-	if !column.ShouldBackfill() {
-		// If we don't need to backfill, don't backfill.
-		return nil
-	}
-
-	fqTableName = strings.ToLower(fqTableName)
-	escapedCol := column.Name(&columns.NameArgs{Escape: true, DestKind: dwh.Label()})
-	query := fmt.Sprintf(`BEGIN; UPDATE %s SET %s = %v WHERE %s IS NULL;ALTER TABLE %s COMMENT = '%v';COMMIT;`,
-		// UPDATE table SET col = default_val
-		fqTableName, escapedCol, value,
-		// WHERE col is NULL;
-		escapedCol,
-		// ALTER TABLE col comment = comment
-		fqTableName, `{"backfilled": true}`,
-	)
-
-	_, err := dwh.Exec(query)
-	return err
-}
-
 // DropTemporaryTable - this will drop the temporary table from Snowflake w/ stages and BigQuery
 // It has a safety check to make sure the tableName contains the `constants.ArtiePrefix` key.
 // Temporary tables look like this: database.schema.tableName__artie__RANDOM_STRING(10)

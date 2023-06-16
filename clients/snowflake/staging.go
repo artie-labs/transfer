@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/dwh"
+
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -16,6 +18,27 @@ import (
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 )
+
+// BackfillColumn will perform a backfill to the destination and also update the comment within a transaction.
+// Source: https://docs.snowflake.com/en/sql-reference/sql/comment
+func (s *Store) backfillColumn(ctx context.Context, dwh dwh.DataWarehouse, column *columns.Column, value interface{}, fqTableName string) error {
+	if !column.ShouldBackfill() {
+		// If we don't need to backfill, don't backfill.
+		return nil
+	}
+
+	fqTableName = strings.ToLower(fqTableName)
+	escapedCol := column.Name(&columns.NameArgs{Escape: true, DestKind: dwh.Label()})
+	query := fmt.Sprintf(`BEGIN; UPDATE %s SET %s = %v WHERE %s IS NULL; COMMENT ON COLUMN %s.%s IS '%v'; COMMIT;`,
+		// UPDATE table SET col = default_val WHERE col IS NULL
+		fqTableName, escapedCol, value, escapedCol,
+		// COMMENT on col table.col IS ...
+		fqTableName, escapedCol, `{"backfilled": true}`,
+	)
+
+	_, err := dwh.Exec(query)
+	return err
+}
 
 // prepareTempTable does the following:
 // 1) Create the temporary table
