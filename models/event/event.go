@@ -31,12 +31,20 @@ type Event struct {
 }
 
 func ToMemoryEvent(ctx context.Context, event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) Event {
+	cols := event.GetColumns()
+	// Now iterate over pkMap and tag each column that is a primary key
+	for primaryKey := range pkMap {
+		cols.UpsertColumn(primaryKey, columns.UpsertColumnArg{
+			PrimaryKey: true,
+		})
+	}
+
 	return Event{
 		Table:          stringutil.Override(event.GetTableName(), tc.TableName),
 		PrimaryKeyMap:  pkMap,
 		ExecutionTime:  event.GetExecutionTime(),
 		OptionalSchema: event.GetOptionalSchema(ctx),
-		Columns:        event.GetColumns(),
+		Columns:        cols,
 		Data:           event.GetData(ctx, pkMap, tc),
 	}
 }
@@ -140,7 +148,9 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 		}
 
 		if val == constants.ToastUnavailableValuePlaceholder {
-			inMemoryColumns.UpsertColumn(newColName, true)
+			inMemoryColumns.UpsertColumn(newColName, columns.UpsertColumnArg{
+				ToastCol: true,
+			})
 		} else {
 			retrievedColumn, isOk := inMemoryColumns.GetColumn(newColName)
 			if !isOk {

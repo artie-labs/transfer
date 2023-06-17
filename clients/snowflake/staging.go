@@ -32,15 +32,12 @@ func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTab
 		fqTableName, escapedCol, column.DefaultValue, escapedCol,
 	)
 
-	fmt.Println("query", query)
-
 	_, err := s.Exec(query)
 	if err != nil {
 		return fmt.Errorf("failed to backfill, err: %v", err)
 	}
 
 	query = fmt.Sprintf(`COMMENT ON COLUMN %s.%s IS '%v';`, fqTableName, escapedCol, `{"backfilled": true}`)
-	fmt.Println("query", query)
 	_, err = s.Exec(query)
 	return err
 }

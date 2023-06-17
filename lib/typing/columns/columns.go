@@ -21,6 +21,7 @@ type Column struct {
 	ToastColumn    bool
 	DefaultValue   interface{}
 	shouldBackfill bool
+	backfilled     bool
 }
 
 func UnescapeColumnName(escapedName string, destKind constants.DestinationKind) string {
@@ -39,6 +40,15 @@ func NewColumn(name string, kd typing.KindDetails) Column {
 	}
 }
 
+func (c *Column) SetBackfilled(backfilled bool) {
+	c.backfilled = backfilled
+	return
+}
+
+func (c *Column) Backfilled() bool {
+	return c.backfilled
+}
+
 func (c *Column) SetDefaultValue(value interface{}) {
 	c.DefaultValue = value
 }
@@ -48,17 +58,14 @@ func (c *Column) ToLowerName() {
 	return
 }
 
-func (c *Column) SetShouldBackfill(val bool) {
-	c.shouldBackfill = val
-	return
-}
 func (c *Column) ShouldBackfill() bool {
 	if c.primaryKey {
 		// Never need to backfill primary key.
 		return false
 	}
 
-	return c.shouldBackfill
+	// Should backfill if the default value is not null and the column has not been backfilled.
+	return c.DefaultValue != nil && c.backfilled == false
 }
 
 type NameArgs struct {
@@ -101,15 +108,21 @@ func (c *Columns) EscapeName(args *NameArgs) {
 	return
 }
 
+type UpsertColumnArg struct {
+	ToastCol   bool
+	PrimaryKey bool
+}
+
 // UpsertColumn - just a wrapper around UpdateColumn and AddColumn
 // If it doesn't find a column, it'll add one where the kind = Invalid.
-func (c *Columns) UpsertColumn(colName string, toastColumn bool) {
+func (c *Columns) UpsertColumn(colName string, arg UpsertColumnArg) {
 	if colName == "" {
 		return
 	}
 
 	if col, isOk := c.GetColumn(colName); isOk {
-		col.ToastColumn = toastColumn
+		col.ToastColumn = arg.ToastCol
+		col.primaryKey = arg.PrimaryKey
 		c.UpdateColumn(col)
 		return
 	}
@@ -117,7 +130,8 @@ func (c *Columns) UpsertColumn(colName string, toastColumn bool) {
 	c.AddColumn(Column{
 		name:        colName,
 		KindDetails: typing.Invalid,
-		ToastColumn: toastColumn,
+		ToastColumn: arg.ToastCol,
+		primaryKey:  arg.PrimaryKey,
 	})
 	return
 }
@@ -197,7 +211,6 @@ func (c *Columns) UpdateColumn(updateCol Column) {
 
 	for index, col := range c.columns {
 		if col.name == updateCol.name {
-			fmt.Println("name", col.name, "col", col.DefaultValue, "updateCol", updateCol.DefaultValue)
 			if col.DefaultValue != nil && updateCol.DefaultValue == nil {
 				updateCol.DefaultValue = col.DefaultValue
 				updateCol.shouldBackfill = true

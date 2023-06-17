@@ -186,9 +186,10 @@ func (t *TableData) UpdateInMemoryColumnsFromDestination(cols ...columns.Column)
 
 		if found {
 			// We should take `kindDetails.kind`, `defaultValue` and `shouldBackfill` from foundCol
+			// We are not taking primaryKey because DWH does not have this information.
 			inMemoryCol.KindDetails.Kind = foundColumn.KindDetails.Kind
 			inMemoryCol.DefaultValue = foundColumn.DefaultValue
-			inMemoryCol.SetShouldBackfill(foundColumn.ShouldBackfill())
+			inMemoryCol.SetBackfilled(foundColumn.Backfilled())
 
 			if foundColumn.KindDetails.ExtendedTimeDetails != nil {
 				if inMemoryCol.KindDetails.ExtendedTimeDetails == nil {
