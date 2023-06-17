@@ -106,9 +106,34 @@ func TestProcessMessageFailures(t *testing.T) {
 
 	vals := []string{
 		"",
-		`
-{
-	"schema": {},
+		`{
+	"schema": {
+		"type": "struct",
+		"fields": [{
+			"type": "struct",
+			"fields": [{
+				"type": "int32",
+				"optional": false,
+				"default": 0,
+				"field": "id"
+			}, {
+				"type": "string",
+				"optional": false,
+				"field": "first_name"
+			}, {
+				"type": "string",
+				"optional": false,
+				"field": "last_name"
+			}, {
+				"type": "string",
+				"optional": false,
+				"field": "email"
+			}],
+			"optional": true,
+			"name": "dbserver1.inventory.customers.Value",
+			"field": "after"
+		}]
+	},
 	"payload": {
 		"before": null,
 		"after": "{\"_id\": {\"$numberLong\": \"1004\"},\"first_name\": \"Anne\",\"last_name\": \"Kretchmar\",\"email\": \"annek@noanswer.org\"}",

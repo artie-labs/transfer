@@ -31,7 +31,7 @@ func (f fakeEvent) GetOptionalSchema(ctx context.Context) map[string]typing.Kind
 }
 
 func (f fakeEvent) GetColumns() *columns.Columns {
-	return nil
+	return &columns.Columns{}
 }
 
 func (f fakeEvent) GetData(ctx context.Context, pkMap map[string]interface{}, config *kafkalib.TopicConfig) map[string]interface{} {

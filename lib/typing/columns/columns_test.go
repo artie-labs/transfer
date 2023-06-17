@@ -185,26 +185,28 @@ func TestColumns_UpsertColumns(t *testing.T) {
 
 	// Now selectively update only a, b
 	for _, key := range []string{"a", "b"} {
-		cols.UpsertColumn(key, true)
+		cols.UpsertColumn(key, UpsertColumnArg{
+			ToastCol: true,
+		})
 
 		// Now inspect.
 		col, _ := cols.GetColumn(key)
 		assert.True(t, col.ToastColumn)
 	}
 
-	cols.UpsertColumn("zzz", false)
+	cols.UpsertColumn("zzz", UpsertColumnArg{})
 	zzzCol, _ := cols.GetColumn("zzz")
 	assert.False(t, zzzCol.ToastColumn)
 	assert.Equal(t, zzzCol.KindDetails, typing.Invalid)
 
-	cols.UpsertColumn("aaa", false)
+	cols.UpsertColumn("aaa", UpsertColumnArg{})
 	aaaCol, _ := cols.GetColumn("aaa")
 	assert.False(t, aaaCol.ToastColumn)
 	assert.Equal(t, aaaCol.KindDetails, typing.Invalid)
 
 	length := len(cols.columns)
 	for i := 0; i < 500; i++ {
-		cols.UpsertColumn("", false)
+		cols.UpsertColumn("", UpsertColumnArg{})
 	}
 
 	assert.Equal(t, length, len(cols.columns))

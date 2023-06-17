@@ -33,10 +33,12 @@ type Event struct {
 func ToMemoryEvent(ctx context.Context, event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) Event {
 	cols := event.GetColumns()
 	// Now iterate over pkMap and tag each column that is a primary key
-	for primaryKey := range pkMap {
-		cols.UpsertColumn(primaryKey, columns.UpsertColumnArg{
-			PrimaryKey: true,
-		})
+	if cols != nil {
+		for primaryKey := range pkMap {
+			cols.UpsertColumn(primaryKey, columns.UpsertColumnArg{
+				PrimaryKey: true,
+			})
+		}
 	}
 
 	return Event{
