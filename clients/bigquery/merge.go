@@ -55,24 +55,34 @@ func merge(tableData *optimization.TableData) ([]*Row, error) {
 
 // BackfillColumn will perform a backfill to the destination and also update the comment within a transaction.
 // Source: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-definition-language#column_set_options_list
-func (s *Store) backfillColumn(ctx context.Context, column *columns.Column, value interface{}, fqTableName string) error {
+func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTableName string) error {
 	if !column.ShouldBackfill() {
 		// If we don't need to backfill, don't backfill.
 		return nil
 	}
 
 	fqTableName = strings.ToLower(fqTableName)
-	escapedCol := column.Name(&columns.NameArgs{Escape: true, DestKind: s.Label()})
-	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;
+	logger.FromContext(ctx).WithFields(map[string]interface{}{
+		"colName":      column.Name(nil),
+		"defaultValue": column.DefaultValue,
+		"table":        fqTableName,
+	}).Info("backfilling column")
 
-	ALTER TABLE %s ALTER COLUMN %s SET OPTIONS (description="%s"); COMMIT;`,
+	escapedCol := column.Name(&columns.NameArgs{Escape: true, DestKind: s.Label()})
+	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
 		// UPDATE table SET col = default_val WHERE col IS NULL
-		fqTableName, escapedCol, value, escapedCol,
-		// ALTER TABLE table ALTER COLUMN col set OPTIONS (description=...)
-		fqTableName, `{"backfilled": true}`,
-	)
+		fqTableName, escapedCol, column.DefaultValue, escapedCol)
 
 	_, err := s.Exec(query)
+	if err != nil {
+		return fmt.Errorf("failed to backfill, err: %v, query: %v", err, query)
+	}
+
+	query = fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET OPTIONS (description=`%s`);",
+		// ALTER TABLE table ALTER COLUMN col set OPTIONS (description=...)
+		fqTableName, escapedCol, `{"backfilled": true}`,
+	)
+	_, err = s.Exec(query)
 	return err
 }
 
@@ -173,6 +183,14 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	err = s.PutTable(ctx, tableData.TopicConfig.Database, tableName, rows)
 	if err != nil {
 		return fmt.Errorf("failed to insert into temp table: %s, error: %v", tableName, err)
+	}
+
+	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
+		err = s.backfillColumn(ctx, col, tableData.ToFqName(ctx, s.Label()))
+		if err != nil {
+			return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v",
+				col.Name(nil), col.DefaultValue, err)
+		}
 	}
 
 	mergeQuery, err := dml.MergeStatement(dml.MergeArgument{

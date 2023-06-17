@@ -133,3 +133,7 @@ func IsValidDestination(destination DestinationKind) bool {
 
 	return false
 }
+
+type ColComment struct {
+	Backfilled bool `json:"backfilled"`
+}

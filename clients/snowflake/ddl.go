@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
+
 	"github.com/artie-labs/transfer/lib/typing"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -14,10 +16,6 @@ import (
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/logger"
 )
-
-type colComment struct {
-	Backfilled bool `json:"backfilled"`
-}
 
 func (s *Store) getTableConfig(ctx context.Context, fqName string, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
 	// Check if it already exists in cache
@@ -82,10 +80,9 @@ func (s *Store) getTableConfig(ctx context.Context, fqName string, dropDeletedCo
 		}
 
 		col := columns.NewColumn(row[describeNameCol], typing.SnowflakeTypeToKind(row[describeTypeCol]))
-
 		if comment, isOk := row[describeCommentCol]; isOk && comment != "<nil>" {
 			// Try to parse the comment.
-			var _colComment colComment
+			var _colComment constants.ColComment
 			err = json.Unmarshal([]byte(comment), &_colComment)
 			if err != nil {
 				return nil, fmt.Errorf("failed to unmarshal comment, err: %v", err)
@@ -99,6 +96,5 @@ func (s *Store) getTableConfig(ctx context.Context, fqName string, dropDeletedCo
 
 	sflkTableConfig := types.NewDwhTableConfig(&snowflakeColumns, nil, tableMissing, dropDeletedColumns)
 	s.configMap.AddTableToConfig(fqName, sflkTableConfig)
-
 	return sflkTableConfig, nil
 }
