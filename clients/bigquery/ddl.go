@@ -83,8 +83,6 @@ func (s *Store) describeTable(ctx context.Context, tableData *optimization.Table
 			row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
 		}
 
-		fmt.Println("row", row)
-
 		retMap[row[describeNameCol]] = columnMetadata{
 			Type:    row[describeTypeCol],
 			Comment: row[describeCommentCol],
