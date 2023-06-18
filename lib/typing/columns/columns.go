@@ -18,10 +18,9 @@ type Column struct {
 	// ToastColumn indicates that the source column is a TOAST column and the value is unavailable
 	// We have stripped this out.
 	// Whenever we see the same column where there's an opposite value in `toastColumn`, we will trigger a flush
-	ToastColumn    bool
-	DefaultValue   interface{}
-	shouldBackfill bool
-	backfilled     bool
+	ToastColumn  bool
+	DefaultValue interface{}
+	backfilled   bool
 }
 
 func UnescapeColumnName(escapedName string, destKind constants.DestinationKind) string {
@@ -205,7 +204,6 @@ func (c *Columns) GetColumns() []Column {
 
 // UpdateColumn will update the column and also preserve the `defaultValue` from the previous column if the new column does not have one.
 func (c *Columns) UpdateColumn(updateCol Column) {
-	//TODO: Test
 	c.Lock()
 	defer c.Unlock()
 
@@ -213,7 +211,6 @@ func (c *Columns) UpdateColumn(updateCol Column) {
 		if col.name == updateCol.name {
 			if col.DefaultValue != nil && updateCol.DefaultValue == nil {
 				updateCol.DefaultValue = col.DefaultValue
-				updateCol.shouldBackfill = true
 			}
 
 			c.columns[index] = updateCol

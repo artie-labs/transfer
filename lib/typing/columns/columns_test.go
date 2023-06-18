@@ -11,6 +11,58 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestColumn_ShouldBackfill(t *testing.T) {
+	type _testCase struct {
+		name                 string
+		column               *Column
+		expectShouldBackfill bool
+	}
+
+	testCases := []_testCase{
+		{
+			name: "happy path",
+			column: &Column{
+				name: "id",
+			},
+		},
+		{
+			name: "happy path, primary key",
+			column: &Column{
+				name:       "id",
+				primaryKey: true,
+			},
+		},
+		{
+			name: "happy path, primary key (default value set and not backfilled), but since it's a PK - no backfill",
+			column: &Column{
+				name:         "id",
+				primaryKey:   true,
+				DefaultValue: 123,
+			},
+		},
+		{
+			name: "default value set but backfilled",
+			column: &Column{
+				name:         "id",
+				DefaultValue: "dusty",
+				backfilled:   true,
+			},
+		},
+		{
+			name: "default value set and not backfilled",
+			column: &Column{
+				name:         "id",
+				DefaultValue: "dusty",
+			},
+			expectShouldBackfill: true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		assert.Equal(t, testCase.expectShouldBackfill, testCase.column.ShouldBackfill(), testCase.name)
+	}
+}
+
 func TestUnescapeColumnName(t *testing.T) {
 	type _testCase struct {
 		escapedName           string
@@ -197,11 +249,16 @@ func TestColumns_UpsertColumns(t *testing.T) {
 	cols.UpsertColumn("zzz", UpsertColumnArg{})
 	zzzCol, _ := cols.GetColumn("zzz")
 	assert.False(t, zzzCol.ToastColumn)
+	assert.False(t, zzzCol.primaryKey)
 	assert.Equal(t, zzzCol.KindDetails, typing.Invalid)
 
-	cols.UpsertColumn("aaa", UpsertColumnArg{})
+	cols.UpsertColumn("aaa", UpsertColumnArg{
+		ToastCol:   true,
+		PrimaryKey: true,
+	})
 	aaaCol, _ := cols.GetColumn("aaa")
-	assert.False(t, aaaCol.ToastColumn)
+	assert.True(t, aaaCol.ToastColumn)
+	assert.True(t, aaaCol.primaryKey)
 	assert.Equal(t, aaaCol.KindDetails, typing.Invalid)
 
 	length := len(cols.columns)
