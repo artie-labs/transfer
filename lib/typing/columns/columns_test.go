@@ -281,7 +281,7 @@ func TestColumns_Add_Duplicate(t *testing.T) {
 
 func TestColumns_Mutation(t *testing.T) {
 	var cols Columns
-	colsToAdd := []Column{{name: "foo", KindDetails: typing.String}, {name: "bar", KindDetails: typing.Struct}}
+	colsToAdd := []Column{{name: "foo", KindDetails: typing.String, DefaultValue: "bar"}, {name: "bar", KindDetails: typing.Struct}}
 	// Insert
 	for _, colToAdd := range colsToAdd {
 		cols.AddColumn(colToAdd)
@@ -303,17 +303,20 @@ func TestColumns_Mutation(t *testing.T) {
 	})
 
 	cols.UpdateColumn(Column{
-		name:        "bar",
-		KindDetails: typing.Boolean,
+		name:         "bar",
+		KindDetails:  typing.Boolean,
+		DefaultValue: "123",
 	})
 
 	fooCol, isOk = cols.GetColumn("foo")
 	assert.True(t, isOk)
 	assert.Equal(t, typing.Integer, fooCol.KindDetails)
+	assert.Equal(t, "bar", fooCol.DefaultValue)
 
 	barCol, isOk = cols.GetColumn("bar")
 	assert.True(t, isOk)
 	assert.Equal(t, typing.Boolean, barCol.KindDetails)
+	assert.Equal(t, "123", barCol.DefaultValue)
 
 	// Delete
 	cols.DeleteColumn("foo")
