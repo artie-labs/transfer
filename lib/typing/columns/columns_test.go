@@ -311,7 +311,7 @@ func TestColumns_Mutation(t *testing.T) {
 	fooCol, isOk = cols.GetColumn("foo")
 	assert.True(t, isOk)
 	assert.Equal(t, typing.Integer, fooCol.KindDetails)
-	assert.Equal(t, "bar", fooCol.DefaultValue)
+	assert.Equal(t, nil, fooCol.DefaultValue)
 
 	barCol, isOk = cols.GetColumn("bar")
 	assert.True(t, isOk)

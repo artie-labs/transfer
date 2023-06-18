@@ -209,10 +209,6 @@ func (c *Columns) UpdateColumn(updateCol Column) {
 
 	for index, col := range c.columns {
 		if col.name == updateCol.name {
-			if col.DefaultValue != nil && updateCol.DefaultValue == nil {
-				updateCol.DefaultValue = col.DefaultValue
-			}
-
 			c.columns[index] = updateCol
 			return
 		}
