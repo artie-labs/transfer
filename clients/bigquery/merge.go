@@ -171,6 +171,13 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	// End temporary table creation
 
 	// Backfill columns if necessary
+	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
+		err = s.backfillColumn(ctx, col, tableData.ToFqName(ctx, s.Label()))
+		if err != nil {
+			return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v",
+				col.Name(nil), col.DefaultValue, err)
+		}
+	}
 
 	// Perform actual merge now
 	rows, err := merge(tableData)
@@ -183,14 +190,6 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	err = s.PutTable(ctx, tableData.TopicConfig.Database, tableName, rows)
 	if err != nil {
 		return fmt.Errorf("failed to insert into temp table: %s, error: %v", tableName, err)
-	}
-
-	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
-		err = s.backfillColumn(ctx, col, tableData.ToFqName(ctx, s.Label()))
-		if err != nil {
-			return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v",
-				col.Name(nil), col.DefaultValue, err)
-		}
 	}
 
 	mergeQuery, err := dml.MergeStatement(dml.MergeArgument{
