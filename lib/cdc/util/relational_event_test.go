@@ -63,7 +63,7 @@ func TestSource_GetOptionalSchema(t *testing.T) {
 	assert.True(t, isOk)
 	assert.Equal(t, value, typing.String)
 
-	cols := schemaEventPayload.GetColumns()
+	cols := schemaEventPayload.GetColumns(ctx)
 	assert.Equal(t, 6, len(cols.GetColumns()))
 
 	col, isOk := cols.GetColumn("boolean_column")

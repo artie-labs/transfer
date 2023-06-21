@@ -290,7 +290,8 @@ func (m *MySQLTestSuite) TestGetEventFromBytes() {
 		"transaction": null
 	}
 }`
-	evt, err := m.Debezium.GetEventFromBytes(context.Background(), []byte(payload))
+	ctx := context.Background()
+	evt, err := m.Debezium.GetEventFromBytes(ctx, []byte(payload))
 	assert.NoError(m.T(), err)
 	assert.Equal(m.T(), time.Date(2023, time.March, 13, 19, 19, 24, 0, time.UTC), evt.GetExecutionTime())
 	assert.Equal(m.T(), "customers", evt.GetTableName())
@@ -298,11 +299,11 @@ func (m *MySQLTestSuite) TestGetEventFromBytes() {
 	kvMap := map[string]interface{}{
 		"id": 1001,
 	}
-	evtData := evt.GetData(context.Background(), kvMap, &kafkalib.TopicConfig{})
+	evtData := evt.GetData(ctx, kvMap, &kafkalib.TopicConfig{})
 	assert.Equal(m.T(), evtData["id"], 1001)
 	assert.Equal(m.T(), evtData["first_name"], "Sally")
 	assert.Equal(m.T(), evtData["bool_test"], false)
-	cols := evt.GetColumns()
+	cols := evt.GetColumns(ctx)
 	assert.NotNil(m.T(), cols)
 
 	for key := range evtData {

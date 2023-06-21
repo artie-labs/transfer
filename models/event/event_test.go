@@ -30,7 +30,7 @@ func (f fakeEvent) GetOptionalSchema(ctx context.Context) map[string]typing.Kind
 	return nil
 }
 
-func (f fakeEvent) GetColumns() *columns.Columns {
+func (f fakeEvent) GetColumns(ctx context.Context) *columns.Columns {
 	return &columns.Columns{}
 }
 

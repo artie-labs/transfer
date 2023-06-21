@@ -2,8 +2,6 @@ package util
 
 import (
 	"context"
-	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -12,7 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
@@ -37,7 +34,7 @@ type Source struct {
 	Table     string `json:"table"`
 }
 
-func (s *SchemaEventPayload) GetColumns() *columns.Columns {
+func (s *SchemaEventPayload) GetColumns(ctx context.Context) *columns.Columns {
 	fieldsObject := s.Schema.GetSchemaFromLabel(cdc.After)
 	if fieldsObject == nil {
 		// AFTER schema does not exist.
@@ -49,7 +46,7 @@ func (s *SchemaEventPayload) GetColumns() *columns.Columns {
 		// We are purposefully doing this to ensure that the correct typing is set
 		// When we invoke event.Save()
 		col := columns.NewColumn(field.FieldName, typing.Invalid)
-		col.SetDefaultValue(field.Default)
+		col.SetDefaultValue(parseField(ctx, field, field.Default))
 		cols.AddColumn(col)
 	}
 
@@ -114,68 +111,13 @@ func (s *SchemaEventPayload) GetData(ctx context.Context, pkMap map[string]inter
 	afterSchemaObject := s.Schema.GetSchemaFromLabel(cdc.After)
 	if afterSchemaObject != nil {
 		for _, field := range afterSchemaObject.Fields {
-			// Check if the field is an integer and requires us to cast it as such.
-			if field.IsInteger() {
-				valFloat, isOk := retMap[field.FieldName].(float64)
-				if isOk {
-					retMap[field.FieldName] = int(valFloat)
-					continue
-				}
+			_, isOk := retMap[field.FieldName]
+			if !isOk {
+				// Skipping b/c envelope mismatch with the actual request body
+				continue
 			}
 
-			if valid, supportedType := debezium.RequiresSpecialTypeCasting(field.DebeziumType); valid {
-				val, isOk := retMap[field.FieldName]
-				if !isOk {
-					continue
-				}
-
-				switch debezium.SupportedDebeziumType(field.DebeziumType) {
-				case debezium.KafkaDecimalType:
-					decimalVal, err := debezium.DecodeDecimal(fmt.Sprint(val), field.Parameters)
-					if err == nil {
-						retMap[field.FieldName] = decimalVal
-					} else {
-						logger.FromContext(ctx).WithFields(map[string]interface{}{
-							"err":           err,
-							"supportedType": supportedType,
-							"val":           val,
-						}).Debug("skipped casting dbz type due to an error")
-					}
-				case debezium.KafkaVariableNumericType:
-					variableNumericVal, err := debezium.DecodeDebeziumVariableDecimal(val)
-					if err == nil {
-						retMap[field.FieldName] = variableNumericVal
-					} else {
-						logger.FromContext(ctx).WithFields(map[string]interface{}{
-							"err":           err,
-							"supportedType": supportedType,
-							"val":           val,
-						}).Debug("skipped casting dbz type due to an error")
-					}
-				default:
-					// Need to cast this as a FLOAT first because the number may come out in scientific notation
-					// ParseFloat is apt to handle it, and ParseInt is not, see: https://github.com/golang/go/issues/19288
-					floatVal, castErr := strconv.ParseFloat(fmt.Sprint(val), 64)
-					if castErr == nil {
-						extendedTime, err := debezium.FromDebeziumTypeToTime(supportedType, int64(floatVal))
-						if err == nil {
-							retMap[field.FieldName] = extendedTime
-						} else {
-							logger.FromContext(ctx).WithFields(map[string]interface{}{
-								"err":           err,
-								"supportedType": supportedType,
-								"val":           val,
-							}).Debug("skipped casting dbz type due to an error")
-						}
-					} else {
-						logger.FromContext(ctx).WithFields(map[string]interface{}{
-							"err":           castErr,
-							"supportedType": supportedType,
-							"val":           val,
-						}).Debug("skipped casting because we failed to parse the float")
-					}
-				}
-			}
+			retMap[field.FieldName] = parseField(ctx, field, retMap[field.FieldName])
 		}
 	}
 
