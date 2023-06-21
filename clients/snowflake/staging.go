@@ -216,7 +216,6 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 
 	// Now iterate over all the in-memory cols and see which one requires backfill.
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
-		// TODO: further optimization available here to not backfill if it's a new table.
 		err = s.backfillColumn(ctx, col, tableData.ToFqName(ctx, s.Label()))
 		if err != nil {
 			defaultVal, _ := col.DefaultValue(nil)
