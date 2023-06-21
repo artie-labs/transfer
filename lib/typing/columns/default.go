@@ -16,7 +16,8 @@ type DefaultValueArgs struct {
 }
 
 func (c *Column) DefaultValue(args *DefaultValueArgs) (interface{}, error) {
-	if args == nil {
+	if args == nil || !args.Escape {
+		// Either no args, or args.Escape = false
 		return c.defaultValue, nil
 	}
 
