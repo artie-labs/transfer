@@ -64,7 +64,7 @@ func (c *Column) ShouldBackfill() bool {
 	}
 
 	// Should backfill if the default value is not null and the column has not been backfilled.
-	return c.DefaultValue != nil && c.backfilled == false
+	return c.defaultValue != nil && c.backfilled == false
 }
 
 type NameArgs struct {

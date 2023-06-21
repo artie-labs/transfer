@@ -37,14 +37,14 @@ func TestColumn_ShouldBackfill(t *testing.T) {
 			column: &Column{
 				name:         "id",
 				primaryKey:   true,
-				DefaultValue: 123,
+				defaultValue: 123,
 			},
 		},
 		{
 			name: "default value set but backfilled",
 			column: &Column{
 				name:         "id",
-				DefaultValue: "dusty",
+				defaultValue: "dusty",
 				backfilled:   true,
 			},
 		},
@@ -52,7 +52,7 @@ func TestColumn_ShouldBackfill(t *testing.T) {
 			name: "default value set and not backfilled",
 			column: &Column{
 				name:         "id",
-				DefaultValue: "dusty",
+				defaultValue: "dusty",
 			},
 			expectShouldBackfill: true,
 		},
@@ -281,7 +281,7 @@ func TestColumns_Add_Duplicate(t *testing.T) {
 
 func TestColumns_Mutation(t *testing.T) {
 	var cols Columns
-	colsToAdd := []Column{{name: "foo", KindDetails: typing.String, DefaultValue: "bar"}, {name: "bar", KindDetails: typing.Struct}}
+	colsToAdd := []Column{{name: "foo", KindDetails: typing.String, defaultValue: "bar"}, {name: "bar", KindDetails: typing.Struct}}
 	// Insert
 	for _, colToAdd := range colsToAdd {
 		cols.AddColumn(colToAdd)
@@ -305,18 +305,18 @@ func TestColumns_Mutation(t *testing.T) {
 	cols.UpdateColumn(Column{
 		name:         "bar",
 		KindDetails:  typing.Boolean,
-		DefaultValue: "123",
+		defaultValue: "123",
 	})
 
 	fooCol, isOk = cols.GetColumn("foo")
 	assert.True(t, isOk)
 	assert.Equal(t, typing.Integer, fooCol.KindDetails)
-	assert.Equal(t, nil, fooCol.DefaultValue)
+	assert.Equal(t, nil, fooCol.defaultValue)
 
 	barCol, isOk = cols.GetColumn("bar")
 	assert.True(t, isOk)
 	assert.Equal(t, typing.Boolean, barCol.KindDetails)
-	assert.Equal(t, "123", barCol.DefaultValue)
+	assert.Equal(t, "123", barCol.defaultValue)
 
 	// Delete
 	cols.DeleteColumn("foo")

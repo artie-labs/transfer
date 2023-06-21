@@ -32,13 +32,18 @@ func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTab
 		"table":        fqTableName,
 	}).Info("backfilling column")
 
+	defaultVal, err := column.DefaultValue(true)
+	if err != nil {
+		return fmt.Errorf("failed to escape default value, err: %v", err)
+	}
+
 	escapedCol := column.Name(&columns.NameArgs{Escape: true, DestKind: s.Label()})
 	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
 		// UPDATE table SET col = default_val WHERE col IS NULL
-		fqTableName, escapedCol, column.DefaultValue, escapedCol,
+		fqTableName, escapedCol, defaultVal, escapedCol,
 	)
 
-	_, err := s.Exec(query)
+	_, err = s.Exec(query)
 	if err != nil {
 		return fmt.Errorf("failed to backfill, err: %v", err)
 	}
@@ -210,8 +215,9 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
 		err = s.backfillColumn(ctx, col, tableData.ToFqName(ctx, s.Label()))
 		if err != nil {
+			defaultVal, _ := col.DefaultValue(false)
 			return fmt.Errorf("failed to backfill col: %v, default value: %v, error: %v",
-				col.Name(nil), col.DefaultValue, err)
+				col.Name(nil), defaultVal, err)
 		}
 	}
 
