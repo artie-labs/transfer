@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
+
+	"github.com/artie-labs/transfer/lib/jitter"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
@@ -56,6 +59,7 @@ func merge(tableData *optimization.TableData) ([]*Row, error) {
 // BackfillColumn will perform a backfill to the destination and also update the comment within a transaction.
 // Source: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-definition-language#column_set_options_list
 func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTableName string) error {
+	val, _ := column.DefaultValue(nil)
 	if !column.ShouldBackfill() {
 		// If we don't need to backfill, don't backfill.
 		return nil
@@ -64,11 +68,15 @@ func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTab
 	fqTableName = strings.ToLower(fqTableName)
 	logger.FromContext(ctx).WithFields(map[string]interface{}{
 		"colName":      column.Name(nil),
-		"defaultValue": column.DefaultValue,
+		"defaultValue": val,
 		"table":        fqTableName,
 	}).Info("backfilling column")
 
-	defaultVal, err := column.DefaultValue(true)
+	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{
+		Escape:   true,
+		BigQuery: true,
+	})
+
 	if err != nil {
 		return fmt.Errorf("failed to escape default value, err: %v", err)
 	}
@@ -177,12 +185,25 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	// Backfill columns if necessary
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
-		err = s.backfillColumn(ctx, col, tableData.ToFqName(ctx, s.Label()))
-		if err != nil {
-			defaultVal, _ := col.DefaultValue(false)
-			return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v",
-				col.Name(nil), defaultVal, err)
+		var attempts int
+		for {
+			// TODO: further optimization available here to not backfill if it's a new table.
+			err = s.backfillColumn(ctx, col, tableData.ToFqName(ctx, s.Label()))
+			if err == nil {
+				break
+			}
+
+			if TableUpdateQuotaErr(err) {
+				err = nil
+				attempts += 1
+				time.Sleep(time.Duration(jitter.JitterMs(1500, attempts)) * time.Millisecond)
+			} else {
+				defaultVal, _ := col.DefaultValue(nil)
+				return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v",
+					col.Name(nil), defaultVal, err)
+			}
 		}
+
 	}
 
 	// Perform actual merge now

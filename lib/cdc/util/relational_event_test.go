@@ -3,7 +3,6 @@ package util
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
@@ -69,16 +68,15 @@ func TestSource_GetOptionalSchema(t *testing.T) {
 	col, isOk := cols.GetColumn("boolean_column")
 	assert.True(t, isOk)
 
-	defaultVal, err := col.DefaultValue(false)
+	defaultVal, err := col.DefaultValue(nil)
 	assert.NoError(t, err)
 	assert.Equal(t, false, defaultVal)
 
 	for _, _col := range cols.GetColumns() {
 		// All the other columns do not have a default value.
 		if _col.Name(nil) != "boolean_column" {
-			defaultVal, err = _col.DefaultValue(false)
+			defaultVal, err = _col.DefaultValue(nil)
 			assert.NoError(t, err)
-			fmt.Println("defaultVal", defaultVal)
 			assert.Nil(t, defaultVal, _col.Name(nil))
 		}
 	}

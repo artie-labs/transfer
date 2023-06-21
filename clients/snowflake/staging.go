@@ -20,6 +20,7 @@ import (
 // BackfillColumn will perform a backfill to the destination and also update the comment within a transaction.
 // Source: https://docs.snowflake.com/en/sql-reference/sql/comment
 func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTableName string) error {
+	val, _ := column.DefaultValue(nil)
 	if !column.ShouldBackfill() {
 		// If we don't need to backfill, don't backfill.
 		return nil
@@ -28,11 +29,13 @@ func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTab
 	fqTableName = strings.ToLower(fqTableName)
 	logger.FromContext(ctx).WithFields(map[string]interface{}{
 		"colName":      column.Name(nil),
-		"defaultValue": column.DefaultValue,
+		"defaultValue": val,
 		"table":        fqTableName,
 	}).Info("backfilling column")
 
-	defaultVal, err := column.DefaultValue(true)
+	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{
+		Escape: true,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to escape default value, err: %v", err)
 	}
@@ -45,7 +48,7 @@ func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTab
 
 	_, err = s.Exec(query)
 	if err != nil {
-		return fmt.Errorf("failed to backfill, err: %v", err)
+		return fmt.Errorf("failed to backfill, err: %v, query: %v", err, query)
 	}
 
 	query = fmt.Sprintf(`COMMENT ON COLUMN %s.%s IS '%v';`, fqTableName, escapedCol, `{"backfilled": true}`)
@@ -213,9 +216,10 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 
 	// Now iterate over all the in-memory cols and see which one requires backfill.
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
+		// TODO: further optimization available here to not backfill if it's a new table.
 		err = s.backfillColumn(ctx, col, tableData.ToFqName(ctx, s.Label()))
 		if err != nil {
-			defaultVal, _ := col.DefaultValue(false)
+			defaultVal, _ := col.DefaultValue(nil)
 			return fmt.Errorf("failed to backfill col: %v, default value: %v, error: %v",
 				col.Name(nil), defaultVal, err)
 		}
