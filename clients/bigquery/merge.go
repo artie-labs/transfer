@@ -75,12 +75,12 @@ func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTab
 		return fmt.Errorf("failed to escape default value, err: %v", err)
 	}
 
+	fqTableName = strings.ToLower(fqTableName)
 	escapedCol := column.Name(&columns.NameArgs{Escape: true, DestKind: s.Label()})
 	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
 		// UPDATE table SET col = default_val WHERE col IS NULL
 		fqTableName, escapedCol, defaultVal, escapedCol)
 
-	fqTableName = strings.ToLower(fqTableName)
 	logger.FromContext(ctx).WithFields(map[string]interface{}{
 		"colName": column.Name(nil),
 		"query":   query,
