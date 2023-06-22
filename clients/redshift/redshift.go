@@ -3,6 +3,7 @@ package redshift
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/artie-labs/transfer/lib/dwh/dml"
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -112,10 +113,12 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	fmt.Println("tableConfig", tableConfig)
 
 	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
-	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label()), tableData.TempTableSuffix())
-	//if err = s.prepareTempTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {
-	//	return err
-	//}
+
+	// Temporary tables cannot specify schemas, so we just prefix it instead.
+	temporaryTableName := fmt.Sprintf("%s_%s", strings.ReplaceAll(tableData.ToFqName(ctx, s.Label()), ".", "_"), tableData.TempTableSuffix())
+	if err = s.prepareTempTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {
+		return err
+	}
 
 	// Now iterate over all the in-memory cols and see which one requires backfill.
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {

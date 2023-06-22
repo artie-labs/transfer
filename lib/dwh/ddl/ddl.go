@@ -110,6 +110,11 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 		if args.TemporaryTable {
 			expiryString := typing.ExpiresDate(time.Now().UTC().Add(constants.BigQueryTempTableTTL))
 			switch args.Dwh.Label() {
+			case constants.Redshift:
+				// TODO check if Redshift has the temp table problem, which will require getting a comment.
+				//sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s) WITH (COMMENT = '%s');", args.FqTableName,
+				//	strings.Join(colSQLParts, ","), fmt.Sprintf("%s%s", constants.SnowflakeExpireCommentPrefix, expiryString))
+				sqlQuery = fmt.Sprintf("CREATE TEMP TABLE IF NOT EXISTS %s (%s);", args.FqTableName, strings.Join(colSQLParts, ","))
 			case constants.BigQuery:
 				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
 					args.FqTableName, strings.Join(colSQLParts, ","), expiryString)

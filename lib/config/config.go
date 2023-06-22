@@ -62,6 +62,7 @@ type Redshift struct {
 	Database string `yaml:"database"`
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
+	Bucket   string `yaml:"bucket"`
 }
 
 type Snowflake struct {
