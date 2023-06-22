@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/ptr"
+
 	"github.com/artie-labs/transfer/lib/jitter"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -189,6 +191,9 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		for {
 			err = s.backfillColumn(ctx, col, tableData.ToFqName(ctx, s.Label()))
 			if err == nil {
+				tableConfig.Columns().UpsertColumn(col.Name(nil), columns.UpsertColumnArg{
+					Backfilled: ptr.ToBool(true),
+				})
 				break
 			}
 

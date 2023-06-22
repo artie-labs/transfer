@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/ptr"
+
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/array"
@@ -36,7 +38,7 @@ func ToMemoryEvent(ctx context.Context, event cdc.Event, pkMap map[string]interf
 	if cols != nil {
 		for primaryKey := range pkMap {
 			cols.UpsertColumn(primaryKey, columns.UpsertColumnArg{
-				PrimaryKey: true,
+				PrimaryKey: ptr.ToBool(true),
 			})
 		}
 	}
@@ -151,7 +153,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 
 		if val == constants.ToastUnavailableValuePlaceholder {
 			inMemoryColumns.UpsertColumn(newColName, columns.UpsertColumnArg{
-				ToastCol: true,
+				ToastCol: ptr.ToBool(true),
 			})
 		} else {
 			retrievedColumn, isOk := inMemoryColumns.GetColumn(newColName)

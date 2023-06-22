@@ -108,8 +108,9 @@ func (c *Columns) EscapeName(args *NameArgs) {
 }
 
 type UpsertColumnArg struct {
-	ToastCol   bool
-	PrimaryKey bool
+	ToastCol   *bool
+	PrimaryKey *bool
+	Backfilled *bool
 }
 
 // UpsertColumn - just a wrapper around UpdateColumn and AddColumn
@@ -120,18 +121,40 @@ func (c *Columns) UpsertColumn(colName string, arg UpsertColumnArg) {
 	}
 
 	if col, isOk := c.GetColumn(colName); isOk {
-		col.ToastColumn = arg.ToastCol
-		col.primaryKey = arg.PrimaryKey
+		if arg.ToastCol != nil {
+			col.ToastColumn = *arg.ToastCol
+		}
+
+		if arg.PrimaryKey != nil {
+			col.primaryKey = *arg.PrimaryKey
+		}
+
+		if arg.Backfilled != nil {
+			col.backfilled = *arg.Backfilled
+		}
+
 		c.UpdateColumn(col)
 		return
 	}
 
-	c.AddColumn(Column{
+	col := Column{
 		name:        colName,
 		KindDetails: typing.Invalid,
-		ToastColumn: arg.ToastCol,
-		primaryKey:  arg.PrimaryKey,
-	})
+	}
+
+	if arg.ToastCol != nil {
+		col.ToastColumn = *arg.ToastCol
+	}
+
+	if arg.PrimaryKey != nil {
+		col.primaryKey = *arg.PrimaryKey
+	}
+
+	if arg.Backfilled != nil {
+		col.backfilled = *arg.Backfilled
+	}
+	
+	c.AddColumn(col)
 	return
 }
 

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/ptr"
+
 	"github.com/artie-labs/transfer/lib/typing"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -238,7 +240,7 @@ func TestColumns_UpsertColumns(t *testing.T) {
 	// Now selectively update only a, b
 	for _, key := range []string{"a", "b"} {
 		cols.UpsertColumn(key, UpsertColumnArg{
-			ToastCol: true,
+			ToastCol: ptr.ToBool(true),
 		})
 
 		// Now inspect.
@@ -253,8 +255,8 @@ func TestColumns_UpsertColumns(t *testing.T) {
 	assert.Equal(t, zzzCol.KindDetails, typing.Invalid)
 
 	cols.UpsertColumn("aaa", UpsertColumnArg{
-		ToastCol:   true,
-		PrimaryKey: true,
+		ToastCol:   ptr.ToBool(true),
+		PrimaryKey: ptr.ToBool(true),
 	})
 	aaaCol, _ := cols.GetColumn("aaa")
 	assert.True(t, aaaCol.ToastColumn)

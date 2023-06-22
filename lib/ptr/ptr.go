@@ -11,3 +11,7 @@ func ToInt(val int) *int {
 func ToInt64(val int64) *int64 {
 	return &val
 }
+
+func ToBool(val bool) *bool {
+	return &val
+}

@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/ptr"
+
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -222,6 +224,10 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 			return fmt.Errorf("failed to backfill col: %v, default value: %v, error: %v",
 				col.Name(nil), defaultVal, err)
 		}
+
+		tableConfig.Columns().UpsertColumn(col.Name(nil), columns.UpsertColumnArg{
+			Backfilled: ptr.ToBool(true),
+		})
 	}
 
 	// Prepare merge statement
