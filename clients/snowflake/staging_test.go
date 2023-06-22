@@ -29,11 +29,11 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 		commentSQL  string
 	}
 
-	backfilledCol := columns.NewColumn("foo", typing.Invalid)
+	backfilledCol := columns.NewColumn("foo", typing.Boolean)
 	backfilledCol.SetDefaultValue(true)
 	backfilledCol.SetBackfilled(true)
 
-	needsBackfillCol := columns.NewColumn("foo", typing.Invalid)
+	needsBackfillCol := columns.NewColumn("foo", typing.Boolean)
 	needsBackfillCol.SetDefaultValue(true)
 	testCases := []_testCase{
 		{

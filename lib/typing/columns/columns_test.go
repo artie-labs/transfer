@@ -43,11 +43,20 @@ func TestColumn_ShouldBackfill(t *testing.T) {
 			},
 		},
 		{
+			name: "default value set but kind = invalid",
+			column: &Column{
+				name:         "id",
+				defaultValue: "dusty",
+				KindDetails:  typing.Invalid,
+			},
+		},
+		{
 			name: "default value set but backfilled",
 			column: &Column{
 				name:         "id",
 				defaultValue: "dusty",
 				backfilled:   true,
+				KindDetails:  typing.String,
 			},
 		},
 		{
@@ -55,6 +64,7 @@ func TestColumn_ShouldBackfill(t *testing.T) {
 			column: &Column{
 				name:         "id",
 				defaultValue: "dusty",
+				KindDetails:  typing.String,
 			},
 			expectShouldBackfill: true,
 		},
