@@ -63,6 +63,8 @@ type Redshift struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 	Bucket   string `yaml:"bucket"`
+	// https://docs.aws.amazon.com/redshift/latest/dg/copy-parameters-authorization.html
+	CredentialsClause string `yaml:"credentialsClause"`
 }
 
 type Snowflake struct {

@@ -33,6 +33,7 @@ func UploadLocalFileToS3(ctx context.Context, args UploadArgs) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	defer file.Close()
 
 	fileInfo, err := file.Stat()
@@ -51,31 +52,33 @@ func UploadLocalFileToS3(ctx context.Context, args UploadArgs) (string, error) {
 		return "", err
 	}
 
-	// Set the object expiration to 6 hours from now
-	expiration := time.Now().Add(6 * time.Hour)
-	ruleID := "ExpireRule"
-	rule := types.LifecycleRule{
-		ID:     &ruleID,
-		Status: types.ExpirationStatusEnabled,
-		Expiration: &types.LifecycleExpiration{
-			Date: &expiration,
-		},
-	}
+	if args.Expiry {
+		// Set the object expiration to 6 hours from now
+		expiration := time.Now().Add(6 * time.Hour)
+		ruleID := "ExpireRule"
+		rule := types.LifecycleRule{
+			ID:     &ruleID,
+			Status: types.ExpirationStatusEnabled,
+			Expiration: &types.LifecycleExpiration{
+				Date: &expiration,
+			},
+		}
 
-	input := &s3.PutBucketLifecycleConfigurationInput{
-		Bucket: aws.String(args.Bucket),
-		LifecycleConfiguration: &types.BucketLifecycleConfiguration{
-			Rules: []types.LifecycleRule{rule},
-		},
-	}
+		input := &s3.PutBucketLifecycleConfigurationInput{
+			Bucket: aws.String(args.Bucket),
+			LifecycleConfiguration: &types.BucketLifecycleConfiguration{
+				Rules: []types.LifecycleRule{rule},
+			},
+		}
 
-	_, err = s3Client.PutBucketLifecycleConfiguration(context.TODO(), input)
-	if err != nil {
-		return "", fmt.Errorf("failed applying lifecycle rule: %v", err)
-	}
+		_, err = s3Client.PutBucketLifecycleConfiguration(ctx, input)
+		if err != nil {
+			return "", fmt.Errorf("failed applying lifecycle rule: %v", err)
+		}
 
-	if err != nil {
-		return "", err
+		if err != nil {
+			return "", err
+		}
 	}
 
 	return fmt.Sprintf("s3://%s/%s", args.Bucket, objectKey), nil

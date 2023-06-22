@@ -22,7 +22,9 @@ import (
 )
 
 type Store struct {
-	configMap *types.DwhToTablesConfigMap
+	credentialsClause string
+	bucket            string
+	configMap         *types.DwhToTablesConfigMap
 	db.Store
 }
 
@@ -154,8 +156,9 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	log.WithField("query", mergeQuery).Debug("executing...")
 	_, err = s.Exec(mergeQuery)
+	fmt.Println("mergeQuery", mergeQuery)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to merge, query: %v, err: %v", mergeQuery, err)
 	}
 
 	_ = ddl.DropTemporaryTable(ctx, s, temporaryTableName, false)
@@ -177,7 +180,9 @@ func LoadRedshift(ctx context.Context, _store *db.Store) *Store {
 		settings.Config.Redshift.Password, settings.Config.Redshift.Database)
 
 	return &Store{
-		Store:     db.Open(ctx, "postgres", connStr),
-		configMap: &types.DwhToTablesConfigMap{},
+		credentialsClause: settings.Config.Redshift.CredentialsClause,
+		bucket:            settings.Config.Redshift.Bucket,
+		Store:             db.Open(ctx, "postgres", connStr),
+		configMap:         &types.DwhToTablesConfigMap{},
 	}
 }
