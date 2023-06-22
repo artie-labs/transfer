@@ -115,12 +115,14 @@ const (
 	Snowflake       DestinationKind = "snowflake"
 	Test            DestinationKind = "test"
 	BigQuery        DestinationKind = "bigquery"
+	Redshift        DestinationKind = "redshift"
 )
 
 var validDestinations = []DestinationKind{
 	BigQuery,
 	Snowflake,
 	SnowflakeStages,
+	Redshift,
 	Test,
 }
 

@@ -56,6 +56,14 @@ type BigQuery struct {
 	ProjectID         string `yaml:"projectID"`
 }
 
+type Redshift struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	Database string `yaml:"database"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+}
+
 type Snowflake struct {
 	AccountID string `yaml:"account"`
 	Username  string `yaml:"username"`
@@ -106,6 +114,7 @@ type Config struct {
 	// Supported destinations
 	BigQuery  *BigQuery  `yaml:"bigquery"`
 	Snowflake *Snowflake `yaml:"snowflake"`
+	Redshift  *Redshift  `yaml:"redshift"`
 
 	Reporting struct {
 		Sentry *Sentry `yaml:"sentry"`

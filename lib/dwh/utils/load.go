@@ -3,6 +3,8 @@ package utils
 import (
 	"context"
 
+	"github.com/artie-labs/transfer/clients/redshift"
+
 	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/config"
@@ -39,6 +41,8 @@ func DataWarehouse(ctx context.Context, store *db.Store) dwh.DataWarehouse {
 		return s
 	case constants.BigQuery:
 		return bigquery.LoadBigQuery(ctx, store)
+	case constants.Redshift:
+		return redshift.LoadRedshift(ctx, store)
 	}
 
 	logger.FromContext(ctx).WithFields(map[string]interface{}{
