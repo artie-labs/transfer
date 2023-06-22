@@ -63,6 +63,11 @@ func (c *Column) ShouldBackfill() bool {
 		return false
 	}
 
+	if c.KindDetails.Kind == typing.Invalid.Kind {
+		// Don't backfill if the in-memory data is `INVALID`
+		return false
+	}
+
 	// Should backfill if the default value is not null and the column has not been backfilled.
 	return c.defaultValue != nil && c.backfilled == false
 }
@@ -153,7 +158,7 @@ func (c *Columns) UpsertColumn(colName string, arg UpsertColumnArg) {
 	if arg.Backfilled != nil {
 		col.backfilled = *arg.Backfilled
 	}
-	
+
 	c.AddColumn(col)
 	return
 }
