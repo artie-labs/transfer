@@ -11,7 +11,7 @@
 </div>
 <br/>
 
-Depending on where you work, the latency in your data warehouse is often several hours to days old. This problem gets exacerbated as data volumes grow. With Artie Transfer, you can reduce data latency from several hours to minutes by leveraging change data capture (CDC).
+Depending on where you work, the latency in your data warehouse is often several hours to days old. This problem gets exacerbated as data volumes grow. With Artie Transfer, you can reduce data latency from several hours to sub-minute by leveraging change data capture (CDC).
 
 Here's why you should use Artie Transfer:
 
