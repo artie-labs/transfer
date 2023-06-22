@@ -68,15 +68,6 @@ _If the database you are using is not on the list, feel free to file for a [feat
 * [Artie Transfer configuration file guide](https://docs.artie.so/running-transfer/options)
 * [Examples of configuration files](https://docs.artie.so/running-transfer/examples)
 
-
-## Limitations
-_Note: If any of these limitations are blocking you from using Transfer. Feel free to contribute or file a bug and we'll get this prioritized!</br>
-The long term goal for Artie Transfer is to be able to extend the service to have as little of these limitations as possible._
-
-* [PostgreSQL](https://docs.artie.so/real-time-sources/postgresql#running-it-yourself)
-* [MySQL](https://docs.artie.so/real-time-sources/mysql#running-it-yourself)
-* [MongoDB](https://docs.artie.so/real-time-sources/mongodb#running-it-yourself)
-
 ## Telemetry
 
 [Artie Transfer's telemetry guide](https://docs.artie.so/telemetry/overview)
