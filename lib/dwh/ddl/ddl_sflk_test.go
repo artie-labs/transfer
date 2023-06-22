@@ -1,7 +1,6 @@
 package ddl_test
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -18,7 +17,6 @@ import (
 )
 
 func (d *DDLTestSuite) TestAlterComplexObjects() {
-	ctx := context.Background()
 	// Test Structs and Arrays
 	cols := []columns.Column{
 		columns.NewColumn("preferences", typing.Struct),
@@ -38,7 +36,7 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 		CdcTime:     time.Now().UTC(),
 	}
 
-	err := ddl.AlterTable(ctx, alterTableArgs, cols...)
+	err := ddl.AlterTable(d.ctx, alterTableArgs, cols...)
 
 	for i := 0; i < len(cols); i++ {
 		execQuery, _ := d.fakeSnowflakeStore.ExecArgsForCall(i)
@@ -54,7 +52,6 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 }
 
 func (d *DDLTestSuite) TestAlterIdempotency() {
-	ctx := context.Background()
 	cols := []columns.Column{
 		columns.NewColumn("created_at", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)),
 		columns.NewColumn("id", typing.Integer),
@@ -75,12 +72,12 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 		CdcTime:     time.Now().UTC(),
 	}
 
-	err := ddl.AlterTable(ctx, alterTableArgs, cols...)
+	err := ddl.AlterTable(d.ctx, alterTableArgs, cols...)
 	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStore.ExecCallCount(), "called SFLK the same amt to create cols")
 	assert.NoError(d.T(), err)
 
 	d.fakeSnowflakeStore.ExecReturns(nil, errors.New("table does not exist"))
-	err = ddl.AlterTable(ctx, alterTableArgs, cols...)
+	err = ddl.AlterTable(d.ctx, alterTableArgs, cols...)
 	assert.Error(d.T(), err)
 }
 
