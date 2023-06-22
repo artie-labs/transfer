@@ -70,7 +70,7 @@ func (a *AlterTableArgs) Validate() error {
 	return nil
 }
 
-func AlterTable(_ context.Context, args AlterTableArgs, cols ...columns.Column) error {
+func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column) error {
 	if err := args.Validate(); err != nil {
 		return err
 	}
@@ -129,6 +129,7 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...columns.Column) 
 			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
 		}
 
+		logger.FromContext(ctx).WithField("query", sqlQuery).Info("ddl - executing sql")
 		_, err = args.Dwh.Exec(sqlQuery)
 		if ColumnAlreadyExistErr(err, args.Dwh.Label()) {
 			err = nil
@@ -138,6 +139,7 @@ func AlterTable(_ context.Context, args AlterTableArgs, cols ...columns.Column) 
 	} else {
 		for _, colSQLPart := range colSQLParts {
 			sqlQuery := fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", args.FqTableName, args.ColumnOp, colSQLPart)
+			logger.FromContext(ctx).WithField("query", sqlQuery).Info("ddl - executing sql")
 			_, err = args.Dwh.Exec(sqlQuery)
 			if ColumnAlreadyExistErr(err, args.Dwh.Label()) {
 				err = nil

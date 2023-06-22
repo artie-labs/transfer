@@ -1,7 +1,6 @@
 package ddl_test
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -21,8 +20,6 @@ func (d *DDLTestSuite) Test_CreateTable() {
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
-
-	ctx := context.Background()
 
 	type dwhToTableConfig struct {
 		_dwh         dwh.DataWarehouse
@@ -59,7 +56,7 @@ func (d *DDLTestSuite) Test_CreateTable() {
 			ColumnOp:    constants.Add,
 		}
 
-		err := ddl.AlterTable(ctx, alterTableArgs, columns.NewColumn("name", typing.String))
+		err := ddl.AlterTable(d.ctx, alterTableArgs, columns.NewColumn("name", typing.String))
 		assert.Equal(d.T(), 1, dwhTc._fakeStore.ExecCallCount())
 
 		query, _ := dwhTc._fakeStore.ExecArgsForCall(0)
@@ -112,7 +109,6 @@ func (d *DDLTestSuite) TestCreateTable() {
 	}
 
 	for index, testCase := range testCases {
-		ctx := context.Background()
 		fqTable := "demo.public.experiments"
 		d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 		tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
@@ -126,7 +122,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 			CdcTime:     time.Now().UTC(),
 		}
 
-		err := ddl.AlterTable(ctx, alterTableArgs, testCase.cols...)
+		err := ddl.AlterTable(d.ctx, alterTableArgs, testCase.cols...)
 		assert.NoError(d.T(), err, testCase.name)
 
 		execQuery, _ := d.fakeSnowflakeStore.ExecArgsForCall(index)
