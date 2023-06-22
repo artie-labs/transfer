@@ -61,18 +61,10 @@ func merge(tableData *optimization.TableData) ([]*Row, error) {
 // BackfillColumn will perform a backfill to the destination and also update the comment within a transaction.
 // Source: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-definition-language#column_set_options_list
 func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTableName string) error {
-	val, _ := column.DefaultValue(nil)
 	if !column.ShouldBackfill() {
 		// If we don't need to backfill, don't backfill.
 		return nil
 	}
-
-	fqTableName = strings.ToLower(fqTableName)
-	logger.FromContext(ctx).WithFields(map[string]interface{}{
-		"colName":      column.Name(nil),
-		"defaultValue": val,
-		"table":        fqTableName,
-	}).Info("backfilling column")
 
 	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{
 		Escape:   true,
@@ -88,6 +80,12 @@ func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTab
 		// UPDATE table SET col = default_val WHERE col IS NULL
 		fqTableName, escapedCol, defaultVal, escapedCol)
 
+	fqTableName = strings.ToLower(fqTableName)
+	logger.FromContext(ctx).WithFields(map[string]interface{}{
+		"colName": column.Name(nil),
+		"query":   query,
+		"table":   fqTableName,
+	}).Info("backfilling column")
 	_, err = s.Exec(query)
 	if err != nil {
 		return fmt.Errorf("failed to backfill, err: %v, query: %v", err, query)

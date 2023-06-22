@@ -22,19 +22,12 @@ import (
 // BackfillColumn will perform a backfill to the destination and also update the comment within a transaction.
 // Source: https://docs.snowflake.com/en/sql-reference/sql/comment
 func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTableName string) error {
-	val, _ := column.DefaultValue(nil)
 	if !column.ShouldBackfill() {
 		// If we don't need to backfill, don't backfill.
 		return nil
 	}
 
 	fqTableName = strings.ToLower(fqTableName)
-	logger.FromContext(ctx).WithFields(map[string]interface{}{
-		"colName":      column.Name(nil),
-		"defaultValue": val,
-		"table":        fqTableName,
-	}).Info("backfilling column")
-
 	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{
 		Escape: true,
 	})
@@ -47,6 +40,11 @@ func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTab
 		// UPDATE table SET col = default_val WHERE col IS NULL
 		fqTableName, escapedCol, defaultVal, escapedCol,
 	)
+	logger.FromContext(ctx).WithFields(map[string]interface{}{
+		"colName": column.Name(nil),
+		"query":   query,
+		"table":   fqTableName,
+	}).Info("backfilling column")
 
 	_, err = s.Exec(query)
 	if err != nil {
