@@ -25,8 +25,9 @@ type Store struct {
 
 const (
 	// Column names from the output of DESC table;
-	describeNameCol = "name"
-	describeTypeCol = "type"
+	describeNameCol    = "name"
+	describeTypeCol    = "type"
+	describeCommentCol = "comment"
 )
 
 func (s *Store) Label() constants.DestinationKind {

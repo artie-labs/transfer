@@ -19,6 +19,59 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func (s *SnowflakeTestSuite) TestBackfillColumn() {
+	fqTableName := "db.public.tableName"
+	type _testCase struct {
+		name        string
+		col         columns.Column
+		expectErr   bool
+		backfillSQL string
+		commentSQL  string
+	}
+
+	backfilledCol := columns.NewColumn("foo", typing.Invalid)
+	backfilledCol.SetDefaultValue(true)
+	backfilledCol.SetBackfilled(true)
+
+	needsBackfillCol := columns.NewColumn("foo", typing.Invalid)
+	needsBackfillCol.SetDefaultValue(true)
+	testCases := []_testCase{
+		{
+			name: "col that doesn't have default val",
+			col:  columns.NewColumn("foo", typing.Invalid),
+		},
+		{
+			name: "col that has default value but already backfilled",
+			col:  backfilledCol,
+		},
+		{
+			name:        "col that has default value that needs to be backfilled",
+			col:         needsBackfillCol,
+			backfillSQL: `UPDATE db.public.tablename SET foo = true WHERE foo IS NULL;`,
+			commentSQL:  `COMMENT ON COLUMN db.public.tablename.foo IS '{"backfilled": true}';`,
+		},
+	}
+
+	for _, testCase := range testCases {
+		err := s.stageStore.backfillColumn(s.ctx, testCase.col, fqTableName)
+		if testCase.expectErr {
+			assert.Error(s.T(), err, testCase.name)
+			continue
+		}
+
+		assert.NoError(s.T(), err, testCase.name)
+		if testCase.backfillSQL != "" && testCase.commentSQL != "" {
+			backfillSQL, _ := s.fakeStageStore.ExecArgsForCall(0)
+			assert.Equal(s.T(), testCase.backfillSQL, backfillSQL, testCase.name)
+
+			commentSQL, _ := s.fakeStageStore.ExecArgsForCall(1)
+			assert.Equal(s.T(), testCase.commentSQL, commentSQL, testCase.name)
+		} else {
+			assert.Equal(s.T(), 0, s.fakeStageStore.ExecCallCount())
+		}
+	}
+}
+
 // generateTableData - returns tableName and tableData
 func generateTableData(rows int) (string, *optimization.TableData) {
 	randomTableName := fmt.Sprintf("temp_%s_%s", constants.ArtiePrefix, stringutil.Random(10))

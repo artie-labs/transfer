@@ -4,12 +4,66 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/ptr"
+
 	"github.com/artie-labs/transfer/lib/typing"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestColumn_ShouldBackfill(t *testing.T) {
+	type _testCase struct {
+		name                 string
+		column               *Column
+		expectShouldBackfill bool
+	}
+
+	testCases := []_testCase{
+		{
+			name: "happy path",
+			column: &Column{
+				name: "id",
+			},
+		},
+		{
+			name: "happy path, primary key",
+			column: &Column{
+				name:       "id",
+				primaryKey: true,
+			},
+		},
+		{
+			name: "happy path, primary key (default value set and not backfilled), but since it's a PK - no backfill",
+			column: &Column{
+				name:         "id",
+				primaryKey:   true,
+				defaultValue: 123,
+			},
+		},
+		{
+			name: "default value set but backfilled",
+			column: &Column{
+				name:         "id",
+				defaultValue: "dusty",
+				backfilled:   true,
+			},
+		},
+		{
+			name: "default value set and not backfilled",
+			column: &Column{
+				name:         "id",
+				defaultValue: "dusty",
+			},
+			expectShouldBackfill: true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		assert.Equal(t, testCase.expectShouldBackfill, testCase.column.ShouldBackfill(), testCase.name)
+	}
+}
 
 func TestUnescapeColumnName(t *testing.T) {
 	type _testCase struct {
@@ -185,26 +239,33 @@ func TestColumns_UpsertColumns(t *testing.T) {
 
 	// Now selectively update only a, b
 	for _, key := range []string{"a", "b"} {
-		cols.UpsertColumn(key, true)
+		cols.UpsertColumn(key, UpsertColumnArg{
+			ToastCol: ptr.ToBool(true),
+		})
 
 		// Now inspect.
 		col, _ := cols.GetColumn(key)
 		assert.True(t, col.ToastColumn)
 	}
 
-	cols.UpsertColumn("zzz", false)
+	cols.UpsertColumn("zzz", UpsertColumnArg{})
 	zzzCol, _ := cols.GetColumn("zzz")
 	assert.False(t, zzzCol.ToastColumn)
+	assert.False(t, zzzCol.primaryKey)
 	assert.Equal(t, zzzCol.KindDetails, typing.Invalid)
 
-	cols.UpsertColumn("aaa", false)
+	cols.UpsertColumn("aaa", UpsertColumnArg{
+		ToastCol:   ptr.ToBool(true),
+		PrimaryKey: ptr.ToBool(true),
+	})
 	aaaCol, _ := cols.GetColumn("aaa")
-	assert.False(t, aaaCol.ToastColumn)
+	assert.True(t, aaaCol.ToastColumn)
+	assert.True(t, aaaCol.primaryKey)
 	assert.Equal(t, aaaCol.KindDetails, typing.Invalid)
 
 	length := len(cols.columns)
 	for i := 0; i < 500; i++ {
-		cols.UpsertColumn("", false)
+		cols.UpsertColumn("", UpsertColumnArg{})
 	}
 
 	assert.Equal(t, length, len(cols.columns))
@@ -222,7 +283,7 @@ func TestColumns_Add_Duplicate(t *testing.T) {
 
 func TestColumns_Mutation(t *testing.T) {
 	var cols Columns
-	colsToAdd := []Column{{name: "foo", KindDetails: typing.String}, {name: "bar", KindDetails: typing.Struct}}
+	colsToAdd := []Column{{name: "foo", KindDetails: typing.String, defaultValue: "bar"}, {name: "bar", KindDetails: typing.Struct}}
 	// Insert
 	for _, colToAdd := range colsToAdd {
 		cols.AddColumn(colToAdd)
@@ -244,17 +305,20 @@ func TestColumns_Mutation(t *testing.T) {
 	})
 
 	cols.UpdateColumn(Column{
-		name:        "bar",
-		KindDetails: typing.Boolean,
+		name:         "bar",
+		KindDetails:  typing.Boolean,
+		defaultValue: "123",
 	})
 
 	fooCol, isOk = cols.GetColumn("foo")
 	assert.True(t, isOk)
 	assert.Equal(t, typing.Integer, fooCol.KindDetails)
+	assert.Equal(t, nil, fooCol.defaultValue)
 
 	barCol, isOk = cols.GetColumn("bar")
 	assert.True(t, isOk)
 	assert.Equal(t, typing.Boolean, barCol.KindDetails)
+	assert.Equal(t, "123", barCol.defaultValue)
 
 	// Delete
 	cols.DeleteColumn("foo")

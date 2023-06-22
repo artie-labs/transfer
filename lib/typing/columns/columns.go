@@ -13,11 +13,14 @@ import (
 
 type Column struct {
 	name        string
+	primaryKey  bool
 	KindDetails typing.KindDetails
 	// ToastColumn indicates that the source column is a TOAST column and the value is unavailable
 	// We have stripped this out.
 	// Whenever we see the same column where there's an opposite value in `toastColumn`, we will trigger a flush
-	ToastColumn bool
+	ToastColumn  bool
+	defaultValue interface{}
+	backfilled   bool
 }
 
 func UnescapeColumnName(escapedName string, destKind constants.DestinationKind) string {
@@ -36,9 +39,32 @@ func NewColumn(name string, kd typing.KindDetails) Column {
 	}
 }
 
+func (c *Column) SetBackfilled(backfilled bool) {
+	c.backfilled = backfilled
+	return
+}
+
+func (c *Column) Backfilled() bool {
+	return c.backfilled
+}
+
+func (c *Column) SetDefaultValue(value interface{}) {
+	c.defaultValue = value
+}
+
 func (c *Column) ToLowerName() {
 	c.name = strings.ToLower(c.name)
 	return
+}
+
+func (c *Column) ShouldBackfill() bool {
+	if c.primaryKey {
+		// Never need to backfill primary key.
+		return false
+	}
+
+	// Should backfill if the default value is not null and the column has not been backfilled.
+	return c.defaultValue != nil && c.backfilled == false
 }
 
 type NameArgs struct {
@@ -81,24 +107,54 @@ func (c *Columns) EscapeName(args *NameArgs) {
 	return
 }
 
+type UpsertColumnArg struct {
+	ToastCol   *bool
+	PrimaryKey *bool
+	Backfilled *bool
+}
+
 // UpsertColumn - just a wrapper around UpdateColumn and AddColumn
 // If it doesn't find a column, it'll add one where the kind = Invalid.
-func (c *Columns) UpsertColumn(colName string, toastColumn bool) {
+func (c *Columns) UpsertColumn(colName string, arg UpsertColumnArg) {
 	if colName == "" {
 		return
 	}
 
 	if col, isOk := c.GetColumn(colName); isOk {
-		col.ToastColumn = toastColumn
+		if arg.ToastCol != nil {
+			col.ToastColumn = *arg.ToastCol
+		}
+
+		if arg.PrimaryKey != nil {
+			col.primaryKey = *arg.PrimaryKey
+		}
+
+		if arg.Backfilled != nil {
+			col.backfilled = *arg.Backfilled
+		}
+
 		c.UpdateColumn(col)
 		return
 	}
 
-	c.AddColumn(Column{
+	col := Column{
 		name:        colName,
 		KindDetails: typing.Invalid,
-		ToastColumn: toastColumn,
-	})
+	}
+
+	if arg.ToastCol != nil {
+		col.ToastColumn = *arg.ToastCol
+	}
+
+	if arg.PrimaryKey != nil {
+		col.primaryKey = *arg.PrimaryKey
+	}
+
+	if arg.Backfilled != nil {
+		col.backfilled = *arg.Backfilled
+	}
+	
+	c.AddColumn(col)
 	return
 }
 
@@ -169,6 +225,7 @@ func (c *Columns) GetColumns() []Column {
 	return cols
 }
 
+// UpdateColumn will update the column and also preserve the `defaultValue` from the previous column if the new column does not have one.
 func (c *Columns) UpdateColumn(updateCol Column) {
 	c.Lock()
 	defer c.Unlock()

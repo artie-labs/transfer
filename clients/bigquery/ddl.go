@@ -2,6 +2,7 @@ package bigquery
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -16,15 +17,25 @@ import (
 )
 
 const (
-	// Column names from SELECT column_name, data_type FROM  `project.INFORMATION_SCHEMA.COLUMNS` WHERE table_name="table";
-	describeNameCol = "column_name"
-	describeTypeCol = "data_type"
+	describeNameCol    = "column_name"
+	describeTypeCol    = "data_type"
+	describeCommentCol = "description"
 )
 
-func (s *Store) describeTable(ctx context.Context, tableData *optimization.TableData) (map[string]string, error) {
+type columnMetadata struct {
+	Type    string
+	Comment string
+}
+
+func (s *Store) describeTable(ctx context.Context, tableData *optimization.TableData) (map[string]columnMetadata, error) {
 	log := logger.FromContext(ctx)
-	rows, err := s.Query(fmt.Sprintf("SELECT column_name, data_type FROM  `%s.INFORMATION_SCHEMA.COLUMNS` WHERE table_name='%s';",
-		tableData.TopicConfig.Database, tableData.Name()))
+
+	// We modified this from COLUMN to COLUMN_FIELD_PATHS, so we can get the column description.
+	// https://cloud.google.com/bigquery/docs/information-schema-column-field-paths
+	query := fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name='%s';",
+		tableData.TopicConfig.Database, tableData.Name())
+
+	rows, err := s.Query(query)
 	defer func() {
 		if rows != nil {
 			err = rows.Close()
@@ -37,10 +48,10 @@ func (s *Store) describeTable(ctx context.Context, tableData *optimization.Table
 	if err != nil {
 		// The query will not fail if the table doesn't exist. It will simply return 0 rows.
 		// It WILL fail if the dataset doesn't exist or if it encounters any other forms of error.
-		return nil, err
+		return nil, fmt.Errorf("failed to query, err: %v, query: %v", err, query)
 	}
 
-	retMap := make(map[string]string)
+	retMap := make(map[string]columnMetadata)
 	for rows != nil && rows.Next() {
 		// figure out what columns were returned
 		// the column names will be the JSON object field keys
@@ -72,7 +83,10 @@ func (s *Store) describeTable(ctx context.Context, tableData *optimization.Table
 			row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
 		}
 
-		retMap[row[describeNameCol]] = row[describeTypeCol]
+		retMap[row[describeNameCol]] = columnMetadata{
+			Type:    row[describeTypeCol],
+			Comment: row[describeCommentCol],
+		}
 	}
 
 	return retMap, nil
@@ -91,8 +105,20 @@ func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.Tabl
 	}
 
 	var bqColumns columns.Columns
-	for column, columnType := range retMap {
-		bqColumns.AddColumn(columns.NewColumn(column, typing.BigQueryTypeToKind(columnType)))
+	for column, metadata := range retMap {
+		col := columns.NewColumn(column, typing.BigQueryTypeToKind(metadata.Type))
+		if metadata.Comment != "" {
+			// Try to parse the comment.
+			var _colComment constants.ColComment
+			err = json.Unmarshal([]byte(metadata.Comment), &_colComment)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal comment, err: %v", err)
+			}
+
+			col.SetBackfilled(_colComment.Backfilled)
+		}
+
+		bqColumns.AddColumn(col)
 	}
 
 	// If retMap is empty, it'll create a new table.

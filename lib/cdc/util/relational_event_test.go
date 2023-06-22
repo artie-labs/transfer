@@ -62,6 +62,25 @@ func TestSource_GetOptionalSchema(t *testing.T) {
 	assert.True(t, isOk)
 	assert.Equal(t, value, typing.String)
 
+	cols := schemaEventPayload.GetColumns(ctx)
+	assert.Equal(t, 6, len(cols.GetColumns()))
+
+	col, isOk := cols.GetColumn("boolean_column")
+	assert.True(t, isOk)
+
+	defaultVal, err := col.DefaultValue(nil)
+	assert.NoError(t, err)
+	assert.Equal(t, false, defaultVal)
+
+	for _, _col := range cols.GetColumns() {
+		// All the other columns do not have a default value.
+		if _col.Name(nil) != "boolean_column" {
+			defaultVal, err = _col.DefaultValue(nil)
+			assert.NoError(t, err)
+			assert.Nil(t, defaultVal, _col.Name(nil))
+		}
+	}
+
 	// OptionalColumn does not pick up custom data types.
 	_, isOk = optionalSchema["zoned_timestamp_column"]
 	assert.False(t, isOk)

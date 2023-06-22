@@ -2,15 +2,19 @@ package snowflake
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/artie-labs/transfer/lib/config/constants"
+
+	"github.com/artie-labs/transfer/lib/typing"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/logger"
-	"github.com/artie-labs/transfer/lib/typing"
 )
 
 func (s *Store) getTableConfig(ctx context.Context, fqName string, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
@@ -75,11 +79,22 @@ func (s *Store) getTableConfig(ctx context.Context, fqName string, dropDeletedCo
 			row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
 		}
 
-		snowflakeColumns.AddColumn(columns.NewColumn(row[describeNameCol], typing.SnowflakeTypeToKind(row[describeTypeCol])))
+		col := columns.NewColumn(row[describeNameCol], typing.SnowflakeTypeToKind(row[describeTypeCol]))
+		if comment, isOk := row[describeCommentCol]; isOk && comment != "<nil>" {
+			// Try to parse the comment.
+			var _colComment constants.ColComment
+			err = json.Unmarshal([]byte(comment), &_colComment)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal comment, err: %v", err)
+			}
+
+			col.SetBackfilled(_colComment.Backfilled)
+		}
+
+		snowflakeColumns.AddColumn(col)
 	}
 
 	sflkTableConfig := types.NewDwhTableConfig(&snowflakeColumns, nil, tableMissing, dropDeletedColumns)
 	s.configMap.AddTableToConfig(fqName, sflkTableConfig)
-
 	return sflkTableConfig, nil
 }

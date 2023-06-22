@@ -3,6 +3,12 @@ package bigquery
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
+	"github.com/artie-labs/transfer/lib/ptr"
+
+	"github.com/artie-labs/transfer/lib/jitter"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
@@ -50,6 +56,47 @@ func merge(tableData *optimization.TableData) ([]*Row, error) {
 	}
 
 	return rows, nil
+}
+
+// BackfillColumn will perform a backfill to the destination and also update the comment within a transaction.
+// Source: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-definition-language#column_set_options_list
+func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTableName string) error {
+	if !column.ShouldBackfill() {
+		// If we don't need to backfill, don't backfill.
+		return nil
+	}
+
+	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{
+		Escape:   true,
+		BigQuery: true,
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to escape default value, err: %v", err)
+	}
+
+	fqTableName = strings.ToLower(fqTableName)
+	escapedCol := column.Name(&columns.NameArgs{Escape: true, DestKind: s.Label()})
+	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
+		// UPDATE table SET col = default_val WHERE col IS NULL
+		fqTableName, escapedCol, defaultVal, escapedCol)
+
+	logger.FromContext(ctx).WithFields(map[string]interface{}{
+		"colName": column.Name(nil),
+		"query":   query,
+		"table":   fqTableName,
+	}).Info("backfilling column")
+	_, err = s.Exec(query)
+	if err != nil {
+		return fmt.Errorf("failed to backfill, err: %v, query: %v", err, query)
+	}
+
+	query = fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET OPTIONS (description=`%s`);",
+		// ALTER TABLE table ALTER COLUMN col set OPTIONS (description=...)
+		fqTableName, escapedCol, `{"backfilled": true}`,
+	)
+	_, err = s.Exec(query)
+	return err
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
@@ -136,6 +183,32 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 	// End temporary table creation
 
+	// Backfill columns if necessary
+	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
+		var attempts int
+		for {
+			err = s.backfillColumn(ctx, col, tableData.ToFqName(ctx, s.Label()))
+			if err == nil {
+				tableConfig.Columns().UpsertColumn(col.Name(nil), columns.UpsertColumnArg{
+					Backfilled: ptr.ToBool(true),
+				})
+				break
+			}
+
+			if TableUpdateQuotaErr(err) {
+				err = nil
+				attempts += 1
+				time.Sleep(time.Duration(jitter.JitterMs(1500, attempts)) * time.Millisecond)
+			} else {
+				defaultVal, _ := col.DefaultValue(nil)
+				return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v",
+					col.Name(nil), defaultVal, err)
+			}
+		}
+
+	}
+
+	// Perform actual merge now
 	rows, err := merge(tableData)
 	if err != nil {
 		log.WithError(err).Warn("failed to generate the merge query")
