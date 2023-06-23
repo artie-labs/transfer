@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/array"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -18,8 +20,8 @@ import (
 // This is necessary because CSV writers require values to in `string`.
 func CastColValStaging(colVal interface{}, colKind columns.Column) (string, error) {
 	if colVal == nil {
-		// \\N needs to match NULL_IF(...) from ddl.go
-		return `\\N`, nil
+		// This matches the COPY clause for NULL terminator.
+		return `\N`, nil
 	}
 
 	colValString := fmt.Sprint(colVal)
@@ -39,7 +41,15 @@ func CastColValStaging(colVal interface{}, colKind columns.Column) (string, erro
 		}
 
 	case typing.String.Kind:
-		colValString = stringutil.Wrap(colVal, true)
+		// TODO: Worth writing a benchmark whether we should check for prefix and suffix of `[ ]`
+		// Check if it's an array.
+		list, err := array.InterfaceToArrayString(colVal)
+		if err == nil {
+			colValString = "[" + strings.Join(list, ",") + "]"
+		} else {
+			colValString = stringutil.Wrap(colVal, true)
+		}
+
 	case typing.Struct.Kind:
 		if colKind.KindDetails == typing.Struct {
 			if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
@@ -63,8 +73,8 @@ func CastColValStaging(colVal interface{}, colKind columns.Column) (string, erro
 			return "", err
 		}
 
+		fmt.Println("colVal", colVal, "colValBytes", string(colValBytes))
 		colValString = string(colValBytes)
-
 	case typing.EDecimal.Kind:
 		val, isOk := colVal.(*decimal.Decimal)
 		if !isOk {

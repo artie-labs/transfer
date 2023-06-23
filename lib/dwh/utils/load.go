@@ -37,7 +37,6 @@ func DataWarehouse(ctx context.Context, store *db.Store) dwh.DataWarehouse {
 		if err := s.Sweep(ctx); err != nil {
 			logger.FromContext(ctx).WithError(err).Fatalf("failed to clean up snowflake")
 		}
-
 		return s
 	case constants.BigQuery:
 		return bigquery.LoadBigQuery(ctx, store)

@@ -12,27 +12,40 @@ func RedshiftTypeToKind(rawType string) KindDetails {
 	rawType = strings.ToLower(rawType)
 
 	switch rawType {
-	case "integer":
+	case "integer", "bigint":
 		return Integer
 	case "character varying":
 		return String
+	case "double precision":
+		return Float
 	case "timestamp with time zone", "timestamp without time zone":
 		return NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType)
+	case "time without time zone":
+		return NewKindDetailsFromTemplate(ETime, ext.TimeKindType)
+	case "date":
+		return NewKindDetailsFromTemplate(ETime, ext.DateKindType)
 	case "boolean":
 		return Boolean
 	}
 
-	fmt.Println("RedshiftTypeToKind raw type", rawType)
+	fmt.Println("### RedshiftTypeToKind raw type", rawType)
 
 	return Invalid
 }
 
 func kindToRedShift(kd KindDetails) string {
-	fmt.Println("kindToRedShift", kd)
 	switch kd.Kind {
-	case String.Kind:
+	case Integer.Kind:
+		// int4 is 2^31, whereas int8 is 2^63.
+		// we're using a larger data type to not have an integer overflow.
+		return "INT8"
+	case String.Kind, Struct.Kind, Array.Kind:
+		// Redshift does not have a built-in JSON type (which means we'll cast STRUCT and ARRAY kinds as TEXT).
+		// As a result, Artie will store this in JSON string and customers will need to extract this data out via SQL.
 		return "text"
-
+	case Boolean.Kind:
+		// We need to append `NULL` to let Redshift know that NULL is an acceptable data type.
+		return "BOOLEAN NULL"
 	case ETime.Kind:
 		switch kd.ExtendedTimeDetails.Type {
 		case ext.DateTimeKindType:
@@ -42,7 +55,11 @@ func kindToRedShift(kd KindDetails) string {
 		case ext.TimeKindType:
 			return "time"
 		}
+	case EDecimal.Kind:
+		return kd.ExtendedDecimalDetails.SnowflakeOrRedshiftKind()
 	}
+
+	fmt.Println("### kindToRedShift", kd)
 
 	return kd.Kind
 }
