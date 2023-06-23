@@ -55,8 +55,6 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
-	fmt.Println("createTable", tableConfig.CreateTable())
-
 	log := logger.FromContext(ctx)
 	fqName := tableData.ToFqName(ctx, s.Label())
 	// Check if all the columns exist in Redshift
@@ -112,8 +110,6 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		}
 	}
 
-	fmt.Println("tableConfig", tableConfig)
-
 	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 
 	// Temporary tables cannot specify schemas, so we just prefix it instead.
@@ -164,8 +160,6 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		fmt.Println("mergeQuery", mergeQuery)
 		_, err = tx.Exec(mergeQuery)
 		if err != nil {
-			txErr := tx.Rollback()
-			fmt.Println("txErr", txErr)
 			return fmt.Errorf("failed to merge, query: %v, err: %v", mergeQuery, err)
 		}
 	}

@@ -73,7 +73,6 @@ func CastColValStaging(colVal interface{}, colKind columns.Column) (string, erro
 			return "", err
 		}
 
-		fmt.Println("colVal", colVal, "colValBytes", string(colValBytes))
 		colValString = string(colValBytes)
 	case typing.EDecimal.Kind:
 		val, isOk := colVal.(*decimal.Decimal)

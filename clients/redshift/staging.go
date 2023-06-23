@@ -49,10 +49,10 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 	// Note, we need to specify `\\N` here and in `CastColVal(..)` we are only doing `\N`, this is because Redshift treats backslashes as an escape character.
 	// So, it'll convert `\N` => `\\N` during COPY.
 	copyStmt := fmt.Sprintf(`COPY %s FROM '%s' DELIMITER '\t' NULL AS '\\N' FORMAT CSV %s dateformat 'auto' timeformat 'auto';`, tempTableName, s3Uri, s.credentialsClause)
-	fmt.Println(copyStmt)
 	if _, err = s.Exec(copyStmt); err != nil {
 		return fmt.Errorf("failed to run COPY for temporary table, err: %v, copy: %v", err, copyStmt)
 	}
+
 	if deleteErr := os.RemoveAll(fp); deleteErr != nil {
 		logger.FromContext(ctx).WithError(deleteErr).WithField("filePath", fp).Warn("failed to delete temp file")
 	}

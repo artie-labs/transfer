@@ -92,8 +92,6 @@ where c.table_name='%s' and c.table_schema='%s'`, args.Table, args.Schema)
 			row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
 		}
 
-		fmt.Println("row", row)
-
 		col := columns.NewColumn(row[describeNameCol], typing.RedshiftTypeToKind(row[describeTypeCol]))
 		if comment, isOk := row[describeDescriptionCol]; isOk && comment != "<nil>" {
 			// Try to parse the comment.

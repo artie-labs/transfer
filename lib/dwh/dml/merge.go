@@ -127,7 +127,7 @@ func MergeStatementParts(m MergeArgument) ([]string, error) {
 			// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
 			m.PrimaryKeys[0].EscapedName()),
 		// UPDATE
-		fmt.Sprintf(`UPDATE %s as cc SET %s FROM %s cc WHERE %s%s AND COALESCE(cc.%s, false) = false;`,
+		fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s AND COALESCE(cc.%s, false) = false;`,
 			// UPDATE table set col1 = cc. col1
 			m.FqTableName, columns.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.Redshift),
 			// FROM staging WHERE join on PK(s)
