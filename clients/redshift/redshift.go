@@ -152,6 +152,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		}),
 		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:     tableData.TopicConfig.SoftDelete,
+		RedShift:       true,
 	})
 
 	log.WithField("query", mergeQuery).Debug("executing...")

@@ -28,11 +28,13 @@ type MergeArgument struct {
 	// 1) escape JSON columns
 	// 2) merge temp table vs. subquery
 	BigQuery   bool
+	RedShift   bool
 	SoftDelete bool
 }
 
 // TODO - add validation to merge argument
 // TODO - simplify the whole escape / unescape columns logic.
+// TODO: Does Snowflake and BigQuery return the staging alias?
 func MergeStatement(m MergeArgument) (string, error) {
 	// We should not need idempotency key for DELETE
 	// This is based on the assumption that the primary key would be atomically increasing or UUID based
@@ -65,7 +67,7 @@ func MergeStatement(m MergeArgument) (string, error) {
 	}
 
 	subQuery := fmt.Sprintf("( %s )", m.SubQuery)
-	if m.BigQuery {
+	if m.BigQuery || m.RedShift {
 		subQuery = m.SubQuery
 	}
 
