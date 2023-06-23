@@ -38,8 +38,7 @@ func (s *Store) getTableConfig(ctx context.Context, args getTableConfigArgs) (*t
 
 	log := logger.FromContext(ctx)
 	// This query is a modified fork from: https://gist.github.com/alexanderlz/7302623
-	query := fmt.Sprintf(`
-select c.column_name,c.data_type,d.description 
+	query := fmt.Sprintf(`select c.column_name,c.data_type,d.description 
 from information_schema.columns c 
 left join pg_class c1 on c.table_name=c1.relname 
 left join pg_catalog.pg_namespace n on c.table_schema=n.nspname and c1.relnamespace=n.oid 

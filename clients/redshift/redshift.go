@@ -138,7 +138,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	// Prepare merge statement
-	mergeQuery, err := dml.MergeStatement(dml.MergeArgument{
+	mergeParts, err := dml.MergeStatementParts(dml.MergeArgument{
 		FqTableName:   fqName,
 		SubQuery:      temporaryTableName,
 		IdempotentKey: tableData.TopicConfig.IdempotentKey,
@@ -155,20 +155,23 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		Redshift:       true,
 	})
 
-	log.WithField("query", mergeQuery).Debug("executing...")
-
-	fmt.Println("mergeQuery", mergeQuery)
 	tx, err := s.Begin()
-	_, err = tx.Exec(mergeQuery)
 	if err != nil {
-		txErr := tx.Rollback()
-		fmt.Println("txErr", txErr)
-		return fmt.Errorf("failed to merge, query: %v, err: %v", mergeQuery, err)
+		return fmt.Errorf("failed to start tx, err: %v", err)
 	}
 
-	fmt.Println("committing")
+	for _, mergeQuery := range mergeParts {
+		fmt.Println("mergeQuery", mergeQuery)
+		_, err = tx.Exec(mergeQuery)
+		if err != nil {
+			txErr := tx.Rollback()
+			fmt.Println("txErr", txErr)
+			return fmt.Errorf("failed to merge, query: %v, err: %v", mergeQuery, err)
+		}
+	}
+
 	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("failed to merge, query: %v, err: %v", mergeQuery, err)
+		return fmt.Errorf("failed to merge, parts: %v, err: %v", mergeParts, err)
 	}
 
 	_ = ddl.DropTemporaryTable(ctx, s, temporaryTableName, false)
