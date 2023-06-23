@@ -67,9 +67,8 @@ func (d *Decimal) Value() interface{} {
 	return d.value
 }
 
-// SnowflakeOrRedshiftKind - is used to determine whether a NUMERIC data type should be a STRING or NUMERIC(p, s).
-// We are combining Redshift and Snowflake here because they have the same precision requirement (38 digits).
-func (d *Decimal) SnowflakeOrRedshiftKind() string {
+// SnowflakeKind - is used to determine whether a NUMERIC data type should be a STRING or NUMERIC(p, s).
+func (d *Decimal) SnowflakeKind() string {
 	precision := MaxPrecisionBeforeString
 	if d.precision != nil {
 		precision = *d.precision
@@ -77,6 +76,21 @@ func (d *Decimal) SnowflakeOrRedshiftKind() string {
 
 	if precision > MaxPrecisionBeforeString || precision == -1 {
 		return "STRING"
+	}
+
+	return fmt.Sprintf("NUMERIC(%v, %v)", precision, d.scale)
+}
+
+// RedshiftKind - is used to determine whether a NUMERIC data type should be a STRING or NUMERIC(p, s).
+// This has the same max precision of 38 digits like Snowflake.
+func (d *Decimal) RedshiftKind() string {
+	precision := MaxPrecisionBeforeString
+	if d.precision != nil {
+		precision = *d.precision
+	}
+
+	if precision > MaxPrecisionBeforeString || precision == -1 {
+		return "TEXT"
 	}
 
 	return fmt.Sprintf("NUMERIC(%v, %v)", precision, d.scale)

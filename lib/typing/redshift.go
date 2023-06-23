@@ -8,10 +8,7 @@ import (
 )
 
 func RedshiftTypeToKind(rawType string) KindDetails {
-	// TODO - this needs to be filled out.
-	rawType = strings.ToLower(rawType)
-
-	switch rawType {
+	switch strings.ToLower(rawType) {
 	case "integer", "bigint":
 		return Integer
 	case "character varying":
@@ -26,9 +23,9 @@ func RedshiftTypeToKind(rawType string) KindDetails {
 		return NewKindDetailsFromTemplate(ETime, ext.DateKindType)
 	case "boolean":
 		return Boolean
+	case "numeric":
+		return EDecimal
 	}
-
-	fmt.Println("### RedshiftTypeToKind raw type", rawType)
 
 	return Invalid
 }
@@ -56,7 +53,7 @@ func kindToRedShift(kd KindDetails) string {
 			return "time"
 		}
 	case EDecimal.Kind:
-		return kd.ExtendedDecimalDetails.SnowflakeOrRedshiftKind()
+		return kd.ExtendedDecimalDetails.RedshiftKind()
 	}
 
 	fmt.Println("### kindToRedShift", kd)
