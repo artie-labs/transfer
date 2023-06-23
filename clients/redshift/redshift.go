@@ -152,13 +152,22 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		}),
 		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:     tableData.TopicConfig.SoftDelete,
-		RedShift:       true,
+		Redshift:       true,
 	})
 
 	log.WithField("query", mergeQuery).Debug("executing...")
-	_, err = s.Exec(mergeQuery)
+
 	fmt.Println("mergeQuery", mergeQuery)
+	tx, err := s.Begin()
+	_, err = tx.Exec(mergeQuery)
 	if err != nil {
+		txErr := tx.Rollback()
+		fmt.Println("txErr", txErr)
+		return fmt.Errorf("failed to merge, query: %v, err: %v", mergeQuery, err)
+	}
+
+	fmt.Println("committing")
+	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("failed to merge, query: %v, err: %v", mergeQuery, err)
 	}
 

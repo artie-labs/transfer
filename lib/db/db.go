@@ -10,6 +10,7 @@ import (
 type Store interface {
 	Exec(query string, args ...any) (sql.Result, error)
 	Query(query string, args ...any) (*sql.Rows, error)
+	Begin() (*sql.Tx, error)
 }
 
 func Open(ctx context.Context, driverName, dsn string) Store {

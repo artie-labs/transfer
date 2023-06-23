@@ -9,6 +9,18 @@ import (
 )
 
 type FakeStore struct {
+	BeginStub        func() (*sql.Tx, error)
+	beginMutex       sync.RWMutex
+	beginArgsForCall []struct {
+	}
+	beginReturns struct {
+		result1 *sql.Tx
+		result2 error
+	}
+	beginReturnsOnCall map[int]struct {
+		result1 *sql.Tx
+		result2 error
+	}
 	ExecStub        func(string, ...any) (sql.Result, error)
 	execMutex       sync.RWMutex
 	execArgsForCall []struct {
@@ -39,6 +51,62 @@ type FakeStore struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *FakeStore) Begin() (*sql.Tx, error) {
+	fake.beginMutex.Lock()
+	ret, specificReturn := fake.beginReturnsOnCall[len(fake.beginArgsForCall)]
+	fake.beginArgsForCall = append(fake.beginArgsForCall, struct {
+	}{})
+	stub := fake.BeginStub
+	fakeReturns := fake.beginReturns
+	fake.recordInvocation("Begin", []interface{}{})
+	fake.beginMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeStore) BeginCallCount() int {
+	fake.beginMutex.RLock()
+	defer fake.beginMutex.RUnlock()
+	return len(fake.beginArgsForCall)
+}
+
+func (fake *FakeStore) BeginCalls(stub func() (*sql.Tx, error)) {
+	fake.beginMutex.Lock()
+	defer fake.beginMutex.Unlock()
+	fake.BeginStub = stub
+}
+
+func (fake *FakeStore) BeginReturns(result1 *sql.Tx, result2 error) {
+	fake.beginMutex.Lock()
+	defer fake.beginMutex.Unlock()
+	fake.BeginStub = nil
+	fake.beginReturns = struct {
+		result1 *sql.Tx
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeStore) BeginReturnsOnCall(i int, result1 *sql.Tx, result2 error) {
+	fake.beginMutex.Lock()
+	defer fake.beginMutex.Unlock()
+	fake.BeginStub = nil
+	if fake.beginReturnsOnCall == nil {
+		fake.beginReturnsOnCall = make(map[int]struct {
+			result1 *sql.Tx
+			result2 error
+		})
+	}
+	fake.beginReturnsOnCall[i] = struct {
+		result1 *sql.Tx
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeStore) Exec(arg1 string, arg2 ...any) (sql.Result, error) {
@@ -174,6 +242,8 @@ func (fake *FakeStore) QueryReturnsOnCall(i int, result1 *sql.Rows, result2 erro
 func (fake *FakeStore) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.beginMutex.RLock()
+	defer fake.beginMutex.RUnlock()
 	fake.execMutex.RLock()
 	defer fake.execMutex.RUnlock()
 	fake.queryMutex.RLock()

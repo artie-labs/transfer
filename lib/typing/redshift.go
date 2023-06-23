@@ -8,6 +8,7 @@ import (
 )
 
 func RedshiftTypeToKind(rawType string) KindDetails {
+	// TODO - this needs to be filled out.
 	rawType = strings.ToLower(rawType)
 
 	switch rawType {
@@ -17,6 +18,8 @@ func RedshiftTypeToKind(rawType string) KindDetails {
 		return String
 	case "timestamp with time zone", "timestamp without time zone":
 		return NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType)
+	case "boolean":
+		return Boolean
 	}
 
 	fmt.Println("RedshiftTypeToKind raw type", rawType)

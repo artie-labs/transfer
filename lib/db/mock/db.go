@@ -22,3 +22,8 @@ func (m *DB) Query(query string, args ...any) (*sql.Rows, error) {
 	fmt.Println("Mock DB is querying", "query", query, "args", args)
 	return m.Fake.Query(query, args)
 }
+
+func (m *DB) Begin() (*sql.Tx, error) {
+	fmt.Println("Mock DB Begin()")
+	return m.Fake.Begin()
+}
