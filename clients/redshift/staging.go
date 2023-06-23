@@ -36,9 +36,9 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 
 	// Load fp into s3, get S3 URI and pass it down.
 	s3Uri, err := s3.UploadLocalFileToS3(ctx, s3.UploadArgs{
-		Bucket:   s.bucket,
-		FilePath: fp,
-		Expiry:   false,
+		OptionalS3Prefix: s.optionalS3Prefix,
+		Bucket:           s.bucket,
+		FilePath:         fp,
 	})
 
 	if err != nil {

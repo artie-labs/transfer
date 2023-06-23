@@ -59,12 +59,13 @@ type BigQuery struct {
 }
 
 type Redshift struct {
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	Database string `yaml:"database"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	Bucket   string `yaml:"bucket"`
+	Host             string `yaml:"host"`
+	Port             int    `yaml:"port"`
+	Database         string `yaml:"database"`
+	Username         string `yaml:"username"`
+	Password         string `yaml:"password"`
+	Bucket           string `yaml:"bucket"`
+	OptionalS3Prefix string `yaml:"optionalS3Prefix"`
 	// https://docs.aws.amazon.com/redshift/latest/dg/copy-parameters-authorization.html
 	CredentialsClause string `yaml:"credentialsClause"`
 }

@@ -24,6 +24,7 @@ import (
 type Store struct {
 	credentialsClause string
 	bucket            string
+	optionalS3Prefix  string
 	configMap         *types.DwhToTablesConfigMap
 	db.Store
 }
@@ -189,6 +190,7 @@ func LoadRedshift(ctx context.Context, _store *db.Store) *Store {
 	return &Store{
 		credentialsClause: settings.Config.Redshift.CredentialsClause,
 		bucket:            settings.Config.Redshift.Bucket,
+		optionalS3Prefix:  settings.Config.Redshift.OptionalS3Prefix,
 		Store:             db.Open(ctx, "postgres", connStr),
 		configMap:         &types.DwhToTablesConfigMap{},
 	}
