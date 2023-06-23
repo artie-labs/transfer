@@ -51,7 +51,5 @@ func TestRedshiftTypeToKind(t *testing.T) {
 			kd := RedshiftTypeToKind(rawType)
 			assert.Equal(t, testCase.expectedKd.Kind, kd.Kind, testCase.name)
 		}
-
 	}
-
 }

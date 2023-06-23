@@ -1,7 +1,6 @@
 package typing
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -55,8 +54,6 @@ func kindToRedShift(kd KindDetails) string {
 	case EDecimal.Kind:
 		return kd.ExtendedDecimalDetails.RedshiftKind()
 	}
-
-	fmt.Println("### kindToRedShift", kd)
 
 	return kd.Kind
 }

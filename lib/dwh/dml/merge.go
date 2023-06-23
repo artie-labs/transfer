@@ -64,7 +64,6 @@ func MergeStatementParts(m MergeArgument) ([]string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	// TODO solve for TOASTed.
 	// TODO solve for idempotency
 	if m.SoftDelete {
 		return []string{
