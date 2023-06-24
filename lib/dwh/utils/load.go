@@ -43,9 +43,8 @@ func DataWarehouse(ctx context.Context, store *db.Store) dwh.DataWarehouse {
 	case constants.Redshift:
 		s := redshift.LoadRedshift(ctx, store)
 		if err := s.Sweep(ctx); err != nil {
-			logger.FromContext(ctx).WithError(err).Fatalf("failed to clean up snowflake")
+			logger.FromContext(ctx).WithError(err).Fatalf("failed to clean up redshift")
 		}
-
 		return s
 	}
 
