@@ -158,7 +158,6 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	for _, mergeQuery := range mergeParts {
-		fmt.Println("mergeQuery", mergeQuery)
 		_, err = tx.Exec(mergeQuery)
 		if err != nil {
 			return fmt.Errorf("failed to merge, query: %v, err: %v", mergeQuery, err)

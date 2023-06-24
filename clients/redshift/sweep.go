@@ -47,8 +47,6 @@ WHERE n.nspname = '%s' and c.relname ILIKE '%s';`,
 				return err
 			}
 
-			fmt.Println("tableName", tableName, "comment", comment)
-
 			if ddl.ShouldDelete(comment) {
 				err = ddl.DropTemporaryTable(ctx, s,
 					fmt.Sprintf("%s.%s.%s", dbAndSchemaPair.Database, dbAndSchemaPair.Schema, tableName), true)
