@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/artie-labs/transfer/clients/utils"
+
 	"github.com/artie-labs/transfer/lib/dwh/dml"
 	"github.com/artie-labs/transfer/lib/ptr"
 
@@ -120,14 +122,13 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	// Now iterate over all the in-memory cols and see which one requires backfill.
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
-		// TODO: backfill.
-		//err = s.backfillColumn(ctx, col, tableData.ToFqName(ctx, s.Label()))
-		//if err != nil {
-		//	defaultVal, _ := col.DefaultValue(nil)
-		//	return fmt.Errorf("failed to backfill col: %v, default value: %v, error: %v",
-		//		col.Name(nil), defaultVal, err)
-		//}
-		//
+		err = utils.BackfillColumn(ctx, s, col, tableData.ToFqName(ctx, s.Label()))
+		if err != nil {
+			defaultVal, _ := col.DefaultValue(nil)
+			return fmt.Errorf("failed to backfill col: %v, default value: %v, error: %v",
+				col.Name(nil), defaultVal, err)
+		}
+
 		tableConfig.Columns().UpsertColumn(col.Name(nil), columns.UpsertColumnArg{
 			Backfilled: ptr.ToBool(true),
 		})

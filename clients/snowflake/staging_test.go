@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/artie-labs/transfer/clients/utils"
+
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/dwh/types"
@@ -53,7 +55,7 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 	}
 
 	for _, testCase := range testCases {
-		err := s.stageStore.backfillColumn(s.ctx, testCase.col, fqTableName)
+		err := utils.BackfillColumn(s.ctx, s.stageStore, testCase.col, fqTableName)
 		if testCase.expectErr {
 			assert.Error(s.T(), err, testCase.name)
 			continue

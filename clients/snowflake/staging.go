@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/artie-labs/transfer/clients/utils"
+
 	"github.com/artie-labs/transfer/lib/ptr"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -18,43 +20,6 @@ import (
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 )
-
-// BackfillColumn will perform a backfill to the destination and also update the comment within a transaction.
-// Source: https://docs.snowflake.com/en/sql-reference/sql/comment
-func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTableName string) error {
-	if !column.ShouldBackfill() {
-		// If we don't need to backfill, don't backfill.
-		return nil
-	}
-
-	fqTableName = strings.ToLower(fqTableName)
-	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{
-		Escape: true,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to escape default value, err: %v", err)
-	}
-
-	escapedCol := column.Name(&columns.NameArgs{Escape: true, DestKind: s.Label()})
-	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
-		// UPDATE table SET col = default_val WHERE col IS NULL
-		fqTableName, escapedCol, defaultVal, escapedCol,
-	)
-	logger.FromContext(ctx).WithFields(map[string]interface{}{
-		"colName": column.Name(nil),
-		"query":   query,
-		"table":   fqTableName,
-	}).Info("backfilling column")
-
-	_, err = s.Exec(query)
-	if err != nil {
-		return fmt.Errorf("failed to backfill, err: %v, query: %v", err, query)
-	}
-
-	query = fmt.Sprintf(`COMMENT ON COLUMN %s.%s IS '%v';`, fqTableName, escapedCol, `{"backfilled": true}`)
-	_, err = s.Exec(query)
-	return err
-}
 
 // prepareTempTable does the following:
 // 1) Create the temporary table
@@ -216,7 +181,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 
 	// Now iterate over all the in-memory cols and see which one requires backfill.
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
-		err = s.backfillColumn(ctx, col, tableData.ToFqName(ctx, s.Label()))
+		err = utils.BackfillColumn(ctx, s, col, tableData.ToFqName(ctx, s.Label()))
 		if err != nil {
 			defaultVal, _ := col.DefaultValue(nil)
 			return fmt.Errorf("failed to backfill col: %v, default value: %v, error: %v",

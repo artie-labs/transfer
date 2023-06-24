@@ -13,6 +13,7 @@ import (
 type DefaultValueArgs struct {
 	Escape   bool
 	BigQuery bool
+	Redshift bool
 }
 
 func (c *Column) DefaultValue(args *DefaultValueArgs) (interface{}, error) {
@@ -29,6 +30,10 @@ func (c *Column) DefaultValue(args *DefaultValueArgs) (interface{}, error) {
 	case typing.Struct.Kind, typing.Array.Kind:
 		if args.BigQuery {
 			return "JSON" + stringutil.Wrap(c.defaultValue, false), nil
+		}
+
+		if args.Redshift {
+			return stringutil.Wrap(c.defaultValue, false), nil
 		}
 	case typing.ETime.Kind:
 		extTime, err := ext.ParseFromInterface(c.defaultValue)
