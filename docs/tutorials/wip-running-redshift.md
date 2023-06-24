@@ -18,7 +18,7 @@ resource "aws_s3_bucket" "transfer_s3_redshift_bucket" {
   bucket = "artie-redshift-logs"  # Set your desired bucket name
 }
 
-resource "aws_s3_bucket_lifecycle_configuration" "transfer_s3_redshift_bucket_lifecycle" {
+resource "aws_s3_bucket_lifecycle_configuration" "my_bucket_lifecycle" {
   rule {
     id     = "DeleteOldObjects"
     status = "Enabled"
