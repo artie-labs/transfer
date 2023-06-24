@@ -41,7 +41,6 @@ func CastColValStaging(colVal interface{}, colKind columns.Column) (string, erro
 		}
 
 	case typing.String.Kind:
-		fmt.Println("colVal", colVal)
 		// TODO: Worth writing a benchmark whether we should check for prefix and suffix of `[ ]`
 		// Check if it's an array.
 		list, err := array.InterfaceToArrayString(colVal)
