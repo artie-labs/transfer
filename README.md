@@ -56,6 +56,7 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
 - [Destinations](https://docs.artie.so/real-time-destinations/overview):
     - Snowflake
     - BigQuery
+    - Redshift
 
 - [Sources](https://docs.artie.so/real-time-sources/overview):
     - MongoDB
