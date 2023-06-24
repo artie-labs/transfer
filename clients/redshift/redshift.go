@@ -3,7 +3,6 @@ package redshift
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/artie-labs/transfer/lib/dwh/dml"
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -114,7 +113,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 
 	// Temporary tables cannot specify schemas, so we just prefix it instead.
-	temporaryTableName := fmt.Sprintf("%s_%s", strings.ReplaceAll(tableData.ToFqName(ctx, s.Label()), ".", "_"), tableData.TempTableSuffix())
+	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label()), tableData.TempTableSuffix())
 	if err = s.prepareTempTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {
 		return err
 	}

@@ -5,6 +5,9 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
+	"time"
+
+	"github.com/artie-labs/transfer/lib/typing"
 
 	"github.com/artie-labs/transfer/lib/s3"
 
@@ -27,6 +30,12 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 
 	if err := ddl.AlterTable(ctx, tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
 		return fmt.Errorf("failed to create temp table, error: %v", err)
+	}
+
+	expiryString := typing.ExpiresDate(time.Now().UTC().Add(ddl.TempTableTTL))
+	// Now add a comment to the temporary table.
+	if _, err := s.Exec(fmt.Sprintf(`COMMENT ON TABLE %s IS '%s';`, tempTableName, ddl.ExpiryComment(expiryString))); err != nil {
+		return fmt.Errorf("failed to add comment to table, tableName: %v, err: %v", tempTableName, err)
 	}
 
 	fp, err := s.loadTemporaryTable(tableData, tempTableName)
