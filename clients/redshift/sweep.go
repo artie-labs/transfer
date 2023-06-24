@@ -13,7 +13,6 @@ import (
 )
 
 func (s *Store) Sweep(ctx context.Context) error {
-
 	logger.FromContext(ctx).Info("looking to see if there are any dangling artie temporary tables to delete...")
 	// Find all the database and schema pairings
 	// Then iterate over information schema
