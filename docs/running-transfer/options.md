@@ -59,6 +59,10 @@ Please see: [snowflake.md](../real-time-destinations/snowflake.md "mention") on 
 
 <table><thead><tr><th width="434">Key</th><th width="110">Optional</th><th>Description</th></tr></thead><tbody><tr><td><code>snowflake.account</code></td><td>N</td><td>Snowflake <a href="https://docs.snowflake.com/en/user-guide/admin-account-identifier.html#account-identifiers">Account Identifier</a></td></tr><tr><td><code>snowflake.username</code></td><td>N</td><td>Snowflake username</td></tr><tr><td><code>snowflake.password</code></td><td>N</td><td>Snowflake password</td></tr><tr><td><code>snowflake.warehouse</code></td><td>N</td><td>Snowflake virtual warehouse name</td></tr><tr><td><code>snowflake.region</code></td><td>N</td><td>Snowflake region.</td></tr></tbody></table>
 
+### Redshift
+
+<table><thead><tr><th width="434">Key</th><th width="106.33333333333331">Optional</th><th>Description</th></tr></thead><tbody><tr><td><code>redshift.host</code></td><td>N</td><td>Host URL<br>e.g. <code>test-cluster.us-east-1.redshift.amazonaws.com</code></td></tr><tr><td><code>redshift.port</code></td><td>N</td><td>-</td></tr><tr><td><code>redshift.database</code></td><td>N</td><td>Namespace / Database in Redshift.</td></tr><tr><td><code>redshift.username</code></td><td>N</td><td></td></tr><tr><td><code>redshift.password</code></td><td>N</td><td></td></tr><tr><td><code>redshift.bucket</code></td><td>N</td><td>Bucket for where staging files will be stored.<br><br>Take a look at </td></tr></tbody></table>
+
 ### Telemetry
 
 Overview of Telemetry can be found here: [Broken link](broken-reference "mention").
