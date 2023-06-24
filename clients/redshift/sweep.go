@@ -1,23 +1,18 @@
-package snowflake
+package redshift
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
 
-	"github.com/artie-labs/transfer/lib/dwh/ddl"
-
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/dwh/ddl"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 )
 
 func (s *Store) Sweep(ctx context.Context) error {
-	if !s.useStaging {
-		return nil
-	}
-
 	logger.FromContext(ctx).Info("looking to see if there are any dangling artie temporary tables to delete...")
 	// Find all the database and schema pairings
 	// Then iterate over information schema
@@ -34,9 +29,12 @@ func (s *Store) Sweep(ctx context.Context) error {
 		// ILIKE is used to be case-insensitive since Snowflake stores all the tables in UPPER.
 		var rows *sql.Rows
 		rows, err = s.Store.Query(fmt.Sprintf(
-			`SELECT table_name, comment FROM %s.information_schema.tables where table_name ILIKE '%s' AND table_schema = UPPER('%s')`,
-			dbAndSchemaPair.Database,
-			"%"+constants.ArtiePrefix+"%", dbAndSchemaPair.Schema))
+			`select c.relname, d.description from pg_catalog.pg_description d
+JOIN pg_class c on d.objoid = c.oid
+JOIN pg_catalog.pg_namespace n on n.oid = c.relnamespace
+WHERE n.nspname = '%s' and c.relname ILIKE '%s';`,
+			dbAndSchemaPair.Schema,
+			"%"+constants.ArtiePrefix+"%"))
 		if err != nil {
 			return err
 		}

@@ -108,8 +108,10 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 	if args.CreateTable {
 		var sqlQuery string
 		if args.TemporaryTable {
-			expiryString := typing.ExpiresDate(time.Now().UTC().Add(constants.BigQueryTempTableTTL))
+			expiryString := typing.ExpiresDate(time.Now().UTC().Add(TempTableTTL))
 			switch args.Dwh.Label() {
+			case constants.Redshift:
+				sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", args.FqTableName, strings.Join(colSQLParts, ","))
 			case constants.BigQuery:
 				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
 					args.FqTableName, strings.Join(colSQLParts, ","), expiryString)
@@ -121,7 +123,8 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE) COMMENT='%s'`,
 					args.FqTableName, strings.Join(colSQLParts, ","),
 					// Comment on the table
-					fmt.Sprintf("%s%s", constants.SnowflakeExpireCommentPrefix, expiryString))
+					ExpiryComment(expiryString),
+				)
 			default:
 				return fmt.Errorf("unexpected dwh: %v trying to create a temporary table", args.Dwh.Label())
 			}

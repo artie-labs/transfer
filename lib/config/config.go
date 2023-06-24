@@ -5,6 +5,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/artie-labs/transfer/lib/stringutil"
+
 	"github.com/artie-labs/transfer/lib/numbers"
 	"gopkg.in/yaml.v3"
 
@@ -54,6 +56,18 @@ type BigQuery struct {
 	PathToCredentials string `yaml:"pathToCredentials"`
 	DefaultDataset    string `yaml:"defaultDataset"`
 	ProjectID         string `yaml:"projectID"`
+}
+
+type Redshift struct {
+	Host             string `yaml:"host"`
+	Port             int    `yaml:"port"`
+	Database         string `yaml:"database"`
+	Username         string `yaml:"username"`
+	Password         string `yaml:"password"`
+	Bucket           string `yaml:"bucket"`
+	OptionalS3Prefix string `yaml:"optionalS3Prefix"`
+	// https://docs.aws.amazon.com/redshift/latest/dg/copy-parameters-authorization.html
+	CredentialsClause string `yaml:"credentialsClause"`
 }
 
 type Snowflake struct {
@@ -106,6 +120,7 @@ type Config struct {
 	// Supported destinations
 	BigQuery  *BigQuery  `yaml:"bigquery"`
 	Snowflake *Snowflake `yaml:"snowflake"`
+	Redshift  *Redshift  `yaml:"redshift"`
 
 	Reporting struct {
 		Sentry *Sentry `yaml:"sentry"`
@@ -159,6 +174,27 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 	return &config, nil
 }
 
+func (c *Config) ValidateRedshift() error {
+	if c.Output != constants.Redshift {
+		return fmt.Errorf("output is not redshift, output: %v", c.Output)
+	}
+
+	if c.Redshift == nil {
+		return fmt.Errorf("redshift cfg is nil")
+	}
+
+	if empty := stringutil.Empty(c.Redshift.Host, c.Redshift.Database, c.Redshift.Username,
+		c.Redshift.Password, c.Redshift.Bucket, c.Redshift.CredentialsClause); empty {
+		return fmt.Errorf("one of redshift settings is empty")
+	}
+
+	if c.Redshift.Port <= 0 {
+		return fmt.Errorf("redshift invalid port")
+	}
+
+	return nil
+}
+
 // Validate will check the output source validity
 // It will also check if a topic exists + iterate over each topic to make sure it's valid.
 // The actual output source (like Snowflake) and CDC parser will be loaded and checked by other funcs.
@@ -180,12 +216,19 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("config is invalid, buffer pool is too small, min value: %v, actual: %v", bufferPoolSizeStart, int(c.BufferRows))
 	}
 
-	if c.Output == constants.Snowflake && int(c.BufferRows) > bufferPoolSizeEnd {
-		return fmt.Errorf("snowflake does not allow more than 15k rows, actual: %v", int(c.BufferRows))
-	}
-
 	if !constants.IsValidDestination(c.Output) {
 		return fmt.Errorf("config is invalid, output: %s is invalid", c.Output)
+	}
+
+	switch c.Output {
+	case constants.Redshift:
+		if err := c.ValidateRedshift(); err != nil {
+			return err
+		}
+	case constants.Snowflake:
+		if int(c.BufferRows) > bufferPoolSizeEnd {
+			return fmt.Errorf("snowflake does not allow more than 15k rows, actual: %v", int(c.BufferRows))
+		}
 	}
 
 	if c.Queue == constants.Kafka {

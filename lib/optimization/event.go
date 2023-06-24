@@ -132,6 +132,10 @@ func (t *TableData) RowsData() map[string]map[string]interface{} {
 
 func (t *TableData) ToFqName(ctx context.Context, kind constants.DestinationKind) string {
 	switch kind {
+	case constants.Redshift:
+		// Redshift is Postgres compatible, so when establishing a connection, we'll specify a database.
+		// Thus, we only need to specify schema and table name here.
+		return fmt.Sprintf("%s.%s", t.TopicConfig.Schema, t.Name())
 	case constants.BigQuery:
 		// The fully qualified name for BigQuery is: project_id.dataset.tableName.
 		return fmt.Sprintf("%s.%s.%s", config.FromContext(ctx).Config.BigQuery.ProjectID, t.TopicConfig.Database, t.Name())

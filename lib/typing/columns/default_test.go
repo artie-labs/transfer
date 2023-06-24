@@ -3,6 +3,8 @@ package columns
 import (
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
+
 	"github.com/artie-labs/transfer/lib/typing"
 
 	"github.com/stretchr/testify/assert"
@@ -65,9 +67,21 @@ func TestColumn_DefaultValue(t *testing.T) {
 			},
 			args: &DefaultValueArgs{
 				Escape:   true,
-				BigQuery: true,
+				DestKind: constants.BigQuery,
 			},
 			expectedValue: "JSON'{}'",
+		},
+		{
+			name: "json (redshift)",
+			col: &Column{
+				KindDetails:  typing.Struct,
+				defaultValue: "{}",
+			},
+			args: &DefaultValueArgs{
+				Escape:   true,
+				DestKind: constants.Redshift,
+			},
+			expectedValue: "'{}'",
 		},
 	}
 

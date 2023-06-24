@@ -19,29 +19,41 @@ import (
 
 func TestNewTableData_TableName(t *testing.T) {
 	type _testCase struct {
-		name                    string
-		tableName               string
-		overrideName            string
+		name         string
+		tableName    string
+		overrideName string
+		schema       string
+		db           string
+
 		expectedName            string
 		expectedSnowflakeFqName string
 		expectedBigQueryFqName  string
+		expectedRedshiftFqName  string
 	}
 
 	testCases := []_testCase{
 		{
-			name:                    "no override is provided",
-			tableName:               "food",
+			name:      "no override is provided",
+			tableName: "food",
+			schema:    "public",
+			db:        "db",
+
 			expectedName:            "food",
-			expectedSnowflakeFqName: "..food",
-			expectedBigQueryFqName:  "artie..food",
+			expectedSnowflakeFqName: "db.public.food",
+			expectedBigQueryFqName:  "artie.db.food",
+			expectedRedshiftFqName:  "public.food",
 		},
 		{
-			name:                    "override is provided",
-			tableName:               "food",
-			overrideName:            "drinks",
+			name:         "override is provided",
+			tableName:    "food",
+			schema:       "public",
+			overrideName: "drinks",
+			db:           "db",
+
 			expectedName:            "drinks",
-			expectedSnowflakeFqName: "..drinks",      // db, schema
-			expectedBigQueryFqName:  "artie..drinks", // data set only
+			expectedSnowflakeFqName: "db.public.drinks",
+			expectedBigQueryFqName:  "artie.db.drinks",
+			expectedRedshiftFqName:  "public.food",
 		},
 	}
 
@@ -54,11 +66,16 @@ func TestNewTableData_TableName(t *testing.T) {
 	})
 
 	for _, testCase := range testCases {
-		td := NewTableData(nil, nil, kafkalib.TopicConfig{TableName: testCase.overrideName}, testCase.tableName)
+		td := NewTableData(nil, nil, kafkalib.TopicConfig{
+			Database:  testCase.db,
+			TableName: testCase.overrideName,
+			Schema:    testCase.schema,
+		}, testCase.tableName)
 		assert.Equal(t, testCase.expectedName, td.Name(), testCase.name)
 		assert.Equal(t, testCase.expectedName, td.name, testCase.name)
 		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.SnowflakeStages))
 		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.Snowflake))
+		assert.Equal(t, testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery))
 		assert.Equal(t, testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery))
 	}
 }

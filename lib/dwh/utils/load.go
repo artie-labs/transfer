@@ -3,6 +3,8 @@ package utils
 import (
 	"context"
 
+	"github.com/artie-labs/transfer/clients/redshift"
+
 	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/config"
@@ -35,10 +37,15 @@ func DataWarehouse(ctx context.Context, store *db.Store) dwh.DataWarehouse {
 		if err := s.Sweep(ctx); err != nil {
 			logger.FromContext(ctx).WithError(err).Fatalf("failed to clean up snowflake")
 		}
-
 		return s
 	case constants.BigQuery:
 		return bigquery.LoadBigQuery(ctx, store)
+	case constants.Redshift:
+		s := redshift.LoadRedshift(ctx, store)
+		if err := s.Sweep(ctx); err != nil {
+			logger.FromContext(ctx).WithError(err).Fatalf("failed to clean up redshift")
+		}
+		return s
 	}
 
 	logger.FromContext(ctx).WithFields(map[string]interface{}{

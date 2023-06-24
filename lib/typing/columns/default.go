@@ -3,6 +3,8 @@ package columns
 import (
 	"fmt"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
+
 	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/artie-labs/transfer/lib/stringutil"
@@ -12,7 +14,7 @@ import (
 
 type DefaultValueArgs struct {
 	Escape   bool
-	BigQuery bool
+	DestKind constants.DestinationKind
 }
 
 func (c *Column) DefaultValue(args *DefaultValueArgs) (interface{}, error) {
@@ -27,8 +29,11 @@ func (c *Column) DefaultValue(args *DefaultValueArgs) (interface{}, error) {
 
 	switch c.KindDetails.Kind {
 	case typing.Struct.Kind, typing.Array.Kind:
-		if args.BigQuery {
+		switch args.DestKind {
+		case constants.BigQuery:
 			return "JSON" + stringutil.Wrap(c.defaultValue, false), nil
+		case constants.Redshift:
+			return stringutil.Wrap(c.defaultValue, false), nil
 		}
 	case typing.ETime.Kind:
 		extTime, err := ext.ParseFromInterface(c.defaultValue)

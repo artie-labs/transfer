@@ -1,6 +1,8 @@
 package constants
 
-import "time"
+import (
+	"time"
+)
 
 const (
 	ToastUnavailableValuePlaceholder = "__debezium_unavailable_value"
@@ -10,18 +12,15 @@ const (
 	// We will strip this out from our partition key parsing.
 	DebeziumTopicRoutingKey = "__dbz__physicalTableIdentifier"
 
-	SnowflakeExpireCommentPrefix = "expires:"
-	ArtiePrefix                  = "__artie"
-	DeleteColumnMarker           = ArtiePrefix + "_delete"
-	DeletionConfidencePadding    = 4 * time.Hour
+	ArtiePrefix               = "__artie"
+	DeleteColumnMarker        = ArtiePrefix + "_delete"
+	DeletionConfidencePadding = 4 * time.Hour
 
 	// DBZPostgresFormat is the only supported CDC format right now
 	DBZPostgresFormat    = "debezium.postgres"
 	DBZPostgresAltFormat = "debezium.postgres.wal2json"
 	DBZMongoFormat       = "debezium.mongodb"
 	DBZMySQLFormat       = "debezium.mysql"
-
-	BigQueryTempTableTTL = 6 * time.Hour
 )
 
 // ReservedKeywords is populated from: https://docs.snowflake.com/en/sql-reference/reserved-keywords
@@ -115,12 +114,14 @@ const (
 	Snowflake       DestinationKind = "snowflake"
 	Test            DestinationKind = "test"
 	BigQuery        DestinationKind = "bigquery"
+	Redshift        DestinationKind = "redshift"
 )
 
 var validDestinations = []DestinationKind{
 	BigQuery,
 	Snowflake,
 	SnowflakeStages,
+	Redshift,
 	Test,
 }
 
