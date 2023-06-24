@@ -35,6 +35,10 @@ type MergeArgument struct {
 }
 
 func MergeStatementParts(m MergeArgument) ([]string, error) {
+	if !m.Redshift {
+		return nil, fmt.Errorf("err - this is meant for redshift only")
+	}
+
 	// We should not need idempotency key for DELETE
 	// This is based on the assumption that the primary key would be atomically increasing or UUID based
 	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
@@ -44,23 +48,13 @@ func MergeStatementParts(m MergeArgument) ([]string, error) {
 	// This is because Snowflake does not respect NS granularity.
 	var idempotentClause string
 	if m.IdempotentKey != "" {
-		idempotentClause = fmt.Sprintf(" AND cc.%s >= c.%s ", m.IdempotentKey, m.IdempotentKey)
+		idempotentClause = fmt.Sprintf(" AND cc.%s >= c.%s", m.IdempotentKey, m.IdempotentKey)
 	}
 
 	var equalitySQLParts []string
 	for _, primaryKey := range m.PrimaryKeys {
 		// We'll need to escape the primary key as well.
 		equalitySQL := fmt.Sprintf("c.%s = cc.%s", primaryKey.EscapedName(), primaryKey.EscapedName())
-		pkCol, isOk := m.ColumnsToTypes.GetColumn(primaryKey.RawName())
-		if !isOk {
-			return nil, fmt.Errorf("error: column: %s does not exist in columnToType: %v", primaryKey.RawName(), m.ColumnsToTypes)
-		}
-
-		if m.BigQuery && pkCol.KindDetails.Kind == typing.Struct.Kind {
-			// BigQuery requires special casting to compare two JSON objects.
-			equalitySQL = fmt.Sprintf("TO_JSON_STRING(c.%s) = TO_JSON_STRING(cc.%s)", primaryKey.EscapedName(), primaryKey.EscapedName())
-		}
-
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
@@ -68,7 +62,7 @@ func MergeStatementParts(m MergeArgument) ([]string, error) {
 	if m.SoftDelete {
 		return []string{
 			// INSERT
-			fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s c on %s WHERE c.%s IS NULL;`,
+			fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
 				// insert into target (col1, col2, col3)
 				m.FqTableName, strings.Join(m.Columns, ","),
 				// SELECT cc.col1, cc.col2, ... FROM staging as CC
@@ -82,7 +76,7 @@ func MergeStatementParts(m MergeArgument) ([]string, error) {
 				// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
 				m.PrimaryKeys[0].EscapedName()),
 			// UPDATE
-			fmt.Sprintf(`UPDATE %s as c SET %s FROM %s cc WHERE %s%s;`,
+			fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s;`,
 				// UPDATE table set col1 = cc. col1
 				m.FqTableName, columns.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.Redshift),
 				// FROM table (temp) WHERE join on PK(s)
@@ -112,7 +106,7 @@ func MergeStatementParts(m MergeArgument) ([]string, error) {
 
 	return []string{
 		// INSERT
-		fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s c on %s WHERE c.%s IS NULL;`,
+		fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
 			// insert into target (col1, col2, col3)
 			m.FqTableName, strings.Join(m.Columns, ","),
 			// SELECT cc.col1, cc.col2, ... FROM staging as CC
@@ -133,7 +127,7 @@ func MergeStatementParts(m MergeArgument) ([]string, error) {
 			m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause, constants.DeleteColumnMarker,
 		),
 		// DELETE
-		fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s cc WHERE cc.%s = true);`,
+		fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s as cc WHERE cc.%s = true);`,
 			// DELETE from table where (pk_1, pk_2)
 			m.FqTableName, strings.Join(pks, ","),
 			// IN (cc.pk_1, cc.pk_2) FROM staging
