@@ -23,15 +23,10 @@ func BackfillColumn(ctx context.Context, dwh dwh.DataWarehouse, column columns.C
 	}
 
 	fqTableName = strings.ToLower(fqTableName)
-	defaultArgs := &columns.DefaultValueArgs{
-		Escape: true,
-	}
-
-	if dwh.Label() == constants.Redshift {
-		defaultArgs.Redshift = true
-	}
-
-	defaultVal, err := column.DefaultValue(defaultArgs)
+	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{
+		Escape:   true,
+		DestKind: dwh.Label(),
+	})
 	if err != nil {
 		return fmt.Errorf("failed to escape default value, err: %v", err)
 	}

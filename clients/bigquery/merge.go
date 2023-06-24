@@ -68,7 +68,7 @@ func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTab
 
 	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{
 		Escape:   true,
-		BigQuery: true,
+		DestKind: s.Label(),
 	})
 
 	if err != nil {
