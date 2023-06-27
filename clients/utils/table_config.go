@@ -94,7 +94,6 @@ func GetTableConfig(ctx context.Context, args GetTableCfgArgs) (*types.DwhTableC
 			row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
 		}
 
-		// TODO Refactor column.
 		var kd typing.KindDetails
 		switch args.Dwh.Label() {
 		case constants.Snowflake, constants.SnowflakeStages:

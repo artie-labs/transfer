@@ -71,7 +71,7 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 	// Process tried to delete, but it's lagged.
 	allowed = s.stageStore.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name(nil), time.Now().Add(-1*(6*time.Hour)))
 
-	assert.Equal(s.T(), allowed, false, "should not be alldowed to delete")
+	assert.Equal(s.T(), allowed, false, "should not be allowed to delete")
 
 	// Process now caught up, and is asking if we can delete, should still be no.
 	allowed = s.stageStore.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name(nil), time.Now())
