@@ -11,7 +11,20 @@ Today, we support the following cloud providers:
 Please reach out to **hi@artie.so** if your cloud provider or region is not listed!
 {% endhint %}
 
-## IP Ranges (CIDR format)
+## Control Plane IP ranges (CIDR format)
+
+{% hint style="info" %}
+Add these IP addresses in so that the dashboard is able to validate connectivity!
+{% endhint %}
+
+* 164.90.147.255/32
+* 164.90.147.217/32
+* 147.182.226.70/32
+* 24.199.76.121/32
+* 143.198.244.128/32
+* 164.92.90.51/32
+
+## Data Plane IP Ranges (CIDR format)
 
 **AWS US-East-1**
 
