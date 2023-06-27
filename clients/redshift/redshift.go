@@ -122,6 +122,10 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	// Now iterate over all the in-memory cols and see which one requires backfill.
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
+		if col.ShouldSkip() {
+			continue
+		}
+
 		err = utils.BackfillColumn(ctx, s, col, tableData.ToFqName(ctx, s.Label()))
 		if err != nil {
 			defaultVal, _ := col.DefaultValue(nil)

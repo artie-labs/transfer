@@ -13,6 +13,38 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestColumn_ShouldSkip(t *testing.T) {
+	type _testCase struct {
+		name           string
+		col            *Column
+		expectedResult bool
+	}
+
+	testCases := []_testCase{
+		{
+			name:           "col is nil",
+			expectedResult: true,
+		},
+		{
+			name: "invalid column",
+			col: &Column{
+				KindDetails: typing.Invalid,
+			},
+			expectedResult: true,
+		},
+		{
+			name: "normal column",
+			col: &Column{
+				KindDetails: typing.String,
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		assert.Equal(t, testCase.expectedResult, testCase.col.ShouldSkip(), testCase.name)
+	}
+}
+
 func TestColumn_ShouldBackfill(t *testing.T) {
 	type _testCase struct {
 		name                 string

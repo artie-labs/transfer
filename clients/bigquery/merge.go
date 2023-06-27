@@ -185,6 +185,10 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	// Backfill columns if necessary
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
+		if col.ShouldSkip() {
+			continue
+		}
+
 		var attempts int
 		for {
 			err = s.backfillColumn(ctx, col, tableData.ToFqName(ctx, s.Label()))

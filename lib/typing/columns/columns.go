@@ -23,6 +23,14 @@ type Column struct {
 	backfilled   bool
 }
 
+func (c *Column) ShouldSkip() bool {
+	if c == nil || c.KindDetails.Kind == typing.Invalid.Kind {
+		return true
+	}
+
+	return false
+}
+
 func UnescapeColumnName(escapedName string, destKind constants.DestinationKind) string {
 	if destKind == constants.BigQuery {
 		return strings.ReplaceAll(escapedName, "`", "")
@@ -63,8 +71,8 @@ func (c *Column) ShouldBackfill() bool {
 		return false
 	}
 
-	if c.KindDetails.Kind == typing.Invalid.Kind {
-		// Don't backfill if the in-memory data is `INVALID`
+	if c.ShouldSkip() {
+		// Don't backfill
 		return false
 	}
 
