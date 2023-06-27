@@ -74,7 +74,7 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 	// It's okay to combine since args.ColumnOp only takes one of: `Delete` or `Add`
 	var colSQLParts []string
 	for _, col := range cols {
-		if col.KindDetails == typing.Invalid {
+		if col.ShouldSkip() {
 			// Let's not modify the table if the column kind is invalid
 			continue
 		}
