@@ -18,17 +18,15 @@ func (d *DDLTestSuite) Test_DropTemporaryTable() {
 		"customers.customers",
 	}
 
-	// Should not do anything to Snowflake since it's not supported.
+	// Should not drop since these do not have Artie prefix in the name.
 	for _, table := range doNotDropTables {
-		tableWithSuffix := fmt.Sprintf("%s_%s", table, constants.ArtiePrefix)
-		_ = ddl.DropTemporaryTable(d.ctx, d.snowflakeStore, table, false)
-		_ = ddl.DropTemporaryTable(d.ctx, d.snowflakeStore, tableWithSuffix, false)
-		assert.Equal(d.T(), 0, d.fakeSnowflakeStore.ExecCallCount())
+		_ = ddl.DropTemporaryTable(d.ctx, d.snowflakeStagesStore, table, false)
+		assert.Equal(d.T(), 0, d.fakeSnowflakeStagesStore.ExecCallCount())
 	}
 
 	for _, _dwh := range []dwh.DataWarehouse{d.bigQueryStore, d.snowflakeStagesStore} {
 		var fakeStore *mocks.FakeStore
-		if _dwh.Label() == constants.SnowflakeStages {
+		if _dwh.Label() == constants.Snowflake || _dwh.Label() == constants.SnowflakeStages {
 			fakeStore = d.fakeSnowflakeStagesStore
 		} else if _dwh.Label() == constants.BigQuery {
 			fakeStore = d.fakeBigQueryStore
@@ -49,7 +47,6 @@ func (d *DDLTestSuite) Test_DropTemporaryTable() {
 
 			query, _ := fakeStore.ExecArgsForCall(index)
 			assert.Equal(d.T(), fmt.Sprintf("DROP TABLE IF EXISTS %s", fullTableName), query)
-
 		}
 	}
 }
@@ -65,7 +62,7 @@ func (d *DDLTestSuite) Test_DropTemporaryTable_Errors() {
 	randomErr := fmt.Errorf("random err")
 	for _, _dwh := range []dwh.DataWarehouse{d.bigQueryStore, d.snowflakeStagesStore} {
 		var fakeStore *mocks.FakeStore
-		if _dwh.Label() == constants.SnowflakeStages {
+		if _dwh.Label() == constants.Snowflake {
 			fakeStore = d.fakeSnowflakeStagesStore
 			d.fakeSnowflakeStagesStore.ExecReturns(nil, randomErr)
 		} else if _dwh.Label() == constants.BigQuery {

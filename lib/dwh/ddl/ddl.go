@@ -19,12 +19,7 @@ import (
 // It has a safety check to make sure the tableName contains the `constants.ArtiePrefix` key.
 // Temporary tables look like this: database.schema.tableName__artie__RANDOM_STRING(10)
 func DropTemporaryTable(ctx context.Context, dwh dwh.DataWarehouse, fqTableName string, shouldReturnError bool) error {
-	if dwh.Label() == constants.Snowflake {
-		// Snowflake does not have this feature enabled.
-		return nil
-	}
-
-	// Need to lower it because Snowflake uppercases.
+	// Need to lower it because Snowflake upper-cases.
 	fqTableName = strings.ToLower(fqTableName)
 	if strings.Contains(fqTableName, constants.ArtiePrefix) {
 		// https://cloud.google.com/bigquery/docs/reference/standard-sql/data-definition-language#drop_table_statement
@@ -116,7 +111,7 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
 					args.FqTableName, strings.Join(colSQLParts, ","), expiryString)
 			// Not enabled for constants.Snowflake yet
-			case constants.SnowflakeStages:
+			case constants.Snowflake, constants.SnowflakeStages:
 				// TEMPORARY Table syntax - https://docs.snowflake.com/en/sql-reference/sql/create-table
 				// PURGE syntax - https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#purging-files-after-loading
 				// FIELD_OPTIONALLY_ENCLOSED_BY - is needed because CSV will try to escape any values that have `"`

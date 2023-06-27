@@ -64,10 +64,10 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		anotherCols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
-	s.store.configMap.AddTableToConfig(tableData.ToFqName(s.ctx, constants.Snowflake),
+	s.stageStore.configMap.AddTableToConfig(tableData.ToFqName(s.ctx, constants.Snowflake),
 		types.NewDwhTableConfig(&anotherCols, nil, false, true))
 
-	err := s.store.Merge(s.ctx, tableData)
+	err := s.stageStore.Merge(s.ctx, tableData)
 	_col, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("first_name")
 	assert.True(s.T(), isOk)
 	assert.Equal(s.T(), _col.KindDetails, typing.String)
@@ -109,17 +109,19 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		tableData.InsertRow(pk, row)
 	}
 
-	s.store.configMap.AddTableToConfig(tableData.ToFqName(s.ctx, constants.Snowflake),
+	s.stageStore.configMap.AddTableToConfig(tableData.ToFqName(s.ctx, constants.Snowflake),
 		types.NewDwhTableConfig(&cols, nil, false, true))
 
-	s.fakeStore.ExecReturnsOnCall(0, nil, fmt.Errorf("390114: Authentication token has expired. The user must authenticate again."))
-	err := s.store.Merge(s.ctx, tableData)
+	s.fakeStageStore.ExecReturnsOnCall(0, nil, fmt.Errorf("390114: Authentication token has expired. The user must authenticate again."))
+	err := s.stageStore.Merge(s.ctx, tableData)
 	assert.True(s.T(), AuthenticationExpirationErr(err), err)
 
-	s.fakeStore.ExecReturnsOnCall(1, nil, nil)
-	assert.Nil(s.T(), s.store.Merge(s.ctx, tableData))
-	s.fakeStore.ExecReturns(nil, nil)
-	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 2, "called merge")
+	s.fakeStageStore.ExecReturnsOnCall(1, nil, nil)
+	assert.Nil(s.T(), s.stageStore.Merge(s.ctx, tableData))
+	s.fakeStageStore.ExecReturns(nil, nil)
+
+	// 5 regular ones and then 1 additional one to re-establish auth.
+	assert.Equal(s.T(), s.fakeStageStore.ExecCallCount(), 6, "called merge")
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMerge() {
@@ -157,12 +159,37 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		tableData.InsertRow(pk, row)
 	}
 
-	s.store.configMap.AddTableToConfig(tableData.ToFqName(s.ctx, constants.Snowflake),
-		types.NewDwhTableConfig(&cols, nil, false, true))
-	err := s.store.Merge(s.ctx, tableData)
-	assert.Nil(s.T(), err)
-	s.fakeStore.ExecReturns(nil, nil)
-	assert.Equal(s.T(), 1, s.fakeStore.ExecCallCount(), "called merge")
+	var idx int
+	for _, destKind := range []constants.DestinationKind{constants.Snowflake, constants.SnowflakeStages} {
+		fqName := tableData.ToFqName(s.ctx, destKind)
+		s.stageStore.configMap.AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, true))
+		err := s.stageStore.Merge(s.ctx, tableData)
+		assert.Nil(s.T(), err)
+		s.fakeStageStore.ExecReturns(nil, nil)
+		// CREATE TABLE IF NOT EXISTS customer.public.orders___artie_Mwv9YADmRy (id int,name string,__artie_delete boolean,created_at timestamp_tz) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE) COMMENT='expires:2023-06-27 11:54:03 UTC'
+		createQuery, _ := s.fakeStageStore.ExecArgsForCall(idx)
+		assert.Contains(s.T(), createQuery, fmt.Sprintf("%s_%s", fqName, constants.ArtiePrefix), fmt.Sprintf("query: %v, destKind: %v", createQuery, destKind))
+
+		// PUT file:///tmp/customer.public.orders___artie_Mwv9YADmRy.csv @customer.public.%orders___artie_Mwv9YADmRy AUTO_COMPRESS=TRUE
+		putQuery, _ := s.fakeStageStore.ExecArgsForCall(idx + 1)
+		assert.Contains(s.T(), putQuery, fmt.Sprintf("PUT file:///tmp/%s_%s", fqName, constants.ArtiePrefix), fmt.Sprintf("query: %v, destKind: %v", putQuery, destKind))
+
+		// COPY INTO customer.public.orders___artie_Mwv9YADmRy (id,name,__artie_delete,created_at) FROM (SELECT $1,$2,$3,$4 FROM @customer.public.%orders___artie_Mwv9YADmRy
+		copyQuery, _ := s.fakeStageStore.ExecArgsForCall(idx + 2)
+		assert.Contains(s.T(), copyQuery, fmt.Sprintf("COPY INTO %s_%s", fqName, constants.ArtiePrefix), fmt.Sprintf("query: %v, destKind: %v", copyQuery, destKind))
+		assert.Contains(s.T(), copyQuery, fmt.Sprintf("FROM %s", "@customer.public.%orders___artie"), fmt.Sprintf("query: %v, destKind: %v", copyQuery, destKind))
+
+		mergeQuery, _ := s.fakeStageStore.ExecArgsForCall(idx + 3)
+		assert.Contains(s.T(), mergeQuery, fmt.Sprintf("MERGE INTO %s", fqName), fmt.Sprintf("query: %v, destKind: %v", mergeQuery, destKind))
+
+		// Drop a table now.
+		dropQuery, _ := s.fakeStageStore.ExecArgsForCall(idx + 4)
+		assert.Contains(s.T(), dropQuery, fmt.Sprintf("DROP TABLE IF EXISTS %s", fmt.Sprintf("%s_%s", fqName, constants.ArtiePrefix)),
+			fmt.Sprintf("query: %v, destKind: %v", dropQuery, destKind))
+		idx += 5
+	}
+
+	assert.Equal(s.T(), 10, s.fakeStageStore.ExecCallCount(), "called merge")
 }
 
 // TestExecuteMergeDeletionFlagRemoval is going to run execute merge twice.
@@ -217,18 +244,18 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 	sflkCols.AddColumn(columns.NewColumn("new", typing.String))
 	config := types.NewDwhTableConfig(&sflkCols, nil, false, true)
-	s.store.configMap.AddTableToConfig(tableData.ToFqName(s.ctx, constants.Snowflake), config)
+	s.stageStore.configMap.AddTableToConfig(tableData.ToFqName(s.ctx, constants.Snowflake), config)
 
-	err := s.store.Merge(s.ctx, tableData)
+	err := s.stageStore.Merge(s.ctx, tableData)
 	assert.Nil(s.T(), err)
-	s.fakeStore.ExecReturns(nil, nil)
-	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 1, "called merge")
+	s.fakeStageStore.ExecReturns(nil, nil)
+	assert.Equal(s.T(), s.fakeStageStore.ExecCallCount(), 5, "called merge")
 
 	// Check the temp deletion table now.
-	assert.Equal(s.T(), len(s.store.configMap.TableConfig(tableData.ToFqName(s.ctx, constants.Snowflake)).ReadOnlyColumnsToDelete()), 1,
-		s.store.configMap.TableConfig(tableData.ToFqName(s.ctx, constants.Snowflake)).ReadOnlyColumnsToDelete())
+	assert.Equal(s.T(), len(s.stageStore.configMap.TableConfig(tableData.ToFqName(s.ctx, constants.Snowflake)).ReadOnlyColumnsToDelete()), 1,
+		s.stageStore.configMap.TableConfig(tableData.ToFqName(s.ctx, constants.Snowflake)).ReadOnlyColumnsToDelete())
 
-	_, isOk := s.store.configMap.TableConfig(tableData.ToFqName(s.ctx, constants.Snowflake)).ReadOnlyColumnsToDelete()["new"]
+	_, isOk := s.stageStore.configMap.TableConfig(tableData.ToFqName(s.ctx, constants.Snowflake)).ReadOnlyColumnsToDelete()["new"]
 	assert.True(s.T(), isOk)
 
 	// Now try to execute merge where 1 of the rows have the column now
@@ -243,18 +270,18 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		break
 	}
 
-	err = s.store.Merge(s.ctx, tableData)
+	err = s.stageStore.Merge(s.ctx, tableData)
 	assert.NoError(s.T(), err)
-	s.fakeStore.ExecReturns(nil, nil)
-	assert.Equal(s.T(), s.fakeStore.ExecCallCount(), 2, "called merge again")
+	s.fakeStageStore.ExecReturns(nil, nil)
+	assert.Equal(s.T(), s.fakeStageStore.ExecCallCount(), 10, "called merge again")
 
 	// Caught up now, so columns should be 0.
-	assert.Equal(s.T(), len(s.store.configMap.TableConfig(tableData.ToFqName(s.ctx, constants.Snowflake)).ReadOnlyColumnsToDelete()), 0,
-		s.store.configMap.TableConfig(tableData.ToFqName(s.ctx, constants.Snowflake)).ReadOnlyColumnsToDelete())
+	assert.Equal(s.T(), len(s.stageStore.configMap.TableConfig(tableData.ToFqName(s.ctx, constants.Snowflake)).ReadOnlyColumnsToDelete()), 0,
+		s.stageStore.configMap.TableConfig(tableData.ToFqName(s.ctx, constants.Snowflake)).ReadOnlyColumnsToDelete())
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
 	tableData := optimization.NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
-	err := s.store.Merge(s.ctx, tableData)
+	err := s.stageStore.Merge(s.ctx, tableData)
 	assert.Nil(s.T(), err)
 }

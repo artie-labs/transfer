@@ -28,10 +28,10 @@ func (d *DDLTestSuite) TestValidate_AlterTableArgs() {
 
 func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 	fqName := "mock_dataset.mock_table"
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
-	snowflakeTc := d.snowflakeStore.GetConfigMap().TableConfig(fqName)
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
+	snowflakeTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqName)
 	args := ddl.AlterTableArgs{
-		Dwh:            d.snowflakeStore,
+		Dwh:            d.snowflakeStagesStore,
 		Tc:             snowflakeTc,
 		FqTableName:    fqName,
 		CreateTable:    true,
@@ -41,7 +41,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 	}
 
 	err := ddl.AlterTable(d.ctx, args)
-	assert.Equal(d.T(), "unexpected dwh: snowflake trying to create a temporary table", err.Error())
+	assert.Nil(d.T(), err)
 
 	args.ColumnOp = constants.Delete
 	err = ddl.AlterTable(d.ctx, args)

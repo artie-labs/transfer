@@ -23,9 +23,7 @@ const (
 	flushIntervalSecondsEnd   = 6 * 60 * 60
 
 	bufferPoolSizeStart = 5
-	// Snowflake has a limit of 2^14 elements within an expression.
-	// https://github.com/snowflakedb/snowflake-connector-python/issues/37
-	bufferPoolSizeEnd = 15000
+	bufferPoolSizeEnd   = 30000
 )
 
 type Sentry struct {
@@ -224,10 +222,6 @@ func (c *Config) Validate() error {
 	case constants.Redshift:
 		if err := c.ValidateRedshift(); err != nil {
 			return err
-		}
-	case constants.Snowflake:
-		if int(c.BufferRows) > bufferPoolSizeEnd {
-			return fmt.Errorf("snowflake does not allow more than 15k rows, actual: %v", int(c.BufferRows))
 		}
 	}
 

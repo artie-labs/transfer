@@ -9,13 +9,10 @@ import (
 )
 
 func (s *SnowflakeTestSuite) TestSweep() {
-	// This is a no-op, since store isn't a store w/ stages.
-	assert.NoError(s.T(), s.store.Sweep(s.ctx))
-
 	s.ctx = config.InjectSettingsIntoContext(s.ctx, &config.Settings{
 		Config: &config.Config{
 			Queue:                constants.Kafka,
-			Output:               constants.SnowflakeStages,
+			Output:               constants.Snowflake,
 			BufferRows:           5,
 			FlushSizeKb:          50,
 			FlushIntervalSeconds: 50,

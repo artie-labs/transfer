@@ -24,7 +24,7 @@ func TestInjectDwhIntoCtx(t *testing.T) {
 	assert.Nil(t, dwhVal)
 
 	var _dwh dwh.DataWarehouse
-	_dwh = snowflake.LoadSnowflake(ctx, &store, false)
+	_dwh = snowflake.LoadSnowflake(ctx, &store)
 
 	ctx = InjectDwhIntoCtx(_dwh, ctx)
 	dwhCtx := FromContext(ctx)

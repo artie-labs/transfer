@@ -29,11 +29,9 @@ func DataWarehouse(ctx context.Context, store *db.Store) dwh.DataWarehouse {
 		store := db.Store(&mock.DB{
 			Fake: mocks.FakeStore{},
 		})
-		return snowflake.LoadSnowflake(ctx, &store, false)
-	case constants.Snowflake:
-		return snowflake.LoadSnowflake(ctx, store, false)
-	case constants.SnowflakeStages:
-		s := snowflake.LoadSnowflake(ctx, store, true)
+		return snowflake.LoadSnowflake(ctx, &store)
+	case constants.Snowflake, constants.SnowflakeStages:
+		s := snowflake.LoadSnowflake(ctx, store)
 		if err := s.Sweep(ctx); err != nil {
 			logger.FromContext(ctx).WithError(err).Fatalf("failed to clean up snowflake")
 		}

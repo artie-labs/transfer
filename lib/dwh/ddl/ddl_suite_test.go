@@ -21,9 +21,6 @@ type DDLTestSuite struct {
 	fakeBigQueryStore *mocks.FakeStore
 	bigQueryStore     *bigquery.Store
 
-	fakeSnowflakeStore *mocks.FakeStore
-	snowflakeStore     *snowflake.Store
-
 	fakeSnowflakeStagesStore *mocks.FakeStore
 	snowflakeStagesStore     *snowflake.Store
 }
@@ -51,13 +48,9 @@ func (d *DDLTestSuite) SetupTest() {
 	bqStore := db.Store(d.fakeBigQueryStore)
 	d.bigQueryStore = bigquery.LoadBigQuery(ctx, &bqStore)
 
-	d.fakeSnowflakeStore = &mocks.FakeStore{}
-	sflkStore := db.Store(d.fakeSnowflakeStore)
-	d.snowflakeStore = snowflake.LoadSnowflake(ctx, &sflkStore, false)
-
 	d.fakeSnowflakeStagesStore = &mocks.FakeStore{}
 	snowflakeStagesStore := db.Store(d.fakeSnowflakeStagesStore)
-	d.snowflakeStagesStore = snowflake.LoadSnowflake(ctx, &snowflakeStagesStore, true)
+	d.snowflakeStagesStore = snowflake.LoadSnowflake(ctx, &snowflakeStagesStore)
 }
 
 func TestDDLTestSuite(t *testing.T) {
