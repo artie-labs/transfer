@@ -28,6 +28,7 @@ func (s *Store) getTableConfig(ctx context.Context, args getTableConfigArgs) (*t
 		Dwh:       s,
 		FqName:    fmt.Sprintf("%s.%s", args.Schema, args.Table),
 		ConfigMap: s.configMap,
+		// This query is a modified fork from: https://gist.github.com/alexanderlz/7302623
 		Query: fmt.Sprintf(`select c.column_name,c.data_type,d.description 
 from information_schema.columns c 
 left join pg_class c1 on c.table_name=c1.relname 

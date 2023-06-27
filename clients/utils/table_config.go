@@ -8,13 +8,11 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/dwh"
+	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-
-	"github.com/artie-labs/transfer/lib/dwh"
-
-	"github.com/artie-labs/transfer/lib/dwh/types"
 )
 
 type GetTableCfgArgs struct {
@@ -37,7 +35,6 @@ func GetTableConfig(ctx context.Context, args GetTableCfgArgs) (*types.DwhTableC
 	}
 
 	log := logger.FromContext(ctx)
-	// This query is a modified fork from: https://gist.github.com/alexanderlz/7302623
 	rows, err := args.Dwh.Query(args.Query)
 	defer func() {
 		if rows != nil {
@@ -50,14 +47,25 @@ func GetTableConfig(ctx context.Context, args GetTableCfgArgs) (*types.DwhTableC
 
 	var tableMissing bool
 	if err != nil {
-		return nil, fmt.Errorf("failed to query redshift, err: %v", err)
+		switch args.Dwh.Label() {
+		case constants.Snowflake, constants.SnowflakeStages:
+			if SnowflakeTableDoesNotExistErr(err) {
+				// Swallow the error, make sure all the metadata is created
+				tableMissing = true
+				err = nil
+			} else {
+				return nil, fmt.Errorf("failed to query %v, err: %v", args.Dwh.Label(), err)
+			}
+		default:
+			return nil, fmt.Errorf("failed to query %v, err: %v", args.Dwh.Label(), err)
+		}
 	}
 
-	var redshiftCols columns.Columns
+	var cols columns.Columns
 	for rows != nil && rows.Next() {
 		// figure out what columns were returned
 		// the column names will be the JSON object field keys
-		cols, err := rows.ColumnTypes()
+		colTypes, err := rows.ColumnTypes()
 		if err != nil {
 			return nil, err
 		}
@@ -65,8 +73,8 @@ func GetTableConfig(ctx context.Context, args GetTableCfgArgs) (*types.DwhTableC
 		var columnNameList []string
 		// Scan needs an array of pointers to the values it is setting
 		// This creates the object and sets the values correctly
-		values := make([]interface{}, len(cols))
-		for idx, column := range cols {
+		values := make([]interface{}, len(colTypes))
+		for idx, column := range colTypes {
 			values[idx] = new(interface{})
 			columnNameList = append(columnNameList, strings.ToLower(column.Name()))
 		}
@@ -98,15 +106,15 @@ func GetTableConfig(ctx context.Context, args GetTableCfgArgs) (*types.DwhTableC
 			col.SetBackfilled(_colComment.Backfilled)
 		}
 
-		redshiftCols.AddColumn(col)
+		cols.AddColumn(col)
 	}
 
 	// Do it this way via rows.Next() because that will move the iterator and cause us to miss a column.
-	if len(redshiftCols.GetColumns()) == 0 {
+	if len(cols.GetColumns()) == 0 {
 		tableMissing = true
 	}
 
-	redshiftTableCfg := types.NewDwhTableConfig(&redshiftCols, nil, tableMissing, args.DropDeletedColumns)
-	args.ConfigMap.AddTableToConfig(args.FqName, redshiftTableCfg)
-	return redshiftTableCfg, nil
+	tableCfg := types.NewDwhTableConfig(&cols, nil, tableMissing, args.DropDeletedColumns)
+	args.ConfigMap.AddTableToConfig(args.FqName, tableCfg)
+	return tableCfg, nil
 }
