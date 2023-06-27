@@ -94,7 +94,20 @@ func GetTableConfig(ctx context.Context, args GetTableCfgArgs) (*types.DwhTableC
 			row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
 		}
 
-		col := columns.NewColumn(row[args.ColumnNameLabel], typing.RedshiftTypeToKind(row[args.ColumnTypeLabel]))
+		// TODO Refactor column.
+		var kd typing.KindDetails
+		switch args.Dwh.Label() {
+		case constants.Snowflake, constants.SnowflakeStages:
+			kd = typing.SnowflakeTypeToKind(row[args.ColumnTypeLabel])
+		case constants.BigQuery:
+			kd = typing.BigQueryTypeToKind(row[args.ColumnTypeLabel])
+		case constants.Redshift:
+			kd = typing.RedshiftTypeToKind(row[args.ColumnTypeLabel])
+		default:
+			return nil, fmt.Errorf("unexpected dwh kind, label: %v", args.Dwh.Label())
+		}
+
+		col := columns.NewColumn(row[args.ColumnNameLabel], kd)
 		if comment, isOk := row[args.ColumnDescLabel]; isOk && args.EmptyCommentValue != nil && comment != *args.EmptyCommentValue {
 			// Try to parse the comment.
 			var _colComment constants.ColComment
