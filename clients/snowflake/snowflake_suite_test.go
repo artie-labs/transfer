@@ -24,6 +24,10 @@ func (s *SnowflakeTestSuite) SetupTest() {
 		VerboseLogging: false,
 	})
 
+	s.ResetStore()
+}
+
+func (s *SnowflakeTestSuite) ResetStore() {
 	s.fakeStageStore = &mocks.FakeStore{}
 	stageStore := db.Store(s.fakeStageStore)
 	s.stageStore = LoadSnowflake(s.ctx, &stageStore)
