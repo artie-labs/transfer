@@ -52,7 +52,12 @@ func (tc *DwhTableConfig) Columns() *columns.Columns {
 		return nil
 	}
 
-	return tc.columns
+	var cols columns.Columns
+	for _, col := range tc.columns.GetColumns() {
+		cols.AddColumn(col)
+	}
+
+	return &cols
 }
 
 func (tc *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp constants.ColumnOperation, cols ...columns.Column) {
