@@ -18,7 +18,6 @@ import (
 func (d *DDLTestSuite) Test_CreateTable() {
 	fqName := "mock_dataset.mock_table"
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
-	d.snowflakeStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 
 	type dwhToTableConfig struct {
@@ -28,7 +27,6 @@ func (d *DDLTestSuite) Test_CreateTable() {
 	}
 
 	bigQueryTc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
-	snowflakeTc := d.snowflakeStore.GetConfigMap().TableConfig(fqName)
 	snowflakeStagesTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqName)
 
 	for _, dwhTc := range []dwhToTableConfig{
@@ -36,11 +34,6 @@ func (d *DDLTestSuite) Test_CreateTable() {
 			_dwh:         d.bigQueryStore,
 			_tableConfig: bigQueryTc,
 			_fakeStore:   d.fakeBigQueryStore,
-		},
-		{
-			_dwh:         d.snowflakeStore,
-			_tableConfig: snowflakeTc,
-			_fakeStore:   d.fakeSnowflakeStore,
 		},
 		{
 			_dwh:         d.snowflakeStagesStore,
@@ -110,11 +103,11 @@ func (d *DDLTestSuite) TestCreateTable() {
 
 	for index, testCase := range testCases {
 		fqTable := "demo.public.experiments"
-		d.snowflakeStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
-		tc := d.snowflakeStore.GetConfigMap().TableConfig(fqTable)
+		d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
+		tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
 
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:         d.snowflakeStore,
+			Dwh:         d.snowflakeStagesStore,
 			Tc:          tc,
 			FqTableName: fqTable,
 			CreateTable: tc.CreateTable(),
@@ -125,11 +118,11 @@ func (d *DDLTestSuite) TestCreateTable() {
 		err := ddl.AlterTable(d.ctx, alterTableArgs, testCase.cols...)
 		assert.NoError(d.T(), err, testCase.name)
 
-		execQuery, _ := d.fakeSnowflakeStore.ExecArgsForCall(index)
+		execQuery, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(index)
 		assert.Equal(d.T(), testCase.expectedQuery, execQuery, testCase.name)
 
 		// Check if the table is now marked as created where `CreateTable = false`.
-		assert.Equal(d.T(), d.snowflakeStore.GetConfigMap().TableConfig(fqTable).CreateTable(),
-			false, d.snowflakeStore.GetConfigMap().TableConfig(fqTable), testCase.name)
+		assert.Equal(d.T(), d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable).CreateTable(),
+			false, d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable), testCase.name)
 	}
 }

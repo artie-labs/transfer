@@ -447,13 +447,12 @@ func TestConfig_Validate(t *testing.T) {
 	assert.Equal(t, tc, *tcs[0])
 
 	// Check Snowflake and BigQuery for large rows
-	// Snowflake should error, BigQuery will not.
-	cfg.Output = constants.Snowflake
-	cfg.BufferRows = bufferPoolSizeEnd + 1
-	assert.Contains(t, cfg.Validate().Error(), "snowflake does not allow more than 15k rows")
-
-	cfg.Output = constants.BigQuery
-	assert.Nil(t, cfg.Validate())
+	// All should be fine.
+	for _, destKind := range []constants.DestinationKind{constants.SnowflakeStages, constants.Snowflake, constants.BigQuery} {
+		cfg.Output = destKind
+		cfg.BufferRows = bufferPoolSizeEnd + 1
+		assert.Nil(t, cfg.Validate())
+	}
 
 	// Test the various flush error settings.
 	for i := 0; i < bufferPoolSizeStart; i++ {

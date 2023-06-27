@@ -43,7 +43,7 @@ func TestWrapper_Complete(t *testing.T) {
 		// Snowflake escape
 		w := NewWrapper(NewColumn(testCase.name, typing.Invalid), &NameArgs{
 			Escape:   true,
-			DestKind: constants.SnowflakeStages,
+			DestKind: constants.Snowflake,
 		})
 
 		assert.Equal(t, testCase.expectedEscapedName, w.EscapedName(), testCase.name)

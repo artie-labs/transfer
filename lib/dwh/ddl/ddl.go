@@ -116,7 +116,7 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
 					args.FqTableName, strings.Join(colSQLParts, ","), expiryString)
 			// Not enabled for constants.Snowflake yet
-			case constants.SnowflakeStages:
+			case constants.Snowflake, constants.SnowflakeStages:
 				// TEMPORARY Table syntax - https://docs.snowflake.com/en/sql-reference/sql/create-table
 				// PURGE syntax - https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#purging-files-after-loading
 				// FIELD_OPTIONALLY_ENCLOSED_BY - is needed because CSV will try to escape any values that have `"`

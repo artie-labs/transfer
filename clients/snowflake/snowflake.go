@@ -78,7 +78,7 @@ func (s *Store) ReestablishConnection(ctx context.Context) {
 	return
 }
 
-func LoadSnowflake(ctx context.Context, _store *db.Store, stages bool) *Store {
+func LoadSnowflake(ctx context.Context, _store *db.Store) *Store {
 	if _store != nil {
 		// Used for tests.
 		return &Store{

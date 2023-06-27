@@ -14,9 +14,7 @@ import (
 
 type SnowflakeTestSuite struct {
 	suite.Suite
-	fakeStore      *mocks.FakeStore
 	fakeStageStore *mocks.FakeStore
-	store          *Store
 	stageStore     *Store
 	ctx            context.Context
 }
@@ -26,14 +24,9 @@ func (s *SnowflakeTestSuite) SetupTest() {
 		VerboseLogging: false,
 	})
 
-	s.fakeStore = &mocks.FakeStore{}
-	store := db.Store(s.fakeStore)
-	s.store = LoadSnowflake(s.ctx, &store, false)
-
 	s.fakeStageStore = &mocks.FakeStore{}
 	stageStore := db.Store(s.fakeStageStore)
-	s.stageStore = LoadSnowflake(s.ctx, &stageStore, true)
-
+	s.stageStore = LoadSnowflake(s.ctx, &stageStore)
 }
 
 func TestSnowflakeTestSuite(t *testing.T) {
