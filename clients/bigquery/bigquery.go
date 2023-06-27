@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/artie-labs/transfer/lib/ptr"
+
 	"cloud.google.com/go/bigquery"
 	_ "github.com/viant/bigquery"
 
@@ -38,6 +40,7 @@ func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.Tabl
 		ColumnNameLabel:    describeNameCol,
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeCommentCol,
+		EmptyCommentValue:  ptr.ToString(""),
 		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
 	})
 }

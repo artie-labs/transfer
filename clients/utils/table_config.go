@@ -27,6 +27,16 @@ type GetTableCfgArgs struct {
 	DropDeletedColumns bool
 }
 
+func (g *GetTableCfgArgs) ShouldParseComment(comment string) bool {
+	if g.EmptyCommentValue != nil && comment == *g.EmptyCommentValue {
+		return false
+	}
+
+	// Snowflake and Redshift both will return `<nil>` if the comment does not exist, this will check the value.
+	// BigQuery returns ""
+	return true
+}
+
 func GetTableConfig(ctx context.Context, args GetTableCfgArgs) (*types.DwhTableConfig, error) {
 	// Check if it already exists in cache
 	tableConfig := args.ConfigMap.TableConfig(args.FqName)
@@ -107,7 +117,8 @@ func GetTableConfig(ctx context.Context, args GetTableCfgArgs) (*types.DwhTableC
 		}
 
 		col := columns.NewColumn(row[args.ColumnNameLabel], kd)
-		if comment, isOk := row[args.ColumnDescLabel]; isOk && args.EmptyCommentValue != nil && comment != *args.EmptyCommentValue {
+		comment, isOk := row[args.ColumnDescLabel]
+		if isOk && args.ShouldParseComment(comment) {
 			// Try to parse the comment.
 			var _colComment constants.ColComment
 			err = json.Unmarshal([]byte(comment), &_colComment)
@@ -116,6 +127,7 @@ func GetTableConfig(ctx context.Context, args GetTableCfgArgs) (*types.DwhTableC
 			}
 
 			col.SetBackfilled(_colComment.Backfilled)
+
 		}
 
 		cols.AddColumn(col)
