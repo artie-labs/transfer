@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
+
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/dwh/utils"
@@ -29,8 +31,25 @@ func (f *FlushTestSuite) SetupTest() {
 
 	f.ctx = config.InjectSettingsIntoContext(f.ctx, &config.Settings{
 		Config: &config.Config{
-			Output:     "snowflake",
-			BufferRows: 500,
+			Kafka: &config.Kafka{
+				BootstrapServer: "foo",
+				GroupID:         "bar",
+				Username:        "user",
+				Password:        "abc",
+				TopicConfigs: []*kafkalib.TopicConfig{
+					{
+						Database:  "db",
+						Schema:    "schema",
+						Topic:     "topic",
+						CDCFormat: constants.DBZPostgresFormat,
+					},
+				},
+			},
+			Queue:                constants.Kafka,
+			Output:               "snowflake",
+			BufferRows:           500,
+			FlushIntervalSeconds: 60,
+			FlushSizeKb:          500,
 		},
 		VerboseLogging: false,
 	})
