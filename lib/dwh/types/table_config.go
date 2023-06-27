@@ -47,7 +47,7 @@ func (tc *DwhTableConfig) DropDeletedColumns() bool {
 	return tc.dropDeletedColumns
 }
 
-func (tc *DwhTableConfig) Columns() *columns.Columns {
+func (tc *DwhTableConfig) ReadOnlyColumns() *columns.Columns {
 	if tc == nil {
 		return nil
 	}

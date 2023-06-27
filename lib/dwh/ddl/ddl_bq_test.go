@@ -65,7 +65,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	// Have not deleted, but tried to!
 	assert.Equal(d.T(), originalColumnLength, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumnsToDelete())
 	// Columns have not been deleted yet.
-	assert.Equal(d.T(), originalColumnLength, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns())
+	assert.Equal(d.T(), originalColumnLength, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumns())
 
 	// Now try to delete again and with an increased TS. It should now be all deleted.
 	var callIdx int
@@ -93,7 +93,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	// Columns have now been deleted.
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumnsToDelete())
 	// Columns have not been deleted yet.
-	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns())
+	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumns())
 	assert.Equal(d.T(), originalColumnLength, d.fakeBigQueryStore.ExecCallCount())
 }
 
@@ -123,7 +123,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&existingCols, nil, false, true))
 	// Prior to adding, there should be no colsToDelete
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumnsToDelete())
-	assert.Equal(d.T(), len(existingCols.GetColumns()), len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns())
+	assert.Equal(d.T(), len(existingCols.GetColumns()), len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumns())
 
 	var callIdx int
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
@@ -151,9 +151,9 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 	}
 
 	// Check all the columns, make sure it's correct. (length)
-	assert.Equal(d.T(), newColsLen+existingColsLen, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns())
+	assert.Equal(d.T(), newColsLen+existingColsLen, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumns())
 	// Check by iterating over the columns
-	for _, column := range d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns() {
+	for _, column := range d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumns().GetColumns() {
 		existingCol, isOk := existingCols.GetColumn(column.Name(nil))
 		if !isOk {
 			// Check new cols?
@@ -183,7 +183,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&existingCols, nil, false, true))
 	// Prior to adding, there should be no colsToDelete
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumnsToDelete())
-	assert.Equal(d.T(), len(existingCols.GetColumns()), len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns())
+	assert.Equal(d.T(), len(existingCols.GetColumns()), len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumns())
 
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
 	var callIdx int
@@ -211,9 +211,9 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 	}
 
 	// Check all the columns, make sure it's correct. (length)
-	assert.Equal(d.T(), existingColsLen, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns())
+	assert.Equal(d.T(), existingColsLen, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumns())
 	// Check by iterating over the columns
-	for _, column := range d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns() {
+	for _, column := range d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumns().GetColumns() {
 		existingCol, isOk := existingCols.GetColumn(column.Name(nil))
 		assert.True(d.T(), isOk)
 		assert.Equal(d.T(), column.KindDetails, existingCol.KindDetails)
@@ -261,7 +261,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 	}
 
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumnsToDelete()))
-	assert.Equal(d.T(), originalColumnLength, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns()))
+	assert.Equal(d.T(), originalColumnLength, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumns().GetColumns()))
 
 	// Now try to delete again and with an increased TS. It should now be all deleted.
 	for _, column := range cols.GetColumns() {
@@ -281,5 +281,5 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 
 	// Columns still exist
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumnsToDelete()))
-	assert.Equal(d.T(), originalColumnLength, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns()))
+	assert.Equal(d.T(), originalColumnLength, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumns().GetColumns()))
 }
