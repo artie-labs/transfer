@@ -173,11 +173,6 @@ func (t *TableData) UpdateInMemoryColumnsFromDestination(cols ...columns.Column)
 	}
 
 	for _, inMemoryCol := range t.inMemoryColumns.GetColumns() {
-		//if inMemoryCol.KindDetails.Kind == typing.Invalid.Kind {
-		//	// Don't copy this over because tableData has the wrong colVal
-		//	continue
-		//}
-
 		var foundColumn columns.Column
 		var found bool
 		for _, col := range cols {
@@ -191,6 +186,8 @@ func (t *TableData) UpdateInMemoryColumnsFromDestination(cols ...columns.Column)
 		if found {
 			// We should take `kindDetails.kind` and `backfilled` from foundCol
 			// We are not taking primaryKey and defaultValue because DWH does not have this information.
+			// Note: If our in-memory column is `Invalid`, it would get skipped during merge. However, if the column exists in
+			// the destination, we'll copy the type over. This is to make sure we don't miss batch updates where the whole column in the batch is NULL.
 			inMemoryCol.KindDetails.Kind = foundColumn.KindDetails.Kind
 			inMemoryCol.SetBackfilled(foundColumn.Backfilled())
 
