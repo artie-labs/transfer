@@ -3,20 +3,22 @@ package optimization
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/artie-labs/transfer/lib/typing"
-
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/ext"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
-	// Test the following scenarios:
-	// 4. Test copying `extendedTimeDetails`
 	tableDataCols := &columns.Columns{}
 	tableDataCols.AddColumn(columns.NewColumn("name", typing.String))
 	tableDataCols.AddColumn(columns.NewColumn("bool_backfill", typing.Boolean))
 	tableDataCols.AddColumn(columns.NewColumn("prev_invalid", typing.Invalid))
+
+	// Casting these as STRING so tableColumn via this f(x) will set it correctly.
+	tableDataCols.AddColumn(columns.NewColumn("ext_date", typing.String))
+	tableDataCols.AddColumn(columns.NewColumn("ext_time", typing.String))
+	tableDataCols.AddColumn(columns.NewColumn("ext_datetime", typing.String))
 	tableData := &TableData{
 		inMemoryColumns: tableDataCols,
 	}
@@ -54,4 +56,31 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 			assert.False(t, inMemoryCol.Backfilled(), inMemoryCol.Name(nil))
 		}
 	}
+
+	// Testing extTimeDetails
+	for _, extTimeDetailsCol := range []string{"ext_date", "ext_time", "ext_datetime"} {
+		col, isOk := tableData.inMemoryColumns.GetColumn(extTimeDetailsCol)
+		assert.True(t, isOk, extTimeDetailsCol)
+		assert.Equal(t, typing.String, col.KindDetails, extTimeDetailsCol)
+		assert.Nil(t, col.KindDetails.ExtendedTimeDetails, extTimeDetailsCol)
+	}
+
+	tableData.UpdateInMemoryColumnsFromDestination(columns.NewColumn("ext_date", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType)))
+	tableData.UpdateInMemoryColumnsFromDestination(columns.NewColumn("ext_time", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)))
+	tableData.UpdateInMemoryColumnsFromDestination(columns.NewColumn("ext_datetime", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)))
+
+	dateCol, isOk := tableData.inMemoryColumns.GetColumn("ext_date")
+	assert.True(t, isOk)
+	assert.NotNil(t, dateCol.KindDetails.ExtendedTimeDetails)
+	assert.Equal(t, ext.DateKindType, dateCol.KindDetails.ExtendedTimeDetails.Type)
+
+	timeCol, isOk := tableData.inMemoryColumns.GetColumn("ext_time")
+	assert.True(t, isOk)
+	assert.NotNil(t, timeCol.KindDetails.ExtendedTimeDetails)
+	assert.Equal(t, ext.TimeKindType, timeCol.KindDetails.ExtendedTimeDetails.Type)
+
+	dateTimeCol, isOk := tableData.inMemoryColumns.GetColumn("ext_datetime")
+	assert.True(t, isOk)
+	assert.NotNil(t, dateTimeCol.KindDetails.ExtendedTimeDetails)
+	assert.Equal(t, ext.DateTimeKindType, dateTimeCol.KindDetails.ExtendedTimeDetails.Type)
 }
