@@ -173,10 +173,10 @@ func (t *TableData) UpdateInMemoryColumnsFromDestination(cols ...columns.Column)
 	}
 
 	for _, inMemoryCol := range t.inMemoryColumns.GetColumns() {
-		if inMemoryCol.KindDetails.Kind == typing.Invalid.Kind {
-			// Don't copy this over because tableData has the wrong colVal
-			continue
-		}
+		//if inMemoryCol.KindDetails.Kind == typing.Invalid.Kind {
+		//	// Don't copy this over because tableData has the wrong colVal
+		//	continue
+		//}
 
 		var foundColumn columns.Column
 		var found bool
