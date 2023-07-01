@@ -5,21 +5,44 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/artie-labs/transfer/lib/ptr"
+
 	"cloud.google.com/go/bigquery"
 	_ "github.com/viant/bigquery"
 
+	"github.com/artie-labs/transfer/clients/utils"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/dwh/types"
 	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/artie-labs/transfer/lib/optimization"
 )
 
-const GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
+const (
+	GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
+	describeNameCol               = "column_name"
+	describeTypeCol               = "data_type"
+	describeCommentCol            = "description"
+)
 
 type Store struct {
 	configMap *types.DwhToTablesConfigMap
 	db.Store
+}
+
+func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+	return utils.GetTableConfig(ctx, utils.GetTableCfgArgs{
+		Dwh:                s,
+		FqName:             tableData.ToFqName(ctx, constants.BigQuery),
+		ConfigMap:          s.configMap,
+		Query:              fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name='%s';", tableData.TopicConfig.Database, tableData.Name()),
+		ColumnNameLabel:    describeNameCol,
+		ColumnTypeLabel:    describeTypeCol,
+		ColumnDescLabel:    describeCommentCol,
+		EmptyCommentValue:  ptr.ToString(""),
+		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
+	})
 }
 
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
