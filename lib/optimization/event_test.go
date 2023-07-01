@@ -138,9 +138,10 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 	assert.True(t, isOk)
 	assert.Equal(t, ext.DateTime.Type, col.KindDetails.ExtendedTimeDetails.Type)
 
+	// It went from invalid to boolean.
 	col, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("bar")
 	assert.True(t, isOk)
-	assert.Equal(t, typing.Invalid, col.KindDetails)
+	assert.Equal(t, typing.Boolean, col.KindDetails)
 
 	col, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("do_not_change_format")
 	assert.True(t, isOk)
