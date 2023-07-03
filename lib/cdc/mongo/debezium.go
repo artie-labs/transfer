@@ -73,6 +73,10 @@ func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.T
 	return debezium.ParsePartitionKey(key, tc.CDCKeyFormat)
 }
 
+func (s *SchemaEventPayload) DeletePayload() bool {
+	return s.Payload.Operation == "d"
+}
+
 func (s *SchemaEventPayload) GetExecutionTime() time.Time {
 	return time.UnixMilli(s.Payload.Source.TsMs).UTC()
 }
