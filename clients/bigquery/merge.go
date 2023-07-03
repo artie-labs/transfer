@@ -134,12 +134,13 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	// createTable is set to false because table creation requires a column to be added
 	// Which means, we'll only do it upon Add columns.
 	deleteAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:         s,
-		Tc:          tableConfig,
-		FqTableName: tableData.ToFqName(ctx, s.Label()),
-		CreateTable: false,
-		ColumnOp:    constants.Delete,
-		CdcTime:     tableData.LatestCDCTs,
+		Dwh:                     s,
+		Tc:                      tableConfig,
+		FqTableName:             tableData.ToFqName(ctx, s.Label()),
+		CreateTable:             false,
+		ColumnOp:                constants.Delete,
+		ContainsOtherOperations: tableData.ContainOtherOperations(),
+		CdcTime:                 tableData.LatestCDCTs,
 	}
 
 	err = ddl.AlterTable(ctx, deleteAlterTableArgs, srcKeysMissing...)

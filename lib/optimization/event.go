@@ -45,6 +45,10 @@ type TableData struct {
 	name string
 }
 
+func (t *TableData) ContainOtherOperations() bool {
+	return t.containOtherOperations
+}
+
 func (t *TableData) PrimaryKeys(args *columns.NameArgs) []columns.Wrapper {
 	var primaryKeysEscaped []columns.Wrapper
 	for _, pk := range t.primaryKeys {
