@@ -85,7 +85,6 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 			if !args.Tc.ShouldDeleteColumn(col.Name(nil), args.CdcTime, args.ContainOtherOperations) {
 				continue
 			}
-
 		}
 
 		mutateCol = append(mutateCol, col)
