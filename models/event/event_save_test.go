@@ -250,3 +250,26 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 	assert.True(e.T(), isOk)
 	assert.Equal(e.T(), typing.Boolean, column.KindDetails)
 }
+
+func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
+	event := Event{
+		Table: "foo",
+		PrimaryKeyMap: map[string]interface{}{
+			"id": "123",
+		},
+		Data: map[string]interface{}{
+			constants.DeleteColumnMarker: true,
+		},
+		Deleted: true,
+	}
+
+	kafkaMsg := kafka.Message{}
+	_, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	assert.Nil(e.T(), err)
+	assert.False(e.T(), models.GetMemoryDB(e.ctx).GetOrCreateTableData("foo").ContainOtherOperations())
+
+	event.Deleted = false
+	_, err = event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	assert.NoError(e.T(), err)
+	assert.True(e.T(), models.GetMemoryDB(e.ctx).GetOrCreateTableData("foo").ContainOtherOperations())
+}

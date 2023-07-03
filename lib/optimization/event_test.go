@@ -213,15 +213,15 @@ func TestTableData_InsertRowIntegrity(t *testing.T) {
 
 	td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
 	assert.Equal(t, 0, int(td.Rows()))
-	assert.False(t, td.containOtherOperations)
+	assert.False(t, td.ContainOtherOperations())
 
 	for i := 0; i < 100; i++ {
 		td.InsertRow("123", nil, true)
-		assert.False(t, td.containOtherOperations)
+		assert.False(t, td.ContainOtherOperations())
 	}
 
 	for i := 0; i < 100; i++ {
 		td.InsertRow("123", nil, false)
-		assert.True(t, td.containOtherOperations)
+		assert.True(t, td.ContainOtherOperations())
 	}
 }

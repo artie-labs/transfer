@@ -120,12 +120,12 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	td.Lock()
 	defer td.Unlock()
 	if td.Empty() {
-		columns := &columns.Columns{}
+		cols := &columns.Columns{}
 		if e.Columns != nil {
-			columns = e.Columns
+			cols = e.Columns
 		}
 
-		td.SetTableData(optimization.NewTableData(columns, e.PrimaryKeys(), *topicConfig, e.Table))
+		td.SetTableData(optimization.NewTableData(cols, e.PrimaryKeys(), *topicConfig, e.Table))
 	} else {
 		if e.Columns != nil {
 			// Iterate over this again just in case.
