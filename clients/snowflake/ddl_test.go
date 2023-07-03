@@ -46,9 +46,7 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 }
 
 func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
-	// TODO: Extend
 	fqName := "coffee_shop.orders.public"
-
 	var cols columns.Columns
 	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":          typing.Integer,
