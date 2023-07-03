@@ -16,7 +16,7 @@ require (
 	github.com/segmentio/kafka-go v0.4.38
 	github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2 v0.1.0
 	github.com/sirupsen/logrus v1.9.0
-	github.com/snowflakedb/gosnowflake v1.6.21
+	github.com/snowflakedb/gosnowflake v1.6.22
 	github.com/stretchr/testify v1.8.4
 	github.com/viant/bigquery v0.2.1-0.20230129024722-24ed6fd5555f
 	go.mongodb.org/mongo-driver v1.11.0
