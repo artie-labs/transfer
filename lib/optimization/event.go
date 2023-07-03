@@ -45,8 +45,10 @@ type TableData struct {
 	name string
 }
 
-func (t *TableData) ContainOtherOperations() bool {
-	return t.containOtherOperations
+// ContainsDeleteEventsOnly is the complement version of `containOtherOperations` to minimize surprises
+// Since `ContainsDeleteEventsonly` if true, we will skip column deletion in the destination.
+func (t *TableData) ContainsDeleteEventsOnly() bool {
+	return !t.containOtherOperations
 }
 
 func (t *TableData) PrimaryKeys(args *columns.NameArgs) []columns.Wrapper {

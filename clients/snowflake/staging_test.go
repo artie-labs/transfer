@@ -91,7 +91,7 @@ func generateTableData(rows int) (string, *optimization.TableData) {
 			"last_name":  fmt.Sprintf("last_name %d", i),
 		}
 
-		td.InsertRow(key, rowData)
+		td.InsertRow(key, rowData, false)
 	}
 
 	return randomTableName, td

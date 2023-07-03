@@ -163,7 +163,7 @@ func TestTableData_ShouldFlushRowLength(t *testing.T) {
 		assert.False(t, td.ShouldFlush(ctx))
 		td.InsertRow(fmt.Sprint(i), map[string]interface{}{
 			"foo": "bar",
-		})
+		}, false)
 	}
 
 	assert.True(t, td.ShouldFlush(ctx))
@@ -188,7 +188,7 @@ func TestTableData_ShouldFlushRowSize(t *testing.T) {
 			"nested": map[string]interface{}{
 				"foo": "bar",
 			},
-		})
+		}, false)
 	}
 
 	td.InsertRow("33333", map[string]interface{}{
@@ -199,7 +199,7 @@ func TestTableData_ShouldFlushRowSize(t *testing.T) {
 		"nested": map[string]interface{}{
 			"foo": "bar",
 		},
-	})
+	}, false)
 
 	assert.True(t, td.ShouldFlush(ctx))
 }

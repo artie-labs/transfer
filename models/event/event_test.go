@@ -18,6 +18,10 @@ var idMap = map[string]interface{}{
 	"id": 123,
 }
 
+func (f fakeEvent) DeletePayload() bool {
+	return false
+}
+
 func (f fakeEvent) GetExecutionTime() time.Time {
 	return time.Now()
 }

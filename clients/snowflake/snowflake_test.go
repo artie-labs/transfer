@@ -50,7 +50,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	assert.Equal(s.T(), topicConfig.TableName, tableData.Name(), "override is working")
 
 	for pk, row := range rowsData {
-		tableData.InsertRow(pk, row)
+		tableData.InsertRow(pk, row, false)
 	}
 
 	anotherColToKindDetailsMap := map[string]typing.KindDetails{
@@ -106,7 +106,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 
 	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, "foo")
 	for pk, row := range rowsData {
-		tableData.InsertRow(pk, row)
+		tableData.InsertRow(pk, row, false)
 	}
 
 	s.stageStore.configMap.AddTableToConfig(tableData.ToFqName(s.ctx, constants.Snowflake),
@@ -156,7 +156,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 
 	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, "foo")
 	for pk, row := range rowsData {
-		tableData.InsertRow(pk, row)
+		tableData.InsertRow(pk, row, false)
 	}
 
 	var idx int
@@ -227,7 +227,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, "foo")
 	for pk, row := range rowsData {
-		tableData.InsertRow(pk, row)
+		tableData.InsertRow(pk, row, false)
 	}
 
 	snowflakeColToKindDetailsMap := map[string]typing.KindDetails{
