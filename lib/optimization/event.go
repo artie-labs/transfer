@@ -33,6 +33,9 @@ type TableData struct {
 	// This is used for the automatic schema detection
 	LatestCDCTs time.Time
 	approxSize  int
+	// containOtherOperations - this means the `TableData` object contains other events that arises from CREATE, UPDATE, REPLICATION
+	// if this value is false, that means it is only deletes. Which means we should not drop columns
+	containOtherOperations bool
 
 	// BigQuery specific. We are creating a temporary table to execute a merge, in order to avoid in-memory tables via UNION ALL.
 	temporaryTableSuffix string
@@ -94,7 +97,7 @@ func NewTableData(inMemoryColumns *columns.Columns, primaryKeys []string, topicC
 // InsertRow creates a single entrypoint for how rows get added to TableData
 // This is important to avoid concurrent r/w, but also the ability for us to add or decrement row size by keeping a running total
 // With this, we are able to reduce the latency by 500x+ on a 5k row table. See event_bench_test.go vs. size_bench_test.go
-func (t *TableData) InsertRow(pk string, rowData map[string]interface{}) {
+func (t *TableData) InsertRow(pk string, rowData map[string]interface{}, delete bool) {
 	var prevRowSize int
 	prevRow, isOk := t.rowsData[pk]
 	if isOk {
@@ -117,6 +120,11 @@ func (t *TableData) InsertRow(pk string, rowData map[string]interface{}) {
 	// If prevRow doesn't exist, it'll be 0, which is a no-op.
 	t.approxSize += newRowSize - prevRowSize
 	t.rowsData[pk] = rowData
+
+	if !delete && !t.containOtherOperations {
+		t.containOtherOperations = true
+	}
+
 	return
 }
 

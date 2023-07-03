@@ -30,6 +30,7 @@ type Event struct {
 	OptionalSchema map[string]typing.KindDetails
 	Columns        *columns.Columns
 	ExecutionTime  time.Time // When the SQL command was executed
+	Deleted        bool
 }
 
 func ToMemoryEvent(ctx context.Context, event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) Event {
@@ -50,6 +51,7 @@ func ToMemoryEvent(ctx context.Context, event cdc.Event, pkMap map[string]interf
 		OptionalSchema: event.GetOptionalSchema(ctx),
 		Columns:        cols,
 		Data:           event.GetData(ctx, pkMap, tc),
+		Deleted:        event.DeletePayload(),
 	}
 }
 
@@ -182,7 +184,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 
 	// Swap out sanitizedData <> data.
 	e.Data = sanitizedData
-	td.InsertRow(e.PrimaryKeyValue(), e.Data)
+	td.InsertRow(e.PrimaryKeyValue(), e.Data, e.Deleted)
 	// If the message is Kafka, then we only need the latest one
 	// If it's pubsub, we will store all of them in memory. This is because GCP pub/sub REQUIRES us to ack every single message
 	if message.Kind() == artie.Kafka {
