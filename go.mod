@@ -16,7 +16,7 @@ require (
 	github.com/segmentio/kafka-go v0.4.38
 	github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2 v0.1.0
 	github.com/sirupsen/logrus v1.9.0
-	github.com/snowflakedb/gosnowflake v1.6.22
+	github.com/snowflakedb/gosnowflake v1.6.23-0.20230622060049-8cb65fd3db4a
 	github.com/stretchr/testify v1.8.4
 	github.com/viant/bigquery v0.2.1-0.20230129024722-24ed6fd5555f
 	go.mongodb.org/mongo-driver v1.11.0
@@ -37,7 +37,7 @@ require (
 	github.com/JohnCGriffin/overflow v0.0.0-20211019200055-46fa312c352c // indirect
 	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
-	github.com/apache/arrow/go/v12 v12.0.0 // indirect
+	github.com/apache/arrow/go/v12 v12.0.1 // indirect
 	github.com/apache/thrift v0.16.0 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.4.10 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.18 // indirect
