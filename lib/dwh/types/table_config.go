@@ -88,9 +88,17 @@ func (tc *DwhTableConfig) ReadOnlyColumnsToDelete() map[string]time.Time {
 	return colsToDelete
 }
 
-func (tc *DwhTableConfig) ShouldDeleteColumn(colName string, cdcTime time.Time) bool {
+func (tc *DwhTableConfig) ShouldDeleteColumn(colName string, cdcTime time.Time, containsDeleteEventsOnly bool) bool {
 	if tc == nil {
 		// Avoid a panic and default to FALSE.
+		return false
+	}
+
+	// We should not delete if either conditions are true.
+	// 1. TableData contains only DELETES
+	// 2. Explicit setting that specifies not to drop columns
+	if containsDeleteEventsOnly {
+		// never delete
 		return false
 	}
 

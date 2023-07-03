@@ -83,16 +83,10 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 		}
 
 		if args.ColumnOp == constants.Delete {
-			// We should not delete if either conditions are true.
-			// 1. Explicit setting that specifies not to drop columns.
-			// 2. TableData contains only DELETEs
-			if !args.Tc.ShouldDeleteColumn(col.Name(nil), args.CdcTime) {
+			if !args.Tc.ShouldDeleteColumn(col.Name(nil), args.CdcTime, args.ContainsDeleteEventsOnly) {
 				continue
 			}
 
-			if args.ContainsDeleteEventsOnly {
-				continue
-			}
 		}
 
 		mutateCol = append(mutateCol, col)

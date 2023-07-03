@@ -22,6 +22,7 @@ func (d *Debezium) GetEventFromBytes(_ context.Context, bytes []byte) (cdc.Event
 	var schemaEventPayload SchemaEventPayload
 	if len(bytes) == 0 {
 		// This is a Kafka Tombstone event.
+		schemaEventPayload.Payload.Operation = "d"
 		return &schemaEventPayload, nil
 	}
 
