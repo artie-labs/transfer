@@ -5,11 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/logger"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 type DwhTableConfig struct {
