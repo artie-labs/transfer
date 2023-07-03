@@ -98,12 +98,10 @@ func (d *DwhTableConfig) ShouldDeleteColumn(colName string, cdcTime time.Time, c
 	// 1. TableData contains only DELETES
 	// 2. Explicit setting that specifies not to drop columns
 	if !containOtherOperations {
-		// never delete
 		return false
 	}
 
 	if d.dropDeletedColumns == false {
-		// Never delete
 		return false
 	}
 
