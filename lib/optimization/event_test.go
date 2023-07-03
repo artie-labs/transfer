@@ -203,3 +203,25 @@ func TestTableData_ShouldFlushRowSize(t *testing.T) {
 
 	assert.True(t, td.ShouldFlush(ctx))
 }
+
+func TestTableData_InsertRowIntegrity(t *testing.T) {
+	ctx := context.Background()
+	ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{Config: &config.Config{
+		FlushSizeKb: 5,
+		BufferRows:  20000,
+	}})
+
+	td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
+	assert.Equal(t, 0, int(td.Rows()))
+	assert.False(t, td.containOtherOperations)
+
+	for i := 0; i < 100; i++ {
+		td.InsertRow("123", nil, true)
+		assert.False(t, td.containOtherOperations)
+	}
+
+	for i := 0; i < 100; i++ {
+		td.InsertRow("123", nil, false)
+		assert.True(t, td.containOtherOperations)
+	}
+}
