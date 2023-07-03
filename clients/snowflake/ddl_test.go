@@ -36,7 +36,7 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 	nameCol := columns.NewColumn("name", typing.String)
 	tc := s.stageStore.configMap.TableConfig(fqName)
 
-	val := tc.ShouldDeleteColumn(nameCol.Name(nil), time.Now().Add(-1*6*time.Hour), true)
+	val := tc.ShouldDeleteColumn(s.ctx, nameCol.Name(nil), time.Now().Add(-1*6*time.Hour), true)
 	assert.False(s.T(), val, "should not try to delete this column")
 	assert.Equal(s.T(), len(s.stageStore.configMap.TableConfig(fqName).ReadOnlyColumnsToDelete()), 1)
 
@@ -63,21 +63,23 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 
 	nameCol := columns.NewColumn("name", typing.String)
 	// Let's try to delete name.
-	allowed := s.stageStore.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name(nil), time.Now().Add(-1*(6*time.Hour)), true)
+	allowed := s.stageStore.configMap.TableConfig(fqName).ShouldDeleteColumn(s.ctx, nameCol.Name(nil),
+		time.Now().Add(-1*(6*time.Hour)), true)
 
 	assert.Equal(s.T(), allowed, false, "should not be allowed to delete")
 
 	// Process tried to delete, but it's lagged.
-	allowed = s.stageStore.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name(nil), time.Now().Add(-1*(6*time.Hour)), true)
+	allowed = s.stageStore.configMap.TableConfig(fqName).ShouldDeleteColumn(s.ctx, nameCol.Name(nil),
+		time.Now().Add(-1*(6*time.Hour)), true)
 
 	assert.Equal(s.T(), allowed, false, "should not be allowed to delete")
 
 	// Process now caught up, and is asking if we can delete, should still be no.
-	allowed = s.stageStore.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name(nil), time.Now(), true)
+	allowed = s.stageStore.configMap.TableConfig(fqName).ShouldDeleteColumn(s.ctx, nameCol.Name(nil), time.Now(), true)
 	assert.Equal(s.T(), allowed, false, "should not be allowed to delete still")
 
 	// Process is finally ahead, has permission to delete now.
-	allowed = s.stageStore.configMap.TableConfig(fqName).ShouldDeleteColumn(nameCol.Name(nil),
+	allowed = s.stageStore.configMap.TableConfig(fqName).ShouldDeleteColumn(s.ctx, nameCol.Name(nil),
 		time.Now().Add(2*constants.DeletionConfidencePadding), true)
 
 	assert.Equal(s.T(), allowed, true, "should now be allowed to delete")
@@ -100,7 +102,8 @@ func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
 	}, false, false)
 
 	assert.Equal(s.T(), len(tc.ReadOnlyColumnsToDelete()), 1)
-	assert.False(s.T(), tc.ShouldDeleteColumn("customer_id", time.Now().Add(24*time.Hour), false))
+	assert.False(s.T(), tc.ShouldDeleteColumn(s.ctx, "customer_id",
+		time.Now().Add(24*time.Hour), false))
 }
 
 func (s *SnowflakeTestSuite) TestGetTableConfig() {

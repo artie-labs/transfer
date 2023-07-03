@@ -82,7 +82,7 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 		}
 
 		if args.ColumnOp == constants.Delete {
-			if !args.Tc.ShouldDeleteColumn(col.Name(nil), args.CdcTime, args.ContainOtherOperations) {
+			if !args.Tc.ShouldDeleteColumn(ctx, col.Name(nil), args.CdcTime, args.ContainOtherOperations) {
 				continue
 			}
 		}
