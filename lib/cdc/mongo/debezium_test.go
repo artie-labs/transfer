@@ -93,6 +93,7 @@ func (p *MongoTestSuite) TestMongoDBEventOrder() {
 	assert.True(p.T(), isOk)
 	assert.Equal(p.T(), time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC), schemaEvt.GetExecutionTime())
 	assert.Equal(p.T(), "orders", schemaEvt.GetTableName())
+	assert.False(p.T(), evt.DeletePayload())
 }
 
 func (p *MongoTestSuite) TestMongoDBEventCustomer() {
@@ -146,6 +147,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 	assert.Equal(p.T(), evt.GetExecutionTime(),
 		time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
 	assert.Equal(p.T(), "customers", evt.GetTableName())
+	assert.False(p.T(), evt.DeletePayload())
 }
 
 func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
@@ -192,7 +194,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 	assert.Equal(p.T(), true, evt.DeletePayload())
 }
 
-func (p *MongoTestSuite) TestGetEventFromBytes_Tombstone() {
+func (p *MongoTestSuite) TestGetEventFromBytesTombstone() {
 	evt, err := p.Debezium.GetEventFromBytes(context.Background(), nil)
 	assert.NoError(p.T(), err)
 	assert.Equal(p.T(), true, evt.DeletePayload())
@@ -385,10 +387,8 @@ func (p *MongoTestSuite) TestMongoDBEventWithSchema() {
 	}
 }
 `
-
 	evt, err := p.Debezium.GetEventFromBytes(ctx, []byte(payload))
 	assert.NoError(p.T(), err)
-
 	schemaEvt, isOk := evt.(*SchemaEventPayload)
 	assert.True(p.T(), isOk)
 	assert.Equal(p.T(), schemaEvt.Schema.SchemaType, "struct")
@@ -398,5 +398,5 @@ func (p *MongoTestSuite) TestMongoDBEventWithSchema() {
 		DebeziumType: "",
 		Type:         "string",
 	})
-
+	assert.False(p.T(), evt.DeletePayload())
 }

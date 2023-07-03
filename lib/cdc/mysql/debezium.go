@@ -3,6 +3,7 @@ package mysql
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/cdc/util"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -15,6 +16,7 @@ type Debezium string
 func (d *Debezium) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Event, error) {
 	var event util.SchemaEventPayload
 	if len(bytes) == 0 {
+		event.Payload.Operation = "d"
 		// This is a Kafka Tombstone event.
 		return &event, nil
 	}

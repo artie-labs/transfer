@@ -15,10 +15,16 @@ var validTc = &kafkalib.TopicConfig{
 	CDCKeyFormat: "org.apache.kafka.connect.json.JsonConverter",
 }
 
+func (p *PostgresTestSuite) TestGetEventFromBytesTombstone() {
+	evt, err := p.GetEventFromBytes(context.Background(), nil)
+	assert.NoError(p.T(), err)
+	assert.True(p.T(), evt.DeletePayload())
+}
+
 func (p *PostgresTestSuite) TestGetPrimaryKey() {
 	valString := `{"id": 47}`
-
 	pkMap, err := p.GetPrimaryKey(context.Background(), []byte(valString), validTc)
+	assert.NoError(p.T(), err)
 
 	val, isOk := pkMap["id"]
 	assert.True(p.T(), isOk)
@@ -75,9 +81,9 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
 	}
 }
 `
-
 	evt, err := p.Debezium.GetEventFromBytes(context.Background(), []byte(payload))
 	assert.Nil(p.T(), err)
+	assert.False(p.T(), evt.DeletePayload())
 
 	evtData := evt.GetData(context.Background(), map[string]interface{}{"id": 59}, &kafkalib.TopicConfig{})
 	assert.Equal(p.T(), evtData["id"], float64(59))
@@ -87,6 +93,7 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
 	assert.Equal(p.T(), time.Date(2022, time.November, 16,
 		4, 1, 53, 308000000, time.UTC), evt.GetExecutionTime())
 	assert.Equal(p.T(), "orders", evt.GetTableName())
+	assert.False(p.T(), evt.DeletePayload())
 }
 
 func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
@@ -177,9 +184,9 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	}
 }
 `
-
 	evt, err := p.Debezium.GetEventFromBytes(context.Background(), []byte(payload))
 	assert.Nil(p.T(), err)
+	assert.False(p.T(), evt.DeletePayload())
 
 	evtData := evt.GetData(context.Background(), map[string]interface{}{"id": 1001}, &kafkalib.TopicConfig{})
 
