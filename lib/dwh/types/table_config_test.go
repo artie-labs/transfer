@@ -16,14 +16,15 @@ import (
 )
 
 func TestDwhTableConfig_ShouldDeleteColumn(t *testing.T) {
+	// TODO: Extend
 	dwhTableConfig := NewDwhTableConfig(&columns.Columns{}, nil, false, false)
-	results := dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC())
+	results := dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC(), true)
 	assert.False(t, results)
 	assert.Equal(t, len(dwhTableConfig.ReadOnlyColumnsToDelete()), 0)
 
 	// Once the flag is turned on.
 	dwhTableConfig.dropDeletedColumns = true
-	results = dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC())
+	results = dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC(), true)
 	assert.False(t, results)
 	assert.Equal(t, len(dwhTableConfig.ReadOnlyColumnsToDelete()), 1)
 }

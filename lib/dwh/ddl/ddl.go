@@ -41,13 +41,12 @@ func DropTemporaryTable(ctx context.Context, dwh dwh.DataWarehouse, fqTableName 
 type AlterTableArgs struct {
 	Dwh dwh.DataWarehouse
 	Tc  *types.DwhTableConfig
-	// ContainsOtherOperations - this is tableData `containOtherOperations` complement. We did this so that the default behavior if a new integration or feature is added
-	// It will default to false and skip the DDL to minimize surprise.
-	ContainsDeleteEventsOnly bool
-	FqTableName              string
-	CreateTable              bool
-	TemporaryTable           bool
-	ColumnOp                 constants.ColumnOperation
+	// ContainsOtherOperations - this is sourced from tableData `containOtherOperations`
+	ContainOtherOperations bool
+	FqTableName            string
+	CreateTable            bool
+	TemporaryTable         bool
+	ColumnOp               constants.ColumnOperation
 
 	CdcTime time.Time
 }
@@ -83,7 +82,7 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 		}
 
 		if args.ColumnOp == constants.Delete {
-			if !args.Tc.ShouldDeleteColumn(col.Name(nil), args.CdcTime, args.ContainsDeleteEventsOnly) {
+			if !args.Tc.ShouldDeleteColumn(col.Name(nil), args.CdcTime, args.ContainOtherOperations) {
 				continue
 			}
 

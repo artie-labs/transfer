@@ -189,6 +189,13 @@ func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 	assert.Equal(p.T(), evtData[constants.DeleteColumnMarker], true)
 	assert.Equal(p.T(), evt.GetExecutionTime(),
 		time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
+	assert.Equal(p.T(), true, evt.DeletePayload())
+}
+
+func (p *MongoTestSuite) TestGetEventFromBytes_Tombstone() {
+	evt, err := p.Debezium.GetEventFromBytes(context.Background(), nil)
+	assert.NoError(p.T(), err)
+	assert.Equal(p.T(), true, evt.DeletePayload())
 }
 
 func (p *MongoTestSuite) TestMongoDBEventWithSchema() {
