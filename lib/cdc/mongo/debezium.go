@@ -22,6 +22,7 @@ func (d *Debezium) GetEventFromBytes(_ context.Context, bytes []byte) (cdc.Event
 	var schemaEventPayload SchemaEventPayload
 	if len(bytes) == 0 {
 		// This is a Kafka Tombstone event.
+		schemaEventPayload.Payload.Operation = "d"
 		return &schemaEventPayload, nil
 	}
 
@@ -71,6 +72,10 @@ func (d *Debezium) Labels() []string {
 
 func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (kvMap map[string]interface{}, err error) {
 	return debezium.ParsePartitionKey(key, tc.CDCKeyFormat)
+}
+
+func (s *SchemaEventPayload) DeletePayload() bool {
+	return s.Payload.Operation == "d"
 }
 
 func (s *SchemaEventPayload) GetExecutionTime() time.Time {

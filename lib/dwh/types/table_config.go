@@ -33,98 +33,104 @@ func NewDwhTableConfig(columns *columns.Columns, colsToDelete map[string]time.Ti
 	}
 }
 
-func (tc *DwhTableConfig) CreateTable() bool {
-	tc.RLock()
-	defer tc.RUnlock()
+func (d *DwhTableConfig) CreateTable() bool {
+	d.RLock()
+	defer d.RUnlock()
 
-	return tc.createTable
+	return d.createTable
 }
 
-func (tc *DwhTableConfig) DropDeletedColumns() bool {
-	tc.RLock()
-	defer tc.RUnlock()
+func (d *DwhTableConfig) DropDeletedColumns() bool {
+	d.RLock()
+	defer d.RUnlock()
 
-	return tc.dropDeletedColumns
+	return d.dropDeletedColumns
 }
 
-func (tc *DwhTableConfig) Columns() *columns.Columns {
-	if tc == nil {
+func (d *DwhTableConfig) Columns() *columns.Columns {
+	if d == nil {
 		return nil
 	}
 
-	return tc.columns
+	return d.columns
 }
 
-func (tc *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp constants.ColumnOperation, cols ...columns.Column) {
-	tc.Lock()
-	defer tc.Unlock()
+func (d *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp constants.ColumnOperation, cols ...columns.Column) {
+	d.Lock()
+	defer d.Unlock()
 	switch columnOp {
 	case constants.Add:
 		for _, col := range cols {
-			tc.columns.AddColumn(col)
+			d.columns.AddColumn(col)
 			// Delete from the permissions table, if exists.
-			delete(tc.columnsToDelete, col.Name(nil))
+			delete(d.columnsToDelete, col.Name(nil))
 		}
 
-		tc.createTable = createTable
+		d.createTable = createTable
 	case constants.Delete:
 		for _, col := range cols {
 			// Delete from the permissions and in-memory table
-			tc.columns.DeleteColumn(col.Name(nil))
-			delete(tc.columnsToDelete, col.Name(nil))
+			d.columns.DeleteColumn(col.Name(nil))
+			delete(d.columnsToDelete, col.Name(nil))
 		}
 	}
 }
 
 // ReadOnlyColumnsToDelete returns a read only version of the columns that need to be deleted.
-func (tc *DwhTableConfig) ReadOnlyColumnsToDelete() map[string]time.Time {
-	tc.RLock()
-	defer tc.RUnlock()
+func (d *DwhTableConfig) ReadOnlyColumnsToDelete() map[string]time.Time {
+	d.RLock()
+	defer d.RUnlock()
 	colsToDelete := make(map[string]time.Time)
-	for k, v := range tc.columnsToDelete {
+	for k, v := range d.columnsToDelete {
 		colsToDelete[k] = v
 	}
 
 	return colsToDelete
 }
 
-func (tc *DwhTableConfig) ShouldDeleteColumn(colName string, cdcTime time.Time) bool {
-	if tc == nil {
+func (d *DwhTableConfig) ShouldDeleteColumn(colName string, cdcTime time.Time, containOtherOperations bool) bool {
+	if d == nil {
 		// Avoid a panic and default to FALSE.
 		return false
 	}
 
-	if tc.dropDeletedColumns == false {
-		// Never delete
+	// We should not delete if either conditions are true.
+	// 1. TableData contains only DELETES
+	// 2. Explicit setting that specifies not to drop columns
+	if !containOtherOperations {
 		return false
 	}
 
-	colsToDelete := tc.ReadOnlyColumnsToDelete()
+	if d.dropDeletedColumns == false {
+		return false
+	}
+
+	colsToDelete := d.ReadOnlyColumnsToDelete()
 	ts, isOk := colsToDelete[colName]
 	if isOk {
 		// If the CDC time is greater than this timestamp, then we should delete it.
 		return cdcTime.After(ts)
 	}
 
-	tc.AddColumnsToDelete(colName, time.Now().UTC().Add(constants.DeletionConfidencePadding))
+	d.AddColumnsToDelete(colName, time.Now().UTC().Add(constants.DeletionConfidencePadding))
 	return false
 }
 
-func (tc *DwhTableConfig) AddColumnsToDelete(colName string, ts time.Time) {
-	tc.Lock()
-	defer tc.Unlock()
+func (d *DwhTableConfig) AddColumnsToDelete(colName string, ts time.Time) {
+	d.Lock()
+	defer d.Unlock()
 
-	if tc.columnsToDelete == nil {
-		tc.columnsToDelete = make(map[string]time.Time)
+	if d.columnsToDelete == nil {
+		d.columnsToDelete = make(map[string]time.Time)
 	}
 
-	tc.columnsToDelete[colName] = ts
+	d.columnsToDelete[colName] = ts
 	return
 }
 
-func (tc *DwhTableConfig) ClearColumnsToDeleteByColName(colName string) {
-	tc.Lock()
-	defer tc.Unlock()
+func (d *DwhTableConfig) ClearColumnsToDeleteByColName(colName string) {
+	d.Lock()
+	defer d.Unlock()
 
-	delete(tc.columnsToDelete, colName)
+	delete(d.columnsToDelete, colName)
 }

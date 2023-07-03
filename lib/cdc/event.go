@@ -19,6 +19,7 @@ type Format interface {
 
 type Event interface {
 	GetExecutionTime() time.Time
+	DeletePayload() bool
 	GetTableName() string
 	GetData(ctx context.Context, pkMap map[string]interface{}, config *kafkalib.TopicConfig) map[string]interface{}
 	GetOptionalSchema(ctx context.Context) map[string]typing.KindDetails

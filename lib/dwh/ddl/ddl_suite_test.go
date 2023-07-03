@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/artie-labs/transfer/clients/redshift"
+
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/logger"
 
@@ -23,6 +25,9 @@ type DDLTestSuite struct {
 
 	fakeSnowflakeStagesStore *mocks.FakeStore
 	snowflakeStagesStore     *snowflake.Store
+
+	fakeRedshiftStore *mocks.FakeStore
+	redshiftStore     *redshift.Store
 }
 
 func (d *DDLTestSuite) SetupTest() {
@@ -51,6 +56,10 @@ func (d *DDLTestSuite) SetupTest() {
 	d.fakeSnowflakeStagesStore = &mocks.FakeStore{}
 	snowflakeStagesStore := db.Store(d.fakeSnowflakeStagesStore)
 	d.snowflakeStagesStore = snowflake.LoadSnowflake(ctx, &snowflakeStagesStore)
+
+	d.fakeRedshiftStore = &mocks.FakeStore{}
+	redshiftStore := db.Store(d.fakeRedshiftStore)
+	d.redshiftStore = redshift.LoadRedshift(ctx, &redshiftStore)
 }
 
 func TestDDLTestSuite(t *testing.T) {

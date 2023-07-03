@@ -75,6 +75,10 @@ func (s *SchemaEventPayload) GetOptionalSchema(ctx context.Context) map[string]t
 	return schema
 }
 
+func (s *SchemaEventPayload) DeletePayload() bool {
+	return s.Payload.Operation == "d"
+}
+
 func (s *SchemaEventPayload) GetExecutionTime() time.Time {
 	return time.UnixMilli(s.Payload.Source.TsMs).UTC()
 }

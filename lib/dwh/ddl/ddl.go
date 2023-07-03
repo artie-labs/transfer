@@ -39,12 +39,14 @@ func DropTemporaryTable(ctx context.Context, dwh dwh.DataWarehouse, fqTableName 
 }
 
 type AlterTableArgs struct {
-	Dwh            dwh.DataWarehouse
-	Tc             *types.DwhTableConfig
-	FqTableName    string
-	CreateTable    bool
-	TemporaryTable bool
-	ColumnOp       constants.ColumnOperation
+	Dwh dwh.DataWarehouse
+	Tc  *types.DwhTableConfig
+	// ContainsOtherOperations - this is sourced from tableData `containOtherOperations`
+	ContainOtherOperations bool
+	FqTableName            string
+	CreateTable            bool
+	TemporaryTable         bool
+	ColumnOp               constants.ColumnOperation
 
 	CdcTime time.Time
 }
@@ -79,9 +81,10 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 			continue
 		}
 
-		if args.ColumnOp == constants.Delete && !args.Tc.ShouldDeleteColumn(col.Name(nil), args.CdcTime) {
-			// Don't delete yet, we can evaluate when we consume more messages.
-			continue
+		if args.ColumnOp == constants.Delete {
+			if !args.Tc.ShouldDeleteColumn(col.Name(nil), args.CdcTime, args.ContainOtherOperations) {
+				continue
+			}
 		}
 
 		mutateCol = append(mutateCol, col)

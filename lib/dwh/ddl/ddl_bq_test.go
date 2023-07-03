@@ -50,12 +50,13 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumnsToDelete())
 	for _, column := range cols.GetColumns() {
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:         d.bigQueryStore,
-			Tc:          tc,
-			FqTableName: fqName,
-			CreateTable: tc.CreateTable(),
-			ColumnOp:    constants.Delete,
-			CdcTime:     ts,
+			Dwh:                    d.bigQueryStore,
+			Tc:                     tc,
+			FqTableName:            fqName,
+			CreateTable:            tc.CreateTable(),
+			ColumnOp:               constants.Delete,
+			ContainOtherOperations: true,
+			CdcTime:                ts,
 		}
 
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
@@ -71,12 +72,13 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	var callIdx int
 	for _, column := range cols.GetColumns() {
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:         d.bigQueryStore,
-			Tc:          tc,
-			FqTableName: fqName,
-			CreateTable: tc.CreateTable(),
-			ColumnOp:    constants.Delete,
-			CdcTime:     ts.Add(2 * constants.DeletionConfidencePadding),
+			Dwh:                    d.bigQueryStore,
+			Tc:                     tc,
+			FqTableName:            fqName,
+			CreateTable:            tc.CreateTable(),
+			ColumnOp:               constants.Delete,
+			ContainOtherOperations: true,
+			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
 		}
 
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)

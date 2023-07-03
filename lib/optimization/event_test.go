@@ -163,7 +163,7 @@ func TestTableData_ShouldFlushRowLength(t *testing.T) {
 		assert.False(t, td.ShouldFlush(ctx))
 		td.InsertRow(fmt.Sprint(i), map[string]interface{}{
 			"foo": "bar",
-		})
+		}, false)
 	}
 
 	assert.True(t, td.ShouldFlush(ctx))
@@ -188,7 +188,7 @@ func TestTableData_ShouldFlushRowSize(t *testing.T) {
 			"nested": map[string]interface{}{
 				"foo": "bar",
 			},
-		})
+		}, false)
 	}
 
 	td.InsertRow("33333", map[string]interface{}{
@@ -199,7 +199,29 @@ func TestTableData_ShouldFlushRowSize(t *testing.T) {
 		"nested": map[string]interface{}{
 			"foo": "bar",
 		},
-	})
+	}, false)
 
 	assert.True(t, td.ShouldFlush(ctx))
+}
+
+func TestTableData_InsertRowIntegrity(t *testing.T) {
+	ctx := context.Background()
+	ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{Config: &config.Config{
+		FlushSizeKb: 5,
+		BufferRows:  20000,
+	}})
+
+	td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
+	assert.Equal(t, 0, int(td.Rows()))
+	assert.False(t, td.ContainOtherOperations())
+
+	for i := 0; i < 100; i++ {
+		td.InsertRow("123", nil, true)
+		assert.False(t, td.ContainOtherOperations())
+	}
+
+	for i := 0; i < 100; i++ {
+		td.InsertRow("123", nil, false)
+		assert.True(t, td.ContainOtherOperations())
+	}
 }

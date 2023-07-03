@@ -135,11 +135,12 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
 	alterTableArgs := ddl.AlterTableArgs{
-		Dwh:         d.snowflakeStagesStore,
-		Tc:          tc,
-		FqTableName: fqTable,
-		ColumnOp:    constants.Delete,
-		CdcTime:     time.Now().UTC(),
+		Dwh:                    d.snowflakeStagesStore,
+		Tc:                     tc,
+		FqTableName:            fqTable,
+		ContainOtherOperations: true,
+		ColumnOp:               constants.Delete,
+		CdcTime:                time.Now().UTC(),
 	}
 	err := ddl.AlterTable(d.ctx, alterTableArgs, cols...)
 	assert.Equal(d.T(), 0, d.fakeSnowflakeStagesStore.ExecCallCount(), "tried to delete, but not yet.")
@@ -200,11 +201,12 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
 	alterTableArgs := ddl.AlterTableArgs{
-		Dwh:         d.snowflakeStagesStore,
-		Tc:          tc,
-		FqTableName: fqTable,
-		ColumnOp:    constants.Delete,
-		CdcTime:     time.Now(),
+		Dwh:                    d.snowflakeStagesStore,
+		Tc:                     tc,
+		FqTableName:            fqTable,
+		ColumnOp:               constants.Delete,
+		ContainOtherOperations: true,
+		CdcTime:                time.Now(),
 	}
 	err := ddl.AlterTable(d.ctx, alterTableArgs, cols...)
 	assert.Equal(d.T(), 3, d.fakeSnowflakeStagesStore.ExecCallCount(), "tried to delete, but not yet.")

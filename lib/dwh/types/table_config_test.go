@@ -16,16 +16,32 @@ import (
 )
 
 func TestDwhTableConfig_ShouldDeleteColumn(t *testing.T) {
+	// Test 3 different possibilities:
+	// 1. DropDeletedColumns = false, so don't delete.
 	dwhTableConfig := NewDwhTableConfig(&columns.Columns{}, nil, false, false)
-	results := dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC())
-	assert.False(t, results)
-	assert.Equal(t, len(dwhTableConfig.ReadOnlyColumnsToDelete()), 0)
+	for i := 0; i < 100; i++ {
+		results := dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC(), true)
+		assert.False(t, results)
+		assert.Equal(t, len(dwhTableConfig.ReadOnlyColumnsToDelete()), 0)
+	}
 
-	// Once the flag is turned on.
-	dwhTableConfig.dropDeletedColumns = true
-	results = dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC())
-	assert.False(t, results)
-	assert.Equal(t, len(dwhTableConfig.ReadOnlyColumnsToDelete()), 1)
+	// 2. DropDeletedColumns = true and ContainsOtherOperations = false, so don't delete
+	dwhTableConfig = NewDwhTableConfig(&columns.Columns{}, nil, false, true)
+	for i := 0; i < 100; i++ {
+		results := dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC(), false)
+		assert.False(t, results)
+		assert.Equal(t, len(dwhTableConfig.ReadOnlyColumnsToDelete()), 0)
+	}
+
+	// 3. DropDeletedColumns = true and ContainsOtherOperations = true, now check CDC time to delete.
+	dwhTableConfig = NewDwhTableConfig(&columns.Columns{}, nil, false, true)
+	for i := 0; i < 100; i++ {
+		results := dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC(), true)
+		assert.False(t, results)
+		assert.Equal(t, len(dwhTableConfig.ReadOnlyColumnsToDelete()), 1)
+	}
+
+	assert.True(t, dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC().Add(2*constants.DeletionConfidencePadding), true))
 }
 
 // TestDwhTableConfig_ColumnsConcurrency this file is meant to test the concurrency methods of .Columns()

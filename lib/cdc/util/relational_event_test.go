@@ -117,6 +117,8 @@ func TestGetDataTestInsert(t *testing.T) {
 		},
 	}
 
+	assert.False(t, schemaEventPayload.DeletePayload())
+
 	evtData := schemaEventPayload.GetData(context.Background(), map[string]interface{}{"pk": 1}, &tc)
 	assert.Equal(t, len(after), len(evtData), "has deletion flag")
 
@@ -142,6 +144,8 @@ func TestGetDataTestDelete(t *testing.T) {
 			Source:    Source{TsMs: now.UnixMilli()},
 		},
 	}
+
+	assert.False(t, schemaEventPayload.DeletePayload())
 
 	kvMap := map[string]interface{}{"pk": 1}
 	evtData := schemaEventPayload.GetData(context.Background(), kvMap, tc)
@@ -187,6 +191,7 @@ func TestGetDataTestUpdate(t *testing.T) {
 		},
 	}
 
+	assert.False(t, schemaEventPayload.DeletePayload())
 	kvMap := map[string]interface{}{"pk": 1}
 
 	evtData := schemaEventPayload.GetData(context.Background(), kvMap, &tc)
