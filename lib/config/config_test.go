@@ -27,6 +27,17 @@ kafka:
 `
 )
 
+func TestBigQuery_DSN(t *testing.T) {
+	b := BigQuery{
+		DefaultDataset: "dataset",
+		ProjectID:      "project",
+	}
+
+	assert.Equal(t, "bigquery://project/dataset", b.DSN())
+	b.Location = "eu"
+	assert.Equal(t, "bigquery://project/eu/dataset", b.DSN())
+}
+
 func TestKafka_String(t *testing.T) {
 	k := Kafka{
 		BootstrapServer: "server",
