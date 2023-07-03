@@ -51,7 +51,7 @@ pubsub:
 
 ### BigQuery
 
-<table><thead><tr><th width="433">Key</th><th width="106.33333333333331">Optional</th><th>Description</th></tr></thead><tbody><tr><td><code>bigquery.pathToCredentials</code></td><td>Y</td><td>Path to the credentials file for Google. <br><br>You can also directly inject <code>GOOGLE_APPLICATION_CREDENTIALS</code> ENV VAR, else Transfer will set it for you based on this value provided.</td></tr><tr><td><code>bigquery.projectID</code></td><td>N</td><td>Google Cloud Project ID</td></tr><tr><td><code>bigquery.defaultDataset</code></td><td>N</td><td><p>The default dataset used. </p><p></p><p>This just allows us to connect to BigQuery using data source  notation (DSN). </p></td></tr></tbody></table>
+<table><thead><tr><th width="433">Key</th><th width="106.33333333333331">Optional</th><th>Description</th></tr></thead><tbody><tr><td><code>bigquery.pathToCredentials</code></td><td>Y</td><td>Path to the credentials file for Google. <br><br>You can also directly inject <code>GOOGLE_APPLICATION_CREDENTIALS</code> ENV VAR, else Transfer will set it for you based on this value provided.</td></tr><tr><td><code>bigquery.projectID</code></td><td>N</td><td>Google Cloud Project ID</td></tr><tr><td><code>bigquery.location</code></td><td>Y</td><td>Location of the BigQuery dataset. <br><br>Defaults to <code>us</code>.</td></tr><tr><td><code>bigquery.defaultDataset</code></td><td>N</td><td><p>The default dataset used. </p><p></p><p>This just allows us to connect to BigQuery using data source  notation (DSN). </p></td></tr></tbody></table>
 
 ### Snowflake
 
