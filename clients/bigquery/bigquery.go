@@ -85,7 +85,6 @@ func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
 	}
 
 	settings := config.FromContext(ctx)
-
 	if credPath := settings.Config.BigQuery.PathToCredentials; credPath != "" {
 		// If the credPath is set, let's set it into the env var.
 		logger.FromContext(ctx).Debug("writing the path to BQ credentials to env var for google auth")
@@ -96,8 +95,7 @@ func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
 	}
 
 	return &Store{
-		Store: db.Open(ctx, "bigquery", fmt.Sprintf("bigquery://%s/%s",
-			settings.Config.BigQuery.ProjectID, settings.Config.BigQuery.DefaultDataset)),
+		Store:     db.Open(ctx, "bigquery", settings.Config.BigQuery.DSN()),
 		configMap: &types.DwhToTablesConfigMap{},
 	}
 }
