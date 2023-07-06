@@ -256,7 +256,6 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	assert.Equal(d.T(), originalColumnLength, len(snowflakeTc.ReadOnlyColumnsToDelete()), snowflakeTc.ReadOnlyColumnsToDelete())
 
 	for _, column := range cols.GetColumns() {
-		fmt.Println("snowflake?")
 		alterTableArgs := ddl.AlterTableArgs{
 			Dwh:                    d.snowflakeStagesStore,
 			Tc:                     snowflakeTc,
@@ -271,7 +270,6 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 		assert.NoError(d.T(), err)
 
 		// BigQuery
-		fmt.Println("bigquery?")
 		alterTableArgs = ddl.AlterTableArgs{
 			Dwh:                    d.bigQueryStore,
 			Tc:                     bqTc,

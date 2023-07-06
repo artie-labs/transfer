@@ -12,6 +12,7 @@ import (
 )
 
 func TestShouldSkipColumn(t *testing.T) {
+	// TODO - fill this out.
 	colsToExpectation := map[string]bool{
 		"id":                         false,
 		"21331":                      false,
@@ -20,13 +21,13 @@ func TestShouldSkipColumn(t *testing.T) {
 	}
 
 	for col, expected := range colsToExpectation {
-		assert.Equal(t, shouldSkipColumn(col, false), expected)
+		assert.Equal(t, shouldSkipColumn(col, false, false), expected)
 	}
 
 	// When toggling soft deletion on, this column should not be skipped.
 	colsToExpectation[constants.DeleteColumnMarker] = false
 	for col, expected := range colsToExpectation {
-		assert.Equal(t, shouldSkipColumn(col, true), expected)
+		assert.Equal(t, shouldSkipColumn(col, true, false), expected)
 	}
 }
 
@@ -82,7 +83,7 @@ func TestDiff_VariousNils(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		actualSrcKeysMissing, actualTargKeysMissing := Diff(testCase.sourceCols, testCase.targCols, false)
+		actualSrcKeysMissing, actualTargKeysMissing := Diff(testCase.sourceCols, testCase.targCols, false, false)
 		assert.Equal(t, testCase.expectedSrcKeyLength, len(actualSrcKeysMissing), testCase.name)
 		assert.Equal(t, testCase.expectedTargKeyLength, len(actualTargKeysMissing), testCase.name)
 	}
@@ -92,7 +93,7 @@ func TestDiffBasic(t *testing.T) {
 	var source Columns
 	source.AddColumn(NewColumn("a", typing.Integer))
 
-	srcKeyMissing, targKeyMissing := Diff(&source, &source, false)
+	srcKeyMissing, targKeyMissing := Diff(&source, &source, false, false)
 	assert.Equal(t, len(srcKeyMissing), 0)
 	assert.Equal(t, len(targKeyMissing), 0)
 }
@@ -116,7 +117,7 @@ func TestDiffDelta1(t *testing.T) {
 		targCols.AddColumn(NewColumn(colName, kindDetails))
 	}
 
-	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targCols, false)
+	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targCols, false, false)
 	assert.Equal(t, len(srcKeyMissing), 2, srcKeyMissing)   // Missing aa, cc
 	assert.Equal(t, len(targKeyMissing), 2, targKeyMissing) // Missing aa, cc
 }
@@ -148,7 +149,7 @@ func TestDiffDelta2(t *testing.T) {
 		targetCols.AddColumn(NewColumn(colName, kindDetails))
 	}
 
-	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targetCols, false)
+	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targetCols, false, false)
 	assert.Equal(t, len(srcKeyMissing), 1, srcKeyMissing)   // Missing dd
 	assert.Equal(t, len(targKeyMissing), 3, targKeyMissing) // Missing a, c, d
 }
@@ -163,7 +164,7 @@ func TestDiffDeterministic(t *testing.T) {
 	sourceCols.AddColumn(NewColumn("name", typing.String))
 
 	for i := 0; i < 500; i++ {
-		keysMissing, targetKeysMissing := Diff(&sourceCols, &targCols, false)
+		keysMissing, targetKeysMissing := Diff(&sourceCols, &targCols, false, false)
 		assert.Equal(t, 0, len(keysMissing), keysMissing)
 
 		var key string
