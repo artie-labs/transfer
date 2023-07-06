@@ -1,6 +1,7 @@
 package dml
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -31,8 +32,6 @@ type MergeArgument struct {
 	// 1) Using as part of the MergeStatementIndividual
 	Redshift   bool
 	SoftDelete bool
-
-	IncludeArtieUpdatedCol bool
 }
 
 func MergeStatementParts(m MergeArgument) ([]string, error) {
@@ -59,6 +58,7 @@ func MergeStatementParts(m MergeArgument) ([]string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
+	// TODO solve for idempotency
 	if m.SoftDelete {
 		return []string{
 			// INSERT
@@ -85,18 +85,18 @@ func MergeStatementParts(m MergeArgument) ([]string, error) {
 		}, nil
 	}
 
-	colsToStrip := []string{constants.DeleteColumnMarker}
-	if !m.IncludeArtieUpdatedCol {
-		colsToStrip = append(colsToStrip, constants.UpdateColumnMarker)
+	// We also need to remove __artie flags since it does not exist in the destination table
+	var removed bool
+	for idx, col := range m.Columns {
+		if col == constants.DeleteColumnMarker {
+			m.Columns = append(m.Columns[:idx], m.Columns[idx+1:]...)
+			removed = true
+			break
+		}
 	}
 
-	for _, colToStrip := range colsToStrip {
-		// We also need to remove __artie flags since it does not exist in the destination table
-		if !array.StringContains(m.Columns, colToStrip) {
-			return nil, fmt.Errorf("artie %s doesn't exist", colToStrip)
-		}
-
-		m.Columns = array.RemoveElement(m.Columns, colToStrip)
+	if !removed {
+		return nil, errors.New("artie delete flag doesn't exist")
 	}
 
 	var pks []string
@@ -203,18 +203,18 @@ func MergeStatement(m MergeArgument) (string, error) {
 			})), nil
 	}
 
-	colsToStrip := []string{constants.DeleteColumnMarker}
-	if !m.IncludeArtieUpdatedCol {
-		colsToStrip = append(colsToStrip, constants.UpdateColumnMarker)
+	// We also need to remove __artie flags since it does not exist in the destination table
+	var removed bool
+	for idx, col := range m.Columns {
+		if col == constants.DeleteColumnMarker {
+			m.Columns = append(m.Columns[:idx], m.Columns[idx+1:]...)
+			removed = true
+			break
+		}
 	}
 
-	for _, colToStrip := range colsToStrip {
-		// We also need to remove __artie flags since it does not exist in the destination table
-		if !array.StringContains(m.Columns, colToStrip) {
-			return "", fmt.Errorf("artie %s doesn't exist", colToStrip)
-		}
-
-		m.Columns = array.RemoveElement(m.Columns, colToStrip)
+	if !removed {
+		return "", errors.New("artie delete flag doesn't exist")
 	}
 
 	return fmt.Sprintf(`

@@ -117,7 +117,10 @@ func (s *SchemaEventPayload) GetData(ctx context.Context, pkMap map[string]inter
 		// the PK. We can explore simplifying this interface in the future by leveraging before.
 		retMap = map[string]interface{}{
 			constants.DeleteColumnMarker: true,
-			constants.UpdateColumnMarker: time.Now().UTC(),
+		}
+
+		if tc.IncludeArtieUpdatedAt {
+			retMap[constants.UpdateColumnMarker] = time.Now().UTC()
 		}
 
 		for k, v := range pkMap {
@@ -137,7 +140,9 @@ func (s *SchemaEventPayload) GetData(ctx context.Context, pkMap map[string]inter
 		}
 
 		retMap[constants.DeleteColumnMarker] = false
-		retMap[constants.UpdateColumnMarker] = time.Now().UTC()
+		if tc.IncludeArtieUpdatedAt {
+			retMap[constants.UpdateColumnMarker] = time.Now().UTC()
+		}
 	}
 
 	return retMap
