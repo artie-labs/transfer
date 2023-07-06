@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/ext"
+
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -98,6 +100,10 @@ func (s *SchemaEventPayload) GetData(ctx context.Context, pkMap map[string]inter
 			constants.DeleteColumnMarker: true,
 		}
 
+		if tc.IncludeArtieUpdatedAt {
+			retMap[constants.UpdateColumnMarker] = ext.NewUTCTime(ext.ISO8601)
+		}
+
 		for k, v := range pkMap {
 			retMap[k] = v
 		}
@@ -109,6 +115,9 @@ func (s *SchemaEventPayload) GetData(ctx context.Context, pkMap map[string]inter
 	} else {
 		retMap = s.Payload.After
 		retMap[constants.DeleteColumnMarker] = false
+		if tc.IncludeArtieUpdatedAt {
+			retMap[constants.UpdateColumnMarker] = ext.NewUTCTime(ext.ISO8601)
+		}
 	}
 
 	// Iterate over the schema and identify if there are any fields that require extra care.

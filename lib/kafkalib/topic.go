@@ -31,15 +31,16 @@ func GetUniqueDatabaseAndSchema(tcs []*TopicConfig) []DatabaseSchemaPair {
 }
 
 type TopicConfig struct {
-	Database           string `yaml:"db"`
-	TableName          string `yaml:"tableName"`
-	Schema             string `yaml:"schema"`
-	Topic              string `yaml:"topic"`
-	IdempotentKey      string `yaml:"idempotentKey"`
-	CDCFormat          string `yaml:"cdcFormat"`
-	CDCKeyFormat       string `yaml:"cdcKeyFormat"`
-	DropDeletedColumns bool   `yaml:"dropDeletedColumns"`
-	SoftDelete         bool   `yaml:"softDelete"`
+	Database              string `yaml:"db"`
+	TableName             string `yaml:"tableName"`
+	Schema                string `yaml:"schema"`
+	Topic                 string `yaml:"topic"`
+	IdempotentKey         string `yaml:"idempotentKey"`
+	CDCFormat             string `yaml:"cdcFormat"`
+	CDCKeyFormat          string `yaml:"cdcKeyFormat"`
+	DropDeletedColumns    bool   `yaml:"dropDeletedColumns"`
+	SoftDelete            bool   `yaml:"softDelete"`
+	IncludeArtieUpdatedAt bool   `yaml:"includeArtieUpdatedAt"`
 }
 
 const (

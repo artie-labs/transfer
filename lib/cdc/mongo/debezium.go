@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/ext"
+
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -119,6 +121,10 @@ func (s *SchemaEventPayload) GetData(ctx context.Context, pkMap map[string]inter
 			constants.DeleteColumnMarker: true,
 		}
 
+		if tc.IncludeArtieUpdatedAt {
+			retMap[constants.UpdateColumnMarker] = ext.NewUTCTime(ext.ISO8601)
+		}
+
 		for k, v := range pkMap {
 			retMap[k] = v
 		}
@@ -136,6 +142,9 @@ func (s *SchemaEventPayload) GetData(ctx context.Context, pkMap map[string]inter
 		}
 
 		retMap[constants.DeleteColumnMarker] = false
+		if tc.IncludeArtieUpdatedAt {
+			retMap[constants.UpdateColumnMarker] = ext.NewUTCTime(ext.ISO8601)
+		}
 	}
 
 	return retMap

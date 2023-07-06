@@ -1,32 +1,61 @@
 package columns
 
 import (
-	"fmt"
 	"testing"
+
+	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/artie-labs/transfer/lib/typing"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestShouldSkipColumn(t *testing.T) {
-	colsToExpectation := map[string]bool{
-		"id":                         false,
-		"21331":                      false,
-		constants.DeleteColumnMarker: true,
-		fmt.Sprintf("%s_hellooooooo", constants.ArtiePrefix): true,
+	type _testCase struct {
+		name                  string
+		colName               string
+		softDelete            bool
+		includeArtieUpdatedAt bool
+		expectedResult        bool
 	}
 
-	for col, expected := range colsToExpectation {
-		assert.Equal(t, shouldSkipColumn(col, false), expected)
+	testCases := []_testCase{
+		{
+			name:       "delete col marker + soft delete",
+			colName:    constants.DeleteColumnMarker,
+			softDelete: true,
+		},
+		{
+			name:           "delete col marker",
+			colName:        constants.DeleteColumnMarker,
+			expectedResult: true,
+		},
+		{
+			name:                  "updated col marker + include updated",
+			colName:               constants.UpdateColumnMarker,
+			includeArtieUpdatedAt: true,
+		},
+		{
+			name:           "updated col marker",
+			colName:        constants.UpdateColumnMarker,
+			expectedResult: true,
+		},
+		{
+			name:    "random col",
+			colName: "firstName",
+		},
+		{
+			name:                  "col with includeArtieUpdatedAt + softDelete",
+			colName:               "email",
+			includeArtieUpdatedAt: true,
+			softDelete:            true,
+		},
 	}
 
-	// When toggling soft deletion on, this column should not be skipped.
-	colsToExpectation[constants.DeleteColumnMarker] = false
-	for col, expected := range colsToExpectation {
-		assert.Equal(t, shouldSkipColumn(col, true), expected)
+	for _, testCase := range testCases {
+		actualResult := shouldSkipColumn(testCase.colName, testCase.softDelete, testCase.includeArtieUpdatedAt)
+		assert.Equal(t, testCase.expectedResult, actualResult, testCase.name)
 	}
 }
 
@@ -82,7 +111,7 @@ func TestDiff_VariousNils(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		actualSrcKeysMissing, actualTargKeysMissing := Diff(testCase.sourceCols, testCase.targCols, false)
+		actualSrcKeysMissing, actualTargKeysMissing := Diff(testCase.sourceCols, testCase.targCols, false, false)
 		assert.Equal(t, testCase.expectedSrcKeyLength, len(actualSrcKeysMissing), testCase.name)
 		assert.Equal(t, testCase.expectedTargKeyLength, len(actualTargKeysMissing), testCase.name)
 	}
@@ -92,7 +121,7 @@ func TestDiffBasic(t *testing.T) {
 	var source Columns
 	source.AddColumn(NewColumn("a", typing.Integer))
 
-	srcKeyMissing, targKeyMissing := Diff(&source, &source, false)
+	srcKeyMissing, targKeyMissing := Diff(&source, &source, false, false)
 	assert.Equal(t, len(srcKeyMissing), 0)
 	assert.Equal(t, len(targKeyMissing), 0)
 }
@@ -116,7 +145,7 @@ func TestDiffDelta1(t *testing.T) {
 		targCols.AddColumn(NewColumn(colName, kindDetails))
 	}
 
-	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targCols, false)
+	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targCols, false, false)
 	assert.Equal(t, len(srcKeyMissing), 2, srcKeyMissing)   // Missing aa, cc
 	assert.Equal(t, len(targKeyMissing), 2, targKeyMissing) // Missing aa, cc
 }
@@ -148,7 +177,7 @@ func TestDiffDelta2(t *testing.T) {
 		targetCols.AddColumn(NewColumn(colName, kindDetails))
 	}
 
-	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targetCols, false)
+	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targetCols, false, false)
 	assert.Equal(t, len(srcKeyMissing), 1, srcKeyMissing)   // Missing dd
 	assert.Equal(t, len(targKeyMissing), 3, targKeyMissing) // Missing a, c, d
 }
@@ -163,7 +192,7 @@ func TestDiffDeterministic(t *testing.T) {
 	sourceCols.AddColumn(NewColumn("name", typing.String))
 
 	for i := 0; i < 500; i++ {
-		keysMissing, targetKeysMissing := Diff(&sourceCols, &targCols, false)
+		keysMissing, targetKeysMissing := Diff(&sourceCols, &targCols, false, false)
 		assert.Equal(t, 0, len(keysMissing), keysMissing)
 
 		var key string

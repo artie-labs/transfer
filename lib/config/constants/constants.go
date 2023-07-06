@@ -16,6 +16,8 @@ const (
 	DeleteColumnMarker        = ArtiePrefix + "_delete"
 	DeletionConfidencePadding = 4 * time.Hour
 
+	UpdateColumnMarker = ArtiePrefix + "_updated_at"
+
 	// DBZPostgresFormat is the only supported CDC format right now
 	DBZPostgresFormat    = "debezium.postgres"
 	DBZPostgresAltFormat = "debezium.postgres.wal2json"
