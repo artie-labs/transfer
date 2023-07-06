@@ -131,14 +131,21 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 	evt, err := p.Debezium.GetEventFromBytes(ctx, []byte(payload))
 	assert.NoError(p.T(), err)
 	evtData := evt.GetData(context.Background(), map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{})
-
+	_, isOk := evtData[constants.UpdateColumnMarker]
+	assert.False(p.T(), isOk)
 	assert.Equal(p.T(), evtData["_id"], 1003)
 	assert.Equal(p.T(), evtData["first_name"], "Robin")
 	assert.Equal(p.T(), evtData["last_name"], "Tang")
 	assert.Equal(p.T(), evtData["email"], "robin@artie.so")
 
-	var nestedData map[string]interface{}
+	evtDataWithIncludedAt := evt.GetData(context.Background(), map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{
+		IncludeArtieUpdatedAt: true,
+	})
 
+	_, isOk = evtDataWithIncludedAt[constants.UpdateColumnMarker]
+	assert.True(p.T(), isOk)
+
+	var nestedData map[string]interface{}
 	err = json.Unmarshal([]byte(evtData["nested"].(string)), &nestedData)
 	assert.NoError(p.T(), err)
 
@@ -186,12 +193,20 @@ func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 	assert.NoError(p.T(), err)
 	evtData := evt.GetData(context.Background(), map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{})
 	assert.Equal(p.T(), "customers123", evt.GetTableName())
-
+	_, isOk := evtData[constants.UpdateColumnMarker]
+	assert.False(p.T(), isOk)
 	assert.Equal(p.T(), evtData["_id"], 1003)
 	assert.Equal(p.T(), evtData[constants.DeleteColumnMarker], true)
 	assert.Equal(p.T(), evt.GetExecutionTime(),
 		time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
 	assert.Equal(p.T(), true, evt.DeletePayload())
+
+	evtData = evt.GetData(context.Background(), map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{
+		IncludeArtieUpdatedAt: true,
+	})
+	_, isOk = evtData[constants.UpdateColumnMarker]
+	assert.True(p.T(), isOk)
+
 }
 
 func (p *MongoTestSuite) TestGetEventFromBytesTombstone() {

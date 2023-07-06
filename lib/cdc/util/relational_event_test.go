@@ -108,7 +108,6 @@ func TestGetDataTestInsert(t *testing.T) {
 		"favoriteFood": "jerky",
 	}
 
-	var tc kafkalib.TopicConfig
 	schemaEventPayload := SchemaEventPayload{
 		Payload: Payload{
 			Before:    nil,
@@ -119,15 +118,25 @@ func TestGetDataTestInsert(t *testing.T) {
 
 	assert.False(t, schemaEventPayload.DeletePayload())
 
-	evtData := schemaEventPayload.GetData(context.Background(), map[string]interface{}{"pk": 1}, &tc)
+	evtData := schemaEventPayload.GetData(context.Background(), map[string]interface{}{"pk": 1}, &kafkalib.TopicConfig{})
 	assert.Equal(t, len(after), len(evtData), "has deletion flag")
 
 	deletionFlag, isOk := evtData[constants.DeleteColumnMarker]
 	assert.True(t, isOk)
 	assert.False(t, deletionFlag.(bool))
 
+	_, isOk = evtData[constants.UpdateColumnMarker]
+	assert.False(t, isOk)
+
 	delete(evtData, constants.DeleteColumnMarker)
 	assert.Equal(t, after, evtData)
+
+	evtData = schemaEventPayload.GetData(context.Background(), map[string]interface{}{"pk": 1}, &kafkalib.TopicConfig{
+		IncludeArtieUpdatedAt: true,
+	})
+
+	_, isOk = evtData[constants.UpdateColumnMarker]
+	assert.True(t, isOk)
 }
 
 func TestGetDataTestDelete(t *testing.T) {
@@ -182,7 +191,6 @@ func TestGetDataTestUpdate(t *testing.T) {
 		"weight_lbs":   33,
 	}
 
-	var tc kafkalib.TopicConfig
 	schemaEventPayload := SchemaEventPayload{
 		Payload: Payload{
 			Before:    before,
@@ -194,13 +202,23 @@ func TestGetDataTestUpdate(t *testing.T) {
 	assert.False(t, schemaEventPayload.DeletePayload())
 	kvMap := map[string]interface{}{"pk": 1}
 
-	evtData := schemaEventPayload.GetData(context.Background(), kvMap, &tc)
+	evtData := schemaEventPayload.GetData(context.Background(), kvMap, &kafkalib.TopicConfig{})
 	assert.Equal(t, len(after), len(evtData), "has deletion flag")
 
 	deletionFlag, isOk := evtData[constants.DeleteColumnMarker]
 	assert.True(t, isOk)
 	assert.False(t, deletionFlag.(bool))
 
+	_, isOk = evtData[constants.UpdateColumnMarker]
+	assert.False(t, isOk)
+
 	delete(evtData, constants.DeleteColumnMarker)
 	assert.Equal(t, after, evtData)
+
+	evtData = schemaEventPayload.GetData(context.Background(), kvMap, &kafkalib.TopicConfig{
+		IncludeArtieUpdatedAt: true,
+	})
+
+	_, isOk = evtData[constants.UpdateColumnMarker]
+	assert.True(t, isOk)
 }
