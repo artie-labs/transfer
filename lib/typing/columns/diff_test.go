@@ -1,33 +1,61 @@
 package columns
 
 import (
-	"fmt"
 	"testing"
+
+	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/artie-labs/transfer/lib/typing"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestShouldSkipColumn(t *testing.T) {
-	// TODO - fill this out.
-	colsToExpectation := map[string]bool{
-		"id":                         false,
-		"21331":                      false,
-		constants.DeleteColumnMarker: true,
-		fmt.Sprintf("%s_hellooooooo", constants.ArtiePrefix): true,
+	type _testCase struct {
+		name                  string
+		colName               string
+		softDelete            bool
+		includeArtieUpdatedAt bool
+		expectedResult        bool
 	}
 
-	for col, expected := range colsToExpectation {
-		assert.Equal(t, shouldSkipColumn(col, false, false), expected)
+	testCases := []_testCase{
+		{
+			name:       "delete col marker + soft delete",
+			colName:    constants.DeleteColumnMarker,
+			softDelete: true,
+		},
+		{
+			name:           "delete col marker",
+			colName:        constants.DeleteColumnMarker,
+			expectedResult: true,
+		},
+		{
+			name:                  "updated col marker + include updated",
+			colName:               constants.UpdateColumnMarker,
+			includeArtieUpdatedAt: true,
+		},
+		{
+			name:           "updated col marker",
+			colName:        constants.UpdateColumnMarker,
+			expectedResult: true,
+		},
+		{
+			name:    "random col",
+			colName: "firstName",
+		},
+		{
+			name:                  "col with includeArtieUpdatedAt + softDelete",
+			colName:               "email",
+			includeArtieUpdatedAt: true,
+			softDelete:            true,
+		},
 	}
 
-	// When toggling soft deletion on, this column should not be skipped.
-	colsToExpectation[constants.DeleteColumnMarker] = false
-	for col, expected := range colsToExpectation {
-		assert.Equal(t, shouldSkipColumn(col, true, false), expected)
+	for _, testCase := range testCases {
+		actualResult := shouldSkipColumn(testCase.colName, testCase.softDelete, testCase.includeArtieUpdatedAt)
+		assert.Equal(t, testCase.expectedResult, actualResult, testCase.name)
 	}
 }
 
