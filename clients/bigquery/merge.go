@@ -227,7 +227,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return fmt.Errorf("failed to insert into temp table: %s, error: %v", tableName, err)
 	}
 
-	mergeQuery, err := dml.MergeStatement(dml.MergeArgument{
+	mergeQuery, err := dml.MergeStatement(&dml.MergeArgument{
 		FqTableName:   tableData.ToFqName(ctx, constants.BigQuery),
 		SubQuery:      tempAlterTableArgs.FqTableName,
 		IdempotentKey: tableData.TopicConfig.IdempotentKey,

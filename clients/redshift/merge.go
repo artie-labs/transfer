@@ -113,7 +113,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	// Prepare merge statement
-	mergeParts, err := dml.MergeStatementParts(dml.MergeArgument{
+	mergeParts, err := dml.MergeStatementParts(&dml.MergeArgument{
 		FqTableName:   fqName,
 		SubQuery:      temporaryTableName,
 		IdempotentKey: tableData.TopicConfig.IdempotentKey,

@@ -16,7 +16,7 @@ func TestMergeStatementPartsValidation(t *testing.T) {
 		{BigQuery: true},
 		{},
 	} {
-		parts, err := MergeStatementParts(arg)
+		parts, err := MergeStatementParts(&arg)
 		assert.Error(t, err)
 		assert.Nil(t, parts)
 	}
@@ -78,7 +78,7 @@ func TestMergeStatementPartsSoftDelete(t *testing.T) {
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(false)
-	m := MergeArgument{
+	m := &MergeArgument{
 		FqTableName:    fqTableName,
 		SubQuery:       tempTableName,
 		PrimaryKeys:    res.PrimaryKeys,
@@ -115,7 +115,7 @@ func TestMergeStatementPartsSoftDeleteComposite(t *testing.T) {
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(true)
-	m := MergeArgument{
+	m := &MergeArgument{
 		FqTableName:    fqTableName,
 		SubQuery:       tempTableName,
 		PrimaryKeys:    res.PrimaryKeys,
@@ -155,7 +155,7 @@ func TestMergeStatementParts(t *testing.T) {
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(false)
-	m := MergeArgument{
+	m := &MergeArgument{
 		FqTableName:    fqTableName,
 		SubQuery:       tempTableName,
 		PrimaryKeys:    res.PrimaryKeys,
@@ -180,7 +180,7 @@ func TestMergeStatementParts(t *testing.T) {
 		`DELETE FROM public.tableName WHERE (id) IN (SELECT cc.id FROM public.tableName__temp as cc WHERE cc.__artie_delete = true);`,
 		parts[2])
 
-	m = MergeArgument{
+	m = &MergeArgument{
 		FqTableName:    fqTableName,
 		SubQuery:       tempTableName,
 		PrimaryKeys:    res.PrimaryKeys,
@@ -211,7 +211,7 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(true)
-	m := MergeArgument{
+	m := &MergeArgument{
 		FqTableName:    fqTableName,
 		SubQuery:       tempTableName,
 		PrimaryKeys:    res.PrimaryKeys,
@@ -236,7 +236,7 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 		`DELETE FROM public.tableName WHERE (id,email) IN (SELECT cc.id,cc.email FROM public.tableName__temp as cc WHERE cc.__artie_delete = true);`,
 		parts[2])
 
-	m = MergeArgument{
+	m = &MergeArgument{
 		FqTableName:    fqTableName,
 		SubQuery:       tempTableName,
 		PrimaryKeys:    res.PrimaryKeys,

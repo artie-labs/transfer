@@ -34,7 +34,23 @@ type MergeArgument struct {
 	SoftDelete bool
 }
 
-func MergeStatementParts(m MergeArgument) ([]string, error) {
+func (m *MergeArgument) Valid() error {
+	if m == nil {
+		return fmt.Errorf("merge argument is nil")
+	}
+
+	if len(m.PrimaryKeys) == 0 {
+		return fmt.Errorf("merge argument does not contain primary keys")
+	}
+
+	return nil
+}
+
+func MergeStatementParts(m *MergeArgument) ([]string, error) {
+	if err := m.Valid(); err != nil {
+		return nil, err
+	}
+
 	if !m.Redshift {
 		return nil, fmt.Errorf("err - this is meant for redshift only")
 	}
@@ -58,7 +74,6 @@ func MergeStatementParts(m MergeArgument) ([]string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	// TODO solve for idempotency
 	if m.SoftDelete {
 		return []string{
 			// INSERT
@@ -140,9 +155,12 @@ func MergeStatementParts(m MergeArgument) ([]string, error) {
 	}, nil
 }
 
-// TODO - add validation to merge argument
 // TODO - simplify the whole escape / unescape columns logic.
-func MergeStatement(m MergeArgument) (string, error) {
+func MergeStatement(m *MergeArgument) (string, error) {
+	if err := m.Valid(); err != nil {
+		return "", err
+	}
+
 	// We should not need idempotency key for DELETE
 	// This is based on the assumption that the primary key would be atomically increasing or UUID based
 	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision

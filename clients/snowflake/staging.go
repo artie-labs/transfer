@@ -200,7 +200,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 	}
 
 	// Prepare merge statement
-	mergeQuery, err := dml.MergeStatement(dml.MergeArgument{
+	mergeQuery, err := dml.MergeStatement(&dml.MergeArgument{
 		FqTableName:   tableData.ToFqName(ctx, constants.Snowflake),
 		SubQuery:      temporaryTableName,
 		IdempotentKey: tableData.TopicConfig.IdempotentKey,

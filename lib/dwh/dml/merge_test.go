@@ -37,7 +37,7 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 	_cols.AddColumn(columns.NewColumn("id", typing.String))
 
 	for _, idempotentKey := range []string{"", "updated_at"} {
-		mergeSQL, err := MergeStatement(MergeArgument{
+		mergeSQL, err := MergeStatement(&MergeArgument{
 			FqTableName:    fqTable,
 			SubQuery:       subQuery,
 			IdempotentKey:  idempotentKey,
@@ -84,7 +84,7 @@ func TestMergeStatement(t *testing.T) {
 	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
-	mergeSQL, err := MergeStatement(MergeArgument{
+	mergeSQL, err := MergeStatement(&MergeArgument{
 		FqTableName:   fqTable,
 		SubQuery:      subQuery,
 		IdempotentKey: "",
@@ -131,7 +131,7 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 	var _cols columns.Columns
 	_cols.AddColumn(columns.NewColumn("id", typing.String))
 
-	mergeSQL, err := MergeStatement(MergeArgument{
+	mergeSQL, err := MergeStatement(&MergeArgument{
 		FqTableName:    fqTable,
 		SubQuery:       subQuery,
 		IdempotentKey:  "updated_at",
@@ -170,7 +170,7 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 	_cols.AddColumn(columns.NewColumn("id", typing.String))
 	_cols.AddColumn(columns.NewColumn("another_id", typing.String))
 
-	mergeSQL, err := MergeStatement(MergeArgument{
+	mergeSQL, err := MergeStatement(&MergeArgument{
 		FqTableName:   fqTable,
 		SubQuery:      subQuery,
 		IdempotentKey: "updated_at",
@@ -215,7 +215,7 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
-	mergeSQL, err := MergeStatement(MergeArgument{
+	mergeSQL, err := MergeStatement(&MergeArgument{
 		FqTableName:   fqTable,
 		SubQuery:      subQuery,
 		IdempotentKey: "",
