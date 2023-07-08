@@ -15,6 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
+// TODO - Would be nice to standardize PrimaryKeys, Columns, ColumnsToTypes so we don't have to pass in all 3.
 type MergeArgument struct {
 	FqTableName   string
 	SubQuery      string
@@ -49,8 +50,12 @@ func (m *MergeArgument) Valid() error {
 		return fmt.Errorf("columns cannot be empty")
 	}
 
-	if stringutil.Empty(m.FqTableName) {
-		return fmt.Errorf("one of these arguments is empty: fqTableName")
+	if len(m.ColumnsToTypes.GetColumns()) == 0 {
+		return fmt.Errorf("columnToTypes cannot be empty")
+	}
+
+	if stringutil.Empty(m.FqTableName, m.SubQuery) {
+		return fmt.Errorf("one of these arguments is empty: fqTableName, subQuery")
 	}
 
 	return nil
@@ -186,7 +191,6 @@ func MergeStatement(m *MergeArgument) (string, error) {
 	var equalitySQLParts []string
 	for _, primaryKey := range m.PrimaryKeys {
 		// We'll need to escape the primary key as well.
-
 		equalitySQL := fmt.Sprintf("c.%s = cc.%s", primaryKey.EscapedName(), primaryKey.EscapedName())
 		pkCol, isOk := m.ColumnsToTypes.GetColumn(primaryKey.RawName())
 		if !isOk {
