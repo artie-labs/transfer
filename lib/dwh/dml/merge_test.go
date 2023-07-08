@@ -35,6 +35,7 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 
 	var _cols columns.Columns
 	_cols.AddColumn(columns.NewColumn("id", typing.String))
+	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	for _, idempotentKey := range []string{"", "updated_at"} {
 		mergeSQL, err := MergeStatement(&MergeArgument{
@@ -42,7 +43,6 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 			SubQuery:       subQuery,
 			IdempotentKey:  idempotentKey,
 			PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil)},
-			Columns:        cols,
 			ColumnsToTypes: _cols,
 			DestKind:       constants.Snowflake,
 			SoftDelete:     true,
@@ -85,13 +85,10 @@ func TestMergeStatement(t *testing.T) {
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 	mergeSQL, err := MergeStatement(&MergeArgument{
-		FqTableName:   fqTable,
-		SubQuery:      subQuery,
-		IdempotentKey: "",
-		PrimaryKeys:   []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil)},
-		Columns: _cols.GetColumnsToUpdate(&columns.NameArgs{
-			Escape: true,
-		}),
+		FqTableName:    fqTable,
+		SubQuery:       subQuery,
+		IdempotentKey:  "",
+		PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil)},
 		ColumnsToTypes: _cols,
 		DestKind:       constants.Snowflake,
 		SoftDelete:     false,
@@ -130,13 +127,13 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 
 	var _cols columns.Columns
 	_cols.AddColumn(columns.NewColumn("id", typing.String))
+	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	mergeSQL, err := MergeStatement(&MergeArgument{
 		FqTableName:    fqTable,
 		SubQuery:       subQuery,
 		IdempotentKey:  "updated_at",
 		PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil)},
-		Columns:        cols,
 		ColumnsToTypes: _cols,
 		DestKind:       constants.Snowflake,
 		SoftDelete:     false,
@@ -169,6 +166,7 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 	var _cols columns.Columns
 	_cols.AddColumn(columns.NewColumn("id", typing.String))
 	_cols.AddColumn(columns.NewColumn("another_id", typing.String))
+	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	mergeSQL, err := MergeStatement(&MergeArgument{
 		FqTableName:   fqTable,
@@ -176,7 +174,6 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 		IdempotentKey: "updated_at",
 		PrimaryKeys: []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil),
 			columns.NewWrapper(columns.NewColumn("another_id", typing.Invalid), nil)},
-		Columns:        cols,
 		ColumnsToTypes: _cols,
 		DestKind:       constants.Snowflake,
 		SoftDelete:     false,
@@ -229,9 +226,6 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 				DestKind: constants.Snowflake,
 			}),
 		},
-		Columns: _cols.GetColumnsToUpdate(&columns.NameArgs{
-			Escape: true,
-		}),
 		ColumnsToTypes: _cols,
 		DestKind:       constants.Snowflake,
 		SoftDelete:     false,

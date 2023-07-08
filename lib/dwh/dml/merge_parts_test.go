@@ -25,7 +25,6 @@ func TestMergeStatementPartsValidation(t *testing.T) {
 
 type result struct {
 	PrimaryKeys    []columns.Wrapper
-	Columns        []string
 	ColumnsToTypes columns.Columns
 }
 
@@ -60,18 +59,9 @@ func getBasicColumnsForTest(compositeKey bool) result {
 		}))
 	}
 
-	var rawCols []string
-	for _, col := range cols.GetColumns() {
-		rawCols = append(rawCols, col.Name(&columns.NameArgs{
-			Escape:   true,
-			DestKind: constants.Redshift,
-		}))
-	}
-
 	return result{
 		PrimaryKeys:    pks,
 		ColumnsToTypes: cols,
-		Columns:        rawCols,
 	}
 }
 
@@ -83,7 +73,6 @@ func TestMergeStatementPartsSoftDelete(t *testing.T) {
 		FqTableName:    fqTableName,
 		SubQuery:       tempTableName,
 		PrimaryKeys:    res.PrimaryKeys,
-		Columns:        res.Columns,
 		ColumnsToTypes: res.ColumnsToTypes,
 		DestKind:       constants.Redshift,
 		SoftDelete:     true,
@@ -120,7 +109,6 @@ func TestMergeStatementPartsSoftDeleteComposite(t *testing.T) {
 		FqTableName:    fqTableName,
 		SubQuery:       tempTableName,
 		PrimaryKeys:    res.PrimaryKeys,
-		Columns:        res.Columns,
 		ColumnsToTypes: res.ColumnsToTypes,
 		DestKind:       constants.Redshift,
 		SoftDelete:     true,
@@ -160,7 +148,6 @@ func TestMergeStatementParts(t *testing.T) {
 		FqTableName:    fqTableName,
 		SubQuery:       tempTableName,
 		PrimaryKeys:    res.PrimaryKeys,
-		Columns:        res.Columns,
 		ColumnsToTypes: res.ColumnsToTypes,
 		DestKind:       constants.Redshift,
 	}
@@ -185,7 +172,6 @@ func TestMergeStatementParts(t *testing.T) {
 		FqTableName:    fqTableName,
 		SubQuery:       tempTableName,
 		PrimaryKeys:    res.PrimaryKeys,
-		Columns:        res.Columns,
 		ColumnsToTypes: res.ColumnsToTypes,
 		DestKind:       constants.Redshift,
 		IdempotentKey:  "created_at",
@@ -216,7 +202,6 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 		FqTableName:    fqTableName,
 		SubQuery:       tempTableName,
 		PrimaryKeys:    res.PrimaryKeys,
-		Columns:        res.Columns,
 		ColumnsToTypes: res.ColumnsToTypes,
 		DestKind:       constants.Redshift,
 	}
@@ -241,7 +226,6 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 		FqTableName:    fqTableName,
 		SubQuery:       tempTableName,
 		PrimaryKeys:    res.PrimaryKeys,
-		Columns:        res.Columns,
 		ColumnsToTypes: res.ColumnsToTypes,
 		DestKind:       constants.Redshift,
 		IdempotentKey:  "created_at",

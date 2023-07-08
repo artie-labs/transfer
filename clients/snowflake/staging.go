@@ -208,10 +208,6 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 			Escape:   true,
 			DestKind: s.Label(),
 		}),
-		Columns: tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(&columns.NameArgs{
-			Escape:   true,
-			DestKind: s.Label(),
-		}),
 		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:     tableData.TopicConfig.SoftDelete,
 	})

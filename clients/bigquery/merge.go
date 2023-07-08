@@ -235,10 +235,6 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 			Escape:   true,
 			DestKind: s.Label(),
 		}),
-		Columns: tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(&columns.NameArgs{
-			Escape:   true,
-			DestKind: s.Label(),
-		}),
 		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:     tableData.TopicConfig.SoftDelete,
 		DestKind:       s.Label(),

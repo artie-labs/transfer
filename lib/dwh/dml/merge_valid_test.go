@@ -39,18 +39,9 @@ func TestMergeArgument_Valid(t *testing.T) {
 			expectErrorMessage: "merge argument does not contain primary keys",
 		},
 		{
-			name: "pks exist, but no cols",
+			name: "pks but no colsToTypes",
 			mergeArg: &MergeArgument{
 				PrimaryKeys: primaryKeys,
-			},
-			expectedError:      true,
-			expectErrorMessage: "columns cannot be empty",
-		},
-		{
-			name: "pks, cols exist but no colsToTypes",
-			mergeArg: &MergeArgument{
-				PrimaryKeys: primaryKeys,
-				Columns:     []string{"id", "firstName", "lastName", "email"},
 			},
 			expectedError:      true,
 			expectErrorMessage: "columnToTypes cannot be empty",
@@ -59,7 +50,6 @@ func TestMergeArgument_Valid(t *testing.T) {
 			name: "pks, cols, colsTpTypes exists but no subquery or fqTableName",
 			mergeArg: &MergeArgument{
 				PrimaryKeys:    primaryKeys,
-				Columns:        []string{"id", "firstName", "lastName", "email"},
 				ColumnsToTypes: cols,
 			},
 			expectedError:      true,
@@ -69,7 +59,6 @@ func TestMergeArgument_Valid(t *testing.T) {
 			name: "pks, cols, colsTpTypes, subquery exists but no fqTableName",
 			mergeArg: &MergeArgument{
 				PrimaryKeys:    primaryKeys,
-				Columns:        []string{"id", "firstName", "lastName", "email"},
 				ColumnsToTypes: cols,
 				SubQuery:       "schema.tableName",
 			},
@@ -80,7 +69,6 @@ func TestMergeArgument_Valid(t *testing.T) {
 			name: "pks, cols, colsTpTypes, fqTableName exists but no subquery",
 			mergeArg: &MergeArgument{
 				PrimaryKeys:    primaryKeys,
-				Columns:        []string{"id", "firstName", "lastName", "email"},
 				ColumnsToTypes: cols,
 				FqTableName:    "schema.tableName",
 			},
@@ -91,7 +79,6 @@ func TestMergeArgument_Valid(t *testing.T) {
 			name: "everything exists",
 			mergeArg: &MergeArgument{
 				PrimaryKeys:    primaryKeys,
-				Columns:        []string{"id", "firstName", "lastName", "email"},
 				ColumnsToTypes: cols,
 				SubQuery:       "schema.tableName",
 				FqTableName:    "schema.tableName",

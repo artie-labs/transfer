@@ -15,16 +15,13 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
-// TODO - Would be nice to standardize PrimaryKeys, Columns, ColumnsToTypes so we don't have to pass in all 3.
 type MergeArgument struct {
 	FqTableName   string
 	SubQuery      string
 	IdempotentKey string
 	PrimaryKeys   []columns.Wrapper
 
-	// Note columns is already escaped.
 	// ColumnsToTypes also needs to be escaped.
-	Columns        []string
 	ColumnsToTypes columns.Columns
 
 	/*
@@ -46,10 +43,6 @@ func (m *MergeArgument) Valid() error {
 
 	if len(m.PrimaryKeys) == 0 {
 		return fmt.Errorf("merge argument does not contain primary keys")
-	}
-
-	if len(m.Columns) == 0 {
-		return fmt.Errorf("columns cannot be empty")
 	}
 
 	if len(m.ColumnsToTypes.GetColumns()) == 0 {
@@ -91,15 +84,20 @@ func MergeStatementParts(m *MergeArgument) ([]string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
+	cols := m.ColumnsToTypes.GetColumnsToUpdate(&columns.NameArgs{
+		Escape:   true,
+		DestKind: m.DestKind,
+	})
+
 	if m.SoftDelete {
 		return []string{
 			// INSERT
 			fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
 				// insert into target (col1, col2, col3)
-				m.FqTableName, strings.Join(m.Columns, ","),
+				m.FqTableName, strings.Join(cols, ","),
 				// SELECT cc.col1, cc.col2, ... FROM staging as CC
 				array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-					Vals:      m.Columns,
+					Vals:      cols,
 					Separator: ",",
 					Prefix:    "cc.",
 				}), m.SubQuery,
@@ -110,7 +108,7 @@ func MergeStatementParts(m *MergeArgument) ([]string, error) {
 			// UPDATE
 			fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s;`,
 				// UPDATE table set col1 = cc. col1
-				m.FqTableName, columns.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.DestKind),
+				m.FqTableName, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind),
 				// FROM table (temp) WHERE join on PK(s)
 				m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause,
 			),
@@ -119,9 +117,9 @@ func MergeStatementParts(m *MergeArgument) ([]string, error) {
 
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
-	for idx, col := range m.Columns {
+	for idx, col := range cols {
 		if col == constants.DeleteColumnMarker {
-			m.Columns = append(m.Columns[:idx], m.Columns[idx+1:]...)
+			cols = append(cols[:idx], cols[idx+1:]...)
 			removed = true
 			break
 		}
@@ -140,10 +138,10 @@ func MergeStatementParts(m *MergeArgument) ([]string, error) {
 		// INSERT
 		fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
 			// insert into target (col1, col2, col3)
-			m.FqTableName, strings.Join(m.Columns, ","),
+			m.FqTableName, strings.Join(cols, ","),
 			// SELECT cc.col1, cc.col2, ... FROM staging as CC
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      m.Columns,
+				Vals:      cols,
 				Separator: ",",
 				Prefix:    "cc.",
 			}), m.SubQuery,
@@ -154,7 +152,7 @@ func MergeStatementParts(m *MergeArgument) ([]string, error) {
 		// UPDATE
 		fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s AND COALESCE(cc.%s, false) = false;`,
 			// UPDATE table set col1 = cc. col1
-			m.FqTableName, columns.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.DestKind),
+			m.FqTableName, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind),
 			// FROM staging WHERE join on PK(s)
 			m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause, constants.DeleteColumnMarker,
 		),
@@ -172,7 +170,6 @@ func MergeStatementParts(m *MergeArgument) ([]string, error) {
 	}, nil
 }
 
-// TODO - simplify the whole escape / unescape columns logic.
 func MergeStatement(m *MergeArgument) (string, error) {
 	if err := m.Valid(); err != nil {
 		return "", err
@@ -212,6 +209,11 @@ func MergeStatement(m *MergeArgument) (string, error) {
 		subQuery = m.SubQuery
 	}
 
+	cols := m.ColumnsToTypes.GetColumnsToUpdate(&columns.NameArgs{
+		Escape:   true,
+		DestKind: m.DestKind,
+	})
+
 	if m.SoftDelete {
 		return fmt.Sprintf(`
 			MERGE INTO %s c using %s as cc on %s
@@ -227,11 +229,11 @@ func MergeStatement(m *MergeArgument) (string, error) {
 					);
 		`, m.FqTableName, subQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, columns.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.DestKind),
+			idempotentClause, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind),
 			// Insert
-			constants.DeleteColumnMarker, strings.Join(m.Columns, ","),
+			constants.DeleteColumnMarker, strings.Join(cols, ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      m.Columns,
+				Vals:      cols,
 				Separator: ",",
 				Prefix:    "cc.",
 			})), nil
@@ -239,9 +241,9 @@ func MergeStatement(m *MergeArgument) (string, error) {
 
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
-	for idx, col := range m.Columns {
+	for idx, col := range cols {
 		if col == constants.DeleteColumnMarker {
-			m.Columns = append(m.Columns[:idx], m.Columns[idx+1:]...)
+			cols = append(cols[:idx], cols[idx+1:]...)
 			removed = true
 			break
 		}
@@ -268,11 +270,11 @@ func MergeStatement(m *MergeArgument) (string, error) {
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update
-		constants.DeleteColumnMarker, idempotentClause, columns.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.DestKind),
+		constants.DeleteColumnMarker, idempotentClause, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind),
 		// Insert
-		constants.DeleteColumnMarker, strings.Join(m.Columns, ","),
+		constants.DeleteColumnMarker, strings.Join(cols, ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      m.Columns,
+			Vals:      cols,
 			Separator: ",",
 			Prefix:    "cc.",
 		})), nil
