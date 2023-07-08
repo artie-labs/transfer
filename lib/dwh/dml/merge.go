@@ -27,13 +27,15 @@ type MergeArgument struct {
 	Columns        []string
 	ColumnsToTypes columns.Columns
 
-	// BigQuery is used to:
-	// 1) escape JSON columns
-	// 2) merge temp table vs. subquery
-	BigQuery bool
-	// Redshift is used for:
-	// 1) Using as part of the MergeStatementIndividual
-	Redshift   bool
+	/*
+		DestKind is used needed because:
+		- BigQuery is used to:
+			1) escape JSON columns
+			2) merge temp table vs. subquery
+		- Redshift is used to:
+			1) Using as part of the MergeStatementIndividual
+	*/
+	DestKind   constants.DestinationKind
 	SoftDelete bool
 }
 
@@ -66,7 +68,7 @@ func MergeStatementParts(m *MergeArgument) ([]string, error) {
 		return nil, err
 	}
 
-	if !m.Redshift {
+	if m.DestKind != constants.Redshift {
 		return nil, fmt.Errorf("err - this is meant for redshift only")
 	}
 
@@ -108,7 +110,7 @@ func MergeStatementParts(m *MergeArgument) ([]string, error) {
 			// UPDATE
 			fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s;`,
 				// UPDATE table set col1 = cc. col1
-				m.FqTableName, columns.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.Redshift),
+				m.FqTableName, columns.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.DestKind),
 				// FROM table (temp) WHERE join on PK(s)
 				m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause,
 			),
@@ -152,7 +154,7 @@ func MergeStatementParts(m *MergeArgument) ([]string, error) {
 		// UPDATE
 		fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s AND COALESCE(cc.%s, false) = false;`,
 			// UPDATE table set col1 = cc. col1
-			m.FqTableName, columns.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.Redshift),
+			m.FqTableName, columns.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.DestKind),
 			// FROM staging WHERE join on PK(s)
 			m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause, constants.DeleteColumnMarker,
 		),
@@ -197,7 +199,7 @@ func MergeStatement(m *MergeArgument) (string, error) {
 			return "", fmt.Errorf("error: column: %s does not exist in columnToType: %v", primaryKey.RawName(), m.ColumnsToTypes)
 		}
 
-		if m.BigQuery && pkCol.KindDetails.Kind == typing.Struct.Kind {
+		if m.DestKind == constants.BigQuery && pkCol.KindDetails.Kind == typing.Struct.Kind {
 			// BigQuery requires special casting to compare two JSON objects.
 			equalitySQL = fmt.Sprintf("TO_JSON_STRING(c.%s) = TO_JSON_STRING(cc.%s)", primaryKey.EscapedName(), primaryKey.EscapedName())
 		}
@@ -206,7 +208,7 @@ func MergeStatement(m *MergeArgument) (string, error) {
 	}
 
 	subQuery := fmt.Sprintf("( %s )", m.SubQuery)
-	if m.BigQuery {
+	if m.DestKind == constants.BigQuery {
 		subQuery = m.SubQuery
 	}
 
@@ -225,7 +227,7 @@ func MergeStatement(m *MergeArgument) (string, error) {
 					);
 		`, m.FqTableName, subQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, columns.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.BigQuery),
+			idempotentClause, columns.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.DestKind),
 			// Insert
 			constants.DeleteColumnMarker, strings.Join(m.Columns, ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -266,7 +268,7 @@ func MergeStatement(m *MergeArgument) (string, error) {
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update
-		constants.DeleteColumnMarker, idempotentClause, columns.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.BigQuery),
+		constants.DeleteColumnMarker, idempotentClause, columns.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.DestKind),
 		// Insert
 		constants.DeleteColumnMarker, strings.Join(m.Columns, ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{

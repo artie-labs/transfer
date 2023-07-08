@@ -44,7 +44,7 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 			PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil)},
 			Columns:        cols,
 			ColumnsToTypes: _cols,
-			BigQuery:       false,
+			DestKind:       constants.Snowflake,
 			SoftDelete:     true,
 		})
 		assert.NoError(t, err)
@@ -93,7 +93,7 @@ func TestMergeStatement(t *testing.T) {
 			Escape: true,
 		}),
 		ColumnsToTypes: _cols,
-		BigQuery:       false,
+		DestKind:       constants.Snowflake,
 		SoftDelete:     false,
 	})
 	assert.NoError(t, err)
@@ -138,7 +138,7 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 		PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil)},
 		Columns:        cols,
 		ColumnsToTypes: _cols,
-		BigQuery:       false,
+		DestKind:       constants.Snowflake,
 		SoftDelete:     false,
 	})
 	assert.NoError(t, err)
@@ -178,7 +178,7 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 			columns.NewWrapper(columns.NewColumn("another_id", typing.Invalid), nil)},
 		Columns:        cols,
 		ColumnsToTypes: _cols,
-		BigQuery:       false,
+		DestKind:       constants.Snowflake,
 		SoftDelete:     false,
 	})
 	assert.NoError(t, err)
@@ -233,7 +233,7 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 			Escape: true,
 		}),
 		ColumnsToTypes: _cols,
-		BigQuery:       false,
+		DestKind:       constants.Snowflake,
 		SoftDelete:     false,
 	})
 	assert.NoError(t, err)

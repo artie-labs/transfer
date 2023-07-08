@@ -12,11 +12,12 @@ import (
 )
 
 func TestMergeStatementPartsValidation(t *testing.T) {
-	for _, arg := range []MergeArgument{
-		{BigQuery: true},
-		{},
+	for _, arg := range []*MergeArgument{
+		{DestKind: constants.Snowflake},
+		{DestKind: constants.SnowflakeStages},
+		{DestKind: constants.BigQuery},
 	} {
-		parts, err := MergeStatementParts(&arg)
+		parts, err := MergeStatementParts(arg)
 		assert.Error(t, err)
 		assert.Nil(t, parts)
 	}
@@ -84,7 +85,7 @@ func TestMergeStatementPartsSoftDelete(t *testing.T) {
 		PrimaryKeys:    res.PrimaryKeys,
 		Columns:        res.Columns,
 		ColumnsToTypes: res.ColumnsToTypes,
-		Redshift:       true,
+		DestKind:       constants.Redshift,
 		SoftDelete:     true,
 	}
 
@@ -121,7 +122,7 @@ func TestMergeStatementPartsSoftDeleteComposite(t *testing.T) {
 		PrimaryKeys:    res.PrimaryKeys,
 		Columns:        res.Columns,
 		ColumnsToTypes: res.ColumnsToTypes,
-		Redshift:       true,
+		DestKind:       constants.Redshift,
 		SoftDelete:     true,
 	}
 
@@ -161,7 +162,7 @@ func TestMergeStatementParts(t *testing.T) {
 		PrimaryKeys:    res.PrimaryKeys,
 		Columns:        res.Columns,
 		ColumnsToTypes: res.ColumnsToTypes,
-		Redshift:       true,
+		DestKind:       constants.Redshift,
 	}
 
 	parts, err := MergeStatementParts(m)
@@ -186,7 +187,7 @@ func TestMergeStatementParts(t *testing.T) {
 		PrimaryKeys:    res.PrimaryKeys,
 		Columns:        res.Columns,
 		ColumnsToTypes: res.ColumnsToTypes,
-		Redshift:       true,
+		DestKind:       constants.Redshift,
 		IdempotentKey:  "created_at",
 	}
 
@@ -217,7 +218,7 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 		PrimaryKeys:    res.PrimaryKeys,
 		Columns:        res.Columns,
 		ColumnsToTypes: res.ColumnsToTypes,
-		Redshift:       true,
+		DestKind:       constants.Redshift,
 	}
 
 	parts, err := MergeStatementParts(m)
@@ -242,7 +243,7 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 		PrimaryKeys:    res.PrimaryKeys,
 		Columns:        res.Columns,
 		ColumnsToTypes: res.ColumnsToTypes,
-		Redshift:       true,
+		DestKind:       constants.Redshift,
 		IdempotentKey:  "created_at",
 	}
 

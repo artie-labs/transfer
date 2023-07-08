@@ -24,7 +24,7 @@ func TestMergeStatement_TempTable(t *testing.T) {
 		PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("order_id", typing.Invalid), nil)},
 		Columns:        []string{"order_id", "name", constants.DeleteColumnMarker},
 		ColumnsToTypes: cols,
-		BigQuery:       true,
+		DestKind:       constants.BigQuery,
 		SoftDelete:     false,
 	}
 
@@ -46,7 +46,7 @@ func TestMergeStatement_JSONKey(t *testing.T) {
 		PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("order_oid", typing.Invalid), nil)},
 		Columns:        []string{"order_oid", "name", constants.DeleteColumnMarker},
 		ColumnsToTypes: cols,
-		BigQuery:       true,
+		DestKind:       constants.BigQuery,
 		SoftDelete:     false,
 	}
 

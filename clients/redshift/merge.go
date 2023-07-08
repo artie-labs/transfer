@@ -127,7 +127,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		}),
 		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:     tableData.TopicConfig.SoftDelete,
-		Redshift:       true,
+		DestKind:       s.Label(),
 	})
 
 	tx, err := s.Begin()
