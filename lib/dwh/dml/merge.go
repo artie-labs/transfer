@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/stringutil"
+
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/typing"
@@ -41,6 +43,14 @@ func (m *MergeArgument) Valid() error {
 
 	if len(m.PrimaryKeys) == 0 {
 		return fmt.Errorf("merge argument does not contain primary keys")
+	}
+
+	if len(m.Columns) == 0 {
+		return fmt.Errorf("columns cannot be empty")
+	}
+
+	if stringutil.Empty(m.FqTableName) {
+		return fmt.Errorf("one of these arguments is empty: fqTableName")
 	}
 
 	return nil
