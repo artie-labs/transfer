@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/stringutil"
+
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/typing"
@@ -19,23 +21,47 @@ type MergeArgument struct {
 	IdempotentKey string
 	PrimaryKeys   []columns.Wrapper
 
-	// Note columns is already escaped.
 	// ColumnsToTypes also needs to be escaped.
-	Columns        []string
 	ColumnsToTypes columns.Columns
 
-	// BigQuery is used to:
-	// 1) escape JSON columns
-	// 2) merge temp table vs. subquery
-	BigQuery bool
-	// Redshift is used for:
-	// 1) Using as part of the MergeStatementIndividual
-	Redshift   bool
+	/*
+		DestKind is used needed because:
+		- BigQuery is used to:
+			1) escape JSON columns
+			2) merge temp table vs. subquery
+		- Redshift is used to:
+			1) Using as part of the MergeStatementIndividual
+	*/
+	DestKind   constants.DestinationKind
 	SoftDelete bool
 }
 
-func MergeStatementParts(m MergeArgument) ([]string, error) {
-	if !m.Redshift {
+func (m *MergeArgument) Valid() error {
+	if m == nil {
+		return fmt.Errorf("merge argument is nil")
+	}
+
+	if len(m.PrimaryKeys) == 0 {
+		return fmt.Errorf("merge argument does not contain primary keys")
+	}
+
+	if len(m.ColumnsToTypes.GetColumns()) == 0 {
+		return fmt.Errorf("columnToTypes cannot be empty")
+	}
+
+	if stringutil.Empty(m.FqTableName, m.SubQuery) {
+		return fmt.Errorf("one of these arguments is empty: fqTableName, subQuery")
+	}
+
+	return nil
+}
+
+func MergeStatementParts(m *MergeArgument) ([]string, error) {
+	if err := m.Valid(); err != nil {
+		return nil, err
+	}
+
+	if m.DestKind != constants.Redshift {
 		return nil, fmt.Errorf("err - this is meant for redshift only")
 	}
 
@@ -58,16 +84,20 @@ func MergeStatementParts(m MergeArgument) ([]string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	// TODO solve for idempotency
+	cols := m.ColumnsToTypes.GetColumnsToUpdate(&columns.NameArgs{
+		Escape:   true,
+		DestKind: m.DestKind,
+	})
+
 	if m.SoftDelete {
 		return []string{
 			// INSERT
 			fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
 				// insert into target (col1, col2, col3)
-				m.FqTableName, strings.Join(m.Columns, ","),
+				m.FqTableName, strings.Join(cols, ","),
 				// SELECT cc.col1, cc.col2, ... FROM staging as CC
 				array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-					Vals:      m.Columns,
+					Vals:      cols,
 					Separator: ",",
 					Prefix:    "cc.",
 				}), m.SubQuery,
@@ -78,7 +108,7 @@ func MergeStatementParts(m MergeArgument) ([]string, error) {
 			// UPDATE
 			fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s;`,
 				// UPDATE table set col1 = cc. col1
-				m.FqTableName, columns.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.Redshift),
+				m.FqTableName, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind),
 				// FROM table (temp) WHERE join on PK(s)
 				m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause,
 			),
@@ -87,9 +117,9 @@ func MergeStatementParts(m MergeArgument) ([]string, error) {
 
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
-	for idx, col := range m.Columns {
+	for idx, col := range cols {
 		if col == constants.DeleteColumnMarker {
-			m.Columns = append(m.Columns[:idx], m.Columns[idx+1:]...)
+			cols = append(cols[:idx], cols[idx+1:]...)
 			removed = true
 			break
 		}
@@ -108,10 +138,10 @@ func MergeStatementParts(m MergeArgument) ([]string, error) {
 		// INSERT
 		fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
 			// insert into target (col1, col2, col3)
-			m.FqTableName, strings.Join(m.Columns, ","),
+			m.FqTableName, strings.Join(cols, ","),
 			// SELECT cc.col1, cc.col2, ... FROM staging as CC
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      m.Columns,
+				Vals:      cols,
 				Separator: ",",
 				Prefix:    "cc.",
 			}), m.SubQuery,
@@ -122,7 +152,7 @@ func MergeStatementParts(m MergeArgument) ([]string, error) {
 		// UPDATE
 		fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s AND COALESCE(cc.%s, false) = false;`,
 			// UPDATE table set col1 = cc. col1
-			m.FqTableName, columns.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.Redshift),
+			m.FqTableName, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind),
 			// FROM staging WHERE join on PK(s)
 			m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause, constants.DeleteColumnMarker,
 		),
@@ -140,9 +170,11 @@ func MergeStatementParts(m MergeArgument) ([]string, error) {
 	}, nil
 }
 
-// TODO - add validation to merge argument
-// TODO - simplify the whole escape / unescape columns logic.
-func MergeStatement(m MergeArgument) (string, error) {
+func MergeStatement(m *MergeArgument) (string, error) {
+	if err := m.Valid(); err != nil {
+		return "", err
+	}
+
 	// We should not need idempotency key for DELETE
 	// This is based on the assumption that the primary key would be atomically increasing or UUID based
 	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
@@ -158,14 +190,13 @@ func MergeStatement(m MergeArgument) (string, error) {
 	var equalitySQLParts []string
 	for _, primaryKey := range m.PrimaryKeys {
 		// We'll need to escape the primary key as well.
-
 		equalitySQL := fmt.Sprintf("c.%s = cc.%s", primaryKey.EscapedName(), primaryKey.EscapedName())
 		pkCol, isOk := m.ColumnsToTypes.GetColumn(primaryKey.RawName())
 		if !isOk {
 			return "", fmt.Errorf("error: column: %s does not exist in columnToType: %v", primaryKey.RawName(), m.ColumnsToTypes)
 		}
 
-		if m.BigQuery && pkCol.KindDetails.Kind == typing.Struct.Kind {
+		if m.DestKind == constants.BigQuery && pkCol.KindDetails.Kind == typing.Struct.Kind {
 			// BigQuery requires special casting to compare two JSON objects.
 			equalitySQL = fmt.Sprintf("TO_JSON_STRING(c.%s) = TO_JSON_STRING(cc.%s)", primaryKey.EscapedName(), primaryKey.EscapedName())
 		}
@@ -174,9 +205,14 @@ func MergeStatement(m MergeArgument) (string, error) {
 	}
 
 	subQuery := fmt.Sprintf("( %s )", m.SubQuery)
-	if m.BigQuery {
+	if m.DestKind == constants.BigQuery {
 		subQuery = m.SubQuery
 	}
+
+	cols := m.ColumnsToTypes.GetColumnsToUpdate(&columns.NameArgs{
+		Escape:   true,
+		DestKind: m.DestKind,
+	})
 
 	if m.SoftDelete {
 		return fmt.Sprintf(`
@@ -193,11 +229,11 @@ func MergeStatement(m MergeArgument) (string, error) {
 					);
 		`, m.FqTableName, subQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, columns.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.BigQuery),
+			idempotentClause, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind),
 			// Insert
-			constants.DeleteColumnMarker, strings.Join(m.Columns, ","),
+			constants.DeleteColumnMarker, strings.Join(cols, ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      m.Columns,
+				Vals:      cols,
 				Separator: ",",
 				Prefix:    "cc.",
 			})), nil
@@ -205,9 +241,9 @@ func MergeStatement(m MergeArgument) (string, error) {
 
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
-	for idx, col := range m.Columns {
+	for idx, col := range cols {
 		if col == constants.DeleteColumnMarker {
-			m.Columns = append(m.Columns[:idx], m.Columns[idx+1:]...)
+			cols = append(cols[:idx], cols[idx+1:]...)
 			removed = true
 			break
 		}
@@ -234,11 +270,11 @@ func MergeStatement(m MergeArgument) (string, error) {
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update
-		constants.DeleteColumnMarker, idempotentClause, columns.ColumnsUpdateQuery(m.Columns, m.ColumnsToTypes, m.BigQuery),
+		constants.DeleteColumnMarker, idempotentClause, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind),
 		// Insert
-		constants.DeleteColumnMarker, strings.Join(m.Columns, ","),
+		constants.DeleteColumnMarker, strings.Join(cols, ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      m.Columns,
+			Vals:      cols,
 			Separator: ",",
 			Prefix:    "cc.",
 		})), nil

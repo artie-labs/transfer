@@ -18,13 +18,12 @@ func TestMergeStatement_TempTable(t *testing.T) {
 	cols.AddColumn(columns.NewColumn("name", typing.String))
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
-	mergeArg := MergeArgument{
+	mergeArg := &MergeArgument{
 		FqTableName:    "customers.orders",
 		SubQuery:       "customers.orders_tmp",
 		PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("order_id", typing.Invalid), nil)},
-		Columns:        []string{"order_id", "name", constants.DeleteColumnMarker},
 		ColumnsToTypes: cols,
-		BigQuery:       true,
+		DestKind:       constants.BigQuery,
 		SoftDelete:     false,
 	}
 
@@ -40,13 +39,12 @@ func TestMergeStatement_JSONKey(t *testing.T) {
 	cols.AddColumn(columns.NewColumn("name", typing.String))
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
-	mergeArg := MergeArgument{
+	mergeArg := &MergeArgument{
 		FqTableName:    "customers.orders",
 		SubQuery:       "customers.orders_tmp",
 		PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("order_oid", typing.Invalid), nil)},
-		Columns:        []string{"order_oid", "name", constants.DeleteColumnMarker},
 		ColumnsToTypes: cols,
-		BigQuery:       true,
+		DestKind:       constants.BigQuery,
 		SoftDelete:     false,
 	}
 

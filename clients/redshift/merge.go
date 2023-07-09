@@ -113,7 +113,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	// Prepare merge statement
-	mergeParts, err := dml.MergeStatementParts(dml.MergeArgument{
+	mergeParts, err := dml.MergeStatementParts(&dml.MergeArgument{
 		FqTableName:   fqName,
 		SubQuery:      temporaryTableName,
 		IdempotentKey: tableData.TopicConfig.IdempotentKey,
@@ -121,13 +121,9 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 			Escape:   true,
 			DestKind: s.Label(),
 		}),
-		Columns: tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(&columns.NameArgs{
-			Escape:   true,
-			DestKind: s.Label(),
-		}),
 		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:     tableData.TopicConfig.SoftDelete,
-		Redshift:       true,
+		DestKind:       s.Label(),
 	})
 
 	tx, err := s.Begin()

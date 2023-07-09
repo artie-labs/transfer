@@ -375,7 +375,7 @@ func TestColumnsUpdateQuery(t *testing.T) {
 		columns        []string
 		columnsToTypes Columns
 		expectedString string
-		bigQuery       bool
+		destKind       constants.DestinationKind
 	}
 
 	fooBarCols := []string{"foo", "bar"}
@@ -460,39 +460,42 @@ func TestColumnsUpdateQuery(t *testing.T) {
 			name:           "happy path",
 			columns:        fooBarCols,
 			columnsToTypes: happyPathCols,
+			destKind:       constants.Redshift,
 			expectedString: "foo=cc.foo,bar=cc.bar",
 		},
 		{
 			name:           "string and toast",
 			columns:        fooBarCols,
 			columnsToTypes: stringAndToastCols,
+			destKind:       constants.Snowflake,
 			expectedString: "foo= CASE WHEN cc.foo != '__debezium_unavailable_value' THEN cc.foo ELSE c.foo END,bar=cc.bar",
 		},
 		{
 			name:           "struct, string and toast string",
 			columns:        lastCaseCols,
 			columnsToTypes: lastCaseColTypes,
+			destKind:       constants.Redshift,
 			expectedString: "a1= CASE WHEN cc.a1 != {'key': '__debezium_unavailable_value'} THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN cc.b2 != '__debezium_unavailable_value' THEN cc.b2 ELSE c.b2 END,c3=cc.c3",
 		},
 		{
 			name:           "struct, string and toast string (bigquery)",
 			columns:        lastCaseCols,
 			columnsToTypes: lastCaseColTypes,
-			bigQuery:       true,
+			destKind:       constants.BigQuery,
 			expectedString: `a1= CASE WHEN TO_JSON_STRING(cc.a1) != '{"key":"__debezium_unavailable_value"}' THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN cc.b2 != '__debezium_unavailable_value' THEN cc.b2 ELSE c.b2 END,c3=cc.c3`,
 		},
 		{
 			name:           "struct, string and toast string (bigquery) w/ reserved keywords",
 			columns:        lastCaseColsEsc,
 			columnsToTypes: lastCaseEscapeTypes,
-			bigQuery:       true,
+			destKind:       constants.BigQuery,
 			expectedString: fmt.Sprintf(`a1= CASE WHEN TO_JSON_STRING(cc.a1) != '%s' THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN cc.b2 != '__debezium_unavailable_value' THEN cc.b2 ELSE c.b2 END,c3=cc.c3,%s,%s`,
 				key, fmt.Sprintf("`start`= CASE WHEN TO_JSON_STRING(cc.`start`) != '%s' THEN cc.`start` ELSE c.`start` END", key), "`select`=cc.`select`"),
 		},
 	}
 
 	for _, _testCase := range testCases {
-		actualQuery := ColumnsUpdateQuery(_testCase.columns, _testCase.columnsToTypes, _testCase.bigQuery)
+		actualQuery := ColumnsUpdateQuery(_testCase.columns, _testCase.columnsToTypes, _testCase.destKind)
 		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
 	}
 }

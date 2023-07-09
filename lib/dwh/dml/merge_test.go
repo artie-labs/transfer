@@ -35,16 +35,16 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 
 	var _cols columns.Columns
 	_cols.AddColumn(columns.NewColumn("id", typing.String))
+	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	for _, idempotentKey := range []string{"", "updated_at"} {
-		mergeSQL, err := MergeStatement(MergeArgument{
+		mergeSQL, err := MergeStatement(&MergeArgument{
 			FqTableName:    fqTable,
 			SubQuery:       subQuery,
 			IdempotentKey:  idempotentKey,
 			PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil)},
-			Columns:        cols,
 			ColumnsToTypes: _cols,
-			BigQuery:       false,
+			DestKind:       constants.Snowflake,
 			SoftDelete:     true,
 		})
 		assert.NoError(t, err)
@@ -84,16 +84,13 @@ func TestMergeStatement(t *testing.T) {
 	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
-	mergeSQL, err := MergeStatement(MergeArgument{
-		FqTableName:   fqTable,
-		SubQuery:      subQuery,
-		IdempotentKey: "",
-		PrimaryKeys:   []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil)},
-		Columns: _cols.GetColumnsToUpdate(&columns.NameArgs{
-			Escape: true,
-		}),
+	mergeSQL, err := MergeStatement(&MergeArgument{
+		FqTableName:    fqTable,
+		SubQuery:       subQuery,
+		IdempotentKey:  "",
+		PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil)},
 		ColumnsToTypes: _cols,
-		BigQuery:       false,
+		DestKind:       constants.Snowflake,
 		SoftDelete:     false,
 	})
 	assert.NoError(t, err)
@@ -130,15 +127,15 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 
 	var _cols columns.Columns
 	_cols.AddColumn(columns.NewColumn("id", typing.String))
+	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
-	mergeSQL, err := MergeStatement(MergeArgument{
+	mergeSQL, err := MergeStatement(&MergeArgument{
 		FqTableName:    fqTable,
 		SubQuery:       subQuery,
 		IdempotentKey:  "updated_at",
 		PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil)},
-		Columns:        cols,
 		ColumnsToTypes: _cols,
-		BigQuery:       false,
+		DestKind:       constants.Snowflake,
 		SoftDelete:     false,
 	})
 	assert.NoError(t, err)
@@ -169,16 +166,16 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 	var _cols columns.Columns
 	_cols.AddColumn(columns.NewColumn("id", typing.String))
 	_cols.AddColumn(columns.NewColumn("another_id", typing.String))
+	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
-	mergeSQL, err := MergeStatement(MergeArgument{
+	mergeSQL, err := MergeStatement(&MergeArgument{
 		FqTableName:   fqTable,
 		SubQuery:      subQuery,
 		IdempotentKey: "updated_at",
 		PrimaryKeys: []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil),
 			columns.NewWrapper(columns.NewColumn("another_id", typing.Invalid), nil)},
-		Columns:        cols,
 		ColumnsToTypes: _cols,
-		BigQuery:       false,
+		DestKind:       constants.Snowflake,
 		SoftDelete:     false,
 	})
 	assert.NoError(t, err)
@@ -215,7 +212,7 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
-	mergeSQL, err := MergeStatement(MergeArgument{
+	mergeSQL, err := MergeStatement(&MergeArgument{
 		FqTableName:   fqTable,
 		SubQuery:      subQuery,
 		IdempotentKey: "",
@@ -229,11 +226,8 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 				DestKind: constants.Snowflake,
 			}),
 		},
-		Columns: _cols.GetColumnsToUpdate(&columns.NameArgs{
-			Escape: true,
-		}),
 		ColumnsToTypes: _cols,
-		BigQuery:       false,
+		DestKind:       constants.Snowflake,
 		SoftDelete:     false,
 	})
 	assert.NoError(t, err)

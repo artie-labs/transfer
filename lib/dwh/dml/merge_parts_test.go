@@ -12,9 +12,10 @@ import (
 )
 
 func TestMergeStatementPartsValidation(t *testing.T) {
-	for _, arg := range []MergeArgument{
-		{BigQuery: true},
-		{},
+	for _, arg := range []*MergeArgument{
+		{DestKind: constants.Snowflake},
+		{DestKind: constants.SnowflakeStages},
+		{DestKind: constants.BigQuery},
 	} {
 		parts, err := MergeStatementParts(arg)
 		assert.Error(t, err)
@@ -24,7 +25,6 @@ func TestMergeStatementPartsValidation(t *testing.T) {
 
 type result struct {
 	PrimaryKeys    []columns.Wrapper
-	Columns        []string
 	ColumnsToTypes columns.Columns
 }
 
@@ -59,18 +59,9 @@ func getBasicColumnsForTest(compositeKey bool) result {
 		}))
 	}
 
-	var rawCols []string
-	for _, col := range cols.GetColumns() {
-		rawCols = append(rawCols, col.Name(&columns.NameArgs{
-			Escape:   true,
-			DestKind: constants.Redshift,
-		}))
-	}
-
 	return result{
 		PrimaryKeys:    pks,
 		ColumnsToTypes: cols,
-		Columns:        rawCols,
 	}
 }
 
@@ -78,13 +69,12 @@ func TestMergeStatementPartsSoftDelete(t *testing.T) {
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(false)
-	m := MergeArgument{
+	m := &MergeArgument{
 		FqTableName:    fqTableName,
 		SubQuery:       tempTableName,
 		PrimaryKeys:    res.PrimaryKeys,
-		Columns:        res.Columns,
 		ColumnsToTypes: res.ColumnsToTypes,
-		Redshift:       true,
+		DestKind:       constants.Redshift,
 		SoftDelete:     true,
 	}
 
@@ -115,13 +105,12 @@ func TestMergeStatementPartsSoftDeleteComposite(t *testing.T) {
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(true)
-	m := MergeArgument{
+	m := &MergeArgument{
 		FqTableName:    fqTableName,
 		SubQuery:       tempTableName,
 		PrimaryKeys:    res.PrimaryKeys,
-		Columns:        res.Columns,
 		ColumnsToTypes: res.ColumnsToTypes,
-		Redshift:       true,
+		DestKind:       constants.Redshift,
 		SoftDelete:     true,
 	}
 
@@ -155,13 +144,12 @@ func TestMergeStatementParts(t *testing.T) {
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(false)
-	m := MergeArgument{
+	m := &MergeArgument{
 		FqTableName:    fqTableName,
 		SubQuery:       tempTableName,
 		PrimaryKeys:    res.PrimaryKeys,
-		Columns:        res.Columns,
 		ColumnsToTypes: res.ColumnsToTypes,
-		Redshift:       true,
+		DestKind:       constants.Redshift,
 	}
 
 	parts, err := MergeStatementParts(m)
@@ -180,13 +168,12 @@ func TestMergeStatementParts(t *testing.T) {
 		`DELETE FROM public.tableName WHERE (id) IN (SELECT cc.id FROM public.tableName__temp as cc WHERE cc.__artie_delete = true);`,
 		parts[2])
 
-	m = MergeArgument{
+	m = &MergeArgument{
 		FqTableName:    fqTableName,
 		SubQuery:       tempTableName,
 		PrimaryKeys:    res.PrimaryKeys,
-		Columns:        res.Columns,
 		ColumnsToTypes: res.ColumnsToTypes,
-		Redshift:       true,
+		DestKind:       constants.Redshift,
 		IdempotentKey:  "created_at",
 	}
 
@@ -211,13 +198,12 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(true)
-	m := MergeArgument{
+	m := &MergeArgument{
 		FqTableName:    fqTableName,
 		SubQuery:       tempTableName,
 		PrimaryKeys:    res.PrimaryKeys,
-		Columns:        res.Columns,
 		ColumnsToTypes: res.ColumnsToTypes,
-		Redshift:       true,
+		DestKind:       constants.Redshift,
 	}
 
 	parts, err := MergeStatementParts(m)
@@ -236,13 +222,12 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 		`DELETE FROM public.tableName WHERE (id,email) IN (SELECT cc.id,cc.email FROM public.tableName__temp as cc WHERE cc.__artie_delete = true);`,
 		parts[2])
 
-	m = MergeArgument{
+	m = &MergeArgument{
 		FqTableName:    fqTableName,
 		SubQuery:       tempTableName,
 		PrimaryKeys:    res.PrimaryKeys,
-		Columns:        res.Columns,
 		ColumnsToTypes: res.ColumnsToTypes,
-		Redshift:       true,
+		DestKind:       constants.Redshift,
 		IdempotentKey:  "created_at",
 	}
 
