@@ -1,6 +1,6 @@
 # Privacy Policy
 
-Last updated: December 28, 2022
+Last updated: July 9, 2023
 
 This notice is to inform visitors on how Artie Technologies Inc. (“_**Artie**_”) collects, use, and process the personal information we collect about you in the course of business on Artie’s website; artie.so and within our product dashboard, app.artie.so (“_**Websites**_”).\
 \
@@ -39,6 +39,10 @@ Our Websites may contain links to other sites. If you click on a third-party lin
 **How does Artie keep my personal data secure?**
 
 Artie stores all the personal information on leading and robust cloud service providers like Google Cloud Platform and Amazon Web Service. Artie uses industry-standard security protocols (such as encryption at REST, “Least Privilege” principle) to protect personal data. In addition our Websites are served with SSL and server software is continuously updated with the latest security patches.
+
+* Data at rest are all encrypted with AES256 or hashed with SHA256.
+* Data in transit are all secured via TLS.
+* Secrets management is centralized and encrypted with AGE where appropriate.
 
 **Changes to This Privacy Notice**
 
