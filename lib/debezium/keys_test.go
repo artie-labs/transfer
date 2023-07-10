@@ -16,6 +16,11 @@ func TestParsePartitionKeyString(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, kv["hi"], "=world")
 
+	kv, err = parsePartitionKeyString([]byte("Struct{Foo=bar,abc=def}"))
+	assert.NoError(t, err)
+	assert.Equal(t, kv["foo"], "bar")
+	assert.Equal(t, kv["abc"], "def")
+
 	kv, err = parsePartitionKeyString([]byte("Struct{id=47}"))
 	assert.NoError(t, err)
 	assert.Equal(t, kv["id"], "47")

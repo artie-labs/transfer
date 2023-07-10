@@ -89,7 +89,7 @@ func parsePartitionKeyStruct(keyBytes []byte) (map[string]interface{}, error) {
 	_, isOk := pkStruct["payload"]
 	if !isOk {
 		// pkStruct does not have schema enabled
-		return pkStruct, nil
+		return sanitizePayload(pkStruct), nil
 	}
 
 	pkStruct, isOk = pkStruct["payload"].(map[string]interface{})
@@ -99,11 +99,14 @@ func parsePartitionKeyStruct(keyBytes []byte) (map[string]interface{}, error) {
 
 	// Skip this key.
 	delete(pkStruct, constants.DebeziumTopicRoutingKey)
+	return sanitizePayload(pkStruct), nil
+}
 
-	escapedPkStruct := make(map[string]interface{})
-	for key, value := range pkStruct {
-		escapedPkStruct[columns.EscapeName(key)] = value
+func sanitizePayload(retMap map[string]interface{}) map[string]interface{} {
+	escapedRetMap := make(map[string]interface{})
+	for key, value := range retMap {
+		escapedRetMap[columns.EscapeName(key)] = value
 	}
 
-	return escapedPkStruct, nil
+	return escapedRetMap
 }
