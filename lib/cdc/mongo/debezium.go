@@ -102,8 +102,6 @@ func (s *SchemaEventPayload) GetColumns(ctx context.Context) *columns.Columns {
 
 	var cols columns.Columns
 	for _, field := range fieldsObject.Fields {
-		// TODO: lower-case and uppercase should be handled with more robust care. It's too fragile at the moment.
-
 		// We are purposefully doing this to ensure that the correct typing is set
 		// When we invoke event.Save()
 		cols.AddColumn(columns.NewColumn(columns.EscapeName(field.FieldName), typing.Invalid))
