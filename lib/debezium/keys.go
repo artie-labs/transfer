@@ -62,13 +62,7 @@ func parsePartitionKeyString(keyBytes []byte) (map[string]interface{}, error) {
 	}
 	// Skip this key.
 	delete(retMap, constants.DebeziumTopicRoutingKey)
-
-	escapedPkStruct := make(map[string]interface{})
-	for key, value := range retMap {
-		escapedPkStruct[columns.EscapeName(key)] = value
-	}
-
-	return escapedPkStruct, nil
+	return sanitizePayload(retMap), nil
 }
 
 func parsePartitionKeyStruct(keyBytes []byte) (map[string]interface{}, error) {

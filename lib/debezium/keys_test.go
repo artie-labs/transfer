@@ -66,9 +66,10 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, kv["id"], float64(47))
 
-	kv, err = parsePartitionKeyStruct([]byte(`{"uuid": "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c"}`))
+	kv, err = parsePartitionKeyStruct([]byte(`{"uuid": "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c", "FOO": "bar"}`))
 	assert.Nil(t, err)
 	assert.Equal(t, kv["uuid"], "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c")
+	assert.Equal(t, kv["foo"], "bar")
 
 	kv, err = parsePartitionKeyStruct([]byte(`{
 	"schema": {
