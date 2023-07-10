@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
@@ -61,11 +63,12 @@ func parsePartitionKeyString(keyBytes []byte) (map[string]interface{}, error) {
 	// Skip this key.
 	delete(retMap, constants.DebeziumTopicRoutingKey)
 
+	escapedPkStruct := make(map[string]interface{})
 	for key, value := range retMap {
-		retMap[key] = value
+		escapedPkStruct[columns.EscapeName(key)] = value
 	}
 
-	return retMap, nil
+	return escapedPkStruct, nil
 }
 
 func parsePartitionKeyStruct(keyBytes []byte) (map[string]interface{}, error) {
@@ -97,9 +100,10 @@ func parsePartitionKeyStruct(keyBytes []byte) (map[string]interface{}, error) {
 	// Skip this key.
 	delete(pkStruct, constants.DebeziumTopicRoutingKey)
 
+	escapedPkStruct := make(map[string]interface{})
 	for key, value := range pkStruct {
-		pkStruct[key] = value
+		escapedPkStruct[columns.EscapeName(key)] = value
 	}
 
-	return pkStruct, nil
+	return escapedPkStruct, nil
 }
