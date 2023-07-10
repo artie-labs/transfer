@@ -33,13 +33,13 @@ func ParsePartitionKey(key []byte, cdcKeyFormat string) (map[string]interface{},
 // However, if the k or v has `,` or `=` within it, it is not escaped and thus difficult to delineate between a separator or a continuation of the column or value.
 // In the case where there are multiple `=`, we will use the first one to separate between the key and value.
 // TL;DR - Use `org.apache.kafka.connect.json.JsonConverter` over `org.apache.kafka.connect.storage.StringConverter`
-func parsePartitionKeyString(key []byte) (map[string]interface{}, error) {
+func parsePartitionKeyString(keyBytes []byte) (map[string]interface{}, error) {
 	// Key will look like key: Struct{quarter_id=1,course_id=course1,student_id=1}
-	if len(key) == 0 {
+	if len(keyBytes) == 0 {
 		return nil, fmt.Errorf("key is nil")
 	}
 
-	keyString := string(key)
+	keyString := string(keyBytes)
 	if len(stringPrefix+stringSuffix) >= len(keyString) {
 		return nil, fmt.Errorf("key is too short")
 	}
@@ -60,16 +60,21 @@ func parsePartitionKeyString(key []byte) (map[string]interface{}, error) {
 	}
 	// Skip this key.
 	delete(retMap, constants.DebeziumTopicRoutingKey)
+
+	for key, value := range retMap {
+		retMap[key] = value
+	}
+
 	return retMap, nil
 }
 
-func parsePartitionKeyStruct(key []byte) (map[string]interface{}, error) {
-	if len(key) == 0 {
+func parsePartitionKeyStruct(keyBytes []byte) (map[string]interface{}, error) {
+	if len(keyBytes) == 0 {
 		return nil, fmt.Errorf("key is nil")
 	}
 
 	var pkStruct map[string]interface{}
-	err := json.Unmarshal(key, &pkStruct)
+	err := json.Unmarshal(keyBytes, &pkStruct)
 	if err != nil {
 		return nil, fmt.Errorf("failed to json unmarshal, error: %v", err)
 	}
@@ -91,5 +96,10 @@ func parsePartitionKeyStruct(key []byte) (map[string]interface{}, error) {
 
 	// Skip this key.
 	delete(pkStruct, constants.DebeziumTopicRoutingKey)
+
+	for key, value := range pkStruct {
+		pkStruct[key] = value
+	}
+
 	return pkStruct, nil
 }
