@@ -135,6 +135,10 @@ func (m *MySQLTestSuite) TestGetEventFromBytes() {
 				"type": "int64",
 				"optional": true,
 				"field": "big_int_test"
+			}, {
+				"type": "int64",
+				"optional": false,
+				"field": "abcDEF"
 			}],
 			"optional": true,
 			"name": "mysql1.inventory.customers.Value",
@@ -272,7 +276,8 @@ func (m *MySQLTestSuite) TestGetEventFromBytes() {
 			"int_test": 4,
 			"integer_test": 5,
 			"int_x_test": 7,
-			"big_int_test": 9223372036854775806
+			"big_int_test": 9223372036854775806,
+			"abcDEF": 123
 		},
 		"source": {
 			"version": "2.0.1.Final",
@@ -312,13 +317,16 @@ func (m *MySQLTestSuite) TestGetEventFromBytes() {
 	cols := evt.GetColumns(ctx)
 	assert.NotNil(m.T(), cols)
 
+	col, isOk := cols.GetColumn("abcdef")
+	assert.True(m.T(), isOk)
+	assert.Equal(m.T(), "abcdef", col.Name(nil))
 	for key := range evtData {
 		if strings.Contains(key, constants.ArtiePrefix) {
 			continue
 		}
 
-		col, isOk := cols.GetColumn(key)
-		assert.Equal(m.T(), true, isOk)
+		col, isOk := cols.GetColumn(strings.ToLower(key))
+		assert.Equal(m.T(), true, isOk, key)
 		assert.Equal(m.T(), typing.Invalid, col.KindDetails, fmt.Sprintf("colName: %v, evtData key: %v", col.Name(nil), key))
 	}
 }

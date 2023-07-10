@@ -414,4 +414,7 @@ func (p *MongoTestSuite) TestMongoDBEventWithSchema() {
 		Type:         "string",
 	})
 	assert.False(p.T(), evt.DeletePayload())
+
+	cols := schemaEvt.GetColumns(ctx)
+	assert.NotNil(p.T(), cols)
 }

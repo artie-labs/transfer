@@ -13,6 +13,33 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestEscapeName(t *testing.T) {
+	type _testCase struct {
+		name         string
+		expectedName string
+	}
+
+	testCases := []_testCase{
+		{
+			name:         "foo",
+			expectedName: "foo",
+		},
+		{
+			name:         "FOOO",
+			expectedName: "fooo",
+		},
+		{
+			name:         "col with spaces",
+			expectedName: "col__with__spaces",
+		},
+	}
+
+	for _, testCase := range testCases {
+		actualName := EscapeName(testCase.name)
+		assert.Equal(t, testCase.expectedName, actualName, testCase.name)
+	}
+}
+
 func TestColumn_ShouldSkip(t *testing.T) {
 	type _testCase struct {
 		name           string

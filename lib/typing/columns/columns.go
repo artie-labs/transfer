@@ -5,11 +5,19 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/artie-labs/transfer/lib/stringutil"
+
 	"github.com/artie-labs/transfer/lib/typing"
 
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
+
+// EscapeName - will lowercase columns and escape spaces.
+func EscapeName(name string) string {
+	_, name = stringutil.EscapeSpaces(strings.ToLower(name))
+	return name
+}
 
 type Column struct {
 	name        string
