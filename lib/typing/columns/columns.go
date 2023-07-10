@@ -15,9 +15,7 @@ import (
 
 // EscapeName - will lowercase columns and escape spaces.
 func EscapeName(name string) string {
-	// TODO: Test
-	name = strings.ToLower(name)
-	_, name = stringutil.EscapeSpaces(name)
+	_, name = stringutil.EscapeSpaces(strings.ToLower(name))
 	return name
 }
 
