@@ -3,7 +3,6 @@ package bigquery
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/sql"
@@ -77,7 +76,6 @@ func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTab
 		return fmt.Errorf("failed to escape default value, err: %v", err)
 	}
 
-	fqTableName = strings.ToLower(fqTableName)
 	escapedCol := column.Name(ctx, &sql.NameArgs{Escape: true, DestKind: s.Label()})
 	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
 		// UPDATE table SET col = default_val WHERE col IS NULL

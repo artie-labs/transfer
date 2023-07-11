@@ -3,7 +3,6 @@ package utils
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/artie-labs/transfer/lib/sql"
 
@@ -24,7 +23,6 @@ func BackfillColumn(ctx context.Context, dwh dwh.DataWarehouse, column columns.C
 		return nil
 	}
 
-	fqTableName = strings.ToLower(fqTableName)
 	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{
 		Escape:   true,
 		DestKind: dwh.Label(),
