@@ -43,7 +43,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 		return fmt.Errorf("failed to create temp table, error: %v", err)
 	}
 
-	fp, err := s.loadTemporaryTable(tableData, tempTableName)
+	fp, err := s.loadTemporaryTable(ctx, tableData, tempTableName)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table, err: %v", err)
 	}
@@ -54,12 +54,12 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 
 	_, err = s.Exec(fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
 		// Copy into temporary tables (column ...)
-		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(&sql.NameArgs{
+		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, &sql.NameArgs{
 			Escape:   true,
 			DestKind: s.Label(),
 		}), ","),
 		// Escaped columns, TABLE NAME
-		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableName, "%")))
+		escapeColumns(ctx, tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableName, "%")))
 
 	if err != nil {
 		return fmt.Errorf("failed to load staging file into temporary table, err: %v", err)
@@ -75,7 +75,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 // loadTemporaryTable will write the data into /tmp/newTableName.csv
 // This way, another function can call this and then invoke a Snowflake PUT.
 // Returns the file path and potential error
-func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableName string) (string, error) {
+func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.TableData, newTableName string) (string, error) {
 	filePath := fmt.Sprintf("/tmp/%s.csv", newTableName)
 	file, err := os.Create(filePath)
 	if err != nil {
@@ -87,7 +87,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 	writer.Comma = '\t'
 	for _, value := range tableData.RowsData() {
 		var row []string
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal := value[col]
 			// Check
@@ -123,7 +123,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 
 	log := logger.FromContext(ctx)
 	// Check if all the columns exist in Snowflake
-	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
+	srcKeysMissing, targetKeysMissing := columns.Diff(ctx, tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
 		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
@@ -165,7 +165,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 	for colToDelete := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, col := range srcKeysMissing {
-			if found = col.Name(nil) == colToDelete; found {
+			if found = col.Name(ctx, nil) == colToDelete; found {
 				// Found it.
 				break
 			}
@@ -177,7 +177,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		}
 	}
 
-	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
+	tableData.UpdateInMemoryColumnsFromDestination(ctx, tableConfig.Columns().GetColumns()...)
 	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label(), false), tableData.TempTableSuffix())
 	if err = s.prepareTempTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {
 		return err
@@ -193,20 +193,20 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		if err != nil {
 			defaultVal, _ := col.DefaultValue(nil)
 			return fmt.Errorf("failed to backfill col: %v, default value: %v, error: %v",
-				col.Name(nil), defaultVal, err)
+				col.Name(ctx, nil), defaultVal, err)
 		}
 
-		tableConfig.Columns().UpsertColumn(col.Name(nil), columns.UpsertColumnArg{
+		tableConfig.Columns().UpsertColumn(col.Name(ctx, nil), columns.UpsertColumnArg{
 			Backfilled: ptr.ToBool(true),
 		})
 	}
 
 	// Prepare merge statement
-	mergeQuery, err := dml.MergeStatement(&dml.MergeArgument{
+	mergeQuery, err := dml.MergeStatement(ctx, &dml.MergeArgument{
 		FqTableName:   tableData.ToFqName(ctx, constants.Snowflake, true),
 		SubQuery:      temporaryTableName,
 		IdempotentKey: tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys: tableData.PrimaryKeys(&sql.NameArgs{
+		PrimaryKeys: tableData.PrimaryKeys(ctx, &sql.NameArgs{
 			Escape:   true,
 			DestKind: s.Label(),
 		}),

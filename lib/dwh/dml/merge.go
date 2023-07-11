@@ -1,6 +1,7 @@
 package dml
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -58,7 +59,7 @@ func (m *MergeArgument) Valid() error {
 	return nil
 }
 
-func MergeStatementParts(m *MergeArgument) ([]string, error) {
+func MergeStatementParts(ctx context.Context, m *MergeArgument) ([]string, error) {
 	if err := m.Valid(); err != nil {
 		return nil, err
 	}
@@ -86,7 +87,7 @@ func MergeStatementParts(m *MergeArgument) ([]string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	cols := m.ColumnsToTypes.GetColumnsToUpdate(&sql.NameArgs{
+	cols := m.ColumnsToTypes.GetColumnsToUpdate(ctx, &sql.NameArgs{
 		Escape:   true,
 		DestKind: m.DestKind,
 	})
@@ -110,7 +111,7 @@ func MergeStatementParts(m *MergeArgument) ([]string, error) {
 			// UPDATE
 			fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s;`,
 				// UPDATE table set col1 = cc. col1
-				m.FqTableName, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind),
+				m.FqTableName, columns.ColumnsUpdateQuery(ctx, cols, m.ColumnsToTypes, m.DestKind),
 				// FROM table (temp) WHERE join on PK(s)
 				m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause,
 			),
@@ -154,7 +155,7 @@ func MergeStatementParts(m *MergeArgument) ([]string, error) {
 		// UPDATE
 		fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s AND COALESCE(cc.%s, false) = false;`,
 			// UPDATE table set col1 = cc. col1
-			m.FqTableName, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind),
+			m.FqTableName, columns.ColumnsUpdateQuery(ctx, cols, m.ColumnsToTypes, m.DestKind),
 			// FROM staging WHERE join on PK(s)
 			m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause, constants.DeleteColumnMarker,
 		),
@@ -172,7 +173,7 @@ func MergeStatementParts(m *MergeArgument) ([]string, error) {
 	}, nil
 }
 
-func MergeStatement(m *MergeArgument) (string, error) {
+func MergeStatement(ctx context.Context, m *MergeArgument) (string, error) {
 	if err := m.Valid(); err != nil {
 		return "", err
 	}
@@ -211,7 +212,7 @@ func MergeStatement(m *MergeArgument) (string, error) {
 		subQuery = m.SubQuery
 	}
 
-	cols := m.ColumnsToTypes.GetColumnsToUpdate(&sql.NameArgs{
+	cols := m.ColumnsToTypes.GetColumnsToUpdate(ctx, &sql.NameArgs{
 		Escape:   true,
 		DestKind: m.DestKind,
 	})
@@ -231,7 +232,7 @@ func MergeStatement(m *MergeArgument) (string, error) {
 					);
 		`, m.FqTableName, subQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind),
+			idempotentClause, columns.ColumnsUpdateQuery(ctx, cols, m.ColumnsToTypes, m.DestKind),
 			// Insert
 			constants.DeleteColumnMarker, strings.Join(cols, ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -272,7 +273,7 @@ func MergeStatement(m *MergeArgument) (string, error) {
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update
-		constants.DeleteColumnMarker, idempotentClause, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind),
+		constants.DeleteColumnMarker, idempotentClause, columns.ColumnsUpdateQuery(ctx, cols, m.ColumnsToTypes, m.DestKind),
 		// Insert
 		constants.DeleteColumnMarker, strings.Join(cols, ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{

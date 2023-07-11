@@ -23,7 +23,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	tableConfig, err := s.getTableConfig(ctx, getTableConfigArgs{
-		Table: tableData.Name(&sql.NameArgs{
+		Table: tableData.Name(ctx, &sql.NameArgs{
 			Escape:   true,
 			DestKind: s.Label(),
 		}),
@@ -37,7 +37,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	log := logger.FromContext(ctx)
 	fqName := tableData.ToFqName(ctx, s.Label(), true)
 	// Check if all the columns exist in Redshift
-	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
+	srcKeysMissing, targetKeysMissing := columns.Diff(ctx, tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
 		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
@@ -79,7 +79,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	for colToDelete := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, col := range srcKeysMissing {
-			if found = col.Name(nil) == colToDelete; found {
+			if found = col.Name(ctx, nil) == colToDelete; found {
 				// Found it.
 				break
 			}
@@ -91,7 +91,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		}
 	}
 
-	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
+	tableData.UpdateInMemoryColumnsFromDestination(ctx, tableConfig.Columns().GetColumns()...)
 
 	// Temporary tables cannot specify schemas, so we just prefix it instead.
 	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label(), false), tableData.TempTableSuffix())
@@ -109,20 +109,20 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		if err != nil {
 			defaultVal, _ := col.DefaultValue(nil)
 			return fmt.Errorf("failed to backfill col: %v, default value: %v, error: %v",
-				col.Name(nil), defaultVal, err)
+				col.Name(ctx, nil), defaultVal, err)
 		}
 
-		tableConfig.Columns().UpsertColumn(col.Name(nil), columns.UpsertColumnArg{
+		tableConfig.Columns().UpsertColumn(col.Name(ctx, nil), columns.UpsertColumnArg{
 			Backfilled: ptr.ToBool(true),
 		})
 	}
 
 	// Prepare merge statement
-	mergeParts, err := dml.MergeStatementParts(&dml.MergeArgument{
+	mergeParts, err := dml.MergeStatementParts(ctx, &dml.MergeArgument{
 		FqTableName:   fqName,
 		SubQuery:      temporaryTableName,
 		IdempotentKey: tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys: tableData.PrimaryKeys(&sql.NameArgs{
+		PrimaryKeys: tableData.PrimaryKeys(ctx, &sql.NameArgs{
 			Escape:   true,
 			DestKind: s.Label(),
 		}),

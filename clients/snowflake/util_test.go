@@ -46,7 +46,7 @@ func TestAddPrefixToTableName(t *testing.T) {
 	}
 }
 
-func TestEscapeColumns(t *testing.T) {
+func (s *SnowflakeTestSuite) TestEscapeColumns() {
 	type _testCase struct {
 		name           string
 		cols           *columns.Columns
@@ -87,7 +87,7 @@ func TestEscapeColumns(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		actualString := escapeColumns(testCase.cols, ",")
-		assert.Equal(t, testCase.expectedString, actualString, testCase.name)
+		actualString := escapeColumns(s.ctx, testCase.cols, ",")
+		assert.Equal(s.T(), testCase.expectedString, actualString, testCase.name)
 	}
 }

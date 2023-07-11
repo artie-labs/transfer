@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSource_GetOptionalSchema(t *testing.T) {
+func (u *UtilTestSuite) TestSource_GetOptionalSchema() {
 	ctx := context.Background()
 	var schemaEventPayload SchemaEventPayload
 	err := json.Unmarshal([]byte(`{
@@ -56,34 +56,34 @@ func TestSource_GetOptionalSchema(t *testing.T) {
 	"payload": {}
 }`), &schemaEventPayload)
 
-	assert.NoError(t, err)
+	assert.NoError(u.T(), err)
 	optionalSchema := schemaEventPayload.GetOptionalSchema(ctx)
 	value, isOk := optionalSchema["last_modified"]
-	assert.True(t, isOk)
-	assert.Equal(t, value, typing.String)
+	assert.True(u.T(), isOk)
+	assert.Equal(u.T(), value, typing.String)
 
 	cols := schemaEventPayload.GetColumns(ctx)
-	assert.Equal(t, 6, len(cols.GetColumns()))
+	assert.Equal(u.T(), 6, len(cols.GetColumns()))
 
 	col, isOk := cols.GetColumn("boolean_column")
-	assert.True(t, isOk)
+	assert.True(u.T(), isOk)
 
 	defaultVal, err := col.DefaultValue(nil)
-	assert.NoError(t, err)
-	assert.Equal(t, false, defaultVal)
+	assert.NoError(u.T(), err)
+	assert.Equal(u.T(), false, defaultVal)
 
 	for _, _col := range cols.GetColumns() {
 		// All the other columns do not have a default value.
-		if _col.Name(nil) != "boolean_column" {
+		if _col.Name(u.ctx, nil) != "boolean_column" {
 			defaultVal, err = _col.DefaultValue(nil)
-			assert.NoError(t, err)
-			assert.Nil(t, defaultVal, _col.Name(nil))
+			assert.NoError(u.T(), err)
+			assert.Nil(u.T(), defaultVal, _col.Name(u.ctx, nil))
 		}
 	}
 
 	// OptionalColumn does not pick up custom data types.
 	_, isOk = optionalSchema["zoned_timestamp_column"]
-	assert.False(t, isOk)
+	assert.False(u.T(), isOk)
 }
 
 func TestSource_GetExecutionTime(t *testing.T) {

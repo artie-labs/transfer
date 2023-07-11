@@ -51,18 +51,18 @@ func (t *TableData) ContainOtherOperations() bool {
 	return t.containOtherOperations
 }
 
-func (t *TableData) PrimaryKeys(args *sql.NameArgs) []columns.Wrapper {
+func (t *TableData) PrimaryKeys(ctx context.Context, args *sql.NameArgs) []columns.Wrapper {
 	var primaryKeysEscaped []columns.Wrapper
 	for _, pk := range t.primaryKeys {
 		col := columns.NewColumn(pk, typing.Invalid)
-		primaryKeysEscaped = append(primaryKeysEscaped, columns.NewWrapper(col, args))
+		primaryKeysEscaped = append(primaryKeysEscaped, columns.NewWrapper(ctx, col, args))
 	}
 
 	return primaryKeysEscaped
 }
 
-func (t *TableData) Name(args *sql.NameArgs) string {
-	return sql.EscapeName(t.name, args)
+func (t *TableData) Name(ctx context.Context, args *sql.NameArgs) string {
+	return sql.EscapeName(ctx, t.name, args)
 }
 
 func (t *TableData) SetInMemoryColumns(columns *columns.Columns) {
@@ -149,18 +149,18 @@ func (t *TableData) ToFqName(ctx context.Context, kind constants.DestinationKind
 	case constants.Redshift:
 		// Redshift is Postgres compatible, so when establishing a connection, we'll specify a database.
 		// Thus, we only need to specify schema and table name here.
-		return fmt.Sprintf("%s.%s", t.TopicConfig.Schema, t.Name(&sql.NameArgs{
+		return fmt.Sprintf("%s.%s", t.TopicConfig.Schema, t.Name(ctx, &sql.NameArgs{
 			Escape:   escape,
 			DestKind: kind,
 		}))
 	case constants.BigQuery:
 		// The fully qualified name for BigQuery is: project_id.dataset.tableName.
-		return fmt.Sprintf("%s.%s.%s", config.FromContext(ctx).Config.BigQuery.ProjectID, t.TopicConfig.Database, t.Name(&sql.NameArgs{
+		return fmt.Sprintf("%s.%s.%s", config.FromContext(ctx).Config.BigQuery.ProjectID, t.TopicConfig.Database, t.Name(ctx, &sql.NameArgs{
 			Escape:   escape,
 			DestKind: kind,
 		}))
 	default:
-		return fmt.Sprintf("%s.%s.%s", t.TopicConfig.Database, t.TopicConfig.Schema, t.Name(&sql.NameArgs{
+		return fmt.Sprintf("%s.%s.%s", t.TopicConfig.Database, t.TopicConfig.Schema, t.Name(ctx, &sql.NameArgs{
 			Escape:   escape,
 			DestKind: kind,
 		}))
@@ -190,7 +190,7 @@ func (t *TableData) ShouldFlush(ctx context.Context) bool {
 // Prior to merging, we will need to treat `tableConfig` as the source-of-truth and whenever there's discrepancies
 // We will prioritize using the values coming from (2) TableConfig. We also cannot simply do a replacement, as we have in-memory columns
 // That carry metadata for Artie Transfer. They are prefixed with __artie.
-func (t *TableData) UpdateInMemoryColumnsFromDestination(cols ...columns.Column) {
+func (t *TableData) UpdateInMemoryColumnsFromDestination(ctx context.Context, cols ...columns.Column) {
 	if t == nil {
 		return
 	}
@@ -199,7 +199,7 @@ func (t *TableData) UpdateInMemoryColumnsFromDestination(cols ...columns.Column)
 		var foundColumn columns.Column
 		var found bool
 		for _, col := range cols {
-			if col.Name(nil) == strings.ToLower(inMemoryCol.Name(nil)) {
+			if col.Name(ctx, nil) == strings.ToLower(inMemoryCol.Name(ctx, nil)) {
 				foundColumn = col
 				found = true
 				break

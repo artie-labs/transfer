@@ -1,14 +1,11 @@
 package sql
 
 import (
-	"testing"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
-
 	"github.com/stretchr/testify/assert"
 )
 
-func TestEscapeName(t *testing.T) {
+func (s *SqlTestSuite) TestEscapeName() {
 	type _testCase struct {
 		name         string
 		nameToEscape string
@@ -85,7 +82,7 @@ func TestEscapeName(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		actualName := EscapeName(testCase.nameToEscape, testCase.args)
-		assert.Equal(t, testCase.expectedName, actualName, testCase.name)
+		actualName := EscapeName(s.ctx, testCase.nameToEscape, testCase.args)
+		assert.Equal(s.T(), testCase.expectedName, actualName, testCase.name)
 	}
 }

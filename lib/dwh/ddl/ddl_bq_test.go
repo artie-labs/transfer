@@ -85,7 +85,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
 
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s drop COLUMN %s", fqName, column.Name(&artieSQL.NameArgs{
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s drop COLUMN %s", fqName, column.Name(d.ctx, &artieSQL.NameArgs{
 			Escape:   true,
 			DestKind: d.bigQueryStore.Label(),
 		})), query)
@@ -145,7 +145,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, col)
 		assert.NoError(d.T(), err)
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, col.Name(&artieSQL.NameArgs{
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, col.Name(d.ctx, &artieSQL.NameArgs{
 			Escape:   true,
 			DestKind: d.bigQueryStore.Label(),
 		}),
@@ -157,10 +157,10 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 	assert.Equal(d.T(), newColsLen+existingColsLen, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns())
 	// Check by iterating over the columns
 	for _, column := range d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns() {
-		existingCol, isOk := existingCols.GetColumn(column.Name(nil))
+		existingCol, isOk := existingCols.GetColumn(column.Name(d.ctx, nil))
 		if !isOk {
 			// Check new cols?
-			existingCol.KindDetails, isOk = newCols[column.Name(nil)]
+			existingCol.KindDetails, isOk = newCols[column.Name(d.ctx, nil)]
 		}
 
 		assert.True(d.T(), isOk)
@@ -205,7 +205,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
 		assert.NoError(d.T(), err)
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, column.Name(&artieSQL.NameArgs{
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, column.Name(d.ctx, &artieSQL.NameArgs{
 			Escape:   true,
 			DestKind: d.bigQueryStore.Label(),
 		}),
@@ -217,7 +217,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 	assert.Equal(d.T(), existingColsLen, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns())
 	// Check by iterating over the columns
 	for _, column := range d.bigQueryStore.GetConfigMap().TableConfig(fqName).Columns().GetColumns() {
-		existingCol, isOk := existingCols.GetColumn(column.Name(nil))
+		existingCol, isOk := existingCols.GetColumn(column.Name(d.ctx, nil))
 		assert.True(d.T(), isOk)
 		assert.Equal(d.T(), column.KindDetails, existingCol.KindDetails)
 	}

@@ -1,8 +1,6 @@
 package columns
 
 import (
-	"testing"
-
 	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/stretchr/testify/assert"
@@ -12,7 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func TestWrapper_Complete(t *testing.T) {
+func (c *ColumnsTestSuite) TestWrapper_Complete() {
 	type _testCase struct {
 		name                  string
 		expectedRawName       string
@@ -43,38 +41,38 @@ func TestWrapper_Complete(t *testing.T) {
 
 	for _, testCase := range testCases {
 		// Snowflake escape
-		w := NewWrapper(NewColumn(testCase.name, typing.Invalid), &sql.NameArgs{
+		w := NewWrapper(c.ctx, NewColumn(testCase.name, typing.Invalid), &sql.NameArgs{
 			Escape:   true,
 			DestKind: constants.Snowflake,
 		})
 
-		assert.Equal(t, testCase.expectedEscapedName, w.EscapedName(), testCase.name)
-		assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
+		assert.Equal(c.T(), testCase.expectedEscapedName, w.EscapedName(), testCase.name)
+		assert.Equal(c.T(), testCase.expectedRawName, w.RawName(), testCase.name)
 
 		// BigQuery escape
-		w = NewWrapper(NewColumn(testCase.name, typing.Invalid), &sql.NameArgs{
+		w = NewWrapper(c.ctx, NewColumn(testCase.name, typing.Invalid), &sql.NameArgs{
 			Escape:   true,
 			DestKind: constants.BigQuery,
 		})
 
-		assert.Equal(t, testCase.expectedEscapedNameBQ, w.EscapedName(), testCase.name)
-		assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
+		assert.Equal(c.T(), testCase.expectedEscapedNameBQ, w.EscapedName(), testCase.name)
+		assert.Equal(c.T(), testCase.expectedRawName, w.RawName(), testCase.name)
 
 		for _, destKind := range []constants.DestinationKind{constants.Snowflake, constants.SnowflakeStages, constants.BigQuery} {
-			w = NewWrapper(NewColumn(testCase.name, typing.Invalid), &sql.NameArgs{
+			w = NewWrapper(c.ctx, NewColumn(testCase.name, typing.Invalid), &sql.NameArgs{
 				Escape:   false,
 				DestKind: destKind,
 			})
 
-			assert.Equal(t, testCase.expectedRawName, w.EscapedName(), testCase.name)
-			assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
+			assert.Equal(c.T(), testCase.expectedRawName, w.EscapedName(), testCase.name)
+			assert.Equal(c.T(), testCase.expectedRawName, w.RawName(), testCase.name)
 		}
 
 		// Same if nil
-		w = NewWrapper(NewColumn(testCase.name, typing.Invalid), nil)
+		w = NewWrapper(c.ctx, NewColumn(testCase.name, typing.Invalid), nil)
 
-		assert.Equal(t, testCase.expectedRawName, w.EscapedName(), testCase.name)
-		assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
+		assert.Equal(c.T(), testCase.expectedRawName, w.EscapedName(), testCase.name)
+		assert.Equal(c.T(), testCase.expectedRawName, w.RawName(), testCase.name)
 
 	}
 }

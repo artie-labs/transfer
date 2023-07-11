@@ -2,7 +2,6 @@ package types
 
 import (
 	"sync"
-	"testing"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -31,17 +30,17 @@ func generateDwhTableCfg() *DwhTableConfig {
 	}
 }
 
-func TestDwhToTablesConfigMap_TableConfigBasic(t *testing.T) {
+func (t *TypesTestSuite) TestDwhToTablesConfigMap_TableConfigBasic() {
 	dwh := &DwhToTablesConfigMap{}
 	dwhTableConfig := generateDwhTableCfg()
 
 	fqName := "database.schema.tableName"
 	dwh.AddTableToConfig(fqName, dwhTableConfig)
-	assert.Equal(t, *dwhTableConfig, *dwh.TableConfig(fqName))
+	assert.Equal(t.T(), *dwhTableConfig, *dwh.TableConfig(fqName))
 }
 
 // TestDwhToTablesConfigMap_Concurrency - has a bunch of concurrent go-routines that are rapidly adding and reading from the tableConfig.
-func TestDwhToTablesConfigMap_Concurrency(t *testing.T) {
+func (t *TypesTestSuite) TestDwhToTablesConfigMap_Concurrency() {
 	dwh := &DwhToTablesConfigMap{}
 	fqName := "db.schema.table"
 	dwhTableCfg := generateDwhTableCfg()
@@ -63,7 +62,7 @@ func TestDwhToTablesConfigMap_Concurrency(t *testing.T) {
 		defer wg.Done()
 		for i := 0; i < 1000; i++ {
 			time.Sleep(time.Duration(jitter.JitterMs(5, 1)) * time.Millisecond)
-			assert.Equal(t, *dwhTableCfg, *dwh.TableConfig(fqName))
+			assert.Equal(t.T(), *dwhTableCfg, *dwh.TableConfig(fqName))
 		}
 
 	}()

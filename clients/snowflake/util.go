@@ -1,6 +1,7 @@
 package snowflake
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -24,9 +25,9 @@ func addPrefixToTableName(fqTableName string, prefix string) string {
 
 // escapeColumns will take the columns that are passed in, escape them and return them in the ordered received.
 // It'll return like this: $1, $2, $3
-func escapeColumns(columns *columns.Columns, delimiter string) string {
+func escapeColumns(ctx context.Context, columns *columns.Columns, delimiter string) string {
 	var escapedCols []string
-	for index, col := range columns.GetColumnsToUpdate(nil) {
+	for index, col := range columns.GetColumnsToUpdate(ctx, nil) {
 		colKind, _ := columns.GetColumn(col)
 		escapedCol := fmt.Sprintf("$%d", index+1)
 		switch colKind.KindDetails {
