@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/sql"
+
 	"github.com/artie-labs/transfer/clients/utils"
 
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -52,7 +54,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 
 	_, err = s.Exec(fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
 		// Copy into temporary tables (column ...)
-		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(&columns.NameArgs{
+		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(&sql.NameArgs{
 			Escape:   true,
 			DestKind: s.Label(),
 		}), ","),
@@ -204,7 +206,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		FqTableName:   tableData.ToFqName(ctx, constants.Snowflake),
 		SubQuery:      temporaryTableName,
 		IdempotentKey: tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys: tableData.PrimaryKeys(&columns.NameArgs{
+		PrimaryKeys: tableData.PrimaryKeys(&sql.NameArgs{
 			Escape:   true,
 			DestKind: s.Label(),
 		}),

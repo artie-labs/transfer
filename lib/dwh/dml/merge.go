@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/sql"
+
 	"github.com/artie-labs/transfer/lib/stringutil"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -84,7 +86,7 @@ func MergeStatementParts(m *MergeArgument) ([]string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	cols := m.ColumnsToTypes.GetColumnsToUpdate(&columns.NameArgs{
+	cols := m.ColumnsToTypes.GetColumnsToUpdate(&sql.NameArgs{
 		Escape:   true,
 		DestKind: m.DestKind,
 	})
@@ -209,7 +211,7 @@ func MergeStatement(m *MergeArgument) (string, error) {
 		subQuery = m.SubQuery
 	}
 
-	cols := m.ColumnsToTypes.GetColumnsToUpdate(&columns.NameArgs{
+	cols := m.ColumnsToTypes.GetColumnsToUpdate(&sql.NameArgs{
 		Escape:   true,
 		DestKind: m.DestKind,
 	})

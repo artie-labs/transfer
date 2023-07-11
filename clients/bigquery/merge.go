@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/sql"
+
 	"github.com/artie-labs/transfer/lib/ptr"
 
 	"github.com/artie-labs/transfer/lib/jitter"
@@ -76,7 +78,7 @@ func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTab
 	}
 
 	fqTableName = strings.ToLower(fqTableName)
-	escapedCol := column.Name(&columns.NameArgs{Escape: true, DestKind: s.Label()})
+	escapedCol := column.Name(&sql.NameArgs{Escape: true, DestKind: s.Label()})
 	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
 		// UPDATE table SET col = default_val WHERE col IS NULL
 		fqTableName, escapedCol, defaultVal, escapedCol)
@@ -221,7 +223,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
-	tableName := fmt.Sprintf("%s_%s", tableData.Name(), tableData.TempTableSuffix())
+	tableName := fmt.Sprintf("%s_%s", tableData.Name(nil), tableData.TempTableSuffix())
 	err = s.PutTable(ctx, tableData.TopicConfig.Database, tableName, rows)
 	if err != nil {
 		return fmt.Errorf("failed to insert into temp table: %s, error: %v", tableName, err)
@@ -231,7 +233,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		FqTableName:   tableData.ToFqName(ctx, constants.BigQuery),
 		SubQuery:      tempAlterTableArgs.FqTableName,
 		IdempotentKey: tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys: tableData.PrimaryKeys(&columns.NameArgs{
+		PrimaryKeys: tableData.PrimaryKeys(&sql.NameArgs{
 			Escape:   true,
 			DestKind: s.Label(),
 		}),

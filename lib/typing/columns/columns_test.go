@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/ptr"
-
-	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-
+	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -203,15 +202,15 @@ func TestColumn_Name(t *testing.T) {
 		}
 
 		assert.Equal(t, testCase.expectedName, c.Name(nil), testCase.colName)
-		assert.Equal(t, testCase.expectedName, c.Name(&NameArgs{
+		assert.Equal(t, testCase.expectedName, c.Name(&sql.NameArgs{
 			Escape: false,
 		}), testCase.colName)
 
-		assert.Equal(t, testCase.expectedNameEsc, c.Name(&NameArgs{
+		assert.Equal(t, testCase.expectedNameEsc, c.Name(&sql.NameArgs{
 			Escape:   true,
 			DestKind: constants.Snowflake,
 		}), testCase.colName)
-		assert.Equal(t, testCase.expectedNameEscBq, c.Name(&NameArgs{
+		assert.Equal(t, testCase.expectedNameEscBq, c.Name(&sql.NameArgs{
 			Escape:   true,
 			DestKind: constants.BigQuery,
 		}), testCase.colName)
@@ -275,16 +274,16 @@ func TestColumns_GetColumnsToUpdate(t *testing.T) {
 		}
 
 		assert.Equal(t, testCase.expectedCols, cols.GetColumnsToUpdate(nil), testCase.name)
-		assert.Equal(t, testCase.expectedCols, cols.GetColumnsToUpdate(&NameArgs{
+		assert.Equal(t, testCase.expectedCols, cols.GetColumnsToUpdate(&sql.NameArgs{
 			Escape: false,
 		}), testCase.name)
 
-		assert.Equal(t, testCase.expectedColsEsc, cols.GetColumnsToUpdate(&NameArgs{
+		assert.Equal(t, testCase.expectedColsEsc, cols.GetColumnsToUpdate(&sql.NameArgs{
 			Escape:   true,
 			DestKind: constants.Snowflake,
 		}), testCase.name)
 
-		assert.Equal(t, testCase.expectedColsEscBq, cols.GetColumnsToUpdate(&NameArgs{
+		assert.Equal(t, testCase.expectedColsEscBq, cols.GetColumnsToUpdate(&sql.NameArgs{
 			Escape:   true,
 			DestKind: constants.BigQuery,
 		}), testCase.name)

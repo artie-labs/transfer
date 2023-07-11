@@ -36,7 +36,7 @@ func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.Tabl
 		Dwh:                s,
 		FqName:             tableData.ToFqName(ctx, constants.BigQuery),
 		ConfigMap:          s.configMap,
-		Query:              fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name='%s';", tableData.TopicConfig.Database, tableData.Name()),
+		Query:              fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name='%s';", tableData.TopicConfig.Database, tableData.Name(nil)),
 		ColumnNameLabel:    describeNameCol,
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeCommentCol,

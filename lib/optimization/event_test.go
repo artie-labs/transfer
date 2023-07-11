@@ -71,7 +71,7 @@ func TestNewTableData_TableName(t *testing.T) {
 			TableName: testCase.overrideName,
 			Schema:    testCase.schema,
 		}, testCase.tableName)
-		assert.Equal(t, testCase.expectedName, td.Name(), testCase.name)
+		assert.Equal(t, testCase.expectedName, td.Name(nil), testCase.name)
 		assert.Equal(t, testCase.expectedName, td.name, testCase.name)
 		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.SnowflakeStages))
 		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.Snowflake))

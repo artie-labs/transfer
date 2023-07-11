@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/sql"
+
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -90,12 +92,12 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 		mutateCol = append(mutateCol, col)
 		switch args.ColumnOp {
 		case constants.Add:
-			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, col.Name(&columns.NameArgs{
+			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, col.Name(&sql.NameArgs{
 				Escape:   true,
 				DestKind: args.Dwh.Label(),
 			}), typing.KindToDWHType(col.KindDetails, args.Dwh.Label())))
 		case constants.Delete:
-			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s`, col.Name(&columns.NameArgs{
+			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s`, col.Name(&sql.NameArgs{
 				Escape:   true,
 				DestKind: args.Dwh.Label(),
 			})))
