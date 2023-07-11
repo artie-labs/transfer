@@ -53,6 +53,10 @@ pubsub:
 
 <table><thead><tr><th width="433">Key</th><th width="106.33333333333331">Optional</th><th>Description</th></tr></thead><tbody><tr><td><code>bigquery.pathToCredentials</code></td><td>Y</td><td>Path to the credentials file for Google. <br><br>You can also directly inject <code>GOOGLE_APPLICATION_CREDENTIALS</code> ENV VAR, else Transfer will set it for you based on this value provided.</td></tr><tr><td><code>bigquery.projectID</code></td><td>N</td><td>Google Cloud Project ID</td></tr><tr><td><code>bigquery.location</code></td><td>Y</td><td>Location of the BigQuery dataset. <br><br>Defaults to <code>us</code>.</td></tr><tr><td><code>bigquery.defaultDataset</code></td><td>N</td><td><p>The default dataset used. </p><p></p><p>This just allows us to connect to BigQuery using data source  notation (DSN). </p></td></tr></tbody></table>
 
+### Shared destination config
+
+<table><thead><tr><th width="423.3333333333333">Key</th><th width="99">Optional</th><th>Description`</th></tr></thead><tbody><tr><td><code>sharedDestinationConfig.uppercaseEscapedNames</code></td><td>Y</td><td>Defaults to <code>false</code>. <br><br>By enabling <a data-footnote-ref href="#user-content-fn-1">t</a>his, the escaped value will be in upper case for both table and column names.</td></tr></tbody></table>
+
 ### Snowflake
 
 Please see: [snowflake.md](../real-time-destinations/snowflake.md "mention") on how to gather these values.
@@ -68,3 +72,5 @@ Please see: [snowflake.md](../real-time-destinations/snowflake.md "mention") on 
 Overview of Telemetry can be found here: [Broken link](broken-reference "mention").
 
 <table><thead><tr><th width="429">Key</th><th width="95">Type</th><th width="102">Optional</th><th>Description</th></tr></thead><tbody><tr><td><code>telemetry.metrics</code></td><td>Object</td><td>Y</td><td>Parent object. See below.</td></tr><tr><td><code>telemetry.metrics.provider</code></td><td>String</td><td>Y</td><td>Provider to export metrics to. Transfer currently only supports: <code>datadog</code>.</td></tr><tr><td><code>telemetry.metrics.settings</code></td><td>Object</td><td>Y</td><td>Additional settings block, see below</td></tr><tr><td><code>telemetry.metrics.settings.tags</code></td><td>Array</td><td>Y</td><td>Tags that will appear for every metrics like: <code>env:production</code>, <code>company:foo</code></td></tr><tr><td><code>telemetry.metrics.settings.namespace</code></td><td>String</td><td>Y</td><td>Optional namespace prefix for metrics. Defaults to <code>transfer.</code> if none is provided.</td></tr><tr><td><code>telemetry.metrics.settings.addr</code></td><td>String</td><td>Y</td><td>Address for where the statsD agent is running. Defaults to <code>127.0.0.1:8125</code> if none is provided.</td></tr><tr><td><code>telemetry.metrics.settings.sampling</code></td><td>Number</td><td>Y</td><td>Percentage of data to send. Provide a number between 0 and 1. Defaults to <code>1</code> if none is provided. Refer to <a href="https://docs.datadoghq.com/metrics/custom_metrics/dogstatsd_metrics_submission/#sample-rates">this</a> for additional information.</td></tr></tbody></table>
+
+[^1]: 
