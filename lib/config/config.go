@@ -81,6 +81,10 @@ type Redshift struct {
 	CredentialsClause string `yaml:"credentialsClause"`
 }
 
+type SharedDestinationConfig struct {
+	UppercaseEscapedNames bool `yaml:"uppercaseEscapedNames"`
+}
+
 type Snowflake struct {
 	AccountID string `yaml:"account"`
 	Username  string `yaml:"username"`
@@ -127,6 +131,9 @@ type Config struct {
 	// Supported message queues
 	Pubsub *Pubsub
 	Kafka  *Kafka
+
+	// Shared destination configuration
+	SharedDestinationConfig SharedDestinationConfig `yaml:"sharedDestinationConfig"`
 
 	// Supported destinations
 	BigQuery  *BigQuery  `yaml:"bigquery"`

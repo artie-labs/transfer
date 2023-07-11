@@ -64,7 +64,7 @@ func GetTableConfig(ctx context.Context, args GetTableCfgArgs) (*types.DwhTableC
 				tableMissing = true
 				err = nil
 			} else {
-				return nil, fmt.Errorf("failed to query %v, err: %v", args.Dwh.Label(), err)
+				return nil, fmt.Errorf("failed to query %v, err: %v, query: %v", args.Dwh.Label(), err, args.Query)
 			}
 		default:
 			return nil, fmt.Errorf("failed to query %v, err: %v", args.Dwh.Label(), err)

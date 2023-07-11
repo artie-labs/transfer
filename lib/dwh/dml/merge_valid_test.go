@@ -1,15 +1,13 @@
 package dml
 
 import (
-	"testing"
-
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMergeArgument_Valid(t *testing.T) {
+func (m *MergeTestSuite) TestMergeArgument_Valid() {
 	type _testCase struct {
 		name               string
 		mergeArg           *MergeArgument
@@ -18,7 +16,7 @@ func TestMergeArgument_Valid(t *testing.T) {
 	}
 
 	primaryKeys := []columns.Wrapper{
-		columns.NewWrapper(columns.NewColumn("id", typing.Integer), nil),
+		columns.NewWrapper(m.ctx, columns.NewColumn("id", typing.Integer), nil),
 	}
 
 	var cols columns.Columns
@@ -89,10 +87,10 @@ func TestMergeArgument_Valid(t *testing.T) {
 	for _, testCase := range testCases {
 		actualErr := testCase.mergeArg.Valid()
 		if testCase.expectedError {
-			assert.Error(t, actualErr, testCase.name)
-			assert.Equal(t, testCase.expectErrorMessage, actualErr.Error(), testCase.name)
+			assert.Error(m.T(), actualErr, testCase.name)
+			assert.Equal(m.T(), testCase.expectErrorMessage, actualErr.Error(), testCase.name)
 		} else {
-			assert.NoError(t, actualErr, testCase.name)
+			assert.NoError(m.T(), actualErr, testCase.name)
 		}
 	}
 }

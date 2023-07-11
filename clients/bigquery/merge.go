@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/sql"
+
 	"github.com/artie-labs/transfer/lib/ptr"
 
 	"github.com/artie-labs/transfer/lib/jitter"
@@ -36,11 +38,11 @@ func (r *Row) Save() (map[string]bigquery.Value, string, error) {
 	return r.data, bigquery.NoDedupeID, nil
 }
 
-func merge(tableData *optimization.TableData) ([]*Row, error) {
+func merge(ctx context.Context, tableData *optimization.TableData) ([]*Row, error) {
 	var rows []*Row
 	for _, value := range tableData.RowsData() {
 		data := make(map[string]bigquery.Value)
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal, err := CastColVal(value[col], colKind)
 			if err != nil {
@@ -76,13 +78,13 @@ func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTab
 	}
 
 	fqTableName = strings.ToLower(fqTableName)
-	escapedCol := column.Name(&columns.NameArgs{Escape: true, DestKind: s.Label()})
+	escapedCol := column.Name(ctx, &sql.NameArgs{Escape: true, DestKind: s.Label()})
 	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
 		// UPDATE table SET col = default_val WHERE col IS NULL
 		fqTableName, escapedCol, defaultVal, escapedCol)
 
 	logger.FromContext(ctx).WithFields(map[string]interface{}{
-		"colName": column.Name(nil),
+		"colName": column.Name(ctx, nil),
 		"query":   query,
 		"table":   fqTableName,
 	}).Info("backfilling column")
@@ -113,12 +115,12 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	log := logger.FromContext(ctx)
 	// Check if all the columns exist in BigQuery
-	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(),
+	srcKeysMissing, targetKeysMissing := columns.Diff(ctx, tableData.ReadOnlyInMemoryCols(),
 		tableConfig.Columns(), tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
 		Tc:          tableConfig,
-		FqTableName: tableData.ToFqName(ctx, s.Label()),
+		FqTableName: tableData.ToFqName(ctx, s.Label(), true),
 		CreateTable: tableConfig.CreateTable(),
 		ColumnOp:    constants.Add,
 		CdcTime:     tableData.LatestCDCTs,
@@ -137,7 +139,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	deleteAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:                    s,
 		Tc:                     tableConfig,
-		FqTableName:            tableData.ToFqName(ctx, s.Label()),
+		FqTableName:            tableData.ToFqName(ctx, s.Label(), true),
 		CreateTable:            false,
 		ColumnOp:               constants.Delete,
 		ContainOtherOperations: tableData.ContainOtherOperations(),
@@ -155,7 +157,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	for colToDelete := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, col := range srcKeysMissing {
-			if found = col.Name(nil) == colToDelete; found {
+			if found = col.Name(ctx, nil) == colToDelete; found {
 				// Found it.
 				break
 			}
@@ -168,13 +170,13 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	// Infer the right data types from BigQuery before temp table creation.
-	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
+	tableData.UpdateInMemoryColumnsFromDestination(ctx, tableConfig.Columns().GetColumns()...)
 
 	// Start temporary table creation
 	tempAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:            s,
 		Tc:             tableConfig,
-		FqTableName:    fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label()), tableData.TempTableSuffix()),
+		FqTableName:    fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label(), false), tableData.TempTableSuffix()),
 		CreateTable:    true,
 		TemporaryTable: true,
 		ColumnOp:       constants.Add,
@@ -193,9 +195,9 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 		var attempts int
 		for {
-			err = s.backfillColumn(ctx, col, tableData.ToFqName(ctx, s.Label()))
+			err = s.backfillColumn(ctx, col, tableData.ToFqName(ctx, s.Label(), true))
 			if err == nil {
-				tableConfig.Columns().UpsertColumn(col.Name(nil), columns.UpsertColumnArg{
+				tableConfig.Columns().UpsertColumn(col.Name(ctx, nil), columns.UpsertColumnArg{
 					Backfilled: ptr.ToBool(true),
 				})
 				break
@@ -208,30 +210,30 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 			} else {
 				defaultVal, _ := col.DefaultValue(nil)
 				return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v",
-					col.Name(nil), defaultVal, err)
+					col.Name(ctx, nil), defaultVal, err)
 			}
 		}
 
 	}
 
 	// Perform actual merge now
-	rows, err := merge(tableData)
+	rows, err := merge(ctx, tableData)
 	if err != nil {
 		log.WithError(err).Warn("failed to generate the merge query")
 		return err
 	}
 
-	tableName := fmt.Sprintf("%s_%s", tableData.Name(), tableData.TempTableSuffix())
+	tableName := fmt.Sprintf("%s_%s", tableData.Name(ctx, nil), tableData.TempTableSuffix())
 	err = s.PutTable(ctx, tableData.TopicConfig.Database, tableName, rows)
 	if err != nil {
 		return fmt.Errorf("failed to insert into temp table: %s, error: %v", tableName, err)
 	}
 
-	mergeQuery, err := dml.MergeStatement(&dml.MergeArgument{
-		FqTableName:   tableData.ToFqName(ctx, constants.BigQuery),
+	mergeQuery, err := dml.MergeStatement(ctx, &dml.MergeArgument{
+		FqTableName:   tableData.ToFqName(ctx, constants.BigQuery, true),
 		SubQuery:      tempAlterTableArgs.FqTableName,
 		IdempotentKey: tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys: tableData.PrimaryKeys(&columns.NameArgs{
+		PrimaryKeys: tableData.PrimaryKeys(ctx, &sql.NameArgs{
 			Escape:   true,
 			DestKind: s.Label(),
 		}),

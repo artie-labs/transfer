@@ -3,8 +3,9 @@ package dml
 import (
 	"fmt"
 	"strings"
-	"testing"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
@@ -13,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMergeStatementSoftDelete(t *testing.T) {
+func (m *MergeTestSuite) TestMergeStatementSoftDelete() {
 	// No idempotent key
 	fqTable := "database.schema.table"
 	cols := []string{
@@ -38,26 +39,26 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	for _, idempotentKey := range []string{"", "updated_at"} {
-		mergeSQL, err := MergeStatement(&MergeArgument{
+		mergeSQL, err := MergeStatement(m.ctx, &MergeArgument{
 			FqTableName:    fqTable,
 			SubQuery:       subQuery,
 			IdempotentKey:  idempotentKey,
-			PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil)},
+			PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(m.ctx, columns.NewColumn("id", typing.Invalid), nil)},
 			ColumnsToTypes: _cols,
 			DestKind:       constants.Snowflake,
 			SoftDelete:     true,
 		})
-		assert.NoError(t, err)
-		assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
+		assert.NoError(m.T(), err)
+		assert.True(m.T(), strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
 		// Soft deletion flag being passed.
-		assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("%s=cc.%s", constants.DeleteColumnMarker, constants.DeleteColumnMarker)), mergeSQL)
+		assert.True(m.T(), strings.Contains(mergeSQL, fmt.Sprintf("%s=cc.%s", constants.DeleteColumnMarker, constants.DeleteColumnMarker)), mergeSQL)
 
-		assert.Equal(t, len(idempotentKey) > 0, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")))
+		assert.Equal(m.T(), len(idempotentKey) > 0, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")))
 	}
 
 }
 
-func TestMergeStatement(t *testing.T) {
+func (m *MergeTestSuite) TestMergeStatement() {
 	// No idempotent key
 	fqTable := "database.schema.table"
 	colToTypes := map[string]typing.KindDetails{
@@ -84,29 +85,29 @@ func TestMergeStatement(t *testing.T) {
 	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
-	mergeSQL, err := MergeStatement(&MergeArgument{
+	mergeSQL, err := MergeStatement(m.ctx, &MergeArgument{
 		FqTableName:    fqTable,
 		SubQuery:       subQuery,
 		IdempotentKey:  "",
-		PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil)},
+		PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(m.ctx, columns.NewColumn("id", typing.Invalid), nil)},
 		ColumnsToTypes: _cols,
 		DestKind:       constants.Snowflake,
 		SoftDelete:     false,
 	})
-	assert.NoError(t, err)
-	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
-	assert.False(t, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")), fmt.Sprintf("Idempotency key: %s", mergeSQL))
+	assert.NoError(m.T(), err)
+	assert.True(m.T(), strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
+	assert.False(m.T(), strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")), fmt.Sprintf("Idempotency key: %s", mergeSQL))
 	// Check primary keys clause
-	assert.True(t, strings.Contains(mergeSQL, "as cc on c.id = cc.id"), mergeSQL)
+	assert.True(m.T(), strings.Contains(mergeSQL, "as cc on c.id = cc.id"), mergeSQL)
 
 	// Check setting for update
-	assert.True(t, strings.Contains(mergeSQL, `SET id=cc.id,bar=cc.bar,updated_at=cc.updated_at,"start"=cc."start"`), mergeSQL)
+	assert.True(m.T(), strings.Contains(mergeSQL, `SET id=cc.id,bar=cc.bar,updated_at=cc.updated_at,"start"=cc."start"`), mergeSQL)
 	// Check for INSERT
-	assert.True(t, strings.Contains(mergeSQL, `id,bar,updated_at,"start"`), mergeSQL)
-	assert.True(t, strings.Contains(mergeSQL, `cc.id,cc.bar,cc.updated_at,cc."start"`), mergeSQL)
+	assert.True(m.T(), strings.Contains(mergeSQL, `id,bar,updated_at,"start"`), mergeSQL)
+	assert.True(m.T(), strings.Contains(mergeSQL, `cc.id,cc.bar,cc.updated_at,cc."start"`), mergeSQL)
 }
 
-func TestMergeStatementIdempotentKey(t *testing.T) {
+func (m *MergeTestSuite) TestMergeStatementIdempotentKey() {
 	fqTable := "database.schema.table"
 	cols := []string{
 		"id",
@@ -129,21 +130,21 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 	_cols.AddColumn(columns.NewColumn("id", typing.String))
 	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
-	mergeSQL, err := MergeStatement(&MergeArgument{
+	mergeSQL, err := MergeStatement(m.ctx, &MergeArgument{
 		FqTableName:    fqTable,
 		SubQuery:       subQuery,
 		IdempotentKey:  "updated_at",
-		PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil)},
+		PrimaryKeys:    []columns.Wrapper{columns.NewWrapper(m.ctx, columns.NewColumn("id", typing.Invalid), nil)},
 		ColumnsToTypes: _cols,
 		DestKind:       constants.Snowflake,
 		SoftDelete:     false,
 	})
-	assert.NoError(t, err)
-	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
-	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")), fmt.Sprintf("Idempotency key: %s", mergeSQL))
+	assert.NoError(m.T(), err)
+	assert.True(m.T(), strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
+	assert.True(m.T(), strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")), fmt.Sprintf("Idempotency key: %s", mergeSQL))
 }
 
-func TestMergeStatementCompositeKey(t *testing.T) {
+func (m *MergeTestSuite) TestMergeStatementCompositeKey() {
 	fqTable := "database.schema.table"
 	cols := []string{
 		"id",
@@ -168,24 +169,23 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 	_cols.AddColumn(columns.NewColumn("another_id", typing.String))
 	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
-	mergeSQL, err := MergeStatement(&MergeArgument{
+	mergeSQL, err := MergeStatement(m.ctx, &MergeArgument{
 		FqTableName:   fqTable,
 		SubQuery:      subQuery,
 		IdempotentKey: "updated_at",
-		PrimaryKeys: []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), nil),
-			columns.NewWrapper(columns.NewColumn("another_id", typing.Invalid), nil)},
+		PrimaryKeys: []columns.Wrapper{columns.NewWrapper(m.ctx, columns.NewColumn("id", typing.Invalid), nil),
+			columns.NewWrapper(m.ctx, columns.NewColumn("another_id", typing.Invalid), nil)},
 		ColumnsToTypes: _cols,
 		DestKind:       constants.Snowflake,
 		SoftDelete:     false,
 	})
-	assert.NoError(t, err)
-	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
-	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")), fmt.Sprintf("Idempotency key: %s", mergeSQL))
-
-	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("cc on c.id = cc.id and c.another_id = cc.another_id")))
+	assert.NoError(m.T(), err)
+	assert.True(m.T(), strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
+	assert.True(m.T(), strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")), fmt.Sprintf("Idempotency key: %s", mergeSQL))
+	assert.True(m.T(), strings.Contains(mergeSQL, fmt.Sprintf("cc on c.id = cc.id and c.another_id = cc.another_id")))
 }
 
-func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
+func (m *MergeTestSuite) TestMergeStatementEscapePrimaryKeys() {
 	// No idempotent key
 	fqTable := "database.schema.table"
 	colToTypes := map[string]typing.KindDetails{
@@ -212,16 +212,16 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
-	mergeSQL, err := MergeStatement(&MergeArgument{
+	mergeSQL, err := MergeStatement(m.ctx, &MergeArgument{
 		FqTableName:   fqTable,
 		SubQuery:      subQuery,
 		IdempotentKey: "",
 		PrimaryKeys: []columns.Wrapper{
-			columns.NewWrapper(columns.NewColumn("id", typing.Invalid), &columns.NameArgs{
+			columns.NewWrapper(m.ctx, columns.NewColumn("id", typing.Invalid), &sql.NameArgs{
 				Escape:   true,
 				DestKind: constants.Snowflake,
 			}),
-			columns.NewWrapper(columns.NewColumn("group", typing.Invalid), &columns.NameArgs{
+			columns.NewWrapper(m.ctx, columns.NewColumn("group", typing.Invalid), &sql.NameArgs{
 				Escape:   true,
 				DestKind: constants.Snowflake,
 			}),
@@ -230,15 +230,15 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 		DestKind:       constants.Snowflake,
 		SoftDelete:     false,
 	})
-	assert.NoError(t, err)
-	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
-	assert.False(t, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")), fmt.Sprintf("Idempotency key: %s", mergeSQL))
+	assert.NoError(m.T(), err)
+	assert.True(m.T(), strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
+	assert.False(m.T(), strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")), fmt.Sprintf("Idempotency key: %s", mergeSQL))
 	// Check primary keys clause
-	assert.True(t, strings.Contains(mergeSQL, `as cc on c.id = cc.id and c."group" = cc."group"`), mergeSQL)
+	assert.True(m.T(), strings.Contains(mergeSQL, `as cc on c.id = cc.id and c."group" = cc."group"`), mergeSQL)
 
 	// Check setting for update
-	assert.True(t, strings.Contains(mergeSQL, `SET id=cc.id,"group"=cc."group",updated_at=cc.updated_at,"start"=cc."start"`), mergeSQL)
+	assert.True(m.T(), strings.Contains(mergeSQL, `SET id=cc.id,"group"=cc."group",updated_at=cc.updated_at,"start"=cc."start"`), mergeSQL)
 	// Check for INSERT
-	assert.True(t, strings.Contains(mergeSQL, `id,"group",updated_at,"start"`), mergeSQL)
-	assert.True(t, strings.Contains(mergeSQL, `cc.id,cc."group",cc.updated_at,cc."start"`), mergeSQL)
+	assert.True(m.T(), strings.Contains(mergeSQL, `id,"group",updated_at,"start"`), mergeSQL)
+	assert.True(m.T(), strings.Contains(mergeSQL, `cc.id,cc."group",cc.updated_at,cc."start"`), mergeSQL)
 }

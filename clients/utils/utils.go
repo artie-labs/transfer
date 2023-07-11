@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/sql"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/artie-labs/transfer/lib/dwh"
@@ -31,13 +33,13 @@ func BackfillColumn(ctx context.Context, dwh dwh.DataWarehouse, column columns.C
 		return fmt.Errorf("failed to escape default value, err: %v", err)
 	}
 
-	escapedCol := column.Name(&columns.NameArgs{Escape: true, DestKind: dwh.Label()})
+	escapedCol := column.Name(ctx, &sql.NameArgs{Escape: true, DestKind: dwh.Label()})
 	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
 		// UPDATE table SET col = default_val WHERE col IS NULL
 		fqTableName, escapedCol, defaultVal, escapedCol,
 	)
 	logger.FromContext(ctx).WithFields(map[string]interface{}{
-		"colName": column.Name(nil),
+		"colName": column.Name(ctx, nil),
 		"query":   query,
 		"table":   fqTableName,
 	}).Info("backfilling column")

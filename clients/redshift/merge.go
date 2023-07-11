@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/artie-labs/transfer/lib/sql"
+
 	"github.com/artie-labs/transfer/clients/utils"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/dwh/ddl"
@@ -21,7 +23,10 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	tableConfig, err := s.getTableConfig(ctx, getTableConfigArgs{
-		Table:              tableData.Name(),
+		Table: tableData.Name(ctx, &sql.NameArgs{
+			Escape:   true,
+			DestKind: s.Label(),
+		}),
 		Schema:             tableData.TopicConfig.Schema,
 		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
 	})
@@ -30,9 +35,9 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	log := logger.FromContext(ctx)
-	fqName := tableData.ToFqName(ctx, s.Label())
+	fqName := tableData.ToFqName(ctx, s.Label(), true)
 	// Check if all the columns exist in Redshift
-	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
+	srcKeysMissing, targetKeysMissing := columns.Diff(ctx, tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
 		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
@@ -74,7 +79,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	for colToDelete := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, col := range srcKeysMissing {
-			if found = col.Name(nil) == colToDelete; found {
+			if found = col.Name(ctx, nil) == colToDelete; found {
 				// Found it.
 				break
 			}
@@ -86,10 +91,10 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		}
 	}
 
-	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
+	tableData.UpdateInMemoryColumnsFromDestination(ctx, tableConfig.Columns().GetColumns()...)
 
 	// Temporary tables cannot specify schemas, so we just prefix it instead.
-	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label()), tableData.TempTableSuffix())
+	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label(), false), tableData.TempTableSuffix())
 	if err = s.prepareTempTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {
 		return err
 	}
@@ -100,24 +105,24 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 			continue
 		}
 
-		err = utils.BackfillColumn(ctx, s, col, tableData.ToFqName(ctx, s.Label()))
+		err = utils.BackfillColumn(ctx, s, col, tableData.ToFqName(ctx, s.Label(), true))
 		if err != nil {
 			defaultVal, _ := col.DefaultValue(nil)
 			return fmt.Errorf("failed to backfill col: %v, default value: %v, error: %v",
-				col.Name(nil), defaultVal, err)
+				col.Name(ctx, nil), defaultVal, err)
 		}
 
-		tableConfig.Columns().UpsertColumn(col.Name(nil), columns.UpsertColumnArg{
+		tableConfig.Columns().UpsertColumn(col.Name(ctx, nil), columns.UpsertColumnArg{
 			Backfilled: ptr.ToBool(true),
 		})
 	}
 
 	// Prepare merge statement
-	mergeParts, err := dml.MergeStatementParts(&dml.MergeArgument{
+	mergeParts, err := dml.MergeStatementParts(ctx, &dml.MergeArgument{
 		FqTableName:   fqName,
 		SubQuery:      temporaryTableName,
 		IdempotentKey: tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys: tableData.PrimaryKeys(&columns.NameArgs{
+		PrimaryKeys: tableData.PrimaryKeys(ctx, &sql.NameArgs{
 			Escape:   true,
 			DestKind: s.Label(),
 		}),

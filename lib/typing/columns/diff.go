@@ -1,6 +1,7 @@
 package columns
 
 import (
+	"context"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -27,12 +28,12 @@ func shouldSkipColumn(colName string, softDelete bool, includeArtieUpdatedAt boo
 
 // Diff - when given 2 maps, a source and target
 // It will provide a diff in the form of 2 variables
-func Diff(columnsInSource *Columns, columnsInDestination *Columns, softDelete bool, includeArtieUpdatedAt bool) ([]Column, []Column) {
+func Diff(ctx context.Context, columnsInSource *Columns, columnsInDestination *Columns, softDelete bool, includeArtieUpdatedAt bool) ([]Column, []Column) {
 	src := CloneColumns(columnsInSource)
 	targ := CloneColumns(columnsInDestination)
 	var colsToDelete []Column
 	for _, col := range src.GetColumns() {
-		_, isOk := targ.GetColumn(col.Name(nil))
+		_, isOk := targ.GetColumn(col.Name(ctx, nil))
 		if isOk {
 			colsToDelete = append(colsToDelete, col)
 
@@ -41,13 +42,13 @@ func Diff(columnsInSource *Columns, columnsInDestination *Columns, softDelete bo
 
 	// We cannot delete inside a for-loop that is iterating over src.GetColumns() because we are messing up the array order.
 	for _, colToDelete := range colsToDelete {
-		src.DeleteColumn(colToDelete.Name(nil))
-		targ.DeleteColumn(colToDelete.Name(nil))
+		src.DeleteColumn(colToDelete.Name(ctx, nil))
+		targ.DeleteColumn(colToDelete.Name(ctx, nil))
 	}
 
 	var targetColumnsMissing Columns
 	for _, col := range src.GetColumns() {
-		if shouldSkipColumn(col.Name(nil), softDelete, includeArtieUpdatedAt) {
+		if shouldSkipColumn(col.Name(ctx, nil), softDelete, includeArtieUpdatedAt) {
 			continue
 		}
 
@@ -56,7 +57,7 @@ func Diff(columnsInSource *Columns, columnsInDestination *Columns, softDelete bo
 
 	var sourceColumnsMissing Columns
 	for _, col := range targ.GetColumns() {
-		if shouldSkipColumn(col.Name(nil), softDelete, includeArtieUpdatedAt) {
+		if shouldSkipColumn(col.Name(ctx, nil), softDelete, includeArtieUpdatedAt) {
 			continue
 		}
 

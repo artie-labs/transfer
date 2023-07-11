@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewTableData_TableName(t *testing.T) {
+func (o *OptimizationTestSuite) TestNewTableData_TableName() {
 	type _testCase struct {
 		name         string
 		tableName    string
@@ -71,16 +71,16 @@ func TestNewTableData_TableName(t *testing.T) {
 			TableName: testCase.overrideName,
 			Schema:    testCase.schema,
 		}, testCase.tableName)
-		assert.Equal(t, testCase.expectedName, td.Name(), testCase.name)
-		assert.Equal(t, testCase.expectedName, td.name, testCase.name)
-		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.SnowflakeStages))
-		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.Snowflake))
-		assert.Equal(t, testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery))
-		assert.Equal(t, testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery))
+		assert.Equal(o.T(), testCase.expectedName, td.Name(o.ctx, nil), testCase.name)
+		assert.Equal(o.T(), testCase.expectedName, td.name, testCase.name)
+		assert.Equal(o.T(), testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.SnowflakeStages, true))
+		assert.Equal(o.T(), testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.Snowflake, true))
+		assert.Equal(o.T(), testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery, true))
+		assert.Equal(o.T(), testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery, true))
 	}
 }
 
-func TestTableData_ReadOnlyInMemoryCols(t *testing.T) {
+func (o *OptimizationTestSuite) TestTableData_ReadOnlyInMemoryCols() {
 	// Making sure the columns are actually read only.
 	var cols columns.Columns
 	cols.AddColumn(columns.NewColumn("name", typing.String))
@@ -91,13 +91,13 @@ func TestTableData_ReadOnlyInMemoryCols(t *testing.T) {
 
 	// Check if last_name actually exists.
 	_, isOk := td.ReadOnlyInMemoryCols().GetColumn("last_name")
-	assert.False(t, isOk)
+	assert.False(o.T(), isOk)
 
 	// Check length is 1.
-	assert.Equal(t, 1, len(td.ReadOnlyInMemoryCols().GetColumns()))
+	assert.Equal(o.T(), 1, len(td.ReadOnlyInMemoryCols().GetColumns()))
 }
 
-func TestTableData_UpdateInMemoryColumns(t *testing.T) {
+func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumns() {
 	var _cols columns.Columns
 	for colName, colKind := range map[string]typing.KindDetails{
 		"FOO":                  typing.String,
@@ -113,10 +113,10 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 	}
 
 	extCol, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("do_not_change_format")
-	assert.True(t, isOk)
+	assert.True(o.T(), isOk)
 
 	extCol.KindDetails.ExtendedTimeDetails.Format = time.RFC3339Nano
-	tableData.inMemoryColumns.UpdateColumn(columns.NewColumn(extCol.Name(nil), extCol.KindDetails))
+	tableData.inMemoryColumns.UpdateColumn(columns.NewColumn(extCol.Name(o.ctx, nil), extCol.KindDetails))
 
 	for name, colKindDetails := range map[string]typing.KindDetails{
 		"foo":                  typing.String,
@@ -124,30 +124,30 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 		"bar":                  typing.Boolean,
 		"do_not_change_format": typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 	} {
-		tableData.UpdateInMemoryColumnsFromDestination(columns.NewColumn(name, colKindDetails))
+		tableData.UpdateInMemoryColumnsFromDestination(o.ctx, columns.NewColumn(name, colKindDetails))
 	}
 
 	// It's saved back in the original format.
 	_, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("foo")
-	assert.False(t, isOk)
+	assert.False(o.T(), isOk)
 
 	_, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("FOO")
-	assert.True(t, isOk)
+	assert.True(o.T(), isOk)
 
 	col, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("CHANGE_me")
-	assert.True(t, isOk)
-	assert.Equal(t, ext.DateTime.Type, col.KindDetails.ExtendedTimeDetails.Type)
+	assert.True(o.T(), isOk)
+	assert.Equal(o.T(), ext.DateTime.Type, col.KindDetails.ExtendedTimeDetails.Type)
 
 	// It went from invalid to boolean.
 	col, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("bar")
-	assert.True(t, isOk)
-	assert.Equal(t, typing.Boolean, col.KindDetails)
+	assert.True(o.T(), isOk)
+	assert.Equal(o.T(), typing.Boolean, col.KindDetails)
 
 	col, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("do_not_change_format")
-	assert.True(t, isOk)
-	assert.Equal(t, col.KindDetails.Kind, typing.ETime.Kind)
-	assert.Equal(t, col.KindDetails.ExtendedTimeDetails.Type, ext.DateTimeKindType, "correctly mapped type")
-	assert.Equal(t, col.KindDetails.ExtendedTimeDetails.Format, time.RFC3339Nano, "format has been preserved")
+	assert.True(o.T(), isOk)
+	assert.Equal(o.T(), col.KindDetails.Kind, typing.ETime.Kind)
+	assert.Equal(o.T(), col.KindDetails.ExtendedTimeDetails.Type, ext.DateTimeKindType, "correctly mapped type")
+	assert.Equal(o.T(), col.KindDetails.ExtendedTimeDetails.Format, time.RFC3339Nano, "format has been preserved")
 }
 
 func TestTableData_ShouldFlushRowLength(t *testing.T) {
