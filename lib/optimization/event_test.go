@@ -73,10 +73,10 @@ func TestNewTableData_TableName(t *testing.T) {
 		}, testCase.tableName)
 		assert.Equal(t, testCase.expectedName, td.Name(nil), testCase.name)
 		assert.Equal(t, testCase.expectedName, td.name, testCase.name)
-		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.SnowflakeStages))
-		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.Snowflake))
-		assert.Equal(t, testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery))
-		assert.Equal(t, testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery))
+		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.SnowflakeStages, true))
+		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.Snowflake, true))
+		assert.Equal(t, testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery, true))
+		assert.Equal(t, testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery, true))
 	}
 }
 
