@@ -115,7 +115,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		return nil
 	}
 
-	fqName := tableData.ToFqName(ctx, constants.Snowflake)
+	fqName := tableData.ToFqName(ctx, constants.Snowflake, true)
 	tableConfig, err := s.getTableConfig(ctx, fqName, tableData.TopicConfig.DropDeletedColumns)
 	if err != nil {
 		return err
@@ -178,7 +178,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 	}
 
 	tableData.UpdateInMemoryColumnsFromDestination(tableConfig.Columns().GetColumns()...)
-	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label()), tableData.TempTableSuffix())
+	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label(), false), tableData.TempTableSuffix())
 	if err = s.prepareTempTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {
 		return err
 	}
@@ -189,7 +189,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 			continue
 		}
 
-		err = utils.BackfillColumn(ctx, s, col, tableData.ToFqName(ctx, s.Label()))
+		err = utils.BackfillColumn(ctx, s, col, tableData.ToFqName(ctx, s.Label(), true))
 		if err != nil {
 			defaultVal, _ := col.DefaultValue(nil)
 			return fmt.Errorf("failed to backfill col: %v, default value: %v, error: %v",
@@ -203,7 +203,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 
 	// Prepare merge statement
 	mergeQuery, err := dml.MergeStatement(&dml.MergeArgument{
-		FqTableName:   tableData.ToFqName(ctx, constants.Snowflake),
+		FqTableName:   tableData.ToFqName(ctx, constants.Snowflake, true),
 		SubQuery:      temporaryTableName,
 		IdempotentKey: tableData.TopicConfig.IdempotentKey,
 		PrimaryKeys: tableData.PrimaryKeys(&sql.NameArgs{

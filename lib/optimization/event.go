@@ -144,24 +144,24 @@ func (t *TableData) RowsData() map[string]map[string]interface{} {
 	return _rowsData
 }
 
-func (t *TableData) ToFqName(ctx context.Context, kind constants.DestinationKind) string {
+func (t *TableData) ToFqName(ctx context.Context, kind constants.DestinationKind, escape bool) string {
 	switch kind {
 	case constants.Redshift:
 		// Redshift is Postgres compatible, so when establishing a connection, we'll specify a database.
 		// Thus, we only need to specify schema and table name here.
 		return fmt.Sprintf("%s.%s", t.TopicConfig.Schema, t.Name(&sql.NameArgs{
-			Escape:   true,
+			Escape:   escape,
 			DestKind: kind,
 		}))
 	case constants.BigQuery:
 		// The fully qualified name for BigQuery is: project_id.dataset.tableName.
 		return fmt.Sprintf("%s.%s.%s", config.FromContext(ctx).Config.BigQuery.ProjectID, t.TopicConfig.Database, t.Name(&sql.NameArgs{
-			Escape:   true,
+			Escape:   escape,
 			DestKind: kind,
 		}))
 	default:
 		return fmt.Sprintf("%s.%s.%s", t.TopicConfig.Database, t.TopicConfig.Schema, t.Name(&sql.NameArgs{
-			Escape:   true,
+			Escape:   escape,
 			DestKind: kind,
 		}))
 	}

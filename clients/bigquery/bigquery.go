@@ -34,7 +34,7 @@ type Store struct {
 func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	return utils.GetTableConfig(ctx, utils.GetTableCfgArgs{
 		Dwh:                s,
-		FqName:             tableData.ToFqName(ctx, constants.BigQuery),
+		FqName:             tableData.ToFqName(ctx, constants.BigQuery, true),
 		ConfigMap:          s.configMap,
 		Query:              fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name='%s';", tableData.TopicConfig.Database, tableData.Name(nil)),
 		ColumnNameLabel:    describeNameCol,
