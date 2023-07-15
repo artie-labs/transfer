@@ -25,6 +25,43 @@ This is necessary so that we are able to run a Debezium deployment to subscribe 
 | Password              | Password for authentication into your database.                                                                                                                                  | No default    |
 | Authentication source | MongoDB [authSource](https://www.mongodb.com/docs/manual/reference/connection-string/#mongodb-urioption-urioption.authSource) (which database should we authenticate against)    | admin         |
 
+### Creating a new user
+
+```mongodb
+use admin;
+
+# Creating a role to allow listing DBs and finding the changeStream
+db.runCommand({
+    createRole: "listDatabases",
+    privileges: [
+        { resource: { cluster : true }, actions: ["listDatabases"]}
+    ],
+    roles: []
+});
+
+db.runCommand({
+    createRole: "readChangeStream",
+    privileges: [
+        { resource: { db: "", collection: ""}, actions: [ "find", "changeStream" ] },
+    ],
+    roles: []
+});
+
+# Creating a service account, assign permissions
+db.createUser({
+    user: 'artie',
+    pwd: 'artie',
+    roles: [
+        { role: "readWrite", db: <COLLECTION_NAME> },
+        { role: "read", db: "local" },
+        { role: "listDatabases", db: "admin" },
+        { role: "readChangeStream", db: "admin" },
+        { role: "read", db: "config" },
+        { role: "read", db: "admin" }
+    ]
+});
+```
+
 ### Supported types
 
 _Types are sourced from the_ [_MongoDB extended JSON specification_](https://github.com/mongodb/specifications/blob/master/source/extended-json.rst#canonical-extended-json-example)_._
