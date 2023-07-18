@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,11 +21,21 @@ import (
 // JSONEToMap will take JSONE data in bytes, parse all the custom types
 // Then from all the custom types,
 func JSONEToMap(val []byte) (map[string]interface{}, error) {
+	// RegEx on the actual value of `NaN` only (raw value and quotes).
+	// This is because we cannot use RegEx to find only NaN.
+	re := regexp.MustCompile(`\bNaN\b|"\bNaN\b"`)
+	val = []byte(re.ReplaceAllStringFunc(string(val), func(match string) string {
+		if strings.Contains(match, "\"") {
+			return match
+		}
+		return "null"
+	}))
+
 	var jsonMap map[string]interface{}
 	var bsonDoc bson.D
 	err := bson.UnmarshalExtJSON(val, false, &bsonDoc)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to unmarshal ext json, err: %v", err)
 	}
 
 	bytes, err := bson.MarshalExtJSONWithRegistry(createCustomRegistry().Build(),

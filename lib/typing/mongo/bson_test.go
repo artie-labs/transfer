@@ -1,8 +1,9 @@
 package mongo
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // TestMarshal, every single type is listed here: https://github.com/mongodb/specifications/blob/master/source/extended-json.rst#canonical-extended-json-example
@@ -45,7 +46,10 @@ func TestMarshal(t *testing.T) {
 	},
 	"test_timestamp": {
        "$timestamp": { "t": 1678929517, "i": 1 }
-   	}
+   	},
+	"test_nan": NaN,
+	"test_nan_string": "NaN",
+	"test_nan_string33": "NaNaNaNa"
 }
 `)
 	result, err := JSONEToMap(bsonData)
@@ -66,4 +70,7 @@ func TestMarshal(t *testing.T) {
 	assert.Equal(t, result["test_list"], []interface{}{float64(1), float64(2), float64(3), float64(4), "hello"})
 	assert.Equal(t, result["test_nested_object"], map[string]interface{}{"a": map[string]interface{}{"b": map[string]interface{}{"c": "hello"}}})
 	assert.Equal(t, "2023-03-16T01:18:37+00:00", result["test_timestamp"])
+	assert.Equal(t, nil, result["test_nan"])
+	assert.Equal(t, "NaN", result["test_nan_string"]) // This should not be escaped.
+	assert.Equal(t, "NaNaNaNa", result["test_nan_string33"])
 }
