@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -20,8 +21,17 @@ import (
 // JSONEToMap will take JSONE data in bytes, parse all the custom types
 // Then from all the custom types,
 func JSONEToMap(val []byte) (map[string]interface{}, error) {
-	re := regexp.MustCompile(`\bNaN\b`)
-	val = []byte(re.ReplaceAllString(string(val), "null"))
+	// RegEx on the actual value of `NaN` only (raw value and quotes).
+	// This is because we cannot use RegEx to find only NaN.
+	re := regexp.MustCompile(`\bNaN\b|"\bNaN\b"`)
+	val = []byte(re.ReplaceAllStringFunc(string(val), func(match string) string {
+		if strings.Contains(match, "\"") {
+			// if the match has quotes, return as is
+			return match
+		}
+		// if the match doesn't have quotes, replace with null
+		return "null"
+	}))
 
 	var jsonMap map[string]interface{}
 	var bsonDoc bson.D
