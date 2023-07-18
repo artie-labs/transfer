@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -21,6 +22,7 @@ import (
 type Debezium string
 
 func (d *Debezium) GetEventFromBytes(_ context.Context, bytes []byte) (cdc.Event, error) {
+	//fmt.Println("string", string(bytes))
 	var schemaEventPayload SchemaEventPayload
 	if len(bytes) == 0 {
 		// This is a Kafka Tombstone event.
@@ -30,7 +32,7 @@ func (d *Debezium) GetEventFromBytes(_ context.Context, bytes []byte) (cdc.Event
 
 	err := json.Unmarshal(bytes, &schemaEventPayload)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to unmarshal json, err: %v", err)
 	}
 
 	// Now marshal before & after string.
@@ -46,7 +48,7 @@ func (d *Debezium) GetEventFromBytes(_ context.Context, bytes []byte) (cdc.Event
 	if schemaEventPayload.Payload.After != nil {
 		after, err := mongo.JSONEToMap([]byte(*schemaEventPayload.Payload.After))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("mongo JSONEToMap err: %v", err)
 		}
 
 		// Now, we need to iterate over each key and if the value is JSON
@@ -55,7 +57,7 @@ func (d *Debezium) GetEventFromBytes(_ context.Context, bytes []byte) (cdc.Event
 			if typing.ParseValue(key, nil, value) == typing.Struct {
 				valBytes, err := json.Marshal(value)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("failed to marshal, err: %v", err)
 				}
 
 				after[key] = string(valBytes)

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -19,11 +20,14 @@ import (
 // JSONEToMap will take JSONE data in bytes, parse all the custom types
 // Then from all the custom types,
 func JSONEToMap(val []byte) (map[string]interface{}, error) {
+	re := regexp.MustCompile(`\bNaN\b`)
+	val = []byte(re.ReplaceAllString(string(val), "null"))
+
 	var jsonMap map[string]interface{}
 	var bsonDoc bson.D
 	err := bson.UnmarshalExtJSON(val, false, &bsonDoc)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to unmarshal ext json, err: %v", err)
 	}
 
 	bytes, err := bson.MarshalExtJSONWithRegistry(createCustomRegistry().Build(),

@@ -48,6 +48,7 @@ func processMessage(ctx context.Context, processArgs ProcessArgs) error {
 
 	_event, err := topicConfig.GetEventFromBytes(ctx, processArgs.Msg.Value())
 	if err != nil {
+		fmt.Println(string(processArgs.Msg.Value()))
 		tags["what"] = "marshall_value_err"
 		return fmt.Errorf("cannot unmarshall event, err: %v", err)
 	}
