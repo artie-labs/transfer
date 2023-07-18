@@ -26,10 +26,8 @@ func JSONEToMap(val []byte) (map[string]interface{}, error) {
 	re := regexp.MustCompile(`\bNaN\b|"\bNaN\b"`)
 	val = []byte(re.ReplaceAllStringFunc(string(val), func(match string) string {
 		if strings.Contains(match, "\"") {
-			// if the match has quotes, return as is
 			return match
 		}
-		// if the match doesn't have quotes, replace with null
 		return "null"
 	}))
 
