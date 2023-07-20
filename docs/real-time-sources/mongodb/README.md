@@ -52,7 +52,7 @@ db.createUser({
     user: 'artie',
     pwd: 'artie',
     roles: [
-        { role: "readWrite", db: <COLLECTION_NAME> },
+        { role: "read", db: <COLLECTION_NAME> },
         { role: "read", db: "local" },
         { role: "listDatabases", db: "admin" },
         { role: "readChangeStream", db: "admin" },
