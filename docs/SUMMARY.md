@@ -40,7 +40,7 @@
 * [Setting up Pub/Sub](tutorials/setting-up-pub-sub.md)
 * [Debezium Topic Reroute SMT](tutorials/debezium-topic-reroute-smt.md)
 * [Enabling SSH Tunneling](tutorials/enabling-ssh-tunneling.md)
-* [\<WIP> Preventing WAL growth on AWS RDS](tutorials/less-than-wip-greater-than-preventing-wal-growth-on-aws-rds.md)
+* [Preventing WAL growth on AWS RDS](tutorials/preventing-wal-growth-on-aws-rds.md)
 
 ***
 
