@@ -26,7 +26,7 @@ You only need to enable this feature if your database does not make updates, whi
 
 Within Debezium, there is a [Heartbeat feature](https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-property-heartbeat-action-query) that allows us to periodically ping the database to ensure WAL growth is sustained.&#x20;
 
-To turn this on within Artie, first create the table within Postgres:
+1. To turn this on within Artie, first create the table within Postgres:
 
 ```sql
 CREATE TABLE test_heartbeat_table (id text PRIMARY KEY, ts timestamp);
@@ -36,4 +36,8 @@ CREATE TABLE test_heartbeat_table (id text PRIMARY KEY, ts timestamp);
 -- Such that we never end up adding additional rows.
 INSERT INTO test_heartbeat_table (id, ts) VALUES (1, NOW());
 ```
+
+2. Check `Enable Heartbeats` under Deployment Advanced Settings
+
+<figure><img src="../.gitbook/assets/image (8).png" alt=""><figcaption></figcaption></figure>
 
