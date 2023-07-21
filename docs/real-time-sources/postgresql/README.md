@@ -28,7 +28,7 @@ Using Amazon RDS? RDS has its own internal permissioning model. Run this command
 `GRANT rds_replication to username;`
 {% endhint %}
 
-### Granting access (public schema)
+### Granting access
 
 ```sql
 CREATE USER username WITH PASSWORD 'password';
@@ -49,11 +49,7 @@ CREATE PUBLICATION dbz_publication FOR ALL TABLES;
 ALTER USER username REPLICATION;
 ```
 
-### Granting access (non-public schema)
 
-{% hint style="info" %}
-Non-public schemas are slightly different and require an additional command to grant usage.
-{% endhint %}
 
 ### Supported types
 
