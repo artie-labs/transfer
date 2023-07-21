@@ -4,7 +4,7 @@ description: >-
   database running on AWS RDS.
 ---
 
-# \<WIP> Preventing WAL growth on AWS RDS
+# Preventing WAL growth on AWS RDS
 
 ## _What is WAL?_
 
@@ -29,15 +29,11 @@ Within Debezium, there is a [Heartbeat feature](https://debezium.io/documentatio
 To turn this on within Artie, first create the table within Postgres:
 
 ```sql
-CREATE TABLE test_heartbeat_table (
-    id text PRIMARY KEY,
-    ts timestamp
-);
-
-# Then insert one row into this table.
-# Artie's periodic pings will be this:
-# UPDATE test_heartbeat_table set ts = now() where id = '1';
-# Such that we never end up adding additional rows.
+CREATE TABLE test_heartbeat_table (id text PRIMARY KEY, ts timestamp);
+-- Then insert one row into this table.
+-- Artie's periodic pings will be this:
+-- UPDATE test_heartbeat_table set ts = now() where id = '1';
+-- Such that we never end up adding additional rows.
 INSERT INTO test_heartbeat_table (id, ts) VALUES (1, NOW());
 ```
 
