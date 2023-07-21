@@ -28,8 +28,14 @@ Using Amazon RDS? RDS has its own internal permissioning model. Run this command
 `GRANT rds_replication to username;`
 {% endhint %}
 
+### Granting access (public schema)
+
 ```sql
 CREATE USER username WITH PASSWORD 'password';
+
+-- (optional) If the schema is not public, you will need this additional line
+GRANT USAGE ON SCHEMA schema_name TO artie_transfer;
+
 -- Grant read-only access to future tables
 ALTER DEFAULT PRIVILEGES IN SCHEMA schema_name GRANT SELECT ON TABLES TO username;
 -- Grant access to existing tables
@@ -41,8 +47,13 @@ CREATE PUBLICATION dbz_publication FOR ALL TABLES;
 
 -- Add the replication role to your user (not needed for Amazon RDS)
 ALTER USER username REPLICATION;
-
 ```
+
+### Granting access (non-public schema)
+
+{% hint style="info" %}
+Non-public schemas are slightly different and require an additional command to grant usage.
+{% endhint %}
 
 ### Supported types
 
