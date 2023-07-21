@@ -31,22 +31,22 @@ Using Amazon RDS? RDS has its own internal permissioning model. Run this command
 ### Granting access
 
 ```sql
-CREATE USER username WITH PASSWORD 'password';
+CREATE USER artie_transfer WITH PASSWORD 'password';
 
 -- (optional) If the schema is not public, you will need this additional line
 GRANT USAGE ON SCHEMA schema_name TO artie_transfer;
 
 -- Grant read-only access to future tables
-ALTER DEFAULT PRIVILEGES IN SCHEMA schema_name GRANT SELECT ON TABLES TO username;
+ALTER DEFAULT PRIVILEGES IN SCHEMA schema_name GRANT SELECT ON TABLES TO artie_transfer;
 -- Grant access to existing tables
-GRANT SELECT ON ALL TABLES IN SCHEMA schema_name TO username;
+GRANT SELECT ON ALL TABLES IN SCHEMA schema_name TO artie_transfer;
 
 -- The replication role does not have enough permissions to create publications. 
 -- So you will need to create this as well.
 CREATE PUBLICATION dbz_publication FOR ALL TABLES;
 
 -- Add the replication role to your user (not needed for Amazon RDS)
-ALTER USER username REPLICATION;
+ALTER USER artie_transfer REPLICATION;
 ```
 
 
