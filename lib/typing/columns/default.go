@@ -49,7 +49,7 @@ func (c *Column) DefaultValue(args *DefaultValueArgs) (interface{}, error) {
 		case ext.TimeKindType:
 			return stringutil.Wrap(extTime.String(ext.PostgresTimeFormatNoTZ), false), nil
 		default:
-			return stringutil.Wrap(extTime.String(""), false), nil
+			return stringutil.Wrap(extTime.String(c.KindDetails.ExtendedTimeDetails.Format), false), nil
 		}
 	case typing.EDecimal.Kind:
 		val, isOk := c.defaultValue.(*decimal.Decimal)

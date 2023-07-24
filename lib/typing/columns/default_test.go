@@ -2,6 +2,9 @@ package columns
 
 import (
 	"testing"
+	"time"
+
+	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 
@@ -18,6 +21,20 @@ func TestColumn_DefaultValue(t *testing.T) {
 		expectedValue interface{}
 		expectedEr    bool
 	}
+
+	birthday := time.Date(2022, time.September, 6, 3, 19, 24, 942000000, time.UTC)
+	birthdayExtDateTime, err := ext.ParseExtendedDateTime(birthday.Format(ext.ISO8601))
+	assert.NoError(t, err)
+
+	// date
+	dateKind := typing.ETime
+	dateKind.ExtendedTimeDetails = &ext.Date
+	// time
+	timeKind := typing.ETime
+	timeKind.ExtendedTimeDetails = &ext.Time
+	// date time
+	dateTimeKind := typing.ETime
+	dateTimeKind.ExtendedTimeDetails = &ext.DateTime
 
 	testCases := []_testCase{
 		{
@@ -83,12 +100,47 @@ func TestColumn_DefaultValue(t *testing.T) {
 			},
 			expectedValue: "'{}'",
 		},
+		{
+			name: "date",
+			col: &Column{
+				KindDetails:  dateKind,
+				defaultValue: birthdayExtDateTime,
+			},
+			args: &DefaultValueArgs{
+				Escape: true,
+			},
+			expectedValue: "'2022-09-06'",
+		},
+		{
+			name: "time",
+			col: &Column{
+				KindDetails:  timeKind,
+				defaultValue: birthdayExtDateTime,
+			},
+			args: &DefaultValueArgs{
+				Escape: true,
+			},
+			expectedValue: "'03:19:24'",
+		},
+		{
+			name: "datetime",
+			col: &Column{
+				KindDetails:  dateTimeKind,
+				defaultValue: birthdayExtDateTime,
+			},
+			args: &DefaultValueArgs{
+				Escape: true,
+			},
+			expectedValue: "'2022-09-06T03:19:24Z'",
+		},
 	}
 
 	for _, testCase := range testCases {
 		actualValue, actualErr := testCase.col.DefaultValue(testCase.args)
 		if testCase.expectedEr {
 			assert.Error(t, actualErr, testCase.name)
+		} else {
+			assert.NoError(t, actualErr, testCase.name)
 		}
 
 		assert.Equal(t, testCase.expectedValue, actualValue, testCase.name)
