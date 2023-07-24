@@ -45,7 +45,7 @@ func merge(ctx context.Context, tableData *optimization.TableData) ([]*Row, erro
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal, err := CastColVal(value[col], colKind)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to cast col: %v, err: %v", col, err)
 			}
 
 			if colVal != nil {

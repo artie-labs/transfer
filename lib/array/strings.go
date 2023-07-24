@@ -2,7 +2,6 @@ package array
 
 import (
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"strings"
 
@@ -16,7 +15,8 @@ func InterfaceToArrayString(val interface{}) ([]string, error) {
 
 	list := reflect.ValueOf(val)
 	if list.Kind() != reflect.Slice {
-		return nil, fmt.Errorf("wrong data type")
+		// Since it's not a slice, let's cast it as a slice and re-enter this function.
+		return InterfaceToArrayString([]interface{}{val})
 	}
 
 	var vals []string
