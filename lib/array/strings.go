@@ -45,10 +45,6 @@ func InterfaceToArrayString(val interface{}) ([]string, error) {
 		}
 	}
 
-	if len(vals) == 0 {
-		return nil, nil
-	}
-
 	return vals, nil
 }
 
