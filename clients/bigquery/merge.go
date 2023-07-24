@@ -245,6 +245,8 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	_, err = s.Exec(mergeQuery)
+	// This is above, in the case we have a head of line blocking because of an error
+	// We will not create infinite temporary tables.
 	_ = ddl.DropTemporaryTable(ctx, s, tempAlterTableArgs.FqTableName, false)
 	if err != nil {
 		return err
