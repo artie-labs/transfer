@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"cloud.google.com/go/bigquery"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -16,7 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func CastColVal(col string, colVal interface{}, colKind columns.Column) (interface{}, error) {
+func CastColVal(colVal interface{}, colKind columns.Column) (interface{}, error) {
 	if colVal != nil {
 		switch colKind.KindDetails.Kind {
 		case typing.EDecimal.Kind:
@@ -46,8 +45,6 @@ func CastColVal(col string, colVal interface{}, colKind columns.Column) (interfa
 			case ext.TimeKindType:
 				colVal = extTime.String(typing.StreamingTimeFormat)
 			}
-
-			fmt.Println("### AFTER col", col, "colVal", colVal, "extTime.NestedKind.Type", extTime.NestedKind.Type)
 		case typing.Struct.Kind:
 			if colKind.KindDetails == typing.Struct {
 				if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
@@ -62,7 +59,7 @@ func CastColVal(col string, colVal interface{}, colKind columns.Column) (interfa
 			}
 
 			if len(arrayString) == 0 {
-				return []bigquery.NullString{{Valid: false}}, nil
+				return nil, nil
 			}
 
 			return arrayString, nil
