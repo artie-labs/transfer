@@ -221,6 +221,14 @@ func (r *RedshiftTestSuite) TestCastColValStaging_Time() {
 			expectedString: "2022-09-06",
 		},
 		{
+			name:   "date (but value is datetime)",
+			colVal: birthDateTime,
+			colKind: columns.Column{
+				KindDetails: dateKind,
+			},
+			expectedString: "2022-09-06",
+		},
+		{
 			name:   "time",
 			colVal: birthTime,
 			colKind: columns.Column{

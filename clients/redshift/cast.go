@@ -41,7 +41,7 @@ func CastColValStaging(colVal interface{}, colKind columns.Column) (string, erro
 		case ext.TimeKindType:
 			colValString = extTime.String(ext.PostgresTimeFormatNoTZ)
 		default:
-			colValString = extTime.String("")
+			colValString = extTime.String(colKind.KindDetails.ExtendedTimeDetails.Format)
 		}
 
 	case typing.String.Kind:
