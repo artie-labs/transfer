@@ -76,6 +76,18 @@ func TestCastColVal(t *testing.T) {
 			expectedValue: []string{"1", "2", "3", "4", "5"},
 		},
 		{
+			name:          "empty array",
+			colVal:        []int{},
+			colKind:       columns.Column{KindDetails: typing.Array},
+			expectedValue: nil,
+		},
+		{
+			name:          "null array",
+			colVal:        nil,
+			colKind:       columns.Column{KindDetails: typing.Array},
+			expectedValue: nil,
+		},
+		{
 			name:          "timestamp",
 			colVal:        birthdayTSExt,
 			colKind:       columns.Column{KindDetails: tsKind},
@@ -84,6 +96,12 @@ func TestCastColVal(t *testing.T) {
 		{
 			name:          "date",
 			colVal:        birthdayDateExt,
+			colKind:       columns.Column{KindDetails: dateKind},
+			expectedValue: "2022-09-06",
+		},
+		{
+			name:          "date (column is a date, but value is not)",
+			colVal:        birthdayTSExt,
 			colKind:       columns.Column{KindDetails: dateKind},
 			expectedValue: "2022-09-06",
 		},
