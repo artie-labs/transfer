@@ -1,12 +1,14 @@
 package ext
 
 import (
-	"github.com/stretchr/testify/assert"
-	"testing"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/config"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func TestParseFromInterface(t *testing.T) {
+func (e *ExtTestSuite) TestParseFromInterface() {
 	var vals []interface{}
 	vals = append(vals, &ExtendedTime{
 		Time: time.Now().UTC(),
@@ -29,9 +31,9 @@ func TestParseFromInterface(t *testing.T) {
 	})
 
 	for _, val := range vals {
-		extTime, err := ParseFromInterface(val)
-		assert.NoError(t, err)
-		assert.Equal(t, val, extTime)
+		extTime, err := ParseFromInterface(e.ctx, val)
+		assert.NoError(e.T(), err)
+		assert.Equal(e.T(), val, extTime)
 	}
 
 	invalidVals := []interface{}{
@@ -40,59 +42,74 @@ func TestParseFromInterface(t *testing.T) {
 		false,
 	}
 	for _, invalidVal := range invalidVals {
-		_, err := ParseFromInterface(invalidVal)
-		assert.Error(t, err)
+		_, err := ParseFromInterface(e.ctx, invalidVal)
+		assert.Error(e.T(), err)
 	}
 }
 
-func TestParseFromInterfaceDateTime(t *testing.T) {
+func (e *ExtTestSuite) TestParseFromInterfaceDateTime() {
 	now := time.Now().In(time.UTC)
 	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
-		et, err := ParseFromInterface(now.Format(supportedDateTimeLayout))
-		assert.NoError(t, err)
-		assert.Equal(t, et.NestedKind.Type, DateTimeKindType)
-		assert.Equal(t, et.String(""), now.Format(supportedDateTimeLayout))
+		et, err := ParseFromInterface(e.ctx, now.Format(supportedDateTimeLayout))
+		assert.NoError(e.T(), err)
+		assert.Equal(e.T(), et.NestedKind.Type, DateTimeKindType)
+		assert.Equal(e.T(), et.String(""), now.Format(supportedDateTimeLayout))
 	}
 }
 
-func TestParseFromInterfaceTime(t *testing.T) {
+func (e *ExtTestSuite) TestParseFromInterfaceTime() {
 	now := time.Now()
 	for _, supportedTimeFormat := range supportedTimeFormats {
-		et, err := ParseFromInterface(now.Format(supportedTimeFormat))
-		assert.NoError(t, err)
-		assert.Equal(t, et.NestedKind.Type, TimeKindType)
+		et, err := ParseFromInterface(e.ctx, now.Format(supportedTimeFormat))
+		assert.NoError(e.T(), err)
+		assert.Equal(e.T(), et.NestedKind.Type, TimeKindType)
 		// Without passing an override format, this should return the same preserved dt format.
-		assert.Equal(t, et.String(""), now.Format(supportedTimeFormat))
+		assert.Equal(e.T(), et.String(""), now.Format(supportedTimeFormat))
 	}
 }
 
-func TestParseFromInterfaceDate(t *testing.T) {
+func (e *ExtTestSuite) TestParseFromInterfaceDate() {
 	now := time.Now()
 	for _, supportedDateFormat := range supportedDateFormats {
-		et, err := ParseFromInterface(now.Format(supportedDateFormat))
-		assert.NoError(t, err)
-		assert.Equal(t, et.NestedKind.Type, DateKindType)
+		et, err := ParseFromInterface(e.ctx, now.Format(supportedDateFormat))
+		assert.NoError(e.T(), err)
+		assert.Equal(e.T(), et.NestedKind.Type, DateKindType)
 
 		// Without passing an override format, this should return the same preserved dt format.
-		assert.Equal(t, et.String(""), now.Format(supportedDateFormat))
+		assert.Equal(e.T(), et.String(""), now.Format(supportedDateFormat))
 	}
 }
 
-func TestParseExtendedDateTime_Timestamp(t *testing.T) {
+func (e *ExtTestSuite) TestParseExtendedDateTime_Timestamp() {
 	tsString := "2023-04-24T17:29:05.69944Z"
-	extTime, err := ParseExtendedDateTime(tsString)
-	assert.NoError(t, err)
-	assert.Equal(t, "2023-04-24T17:29:05.69944Z", extTime.String(""))
+	extTime, err := ParseExtendedDateTime(e.ctx, tsString)
+	assert.NoError(e.T(), err)
+	assert.Equal(e.T(), "2023-04-24T17:29:05.69944Z", extTime.String(""))
 }
 
-func TestTimeLayout(t *testing.T) {
+func (e *ExtTestSuite) TestParseExtendedDateTime() {
+	ctx := config.InjectSettingsIntoContext(e.ctx, &config.Settings{
+		Config: &config.Config{
+			SharedTransferConfig: config.SharedTransferConfig{
+				// DD-MM-YY
+				AdditionalDateFormats: []string{"02/01/06"},
+			},
+		},
+	})
+
+	dateString := "27/12/82"
+	extTime, err := ParseExtendedDateTime(ctx, dateString)
+	assert.NoError(e.T(), err)
+	assert.Equal(e.T(), "27/12/82", extTime.String(""))
+}
+
+func (e *ExtTestSuite) TestTimeLayout() {
 	ts := time.Now()
 
 	for _, supportedFormat := range supportedTimeFormats {
 		parsedTsString := ts.Format(supportedFormat)
-		extTime, err := ParseExtendedDateTime(parsedTsString)
-		assert.NoError(t, err)
-		assert.Equal(t, parsedTsString, extTime.String(""))
+		extTime, err := ParseExtendedDateTime(e.ctx, parsedTsString)
+		assert.NoError(e.T(), err)
+		assert.Equal(e.T(), parsedTsString, extTime.String(""))
 	}
-
 }

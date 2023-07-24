@@ -91,7 +91,7 @@ func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal := value[col]
 			// Check
-			castedValue, castErr := CastColValStaging(colVal, colKind)
+			castedValue, castErr := CastColValStaging(ctx, colVal, colKind)
 			if castErr != nil {
 				return "", castErr
 			}
@@ -191,7 +191,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 
 		err = utils.BackfillColumn(ctx, s, col, tableData.ToFqName(ctx, s.Label(), true))
 		if err != nil {
-			defaultVal, _ := col.DefaultValue(nil)
+			defaultVal, _ := col.DefaultValue(ctx, nil)
 			return fmt.Errorf("failed to backfill col: %v, default value: %v, error: %v",
 				col.Name(ctx, nil), defaultVal, err)
 		}

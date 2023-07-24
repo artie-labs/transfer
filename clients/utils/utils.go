@@ -23,7 +23,7 @@ func BackfillColumn(ctx context.Context, dwh dwh.DataWarehouse, column columns.C
 		return nil
 	}
 
-	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{
+	defaultVal, err := column.DefaultValue(ctx, &columns.DefaultValueArgs{
 		Escape:   true,
 		DestKind: dwh.Label(),
 	})

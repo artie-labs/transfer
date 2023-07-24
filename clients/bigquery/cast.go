@@ -1,6 +1,7 @@
 package bigquery
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -9,14 +10,13 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/array"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func CastColVal(colVal interface{}, colKind columns.Column) (interface{}, error) {
+func CastColVal(ctx context.Context, colVal interface{}, colKind columns.Column) (interface{}, error) {
 	if colVal != nil {
 		switch colKind.KindDetails.Kind {
 		case typing.EDecimal.Kind:
@@ -27,12 +27,17 @@ func CastColVal(colVal interface{}, colKind columns.Column) (interface{}, error)
 
 			return val.Value(), nil
 		case typing.ETime.Kind:
-			extTime, err := ext.ParseFromInterface(colVal)
+			extTime, err := ext.ParseFromInterface(ctx, colVal)
 			if err != nil {
 				return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
 			}
 
-			switch extTime.NestedKind.Type {
+			if colKind.KindDetails.ExtendedTimeDetails == nil {
+				return nil, fmt.Errorf("column kind details for extended time details is null")
+			}
+
+			// We should be using the colKind here since the data types coming from the source may be inconsistent.
+			switch colKind.KindDetails.ExtendedTimeDetails.Type {
 			// https://cloud.google.com/bigquery/docs/streaming-data-into-bigquery#sending_datetime_data
 			case ext.DateTimeKindType:
 				colVal = extTime.StringUTC(ext.BigQueryDateTimeFormat)
@@ -49,12 +54,16 @@ func CastColVal(colVal interface{}, colKind columns.Column) (interface{}, error)
 			}
 		case typing.Array.Kind:
 			var err error
-			colVal, err = array.InterfaceToArrayString(colVal)
+			arrayString, err := array.InterfaceToArrayString(colVal, true)
 			if err != nil {
 				return nil, err
 			}
 
-			return colVal, nil
+			if len(arrayString) == 0 {
+				return nil, nil
+			}
+
+			return arrayString, nil
 		}
 
 		return fmt.Sprint(colVal), nil

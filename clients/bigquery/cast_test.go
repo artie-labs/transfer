@@ -2,7 +2,6 @@ package bigquery
 
 import (
 	"fmt"
-	"testing"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -16,7 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func TestCastColVal(t *testing.T) {
+func (b *BigQueryTestSuite) TestCastColVal() {
 	type _testCase struct {
 		name    string
 		colVal  interface{}
@@ -34,15 +33,15 @@ func TestCastColVal(t *testing.T) {
 
 	birthday := time.Date(2022, time.September, 6, 3, 19, 24, 942000000, time.UTC)
 	birthdayTSExt, err := ext.NewExtendedTime(birthday, tsKind.ExtendedTimeDetails.Type, "")
-	assert.NoError(t, err)
+	assert.NoError(b.T(), err)
 
 	birthdayDateExt, err := ext.NewExtendedTime(birthday, dateKind.ExtendedTimeDetails.Type, "")
-	assert.NoError(t, err)
+	assert.NoError(b.T(), err)
 
 	timeKind := typing.ETime
 	timeKind.ExtendedTimeDetails = &ext.Time
 	birthdayTimeExt, err := ext.NewExtendedTime(birthday, timeKind.ExtendedTimeDetails.Type, "")
-	assert.NoError(t, err)
+	assert.NoError(b.T(), err)
 
 	testCases := []_testCase{
 		{
@@ -76,6 +75,18 @@ func TestCastColVal(t *testing.T) {
 			expectedValue: []string{"1", "2", "3", "4", "5"},
 		},
 		{
+			name:          "empty array",
+			colVal:        []int{},
+			colKind:       columns.Column{KindDetails: typing.Array},
+			expectedValue: nil,
+		},
+		{
+			name:          "null array",
+			colVal:        nil,
+			colKind:       columns.Column{KindDetails: typing.Array},
+			expectedValue: nil,
+		},
+		{
 			name:          "timestamp",
 			colVal:        birthdayTSExt,
 			colKind:       columns.Column{KindDetails: tsKind},
@@ -88,6 +99,12 @@ func TestCastColVal(t *testing.T) {
 			expectedValue: "2022-09-06",
 		},
 		{
+			name:          "date (column is a date, but value is not)",
+			colVal:        birthdayTSExt,
+			colKind:       columns.Column{KindDetails: dateKind},
+			expectedValue: "2022-09-06",
+		},
+		{
 			name:          "time",
 			colVal:        birthdayTimeExt,
 			colKind:       columns.Column{KindDetails: timeKind},
@@ -96,8 +113,8 @@ func TestCastColVal(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		actualString, actualErr := CastColVal(testCase.colVal, testCase.colKind)
-		assert.Equal(t, testCase.expectedErr, actualErr, testCase.name)
-		assert.Equal(t, testCase.expectedValue, actualString, testCase.name)
+		actualString, actualErr := CastColVal(b.ctx, testCase.colVal, testCase.colKind)
+		assert.Equal(b.T(), testCase.expectedErr, actualErr, testCase.name)
+		assert.Equal(b.T(), testCase.expectedValue, actualString, testCase.name)
 	}
 }

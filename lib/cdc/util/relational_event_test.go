@@ -68,14 +68,14 @@ func (u *UtilTestSuite) TestSource_GetOptionalSchema() {
 	col, isOk := cols.GetColumn("boolean_column")
 	assert.True(u.T(), isOk)
 
-	defaultVal, err := col.DefaultValue(nil)
+	defaultVal, err := col.DefaultValue(u.ctx, nil)
 	assert.NoError(u.T(), err)
 	assert.Equal(u.T(), false, defaultVal)
 
 	for _, _col := range cols.GetColumns() {
 		// All the other columns do not have a default value.
 		if _col.Name(u.ctx, nil) != "boolean_column" {
-			defaultVal, err = _col.DefaultValue(nil)
+			defaultVal, err = _col.DefaultValue(u.ctx, nil)
 			assert.NoError(u.T(), err)
 			assert.Nil(u.T(), defaultVal, _col.Name(u.ctx, nil))
 		}

@@ -193,7 +193,7 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	// Testing typing.
 	assert.Equal(p.T(), evtData["id"], 1001)
 	assert.Equal(p.T(), evtData["another_id"], 333)
-	assert.Equal(p.T(), typing.ParseValue("another_id", evt.GetOptionalSchema(p.ctx), evtData["another_id"]), typing.Integer)
+	assert.Equal(p.T(), typing.ParseValue(p.ctx, "another_id", evt.GetOptionalSchema(p.ctx), evtData["another_id"]), typing.Integer)
 
 	assert.Equal(p.T(), evtData["email"], "sally.thomas@acme.com")
 

@@ -21,7 +21,7 @@ import (
 
 type Debezium string
 
-func (d *Debezium) GetEventFromBytes(_ context.Context, bytes []byte) (cdc.Event, error) {
+func (d *Debezium) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Event, error) {
 	var schemaEventPayload SchemaEventPayload
 	if len(bytes) == 0 {
 		// This is a Kafka Tombstone event.
@@ -53,7 +53,7 @@ func (d *Debezium) GetEventFromBytes(_ context.Context, bytes []byte) (cdc.Event
 		// Now, we need to iterate over each key and if the value is JSON
 		// We need to parse the JSON into a string format
 		for key, value := range after {
-			if typing.ParseValue(key, nil, value) == typing.Struct {
+			if typing.ParseValue(ctx, key, nil, value) == typing.Struct {
 				valBytes, err := json.Marshal(value)
 				if err != nil {
 					return nil, fmt.Errorf("failed to marshal, err: %v", err)

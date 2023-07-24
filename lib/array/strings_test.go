@@ -10,11 +10,11 @@ import (
 
 func TestToArrayString(t *testing.T) {
 	type _testCase struct {
-		name string
-		val  interface{}
-
-		expectedList []string
-		expectedErr  error
+		name          string
+		val           interface{}
+		recastAsArray bool
+		expectedList  []string
+		expectedErr   error
 	}
 
 	testCases := []_testCase{
@@ -25,7 +25,7 @@ func TestToArrayString(t *testing.T) {
 			name:         "wrong data type",
 			val:          true,
 			expectedList: nil,
-			expectedErr:  fmt.Errorf("wrong data type"),
+			expectedErr:  fmt.Errorf("wrong data type, kind: bool"),
 		},
 		{
 			name:         "list of numbers",
@@ -66,10 +66,16 @@ func TestToArrayString(t *testing.T) {
 			},
 			expectedList: []string{"[foo bar]", "[abc def]"},
 		},
+		{
+			name:          "boolean, but recasting as an array",
+			val:           true,
+			expectedList:  []string{"true"},
+			recastAsArray: true,
+		},
 	}
 
 	for _, testCase := range testCases {
-		actualString, actualErr := InterfaceToArrayString(testCase.val)
+		actualString, actualErr := InterfaceToArrayString(testCase.val, testCase.recastAsArray)
 		assert.Equal(t, testCase.expectedList, actualString, testCase.name)
 		assert.Equal(t, testCase.expectedErr, actualErr, testCase.name)
 	}

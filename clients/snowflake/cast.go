@@ -1,6 +1,7 @@
 package snowflake
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -20,7 +21,7 @@ import (
 
 // CastColValStaging - takes `colVal` interface{} and `colKind` typing.Column and converts the value into a string value
 // This is necessary because CSV writers require values to in `string`.
-func CastColValStaging(colVal interface{}, colKind columns.Column) (string, error) {
+func CastColValStaging(ctx context.Context, colVal interface{}, colKind columns.Column) (string, error) {
 	if colVal == nil {
 		// \\N needs to match NULL_IF(...) from ddl.go
 		return `\\N`, nil
@@ -30,16 +31,20 @@ func CastColValStaging(colVal interface{}, colKind columns.Column) (string, erro
 	switch colKind.KindDetails.Kind {
 	// All the other types do not need string wrapping.
 	case typing.ETime.Kind:
-		extTime, err := ext.ParseFromInterface(colVal)
+		extTime, err := ext.ParseFromInterface(ctx, colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
 		}
 
-		switch extTime.NestedKind.Type {
+		if colKind.KindDetails.ExtendedTimeDetails == nil {
+			return "", fmt.Errorf("column kind details for extended time details is null")
+		}
+
+		switch colKind.KindDetails.ExtendedTimeDetails.Type {
 		case ext.TimeKindType:
 			colValString = extTime.String(ext.PostgresTimeFormatNoTZ)
 		default:
-			colValString = extTime.String("")
+			colValString = extTime.String(colKind.KindDetails.ExtendedTimeDetails.Format)
 		}
 
 	case typing.String.Kind:
