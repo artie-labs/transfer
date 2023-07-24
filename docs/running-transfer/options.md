@@ -53,9 +53,19 @@ pubsub:
 
 <table><thead><tr><th width="433">Key</th><th width="106.33333333333331">Optional</th><th>Description</th></tr></thead><tbody><tr><td><code>bigquery.pathToCredentials</code></td><td>Y</td><td>Path to the credentials file for Google. <br><br>You can also directly inject <code>GOOGLE_APPLICATION_CREDENTIALS</code> ENV VAR, else Transfer will set it for you based on this value provided.</td></tr><tr><td><code>bigquery.projectID</code></td><td>N</td><td>Google Cloud Project ID</td></tr><tr><td><code>bigquery.location</code></td><td>Y</td><td>Location of the BigQuery dataset. <br><br>Defaults to <code>us</code>.</td></tr><tr><td><code>bigquery.defaultDataset</code></td><td>N</td><td><p>The default dataset used. </p><p></p><p>This just allows us to connect to BigQuery using data source  notation (DSN). </p></td></tr></tbody></table>
 
+### Shared Transfer config
+
+
+
+<table><thead><tr><th width="425.3333333333333">Key</th><th width="101">Optional</th><th>Description</th></tr></thead><tbody><tr><td><code>sharedTransferConfig.additionalDateFormats</code></td><td>Y</td><td><p>You can specify additional date formats if they are <a href="https://github.com/artie-labs/transfer/blob/master/lib/typing/ext/variables.go">not already supported</a>.</p><p></p><p>Example:</p><pre><code>sharedTransferConfig:
+  additionalDateFormats:
+    - 02/01/06 # DD/MM/YY
+    - 02/01/2006 # DD/MM/YYYY
+</code></pre><p>If you are unsure, refer to this <a href="https://yourbasic.org/golang/format-parse-string-time-date-example/">guide</a>. </p></td></tr></tbody></table>
+
 ### Shared destination config
 
-<table><thead><tr><th width="423.3333333333333">Key</th><th width="99">Optional</th><th>Description`</th></tr></thead><tbody><tr><td><code>sharedDestinationConfig.uppercaseEscapedNames</code></td><td>Y</td><td>Defaults to <code>false</code>. <br><br>By enabling <a data-footnote-ref href="#user-content-fn-1">t</a>his, the escaped value will be in upper case for both table and column names.</td></tr></tbody></table>
+<table><thead><tr><th width="423.3333333333333">Key</th><th width="99">Optional</th><th>Description</th></tr></thead><tbody><tr><td><code>sharedDestinationConfig.uppercaseEscapedNames</code></td><td>Y</td><td>Defaults to <code>false</code>. <br><br>By enabling <a data-footnote-ref href="#user-content-fn-1">t</a>his, the escaped value will be in upper case for both table and column names.</td></tr></tbody></table>
 
 ### Snowflake
 
