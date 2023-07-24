@@ -1,6 +1,7 @@
 package columns
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -17,7 +18,7 @@ type DefaultValueArgs struct {
 	DestKind constants.DestinationKind
 }
 
-func (c *Column) DefaultValue(args *DefaultValueArgs) (interface{}, error) {
+func (c *Column) DefaultValue(ctx context.Context, args *DefaultValueArgs) (interface{}, error) {
 	if args == nil || !args.Escape {
 		// Either no args, or args.Escape = false
 		return c.defaultValue, nil
@@ -40,7 +41,7 @@ func (c *Column) DefaultValue(args *DefaultValueArgs) (interface{}, error) {
 			return nil, fmt.Errorf("column kind details for extended time is nil")
 		}
 
-		extTime, err := ext.ParseFromInterface(c.defaultValue)
+		extTime, err := ext.ParseFromInterface(ctx, c.defaultValue)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", c.defaultValue, err)
 		}

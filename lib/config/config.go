@@ -82,7 +82,8 @@ type Redshift struct {
 }
 
 type SharedDestinationConfig struct {
-	UppercaseEscapedNames bool `yaml:"uppercaseEscapedNames"`
+	UppercaseEscapedNames bool     `yaml:"uppercaseEscapedNames"`
+	AdditionalDateFormats []string `yaml:"additionalDateFormats"`
 }
 
 type Snowflake struct {

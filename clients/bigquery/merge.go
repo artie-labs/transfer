@@ -43,7 +43,7 @@ func merge(ctx context.Context, tableData *optimization.TableData) ([]*Row, erro
 		data := make(map[string]bigquery.Value)
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
-			colVal, err := CastColVal(value[col], colKind)
+			colVal, err := CastColVal(ctx, value[col], colKind)
 			if err != nil {
 				return nil, fmt.Errorf("failed to cast col: %v, err: %v", col, err)
 			}
@@ -67,7 +67,7 @@ func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTab
 		return nil
 	}
 
-	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{
+	defaultVal, err := column.DefaultValue(ctx, &columns.DefaultValueArgs{
 		Escape:   true,
 		DestKind: s.Label(),
 	})
@@ -206,7 +206,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 				attempts += 1
 				time.Sleep(time.Duration(jitter.JitterMs(1500, attempts)) * time.Millisecond)
 			} else {
-				defaultVal, _ := col.DefaultValue(nil)
+				defaultVal, _ := col.DefaultValue(ctx, nil)
 				return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v",
 					col.Name(ctx, nil), defaultVal, err)
 			}

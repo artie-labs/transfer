@@ -5,22 +5,21 @@ import (
 	"fmt"
 	"math"
 	"strings"
-	"testing"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNil(t *testing.T) {
-	assert.Equal(t, ParseValue("", nil, ""), String)
-	assert.Equal(t, ParseValue("", nil, "nil"), String)
-	assert.Equal(t, ParseValue("", nil, nil), Invalid)
+func (t *TypingTestSuite) TestNil() {
+	assert.Equal(t.T(), ParseValue(t.ctx, "", nil, ""), String)
+	assert.Equal(t.T(), ParseValue(t.ctx, "", nil, "nil"), String)
+	assert.Equal(t.T(), ParseValue(t.ctx, "", nil, nil), Invalid)
 }
 
-func TestJSONString(t *testing.T) {
-	assert.Equal(t, true, IsJSON(`{"hello": "world"}`))
-	assert.Equal(t, true, IsJSON(`{}`))
-	assert.Equal(t, true, IsJSON(strings.TrimSpace(`
+func (t *TypingTestSuite) TestJSONString() {
+	assert.Equal(t.T(), true, IsJSON(`{"hello": "world"}`))
+	assert.Equal(t.T(), true, IsJSON(`{}`))
+	assert.Equal(t.T(), true, IsJSON(strings.TrimSpace(`
 	{
 		"hello": {
 			"world": {
@@ -33,39 +32,39 @@ func TestJSONString(t *testing.T) {
 	}
 	`)))
 
-	assert.Equal(t, false, IsJSON(`{null`))
-	assert.Equal(t, false, IsJSON(`{null}`))
-	assert.Equal(t, false, IsJSON(`{abc: def}`))
+	assert.Equal(t.T(), false, IsJSON(`{null`))
+	assert.Equal(t.T(), false, IsJSON(`{null}`))
+	assert.Equal(t.T(), false, IsJSON(`{abc: def}`))
 }
 
-func TestParseValueBasic(t *testing.T) {
+func (t *TypingTestSuite) TestParseValueBasic() {
 	// Floats
-	assert.Equal(t, ParseValue("", nil, 7.5), Float)
-	assert.Equal(t, ParseValue("", nil, -7.4999999), Float)
-	assert.Equal(t, ParseValue("", nil, 7.0), Float)
+	assert.Equal(t.T(), ParseValue(t.ctx, "", nil, 7.5), Float)
+	assert.Equal(t.T(), ParseValue(t.ctx, "", nil, -7.4999999), Float)
+	assert.Equal(t.T(), ParseValue(t.ctx, "", nil, 7.0), Float)
 
 	// Integers
-	assert.Equal(t, ParseValue("", nil, 9), Integer)
-	assert.Equal(t, ParseValue("", nil, math.MaxInt), Integer)
-	assert.Equal(t, ParseValue("", nil, -1*math.MaxInt), Integer)
+	assert.Equal(t.T(), ParseValue(t.ctx, "", nil, 9), Integer)
+	assert.Equal(t.T(), ParseValue(t.ctx, "", nil, math.MaxInt), Integer)
+	assert.Equal(t.T(), ParseValue(t.ctx, "", nil, -1*math.MaxInt), Integer)
 
 	// Invalid
-	assert.Equal(t, ParseValue("", nil, nil), Invalid)
-	assert.Equal(t, ParseValue("", nil, errors.New("hello")), Invalid)
+	assert.Equal(t.T(), ParseValue(t.ctx, "", nil, nil), Invalid)
+	assert.Equal(t.T(), ParseValue(t.ctx, "", nil, errors.New("hello")), Invalid)
 
 	// Boolean
-	assert.Equal(t, ParseValue("", nil, true), Boolean)
-	assert.Equal(t, ParseValue("", nil, false), Boolean)
+	assert.Equal(t.T(), ParseValue(t.ctx, "", nil, true), Boolean)
+	assert.Equal(t.T(), ParseValue(t.ctx, "", nil, false), Boolean)
 }
 
-func TestParseValueArrays(t *testing.T) {
-	assert.Equal(t, ParseValue("", nil, []string{"a", "b", "c"}), Array)
-	assert.Equal(t, ParseValue("", nil, []interface{}{"a", 123, "c"}), Array)
-	assert.Equal(t, ParseValue("", nil, []int64{1}), Array)
-	assert.Equal(t, ParseValue("", nil, []bool{false}), Array)
+func (t *TypingTestSuite) TestParseValueArrays() {
+	assert.Equal(t.T(), ParseValue(t.ctx, "", nil, []string{"a", "b", "c"}), Array)
+	assert.Equal(t.T(), ParseValue(t.ctx, "", nil, []interface{}{"a", 123, "c"}), Array)
+	assert.Equal(t.T(), ParseValue(t.ctx, "", nil, []int64{1}), Array)
+	assert.Equal(t.T(), ParseValue(t.ctx, "", nil, []bool{false}), Array)
 }
 
-func TestParseValueMaps(t *testing.T) {
+func (t *TypingTestSuite) TestParseValueMaps() {
 	randomMaps := []interface{}{
 		map[string]interface{}{
 			"foo":   "bar",
@@ -91,11 +90,11 @@ func TestParseValueMaps(t *testing.T) {
 	}
 
 	for _, randomMap := range randomMaps {
-		assert.Equal(t, ParseValue("", nil, randomMap), Struct, fmt.Sprintf("Failed message is: %v", randomMap))
+		assert.Equal(t.T(), ParseValue(t.ctx, "", nil, randomMap), Struct, fmt.Sprintf("Failed message is: %v", randomMap))
 	}
 }
 
-func TestDateTime(t *testing.T) {
+func (t *TypingTestSuite) TestDateTime() {
 	// Took this list from the Go time library.
 	possibleDates := []interface{}{
 		"01/02 03:04:05PM '06 -0700", // The reference time, in numerical order.
@@ -111,34 +110,34 @@ func TestDateTime(t *testing.T) {
 	}
 
 	for _, possibleDate := range possibleDates {
-		assert.Equal(t, ParseValue("", nil, possibleDate).ExtendedTimeDetails.Type, ext.DateTime.Type, fmt.Sprintf("Failed format, value is: %v", possibleDate))
+		assert.Equal(t.T(), ParseValue(t.ctx, "", nil, possibleDate).ExtendedTimeDetails.Type, ext.DateTime.Type, fmt.Sprintf("Failed format, value is: %v", possibleDate))
 
 		// Test the parseDT function as well.
-		ts, err := ext.ParseExtendedDateTime(fmt.Sprint(possibleDate))
-		assert.NoError(t, err, err)
-		assert.False(t, ts.IsZero(), ts)
+		ts, err := ext.ParseExtendedDateTime(t.ctx, fmt.Sprint(possibleDate))
+		assert.NoError(t.T(), err, err)
+		assert.False(t.T(), ts.IsZero(), ts)
 	}
 
-	ts, err := ext.ParseExtendedDateTime("random")
-	assert.Error(t, err, err)
-	assert.Nil(t, ts)
+	ts, err := ext.ParseExtendedDateTime(t.ctx, "random")
+	assert.Error(t.T(), err, err)
+	assert.Nil(t.T(), ts)
 }
 
-func TestDateTime_Fallback(t *testing.T) {
+func (t *TypingTestSuite) TestDateTime_Fallback() {
 	dtString := "Mon Jan 02 15:04:05.69944 -0700 2006"
-	ts, err := ext.ParseExtendedDateTime(dtString)
-	assert.NoError(t, err)
-	assert.NotEqual(t, ts.String(""), dtString)
+	ts, err := ext.ParseExtendedDateTime(t.ctx, dtString)
+	assert.NoError(t.T(), err)
+	assert.NotEqual(t.T(), ts.String(""), dtString)
 }
 
-func TestTime(t *testing.T) {
-	kindDetails := ParseValue("", nil, "00:18:11.13116+00")
+func (t *TypingTestSuite) TestTime() {
+	kindDetails := ParseValue(t.ctx, "", nil, "00:18:11.13116+00")
 	// 00:42:26.693631Z
-	assert.Equal(t, ETime.Kind, kindDetails.Kind)
-	assert.Equal(t, ext.TimeKindType, kindDetails.ExtendedTimeDetails.Type)
+	assert.Equal(t.T(), ETime.Kind, kindDetails.Kind)
+	assert.Equal(t.T(), ext.TimeKindType, kindDetails.ExtendedTimeDetails.Type)
 }
 
-func TestString(t *testing.T) {
+func (t *TypingTestSuite) TestString() {
 	possibleStrings := []string{
 		"dusty",
 		"robin",
@@ -146,17 +145,17 @@ func TestString(t *testing.T) {
 	}
 
 	for _, possibleString := range possibleStrings {
-		assert.Equal(t, ParseValue("", nil, possibleString), String)
+		assert.Equal(t.T(), ParseValue(t.ctx, "", nil, possibleString), String)
 	}
 }
 
-func TestOptionalSchema(t *testing.T) {
-	kd := ParseValue("", nil, true)
-	assert.Equal(t, kd, Boolean)
+func (t *TypingTestSuite) TestOptionalSchema() {
+	kd := ParseValue(t.ctx, "", nil, true)
+	assert.Equal(t.T(), kd, Boolean)
 
 	// Key in a nil-schema
-	kd = ParseValue("key", nil, true)
-	assert.Equal(t, kd, Boolean)
+	kd = ParseValue(t.ctx, "key", nil, true)
+	assert.Equal(t.T(), kd, Boolean)
 
 	// Non-existent key in the schema.
 	optionalSchema := map[string]KindDetails{
@@ -164,10 +163,10 @@ func TestOptionalSchema(t *testing.T) {
 	}
 
 	// Parse it as a date since it doesn't exist in the optional schema.
-	kd = ParseValue("updated_at", optionalSchema, "2023-01-01")
-	assert.Equal(t, ext.Date.Type, kd.ExtendedTimeDetails.Type)
+	kd = ParseValue(t.ctx, "updated_at", optionalSchema, "2023-01-01")
+	assert.Equal(t.T(), ext.Date.Type, kd.ExtendedTimeDetails.Type)
 
 	// Respecting the optional schema
-	kd = ParseValue("created_at", optionalSchema, "2023-01-01")
-	assert.Equal(t, String, kd)
+	kd = ParseValue(t.ctx, "created_at", optionalSchema, "2023-01-01")
+	assert.Equal(t.T(), String, kd)
 }

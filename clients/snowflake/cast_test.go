@@ -1,6 +1,7 @@
 package snowflake
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 	"testing"
@@ -29,8 +30,8 @@ type _testCase struct {
 	expectErr      bool
 }
 
-func evaluateTestCase(t *testing.T, testCase _testCase) {
-	actualString, actualErr := CastColValStaging(testCase.colVal, testCase.colKind)
+func evaluateTestCase(t *testing.T, ctx context.Context, testCase _testCase) {
+	actualString, actualErr := CastColValStaging(ctx, testCase.colVal, testCase.colKind)
 	if testCase.expectErr {
 		assert.Error(t, actualErr, testCase.name)
 	} else {
@@ -128,7 +129,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Basic() {
 	}
 
 	for _, testCase := range testCases {
-		evaluateTestCase(s.T(), testCase)
+		evaluateTestCase(s.T(), s.ctx, testCase)
 	}
 }
 
@@ -177,7 +178,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Array() {
 	}
 
 	for _, testCase := range testCases {
-		evaluateTestCase(s.T(), testCase)
+		evaluateTestCase(s.T(), s.ctx, testCase)
 	}
 }
 
@@ -239,7 +240,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Time() {
 	}
 
 	for _, testCase := range testCases {
-		evaluateTestCase(s.T(), testCase)
+		evaluateTestCase(s.T(), s.ctx, testCase)
 	}
 }
 
@@ -258,6 +259,6 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_TOAST() {
 	}
 
 	for _, testCase := range testCases {
-		evaluateTestCase(s.T(), testCase)
+		evaluateTestCase(s.T(), s.ctx, testCase)
 	}
 }

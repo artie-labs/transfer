@@ -80,7 +80,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		"name":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
 		// Add kindDetails to created_at
-		"created_at": typing.ParseValue("", nil, time.Now().Format(time.RFC3339Nano)),
+		"created_at": typing.ParseValue(s.ctx, "", nil, time.Now().Format(time.RFC3339Nano)),
 	}
 
 	var cols columns.Columns
@@ -130,7 +130,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		"name":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
 		// Add kindDetails to created_at
-		"created_at": typing.ParseValue("", nil, time.Now().Format(time.RFC3339Nano)),
+		"created_at": typing.ParseValue(s.ctx, "", nil, time.Now().Format(time.RFC3339Nano)),
 	}
 
 	var cols columns.Columns
@@ -217,7 +217,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		"name":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
 		// Add kindDetails to created_at
-		"created_at": typing.ParseValue("", nil, time.Now().Format(time.RFC3339Nano)),
+		"created_at": typing.ParseValue(s.ctx, "", nil, time.Now().Format(time.RFC3339Nano)),
 	}
 
 	var cols columns.Columns
@@ -265,7 +265,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 		inMemColumns := tableData.ReadOnlyInMemoryCols()
 		// Since sflkColumns overwrote the format, let's set it correctly again.
-		inMemColumns.UpdateColumn(columns.NewColumn("created_at", typing.ParseValue("", nil, time.Now().Format(time.RFC3339Nano))))
+		inMemColumns.UpdateColumn(columns.NewColumn("created_at", typing.ParseValue(s.ctx, "", nil, time.Now().Format(time.RFC3339Nano))))
 		tableData.SetInMemoryColumns(inMemColumns)
 		break
 	}

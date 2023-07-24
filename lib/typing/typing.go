@@ -1,6 +1,7 @@
 package typing
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -87,7 +88,7 @@ func IsJSON(str string) bool {
 	return false
 }
 
-func ParseValue(key string, optionalSchema map[string]KindDetails, val interface{}) KindDetails {
+func ParseValue(ctx context.Context, key string, optionalSchema map[string]KindDetails, val interface{}) KindDetails {
 	if val == nil {
 		return Invalid
 	}
@@ -121,7 +122,7 @@ func ParseValue(key string, optionalSchema map[string]KindDetails, val interface
 		// This way, we don't penalize every string into going through this loop
 		// In the future, we can have specific layout RFCs run depending on the char
 		if strings.Contains(valString, ":") || strings.Contains(valString, "-") {
-			extendedKind, err := ext.ParseExtendedDateTime(valString)
+			extendedKind, err := ext.ParseExtendedDateTime(ctx, valString)
 			if err == nil {
 				return KindDetails{
 					Kind:                ETime.Kind,

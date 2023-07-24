@@ -2,7 +2,6 @@ package bigquery
 
 import (
 	"fmt"
-	"testing"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -16,7 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func TestCastColVal(t *testing.T) {
+func (b *BigQueryTestSuite) TestCastColVal() {
 	type _testCase struct {
 		name    string
 		colVal  interface{}
@@ -114,8 +113,8 @@ func TestCastColVal(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		actualString, actualErr := CastColVal(testCase.colVal, testCase.colKind)
-		assert.Equal(t, testCase.expectedErr, actualErr, testCase.name)
-		assert.Equal(t, testCase.expectedValue, actualString, testCase.name)
+		actualString, actualErr := CastColVal(b.ctx, testCase.colVal, testCase.colKind)
+		assert.Equal(b.T(), testCase.expectedErr, actualErr, testCase.name)
+		assert.Equal(b.T(), testCase.expectedValue, actualString, testCase.name)
 	}
 }

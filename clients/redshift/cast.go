@@ -1,6 +1,7 @@
 package redshift
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -18,7 +19,7 @@ import (
 
 // CastColValStaging - takes `colVal` interface{} and `colKind` typing.Column and converts the value into a string value
 // This is necessary because CSV writers require values to in `string`.
-func CastColValStaging(colVal interface{}, colKind columns.Column) (string, error) {
+func CastColValStaging(ctx context.Context, colVal interface{}, colKind columns.Column) (string, error) {
 	if colVal == nil {
 		// This matches the COPY clause for NULL terminator.
 		return `\N`, nil
@@ -28,7 +29,7 @@ func CastColValStaging(colVal interface{}, colKind columns.Column) (string, erro
 	switch colKind.KindDetails.Kind {
 	// All the other types do not need string wrapping.
 	case typing.ETime.Kind:
-		extTime, err := ext.ParseFromInterface(colVal)
+		extTime, err := ext.ParseFromInterface(ctx, colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
 		}
