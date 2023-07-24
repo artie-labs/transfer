@@ -4,19 +4,19 @@ import (
 	"fmt"
 	"strings"
 
+	"cloud.google.com/go/bigquery"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/array"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func CastColVal(colVal interface{}, colKind columns.Column) (interface{}, error) {
+func CastColVal(col string, colVal interface{}, colKind columns.Column) (interface{}, error) {
 	if colVal != nil {
 		switch colKind.KindDetails.Kind {
 		case typing.EDecimal.Kind:
@@ -31,6 +31,8 @@ func CastColVal(colVal interface{}, colKind columns.Column) (interface{}, error)
 			if err != nil {
 				return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
 			}
+
+			fmt.Println("colVal", colVal, "extTime.NestedKind.Type", extTime.NestedKind.Type)
 
 			switch extTime.NestedKind.Type {
 			// https://cloud.google.com/bigquery/docs/streaming-data-into-bigquery#sending_datetime_data
@@ -49,12 +51,16 @@ func CastColVal(colVal interface{}, colKind columns.Column) (interface{}, error)
 			}
 		case typing.Array.Kind:
 			var err error
-			colVal, err = array.InterfaceToArrayString(colVal)
+			arrayString, err := array.InterfaceToArrayString(colVal)
 			if err != nil {
 				return nil, err
 			}
 
-			return colVal, nil
+			if len(arrayString) == 0 {
+				return []bigquery.NullString{{Valid: false}}, nil
+			}
+
+			return arrayString, nil
 		}
 
 		return fmt.Sprint(colVal), nil
