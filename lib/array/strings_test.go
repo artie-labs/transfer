@@ -25,7 +25,7 @@ func TestToArrayString(t *testing.T) {
 			name:         "wrong data type",
 			val:          true,
 			expectedList: nil,
-			expectedErr:  fmt.Errorf("wrong data type"),
+			expectedErr:  fmt.Errorf("wrong data type, kind: bool"),
 		},
 		{
 			name:         "list of numbers",
@@ -69,7 +69,7 @@ func TestToArrayString(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		actualString, actualErr := InterfaceToArrayString(testCase.val)
+		actualString, actualErr := InterfaceToArrayString(testCase.val, false)
 		assert.Equal(t, testCase.expectedList, actualString, testCase.name)
 		assert.Equal(t, testCase.expectedErr, actualErr, testCase.name)
 	}

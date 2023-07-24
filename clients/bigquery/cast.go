@@ -53,7 +53,7 @@ func CastColVal(colVal interface{}, colKind columns.Column) (interface{}, error)
 			}
 		case typing.Array.Kind:
 			var err error
-			arrayString, err := array.InterfaceToArrayString(colVal)
+			arrayString, err := array.InterfaceToArrayString(colVal, true)
 			if err != nil {
 				return nil, err
 			}

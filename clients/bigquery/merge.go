@@ -245,10 +245,10 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	_, err = s.Exec(mergeQuery)
+	_ = ddl.DropTemporaryTable(ctx, s, tempAlterTableArgs.FqTableName, false)
 	if err != nil {
 		return err
 	}
 
-	_ = ddl.DropTemporaryTable(ctx, s, tempAlterTableArgs.FqTableName, false)
 	return nil
 }

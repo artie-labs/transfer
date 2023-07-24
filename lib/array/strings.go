@@ -2,21 +2,27 @@ package array
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
-func InterfaceToArrayString(val interface{}) ([]string, error) {
+func InterfaceToArrayString(val interface{}, recastAsArray bool) ([]string, error) {
 	if val == nil {
 		return nil, nil
 	}
 
 	list := reflect.ValueOf(val)
 	if list.Kind() != reflect.Slice {
-		// Since it's not a slice, let's cast it as a slice and re-enter this function.
-		return InterfaceToArrayString([]interface{}{val})
+		if recastAsArray {
+			// Since it's not a slice, let's cast it as a slice and re-enter this function.
+			return InterfaceToArrayString([]interface{}{val}, recastAsArray)
+		} else {
+			return nil, fmt.Errorf("wrong data type, kind: %v", list.Kind())
+		}
+
 	}
 
 	var vals []string

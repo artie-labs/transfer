@@ -47,7 +47,6 @@ func (r *RedshiftTestSuite) TestCastColValStaging_Basic() {
 			colKind: columns.Column{
 				KindDetails: typing.String,
 			},
-
 			expectedString: "",
 		},
 		{

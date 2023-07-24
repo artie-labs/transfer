@@ -45,7 +45,7 @@ func CastColValStaging(colVal interface{}, colKind columns.Column) (string, erro
 		}
 
 	case typing.String.Kind:
-		list, err := array.InterfaceToArrayString(colVal)
+		list, err := array.InterfaceToArrayString(colVal, false)
 		if err == nil {
 			colValString = "[" + strings.Join(list, ",") + "]"
 		} else {

@@ -1,9 +1,10 @@
 package ext
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseFromInterface(t *testing.T) {
@@ -85,6 +86,13 @@ func TestParseExtendedDateTime_Timestamp(t *testing.T) {
 	assert.Equal(t, "2023-04-24T17:29:05.69944Z", extTime.String(""))
 }
 
+func TestParseExtendedDateTime(t *testing.T) {
+	dateString := "27/12/1992"
+	extTime, err := ParseExtendedDateTime(dateString)
+	assert.NoError(t, err)
+	assert.Equal(t, "2023-04-24T17:29:05.69944Z", extTime.String(""))
+}
+
 func TestTimeLayout(t *testing.T) {
 	ts := time.Now()
 
@@ -94,5 +102,4 @@ func TestTimeLayout(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, parsedTsString, extTime.String(""))
 	}
-
 }
