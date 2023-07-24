@@ -213,6 +213,14 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Time() {
 			expectedString: "2022-09-06",
 		},
 		{
+			name:   "date (but value is dateTime)",
+			colVal: birthDateTime,
+			colKind: columns.Column{
+				KindDetails: dateKind,
+			},
+			expectedString: "2022-09-06",
+		},
+		{
 			name:   "time",
 			colVal: birthTime,
 			colKind: columns.Column{
