@@ -1,8 +1,9 @@
 package ext
 
 import (
-	"testing"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/config"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -79,18 +80,27 @@ func (e *ExtTestSuite) TestParseFromInterfaceDate() {
 	}
 }
 
-func (e *ExtTestSuite) TestParseExtendedDateTime_Timestamp(t *testing.T) {
+func (e *ExtTestSuite) TestParseExtendedDateTime_Timestamp() {
 	tsString := "2023-04-24T17:29:05.69944Z"
 	extTime, err := ParseExtendedDateTime(e.ctx, tsString)
-	assert.NoError(t, err)
-	assert.Equal(t, "2023-04-24T17:29:05.69944Z", extTime.String(""))
+	assert.NoError(e.T(), err)
+	assert.Equal(e.T(), "2023-04-24T17:29:05.69944Z", extTime.String(""))
 }
 
 func (e *ExtTestSuite) TestParseExtendedDateTime() {
+	ctx := config.InjectSettingsIntoContext(e.ctx, &config.Settings{
+		Config: &config.Config{
+			SharedTransferConfig: config.SharedTransferConfig{
+				// DD-MM-YY
+				AdditionalDateFormats: []string{"02/01/06"},
+			},
+		},
+	})
+
 	dateString := "27/12/82"
-	extTime, err := ParseExtendedDateTime(e.ctx, dateString)
+	extTime, err := ParseExtendedDateTime(ctx, dateString)
 	assert.NoError(e.T(), err)
-	assert.Equal(e.T(), "2023-04-24T17:29:05.69944Z", extTime.String(""))
+	assert.Equal(e.T(), "27/12/82", extTime.String(""))
 }
 
 func (e *ExtTestSuite) TestTimeLayout() {

@@ -82,7 +82,10 @@ type Redshift struct {
 }
 
 type SharedDestinationConfig struct {
-	UppercaseEscapedNames bool     `yaml:"uppercaseEscapedNames"`
+	UppercaseEscapedNames bool `yaml:"uppercaseEscapedNames"`
+}
+
+type SharedTransferConfig struct {
 	AdditionalDateFormats []string `yaml:"additionalDateFormats"`
 }
 
@@ -132,6 +135,9 @@ type Config struct {
 	// Supported message queues
 	Pubsub *Pubsub
 	Kafka  *Kafka
+
+	// Shared Transfer settings
+	SharedTransferConfig SharedTransferConfig `yaml:"sharedTransferConfig"`
 
 	// Shared destination configuration
 	SharedDestinationConfig SharedDestinationConfig `yaml:"sharedDestinationConfig"`

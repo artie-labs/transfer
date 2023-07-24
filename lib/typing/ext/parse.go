@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/config"
 )
 
 func ParseFromInterface(ctx context.Context, val interface{}) (*ExtendedTime, error) {
@@ -62,10 +64,14 @@ func ParseExtendedDateTime(ctx context.Context, dtString string) (*ExtendedTime,
 		}
 	}
 
+	allSupportedDateFormats := supportedDateFormats
+	if len(config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats) > 0 {
+		allSupportedDateFormats = append(allSupportedDateFormats, config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats...)
+	}
+
 	// Now check DATE formats
-	for _, supportedDateFormat := range supportedDateFormats {
+	for _, supportedDateFormat := range allSupportedDateFormats {
 		ts, exactMatch, err := ParseTimeExactMatch(supportedDateFormat, dtString)
-		fmt.Println("ts", ts, "exactMatch", exactMatch, "err", err, "fmt", supportedDateFormat)
 		if err == nil && exactMatch {
 			return NewExtendedTime(ts, DateKindType, supportedDateFormat)
 		}

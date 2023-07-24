@@ -14,12 +14,8 @@ type ExtTestSuite struct {
 }
 
 func (e *ExtTestSuite) SetupTest() {
-	e.ctx = context.Background()
-	e.ctx = config.InjectSettingsIntoContext(e.ctx, &config.Settings{
-		Config: &config.Config{
-			FlushIntervalSeconds: 10,
-			BufferRows:           10,
-		},
+	e.ctx = config.InjectSettingsIntoContext(context.Background(), &config.Settings{
+		Config: &config.Config{},
 	})
 }
 

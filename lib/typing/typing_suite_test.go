@@ -13,9 +13,11 @@ type TypingTestSuite struct {
 	ctx context.Context
 }
 
-func (t *TypingTestSuite) SetUpTest() {
-	t.ctx = config.InjectSettingsIntoContext(context.Background(), &config.Settings{
+func (t *TypingTestSuite) SetupTest() {
+	t.ctx = context.Background() // Initialize the context
+	t.ctx = config.InjectSettingsIntoContext(t.ctx, &config.Settings{
 		VerboseLogging: false,
+		Config:         &config.Config{},
 	})
 }
 
