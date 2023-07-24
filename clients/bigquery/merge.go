@@ -44,7 +44,6 @@ func merge(ctx context.Context, tableData *optimization.TableData) ([]*Row, erro
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal, err := CastColVal(col, value[col], colKind)
-			fmt.Println("value", value[col], "colKind", colKind, "colVal", colVal, "err", err)
 			if err != nil {
 				return nil, err
 			}

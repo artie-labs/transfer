@@ -35,7 +35,11 @@ func CastColValStaging(colVal interface{}, colKind columns.Column) (string, erro
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
 		}
 
-		switch extTime.NestedKind.Type {
+		if colKind.KindDetails.ExtendedTimeDetails == nil {
+			return "", fmt.Errorf("column kind details for extended time details is null")
+		}
+
+		switch colKind.KindDetails.ExtendedTimeDetails.Type {
 		case ext.TimeKindType:
 			colValString = extTime.String(ext.PostgresTimeFormatNoTZ)
 		default:

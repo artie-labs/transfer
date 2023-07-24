@@ -36,12 +36,16 @@ func (c *Column) DefaultValue(args *DefaultValueArgs) (interface{}, error) {
 			return stringutil.Wrap(c.defaultValue, false), nil
 		}
 	case typing.ETime.Kind:
+		if c.KindDetails.ExtendedTimeDetails == nil {
+			return nil, fmt.Errorf("column kind details for extended time is nil")
+		}
+
 		extTime, err := ext.ParseFromInterface(c.defaultValue)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", c.defaultValue, err)
 		}
 
-		switch extTime.NestedKind.Type {
+		switch c.KindDetails.ExtendedTimeDetails.Type {
 		case ext.TimeKindType:
 			return stringutil.Wrap(extTime.String(ext.PostgresTimeFormatNoTZ), false), nil
 		default:

@@ -32,9 +32,12 @@ func CastColVal(col string, colVal interface{}, colKind columns.Column) (interfa
 				return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
 			}
 
-			fmt.Println("colVal", colVal, "extTime.NestedKind.Type", extTime.NestedKind.Type)
+			if colKind.KindDetails.ExtendedTimeDetails == nil {
+				return nil, fmt.Errorf("column kind details for extended time details is null")
+			}
 
-			switch extTime.NestedKind.Type {
+			// We should be using the colKind here since the data types coming from the source may be inconsistent.
+			switch colKind.KindDetails.ExtendedTimeDetails.Type {
 			// https://cloud.google.com/bigquery/docs/streaming-data-into-bigquery#sending_datetime_data
 			case ext.DateTimeKindType:
 				colVal = extTime.StringUTC(ext.BigQueryDateTimeFormat)
@@ -43,6 +46,8 @@ func CastColVal(col string, colVal interface{}, colKind columns.Column) (interfa
 			case ext.TimeKindType:
 				colVal = extTime.String(typing.StreamingTimeFormat)
 			}
+
+			fmt.Println("### AFTER col", col, "colVal", colVal, "extTime.NestedKind.Type", extTime.NestedKind.Type)
 		case typing.Struct.Kind:
 			if colKind.KindDetails == typing.Struct {
 				if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
