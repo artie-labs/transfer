@@ -54,6 +54,15 @@ func InterfaceToArrayString(val interface{}, recastAsArray bool) ([]string, erro
 	return vals, nil
 }
 
+func StringsJoinAddSingleQuotes(values []string) string {
+	var vals []string
+	for _, value := range values {
+		vals = append(vals, fmt.Sprintf(`'%s'`, value))
+	}
+
+	return strings.Join(vals, ",")
+}
+
 type StringsJoinAddPrefixArgs struct {
 	Vals      []string
 	Separator string

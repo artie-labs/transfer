@@ -23,16 +23,20 @@ type BigQuerySettings struct {
 }
 
 // GenerateMergeString this is used as an equality string for the MERGE statement.
-func (b *BigQuerySettings) GenerateMergeString() (string, error) {
+func (b *BigQuerySettings) GenerateMergeString(values []string) (string, error) {
 	if err := b.Valid(); err != nil {
 		return "", fmt.Errorf("failed to validate bigQuerySettings, err: %v", err)
+	}
+
+	if len(values) == 0 {
+		return "", fmt.Errorf("values cannot be empty")
 	}
 
 	switch b.PartitionType {
 	case "time":
 		switch b.PartitionBy {
 		case "daily":
-			return fmt.Sprintf(`DATE(c.%s) = DATE(cc.%s)`, b.PartitionField, b.PartitionField), nil
+			return fmt.Sprintf(`DATE(c.%s) IN (%s)`, b.PartitionField, array.StringsJoinAddSingleQuotes(values)), nil
 		}
 	}
 

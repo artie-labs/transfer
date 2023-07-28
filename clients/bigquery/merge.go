@@ -229,7 +229,12 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	var additionalEqualityStrings []string
 	if tableData.TopicConfig.BigQueryPartitionSettings != nil {
-		mergeString, err := tableData.TopicConfig.BigQueryPartitionSettings.GenerateMergeString()
+		distinctDates, err := tableData.DistinctDates(tableData.TopicConfig.BigQueryPartitionSettings.PartitionField)
+		if err != nil {
+			return fmt.Errorf("failed to generate distinct dates, err: %v", distinctDates)
+		}
+
+		mergeString, err := tableData.TopicConfig.BigQueryPartitionSettings.GenerateMergeString(distinctDates)
 		if err != nil {
 			log.WithError(err).Warn("failed to generate merge string")
 			return err

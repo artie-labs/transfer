@@ -104,6 +104,7 @@ func NewTableData(inMemoryColumns *columns.Columns, primaryKeys []string, topicC
 // This is important to avoid concurrent r/w, but also the ability for us to add or decrement row size by keeping a running total
 // With this, we are able to reduce the latency by 500x+ on a 5k row table. See event_bench_test.go vs. size_bench_test.go
 func (t *TableData) InsertRow(pk string, rowData map[string]interface{}, delete bool) {
+
 	var prevRowSize int
 	prevRow, isOk := t.rowsData[pk]
 	if isOk {
@@ -173,6 +174,30 @@ func (t *TableData) Rows() uint {
 	}
 
 	return uint(len(t.rowsData))
+}
+
+func (t *TableData) DistinctDates(colName string) ([]string, error) {
+	retMap := make(map[string]bool)
+	for _, row := range t.rowsData {
+		val, isOk := row[colName]
+		if !isOk {
+			return nil, fmt.Errorf("col: %v does not exist on row: %v", colName, row)
+		}
+
+		valTime, isOk := val.(*ext.ExtendedTime)
+		if !isOk {
+			return nil, fmt.Errorf("col: %v is not a time column, value: %v", colName, val)
+		}
+
+		retMap[valTime.String(ext.PostgresDateFormat)] = true
+	}
+
+	var distinctDates []string
+	for key := range retMap {
+		distinctDates = append(distinctDates, key)
+	}
+
+	return distinctDates, nil
 }
 
 func (t *TableData) TempTableSuffix() string {

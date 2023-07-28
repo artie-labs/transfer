@@ -8,6 +8,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestStringsJoinAddSingleQuotes(t *testing.T) {
+	foo := []string{
+		"abc",
+		"def",
+		"ggg",
+	}
+
+	assert.Equal(t, "'abc','def','ggg'", StringsJoinAddSingleQuotes(foo))
+}
+
 func TestToArrayString(t *testing.T) {
 	type _testCase struct {
 		name          string
