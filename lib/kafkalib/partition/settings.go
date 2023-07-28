@@ -22,6 +22,7 @@ type BigQuerySettings struct {
 	PartitionBy    string `yaml:"partitionBy"`
 }
 
+// GenerateMergeString this is used as an equality string for the MERGE statement.
 func (b *BigQuerySettings) GenerateMergeString() (string, error) {
 	if err := b.Valid(); err != nil {
 		return "", fmt.Errorf("failed to validate bigQuerySettings, err: %v", err)
