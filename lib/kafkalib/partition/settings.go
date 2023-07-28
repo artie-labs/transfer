@@ -22,6 +22,22 @@ type BigQuerySettings struct {
 	PartitionBy    string `yaml:"partitionBy"`
 }
 
+func (b *BigQuerySettings) GenerateMergeString() (string, error) {
+	if err := b.Valid(); err != nil {
+		return "", fmt.Errorf("failed to validate bigQuerySettings, err: %v", err)
+	}
+
+	switch b.PartitionType {
+	case "time":
+		switch b.PartitionBy {
+		case "daily":
+			return fmt.Sprintf(`DATE(c.%s) = DATE(cc.%s)`, b.PartitionField, b.PartitionField), nil
+		}
+	}
+
+	return "", fmt.Errorf("unexpected partitionType: %s and/or partitionBy: %s", b.PartitionType, b.PartitionBy)
+}
+
 func (b *BigQuerySettings) Valid() error {
 	if b == nil {
 		return fmt.Errorf("bigQuerySettings is nil")
