@@ -58,8 +58,9 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
 	err := s.mergeWithStages(ctx, tableData)
 	if AuthenticationExpirationErr(err) {
-		logger.FromContext(ctx).WithError(err).Warn("authentication has expired, will reload the Snowflake store")
+		logger.FromContext(ctx).WithError(err).Warn("authentication has expired, will reload the Snowflake store and retry merging")
 		s.ReestablishConnection(ctx)
+		return s.Merge(ctx, tableData)
 	}
 
 	return err
