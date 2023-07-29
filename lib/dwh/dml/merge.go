@@ -24,6 +24,9 @@ type MergeArgument struct {
 	IdempotentKey string
 	PrimaryKeys   []columns.Wrapper
 
+	// AdditionalEqualityStrings is used for handling BigQuery partitioned table merges
+	AdditionalEqualityStrings []string
+
 	// ColumnsToTypes also needs to be escaped.
 	ColumnsToTypes columns.Columns
 
@@ -210,6 +213,10 @@ func MergeStatement(ctx context.Context, m *MergeArgument) (string, error) {
 	subQuery := fmt.Sprintf("( %s )", m.SubQuery)
 	if m.DestKind == constants.BigQuery {
 		subQuery = m.SubQuery
+
+		if len(m.AdditionalEqualityStrings) > 0 {
+			equalitySQLParts = append(equalitySQLParts, m.AdditionalEqualityStrings...)
+		}
 	}
 
 	cols := m.ColumnsToTypes.GetColumnsToUpdate(ctx, &sql.NameArgs{

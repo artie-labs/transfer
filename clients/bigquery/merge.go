@@ -227,10 +227,27 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return fmt.Errorf("failed to insert into temp table: %s, error: %v", tableName, err)
 	}
 
+	var additionalEqualityStrings []string
+	if tableData.TopicConfig.BigQueryPartitionSettings != nil {
+		distinctDates, err := tableData.DistinctDates(ctx, tableData.TopicConfig.BigQueryPartitionSettings.PartitionField)
+		if err != nil {
+			return fmt.Errorf("failed to generate distinct dates, err: %v", err)
+		}
+
+		mergeString, err := tableData.TopicConfig.BigQueryPartitionSettings.GenerateMergeString(distinctDates)
+		if err != nil {
+			log.WithError(err).Warn("failed to generate merge string")
+			return err
+		}
+
+		additionalEqualityStrings = []string{mergeString}
+	}
+
 	mergeQuery, err := dml.MergeStatement(ctx, &dml.MergeArgument{
-		FqTableName:   tableData.ToFqName(ctx, constants.BigQuery, true),
-		SubQuery:      tempAlterTableArgs.FqTableName,
-		IdempotentKey: tableData.TopicConfig.IdempotentKey,
+		FqTableName:               tableData.ToFqName(ctx, constants.BigQuery, true),
+		AdditionalEqualityStrings: additionalEqualityStrings,
+		SubQuery:                  tempAlterTableArgs.FqTableName,
+		IdempotentKey:             tableData.TopicConfig.IdempotentKey,
 		PrimaryKeys: tableData.PrimaryKeys(ctx, &sql.NameArgs{
 			Escape:   true,
 			DestKind: s.Label(),

@@ -175,6 +175,30 @@ func (t *TableData) Rows() uint {
 	return uint(len(t.rowsData))
 }
 
+func (t *TableData) DistinctDates(ctx context.Context, colName string) ([]string, error) {
+	retMap := make(map[string]bool)
+	for _, row := range t.rowsData {
+		val, isOk := row[colName]
+		if !isOk {
+			return nil, fmt.Errorf("col: %v does not exist on row: %v", colName, row)
+		}
+
+		extTime, err := ext.ParseFromInterface(ctx, val)
+		if err != nil {
+			return nil, fmt.Errorf("col: %v is not a time column, value: %v, err: %v", colName, val, err)
+		}
+
+		retMap[extTime.String(ext.PostgresDateFormat)] = true
+	}
+
+	var distinctDates []string
+	for key := range retMap {
+		distinctDates = append(distinctDates, key)
+	}
+
+	return distinctDates, nil
+}
+
 func (t *TableData) TempTableSuffix() string {
 	return t.temporaryTableSuffix
 }
