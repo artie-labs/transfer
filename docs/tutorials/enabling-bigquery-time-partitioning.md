@@ -46,5 +46,4 @@ The steps are as follows:
 
 ### Editing Artie Transfer table settings
 
-<figure><img src="../.gitbook/assets/enabling_table_settings.gif" alt=""><figcaption></figcaption></figure>
-
+<figure><img src="../.gitbook/assets/Jul-28-2023 21-41-50.gif" alt=""><figcaption></figcaption></figure>
