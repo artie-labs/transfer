@@ -114,14 +114,11 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 
 	s.fakeStageStore.ExecReturnsOnCall(0, nil, fmt.Errorf("390114: Authentication token has expired. The user must authenticate again."))
 	err := s.stageStore.Merge(s.ctx, tableData)
-	assert.True(s.T(), AuthenticationExpirationErr(err), err)
-
-	s.fakeStageStore.ExecReturnsOnCall(1, nil, nil)
-	assert.Nil(s.T(), s.stageStore.Merge(s.ctx, tableData))
-	s.fakeStageStore.ExecReturns(nil, nil)
+	assert.NoError(s.T(), err, "transient errors like auth errors will be retried")
 
 	// 5 regular ones and then 1 additional one to re-establish auth.
-	assert.Equal(s.T(), s.fakeStageStore.ExecCallCount(), 6, "called merge")
+	baseline := 5
+	assert.Equal(s.T(), s.fakeStageStore.ExecCallCount(), baseline+1, "called merge")
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMerge() {
