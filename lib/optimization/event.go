@@ -186,7 +186,7 @@ func (t *TableData) DistinctDates(ctx context.Context, colName string) ([]string
 
 		extTime, err := ext.ParseFromInterface(ctx, val)
 		if err != nil {
-			return nil, fmt.Errorf("col: %v is not a time column, value: %v", colName, val)
+			return nil, fmt.Errorf("col: %v is not a time column, value: %v, err: %v", colName, val, err)
 		}
 
 		retMap[extTime.String(ext.PostgresDateFormat)] = true

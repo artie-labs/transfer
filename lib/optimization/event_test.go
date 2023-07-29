@@ -3,6 +3,7 @@ package optimization
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -16,6 +17,102 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
+
+func (o *OptimizationTestSuite) TestDistinctDates() {
+	type _testCase struct {
+		name                string
+		rowData             map[string]map[string]interface{} // pk -> { col -> val }
+		expectErr           bool
+		expectedDatesString []string
+	}
+
+	testCases := []_testCase{
+		{
+			name: "no dates",
+		},
+		{
+			name: "one date",
+			rowData: map[string]map[string]interface{}{
+				"1": {
+					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
+				},
+			},
+			expectedDatesString: []string{"2020-01-01"},
+		},
+		{
+			name: "two dates",
+			rowData: map[string]map[string]interface{}{
+				"1": {
+					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
+				},
+				"2": {
+					"ts": time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
+				},
+			},
+			expectedDatesString: []string{"2020-01-01", "2020-01-02"},
+		},
+		{
+			name: "3 dates, 2 unique",
+			rowData: map[string]map[string]interface{}{
+				"1": {
+					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
+				},
+				"1_duplicate": {
+					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
+				},
+				"2": {
+					"ts": time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
+				},
+			},
+			expectedDatesString: []string{"2020-01-01", "2020-01-02"},
+		},
+		{
+			name: "two dates, one is nil",
+			rowData: map[string]map[string]interface{}{
+				"1": {
+					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
+				},
+				"2": {
+					"ts": nil,
+				},
+			},
+			expectErr: true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t := &TableData{
+			rowsData: testCase.rowData,
+		}
+
+		actualValues, actualErr := t.DistinctDates(o.ctx, "ts")
+		if testCase.expectErr {
+			assert.Error(o.T(), actualErr, testCase.name)
+		} else {
+			assert.NoError(o.T(), actualErr, testCase.name)
+			assert.Equal(o.T(), true, slicesEqualUnordered(testCase.expectedDatesString, actualValues),
+				fmt.Sprintf("2 arrays not the same, test name: %s, expected array: %v, actual array: %v",
+					testCase.name, testCase.expectedDatesString, actualValues))
+		}
+	}
+}
+
+func slicesEqualUnordered(s1, s2 []string) bool {
+	if len(s1) != len(s2) {
+		return false
+	}
+
+	sort.Strings(s1)
+	sort.Strings(s2)
+
+	for i, v := range s1 {
+		if v != s2[i] {
+			return false
+		}
+	}
+
+	return true
+}
 
 func (o *OptimizationTestSuite) TestNewTableData_TableName() {
 	type _testCase struct {
