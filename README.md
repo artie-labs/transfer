@@ -36,7 +36,7 @@ The optimal set-up looks something like this:
 * Kafka topic per table (so we can toggle number of partitions based on throughput)
 * Partition key is the primary key for the table (so we avoid out-of-order writes at the row level)
 
-To see the current supported databases, check out the [Supported section](#what-is-currently-supported)
+To see all of the supported databases, check out the [Supported section](#what-is-currently-supported)
 
 ## Examples
 
