@@ -1,7 +1,7 @@
 ---
 description: >-
   BigQuery Time Partitioning is a good way to reduce the number of bytes
-  processed which lowers your bill and increases Transfer's performance!
+  processed which lowers your bill and increases Artie Transfer's performance!
 ---
 
 # Enabling BigQuery Time Partitioning
@@ -33,7 +33,7 @@ Note: A BigQuery table **can have up to 4000 partitions**. So, if you picked the
 
 The steps are as follows:
 
-1. Pause Artie Transfer deployment (this will only pause Transfer, Debezium will still be running and capturing the changes).
+1. Pause Artie Transfer deployment (this will only pause Artie Transfer, Debezium will still be running and capturing the changes).
 2. Create the table with the right partitioning strategy (e.g. `leads_copy`)
 3. Copy the main table into the new partitioned table&#x20;
 4. Drop the old table (`leads`) and [rename](https://cloud.google.com/bigquery/docs/managing-tables#renaming-table) the new partitioned table. (`leads_copy`)
