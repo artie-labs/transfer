@@ -22,5 +22,5 @@ The `what` tag aims to provide a high level of visibility into whether an attemp
 
 Transfer will provide `what:success` if the attempt failed and different reasoning depending on the error state. This way, our monitors and response to failures can be more actionable and we can jump straight to the offending code block.
 
-<figure><img src="../.gitbook/assets/image (4) (1).png" alt=""><figcaption><p>Here's a visualization of what this looks like</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (4) (1) (1).png" alt=""><figcaption><p>Here's a visualization of what this looks like</p></figcaption></figure>
 

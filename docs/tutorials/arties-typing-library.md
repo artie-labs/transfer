@@ -27,7 +27,7 @@ The first one, `5` , will be casted as a `INT` and the second one will be casted
 
 As part of our values to preserve data integrity, we will provide the JSON object back out to the destination in the way that it was received. See below for an example in Snowflake.
 
-<figure><img src="../.gitbook/assets/image (1).png" alt=""><figcaption><p>JSON object preservation in Snowflake example</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (1) (1).png" alt=""><figcaption><p>JSON object preservation in Snowflake example</p></figcaption></figure>
 
 > How do you know if a value is a JSON object?
 
@@ -44,7 +44,7 @@ Arrays also have first-class support and we support the following:
 
 <figure><img src="../.gitbook/assets/image (7).png" alt=""><figcaption><p>Normal array</p></figcaption></figure>
 
-<figure><img src="../.gitbook/assets/image (1) (1).png" alt=""><figcaption><p>Array with nested objects</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (1) (1) (1).png" alt=""><figcaption><p>Array with nested objects</p></figcaption></figure>
 
 ## Timestamp, Date and Time
 

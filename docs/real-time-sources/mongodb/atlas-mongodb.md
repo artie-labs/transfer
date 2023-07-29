@@ -25,7 +25,7 @@ To grab the connection string, follow these steps:
 2. Find your deployment and click `Connect`
 3. Click on shell and select `3.4 or earlier` for mongo shell
 
-<figure><img src="../../.gitbook/assets/image.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (4).png" alt=""><figcaption></figcaption></figure>
 
 ## Authentication
 

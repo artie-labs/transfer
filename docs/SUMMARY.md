@@ -35,12 +35,13 @@
 
 ## 👨💻 Tutorials
 
+* [Enabling BigQuery Time Partitioning](tutorials/enabling-bigquery-time-partitioning.md)
+* [Enabling SSH Tunneling](tutorials/enabling-ssh-tunneling.md)
+* [Preventing WAL growth on AWS RDS](tutorials/preventing-wal-growth-on-aws-rds.md)
 * [Artie's typing library](tutorials/arties-typing-library.md)
 * [Running Redshift](tutorials/running-redshift.md)
 * [Setting up Pub/Sub](tutorials/setting-up-pub-sub.md)
 * [Debezium Topic Reroute SMT](tutorials/debezium-topic-reroute-smt.md)
-* [Enabling SSH Tunneling](tutorials/enabling-ssh-tunneling.md)
-* [Preventing WAL growth on AWS RDS](tutorials/preventing-wal-growth-on-aws-rds.md)
 
 ***
 
