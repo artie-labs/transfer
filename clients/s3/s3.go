@@ -5,20 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/artie-labs/transfer/lib/parquetutil"
 	"github.com/xitongsys/parquet-go/parquet"
 
+	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/parquetutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/xitongsys/parquet-go-source/local"
-
-	//"github.com/xitongsys/parquetutil-go/writer"
-
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/xitongsys/parquet-go/writer"
-
-	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/optimization"
 )
 
 type S3 struct {
@@ -54,14 +50,14 @@ func (s *S3) Merge(ctx context.Context, tableData *optimization.TableData) error
 		return fmt.Errorf("failed to generate parquetutil schema, err: %v", err)
 	}
 
-	fw, err := local.NewLocalFileWriter("/tmp/json.parquet.gz")
+	fw, err := local.NewLocalFileWriter("/tmp/normal.parquet.gz")
 	if err != nil {
 		return fmt.Errorf("failed to create a local parquetutil file, err: %v", err)
 	}
 
 	fmt.Println("schema", schema)
 
-	pw, err := writer.NewJSONWriterFromWriter(fw, schema, 4)
+	pw, err := writer.NewJSONWriter(schema, fw, 4)
 	if err != nil {
 		return fmt.Errorf("failed to instantiate parquetutil writer, err: %v", err)
 	}
@@ -70,10 +66,7 @@ func (s *S3) Merge(ctx context.Context, tableData *optimization.TableData) error
 	for _, val := range tableData.RowsData() {
 		row := make(map[string]interface{})
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, nil) {
-			//colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal := val[col]
-
-			// TODO parse this.
 			row[col] = colVal
 		}
 
@@ -94,7 +87,7 @@ func (s *S3) Merge(ctx context.Context, tableData *optimization.TableData) error
 		return fmt.Errorf("failed to write stop, err: %v", err)
 	}
 
-	return nil
+	return fw.Close()
 }
 
 func LoadS3(ctx context.Context, settings *config.S3Settings) *S3 {
