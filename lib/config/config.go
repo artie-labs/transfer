@@ -73,9 +73,8 @@ type S3Settings struct {
 	OptionalPrefix string `yaml:"optionalPrefix"`
 	Bucket         string `yaml:"bucket"`
 	// https://docs.aws.amazon.com/redshift/latest/dg/copy-parameters-authorization.html
-	CredentialsClause    string                   `yaml:"credentialsClause"`
-	ShowDeduplicatedRows bool                     `yaml:"showDeduplicatedRows"`
-	OutputFormat         constants.S3OutputFormat `yaml:"outputFormat"`
+	CredentialsClause string                   `yaml:"credentialsClause"`
+	OutputFormat      constants.S3OutputFormat `yaml:"outputFormat"`
 }
 
 func (s *S3Settings) Validate() error {

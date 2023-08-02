@@ -24,7 +24,7 @@ func Baseline(ctx context.Context) destination.Baseline {
 	settings := config.FromContext(ctx)
 	switch settings.Config.Output {
 	case constants.S3:
-		return s3.LoadS3(ctx)
+		return s3.LoadS3(ctx, settings.Config.S3)
 	}
 
 	logger.FromContext(ctx).WithFields(map[string]interface{}{

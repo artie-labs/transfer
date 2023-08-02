@@ -146,6 +146,12 @@ func (t *TableData) RowsData() map[string]map[string]interface{} {
 
 func (t *TableData) ToFqName(ctx context.Context, kind constants.DestinationKind, escape bool) string {
 	switch kind {
+	case constants.S3:
+		// S3 should be db.schema.tableName, but we don't need to escape, since it's not a SQL db.
+		return fmt.Sprintf("%s.%s.%s", t.TopicConfig.Database, t.TopicConfig.Schema, t.Name(ctx, &sql.NameArgs{
+			Escape:   false,
+			DestKind: kind,
+		}))
 	case constants.Redshift:
 		// Redshift is Postgres compatible, so when establishing a connection, we'll specify a database.
 		// Thus, we only need to specify schema and table name here.
