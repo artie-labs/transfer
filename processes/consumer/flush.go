@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/dwh/utils"
+	"github.com/artie-labs/transfer/lib/destination/utils"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"

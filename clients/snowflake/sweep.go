@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/artie-labs/transfer/lib/dwh/ddl"
+	"github.com/artie-labs/transfer/lib/destination/ddl"
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"

@@ -13,7 +13,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
-	"github.com/artie-labs/transfer/lib/dwh/types"
+	"github.com/artie-labs/transfer/lib/destination/types"
 )
 
 func TestGetTableCfgArgs_ShouldParseComment(t *testing.T) {

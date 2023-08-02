@@ -7,9 +7,9 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/dwh"
-	"github.com/artie-labs/transfer/lib/dwh/ddl"
-	"github.com/artie-labs/transfer/lib/dwh/types"
+	"github.com/artie-labs/transfer/lib/destination"
+	"github.com/artie-labs/transfer/lib/destination/ddl"
+	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +21,7 @@ func (d *DDLTestSuite) Test_CreateTable() {
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 
 	type dwhToTableConfig struct {
-		_dwh         dwh.DataWarehouse
+		_dwh         destination.DataWarehouse
 		_tableConfig *types.DwhTableConfig
 		_fakeStore   *mocks.FakeStore
 	}

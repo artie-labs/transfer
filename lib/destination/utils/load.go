@@ -11,12 +11,12 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/db/mock"
-	"github.com/artie-labs/transfer/lib/dwh"
+	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/mocks"
 )
 
-func DataWarehouse(ctx context.Context, store *db.Store) dwh.DataWarehouse {
+func DataWarehouse(ctx context.Context, store *db.Store) destination.DataWarehouse {
 	settings := config.FromContext(ctx)
 
 	switch settings.Config.Output {

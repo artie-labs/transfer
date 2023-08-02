@@ -7,7 +7,7 @@ import (
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/db/mock"
-	"github.com/artie-labs/transfer/lib/dwh"
+	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,7 +23,7 @@ func TestInjectDwhIntoCtx(t *testing.T) {
 	dwhVal := ctx.Value(dwhKey)
 	assert.Nil(t, dwhVal)
 
-	var _dwh dwh.DataWarehouse
+	var _dwh destination.DataWarehouse
 	_dwh = snowflake.LoadSnowflake(ctx, &store)
 
 	ctx = InjectDwhIntoCtx(_dwh, ctx)

@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/dwh"
-	"github.com/artie-labs/transfer/lib/dwh/ddl"
+	"github.com/artie-labs/transfer/lib/destination"
+	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/stretchr/testify/assert"
 )
@@ -24,7 +24,7 @@ func (d *DDLTestSuite) Test_DropTemporaryTable() {
 		assert.Equal(d.T(), 0, d.fakeSnowflakeStagesStore.ExecCallCount())
 	}
 
-	for _, _dwh := range []dwh.DataWarehouse{d.bigQueryStore, d.snowflakeStagesStore} {
+	for _, _dwh := range []destination.DataWarehouse{d.bigQueryStore, d.snowflakeStagesStore} {
 		var fakeStore *mocks.FakeStore
 		if _dwh.Label() == constants.Snowflake || _dwh.Label() == constants.SnowflakeStages {
 			fakeStore = d.fakeSnowflakeStagesStore
@@ -60,7 +60,7 @@ func (d *DDLTestSuite) Test_DropTemporaryTable_Errors() {
 	}
 
 	randomErr := fmt.Errorf("random err")
-	for _, _dwh := range []dwh.DataWarehouse{d.bigQueryStore, d.snowflakeStagesStore} {
+	for _, _dwh := range []destination.DataWarehouse{d.bigQueryStore, d.snowflakeStagesStore} {
 		var fakeStore *mocks.FakeStore
 		if _dwh.Label() == constants.Snowflake {
 			fakeStore = d.fakeSnowflakeStagesStore

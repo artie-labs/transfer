@@ -8,12 +8,12 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 
-	"github.com/artie-labs/transfer/lib/dwh"
+	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func BackfillColumn(ctx context.Context, dwh dwh.DataWarehouse, column columns.Column, fqTableName string) error {
+func BackfillColumn(ctx context.Context, dwh destination.DataWarehouse, column columns.Column, fqTableName string) error {
 	if dwh.Label() == constants.BigQuery {
 		return fmt.Errorf("bigquery does not use this method")
 	}

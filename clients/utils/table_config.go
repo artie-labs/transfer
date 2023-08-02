@@ -8,15 +8,15 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/dwh"
-	"github.com/artie-labs/transfer/lib/dwh/types"
+	"github.com/artie-labs/transfer/lib/destination"
+	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 type GetTableCfgArgs struct {
-	Dwh                dwh.DataWarehouse
+	Dwh                destination.DataWarehouse
 	FqName             string
 	ConfigMap          *types.DwhToTablesConfigMap
 	Query              string
@@ -113,7 +113,7 @@ func GetTableConfig(ctx context.Context, args GetTableCfgArgs) (*types.DwhTableC
 		case constants.Redshift:
 			kd = typing.RedshiftTypeToKind(row[args.ColumnTypeLabel])
 		default:
-			return nil, fmt.Errorf("unexpected dwh kind, label: %v", args.Dwh.Label())
+			return nil, fmt.Errorf("unexpected destination kind, label: %v", args.Dwh.Label())
 		}
 
 		col := columns.NewColumn(row[args.ColumnNameLabel], kd)
