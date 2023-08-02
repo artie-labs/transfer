@@ -69,6 +69,22 @@ func (b *BigQuery) DSN() string {
 	return dsn
 }
 
+type S3Settings struct {
+	OptionalPrefix string `yaml:"optionalPrefix"`
+	Bucket         string `yaml:"bucket"`
+	// https://docs.aws.amazon.com/redshift/latest/dg/copy-parameters-authorization.html
+	CredentialsClause    string `yaml:"credentialsClause"`
+	ShowDeduplicatedRows bool   `yaml:"showDeduplicatedRows"`
+}
+
+func (s *S3Settings) Validate() error {
+	if empty := stringutil.Empty(s.Bucket, s.CredentialsClause); empty {
+		return fmt.Errorf("one of s3 settings is empty")
+	}
+
+	return nil
+}
+
 type Redshift struct {
 	Host             string `yaml:"host"`
 	Port             int    `yaml:"port"`
@@ -143,9 +159,10 @@ type Config struct {
 	SharedDestinationConfig SharedDestinationConfig `yaml:"sharedDestinationConfig"`
 
 	// Supported destinations
-	BigQuery  *BigQuery  `yaml:"bigquery"`
-	Snowflake *Snowflake `yaml:"snowflake"`
-	Redshift  *Redshift  `yaml:"redshift"`
+	BigQuery  *BigQuery   `yaml:"bigquery"`
+	Snowflake *Snowflake  `yaml:"snowflake"`
+	Redshift  *Redshift   `yaml:"redshift"`
+	S3        *S3Settings `yaml:"s3"`
 
 	Reporting struct {
 		Sentry *Sentry `yaml:"sentry"`
