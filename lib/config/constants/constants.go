@@ -125,6 +125,7 @@ var validDestinations = []DestinationKind{
 	Snowflake,
 	SnowflakeStages,
 	Redshift,
+	S3,
 	Test,
 }
 
@@ -146,7 +147,7 @@ type S3OutputFormat string
 
 const (
 	// TODO - We should support TSV, Avro
-	ParquetFormat S3OutputFormat = "parquet"
+	ParquetFormat S3OutputFormat = "parquetutil"
 )
 
 func IsValidS3OutputFormat(format S3OutputFormat) bool {
