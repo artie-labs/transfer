@@ -19,6 +19,8 @@ require (
 	github.com/snowflakedb/gosnowflake v1.6.23-0.20230622060049-8cb65fd3db4a
 	github.com/stretchr/testify v1.8.4
 	github.com/viant/bigquery v0.2.1-0.20230129024722-24ed6fd5555f
+	github.com/xitongsys/parquet-go v1.6.2
+	github.com/xitongsys/parquet-go-source v0.0.0-20200817004010-026bad9b25d0
 	go.mongodb.org/mongo-driver v1.11.0
 	google.golang.org/api v0.118.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -36,7 +38,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.0.0 // indirect
 	github.com/JohnCGriffin/overflow v0.0.0-20211019200055-46fa312c352c // indirect
 	github.com/Microsoft/go-winio v0.6.0 // indirect
-	github.com/andybalholm/brotli v1.0.4 // indirect
+	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/apache/arrow/go/arrow v0.0.0-20200730104253-651201b0f516 // indirect
 	github.com/apache/arrow/go/v12 v12.0.1 // indirect
 	github.com/apache/thrift v0.16.0 // indirect
@@ -80,7 +82,7 @@ require (
 	github.com/gsterjov/go-libsecret v0.0.0-20161001094733-a6f4afe4910c // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/klauspost/asmfmt v1.3.2 // indirect
-	github.com/klauspost/compress v1.15.15 // indirect
+	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.3 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.1 // indirect
@@ -91,7 +93,7 @@ require (
 	github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 // indirect
 	github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3 // indirect
 	github.com/mtibben/percent v0.2.1 // indirect
-	github.com/pierrec/lz4/v4 v4.1.17 // indirect
+	github.com/pierrec/lz4/v4 v4.1.18 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -100,8 +102,6 @@ require (
 	github.com/viant/scy v0.3.2-0.20220825213848-acc5c59cde78 // indirect
 	github.com/viant/toolbox v0.34.5 // indirect
 	github.com/viant/xunsafe v0.8.2 // indirect
-	github.com/xitongsys/parquet-go v1.6.2 // indirect
-	github.com/xitongsys/parquet-go-source v0.0.0-20200817004010-026bad9b25d0 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/crypto v0.10.0 // indirect
@@ -110,7 +110,7 @@ require (
 	golang.org/x/net v0.11.0 // indirect
 	golang.org/x/oauth2 v0.7.0 // indirect
 	golang.org/x/sync v0.2.0 // indirect
-	golang.org/x/sys v0.9.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
 	golang.org/x/term v0.9.0 // indirect
 	golang.org/x/text v0.10.0 // indirect
 	golang.org/x/tools v0.9.3 // indirect
