@@ -40,10 +40,19 @@ func TestS3Settings_Validate(t *testing.T) {
 			ExpectErr: true,
 		},
 		{
-			Name: "all set",
+			Name: "missing output format",
 			S3: &S3Settings{
 				Bucket:            "bucket",
 				CredentialsClause: "region",
+			},
+			ExpectErr: true,
+		},
+		{
+			Name: "valid",
+			S3: &S3Settings{
+				Bucket:            "bucket",
+				CredentialsClause: "region",
+				OutputFormat:      constants.ParquetFormat,
 			},
 			ExpectErr: true,
 		},

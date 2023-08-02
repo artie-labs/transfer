@@ -141,3 +141,14 @@ func IsValidDestination(destination DestinationKind) bool {
 type ColComment struct {
 	Backfilled bool `json:"backfilled"`
 }
+
+type S3OutputFormat string
+
+const (
+	// TODO - We should support TSV, Avro
+	ParquetFormat S3OutputFormat = "parquet"
+)
+
+func IsValidS3OutputFormat(format S3OutputFormat) bool {
+	return format == ParquetFormat
+}
