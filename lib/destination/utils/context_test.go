@@ -20,7 +20,7 @@ func TestInjectDwhIntoCtx(t *testing.T) {
 	})
 
 	// Check before injection, there should be no DWH.
-	dwhVal := ctx.Value(dwhKey)
+	dwhVal := ctx.Value(destKey)
 	assert.Nil(t, dwhVal)
 
 	var _dwh destination.DataWarehouse

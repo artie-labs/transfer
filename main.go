@@ -23,7 +23,12 @@ func main() {
 
 	// Loading Telemetry
 	ctx = metrics.LoadExporter(ctx)
-	ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(ctx, nil), ctx)
+	if utils.IsOutputBaseline(ctx) {
+		ctx = utils.InjectBaselineIntoCtx(utils.Baseline(ctx), ctx)
+	} else {
+		ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(ctx, nil), ctx)
+	}
+
 	ctx = models.LoadMemoryDB(ctx)
 	settings := config.FromContext(ctx)
 

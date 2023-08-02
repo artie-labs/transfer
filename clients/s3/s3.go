@@ -18,3 +18,7 @@ func (s *S3) Label() constants.DestinationKind {
 func (s *S3) Merge(ctx context.Context, tableData *optimization.TableData) error {
 	return nil
 }
+
+func LoadS3(ctx context.Context) *S3 {
+	return &S3{}
+}

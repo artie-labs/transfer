@@ -3,6 +3,8 @@ package utils
 import (
 	"context"
 
+	"github.com/artie-labs/transfer/clients/s3"
+
 	"github.com/artie-labs/transfer/clients/redshift"
 
 	"github.com/artie-labs/transfer/clients/bigquery"
@@ -15,6 +17,24 @@ import (
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/mocks"
 )
+
+func IsOutputBaseline(ctx context.Context) bool {
+	return config.FromContext(ctx).Config.Output == constants.S3
+}
+
+func Baseline(ctx context.Context) destination.Baseline {
+	settings := config.FromContext(ctx)
+	switch settings.Config.Output {
+	case constants.S3:
+		return s3.LoadS3(ctx)
+	}
+
+	logger.FromContext(ctx).WithFields(map[string]interface{}{
+		"source": settings.Config.Output,
+	}).Fatal("No valid output sources specified")
+
+	return nil
+}
 
 func DataWarehouse(ctx context.Context, store *db.Store) destination.DataWarehouse {
 	settings := config.FromContext(ctx)

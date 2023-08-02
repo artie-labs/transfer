@@ -15,7 +15,7 @@ type DataWarehouse interface {
 	Query(query string, args ...any) (*sql.Rows, error)
 }
 
-type Destination interface {
+type Baseline interface {
 	Label() constants.DestinationKind
 	Merge(ctx context.Context, tableData *optimization.TableData) error
 }
