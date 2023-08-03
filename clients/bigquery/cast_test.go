@@ -119,6 +119,11 @@ func (b *BigQueryTestSuite) TestCastColVal() {
 			colVal:  invalidDateTsExt,
 			colKind: columns.Column{KindDetails: dateKind},
 		},
+		{
+			name:    "datetime (column is a datetime, but value is invalid)",
+			colVal:  invalidDateTsExt,
+			colKind: columns.Column{KindDetails: tsKind},
+		},
 	}
 
 	for _, testCase := range testCases {
