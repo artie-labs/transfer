@@ -170,7 +170,7 @@ type Config struct {
 	BigQuery  *BigQuery   `yaml:"bigquery"`
 	Snowflake *Snowflake  `yaml:"snowflake"`
 	Redshift  *Redshift   `yaml:"redshift"`
-	S3        *S3Settings `yaml:"s3lib"`
+	S3        *S3Settings `yaml:"s3"`
 
 	Reporting struct {
 		Sentry *Sentry `yaml:"sentry"`
