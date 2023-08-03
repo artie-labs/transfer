@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/stringutil"
+
 	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/artie-labs/transfer/lib/s3lib"
@@ -82,7 +84,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return fmt.Errorf("failed to generate parquet schema, err: %v", err)
 	}
 
-	fp := fmt.Sprintf("/tmp/%v.parquet.gz", tableData.LatestCDCTs.UnixMilli())
+	fp := fmt.Sprintf("/tmp/%v_%s.parquet.gz", tableData.LatestCDCTs.UnixMilli(), stringutil.Random(4))
 	fw, err := local.NewLocalFileWriter(fp)
 	if err != nil {
 		return fmt.Errorf("failed to create a local parquet file, err: %v", err)
