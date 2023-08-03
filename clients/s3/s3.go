@@ -97,8 +97,17 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	for _, val := range tableData.RowsData() {
 		row := make(map[string]interface{})
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, nil) {
-			colVal := val[col]
-			row[col] = colVal
+			colKind, isOk := tableData.ReadOnlyInMemoryCols().GetColumn(col)
+			if !isOk {
+				return fmt.Errorf("expected column: %v to exist in readOnlyInMemoryCols(...) but it does not", col)
+			}
+
+			value, err := parquetutil.ParseValue(ctx, val[col], colKind)
+			if err != nil {
+				return fmt.Errorf("failed to parse value, err: %v, value: %v, column: %v", err, val[col], col)
+			}
+
+			row[col] = value
 		}
 
 		rowBytes, err := json.Marshal(row)
