@@ -43,6 +43,10 @@ func (b *BigQueryTestSuite) TestCastColVal() {
 	birthdayTimeExt, err := ext.NewExtendedTime(birthday, timeKind.ExtendedTimeDetails.Type, "")
 	assert.NoError(b.T(), err)
 
+	invalidDate := time.Date(0, time.September, 6, 3, 19, 24, 942000000, time.UTC)
+	invalidDateTsExt, err := ext.NewExtendedTime(invalidDate, tsKind.ExtendedTimeDetails.Type, "")
+	assert.NoError(b.T(), err)
+
 	testCases := []_testCase{
 		{
 			name:          "escaping string",
@@ -109,6 +113,11 @@ func (b *BigQueryTestSuite) TestCastColVal() {
 			colVal:        birthdayTimeExt,
 			colKind:       columns.Column{KindDetails: timeKind},
 			expectedValue: "03:19:24",
+		},
+		{
+			name:    "date (column is a date, but value is invalid)",
+			colVal:  invalidDateTsExt,
+			colKind: columns.Column{KindDetails: dateKind},
 		},
 	}
 
