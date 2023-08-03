@@ -79,15 +79,15 @@ type S3Settings struct {
 
 func (s *S3Settings) Validate() error {
 	if s == nil {
-		return fmt.Errorf("s3lib settings are nil")
+		return fmt.Errorf("s3 settings are nil")
 	}
 
 	if empty := stringutil.Empty(s.Bucket, s.CredentialsClause); empty {
-		return fmt.Errorf("one of s3lib settings is empty")
+		return fmt.Errorf("one of s3 settings is empty")
 	}
 
 	if !constants.IsValidS3OutputFormat(s.OutputFormat) {
-		return fmt.Errorf("invalid s3lib output format, format: %v", s.OutputFormat)
+		return fmt.Errorf("invalid s3 output format, format: %v", s.OutputFormat)
 	}
 
 	return nil
@@ -273,6 +273,10 @@ func (c *Config) Validate() error {
 	switch c.Output {
 	case constants.Redshift:
 		if err := c.ValidateRedshift(); err != nil {
+			return err
+		}
+	case constants.S3:
+		if err := c.S3.Validate(); err != nil {
 			return err
 		}
 	}

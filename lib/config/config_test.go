@@ -482,10 +482,22 @@ func TestConfig_Validate(t *testing.T) {
 	cfg.FlushIntervalSeconds = 600
 	assert.Nil(t, cfg.Validate())
 
+	// Now that we have a valid output, let's test with S3.
+	cfg.Output = constants.S3
+	assert.Error(t, cfg.Validate())
+	cfg.S3 = &S3Settings{
+		Bucket:            "foo",
+		CredentialsClause: "abc",
+		OutputFormat:      constants.ParquetFormat,
+	}
+
+	assert.Nil(t, cfg.Validate())
+
 	for _, num := range []int{-500, -300, -5, 0} {
 		cfg.FlushSizeKb = num
 		assert.Contains(t, cfg.Validate().Error(), "config is invalid, flush size pool has to be a positive number")
 	}
+
 }
 
 func TestCfg_KafkaBootstrapServers(t *testing.T) {
