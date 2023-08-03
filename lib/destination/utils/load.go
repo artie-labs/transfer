@@ -24,7 +24,12 @@ func Baseline(ctx context.Context) destination.Baseline {
 	settings := config.FromContext(ctx)
 	switch settings.Config.Output {
 	case constants.S3:
-		return s3.LoadS3(ctx, settings.Config.S3)
+		store, err := s3.LoadStore(ctx, settings.Config.S3)
+		if err != nil {
+			logger.FromContext(ctx).WithError(err).Fatalf("failed to load s3")
+		}
+
+		return store
 	}
 
 	logger.FromContext(ctx).WithFields(map[string]interface{}{

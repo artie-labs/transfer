@@ -4,6 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
+
+	"github.com/artie-labs/transfer/lib/typing/ext"
+
+	"github.com/artie-labs/transfer/lib/s3lib"
 
 	"github.com/xitongsys/parquet-go/parquet"
 
@@ -17,20 +22,40 @@ import (
 	"github.com/xitongsys/parquet-go/writer"
 )
 
-type S3 struct {
+type Store struct {
 	Settings *config.S3Settings
 }
 
-func (s *S3) Label() constants.DestinationKind {
+func (s *Store) Validate() error {
+	if s == nil {
+		return fmt.Errorf("s3 store is nil")
+	}
+
+	if err := s.Settings.Validate(); err != nil {
+		return fmt.Errorf("failed to validate settings, err :%v", err)
+	}
+
+	return nil
+}
+
+func (s *Store) Label() constants.DestinationKind {
 	return constants.S3
+}
+
+// ObjectPrefix - this will generate the exact right prefix that we need to write into S3.
+// It will look like something like this:
+// > optionalPrefix/fullyQualifiedTableName/YYYY-MM-DD
+func (s *Store) ObjectPrefix(ctx context.Context, tableData *optimization.TableData) string {
+	fqTableName := tableData.ToFqName(ctx, s.Label(), false)
+	yyyyMMDDFormat := tableData.LatestCDCTs.Format(ext.PostgresDateFormat)
+	return strings.Join([]string{s.Settings.OptionalPrefix, fqTableName, yyyyMMDDFormat}, "/")
 }
 
 // Merge - will take tableData, write it into a particular file in the specified format.
 // It will then upload this file to S3 under this particular format
-// s3://bucket/optionalS3Prefix/fullyQualifiedTableName/YYYY-MM-DD/{{unix_timestamp}}.parquetutil.gz
+// s3lib://bucket/optionalS3Prefix/fullyQualifiedTableName/YYYY-MM-DD/{{unix_timestamp}}.parquet.gz
 // * fullyQualifiedTableName - databaseName.schemaName.tableName
-func (s *S3) Merge(ctx context.Context, tableData *optimization.TableData) error {
-	fmt.Println("yay getting called!!!")
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
 	if tableData.Rows() == 0 || tableData.ReadOnlyInMemoryCols() == nil {
 		// There's no rows or columns. Let's skip.
 		return nil
@@ -55,8 +80,6 @@ func (s *S3) Merge(ctx context.Context, tableData *optimization.TableData) error
 		return fmt.Errorf("failed to create a local parquetutil file, err: %v", err)
 	}
 
-	fmt.Println("schema", schema)
-
 	pw, err := writer.NewJSONWriter(schema, fw, 4)
 	if err != nil {
 		return fmt.Errorf("failed to instantiate parquetutil writer, err: %v", err)
@@ -70,28 +93,42 @@ func (s *S3) Merge(ctx context.Context, tableData *optimization.TableData) error
 			row[col] = colVal
 		}
 
-		fmt.Println("row", row)
 		rowBytes, err := json.Marshal(row)
 		if err != nil {
 			return fmt.Errorf("failed to marshal row, err: %v", err)
 		}
 
-		fmt.Println("string(rowBytes)", string(rowBytes))
 		if err = pw.Write(string(rowBytes)); err != nil {
 			return fmt.Errorf("failed to write row, err: %v", err)
 		}
 	}
 
-	fmt.Println("pw", pw)
 	if err = pw.WriteStop(); err != nil {
 		return fmt.Errorf("failed to write stop, err: %v", err)
 	}
 
-	return fw.Close()
+	if err = fw.Close(); err != nil {
+		return fmt.Errorf("failed to close filewriter, err: %v", err)
+	}
+
+	if _, err = s3lib.UploadLocalFileToS3(ctx, s3lib.UploadArgs{
+		Bucket:           s.Settings.Bucket,
+		OptionalS3Prefix: s.Settings.OptionalPrefix,
+	}); err != nil {
+		return fmt.Errorf("failed to upload file to s3, err: %v", err)
+	}
+
+	return nil
 }
 
-func LoadS3(ctx context.Context, settings *config.S3Settings) *S3 {
-	return &S3{
+func LoadStore(ctx context.Context, settings *config.S3Settings) (*Store, error) {
+	store := &Store{
 		Settings: settings,
 	}
+
+	if err := store.Validate(); err != nil {
+		return nil, err
+	}
+
+	return store, nil
 }

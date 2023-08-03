@@ -1,4 +1,4 @@
-package s3
+package s3lib
 
 import (
 	"context"
@@ -51,5 +51,5 @@ func UploadLocalFileToS3(ctx context.Context, args UploadArgs) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("s3://%s/%s", args.Bucket, objectKey), nil
+	return fmt.Sprintf("s3lib://%s/%s", args.Bucket, objectKey), nil
 }

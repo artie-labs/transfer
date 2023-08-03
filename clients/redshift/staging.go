@@ -9,7 +9,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/typing"
 
-	"github.com/artie-labs/transfer/lib/s3"
+	"github.com/artie-labs/transfer/lib/s3lib"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
@@ -43,15 +43,15 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 		return fmt.Errorf("failed to load temporary table, err: %v", err)
 	}
 
-	// Load fp into s3, get S3 URI and pass it down.
-	s3Uri, err := s3.UploadLocalFileToS3(ctx, s3.UploadArgs{
+	// Load fp into s3lib, get S3 URI and pass it down.
+	s3Uri, err := s3lib.UploadLocalFileToS3(ctx, s3lib.UploadArgs{
 		OptionalS3Prefix: s.optionalS3Prefix,
 		Bucket:           s.bucket,
 		FilePath:         fp,
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to upload this to s3, err: %v", err)
+		return fmt.Errorf("failed to upload this to s3lib, err: %v", err)
 	}
 
 	// COPY table_name FROM '/path/to/local/file' DELIMITER '\t' NULL '\\N' FORMAT csv;

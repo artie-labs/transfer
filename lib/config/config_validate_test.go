@@ -54,7 +54,6 @@ func TestS3Settings_Validate(t *testing.T) {
 				CredentialsClause: "region",
 				OutputFormat:      constants.ParquetFormat,
 			},
-			ExpectErr: true,
 		},
 	}
 

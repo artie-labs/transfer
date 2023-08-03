@@ -78,12 +78,16 @@ type S3Settings struct {
 }
 
 func (s *S3Settings) Validate() error {
-	if empty := stringutil.Empty(s.Bucket, s.CredentialsClause); empty {
-		return fmt.Errorf("one of s3 settings is empty")
+	if s == nil {
+		return fmt.Errorf("s3lib settings are nil")
 	}
 
-	if constants.IsValidS3OutputFormat(s.OutputFormat) {
-		return fmt.Errorf("invalid s3 output format, format: %v", s.OutputFormat)
+	if empty := stringutil.Empty(s.Bucket, s.CredentialsClause); empty {
+		return fmt.Errorf("one of s3lib settings is empty")
+	}
+
+	if !constants.IsValidS3OutputFormat(s.OutputFormat) {
+		return fmt.Errorf("invalid s3lib output format, format: %v", s.OutputFormat)
 	}
 
 	return nil
@@ -166,7 +170,7 @@ type Config struct {
 	BigQuery  *BigQuery   `yaml:"bigquery"`
 	Snowflake *Snowflake  `yaml:"snowflake"`
 	Redshift  *Redshift   `yaml:"redshift"`
-	S3        *S3Settings `yaml:"s3"`
+	S3        *S3Settings `yaml:"s3lib"`
 
 	Reporting struct {
 		Sentry *Sentry `yaml:"sentry"`
