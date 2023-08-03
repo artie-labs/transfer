@@ -48,7 +48,12 @@ func (s *Store) Label() constants.DestinationKind {
 func (s *Store) ObjectPrefix(ctx context.Context, tableData *optimization.TableData) string {
 	fqTableName := tableData.ToFqName(ctx, s.Label(), false)
 	yyyyMMDDFormat := tableData.LatestCDCTs.Format(ext.PostgresDateFormat)
-	return strings.Join([]string{s.Settings.OptionalPrefix, fqTableName, yyyyMMDDFormat}, "/")
+
+	if len(s.Settings.OptionalPrefix) > 0 {
+		return strings.Join([]string{s.Settings.OptionalPrefix, fqTableName, yyyyMMDDFormat}, "/")
+	}
+
+	return strings.Join([]string{fqTableName, yyyyMMDDFormat}, "/")
 }
 
 // Merge - will take tableData, write it into a particular file in the specified format.
