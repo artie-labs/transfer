@@ -126,7 +126,7 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 					ExpiryComment(expiryString),
 				)
 			default:
-				return fmt.Errorf("unexpected destination: %v trying to create a temporary table", args.Dwh.Label())
+				return fmt.Errorf("unexpected dwh: %v trying to create a temporary table", args.Dwh.Label())
 			}
 		} else {
 			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
