@@ -23,7 +23,7 @@ func GenerateJSONSchema(ctx context.Context, columns []columns.Column) (string, 
 
 	schemaBytes, err := json.Marshal(typing.Field{
 		Tag: typing.FieldTag{
-			Name:           "parquetutil-go-root",
+			Name:           "parquet-go-root",
 			RepetitionType: ptr.ToString("REQUIRED"),
 		}.String(),
 		Fields: fields,

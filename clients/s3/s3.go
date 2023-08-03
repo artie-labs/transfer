@@ -79,18 +79,18 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	schema, err := parquetutil.GenerateJSONSchema(ctx, cols)
 	if err != nil {
-		return fmt.Errorf("failed to generate parquetutil schema, err: %v", err)
+		return fmt.Errorf("failed to generate parquet schema, err: %v", err)
 	}
 
 	fp := fmt.Sprintf("/tmp/%v.parquet.gz", tableData.LatestCDCTs.UnixMilli())
 	fw, err := local.NewLocalFileWriter(fp)
 	if err != nil {
-		return fmt.Errorf("failed to create a local parquetutil file, err: %v", err)
+		return fmt.Errorf("failed to create a local parquet file, err: %v", err)
 	}
 
 	pw, err := writer.NewJSONWriter(schema, fw, 4)
 	if err != nil {
-		return fmt.Errorf("failed to instantiate parquetutil writer, err: %v", err)
+		return fmt.Errorf("failed to instantiate parquet writer, err: %v", err)
 	}
 
 	pw.CompressionType = parquet.CompressionCodec_GZIP

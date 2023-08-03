@@ -117,7 +117,7 @@ const (
 	Test            DestinationKind = "test"
 	BigQuery        DestinationKind = "bigquery"
 	Redshift        DestinationKind = "redshift"
-	S3              DestinationKind = "s3lib"
+	S3              DestinationKind = "s3"
 )
 
 var validDestinations = []DestinationKind{
