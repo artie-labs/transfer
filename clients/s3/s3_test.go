@@ -31,6 +31,10 @@ func (s *S3TestSuite) TestObjectPrefix() {
 	td.LatestCDCTs = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	testCases := []_testCase{
 		{
+			name:        "nil",
+			expectError: true,
+		},
+		{
 			name:      "valid #1 (no prefix)",
 			tableData: td,
 			config: &config.S3Settings{

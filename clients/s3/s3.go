@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -56,10 +57,11 @@ func (s *Store) ObjectPrefix(ctx context.Context, tableData *optimization.TableD
 	return strings.Join([]string{fqTableName, yyyyMMDDFormat}, "/")
 }
 
-// Merge - will take tableData, write it into a particular file in the specified format.
-// It will then upload this file to S3 under this particular format
-// s3lib://bucket/optionalS3Prefix/fullyQualifiedTableName/YYYY-MM-DD/{{unix_timestamp}}.parquet.gz
-// * fullyQualifiedTableName - databaseName.schemaName.tableName
+// Merge - will take tableData, write it into a particular file in the specified format, in these steps:
+// 1. Load a ParquetWriter from a JSON schema (auto-generated)
+// 2. Load the temporary file, under this format: s3://bucket/optionalS3Prefix/fullyQualifiedTableName/YYYY-MM-DD/{{unix_timestamp}}.parquet.gz
+// 3. It will then upload this to S3
+// 4. Delete the temporary file
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
 	if tableData.Rows() == 0 || tableData.ReadOnlyInMemoryCols() == nil {
 		// There's no rows or columns. Let's skip.
@@ -80,7 +82,8 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return fmt.Errorf("failed to generate parquetutil schema, err: %v", err)
 	}
 
-	fw, err := local.NewLocalFileWriter("/tmp/normal.parquet.gz")
+	fp := fmt.Sprintf("/tmp/%v.parquet.gz", tableData.LatestCDCTs.UnixMilli())
+	fw, err := local.NewLocalFileWriter(fp)
 	if err != nil {
 		return fmt.Errorf("failed to create a local parquetutil file, err: %v", err)
 	}
@@ -118,12 +121,13 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	if _, err = s3lib.UploadLocalFileToS3(ctx, s3lib.UploadArgs{
 		Bucket:           s.Settings.Bucket,
-		OptionalS3Prefix: s.Settings.OptionalPrefix,
+		OptionalS3Prefix: s.ObjectPrefix(ctx, tableData),
+		FilePath:         fp,
 	}); err != nil {
 		return fmt.Errorf("failed to upload file to s3, err: %v", err)
 	}
 
-	return nil
+	return os.RemoveAll(fp)
 }
 
 func LoadStore(ctx context.Context, settings *config.S3Settings) (*Store, error) {

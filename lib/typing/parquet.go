@@ -15,6 +15,8 @@ type FieldTag struct {
 	ValueConvertedType *string
 	// https://github.com/xitongsys/parquet-go#repetition-type
 	RepetitionType *string
+	Scale          *int
+	Precision      *int
 }
 
 func (f FieldTag) String() string {
@@ -42,6 +44,14 @@ func (f FieldTag) String() string {
 		parts = append(parts, fmt.Sprintf("repetitiontype=%s", *f.RepetitionType))
 	} else {
 		parts = append(parts, "repetitiontype=OPTIONAL")
+	}
+
+	if f.Scale != nil {
+		parts = append(parts, fmt.Sprintf("scale=%v", *f.Scale))
+	}
+
+	if f.Precision != nil {
+		parts = append(parts, fmt.Sprintf("precision=%v", *f.Precision))
 	}
 
 	return strings.Join(parts, ", ")
@@ -72,12 +82,28 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 			}.String(),
 		}, nil
 	case EDecimal.Kind:
-		// TODO: Support precision and scale.
+		precision := k.ExtendedDecimalDetails.Precision()
+		if precision == nil {
+			// This is a variable precision decimal, so we'll just treat it as a string.
+			return &Field{
+				Tag: FieldTag{
+					Name:          colName,
+					InName:        &colName,
+					Type:          ptr.ToString("BYTE_ARRAY"),
+					ConvertedType: ptr.ToString("UTF8"),
+				}.String(),
+			}, nil
+		}
+
+		scale := k.ExtendedDecimalDetails.Scale()
 		return &Field{
 			Tag: FieldTag{
-				Name:   colName,
-				InName: &colName,
-				Type:   ptr.ToString("INT64"),
+				Name:          colName,
+				InName:        &colName,
+				Type:          ptr.ToString("BYTE_ARRAY"),
+				ConvertedType: ptr.ToString("DECIMAL"),
+				Precision:     precision,
+				Scale:         ptr.ToInt(scale),
 			}.String(),
 		}, nil
 	case Boolean.Kind:
