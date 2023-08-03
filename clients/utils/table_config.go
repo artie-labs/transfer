@@ -113,7 +113,7 @@ func GetTableConfig(ctx context.Context, args GetTableCfgArgs) (*types.DwhTableC
 		case constants.Redshift:
 			kd = typing.RedshiftTypeToKind(row[args.ColumnTypeLabel])
 		default:
-			return nil, fmt.Errorf("unexpected destination kind, label: %v", args.Dwh.Label())
+			return nil, fmt.Errorf("unexpected dwh kind, label: %v", args.Dwh.Label())
 		}
 
 		col := columns.NewColumn(row[args.ColumnNameLabel], kd)

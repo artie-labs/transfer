@@ -16,7 +16,7 @@ snowflake:
   account: 123
   username: foo
   password: bar
-  warehouse: destination
+  warehouse: dwh
   region: us-east-2.aws
 
 telemetry:
