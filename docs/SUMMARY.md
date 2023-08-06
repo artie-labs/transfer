@@ -22,6 +22,7 @@
 * [Snowflake](real-time-destinations/snowflake.md)
 * [Redshift](real-time-destinations/redshift.md)
 * [BigQuery](real-time-destinations/bigquery.md)
+* [S3](real-time-destinations/s3.md)
 
 ## Running Transfer
 
