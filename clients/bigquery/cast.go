@@ -40,8 +40,16 @@ func CastColVal(ctx context.Context, colVal interface{}, colKind columns.Column)
 			switch colKind.KindDetails.ExtendedTimeDetails.Type {
 			// https://cloud.google.com/bigquery/docs/streaming-data-into-bigquery#sending_datetime_data
 			case ext.DateTimeKindType:
+				if extTime.Year() == 0 {
+					return nil, nil
+				}
+
 				colVal = extTime.StringUTC(ext.BigQueryDateTimeFormat)
 			case ext.DateKindType:
+				if extTime.Year() == 0 {
+					return nil, nil
+				}
+
 				colVal = extTime.String(ext.PostgresDateFormat)
 			case ext.TimeKindType:
 				colVal = extTime.String(typing.StreamingTimeFormat)
