@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/typing/ext"
+
 	"github.com/artie-labs/transfer/lib/ptr"
 )
 
@@ -68,6 +70,28 @@ type Field struct {
 }
 
 func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
+	var stringKind bool
+	if k.ExtendedTimeDetails != nil {
+		// If it's a date or time, it should be a STRING annotation.
+		if k.ExtendedTimeDetails.Type == ext.DateKindType || k.ExtendedTimeDetails.Type == ext.TimeKindType {
+			stringKind = true
+		}
+	}
+
+	if k.Kind == String.Kind || k.Kind == Struct.Kind || stringKind {
+		// We could go further with struct, but it's very possible that it has inconsistent column headers across all the rows.
+		// It's much safer to just treat this as a string. When we do bring this data out into another destination,
+		// then just parse it as a JSON string, into a VARIANT column.
+		return &Field{
+			Tag: FieldTag{
+				Name:          colName,
+				InName:        &colName,
+				Type:          ptr.ToString("BYTE_ARRAY"),
+				ConvertedType: ptr.ToString("UTF8"),
+			}.String(),
+		}, nil
+	}
+
 	switch k.Kind {
 	case Float.Kind:
 		return &Field{
@@ -78,6 +102,7 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 			}.String(),
 		}, nil
 	case Integer.Kind, ETime.Kind:
+
 		// Parquet doesn't have native time types, so we are using int64 and casting the value as UNIX ts.
 		return &Field{
 			Tag: FieldTag{
@@ -138,19 +163,6 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 				},
 			},
 		}, nil
-	case String.Kind, Struct.Kind:
-		// We could go further with struct, but it's very possible that it has inconsistent column headers across all the rows.
-		// It's much safer to just treat this as a string. When we do bring this data out into another destination,
-		// then just parse it as a JSON string, into a VARIANT column.
-		return &Field{
-			Tag: FieldTag{
-				Name:          colName,
-				InName:        &colName,
-				Type:          ptr.ToString("BYTE_ARRAY"),
-				ConvertedType: ptr.ToString("UTF8"),
-			}.String(),
-		}, nil
-
 	}
 
 	return nil, nil

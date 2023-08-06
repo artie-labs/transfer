@@ -31,6 +31,10 @@ func ParseValue(ctx context.Context, colVal interface{}, colKind columns.Column)
 			return "", fmt.Errorf("column kind details for extended time details is null")
 		}
 
+		if colKind.KindDetails.ExtendedTimeDetails.Type == ext.DateKindType || colKind.KindDetails.ExtendedTimeDetails.Type == ext.TimeKindType {
+			return extTime.Format(colKind.KindDetails.ExtendedTimeDetails.Format), nil
+		}
+
 		return extTime.Time.UnixMilli(), nil
 	case typing.String.Kind:
 		return colVal, nil
