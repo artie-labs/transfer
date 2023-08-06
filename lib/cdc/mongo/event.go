@@ -1,11 +1,21 @@
 package mongo
 
-import "github.com/artie-labs/transfer/lib/debezium"
+import (
+	"time"
+
+	"github.com/artie-labs/transfer/lib/debezium"
+)
 
 // SchemaEventPayload is our struct for an event with schema enabled. For reference, this is an example payload https://gist.github.com/Tang8330/d0998d8d1ebcbeaa4ecb8e098445cc3a
 type SchemaEventPayload struct {
 	Schema  debezium.Schema `json:"schema"`
 	Payload payload         `json:"payload"`
+}
+
+func (s *SchemaEventPayload) Tombstone() {
+	s.Payload.Operation = "d"
+	s.Payload.Source.TsMs = time.Now().UnixMilli()
+	return
 }
 
 type payload struct {

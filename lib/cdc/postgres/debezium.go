@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"encoding/json"
-	"time"
 
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/cdc/util"
@@ -17,10 +16,7 @@ type Debezium string
 func (d *Debezium) GetEventFromBytes(ctx context.Context, bytes []byte) (cdc.Event, error) {
 	var event util.SchemaEventPayload
 	if len(bytes) == 0 {
-		// This is a Kafka Tombstone event.
-		// So, we'll tag this event as a "Delete" and also add when this event was received as the execution time.
-		event.Payload.Operation = "d"
-		event.Payload.Source.TsMs = time.Now().UnixMilli()
+		event.Tombstone()
 		return &event, nil
 	}
 

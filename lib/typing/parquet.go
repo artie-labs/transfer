@@ -17,6 +17,7 @@ type FieldTag struct {
 	RepetitionType *string
 	Scale          *int
 	Precision      *int
+	Length         *int
 }
 
 func (f FieldTag) String() string {
@@ -54,6 +55,10 @@ func (f FieldTag) String() string {
 		parts = append(parts, fmt.Sprintf("precision=%v", *f.Precision))
 	}
 
+	if f.Length != nil {
+		parts = append(parts, fmt.Sprintf("length=%v", *f.Length))
+	}
+
 	return strings.Join(parts, ", ")
 }
 
@@ -83,7 +88,7 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 		}, nil
 	case EDecimal.Kind:
 		precision := k.ExtendedDecimalDetails.Precision()
-		if precision == nil {
+		if precision == nil || *precision == -1 {
 			// This is a variable precision decimal, so we'll just treat it as a string.
 			return &Field{
 				Tag: FieldTag{
