@@ -1,7 +1,13 @@
 package parquetutil
 
 import (
+	"math/big"
+
+	"github.com/artie-labs/transfer/lib/ptr"
+
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,11 +21,46 @@ func (p *ParquetUtilTestSuite) TestParseValue() {
 		expectedValue interface{}
 	}
 
+	eDecimal := typing.EDecimal
+	eDecimal.ExtendedDecimalDetails = decimal.NewDecimal(5, ptr.ToInt(30), nil)
+
 	testCases := []_testStruct{
 		{
 			name:          "nil value",
 			colVal:        nil,
 			expectedValue: nil,
+		},
+		{
+			name:          "string value",
+			colVal:        "test",
+			colKind:       columns.NewColumn("", typing.String),
+			expectedValue: "test",
+		},
+		{
+			name: "struct value",
+			colVal: map[string]interface{}{
+				"foo": "bar",
+			},
+			colKind:       columns.NewColumn("", typing.Struct),
+			expectedValue: `{"foo":"bar"}`,
+		},
+		{
+			name:          "array (numbers - converted to string)",
+			colVal:        []interface{}{123, 456},
+			colKind:       columns.NewColumn("", typing.Array),
+			expectedValue: []string{"123", "456"},
+		},
+		{
+			name:          "array (boolean - converted to string)",
+			colVal:        []interface{}{true, false, true},
+			colKind:       columns.NewColumn("", typing.Array),
+			expectedValue: []string{"true", "false", "true"},
+		},
+		{
+			name:          "decimal",
+			colVal:        decimal.NewDecimal(5, ptr.ToInt(30), big.NewFloat(5000.2232)),
+			colKind:       columns.NewColumn("", eDecimal),
+			expectedValue: "5000.22320",
 		},
 	}
 

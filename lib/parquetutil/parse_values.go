@@ -34,7 +34,6 @@ func ParseValue(ctx context.Context, colVal interface{}, colKind columns.Column)
 		return extTime.Time.UnixMilli(), nil
 	case typing.String.Kind:
 		return colVal, nil
-
 	case typing.Struct.Kind:
 		if colKind.KindDetails == typing.Struct {
 			if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {

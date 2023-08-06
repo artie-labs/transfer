@@ -19,6 +19,7 @@ func (p *PostgresTestSuite) TestGetEventFromBytesTombstone() {
 	evt, err := p.GetEventFromBytes(context.Background(), nil)
 	assert.NoError(p.T(), err)
 	assert.True(p.T(), evt.DeletePayload())
+	assert.False(p.T(), evt.GetExecutionTime().IsZero())
 }
 
 func (p *PostgresTestSuite) TestGetPrimaryKey() {

@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -213,6 +214,9 @@ func (p *MongoTestSuite) TestGetEventFromBytesTombstone() {
 	evt, err := p.Debezium.GetEventFromBytes(context.Background(), nil)
 	assert.NoError(p.T(), err)
 	assert.Equal(p.T(), true, evt.DeletePayload())
+
+	fmt.Println(evt.GetExecutionTime())
+	assert.False(p.T(), evt.GetExecutionTime().IsZero())
 }
 
 func (p *MongoTestSuite) TestMongoDBEventWithSchema() {
