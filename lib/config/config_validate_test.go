@@ -8,6 +8,65 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestS3Settings_Validate(t *testing.T) {
+	type _testCase struct {
+		Name      string
+		S3        *S3Settings
+		ExpectErr bool
+	}
+
+	testCases := []_testCase{
+		{
+			Name:      "nil",
+			ExpectErr: true,
+		},
+		{
+			Name:      "empty",
+			S3:        &S3Settings{},
+			ExpectErr: true,
+		},
+		{
+			Name: "missing bucket",
+			S3: &S3Settings{
+				CredentialsClause: "region",
+			},
+			ExpectErr: true,
+		},
+		{
+			Name: "missing credentials clause",
+			S3: &S3Settings{
+				Bucket: "bucket",
+			},
+			ExpectErr: true,
+		},
+		{
+			Name: "missing output format",
+			S3: &S3Settings{
+				Bucket:            "bucket",
+				CredentialsClause: "region",
+			},
+			ExpectErr: true,
+		},
+		{
+			Name: "valid",
+			S3: &S3Settings{
+				Bucket:            "bucket",
+				CredentialsClause: "region",
+				OutputFormat:      constants.ParquetFormat,
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		err := testCase.S3.Validate()
+		if testCase.ExpectErr {
+			assert.Error(t, err, testCase.Name)
+		} else {
+			assert.NoError(t, err, testCase.Name)
+		}
+	}
+}
+
 func TestCfg_ValidateRedshift(t *testing.T) {
 	type _testCase struct {
 		Name      string

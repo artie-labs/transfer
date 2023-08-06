@@ -11,8 +11,8 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/dwh"
-	"github.com/artie-labs/transfer/lib/dwh/types"
+	"github.com/artie-labs/transfer/lib/destination"
+	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/typing"
 )
@@ -20,7 +20,7 @@ import (
 // DropTemporaryTable - this will drop the temporary table from Snowflake w/ stages and BigQuery
 // It has a safety check to make sure the tableName contains the `constants.ArtiePrefix` key.
 // Temporary tables look like this: database.schema.tableName__artie__RANDOM_STRING(10)
-func DropTemporaryTable(ctx context.Context, dwh dwh.DataWarehouse, fqTableName string, shouldReturnError bool) error {
+func DropTemporaryTable(ctx context.Context, dwh destination.DataWarehouse, fqTableName string, shouldReturnError bool) error {
 	// Need to lower it because Snowflake upper-cases.
 	fqTableName = strings.ToLower(fqTableName)
 	if strings.Contains(fqTableName, constants.ArtiePrefix) {
@@ -41,7 +41,7 @@ func DropTemporaryTable(ctx context.Context, dwh dwh.DataWarehouse, fqTableName 
 }
 
 type AlterTableArgs struct {
-	Dwh dwh.DataWarehouse
+	Dwh destination.DataWarehouse
 	Tc  *types.DwhTableConfig
 	// ContainsOtherOperations - this is sourced from tableData `containOtherOperations`
 	ContainOtherOperations bool

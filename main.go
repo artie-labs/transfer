@@ -8,7 +8,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/dwh/utils"
+	"github.com/artie-labs/transfer/lib/destination/utils"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"
@@ -23,7 +23,12 @@ func main() {
 
 	// Loading Telemetry
 	ctx = metrics.LoadExporter(ctx)
-	ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(ctx, nil), ctx)
+	if utils.IsOutputBaseline(ctx) {
+		ctx = utils.InjectBaselineIntoCtx(utils.Baseline(ctx), ctx)
+	} else {
+		ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(ctx, nil), ctx)
+	}
+
 	ctx = models.LoadMemoryDB(ctx)
 	settings := config.FromContext(ctx)
 

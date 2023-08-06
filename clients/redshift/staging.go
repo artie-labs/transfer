@@ -9,11 +9,11 @@ import (
 
 	"github.com/artie-labs/transfer/lib/typing"
 
-	"github.com/artie-labs/transfer/lib/s3"
+	"github.com/artie-labs/transfer/lib/s3lib"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/dwh/ddl"
-	"github.com/artie-labs/transfer/lib/dwh/types"
+	"github.com/artie-labs/transfer/lib/destination/ddl"
+	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 )
@@ -44,7 +44,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 	}
 
 	// Load fp into s3, get S3 URI and pass it down.
-	s3Uri, err := s3.UploadLocalFileToS3(ctx, s3.UploadArgs{
+	s3Uri, err := s3lib.UploadLocalFileToS3(ctx, s3lib.UploadArgs{
 		OptionalS3Prefix: s.optionalS3Prefix,
 		Bucket:           s.bucket,
 		FilePath:         fp,

@@ -213,6 +213,7 @@ func (p *MongoTestSuite) TestGetEventFromBytesTombstone() {
 	evt, err := p.Debezium.GetEventFromBytes(context.Background(), nil)
 	assert.NoError(p.T(), err)
 	assert.Equal(p.T(), true, evt.DeletePayload())
+	assert.False(p.T(), evt.GetExecutionTime().IsZero())
 }
 
 func (p *MongoTestSuite) TestMongoDBEventWithSchema() {

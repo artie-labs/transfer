@@ -8,15 +8,15 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/dwh"
-	"github.com/artie-labs/transfer/lib/dwh/types"
+	"github.com/artie-labs/transfer/lib/destination"
+	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 type GetTableCfgArgs struct {
-	Dwh                dwh.DataWarehouse
+	Dwh                destination.DataWarehouse
 	FqName             string
 	ConfigMap          *types.DwhToTablesConfigMap
 	Query              string

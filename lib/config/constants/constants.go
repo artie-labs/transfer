@@ -117,6 +117,7 @@ const (
 	Test            DestinationKind = "test"
 	BigQuery        DestinationKind = "bigquery"
 	Redshift        DestinationKind = "redshift"
+	S3              DestinationKind = "s3"
 )
 
 var validDestinations = []DestinationKind{
@@ -124,6 +125,7 @@ var validDestinations = []DestinationKind{
 	Snowflake,
 	SnowflakeStages,
 	Redshift,
+	S3,
 	Test,
 }
 
@@ -139,4 +141,15 @@ func IsValidDestination(destination DestinationKind) bool {
 
 type ColComment struct {
 	Backfilled bool `json:"backfilled"`
+}
+
+type S3OutputFormat string
+
+const (
+	// TODO - We should support TSV, Avro
+	ParquetFormat S3OutputFormat = "parquet"
+)
+
+func IsValidS3OutputFormat(format S3OutputFormat) bool {
+	return format == ParquetFormat
 }

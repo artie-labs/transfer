@@ -126,6 +126,7 @@ func (o *OptimizationTestSuite) TestNewTableData_TableName() {
 		expectedSnowflakeFqName string
 		expectedBigQueryFqName  string
 		expectedRedshiftFqName  string
+		expectedS3FqName        string
 	}
 
 	testCases := []_testCase{
@@ -139,6 +140,7 @@ func (o *OptimizationTestSuite) TestNewTableData_TableName() {
 			expectedSnowflakeFqName: "db.public.food",
 			expectedBigQueryFqName:  "artie.db.food",
 			expectedRedshiftFqName:  "public.food",
+			expectedS3FqName:        "db.public.food",
 		},
 		{
 			name:         "override is provided",
@@ -151,6 +153,7 @@ func (o *OptimizationTestSuite) TestNewTableData_TableName() {
 			expectedSnowflakeFqName: "db.public.drinks",
 			expectedBigQueryFqName:  "artie.db.drinks",
 			expectedRedshiftFqName:  "public.food",
+			expectedS3FqName:        "db.public.drinks",
 		},
 	}
 
@@ -170,10 +173,14 @@ func (o *OptimizationTestSuite) TestNewTableData_TableName() {
 		}, testCase.tableName)
 		assert.Equal(o.T(), testCase.expectedName, td.Name(o.ctx, nil), testCase.name)
 		assert.Equal(o.T(), testCase.expectedName, td.name, testCase.name)
-		assert.Equal(o.T(), testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.SnowflakeStages, true))
-		assert.Equal(o.T(), testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.Snowflake, true))
-		assert.Equal(o.T(), testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery, true))
-		assert.Equal(o.T(), testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery, true))
+		assert.Equal(o.T(), testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.SnowflakeStages, true), testCase.name)
+		assert.Equal(o.T(), testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.Snowflake, true), testCase.name)
+		assert.Equal(o.T(), testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery, true), testCase.name)
+		assert.Equal(o.T(), testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery, true), testCase.name)
+
+		// S3 does not escape, so let's test both to make sure.
+		assert.Equal(o.T(), testCase.expectedS3FqName, td.ToFqName(ctx, constants.S3, true), testCase.name)
+		assert.Equal(o.T(), testCase.expectedS3FqName, td.ToFqName(ctx, constants.S3, false), testCase.name)
 	}
 }
 

@@ -11,7 +11,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
-	"github.com/artie-labs/transfer/lib/dwh/types"
+	"github.com/artie-labs/transfer/lib/destination/types"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
