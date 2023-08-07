@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/ptr"
+
 	"github.com/artie-labs/transfer/lib/stringutil"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -131,9 +133,11 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	if _, err = s3lib.UploadLocalFileToS3(ctx, s3lib.UploadArgs{
-		Bucket:           s.Settings.Bucket,
-		OptionalS3Prefix: s.ObjectPrefix(ctx, tableData),
-		FilePath:         fp,
+		Bucket:                     s.Settings.Bucket,
+		OptionalS3Prefix:           s.ObjectPrefix(ctx, tableData),
+		FilePath:                   fp,
+		OverrideAWSAccessKeyID:     ptr.ToString(s.Settings.AwsAccessKeyID),
+		OverrideAWSAccessKeySecret: ptr.ToString(s.Settings.AwsSecretAccessKey),
 	}); err != nil {
 		return fmt.Errorf("failed to upload file to s3, err: %v", err)
 	}
