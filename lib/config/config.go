@@ -70,11 +70,11 @@ func (b *BigQuery) DSN() string {
 }
 
 type S3Settings struct {
-	OptionalPrefix string `yaml:"optionalPrefix"`
-	Bucket         string `yaml:"bucket"`
-	// https://docs.aws.amazon.com/redshift/latest/dg/copy-parameters-authorization.html
-	CredentialsClause string                   `yaml:"credentialsClause"`
-	OutputFormat      constants.S3OutputFormat `yaml:"outputFormat"`
+	OptionalPrefix     string                   `yaml:"optionalPrefix"`
+	Bucket             string                   `yaml:"bucket"`
+	AwsAccessKeyID     string                   `yaml:"awsAccessKeyID"`
+	AwsSecretAccessKey string                   `yaml:"awsSecretAccessKey"`
+	OutputFormat       constants.S3OutputFormat `yaml:"outputFormat"`
 }
 
 func (s *S3Settings) Validate() error {
@@ -82,7 +82,7 @@ func (s *S3Settings) Validate() error {
 		return fmt.Errorf("s3 settings are nil")
 	}
 
-	if empty := stringutil.Empty(s.Bucket, s.CredentialsClause); empty {
+	if empty := stringutil.Empty(s.Bucket, s.AwsSecretAccessKey, s.AwsAccessKeyID); empty {
 		return fmt.Errorf("one of s3 settings is empty")
 	}
 

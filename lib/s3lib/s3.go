@@ -5,23 +5,36 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/aws/aws-sdk-go-v2/credentials"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 type UploadArgs struct {
-	Bucket           string
-	OptionalS3Prefix string
-	FilePath         string
+	Bucket                     string
+	OptionalS3Prefix           string
+	FilePath                   string
+	OverrideAWSAccessKeyID     *string
+	OverrideAWSAccessKeySecret *string
 }
 
 // UploadLocalFileToS3 - takes a filepath with the file and bucket and optional expiry
 // It will then upload it and then return the S3 URI and any error(s).
 func UploadLocalFileToS3(ctx context.Context, args UploadArgs) (string, error) {
-	cfg, err := config.LoadDefaultConfig(ctx)
+	var cfg aws.Config
+	var err error
+
+	if args.OverrideAWSAccessKeyID != nil && args.OverrideAWSAccessKeySecret != nil {
+		creds := credentials.NewStaticCredentialsProvider(*args.OverrideAWSAccessKeyID, *args.OverrideAWSAccessKeySecret, "")
+		cfg, err = config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(creds))
+	} else {
+		cfg, err = config.LoadDefaultConfig(ctx)
+	}
+
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed loading config, err: %v", err)
 	}
 
 	s3Client := s3.NewFromConfig(cfg)
