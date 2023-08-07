@@ -96,12 +96,7 @@ Please see: [snowflake.md](../real-time-destinations/snowflake.md "mention") on 
 
 ### S3
 
-| Key                  | Optional | Description                                                                                                                                 |
-| -------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| s3.optionalPrefix    | Y        | Prefix after the bucket name.                                                                                                               |
-| s3.bucket            | N        | S3 bucket name                                                                                                                              |
-| s3.credentialsClause | N        | S3 credentials clause. See more [here](https://docs.aws.amazon.com/redshift/latest/dg/copy-parameters-authorization.html#copy-credentials). |
-| s3.outputFormat      | N        | Output file format. Currently, we only support Parquet.                                                                                     |
+<table><thead><tr><th width="300">Key</th><th width="190.33333333333331">Optional</th><th>Description</th></tr></thead><tbody><tr><td><code>s3.optionalPrefix</code></td><td>Y</td><td>Prefix after the bucket name.</td></tr><tr><td><code>s3.bucket</code></td><td>N</td><td>S3 bucket name</td></tr><tr><td><code>s3.awsAccessKeyID</code></td><td>N</td><td>The <code>AWS_ACCESS_KEY_ID</code> for the service account.</td></tr><tr><td><code>s3.awsSecretAccessKey</code></td><td>N</td><td>The <code>AWS_SECRET_ACCESS_KEY</code> for the service account.</td></tr></tbody></table>
 
 ### Telemetry
 
