@@ -486,9 +486,10 @@ func TestConfig_Validate(t *testing.T) {
 	cfg.Output = constants.S3
 	assert.Error(t, cfg.Validate())
 	cfg.S3 = &S3Settings{
-		Bucket:            "foo",
-		CredentialsClause: "abc",
-		OutputFormat:      constants.ParquetFormat,
+		Bucket:             "foo",
+		AwsSecretAccessKey: "foo",
+		AwsAccessKeyID:     "bar",
+		OutputFormat:       constants.ParquetFormat,
 	}
 
 	assert.Nil(t, cfg.Validate())

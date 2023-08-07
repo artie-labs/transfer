@@ -28,31 +28,43 @@ func TestS3Settings_Validate(t *testing.T) {
 		{
 			Name: "missing bucket",
 			S3: &S3Settings{
-				CredentialsClause: "region",
+				AwsSecretAccessKey: "foo",
+				AwsAccessKeyID:     "bar",
 			},
 			ExpectErr: true,
 		},
 		{
-			Name: "missing credentials clause",
+			Name: "missing aws access key id",
 			S3: &S3Settings{
-				Bucket: "bucket",
+				AwsSecretAccessKey: "foo",
+				Bucket:             "bucket",
+			},
+			ExpectErr: true,
+		},
+		{
+			Name: "missing aws secret access key",
+			S3: &S3Settings{
+				AwsAccessKeyID: "bar",
+				Bucket:         "bucket",
 			},
 			ExpectErr: true,
 		},
 		{
 			Name: "missing output format",
 			S3: &S3Settings{
-				Bucket:            "bucket",
-				CredentialsClause: "region",
+				Bucket:             "bucket",
+				AwsSecretAccessKey: "foo",
+				AwsAccessKeyID:     "bar",
 			},
 			ExpectErr: true,
 		},
 		{
 			Name: "valid",
 			S3: &S3Settings{
-				Bucket:            "bucket",
-				CredentialsClause: "region",
-				OutputFormat:      constants.ParquetFormat,
+				Bucket:             "bucket",
+				AwsSecretAccessKey: "foo",
+				AwsAccessKeyID:     "bar",
+				OutputFormat:       constants.ParquetFormat,
 			},
 		},
 	}
