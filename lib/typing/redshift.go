@@ -38,7 +38,9 @@ func kindToRedShift(kd KindDetails) string {
 	case String.Kind, Struct.Kind, Array.Kind:
 		// Redshift does not have a built-in JSON type (which means we'll cast STRUCT and ARRAY kinds as TEXT).
 		// As a result, Artie will store this in JSON string and customers will need to extract this data out via SQL.
-		return "text"
+		// Columns that are automatically created by Artie are created as VARCHAR(MAX).
+		// Rationale: https://github.com/artie-labs/transfer/pull/173
+		return "VARCHAR(MAX)"
 	case Boolean.Kind:
 		// We need to append `NULL` to let Redshift know that NULL is an acceptable data type.
 		return "BOOLEAN NULL"
