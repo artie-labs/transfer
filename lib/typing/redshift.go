@@ -38,7 +38,9 @@ func kindToRedShift(kd KindDetails) string {
 	case String.Kind, Struct.Kind, Array.Kind:
 		// Redshift does not have a built-in JSON type (which means we'll cast STRUCT and ARRAY kinds as TEXT).
 		// As a result, Artie will store this in JSON string and customers will need to extract this data out via SQL.
-		return "text"
+		// TODO: We should make this more dynamic, especially for Redshift.
+		// This is because TEXT defaults to 256 chars. https://docs.aws.amazon.com/redshift/latest/dg/r_Character_types.html
+		return "VARCHAR(2048)"
 	case Boolean.Kind:
 		// We need to append `NULL` to let Redshift know that NULL is an acceptable data type.
 		return "BOOLEAN NULL"
