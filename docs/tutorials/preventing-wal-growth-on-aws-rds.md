@@ -41,3 +41,31 @@ INSERT INTO test_heartbeat_table (id, ts) VALUES (1, NOW());
 
 <figure><img src="../.gitbook/assets/image (8).png" alt=""><figcaption></figcaption></figure>
 
+## Additional preventative measures
+
+In addition to enabling heartbeats, it is best practice to set up the following:
+
+* Monitoring your Amazon RDS instance for `free_storage_space`.
+* Enable storage autoscaling. The guide to enable this can be [found here](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER\_PIOPS.StorageTypes.html#USER\_PIOPS.Autoscaling).
+* Configure [max\_slot\_wal\_keep\_size](https://www.postgresql.org/docs/current/runtime-config-replication.html) to the desired size
+  * The default value is -1
+  * Each file size is 64mb
+  * If you want to set this to be 1 GB, set `max_slot_wal_keep_size` to be 16
+
+### Advanced commands
+
+<pre class="language-sql"><code class="lang-sql">-- See all replication slots
+SELECT * FROM pg_replication_slots;
+
+-- Drop replication slot
+select pg_drop_replication_slot(REPLICATION_SLOT_NAME);
+
+-- See the size of replication slot
+<strong>SELECT
+</strong>  slot_name,
+  pg_size_pretty(
+    pg_wal_lsn_diff(
+      pg_current_wal_lsn(), restart_lsn)) AS retained_wal,
+  active,
+  restart_lsn FROM pg_replication_slots;
+</code></pre>
