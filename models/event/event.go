@@ -163,6 +163,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 			retrievedColumn, isOk := inMemoryColumns.GetColumn(newColName)
 			if !isOk {
 				// This would only happen if the columns did not get passed in initially.
+				fmt.Println("new column", newColName, "typing.ParseValue", typing.ParseValue(ctx, _col, e.OptionalSchema, val), "val", val)
 				inMemoryColumns.AddColumn(columns.NewColumn(newColName, typing.ParseValue(ctx, _col, e.OptionalSchema, val)))
 			} else {
 				if retrievedColumn.KindDetails == typing.Invalid {
@@ -170,6 +171,8 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 					// If everything is nil, we don't need to add a column
 					// However, it's important to create a column even if it's nil.
 					// This is because we don't want to think that it's okay to drop a column in DWH
+
+					fmt.Println("new column 2", newColName, "typing.ParseValue", typing.ParseValue(ctx, _col, e.OptionalSchema, val), "val", val)
 					if kindDetails := typing.ParseValue(ctx, _col, e.OptionalSchema, val); kindDetails.Kind != typing.Invalid.Kind {
 						retrievedColumn.KindDetails = kindDetails
 						inMemoryColumns.UpdateColumn(retrievedColumn)

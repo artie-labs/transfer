@@ -94,6 +94,7 @@ func ParseValue(ctx context.Context, key string, optionalSchema map[string]KindD
 	if len(optionalSchema) > 0 {
 		// If the column exists in the schema, let's early exit.
 		kindDetail, isOk := optionalSchema[key]
+		fmt.Println("key", key, "isOk", isOk, "kindDetail", kindDetail)
 		if isOk {
 			// If the schema exists, use it as sot.
 			return kindDetail

@@ -78,6 +78,10 @@ func (s *SchemaEventPayload) GetOptionalSchema(ctx context.Context) map[string]t
 		if field.Type == "string" && field.DebeziumType == "" {
 			schema[field.FieldName] = typing.String
 		}
+
+		if field.Type == "string" && field.DebeziumType == "io.debezium.data.Json" {
+			schema[field.FieldName] = typing.Struct
+		}
 	}
 
 	return schema
