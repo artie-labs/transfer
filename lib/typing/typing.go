@@ -78,9 +78,7 @@ func IsJSON(str string) bool {
 		return false
 	}
 
-	// Shouldn't need to strings.TrimSpace(...).
-	valStringChars := []rune(str)
-	if string(valStringChars[0]) == "{" && string(valStringChars[len(valStringChars)-1]) == "}" {
+	if (str[0] == '{' && str[len(str)-1] == '}') || (str[0] == '[' && str[len(str)-1] == ']') {
 		var js json.RawMessage
 		return json.Unmarshal([]byte(str), &js) == nil
 	}

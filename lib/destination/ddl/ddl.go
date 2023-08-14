@@ -92,6 +92,7 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 		mutateCol = append(mutateCol, col)
 		switch args.ColumnOp {
 		case constants.Add:
+			fmt.Println("col", col.Name(ctx, nil), typing.KindToDWHType(col.KindDetails, args.Dwh.Label()), col.KindDetails.Kind)
 			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, col.Name(ctx, &sql.NameArgs{
 				Escape:   true,
 				DestKind: args.Dwh.Label(),

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"strings"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
@@ -17,24 +16,60 @@ func (t *TypingTestSuite) TestNil() {
 }
 
 func (t *TypingTestSuite) TestJSONString() {
-	assert.Equal(t.T(), true, IsJSON(`{"hello": "world"}`))
-	assert.Equal(t.T(), true, IsJSON(`{}`))
-	assert.Equal(t.T(), true, IsJSON(strings.TrimSpace(`
-	{
-		"hello": {
-			"world": {
-				"nested_value": true
-			}
-		},
-		"add_a_list_here": [1, 2, 3, 4],
-		"number": 7.5,
-		"integerNum": 7
+	type _testCase struct {
+		name     string
+		input    string
+		expected bool
 	}
-	`)))
 
-	assert.Equal(t.T(), false, IsJSON(`{null`))
-	assert.Equal(t.T(), false, IsJSON(`{null}`))
-	assert.Equal(t.T(), false, IsJSON(`{abc: def}`))
+	testCases := []_testCase{
+		{
+			name: "empty string",
+		},
+		{
+			name:  "string",
+			input: "hello world",
+		},
+		{
+			name:  "invalid json",
+			input: "{null}",
+		},
+		{
+			name:     "empty object",
+			input:    "{}",
+			expected: true,
+		},
+		{
+			name:     "empty array",
+			input:    "[]",
+			expected: true,
+		},
+		{
+			name:     "simple object",
+			input:    `{"hello": "world"}`,
+			expected: true,
+		},
+		{
+			name:     "simple array",
+			input:    `["hello", "world"]`,
+			expected: true,
+		},
+		{
+			name:     "complex object",
+			input:    `{"hello": {"world": {"nested_value": true}}, "add_a_list_here": [1, 2, 3, 4], "number": 7.5, "integerNum": 7}`,
+			expected: true,
+		},
+		{
+			name:     "complex array",
+			input:    `["hello", "world", {"nested_value": true}, [1, 2, 3, 4], 7.5, 7]`,
+			expected: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		actualResult := IsJSON(tc.input)
+		assert.Equal(t.T(), tc.expected, actualResult, tc.name)
+	}
 }
 
 func (t *TypingTestSuite) TestParseValueBasic() {

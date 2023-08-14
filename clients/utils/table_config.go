@@ -138,6 +138,8 @@ func GetTableConfig(ctx context.Context, args GetTableCfgArgs) (*types.DwhTableC
 		tableMissing = true
 	}
 
+	fmt.Println("tblName", args.FqName, "tableMissing", tableMissing)
+
 	tableCfg := types.NewDwhTableConfig(&cols, nil, tableMissing, args.DropDeletedColumns)
 	args.ConfigMap.AddTableToConfig(args.FqName, tableCfg)
 	return tableCfg, nil
