@@ -40,8 +40,8 @@ func TestRedshiftTypeToKind(t *testing.T) {
 			expectedKd: Boolean,
 		},
 		{
-			name:       "Numeric",
-			rawTypes:   []string{"numeric"},
+			name:       "numeric",
+			rawTypes:   []string{"numeric(5,2)", "numeric(5,5)"},
 			expectedKd: EDecimal,
 		},
 	}

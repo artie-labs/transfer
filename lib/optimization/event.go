@@ -241,7 +241,15 @@ func (t *TableData) UpdateInMemoryColumnsFromDestination(ctx context.Context, co
 			// We are not taking primaryKey and defaultValue because DWH does not have this information.
 			// Note: If our in-memory column is `Invalid`, it would get skipped during merge. However, if the column exists in
 			// the destination, we'll copy the type over. This is to make sure we don't miss batch updates where the whole column in the batch is NULL.
-			inMemoryCol.KindDetails.Kind = foundColumn.KindDetails.Kind
+
+			// If the inMemoryColumn is decimal and foundColumn is integer, don't copy it over.
+			// This is because parsing NUMERIC(...) will return an INTEGER if there's no decimal point.
+			// However, this will wipe the precision unit from the INTEGER which may cause integer overflow.
+			shouldSKip := inMemoryCol.KindDetails.Kind == typing.EDecimal.Kind && foundColumn.KindDetails.Kind == typing.Integer.Kind
+			if !shouldSKip {
+				inMemoryCol.KindDetails.Kind = foundColumn.KindDetails.Kind
+			}
+
 			inMemoryCol.SetBackfilled(foundColumn.Backfilled())
 
 			if foundColumn.KindDetails.ExtendedTimeDetails != nil {

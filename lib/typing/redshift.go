@@ -7,6 +7,11 @@ import (
 )
 
 func RedshiftTypeToKind(rawType string) KindDetails {
+	rawType = strings.ToLower(rawType)
+	if strings.HasPrefix(rawType, "numeric") {
+		return ParseNumeric(defaultPrefix, rawType)
+	}
+
 	switch strings.ToLower(rawType) {
 	case "super":
 		return Struct
@@ -24,8 +29,6 @@ func RedshiftTypeToKind(rawType string) KindDetails {
 		return NewKindDetailsFromTemplate(ETime, ext.DateKindType)
 	case "boolean":
 		return Boolean
-	case "numeric":
-		return EDecimal
 	}
 
 	return Invalid
