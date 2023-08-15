@@ -21,6 +21,11 @@ import (
 // This is necessary because CSV writers require values to in `string`.
 func CastColValStaging(ctx context.Context, colVal interface{}, colKind columns.Column) (string, error) {
 	if colVal == nil {
+		if colKind.KindDetails == typing.Struct {
+			// Returning empty here because if it's a struct, it will go through JSON PARSE and JSON_PARSE("") = null
+			return "", nil
+		}
+
 		// This matches the COPY clause for NULL terminator.
 		return `\N`, nil
 	}
