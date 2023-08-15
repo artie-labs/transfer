@@ -116,7 +116,6 @@ func GetTableConfig(ctx context.Context, args GetTableCfgArgs) (*types.DwhTableC
 			return nil, fmt.Errorf("unexpected dwh kind, label: %v", args.Dwh.Label())
 		}
 
-		fmt.Println("kd", kd, "row", row[args.ColumnTypeLabel])
 		col := columns.NewColumn(row[args.ColumnNameLabel], kd)
 		comment, isOk := row[args.ColumnDescLabel]
 		if isOk && args.ShouldParseComment(comment) {

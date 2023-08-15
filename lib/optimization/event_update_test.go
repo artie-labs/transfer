@@ -12,6 +12,7 @@ func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumnsFromDestinati
 	tableDataCols.AddColumn(columns.NewColumn("name", typing.String))
 	tableDataCols.AddColumn(columns.NewColumn("bool_backfill", typing.Boolean))
 	tableDataCols.AddColumn(columns.NewColumn("prev_invalid", typing.Invalid))
+	tableDataCols.AddColumn(columns.NewColumn("numeric_test", typing.EDecimal))
 
 	// Casting these as STRING so tableColumn via this f(x) will set it correctly.
 	tableDataCols.AddColumn(columns.NewColumn("ext_date", typing.String))
@@ -33,6 +34,12 @@ func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumnsFromDestinati
 		_, isOk := tableData.inMemoryColumns.GetColumn(nonExistentTableCol)
 		assert.False(o.T(), isOk, nonExistentTableCol)
 	}
+
+	// Making sure it's still numeric
+	tableData.UpdateInMemoryColumnsFromDestination(o.ctx, columns.NewColumn("numeric_test", typing.Integer))
+	numericCol, isOk := tableData.inMemoryColumns.GetColumn("numeric_test")
+	assert.True(o.T(), isOk)
+	assert.Equal(o.T(), typing.EDecimal.Kind, numericCol.KindDetails.Kind, "numeric_test")
 
 	// Testing to make sure we're copying the kindDetails over.
 	tableData.UpdateInMemoryColumnsFromDestination(o.ctx, columns.NewColumn("prev_invalid", typing.String))
