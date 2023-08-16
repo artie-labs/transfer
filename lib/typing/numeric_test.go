@@ -66,3 +66,27 @@ func TestParseNumeric(t *testing.T) {
 		assert.Equal(t, testCase.expectedKindDetails, ParseNumeric(testCase.prefix, testCase.valString), fmt.Sprintf("prefix:%s, valString:%s", testCase.prefix, testCase.valString))
 	}
 }
+
+func TestParseNumeric_PrecisionAndScale(t *testing.T) {
+	type _testCase struct {
+		name              string
+		input             string
+		expectedPrecision int
+		expectedScale     int
+	}
+
+	testCases := []_testCase{
+		{
+			name:              "precision and scale",
+			input:             "numeric(5, 2)",
+			expectedPrecision: 5,
+			expectedScale:     2,
+		},
+	}
+
+	for _, tc := range testCases {
+		numeric := ParseNumeric(defaultPrefix, tc.input)
+		assert.Equal(t, tc.expectedPrecision, *numeric.ExtendedDecimalDetails.Precision(), tc.name)
+		assert.Equal(t, tc.expectedScale, numeric.ExtendedDecimalDetails.Scale(), tc.name)
+	}
+}

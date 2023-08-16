@@ -3,6 +3,8 @@ package typing
 import (
 	"strconv"
 	"strings"
+
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
 const defaultPrefix = "numeric"
@@ -37,5 +39,7 @@ func ParseNumeric(prefix, valString string) KindDetails {
 		return Integer
 	}
 
-	return EDecimal
+	eDec := EDecimal
+	eDec.ExtendedDecimalDetails = decimal.NewDecimal(parsedNumbers[1], &parsedNumbers[0], nil)
+	return eDec
 }

@@ -226,6 +226,11 @@ func (t *TableData) UpdateInMemoryColumnsFromDestination(ctx context.Context, co
 	}
 
 	for _, inMemoryCol := range t.inMemoryColumns.GetColumns() {
+		// If the
+		if inMemoryCol.ShouldSkip() {
+			continue
+		}
+
 		var foundColumn columns.Column
 		var found bool
 		for _, col := range cols {
