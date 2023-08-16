@@ -259,6 +259,10 @@ func (t *TableData) UpdateInMemoryColumnsFromDestination(ctx context.Context, co
 				inMemoryCol.KindDetails.ExtendedTimeDetails.Type = foundColumn.KindDetails.ExtendedTimeDetails.Type
 			}
 
+			if foundColumn.KindDetails.ExtendedDecimalDetails != nil && inMemoryCol.KindDetails.ExtendedDecimalDetails == nil {
+				inMemoryCol.KindDetails.ExtendedDecimalDetails = foundColumn.KindDetails.ExtendedDecimalDetails
+			}
+
 			t.inMemoryColumns.UpdateColumn(inMemoryCol)
 		}
 	}
