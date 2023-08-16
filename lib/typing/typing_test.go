@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"strings"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
@@ -17,24 +16,58 @@ func (t *TypingTestSuite) TestNil() {
 }
 
 func (t *TypingTestSuite) TestJSONString() {
-	assert.Equal(t.T(), true, IsJSON(`{"hello": "world"}`))
-	assert.Equal(t.T(), true, IsJSON(`{}`))
-	assert.Equal(t.T(), true, IsJSON(strings.TrimSpace(`
-	{
-		"hello": {
-			"world": {
-				"nested_value": true
-			}
-		},
-		"add_a_list_here": [1, 2, 3, 4],
-		"number": 7.5,
-		"integerNum": 7
+	type _testCase struct {
+		input    string
+		expected bool
 	}
-	`)))
 
-	assert.Equal(t.T(), false, IsJSON(`{null`))
-	assert.Equal(t.T(), false, IsJSON(`{null}`))
-	assert.Equal(t.T(), false, IsJSON(`{abc: def}`))
+	testCases := []_testCase{
+		{
+			input:    "{}",
+			expected: true,
+		},
+		{
+			input:    `{"hello": "world"}`,
+			expected: true,
+		},
+		{
+			input: `{
+				"hello": {
+					"world": {
+						"nested_value": true
+					}
+				},
+				"add_a_list_here": [1, 2, 3, 4],
+				"number": 7.5,
+				"integerNum": 7
+			}`,
+			expected: true,
+		},
+		{
+			input: `{"hello": "world"`,
+		},
+		{
+			input: `{"hello": "world"}}`,
+		},
+		{
+			input: `{null}`,
+		},
+		{
+			input:    `[]`,
+			expected: true,
+		},
+		{
+			input:    `[1, 2, 3, 4]`,
+			expected: true,
+		},
+		{
+			input: `[1, 2, 3, 4`,
+		},
+	}
+
+	for _, tc := range testCases {
+		assert.Equal(t.T(), tc.expected, IsJSON(tc.input), tc.input)
+	}
 }
 
 func (t *TypingTestSuite) TestParseValueBasic() {
