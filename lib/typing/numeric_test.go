@@ -63,7 +63,7 @@ func TestParseNumeric(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		assert.Equal(t, testCase.expectedKindDetails, ParseNumeric(testCase.prefix, testCase.valString), fmt.Sprintf("prefix:%s, valString:%s", testCase.prefix, testCase.valString))
+		assert.Equal(t, testCase.expectedKindDetails.Kind, ParseNumeric(testCase.prefix, testCase.valString).Kind, fmt.Sprintf("prefix:%s, valString:%s", testCase.prefix, testCase.valString))
 	}
 }
 

@@ -255,7 +255,6 @@ func (t *TableData) UpdateInMemoryColumnsFromDestination(ctx context.Context, co
 			}
 
 			inMemoryCol.SetBackfilled(foundColumn.Backfilled())
-
 			if foundColumn.KindDetails.ExtendedTimeDetails != nil {
 				if inMemoryCol.KindDetails.ExtendedTimeDetails == nil {
 					inMemoryCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{}
