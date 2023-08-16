@@ -49,7 +49,7 @@ func TestBigQueryTypeToKind(t *testing.T) {
 	}
 
 	for bqCol, expectedKind := range bqColToExpectedKind {
-		assert.Equal(t, expectedKind, BigQueryTypeToKind(bqCol), fmt.Sprintf("bqCol: %s did not match", bqCol))
+		assert.Equal(t, expectedKind.Kind, BigQueryTypeToKind(bqCol).Kind, fmt.Sprintf("bqCol: %s did not match", bqCol))
 	}
 }
 

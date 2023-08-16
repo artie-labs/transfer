@@ -15,7 +15,7 @@ func TestSnowflakeTypeToKindNumber(t *testing.T) {
 
 	expectedFloats := []string{"number(38, 1)", "number(2, 2)", "number(2, 30)"}
 	for _, expectedFloat := range expectedFloats {
-		assert.Equal(t, SnowflakeTypeToKind(expectedFloat), EDecimal, expectedFloat)
+		assert.Equal(t, SnowflakeTypeToKind(expectedFloat).Kind, EDecimal.Kind, expectedFloat)
 	}
 }
 
@@ -31,7 +31,7 @@ func TestSnowflakeTypeToKindFloats(t *testing.T) {
 
 	expectedNumerics := []string{"NUMERIC(38, 2)", "NUMBER(38, 2)", "DECIMAL"}
 	for _, expectedNumeric := range expectedNumerics {
-		assert.Equal(t, SnowflakeTypeToKind(expectedNumeric), EDecimal, expectedNumeric)
+		assert.Equal(t, SnowflakeTypeToKind(expectedNumeric).Kind, EDecimal.Kind, expectedNumeric)
 	}
 }
 

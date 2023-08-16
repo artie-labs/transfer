@@ -250,7 +250,6 @@ func (t *TableData) UpdateInMemoryColumnsFromDestination(ctx context.Context, co
 			}
 
 			inMemoryCol.SetBackfilled(foundColumn.Backfilled())
-
 			if foundColumn.KindDetails.ExtendedTimeDetails != nil {
 				if inMemoryCol.KindDetails.ExtendedTimeDetails == nil {
 					inMemoryCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{}
@@ -258,6 +257,10 @@ func (t *TableData) UpdateInMemoryColumnsFromDestination(ctx context.Context, co
 
 				// Don't have tcKind.ExtendedTimeDetails update the format since the DWH will not have that.
 				inMemoryCol.KindDetails.ExtendedTimeDetails.Type = foundColumn.KindDetails.ExtendedTimeDetails.Type
+			}
+
+			if foundColumn.KindDetails.ExtendedDecimalDetails != nil && inMemoryCol.KindDetails.ExtendedDecimalDetails == nil {
+				inMemoryCol.KindDetails.ExtendedDecimalDetails = foundColumn.KindDetails.ExtendedDecimalDetails
 			}
 
 			t.inMemoryColumns.UpdateColumn(inMemoryCol)
