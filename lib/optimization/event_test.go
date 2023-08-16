@@ -245,7 +245,6 @@ func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumns() {
 	// It went from invalid to boolean.
 	col, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("bar")
 	assert.True(o.T(), isOk)
-	fmt.Println("col", col.KindDetails.Kind)
 	assert.Equal(o.T(), typing.Boolean, col.KindDetails)
 
 	col, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("do_not_change_format")
