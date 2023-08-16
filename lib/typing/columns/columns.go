@@ -273,6 +273,13 @@ func ColumnsUpdateQuery(ctx context.Context, columns []string, columnsToTypes Co
 							column, column, constants.ToastUnavailableValuePlaceholder,
 							// cc.col ELSE c.col END
 							column, column))
+				} else if destKind == constants.Redshift {
+					_columns = append(_columns,
+						fmt.Sprintf(`%s= CASE WHEN cc.%s != JSON_PARSE('{"key":"%s"}') THEN cc.%s ELSE c.%s END`,
+							// col CASE when TO_JSON_STRING(cc.col) != { 'key': TOAST_UNAVAILABLE_VALUE }
+							column, column, constants.ToastUnavailableValuePlaceholder,
+							// cc.col ELSE c.col END
+							column, column))
 				} else {
 					_columns = append(_columns,
 						fmt.Sprintf("%s= CASE WHEN cc.%s != {'key': '%s'} THEN cc.%s ELSE c.%s END",
