@@ -74,13 +74,14 @@ func NewKindDetailsFromTemplate(details KindDetails, extendedType ext.ExtendedTi
 // This is an optimization since JSON string checking is expensive.
 func IsJSON(str string) bool {
 	if len(str) < 2 {
-		// Not LTE 2 because {} is a valid JSON object.
 		return false
 	}
 
-	// Shouldn't need to strings.TrimSpace(...).
-	valStringChars := []rune(str)
-	if string(valStringChars[0]) == "{" && string(valStringChars[len(valStringChars)-1]) == "}" {
+	valStringChars := []rune(strings.TrimSpace(str))
+	firstChar := string(valStringChars[0])
+	lastChar := string(valStringChars[len(valStringChars)-1])
+
+	if (firstChar == "{" && lastChar == "}") || (firstChar == "[" && lastChar == "]") {
 		var js json.RawMessage
 		return json.Unmarshal([]byte(str), &js) == nil
 	}
