@@ -1,8 +1,10 @@
 package optimization
 
 import (
+	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
@@ -18,6 +20,12 @@ func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumnsFromDestinati
 	tableDataCols.AddColumn(columns.NewColumn("ext_date", typing.String))
 	tableDataCols.AddColumn(columns.NewColumn("ext_time", typing.String))
 	tableDataCols.AddColumn(columns.NewColumn("ext_datetime", typing.String))
+	tableDataCols.AddColumn(columns.NewColumn("ext_dec", typing.String))
+
+	extDecimalType := typing.EDecimal
+	extDecimalType.ExtendedDecimalDetails = decimal.NewDecimal(2, ptr.ToInt(22), nil)
+	tableDataCols.AddColumn(columns.NewColumn("ext_dec_filled", extDecimalType))
+
 	tableData := &TableData{
 		inMemoryColumns: tableDataCols,
 	}
@@ -70,8 +78,8 @@ func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumnsFromDestinati
 		assert.Nil(o.T(), col.KindDetails.ExtendedTimeDetails, extTimeDetailsCol)
 	}
 
-	tableData.UpdateInMemoryColumnsFromDestination(o.ctx, columns.NewColumn("ext_date", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType)))
 	tableData.UpdateInMemoryColumnsFromDestination(o.ctx, columns.NewColumn("ext_time", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)))
+	tableData.UpdateInMemoryColumnsFromDestination(o.ctx, columns.NewColumn("ext_date", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType)))
 	tableData.UpdateInMemoryColumnsFromDestination(o.ctx, columns.NewColumn("ext_datetime", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)))
 
 	dateCol, isOk := tableData.inMemoryColumns.GetColumn("ext_date")
@@ -88,4 +96,37 @@ func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumnsFromDestinati
 	assert.True(o.T(), isOk)
 	assert.NotNil(o.T(), dateTimeCol.KindDetails.ExtendedTimeDetails)
 	assert.Equal(o.T(), ext.DateTimeKindType, dateTimeCol.KindDetails.ExtendedTimeDetails.Type)
+
+	// Testing extDecimalDetails
+	// Confirm that before you update, it's invalid.
+	extDecCol, isOk := tableData.inMemoryColumns.GetColumn("ext_dec")
+	assert.True(o.T(), isOk)
+	assert.Equal(o.T(), typing.String, extDecCol.KindDetails)
+
+	extDecimal := typing.EDecimal
+	extDecimal.ExtendedDecimalDetails = decimal.NewDecimal(2, ptr.ToInt(30), nil)
+	tableData.UpdateInMemoryColumnsFromDestination(o.ctx, columns.NewColumn("ext_dec", extDecimal))
+	// Now it should be ext decimal type
+	extDecCol, isOk = tableData.inMemoryColumns.GetColumn("ext_dec")
+	assert.True(o.T(), isOk)
+	assert.Equal(o.T(), typing.EDecimal.Kind, extDecCol.KindDetails.Kind)
+	// Check precision and scale too.
+	assert.Equal(o.T(), 30, *extDecCol.KindDetails.ExtendedDecimalDetails.Precision())
+	assert.Equal(o.T(), 2, extDecCol.KindDetails.ExtendedDecimalDetails.Scale())
+
+	// Testing ext_dec_filled since it's already filled out
+	extDecColFilled, isOk := tableData.inMemoryColumns.GetColumn("ext_dec_filled")
+	assert.True(o.T(), isOk)
+	assert.Equal(o.T(), typing.EDecimal.Kind, extDecColFilled.KindDetails.Kind)
+	// Check precision and scale too.
+	assert.Equal(o.T(), 22, *extDecColFilled.KindDetails.ExtendedDecimalDetails.Precision())
+	assert.Equal(o.T(), 2, extDecColFilled.KindDetails.ExtendedDecimalDetails.Scale())
+
+	tableData.UpdateInMemoryColumnsFromDestination(o.ctx, columns.NewColumn("ext_dec_filled", extDecimal))
+	extDecColFilled, isOk = tableData.inMemoryColumns.GetColumn("ext_dec_filled")
+	assert.True(o.T(), isOk)
+	assert.Equal(o.T(), typing.EDecimal.Kind, extDecColFilled.KindDetails.Kind)
+	// Check precision and scale too.
+	assert.Equal(o.T(), 22, *extDecColFilled.KindDetails.ExtendedDecimalDetails.Precision())
+	assert.Equal(o.T(), 2, extDecColFilled.KindDetails.ExtendedDecimalDetails.Scale())
 }
