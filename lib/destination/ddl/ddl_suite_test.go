@@ -33,7 +33,9 @@ type DDLTestSuite struct {
 func (d *DDLTestSuite) SetupTest() {
 	ctx := config.InjectSettingsIntoContext(context.Background(), &config.Settings{
 		VerboseLogging: true,
-		Config:         &config.Config{},
+		Config: &config.Config{
+			Redshift: &config.Redshift{},
+		},
 	})
 
 	bqCtx := config.InjectSettingsIntoContext(context.Background(), &config.Settings{
