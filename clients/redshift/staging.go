@@ -88,7 +88,7 @@ func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal := value[col]
 			// Check
-			castedValue, castErr := CastColValStaging(ctx, colVal, colKind)
+			castedValue, castErr := s.CastColValStaging(ctx, colVal, colKind)
 			if castErr != nil {
 				return "", castErr
 			}

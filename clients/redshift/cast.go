@@ -17,9 +17,34 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
+const (
+	maxRedshiftVarCharLen = 65535
+	maxRedshiftSuperLen   = 1 * 1024 * 1024 // 1 MB
+)
+
+// replaceExceededValues - takes `colVal` interface{} and `colKind` columns.Column and replaces the value with an empty string if it exceeds the max length.
+// This currently only works for STRING and SUPER data types.
+func replaceExceededValues(colVal interface{}, colKind columns.Column) interface{} {
+	colValString := fmt.Sprint(colVal)
+	switch colKind.KindDetails.Kind {
+	case typing.Struct.Kind: // Assuming this corresponds to SUPER type in Redshift
+		if len(colValString) > maxRedshiftSuperLen {
+			return map[string]interface{}{
+				"key": constants.ExceededValueMarker,
+			}
+		}
+	case typing.String.Kind:
+		if len(colValString) > maxRedshiftVarCharLen {
+			return constants.ExceededValueMarker
+		}
+	}
+
+	return colVal
+}
+
 // CastColValStaging - takes `colVal` interface{} and `colKind` typing.Column and converts the value into a string value
 // This is necessary because CSV writers require values to in `string`.
-func CastColValStaging(ctx context.Context, colVal interface{}, colKind columns.Column) (string, error) {
+func (s *Store) CastColValStaging(ctx context.Context, colVal interface{}, colKind columns.Column) (string, error) {
 	if colVal == nil {
 		if colKind.KindDetails == typing.Struct {
 			// Returning empty here because if it's a struct, it will go through JSON PARSE and JSON_PARSE("") = null
@@ -28,6 +53,10 @@ func CastColValStaging(ctx context.Context, colVal interface{}, colKind columns.
 
 		// This matches the COPY clause for NULL terminator.
 		return `\N`, nil
+	}
+
+	if s.skipLargeColumns {
+		colVal = replaceExceededValues(colVal, colKind)
 	}
 
 	colValString := fmt.Sprint(colVal)
