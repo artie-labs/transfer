@@ -30,8 +30,8 @@ type _testCase struct {
 	expectErr      bool
 }
 
-func evaluateTestCase(t *testing.T, ctx context.Context, testCase _testCase) {
-	actualString, actualErr := CastColValStaging(ctx, testCase.colVal, testCase.colKind)
+func evaluateTestCase(t *testing.T, ctx context.Context, store *Store, testCase _testCase) {
+	actualString, actualErr := store.CastColValStaging(ctx, testCase.colVal, testCase.colKind)
 	if testCase.expectErr {
 		assert.Error(t, actualErr, testCase.name)
 	} else {
@@ -136,7 +136,7 @@ func (r *RedshiftTestSuite) TestCastColValStaging_Basic() {
 	}
 
 	for _, testCase := range testCases {
-		evaluateTestCase(r.T(), r.ctx, testCase)
+		evaluateTestCase(r.T(), r.ctx, r.store, testCase)
 	}
 }
 
@@ -185,7 +185,7 @@ func (r *RedshiftTestSuite) TestCastColValStaging_Array() {
 	}
 
 	for _, testCase := range testCases {
-		evaluateTestCase(r.T(), r.ctx, testCase)
+		evaluateTestCase(r.T(), r.ctx, r.store, testCase)
 	}
 }
 
@@ -247,7 +247,7 @@ func (r *RedshiftTestSuite) TestCastColValStaging_Time() {
 	}
 
 	for _, testCase := range testCases {
-		evaluateTestCase(r.T(), r.ctx, testCase)
+		evaluateTestCase(r.T(), r.ctx, r.store, testCase)
 	}
 }
 
@@ -266,6 +266,6 @@ func (r *RedshiftTestSuite) TestCastColValStaging_TOAST() {
 	}
 
 	for _, testCase := range testCases {
-		evaluateTestCase(r.T(), r.ctx, testCase)
+		evaluateTestCase(r.T(), r.ctx, r.store, testCase)
 	}
 }
