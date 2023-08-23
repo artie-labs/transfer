@@ -21,7 +21,7 @@ type Store struct {
 	bucket            string
 	optionalS3Prefix  string
 	configMap         *types.DwhToTablesConfigMap
-	skipLargeColumns  bool
+	skipLgCols        bool
 	db.Store
 }
 
@@ -85,15 +85,17 @@ WHERE
 }
 
 func LoadRedshift(ctx context.Context, _store *db.Store) *Store {
+	settings := config.FromContext(ctx)
+
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			Store:     *_store,
-			configMap: &types.DwhToTablesConfigMap{},
+			Store:      *_store,
+			configMap:  &types.DwhToTablesConfigMap{},
+			skipLgCols: settings.Config.Redshift.SkipLgCols,
 		}
 	}
 
-	settings := config.FromContext(ctx)
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require",
 		settings.Config.Redshift.Host, settings.Config.Redshift.Port, settings.Config.Redshift.Username,
 		settings.Config.Redshift.Password, settings.Config.Redshift.Database)
@@ -102,7 +104,7 @@ func LoadRedshift(ctx context.Context, _store *db.Store) *Store {
 		credentialsClause: settings.Config.Redshift.CredentialsClause,
 		bucket:            settings.Config.Redshift.Bucket,
 		optionalS3Prefix:  settings.Config.Redshift.OptionalS3Prefix,
-		skipLargeColumns:  settings.Config.Redshift.SkipLgCols,
+		skipLgCols:        settings.Config.Redshift.SkipLgCols,
 		Store:             db.Open(ctx, "postgres", connStr),
 		configMap:         &types.DwhToTablesConfigMap{},
 	}

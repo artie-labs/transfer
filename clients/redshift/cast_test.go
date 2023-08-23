@@ -7,6 +7,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/stringutil"
+
+	"github.com/artie-labs/transfer/lib/db"
+
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/ptr"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -268,4 +274,58 @@ func (r *RedshiftTestSuite) TestCastColValStaging_TOAST() {
 	for _, testCase := range testCases {
 		evaluateTestCase(r.T(), r.ctx, r.store, testCase)
 	}
+}
+
+func (r *RedshiftTestSuite) TestCastColValStaging_ExceededValues() {
+	testCases := []_testCase{
+		{
+			name:   "string",
+			colVal: stringutil.Random(maxRedshiftVarCharLen + 1),
+			colKind: columns.Column{
+				KindDetails: typing.String,
+			},
+			expectedString: "__artie_exceeded_value",
+		},
+		{
+			name:   "string",
+			colVal: "thisissuperlongbutnotlongenoughtogetmasked",
+			colKind: columns.Column{
+				KindDetails: typing.String,
+			},
+			expectedString: "thisissuperlongbutnotlongenoughtogetmasked",
+		},
+		{
+			name:   "struct",
+			colVal: map[string]interface{}{"foo": stringutil.Random(maxRedshiftSuperLen + 1)},
+			colKind: columns.Column{
+				KindDetails: typing.Struct,
+			},
+			expectedString: `{"key":"__artie_exceeded_value"}`,
+		},
+		{
+			name:   "struct",
+			colVal: map[string]interface{}{"foo": stringutil.Random(maxRedshiftSuperLen + 1)},
+			colKind: columns.Column{
+				KindDetails: typing.Struct,
+			},
+			expectedString: `{"key":"__artie_exceeded_value"}`,
+		},
+	}
+
+	ctx := config.InjectSettingsIntoContext(context.Background(), &config.Settings{
+		VerboseLogging: false,
+		Config: &config.Config{
+			Redshift: &config.Redshift{
+				SkipLgCols: true,
+			},
+		},
+	})
+
+	store := db.Store(r.fakeStore)
+	skipLargeRowsStore := LoadRedshift(ctx, &store)
+
+	for _, testCase := range testCases {
+		evaluateTestCase(r.T(), r.ctx, skipLargeRowsStore, testCase)
+	}
+
 }

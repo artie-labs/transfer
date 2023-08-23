@@ -55,7 +55,7 @@ func (s *Store) CastColValStaging(ctx context.Context, colVal interface{}, colKi
 		return `\N`, nil
 	}
 
-	if s.skipLargeColumns {
+	if s.skipLgCols {
 		colVal = replaceExceededValues(colVal, colKind)
 	}
 

@@ -20,6 +20,9 @@ type RedshiftTestSuite struct {
 func (r *RedshiftTestSuite) SetupTest() {
 	r.ctx = config.InjectSettingsIntoContext(context.Background(), &config.Settings{
 		VerboseLogging: false,
+		Config: &config.Config{
+			Redshift: &config.Redshift{},
+		},
 	})
 
 	r.fakeStore = &mocks.FakeStore{}
