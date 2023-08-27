@@ -15,6 +15,7 @@
 * [MySQL](real-time-sources/mysql.md)
 * [MongoDB](real-time-sources/mongodb/README.md)
   * [Atlas - MongoDB](real-time-sources/mongodb/atlas-mongodb.md)
+* [DynamoDB](real-time-sources/dynamodb.md)
 
 ## Real-time Destinations
 
