@@ -119,7 +119,7 @@ func StartConsumer(ctx context.Context) {
 				kafkaMsg, err := kafkaConsumer.FetchMessage(ctx)
 				msg := artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)
 				logFields := map[string]interface{}{
-					"topic":  msg.Topic,
+					"topic":  msg.Topic(),
 					"offset": kafkaMsg.Offset,
 					"key":    string(msg.Key()),
 					"value":  string(msg.Value()),
@@ -130,12 +130,13 @@ func StartConsumer(ctx context.Context) {
 					continue
 				}
 
-				msg.EmitIngestionLag(ctx, kafkaConsumer.Config().GroupID)
-				processErr := processMessage(ctx, ProcessArgs{
+				tableName, processErr := processMessage(ctx, ProcessArgs{
 					Msg:                    msg,
 					GroupID:                kafkaConsumer.Config().GroupID,
 					TopicToConfigFormatMap: tcFmtMap,
 				})
+
+				msg.EmitIngestionLag(ctx, kafkaConsumer.Config().GroupID, tableName)
 				if processErr != nil {
 					log.WithError(processErr).WithFields(logFields).Warn("skipping message...")
 				}

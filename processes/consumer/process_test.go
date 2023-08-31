@@ -46,13 +46,15 @@ func TestProcessMessageFailures(t *testing.T) {
 		GroupID: "foo",
 	}
 
-	err := processMessage(ctx, processArgs)
+	tableName, err := processMessage(ctx, processArgs)
 	assert.True(t, strings.Contains(err.Error(), "failed to process, topicConfig is nil"), err.Error())
+	assert.Empty(t, tableName)
 
 	processArgs.TopicToConfigFormatMap = NewTcFmtMap()
-	err = processMessage(ctx, processArgs)
+	tableName, err = processMessage(ctx, processArgs)
 	assert.True(t, strings.Contains(err.Error(), "failed to get topic"), err.Error())
 	assert.Equal(t, 0, len(models.GetMemoryDB(ctx).TableData()))
+	assert.Empty(t, tableName)
 
 	var mgo mongo.Debezium
 	const (
@@ -84,11 +86,12 @@ func TestProcessMessageFailures(t *testing.T) {
 	tcFmt, isOk := tcFmtMap.GetTopicFmt(msg.Topic())
 	assert.True(t, isOk)
 
-	err = processMessage(ctx, processArgs)
+	tableName, err = processMessage(ctx, processArgs)
 	assert.True(t, strings.Contains(err.Error(),
 		fmt.Sprintf("err: format: %s is not supported", tcFmt.tc.CDCKeyFormat)), err.Error())
 	assert.True(t, strings.Contains(err.Error(), "cannot unmarshall key"), err.Error())
 	assert.Equal(t, 0, len(models.GetMemoryDB(ctx).TableData()))
+	assert.Empty(t, tableName)
 
 	// Add will just replace the prev setting.
 	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
@@ -176,8 +179,9 @@ func TestProcessMessageFailures(t *testing.T) {
 			TopicToConfigFormatMap: tcFmtMap,
 		}
 
-		err = processMessage(ctx, processArgs)
+		tableName, err = processMessage(ctx, processArgs)
 		assert.NoError(t, err)
+		assert.Equal(t, table, tableName)
 
 		td := memoryDB.GetOrCreateTableData(table)
 		// Check that there are corresponding row(s) in the memory DB
@@ -203,7 +207,8 @@ func TestProcessMessageFailures(t *testing.T) {
 		TopicToConfigFormatMap: tcFmtMap,
 	}
 
-	err = processMessage(ctx, processArgs)
+	tableName, err = processMessage(ctx, processArgs)
 	assert.Error(t, err)
+	assert.Empty(t, tableName)
 	assert.True(t, td.Rows() > 0)
 }

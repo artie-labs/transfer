@@ -56,10 +56,11 @@ func (m *Message) Kind() Kind {
 	return Invalid
 }
 
-func (m *Message) EmitIngestionLag(ctx context.Context, groupID string) {
+func (m *Message) EmitIngestionLag(ctx context.Context, groupID, table string) {
 	metrics.FromContext(ctx).Timing("ingestion.lag", time.Since(m.PublishTime()), map[string]string{
 		"groupID":   groupID,
 		"topic":     m.Topic(),
+		"table":     table,
 		"partition": m.Partition(),
 	})
 }

@@ -16,9 +16,13 @@ type ProcessArgs struct {
 	TopicToConfigFormatMap *TcFmtMap
 }
 
-func processMessage(ctx context.Context, processArgs ProcessArgs) error {
+// processMessage will return:
+// 1. TableName (string)
+// 2. Error
+// We are using the TableName for emitting Kafka ingestion lag
+func processMessage(ctx context.Context, processArgs ProcessArgs) (string, error) {
 	if processArgs.TopicToConfigFormatMap == nil {
-		return fmt.Errorf("failed to process, topicConfig is nil")
+		return "", fmt.Errorf("failed to process, topicConfig is nil")
 	}
 
 	tags := map[string]string{
@@ -34,7 +38,7 @@ func processMessage(ctx context.Context, processArgs ProcessArgs) error {
 	topicConfig, isOk := processArgs.TopicToConfigFormatMap.GetTopicFmt(processArgs.Msg.Topic())
 	if !isOk {
 		tags["what"] = "failed_topic_lookup"
-		return fmt.Errorf("failed to get topic name: %s", processArgs.Msg.Topic())
+		return "", fmt.Errorf("failed to get topic name: %s", processArgs.Msg.Topic())
 	}
 
 	tags["database"] = topicConfig.tc.Database
@@ -43,13 +47,13 @@ func processMessage(ctx context.Context, processArgs ProcessArgs) error {
 	pkMap, err := topicConfig.GetPrimaryKey(ctx, processArgs.Msg.Key(), topicConfig.tc)
 	if err != nil {
 		tags["what"] = "marshall_pk_err"
-		return fmt.Errorf("cannot unmarshall key, key: %s, err: %v", string(processArgs.Msg.Key()), err)
+		return "", fmt.Errorf("cannot unmarshall key, key: %s, err: %v", string(processArgs.Msg.Key()), err)
 	}
 
 	_event, err := topicConfig.GetEventFromBytes(ctx, processArgs.Msg.Value())
 	if err != nil {
 		tags["what"] = "marshall_value_err"
-		return fmt.Errorf("cannot unmarshall event, err: %v", err)
+		return "", fmt.Errorf("cannot unmarshall event, err: %v", err)
 	}
 
 	evt := event.ToMemoryEvent(ctx, _event, pkMap, topicConfig.tc)
@@ -62,11 +66,11 @@ func processMessage(ctx context.Context, processArgs ProcessArgs) error {
 	}
 
 	if shouldFlush {
-		return Flush(Args{
+		return evt.Table, Flush(Args{
 			Context:       ctx,
 			SpecificTable: evt.Table,
 		})
 	}
 
-	return nil
+	return evt.Table, nil
 }
