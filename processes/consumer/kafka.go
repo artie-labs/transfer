@@ -93,7 +93,6 @@ func StartConsumer(ctx context.Context) {
 			tc:     topicConfig,
 			Format: format.GetFormatParser(ctx, topicConfig.CDCFormat, topicConfig.Topic),
 		})
-
 		topics = append(topics, topicConfig.Topic)
 	}
 
