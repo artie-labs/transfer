@@ -89,7 +89,6 @@ func StartSubscriber(ctx context.Context) {
 			for {
 				err = sub.Receive(ctx, func(_ context.Context, pubsubMsg *gcp_pubsub.Message) {
 					msg := artie.NewMessage(nil, pubsubMsg, topic)
-					msg.EmitIngestionLag(ctx, subName)
 					logFields := map[string]interface{}{
 						"topic": msg.Topic(),
 						"msgID": msg.PubSub.ID,
@@ -97,11 +96,13 @@ func StartSubscriber(ctx context.Context) {
 						"value": string(msg.Value()),
 					}
 
-					processErr := processMessage(ctx, ProcessArgs{
+					tableName, processErr := processMessage(ctx, ProcessArgs{
 						Msg:                    msg,
 						GroupID:                subName,
 						TopicToConfigFormatMap: tcFmtMap,
 					})
+
+					msg.EmitIngestionLag(ctx, subName, tableName)
 					if processErr != nil {
 						log.WithError(processErr).WithFields(logFields).Warn("skipping message...")
 					}

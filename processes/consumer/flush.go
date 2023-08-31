@@ -77,7 +77,6 @@ func Flush(args Args) error {
 				}
 			}
 			metrics.FromContext(args.Context).Timing("flush", time.Since(start), tags)
-
 		}(tableName, tableData)
 	}
 	wg.Wait()
