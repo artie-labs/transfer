@@ -5,6 +5,7 @@ import (
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
@@ -100,12 +101,21 @@ func (f Field) ToKindDetails() typing.KindDetails {
 	case string(JSON):
 		return typing.Struct
 	case string(KafkaDecimalType):
+		scaleAndPrecision, err := f.GetScaleAndPrecision()
+		if err != nil {
+			return typing.Invalid
+		}
 
+		eDecimal := typing.EDecimal
+		eDecimal.ExtendedDecimalDetails = decimal.NewDecimal(scaleAndPrecision.Scale, scaleAndPrecision.Precision, nil)
+		return eDecimal
 	case string(KafkaVariableNumericType):
-		// TODO: make sure KafkaVariableNumericType updates scale
-		// TODO: extract scale and precision out
-		// Then, cast EDECIMAL
-
+		// For variable numeric types, we are defaulting to a scale of 5
+		// This is because scale is not specified at the column level, rather at the row level
+		// It shouldn't matter much anyway since the column type we are creating is `TEXT` to avoid boundary errors.
+		eDecimal := typing.EDecimal
+		eDecimal.ExtendedDecimalDetails = decimal.NewDecimal(decimal.DefaultScale, ptr.ToInt(decimal.PrecisionNotSpecified), nil)
+		return eDecimal
 	}
 
 	switch f.Type {

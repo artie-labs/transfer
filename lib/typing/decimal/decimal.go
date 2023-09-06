@@ -14,6 +14,11 @@ type Decimal struct {
 	value     *big.Float
 }
 
+const (
+	DefaultScale          = 5
+	PrecisionNotSpecified = -1
+)
+
 // MaxPrecisionBeforeString - if the precision is greater than 38, we'll cast it as a string.
 // This is because Snowflake and BigQuery both do not have NUMERIC data types that go beyond 38.
 const MaxPrecisionBeforeString = 38

@@ -92,15 +92,14 @@ func IsJSON(str string) bool {
 func ParseValue(ctx context.Context, key string, optionalSchema map[string]KindDetails, val interface{}) KindDetails {
 	cfg := config.FromContext(ctx).Config
 	if val == nil && !cfg.SharedTransferConfig.CreateAllColumnsIfAvailable {
-		// If the value is nil and we do not have `createAllColumnsIfAvailable` turned on, let's return `Invalid`
+		// If the value is nil and `createAllColumnsIfAvailable` = false, then return `Invalid
 		return Invalid
 	}
 
 	// OptionalSchema is fetched from the message header
 	if len(optionalSchema) > 0 {
 		// If the column exists in the schema, let's early exit.
-		kindDetail, isOk := optionalSchema[key]
-		if isOk {
+		if kindDetail, isOk := optionalSchema[key]; isOk {
 			// If the schema exists, use it as sot.
 			return kindDetail
 		}
