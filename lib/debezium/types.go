@@ -116,7 +116,6 @@ func (f Field) DecodeDecimal(encoded string) (*decimal.Decimal, error) {
 }
 
 func (f Field) DecodeDebeziumVariableDecimal(value interface{}) (*decimal.Decimal, error) {
-	// TODO: Test
 	valueStruct, isOk := value.(map[string]interface{})
 	if !isOk {
 		return nil, fmt.Errorf("value is not map[string]interface{} type")
