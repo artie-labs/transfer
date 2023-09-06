@@ -96,11 +96,18 @@ func ParseValue(ctx context.Context, key string, optionalSchema map[string]KindD
 		return Invalid
 	}
 
-	// OptionalSchema is fetched from the message header
 	if len(optionalSchema) > 0 {
 		// If the column exists in the schema, let's early exit.
 		if kindDetail, isOk := optionalSchema[key]; isOk {
 			// If the schema exists, use it as sot.
+			if val != nil && (kindDetail.Kind == ETime.Kind || kindDetail.Kind == EDecimal.Kind) {
+				// If the data type is either `ETime` or `EDecimal` and the value exists, we will not early exit
+				// We are not skipping so that we are able to get the exact layout specified at the row level to preserve:
+				// 1. Layout for time / date / timestamps
+				// 2. Precision and scale for numeric values
+				return ParseValue(ctx, key, nil, val)
+			}
+
 			return kindDetail
 		}
 	}

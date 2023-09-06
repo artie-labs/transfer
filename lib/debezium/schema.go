@@ -80,7 +80,7 @@ func (f Field) ToKindDetails() typing.KindDetails {
 	// We'll first cast based on Debezium types
 	// Then, we'll fall back on the actual data types.
 	switch f.DebeziumType {
-	case string(Timestamp), string(MicroTimestamp), string(DateTimeKafkaConnect):
+	case string(Timestamp), string(MicroTimestamp), string(DateTimeKafkaConnect), string(DateTimeWithTimezone):
 		etime := typing.ETime
 		etime.ExtendedTimeDetails = &ext.NestedKind{
 			Type: ext.DateTimeKindType,
@@ -92,7 +92,7 @@ func (f Field) ToKindDetails() typing.KindDetails {
 			Type: ext.DateKindType,
 		}
 		return etime
-	case string(Time), string(TimeMicro), string(TimeKafkaConnect):
+	case string(Time), string(TimeMicro), string(TimeKafkaConnect), string(TimeWithTimezone):
 		etime := typing.ETime
 		etime.ExtendedTimeDetails = &ext.NestedKind{
 			Type: ext.TimeKindType,

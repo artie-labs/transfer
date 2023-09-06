@@ -26,6 +26,8 @@ const (
 	TimeMicro            SupportedDebeziumType = "io.debezium.time.MicroTime"
 	DateKafkaConnect     SupportedDebeziumType = "org.apache.kafka.connect.data.Date"
 	TimeKafkaConnect     SupportedDebeziumType = "org.apache.kafka.connect.data.Time"
+	TimeWithTimezone     SupportedDebeziumType = "io.debezium.time.ZonedTime"
+	DateTimeWithTimezone SupportedDebeziumType = "io.debezium.time.ZonedTimestamp"
 	DateTimeKafkaConnect SupportedDebeziumType = "org.apache.kafka.connect.data.Timestamp"
 
 	KafkaDecimalType         SupportedDebeziumType = "org.apache.kafka.connect.data.Decimal"
@@ -34,7 +36,7 @@ const (
 	KafkaDecimalPrecisionKey = "connect.decimal.precision"
 )
 
-var supportedTypes = []SupportedDebeziumType{
+var typesThatRequireTypeCasting = []SupportedDebeziumType{
 	Timestamp,
 	MicroTimestamp,
 	Date,
@@ -48,7 +50,7 @@ var supportedTypes = []SupportedDebeziumType{
 }
 
 func RequiresSpecialTypeCasting(typeLabel string) (bool, SupportedDebeziumType) {
-	for _, supportedType := range supportedTypes {
+	for _, supportedType := range typesThatRequireTypeCasting {
 		if typeLabel == string(supportedType) {
 			return true, supportedType
 		}
