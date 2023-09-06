@@ -39,7 +39,7 @@
 
 * [Enabling BigQuery Time Partitioning](tutorials/enabling-bigquery-time-partitioning.md)
 * [Enabling SSH Tunneling](tutorials/enabling-ssh-tunneling.md)
-* [Preventing WAL growth on AWS RDS](tutorials/preventing-wal-growth-on-aws-rds.md)
+* [Preventing WAL growth on Postgres running on AWS RDS](tutorials/preventing-wal-growth-on-postgres-running-on-aws-rds.md)
 
 ## 💻 OS Tutorials
 
