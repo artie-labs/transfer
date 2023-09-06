@@ -1,6 +1,6 @@
 # Fixed IP Addresses
 
-To ensure that Artie is able to subscribe to your sources and push data to your destination, please refer to this page to add all of Artie's IP addresses to your allowlist.
+To ensure that Artie is able to subscribe to your sources and push data to your destination, please  add all of Artie's IP addresses below to your allowlist.
 
 Today, we support the following cloud providers:
 
