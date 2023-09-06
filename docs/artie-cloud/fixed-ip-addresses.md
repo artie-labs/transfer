@@ -14,7 +14,7 @@ Please reach out to **hi@artie.so** if your cloud provider or region is not list
 ## Control Plane IP ranges (CIDR format)
 
 {% hint style="info" %}
-Add these IP addresses in so that the dashboard is able to validate connectivity!
+Add the following IP addresses so that the dashboard is able to validate connectivity!
 {% endhint %}
 
 * 164.90.147.255/32
