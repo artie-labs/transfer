@@ -1,7 +1,6 @@
 package mongo
 
 import (
-	"context"
 	"encoding/json"
 	"time"
 
@@ -21,7 +20,7 @@ func (p *MongoTestSuite) TestGetPrimaryKey() {
 		CDCKeyFormat: "org.apache.kafka.connect.storage.StringConverter",
 	}
 
-	pkMap, err := p.GetPrimaryKey(context.Background(), []byte(valString), tc)
+	pkMap, err := p.GetPrimaryKey(p.ctx, []byte(valString), tc)
 	pkVal, isOk := pkMap["id"]
 	assert.True(p.T(), isOk)
 	assert.Equal(p.T(), pkVal, "1001")
@@ -55,7 +54,6 @@ func (p *MongoTestSuite) TestBsonTypes() {
 }
 
 func (p *MongoTestSuite) TestMongoDBEventOrder() {
-	ctx := context.Background()
 	payload := `
 {
 	"schema": {},
@@ -86,7 +84,7 @@ func (p *MongoTestSuite) TestMongoDBEventOrder() {
 }
 `
 
-	evt, err := p.Debezium.GetEventFromBytes(ctx, []byte(payload))
+	evt, err := p.Debezium.GetEventFromBytes(p.ctx, []byte(payload))
 	assert.NoError(p.T(), err)
 
 	schemaEvt, isOk := evt.(*SchemaEventPayload)
@@ -97,7 +95,6 @@ func (p *MongoTestSuite) TestMongoDBEventOrder() {
 }
 
 func (p *MongoTestSuite) TestMongoDBEventCustomer() {
-	ctx := context.Background()
 	payload := `
 {
 	"schema": {},
@@ -128,9 +125,9 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 }
 `
 
-	evt, err := p.Debezium.GetEventFromBytes(ctx, []byte(payload))
+	evt, err := p.Debezium.GetEventFromBytes(p.ctx, []byte(payload))
 	assert.NoError(p.T(), err)
-	evtData := evt.GetData(context.Background(), map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{})
+	evtData := evt.GetData(p.ctx, map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{})
 	_, isOk := evtData[constants.UpdateColumnMarker]
 	assert.False(p.T(), isOk)
 	assert.Equal(p.T(), evtData["_id"], 1003)
@@ -138,7 +135,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 	assert.Equal(p.T(), evtData["last_name"], "Tang")
 	assert.Equal(p.T(), evtData["email"], "robin@artie.so")
 
-	evtDataWithIncludedAt := evt.GetData(context.Background(), map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{
+	evtDataWithIncludedAt := evt.GetData(p.ctx, map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{
 		IncludeArtieUpdatedAt: true,
 	})
 
@@ -158,7 +155,6 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 }
 
 func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
-	ctx := context.Background()
 	payload := `
 {
 	"schema": {},
@@ -189,9 +185,9 @@ func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 }
 `
 
-	evt, err := p.Debezium.GetEventFromBytes(ctx, []byte(payload))
+	evt, err := p.Debezium.GetEventFromBytes(p.ctx, []byte(payload))
 	assert.NoError(p.T(), err)
-	evtData := evt.GetData(context.Background(), map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{})
+	evtData := evt.GetData(p.ctx, map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{})
 	assert.Equal(p.T(), "customers123", evt.GetTableName())
 	_, isOk := evtData[constants.UpdateColumnMarker]
 	assert.False(p.T(), isOk)
@@ -201,7 +197,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 		time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
 	assert.Equal(p.T(), true, evt.DeletePayload())
 
-	evtData = evt.GetData(context.Background(), map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{
+	evtData = evt.GetData(p.ctx, map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{
 		IncludeArtieUpdatedAt: true,
 	})
 	_, isOk = evtData[constants.UpdateColumnMarker]
@@ -210,14 +206,13 @@ func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 }
 
 func (p *MongoTestSuite) TestGetEventFromBytesTombstone() {
-	evt, err := p.Debezium.GetEventFromBytes(context.Background(), nil)
+	evt, err := p.Debezium.GetEventFromBytes(p.ctx, nil)
 	assert.NoError(p.T(), err)
 	assert.Equal(p.T(), true, evt.DeletePayload())
 	assert.False(p.T(), evt.GetExecutionTime().IsZero())
 }
 
 func (p *MongoTestSuite) TestMongoDBEventWithSchema() {
-	ctx := context.Background()
 	payload := `
 {
 	"schema": {
@@ -403,7 +398,7 @@ func (p *MongoTestSuite) TestMongoDBEventWithSchema() {
 	}
 }
 `
-	evt, err := p.Debezium.GetEventFromBytes(ctx, []byte(payload))
+	evt, err := p.Debezium.GetEventFromBytes(p.ctx, []byte(payload))
 	assert.NoError(p.T(), err)
 	schemaEvt, isOk := evt.(*SchemaEventPayload)
 	assert.True(p.T(), isOk)
@@ -415,7 +410,6 @@ func (p *MongoTestSuite) TestMongoDBEventWithSchema() {
 		Type:         "string",
 	})
 	assert.False(p.T(), evt.DeletePayload())
-
-	cols := schemaEvt.GetColumns(ctx)
+	cols := schemaEvt.GetColumns(p.ctx)
 	assert.NotNil(p.T(), cols)
 }

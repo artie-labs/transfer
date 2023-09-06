@@ -2,8 +2,12 @@ package postgres
 
 import (
 	"context"
-	"github.com/stretchr/testify/suite"
 	"testing"
+
+	"github.com/artie-labs/transfer/lib/config"
+
+	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/stretchr/testify/suite"
 )
 
 type PostgresTestSuite struct {
@@ -15,7 +19,10 @@ type PostgresTestSuite struct {
 func (p *PostgresTestSuite) SetupTest() {
 	var debezium Debezium
 	p.Debezium = &debezium
-	p.ctx = context.Background()
+	p.ctx = config.InjectSettingsIntoContext(context.Background(), &config.Settings{
+		VerboseLogging: true,
+	})
+	p.ctx = logger.InjectLoggerIntoCtx(p.ctx)
 }
 
 func TestPostgresTestSuite(t *testing.T) {

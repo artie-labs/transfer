@@ -1,7 +1,6 @@
 package postgres
 
 import (
-	"context"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -16,7 +15,7 @@ var validTc = &kafkalib.TopicConfig{
 }
 
 func (p *PostgresTestSuite) TestGetEventFromBytesTombstone() {
-	evt, err := p.GetEventFromBytes(context.Background(), nil)
+	evt, err := p.GetEventFromBytes(p.ctx, nil)
 	assert.NoError(p.T(), err)
 	assert.True(p.T(), evt.DeletePayload())
 	assert.False(p.T(), evt.GetExecutionTime().IsZero())
@@ -24,7 +23,7 @@ func (p *PostgresTestSuite) TestGetEventFromBytesTombstone() {
 
 func (p *PostgresTestSuite) TestGetPrimaryKey() {
 	valString := `{"id": 47}`
-	pkMap, err := p.GetPrimaryKey(context.Background(), []byte(valString), validTc)
+	pkMap, err := p.GetPrimaryKey(p.ctx, []byte(valString), validTc)
 	assert.NoError(p.T(), err)
 
 	val, isOk := pkMap["id"]
@@ -35,7 +34,7 @@ func (p *PostgresTestSuite) TestGetPrimaryKey() {
 
 func (p *PostgresTestSuite) TestGetPrimaryKeyUUID() {
 	valString := `{"uuid": "ca0cefe9-45cf-44fa-a2ab-ec5e7e5522a3"}`
-	pkMap, err := p.GetPrimaryKey(context.Background(), []byte(valString), validTc)
+	pkMap, err := p.GetPrimaryKey(p.ctx, []byte(valString), validTc)
 	val, isOk := pkMap["uuid"]
 	assert.True(p.T(), isOk)
 	assert.Equal(p.T(), val, "ca0cefe9-45cf-44fa-a2ab-ec5e7e5522a3")
@@ -82,11 +81,11 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
 	}
 }
 `
-	evt, err := p.Debezium.GetEventFromBytes(context.Background(), []byte(payload))
+	evt, err := p.Debezium.GetEventFromBytes(p.ctx, []byte(payload))
 	assert.Nil(p.T(), err)
 	assert.False(p.T(), evt.DeletePayload())
 
-	evtData := evt.GetData(context.Background(), map[string]interface{}{"id": 59}, &kafkalib.TopicConfig{})
+	evtData := evt.GetData(p.ctx, map[string]interface{}{"id": 59}, &kafkalib.TopicConfig{})
 	assert.Equal(p.T(), evtData["id"], float64(59))
 
 	assert.Equal(p.T(), evtData["item"], "Barings Participation Investors")
@@ -185,11 +184,11 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	}
 }
 `
-	evt, err := p.Debezium.GetEventFromBytes(context.Background(), []byte(payload))
+	evt, err := p.Debezium.GetEventFromBytes(p.ctx, []byte(payload))
 	assert.Nil(p.T(), err)
 	assert.False(p.T(), evt.DeletePayload())
 
-	evtData := evt.GetData(context.Background(), map[string]interface{}{"id": 1001}, &kafkalib.TopicConfig{})
+	evtData := evt.GetData(p.ctx, map[string]interface{}{"id": 1001}, &kafkalib.TopicConfig{})
 
 	// Testing typing.
 	assert.Equal(p.T(), evtData["id"], 1001)
