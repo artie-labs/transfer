@@ -7,9 +7,9 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/typing/decimal"
-
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
@@ -90,10 +90,13 @@ func IsJSON(str string) bool {
 }
 
 func ParseValue(ctx context.Context, key string, optionalSchema map[string]KindDetails, val interface{}) KindDetails {
-	if val == nil {
+	cfg := config.FromContext(ctx).Config
+	if val == nil && !cfg.SharedTransferConfig.CreateAllColumnsIfAvailable {
+		// If the value is nil and we do not have `createAllColumnsIfAvailable` turned on, let's return `Invalid`
 		return Invalid
 	}
 
+	// OptionalSchema is fetched from the message header
 	if len(optionalSchema) > 0 {
 		// If the column exists in the schema, let's early exit.
 		kindDetail, isOk := optionalSchema[key]
