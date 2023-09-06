@@ -5,10 +5,80 @@ import (
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/array"
+	"github.com/artie-labs/transfer/lib/ptr"
 
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestField_GetScaleAndPrecision(t *testing.T) {
+	type _tc struct {
+		name              string
+		parameters        map[string]interface{}
+		expectErr         bool
+		expectedScale     int
+		expectedPrecision *int
+	}
+
+	tcs := []_tc{
+		{
+			name:       "Test Case 1: Empty Parameters",
+			parameters: map[string]interface{}{},
+			expectErr:  true,
+		},
+		{
+			name: "Test Case 2: Valid Scale Only",
+			parameters: map[string]interface{}{
+				"scale": 5,
+			},
+			expectedScale: 5,
+		},
+		{
+			name: "Test Case 3: Valid Scale and Precision",
+			parameters: map[string]interface{}{
+				"scale":                  5,
+				KafkaDecimalPrecisionKey: 10,
+			},
+			expectedScale:     5,
+			expectedPrecision: ptr.ToInt(10),
+		},
+		{
+			name: "Test Case 4: Invalid Scale Type",
+			parameters: map[string]interface{}{
+				"scale": "invalid",
+			},
+			expectErr: true,
+		},
+		{
+			name: "Test Case 5: Invalid Precision Type",
+			parameters: map[string]interface{}{
+				"scale":                  5,
+				KafkaDecimalPrecisionKey: "invalid",
+			},
+			expectErr: true,
+		},
+	}
+
+	for _, tc := range tcs {
+		field := Field{
+			Parameters: tc.parameters,
+		}
+
+		results, err := field.GetScaleAndPrecision()
+		if tc.expectErr {
+			assert.Error(t, err, tc.name)
+		} else {
+			assert.NoError(t, err, tc.name)
+			assert.Equal(t, tc.expectedScale, results.Scale, tc.name)
+
+			if tc.expectedPrecision == nil {
+				assert.Nil(t, results.Precision, tc.name)
+			} else {
+				assert.Equal(t, *tc.expectedPrecision, *results.Precision, tc.name)
+			}
+		}
+	}
+}
 
 func TestField_IsInteger(t *testing.T) {
 	payload := `{

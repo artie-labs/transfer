@@ -47,10 +47,46 @@ func TestGetIntegerFromMap(t *testing.T) {
 
 	testCases := []_testCase{
 		{
-			name:          "happy path",
+			name:          "happy path with string value",
 			obj:           object,
 			key:           "abc",
 			expectedValue: 123,
+		},
+		{
+			name:          "happy path with number value",
+			obj:           object,
+			key:           "abc (number)",
+			expectedValue: 123,
+		},
+		{
+			name:        "non-existing key",
+			obj:         object,
+			key:         "xyz",
+			expectError: true,
+		},
+		{
+			name:        "boolean value",
+			obj:         object,
+			key:         "def",
+			expectError: true,
+		},
+		{
+			name:        "non-numeric string value",
+			obj:         object,
+			key:         "ghi",
+			expectError: true,
+		},
+		{
+			name:          "negative number as string",
+			obj:           object,
+			key:           "123",
+			expectedValue: -321,
+		},
+		{
+			name:          "negative number",
+			obj:           object,
+			key:           "123 (number)",
+			expectedValue: -321,
 		},
 	}
 
