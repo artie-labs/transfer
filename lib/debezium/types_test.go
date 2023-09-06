@@ -197,7 +197,11 @@ func TestDecodeDecimal(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		dec, err := DecodeDecimal(testCase.encoded, testCase.params)
+		field := Field{
+			Parameters: testCase.params,
+		}
+
+		dec, err := field.DecodeDecimal(testCase.encoded)
 		if testCase.expectError {
 			assert.Error(t, err, testCase.name)
 			continue
@@ -265,7 +269,8 @@ func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		dec, err := DecodeDebeziumVariableDecimal(testCase.value)
+		field := Field{}
+		dec, err := field.DecodeDebeziumVariableDecimal(testCase.value)
 		if testCase.expectError {
 			assert.Error(t, err, testCase.name)
 			continue

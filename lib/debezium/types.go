@@ -6,8 +6,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/ptr"
-
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 
 	"github.com/artie-labs/transfer/lib/maputil"
@@ -18,13 +16,14 @@ import (
 type SupportedDebeziumType string
 
 const (
-	Invalid        SupportedDebeziumType = "invalid"
-	Timestamp      SupportedDebeziumType = "io.debezium.time.Timestamp"
-	MicroTimestamp SupportedDebeziumType = "io.debezium.time.MicroTimestamp"
-	Date           SupportedDebeziumType = "io.debezium.time.Date"
-	Time           SupportedDebeziumType = "io.debezium.time.Time"
-	TimeMicro      SupportedDebeziumType = "io.debezium.time.MicroTime"
+	Invalid SupportedDebeziumType = "invalid"
+	JSON    SupportedDebeziumType = "io.debezium.data.Json"
 
+	Timestamp            SupportedDebeziumType = "io.debezium.time.Timestamp"
+	MicroTimestamp       SupportedDebeziumType = "io.debezium.time.MicroTimestamp"
+	Date                 SupportedDebeziumType = "io.debezium.time.Date"
+	Time                 SupportedDebeziumType = "io.debezium.time.Time"
+	TimeMicro            SupportedDebeziumType = "io.debezium.time.MicroTime"
 	DateKafkaConnect     SupportedDebeziumType = "org.apache.kafka.connect.data.Date"
 	TimeKafkaConnect     SupportedDebeziumType = "org.apache.kafka.connect.data.Time"
 	DateTimeKafkaConnect SupportedDebeziumType = "org.apache.kafka.connect.data.Timestamp"
@@ -88,20 +87,10 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ex
 // * Parameters - which contains:
 //   - `scale` (number of digits following decimal point)
 //   - `connect.decimal.precision` which is an optional parameter. (If -1, then it's variable and .Value() will be in STRING).
-func DecodeDecimal(encoded string, parameters map[string]interface{}) (*decimal.Decimal, error) {
-	scale, scaleErr := maputil.GetIntegerFromMap(parameters, "scale")
-	if scaleErr != nil {
-		return nil, scaleErr
-	}
-
-	var precPtr *int
-	if _, isOk := parameters[KafkaDecimalPrecisionKey]; isOk {
-		precision, precisionErr := maputil.GetIntegerFromMap(parameters, KafkaDecimalPrecisionKey)
-		if precisionErr != nil {
-			return nil, precisionErr
-		}
-
-		precPtr = ptr.ToInt(precision)
+func (f Field) DecodeDecimal(encoded string) (*decimal.Decimal, error) {
+	results, err := f.GetScaleAndPrecision()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get scale and/or precision, err: %v", err)
 	}
 
 	data, err := base64.StdEncoding.DecodeString(encoded)
@@ -116,17 +105,18 @@ func DecodeDecimal(encoded string, parameters map[string]interface{}) (*decimal.
 	bigFloat := new(big.Float).SetInt(bigInt)
 
 	// Compute divisor as 10^scale with big.Int's Exp, then convert to big.Float
-	scaleInt := big.NewInt(int64(scale))
+	scaleInt := big.NewInt(int64(results.Scale))
 	ten := big.NewInt(10)
 	divisorInt := new(big.Int).Exp(ten, scaleInt, nil)
 	divisorFloat := new(big.Float).SetInt(divisorInt)
 
 	// Perform the division
 	bigFloat.Quo(bigFloat, divisorFloat)
-	return decimal.NewDecimal(scale, precPtr, bigFloat), nil
+	return decimal.NewDecimal(results.Scale, results.Precision, bigFloat), nil
 }
 
-func DecodeDebeziumVariableDecimal(value interface{}) (*decimal.Decimal, error) {
+func (f Field) DecodeDebeziumVariableDecimal(value interface{}) (*decimal.Decimal, error) {
+	// TODO: Test
 	valueStruct, isOk := value.(map[string]interface{})
 	if !isOk {
 		return nil, fmt.Errorf("value is not map[string]interface{} type")
@@ -142,8 +132,10 @@ func DecodeDebeziumVariableDecimal(value interface{}) (*decimal.Decimal, error) 
 		return nil, fmt.Errorf("encoded value does not exist")
 	}
 
-	return DecodeDecimal(fmt.Sprint(val), map[string]interface{}{
-		"scale":                     scale,
-		"connect.decimal.precision": "-1",
-	})
+	f.Parameters = map[string]interface{}{
+		"scale":                  scale,
+		KafkaDecimalPrecisionKey: "-1",
+	}
+
+	return f.DecodeDecimal(fmt.Sprint(val))
 }
