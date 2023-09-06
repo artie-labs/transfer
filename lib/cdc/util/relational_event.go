@@ -61,28 +61,6 @@ func (s *SchemaEventPayload) GetColumns(ctx context.Context) *columns.Columns {
 	return &cols
 }
 
-func (s *SchemaEventPayload) GetOptionalSchema(ctx context.Context) map[string]typing.KindDetails {
-	fieldsObject := s.Schema.GetSchemaFromLabel(cdc.After)
-	if fieldsObject == nil {
-		// AFTER schema does not exist.
-		return nil
-	}
-
-	schema := make(map[string]typing.KindDetails)
-	for _, field := range fieldsObject.Fields {
-		// So far, we should only need to add a string type.
-		// (a) All the special Debezium types will be handled by our Debezium library and casted accordingly.
-		// (b) All the ZonedTimestamps where the actual casting is from a string will be handled by our typing library
-		// We are explicitly adding this for string types where the value may be of time/date kind but
-		// the actual column type in the source database is STRING.
-		if field.Type == "string" && field.DebeziumType == "" {
-			schema[field.FieldName] = typing.String
-		}
-	}
-
-	return schema
-}
-
 func (s *SchemaEventPayload) DeletePayload() bool {
 	return s.Payload.Operation == "d"
 }

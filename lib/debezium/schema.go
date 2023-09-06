@@ -2,6 +2,7 @@ package debezium
 
 import (
 	"github.com/artie-labs/transfer/lib/cdc"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 type Schema struct {
@@ -40,13 +41,33 @@ type Field struct {
 	Parameters   map[string]interface{} `json:"parameters"`
 }
 
-// IsInteger inspects the field object within the schema object, a field is classified as an int
-// When the "type" is int32 or int64. It also should not have a name (as that's where DBZ specify the data types)
-func (f *Field) IsInteger() (valid bool) {
-	if f == nil {
-		return
-	}
+func (f Field) IsInteger() (valid bool) {
+	return f.ToKindDetails() == typing.Integer
+}
 
-	validIntegerType := f.Type == "int16" || f.Type == "int32" || f.Type == "int64"
-	return validIntegerType && f.DebeziumType == ""
+func (f Field) ToKindDetails() typing.KindDetails {
+	switch f.Type {
+	case "int16", "int32", "int64":
+		if f.DebeziumType == "" {
+			return typing.Integer
+		}
+		// TODO: deal with ts.
+
+		return typing.Integer
+	case "float", "double":
+		// TODO: custom-snapshot is not emitting this yet.
+		return typing.Float
+	case "string":
+		// Within string, now inspect the Debezium type
+		// TODO: Also deal with strings
+		return typing.String
+	case "struct":
+		return typing.Struct
+	case "boolean":
+		return typing.Boolean
+	case "array":
+		return typing.Array
+	default:
+		return typing.Invalid
+	}
 }

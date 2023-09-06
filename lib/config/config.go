@@ -112,6 +112,11 @@ type SharedDestinationConfig struct {
 
 type SharedTransferConfig struct {
 	AdditionalDateFormats []string `yaml:"additionalDateFormats"`
+
+	// CreateAllColumnsIfAvailable - If true, we will create all columns if the metadata is available regardless of
+	// whether we have a value from the column. This will also bypass our Typing library.
+	// This only works for data sources with a schema such as Postgres and MySQL
+	CreateAllColumnsIfAvailable bool `yaml:"createAllColumnsIfAvailable"`
 }
 
 type Snowflake struct {
