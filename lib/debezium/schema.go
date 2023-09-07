@@ -111,7 +111,7 @@ func (f Field) ToKindDetails() typing.KindDetails {
 		return typing.Integer
 	case "float", "double":
 		return typing.Float
-	case "string":
+	case "string", "bytes":
 		return typing.String
 	case "struct":
 		return typing.Struct
