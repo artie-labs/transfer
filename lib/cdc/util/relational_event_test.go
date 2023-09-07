@@ -80,10 +80,6 @@ func (u *UtilTestSuite) TestSource_GetOptionalSchema() {
 			assert.Nil(u.T(), defaultVal, _col.Name(u.ctx, nil))
 		}
 	}
-
-	// OptionalColumn does not pick up custom data types.
-	_, isOk = optionalSchema["zoned_timestamp_column"]
-	assert.False(u.T(), isOk)
 }
 
 func TestSource_GetExecutionTime(t *testing.T) {

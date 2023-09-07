@@ -2,6 +2,11 @@ package debezium
 
 import (
 	"github.com/artie-labs/transfer/lib/cdc"
+	"github.com/artie-labs/transfer/lib/maputil"
+	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type Schema struct {
@@ -40,13 +45,81 @@ type Field struct {
 	Parameters   map[string]interface{} `json:"parameters"`
 }
 
-// IsInteger inspects the field object within the schema object, a field is classified as an int
-// When the "type" is int32 or int64. It also should not have a name (as that's where DBZ specify the data types)
-func (f *Field) IsInteger() (valid bool) {
-	if f == nil {
-		return
+func (f Field) IsInteger() (valid bool) {
+	return f.ToKindDetails() == typing.Integer
+}
+
+type ScaleAndPrecisionResults struct {
+	Scale     int
+	Precision *int
+}
+
+func (f Field) GetScaleAndPrecision() (ScaleAndPrecisionResults, error) {
+	scale, scaleErr := maputil.GetIntegerFromMap(f.Parameters, "scale")
+	if scaleErr != nil {
+		return ScaleAndPrecisionResults{}, scaleErr
 	}
 
-	validIntegerType := f.Type == "int16" || f.Type == "int32" || f.Type == "int64"
-	return validIntegerType && f.DebeziumType == ""
+	var precisionPtr *int
+	if _, isOk := f.Parameters[KafkaDecimalPrecisionKey]; isOk {
+		precision, precisionErr := maputil.GetIntegerFromMap(f.Parameters, KafkaDecimalPrecisionKey)
+		if precisionErr != nil {
+			return ScaleAndPrecisionResults{}, precisionErr
+		}
+
+		precisionPtr = ptr.ToInt(precision)
+	}
+
+	return ScaleAndPrecisionResults{
+		Scale:     scale,
+		Precision: precisionPtr,
+	}, nil
+}
+
+func (f Field) ToKindDetails() typing.KindDetails {
+	// We'll first cast based on Debezium types
+	// Then, we'll fall back on the actual data types.
+	switch f.DebeziumType {
+	case string(Timestamp), string(MicroTimestamp), string(DateTimeKafkaConnect), string(DateTimeWithTimezone):
+		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)
+	case string(Date), string(DateKafkaConnect):
+		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType)
+	case string(Time), string(TimeMicro), string(TimeKafkaConnect), string(TimeWithTimezone):
+		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
+	case string(JSON):
+		return typing.Struct
+	case string(KafkaDecimalType):
+		scaleAndPrecision, err := f.GetScaleAndPrecision()
+		if err != nil {
+			return typing.Invalid
+		}
+
+		eDecimal := typing.EDecimal
+		eDecimal.ExtendedDecimalDetails = decimal.NewDecimal(scaleAndPrecision.Scale, scaleAndPrecision.Precision, nil)
+		return eDecimal
+	case string(KafkaVariableNumericType):
+		// For variable numeric types, we are defaulting to a scale of 5
+		// This is because scale is not specified at the column level, rather at the row level
+		// It shouldn't matter much anyway since the column type we are creating is `TEXT` to avoid boundary errors.
+		eDecimal := typing.EDecimal
+		eDecimal.ExtendedDecimalDetails = decimal.NewDecimal(decimal.DefaultScale, ptr.ToInt(decimal.PrecisionNotSpecified), nil)
+		return eDecimal
+	}
+
+	switch f.Type {
+	case "int16", "int32", "int64":
+		return typing.Integer
+	case "float", "double":
+		return typing.Float
+	case "string":
+		return typing.String
+	case "struct":
+		return typing.Struct
+	case "boolean":
+		return typing.Boolean
+	case "array":
+		return typing.Array
+	default:
+		return typing.Invalid
+	}
 }

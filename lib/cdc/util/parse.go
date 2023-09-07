@@ -22,7 +22,7 @@ func parseField(ctx context.Context, field debezium.Field, value interface{}) in
 	if valid, supportedType := debezium.RequiresSpecialTypeCasting(field.DebeziumType); valid {
 		switch debezium.SupportedDebeziumType(field.DebeziumType) {
 		case debezium.KafkaDecimalType:
-			decimalVal, err := debezium.DecodeDecimal(fmt.Sprint(value), field.Parameters)
+			decimalVal, err := field.DecodeDecimal(fmt.Sprint(value))
 			if err == nil {
 				return decimalVal
 			} else {
@@ -33,7 +33,7 @@ func parseField(ctx context.Context, field debezium.Field, value interface{}) in
 				}).Debug("skipped casting dbz type due to an error")
 			}
 		case debezium.KafkaVariableNumericType:
-			variableNumericVal, err := debezium.DecodeDebeziumVariableDecimal(value)
+			variableNumericVal, err := field.DecodeDebeziumVariableDecimal(value)
 			if err == nil {
 				return variableNumericVal
 			} else {
