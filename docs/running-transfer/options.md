@@ -78,7 +78,7 @@ bigQueryPartitionSettings:
   additionalDateFormats:
     - 02/01/06 # DD/MM/YY
     - 02/01/2006 # DD/MM/YYYY
-</code></pre><p>If you are unsure, refer to this <a href="https://yourbasic.org/golang/format-parse-string-time-date-example/">guide</a>. </p></td></tr><tr><td><code>createAllColumnsIfAvailable</code></td><td>Y</td><td><p>Boolean field.</p><p><br>If this is set <code>true</code>, it will create columns even if the value is <code>NULL</code>.</p></td></tr></tbody></table>
+</code></pre><p>If you are unsure, refer to this <a href="https://yourbasic.org/golang/format-parse-string-time-date-example/">guide</a>. </p></td></tr><tr><td><code>sharedTransferConfig.createAllColumnsIfAvailable</code></td><td>Y</td><td><p>Boolean field.</p><p><br>If this is set <code>true</code>, it will create columns even if the value is <code>NULL</code>.</p></td></tr></tbody></table>
 
 ### Shared destination config
 
