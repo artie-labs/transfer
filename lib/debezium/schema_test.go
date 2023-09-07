@@ -202,6 +202,11 @@ func TestField_ToKindDetails(t *testing.T) {
 			expectedKindDetails: typing.String,
 		},
 		{
+			name:                "bytes",
+			field:               Field{Type: "bytes"},
+			expectedKindDetails: typing.String,
+		},
+		{
 			name:                "struct",
 			field:               Field{Type: "struct"},
 			expectedKindDetails: typing.Struct,
