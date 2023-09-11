@@ -14,6 +14,8 @@ description: Going over how to find your Snowflake settings and outline the typi
 
 In order for workloads to uniquely identify accounts, we need to pass in your [account identifier](https://docs.snowflake.com/en/user-guide/admin-account-identifier.html).&#x20;
 
+<figure><img src="../.gitbook/assets/snowflake_account_url.gif" alt=""><figcaption><p>Retrieving Account URL</p></figcaption></figure>
+
 ### Which data warehouse to use?
 
 Part of Snowflake's pricing model is virtual warehouse usage and price scales based on the size of the virtual warehouse.&#x20;
