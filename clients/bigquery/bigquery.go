@@ -28,6 +28,7 @@ const (
 
 type Store struct {
 	configMap *types.DwhToTablesConfigMap
+	batchSize int
 	db.Store
 }
 
@@ -72,8 +73,15 @@ func (s *Store) PutTable(ctx context.Context, dataset, tableName string, rows []
 	client := s.GetClient(ctx)
 	defer client.Close()
 
+	batch := NewBatch(rows, s.batchSize)
 	inserter := client.Dataset(dataset).Table(tableName).Inserter()
-	return inserter.Put(ctx, rows)
+	for batch.HasNext() {
+		if err := inserter.Put(ctx, batch.NextChunk()); err != nil {
+			return fmt.Errorf("failed to insert rows, err: %v", err)
+		}
+	}
+
+	return nil
 }
 
 func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
@@ -86,6 +94,7 @@ func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
 	}
 
 	settings := config.FromContext(ctx)
+	settings.Config.BigQuery.LoadDefaultValues()
 	if credPath := settings.Config.BigQuery.PathToCredentials; credPath != "" {
 		// If the credPath is set, let's set it into the env var.
 		logger.FromContext(ctx).Debug("writing the path to BQ credentials to env var for google auth")
@@ -98,5 +107,6 @@ func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
 	return &Store{
 		Store:     db.Open(ctx, "bigquery", settings.Config.BigQuery.DSN()),
 		configMap: &types.DwhToTablesConfigMap{},
+		batchSize: settings.Config.BigQuery.BatchSize,
 	}
 }
