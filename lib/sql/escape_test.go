@@ -90,7 +90,7 @@ func (s *SqlTestSuite) TestEscapeName() {
 			expectedNameWhenUpperCfg: "hello",
 		},
 		{
-			name: "escape = true, redshift, #1",
+			name: "escape = true, redshift, #1 (delta)",
 			args: &NameArgs{
 				Escape:   true,
 				DestKind: constants.Redshift,
@@ -98,6 +98,16 @@ func (s *SqlTestSuite) TestEscapeName() {
 			nameToEscape:             "delta",
 			expectedName:             `"delta"`,
 			expectedNameWhenUpperCfg: `"DELTA"`,
+		},
+		{
+			name: "escape = true, redshift, #1 (delta)",
+			args: &NameArgs{
+				Escape:   true,
+				DestKind: constants.Snowflake,
+			},
+			nameToEscape:             "delta",
+			expectedName:             `delta`,
+			expectedNameWhenUpperCfg: `delta`,
 		},
 	}
 
