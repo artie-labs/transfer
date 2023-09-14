@@ -17,12 +17,18 @@ type NameArgs struct {
 }
 
 func EscapeName(ctx context.Context, name string, args *NameArgs) string {
-	var escape bool
-	if args != nil {
-		escape = args.Escape
+	if args == nil {
+		return name
 	}
 
-	if escape && array.StringContains(constants.ReservedKeywords, name) {
+	var needsEscaping bool
+	if args.DestKind == constants.Redshift {
+		needsEscaping = array.StringContains(constants.RedshiftReservedKeywords, name)
+	} else {
+		needsEscaping = array.StringContains(constants.ReservedKeywords, name)
+	}
+
+	if args.Escape && needsEscaping {
 		if config.FromContext(ctx).Config.SharedDestinationConfig.UppercaseEscapedNames {
 			name = strings.ToUpper(name)
 		}
