@@ -89,6 +89,16 @@ func (s *SqlTestSuite) TestEscapeName() {
 			expectedName:             "hello",
 			expectedNameWhenUpperCfg: "hello",
 		},
+		{
+			name: "escape = true, redshift, #1",
+			args: &NameArgs{
+				Escape:   true,
+				DestKind: constants.Redshift,
+			},
+			nameToEscape:             "delta",
+			expectedName:             `"delta"`,
+			expectedNameWhenUpperCfg: `"DELTA"`,
+		},
 	}
 
 	for _, testCase := range testCases {
