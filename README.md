@@ -11,16 +11,20 @@
 </div>
 <br/>
 
-Depending on where you work, the latency in your data warehouse is often several hours to days old. This problem gets exacerbated as data volumes grow. With Artie Transfer, you can reduce data latency from several hours to sub-minute by leveraging change data capture (CDC).
+Artie Transfer is a real time data replication solution for databases and data warehouses/data lakes.
 
-Here's why you should use Artie Transfer:
+Typical ETL solutions leverage batched processes or schedulers (DAGs, Airflow), which means the data latency in the downstream data warehouse is often several hours to days old. This problem gets exacerbated as data volumes grow (batched processes take increasingly longer to run). 
 
-- It's easy to use: just set up a simple configuration file, and you're good to go!
-- It provides sub-minute latency.
-- It has automatic table creation and schema detection.
-- It provides automatic retries and its processing is idempotent.
-- It's built to scale: handle anywhere from 1GB to 100+ TB of data.
-- It has built-in error reporting along with rich telemetry stats.
+Artie leverages change data capture (CDC) and stream processing to perform data syncs in a more efficient way, which enables sub-minute latency. Use Artie Transfer to reduce data latency from several hours to seconds! 
+
+Benefits of Artie Transfer:
+
+- Sub-minute data latency so you always have access to live production data.
+- Easy to use: just set up a simple configuration file, and you're good to go!
+- Automatic table creation and schema detection.
+- Artie has automatic retries and its processing is idempotent.
+- Built to scale: handle anywhere from 1GB to 100+ TB of data.
+- Built-in error reporting along with rich telemetry statistics.
 
 Take a look at the [Getting started](#getting-started) on how to get started with Artie Transfer!
 
@@ -30,11 +34,11 @@ Take a look at the [Getting started](#getting-started) on how to get started wit
 </div>
 
 ### Pre-requisites
-As you can see from the architecture above, Transfer sits behind Kafka and expects CDC messages to be in a particular format. Please see the currently supported section on what sources and destinations are supported.
+As you can see from the architecture above, Artie Transfer sits behind Kafka and expects CDC messages to be in a particular format. Please see the currently supported section on what sources and destinations are supported.
 
 The optimal set-up looks something like this:
-* Kafka topic per table (so we can toggle number of partitions based on throughput)
-* Partition key is the primary key for the table (so we avoid out-of-order writes at the row level)
+* One Kafka topic per table (such that we can toggle the number of partitions based on throughput)
+* The partition key is the primary key for the table (to avoid out-of-order writes at the row level)
 
 To see all of the supported databases, check out the [Supported section](#what-is-currently-supported)
 
