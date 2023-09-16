@@ -120,7 +120,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	// Prepare merge statement
 	mergeParts, err := dml.MergeStatementParts(ctx, &dml.MergeArgument{
 		FqTableName:   fqName,
-		SubQuery:      temporaryTableName,
+		SubQuery:      fmt.Sprintf(`( SELECT DISTINCT *  FROM %s )`, temporaryTableName),
 		IdempotentKey: tableData.TopicConfig.IdempotentKey,
 		PrimaryKeys: tableData.PrimaryKeys(ctx, &sql.NameArgs{
 			Escape:   true,
