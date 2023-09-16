@@ -119,8 +119,10 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	// Prepare merge statement
 	mergeParts, err := dml.MergeStatementParts(ctx, &dml.MergeArgument{
-		FqTableName:   fqName,
-		SubQuery:      temporaryTableName,
+		FqTableName: fqName,
+		// We are adding SELECT DISTINCT here for the temporary table as an extra guardrail.
+		// Redshift does not enforce any row uniqueness and there could be potential LOAD errors which will cause duplicate rows to arise.
+		SubQuery:      fmt.Sprintf(`( SELECT DISTINCT *  FROM %s )`, temporaryTableName),
 		IdempotentKey: tableData.TopicConfig.IdempotentKey,
 		PrimaryKeys: tableData.PrimaryKeys(ctx, &sql.NameArgs{
 			Escape:   true,
