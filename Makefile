@@ -38,3 +38,7 @@ bench_size:
 bench_typing:
 	go test ./lib/typing -bench=Bench -benchtime=20s
 	go test ./lib/debezium -bench=Bench -benchtime=20s
+
+.PHONY: bench_redshift
+bench_redshift:
+	go test ./clients/redshift -bench=Bench -benchtime=20s
