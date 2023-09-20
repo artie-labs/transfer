@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	maxRedshiftVarCharLen = 65535
+	maxRedshiftVarCharLen = 65000
 	maxRedshiftSuperLen   = 1 * 1024 * 1024 // 1 MB
 )
 
