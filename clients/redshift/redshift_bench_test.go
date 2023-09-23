@@ -2,7 +2,10 @@ package redshift
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
+
+	"github.com/artie-labs/transfer/lib/stringutil"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -10,9 +13,9 @@ import (
 )
 
 func BenchmarkOldMethod(b *testing.B) {
-	colVal := "a string that will be used to benchmark the old method"
+	// Random string between [500, 100000)
+	colVal := stringutil.Random(rand.Intn(100000) + 500)
 	colKind := columns.NewColumn("foo", typing.String)
-
 	for i := 0; i < b.N; i++ {
 		replaceExceededValuesOld(colVal, colKind)
 	}
