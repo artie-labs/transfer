@@ -12,22 +12,22 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func BenchmarkOldMethod(b *testing.B) {
-	// Random string between [500, 100000)
-	colVal := stringutil.Random(rand.Intn(100000) + 500)
-	colKind := columns.NewColumn("foo", typing.String)
-	for i := 0; i < b.N; i++ {
-		replaceExceededValuesOld(colVal, colKind)
-	}
-}
+func BenchmarkMethods(b *testing.B) {
+	// Random string of length [500, 100,000)
+	colVal := stringutil.Random(rand.Intn(100000) + 500) // use the same value for both benchmarks
+	colKind := columns.NewColumn("foo", typing.String)   // use the same column kind for both benchmarks
 
-func BenchmarkNewMethod(b *testing.B) {
-	colVal := "a string that will be used to benchmark the new method"
-	colKind := columns.NewColumn("foo", typing.String)
+	b.Run("OldMethod", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			replaceExceededValuesOld(colVal, colKind)
+		}
+	})
 
-	for i := 0; i < b.N; i++ {
-		replaceExceededValuesNew(colVal, colKind)
-	}
+	b.Run("NewMethod", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			replaceExceededValuesNew(colVal, colKind)
+		}
+	})
 }
 
 func replaceExceededValuesOld(colVal interface{}, colKind columns.Column) interface{} {
