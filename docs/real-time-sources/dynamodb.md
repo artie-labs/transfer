@@ -62,6 +62,8 @@ resource "aws_iam_policy" "dynamodb_streams_access" {
           "dynamodb:GetRecords",
           "dynamodb:ListStreams"
         ],
+        // Don't want to use "*"? You can specify like this:
+        // Resource = [ TABLE_ARN, TABLE_ARN + "/stream/*" ]
         Resource = "*"
       }
     ]
