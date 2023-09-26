@@ -7,8 +7,8 @@ Today, we support the following cloud providers:
 * Google Cloud Platform
 * Amazon Web Services
 
-{% hint style="info" %}
-Please reach out to **hi@artie.so** if your cloud provider or region is not listed!
+{% hint style="warning" %}
+Please make sure to add all the IP addresses from the **Control Plane** + **AWS US-East-1.**  By default, you will be put in the US-East-1 region, please make sure to contact support if you'd like to be moved to another region.
 {% endhint %}
 
 ## Control Plane IP ranges (CIDR format)
@@ -26,7 +26,7 @@ Add the following IP addresses so that the dashboard is able to validate connect
 
 ## Data Plane IP Ranges (CIDR format)
 
-**AWS US-East-1**
+**AWS US-East-1 (Default)**
 
 * 3.215.55.30/32
 * 3.216.86.119/32
@@ -38,3 +38,16 @@ Add the following IP addresses so that the dashboard is able to validate connect
 * 54.165.47.156/32
 * 44.216.116.232/32
 * 54.164.238.160/32
+
+**AWS US-West-2**
+
+* 54.191.160.248/32
+* 52.35.174.184/32
+* 54.71.53.235/32
+* 44.238.111.7/32
+* 100.20.16.250/32
+* 54.245.136.219/32
+* 52.33.116.144/32
+* 44.238.174.20/32
+* 54.70.103.212/32
+* 54.185.25.39/32
