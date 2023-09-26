@@ -26,7 +26,7 @@ Add the following IP addresses so that the dashboard is able to validate connect
 
 ## Data Plane IP Ranges (CIDR format)
 
-**AWS US-East-1 (Default)**
+### **AWS US-East-1 (Default)**
 
 * 3.215.55.30/32
 * 3.216.86.119/32
@@ -39,7 +39,7 @@ Add the following IP addresses so that the dashboard is able to validate connect
 * 44.216.116.232/32
 * 54.164.238.160/32
 
-**AWS US-West-2**
+### **AWS US-West-2**
 
 * 54.191.160.248/32
 * 52.35.174.184/32
