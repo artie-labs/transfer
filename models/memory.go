@@ -2,7 +2,9 @@ package models
 
 import (
 	"context"
+	"fmt"
 	"sync"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -15,11 +17,18 @@ const dbKey = "__db"
 // We did this because certain operations require different locking patterns
 type TableData struct {
 	*optimization.TableData
+	lastMergeTime time.Time
 	sync.Mutex
 }
 
 func (t *TableData) Wipe() {
 	t.TableData = nil
+	t.lastMergeTime = time.Now()
+}
+
+func (t *TableData) ShouldSkipMerge(cooldown time.Duration) bool {
+	fmt.Println("coolDown", cooldown)
+	return time.Since(t.lastMergeTime) < cooldown
 }
 
 func (t *TableData) Empty() bool {
@@ -75,7 +84,6 @@ func (d *DatabaseData) GetOrCreateTableData(tableName string) *TableData {
 func (d *DatabaseData) ClearTableConfig(tableName string) {
 	d.Lock()
 	defer d.Unlock()
-
 	d.tableData[tableName].Wipe()
 	return
 }

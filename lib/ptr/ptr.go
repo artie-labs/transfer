@@ -1,5 +1,7 @@
 package ptr
 
+import "time"
+
 func ToString(val string) *string {
 	return &val
 }
@@ -14,4 +16,8 @@ func ToInt64(val int64) *int64 {
 
 func ToBool(val bool) *bool {
 	return &val
+}
+
+func ToDuration(duration time.Duration) *time.Duration {
+	return &duration
 }

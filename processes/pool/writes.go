@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/ptr"
+
 	"github.com/artie-labs/transfer/processes/consumer"
 
 	"github.com/artie-labs/transfer/lib/logger"
@@ -15,7 +17,8 @@ func StartPool(ctx context.Context, td time.Duration) {
 	ticker := time.NewTicker(td)
 	for range ticker.C {
 		log.WithError(consumer.Flush(consumer.Args{
-			Context: ctx,
+			Context:  ctx,
+			CoolDown: ptr.ToDuration(td),
 		})).Info("Flushing via pool...")
 	}
 }
