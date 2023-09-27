@@ -12,7 +12,8 @@ import (
 )
 
 type Args struct {
-	Context  context.Context
+	Context context.Context
+	// If cooldown is passed in, we'll skip the merge if the table has been recently merged
 	CoolDown *time.Duration
 	// If specificTable is not passed in, we'll just flush everything.
 	SpecificTable string
