@@ -2,7 +2,6 @@ package models
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -27,7 +26,6 @@ func (t *TableData) Wipe() {
 }
 
 func (t *TableData) ShouldSkipMerge(cooldown time.Duration) bool {
-	fmt.Println("coolDown", cooldown)
 	return time.Since(t.lastMergeTime) < cooldown
 }
 

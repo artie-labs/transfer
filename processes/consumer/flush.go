@@ -2,7 +2,6 @@ package consumer
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -68,7 +67,6 @@ func Flush(args Args) error {
 				"schema":   _tableData.TopicConfig.Schema,
 			}
 
-			fmt.Println("rows", _tableData.TableData.Rows())
 			err := utils.FromContext(args.Context).Merge(args.Context, _tableData.TableData)
 			if err != nil {
 				tags["what"] = "merge_fail"
