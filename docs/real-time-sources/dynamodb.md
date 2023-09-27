@@ -51,20 +51,39 @@ resource "aws_iam_role" "dynamodb_streams_role" {
 resource "aws_iam_policy" "dynamodb_streams_access" {
   name        = "DynamoDBStreamsAccess"
   description = "My policy that grants access to DynamoDB streams"
+
   policy = jsonencode({
-    Version = "2012-10-17",
+    Version   = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "dynamodb:GetShardIterator",
           "dynamodb:DescribeStream",
           "dynamodb:GetRecords",
-          "dynamodb:ListStreams"
+          "dynamodb:ListStreams",
+
+          // Stuff only required for export (snapshot)
+          "dynamodb:DescribeTable"
         ],
         // Don't want to use "*"? You can specify like this:
         // Resource = [ TABLE_ARN, TABLE_ARN + "/stream/*" ]
-        Resource = "*"
+        Resource = "*" # Modify this to restrict access to specific streams or resources
+      },
+      // Export (snapshot) requires access to S3
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "s3:ListBucket"
+        ],
+        "Resource" : "arn:aws:s3:::artie-transfer-test"
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "s3:GetObject"
+        ],
+        "Resource" : "arn:aws:s3:::artie-transfer-test/AWSDynamoDB/*"
       }
     ]
   })
