@@ -15,11 +15,22 @@ const dbKey = "__db"
 // We did this because certain operations require different locking patterns
 type TableData struct {
 	*optimization.TableData
+	flushing bool
 	sync.Mutex
+}
+
+func (t *TableData) Flushing() bool {
+	return t.flushing
+}
+
+func (t *TableData) SetFlushing(flush bool) bool {
+	t.flushing = flush
+	return t.flushing
 }
 
 func (t *TableData) Wipe() {
 	t.TableData = nil
+	t.flushing = false
 }
 
 func (t *TableData) Empty() bool {

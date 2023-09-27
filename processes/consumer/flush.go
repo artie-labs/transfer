@@ -41,14 +41,22 @@ func Flush(args Args) error {
 
 		wg.Add(1)
 		go func(_tableName string, _tableData *models.TableData) {
+			if _tableData.Flushing() {
+				// There is already a process that is trying to flush.
+				// Let's not try to wait to acquire the lock and just move on.
+				return
+			}
+
 			// Lock the tables when executing merge.
 			_tableData.Lock()
 			defer _tableData.Unlock()
 			defer wg.Done()
-
 			if _tableData.Empty() {
 				return
 			}
+
+			_tableData.SetFlushing(true)
+			defer _tableData.SetFlushing(false)
 
 			start := time.Now()
 			logFields := map[string]interface{}{
