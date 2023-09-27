@@ -2,14 +2,13 @@ package models
 
 import (
 	"context"
-	"testing"
 
 	"github.com/artie-labs/transfer/lib/optimization"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTableData_Complete(t *testing.T) {
+func (m *ModelsTestSuite) TestTableData_Complete() {
 	ctx := context.Background()
 	ctx = LoadMemoryDB(ctx)
 
@@ -18,25 +17,25 @@ func TestTableData_Complete(t *testing.T) {
 
 	// TableData does not exist
 	_, isOk := db.TableData()[tableName]
-	assert.False(t, isOk)
+	assert.False(m.T(), isOk)
 
 	td := db.GetOrCreateTableData(tableName)
-	assert.True(t, td.Empty())
+	assert.True(m.T(), td.Empty())
 	_, isOk = db.TableData()[tableName]
-	assert.True(t, isOk)
+	assert.True(m.T(), isOk)
 
 	// Add the td struct
 	td.SetTableData(&optimization.TableData{})
-	assert.False(t, td.Empty())
+	assert.False(m.T(), td.Empty())
 
 	// Wipe via tableData.Wipe()
 	td.Wipe()
-	assert.True(t, td.Empty())
+	assert.True(m.T(), td.Empty())
 
 	// Wipe via ClearTableConfig(...)
 	td.SetTableData(&optimization.TableData{})
-	assert.False(t, td.Empty())
+	assert.False(m.T(), td.Empty())
 
 	db.ClearTableConfig(tableName)
-	assert.True(t, td.Empty())
+	assert.True(m.T(), td.Empty())
 }
