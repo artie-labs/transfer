@@ -26,7 +26,9 @@ func (t *TableData) Wipe() {
 }
 
 func (t *TableData) ShouldSkipMerge(cooldown time.Duration) bool {
-	return time.Since(t.lastMergeTime) < cooldown
+	padding := 100 * time.Millisecond
+	// Padding is added since we are using the flush time interval as the cooldown
+	return time.Since(t.lastMergeTime) < (cooldown - padding)
 }
 
 func (t *TableData) Empty() bool {
