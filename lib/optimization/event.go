@@ -222,6 +222,8 @@ func (t *TableData) ShouldFlush(ctx context.Context) bool {
 		log.WithFields(map[string]interface{}{
 			"flushBasedOnRows": flushBasedOnRows,
 			"flushBasedOnSize": flushBasedOnSize,
+			"rows":             t.Rows(),
+			"approxSize":       t.approxSize,
 		}).Info("flushing based on size or rows")
 		return true
 	}
