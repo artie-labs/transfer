@@ -43,6 +43,8 @@ func Flush(args Args) error {
 
 		wg.Add(1)
 		go func(_tableName string, _tableData *models.TableData) {
+			defer wg.Done()
+
 			logFields := map[string]interface{}{
 				"tableName": _tableName,
 			}
@@ -55,13 +57,11 @@ func Flush(args Args) error {
 			// Lock the tables when executing merge.
 			_tableData.Lock()
 			defer _tableData.Unlock()
-			defer wg.Done()
 			if _tableData.Empty() {
 				return
 			}
 
 			start := time.Now()
-
 			tags := map[string]string{
 				"what":     "success",
 				"table":    _tableName,
