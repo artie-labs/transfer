@@ -49,6 +49,7 @@ func Flush(args Args) error {
 
 			if args.CoolDown != nil && _tableData.ShouldSkipMerge(*args.CoolDown) {
 				log.WithFields(logFields).Info("skipping merge because we are currently in a merge cooldown")
+				return
 			}
 
 			// Lock the tables when executing merge.
