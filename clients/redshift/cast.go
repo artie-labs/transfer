@@ -10,7 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/array"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -83,10 +82,7 @@ func (s *Store) CastColValStaging(ctx context.Context, colVal interface{}, colKi
 		list, err := array.InterfaceToArrayString(colVal, false)
 		if err == nil {
 			colValString = "[" + strings.Join(list, ",") + "]"
-		} else {
-			colValString = stringutil.Wrap(colVal, true)
 		}
-
 	case typing.Struct.Kind:
 		if colKind.KindDetails == typing.Struct {
 			if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
