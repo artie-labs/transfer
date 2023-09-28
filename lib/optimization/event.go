@@ -6,8 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/logger"
-
 	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -213,22 +211,7 @@ func (t *TableData) TempTableSuffix() string {
 
 func (t *TableData) ShouldFlush(ctx context.Context) bool {
 	settings := config.FromContext(ctx)
-	log := logger.FromContext(ctx)
-
-	flushBasedOnRows := t.Rows() > settings.Config.BufferRows
-	flushBasedOnSize := t.approxSize > settings.Config.FlushSizeKb*1024
-
-	if flushBasedOnSize || flushBasedOnRows {
-		log.WithFields(map[string]interface{}{
-			"flushBasedOnRows": flushBasedOnRows,
-			"flushBasedOnSize": flushBasedOnSize,
-			"rows":             t.Rows(),
-			"approxSize":       t.approxSize,
-		}).Info("flushing based on size or rows")
-		return true
-	}
-
-	return false
+	return t.Rows() > settings.Config.BufferRows || t.approxSize > settings.Config.FlushSizeKb*1024
 }
 
 // UpdateInMemoryColumnsFromDestination - When running Transfer, we will have 2 column types.
