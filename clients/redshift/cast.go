@@ -25,17 +25,16 @@ const (
 // replaceExceededValues - takes `colVal` interface{} and `colKind` columns.Column and replaces the value with an empty string if it exceeds the max length.
 // This currently only works for STRING and SUPER data types.
 func replaceExceededValues(colVal interface{}, colKind columns.Column) interface{} {
-	// TODO: We should try to make this faster. Converting this to `[]rune` from `[]byte` is about 2.5-3x slower
-	colValBytes := len([]rune(fmt.Sprint(colVal)))
+	numOfChars := len(fmt.Sprint(colVal))
 	switch colKind.KindDetails.Kind {
 	case typing.Struct.Kind: // Assuming this corresponds to SUPER type in Redshift
-		if colValBytes > maxRedshiftSuperLen {
+		if numOfChars > maxRedshiftSuperLen {
 			return map[string]interface{}{
 				"key": constants.ExceededValueMarker,
 			}
 		}
 	case typing.String.Kind:
-		if colValBytes > maxRedshiftVarCharLen {
+		if numOfChars > maxRedshiftVarCharLen {
 			return constants.ExceededValueMarker
 		}
 	}

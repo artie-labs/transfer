@@ -50,7 +50,7 @@ func replaceExceededValuesOld(colVal interface{}, colKind columns.Column) interf
 
 func replaceExceededValuesNew(colVal interface{}, colKind columns.Column) interface{} {
 	colValString := fmt.Sprint(colVal)
-	colValBytes := len([]rune(colValString))
+	colValBytes := len(colValString)
 	switch colKind.KindDetails.Kind {
 	case typing.Struct.Kind:
 		if colValBytes > maxRedshiftSuperLen {
