@@ -27,3 +27,18 @@ func (m *ModelsTestSuite) TestMergeOperations() {
 	time.Sleep(3 * time.Second)
 	assert.False(m.T(), td.ShouldSkipMerge(coolDown))
 }
+
+func (m *ModelsTestSuite) TestPadding() {
+	coolDown := 2 * time.Second
+
+	td := TableData{
+		TableData: &optimization.TableData{},
+	}
+	td.Wipe()
+
+	time.Sleep(1500 * time.Millisecond)
+	assert.True(m.T(), td.ShouldSkipMerge(coolDown))
+
+	time.Sleep(500 * time.Millisecond)
+	assert.False(m.T(), td.ShouldSkipMerge(coolDown))
+}

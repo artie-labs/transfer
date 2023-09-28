@@ -141,7 +141,6 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	sanitizedData := make(map[string]interface{})
 	for _col, val := range e.Data {
 		// TODO: Refactor this to call columns.EscapeName(...)
-
 		// columns need to all be normalized and lower cased.
 		newColName := strings.ToLower(_col)
 		// Columns here could contain spaces. Every destination treats spaces in a column differently.
