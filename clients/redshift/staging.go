@@ -1,6 +1,7 @@
 package redshift
 
 import (
+	"compress/gzip"
 	"context"
 	"encoding/csv"
 	"fmt"
@@ -57,7 +58,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 	// COPY table_name FROM '/path/to/local/file' DELIMITER '\t' NULL '\\N' FORMAT csv;
 	// Note, we need to specify `\\N` here and in `CastColVal(..)` we are only doing `\N`, this is because Redshift treats backslashes as an escape character.
 	// So, it'll convert `\N` => `\\N` during COPY.
-	copyStmt := fmt.Sprintf(`COPY %s FROM '%s' DELIMITER '\t' NULL AS '\\N' FORMAT CSV %s dateformat 'auto' timeformat 'auto';`, tempTableName, s3Uri, s.credentialsClause)
+	copyStmt := fmt.Sprintf(`COPY %s FROM '%s' DELIMITER '\t' NULL AS '\\N' GZIP %s dateformat 'auto' timeformat 'auto';`, tempTableName, s3Uri, s.credentialsClause)
 	if _, err = s.Exec(copyStmt); err != nil {
 		return fmt.Errorf("failed to run COPY for temporary table, err: %v, copy: %v", err, copyStmt)
 	}
@@ -69,30 +70,27 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 	return nil
 }
 
-// loadTemporaryTable will write the data into /tmp/newTableName.csv
-// This way, another function can call this and then invoke a Snowflake PUT.
-// Returns the file path and potential error
 func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.TableData, newTableName string) (string, error) {
-	filePath := fmt.Sprintf("/tmp/%s.csv", newTableName)
+	filePath := fmt.Sprintf("/tmp/%s.csv.gz", newTableName)
 	file, err := os.Create(filePath)
 	if err != nil {
 		return "", err
 	}
-
 	defer file.Close()
-	writer := csv.NewWriter(file)
+
+	gzipWriter := gzip.NewWriter(file) // Create a new gzip writer
+	defer gzipWriter.Close()           // Ensure to close the gzip writer after writing
+
+	writer := csv.NewWriter(gzipWriter) // Create a CSV writer on top of the gzip writer
 	writer.Comma = '\t'
 	for _, value := range tableData.RowsData() {
 		var row []string
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
-			colVal := value[col]
-			// Check
-			castedValue, castErr := s.CastColValStaging(ctx, colVal, colKind)
+			castedValue, castErr := s.CastColValStaging(ctx, value[col], colKind)
 			if castErr != nil {
 				return "", castErr
 			}
-
 			row = append(row, castedValue)
 		}
 
@@ -102,5 +100,9 @@ func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.
 	}
 
 	writer.Flush()
-	return filePath, writer.Error()
+	if err = writer.Error(); err != nil {
+		return "", fmt.Errorf("failed to flush csv writer, err: %v", err)
+	}
+
+	return filePath, nil
 }
