@@ -13,6 +13,8 @@ import (
 
 type Args struct {
 	Context context.Context
+	// If cooldown is passed in, we'll skip the merge if the table has been recently merged
+	CoolDown *time.Duration
 	// If specificTable is not passed in, we'll just flush everything.
 	SpecificTable string
 }
@@ -41,20 +43,25 @@ func Flush(args Args) error {
 
 		wg.Add(1)
 		go func(_tableName string, _tableData *models.TableData) {
+			defer wg.Done()
+
+			logFields := map[string]interface{}{
+				"tableName": _tableName,
+			}
+
+			if args.CoolDown != nil && _tableData.ShouldSkipMerge(*args.CoolDown) {
+				log.WithFields(logFields).Info("skipping merge because we are currently in a merge cooldown")
+				return
+			}
+
 			// Lock the tables when executing merge.
 			_tableData.Lock()
 			defer _tableData.Unlock()
-			defer wg.Done()
-
 			if _tableData.Empty() {
 				return
 			}
 
 			start := time.Now()
-			logFields := map[string]interface{}{
-				"tableName": _tableName,
-			}
-
 			tags := map[string]string{
 				"what":     "success",
 				"table":    _tableName,
