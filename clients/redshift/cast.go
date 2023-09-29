@@ -10,7 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/array"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -25,16 +24,16 @@ const (
 // replaceExceededValues - takes `colVal` interface{} and `colKind` columns.Column and replaces the value with an empty string if it exceeds the max length.
 // This currently only works for STRING and SUPER data types.
 func replaceExceededValues(colVal interface{}, colKind columns.Column) interface{} {
-	colValBytes := len([]byte(fmt.Sprint(colVal)))
+	numOfChars := len(fmt.Sprint(colVal))
 	switch colKind.KindDetails.Kind {
 	case typing.Struct.Kind: // Assuming this corresponds to SUPER type in Redshift
-		if colValBytes > maxRedshiftSuperLen {
+		if numOfChars > maxRedshiftSuperLen {
 			return map[string]interface{}{
 				"key": constants.ExceededValueMarker,
 			}
 		}
 	case typing.String.Kind:
-		if colValBytes > maxRedshiftVarCharLen {
+		if numOfChars > maxRedshiftVarCharLen {
 			return constants.ExceededValueMarker
 		}
 	}
@@ -83,10 +82,7 @@ func (s *Store) CastColValStaging(ctx context.Context, colVal interface{}, colKi
 		list, err := array.InterfaceToArrayString(colVal, false)
 		if err == nil {
 			colValString = "[" + strings.Join(list, ",") + "]"
-		} else {
-			colValString = stringutil.Wrap(colVal, true)
 		}
-
 	case typing.Struct.Kind:
 		if colKind.KindDetails == typing.Struct {
 			if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {

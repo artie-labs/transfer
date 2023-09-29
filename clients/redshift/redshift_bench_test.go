@@ -2,29 +2,32 @@ package redshift
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
+
+	"github.com/artie-labs/transfer/lib/stringutil"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func BenchmarkOldMethod(b *testing.B) {
-	colVal := "a string that will be used to benchmark the old method"
-	colKind := columns.NewColumn("foo", typing.String)
+func BenchmarkMethods(b *testing.B) {
+	// Random string of length [500, 100,000)
+	colVal := stringutil.Random(rand.Intn(100000) + 500) // use the same value for both benchmarks
+	colKind := columns.NewColumn("foo", typing.String)   // use the same column kind for both benchmarks
 
-	for i := 0; i < b.N; i++ {
-		replaceExceededValuesOld(colVal, colKind)
-	}
-}
+	b.Run("OldMethod", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			replaceExceededValuesOld(colVal, colKind)
+		}
+	})
 
-func BenchmarkNewMethod(b *testing.B) {
-	colVal := "a string that will be used to benchmark the new method"
-	colKind := columns.NewColumn("foo", typing.String)
-
-	for i := 0; i < b.N; i++ {
-		replaceExceededValuesNew(colVal, colKind)
-	}
+	b.Run("NewMethod", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			replaceExceededValuesNew(colVal, colKind)
+		}
+	})
 }
 
 func replaceExceededValuesOld(colVal interface{}, colKind columns.Column) interface{} {
@@ -47,7 +50,7 @@ func replaceExceededValuesOld(colVal interface{}, colKind columns.Column) interf
 
 func replaceExceededValuesNew(colVal interface{}, colKind columns.Column) interface{} {
 	colValString := fmt.Sprint(colVal)
-	colValBytes := len([]byte(colValString))
+	colValBytes := len(colValString)
 	switch colKind.KindDetails.Kind {
 	case typing.Struct.Kind:
 		if colValBytes > maxRedshiftSuperLen {
