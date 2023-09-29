@@ -17,6 +17,9 @@ type Args struct {
 	CoolDown *time.Duration
 	// If specificTable is not passed in, we'll just flush everything.
 	SpecificTable string
+
+	// Reason (reason for the flush)
+	Reason string
 }
 
 // Flush will merge and commit the offset on the specified topics within `args.SpecificTable`.
@@ -67,6 +70,7 @@ func Flush(args Args) error {
 				"table":    _tableName,
 				"database": _tableData.TopicConfig.Database,
 				"schema":   _tableData.TopicConfig.Schema,
+				"reason":   args.Reason,
 			}
 
 			err := utils.FromContext(args.Context).Merge(args.Context, _tableData.TableData)
