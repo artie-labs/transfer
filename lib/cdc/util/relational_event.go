@@ -61,6 +61,10 @@ func (s *SchemaEventPayload) GetColumns(ctx context.Context) *columns.Columns {
 	return &cols
 }
 
+func (s *SchemaEventPayload) Operation() string {
+	return s.Payload.Operation
+}
+
 func (s *SchemaEventPayload) DeletePayload() bool {
 	return s.Payload.Operation == "d"
 }

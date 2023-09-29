@@ -102,16 +102,14 @@ func (e *Event) PrimaryKeyValue() string {
 }
 
 // Save will save the event into our in memory event
-// It will return:
-//   - Whether to flush immediately or not
-//   - Error
-func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, message artie.Message) (bool, error) {
+// It will return (flush bool, flushReason string, err error)
+func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, message artie.Message) (bool, string, error) {
 	if topicConfig == nil {
-		return false, errors.New("topicConfig is missing")
+		return false, "", errors.New("topicConfig is missing")
 	}
 
 	if !e.IsValid() {
-		return false, errors.New("event not valid")
+		return false, "", errors.New("event not valid")
 	}
 
 	inMemDB := models.GetMemoryDB(ctx)
@@ -195,5 +193,6 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	}
 
 	td.LatestCDCTs = e.ExecutionTime
-	return td.ShouldFlush(ctx), nil
+	flush, flushReason := td.ShouldFlush(ctx)
+	return flush, flushReason, nil
 }

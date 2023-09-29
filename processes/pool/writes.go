@@ -17,6 +17,7 @@ func StartPool(ctx context.Context, td time.Duration) {
 	ticker := time.NewTicker(td)
 	for range ticker.C {
 		log.WithError(consumer.Flush(consumer.Args{
+			Reason:   "time",
 			Context:  ctx,
 			CoolDown: ptr.ToDuration(td),
 		})).Info("Flushing via pool...")

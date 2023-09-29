@@ -56,10 +56,12 @@ func processMessage(ctx context.Context, processArgs ProcessArgs) (string, error
 		return "", fmt.Errorf("cannot unmarshall event, err: %v", err)
 	}
 
+	tags["op"] = _event.Operation()
 	evt := event.ToMemoryEvent(ctx, _event, pkMap, topicConfig.tc)
 	// Table name is only available after event has been casted
 	tags["table"] = evt.Table
-	shouldFlush, err := evt.Save(ctx, topicConfig.tc, processArgs.Msg)
+
+	shouldFlush, flushReason, err := evt.Save(ctx, topicConfig.tc, processArgs.Msg)
 	if err != nil {
 		tags["what"] = "save_fail"
 		err = fmt.Errorf("event failed to save, err: %v", err)
@@ -68,6 +70,7 @@ func processMessage(ctx context.Context, processArgs ProcessArgs) (string, error
 	if shouldFlush {
 		return evt.Table, Flush(Args{
 			Context:       ctx,
+			Reason:        flushReason,
 			SpecificTable: evt.Table,
 		})
 	}

@@ -209,9 +209,19 @@ func (t *TableData) TempTableSuffix() string {
 	return t.temporaryTableSuffix
 }
 
-func (t *TableData) ShouldFlush(ctx context.Context) bool {
+// ShouldFlush will return whether Transfer should flush
+// If so, what is the reason?
+func (t *TableData) ShouldFlush(ctx context.Context) (bool, string) {
 	settings := config.FromContext(ctx)
-	return t.Rows() > settings.Config.BufferRows || t.approxSize > settings.Config.FlushSizeKb*1024
+	if t.Rows() > settings.Config.BufferRows {
+		return true, "rows"
+	}
+
+	if t.approxSize > settings.Config.FlushSizeKb*1024 {
+		return true, "size"
+	}
+
+	return false, ""
 }
 
 // UpdateInMemoryColumnsFromDestination - When running Transfer, we will have 2 column types.

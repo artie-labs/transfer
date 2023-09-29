@@ -264,13 +264,18 @@ func TestTableData_ShouldFlushRowLength(t *testing.T) {
 	// Insert 3 rows and confirm that we need to flush.
 	td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
 	for i := 0; i < 3; i++ {
-		assert.False(t, td.ShouldFlush(ctx))
+		shouldFlush, flushReason := td.ShouldFlush(ctx)
+		assert.False(t, shouldFlush)
+		assert.Empty(t, flushReason)
+
 		td.InsertRow(fmt.Sprint(i), map[string]interface{}{
 			"foo": "bar",
 		}, false)
 	}
 
-	assert.True(t, td.ShouldFlush(ctx))
+	shouldFlush, flushReason := td.ShouldFlush(ctx)
+	assert.True(t, shouldFlush)
+	assert.Equal(t, "rows", flushReason)
 }
 
 func TestTableData_ShouldFlushRowSize(t *testing.T) {
@@ -283,7 +288,9 @@ func TestTableData_ShouldFlushRowSize(t *testing.T) {
 	// Insert 3 rows and confirm that we need to flush.
 	td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
 	for i := 0; i < 45; i++ {
-		assert.False(t, td.ShouldFlush(ctx))
+		shouldFlush, flushReason := td.ShouldFlush(ctx)
+		assert.False(t, shouldFlush)
+		assert.Empty(t, flushReason)
 		td.InsertRow(fmt.Sprint(i), map[string]interface{}{
 			"foo":   "bar",
 			"array": []string{"foo", "bar", "dusty", "the aussie", "robin", "jacqueline", "charlie"},
@@ -305,7 +312,9 @@ func TestTableData_ShouldFlushRowSize(t *testing.T) {
 		},
 	}, false)
 
-	assert.True(t, td.ShouldFlush(ctx))
+	shouldFlush, flushReason := td.ShouldFlush(ctx)
+	assert.True(t, shouldFlush)
+	assert.Equal(t, "size", flushReason)
 }
 
 func TestTableData_InsertRowIntegrity(t *testing.T) {

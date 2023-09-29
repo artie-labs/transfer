@@ -76,6 +76,10 @@ func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.T
 	return debezium.ParsePartitionKey(key, tc.CDCKeyFormat)
 }
 
+func (s *SchemaEventPayload) Operation() string {
+	return s.Payload.Operation
+}
+
 func (s *SchemaEventPayload) DeletePayload() bool {
 	return s.Payload.Operation == "d"
 }
