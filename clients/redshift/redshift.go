@@ -74,7 +74,7 @@ LEFT JOIN
 LEFT JOIN 
     pg_catalog.pg_description d ON d.objsubid=c.ordinal_position AND d.objoid=c1.oid 
 WHERE 
-    c.table_name='%s' AND c.table_schema='%s';
+    LOWER(c.table_name) = LOWER('%s') AND LOWER(c.table_schema) = LOWER('%s');
 `, args.Table, args.Schema),
 		ColumnNameLabel:    describeNameCol,
 		ColumnTypeLabel:    describeTypeCol,

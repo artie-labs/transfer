@@ -46,6 +46,7 @@ func GetTableConfig(ctx context.Context, args GetTableCfgArgs) (*types.DwhTableC
 
 	log := logger.FromContext(ctx)
 	rows, err := args.Dwh.Query(args.Query)
+	fmt.Println("query", args.Query)
 	defer func() {
 		if rows != nil {
 			err = rows.Close()
@@ -137,6 +138,8 @@ func GetTableConfig(ctx context.Context, args GetTableCfgArgs) (*types.DwhTableC
 	if len(cols.GetColumns()) == 0 {
 		tableMissing = true
 	}
+
+	fmt.Println("tableMissing", tableMissing, "args.FqName", args.FqName)
 
 	tableCfg := types.NewDwhTableConfig(&cols, nil, tableMissing, args.DropDeletedColumns)
 	args.ConfigMap.AddTableToConfig(args.FqName, tableCfg)
