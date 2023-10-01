@@ -41,9 +41,9 @@ func replaceExceededValues(colVal interface{}, colKind columns.Column) interface
 	return colVal
 }
 
-// CastColValStaging - takes `colVal` interface{} and `colKind` typing.Column and converts the value into a string value
+// castColValStaging - takes `colVal` interface{} and `colKind` typing.Column and converts the value into a string value
 // This is necessary because CSV writers require values to in `string`.
-func (s *Store) CastColValStaging(ctx context.Context, colVal interface{}, colKind columns.Column) (string, error) {
+func (s *Store) castColValStaging(ctx context.Context, colVal interface{}, colKind columns.Column) (string, error) {
 	if colVal == nil {
 		if colKind.KindDetails == typing.Struct {
 			// Returning empty here because if it's a struct, it will go through JSON PARSE and JSON_PARSE("") = null

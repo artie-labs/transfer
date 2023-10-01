@@ -87,10 +87,11 @@ func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.
 		var row []string
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
-			castedValue, castErr := s.CastColValStaging(ctx, value[col], colKind)
+			castedValue, castErr := s.castColValStaging(ctx, value[col], colKind)
 			if castErr != nil {
 				return "", castErr
 			}
+
 			row = append(row, castedValue)
 		}
 

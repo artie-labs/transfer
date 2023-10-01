@@ -3,6 +3,9 @@ package redshift
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/artie-labs/transfer/lib/jitter"
 
 	"github.com/artie-labs/transfer/lib/sql"
 
@@ -16,7 +19,35 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+const (
+	maxAttempts   = 3
+	jitterSleepMs = 500
+)
+
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
+	var attempts int
+	var err error
+	for maxAttempts > attempts {
+		err = s.merge(ctx, tableData)
+		if err == nil {
+			break
+		} else {
+			if retryableError(err) {
+				sleepDuration := jitter.JitterMs(jitterSleepMs, attempts)
+				logger.FromContext(ctx).WithField("sleepDuration (ms)", sleepDuration).WithError(err).Warn("hit a retryable error, will sleep and then retry...")
+				time.Sleep(time.Duration(sleepDuration) * time.Millisecond)
+			} else {
+				break
+			}
+		}
+
+		attempts++
+	}
+
+	return err
+}
+
+func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) error {
 	if tableData.Rows() == 0 || tableData.ReadOnlyInMemoryCols() == nil {
 		// There's no rows or columns. Let's skip.
 		return nil
