@@ -1,25 +1,47 @@
 ---
 description: >-
-  In this guide, we'll go over how to set up SSH tunneling so that Artie can
-  connect to your database without going over the internet.
+  In this guide, we will walk through what is a SSH tunnel and how you can
+  enable this within Artie.
 ---
 
 # Enabling SSH Tunneling
 
-## How this looks
+## What is SSH Tunneling?
 
-<figure><img src="../.gitbook/assets/image (4) (1).png" alt=""><figcaption></figcaption></figure>
+An SSH tunnel refers to a secured connection between a local machine and a remote server. SSH tunnels are a great and secure way to manage access to private resources within your VPC.
 
-### Setting up bastion host
+With Artie, it would look something like this:
 
-If you have one already, skip this step. However, if you don't - then make sure to create an EC2 or equivalent instance. Make sure this instance can connect to your database!
+<figure><img src="../.gitbook/assets/image (4) (1).png" alt="" width="563"><figcaption></figcaption></figure>
 
-### Allowing Artie to connect
+### Step 1 - Creating a SSH tunnel
 
-1. SSH into your newly created instance
-2. Find your company's SSH public key (Artie Dashboard) and add it to `~/.ssh/authorized_keys` \[[AWS guide](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/replacing-key-pair.html)]
-3. Grab the public IP address, port and username and add this to your company [advanced settings](https://app.artie.so/settings) on the Artie dashboard.&#x20;
+If you have one already, skip this step. However, if you don't - then make sure to create an EC2 or equivalent instance. Make sure this instance can connect to your database.
 
-<figure><img src="../.gitbook/assets/image (3) (1).png" alt=""><figcaption><p>Artie advanced settings</p></figcaption></figure>
+### Step 2 - Allowing Artie to connect
 
-<figure><img src="../.gitbook/assets/image (2) (1).png" alt=""><figcaption><p>AWS console to grab the IP address</p></figcaption></figure>
+* Before you add an account to Artie, make sure to create a new SSH tunnel within [Artie UI](https://app.artie.so/settings)
+* Grab the public IP address and port
+
+<figure><img src="../.gitbook/assets/image (2) (1).png" alt="" width="563"><figcaption><p>AWS console to grab the IP address</p></figcaption></figure>
+
+* Once the SSH tunnel is created, copy the public key and add it to your server
+
+<figure><img src="../.gitbook/assets/image (3) (1).png" alt="" width="563"><figcaption><p>Artie advanced settings</p></figcaption></figure>
+
+```bash
+# SSH into your instance
+
+# (Optional) if you want to create a service account
+sudo adduser -m artie
+sudo su artie
+mkdir ~/.ssh
+
+# Add the public key to ~/.ssh/authorized_keys
+vi ~/.ssh/authorized_keys
+
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys
+
+exit
+```
