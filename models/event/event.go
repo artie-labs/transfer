@@ -24,9 +24,11 @@ import (
 )
 
 type Event struct {
-	Table          string
-	PrimaryKeyMap  map[string]interface{}
-	Data           map[string]interface{} // json serialized column data
+	Table         string
+	PrimaryKeyMap map[string]interface{}
+	Data          map[string]interface{} // json serialized column data
+	Operation     string
+
 	OptionalSchema map[string]typing.KindDetails
 	Columns        *columns.Columns
 	ExecutionTime  time.Time // When the SQL command was executed
@@ -51,6 +53,7 @@ func ToMemoryEvent(ctx context.Context, event cdc.Event, pkMap map[string]interf
 		OptionalSchema: event.GetOptionalSchema(ctx),
 		Columns:        cols,
 		Data:           event.GetData(ctx, pkMap, tc),
+		Operation:      event.Operation(),
 		Deleted:        event.DeletePayload(),
 	}
 }
@@ -110,6 +113,10 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 
 	if !e.IsValid() {
 		return false, "", errors.New("event not valid")
+	}
+
+	if topicConfig.SkipDelete && e.Operation == "d" {
+		return false, "", nil
 	}
 
 	inMemDB := models.GetMemoryDB(ctx)
