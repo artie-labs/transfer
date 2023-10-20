@@ -40,6 +40,7 @@ type MergeArgument struct {
 	*/
 	DestKind   constants.DestinationKind
 	SoftDelete bool
+	// SkipDelete is only used for Redshift and MergeStatementParts
 	SkipDelete bool
 }
 

@@ -66,6 +66,35 @@ func getBasicColumnsForTest(ctx context.Context, compositeKey bool) result {
 	}
 }
 
+func (m *MergeTestSuite) TestMergeStatementParts_SkipDelete() {
+	// Biggest difference with this test are:
+	// 1. We are not saving `__artie_deleted` column
+	// 2. There are 3 SQL queries (INSERT, UPDATE and DELETE)
+	fqTableName := "public.tableName"
+	tempTableName := "public.tableName__temp"
+	res := getBasicColumnsForTest(m.ctx, false)
+	mergeArg := &MergeArgument{
+		FqTableName:    fqTableName,
+		SubQuery:       tempTableName,
+		PrimaryKeys:    res.PrimaryKeys,
+		ColumnsToTypes: res.ColumnsToTypes,
+		DestKind:       constants.Redshift,
+		SkipDelete:     true,
+	}
+
+	parts, err := MergeStatementParts(m.ctx, mergeArg)
+	assert.NoError(m.T(), err)
+	assert.Equal(m.T(), 2, len(parts))
+
+	assert.Equal(m.T(),
+		`INSERT INTO public.tableName (id,email,first_name,last_name,created_at,toast_text) SELECT cc.id,cc.email,cc.first_name,cc.last_name,cc.created_at,cc.toast_text FROM public.tableName__temp as cc LEFT JOIN public.tableName as c on c.id = cc.id WHERE c.id IS NULL;`,
+		parts[0])
+
+	assert.Equal(m.T(),
+		`UPDATE public.tableName as c SET id=cc.id,email=cc.email,first_name=cc.first_name,last_name=cc.last_name,created_at=cc.created_at,toast_text= CASE WHEN cc.toast_text != '__debezium_unavailable_value' THEN cc.toast_text ELSE c.toast_text END FROM public.tableName__temp as cc WHERE c.id = cc.id AND COALESCE(cc.__artie_delete, false) = false;`,
+		parts[1])
+}
+
 func (m *MergeTestSuite) TestMergeStatementPartsSoftDelete() {
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
