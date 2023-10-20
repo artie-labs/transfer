@@ -42,6 +42,7 @@ type TopicConfig struct {
 	CDCKeyFormat              string                      `yaml:"cdcKeyFormat"`
 	DropDeletedColumns        bool                        `yaml:"dropDeletedColumns"`
 	SoftDelete                bool                        `yaml:"softDelete"`
+	SkipDelete                bool                        `yaml:"skipDelete"`
 	IncludeArtieUpdatedAt     bool                        `yaml:"includeArtieUpdatedAt"`
 	BigQueryPartitionSettings *partition.BigQuerySettings `yaml:"bigQueryPartitionSettings"`
 }

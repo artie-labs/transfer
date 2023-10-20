@@ -40,6 +40,8 @@ type MergeArgument struct {
 	*/
 	DestKind   constants.DestinationKind
 	SoftDelete bool
+	// SkipDelete is only used for Redshift and MergeStatementParts
+	SkipDelete bool
 }
 
 func (m *MergeArgument) Valid() error {
@@ -140,7 +142,7 @@ func MergeStatementParts(ctx context.Context, m *MergeArgument) ([]string, error
 		pks = append(pks, pk.EscapedName())
 	}
 
-	return []string{
+	parts := []string{
 		// INSERT
 		fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
 			// insert into target (col1, col2, col3)
@@ -162,18 +164,24 @@ func MergeStatementParts(ctx context.Context, m *MergeArgument) ([]string, error
 			// FROM staging WHERE join on PK(s)
 			m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause, constants.DeleteColumnMarker,
 		),
-		// DELETE
-		fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s as cc WHERE cc.%s = true);`,
-			// DELETE from table where (pk_1, pk_2)
-			m.FqTableName, strings.Join(pks, ","),
-			// IN (cc.pk_1, cc.pk_2) FROM staging
-			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      pks,
-				Separator: ",",
-				Prefix:    "cc.",
-			}), m.SubQuery, constants.DeleteColumnMarker,
-		),
-	}, nil
+	}
+
+	if !m.SkipDelete {
+		parts = append(parts,
+			// DELETE
+			fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s as cc WHERE cc.%s = true);`,
+				// DELETE from table where (pk_1, pk_2)
+				m.FqTableName, strings.Join(pks, ","),
+				// IN (cc.pk_1, cc.pk_2) FROM staging
+				array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
+					Vals:      pks,
+					Separator: ",",
+					Prefix:    "cc.",
+				}), m.SubQuery, constants.DeleteColumnMarker,
+			))
+	}
+
+	return parts, nil
 }
 
 func MergeStatement(ctx context.Context, m *MergeArgument) (string, error) {

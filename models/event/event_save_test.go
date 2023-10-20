@@ -22,6 +22,32 @@ var topicConfig = &kafkalib.TopicConfig{
 	Schema:    "public",
 }
 
+func (e *EventsTestSuite) TestSaveEvent_SkipDelete() {
+	event := Event{
+		Table: "foo",
+		PrimaryKeyMap: map[string]interface{}{
+			"id": "123",
+		},
+		Data: map[string]interface{}{
+			"foo":                        "bar",
+			constants.DeleteColumnMarker: true,
+		},
+		Operation: "d",
+	}
+
+	td := models.GetMemoryDB(e.ctx).GetOrCreateTableData("foo")
+	assert.Equal(e.T(), 0, int(td.Rows()))
+
+	kafkaMsg := kafka.Message{}
+
+	topicConfig.SkipDelete = true
+	_, _, err := event.Save(e.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	assert.Nil(e.T(), err)
+
+	// Inspect the in-memory DB after save (should have no rows).
+	assert.Equal(e.T(), 0, int(td.Rows()))
+}
+
 func (e *EventsTestSuite) TestSaveEvent() {
 	expectedCol := "rOBiN TaNG"
 	expectedLowerCol := "robin__tang"
