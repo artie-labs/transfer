@@ -27,7 +27,6 @@ type Event struct {
 	Table         string
 	PrimaryKeyMap map[string]interface{}
 	Data          map[string]interface{} // json serialized column data
-	Operation     string
 
 	OptionalSchema map[string]typing.KindDetails
 	Columns        *columns.Columns
@@ -53,7 +52,6 @@ func ToMemoryEvent(ctx context.Context, event cdc.Event, pkMap map[string]interf
 		OptionalSchema: event.GetOptionalSchema(ctx),
 		Columns:        cols,
 		Data:           event.GetData(ctx, pkMap, tc),
-		Operation:      event.Operation(),
 		Deleted:        event.DeletePayload(),
 	}
 }
@@ -113,10 +111,6 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 
 	if !e.IsValid() {
 		return false, "", errors.New("event not valid")
-	}
-
-	if topicConfig.SkipDelete && e.Operation == "d" {
-		return false, "", nil
 	}
 
 	inMemDB := models.GetMemoryDB(ctx)
@@ -202,4 +196,12 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	td.LatestCDCTs = e.ExecutionTime
 	flush, flushReason := td.ShouldFlush(ctx)
 	return flush, flushReason, nil
+}
+
+func (e *Event) ShouldSkip(skipDelete bool) bool {
+	if skipDelete && e.Deleted {
+		return true
+	}
+
+	return false
 }
