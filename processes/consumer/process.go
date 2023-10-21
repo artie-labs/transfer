@@ -61,6 +61,13 @@ func processMessage(ctx context.Context, processArgs ProcessArgs) (string, error
 	// Table name is only available after event has been casted
 	tags["table"] = evt.Table
 
+	// Check to see if we should skip first
+	// This way, we can emit a specific tag to be more clear
+	if evt.ShouldSkip(topicConfig.tc.SkipDelete) {
+		tags["skipped"] = "yes"
+		return evt.Table, nil
+	}
+
 	shouldFlush, flushReason, err := evt.Save(ctx, topicConfig.tc, processArgs.Msg)
 	if err != nil {
 		tags["what"] = "save_fail"
