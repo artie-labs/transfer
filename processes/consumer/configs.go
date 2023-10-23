@@ -3,6 +3,10 @@ package consumer
 import (
 	"context"
 	"sync"
+	"time"
+
+	"github.com/artie-labs/transfer/lib/jitter"
+	"github.com/artie-labs/transfer/lib/logger"
 
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -44,7 +48,25 @@ func CommitOffset(ctx context.Context, topic string, partitionsToOffset map[stri
 	for _, msgs := range partitionsToOffset {
 		for _, msg := range msgs {
 			if msg.KafkaMsg != nil {
-				err = topicToConsumer.Get(topic).CommitMessages(ctx, *msg.KafkaMsg)
+				for attempts := 0; attempts < 5; attempts++ {
+					err = topicToConsumer.Get(topic).CommitMessages(ctx, *msg.KafkaMsg)
+					if err == nil {
+						break
+					}
+
+					if kafkalib.IsRetryableErr(err) {
+						jitterDuration := jitter.JitterMs(1500, attempts)
+						logger.FromContext(ctx).WithError(err).WithFields(map[string]interface{}{
+							"attempts":            attempts,
+							"sleep duration (ms)": jitterDuration,
+						}).Info("encountered a retryable error, will sleep and retry...")
+
+						time.Sleep(time.Duration(jitterDuration) * time.Millisecond)
+					} else if err != nil {
+						break
+					}
+				}
+
 				if err != nil {
 					return err
 				}
