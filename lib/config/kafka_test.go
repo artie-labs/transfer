@@ -30,6 +30,4 @@ func TestKafka_Brokers(t *testing.T) {
 
 		assert.Equal(t, tc.expectedBrokers, kafka.Brokers(), tc.bootstrapServer)
 	}
-
-	assert.False(t, true)
 }
