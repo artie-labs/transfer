@@ -121,7 +121,7 @@ func (t *TypesTestSuite) TestDwhTableConfig_ReadOnlyColumnsToDelete() {
 	for i := 0; i < 100; i++ {
 		wg.Add(1)
 		go func() {
-			time.Sleep(time.Duration(jitter.JitterMs(50, 1)) * time.Millisecond)
+			time.Sleep(jitter.JitterMs(50, 1) * time.Millisecond)
 			defer wg.Done()
 			actualColsToDelete := tc.ReadOnlyColumnsToDelete()
 			assert.Equal(t.T(), colsToDelete, actualColsToDelete)
@@ -143,7 +143,7 @@ func (t *TypesTestSuite) TestDwhTableConfig_ClearColumnsToDeleteByColName() {
 		for i := 0; i < 100; i++ {
 			wg.Add(1)
 			go func(colName string) {
-				time.Sleep(time.Duration(jitter.JitterMs(50, 1)) * time.Millisecond)
+				time.Sleep(jitter.JitterMs(50, 1) * time.Millisecond)
 				defer wg.Done()
 				tc.ClearColumnsToDeleteByColName(colName)
 			}(colToDelete)

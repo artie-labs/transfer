@@ -35,13 +35,13 @@ func (s *storeWrapper) Exec(query string, args ...any) (sql.Result, error) {
 		}
 
 		if retryableError(err) {
-			sleepDurationMs := jitter.JitterMs(sleepIntervalMs, attempts)
+			sleepDuration := jitter.JitterMs(sleepIntervalMs, attempts)
 			logger.FromContext(s.ctx).WithError(err).WithFields(map[string]interface{}{
-				"sleepDurationMs": sleepDurationMs,
-				"attempts":        attempts,
+				"sleepDuration (ms)": sleepDuration,
+				"attempts":           attempts,
 			}).Warn("failed to execute the query, retrying...")
 
-			time.Sleep(time.Duration(sleepDurationMs) * time.Millisecond)
+			time.Sleep(sleepDuration * time.Millisecond)
 			continue
 		}
 

@@ -51,7 +51,7 @@ func (t *TypesTestSuite) TestDwhToTablesConfigMap_Concurrency() {
 	go func() {
 		defer wg.Done()
 		for i := 0; i < 1000; i++ {
-			time.Sleep(time.Duration(jitter.JitterMs(5, 1)) * time.Millisecond)
+			time.Sleep(jitter.JitterMs(5, 1) * time.Millisecond)
 			dwh.AddTableToConfig(fqName, dwhTableCfg)
 		}
 	}()
@@ -61,7 +61,7 @@ func (t *TypesTestSuite) TestDwhToTablesConfigMap_Concurrency() {
 	go func() {
 		defer wg.Done()
 		for i := 0; i < 1000; i++ {
-			time.Sleep(time.Duration(jitter.JitterMs(5, 1)) * time.Millisecond)
+			time.Sleep(jitter.JitterMs(5, 1) * time.Millisecond)
 			assert.Equal(t.T(), *dwhTableCfg, *dwh.TableConfig(fqName))
 		}
 

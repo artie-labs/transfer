@@ -61,8 +61,8 @@ func CommitOffset(ctx context.Context, topic string, partitionsToOffset map[stri
 							"sleep duration (ms)": jitterDuration,
 						}).Info("encountered a retryable error, will sleep and retry...")
 
-						time.Sleep(time.Duration(jitterDuration) * time.Millisecond)
-					} else if err != nil {
+						time.Sleep(jitterDuration * time.Millisecond)
+					} else {
 						break
 					}
 				}

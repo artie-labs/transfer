@@ -204,7 +204,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 			if TableUpdateQuotaErr(err) {
 				err = nil
 				attempts += 1
-				time.Sleep(time.Duration(jitter.JitterMs(1500, attempts)) * time.Millisecond)
+				time.Sleep(jitter.JitterMs(1500, attempts) * time.Millisecond)
 			} else {
 				defaultVal, _ := col.DefaultValue(ctx, nil)
 				return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v",
