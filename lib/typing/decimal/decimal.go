@@ -24,11 +24,6 @@ const (
 // MaxPrecisionBeforeString - if the precision is greater than 38, we'll cast it as a string.
 // This is because Snowflake and BigQuery both do not have NUMERIC data types that go beyond 38.
 const MaxPrecisionBeforeString = 38
-const MaxPrecisionBeforeStringBigQuery = 31
-
-// MaxScaleBeforeStringBigQuery - when scale exceeds 9, we'll set this to a STRING.
-// Anything above 9 will exceed the NUMERIC data type in BigQuery, ref: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#decimal_types
-const MaxScaleBeforeStringBigQuery = 9
 
 func NewDecimal(scale int, precision *int, value *big.Float) *Decimal {
 	if precision != nil {
@@ -102,6 +97,10 @@ func (d *Decimal) RedshiftKind() string {
 
 	return fmt.Sprintf("NUMERIC(%v, %v)", precision, d.scale)
 }
+
+// MaxScaleBeforeStringBigQuery - when scale exceeds 9, we'll set this to a STRING.
+// Anything above 9 will exceed the NUMERIC data type in BigQuery, ref: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#decimal_types
+const MaxScaleBeforeStringBigQuery = 9
 
 func (d *Decimal) BigQueryKind() string {
 	if d.precision == nil || *d.precision == -1 {
