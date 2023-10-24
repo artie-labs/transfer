@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/artie-labs/transfer/lib/numbers"
+
 	"github.com/artie-labs/transfer/lib/ptr"
 )
 
@@ -102,14 +104,17 @@ func (d *Decimal) RedshiftKind() string {
 }
 
 func (d *Decimal) BigQueryKind() string {
-	precision := MaxPrecisionBeforeStringBigQuery
-	if d.precision != nil {
-		precision = *d.precision
-	}
-
-	if precision > MaxPrecisionBeforeStringBigQuery || precision == -1 || d.scale > MaxScaleBeforeStringBigQuery {
+	if d.precision == nil || *d.precision == -1 {
 		return "STRING"
 	}
 
-	return fmt.Sprintf("NUMERIC(%v, %v)", precision, d.scale)
+	if d.scale > MaxScaleBeforeStringBigQuery {
+		return "STRING"
+	}
+
+	if numbers.BetweenEq(numbers.MaxInt(1, d.scale), d.scale+29, *d.precision) {
+		return fmt.Sprintf("NUMERIC(%v, %v)", d.precision, d.scale)
+	} else {
+		return "STRING"
+	}
 }
