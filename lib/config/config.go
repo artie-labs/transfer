@@ -242,7 +242,11 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("config is invalid, flush size pool has to be a positive number, current value: %v", c.FlushSizeKb)
 	}
 
-	if !numbers.BetweenEq(flushIntervalSecondsStart, flushIntervalSecondsEnd, c.FlushIntervalSeconds) {
+	if !numbers.BetweenEq(numbers.BetweenEqArgs{
+		Start:  flushIntervalSecondsStart,
+		End:    flushIntervalSecondsEnd,
+		Number: c.FlushIntervalSeconds,
+	}) {
 		return fmt.Errorf("config is invalid, flush interval is outside of our range, seconds: %v, expected start: %v, end: %v",
 			c.FlushIntervalSeconds, flushIntervalSecondsStart, flushIntervalSecondsEnd)
 	}
