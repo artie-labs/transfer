@@ -59,6 +59,7 @@ func Flush(args Args) error {
 
 			// Lock the tables when executing merge.
 			_tableData.Lock()
+			_tableData.ResetTempTableSuffix()
 			defer _tableData.Unlock()
 			if _tableData.Empty() {
 				return

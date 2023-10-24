@@ -39,7 +39,6 @@ type TableData struct {
 	// if this value is false, that means it is only deletes. Which means we should not drop columns
 	containOtherOperations bool
 
-	// BigQuery specific. We are creating a temporary table to execute a merge, in order to avoid in-memory tables via UNION ALL.
 	temporaryTableSuffix string
 
 	// Name of the table in the destination
@@ -89,15 +88,17 @@ func (t *TableData) ReadOnlyInMemoryCols() *columns.Columns {
 }
 
 func NewTableData(inMemoryColumns *columns.Columns, primaryKeys []string, topicConfig kafkalib.TopicConfig, name string) *TableData {
-	return &TableData{
+	td := &TableData{
 		inMemoryColumns:         inMemoryColumns,
 		rowsData:                map[string]map[string]interface{}{},
 		primaryKeys:             primaryKeys,
 		TopicConfig:             topicConfig,
 		PartitionsToLastMessage: map[string][]artie.Message{},
-		temporaryTableSuffix:    fmt.Sprintf("%s_%s", constants.ArtiePrefix, stringutil.Random(10)),
 		name:                    stringutil.Override(name, topicConfig.TableName),
 	}
+
+	td.ResetTempTableSuffix()
+	return td
 }
 
 // InsertRow creates a single entrypoint for how rows get added to TableData
@@ -203,6 +204,10 @@ func (t *TableData) DistinctDates(ctx context.Context, colName string) ([]string
 	}
 
 	return distinctDates, nil
+}
+
+func (t *TableData) ResetTempTableSuffix() {
+	t.temporaryTableSuffix = fmt.Sprintf("%s_%s", constants.ArtiePrefix, stringutil.Random(10))
 }
 
 func (t *TableData) TempTableSuffix() string {
