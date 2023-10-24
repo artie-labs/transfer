@@ -1,8 +1,9 @@
 package numbers
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBetweenEq(t *testing.T) {
@@ -22,6 +23,10 @@ func TestBetweenEq(t *testing.T) {
 	}
 
 	for _, _case := range cases {
-		assert.Equal(t, _case.result, BetweenEq(_case.start, _case.end, _case.number), _case)
+		assert.Equal(t, _case.result, BetweenEq(BetweenEqArgs{
+			Start:  _case.start,
+			End:    _case.end,
+			Number: _case.number,
+		}), _case)
 	}
 }

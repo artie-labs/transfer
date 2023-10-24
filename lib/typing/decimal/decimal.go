@@ -98,22 +98,49 @@ func (d *Decimal) RedshiftKind() string {
 	return fmt.Sprintf("NUMERIC(%v, %v)", precision, d.scale)
 }
 
-// MaxScaleBeforeStringBigQuery - when scale exceeds 9, we'll set this to a STRING.
-// Anything above 9 will exceed the NUMERIC data type in BigQuery, ref: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#decimal_types
-const MaxScaleBeforeStringBigQuery = 9
-
+// BigQueryKind - is inferring logic from: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#decimal_types
 func (d *Decimal) BigQueryKind() string {
+	if d.Numeric() {
+		return fmt.Sprintf("NUMERIC(%v, %v)", *d.precision, d.scale)
+	} else if d.BigNumeric() {
+		return fmt.Sprintf("BIGNUMERIC(%v, %v)", *d.precision, d.scale)
+	}
+
+	return "STRING"
+}
+
+func (d *Decimal) Numeric() bool {
+	if d.precision == nil || *d.precision == PrecisionNotSpecified {
+		return false
+	}
+
+	// 0 <= s <= 38
+	if !numbers.BetweenEq(numbers.BetweenEqArgs{Start: 0, End: 9, Number: d.scale}) {
+		return false
+	}
+
+	// max(1,s) <= p <= s + 29
+	return numbers.BetweenEq(numbers.BetweenEqArgs{
+		Start:  numbers.MaxInt(1, d.scale),
+		End:    d.scale + 29,
+		Number: *d.precision,
+	})
+}
+
+func (d *Decimal) BigNumeric() bool {
 	if d.precision == nil || *d.precision == -1 {
-		return "STRING"
+		return false
 	}
 
-	if d.scale > MaxScaleBeforeStringBigQuery {
-		return "STRING"
+	// 0 <= s <= 38
+	if !numbers.BetweenEq(numbers.BetweenEqArgs{Start: 0, End: 38, Number: d.scale}) {
+		return false
 	}
 
-	if numbers.BetweenEq(numbers.MaxInt(1, d.scale), d.scale+29, *d.precision) {
-		return fmt.Sprintf("NUMERIC(%v, %v)", d.precision, d.scale)
-	} else {
-		return "STRING"
-	}
+	// max(1,s) <= p <= s + 38
+	return numbers.BetweenEq(numbers.BetweenEqArgs{
+		Start:  numbers.MaxInt(1, d.scale),
+		End:    d.scale + 38,
+		Number: *d.precision,
+	})
 }
