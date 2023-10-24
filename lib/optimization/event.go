@@ -207,6 +207,11 @@ func (t *TableData) DistinctDates(ctx context.Context, colName string) ([]string
 }
 
 func (t *TableData) ResetTempTableSuffix() {
+	if t == nil {
+		// This is needed because we periodically wipe tableData
+		return
+	}
+
 	t.temporaryTableSuffix = fmt.Sprintf("%s_%s", constants.ArtiePrefix, stringutil.Random(10))
 }
 
