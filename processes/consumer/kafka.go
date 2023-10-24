@@ -108,7 +108,7 @@ func StartConsumer(ctx context.Context) {
 				Topic:   topic,
 			}
 
-			kafkaConsumer := kafka.NewReader(kafkaCfg)
+			kafkaConsumer := kafkalib.NewReader(kafkaCfg)
 			topicToConsumer.Add(topic, kafkaConsumer)
 			for {
 				kafkaMsg, err := kafkaConsumer.FetchMessage(ctx)

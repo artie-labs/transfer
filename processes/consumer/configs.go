@@ -49,12 +49,15 @@ func CommitOffset(ctx context.Context, topic string, partitionsToOffset map[stri
 		for _, msg := range msgs {
 			if msg.KafkaMsg != nil {
 				for attempts := 0; attempts < 5; attempts++ {
-					err = topicToConsumer.Get(topic).CommitMessages(ctx, *msg.KafkaMsg)
+					consumer := topicToConsumer.Get(topic)
+					err = consumer.CommitMessages(ctx, *msg.KafkaMsg)
 					if err == nil {
 						break
 					}
 
 					if kafkalib.IsRetryableErr(err) {
+						_ = consumer.Reload()
+
 						jitterDuration := jitter.JitterMs(1500, attempts)
 						logger.FromContext(ctx).WithError(err).WithFields(map[string]interface{}{
 							"attempts":            attempts,
