@@ -44,12 +44,12 @@ type TopicConfigFormatter struct {
 }
 
 func CommitOffset(ctx context.Context, topic string, partitionsToOffset map[string][]artie.Message) error {
-	var err error
+	consumer := topicToConsumer.Get(topic)
 	for _, msgs := range partitionsToOffset {
 		for _, msg := range msgs {
 			if msg.KafkaMsg != nil {
+				var err error
 				for attempts := 0; attempts < 5; attempts++ {
-					consumer := topicToConsumer.Get(topic)
 					err = consumer.CommitMessages(ctx, *msg.KafkaMsg)
 					if err == nil {
 						break
@@ -57,7 +57,6 @@ func CommitOffset(ctx context.Context, topic string, partitionsToOffset map[stri
 
 					if kafkalib.IsRetryableErr(err) {
 						_ = consumer.Reload()
-
 						jitterDuration := jitter.JitterMs(1500, attempts)
 						logger.FromContext(ctx).WithError(err).WithFields(map[string]interface{}{
 							"attempts":            attempts,
@@ -81,5 +80,5 @@ func CommitOffset(ctx context.Context, topic string, partitionsToOffset map[stri
 		}
 	}
 
-	return err
+	return nil
 }
