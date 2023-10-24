@@ -114,7 +114,7 @@ func (d *Decimal) Numeric() bool {
 		return false
 	}
 
-	// 0 <= s <= 38
+	// 0 <= s <= 9
 	if !numbers.BetweenEq(numbers.BetweenEqArgs{Start: 0, End: 9, Number: d.scale}) {
 		return false
 	}
