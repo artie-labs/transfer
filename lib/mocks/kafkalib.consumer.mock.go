@@ -45,6 +45,16 @@ type FakeConsumer struct {
 		result1 kafka.Message
 		result2 error
 	}
+	ReloadStub        func() error
+	reloadMutex       sync.RWMutex
+	reloadArgsForCall []struct {
+	}
+	reloadReturns struct {
+		result1 error
+	}
+	reloadReturnsOnCall map[int]struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -228,6 +238,59 @@ func (fake *FakeConsumer) ReadMessageReturnsOnCall(i int, result1 kafka.Message,
 	}{result1, result2}
 }
 
+func (fake *FakeConsumer) Reload() error {
+	fake.reloadMutex.Lock()
+	ret, specificReturn := fake.reloadReturnsOnCall[len(fake.reloadArgsForCall)]
+	fake.reloadArgsForCall = append(fake.reloadArgsForCall, struct {
+	}{})
+	stub := fake.ReloadStub
+	fakeReturns := fake.reloadReturns
+	fake.recordInvocation("Reload", []interface{}{})
+	fake.reloadMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeConsumer) ReloadCallCount() int {
+	fake.reloadMutex.RLock()
+	defer fake.reloadMutex.RUnlock()
+	return len(fake.reloadArgsForCall)
+}
+
+func (fake *FakeConsumer) ReloadCalls(stub func() error) {
+	fake.reloadMutex.Lock()
+	defer fake.reloadMutex.Unlock()
+	fake.ReloadStub = stub
+}
+
+func (fake *FakeConsumer) ReloadReturns(result1 error) {
+	fake.reloadMutex.Lock()
+	defer fake.reloadMutex.Unlock()
+	fake.ReloadStub = nil
+	fake.reloadReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeConsumer) ReloadReturnsOnCall(i int, result1 error) {
+	fake.reloadMutex.Lock()
+	defer fake.reloadMutex.Unlock()
+	fake.ReloadStub = nil
+	if fake.reloadReturnsOnCall == nil {
+		fake.reloadReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.reloadReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeConsumer) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -237,6 +300,8 @@ func (fake *FakeConsumer) Invocations() map[string][][]interface{} {
 	defer fake.commitMessagesMutex.RUnlock()
 	fake.readMessageMutex.RLock()
 	defer fake.readMessageMutex.RUnlock()
+	fake.reloadMutex.RLock()
+	defer fake.reloadMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
