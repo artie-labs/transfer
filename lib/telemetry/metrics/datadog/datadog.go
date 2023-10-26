@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/telemetry/metrics"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 
 	"github.com/DataDog/datadog-go/statsd"
 	"github.com/artie-labs/transfer/lib/logger"
@@ -46,7 +46,7 @@ func getSampleRate(val interface{}) float64 {
 	return floatVal
 }
 
-func NewDatadogClient(ctx context.Context, settings map[string]interface{}) (context.Context, error) {
+func NewDatadogClient(ctx context.Context, settings map[string]interface{}) (base.Client, error) {
 	address := fmt.Sprint(maputil.GetKeyFromMap(settings, DatadogAddr, DefaultAddr))
 	host := os.Getenv("TELEMETRY_HOST")
 	port := os.Getenv("TELEMETRY_PORT")
@@ -57,17 +57,16 @@ func NewDatadogClient(ctx context.Context, settings map[string]interface{}) (con
 
 	datadogClient, err := statsd.New(address)
 	if err != nil {
-		return ctx, err
+		return nil, err
 	}
 
 	datadogClient.Namespace = fmt.Sprint(maputil.GetKeyFromMap(settings, Namespace, DefaultNamespace))
 	datadogClient.Tags = getTags(maputil.GetKeyFromMap(settings, Tags, []string{}))
 
-	ctx = metrics.InjectMetricsClientIntoCtx(ctx, &statsClient{
+	return &statsClient{
 		client: datadogClient,
 		rate:   getSampleRate(maputil.GetKeyFromMap(settings, Sampling, DefaultSampleRate)),
-	})
-	return ctx, nil
+	}, nil
 }
 
 type statsClient struct {

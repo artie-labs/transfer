@@ -1,7 +1,6 @@
 package datadog
 
 import (
-	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,19 +20,17 @@ func (d *DatadogTestSuite) TestGetTags() {
 }
 
 func (d *DatadogTestSuite) TestNewDatadogClient() {
-	var err error
-	d.ctx, err = NewDatadogClient(d.ctx, map[string]interface{}{
+	client, err := NewDatadogClient(d.ctx, map[string]interface{}{
 		Tags: []string{
 			"env:production",
 		},
 		Namespace: "dusty.",
 		Sampling:  0.255,
-		// Cannot test datadogAddr (addr is private)
 	})
 
 	assert.NoError(d.T(), err, err)
-	mtr := metrics.FromContext(d.ctx).(*statsClient)
-
+	mtr, isOk := client.(*statsClient)
+	assert.True(d.T(), isOk)
 	assert.Equal(d.T(), mtr.rate, 0.255, mtr.rate)
 	assert.Equal(d.T(), mtr.client.Namespace, "dusty.", mtr.client.Namespace)
 	assert.Equal(d.T(), mtr.client.Tags, []string{"env:production"}, mtr.client.Tags)
