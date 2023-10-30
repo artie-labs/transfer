@@ -88,17 +88,16 @@ func (t *TableData) ReadOnlyInMemoryCols() *columns.Columns {
 }
 
 func NewTableData(inMemoryColumns *columns.Columns, primaryKeys []string, topicConfig kafkalib.TopicConfig, name string) *TableData {
-	td := &TableData{
-		inMemoryColumns:         inMemoryColumns,
-		rowsData:                map[string]map[string]interface{}{},
-		primaryKeys:             primaryKeys,
-		TopicConfig:             topicConfig,
+	return &TableData{
+		inMemoryColumns: inMemoryColumns,
+		rowsData:        map[string]map[string]interface{}{},
+		primaryKeys:     primaryKeys,
+		TopicConfig:     topicConfig,
+		// temporaryTableSuffix is being set in `ResetTempTableSuffix`
+		temporaryTableSuffix:    "",
 		PartitionsToLastMessage: map[string][]artie.Message{},
 		name:                    stringutil.Override(name, topicConfig.TableName),
 	}
-
-	td.ResetTempTableSuffix()
-	return td
 }
 
 // InsertRow creates a single entrypoint for how rows get added to TableData
