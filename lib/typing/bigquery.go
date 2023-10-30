@@ -33,14 +33,20 @@ func BigQueryTypeToKind(rawBqType string) KindDetails {
 	// Geography, geometry date, time, varbinary, binary are currently not supported.
 	switch strings.TrimSpace(strings.ToLower(bqType[:idxStop])) {
 	case "numeric":
-		if rawBqType == "numeric" {
+		if rawBqType == "numeric" || rawBqType == "bignumeric" {
 			// This is a specific thing to BigQuery
 			// A `NUMERIC` type without precision or scale specified is NUMERIC(38, 9)
 			return EDecimal
 		}
 
 		return ParseNumeric(defaultPrefix, rawBqType)
-	case "decimal", "float", "float64", "bignumeric", "bigdecimal":
+	case "bignumeric":
+		if rawBqType == "bignumeric" {
+			return EDecimal
+		}
+
+		return ParseNumeric("bignumeric", rawBqType)
+	case "decimal", "float", "float64", "bigdecimal":
 		return Float
 	case "int", "integer", "int64":
 		return Integer

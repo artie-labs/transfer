@@ -12,11 +12,12 @@ import (
 func TestBigQueryTypeToKind(t *testing.T) {
 	bqColToExpectedKind := map[string]KindDetails{
 		//// Number
-		"numeric":       EDecimal,
-		"numeric(5)":    Integer,
-		"numeric(5, 0)": Integer,
-		"numeric(5, 2)": EDecimal,
-		"numeric(8, 6)": EDecimal,
+		"numeric":           EDecimal,
+		"numeric(5)":        Integer,
+		"numeric(5, 0)":     Integer,
+		"numeric(5, 2)":     EDecimal,
+		"numeric(8, 6)":     EDecimal,
+		"bignumeric(38, 2)": EDecimal,
 
 		// Integer
 		"int":     Integer,

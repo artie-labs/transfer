@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/artie-labs/transfer/lib/numbers"
+
 	"github.com/artie-labs/transfer/lib/ptr"
 )
 
@@ -22,11 +24,6 @@ const (
 // MaxPrecisionBeforeString - if the precision is greater than 38, we'll cast it as a string.
 // This is because Snowflake and BigQuery both do not have NUMERIC data types that go beyond 38.
 const MaxPrecisionBeforeString = 38
-const MaxPrecisionBeforeStringBigQuery = 31
-
-// MaxScaleBeforeStringBigQuery - when scale exceeds 9, we'll set this to a STRING.
-// Anything above 9 will exceed the NUMERIC data type in BigQuery, ref: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#decimal_types
-const MaxScaleBeforeStringBigQuery = 9
 
 func NewDecimal(scale int, precision *int, value *big.Float) *Decimal {
 	if precision != nil {
@@ -101,15 +98,49 @@ func (d *Decimal) RedshiftKind() string {
 	return fmt.Sprintf("NUMERIC(%v, %v)", precision, d.scale)
 }
 
+// BigQueryKind - is inferring logic from: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#decimal_types
 func (d *Decimal) BigQueryKind() string {
-	precision := MaxPrecisionBeforeStringBigQuery
-	if d.precision != nil {
-		precision = *d.precision
+	if d.Numeric() {
+		return fmt.Sprintf("NUMERIC(%v, %v)", *d.precision, d.scale)
+	} else if d.BigNumeric() {
+		return fmt.Sprintf("BIGNUMERIC(%v, %v)", *d.precision, d.scale)
 	}
 
-	if precision > MaxPrecisionBeforeStringBigQuery || precision == -1 || d.scale > MaxScaleBeforeStringBigQuery {
-		return "STRING"
+	return "STRING"
+}
+
+func (d *Decimal) Numeric() bool {
+	if d.precision == nil || *d.precision == PrecisionNotSpecified {
+		return false
 	}
 
-	return fmt.Sprintf("NUMERIC(%v, %v)", precision, d.scale)
+	// 0 <= s <= 9
+	if !numbers.BetweenEq(numbers.BetweenEqArgs{Start: 0, End: 9, Number: d.scale}) {
+		return false
+	}
+
+	// max(1,s) <= p <= s + 29
+	return numbers.BetweenEq(numbers.BetweenEqArgs{
+		Start:  numbers.MaxInt(1, d.scale),
+		End:    d.scale + 29,
+		Number: *d.precision,
+	})
+}
+
+func (d *Decimal) BigNumeric() bool {
+	if d.precision == nil || *d.precision == -1 {
+		return false
+	}
+
+	// 0 <= s <= 38
+	if !numbers.BetweenEq(numbers.BetweenEqArgs{Start: 0, End: 38, Number: d.scale}) {
+		return false
+	}
+
+	// max(1,s) <= p <= s + 38
+	return numbers.BetweenEq(numbers.BetweenEqArgs{
+		Start:  numbers.MaxInt(1, d.scale),
+		End:    d.scale + 38,
+		Number: *d.precision,
+	})
 }

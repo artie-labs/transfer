@@ -1,9 +1,35 @@
 package numbers
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
+
+func TestMaxInt(t *testing.T) {
+	type testCase struct {
+		a        int
+		b        int
+		expected int
+	}
+
+	tcs := []testCase{
+		{
+			a:        1,
+			b:        2,
+			expected: 2,
+		},
+		{
+			a:        9,
+			b:        1,
+			expected: 9,
+		},
+	}
+
+	for _, tc := range tcs {
+		assert.Equal(t, tc.expected, MaxInt(tc.a, tc.b))
+	}
+}
 
 func TestBetweenEq(t *testing.T) {
 	type testCase struct {
@@ -22,6 +48,10 @@ func TestBetweenEq(t *testing.T) {
 	}
 
 	for _, _case := range cases {
-		assert.Equal(t, _case.result, BetweenEq(_case.start, _case.end, _case.number), _case)
+		assert.Equal(t, _case.result, BetweenEq(BetweenEqArgs{
+			Start:  _case.start,
+			End:    _case.end,
+			Number: _case.number,
+		}), _case)
 	}
 }
