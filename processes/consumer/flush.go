@@ -59,11 +59,13 @@ func Flush(args Args) error {
 
 			// Lock the tables when executing merge.
 			_tableData.Lock()
-			_tableData.ResetTempTableSuffix()
 			defer _tableData.Unlock()
 			if _tableData.Empty() {
 				return
 			}
+
+			// This is added so that we have a new temporary table suffix for each merge.
+			_tableData.ResetTempTableSuffix()
 
 			start := time.Now()
 			tags := map[string]string{
@@ -80,7 +82,7 @@ func Flush(args Args) error {
 				log.WithError(err).WithFields(logFields).Warn("Failed to execute merge...not going to flush memory")
 			} else {
 				log.WithFields(logFields).Info("Merge success, clearing memory...")
-				commitErr := CommitOffset(args.Context, _tableData.TopicConfig.Topic, _tableData.PartitionsToLastMessage)
+				commitErr := commitOffset(args.Context, _tableData.TopicConfig.Topic, _tableData.PartitionsToLastMessage)
 				if commitErr == nil {
 					models.GetMemoryDB(args.Context).ClearTableConfig(_tableName)
 				} else {
