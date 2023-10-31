@@ -23,9 +23,17 @@ To grab the connection string, follow these steps:
 
 1. Go to [Atlas UI](https://cloud.mongodb.com/)
 2. Find your deployment and click `Connect`
-3. Click on shell and select `3.4 or earlier` for mongo shell
+3. Click on Shell and we support [SRV and standard connection string](https://www.mongodb.com/docs/manual/reference/connection-string/).
 
-<figure><img src="../../.gitbook/assets/image (4).png" alt=""><figcaption></figcaption></figure>
+
+
+<div align="center">
+
+<figure><img src="../../.gitbook/assets/image (10).png" alt="" width="563"><figcaption><p>SRV connection string</p></figcaption></figure>
+
+</div>
+
+<figure><img src="../../.gitbook/assets/image (11).png" alt="" width="563"><figcaption><p>Standard connection string</p></figcaption></figure>
 
 ## Authentication
 
