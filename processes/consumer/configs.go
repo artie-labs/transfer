@@ -39,7 +39,7 @@ type TopicConfigFormatter struct {
 	cdc.Format
 }
 
-func CommitOffset(ctx context.Context, topic string, partitionsToOffset map[string][]artie.Message) error {
+func commitOffset(ctx context.Context, topic string, partitionsToOffset map[string][]artie.Message) error {
 	var err error
 	for _, msgs := range partitionsToOffset {
 		for _, msg := range msgs {

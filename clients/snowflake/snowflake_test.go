@@ -105,6 +105,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 	}
 
 	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, "foo")
+	tableData.ResetTempTableSuffix()
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row, false)
 	}
@@ -152,6 +153,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	}
 
 	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, "foo")
+	tableData.ResetTempTableSuffix()
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row, false)
 	}
@@ -223,6 +225,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	}
 
 	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, "foo")
+	tableData.ResetTempTableSuffix()
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row, false)
 	}
