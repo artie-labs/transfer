@@ -1,13 +1,20 @@
 package redshift
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type describeArgs struct {
 	RawTableName string
 	Schema       string
 }
 
-func describeTableQuery(args describeArgs) string {
+func describeTableQuery(args describeArgs) (string, error) {
+	if strings.Contains(args.RawTableName, `"`) {
+		return "", fmt.Errorf("table name cannot contain double quotes")
+	}
+
 	// This query is a modified fork from: https://gist.github.com/alexanderlz/7302623
 	return fmt.Sprintf(`
 SELECT 
@@ -29,5 +36,5 @@ LEFT JOIN
     pg_catalog.pg_description d ON d.objsubid=c.ordinal_position AND d.objoid=c1.oid 
 WHERE 
     LOWER(c.table_name) = LOWER('%s') AND LOWER(c.table_schema) = LOWER('%s');
-`, args.RawTableName, args.Schema)
+`, args.RawTableName, args.Schema), nil
 }

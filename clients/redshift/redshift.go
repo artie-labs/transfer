@@ -46,14 +46,20 @@ const (
 )
 
 func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+	describeQuery, err := describeTableQuery(describeArgs{
+		RawTableName: tableData.Name(ctx, nil),
+		Schema:       tableData.TopicConfig.Schema,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
 	return utils.GetTableConfig(ctx, utils.GetTableCfgArgs{
-		Dwh:       s,
-		FqName:    tableData.ToFqName(ctx, s.Label(), true),
-		ConfigMap: s.configMap,
-		Query: describeTableQuery(describeArgs{
-			RawTableName: tableData.Name(ctx, nil),
-			Schema:       tableData.TopicConfig.Schema,
-		}),
+		Dwh:                s,
+		FqName:             tableData.ToFqName(ctx, s.Label(), true),
+		ConfigMap:          s.configMap,
+		Query:              describeQuery,
 		ColumnNameLabel:    describeNameCol,
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeDescriptionCol,
