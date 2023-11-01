@@ -39,30 +39,26 @@ func (s *Store) Label() constants.DestinationKind {
 	return constants.Redshift
 }
 
-type getTableConfigArgs struct {
-	TableData *optimization.TableData
-}
-
 const (
 	describeNameCol        = "column_name"
 	describeTypeCol        = "data_type"
 	describeDescriptionCol = "description"
 )
 
-func (s *Store) getTableConfig(ctx context.Context, args getTableConfigArgs) (*types.DwhTableConfig, error) {
+func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	return utils.GetTableConfig(ctx, utils.GetTableCfgArgs{
 		Dwh:       s,
-		FqName:    args.TableData.ToFqName(ctx, s.Label(), true),
+		FqName:    tableData.ToFqName(ctx, s.Label(), true),
 		ConfigMap: s.configMap,
 		Query: describeTableQuery(describeArgs{
-			RawTableName: args.TableData.Name(ctx, nil),
-			Schema:       args.TableData.TopicConfig.Schema,
+			RawTableName: tableData.Name(ctx, nil),
+			Schema:       tableData.TopicConfig.Schema,
 		}),
 		ColumnNameLabel:    describeNameCol,
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeDescriptionCol,
 		EmptyCommentValue:  ptr.ToString("<nil>"),
-		DropDeletedColumns: args.TableData.TopicConfig.DropDeletedColumns,
+		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
 	})
 }
 
