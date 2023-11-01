@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/artie-labs/transfer/lib/sql"
+
+	"github.com/artie-labs/transfer/lib/optimization"
+
 	"github.com/artie-labs/transfer/clients/utils"
 
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -38,7 +42,7 @@ func (s *Store) Label() constants.DestinationKind {
 }
 
 type getTableConfigArgs struct {
-	Table              string
+	TableData          *optimization.TableData
 	Schema             string
 	DropDeletedColumns bool
 }
@@ -50,9 +54,19 @@ const (
 )
 
 func (s *Store) getTableConfig(ctx context.Context, args getTableConfigArgs) (*types.DwhTableConfig, error) {
+	escapedTableName := args.TableData.Name(ctx, &sql.NameArgs{
+		Escape:   true,
+		DestKind: s.Label(),
+	})
+
+	rawTableName := args.TableData.Name(ctx, &sql.NameArgs{
+		Escape:   false,
+		DestKind: s.Label(),
+	})
+
 	return utils.GetTableConfig(ctx, utils.GetTableCfgArgs{
 		Dwh:       s,
-		FqName:    fmt.Sprintf("%s.%s", args.Schema, args.Table),
+		FqName:    fmt.Sprintf("%s.%s", args.Schema, escapedTableName),
 		ConfigMap: s.configMap,
 		// This query is a modified fork from: https://gist.github.com/alexanderlz/7302623
 		Query: fmt.Sprintf(`
@@ -75,7 +89,7 @@ LEFT JOIN
     pg_catalog.pg_description d ON d.objsubid=c.ordinal_position AND d.objoid=c1.oid 
 WHERE 
     LOWER(c.table_name) = LOWER('%s') AND LOWER(c.table_schema) = LOWER('%s');
-`, args.Table, args.Schema),
+`, rawTableName, args.Schema),
 		ColumnNameLabel:    describeNameCol,
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeDescriptionCol,
