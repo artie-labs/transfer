@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/artie-labs/transfer/lib/sql"
-
 	"github.com/artie-labs/transfer/lib/optimization"
 
 	"github.com/artie-labs/transfer/clients/utils"
@@ -52,23 +50,12 @@ const (
 )
 
 func (s *Store) getTableConfig(ctx context.Context, args getTableConfigArgs) (*types.DwhTableConfig, error) {
-	escapedTableName := args.TableData.Name(ctx, &sql.NameArgs{
-		Escape:   true,
-		DestKind: s.Label(),
-	})
-
-	rawTableName := args.TableData.Name(ctx, &sql.NameArgs{
-		Escape:   false,
-		DestKind: s.Label(),
-	})
-
 	return utils.GetTableConfig(ctx, utils.GetTableCfgArgs{
 		Dwh:       s,
-		FqName:    fmt.Sprintf("%s.%s", args.TableData.TopicConfig.Schema, escapedTableName),
+		FqName:    args.TableData.ToFqName(ctx, s.Label(), true),
 		ConfigMap: s.configMap,
-
 		Query: describeTableQuery(describeArgs{
-			RawTableName: rawTableName,
+			RawTableName: args.TableData.Name(ctx, nil),
 			Schema:       args.TableData.TopicConfig.Schema,
 		}),
 		ColumnNameLabel:    describeNameCol,
