@@ -23,9 +23,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	tableConfig, err := s.getTableConfig(ctx, getTableConfigArgs{
-		TableData:          tableData,
-		Schema:             tableData.TopicConfig.Schema,
-		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
+		TableData: tableData,
 	})
 	if err != nil {
 		return err
