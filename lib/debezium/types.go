@@ -101,15 +101,18 @@ func (f Field) DecodeDecimal(encoded string) (*decimal.Decimal, error) {
 	}
 
 	bigInt := new(big.Int)
+
 	// If the data represents a negative number, the sign bit will be set.
 	if len(data) > 0 && data[0] >= 0x80 {
 		// To convert the data to a two's complement integer, we need to invert the bytes and add one.
 		for i := range data {
 			data[i] = ^data[i]
 		}
+
 		bigInt.SetBytes(data)
+		// We are adding this because Debezium (Java) encoded this value and uses two's complement binary representation for negative numbers
 		bigInt.Add(bigInt, big.NewInt(1))
-		bigInt.Neg(bigInt) // Negate the integer to get the correct negative value.
+		bigInt.Neg(bigInt)
 	} else {
 		bigInt.SetBytes(data)
 	}
