@@ -149,6 +149,5 @@ func (f Field) DecodeDebeziumVariableDecimal(value interface{}) (*decimal.Decima
 		KafkaDecimalPrecisionKey: "-1",
 	}
 
-	fmt.Println("value", val)
 	return f.DecodeDecimal(fmt.Sprint(val))
 }
