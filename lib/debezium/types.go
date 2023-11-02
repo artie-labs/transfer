@@ -101,7 +101,18 @@ func (f Field) DecodeDecimal(encoded string) (*decimal.Decimal, error) {
 	}
 
 	bigInt := new(big.Int)
-	bigInt.SetBytes(data)
+	// If the data represents a negative number, the sign bit will be set.
+	if len(data) > 0 && data[0] >= 0x80 {
+		// To convert the data to a two's complement integer, we need to invert the bytes and add one.
+		for i := range data {
+			data[i] = ^data[i]
+		}
+		bigInt.SetBytes(data)
+		bigInt.Add(bigInt, big.NewInt(1))
+		bigInt.Neg(bigInt) // Negate the integer to get the correct negative value.
+	} else {
+		bigInt.SetBytes(data)
+	}
 
 	// Convert the big integer to a big float
 	bigFloat := new(big.Float).SetInt(bigInt)
@@ -138,5 +149,6 @@ func (f Field) DecodeDebeziumVariableDecimal(value interface{}) (*decimal.Decima
 		KafkaDecimalPrecisionKey: "-1",
 	}
 
+	fmt.Println("value", val)
 	return f.DecodeDecimal(fmt.Sprint(val))
 }
