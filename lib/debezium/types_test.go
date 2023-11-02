@@ -266,6 +266,15 @@ func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 			expectValue: "123.45",
 			expectScale: 2,
 		},
+		{
+			name: "negative numbers (scale 7)",
+			value: map[string]interface{}{
+				"scale": 7,
+				"value": "wT9Wmw==",
+			},
+			expectValue: "-105.2813669",
+			expectScale: 7,
+		},
 	}
 
 	for _, testCase := range testCases {
