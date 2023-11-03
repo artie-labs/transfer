@@ -88,6 +88,10 @@ ALTER USER artie_transfer REPLICATION;
 * `DATERANGE`
 * `ENUM`
 * `LTREE`
+* `PostGIS data types`
+  * `Latitude`
+  * `Longitude`
+  * More coming soon!
 
 ## Running it yourself
 
