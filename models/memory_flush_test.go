@@ -7,7 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func (m *ModelsTestSuite) TestMergeOperations() {
+func (m *ModelsTestSuite) TestShouldSkipMerge() {
+	// 5 seconds
 	coolDown := 5 * time.Second
 	checkInterval := 200 * time.Millisecond
 
@@ -26,19 +27,16 @@ func (m *ModelsTestSuite) TestMergeOperations() {
 
 	time.Sleep(3 * time.Second)
 	assert.False(m.T(), td.ShouldSkipMerge(coolDown))
-}
 
-func (m *ModelsTestSuite) TestPadding() {
-	coolDown := 2 * time.Second
+	// 5 minutes now
+	coolDown = 5 * time.Minute
+	now := time.Now()
 
-	td := TableData{
-		TableData: &optimization.TableData{},
-	}
-	td.Wipe()
-
-	time.Sleep(1500 * time.Millisecond)
-	assert.True(m.T(), td.ShouldSkipMerge(coolDown))
-
-	time.Sleep(500 * time.Millisecond)
+	// We merged 4 mins ago, so let's test the confidence interval.
+	td.lastMergeTime = now.Add(-4 * time.Minute)
 	assert.False(m.T(), td.ShouldSkipMerge(coolDown))
+
+	// Let's try if we merged 2 mins ago, we should skip.
+	td.lastMergeTime = now.Add(-2 * time.Minute)
+	assert.True(m.T(), td.ShouldSkipMerge(coolDown))
 }

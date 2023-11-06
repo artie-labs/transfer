@@ -25,10 +25,19 @@ func (t *TableData) Wipe() {
 	t.lastMergeTime = time.Now()
 }
 
+// ShouldSkipMerge - this function is only used when the flush reason was time-based.
+// We want to add this in so that it can strike a balance between the Flush and Consumer go-routines on when to merge.
+// Say our flush interval is 5 mins and it flushed 4 mins ago based on size or rows - we don't want to flush right after since the buffer would be mostly empty.
 func (t *TableData) ShouldSkipMerge(cooldown time.Duration) bool {
-	padding := 100 * time.Millisecond
-	// Padding is added since we are using the flush time interval as the cooldown
-	return time.Since(t.lastMergeTime) < (cooldown - padding)
+	if cooldown > 1*time.Minute {
+		confidenceInterval := 0.25
+		confidenceDuration := time.Duration(confidenceInterval * float64(cooldown))
+
+		// Subtract the confidenceDuration from the cooldown to get the adjusted cooldown
+		cooldown = cooldown - confidenceDuration
+	}
+
+	return time.Since(t.lastMergeTime) < cooldown
 }
 
 func (t *TableData) Empty() bool {
