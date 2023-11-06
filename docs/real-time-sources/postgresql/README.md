@@ -104,9 +104,6 @@ PostgreSQL Watcher provides additional guardrails around your database replicati
 
 PostgreSQL Watcher is available to all Artie Cloud customers using PostgreSQL as a data source.&#x20;
 
-\
-
-
 ## Running it yourself
 
 #### Self-hosted notes:
