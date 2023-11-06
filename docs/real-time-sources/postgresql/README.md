@@ -49,8 +49,6 @@ CREATE PUBLICATION dbz_publication FOR ALL TABLES;
 ALTER USER artie_transfer REPLICATION;
 ```
 
-
-
 ### Supported types
 
 * `BOOLEAN` / `BOOL`
@@ -92,6 +90,22 @@ ALTER USER artie_transfer REPLICATION;
   * `Latitude`
   * `Longitude`
   * More coming soon!
+
+## Additional features
+
+### PostgreSQL Watcher
+
+To set up your PostgreSQL database for CDC-based replication, you will need to enable replication slots. When this is done incorrectly, it could potentially cause a replication slot overflow and bring your production database down.
+
+PostgreSQL Watcher provides additional guardrails around your database replication, and will do the following:
+
+* 📊 Regularly check and monitor your replication slot size in 15-minute intervals and notify if the slot exceeds a certain threshold.
+* 💓 Heartbeats verification. For folks that are leveraging [Heartbeats](https://docs.artie.so/tutorials/preventing-wal-growth-on-postgres-running-on-aws-rds), PostgreSQL Watcher will also check to make sure table permissions are updated and our service account has access to run Heartbeats. Watcher will notify you if the verification fails.
+
+PostgreSQL Watcher is available to all Artie Cloud customers using PostgreSQL as a data source.&#x20;
+
+\
+
 
 ## Running it yourself
 
