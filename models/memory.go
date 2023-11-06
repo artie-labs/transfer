@@ -33,7 +33,6 @@ func (t *TableData) ShouldSkipMerge(cooldown time.Duration) bool {
 		confidenceInterval := 0.25
 		confidenceDuration := time.Duration(confidenceInterval * float64(cooldown))
 
-		// Padding is added since we are using the flush time interval as the cooldown
 		// Subtract the confidenceDuration from the cooldown to get the adjusted cooldown
 		cooldown = cooldown - confidenceDuration
 	}
