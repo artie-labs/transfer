@@ -11,7 +11,10 @@ description: >-
 We will be running Debezium to fetch CDC logs from MongoDB by using [Change Streams](https://www.mongodb.com/docs/manual/changeStreams/) which is a more performant and reliable approach than tailing the `oplog`.&#x20;
 
 {% hint style="info" %}
-MongoDB server **must** be in a replica set. If your deployment only has a `standalone` server, you can create a replica set with one member.
+MongoDB server **must** be in a replica set. If your deployment only has a `standalone` server, you can create a replica set with one member.&#x20;
+
+\
+Using a standalone server? Check out this [guide](https://www.mongodb.com/docs/manual/tutorial/convert-standalone-to-replica-set/).
 {% endhint %}
 
 ## Finding your MongoDB settings
