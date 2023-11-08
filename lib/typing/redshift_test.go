@@ -25,6 +25,16 @@ func TestRedshiftTypeToKind(t *testing.T) {
 			expectedKd: String,
 		},
 		{
+			name:       "String",
+			rawTypes:   []string{"character varying"},
+			expectedKd: String,
+		},
+		{
+			name:       "String",
+			rawTypes:   []string{"character varying(65535)"},
+			expectedKd: String,
+		},
+		{
 			name:       "Double Precision",
 			rawTypes:   []string{"double precision", "DOUBLE precision"},
 			expectedKd: Float,

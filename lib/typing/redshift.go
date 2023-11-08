@@ -12,13 +12,15 @@ func RedshiftTypeToKind(rawType string) KindDetails {
 		return ParseNumeric(defaultPrefix, rawType)
 	}
 
-	switch strings.ToLower(rawType) {
+	if strings.Contains(rawType, "character varying") {
+		return String
+	}
+
+	switch rawType {
 	case "super":
 		return Struct
 	case "integer", "bigint":
 		return Integer
-	case "character varying":
-		return String
 	case "double precision":
 		return Float
 	case "timestamp with time zone", "timestamp without time zone":
