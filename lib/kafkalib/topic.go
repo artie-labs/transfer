@@ -50,12 +50,10 @@ type TopicConfig struct {
 
 const (
 	defaultKeyFormat = "org.apache.kafka.connect.storage.StringConverter"
+	jsonKeyFormat    = "org.apache.kafka.connect.json.JsonConverter"
 )
 
-var (
-	validKeyFormats = []string{"org.apache.kafka.connect.json.JsonConverter",
-		"org.apache.kafka.connect.storage.StringConverter"}
-)
+var validKeyFormats = []string{jsonKeyFormat, defaultKeyFormat}
 
 func (t *TopicConfig) String() string {
 	if t == nil {
