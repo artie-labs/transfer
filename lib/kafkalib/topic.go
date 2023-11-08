@@ -44,6 +44,7 @@ type TopicConfig struct {
 	SoftDelete                bool                        `yaml:"softDelete"`
 	SkipDelete                bool                        `yaml:"skipDelete"`
 	IncludeArtieUpdatedAt     bool                        `yaml:"includeArtieUpdatedAt"`
+	SupportDownCast           bool                        `yaml:"supportDownCast"`
 	BigQueryPartitionSettings *partition.BigQuerySettings `yaml:"bigQueryPartitionSettings"`
 }
 
@@ -62,8 +63,8 @@ func (t *TopicConfig) String() string {
 	}
 
 	return fmt.Sprintf(
-		"db=%s, schema=%s, tableNameOverride=%s, topic=%s, idempotentKey=%s, cdcFormat=%s, dropDeletedColumns=%v",
-		t.Database, t.Schema, t.TableName, t.Topic, t.IdempotentKey, t.CDCFormat, t.DropDeletedColumns)
+		"db=%s, schema=%s, tableNameOverride=%s, topic=%s, idempotentKey=%s, cdcFormat=%s, dropDeletedColumns=%v, includeArtieUpdatedAt=%v, supportDownCast=%v",
+		t.Database, t.Schema, t.TableName, t.Topic, t.IdempotentKey, t.CDCFormat, t.DropDeletedColumns, t.IncludeArtieUpdatedAt, t.SupportDownCast)
 }
 
 func (t *TopicConfig) Valid() bool {
