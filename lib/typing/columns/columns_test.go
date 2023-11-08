@@ -366,15 +366,19 @@ func (c *ColumnsTestSuite) TestColumns_Mutation() {
 	assert.Equal(c.T(), typing.Struct, barCol.KindDetails)
 
 	// Update
-	cols.UpdateColumn(Column{
-		name:        "foo",
-		KindDetails: typing.Integer,
+	cols.UpdateColumn(UpdateColumnArgs{
+		UpdateCol: Column{
+			name:        "foo",
+			KindDetails: typing.Integer,
+		},
 	})
 
-	cols.UpdateColumn(Column{
-		name:         "bar",
-		KindDetails:  typing.Boolean,
-		defaultValue: "123",
+	cols.UpdateColumn(UpdateColumnArgs{
+		UpdateCol: Column{
+			name:         "bar",
+			KindDetails:  typing.Boolean,
+			defaultValue: "123",
+		},
 	})
 
 	fooCol, isOk = cols.GetColumn("foo")

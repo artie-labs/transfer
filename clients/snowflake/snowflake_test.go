@@ -265,7 +265,9 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 		inMemColumns := tableData.ReadOnlyInMemoryCols()
 		// Since sflkColumns overwrote the format, let's set it correctly again.
-		inMemColumns.UpdateColumn(columns.NewColumn("created_at", typing.ParseValue(s.ctx, "", nil, time.Now().Format(time.RFC3339Nano))))
+		inMemColumns.UpdateColumn(columns.UpdateColumnArgs{
+			UpdateCol: columns.NewColumn("created_at", typing.ParseValue(s.ctx, "", nil, time.Now().Format(time.RFC3339Nano))),
+		})
 		tableData.SetInMemoryColumns(inMemColumns)
 		break
 	}

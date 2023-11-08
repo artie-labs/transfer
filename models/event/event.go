@@ -170,7 +170,9 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 					// This is because we don't want to think that it's okay to drop a column in DWH
 					if kindDetails := typing.ParseValue(ctx, _col, e.OptionalSchema, val); kindDetails.Kind != typing.Invalid.Kind {
 						retrievedColumn.KindDetails = kindDetails
-						inMemoryColumns.UpdateColumn(retrievedColumn, nil)
+						inMemoryColumns.UpdateColumn(columns.UpdateColumnArgs{
+							UpdateCol: retrievedColumn,
+						})
 					}
 				}
 			}

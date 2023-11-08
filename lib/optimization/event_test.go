@@ -220,7 +220,9 @@ func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumns() {
 	assert.True(o.T(), isOk)
 
 	extCol.KindDetails.ExtendedTimeDetails.Format = time.RFC3339Nano
-	tableData.inMemoryColumns.UpdateColumn(columns.NewColumn(extCol.Name(o.ctx, nil), extCol.KindDetails))
+	tableData.inMemoryColumns.UpdateColumn(columns.UpdateColumnArgs{
+		UpdateCol: columns.NewColumn(extCol.Name(o.ctx, nil), extCol.KindDetails),
+	})
 
 	for name, colKindDetails := range map[string]typing.KindDetails{
 		"foo":                  typing.String,

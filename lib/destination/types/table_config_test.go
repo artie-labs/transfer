@@ -73,7 +73,11 @@ func TestDwhTableConfig_ColumnsConcurrency(t *testing.T) {
 				if (j % 2) == 0 {
 					kindDetails = typing.Array
 				}
-				tableCfg.Columns().UpdateColumn(columns.NewColumn("foo", kindDetails))
+
+				tableCfg.Columns().UpdateColumn(columns.UpdateColumnArgs{
+					UpdateCol: columns.NewColumn("foo", kindDetails),
+				})
+
 				assert.Equal(t, 3, len(tableCfg.Columns().GetColumns()), tableCfg.Columns().GetColumns())
 			}
 		}(dwhTableCfg)

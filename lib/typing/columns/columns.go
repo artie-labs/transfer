@@ -133,7 +133,9 @@ func (c *Columns) UpsertColumn(colName string, arg UpsertColumnArg) {
 			col.backfilled = *arg.Backfilled
 		}
 
-		c.UpdateColumn(col, nil)
+		c.UpdateColumn(UpdateColumnArgs{
+			UpdateCol: col,
+		})
 		return
 	}
 
@@ -226,25 +228,22 @@ func (c *Columns) GetColumns() []Column {
 }
 
 type UpdateColumnArgs struct {
+	UpdateCol     Column
+	SupportUpcast bool
 }
 
 // UpdateColumn will update the column and also preserve the `defaultValue` from the previous column if the new column does not have one.
 // If `supportDownCasting` is true, we will also update the column type if possible.
-func (c *Columns) UpdateColumn(updateCol Column, supportUpcasting *bool) {
+func (c *Columns) UpdateColumn(args UpdateColumnArgs) {
 	c.Lock()
 	defer c.Unlock()
 
-	var upcast bool
-	if supportUpcasting != nil {
-		upcast = *supportUpcasting
-	}
-
 	for index, col := range c.columns {
-		if col.name == updateCol.name {
-			c.columns[index] = updateCol
+		if col.name == args.UpdateCol.name {
+			c.columns[index] = args.UpdateCol
 
-			if upcast && c.columns[index].KindDetails.CanBeUpcasted(updateCol.KindDetails) {
-				c.columns[index].KindDetails = updateCol.KindDetails
+			if args.SupportUpcast && c.columns[index].KindDetails.CanBeUpcasted(args.UpdateCol.KindDetails) {
+				c.columns[index].KindDetails = args.UpdateCol.KindDetails
 			}
 
 			return
