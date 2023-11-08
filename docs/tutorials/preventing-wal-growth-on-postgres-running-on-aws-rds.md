@@ -6,6 +6,8 @@ description: >-
 
 # Preventing WAL growth on Postgres running on AWS RDS
 
+Last updated: 11/08/2023
+
 ## What is WAL?
 
 WAL stands for Write-Ahead Logging, which is a method for Postgres to handle change data capture (CDC). Database record changes will be logged and stored within WAL to ensure data integrity.&#x20;
@@ -48,6 +50,7 @@ INSERT INTO test_heartbeat_table (id, ts) VALUES (1, NOW());
 In addition to enabling heartbeats, it is best practice to set up the following:
 
 * Monitoring your Amazon RDS instance for `free_storage_space`.
+* Implement `statement_timeout` so long running transactions do not block replication slots from advancing. \[[AWS guide](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Appendix.PostgreSQL.CommonDBATasks.Parameters.html)]
 * Enable storage autoscaling. The guide to enable this can be [found here](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER\_PIOPS.StorageTypes.html#USER\_PIOPS.Autoscaling).
 * Configure [max\_slot\_wal\_keep\_size](https://www.postgresql.org/docs/current/runtime-config-replication.html) to the desired size
   * The default value is -1
