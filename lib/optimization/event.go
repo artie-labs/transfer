@@ -282,7 +282,7 @@ func (t *TableData) UpdateInMemoryColumnsFromDestination(ctx context.Context, co
 				inMemoryCol.KindDetails.ExtendedDecimalDetails = foundColumn.KindDetails.ExtendedDecimalDetails
 			}
 
-			t.inMemoryColumns.UpdateColumn(inMemoryCol)
+			t.inMemoryColumns.UpdateColumn(inMemoryCol, &t.TopicConfig.SupportUpcast)
 		}
 	}
 

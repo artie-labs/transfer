@@ -19,6 +19,26 @@ type KindDetails struct {
 	ExtendedDecimalDetails *decimal.Decimal
 }
 
+// CanBeUpcasted - Upcasting or widening conversion refers to converting from one data type to another without having precision loss
+// A clear example of this is converting from an int to a float, or boolean to a string.
+func (k *KindDetails) CanBeUpcasted(destKindDetails KindDetails) bool {
+	// Today, we only support the following down cast conversion:
+	// 1. Int / float / boolean -> string
+	// 2. Integer -> Float
+	switch k.Kind {
+	case Integer.Kind:
+		if destKindDetails.Kind == Float.Kind || destKindDetails.Kind == String.Kind {
+			return true
+		}
+	case Float.Kind, Boolean.Kind:
+		if destKindDetails.Kind == String.Kind {
+			return true
+		}
+	}
+
+	return false
+}
+
 // Summarized this from Snowflake + Reflect.
 // In the future, we can support Geo objects.
 var (
