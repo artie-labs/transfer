@@ -22,7 +22,7 @@ import (
 // Then from all the custom types,
 func JSONEToMap(val []byte) (map[string]interface{}, error) {
 	// We are escaping `NaN`, `Infinity` and `-Infinity` (literal values)
-	re := regexp.MustCompile(`\bNaN\b|"\bNaN\b"|-\bInfinity\b|"-\bInfinity\b|\bInfinity\b|"\bInfinity\b"`)
+	re := regexp.MustCompile(`\bNaN\b|"\bNaN\b"|-\bInfinity\b|"-\bInfinity\b"|\bInfinity\b|"\bInfinity\b"`)
 	val = []byte(re.ReplaceAllStringFunc(string(val), func(match string) string {
 		if strings.Contains(match, "\"") {
 			return match
