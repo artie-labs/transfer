@@ -49,7 +49,13 @@ func TestMarshal(t *testing.T) {
    	},
 	"test_nan": NaN,
 	"test_nan_string": "NaN",
-	"test_nan_string33": "NaNaNaNa"
+	"test_nan_string33": "NaNaNaNa",
+	"test_infinity": Infinity,
+	"test_infinity_string": "Infinity",
+	"test_infinity_string1": "Infinity123",
+	"test_negative_infinity": -Infinity,
+	"test_negative_infinity_string": "-Infinity",
+	"test_negative_infinity_string1": "-Infinity123"
 }
 `)
 	result, err := JSONEToMap(bsonData)
@@ -70,7 +76,19 @@ func TestMarshal(t *testing.T) {
 	assert.Equal(t, result["test_list"], []interface{}{float64(1), float64(2), float64(3), float64(4), "hello"})
 	assert.Equal(t, result["test_nested_object"], map[string]interface{}{"a": map[string]interface{}{"b": map[string]interface{}{"c": "hello"}}})
 	assert.Equal(t, "2023-03-16T01:18:37+00:00", result["test_timestamp"])
+
+	// NaN
 	assert.Equal(t, nil, result["test_nan"])
 	assert.Equal(t, "NaN", result["test_nan_string"]) // This should not be escaped.
 	assert.Equal(t, "NaNaNaNa", result["test_nan_string33"])
+
+	// Infinity
+	assert.Equal(t, nil, result["test_infinity"])
+	assert.Equal(t, "Infinity", result["test_infinity_string"])     // This should not be escaped.
+	assert.Equal(t, "Infinity123", result["test_infinity_string1"]) // This should not be escaped.
+
+	// Negative Infinity
+	assert.Equal(t, nil, result["test_negative_infinity"])
+	assert.Equal(t, "-Infinity", result["test_negative_infinity_string"])     // This should not be escaped.
+	assert.Equal(t, "-Infinity123", result["test_negative_infinity_string1"]) // This should not be escaped.
 }

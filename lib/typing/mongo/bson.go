@@ -21,9 +21,8 @@ import (
 // JSONEToMap will take JSONE data in bytes, parse all the custom types
 // Then from all the custom types,
 func JSONEToMap(val []byte) (map[string]interface{}, error) {
-	// RegEx on the actual value of `NaN` only (raw value and quotes).
-	// This is because we cannot use RegEx to find only NaN.
-	re := regexp.MustCompile(`\bNaN\b|"\bNaN\b"`)
+	// We are escaping `NaN`, `Infinity` and `-Infinity` (literal values)
+	re := regexp.MustCompile(`\bNaN\b|"\bNaN\b"|-\bInfinity\b|"-\bInfinity\b|\bInfinity\b|"\bInfinity\b"`)
 	val = []byte(re.ReplaceAllStringFunc(string(val), func(match string) string {
 		if strings.Contains(match, "\"") {
 			return match
