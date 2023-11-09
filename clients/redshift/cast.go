@@ -25,6 +25,7 @@ const (
 // This currently only works for STRING and SUPER data types.
 func replaceExceededValues(colVal interface{}, colKind columns.Column) interface{} {
 	numOfChars := len(fmt.Sprint(colVal))
+
 	switch colKind.KindDetails.Kind {
 	case typing.Struct.Kind: // Assuming this corresponds to SUPER type in Redshift
 		if numOfChars > maxRedshiftSuperLen {
@@ -52,10 +53,6 @@ func (s *Store) CastColValStaging(ctx context.Context, colVal interface{}, colKi
 
 		// This matches the COPY clause for NULL terminator.
 		return `\N`, nil
-	}
-
-	if s.skipLgCols {
-		colVal = replaceExceededValues(colVal, colKind)
 	}
 
 	colValString := fmt.Sprint(colVal)
@@ -114,6 +111,12 @@ func (s *Store) CastColValStaging(ctx context.Context, colVal interface{}, colKi
 		}
 
 		return val.String(), nil
+	}
+
+	// TODO: Write a test for this.
+	// Checks for DDL overflow needs to be done at the end in case there are any conversions that need to be done.
+	if s.skipLgCols {
+		colValString = fmt.Sprint(replaceExceededValues(colVal, colKind))
 	}
 
 	return colValString, nil
