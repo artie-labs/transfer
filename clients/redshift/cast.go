@@ -110,7 +110,6 @@ func (s *Store) CastColValStaging(ctx context.Context, colVal interface{}, colKi
 		return val.String(), nil
 	}
 
-	// TODO: Write a test for this.
 	// Checks for DDL overflow needs to be done at the end in case there are any conversions that need to be done.
 	if s.skipLgCols {
 		colValString = fmt.Sprint(replaceExceededValues(colVal, colKind))
