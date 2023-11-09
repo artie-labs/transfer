@@ -29,9 +29,7 @@ func replaceExceededValues(colVal interface{}, colKind columns.Column) interface
 	switch colKind.KindDetails.Kind {
 	case typing.Struct.Kind: // Assuming this corresponds to SUPER type in Redshift
 		if numOfChars > maxRedshiftSuperLen {
-			return map[string]interface{}{
-				"key": constants.ExceededValueMarker,
-			}
+			return fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker)
 		}
 	case typing.String.Kind:
 		if numOfChars > maxRedshiftVarCharLen {
