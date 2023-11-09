@@ -27,6 +27,54 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func (r *RedshiftTestSuite) TestReplaceExceededValues() {
+	type _tc struct {
+		name           string
+		colVal         interface{}
+		colKind        columns.Column
+		expectedResult interface{}
+	}
+
+	tcs := []_tc{
+		{
+			name:   "string",
+			colVal: stringutil.Random(maxRedshiftVarCharLen + 1),
+			colKind: columns.Column{
+				KindDetails: typing.String,
+			},
+			expectedResult: constants.ExceededValueMarker,
+		},
+		{
+			name:   "string - not masked",
+			colVal: "thisissuperlongbutnotlongenoughtogetmasked",
+			colKind: columns.Column{
+				KindDetails: typing.String,
+			},
+			expectedResult: "thisissuperlongbutnotlongenoughtogetmasked",
+		},
+		{
+			name:   "struct",
+			colVal: fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(maxRedshiftSuperLen+1)),
+			colKind: columns.Column{
+				KindDetails: typing.Struct,
+			},
+			expectedResult: fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker),
+		},
+		{
+			name:   "struct - not masked",
+			colVal: `{"foo": "bar"}`,
+			colKind: columns.Column{
+				KindDetails: typing.Struct,
+			},
+			expectedResult: `{"foo": "bar"}`,
+		},
+	}
+
+	for _, tc := range tcs {
+		assert.Equal(r.T(), tc.expectedResult, replaceExceededValues(tc.colVal, tc.colKind), tc.name)
+	}
+}
+
 type _testCase struct {
 	name    string
 	colVal  interface{}
