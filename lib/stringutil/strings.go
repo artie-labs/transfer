@@ -5,7 +5,20 @@ import (
 	"math/rand"
 	"strings"
 	"time"
+	"unicode"
 )
+
+// RemoveNonPrintableChars - Redshift SUPER and VARCHAR do not accept non-printable ASCII characters.
+// This function will remove them.
+func RemoveNonPrintableChars(str string) string {
+	return strings.Map(func(r rune) rune {
+		if unicode.IsPrint(r) {
+			return r
+		}
+
+		return -1
+	}, str)
+}
 
 // Override - pass in a list of vals, the right most value that is not empty will override.
 func Override(vals ...string) string {
@@ -58,10 +71,6 @@ func Empty(vals ...string) bool {
 func EscapeSpaces(col string) (escaped bool, newString string) {
 	subStr := " "
 	return strings.Contains(col, subStr), strings.ReplaceAll(col, subStr, "__")
-}
-
-func LineBreaksToCarriageReturns(paragraph string) string {
-	return strings.ReplaceAll(paragraph, "\n", `\n`)
 }
 
 func stringWithCharset(length int, charset string) string {
