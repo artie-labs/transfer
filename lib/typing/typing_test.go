@@ -67,8 +67,7 @@ func (t *TypingTestSuite) TestJSONString() {
 			input: ``,
 		},
 		{
-			input:    `   `,
-			expected: true,
+			input: `   `,
 		},
 	}
 
