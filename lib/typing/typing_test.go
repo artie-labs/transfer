@@ -63,6 +63,13 @@ func (t *TypingTestSuite) TestJSONString() {
 		{
 			input: `[1, 2, 3, 4`,
 		},
+		{
+			input: ``,
+		},
+		{
+			input:    `   `,
+			expected: true,
+		},
 	}
 
 	for _, tc := range testCases {

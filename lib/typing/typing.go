@@ -73,11 +73,13 @@ func NewKindDetailsFromTemplate(details KindDetails, extendedType ext.ExtendedTi
 // Once there, we will then check if it's a JSON string or not.
 // This is an optimization since JSON string checking is expensive.
 func IsJSON(str string) bool {
+	str = strings.TrimSpace(str)
+
 	if len(str) < 2 {
 		return false
 	}
 
-	valStringChars := []rune(strings.TrimSpace(str))
+	valStringChars := []rune(str)
 	firstChar := string(valStringChars[0])
 	lastChar := string(valStringChars[len(valStringChars)-1])
 
