@@ -45,6 +45,26 @@ INSERT INTO test_heartbeat_table (id, ts) VALUES (1, NOW());
 
 <figure><img src="../.gitbook/assets/image (8).png" alt=""><figcaption></figcaption></figure>
 
+## If you do have heartbeats enabled
+
+* Does the heartbeats table (`test_heartbeat_table`) actually exist?
+* Is the heartbeats table included in your Postgres PUBLICATIONS?
+* Does the service account have permissions to write to the table?
+
+## Monitor any long-running transactions
+
+Are there any long-running queries that may prevent your replication slot from being advanced? Check if there are any long running queries by running this:
+
+```sql
+SELECT
+  pid,
+  now() - pg_stat_activity.query_start AS duration,
+  query,
+  state
+FROM pg_stat_activity
+WHERE (now() - pg_stat_activity.query_start) > interval '1 minute';
+```
+
 ## Additional preventative measures
 
 In addition to enabling heartbeats, it is best practice to set up the following:
