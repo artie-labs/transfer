@@ -15,16 +15,55 @@ import (
 )
 
 func (p *MongoTestSuite) TestGetPrimaryKey() {
-	valString := `Struct{id=1001}`
-	tc := &kafkalib.TopicConfig{
-		CDCKeyFormat: "org.apache.kafka.connect.storage.StringConverter",
+	type _tc struct {
+		name          string
+		key           []byte
+		keyFormat     string
+		expectedValue any
 	}
 
-	pkMap, err := p.GetPrimaryKey(p.ctx, []byte(valString), tc)
-	pkVal, isOk := pkMap["id"]
-	assert.True(p.T(), isOk)
-	assert.Equal(p.T(), pkVal, "1001")
-	assert.Equal(p.T(), err, nil)
+	tcs := []_tc{
+		{
+			name:          "id in json format, value = number",
+			key:           []byte(`{"id": 1001}`),
+			keyFormat:     debezium.KeyFormatJSON,
+			expectedValue: float64(1001),
+		},
+		{
+			name:          "id in string format",
+			key:           []byte(`Struct{id=1001}`),
+			keyFormat:     debezium.KeyFormatString,
+			expectedValue: "1001",
+		},
+		{
+			name:          "id in json format, value = object id",
+			key:           []byte(`{"schema":{"type":"struct","fields":[{"type":"string","optional":false,"field":"id"}],"optional":false,"name":"1a75f632-29d2-419b-9ffe-d18fa12d74d5.38d5d2db-870a-4a38-a76c-9891b0e5122d.myFirstDatabase.stock.Key"},"payload":{"id":"{\"$oid\": \"63e3a3bf314a4076d249e203\"}"}}`),
+			keyFormat:     debezium.KeyFormatJSON,
+			expectedValue: "63e3a3bf314a4076d249e203",
+		},
+		{
+			name:          "id in string format, value = object id",
+			key:           []byte(`Struct{id={"$oid": "65566afbfefeb3c639deaf5d"}}`),
+			keyFormat:     debezium.KeyFormatString,
+			expectedValue: "65566afbfefeb3c639deaf5d",
+		},
+	}
+
+	for _, tc := range tcs {
+		pkMap, err := p.GetPrimaryKey(p.ctx, tc.key, &kafkalib.TopicConfig{
+			CDCKeyFormat: tc.keyFormat,
+		})
+
+		assert.Equal(p.T(), err, nil, tc.name)
+
+		pkVal, isOk := pkMap["_id"]
+		assert.True(p.T(), isOk, tc.name)
+		assert.Equal(p.T(), pkVal, tc.expectedValue, tc.name)
+
+		// The `id` column should not exist anymore
+		_, isOk = pkMap["id"]
+		assert.False(p.T(), isOk)
+	}
 }
 
 func (p *MongoTestSuite) TestSource_GetExecutionTime() {

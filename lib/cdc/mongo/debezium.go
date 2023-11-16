@@ -6,14 +6,16 @@ import (
 	"fmt"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
+
+	"github.com/artie-labs/transfer/lib/debezium"
+
 	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/debezium"
-
 	"github.com/artie-labs/transfer/lib/cdc"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/mongo"
@@ -72,8 +74,43 @@ func (d *Debezium) Labels() []string {
 	return []string{constants.DBZMongoFormat}
 }
 
-func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (kvMap map[string]interface{}, err error) {
-	return debezium.ParsePartitionKey(key, tc.CDCKeyFormat)
+func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (map[string]interface{}, error) {
+	kvMap, err := debezium.ParsePartitionKey(key, tc.CDCKeyFormat)
+	if err != nil {
+		return nil, err
+	}
+
+	// This code is needed because the partition key bytes returns nested objects as a string
+	// Such that, the value looks like this: {"id":"{\"$oid\": \"640127e4beeb1ccfc821c25b\"}"}
+	for k, v := range kvMap {
+		var obj map[string]interface{}
+		if err = json.Unmarshal([]byte(fmt.Sprint(v)), &obj); err != nil {
+			continue
+		}
+
+		// If the value is indeed a nested JSON object, we'll pass it along.
+		kvMap[k] = obj
+	}
+
+	// Now that we have the JSON extended object, we'll parse it down into bytes, so we can feed it into `JSONEToMap`
+	kvMapBytes, err := bson.MarshalExtJSON(kvMap, false, false)
+	if err != nil {
+		return nil, err
+	}
+
+	kvMap, err = mongo.JSONEToMap(kvMapBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	value, isOk := kvMap["id"]
+	if isOk {
+		// Debezium will write MongoDB's primary key `_id` as `id` in the partition key, so we are renaming it back to `_id`
+		kvMap["_id"] = value
+		delete(kvMap, "id")
+	}
+
+	return kvMap, nil
 }
 
 func (s *SchemaEventPayload) Operation() string {
