@@ -72,8 +72,22 @@ func (d *Debezium) Labels() []string {
 	return []string{constants.DBZMongoFormat}
 }
 
-func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (kvMap map[string]interface{}, err error) {
-	return debezium.ParsePartitionKey(key, tc.CDCKeyFormat)
+func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (map[string]interface{}, error) {
+	kvMap, err := debezium.ParsePartitionKey(key, tc.CDCKeyFormat)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse kvMap
+
+	value, isOk := kvMap["id"]
+	if isOk {
+		// This is done because Debezium will rewrite _id as id in the partition key.
+		kvMap["_id"] = value
+		delete(kvMap, "id")
+	}
+
+	return kvMap, nil
 }
 
 func (s *SchemaEventPayload) Operation() string {
