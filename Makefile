@@ -42,3 +42,7 @@ bench_typing:
 .PHONY: bench_redshift
 bench_redshift:
 	go test ./clients/redshift -bench=Bench -benchtime=20s
+
+.PHONY: bench_mongo
+bench_mongo:
+	go test ./lib/cdc/mongo -bench=Bench -benchtime=20s
