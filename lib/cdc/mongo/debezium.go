@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
+
 	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -72,8 +74,18 @@ func (d *Debezium) Labels() []string {
 	return []string{constants.DBZMongoFormat}
 }
 
-func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (kvMap map[string]interface{}, err error) {
-	return debezium.ParsePartitionKey(key, tc.CDCKeyFormat)
+func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (map[string]interface{}, error) {
+	kvMap, err := debezium.ParsePartitionKey(key, tc.CDCKeyFormat)
+	if err != nil {
+		return nil, err
+	}
+
+	bytes, err := bson.MarshalExtJSON(kvMap, false, false)
+	if err != nil {
+		return nil, err
+	}
+
+	return mongo.JSONEToMap(bytes)
 }
 
 func (s *SchemaEventPayload) Operation() string {

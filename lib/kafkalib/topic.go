@@ -48,11 +48,12 @@ type TopicConfig struct {
 }
 
 const (
-	defaultKeyFormat = "org.apache.kafka.connect.storage.StringConverter"
-	jsonFormat       = "org.apache.kafka.connect.json.JsonConverter"
+	// StringKeyFormat is also the default format
+	StringKeyFormat = "org.apache.kafka.connect.storage.StringConverter"
+	JSONKeyFormat   = "org.apache.kafka.connect.json.JsonConverter"
 )
 
-var validKeyFormats = []string{defaultKeyFormat, jsonFormat}
+var validKeyFormats = []string{StringKeyFormat, JSONKeyFormat}
 
 func (t *TopicConfig) String() string {
 	if t == nil {
@@ -76,7 +77,7 @@ func (t *TopicConfig) Valid() bool {
 	}
 
 	if t.CDCKeyFormat == "" {
-		t.CDCKeyFormat = defaultKeyFormat
+		t.CDCKeyFormat = StringKeyFormat
 	}
 
 	contains := array.StringContains(validKeyFormats, t.CDCKeyFormat)

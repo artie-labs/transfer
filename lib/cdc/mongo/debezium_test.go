@@ -15,16 +15,43 @@ import (
 )
 
 func (p *MongoTestSuite) TestGetPrimaryKey() {
-	valString := `Struct{id=1001}`
-	tc := &kafkalib.TopicConfig{
-		CDCKeyFormat: "org.apache.kafka.connect.storage.StringConverter",
+	type _tc struct {
+		val           string
+		format        string
+		expectedValue any
 	}
 
-	pkMap, err := p.GetPrimaryKey(p.ctx, []byte(valString), tc)
-	pkVal, isOk := pkMap["id"]
-	assert.True(p.T(), isOk)
-	assert.Equal(p.T(), pkVal, "1001")
-	assert.Equal(p.T(), err, nil)
+	tcs := []_tc{
+		{
+			val:           `Struct{id=1001}`,
+			format:        kafkalib.StringKeyFormat,
+			expectedValue: "1001",
+		},
+		{
+			val:           `{"id": {"$numberLong": "1002"}}`,
+			format:        kafkalib.JSONKeyFormat,
+			expectedValue: float64(1002),
+		},
+		{
+			val:           `{"id":{"$oid": "63793b4014f7f28f570c524e"}}`,
+			format:        kafkalib.JSONKeyFormat,
+			expectedValue: "63793b4014f7f28f570c524e",
+		},
+	}
+
+	for _, tc := range tcs {
+		topicCfg := &kafkalib.TopicConfig{
+			CDCKeyFormat: tc.format,
+		}
+
+		pkMap, err := p.GetPrimaryKey(p.ctx, []byte(tc.val), topicCfg)
+		assert.Equal(p.T(), err, nil)
+
+		pkVal, isOk := pkMap["id"]
+		assert.True(p.T(), isOk)
+		assert.Equal(p.T(), tc.expectedValue, pkVal)
+	}
+
 }
 
 func (p *MongoTestSuite) TestSource_GetExecutionTime() {

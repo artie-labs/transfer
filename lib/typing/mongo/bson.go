@@ -30,7 +30,6 @@ func JSONEToMap(val []byte) (map[string]interface{}, error) {
 		return "null"
 	}))
 
-	var jsonMap map[string]interface{}
 	var bsonDoc bson.D
 	err := bson.UnmarshalExtJSON(val, false, &bsonDoc)
 	if err != nil {
@@ -43,6 +42,7 @@ func JSONEToMap(val []byte) (map[string]interface{}, error) {
 		return nil, err
 	}
 
+	var jsonMap map[string]interface{}
 	err = json.Unmarshal(bytes, &jsonMap)
 	return jsonMap, err
 }
