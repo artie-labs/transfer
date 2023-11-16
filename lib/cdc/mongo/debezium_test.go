@@ -59,6 +59,10 @@ func (p *MongoTestSuite) TestGetPrimaryKey() {
 		pkVal, isOk := pkMap["_id"]
 		assert.True(p.T(), isOk, tc.name)
 		assert.Equal(p.T(), pkVal, tc.expectedValue, tc.name)
+
+		// The `id` column should not exist anymore
+		_, isOk = pkMap["id"]
+		assert.False(p.T(), isOk)
 	}
 }
 
