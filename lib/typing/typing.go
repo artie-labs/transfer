@@ -74,7 +74,6 @@ func NewKindDetailsFromTemplate(details KindDetails, extendedType ext.ExtendedTi
 // This is an optimization since JSON string checking is expensive.
 func IsJSON(str string) bool {
 	str = strings.TrimSpace(str)
-
 	if len(str) < 2 {
 		return false
 	}
