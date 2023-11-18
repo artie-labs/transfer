@@ -30,7 +30,7 @@ import (
 func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 	type _tc struct {
 		name           string
-		colVal         interface{}
+		colVal         string
 		colKind        columns.Column
 		expectedResult interface{}
 	}
@@ -235,6 +235,39 @@ func (r *RedshiftTestSuite) TestCastColValStaging_Array() {
 				true,
 			},
 			expectedString: `[true,true,false,false,true]`,
+		},
+		{
+			name: "json object, but this is inferred as a string",
+			colVal: map[string]interface{}{
+				"foo": "bar",
+			},
+			colKind: columns.Column{
+				KindDetails: typing.String,
+			},
+			expectedString: `{"foo":"bar"}`,
+		},
+		{
+			name: "list of json object, but this is inferred as a string",
+			colVal: []map[string]interface{}{
+				{
+					"foo": "bar",
+				},
+				{
+					"hello": "world",
+				},
+			},
+			colKind: columns.Column{
+				KindDetails: typing.String,
+			},
+			expectedString: `[{"foo":"bar"},{"hello":"world"}]`,
+		},
+		{
+			name:   "string",
+			colVal: "hello world",
+			colKind: columns.Column{
+				KindDetails: typing.String,
+			},
+			expectedString: "hello world",
 		},
 	}
 

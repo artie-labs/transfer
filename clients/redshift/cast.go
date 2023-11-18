@@ -23,8 +23,8 @@ const (
 
 // replaceExceededValues - takes `colVal` interface{} and `colKind` columns.Column and replaces the value with an empty string if it exceeds the max length.
 // This currently only works for STRING and SUPER data types.
-func replaceExceededValues(colVal interface{}, colKind columns.Column) interface{} {
-	numOfChars := len(fmt.Sprint(colVal))
+func replaceExceededValues(colVal string, colKind columns.Column) string {
+	numOfChars := len(colVal)
 	switch colKind.KindDetails.Kind {
 	case typing.Struct.Kind: // Assuming this corresponds to SUPER type in Redshift
 		if numOfChars > maxRedshiftSuperLen {
@@ -73,9 +73,21 @@ func (s *Store) CastColValStaging(ctx context.Context, colVal interface{}, colKi
 		}
 
 	case typing.String.Kind:
+		// Check for arrays
 		list, err := array.InterfaceToArrayString(colVal, false)
 		if err == nil {
 			colValString = "[" + strings.Join(list, ",") + "]"
+		}
+
+		// This should also check if the colValString contains Go's internal string representation of a map[string]interface{}
+		_, isOk := colVal.(map[string]interface{})
+		if isOk {
+			colValBytes, err := json.Marshal(colVal)
+			if err != nil {
+				return "", err
+			}
+
+			colValString = string(colValBytes)
 		}
 	case typing.Struct.Kind:
 		if colKind.KindDetails == typing.Struct {
@@ -112,7 +124,7 @@ func (s *Store) CastColValStaging(ctx context.Context, colVal interface{}, colKi
 
 	// Checks for DDL overflow needs to be done at the end in case there are any conversions that need to be done.
 	if s.skipLgCols {
-		colValString = fmt.Sprint(replaceExceededValues(colVal, colKind))
+		colValString = replaceExceededValues(colValString, colKind)
 	}
 
 	return colValString, nil

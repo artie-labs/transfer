@@ -28,6 +28,7 @@ func (r *RedshiftTestSuite) SetupTest() {
 	r.fakeStore = &mocks.FakeStore{}
 	store := db.Store(r.fakeStore)
 	r.store = LoadRedshift(r.ctx, &store)
+	r.store.skipLgCols = true
 }
 
 func TestRedshiftTestSuite(t *testing.T) {
