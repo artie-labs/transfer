@@ -236,6 +236,16 @@ func (r *RedshiftTestSuite) TestCastColValStaging_Array() {
 			},
 			expectedString: `[true,true,false,false,true]`,
 		},
+		{
+			name: "json object, but this is inferred as a string",
+			colVal: map[string]interface{}{
+				"foo": "bar",
+			},
+			colKind: columns.Column{
+				KindDetails: typing.String,
+			},
+			expectedString: `{"foo":"bar"}`,
+		},
 	}
 
 	for _, testCase := range testCases {

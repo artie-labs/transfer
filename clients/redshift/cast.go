@@ -73,9 +73,21 @@ func (s *Store) CastColValStaging(ctx context.Context, colVal interface{}, colKi
 		}
 
 	case typing.String.Kind:
+		// Check for arrays
 		list, err := array.InterfaceToArrayString(colVal, false)
 		if err == nil {
 			colValString = "[" + strings.Join(list, ",") + "]"
+		}
+
+		// This should also check if the colValString contains Go's internal string representation of a map[string]interface{}
+		_, isOk := colVal.(map[string]interface{})
+		if isOk {
+			colValBytes, err := json.Marshal(colVal)
+			if err != nil {
+				return "", err
+			}
+
+			colValString = string(colValBytes)
 		}
 	case typing.Struct.Kind:
 		if colKind.KindDetails == typing.Struct {
