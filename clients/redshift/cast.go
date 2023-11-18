@@ -23,7 +23,7 @@ const (
 
 // replaceExceededValues - takes `colVal` interface{} and `colKind` columns.Column and replaces the value with an empty string if it exceeds the max length.
 // This currently only works for STRING and SUPER data types.
-func replaceExceededValues(colVal string, colKind columns.Column) interface{} {
+func replaceExceededValues(colVal string, colKind columns.Column) string {
 	numOfChars := len(colVal)
 	switch colKind.KindDetails.Kind {
 	case typing.Struct.Kind: // Assuming this corresponds to SUPER type in Redshift
@@ -124,7 +124,7 @@ func (s *Store) CastColValStaging(ctx context.Context, colVal interface{}, colKi
 
 	// Checks for DDL overflow needs to be done at the end in case there are any conversions that need to be done.
 	if s.skipLgCols {
-		colValString = fmt.Sprint(replaceExceededValues(colValString, colKind))
+		colValString = replaceExceededValues(colValString, colKind)
 	}
 
 	return colValString, nil
