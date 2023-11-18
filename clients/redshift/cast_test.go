@@ -246,6 +246,14 @@ func (r *RedshiftTestSuite) TestCastColValStaging_Array() {
 			},
 			expectedString: `{"foo":"bar"}`,
 		},
+		{
+			name:   "string",
+			colVal: "hello world",
+			colKind: columns.Column{
+				KindDetails: typing.String,
+			},
+			expectedString: "hello world",
+		},
 	}
 
 	for _, testCase := range testCases {
