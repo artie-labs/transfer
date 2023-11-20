@@ -6,8 +6,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-type SnowflakeKind string
-
 // https://docs.snowflake.com/en/sql-reference/intro-summary-data-types.html
 
 func SnowflakeTypeToKind(snowflakeType string) KindDetails {
