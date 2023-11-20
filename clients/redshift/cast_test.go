@@ -32,7 +32,7 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 		name           string
 		colVal         string
 		colKind        columns.Column
-		expectedResult interface{}
+		expectedResult string
 	}
 
 	tcs := []_tc{

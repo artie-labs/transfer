@@ -23,16 +23,6 @@ func Override(vals ...string) string {
 	return retVal
 }
 
-func Reverse(val string) string {
-	var reverseParts []rune
-	valRune := []rune(val)
-	for i := len(val) - 1; i >= 0; i-- {
-		reverseParts = append(reverseParts, valRune[i])
-	}
-
-	return string(reverseParts)
-}
-
 func Wrap(colVal interface{}, noQuotes bool) string {
 	colVal = strings.ReplaceAll(fmt.Sprint(colVal), `\`, `\\`)
 	// The normal string escape is to do for O'Reilly is O\\'Reilly, but Snowflake escapes via \'
@@ -58,10 +48,6 @@ func Empty(vals ...string) bool {
 func EscapeSpaces(col string) (escaped bool, newString string) {
 	subStr := " "
 	return strings.Contains(col, subStr), strings.ReplaceAll(col, subStr, "__")
-}
-
-func LineBreaksToCarriageReturns(paragraph string) string {
-	return strings.ReplaceAll(paragraph, "\n", `\n`)
 }
 
 func stringWithCharset(length int, charset string) string {

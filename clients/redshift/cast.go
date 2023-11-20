@@ -73,9 +73,8 @@ func (s *Store) CastColValStaging(ctx context.Context, colVal interface{}, colKi
 		}
 
 	case typing.String.Kind:
-		// Check for arrays
-		list, err := array.InterfaceToArrayString(colVal, false)
-		if err == nil {
+		list, convErr := array.InterfaceToArrayString(colVal, false)
+		if convErr == nil {
 			colValString = "[" + strings.Join(list, ",") + "]"
 		}
 
