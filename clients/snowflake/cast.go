@@ -7,15 +7,11 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/typing/decimal"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
-	"github.com/artie-labs/transfer/lib/stringutil"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
-
+	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
@@ -29,7 +25,6 @@ func castColValStaging(ctx context.Context, colVal interface{}, colKind columns.
 
 	colValString := fmt.Sprint(colVal)
 	switch colKind.KindDetails.Kind {
-	// All the other types do not need string wrapping.
 	case typing.ETime.Kind:
 		extTime, err := ext.ParseFromInterface(ctx, colVal)
 		if err != nil {
@@ -48,6 +43,7 @@ func castColValStaging(ctx context.Context, colVal interface{}, colKind columns.
 		}
 
 	case typing.String.Kind:
+		// If the value is JSON, then we should parse the JSON into a string.
 		_, isOk := colVal.(map[string]interface{})
 		if isOk {
 			bytes, err := json.Marshal(colVal)
@@ -57,6 +53,7 @@ func castColValStaging(ctx context.Context, colVal interface{}, colKind columns.
 
 			colValString = string(bytes)
 		} else {
+			// Else, make sure we escape the quotes.
 			colValString = stringutil.Wrap(colVal, true)
 		}
 	case typing.Struct.Kind:
