@@ -31,7 +31,7 @@ type _testCase struct {
 }
 
 func evaluateTestCase(t *testing.T, ctx context.Context, testCase _testCase) {
-	actualString, actualErr := CastColValStaging(ctx, testCase.colVal, testCase.colKind)
+	actualString, actualErr := castColValStaging(ctx, testCase.colVal, testCase.colKind)
 	if testCase.expectErr {
 		assert.Error(t, actualErr, testCase.name)
 	} else {
