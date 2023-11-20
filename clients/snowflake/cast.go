@@ -7,21 +7,17 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/typing/decimal"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
-	"github.com/artie-labs/transfer/lib/stringutil"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
-
+	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-// CastColValStaging - takes `colVal` interface{} and `colKind` typing.Column and converts the value into a string value
+// castColValStaging - takes `colVal` interface{} and `colKind` typing.Column and converts the value into a string value
 // This is necessary because CSV writers require values to in `string`.
-func CastColValStaging(ctx context.Context, colVal interface{}, colKind columns.Column) (string, error) {
+func castColValStaging(ctx context.Context, colVal interface{}, colKind columns.Column) (string, error) {
 	if colVal == nil {
 		// \\N needs to match NULL_IF(...) from ddl.go
 		return `\\N`, nil
@@ -29,7 +25,6 @@ func CastColValStaging(ctx context.Context, colVal interface{}, colKind columns.
 
 	colValString := fmt.Sprint(colVal)
 	switch colKind.KindDetails.Kind {
-	// All the other types do not need string wrapping.
 	case typing.ETime.Kind:
 		extTime, err := ext.ParseFromInterface(ctx, colVal)
 		if err != nil {
@@ -48,7 +43,19 @@ func CastColValStaging(ctx context.Context, colVal interface{}, colKind columns.
 		}
 
 	case typing.String.Kind:
-		colValString = stringutil.Wrap(colVal, true)
+		// If the value is JSON, then we should parse the JSON into a string.
+		_, isOk := colVal.(map[string]interface{})
+		if isOk {
+			bytes, err := json.Marshal(colVal)
+			if err != nil {
+				return "", err
+			}
+
+			colValString = string(bytes)
+		} else {
+			// Else, make sure we escape the quotes.
+			colValString = stringutil.Wrap(colVal, true)
+		}
 	case typing.Struct.Kind:
 		if colKind.KindDetails == typing.Struct {
 			if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
@@ -73,7 +80,6 @@ func CastColValStaging(ctx context.Context, colVal interface{}, colKind columns.
 		}
 
 		colValString = string(colValBytes)
-
 	case typing.EDecimal.Kind:
 		val, isOk := colVal.(*decimal.Decimal)
 		if !isOk {

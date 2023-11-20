@@ -31,7 +31,7 @@ type _testCase struct {
 }
 
 func evaluateTestCase(t *testing.T, ctx context.Context, testCase _testCase) {
-	actualString, actualErr := CastColValStaging(ctx, testCase.colVal, testCase.colKind)
+	actualString, actualErr := castColValStaging(ctx, testCase.colVal, testCase.colKind)
 	if testCase.expectErr {
 		assert.Error(t, actualErr, testCase.name)
 	} else {
@@ -42,6 +42,15 @@ func evaluateTestCase(t *testing.T, ctx context.Context, testCase _testCase) {
 
 func (s *SnowflakeTestSuite) TestCastColValStaging_Basic() {
 	testCases := []_testCase{
+		{
+			name:   "colKind = string, colVal = JSON (this happens because of schema inference)",
+			colVal: map[string]interface{}{"hello": "world"},
+			colKind: columns.Column{
+				KindDetails: typing.String,
+			},
+
+			expectedString: `{"hello":"world"}`,
+		},
 		{
 			name:   "empty string",
 			colVal: "",
