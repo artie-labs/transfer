@@ -43,6 +43,15 @@ func evaluateTestCase(t *testing.T, ctx context.Context, testCase _testCase) {
 func (s *SnowflakeTestSuite) TestCastColValStaging_Basic() {
 	testCases := []_testCase{
 		{
+			name:   "colKind = string, colVal = JSON (this happens because of schema inference)",
+			colVal: map[string]interface{}{"hello": "world"},
+			colKind: columns.Column{
+				KindDetails: typing.String,
+			},
+
+			expectedString: `{"hello":"world"}`,
+		},
+		{
 			name:   "empty string",
 			colVal: "",
 			colKind: columns.Column{

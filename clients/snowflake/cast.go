@@ -48,7 +48,17 @@ func castColValStaging(ctx context.Context, colVal interface{}, colKind columns.
 		}
 
 	case typing.String.Kind:
-		colValString = stringutil.Wrap(colVal, true)
+		_, isOk := colVal.(map[string]interface{})
+		if isOk {
+			bytes, err := json.Marshal(colVal)
+			if err != nil {
+				return "", err
+			}
+
+			colValString = string(bytes)
+		} else {
+			colValString = stringutil.Wrap(colVal, true)
+		}
 	case typing.Struct.Kind:
 		if colKind.KindDetails == typing.Struct {
 			if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
@@ -73,7 +83,6 @@ func castColValStaging(ctx context.Context, colVal interface{}, colKind columns.
 		}
 
 		colValString = string(colValBytes)
-
 	case typing.EDecimal.Kind:
 		val, isOk := colVal.(*decimal.Decimal)
 		if !isOk {
