@@ -152,13 +152,12 @@ func (s *SchemaEventPayload) GetColumns(ctx context.Context) *columns.Columns {
 }
 
 func (s *SchemaEventPayload) GetData(ctx context.Context, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
-	retMap := make(map[string]interface{})
 	if len(s.Payload.AfterMap) == 0 {
 		// This is a delete event, so mark it as deleted.
 		// And we need to reconstruct the data bit since it will be empty.
 		// We _can_ rely on *before* since even without running replicate identity, it will still copy over
 		// the PK. We can explore simplifying this interface in the future by leveraging before.
-		retMap = map[string]interface{}{
+		retMap := map[string]interface{}{
 			constants.DeleteColumnMarker: true,
 		}
 
@@ -174,18 +173,20 @@ func (s *SchemaEventPayload) GetData(ctx context.Context, pkMap map[string]inter
 		if tc.IdempotentKey != "" {
 			retMap[tc.IdempotentKey] = s.GetExecutionTime().Format(time.RFC3339)
 		}
-	} else {
-		retMap = s.Payload.AfterMap
-		// We need this because there's an edge case with Debezium
-		// Where _id gets rewritten as id in the partition key.
-		for k, v := range pkMap {
-			retMap[k] = v
-		}
 
-		retMap[constants.DeleteColumnMarker] = false
-		if tc.IncludeArtieUpdatedAt {
-			retMap[constants.UpdateColumnMarker] = ext.NewUTCTime(ext.ISO8601)
-		}
+		return retMap
+	}
+
+	retMap := s.Payload.AfterMap
+	// We need this because there's an edge case with Debezium
+	// Where _id gets rewritten as id in the partition key.
+	for k, v := range pkMap {
+		retMap[k] = v
+	}
+
+	retMap[constants.DeleteColumnMarker] = false
+	if tc.IncludeArtieUpdatedAt {
+		retMap[constants.UpdateColumnMarker] = ext.NewUTCTime(ext.ISO8601)
 	}
 
 	return retMap

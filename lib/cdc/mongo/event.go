@@ -15,7 +15,6 @@ type SchemaEventPayload struct {
 func (s *SchemaEventPayload) Tombstone() {
 	s.Payload.Operation = "d"
 	s.Payload.Source.TsMs = time.Now().UnixMilli()
-	return
 }
 
 type payload struct {

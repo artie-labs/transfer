@@ -72,11 +72,7 @@ func (e *Event) IsValid() bool {
 
 	// Check if delete flag exists.
 	_, isOk := e.Data[constants.DeleteColumnMarker]
-	if !isOk {
-		return false
-	}
-
-	return true
+	return isOk
 }
 
 // PrimaryKeys is returned in a sorted manner to be safe.

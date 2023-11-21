@@ -1,31 +1,9 @@
 package bigquery
 
-import (
-	"fmt"
-)
-
-var BatchEmptyErr = fmt.Errorf("batch is empty")
-
 type Batch struct {
 	rows        []*Row
 	chunkSize   int
 	iteratorIdx int
-}
-
-func (b *Batch) IsValid() error {
-	if len(b.rows) == 0 {
-		return BatchEmptyErr
-	}
-
-	if b.chunkSize < 1 {
-		return fmt.Errorf("chunk size is too small")
-	}
-
-	if b.iteratorIdx < 0 {
-		return fmt.Errorf("iterator cannot be less than 0")
-	}
-
-	return nil
 }
 
 func NewBatch(rows []*Row, chunkSize int) *Batch {

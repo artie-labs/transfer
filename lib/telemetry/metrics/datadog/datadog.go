@@ -76,12 +76,10 @@ type statsClient struct {
 
 func (s *statsClient) Timing(name string, value time.Duration, tags map[string]string) {
 	_ = s.client.Timing(name, value, toDatadogTags(tags), s.rate)
-	return
 }
 
 func (s *statsClient) Incr(name string, tags map[string]string) {
 	_ = s.client.Incr(name, toDatadogTags(tags), s.rate)
-	return
 }
 
 func (s *statsClient) Count(name string, value int64, tags map[string]string) {

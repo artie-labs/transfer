@@ -60,11 +60,11 @@ func (b *BigQuerySettings) Valid() error {
 		return fmt.Errorf("partitionBy cannot be empty")
 	}
 
-	if array.StringContains(ValidPartitionTypes, b.PartitionType) == false {
+	if !array.StringContains(ValidPartitionTypes, b.PartitionType) {
 		return fmt.Errorf("partitionType must be one of: %v", ValidPartitionTypes)
 	}
 
-	if array.StringContains(ValidPartitionBy, b.PartitionBy) == false {
+	if !array.StringContains(ValidPartitionBy, b.PartitionBy) {
 		return fmt.Errorf("partitionBy must be one of: %v", ValidPartitionBy)
 	}
 

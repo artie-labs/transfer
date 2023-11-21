@@ -36,7 +36,6 @@ func (t *TopicToConsumer) Add(topic string, consumer kafkalib.Consumer) {
 	t.Lock()
 	defer t.Unlock()
 	t.topicToConsumer[topic] = consumer
-	return
 }
 
 func (t *TopicToConsumer) Get(topic string) kafkalib.Consumer {

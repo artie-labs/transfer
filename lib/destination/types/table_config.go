@@ -102,7 +102,7 @@ func (d *DwhTableConfig) ShouldDeleteColumn(ctx context.Context, colName string,
 		return false
 	}
 
-	if d.dropDeletedColumns == false {
+	if !d.dropDeletedColumns {
 		return false
 	}
 
@@ -132,7 +132,6 @@ func (d *DwhTableConfig) AddColumnsToDelete(colName string, ts time.Time) {
 	}
 
 	d.columnsToDelete[colName] = ts
-	return
 }
 
 func (d *DwhTableConfig) ClearColumnsToDeleteByColName(colName string) {

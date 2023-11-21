@@ -51,10 +51,8 @@ func main() {
 		switch settings.Config.Queue {
 		case constants.Kafka:
 			consumer.StartConsumer(ctx)
-			break
 		case constants.PubSub:
 			consumer.StartSubscriber(ctx)
-			break
 		default:
 			logger.FromContext(ctx).Fatalf("message queue: %s not supported", settings.Config.Queue)
 		}

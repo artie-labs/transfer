@@ -6,58 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func (b *BigQueryTestSuite) TestBatch_IsValid() {
-	type _testCase struct {
-		name        string
-		msgs        []*Row
-		chunkSize   int
-		expectError bool
-	}
-
-	testCases := []_testCase{
-		{
-			name: "happy path",
-			msgs: []*Row{
-				NewRow(map[string]bigquery.Value{"col1": "message1"}),
-				NewRow(map[string]bigquery.Value{"col1": "message2"}),
-			},
-			chunkSize: 2,
-		},
-		{
-			name: "happy path (chunkSize = 0)",
-			msgs: []*Row{
-				NewRow(map[string]bigquery.Value{"col1": "message1"}),
-				NewRow(map[string]bigquery.Value{"col1": "message2"}),
-			},
-			expectError: true,
-		},
-		{
-			name: "happy path (chunkSize = -5)",
-			msgs: []*Row{
-				NewRow(map[string]bigquery.Value{"col1": "message1"}),
-				NewRow(map[string]bigquery.Value{"col1": "message2"}),
-			},
-			chunkSize:   -5,
-			expectError: true,
-		},
-		{
-			name:        "batch is empty",
-			chunkSize:   2,
-			expectError: true,
-		},
-	}
-
-	for _, testCase := range testCases {
-		batch := NewBatch(testCase.msgs, testCase.chunkSize)
-		actualErr := batch.IsValid()
-		if testCase.expectError {
-			assert.Error(b.T(), actualErr, testCase.name)
-		} else {
-			assert.NoError(b.T(), actualErr, testCase.name)
-		}
-	}
-}
-
 func (b *BigQueryTestSuite) TestBatch_NextChunk() {
 	messages := []*Row{
 		NewRow(map[string]bigquery.Value{"col1": "message1"}),

@@ -65,14 +65,11 @@ func StartSubscriber(ctx context.Context) {
 	}
 
 	tcFmtMap := NewTcFmtMap()
-	var topics []string
 	for _, topicConfig := range settings.Config.Pubsub.TopicConfigs {
 		tcFmtMap.Add(topicConfig.Topic, TopicConfigFormatter{
 			tc:     topicConfig,
 			Format: format.GetFormatParser(ctx, topicConfig.CDCFormat, topicConfig.Topic),
 		})
-
-		topics = append(topics, topicConfig.Topic)
 	}
 
 	var wg sync.WaitGroup

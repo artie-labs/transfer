@@ -56,7 +56,6 @@ func NewColumn(name string, kd typing.KindDetails) Column {
 
 func (c *Column) SetBackfilled(backfilled bool) {
 	c.backfilled = backfilled
-	return
 }
 
 func (c *Column) Backfilled() bool {
@@ -69,7 +68,6 @@ func (c *Column) SetDefaultValue(value interface{}) {
 
 func (c *Column) ToLowerName() {
 	c.name = strings.ToLower(c.name)
-	return
 }
 
 func (c *Column) ShouldBackfill() bool {
@@ -84,7 +82,7 @@ func (c *Column) ShouldBackfill() bool {
 	}
 
 	// Should backfill if the default value is not null and the column has not been backfilled.
-	return c.defaultValue != nil && c.backfilled == false
+	return c.defaultValue != nil && !c.backfilled
 }
 
 // Name will give you c.name
@@ -103,8 +101,6 @@ func (c *Columns) EscapeName(ctx context.Context, args *sql.NameArgs) {
 	for idx := range c.columns {
 		c.columns[idx].name = c.columns[idx].Name(ctx, args)
 	}
-
-	return
 }
 
 type UpsertColumnArg struct {
@@ -155,7 +151,6 @@ func (c *Columns) UpsertColumn(colName string, arg UpsertColumnArg) {
 	}
 
 	c.AddColumn(col)
-	return
 }
 
 func (c *Columns) AddColumn(col Column) {

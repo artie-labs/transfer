@@ -46,7 +46,6 @@ func (t *TableData) Empty() bool {
 
 func (t *TableData) SetTableData(td *optimization.TableData) {
 	t.TableData = td
-	return
 }
 
 type DatabaseData struct {
