@@ -128,7 +128,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to generate merge statement", err)
+		return fmt.Errorf("failed to generate merge statement, err: %v", err)
 	}
 
 	tx, err := s.Begin()

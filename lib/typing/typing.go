@@ -171,8 +171,6 @@ func ParseValue(ctx context.Context, key string, optionalSchema map[string]KindD
 		} else if reflect.TypeOf(val).Kind() == reflect.Map {
 			return Struct
 		}
-
-		break
 	}
 
 	return Invalid

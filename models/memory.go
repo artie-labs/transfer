@@ -93,7 +93,6 @@ func (d *DatabaseData) ClearTableConfig(tableName string) {
 	d.Lock()
 	defer d.Unlock()
 	d.tableData[tableName].Wipe()
-	return
 }
 
 func (d *DatabaseData) TableData() map[string]*TableData {
