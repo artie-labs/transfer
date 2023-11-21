@@ -44,13 +44,10 @@ func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat 
 		switch kindType {
 		case DateTimeKindType:
 			originalFormat = DateTime.Format
-			break
 		case DateKindType:
 			originalFormat = Date.Format
-			break
 		case TimeKindType:
 			originalFormat = Time.Format
-			break
 		}
 	}
 

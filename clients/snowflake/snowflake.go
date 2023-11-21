@@ -94,7 +94,6 @@ func (s *Store) ReestablishConnection(ctx context.Context) {
 	}
 
 	s.Store = db.Open(ctx, "snowflake", dsn)
-	return
 }
 
 func LoadSnowflake(ctx context.Context, _store *db.Store) *Store {

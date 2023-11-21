@@ -79,12 +79,7 @@ func (t *TopicConfig) Valid() bool {
 		t.CDCKeyFormat = defaultKeyFormat
 	}
 
-	contains := array.StringContains(validKeyFormats, t.CDCKeyFormat)
-	if !contains {
-		return false
-	}
-
-	return true
+	return array.StringContains(validKeyFormats, t.CDCKeyFormat)
 }
 
 func (t *TopicConfig) ToCacheKey(partition int64) string {

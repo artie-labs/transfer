@@ -513,9 +513,7 @@ func TestCfg_KafkaBootstrapServers(t *testing.T) {
 	}
 
 	var brokers []string
-	for _, broker := range strings.Split(kafkaWithMultipleBrokers.BootstrapServer, ",") {
-		brokers = append(brokers, broker)
-	}
+	brokers = append(brokers, strings.Split(kafkaWithMultipleBrokers.BootstrapServer, ",")...)
 
 	assert.Equal(t, []string{"a:9092", "b:9093", "c:9094"}, brokers)
 }

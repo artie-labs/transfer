@@ -78,7 +78,7 @@ func (s *SchemaEventPayload) GetTableName() string {
 }
 
 func (s *SchemaEventPayload) GetData(ctx context.Context, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
-	retMap := make(map[string]interface{})
+	var retMap map[string]interface{}
 	if len(s.Payload.After) == 0 {
 		// This is a delete payload, so mark it as deleted.
 		// And we need to reconstruct the data bit since it will be empty.

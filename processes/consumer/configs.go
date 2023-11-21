@@ -24,7 +24,6 @@ func (t *TcFmtMap) Add(topic string, fmt TopicConfigFormatter) {
 	t.Lock()
 	defer t.Unlock()
 	t.tc[topic] = fmt
-	return
 }
 
 func (t *TcFmtMap) GetTopicFmt(topic string) (TopicConfigFormatter, bool) {

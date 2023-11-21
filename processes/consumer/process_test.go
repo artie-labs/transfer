@@ -259,12 +259,6 @@ func TestProcessMessageSkip(t *testing.T) {
 		Format: &mgo,
 	})
 
-	processArgs := ProcessArgs{
-		Msg:                    msg,
-		GroupID:                "foo",
-		TopicToConfigFormatMap: tcFmtMap,
-	}
-
 	// Add will just replace the prev setting.
 	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
 		tc: &kafkalib.TopicConfig{
@@ -345,7 +339,7 @@ func TestProcessMessageSkip(t *testing.T) {
 			msg.KafkaMsg.Value = []byte(val)
 		}
 
-		processArgs = ProcessArgs{
+		processArgs := ProcessArgs{
 			Msg:                    msg,
 			GroupID:                "foo",
 			TopicToConfigFormatMap: tcFmtMap,

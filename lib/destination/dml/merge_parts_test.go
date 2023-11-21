@@ -120,6 +120,8 @@ func (m *MergeTestSuite) TestMergeStatementPartsSoftDelete() {
 
 	mergeArg.IdempotentKey = "created_at"
 	parts, err = MergeStatementParts(m.ctx, mergeArg)
+	assert.NoError(m.T(), err)
+
 	// Parts[0] for insertion should be identical
 	assert.Equal(m.T(),
 		`INSERT INTO public.tableName (id,email,first_name,last_name,created_at,toast_text,__artie_delete) SELECT cc.id,cc.email,cc.first_name,cc.last_name,cc.created_at,cc.toast_text,cc.__artie_delete FROM public.tableName__temp as cc LEFT JOIN public.tableName as c on c.id = cc.id WHERE c.id IS NULL;`,
@@ -156,6 +158,8 @@ func (m *MergeTestSuite) TestMergeStatementPartsSoftDeleteComposite() {
 
 	mergeArg.IdempotentKey = "created_at"
 	parts, err = MergeStatementParts(m.ctx, mergeArg)
+	assert.NoError(m.T(), err)
+
 	// Parts[0] for insertion should be identical
 	assert.Equal(m.T(),
 		`INSERT INTO public.tableName (id,email,first_name,last_name,created_at,toast_text,__artie_delete) SELECT cc.id,cc.email,cc.first_name,cc.last_name,cc.created_at,cc.toast_text,cc.__artie_delete FROM public.tableName__temp as cc LEFT JOIN public.tableName as c on c.id = cc.id and c.email = cc.email WHERE c.id IS NULL;`,

@@ -66,12 +66,10 @@ func (t *TableData) Name(ctx context.Context, args *sql.NameArgs) string {
 
 func (t *TableData) SetInMemoryColumns(columns *columns.Columns) {
 	t.inMemoryColumns = columns
-	return
 }
 
 func (t *TableData) AddInMemoryCol(column columns.Column) {
 	t.inMemoryColumns.AddColumn(column)
-	return
 }
 
 func (t *TableData) ReadOnlyInMemoryCols() *columns.Columns {
@@ -130,8 +128,6 @@ func (t *TableData) InsertRow(pk string, rowData map[string]interface{}, delete 
 	if !delete && !t.containOtherOperations {
 		t.containOtherOperations = true
 	}
-
-	return
 }
 
 // RowsData returns a read only map of tableData's rowData.
@@ -285,6 +281,4 @@ func (t *TableData) UpdateInMemoryColumnsFromDestination(ctx context.Context, co
 			t.inMemoryColumns.UpdateColumn(inMemoryCol)
 		}
 	}
-
-	return
 }

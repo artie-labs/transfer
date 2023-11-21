@@ -71,7 +71,7 @@ func processMessage(ctx context.Context, processArgs ProcessArgs) (string, error
 	shouldFlush, flushReason, err := evt.Save(ctx, topicConfig.tc, processArgs.Msg)
 	if err != nil {
 		tags["what"] = "save_fail"
-		err = fmt.Errorf("event failed to save, err: %v", err)
+		return "", fmt.Errorf("event failed to save, err: %v", err)
 	}
 
 	if shouldFlush {

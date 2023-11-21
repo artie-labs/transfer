@@ -214,6 +214,10 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		SoftDelete:     tableData.TopicConfig.SoftDelete,
 	})
 
+	if err != nil {
+		return fmt.Errorf("failed to generate merge statement, err: %v", err)
+	}
+
 	log.WithField("query", mergeQuery).Debug("executing...")
 	_, err = s.Exec(mergeQuery)
 	if err != nil {

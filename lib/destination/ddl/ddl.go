@@ -97,10 +97,10 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 				DestKind: args.Dwh.Label(),
 			}), typing.KindToDWHType(col.KindDetails, args.Dwh.Label())))
 		case constants.Delete:
-			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s`, col.Name(ctx, &sql.NameArgs{
+			colSQLParts = append(colSQLParts, col.Name(ctx, &sql.NameArgs{
 				Escape:   true,
 				DestKind: args.Dwh.Label(),
-			})))
+			}))
 		}
 	}
 

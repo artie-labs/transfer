@@ -127,6 +127,10 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		DestKind:       s.Label(),
 	})
 
+	if err != nil {
+		return fmt.Errorf("failed to generate merge statement, err: %v", err)
+	}
+
 	tx, err := s.Begin()
 	if err != nil {
 		return fmt.Errorf("failed to start tx, err: %v", err)

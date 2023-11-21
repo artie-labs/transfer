@@ -182,7 +182,7 @@ func (m *MergeTestSuite) TestMergeStatementCompositeKey() {
 	assert.NoError(m.T(), err)
 	assert.True(m.T(), strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
 	assert.True(m.T(), strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")), fmt.Sprintf("Idempotency key: %s", mergeSQL))
-	assert.True(m.T(), strings.Contains(mergeSQL, fmt.Sprintf("cc on c.id = cc.id and c.another_id = cc.another_id")))
+	assert.True(m.T(), strings.Contains(mergeSQL, "cc on c.id = cc.id and c.another_id = cc.another_id"))
 }
 
 func (m *MergeTestSuite) TestMergeStatementEscapePrimaryKeys() {

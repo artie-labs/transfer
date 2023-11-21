@@ -46,7 +46,6 @@ func (t *TableData) Empty() bool {
 
 func (t *TableData) SetTableData(td *optimization.TableData) {
 	t.TableData = td
-	return
 }
 
 type DatabaseData struct {
@@ -94,7 +93,6 @@ func (d *DatabaseData) ClearTableConfig(tableName string) {
 	d.Lock()
 	defer d.Unlock()
 	d.tableData[tableName].Wipe()
-	return
 }
 
 func (d *DatabaseData) TableData() map[string]*TableData {

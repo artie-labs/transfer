@@ -171,11 +171,11 @@ type Config struct {
 
 func readFileToConfig(pathToConfig string) (*Config, error) {
 	file, err := os.Open(pathToConfig)
-	defer file.Close()
-
 	if err != nil {
 		return nil, err
 	}
+
+	defer file.Close()
 
 	var bytes []byte
 	bytes, err = io.ReadAll(file)

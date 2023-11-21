@@ -30,5 +30,4 @@ func (d *DwhToTablesConfigMap) AddTableToConfig(fqName string, config *DwhTableC
 	}
 
 	d.fqNameToDwhTableConfig[fqName] = config
-	return
 }
