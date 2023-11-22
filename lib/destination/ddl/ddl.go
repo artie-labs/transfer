@@ -21,8 +21,11 @@ import (
 // It has a safety check to make sure the tableName contains the `constants.ArtiePrefix` key.
 // Temporary tables look like this: database.schema.tableName__artie__RANDOM_STRING(10)
 func DropTemporaryTable(ctx context.Context, dwh destination.DataWarehouse, fqTableName string, shouldReturnError bool) error {
-	// Need to lower it because Snowflake upper-cases.
-	fqTableName = strings.ToLower(fqTableName)
+	if dwh.Label() != constants.BigQuery {
+		// BigQuery is case-sensitive, so lets no lower.
+		fqTableName = strings.ToLower(fqTableName)
+	}
+
 	if strings.Contains(fqTableName, constants.ArtiePrefix) {
 		// https://cloud.google.com/bigquery/docs/reference/standard-sql/data-definition-language#drop_table_statement
 		// https://docs.snowflake.com/en/sql-reference/sql/drop-table

@@ -2,6 +2,7 @@ package ddl_test
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
@@ -9,6 +10,39 @@ import (
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/stretchr/testify/assert"
 )
+
+func (d *DDLTestSuite) Test_DropTemporaryTableCaseSensitive() {
+	tablesToDrop := []string{
+		"foo",
+		"abcdef",
+		"gGghHH",
+	}
+
+	for _, dest := range []destination.DataWarehouse{d.bigQueryStore, d.snowflakeStagesStore} {
+		var fakeStore *mocks.FakeStore
+		if dest.Label() == constants.Snowflake {
+			fakeStore = d.fakeSnowflakeStagesStore
+		} else if dest.Label() == constants.BigQuery {
+			fakeStore = d.fakeBigQueryStore
+		}
+
+		for tableIndex, table := range tablesToDrop {
+			fullTableName := fmt.Sprintf("%s_%s", table, constants.ArtiePrefix)
+			_ = ddl.DropTemporaryTable(d.ctx, dest, fullTableName, false)
+
+			// There should be the same number of DROP table calls as the number of tables to drop.
+			assert.Equal(d.T(), tableIndex+1, fakeStore.ExecCallCount())
+			query, _ := fakeStore.ExecArgsForCall(tableIndex)
+
+			if dest.Label() == constants.BigQuery {
+				// BigQuery should be case-sensitive.
+				assert.Equal(d.T(), fmt.Sprintf("DROP TABLE IF EXISTS %s", fullTableName), query)
+			} else {
+				assert.Equal(d.T(), fmt.Sprintf("DROP TABLE IF EXISTS %s", strings.ToLower(fullTableName)), query)
+			}
+		}
+	}
+}
 
 func (d *DDLTestSuite) Test_DropTemporaryTable() {
 	doNotDropTables := []string{
