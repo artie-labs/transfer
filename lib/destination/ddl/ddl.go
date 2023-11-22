@@ -22,7 +22,7 @@ import (
 // Temporary tables look like this: database.schema.tableName__artie__RANDOM_STRING(10)
 func DropTemporaryTable(ctx context.Context, dwh destination.DataWarehouse, fqTableName string, shouldReturnError bool) error {
 	if dwh.Label() != constants.BigQuery {
-		// BigQuery does not require lower-casing the table name, but Redshift and Snowflake does.
+		// BigQuery is case-sensitive, so lets no lower.
 		fqTableName = strings.ToLower(fqTableName)
 	}
 
