@@ -57,6 +57,7 @@ func (m *Message) Kind() Kind {
 }
 
 // EmitRowLag will diff against the partition's high watermark and the message's offset
+// This function is only available for Kafka since Kafka has the concept of offsets and watermarks.
 func (m *Message) EmitRowLag(ctx context.Context, groupID, table string) {
 	if m.KafkaMsg == nil {
 		return
