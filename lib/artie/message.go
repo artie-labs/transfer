@@ -62,12 +62,12 @@ func (m *Message) EmitRowLag(ctx context.Context, groupID, table string) {
 		return
 	}
 
-	metrics.FromContext(ctx).Gauge("row.lag", float64(m.KafkaMsg.HighWaterMark-m.KafkaMsg.Offset), map[string]string{
+	metrics.FromContext(ctx).GaugeWithSample("row.lag", float64(m.KafkaMsg.HighWaterMark-m.KafkaMsg.Offset), map[string]string{
 		"groupID":   groupID,
 		"topic":     m.Topic(),
 		"table":     table,
 		"partition": m.Partition(),
-	})
+	}, 0.5)
 }
 
 func (m *Message) EmitIngestionLag(ctx context.Context, groupID, table string) {
