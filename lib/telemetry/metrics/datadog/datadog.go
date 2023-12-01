@@ -89,3 +89,7 @@ func (s *statsClient) Count(name string, value int64, tags map[string]string) {
 func (s *statsClient) Gauge(name string, value float64, tags map[string]string) {
 	_ = s.client.Gauge(name, value, toDatadogTags(tags), s.rate)
 }
+
+func (s *statsClient) GaugeWithSample(name string, value float64, tags map[string]string, sample float64) {
+	_ = s.client.Gauge(name, value, toDatadogTags(tags), sample)
+}

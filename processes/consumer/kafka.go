@@ -136,6 +136,7 @@ func StartConsumer(ctx context.Context) {
 				})
 
 				msg.EmitIngestionLag(ctx, kafkaConsumer.Config().GroupID, tableName)
+				msg.EmitRowLag(ctx, kafkaConsumer.Config().GroupID, tableName)
 				if processErr != nil {
 					log.WithError(processErr).WithFields(logFields).Warn("skipping message...")
 				}

@@ -56,6 +56,21 @@ func (m *Message) Kind() Kind {
 	return Invalid
 }
 
+// EmitRowLag will diff against the partition's high watermark and the message's offset
+// This function is only available for Kafka since Kafka has the concept of offsets and watermarks.
+func (m *Message) EmitRowLag(ctx context.Context, groupID, table string) {
+	if m.KafkaMsg == nil {
+		return
+	}
+
+	metrics.FromContext(ctx).GaugeWithSample("row.lag", float64(m.KafkaMsg.HighWaterMark-m.KafkaMsg.Offset), map[string]string{
+		"groupID":   groupID,
+		"topic":     m.Topic(),
+		"table":     table,
+		"partition": m.Partition(),
+	}, 0.5)
+}
+
 func (m *Message) EmitIngestionLag(ctx context.Context, groupID, table string) {
 	metrics.FromContext(ctx).Timing("ingestion.lag", time.Since(m.PublishTime()), map[string]string{
 		"groupID":   groupID,

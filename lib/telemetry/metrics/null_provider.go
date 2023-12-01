@@ -8,6 +8,10 @@ func (n NullMetricsProvider) Gauge(name string, value float64, tags map[string]s
 	return
 }
 
+func (n NullMetricsProvider) GaugeWithSample(name string, value float64, tags map[string]string, sample float64) {
+	return
+}
+
 func (n NullMetricsProvider) Count(name string, value int64, tags map[string]string) {
 	return
 }
