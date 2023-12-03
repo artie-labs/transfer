@@ -28,6 +28,43 @@ This is necessary so that we are able to run a Debezium deployment to subscribe 
 
 <figure><img src="../.gitbook/assets/image (13).png" alt="" width="371"><figcaption></figcaption></figure>
 
+### Enabling change streams and creation of a service account
+
+```mongodb
+// Creating a service account for Artie to subscribe to change stream
+db.createUser({user: "artie", pwd: "changeme", roles: ["read"]});
+// Grants access to DocumentDB change streams
+use admin;
+db.grantRolesToUser("artie", [
+  { role: "readAnyDatabase", db: "admin" }
+]);
+
+// Depending on the permission granularity you want, you can use the following commands to grant permissions to the service account.    
+// Enable change streams for all collections in database "changeme"
+db.adminCommand({
+    modifyChangeStreams: 1,
+    database: "changeme",
+    collection: "",
+    enable: true
+});
+
+// Enable change streams for all collections in all databases
+db.adminCommand({
+    modifyChangeStreams: 1,
+    database: "",
+    collection: "", 
+    enable: true
+});
+
+// Advanced: Enable change streams for the collection "foo" in database "changeme"
+db.adminCommand({
+    modifyChangeStreams: 1,
+    database: "changeme",
+    collection: "foo", 
+    enable: true
+});
+```
+
 ### Supported types
 
 _Types are sourced from the_ [_MongoDB extended JSON specification_](https://github.com/mongodb/specifications/blob/master/source/extended-json.rst#canonical-extended-json-example)_._
