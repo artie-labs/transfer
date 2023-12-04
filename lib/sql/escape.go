@@ -3,6 +3,7 @@ package sql
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -16,16 +17,38 @@ type NameArgs struct {
 	DestKind constants.DestinationKind
 }
 
+// symbolsToEscape are additional keywords that we need to escape
+var symbolsToEscape = []string{":"}
+
 func EscapeName(ctx context.Context, name string, args *NameArgs) string {
 	if args == nil {
 		return name
 	}
 
-	var needsEscaping bool
+	var reservedKeywords []string
 	if args.DestKind == constants.Redshift {
-		needsEscaping = array.StringContains(constants.RedshiftReservedKeywords, name)
+		reservedKeywords = constants.RedshiftReservedKeywords
 	} else {
-		needsEscaping = array.StringContains(constants.ReservedKeywords, name)
+		reservedKeywords = constants.ReservedKeywords
+	}
+
+	needsEscaping := array.StringContains(reservedKeywords, name)
+
+	// If it does not contain any reserved words, does it contain any symbols that need to be escaped?
+	if !needsEscaping {
+		for _, symbol := range symbolsToEscape {
+			if strings.Contains(name, symbol) {
+				needsEscaping = true
+				break
+			}
+		}
+	}
+
+	// If it still doesn't need to be escaped, we should check if it's a number.
+	if !needsEscaping {
+		if _, err := strconv.Atoi(name); err == nil {
+			needsEscaping = true
+		}
 	}
 
 	if args.Escape && needsEscaping {
