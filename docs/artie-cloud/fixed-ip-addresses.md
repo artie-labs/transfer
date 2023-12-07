@@ -25,7 +25,7 @@ Add the following IP addresses so that the dashboard is able to validate connect
 * 164.92.90.51/32
 
 {% hint style="info" %}
-We are planning to migrate our Control Plane to Amazon by March 2024, with the following IP addresses
+We are planning to migrate our Control Plane to Amazon by March 2024, with the following IP addresses:
 {% endhint %}
 
 * 52.55.119.205/32
