@@ -24,6 +24,14 @@ Add the following IP addresses so that the dashboard is able to validate connect
 * 143.198.244.128/32
 * 164.92.90.51/32
 
+Amazon (**Note:** We are planning to migrate our Control Plane to Amazon by March 2024)
+
+* 52.55.119.205/32
+* 54.204.194.211/32
+* 52.200.253.111/32
+* 52.44.73.206/32
+* 44.217.73.84/32
+
 ## Data Plane IP Ranges (CIDR format)
 
 ### **AWS US-East-1 (Default)**
