@@ -38,6 +38,32 @@ func TestBigQuery_DSN(t *testing.T) {
 	assert.Equal(t, "bigquery://project/eu/dataset", b.DSN())
 }
 
+func TestKafka_BootstrapServers(t *testing.T) {
+	type _tc struct {
+		bootstrapServerString    string
+		expectedBootstrapServers []string
+	}
+
+	tcs := []_tc{
+		{
+			bootstrapServerString:    "localhost:9092",
+			expectedBootstrapServers: []string{"localhost:9092"},
+		},
+		{
+			bootstrapServerString:    "a:9092,b:9093,c:9094",
+			expectedBootstrapServers: []string{"a:9092", "b:9093", "c:9094"},
+		},
+	}
+
+	for idx, tc := range tcs {
+		k := Kafka{
+			BootstrapServer: tc.bootstrapServerString,
+		}
+
+		assert.Equal(t, tc.expectedBootstrapServers, k.BootstrapServers(), idx)
+	}
+}
+
 func TestKafka_String(t *testing.T) {
 	k := Kafka{
 		BootstrapServer: "server",
