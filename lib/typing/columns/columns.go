@@ -212,7 +212,9 @@ func (c *Columns) GetColumns() []Column {
 	c.RLock()
 	defer c.RUnlock()
 
-	return c.columns
+	var cols []Column
+	cols = append(cols, c.columns...)
+	return cols
 }
 
 // UpdateColumn will update the column and also preserve the `defaultValue` from the previous column if the new column does not have one.
