@@ -112,7 +112,6 @@ func ParseValue(ctx context.Context, key string, optionalSchema map[string]KindD
 		}
 	}
 
-	// Check if it's a number first.
 	switch convertedVal := val.(type) {
 	case nil:
 		return Invalid
