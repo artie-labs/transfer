@@ -4,6 +4,10 @@ all:
 	make generate
 	make test
 
+.PHONY: static
+static:
+	staticcheck ./...
+
 .PHONY: test
 test:
 	go test ./...

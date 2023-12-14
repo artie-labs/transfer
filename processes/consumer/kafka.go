@@ -3,7 +3,6 @@ package consumer
 import (
 	"context"
 	"crypto/tls"
-	"strings"
 	"sync"
 	"time"
 
@@ -105,13 +104,9 @@ func StartConsumer(ctx context.Context) {
 				GroupID: settings.Config.Kafka.GroupID,
 				Dialer:  dialer,
 				Topic:   topic,
-			}
-			var brokers []string
-			for _, bootstrapServer := range strings.Split(settings.Config.Kafka.BootstrapServer, ",") {
-				brokers = append(brokers, bootstrapServer)
+				Brokers: settings.Config.Kafka.BootstrapServers(),
 			}
 
-			kafkaCfg.Brokers = brokers
 			kafkaConsumer := kafka.NewReader(kafkaCfg)
 			topicToConsumer.Add(topic, kafkaConsumer)
 			for {

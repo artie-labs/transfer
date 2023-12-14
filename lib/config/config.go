@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/artie-labs/transfer/lib/stringutil"
 
@@ -46,6 +47,10 @@ type Kafka struct {
 	Password        string                  `yaml:"password"`
 	EnableAWSMSKIAM bool                    `yaml:"enableAWSMKSIAM"`
 	TopicConfigs    []*kafkalib.TopicConfig `yaml:"topicConfigs"`
+}
+
+func (k *Kafka) BootstrapServers() []string {
+	return strings.Split(k.BootstrapServer, ",")
 }
 
 type S3Settings struct {

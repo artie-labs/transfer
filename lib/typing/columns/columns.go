@@ -213,10 +213,7 @@ func (c *Columns) GetColumns() []Column {
 	defer c.RUnlock()
 
 	var cols []Column
-	for _, col := range c.columns {
-		cols = append(cols, col)
-	}
-
+	cols = append(cols, c.columns...)
 	return cols
 }
 
