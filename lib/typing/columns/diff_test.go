@@ -214,7 +214,7 @@ func (c *ColumnsTestSuite) TestCopyColMap() {
 	assert.Equal(c.T(), *copiedCols, cols)
 
 	//Delete a row from copiedCols
-	copiedCols.columns = append(copiedCols.columns[1:])
+	copiedCols.columns = copiedCols.columns[1:]
 	assert.NotEqual(c.T(), *copiedCols, cols)
 }
 

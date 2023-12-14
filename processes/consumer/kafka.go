@@ -107,9 +107,7 @@ func StartConsumer(ctx context.Context) {
 				Topic:   topic,
 			}
 			var brokers []string
-			for _, bootstrapServer := range strings.Split(settings.Config.Kafka.BootstrapServer, ",") {
-				brokers = append(brokers, bootstrapServer)
-			}
+			brokers = append(brokers, strings.Split(settings.Config.Kafka.BootstrapServer, ",")...)
 
 			kafkaCfg.Brokers = brokers
 			kafkaConsumer := kafka.NewReader(kafkaCfg)

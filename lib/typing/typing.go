@@ -3,7 +3,6 @@ package typing
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"strings"
 
@@ -114,7 +113,7 @@ func ParseValue(ctx context.Context, key string, optionalSchema map[string]KindD
 	}
 
 	// Check if it's a number first.
-	switch val.(type) {
+	switch convertedVal := val.(type) {
 	case nil:
 		return Invalid
 	case uint, int, uint8, uint16, uint32, uint64, int8, int16, int32, int64:
@@ -128,12 +127,11 @@ func ParseValue(ctx context.Context, key string, optionalSchema map[string]KindD
 	case bool:
 		return Boolean
 	case string:
-		valString := fmt.Sprint(val)
 		// If it contains space or -, then we must check against date time.
 		// This way, we don't penalize every string into going through this loop
 		// In the future, we can have specific layout RFCs run depending on the char
-		if strings.Contains(valString, ":") || strings.Contains(valString, "-") {
-			extendedKind, err := ext.ParseExtendedDateTime(ctx, valString)
+		if strings.Contains(convertedVal, ":") || strings.Contains(convertedVal, "-") {
+			extendedKind, err := ext.ParseExtendedDateTime(ctx, convertedVal)
 			if err == nil {
 				return KindDetails{
 					Kind:                ETime.Kind,
@@ -142,27 +140,21 @@ func ParseValue(ctx context.Context, key string, optionalSchema map[string]KindD
 			}
 		}
 
-		if IsJSON(valString) {
+		if IsJSON(convertedVal) {
 			return Struct
 		}
 
 		return String
 
 	case *decimal.Decimal:
-		extendedKind, isOk := val.(*decimal.Decimal)
-		if isOk {
-			return KindDetails{
-				Kind:                   EDecimal.Kind,
-				ExtendedDecimalDetails: extendedKind,
-			}
+		return KindDetails{
+			Kind:                   EDecimal.Kind,
+			ExtendedDecimalDetails: convertedVal,
 		}
 	case *ext.ExtendedTime:
-		extendedKind, isOk := val.(*ext.ExtendedTime)
-		if isOk {
-			return KindDetails{
-				Kind:                ETime.Kind,
-				ExtendedTimeDetails: &extendedKind.NestedKind,
-			}
+		return KindDetails{
+			Kind:                ETime.Kind,
+			ExtendedTimeDetails: &convertedVal.NestedKind,
 		}
 	default:
 		// Check if the val is one of our custom-types
