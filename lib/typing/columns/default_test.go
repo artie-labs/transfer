@@ -1,11 +1,12 @@
 package columns
 
 import (
+	"fmt"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/typing/ext"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
+
+	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/artie-labs/transfer/lib/typing"
 
@@ -14,11 +15,12 @@ import (
 
 func (c *ColumnsTestSuite) TestColumn_DefaultValue() {
 	type _testCase struct {
-		name          string
-		col           *Column
-		args          *DefaultValueArgs
-		expectedValue interface{}
-		expectedEr    bool
+		name                       string
+		col                        *Column
+		args                       *DefaultValueArgs
+		expectedValue              interface{}
+		destKindToExpectedValueMap map[constants.DestinationKind]interface{}
+		expectedEr                 bool
 	}
 
 	birthday := time.Date(2022, time.September, 6, 3, 19, 24, 942000000, time.UTC)
@@ -73,31 +75,11 @@ func (c *ColumnsTestSuite) TestColumn_DefaultValue() {
 			args: &DefaultValueArgs{
 				Escape: true,
 			},
-			expectedValue: "{}",
-		},
-		{
-			name: "json (bigquery)",
-			col: &Column{
-				KindDetails:  typing.Struct,
-				defaultValue: "{}",
+			expectedValue: `{}`,
+			destKindToExpectedValueMap: map[constants.DestinationKind]interface{}{
+				constants.BigQuery: "JSON'{}'",
+				constants.Redshift: `'{}'`,
 			},
-			args: &DefaultValueArgs{
-				Escape:   true,
-				DestKind: constants.BigQuery,
-			},
-			expectedValue: "JSON'{}'",
-		},
-		{
-			name: "json (redshift)",
-			col: &Column{
-				KindDetails:  typing.Struct,
-				defaultValue: "{}",
-			},
-			args: &DefaultValueArgs{
-				Escape:   true,
-				DestKind: constants.Redshift,
-			},
-			expectedValue: "'{}'",
 		},
 		{
 			name: "date",
@@ -135,13 +117,25 @@ func (c *ColumnsTestSuite) TestColumn_DefaultValue() {
 	}
 
 	for _, testCase := range testCases {
-		actualValue, actualErr := testCase.col.DefaultValue(c.ctx, testCase.args)
-		if testCase.expectedEr {
-			assert.Error(c.T(), actualErr, testCase.name)
-		} else {
-			assert.NoError(c.T(), actualErr, testCase.name)
-		}
+		for _, validDest := range constants.ValidDestinations {
+			if testCase.args != nil {
+				testCase.args.DestKind = validDest
+			}
 
-		assert.Equal(c.T(), testCase.expectedValue, actualValue, testCase.name)
+			actualValue, actualErr := testCase.col.DefaultValue(c.ctx, testCase.args)
+			if testCase.expectedEr {
+				assert.Error(c.T(), actualErr, fmt.Sprintf("%s %s", testCase.name, validDest))
+			} else {
+				assert.NoError(c.T(), actualErr, fmt.Sprintf("%s %s", testCase.name, validDest))
+			}
+
+			expectedValue := testCase.expectedValue
+			if potentialValue, isOk := testCase.destKindToExpectedValueMap[validDest]; isOk {
+				// Not everything requires a destination specific value, so only use this if necessary.
+				expectedValue = potentialValue
+			}
+
+			assert.Equal(c.T(), expectedValue, actualValue, fmt.Sprintf("%s %s", testCase.name, validDest))
+		}
 	}
 }

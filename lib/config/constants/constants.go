@@ -120,7 +120,7 @@ const (
 	S3              DestinationKind = "s3"
 )
 
-var validDestinations = []DestinationKind{
+var ValidDestinations = []DestinationKind{
 	BigQuery,
 	Snowflake,
 	SnowflakeStages,
@@ -130,7 +130,7 @@ var validDestinations = []DestinationKind{
 }
 
 func IsValidDestination(destination DestinationKind) bool {
-	for _, validDest := range validDestinations {
+	for _, validDest := range ValidDestinations {
 		if destination == validDest {
 			return true
 		}
