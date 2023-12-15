@@ -16,7 +16,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func CastColVal(ctx context.Context, colVal interface{}, colKind columns.Column) (interface{}, error) {
+func castColVal(ctx context.Context, colVal interface{}, colKind columns.Column) (interface{}, error) {
 	if colVal != nil {
 		switch colKind.KindDetails.Kind {
 		case typing.EDecimal.Kind:
