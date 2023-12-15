@@ -78,8 +78,24 @@ func (c *ColumnsTestSuite) TestColumn_DefaultValue() {
 			expectedValue: `{}`,
 			destKindToExpectedValueMap: map[constants.DestinationKind]interface{}{
 				constants.BigQuery:  "JSON'{}'",
-				constants.Redshift:  `'{}'`,
+				constants.Redshift:  `JSON_PARSE('{}')`,
 				constants.Snowflake: `'{}'`,
+			},
+		},
+		{
+			name: "json w/ some values",
+			col: &Column{
+				KindDetails:  typing.Struct,
+				defaultValue: "{\"age\": 0, \"membership_level\": \"standard\"}",
+			},
+			args: &DefaultValueArgs{
+				Escape: true,
+			},
+			expectedValue: "{\"age\": 0, \"membership_level\": \"standard\"}",
+			destKindToExpectedValueMap: map[constants.DestinationKind]interface{}{
+				constants.BigQuery:  "JSON'{\"age\": 0, \"membership_level\": \"standard\"}'",
+				constants.Redshift:  "JSON_PARSE('{\"age\": 0, \"membership_level\": \"standard\"}')",
+				constants.Snowflake: "'{\"age\": 0, \"membership_level\": \"standard\"}'",
 			},
 		},
 		{
