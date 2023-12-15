@@ -2,9 +2,10 @@ package size
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestVariableToBytes(t *testing.T) {
@@ -12,13 +13,13 @@ func TestVariableToBytes(t *testing.T) {
 	assert.NoError(t, os.RemoveAll(filePath))
 
 	rowsData := make(map[string]map[string]interface{}) // pk -> { col -> val }
-	for i := 0; i < 500; i ++ {
+	for i := 0; i < 500; i++ {
 		rowsData[fmt.Sprintf("key-%v", i)] = map[string]interface{}{
-			"id": fmt.Sprintf("key-%v", i),
-			"artie": "transfer",
-			"dusty": "the mini aussie",
+			"id":         fmt.Sprintf("key-%v", i),
+			"artie":      "transfer",
+			"dusty":      "the mini aussie",
 			"next_puppy": true,
-			"team": []string{"charlie", "robin", "jacqueline"},
+			"team":       []string{"charlie", "robin", "jacqueline"},
 		}
 	}
 
@@ -29,6 +30,5 @@ func TestVariableToBytes(t *testing.T) {
 	assert.NoError(t, err)
 
 	size := GetApproxSize(rowsData)
-	assert.NoError(t, err)
 	assert.Equal(t, int(stat.Size()), size)
 }
