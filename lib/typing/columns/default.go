@@ -33,7 +33,7 @@ func (c *Column) DefaultValue(ctx context.Context, args *DefaultValueArgs) (inte
 		switch args.DestKind {
 		case constants.BigQuery:
 			return "JSON" + stringutil.Wrap(c.defaultValue, false), nil
-		case constants.Redshift:
+		case constants.Redshift, constants.Snowflake:
 			return stringutil.Wrap(c.defaultValue, false), nil
 		}
 	case typing.ETime.Kind:

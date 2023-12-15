@@ -77,8 +77,9 @@ func (c *ColumnsTestSuite) TestColumn_DefaultValue() {
 			},
 			expectedValue: `{}`,
 			destKindToExpectedValueMap: map[constants.DestinationKind]interface{}{
-				constants.BigQuery: "JSON'{}'",
-				constants.Redshift: `'{}'`,
+				constants.BigQuery:  "JSON'{}'",
+				constants.Redshift:  `'{}'`,
+				constants.Snowflake: `'{}'`,
 			},
 		},
 		{
