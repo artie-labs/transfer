@@ -10,6 +10,8 @@ import (
 )
 
 func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumnsFromDestination() {
+	const strCol = "string"
+
 	tableDataCols := &columns.Columns{}
 	tableDataCols.AddColumn(columns.NewColumn("name", typing.String))
 	tableDataCols.AddColumn(columns.NewColumn("bool_backfill", typing.Boolean))
@@ -25,6 +27,8 @@ func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumnsFromDestinati
 	extDecimalType := typing.EDecimal
 	extDecimalType.ExtendedDecimalDetails = decimal.NewDecimal(2, ptr.ToInt(22), nil)
 	tableDataCols.AddColumn(columns.NewColumn("ext_dec_filled", extDecimalType))
+
+	tableDataCols.AddColumn(columns.NewColumn(strCol, typing.String))
 
 	tableData := &TableData{
 		inMemoryColumns: tableDataCols,
@@ -129,4 +133,15 @@ func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumnsFromDestinati
 	// Check precision and scale too.
 	assert.Equal(o.T(), 22, *extDecColFilled.KindDetails.ExtendedDecimalDetails.Precision())
 	assert.Equal(o.T(), 2, extDecColFilled.KindDetails.ExtendedDecimalDetails.Scale())
+
+	// Testing string precision
+	stringKindWithPrecision := typing.KindDetails{
+		Kind:                         typing.String.Kind,
+		OptionalRedshiftStrPrecision: ptr.ToInt(123),
+	}
+	tableData.MergeColumnsFromDestination(o.ctx, columns.NewColumn(strCol, stringKindWithPrecision))
+	foundStrCol, isOk := tableData.inMemoryColumns.GetColumn(strCol)
+	assert.True(o.T(), isOk)
+	assert.Equal(o.T(), typing.String.Kind, foundStrCol.KindDetails.Kind)
+	assert.Equal(o.T(), 123, *foundStrCol.KindDetails.OptionalRedshiftStrPrecision)
 }
