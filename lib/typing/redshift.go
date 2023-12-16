@@ -64,7 +64,7 @@ func kindToRedShift(kd KindDetails) string {
 		return "VARCHAR(MAX)"
 	case String.Kind:
 		if kd.OptionalRedshiftStrPrecision != nil {
-			return fmt.Sprintf("VARCHAR(%d)", kd.OptionalRedshiftStrPrecision)
+			return fmt.Sprintf("VARCHAR(%d)", *kd.OptionalRedshiftStrPrecision)
 		}
 
 		return "VARCHAR(MAX)"
