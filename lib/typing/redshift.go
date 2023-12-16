@@ -1,19 +1,31 @@
 package typing
 
 import (
+	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func RedshiftTypeToKind(rawType string) KindDetails {
+func RedshiftTypeToKind(rawType string, stringPrecision string) KindDetails {
 	rawType = strings.ToLower(rawType)
 	if strings.HasPrefix(rawType, "numeric") {
 		return ParseNumeric(defaultPrefix, rawType)
 	}
 
+	// TODO: Add test
 	if strings.Contains(rawType, "character varying") {
-		return String
+		var strPrecision *int
+		precision, err := strconv.Atoi(stringPrecision)
+		if err == nil {
+			strPrecision = &precision
+		}
+
+		return KindDetails{
+			Kind:                         String.Kind,
+			OptionalRedshiftStrPrecision: strPrecision,
+		}
 	}
 
 	switch rawType {
@@ -44,11 +56,17 @@ func kindToRedShift(kd KindDetails) string {
 		return "INT8"
 	case Struct.Kind:
 		return "SUPER"
-	case String.Kind, Array.Kind:
+	case Array.Kind:
 		// Redshift does not have a built-in JSON type (which means we'll cast STRUCT and ARRAY kinds as TEXT).
 		// As a result, Artie will store this in JSON string and customers will need to extract this data out via SQL.
 		// Columns that are automatically created by Artie are created as VARCHAR(MAX).
 		// Rationale: https://github.com/artie-labs/transfer/pull/173
+		return "VARCHAR(MAX)"
+	case String.Kind:
+		if kd.OptionalRedshiftStrPrecision != nil {
+			return fmt.Sprintf("VARCHAR(%d)", kd.OptionalRedshiftStrPrecision)
+		}
+
 		return "VARCHAR(MAX)"
 	case Boolean.Kind:
 		// We need to append `NULL` to let Redshift know that NULL is an acceptable data type.

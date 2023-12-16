@@ -16,6 +16,9 @@ type KindDetails struct {
 	Kind                   string
 	ExtendedTimeDetails    *ext.NestedKind
 	ExtendedDecimalDetails *decimal.Decimal
+
+	// Optional kind details metadata
+	OptionalRedshiftStrPrecision *int
 }
 
 // Summarized this from Snowflake + Reflect.
