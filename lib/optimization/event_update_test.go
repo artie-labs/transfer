@@ -37,20 +37,20 @@ func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumnsFromDestinati
 	}
 
 	// Testing to make sure we don't copy over non-existent columns
-	tableData.UpdateInMemoryColumnsFromDestination(o.ctx, nonExistentCols...)
+	tableData.MergeColumnsFromDestination(o.ctx, nonExistentCols...)
 	for _, nonExistentTableCol := range nonExistentTableCols {
 		_, isOk := tableData.inMemoryColumns.GetColumn(nonExistentTableCol)
 		assert.False(o.T(), isOk, nonExistentTableCol)
 	}
 
 	// Making sure it's still numeric
-	tableData.UpdateInMemoryColumnsFromDestination(o.ctx, columns.NewColumn("numeric_test", typing.Integer))
+	tableData.MergeColumnsFromDestination(o.ctx, columns.NewColumn("numeric_test", typing.Integer))
 	numericCol, isOk := tableData.inMemoryColumns.GetColumn("numeric_test")
 	assert.True(o.T(), isOk)
 	assert.Equal(o.T(), typing.EDecimal.Kind, numericCol.KindDetails.Kind, "numeric_test")
 
 	// Testing to make sure we're copying the kindDetails over.
-	tableData.UpdateInMemoryColumnsFromDestination(o.ctx, columns.NewColumn("prev_invalid", typing.String))
+	tableData.MergeColumnsFromDestination(o.ctx, columns.NewColumn("prev_invalid", typing.String))
 	prevInvalidCol, isOk := tableData.inMemoryColumns.GetColumn("prev_invalid")
 	assert.True(o.T(), isOk)
 	assert.Equal(o.T(), typing.String, prevInvalidCol.KindDetails)
@@ -61,7 +61,7 @@ func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumnsFromDestinati
 	}
 	backfilledCol := columns.NewColumn("bool_backfill", typing.Boolean)
 	backfilledCol.SetBackfilled(true)
-	tableData.UpdateInMemoryColumnsFromDestination(o.ctx, backfilledCol)
+	tableData.MergeColumnsFromDestination(o.ctx, backfilledCol)
 	for _, inMemoryCol := range tableData.inMemoryColumns.GetColumns() {
 		if inMemoryCol.Name(o.ctx, nil) == backfilledCol.Name(o.ctx, nil) {
 			assert.True(o.T(), inMemoryCol.Backfilled(), inMemoryCol.Name(o.ctx, nil))
@@ -78,9 +78,9 @@ func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumnsFromDestinati
 		assert.Nil(o.T(), col.KindDetails.ExtendedTimeDetails, extTimeDetailsCol)
 	}
 
-	tableData.UpdateInMemoryColumnsFromDestination(o.ctx, columns.NewColumn("ext_time", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)))
-	tableData.UpdateInMemoryColumnsFromDestination(o.ctx, columns.NewColumn("ext_date", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType)))
-	tableData.UpdateInMemoryColumnsFromDestination(o.ctx, columns.NewColumn("ext_datetime", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)))
+	tableData.MergeColumnsFromDestination(o.ctx, columns.NewColumn("ext_time", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)))
+	tableData.MergeColumnsFromDestination(o.ctx, columns.NewColumn("ext_date", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType)))
+	tableData.MergeColumnsFromDestination(o.ctx, columns.NewColumn("ext_datetime", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)))
 
 	dateCol, isOk := tableData.inMemoryColumns.GetColumn("ext_date")
 	assert.True(o.T(), isOk)
@@ -105,7 +105,7 @@ func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumnsFromDestinati
 
 	extDecimal := typing.EDecimal
 	extDecimal.ExtendedDecimalDetails = decimal.NewDecimal(2, ptr.ToInt(30), nil)
-	tableData.UpdateInMemoryColumnsFromDestination(o.ctx, columns.NewColumn("ext_dec", extDecimal))
+	tableData.MergeColumnsFromDestination(o.ctx, columns.NewColumn("ext_dec", extDecimal))
 	// Now it should be ext decimal type
 	extDecCol, isOk = tableData.inMemoryColumns.GetColumn("ext_dec")
 	assert.True(o.T(), isOk)
@@ -122,7 +122,7 @@ func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumnsFromDestinati
 	assert.Equal(o.T(), 22, *extDecColFilled.KindDetails.ExtendedDecimalDetails.Precision())
 	assert.Equal(o.T(), 2, extDecColFilled.KindDetails.ExtendedDecimalDetails.Scale())
 
-	tableData.UpdateInMemoryColumnsFromDestination(o.ctx, columns.NewColumn("ext_dec_filled", extDecimal))
+	tableData.MergeColumnsFromDestination(o.ctx, columns.NewColumn("ext_dec_filled", extDecimal))
 	extDecColFilled, isOk = tableData.inMemoryColumns.GetColumn("ext_dec_filled")
 	assert.True(o.T(), isOk)
 	assert.Equal(o.T(), typing.EDecimal.Kind, extDecColFilled.KindDetails.Kind)

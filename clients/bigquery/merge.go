@@ -168,7 +168,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	// Infer the right data types from BigQuery before temp table creation.
-	tableData.UpdateInMemoryColumnsFromDestination(ctx, tableConfig.Columns().GetColumns()...)
+	tableData.MergeColumnsFromDestination(ctx, tableConfig.Columns().GetColumns()...)
 
 	// Start temporary table creation
 	tempAlterTableArgs := ddl.AlterTableArgs{

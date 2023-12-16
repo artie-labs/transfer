@@ -229,13 +229,13 @@ func (t *TableData) ShouldFlush(ctx context.Context) (bool, string) {
 	return false, ""
 }
 
-// UpdateInMemoryColumnsFromDestination - When running Transfer, we will have 2 column types.
+// MergeColumnsFromDestination - When running Transfer, we will have 2 column types.
 // 1) TableData (constructed in-memory)
 // 2) TableConfig (coming from the SQL DESCRIBE or equivalent statement) from the destination
 // Prior to merging, we will need to treat `tableConfig` as the source-of-truth and whenever there's discrepancies
 // We will prioritize using the values coming from (2) TableConfig. We also cannot simply do a replacement, as we have in-memory columns
 // That carry metadata for Artie Transfer. They are prefixed with __artie.
-func (t *TableData) UpdateInMemoryColumnsFromDestination(ctx context.Context, cols ...columns.Column) {
+func (t *TableData) MergeColumnsFromDestination(ctx context.Context, destCols ...columns.Column) {
 	if t == nil {
 		return
 	}
@@ -243,9 +243,9 @@ func (t *TableData) UpdateInMemoryColumnsFromDestination(ctx context.Context, co
 	for _, inMemoryCol := range t.inMemoryColumns.GetColumns() {
 		var foundColumn columns.Column
 		var found bool
-		for _, col := range cols {
-			if col.Name(ctx, nil) == strings.ToLower(inMemoryCol.Name(ctx, nil)) {
-				foundColumn = col
+		for _, destCol := range destCols {
+			if destCol.Name(ctx, nil) == strings.ToLower(inMemoryCol.Name(ctx, nil)) {
+				foundColumn = destCol
 				found = true
 				break
 			}
@@ -255,13 +255,16 @@ func (t *TableData) UpdateInMemoryColumnsFromDestination(ctx context.Context, co
 			// If the inMemoryColumn is decimal and foundColumn is integer, don't copy it over.
 			// This is because parsing NUMERIC(...) will return an INTEGER if there's no decimal point.
 			// However, this will wipe the precision unit from the INTEGER which may cause integer overflow.
-			shouldSKip := inMemoryCol.KindDetails.Kind == typing.EDecimal.Kind && foundColumn.KindDetails.Kind == typing.Integer.Kind
-			if !shouldSKip {
+			shouldSkip := inMemoryCol.KindDetails.Kind == typing.EDecimal.Kind && foundColumn.KindDetails.Kind == typing.Integer.Kind
+			if !shouldSkip {
 				// We should take `kindDetails.kind` and `backfilled` from foundCol
 				// We are not taking primaryKey and defaultValue because DWH does not have this information.
 				// Note: If our in-memory column is `Invalid`, it would get skipped during merge. However, if the column exists in
 				// the destination, we'll copy the type over. This is to make sure we don't miss batch updates where the whole column in the batch is NULL.
 				inMemoryCol.KindDetails.Kind = foundColumn.KindDetails.Kind
+				if foundColumn.KindDetails.OptionalRedshiftStrPrecision != nil {
+					inMemoryCol.KindDetails.OptionalRedshiftStrPrecision = foundColumn.KindDetails.OptionalRedshiftStrPrecision
+				}
 			}
 
 			inMemoryCol.SetBackfilled(foundColumn.Backfilled())
