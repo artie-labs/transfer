@@ -14,7 +14,6 @@ func RedshiftTypeToKind(rawType string, stringPrecision string) KindDetails {
 		return ParseNumeric(defaultPrefix, rawType)
 	}
 
-	// TODO: Add test
 	if strings.Contains(rawType, "character varying") {
 		var strPrecision *int
 		precision, err := strconv.Atoi(stringPrecision)
