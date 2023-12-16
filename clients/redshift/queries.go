@@ -25,9 +25,9 @@ SELECT
         WHEN c.data_type = 'numeric' THEN 
             'numeric(' || COALESCE(CAST(c.numeric_precision AS VARCHAR), '') || ',' || COALESCE(CAST(c.numeric_scale AS VARCHAR), '') || ')'
         ELSE 
-            c.data_type,
-	c.%s,
+            c.data_type
     END AS data_type,
+    c.%s,
     d.description
 FROM 
     information_schema.columns c 
