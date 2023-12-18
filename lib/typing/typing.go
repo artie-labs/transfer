@@ -177,7 +177,7 @@ func KindToDWHType(kd KindDetails, dwh constants.DestinationKind) string {
 	case constants.BigQuery:
 		return kindToBigQuery(kd)
 	case constants.Redshift:
-		return kindToRedShift(kd)
+		return kindToRedshift(kd)
 	}
 
 	return ""

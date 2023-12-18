@@ -97,6 +97,8 @@ func TestRedshiftTypeToKind(t *testing.T) {
 
 			if kd.OptionalRedshiftStrPrecision != nil {
 				assert.Equal(t, *testCase.expectedKd.OptionalRedshiftStrPrecision, *kd.OptionalRedshiftStrPrecision, testCase.name)
+			} else {
+				assert.Nil(t, kd.OptionalRedshiftStrPrecision, testCase.name)
 			}
 		}
 	}

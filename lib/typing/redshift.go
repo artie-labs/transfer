@@ -47,7 +47,7 @@ func RedshiftTypeToKind(rawType string, stringPrecision string) KindDetails {
 	return Invalid
 }
 
-func kindToRedShift(kd KindDetails) string {
+func kindToRedshift(kd KindDetails) string {
 	switch kd.Kind {
 	case Integer.Kind:
 		// int4 is 2^31, whereas int8 is 2^63.
