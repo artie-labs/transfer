@@ -3,6 +3,8 @@ package redshift
 import (
 	"fmt"
 	"strings"
+
+	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
 type describeArgs struct {
@@ -23,8 +25,9 @@ SELECT
         WHEN c.data_type = 'numeric' THEN 
             'numeric(' || COALESCE(CAST(c.numeric_precision AS VARCHAR), '') || ',' || COALESCE(CAST(c.numeric_scale AS VARCHAR), '') || ')'
         ELSE 
-            c.data_type 
+            c.data_type
     END AS data_type,
+    c.%s,
     d.description
 FROM 
     information_schema.columns c 
@@ -36,5 +39,5 @@ LEFT JOIN
     pg_catalog.pg_description d ON d.objsubid=c.ordinal_position AND d.objoid=c1.oid 
 WHERE 
     LOWER(c.table_name) = LOWER('%s') AND LOWER(c.table_schema) = LOWER('%s');
-`, args.RawTableName, args.Schema), nil
+`, constants.StrPrecisionCol, args.RawTableName, args.Schema), nil
 }

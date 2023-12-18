@@ -59,21 +59,20 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	err := s.mergeWithStages(ctx, tableData)
 	if AuthenticationExpirationErr(err) {
 		logger.FromContext(ctx).WithError(err).Warn("authentication has expired, will reload the Snowflake store and retry merging")
-		s.ReestablishConnection(ctx)
+		s.reestablishConnection(ctx)
 		return s.Merge(ctx, tableData)
 	}
 
 	return err
 }
 
-func (s *Store) ReestablishConnection(ctx context.Context) {
+func (s *Store) reestablishConnection(ctx context.Context) {
 	if s.testDB {
 		// Don't actually re-establish for tests.
 		return
 	}
 
 	settings := config.FromContext(ctx)
-
 	cfg := &gosnowflake.Config{
 		Account:   settings.Config.Snowflake.AccountID,
 		User:      settings.Config.Snowflake.Username,
@@ -110,6 +109,6 @@ func LoadSnowflake(ctx context.Context, _store *db.Store) *Store {
 		configMap: &types.DwhToTablesConfigMap{},
 	}
 
-	s.ReestablishConnection(ctx)
+	s.reestablishConnection(ctx)
 	return s
 }

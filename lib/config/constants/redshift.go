@@ -162,3 +162,5 @@ var RedshiftReservedKeywords = []string{
 	"with",
 	"without",
 }
+
+const StrPrecisionCol = "character_maximum_length"

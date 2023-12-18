@@ -16,6 +16,9 @@ type KindDetails struct {
 	Kind                   string
 	ExtendedTimeDetails    *ext.NestedKind
 	ExtendedDecimalDetails *decimal.Decimal
+
+	// Optional kind details metadata
+	OptionalRedshiftStrPrecision *int
 }
 
 // Summarized this from Snowflake + Reflect.
@@ -174,7 +177,7 @@ func KindToDWHType(kd KindDetails, dwh constants.DestinationKind) string {
 	case constants.BigQuery:
 		return kindToBigQuery(kd)
 	case constants.Redshift:
-		return kindToRedShift(kd)
+		return kindToRedshift(kd)
 	}
 
 	return ""
