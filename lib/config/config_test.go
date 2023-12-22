@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -87,13 +88,13 @@ func TestKafka_String(t *testing.T) {
 }
 
 func TestReadNonExistentFile(t *testing.T) {
-	config, err := readFileToConfig("/tmp/213213231312")
-	assert.Error(t, err)
+	config, err := readFileToConfig(filepath.Join(t.TempDir(), "213213231312"))
+	assert.ErrorContains(t, err, "no such file or directory")
 	assert.Nil(t, config)
 }
 
 func TestOutputSourceValid(t *testing.T) {
-	randomFile := fmt.Sprintf("/tmp/%s_output_source_valid", time.Now().String())
+	randomFile := filepath.Join(t.TempDir(), fmt.Sprintf("%s_output_source_valid", time.Now().String()))
 	defer os.Remove(randomFile)
 
 	file, err := os.Create(randomFile)
@@ -127,7 +128,7 @@ bufferRows: 10
 }
 
 func TestOutputSourceInvalid(t *testing.T) {
-	randomFile := fmt.Sprintf("/tmp/%s_output_source", time.Now().String())
+	randomFile := filepath.Join(t.TempDir(), fmt.Sprintf("%s_output_source", time.Now().String()))
 	defer os.Remove(randomFile)
 
 	file, err := os.Create(randomFile)
@@ -150,7 +151,7 @@ outputSource: none
 }
 
 func TestConfig_Validate_ErrorTopicConfigInvalid(t *testing.T) {
-	randomFile := fmt.Sprintf("/tmp/%s_output_source_invalid_tc", time.Now().String())
+	randomFile := filepath.Join(t.TempDir(), fmt.Sprintf("%s_output_source_invalid_tc", time.Now().String()))
 	defer os.Remove(randomFile)
 
 	file, err := os.Create(randomFile)
@@ -193,7 +194,7 @@ kafka:
 }
 
 func TestConfig_Validate_ErrorKafkaInvalid(t *testing.T) {
-	randomFile := fmt.Sprintf("/tmp/%s_output_source_invalid_tc", time.Now().String())
+	randomFile := filepath.Join(t.TempDir(), fmt.Sprintf("%s_output_source_invalid_tc", time.Now().String()))
 	defer os.Remove(randomFile)
 
 	file, err := os.Create(randomFile)
@@ -216,7 +217,7 @@ outputSource: test
 
 	_, err = io.WriteString(file, `
 kafka:
- bootstrapServer: 
+ bootstrapServer:
  groupID: 123
  username: foo
  password: bar
@@ -251,7 +252,7 @@ kafka:
 }
 
 func TestReadSentryDSNAndTelemetry(t *testing.T) {
-	randomFile := fmt.Sprintf("/tmp/%s_sentry_dsn", time.Now().String())
+	randomFile := filepath.Join(t.TempDir(), fmt.Sprintf("%s_sentry_dsn", time.Now().String()))
 	defer os.Remove(randomFile)
 
 	file, err := os.Create(randomFile)
@@ -291,7 +292,7 @@ telemetry:
 }
 
 func TestReadFileNotYAML(t *testing.T) {
-	randomFile := fmt.Sprintf("/tmp/%s", time.Now().String())
+	randomFile := filepath.Join(t.TempDir(), time.Now().String())
 	defer os.Remove(randomFile)
 
 	file, err := os.Create(randomFile)
@@ -308,7 +309,7 @@ func TestReadFileNotYAML(t *testing.T) {
 }
 
 func TestReadFileToConfig_Snowflake(t *testing.T) {
-	randomFile := fmt.Sprintf("/tmp/%s", time.Now().String())
+	randomFile := filepath.Join(t.TempDir(), time.Now().String())
 	defer os.Remove(randomFile)
 
 	file, err := os.Create(randomFile)

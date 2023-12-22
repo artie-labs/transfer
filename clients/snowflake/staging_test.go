@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/artie-labs/transfer/clients/utils"
@@ -115,8 +116,8 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	resourceName := addPrefixToTableName(tempTableName, "%")
 	// Second call is a PUT
 	putQuery, _ := s.fakeStageStore.ExecArgsForCall(1)
-	assert.Equal(s.T(), fmt.Sprintf(`PUT file:///tmp/%s.csv @%s AUTO_COMPRESS=TRUE`,
-		tempTableName, resourceName), putQuery)
+	assert.Equal(s.T(), fmt.Sprintf(`PUT file://%s.csv @%s AUTO_COMPRESS=TRUE`,
+		filepath.Join(s.T().TempDir(), tempTableName), resourceName), putQuery)
 
 	// Third call is a COPY INTO
 	copyQuery, _ := s.fakeStageStore.ExecArgsForCall(2)

@@ -2,6 +2,7 @@ package snowflake
 
 import (
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -171,7 +172,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 
 		// PUT file:///tmp/customer.public.orders___artie_Mwv9YADmRy.csv @customer.public.%orders___artie_Mwv9YADmRy AUTO_COMPRESS=TRUE
 		putQuery, _ := s.fakeStageStore.ExecArgsForCall(idx + 1)
-		assert.Contains(s.T(), putQuery, fmt.Sprintf("PUT file:///tmp/%s_%s", fqName, constants.ArtiePrefix), fmt.Sprintf("query: %v, destKind: %v", putQuery, destKind))
+		assert.Contains(s.T(), putQuery, fmt.Sprintf("PUT file://%s_%s", filepath.Join(s.T().TempDir(), fqName), constants.ArtiePrefix), fmt.Sprintf("query: %v, destKind: %v", putQuery, destKind))
 
 		// COPY INTO customer.public.orders___artie_Mwv9YADmRy (id,name,__artie_delete,created_at) FROM (SELECT $1,$2,$3,$4 FROM @customer.public.%orders___artie_Mwv9YADmRy
 		copyQuery, _ := s.fakeStageStore.ExecArgsForCall(idx + 2)
