@@ -12,6 +12,7 @@ import (
 // ParseField returns a `parsedValue` as type interface{}
 func parseField(ctx context.Context, field debezium.Field, value interface{}) interface{} {
 	if value == nil {
+		// Early exit.
 		return nil
 	}
 
