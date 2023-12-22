@@ -8,14 +8,12 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config"
 
-	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/stretchr/testify/suite"
 )
 
 type EventsTestSuite struct {
 	suite.Suite
-	fakeStore *mocks.FakeStore
-	ctx       context.Context
+	ctx context.Context
 }
 
 func (e *EventsTestSuite) SetupTest() {

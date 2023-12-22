@@ -19,13 +19,8 @@ type DefaultValueArgs struct {
 }
 
 func (c *Column) DefaultValue(ctx context.Context, args *DefaultValueArgs) (interface{}, error) {
-	if args == nil || !args.Escape {
-		// Either no args, or args.Escape = false
+	if args == nil || !args.Escape || c.defaultValue == nil {
 		return c.defaultValue, nil
-	}
-
-	if c.defaultValue == nil {
-		return nil, nil
 	}
 
 	switch c.KindDetails.Kind {

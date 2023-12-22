@@ -57,16 +57,27 @@ func (s *SnowflakeTestSuite) TestEscapeColumns() {
 		happyPathCols                columns.Columns
 		happyPathAndJSONCols         columns.Columns
 		happyPathAndJSONAndArrayCols columns.Columns
+		colsWithInvalidValues        columns.Columns
 	)
 
 	happyPathCols.AddColumn(columns.NewColumn("foo", typing.String))
 	happyPathCols.AddColumn(columns.NewColumn("bar", typing.String))
 
-	happyPathAndJSONCols = happyPathCols
+	for _, happyPathCol := range happyPathCols.GetColumns() {
+		happyPathAndJSONCols.AddColumn(happyPathCol)
+	}
 	happyPathAndJSONCols.AddColumn(columns.NewColumn("struct", typing.Struct))
 
-	happyPathAndJSONAndArrayCols = happyPathAndJSONCols
+	for _, happyPathAndJSONCol := range happyPathAndJSONCols.GetColumns() {
+		happyPathAndJSONAndArrayCols.AddColumn(happyPathAndJSONCol)
+	}
 	happyPathAndJSONAndArrayCols.AddColumn(columns.NewColumn("array", typing.Array))
+
+	colsWithInvalidValues.AddColumn(columns.NewColumn("invalid1", typing.Invalid))
+	for _, happyPathAndJSONAndArrayCol := range happyPathAndJSONAndArrayCols.GetColumns() {
+		colsWithInvalidValues.AddColumn(happyPathAndJSONAndArrayCol)
+	}
+	colsWithInvalidValues.AddColumn(columns.NewColumn("invalid2", typing.Invalid))
 
 	testCases := []_testCase{
 		{
@@ -84,10 +95,16 @@ func (s *SnowflakeTestSuite) TestEscapeColumns() {
 			cols:           &happyPathAndJSONAndArrayCols,
 			expectedString: "$1,$2,PARSE_JSON($3),CAST(PARSE_JSON($4) AS ARRAY) AS $4",
 		},
+		{
+			name: "cols with invalid values",
+			cols: &colsWithInvalidValues,
+			// Index here should be the same still.
+			expectedString: "$1,$2,PARSE_JSON($3),CAST(PARSE_JSON($4) AS ARRAY) AS $4",
+		},
 	}
 
 	for _, testCase := range testCases {
-		actualString := escapeColumns(s.ctx, testCase.cols, ",")
+		actualString := escapeColumns(testCase.cols, ",")
 		assert.Equal(s.T(), testCase.expectedString, actualString, testCase.name)
 	}
 }
