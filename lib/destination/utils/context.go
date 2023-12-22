@@ -3,22 +3,22 @@ package utils
 import (
 	"context"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
+
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/logger"
 )
 
-const destKey = "_dest"
-
 func InjectDwhIntoCtx(dwh destination.DataWarehouse, ctx context.Context) context.Context {
-	return context.WithValue(ctx, destKey, dwh)
+	return context.WithValue(ctx, constants.DestinationKey, dwh)
 }
 
 func InjectBaselineIntoCtx(fs destination.Baseline, ctx context.Context) context.Context {
-	return context.WithValue(ctx, destKey, fs)
+	return context.WithValue(ctx, constants.DestinationKey, fs)
 }
 
 func FromContext(ctx context.Context) destination.Baseline {
-	destVal := ctx.Value(destKey)
+	destVal := ctx.Value(constants.DestinationKey)
 	if destVal == nil {
 		logger.FromContext(ctx).Fatal("destination missing from context")
 	}

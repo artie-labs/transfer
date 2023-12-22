@@ -5,11 +5,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
+
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 )
-
-const dbKey = "__db"
 
 // TableData is a wrapper around *optimization.TableData which stores the actual underlying tableData.
 // The wrapper here is just to have a mutex. Any of the ptr methods on *TableData will require callers to use their own locks.
@@ -55,13 +55,13 @@ type DatabaseData struct {
 
 func LoadMemoryDB(ctx context.Context) context.Context {
 	tableData := make(map[string]*TableData)
-	return context.WithValue(ctx, dbKey, &DatabaseData{
+	return context.WithValue(ctx, constants.DatabaseKey, &DatabaseData{
 		tableData: tableData,
 	})
 }
 
 func GetMemoryDB(ctx context.Context) *DatabaseData {
-	dbValue := ctx.Value(dbKey)
+	dbValue := ctx.Value(constants.DatabaseKey)
 	if dbValue == nil {
 		logger.FromContext(ctx).Fatalf("failed to retrieve database from context")
 	}

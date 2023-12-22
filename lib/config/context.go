@@ -2,11 +2,11 @@ package config
 
 import (
 	"context"
-	"github.com/jessevdk/go-flags"
 	"log"
-)
 
-const settingsKey = "_settings"
+	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/jessevdk/go-flags"
+)
 
 type Settings struct {
 	Config         *Config
@@ -15,11 +15,11 @@ type Settings struct {
 
 // InjectSettingsIntoContext is used for tests ONLY
 func InjectSettingsIntoContext(ctx context.Context, settings *Settings) context.Context {
-	return context.WithValue(ctx, settingsKey, settings)
+	return context.WithValue(ctx, constants.ConfigKey, settings)
 }
 
 func FromContext(ctx context.Context) *Settings {
-	settingsVal := ctx.Value(settingsKey)
+	settingsVal := ctx.Value(constants.ConfigKey)
 	if settingsVal == nil {
 		log.Fatalf("failed to grab settings from context")
 	}
@@ -63,5 +63,5 @@ func InitializeCfgIntoContext(ctx context.Context, args []string, loadConfig boo
 		VerboseLogging: opts.Verbose,
 	}
 
-	return context.WithValue(ctx, settingsKey, settings)
+	return context.WithValue(ctx, constants.ConfigKey, settings)
 }
