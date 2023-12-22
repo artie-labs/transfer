@@ -18,6 +18,11 @@ func (u *UtilTestSuite) TestParseField() {
 
 	testCases := []_testCase{
 		{
+			name:          "nil",
+			value:         nil,
+			expectedValue: nil,
+		},
+		{
 			name:          "string",
 			value:         "robin",
 			expectedValue: "robin",
