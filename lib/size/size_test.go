@@ -12,7 +12,7 @@ func TestVariableToBytes(t *testing.T) {
 	filePath := "/tmp/size_test"
 	assert.NoError(t, os.RemoveAll(filePath))
 
-	rowsData := make(map[string]map[string]interface{}) // pk -> { col -> val }
+	rowsData := make(map[string]interface{}) // pk -> { col -> val }
 	for i := 0; i < 500; i++ {
 		rowsData[fmt.Sprintf("key-%v", i)] = map[string]interface{}{
 			"id":         fmt.Sprintf("key-%v", i),
