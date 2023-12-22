@@ -59,7 +59,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 			DestKind: s.Label(),
 		}), ","),
 		// Escaped columns, TABLE NAME
-		escapeColumns(ctx, tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableName, "%")))
+		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableName, "%")))
 
 	if err != nil {
 		return fmt.Errorf("failed to load staging file into temporary table, err: %v", err)

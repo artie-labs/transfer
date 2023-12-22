@@ -1,7 +1,6 @@
 package snowflake
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -25,12 +24,14 @@ func addPrefixToTableName(fqTableName string, prefix string) string {
 
 // escapeColumns will take the columns that are passed in, escape them and return them in the ordered received.
 // It'll return like this: $1, $2, $3
-func escapeColumns(ctx context.Context, columns *columns.Columns, delimiter string) string {
+func escapeColumns(columns *columns.Columns, delimiter string) string {
 	var escapedCols []string
-	for index, col := range columns.GetColumnsToUpdate(ctx, nil) {
-		colKind, _ := columns.GetColumn(col)
+	var index int
+	for _, col := range columns.GetColumns() {
 		escapedCol := fmt.Sprintf("$%d", index+1)
-		switch colKind.KindDetails {
+		switch col.KindDetails {
+		case typing.Invalid:
+			continue
 		case typing.Struct:
 			// https://community.snowflake.com/s/article/how-to-load-json-values-in-a-csv-file
 			escapedCol = fmt.Sprintf("PARSE_JSON(%s)", escapedCol)
@@ -39,6 +40,7 @@ func escapeColumns(ctx context.Context, columns *columns.Columns, delimiter stri
 		}
 
 		escapedCols = append(escapedCols, escapedCol)
+		index += 1
 	}
 
 	return strings.Join(escapedCols, delimiter)
