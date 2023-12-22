@@ -22,7 +22,7 @@ func addPrefixToTableName(fqTableName string, prefix string) string {
 		strings.Join(tableParts[0:len(tableParts)-1], "."), prefix, tableParts[len(tableParts)-1])
 }
 
-// escapeColumns will take the columns that are passed in, escape them and return them in the ordered received.
+// escapeColumns will take the take columns, filter out invalid ones and escape them and return them in the ordered received.
 // It'll return like this: $1, $2, $3
 func escapeColumns(columns *columns.Columns, delimiter string) string {
 	var escapedCols []string
