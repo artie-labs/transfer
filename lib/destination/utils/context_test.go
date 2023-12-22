@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
+
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/db/mock"
@@ -19,7 +21,7 @@ func TestInjectDwhIntoCtx(t *testing.T) {
 	})
 
 	// Check before injection, there should be no DWH.
-	dwhVal := ctx.Value(destKey)
+	dwhVal := ctx.Value(constants.DestinationKey)
 	assert.Nil(t, dwhVal)
 
 	_dwh := snowflake.LoadSnowflake(ctx, &store)

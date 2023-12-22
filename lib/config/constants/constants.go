@@ -153,3 +153,13 @@ const (
 func IsValidS3OutputFormat(format S3OutputFormat) bool {
 	return format == ParquetFormat
 }
+
+type contextKey string
+
+const (
+	ConfigKey      contextKey = "__settings"
+	DestinationKey contextKey = "__dest"
+	LoggerKey      contextKey = "__log"
+	MetricsKey     contextKey = "__metrics"
+	DatabaseKey    contextKey = "__db"
+)
