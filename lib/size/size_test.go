@@ -16,6 +16,19 @@ func TestGetApproxSize(t *testing.T) {
 			"dusty":      "the mini aussie",
 			"next_puppy": true,
 			"team":       []string{"charlie", "robin", "jacqueline"},
+			"arrays":     []string{"foo", "bar", "baz"},
+			"nested": map[string]interface{}{
+				"foo": "bar",
+				"abc": "xyz",
+			},
+			"array_of_maps": []map[string]interface{}{
+				{
+					"foo": "bar",
+				},
+				{
+					"abc": "xyz",
+				},
+			},
 		}
 	}
 

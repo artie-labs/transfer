@@ -1,19 +1,13 @@
 package size
 
-import "fmt"
+import (
+	"fmt"
+)
 
-func GetApproxSize(v map[string]interface{}) int {
+func GetApproxSize(value interface{}) int {
 	// We chose not to use unsafe.SizeOf or reflect.Type.Size (both are akin) because they do not do recursive traversal.
 	// We also chose not to use gob.NewEncoder because it does not work for all data types and had a huge computational overhead.
 	// Another plus here is that this will not error out.
-	var size int
-	for _, value := range v {
-		size += approximateSizeOfValue(value)
-	}
-	return size
-}
-
-func approximateSizeOfValue(value interface{}) int {
 	switch v := value.(type) {
 	case string:
 		return len(v)
@@ -33,7 +27,29 @@ func approximateSizeOfValue(value interface{}) int {
 	case complex128:
 		return 16 // Approximation for complex types
 	case map[string]interface{}:
-		return GetApproxSize(v) // Recursive call for nested maps
+		var size int
+		for _, val := range v {
+			size += GetApproxSize(val)
+		}
+		return size
+	case []map[string]interface{}:
+		var size int
+		for _, val := range v {
+			size += GetApproxSize(val)
+		}
+		return size
+	case []string:
+		var size int
+		for _, val := range v {
+			size += GetApproxSize(val)
+		}
+		return size
+	case [][]byte:
+		var size int
+		for _, val := range v {
+			size += GetApproxSize(val)
+		}
+		return size
 	}
 
 	return len([]byte(fmt.Sprint(value)))
