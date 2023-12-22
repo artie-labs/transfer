@@ -39,6 +39,17 @@ func (c *ColumnsTestSuite) TestColumn_DefaultValue() {
 
 	testCases := []_testCase{
 		{
+			name: "default value = nil",
+			col: &Column{
+				KindDetails:  typing.String,
+				defaultValue: nil,
+			},
+			args: &DefaultValueArgs{
+				Escape: true,
+			},
+			expectedValue: nil,
+		},
+		{
 			name: "escaped args (nil)",
 			col: &Column{
 				KindDetails:  typing.String,
