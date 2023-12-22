@@ -287,7 +287,7 @@ func TestTableData_ShouldFlushRowSize(t *testing.T) {
 
 	// Insert 3 rows and confirm that we need to flush.
 	td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
-	for i := 0; i < 45; i++ {
+	for i := 0; i < 85; i++ {
 		shouldFlush, flushReason := td.ShouldFlush(ctx)
 		assert.False(t, shouldFlush)
 		assert.Empty(t, flushReason)
@@ -309,6 +309,8 @@ func TestTableData_ShouldFlushRowSize(t *testing.T) {
 		"false": false,
 		"nested": map[string]interface{}{
 			"foo": "bar",
+			"bar": "xyz",
+			"123": "9222213213j1i31j3k21j321k3j1k31jk31213123213213121322j31k2",
 		},
 	}, false)
 

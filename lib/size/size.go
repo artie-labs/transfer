@@ -8,9 +8,8 @@ import "fmt"
 // Another bonus is that there is no possible way for this to error out.
 func GetApproxSize(v map[string]interface{}) int {
 	var size int
-	for key, value := range v {
-		size += len(key)                      // Size of the key
-		size += approximateSizeOfValue(value) // Size of the value
+	for _, value := range v {
+		size += approximateSizeOfValue(value)
 	}
 	return size
 }
@@ -19,17 +18,23 @@ func approximateSizeOfValue(value interface{}) int {
 	switch v := value.(type) {
 	case string:
 		return len(v)
+	case []byte:
+		return len(v)
 	case bool:
-		return 1 // Size of a boolean
-	case int, int8, int16, int32, int64,
-		uint, uint8, uint16, uint32, uint64, uintptr, float32, float64:
-		return 8 // Approximation for floating-point types
-	case complex64, complex128:
+		return 1
+	case int8, uint8:
+		return 1
+	case int16, uint16:
+		return 2
+	case int32, uint32, float32:
+		return 4
+	case int, int64, uint, uint64, uintptr, float64, complex64:
+		// int, uint are platform dependent - but to be safe, let's over approximate and assume 64-bit system
+		return 8
+	case complex128:
 		return 16 // Approximation for complex types
 	case map[string]interface{}:
 		return GetApproxSize(v) // Recursive call for nested maps
-	case []byte:
-		return len(v) // Size of byte slice
 	}
 
 	return len([]byte(fmt.Sprint(value)))
