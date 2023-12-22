@@ -28,14 +28,9 @@ type Event interface {
 	GetColumns(ctx context.Context) *columns.Columns
 }
 
-// FieldLabelKind is used when the schema is turned on. Each schema object will be labelled.
+// FieldLabelKind is used when the schema is turned on.
 type FieldLabelKind string
 
 const (
-	Before      FieldLabelKind = "before"
-	After       FieldLabelKind = "after"
-	Source      FieldLabelKind = "source"
-	Op          FieldLabelKind = "op"
-	TsMs        FieldLabelKind = "ts_ms"
-	Transaction FieldLabelKind = "transaction"
+	After FieldLabelKind = "after"
 )

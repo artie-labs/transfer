@@ -11,6 +11,10 @@ import (
 
 // ParseField returns a `parsedValue` as type interface{}
 func parseField(ctx context.Context, field debezium.Field, value interface{}) interface{} {
+	if value == nil {
+		return nil
+	}
+
 	// Check if the field is an integer and requires us to cast it as such.
 	if field.IsInteger() {
 		valFloat, isOk := value.(float64)

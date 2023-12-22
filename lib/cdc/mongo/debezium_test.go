@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
 
@@ -442,12 +441,6 @@ func (p *MongoTestSuite) TestMongoDBEventWithSchema() {
 	schemaEvt, isOk := evt.(*SchemaEventPayload)
 	assert.True(p.T(), isOk)
 	assert.Equal(p.T(), schemaEvt.Schema.SchemaType, "struct")
-	assert.Equal(p.T(), schemaEvt.Schema.GetSchemaFromLabel(cdc.Source).Fields[0], debezium.Field{
-		Optional:     false,
-		FieldName:    "version",
-		DebeziumType: "",
-		Type:         "string",
-	})
 	assert.False(p.T(), evt.DeletePayload())
 	cols := schemaEvt.GetColumns(p.ctx)
 	assert.NotNil(p.T(), cols)
