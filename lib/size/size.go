@@ -5,13 +5,13 @@ import (
 )
 
 func GetApproxSize(value interface{}) int {
+	// We chose not to use unsafe.SizeOf or reflect.Type.Size (both are akin) because they do not do recursive traversal.
+	// We also chose not to use gob.NewEncoder because it does not work for all data types and had a huge computational overhead.
+	// Another plus here is that this will not error out.
 	if value == nil {
 		return 0
 	}
 
-	// We chose not to use unsafe.SizeOf or reflect.Type.Size (both are akin) because they do not do recursive traversal.
-	// We also chose not to use gob.NewEncoder because it does not work for all data types and had a huge computational overhead.
-	// Another plus here is that this will not error out.
 	switch v := value.(type) {
 	case string:
 		return len(v)
@@ -29,7 +29,7 @@ func GetApproxSize(value interface{}) int {
 		// int, uint are platform dependent - but to be safe, let's over approximate and assume 64-bit system
 		return 8
 	case complex128:
-		return 16 // Approximation for complex types
+		return 16
 	case map[string]interface{}:
 		var size int
 		for _, val := range v {
