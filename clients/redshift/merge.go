@@ -67,23 +67,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
-	// Make sure we are still trying to delete it.
-	// If not, then we should assume the column is good and then remove it from our in-mem store.
-	for colToDelete := range tableConfig.ReadOnlyColumnsToDelete() {
-		var found bool
-		for _, col := range srcKeysMissing {
-			if found = col.Name(ctx, nil) == colToDelete; found {
-				// Found it.
-				break
-			}
-		}
-
-		if !found {
-			// Only if it is NOT found shall we try to delete from in-memory (because we caught up)
-			tableConfig.ClearColumnsToDeleteByColName(colToDelete)
-		}
-	}
-
+	tableConfig.AuditColumnsToDelete(srcKeysMissing)
 	tableData.MergeColumnsFromDestination(ctx, tableConfig.Columns().GetColumns()...)
 
 	// Temporary tables cannot specify schemas, so we just prefix it instead.

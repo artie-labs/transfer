@@ -16,12 +16,15 @@ import (
 )
 
 type GetTableCfgArgs struct {
-	Dwh                destination.DataWarehouse
-	FqName             string
-	ConfigMap          *types.DwhToTablesConfigMap
-	Query              string
-	ColumnNameLabel    string
-	ColumnTypeLabel    string
+	Dwh       destination.DataWarehouse
+	FqName    string
+	ConfigMap *types.DwhToTablesConfigMap
+	Query     string
+	// Name of the column
+	ColumnNameLabel string
+	// Column type
+	ColumnTypeLabel string
+	// Description of the column (used to annotate whether we need to backfill or not)
 	ColumnDescLabel    string
 	EmptyCommentValue  *string
 	DropDeletedColumns bool
