@@ -150,7 +150,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
-	tableConfig.AuditColumnsToDelete(srcKeysMissing)
+	tableConfig.AuditColumnsToDelete(ctx, srcKeysMissing)
 
 	// Infer the right data types from BigQuery before temp table creation.
 	tableData.MergeColumnsFromDestination(ctx, tableConfig.Columns().GetColumns()...)

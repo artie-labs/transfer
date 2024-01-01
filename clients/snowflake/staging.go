@@ -160,7 +160,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		return err
 	}
 
-	tableConfig.AuditColumnsToDelete(srcKeysMissing)
+	tableConfig.AuditColumnsToDelete(ctx, srcKeysMissing)
 	tableData.MergeColumnsFromDestination(ctx, tableConfig.Columns().GetColumns()...)
 	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label(), false), tableData.TempTableSuffix())
 	if err = s.prepareTempTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {

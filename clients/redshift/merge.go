@@ -67,7 +67,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
-	tableConfig.AuditColumnsToDelete(srcKeysMissing)
+	tableConfig.AuditColumnsToDelete(ctx, srcKeysMissing)
 	tableData.MergeColumnsFromDestination(ctx, tableConfig.Columns().GetColumns()...)
 
 	// Temporary tables cannot specify schemas, so we just prefix it instead.

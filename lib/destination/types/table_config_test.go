@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+	"sort"
 	"sync"
 	"testing"
 	"time"
@@ -130,26 +131,55 @@ func (t *TypesTestSuite) TestDwhTableConfig_ReadOnlyColumnsToDelete() {
 	wg.Wait()
 }
 
-func (t *TypesTestSuite) TestDwhTableConfig_ClearColumnsToDeleteByColName() {
-	colsToDelete := make(map[string]time.Time)
-	for _, colToDelete := range []string{"a", "b", "c", "d"} {
-		colsToDelete[colToDelete] = time.Now()
+func (t *TypesTestSuite) TestAuditColumnsToDelete() {
+	type _tc struct {
+		colsToDelete       []string
+		dropDeletedCols    bool
+		expectedColsRemain []string
 	}
 
-	tc := NewDwhTableConfig(nil, colsToDelete, false, false)
-	var wg sync.WaitGroup
-	assert.Equal(t.T(), 4, len(tc.columnsToDelete))
-	for _, colToDelete := range []string{"a", "b", "c", "d"} {
-		for i := 0; i < 100; i++ {
-			wg.Add(1)
-			go func(colName string) {
-				time.Sleep(time.Duration(jitter.JitterMs(50, 1)) * time.Millisecond)
-				defer wg.Done()
-				tc.ClearColumnsToDeleteByColName(colName)
-			}(colToDelete)
+	colsToDeleteList := []string{"aa", "ba", "ca", "da"}
+	tcs := []_tc{
+		{
+			colsToDelete:       colsToDeleteList,
+			dropDeletedCols:    false,
+			expectedColsRemain: colsToDeleteList,
+		},
+		{
+			colsToDelete:       []string{},
+			dropDeletedCols:    true,
+			expectedColsRemain: []string{},
+		},
+		{
+			colsToDelete:       []string{"aa", "ba", "ccc"},
+			dropDeletedCols:    true,
+			expectedColsRemain: []string{"aa", "ba"},
+		},
+	}
+
+	for idx, tc := range tcs {
+		colsToDelete := make(map[string]time.Time)
+		for _, colToDelete := range colsToDeleteList {
+			colsToDelete[colToDelete] = time.Now()
 		}
-	}
 
-	wg.Wait()
-	assert.Equal(t.T(), 0, len(tc.columnsToDelete))
+		dwhTc := NewDwhTableConfig(nil, colsToDelete, false, tc.dropDeletedCols)
+		var cols []columns.Column
+		for _, colToDelete := range tc.colsToDelete {
+			cols = append(cols, columns.NewColumn(colToDelete, typing.String))
+		}
+
+		dwhTc.AuditColumnsToDelete(t.ctx, cols)
+		var actualCols []string
+		for col := range dwhTc.ReadOnlyColumnsToDelete() {
+			actualCols = append(actualCols, col)
+		}
+
+		if len(actualCols) == 0 {
+			actualCols = []string{}
+		}
+
+		sort.Strings(actualCols)
+		assert.Equal(t.T(), tc.expectedColsRemain, actualCols, idx)
+	}
 }
