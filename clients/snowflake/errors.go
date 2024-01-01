@@ -2,7 +2,7 @@ package snowflake
 
 import "strings"
 
-func AuthenticationExpirationErr(err error) bool {
+func IsAuthExpiredError(err error) bool {
 	if err == nil {
 		return false
 	}
