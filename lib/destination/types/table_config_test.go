@@ -141,7 +141,7 @@ func (t *TypesTestSuite) TestAuditColumnsToDelete() {
 	colsToDeleteList := []string{"aa", "ba", "ca", "da"}
 	tcs := []_tc{
 		{
-			colsToDelete:       colsToDeleteList,
+			colsToDelete:       []string{"aa"},
 			dropDeletedCols:    false,
 			expectedColsRemain: colsToDeleteList,
 		},
