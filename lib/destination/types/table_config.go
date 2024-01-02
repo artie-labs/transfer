@@ -77,6 +77,31 @@ func (d *DwhTableConfig) MutateInMemoryColumns(ctx context.Context, createTable 
 	}
 }
 
+// AuditColumnsToDelete - will check its (*DwhTableConfig) columnsToDelete against `colsToDelete` and remove any columns that are not in `colsToDelete`.
+// `colsToDelete` is derived from diffing the destination and source (if destination has extra columns)
+func (d *DwhTableConfig) AuditColumnsToDelete(ctx context.Context, colsToDelete []columns.Column) {
+	if !d.dropDeletedColumns {
+		// If `dropDeletedColumns` is false, then let's skip this.
+		return
+	}
+
+	d.Lock()
+	defer d.Unlock()
+
+	for colName := range d.columnsToDelete {
+		var found bool
+		for _, col := range colsToDelete {
+			if found = col.Name(ctx, nil) == colName; found {
+				break
+			}
+		}
+
+		if !found {
+			delete(d.columnsToDelete, colName)
+		}
+	}
+}
+
 // ReadOnlyColumnsToDelete returns a read only version of the columns that need to be deleted.
 func (d *DwhTableConfig) ReadOnlyColumnsToDelete() map[string]time.Time {
 	d.RLock()
@@ -132,11 +157,4 @@ func (d *DwhTableConfig) AddColumnsToDelete(colName string, ts time.Time) {
 	}
 
 	d.columnsToDelete[colName] = ts
-}
-
-func (d *DwhTableConfig) ClearColumnsToDeleteByColName(colName string) {
-	d.Lock()
-	defer d.Unlock()
-
-	delete(d.columnsToDelete, colName)
 }
