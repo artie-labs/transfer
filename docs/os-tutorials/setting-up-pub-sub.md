@@ -4,7 +4,7 @@
 
 In this tutorial, we will learn how to run Debezium Server with Pub/Sub sink and Artie Transfer locally using Docker.
 
-<figure><img src="../.gitbook/assets/image (5) (1).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (30).png" alt=""><figcaption></figcaption></figure>
 
 ## Prerequisites
 
@@ -27,7 +27,7 @@ gcloud auth application-default login
 
 To use Pub/Sub in your GCP project, you will also need to enable it. Visit [this link](https://console.cloud.google.com/marketplace/product/google/pubsub.googleapis.com) to enable it.
 
-<figure><img src="../.gitbook/assets/image (1) (3).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (28).png" alt=""><figcaption></figcaption></figure>
 
 ## Creating a service account
 
@@ -65,7 +65,7 @@ resource "google_project_iam_member" "transfer" {
 
 Once your service account has been created, head to the GCP console and create a key for the service account. Save the key as we will be referencing it in the later steps.
 
-<figure><img src="../.gitbook/assets/image (2) (1) (1).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (13).png" alt=""><figcaption></figcaption></figure>
 
 ## Create the Pub/Sub topic and subscriptions
 

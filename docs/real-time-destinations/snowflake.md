@@ -8,7 +8,7 @@ description: Going over how to find your Snowflake settings and outline the typi
 
 ### Getting your username and password
 
-<figure><img src="../.gitbook/assets/image (1) (2).png" alt=""><figcaption><p>Create a service account for Transfer to use</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (10).png" alt=""><figcaption><p>Create a service account for Transfer to use</p></figcaption></figure>
 
 ### Getting the Snowflake account identifier
 
@@ -26,7 +26,7 @@ Consider creating a new virtual data warehouse for Transfer so that you can size
 For the most optimal usage, consider leveraging warehouse suspension policies and size your warehouse appropriately depending on your workloads. Click [here to learn more](https://docs.snowflake.com/en/user-guide/warehouses-overview.html#warehouse-size) from Snowflake's website.
 {% endhint %}
 
-<figure><img src="../.gitbook/assets/image (3) (1) (2).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (27).png" alt=""><figcaption></figcaption></figure>
 
 
 

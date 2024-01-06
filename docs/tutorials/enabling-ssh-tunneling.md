@@ -12,7 +12,7 @@ An SSH tunnel refers to a secured connection between a local machine and a remot
 
 With Artie, it would look something like this:
 
-<figure><img src="../.gitbook/assets/image (4) (1).png" alt="" width="563"><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (17).png" alt="" width="563"><figcaption></figcaption></figure>
 
 ### Step 1 - Creating a SSH tunnel
 
@@ -23,11 +23,11 @@ If you have one already, skip this step. However, if you don't - then make sure 
 * Before you add an account to Artie, make sure to create a new SSH tunnel within [Artie UI](https://app.artie.so/settings)
 * Grab the public IP address and port
 
-<figure><img src="../.gitbook/assets/image (2) (1).png" alt="" width="563"><figcaption><p>AWS console to grab the IP address</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (11).png" alt="" width="563"><figcaption><p>AWS console to grab the IP address</p></figcaption></figure>
 
 * Once the SSH tunnel is created, copy the public key and add it to your server
 
-<figure><img src="../.gitbook/assets/image (3) (1).png" alt="" width="563"><figcaption><p>Artie advanced settings</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (14).png" alt="" width="563"><figcaption><p>Artie advanced settings</p></figcaption></figure>
 
 ```bash
 # SSH into your instance

@@ -12,7 +12,7 @@ To integrate Redshift with Artie, we will need the following settings.
 2. Username and password.&#x20;
 3. Ensure it's publicly accessible to Artie.
 
-<figure><img src="../.gitbook/assets/image (5).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (20).png" alt=""><figcaption></figcaption></figure>
 
 ### Giving a limited user account
 

@@ -93,6 +93,14 @@ ALTER USER artie_transfer REPLICATION;
 
 ## Additional features
 
+### Changing PostgreSQL Publications
+
+By default, Artie will create a [publication](https://www.postgresql.org/docs/current/logical-replication-publication.html) that includes all table changes. You can override this behavior by selecting `Filtered` under the Deployment advanced settings.
+
+**If you change this to be filtered**, this means that we will update the publications whenever tables get added or removed. Additionally, the service account must be the owner of the tables as this is a [PostgreSQL requirement](https://www.postgresql.org/docs/current/sql-alterpublication.html).&#x20;
+
+<figure><img src="../../.gitbook/assets/image (1).png" alt="" width="563"><figcaption><p>Changing the behavior of Postgres publications</p></figcaption></figure>
+
 ### PostgreSQL Watcher
 
 To set up your PostgreSQL database for CDC-based replication, you will need to enable replication slots. When this is done incorrectly, it could potentially cause a replication slot overflow and bring your production database down.

@@ -43,7 +43,7 @@ INSERT INTO test_heartbeat_table (id, ts) VALUES (1, NOW());
 
 2. Check `Enable Heartbeats` under Deployment Advanced Settings
 
-<figure><img src="../.gitbook/assets/image (8).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (35).png" alt=""><figcaption></figcaption></figure>
 
 ## If you do have heartbeats enabled
 

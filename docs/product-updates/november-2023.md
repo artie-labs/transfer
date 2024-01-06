@@ -12,7 +12,7 @@ Welcome to our inaugural product update where we will highlight major product re
 
 We are extremely excited to announce our Analytics Portal to increase visibility and observability of our streaming pipelines. This will provide insights into system level infrastructure and help with monitoring database and pipeline health. When identifying and resolving issues, one of the most important metrics is to reduce MTTD (mean time to detection). With Artie’s streaming pipelines and periodic jobs like [Postgres Watcher](https://docs.artie.so/real-time-sources/postgresql#postgresql-watcher), metrics are being sent to our Analytics Portal in-flight, as the underlying data is still being processed.&#x20;
 
-<figure><img src="../.gitbook/assets/image (12).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (39).png" alt=""><figcaption></figcaption></figure>
 
 With the first iteration of our Analytics Portal, we are providing industry standard telemetry to streaming pipelines and related infrastructure. The Analytics Portal initially comes with a set of pre-built charts and monitors. Customers are able to drill down to get deployment, database, and table level statistics.&#x20;
 

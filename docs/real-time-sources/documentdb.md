@@ -26,7 +26,7 @@ This is necessary so that we are able to run a Debezium deployment to subscribe 
 | Username         | Username for authentication into your database.                                 |
 | Password         | Password for authentication into your database.                                 |
 
-<figure><img src="../.gitbook/assets/image (13).png" alt="" width="371"><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (40).png" alt="" width="371"><figcaption></figcaption></figure>
 
 ### Enabling change streams and creation of a service account
 

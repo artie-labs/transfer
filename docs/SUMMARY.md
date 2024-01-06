@@ -8,7 +8,7 @@
 
 ## Real-time Sources
 
-* [Overview](real-time-sources/wip-overview.md)
+* [Overview](real-time-sources/overview.md)
 * [PostgreSQL](real-time-sources/postgresql/README.md)
   * [GCP CloudSQL - PostgreSQL](real-time-sources/postgresql/gcp-cloudsql-postgresql.md)
   * [Amazon RDS - PostgreSQL](real-time-sources/postgresql/amazon-rds-postgresql.md)
@@ -28,7 +28,7 @@
 
 ## Running Transfer
 
-* [Overview](<README (1).md>)
+* [Overview](running-transfer/overview.md)
 * [Options](running-transfer/options.md)
 * [Examples](running-transfer/examples.md)
 

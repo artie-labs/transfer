@@ -29,14 +29,14 @@ To grab the connection string, follow these steps:
 
 <div align="center">
 
-<figure><img src="../../.gitbook/assets/image (10).png" alt="" width="563"><figcaption><p>SRV connection string</p></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (37).png" alt="" width="563"><figcaption><p>SRV connection string</p></figcaption></figure>
 
 </div>
 
-<figure><img src="../../.gitbook/assets/image (11).png" alt="" width="563"><figcaption><p>Standard connection string</p></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (38).png" alt="" width="563"><figcaption><p>Standard connection string</p></figcaption></figure>
 
 ## Authentication
 
 Please see the diagram below. To get here, go into your Atlas console, make sure you are on the right project and then select "Database Access".
 
-<figure><img src="../../.gitbook/assets/image (2) (2) (1).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (23).png" alt=""><figcaption></figcaption></figure>
