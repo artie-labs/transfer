@@ -30,7 +30,7 @@ Take a look at the [Getting started](#getting-started) on how to get started wit
 
 ## Architecture
 <div align="center">
-  <img src="https://user-images.githubusercontent.com/4412200/201719978-d9659515-6305-440f-b14a-f5d577a15457.png"/>
+  <img src="https://github.com/artie-labs/transfer/assets/4412200/a30a2ee1-7bdd-437c-9acb-ce6591654d18"/>
 </div>
 
 ### Pre-requisites
