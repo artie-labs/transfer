@@ -65,8 +65,10 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
 
 - [Sources](https://docs.artie.so/real-time-sources/overview):
     - MongoDB
-    - PostgreSQL, we support the following replication slot plug-ins: `pgoutput, decoderbufs, wal2json`
+    - DocumentDB
+    - PostgreSQL
     - MySQL
+    - DynamoDB
 
 _If the database you are using is not on the list, feel free to file for a [feature request](https://github.com/artie-labs/transfer/issues/new)._
 
