@@ -1,6 +1,6 @@
 module github.com/artie-labs/transfer
 
-go 1.19
+go 1.21
 
 require (
 	cloud.google.com/go/bigquery v1.51.2

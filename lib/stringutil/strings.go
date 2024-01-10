@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
-	"time"
 )
 
 // Override - pass in a list of vals, the right most value that is not empty will override.
@@ -55,6 +54,5 @@ func stringWithCharset(length int, charset string) string {
 }
 
 func Random(length int) string {
-	rand.Seed(time.Now().UnixNano())
 	return stringWithCharset(length, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 }
