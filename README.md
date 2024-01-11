@@ -11,22 +11,23 @@
 </div>
 <br/>
 
-Artie Transfer is a real time data replication solution for databases and data warehouses/data lakes.
+Artie Transfer is a real-time data replication solution for databases and data warehouses/data lakes.
 
-Typical ETL solutions leverage batched processes or schedulers (DAGs, Airflow), which means the data latency in the downstream data warehouse is often several hours to days old. This problem gets exacerbated as data volumes grow (batched processes take increasingly longer to run). 
+Typical ETL solutions rely on batched processes or schedulers (i.e. DAGs, Airflow), which means the data in the downstream data warehouse is often several hours to days old. This problem is exacerbated as data volumes grow, as batched processes take increasingly longer to run.
 
-Artie leverages change data capture (CDC) and stream processing to perform data syncs in a more efficient way, which enables sub-minute latency. Use Artie Transfer to reduce data latency from several hours to seconds! 
+Artie leverages change data capture (CDC) and stream processing to perform data syncs in a more efficient way, which enables sub-minute latency.
 
 Benefits of Artie Transfer:
 
-- Sub-minute data latency so you always have access to live production data.
-- Easy to use: just set up a simple configuration file, and you're good to go!
-- Automatic table creation and schema detection.
-- Artie has automatic retries and its processing is idempotent.
-- Built to scale: handle anywhere from 1GB to 100+ TB of data.
-- Built-in error reporting along with rich telemetry statistics.
+- Sub-minute data latency: always have access to live production data.
+- Ease of use: just set up a simple configuration file, and you're good to go!
+-  Automatic table creation and schema detection: Artie infers schemas and automatically merges changes to downstream destinations.
+-  Reliability: Artie has automatic retries and processing is idempotent.
+-  Scalability: handle anywhere from 1GB to 100+ TB of data.
+-  Monitoring: built-in error reporting along with rich telemetry statistics.
 
-Take a look at the [Getting started](#getting-started) on how to get started with Artie Transfer!
+
+Take a look at this [guide](#getting-started) to get started!
 
 ## Architecture
 <div align="center">
@@ -34,13 +35,15 @@ Take a look at the [Getting started](#getting-started) on how to get started wit
 </div>
 
 ### Pre-requisites
-As you can see from the architecture above, Artie Transfer sits behind Kafka and expects CDC messages to be in a particular format. Please see the currently supported section on what sources and destinations are supported.
+As you can see from the architecture diagram above, Artie Transfer is a Kafka consumer and expects CDC messages to be in a particular format.
 
 The optimal set-up looks something like this:
-* One Kafka topic per table (such that we can toggle the number of partitions based on throughput)
-* The partition key is the primary key for the table (to avoid out-of-order writes at the row level)
+* [Debezium](https://github.com/debezium/debezium) or [Artie Reader](https://github.com/artie-labs/reader) depending on the source
+* Kafka
+  * One Kafka topic per table, such that you can toggle the number of partitions based on throughput.
+  * The partition key should be the primary key for the table to avoid out-of-order writes at the row level.
 
-To see all of the supported databases, check out the [Supported section](#what-is-currently-supported)
+Please see the [supported section](#what-is-currently-supported) on what sources and destinations are supported.
 
 ## Examples
 
