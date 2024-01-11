@@ -93,13 +93,28 @@ ALTER USER artie_transfer REPLICATION;
 
 ## Additional features
 
-### Changing PostgreSQL Publications
+### Heartbeats
+
+Once you selected `Enable heartbeats` under Advanced Settings, you will then need to run the following command:
+
+```sql
+CREATE TABLE test_heartbeat_table (id text PRIMARY KEY, ts timestamp);
+-- Grant access to the heartbeat table
+GRANT UPDATE ON TABLE test_heartbeat_table TO artie_transfer;
+-- Then insert one row into this table.
+-- Artie's periodic pings will be this:
+-- UPDATE test_heartbeat_table set ts = now() where id = '1';
+-- Such that we never end up adding additional rows.
+INSERT INTO test_heartbeat_table (id, ts) VALUES (1, NOW());
+```
+
+### Customize PostgreSQL publications
 
 By default, Artie will create a [publication](https://www.postgresql.org/docs/current/logical-replication-publication.html) that includes all table changes. You can override this behavior by selecting `Filtered` under the Deployment advanced settings.
 
 **If you change this to be filtered**, this means that we will update the publications whenever tables get added or removed. Additionally, the service account must be the owner of the tables as this is a [PostgreSQL requirement](https://www.postgresql.org/docs/current/sql-alterpublication.html).&#x20;
 
-<figure><img src="../../.gitbook/assets/image (1).png" alt="" width="563"><figcaption><p>Changing the behavior of Postgres publications</p></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (1) (1).png" alt="" width="563"><figcaption><p>Changing the behavior of Postgres publications</p></figcaption></figure>
 
 ### PostgreSQL Watcher
 
