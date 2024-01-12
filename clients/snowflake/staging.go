@@ -115,7 +115,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		return nil
 	}
 
-	fqName := tableData.ToFqName(ctx, constants.Snowflake, true, "")
+	fqName := tableData.ToFqName(ctx, s.Label(), true, "")
 	tableConfig, err := s.getTableConfig(ctx, fqName, tableData.TopicConfig.DropDeletedColumns)
 	if err != nil {
 		return err
@@ -173,7 +173,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 			continue
 		}
 
-		err = utils.BackfillColumn(ctx, s, col, tableData.ToFqName(ctx, s.Label(), true, ""))
+		err = utils.BackfillColumn(ctx, s, col, fqName)
 		if err != nil {
 			defaultVal, _ := col.DefaultValue(ctx, nil)
 			return fmt.Errorf("failed to backfill col: %v, default value: %v, error: %v",
