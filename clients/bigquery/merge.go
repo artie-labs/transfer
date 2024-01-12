@@ -116,11 +116,11 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	srcKeysMissing, targetKeysMissing := columns.Diff(ctx, tableData.ReadOnlyInMemoryCols(),
 		tableConfig.Columns(), tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt)
 
-	tableName := tableData.ToFqName(ctx, s.Label(), true, s.projectID)
+	fqName := tableData.ToFqName(ctx, s.Label(), true, s.projectID)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
 		Tc:          tableConfig,
-		FqTableName: tableName,
+		FqTableName: fqName,
 		CreateTable: tableConfig.CreateTable(),
 		ColumnOp:    constants.Add,
 		CdcTime:     tableData.LatestCDCTs,
@@ -139,7 +139,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	deleteAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:                    s,
 		Tc:                     tableConfig,
-		FqTableName:            tableName,
+		FqTableName:            fqName,
 		CreateTable:            false,
 		ColumnOp:               constants.Delete,
 		ContainOtherOperations: tableData.ContainOtherOperations(),
@@ -180,7 +180,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 		var attempts int
 		for {
-			err = s.backfillColumn(ctx, col, tableName)
+			err = s.backfillColumn(ctx, col, fqName)
 			if err == nil {
 				tableConfig.Columns().UpsertColumn(col.Name(ctx, nil), columns.UpsertColumnArg{
 					Backfilled: ptr.ToBool(true),
@@ -208,10 +208,10 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
-	tempTableName := fmt.Sprintf("%s_%s", tableData.Name(ctx, nil), tableData.TempTableSuffix())
-	err = s.PutTable(ctx, tableData.TopicConfig.Database, tempTableName, rows)
+	tableName := fmt.Sprintf("%s_%s", tableData.Name(ctx, nil), tableData.TempTableSuffix())
+	err = s.PutTable(ctx, tableData.TopicConfig.Database, tableName, rows)
 	if err != nil {
-		return fmt.Errorf("failed to insert into temp table: %s, error: %v", tempTableName, err)
+		return fmt.Errorf("failed to insert into temp table: %s, error: %v", tableName, err)
 	}
 
 	var additionalEqualityStrings []string
@@ -231,7 +231,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	mergeQuery, err := dml.MergeStatement(ctx, &dml.MergeArgument{
-		FqTableName:               tableName,
+		FqTableName:               fqName,
 		AdditionalEqualityStrings: additionalEqualityStrings,
 		SubQuery:                  tempAlterTableArgs.FqTableName,
 		IdempotentKey:             tableData.TopicConfig.IdempotentKey,
