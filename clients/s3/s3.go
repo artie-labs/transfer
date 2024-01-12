@@ -51,7 +51,7 @@ func (s *Store) Label() constants.DestinationKind {
 // It will look like something like this:
 // > optionalPrefix/fullyQualifiedTableName/YYYY-MM-DD
 func (s *Store) ObjectPrefix(ctx context.Context, tableData *optimization.TableData) string {
-	fqTableName := tableData.ToFqName(ctx, s.Label(), false)
+	fqTableName := tableData.ToFqName(ctx, s.Label(), false, "")
 	yyyyMMDDFormat := tableData.LatestCDCTs.Format(ext.PostgresDateFormat)
 
 	if len(s.Settings.OptionalPrefix) > 0 {

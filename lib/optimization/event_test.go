@@ -157,10 +157,11 @@ func (o *OptimizationTestSuite) TestNewTableData_TableName() {
 		},
 	}
 
+	bqProjectID := "artie"
 	ctx := config.InjectSettingsIntoContext(context.Background(), &config.Settings{
 		Config: &config.Config{
 			BigQuery: &config.BigQuery{
-				ProjectID: "artie",
+				ProjectID: bqProjectID,
 			},
 		},
 	})
@@ -173,14 +174,14 @@ func (o *OptimizationTestSuite) TestNewTableData_TableName() {
 		}, testCase.tableName)
 		assert.Equal(o.T(), testCase.expectedName, td.Name(o.ctx, nil), testCase.name)
 		assert.Equal(o.T(), testCase.expectedName, td.name, testCase.name)
-		assert.Equal(o.T(), testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.SnowflakeStages, true), testCase.name)
-		assert.Equal(o.T(), testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.Snowflake, true), testCase.name)
-		assert.Equal(o.T(), testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery, true), testCase.name)
-		assert.Equal(o.T(), testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery, true), testCase.name)
+		assert.Equal(o.T(), testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.SnowflakeStages, true, ""), testCase.name)
+		assert.Equal(o.T(), testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.Snowflake, true, ""), testCase.name)
+		assert.Equal(o.T(), testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery, true, bqProjectID), testCase.name)
+		assert.Equal(o.T(), testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery, true, bqProjectID), testCase.name)
 
 		// S3 does not escape, so let's test both to make sure.
-		assert.Equal(o.T(), testCase.expectedS3FqName, td.ToFqName(ctx, constants.S3, true), testCase.name)
-		assert.Equal(o.T(), testCase.expectedS3FqName, td.ToFqName(ctx, constants.S3, false), testCase.name)
+		assert.Equal(o.T(), testCase.expectedS3FqName, td.ToFqName(ctx, constants.S3, true, ""), testCase.name)
+		assert.Equal(o.T(), testCase.expectedS3FqName, td.ToFqName(ctx, constants.S3, false, ""), testCase.name)
 	}
 }
 

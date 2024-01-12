@@ -57,7 +57,7 @@ func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.Tabl
 
 	return utils.GetTableConfig(ctx, utils.GetTableCfgArgs{
 		Dwh:                s,
-		FqName:             tableData.ToFqName(ctx, s.Label(), true),
+		FqName:             tableData.ToFqName(ctx, s.Label(), true, ""),
 		ConfigMap:          s.configMap,
 		Query:              describeQuery,
 		ColumnNameLabel:    describeNameCol,

@@ -29,13 +29,15 @@ const (
 type Store struct {
 	configMap *types.DwhToTablesConfigMap
 	batchSize int
+	projectID string
+
 	db.Store
 }
 
 func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	return utils.GetTableConfig(ctx, utils.GetTableCfgArgs{
 		Dwh:       s,
-		FqName:    tableData.ToFqName(ctx, s.Label(), true),
+		FqName:    tableData.ToFqName(ctx, s.Label(), true, ""),
 		ConfigMap: s.configMap,
 		Query: fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name='%s';",
 			tableData.TopicConfig.Database, tableData.Name(ctx, nil)),
@@ -89,6 +91,7 @@ func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
 		// Used for tests.
 		return &Store{
 			Store:     *_store,
+			projectID: "",
 			configMap: &types.DwhToTablesConfigMap{},
 		}
 	}
@@ -108,5 +111,6 @@ func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
 		Store:     db.Open(ctx, "bigquery", settings.Config.BigQuery.DSN()),
 		configMap: &types.DwhToTablesConfigMap{},
 		batchSize: settings.Config.BigQuery.BatchSize,
+		projectID: settings.Config.BigQuery.ProjectID,
 	}
 }

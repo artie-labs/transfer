@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	artieSQL "github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -42,7 +44,8 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
-	fqName := td.ToFqName(d.bqCtx, constants.BigQuery, true)
+	bqProjectID := config.FromContext(d.bqCtx).Config.BigQuery.ProjectID
+	fqName := td.ToFqName(d.bqCtx, constants.BigQuery, true, bqProjectID)
 	originalColumnLength := len(cols.GetColumns())
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, true))
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
@@ -241,7 +244,8 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
-	fqName := td.ToFqName(d.bqCtx, constants.BigQuery, true)
+	bqProjectID := config.FromContext(d.bqCtx).Config.BigQuery.ProjectID
+	fqName := td.ToFqName(d.bqCtx, constants.BigQuery, true, bqProjectID)
 	originalColumnLength := len(columnNameToKindDetailsMap)
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, false))
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
