@@ -85,7 +85,7 @@ func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.
 	writer.Comma = '\t'
 	for _, value := range tableData.RowsData() {
 		var row []string
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			castedValue, castErr := s.CastColValStaging(ctx, value[col], colKind)
 			if castErr != nil {

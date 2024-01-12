@@ -18,8 +18,9 @@ import (
 
 type Store struct {
 	db.Store
-	testDB    bool // Used for testing
-	configMap *types.DwhToTablesConfigMap
+	testDB            bool // Used for testing
+	configMap         *types.DwhToTablesConfigMap
+	uppercaseEscNames bool
 }
 
 const (
@@ -106,7 +107,8 @@ func LoadSnowflake(ctx context.Context, _store *db.Store) *Store {
 	}
 
 	s := &Store{
-		configMap: &types.DwhToTablesConfigMap{},
+		configMap:         &types.DwhToTablesConfigMap{},
+		uppercaseEscNames: config.FromContext(ctx).Config.SharedDestinationConfig.UppercaseEscapedNames,
 	}
 
 	s.reestablishConnection(ctx)

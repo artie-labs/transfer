@@ -101,7 +101,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	pw.CompressionType = parquet.CompressionCodec_GZIP
 	for _, val := range tableData.RowsData() {
 		row := make(map[string]interface{})
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(nil) {
 			colKind, isOk := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			if !isOk {
 				return fmt.Errorf("expected column: %v to exist in readOnlyInMemoryCols(...) but it does not", col)

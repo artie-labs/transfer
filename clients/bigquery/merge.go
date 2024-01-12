@@ -41,7 +41,7 @@ func merge(ctx context.Context, tableData *optimization.TableData) ([]*Row, erro
 	var rows []*Row
 	for _, value := range tableData.RowsData() {
 		data := make(map[string]bigquery.Value)
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal, err := castColVal(ctx, value[col], colKind)
 			if err != nil {
@@ -76,13 +76,17 @@ func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTab
 		return fmt.Errorf("failed to escape default value, err: %v", err)
 	}
 
-	escapedCol := column.Name(ctx, &sql.NameArgs{Escape: true, DestKind: s.Label()})
+	escapedCol := column.Name(&sql.NameArgs{
+		Escape:           true,
+		DestKind:         s.Label(),
+		UppercaseEscName: s.uppercaseEscNames,
+	})
 	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
 		// UPDATE table SET col = default_val WHERE col IS NULL
 		fqTableName, escapedCol, defaultVal, escapedCol)
 
 	logger.FromContext(ctx).WithFields(map[string]interface{}{
-		"colName": column.Name(ctx, nil),
+		"colName": column.Name(nil),
 		"query":   query,
 		"table":   fqTableName,
 	}).Info("backfilling column")
@@ -118,7 +122,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
 		Tc:          tableConfig,
-		FqTableName: tableData.ToFqName(ctx, s.Label(), true),
+		FqTableName: tableData.ToFqName(ctx, s.Label(), true, s.uppercaseEscNames),
 		CreateTable: tableConfig.CreateTable(),
 		ColumnOp:    constants.Add,
 		CdcTime:     tableData.LatestCDCTs,
@@ -137,7 +141,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	deleteAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:                    s,
 		Tc:                     tableConfig,
-		FqTableName:            tableData.ToFqName(ctx, s.Label(), true),
+		FqTableName:            tableData.ToFqName(ctx, s.Label(), true, s.uppercaseEscNames),
 		CreateTable:            false,
 		ColumnOp:               constants.Delete,
 		ContainOtherOperations: tableData.ContainOtherOperations(),
@@ -153,13 +157,13 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	tableConfig.AuditColumnsToDelete(ctx, srcKeysMissing)
 
 	// Infer the right data types from BigQuery before temp table creation.
-	tableData.MergeColumnsFromDestination(ctx, tableConfig.Columns().GetColumns()...)
+	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 
 	// Start temporary table creation
 	tempAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:            s,
 		Tc:             tableConfig,
-		FqTableName:    fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label(), false), tableData.TempTableSuffix()),
+		FqTableName:    fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label(), false, s.uppercaseEscNames), tableData.TempTableSuffix()),
 		CreateTable:    true,
 		TemporaryTable: true,
 		ColumnOp:       constants.Add,
@@ -178,9 +182,9 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 		var attempts int
 		for {
-			err = s.backfillColumn(ctx, col, tableData.ToFqName(ctx, s.Label(), true))
+			err = s.backfillColumn(ctx, col, tableData.ToFqName(ctx, s.Label(), true, s.uppercaseEscNames))
 			if err == nil {
-				tableConfig.Columns().UpsertColumn(col.Name(ctx, nil), columns.UpsertColumnArg{
+				tableConfig.Columns().UpsertColumn(col.Name(nil), columns.UpsertColumnArg{
 					Backfilled: ptr.ToBool(true),
 				})
 				break
@@ -193,7 +197,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 			} else {
 				defaultVal, _ := col.DefaultValue(ctx, nil)
 				return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v",
-					col.Name(ctx, nil), defaultVal, err)
+					col.Name(nil), defaultVal, err)
 			}
 		}
 
@@ -206,7 +210,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
-	tableName := fmt.Sprintf("%s_%s", tableData.Name(ctx, nil), tableData.TempTableSuffix())
+	tableName := fmt.Sprintf("%s_%s", tableData.Name(nil), tableData.TempTableSuffix())
 	err = s.PutTable(ctx, tableData.TopicConfig.Database, tableName, rows)
 	if err != nil {
 		return fmt.Errorf("failed to insert into temp table: %s, error: %v", tableName, err)
@@ -229,7 +233,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	mergeQuery, err := dml.MergeStatement(ctx, &dml.MergeArgument{
-		FqTableName:               tableData.ToFqName(ctx, constants.BigQuery, true),
+		FqTableName:               tableData.ToFqName(ctx, constants.BigQuery, true, s.uppercaseEscNames),
 		AdditionalEqualityStrings: additionalEqualityStrings,
 		SubQuery:                  tempAlterTableArgs.FqTableName,
 		IdempotentKey:             tableData.TopicConfig.IdempotentKey,

@@ -1,7 +1,6 @@
 package columns
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -184,7 +183,7 @@ func (c *Columns) GetColumn(name string) (Column, bool) {
 
 // GetColumnsToUpdate will filter all the `Invalid` columns so that we do not update it.
 // It also has an option to escape the returned columns or not. This is used mostly for the SQL MERGE queries.
-func (c *Columns) GetColumnsToUpdate(ctx context.Context, args *sql.NameArgs) []string {
+func (c *Columns) GetColumnsToUpdate(args *sql.NameArgs) []string {
 	if c == nil {
 		return []string{}
 	}

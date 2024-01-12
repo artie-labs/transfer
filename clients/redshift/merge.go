@@ -82,7 +82,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 			continue
 		}
 
-		err = utils.BackfillColumn(ctx, s, col, tableData.ToFqName(ctx, s.Label(), true, s.uppercaseEscNames))
+		err = utils.BackfillColumn(ctx, s, col, tableData.ToFqName(ctx, s.Label(), true, s.uppercaseEscNames), s.uppercaseEscNames)
 		if err != nil {
 			defaultVal, _ := col.DefaultValue(ctx, nil)
 			return fmt.Errorf("failed to backfill col: %v, default value: %v, error: %v",

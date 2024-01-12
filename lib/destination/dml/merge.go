@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/stringutil"
@@ -92,11 +94,12 @@ func MergeStatementParts(ctx context.Context, m *MergeArgument) ([]string, error
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	cols := m.ColumnsToTypes.GetColumnsToUpdate(ctx, &sql.NameArgs{
+	cols := m.ColumnsToTypes.GetColumnsToUpdate(&sql.NameArgs{
 		Escape:   true,
 		DestKind: m.DestKind,
 	})
 
+	uppercaseEscName := config.FromContext(ctx).Config.SharedDestinationConfig.UppercaseEscapedNames
 	if m.SoftDelete {
 		return []string{
 			// INSERT
@@ -116,7 +119,7 @@ func MergeStatementParts(ctx context.Context, m *MergeArgument) ([]string, error
 			// UPDATE
 			fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s;`,
 				// UPDATE table set col1 = cc. col1
-				m.FqTableName, columns.ColumnsUpdateQuery(ctx, cols, m.ColumnsToTypes, m.DestKind),
+				m.FqTableName, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, uppercaseEscName),
 				// FROM table (temp) WHERE join on PK(s)
 				m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause,
 			),
@@ -160,7 +163,7 @@ func MergeStatementParts(ctx context.Context, m *MergeArgument) ([]string, error
 		// UPDATE
 		fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s AND COALESCE(cc.%s, false) = false;`,
 			// UPDATE table set col1 = cc. col1
-			m.FqTableName, columns.ColumnsUpdateQuery(ctx, cols, m.ColumnsToTypes, m.DestKind),
+			m.FqTableName, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, uppercaseEscName),
 			// FROM staging WHERE join on PK(s)
 			m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause, constants.DeleteColumnMarker,
 		),
@@ -188,6 +191,8 @@ func MergeStatement(ctx context.Context, m *MergeArgument) (string, error) {
 	if err := m.Valid(); err != nil {
 		return "", err
 	}
+
+	uppercaseEscName := config.FromContext(ctx).Config.SharedDestinationConfig.UppercaseEscapedNames
 
 	// We should not need idempotency key for DELETE
 	// This is based on the assumption that the primary key would be atomically increasing or UUID based
@@ -227,9 +232,10 @@ func MergeStatement(ctx context.Context, m *MergeArgument) (string, error) {
 		}
 	}
 
-	cols := m.ColumnsToTypes.GetColumnsToUpdate(ctx, &sql.NameArgs{
-		Escape:   true,
-		DestKind: m.DestKind,
+	cols := m.ColumnsToTypes.GetColumnsToUpdate(&sql.NameArgs{
+		Escape:           true,
+		DestKind:         m.DestKind,
+		UppercaseEscName: uppercaseEscName,
 	})
 
 	if m.SoftDelete {
@@ -247,7 +253,7 @@ func MergeStatement(ctx context.Context, m *MergeArgument) (string, error) {
 					);
 		`, m.FqTableName, subQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, columns.ColumnsUpdateQuery(ctx, cols, m.ColumnsToTypes, m.DestKind),
+			idempotentClause, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, uppercaseEscName),
 			// Insert
 			constants.DeleteColumnMarker, strings.Join(cols, ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -288,7 +294,7 @@ func MergeStatement(ctx context.Context, m *MergeArgument) (string, error) {
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update
-		constants.DeleteColumnMarker, idempotentClause, columns.ColumnsUpdateQuery(ctx, cols, m.ColumnsToTypes, m.DestKind),
+		constants.DeleteColumnMarker, idempotentClause, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, uppercaseEscName),
 		// Insert
 		constants.DeleteColumnMarker, strings.Join(cols, ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{

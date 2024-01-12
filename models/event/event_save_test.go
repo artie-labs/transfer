@@ -201,7 +201,7 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	evt.Columns.AddColumn(columns.NewColumn("foo", typing.Invalid))
 	var index int
 	for idx, col := range evt.Columns.GetColumns() {
-		if col.Name(e.ctx, nil) == "foo" {
+		if col.Name(nil) == "foo" {
 			index = idx
 		}
 	}
