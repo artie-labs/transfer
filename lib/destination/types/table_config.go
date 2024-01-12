@@ -82,6 +82,7 @@ func (d *DwhTableConfig) MutateInMemoryColumns(ctx context.Context, createTable 
 func (d *DwhTableConfig) AuditColumnsToDelete(ctx context.Context, colsToDelete []columns.Column) {
 	if !d.dropDeletedColumns || len(colsToDelete) == 0 {
 		// If `dropDeletedColumns` is false, then let's skip this.
+		// Or if there are no `colsToDelete` then let's also skip this since for-loop won't run.
 		return
 	}
 
