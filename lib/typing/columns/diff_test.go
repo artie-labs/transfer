@@ -2,6 +2,7 @@ package columns
 
 import (
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/typing"
 
@@ -195,7 +196,7 @@ func (c *ColumnsTestSuite) TestDiffDeterministic() {
 
 		var key string
 		for _, targetKeyMissing := range targetKeysMissing {
-			key += targetKeyMissing.Name(c.ctx, nil)
+			key += targetKeyMissing.Name(sql.DoNotEscapeNameArgs)
 		}
 
 		retMap[key] = false

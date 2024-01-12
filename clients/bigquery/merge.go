@@ -247,9 +247,10 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		AdditionalEqualityStrings: additionalEqualityStrings,
 		SubQuery:                  tempAlterTableArgs.FqTableName,
 		IdempotentKey:             tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys: tableData.PrimaryKeys(ctx, &sql.NameArgs{
-			Escape:   true,
-			DestKind: s.Label(),
+		PrimaryKeys: tableData.PrimaryKeys(sql.NameArgs{
+			Escape:           true,
+			DestKind:         s.Label(),
+			UppercaseEscName: s.uppercaseEscName,
 		}),
 		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:     tableData.TopicConfig.SoftDelete,

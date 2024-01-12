@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/sql"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -56,7 +58,7 @@ func (d *DwhTableConfig) Columns() *columns.Columns {
 	return d.columns
 }
 
-func (d *DwhTableConfig) MutateInMemoryColumns(ctx context.Context, createTable bool, columnOp constants.ColumnOperation, cols ...columns.Column) {
+func (d *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp constants.ColumnOperation, cols ...columns.Column) {
 	d.Lock()
 	defer d.Unlock()
 	switch columnOp {
@@ -64,15 +66,15 @@ func (d *DwhTableConfig) MutateInMemoryColumns(ctx context.Context, createTable 
 		for _, col := range cols {
 			d.columns.AddColumn(col)
 			// Delete from the permissions table, if exists.
-			delete(d.columnsToDelete, col.Name(ctx, nil))
+			delete(d.columnsToDelete, col.Name(sql.DoNotEscapeNameArgs))
 		}
 
 		d.createTable = createTable
 	case constants.Delete:
 		for _, col := range cols {
 			// Delete from the permissions and in-memory table
-			d.columns.DeleteColumn(col.Name(ctx, nil))
-			delete(d.columnsToDelete, col.Name(ctx, nil))
+			d.columns.DeleteColumn(col.Name(sql.DoNotEscapeNameArgs))
+			delete(d.columnsToDelete, col.Name(sql.DoNotEscapeNameArgs))
 		}
 	}
 }
@@ -91,7 +93,7 @@ func (d *DwhTableConfig) AuditColumnsToDelete(ctx context.Context, colsToDelete 
 	for colName := range d.columnsToDelete {
 		var found bool
 		for _, col := range colsToDelete {
-			if found = col.Name(ctx, nil) == colName; found {
+			if found = col.Name(sql.DoNotEscapeNameArgs) == colName; found {
 				break
 			}
 		}

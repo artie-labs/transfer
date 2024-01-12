@@ -68,7 +68,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	tableConfig.AuditColumnsToDelete(ctx, srcKeysMissing)
-	tableData.MergeColumnsFromDestination(ctx, tableConfig.Columns().GetColumns()...)
+	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 
 	// Temporary tables cannot specify schemas, so we just prefix it instead.
 	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label(), false), tableData.TempTableSuffix())
@@ -86,24 +86,25 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		if err != nil {
 			defaultVal, _ := col.DefaultValue(ctx, nil)
 			return fmt.Errorf("failed to backfill col: %v, default value: %v, error: %v",
-				col.Name(ctx, nil), defaultVal, err)
+				col.Name(sql.DoNotEscapeNameArgs), defaultVal, err)
 		}
 
-		tableConfig.Columns().UpsertColumn(col.Name(ctx, nil), columns.UpsertColumnArg{
+		tableConfig.Columns().UpsertColumn(col.Name(sql.DoNotEscapeNameArgs), columns.UpsertColumnArg{
 			Backfilled: ptr.ToBool(true),
 		})
 	}
 
 	// Prepare merge statement
-	mergeParts, err := dml.MergeStatementParts(ctx, &dml.MergeArgument{
+	mergeParts, err := dml.MergeStatementParts(&dml.MergeArgument{
 		FqTableName: fqName,
 		// We are adding SELECT DISTINCT here for the temporary table as an extra guardrail.
 		// Redshift does not enforce any row uniqueness and there could be potential LOAD errors which will cause duplicate rows to arise.
 		SubQuery:      fmt.Sprintf(`( SELECT DISTINCT *  FROM %s )`, temporaryTableName),
 		IdempotentKey: tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys: tableData.PrimaryKeys(ctx, &sql.NameArgs{
-			Escape:   true,
-			DestKind: s.Label(),
+		PrimaryKeys: tableData.PrimaryKeys(sql.NameArgs{
+			Escape:           true,
+			DestKind:         s.Label(),
+			UppercaseEscName: s.uppercaseEscName,
 		}),
 		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
 		SkipDelete:     tableData.TopicConfig.SkipDelete,

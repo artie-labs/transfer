@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/artie-labs/transfer/lib/sql"
+
 	"github.com/artie-labs/transfer/lib/optimization"
 
 	"github.com/artie-labs/transfer/clients/utils"
@@ -24,6 +26,8 @@ type Store struct {
 	optionalS3Prefix  string
 	configMap         *types.DwhToTablesConfigMap
 	skipLgCols        bool
+	uppercaseEscName  bool
+
 	db.Store
 }
 
@@ -47,7 +51,7 @@ const (
 
 func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	describeQuery, err := describeTableQuery(describeArgs{
-		RawTableName: tableData.Name(ctx, nil),
+		RawTableName: tableData.Name(sql.DoNotEscapeNameArgs),
 		Schema:       tableData.TopicConfig.Schema,
 	})
 
@@ -89,6 +93,7 @@ func LoadRedshift(ctx context.Context, _store *db.Store) *Store {
 		bucket:            settings.Config.Redshift.Bucket,
 		optionalS3Prefix:  settings.Config.Redshift.OptionalS3Prefix,
 		skipLgCols:        settings.Config.Redshift.SkipLgCols,
+		uppercaseEscName:  settings.Config.SharedDestinationConfig.UppercaseEscapedNames,
 		Store:             db.Open(ctx, "postgres", connStr),
 		configMap:         &types.DwhToTablesConfigMap{},
 	}

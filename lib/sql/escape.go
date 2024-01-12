@@ -9,6 +9,10 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
+var DoNotEscapeNameArgs = NameArgs{
+	Escape: false,
+}
+
 type NameArgs struct {
 	Escape           bool
 	DestKind         constants.DestinationKind
@@ -19,6 +23,10 @@ type NameArgs struct {
 var symbolsToEscape = []string{":"}
 
 func EscapeName(name string, args NameArgs) string {
+	if !args.Escape {
+		return name
+	}
+
 	var reservedKeywords []string
 	if args.DestKind == constants.Redshift {
 		reservedKeywords = constants.RedshiftReservedKeywords

@@ -100,7 +100,7 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 				DestKind: args.Dwh.Label(),
 			}), typing.KindToDWHType(col.KindDetails, args.Dwh.Label())))
 		case constants.Delete:
-			colSQLParts = append(colSQLParts, col.Name(ctx, &sql.NameArgs{
+			colSQLParts = append(colSQLParts, col.Name(sql.NameArgs{
 				Escape:   true,
 				DestKind: args.Dwh.Label(),
 			}))
@@ -157,7 +157,7 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 
 	if err == nil {
 		// createTable = false since it all successfully updated.
-		args.Tc.MutateInMemoryColumns(ctx, false, args.ColumnOp, mutateCol...)
+		args.Tc.MutateInMemoryColumns(false, args.ColumnOp, mutateCol...)
 	}
 
 	return nil
