@@ -87,17 +87,17 @@ func (s *Store) PutTable(ctx context.Context, dataset, tableName string, rows []
 }
 
 func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
+	settings := config.FromContext(ctx)
+	settings.Config.BigQuery.LoadDefaultValues()
 	if _store != nil {
 		// Used for tests.
 		return &Store{
 			Store:     *_store,
-			projectID: "",
+			projectID: settings.Config.BigQuery.ProjectID,
 			configMap: &types.DwhToTablesConfigMap{},
 		}
 	}
 
-	settings := config.FromContext(ctx)
-	settings.Config.BigQuery.LoadDefaultValues()
 	if credPath := settings.Config.BigQuery.PathToCredentials; credPath != "" {
 		// If the credPath is set, let's set it into the env var.
 		logger.FromContext(ctx).Debug("writing the path to BQ credentials to env var for google auth")

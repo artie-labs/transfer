@@ -21,6 +21,11 @@ type BigQueryTestSuite struct {
 func (b *BigQueryTestSuite) SetupTest() {
 	b.ctx = config.InjectSettingsIntoContext(context.Background(), &config.Settings{
 		VerboseLogging: false,
+		Config: &config.Config{
+			BigQuery: &config.BigQuery{
+				ProjectID: "artie",
+			},
+		},
 	})
 
 	b.fakeStore = &mocks.FakeStore{}
