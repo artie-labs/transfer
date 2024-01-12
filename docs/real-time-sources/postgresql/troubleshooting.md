@@ -21,6 +21,6 @@ You can do this by going to the Deployment overview and changing the status.
 -- Find all the replication slots
 SELECT * FROM pg_replication_slots;
 -- Drop a particular replication slot by name
-select pg_drop_replication_slot('NAME');
+SELECT pg_drop_replication_slot('NAME');
 ```
 
