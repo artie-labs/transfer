@@ -38,10 +38,14 @@ func (r *Row) Save() (map[string]bigquery.Value, string, error) {
 }
 
 func merge(ctx context.Context, tableData *optimization.TableData) ([]*Row, error) {
+	doNotEscNameArgs := sql.NameArgs{
+		Escape: false,
+	}
+
 	var rows []*Row
 	for _, value := range tableData.RowsData() {
 		data := make(map[string]bigquery.Value)
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(doNotEscNameArgs) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal, err := castColVal(ctx, value[col], colKind)
 			if err != nil {
@@ -76,13 +80,19 @@ func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTab
 		return fmt.Errorf("failed to escape default value, err: %v", err)
 	}
 
-	escapedCol := column.Name(ctx, &sql.NameArgs{Escape: true, DestKind: s.Label()})
+	nameArgs := sql.NameArgs{
+		Escape:           true,
+		DestKind:         s.Label(),
+		UppercaseEscName: s.uppercaseEscName,
+	}
+
+	escapedCol := column.Name(nameArgs)
 	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
 		// UPDATE table SET col = default_val WHERE col IS NULL
 		fqTableName, escapedCol, defaultVal, escapedCol)
 
 	logger.FromContext(ctx).WithFields(map[string]interface{}{
-		"colName": column.Name(ctx, nil),
+		"colName": column.Name(nameArgs),
 		"query":   query,
 		"table":   fqTableName,
 	}).Info("backfilling column")
@@ -153,7 +163,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	tableConfig.AuditColumnsToDelete(ctx, srcKeysMissing)
 
 	// Infer the right data types from BigQuery before temp table creation.
-	tableData.MergeColumnsFromDestination(ctx, tableConfig.Columns().GetColumns()...)
+	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 
 	// Start temporary table creation
 	tempAlterTableArgs := ddl.AlterTableArgs{
@@ -170,6 +180,10 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 	// End temporary table creation
 
+	doNotEscNameArgs := sql.NameArgs{
+		Escape: false,
+	}
+
 	// Backfill columns if necessary
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
 		if col.ShouldSkip() {
@@ -180,7 +194,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		for {
 			err = s.backfillColumn(ctx, col, tableData.ToFqName(ctx, s.Label(), true))
 			if err == nil {
-				tableConfig.Columns().UpsertColumn(col.Name(ctx, nil), columns.UpsertColumnArg{
+				tableConfig.Columns().UpsertColumn(col.Name(doNotEscNameArgs), columns.UpsertColumnArg{
 					Backfilled: ptr.ToBool(true),
 				})
 				break
@@ -193,7 +207,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 			} else {
 				defaultVal, _ := col.DefaultValue(ctx, nil)
 				return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v",
-					col.Name(ctx, nil), defaultVal, err)
+					col.Name(doNotEscNameArgs), defaultVal, err)
 			}
 		}
 
@@ -206,7 +220,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
-	tableName := fmt.Sprintf("%s_%s", tableData.Name(ctx, nil), tableData.TempTableSuffix())
+	tableName := fmt.Sprintf("%s_%s", tableData.Name(doNotEscNameArgs), tableData.TempTableSuffix())
 	err = s.PutTable(ctx, tableData.TopicConfig.Database, tableName, rows)
 	if err != nil {
 		return fmt.Errorf("failed to insert into temp table: %s, error: %v", tableName, err)

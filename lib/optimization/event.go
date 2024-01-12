@@ -44,6 +44,9 @@ type TableData struct {
 	// Name of the table in the destination
 	// Prefer calling .Name() everywhere
 	name string
+
+	// This is set by config
+	uppercaseEscName bool
 }
 
 func (t *TableData) ContainOtherOperations() bool {
@@ -60,8 +63,8 @@ func (t *TableData) PrimaryKeys(ctx context.Context, args *sql.NameArgs) []colum
 	return primaryKeysEscaped
 }
 
-func (t *TableData) Name(ctx context.Context, args *sql.NameArgs) string {
-	return sql.EscapeName(ctx, t.name, args)
+func (t *TableData) Name(args sql.NameArgs) string {
+	return sql.EscapeName(t.name, args)
 }
 
 func (t *TableData) SetInMemoryColumns(columns *columns.Columns) {
@@ -85,7 +88,7 @@ func (t *TableData) ReadOnlyInMemoryCols() *columns.Columns {
 	return &cols
 }
 
-func NewTableData(inMemoryColumns *columns.Columns, primaryKeys []string, topicConfig kafkalib.TopicConfig, name string) *TableData {
+func NewTableData(inMemoryColumns *columns.Columns, primaryKeys []string, topicConfig kafkalib.TopicConfig, name string, uppercaseEscName bool) *TableData {
 	return &TableData{
 		inMemoryColumns: inMemoryColumns,
 		rowsData:        map[string]map[string]interface{}{},
@@ -95,6 +98,7 @@ func NewTableData(inMemoryColumns *columns.Columns, primaryKeys []string, topicC
 		temporaryTableSuffix:    "",
 		PartitionsToLastMessage: map[string][]artie.Message{},
 		name:                    stringutil.Override(name, topicConfig.TableName),
+		uppercaseEscName:        uppercaseEscName,
 	}
 }
 
@@ -144,27 +148,31 @@ func (t *TableData) ToFqName(ctx context.Context, kind constants.DestinationKind
 	switch kind {
 	case constants.S3:
 		// S3 should be db.schema.tableName, but we don't need to escape, since it's not a SQL db.
-		return fmt.Sprintf("%s.%s.%s", t.TopicConfig.Database, t.TopicConfig.Schema, t.Name(ctx, &sql.NameArgs{
-			Escape:   false,
-			DestKind: kind,
+		return fmt.Sprintf("%s.%s.%s", t.TopicConfig.Database, t.TopicConfig.Schema, t.Name(sql.NameArgs{
+			Escape:           false,
+			DestKind:         kind,
+			UppercaseEscName: t.uppercaseEscName,
 		}))
 	case constants.Redshift:
 		// Redshift is Postgres compatible, so when establishing a connection, we'll specify a database.
 		// Thus, we only need to specify schema and table name here.
-		return fmt.Sprintf("%s.%s", t.TopicConfig.Schema, t.Name(ctx, &sql.NameArgs{
-			Escape:   escape,
-			DestKind: kind,
+		return fmt.Sprintf("%s.%s", t.TopicConfig.Schema, t.Name(sql.NameArgs{
+			Escape:           escape,
+			DestKind:         kind,
+			UppercaseEscName: t.uppercaseEscName,
 		}))
 	case constants.BigQuery:
 		// The fully qualified name for BigQuery is: project_id.dataset.tableName.
-		return fmt.Sprintf("%s.%s.%s", config.FromContext(ctx).Config.BigQuery.ProjectID, t.TopicConfig.Database, t.Name(ctx, &sql.NameArgs{
-			Escape:   escape,
-			DestKind: kind,
+		return fmt.Sprintf("%s.%s.%s", config.FromContext(ctx).Config.BigQuery.ProjectID, t.TopicConfig.Database, t.Name(sql.NameArgs{
+			Escape:           escape,
+			DestKind:         kind,
+			UppercaseEscName: t.uppercaseEscName,
 		}))
 	default:
-		return fmt.Sprintf("%s.%s.%s", t.TopicConfig.Database, t.TopicConfig.Schema, t.Name(ctx, &sql.NameArgs{
-			Escape:   escape,
-			DestKind: kind,
+		return fmt.Sprintf("%s.%s.%s", t.TopicConfig.Database, t.TopicConfig.Schema, t.Name(sql.NameArgs{
+			Escape:           escape,
+			DestKind:         kind,
+			UppercaseEscName: t.uppercaseEscName,
 		}))
 	}
 }
@@ -235,16 +243,20 @@ func (t *TableData) ShouldFlush(ctx context.Context) (bool, string) {
 // Prior to merging, we will need to treat `tableConfig` as the source-of-truth and whenever there's discrepancies
 // We will prioritize using the values coming from (2) TableConfig. We also cannot simply do a replacement, as we have in-memory columns
 // That carry metadata for Artie Transfer. They are prefixed with __artie.
-func (t *TableData) MergeColumnsFromDestination(ctx context.Context, destCols ...columns.Column) {
+func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) {
 	if t == nil {
 		return
+	}
+
+	nameArgs := sql.NameArgs{
+		Escape: false,
 	}
 
 	for _, inMemoryCol := range t.inMemoryColumns.GetColumns() {
 		var foundColumn columns.Column
 		var found bool
 		for _, destCol := range destCols {
-			if destCol.Name(ctx, nil) == strings.ToLower(inMemoryCol.Name(ctx, nil)) {
+			if destCol.Name(nameArgs) == strings.ToLower(inMemoryCol.Name(nameArgs)) {
 				foundColumn = destCol
 				found = true
 				break

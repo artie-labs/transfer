@@ -1,7 +1,6 @@
 package columns
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -88,8 +87,8 @@ func (c *Column) ShouldBackfill() bool {
 // Name will give you c.name
 // However, if you pass in escape, we will escape if the column name is part of the reserved words from destinations.
 // If so, it'll change from `start` => `"start"` as suggested by Snowflake.
-func (c *Column) Name(ctx context.Context, args *sql.NameArgs) string {
-	return sql.EscapeName(ctx, c.name, args)
+func (c *Column) Name(args sql.NameArgs) string {
+	return sql.EscapeName(c.name, args)
 }
 
 type Columns struct {
@@ -97,9 +96,9 @@ type Columns struct {
 	sync.RWMutex
 }
 
-func (c *Columns) EscapeName(ctx context.Context, args *sql.NameArgs) {
+func (c *Columns) EscapeName(args sql.NameArgs) {
 	for idx := range c.columns {
-		c.columns[idx].name = c.columns[idx].Name(ctx, args)
+		c.columns[idx].name = c.columns[idx].Name(args)
 	}
 }
 
@@ -184,7 +183,7 @@ func (c *Columns) GetColumn(name string) (Column, bool) {
 
 // GetColumnsToUpdate will filter all the `Invalid` columns so that we do not update it.
 // It also has an option to escape the returned columns or not. This is used mostly for the SQL MERGE queries.
-func (c *Columns) GetColumnsToUpdate(ctx context.Context, args *sql.NameArgs) []string {
+func (c *Columns) GetColumnsToUpdate(args sql.NameArgs) []string {
 	if c == nil {
 		return []string{}
 	}
@@ -198,7 +197,7 @@ func (c *Columns) GetColumnsToUpdate(ctx context.Context, args *sql.NameArgs) []
 			continue
 		}
 
-		cols = append(cols, col.Name(ctx, args))
+		cols = append(cols, col.Name(args))
 	}
 
 	return cols
@@ -247,10 +246,11 @@ func (c *Columns) DeleteColumn(name string) {
 // columnsToTypes - given that list, provide the types (separate list because this list may contain invalid columns
 // bigQueryTypeCasting - We'll need to escape the column comparison if the column's a struct.
 // It then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email
-func ColumnsUpdateQuery(ctx context.Context, columns []string, columnsToTypes Columns, destKind constants.DestinationKind) string {
-	columnsToTypes.EscapeName(ctx, &sql.NameArgs{
-		Escape:   true,
-		DestKind: destKind,
+func ColumnsUpdateQuery(uppercaseEscName bool, columns []string, columnsToTypes Columns, destKind constants.DestinationKind) string {
+	columnsToTypes.EscapeName(sql.NameArgs{
+		UppercaseEscName: uppercaseEscName,
+		Escape:           true,
+		DestKind:         destKind,
 	})
 
 	var _columns []string

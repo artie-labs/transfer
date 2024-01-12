@@ -1,30 +1,24 @@
 package sql
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"strings"
-
-	"github.com/artie-labs/transfer/lib/config"
 
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
 type NameArgs struct {
-	Escape   bool
-	DestKind constants.DestinationKind
+	Escape           bool
+	DestKind         constants.DestinationKind
+	UppercaseEscName bool
 }
 
 // symbolsToEscape are additional keywords that we need to escape
 var symbolsToEscape = []string{":"}
 
-func EscapeName(ctx context.Context, name string, args *NameArgs) string {
-	if args == nil {
-		return name
-	}
-
+func EscapeName(name string, args NameArgs) string {
 	var reservedKeywords []string
 	if args.DestKind == constants.Redshift {
 		reservedKeywords = constants.RedshiftReservedKeywords
@@ -33,7 +27,6 @@ func EscapeName(ctx context.Context, name string, args *NameArgs) string {
 	}
 
 	needsEscaping := array.StringContains(reservedKeywords, name)
-
 	// If it does not contain any reserved words, does it contain any symbols that need to be escaped?
 	if !needsEscaping {
 		for _, symbol := range symbolsToEscape {
@@ -52,11 +45,11 @@ func EscapeName(ctx context.Context, name string, args *NameArgs) string {
 	}
 
 	if args.Escape && needsEscaping {
-		if config.FromContext(ctx).Config.SharedDestinationConfig.UppercaseEscapedNames {
+		if args.UppercaseEscName {
 			name = strings.ToUpper(name)
 		}
 
-		if args != nil && args.DestKind == constants.BigQuery {
+		if args.DestKind == constants.BigQuery {
 			// BigQuery needs backticks to escape.
 			return fmt.Sprintf("`%s`", name)
 		} else {
