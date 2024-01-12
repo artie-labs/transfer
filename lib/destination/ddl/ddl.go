@@ -77,7 +77,9 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 		return err
 	}
 
-	// TODO: Early exit if cols is empty.
+	if len(cols) == 0 {
+		return nil
+	}
 
 	var mutateCol []columns.Column
 	// It's okay to combine since args.ColumnOp only takes one of: `Delete` or `Add`
