@@ -242,7 +242,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		additionalEqualityStrings = []string{mergeString}
 	}
 
-	mergeQuery, err := dml.MergeStatement(ctx, &dml.MergeArgument{
+	mergeQuery, err := dml.MergeStatement(&dml.MergeArgument{
 		FqTableName:               tableData.ToFqName(ctx, constants.BigQuery, true),
 		AdditionalEqualityStrings: additionalEqualityStrings,
 		SubQuery:                  tempAlterTableArgs.FqTableName,
@@ -252,9 +252,10 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 			DestKind:         s.Label(),
 			UppercaseEscName: s.uppercaseEscName,
 		}),
-		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
-		SoftDelete:     tableData.TopicConfig.SoftDelete,
-		DestKind:       s.Label(),
+		ColumnsToTypes:   *tableData.ReadOnlyInMemoryCols(),
+		SoftDelete:       tableData.TopicConfig.SoftDelete,
+		DestKind:         s.Label(),
+		UppercaseEscName: s.uppercaseEscName,
 	})
 
 	if err != nil {

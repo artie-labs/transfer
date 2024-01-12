@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/artie-labs/transfer/lib/sql"
+
 	"github.com/artie-labs/transfer/clients/utils"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -18,8 +20,9 @@ import (
 
 type Store struct {
 	db.Store
-	testDB    bool // Used for testing
-	configMap *types.DwhToTablesConfigMap
+	testDB           bool // Used for testing
+	configMap        *types.DwhToTablesConfigMap
+	uppercaseEscName bool
 }
 
 const (
@@ -28,6 +31,14 @@ const (
 	describeTypeCol    = "type"
 	describeCommentCol = "comment"
 )
+
+func (s *Store) EscSQLNameArgs() sql.NameArgs {
+	return sql.NameArgs{
+		Escape:           true,
+		DestKind:         s.Label(),
+		UppercaseEscName: s.uppercaseEscName,
+	}
+}
 
 func (s *Store) getTableConfig(ctx context.Context, fqName string, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
 	return utils.GetTableConfig(ctx, utils.GetTableCfgArgs{
@@ -99,14 +110,16 @@ func LoadSnowflake(ctx context.Context, _store *db.Store) *Store {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			testDB:    true,
-			Store:     *_store,
-			configMap: &types.DwhToTablesConfigMap{},
+			testDB:           true,
+			Store:            *_store,
+			configMap:        &types.DwhToTablesConfigMap{},
+			uppercaseEscName: config.FromContext(ctx).Config.SharedDestinationConfig.UppercaseEscapedNames,
 		}
 	}
 
 	s := &Store{
-		configMap: &types.DwhToTablesConfigMap{},
+		configMap:        &types.DwhToTablesConfigMap{},
+		uppercaseEscName: config.FromContext(ctx).Config.SharedDestinationConfig.UppercaseEscapedNames,
 	}
 
 	s.reestablishConnection(ctx)

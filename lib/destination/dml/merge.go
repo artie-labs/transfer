@@ -1,7 +1,6 @@
 package dml
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -186,7 +185,7 @@ func MergeStatementParts(m *MergeArgument) ([]string, error) {
 	return parts, nil
 }
 
-func MergeStatement(ctx context.Context, m *MergeArgument) (string, error) {
+func MergeStatement(m *MergeArgument) (string, error) {
 	if err := m.Valid(); err != nil {
 		return "", err
 	}

@@ -54,10 +54,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 
 	_, err = s.Exec(fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
 		// Copy into temporary tables (column ...)
-		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, &sql.NameArgs{
-			Escape:   true,
-			DestKind: s.Label(),
-		}), ","),
+		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.EscSQLNameArgs()), ","),
 		// Escaped columns, TABLE NAME
 		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableName, "%")))
 
@@ -87,7 +84,7 @@ func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.
 	writer.Comma = '\t'
 	for _, value := range tableData.RowsData() {
 		var row []string
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(sql.DoNotEscapeNameArgs) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal := value[col]
 			// Check
@@ -161,7 +158,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 	}
 
 	tableConfig.AuditColumnsToDelete(ctx, srcKeysMissing)
-	tableData.MergeColumnsFromDestination(ctx, tableConfig.Columns().GetColumns()...)
+	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label(), false), tableData.TempTableSuffix())
 	if err = s.prepareTempTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {
 		return err
@@ -177,25 +174,23 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		if err != nil {
 			defaultVal, _ := col.DefaultValue(ctx, nil)
 			return fmt.Errorf("failed to backfill col: %v, default value: %v, error: %v",
-				col.Name(ctx, nil), defaultVal, err)
+				col.Name(sql.DoNotEscapeNameArgs), defaultVal, err)
 		}
 
-		tableConfig.Columns().UpsertColumn(col.Name(ctx, nil), columns.UpsertColumnArg{
+		tableConfig.Columns().UpsertColumn(col.Name(sql.DoNotEscapeNameArgs), columns.UpsertColumnArg{
 			Backfilled: ptr.ToBool(true),
 		})
 	}
 
 	// Prepare merge statement
-	mergeQuery, err := dml.MergeStatement(ctx, &dml.MergeArgument{
-		FqTableName:   tableData.ToFqName(ctx, constants.Snowflake, true),
-		SubQuery:      temporaryTableName,
-		IdempotentKey: tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys: tableData.PrimaryKeys(ctx, &sql.NameArgs{
-			Escape:   true,
-			DestKind: s.Label(),
-		}),
-		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
-		SoftDelete:     tableData.TopicConfig.SoftDelete,
+	mergeQuery, err := dml.MergeStatement(&dml.MergeArgument{
+		FqTableName:      tableData.ToFqName(ctx, constants.Snowflake, true),
+		SubQuery:         temporaryTableName,
+		IdempotentKey:    tableData.TopicConfig.IdempotentKey,
+		PrimaryKeys:      tableData.PrimaryKeys(s.EscSQLNameArgs()),
+		ColumnsToTypes:   *tableData.ReadOnlyInMemoryCols(),
+		SoftDelete:       tableData.TopicConfig.SoftDelete,
+		UppercaseEscName: s.uppercaseEscName,
 	})
 
 	if err != nil {
