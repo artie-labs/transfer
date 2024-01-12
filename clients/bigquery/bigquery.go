@@ -27,8 +27,9 @@ const (
 )
 
 type Store struct {
-	configMap *types.DwhToTablesConfigMap
-	batchSize int
+	configMap            *types.DwhToTablesConfigMap
+	batchSize            int
+	uppercaseEscColNames bool
 	db.Store
 }
 
@@ -38,7 +39,7 @@ func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.Tabl
 		FqName:    tableData.ToFqName(ctx, s.Label(), true),
 		ConfigMap: s.configMap,
 		Query: fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name='%s';",
-			tableData.TopicConfig.Database, tableData.Name(ctx, nil)),
+			tableData.TopicConfig.Database, tableData.Name(nil)),
 		ColumnNameLabel:    describeNameCol,
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeCommentCol,
@@ -85,16 +86,18 @@ func (s *Store) PutTable(ctx context.Context, dataset, tableName string, rows []
 }
 
 func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
+	settings := config.FromContext(ctx)
+	settings.Config.BigQuery.LoadDefaultValues()
+
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			Store:     *_store,
-			configMap: &types.DwhToTablesConfigMap{},
+			Store:                *_store,
+			uppercaseEscColNames: settings.Config.SharedDestinationConfig.UppercaseEscapedNames,
+			configMap:            &types.DwhToTablesConfigMap{},
 		}
 	}
 
-	settings := config.FromContext(ctx)
-	settings.Config.BigQuery.LoadDefaultValues()
 	if credPath := settings.Config.BigQuery.PathToCredentials; credPath != "" {
 		// If the credPath is set, let's set it into the env var.
 		logger.FromContext(ctx).Debug("writing the path to BQ credentials to env var for google auth")
@@ -105,8 +108,9 @@ func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
 	}
 
 	return &Store{
-		Store:     db.Open(ctx, "bigquery", settings.Config.BigQuery.DSN()),
-		configMap: &types.DwhToTablesConfigMap{},
-		batchSize: settings.Config.BigQuery.BatchSize,
+		Store:                db.Open(ctx, "bigquery", settings.Config.BigQuery.DSN()),
+		uppercaseEscColNames: settings.Config.SharedDestinationConfig.UppercaseEscapedNames,
+		configMap:            &types.DwhToTablesConfigMap{},
+		batchSize:            settings.Config.BigQuery.BatchSize,
 	}
 }

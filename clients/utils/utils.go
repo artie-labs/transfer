@@ -13,7 +13,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func BackfillColumn(ctx context.Context, dwh destination.DataWarehouse, column columns.Column, fqTableName string) error {
+func BackfillColumn(ctx context.Context, dwh destination.DataWarehouse, column columns.Column, fqTableName string, uppercaseEscName bool) error {
 	if dwh.Label() == constants.BigQuery {
 		return fmt.Errorf("bigquery does not use this method")
 	}
@@ -31,13 +31,17 @@ func BackfillColumn(ctx context.Context, dwh destination.DataWarehouse, column c
 		return fmt.Errorf("failed to escape default value, err: %v", err)
 	}
 
-	escapedCol := column.Name(ctx, &sql.NameArgs{Escape: true, DestKind: dwh.Label()})
+	escapedCol := column.Name(&sql.NameArgs{
+		Escape:           true,
+		DestKind:         dwh.Label(),
+		UppercaseEscName: uppercaseEscName,
+	})
 	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
 		// UPDATE table SET col = default_val WHERE col IS NULL
 		fqTableName, escapedCol, defaultVal, escapedCol,
 	)
 	logger.FromContext(ctx).WithFields(map[string]interface{}{
-		"colName": column.Name(ctx, nil),
+		"colName": column.Name(nil),
 		"query":   query,
 		"table":   fqTableName,
 	}).Info("backfilling column")

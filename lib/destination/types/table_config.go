@@ -64,15 +64,15 @@ func (d *DwhTableConfig) MutateInMemoryColumns(ctx context.Context, createTable 
 		for _, col := range cols {
 			d.columns.AddColumn(col)
 			// Delete from the permissions table, if exists.
-			delete(d.columnsToDelete, col.Name(ctx, nil))
+			delete(d.columnsToDelete, col.Name(nil))
 		}
 
 		d.createTable = createTable
 	case constants.Delete:
 		for _, col := range cols {
 			// Delete from the permissions and in-memory table
-			d.columns.DeleteColumn(col.Name(ctx, nil))
-			delete(d.columnsToDelete, col.Name(ctx, nil))
+			d.columns.DeleteColumn(col.Name(nil))
+			delete(d.columnsToDelete, col.Name(nil))
 		}
 	}
 }
@@ -91,7 +91,7 @@ func (d *DwhTableConfig) AuditColumnsToDelete(ctx context.Context, colsToDelete 
 	for colName := range d.columnsToDelete {
 		var found bool
 		for _, col := range colsToDelete {
-			if found = col.Name(ctx, nil) == colName; found {
+			if found = col.Name(nil) == colName; found {
 				break
 			}
 		}

@@ -24,6 +24,7 @@ type Store struct {
 	optionalS3Prefix  string
 	configMap         *types.DwhToTablesConfigMap
 	skipLgCols        bool
+	uppercaseEscNames bool
 	db.Store
 }
 
@@ -47,7 +48,7 @@ const (
 
 func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	describeQuery, err := describeTableQuery(describeArgs{
-		RawTableName: tableData.Name(ctx, nil),
+		RawTableName: tableData.Name(nil),
 		Schema:       tableData.TopicConfig.Schema,
 	})
 
@@ -57,7 +58,7 @@ func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.Tabl
 
 	return utils.GetTableConfig(ctx, utils.GetTableCfgArgs{
 		Dwh:                s,
-		FqName:             tableData.ToFqName(ctx, s.Label(), true),
+		FqName:             tableData.ToFqName(ctx, s.Label(), true, s.uppercaseEscNames),
 		ConfigMap:          s.configMap,
 		Query:              describeQuery,
 		ColumnNameLabel:    describeNameCol,
@@ -74,9 +75,10 @@ func LoadRedshift(ctx context.Context, _store *db.Store) *Store {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			Store:      *_store,
-			configMap:  &types.DwhToTablesConfigMap{},
-			skipLgCols: settings.Config.Redshift.SkipLgCols,
+			Store:             *_store,
+			configMap:         &types.DwhToTablesConfigMap{},
+			skipLgCols:        settings.Config.Redshift.SkipLgCols,
+			uppercaseEscNames: settings.Config.SharedDestinationConfig.UppercaseEscapedNames,
 		}
 	}
 
@@ -85,11 +87,12 @@ func LoadRedshift(ctx context.Context, _store *db.Store) *Store {
 		settings.Config.Redshift.Password, settings.Config.Redshift.Database)
 
 	return &Store{
+		Store:             db.Open(ctx, "postgres", connStr),
 		credentialsClause: settings.Config.Redshift.CredentialsClause,
 		bucket:            settings.Config.Redshift.Bucket,
 		optionalS3Prefix:  settings.Config.Redshift.OptionalS3Prefix,
 		skipLgCols:        settings.Config.Redshift.SkipLgCols,
-		Store:             db.Open(ctx, "postgres", connStr),
+		uppercaseEscNames: settings.Config.SharedDestinationConfig.UppercaseEscapedNames,
 		configMap:         &types.DwhToTablesConfigMap{},
 	}
 }

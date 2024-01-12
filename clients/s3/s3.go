@@ -28,7 +28,8 @@ import (
 )
 
 type Store struct {
-	Settings *config.S3Settings
+	Settings         *config.S3Settings
+	uppercaseEscName bool
 }
 
 func (s *Store) Validate() error {
@@ -51,7 +52,7 @@ func (s *Store) Label() constants.DestinationKind {
 // It will look like something like this:
 // > optionalPrefix/fullyQualifiedTableName/YYYY-MM-DD
 func (s *Store) ObjectPrefix(ctx context.Context, tableData *optimization.TableData) string {
-	fqTableName := tableData.ToFqName(ctx, s.Label(), false)
+	fqTableName := tableData.ToFqName(ctx, s.Label(), false, s.uppercaseEscName)
 	yyyyMMDDFormat := tableData.LatestCDCTs.Format(ext.PostgresDateFormat)
 
 	if len(s.Settings.OptionalPrefix) > 0 {
@@ -81,7 +82,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		cols = append(cols, col)
 	}
 
-	schema, err := parquetutil.GenerateJSONSchema(ctx, cols)
+	schema, err := parquetutil.GenerateJSONSchema(cols)
 	if err != nil {
 		return fmt.Errorf("failed to generate parquet schema, err: %v", err)
 	}
@@ -148,6 +149,8 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 func LoadStore(ctx context.Context, settings *config.S3Settings) (*Store, error) {
 	store := &Store{
 		Settings: settings,
+		// This is S3, we don't need to escape any col or table names, so it's not reading from config.
+		uppercaseEscName: false,
 	}
 
 	if err := store.Validate(); err != nil {

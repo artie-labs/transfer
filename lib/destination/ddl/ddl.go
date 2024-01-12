@@ -51,7 +51,9 @@ type AlterTableArgs struct {
 	FqTableName            string
 	CreateTable            bool
 	TemporaryTable         bool
-	ColumnOp               constants.ColumnOperation
+	// TODO: Set
+	UppercaseEscName bool
+	ColumnOp         constants.ColumnOperation
 
 	CdcTime time.Time
 }
@@ -87,7 +89,7 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 		}
 
 		if args.ColumnOp == constants.Delete {
-			if !args.Tc.ShouldDeleteColumn(ctx, col.Name(ctx, nil), args.CdcTime, args.ContainOtherOperations) {
+			if !args.Tc.ShouldDeleteColumn(ctx, col.Name(nil), args.CdcTime, args.ContainOtherOperations) {
 				continue
 			}
 		}
@@ -95,14 +97,16 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 		mutateCol = append(mutateCol, col)
 		switch args.ColumnOp {
 		case constants.Add:
-			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, col.Name(ctx, &sql.NameArgs{
-				Escape:   true,
-				DestKind: args.Dwh.Label(),
+			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, col.Name(&sql.NameArgs{
+				Escape:           true,
+				DestKind:         args.Dwh.Label(),
+				UppercaseEscName: args.UppercaseEscName,
 			}), typing.KindToDWHType(col.KindDetails, args.Dwh.Label())))
 		case constants.Delete:
-			colSQLParts = append(colSQLParts, col.Name(ctx, &sql.NameArgs{
-				Escape:   true,
-				DestKind: args.Dwh.Label(),
+			colSQLParts = append(colSQLParts, col.Name(&sql.NameArgs{
+				Escape:           true,
+				DestKind:         args.Dwh.Label(),
+				UppercaseEscName: args.UppercaseEscName,
 			}))
 		}
 	}

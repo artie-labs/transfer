@@ -33,7 +33,7 @@ func Diff(ctx context.Context, columnsInSource *Columns, columnsInDestination *C
 	targ := CloneColumns(columnsInDestination)
 	var colsToDelete []Column
 	for _, col := range src.GetColumns() {
-		_, isOk := targ.GetColumn(col.Name(ctx, nil))
+		_, isOk := targ.GetColumn(col.Name(nil))
 		if isOk {
 			colsToDelete = append(colsToDelete, col)
 
@@ -42,13 +42,13 @@ func Diff(ctx context.Context, columnsInSource *Columns, columnsInDestination *C
 
 	// We cannot delete inside a for-loop that is iterating over src.GetColumns() because we are messing up the array order.
 	for _, colToDelete := range colsToDelete {
-		src.DeleteColumn(colToDelete.Name(ctx, nil))
-		targ.DeleteColumn(colToDelete.Name(ctx, nil))
+		src.DeleteColumn(colToDelete.Name(nil))
+		targ.DeleteColumn(colToDelete.Name(nil))
 	}
 
 	var targetColumnsMissing Columns
 	for _, col := range src.GetColumns() {
-		if shouldSkipColumn(col.Name(ctx, nil), softDelete, includeArtieUpdatedAt) {
+		if shouldSkipColumn(col.Name(nil), softDelete, includeArtieUpdatedAt) {
 			continue
 		}
 
@@ -57,7 +57,7 @@ func Diff(ctx context.Context, columnsInSource *Columns, columnsInDestination *C
 
 	var sourceColumnsMissing Columns
 	for _, col := range targ.GetColumns() {
-		if shouldSkipColumn(col.Name(ctx, nil), softDelete, includeArtieUpdatedAt) {
+		if shouldSkipColumn(col.Name(nil), softDelete, includeArtieUpdatedAt) {
 			continue
 		}
 
