@@ -104,12 +104,13 @@ type SharedTransferConfig struct {
 }
 
 type Snowflake struct {
-	AccountID string `yaml:"account"`
-	Username  string `yaml:"username"`
-	Password  string `yaml:"password"`
-	Warehouse string `yaml:"warehouse"`
-	Region    string `yaml:"region"`
-	Host      string `yaml:"host"`
+	AccountID   string `yaml:"account"`
+	Username    string `yaml:"username"`
+	Password    string `yaml:"password"`
+	Warehouse   string `yaml:"warehouse"`
+	Region      string `yaml:"region"`
+	Host        string `yaml:"host"`
+	Application string `yaml:"application"`
 }
 
 func (p *Pubsub) String() string {
