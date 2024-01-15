@@ -195,7 +195,7 @@ func (c *ColumnsTestSuite) TestDiffDeterministic() {
 
 		var key string
 		for _, targetKeyMissing := range targetKeysMissing {
-			key += targetKeyMissing.Name(c.ctx, nil)
+			key += targetKeyMissing.RawName()
 		}
 
 		retMap[key] = false

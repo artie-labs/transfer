@@ -60,6 +60,10 @@ func (t *TableData) PrimaryKeys(ctx context.Context, args *sql.NameArgs) []colum
 	return primaryKeysEscaped
 }
 
+func (t *TableData) RawName() string {
+	return t.name
+}
+
 func (t *TableData) Name(ctx context.Context, args *sql.NameArgs) string {
 	return sql.EscapeName(ctx, t.name, args)
 }

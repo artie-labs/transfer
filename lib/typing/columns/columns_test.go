@@ -200,7 +200,7 @@ func (c *ColumnsTestSuite) TestColumn_Name() {
 			name: testCase.colName,
 		}
 
-		assert.Equal(c.T(), testCase.expectedName, col.Name(c.ctx, nil), testCase.colName)
+		assert.Equal(c.T(), testCase.expectedName, col.RawName(), testCase.colName)
 		assert.Equal(c.T(), testCase.expectedName, col.Name(c.ctx, &sql.NameArgs{
 			Escape: false,
 		}), testCase.colName)

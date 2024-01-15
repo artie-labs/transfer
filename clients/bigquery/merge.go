@@ -82,7 +82,7 @@ func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTab
 		fqTableName, escapedCol, defaultVal, escapedCol)
 
 	logger.FromContext(ctx).WithFields(map[string]interface{}{
-		"colName": column.Name(ctx, nil),
+		"colName": column.RawName(),
 		"query":   query,
 		"table":   fqTableName,
 	}).Info("backfilling column")
@@ -180,7 +180,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		for {
 			err = s.backfillColumn(ctx, col, tableData.ToFqName(ctx, s.Label(), true))
 			if err == nil {
-				tableConfig.Columns().UpsertColumn(col.Name(ctx, nil), columns.UpsertColumnArg{
+				tableConfig.Columns().UpsertColumn(col.RawName(), columns.UpsertColumnArg{
 					Backfilled: ptr.ToBool(true),
 				})
 				break
@@ -192,7 +192,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 				time.Sleep(time.Duration(jitter.JitterMs(1500, attempts)) * time.Millisecond)
 			} else {
 				return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v",
-					col.Name(ctx, nil), col.RawDefaultValue(), err)
+					col.RawName(), col.RawDefaultValue(), err)
 			}
 		}
 
@@ -205,7 +205,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
-	tableName := fmt.Sprintf("%s_%s", tableData.Name(ctx, nil), tableData.TempTableSuffix())
+	tableName := fmt.Sprintf("%s_%s", tableData.RawName(), tableData.TempTableSuffix())
 	err = s.PutTable(ctx, tableData.TopicConfig.Database, tableName, rows)
 	if err != nil {
 		return fmt.Errorf("failed to insert into temp table: %s, error: %v", tableName, err)
