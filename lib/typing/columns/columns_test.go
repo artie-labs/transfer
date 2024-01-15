@@ -132,38 +132,6 @@ func (c *ColumnsTestSuite) TestColumn_ShouldBackfill() {
 	}
 }
 
-func (c *ColumnsTestSuite) TestUnescapeColumnName() {
-	type _testCase struct {
-		escapedName           string
-		expectedBigQueryName  string
-		expectedSnowflakeName string
-		expectedOtherName     string
-	}
-
-	testCases := []_testCase{
-		{
-			escapedName:           "foo",
-			expectedBigQueryName:  "foo",
-			expectedSnowflakeName: "foo",
-			expectedOtherName:     "foo",
-		},
-		{
-			escapedName: "`start`",
-			// Should only escape BigQuery
-			expectedBigQueryName:  "start",
-			expectedSnowflakeName: "`start`",
-			expectedOtherName:     "`start`",
-		},
-	}
-
-	for _, testCase := range testCases {
-		assert.Equal(c.T(), testCase.expectedBigQueryName, UnescapeColumnName(testCase.escapedName, constants.BigQuery))
-		assert.Equal(c.T(), testCase.expectedSnowflakeName, UnescapeColumnName(testCase.escapedName, constants.Snowflake))
-		assert.Equal(c.T(), testCase.expectedSnowflakeName, UnescapeColumnName(testCase.escapedName, constants.SnowflakeStages))
-		assert.Equal(c.T(), testCase.expectedOtherName, UnescapeColumnName(testCase.escapedName, ""))
-	}
-}
-
 func (c *ColumnsTestSuite) TestColumn_Name() {
 	type _testCase struct {
 		colName      string

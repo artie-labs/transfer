@@ -38,15 +38,6 @@ func (c *Column) ShouldSkip() bool {
 	return false
 }
 
-func UnescapeColumnName(escapedName string, destKind constants.DestinationKind) string {
-	if destKind == constants.BigQuery {
-		return strings.ReplaceAll(escapedName, "`", "")
-	} else {
-		// Snowflake does not return escaping.
-		return escapedName
-	}
-}
-
 func NewColumn(name string, kd typing.KindDetails) Column {
 	return Column{
 		name:        name,
