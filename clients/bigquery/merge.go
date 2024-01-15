@@ -150,7 +150,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
-	tableConfig.AuditColumnsToDelete(ctx, srcKeysMissing)
+	tableConfig.AuditColumnsToDelete(srcKeysMissing)
 
 	// Infer the right data types from BigQuery before temp table creation.
 	tableData.MergeColumnsFromDestination(ctx, tableConfig.Columns().GetColumns()...)
@@ -191,9 +191,8 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 				attempts += 1
 				time.Sleep(time.Duration(jitter.JitterMs(1500, attempts)) * time.Millisecond)
 			} else {
-				defaultVal, _ := col.DefaultValue(ctx, nil)
 				return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v",
-					col.Name(ctx, nil), defaultVal, err)
+					col.Name(ctx, nil), col.RawDefaultValue(), err)
 			}
 		}
 

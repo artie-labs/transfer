@@ -56,7 +56,7 @@ func (d *DwhTableConfig) Columns() *columns.Columns {
 	return d.columns
 }
 
-func (d *DwhTableConfig) MutateInMemoryColumns(ctx context.Context, createTable bool, columnOp constants.ColumnOperation, cols ...columns.Column) {
+func (d *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp constants.ColumnOperation, cols ...columns.Column) {
 	d.Lock()
 	defer d.Unlock()
 	switch columnOp {
@@ -64,22 +64,22 @@ func (d *DwhTableConfig) MutateInMemoryColumns(ctx context.Context, createTable 
 		for _, col := range cols {
 			d.columns.AddColumn(col)
 			// Delete from the permissions table, if exists.
-			delete(d.columnsToDelete, col.Name(ctx, nil))
+			delete(d.columnsToDelete, col.RawName())
 		}
 
 		d.createTable = createTable
 	case constants.Delete:
 		for _, col := range cols {
 			// Delete from the permissions and in-memory table
-			d.columns.DeleteColumn(col.Name(ctx, nil))
-			delete(d.columnsToDelete, col.Name(ctx, nil))
+			d.columns.DeleteColumn(col.RawName())
+			delete(d.columnsToDelete, col.RawName())
 		}
 	}
 }
 
 // AuditColumnsToDelete - will check its (*DwhTableConfig) columnsToDelete against `colsToDelete` and remove any columns that are not in `colsToDelete`.
 // `colsToDelete` is derived from diffing the destination and source (if destination has extra columns)
-func (d *DwhTableConfig) AuditColumnsToDelete(ctx context.Context, colsToDelete []columns.Column) {
+func (d *DwhTableConfig) AuditColumnsToDelete(colsToDelete []columns.Column) {
 	if !d.dropDeletedColumns {
 		// If `dropDeletedColumns` is false, then let's skip this.
 		return
@@ -91,7 +91,7 @@ func (d *DwhTableConfig) AuditColumnsToDelete(ctx context.Context, colsToDelete 
 	for colName := range d.columnsToDelete {
 		var found bool
 		for _, col := range colsToDelete {
-			if found = col.Name(ctx, nil) == colName; found {
+			if found = col.RawName() == colName; found {
 				break
 			}
 		}

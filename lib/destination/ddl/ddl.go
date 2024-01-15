@@ -157,7 +157,7 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 
 	if err == nil {
 		// createTable = false since it all successfully updated.
-		args.Tc.MutateInMemoryColumns(ctx, false, args.ColumnOp, mutateCol...)
+		args.Tc.MutateInMemoryColumns(false, args.ColumnOp, mutateCol...)
 	}
 
 	return nil
