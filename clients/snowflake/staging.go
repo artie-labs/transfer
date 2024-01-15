@@ -123,7 +123,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 
 	log := logger.FromContext(ctx)
 	// Check if all the columns exist in Snowflake
-	srcKeysMissing, targetKeysMissing := columns.Diff(ctx, tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
+	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
 		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,

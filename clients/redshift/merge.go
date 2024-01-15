@@ -30,7 +30,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	log := logger.FromContext(ctx)
 	fqName := tableData.ToFqName(ctx, s.Label(), true)
 	// Check if all the columns exist in Redshift
-	srcKeysMissing, targetKeysMissing := columns.Diff(ctx, tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
+	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
 		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
