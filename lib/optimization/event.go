@@ -235,7 +235,8 @@ func (t *TableData) ShouldFlush(ctx context.Context) (bool, string) {
 // Prior to merging, we will need to treat `tableConfig` as the source-of-truth and whenever there's discrepancies
 // We will prioritize using the values coming from (2) TableConfig. We also cannot simply do a replacement, as we have in-memory columns
 // That carry metadata for Artie Transfer. They are prefixed with __artie.
-func (t *TableData) MergeColumnsFromDestination(ctx context.Context, destCols ...columns.Column) {
+func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) {
+	// TODO: Should add an early exit for when `destCols` is empty
 	if t == nil {
 		return
 	}
@@ -244,7 +245,7 @@ func (t *TableData) MergeColumnsFromDestination(ctx context.Context, destCols ..
 		var foundColumn columns.Column
 		var found bool
 		for _, destCol := range destCols {
-			if destCol.Name(ctx, nil) == strings.ToLower(inMemoryCol.Name(ctx, nil)) {
+			if destCol.RawName() == strings.ToLower(inMemoryCol.RawName()) {
 				foundColumn = destCol
 				found = true
 				break

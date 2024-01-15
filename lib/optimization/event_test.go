@@ -228,7 +228,7 @@ func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumns() {
 		"bar":                  typing.Boolean,
 		"do_not_change_format": typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 	} {
-		tableData.MergeColumnsFromDestination(o.ctx, columns.NewColumn(name, colKindDetails))
+		tableData.MergeColumnsFromDestination(columns.NewColumn(name, colKindDetails))
 	}
 
 	// It's saved back in the original format.

@@ -153,7 +153,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
 
 	// Infer the right data types from BigQuery before temp table creation.
-	tableData.MergeColumnsFromDestination(ctx, tableConfig.Columns().GetColumns()...)
+	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 
 	// Start temporary table creation
 	tempAlterTableArgs := ddl.AlterTableArgs{
