@@ -47,7 +47,7 @@ const (
 
 func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	describeQuery, err := describeTableQuery(describeArgs{
-		RawTableName: tableData.Name(ctx, nil),
+		RawTableName: tableData.RawName(),
 		Schema:       tableData.TopicConfig.Schema,
 	})
 

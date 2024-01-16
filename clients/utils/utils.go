@@ -37,7 +37,7 @@ func BackfillColumn(ctx context.Context, dwh destination.DataWarehouse, column c
 		fqTableName, escapedCol, defaultVal, escapedCol,
 	)
 	logger.FromContext(ctx).WithFields(map[string]interface{}{
-		"colName": column.Name(ctx, nil),
+		"colName": column.RawName(),
 		"query":   query,
 		"table":   fqTableName,
 	}).Info("backfilling column")

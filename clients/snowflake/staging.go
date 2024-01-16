@@ -123,7 +123,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 
 	log := logger.FromContext(ctx)
 	// Check if all the columns exist in Snowflake
-	srcKeysMissing, targetKeysMissing := columns.Diff(ctx, tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
+	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
 		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
@@ -160,8 +160,8 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		return err
 	}
 
-	tableConfig.AuditColumnsToDelete(ctx, srcKeysMissing)
-	tableData.MergeColumnsFromDestination(ctx, tableConfig.Columns().GetColumns()...)
+	tableConfig.AuditColumnsToDelete(srcKeysMissing)
+	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label(), false), tableData.TempTableSuffix())
 	if err = s.prepareTempTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {
 		return err
@@ -175,12 +175,10 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 
 		err = utils.BackfillColumn(ctx, s, col, tableData.ToFqName(ctx, s.Label(), true))
 		if err != nil {
-			defaultVal, _ := col.DefaultValue(ctx, nil)
-			return fmt.Errorf("failed to backfill col: %v, default value: %v, error: %v",
-				col.Name(ctx, nil), defaultVal, err)
+			return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v", col.RawName(), col.RawDefaultValue(), err)
 		}
 
-		tableConfig.Columns().UpsertColumn(col.Name(ctx, nil), columns.UpsertColumnArg{
+		tableConfig.Columns().UpsertColumn(col.RawName(), columns.UpsertColumnArg{
 			Backfilled: ptr.ToBool(true),
 		})
 	}
