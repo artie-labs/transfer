@@ -84,7 +84,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 		err = utils.BackfillColumn(ctx, s, col, tableData.ToFqName(ctx, s.Label(), true))
 		if err != nil {
-			return fmt.Errorf("failed to backfill col: %v, default value: %v, error: %v", col.RawName(), col.RawDefaultValue(), err)
+			return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v", col.RawName(), col.RawDefaultValue(), err)
 		}
 
 		tableConfig.Columns().UpsertColumn(col.RawName(), columns.UpsertColumnArg{

@@ -191,8 +191,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 				attempts += 1
 				time.Sleep(time.Duration(jitter.JitterMs(1500, attempts)) * time.Millisecond)
 			} else {
-				return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v",
-					col.RawName(), col.RawDefaultValue(), err)
+				return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v", col.RawName(), col.RawDefaultValue(), err)
 			}
 		}
 

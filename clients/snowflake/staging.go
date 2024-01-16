@@ -175,7 +175,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 
 		err = utils.BackfillColumn(ctx, s, col, tableData.ToFqName(ctx, s.Label(), true))
 		if err != nil {
-			return fmt.Errorf("failed to backfill col: %v, default value: %v, error: %v", col.RawName(), col.RawDefaultValue(), err)
+			return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v", col.RawName(), col.RawDefaultValue(), err)
 		}
 
 		tableConfig.Columns().UpsertColumn(col.RawName(), columns.UpsertColumnArg{
