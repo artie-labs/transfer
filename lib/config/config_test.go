@@ -329,6 +329,7 @@ func TestReadFileToConfig_Snowflake(t *testing.T) {
 		warehouse         = "warehouse"
 		region            = "region"
 		sentryDSN         = "sentry_url"
+		application       = "foo"
 	)
 
 	_, err = io.WriteString(file, fmt.Sprintf(
@@ -349,13 +350,14 @@ snowflake:
  password: %s
  warehouse: %s
  region: %s
+ application: %s
 
 reporting:
  sentry:
   dsn: %s
 
 `, bootstrapServer, groupID, true, username, password, snowflakeAccount,
-		snowflakeUser, snowflakePassword, warehouse, region, sentryDSN))
+		snowflakeUser, snowflakePassword, warehouse, region, application, sentryDSN))
 	assert.Nil(t, err)
 
 	// Now read it!
@@ -394,6 +396,7 @@ reporting:
 	assert.Equal(t, config.Snowflake.AccountID, snowflakeAccount)
 	assert.Equal(t, config.Snowflake.Warehouse, warehouse)
 	assert.Equal(t, config.Snowflake.Region, region)
+	assert.Equal(t, config.Snowflake.Application, application)
 	assert.Equal(t, config.Reporting.Sentry.DSN, sentryDSN)
 }
 

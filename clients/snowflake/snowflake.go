@@ -74,11 +74,12 @@ func (s *Store) reestablishConnection(ctx context.Context) {
 
 	settings := config.FromContext(ctx)
 	cfg := &gosnowflake.Config{
-		Account:   settings.Config.Snowflake.AccountID,
-		User:      settings.Config.Snowflake.Username,
-		Password:  settings.Config.Snowflake.Password,
-		Warehouse: settings.Config.Snowflake.Warehouse,
-		Region:    settings.Config.Snowflake.Region,
+		Account:     settings.Config.Snowflake.AccountID,
+		User:        settings.Config.Snowflake.Username,
+		Password:    settings.Config.Snowflake.Password,
+		Warehouse:   settings.Config.Snowflake.Warehouse,
+		Region:      settings.Config.Snowflake.Region,
+		Application: settings.Config.Snowflake.Application,
 	}
 
 	if settings.Config.Snowflake.Host != "" {

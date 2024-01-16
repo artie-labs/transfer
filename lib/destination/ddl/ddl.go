@@ -91,7 +91,7 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 		}
 
 		if args.ColumnOp == constants.Delete {
-			if !args.Tc.ShouldDeleteColumn(ctx, col.Name(ctx, nil), args.CdcTime, args.ContainOtherOperations) {
+			if !args.Tc.ShouldDeleteColumn(ctx, col.RawName(), args.CdcTime, args.ContainOtherOperations) {
 				continue
 			}
 		}
@@ -161,7 +161,7 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 
 	if err == nil {
 		// createTable = false since it all successfully updated.
-		args.Tc.MutateInMemoryColumns(ctx, false, args.ColumnOp, mutateCol...)
+		args.Tc.MutateInMemoryColumns(false, args.ColumnOp, mutateCol...)
 	}
 
 	return nil

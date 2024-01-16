@@ -172,7 +172,7 @@ func (o *OptimizationTestSuite) TestNewTableData_TableName() {
 			TableName: testCase.overrideName,
 			Schema:    testCase.schema,
 		}, testCase.tableName)
-		assert.Equal(o.T(), testCase.expectedName, td.Name(o.ctx, nil), testCase.name)
+		assert.Equal(o.T(), testCase.expectedName, td.RawName(), testCase.name)
 		assert.Equal(o.T(), testCase.expectedName, td.name, testCase.name)
 		assert.Equal(o.T(), testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.SnowflakeStages, true, ""), testCase.name)
 		assert.Equal(o.T(), testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.Snowflake, true, ""), testCase.name)
@@ -221,7 +221,7 @@ func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumns() {
 	assert.True(o.T(), isOk)
 
 	extCol.KindDetails.ExtendedTimeDetails.Format = time.RFC3339Nano
-	tableData.inMemoryColumns.UpdateColumn(columns.NewColumn(extCol.Name(o.ctx, nil), extCol.KindDetails))
+	tableData.inMemoryColumns.UpdateColumn(columns.NewColumn(extCol.RawName(), extCol.KindDetails))
 
 	for name, colKindDetails := range map[string]typing.KindDetails{
 		"foo":                  typing.String,
@@ -229,7 +229,7 @@ func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumns() {
 		"bar":                  typing.Boolean,
 		"do_not_change_format": typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 	} {
-		tableData.MergeColumnsFromDestination(o.ctx, columns.NewColumn(name, colKindDetails))
+		tableData.MergeColumnsFromDestination(columns.NewColumn(name, colKindDetails))
 	}
 
 	// It's saved back in the original format.

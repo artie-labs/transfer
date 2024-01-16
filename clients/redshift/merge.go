@@ -30,7 +30,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	log := logger.FromContext(ctx)
 	fqName := tableData.ToFqName(ctx, s.Label(), true, "")
 	// Check if all the columns exist in Redshift
-	srcKeysMissing, targetKeysMissing := columns.Diff(ctx, tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
+	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
 		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
@@ -67,8 +67,8 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
-	tableConfig.AuditColumnsToDelete(ctx, srcKeysMissing)
-	tableData.MergeColumnsFromDestination(ctx, tableConfig.Columns().GetColumns()...)
+	tableConfig.AuditColumnsToDelete(srcKeysMissing)
+	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 
 	// Temporary tables cannot specify schemas, so we just prefix it instead.
 	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label(), false, ""), tableData.TempTableSuffix())
@@ -84,12 +84,10 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 		err = utils.BackfillColumn(ctx, s, col, tableData.ToFqName(ctx, s.Label(), true, ""))
 		if err != nil {
-			defaultVal, _ := col.DefaultValue(ctx, nil)
-			return fmt.Errorf("failed to backfill col: %v, default value: %v, error: %v",
-				col.Name(ctx, nil), defaultVal, err)
+			return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v", col.RawName(), col.RawDefaultValue(), err)
 		}
 
-		tableConfig.Columns().UpsertColumn(col.Name(ctx, nil), columns.UpsertColumnArg{
+		tableConfig.Columns().UpsertColumn(col.RawName(), columns.UpsertColumnArg{
 			Backfilled: ptr.ToBool(true),
 		})
 	}

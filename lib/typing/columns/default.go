@@ -18,6 +18,10 @@ type DefaultValueArgs struct {
 	DestKind constants.DestinationKind
 }
 
+func (c *Column) RawDefaultValue() interface{} {
+	return c.defaultValue
+}
+
 func (c *Column) DefaultValue(ctx context.Context, args *DefaultValueArgs) (interface{}, error) {
 	if args == nil || !args.Escape || c.defaultValue == nil {
 		return c.defaultValue, nil

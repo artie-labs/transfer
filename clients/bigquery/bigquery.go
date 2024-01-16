@@ -40,7 +40,7 @@ func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.Tabl
 		FqName:    tableData.ToFqName(ctx, s.Label(), true, s.projectID),
 		ConfigMap: s.configMap,
 		Query: fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name='%s';",
-			tableData.TopicConfig.Database, tableData.Name(ctx, nil)),
+			tableData.TopicConfig.Database, tableData.RawName()),
 		ColumnNameLabel:    describeNameCol,
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeCommentCol,

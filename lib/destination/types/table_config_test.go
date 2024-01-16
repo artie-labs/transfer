@@ -86,7 +86,7 @@ func TestDwhTableConfig_ColumnsConcurrency(t *testing.T) {
 func (t *TypesTestSuite) TestDwhTableConfig_MutateInMemoryColumns() {
 	tc := NewDwhTableConfig(&columns.Columns{}, nil, false, false)
 	for _, col := range []string{"a", "b", "c", "d", "e"} {
-		tc.MutateInMemoryColumns(t.ctx, false, constants.Add, columns.NewColumn(col, typing.String))
+		tc.MutateInMemoryColumns(false, constants.Add, columns.NewColumn(col, typing.String))
 	}
 
 	assert.Equal(t.T(), 5, len(tc.columns.GetColumns()))
@@ -95,7 +95,7 @@ func (t *TypesTestSuite) TestDwhTableConfig_MutateInMemoryColumns() {
 		wg.Add(1)
 		go func(colName string) {
 			defer wg.Done()
-			tc.MutateInMemoryColumns(t.ctx, false, constants.Add, columns.NewColumn(colName, typing.String))
+			tc.MutateInMemoryColumns(false, constants.Add, columns.NewColumn(colName, typing.String))
 		}(addCol)
 	}
 
@@ -103,7 +103,7 @@ func (t *TypesTestSuite) TestDwhTableConfig_MutateInMemoryColumns() {
 		wg.Add(1)
 		go func(colName string) {
 			defer wg.Done()
-			tc.MutateInMemoryColumns(t.ctx, false, constants.Delete, columns.NewColumn(colName, typing.Invalid))
+			tc.MutateInMemoryColumns(false, constants.Delete, columns.NewColumn(colName, typing.Invalid))
 		}(removeCol)
 	}
 
@@ -169,7 +169,7 @@ func (t *TypesTestSuite) TestAuditColumnsToDelete() {
 			cols = append(cols, columns.NewColumn(colToDelete, typing.String))
 		}
 
-		dwhTc.AuditColumnsToDelete(t.ctx, cols)
+		dwhTc.AuditColumnsToDelete(cols)
 		var actualCols []string
 		for col := range dwhTc.ReadOnlyColumnsToDelete() {
 			actualCols = append(actualCols, col)

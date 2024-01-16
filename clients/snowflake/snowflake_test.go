@@ -47,7 +47,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	}
 
 	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, "foo")
-	assert.Equal(s.T(), topicConfig.TableName, tableData.Name(s.ctx, nil), "override is working")
+	assert.Equal(s.T(), topicConfig.TableName, tableData.RawName(), "override is working")
 
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row, false)
