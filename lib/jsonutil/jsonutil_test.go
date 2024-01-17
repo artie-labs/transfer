@@ -10,6 +10,12 @@ import (
 
 func TestSanitizePayload(t *testing.T) {
 	{
+		// Don't touch if the value isn't a string
+		val, err := SanitizePayload(123)
+		assert.NoError(t, err)
+		assert.Equal(t, 123, val)
+	}
+	{
 		// Invalid JSON string
 		_, err := SanitizePayload("hello")
 		assert.Error(t, err)
