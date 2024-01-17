@@ -47,6 +47,7 @@ var typesThatRequireTypeCasting = []SupportedDebeziumType{
 	DateTimeKafkaConnect,
 	KafkaDecimalType,
 	KafkaVariableNumericType,
+	JSON,
 }
 
 func RequiresSpecialTypeCasting(typeLabel string) (bool, SupportedDebeziumType) {
