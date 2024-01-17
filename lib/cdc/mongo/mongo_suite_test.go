@@ -23,6 +23,7 @@ func (p *MongoTestSuite) SetupTest() {
 
 	p.ctx = config.InjectSettingsIntoContext(context.Background(), &config.Settings{
 		VerboseLogging: true,
+		Config:         &config.Config{},
 	})
 	p.ctx = logger.InjectLoggerIntoCtx(p.ctx)
 }

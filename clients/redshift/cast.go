@@ -1,7 +1,6 @@
 package redshift
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -41,7 +40,7 @@ func replaceExceededValues(colVal string, colKind columns.Column) string {
 
 // CastColValStaging - takes `colVal` interface{} and `colKind` typing.Column and converts the value into a string value
 // This is necessary because CSV writers require values to in `string`.
-func (s *Store) CastColValStaging(ctx context.Context, colVal interface{}, colKind columns.Column) (string, error) {
+func (s *Store) CastColValStaging(colVal interface{}, colKind columns.Column, additionalDateFmts []string) (string, error) {
 	if colVal == nil {
 		if colKind.KindDetails == typing.Struct {
 			// Returning empty here because if it's a struct, it will go through JSON PARSE and JSON_PARSE("") = null
@@ -56,7 +55,7 @@ func (s *Store) CastColValStaging(ctx context.Context, colVal interface{}, colKi
 	switch colKind.KindDetails.Kind {
 	// All the other types do not need string wrapping.
 	case typing.ETime.Kind:
-		extTime, err := ext.ParseFromInterface(ctx, colVal)
+		extTime, err := ext.ParseFromInterface(additionalDateFmts, colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
 		}

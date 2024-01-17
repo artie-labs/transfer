@@ -1,7 +1,6 @@
 package columns
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -22,7 +21,7 @@ func (c *Column) RawDefaultValue() interface{} {
 	return c.defaultValue
 }
 
-func (c *Column) DefaultValue(ctx context.Context, args *DefaultValueArgs) (interface{}, error) {
+func (c *Column) DefaultValue(args *DefaultValueArgs, additionalDateFmts []string) (interface{}, error) {
 	if args == nil || !args.Escape || c.defaultValue == nil {
 		return c.defaultValue, nil
 	}
@@ -42,7 +41,7 @@ func (c *Column) DefaultValue(ctx context.Context, args *DefaultValueArgs) (inte
 			return nil, fmt.Errorf("column kind details for extended time is nil")
 		}
 
-		extTime, err := ext.ParseFromInterface(ctx, c.defaultValue)
+		extTime, err := ext.ParseFromInterface(additionalDateFmts, c.defaultValue)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", c.defaultValue, err)
 		}

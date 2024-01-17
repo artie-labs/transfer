@@ -1,7 +1,6 @@
 package bigquery
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -16,7 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func castColVal(ctx context.Context, colVal interface{}, colKind columns.Column) (interface{}, error) {
+func castColVal(colVal interface{}, colKind columns.Column, additionalDateFmts []string) (interface{}, error) {
 	if colVal != nil {
 		switch colKind.KindDetails.Kind {
 		case typing.EDecimal.Kind:
@@ -27,7 +26,7 @@ func castColVal(ctx context.Context, colVal interface{}, colKind columns.Column)
 
 			return val.Value(), nil
 		case typing.ETime.Kind:
-			extTime, err := ext.ParseFromInterface(ctx, colVal)
+			extTime, err := ext.ParseFromInterface(additionalDateFmts, colVal)
 			if err != nil {
 				return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
 			}

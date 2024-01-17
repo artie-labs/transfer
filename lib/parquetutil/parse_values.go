@@ -1,7 +1,6 @@
 package parquetutil
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -15,14 +14,14 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func ParseValue(ctx context.Context, colVal interface{}, colKind columns.Column) (interface{}, error) {
+func ParseValue(colVal interface{}, colKind columns.Column, additionalDateFmts []string) (interface{}, error) {
 	if colVal == nil {
 		return nil, nil
 	}
 
 	switch colKind.KindDetails.Kind {
 	case typing.ETime.Kind:
-		extTime, err := ext.ParseFromInterface(ctx, colVal)
+		extTime, err := ext.ParseFromInterface(additionalDateFmts, colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
 		}

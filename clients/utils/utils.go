@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -23,10 +25,8 @@ func BackfillColumn(ctx context.Context, dwh destination.DataWarehouse, column c
 		return nil
 	}
 
-	defaultVal, err := column.DefaultValue(ctx, &columns.DefaultValueArgs{
-		Escape:   true,
-		DestKind: dwh.Label(),
-	})
+	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
+	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{Escape: true, DestKind: dwh.Label()}, additionalDateFmts)
 	if err != nil {
 		return fmt.Errorf("failed to escape default value, err: %v", err)
 	}

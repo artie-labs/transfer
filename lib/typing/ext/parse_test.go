@@ -29,7 +29,7 @@ func (e *ExtTestSuite) TestParseFromInterface() {
 	})
 
 	for _, val := range vals {
-		extTime, err := ParseFromInterface(e.ctx, val)
+		extTime, err := ParseFromInterface(nil, val)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), val, extTime)
 	}

@@ -1,7 +1,6 @@
 package snowflake
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -17,7 +16,7 @@ import (
 
 // castColValStaging - takes `colVal` interface{} and `colKind` typing.Column and converts the value into a string value
 // This is necessary because CSV writers require values to in `string`.
-func castColValStaging(ctx context.Context, colVal interface{}, colKind columns.Column) (string, error) {
+func castColValStaging(colVal interface{}, colKind columns.Column, additionalDateFmts []string) (string, error) {
 	if colVal == nil {
 		// \\N needs to match NULL_IF(...) from ddl.go
 		return `\\N`, nil
@@ -26,7 +25,7 @@ func castColValStaging(ctx context.Context, colVal interface{}, colKind columns.
 	colValString := fmt.Sprint(colVal)
 	switch colKind.KindDetails.Kind {
 	case typing.ETime.Kind:
-		extTime, err := ext.ParseFromInterface(ctx, colVal)
+		extTime, err := ext.ParseFromInterface(additionalDateFmts, colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
 		}
