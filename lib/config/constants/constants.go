@@ -42,7 +42,6 @@ var ReservedKeywords = []string{
 	"connect",
 	"create",
 	"current",
-	"default", // default isn't in this list, but it should be.
 	"delete",
 	"distinct",
 	"drop",
