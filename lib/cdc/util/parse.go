@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/artie-labs/transfer/lib/jsonutil"
+
 	"github.com/artie-labs/transfer/lib/debezium"
 	"github.com/artie-labs/transfer/lib/logger"
 )
@@ -25,6 +27,11 @@ func parseField(ctx context.Context, field debezium.Field, value interface{}) in
 
 	if valid, supportedType := debezium.RequiresSpecialTypeCasting(field.DebeziumType); valid {
 		switch debezium.SupportedDebeziumType(field.DebeziumType) {
+		case debezium.JSON:
+			valString, err := jsonutil.SanitizePayload(value)
+			if err == nil {
+				return valString
+			}
 		case debezium.KafkaDecimalType:
 			decimalVal, err := field.DecodeDecimal(fmt.Sprint(value))
 			if err == nil {
