@@ -7,22 +7,17 @@ import (
 	"os"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/config"
-
-	"github.com/artie-labs/transfer/lib/sql"
-
 	"github.com/artie-labs/transfer/clients/utils"
-
-	"github.com/artie-labs/transfer/lib/ptr"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/dml"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 // prepareTempTable does the following:
