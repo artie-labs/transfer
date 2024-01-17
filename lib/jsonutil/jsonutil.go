@@ -16,7 +16,7 @@ func SanitizePayload(val interface{}) (interface{}, error) {
 	if err == nil {
 		valBytes, err := json.Marshal(jsonMap)
 		if err == nil {
-			return valBytes, nil
+			return string(valBytes), nil
 		}
 	}
 
