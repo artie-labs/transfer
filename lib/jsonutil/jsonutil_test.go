@@ -41,18 +41,7 @@ func TestSanitizePayload(t *testing.T) {
 		err = json.Unmarshal([]byte(fmt.Sprint(val)), &jsonMap)
 		assert.NoError(t, err)
 
-		var foundHello bool
-		var foundFoo bool
-		for key := range jsonMap {
-			if key == "hello" {
-				foundHello = true
-			}
-			if key == "foo" {
-				foundFoo = true
-			}
-		}
-
-		assert.True(t, foundHello)
-		assert.True(t, foundFoo)
+		assert.Contains(t, jsonMap, "hello")
+		assert.Contains(t, jsonMap, "foo")
 	}
 }
