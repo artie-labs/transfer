@@ -37,6 +37,10 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 
 	needsBackfillCol := columns.NewColumn("foo", typing.Boolean)
 	needsBackfillCol.SetDefaultValue(true)
+
+	needsBackfillColDefault := columns.NewColumn("default", typing.Boolean)
+	needsBackfillColDefault.SetDefaultValue(true)
+
 	testCases := []_testCase{
 		{
 			name: "col that doesn't have default val",
@@ -52,8 +56,15 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 			backfillSQL: `UPDATE db.public.tableName SET foo = true WHERE foo IS NULL;`,
 			commentSQL:  `COMMENT ON COLUMN db.public.tableName.foo IS '{"backfilled": true}';`,
 		},
+		{
+			name:        "default col that has default value that needs to be backfilled",
+			col:         needsBackfillColDefault,
+			backfillSQL: `UPDATE db.public.tableName SET default = true WHERE "default" IS NULL;`,
+			commentSQL:  `COMMENT ON COLUMN db.public.tableName.default IS '{"backfilled": true}';`,
+		},
 	}
 
+	var count int
 	for _, testCase := range testCases {
 		err := utils.BackfillColumn(s.ctx, s.stageStore, testCase.col, fqTableName)
 		if testCase.expectErr {
@@ -63,11 +74,14 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 
 		assert.NoError(s.T(), err, testCase.name)
 		if testCase.backfillSQL != "" && testCase.commentSQL != "" {
-			backfillSQL, _ := s.fakeStageStore.ExecArgsForCall(0)
+			backfillSQL, _ := s.fakeStageStore.ExecArgsForCall(count)
 			assert.Equal(s.T(), testCase.backfillSQL, backfillSQL, testCase.name)
 
-			commentSQL, _ := s.fakeStageStore.ExecArgsForCall(1)
+			count++
+			commentSQL, _ := s.fakeStageStore.ExecArgsForCall(count)
 			assert.Equal(s.T(), testCase.commentSQL, commentSQL, testCase.name)
+
+			count++
 		} else {
 			assert.Equal(s.T(), 0, s.fakeStageStore.ExecCallCount())
 		}
