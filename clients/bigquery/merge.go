@@ -5,24 +5,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/config"
-
-	"github.com/artie-labs/transfer/lib/sql"
-
-	"github.com/artie-labs/transfer/lib/ptr"
-
-	"github.com/artie-labs/transfer/lib/jitter"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
 	"cloud.google.com/go/bigquery"
 
-	"github.com/artie-labs/transfer/lib/destination/dml"
-
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
+	"github.com/artie-labs/transfer/lib/destination/dml"
+	"github.com/artie-labs/transfer/lib/jitter"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 type Row struct {
