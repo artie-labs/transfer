@@ -29,13 +29,15 @@ const (
 type Store struct {
 	configMap *types.DwhToTablesConfigMap
 	batchSize int
+	projectID string
+
 	db.Store
 }
 
 func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	return utils.GetTableConfig(ctx, utils.GetTableCfgArgs{
 		Dwh:       s,
-		FqName:    tableData.ToFqName(ctx, s.Label(), true),
+		FqName:    tableData.ToFqName(ctx, s.Label(), true, s.projectID),
 		ConfigMap: s.configMap,
 		Query: fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name='%s';",
 			tableData.TopicConfig.Database, tableData.RawName()),
@@ -85,16 +87,17 @@ func (s *Store) PutTable(ctx context.Context, dataset, tableName string, rows []
 }
 
 func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
+	settings := config.FromContext(ctx)
+	settings.Config.BigQuery.LoadDefaultValues()
 	if _store != nil {
 		// Used for tests.
 		return &Store{
 			Store:     *_store,
+			projectID: settings.Config.BigQuery.ProjectID,
 			configMap: &types.DwhToTablesConfigMap{},
 		}
 	}
 
-	settings := config.FromContext(ctx)
-	settings.Config.BigQuery.LoadDefaultValues()
 	if credPath := settings.Config.BigQuery.PathToCredentials; credPath != "" {
 		// If the credPath is set, let's set it into the env var.
 		logger.FromContext(ctx).Debug("writing the path to BQ credentials to env var for google auth")
@@ -108,5 +111,6 @@ func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
 		Store:     db.Open(ctx, "bigquery", settings.Config.BigQuery.DSN()),
 		configMap: &types.DwhToTablesConfigMap{},
 		batchSize: settings.Config.BigQuery.BatchSize,
+		projectID: settings.Config.BigQuery.ProjectID,
 	}
 }

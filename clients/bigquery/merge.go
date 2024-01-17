@@ -115,10 +115,12 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	// Check if all the columns exist in BigQuery
 	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(),
 		tableConfig.Columns(), tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt)
+
+	fqName := tableData.ToFqName(ctx, s.Label(), true, s.projectID)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
 		Tc:          tableConfig,
-		FqTableName: tableData.ToFqName(ctx, s.Label(), true),
+		FqTableName: fqName,
 		CreateTable: tableConfig.CreateTable(),
 		ColumnOp:    constants.Add,
 		CdcTime:     tableData.LatestCDCTs,
@@ -137,7 +139,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	deleteAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:                    s,
 		Tc:                     tableConfig,
-		FqTableName:            tableData.ToFqName(ctx, s.Label(), true),
+		FqTableName:            fqName,
 		CreateTable:            false,
 		ColumnOp:               constants.Delete,
 		ContainOtherOperations: tableData.ContainOtherOperations(),
@@ -159,7 +161,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	tempAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:            s,
 		Tc:             tableConfig,
-		FqTableName:    fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label(), false), tableData.TempTableSuffix()),
+		FqTableName:    fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label(), false, s.projectID), tableData.TempTableSuffix()),
 		CreateTable:    true,
 		TemporaryTable: true,
 		ColumnOp:       constants.Add,
@@ -178,7 +180,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 		var attempts int
 		for {
-			err = s.backfillColumn(ctx, col, tableData.ToFqName(ctx, s.Label(), true))
+			err = s.backfillColumn(ctx, col, fqName)
 			if err == nil {
 				tableConfig.Columns().UpsertColumn(col.RawName(), columns.UpsertColumnArg{
 					Backfilled: ptr.ToBool(true),
@@ -227,7 +229,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	mergeQuery, err := dml.MergeStatement(ctx, &dml.MergeArgument{
-		FqTableName:               tableData.ToFqName(ctx, constants.BigQuery, true),
+		FqTableName:               fqName,
 		AdditionalEqualityStrings: additionalEqualityStrings,
 		SubQuery:                  tempAlterTableArgs.FqTableName,
 		IdempotentKey:             tableData.TopicConfig.IdempotentKey,

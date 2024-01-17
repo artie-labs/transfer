@@ -77,6 +77,10 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 		return err
 	}
 
+	if len(cols) == 0 {
+		return nil
+	}
+
 	var mutateCol []columns.Column
 	// It's okay to combine since args.ColumnOp only takes one of: `Delete` or `Add`
 	var colSQLParts []string
