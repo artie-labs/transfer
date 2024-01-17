@@ -28,7 +28,7 @@ func TestSanitizePayload(t *testing.T) {
 	}
 	{
 		// Fake JSON - appears to be in JSON format, but has duplicate keys
-		val, err := SanitizePayload(`{"hello":"world","hello":"world"}`)
+		val, err := SanitizePayload(`{"hello":"11world","hello":"world"}`)
 		assert.NoError(t, err)
 		assert.Equal(t, `{"hello":"world"}`, val)
 	}
