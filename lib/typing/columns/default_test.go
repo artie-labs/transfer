@@ -24,7 +24,7 @@ func (c *ColumnsTestSuite) TestColumn_DefaultValue() {
 	}
 
 	birthday := time.Date(2022, time.September, 6, 3, 19, 24, 942000000, time.UTC)
-	birthdayExtDateTime, err := ext.ParseExtendedDateTime(c.ctx, birthday.Format(ext.ISO8601))
+	birthdayExtDateTime, err := ext.ParseExtendedDateTime(nil, birthday.Format(ext.ISO8601))
 	assert.NoError(c.T(), err)
 
 	// date

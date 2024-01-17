@@ -1,14 +1,11 @@
 package ext
 
 import (
-	"context"
 	"fmt"
 	"time"
-
-	"github.com/artie-labs/transfer/lib/config"
 )
 
-func ParseFromInterface(ctx context.Context, val interface{}) (*ExtendedTime, error) {
+func ParseFromInterface(additionalDateFormats []string, val interface{}) (*ExtendedTime, error) {
 	if val == nil {
 		return nil, fmt.Errorf("val is nil")
 	}
@@ -19,7 +16,7 @@ func ParseFromInterface(ctx context.Context, val interface{}) (*ExtendedTime, er
 	}
 
 	var err error
-	extendedTime, err = ParseExtendedDateTime(ctx, fmt.Sprint(val))
+	extendedTime, err = ParseExtendedDateTime(additionalDateFormats, fmt.Sprint(val))
 	if err != nil {
 		return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", val, err)
 	}
@@ -49,7 +46,7 @@ func ParseTimeExactMatch(layout, potentialDateTimeString string) (time.Time, boo
 // 1) Precision loss in translation
 // 2) Original format preservation (with tz locale).
 // If it cannot find it, then it will give you the next best thing.
-func ParseExtendedDateTime(ctx context.Context, dtString string) (*ExtendedTime, error) {
+func ParseExtendedDateTime(additionalDateFormats []string, dtString string) (*ExtendedTime, error) {
 	// Check all the timestamp formats
 	var potentialFormat string
 	var potentialTime time.Time
@@ -65,8 +62,8 @@ func ParseExtendedDateTime(ctx context.Context, dtString string) (*ExtendedTime,
 	}
 
 	allSupportedDateFormats := supportedDateFormats
-	if len(config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats) > 0 {
-		allSupportedDateFormats = append(allSupportedDateFormats, config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats...)
+	if len(additionalDateFormats) > 0 {
+		allSupportedDateFormats = append(allSupportedDateFormats, additionalDateFormats...)
 	}
 
 	// Now check DATE formats
