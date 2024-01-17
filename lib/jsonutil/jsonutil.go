@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// SanitizePayload will take in a JSON string, and return a JSON string that has been sanitized (removed duplicate keys)
 func SanitizePayload(val interface{}) (interface{}, error) {
 	_, isOk := val.(map[string]interface{})
 	if isOk {
