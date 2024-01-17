@@ -37,7 +37,8 @@ func BackfillColumn(ctx context.Context, dwh destination.DataWarehouse, column c
 	// Once we escape everything by default, we can remove this patch of code.
 	additionalEscapedCol := escapedCol
 	if additionalEscapedCol == "default" && dwh.Label() == constants.Snowflake {
-		additionalEscapedCol = fmt.Sprintf(`"%s"`, additionalEscapedCol)
+		// It should be uppercase because Snowflake's default column is uppercase and since it's not a reserved column name, it uses the default setting.
+		additionalEscapedCol = "DEFAULT"
 	}
 
 	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
