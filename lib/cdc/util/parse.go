@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/artie-labs/transfer/lib/jsonutil"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/artie-labs/transfer/lib/debezium"
 	"github.com/artie-labs/transfer/lib/logger"
@@ -64,6 +65,15 @@ func parseField(ctx context.Context, field debezium.Field, value interface{}) in
 				if err == nil {
 					return extendedTime
 				} else {
+					if ext.IsInvalidErr(err) {
+						logger.FromContext(ctx).WithFields(map[string]interface{}{
+							"err":           err,
+							"supportedType": supportedType,
+							"val":           value,
+						}).Info("extTime is not valid, so returning nil here instead")
+						return nil
+					}
+
 					logger.FromContext(ctx).WithFields(map[string]interface{}{
 						"err":           err,
 						"supportedType": supportedType,

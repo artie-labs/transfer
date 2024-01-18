@@ -1,6 +1,9 @@
 package ext
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 type ExtendedTimeKindType string
 
@@ -37,6 +40,25 @@ var (
 type ExtendedTime struct {
 	time.Time
 	NestedKind NestedKind
+}
+
+const InvalidErrPrefix = "extTime is not valid"
+
+func IsInvalidErr(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return strings.HasPrefix(err.Error(), InvalidErrPrefix)
+}
+
+func (e *ExtendedTime) IsValid() bool {
+	// This will make us feature-parity with Go: https://github.com/golang/go/blob/97daa6e94296980b4aa2dac93a938a5edd95ce93/src/time/format_rfc3339.go#L62
+	if e.Time.Year() > 9999 || e.Time.Year() < 0 {
+		return false
+	}
+
+	return true
 }
 
 func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat string) (*ExtendedTime, error) {
