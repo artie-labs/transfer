@@ -60,7 +60,7 @@ func (d *DDLTestSuite) Test_DropTemporaryTable() {
 
 	for _, _dwh := range []destination.DataWarehouse{d.bigQueryStore, d.snowflakeStagesStore} {
 		var fakeStore *mocks.FakeStore
-		if _dwh.Label() == constants.Snowflake || _dwh.Label() == constants.SnowflakeStages {
+		if _dwh.Label() == constants.Snowflake {
 			fakeStore = d.fakeSnowflakeStagesStore
 		} else if _dwh.Label() == constants.BigQuery {
 			fakeStore = d.fakeBigQueryStore

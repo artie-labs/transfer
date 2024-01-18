@@ -112,18 +112,16 @@ const (
 type DestinationKind string
 
 const (
-	SnowflakeStages DestinationKind = "snowflake_stage"
-	Snowflake       DestinationKind = "snowflake"
-	Test            DestinationKind = "test"
-	BigQuery        DestinationKind = "bigquery"
-	Redshift        DestinationKind = "redshift"
-	S3              DestinationKind = "s3"
+	Snowflake DestinationKind = "snowflake"
+	Test      DestinationKind = "test"
+	BigQuery  DestinationKind = "bigquery"
+	Redshift  DestinationKind = "redshift"
+	S3        DestinationKind = "s3"
 )
 
 var ValidDestinations = []DestinationKind{
 	BigQuery,
 	Snowflake,
-	SnowflakeStages,
 	Redshift,
 	S3,
 	Test,

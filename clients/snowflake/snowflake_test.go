@@ -159,36 +159,34 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	}
 
 	var idx int
-	for _, destKind := range []constants.DestinationKind{constants.Snowflake, constants.SnowflakeStages} {
-		fqName := tableData.ToFqName(s.ctx, destKind, true, "")
-		s.stageStore.configMap.AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, true))
-		err := s.stageStore.Merge(s.ctx, tableData)
-		assert.Nil(s.T(), err)
-		s.fakeStageStore.ExecReturns(nil, nil)
-		// CREATE TABLE IF NOT EXISTS customer.public.orders___artie_Mwv9YADmRy (id int,name string,__artie_delete boolean,created_at timestamp_tz) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE) COMMENT='expires:2023-06-27 11:54:03 UTC'
-		createQuery, _ := s.fakeStageStore.ExecArgsForCall(idx)
-		assert.Contains(s.T(), createQuery, fmt.Sprintf("%s_%s", fqName, constants.ArtiePrefix), fmt.Sprintf("query: %v, destKind: %v", createQuery, destKind))
 
-		// PUT file:///tmp/customer.public.orders___artie_Mwv9YADmRy.csv @customer.public.%orders___artie_Mwv9YADmRy AUTO_COMPRESS=TRUE
-		putQuery, _ := s.fakeStageStore.ExecArgsForCall(idx + 1)
-		assert.Contains(s.T(), putQuery, fmt.Sprintf("PUT file:///tmp/%s_%s", fqName, constants.ArtiePrefix), fmt.Sprintf("query: %v, destKind: %v", putQuery, destKind))
+	fqName := tableData.ToFqName(s.ctx, constants.Snowflake, true, "")
+	s.stageStore.configMap.AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, true))
+	err := s.stageStore.Merge(s.ctx, tableData)
+	assert.Nil(s.T(), err)
+	s.fakeStageStore.ExecReturns(nil, nil)
+	// CREATE TABLE IF NOT EXISTS customer.public.orders___artie_Mwv9YADmRy (id int,name string,__artie_delete boolean,created_at timestamp_tz) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE) COMMENT='expires:2023-06-27 11:54:03 UTC'
+	createQuery, _ := s.fakeStageStore.ExecArgsForCall(idx)
+	assert.Contains(s.T(), createQuery, fmt.Sprintf("%s_%s", fqName, constants.ArtiePrefix), fmt.Sprintf("query: %v, destKind: %v", createQuery, constants.Snowflake))
 
-		// COPY INTO customer.public.orders___artie_Mwv9YADmRy (id,name,__artie_delete,created_at) FROM (SELECT $1,$2,$3,$4 FROM @customer.public.%orders___artie_Mwv9YADmRy
-		copyQuery, _ := s.fakeStageStore.ExecArgsForCall(idx + 2)
-		assert.Contains(s.T(), copyQuery, fmt.Sprintf("COPY INTO %s_%s", fqName, constants.ArtiePrefix), fmt.Sprintf("query: %v, destKind: %v", copyQuery, destKind))
-		assert.Contains(s.T(), copyQuery, fmt.Sprintf("FROM %s", "@customer.public.%orders___artie"), fmt.Sprintf("query: %v, destKind: %v", copyQuery, destKind))
+	// PUT file:///tmp/customer.public.orders___artie_Mwv9YADmRy.csv @customer.public.%orders___artie_Mwv9YADmRy AUTO_COMPRESS=TRUE
+	putQuery, _ := s.fakeStageStore.ExecArgsForCall(idx + 1)
+	assert.Contains(s.T(), putQuery, fmt.Sprintf("PUT file:///tmp/%s_%s", fqName, constants.ArtiePrefix), fmt.Sprintf("query: %v, destKind: %v", putQuery, constants.Snowflake))
 
-		mergeQuery, _ := s.fakeStageStore.ExecArgsForCall(idx + 3)
-		assert.Contains(s.T(), mergeQuery, fmt.Sprintf("MERGE INTO %s", fqName), fmt.Sprintf("query: %v, destKind: %v", mergeQuery, destKind))
+	// COPY INTO customer.public.orders___artie_Mwv9YADmRy (id,name,__artie_delete,created_at) FROM (SELECT $1,$2,$3,$4 FROM @customer.public.%orders___artie_Mwv9YADmRy
+	copyQuery, _ := s.fakeStageStore.ExecArgsForCall(idx + 2)
+	assert.Contains(s.T(), copyQuery, fmt.Sprintf("COPY INTO %s_%s", fqName, constants.ArtiePrefix), fmt.Sprintf("query: %v, destKind: %v", copyQuery, constants.Snowflake))
+	assert.Contains(s.T(), copyQuery, fmt.Sprintf("FROM %s", "@customer.public.%orders___artie"), fmt.Sprintf("query: %v, destKind: %v", copyQuery, constants.Snowflake))
 
-		// Drop a table now.
-		dropQuery, _ := s.fakeStageStore.ExecArgsForCall(idx + 4)
-		assert.Contains(s.T(), dropQuery, fmt.Sprintf("DROP TABLE IF EXISTS %s", fmt.Sprintf("%s_%s", fqName, constants.ArtiePrefix)),
-			fmt.Sprintf("query: %v, destKind: %v", dropQuery, destKind))
-		idx += 5
-	}
+	mergeQuery, _ := s.fakeStageStore.ExecArgsForCall(idx + 3)
+	assert.Contains(s.T(), mergeQuery, fmt.Sprintf("MERGE INTO %s", fqName), fmt.Sprintf("query: %v, destKind: %v", mergeQuery, constants.Snowflake))
 
-	assert.Equal(s.T(), 10, s.fakeStageStore.ExecCallCount(), "called merge")
+	// Drop a table now.
+	dropQuery, _ := s.fakeStageStore.ExecArgsForCall(idx + 4)
+	assert.Contains(s.T(), dropQuery, fmt.Sprintf("DROP TABLE IF EXISTS %s", fmt.Sprintf("%s_%s", fqName, constants.ArtiePrefix)),
+		fmt.Sprintf("query: %v, destKind: %v", dropQuery, constants.Snowflake))
+
+	assert.Equal(s.T(), 5, s.fakeStageStore.ExecCallCount(), "called merge")
 }
 
 // TestExecuteMergeDeletionFlagRemoval is going to run execute merge twice.

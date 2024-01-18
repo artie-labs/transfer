@@ -61,7 +61,7 @@ func GetTableConfig(ctx context.Context, args GetTableCfgArgs) (*types.DwhTableC
 	var tableMissing bool
 	if err != nil {
 		switch args.Dwh.Label() {
-		case constants.Snowflake, constants.SnowflakeStages:
+		case constants.Snowflake:
 			if SnowflakeTableDoesNotExistErr(err) {
 				// Swallow the error, make sure all the metadata is created
 				tableMissing = true
@@ -109,7 +109,7 @@ func GetTableConfig(ctx context.Context, args GetTableCfgArgs) (*types.DwhTableC
 
 		var kd typing.KindDetails
 		switch args.Dwh.Label() {
-		case constants.Snowflake, constants.SnowflakeStages:
+		case constants.Snowflake:
 			kd = typing.SnowflakeTypeToKind(row[args.ColumnTypeLabel])
 		case constants.BigQuery:
 			kd = typing.BigQueryTypeToKind(row[args.ColumnTypeLabel])
