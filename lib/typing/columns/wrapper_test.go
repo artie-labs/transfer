@@ -58,7 +58,7 @@ func (c *ColumnsTestSuite) TestWrapper_Complete() {
 		assert.Equal(c.T(), testCase.expectedEscapedNameBQ, w.EscapedName(), testCase.name)
 		assert.Equal(c.T(), testCase.expectedRawName, w.RawName(), testCase.name)
 
-		for _, destKind := range []constants.DestinationKind{constants.Snowflake, constants.SnowflakeStages, constants.BigQuery} {
+		for _, destKind := range []constants.DestinationKind{constants.Snowflake, constants.BigQuery} {
 			w = NewWrapper(c.ctx, NewColumn(testCase.name, typing.Invalid), &sql.NameArgs{
 				Escape:   false,
 				DestKind: destKind,

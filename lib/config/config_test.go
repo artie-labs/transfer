@@ -489,7 +489,7 @@ func TestConfig_Validate(t *testing.T) {
 
 	// Check Snowflake and BigQuery for large rows
 	// All should be fine.
-	for _, destKind := range []constants.DestinationKind{constants.SnowflakeStages, constants.Snowflake, constants.BigQuery} {
+	for _, destKind := range []constants.DestinationKind{constants.Snowflake, constants.BigQuery} {
 		cfg.Output = destKind
 		cfg.BufferRows = bufferPoolSizeEnd + 1
 		assert.Nil(t, cfg.Validate())

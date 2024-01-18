@@ -174,7 +174,6 @@ func (o *OptimizationTestSuite) TestNewTableData_TableName() {
 		}, testCase.tableName)
 		assert.Equal(o.T(), testCase.expectedName, td.RawName(), testCase.name)
 		assert.Equal(o.T(), testCase.expectedName, td.name, testCase.name)
-		assert.Equal(o.T(), testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.SnowflakeStages, true, ""), testCase.name)
 		assert.Equal(o.T(), testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.Snowflake, true, ""), testCase.name)
 		assert.Equal(o.T(), testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery, true, bqProjectID), testCase.name)
 		assert.Equal(o.T(), testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery, true, bqProjectID), testCase.name)

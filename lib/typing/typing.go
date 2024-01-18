@@ -172,7 +172,7 @@ func ParseValue(ctx context.Context, key string, optionalSchema map[string]KindD
 
 func KindToDWHType(kd KindDetails, dwh constants.DestinationKind) string {
 	switch dwh {
-	case constants.Snowflake, constants.SnowflakeStages:
+	case constants.Snowflake:
 		return kindToSnowflake(kd)
 	case constants.BigQuery:
 		return kindToBigQuery(kd)

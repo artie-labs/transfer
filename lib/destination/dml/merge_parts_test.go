@@ -15,7 +15,6 @@ import (
 func (m *MergeTestSuite) TestMergeStatementPartsValidation() {
 	for _, arg := range []*MergeArgument{
 		{DestKind: constants.Snowflake},
-		{DestKind: constants.SnowflakeStages},
 		{DestKind: constants.BigQuery},
 	} {
 		parts, err := MergeStatementParts(m.ctx, arg)

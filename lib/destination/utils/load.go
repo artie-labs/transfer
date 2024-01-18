@@ -53,7 +53,7 @@ func DataWarehouse(ctx context.Context, store *db.Store) destination.DataWarehou
 			Fake: mocks.FakeStore{},
 		})
 		return snowflake.LoadSnowflake(ctx, &store)
-	case constants.Snowflake, constants.SnowflakeStages:
+	case constants.Snowflake:
 		s := snowflake.LoadSnowflake(ctx, store)
 		if err := s.Sweep(ctx); err != nil {
 			logger.FromContext(ctx).WithError(err).Fatalf("failed to clean up snowflake")
