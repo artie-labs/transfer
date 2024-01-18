@@ -127,7 +127,7 @@ func (b *BigQueryTestSuite) TestCastColVal() {
 	}
 
 	for _, testCase := range testCases {
-		actualString, actualErr := castColVal(b.ctx, testCase.colVal, testCase.colKind)
+		actualString, actualErr := castColVal(testCase.colVal, testCase.colKind, nil)
 		assert.Equal(b.T(), testCase.expectedErr, actualErr, testCase.name)
 		assert.Equal(b.T(), testCase.expectedValue, actualString, testCase.name)
 	}

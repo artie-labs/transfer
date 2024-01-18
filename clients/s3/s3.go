@@ -97,6 +97,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return fmt.Errorf("failed to instantiate parquet writer, err: %v", err)
 	}
 
+	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
 	pw.CompressionType = parquet.CompressionCodec_GZIP
 	for _, val := range tableData.RowsData() {
 		row := make(map[string]interface{})
@@ -106,7 +107,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 				return fmt.Errorf("expected column: %v to exist in readOnlyInMemoryCols(...) but it does not", col)
 			}
 
-			value, err := parquetutil.ParseValue(ctx, val[col], colKind)
+			value, err := parquetutil.ParseValue(val[col], colKind, additionalDateFmts)
 			if err != nil {
 				return fmt.Errorf("failed to parse value, err: %v, value: %v, column: %v", err, val[col], col)
 			}

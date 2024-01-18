@@ -6,14 +6,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/stringutil"
-
-	"github.com/artie-labs/transfer/lib/numbers"
 	"gopkg.in/yaml.v3"
 
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/numbers"
+	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
 const (

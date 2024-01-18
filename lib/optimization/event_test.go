@@ -85,7 +85,7 @@ func (o *OptimizationTestSuite) TestDistinctDates() {
 			rowsData: testCase.rowData,
 		}
 
-		actualValues, actualErr := t.DistinctDates(o.ctx, "ts")
+		actualValues, actualErr := t.DistinctDates("ts", nil)
 		if testCase.expectErr {
 			assert.Error(o.T(), actualErr, testCase.name)
 		} else {

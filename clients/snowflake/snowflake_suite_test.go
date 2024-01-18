@@ -22,6 +22,7 @@ type SnowflakeTestSuite struct {
 func (s *SnowflakeTestSuite) SetupTest() {
 	s.ctx = config.InjectSettingsIntoContext(context.Background(), &config.Settings{
 		VerboseLogging: false,
+		Config:         &config.Config{},
 	})
 
 	s.ResetStore()

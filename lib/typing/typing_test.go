@@ -152,19 +152,19 @@ func (t *TypingTestSuite) TestDateTime() {
 		assert.Equal(t.T(), ParseValue(t.ctx, "", nil, possibleDate).ExtendedTimeDetails.Type, ext.DateTime.Type, fmt.Sprintf("Failed format, value is: %v", possibleDate))
 
 		// Test the parseDT function as well.
-		ts, err := ext.ParseExtendedDateTime(t.ctx, fmt.Sprint(possibleDate))
+		ts, err := ext.ParseExtendedDateTime(fmt.Sprint(possibleDate), []string{})
 		assert.NoError(t.T(), err, err)
 		assert.False(t.T(), ts.IsZero(), ts)
 	}
 
-	ts, err := ext.ParseExtendedDateTime(t.ctx, "random")
+	ts, err := ext.ParseExtendedDateTime("random", []string{})
 	assert.Error(t.T(), err, err)
 	assert.Nil(t.T(), ts)
 }
 
 func (t *TypingTestSuite) TestDateTime_Fallback() {
 	dtString := "Mon Jan 02 15:04:05.69944 -0700 2006"
-	ts, err := ext.ParseExtendedDateTime(t.ctx, dtString)
+	ts, err := ext.ParseExtendedDateTime(dtString, nil)
 	assert.NoError(t.T(), err)
 	assert.NotEqual(t.T(), ts.String(""), dtString)
 }

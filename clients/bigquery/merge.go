@@ -5,22 +5,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/sql"
-
-	"github.com/artie-labs/transfer/lib/ptr"
-
-	"github.com/artie-labs/transfer/lib/jitter"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
 	"cloud.google.com/go/bigquery"
 
-	"github.com/artie-labs/transfer/lib/destination/dml"
-
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
+	"github.com/artie-labs/transfer/lib/destination/dml"
+	"github.com/artie-labs/transfer/lib/jitter"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 type Row struct {
@@ -39,11 +35,13 @@ func (r *Row) Save() (map[string]bigquery.Value, string, error) {
 
 func merge(ctx context.Context, tableData *optimization.TableData) ([]*Row, error) {
 	var rows []*Row
+
+	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
 	for _, value := range tableData.RowsData() {
 		data := make(map[string]bigquery.Value)
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
-			colVal, err := castColVal(ctx, value[col], colKind)
+			colVal, err := castColVal(value[col], colKind, additionalDateFmts)
 			if err != nil {
 				return nil, fmt.Errorf("failed to cast col: %v, err: %v", col, err)
 			}
@@ -67,11 +65,9 @@ func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTab
 		return nil
 	}
 
-	defaultVal, err := column.DefaultValue(ctx, &columns.DefaultValueArgs{
-		Escape:   true,
-		DestKind: s.Label(),
-	})
+	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
 
+	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{Escape: true, DestKind: s.Label()}, additionalDateFmts)
 	if err != nil {
 		return fmt.Errorf("failed to escape default value, err: %v", err)
 	}
@@ -214,7 +210,8 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	var additionalEqualityStrings []string
 	if tableData.TopicConfig.BigQueryPartitionSettings != nil {
-		distinctDates, err := tableData.DistinctDates(ctx, tableData.TopicConfig.BigQueryPartitionSettings.PartitionField)
+		additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
+		distinctDates, err := tableData.DistinctDates(tableData.TopicConfig.BigQueryPartitionSettings.PartitionField, additionalDateFmts)
 		if err != nil {
 			return fmt.Errorf("failed to generate distinct dates, err: %v", err)
 		}

@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/typing"
 
 	"github.com/artie-labs/transfer/lib/s3lib"
@@ -83,11 +85,13 @@ func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.
 
 	writer := csv.NewWriter(gzipWriter) // Create a CSV writer on top of the gzip writer
 	writer.Comma = '\t'
+
+	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
 	for _, value := range tableData.RowsData() {
 		var row []string
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
-			castedValue, castErr := s.CastColValStaging(ctx, value[col], colKind)
+			castedValue, castErr := s.CastColValStaging(value[col], colKind, additionalDateFmts)
 			if castErr != nil {
 				return "", castErr
 			}

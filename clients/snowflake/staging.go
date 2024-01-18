@@ -7,20 +7,17 @@ import (
 	"os"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/sql"
-
 	"github.com/artie-labs/transfer/clients/utils"
-
-	"github.com/artie-labs/transfer/lib/ptr"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/dml"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 // prepareTempTable does the following:
@@ -85,13 +82,15 @@ func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.
 	defer file.Close()
 	writer := csv.NewWriter(file)
 	writer.Comma = '\t'
+
+	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
 	for _, value := range tableData.RowsData() {
 		var row []string
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal := value[col]
 			// Check
-			castedValue, castErr := castColValStaging(ctx, colVal, colKind)
+			castedValue, castErr := castColValStaging(colVal, colKind, additionalDateFmts)
 			if castErr != nil {
 				return "", castErr
 			}

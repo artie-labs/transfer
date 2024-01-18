@@ -93,7 +93,7 @@ func (p *ParquetUtilTestSuite) TestParseValue() {
 	}
 
 	for _, tc := range testCases {
-		actualValue, actualErr := ParseValue(p.ctx, tc.colVal, tc.colKind)
+		actualValue, actualErr := ParseValue(tc.colVal, tc.colKind, nil)
 		if tc.expectErr {
 			assert.Error(p.T(), actualErr, tc.name)
 		} else {

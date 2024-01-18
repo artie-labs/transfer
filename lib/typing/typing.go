@@ -133,7 +133,7 @@ func ParseValue(ctx context.Context, key string, optionalSchema map[string]KindD
 		// This way, we don't penalize every string into going through this loop
 		// In the future, we can have specific layout RFCs run depending on the char
 		if strings.Contains(convertedVal, ":") || strings.Contains(convertedVal, "-") {
-			extendedKind, err := ext.ParseExtendedDateTime(ctx, convertedVal)
+			extendedKind, err := ext.ParseExtendedDateTime(convertedVal, cfg.SharedTransferConfig.AdditionalDateFormats)
 			if err == nil {
 				return KindDetails{
 					Kind:                ETime.Kind,

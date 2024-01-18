@@ -24,7 +24,7 @@ func (c *ColumnsTestSuite) TestColumn_DefaultValue() {
 	}
 
 	birthday := time.Date(2022, time.September, 6, 3, 19, 24, 942000000, time.UTC)
-	birthdayExtDateTime, err := ext.ParseExtendedDateTime(c.ctx, birthday.Format(ext.ISO8601))
+	birthdayExtDateTime, err := ext.ParseExtendedDateTime(birthday.Format(ext.ISO8601), nil)
 	assert.NoError(c.T(), err)
 
 	// date
@@ -150,7 +150,7 @@ func (c *ColumnsTestSuite) TestColumn_DefaultValue() {
 				testCase.args.DestKind = validDest
 			}
 
-			actualValue, actualErr := testCase.col.DefaultValue(c.ctx, testCase.args)
+			actualValue, actualErr := testCase.col.DefaultValue(testCase.args, nil)
 			if testCase.expectedEr {
 				assert.Error(c.T(), actualErr, fmt.Sprintf("%s %s", testCase.name, validDest))
 			} else {
