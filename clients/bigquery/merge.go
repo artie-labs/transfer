@@ -211,7 +211,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	var additionalEqualityStrings []string
 	if tableData.TopicConfig.BigQueryPartitionSettings != nil {
 		additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
-		distinctDates, err := tableData.DistinctDates(additionalDateFmts, tableData.TopicConfig.BigQueryPartitionSettings.PartitionField)
+		distinctDates, err := tableData.DistinctDates(tableData.TopicConfig.BigQueryPartitionSettings.PartitionField, additionalDateFmts)
 		if err != nil {
 			return fmt.Errorf("failed to generate distinct dates, err: %v", err)
 		}

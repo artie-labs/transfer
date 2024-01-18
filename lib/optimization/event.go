@@ -178,7 +178,7 @@ func (t *TableData) Rows() uint {
 	return uint(len(t.rowsData))
 }
 
-func (t *TableData) DistinctDates(additionalDateFmts []string, colName string) ([]string, error) {
+func (t *TableData) DistinctDates(colName string, additionalDateFmts []string) ([]string, error) {
 	retMap := make(map[string]bool)
 	for _, row := range t.rowsData {
 		val, isOk := row[colName]
