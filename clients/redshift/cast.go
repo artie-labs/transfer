@@ -55,7 +55,7 @@ func (s *Store) CastColValStaging(colVal interface{}, colKind columns.Column, ad
 	switch colKind.KindDetails.Kind {
 	// All the other types do not need string wrapping.
 	case typing.ETime.Kind:
-		extTime, err := ext.ParseFromInterface(additionalDateFmts, colVal)
+		extTime, err := ext.ParseFromInterface(colVal, additionalDateFmts)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
 		}

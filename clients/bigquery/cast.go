@@ -26,7 +26,7 @@ func castColVal(colVal interface{}, colKind columns.Column, additionalDateFmts [
 
 			return val.Value(), nil
 		case typing.ETime.Kind:
-			extTime, err := ext.ParseFromInterface(additionalDateFmts, colVal)
+			extTime, err := ext.ParseFromInterface(colVal, additionalDateFmts)
 			if err != nil {
 				return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
 			}

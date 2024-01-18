@@ -25,7 +25,7 @@ func castColValStaging(colVal interface{}, colKind columns.Column, additionalDat
 	colValString := fmt.Sprint(colVal)
 	switch colKind.KindDetails.Kind {
 	case typing.ETime.Kind:
-		extTime, err := ext.ParseFromInterface(additionalDateFmts, colVal)
+		extTime, err := ext.ParseFromInterface(colVal, additionalDateFmts)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
 		}

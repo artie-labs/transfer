@@ -41,7 +41,7 @@ func (c *Column) DefaultValue(args *DefaultValueArgs, additionalDateFmts []strin
 			return nil, fmt.Errorf("column kind details for extended time is nil")
 		}
 
-		extTime, err := ext.ParseFromInterface(additionalDateFmts, c.defaultValue)
+		extTime, err := ext.ParseFromInterface(c.defaultValue, additionalDateFmts)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", c.defaultValue, err)
 		}
