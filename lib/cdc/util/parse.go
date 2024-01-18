@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/artie-labs/transfer/lib/jsonutil"
 
@@ -64,6 +65,15 @@ func parseField(ctx context.Context, field debezium.Field, value interface{}) in
 				if err == nil {
 					return extendedTime
 				} else {
+					if strings.Contains(err.Error(), "is not valid") {
+						logger.FromContext(ctx).WithFields(map[string]interface{}{
+							"err":           err,
+							"supportedType": supportedType,
+							"val":           value,
+						}).Info("returning nil here instead")
+						return nil
+					}
+
 					logger.FromContext(ctx).WithFields(map[string]interface{}{
 						"err":           err,
 						"supportedType": supportedType,

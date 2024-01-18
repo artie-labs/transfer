@@ -315,8 +315,6 @@ func TestTableData_ShouldFlushRowSize(t *testing.T) {
 		},
 	}, false)
 
-	fmt.Println("####", td.approxSize)
-
 	shouldFlush, flushReason := td.ShouldFlush(ctx)
 	assert.True(t, shouldFlush)
 	assert.Equal(t, "size", flushReason)

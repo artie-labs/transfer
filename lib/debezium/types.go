@@ -64,6 +64,7 @@ func RequiresSpecialTypeCasting(typeLabel string) (bool, SupportedDebeziumType) 
 func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ext.ExtendedTime, error) {
 	var extTime *ext.ExtendedTime
 	var err error
+
 	switch supportedType {
 	case Timestamp, DateTimeKafkaConnect:
 		// Represents the number of milliseconds since the epoch, and does not include timezone information.
@@ -85,9 +86,13 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ex
 		return nil, fmt.Errorf("supportedType: %s, val: %v failed to be matched", supportedType, val)
 	}
 
+	if err != nil {
+		return nil, err
+	}
+
 	if extTime != nil {
 		if !extTime.IsValid() {
-			return nil, fmt.Errorf("extTime is not valid, extTime: %v", extTime.String(""))
+			return nil, fmt.Errorf("extTime is not valid, extTime: %v", extTime)
 		}
 	}
 
