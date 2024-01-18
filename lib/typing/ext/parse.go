@@ -61,11 +61,8 @@ func ParseExtendedDateTime(additionalDateFormats []string, dtString string) (*Ex
 		}
 	}
 
-	allSupportedDateFormats := supportedDateFormats
-	if len(additionalDateFormats) > 0 {
-		allSupportedDateFormats = append(allSupportedDateFormats, additionalDateFormats...)
-	}
-
+	// We can append nil arrays
+	allSupportedDateFormats := append(supportedDateFormats, additionalDateFormats...)
 	// Now check DATE formats
 	for _, supportedDateFormat := range allSupportedDateFormats {
 		ts, exactMatch, err := ParseTimeExactMatch(supportedDateFormat, dtString)
