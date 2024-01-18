@@ -61,6 +61,12 @@ func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat 
 }
 
 func (e *ExtendedTime) String(overrideFormat string) string {
+	// This will make us feature-parity with Go: https://github.com/golang/go/blob/97daa6e94296980b4aa2dac93a938a5edd95ce93/src/time/format_rfc3339.go#L62
+	// If the year exceeds YYYY, or is in BC then we should return an empty string.
+	if e.Year() > 9999 || e.Year() < 0 {
+		return ""
+	}
+
 	if overrideFormat != "" {
 		return e.Time.Format(overrideFormat)
 	}
