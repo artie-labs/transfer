@@ -92,7 +92,7 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ex
 
 	if extTime != nil {
 		if !extTime.IsValid() {
-			return nil, fmt.Errorf("extTime is not valid, extTime: %v", extTime)
+			return nil, fmt.Errorf("%s, extTime: %v", ext.InvalidErrPrefix, extTime)
 		}
 	}
 
