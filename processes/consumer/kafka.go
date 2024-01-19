@@ -3,10 +3,12 @@ package consumer
 import (
 	"context"
 	"crypto/tls"
+	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/artie"
+	"github.com/artie-labs/transfer/lib/logger"
 	awsCfg "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2"
 	"github.com/segmentio/kafka-go/sasl/plain"
@@ -14,7 +16,6 @@ import (
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -51,9 +52,8 @@ func SetKafkaConsumer(_topicToConsumer map[string]kafkalib.Consumer) {
 }
 
 func StartConsumer(ctx context.Context) {
-	log := logger.FromContext(ctx)
 	settings := config.FromContext(ctx)
-	log.Info("Starting Kafka consumer...", settings.Config.Kafka)
+	slog.Info("Starting Kafka consumer...", slog.Any("config", settings.Config.Kafka))
 
 	dialer := &kafka.Dialer{
 		Timeout:   10 * time.Second,
@@ -65,7 +65,7 @@ func StartConsumer(ctx context.Context) {
 	if settings.Config.Kafka.EnableAWSMSKIAM {
 		cfg, err := awsCfg.LoadDefaultConfig(ctx)
 		if err != nil {
-			log.WithError(err).Fatal("failed to load aws configuration")
+			logger.Fatal("failed to load aws configuration", slog.Any("err", err))
 		}
 
 		dialer.SASLMechanism = aws_msk_iam_v2.NewMechanism(cfg)
@@ -112,15 +112,15 @@ func StartConsumer(ctx context.Context) {
 			for {
 				kafkaMsg, err := kafkaConsumer.FetchMessage(ctx)
 				msg := artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)
-				logFields := map[string]interface{}{
-					"topic":  msg.Topic(),
-					"offset": kafkaMsg.Offset,
-					"key":    string(msg.Key()),
-					"value":  string(msg.Value()),
+				logFields := []any{
+					slog.String("topic", msg.Topic()),
+					slog.Int64("offset", kafkaMsg.Offset),
+					slog.String("key", string(msg.Key())),
+					slog.String("value", string(msg.Value())),
 				}
 
 				if err != nil {
-					log.WithError(err).WithFields(logFields).Warn("failed to read kafka message")
+					slog.With(logFields...).Warn("failed to read kafka message", slog.Any("err", err))
 					continue
 				}
 
@@ -133,7 +133,7 @@ func StartConsumer(ctx context.Context) {
 				msg.EmitIngestionLag(ctx, kafkaConsumer.Config().GroupID, tableName)
 				msg.EmitRowLag(ctx, kafkaConsumer.Config().GroupID, tableName)
 				if processErr != nil {
-					log.WithError(processErr).WithFields(logFields).Warn("skipping message...")
+					slog.With(logFields...).Warn("skipping message...", slog.Any("err", processErr))
 				}
 			}
 		}(topic)

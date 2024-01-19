@@ -3,6 +3,7 @@ package datadog
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"strconv"
 	"time"
@@ -10,7 +11,6 @@ import (
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 
 	"github.com/DataDog/datadog-go/statsd"
-	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
@@ -52,7 +52,7 @@ func NewDatadogClient(ctx context.Context, settings map[string]interface{}) (bas
 	port := os.Getenv("TELEMETRY_PORT")
 	if !stringutil.Empty(host, port) {
 		address = fmt.Sprintf("%s:%s", host, port)
-		logger.FromContext(ctx).WithField("address", address).Info("overriding telemetry address with env vars")
+		slog.Info("overriding telemetry address with env vars", slog.String("address", address))
 	}
 
 	datadogClient, err := statsd.New(address)

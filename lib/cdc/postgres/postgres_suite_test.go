@@ -6,7 +6,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config"
 
-	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -22,7 +21,6 @@ func (p *PostgresTestSuite) SetupTest() {
 	p.ctx = config.InjectSettingsIntoContext(context.Background(), &config.Settings{
 		VerboseLogging: true,
 	})
-	p.ctx = logger.InjectLoggerIntoCtx(p.ctx)
 }
 
 func TestPostgresTestSuite(t *testing.T) {

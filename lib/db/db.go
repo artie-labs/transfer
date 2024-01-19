@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"log/slog"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/jitter"
@@ -36,10 +37,11 @@ func (s *storeWrapper) Exec(query string, args ...any) (sql.Result, error) {
 
 		if retryableError(err) {
 			sleepDurationMs := jitter.JitterMs(sleepIntervalMs, attempts)
-			logger.FromContext(s.ctx).WithError(err).WithFields(map[string]interface{}{
-				"sleepDurationMs": sleepDurationMs,
-				"attempts":        attempts,
-			}).Warn("failed to execute the query, retrying...")
+			slog.Warn("failed to execute the query, retrying...",
+				slog.Any("err", err),
+				slog.Int("sleepDurationMs", sleepDurationMs),
+				slog.Int("attempts", attempts),
+			)
 
 			time.Sleep(time.Duration(sleepDurationMs) * time.Millisecond)
 			continue
@@ -61,20 +63,20 @@ func (s *storeWrapper) Begin() (*sql.Tx, error) {
 func Open(ctx context.Context, driverName, dsn string) Store {
 	db, err := sql.Open(driverName, dsn)
 	if err != nil {
-		logger.FromContext(ctx).WithFields(map[string]interface{}{
-			"driverName": driverName,
-			"dsn":        dsn,
-			"error":      err,
-		}).Fatal("Failed to start a SQL client")
+		logger.Fatal("Failed to start a SQL client",
+			slog.String("driverName", driverName),
+			slog.String("dsn", dsn),
+			slog.Any("err", err),
+		)
 	}
 
 	err = db.Ping()
 	if err != nil {
-		logger.FromContext(ctx).WithFields(map[string]interface{}{
-			"driverName": driverName,
-			"dsn":        dsn,
-			"error":      err,
-		}).Fatal("Failed to validate the DB connection")
+		logger.Fatal("Failed to validate the DB connection",
+			slog.String("driverName", driverName),
+			slog.String("dsn", dsn),
+			slog.Any("err", err),
+		)
 	}
 
 	return &storeWrapper{

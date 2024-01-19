@@ -3,6 +3,7 @@ package ddl
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -13,14 +14,13 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
-	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
 // DropTemporaryTable - this will drop the temporary table from Snowflake w/ stages and BigQuery
 // It has a safety check to make sure the tableName contains the `constants.ArtiePrefix` key.
 // Temporary tables look like this: database.schema.tableName__artie__RANDOM_STRING(10)
-func DropTemporaryTable(ctx context.Context, dwh destination.DataWarehouse, fqTableName string, shouldReturnError bool) error {
+func DropTemporaryTable(dwh destination.DataWarehouse, fqTableName string, shouldReturnError bool) error {
 	if dwh.Label() != constants.BigQuery {
 		// BigQuery is case-sensitive, so lets no lower.
 		fqTableName = strings.ToLower(fqTableName)
@@ -31,13 +31,13 @@ func DropTemporaryTable(ctx context.Context, dwh destination.DataWarehouse, fqTa
 		// https://docs.snowflake.com/en/sql-reference/sql/drop-table
 		_, err := dwh.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", fqTableName))
 		if err != nil {
-			logger.FromContext(ctx).WithError(err).Warn("failed to drop temporary table, it will get garbage collected by the TTL...")
+			slog.Warn("failed to drop temporary table, it will get garbage collected by the TTL...", slog.Any("err", err))
 			if shouldReturnError {
 				return fmt.Errorf("failed to drop temp table - err %v", err)
 			}
 		}
 	} else {
-		logger.FromContext(ctx).Warn(fmt.Sprintf("skipped dropping table: %s because it does not contain the artie prefix", fqTableName))
+		slog.Warn(fmt.Sprintf("skipped dropping table: %s because it does not contain the artie prefix", fqTableName))
 	}
 
 	return nil
@@ -145,7 +145,7 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
 		}
 
-		logger.FromContext(ctx).WithField("query", sqlQuery).Info("ddl - executing sql")
+		slog.Info("ddl - executing sql", slog.String("query", sqlQuery))
 		_, err = args.Dwh.Exec(sqlQuery)
 		if ColumnAlreadyExistErr(err, args.Dwh.Label()) {
 			err = nil
@@ -155,7 +155,7 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 	} else {
 		for _, colSQLPart := range colSQLParts {
 			sqlQuery := fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", args.FqTableName, args.ColumnOp, colSQLPart)
-			logger.FromContext(ctx).WithField("query", sqlQuery).Info("ddl - executing sql")
+			slog.Info("ddl - executing sql", slog.String("query", sqlQuery))
 			_, err = args.Dwh.Exec(sqlQuery)
 			if ColumnAlreadyExistErr(err, args.Dwh.Label()) {
 				err = nil

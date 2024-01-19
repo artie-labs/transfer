@@ -63,12 +63,12 @@ func LoadMemoryDB(ctx context.Context) context.Context {
 func GetMemoryDB(ctx context.Context) *DatabaseData {
 	dbValue := ctx.Value(constants.DatabaseKey)
 	if dbValue == nil {
-		logger.FromContext(ctx).Fatalf("failed to retrieve database from context")
+		logger.Fatal("failed to retrieve database from context")
 	}
 
 	db, isOk := dbValue.(*DatabaseData)
 	if !isOk {
-		logger.FromContext(ctx).Fatalf("database data is not the right type *DatabaseData")
+		logger.Fatal("database data is not the right type *DatabaseData")
 	}
 
 	return db

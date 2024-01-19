@@ -3,6 +3,7 @@ package bigquery
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"cloud.google.com/go/bigquery"
@@ -12,7 +13,6 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/dml"
 	"github.com/artie-labs/transfer/lib/jitter"
-	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -77,11 +77,12 @@ func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTab
 		// UPDATE table SET col = default_val WHERE col IS NULL
 		fqTableName, escapedCol, defaultVal, escapedCol)
 
-	logger.FromContext(ctx).WithFields(map[string]interface{}{
-		"colName": column.RawName(),
-		"query":   query,
-		"table":   fqTableName,
-	}).Info("backfilling column")
+	slog.Info(
+		"backfilling column",
+		slog.String("colName", column.RawName()),
+		slog.String("query", query),
+		slog.String("table", fqTableName),
+	)
 	_, err = s.Exec(query)
 	if err != nil {
 		return fmt.Errorf("failed to backfill, err: %v, query: %v", err, query)
@@ -107,7 +108,6 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
-	log := logger.FromContext(ctx)
 	// Check if all the columns exist in BigQuery
 	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(),
 		tableConfig.Columns(), tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt)
@@ -126,7 +126,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	// Keys that exist in CDC stream, but not in BigQuery
 	err = ddl.AlterTable(ctx, createAlterTableArgs, targetKeysMissing...)
 	if err != nil {
-		log.WithError(err).Warn("failed to apply alter table")
+		slog.Warn("failed to apply alter table", slog.Any("err", err))
 		return err
 	}
 
@@ -146,7 +146,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	err = ddl.AlterTable(ctx, deleteAlterTableArgs, srcKeysMissing...)
 	if err != nil {
-		log.WithError(err).Warn("failed to apply alter table")
+		slog.Warn("failed to apply alter table", slog.Any("err", err))
 		return err
 	}
 
@@ -201,7 +201,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	// Perform actual merge now
 	rows, err := s.merge(ctx, tableData)
 	if err != nil {
-		log.WithError(err).Warn("failed to generate the merge query")
+		slog.Warn("failed to generate the merge query", slog.Any("err", err))
 		return err
 	}
 
@@ -221,7 +221,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 		mergeString, err := tableData.TopicConfig.BigQueryPartitionSettings.GenerateMergeString(distinctDates)
 		if err != nil {
-			log.WithError(err).Warn("failed to generate merge string")
+			slog.Warn("failed to generate merge string", slog.Any("err", err))
 			return err
 		}
 
@@ -248,7 +248,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	_, err = s.Exec(mergeQuery)
 	// This is above, in the case we have a head of line blocking because of an error
 	// We will not create infinite temporary tables.
-	_ = ddl.DropTemporaryTable(ctx, s, tempAlterTableArgs.FqTableName, false)
+	_ = ddl.DropTemporaryTable(s, tempAlterTableArgs.FqTableName, false)
 	if err != nil {
 		return err
 	}

@@ -2,8 +2,7 @@ package util
 
 import (
 	"context"
-
-	"github.com/artie-labs/transfer/lib/logger"
+	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -20,9 +19,7 @@ func (s *SchemaEventPayload) GetOptionalSchema(ctx context.Context) map[string]t
 	for _, field := range fieldsObject.Fields {
 		kd := field.ToKindDetails()
 		if kd == typing.Invalid {
-			logger.FromContext(ctx).WithFields(map[string]interface{}{
-				"field": field.FieldName,
-			}).Warn("skipping field from optional schema b/c we cannot determine the data type")
+			slog.Warn("skipping field from optional schema b/c we cannot determine the data type", slog.String("field", field.FieldName))
 			continue
 		}
 
