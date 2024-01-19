@@ -1,7 +1,6 @@
 package sql
 
 import (
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/stretchr/testify/assert"
 )
@@ -132,11 +131,10 @@ func (s *SqlTestSuite) TestEscapeName() {
 	}
 
 	for _, testCase := range testCases {
-		actualName := EscapeName(s.ctx, testCase.nameToEscape, testCase.args)
+		actualName := EscapeName(testCase.nameToEscape, false, testCase.args)
 		assert.Equal(s.T(), testCase.expectedName, actualName, testCase.name)
 
-		upperCtx := config.InjectSettingsIntoContext(s.ctx, &config.Settings{Config: &config.Config{SharedDestinationConfig: config.SharedDestinationConfig{UppercaseEscapedNames: true}}})
-		actualUpperName := EscapeName(upperCtx, testCase.nameToEscape, testCase.args)
+		actualUpperName := EscapeName(testCase.nameToEscape, true, testCase.args)
 		assert.Equal(s.T(), testCase.expectedNameWhenUpperCfg, actualUpperName, testCase.name)
 	}
 }
