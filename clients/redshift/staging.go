@@ -78,6 +78,7 @@ func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.
 	if err != nil {
 		return "", err
 	}
+
 	defer file.Close()
 
 	gzipWriter := gzip.NewWriter(file) // Create a new gzip writer
@@ -89,12 +90,13 @@ func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.
 	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
 	for _, value := range tableData.RowsData() {
 		var row []string
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.uppercaseEscNames, nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			castedValue, castErr := s.CastColValStaging(value[col], colKind, additionalDateFmts)
 			if castErr != nil {
 				return "", castErr
 			}
+
 			row = append(row, castedValue)
 		}
 

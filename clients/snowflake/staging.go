@@ -28,12 +28,13 @@ import (
 // 5) Deletes CSV generated from (2)
 func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string) error {
 	tempAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:            s,
-		Tc:             tableConfig,
-		FqTableName:    tempTableName,
-		CreateTable:    true,
-		TemporaryTable: true,
-		ColumnOp:       constants.Add,
+		Dwh:               s,
+		Tc:                tableConfig,
+		FqTableName:       tempTableName,
+		CreateTable:       true,
+		TemporaryTable:    true,
+		ColumnOp:          constants.Add,
+		UppercaseEscNames: &s.uppercaseEscNames,
 	}
 
 	if err := ddl.AlterTable(ctx, tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
@@ -51,7 +52,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 
 	_, err = s.Exec(fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
 		// Copy into temporary tables (column ...)
-		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, &sql.NameArgs{
+		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.uppercaseEscNames, &sql.NameArgs{
 			Escape:   true,
 			DestKind: s.Label(),
 		}), ","),
@@ -86,7 +87,7 @@ func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.
 	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
 	for _, value := range tableData.RowsData() {
 		var row []string
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.uppercaseEscNames, nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal := value[col]
 			// Check
@@ -114,7 +115,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		return nil
 	}
 
-	fqName := tableData.ToFqName(ctx, s.Label(), true, "")
+	fqName := tableData.ToFqName(s.Label(), true, s.uppercaseEscNames, "")
 	tableConfig, err := s.getTableConfig(ctx, fqName, tableData.TopicConfig.DropDeletedColumns)
 	if err != nil {
 		return err
@@ -125,12 +126,13 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
 		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt)
 	createAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:         s,
-		Tc:          tableConfig,
-		FqTableName: fqName,
-		CreateTable: tableConfig.CreateTable(),
-		ColumnOp:    constants.Add,
-		CdcTime:     tableData.LatestCDCTs,
+		Dwh:               s,
+		Tc:                tableConfig,
+		FqTableName:       fqName,
+		CreateTable:       tableConfig.CreateTable(),
+		ColumnOp:          constants.Add,
+		CdcTime:           tableData.LatestCDCTs,
+		UppercaseEscNames: &s.uppercaseEscNames,
 	}
 
 	// Keys that exist in CDC stream, but not in Snowflake
@@ -161,7 +163,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
 	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
-	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label(), false, ""), tableData.TempTableSuffix())
+	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.uppercaseEscNames, ""), tableData.TempTableSuffix())
 	if err = s.prepareTempTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {
 		return err
 	}

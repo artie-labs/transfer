@@ -114,12 +114,13 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	fqName := tableData.ToFqName(s.Label(), true, s.uppercaseEscNames, s.projectID)
 	createAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:         s,
-		Tc:          tableConfig,
-		FqTableName: fqName,
-		CreateTable: tableConfig.CreateTable(),
-		ColumnOp:    constants.Add,
-		CdcTime:     tableData.LatestCDCTs,
+		Dwh:               s,
+		Tc:                tableConfig,
+		FqTableName:       fqName,
+		CreateTable:       tableConfig.CreateTable(),
+		ColumnOp:          constants.Add,
+		CdcTime:           tableData.LatestCDCTs,
+		UppercaseEscNames: &s.uppercaseEscNames,
 	}
 
 	// Keys that exist in CDC stream, but not in BigQuery
@@ -140,6 +141,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		ColumnOp:               constants.Delete,
 		ContainOtherOperations: tableData.ContainOtherOperations(),
 		CdcTime:                tableData.LatestCDCTs,
+		UppercaseEscNames:      &s.uppercaseEscNames,
 	}
 
 	err = ddl.AlterTable(ctx, deleteAlterTableArgs, srcKeysMissing...)
@@ -155,12 +157,13 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	// Start temporary table creation
 	tempAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:            s,
-		Tc:             tableConfig,
-		FqTableName:    fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.uppercaseEscNames, s.projectID), tableData.TempTableSuffix()),
-		CreateTable:    true,
-		TemporaryTable: true,
-		ColumnOp:       constants.Add,
+		Dwh:               s,
+		Tc:                tableConfig,
+		FqTableName:       fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.uppercaseEscNames, s.projectID), tableData.TempTableSuffix()),
+		CreateTable:       true,
+		TemporaryTable:    true,
+		ColumnOp:          constants.Add,
+		UppercaseEscNames: &s.uppercaseEscNames,
 	}
 
 	if err = ddl.AlterTable(ctx, tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {

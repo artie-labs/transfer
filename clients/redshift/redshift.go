@@ -24,6 +24,8 @@ type Store struct {
 	optionalS3Prefix  string
 	configMap         *types.DwhToTablesConfigMap
 	skipLgCols        bool
+	uppercaseEscNames bool
+
 	db.Store
 }
 
@@ -57,7 +59,7 @@ func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.Tabl
 
 	return utils.GetTableConfig(ctx, utils.GetTableCfgArgs{
 		Dwh:                s,
-		FqName:             tableData.ToFqName(ctx, s.Label(), true, ""),
+		FqName:             tableData.ToFqName(s.Label(), true, s.uppercaseEscNames, ""),
 		ConfigMap:          s.configMap,
 		Query:              describeQuery,
 		ColumnNameLabel:    describeNameCol,
@@ -74,9 +76,11 @@ func LoadRedshift(ctx context.Context, _store *db.Store) *Store {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			Store:      *_store,
-			configMap:  &types.DwhToTablesConfigMap{},
-			skipLgCols: settings.Config.Redshift.SkipLgCols,
+			configMap:         &types.DwhToTablesConfigMap{},
+			skipLgCols:        settings.Config.Redshift.SkipLgCols,
+			uppercaseEscNames: settings.Config.SharedDestinationConfig.UppercaseEscapedNames,
+
+			Store: *_store,
 		}
 	}
 
@@ -89,7 +93,9 @@ func LoadRedshift(ctx context.Context, _store *db.Store) *Store {
 		bucket:            settings.Config.Redshift.Bucket,
 		optionalS3Prefix:  settings.Config.Redshift.OptionalS3Prefix,
 		skipLgCols:        settings.Config.Redshift.SkipLgCols,
-		Store:             db.Open(ctx, "postgres", connStr),
 		configMap:         &types.DwhToTablesConfigMap{},
+		uppercaseEscNames: settings.Config.SharedDestinationConfig.UppercaseEscapedNames,
+
+		Store: db.Open(ctx, "postgres", connStr),
 	}
 }

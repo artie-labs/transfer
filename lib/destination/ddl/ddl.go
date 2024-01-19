@@ -51,7 +51,9 @@ type AlterTableArgs struct {
 	FqTableName            string
 	CreateTable            bool
 	TemporaryTable         bool
-	ColumnOp               constants.ColumnOperation
+	UppercaseEscNames      *bool
+
+	ColumnOp constants.ColumnOperation
 
 	CdcTime time.Time
 }
@@ -67,6 +69,10 @@ func (a *AlterTableArgs) Validate() error {
 		if !a.CreateTable {
 			return fmt.Errorf("incompatible operation - we should not be altering temporary tables, only create")
 		}
+	}
+
+	if a.UppercaseEscNames == nil {
+		return fmt.Errorf("uppercaseEscNames cannot be nil")
 	}
 
 	return nil
@@ -99,12 +105,12 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 		mutateCol = append(mutateCol, col)
 		switch args.ColumnOp {
 		case constants.Add:
-			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, col.Name(ctx, &sql.NameArgs{
+			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, col.Name(*args.UppercaseEscNames, &sql.NameArgs{
 				Escape:   true,
 				DestKind: args.Dwh.Label(),
 			}), typing.KindToDWHType(col.KindDetails, args.Dwh.Label())))
 		case constants.Delete:
-			colSQLParts = append(colSQLParts, col.Name(ctx, &sql.NameArgs{
+			colSQLParts = append(colSQLParts, col.Name(*args.UppercaseEscNames, &sql.NameArgs{
 				Escape:   true,
 				DestKind: args.Dwh.Label(),
 			}))
