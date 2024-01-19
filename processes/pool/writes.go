@@ -13,10 +13,13 @@ func StartPool(ctx context.Context, td time.Duration) {
 	slog.Info("Starting pool timer...")
 	ticker := time.NewTicker(td)
 	for range ticker.C {
-		slog.With("err", consumer.Flush(consumer.Args{
+		slog.Info("Flushing via pool...")
+		if err := consumer.Flush(consumer.Args{
 			Reason:   "time",
 			Context:  ctx,
 			CoolDown: ptr.ToDuration(td),
-		})).Info("Flushing via pool...")
+		}); err != nil {
+			slog.Error("Failed to flush via pool", slog.Any("err", err))
+		}
 	}
 }
