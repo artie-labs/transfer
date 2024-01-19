@@ -1,7 +1,6 @@
 package util
 
 import (
-	"context"
 	"encoding/json"
 	"io"
 	"math/big"
@@ -11,8 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-
-	"github.com/artie-labs/transfer/lib/config"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -75,8 +72,6 @@ func TestSchemaEventPayload_Decimal_GetData(t *testing.T) {
 	bytes, err := io.ReadAll(file)
 	assert.NoError(t, err)
 
-	ctx := context.Background()
-	ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{Config: nil, VerboseLogging: true})
 	var schemaEventPayload SchemaEventPayload
 	err = json.Unmarshal(bytes, &schemaEventPayload)
 	assert.NoError(t, err)
@@ -106,8 +101,6 @@ func TestSchemaEventPayload_Money_GetData(t *testing.T) {
 	bytes, err := io.ReadAll(file)
 	assert.NoError(t, err)
 
-	ctx := context.Background()
-	ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{Config: nil, VerboseLogging: true})
 	var schemaEventPayload SchemaEventPayload
 	err = json.Unmarshal(bytes, &schemaEventPayload)
 	assert.NoError(t, err)
