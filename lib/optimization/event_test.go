@@ -158,29 +158,20 @@ func (o *OptimizationTestSuite) TestNewTableData_TableName() {
 	}
 
 	bqProjectID := "artie"
-	ctx := config.InjectSettingsIntoContext(context.Background(), &config.Settings{
-		Config: &config.Config{
-			BigQuery: &config.BigQuery{
-				ProjectID: bqProjectID,
-			},
-		},
-	})
-
 	for _, testCase := range testCases {
-		td := NewTableData(nil, nil, kafkalib.TopicConfig{
-			Database:  testCase.db,
-			TableName: testCase.overrideName,
-			Schema:    testCase.schema,
-		}, testCase.tableName)
+		td := NewTableData(nil, nil,
+			kafkalib.TopicConfig{Database: testCase.db, TableName: testCase.overrideName, Schema: testCase.schema},
+			testCase.tableName)
+
 		assert.Equal(o.T(), testCase.expectedName, td.RawName(), testCase.name)
 		assert.Equal(o.T(), testCase.expectedName, td.name, testCase.name)
-		assert.Equal(o.T(), testCase.expectedSnowflakeFqName, td.ToFqName(ctx, constants.Snowflake, true, ""), testCase.name)
-		assert.Equal(o.T(), testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery, true, bqProjectID), testCase.name)
-		assert.Equal(o.T(), testCase.expectedBigQueryFqName, td.ToFqName(ctx, constants.BigQuery, true, bqProjectID), testCase.name)
+		assert.Equal(o.T(), testCase.expectedSnowflakeFqName, td.ToFqName(constants.Snowflake, true, false, ""), testCase.name)
+		assert.Equal(o.T(), testCase.expectedBigQueryFqName, td.ToFqName(constants.BigQuery, true, false, bqProjectID), testCase.name)
+		assert.Equal(o.T(), testCase.expectedBigQueryFqName, td.ToFqName(constants.BigQuery, true, false, bqProjectID), testCase.name)
 
 		// S3 does not escape, so let's test both to make sure.
-		assert.Equal(o.T(), testCase.expectedS3FqName, td.ToFqName(ctx, constants.S3, true, ""), testCase.name)
-		assert.Equal(o.T(), testCase.expectedS3FqName, td.ToFqName(ctx, constants.S3, false, ""), testCase.name)
+		assert.Equal(o.T(), testCase.expectedS3FqName, td.ToFqName(constants.S3, true, false, ""), testCase.name)
+		assert.Equal(o.T(), testCase.expectedS3FqName, td.ToFqName(constants.S3, false, false, ""), testCase.name)
 	}
 }
 

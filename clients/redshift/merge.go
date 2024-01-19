@@ -94,23 +94,22 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		})
 	}
 
-	// Prepare merge statement
-	mergeParts, err := dml.MergeStatementParts(ctx, &dml.MergeArgument{
+	mergArg := &dml.MergeArgument{
 		FqTableName: fqName,
 		// We are adding SELECT DISTINCT here for the temporary table as an extra guardrail.
 		// Redshift does not enforce any row uniqueness and there could be potential LOAD errors which will cause duplicate rows to arise.
-		SubQuery:      fmt.Sprintf(`( SELECT DISTINCT *  FROM %s )`, temporaryTableName),
-		IdempotentKey: tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys: tableData.PrimaryKeys(ctx, &sql.NameArgs{
-			Escape:   true,
-			DestKind: s.Label(),
-		}),
-		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
-		SkipDelete:     tableData.TopicConfig.SkipDelete,
-		SoftDelete:     tableData.TopicConfig.SoftDelete,
-		DestKind:       s.Label(),
-	})
+		SubQuery:          fmt.Sprintf(`( SELECT DISTINCT *  FROM %s )`, temporaryTableName),
+		IdempotentKey:     tableData.TopicConfig.IdempotentKey,
+		PrimaryKeys:       tableData.PrimaryKeys(s.uppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: s.Label()}),
+		ColumnsToTypes:    *tableData.ReadOnlyInMemoryCols(),
+		SkipDelete:        tableData.TopicConfig.SkipDelete,
+		SoftDelete:        tableData.TopicConfig.SoftDelete,
+		DestKind:          s.Label(),
+		UppercaseEscNames: &s.uppercaseEscNames,
+	}
 
+	// Prepare merge statement
+	mergeParts, err := mergArg.GetParts()
 	if err != nil {
 		return fmt.Errorf("failed to generate merge statement, err: %v", err)
 	}

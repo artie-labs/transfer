@@ -45,7 +45,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	}
 
 	bqProjectID := config.FromContext(d.bqCtx).Config.BigQuery.ProjectID
-	fqName := td.ToFqName(d.bqCtx, constants.BigQuery, true, bqProjectID)
+	fqName := td.ToFqName(d.bigQueryStore.Label(), true, false, bqProjectID)
 	originalColumnLength := len(cols.GetColumns())
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, true))
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
@@ -88,7 +88,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
 
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s drop COLUMN %s", fqName, column.Name(d.ctx, &artieSQL.NameArgs{
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s drop COLUMN %s", fqName, column.Name(false, &artieSQL.NameArgs{
 			Escape:   true,
 			DestKind: d.bigQueryStore.Label(),
 		})), query)
@@ -148,7 +148,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, col)
 		assert.NoError(d.T(), err)
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, col.Name(d.ctx, &artieSQL.NameArgs{
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, col.Name(false, &artieSQL.NameArgs{
 			Escape:   true,
 			DestKind: d.bigQueryStore.Label(),
 		}),
@@ -208,7 +208,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
 		assert.NoError(d.T(), err)
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, column.Name(d.ctx, &artieSQL.NameArgs{
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, column.Name(false, &artieSQL.NameArgs{
 			Escape:   true,
 			DestKind: d.bigQueryStore.Label(),
 		}), typing.KindToDWHType(column.KindDetails, d.bigQueryStore.Label())), query)
@@ -245,7 +245,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 	}
 
 	bqProjectID := config.FromContext(d.bqCtx).Config.BigQuery.ProjectID
-	fqName := td.ToFqName(d.bqCtx, constants.BigQuery, true, bqProjectID)
+	fqName := td.ToFqName(d.bigQueryStore.Label(), true, false, bqProjectID)
 	originalColumnLength := len(columnNameToKindDetailsMap)
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, false))
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)

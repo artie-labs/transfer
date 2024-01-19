@@ -28,7 +28,8 @@ import (
 )
 
 type Store struct {
-	Settings *config.S3Settings
+	Settings          *config.S3Settings
+	uppercaseEscNames bool
 }
 
 func (s *Store) Validate() error {
@@ -50,8 +51,8 @@ func (s *Store) Label() constants.DestinationKind {
 // ObjectPrefix - this will generate the exact right prefix that we need to write into S3.
 // It will look like something like this:
 // > optionalPrefix/fullyQualifiedTableName/YYYY-MM-DD
-func (s *Store) ObjectPrefix(ctx context.Context, tableData *optimization.TableData) string {
-	fqTableName := tableData.ToFqName(ctx, s.Label(), false, "")
+func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
+	fqTableName := tableData.ToFqName(s.Label(), false, s.uppercaseEscNames, "")
 	yyyyMMDDFormat := tableData.LatestCDCTs.Format(ext.PostgresDateFormat)
 
 	if len(s.Settings.OptionalPrefix) > 0 {
@@ -101,7 +102,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	pw.CompressionType = parquet.CompressionCodec_GZIP
 	for _, val := range tableData.RowsData() {
 		row := make(map[string]interface{})
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.uppercaseEscNames, nil) {
 			colKind, isOk := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			if !isOk {
 				return fmt.Errorf("expected column: %v to exist in readOnlyInMemoryCols(...) but it does not", col)
@@ -135,7 +136,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	if _, err = s3lib.UploadLocalFileToS3(ctx, s3lib.UploadArgs{
 		Bucket:                     s.Settings.Bucket,
-		OptionalS3Prefix:           s.ObjectPrefix(ctx, tableData),
+		OptionalS3Prefix:           s.ObjectPrefix(tableData),
 		FilePath:                   fp,
 		OverrideAWSAccessKeyID:     ptr.ToString(s.Settings.AwsAccessKeyID),
 		OverrideAWSAccessKeySecret: ptr.ToString(s.Settings.AwsSecretAccessKey),
@@ -146,9 +147,10 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	return os.RemoveAll(fp)
 }
 
-func LoadStore(ctx context.Context, settings *config.S3Settings) (*Store, error) {
+func LoadStore(_ context.Context, settings *config.S3Settings) (*Store, error) {
 	store := &Store{
-		Settings: settings,
+		Settings:          settings,
+		uppercaseEscNames: false,
 	}
 
 	if err := store.Validate(); err != nil {

@@ -169,15 +169,15 @@ func (c *ColumnsTestSuite) TestColumn_Name() {
 		}
 
 		assert.Equal(c.T(), testCase.expectedName, col.RawName(), testCase.colName)
-		assert.Equal(c.T(), testCase.expectedName, col.Name(c.ctx, &sql.NameArgs{
+		assert.Equal(c.T(), testCase.expectedName, col.Name(false, &sql.NameArgs{
 			Escape: false,
 		}), testCase.colName)
 
-		assert.Equal(c.T(), testCase.expectedNameEsc, col.Name(c.ctx, &sql.NameArgs{
+		assert.Equal(c.T(), testCase.expectedNameEsc, col.Name(false, &sql.NameArgs{
 			Escape:   true,
 			DestKind: constants.Snowflake,
 		}), testCase.colName)
-		assert.Equal(c.T(), testCase.expectedNameEscBq, col.Name(c.ctx, &sql.NameArgs{
+		assert.Equal(c.T(), testCase.expectedNameEscBq, col.Name(false, &sql.NameArgs{
 			Escape:   true,
 			DestKind: constants.BigQuery,
 		}), testCase.colName)
@@ -240,17 +240,17 @@ func (c *ColumnsTestSuite) TestColumns_GetColumnsToUpdate() {
 			columns: testCase.cols,
 		}
 
-		assert.Equal(c.T(), testCase.expectedCols, cols.GetColumnsToUpdate(c.ctx, nil), testCase.name)
-		assert.Equal(c.T(), testCase.expectedCols, cols.GetColumnsToUpdate(c.ctx, &sql.NameArgs{
+		assert.Equal(c.T(), testCase.expectedCols, cols.GetColumnsToUpdate(false, nil), testCase.name)
+		assert.Equal(c.T(), testCase.expectedCols, cols.GetColumnsToUpdate(false, &sql.NameArgs{
 			Escape: false,
 		}), testCase.name)
 
-		assert.Equal(c.T(), testCase.expectedColsEsc, cols.GetColumnsToUpdate(c.ctx, &sql.NameArgs{
+		assert.Equal(c.T(), testCase.expectedColsEsc, cols.GetColumnsToUpdate(false, &sql.NameArgs{
 			Escape:   true,
 			DestKind: constants.Snowflake,
 		}), testCase.name)
 
-		assert.Equal(c.T(), testCase.expectedColsEscBq, cols.GetColumnsToUpdate(c.ctx, &sql.NameArgs{
+		assert.Equal(c.T(), testCase.expectedColsEscBq, cols.GetColumnsToUpdate(false, &sql.NameArgs{
 			Escape:   true,
 			DestKind: constants.BigQuery,
 		}), testCase.name)
@@ -488,7 +488,7 @@ func (c *ColumnsTestSuite) TestColumnsUpdateQuery() {
 	}
 
 	for _, _testCase := range testCases {
-		actualQuery := ColumnsUpdateQuery(c.ctx, _testCase.columns, _testCase.columnsToTypes, _testCase.destKind)
+		actualQuery := ColumnsUpdateQuery(_testCase.columns, _testCase.columnsToTypes, _testCase.destKind, false)
 		assert.Equal(c.T(), _testCase.expectedString, actualQuery, _testCase.name)
 	}
 }

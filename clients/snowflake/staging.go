@@ -153,6 +153,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		ColumnOp:               constants.Delete,
 		ContainOtherOperations: tableData.ContainOtherOperations(),
 		CdcTime:                tableData.LatestCDCTs,
+		UppercaseEscNames:      &s.uppercaseEscNames,
 	}
 
 	err = ddl.AlterTable(ctx, deleteAlterTableArgs, srcKeysMissing...)
@@ -184,19 +185,18 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		})
 	}
 
-	// Prepare merge statement
-	mergeQuery, err := dml.MergeStatement(ctx, &dml.MergeArgument{
-		FqTableName:   fqName,
-		SubQuery:      temporaryTableName,
-		IdempotentKey: tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys: tableData.PrimaryKeys(ctx, &sql.NameArgs{
-			Escape:   true,
-			DestKind: s.Label(),
-		}),
-		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
-		SoftDelete:     tableData.TopicConfig.SoftDelete,
-	})
+	mergeArg := &dml.MergeArgument{
+		FqTableName:       fqName,
+		SubQuery:          temporaryTableName,
+		IdempotentKey:     tableData.TopicConfig.IdempotentKey,
+		PrimaryKeys:       tableData.PrimaryKeys(s.uppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: s.Label()}),
+		ColumnsToTypes:    *tableData.ReadOnlyInMemoryCols(),
+		SoftDelete:        tableData.TopicConfig.SoftDelete,
+		UppercaseEscNames: &s.uppercaseEscNames,
+	}
 
+	// Prepare merge statement
+	mergeQuery, err := mergeArg.GetStatement()
 	if err != nil {
 		return fmt.Errorf("failed to generate merge statement, err: %v", err)
 	}

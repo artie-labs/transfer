@@ -65,7 +65,7 @@ func (s *S3TestSuite) TestObjectPrefix() {
 			assert.Error(s.T(), err, tc.name)
 		} else {
 			assert.NoError(s.T(), err, tc.name)
-			actualObjectPrefix := store.ObjectPrefix(s.ctx, tc.tableData)
+			actualObjectPrefix := store.ObjectPrefix(tc.tableData)
 			assert.Equal(s.T(), tc.expectedFormat, actualObjectPrefix, tc.name)
 		}
 	}

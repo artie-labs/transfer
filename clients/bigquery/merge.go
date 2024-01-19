@@ -228,20 +228,19 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		additionalEqualityStrings = []string{mergeString}
 	}
 
-	mergeQuery, err := dml.MergeStatement(ctx, &dml.MergeArgument{
+	mergeArg := &dml.MergeArgument{
 		FqTableName:               fqName,
 		AdditionalEqualityStrings: additionalEqualityStrings,
 		SubQuery:                  tempAlterTableArgs.FqTableName,
 		IdempotentKey:             tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys: tableData.PrimaryKeys(ctx, &sql.NameArgs{
-			Escape:   true,
-			DestKind: s.Label(),
-		}),
-		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
-		SoftDelete:     tableData.TopicConfig.SoftDelete,
-		DestKind:       s.Label(),
-	})
+		PrimaryKeys:               tableData.PrimaryKeys(s.uppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: s.Label()}),
+		ColumnsToTypes:            *tableData.ReadOnlyInMemoryCols(),
+		SoftDelete:                tableData.TopicConfig.SoftDelete,
+		DestKind:                  s.Label(),
+		UppercaseEscNames:         &s.uppercaseEscNames,
+	}
 
+	mergeQuery, err := mergeArg.GetStatement()
 	if err != nil {
 		return err
 	}

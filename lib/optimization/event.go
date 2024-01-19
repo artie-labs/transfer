@@ -47,11 +47,11 @@ func (t *TableData) ContainOtherOperations() bool {
 	return t.containOtherOperations
 }
 
-func (t *TableData) PrimaryKeys(ctx context.Context, args *sql.NameArgs) []columns.Wrapper {
+func (t *TableData) PrimaryKeys(uppercaseEscNames bool, args *sql.NameArgs) []columns.Wrapper {
 	var primaryKeysEscaped []columns.Wrapper
 	for _, pk := range t.primaryKeys {
 		col := columns.NewColumn(pk, typing.Invalid)
-		primaryKeysEscaped = append(primaryKeysEscaped, columns.NewWrapper(ctx, col, args))
+		primaryKeysEscaped = append(primaryKeysEscaped, columns.NewWrapper(col, uppercaseEscNames, args))
 	}
 
 	return primaryKeysEscaped
