@@ -107,6 +107,8 @@ func (f Field) ToKindDetails() typing.KindDetails {
 	}
 
 	switch f.Type {
+	case "map":
+		return typing.Struct
 	case "int16", "int32", "int64":
 		return typing.Integer
 	case "float", "double":
