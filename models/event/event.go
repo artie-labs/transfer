@@ -155,6 +155,8 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 			valMap, isOk := val.(map[string]interface{})
 			if isOk {
 				if _, isOk = valMap[constants.ToastUnavailableValuePlaceholder]; isOk {
+					// Casting the value back into how other TOASTED values look like.
+					val = constants.ToastUnavailableValuePlaceholder
 					toastedCol = true
 				}
 			}
