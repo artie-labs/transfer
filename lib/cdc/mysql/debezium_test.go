@@ -140,7 +140,19 @@ func (m *MySQLTestSuite) TestGetEventFromBytes() {
 				"type": "int64",
 				"optional": false,
 				"field": "abcDEF"
-			}],
+			}, {
+                "type": "map",
+                "keys": {
+                    "type": "string",
+                    "optional": false
+                },
+                "values": {
+                    "type": "string",
+                    "optional": true
+                },
+                "optional": false,
+                "field": "custom_fields"
+            }],
 			"optional": true,
 			"name": "mysql1.inventory.customers.Value",
 			"field": "after"
@@ -307,6 +319,9 @@ func (m *MySQLTestSuite) TestGetEventFromBytes() {
 	assert.NoError(m.T(), err)
 	assert.Equal(m.T(), time.Date(2023, time.March, 13, 19, 19, 24, 0, time.UTC), evt.GetExecutionTime())
 	assert.Equal(m.T(), "customers", evt.GetTableName())
+
+	schema := evt.GetOptionalSchema(ctx)
+	assert.Equal(m.T(), typing.Struct, schema["custom_fields"])
 
 	kvMap := map[string]interface{}{
 		"id": 1001,
