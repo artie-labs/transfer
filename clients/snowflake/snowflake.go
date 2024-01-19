@@ -106,7 +106,8 @@ func LoadSnowflake(ctx context.Context, _store *db.Store) *Store {
 			testDB:            true,
 			uppercaseEscNames: cfg.SharedDestinationConfig.UppercaseEscapedNames,
 			configMap:         &types.DwhToTablesConfigMap{},
-			Store:             *_store,
+
+			Store: *_store,
 		}
 	}
 

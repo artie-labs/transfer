@@ -110,7 +110,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		tableData.InsertRow(pk, row, false)
 	}
 
-	s.stageStore.configMap.AddTableToConfig(tableData.ToFqName(constants.Snowflake, true, s.stageStore.uppercaseEscNames, ""),
+	s.stageStore.configMap.AddTableToConfig(tableData.ToFqName(s.stageStore.Label(), true, s.stageStore.uppercaseEscNames, ""),
 		types.NewDwhTableConfig(&cols, nil, false, true))
 
 	s.fakeStageStore.ExecReturnsOnCall(0, nil, fmt.Errorf("390114: Authentication token has expired. The user must authenticate again."))

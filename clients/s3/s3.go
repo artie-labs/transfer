@@ -147,7 +147,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	return os.RemoveAll(fp)
 }
 
-func LoadStore(_ context.Context, settings *config.S3Settings) (*Store, error) {
+func LoadStore(settings *config.S3Settings) (*Store, error) {
 	store := &Store{
 		Settings:          settings,
 		uppercaseEscNames: false,

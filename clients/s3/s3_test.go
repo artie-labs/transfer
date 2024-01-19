@@ -60,7 +60,7 @@ func (s *S3TestSuite) TestObjectPrefix() {
 	}
 
 	for _, tc := range testCases {
-		store, err := LoadStore(s.ctx, tc.config)
+		store, err := LoadStore(tc.config)
 		if tc.expectError {
 			assert.Error(s.T(), err, tc.name)
 		} else {
