@@ -71,6 +71,7 @@ ALTER USER artie_transfer REPLICATION;
 * `TIME WITH TIME ZONE`
 * `INTERVAL [P]`, we store this in microseconds.
 * `JSON`, `JSONB`
+* `HSTORE`
 * `XML`
 * `UUID`
 * `CITEXT`
