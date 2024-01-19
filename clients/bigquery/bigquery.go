@@ -27,9 +27,10 @@ const (
 )
 
 type Store struct {
-	configMap *types.DwhToTablesConfigMap
-	batchSize int
-	projectID string
+	configMap         *types.DwhToTablesConfigMap
+	batchSize         int
+	projectID         string
+	uppercaseEscNames bool
 
 	db.Store
 }
@@ -37,7 +38,7 @@ type Store struct {
 func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	return utils.GetTableConfig(ctx, utils.GetTableCfgArgs{
 		Dwh:       s,
-		FqName:    tableData.ToFqName(ctx, s.Label(), true, s.projectID),
+		FqName:    tableData.ToFqName(s.Label(), true, s.uppercaseEscNames, s.projectID),
 		ConfigMap: s.configMap,
 		Query: fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name='%s';",
 			tableData.TopicConfig.Database, tableData.RawName()),
@@ -92,9 +93,10 @@ func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			Store:     *_store,
-			projectID: settings.Config.BigQuery.ProjectID,
-			configMap: &types.DwhToTablesConfigMap{},
+			Store:             *_store,
+			projectID:         settings.Config.BigQuery.ProjectID,
+			uppercaseEscNames: settings.Config.SharedDestinationConfig.UppercaseEscapedNames,
+			configMap:         &types.DwhToTablesConfigMap{},
 		}
 	}
 
@@ -108,9 +110,10 @@ func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
 	}
 
 	return &Store{
-		Store:     db.Open(ctx, "bigquery", settings.Config.BigQuery.DSN()),
-		configMap: &types.DwhToTablesConfigMap{},
-		batchSize: settings.Config.BigQuery.BatchSize,
-		projectID: settings.Config.BigQuery.ProjectID,
+		Store:             db.Open(ctx, "bigquery", settings.Config.BigQuery.DSN()),
+		configMap:         &types.DwhToTablesConfigMap{},
+		batchSize:         settings.Config.BigQuery.BatchSize,
+		projectID:         settings.Config.BigQuery.ProjectID,
+		uppercaseEscNames: settings.Config.SharedDestinationConfig.UppercaseEscapedNames,
 	}
 }

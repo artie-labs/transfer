@@ -33,13 +33,13 @@ func (r *Row) Save() (map[string]bigquery.Value, string, error) {
 	return r.data, bigquery.NoDedupeID, nil
 }
 
-func merge(ctx context.Context, tableData *optimization.TableData) ([]*Row, error) {
+func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) ([]*Row, error) {
 	var rows []*Row
 
 	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
 	for _, value := range tableData.RowsData() {
 		data := make(map[string]bigquery.Value)
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.uppercaseEscNames, nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal, err := castColVal(value[col], colKind, additionalDateFmts)
 			if err != nil {
@@ -72,7 +72,7 @@ func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTab
 		return fmt.Errorf("failed to escape default value, err: %v", err)
 	}
 
-	escapedCol := column.Name(ctx, &sql.NameArgs{Escape: true, DestKind: s.Label()})
+	escapedCol := column.Name(s.uppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: s.Label()})
 	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
 		// UPDATE table SET col = default_val WHERE col IS NULL
 		fqTableName, escapedCol, defaultVal, escapedCol)
@@ -112,7 +112,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(),
 		tableConfig.Columns(), tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt)
 
-	fqName := tableData.ToFqName(ctx, s.Label(), true, s.projectID)
+	fqName := tableData.ToFqName(s.Label(), true, s.uppercaseEscNames, s.projectID)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         s,
 		Tc:          tableConfig,
@@ -157,7 +157,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	tempAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:            s,
 		Tc:             tableConfig,
-		FqTableName:    fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label(), false, s.projectID), tableData.TempTableSuffix()),
+		FqTableName:    fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.uppercaseEscNames, s.projectID), tableData.TempTableSuffix()),
 		CreateTable:    true,
 		TemporaryTable: true,
 		ColumnOp:       constants.Add,
@@ -196,7 +196,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	// Perform actual merge now
-	rows, err := merge(ctx, tableData)
+	rows, err := s.merge(ctx, tableData)
 	if err != nil {
 		log.WithError(err).Warn("failed to generate the merge query")
 		return err

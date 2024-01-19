@@ -61,8 +61,8 @@ func (t *TableData) RawName() string {
 	return t.name
 }
 
-func (t *TableData) Name(ctx context.Context, args *sql.NameArgs) string {
-	return sql.EscapeName(ctx, t.name, args)
+func (t *TableData) Name(uppercaseEscNames bool, args *sql.NameArgs) string {
+	return sql.EscapeName(t.name, uppercaseEscNames, args)
 }
 
 func (t *TableData) SetInMemoryColumns(columns *columns.Columns) {
@@ -141,29 +141,29 @@ func (t *TableData) RowsData() map[string]map[string]interface{} {
 	return _rowsData
 }
 
-func (t *TableData) ToFqName(ctx context.Context, kind constants.DestinationKind, escape bool, bigQueryProjectID string) string {
+func (t *TableData) ToFqName(kind constants.DestinationKind, escape bool, uppercaseEscNames bool, bigQueryProjectID string) string {
 	switch kind {
 	case constants.S3:
 		// S3 should be db.schema.tableName, but we don't need to escape, since it's not a SQL db.
-		return fmt.Sprintf("%s.%s.%s", t.TopicConfig.Database, t.TopicConfig.Schema, t.Name(ctx, &sql.NameArgs{
+		return fmt.Sprintf("%s.%s.%s", t.TopicConfig.Database, t.TopicConfig.Schema, t.Name(uppercaseEscNames, &sql.NameArgs{
 			Escape:   false,
 			DestKind: kind,
 		}))
 	case constants.Redshift:
 		// Redshift is Postgres compatible, so when establishing a connection, we'll specify a database.
 		// Thus, we only need to specify schema and table name here.
-		return fmt.Sprintf("%s.%s", t.TopicConfig.Schema, t.Name(ctx, &sql.NameArgs{
+		return fmt.Sprintf("%s.%s", t.TopicConfig.Schema, t.Name(uppercaseEscNames, &sql.NameArgs{
 			Escape:   escape,
 			DestKind: kind,
 		}))
 	case constants.BigQuery:
 		// The fully qualified name for BigQuery is: project_id.dataset.tableName.
-		return fmt.Sprintf("%s.%s.%s", bigQueryProjectID, t.TopicConfig.Database, t.Name(ctx, &sql.NameArgs{
+		return fmt.Sprintf("%s.%s.%s", bigQueryProjectID, t.TopicConfig.Database, t.Name(uppercaseEscNames, &sql.NameArgs{
 			Escape:   escape,
 			DestKind: kind,
 		}))
 	default:
-		return fmt.Sprintf("%s.%s.%s", t.TopicConfig.Database, t.TopicConfig.Schema, t.Name(ctx, &sql.NameArgs{
+		return fmt.Sprintf("%s.%s.%s", t.TopicConfig.Database, t.TopicConfig.Schema, t.Name(uppercaseEscNames, &sql.NameArgs{
 			Escape:   escape,
 			DestKind: kind,
 		}))
