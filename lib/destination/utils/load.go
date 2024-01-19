@@ -68,7 +68,7 @@ func DataWarehouse(ctx context.Context, store *db.Store) destination.DataWarehou
 		return s
 	}
 
-	logger.Fatal("No valid output sources specified.", slog.Any("source", settings.Config.Output))
+	logger.Fatal("No valid output sources specified", slog.Any("source", settings.Config.Output))
 
 	return nil
 }
