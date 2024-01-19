@@ -31,7 +31,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 		ColumnOp:       constants.Add,
 	}
 
-	if err := ddl.AlterTable(ctx, tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
+	if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
 		return fmt.Errorf("failed to create temp table, error: %v", err)
 	}
 

@@ -1,13 +1,10 @@
 package types
 
 import (
-	"context"
 	"sort"
 	"sync"
 	"testing"
 	"time"
-
-	"github.com/artie-labs/transfer/lib/config"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
@@ -20,15 +17,11 @@ import (
 )
 
 func (t *TypesTestSuite) TestDwhTableConfig_ShouldDeleteColumn() {
-	ctx := config.InjectSettingsIntoContext(context.Background(), &config.Settings{
-		VerboseLogging: false,
-	})
-
 	// Test 3 different possibilities:
 	// 1. DropDeletedColumns = false, so don't delete.
 	dwhTableConfig := NewDwhTableConfig(&columns.Columns{}, nil, false, false)
 	for i := 0; i < 100; i++ {
-		results := dwhTableConfig.ShouldDeleteColumn(ctx, "hello", time.Now().UTC(), true)
+		results := dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC(), true)
 		assert.False(t.T(), results)
 		assert.Equal(t.T(), len(dwhTableConfig.ReadOnlyColumnsToDelete()), 0)
 	}
@@ -36,7 +29,7 @@ func (t *TypesTestSuite) TestDwhTableConfig_ShouldDeleteColumn() {
 	// 2. DropDeletedColumns = true and ContainsOtherOperations = false, so don't delete
 	dwhTableConfig = NewDwhTableConfig(&columns.Columns{}, nil, false, true)
 	for i := 0; i < 100; i++ {
-		results := dwhTableConfig.ShouldDeleteColumn(ctx, "hello", time.Now().UTC(), false)
+		results := dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC(), false)
 		assert.False(t.T(), results)
 		assert.Equal(t.T(), len(dwhTableConfig.ReadOnlyColumnsToDelete()), 0)
 	}
@@ -44,12 +37,12 @@ func (t *TypesTestSuite) TestDwhTableConfig_ShouldDeleteColumn() {
 	// 3. DropDeletedColumns = true and ContainsOtherOperations = true, now check CDC time to delete.
 	dwhTableConfig = NewDwhTableConfig(&columns.Columns{}, nil, false, true)
 	for i := 0; i < 100; i++ {
-		results := dwhTableConfig.ShouldDeleteColumn(ctx, "hello", time.Now().UTC(), true)
+		results := dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC(), true)
 		assert.False(t.T(), results)
 		assert.Equal(t.T(), len(dwhTableConfig.ReadOnlyColumnsToDelete()), 1)
 	}
 
-	assert.True(t.T(), dwhTableConfig.ShouldDeleteColumn(ctx, "hello", time.Now().UTC().Add(2*constants.DeletionConfidencePadding), true))
+	assert.True(t.T(), dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC().Add(2*constants.DeletionConfidencePadding), true))
 }
 
 // TestDwhTableConfig_ColumnsConcurrency this file is meant to test the concurrency methods of .Columns()

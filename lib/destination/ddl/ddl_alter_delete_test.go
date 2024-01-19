@@ -65,7 +65,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
-		err := ddl.AlterTable(d.ctx, alterTableArgs, column)
+		err := ddl.AlterTable(alterTableArgs, column)
 		assert.NoError(d.T(), err)
 	}
 
@@ -86,7 +86,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
-		err := ddl.AlterTable(d.ctx, alterTableArgs, column)
+		err := ddl.AlterTable(alterTableArgs, column)
 		assert.NoError(d.T(), err)
 	}
 
@@ -107,7 +107,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
-		err := ddl.AlterTable(d.ctx, alterTableArgs, column)
+		err := ddl.AlterTable(alterTableArgs, column)
 		assert.NoError(d.T(), err)
 	}
 
@@ -142,7 +142,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
-		err := ddl.AlterTable(d.ctx, alterTableArgs, column)
+		err := ddl.AlterTable(alterTableArgs, column)
 		assert.NoError(d.T(), err)
 	}
 
@@ -163,7 +163,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
-		err := ddl.AlterTable(d.ctx, alterTableArgs, column)
+		err := ddl.AlterTable(alterTableArgs, column)
 		assert.NoError(d.T(), err)
 	}
 
@@ -184,7 +184,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
-		err := ddl.AlterTable(d.ctx, alterTableArgs, column)
+		err := ddl.AlterTable(alterTableArgs, column)
 		assert.NoError(d.T(), err)
 	}
 
@@ -221,7 +221,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
-		err := ddl.AlterTable(d.ctx, alterTableArgs, column)
+		err := ddl.AlterTable(alterTableArgs, column)
 		assert.NoError(d.T(), err)
 	}
 
@@ -238,7 +238,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
-		err := ddl.AlterTable(d.ctx, alterTableArgs, column)
+		err := ddl.AlterTable(alterTableArgs, column)
 		assert.NoError(d.T(), err)
 	}
 
@@ -255,7 +255,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
-		err := ddl.AlterTable(d.ctx, alterTableArgs, column)
+		err := ddl.AlterTable(alterTableArgs, column)
 		assert.NoError(d.T(), err)
 	}
 
@@ -280,7 +280,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
-		err := ddl.AlterTable(d.ctx, alterTableArgs, column)
+		err := ddl.AlterTable(alterTableArgs, column)
 		assert.NoError(d.T(), err)
 
 		// BigQuery
@@ -295,7 +295,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
-		err = ddl.AlterTable(d.ctx, alterTableArgs, column)
+		err = ddl.AlterTable(alterTableArgs, column)
 		assert.NoError(d.T(), err)
 
 		// Redshift
@@ -310,7 +310,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
-		err = ddl.AlterTable(d.ctx, alterTableArgs, column)
+		err = ddl.AlterTable(alterTableArgs, column)
 		assert.NoError(d.T(), err)
 	}
 

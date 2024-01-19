@@ -52,7 +52,7 @@ func (d *DDLTestSuite) Test_CreateTable() {
 			UppercaseEscNames: ptr.ToBool(false),
 		}
 
-		err := ddl.AlterTable(d.ctx, alterTableArgs, columns.NewColumn("name", typing.String))
+		err := ddl.AlterTable(alterTableArgs, columns.NewColumn("name", typing.String))
 		assert.Equal(d.T(), 1, dwhTc._fakeStore.ExecCallCount())
 
 		query, _ := dwhTc._fakeStore.ExecArgsForCall(0)
@@ -119,7 +119,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 			UppercaseEscNames: ptr.ToBool(false),
 		}
 
-		err := ddl.AlterTable(d.ctx, alterTableArgs, testCase.cols...)
+		err := ddl.AlterTable(alterTableArgs, testCase.cols...)
 		assert.NoError(d.T(), err, testCase.name)
 
 		execQuery, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(index)

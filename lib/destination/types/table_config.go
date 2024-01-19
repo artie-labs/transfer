@@ -1,7 +1,6 @@
 package types
 
 import (
-	"context"
 	"log/slog"
 	"sync"
 	"time"
@@ -114,7 +113,7 @@ func (d *DwhTableConfig) ReadOnlyColumnsToDelete() map[string]time.Time {
 	return colsToDelete
 }
 
-func (d *DwhTableConfig) ShouldDeleteColumn(ctx context.Context, colName string, cdcTime time.Time, containOtherOperations bool) bool {
+func (d *DwhTableConfig) ShouldDeleteColumn(colName string, cdcTime time.Time, containOtherOperations bool) bool {
 	if d == nil {
 		// Avoid a panic and default to FALSE.
 		return false

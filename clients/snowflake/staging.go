@@ -37,7 +37,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 		UppercaseEscNames: &s.uppercaseEscNames,
 	}
 
-	if err := ddl.AlterTable(ctx, tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
+	if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
 		return fmt.Errorf("failed to create temp table, error: %v", err)
 	}
 
@@ -135,7 +135,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 	}
 
 	// Keys that exist in CDC stream, but not in Snowflake
-	err = ddl.AlterTable(ctx, createAlterTableArgs, targetKeysMissing...)
+	err = ddl.AlterTable(createAlterTableArgs, targetKeysMissing...)
 	if err != nil {
 		slog.Warn("failed to apply alter table", slog.Any("err", err))
 		return err
@@ -155,7 +155,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		UppercaseEscNames:      &s.uppercaseEscNames,
 	}
 
-	err = ddl.AlterTable(ctx, deleteAlterTableArgs, srcKeysMissing...)
+	err = ddl.AlterTable(deleteAlterTableArgs, srcKeysMissing...)
 	if err != nil {
 		slog.Warn("failed to apply alter table", slog.Any("err", err))
 		return err

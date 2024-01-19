@@ -1,7 +1,6 @@
 package ddl
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -78,7 +77,7 @@ func (a *AlterTableArgs) Validate() error {
 	return nil
 }
 
-func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column) error {
+func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 	if err := args.Validate(); err != nil {
 		return err
 	}
@@ -97,7 +96,7 @@ func AlterTable(ctx context.Context, args AlterTableArgs, cols ...columns.Column
 		}
 
 		if args.ColumnOp == constants.Delete {
-			if !args.Tc.ShouldDeleteColumn(ctx, col.RawName(), args.CdcTime, args.ContainOtherOperations) {
+			if !args.Tc.ShouldDeleteColumn(col.RawName(), args.CdcTime, args.ContainOtherOperations) {
 				continue
 			}
 		}

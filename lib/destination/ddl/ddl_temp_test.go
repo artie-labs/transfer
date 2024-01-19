@@ -44,11 +44,11 @@ func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 		UppercaseEscNames: ptr.ToBool(false),
 	}
 
-	err := ddl.AlterTable(d.ctx, args)
+	err := ddl.AlterTable(args)
 	assert.Nil(d.T(), err)
 
 	args.ColumnOp = constants.Delete
-	err = ddl.AlterTable(d.ctx, args)
+	err = ddl.AlterTable(args)
 	assert.Contains(d.T(), err.Error(), "incompatible operation - cannot drop columns and create table at the same time")
 
 	// Change it to SFLK + Stage
@@ -58,7 +58,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 	args.Tc = snowflakeStagesTc
 	args.CreateTable = false
 
-	err = ddl.AlterTable(d.ctx, args)
+	err = ddl.AlterTable(args)
 	assert.Equal(d.T(), "incompatible operation - we should not be altering temporary tables, only create", err.Error())
 }
 
@@ -78,7 +78,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 		UppercaseEscNames: ptr.ToBool(false),
 	}
 
-	err := ddl.AlterTable(d.ctx, args, columns.NewColumn("foo", typing.String), columns.NewColumn("bar", typing.Float), columns.NewColumn("start", typing.String))
+	err := ddl.AlterTable(args, columns.NewColumn("foo", typing.String), columns.NewColumn("bar", typing.Float), columns.NewColumn("start", typing.String))
 
 	assert.NoError(d.T(), err)
 	assert.Equal(d.T(), 1, d.fakeSnowflakeStagesStore.ExecCallCount())
@@ -95,7 +95,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 	args.Dwh = d.bigQueryStore
 	args.Tc = bqTc
 
-	err = ddl.AlterTable(d.ctx, args, columns.NewColumn("foo", typing.String), columns.NewColumn("bar", typing.Float), columns.NewColumn("select", typing.String))
+	err = ddl.AlterTable(args, columns.NewColumn("foo", typing.String), columns.NewColumn("bar", typing.Float), columns.NewColumn("select", typing.String))
 	assert.NoError(d.T(), err)
 	assert.Equal(d.T(), 1, d.fakeBigQueryStore.ExecCallCount())
 	bqQuery, _ := d.fakeBigQueryStore.ExecArgsForCall(0)
