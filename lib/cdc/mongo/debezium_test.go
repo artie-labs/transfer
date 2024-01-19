@@ -166,7 +166,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 
 	evt, err := p.Debezium.GetEventFromBytes(p.ctx, []byte(payload))
 	assert.NoError(p.T(), err)
-	evtData := evt.GetData(p.ctx, map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{})
+	evtData := evt.GetData(map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{})
 	_, isOk := evtData[constants.UpdateColumnMarker]
 	assert.False(p.T(), isOk)
 	assert.Equal(p.T(), evtData["_id"], 1003)
@@ -174,7 +174,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 	assert.Equal(p.T(), evtData["last_name"], "Tang")
 	assert.Equal(p.T(), evtData["email"], "robin@artie.so")
 
-	evtDataWithIncludedAt := evt.GetData(p.ctx, map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{
+	evtDataWithIncludedAt := evt.GetData(map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{
 		IncludeArtieUpdatedAt: true,
 	})
 
@@ -226,7 +226,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 
 	evt, err := p.Debezium.GetEventFromBytes(p.ctx, []byte(payload))
 	assert.NoError(p.T(), err)
-	evtData := evt.GetData(p.ctx, map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{})
+	evtData := evt.GetData(map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{})
 	assert.Equal(p.T(), "customers123", evt.GetTableName())
 	_, isOk := evtData[constants.UpdateColumnMarker]
 	assert.False(p.T(), isOk)
@@ -236,7 +236,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 		time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
 	assert.Equal(p.T(), true, evt.DeletePayload())
 
-	evtData = evt.GetData(p.ctx, map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{
+	evtData = evt.GetData(map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{
 		IncludeArtieUpdatedAt: true,
 	})
 	_, isOk = evtData[constants.UpdateColumnMarker]
@@ -449,6 +449,6 @@ func (p *MongoTestSuite) TestMongoDBEventWithSchema() {
 		Type:         "string",
 	})
 	assert.False(p.T(), evt.DeletePayload())
-	cols := schemaEvt.GetColumns(p.ctx)
+	cols := schemaEvt.GetColumns()
 	assert.NotNil(p.T(), cols)
 }

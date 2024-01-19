@@ -91,7 +91,7 @@ func (u *UtilTestSuite) TestParseField() {
 	}
 
 	for _, testCase := range testCases {
-		actualField := parseField(u.ctx, testCase.field, testCase.value)
+		actualField := parseField(testCase.field, testCase.value)
 		if testCase.expectedDecimal {
 			decVal, isOk := actualField.(*decimal.Decimal)
 			assert.True(u.T(), isOk)

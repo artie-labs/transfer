@@ -85,7 +85,7 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
 	assert.Nil(p.T(), err)
 	assert.False(p.T(), evt.DeletePayload())
 
-	evtData := evt.GetData(p.ctx, map[string]interface{}{"id": 59}, &kafkalib.TopicConfig{})
+	evtData := evt.GetData(map[string]interface{}{"id": 59}, &kafkalib.TopicConfig{})
 	assert.Equal(p.T(), evtData["id"], float64(59))
 
 	assert.Equal(p.T(), evtData["item"], "Barings Participation Investors")
@@ -188,12 +188,12 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	assert.Nil(p.T(), err)
 	assert.False(p.T(), evt.DeletePayload())
 
-	evtData := evt.GetData(p.ctx, map[string]interface{}{"id": 1001}, &kafkalib.TopicConfig{})
+	evtData := evt.GetData(map[string]interface{}{"id": 1001}, &kafkalib.TopicConfig{})
 
 	// Testing typing.
 	assert.Equal(p.T(), evtData["id"], 1001)
 	assert.Equal(p.T(), evtData["another_id"], 333)
-	assert.Equal(p.T(), typing.ParseValue(p.ctx, "another_id", evt.GetOptionalSchema(p.ctx), evtData["another_id"]), typing.Integer)
+	assert.Equal(p.T(), typing.ParseValue(p.ctx, "another_id", evt.GetOptionalSchema(), evtData["another_id"]), typing.Integer)
 
 	assert.Equal(p.T(), evtData["email"], "sally.thomas@acme.com")
 
