@@ -149,7 +149,18 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 			sanitizedData[newColName] = val
 		}
 
-		if val == constants.ToastUnavailableValuePlaceholder {
+		toastedCol := val == constants.ToastUnavailableValuePlaceholder
+		if !toastedCol {
+			// If the value is in map[string]string, the TOASTED value will look like map[__debezium_unavailable_value:__debezium_unavailable_value]
+			valMap, isOk := val.(map[string]interface{})
+			if isOk {
+				if _, isOk = valMap[constants.ToastUnavailableValuePlaceholder]; isOk {
+					toastedCol = true
+				}
+			}
+		}
+
+		if toastedCol {
 			inMemoryColumns.UpsertColumn(newColName, columns.UpsertColumnArg{
 				ToastCol: ptr.ToBool(true),
 			})
