@@ -1,27 +1,25 @@
 package sql
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"strings"
-
-	"github.com/artie-labs/transfer/lib/config"
 
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
 type NameArgs struct {
-	Escape   bool
-	DestKind constants.DestinationKind
+	Escape                bool
+	DestKind              constants.DestinationKind
+	UppercaseEscapedNames bool
 }
 
 // symbolsToEscape are additional keywords that we need to escape
 var symbolsToEscape = []string{":"}
 
-func EscapeName(ctx context.Context, name string, args *NameArgs) string {
-	if args == nil {
+func EscapeName(name string, args NameArgs) string {
+	if !args.Escape {
 		return name
 	}
 
@@ -52,11 +50,11 @@ func EscapeName(ctx context.Context, name string, args *NameArgs) string {
 	}
 
 	if args.Escape && needsEscaping {
-		if config.FromContext(ctx).Config.SharedDestinationConfig.UppercaseEscapedNames {
+		if args.UppercaseEscapedNames {
 			name = strings.ToUpper(name)
 		}
 
-		if args != nil && args.DestKind == constants.BigQuery {
+		if args.DestKind == constants.BigQuery {
 			// BigQuery needs backticks to escape.
 			return fmt.Sprintf("`%s`", name)
 		} else {
