@@ -3,6 +3,7 @@ package snowflake
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/artie-labs/transfer/clients/utils"
 
@@ -30,8 +31,8 @@ const (
 	describeCommentCol = "comment"
 )
 
-func (s *Store) getTableConfig(ctx context.Context, fqName string, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
-	return utils.GetTableConfig(ctx, utils.GetTableCfgArgs{
+func (s *Store) getTableConfig(fqName string, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
+	return utils.GetTableConfig(utils.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             fqName,
 		ConfigMap:          s.configMap,
@@ -59,7 +60,7 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
 	err := s.mergeWithStages(ctx, tableData)
 	if IsAuthExpiredError(err) {
-		logger.FromContext(ctx).WithError(err).Warn("authentication has expired, will reload the Snowflake store and retry merging")
+		slog.Warn("authentication has expired, will reload the Snowflake store and retry merging", slog.Any("err", err))
 		s.reestablishConnection(ctx)
 		return s.Merge(ctx, tableData)
 	}
@@ -91,7 +92,7 @@ func (s *Store) reestablishConnection(ctx context.Context) {
 
 	dsn, err := gosnowflake.DSN(cfg)
 	if err != nil {
-		logger.FromContext(ctx).Fatalf("failed to get snowflake dsn, err: %v", err)
+		logger.Fatal("failed to get snowflake dsn", slog.Any("err", err))
 	}
 
 	s.Store = db.Open(ctx, "snowflake", dsn)

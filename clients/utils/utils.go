@@ -3,6 +3,7 @@ package utils
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/config"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/artie-labs/transfer/lib/destination"
-	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
@@ -46,11 +46,11 @@ func BackfillColumn(ctx context.Context, dwh destination.DataWarehouse, column c
 		// UPDATE table SET col = default_val WHERE col IS NULL
 		fqTableName, escapedCol, defaultVal, additionalEscapedCol,
 	)
-	logger.FromContext(ctx).WithFields(map[string]interface{}{
-		"colName": column.RawName(),
-		"query":   query,
-		"table":   fqTableName,
-	}).Info("backfilling column")
+	slog.Info("backfilling column",
+		slog.String("colName", column.RawName()),
+		slog.String("query", query),
+		slog.String("table", fqTableName),
+	)
 
 	_, err = dwh.Exec(query)
 	if err != nil {

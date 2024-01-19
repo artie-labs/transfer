@@ -7,7 +7,6 @@ import (
 	"github.com/artie-labs/transfer/clients/redshift"
 
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/logger"
 
 	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/clients/snowflake"
@@ -47,8 +46,6 @@ func (d *DDLTestSuite) SetupTest() {
 		},
 	})
 
-	bqCtx = logger.InjectLoggerIntoCtx(bqCtx)
-	ctx = logger.InjectLoggerIntoCtx(ctx)
 	d.ctx = ctx
 	d.bqCtx = bqCtx
 

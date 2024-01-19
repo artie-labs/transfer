@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/dml"
 	"github.com/artie-labs/transfer/lib/destination/types"
-	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -37,7 +37,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 		UppercaseEscNames: &s.uppercaseEscNames,
 	}
 
-	if err := ddl.AlterTable(ctx, tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
+	if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
 		return fmt.Errorf("failed to create temp table, error: %v", err)
 	}
 
@@ -64,7 +64,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 	}
 
 	if deleteErr := os.RemoveAll(fp); deleteErr != nil {
-		logger.FromContext(ctx).WithError(deleteErr).WithField("filePath", fp).Warn("failed to delete temp file")
+		slog.Warn("failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
 	}
 
 	return nil
@@ -116,12 +116,11 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 	}
 
 	fqName := tableData.ToFqName(s.Label(), true, s.uppercaseEscNames, "")
-	tableConfig, err := s.getTableConfig(ctx, fqName, tableData.TopicConfig.DropDeletedColumns)
+	tableConfig, err := s.getTableConfig(fqName, tableData.TopicConfig.DropDeletedColumns)
 	if err != nil {
 		return err
 	}
 
-	log := logger.FromContext(ctx)
 	// Check if all the columns exist in Snowflake
 	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
 		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt)
@@ -136,9 +135,9 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 	}
 
 	// Keys that exist in CDC stream, but not in Snowflake
-	err = ddl.AlterTable(ctx, createAlterTableArgs, targetKeysMissing...)
+	err = ddl.AlterTable(createAlterTableArgs, targetKeysMissing...)
 	if err != nil {
-		log.WithError(err).Warn("failed to apply alter table")
+		slog.Warn("failed to apply alter table", slog.Any("err", err))
 		return err
 	}
 
@@ -156,9 +155,9 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		UppercaseEscNames:      &s.uppercaseEscNames,
 	}
 
-	err = ddl.AlterTable(ctx, deleteAlterTableArgs, srcKeysMissing...)
+	err = ddl.AlterTable(deleteAlterTableArgs, srcKeysMissing...)
 	if err != nil {
-		log.WithError(err).Warn("failed to apply alter table")
+		slog.Warn("failed to apply alter table", slog.Any("err", err))
 		return err
 	}
 
@@ -200,12 +199,12 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		return fmt.Errorf("failed to generate merge statement, err: %v", err)
 	}
 
-	log.WithField("query", mergeQuery).Debug("executing...")
+	slog.Debug("executing...", slog.String("query", mergeQuery))
 	_, err = s.Exec(mergeQuery)
 	if err != nil {
 		return err
 	}
 
-	_ = ddl.DropTemporaryTable(ctx, s, temporaryTableName, false)
+	_ = ddl.DropTemporaryTable(s, temporaryTableName, false)
 	return err
 }

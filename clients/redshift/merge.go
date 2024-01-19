@@ -3,6 +3,7 @@ package redshift
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/sql"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/dml"
-	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -22,12 +22,11 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return nil
 	}
 
-	tableConfig, err := s.getTableConfig(ctx, tableData)
+	tableConfig, err := s.getTableConfig(tableData)
 	if err != nil {
 		return err
 	}
 
-	log := logger.FromContext(ctx)
 	fqName := tableData.ToFqName(s.Label(), true, s.uppercaseEscNames, "")
 	// Check if all the columns exist in Redshift
 	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
@@ -43,9 +42,9 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	// Keys that exist in CDC stream, but not in Redshift
-	err = ddl.AlterTable(ctx, createAlterTableArgs, targetKeysMissing...)
+	err = ddl.AlterTable(createAlterTableArgs, targetKeysMissing...)
 	if err != nil {
-		log.WithError(err).Warn("failed to apply alter table")
+		slog.Warn("failed to apply alter table", slog.Any("err", err))
 		return err
 	}
 
@@ -63,9 +62,9 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		UppercaseEscNames:      &s.uppercaseEscNames,
 	}
 
-	err = ddl.AlterTable(ctx, deleteAlterTableArgs, srcKeysMissing...)
+	err = ddl.AlterTable(deleteAlterTableArgs, srcKeysMissing...)
 	if err != nil {
-		log.WithError(err).Warn("failed to apply alter table")
+		slog.Warn("failed to apply alter table", slog.Any("err", err))
 		return err
 	}
 
@@ -130,6 +129,6 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return fmt.Errorf("failed to merge, parts: %v, err: %v", mergeParts, err)
 	}
 
-	_ = ddl.DropTemporaryTable(ctx, s, temporaryTableName, false)
+	_ = ddl.DropTemporaryTable(s, temporaryTableName, false)
 	return err
 }

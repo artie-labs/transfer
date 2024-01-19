@@ -2,12 +2,11 @@ package metrics
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/datadog"
-
-	"github.com/artie-labs/transfer/lib/logger"
 )
 
 var supportedExporterKinds = []constants.ExporterKind{constants.Datadog}
@@ -30,19 +29,17 @@ func LoadExporter(ctx context.Context) context.Context {
 	ddSettings := settings.Config.Telemetry.Metrics.Settings
 
 	if !exporterKindValid(kind) {
-		logger.FromContext(ctx).WithFields(map[string]interface{}{
-			"exporterKind": kind,
-		}).Info("invalid or no exporter kind passed in, skipping...")
+		slog.Info("invalid or no exporter kind passed in, skipping...", slog.Any("exporterKind", kind))
 	}
 
 	switch kind {
 	case constants.Datadog:
-		statsClient, exportErr := datadog.NewDatadogClient(ctx, ddSettings)
+		statsClient, exportErr := datadog.NewDatadogClient(ddSettings)
 		if exportErr != nil {
-			logger.FromContext(ctx).WithField("provider", kind).Error(exportErr)
+			slog.Error("Metrics client error", slog.Any("err", exportErr), slog.Any("provider", kind))
 		} else {
 			ctx = InjectMetricsClientIntoCtx(ctx, statsClient)
-			logger.FromContext(ctx).WithField("provider", kind).Info("Metrics client loaded")
+			slog.Info("Metrics client loaded", slog.Any("provider", kind))
 		}
 	}
 

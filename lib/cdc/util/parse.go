@@ -3,13 +3,13 @@ package util
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 
 	"github.com/artie-labs/transfer/lib/jsonutil"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/artie-labs/transfer/lib/debezium"
-	"github.com/artie-labs/transfer/lib/logger"
 )
 
 // ParseField returns a `parsedValue` as type interface{}
@@ -39,22 +39,22 @@ func parseField(ctx context.Context, field debezium.Field, value interface{}) in
 			if err == nil {
 				return decimalVal
 			} else {
-				logger.FromContext(ctx).WithFields(map[string]interface{}{
-					"err":           err,
-					"supportedType": supportedType,
-					"val":           value,
-				}).Debug("skipped casting dbz type due to an error")
+				slog.Debug("skipped casting dbz type due to an error",
+					slog.Any("err", err),
+					slog.Any("supportedType", supportedType),
+					slog.Any("val", value),
+				)
 			}
 		case debezium.KafkaVariableNumericType:
 			variableNumericVal, err := field.DecodeDebeziumVariableDecimal(value)
 			if err == nil {
 				return variableNumericVal
 			} else {
-				logger.FromContext(ctx).WithFields(map[string]interface{}{
-					"err":           err,
-					"supportedType": supportedType,
-					"val":           value,
-				}).Debug("skipped casting dbz type due to an error")
+				slog.Debug("skipped casting dbz type due to an error",
+					slog.Any("err", err),
+					slog.Any("supportedType", supportedType),
+					slog.Any("val", value),
+				)
 			}
 		default:
 			// Need to cast this as a FLOAT first because the number may come out in scientific notation
@@ -66,26 +66,26 @@ func parseField(ctx context.Context, field debezium.Field, value interface{}) in
 					return extendedTime
 				} else {
 					if ext.IsInvalidErr(err) {
-						logger.FromContext(ctx).WithFields(map[string]interface{}{
-							"err":           err,
-							"supportedType": supportedType,
-							"val":           value,
-						}).Info("extTime is not valid, so returning nil here instead")
+						slog.Info("extTime is not valid, so returning nil here instead",
+							slog.Any("err", err),
+							slog.Any("supportedType", supportedType),
+							slog.Any("val", value),
+						)
 						return nil
 					}
 
-					logger.FromContext(ctx).WithFields(map[string]interface{}{
-						"err":           err,
-						"supportedType": supportedType,
-						"val":           value,
-					}).Debug("skipped casting dbz type due to an error")
+					slog.Debug("skipped casting dbz type due to an error",
+						slog.Any("err", err),
+						slog.Any("supportedType", supportedType),
+						slog.Any("val", value),
+					)
 				}
 			} else {
-				logger.FromContext(ctx).WithFields(map[string]interface{}{
-					"err":           castErr,
-					"supportedType": supportedType,
-					"val":           value,
-				}).Debug("skipped casting because we failed to parse the float")
+				slog.Debug("skipped casting because we failed to parse the float",
+					slog.Any("err", castErr),
+					slog.Any("supportedType", supportedType),
+					slog.Any("val", value),
+				)
 			}
 		}
 	}

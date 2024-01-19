@@ -3,6 +3,7 @@ package consumer
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -17,7 +18,6 @@ import (
 const defaultAckDeadline = 10 * time.Minute
 
 func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, topic, subName string) (*gcp_pubsub.Subscription, error) {
-	log := logger.FromContext(ctx)
 	sub := client.Subscription(subName)
 	exists, err := sub.Exists(ctx)
 	if err != nil {
@@ -25,7 +25,7 @@ func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, to
 	}
 
 	if !exists {
-		log.WithField("topic", topic).Info("subscription does not exist, creating one...")
+		slog.Info("subscription does not exist, creating one...", slog.String("topic", topic))
 		gcpTopic := client.Topic(topic)
 		exists, err = gcpTopic.Exists(ctx)
 		if !exists || err != nil {
@@ -56,19 +56,18 @@ func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, to
 }
 
 func StartSubscriber(ctx context.Context) {
-	log := logger.FromContext(ctx)
 	settings := config.FromContext(ctx)
 	client, clientErr := gcp_pubsub.NewClient(ctx, settings.Config.Pubsub.ProjectID,
 		option.WithCredentialsFile(settings.Config.Pubsub.PathToCredentials))
 	if clientErr != nil {
-		log.Fatalf("failed to create a pubsub client, err: %v", clientErr)
+		logger.Fatal("failed to create a pubsub client", slog.Any("err", clientErr))
 	}
 
 	tcFmtMap := NewTcFmtMap()
 	for _, topicConfig := range settings.Config.Pubsub.TopicConfigs {
 		tcFmtMap.Add(topicConfig.Topic, TopicConfigFormatter{
 			tc:     topicConfig,
-			Format: format.GetFormatParser(ctx, topicConfig.CDCFormat, topicConfig.Topic),
+			Format: format.GetFormatParser(topicConfig.CDCFormat, topicConfig.Topic),
 		})
 	}
 
@@ -80,17 +79,17 @@ func StartSubscriber(ctx context.Context) {
 			subName := fmt.Sprintf("transfer_%s", topic)
 			sub, err := findOrCreateSubscription(ctx, client, topic, subName)
 			if err != nil {
-				log.Fatalf("failed to find or create subscription, err: %v", err)
+				logger.Fatal("failed to find or create subscription", slog.Any("err", err))
 			}
 
 			for {
 				err = sub.Receive(ctx, func(_ context.Context, pubsubMsg *gcp_pubsub.Message) {
 					msg := artie.NewMessage(nil, pubsubMsg, topic)
-					logFields := map[string]interface{}{
-						"topic": msg.Topic(),
-						"msgID": msg.PubSub.ID,
-						"key":   string(msg.Key()),
-						"value": string(msg.Value()),
+					logFields := []any{
+						slog.String("topic", msg.Topic()),
+						slog.String("msgID", msg.PubSub.ID),
+						slog.String("key", string(msg.Key())),
+						slog.String("value", string(msg.Value())),
 					}
 
 					tableName, processErr := processMessage(ctx, ProcessArgs{
@@ -101,12 +100,12 @@ func StartSubscriber(ctx context.Context) {
 
 					msg.EmitIngestionLag(ctx, subName, tableName)
 					if processErr != nil {
-						log.WithError(processErr).WithFields(logFields).Warn("skipping message...")
+						slog.With(logFields...).Warn("skipping message...", slog.Any("err", processErr))
 					}
 				})
 
 				if err != nil {
-					log.Fatalf("sub receive error, err: %v", err)
+					logger.Fatal("sub receive error", slog.Any("err", err))
 				}
 			}
 

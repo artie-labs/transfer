@@ -66,7 +66,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
-		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
+		err := ddl.AlterTable(alterTableArgs, column)
 		assert.NoError(d.T(), err)
 	}
 
@@ -89,7 +89,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
-		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
+		err := ddl.AlterTable(alterTableArgs, column)
 
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s drop COLUMN %s", fqName, column.Name(false, &artieSQL.NameArgs{
@@ -150,7 +150,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 
 		col := columns.NewColumn(name, kind)
 
-		err := ddl.AlterTable(d.bqCtx, alterTableArgs, col)
+		err := ddl.AlterTable(alterTableArgs, col)
 		assert.NoError(d.T(), err)
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, col.Name(false, &artieSQL.NameArgs{
@@ -211,7 +211,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 			CdcTime:           ts,
 			UppercaseEscNames: ptr.ToBool(false),
 		}
-		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
+		err := ddl.AlterTable(alterTableArgs, column)
 		assert.NoError(d.T(), err)
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, column.Name(false, &artieSQL.NameArgs{
@@ -268,7 +268,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 			CdcTime:           ts,
 			UppercaseEscNames: ptr.ToBool(false),
 		}
-		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
+		err := ddl.AlterTable(alterTableArgs, column)
 		assert.NoError(d.T(), err)
 	}
 
@@ -287,7 +287,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 			UppercaseEscNames: ptr.ToBool(false),
 		}
 
-		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
+		err := ddl.AlterTable(alterTableArgs, column)
 		assert.NoError(d.T(), err)
 		assert.Equal(d.T(), 0, d.fakeBigQueryStore.ExecCallCount())
 	}

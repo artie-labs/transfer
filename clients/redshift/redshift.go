@@ -47,7 +47,7 @@ const (
 	describeDescriptionCol = "description"
 )
 
-func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+func (s *Store) getTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	describeQuery, err := describeTableQuery(describeArgs{
 		RawTableName: tableData.RawName(),
 		Schema:       tableData.TopicConfig.Schema,
@@ -57,7 +57,7 @@ func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.Tabl
 		return nil, err
 	}
 
-	return utils.GetTableConfig(ctx, utils.GetTableCfgArgs{
+	return utils.GetTableConfig(utils.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             tableData.ToFqName(s.Label(), true, s.uppercaseEscNames, ""),
 		ConfigMap:          s.configMap,

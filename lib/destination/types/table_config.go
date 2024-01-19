@@ -1,12 +1,11 @@
 package types
 
 import (
-	"context"
+	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
@@ -114,7 +113,7 @@ func (d *DwhTableConfig) ReadOnlyColumnsToDelete() map[string]time.Time {
 	return colsToDelete
 }
 
-func (d *DwhTableConfig) ShouldDeleteColumn(ctx context.Context, colName string, cdcTime time.Time, containOtherOperations bool) bool {
+func (d *DwhTableConfig) ShouldDeleteColumn(colName string, cdcTime time.Time, containOtherOperations bool) bool {
 	if d == nil {
 		// Avoid a panic and default to FALSE.
 		return false
@@ -139,10 +138,10 @@ func (d *DwhTableConfig) ShouldDeleteColumn(ctx context.Context, colName string,
 	}
 
 	delTime := time.Now().UTC().Add(constants.DeletionConfidencePadding)
-	logger.FromContext(ctx).WithFields(map[string]interface{}{
-		"colName":         colName,
-		"deleteAfterTime": delTime,
-	}).Info("column added to columnsToDelete")
+	slog.Info("column added to columnsToDelete",
+		slog.String("colName", colName),
+		slog.Time("deleteAfterTime", delTime),
+	)
 
 	d.AddColumnsToDelete(colName, delTime)
 	return false

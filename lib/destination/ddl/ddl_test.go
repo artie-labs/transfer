@@ -28,7 +28,7 @@ func (d *DDLTestSuite) Test_DropTemporaryTableCaseSensitive() {
 
 		for tableIndex, table := range tablesToDrop {
 			fullTableName := fmt.Sprintf("%s_%s", table, constants.ArtiePrefix)
-			_ = ddl.DropTemporaryTable(d.ctx, dest, fullTableName, false)
+			_ = ddl.DropTemporaryTable(dest, fullTableName, false)
 
 			// There should be the same number of DROP table calls as the number of tables to drop.
 			assert.Equal(d.T(), tableIndex+1, fakeStore.ExecCallCount())
@@ -54,7 +54,7 @@ func (d *DDLTestSuite) Test_DropTemporaryTable() {
 
 	// Should not drop since these do not have Artie prefix in the name.
 	for _, table := range doNotDropTables {
-		_ = ddl.DropTemporaryTable(d.ctx, d.snowflakeStagesStore, table, false)
+		_ = ddl.DropTemporaryTable(d.snowflakeStagesStore, table, false)
 		assert.Equal(d.T(), 0, d.fakeSnowflakeStagesStore.ExecCallCount())
 	}
 
@@ -67,14 +67,14 @@ func (d *DDLTestSuite) Test_DropTemporaryTable() {
 		}
 
 		for _, doNotDropTable := range doNotDropTables {
-			_ = ddl.DropTemporaryTable(d.ctx, _dwh, doNotDropTable, false)
+			_ = ddl.DropTemporaryTable(_dwh, doNotDropTable, false)
 
 			assert.Equal(d.T(), 0, fakeStore.ExecCallCount())
 		}
 
 		for index, table := range doNotDropTables {
 			fullTableName := fmt.Sprintf("%s_%s", table, constants.ArtiePrefix)
-			_ = ddl.DropTemporaryTable(d.ctx, _dwh, fullTableName, false)
+			_ = ddl.DropTemporaryTable(_dwh, fullTableName, false)
 
 			count := index + 1
 			assert.Equal(d.T(), count, fakeStore.ExecCallCount())
@@ -108,7 +108,7 @@ func (d *DDLTestSuite) Test_DropTemporaryTable_Errors() {
 		for _, shouldReturnErr := range []bool{true, false} {
 			for _, table := range tablesToDrop {
 				fullTableName := fmt.Sprintf("%s_%s", table, constants.ArtiePrefix)
-				err := ddl.DropTemporaryTable(d.ctx, _dwh, fullTableName, shouldReturnErr)
+				err := ddl.DropTemporaryTable(_dwh, fullTableName, shouldReturnErr)
 				if shouldReturnErr {
 					assert.Error(d.T(), err)
 					assert.Contains(d.T(), err.Error(), randomErr.Error())

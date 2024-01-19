@@ -1,16 +1,15 @@
 package utils
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
-	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -40,20 +39,19 @@ func (g *GetTableCfgArgs) ShouldParseComment(comment string) bool {
 	return true
 }
 
-func GetTableConfig(ctx context.Context, args GetTableCfgArgs) (*types.DwhTableConfig, error) {
+func GetTableConfig(args GetTableCfgArgs) (*types.DwhTableConfig, error) {
 	// Check if it already exists in cache
 	tableConfig := args.ConfigMap.TableConfig(args.FqName)
 	if tableConfig != nil {
 		return tableConfig, nil
 	}
 
-	log := logger.FromContext(ctx)
 	rows, err := args.Dwh.Query(args.Query)
 	defer func() {
 		if rows != nil {
 			err = rows.Close()
 			if err != nil {
-				log.WithError(err).Warn("Failed to close the row")
+				slog.Warn("Failed to close the row", slog.Any("err", err))
 			}
 		}
 	}()

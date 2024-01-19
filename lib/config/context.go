@@ -21,7 +21,7 @@ func InjectSettingsIntoContext(ctx context.Context, settings *Settings) context.
 func FromContext(ctx context.Context) *Settings {
 	settingsVal := ctx.Value(constants.ConfigKey)
 	if settingsVal == nil {
-		log.Fatalf("failed to grab settings from context")
+		log.Fatal("failed to grab settings from context")
 	}
 
 	settings, isOk := settingsVal.(*Settings)

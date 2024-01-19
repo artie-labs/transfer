@@ -2,11 +2,11 @@ package consumer
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/destination/utils"
-	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"
 )
@@ -30,7 +30,6 @@ func Flush(args Args) error {
 		return nil
 	}
 
-	log := logger.FromContext(args.Context)
 	var wg sync.WaitGroup
 	// Read lock to examine the map of tables
 	models.GetMemoryDB(args.Context).RLock()
@@ -48,12 +47,12 @@ func Flush(args Args) error {
 		go func(_tableName string, _tableData *models.TableData) {
 			defer wg.Done()
 
-			logFields := map[string]interface{}{
-				"tableName": _tableName,
+			logFields := []any{
+				slog.String("tableName", _tableName),
 			}
 
 			if args.CoolDown != nil && _tableData.ShouldSkipMerge(*args.CoolDown) {
-				log.WithFields(logFields).Info("skipping merge because we are currently in a merge cooldown")
+				slog.With(logFields...).Info("skipping merge because we are currently in a merge cooldown")
 				return
 			}
 
@@ -79,15 +78,15 @@ func Flush(args Args) error {
 			err := utils.FromContext(args.Context).Merge(args.Context, _tableData.TableData)
 			if err != nil {
 				tags["what"] = "merge_fail"
-				log.WithError(err).WithFields(logFields).Warn("Failed to execute merge...not going to flush memory")
+				slog.With(logFields...).Warn("Failed to execute merge...not going to flush memory", slog.Any("err", err))
 			} else {
-				log.WithFields(logFields).Info("Merge success, clearing memory...")
+				slog.With(logFields...).Info("Merge success, clearing memory...")
 				commitErr := commitOffset(args.Context, _tableData.TopicConfig.Topic, _tableData.PartitionsToLastMessage)
 				if commitErr == nil {
 					models.GetMemoryDB(args.Context).ClearTableConfig(_tableName)
 				} else {
 					tags["what"] = "commit_fail"
-					log.WithError(commitErr).Warn("commit error...")
+					slog.Warn("commit error...", slog.Any("err", commitErr))
 				}
 			}
 			metrics.FromContext(args.Context).Timing("flush", time.Since(start), tags)

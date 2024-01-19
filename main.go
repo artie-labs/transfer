@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"sync"
 	"time"
@@ -14,12 +15,20 @@ import (
 	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/processes/consumer"
 	"github.com/artie-labs/transfer/processes/pool"
+	"github.com/getsentry/sentry-go"
 )
 
 func main() {
 	// Parse args into settings.
 	ctx := config.InitializeCfgIntoContext(context.Background(), os.Args, true)
-	ctx = logger.InjectLoggerIntoCtx(ctx)
+
+	// Initialize default logger
+	_logger, usingSentry := logger.NewLogger(config.FromContext(ctx))
+	slog.SetDefault(_logger)
+	if usingSentry {
+		defer sentry.Flush(2 * time.Second)
+		slog.Info("Sentry logger enabled")
+	}
 
 	// Loading Telemetry
 	ctx = metrics.LoadExporter(ctx)
@@ -32,11 +41,11 @@ func main() {
 	ctx = models.LoadMemoryDB(ctx)
 	settings := config.FromContext(ctx)
 
-	logger.FromContext(ctx).WithFields(map[string]interface{}{
-		"flush_interval_seconds": settings.Config.FlushIntervalSeconds,
-		"buffer_pool_size":       settings.Config.BufferRows,
-		"flush_pool_size (kb)":   settings.Config.FlushSizeKb,
-	}).Info("config is loaded")
+	slog.Info("config is loaded",
+		slog.Int("flush_interval_seconds", settings.Config.FlushIntervalSeconds),
+		slog.Uint64("buffer_pool_size", uint64(settings.Config.BufferRows)),
+		slog.Int("flush_pool_size (kb)", settings.Config.FlushSizeKb),
+	)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -54,7 +63,7 @@ func main() {
 		case constants.PubSub:
 			consumer.StartSubscriber(ctx)
 		default:
-			logger.FromContext(ctx).Fatalf("message queue: %s not supported", settings.Config.Queue)
+			logger.Fatalf("message queue: %s not supported", settings.Config.Queue)
 		}
 	}(ctx)
 

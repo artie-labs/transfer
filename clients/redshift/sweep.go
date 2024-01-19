@@ -4,16 +4,16 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/logger"
 )
 
 func (s *Store) Sweep(ctx context.Context) error {
-	logger.FromContext(ctx).Info("looking to see if there are any dangling artie temporary tables to delete...")
+	slog.Info("looking to see if there are any dangling artie temporary tables to delete...")
 	// Find all the database and schema pairings
 	// Then iterate over information schema
 	// Find anything that has __artie__ in the table name
@@ -47,7 +47,7 @@ WHERE n.nspname = '%s' and c.relname ILIKE '%s';`,
 			}
 
 			if ddl.ShouldDelete(comment) {
-				err = ddl.DropTemporaryTable(ctx, s,
+				err = ddl.DropTemporaryTable(s,
 					fmt.Sprintf("%s.%s.%s", dbAndSchemaPair.Database, dbAndSchemaPair.Schema, tableName), true)
 				if err != nil {
 					return err

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 
@@ -20,7 +21,7 @@ func InjectBaselineIntoCtx(fs destination.Baseline, ctx context.Context) context
 func FromContext(ctx context.Context) destination.Baseline {
 	destVal := ctx.Value(constants.DestinationKey)
 	if destVal == nil {
-		logger.FromContext(ctx).Fatal("destination missing from context")
+		logger.Fatal("destination missing from context")
 	}
 
 	// Check if the key is a type destination.DataWarehouse or destination.Baseline
@@ -31,7 +32,7 @@ func FromContext(ctx context.Context) destination.Baseline {
 
 	dwh, isOk := destVal.(destination.DataWarehouse)
 	if !isOk {
-		logger.FromContext(ctx).WithField("dwhVal", destVal).Fatal("destination type is incorrect")
+		logger.Fatal("destination type is incorrect", slog.Any("dwhVal", destVal))
 	}
 
 	return dwh
