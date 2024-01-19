@@ -94,7 +94,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		})
 	}
 
-	mergArg := &dml.MergeArgument{
+	mergArg := dml.MergeArgument{
 		FqTableName: fqName,
 		// We are adding SELECT DISTINCT here for the temporary table as an extra guardrail.
 		// Redshift does not enforce any row uniqueness and there could be potential LOAD errors which will cause duplicate rows to arise.
