@@ -329,6 +329,14 @@ func TestField_ToKindDetails(t *testing.T) {
 			},
 			expectedKindDetails: eDecimal,
 		},
+		{
+			name: "Debezium Map",
+			field: Field{
+				DebeziumType: "",
+				Type:         "map",
+			},
+			expectedKindDetails: typing.Struct,
+		},
 	}
 
 	for _, tc := range tcs {
