@@ -185,7 +185,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		})
 	}
 
-	mergeArg := &dml.MergeArgument{
+	mergeArg := dml.MergeArgument{
 		FqTableName:       fqName,
 		SubQuery:          temporaryTableName,
 		IdempotentKey:     tableData.TopicConfig.IdempotentKey,
@@ -195,7 +195,6 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		UppercaseEscNames: &s.uppercaseEscNames,
 	}
 
-	// Prepare merge statement
 	mergeQuery, err := mergeArg.GetStatement()
 	if err != nil {
 		return fmt.Errorf("failed to generate merge statement, err: %v", err)

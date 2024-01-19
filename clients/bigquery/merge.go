@@ -228,7 +228,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		additionalEqualityStrings = []string{mergeString}
 	}
 
-	mergeArg := &dml.MergeArgument{
+	mergeArg := dml.MergeArgument{
 		FqTableName:               fqName,
 		AdditionalEqualityStrings: additionalEqualityStrings,
 		SubQuery:                  tempAlterTableArgs.FqTableName,
