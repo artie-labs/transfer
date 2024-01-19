@@ -93,7 +93,8 @@ func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			Store:             *_store,
+			Store: *_store,
+
 			projectID:         settings.Config.BigQuery.ProjectID,
 			uppercaseEscNames: settings.Config.SharedDestinationConfig.UppercaseEscapedNames,
 			configMap:         &types.DwhToTablesConfigMap{},
@@ -110,7 +111,8 @@ func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
 	}
 
 	return &Store{
-		Store:             db.Open(ctx, "bigquery", settings.Config.BigQuery.DSN()),
+		Store: db.Open(ctx, "bigquery", settings.Config.BigQuery.DSN()),
+
 		configMap:         &types.DwhToTablesConfigMap{},
 		batchSize:         settings.Config.BigQuery.BatchSize,
 		projectID:         settings.Config.BigQuery.ProjectID,
