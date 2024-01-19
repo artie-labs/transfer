@@ -15,6 +15,7 @@ import (
 	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/processes/consumer"
 	"github.com/artie-labs/transfer/processes/pool"
+	"github.com/getsentry/sentry-go"
 )
 
 func main() {
@@ -22,7 +23,12 @@ func main() {
 	ctx := config.InitializeCfgIntoContext(context.Background(), os.Args, true)
 
 	// Initialize default logger
-	slog.SetDefault(logger.NewLogger(config.FromContext(ctx)))
+	_logger, usingSentry := logger.NewLogger(config.FromContext(ctx))
+	slog.SetDefault(_logger)
+	if usingSentry {
+		defer sentry.Flush(2 * time.Second)
+		slog.Info("Sentry logger enabled")
+	}
 
 	// Loading Telemetry
 	ctx = metrics.LoadExporter(ctx)

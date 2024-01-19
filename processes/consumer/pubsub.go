@@ -3,7 +3,6 @@ package consumer
 import (
 	"context"
 	"fmt"
-	"log"
 	"log/slog"
 	"sync"
 	"time"
@@ -80,7 +79,7 @@ func StartSubscriber(ctx context.Context) {
 			subName := fmt.Sprintf("transfer_%s", topic)
 			sub, err := findOrCreateSubscription(ctx, client, topic, subName)
 			if err != nil {
-				log.Fatalf("failed to find or create subscription, err: %v", err)
+				logger.Fatal("failed to find or create subscription", slog.Any("err", err))
 			}
 
 			for {

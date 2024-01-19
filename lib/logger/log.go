@@ -13,7 +13,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 )
 
-func NewLogger(settings *config.Settings) *slog.Logger {
+func NewLogger(settings *config.Settings) (*slog.Logger, bool) {
 	tintLogLevel := slog.LevelInfo
 	if settings != nil && settings.VerboseLogging {
 		tintLogLevel = slog.LevelDebug
@@ -34,11 +34,7 @@ func NewLogger(settings *config.Settings) *slog.Logger {
 		}
 	}
 
-	logger := slog.New(handler)
-	if loggingToSentry {
-		logger.Info("sentry logger enabled")
-	}
-	return logger
+	return slog.New(handler), loggingToSentry
 }
 
 func Fatal(msg string, args ...interface{}) {
