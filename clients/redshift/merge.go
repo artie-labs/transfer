@@ -22,7 +22,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return nil
 	}
 
-	tableConfig, err := s.getTableConfig(ctx, tableData)
+	tableConfig, err := s.getTableConfig(tableData)
 	if err != nil {
 		return err
 	}

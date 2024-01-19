@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -65,7 +64,7 @@ func TestGetTableConfig(t *testing.T) {
 	cm := &types.DwhToTablesConfigMap{}
 	cm.AddTableToConfig(fqName, dwhTableCfg)
 
-	actualTableCfg, err := GetTableConfig(context.Background(), GetTableCfgArgs{
+	actualTableCfg, err := GetTableConfig(GetTableCfgArgs{
 		FqName:    fqName,
 		ConfigMap: cm,
 	})

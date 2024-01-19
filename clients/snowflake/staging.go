@@ -116,7 +116,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 	}
 
 	fqName := tableData.ToFqName(s.Label(), true, s.uppercaseEscNames, "")
-	tableConfig, err := s.getTableConfig(ctx, fqName, tableData.TopicConfig.DropDeletedColumns)
+	tableConfig, err := s.getTableConfig(fqName, tableData.TopicConfig.DropDeletedColumns)
 	if err != nil {
 		return err
 	}

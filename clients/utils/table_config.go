@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -40,7 +39,7 @@ func (g *GetTableCfgArgs) ShouldParseComment(comment string) bool {
 	return true
 }
 
-func GetTableConfig(ctx context.Context, args GetTableCfgArgs) (*types.DwhTableConfig, error) {
+func GetTableConfig(args GetTableCfgArgs) (*types.DwhTableConfig, error) {
 	// Check if it already exists in cache
 	tableConfig := args.ConfigMap.TableConfig(args.FqName)
 	if tableConfig != nil {

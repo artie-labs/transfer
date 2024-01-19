@@ -31,8 +31,8 @@ const (
 	describeCommentCol = "comment"
 )
 
-func (s *Store) getTableConfig(ctx context.Context, fqName string, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
-	return utils.GetTableConfig(ctx, utils.GetTableCfgArgs{
+func (s *Store) getTableConfig(fqName string, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
+	return utils.GetTableConfig(utils.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             fqName,
 		ConfigMap:          s.configMap,

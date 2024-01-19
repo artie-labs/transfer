@@ -111,7 +111,7 @@ func (s *SnowflakeTestSuite) TestGetTableConfig() {
 	fqName := "customers.public.orders22"
 	s.fakeStageStore.QueryReturns(nil, fmt.Errorf("Table '%s' does not exist or not authorized", fqName))
 
-	tableConfig, err := s.stageStore.getTableConfig(s.ctx, fqName, false)
+	tableConfig, err := s.stageStore.getTableConfig(fqName, false)
 	assert.NotNil(s.T(), tableConfig, "config is nil")
 	assert.NoError(s.T(), err)
 

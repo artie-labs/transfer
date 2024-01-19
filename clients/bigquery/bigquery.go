@@ -36,8 +36,8 @@ type Store struct {
 	db.Store
 }
 
-func (s *Store) getTableConfig(ctx context.Context, tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	return utils.GetTableConfig(ctx, utils.GetTableCfgArgs{
+func (s *Store) getTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+	return utils.GetTableConfig(utils.GetTableCfgArgs{
 		Dwh:       s,
 		FqName:    tableData.ToFqName(s.Label(), true, s.uppercaseEscNames, s.projectID),
 		ConfigMap: s.configMap,
