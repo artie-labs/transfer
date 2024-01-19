@@ -26,7 +26,7 @@ func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, to
 	}
 
 	if !exists {
-		slog.With("topic", topic).Info("subscription does not exist, creating one...")
+		slog.Info("subscription does not exist, creating one...", slog.String("topic", topic))
 		gcpTopic := client.Topic(topic)
 		exists, err = gcpTopic.Exists(ctx)
 		if !exists || err != nil {
@@ -101,7 +101,7 @@ func StartSubscriber(ctx context.Context) {
 
 					msg.EmitIngestionLag(ctx, subName, tableName)
 					if processErr != nil {
-						slog.With(slog.Any("err", processErr)).With(logFields...).Warn("skipping message...")
+						slog.With(logFields...).Warn("skipping message...", slog.Any("err", processErr))
 					}
 				})
 
