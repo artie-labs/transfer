@@ -21,7 +21,7 @@ func (u *UtilTestSuite) TestGetOptionalSchema() {
 	}
 
 	for _, tc := range tcs {
-		actualData := tc.s.GetOptionalSchema(u.ctx)
+		actualData := tc.s.GetOptionalSchema()
 		assert.Equal(u.T(), tc.expected, actualData, tc.name)
 	}
 }

@@ -1,7 +1,6 @@
 package util
 
 import (
-	"context"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -42,7 +41,7 @@ func (s *SchemaEventPayload) Tombstone() {
 	s.Payload.Source.TsMs = time.Now().UnixMilli()
 }
 
-func (s *SchemaEventPayload) GetColumns(ctx context.Context) *columns.Columns {
+func (s *SchemaEventPayload) GetColumns() *columns.Columns {
 	fieldsObject := s.Schema.GetSchemaFromLabel(cdc.After)
 	if fieldsObject == nil {
 		// AFTER schema does not exist.
@@ -54,7 +53,7 @@ func (s *SchemaEventPayload) GetColumns(ctx context.Context) *columns.Columns {
 		// We are purposefully doing this to ensure that the correct typing is set
 		// When we invoke event.Save()
 		col := columns.NewColumn(columns.EscapeName(field.FieldName), typing.Invalid)
-		col.SetDefaultValue(parseField(ctx, field, field.Default))
+		col.SetDefaultValue(parseField(field, field.Default))
 		cols.AddColumn(col)
 	}
 
@@ -77,7 +76,7 @@ func (s *SchemaEventPayload) GetTableName() string {
 	return s.Payload.Source.Table
 }
 
-func (s *SchemaEventPayload) GetData(ctx context.Context, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
+func (s *SchemaEventPayload) GetData(pkMap map[string]interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
 	var retMap map[string]interface{}
 	if len(s.Payload.After) == 0 {
 		// This is a delete payload, so mark it as deleted.
@@ -118,7 +117,7 @@ func (s *SchemaEventPayload) GetData(ctx context.Context, pkMap map[string]inter
 				continue
 			}
 
-			retMap[field.FieldName] = parseField(ctx, field, retMap[field.FieldName])
+			retMap[field.FieldName] = parseField(field, retMap[field.FieldName])
 		}
 	}
 

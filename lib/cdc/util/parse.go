@@ -1,7 +1,6 @@
 package util
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -13,7 +12,7 @@ import (
 )
 
 // ParseField returns a `parsedValue` as type interface{}
-func parseField(ctx context.Context, field debezium.Field, value interface{}) interface{} {
+func parseField(field debezium.Field, value interface{}) interface{} {
 	if value == nil {
 		return nil
 	}

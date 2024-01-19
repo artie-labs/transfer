@@ -1,7 +1,6 @@
 package parquetutil
 
 import (
-	"context"
 	"encoding/json"
 
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -9,7 +8,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func GenerateJSONSchema(ctx context.Context, columns []columns.Column) (string, error) {
+func GenerateJSONSchema(columns []columns.Column) (string, error) {
 	var fields []typing.Field
 	for _, column := range columns {
 		// We don't need to escape the column name here.

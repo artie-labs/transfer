@@ -1,7 +1,6 @@
 package util
 
 import (
-	"context"
 	"encoding/json"
 	"io"
 	"math/big"
@@ -11,8 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-
-	"github.com/artie-labs/transfer/lib/config"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -27,7 +24,7 @@ func TestSchemaEventPayload_MiscNumbers_GetData(t *testing.T) {
 	err = json.Unmarshal(bytes, &schemaEventPayload)
 	assert.NoError(t, err)
 
-	retMap := schemaEventPayload.GetData(context.Background(), nil, &kafkalib.TopicConfig{})
+	retMap := schemaEventPayload.GetData(nil, &kafkalib.TopicConfig{})
 	assert.Equal(t, retMap["smallint_test"], 1)
 	assert.Equal(t, retMap["smallserial_test"], 2)
 	assert.Equal(t, retMap["int_test"], 3)
@@ -46,7 +43,7 @@ func TestSchemaEventPayload_Numeric_GetData(t *testing.T) {
 	var schemaEventPayload SchemaEventPayload
 	err = json.Unmarshal(bytes, &schemaEventPayload)
 	assert.NoError(t, err)
-	retMap := schemaEventPayload.GetData(context.Background(), nil, &kafkalib.TopicConfig{})
+	retMap := schemaEventPayload.GetData(nil, &kafkalib.TopicConfig{})
 
 	assert.Equal(t, "123456.789", retMap["numeric_test"].(*decimal.Decimal).Value())
 	assert.Equal(t, 0, big.NewFloat(1234).Cmp(retMap["numeric_5"].(*decimal.Decimal).Value().(*big.Float)))
@@ -75,12 +72,10 @@ func TestSchemaEventPayload_Decimal_GetData(t *testing.T) {
 	bytes, err := io.ReadAll(file)
 	assert.NoError(t, err)
 
-	ctx := context.Background()
-	ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{Config: nil, VerboseLogging: true})
 	var schemaEventPayload SchemaEventPayload
 	err = json.Unmarshal(bytes, &schemaEventPayload)
 	assert.NoError(t, err)
-	retMap := schemaEventPayload.GetData(ctx, nil, &kafkalib.TopicConfig{})
+	retMap := schemaEventPayload.GetData(nil, &kafkalib.TopicConfig{})
 	assert.Equal(t, "123.45", retMap["decimal_test"].(*decimal.Decimal).Value())
 	decimalWithScaleMap := map[string]string{
 		"decimal_test_5":   "123",
@@ -106,12 +101,10 @@ func TestSchemaEventPayload_Money_GetData(t *testing.T) {
 	bytes, err := io.ReadAll(file)
 	assert.NoError(t, err)
 
-	ctx := context.Background()
-	ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{Config: nil, VerboseLogging: true})
 	var schemaEventPayload SchemaEventPayload
 	err = json.Unmarshal(bytes, &schemaEventPayload)
 	assert.NoError(t, err)
-	retMap := schemaEventPayload.GetData(ctx, nil, &kafkalib.TopicConfig{})
+	retMap := schemaEventPayload.GetData(nil, &kafkalib.TopicConfig{})
 
 	decimalWithScaleMap := map[string]string{
 		"money_test": "123456.78",

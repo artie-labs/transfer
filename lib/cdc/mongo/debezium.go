@@ -129,12 +129,12 @@ func (s *SchemaEventPayload) GetTableName() string {
 	return s.Payload.Source.Collection
 }
 
-func (s *SchemaEventPayload) GetOptionalSchema(ctx context.Context) map[string]typing.KindDetails {
+func (s *SchemaEventPayload) GetOptionalSchema() map[string]typing.KindDetails {
 	// MongoDB does not have a schema at the database level.
 	return nil
 }
 
-func (s *SchemaEventPayload) GetColumns(ctx context.Context) *columns.Columns {
+func (s *SchemaEventPayload) GetColumns() *columns.Columns {
 	fieldsObject := s.Schema.GetSchemaFromLabel(cdc.After)
 	if fieldsObject == nil {
 		// AFTER schema does not exist.
@@ -151,7 +151,7 @@ func (s *SchemaEventPayload) GetColumns(ctx context.Context) *columns.Columns {
 	return &cols
 }
 
-func (s *SchemaEventPayload) GetData(ctx context.Context, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
+func (s *SchemaEventPayload) GetData(pkMap map[string]interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
 	if len(s.Payload.AfterMap) == 0 {
 		// This is a delete event, so mark it as deleted.
 		// And we need to reconstruct the data bit since it will be empty.

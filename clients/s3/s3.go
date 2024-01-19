@@ -82,7 +82,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		cols = append(cols, col)
 	}
 
-	schema, err := parquetutil.GenerateJSONSchema(ctx, cols)
+	schema, err := parquetutil.GenerateJSONSchema(cols)
 	if err != nil {
 		return fmt.Errorf("failed to generate parquet schema, err: %v", err)
 	}

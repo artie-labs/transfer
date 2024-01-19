@@ -1,14 +1,13 @@
 package util
 
 import (
-	"context"
 	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (s *SchemaEventPayload) GetOptionalSchema(ctx context.Context) map[string]typing.KindDetails {
+func (s *SchemaEventPayload) GetOptionalSchema() map[string]typing.KindDetails {
 	fieldsObject := s.Schema.GetSchemaFromLabel(cdc.After)
 	if fieldsObject == nil {
 		// AFTER schema does not exist.

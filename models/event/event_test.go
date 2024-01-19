@@ -35,15 +35,15 @@ func (f fakeEvent) GetTableName() string {
 	return "foo"
 }
 
-func (f fakeEvent) GetOptionalSchema(ctx context.Context) map[string]typing.KindDetails {
+func (f fakeEvent) GetOptionalSchema() map[string]typing.KindDetails {
 	return nil
 }
 
-func (f fakeEvent) GetColumns(ctx context.Context) *columns.Columns {
+func (f fakeEvent) GetColumns() *columns.Columns {
 	return &columns.Columns{}
 }
 
-func (f fakeEvent) GetData(ctx context.Context, pkMap map[string]interface{}, config *kafkalib.TopicConfig) map[string]interface{} {
+func (f fakeEvent) GetData(pkMap map[string]interface{}, config *kafkalib.TopicConfig) map[string]interface{} {
 	return map[string]interface{}{constants.DeleteColumnMarker: false}
 }
 
