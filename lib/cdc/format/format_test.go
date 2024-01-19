@@ -21,7 +21,7 @@ func TestGetFormatParser(t *testing.T) {
 
 	validFormats := []string{constants.DBZPostgresAltFormat, constants.DBZPostgresFormat, constants.DBZMongoFormat}
 	for _, validFormat := range validFormats {
-		assert.NotNil(t, GetFormatParser(ctx, validFormat, "topicA"))
+		assert.NotNil(t, GetFormatParser(validFormat, "topicA"))
 	}
 }
 
@@ -44,6 +44,6 @@ func testOsExit(t *testing.T, testFunc func(*testing.T)) {
 func TestGetFormatParserFatal(t *testing.T) {
 	// This test cannot be iterated because it forks a separate process to do `go test -test.run=...`
 	testOsExit(t, func(t *testing.T) {
-		GetFormatParser(context.Background(), "foo", "topicB")
+		GetFormatParser("foo", "topicB")
 	})
 }

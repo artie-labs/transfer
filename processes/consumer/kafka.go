@@ -89,7 +89,7 @@ func StartConsumer(ctx context.Context) {
 	for _, topicConfig := range settings.Config.Kafka.TopicConfigs {
 		tcFmtMap.Add(topicConfig.Topic, TopicConfigFormatter{
 			tc:     topicConfig,
-			Format: format.GetFormatParser(ctx, topicConfig.CDCFormat, topicConfig.Topic),
+			Format: format.GetFormatParser(topicConfig.CDCFormat, topicConfig.Topic),
 		})
 		topics = append(topics, topicConfig.Topic)
 	}

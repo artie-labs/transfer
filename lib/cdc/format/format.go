@@ -1,7 +1,6 @@
 package format
 
 import (
-	"context"
 	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/cdc/mysql"
@@ -18,7 +17,7 @@ var (
 	mySQL mysql.Debezium
 )
 
-func GetFormatParser(ctx context.Context, label, topic string) cdc.Format {
+func GetFormatParser(label, topic string) cdc.Format {
 	validFormats := []cdc.Format{
 		&d, &m, &mySQL,
 	}
