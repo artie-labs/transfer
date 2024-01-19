@@ -20,7 +20,7 @@ func (d *DatadogTestSuite) TestGetTags() {
 }
 
 func (d *DatadogTestSuite) TestNewDatadogClient() {
-	client, err := NewDatadogClient(d.ctx, map[string]interface{}{
+	client, err := NewDatadogClient(map[string]interface{}{
 		Tags: []string{
 			"env:production",
 		},

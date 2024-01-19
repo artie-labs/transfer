@@ -34,7 +34,7 @@ func LoadExporter(ctx context.Context) context.Context {
 
 	switch kind {
 	case constants.Datadog:
-		statsClient, exportErr := datadog.NewDatadogClient(ctx, ddSettings)
+		statsClient, exportErr := datadog.NewDatadogClient(ddSettings)
 		if exportErr != nil {
 			slog.Error("Metrics client error", slog.Any("err", exportErr), slog.Any("provider", kind))
 		} else {

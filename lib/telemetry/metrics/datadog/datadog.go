@@ -1,7 +1,6 @@
 package datadog
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -46,7 +45,7 @@ func getSampleRate(val interface{}) float64 {
 	return floatVal
 }
 
-func NewDatadogClient(ctx context.Context, settings map[string]interface{}) (base.Client, error) {
+func NewDatadogClient(settings map[string]interface{}) (base.Client, error) {
 	address := fmt.Sprint(maputil.GetKeyFromMap(settings, DatadogAddr, DefaultAddr))
 	host := os.Getenv("TELEMETRY_HOST")
 	port := os.Getenv("TELEMETRY_PORT")
