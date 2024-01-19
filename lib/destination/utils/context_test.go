@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/artie-labs/transfer/clients/snowflake"
@@ -14,7 +16,11 @@ import (
 )
 
 func TestInjectDwhIntoCtx(t *testing.T) {
-	ctx := context.Background()
+	ctx := config.InjectSettingsIntoContext(context.Background(), &config.Settings{
+		Config: &config.Config{
+			SharedDestinationConfig: config.SharedDestinationConfig{UppercaseEscapedNames: true},
+		},
+	})
 
 	store := db.Store(&mock.DB{
 		Fake: mocks.FakeStore{},

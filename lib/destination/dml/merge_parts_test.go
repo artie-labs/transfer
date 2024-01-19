@@ -2,6 +2,7 @@ package dml
 
 import (
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/typing"
@@ -71,12 +72,13 @@ func (m *MergeTestSuite) TestMergeStatementParts_SkipDelete() {
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(false, false)
 	mergeArg := &MergeArgument{
-		FqTableName:    fqTableName,
-		SubQuery:       tempTableName,
-		PrimaryKeys:    res.PrimaryKeys,
-		ColumnsToTypes: res.ColumnsToTypes,
-		DestKind:       constants.Redshift,
-		SkipDelete:     true,
+		FqTableName:       fqTableName,
+		SubQuery:          tempTableName,
+		PrimaryKeys:       res.PrimaryKeys,
+		ColumnsToTypes:    res.ColumnsToTypes,
+		DestKind:          constants.Redshift,
+		SkipDelete:        true,
+		UppercaseEscNames: ptr.ToBool(false),
 	}
 
 	parts, err := mergeArg.GetParts()
@@ -97,12 +99,13 @@ func (m *MergeTestSuite) TestMergeStatementPartsSoftDelete() {
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(false, false)
 	mergeArg := &MergeArgument{
-		FqTableName:    fqTableName,
-		SubQuery:       tempTableName,
-		PrimaryKeys:    res.PrimaryKeys,
-		ColumnsToTypes: res.ColumnsToTypes,
-		DestKind:       constants.Redshift,
-		SoftDelete:     true,
+		FqTableName:       fqTableName,
+		SubQuery:          tempTableName,
+		PrimaryKeys:       res.PrimaryKeys,
+		ColumnsToTypes:    res.ColumnsToTypes,
+		DestKind:          constants.Redshift,
+		SoftDelete:        true,
+		UppercaseEscNames: ptr.ToBool(false),
 	}
 
 	parts, err := mergeArg.GetParts()
@@ -135,12 +138,13 @@ func (m *MergeTestSuite) TestMergeStatementPartsSoftDeleteComposite() {
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(true, false)
 	mergeArg := &MergeArgument{
-		FqTableName:    fqTableName,
-		SubQuery:       tempTableName,
-		PrimaryKeys:    res.PrimaryKeys,
-		ColumnsToTypes: res.ColumnsToTypes,
-		DestKind:       constants.Redshift,
-		SoftDelete:     true,
+		FqTableName:       fqTableName,
+		SubQuery:          tempTableName,
+		PrimaryKeys:       res.PrimaryKeys,
+		ColumnsToTypes:    res.ColumnsToTypes,
+		DestKind:          constants.Redshift,
+		SoftDelete:        true,
+		UppercaseEscNames: ptr.ToBool(false),
 	}
 
 	parts, err := mergeArg.GetParts()
@@ -176,11 +180,12 @@ func (m *MergeTestSuite) TestMergeStatementParts() {
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(false, false)
 	mergeArg := &MergeArgument{
-		FqTableName:    fqTableName,
-		SubQuery:       tempTableName,
-		PrimaryKeys:    res.PrimaryKeys,
-		ColumnsToTypes: res.ColumnsToTypes,
-		DestKind:       constants.Redshift,
+		FqTableName:       fqTableName,
+		SubQuery:          tempTableName,
+		PrimaryKeys:       res.PrimaryKeys,
+		ColumnsToTypes:    res.ColumnsToTypes,
+		DestKind:          constants.Redshift,
+		UppercaseEscNames: ptr.ToBool(false),
 	}
 
 	parts, err := mergeArg.GetParts()
@@ -200,12 +205,13 @@ func (m *MergeTestSuite) TestMergeStatementParts() {
 		parts[2])
 
 	mergeArg = &MergeArgument{
-		FqTableName:    fqTableName,
-		SubQuery:       tempTableName,
-		PrimaryKeys:    res.PrimaryKeys,
-		ColumnsToTypes: res.ColumnsToTypes,
-		DestKind:       constants.Redshift,
-		IdempotentKey:  "created_at",
+		FqTableName:       fqTableName,
+		SubQuery:          tempTableName,
+		PrimaryKeys:       res.PrimaryKeys,
+		ColumnsToTypes:    res.ColumnsToTypes,
+		DestKind:          constants.Redshift,
+		IdempotentKey:     "created_at",
+		UppercaseEscNames: ptr.ToBool(false),
 	}
 
 	parts, err = mergeArg.GetParts()
@@ -230,11 +236,12 @@ func (m *MergeTestSuite) TestMergeStatementPartsCompositeKey() {
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(true, false)
 	mergeArg := &MergeArgument{
-		FqTableName:    fqTableName,
-		SubQuery:       tempTableName,
-		PrimaryKeys:    res.PrimaryKeys,
-		ColumnsToTypes: res.ColumnsToTypes,
-		DestKind:       constants.Redshift,
+		FqTableName:       fqTableName,
+		SubQuery:          tempTableName,
+		PrimaryKeys:       res.PrimaryKeys,
+		ColumnsToTypes:    res.ColumnsToTypes,
+		DestKind:          constants.Redshift,
+		UppercaseEscNames: ptr.ToBool(false),
 	}
 
 	parts, err := mergeArg.GetParts()
@@ -254,12 +261,13 @@ func (m *MergeTestSuite) TestMergeStatementPartsCompositeKey() {
 		parts[2])
 
 	mergeArg = &MergeArgument{
-		FqTableName:    fqTableName,
-		SubQuery:       tempTableName,
-		PrimaryKeys:    res.PrimaryKeys,
-		ColumnsToTypes: res.ColumnsToTypes,
-		DestKind:       constants.Redshift,
-		IdempotentKey:  "created_at",
+		FqTableName:       fqTableName,
+		SubQuery:          tempTableName,
+		PrimaryKeys:       res.PrimaryKeys,
+		ColumnsToTypes:    res.ColumnsToTypes,
+		DestKind:          constants.Redshift,
+		IdempotentKey:     "created_at",
+		UppercaseEscNames: ptr.ToBool(false),
 	}
 
 	parts, err = mergeArg.GetParts()

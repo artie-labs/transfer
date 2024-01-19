@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/ptr"
+
 	"github.com/artie-labs/transfer/lib/config"
 
 	artieSQL "github.com/artie-labs/transfer/lib/sql"
@@ -61,6 +63,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 			ColumnOp:               constants.Delete,
 			ContainOtherOperations: true,
 			CdcTime:                ts,
+			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
@@ -83,6 +86,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 			ColumnOp:               constants.Delete,
 			ContainOtherOperations: true,
 			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
+			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
@@ -135,12 +139,13 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
 	for name, kind := range newCols {
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:         d.bigQueryStore,
-			Tc:          tc,
-			FqTableName: fqName,
-			CreateTable: tc.CreateTable(),
-			ColumnOp:    constants.Add,
-			CdcTime:     ts,
+			Dwh:               d.bigQueryStore,
+			Tc:                tc,
+			FqTableName:       fqName,
+			CreateTable:       tc.CreateTable(),
+			ColumnOp:          constants.Add,
+			CdcTime:           ts,
+			UppercaseEscNames: ptr.ToBool(false),
 		}
 
 		col := columns.NewColumn(name, kind)
@@ -198,12 +203,13 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 		// BQ returning the same error because the column already exists.
 		d.fakeBigQueryStore.ExecReturnsOnCall(0, sqlResult, errors.New("Column already exists: _string at [1:39]"))
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:         d.bigQueryStore,
-			Tc:          tc,
-			FqTableName: fqName,
-			CreateTable: tc.CreateTable(),
-			ColumnOp:    constants.Add,
-			CdcTime:     ts,
+			Dwh:               d.bigQueryStore,
+			Tc:                tc,
+			FqTableName:       fqName,
+			CreateTable:       tc.CreateTable(),
+			ColumnOp:          constants.Add,
+			CdcTime:           ts,
+			UppercaseEscNames: ptr.ToBool(false),
 		}
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
 		assert.NoError(d.T(), err)
@@ -254,12 +260,13 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumnsToDelete())
 	for _, column := range cols.GetColumns() {
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:         d.bigQueryStore,
-			Tc:          tc,
-			FqTableName: fqName,
-			CreateTable: tc.CreateTable(),
-			ColumnOp:    constants.Delete,
-			CdcTime:     ts,
+			Dwh:               d.bigQueryStore,
+			Tc:                tc,
+			FqTableName:       fqName,
+			CreateTable:       tc.CreateTable(),
+			ColumnOp:          constants.Delete,
+			CdcTime:           ts,
+			UppercaseEscNames: ptr.ToBool(false),
 		}
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
 		assert.NoError(d.T(), err)
@@ -271,12 +278,13 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 	// Now try to delete again and with an increased TS. It should now be all deleted.
 	for _, column := range cols.GetColumns() {
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:         d.bigQueryStore,
-			Tc:          tc,
-			FqTableName: fqName,
-			CreateTable: tc.CreateTable(),
-			ColumnOp:    constants.Delete,
-			CdcTime:     ts.Add(2 * constants.DeletionConfidencePadding),
+			Dwh:               d.bigQueryStore,
+			Tc:                tc,
+			FqTableName:       fqName,
+			CreateTable:       tc.CreateTable(),
+			ColumnOp:          constants.Delete,
+			CdcTime:           ts.Add(2 * constants.DeletionConfidencePadding),
+			UppercaseEscNames: ptr.ToBool(false),
 		}
 
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
