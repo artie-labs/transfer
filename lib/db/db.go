@@ -65,7 +65,6 @@ func Open(ctx context.Context, driverName, dsn string) Store {
 	if err != nil {
 		logger.Fatal("Failed to start a SQL client",
 			slog.String("driverName", driverName),
-			slog.String("dsn", dsn),
 			slog.Any("err", err),
 		)
 	}
@@ -74,7 +73,6 @@ func Open(ctx context.Context, driverName, dsn string) Store {
 	if err != nil {
 		logger.Fatal("Failed to validate the DB connection",
 			slog.String("driverName", driverName),
-			slog.String("dsn", dsn),
 			slog.Any("err", err),
 		)
 	}
