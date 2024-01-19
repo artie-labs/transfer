@@ -28,17 +28,18 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	log := logger.FromContext(ctx)
-	fqName := tableData.ToFqName(ctx, s.Label(), true, "")
+	fqName := tableData.ToFqName(s.Label(), true, s.uppercaseEscNames, "")
 	// Check if all the columns exist in Redshift
 	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
 		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt)
 	createAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:         s,
-		Tc:          tableConfig,
-		FqTableName: fqName,
-		CreateTable: tableConfig.CreateTable(),
-		ColumnOp:    constants.Add,
-		CdcTime:     tableData.LatestCDCTs,
+		Dwh:               s,
+		Tc:                tableConfig,
+		FqTableName:       fqName,
+		CreateTable:       tableConfig.CreateTable(),
+		ColumnOp:          constants.Add,
+		CdcTime:           tableData.LatestCDCTs,
+		UppercaseEscNames: &s.uppercaseEscNames,
 	}
 
 	// Keys that exist in CDC stream, but not in Redshift
@@ -59,6 +60,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		ColumnOp:               constants.Delete,
 		ContainOtherOperations: tableData.ContainOtherOperations(),
 		CdcTime:                tableData.LatestCDCTs,
+		UppercaseEscNames:      &s.uppercaseEscNames,
 	}
 
 	err = ddl.AlterTable(ctx, deleteAlterTableArgs, srcKeysMissing...)
@@ -71,7 +73,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 
 	// Temporary tables cannot specify schemas, so we just prefix it instead.
-	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label(), false, ""), tableData.TempTableSuffix())
+	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.uppercaseEscNames, ""), tableData.TempTableSuffix())
 	if err = s.prepareTempTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {
 		return err
 	}
@@ -92,23 +94,22 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		})
 	}
 
-	// Prepare merge statement
-	mergeParts, err := dml.MergeStatementParts(ctx, &dml.MergeArgument{
+	mergArg := dml.MergeArgument{
 		FqTableName: fqName,
 		// We are adding SELECT DISTINCT here for the temporary table as an extra guardrail.
 		// Redshift does not enforce any row uniqueness and there could be potential LOAD errors which will cause duplicate rows to arise.
-		SubQuery:      fmt.Sprintf(`( SELECT DISTINCT *  FROM %s )`, temporaryTableName),
-		IdempotentKey: tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys: tableData.PrimaryKeys(ctx, &sql.NameArgs{
-			Escape:   true,
-			DestKind: s.Label(),
-		}),
-		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
-		SkipDelete:     tableData.TopicConfig.SkipDelete,
-		SoftDelete:     tableData.TopicConfig.SoftDelete,
-		DestKind:       s.Label(),
-	})
+		SubQuery:          fmt.Sprintf(`( SELECT DISTINCT *  FROM %s )`, temporaryTableName),
+		IdempotentKey:     tableData.TopicConfig.IdempotentKey,
+		PrimaryKeys:       tableData.PrimaryKeys(s.uppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: s.Label()}),
+		ColumnsToTypes:    *tableData.ReadOnlyInMemoryCols(),
+		SkipDelete:        tableData.TopicConfig.SkipDelete,
+		SoftDelete:        tableData.TopicConfig.SoftDelete,
+		DestKind:          s.Label(),
+		UppercaseEscNames: &s.uppercaseEscNames,
+	}
 
+	// Prepare merge statement
+	mergeParts, err := mergArg.GetParts()
 	if err != nil {
 		return fmt.Errorf("failed to generate merge statement, err: %v", err)
 	}

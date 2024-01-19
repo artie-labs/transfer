@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/ptr"
+
 	"github.com/artie-labs/transfer/lib/config"
 
 	artieSQL "github.com/artie-labs/transfer/lib/sql"
@@ -45,7 +47,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	}
 
 	bqProjectID := config.FromContext(d.bqCtx).Config.BigQuery.ProjectID
-	fqName := td.ToFqName(d.bqCtx, constants.BigQuery, true, bqProjectID)
+	fqName := td.ToFqName(d.bigQueryStore.Label(), true, false, bqProjectID)
 	originalColumnLength := len(cols.GetColumns())
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, true))
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
@@ -61,6 +63,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 			ColumnOp:               constants.Delete,
 			ContainOtherOperations: true,
 			CdcTime:                ts,
+			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
@@ -83,12 +86,13 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 			ColumnOp:               constants.Delete,
 			ContainOtherOperations: true,
 			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
+			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
 
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s drop COLUMN %s", fqName, column.Name(d.ctx, &artieSQL.NameArgs{
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s drop COLUMN %s", fqName, column.Name(false, &artieSQL.NameArgs{
 			Escape:   true,
 			DestKind: d.bigQueryStore.Label(),
 		})), query)
@@ -135,12 +139,13 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
 	for name, kind := range newCols {
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:         d.bigQueryStore,
-			Tc:          tc,
-			FqTableName: fqName,
-			CreateTable: tc.CreateTable(),
-			ColumnOp:    constants.Add,
-			CdcTime:     ts,
+			Dwh:               d.bigQueryStore,
+			Tc:                tc,
+			FqTableName:       fqName,
+			CreateTable:       tc.CreateTable(),
+			ColumnOp:          constants.Add,
+			CdcTime:           ts,
+			UppercaseEscNames: ptr.ToBool(false),
 		}
 
 		col := columns.NewColumn(name, kind)
@@ -148,7 +153,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, col)
 		assert.NoError(d.T(), err)
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, col.Name(d.ctx, &artieSQL.NameArgs{
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, col.Name(false, &artieSQL.NameArgs{
 			Escape:   true,
 			DestKind: d.bigQueryStore.Label(),
 		}),
@@ -198,17 +203,18 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 		// BQ returning the same error because the column already exists.
 		d.fakeBigQueryStore.ExecReturnsOnCall(0, sqlResult, errors.New("Column already exists: _string at [1:39]"))
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:         d.bigQueryStore,
-			Tc:          tc,
-			FqTableName: fqName,
-			CreateTable: tc.CreateTable(),
-			ColumnOp:    constants.Add,
-			CdcTime:     ts,
+			Dwh:               d.bigQueryStore,
+			Tc:                tc,
+			FqTableName:       fqName,
+			CreateTable:       tc.CreateTable(),
+			ColumnOp:          constants.Add,
+			CdcTime:           ts,
+			UppercaseEscNames: ptr.ToBool(false),
 		}
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
 		assert.NoError(d.T(), err)
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, column.Name(d.ctx, &artieSQL.NameArgs{
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, column.Name(false, &artieSQL.NameArgs{
 			Escape:   true,
 			DestKind: d.bigQueryStore.Label(),
 		}), typing.KindToDWHType(column.KindDetails, d.bigQueryStore.Label())), query)
@@ -245,7 +251,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 	}
 
 	bqProjectID := config.FromContext(d.bqCtx).Config.BigQuery.ProjectID
-	fqName := td.ToFqName(d.bqCtx, constants.BigQuery, true, bqProjectID)
+	fqName := td.ToFqName(d.bigQueryStore.Label(), true, false, bqProjectID)
 	originalColumnLength := len(columnNameToKindDetailsMap)
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, false))
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
@@ -254,12 +260,13 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumnsToDelete())
 	for _, column := range cols.GetColumns() {
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:         d.bigQueryStore,
-			Tc:          tc,
-			FqTableName: fqName,
-			CreateTable: tc.CreateTable(),
-			ColumnOp:    constants.Delete,
-			CdcTime:     ts,
+			Dwh:               d.bigQueryStore,
+			Tc:                tc,
+			FqTableName:       fqName,
+			CreateTable:       tc.CreateTable(),
+			ColumnOp:          constants.Delete,
+			CdcTime:           ts,
+			UppercaseEscNames: ptr.ToBool(false),
 		}
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)
 		assert.NoError(d.T(), err)
@@ -271,12 +278,13 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 	// Now try to delete again and with an increased TS. It should now be all deleted.
 	for _, column := range cols.GetColumns() {
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:         d.bigQueryStore,
-			Tc:          tc,
-			FqTableName: fqName,
-			CreateTable: tc.CreateTable(),
-			ColumnOp:    constants.Delete,
-			CdcTime:     ts.Add(2 * constants.DeletionConfidencePadding),
+			Dwh:               d.bigQueryStore,
+			Tc:                tc,
+			FqTableName:       fqName,
+			CreateTable:       tc.CreateTable(),
+			ColumnOp:          constants.Delete,
+			CdcTime:           ts.Add(2 * constants.DeletionConfidencePadding),
+			UppercaseEscNames: ptr.ToBool(false),
 		}
 
 		err := ddl.AlterTable(d.bqCtx, alterTableArgs, column)

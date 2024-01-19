@@ -33,13 +33,13 @@ func (r *Row) Save() (map[string]bigquery.Value, string, error) {
 	return r.data, bigquery.NoDedupeID, nil
 }
 
-func merge(ctx context.Context, tableData *optimization.TableData) ([]*Row, error) {
+func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) ([]*Row, error) {
 	var rows []*Row
 
 	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
 	for _, value := range tableData.RowsData() {
 		data := make(map[string]bigquery.Value)
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(ctx, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.uppercaseEscNames, nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal, err := castColVal(value[col], colKind, additionalDateFmts)
 			if err != nil {
@@ -72,7 +72,7 @@ func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTab
 		return fmt.Errorf("failed to escape default value, err: %v", err)
 	}
 
-	escapedCol := column.Name(ctx, &sql.NameArgs{Escape: true, DestKind: s.Label()})
+	escapedCol := column.Name(s.uppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: s.Label()})
 	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
 		// UPDATE table SET col = default_val WHERE col IS NULL
 		fqTableName, escapedCol, defaultVal, escapedCol)
@@ -112,14 +112,15 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(),
 		tableConfig.Columns(), tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt)
 
-	fqName := tableData.ToFqName(ctx, s.Label(), true, s.projectID)
+	fqName := tableData.ToFqName(s.Label(), true, s.uppercaseEscNames, s.projectID)
 	createAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:         s,
-		Tc:          tableConfig,
-		FqTableName: fqName,
-		CreateTable: tableConfig.CreateTable(),
-		ColumnOp:    constants.Add,
-		CdcTime:     tableData.LatestCDCTs,
+		Dwh:               s,
+		Tc:                tableConfig,
+		FqTableName:       fqName,
+		CreateTable:       tableConfig.CreateTable(),
+		ColumnOp:          constants.Add,
+		CdcTime:           tableData.LatestCDCTs,
+		UppercaseEscNames: &s.uppercaseEscNames,
 	}
 
 	// Keys that exist in CDC stream, but not in BigQuery
@@ -140,6 +141,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		ColumnOp:               constants.Delete,
 		ContainOtherOperations: tableData.ContainOtherOperations(),
 		CdcTime:                tableData.LatestCDCTs,
+		UppercaseEscNames:      &s.uppercaseEscNames,
 	}
 
 	err = ddl.AlterTable(ctx, deleteAlterTableArgs, srcKeysMissing...)
@@ -155,12 +157,13 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	// Start temporary table creation
 	tempAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:            s,
-		Tc:             tableConfig,
-		FqTableName:    fmt.Sprintf("%s_%s", tableData.ToFqName(ctx, s.Label(), false, s.projectID), tableData.TempTableSuffix()),
-		CreateTable:    true,
-		TemporaryTable: true,
-		ColumnOp:       constants.Add,
+		Dwh:               s,
+		Tc:                tableConfig,
+		FqTableName:       fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.uppercaseEscNames, s.projectID), tableData.TempTableSuffix()),
+		CreateTable:       true,
+		TemporaryTable:    true,
+		ColumnOp:          constants.Add,
+		UppercaseEscNames: &s.uppercaseEscNames,
 	}
 
 	if err = ddl.AlterTable(ctx, tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
@@ -196,7 +199,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	// Perform actual merge now
-	rows, err := merge(ctx, tableData)
+	rows, err := s.merge(ctx, tableData)
 	if err != nil {
 		log.WithError(err).Warn("failed to generate the merge query")
 		return err
@@ -225,20 +228,19 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		additionalEqualityStrings = []string{mergeString}
 	}
 
-	mergeQuery, err := dml.MergeStatement(ctx, &dml.MergeArgument{
+	mergeArg := dml.MergeArgument{
 		FqTableName:               fqName,
 		AdditionalEqualityStrings: additionalEqualityStrings,
 		SubQuery:                  tempAlterTableArgs.FqTableName,
 		IdempotentKey:             tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys: tableData.PrimaryKeys(ctx, &sql.NameArgs{
-			Escape:   true,
-			DestKind: s.Label(),
-		}),
-		ColumnsToTypes: *tableData.ReadOnlyInMemoryCols(),
-		SoftDelete:     tableData.TopicConfig.SoftDelete,
-		DestKind:       s.Label(),
-	})
+		PrimaryKeys:               tableData.PrimaryKeys(s.uppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: s.Label()}),
+		ColumnsToTypes:            *tableData.ReadOnlyInMemoryCols(),
+		SoftDelete:                tableData.TopicConfig.SoftDelete,
+		DestKind:                  s.Label(),
+		UppercaseEscNames:         &s.uppercaseEscNames,
+	}
 
+	mergeQuery, err := mergeArg.GetStatement()
 	if err != nil {
 		return err
 	}

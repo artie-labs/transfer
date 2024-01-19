@@ -3,6 +3,8 @@ package ddl_test
 import (
 	"time"
 
+	"github.com/artie-labs/transfer/lib/ptr"
+
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -14,8 +16,9 @@ import (
 
 func (d *DDLTestSuite) TestValidate_AlterTableArgs() {
 	a := &ddl.AlterTableArgs{
-		ColumnOp:    constants.Delete,
-		CreateTable: true,
+		ColumnOp:          constants.Delete,
+		CreateTable:       true,
+		UppercaseEscNames: ptr.ToBool(false),
 	}
 
 	assert.Contains(d.T(), a.Validate().Error(), "incompatible operation - cannot drop columns and create table at the same time")
@@ -31,13 +34,14 @@ func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	snowflakeTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqName)
 	args := ddl.AlterTableArgs{
-		Dwh:            d.snowflakeStagesStore,
-		Tc:             snowflakeTc,
-		FqTableName:    fqName,
-		CreateTable:    true,
-		TemporaryTable: true,
-		ColumnOp:       constants.Add,
-		CdcTime:        time.Time{},
+		Dwh:               d.snowflakeStagesStore,
+		Tc:                snowflakeTc,
+		FqTableName:       fqName,
+		CreateTable:       true,
+		TemporaryTable:    true,
+		ColumnOp:          constants.Add,
+		CdcTime:           time.Time{},
+		UppercaseEscNames: ptr.ToBool(false),
 	}
 
 	err := ddl.AlterTable(d.ctx, args)
@@ -64,13 +68,14 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	sflkStageTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqName)
 	args := ddl.AlterTableArgs{
-		Dwh:            d.snowflakeStagesStore,
-		Tc:             sflkStageTc,
-		FqTableName:    fqName,
-		CreateTable:    true,
-		TemporaryTable: true,
-		ColumnOp:       constants.Add,
-		CdcTime:        time.Time{},
+		Dwh:               d.snowflakeStagesStore,
+		Tc:                sflkStageTc,
+		FqTableName:       fqName,
+		CreateTable:       true,
+		TemporaryTable:    true,
+		ColumnOp:          constants.Add,
+		CdcTime:           time.Time{},
+		UppercaseEscNames: ptr.ToBool(false),
 	}
 
 	err := ddl.AlterTable(d.ctx, args, columns.NewColumn("foo", typing.String), columns.NewColumn("bar", typing.Float), columns.NewColumn("start", typing.String))

@@ -1,12 +1,9 @@
 package sql
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"strings"
-
-	"github.com/artie-labs/transfer/lib/config"
 
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -20,7 +17,7 @@ type NameArgs struct {
 // symbolsToEscape are additional keywords that we need to escape
 var symbolsToEscape = []string{":"}
 
-func EscapeName(ctx context.Context, name string, args *NameArgs) string {
+func EscapeName(name string, uppercaseEscNames bool, args *NameArgs) string {
 	if args == nil {
 		return name
 	}
@@ -52,7 +49,7 @@ func EscapeName(ctx context.Context, name string, args *NameArgs) string {
 	}
 
 	if args.Escape && needsEscaping {
-		if config.FromContext(ctx).Config.SharedDestinationConfig.UppercaseEscapedNames {
+		if uppercaseEscNames {
 			name = strings.ToUpper(name)
 		}
 

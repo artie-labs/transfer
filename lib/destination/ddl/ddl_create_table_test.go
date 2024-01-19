@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/ptr"
+
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -42,11 +44,12 @@ func (d *DDLTestSuite) Test_CreateTable() {
 		},
 	} {
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:         dwhTc._dwh,
-			Tc:          dwhTc._tableConfig,
-			FqTableName: fqName,
-			CreateTable: dwhTc._tableConfig.CreateTable(),
-			ColumnOp:    constants.Add,
+			Dwh:               dwhTc._dwh,
+			Tc:                dwhTc._tableConfig,
+			FqTableName:       fqName,
+			CreateTable:       dwhTc._tableConfig.CreateTable(),
+			ColumnOp:          constants.Add,
+			UppercaseEscNames: ptr.ToBool(false),
 		}
 
 		err := ddl.AlterTable(d.ctx, alterTableArgs, columns.NewColumn("name", typing.String))
@@ -107,12 +110,13 @@ func (d *DDLTestSuite) TestCreateTable() {
 		tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
 
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:         d.snowflakeStagesStore,
-			Tc:          tc,
-			FqTableName: fqTable,
-			CreateTable: tc.CreateTable(),
-			ColumnOp:    constants.Add,
-			CdcTime:     time.Now().UTC(),
+			Dwh:               d.snowflakeStagesStore,
+			Tc:                tc,
+			FqTableName:       fqTable,
+			CreateTable:       tc.CreateTable(),
+			ColumnOp:          constants.Add,
+			CdcTime:           time.Now().UTC(),
+			UppercaseEscNames: ptr.ToBool(false),
 		}
 
 		err := ddl.AlterTable(d.ctx, alterTableArgs, testCase.cols...)

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/ptr"
+
 	"github.com/artie-labs/transfer/lib/config"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -31,9 +33,9 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	}, "tableName")
 
 	originalColumnLength := len(cols.GetColumns())
-	bqName := td.ToFqName(d.bqCtx, constants.BigQuery, true, config.FromContext(d.bqCtx).Config.BigQuery.ProjectID)
-	redshiftName := td.ToFqName(d.ctx, constants.Redshift, true, "")
-	snowflakeName := td.ToFqName(d.ctx, constants.Snowflake, true, "")
+	bqName := td.ToFqName(constants.BigQuery, true, false, config.FromContext(d.bqCtx).Config.BigQuery.ProjectID)
+	redshiftName := td.ToFqName(constants.Redshift, true, false, "")
+	snowflakeName := td.ToFqName(constants.Snowflake, true, false, "")
 
 	// Testing 3 scenarios here
 	// 1. DropDeletedColumns = false, ContainOtherOperations = true, don't delete ever.
@@ -60,6 +62,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: true,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
+			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
 		err := ddl.AlterTable(d.ctx, alterTableArgs, column)
@@ -80,6 +83,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: true,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
+			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
 		err := ddl.AlterTable(d.ctx, alterTableArgs, column)
@@ -100,6 +104,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: true,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
+			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
 		err := ddl.AlterTable(d.ctx, alterTableArgs, column)
@@ -134,6 +139,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: false,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
+			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
 		err := ddl.AlterTable(d.ctx, alterTableArgs, column)
@@ -154,6 +160,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: false,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
+			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
 		err := ddl.AlterTable(d.ctx, alterTableArgs, column)
@@ -174,6 +181,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: false,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
+			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
 		err := ddl.AlterTable(d.ctx, alterTableArgs, column)
@@ -210,6 +218,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: true,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
+			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
 		err := ddl.AlterTable(d.ctx, alterTableArgs, column)
@@ -226,6 +235,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: true,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
+			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
 		err := ddl.AlterTable(d.ctx, alterTableArgs, column)
@@ -242,6 +252,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: true,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
+			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
 		err := ddl.AlterTable(d.ctx, alterTableArgs, column)
@@ -266,6 +277,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: true,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
+			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
 		err := ddl.AlterTable(d.ctx, alterTableArgs, column)
@@ -280,6 +292,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: true,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
+			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
 		err = ddl.AlterTable(d.ctx, alterTableArgs, column)
@@ -294,6 +307,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: true,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
+			UppercaseEscNames:      ptr.ToBool(false),
 		}
 
 		err = ddl.AlterTable(d.ctx, alterTableArgs, column)

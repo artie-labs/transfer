@@ -1,6 +1,7 @@
 package dml
 
 import (
+	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
@@ -11,12 +12,11 @@ func (m *MergeTestSuite) TestMergeArgument_Valid() {
 	type _testCase struct {
 		name               string
 		mergeArg           *MergeArgument
-		expectedError      bool
 		expectErrorMessage string
 	}
 
 	primaryKeys := []columns.Wrapper{
-		columns.NewWrapper(m.ctx, columns.NewColumn("id", typing.Integer), nil),
+		columns.NewWrapper(columns.NewColumn("id", typing.Integer), false, nil),
 	}
 
 	var cols columns.Columns
@@ -27,13 +27,11 @@ func (m *MergeTestSuite) TestMergeArgument_Valid() {
 	testCases := []_testCase{
 		{
 			name:               "nil",
-			expectedError:      true,
 			expectErrorMessage: "merge argument is nil",
 		},
 		{
 			name:               "no pks",
 			mergeArg:           &MergeArgument{},
-			expectedError:      true,
 			expectErrorMessage: "merge argument does not contain primary keys",
 		},
 		{
@@ -41,7 +39,6 @@ func (m *MergeTestSuite) TestMergeArgument_Valid() {
 			mergeArg: &MergeArgument{
 				PrimaryKeys: primaryKeys,
 			},
-			expectedError:      true,
 			expectErrorMessage: "columnToTypes cannot be empty",
 		},
 		{
@@ -50,7 +47,6 @@ func (m *MergeTestSuite) TestMergeArgument_Valid() {
 				PrimaryKeys:    primaryKeys,
 				ColumnsToTypes: cols,
 			},
-			expectedError:      true,
 			expectErrorMessage: "one of these arguments is empty: fqTableName, subQuery",
 		},
 		{
@@ -60,7 +56,6 @@ func (m *MergeTestSuite) TestMergeArgument_Valid() {
 				ColumnsToTypes: cols,
 				SubQuery:       "schema.tableName",
 			},
-			expectedError:      true,
 			expectErrorMessage: "one of these arguments is empty: fqTableName, subQuery",
 		},
 		{
@@ -70,23 +65,33 @@ func (m *MergeTestSuite) TestMergeArgument_Valid() {
 				ColumnsToTypes: cols,
 				FqTableName:    "schema.tableName",
 			},
-			expectedError:      true,
 			expectErrorMessage: "one of these arguments is empty: fqTableName, subQuery",
+		},
+		{
+			name: "did not pass in uppercase esc col",
+			mergeArg: &MergeArgument{
+				PrimaryKeys:    primaryKeys,
+				ColumnsToTypes: cols,
+				FqTableName:    "schema.tableName",
+				SubQuery:       "schema.tableName",
+			},
+			expectErrorMessage: "uppercaseEscNames cannot be nil",
 		},
 		{
 			name: "everything exists",
 			mergeArg: &MergeArgument{
-				PrimaryKeys:    primaryKeys,
-				ColumnsToTypes: cols,
-				SubQuery:       "schema.tableName",
-				FqTableName:    "schema.tableName",
+				PrimaryKeys:       primaryKeys,
+				ColumnsToTypes:    cols,
+				SubQuery:          "schema.tableName",
+				FqTableName:       "schema.tableName",
+				UppercaseEscNames: ptr.ToBool(false),
 			},
 		},
 	}
 
 	for _, testCase := range testCases {
 		actualErr := testCase.mergeArg.Valid()
-		if testCase.expectedError {
+		if len(testCase.expectErrorMessage) > 0 {
 			assert.Error(m.T(), actualErr, testCase.name)
 			assert.Equal(m.T(), testCase.expectErrorMessage, actualErr.Error(), testCase.name)
 		} else {
