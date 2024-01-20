@@ -50,7 +50,7 @@ func (p *MongoTestSuite) TestGetPrimaryKey() {
 	}
 
 	for _, tc := range tcs {
-		pkMap, err := p.GetPrimaryKey(p.ctx, tc.key, &kafkalib.TopicConfig{
+		pkMap, err := p.GetPrimaryKey(tc.key, &kafkalib.TopicConfig{
 			CDCKeyFormat: tc.keyFormat,
 		})
 
