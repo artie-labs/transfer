@@ -44,7 +44,7 @@ func processMessage(ctx context.Context, processArgs ProcessArgs) (string, error
 	tags["database"] = topicConfig.tc.Database
 	tags["schema"] = topicConfig.tc.Schema
 
-	pkMap, err := topicConfig.GetPrimaryKey(ctx, processArgs.Msg.Key(), topicConfig.tc)
+	pkMap, err := topicConfig.GetPrimaryKey(processArgs.Msg.Key(), topicConfig.tc)
 	if err != nil {
 		tags["what"] = "marshall_pk_err"
 		return "", fmt.Errorf("cannot unmarshall key, key: %s, err: %v", string(processArgs.Msg.Key()), err)

@@ -74,7 +74,7 @@ func (d *Debezium) Labels() []string {
 	return []string{constants.DBZMongoFormat}
 }
 
-func (d *Debezium) GetPrimaryKey(ctx context.Context, key []byte, tc *kafkalib.TopicConfig) (map[string]interface{}, error) {
+func (d *Debezium) GetPrimaryKey(key []byte, tc *kafkalib.TopicConfig) (map[string]interface{}, error) {
 	kvMap, err := debezium.ParsePartitionKey(key, tc.CDCKeyFormat)
 	if err != nil {
 		return nil, err

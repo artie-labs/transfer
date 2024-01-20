@@ -23,7 +23,7 @@ func (p *PostgresTestSuite) TestGetEventFromBytesTombstone() {
 
 func (p *PostgresTestSuite) TestGetPrimaryKey() {
 	valString := `{"id": 47}`
-	pkMap, err := p.GetPrimaryKey(p.ctx, []byte(valString), validTc)
+	pkMap, err := p.GetPrimaryKey([]byte(valString), validTc)
 	assert.NoError(p.T(), err)
 
 	val, isOk := pkMap["id"]
@@ -34,7 +34,7 @@ func (p *PostgresTestSuite) TestGetPrimaryKey() {
 
 func (p *PostgresTestSuite) TestGetPrimaryKeyUUID() {
 	valString := `{"uuid": "ca0cefe9-45cf-44fa-a2ab-ec5e7e5522a3"}`
-	pkMap, err := p.GetPrimaryKey(p.ctx, []byte(valString), validTc)
+	pkMap, err := p.GetPrimaryKey([]byte(valString), validTc)
 	val, isOk := pkMap["uuid"]
 	assert.True(p.T(), isOk)
 	assert.Equal(p.T(), val, "ca0cefe9-45cf-44fa-a2ab-ec5e7e5522a3")
