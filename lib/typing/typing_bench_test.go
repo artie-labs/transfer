@@ -1,7 +1,6 @@
 package typing
 
 import (
-	"context"
 	"fmt"
 	"reflect"
 	"testing"
@@ -37,7 +36,7 @@ func BenchmarkLargeMapLengthQuery_WithMassiveValues(b *testing.B) {
 
 func BenchmarkParseValueIntegerArtie(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		ParseValue(context.Background(), "", nil, 45456312)
+		ParseValue(45456312, "", nil, Settings{})
 	}
 }
 
@@ -49,7 +48,7 @@ func BenchmarkParseValueIntegerGo(b *testing.B) {
 
 func BenchmarkParseValueBooleanArtie(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		ParseValue(context.Background(), "", nil, true)
+		ParseValue(true, "", nil, Settings{})
 	}
 }
 
@@ -61,7 +60,7 @@ func BenchmarkParseValueBooleanGo(b *testing.B) {
 
 func BenchmarkParseValueFloatArtie(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		ParseValue(context.Background(), "", nil, 7.44)
+		ParseValue(7.44, "", nil, Settings{})
 	}
 }
 
