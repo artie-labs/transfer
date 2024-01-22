@@ -90,6 +90,7 @@ ALTER USER artie_transfer REPLICATION;
 * `PostGIS data types`
   * `Latitude`
   * `Longitude`
+  * `Point`
   * More coming soon!
 
 ## Additional features
