@@ -11,10 +11,10 @@ import (
 )
 
 func (t *TypingTestSuite) TestNil() {
-	tCfg := config.SharedTransferConfig{}
-	assert.Equal(t.T(), ParseValue(tCfg, "", nil, ""), String)
-	assert.Equal(t.T(), ParseValue(tCfg, "", nil, "nil"), String)
-	assert.Equal(t.T(), ParseValue(tCfg, "", nil, nil), Invalid)
+	stCfg := config.SharedTransferConfig{}
+	assert.Equal(t.T(), ParseValue(stCfg, "", nil, ""), String)
+	assert.Equal(t.T(), ParseValue(stCfg, "", nil, "nil"), String)
+	assert.Equal(t.T(), ParseValue(stCfg, "", nil, nil), Invalid)
 }
 
 func (t *TypingTestSuite) TestJSONString() {
