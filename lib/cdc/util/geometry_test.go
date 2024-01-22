@@ -4,7 +4,7 @@ import "github.com/stretchr/testify/assert"
 
 func (u *UtilTestSuite) TestParseGeometryPoint() {
 	{
-		geometry, err := parseGeometryPoint(map[string]interface{}{
+		geoJSONString, err := parseGeometryPoint(map[string]interface{}{
 			"x":    2.2945,
 			"y":    48.8584,
 			"wkb":  "AQEAAABCYOXQIlsCQHZxGw3gbUhA",
@@ -12,6 +12,6 @@ func (u *UtilTestSuite) TestParseGeometryPoint() {
 		})
 
 		assert.NoError(u.T(), err)
-		assert.Equal(u.T(), `{"type":"Point","coordinates":[2.2945,48.8584]}`, geometry)
+		assert.Equal(u.T(), `{"type":"Feature","geometry":{"type":"Point","coordinates":[2.2945,48.8584]}}`, geoJSONString)
 	}
 }

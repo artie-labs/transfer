@@ -5,6 +5,16 @@ import (
 	"fmt"
 )
 
+type GeoJSON struct {
+	Type       GeoJSONType            `json:"type"`
+	Geometry   Geometry               `json:"geometry"`
+	Properties map[string]interface{} `json:"properties,omitempty"`
+}
+
+type GeoJSONType string
+
+const Feature GeoJSONType = "Feature"
+
 type Geometry struct {
 	Type        GeometricShapes `json:"type"`
 	Coordinates interface{}     `json:"coordinates"`
@@ -12,9 +22,7 @@ type Geometry struct {
 
 type GeometricShapes string
 
-const (
-	Point GeometricShapes = "Point"
-)
+const Point GeometricShapes = "Point"
 
 func parseGeometryPoint(value interface{}) (string, error) {
 	valMap, isOk := value.(map[string]interface{})
@@ -32,12 +40,15 @@ func parseGeometryPoint(value interface{}) (string, error) {
 		return "", fmt.Errorf("y coordinate does not exist")
 	}
 
-	geometry := Geometry{
-		Type:        Point,
-		Coordinates: []interface{}{x, y},
+	geoJSON := GeoJSON{
+		Type: Feature,
+		Geometry: Geometry{
+			Type:        Point,
+			Coordinates: []interface{}{x, y},
+		},
 	}
 
-	bytes, err := json.Marshal(geometry)
+	bytes, err := json.Marshal(geoJSON)
 	if err != nil {
 		return "", err
 	}
