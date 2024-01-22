@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+// Note: Today, we are not doing anything about wkb and srid right now.
+
 type GeoJSON struct {
 	Type       GeoJSONType            `json:"type"`
 	Geometry   Geometry               `json:"geometry"`
