@@ -33,6 +33,9 @@ const (
 	KafkaDecimalType         SupportedDebeziumType = "org.apache.kafka.connect.data.Decimal"
 	KafkaVariableNumericType SupportedDebeziumType = "io.debezium.data.VariableScaleDecimal"
 
+	// PostGIS data types
+	GeometryPointType SupportedDebeziumType = "io.debezium.data.geometry.Point"
+
 	KafkaDecimalPrecisionKey = "connect.decimal.precision"
 )
 
@@ -48,6 +51,7 @@ var typesThatRequireTypeCasting = []SupportedDebeziumType{
 	KafkaDecimalType,
 	KafkaVariableNumericType,
 	JSON,
+	GeometryPointType,
 }
 
 func RequiresSpecialTypeCasting(typeLabel string) (bool, SupportedDebeziumType) {

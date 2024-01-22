@@ -33,6 +33,11 @@ func parseField(field debezium.Field, value interface{}) interface{} {
 			if err == nil {
 				return valString
 			}
+		case debezium.GeometryPointType:
+			geometryString, err := parseGeometryPoint(value)
+			if err == nil {
+				return geometryString
+			}
 		case debezium.KafkaDecimalType:
 			decimalVal, err := field.DecodeDecimal(fmt.Sprint(value))
 			if err == nil {
