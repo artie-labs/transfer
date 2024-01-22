@@ -189,13 +189,11 @@ func (t *TypingTestSuite) TestString() {
 }
 
 func (t *TypingTestSuite) TestOptionalSchema() {
-	stCfg := TypingSettings{}
-
-	kd := ParseValue(stCfg, "", nil, true)
+	kd := ParseValue(TypingSettings{}, "", nil, true)
 	assert.Equal(t.T(), kd, Boolean)
 
 	// Key in a nil-schema
-	kd = ParseValue(stCfg, "key", nil, true)
+	kd = ParseValue(TypingSettings{}, "key", nil, true)
 	assert.Equal(t.T(), kd, Boolean)
 
 	// Non-existent key in the schema.
@@ -204,10 +202,10 @@ func (t *TypingTestSuite) TestOptionalSchema() {
 	}
 
 	// Parse it as a date since it doesn't exist in the optional schema.
-	kd = ParseValue(stCfg, "updated_at", optionalSchema, "2023-01-01")
+	kd = ParseValue(TypingSettings{}, "updated_at", optionalSchema, "2023-01-01")
 	assert.Equal(t.T(), ext.Date.Type, kd.ExtendedTimeDetails.Type)
 
 	// Respecting the optional schema
-	kd = ParseValue(stCfg, "created_at", optionalSchema, "2023-01-01")
+	kd = ParseValue(TypingSettings{}, "created_at", optionalSchema, "2023-01-01")
 	assert.Equal(t.T(), String, kd)
 }
