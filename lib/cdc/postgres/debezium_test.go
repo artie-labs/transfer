@@ -3,6 +3,7 @@ package postgres
 import (
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -193,7 +194,7 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	// Testing typing.
 	assert.Equal(p.T(), evtData["id"], 1001)
 	assert.Equal(p.T(), evtData["another_id"], 333)
-	assert.Equal(p.T(), typing.ParseValue(p.ctx, "another_id", evt.GetOptionalSchema(), evtData["another_id"]), typing.Integer)
+	assert.Equal(p.T(), typing.ParseValue(config.SharedTransferConfig{}, "another_id", evt.GetOptionalSchema(), evtData["another_id"]), typing.Integer)
 
 	assert.Equal(p.T(), evtData["email"], "sally.thomas@acme.com")
 

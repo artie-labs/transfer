@@ -1,7 +1,6 @@
 package typing
 
 import (
-	"context"
 	"encoding/json"
 	"reflect"
 	"strings"
@@ -92,9 +91,8 @@ func IsJSON(str string) bool {
 	return false
 }
 
-func ParseValue(ctx context.Context, key string, optionalSchema map[string]KindDetails, val interface{}) KindDetails {
-	cfg := config.FromContext(ctx).Config
-	if val == nil && !cfg.SharedTransferConfig.CreateAllColumnsIfAvailable {
+func ParseValue(tCfg config.SharedTransferConfig, key string, optionalSchema map[string]KindDetails, val interface{}) KindDetails {
+	if val == nil && !tCfg.CreateAllColumnsIfAvailable {
 		// If the value is nil and `createAllColumnsIfAvailable` = false, then return `Invalid
 		return Invalid
 	}
@@ -108,7 +106,7 @@ func ParseValue(ctx context.Context, key string, optionalSchema map[string]KindD
 				// We are not skipping so that we are able to get the exact layout specified at the row level to preserve:
 				// 1. Layout for time / date / timestamps
 				// 2. Precision and scale for numeric values
-				return ParseValue(ctx, key, nil, val)
+				return ParseValue(tCfg, key, nil, val)
 			}
 
 			return kindDetail
@@ -133,7 +131,7 @@ func ParseValue(ctx context.Context, key string, optionalSchema map[string]KindD
 		// This way, we don't penalize every string into going through this loop
 		// In the future, we can have specific layout RFCs run depending on the char
 		if strings.Contains(convertedVal, ":") || strings.Contains(convertedVal, "-") {
-			extendedKind, err := ext.ParseExtendedDateTime(convertedVal, cfg.SharedTransferConfig.AdditionalDateFormats)
+			extendedKind, err := ext.ParseExtendedDateTime(convertedVal, tCfg.AdditionalDateFormats)
 			if err == nil {
 				return KindDetails{
 					Kind:                ETime.Kind,
