@@ -21,6 +21,7 @@ require (
 	github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2 v0.1.0
 	github.com/snowflakedb/gosnowflake v1.6.23-0.20230622060049-8cb65fd3db4a
 	github.com/stretchr/testify v1.8.4
+	github.com/twpayne/go-geom v1.5.3
 	github.com/viant/bigquery v0.2.1-0.20230129024722-24ed6fd5555f
 	github.com/xitongsys/parquet-go v1.6.2
 	github.com/xitongsys/parquet-go-source v0.0.0-20200817004010-026bad9b25d0

@@ -13,6 +13,7 @@ import (
 
 // ParseField returns a `parsedValue` as type interface{}
 func parseField(field debezium.Field, value interface{}) interface{} {
+	// TODO: We should surface the errors from `parseField`.
 	if value == nil {
 		return nil
 	}
@@ -32,6 +33,11 @@ func parseField(field debezium.Field, value interface{}) interface{} {
 			valString, err := jsonutil.SanitizePayload(value)
 			if err == nil {
 				return valString
+			}
+		case debezium.GeometryType:
+			geometryString, err := parseGeometry(value)
+			if err == nil {
+				return geometryString
 			}
 		case debezium.GeometryPointType:
 			geometryString, err := parseGeometryPoint(value)

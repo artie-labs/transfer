@@ -1,6 +1,8 @@
 package util
 
-import "github.com/stretchr/testify/assert"
+import (
+	"github.com/stretchr/testify/assert"
+)
 
 func (u *UtilTestSuite) TestParseGeometryPoint() {
 	{
@@ -13,5 +15,17 @@ func (u *UtilTestSuite) TestParseGeometryPoint() {
 
 		assert.NoError(u.T(), err)
 		assert.Equal(u.T(), `{"type":"Feature","geometry":{"type":"Point","coordinates":[2.2945,48.8584]}}`, geoJSONString)
+	}
+}
+
+func (u *UtilTestSuite) TestGeometryWkb() {
+	{
+		geoJSONString, err := parseGeometry(map[string]interface{}{
+			"wkb":  "AQEAAAAAAAAAAADwPwAAAAAAAPA/",
+			"srid": nil,
+		})
+
+		assert.NoError(u.T(), err)
+		assert.Equal(u.T(), `{"type":"Feature","geometry":{"type":"Point","coordinates":[1,1]},"properties":null}`, geoJSONString)
 	}
 }
