@@ -216,7 +216,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		"name":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
 		// Add kindDetails to created_at
-		"created_at": typing.ParseValue(config.SharedTransferConfig{}, "", nil, time.Now().Format(time.RFC3339Nano)),
+		"created_at": typing.ParseValue(transferConfig, "", nil, time.Now().Format(time.RFC3339Nano)),
 	}
 
 	var cols columns.Columns
