@@ -5,14 +5,18 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-type TypingSettings struct {
-	config.SharedTransferConfig
+type Settings struct {
+	AdditionalDateFormats []string `yaml:"additionalDateFormats"`
+
+	// CreateAllColumnsIfAvailable - If true, we will create all columns if the metadata is available regardless of
+	// whether we have a value from the column. This will also bypass our Typing library.
+	// This only works for data sources with a schema such as Postgres and MySQL
+	CreateAllColumnsIfAvailable bool `yaml:"createAllColumnsIfAvailable"`
 }
 
 type KindDetails struct {
@@ -95,7 +99,7 @@ func IsJSON(str string) bool {
 	return false
 }
 
-func ParseValue(typingSettings TypingSettings, key string, optionalSchema map[string]KindDetails, val interface{}) KindDetails {
+func ParseValue(typingSettings Settings, key string, optionalSchema map[string]KindDetails, val interface{}) KindDetails {
 	if val == nil && !typingSettings.CreateAllColumnsIfAvailable {
 		// If the value is nil and `createAllColumnsIfAvailable` = false, then return `Invalid
 		return Invalid

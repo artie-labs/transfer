@@ -8,7 +8,6 @@ import (
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
-	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/models/event"
 )
 
@@ -52,7 +51,7 @@ func processMessage(ctx context.Context, processArgs ProcessArgs) (string, error
 		return "", fmt.Errorf("cannot unmarshall key, key: %s, err: %v", string(processArgs.Msg.Key()), err)
 	}
 
-	typingSettings := typing.TypingSettings{SharedTransferConfig: config.FromContext(ctx).Config.SharedTransferConfig}
+	typingSettings := config.FromContext(ctx).Config.SharedTransferConfig.Settings
 	_event, err := topicConfig.GetEventFromBytes(typingSettings, processArgs.Msg.Value())
 	if err != nil {
 		tags["what"] = "marshall_value_err"

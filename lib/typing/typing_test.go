@@ -10,9 +10,9 @@ import (
 )
 
 func (t *TypingTestSuite) TestNil() {
-	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, ""), String)
-	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, "nil"), String)
-	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, nil), Invalid)
+	assert.Equal(t.T(), ParseValue(Settings{}, "", nil, ""), String)
+	assert.Equal(t.T(), ParseValue(Settings{}, "", nil, "nil"), String)
+	assert.Equal(t.T(), ParseValue(Settings{}, "", nil, nil), Invalid)
 }
 
 func (t *TypingTestSuite) TestJSONString() {
@@ -78,29 +78,29 @@ func (t *TypingTestSuite) TestJSONString() {
 
 func (t *TypingTestSuite) TestParseValueBasic() {
 	// Floats
-	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, 7.5), Float)
-	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, -7.4999999), Float)
-	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, 7.0), Float)
+	assert.Equal(t.T(), ParseValue(Settings{}, "", nil, 7.5), Float)
+	assert.Equal(t.T(), ParseValue(Settings{}, "", nil, -7.4999999), Float)
+	assert.Equal(t.T(), ParseValue(Settings{}, "", nil, 7.0), Float)
 
 	// Integers
-	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, 9), Integer)
-	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, math.MaxInt), Integer)
-	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, -1*math.MaxInt), Integer)
+	assert.Equal(t.T(), ParseValue(Settings{}, "", nil, 9), Integer)
+	assert.Equal(t.T(), ParseValue(Settings{}, "", nil, math.MaxInt), Integer)
+	assert.Equal(t.T(), ParseValue(Settings{}, "", nil, -1*math.MaxInt), Integer)
 
 	// Invalid
-	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, nil), Invalid)
-	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, errors.New("hello")), Invalid)
+	assert.Equal(t.T(), ParseValue(Settings{}, "", nil, nil), Invalid)
+	assert.Equal(t.T(), ParseValue(Settings{}, "", nil, errors.New("hello")), Invalid)
 
 	// Boolean
-	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, true), Boolean)
-	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, false), Boolean)
+	assert.Equal(t.T(), ParseValue(Settings{}, "", nil, true), Boolean)
+	assert.Equal(t.T(), ParseValue(Settings{}, "", nil, false), Boolean)
 }
 
 func (t *TypingTestSuite) TestParseValueArrays() {
-	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, []string{"a", "b", "c"}), Array)
-	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, []interface{}{"a", 123, "c"}), Array)
-	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, []int64{1}), Array)
-	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, []bool{false}), Array)
+	assert.Equal(t.T(), ParseValue(Settings{}, "", nil, []string{"a", "b", "c"}), Array)
+	assert.Equal(t.T(), ParseValue(Settings{}, "", nil, []interface{}{"a", 123, "c"}), Array)
+	assert.Equal(t.T(), ParseValue(Settings{}, "", nil, []int64{1}), Array)
+	assert.Equal(t.T(), ParseValue(Settings{}, "", nil, []bool{false}), Array)
 }
 
 func (t *TypingTestSuite) TestParseValueMaps() {
@@ -129,7 +129,7 @@ func (t *TypingTestSuite) TestParseValueMaps() {
 	}
 
 	for _, randomMap := range randomMaps {
-		assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, randomMap), Struct, fmt.Sprintf("Failed message is: %v", randomMap))
+		assert.Equal(t.T(), ParseValue(Settings{}, "", nil, randomMap), Struct, fmt.Sprintf("Failed message is: %v", randomMap))
 	}
 }
 
@@ -149,7 +149,7 @@ func (t *TypingTestSuite) TestDateTime() {
 	}
 
 	for _, possibleDate := range possibleDates {
-		assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, possibleDate).ExtendedTimeDetails.Type, ext.DateTime.Type, fmt.Sprintf("Failed format, value is: %v", possibleDate))
+		assert.Equal(t.T(), ParseValue(Settings{}, "", nil, possibleDate).ExtendedTimeDetails.Type, ext.DateTime.Type, fmt.Sprintf("Failed format, value is: %v", possibleDate))
 
 		// Test the parseDT function as well.
 		ts, err := ext.ParseExtendedDateTime(fmt.Sprint(possibleDate), []string{})
@@ -170,7 +170,7 @@ func (t *TypingTestSuite) TestDateTime_Fallback() {
 }
 
 func (t *TypingTestSuite) TestTime() {
-	kindDetails := ParseValue(TypingSettings{}, "", nil, "00:18:11.13116+00")
+	kindDetails := ParseValue(Settings{}, "", nil, "00:18:11.13116+00")
 	// 00:42:26.693631Z
 	assert.Equal(t.T(), ETime.Kind, kindDetails.Kind)
 	assert.Equal(t.T(), ext.TimeKindType, kindDetails.ExtendedTimeDetails.Type)
@@ -184,16 +184,16 @@ func (t *TypingTestSuite) TestString() {
 	}
 
 	for _, possibleString := range possibleStrings {
-		assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, possibleString), String)
+		assert.Equal(t.T(), ParseValue(Settings{}, "", nil, possibleString), String)
 	}
 }
 
 func (t *TypingTestSuite) TestOptionalSchema() {
-	kd := ParseValue(TypingSettings{}, "", nil, true)
+	kd := ParseValue(Settings{}, "", nil, true)
 	assert.Equal(t.T(), kd, Boolean)
 
 	// Key in a nil-schema
-	kd = ParseValue(TypingSettings{}, "key", nil, true)
+	kd = ParseValue(Settings{}, "key", nil, true)
 	assert.Equal(t.T(), kd, Boolean)
 
 	// Non-existent key in the schema.
@@ -202,10 +202,10 @@ func (t *TypingTestSuite) TestOptionalSchema() {
 	}
 
 	// Parse it as a date since it doesn't exist in the optional schema.
-	kd = ParseValue(TypingSettings{}, "updated_at", optionalSchema, "2023-01-01")
+	kd = ParseValue(Settings{}, "updated_at", optionalSchema, "2023-01-01")
 	assert.Equal(t.T(), ext.Date.Type, kd.ExtendedTimeDetails.Type)
 
 	// Respecting the optional schema
-	kd = ParseValue(TypingSettings{}, "created_at", optionalSchema, "2023-01-01")
+	kd = ParseValue(Settings{}, "created_at", optionalSchema, "2023-01-01")
 	assert.Equal(t.T(), String, kd)
 }

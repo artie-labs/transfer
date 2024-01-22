@@ -15,7 +15,7 @@ var validTc = &kafkalib.TopicConfig{
 }
 
 func (p *PostgresTestSuite) TestGetEventFromBytesTombstone() {
-	evt, err := p.GetEventFromBytes(typing.TypingSettings{}, nil)
+	evt, err := p.GetEventFromBytes(typing.Settings{}, nil)
 	assert.NoError(p.T(), err)
 	assert.True(p.T(), evt.DeletePayload())
 	assert.False(p.T(), evt.GetExecutionTime().IsZero())
@@ -81,7 +81,7 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
 	}
 }
 `
-	evt, err := p.Debezium.GetEventFromBytes(typing.TypingSettings{}, []byte(payload))
+	evt, err := p.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
 	assert.Nil(p.T(), err)
 	assert.False(p.T(), evt.DeletePayload())
 
@@ -184,7 +184,7 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	}
 }
 `
-	evt, err := p.Debezium.GetEventFromBytes(typing.TypingSettings{}, []byte(payload))
+	evt, err := p.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
 	assert.Nil(p.T(), err)
 	assert.False(p.T(), evt.DeletePayload())
 
@@ -193,7 +193,7 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	// Testing typing.
 	assert.Equal(p.T(), evtData["id"], 1001)
 	assert.Equal(p.T(), evtData["another_id"], 333)
-	assert.Equal(p.T(), typing.ParseValue(typing.TypingSettings{}, "another_id", evt.GetOptionalSchema(), evtData["another_id"]), typing.Integer)
+	assert.Equal(p.T(), typing.ParseValue(typing.Settings{}, "another_id", evt.GetOptionalSchema(), evtData["another_id"]), typing.Integer)
 
 	assert.Equal(p.T(), evtData["email"], "sally.thomas@acme.com")
 

@@ -124,7 +124,7 @@ func (p *MongoTestSuite) TestMongoDBEventOrder() {
 }
 `
 
-	evt, err := p.Debezium.GetEventFromBytes(typing.TypingSettings{}, []byte(payload))
+	evt, err := p.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
 	assert.NoError(p.T(), err)
 
 	schemaEvt, isOk := evt.(*SchemaEventPayload)
@@ -165,7 +165,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 }
 `
 
-	evt, err := p.Debezium.GetEventFromBytes(typing.TypingSettings{}, []byte(payload))
+	evt, err := p.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
 	assert.NoError(p.T(), err)
 	evtData := evt.GetData(map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{})
 	_, isOk := evtData[constants.UpdateColumnMarker]
@@ -225,7 +225,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 }
 `
 
-	evt, err := p.Debezium.GetEventFromBytes(typing.TypingSettings{}, []byte(payload))
+	evt, err := p.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
 	assert.NoError(p.T(), err)
 	evtData := evt.GetData(map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{})
 	assert.Equal(p.T(), "customers123", evt.GetTableName())
@@ -246,7 +246,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 }
 
 func (p *MongoTestSuite) TestGetEventFromBytesTombstone() {
-	evt, err := p.Debezium.GetEventFromBytes(typing.TypingSettings{}, nil)
+	evt, err := p.Debezium.GetEventFromBytes(typing.Settings{}, nil)
 	assert.NoError(p.T(), err)
 	assert.Equal(p.T(), true, evt.DeletePayload())
 	assert.False(p.T(), evt.GetExecutionTime().IsZero())
@@ -438,7 +438,7 @@ func (p *MongoTestSuite) TestMongoDBEventWithSchema() {
 	}
 }
 `
-	evt, err := p.Debezium.GetEventFromBytes(typing.TypingSettings{}, []byte(payload))
+	evt, err := p.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
 	assert.NoError(p.T(), err)
 	schemaEvt, isOk := evt.(*SchemaEventPayload)
 	assert.True(p.T(), isOk)
