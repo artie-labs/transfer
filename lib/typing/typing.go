@@ -95,8 +95,8 @@ func IsJSON(str string) bool {
 	return false
 }
 
-func ParseValue(stCfg TypingSettings, key string, optionalSchema map[string]KindDetails, val interface{}) KindDetails {
-	if val == nil && !stCfg.CreateAllColumnsIfAvailable {
+func ParseValue(typingSettings TypingSettings, key string, optionalSchema map[string]KindDetails, val interface{}) KindDetails {
+	if val == nil && !typingSettings.CreateAllColumnsIfAvailable {
 		// If the value is nil and `createAllColumnsIfAvailable` = false, then return `Invalid
 		return Invalid
 	}
@@ -110,7 +110,7 @@ func ParseValue(stCfg TypingSettings, key string, optionalSchema map[string]Kind
 				// We are not skipping so that we are able to get the exact layout specified at the row level to preserve:
 				// 1. Layout for time / date / timestamps
 				// 2. Precision and scale for numeric values
-				return ParseValue(stCfg, key, nil, val)
+				return ParseValue(typingSettings, key, nil, val)
 			}
 
 			return kindDetail
@@ -135,7 +135,7 @@ func ParseValue(stCfg TypingSettings, key string, optionalSchema map[string]Kind
 		// This way, we don't penalize every string into going through this loop
 		// In the future, we can have specific layout RFCs run depending on the char
 		if strings.Contains(convertedVal, ":") || strings.Contains(convertedVal, "-") {
-			extendedKind, err := ext.ParseExtendedDateTime(convertedVal, stCfg.AdditionalDateFormats)
+			extendedKind, err := ext.ParseExtendedDateTime(convertedVal, typingSettings.AdditionalDateFormats)
 			if err == nil {
 				return KindDetails{
 					Kind:                ETime.Kind,
