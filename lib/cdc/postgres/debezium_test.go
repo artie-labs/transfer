@@ -16,7 +16,7 @@ var validTc = &kafkalib.TopicConfig{
 }
 
 func (p *PostgresTestSuite) TestGetEventFromBytesTombstone() {
-	evt, err := p.GetEventFromBytes(p.ctx, nil)
+	evt, err := p.GetEventFromBytes(config.SharedTransferConfig{}, nil)
 	assert.NoError(p.T(), err)
 	assert.True(p.T(), evt.DeletePayload())
 	assert.False(p.T(), evt.GetExecutionTime().IsZero())
@@ -82,7 +82,7 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
 	}
 }
 `
-	evt, err := p.Debezium.GetEventFromBytes(p.ctx, []byte(payload))
+	evt, err := p.Debezium.GetEventFromBytes(config.SharedTransferConfig{}, []byte(payload))
 	assert.Nil(p.T(), err)
 	assert.False(p.T(), evt.DeletePayload())
 
@@ -185,7 +185,7 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	}
 }
 `
-	evt, err := p.Debezium.GetEventFromBytes(p.ctx, []byte(payload))
+	evt, err := p.Debezium.GetEventFromBytes(config.SharedTransferConfig{}, []byte(payload))
 	assert.Nil(p.T(), err)
 	assert.False(p.T(), evt.DeletePayload())
 

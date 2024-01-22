@@ -1,9 +1,9 @@
 package cdc
 
 import (
-	"context"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/typing"
@@ -14,7 +14,7 @@ import (
 type Format interface {
 	Labels() []string // Labels() to return a list of strings to maintain backward compatibility.
 	GetPrimaryKey(key []byte, tc *kafkalib.TopicConfig) (map[string]interface{}, error)
-	GetEventFromBytes(ctx context.Context, bytes []byte) (Event, error)
+	GetEventFromBytes(stCfg config.SharedTransferConfig, bytes []byte) (Event, error)
 }
 
 type Event interface {
