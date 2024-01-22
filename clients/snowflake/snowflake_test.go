@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/stretchr/testify/assert"
@@ -81,7 +80,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		"name":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
 		// Add kindDetails to created_at
-		"created_at": typing.ParseValue(config.SharedTransferConfig{}, "", nil, time.Now().Format(time.RFC3339Nano)),
+		"created_at": typing.ParseValue(typing.TypingSettings{}, "", nil, time.Now().Format(time.RFC3339Nano)),
 	}
 
 	var cols columns.Columns
@@ -129,7 +128,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		"name":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
 		// Add kindDetails to created_at
-		"created_at": typing.ParseValue(config.SharedTransferConfig{}, "", nil, time.Now().Format(time.RFC3339Nano)),
+		"created_at": typing.ParseValue(typing.TypingSettings{}, "", nil, time.Now().Format(time.RFC3339Nano)),
 	}
 
 	var cols columns.Columns
@@ -195,7 +194,6 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 // Second time, we'll simulate the data catching up (column exists) and it should now
 // Remove it from the in-memory store.
 func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
-	transferConfig := config.SharedTransferConfig{}
 	topicConfig := kafkalib.TopicConfig{
 		Database:  "customer",
 		TableName: "orders",
@@ -216,7 +214,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		"name":                       typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
 		// Add kindDetails to created_at
-		"created_at": typing.ParseValue(transferConfig, "", nil, time.Now().Format(time.RFC3339Nano)),
+		"created_at": typing.ParseValue(typing.TypingSettings{}, "", nil, time.Now().Format(time.RFC3339Nano)),
 	}
 
 	var cols columns.Columns
@@ -265,7 +263,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 		inMemColumns := tableData.ReadOnlyInMemoryCols()
 		// Since sflkColumns overwrote the format, let's set it correctly again.
-		inMemColumns.UpdateColumn(columns.NewColumn("created_at", typing.ParseValue(transferConfig, "", nil, time.Now().Format(time.RFC3339Nano))))
+		inMemColumns.UpdateColumn(columns.NewColumn("created_at", typing.ParseValue(typing.TypingSettings{}, "", nil, time.Now().Format(time.RFC3339Nano))))
 		tableData.SetInMemoryColumns(inMemColumns)
 		break
 	}

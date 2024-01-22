@@ -5,16 +5,14 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
 
 func (t *TypingTestSuite) TestNil() {
-	stCfg := config.SharedTransferConfig{}
-	assert.Equal(t.T(), ParseValue(stCfg, "", nil, ""), String)
-	assert.Equal(t.T(), ParseValue(stCfg, "", nil, "nil"), String)
-	assert.Equal(t.T(), ParseValue(stCfg, "", nil, nil), Invalid)
+	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, ""), String)
+	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, "nil"), String)
+	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, nil), Invalid)
 }
 
 func (t *TypingTestSuite) TestJSONString() {
@@ -79,34 +77,30 @@ func (t *TypingTestSuite) TestJSONString() {
 }
 
 func (t *TypingTestSuite) TestParseValueBasic() {
-	stCfg := config.SharedTransferConfig{}
-
 	// Floats
-	assert.Equal(t.T(), ParseValue(stCfg, "", nil, 7.5), Float)
-	assert.Equal(t.T(), ParseValue(stCfg, "", nil, -7.4999999), Float)
-	assert.Equal(t.T(), ParseValue(stCfg, "", nil, 7.0), Float)
+	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, 7.5), Float)
+	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, -7.4999999), Float)
+	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, 7.0), Float)
 
 	// Integers
-	assert.Equal(t.T(), ParseValue(stCfg, "", nil, 9), Integer)
-	assert.Equal(t.T(), ParseValue(stCfg, "", nil, math.MaxInt), Integer)
-	assert.Equal(t.T(), ParseValue(stCfg, "", nil, -1*math.MaxInt), Integer)
+	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, 9), Integer)
+	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, math.MaxInt), Integer)
+	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, -1*math.MaxInt), Integer)
 
 	// Invalid
-	assert.Equal(t.T(), ParseValue(stCfg, "", nil, nil), Invalid)
-	assert.Equal(t.T(), ParseValue(stCfg, "", nil, errors.New("hello")), Invalid)
+	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, nil), Invalid)
+	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, errors.New("hello")), Invalid)
 
 	// Boolean
-	assert.Equal(t.T(), ParseValue(stCfg, "", nil, true), Boolean)
-	assert.Equal(t.T(), ParseValue(stCfg, "", nil, false), Boolean)
+	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, true), Boolean)
+	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, false), Boolean)
 }
 
 func (t *TypingTestSuite) TestParseValueArrays() {
-	stCfg := config.SharedTransferConfig{}
-
-	assert.Equal(t.T(), ParseValue(stCfg, "", nil, []string{"a", "b", "c"}), Array)
-	assert.Equal(t.T(), ParseValue(stCfg, "", nil, []interface{}{"a", 123, "c"}), Array)
-	assert.Equal(t.T(), ParseValue(stCfg, "", nil, []int64{1}), Array)
-	assert.Equal(t.T(), ParseValue(stCfg, "", nil, []bool{false}), Array)
+	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, []string{"a", "b", "c"}), Array)
+	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, []interface{}{"a", 123, "c"}), Array)
+	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, []int64{1}), Array)
+	assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, []bool{false}), Array)
 }
 
 func (t *TypingTestSuite) TestParseValueMaps() {
@@ -135,7 +129,7 @@ func (t *TypingTestSuite) TestParseValueMaps() {
 	}
 
 	for _, randomMap := range randomMaps {
-		assert.Equal(t.T(), ParseValue(config.SharedTransferConfig{}, "", nil, randomMap), Struct, fmt.Sprintf("Failed message is: %v", randomMap))
+		assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, randomMap), Struct, fmt.Sprintf("Failed message is: %v", randomMap))
 	}
 }
 
@@ -155,7 +149,7 @@ func (t *TypingTestSuite) TestDateTime() {
 	}
 
 	for _, possibleDate := range possibleDates {
-		assert.Equal(t.T(), ParseValue(config.SharedTransferConfig{}, "", nil, possibleDate).ExtendedTimeDetails.Type, ext.DateTime.Type, fmt.Sprintf("Failed format, value is: %v", possibleDate))
+		assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, possibleDate).ExtendedTimeDetails.Type, ext.DateTime.Type, fmt.Sprintf("Failed format, value is: %v", possibleDate))
 
 		// Test the parseDT function as well.
 		ts, err := ext.ParseExtendedDateTime(fmt.Sprint(possibleDate), []string{})
@@ -176,7 +170,7 @@ func (t *TypingTestSuite) TestDateTime_Fallback() {
 }
 
 func (t *TypingTestSuite) TestTime() {
-	kindDetails := ParseValue(config.SharedTransferConfig{}, "", nil, "00:18:11.13116+00")
+	kindDetails := ParseValue(TypingSettings{}, "", nil, "00:18:11.13116+00")
 	// 00:42:26.693631Z
 	assert.Equal(t.T(), ETime.Kind, kindDetails.Kind)
 	assert.Equal(t.T(), ext.TimeKindType, kindDetails.ExtendedTimeDetails.Type)
@@ -190,12 +184,12 @@ func (t *TypingTestSuite) TestString() {
 	}
 
 	for _, possibleString := range possibleStrings {
-		assert.Equal(t.T(), ParseValue(config.SharedTransferConfig{}, "", nil, possibleString), String)
+		assert.Equal(t.T(), ParseValue(TypingSettings{}, "", nil, possibleString), String)
 	}
 }
 
 func (t *TypingTestSuite) TestOptionalSchema() {
-	stCfg := config.SharedTransferConfig{}
+	stCfg := TypingSettings{}
 
 	kd := ParseValue(stCfg, "", nil, true)
 	assert.Equal(t.T(), kd, Boolean)

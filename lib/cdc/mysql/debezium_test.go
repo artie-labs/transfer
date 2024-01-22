@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -13,7 +12,7 @@ import (
 )
 
 func (m *MySQLTestSuite) TestGetEventFromBytesTombstone() {
-	evt, err := m.GetEventFromBytes(config.SharedTransferConfig{}, nil)
+	evt, err := m.GetEventFromBytes(typing.TypingSettings{}, nil)
 	assert.NoError(m.T(), err)
 	assert.True(m.T(), evt.DeletePayload())
 	assert.False(m.T(), evt.GetExecutionTime().IsZero())
@@ -314,7 +313,7 @@ func (m *MySQLTestSuite) TestGetEventFromBytes() {
 		"transaction": null
 	}
 }`
-	evt, err := m.Debezium.GetEventFromBytes(config.SharedTransferConfig{}, []byte(payload))
+	evt, err := m.Debezium.GetEventFromBytes(typing.TypingSettings{}, []byte(payload))
 	assert.NoError(m.T(), err)
 	assert.Equal(m.T(), time.Date(2023, time.March, 13, 19, 19, 24, 0, time.UTC), evt.GetExecutionTime())
 	assert.Equal(m.T(), "customers", evt.GetTableName())

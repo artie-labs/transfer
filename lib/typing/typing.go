@@ -11,6 +11,10 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
+type TypingSettings struct {
+	config.SharedTransferConfig
+}
+
 type KindDetails struct {
 	Kind                   string
 	ExtendedTimeDetails    *ext.NestedKind
@@ -91,7 +95,7 @@ func IsJSON(str string) bool {
 	return false
 }
 
-func ParseValue(stCfg config.SharedTransferConfig, key string, optionalSchema map[string]KindDetails, val interface{}) KindDetails {
+func ParseValue(stCfg TypingSettings, key string, optionalSchema map[string]KindDetails, val interface{}) KindDetails {
 	if val == nil && !stCfg.CreateAllColumnsIfAvailable {
 		// If the value is nil and `createAllColumnsIfAvailable` = false, then return `Invalid
 		return Invalid

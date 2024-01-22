@@ -7,7 +7,6 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/debezium"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -23,7 +22,7 @@ import (
 
 type Debezium string
 
-func (d *Debezium) GetEventFromBytes(stCfg config.SharedTransferConfig, bytes []byte) (cdc.Event, error) {
+func (d *Debezium) GetEventFromBytes(typingSettings typing.TypingSettings, bytes []byte) (cdc.Event, error) {
 	var schemaEventPayload SchemaEventPayload
 	if len(bytes) == 0 {
 		schemaEventPayload.Tombstone()
@@ -54,7 +53,7 @@ func (d *Debezium) GetEventFromBytes(stCfg config.SharedTransferConfig, bytes []
 		// Now, we need to iterate over each key and if the value is JSON
 		// We need to parse the JSON into a string format
 		for key, value := range after {
-			if typing.ParseValue(stCfg, key, nil, value) == typing.Struct {
+			if typing.ParseValue(typingSettings, key, nil, value) == typing.Struct {
 				valBytes, err := json.Marshal(value)
 				if err != nil {
 					return nil, fmt.Errorf("failed to marshal, err: %v", err)

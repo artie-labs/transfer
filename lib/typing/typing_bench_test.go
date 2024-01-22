@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
-
-	"github.com/artie-labs/transfer/lib/config"
 )
 
 func BenchmarkLargeMapLengthQuery(b *testing.B) {
@@ -38,7 +36,7 @@ func BenchmarkLargeMapLengthQuery_WithMassiveValues(b *testing.B) {
 
 func BenchmarkParseValueIntegerArtie(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		ParseValue(config.SharedTransferConfig{}, "", nil, 45456312)
+		ParseValue(TypingSettings{}, "", nil, 45456312)
 	}
 }
 
@@ -50,7 +48,7 @@ func BenchmarkParseValueIntegerGo(b *testing.B) {
 
 func BenchmarkParseValueBooleanArtie(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		ParseValue(config.SharedTransferConfig{}, "", nil, true)
+		ParseValue(TypingSettings{}, "", nil, true)
 	}
 }
 
@@ -62,7 +60,7 @@ func BenchmarkParseValueBooleanGo(b *testing.B) {
 
 func BenchmarkParseValueFloatArtie(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		ParseValue(config.SharedTransferConfig{}, "", nil, 7.44)
+		ParseValue(TypingSettings{}, "", nil, 7.44)
 	}
 }
 
