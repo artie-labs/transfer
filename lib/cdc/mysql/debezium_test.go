@@ -1,7 +1,6 @@
 package mysql
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -13,7 +12,7 @@ import (
 )
 
 func (m *MySQLTestSuite) TestGetEventFromBytesTombstone() {
-	evt, err := m.GetEventFromBytes(context.Background(), nil)
+	evt, err := m.GetEventFromBytes(typing.Settings{}, nil)
 	assert.NoError(m.T(), err)
 	assert.True(m.T(), evt.DeletePayload())
 	assert.False(m.T(), evt.GetExecutionTime().IsZero())
@@ -314,8 +313,7 @@ func (m *MySQLTestSuite) TestGetEventFromBytes() {
 		"transaction": null
 	}
 }`
-	ctx := context.Background()
-	evt, err := m.Debezium.GetEventFromBytes(ctx, []byte(payload))
+	evt, err := m.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
 	assert.NoError(m.T(), err)
 	assert.Equal(m.T(), time.Date(2023, time.March, 13, 19, 19, 24, 0, time.UTC), evt.GetExecutionTime())
 	assert.Equal(m.T(), "customers", evt.GetTableName())

@@ -1,16 +1,23 @@
 package typing
 
 import (
-	"context"
 	"encoding/json"
 	"reflect"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
+
+type Settings struct {
+	AdditionalDateFormats []string `yaml:"additionalDateFormats"`
+
+	// CreateAllColumnsIfAvailable - If true, we will create all columns if the metadata is available regardless of
+	// whether we have a value from the column. This will also bypass our Typing library.
+	// This only works for data sources with a schema such as Postgres and MySQL
+	CreateAllColumnsIfAvailable bool `yaml:"createAllColumnsIfAvailable"`
+}
 
 type KindDetails struct {
 	Kind                   string
@@ -92,9 +99,8 @@ func IsJSON(str string) bool {
 	return false
 }
 
-func ParseValue(ctx context.Context, key string, optionalSchema map[string]KindDetails, val interface{}) KindDetails {
-	cfg := config.FromContext(ctx).Config
-	if val == nil && !cfg.SharedTransferConfig.CreateAllColumnsIfAvailable {
+func ParseValue(settings Settings, key string, optionalSchema map[string]KindDetails, val interface{}) KindDetails {
+	if val == nil && !settings.CreateAllColumnsIfAvailable {
 		// If the value is nil and `createAllColumnsIfAvailable` = false, then return `Invalid
 		return Invalid
 	}
@@ -108,7 +114,7 @@ func ParseValue(ctx context.Context, key string, optionalSchema map[string]KindD
 				// We are not skipping so that we are able to get the exact layout specified at the row level to preserve:
 				// 1. Layout for time / date / timestamps
 				// 2. Precision and scale for numeric values
-				return ParseValue(ctx, key, nil, val)
+				return ParseValue(settings, key, nil, val)
 			}
 
 			return kindDetail
@@ -133,7 +139,7 @@ func ParseValue(ctx context.Context, key string, optionalSchema map[string]KindD
 		// This way, we don't penalize every string into going through this loop
 		// In the future, we can have specific layout RFCs run depending on the char
 		if strings.Contains(convertedVal, ":") || strings.Contains(convertedVal, "-") {
-			extendedKind, err := ext.ParseExtendedDateTime(convertedVal, cfg.SharedTransferConfig.AdditionalDateFormats)
+			extendedKind, err := ext.ParseExtendedDateTime(convertedVal, settings.AdditionalDateFormats)
 			if err == nil {
 				return KindDetails{
 					Kind:                ETime.Kind,
