@@ -87,15 +87,18 @@ ALTER USER artie_transfer REPLICATION;
 * `DATERANGE`
 * `ENUM`
 * `LTREE`
-* `PostGIS data types`
+* `PostGIS data type` (following [GeoJSON feature spec](https://datatracker.ietf.org/doc/html/rfc7946))
   * `Latitude`
   * `Longitude`
   * `Point`
+  * `Geometry`
   * More coming soon!
 
 ## Additional features
 
 ### Heartbeats
+
+(following GeoJSON feature spec)
 
 Once you selected `Enable heartbeats` under Advanced Settings, you will then need to run the following command:
 
