@@ -10,11 +10,3 @@ type BetweenEqArgs struct {
 func BetweenEq(args BetweenEqArgs) bool {
 	return args.Number >= args.Start && args.Number <= args.End
 }
-
-func MaxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-
-	return b
-}

@@ -2,6 +2,7 @@ package partition
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/artie-labs/transfer/lib/array"
 )
@@ -60,11 +61,11 @@ func (b *BigQuerySettings) Valid() error {
 		return fmt.Errorf("partitionBy cannot be empty")
 	}
 
-	if !array.StringContains(ValidPartitionTypes, b.PartitionType) {
+	if !slices.Contains(ValidPartitionTypes, b.PartitionType) {
 		return fmt.Errorf("partitionType must be one of: %v", ValidPartitionTypes)
 	}
 
-	if !array.StringContains(ValidPartitionBy, b.PartitionBy) {
+	if !slices.Contains(ValidPartitionBy, b.PartitionBy) {
 		return fmt.Errorf("partitionBy must be one of: %v", ValidPartitionBy)
 	}
 

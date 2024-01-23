@@ -10,7 +10,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/typing"
 
-	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/ptr"
 
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -143,17 +142,17 @@ func TestField_IsInteger(t *testing.T) {
 		}
 	}
 
-	assert.True(t, len(foundIntKeys) > 0)
-	assert.True(t, len(foundNonIntKeys) > 0)
+	assert.NotEmpty(t, foundIntKeys)
+	assert.NotEmpty(t, foundNonIntKeys)
 
 	for _, key := range foundIntKeys {
 		// Make sure these flagged keys are specified within integerKeys.
-		assert.True(t, array.StringContains(integerKeys, key))
+		assert.Contains(t, integerKeys, key)
 	}
 
 	for _, key := range foundNonIntKeys {
 		// Make sure these flagged keys are specified within integerKeys.
-		assert.False(t, array.StringContains(integerKeys, key))
+		assert.NotContains(t, integerKeys, key)
 	}
 }
 

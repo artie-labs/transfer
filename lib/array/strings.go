@@ -92,14 +92,3 @@ func Empty(list []string) bool {
 
 	return false
 }
-
-// StringContains iterates over a list, if any `item` from the list matches `element`, it returns true.
-func StringContains(list []string, element string) bool {
-	for _, v := range list {
-		if element == v {
-			return true
-		}
-	}
-
-	return false
-}

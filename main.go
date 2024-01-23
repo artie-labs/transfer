@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"sync"
@@ -63,7 +64,7 @@ func main() {
 		case constants.PubSub:
 			consumer.StartSubscriber(ctx)
 		default:
-			logger.Fatalf("message queue: %s not supported", settings.Config.Queue)
+			logger.Fatal(fmt.Sprintf("message queue: %s not supported", settings.Config.Queue))
 		}
 	}(ctx)
 

@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"fmt"
 	"log/slog"
 	"os"
 
@@ -39,11 +38,5 @@ func NewLogger(settings *config.Settings) (*slog.Logger, bool) {
 
 func Fatal(msg string, args ...interface{}) {
 	slog.Error(msg, args...)
-	panic(msg)
-}
-
-func Fatalf(msg string, args ...any) {
-	msg = fmt.Sprintf(msg, args...)
-	slog.Error(msg)
 	panic(msg)
 }

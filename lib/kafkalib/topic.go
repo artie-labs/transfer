@@ -2,6 +2,7 @@ package kafkalib
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/artie-labs/transfer/lib/kafkalib/partition"
 
@@ -79,13 +80,5 @@ func (t *TopicConfig) Valid() bool {
 		t.CDCKeyFormat = defaultKeyFormat
 	}
 
-	return array.StringContains(validKeyFormats, t.CDCKeyFormat)
-}
-
-func (t *TopicConfig) ToCacheKey(partition int64) string {
-	return fmt.Sprintf("%s#%d", t.Topic, partition)
-}
-
-func ToCacheKey(topic string, partition int64) string {
-	return fmt.Sprintf("%s#%d", topic, partition)
+	return slices.Contains(validKeyFormats, t.CDCKeyFormat)
 }
