@@ -2,10 +2,10 @@ package sql
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
@@ -29,7 +29,7 @@ func EscapeName(name string, uppercaseEscNames bool, args *NameArgs) string {
 		reservedKeywords = constants.ReservedKeywords
 	}
 
-	needsEscaping := array.StringContains(reservedKeywords, name)
+	needsEscaping := slices.Contains(reservedKeywords, name)
 
 	// If it does not contain any reserved words, does it contain any symbols that need to be escaped?
 	if !needsEscaping {
