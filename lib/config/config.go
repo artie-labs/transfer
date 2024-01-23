@@ -95,7 +95,22 @@ type SharedDestinationConfig struct {
 }
 
 type SharedTransferConfig struct {
-	typing.Settings
+	// TODO: Remove these once everyone is using TypingSettings
+	AdditionalDateFormats       []string `yaml:"additionalDateFormats"`
+	CreateAllColumnsIfAvailable bool     `yaml:"createAllColumnsIfAvailable"`
+
+	TypingSettings *typing.Settings
+}
+
+func (stc SharedTransferConfig) ToTypingSettings() typing.Settings {
+	if stc.TypingSettings != nil {
+		return *stc.TypingSettings
+	}
+
+	return typing.Settings{
+		AdditionalDateFormats:       stc.AdditionalDateFormats,
+		CreateAllColumnsIfAvailable: stc.CreateAllColumnsIfAvailable,
+	}
 }
 
 type Snowflake struct {

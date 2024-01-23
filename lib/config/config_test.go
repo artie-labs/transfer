@@ -547,3 +547,35 @@ func TestCfg_KafkaBootstrapServers(t *testing.T) {
 
 	assert.Equal(t, []string{"a:9092", "b:9093", "c:9094"}, brokers)
 }
+
+func TestUnmarshallSharedTransferConfig(t *testing.T) {
+	// sharedTransferConfig not set
+	{
+		randomFile := filepath.Join(t.TempDir(), "config.yaml")
+		assert.NoError(t, os.WriteFile(randomFile, []byte(validKafkaTopic), 0644))
+		cfg, err := readFileToConfig(randomFile)
+		assert.NoError(t, err)
+		assert.Empty(t, cfg.SharedTransferConfig.AdditionalDateFormats)
+		assert.Empty(t, cfg.SharedTransferConfig.ToTypingSettings().AdditionalDateFormats)
+		assert.False(t, cfg.SharedTransferConfig.CreateAllColumnsIfAvailable)
+		assert.False(t, cfg.SharedTransferConfig.ToTypingSettings().CreateAllColumnsIfAvailable)
+	}
+
+	// sharedTransferConfig set
+	{
+		yamlData := validKafkaTopic + `sharedTransferConfig:
+ additionalDateFormats:
+  - "yyyy-MM-dd"
+ createAllColumnsIfAvailable: true
+`
+
+		randomFile := filepath.Join(t.TempDir(), "config.yaml")
+		assert.NoError(t, os.WriteFile(randomFile, []byte(yamlData), 0644))
+		cfg, err := readFileToConfig(randomFile)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"yyyy-MM-dd"}, cfg.SharedTransferConfig.AdditionalDateFormats)
+		assert.Equal(t, []string{"yyyy-MM-dd"}, cfg.SharedTransferConfig.ToTypingSettings().AdditionalDateFormats)
+		assert.True(t, cfg.SharedTransferConfig.CreateAllColumnsIfAvailable)
+		assert.True(t, cfg.SharedTransferConfig.ToTypingSettings().CreateAllColumnsIfAvailable)
+	}
+}

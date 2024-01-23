@@ -131,7 +131,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 		}
 	}
 
-	typingSettings := config.FromContext(ctx).Config.SharedTransferConfig.Settings
+	typingSettings := config.FromContext(ctx).Config.SharedTransferConfig.ToTypingSettings()
 
 	// Table columns
 	inMemoryColumns := td.ReadOnlyInMemoryCols()
