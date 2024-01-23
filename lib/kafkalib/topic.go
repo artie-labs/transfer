@@ -82,11 +82,3 @@ func (t *TopicConfig) Valid() bool {
 
 	return slices.Contains(validKeyFormats, t.CDCKeyFormat)
 }
-
-func (t *TopicConfig) ToCacheKey(partition int64) string {
-	return fmt.Sprintf("%s#%d", t.Topic, partition)
-}
-
-func ToCacheKey(topic string, partition int64) string {
-	return fmt.Sprintf("%s#%d", topic, partition)
-}

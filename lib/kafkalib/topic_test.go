@@ -97,17 +97,6 @@ func TestGetUniqueDatabaseAndSchema(t *testing.T) {
 	}
 }
 
-func TestToCacheKey(t *testing.T) {
-	topicCfg := &TopicConfig{
-		Database:  "db",
-		TableName: "order",
-		Schema:    "public",
-		Topic:     "order",
-	}
-
-	assert.Equal(t, topicCfg.ToCacheKey(9), ToCacheKey("order", 9))
-}
-
 func TestTopicConfig_String(t *testing.T) {
 	tc := TopicConfig{
 		Database:      "aaa",
