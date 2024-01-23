@@ -13,7 +13,7 @@ import (
 
 type Debezium string
 
-func (d *Debezium) GetEventFromBytes(typingSettings typing.Settings, bytes []byte) (cdc.Event, error) {
+func (d *Debezium) GetEventFromBytes(_ typing.Settings, bytes []byte) (cdc.Event, error) {
 	var event util.SchemaEventPayload
 	if len(bytes) == 0 {
 		event.Tombstone()
