@@ -121,7 +121,7 @@ func (d *Decimal) Numeric() bool {
 
 	// max(1,s) <= p <= s + 29
 	return numbers.BetweenEq(numbers.BetweenEqArgs{
-		Start:  numbers.MaxInt(1, d.scale),
+		Start:  max(1, d.scale),
 		End:    d.scale + 29,
 		Number: *d.precision,
 	})
@@ -139,7 +139,7 @@ func (d *Decimal) BigNumeric() bool {
 
 	// max(1,s) <= p <= s + 38
 	return numbers.BetweenEq(numbers.BetweenEqArgs{
-		Start:  numbers.MaxInt(1, d.scale),
+		Start:  max(1, d.scale),
 		End:    d.scale + 38,
 		Number: *d.precision,
 	})
