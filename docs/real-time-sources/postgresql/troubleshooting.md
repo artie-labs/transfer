@@ -13,7 +13,7 @@ To do this, you'll need to do the following:
 
 You can do this by going to the Deployment overview and changing the status.
 
-<figure><img src="../../.gitbook/assets/image.png" alt="" width="563"><figcaption><p>Changing Deployment status</p></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (3).png" alt="" width="563"><figcaption><p>Changing Deployment status</p></figcaption></figure>
 
 ### Step #2 - Delete the replication slot
 
