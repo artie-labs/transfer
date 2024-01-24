@@ -3,8 +3,8 @@
 ## Creating a service account
 
 ```sql
-CREATE USER 'artie_transfer'@'%' IDENTIFIED BY 'password';
-GRANT SELECT, REPLICATION CLIENT, REPLICATION SLAVE ON *.* TO artie_transfer@'%';
+CREATE USER 'artie_transfer' IDENTIFIED BY 'password';
+GRANT SELECT, REPLICATION CLIENT, REPLICATION SLAVE ON *.* TO artie_transfer;
 ```
 
 ## Enabling Binary Log Access
