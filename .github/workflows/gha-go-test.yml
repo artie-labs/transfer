@@ -5,11 +5,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3 # Checks out the code
+      - uses: actions/checkout@v4 # Checks out the code
       - name: Setting Go up
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version: 1.21
+          cache-dependency-path: go.sum
       - name: staticcheck
         run: |
           go install honnef.co/go/tools/cmd/staticcheck@latest
