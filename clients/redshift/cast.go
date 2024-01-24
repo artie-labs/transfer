@@ -59,8 +59,6 @@ func (s *Store) CastColValStaging(colVal interface{}, colKind columns.Column, ad
 		switch castedColVal := colVal.(type) {
 		case float64:
 			colValString = numbers.Float64ToString(castedColVal)
-		case float32:
-
 		}
 	// All the other types do not need string wrapping.
 	case typing.ETime.Kind:
