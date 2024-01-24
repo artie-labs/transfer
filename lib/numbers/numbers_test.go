@@ -30,3 +30,11 @@ func TestBetweenEq(t *testing.T) {
 		}), _case)
 	}
 }
+
+func TestFloatToString(t *testing.T) {
+	{
+		assert.Equal(t, "1", Float64ToString(1.0))
+		assert.Equal(t, "1.1", Float64ToString(1.1))
+		assert.Equal(t, "1533369.333", Float64ToString(1533369.333))
+	}
+}

@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/numbers"
+
 	"github.com/artie-labs/transfer/lib/array"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -53,6 +55,13 @@ func (s *Store) CastColValStaging(colVal interface{}, colKind columns.Column, ad
 
 	colValString := fmt.Sprint(colVal)
 	switch colKind.KindDetails.Kind {
+	case typing.Integer.Kind:
+		switch castedColVal := colVal.(type) {
+		case float64:
+			colValString = numbers.Float64ToString(castedColVal)
+		case float32:
+
+		}
 	// All the other types do not need string wrapping.
 	case typing.ETime.Kind:
 		extTime, err := ext.ParseFromInterface(colVal, additionalDateFmts)
