@@ -12,13 +12,13 @@ This is necessary so that we are able to run a Debezium deployment to read from 
 
 We will need the following:
 
-| Name               | Description                                                    | Default value |
-| ------------------ | -------------------------------------------------------------- | ------------- |
-| Database Host Name | IP address or hostname of your database server.                | No default    |
-| Database Port      | Port for where your server is running.                         | `3306`        |
-| Database Username  | Username for authentication into your database.                | No default    |
-| Database Password  | Password for authentication into your database.                | No default    |
-| Database Name      | The name of the database that you want to capture changes for. | No default.   |
+| Name               | Description                                                                                                                                    | Default value |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| Database Host Name | <p>IP address or hostname of your database server.<br><br>Make sure this instance is the <strong>primary instance or writer node</strong>.</p> | No default    |
+| Database Port      | Port for where your server is running.                                                                                                         | `3306`        |
+| Database Username  | Username for authentication into your database.                                                                                                | No default    |
+| Database Password  | Password for authentication into your database.                                                                                                | No default    |
+| Database Name      | The name of the database that you want to capture changes for.                                                                                 | No default.   |
 
 ### Supported types
 
