@@ -11,9 +11,33 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"gopkg.in/yaml.v3"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestSharedTransferConfig(t *testing.T) {
+	{
+		var sharedTransferCfg SharedTransferConfig
+		validBody := `
+additionalDateFormats: ["yyyy-MM-dd"]
+createAllColumnsIfAvailable: true
+typingSettings:
+ additionalDateFormats: ["yyyy-MM-dd1"]
+ createAllColumnsIfAvailable: true
+`
+		err := yaml.Unmarshal([]byte(validBody), &sharedTransferCfg)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "yyyy-MM-dd", sharedTransferCfg.AdditionalDateFormats[0])
+		assert.True(t, sharedTransferCfg.CreateAllColumnsIfAvailable)
+
+		assert.True(t, sharedTransferCfg.TypingSettings.CreateAllColumnsIfAvailable)
+		assert.Equal(t, "yyyy-MM-dd1", sharedTransferCfg.TypingSettings.AdditionalDateFormats[0])
+		assert.True(t, sharedTransferCfg.ToTypingSettings().CreateAllColumnsIfAvailable)
+		assert.Equal(t, "yyyy-MM-dd1", sharedTransferCfg.ToTypingSettings().AdditionalDateFormats[0])
+	}
+}
 
 const (
 	validKafkaTopic = `

@@ -96,10 +96,9 @@ type SharedDestinationConfig struct {
 
 type SharedTransferConfig struct {
 	// TODO: Remove these once everyone is using TypingSettings
-	AdditionalDateFormats       []string `yaml:"additionalDateFormats"`
-	CreateAllColumnsIfAvailable bool     `yaml:"createAllColumnsIfAvailable"`
-
-	TypingSettings *typing.Settings
+	AdditionalDateFormats       []string         `yaml:"additionalDateFormats"`
+	CreateAllColumnsIfAvailable bool             `yaml:"createAllColumnsIfAvailable"`
+	TypingSettings              *typing.Settings `yaml:"typingSettings"`
 }
 
 func (stc SharedTransferConfig) ToTypingSettings() typing.Settings {
