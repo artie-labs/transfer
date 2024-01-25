@@ -41,6 +41,7 @@ func replaceExceededValues(colVal string, colKind columns.Column) string {
 // CastColValStaging - takes `colVal` interface{} and `colKind` typing.Column and converts the value into a string value
 // This is necessary because CSV writers require values to in `string`.
 func (s *Store) CastColValStaging(colVal interface{}, colKind columns.Column, additionalDateFmts []string) (string, error) {
+	// TODO: We should consolidate Snowflake and Redshift functions together.
 	if colVal == nil {
 		if colKind.KindDetails == typing.Struct {
 			// Returning empty here because if it's a struct, it will go through JSON PARSE and JSON_PARSE("") = null
@@ -124,7 +125,8 @@ func (s *Store) CastColValStaging(colVal interface{}, colKind columns.Column, ad
 		}
 
 		switch castedColVal := colVal.(type) {
-		// It's okay if it's not a *decimal.Decimal, so long as it's a float.
+		// It's okay if it's not a *decimal.Decimal, so long as it's a float or string.
+		// By having the flexibility of handling both *decimal.Decimal and float64/float32/string values within the same batch will increase our ability for data digestion.
 		case float64, float32:
 			return fmt.Sprint(castedColVal), nil
 		case string:
