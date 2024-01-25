@@ -196,6 +196,22 @@ func (r *RedshiftTestSuite) TestCastColValStaging_Basic() {
 			expectedString: "55.22",
 		},
 		{
+			name:   "numeric data types (float)",
+			colVal: 123.45,
+			colKind: columns.Column{
+				KindDetails: typing.EDecimal,
+			},
+			expectedString: "123.45",
+		},
+		{
+			name:   "numeric data types (string)",
+			colVal: "123.45",
+			colKind: columns.Column{
+				KindDetails: typing.EDecimal,
+			},
+			expectedString: "123.45",
+		},
+		{
 			name:   "numeric data types",
 			colVal: decimal.NewDecimal(2, ptr.ToInt(38), big.NewFloat(585692791691858.25)),
 			colKind: columns.Column{

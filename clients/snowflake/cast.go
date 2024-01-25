@@ -81,11 +81,20 @@ func castColValStaging(colVal interface{}, colKind columns.Column, additionalDat
 		colValString = string(colValBytes)
 	case typing.EDecimal.Kind:
 		val, isOk := colVal.(*decimal.Decimal)
-		if !isOk {
-			return "", fmt.Errorf("colVal is not *decimal.Decimal type")
+		if isOk {
+			return val.String(), nil
 		}
 
-		return val.String(), nil
+		switch castedColVal := colVal.(type) {
+		// It's okay if it's not a *decimal.Decimal, so long as it's a float or string.
+		// By having the flexibility of handling both *decimal.Decimal and float64/float32/string values within the same batch will increase our ability for data digestion.
+		case float64, float32:
+			return fmt.Sprint(castedColVal), nil
+		case string:
+			return castedColVal, nil
+		}
+
+		return "", fmt.Errorf("colVal is not *decimal.Decimal type, type is: %T", colVal)
 	}
 
 	return colValString, nil
