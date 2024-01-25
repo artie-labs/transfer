@@ -23,12 +23,13 @@ import (
 
 func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string) error {
 	tempAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:            s,
-		Tc:             tableConfig,
-		FqTableName:    tempTableName,
-		CreateTable:    true,
-		TemporaryTable: true,
-		ColumnOp:       constants.Add,
+		Dwh:               s,
+		Tc:                tableConfig,
+		FqTableName:       tempTableName,
+		CreateTable:       true,
+		TemporaryTable:    true,
+		ColumnOp:          constants.Add,
+		UppercaseEscNames: &s.uppercaseEscNames,
 	}
 
 	if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
