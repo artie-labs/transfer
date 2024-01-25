@@ -119,11 +119,19 @@ func (s *Store) CastColValStaging(colVal interface{}, colKind columns.Column, ad
 		colValString = string(colValBytes)
 	case typing.EDecimal.Kind:
 		val, isOk := colVal.(*decimal.Decimal)
-		if !isOk {
-			return "", fmt.Errorf("colVal is not *decimal.Decimal type")
+		if isOk {
+			return val.String(), nil
 		}
 
-		return val.String(), nil
+		switch castedColVal := colVal.(type) {
+		// It's okay if it's not a *decimal.Decimal, so long as it's a float.
+		case float64, float32:
+			return fmt.Sprint(castedColVal), nil
+		case string:
+			return castedColVal, nil
+		}
+
+		return "", fmt.Errorf("colVal is not *decimal.Decimal type, type is: %T", colVal)
 	}
 
 	// Checks for DDL overflow needs to be done at the end in case there are any conversions that need to be done.
