@@ -97,6 +97,22 @@ func evaluateTestCase(t *testing.T, store *Store, testCase _testCase) {
 func (r *RedshiftTestSuite) TestCastColValStaging_Basic() {
 	testCases := []_testCase{
 		{
+			name:   "float",
+			colVal: float32(15333599),
+			colKind: columns.Column{
+				KindDetails: typing.Integer,
+			},
+			expectedString: "15333599",
+		},
+		{
+			name:   "float",
+			colVal: 1533358,
+			colKind: columns.Column{
+				KindDetails: typing.Integer,
+			},
+			expectedString: "1533358",
+		},
+		{
 			name:   "empty string",
 			colVal: "",
 			colKind: columns.Column{

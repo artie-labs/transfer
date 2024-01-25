@@ -53,6 +53,12 @@ func (s *Store) CastColValStaging(colVal interface{}, colKind columns.Column, ad
 
 	colValString := fmt.Sprint(colVal)
 	switch colKind.KindDetails.Kind {
+	case typing.Integer.Kind:
+		switch colVal.(type) {
+		case float64, float32:
+			// Strip away the trailing zeros if the value is a float but the type is an integer in DWH
+			colValString = fmt.Sprintf("%.0f", colVal)
+		}
 	// All the other types do not need string wrapping.
 	case typing.ETime.Kind:
 		extTime, err := ext.ParseFromInterface(colVal, additionalDateFmts)
