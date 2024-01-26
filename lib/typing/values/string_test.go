@@ -21,14 +21,14 @@ type _testCase struct {
 	colVal  interface{}
 	colKind columns.Column
 
+	errorMessage   string
 	expectedString string
-	expectErr      bool
 }
 
 func evaluateTestCase(t *testing.T, testCase _testCase) {
 	actualString, actualErr := ToString(testCase.colVal, testCase.colKind, nil)
-	if testCase.expectErr {
-		assert.Error(t, actualErr, testCase.name)
+	if len(testCase.errorMessage) > 0 {
+		assert.Contains(t, actualErr.Error(), testCase.errorMessage, testCase.name)
 	} else {
 		assert.NoError(t, actualErr, testCase.name)
 		assert.Equal(t, testCase.expectedString, actualString, testCase.name)
@@ -38,9 +38,9 @@ func evaluateTestCase(t *testing.T, testCase _testCase) {
 func TestCastColValStaging_Basic(t *testing.T) {
 	testCases := []_testCase{
 		{
-			name:      "null value",
-			colVal:    nil,
-			expectErr: true,
+			name:         "null value",
+			colVal:       nil,
+			errorMessage: "colVal is nil",
 		},
 		{
 			name:   "colKind = string, colVal = JSON (this happens because of schema inference)",
@@ -118,6 +118,7 @@ func TestCastColValStaging_Basic(t *testing.T) {
 
 			expectedString: "55.22",
 		},
+		// Indigestion stuff
 		{
 			name:   "numeric data types (string)",
 			colVal: "123.45",
