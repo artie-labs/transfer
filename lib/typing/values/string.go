@@ -1,4 +1,4 @@
-package snowflake
+package values
 
 import (
 	"encoding/json"
@@ -6,24 +6,28 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-// castColValStaging - takes `colVal` interface{} and `colKind` typing.Column and converts the value into a string value
-// This is necessary because CSV writers require values to in `string`.
-func castColValStaging(colVal interface{}, colKind columns.Column, additionalDateFmts []string) (string, error) {
+func ToString(colVal interface{}, colKind columns.Column, additionalDateFmts []string) (string, error) {
 	if colVal == nil {
-		// \\N needs to match NULL_IF(...) from ddl.go
-		return `\\N`, nil
+		return "", fmt.Errorf("colVal is nil")
 	}
 
 	colValString := fmt.Sprint(colVal)
 	switch colKind.KindDetails.Kind {
+	case typing.Integer.Kind:
+		switch colVal.(type) {
+		case float64, float32:
+			// Strip away the trailing zeros if the value is a float but the type is an integer in DWH
+			return fmt.Sprintf("%.0f", colVal), nil
+		}
+	// All the other types do not need string wrapping.
 	case typing.ETime.Kind:
 		extTime, err := ext.ParseFromInterface(colVal, additionalDateFmts)
 		if err != nil {
@@ -41,20 +45,25 @@ func castColValStaging(colVal interface{}, colKind columns.Column, additionalDat
 			colValString = extTime.String(colKind.KindDetails.ExtendedTimeDetails.Format)
 		}
 
+		return colValString, nil
 	case typing.String.Kind:
-		// If the value is JSON, then we should parse the JSON into a string.
+		list, convErr := array.InterfaceToArrayString(colVal, false)
+		if convErr == nil {
+			colValString = "[" + strings.Join(list, ",") + "]"
+		}
+
+		// This should also check if the colValString contains Go's internal string representation of a map[string]interface{}
 		_, isOk := colVal.(map[string]interface{})
 		if isOk {
-			bytes, err := json.Marshal(colVal)
+			colValBytes, err := json.Marshal(colVal)
 			if err != nil {
 				return "", err
 			}
 
-			colValString = string(bytes)
-		} else {
-			// Else, make sure we escape the quotes.
-			colValString = stringutil.Wrap(colVal, true)
+			colValString = string(colValBytes)
 		}
+
+		return colValString, nil
 	case typing.Struct.Kind:
 		if colKind.KindDetails == typing.Struct {
 			if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
@@ -78,7 +87,7 @@ func castColValStaging(colVal interface{}, colKind columns.Column, additionalDat
 			return "", err
 		}
 
-		colValString = string(colValBytes)
+		return string(colValBytes), nil
 	case typing.EDecimal.Kind:
 		val, isOk := colVal.(*decimal.Decimal)
 		if isOk {
@@ -98,5 +107,4 @@ func castColValStaging(colVal interface{}, colKind columns.Column, additionalDat
 	}
 
 	return colValString, nil
-
 }

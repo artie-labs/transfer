@@ -1,4 +1,4 @@
-package snowflake
+package values
 
 import (
 	"fmt"
@@ -6,18 +6,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/ptr"
-
-	"github.com/artie-labs/transfer/lib/typing/decimal"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-
-	"github.com/artie-labs/transfer/lib/typing/ext"
-
+	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/stretchr/testify/assert"
+	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type _testCase struct {
@@ -30,17 +26,22 @@ type _testCase struct {
 }
 
 func evaluateTestCase(t *testing.T, testCase _testCase) {
-	actualString, actualErr := castColValStaging(testCase.colVal, testCase.colKind, nil)
+	actualString, actualErr := ToString(testCase.colVal, testCase.colKind, nil)
 	if testCase.expectErr {
 		assert.Error(t, actualErr, testCase.name)
 	} else {
 		assert.NoError(t, actualErr, testCase.name)
+		assert.Equal(t, testCase.expectedString, actualString, testCase.name)
 	}
-	assert.Equal(t, testCase.expectedString, actualString, testCase.name)
 }
 
-func (s *SnowflakeTestSuite) TestCastColValStaging_Basic() {
+func TestCastColValStaging_Basic(t *testing.T) {
 	testCases := []_testCase{
+		{
+			name:      "null value",
+			colVal:    nil,
+			expectErr: true,
+		},
 		{
 			name:   "colKind = string, colVal = JSON (this happens because of schema inference)",
 			colVal: map[string]interface{}{"hello": "world"},
@@ -58,15 +59,6 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Basic() {
 			},
 
 			expectedString: "",
-		},
-		{
-			name:   "null value (string, not that it matters)",
-			colVal: nil,
-			colKind: columns.Column{
-				KindDetails: typing.String,
-			},
-
-			expectedString: `\\N`,
 		},
 		{
 			name:   "string",
@@ -153,11 +145,11 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Basic() {
 	}
 
 	for _, testCase := range testCases {
-		evaluateTestCase(s.T(), testCase)
+		evaluateTestCase(t, testCase)
 	}
 }
 
-func (s *SnowflakeTestSuite) TestCastColValStaging_Array() {
+func TestCastColValStaging_Array(t *testing.T) {
 	testCases := []_testCase{
 		{
 			name:   "array w/ numbers",
@@ -202,12 +194,12 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Array() {
 	}
 
 	for _, testCase := range testCases {
-		evaluateTestCase(s.T(), testCase)
+		evaluateTestCase(t, testCase)
 	}
 }
 
 // TestCastColValStaging_Time - will test all the variants of date, time and date time.
-func (s *SnowflakeTestSuite) TestCastColValStaging_Time() {
+func TestCastColValStaging_Time(t *testing.T) {
 	birthday := time.Date(2022, time.September, 6, 3, 19, 24, 942000000, time.UTC)
 	// date
 	dateKind := typing.ETime
@@ -220,13 +212,13 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Time() {
 	dateTimeKind.ExtendedTimeDetails = &ext.DateTime
 
 	birthdate, err := ext.NewExtendedTime(birthday, dateKind.ExtendedTimeDetails.Type, "")
-	assert.NoError(s.T(), err)
+	assert.NoError(t, err)
 
 	birthTime, err := ext.NewExtendedTime(birthday, timeKind.ExtendedTimeDetails.Type, "")
-	assert.NoError(s.T(), err)
+	assert.NoError(t, err)
 
 	birthDateTime, err := ext.NewExtendedTime(birthday, dateTimeKind.ExtendedTimeDetails.Type, "")
-	assert.NoError(s.T(), err)
+	assert.NoError(t, err)
 
 	testCases := []_testCase{
 		{
@@ -264,11 +256,11 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_Time() {
 	}
 
 	for _, testCase := range testCases {
-		evaluateTestCase(s.T(), testCase)
+		evaluateTestCase(t, testCase)
 	}
 }
 
-func (s *SnowflakeTestSuite) TestCastColValStaging_TOAST() {
+func TestCastColValStaging_TOAST(t *testing.T) {
 	// Toast only really matters for JSON blobs since it'll return a STRING value that's not a JSON object.
 	// We're testing that we're casting the unavailable value correctly into a JSON object so that it can compile.
 	testCases := []_testCase{
@@ -283,6 +275,6 @@ func (s *SnowflakeTestSuite) TestCastColValStaging_TOAST() {
 	}
 
 	for _, testCase := range testCases {
-		evaluateTestCase(s.T(), testCase)
+		evaluateTestCase(t, testCase)
 	}
 }

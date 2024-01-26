@@ -1,18 +1,13 @@
 package redshift
 
 import (
-	"encoding/json"
 	"fmt"
-	"reflect"
-	"strings"
 
-	"github.com/artie-labs/transfer/lib/array"
+	"github.com/artie-labs/transfer/lib/typing/values"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 const (
@@ -41,7 +36,6 @@ func replaceExceededValues(colVal string, colKind columns.Column) string {
 // CastColValStaging - takes `colVal` interface{} and `colKind` typing.Column and converts the value into a string value
 // This is necessary because CSV writers require values to in `string`.
 func (s *Store) CastColValStaging(colVal interface{}, colKind columns.Column, additionalDateFmts []string) (string, error) {
-	// TODO: We should consolidate Snowflake and Redshift functions together.
 	if colVal == nil {
 		if colKind.KindDetails == typing.Struct {
 			// Returning empty here because if it's a struct, it will go through JSON PARSE and JSON_PARSE("") = null
@@ -52,88 +46,9 @@ func (s *Store) CastColValStaging(colVal interface{}, colKind columns.Column, ad
 		return `\N`, nil
 	}
 
-	colValString := fmt.Sprint(colVal)
-	switch colKind.KindDetails.Kind {
-	case typing.Integer.Kind:
-		switch colVal.(type) {
-		case float64, float32:
-			// Strip away the trailing zeros if the value is a float but the type is an integer in DWH
-			colValString = fmt.Sprintf("%.0f", colVal)
-		}
-	// All the other types do not need string wrapping.
-	case typing.ETime.Kind:
-		extTime, err := ext.ParseFromInterface(colVal, additionalDateFmts)
-		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
-		}
-
-		if colKind.KindDetails.ExtendedTimeDetails == nil {
-			return "", fmt.Errorf("column kind details for extended time details is null")
-		}
-
-		switch colKind.KindDetails.ExtendedTimeDetails.Type {
-		case ext.TimeKindType:
-			colValString = extTime.String(ext.PostgresTimeFormatNoTZ)
-		default:
-			colValString = extTime.String(colKind.KindDetails.ExtendedTimeDetails.Format)
-		}
-
-	case typing.String.Kind:
-		list, convErr := array.InterfaceToArrayString(colVal, false)
-		if convErr == nil {
-			colValString = "[" + strings.Join(list, ",") + "]"
-		}
-
-		// This should also check if the colValString contains Go's internal string representation of a map[string]interface{}
-		_, isOk := colVal.(map[string]interface{})
-		if isOk {
-			colValBytes, err := json.Marshal(colVal)
-			if err != nil {
-				return "", err
-			}
-
-			colValString = string(colValBytes)
-		}
-	case typing.Struct.Kind:
-		if colKind.KindDetails == typing.Struct {
-			if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
-				colVal = map[string]interface{}{
-					"key": constants.ToastUnavailableValuePlaceholder,
-				}
-			}
-
-			if reflect.TypeOf(colVal).Kind() != reflect.String {
-				colValBytes, err := json.Marshal(colVal)
-				if err != nil {
-					return "", err
-				}
-
-				colValString = string(colValBytes)
-			}
-		}
-	case typing.Array.Kind:
-		colValBytes, err := json.Marshal(colVal)
-		if err != nil {
-			return "", err
-		}
-
-		colValString = string(colValBytes)
-	case typing.EDecimal.Kind:
-		val, isOk := colVal.(*decimal.Decimal)
-		if isOk {
-			return val.String(), nil
-		}
-
-		switch castedColVal := colVal.(type) {
-		// It's okay if it's not a *decimal.Decimal, so long as it's a float or string.
-		// By having the flexibility of handling both *decimal.Decimal and float64/float32/string values within the same batch will increase our ability for data digestion.
-		case float64, float32:
-			return fmt.Sprint(castedColVal), nil
-		case string:
-			return castedColVal, nil
-		}
-
-		return "", fmt.Errorf("colVal is not *decimal.Decimal type, type is: %T", colVal)
+	colValString, err := values.ToString(colVal, colKind, additionalDateFmts)
+	if err != nil {
+		return "", err
 	}
 
 	// Checks for DDL overflow needs to be done at the end in case there are any conversions that need to be done.

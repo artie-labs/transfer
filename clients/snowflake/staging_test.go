@@ -21,6 +21,40 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func (s *SnowflakeTestSuite) TestCastColValStaging() {
+	type _tc struct {
+		name    string
+		colVal  interface{}
+		colKind columns.Column
+
+		errorMessage  string
+		expectedValue string
+	}
+
+	tcs := []_tc{
+		{
+			name:   "null value (string, not that it matters)",
+			colVal: nil,
+			colKind: columns.Column{
+				KindDetails: typing.String,
+			},
+
+			expectedValue: `\\N`,
+		},
+	}
+
+	for _, tc := range tcs {
+		actualValue, err := castColValStaging(tc.colVal, tc.colKind, nil)
+
+		if len(tc.errorMessage) > 0 {
+			assert.Contains(s.T(), err.Error(), tc.errorMessage, tc.name)
+		} else {
+			assert.NoError(s.T(), err, tc.name)
+			assert.Equal(s.T(), tc.expectedValue, actualValue, tc.name)
+		}
+	}
+}
+
 func (s *SnowflakeTestSuite) TestBackfillColumn() {
 	fqTableName := "db.public.tableName"
 	type _testCase struct {
