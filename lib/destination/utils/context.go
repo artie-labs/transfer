@@ -21,7 +21,7 @@ func InjectBaselineIntoCtx(fs destination.Baseline, ctx context.Context) context
 func FromContext(ctx context.Context) destination.Baseline {
 	destVal := ctx.Value(constants.DestinationKey)
 	if destVal == nil {
-		logger.Fatal("destination missing from context")
+		logger.Panic("destination missing from context")
 	}
 
 	// Check if the key is a type destination.DataWarehouse or destination.Baseline
@@ -32,7 +32,7 @@ func FromContext(ctx context.Context) destination.Baseline {
 
 	dwh, isOk := destVal.(destination.DataWarehouse)
 	if !isOk {
-		logger.Fatal("destination type is incorrect", slog.Any("dwhVal", destVal))
+		logger.Panic("destination type is incorrect", slog.Any("dwhVal", destVal))
 	}
 
 	return dwh

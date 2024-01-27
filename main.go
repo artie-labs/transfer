@@ -21,7 +21,10 @@ import (
 
 func main() {
 	// Parse args into settings.
-	ctx := config.InitializeCfgIntoContext(context.Background(), os.Args, true)
+	ctx, err := config.InitializeCfgIntoContext(context.Background(), os.Args, true)
+	if err != nil {
+		logger.Fatal("Failed to initialize config", slog.Any("err", err))
+	}
 
 	// Initialize default logger
 	_logger, usingSentry := logger.NewLogger(config.FromContext(ctx))
