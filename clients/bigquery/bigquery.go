@@ -67,7 +67,7 @@ func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 	settings := config.FromContext(ctx)
 	client, err := bigquery.NewClient(ctx, settings.Config.BigQuery.ProjectID)
 	if err != nil {
-		logger.Fatal("failed to get bigquery client", slog.Any("err", err))
+		logger.Panic("failed to get bigquery client", slog.Any("err", err))
 	}
 
 	return client
@@ -107,7 +107,7 @@ func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
 		slog.Debug("writing the path to BQ credentials to env var for google auth")
 		err := os.Setenv(GooglePathToCredentialsEnvKey, credPath)
 		if err != nil {
-			logger.Fatal(fmt.Sprintf("error setting env var for %s", GooglePathToCredentialsEnvKey), slog.Any("err", err))
+			logger.Panic(fmt.Sprintf("error setting env var for %s", GooglePathToCredentialsEnvKey), slog.Any("err", err))
 		}
 	}
 

@@ -60,7 +60,7 @@ func StartSubscriber(ctx context.Context) {
 	client, clientErr := gcp_pubsub.NewClient(ctx, settings.Config.Pubsub.ProjectID,
 		option.WithCredentialsFile(settings.Config.Pubsub.PathToCredentials))
 	if clientErr != nil {
-		logger.Fatal("failed to create a pubsub client", slog.Any("err", clientErr))
+		logger.Panic("Failed to create a pubsub client", slog.Any("err", clientErr))
 	}
 
 	tcFmtMap := NewTcFmtMap()
@@ -79,7 +79,7 @@ func StartSubscriber(ctx context.Context) {
 			subName := fmt.Sprintf("transfer_%s", topic)
 			sub, err := findOrCreateSubscription(ctx, client, topic, subName)
 			if err != nil {
-				logger.Fatal("failed to find or create subscription", slog.Any("err", err))
+				logger.Panic("Failed to find or create subscription", slog.Any("err", err))
 			}
 
 			for {
@@ -105,7 +105,7 @@ func StartSubscriber(ctx context.Context) {
 				})
 
 				if err != nil {
-					logger.Fatal("sub receive error", slog.Any("err", err))
+					logger.Panic("Sub receive error", slog.Any("err", err))
 				}
 			}
 

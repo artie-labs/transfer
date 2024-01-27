@@ -2,18 +2,21 @@ package config
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseArgs(t *testing.T) {
-	ctx := InitializeCfgIntoContext(context.Background(), []string{}, false)
+	ctx, err := InitializeCfgIntoContext(context.Background(), []string{}, false)
+	assert.NoError(t, err)
 	settings := FromContext(ctx)
 
 	assert.Equal(t, settings.VerboseLogging, false)
 	assert.Nil(t, settings.Config)
 
-	ctx = InitializeCfgIntoContext(context.Background(), []string{"-v"}, false)
+	ctx, err = InitializeCfgIntoContext(context.Background(), []string{"-v"}, false)
+	assert.NoError(t, err)
 	settings = FromContext(ctx)
 	assert.Equal(t, settings.VerboseLogging, true)
 }

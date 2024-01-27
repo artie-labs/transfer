@@ -63,7 +63,7 @@ func (s *storeWrapper) Begin() (*sql.Tx, error) {
 func Open(ctx context.Context, driverName, dsn string) Store {
 	db, err := sql.Open(driverName, dsn)
 	if err != nil {
-		logger.Fatal("Failed to start a SQL client",
+		logger.Panic("Failed to start a SQL client",
 			slog.String("driverName", driverName),
 			slog.Any("err", err),
 		)
@@ -71,7 +71,7 @@ func Open(ctx context.Context, driverName, dsn string) Store {
 
 	err = db.Ping()
 	if err != nil {
-		logger.Fatal("Failed to validate the DB connection",
+		logger.Panic("Failed to validate the DB connection",
 			slog.String("driverName", driverName),
 			slog.Any("err", err),
 		)

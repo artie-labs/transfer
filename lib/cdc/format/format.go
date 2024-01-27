@@ -34,6 +34,6 @@ func GetFormatParser(label, topic string) cdc.Format {
 		}
 	}
 
-	logger.Fatal("Failed to fetch CDC format parser", slog.String("label", label))
+	logger.Panic("Failed to fetch CDC format parser", slog.String("label", label))
 	return nil
 }

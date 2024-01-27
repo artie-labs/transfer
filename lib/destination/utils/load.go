@@ -27,13 +27,13 @@ func Baseline(ctx context.Context) destination.Baseline {
 	case constants.S3:
 		store, err := s3.LoadStore(settings.Config.S3)
 		if err != nil {
-			logger.Fatal("failed to load s3", slog.Any("err", err))
+			logger.Panic("Failed to load s3", slog.Any("err", err))
 		}
 
 		return store
 	}
 
-	logger.Fatal("No valid output sources specified", slog.Any("source", settings.Config.Output))
+	logger.Panic("No valid output sources specified", slog.Any("source", settings.Config.Output))
 
 	return nil
 }
@@ -55,7 +55,7 @@ func DataWarehouse(ctx context.Context, store *db.Store) destination.DataWarehou
 	case constants.Snowflake:
 		s := snowflake.LoadSnowflake(ctx, store)
 		if err := s.Sweep(ctx); err != nil {
-			logger.Fatal("failed to clean up snowflake", slog.Any("err", err))
+			logger.Panic("failed to clean up snowflake", slog.Any("err", err))
 		}
 		return s
 	case constants.BigQuery:
@@ -63,12 +63,12 @@ func DataWarehouse(ctx context.Context, store *db.Store) destination.DataWarehou
 	case constants.Redshift:
 		s := redshift.LoadRedshift(ctx, store)
 		if err := s.Sweep(ctx); err != nil {
-			logger.Fatal("failed to clean up redshift", slog.Any("err", err))
+			logger.Panic("failed to clean up redshift", slog.Any("err", err))
 		}
 		return s
 	}
 
-	logger.Fatal("No valid output sources specified", slog.Any("source", settings.Config.Output))
+	logger.Panic("No valid output sources specified", slog.Any("source", settings.Config.Output))
 
 	return nil
 }

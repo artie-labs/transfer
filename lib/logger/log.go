@@ -38,5 +38,10 @@ func NewLogger(settings *config.Settings) (*slog.Logger, bool) {
 
 func Fatal(msg string, args ...interface{}) {
 	slog.Error(msg, args...)
+	os.Exit(1)
+}
+
+func Panic(msg string, args ...interface{}) {
+	slog.Error(msg, args...)
 	panic(msg)
 }

@@ -65,7 +65,7 @@ func StartConsumer(ctx context.Context) {
 	if settings.Config.Kafka.EnableAWSMSKIAM {
 		cfg, err := awsCfg.LoadDefaultConfig(ctx)
 		if err != nil {
-			logger.Fatal("failed to load aws configuration", slog.Any("err", err))
+			logger.Panic("Failed to load aws configuration", slog.Any("err", err))
 		}
 
 		dialer.SASLMechanism = aws_msk_iam_v2.NewMechanism(cfg)
