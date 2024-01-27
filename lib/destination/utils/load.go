@@ -27,7 +27,7 @@ func Baseline(ctx context.Context) destination.Baseline {
 	case constants.S3:
 		store, err := s3.LoadStore(settings.Config.S3)
 		if err != nil {
-			logger.Panic("failed to load s3", slog.Any("err", err))
+			logger.Panic("Failed to load s3", slog.Any("err", err))
 		}
 
 		return store
