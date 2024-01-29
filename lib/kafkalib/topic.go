@@ -45,6 +45,7 @@ type TopicConfig struct {
 	SoftDelete                bool                        `yaml:"softDelete"`
 	SkipDelete                bool                        `yaml:"skipDelete"`
 	IncludeArtieUpdatedAt     bool                        `yaml:"includeArtieUpdatedAt"`
+	IncludeDatabaseUpdatedAt  bool                        `yaml:"includeDatabaseUpdatedAt"`
 	BigQueryPartitionSettings *partition.BigQuerySettings `yaml:"bigQueryPartitionSettings"`
 }
 

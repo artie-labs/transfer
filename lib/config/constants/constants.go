@@ -12,11 +12,12 @@ const (
 	// We will strip this out from our partition key parsing.
 	DebeziumTopicRoutingKey = "__dbz__physicalTableIdentifier"
 
-	ArtiePrefix               = "__artie"
-	DeleteColumnMarker        = ArtiePrefix + "_delete"
-	DeletionConfidencePadding = 4 * time.Hour
-	UpdateColumnMarker        = ArtiePrefix + "_updated_at"
-	ExceededValueMarker       = ArtiePrefix + "_exceeded_value"
+	ArtiePrefix                 = "__artie"
+	DeleteColumnMarker          = ArtiePrefix + "_delete"
+	DeletionConfidencePadding   = 4 * time.Hour
+	UpdateColumnMarker          = ArtiePrefix + "_updated_at"
+	DatabaseUpdatedColumnMarker = ArtiePrefix + "_database_updated_at"
+	ExceededValueMarker         = ArtiePrefix + "_exceeded_value"
 
 	// DBZPostgresFormat is the only supported CDC format right now
 	DBZPostgresFormat    = "debezium.postgres"

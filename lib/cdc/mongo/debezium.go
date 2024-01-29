@@ -164,6 +164,10 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]interface{}, tc *kafkalib.
 			retMap[constants.UpdateColumnMarker] = ext.NewUTCTime(ext.ISO8601)
 		}
 
+		if tc.IncludeDatabaseUpdatedAt {
+			retMap[constants.DatabaseUpdatedColumnMarker] = s.GetExecutionTime()
+		}
+
 		for k, v := range pkMap {
 			retMap[k] = v
 		}
@@ -186,6 +190,10 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]interface{}, tc *kafkalib.
 	retMap[constants.DeleteColumnMarker] = false
 	if tc.IncludeArtieUpdatedAt {
 		retMap[constants.UpdateColumnMarker] = ext.NewUTCTime(ext.ISO8601)
+	}
+
+	if tc.IncludeDatabaseUpdatedAt {
+		retMap[constants.DatabaseUpdatedColumnMarker] = s.GetExecutionTime()
 	}
 
 	return retMap
