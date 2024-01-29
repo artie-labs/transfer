@@ -23,11 +23,7 @@ func shouldSkipColumn(colName string, softDelete bool, includeArtieUpdatedAt boo
 		return false
 	}
 
-	if strings.Contains(colName, constants.ArtiePrefix) {
-		return true
-	}
-
-	return false
+	return strings.Contains(colName, constants.ArtiePrefix)
 }
 
 // Diff - when given 2 maps, a source and target

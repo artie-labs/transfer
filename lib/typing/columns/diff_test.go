@@ -11,11 +11,12 @@ import (
 
 func (c *ColumnsTestSuite) TestShouldSkipColumn() {
 	type _testCase struct {
-		name                  string
-		colName               string
-		softDelete            bool
-		includeArtieUpdatedAt bool
-		expectedResult        bool
+		name                     string
+		colName                  string
+		softDelete               bool
+		includeArtieUpdatedAt    bool
+		includeDatabaseUpdatedAt bool
+		expectedResult           bool
 	}
 
 	testCases := []_testCase{
@@ -49,10 +50,22 @@ func (c *ColumnsTestSuite) TestShouldSkipColumn() {
 			includeArtieUpdatedAt: true,
 			softDelete:            true,
 		},
+		{
+			name:                     "db updated at col BUT setting is not enabled",
+			colName:                  constants.DatabaseUpdatedColumnMarker,
+			includeDatabaseUpdatedAt: false,
+			expectedResult:           true,
+		},
+		{
+			name:                     "db updated at col AND setting is not enabled",
+			colName:                  constants.DatabaseUpdatedColumnMarker,
+			includeDatabaseUpdatedAt: true,
+			expectedResult:           false,
+		},
 	}
 
 	for _, testCase := range testCases {
-		actualResult := shouldSkipColumn(testCase.colName, testCase.softDelete, testCase.includeArtieUpdatedAt)
+		actualResult := shouldSkipColumn(testCase.colName, testCase.softDelete, testCase.includeArtieUpdatedAt, testCase.includeDatabaseUpdatedAt)
 		assert.Equal(c.T(), testCase.expectedResult, actualResult, testCase.name)
 	}
 }
@@ -109,7 +122,7 @@ func (c *ColumnsTestSuite) TestDiff_VariousNils() {
 	}
 
 	for _, testCase := range testCases {
-		actualSrcKeysMissing, actualTargKeysMissing := Diff(testCase.sourceCols, testCase.targCols, false, false)
+		actualSrcKeysMissing, actualTargKeysMissing := Diff(testCase.sourceCols, testCase.targCols, false, false, false)
 		assert.Equal(c.T(), testCase.expectedSrcKeyLength, len(actualSrcKeysMissing), testCase.name)
 		assert.Equal(c.T(), testCase.expectedTargKeyLength, len(actualTargKeysMissing), testCase.name)
 	}
@@ -119,7 +132,7 @@ func (c *ColumnsTestSuite) TestDiffBasic() {
 	var source Columns
 	source.AddColumn(NewColumn("a", typing.Integer))
 
-	srcKeyMissing, targKeyMissing := Diff(&source, &source, false, false)
+	srcKeyMissing, targKeyMissing := Diff(&source, &source, false, false, false)
 	assert.Equal(c.T(), len(srcKeyMissing), 0)
 	assert.Equal(c.T(), len(targKeyMissing), 0)
 }
@@ -143,7 +156,7 @@ func (c *ColumnsTestSuite) TestDiffDelta1() {
 		targCols.AddColumn(NewColumn(colName, kindDetails))
 	}
 
-	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targCols, false, false)
+	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targCols, false, false, false)
 	assert.Equal(c.T(), len(srcKeyMissing), 2, srcKeyMissing)   // Missing aa, cc
 	assert.Equal(c.T(), len(targKeyMissing), 2, targKeyMissing) // Missing aa, cc
 }
@@ -175,7 +188,7 @@ func (c *ColumnsTestSuite) TestDiffDelta2() {
 		targetCols.AddColumn(NewColumn(colName, kindDetails))
 	}
 
-	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targetCols, false, false)
+	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targetCols, false, false, false)
 	assert.Equal(c.T(), len(srcKeyMissing), 1, srcKeyMissing)   // Missing dd
 	assert.Equal(c.T(), len(targKeyMissing), 3, targKeyMissing) // Missing a, c, d
 }
@@ -190,7 +203,7 @@ func (c *ColumnsTestSuite) TestDiffDeterministic() {
 	sourceCols.AddColumn(NewColumn("name", typing.String))
 
 	for i := 0; i < 500; i++ {
-		keysMissing, targetKeysMissing := Diff(&sourceCols, &targCols, false, false)
+		keysMissing, targetKeysMissing := Diff(&sourceCols, &targCols, false, false, false)
 		assert.Equal(c.T(), 0, len(keysMissing), keysMissing)
 
 		var key string
