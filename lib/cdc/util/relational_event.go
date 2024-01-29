@@ -35,12 +35,6 @@ type Source struct {
 	Table     string `json:"table"`
 }
 
-// Tombstone - This function is filling out the necessary metadata needed for a Kafka tombstone event.
-func (s *SchemaEventPayload) Tombstone() {
-	s.Payload.Operation = "d"
-	s.Payload.Source.TsMs = time.Now().UnixMilli()
-}
-
 func (s *SchemaEventPayload) GetColumns() *columns.Columns {
 	fieldsObject := s.Schema.GetSchemaFromLabel(cdc.After)
 	if fieldsObject == nil {

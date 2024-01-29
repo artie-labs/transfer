@@ -12,10 +12,8 @@ import (
 )
 
 func (m *MySQLTestSuite) TestGetEventFromBytesTombstone() {
-	evt, err := m.GetEventFromBytes(typing.Settings{}, nil)
-	assert.NoError(m.T(), err)
-	assert.True(m.T(), evt.DeletePayload())
-	assert.False(m.T(), evt.GetExecutionTime().IsZero())
+	_, err := m.GetEventFromBytes(typing.Settings{}, nil)
+	assert.Error(m.T(), err)
 }
 
 func (m *MySQLTestSuite) TestGetEventFromBytes() {

@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/typing/values"
+
 	"github.com/artie-labs/transfer/clients/utils"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -19,6 +21,17 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
+
+// castColValStaging - takes `colVal` interface{} and `colKind` typing.Column and converts the value into a string value
+// This is necessary because CSV writers require values to in `string`.
+func castColValStaging(colVal interface{}, colKind columns.Column, additionalDateFmts []string) (string, error) {
+	if colVal == nil {
+		// \\N needs to match NULL_IF(...) from ddl.go
+		return `\\N`, nil
+	}
+
+	return values.ToString(colVal, colKind, additionalDateFmts)
+}
 
 // prepareTempTable does the following:
 // 1) Create the temporary table

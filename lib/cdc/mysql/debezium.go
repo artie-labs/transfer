@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/cdc/util"
@@ -16,8 +17,7 @@ type Debezium string
 func (d *Debezium) GetEventFromBytes(_ typing.Settings, bytes []byte) (cdc.Event, error) {
 	var event util.SchemaEventPayload
 	if len(bytes) == 0 {
-		event.Tombstone()
-		return &event, nil
+		return nil, fmt.Errorf("empty message")
 	}
 
 	err := json.Unmarshal(bytes, &event)
