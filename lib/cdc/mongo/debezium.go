@@ -25,8 +25,7 @@ type Debezium string
 func (d *Debezium) GetEventFromBytes(typingSettings typing.Settings, bytes []byte) (cdc.Event, error) {
 	var schemaEventPayload SchemaEventPayload
 	if len(bytes) == 0 {
-		schemaEventPayload.Tombstone()
-		return &schemaEventPayload, nil
+		return nil, fmt.Errorf("empty message")
 	}
 
 	err := json.Unmarshal(bytes, &schemaEventPayload)

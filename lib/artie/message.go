@@ -3,6 +3,7 @@ package artie
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"cloud.google.com/go/pubsub"
@@ -26,6 +27,15 @@ type pubsubWrapper struct {
 type Message struct {
 	KafkaMsg *kafka.Message
 	PubSub   *pubsubWrapper
+}
+
+func KafkaMsgLogFields(msg *kafka.Message) []any {
+	return []any{
+		slog.String("topic", msg.Topic),
+		slog.Int64("offset", msg.Offset),
+		slog.String("key", string(msg.Key)),
+		slog.String("value", string(msg.Value)),
+	}
 }
 
 func NewMessage(kafkaMsg *kafka.Message, pubsubMsg *pubsub.Message, topic string) Message {
