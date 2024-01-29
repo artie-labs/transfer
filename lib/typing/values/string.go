@@ -8,7 +8,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/stringutil"
 
-	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -42,15 +41,11 @@ func ToString(colVal interface{}, colKind columns.Column, additionalDateFmts []s
 
 		return colValString, nil
 	case typing.String.Kind:
-		// If the values is an array, let's convert it to a string.
-		list, convErr := array.InterfaceToArrayString(colVal, false)
-		if convErr == nil {
-			return "[" + strings.Join(list, ",") + "]", nil
-		}
+		isArray := reflect.ValueOf(colVal).Kind() == reflect.Slice
+		_, isMap := colVal.(map[string]interface{})
 
-		// This should also check if the colValString contains Go's internal string representation of a map[string]interface{}
-		_, isOk := colVal.(map[string]interface{})
-		if isOk {
+		// If colVal is either an array or a JSON object, we should run JSON parse.
+		if isMap || isArray {
 			colValBytes, err := json.Marshal(colVal)
 			if err != nil {
 				return "", err

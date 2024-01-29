@@ -153,6 +153,14 @@ func TestCastColValStaging_Basic(t *testing.T) {
 func TestCastColValStaging_Array(t *testing.T) {
 	testCases := []_testCase{
 		{
+			name:   "array w/ numbers - but type is STRING",
+			colVal: []int{1, 2, 3, 4, 5},
+			colKind: columns.Column{
+				KindDetails: typing.String,
+			},
+			expectedString: `[1,2,3,4,5]`,
+		},
+		{
 			name:   "array w/ numbers",
 			colVal: []int{1, 2, 3, 4, 5},
 			colKind: columns.Column{
