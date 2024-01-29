@@ -324,7 +324,22 @@ func (m *MySQLTestSuite) TestGetEventFromBytes() {
 	kvMap := map[string]interface{}{
 		"id": 1001,
 	}
+
 	evtData := evt.GetData(kvMap, &kafkalib.TopicConfig{})
+
+	// Should have no Artie updated or database updated fields
+	_, isOk := evtData[constants.UpdateColumnMarker]
+	assert.False(m.T(), isOk)
+
+	_, isOk = evtData[constants.DatabaseUpdatedColumnMarker]
+	assert.False(m.T(), isOk)
+
+	evtData = evt.GetData(kvMap, &kafkalib.TopicConfig{
+		IncludeDatabaseUpdatedAt: true,
+	})
+
+	assert.Equal(m.T(), time.Date(2023, time.March, 13, 19, 19, 24, 0, time.UTC), evtData[constants.DatabaseUpdatedColumnMarker])
+
 	assert.Equal(m.T(), evtData["id"], 1001)
 	assert.Equal(m.T(), evtData["first_name"], "Sally")
 	assert.Equal(m.T(), evtData["bool_test"], false)

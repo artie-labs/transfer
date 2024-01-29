@@ -175,9 +175,16 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 	assert.Equal(p.T(), evtData["last_name"], "Tang")
 	assert.Equal(p.T(), evtData["email"], "robin@artie.so")
 
-	evtDataWithIncludedAt := evt.GetData(map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{
-		IncludeArtieUpdatedAt: true,
+	evtDataWithIncludedAt := evt.GetData(map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{})
+	_, isOk = evtDataWithIncludedAt[constants.UpdateColumnMarker]
+	assert.False(p.T(), isOk)
+
+	evtDataWithIncludedAt = evt.GetData(map[string]interface{}{"_id": 1003}, &kafkalib.TopicConfig{
+		IncludeDatabaseUpdatedAt: true,
+		IncludeArtieUpdatedAt:    true,
 	})
+
+	assert.Equal(p.T(), time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC), evtDataWithIncludedAt[constants.DatabaseUpdatedColumnMarker])
 
 	_, isOk = evtDataWithIncludedAt[constants.UpdateColumnMarker]
 	assert.True(p.T(), isOk)
