@@ -42,9 +42,10 @@ func ToString(colVal interface{}, colKind columns.Column, additionalDateFmts []s
 
 		return colValString, nil
 	case typing.String.Kind:
+		// If the values is an array, let's convert it to a string.
 		list, convErr := array.InterfaceToArrayString(colVal, false)
 		if convErr == nil {
-			colValString = "[" + strings.Join(list, ",") + "]"
+			return "[" + strings.Join(list, ",") + "]", nil
 		}
 
 		// This should also check if the colValString contains Go's internal string representation of a map[string]interface{}
