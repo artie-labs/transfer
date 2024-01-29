@@ -1,8 +1,6 @@
 package mongo
 
 import (
-	"time"
-
 	"github.com/artie-labs/transfer/lib/debezium"
 )
 
@@ -10,11 +8,6 @@ import (
 type SchemaEventPayload struct {
 	Schema  debezium.Schema `json:"schema"`
 	Payload payload         `json:"payload"`
-}
-
-func (s *SchemaEventPayload) Tombstone() {
-	s.Payload.Operation = "d"
-	s.Payload.Source.TsMs = time.Now().UnixMilli()
 }
 
 type payload struct {
