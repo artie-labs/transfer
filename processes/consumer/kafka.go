@@ -111,24 +111,18 @@ func StartConsumer(ctx context.Context) {
 			topicToConsumer.Add(topic, kafkaConsumer)
 			for {
 				kafkaMsg, err := kafkaConsumer.FetchMessage(ctx)
-				msg := artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)
-				logFields := []any{
-					slog.String("topic", msg.Topic()),
-					slog.Int64("offset", kafkaMsg.Offset),
-					slog.String("key", string(msg.Key())),
-					slog.String("value", string(msg.Value())),
-				}
-
+				logFields := artie.KafkaMsgLogFields(&kafkaMsg)
 				if err != nil {
 					slog.With(logFields...).Warn("failed to read kafka message", slog.Any("err", err))
 					continue
 				}
 
-				if len(msg.Value()) == 0 {
-					slog.With(logFields...).Info("found a tombstone message, skipping...")
+				if len(kafkaMsg.Value) == 0 {
+					slog.Info("found a tombstone message, skipping...", logFields...)
 					continue
 				}
 
+				msg := artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)
 				tableName, processErr := processMessage(ctx, ProcessArgs{
 					Msg:                    msg,
 					GroupID:                kafkaConsumer.Config().GroupID,
