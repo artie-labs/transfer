@@ -124,6 +124,11 @@ func StartConsumer(ctx context.Context) {
 					continue
 				}
 
+				if len(msg.Value()) == 0 {
+					slog.With(logFields...).Info("found a tombstone message, skipping...")
+					continue
+				}
+
 				tableName, processErr := processMessage(ctx, ProcessArgs{
 					Msg:                    msg,
 					GroupID:                kafkaConsumer.Config().GroupID,
