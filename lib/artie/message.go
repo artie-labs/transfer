@@ -29,7 +29,7 @@ type Message struct {
 	PubSub   *pubsubWrapper
 }
 
-func KafkaMsgLogFields(msg *kafka.Message) []any {
+func KafkaMsgLogFields(msg kafka.Message) []any {
 	return []any{
 		slog.String("topic", msg.Topic),
 		slog.Int64("offset", msg.Offset),
