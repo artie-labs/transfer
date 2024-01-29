@@ -79,7 +79,7 @@ type _testCase struct {
 func evaluateTestCase(t *testing.T, store *Store, testCase _testCase) {
 	actualString, actualErr := store.CastColValStaging(testCase.colVal, testCase.colKind, nil)
 	if len(testCase.errorMessage) > 0 {
-		assert.Contains(t, actualErr.Error(), testCase.errorMessage, testCase.name)
+		assert.ErrorContains(t, actualErr, testCase.errorMessage, testCase.name)
 	} else {
 		assert.NoError(t, actualErr, testCase.name)
 		assert.Equal(t, testCase.expectedString, actualString, testCase.name)

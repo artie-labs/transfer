@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/stringutil"
+
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -21,13 +23,6 @@ func ToString(colVal interface{}, colKind columns.Column, additionalDateFmts []s
 
 	colValString := fmt.Sprint(colVal)
 	switch colKind.KindDetails.Kind {
-	case typing.Integer.Kind:
-		switch colVal.(type) {
-		case float64, float32:
-			// Strip away the trailing zeros if the value is a float but the type is an integer in DWH
-			return fmt.Sprintf("%.0f", colVal), nil
-		}
-	// All the other types do not need string wrapping.
 	case typing.ETime.Kind:
 		extTime, err := ext.ParseFromInterface(colVal, additionalDateFmts)
 		if err != nil {
@@ -61,6 +56,9 @@ func ToString(colVal interface{}, colKind columns.Column, additionalDateFmts []s
 			}
 
 			colValString = string(colValBytes)
+		} else {
+			// Else, make sure we escape the quotes.
+			colValString = stringutil.Wrap(colVal, true)
 		}
 
 		return colValString, nil
@@ -88,6 +86,12 @@ func ToString(colVal interface{}, colKind columns.Column, additionalDateFmts []s
 		}
 
 		return string(colValBytes), nil
+	case typing.Integer.Kind:
+		switch colVal.(type) {
+		case float64, float32:
+			// This will remove trailing zeros and print the float value as an integer, no scientific numbers.
+			return fmt.Sprintf("%.0f", colVal), nil
+		}
 	case typing.EDecimal.Kind:
 		val, isOk := colVal.(*decimal.Decimal)
 		if isOk {
