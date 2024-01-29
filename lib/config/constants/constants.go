@@ -16,7 +16,7 @@ const (
 	DeleteColumnMarker          = ArtiePrefix + "_delete"
 	DeletionConfidencePadding   = 4 * time.Hour
 	UpdateColumnMarker          = ArtiePrefix + "_updated_at"
-	DatabaseUpdatedColumnMarker = ArtiePrefix + "_database_updated_at"
+	DatabaseUpdatedColumnMarker = ArtiePrefix + "_db_updated_at"
 	ExceededValueMarker         = ArtiePrefix + "_exceeded_value"
 
 	// DBZPostgresFormat is the only supported CDC format right now
