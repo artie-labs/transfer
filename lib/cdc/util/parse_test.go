@@ -1,12 +1,14 @@
 package util
 
 import (
+	"testing"
+
 	"github.com/artie-labs/transfer/lib/debezium"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/stretchr/testify/assert"
 )
 
-func (u *UtilTestSuite) TestParseField() {
+func TestParseField(t *testing.T) {
 	type _testCase struct {
 		name          string
 		field         debezium.Field
@@ -94,10 +96,10 @@ func (u *UtilTestSuite) TestParseField() {
 		actualField := parseField(testCase.field, testCase.value)
 		if testCase.expectedDecimal {
 			decVal, isOk := actualField.(*decimal.Decimal)
-			assert.True(u.T(), isOk)
-			assert.Equal(u.T(), testCase.expectedValue, decVal.String(), testCase.name)
+			assert.True(t, isOk)
+			assert.Equal(t, testCase.expectedValue, decVal.String(), testCase.name)
 		} else {
-			assert.Equal(u.T(), testCase.expectedValue, actualField, testCase.name)
+			assert.Equal(t, testCase.expectedValue, actualField, testCase.name)
 		}
 	}
 }

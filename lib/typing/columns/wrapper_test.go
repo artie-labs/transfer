@@ -1,6 +1,8 @@
 package columns
 
 import (
+	"testing"
+
 	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/stretchr/testify/assert"
@@ -10,7 +12,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (c *ColumnsTestSuite) TestWrapper_Complete() {
+func TestWrapper_Complete(t *testing.T) {
 	type _testCase struct {
 		name                  string
 		expectedRawName       string
@@ -46,8 +48,8 @@ func (c *ColumnsTestSuite) TestWrapper_Complete() {
 			DestKind: constants.Snowflake,
 		})
 
-		assert.Equal(c.T(), testCase.expectedEscapedName, w.EscapedName(), testCase.name)
-		assert.Equal(c.T(), testCase.expectedRawName, w.RawName(), testCase.name)
+		assert.Equal(t, testCase.expectedEscapedName, w.EscapedName(), testCase.name)
+		assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
 
 		// BigQuery escape
 		w = NewWrapper(NewColumn(testCase.name, typing.Invalid), false, &sql.NameArgs{
@@ -55,8 +57,8 @@ func (c *ColumnsTestSuite) TestWrapper_Complete() {
 			DestKind: constants.BigQuery,
 		})
 
-		assert.Equal(c.T(), testCase.expectedEscapedNameBQ, w.EscapedName(), testCase.name)
-		assert.Equal(c.T(), testCase.expectedRawName, w.RawName(), testCase.name)
+		assert.Equal(t, testCase.expectedEscapedNameBQ, w.EscapedName(), testCase.name)
+		assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
 
 		for _, destKind := range []constants.DestinationKind{constants.Snowflake, constants.BigQuery} {
 			w = NewWrapper(NewColumn(testCase.name, typing.Invalid), false, &sql.NameArgs{
@@ -64,15 +66,15 @@ func (c *ColumnsTestSuite) TestWrapper_Complete() {
 				DestKind: destKind,
 			})
 
-			assert.Equal(c.T(), testCase.expectedRawName, w.EscapedName(), testCase.name)
-			assert.Equal(c.T(), testCase.expectedRawName, w.RawName(), testCase.name)
+			assert.Equal(t, testCase.expectedRawName, w.EscapedName(), testCase.name)
+			assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
 		}
 
 		// Same if nil
 		w = NewWrapper(NewColumn(testCase.name, typing.Invalid), false, nil)
 
-		assert.Equal(c.T(), testCase.expectedRawName, w.EscapedName(), testCase.name)
-		assert.Equal(c.T(), testCase.expectedRawName, w.RawName(), testCase.name)
+		assert.Equal(t, testCase.expectedRawName, w.EscapedName(), testCase.name)
+		assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
 
 	}
 }

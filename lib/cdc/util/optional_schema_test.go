@@ -1,11 +1,13 @@
 package util
 
 import (
+	"testing"
+
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
 )
 
-func (u *UtilTestSuite) TestGetOptionalSchema() {
+func TestGetOptionalSchema(t *testing.T) {
 	type _tc struct {
 		name     string
 		s        *SchemaEventPayload
@@ -22,6 +24,6 @@ func (u *UtilTestSuite) TestGetOptionalSchema() {
 
 	for _, tc := range tcs {
 		actualData := tc.s.GetOptionalSchema()
-		assert.Equal(u.T(), tc.expected, actualData, tc.name)
+		assert.Equal(t, tc.expected, actualData, tc.name)
 	}
 }

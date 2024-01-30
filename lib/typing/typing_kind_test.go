@@ -1,11 +1,14 @@
 package typing
 
 import (
+	"testing"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/stretchr/testify/assert"
 )
 
-func (t *TypingTestSuite) Test_KindToDWHType() {
+func Test_KindToDWHType(t *testing.T) {
 	type _tc struct {
 		kd                    KindDetails
 		expectedSnowflakeType string
@@ -32,8 +35,8 @@ func (t *TypingTestSuite) Test_KindToDWHType() {
 	}
 
 	for idx, tc := range tcs {
-		t.Equal(tc.expectedSnowflakeType, KindToDWHType(tc.kd, constants.Snowflake), idx)
-		t.Equal(tc.expectedBigQueryType, KindToDWHType(tc.kd, constants.BigQuery), idx)
-		t.Equal(tc.expectedRedshiftType, KindToDWHType(tc.kd, constants.Redshift), idx)
+		assert.Equal(t, tc.expectedSnowflakeType, KindToDWHType(tc.kd, constants.Snowflake), idx)
+		assert.Equal(t, tc.expectedBigQueryType, KindToDWHType(tc.kd, constants.BigQuery), idx)
+		assert.Equal(t, tc.expectedRedshiftType, KindToDWHType(tc.kd, constants.Redshift), idx)
 	}
 }
