@@ -51,7 +51,7 @@ func (d *DDLTestSuite) SetupTest() {
 
 	d.fakeBigQueryStore = &mocks.FakeStore{}
 	bqStore := db.Store(d.fakeBigQueryStore)
-	d.bigQueryStore = bigquery.LoadBigQuery(d.bqCtx, &bqStore)
+	d.bigQueryStore = bigquery.LoadBigQuery(*config.FromContext(d.bqCtx).Config, &bqStore)
 
 	d.fakeSnowflakeStagesStore = &mocks.FakeStore{}
 	snowflakeStagesStore := db.Store(d.fakeSnowflakeStagesStore)
@@ -59,7 +59,7 @@ func (d *DDLTestSuite) SetupTest() {
 
 	d.fakeRedshiftStore = &mocks.FakeStore{}
 	redshiftStore := db.Store(d.fakeRedshiftStore)
-	d.redshiftStore = redshift.LoadRedshift(ctx, &redshiftStore)
+	d.redshiftStore = redshift.LoadRedshift(*config.FromContext(ctx).Config, &redshiftStore)
 }
 
 func TestDDLTestSuite(t *testing.T) {

@@ -88,21 +88,20 @@ func (s *Store) PutTable(ctx context.Context, dataset, tableName string, rows []
 	return nil
 }
 
-func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
-	settings := config.FromContext(ctx)
-	settings.Config.BigQuery.LoadDefaultValues()
+func LoadBigQuery(cfg config.Config, _store *db.Store) *Store {
+	cfg.BigQuery.LoadDefaultValues()
 	if _store != nil {
 		// Used for tests.
 		return &Store{
 			Store: *_store,
 
-			projectID:         settings.Config.BigQuery.ProjectID,
-			uppercaseEscNames: settings.Config.SharedDestinationConfig.UppercaseEscapedNames,
+			projectID:         cfg.BigQuery.ProjectID,
+			uppercaseEscNames: cfg.SharedDestinationConfig.UppercaseEscapedNames,
 			configMap:         &types.DwhToTablesConfigMap{},
 		}
 	}
 
-	if credPath := settings.Config.BigQuery.PathToCredentials; credPath != "" {
+	if credPath := cfg.BigQuery.PathToCredentials; credPath != "" {
 		// If the credPath is set, let's set it into the env var.
 		slog.Debug("writing the path to BQ credentials to env var for google auth")
 		err := os.Setenv(GooglePathToCredentialsEnvKey, credPath)
@@ -112,11 +111,11 @@ func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
 	}
 
 	return &Store{
-		Store: db.Open("bigquery", settings.Config.BigQuery.DSN()),
+		Store: db.Open("bigquery", cfg.BigQuery.DSN()),
 
 		configMap:         &types.DwhToTablesConfigMap{},
-		batchSize:         settings.Config.BigQuery.BatchSize,
-		projectID:         settings.Config.BigQuery.ProjectID,
-		uppercaseEscNames: settings.Config.SharedDestinationConfig.UppercaseEscapedNames,
+		batchSize:         cfg.BigQuery.BatchSize,
+		projectID:         cfg.BigQuery.ProjectID,
+		uppercaseEscNames: cfg.SharedDestinationConfig.UppercaseEscapedNames,
 	}
 }

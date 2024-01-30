@@ -151,7 +151,7 @@ func (r *RedshiftTestSuite) TestCastColValStaging_ExceededValues() {
 	})
 
 	store := db.Store(r.fakeStore)
-	skipLargeRowsStore := LoadRedshift(ctx, &store)
+	skipLargeRowsStore := LoadRedshift(*config.FromContext(ctx).Config, &store)
 
 	for _, testCase := range testCases {
 		evaluateTestCase(r.T(), skipLargeRowsStore, testCase)
