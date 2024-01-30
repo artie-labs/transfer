@@ -98,7 +98,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return fmt.Errorf("failed to instantiate parquet writer, err: %v", err)
 	}
 
-	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
+	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	pw.CompressionType = parquet.CompressionCodec_GZIP
 	for _, val := range tableData.RowsData() {
 		row := make(map[string]interface{})

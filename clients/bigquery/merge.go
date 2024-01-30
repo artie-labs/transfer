@@ -36,7 +36,7 @@ func (r *Row) Save() (map[string]bigquery.Value, string, error) {
 func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) ([]*Row, error) {
 	var rows []*Row
 
-	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
+	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.RowsData() {
 		data := make(map[string]bigquery.Value)
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.uppercaseEscNames, nil) {
@@ -65,7 +65,7 @@ func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTab
 		return nil
 	}
 
-	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
+	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 
 	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{Escape: true, DestKind: s.Label()}, additionalDateFmts)
 	if err != nil {
@@ -213,7 +213,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	var additionalEqualityStrings []string
 	if tableData.TopicConfig.BigQueryPartitionSettings != nil {
-		additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
+		additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 		distinctDates, err := tableData.DistinctDates(tableData.TopicConfig.BigQueryPartitionSettings.PartitionField, additionalDateFmts)
 		if err != nil {
 			return fmt.Errorf("failed to generate distinct dates, err: %v", err)

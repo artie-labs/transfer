@@ -51,7 +51,7 @@ func processMessage(ctx context.Context, processArgs ProcessArgs) (string, error
 		return "", fmt.Errorf("cannot unmarshall key, key: %s, err: %v", string(processArgs.Msg.Key()), err)
 	}
 
-	typingSettings := config.FromContext(ctx).Config.SharedTransferConfig.ToTypingSettings()
+	typingSettings := config.FromContext(ctx).Config.SharedTransferConfig.TypingSettings
 	_event, err := topicConfig.GetEventFromBytes(typingSettings, processArgs.Msg.Value())
 	if err != nil {
 		tags["what"] = "marshall_value_err"

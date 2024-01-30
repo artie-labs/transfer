@@ -97,7 +97,7 @@ func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.
 	writer := csv.NewWriter(file)
 	writer.Comma = '\t'
 
-	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
+	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.RowsData() {
 		var row []string
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.uppercaseEscNames, nil) {
