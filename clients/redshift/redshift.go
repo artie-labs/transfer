@@ -96,6 +96,6 @@ func LoadRedshift(ctx context.Context, _store *db.Store) *Store {
 		configMap:         &types.DwhToTablesConfigMap{},
 		uppercaseEscNames: settings.Config.SharedDestinationConfig.UppercaseEscapedNames,
 
-		Store: db.Open(ctx, "postgres", connStr),
+		Store: db.Open("postgres", connStr),
 	}
 }

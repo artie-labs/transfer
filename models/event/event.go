@@ -8,19 +8,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/ptr"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/models"
 )
 
@@ -35,7 +33,7 @@ type Event struct {
 	Deleted        bool
 }
 
-func ToMemoryEvent(ctx context.Context, event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) Event {
+func ToMemoryEvent(event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) Event {
 	cols := event.GetColumns()
 	// Now iterate over pkMap and tag each column that is a primary key
 	if cols != nil {

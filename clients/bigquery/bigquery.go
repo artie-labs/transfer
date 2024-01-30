@@ -112,7 +112,7 @@ func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
 	}
 
 	return &Store{
-		Store: db.Open(ctx, "bigquery", settings.Config.BigQuery.DSN()),
+		Store: db.Open("bigquery", settings.Config.BigQuery.DSN()),
 
 		configMap:         &types.DwhToTablesConfigMap{},
 		batchSize:         settings.Config.BigQuery.BatchSize,
