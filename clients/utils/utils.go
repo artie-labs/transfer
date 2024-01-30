@@ -25,7 +25,7 @@ func BackfillColumn(ctx context.Context, dwh destination.DataWarehouse, column c
 		return nil
 	}
 
-	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
+	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{Escape: true, DestKind: dwh.Label()}, additionalDateFmts)
 	if err != nil {
 		return fmt.Errorf("failed to escape default value, err: %v", err)
