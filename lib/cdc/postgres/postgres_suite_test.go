@@ -14,7 +14,6 @@ type PostgresTestSuite struct {
 func (p *PostgresTestSuite) SetupTest() {
 	var debezium Debezium
 	p.Debezium = &debezium
-
 }
 
 func TestPostgresTestSuite(t *testing.T) {
