@@ -9,6 +9,7 @@ import (
 
 	"github.com/artie-labs/transfer/clients/utils"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -100,7 +101,7 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 
 	var count int
 	for _, testCase := range testCases {
-		err := utils.BackfillColumn(s.ctx, s.stageStore, testCase.col, fqTableName)
+		err := utils.BackfillColumn(config.Config{}, s.stageStore, testCase.col, fqTableName)
 		if testCase.expectErr {
 			assert.Error(s.T(), err, testCase.name)
 			continue

@@ -187,7 +187,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 			continue
 		}
 
-		err = utils.BackfillColumn(ctx, s, col, fqName)
+		err = utils.BackfillColumn(*config.FromContext(ctx).Config, s, col, fqName)
 		if err != nil {
 			return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v", col.RawName(), col.RawDefaultValue(), err)
 		}
