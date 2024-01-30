@@ -129,7 +129,8 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 		}
 	}
 
-	typingSettings := config.FromContext(ctx).Config.SharedTransferConfig.TypingSettings
+	cfg := config.FromContext(ctx).Config
+	typingSettings := cfg.SharedTransferConfig.TypingSettings
 
 	// Table columns
 	inMemoryColumns := td.ReadOnlyInMemoryCols()
@@ -204,7 +205,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	}
 
 	td.LatestCDCTs = e.ExecutionTime
-	flush, flushReason := td.ShouldFlush(ctx)
+	flush, flushReason := td.ShouldFlush(*cfg)
 	return flush, flushReason, nil
 }
 

@@ -1,7 +1,6 @@
 package optimization
 
 import (
-	"context"
 	"fmt"
 	"sort"
 	"testing"
@@ -246,16 +245,15 @@ func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumns() {
 }
 
 func TestTableData_ShouldFlushRowLength(t *testing.T) {
-	ctx := context.Background()
-	ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{Config: &config.Config{
+	cfg := config.Config{
 		FlushSizeKb: 500,
 		BufferRows:  2,
-	}})
+	}
 
 	// Insert 3 rows and confirm that we need to flush.
 	td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
 	for i := 0; i < 3; i++ {
-		shouldFlush, flushReason := td.ShouldFlush(ctx)
+		shouldFlush, flushReason := td.ShouldFlush(cfg)
 		assert.False(t, shouldFlush)
 		assert.Empty(t, flushReason)
 
@@ -264,22 +262,21 @@ func TestTableData_ShouldFlushRowLength(t *testing.T) {
 		}, false)
 	}
 
-	shouldFlush, flushReason := td.ShouldFlush(ctx)
+	shouldFlush, flushReason := td.ShouldFlush(cfg)
 	assert.True(t, shouldFlush)
 	assert.Equal(t, "rows", flushReason)
 }
 
 func TestTableData_ShouldFlushRowSize(t *testing.T) {
-	ctx := context.Background()
-	ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{Config: &config.Config{
+	cfg := config.Config{
 		FlushSizeKb: 5,
 		BufferRows:  20000,
-	}})
+	}
 
 	// Insert 3 rows and confirm that we need to flush.
 	td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
 	for i := 0; i < 100; i++ {
-		shouldFlush, flushReason := td.ShouldFlush(ctx)
+		shouldFlush, flushReason := td.ShouldFlush(cfg)
 		assert.False(t, shouldFlush)
 		assert.Empty(t, flushReason)
 		td.InsertRow(fmt.Sprint(i), map[string]interface{}{
@@ -305,7 +302,7 @@ func TestTableData_ShouldFlushRowSize(t *testing.T) {
 		},
 	}, false)
 
-	shouldFlush, flushReason := td.ShouldFlush(ctx)
+	shouldFlush, flushReason := td.ShouldFlush(cfg)
 	assert.True(t, shouldFlush)
 	assert.Equal(t, "size", flushReason)
 }
