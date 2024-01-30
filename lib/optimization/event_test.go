@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func (o *OptimizationTestSuite) TestDistinctDates() {
+func TestDistinctDates(t *testing.T) {
 	type _testCase struct {
 		name                string
 		rowData             map[string]map[string]interface{} // pk -> { col -> val }
@@ -80,16 +80,16 @@ func (o *OptimizationTestSuite) TestDistinctDates() {
 	}
 
 	for _, testCase := range testCases {
-		t := &TableData{
+		td := &TableData{
 			rowsData: testCase.rowData,
 		}
 
-		actualValues, actualErr := t.DistinctDates("ts", nil)
+		actualValues, actualErr := td.DistinctDates("ts", nil)
 		if testCase.expectErr {
-			assert.Error(o.T(), actualErr, testCase.name)
+			assert.Error(t, actualErr, testCase.name)
 		} else {
-			assert.NoError(o.T(), actualErr, testCase.name)
-			assert.Equal(o.T(), true, slicesEqualUnordered(testCase.expectedDatesString, actualValues),
+			assert.NoError(t, actualErr, testCase.name)
+			assert.Equal(t, true, slicesEqualUnordered(testCase.expectedDatesString, actualValues),
 				fmt.Sprintf("2 arrays not the same, test name: %s, expected array: %v, actual array: %v",
 					testCase.name, testCase.expectedDatesString, actualValues))
 		}
@@ -113,7 +113,7 @@ func slicesEqualUnordered(s1, s2 []string) bool {
 	return true
 }
 
-func (o *OptimizationTestSuite) TestNewTableData_TableName() {
+func TestNewTableData_TableName(t *testing.T) {
 	type _testCase struct {
 		name         string
 		tableName    string
@@ -162,19 +162,19 @@ func (o *OptimizationTestSuite) TestNewTableData_TableName() {
 			kafkalib.TopicConfig{Database: testCase.db, TableName: testCase.overrideName, Schema: testCase.schema},
 			testCase.tableName)
 
-		assert.Equal(o.T(), testCase.expectedName, td.RawName(), testCase.name)
-		assert.Equal(o.T(), testCase.expectedName, td.name, testCase.name)
-		assert.Equal(o.T(), testCase.expectedSnowflakeFqName, td.ToFqName(constants.Snowflake, true, false, ""), testCase.name)
-		assert.Equal(o.T(), testCase.expectedBigQueryFqName, td.ToFqName(constants.BigQuery, true, false, bqProjectID), testCase.name)
-		assert.Equal(o.T(), testCase.expectedBigQueryFqName, td.ToFqName(constants.BigQuery, true, false, bqProjectID), testCase.name)
+		assert.Equal(t, testCase.expectedName, td.RawName(), testCase.name)
+		assert.Equal(t, testCase.expectedName, td.name, testCase.name)
+		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(constants.Snowflake, true, false, ""), testCase.name)
+		assert.Equal(t, testCase.expectedBigQueryFqName, td.ToFqName(constants.BigQuery, true, false, bqProjectID), testCase.name)
+		assert.Equal(t, testCase.expectedBigQueryFqName, td.ToFqName(constants.BigQuery, true, false, bqProjectID), testCase.name)
 
 		// S3 does not escape, so let's test both to make sure.
-		assert.Equal(o.T(), testCase.expectedS3FqName, td.ToFqName(constants.S3, true, false, ""), testCase.name)
-		assert.Equal(o.T(), testCase.expectedS3FqName, td.ToFqName(constants.S3, false, false, ""), testCase.name)
+		assert.Equal(t, testCase.expectedS3FqName, td.ToFqName(constants.S3, true, false, ""), testCase.name)
+		assert.Equal(t, testCase.expectedS3FqName, td.ToFqName(constants.S3, false, false, ""), testCase.name)
 	}
 }
 
-func (o *OptimizationTestSuite) TestTableData_ReadOnlyInMemoryCols() {
+func TestTableData_ReadOnlyInMemoryCols(t *testing.T) {
 	// Making sure the columns are actually read only.
 	var cols columns.Columns
 	cols.AddColumn(columns.NewColumn("name", typing.String))
@@ -185,13 +185,13 @@ func (o *OptimizationTestSuite) TestTableData_ReadOnlyInMemoryCols() {
 
 	// Check if last_name actually exists.
 	_, isOk := td.ReadOnlyInMemoryCols().GetColumn("last_name")
-	assert.False(o.T(), isOk)
+	assert.False(t, isOk)
 
 	// Check length is 1.
-	assert.Equal(o.T(), 1, len(td.ReadOnlyInMemoryCols().GetColumns()))
+	assert.Equal(t, 1, len(td.ReadOnlyInMemoryCols().GetColumns()))
 }
 
-func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumns() {
+func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 	var _cols columns.Columns
 	for colName, colKind := range map[string]typing.KindDetails{
 		"FOO":                  typing.String,
@@ -207,7 +207,7 @@ func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumns() {
 	}
 
 	extCol, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("do_not_change_format")
-	assert.True(o.T(), isOk)
+	assert.True(t, isOk)
 
 	extCol.KindDetails.ExtendedTimeDetails.Format = time.RFC3339Nano
 	tableData.inMemoryColumns.UpdateColumn(columns.NewColumn(extCol.RawName(), extCol.KindDetails))
@@ -223,25 +223,25 @@ func (o *OptimizationTestSuite) TestTableData_UpdateInMemoryColumns() {
 
 	// It's saved back in the original format.
 	_, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("foo")
-	assert.False(o.T(), isOk)
+	assert.False(t, isOk)
 
 	_, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("FOO")
-	assert.True(o.T(), isOk)
+	assert.True(t, isOk)
 
 	col, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("CHANGE_me")
-	assert.True(o.T(), isOk)
-	assert.Equal(o.T(), ext.DateTime.Type, col.KindDetails.ExtendedTimeDetails.Type)
+	assert.True(t, isOk)
+	assert.Equal(t, ext.DateTime.Type, col.KindDetails.ExtendedTimeDetails.Type)
 
 	// It went from invalid to boolean.
 	col, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("bar")
-	assert.True(o.T(), isOk)
-	assert.Equal(o.T(), typing.Boolean, col.KindDetails)
+	assert.True(t, isOk)
+	assert.Equal(t, typing.Boolean, col.KindDetails)
 
 	col, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("do_not_change_format")
-	assert.True(o.T(), isOk)
-	assert.Equal(o.T(), col.KindDetails.Kind, typing.ETime.Kind)
-	assert.Equal(o.T(), col.KindDetails.ExtendedTimeDetails.Type, ext.DateTimeKindType, "correctly mapped type")
-	assert.Equal(o.T(), col.KindDetails.ExtendedTimeDetails.Format, time.RFC3339Nano, "format has been preserved")
+	assert.True(t, isOk)
+	assert.Equal(t, col.KindDetails.Kind, typing.ETime.Kind)
+	assert.Equal(t, col.KindDetails.ExtendedTimeDetails.Type, ext.DateTimeKindType, "correctly mapped type")
+	assert.Equal(t, col.KindDetails.ExtendedTimeDetails.Format, time.RFC3339Nano, "format has been preserved")
 }
 
 func TestTableData_ShouldFlushRowLength(t *testing.T) {

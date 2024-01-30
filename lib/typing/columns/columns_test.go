@@ -2,6 +2,7 @@ package columns
 
 import (
 	"fmt"
+	"testing"
 
 	"github.com/artie-labs/transfer/lib/sql"
 
@@ -11,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func (c *ColumnsTestSuite) TestEscapeName() {
+func TestEscapeName(t *testing.T) {
 	type _testCase struct {
 		name         string
 		expectedName string
@@ -34,11 +35,11 @@ func (c *ColumnsTestSuite) TestEscapeName() {
 
 	for _, testCase := range testCases {
 		actualName := EscapeName(testCase.name)
-		assert.Equal(c.T(), testCase.expectedName, actualName, testCase.name)
+		assert.Equal(t, testCase.expectedName, actualName, testCase.name)
 	}
 }
 
-func (c *ColumnsTestSuite) TestColumn_ShouldSkip() {
+func TestColumn_ShouldSkip(t *testing.T) {
 	type _testCase struct {
 		name           string
 		col            *Column
@@ -66,11 +67,11 @@ func (c *ColumnsTestSuite) TestColumn_ShouldSkip() {
 	}
 
 	for _, testCase := range testCases {
-		assert.Equal(c.T(), testCase.expectedResult, testCase.col.ShouldSkip(), testCase.name)
+		assert.Equal(t, testCase.expectedResult, testCase.col.ShouldSkip(), testCase.name)
 	}
 }
 
-func (c *ColumnsTestSuite) TestColumn_ShouldBackfill() {
+func TestColumn_ShouldBackfill(t *testing.T) {
 	type _testCase struct {
 		name                 string
 		column               *Column
@@ -128,11 +129,11 @@ func (c *ColumnsTestSuite) TestColumn_ShouldBackfill() {
 	}
 
 	for _, testCase := range testCases {
-		assert.Equal(c.T(), testCase.expectShouldBackfill, testCase.column.ShouldBackfill(), testCase.name)
+		assert.Equal(t, testCase.expectShouldBackfill, testCase.column.ShouldBackfill(), testCase.name)
 	}
 }
 
-func (c *ColumnsTestSuite) TestColumn_Name() {
+func TestColumn_Name(t *testing.T) {
 	type _testCase struct {
 		colName      string
 		expectedName string
@@ -168,23 +169,23 @@ func (c *ColumnsTestSuite) TestColumn_Name() {
 			name: testCase.colName,
 		}
 
-		assert.Equal(c.T(), testCase.expectedName, col.RawName(), testCase.colName)
-		assert.Equal(c.T(), testCase.expectedName, col.Name(false, &sql.NameArgs{
+		assert.Equal(t, testCase.expectedName, col.RawName(), testCase.colName)
+		assert.Equal(t, testCase.expectedName, col.Name(false, &sql.NameArgs{
 			Escape: false,
 		}), testCase.colName)
 
-		assert.Equal(c.T(), testCase.expectedNameEsc, col.Name(false, &sql.NameArgs{
+		assert.Equal(t, testCase.expectedNameEsc, col.Name(false, &sql.NameArgs{
 			Escape:   true,
 			DestKind: constants.Snowflake,
 		}), testCase.colName)
-		assert.Equal(c.T(), testCase.expectedNameEscBq, col.Name(false, &sql.NameArgs{
+		assert.Equal(t, testCase.expectedNameEscBq, col.Name(false, &sql.NameArgs{
 			Escape:   true,
 			DestKind: constants.BigQuery,
 		}), testCase.colName)
 	}
 }
 
-func (c *ColumnsTestSuite) TestColumns_GetColumnsToUpdate() {
+func TestColumns_GetColumnsToUpdate(t *testing.T) {
 	type _testCase struct {
 		name              string
 		cols              []Column
@@ -240,24 +241,24 @@ func (c *ColumnsTestSuite) TestColumns_GetColumnsToUpdate() {
 			columns: testCase.cols,
 		}
 
-		assert.Equal(c.T(), testCase.expectedCols, cols.GetColumnsToUpdate(false, nil), testCase.name)
-		assert.Equal(c.T(), testCase.expectedCols, cols.GetColumnsToUpdate(false, &sql.NameArgs{
+		assert.Equal(t, testCase.expectedCols, cols.GetColumnsToUpdate(false, nil), testCase.name)
+		assert.Equal(t, testCase.expectedCols, cols.GetColumnsToUpdate(false, &sql.NameArgs{
 			Escape: false,
 		}), testCase.name)
 
-		assert.Equal(c.T(), testCase.expectedColsEsc, cols.GetColumnsToUpdate(false, &sql.NameArgs{
+		assert.Equal(t, testCase.expectedColsEsc, cols.GetColumnsToUpdate(false, &sql.NameArgs{
 			Escape:   true,
 			DestKind: constants.Snowflake,
 		}), testCase.name)
 
-		assert.Equal(c.T(), testCase.expectedColsEscBq, cols.GetColumnsToUpdate(false, &sql.NameArgs{
+		assert.Equal(t, testCase.expectedColsEscBq, cols.GetColumnsToUpdate(false, &sql.NameArgs{
 			Escape:   true,
 			DestKind: constants.BigQuery,
 		}), testCase.name)
 	}
 }
 
-func (c *ColumnsTestSuite) TestColumns_UpsertColumns() {
+func TestColumns_UpsertColumns(t *testing.T) {
 	keys := []string{"a", "b", "c", "d", "e"}
 	var cols Columns
 	for _, key := range keys {
@@ -269,7 +270,7 @@ func (c *ColumnsTestSuite) TestColumns_UpsertColumns() {
 
 	// Now inspect prior to change.
 	for _, col := range cols.GetColumns() {
-		assert.False(c.T(), col.ToastColumn)
+		assert.False(t, col.ToastColumn)
 	}
 
 	// Now selectively update only a, b
@@ -280,43 +281,43 @@ func (c *ColumnsTestSuite) TestColumns_UpsertColumns() {
 
 		// Now inspect.
 		col, _ := cols.GetColumn(key)
-		assert.True(c.T(), col.ToastColumn)
+		assert.True(t, col.ToastColumn)
 	}
 
 	cols.UpsertColumn("zzz", UpsertColumnArg{})
 	zzzCol, _ := cols.GetColumn("zzz")
-	assert.False(c.T(), zzzCol.ToastColumn)
-	assert.False(c.T(), zzzCol.primaryKey)
-	assert.Equal(c.T(), zzzCol.KindDetails, typing.Invalid)
+	assert.False(t, zzzCol.ToastColumn)
+	assert.False(t, zzzCol.primaryKey)
+	assert.Equal(t, zzzCol.KindDetails, typing.Invalid)
 
 	cols.UpsertColumn("aaa", UpsertColumnArg{
 		ToastCol:   ptr.ToBool(true),
 		PrimaryKey: ptr.ToBool(true),
 	})
 	aaaCol, _ := cols.GetColumn("aaa")
-	assert.True(c.T(), aaaCol.ToastColumn)
-	assert.True(c.T(), aaaCol.primaryKey)
-	assert.Equal(c.T(), aaaCol.KindDetails, typing.Invalid)
+	assert.True(t, aaaCol.ToastColumn)
+	assert.True(t, aaaCol.primaryKey)
+	assert.Equal(t, aaaCol.KindDetails, typing.Invalid)
 
 	length := len(cols.columns)
 	for i := 0; i < 500; i++ {
 		cols.UpsertColumn("", UpsertColumnArg{})
 	}
 
-	assert.Equal(c.T(), length, len(cols.columns))
+	assert.Equal(t, length, len(cols.columns))
 }
 
-func (c *ColumnsTestSuite) TestColumns_Add_Duplicate() {
+func TestColumns_Add_Duplicate(t *testing.T) {
 	var cols Columns
 	duplicateColumns := []Column{{name: "foo"}, {name: "foo"}, {name: "foo"}, {name: "foo"}, {name: "foo"}, {name: "foo"}}
 	for _, duplicateColumn := range duplicateColumns {
 		cols.AddColumn(duplicateColumn)
 	}
 
-	assert.Equal(c.T(), len(cols.GetColumns()), 1, "AddColumn() de-duplicates")
+	assert.Equal(t, len(cols.GetColumns()), 1, "AddColumn() de-duplicates")
 }
 
-func (c *ColumnsTestSuite) TestColumns_Mutation() {
+func TestColumns_Mutation(t *testing.T) {
 	var cols Columns
 	colsToAdd := []Column{{name: "foo", KindDetails: typing.String, defaultValue: "bar"}, {name: "bar", KindDetails: typing.Struct}}
 	// Insert
@@ -324,14 +325,14 @@ func (c *ColumnsTestSuite) TestColumns_Mutation() {
 		cols.AddColumn(colToAdd)
 	}
 
-	assert.Equal(c.T(), len(cols.GetColumns()), 2)
+	assert.Equal(t, len(cols.GetColumns()), 2)
 	fooCol, isOk := cols.GetColumn("foo")
-	assert.True(c.T(), isOk)
-	assert.Equal(c.T(), typing.String, fooCol.KindDetails)
+	assert.True(t, isOk)
+	assert.Equal(t, typing.String, fooCol.KindDetails)
 
 	barCol, isOk := cols.GetColumn("bar")
-	assert.True(c.T(), isOk)
-	assert.Equal(c.T(), typing.Struct, barCol.KindDetails)
+	assert.True(t, isOk)
+	assert.Equal(t, typing.Struct, barCol.KindDetails)
 
 	// Update
 	cols.UpdateColumn(Column{
@@ -346,23 +347,23 @@ func (c *ColumnsTestSuite) TestColumns_Mutation() {
 	})
 
 	fooCol, isOk = cols.GetColumn("foo")
-	assert.True(c.T(), isOk)
-	assert.Equal(c.T(), typing.Integer, fooCol.KindDetails)
-	assert.Equal(c.T(), nil, fooCol.defaultValue)
+	assert.True(t, isOk)
+	assert.Equal(t, typing.Integer, fooCol.KindDetails)
+	assert.Equal(t, nil, fooCol.defaultValue)
 
 	barCol, isOk = cols.GetColumn("bar")
-	assert.True(c.T(), isOk)
-	assert.Equal(c.T(), typing.Boolean, barCol.KindDetails)
-	assert.Equal(c.T(), "123", barCol.defaultValue)
+	assert.True(t, isOk)
+	assert.Equal(t, typing.Boolean, barCol.KindDetails)
+	assert.Equal(t, "123", barCol.defaultValue)
 
 	// Delete
 	cols.DeleteColumn("foo")
-	assert.Equal(c.T(), len(cols.GetColumns()), 1)
+	assert.Equal(t, len(cols.GetColumns()), 1)
 	cols.DeleteColumn("bar")
-	assert.Equal(c.T(), len(cols.GetColumns()), 0)
+	assert.Equal(t, len(cols.GetColumns()), 0)
 }
 
-func (c *ColumnsTestSuite) TestColumnsUpdateQuery() {
+func TestColumnsUpdateQuery(t *testing.T) {
 	type testCase struct {
 		name           string
 		columns        []string
@@ -489,6 +490,6 @@ func (c *ColumnsTestSuite) TestColumnsUpdateQuery() {
 
 	for _, _testCase := range testCases {
 		actualQuery := ColumnsUpdateQuery(_testCase.columns, _testCase.columnsToTypes, _testCase.destKind, false)
-		assert.Equal(c.T(), _testCase.expectedString, actualQuery, _testCase.name)
+		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
 	}
 }

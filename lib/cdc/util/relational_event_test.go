@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func (u *UtilTestSuite) TestSource_GetOptionalSchema() {
+func TestSource_GetOptionalSchema(t *testing.T) {
 	var schemaEventPayload SchemaEventPayload
 	err := json.Unmarshal([]byte(`{
 	"schema": {
@@ -54,23 +54,23 @@ func (u *UtilTestSuite) TestSource_GetOptionalSchema() {
 	"payload": {}
 }`), &schemaEventPayload)
 
-	assert.NoError(u.T(), err)
+	assert.NoError(t, err)
 	optionalSchema := schemaEventPayload.GetOptionalSchema()
 	value, isOk := optionalSchema["last_modified"]
-	assert.True(u.T(), isOk)
-	assert.Equal(u.T(), value, typing.String)
+	assert.True(t, isOk)
+	assert.Equal(t, value, typing.String)
 
 	cols := schemaEventPayload.GetColumns()
-	assert.Equal(u.T(), 6, len(cols.GetColumns()))
+	assert.Equal(t, 6, len(cols.GetColumns()))
 
 	col, isOk := cols.GetColumn("boolean_column")
-	assert.True(u.T(), isOk)
-	assert.Equal(u.T(), false, col.RawDefaultValue())
+	assert.True(t, isOk)
+	assert.Equal(t, false, col.RawDefaultValue())
 
 	for _, _col := range cols.GetColumns() {
 		// All the other columns do not have a default value.
 		if _col.RawName() != "boolean_column" {
-			assert.Nil(u.T(), _col.RawDefaultValue(), _col.RawName())
+			assert.Nil(t, _col.RawDefaultValue(), _col.RawName())
 		}
 	}
 }
