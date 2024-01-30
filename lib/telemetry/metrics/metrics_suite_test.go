@@ -2,10 +2,9 @@ package metrics
 
 import (
 	"context"
-	"testing"
-
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/stretchr/testify/suite"
+	"testing"
 )
 
 type MetricsTestSuite struct {
