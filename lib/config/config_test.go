@@ -29,8 +29,6 @@ typingSettings:
 
 		assert.True(t, sharedTransferCfg.TypingSettings.CreateAllColumnsIfAvailable)
 		assert.Equal(t, "yyyy-MM-dd1", sharedTransferCfg.TypingSettings.AdditionalDateFormats[0])
-		assert.True(t, sharedTransferCfg.TypingSettings.CreateAllColumnsIfAvailable)
-		assert.Equal(t, "yyyy-MM-dd1", sharedTransferCfg.TypingSettings.AdditionalDateFormats[0])
 	}
 }
 
@@ -389,12 +387,12 @@ reporting:
 	assert.Nil(t, err)
 	assert.NotNil(t, config)
 
-	assert.Equal(t, true, config.Kafka.EnableAWSMSKIAM)
+	assert.True(t, config.Kafka.EnableAWSMSKIAM)
 	assert.Equal(t, username, config.Kafka.Username)
 	assert.Equal(t, bootstrapServer, config.Kafka.BootstrapServer)
 	assert.Equal(t, groupID, config.Kafka.GroupID)
 	assert.Equal(t, password, config.Kafka.Password)
-	assert.Equal(t, true, config.SharedTransferConfig.TypingSettings.CreateAllColumnsIfAvailable)
+	assert.True(t, config.SharedTransferConfig.TypingSettings.CreateAllColumnsIfAvailable)
 
 	var foundOrder bool
 	var foundCustomer bool
@@ -416,13 +414,13 @@ reporting:
 	assert.True(t, foundOrder)
 
 	// Verify Snowflake config
-	assert.Equal(t, config.Snowflake.Username, snowflakeUser)
-	assert.Equal(t, config.Snowflake.Password, snowflakePassword)
-	assert.Equal(t, config.Snowflake.AccountID, snowflakeAccount)
-	assert.Equal(t, config.Snowflake.Warehouse, warehouse)
-	assert.Equal(t, config.Snowflake.Region, region)
-	assert.Equal(t, config.Snowflake.Application, application)
-	assert.Equal(t, config.Reporting.Sentry.DSN, sentryDSN)
+	assert.Equal(t, snowflakeUser, config.Snowflake.Username)
+	assert.Equal(t, snowflakePassword, config.Snowflake.Password)
+	assert.Equal(t, snowflakeAccount, config.Snowflake.AccountID)
+	assert.Equal(t, warehouse, config.Snowflake.Warehouse)
+	assert.Equal(t, region, config.Snowflake.Region)
+	assert.Equal(t, application, config.Snowflake.Application)
+	assert.Equal(t, sentryDSN, config.Reporting.Sentry.DSN)
 }
 
 func TestReadFileToConfig_BigQuery(t *testing.T) {
@@ -469,9 +467,9 @@ bigquery:
 	assert.NotNil(t, config)
 
 	// Verify BigQuery config
-	assert.Equal(t, config.BigQuery.PathToCredentials, pathToCredentials)
-	assert.Equal(t, config.BigQuery.DefaultDataset, dataset)
-	assert.Equal(t, config.BigQuery.ProjectID, projectID)
+	assert.Equal(t, pathToCredentials, config.BigQuery.PathToCredentials)
+	assert.Equal(t, dataset, config.BigQuery.DefaultDataset)
+	assert.Equal(t, projectID, config.BigQuery.ProjectID)
 }
 
 func TestConfig_Validate(t *testing.T) {
@@ -525,12 +523,12 @@ func TestConfig_Validate(t *testing.T) {
 		// Reset buffer rows.
 		cfg.BufferRows = 500
 		cfg.FlushIntervalSeconds = i
-		assert.Contains(t, cfg.Validate().Error(), "flush interval is outside of our range")
+		assert.ErrorContains(t, cfg.Validate(), "flush interval is outside of our range")
 
 		// Reset Flush
 		cfg.FlushIntervalSeconds = 20
 		cfg.BufferRows = uint(i)
-		assert.Contains(t, cfg.Validate().Error(), "buffer pool is too small")
+		assert.ErrorContains(t, cfg.Validate(), "buffer pool is too small")
 	}
 
 	cfg.BufferRows = 500
@@ -551,7 +549,7 @@ func TestConfig_Validate(t *testing.T) {
 
 	for _, num := range []int{-500, -300, -5, 0} {
 		cfg.FlushSizeKb = num
-		assert.Contains(t, cfg.Validate().Error(), "config is invalid, flush size pool has to be a positive number")
+		assert.ErrorContains(t, cfg.Validate(), "config is invalid, flush size pool has to be a positive number")
 	}
 
 }
