@@ -356,7 +356,7 @@ func TestReadFileToConfig_Snowflake(t *testing.T) {
 kafka:
  bootstrapServer: %s
  groupID: %s
- enableAWSMKSIAM: %v
+ enableAWSMKSIAM: true
  username: %s
  password: %s
  topicConfigs:
@@ -371,11 +371,16 @@ snowflake:
  region: %s
  application: %s
 
+sharedTransferConfig:
+  typingSettings:
+    createAllColumnsIfAvailable: true
+
+
 reporting:
  sentry:
   dsn: %s
 
-`, bootstrapServer, groupID, true, username, password, snowflakeAccount,
+`, bootstrapServer, groupID, username, password, snowflakeAccount,
 		snowflakeUser, snowflakePassword, warehouse, region, application, sentryDSN))
 	assert.Nil(t, err)
 
@@ -384,11 +389,12 @@ reporting:
 	assert.Nil(t, err)
 	assert.NotNil(t, config)
 
-	assert.Equal(t, config.Kafka.EnableAWSMSKIAM, true)
-	assert.Equal(t, config.Kafka.Username, username)
-	assert.Equal(t, config.Kafka.BootstrapServer, bootstrapServer)
-	assert.Equal(t, config.Kafka.GroupID, groupID)
-	assert.Equal(t, config.Kafka.Password, password)
+	assert.Equal(t, true, config.Kafka.EnableAWSMSKIAM)
+	assert.Equal(t, username, config.Kafka.Username)
+	assert.Equal(t, bootstrapServer, config.Kafka.BootstrapServer)
+	assert.Equal(t, groupID, config.Kafka.GroupID)
+	assert.Equal(t, password, config.Kafka.Password)
+	assert.Equal(t, true, config.SharedTransferConfig.TypingSettings.CreateAllColumnsIfAvailable)
 
 	var foundOrder bool
 	var foundCustomer bool
