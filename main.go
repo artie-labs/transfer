@@ -25,9 +25,10 @@ func main() {
 	if err != nil {
 		logger.Fatal("Failed to initialize config", slog.Any("err", err))
 	}
+	settings := config.FromContext(ctx)
 
 	// Initialize default logger
-	_logger, usingSentry := logger.NewLogger(config.FromContext(ctx))
+	_logger, usingSentry := logger.NewLogger(settings)
 	slog.SetDefault(_logger)
 	if usingSentry {
 		defer sentry.Flush(2 * time.Second)
@@ -37,14 +38,12 @@ func main() {
 	// Loading Telemetry
 	ctx = metrics.LoadExporter(ctx)
 	if utils.IsOutputBaseline(ctx) {
-		ctx = utils.InjectBaselineIntoCtx(utils.Baseline(ctx), ctx)
+		ctx = utils.InjectBaselineIntoCtx(utils.Baseline(*settings.Config), ctx)
 	} else {
-		ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(ctx, nil), ctx)
+		ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(ctx, *settings.Config, nil), ctx)
 	}
 
 	ctx = models.LoadMemoryDB(ctx)
-	settings := config.FromContext(ctx)
-
 	slog.Info("config is loaded",
 		slog.Int("flush_interval_seconds", settings.Config.FlushIntervalSeconds),
 		slog.Uint64("buffer_pool_size", uint64(settings.Config.BufferRows)),

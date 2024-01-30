@@ -30,7 +30,7 @@ func (b *BigQueryTestSuite) SetupTest() {
 
 	b.fakeStore = &mocks.FakeStore{}
 	store := db.Store(b.fakeStore)
-	b.store = LoadBigQuery(b.ctx, &store)
+	b.store = LoadBigQuery(*config.FromContext(b.ctx).Config, &store)
 }
 
 func TestBigQueryTestSuite(t *testing.T) {

@@ -27,7 +27,7 @@ func (r *RedshiftTestSuite) SetupTest() {
 
 	r.fakeStore = &mocks.FakeStore{}
 	store := db.Store(r.fakeStore)
-	r.store = LoadRedshift(r.ctx, &store)
+	r.store = LoadRedshift(*config.FromContext(r.ctx).Config, &store)
 	r.store.skipLgCols = true
 }
 

@@ -1,7 +1,6 @@
 package redshift
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -70,31 +69,29 @@ func (s *Store) getTableConfig(tableData *optimization.TableData) (*types.DwhTab
 	})
 }
 
-func LoadRedshift(ctx context.Context, _store *db.Store) *Store {
-	settings := config.FromContext(ctx)
-
+func LoadRedshift(cfg config.Config, _store *db.Store) *Store {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
 			configMap:         &types.DwhToTablesConfigMap{},
-			skipLgCols:        settings.Config.Redshift.SkipLgCols,
-			uppercaseEscNames: settings.Config.SharedDestinationConfig.UppercaseEscapedNames,
+			skipLgCols:        cfg.Redshift.SkipLgCols,
+			uppercaseEscNames: cfg.SharedDestinationConfig.UppercaseEscapedNames,
 
 			Store: *_store,
 		}
 	}
 
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require",
-		settings.Config.Redshift.Host, settings.Config.Redshift.Port, settings.Config.Redshift.Username,
-		settings.Config.Redshift.Password, settings.Config.Redshift.Database)
+		cfg.Redshift.Host, cfg.Redshift.Port, cfg.Redshift.Username,
+		cfg.Redshift.Password, cfg.Redshift.Database)
 
 	return &Store{
-		credentialsClause: settings.Config.Redshift.CredentialsClause,
-		bucket:            settings.Config.Redshift.Bucket,
-		optionalS3Prefix:  settings.Config.Redshift.OptionalS3Prefix,
-		skipLgCols:        settings.Config.Redshift.SkipLgCols,
+		credentialsClause: cfg.Redshift.CredentialsClause,
+		bucket:            cfg.Redshift.Bucket,
+		optionalS3Prefix:  cfg.Redshift.OptionalS3Prefix,
+		skipLgCols:        cfg.Redshift.SkipLgCols,
 		configMap:         &types.DwhToTablesConfigMap{},
-		uppercaseEscNames: settings.Config.SharedDestinationConfig.UppercaseEscapedNames,
+		uppercaseEscNames: cfg.SharedDestinationConfig.UppercaseEscapedNames,
 
 		Store: db.Open("postgres", connStr),
 	}

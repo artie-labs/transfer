@@ -21,11 +21,10 @@ func IsOutputBaseline(ctx context.Context) bool {
 	return config.FromContext(ctx).Config.Output == constants.S3
 }
 
-func Baseline(ctx context.Context) destination.Baseline {
-	settings := config.FromContext(ctx)
-	switch settings.Config.Output {
+func Baseline(cfg config.Config) destination.Baseline {
+	switch cfg.Output {
 	case constants.S3:
-		store, err := s3.LoadStore(settings.Config.S3)
+		store, err := s3.LoadStore(cfg.S3)
 		if err != nil {
 			logger.Panic("Failed to load s3", slog.Any("err", err))
 		}
@@ -33,15 +32,13 @@ func Baseline(ctx context.Context) destination.Baseline {
 		return store
 	}
 
-	logger.Panic("No valid output sources specified", slog.Any("source", settings.Config.Output))
+	logger.Panic("No valid output sources specified", slog.Any("source", cfg.Output))
 
 	return nil
 }
 
-func DataWarehouse(ctx context.Context, store *db.Store) destination.DataWarehouse {
-	settings := config.FromContext(ctx)
-
-	switch settings.Config.Output {
+func DataWarehouse(ctx context.Context, cfg config.Config, store *db.Store) destination.DataWarehouse {
+	switch cfg.Output {
 	case "test":
 		// TODO - In the future, we can create a fake store that follows the MERGE syntax for SQL standard.
 		// Also, the fake library not only needs to support MERGE, but needs to be able to make it easy for us to return
@@ -59,16 +56,16 @@ func DataWarehouse(ctx context.Context, store *db.Store) destination.DataWarehou
 		}
 		return s
 	case constants.BigQuery:
-		return bigquery.LoadBigQuery(ctx, store)
+		return bigquery.LoadBigQuery(cfg, store)
 	case constants.Redshift:
-		s := redshift.LoadRedshift(ctx, store)
+		s := redshift.LoadRedshift(cfg, store)
 		if err := s.Sweep(ctx); err != nil {
 			logger.Panic("failed to clean up redshift", slog.Any("err", err))
 		}
 		return s
 	}
 
-	logger.Panic("No valid output sources specified", slog.Any("source", settings.Config.Output))
+	logger.Panic("No valid output sources specified", slog.Any("source", cfg.Output))
 
 	return nil
 }
