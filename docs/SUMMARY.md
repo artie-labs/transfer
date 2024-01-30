@@ -5,6 +5,7 @@
 ## ☁ Artie Cloud
 
 * [Fixed IP Addresses](artie-cloud/fixed-ip-addresses.md)
+* [Dashboard Functionality](artie-cloud/dashboard-functionality.md)
 
 ## Real-time Sources
 
