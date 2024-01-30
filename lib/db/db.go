@@ -1,7 +1,6 @@
 package db
 
 import (
-	"context"
 	"database/sql"
 	"log/slog"
 	"time"
@@ -23,7 +22,6 @@ type Store interface {
 
 type storeWrapper struct {
 	*sql.DB
-	ctx context.Context
 }
 
 func (s *storeWrapper) Exec(query string, args ...any) (sql.Result, error) {
@@ -60,7 +58,7 @@ func (s *storeWrapper) Begin() (*sql.Tx, error) {
 	return s.DB.Begin()
 }
 
-func Open(ctx context.Context, driverName, dsn string) Store {
+func Open(driverName, dsn string) Store {
 	db, err := sql.Open(driverName, dsn)
 	if err != nil {
 		logger.Panic("Failed to start a SQL client",
@@ -78,7 +76,6 @@ func Open(ctx context.Context, driverName, dsn string) Store {
 	}
 
 	return &storeWrapper{
-		DB:  db,
-		ctx: ctx,
+		DB: db,
 	}
 }

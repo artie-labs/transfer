@@ -95,7 +95,7 @@ func (s *Store) reestablishConnection(ctx context.Context) {
 		logger.Panic("failed to get snowflake dsn", slog.Any("err", err))
 	}
 
-	s.Store = db.Open(ctx, "snowflake", dsn)
+	s.Store = db.Open("snowflake", dsn)
 }
 
 func LoadSnowflake(ctx context.Context, _store *db.Store) *Store {

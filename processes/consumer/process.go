@@ -59,7 +59,7 @@ func processMessage(ctx context.Context, processArgs ProcessArgs) (string, error
 	}
 
 	tags["op"] = _event.Operation()
-	evt := event.ToMemoryEvent(ctx, _event, pkMap, topicConfig.tc)
+	evt := event.ToMemoryEvent(_event, pkMap, topicConfig.tc)
 	// Table name is only available after event has been casted
 	tags["table"] = evt.Table
 
