@@ -11,10 +11,10 @@ You can configure Artie to send alerts to your Slack channel in addition to your
 
 <div align="left">
 
-<figure><img src="../.gitbook/assets/image (41).png" alt="" width="249"><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (41).png" alt="" width="374"><figcaption><p>Enable your Slack channel to receive emails</p></figcaption></figure>
 
  
 
-<figure><img src="../.gitbook/assets/image (43).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (43).png" alt=""><figcaption><p>Update Artie dashboard</p></figcaption></figure>
 
 </div>
