@@ -3,6 +3,8 @@ package postgres
 import (
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
+
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -83,13 +85,15 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
 	assert.Nil(p.T(), err)
 	assert.False(p.T(), evt.DeletePayload())
 
-	evtData := evt.GetData(map[string]interface{}{"id": 59}, &kafkalib.TopicConfig{})
-	assert.Equal(p.T(), evtData["id"], float64(59))
+	evtData := evt.GetData(map[string]interface{}{"id": 59}, &kafkalib.TopicConfig{
+		IncludeDatabaseUpdatedAt: true,
+	})
+	assert.Equal(p.T(), float64(59), evtData["id"])
+	assert.Equal(p.T(), "2022-11-16T04:01:53+00:00", evtData[constants.DatabaseUpdatedColumnMarker])
 
-	assert.Equal(p.T(), evtData["item"], "Barings Participation Investors")
-	assert.Equal(p.T(), evtData["nested"], map[string]interface{}{"object": "foo"})
-	assert.Equal(p.T(), time.Date(2022, time.November, 16,
-		4, 1, 53, 308000000, time.UTC), evt.GetExecutionTime())
+	assert.Equal(p.T(), "Barings Participation Investors", evtData["item"])
+	assert.Equal(p.T(), map[string]interface{}{"object": "foo"}, evtData["nested"])
+	assert.Equal(p.T(), time.Date(2022, time.November, 16, 4, 1, 53, 308000000, time.UTC), evt.GetExecutionTime())
 	assert.Equal(p.T(), "orders", evt.GetTableName())
 	assert.False(p.T(), evt.DeletePayload())
 }

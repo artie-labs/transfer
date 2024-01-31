@@ -45,6 +45,7 @@ type TopicConfig struct {
 	SoftDelete                bool                        `yaml:"softDelete"`
 	SkipDelete                bool                        `yaml:"skipDelete"`
 	IncludeArtieUpdatedAt     bool                        `yaml:"includeArtieUpdatedAt"`
+	IncludeDatabaseUpdatedAt  bool                        `yaml:"includeDatabaseUpdatedAt"`
 	BigQueryPartitionSettings *partition.BigQuerySettings `yaml:"bigQueryPartitionSettings"`
 }
 
@@ -65,20 +66,24 @@ func (t *TopicConfig) String() string {
 		t.Database, t.Schema, t.TableName, t.Topic, t.IdempotentKey, t.CDCFormat, t.DropDeletedColumns)
 }
 
-func (t *TopicConfig) Valid() bool {
+func (t *TopicConfig) Validate() error {
 	if t == nil {
-		return false
+		return fmt.Errorf("topic config is nil")
 	}
 
 	// IdempotentKey is optional.
 	empty := array.Empty([]string{t.Database, t.Schema, t.Topic, t.CDCFormat})
 	if empty {
-		return false
+		return fmt.Errorf("database, schema, topic or cdc format is empty")
 	}
 
 	if t.CDCKeyFormat == "" {
 		t.CDCKeyFormat = defaultKeyFormat
 	}
 
-	return slices.Contains(validKeyFormats, t.CDCKeyFormat)
+	if !slices.Contains(validKeyFormats, t.CDCKeyFormat) {
+		return fmt.Errorf("invalid cdc key format: %s", t.CDCKeyFormat)
+	}
+
+	return nil
 }

@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/ext"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -153,7 +155,7 @@ func TestGetDataTestDelete(t *testing.T) {
 
 	assert.Equal(t, 3, len(evtData), evtData)
 	assert.Equal(t, evtData["pk"], 1)
-	assert.Equal(t, evtData[tc.IdempotentKey], now.Format(time.RFC3339))
+	assert.Equal(t, evtData[tc.IdempotentKey], now.Format(ext.ISO8601))
 
 	tc.IdempotentKey = ""
 	evtData = schemaEventPayload.GetData(kvMap, tc)
