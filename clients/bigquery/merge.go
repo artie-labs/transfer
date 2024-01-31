@@ -112,7 +112,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(),
 		tableConfig.Columns(), tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt)
 
-	fqName := tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, s.projectID)
+	fqName := tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, s.config.BigQuery.ProjectID)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               s,
 		Tc:                tableConfig,
@@ -159,7 +159,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	tempAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               s,
 		Tc:                tableConfig,
-		FqTableName:       fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.config.SharedDestinationConfig.UppercaseEscapedNames, s.projectID), tableData.TempTableSuffix()),
+		FqTableName:       fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.config.SharedDestinationConfig.UppercaseEscapedNames, s.config.BigQuery.ProjectID), tableData.TempTableSuffix()),
 		CreateTable:       true,
 		TemporaryTable:    true,
 		ColumnOp:          constants.Add,
