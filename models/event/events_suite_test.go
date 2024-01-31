@@ -1,7 +1,6 @@
 package event
 
 import (
-	"context"
 	"testing"
 
 	"github.com/artie-labs/transfer/models"
@@ -13,8 +12,8 @@ import (
 
 type EventsTestSuite struct {
 	suite.Suite
-	ctx context.Context
 	cfg config.Config
+	db  *models.DatabaseData
 }
 
 func (e *EventsTestSuite) SetupTest() {
@@ -23,7 +22,7 @@ func (e *EventsTestSuite) SetupTest() {
 		FlushSizeKb:          1024,
 		BufferRows:           1000,
 	}
-	e.ctx = models.LoadMemoryDB(context.Background())
+	e.db = models.NewMemoryDB()
 }
 
 func TestEventsTestSuite(t *testing.T) {

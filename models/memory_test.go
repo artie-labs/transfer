@@ -1,7 +1,6 @@
 package models
 
 import (
-	"context"
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -10,10 +9,8 @@ import (
 )
 
 func TestTableData_Complete(t *testing.T) {
-	ctx := context.Background()
-	ctx = LoadMemoryDB(ctx)
+	db := NewMemoryDB()
 
-	db := GetMemoryDB(ctx)
 	tableName := "table"
 
 	// TableData does not exist

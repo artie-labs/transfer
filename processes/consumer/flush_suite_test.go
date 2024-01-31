@@ -1,7 +1,6 @@
 package consumer
 
 import (
-	"context"
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -21,9 +20,8 @@ type FlushTestSuite struct {
 	fakeStore    *mocks.FakeStore
 	fakeConsumer *mocks.FakeConsumer
 	cfg          config.Config
+	db           *models.DatabaseData
 	dwh          destination.DataWarehouse
-
-	ctx context.Context
 }
 
 func (f *FlushTestSuite) SetupTest() {
@@ -54,7 +52,7 @@ func (f *FlushTestSuite) SetupTest() {
 
 	f.dwh = utils.DataWarehouse(f.cfg, &store)
 
-	f.ctx = models.LoadMemoryDB(context.Background())
+	f.db = models.NewMemoryDB()
 
 	f.fakeConsumer = &mocks.FakeConsumer{}
 	SetKafkaConsumer(map[string]kafkalib.Consumer{"foo": f.fakeConsumer})

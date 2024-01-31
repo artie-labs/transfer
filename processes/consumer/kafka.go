@@ -10,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/artie-labs/transfer/models"
 	awsCfg "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2"
 	"github.com/segmentio/kafka-go/sasl/plain"
@@ -52,7 +53,7 @@ func SetKafkaConsumer(_topicToConsumer map[string]kafkalib.Consumer) {
 	}
 }
 
-func StartConsumer(ctx context.Context, cfg config.Config, dest destination.Baseline) {
+func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline) {
 	slog.Info("Starting Kafka consumer...", slog.Any("config", cfg.Kafka))
 
 	dialer := &kafka.Dialer{
@@ -122,7 +123,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, dest destination.Base
 				}
 
 				msg := artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)
-				tableName, processErr := processMessage(ctx, cfg, dest, ProcessArgs{
+				tableName, processErr := processMessage(ctx, cfg, inMemDB, dest, ProcessArgs{
 					Msg:                    msg,
 					GroupID:                kafkaConsumer.Config().GroupID,
 					TopicToConfigFormatMap: tcFmtMap,

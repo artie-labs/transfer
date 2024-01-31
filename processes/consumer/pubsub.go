@@ -13,6 +13,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/artie-labs/transfer/models"
 	"google.golang.org/api/option"
 )
 
@@ -56,7 +57,7 @@ func findOrCreateSubscription(ctx context.Context, cfg config.Config, client *gc
 	return sub, err
 }
 
-func StartSubscriber(ctx context.Context, cfg config.Config, dest destination.Baseline) {
+func StartSubscriber(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline) {
 	client, clientErr := gcp_pubsub.NewClient(ctx, cfg.Pubsub.ProjectID,
 		option.WithCredentialsFile(cfg.Pubsub.PathToCredentials))
 	if clientErr != nil {
@@ -92,7 +93,7 @@ func StartSubscriber(ctx context.Context, cfg config.Config, dest destination.Ba
 						slog.String("value", string(msg.Value())),
 					}
 
-					tableName, processErr := processMessage(ctx, cfg, dest, ProcessArgs{
+					tableName, processErr := processMessage(ctx, cfg, inMemDB, dest, ProcessArgs{
 						Msg:                    msg,
 						GroupID:                subName,
 						TopicToConfigFormatMap: tcFmtMap,

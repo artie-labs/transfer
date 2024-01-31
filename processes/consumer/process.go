@@ -9,6 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
+	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/models/event"
 )
 
@@ -22,7 +23,7 @@ type ProcessArgs struct {
 // 1. TableName (string)
 // 2. Error
 // We are using the TableName for emitting Kafka ingestion lag
-func processMessage(ctx context.Context, cfg config.Config, dest destination.Baseline, processArgs ProcessArgs) (string, error) {
+func processMessage(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, processArgs ProcessArgs) (string, error) {
 	if processArgs.TopicToConfigFormatMap == nil {
 		return "", fmt.Errorf("failed to process, topicConfig is nil")
 	}
@@ -71,14 +72,14 @@ func processMessage(ctx context.Context, cfg config.Config, dest destination.Bas
 		return evt.Table, nil
 	}
 
-	shouldFlush, flushReason, err := evt.Save(ctx, cfg, topicConfig.tc, processArgs.Msg)
+	shouldFlush, flushReason, err := evt.Save(cfg, inMemDB, topicConfig.tc, processArgs.Msg)
 	if err != nil {
 		tags["what"] = "save_fail"
 		return "", fmt.Errorf("event failed to save, err: %v", err)
 	}
 
 	if shouldFlush {
-		return evt.Table, Flush(dest, Args{
+		return evt.Table, Flush(inMemDB, dest, Args{
 			Context:       ctx,
 			Reason:        flushReason,
 			SpecificTable: evt.Table,

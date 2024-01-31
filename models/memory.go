@@ -1,13 +1,9 @@
 package models
 
 import (
-	"context"
 	"sync"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
-
-	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 )
 
@@ -53,25 +49,11 @@ type DatabaseData struct {
 	sync.RWMutex
 }
 
-func LoadMemoryDB(ctx context.Context) context.Context {
+func NewMemoryDB() *DatabaseData {
 	tableData := make(map[string]*TableData)
-	return context.WithValue(ctx, constants.DatabaseKey, &DatabaseData{
+	return &DatabaseData{
 		tableData: tableData,
-	})
-}
-
-func GetMemoryDB(ctx context.Context) *DatabaseData {
-	dbValue := ctx.Value(constants.DatabaseKey)
-	if dbValue == nil {
-		logger.Panic("Failed to retrieve database from context")
 	}
-
-	db, isOk := dbValue.(*DatabaseData)
-	if !isOk {
-		logger.Panic("Database data is not the right type *DatabaseData")
-	}
-
-	return db
 }
 
 func (d *DatabaseData) GetOrCreateTableData(tableName string) *TableData {

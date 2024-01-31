@@ -1,7 +1,6 @@
 package event
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"sort"
@@ -99,7 +98,7 @@ func (e *Event) PrimaryKeyValue() string {
 
 // Save will save the event into our in memory event
 // It will return (flush bool, flushReason string, err error)
-func (e *Event) Save(ctx context.Context, cfg config.Config, topicConfig *kafkalib.TopicConfig, message artie.Message) (bool, string, error) {
+func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, topicConfig *kafkalib.TopicConfig, message artie.Message) (bool, string, error) {
 	if topicConfig == nil {
 		return false, "", errors.New("topicConfig is missing")
 	}
@@ -108,7 +107,6 @@ func (e *Event) Save(ctx context.Context, cfg config.Config, topicConfig *kafkal
 		return false, "", errors.New("event not valid")
 	}
 
-	inMemDB := models.GetMemoryDB(ctx)
 	// Does the table exist?
 	td := inMemDB.GetOrCreateTableData(e.Table)
 	td.Lock()
