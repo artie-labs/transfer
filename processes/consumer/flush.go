@@ -12,7 +12,6 @@ import (
 )
 
 type Args struct {
-	Context context.Context
 	// If cooldown is passed in, we'll skip the merge if the table has been recently merged
 	CoolDown *time.Duration
 	// If specificTable is not passed in, we'll just flush everything.
@@ -25,7 +24,7 @@ type Args struct {
 // Flush will merge and commit the offset on the specified topics within `args.SpecificTable`.
 // If the table list is empty, it'll flush everything. This is the default behavior for the time duration based flush.
 // Table specific flushes will be triggered based on the size of the pool (length and size wise).
-func Flush(inMemDB *models.DatabaseData, dest destination.Baseline, args Args) error {
+func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, args Args) error {
 	if inMemDB == nil {
 		return nil
 	}
@@ -75,13 +74,13 @@ func Flush(inMemDB *models.DatabaseData, dest destination.Baseline, args Args) e
 				"reason":   args.Reason,
 			}
 
-			err := dest.Merge(args.Context, _tableData.TableData)
+			err := dest.Merge(ctx, _tableData.TableData)
 			if err != nil {
 				tags["what"] = "merge_fail"
 				slog.With(logFields...).Warn("Failed to execute merge...not going to flush memory", slog.Any("err", err))
 			} else {
 				slog.With(logFields...).Info("Merge success, clearing memory...")
-				commitErr := commitOffset(args.Context, _tableData.TopicConfig.Topic, _tableData.PartitionsToLastMessage)
+				commitErr := commitOffset(ctx, _tableData.TopicConfig.Topic, _tableData.PartitionsToLastMessage)
 				if commitErr == nil {
 					inMemDB.ClearTableConfig(_tableName)
 				} else {
@@ -89,7 +88,7 @@ func Flush(inMemDB *models.DatabaseData, dest destination.Baseline, args Args) e
 					slog.Warn("Commit error...", slog.Any("err", commitErr))
 				}
 			}
-			metrics.FromContext(args.Context).Timing("flush", time.Since(start), tags)
+			metrics.FromContext(ctx).Timing("flush", time.Since(start), tags)
 		}(tableName, tableData)
 	}
 	wg.Wait()
