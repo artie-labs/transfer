@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/destination/utils"
+	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"
 )
@@ -25,7 +25,7 @@ type Args struct {
 // Flush will merge and commit the offset on the specified topics within `args.SpecificTable`.
 // If the table list is empty, it'll flush everything. This is the default behavior for the time duration based flush.
 // Table specific flushes will be triggered based on the size of the pool (length and size wise).
-func Flush(args Args) error {
+func Flush(dest destination.Baseline, args Args) error {
 	if models.GetMemoryDB(args.Context) == nil {
 		return nil
 	}
@@ -75,7 +75,7 @@ func Flush(args Args) error {
 				"reason":   args.Reason,
 			}
 
-			err := utils.FromContext(args.Context).Merge(args.Context, _tableData.TableData)
+			err := dest.Merge(args.Context, _tableData.TableData)
 			if err != nil {
 				tags["what"] = "merge_fail"
 				slog.With(logFields...).Warn("Failed to execute merge...not going to flush memory", slog.Any("err", err))

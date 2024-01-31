@@ -12,10 +12,21 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/models"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
 )
+
+type MockDestination struct{}
+
+func (n MockDestination) Label() constants.DestinationKind {
+	return constants.DestinationKind("mock")
+}
+
+func (n MockDestination) Merge(ctx context.Context, tableData *optimization.TableData) error {
+	return fmt.Errorf("should not be called")
+}
 
 func TestProcessMessageFailures(t *testing.T) {
 	cfg := config.Config{
@@ -41,12 +52,12 @@ func TestProcessMessageFailures(t *testing.T) {
 		GroupID: "foo",
 	}
 
-	tableName, err := processMessage(ctx, cfg, processArgs)
+	tableName, err := processMessage(ctx, cfg, MockDestination{}, processArgs)
 	assert.True(t, strings.Contains(err.Error(), "failed to process, topicConfig is nil"), err.Error())
 	assert.Empty(t, tableName)
 
 	processArgs.TopicToConfigFormatMap = NewTcFmtMap()
-	tableName, err = processMessage(ctx, cfg, processArgs)
+	tableName, err = processMessage(ctx, cfg, MockDestination{}, processArgs)
 	assert.True(t, strings.Contains(err.Error(), "failed to get topic"), err.Error())
 	assert.Equal(t, 0, len(models.GetMemoryDB(ctx).TableData()))
 	assert.Empty(t, tableName)
@@ -81,7 +92,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	tcFmt, isOk := tcFmtMap.GetTopicFmt(msg.Topic())
 	assert.True(t, isOk)
 
-	tableName, err = processMessage(ctx, cfg, processArgs)
+	tableName, err = processMessage(ctx, cfg, MockDestination{}, processArgs)
 	assert.True(t, strings.Contains(err.Error(),
 		fmt.Sprintf("err: format: %s is not supported", tcFmt.tc.CDCKeyFormat)), err.Error())
 	assert.True(t, strings.Contains(err.Error(), "cannot unmarshall key"), err.Error())
@@ -173,7 +184,7 @@ func TestProcessMessageFailures(t *testing.T) {
 			TopicToConfigFormatMap: tcFmtMap,
 		}
 
-		tableName, err = processMessage(ctx, cfg, processArgs)
+		tableName, err = processMessage(ctx, cfg, MockDestination{}, processArgs)
 		assert.NoError(t, err)
 		assert.Equal(t, table, tableName)
 
@@ -194,7 +205,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		TopicToConfigFormatMap: tcFmtMap,
 	}
 
-	tableName, err = processMessage(ctx, cfg, processArgs)
+	tableName, err = processMessage(ctx, cfg, MockDestination{}, processArgs)
 	assert.Error(t, err)
 	assert.Empty(t, tableName)
 	assert.True(t, td.Rows() > 0)
@@ -330,7 +341,7 @@ func TestProcessMessageSkip(t *testing.T) {
 		td := memoryDB.GetOrCreateTableData(table)
 		assert.Equal(t, 0, int(td.Rows()))
 
-		tableName, err := processMessage(ctx, cfg, processArgs)
+		tableName, err := processMessage(ctx, cfg, MockDestination{}, processArgs)
 		assert.NoError(t, err)
 		assert.Equal(t, table, tableName)
 		// Because it got skipped.
