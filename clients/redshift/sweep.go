@@ -1,25 +1,23 @@
 package redshift
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"log/slog"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
-func (s *Store) Sweep(ctx context.Context) error {
+func (s *Store) Sweep() error {
 	slog.Info("looking to see if there are any dangling artie temporary tables to delete...")
 	// Find all the database and schema pairings
 	// Then iterate over information schema
 	// Find anything that has __artie__ in the table name
 	// Find the comment
 	// If the table should be killed, it will drop it.
-	tcs, err := config.FromContext(ctx).Config.TopicConfigs()
+	tcs, err := s.config.TopicConfigs()
 	if err != nil {
 		return err
 	}

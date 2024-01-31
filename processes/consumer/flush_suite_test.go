@@ -54,7 +54,7 @@ func (f *FlushTestSuite) SetupTest() {
 		VerboseLogging: false,
 	})
 
-	f.ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(f.ctx, *config.FromContext(f.ctx).Config, &store), f.ctx)
+	f.ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(*config.FromContext(f.ctx).Config, &store), f.ctx)
 
 	f.ctx = models.LoadMemoryDB(f.ctx)
 

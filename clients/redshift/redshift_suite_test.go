@@ -1,7 +1,6 @@
 package redshift
 
 import (
-	"context"
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -14,20 +13,16 @@ type RedshiftTestSuite struct {
 	suite.Suite
 	fakeStore *mocks.FakeStore
 	store     *Store
-	ctx       context.Context
 }
 
 func (r *RedshiftTestSuite) SetupTest() {
-	r.ctx = config.InjectSettingsIntoContext(context.Background(), &config.Settings{
-		VerboseLogging: false,
-		Config: &config.Config{
-			Redshift: &config.Redshift{},
-		},
-	})
+	cfg := config.Config{
+		Redshift: &config.Redshift{},
+	}
 
 	r.fakeStore = &mocks.FakeStore{}
 	store := db.Store(r.fakeStore)
-	r.store = LoadRedshift(*config.FromContext(r.ctx).Config, &store)
+	r.store = LoadRedshift(cfg, &store)
 	r.store.skipLgCols = true
 }
 
