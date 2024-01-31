@@ -26,6 +26,7 @@ func main() {
 		logger.Fatal("Failed to initialize config", slog.Any("err", err))
 	}
 	settings := config.FromContext(ctx)
+	cfg := *settings.Config
 
 	// Initialize default logger
 	_logger, usingSentry := logger.NewLogger(settings)
@@ -36,11 +37,11 @@ func main() {
 	}
 
 	// Loading Telemetry
-	ctx = metrics.LoadExporter(ctx, *settings.Config)
+	ctx = metrics.LoadExporter(ctx, cfg)
 	if utils.IsOutputBaseline(ctx) {
-		ctx = utils.InjectBaselineIntoCtx(utils.Baseline(*settings.Config), ctx)
+		ctx = utils.InjectBaselineIntoCtx(utils.Baseline(cfg), ctx)
 	} else {
-		ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(ctx, *settings.Config, nil), ctx)
+		ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(ctx, cfg, nil), ctx)
 	}
 
 	ctx = models.LoadMemoryDB(ctx)
@@ -62,9 +63,9 @@ func main() {
 		defer wg.Done()
 		switch settings.Config.Queue {
 		case constants.Kafka:
-			consumer.StartConsumer(ctx, *settings.Config)
+			consumer.StartConsumer(ctx, cfg)
 		case constants.PubSub:
-			consumer.StartSubscriber(ctx, *settings.Config)
+			consumer.StartSubscriber(ctx, cfg)
 		default:
 			logger.Fatal(fmt.Sprintf("message queue: %s not supported", settings.Config.Queue))
 		}
