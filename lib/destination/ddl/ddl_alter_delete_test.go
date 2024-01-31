@@ -31,7 +31,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	}, "tableName")
 
 	originalColumnLength := len(cols.GetColumns())
-	bqName := td.ToFqName(constants.BigQuery, true, false, d.bigQueryConfig.BigQuery.ProjectID)
+	bqName := td.ToFqName(constants.BigQuery, true, false, d.bigQueryCfg.BigQuery.ProjectID)
 	redshiftName := td.ToFqName(constants.Redshift, true, false, "")
 	snowflakeName := td.ToFqName(constants.Snowflake, true, false, "")
 

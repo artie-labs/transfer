@@ -18,7 +18,7 @@ type DDLTestSuite struct {
 	suite.Suite
 	fakeBigQueryStore *mocks.FakeStore
 	bigQueryStore     *bigquery.Store
-	bigQueryConfig    config.Config
+	bigQueryCfg       config.Config
 
 	fakeSnowflakeStagesStore *mocks.FakeStore
 	snowflakeStagesStore     *snowflake.Store
@@ -32,7 +32,7 @@ func (d *DDLTestSuite) SetupTest() {
 		Redshift: &config.Redshift{},
 	}
 
-	d.bigQueryConfig = config.Config{
+	d.bigQueryCfg = config.Config{
 		BigQuery: &config.BigQuery{
 			ProjectID: "artie-project",
 		},
@@ -40,7 +40,7 @@ func (d *DDLTestSuite) SetupTest() {
 
 	d.fakeBigQueryStore = &mocks.FakeStore{}
 	bqStore := db.Store(d.fakeBigQueryStore)
-	d.bigQueryStore = bigquery.LoadBigQuery(d.bigQueryConfig, &bqStore)
+	d.bigQueryStore = bigquery.LoadBigQuery(d.bigQueryCfg, &bqStore)
 
 	d.fakeSnowflakeStagesStore = &mocks.FakeStore{}
 	snowflakeStagesStore := db.Store(d.fakeSnowflakeStagesStore)
