@@ -28,11 +28,10 @@ const (
 )
 
 type Store struct {
-	configMap         *types.DwhToTablesConfigMap
-	batchSize         int
-	projectID         string
-	uppercaseEscNames bool
-	config            config.Config
+	configMap *types.DwhToTablesConfigMap
+	batchSize int
+	projectID string
+	config    config.Config
 
 	db.Store
 }
@@ -40,7 +39,7 @@ type Store struct {
 func (s *Store) getTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	return utils.GetTableConfig(utils.GetTableCfgArgs{
 		Dwh:       s,
-		FqName:    tableData.ToFqName(s.Label(), true, s.uppercaseEscNames, s.projectID),
+		FqName:    tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, s.projectID),
 		ConfigMap: s.configMap,
 		Query: fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name='%s';",
 			tableData.TopicConfig.Database, tableData.RawName()),
@@ -95,10 +94,9 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) *Store {
 		return &Store{
 			Store: *_store,
 
-			projectID:         cfg.BigQuery.ProjectID,
-			uppercaseEscNames: cfg.SharedDestinationConfig.UppercaseEscapedNames,
-			configMap:         &types.DwhToTablesConfigMap{},
-			config:            cfg,
+			projectID: cfg.BigQuery.ProjectID,
+			configMap: &types.DwhToTablesConfigMap{},
+			config:    cfg,
 		}
 	}
 
@@ -114,10 +112,9 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) *Store {
 	return &Store{
 		Store: db.Open("bigquery", cfg.BigQuery.DSN()),
 
-		configMap:         &types.DwhToTablesConfigMap{},
-		batchSize:         cfg.BigQuery.BatchSize,
-		projectID:         cfg.BigQuery.ProjectID,
-		uppercaseEscNames: cfg.SharedDestinationConfig.UppercaseEscapedNames,
-		config:            cfg,
+		configMap: &types.DwhToTablesConfigMap{},
+		batchSize: cfg.BigQuery.BatchSize,
+		projectID: cfg.BigQuery.ProjectID,
+		config:    cfg,
 	}
 }
