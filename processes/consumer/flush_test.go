@@ -37,7 +37,7 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 		}
 
 		kafkaMsg := kafka.Message{Partition: 1, Offset: 1}
-		_, _, err := evt.Save(f.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+		_, _, err := evt.Save(f.ctx, f.cfg, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 		assert.Nil(f.T(), err)
 
 		td := models.GetMemoryDB(f.ctx).GetOrCreateTableData("foo")
@@ -65,7 +65,7 @@ func (f *FlushTestSuite) TestShouldFlush() {
 
 		var err error
 		kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
-		flush, flushReason, err = evt.Save(f.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+		flush, flushReason, err = evt.Save(f.ctx, f.cfg, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 		assert.Nil(f.T(), err)
 
 		if flush {
@@ -102,7 +102,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 				}
 
 				kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
-				_, _, err := evt.Save(f.ctx, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+				_, _, err := evt.Save(f.ctx, f.cfg, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 				assert.Nil(f.T(), err)
 			}
 		}(tableNames[idx])

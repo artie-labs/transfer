@@ -21,7 +21,7 @@ type ProcessArgs struct {
 // 1. TableName (string)
 // 2. Error
 // We are using the TableName for emitting Kafka ingestion lag
-func processMessage(ctx context.Context, processArgs ProcessArgs) (string, error) {
+func processMessage(ctx context.Context, cfg config.Config, processArgs ProcessArgs) (string, error) {
 	if processArgs.TopicToConfigFormatMap == nil {
 		return "", fmt.Errorf("failed to process, topicConfig is nil")
 	}
@@ -51,7 +51,7 @@ func processMessage(ctx context.Context, processArgs ProcessArgs) (string, error
 		return "", fmt.Errorf("cannot unmarshall key, key: %s, err: %v", string(processArgs.Msg.Key()), err)
 	}
 
-	typingSettings := config.FromContext(ctx).Config.SharedTransferConfig.TypingSettings
+	typingSettings := cfg.SharedTransferConfig.TypingSettings
 	_event, err := topicConfig.GetEventFromBytes(typingSettings, processArgs.Msg.Value())
 	if err != nil {
 		tags["what"] = "marshall_value_err"
@@ -70,7 +70,7 @@ func processMessage(ctx context.Context, processArgs ProcessArgs) (string, error
 		return evt.Table, nil
 	}
 
-	shouldFlush, flushReason, err := evt.Save(ctx, topicConfig.tc, processArgs.Msg)
+	shouldFlush, flushReason, err := evt.Save(ctx, cfg, topicConfig.tc, processArgs.Msg)
 	if err != nil {
 		tags["what"] = "save_fail"
 		return "", fmt.Errorf("event failed to save, err: %v", err)

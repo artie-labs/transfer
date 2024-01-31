@@ -18,15 +18,12 @@ import (
 )
 
 func TestProcessMessageFailures(t *testing.T) {
+	cfg := config.Config{
+		FlushIntervalSeconds: 10,
+		BufferRows:           10,
+		FlushSizeKb:          900,
+	}
 	ctx := context.Background()
-	ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{
-		Config: config.Config{
-			FlushIntervalSeconds: 10,
-			BufferRows:           10,
-			FlushSizeKb:          900,
-		},
-		VerboseLogging: false,
-	})
 
 	ctx = models.LoadMemoryDB(ctx)
 	kafkaMsg := kafka.Message{
@@ -46,12 +43,12 @@ func TestProcessMessageFailures(t *testing.T) {
 		GroupID: "foo",
 	}
 
-	tableName, err := processMessage(ctx, processArgs)
+	tableName, err := processMessage(ctx, cfg, processArgs)
 	assert.True(t, strings.Contains(err.Error(), "failed to process, topicConfig is nil"), err.Error())
 	assert.Empty(t, tableName)
 
 	processArgs.TopicToConfigFormatMap = NewTcFmtMap()
-	tableName, err = processMessage(ctx, processArgs)
+	tableName, err = processMessage(ctx, cfg, processArgs)
 	assert.True(t, strings.Contains(err.Error(), "failed to get topic"), err.Error())
 	assert.Equal(t, 0, len(models.GetMemoryDB(ctx).TableData()))
 	assert.Empty(t, tableName)
@@ -86,7 +83,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	tcFmt, isOk := tcFmtMap.GetTopicFmt(msg.Topic())
 	assert.True(t, isOk)
 
-	tableName, err = processMessage(ctx, processArgs)
+	tableName, err = processMessage(ctx, cfg, processArgs)
 	assert.True(t, strings.Contains(err.Error(),
 		fmt.Sprintf("err: format: %s is not supported", tcFmt.tc.CDCKeyFormat)), err.Error())
 	assert.True(t, strings.Contains(err.Error(), "cannot unmarshall key"), err.Error())
@@ -178,7 +175,7 @@ func TestProcessMessageFailures(t *testing.T) {
 			TopicToConfigFormatMap: tcFmtMap,
 		}
 
-		tableName, err = processMessage(ctx, processArgs)
+		tableName, err = processMessage(ctx, cfg, processArgs)
 		assert.NoError(t, err)
 		assert.Equal(t, table, tableName)
 
@@ -199,22 +196,19 @@ func TestProcessMessageFailures(t *testing.T) {
 		TopicToConfigFormatMap: tcFmtMap,
 	}
 
-	tableName, err = processMessage(ctx, processArgs)
+	tableName, err = processMessage(ctx, cfg, processArgs)
 	assert.Error(t, err)
 	assert.Empty(t, tableName)
 	assert.True(t, td.Rows() > 0)
 }
 
 func TestProcessMessageSkip(t *testing.T) {
+	cfg := config.Config{
+		FlushIntervalSeconds: 10,
+		BufferRows:           10,
+		FlushSizeKb:          900,
+	}
 	ctx := context.Background()
-	ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{
-		Config: config.Config{
-			FlushIntervalSeconds: 10,
-			BufferRows:           10,
-			FlushSizeKb:          900,
-		},
-		VerboseLogging: false,
-	})
 
 	ctx = models.LoadMemoryDB(ctx)
 	kafkaMsg := kafka.Message{
@@ -340,7 +334,7 @@ func TestProcessMessageSkip(t *testing.T) {
 		td := memoryDB.GetOrCreateTableData(table)
 		assert.Equal(t, 0, int(td.Rows()))
 
-		tableName, err := processMessage(ctx, processArgs)
+		tableName, err := processMessage(ctx, cfg, processArgs)
 		assert.NoError(t, err)
 		assert.Equal(t, table, tableName)
 		// Because it got skipped.

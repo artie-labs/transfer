@@ -1,11 +1,8 @@
 package config
 
 import (
-	"context"
 	"fmt"
-	"log"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/jessevdk/go-flags"
 )
 
@@ -14,28 +11,9 @@ type Settings struct {
 	VerboseLogging bool
 }
 
-// InjectSettingsIntoContext is used for tests ONLY
-func InjectSettingsIntoContext(ctx context.Context, settings *Settings) context.Context {
-	return context.WithValue(ctx, constants.ConfigKey, settings)
-}
-
-func FromContext(ctx context.Context) *Settings {
-	settingsVal := ctx.Value(constants.ConfigKey)
-	if settingsVal == nil {
-		log.Panic("Failed to grab settings from context")
-	}
-
-	settings, isOk := settingsVal.(*Settings)
-	if !isOk {
-		log.Panic("Settings in context is not of *config.Settings type")
-	}
-
-	return settings
-}
-
 // InitializeCfgIntoContext will take the flags and then parse
 // loadConfig is optional for testing purposes.
-func InitializeCfgIntoContext(ctx context.Context, args []string, loadConfig bool) (context.Context, error) {
+func LoadSettings(args []string, loadConfig bool) (*Settings, error) {
 	var opts struct {
 		ConfigFilePath string `short:"c" long:"config" description:"path to the config file"`
 		Verbose        bool   `short:"v" long:"verbose" description:"debug logging" optional:"true"`
@@ -63,5 +41,5 @@ func InitializeCfgIntoContext(ctx context.Context, args []string, loadConfig boo
 		settings.Config = *config
 	}
 
-	return context.WithValue(ctx, constants.ConfigKey, settings), nil
+	return settings, nil
 }
