@@ -1,7 +1,6 @@
 package snowflake
 
 import (
-	"context"
 	"encoding/csv"
 	"fmt"
 	"log/slog"
@@ -11,7 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/values"
 
 	"github.com/artie-labs/transfer/clients/utils"
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/dml"
@@ -39,7 +37,7 @@ func castColValStaging(colVal interface{}, colKind columns.Column, additionalDat
 // 3) Runs PUT to upload CSV to Snowflake staging (auto-compression with GZIP)
 // 4) Runs COPY INTO with the columns specified into temporary table
 // 5) Deletes CSV generated from (2)
-func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string) error {
+func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string) error {
 	tempAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               s,
 		Tc:                tableConfig,
@@ -54,7 +52,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 		return fmt.Errorf("failed to create temp table, error: %v", err)
 	}
 
-	fp, err := s.loadTemporaryTable(ctx, tableData, tempTableName)
+	fp, err := s.loadTemporaryTable(tableData, tempTableName)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table, err: %v", err)
 	}
@@ -86,7 +84,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 // loadTemporaryTable will write the data into /tmp/newTableName.csv
 // This way, another function can call this and then invoke a Snowflake PUT.
 // Returns the file path and potential error
-func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.TableData, newTableName string) (string, error) {
+func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableName string) (string, error) {
 	filePath := fmt.Sprintf("/tmp/%s.csv", newTableName)
 	file, err := os.Create(filePath)
 	if err != nil {
@@ -97,7 +95,7 @@ func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.
 	writer := csv.NewWriter(file)
 	writer.Comma = '\t'
 
-	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
+	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.RowsData() {
 		var row []string
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.uppercaseEscNames, nil) {
@@ -121,7 +119,7 @@ func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.
 	return filePath, writer.Error()
 }
 
-func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.TableData) error {
+func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 	// TODO - better test coverage for `mergeWithStages`
 	if tableData.Rows() == 0 || tableData.ReadOnlyInMemoryCols() == nil {
 		// There's no rows. Let's skip.
@@ -177,7 +175,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
 	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.uppercaseEscNames, ""), tableData.TempTableSuffix())
-	if err = s.prepareTempTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {
+	if err = s.prepareTempTable(tableData, tableConfig, temporaryTableName); err != nil {
 		return err
 	}
 
@@ -187,7 +185,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 			continue
 		}
 
-		err = utils.BackfillColumn(*config.FromContext(ctx).Config, s, col, fqName)
+		err = utils.BackfillColumn(s.config, s, col, fqName)
 		if err != nil {
 			return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v", col.RawName(), col.RawDefaultValue(), err)
 		}

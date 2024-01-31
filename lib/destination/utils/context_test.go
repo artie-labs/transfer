@@ -16,10 +16,11 @@ import (
 )
 
 func TestInjectDwhIntoCtx(t *testing.T) {
+	cfg := config.Config{
+		SharedDestinationConfig: config.SharedDestinationConfig{UppercaseEscapedNames: true},
+	}
 	ctx := config.InjectSettingsIntoContext(context.Background(), &config.Settings{
-		Config: &config.Config{
-			SharedDestinationConfig: config.SharedDestinationConfig{UppercaseEscapedNames: true},
-		},
+		Config: &cfg,
 	})
 
 	store := db.Store(&mock.DB{
@@ -30,7 +31,7 @@ func TestInjectDwhIntoCtx(t *testing.T) {
 	dwhVal := ctx.Value(constants.DestinationKey)
 	assert.Nil(t, dwhVal)
 
-	_dwh := snowflake.LoadSnowflake(ctx, &store)
+	_dwh := snowflake.LoadSnowflake(cfg, &store)
 
 	ctx = InjectDwhIntoCtx(_dwh, ctx)
 	dwhCtx := FromContext(ctx)

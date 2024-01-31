@@ -55,7 +55,7 @@ func (d *DDLTestSuite) SetupTest() {
 
 	d.fakeSnowflakeStagesStore = &mocks.FakeStore{}
 	snowflakeStagesStore := db.Store(d.fakeSnowflakeStagesStore)
-	d.snowflakeStagesStore = snowflake.LoadSnowflake(ctx, &snowflakeStagesStore)
+	d.snowflakeStagesStore = snowflake.LoadSnowflake(config.Config{}, &snowflakeStagesStore)
 
 	d.fakeRedshiftStore = &mocks.FakeStore{}
 	redshiftStore := db.Store(d.fakeRedshiftStore)
