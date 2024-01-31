@@ -273,8 +273,8 @@ func (c Config) Validate() error {
 		}
 
 		for _, topicConfig := range c.Kafka.TopicConfigs {
-			if valid := topicConfig.Valid(); !valid {
-				return fmt.Errorf("config is invalid, topic config is invalid, tc: %s", topicConfig.String())
+			if err := topicConfig.Validate(); err != nil {
+				return fmt.Errorf("config is invalid, topic config is invalid, tc: %s, err: %v", topicConfig.String(), err)
 			}
 		}
 
@@ -290,8 +290,8 @@ func (c Config) Validate() error {
 		}
 
 		for _, topicConfig := range c.Pubsub.TopicConfigs {
-			if valid := topicConfig.Valid(); !valid {
-				return fmt.Errorf("config is invalid, topic config is invalid, tc: %s", topicConfig.String())
+			if err := topicConfig.Validate(); err != nil {
+				return fmt.Errorf("config is invalid, topic config is invalid, tc: %s, err: %v", topicConfig.String(), err)
 			}
 		}
 

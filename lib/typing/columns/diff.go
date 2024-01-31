@@ -7,7 +7,7 @@ import (
 )
 
 // shouldSkipColumn takes the `colName` and `softDelete` and will return whether we should skip this column when calculating the diff.
-func shouldSkipColumn(colName string, softDelete bool, includeArtieUpdatedAt bool) bool {
+func shouldSkipColumn(colName string, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool) bool {
 	if colName == constants.DeleteColumnMarker && softDelete {
 		// We need this column to be created if soft deletion is turned on.
 		return false
@@ -18,16 +18,17 @@ func shouldSkipColumn(colName string, softDelete bool, includeArtieUpdatedAt boo
 		return false
 	}
 
-	if strings.Contains(colName, constants.ArtiePrefix) {
-		return true
+	if colName == constants.DatabaseUpdatedColumnMarker && includeDatabaseUpdatedAt {
+		// We want to keep this column if includeDatabaseUpdatedAt is turned on
+		return false
 	}
 
-	return false
+	return strings.Contains(colName, constants.ArtiePrefix)
 }
 
 // Diff - when given 2 maps, a source and target
 // It will provide a diff in the form of 2 variables
-func Diff(columnsInSource *Columns, columnsInDestination *Columns, softDelete bool, includeArtieUpdatedAt bool) ([]Column, []Column) {
+func Diff(columnsInSource *Columns, columnsInDestination *Columns, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool) ([]Column, []Column) {
 	src := CloneColumns(columnsInSource)
 	targ := CloneColumns(columnsInDestination)
 	var colsToDelete []Column
@@ -47,7 +48,7 @@ func Diff(columnsInSource *Columns, columnsInDestination *Columns, softDelete bo
 
 	var targetColumnsMissing Columns
 	for _, col := range src.GetColumns() {
-		if shouldSkipColumn(col.RawName(), softDelete, includeArtieUpdatedAt) {
+		if shouldSkipColumn(col.RawName(), softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt) {
 			continue
 		}
 
@@ -56,7 +57,7 @@ func Diff(columnsInSource *Columns, columnsInDestination *Columns, softDelete bo
 
 	var sourceColumnsMissing Columns
 	for _, col := range targ.GetColumns() {
-		if shouldSkipColumn(col.RawName(), softDelete, includeArtieUpdatedAt) {
+		if shouldSkipColumn(col.RawName(), softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt) {
 			continue
 		}
 
