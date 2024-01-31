@@ -79,8 +79,7 @@ func processMessage(ctx context.Context, cfg config.Config, inMemDB *models.Data
 	}
 
 	if shouldFlush {
-		return evt.Table, Flush(inMemDB, dest, Args{
-			Context:       ctx,
+		return evt.Table, Flush(ctx, inMemDB, dest, Args{
 			Reason:        flushReason,
 			SpecificTable: evt.Table,
 		})

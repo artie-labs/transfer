@@ -16,9 +16,8 @@ func StartPool(ctx context.Context, inMemDB *models.DatabaseData, dest destinati
 	ticker := time.NewTicker(td)
 	for range ticker.C {
 		slog.Info("Flushing via pool...")
-		if err := consumer.Flush(inMemDB, dest, consumer.Args{
+		if err := consumer.Flush(ctx, inMemDB, dest, consumer.Args{
 			Reason:   "time",
-			Context:  ctx,
 			CoolDown: ptr.ToDuration(td),
 		}); err != nil {
 			slog.Error("Failed to flush via pool", slog.Any("err", err))
