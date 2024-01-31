@@ -6,8 +6,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/ptr"
 
-	"github.com/artie-labs/transfer/lib/config"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -33,7 +31,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	}, "tableName")
 
 	originalColumnLength := len(cols.GetColumns())
-	bqName := td.ToFqName(constants.BigQuery, true, false, config.FromContext(d.bqCtx).Config.BigQuery.ProjectID)
+	bqName := td.ToFqName(constants.BigQuery, true, false, d.bigQueryConfig.BigQuery.ProjectID)
 	redshiftName := td.ToFqName(constants.Redshift, true, false, "")
 	snowflakeName := td.ToFqName(constants.Snowflake, true, false, "")
 
