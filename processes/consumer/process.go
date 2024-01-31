@@ -7,6 +7,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models/event"
 )
@@ -21,7 +22,7 @@ type ProcessArgs struct {
 // 1. TableName (string)
 // 2. Error
 // We are using the TableName for emitting Kafka ingestion lag
-func processMessage(ctx context.Context, cfg config.Config, processArgs ProcessArgs) (string, error) {
+func processMessage(ctx context.Context, cfg config.Config, dest destination.Baseline, processArgs ProcessArgs) (string, error) {
 	if processArgs.TopicToConfigFormatMap == nil {
 		return "", fmt.Errorf("failed to process, topicConfig is nil")
 	}
@@ -77,7 +78,7 @@ func processMessage(ctx context.Context, cfg config.Config, processArgs ProcessA
 	}
 
 	if shouldFlush {
-		return evt.Table, Flush(Args{
+		return evt.Table, Flush(dest, Args{
 			Context:       ctx,
 			Reason:        flushReason,
 			SpecificTable: evt.Table,

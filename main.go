@@ -10,6 +10,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/utils"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
@@ -37,10 +38,11 @@ func main() {
 	ctx := context.Background()
 	// Loading telemetry
 	ctx = metrics.LoadExporter(ctx, settings.Config)
+	var dest destination.Baseline
 	if utils.IsOutputBaseline(settings.Config) {
-		ctx = utils.InjectBaselineIntoCtx(utils.Baseline(settings.Config), ctx)
+		dest = utils.Baseline(settings.Config)
 	} else {
-		ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(settings.Config, nil), ctx)
+		dest = utils.DataWarehouse(settings.Config, nil)
 	}
 
 	ctx = models.LoadMemoryDB(ctx)
@@ -54,7 +56,7 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		pool.StartPool(ctx, time.Duration(settings.Config.FlushIntervalSeconds)*time.Second)
+		pool.StartPool(ctx, dest, time.Duration(settings.Config.FlushIntervalSeconds)*time.Second)
 	}()
 
 	wg.Add(1)
@@ -62,9 +64,9 @@ func main() {
 		defer wg.Done()
 		switch settings.Config.Queue {
 		case constants.Kafka:
-			consumer.StartConsumer(ctx, settings.Config)
+			consumer.StartConsumer(ctx, settings.Config, dest)
 		case constants.PubSub:
-			consumer.StartSubscriber(ctx, settings.Config)
+			consumer.StartSubscriber(ctx, settings.Config, dest)
 		default:
 			logger.Fatal(fmt.Sprintf("Message queue: %s not supported", settings.Config.Queue))
 		}
