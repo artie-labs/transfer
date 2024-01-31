@@ -19,10 +19,9 @@ import (
 
 type Store struct {
 	db.Store
-	uppercaseEscNames bool
-	testDB            bool // Used for testing
-	configMap         *types.DwhToTablesConfigMap
-	config            config.Config
+	testDB    bool // Used for testing
+	configMap *types.DwhToTablesConfigMap
+	config    config.Config
 }
 
 const (
@@ -102,19 +101,17 @@ func LoadSnowflake(cfg config.Config, _store *db.Store) *Store {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			testDB:            true,
-			uppercaseEscNames: cfg.SharedDestinationConfig.UppercaseEscapedNames,
-			configMap:         &types.DwhToTablesConfigMap{},
-			config:            cfg,
+			testDB:    true,
+			configMap: &types.DwhToTablesConfigMap{},
+			config:    cfg,
 
 			Store: *_store,
 		}
 	}
 
 	s := &Store{
-		uppercaseEscNames: cfg.SharedDestinationConfig.UppercaseEscapedNames,
-		configMap:         &types.DwhToTablesConfigMap{},
-		config:            cfg,
+		configMap: &types.DwhToTablesConfigMap{},
+		config:    cfg,
 	}
 
 	s.reestablishConnection()
