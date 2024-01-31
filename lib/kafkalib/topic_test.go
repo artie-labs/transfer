@@ -117,7 +117,7 @@ func TestTopicConfig_String(t *testing.T) {
 
 func TestTopicConfig_Validate(t *testing.T) {
 	var tc TopicConfig
-	assert.Error(t, tc.Validate(), tc.String())
+	assert.ErrorContains(t, tc.Validate(), "database, schema, topic or cdc format is empty", tc.String())
 
 	tc = TopicConfig{
 		Database:  "12",
@@ -130,7 +130,7 @@ func TestTopicConfig_Validate(t *testing.T) {
 	assert.NoError(t, tc.Validate(), tc.String())
 
 	tc.CDCKeyFormat = "non_existent"
-	assert.Error(t, tc.Validate(), tc.String())
+	assert.ErrorContains(t, tc.Validate(), "invalid cdc key format: non_existent", tc.String())
 
 	for _, validKeyFormat := range validKeyFormats {
 		tc.CDCKeyFormat = validKeyFormat
