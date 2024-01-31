@@ -7,22 +7,22 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/lmittmann/tint"
 	slogmulti "github.com/samber/slog-multi"
-	slogsentry "github.com/samber/slog-sentry"
+	slogsentry "github.com/samber/slog-sentry/v2"
 
 	"github.com/artie-labs/transfer/lib/config"
 )
 
-func NewLogger(settings *config.Settings) (*slog.Logger, bool) {
+func NewLogger(verbose bool, sentryCfg *config.Sentry) (*slog.Logger, bool) {
 	tintLogLevel := slog.LevelInfo
-	if settings != nil && settings.VerboseLogging {
+	if verbose {
 		tintLogLevel = slog.LevelDebug
 	}
 
 	handler := tint.NewHandler(os.Stderr, &tint.Options{Level: tintLogLevel})
 
 	var loggingToSentry bool
-	if settings != nil && settings.Config != nil && settings.Config.Reporting.Sentry != nil && settings.Config.Reporting.Sentry.DSN != "" {
-		if err := sentry.Init(sentry.ClientOptions{Dsn: settings.Config.Reporting.Sentry.DSN}); err != nil {
+	if sentryCfg != nil && sentryCfg.DSN != "" {
+		if err := sentry.Init(sentry.ClientOptions{Dsn: sentryCfg.DSN}); err != nil {
 			slog.New(handler).Warn("Failed to enable Sentry output", slog.Any("err", err))
 		} else {
 			handler = slogmulti.Fanout(

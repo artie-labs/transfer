@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 
@@ -15,7 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func BackfillColumn(ctx context.Context, dwh destination.DataWarehouse, column columns.Column, fqTableName string) error {
+func BackfillColumn(cfg config.Config, dwh destination.DataWarehouse, column columns.Column, fqTableName string) error {
 	if dwh.Label() == constants.BigQuery {
 		return fmt.Errorf("bigquery does not use this method")
 	}
@@ -25,13 +24,13 @@ func BackfillColumn(ctx context.Context, dwh destination.DataWarehouse, column c
 		return nil
 	}
 
-	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
+	additionalDateFmts := cfg.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{Escape: true, DestKind: dwh.Label()}, additionalDateFmts)
 	if err != nil {
 		return fmt.Errorf("failed to escape default value, err: %v", err)
 	}
 
-	uppercaseEscNames := config.FromContext(ctx).Config.SharedDestinationConfig.UppercaseEscapedNames
+	uppercaseEscNames := cfg.SharedDestinationConfig.UppercaseEscapedNames
 	escapedCol := column.Name(uppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: dwh.Label()})
 
 	// TODO: This is added because `default` is not technically a column that requires escaping, but it is required when it's in the where clause.
@@ -46,7 +45,7 @@ func BackfillColumn(ctx context.Context, dwh destination.DataWarehouse, column c
 		// UPDATE table SET col = default_val WHERE col IS NULL
 		fqTableName, escapedCol, defaultVal, additionalEscapedCol,
 	)
-	slog.Info("backfilling column",
+	slog.Info("Backfilling column",
 		slog.String("colName", column.RawName()),
 		slog.String("query", query),
 		slog.String("table", fqTableName),

@@ -1,7 +1,6 @@
 package ddl_test // to avoid go import cycles.
 
 import (
-	"context"
 	"testing"
 
 	"github.com/artie-labs/transfer/clients/redshift"
@@ -17,10 +16,9 @@ import (
 
 type DDLTestSuite struct {
 	suite.Suite
-	ctx               context.Context
-	bqCtx             context.Context
 	fakeBigQueryStore *mocks.FakeStore
 	bigQueryStore     *bigquery.Store
+	bigQueryCfg       config.Config
 
 	fakeSnowflakeStagesStore *mocks.FakeStore
 	snowflakeStagesStore     *snowflake.Store
@@ -30,36 +28,28 @@ type DDLTestSuite struct {
 }
 
 func (d *DDLTestSuite) SetupTest() {
-	ctx := config.InjectSettingsIntoContext(context.Background(), &config.Settings{
-		VerboseLogging: true,
-		Config: &config.Config{
-			Redshift: &config.Redshift{},
-		},
-	})
+	cfg := config.Config{
+		Redshift: &config.Redshift{},
+	}
 
-	bqCtx := config.InjectSettingsIntoContext(context.Background(), &config.Settings{
-		VerboseLogging: true,
-		Config: &config.Config{
-			BigQuery: &config.BigQuery{
-				ProjectID: "artie-project",
-			},
+	d.bigQueryCfg = config.Config{
+		BigQuery: &config.BigQuery{
+			ProjectID: "artie-project",
 		},
-	})
-
-	d.ctx = ctx
-	d.bqCtx = bqCtx
+	}
 
 	d.fakeBigQueryStore = &mocks.FakeStore{}
 	bqStore := db.Store(d.fakeBigQueryStore)
-	d.bigQueryStore = bigquery.LoadBigQuery(d.bqCtx, &bqStore)
+
+	d.bigQueryStore = bigquery.LoadBigQuery(d.bigQueryCfg, &bqStore)
 
 	d.fakeSnowflakeStagesStore = &mocks.FakeStore{}
 	snowflakeStagesStore := db.Store(d.fakeSnowflakeStagesStore)
-	d.snowflakeStagesStore = snowflake.LoadSnowflake(ctx, &snowflakeStagesStore)
+	d.snowflakeStagesStore = snowflake.LoadSnowflake(cfg, &snowflakeStagesStore)
 
 	d.fakeRedshiftStore = &mocks.FakeStore{}
 	redshiftStore := db.Store(d.fakeRedshiftStore)
-	d.redshiftStore = redshift.LoadRedshift(ctx, &redshiftStore)
+	d.redshiftStore = redshift.LoadRedshift(cfg, &redshiftStore)
 }
 
 func TestDDLTestSuite(t *testing.T) {

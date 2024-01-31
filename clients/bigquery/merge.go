@@ -8,7 +8,6 @@ import (
 
 	"cloud.google.com/go/bigquery"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/dml"
@@ -33,13 +32,13 @@ func (r *Row) Save() (map[string]bigquery.Value, string, error) {
 	return r.data, bigquery.NoDedupeID, nil
 }
 
-func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) ([]*Row, error) {
+func (s *Store) merge(tableData *optimization.TableData) ([]*Row, error) {
 	var rows []*Row
 
-	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
+	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.RowsData() {
 		data := make(map[string]bigquery.Value)
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.uppercaseEscNames, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal, err := castColVal(value[col], colKind, additionalDateFmts)
 			if err != nil {
@@ -59,20 +58,20 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) ([
 
 // BackfillColumn will perform a backfill to the destination and also update the comment within a transaction.
 // Source: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-definition-language#column_set_options_list
-func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTableName string) error {
+func (s *Store) backfillColumn(column columns.Column, fqTableName string) error {
 	if !column.ShouldBackfill() {
 		// If we don't need to backfill, don't backfill.
 		return nil
 	}
 
-	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
+	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 
 	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{Escape: true, DestKind: s.Label()}, additionalDateFmts)
 	if err != nil {
 		return fmt.Errorf("failed to escape default value, err: %v", err)
 	}
 
-	escapedCol := column.Name(s.uppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: s.Label()})
+	escapedCol := column.Name(s.config.SharedDestinationConfig.UppercaseEscapedNames, &sql.NameArgs{Escape: true, DestKind: s.Label()})
 	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
 		// UPDATE table SET col = default_val WHERE col IS NULL
 		fqTableName, escapedCol, defaultVal, escapedCol)
@@ -113,7 +112,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		tableConfig.Columns(), tableData.TopicConfig.SoftDelete,
 		tableData.TopicConfig.IncludeArtieUpdatedAt, tableData.TopicConfig.IncludeDatabaseUpdatedAt)
 
-	fqName := tableData.ToFqName(s.Label(), true, s.uppercaseEscNames, s.projectID)
+	fqName := tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, s.config.BigQuery.ProjectID)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               s,
 		Tc:                tableConfig,
@@ -121,13 +120,13 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		CreateTable:       tableConfig.CreateTable(),
 		ColumnOp:          constants.Add,
 		CdcTime:           tableData.LatestCDCTs,
-		UppercaseEscNames: &s.uppercaseEscNames,
+		UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
 	}
 
 	// Keys that exist in CDC stream, but not in BigQuery
 	err = ddl.AlterTable(createAlterTableArgs, targetKeysMissing...)
 	if err != nil {
-		slog.Warn("failed to apply alter table", slog.Any("err", err))
+		slog.Warn("Failed to apply alter table", slog.Any("err", err))
 		return err
 	}
 
@@ -142,12 +141,12 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		ColumnOp:               constants.Delete,
 		ContainOtherOperations: tableData.ContainOtherOperations(),
 		CdcTime:                tableData.LatestCDCTs,
-		UppercaseEscNames:      &s.uppercaseEscNames,
+		UppercaseEscNames:      &s.config.SharedDestinationConfig.UppercaseEscapedNames,
 	}
 
 	err = ddl.AlterTable(deleteAlterTableArgs, srcKeysMissing...)
 	if err != nil {
-		slog.Warn("failed to apply alter table", slog.Any("err", err))
+		slog.Warn("Failed to apply alter table", slog.Any("err", err))
 		return err
 	}
 
@@ -160,11 +159,11 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	tempAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               s,
 		Tc:                tableConfig,
-		FqTableName:       fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.uppercaseEscNames, s.projectID), tableData.TempTableSuffix()),
+		FqTableName:       fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.config.SharedDestinationConfig.UppercaseEscapedNames, s.config.BigQuery.ProjectID), tableData.TempTableSuffix()),
 		CreateTable:       true,
 		TemporaryTable:    true,
 		ColumnOp:          constants.Add,
-		UppercaseEscNames: &s.uppercaseEscNames,
+		UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
 	}
 
 	if err = ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
@@ -180,7 +179,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 		var attempts int
 		for {
-			err = s.backfillColumn(ctx, col, fqName)
+			err = s.backfillColumn(col, fqName)
 			if err == nil {
 				tableConfig.Columns().UpsertColumn(col.RawName(), columns.UpsertColumnArg{
 					Backfilled: ptr.ToBool(true),
@@ -200,9 +199,9 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	// Perform actual merge now
-	rows, err := s.merge(ctx, tableData)
+	rows, err := s.merge(tableData)
 	if err != nil {
-		slog.Warn("failed to generate the merge query", slog.Any("err", err))
+		slog.Warn("Failed to generate the merge query", slog.Any("err", err))
 		return err
 	}
 
@@ -214,7 +213,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	var additionalEqualityStrings []string
 	if tableData.TopicConfig.BigQueryPartitionSettings != nil {
-		additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
+		additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 		distinctDates, err := tableData.DistinctDates(tableData.TopicConfig.BigQueryPartitionSettings.PartitionField, additionalDateFmts)
 		if err != nil {
 			return fmt.Errorf("failed to generate distinct dates, err: %v", err)
@@ -222,7 +221,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 		mergeString, err := tableData.TopicConfig.BigQueryPartitionSettings.GenerateMergeString(distinctDates)
 		if err != nil {
-			slog.Warn("failed to generate merge string", slog.Any("err", err))
+			slog.Warn("Failed to generate merge string", slog.Any("err", err))
 			return err
 		}
 
@@ -234,11 +233,11 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		AdditionalEqualityStrings: additionalEqualityStrings,
 		SubQuery:                  tempAlterTableArgs.FqTableName,
 		IdempotentKey:             tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys:               tableData.PrimaryKeys(s.uppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: s.Label()}),
+		PrimaryKeys:               tableData.PrimaryKeys(s.config.SharedDestinationConfig.UppercaseEscapedNames, &sql.NameArgs{Escape: true, DestKind: s.Label()}),
 		ColumnsToTypes:            *tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:                tableData.TopicConfig.SoftDelete,
 		DestKind:                  s.Label(),
-		UppercaseEscNames:         &s.uppercaseEscNames,
+		UppercaseEscNames:         &s.config.SharedDestinationConfig.UppercaseEscapedNames,
 	}
 
 	mergeQuery, err := mergeArg.GetStatement()

@@ -1,10 +1,12 @@
 package util
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 )
 
-func (u *UtilTestSuite) TestParseGeometryPoint() {
+func TestParseGeometryPoint(t *testing.T) {
 	{
 		geoJSONString, err := parseGeometryPoint(map[string]interface{}{
 			"x":    2.2945,
@@ -13,19 +15,19 @@ func (u *UtilTestSuite) TestParseGeometryPoint() {
 			"srid": nil,
 		})
 
-		assert.NoError(u.T(), err)
-		assert.Equal(u.T(), `{"type":"Feature","geometry":{"type":"Point","coordinates":[2.2945,48.8584]}}`, geoJSONString)
+		assert.NoError(t, err)
+		assert.Equal(t, `{"type":"Feature","geometry":{"type":"Point","coordinates":[2.2945,48.8584]}}`, geoJSONString)
 	}
 }
 
-func (u *UtilTestSuite) TestGeometryWkb() {
+func TestGeometryWkb(t *testing.T) {
 	{
 		geoJSONString, err := parseGeometry(map[string]interface{}{
 			"wkb":  "AQEAAAAAAAAAAADwPwAAAAAAAPA/",
 			"srid": nil,
 		})
 
-		assert.NoError(u.T(), err)
-		assert.Equal(u.T(), `{"type":"Feature","geometry":{"type":"Point","coordinates":[1,1]},"properties":null}`, geoJSONString)
+		assert.NoError(t, err)
+		assert.Equal(t, `{"type":"Feature","geometry":{"type":"Point","coordinates":[1,1]},"properties":null}`, geoJSONString)
 	}
 }

@@ -8,19 +8,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/ptr"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/models"
 )
 
@@ -35,7 +33,7 @@ type Event struct {
 	Deleted        bool
 }
 
-func ToMemoryEvent(ctx context.Context, event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) Event {
+func ToMemoryEvent(event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) Event {
 	cols := event.GetColumns()
 	// Now iterate over pkMap and tag each column that is a primary key
 	if cols != nil {
@@ -101,7 +99,7 @@ func (e *Event) PrimaryKeyValue() string {
 
 // Save will save the event into our in memory event
 // It will return (flush bool, flushReason string, err error)
-func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, message artie.Message) (bool, string, error) {
+func (e *Event) Save(ctx context.Context, cfg config.Config, topicConfig *kafkalib.TopicConfig, message artie.Message) (bool, string, error) {
 	if topicConfig == nil {
 		return false, "", errors.New("topicConfig is missing")
 	}
@@ -131,7 +129,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 		}
 	}
 
-	typingSettings := config.FromContext(ctx).Config.SharedTransferConfig.ToTypingSettings()
+	typingSettings := cfg.SharedTransferConfig.TypingSettings
 
 	// Table columns
 	inMemoryColumns := td.ReadOnlyInMemoryCols()
@@ -206,7 +204,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	}
 
 	td.LatestCDCTs = e.ExecutionTime
-	flush, flushReason := td.ShouldFlush(ctx)
+	flush, flushReason := td.ShouldFlush(cfg)
 	return flush, flushReason, nil
 }
 

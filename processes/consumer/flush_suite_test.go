@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/destination"
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/db"
@@ -19,6 +20,8 @@ type FlushTestSuite struct {
 	suite.Suite
 	fakeStore    *mocks.FakeStore
 	fakeConsumer *mocks.FakeConsumer
+	cfg          config.Config
+	dwh          destination.DataWarehouse
 
 	ctx context.Context
 }
@@ -27,36 +30,31 @@ func (f *FlushTestSuite) SetupTest() {
 	f.fakeStore = &mocks.FakeStore{}
 	store := db.Store(f.fakeStore)
 
-	f.ctx = context.Background()
-
-	f.ctx = config.InjectSettingsIntoContext(f.ctx, &config.Settings{
-		Config: &config.Config{
-			Kafka: &config.Kafka{
-				BootstrapServer: "foo",
-				GroupID:         "bar",
-				Username:        "user",
-				Password:        "abc",
-				TopicConfigs: []*kafkalib.TopicConfig{
-					{
-						Database:  "db",
-						Schema:    "schema",
-						Topic:     "topic",
-						CDCFormat: constants.DBZPostgresFormat,
-					},
+	f.cfg = config.Config{
+		Kafka: &config.Kafka{
+			BootstrapServer: "foo",
+			GroupID:         "bar",
+			Username:        "user",
+			Password:        "abc",
+			TopicConfigs: []*kafkalib.TopicConfig{
+				{
+					Database:  "db",
+					Schema:    "schema",
+					Topic:     "topic",
+					CDCFormat: constants.DBZPostgresFormat,
 				},
 			},
-			Queue:                constants.Kafka,
-			Output:               "snowflake",
-			BufferRows:           500,
-			FlushIntervalSeconds: 60,
-			FlushSizeKb:          500,
 		},
-		VerboseLogging: false,
-	})
+		Queue:                constants.Kafka,
+		Output:               "snowflake",
+		BufferRows:           500,
+		FlushIntervalSeconds: 60,
+		FlushSizeKb:          500,
+	}
 
-	f.ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(f.ctx, &store), f.ctx)
+	f.dwh = utils.DataWarehouse(f.cfg, &store)
 
-	f.ctx = models.LoadMemoryDB(f.ctx)
+	f.ctx = models.LoadMemoryDB(context.Background())
 
 	f.fakeConsumer = &mocks.FakeConsumer{}
 	SetKafkaConsumer(map[string]kafkalib.Consumer{"foo": f.fakeConsumer})

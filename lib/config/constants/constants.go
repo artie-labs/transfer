@@ -156,8 +156,6 @@ func IsValidS3OutputFormat(format S3OutputFormat) bool {
 type contextKey string
 
 const (
-	ConfigKey      contextKey = "__settings"
-	DestinationKey contextKey = "__dest"
-	MetricsKey     contextKey = "__metrics"
-	DatabaseKey    contextKey = "__db"
+	MetricsKey  contextKey = "__metrics"
+	DatabaseKey contextKey = "__db"
 )

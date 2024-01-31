@@ -1,6 +1,7 @@
 package s3
 
 import (
+	"testing"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -12,7 +13,7 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 )
 
-func (s *S3TestSuite) TestObjectPrefix() {
+func TestObjectPrefix(t *testing.T) {
 	type _testCase struct {
 		name      string
 		tableData *optimization.TableData
@@ -60,13 +61,13 @@ func (s *S3TestSuite) TestObjectPrefix() {
 	}
 
 	for _, tc := range testCases {
-		store, err := LoadStore(tc.config)
+		store, err := LoadStore(config.Config{S3: tc.config})
 		if tc.expectError {
-			assert.Error(s.T(), err, tc.name)
+			assert.Error(t, err, tc.name)
 		} else {
-			assert.NoError(s.T(), err, tc.name)
+			assert.NoError(t, err, tc.name)
 			actualObjectPrefix := store.ObjectPrefix(tc.tableData)
-			assert.Equal(s.T(), tc.expectedFormat, actualObjectPrefix, tc.name)
+			assert.Equal(t, tc.expectedFormat, actualObjectPrefix, tc.name)
 		}
 	}
 }

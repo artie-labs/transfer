@@ -9,6 +9,7 @@ import (
 
 	"github.com/artie-labs/transfer/clients/utils"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -100,7 +101,7 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 
 	var count int
 	for _, testCase := range testCases {
-		err := utils.BackfillColumn(s.ctx, s.stageStore, testCase.col, fqTableName)
+		err := utils.BackfillColumn(config.Config{}, s.stageStore, testCase.col, fqTableName)
 		if testCase.expectErr {
 			assert.Error(s.T(), err, testCase.name)
 			continue
@@ -150,7 +151,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	s.stageStore.GetConfigMap().AddTableToConfig(tempTableName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	sflkTc := s.stageStore.GetConfigMap().TableConfig(tempTableName)
 
-	assert.NoError(s.T(), s.stageStore.prepareTempTable(s.ctx, tableData, sflkTc, tempTableName))
+	assert.NoError(s.T(), s.stageStore.prepareTempTable(tableData, sflkTc, tempTableName))
 	assert.Equal(s.T(), 3, s.fakeStageStore.ExecCallCount())
 
 	// First call is to create the temp table
@@ -174,7 +175,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 
 func (s *SnowflakeTestSuite) TestLoadTemporaryTable() {
 	tempTableName, tableData := generateTableData(100)
-	fp, err := s.stageStore.loadTemporaryTable(s.ctx, tableData, tempTableName)
+	fp, err := s.stageStore.loadTemporaryTable(tableData, tempTableName)
 	assert.NoError(s.T(), err)
 	// Read the CSV and confirm.
 	csvfile, err := os.Open(fp)

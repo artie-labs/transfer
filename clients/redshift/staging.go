@@ -9,8 +9,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/config"
-
 	"github.com/artie-labs/transfer/lib/typing"
 
 	"github.com/artie-labs/transfer/lib/s3lib"
@@ -29,7 +27,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 		CreateTable:       true,
 		TemporaryTable:    true,
 		ColumnOp:          constants.Add,
-		UppercaseEscNames: &s.uppercaseEscNames,
+		UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
 	}
 
 	if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
@@ -42,7 +40,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 		return fmt.Errorf("failed to add comment to table, tableName: %v, err: %v", tempTableName, err)
 	}
 
-	fp, err := s.loadTemporaryTable(ctx, tableData, tempTableName)
+	fp, err := s.loadTemporaryTable(tableData, tempTableName)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table, err: %v", err)
 	}
@@ -67,13 +65,13 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 	}
 
 	if deleteErr := os.RemoveAll(fp); deleteErr != nil {
-		slog.Warn("failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
+		slog.Warn("Failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
 	}
 
 	return nil
 }
 
-func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.TableData, newTableName string) (string, error) {
+func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableName string) (string, error) {
 	filePath := fmt.Sprintf("/tmp/%s.csv.gz", newTableName)
 	file, err := os.Create(filePath)
 	if err != nil {
@@ -88,10 +86,10 @@ func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.
 	writer := csv.NewWriter(gzipWriter) // Create a CSV writer on top of the gzip writer
 	writer.Comma = '\t'
 
-	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
+	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.RowsData() {
 		var row []string
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.uppercaseEscNames, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			castedValue, castErr := s.CastColValStaging(value[col], colKind, additionalDateFmts)
 			if castErr != nil {

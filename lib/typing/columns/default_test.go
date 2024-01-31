@@ -2,6 +2,7 @@ package columns
 
 import (
 	"fmt"
+	"testing"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -13,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func (c *ColumnsTestSuite) TestColumn_DefaultValue() {
+func TestColumn_DefaultValue(t *testing.T) {
 	type _testCase struct {
 		name                       string
 		col                        *Column
@@ -25,7 +26,7 @@ func (c *ColumnsTestSuite) TestColumn_DefaultValue() {
 
 	birthday := time.Date(2022, time.September, 6, 3, 19, 24, 942000000, time.UTC)
 	birthdayExtDateTime, err := ext.ParseExtendedDateTime(birthday.Format(ext.ISO8601), nil)
-	assert.NoError(c.T(), err)
+	assert.NoError(t, err)
 
 	// date
 	dateKind := typing.ETime
@@ -152,9 +153,9 @@ func (c *ColumnsTestSuite) TestColumn_DefaultValue() {
 
 			actualValue, actualErr := testCase.col.DefaultValue(testCase.args, nil)
 			if testCase.expectedEr {
-				assert.Error(c.T(), actualErr, fmt.Sprintf("%s %s", testCase.name, validDest))
+				assert.Error(t, actualErr, fmt.Sprintf("%s %s", testCase.name, validDest))
 			} else {
-				assert.NoError(c.T(), actualErr, fmt.Sprintf("%s %s", testCase.name, validDest))
+				assert.NoError(t, actualErr, fmt.Sprintf("%s %s", testCase.name, validDest))
 			}
 
 			expectedValue := testCase.expectedValue
@@ -163,7 +164,7 @@ func (c *ColumnsTestSuite) TestColumn_DefaultValue() {
 				expectedValue = potentialValue
 			}
 
-			assert.Equal(c.T(), expectedValue, actualValue, fmt.Sprintf("%s %s", testCase.name, validDest))
+			assert.Equal(t, expectedValue, actualValue, fmt.Sprintf("%s %s", testCase.name, validDest))
 		}
 	}
 }

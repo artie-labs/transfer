@@ -28,10 +28,9 @@ const (
 )
 
 type Store struct {
-	configMap         *types.DwhToTablesConfigMap
-	batchSize         int
-	projectID         string
-	uppercaseEscNames bool
+	configMap *types.DwhToTablesConfigMap
+	batchSize int
+	config    config.Config
 
 	db.Store
 }
@@ -39,7 +38,7 @@ type Store struct {
 func (s *Store) getTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	return utils.GetTableConfig(utils.GetTableCfgArgs{
 		Dwh:       s,
-		FqName:    tableData.ToFqName(s.Label(), true, s.uppercaseEscNames, s.projectID),
+		FqName:    tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, s.config.BigQuery.ProjectID),
 		ConfigMap: s.configMap,
 		Query: fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name='%s';",
 			tableData.TopicConfig.Database, tableData.RawName()),
@@ -64,10 +63,9 @@ func (s *Store) Label() constants.DestinationKind {
 }
 
 func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
-	settings := config.FromContext(ctx)
-	client, err := bigquery.NewClient(ctx, settings.Config.BigQuery.ProjectID)
+	client, err := bigquery.NewClient(ctx, s.config.BigQuery.ProjectID)
 	if err != nil {
-		logger.Panic("failed to get bigquery client", slog.Any("err", err))
+		logger.Panic("Failed to get bigquery client", slog.Any("err", err))
 	}
 
 	return client
@@ -88,35 +86,32 @@ func (s *Store) PutTable(ctx context.Context, dataset, tableName string, rows []
 	return nil
 }
 
-func LoadBigQuery(ctx context.Context, _store *db.Store) *Store {
-	settings := config.FromContext(ctx)
-	settings.Config.BigQuery.LoadDefaultValues()
+func LoadBigQuery(cfg config.Config, _store *db.Store) *Store {
+	cfg.BigQuery.LoadDefaultValues()
 	if _store != nil {
 		// Used for tests.
 		return &Store{
 			Store: *_store,
 
-			projectID:         settings.Config.BigQuery.ProjectID,
-			uppercaseEscNames: settings.Config.SharedDestinationConfig.UppercaseEscapedNames,
-			configMap:         &types.DwhToTablesConfigMap{},
+			configMap: &types.DwhToTablesConfigMap{},
+			config:    cfg,
 		}
 	}
 
-	if credPath := settings.Config.BigQuery.PathToCredentials; credPath != "" {
+	if credPath := cfg.BigQuery.PathToCredentials; credPath != "" {
 		// If the credPath is set, let's set it into the env var.
-		slog.Debug("writing the path to BQ credentials to env var for google auth")
+		slog.Debug("Writing the path to BQ credentials to env var for google auth")
 		err := os.Setenv(GooglePathToCredentialsEnvKey, credPath)
 		if err != nil {
-			logger.Panic(fmt.Sprintf("error setting env var for %s", GooglePathToCredentialsEnvKey), slog.Any("err", err))
+			logger.Panic(fmt.Sprintf("Error setting env var for %s", GooglePathToCredentialsEnvKey), slog.Any("err", err))
 		}
 	}
 
 	return &Store{
-		Store: db.Open(ctx, "bigquery", settings.Config.BigQuery.DSN()),
+		Store: db.Open("bigquery", cfg.BigQuery.DSN()),
 
-		configMap:         &types.DwhToTablesConfigMap{},
-		batchSize:         settings.Config.BigQuery.BatchSize,
-		projectID:         settings.Config.BigQuery.ProjectID,
-		uppercaseEscNames: settings.Config.SharedDestinationConfig.UppercaseEscapedNames,
+		configMap: &types.DwhToTablesConfigMap{},
+		batchSize: cfg.BigQuery.BatchSize,
+		config:    cfg,
 	}
 }

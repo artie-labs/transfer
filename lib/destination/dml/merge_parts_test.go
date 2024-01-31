@@ -1,6 +1,8 @@
 package dml
 
 import (
+	"testing"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -11,14 +13,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func (m *MergeTestSuite) TestMergeStatementPartsValidation() {
+func TestMergeStatementPartsValidation(t *testing.T) {
 	for _, arg := range []*MergeArgument{
 		{DestKind: constants.Snowflake},
 		{DestKind: constants.BigQuery},
 	} {
 		parts, err := arg.GetParts()
-		assert.Error(m.T(), err)
-		assert.Nil(m.T(), parts)
+		assert.Error(t, err)
+		assert.Nil(t, parts)
 	}
 }
 
@@ -64,7 +66,7 @@ func getBasicColumnsForTest(compositeKey bool, uppercaseEscNames bool) result {
 	}
 }
 
-func (m *MergeTestSuite) TestMergeStatementParts_SkipDelete() {
+func TestMergeStatementParts_SkipDelete(t *testing.T) {
 	// Biggest difference with this test are:
 	// 1. We are not saving `__artie_deleted` column
 	// 2. There are 3 SQL queries (INSERT, UPDATE and DELETE)
@@ -82,19 +84,19 @@ func (m *MergeTestSuite) TestMergeStatementParts_SkipDelete() {
 	}
 
 	parts, err := mergeArg.GetParts()
-	assert.NoError(m.T(), err)
-	assert.Equal(m.T(), 2, len(parts))
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(parts))
 
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`INSERT INTO public.tableName (id,email,first_name,last_name,created_at,toast_text) SELECT cc.id,cc.email,cc.first_name,cc.last_name,cc.created_at,cc.toast_text FROM public.tableName__temp as cc LEFT JOIN public.tableName as c on c.id = cc.id WHERE c.id IS NULL;`,
 		parts[0])
 
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`UPDATE public.tableName as c SET id=cc.id,email=cc.email,first_name=cc.first_name,last_name=cc.last_name,created_at=cc.created_at,toast_text= CASE WHEN cc.toast_text != '__debezium_unavailable_value' THEN cc.toast_text ELSE c.toast_text END FROM public.tableName__temp as cc WHERE c.id = cc.id AND COALESCE(cc.__artie_delete, false) = false;`,
 		parts[1])
 }
 
-func (m *MergeTestSuite) TestMergeStatementPartsSoftDelete() {
+func TestMergeStatementPartsSoftDelete(t *testing.T) {
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(false, false)
@@ -109,31 +111,31 @@ func (m *MergeTestSuite) TestMergeStatementPartsSoftDelete() {
 	}
 
 	parts, err := mergeArg.GetParts()
-	assert.NoError(m.T(), err)
-	assert.Equal(m.T(), 2, len(parts))
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(parts))
 
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`INSERT INTO public.tableName (id,email,first_name,last_name,created_at,toast_text,__artie_delete) SELECT cc.id,cc.email,cc.first_name,cc.last_name,cc.created_at,cc.toast_text,cc.__artie_delete FROM public.tableName__temp as cc LEFT JOIN public.tableName as c on c.id = cc.id WHERE c.id IS NULL;`,
 		parts[0])
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`UPDATE public.tableName as c SET id=cc.id,email=cc.email,first_name=cc.first_name,last_name=cc.last_name,created_at=cc.created_at,toast_text= CASE WHEN cc.toast_text != '__debezium_unavailable_value' THEN cc.toast_text ELSE c.toast_text END,__artie_delete=cc.__artie_delete FROM public.tableName__temp as cc WHERE c.id = cc.id;`,
 		parts[1])
 
 	mergeArg.IdempotentKey = "created_at"
 	parts, err = mergeArg.GetParts()
-	assert.NoError(m.T(), err)
+	assert.NoError(t, err)
 
 	// Parts[0] for insertion should be identical
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`INSERT INTO public.tableName (id,email,first_name,last_name,created_at,toast_text,__artie_delete) SELECT cc.id,cc.email,cc.first_name,cc.last_name,cc.created_at,cc.toast_text,cc.__artie_delete FROM public.tableName__temp as cc LEFT JOIN public.tableName as c on c.id = cc.id WHERE c.id IS NULL;`,
 		parts[0])
 	// Parts[1] where we're doing UPDATES will have idempotency key.
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`UPDATE public.tableName as c SET id=cc.id,email=cc.email,first_name=cc.first_name,last_name=cc.last_name,created_at=cc.created_at,toast_text= CASE WHEN cc.toast_text != '__debezium_unavailable_value' THEN cc.toast_text ELSE c.toast_text END,__artie_delete=cc.__artie_delete FROM public.tableName__temp as cc WHERE c.id = cc.id AND cc.created_at >= c.created_at;`,
 		parts[1])
 }
 
-func (m *MergeTestSuite) TestMergeStatementPartsSoftDeleteComposite() {
+func TestMergeStatementPartsSoftDeleteComposite(t *testing.T) {
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(true, false)
@@ -148,31 +150,31 @@ func (m *MergeTestSuite) TestMergeStatementPartsSoftDeleteComposite() {
 	}
 
 	parts, err := mergeArg.GetParts()
-	assert.NoError(m.T(), err)
-	assert.Equal(m.T(), 2, len(parts))
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(parts))
 
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`INSERT INTO public.tableName (id,email,first_name,last_name,created_at,toast_text,__artie_delete) SELECT cc.id,cc.email,cc.first_name,cc.last_name,cc.created_at,cc.toast_text,cc.__artie_delete FROM public.tableName__temp as cc LEFT JOIN public.tableName as c on c.id = cc.id and c.email = cc.email WHERE c.id IS NULL;`,
 		parts[0])
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`UPDATE public.tableName as c SET id=cc.id,email=cc.email,first_name=cc.first_name,last_name=cc.last_name,created_at=cc.created_at,toast_text= CASE WHEN cc.toast_text != '__debezium_unavailable_value' THEN cc.toast_text ELSE c.toast_text END,__artie_delete=cc.__artie_delete FROM public.tableName__temp as cc WHERE c.id = cc.id and c.email = cc.email;`,
 		parts[1])
 
 	mergeArg.IdempotentKey = "created_at"
 	parts, err = mergeArg.GetParts()
-	assert.NoError(m.T(), err)
+	assert.NoError(t, err)
 
 	// Parts[0] for insertion should be identical
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`INSERT INTO public.tableName (id,email,first_name,last_name,created_at,toast_text,__artie_delete) SELECT cc.id,cc.email,cc.first_name,cc.last_name,cc.created_at,cc.toast_text,cc.__artie_delete FROM public.tableName__temp as cc LEFT JOIN public.tableName as c on c.id = cc.id and c.email = cc.email WHERE c.id IS NULL;`,
 		parts[0])
 	// Parts[1] where we're doing UPDATES will have idempotency key.
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`UPDATE public.tableName as c SET id=cc.id,email=cc.email,first_name=cc.first_name,last_name=cc.last_name,created_at=cc.created_at,toast_text= CASE WHEN cc.toast_text != '__debezium_unavailable_value' THEN cc.toast_text ELSE c.toast_text END,__artie_delete=cc.__artie_delete FROM public.tableName__temp as cc WHERE c.id = cc.id and c.email = cc.email AND cc.created_at >= c.created_at;`,
 		parts[1])
 }
 
-func (m *MergeTestSuite) TestMergeStatementParts() {
+func TestMergeStatementParts(t *testing.T) {
 	// Biggest difference with this test are:
 	// 1. We are not saving `__artie_deleted` column
 	// 2. There are 3 SQL queries (INSERT, UPDATE and DELETE)
@@ -189,18 +191,18 @@ func (m *MergeTestSuite) TestMergeStatementParts() {
 	}
 
 	parts, err := mergeArg.GetParts()
-	assert.NoError(m.T(), err)
-	assert.Equal(m.T(), 3, len(parts))
+	assert.NoError(t, err)
+	assert.Equal(t, 3, len(parts))
 
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`INSERT INTO public.tableName (id,email,first_name,last_name,created_at,toast_text) SELECT cc.id,cc.email,cc.first_name,cc.last_name,cc.created_at,cc.toast_text FROM public.tableName__temp as cc LEFT JOIN public.tableName as c on c.id = cc.id WHERE c.id IS NULL;`,
 		parts[0])
 
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`UPDATE public.tableName as c SET id=cc.id,email=cc.email,first_name=cc.first_name,last_name=cc.last_name,created_at=cc.created_at,toast_text= CASE WHEN cc.toast_text != '__debezium_unavailable_value' THEN cc.toast_text ELSE c.toast_text END FROM public.tableName__temp as cc WHERE c.id = cc.id AND COALESCE(cc.__artie_delete, false) = false;`,
 		parts[1])
 
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`DELETE FROM public.tableName WHERE (id) IN (SELECT cc.id FROM public.tableName__temp as cc WHERE cc.__artie_delete = true);`,
 		parts[2])
 
@@ -215,23 +217,23 @@ func (m *MergeTestSuite) TestMergeStatementParts() {
 	}
 
 	parts, err = mergeArg.GetParts()
-	assert.NoError(m.T(), err)
-	assert.Equal(m.T(), 3, len(parts))
+	assert.NoError(t, err)
+	assert.Equal(t, 3, len(parts))
 
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`INSERT INTO public.tableName (id,email,first_name,last_name,created_at,toast_text) SELECT cc.id,cc.email,cc.first_name,cc.last_name,cc.created_at,cc.toast_text FROM public.tableName__temp as cc LEFT JOIN public.tableName as c on c.id = cc.id WHERE c.id IS NULL;`,
 		parts[0])
 
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`UPDATE public.tableName as c SET id=cc.id,email=cc.email,first_name=cc.first_name,last_name=cc.last_name,created_at=cc.created_at,toast_text= CASE WHEN cc.toast_text != '__debezium_unavailable_value' THEN cc.toast_text ELSE c.toast_text END FROM public.tableName__temp as cc WHERE c.id = cc.id AND cc.created_at >= c.created_at AND COALESCE(cc.__artie_delete, false) = false;`,
 		parts[1])
 
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`DELETE FROM public.tableName WHERE (id) IN (SELECT cc.id FROM public.tableName__temp as cc WHERE cc.__artie_delete = true);`,
 		parts[2])
 }
 
-func (m *MergeTestSuite) TestMergeStatementPartsCompositeKey() {
+func TestMergeStatementPartsCompositeKey(t *testing.T) {
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(true, false)
@@ -245,18 +247,18 @@ func (m *MergeTestSuite) TestMergeStatementPartsCompositeKey() {
 	}
 
 	parts, err := mergeArg.GetParts()
-	assert.NoError(m.T(), err)
-	assert.Equal(m.T(), 3, len(parts))
+	assert.NoError(t, err)
+	assert.Equal(t, 3, len(parts))
 
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`INSERT INTO public.tableName (id,email,first_name,last_name,created_at,toast_text) SELECT cc.id,cc.email,cc.first_name,cc.last_name,cc.created_at,cc.toast_text FROM public.tableName__temp as cc LEFT JOIN public.tableName as c on c.id = cc.id and c.email = cc.email WHERE c.id IS NULL;`,
 		parts[0])
 
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`UPDATE public.tableName as c SET id=cc.id,email=cc.email,first_name=cc.first_name,last_name=cc.last_name,created_at=cc.created_at,toast_text= CASE WHEN cc.toast_text != '__debezium_unavailable_value' THEN cc.toast_text ELSE c.toast_text END FROM public.tableName__temp as cc WHERE c.id = cc.id and c.email = cc.email AND COALESCE(cc.__artie_delete, false) = false;`,
 		parts[1])
 
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`DELETE FROM public.tableName WHERE (id,email) IN (SELECT cc.id,cc.email FROM public.tableName__temp as cc WHERE cc.__artie_delete = true);`,
 		parts[2])
 
@@ -271,18 +273,18 @@ func (m *MergeTestSuite) TestMergeStatementPartsCompositeKey() {
 	}
 
 	parts, err = mergeArg.GetParts()
-	assert.NoError(m.T(), err)
-	assert.Equal(m.T(), 3, len(parts))
+	assert.NoError(t, err)
+	assert.Equal(t, 3, len(parts))
 
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`INSERT INTO public.tableName (id,email,first_name,last_name,created_at,toast_text) SELECT cc.id,cc.email,cc.first_name,cc.last_name,cc.created_at,cc.toast_text FROM public.tableName__temp as cc LEFT JOIN public.tableName as c on c.id = cc.id and c.email = cc.email WHERE c.id IS NULL;`,
 		parts[0])
 
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`UPDATE public.tableName as c SET id=cc.id,email=cc.email,first_name=cc.first_name,last_name=cc.last_name,created_at=cc.created_at,toast_text= CASE WHEN cc.toast_text != '__debezium_unavailable_value' THEN cc.toast_text ELSE c.toast_text END FROM public.tableName__temp as cc WHERE c.id = cc.id and c.email = cc.email AND cc.created_at >= c.created_at AND COALESCE(cc.__artie_delete, false) = false;`,
 		parts[1])
 
-	assert.Equal(m.T(),
+	assert.Equal(t,
 		`DELETE FROM public.tableName WHERE (id,email) IN (SELECT cc.id,cc.email FROM public.tableName__temp as cc WHERE cc.__artie_delete = true);`,
 		parts[2])
 }

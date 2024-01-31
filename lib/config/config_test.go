@@ -20,8 +20,6 @@ func TestSharedTransferConfig(t *testing.T) {
 	{
 		var sharedTransferCfg SharedTransferConfig
 		validBody := `
-additionalDateFormats: ["yyyy-MM-dd"]
-createAllColumnsIfAvailable: true
 typingSettings:
  additionalDateFormats: ["yyyy-MM-dd1"]
  createAllColumnsIfAvailable: true
@@ -29,13 +27,8 @@ typingSettings:
 		err := yaml.Unmarshal([]byte(validBody), &sharedTransferCfg)
 		assert.NoError(t, err)
 
-		assert.Equal(t, "yyyy-MM-dd", sharedTransferCfg.AdditionalDateFormats[0])
-		assert.True(t, sharedTransferCfg.CreateAllColumnsIfAvailable)
-
 		assert.True(t, sharedTransferCfg.TypingSettings.CreateAllColumnsIfAvailable)
 		assert.Equal(t, "yyyy-MM-dd1", sharedTransferCfg.TypingSettings.AdditionalDateFormats[0])
-		assert.True(t, sharedTransferCfg.ToTypingSettings().CreateAllColumnsIfAvailable)
-		assert.Equal(t, "yyyy-MM-dd1", sharedTransferCfg.ToTypingSettings().AdditionalDateFormats[0])
 	}
 }
 
@@ -361,7 +354,7 @@ func TestReadFileToConfig_Snowflake(t *testing.T) {
 kafka:
  bootstrapServer: %s
  groupID: %s
- enableAWSMKSIAM: %v
+ enableAWSMKSIAM: true
  username: %s
  password: %s
  topicConfigs:
@@ -376,11 +369,16 @@ snowflake:
  region: %s
  application: %s
 
+sharedTransferConfig:
+  typingSettings:
+    createAllColumnsIfAvailable: true
+
+
 reporting:
  sentry:
   dsn: %s
 
-`, bootstrapServer, groupID, true, username, password, snowflakeAccount,
+`, bootstrapServer, groupID, username, password, snowflakeAccount,
 		snowflakeUser, snowflakePassword, warehouse, region, application, sentryDSN))
 	assert.Nil(t, err)
 
@@ -389,11 +387,12 @@ reporting:
 	assert.Nil(t, err)
 	assert.NotNil(t, config)
 
-	assert.Equal(t, config.Kafka.EnableAWSMSKIAM, true)
-	assert.Equal(t, config.Kafka.Username, username)
-	assert.Equal(t, config.Kafka.BootstrapServer, bootstrapServer)
-	assert.Equal(t, config.Kafka.GroupID, groupID)
-	assert.Equal(t, config.Kafka.Password, password)
+	assert.True(t, config.Kafka.EnableAWSMSKIAM)
+	assert.Equal(t, username, config.Kafka.Username)
+	assert.Equal(t, bootstrapServer, config.Kafka.BootstrapServer)
+	assert.Equal(t, groupID, config.Kafka.GroupID)
+	assert.Equal(t, password, config.Kafka.Password)
+	assert.True(t, config.SharedTransferConfig.TypingSettings.CreateAllColumnsIfAvailable)
 
 	var foundOrder bool
 	var foundCustomer bool
@@ -415,13 +414,13 @@ reporting:
 	assert.True(t, foundOrder)
 
 	// Verify Snowflake config
-	assert.Equal(t, config.Snowflake.Username, snowflakeUser)
-	assert.Equal(t, config.Snowflake.Password, snowflakePassword)
-	assert.Equal(t, config.Snowflake.AccountID, snowflakeAccount)
-	assert.Equal(t, config.Snowflake.Warehouse, warehouse)
-	assert.Equal(t, config.Snowflake.Region, region)
-	assert.Equal(t, config.Snowflake.Application, application)
-	assert.Equal(t, config.Reporting.Sentry.DSN, sentryDSN)
+	assert.Equal(t, snowflakeUser, config.Snowflake.Username)
+	assert.Equal(t, snowflakePassword, config.Snowflake.Password)
+	assert.Equal(t, snowflakeAccount, config.Snowflake.AccountID)
+	assert.Equal(t, warehouse, config.Snowflake.Warehouse)
+	assert.Equal(t, region, config.Snowflake.Region)
+	assert.Equal(t, application, config.Snowflake.Application)
+	assert.Equal(t, sentryDSN, config.Reporting.Sentry.DSN)
 }
 
 func TestReadFileToConfig_BigQuery(t *testing.T) {
@@ -468,9 +467,9 @@ bigquery:
 	assert.NotNil(t, config)
 
 	// Verify BigQuery config
-	assert.Equal(t, config.BigQuery.PathToCredentials, pathToCredentials)
-	assert.Equal(t, config.BigQuery.DefaultDataset, dataset)
-	assert.Equal(t, config.BigQuery.ProjectID, projectID)
+	assert.Equal(t, pathToCredentials, config.BigQuery.PathToCredentials)
+	assert.Equal(t, dataset, config.BigQuery.DefaultDataset)
+	assert.Equal(t, projectID, config.BigQuery.ProjectID)
 }
 
 func TestConfig_Validate(t *testing.T) {
@@ -524,12 +523,12 @@ func TestConfig_Validate(t *testing.T) {
 		// Reset buffer rows.
 		cfg.BufferRows = 500
 		cfg.FlushIntervalSeconds = i
-		assert.Contains(t, cfg.Validate().Error(), "flush interval is outside of our range")
+		assert.ErrorContains(t, cfg.Validate(), "flush interval is outside of our range")
 
 		// Reset Flush
 		cfg.FlushIntervalSeconds = 20
 		cfg.BufferRows = uint(i)
-		assert.Contains(t, cfg.Validate().Error(), "buffer pool is too small")
+		assert.ErrorContains(t, cfg.Validate(), "buffer pool is too small")
 	}
 
 	cfg.BufferRows = 500
@@ -550,7 +549,7 @@ func TestConfig_Validate(t *testing.T) {
 
 	for _, num := range []int{-500, -300, -5, 0} {
 		cfg.FlushSizeKb = num
-		assert.Contains(t, cfg.Validate().Error(), "config is invalid, flush size pool has to be a positive number")
+		assert.ErrorContains(t, cfg.Validate(), "config is invalid, flush size pool has to be a positive number")
 	}
 
 }
@@ -570,36 +569,4 @@ func TestCfg_KafkaBootstrapServers(t *testing.T) {
 	brokers = append(brokers, strings.Split(kafkaWithMultipleBrokers.BootstrapServer, ",")...)
 
 	assert.Equal(t, []string{"a:9092", "b:9093", "c:9094"}, brokers)
-}
-
-func TestUnmarshallSharedTransferConfig(t *testing.T) {
-	// sharedTransferConfig not set
-	{
-		randomFile := filepath.Join(t.TempDir(), "config.yaml")
-		assert.NoError(t, os.WriteFile(randomFile, []byte(validKafkaTopic), 0644))
-		cfg, err := readFileToConfig(randomFile)
-		assert.NoError(t, err)
-		assert.Empty(t, cfg.SharedTransferConfig.AdditionalDateFormats)
-		assert.Empty(t, cfg.SharedTransferConfig.ToTypingSettings().AdditionalDateFormats)
-		assert.False(t, cfg.SharedTransferConfig.CreateAllColumnsIfAvailable)
-		assert.False(t, cfg.SharedTransferConfig.ToTypingSettings().CreateAllColumnsIfAvailable)
-	}
-
-	// sharedTransferConfig set
-	{
-		yamlData := validKafkaTopic + `sharedTransferConfig:
- additionalDateFormats:
-  - "yyyy-MM-dd"
- createAllColumnsIfAvailable: true
-`
-
-		randomFile := filepath.Join(t.TempDir(), "config.yaml")
-		assert.NoError(t, os.WriteFile(randomFile, []byte(yamlData), 0644))
-		cfg, err := readFileToConfig(randomFile)
-		assert.NoError(t, err)
-		assert.Equal(t, []string{"yyyy-MM-dd"}, cfg.SharedTransferConfig.AdditionalDateFormats)
-		assert.Equal(t, []string{"yyyy-MM-dd"}, cfg.SharedTransferConfig.ToTypingSettings().AdditionalDateFormats)
-		assert.True(t, cfg.SharedTransferConfig.CreateAllColumnsIfAvailable)
-		assert.True(t, cfg.SharedTransferConfig.ToTypingSettings().CreateAllColumnsIfAvailable)
-	}
 }

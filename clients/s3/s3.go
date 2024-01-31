@@ -28,7 +28,7 @@ import (
 )
 
 type Store struct {
-	Settings          *config.S3Settings
+	config            config.Config
 	uppercaseEscNames bool
 }
 
@@ -37,7 +37,7 @@ func (s *Store) Validate() error {
 		return fmt.Errorf("s3 store is nil")
 	}
 
-	if err := s.Settings.Validate(); err != nil {
+	if err := s.config.S3.Validate(); err != nil {
 		return fmt.Errorf("failed to validate settings, err :%v", err)
 	}
 
@@ -55,8 +55,8 @@ func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
 	fqTableName := tableData.ToFqName(s.Label(), false, s.uppercaseEscNames, "")
 	yyyyMMDDFormat := tableData.LatestCDCTs.Format(ext.PostgresDateFormat)
 
-	if len(s.Settings.OptionalPrefix) > 0 {
-		return strings.Join([]string{s.Settings.OptionalPrefix, fqTableName, yyyyMMDDFormat}, "/")
+	if len(s.config.S3.OptionalPrefix) > 0 {
+		return strings.Join([]string{s.config.S3.OptionalPrefix, fqTableName, yyyyMMDDFormat}, "/")
 	}
 
 	return strings.Join([]string{fqTableName, yyyyMMDDFormat}, "/")
@@ -98,7 +98,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return fmt.Errorf("failed to instantiate parquet writer, err: %v", err)
 	}
 
-	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
+	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	pw.CompressionType = parquet.CompressionCodec_GZIP
 	for _, val := range tableData.RowsData() {
 		row := make(map[string]interface{})
@@ -135,11 +135,11 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	if _, err = s3lib.UploadLocalFileToS3(ctx, s3lib.UploadArgs{
-		Bucket:                     s.Settings.Bucket,
+		Bucket:                     s.config.S3.Bucket,
 		OptionalS3Prefix:           s.ObjectPrefix(tableData),
 		FilePath:                   fp,
-		OverrideAWSAccessKeyID:     ptr.ToString(s.Settings.AwsAccessKeyID),
-		OverrideAWSAccessKeySecret: ptr.ToString(s.Settings.AwsSecretAccessKey),
+		OverrideAWSAccessKeyID:     ptr.ToString(s.config.S3.AwsAccessKeyID),
+		OverrideAWSAccessKeySecret: ptr.ToString(s.config.S3.AwsSecretAccessKey),
 	}); err != nil {
 		return fmt.Errorf("failed to upload file to s3, err: %v", err)
 	}
@@ -147,9 +147,9 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	return os.RemoveAll(fp)
 }
 
-func LoadStore(settings *config.S3Settings) (*Store, error) {
+func LoadStore(cfg config.Config) (*Store, error) {
 	store := &Store{
-		Settings:          settings,
+		config:            cfg,
 		uppercaseEscNames: false,
 	}
 

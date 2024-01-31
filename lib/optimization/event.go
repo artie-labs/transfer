@@ -1,7 +1,6 @@
 package optimization
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -217,13 +216,12 @@ func (t *TableData) TempTableSuffix() string {
 
 // ShouldFlush will return whether Transfer should flush
 // If so, what is the reason?
-func (t *TableData) ShouldFlush(ctx context.Context) (bool, string) {
-	settings := config.FromContext(ctx)
-	if t.Rows() > settings.Config.BufferRows {
+func (t *TableData) ShouldFlush(cfg config.Config) (bool, string) {
+	if t.Rows() > cfg.BufferRows {
 		return true, "rows"
 	}
 
-	if t.approxSize > settings.Config.FlushSizeKb*1024 {
+	if t.approxSize > cfg.FlushSizeKb*1024 {
 		return true, "size"
 	}
 

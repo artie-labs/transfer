@@ -2,6 +2,7 @@ package parquetutil
 
 import (
 	"math/big"
+	"testing"
 
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -12,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func (p *ParquetUtilTestSuite) TestParseValue() {
+func TestParseValue(t *testing.T) {
 	type _testStruct struct {
 		name    string
 		colVal  interface{}
@@ -95,10 +96,10 @@ func (p *ParquetUtilTestSuite) TestParseValue() {
 	for _, tc := range testCases {
 		actualValue, actualErr := ParseValue(tc.colVal, tc.colKind, nil)
 		if tc.expectErr {
-			assert.Error(p.T(), actualErr, tc.name)
+			assert.Error(t, actualErr, tc.name)
 		} else {
-			assert.NoError(p.T(), actualErr, tc.name)
-			assert.Equal(p.T(), tc.expectedValue, actualValue, tc.name)
+			assert.NoError(t, actualErr, tc.name)
+			assert.Equal(t, tc.expectedValue, actualValue, tc.name)
 		}
 	}
 }

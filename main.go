@@ -10,6 +10,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/utils"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
@@ -20,42 +21,42 @@ import (
 )
 
 func main() {
-	// Parse args into settings.
-	ctx, err := config.InitializeCfgIntoContext(context.Background(), os.Args, true)
+	// Parse args into settings
+	settings, err := config.LoadSettings(os.Args, true)
 	if err != nil {
 		logger.Fatal("Failed to initialize config", slog.Any("err", err))
 	}
 
 	// Initialize default logger
-	_logger, usingSentry := logger.NewLogger(config.FromContext(ctx))
+	_logger, usingSentry := logger.NewLogger(settings.VerboseLogging, settings.Config.Reporting.Sentry)
 	slog.SetDefault(_logger)
 	if usingSentry {
 		defer sentry.Flush(2 * time.Second)
 		slog.Info("Sentry logger enabled")
 	}
 
-	// Loading Telemetry
-	ctx = metrics.LoadExporter(ctx)
-	if utils.IsOutputBaseline(ctx) {
-		ctx = utils.InjectBaselineIntoCtx(utils.Baseline(ctx), ctx)
+	ctx := context.Background()
+	// Loading telemetry
+	ctx = metrics.LoadExporter(ctx, settings.Config)
+	var dest destination.Baseline
+	if utils.IsOutputBaseline(settings.Config) {
+		dest = utils.Baseline(settings.Config)
 	} else {
-		ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(ctx, nil), ctx)
+		dest = utils.DataWarehouse(settings.Config, nil)
 	}
 
 	ctx = models.LoadMemoryDB(ctx)
-	settings := config.FromContext(ctx)
-
-	slog.Info("config is loaded",
-		slog.Int("flush_interval_seconds", settings.Config.FlushIntervalSeconds),
-		slog.Uint64("buffer_pool_size", uint64(settings.Config.BufferRows)),
-		slog.Int("flush_pool_size (kb)", settings.Config.FlushSizeKb),
+	slog.Info("Config is loaded",
+		slog.Int("flushIntervalSeconds", settings.Config.FlushIntervalSeconds),
+		slog.Uint64("bufferPoolSize", uint64(settings.Config.BufferRows)),
+		slog.Int("flushPoolSizeKb", settings.Config.FlushSizeKb),
 	)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		pool.StartPool(ctx, time.Duration(settings.Config.FlushIntervalSeconds)*time.Second)
+		pool.StartPool(ctx, dest, time.Duration(settings.Config.FlushIntervalSeconds)*time.Second)
 	}()
 
 	wg.Add(1)
@@ -63,11 +64,11 @@ func main() {
 		defer wg.Done()
 		switch settings.Config.Queue {
 		case constants.Kafka:
-			consumer.StartConsumer(ctx)
+			consumer.StartConsumer(ctx, settings.Config, dest)
 		case constants.PubSub:
-			consumer.StartSubscriber(ctx)
+			consumer.StartSubscriber(ctx, settings.Config, dest)
 		default:
-			logger.Fatal(fmt.Sprintf("message queue: %s not supported", settings.Config.Queue))
+			logger.Fatal(fmt.Sprintf("Message queue: %s not supported", settings.Config.Queue))
 		}
 	}(ctx)
 

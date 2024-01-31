@@ -59,7 +59,7 @@ func (b *BigQueryTestSuite) TestBackfillColumn() {
 
 	var index int
 	for _, testCase := range testCases {
-		err := b.store.backfillColumn(b.ctx, testCase.col, fqTableName)
+		err := b.store.backfillColumn(testCase.col, fqTableName)
 		if testCase.expectErr {
 			assert.Error(b.T(), err, testCase.name)
 			continue

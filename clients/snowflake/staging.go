@@ -1,7 +1,6 @@
 package snowflake
 
 import (
-	"context"
 	"encoding/csv"
 	"fmt"
 	"log/slog"
@@ -11,7 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/values"
 
 	"github.com/artie-labs/transfer/clients/utils"
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/dml"
@@ -39,7 +37,7 @@ func castColValStaging(colVal interface{}, colKind columns.Column, additionalDat
 // 3) Runs PUT to upload CSV to Snowflake staging (auto-compression with GZIP)
 // 4) Runs COPY INTO with the columns specified into temporary table
 // 5) Deletes CSV generated from (2)
-func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string) error {
+func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string) error {
 	tempAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               s,
 		Tc:                tableConfig,
@@ -47,14 +45,14 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 		CreateTable:       true,
 		TemporaryTable:    true,
 		ColumnOp:          constants.Add,
-		UppercaseEscNames: &s.uppercaseEscNames,
+		UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
 	}
 
 	if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
 		return fmt.Errorf("failed to create temp table, error: %v", err)
 	}
 
-	fp, err := s.loadTemporaryTable(ctx, tableData, tempTableName)
+	fp, err := s.loadTemporaryTable(tableData, tempTableName)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table, err: %v", err)
 	}
@@ -65,7 +63,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 
 	_, err = s.Exec(fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
 		// Copy into temporary tables (column ...)
-		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.uppercaseEscNames, &sql.NameArgs{
+		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, &sql.NameArgs{
 			Escape:   true,
 			DestKind: s.Label(),
 		}), ","),
@@ -77,7 +75,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 	}
 
 	if deleteErr := os.RemoveAll(fp); deleteErr != nil {
-		slog.Warn("failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
+		slog.Warn("Failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
 	}
 
 	return nil
@@ -86,7 +84,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 // loadTemporaryTable will write the data into /tmp/newTableName.csv
 // This way, another function can call this and then invoke a Snowflake PUT.
 // Returns the file path and potential error
-func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.TableData, newTableName string) (string, error) {
+func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableName string) (string, error) {
 	filePath := fmt.Sprintf("/tmp/%s.csv", newTableName)
 	file, err := os.Create(filePath)
 	if err != nil {
@@ -97,10 +95,10 @@ func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.
 	writer := csv.NewWriter(file)
 	writer.Comma = '\t'
 
-	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.AdditionalDateFormats
+	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.RowsData() {
 		var row []string
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.uppercaseEscNames, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal := value[col]
 			// Check
@@ -121,14 +119,14 @@ func (s *Store) loadTemporaryTable(ctx context.Context, tableData *optimization.
 	return filePath, writer.Error()
 }
 
-func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.TableData) error {
+func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 	// TODO - better test coverage for `mergeWithStages`
 	if tableData.Rows() == 0 || tableData.ReadOnlyInMemoryCols() == nil {
 		// There's no rows. Let's skip.
 		return nil
 	}
 
-	fqName := tableData.ToFqName(s.Label(), true, s.uppercaseEscNames, "")
+	fqName := tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, "")
 	tableConfig, err := s.getTableConfig(fqName, tableData.TopicConfig.DropDeletedColumns)
 	if err != nil {
 		return err
@@ -145,13 +143,13 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		CreateTable:       tableConfig.CreateTable(),
 		ColumnOp:          constants.Add,
 		CdcTime:           tableData.LatestCDCTs,
-		UppercaseEscNames: &s.uppercaseEscNames,
+		UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
 	}
 
 	// Keys that exist in CDC stream, but not in Snowflake
 	err = ddl.AlterTable(createAlterTableArgs, targetKeysMissing...)
 	if err != nil {
-		slog.Warn("failed to apply alter table", slog.Any("err", err))
+		slog.Warn("Failed to apply alter table", slog.Any("err", err))
 		return err
 	}
 
@@ -166,19 +164,19 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		ColumnOp:               constants.Delete,
 		ContainOtherOperations: tableData.ContainOtherOperations(),
 		CdcTime:                tableData.LatestCDCTs,
-		UppercaseEscNames:      &s.uppercaseEscNames,
+		UppercaseEscNames:      &s.config.SharedDestinationConfig.UppercaseEscapedNames,
 	}
 
 	err = ddl.AlterTable(deleteAlterTableArgs, srcKeysMissing...)
 	if err != nil {
-		slog.Warn("failed to apply alter table", slog.Any("err", err))
+		slog.Warn("Failed to apply alter table", slog.Any("err", err))
 		return err
 	}
 
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
 	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
-	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.uppercaseEscNames, ""), tableData.TempTableSuffix())
-	if err = s.prepareTempTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {
+	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.config.SharedDestinationConfig.UppercaseEscapedNames, ""), tableData.TempTableSuffix())
+	if err = s.prepareTempTable(tableData, tableConfig, temporaryTableName); err != nil {
 		return err
 	}
 
@@ -188,7 +186,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 			continue
 		}
 
-		err = utils.BackfillColumn(ctx, s, col, fqName)
+		err = utils.BackfillColumn(s.config, s, col, fqName)
 		if err != nil {
 			return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v", col.RawName(), col.RawDefaultValue(), err)
 		}
@@ -202,10 +200,10 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		FqTableName:       fqName,
 		SubQuery:          temporaryTableName,
 		IdempotentKey:     tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys:       tableData.PrimaryKeys(s.uppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: s.Label()}),
+		PrimaryKeys:       tableData.PrimaryKeys(s.config.SharedDestinationConfig.UppercaseEscapedNames, &sql.NameArgs{Escape: true, DestKind: s.Label()}),
 		ColumnsToTypes:    *tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:        tableData.TopicConfig.SoftDelete,
-		UppercaseEscNames: &s.uppercaseEscNames,
+		UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
 	}
 
 	mergeQuery, err := mergeArg.GetStatement()
@@ -213,7 +211,7 @@ func (s *Store) mergeWithStages(ctx context.Context, tableData *optimization.Tab
 		return fmt.Errorf("failed to generate merge statement, err: %v", err)
 	}
 
-	slog.Debug("executing...", slog.String("query", mergeQuery))
+	slog.Debug("Executing...", slog.String("query", mergeQuery))
 	_, err = s.Exec(mergeQuery)
 	if err != nil {
 		return err

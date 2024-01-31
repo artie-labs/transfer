@@ -19,9 +19,9 @@ import (
 
 type Store struct {
 	db.Store
-	uppercaseEscNames bool
-	testDB            bool // Used for testing
-	configMap         *types.DwhToTablesConfigMap
+	testDB    bool // Used for testing
+	configMap *types.DwhToTablesConfigMap
+	config    config.Config
 }
 
 const (
@@ -58,65 +58,62 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
-	err := s.mergeWithStages(ctx, tableData)
+	err := s.mergeWithStages(tableData)
 	if IsAuthExpiredError(err) {
 		slog.Warn("authentication has expired, will reload the Snowflake store and retry merging", slog.Any("err", err))
-		s.reestablishConnection(ctx)
+		s.reestablishConnection()
 		return s.Merge(ctx, tableData)
 	}
 
 	return err
 }
 
-func (s *Store) reestablishConnection(ctx context.Context) {
+func (s *Store) reestablishConnection() {
 	if s.testDB {
 		// Don't actually re-establish for tests.
 		return
 	}
 
-	settings := config.FromContext(ctx)
 	cfg := &gosnowflake.Config{
-		Account:     settings.Config.Snowflake.AccountID,
-		User:        settings.Config.Snowflake.Username,
-		Password:    settings.Config.Snowflake.Password,
-		Warehouse:   settings.Config.Snowflake.Warehouse,
-		Region:      settings.Config.Snowflake.Region,
-		Application: settings.Config.Snowflake.Application,
+		Account:     s.config.Snowflake.AccountID,
+		User:        s.config.Snowflake.Username,
+		Password:    s.config.Snowflake.Password,
+		Warehouse:   s.config.Snowflake.Warehouse,
+		Region:      s.config.Snowflake.Region,
+		Application: s.config.Snowflake.Application,
 	}
 
-	if settings.Config.Snowflake.Host != "" {
+	if s.config.Snowflake.Host != "" {
 		// If the host is specified
-		cfg.Host = settings.Config.Snowflake.Host
+		cfg.Host = s.config.Snowflake.Host
 		cfg.Region = ""
 	}
 
 	dsn, err := gosnowflake.DSN(cfg)
 	if err != nil {
-		logger.Panic("failed to get snowflake dsn", slog.Any("err", err))
+		logger.Panic("Failed to get snowflake dsn", slog.Any("err", err))
 	}
 
-	s.Store = db.Open(ctx, "snowflake", dsn)
+	s.Store = db.Open("snowflake", dsn)
 }
 
-func LoadSnowflake(ctx context.Context, _store *db.Store) *Store {
-	cfg := config.FromContext(ctx).Config
-
+func LoadSnowflake(cfg config.Config, _store *db.Store) *Store {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			testDB:            true,
-			uppercaseEscNames: cfg.SharedDestinationConfig.UppercaseEscapedNames,
-			configMap:         &types.DwhToTablesConfigMap{},
+			testDB:    true,
+			configMap: &types.DwhToTablesConfigMap{},
+			config:    cfg,
 
 			Store: *_store,
 		}
 	}
 
 	s := &Store{
-		uppercaseEscNames: cfg.SharedDestinationConfig.UppercaseEscapedNames,
-		configMap:         &types.DwhToTablesConfigMap{},
+		configMap: &types.DwhToTablesConfigMap{},
+		config:    cfg,
 	}
 
-	s.reestablishConnection(ctx)
+	s.reestablishConnection()
 	return s
 }

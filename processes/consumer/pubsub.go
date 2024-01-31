@@ -11,13 +11,14 @@ import (
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/logger"
 	"google.golang.org/api/option"
 )
 
 const defaultAckDeadline = 10 * time.Minute
 
-func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, topic, subName string) (*gcp_pubsub.Subscription, error) {
+func findOrCreateSubscription(ctx context.Context, cfg config.Config, client *gcp_pubsub.Client, topic, subName string) (*gcp_pubsub.Subscription, error) {
 	sub := client.Subscription(subName)
 	exists, err := sub.Exists(ctx)
 	if err != nil {
@@ -25,7 +26,7 @@ func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, to
 	}
 
 	if !exists {
-		slog.Info("subscription does not exist, creating one...", slog.String("topic", topic))
+		slog.Info("Subscription does not exist, creating one...", slog.String("topic", topic))
 		gcpTopic := client.Topic(topic)
 		exists, err = gcpTopic.Exists(ctx)
 		if !exists || err != nil {
@@ -46,7 +47,7 @@ func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, to
 	}
 
 	// This should be the same as our buffer rows so we don't limit our processing throughput
-	sub.ReceiveSettings.MaxOutstandingMessages = int(config.FromContext(ctx).Config.BufferRows) + 1
+	sub.ReceiveSettings.MaxOutstandingMessages = int(cfg.BufferRows) + 1
 
 	// By default, the pub/sub library will try to spawns 10 additional Go-routines per subscription,
 	// it actually does not make the process faster. Rather, it creates more coordination overhead.
@@ -55,16 +56,15 @@ func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, to
 	return sub, err
 }
 
-func StartSubscriber(ctx context.Context) {
-	settings := config.FromContext(ctx)
-	client, clientErr := gcp_pubsub.NewClient(ctx, settings.Config.Pubsub.ProjectID,
-		option.WithCredentialsFile(settings.Config.Pubsub.PathToCredentials))
+func StartSubscriber(ctx context.Context, cfg config.Config, dest destination.Baseline) {
+	client, clientErr := gcp_pubsub.NewClient(ctx, cfg.Pubsub.ProjectID,
+		option.WithCredentialsFile(cfg.Pubsub.PathToCredentials))
 	if clientErr != nil {
 		logger.Panic("Failed to create a pubsub client", slog.Any("err", clientErr))
 	}
 
 	tcFmtMap := NewTcFmtMap()
-	for _, topicConfig := range settings.Config.Pubsub.TopicConfigs {
+	for _, topicConfig := range cfg.Pubsub.TopicConfigs {
 		tcFmtMap.Add(topicConfig.Topic, TopicConfigFormatter{
 			tc:     topicConfig,
 			Format: format.GetFormatParser(topicConfig.CDCFormat, topicConfig.Topic),
@@ -72,12 +72,12 @@ func StartSubscriber(ctx context.Context) {
 	}
 
 	var wg sync.WaitGroup
-	for _, topicConfig := range settings.Config.Pubsub.TopicConfigs {
+	for _, topicConfig := range cfg.Pubsub.TopicConfigs {
 		wg.Add(1)
 		go func(ctx context.Context, client *gcp_pubsub.Client, topic string) {
 			defer wg.Done()
 			subName := fmt.Sprintf("transfer_%s", topic)
-			sub, err := findOrCreateSubscription(ctx, client, topic, subName)
+			sub, err := findOrCreateSubscription(ctx, cfg, client, topic, subName)
 			if err != nil {
 				logger.Panic("Failed to find or create subscription", slog.Any("err", err))
 			}
@@ -92,7 +92,7 @@ func StartSubscriber(ctx context.Context) {
 						slog.String("value", string(msg.Value())),
 					}
 
-					tableName, processErr := processMessage(ctx, ProcessArgs{
+					tableName, processErr := processMessage(ctx, cfg, dest, ProcessArgs{
 						Msg:                    msg,
 						GroupID:                subName,
 						TopicToConfigFormatMap: tcFmtMap,
@@ -100,7 +100,7 @@ func StartSubscriber(ctx context.Context) {
 
 					msg.EmitIngestionLag(ctx, subName, tableName)
 					if processErr != nil {
-						slog.With(logFields...).Warn("skipping message...", slog.Any("err", processErr))
+						slog.With(logFields...).Warn("Skipping message...", slog.Any("err", processErr))
 					}
 				})
 

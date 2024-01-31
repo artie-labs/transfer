@@ -95,21 +95,7 @@ type SharedDestinationConfig struct {
 }
 
 type SharedTransferConfig struct {
-	// TODO: Remove these once everyone is using TypingSettings
-	AdditionalDateFormats       []string         `yaml:"additionalDateFormats"`
-	CreateAllColumnsIfAvailable bool             `yaml:"createAllColumnsIfAvailable"`
-	TypingSettings              *typing.Settings `yaml:"typingSettings"`
-}
-
-func (stc SharedTransferConfig) ToTypingSettings() typing.Settings {
-	if stc.TypingSettings != nil {
-		return *stc.TypingSettings
-	}
-
-	return typing.Settings{
-		AdditionalDateFormats:       stc.AdditionalDateFormats,
-		CreateAllColumnsIfAvailable: stc.CreateAllColumnsIfAvailable,
-	}
+	TypingSettings typing.Settings `yaml:"typingSettings"`
 }
 
 type Snowflake struct {
@@ -132,7 +118,7 @@ func (k *Kafka) String() string {
 		k.BootstrapServer, k.GroupID, k.Username != "", k.Password != "")
 }
 
-func (c *Config) TopicConfigs() ([]*kafkalib.TopicConfig, error) {
+func (c Config) TopicConfigs() ([]*kafkalib.TopicConfig, error) {
 	if err := c.Validate(); err != nil {
 		return nil, err
 	}
@@ -224,7 +210,7 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 	return &config, nil
 }
 
-func (c *Config) ValidateRedshift() error {
+func (c Config) ValidateRedshift() error {
 	if c.Output != constants.Redshift {
 		return fmt.Errorf("output is not redshift, output: %v", c.Output)
 	}
@@ -248,11 +234,7 @@ func (c *Config) ValidateRedshift() error {
 // Validate will check the output source validity
 // It will also check if a topic exists + iterate over each topic to make sure it's valid.
 // The actual output source (like Snowflake) and CDC parser will be loaded and checked by other funcs.
-func (c *Config) Validate() error {
-	if c == nil {
-		return fmt.Errorf("config is nil")
-	}
-
+func (c Config) Validate() error {
 	if c.FlushSizeKb <= 0 {
 		return fmt.Errorf("config is invalid, flush size pool has to be a positive number, current value: %v", c.FlushSizeKb)
 	}

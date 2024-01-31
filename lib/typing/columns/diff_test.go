@@ -1,6 +1,8 @@
 package columns
 
 import (
+	"testing"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/artie-labs/transfer/lib/typing"
@@ -9,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func (c *ColumnsTestSuite) TestShouldSkipColumn() {
+func TestShouldSkipColumn(t *testing.T) {
 	type _testCase struct {
 		name                     string
 		colName                  string
@@ -66,11 +68,11 @@ func (c *ColumnsTestSuite) TestShouldSkipColumn() {
 
 	for _, testCase := range testCases {
 		actualResult := shouldSkipColumn(testCase.colName, testCase.softDelete, testCase.includeArtieUpdatedAt, testCase.includeDatabaseUpdatedAt)
-		assert.Equal(c.T(), testCase.expectedResult, actualResult, testCase.name)
+		assert.Equal(t, testCase.expectedResult, actualResult, testCase.name)
 	}
 }
 
-func (c *ColumnsTestSuite) TestDiff_VariousNils() {
+func TestDiff_VariousNils(t *testing.T) {
 	type _testCase struct {
 		name       string
 		sourceCols *Columns
@@ -123,21 +125,21 @@ func (c *ColumnsTestSuite) TestDiff_VariousNils() {
 
 	for _, testCase := range testCases {
 		actualSrcKeysMissing, actualTargKeysMissing := Diff(testCase.sourceCols, testCase.targCols, false, false, false)
-		assert.Equal(c.T(), testCase.expectedSrcKeyLength, len(actualSrcKeysMissing), testCase.name)
-		assert.Equal(c.T(), testCase.expectedTargKeyLength, len(actualTargKeysMissing), testCase.name)
+		assert.Equal(t, testCase.expectedSrcKeyLength, len(actualSrcKeysMissing), testCase.name)
+		assert.Equal(t, testCase.expectedTargKeyLength, len(actualTargKeysMissing), testCase.name)
 	}
 }
 
-func (c *ColumnsTestSuite) TestDiffBasic() {
+func TestDiffBasic(t *testing.T) {
 	var source Columns
 	source.AddColumn(NewColumn("a", typing.Integer))
 
 	srcKeyMissing, targKeyMissing := Diff(&source, &source, false, false, false)
-	assert.Equal(c.T(), len(srcKeyMissing), 0)
-	assert.Equal(c.T(), len(targKeyMissing), 0)
+	assert.Equal(t, len(srcKeyMissing), 0)
+	assert.Equal(t, len(targKeyMissing), 0)
 }
 
-func (c *ColumnsTestSuite) TestDiffDelta1() {
+func TestDiffDelta1(t *testing.T) {
 	var sourceCols Columns
 	var targCols Columns
 	for colName, kindDetails := range map[string]typing.KindDetails{
@@ -157,11 +159,11 @@ func (c *ColumnsTestSuite) TestDiffDelta1() {
 	}
 
 	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targCols, false, false, false)
-	assert.Equal(c.T(), len(srcKeyMissing), 2, srcKeyMissing)   // Missing aa, cc
-	assert.Equal(c.T(), len(targKeyMissing), 2, targKeyMissing) // Missing aa, cc
+	assert.Equal(t, len(srcKeyMissing), 2, srcKeyMissing)   // Missing aa, cc
+	assert.Equal(t, len(targKeyMissing), 2, targKeyMissing) // Missing aa, cc
 }
 
-func (c *ColumnsTestSuite) TestDiffDelta2() {
+func TestDiffDelta2(t *testing.T) {
 	var sourceCols Columns
 	var targetCols Columns
 
@@ -189,11 +191,11 @@ func (c *ColumnsTestSuite) TestDiffDelta2() {
 	}
 
 	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targetCols, false, false, false)
-	assert.Equal(c.T(), len(srcKeyMissing), 1, srcKeyMissing)   // Missing dd
-	assert.Equal(c.T(), len(targKeyMissing), 3, targKeyMissing) // Missing a, c, d
+	assert.Equal(t, len(srcKeyMissing), 1, srcKeyMissing)   // Missing dd
+	assert.Equal(t, len(targKeyMissing), 3, targKeyMissing) // Missing a, c, d
 }
 
-func (c *ColumnsTestSuite) TestDiffDeterministic() {
+func TestDiffDeterministic(t *testing.T) {
 	retMap := map[string]bool{}
 
 	var sourceCols Columns
@@ -204,7 +206,7 @@ func (c *ColumnsTestSuite) TestDiffDeterministic() {
 
 	for i := 0; i < 500; i++ {
 		keysMissing, targetKeysMissing := Diff(&sourceCols, &targCols, false, false, false)
-		assert.Equal(c.T(), 0, len(keysMissing), keysMissing)
+		assert.Equal(t, 0, len(keysMissing), keysMissing)
 
 		var key string
 		for _, targetKeyMissing := range targetKeysMissing {
@@ -214,24 +216,24 @@ func (c *ColumnsTestSuite) TestDiffDeterministic() {
 		retMap[key] = false
 	}
 
-	assert.Equal(c.T(), 1, len(retMap), retMap)
+	assert.Equal(t, 1, len(retMap), retMap)
 }
 
-func (c *ColumnsTestSuite) TestCopyColMap() {
+func TestCopyColMap(t *testing.T) {
 	var cols Columns
 	cols.AddColumn(NewColumn("hello", typing.String))
 	cols.AddColumn(NewColumn("created_at", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)))
 	cols.AddColumn(NewColumn("updated_at", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)))
 
 	copiedCols := CloneColumns(&cols)
-	assert.Equal(c.T(), *copiedCols, cols)
+	assert.Equal(t, *copiedCols, cols)
 
 	//Delete a row from copiedCols
 	copiedCols.columns = copiedCols.columns[1:]
-	assert.NotEqual(c.T(), *copiedCols, cols)
+	assert.NotEqual(t, *copiedCols, cols)
 }
 
-func (c *ColumnsTestSuite) TestCloneColumns() {
+func TestCloneColumns(t *testing.T) {
 	type _testCase struct {
 		name         string
 		cols         *Columns
@@ -274,6 +276,6 @@ func (c *ColumnsTestSuite) TestCloneColumns() {
 
 	for _, testCase := range testCases {
 		actualCols := CloneColumns(testCase.cols)
-		assert.Equal(c.T(), *testCase.expectedCols, *actualCols, testCase.name)
+		assert.Equal(t, *testCase.expectedCols, *actualCols, testCase.name)
 	}
 }

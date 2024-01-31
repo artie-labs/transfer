@@ -1,7 +1,6 @@
 package redshift
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -141,17 +140,14 @@ func (r *RedshiftTestSuite) TestCastColValStaging_ExceededValues() {
 		},
 	}
 
-	ctx := config.InjectSettingsIntoContext(context.Background(), &config.Settings{
-		VerboseLogging: false,
-		Config: &config.Config{
-			Redshift: &config.Redshift{
-				SkipLgCols: true,
-			},
+	cfg := config.Config{
+		Redshift: &config.Redshift{
+			SkipLgCols: true,
 		},
-	})
+	}
 
 	store := db.Store(r.fakeStore)
-	skipLargeRowsStore := LoadRedshift(ctx, &store)
+	skipLargeRowsStore := LoadRedshift(cfg, &store)
 
 	for _, testCase := range testCases {
 		evaluateTestCase(r.T(), skipLargeRowsStore, testCase)
