@@ -53,13 +53,13 @@ func TestShouldSkipColumn(t *testing.T) {
 			softDelete:            true,
 		},
 		{
-			name:                     "db updated at col BUT setting is not enabled",
+			name:                     "db updated at col BUT updated_at is not enabled",
 			colName:                  constants.DatabaseUpdatedColumnMarker,
 			includeDatabaseUpdatedAt: false,
 			expectedResult:           true,
 		},
 		{
-			name:                     "db updated at col AND setting is not enabled",
+			name:                     "db updated at col AND updated_at is enabled",
 			colName:                  constants.DatabaseUpdatedColumnMarker,
 			includeDatabaseUpdatedAt: true,
 			expectedResult:           false,
