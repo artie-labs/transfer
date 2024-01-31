@@ -1,6 +1,7 @@
 package consumer
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/models"
 )
 
 var topicConfig = &kafkalib.TopicConfig{
@@ -37,10 +37,10 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 		}
 
 		kafkaMsg := kafka.Message{Partition: 1, Offset: 1}
-		_, _, err := evt.Save(f.ctx, f.cfg, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+		_, _, err := evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 		assert.Nil(f.T(), err)
 
-		td := models.GetMemoryDB(f.ctx).GetOrCreateTableData("foo")
+		td := f.db.GetOrCreateTableData("foo")
 		assert.Equal(f.T(), int(td.Rows()), i+1)
 	}
 }
@@ -65,7 +65,7 @@ func (f *FlushTestSuite) TestShouldFlush() {
 
 		var err error
 		kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
-		flush, flushReason, err = evt.Save(f.ctx, f.cfg, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+		flush, flushReason, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 		assert.Nil(f.T(), err)
 
 		if flush {
@@ -102,7 +102,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 				}
 
 				kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
-				_, _, err := evt.Save(f.ctx, f.cfg, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+				_, _, err := evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 				assert.Nil(f.T(), err)
 			}
 		}(tableNames[idx])
@@ -112,12 +112,12 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 
 	// Verify all the tables exist.
 	for idx := range tableNames {
-		td := models.GetMemoryDB(f.ctx).GetOrCreateTableData(tableNames[idx])
+		td := f.db.GetOrCreateTableData(tableNames[idx])
 		tableConfig := td.RowsData()
 		assert.Equal(f.T(), len(tableConfig), 5)
 	}
 
-	assert.Nil(f.T(), Flush(f.dwh, Args{Context: f.ctx}), "flush failed")
+	assert.Nil(f.T(), Flush(f.db, f.dwh, Args{Context: context.Background()}), "flush failed")
 	assert.Equal(f.T(), f.fakeConsumer.CommitMessagesCallCount(), len(tableNames)) // Commit 3 times because 3 topics.
 
 	for i := 0; i < len(tableNames); i++ {

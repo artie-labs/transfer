@@ -34,7 +34,8 @@ func TestProcessMessageFailures(t *testing.T) {
 		BufferRows:           10,
 		FlushSizeKb:          900,
 	}
-	ctx := models.LoadMemoryDB(context.Background())
+	ctx := context.Background()
+	memDB := models.NewMemoryDB()
 	kafkaMsg := kafka.Message{
 		Topic:         "foo",
 		Partition:     0,
@@ -52,14 +53,14 @@ func TestProcessMessageFailures(t *testing.T) {
 		GroupID: "foo",
 	}
 
-	tableName, err := processMessage(ctx, cfg, MockDestination{}, processArgs)
+	tableName, err := processMessage(ctx, cfg, memDB, MockDestination{}, processArgs)
 	assert.True(t, strings.Contains(err.Error(), "failed to process, topicConfig is nil"), err.Error())
 	assert.Empty(t, tableName)
 
 	processArgs.TopicToConfigFormatMap = NewTcFmtMap()
-	tableName, err = processMessage(ctx, cfg, MockDestination{}, processArgs)
+	tableName, err = processMessage(ctx, cfg, memDB, MockDestination{}, processArgs)
 	assert.True(t, strings.Contains(err.Error(), "failed to get topic"), err.Error())
-	assert.Equal(t, 0, len(models.GetMemoryDB(ctx).TableData()))
+	assert.Equal(t, 0, len(memDB.TableData()))
 	assert.Empty(t, tableName)
 
 	var mgo mongo.Debezium
@@ -92,11 +93,11 @@ func TestProcessMessageFailures(t *testing.T) {
 	tcFmt, isOk := tcFmtMap.GetTopicFmt(msg.Topic())
 	assert.True(t, isOk)
 
-	tableName, err = processMessage(ctx, cfg, MockDestination{}, processArgs)
+	tableName, err = processMessage(ctx, cfg, memDB, MockDestination{}, processArgs)
 	assert.True(t, strings.Contains(err.Error(),
 		fmt.Sprintf("err: format: %s is not supported", tcFmt.tc.CDCKeyFormat)), err.Error())
 	assert.True(t, strings.Contains(err.Error(), "cannot unmarshall key"), err.Error())
-	assert.Equal(t, 0, len(models.GetMemoryDB(ctx).TableData()))
+	assert.Equal(t, 0, len(memDB.TableData()))
 	assert.Empty(t, tableName)
 
 	// Add will just replace the prev setting.
@@ -170,7 +171,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	}
 
 	idx := 0
-	memoryDB := models.GetMemoryDB(ctx)
+	memoryDB := memDB
 	for _, val := range vals {
 		idx += 1
 		msg.KafkaMsg.Key = []byte(fmt.Sprintf("Struct{id=%v}", idx))
@@ -184,7 +185,7 @@ func TestProcessMessageFailures(t *testing.T) {
 			TopicToConfigFormatMap: tcFmtMap,
 		}
 
-		tableName, err = processMessage(ctx, cfg, MockDestination{}, processArgs)
+		tableName, err = processMessage(ctx, cfg, memDB, MockDestination{}, processArgs)
 		assert.NoError(t, err)
 		assert.Equal(t, table, tableName)
 
@@ -205,7 +206,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		TopicToConfigFormatMap: tcFmtMap,
 	}
 
-	tableName, err = processMessage(ctx, cfg, MockDestination{}, processArgs)
+	tableName, err = processMessage(ctx, cfg, memDB, MockDestination{}, processArgs)
 	assert.Error(t, err)
 	assert.Empty(t, tableName)
 	assert.True(t, td.Rows() > 0)
@@ -217,7 +218,8 @@ func TestProcessMessageSkip(t *testing.T) {
 		BufferRows:           10,
 		FlushSizeKb:          900,
 	}
-	ctx := models.LoadMemoryDB(context.Background())
+	ctx := context.Background()
+	memDB := models.NewMemoryDB()
 	kafkaMsg := kafka.Message{
 		Topic:         "foo",
 		Partition:     0,
@@ -324,7 +326,7 @@ func TestProcessMessageSkip(t *testing.T) {
 	}
 
 	idx := 0
-	memoryDB := models.GetMemoryDB(ctx)
+	memoryDB := memDB
 	for _, val := range vals {
 		idx += 1
 		msg.KafkaMsg.Key = []byte(fmt.Sprintf("Struct{id=%v}", idx))
@@ -341,7 +343,7 @@ func TestProcessMessageSkip(t *testing.T) {
 		td := memoryDB.GetOrCreateTableData(table)
 		assert.Equal(t, 0, int(td.Rows()))
 
-		tableName, err := processMessage(ctx, cfg, MockDestination{}, processArgs)
+		tableName, err := processMessage(ctx, cfg, memDB, MockDestination{}, processArgs)
 		assert.NoError(t, err)
 		assert.Equal(t, table, tableName)
 		// Because it got skipped.

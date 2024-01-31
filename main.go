@@ -35,6 +35,12 @@ func main() {
 		slog.Info("Sentry logger enabled")
 	}
 
+	slog.Info("Config is loaded",
+		slog.Int("flushIntervalSeconds", settings.Config.FlushIntervalSeconds),
+		slog.Uint64("bufferPoolSize", uint64(settings.Config.BufferRows)),
+		slog.Int("flushPoolSizeKb", settings.Config.FlushSizeKb),
+	)
+
 	ctx := context.Background()
 	// Loading telemetry
 	ctx = metrics.LoadExporter(ctx, settings.Config)
@@ -45,18 +51,13 @@ func main() {
 		dest = utils.DataWarehouse(settings.Config, nil)
 	}
 
-	ctx = models.LoadMemoryDB(ctx)
-	slog.Info("Config is loaded",
-		slog.Int("flushIntervalSeconds", settings.Config.FlushIntervalSeconds),
-		slog.Uint64("bufferPoolSize", uint64(settings.Config.BufferRows)),
-		slog.Int("flushPoolSizeKb", settings.Config.FlushSizeKb),
-	)
+	inMemDB := models.NewMemoryDB()
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		pool.StartPool(ctx, dest, time.Duration(settings.Config.FlushIntervalSeconds)*time.Second)
+		pool.StartPool(ctx, inMemDB, dest, time.Duration(settings.Config.FlushIntervalSeconds)*time.Second)
 	}()
 
 	wg.Add(1)
@@ -64,9 +65,9 @@ func main() {
 		defer wg.Done()
 		switch settings.Config.Queue {
 		case constants.Kafka:
-			consumer.StartConsumer(ctx, settings.Config, dest)
+			consumer.StartConsumer(ctx, settings.Config, inMemDB, dest)
 		case constants.PubSub:
-			consumer.StartSubscriber(ctx, settings.Config, dest)
+			consumer.StartSubscriber(ctx, settings.Config, inMemDB, dest)
 		default:
 			logger.Fatal(fmt.Sprintf("Message queue: %s not supported", settings.Config.Queue))
 		}
