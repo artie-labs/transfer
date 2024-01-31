@@ -45,7 +45,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	// Keys that exist in CDC stream, but not in Redshift
 	err = ddl.AlterTable(createAlterTableArgs, targetKeysMissing...)
 	if err != nil {
-		slog.Warn("failed to apply alter table", slog.Any("err", err))
+		slog.Warn("Failed to apply alter table", slog.Any("err", err))
 		return err
 	}
 
@@ -65,7 +65,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	err = ddl.AlterTable(deleteAlterTableArgs, srcKeysMissing...)
 	if err != nil {
-		slog.Warn("failed to apply alter table", slog.Any("err", err))
+		slog.Warn("Failed to apply alter table", slog.Any("err", err))
 		return err
 	}
 

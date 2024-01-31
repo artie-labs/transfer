@@ -92,7 +92,7 @@ func (s *Store) reestablishConnection() {
 
 	dsn, err := gosnowflake.DSN(cfg)
 	if err != nil {
-		logger.Panic("failed to get snowflake dsn", slog.Any("err", err))
+		logger.Panic("Failed to get snowflake dsn", slog.Any("err", err))
 	}
 
 	s.Store = db.Open("snowflake", dsn)

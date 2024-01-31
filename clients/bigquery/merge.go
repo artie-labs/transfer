@@ -126,7 +126,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	// Keys that exist in CDC stream, but not in BigQuery
 	err = ddl.AlterTable(createAlterTableArgs, targetKeysMissing...)
 	if err != nil {
-		slog.Warn("failed to apply alter table", slog.Any("err", err))
+		slog.Warn("Failed to apply alter table", slog.Any("err", err))
 		return err
 	}
 
@@ -146,7 +146,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	err = ddl.AlterTable(deleteAlterTableArgs, srcKeysMissing...)
 	if err != nil {
-		slog.Warn("failed to apply alter table", slog.Any("err", err))
+		slog.Warn("Failed to apply alter table", slog.Any("err", err))
 		return err
 	}
 
@@ -201,7 +201,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	// Perform actual merge now
 	rows, err := s.merge(tableData)
 	if err != nil {
-		slog.Warn("failed to generate the merge query", slog.Any("err", err))
+		slog.Warn("Failed to generate the merge query", slog.Any("err", err))
 		return err
 	}
 
@@ -221,7 +221,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 		mergeString, err := tableData.TopicConfig.BigQueryPartitionSettings.GenerateMergeString(distinctDates)
 		if err != nil {
-			slog.Warn("failed to generate merge string", slog.Any("err", err))
+			slog.Warn("Failed to generate merge string", slog.Any("err", err))
 			return err
 		}
 

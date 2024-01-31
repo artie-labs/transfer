@@ -112,12 +112,12 @@ func StartConsumer(ctx context.Context) {
 			for {
 				kafkaMsg, err := kafkaConsumer.FetchMessage(ctx)
 				if err != nil {
-					slog.With(artie.KafkaMsgLogFields(kafkaMsg)...).Warn("failed to read kafka message", slog.Any("err", err))
+					slog.With(artie.KafkaMsgLogFields(kafkaMsg)...).Warn("Failed to read kafka message", slog.Any("err", err))
 					continue
 				}
 
 				if len(kafkaMsg.Value) == 0 {
-					slog.Info("found a tombstone message, skipping...", artie.KafkaMsgLogFields(kafkaMsg)...)
+					slog.Info("Found a tombstone message, skipping...", artie.KafkaMsgLogFields(kafkaMsg)...)
 					continue
 				}
 
@@ -131,7 +131,7 @@ func StartConsumer(ctx context.Context) {
 				msg.EmitIngestionLag(ctx, kafkaConsumer.Config().GroupID, tableName)
 				msg.EmitRowLag(ctx, kafkaConsumer.Config().GroupID, tableName)
 				if processErr != nil {
-					slog.With(artie.KafkaMsgLogFields(kafkaMsg)...).Warn("skipping message...", slog.Any("err", processErr))
+					slog.With(artie.KafkaMsgLogFields(kafkaMsg)...).Warn("Skipping message...", slog.Any("err", processErr))
 				}
 			}
 		}(topic)

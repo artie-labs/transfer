@@ -49,7 +49,7 @@ func parseField(field debezium.Field, value interface{}) interface{} {
 			if err == nil {
 				return decimalVal
 			} else {
-				slog.Debug("skipped casting dbz type due to an error",
+				slog.Debug("Skipped casting dbz type due to an error",
 					slog.Any("err", err),
 					slog.Any("supportedType", supportedType),
 					slog.Any("val", value),
@@ -60,7 +60,7 @@ func parseField(field debezium.Field, value interface{}) interface{} {
 			if err == nil {
 				return variableNumericVal
 			} else {
-				slog.Debug("skipped casting dbz type due to an error",
+				slog.Debug("Skipped casting dbz type due to an error",
 					slog.Any("err", err),
 					slog.Any("supportedType", supportedType),
 					slog.Any("val", value),
@@ -76,7 +76,7 @@ func parseField(field debezium.Field, value interface{}) interface{} {
 					return extendedTime
 				} else {
 					if ext.IsInvalidErr(err) {
-						slog.Info("extTime is not valid, so returning nil here instead",
+						slog.Info("ExtTime is not valid, so returning nil here instead",
 							slog.Any("err", err),
 							slog.Any("supportedType", supportedType),
 							slog.Any("val", value),
@@ -84,14 +84,14 @@ func parseField(field debezium.Field, value interface{}) interface{} {
 						return nil
 					}
 
-					slog.Debug("skipped casting dbz type due to an error",
+					slog.Debug("Skipped casting dbz type due to an error",
 						slog.Any("err", err),
 						slog.Any("supportedType", supportedType),
 						slog.Any("val", value),
 					)
 				}
 			} else {
-				slog.Debug("skipped casting because we failed to parse the float",
+				slog.Debug("Skipped casting because we failed to parse the float",
 					slog.Any("err", castErr),
 					slog.Any("supportedType", supportedType),
 					slog.Any("val", value),
