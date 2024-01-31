@@ -62,9 +62,9 @@ func main() {
 		defer wg.Done()
 		switch settings.Config.Queue {
 		case constants.Kafka:
-			consumer.StartConsumer(ctx)
+			consumer.StartConsumer(ctx, *settings.Config)
 		case constants.PubSub:
-			consumer.StartSubscriber(ctx)
+			consumer.StartSubscriber(ctx, *settings.Config)
 		default:
 			logger.Fatal(fmt.Sprintf("message queue: %s not supported", settings.Config.Queue))
 		}

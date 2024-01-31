@@ -55,16 +55,15 @@ func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, to
 	return sub, err
 }
 
-func StartSubscriber(ctx context.Context) {
-	settings := config.FromContext(ctx)
-	client, clientErr := gcp_pubsub.NewClient(ctx, settings.Config.Pubsub.ProjectID,
-		option.WithCredentialsFile(settings.Config.Pubsub.PathToCredentials))
+func StartSubscriber(ctx context.Context, cfg config.Config) {
+	client, clientErr := gcp_pubsub.NewClient(ctx, cfg.Pubsub.ProjectID,
+		option.WithCredentialsFile(cfg.Pubsub.PathToCredentials))
 	if clientErr != nil {
 		logger.Panic("Failed to create a pubsub client", slog.Any("err", clientErr))
 	}
 
 	tcFmtMap := NewTcFmtMap()
-	for _, topicConfig := range settings.Config.Pubsub.TopicConfigs {
+	for _, topicConfig := range cfg.Pubsub.TopicConfigs {
 		tcFmtMap.Add(topicConfig.Topic, TopicConfigFormatter{
 			tc:     topicConfig,
 			Format: format.GetFormatParser(topicConfig.CDCFormat, topicConfig.Topic),
@@ -72,7 +71,7 @@ func StartSubscriber(ctx context.Context) {
 	}
 
 	var wg sync.WaitGroup
-	for _, topicConfig := range settings.Config.Pubsub.TopicConfigs {
+	for _, topicConfig := range cfg.Pubsub.TopicConfigs {
 		wg.Add(1)
 		go func(ctx context.Context, client *gcp_pubsub.Client, topic string) {
 			defer wg.Done()
