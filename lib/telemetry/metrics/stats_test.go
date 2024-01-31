@@ -33,28 +33,26 @@ func (m *MetricsTestSuite) TestLoadExporter() {
 	for kind, result := range exporterKindToResultMap {
 		// Wipe and create a new ctx per run
 		m.ctx = context.Background()
-		m.ctx = config.InjectSettingsIntoContext(m.ctx, &config.Settings{
-			Config: config.Config{
-				Telemetry: struct {
-					Metrics struct {
-						Provider constants.ExporterKind `yaml:"provider"`
-						Settings map[string]interface{} `yaml:"settings,omitempty"`
-					}
+		cfg := config.Config{
+			Telemetry: struct {
+				Metrics struct {
+					Provider constants.ExporterKind `yaml:"provider"`
+					Settings map[string]interface{} `yaml:"settings,omitempty"`
+				}
+			}{
+				Metrics: struct {
+					Provider constants.ExporterKind `yaml:"provider"`
+					Settings map[string]interface{} `yaml:"settings,omitempty"`
 				}{
-					Metrics: struct {
-						Provider constants.ExporterKind `yaml:"provider"`
-						Settings map[string]interface{} `yaml:"settings,omitempty"`
-					}{
-						Provider: kind,
-						Settings: map[string]interface{}{
-							"url": "localhost:8125",
-						},
+					Provider: kind,
+					Settings: map[string]interface{}{
+						"url": "localhost:8125",
 					},
 				},
 			},
-		})
+		}
 
-		m.ctx = LoadExporter(m.ctx)
+		m.ctx = LoadExporter(m.ctx, cfg)
 		_, isOk := FromContext(m.ctx).(NullMetricsProvider)
 		assert.Equal(m.T(), result, isOk)
 	}
