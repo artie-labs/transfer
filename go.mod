@@ -99,6 +99,8 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/samber/lo v1.38.1 // indirect
+	github.com/samber/slog-common v0.15.0 // indirect
+	github.com/samber/slog-sentry/v2 v2.4.0 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/viant/afs v1.16.1-0.20220601210902-dc23d64dda15 // indirect
 	github.com/viant/parsly v0.0.0-20220907184615-a27c125714a1 // indirect

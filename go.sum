@@ -390,10 +390,14 @@ github.com/rogpeppe/go-internal v1.9.0/go.mod h1:WtVeX8xhTBvf0smdhujwtBcq4Qrzq/f
 github.com/russross/blackfriday v1.5.2/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR/rfWxYHBV53g=
 github.com/samber/lo v1.38.1 h1:j2XEAqXKb09Am4ebOg31SpvzUTTs6EN3VfgeLUhPdXM=
 github.com/samber/lo v1.38.1/go.mod h1:+m/ZKRl6ClXCE2Lgf3MsQlWfh4bn1bz6CXEOxnEXnEA=
+github.com/samber/slog-common v0.15.0 h1:pPUhFBPsKwjdzmUyOj1F5Ow5bw3w6hkole5CqJDNZoY=
+github.com/samber/slog-common v0.15.0/go.mod h1:Qjrfhwk79XiCIhBj8+jTq1Cr0u9rlWbjawh3dWXzaHk=
 github.com/samber/slog-multi v1.0.2 h1:6BVH9uHGAsiGkbbtQgAOQJMpKgV8unMrHhhJaw+X1EQ=
 github.com/samber/slog-multi v1.0.2/go.mod h1:uLAvHpGqbYgX4FSL0p1ZwoLuveIAJvBECtE07XmYvFo=
 github.com/samber/slog-sentry v1.2.2 h1:S0glIVITlGCCfSvIOte2Sh63HMHJpYN3hDr+97hILIk=
 github.com/samber/slog-sentry v1.2.2/go.mod h1:bHm8jm1dks0p+xc/lH2i4TIFwnPcMTvZeHgCBj5+uhA=
+github.com/samber/slog-sentry/v2 v2.4.0 h1:AUeY9GYO1mA8AsMsay4a8h4zNlOtNC/g4uhF1HX4+SE=
+github.com/samber/slog-sentry/v2 v2.4.0/go.mod h1:dXRY6Ju31Mwqmu/smT5cW4PEdSZyTVvInPA0/fc3aDU=
 github.com/segmentio/kafka-go v0.4.34/go.mod h1:GAjxBQJdQMB5zfNA21AhpaqOB2Mu+w3De4ni3Gbm8y0=
 github.com/segmentio/kafka-go v0.4.38 h1:iQdOBbUSdfuYlFpvjuALgj7N6DrdPA0HfB4AhREOdtg=
 github.com/segmentio/kafka-go v0.4.38/go.mod h1:ikyuGon/60MN/vXFgykf7Zm8P5Be49gJU6vezwjnnhU=

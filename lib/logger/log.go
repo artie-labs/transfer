@@ -7,7 +7,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/lmittmann/tint"
 	slogmulti "github.com/samber/slog-multi"
-	slogsentry "github.com/samber/slog-sentry"
+	slogsentry "github.com/samber/slog-sentry/v2"
 
 	"github.com/artie-labs/transfer/lib/config"
 )
