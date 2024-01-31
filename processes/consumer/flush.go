@@ -25,16 +25,16 @@ type Args struct {
 // Flush will merge and commit the offset on the specified topics within `args.SpecificTable`.
 // If the table list is empty, it'll flush everything. This is the default behavior for the time duration based flush.
 // Table specific flushes will be triggered based on the size of the pool (length and size wise).
-func Flush(inMemDb *models.DatabaseData, dest destination.Baseline, args Args) error {
-	if inMemDb == nil {
+func Flush(inMemDB *models.DatabaseData, dest destination.Baseline, args Args) error {
+	if inMemDB == nil {
 		return nil
 	}
 
 	var wg sync.WaitGroup
 	// Read lock to examine the map of tables
-	inMemDb.RLock()
-	allTables := inMemDb.TableData()
-	inMemDb.RUnlock()
+	inMemDB.RLock()
+	allTables := inMemDB.TableData()
+	inMemDB.RUnlock()
 
 	// Flush will take everything in memory and call Snowflake to create temp tables.
 	for tableName, tableData := range allTables {
@@ -83,7 +83,7 @@ func Flush(inMemDb *models.DatabaseData, dest destination.Baseline, args Args) e
 				slog.With(logFields...).Info("Merge success, clearing memory...")
 				commitErr := commitOffset(args.Context, _tableData.TopicConfig.Topic, _tableData.PartitionsToLastMessage)
 				if commitErr == nil {
-					inMemDb.ClearTableConfig(_tableName)
+					inMemDB.ClearTableConfig(_tableName)
 				} else {
 					tags["what"] = "commit_fail"
 					slog.Warn("Commit error...", slog.Any("err", commitErr))
