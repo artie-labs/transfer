@@ -20,13 +20,12 @@ import (
 )
 
 func main() {
-	// Parse args into settings.
-	ctx, err := config.InitializeCfgIntoContext(context.Background(), os.Args, true)
+	// Parse args into settings
+	settings, err := config.LoadSettings(os.Args, true)
 	if err != nil {
 		logger.Fatal("Failed to initialize config", slog.Any("err", err))
 	}
 
-	settings := config.FromContext(ctx)
 	// Initialize default logger
 	_logger, usingSentry := logger.NewLogger(settings.VerboseLogging, settings.Config.Reporting.Sentry)
 	slog.SetDefault(_logger)
@@ -35,7 +34,8 @@ func main() {
 		slog.Info("Sentry logger enabled")
 	}
 
-	// Loading Telemetry
+	ctx := context.Background()
+	// Loading telemetry
 	ctx = metrics.LoadExporter(ctx, settings.Config)
 	if utils.IsOutputBaseline(settings.Config) {
 		ctx = utils.InjectBaselineIntoCtx(utils.Baseline(settings.Config), ctx)

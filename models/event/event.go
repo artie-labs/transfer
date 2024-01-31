@@ -99,7 +99,7 @@ func (e *Event) PrimaryKeyValue() string {
 
 // Save will save the event into our in memory event
 // It will return (flush bool, flushReason string, err error)
-func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, message artie.Message) (bool, string, error) {
+func (e *Event) Save(ctx context.Context, cfg config.Config, topicConfig *kafkalib.TopicConfig, message artie.Message) (bool, string, error) {
 	if topicConfig == nil {
 		return false, "", errors.New("topicConfig is missing")
 	}
@@ -129,7 +129,6 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 		}
 	}
 
-	cfg := config.FromContext(ctx).Config
 	typingSettings := cfg.SharedTransferConfig.TypingSettings
 
 	// Table columns

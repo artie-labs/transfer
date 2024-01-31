@@ -19,9 +19,7 @@ func TestInjectDwhIntoCtx(t *testing.T) {
 	cfg := config.Config{
 		SharedDestinationConfig: config.SharedDestinationConfig{UppercaseEscapedNames: true},
 	}
-	ctx := config.InjectSettingsIntoContext(context.Background(), &config.Settings{
-		Config: cfg,
-	})
+	ctx := context.Background()
 
 	store := db.Store(&mock.DB{
 		Fake: mocks.FakeStore{},

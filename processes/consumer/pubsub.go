@@ -17,7 +17,7 @@ import (
 
 const defaultAckDeadline = 10 * time.Minute
 
-func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, topic, subName string) (*gcp_pubsub.Subscription, error) {
+func findOrCreateSubscription(ctx context.Context, cfg config.Config, client *gcp_pubsub.Client, topic, subName string) (*gcp_pubsub.Subscription, error) {
 	sub := client.Subscription(subName)
 	exists, err := sub.Exists(ctx)
 	if err != nil {
@@ -46,7 +46,7 @@ func findOrCreateSubscription(ctx context.Context, client *gcp_pubsub.Client, to
 	}
 
 	// This should be the same as our buffer rows so we don't limit our processing throughput
-	sub.ReceiveSettings.MaxOutstandingMessages = int(config.FromContext(ctx).Config.BufferRows) + 1
+	sub.ReceiveSettings.MaxOutstandingMessages = int(cfg.BufferRows) + 1
 
 	// By default, the pub/sub library will try to spawns 10 additional Go-routines per subscription,
 	// it actually does not make the process faster. Rather, it creates more coordination overhead.
@@ -76,7 +76,7 @@ func StartSubscriber(ctx context.Context, cfg config.Config) {
 		go func(ctx context.Context, client *gcp_pubsub.Client, topic string) {
 			defer wg.Done()
 			subName := fmt.Sprintf("transfer_%s", topic)
-			sub, err := findOrCreateSubscription(ctx, client, topic, subName)
+			sub, err := findOrCreateSubscription(ctx, cfg, client, topic, subName)
 			if err != nil {
 				logger.Panic("Failed to find or create subscription", slog.Any("err", err))
 			}
@@ -91,7 +91,7 @@ func StartSubscriber(ctx context.Context, cfg config.Config) {
 						slog.String("value", string(msg.Value())),
 					}
 
-					tableName, processErr := processMessage(ctx, ProcessArgs{
+					tableName, processErr := processMessage(ctx, cfg, ProcessArgs{
 						Msg:                    msg,
 						GroupID:                subName,
 						TopicToConfigFormatMap: tcFmtMap,

@@ -121,7 +121,7 @@ func StartConsumer(ctx context.Context, cfg config.Config) {
 				}
 
 				msg := artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)
-				tableName, processErr := processMessage(ctx, ProcessArgs{
+				tableName, processErr := processMessage(ctx, cfg, ProcessArgs{
 					Msg:                    msg,
 					GroupID:                kafkaConsumer.Config().GroupID,
 					TopicToConfigFormatMap: tcFmtMap,

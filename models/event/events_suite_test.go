@@ -14,19 +14,16 @@ import (
 type EventsTestSuite struct {
 	suite.Suite
 	ctx context.Context
+	cfg config.Config
 }
 
 func (e *EventsTestSuite) SetupTest() {
-	e.ctx = context.Background()
-	e.ctx = config.InjectSettingsIntoContext(e.ctx, &config.Settings{
-		Config: config.Config{
-			FlushIntervalSeconds: 10,
-			FlushSizeKb:          1024,
-			BufferRows:           1000,
-		},
-	})
-
-	e.ctx = models.LoadMemoryDB(e.ctx)
+	e.cfg = config.Config{
+		FlushIntervalSeconds: 10,
+		FlushSizeKb:          1024,
+		BufferRows:           1000,
+	}
+	e.ctx = models.LoadMemoryDB(context.Background())
 }
 
 func TestEventsTestSuite(t *testing.T) {
