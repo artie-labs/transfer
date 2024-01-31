@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"context"
 	"log/slog"
 
 	"github.com/artie-labs/transfer/clients/bigquery"
@@ -17,8 +16,8 @@ import (
 	"github.com/artie-labs/transfer/lib/mocks"
 )
 
-func IsOutputBaseline(ctx context.Context) bool {
-	return config.FromContext(ctx).Config.Output == constants.S3
+func IsOutputBaseline(cfg config.Config) bool {
+	return cfg.Output == constants.S3
 }
 
 func Baseline(cfg config.Config) destination.Baseline {
@@ -37,7 +36,7 @@ func Baseline(cfg config.Config) destination.Baseline {
 	return nil
 }
 
-func DataWarehouse(ctx context.Context, cfg config.Config, store *db.Store) destination.DataWarehouse {
+func DataWarehouse(cfg config.Config, store *db.Store) destination.DataWarehouse {
 	switch cfg.Output {
 	case "test":
 		// TODO - In the future, we can create a fake store that follows the MERGE syntax for SQL standard.
@@ -59,7 +58,7 @@ func DataWarehouse(ctx context.Context, cfg config.Config, store *db.Store) dest
 		return bigquery.LoadBigQuery(cfg, store)
 	case constants.Redshift:
 		s := redshift.LoadRedshift(cfg, store)
-		if err := s.Sweep(ctx); err != nil {
+		if err := s.Sweep(); err != nil {
 			logger.Panic("Failed to clean up redshift", slog.Any("err", err))
 		}
 		return s

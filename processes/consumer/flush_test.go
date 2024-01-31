@@ -7,7 +7,6 @@ import (
 	"github.com/artie-labs/transfer/models/event"
 
 	"github.com/artie-labs/transfer/lib/artie"
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
@@ -49,9 +48,8 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 func (f *FlushTestSuite) TestShouldFlush() {
 	var flush bool
 	var flushReason string
-	cfg := config.FromContext(f.ctx)
 
-	for i := 0; i < int(float64(cfg.Config.BufferRows)*1.5); i++ {
+	for i := 0; i < int(float64(f.cfg.BufferRows)*1.5); i++ {
 		evt := event.Event{
 			Table: "postgres",
 			PrimaryKeyMap: map[string]interface{}{
