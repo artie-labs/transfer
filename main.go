@@ -28,7 +28,7 @@ func main() {
 
 	settings := config.FromContext(ctx)
 	// Initialize default logger
-	_logger, usingSentry := logger.NewLogger(settings)
+	_logger, usingSentry := logger.NewLogger(settings.VerboseLogging, settings.Config.Reporting.Sentry)
 	slog.SetDefault(_logger)
 	if usingSentry {
 		defer sentry.Flush(2 * time.Second)
