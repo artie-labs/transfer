@@ -21,7 +21,7 @@ func NewLogger(settings *config.Settings) (*slog.Logger, bool) {
 	handler := tint.NewHandler(os.Stderr, &tint.Options{Level: tintLogLevel})
 
 	var loggingToSentry bool
-	if settings != nil && settings.Config != nil && settings.Config.Reporting.Sentry != nil && settings.Config.Reporting.Sentry.DSN != "" {
+	if settings != nil && settings.Config.Reporting.Sentry != nil && settings.Config.Reporting.Sentry.DSN != "" {
 		if err := sentry.Init(sentry.ClientOptions{Dsn: settings.Config.Reporting.Sentry.DSN}); err != nil {
 			slog.New(handler).Warn("Failed to enable Sentry output", slog.Any("err", err))
 		} else {

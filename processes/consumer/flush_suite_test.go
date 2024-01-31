@@ -30,7 +30,7 @@ func (f *FlushTestSuite) SetupTest() {
 	f.ctx = context.Background()
 
 	f.ctx = config.InjectSettingsIntoContext(f.ctx, &config.Settings{
-		Config: &config.Config{
+		Config: config.Config{
 			Kafka: &config.Kafka{
 				BootstrapServer: "foo",
 				GroupID:         "bar",
@@ -54,7 +54,7 @@ func (f *FlushTestSuite) SetupTest() {
 		VerboseLogging: false,
 	})
 
-	f.ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(f.ctx, *config.FromContext(f.ctx).Config, &store), f.ctx)
+	f.ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(f.ctx, config.FromContext(f.ctx).Config, &store), f.ctx)
 
 	f.ctx = models.LoadMemoryDB(f.ctx)
 

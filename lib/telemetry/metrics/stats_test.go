@@ -3,6 +3,7 @@ package metrics
 import (
 	"context"
 	"fmt"
+
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +34,7 @@ func (m *MetricsTestSuite) TestLoadExporter() {
 		// Wipe and create a new ctx per run
 		m.ctx = context.Background()
 		m.ctx = config.InjectSettingsIntoContext(m.ctx, &config.Settings{
-			Config: &config.Config{
+			Config: config.Config{
 				Telemetry: struct {
 					Metrics struct {
 						Provider constants.ExporterKind `yaml:"provider"`

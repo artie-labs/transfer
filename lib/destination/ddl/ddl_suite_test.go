@@ -35,7 +35,7 @@ func (d *DDLTestSuite) SetupTest() {
 
 	bqCtx := config.InjectSettingsIntoContext(context.Background(), &config.Settings{
 		VerboseLogging: true,
-		Config: &config.Config{
+		Config: config.Config{
 			BigQuery: &config.BigQuery{
 				ProjectID: "artie-project",
 			},
@@ -46,7 +46,7 @@ func (d *DDLTestSuite) SetupTest() {
 
 	d.fakeBigQueryStore = &mocks.FakeStore{}
 	bqStore := db.Store(d.fakeBigQueryStore)
-	d.bigQueryStore = bigquery.LoadBigQuery(*config.FromContext(d.bqCtx).Config, &bqStore)
+	d.bigQueryStore = bigquery.LoadBigQuery(config.FromContext(d.bqCtx).Config, &bqStore)
 
 	d.fakeSnowflakeStagesStore = &mocks.FakeStore{}
 	snowflakeStagesStore := db.Store(d.fakeSnowflakeStagesStore)

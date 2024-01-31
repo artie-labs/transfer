@@ -20,14 +20,14 @@ type RedshiftTestSuite struct {
 func (r *RedshiftTestSuite) SetupTest() {
 	r.ctx = config.InjectSettingsIntoContext(context.Background(), &config.Settings{
 		VerboseLogging: false,
-		Config: &config.Config{
+		Config: config.Config{
 			Redshift: &config.Redshift{},
 		},
 	})
 
 	r.fakeStore = &mocks.FakeStore{}
 	store := db.Store(r.fakeStore)
-	r.store = LoadRedshift(*config.FromContext(r.ctx).Config, &store)
+	r.store = LoadRedshift(config.FromContext(r.ctx).Config, &store)
 	r.store.skipLgCols = true
 }
 
