@@ -45,7 +45,7 @@ func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig 
 		CreateTable:       true,
 		TemporaryTable:    true,
 		ColumnOp:          constants.Add,
-		UppercaseEscNames: &s.uppercaseEscNames,
+		UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
 	}
 
 	if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
@@ -63,7 +63,7 @@ func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig 
 
 	_, err = s.Exec(fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
 		// Copy into temporary tables (column ...)
-		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.uppercaseEscNames, &sql.NameArgs{
+		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, &sql.NameArgs{
 			Escape:   true,
 			DestKind: s.Label(),
 		}), ","),
@@ -75,7 +75,7 @@ func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig 
 	}
 
 	if deleteErr := os.RemoveAll(fp); deleteErr != nil {
-		slog.Warn("failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
+		slog.Warn("Failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
 	}
 
 	return nil
@@ -98,7 +98,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.RowsData() {
 		var row []string
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.uppercaseEscNames, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal := value[col]
 			// Check
@@ -126,7 +126,7 @@ func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 		return nil
 	}
 
-	fqName := tableData.ToFqName(s.Label(), true, s.uppercaseEscNames, "")
+	fqName := tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, "")
 	tableConfig, err := s.getTableConfig(fqName, tableData.TopicConfig.DropDeletedColumns)
 	if err != nil {
 		return err
@@ -142,13 +142,13 @@ func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 		CreateTable:       tableConfig.CreateTable(),
 		ColumnOp:          constants.Add,
 		CdcTime:           tableData.LatestCDCTs,
-		UppercaseEscNames: &s.uppercaseEscNames,
+		UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
 	}
 
 	// Keys that exist in CDC stream, but not in Snowflake
 	err = ddl.AlterTable(createAlterTableArgs, targetKeysMissing...)
 	if err != nil {
-		slog.Warn("failed to apply alter table", slog.Any("err", err))
+		slog.Warn("Failed to apply alter table", slog.Any("err", err))
 		return err
 	}
 
@@ -163,18 +163,18 @@ func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 		ColumnOp:               constants.Delete,
 		ContainOtherOperations: tableData.ContainOtherOperations(),
 		CdcTime:                tableData.LatestCDCTs,
-		UppercaseEscNames:      &s.uppercaseEscNames,
+		UppercaseEscNames:      &s.config.SharedDestinationConfig.UppercaseEscapedNames,
 	}
 
 	err = ddl.AlterTable(deleteAlterTableArgs, srcKeysMissing...)
 	if err != nil {
-		slog.Warn("failed to apply alter table", slog.Any("err", err))
+		slog.Warn("Failed to apply alter table", slog.Any("err", err))
 		return err
 	}
 
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
 	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
-	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.uppercaseEscNames, ""), tableData.TempTableSuffix())
+	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.config.SharedDestinationConfig.UppercaseEscapedNames, ""), tableData.TempTableSuffix())
 	if err = s.prepareTempTable(tableData, tableConfig, temporaryTableName); err != nil {
 		return err
 	}
@@ -199,10 +199,10 @@ func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 		FqTableName:       fqName,
 		SubQuery:          temporaryTableName,
 		IdempotentKey:     tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys:       tableData.PrimaryKeys(s.uppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: s.Label()}),
+		PrimaryKeys:       tableData.PrimaryKeys(s.config.SharedDestinationConfig.UppercaseEscapedNames, &sql.NameArgs{Escape: true, DestKind: s.Label()}),
 		ColumnsToTypes:    *tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:        tableData.TopicConfig.SoftDelete,
-		UppercaseEscNames: &s.uppercaseEscNames,
+		UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
 	}
 
 	mergeQuery, err := mergeArg.GetStatement()
@@ -210,7 +210,7 @@ func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 		return fmt.Errorf("failed to generate merge statement, err: %v", err)
 	}
 
-	slog.Debug("executing...", slog.String("query", mergeQuery))
+	slog.Debug("Executing...", slog.String("query", mergeQuery))
 	_, err = s.Exec(mergeQuery)
 	if err != nil {
 		return err

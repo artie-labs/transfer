@@ -51,9 +51,8 @@ func SetKafkaConsumer(_topicToConsumer map[string]kafkalib.Consumer) {
 	}
 }
 
-func StartConsumer(ctx context.Context) {
-	settings := config.FromContext(ctx)
-	slog.Info("Starting Kafka consumer...", slog.Any("config", settings.Config.Kafka))
+func StartConsumer(ctx context.Context, cfg config.Config) {
+	slog.Info("Starting Kafka consumer...", slog.Any("config", cfg.Kafka))
 
 	dialer := &kafka.Dialer{
 		Timeout:   10 * time.Second,
@@ -62,7 +61,7 @@ func StartConsumer(ctx context.Context) {
 
 	// If using AWS MSK IAM, we expect this to be set in the ENV VAR
 	// (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, or the AWS Profile should be called default.)
-	if settings.Config.Kafka.EnableAWSMSKIAM {
+	if cfg.Kafka.EnableAWSMSKIAM {
 		cfg, err := awsCfg.LoadDefaultConfig(ctx)
 		if err != nil {
 			logger.Panic("Failed to load aws configuration", slog.Any("err", err))
@@ -74,10 +73,10 @@ func StartConsumer(ctx context.Context) {
 
 	// If username or password is set, then let's enable PLAIN.
 	// By default, we will support no auth (local testing) and PLAIN SASL.
-	if settings.Config.Kafka.Username != "" {
+	if cfg.Kafka.Username != "" {
 		dialer.SASLMechanism = plain.Mechanism{
-			Username: settings.Config.Kafka.Username,
-			Password: settings.Config.Kafka.Password,
+			Username: cfg.Kafka.Username,
+			Password: cfg.Kafka.Password,
 		}
 
 		dialer.TLS = &tls.Config{}
@@ -86,7 +85,7 @@ func StartConsumer(ctx context.Context) {
 	tcFmtMap := NewTcFmtMap()
 	topicToConsumer = NewTopicToConsumer()
 	var topics []string
-	for _, topicConfig := range settings.Config.Kafka.TopicConfigs {
+	for _, topicConfig := range cfg.Kafka.TopicConfigs {
 		tcFmtMap.Add(topicConfig.Topic, TopicConfigFormatter{
 			tc:     topicConfig,
 			Format: format.GetFormatParser(topicConfig.CDCFormat, topicConfig.Topic),
@@ -101,10 +100,10 @@ func StartConsumer(ctx context.Context) {
 			defer wg.Done()
 
 			kafkaCfg := kafka.ReaderConfig{
-				GroupID: settings.Config.Kafka.GroupID,
+				GroupID: cfg.Kafka.GroupID,
 				Dialer:  dialer,
 				Topic:   topic,
-				Brokers: settings.Config.Kafka.BootstrapServers(),
+				Brokers: cfg.Kafka.BootstrapServers(),
 			}
 
 			kafkaConsumer := kafka.NewReader(kafkaCfg)
@@ -112,12 +111,12 @@ func StartConsumer(ctx context.Context) {
 			for {
 				kafkaMsg, err := kafkaConsumer.FetchMessage(ctx)
 				if err != nil {
-					slog.With(artie.KafkaMsgLogFields(kafkaMsg)...).Warn("failed to read kafka message", slog.Any("err", err))
+					slog.With(artie.KafkaMsgLogFields(kafkaMsg)...).Warn("Failed to read kafka message", slog.Any("err", err))
 					continue
 				}
 
 				if len(kafkaMsg.Value) == 0 {
-					slog.Info("found a tombstone message, skipping...", artie.KafkaMsgLogFields(kafkaMsg)...)
+					slog.Info("Found a tombstone message, skipping...", artie.KafkaMsgLogFields(kafkaMsg)...)
 					continue
 				}
 
@@ -131,7 +130,7 @@ func StartConsumer(ctx context.Context) {
 				msg.EmitIngestionLag(ctx, kafkaConsumer.Config().GroupID, tableName)
 				msg.EmitRowLag(ctx, kafkaConsumer.Config().GroupID, tableName)
 				if processErr != nil {
-					slog.With(artie.KafkaMsgLogFields(kafkaMsg)...).Warn("skipping message...", slog.Any("err", processErr))
+					slog.With(artie.KafkaMsgLogFields(kafkaMsg)...).Warn("Skipping message...", slog.Any("err", processErr))
 				}
 			}
 		}(topic)

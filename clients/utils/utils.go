@@ -45,7 +45,7 @@ func BackfillColumn(cfg config.Config, dwh destination.DataWarehouse, column col
 		// UPDATE table SET col = default_val WHERE col IS NULL
 		fqTableName, escapedCol, defaultVal, additionalEscapedCol,
 	)
-	slog.Info("backfilling column",
+	slog.Info("Backfilling column",
 		slog.String("colName", column.RawName()),
 		slog.String("query", query),
 		slog.String("table", fqTableName),

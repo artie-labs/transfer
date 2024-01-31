@@ -36,7 +36,7 @@ func main() {
 	}
 
 	// Loading Telemetry
-	ctx = metrics.LoadExporter(ctx)
+	ctx = metrics.LoadExporter(ctx, *settings.Config)
 	if utils.IsOutputBaseline(*settings.Config) {
 		ctx = utils.InjectBaselineIntoCtx(utils.Baseline(*settings.Config), ctx)
 	} else {
@@ -44,10 +44,10 @@ func main() {
 	}
 
 	ctx = models.LoadMemoryDB(ctx)
-	slog.Info("config is loaded",
-		slog.Int("flush_interval_seconds", settings.Config.FlushIntervalSeconds),
-		slog.Uint64("buffer_pool_size", uint64(settings.Config.BufferRows)),
-		slog.Int("flush_pool_size (kb)", settings.Config.FlushSizeKb),
+	slog.Info("Config is loaded",
+		slog.Int("flushIntervalSeconds", settings.Config.FlushIntervalSeconds),
+		slog.Uint64("bufferPoolSize", uint64(settings.Config.BufferRows)),
+		slog.Int("flushPoolSizeKb", settings.Config.FlushSizeKb),
 	)
 
 	var wg sync.WaitGroup
@@ -62,11 +62,11 @@ func main() {
 		defer wg.Done()
 		switch settings.Config.Queue {
 		case constants.Kafka:
-			consumer.StartConsumer(ctx)
+			consumer.StartConsumer(ctx, *settings.Config)
 		case constants.PubSub:
-			consumer.StartSubscriber(ctx)
+			consumer.StartSubscriber(ctx, *settings.Config)
 		default:
-			logger.Fatal(fmt.Sprintf("message queue: %s not supported", settings.Config.Queue))
+			logger.Fatal(fmt.Sprintf("Message queue: %s not supported", settings.Config.Queue))
 		}
 	}(ctx)
 

@@ -51,7 +51,7 @@ func DataWarehouse(cfg config.Config, store *db.Store) destination.DataWarehouse
 	case constants.Snowflake:
 		s := snowflake.LoadSnowflake(cfg, store)
 		if err := s.Sweep(); err != nil {
-			logger.Panic("failed to clean up snowflake", slog.Any("err", err))
+			logger.Panic("Failed to clean up snowflake", slog.Any("err", err))
 		}
 		return s
 	case constants.BigQuery:
@@ -59,7 +59,7 @@ func DataWarehouse(cfg config.Config, store *db.Store) destination.DataWarehouse
 	case constants.Redshift:
 		s := redshift.LoadRedshift(cfg, store)
 		if err := s.Sweep(); err != nil {
-			logger.Panic("failed to clean up redshift", slog.Any("err", err))
+			logger.Panic("Failed to clean up redshift", slog.Any("err", err))
 		}
 		return s
 	}
