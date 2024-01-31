@@ -5,24 +5,23 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/kafkalib"
+
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
 const (
-	KeyFormatJSON   = "org.apache.kafka.connect.json.JsonConverter"
-	KeyFormatString = "org.apache.kafka.connect.storage.StringConverter"
-
 	stringPrefix = "Struct{"
 	stringSuffix = "}"
 )
 
 func ParsePartitionKey(key []byte, cdcKeyFormat string) (map[string]interface{}, error) {
 	switch cdcKeyFormat {
-	case KeyFormatJSON:
+	case kafkalib.JSONKeyFmt:
 		return parsePartitionKeyStruct(key)
-	case KeyFormatString:
+	case kafkalib.StringKeyFmt:
 		return parsePartitionKeyString(key)
 
 	}

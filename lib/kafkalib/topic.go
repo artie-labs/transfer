@@ -50,35 +50,23 @@ type TopicConfig struct {
 }
 
 const (
-	defaultKeyFormat = "org.apache.kafka.connect.storage.StringConverter"
-	jsonFormat       = "org.apache.kafka.connect.json.JsonConverter"
+	StringKeyFmt = "org.apache.kafka.connect.storage.StringConverter"
+	JSONKeyFmt   = "org.apache.kafka.connect.json.JsonConverter"
 )
 
-var validKeyFormats = []string{defaultKeyFormat, jsonFormat}
+var validKeyFormats = []string{StringKeyFmt, JSONKeyFmt}
 
-func (t *TopicConfig) String() string {
-	if t == nil {
-		return ""
-	}
-
+func (t TopicConfig) String() string {
 	return fmt.Sprintf(
 		"db=%s, schema=%s, tableNameOverride=%s, topic=%s, idempotentKey=%s, cdcFormat=%s, dropDeletedColumns=%v",
 		t.Database, t.Schema, t.TableName, t.Topic, t.IdempotentKey, t.CDCFormat, t.DropDeletedColumns)
 }
 
-func (t *TopicConfig) Validate() error {
-	if t == nil {
-		return fmt.Errorf("topic config is nil")
-	}
-
+func (t TopicConfig) Validate() error {
 	// IdempotentKey is optional.
 	empty := array.Empty([]string{t.Database, t.Schema, t.Topic, t.CDCFormat})
 	if empty {
 		return fmt.Errorf("database, schema, topic or cdc format is empty")
-	}
-
-	if t.CDCKeyFormat == "" {
-		t.CDCKeyFormat = defaultKeyFormat
 	}
 
 	if !slices.Contains(validKeyFormats, t.CDCKeyFormat) {
