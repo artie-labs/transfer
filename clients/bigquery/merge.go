@@ -8,7 +8,6 @@ import (
 
 	"cloud.google.com/go/bigquery"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/dml"
@@ -213,7 +212,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	var additionalEqualityStrings []string
 	if tableData.TopicConfig.BigQueryPartitionSettings != nil {
-		additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
+		additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 		distinctDates, err := tableData.DistinctDates(tableData.TopicConfig.BigQueryPartitionSettings.PartitionField, additionalDateFmts)
 		if err != nil {
 			return fmt.Errorf("failed to generate distinct dates, err: %v", err)
