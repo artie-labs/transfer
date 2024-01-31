@@ -28,10 +28,9 @@ const (
 )
 
 type Store struct {
-	configMap         *types.DwhToTablesConfigMap
-	batchSize         int
-	projectID         string
-	uppercaseEscNames bool
+	configMap *types.DwhToTablesConfigMap
+	batchSize int
+	config    config.Config
 
 	db.Store
 }
@@ -39,7 +38,7 @@ type Store struct {
 func (s *Store) getTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	return utils.GetTableConfig(utils.GetTableCfgArgs{
 		Dwh:       s,
-		FqName:    tableData.ToFqName(s.Label(), true, s.uppercaseEscNames, s.projectID),
+		FqName:    tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, s.config.BigQuery.ProjectID),
 		ConfigMap: s.configMap,
 		Query: fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name='%s';",
 			tableData.TopicConfig.Database, tableData.RawName()),
@@ -64,8 +63,7 @@ func (s *Store) Label() constants.DestinationKind {
 }
 
 func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
-	settings := config.FromContext(ctx)
-	client, err := bigquery.NewClient(ctx, settings.Config.BigQuery.ProjectID)
+	client, err := bigquery.NewClient(ctx, s.config.BigQuery.ProjectID)
 	if err != nil {
 		logger.Panic("failed to get bigquery client", slog.Any("err", err))
 	}
@@ -95,9 +93,8 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) *Store {
 		return &Store{
 			Store: *_store,
 
-			projectID:         cfg.BigQuery.ProjectID,
-			uppercaseEscNames: cfg.SharedDestinationConfig.UppercaseEscapedNames,
-			configMap:         &types.DwhToTablesConfigMap{},
+			configMap: &types.DwhToTablesConfigMap{},
+			config:    cfg,
 		}
 	}
 
@@ -113,9 +110,8 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) *Store {
 	return &Store{
 		Store: db.Open("bigquery", cfg.BigQuery.DSN()),
 
-		configMap:         &types.DwhToTablesConfigMap{},
-		batchSize:         cfg.BigQuery.BatchSize,
-		projectID:         cfg.BigQuery.ProjectID,
-		uppercaseEscNames: cfg.SharedDestinationConfig.UppercaseEscapedNames,
+		configMap: &types.DwhToTablesConfigMap{},
+		batchSize: cfg.BigQuery.BatchSize,
+		config:    cfg,
 	}
 }
