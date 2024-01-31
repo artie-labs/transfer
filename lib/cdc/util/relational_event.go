@@ -81,14 +81,6 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]interface{}, tc *kafkalib.
 			constants.DeleteColumnMarker: true,
 		}
 
-		if tc.IncludeArtieUpdatedAt {
-			retMap[constants.UpdateColumnMarker] = ext.NewUTCTime(ext.ISO8601)
-		}
-
-		if tc.IncludeDatabaseUpdatedAt {
-			retMap[constants.DatabaseUpdatedColumnMarker] = s.GetExecutionTime()
-		}
-
 		for k, v := range pkMap {
 			retMap[k] = v
 		}
@@ -100,13 +92,14 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]interface{}, tc *kafkalib.
 	} else {
 		retMap = s.Payload.After
 		retMap[constants.DeleteColumnMarker] = false
-		if tc.IncludeArtieUpdatedAt {
-			retMap[constants.UpdateColumnMarker] = ext.NewUTCTime(ext.ISO8601)
-		}
+	}
 
-		if tc.IncludeDatabaseUpdatedAt {
-			retMap[constants.DatabaseUpdatedColumnMarker] = s.GetExecutionTime()
-		}
+	if tc.IncludeArtieUpdatedAt {
+		retMap[constants.UpdateColumnMarker] = ext.NewUTCTime(ext.ISO8601)
+	}
+
+	if tc.IncludeDatabaseUpdatedAt {
+		retMap[constants.DatabaseUpdatedColumnMarker] = s.GetExecutionTime()
 	}
 
 	// Iterate over the schema and identify if there are any fields that require extra care.
