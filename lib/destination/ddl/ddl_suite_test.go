@@ -17,7 +17,6 @@ import (
 
 type DDLTestSuite struct {
 	suite.Suite
-	ctx               context.Context
 	bqCtx             context.Context
 	fakeBigQueryStore *mocks.FakeStore
 	bigQueryStore     *bigquery.Store
@@ -30,12 +29,9 @@ type DDLTestSuite struct {
 }
 
 func (d *DDLTestSuite) SetupTest() {
-	ctx := config.InjectSettingsIntoContext(context.Background(), &config.Settings{
-		VerboseLogging: true,
-		Config: &config.Config{
-			Redshift: &config.Redshift{},
-		},
-	})
+	cfg := config.Config{
+		Redshift: &config.Redshift{},
+	}
 
 	bqCtx := config.InjectSettingsIntoContext(context.Background(), &config.Settings{
 		VerboseLogging: true,
@@ -46,7 +42,6 @@ func (d *DDLTestSuite) SetupTest() {
 		},
 	})
 
-	d.ctx = ctx
 	d.bqCtx = bqCtx
 
 	d.fakeBigQueryStore = &mocks.FakeStore{}
@@ -55,11 +50,11 @@ func (d *DDLTestSuite) SetupTest() {
 
 	d.fakeSnowflakeStagesStore = &mocks.FakeStore{}
 	snowflakeStagesStore := db.Store(d.fakeSnowflakeStagesStore)
-	d.snowflakeStagesStore = snowflake.LoadSnowflake(config.Config{}, &snowflakeStagesStore)
+	d.snowflakeStagesStore = snowflake.LoadSnowflake(cfg, &snowflakeStagesStore)
 
 	d.fakeRedshiftStore = &mocks.FakeStore{}
 	redshiftStore := db.Store(d.fakeRedshiftStore)
-	d.redshiftStore = redshift.LoadRedshift(*config.FromContext(ctx).Config, &redshiftStore)
+	d.redshiftStore = redshift.LoadRedshift(cfg, &redshiftStore)
 }
 
 func TestDDLTestSuite(t *testing.T) {
