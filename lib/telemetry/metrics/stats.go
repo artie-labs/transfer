@@ -23,10 +23,9 @@ func exporterKindValid(kind constants.ExporterKind) bool {
 	return valid
 }
 
-func LoadExporter(ctx context.Context) context.Context {
-	settings := config.FromContext(ctx)
-	kind := settings.Config.Telemetry.Metrics.Provider
-	ddSettings := settings.Config.Telemetry.Metrics.Settings
+func LoadExporter(ctx context.Context, cfg config.Config) context.Context {
+	kind := cfg.Telemetry.Metrics.Provider
+	ddSettings := cfg.Telemetry.Metrics.Settings
 
 	if !exporterKindValid(kind) {
 		slog.Info("invalid or no exporter kind passed in, skipping...", slog.Any("exporterKind", kind))
