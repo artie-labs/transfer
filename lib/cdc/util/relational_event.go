@@ -87,7 +87,7 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]interface{}, tc *kafkalib.
 
 		// If idempotency key is an empty string, don't put it in the payload data
 		if tc.IdempotentKey != "" {
-			retMap[tc.IdempotentKey] = s.GetExecutionTime().Format(time.RFC3339)
+			retMap[tc.IdempotentKey] = s.GetExecutionTime().Format(ext.ISO8601)
 		}
 	} else {
 		retMap = s.Payload.After
