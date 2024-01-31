@@ -54,7 +54,7 @@ func (f *FlushTestSuite) SetupTest() {
 		Config:         &f.cfg,
 		VerboseLogging: false,
 	})
-	f.ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(f.cfg, &store), context.Background())
+	f.ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(f.cfg, &store), f.ctx)
 	f.ctx = models.LoadMemoryDB(f.ctx)
 
 	f.fakeConsumer = &mocks.FakeConsumer{}
