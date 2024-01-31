@@ -10,7 +10,7 @@ import (
 )
 
 type Settings struct {
-	Config         *Config
+	Config         Config
 	VerboseLogging bool
 }
 
@@ -46,22 +46,21 @@ func InitializeCfgIntoContext(ctx context.Context, args []string, loadConfig boo
 		return nil, fmt.Errorf("failed to parse args, err: %w", err)
 	}
 
-	var config *Config
+	settings := &Settings{
+		VerboseLogging: opts.Verbose,
+	}
+
 	if loadConfig {
-		config, err = readFileToConfig(opts.ConfigFilePath)
+		config, err := readFileToConfig(opts.ConfigFilePath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse config file. Please check your config, err: %w", err)
 		}
 
-		err = config.Validate()
-		if err != nil {
+		if err = config.Validate(); err != nil {
 			return nil, fmt.Errorf("failed to validate config, err: %w", err)
 		}
-	}
 
-	settings := &Settings{
-		Config:         config,
-		VerboseLogging: opts.Verbose,
+		settings.Config = *config
 	}
 
 	return context.WithValue(ctx, constants.ConfigKey, settings), nil

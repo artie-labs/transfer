@@ -40,6 +40,7 @@ func (d *DDLTestSuite) SetupTest() {
 
 	d.fakeBigQueryStore = &mocks.FakeStore{}
 	bqStore := db.Store(d.fakeBigQueryStore)
+
 	d.bigQueryStore = bigquery.LoadBigQuery(d.bigQueryCfg, &bqStore)
 
 	d.fakeSnowflakeStagesStore = &mocks.FakeStore{}

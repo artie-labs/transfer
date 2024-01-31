@@ -205,7 +205,7 @@ func (e *Event) Save(ctx context.Context, topicConfig *kafkalib.TopicConfig, mes
 	}
 
 	td.LatestCDCTs = e.ExecutionTime
-	flush, flushReason := td.ShouldFlush(*cfg)
+	flush, flushReason := td.ShouldFlush(cfg)
 	return flush, flushReason, nil
 }
 

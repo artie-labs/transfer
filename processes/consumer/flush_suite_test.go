@@ -51,9 +51,10 @@ func (f *FlushTestSuite) SetupTest() {
 	}
 
 	f.ctx = config.InjectSettingsIntoContext(context.Background(), &config.Settings{
-		Config:         &f.cfg,
+		Config:         f.cfg,
 		VerboseLogging: false,
 	})
+
 	f.ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(f.cfg, &store), f.ctx)
 	f.ctx = models.LoadMemoryDB(f.ctx)
 

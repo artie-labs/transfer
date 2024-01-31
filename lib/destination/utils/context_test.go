@@ -20,7 +20,7 @@ func TestInjectDwhIntoCtx(t *testing.T) {
 		SharedDestinationConfig: config.SharedDestinationConfig{UppercaseEscapedNames: true},
 	}
 	ctx := config.InjectSettingsIntoContext(context.Background(), &config.Settings{
-		Config: &cfg,
+		Config: cfg,
 	})
 
 	store := db.Store(&mock.DB{

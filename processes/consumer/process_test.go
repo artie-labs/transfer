@@ -20,7 +20,7 @@ import (
 func TestProcessMessageFailures(t *testing.T) {
 	ctx := context.Background()
 	ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{
-		Config: &config.Config{
+		Config: config.Config{
 			FlushIntervalSeconds: 10,
 			BufferRows:           10,
 			FlushSizeKb:          900,
@@ -208,7 +208,7 @@ func TestProcessMessageFailures(t *testing.T) {
 func TestProcessMessageSkip(t *testing.T) {
 	ctx := context.Background()
 	ctx = config.InjectSettingsIntoContext(ctx, &config.Settings{
-		Config: &config.Config{
+		Config: config.Config{
 			FlushIntervalSeconds: 10,
 			BufferRows:           10,
 			FlushSizeKb:          900,

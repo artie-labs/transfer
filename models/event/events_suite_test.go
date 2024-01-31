@@ -19,7 +19,7 @@ type EventsTestSuite struct {
 func (e *EventsTestSuite) SetupTest() {
 	e.ctx = context.Background()
 	e.ctx = config.InjectSettingsIntoContext(e.ctx, &config.Settings{
-		Config: &config.Config{
+		Config: config.Config{
 			FlushIntervalSeconds: 10,
 			FlushSizeKb:          1024,
 			BufferRows:           1000,
