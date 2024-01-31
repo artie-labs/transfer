@@ -32,6 +32,7 @@ type Store struct {
 	batchSize         int
 	projectID         string
 	uppercaseEscNames bool
+	config            config.Config
 
 	db.Store
 }
@@ -64,8 +65,7 @@ func (s *Store) Label() constants.DestinationKind {
 }
 
 func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
-	settings := config.FromContext(ctx)
-	client, err := bigquery.NewClient(ctx, settings.Config.BigQuery.ProjectID)
+	client, err := bigquery.NewClient(ctx, s.config.BigQuery.ProjectID)
 	if err != nil {
 		logger.Panic("failed to get bigquery client", slog.Any("err", err))
 	}
@@ -98,6 +98,7 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) *Store {
 			projectID:         cfg.BigQuery.ProjectID,
 			uppercaseEscNames: cfg.SharedDestinationConfig.UppercaseEscapedNames,
 			configMap:         &types.DwhToTablesConfigMap{},
+			config:            cfg,
 		}
 	}
 
@@ -117,5 +118,6 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) *Store {
 		batchSize:         cfg.BigQuery.BatchSize,
 		projectID:         cfg.BigQuery.ProjectID,
 		uppercaseEscNames: cfg.SharedDestinationConfig.UppercaseEscapedNames,
+		config:            cfg,
 	}
 }

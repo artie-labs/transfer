@@ -33,10 +33,10 @@ func (r *Row) Save() (map[string]bigquery.Value, string, error) {
 	return r.data, bigquery.NoDedupeID, nil
 }
 
-func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) ([]*Row, error) {
+func (s *Store) merge(tableData *optimization.TableData) ([]*Row, error) {
 	var rows []*Row
 
-	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
+	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.RowsData() {
 		data := make(map[string]bigquery.Value)
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.uppercaseEscNames, nil) {
@@ -59,13 +59,13 @@ func (s *Store) merge(ctx context.Context, tableData *optimization.TableData) ([
 
 // BackfillColumn will perform a backfill to the destination and also update the comment within a transaction.
 // Source: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-definition-language#column_set_options_list
-func (s *Store) backfillColumn(ctx context.Context, column columns.Column, fqTableName string) error {
+func (s *Store) backfillColumn(column columns.Column, fqTableName string) error {
 	if !column.ShouldBackfill() {
 		// If we don't need to backfill, don't backfill.
 		return nil
 	}
 
-	additionalDateFmts := config.FromContext(ctx).Config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
+	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 
 	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{Escape: true, DestKind: s.Label()}, additionalDateFmts)
 	if err != nil {
@@ -179,7 +179,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 		var attempts int
 		for {
-			err = s.backfillColumn(ctx, col, fqName)
+			err = s.backfillColumn(col, fqName)
 			if err == nil {
 				tableConfig.Columns().UpsertColumn(col.RawName(), columns.UpsertColumnArg{
 					Backfilled: ptr.ToBool(true),
@@ -199,7 +199,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	// Perform actual merge now
-	rows, err := s.merge(ctx, tableData)
+	rows, err := s.merge(tableData)
 	if err != nil {
 		slog.Warn("failed to generate the merge query", slog.Any("err", err))
 		return err
