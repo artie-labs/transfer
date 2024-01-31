@@ -208,9 +208,7 @@ func TestProcessMessageSkip(t *testing.T) {
 		BufferRows:           10,
 		FlushSizeKb:          900,
 	}
-	ctx := context.Background()
-
-	ctx = models.LoadMemoryDB(ctx)
+	ctx := models.LoadMemoryDB(context.Background())
 	kafkaMsg := kafka.Message{
 		Topic:         "foo",
 		Partition:     0,
