@@ -36,7 +36,7 @@ func main() {
 	}
 
 	// Loading Telemetry
-	ctx = metrics.LoadExporter(ctx)
+	ctx = metrics.LoadExporter(ctx, *settings.Config)
 	if utils.IsOutputBaseline(ctx) {
 		ctx = utils.InjectBaselineIntoCtx(utils.Baseline(*settings.Config), ctx)
 	} else {
@@ -62,9 +62,9 @@ func main() {
 		defer wg.Done()
 		switch settings.Config.Queue {
 		case constants.Kafka:
-			consumer.StartConsumer(ctx)
+			consumer.StartConsumer(ctx, *settings.Config)
 		case constants.PubSub:
-			consumer.StartSubscriber(ctx)
+			consumer.StartSubscriber(ctx, *settings.Config)
 		default:
 			logger.Fatal(fmt.Sprintf("Message queue: %s not supported", settings.Config.Queue))
 		}
