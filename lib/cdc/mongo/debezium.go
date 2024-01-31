@@ -160,21 +160,13 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]interface{}, tc *kafkalib.
 			constants.DeleteColumnMarker: true,
 		}
 
-		if tc.IncludeArtieUpdatedAt {
-			retMap[constants.UpdateColumnMarker] = ext.NewUTCTime(ext.ISO8601)
-		}
-
-		if tc.IncludeDatabaseUpdatedAt {
-			retMap[constants.DatabaseUpdatedColumnMarker] = s.GetExecutionTime()
-		}
-
 		for k, v := range pkMap {
 			retMap[k] = v
 		}
 
 		// If idempotency key is an empty string, don't put it in the event data
 		if tc.IdempotentKey != "" {
-			retMap[tc.IdempotentKey] = s.GetExecutionTime().Format(time.RFC3339)
+			retMap[tc.IdempotentKey] = s.GetExecutionTime().Format(ext.ISO8601)
 		}
 	} else {
 		retMap = s.Payload.AfterMap
@@ -192,7 +184,7 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]interface{}, tc *kafkalib.
 	}
 
 	if tc.IncludeDatabaseUpdatedAt {
-		retMap[constants.DatabaseUpdatedColumnMarker] = s.GetExecutionTime()
+		retMap[constants.DatabaseUpdatedColumnMarker] = s.GetExecutionTime().Format(ext.ISO8601)
 	}
 
 	return retMap

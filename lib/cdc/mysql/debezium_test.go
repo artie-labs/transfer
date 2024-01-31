@@ -334,9 +334,13 @@ func (m *MySQLTestSuite) TestGetEventFromBytes() {
 
 	evtData = evt.GetData(kvMap, &kafkalib.TopicConfig{
 		IncludeDatabaseUpdatedAt: true,
+		IncludeArtieUpdatedAt:    true,
 	})
 
-	assert.Equal(m.T(), time.Date(2023, time.March, 13, 19, 19, 24, 0, time.UTC), evtData[constants.DatabaseUpdatedColumnMarker])
+	assert.Equal(m.T(), "2023-03-13T19:19:24+00:00", evtData[constants.DatabaseUpdatedColumnMarker])
+
+	_, err = time.Parse(time.RFC3339, evtData[constants.UpdateColumnMarker].(string))
+	assert.NoError(m.T(), err, evtData[constants.UpdateColumnMarker])
 
 	assert.Equal(m.T(), evtData["id"], 1001)
 	assert.Equal(m.T(), evtData["first_name"], "Sally")

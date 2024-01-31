@@ -89,7 +89,7 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
 		IncludeDatabaseUpdatedAt: true,
 	})
 	assert.Equal(p.T(), float64(59), evtData["id"])
-	assert.Equal(p.T(), time.Date(2022, time.November, 16, 4, 1, 53, 308000000, time.UTC), evtData[constants.DatabaseUpdatedColumnMarker])
+	assert.Equal(p.T(), "2022-11-16T04:01:53+00:00", evtData[constants.DatabaseUpdatedColumnMarker])
 
 	assert.Equal(p.T(), "Barings Participation Investors", evtData["item"])
 	assert.Equal(p.T(), map[string]interface{}{"object": "foo"}, evtData["nested"])

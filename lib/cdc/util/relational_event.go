@@ -99,7 +99,7 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]interface{}, tc *kafkalib.
 	}
 
 	if tc.IncludeDatabaseUpdatedAt {
-		retMap[constants.DatabaseUpdatedColumnMarker] = s.GetExecutionTime()
+		retMap[constants.DatabaseUpdatedColumnMarker] = s.GetExecutionTime().Format(ext.ISO8601)
 	}
 
 	// Iterate over the schema and identify if there are any fields that require extra care.

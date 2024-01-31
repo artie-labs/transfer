@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/ext"
+
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
@@ -184,10 +186,9 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 		IncludeArtieUpdatedAt:    true,
 	})
 
-	assert.Equal(p.T(), time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC), evtDataWithIncludedAt[constants.DatabaseUpdatedColumnMarker])
-
-	_, isOk = evtDataWithIncludedAt[constants.UpdateColumnMarker]
-	assert.True(p.T(), isOk)
+	assert.Equal(p.T(), "2022-11-18T06:35:21+00:00", evtDataWithIncludedAt[constants.DatabaseUpdatedColumnMarker])
+	_, err = time.Parse(ext.ISO8601, evtDataWithIncludedAt[constants.UpdateColumnMarker].(string))
+	assert.NoError(p.T(), err, evtDataWithIncludedAt[constants.UpdateColumnMarker])
 
 	var nestedData map[string]interface{}
 	err = json.Unmarshal([]byte(evtData["nested"].(string)), &nestedData)
