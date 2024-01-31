@@ -24,7 +24,7 @@ func IsOutputBaseline(ctx context.Context) bool {
 func Baseline(cfg config.Config) destination.Baseline {
 	switch cfg.Output {
 	case constants.S3:
-		store, err := s3.LoadStore(cfg.S3)
+		store, err := s3.LoadStore(cfg)
 		if err != nil {
 			logger.Panic("Failed to load s3", slog.Any("err", err))
 		}
