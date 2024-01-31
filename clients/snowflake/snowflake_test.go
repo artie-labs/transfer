@@ -1,6 +1,7 @@
 package snowflake
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -67,7 +68,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	s.stageStore.configMap.AddTableToConfig(tableData.ToFqName(s.stageStore.Label(), true, s.stageStore.uppercaseEscNames, ""),
 		types.NewDwhTableConfig(&anotherCols, nil, false, true))
 
-	err := s.stageStore.Merge(s.ctx, tableData)
+	err := s.stageStore.Merge(context.Background(), tableData)
 	_col, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("first_name")
 	assert.True(s.T(), isOk)
 	assert.Equal(s.T(), _col.KindDetails, typing.String)
@@ -114,7 +115,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		types.NewDwhTableConfig(&cols, nil, false, true))
 
 	s.fakeStageStore.ExecReturnsOnCall(0, nil, fmt.Errorf("390114: Authentication token has expired. The user must authenticate again."))
-	err := s.stageStore.Merge(s.ctx, tableData)
+	err := s.stageStore.Merge(context.Background(), tableData)
 	assert.NoError(s.T(), err, "transient errors like auth errors will be retried")
 
 	// 5 regular ones and then 1 additional one to re-establish auth.
@@ -162,7 +163,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 
 	fqName := tableData.ToFqName(s.stageStore.Label(), true, s.stageStore.uppercaseEscNames, "")
 	s.stageStore.configMap.AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, true))
-	err := s.stageStore.Merge(s.ctx, tableData)
+	err := s.stageStore.Merge(context.Background(), tableData)
 	assert.Nil(s.T(), err)
 	s.fakeStageStore.ExecReturns(nil, nil)
 	// CREATE TABLE IF NOT EXISTS customer.public.orders___artie_Mwv9YADmRy (id int,name string,__artie_delete boolean,created_at timestamp_tz) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE) COMMENT='expires:2023-06-27 11:54:03 UTC'
@@ -244,7 +245,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	config := types.NewDwhTableConfig(&sflkCols, nil, false, true)
 	s.stageStore.configMap.AddTableToConfig(tableData.ToFqName(s.stageStore.Label(), true, s.stageStore.uppercaseEscNames, ""), config)
 
-	err := s.stageStore.Merge(s.ctx, tableData)
+	err := s.stageStore.Merge(context.Background(), tableData)
 	assert.Nil(s.T(), err)
 	s.fakeStageStore.ExecReturns(nil, nil)
 	assert.Equal(s.T(), s.fakeStageStore.ExecCallCount(), 5, "called merge")
@@ -268,7 +269,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		break
 	}
 
-	err = s.stageStore.Merge(s.ctx, tableData)
+	err = s.stageStore.Merge(context.Background(), tableData)
 	assert.NoError(s.T(), err)
 	s.fakeStageStore.ExecReturns(nil, nil)
 	assert.Equal(s.T(), s.fakeStageStore.ExecCallCount(), 10, "called merge again")
@@ -280,6 +281,6 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
 	tableData := optimization.NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
-	err := s.stageStore.Merge(s.ctx, tableData)
+	err := s.stageStore.Merge(context.Background(), tableData)
 	assert.Nil(s.T(), err)
 }
