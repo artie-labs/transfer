@@ -19,6 +19,7 @@ type FlushTestSuite struct {
 	suite.Suite
 	fakeStore    *mocks.FakeStore
 	fakeConsumer *mocks.FakeConsumer
+	cfg          config.Config
 
 	ctx context.Context
 }
@@ -27,35 +28,34 @@ func (f *FlushTestSuite) SetupTest() {
 	f.fakeStore = &mocks.FakeStore{}
 	store := db.Store(f.fakeStore)
 
-	f.ctx = context.Background()
-
-	f.ctx = config.InjectSettingsIntoContext(f.ctx, &config.Settings{
-		Config: config.Config{
-			Kafka: &config.Kafka{
-				BootstrapServer: "foo",
-				GroupID:         "bar",
-				Username:        "user",
-				Password:        "abc",
-				TopicConfigs: []*kafkalib.TopicConfig{
-					{
-						Database:  "db",
-						Schema:    "schema",
-						Topic:     "topic",
-						CDCFormat: constants.DBZPostgresFormat,
-					},
+	f.cfg = config.Config{
+		Kafka: &config.Kafka{
+			BootstrapServer: "foo",
+			GroupID:         "bar",
+			Username:        "user",
+			Password:        "abc",
+			TopicConfigs: []*kafkalib.TopicConfig{
+				{
+					Database:  "db",
+					Schema:    "schema",
+					Topic:     "topic",
+					CDCFormat: constants.DBZPostgresFormat,
 				},
 			},
-			Queue:                constants.Kafka,
-			Output:               "snowflake",
-			BufferRows:           500,
-			FlushIntervalSeconds: 60,
-			FlushSizeKb:          500,
 		},
+		Queue:                constants.Kafka,
+		Output:               "snowflake",
+		BufferRows:           500,
+		FlushIntervalSeconds: 60,
+		FlushSizeKb:          500,
+	}
+
+	f.ctx = config.InjectSettingsIntoContext(context.Background(), &config.Settings{
+		Config:         f.cfg,
 		VerboseLogging: false,
 	})
 
-	f.ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(f.ctx, config.FromContext(f.ctx).Config, &store), f.ctx)
-
+	f.ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(f.cfg, &store), f.ctx)
 	f.ctx = models.LoadMemoryDB(f.ctx)
 
 	f.fakeConsumer = &mocks.FakeConsumer{}
