@@ -18,7 +18,7 @@ func (s *SchemaEventPayload) GetOptionalSchema() map[string]typing.KindDetails {
 	for _, field := range fieldsObject.Fields {
 		kd := field.ToKindDetails()
 		if kd == typing.Invalid {
-			slog.Warn("skipping field from optional schema b/c we cannot determine the data type", slog.String("field", field.FieldName))
+			slog.Warn("Skipping field from optional schema b/c we cannot determine the data type", slog.String("field", field.FieldName))
 			continue
 		}
 

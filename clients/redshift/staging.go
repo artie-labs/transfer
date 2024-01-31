@@ -67,7 +67,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 	}
 
 	if deleteErr := os.RemoveAll(fp); deleteErr != nil {
-		slog.Warn("failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
+		slog.Warn("Failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
 	}
 
 	return nil

@@ -65,7 +65,7 @@ func (s *Store) Label() constants.DestinationKind {
 func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 	client, err := bigquery.NewClient(ctx, s.config.BigQuery.ProjectID)
 	if err != nil {
-		logger.Panic("failed to get bigquery client", slog.Any("err", err))
+		logger.Panic("Failed to get bigquery client", slog.Any("err", err))
 	}
 
 	return client
@@ -100,10 +100,10 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) *Store {
 
 	if credPath := cfg.BigQuery.PathToCredentials; credPath != "" {
 		// If the credPath is set, let's set it into the env var.
-		slog.Debug("writing the path to BQ credentials to env var for google auth")
+		slog.Debug("Writing the path to BQ credentials to env var for google auth")
 		err := os.Setenv(GooglePathToCredentialsEnvKey, credPath)
 		if err != nil {
-			logger.Panic(fmt.Sprintf("error setting env var for %s", GooglePathToCredentialsEnvKey), slog.Any("err", err))
+			logger.Panic(fmt.Sprintf("Error setting env var for %s", GooglePathToCredentialsEnvKey), slog.Any("err", err))
 		}
 	}
 

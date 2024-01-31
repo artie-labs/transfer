@@ -75,7 +75,7 @@ func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig 
 	}
 
 	if deleteErr := os.RemoveAll(fp); deleteErr != nil {
-		slog.Warn("failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
+		slog.Warn("Failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
 	}
 
 	return nil
@@ -148,7 +148,7 @@ func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 	// Keys that exist in CDC stream, but not in Snowflake
 	err = ddl.AlterTable(createAlterTableArgs, targetKeysMissing...)
 	if err != nil {
-		slog.Warn("failed to apply alter table", slog.Any("err", err))
+		slog.Warn("Failed to apply alter table", slog.Any("err", err))
 		return err
 	}
 
@@ -168,7 +168,7 @@ func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 
 	err = ddl.AlterTable(deleteAlterTableArgs, srcKeysMissing...)
 	if err != nil {
-		slog.Warn("failed to apply alter table", slog.Any("err", err))
+		slog.Warn("Failed to apply alter table", slog.Any("err", err))
 		return err
 	}
 
@@ -210,7 +210,7 @@ func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 		return fmt.Errorf("failed to generate merge statement, err: %v", err)
 	}
 
-	slog.Debug("executing...", slog.String("query", mergeQuery))
+	slog.Debug("Executing...", slog.String("query", mergeQuery))
 	_, err = s.Exec(mergeQuery)
 	if err != nil {
 		return err

@@ -29,7 +29,7 @@ func LoadExporter(ctx context.Context) context.Context {
 	ddSettings := settings.Config.Telemetry.Metrics.Settings
 
 	if !exporterKindValid(kind) {
-		slog.Info("invalid or no exporter kind passed in, skipping...", slog.Any("exporterKind", kind))
+		slog.Info("Invalid or no exporter kind passed in, skipping...", slog.Any("exporterKind", kind))
 	}
 
 	switch kind {

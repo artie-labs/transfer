@@ -35,7 +35,7 @@ func (s *storeWrapper) Exec(query string, args ...any) (sql.Result, error) {
 
 		if retryableError(err) {
 			sleepDurationMs := jitter.JitterMs(sleepIntervalMs, attempts)
-			slog.Warn("failed to execute the query, retrying...",
+			slog.Warn("Failed to execute the query, retrying...",
 				slog.Any("err", err),
 				slog.Int("sleepDurationMs", sleepDurationMs),
 				slog.Int("attempts", attempts),

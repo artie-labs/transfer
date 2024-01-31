@@ -30,13 +30,13 @@ func DropTemporaryTable(dwh destination.DataWarehouse, fqTableName string, shoul
 		// https://docs.snowflake.com/en/sql-reference/sql/drop-table
 		_, err := dwh.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", fqTableName))
 		if err != nil {
-			slog.Warn("failed to drop temporary table, it will get garbage collected by the TTL...", slog.Any("err", err))
+			slog.Warn("Failed to drop temporary table, it will get garbage collected by the TTL...", slog.Any("err", err))
 			if shouldReturnError {
 				return fmt.Errorf("failed to drop temp table - err %v", err)
 			}
 		}
 	} else {
-		slog.Warn(fmt.Sprintf("skipped dropping table: %s because it does not contain the artie prefix", fqTableName))
+		slog.Warn(fmt.Sprintf("Skipped dropping table: %s because it does not contain the artie prefix", fqTableName))
 	}
 
 	return nil
@@ -144,7 +144,7 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
 		}
 
-		slog.Info("ddl - executing sql", slog.String("query", sqlQuery))
+		slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
 		_, err = args.Dwh.Exec(sqlQuery)
 		if ColumnAlreadyExistErr(err, args.Dwh.Label()) {
 			err = nil
@@ -154,7 +154,7 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 	} else {
 		for _, colSQLPart := range colSQLParts {
 			sqlQuery := fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", args.FqTableName, args.ColumnOp, colSQLPart)
-			slog.Info("ddl - executing sql", slog.String("query", sqlQuery))
+			slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
 			_, err = args.Dwh.Exec(sqlQuery)
 			if ColumnAlreadyExistErr(err, args.Dwh.Label()) {
 				err = nil

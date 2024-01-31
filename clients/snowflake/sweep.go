@@ -12,7 +12,7 @@ import (
 )
 
 func (s *Store) Sweep() error {
-	slog.Info("looking to see if there are any dangling artie temporary tables to delete...")
+	slog.Info("Looking to see if there are any dangling artie temporary tables to delete...")
 	// Find all the database and schema pairings
 	// Then iterate over information schema
 	// Find anything that has __artie__ in the table name

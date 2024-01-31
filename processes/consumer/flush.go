@@ -52,7 +52,7 @@ func Flush(args Args) error {
 			}
 
 			if args.CoolDown != nil && _tableData.ShouldSkipMerge(*args.CoolDown) {
-				slog.With(logFields...).Info("skipping merge because we are currently in a merge cooldown")
+				slog.With(logFields...).Info("Skipping merge because we are currently in a merge cooldown")
 				return
 			}
 
@@ -86,7 +86,7 @@ func Flush(args Args) error {
 					models.GetMemoryDB(args.Context).ClearTableConfig(_tableName)
 				} else {
 					tags["what"] = "commit_fail"
-					slog.Warn("commit error...", slog.Any("err", commitErr))
+					slog.Warn("Commit error...", slog.Any("err", commitErr))
 				}
 			}
 			metrics.FromContext(args.Context).Timing("flush", time.Since(start), tags)

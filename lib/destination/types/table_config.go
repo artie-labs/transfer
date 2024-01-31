@@ -138,7 +138,7 @@ func (d *DwhTableConfig) ShouldDeleteColumn(colName string, cdcTime time.Time, c
 	}
 
 	delTime := time.Now().UTC().Add(constants.DeletionConfidencePadding)
-	slog.Info("column added to columnsToDelete",
+	slog.Info("Column added to columnsToDelete",
 		slog.String("colName", colName),
 		slog.Time("deleteAfterTime", delTime),
 	)

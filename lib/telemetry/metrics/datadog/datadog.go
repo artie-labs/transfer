@@ -51,7 +51,7 @@ func NewDatadogClient(settings map[string]interface{}) (base.Client, error) {
 	port := os.Getenv("TELEMETRY_PORT")
 	if !stringutil.Empty(host, port) {
 		address = fmt.Sprintf("%s:%s", host, port)
-		slog.Info("overriding telemetry address with env vars", slog.String("address", address))
+		slog.Info("Overriding telemetry address with env vars", slog.String("address", address))
 	}
 
 	datadogClient, err := statsd.New(address)
