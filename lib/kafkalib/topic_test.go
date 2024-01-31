@@ -117,7 +117,7 @@ func TestTopicConfig_String(t *testing.T) {
 
 func TestTopicConfig_Validate(t *testing.T) {
 	var tc TopicConfig
-	assert.False(t, tc.Valid(), tc.String())
+	assert.Error(t, tc.Validate(), tc.String())
 
 	tc = TopicConfig{
 		Database:  "12",
@@ -127,13 +127,13 @@ func TestTopicConfig_Validate(t *testing.T) {
 		CDCFormat: "aa",
 	}
 
-	assert.True(t, tc.Valid(), tc.String())
+	assert.NoError(t, tc.Validate(), tc.String())
 
 	tc.CDCKeyFormat = "non_existent"
-	assert.False(t, tc.Valid(), tc.String())
+	assert.Error(t, tc.Validate(), tc.String())
 
 	for _, validKeyFormat := range validKeyFormats {
 		tc.CDCKeyFormat = validKeyFormat
-		assert.True(t, tc.Valid(), tc.String())
+		assert.NoError(t, tc.Validate(), tc.String())
 	}
 }
