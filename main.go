@@ -37,7 +37,7 @@ func main() {
 
 	// Loading Telemetry
 	ctx = metrics.LoadExporter(ctx)
-	if utils.IsOutputBaseline(ctx) {
+	if utils.IsOutputBaseline(*settings.Config) {
 		ctx = utils.InjectBaselineIntoCtx(utils.Baseline(*settings.Config), ctx)
 	} else {
 		ctx = utils.InjectDwhIntoCtx(utils.DataWarehouse(*settings.Config, nil), ctx)

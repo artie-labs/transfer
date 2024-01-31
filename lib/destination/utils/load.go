@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"context"
 	"log/slog"
 
 	"github.com/artie-labs/transfer/clients/bigquery"
@@ -17,8 +16,8 @@ import (
 	"github.com/artie-labs/transfer/lib/mocks"
 )
 
-func IsOutputBaseline(ctx context.Context) bool {
-	return config.FromContext(ctx).Config.Output == constants.S3
+func IsOutputBaseline(cfg config.Config) bool {
+	return cfg.Output == constants.S3
 }
 
 func Baseline(cfg config.Config) destination.Baseline {
