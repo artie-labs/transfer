@@ -275,7 +275,7 @@ func TestTableData_ContainsHardDeletes(t *testing.T) {
 
 		td.InsertRow("123", nil, true)
 		assert.Equal(t, 1, int(td.Rows()))
-		assert.True(t, td.containsHardDeletes)
+		assert.True(t, td.ContainsHardDeletes())
 	}
 	{
 		// TopicConfig has soft delete turned on, so hard delete = false
@@ -284,7 +284,7 @@ func TestTableData_ContainsHardDeletes(t *testing.T) {
 
 		td.InsertRow("123", nil, true)
 		assert.Equal(t, 1, int(td.Rows()))
-		assert.False(t, td.containsHardDeletes)
+		assert.False(t, td.ContainsHardDeletes())
 	}
 }
 
