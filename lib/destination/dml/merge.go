@@ -212,7 +212,7 @@ func (m *MergeArgument) GetStatement() (string, error) {
 		equalitySQL := fmt.Sprintf("c.%s = cc.%s", primaryKey.EscapedName(), primaryKey.EscapedName())
 		pkCol, isOk := m.ColumnsToTypes.GetColumn(primaryKey.RawName())
 		if !isOk {
-			return "", fmt.Errorf("error: column: %s does not exist in columnToType: %v", primaryKey.RawName(), m.ColumnsToTypes)
+			return "", fmt.Errorf("column: %s does not exist in columnToType: %v", primaryKey.RawName(), m.ColumnsToTypes)
 		}
 
 		if m.DestKind == constants.BigQuery && pkCol.KindDetails.Kind == typing.Struct.Kind {

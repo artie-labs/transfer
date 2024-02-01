@@ -26,8 +26,13 @@ func TestRetryable_Errors(t *testing.T) {
 			expectedResult: false,
 		},
 		{
-			name:           "retryable error",
-			err:            fmt.Errorf("error: read tcp 127.0.0.1:40104->127.0.0.1:28889: read: connection reset by peer"),
+			name:           "retryable error - connection reset by peer",
+			err:            fmt.Errorf("err: read tcp 127.0.0.1:40104->127.0.0.1:28889: read: connection reset by peer"),
+			expectedResult: true,
+		},
+		{
+			name:           "retryable error - connection refused",
+			err:            fmt.Errorf("err: dial tcp [::1]:28889: connect: connection refused"),
 			expectedResult: true,
 		},
 	}

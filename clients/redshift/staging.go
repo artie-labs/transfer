@@ -31,7 +31,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 	}
 
 	if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
-		return fmt.Errorf("failed to create temp table, error: %v", err)
+		return fmt.Errorf("failed to create temp table, err: %v", err)
 	}
 
 	expiryString := typing.ExpiresDate(time.Now().UTC().Add(ddl.TempTableTTL))
