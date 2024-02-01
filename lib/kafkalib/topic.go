@@ -6,9 +6,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/kafkalib/partition"
-
 	"github.com/artie-labs/transfer/lib/array"
+	"github.com/artie-labs/transfer/lib/kafkalib/partition"
+	"github.com/artie-labs/transfer/lib/logger"
 )
 
 type DatabaseSchemaPair struct {
@@ -73,18 +73,20 @@ func (t *TopicConfig) Load() {
 	t.opsToSkipMap = make(map[string]bool)
 	skippedOps := strings.Split(t.SkippedOperations, ",")
 	for _, op := range skippedOps {
-		t.opsToSkipMap[strings.TrimSpace(op)] = true
+		// Lowercase and trim space.
+		t.opsToSkipMap[strings.ToLower(strings.TrimSpace(op))] = true
 	}
 
 	// TODO: For backwards compatibility, remove in a later version.
 	if t.SkipDelete {
+		slog.Warn("skipDelete is deprecated, use skippedOperations instead")
 		t.opsToSkipMap["d"] = true
 	}
 }
 
 func (t TopicConfig) ShouldSkip(op string) bool {
 	if t.opsToSkipMap == nil {
-		slog.Warn("opsToSkipMap is nil, calling Load()")
+		logger.Panic("opsToSkipMap is nil, Load() was never called")
 	}
 
 	_, isOk := t.opsToSkipMap[op]
