@@ -70,8 +70,7 @@ func (t *TopicConfig) Load() {
 	// 4. d - delete
 
 	t.opsToSkipMap = make(map[string]bool)
-	skippedOps := strings.Split(t.SkippedOperations, ",")
-	for _, op := range skippedOps {
+	for _, op := range strings.Split(t.SkippedOperations, ",") {
 		// Lowercase and trim space.
 		t.opsToSkipMap[strings.ToLower(strings.TrimSpace(op))] = true
 	}
