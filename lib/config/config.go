@@ -119,10 +119,6 @@ func (k *Kafka) String() string {
 }
 
 func (c Config) TopicConfigs() ([]*kafkalib.TopicConfig, error) {
-	if err := c.Validate(); err != nil {
-		return nil, err
-	}
-
 	switch c.Queue {
 	case constants.Kafka:
 		return c.Kafka.TopicConfigs, nil

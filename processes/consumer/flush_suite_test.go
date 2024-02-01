@@ -28,21 +28,23 @@ func (f *FlushTestSuite) SetupTest() {
 	f.fakeStore = &mocks.FakeStore{}
 	store := db.Store(f.fakeStore)
 
+	tc := &kafkalib.TopicConfig{
+		Database:     "db",
+		Schema:       "schema",
+		Topic:        "topic",
+		CDCFormat:    constants.DBZPostgresFormat,
+		CDCKeyFormat: kafkalib.JSONKeyFmt,
+	}
+
+	tc.Load()
+
 	f.cfg = config.Config{
 		Kafka: &config.Kafka{
 			BootstrapServer: "foo",
 			GroupID:         "bar",
 			Username:        "user",
 			Password:        "abc",
-			TopicConfigs: []*kafkalib.TopicConfig{
-				{
-					Database:     "db",
-					Schema:       "schema",
-					Topic:        "topic",
-					CDCFormat:    constants.DBZPostgresFormat,
-					CDCKeyFormat: kafkalib.JSONKeyFmt,
-				},
-			},
+			TopicConfigs:    []*kafkalib.TopicConfig{tc},
 		},
 		Queue:                constants.Kafka,
 		Output:               "snowflake",

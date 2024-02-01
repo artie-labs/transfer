@@ -9,6 +9,30 @@ import (
 )
 
 func (s *SnowflakeTestSuite) TestSweep() {
+	tcs := []*kafkalib.TopicConfig{
+		{
+
+			Database:     "db",
+			Schema:       "schema",
+			TableName:    "table1",
+			Topic:        "topic1",
+			CDCFormat:    constants.DBZPostgresFormat,
+			CDCKeyFormat: kafkalib.JSONKeyFmt,
+		},
+		{
+			Database:     "db",
+			Schema:       "schema",
+			TableName:    "table2",
+			Topic:        "topic2",
+			CDCFormat:    constants.DBZPostgresFormat,
+			CDCKeyFormat: kafkalib.JSONKeyFmt,
+		},
+	}
+
+	for _, tc := range tcs {
+		tc.Load()
+	}
+
 	s.stageStore.config = config.Config{
 		Queue:                constants.Kafka,
 		Output:               constants.Snowflake,
@@ -18,25 +42,7 @@ func (s *SnowflakeTestSuite) TestSweep() {
 		Kafka: &config.Kafka{
 			GroupID:         "artie",
 			BootstrapServer: "localhost:9092",
-			TopicConfigs: []*kafkalib.TopicConfig{
-				{
-
-					Database:     "db",
-					Schema:       "schema",
-					TableName:    "table1",
-					Topic:        "topic1",
-					CDCFormat:    constants.DBZPostgresFormat,
-					CDCKeyFormat: kafkalib.JSONKeyFmt,
-				},
-				{
-					Database:     "db",
-					Schema:       "schema",
-					TableName:    "table2",
-					Topic:        "topic2",
-					CDCFormat:    constants.DBZPostgresFormat,
-					CDCKeyFormat: kafkalib.JSONKeyFmt,
-				},
-			},
+			TopicConfigs:    tcs,
 		},
 	}
 

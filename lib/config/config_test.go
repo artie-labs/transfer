@@ -134,14 +134,15 @@ bufferRows: 10
 	assert.Equal(t, config.FlushIntervalSeconds, 15)
 	assert.Equal(t, int(config.BufferRows), 10)
 
-	assert.Nil(t, config.Validate())
-
 	tcs, err := config.TopicConfigs()
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(tcs))
 	for _, tc := range tcs {
+		tc.Load()
 		assert.Equal(t, "customer", tc.Database)
 	}
+
+	assert.Nil(t, config.Validate())
 }
 
 func TestOutputSourceInvalid(t *testing.T) {
@@ -251,6 +252,12 @@ kafka:
 
 	assert.Equal(t, config.FlushIntervalSeconds, defaultFlushTimeSeconds)
 	assert.Equal(t, int(config.BufferRows), bufferPoolSizeEnd)
+
+	tcs, err := config.TopicConfigs()
+	assert.NoError(t, err)
+	for _, tc := range tcs {
+		tc.Load()
+	}
 
 	assert.ErrorContains(t, config.Validate(), "kafka settings is invalid")
 	for _, tc := range config.Kafka.TopicConfigs {
@@ -490,6 +497,8 @@ func TestConfig_Validate(t *testing.T) {
 		Schema:    "schema",
 		Topic:     "topic",
 	}
+
+	tc.Load()
 
 	pubsub.TopicConfigs = []*kafkalib.TopicConfig{&tc}
 
