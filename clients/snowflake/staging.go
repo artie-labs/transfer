@@ -49,7 +49,7 @@ func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig 
 	}
 
 	if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
-		return fmt.Errorf(" error: %v", err)
+		return fmt.Errorf("failed to create temp table, err: %v", err)
 	}
 
 	fp, err := s.loadTemporaryTable(tableData, tempTableName)
