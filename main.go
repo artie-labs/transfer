@@ -41,9 +41,8 @@ func main() {
 		slog.Int("flushPoolSizeKb", settings.Config.FlushSizeKb),
 	)
 
-	ctx := context.Background()
 	// Loading telemetry
-	ctx = metrics.LoadExporter(ctx, settings.Config)
+	ctx := metrics.LoadExporter(context.Background(), settings.Config)
 	var dest destination.Baseline
 	if utils.IsOutputBaseline(settings.Config) {
 		dest = utils.Baseline(settings.Config)

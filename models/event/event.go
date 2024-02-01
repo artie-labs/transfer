@@ -205,11 +205,3 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, topicConfi
 	flush, flushReason := td.ShouldFlush(cfg)
 	return flush, flushReason, nil
 }
-
-func (e *Event) ShouldSkip(skipDelete bool) bool {
-	if skipDelete && e.Deleted {
-		return true
-	}
-
-	return false
-}

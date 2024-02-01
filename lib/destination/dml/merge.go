@@ -39,8 +39,9 @@ type MergeArgument struct {
 	*/
 	DestKind   constants.DestinationKind
 	SoftDelete bool
-	// SkipDelete is only used for Redshift and MergeStatementParts
-	SkipDelete bool
+	// ContainsHardDeletes is only used for Redshift and MergeStatementParts,
+	// where we do not issue a DELETE statement if there are no hard deletes in the batch
+	ContainsHardDeletes bool
 
 	UppercaseEscNames *bool
 }
@@ -171,7 +172,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		),
 	}
 
-	if !m.SkipDelete {
+	if m.ContainsHardDeletes {
 		parts = append(parts,
 			// DELETE
 			fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s as cc WHERE cc.%s = true);`,

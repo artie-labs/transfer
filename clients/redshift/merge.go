@@ -97,14 +97,14 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		FqTableName: fqName,
 		// We are adding SELECT DISTINCT here for the temporary table as an extra guardrail.
 		// Redshift does not enforce any row uniqueness and there could be potential LOAD errors which will cause duplicate rows to arise.
-		SubQuery:          fmt.Sprintf(`( SELECT DISTINCT *  FROM %s )`, temporaryTableName),
-		IdempotentKey:     tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys:       tableData.PrimaryKeys(s.config.SharedDestinationConfig.UppercaseEscapedNames, &sql.NameArgs{Escape: true, DestKind: s.Label()}),
-		ColumnsToTypes:    *tableData.ReadOnlyInMemoryCols(),
-		SkipDelete:        tableData.TopicConfig.SkipDelete,
-		SoftDelete:        tableData.TopicConfig.SoftDelete,
-		DestKind:          s.Label(),
-		UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
+		SubQuery:            fmt.Sprintf(`( SELECT DISTINCT *  FROM %s )`, temporaryTableName),
+		IdempotentKey:       tableData.TopicConfig.IdempotentKey,
+		PrimaryKeys:         tableData.PrimaryKeys(s.config.SharedDestinationConfig.UppercaseEscapedNames, &sql.NameArgs{Escape: true, DestKind: s.Label()}),
+		ColumnsToTypes:      *tableData.ReadOnlyInMemoryCols(),
+		ContainsHardDeletes: tableData.ContainsHardDeletes(),
+		SoftDelete:          tableData.TopicConfig.SoftDelete,
+		DestKind:            s.Label(),
+		UppercaseEscNames:   &s.config.SharedDestinationConfig.UppercaseEscapedNames,
 	}
 
 	// Prepare merge statement

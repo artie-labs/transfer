@@ -254,18 +254,21 @@ func TestProcessMessageSkip(t *testing.T) {
 		Format: &mgo,
 	})
 
+	tc := &kafkalib.TopicConfig{
+		Database:      db,
+		TableName:     table,
+		Schema:        schema,
+		Topic:         msg.Topic(),
+		IdempotentKey: "",
+		CDCFormat:     "",
+		CDCKeyFormat:  "org.apache.kafka.connect.storage.StringConverter",
+		SkipDelete:    true,
+	}
+	tc.Load()
+
 	// Add will just replace the prev setting.
 	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
-		tc: &kafkalib.TopicConfig{
-			Database:      db,
-			TableName:     table,
-			Schema:        schema,
-			Topic:         msg.Topic(),
-			IdempotentKey: "",
-			CDCFormat:     "",
-			CDCKeyFormat:  "org.apache.kafka.connect.storage.StringConverter",
-			SkipDelete:    true,
-		},
+		tc:     tc,
 		Format: &mgo,
 	})
 

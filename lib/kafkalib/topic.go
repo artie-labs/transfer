@@ -2,7 +2,9 @@ package kafkalib
 
 import (
 	"fmt"
+	"log/slog"
 	"slices"
+	"strings"
 
 	"github.com/artie-labs/transfer/lib/kafkalib/partition"
 
@@ -34,19 +36,24 @@ func GetUniqueDatabaseAndSchema(tcs []*TopicConfig) []DatabaseSchemaPair {
 }
 
 type TopicConfig struct {
-	Database                  string                      `yaml:"db"`
-	TableName                 string                      `yaml:"tableName"`
-	Schema                    string                      `yaml:"schema"`
-	Topic                     string                      `yaml:"topic"`
-	IdempotentKey             string                      `yaml:"idempotentKey"`
-	CDCFormat                 string                      `yaml:"cdcFormat"`
-	CDCKeyFormat              string                      `yaml:"cdcKeyFormat"`
-	DropDeletedColumns        bool                        `yaml:"dropDeletedColumns"`
-	SoftDelete                bool                        `yaml:"softDelete"`
+	Database           string `yaml:"db"`
+	TableName          string `yaml:"tableName"`
+	Schema             string `yaml:"schema"`
+	Topic              string `yaml:"topic"`
+	IdempotentKey      string `yaml:"idempotentKey"`
+	CDCFormat          string `yaml:"cdcFormat"`
+	CDCKeyFormat       string `yaml:"cdcKeyFormat"`
+	DropDeletedColumns bool   `yaml:"dropDeletedColumns"`
+	SoftDelete         bool   `yaml:"softDelete"`
+	// TODO: Deprecate SkipDelete in the next version and add it to the Release Notes.
 	SkipDelete                bool                        `yaml:"skipDelete"`
+	SkippedOperations         string                      `yaml:"skippedOperations"`
 	IncludeArtieUpdatedAt     bool                        `yaml:"includeArtieUpdatedAt"`
 	IncludeDatabaseUpdatedAt  bool                        `yaml:"includeDatabaseUpdatedAt"`
 	BigQueryPartitionSettings *partition.BigQuerySettings `yaml:"bigQueryPartitionSettings"`
+
+	// Internal metadata
+	opsToSkipMap map[string]bool `yaml:"-"`
 }
 
 const (
@@ -55,6 +62,34 @@ const (
 )
 
 var validKeyFormats = []string{StringKeyFmt, JSONKeyFmt}
+
+func (t *TopicConfig) Load() {
+	// Operations that we support today:
+	// 1. c - create
+	// 2. r - replication (backfill)
+	// 3. u - update
+	// 4. d - delete
+
+	t.opsToSkipMap = make(map[string]bool)
+	skippedOps := strings.Split(t.SkippedOperations, ",")
+	for _, op := range skippedOps {
+		t.opsToSkipMap[strings.TrimSpace(op)] = true
+	}
+
+	// TODO: For backwards compatibility, remove in a later version.
+	if t.SkipDelete {
+		t.opsToSkipMap["d"] = true
+	}
+}
+
+func (t TopicConfig) ShouldSkip(op string) bool {
+	if t.opsToSkipMap == nil {
+		slog.Warn("opsToSkipMap is nil, calling Load()")
+	}
+
+	_, isOk := t.opsToSkipMap[op]
+	return isOk
+}
 
 func (t TopicConfig) String() string {
 	return fmt.Sprintf(
