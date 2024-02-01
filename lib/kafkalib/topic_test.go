@@ -172,4 +172,11 @@ func TestTopicConfig_Load_ShouldSkip(t *testing.T) {
 		tc.Load()
 		assert.True(t, tc.ShouldSkip("c"), tc.String())
 	}
+	{
+		tc := TopicConfig{
+			SkippedOperations: "d",
+		}
+		tc.Load()
+		assert.True(t, tc.ShouldSkip("d"), tc.String())
+	}
 }

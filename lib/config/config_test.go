@@ -415,11 +415,11 @@ reporting:
 		}
 	}
 
-	assert.True(t, config.Kafka.TopicConfigs[orderIdx].ShouldSkip("d"))
-	assert.True(t, config.Kafka.TopicConfigs[customerIdx].ShouldSkip("c"))
-
 	assert.True(t, customerIdx >= 0)
 	assert.True(t, orderIdx >= 0)
+
+	assert.True(t, config.Kafka.TopicConfigs[orderIdx].ShouldSkip("d"))
+	assert.True(t, config.Kafka.TopicConfigs[customerIdx].ShouldSkip("c"))
 
 	// Verify Snowflake config
 	assert.Equal(t, snowflakeUser, config.Snowflake.Username)
