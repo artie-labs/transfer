@@ -100,17 +100,20 @@ func TestProcessMessageFailures(t *testing.T) {
 	assert.Equal(t, 0, len(memDB.TableData()))
 	assert.Empty(t, tableName)
 
+	tc := &kafkalib.TopicConfig{
+		Database:      db,
+		TableName:     table,
+		Schema:        schema,
+		Topic:         msg.Topic(),
+		IdempotentKey: "",
+		CDCFormat:     "",
+		CDCKeyFormat:  "org.apache.kafka.connect.storage.StringConverter",
+	}
+	tc.Load()
+
 	// Add will just replace the prev setting.
 	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
-		tc: &kafkalib.TopicConfig{
-			Database:      db,
-			TableName:     table,
-			Schema:        schema,
-			Topic:         msg.Topic(),
-			IdempotentKey: "",
-			CDCFormat:     "",
-			CDCKeyFormat:  "org.apache.kafka.connect.storage.StringConverter",
-		},
+		tc:     tc,
 		Format: &mgo,
 	})
 

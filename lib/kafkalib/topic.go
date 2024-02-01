@@ -8,7 +8,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/kafkalib/partition"
-	"github.com/artie-labs/transfer/lib/logger"
 )
 
 type DatabaseSchemaPair struct {
@@ -86,7 +85,7 @@ func (t *TopicConfig) Load() {
 
 func (t TopicConfig) ShouldSkip(op string) bool {
 	if t.opsToSkipMap == nil {
-		logger.Panic("opsToSkipMap is nil, Load() was never called")
+		panic("opsToSkipMap is nil, Load() was never called")
 	}
 
 	_, isOk := t.opsToSkipMap[op]

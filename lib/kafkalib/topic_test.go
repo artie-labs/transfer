@@ -149,9 +149,6 @@ func TestTopicConfig_Load_ShouldSkip(t *testing.T) {
 			SkipDelete: true,
 		}
 
-		// Before load, should be false.
-		assert.False(t, tc.ShouldSkip("d"), tc.String())
-
 		tc.Load()
 		assert.True(t, tc.ShouldSkip("d"), tc.String())
 		for _, op := range []string{"c", "r", "u"} {
