@@ -40,8 +40,8 @@ kafka:
  username: foo
  password: bar
  topicConfigs:
-  - { db: customer, tableName: orders, schema: public, topic: orders, cdcFormat: debezium.mongodb}
-  - { db: customer, tableName: customer, schema: public, topic: customer, cdcFormat: debezium.mongodb}
+  - { db: customer, tableName: orders, schema: public, topic: orders, cdcFormat: debezium.mongodb, cdcKeyFormat: org.apache.kafka.connect.json.JsonConverter}
+  - { db: customer, tableName: customer, schema: public, topic: customer, cdcFormat: debezium.mongodb, cdcKeyFormat: org.apache.kafka.connect.storage.StringConverter}
 `
 )
 
@@ -239,9 +239,9 @@ kafka:
  username: foo
  password: bar
  topicConfigs:
-  - { db: customer, tableName: orders, schema: public, topic: orders, cdcFormat: debezium.mongodb, dropDeletedColumns: true}
-  - { db: customer, tableName: customer, schema: public, topic: customer, cdcFormat: debezium.mongodb, softDelete: true}
-  - { db: customer, tableName: customer55, schema: public, topic: customer55, cdcFormat: debezium.mongodb, dropDeletedColumns: false, softDelete: true}
+  - { db: customer, tableName: orders, schema: public, topic: orders, cdcFormat: debezium.mongodb, cdcKeyFormat: org.apache.kafka.connect.storage.StringConverter, dropDeletedColumns: true}
+  - { db: customer, tableName: customer, schema: public, topic: customer, cdcFormat: debezium.mongodb, cdcKeyFormat: org.apache.kafka.connect.storage.StringConverter, softDelete: true}
+  - { db: customer, tableName: customer55, schema: public, topic: customer55, cdcFormat: debezium.mongodb, cdcKeyFormat: org.apache.kafka.connect.storage.StringConverter, dropDeletedColumns: false, softDelete: true}
 `)
 
 	assert.Nil(t, err)
@@ -252,10 +252,7 @@ kafka:
 	assert.Equal(t, config.FlushIntervalSeconds, defaultFlushTimeSeconds)
 	assert.Equal(t, int(config.BufferRows), bufferPoolSizeEnd)
 
-	validErr = config.Validate()
-	assert.Error(t, validErr)
-	assert.True(t, strings.Contains(validErr.Error(), "kafka settings is invalid"), validErr.Error())
-
+	assert.ErrorContains(t, config.Validate(), "kafka settings is invalid")
 	for _, tc := range config.Kafka.TopicConfigs {
 		if tc.TableName == "orders" {
 			assert.Equal(t, tc.DropDeletedColumns, true)

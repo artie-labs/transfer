@@ -36,10 +36,11 @@ func (f *FlushTestSuite) SetupTest() {
 			Password:        "abc",
 			TopicConfigs: []*kafkalib.TopicConfig{
 				{
-					Database:  "db",
-					Schema:    "schema",
-					Topic:     "topic",
-					CDCFormat: constants.DBZPostgresFormat,
+					Database:     "db",
+					Schema:       "schema",
+					Topic:        "topic",
+					CDCFormat:    constants.DBZPostgresFormat,
+					CDCKeyFormat: kafkalib.JSONKeyFmt,
 				},
 			},
 		},
