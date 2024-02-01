@@ -167,7 +167,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	if err = ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
-		return fmt.Errorf("failed to create temp table, error: %v", err)
+		return fmt.Errorf("failed to create temp table, err: %v", err)
 	}
 	// End temporary table creation
 

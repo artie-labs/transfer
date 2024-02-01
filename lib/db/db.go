@@ -28,24 +28,20 @@ func (s *storeWrapper) Exec(query string, args ...any) (sql.Result, error) {
 	var result sql.Result
 	var err error
 	for attempts := 0; attempts < maxAttempts; attempts++ {
-		result, err = s.DB.Exec(query, args...)
-		if err == nil {
-			break
-		}
-
-		if retryableError(err) {
-			sleepDurationMs := jitter.JitterMs(sleepIntervalMs, attempts)
+		if attempts > 0 {
+			sleepDurationMs := jitter.JitterMs(sleepIntervalMs, attempts-1)
 			slog.Warn("Failed to execute the query, retrying...",
 				slog.Any("err", err),
 				slog.Int("sleepDurationMs", sleepDurationMs),
 				slog.Int("attempts", attempts),
 			)
-
 			time.Sleep(time.Duration(sleepDurationMs) * time.Millisecond)
-			continue
 		}
 
-		break
+		result, err = s.DB.Exec(query, args...)
+		if err == nil || !retryableError(err) {
+			break
+		}
 	}
 	return result, err
 }
