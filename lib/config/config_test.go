@@ -362,8 +362,8 @@ kafka:
  username: %s
  password: %s
  topicConfigs:
-  - { db: customer, tableName: orders, schema: public}
-  - { db: customer, tableName: customer, schema: public}
+  - { db: customer, tableName: orders, schema: public, skippedOperations: d}
+  - { db: customer, tableName: customer, schema: public, skippedOperations: c}
 
 snowflake:
  account: %s
@@ -398,24 +398,28 @@ reporting:
 	assert.Equal(t, password, config.Kafka.Password)
 	assert.True(t, config.SharedTransferConfig.TypingSettings.CreateAllColumnsIfAvailable)
 
-	var foundOrder bool
-	var foundCustomer bool
+	orderIdx := -1
+	customerIdx := -1
+	for idx, topicConfig := range config.Kafka.TopicConfigs {
+		topicConfig.Load()
 
-	for _, topicConfig := range config.Kafka.TopicConfigs {
 		assert.Equal(t, topicConfig.Database, "customer")
 		assert.Equal(t, topicConfig.Schema, "public")
 
 		if topicConfig.TableName == "orders" {
-			foundOrder = true
+			orderIdx = idx
 		}
 
 		if topicConfig.TableName == "customer" {
-			foundCustomer = true
+			customerIdx = idx
 		}
 	}
 
-	assert.True(t, foundCustomer)
-	assert.True(t, foundOrder)
+	assert.True(t, config.Kafka.TopicConfigs[orderIdx].ShouldSkip("d"))
+	assert.True(t, config.Kafka.TopicConfigs[customerIdx].ShouldSkip("c"))
+
+	assert.True(t, customerIdx >= 0)
+	assert.True(t, orderIdx >= 0)
 
 	// Verify Snowflake config
 	assert.Equal(t, snowflakeUser, config.Snowflake.Username)
