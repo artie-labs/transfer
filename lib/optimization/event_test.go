@@ -267,6 +267,27 @@ func TestTableData_ShouldFlushRowLength(t *testing.T) {
 	assert.Equal(t, "rows", flushReason)
 }
 
+func TestTableData_ContainsHardDeletes(t *testing.T) {
+	{
+		// Hard delete = true
+		td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
+		assert.Equal(t, 0, int(td.Rows()))
+
+		td.InsertRow("123", nil, true)
+		assert.Equal(t, 1, int(td.Rows()))
+		assert.True(t, td.ContainsHardDeletes())
+	}
+	{
+		// TopicConfig has soft delete turned on, so hard delete = false
+		td := NewTableData(nil, nil, kafkalib.TopicConfig{SoftDelete: true}, "foo")
+		assert.Equal(t, 0, int(td.Rows()))
+
+		td.InsertRow("123", nil, true)
+		assert.Equal(t, 1, int(td.Rows()))
+		assert.False(t, td.ContainsHardDeletes())
+	}
+}
+
 func TestTableData_ShouldFlushRowSize(t *testing.T) {
 	cfg := config.Config{
 		FlushSizeKb: 5,

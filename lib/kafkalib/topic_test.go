@@ -128,6 +128,9 @@ func TestTopicConfig_Validate(t *testing.T) {
 		CDCKeyFormat: JSONKeyFmt,
 	}
 
+	assert.ErrorContains(t, tc.Validate(), "opsToSkipMap is nil, call Load() first")
+
+	tc.Load()
 	assert.NoError(t, tc.Validate(), tc.String())
 
 	tc.CDCKeyFormat = "non_existent"
@@ -136,5 +139,44 @@ func TestTopicConfig_Validate(t *testing.T) {
 	for _, validKeyFormat := range validKeyFormats {
 		tc.CDCKeyFormat = validKeyFormat
 		assert.NoError(t, tc.Validate(), tc.String())
+	}
+}
+
+func TestTopicConfig_Load_ShouldSkip(t *testing.T) {
+	{
+		// Test backwards compat
+		tc := TopicConfig{
+			SkipDelete: true,
+		}
+
+		tc.Load()
+		assert.True(t, tc.ShouldSkip("d"), tc.String())
+		for _, op := range []string{"c", "r", "u"} {
+			assert.False(t, tc.ShouldSkip(op), tc.String())
+		}
+	}
+	{
+		tc := TopicConfig{
+			SkippedOperations: "c, r, u",
+		}
+		tc.Load()
+		for _, op := range []string{"c", "r", "u"} {
+			assert.True(t, tc.ShouldSkip(op), tc.String())
+		}
+		assert.False(t, tc.ShouldSkip("d"), tc.String())
+	}
+	{
+		tc := TopicConfig{
+			SkippedOperations: "c",
+		}
+		tc.Load()
+		assert.True(t, tc.ShouldSkip("c"), tc.String())
+	}
+	{
+		tc := TopicConfig{
+			SkippedOperations: "d",
+		}
+		tc.Load()
+		assert.True(t, tc.ShouldSkip("d"), tc.String())
 	}
 }

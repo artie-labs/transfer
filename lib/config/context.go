@@ -11,8 +11,7 @@ type Settings struct {
 	VerboseLogging bool
 }
 
-// InitializeCfgIntoContext will take the flags and then parse
-// loadConfig is optional for testing purposes.
+// LoadSettings will take the flags and then parse, loadConfig is optional for testing purposes.
 func LoadSettings(args []string, loadConfig bool) (*Settings, error) {
 	var opts struct {
 		ConfigFilePath string `short:"c" long:"config" description:"path to the config file"`
@@ -32,6 +31,15 @@ func LoadSettings(args []string, loadConfig bool) (*Settings, error) {
 		config, err := readFileToConfig(opts.ConfigFilePath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse config file. Please check your config, err: %w", err)
+		}
+
+		tcs, err := config.TopicConfigs()
+		if err != nil {
+			return nil, err
+		}
+
+		for _, tc := range tcs {
+			tc.Load()
 		}
 
 		if err = config.Validate(); err != nil {

@@ -1,7 +1,6 @@
 package event
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -140,45 +139,5 @@ func (e *EventsTestSuite) TestPrimaryKeyValueDeterministic() {
 
 	for i := 0; i < 500*1000; i++ {
 		assert.Equal(e.T(), evt.PrimaryKeyValue(), "aa=1bb=5dusty=mini aussiegg=artiezz=ff")
-	}
-}
-
-func (e *EventsTestSuite) TestShouldSkip() {
-	type _tc struct {
-		skipDelete     bool
-		deleted        bool
-		expectedResult bool
-	}
-
-	testCases := []_tc{
-		{
-			skipDelete:     false,
-			deleted:        false,
-			expectedResult: false,
-		},
-		{
-			skipDelete:     false,
-			deleted:        true,
-			expectedResult: false,
-		},
-		{
-			skipDelete:     true,
-			deleted:        false,
-			expectedResult: false,
-		},
-		{
-			skipDelete:     true,
-			deleted:        true,
-			expectedResult: true,
-		},
-	}
-
-	for _, testCase := range testCases {
-		evt := &Event{
-			Deleted: testCase.deleted,
-		}
-
-		assert.Equal(e.T(), testCase.expectedResult, evt.ShouldSkip(testCase.skipDelete),
-			fmt.Sprintf("skipDelete: %v, deleted: %v", testCase.skipDelete, testCase.deleted))
 	}
 }

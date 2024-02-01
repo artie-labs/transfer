@@ -65,9 +65,9 @@ func processMessage(ctx context.Context, cfg config.Config, inMemDB *models.Data
 	// Table name is only available after event has been casted
 	tags["table"] = evt.Table
 
-	// Check to see if we should skip first
-	// This way, we can emit a specific tag to be more clear
-	if evt.ShouldSkip(topicConfig.tc.SkipDelete) {
+	if topicConfig.tc.ShouldSkip(_event.Operation()) {
+		// Check to see if we should skip first
+		// This way, we can emit a specific tag to be more clear
 		tags["skipped"] = "yes"
 		return evt.Table, nil
 	}

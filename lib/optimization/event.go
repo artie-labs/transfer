@@ -35,11 +35,18 @@ type TableData struct {
 	// if this value is false, that means it is only deletes. Which means we should not drop columns
 	containOtherOperations bool
 
+	// containsHardDeletes - this means there are hard deletes in `rowsData`, so for multi-part merge statements, we should include a DELETE SQL statement.
+	containsHardDeletes bool
+
 	temporaryTableSuffix string
 
 	// Name of the table in the destination
 	// Prefer calling .Name() everywhere
 	name string
+}
+
+func (t *TableData) ContainsHardDeletes() bool {
+	return t.containsHardDeletes
 }
 
 func (t *TableData) ContainOtherOperations() bool {
@@ -127,6 +134,12 @@ func (t *TableData) InsertRow(pk string, rowData map[string]interface{}, delete 
 
 	if !delete && !t.containOtherOperations {
 		t.containOtherOperations = true
+	}
+
+	// If there's an actual hard delete, let's update it.
+	// We know because we have a delete operation and this topic is not configured to do soft deletes.
+	if !t.containsHardDeletes && !t.TopicConfig.SoftDelete && delete {
+		t.containsHardDeletes = true
 	}
 }
 

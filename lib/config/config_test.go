@@ -134,14 +134,15 @@ bufferRows: 10
 	assert.Equal(t, config.FlushIntervalSeconds, 15)
 	assert.Equal(t, int(config.BufferRows), 10)
 
-	assert.Nil(t, config.Validate())
-
 	tcs, err := config.TopicConfigs()
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(tcs))
 	for _, tc := range tcs {
+		tc.Load()
 		assert.Equal(t, "customer", tc.Database)
 	}
+
+	assert.Nil(t, config.Validate())
 }
 
 func TestOutputSourceInvalid(t *testing.T) {
@@ -252,6 +253,12 @@ kafka:
 	assert.Equal(t, config.FlushIntervalSeconds, defaultFlushTimeSeconds)
 	assert.Equal(t, int(config.BufferRows), bufferPoolSizeEnd)
 
+	tcs, err := config.TopicConfigs()
+	assert.NoError(t, err)
+	for _, tc := range tcs {
+		tc.Load()
+	}
+
 	assert.ErrorContains(t, config.Validate(), "kafka settings is invalid")
 	for _, tc := range config.Kafka.TopicConfigs {
 		if tc.TableName == "orders" {
@@ -355,8 +362,8 @@ kafka:
  username: %s
  password: %s
  topicConfigs:
-  - { db: customer, tableName: orders, schema: public}
-  - { db: customer, tableName: customer, schema: public}
+  - { db: customer, tableName: orders, schema: public, skippedOperations: d}
+  - { db: customer, tableName: customer, schema: public, skippedOperations: c}
 
 snowflake:
  account: %s
@@ -391,24 +398,28 @@ reporting:
 	assert.Equal(t, password, config.Kafka.Password)
 	assert.True(t, config.SharedTransferConfig.TypingSettings.CreateAllColumnsIfAvailable)
 
-	var foundOrder bool
-	var foundCustomer bool
+	orderIdx := -1
+	customerIdx := -1
+	for idx, topicConfig := range config.Kafka.TopicConfigs {
+		topicConfig.Load()
 
-	for _, topicConfig := range config.Kafka.TopicConfigs {
 		assert.Equal(t, topicConfig.Database, "customer")
 		assert.Equal(t, topicConfig.Schema, "public")
 
 		if topicConfig.TableName == "orders" {
-			foundOrder = true
+			orderIdx = idx
 		}
 
 		if topicConfig.TableName == "customer" {
-			foundCustomer = true
+			customerIdx = idx
 		}
 	}
 
-	assert.True(t, foundCustomer)
-	assert.True(t, foundOrder)
+	assert.True(t, customerIdx >= 0)
+	assert.True(t, orderIdx >= 0)
+
+	assert.True(t, config.Kafka.TopicConfigs[orderIdx].ShouldSkip("d"))
+	assert.True(t, config.Kafka.TopicConfigs[customerIdx].ShouldSkip("c"))
 
 	// Verify Snowflake config
 	assert.Equal(t, snowflakeUser, config.Snowflake.Username)
@@ -490,6 +501,8 @@ func TestConfig_Validate(t *testing.T) {
 		Schema:    "schema",
 		Topic:     "topic",
 	}
+
+	tc.Load()
 
 	pubsub.TopicConfigs = []*kafkalib.TopicConfig{&tc}
 
