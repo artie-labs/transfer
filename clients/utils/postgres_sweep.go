@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/artie-labs/transfer/lib/destination"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
@@ -22,13 +21,11 @@ func PostgresSweep(store destination.DataWarehouse, tcs []*kafkalib.TopicConfig)
 	dbAndSchemaPairs := kafkalib.GetUniqueDatabaseAndSchema(tcs)
 	for _, dbAndSchemaPair := range dbAndSchemaPairs {
 		var rows *sql.Rows
-		rows, err := store.Query(fmt.Sprintf(
+		rows, err := store.Query(
 			`select c.relname, d.description from pg_catalog.pg_description d
 JOIN pg_class c on d.objoid = c.oid
 JOIN pg_catalog.pg_namespace n on n.oid = c.relnamespace
-WHERE n.nspname = '%s' and c.relname ILIKE '%s';`,
-			dbAndSchemaPair.Schema,
-			"%"+constants.ArtiePrefix+"%"))
+WHERE n.nspname = $1 and c.relname ILIKE $2;`, dbAndSchemaPair.Schema, "%"+constants.ArtiePrefix+"%")
 		if err != nil {
 			return err
 		}
