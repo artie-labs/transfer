@@ -104,10 +104,11 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 		mutateCol = append(mutateCol, col)
 		switch args.ColumnOp {
 		case constants.Add:
-			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, col.Name(*args.UppercaseEscNames, &sql.NameArgs{
-				Escape:   true,
-				DestKind: args.Dwh.Label(),
-			}), typing.KindToDWHType(col.KindDetails, args.Dwh.Label())))
+			colSqlPart := fmt.Sprintf(`%s %s`, col.Name(*args.UppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: args.Dwh.Label()}), typing.KindToDWHType(col.KindDetails, args.Dwh.Label()))
+			if args.Dwh.Label() == constants.PostgreSQL && col.PrimaryKey() {
+				colSqlPart += " PRIMARY KEY"
+			}
+			colSQLParts = append(colSQLParts, colSqlPart)
 		case constants.Delete:
 			colSQLParts = append(colSQLParts, col.Name(*args.UppercaseEscNames, &sql.NameArgs{
 				Escape:   true,
