@@ -83,6 +83,14 @@ func (d *Decimal) SnowflakeKind() string {
 	return fmt.Sprintf("NUMERIC(%v, %v)", precision, d.scale)
 }
 
+func (d *Decimal) PostgreSQLKind() string {
+	if d.precision == nil || *d.precision == -1 {
+		return "TEXT"
+	}
+
+	return fmt.Sprintf("NUMERIC(%v, %v)", d.precision, d.scale)
+}
+
 // RedshiftKind - is used to determine whether a NUMERIC data type should be a STRING or NUMERIC(p, s).
 // This has the same max precision of 38 digits like Snowflake.
 func (d *Decimal) RedshiftKind() string {

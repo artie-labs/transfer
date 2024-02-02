@@ -25,7 +25,7 @@ type KindDetails struct {
 	ExtendedDecimalDetails *decimal.Decimal
 
 	// Optional kind details metadata
-	OptionalRedshiftStrPrecision *int
+	OptionalStringPrecision *int
 }
 
 // Summarized this from Snowflake + Reflect.

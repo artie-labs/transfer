@@ -22,13 +22,13 @@ func PostgreSQLType(rawType string, stringPrecision string) KindDetails {
 		}
 
 		return KindDetails{
-			Kind:                         String.Kind,
-			OptionalRedshiftStrPrecision: strPrecision,
+			Kind:                    String.Kind,
+			OptionalStringPrecision: strPrecision,
 		}
 	}
 
 	switch rawType {
-	case "super":
+	case "jsonb":
 		return Struct
 	case "integer", "bigint":
 		return Integer
@@ -50,26 +50,17 @@ func PostgreSQLType(rawType string, stringPrecision string) KindDetails {
 func kindToPostgreSQL(kd KindDetails) string {
 	switch kd.Kind {
 	case Integer.Kind:
-		// int4 is 2^31, whereas int8 is 2^63.
-		// we're using a larger data type to not have an integer overflow.
 		return "INTEGER"
-	case Struct.Kind:
+	case Struct.Kind, Array.Kind:
 		return "JSONB"
-	case Array.Kind:
-		// Redshift does not have a built-in JSON type (which means we'll cast STRUCT and ARRAY kinds as TEXT).
-		// As a result, Artie will store this in JSON string and customers will need to extract this data out via SQL.
-		// Columns that are automatically created by Artie are created as VARCHAR(MAX).
-		// Rationale: https://github.com/artie-labs/transfer/pull/173
-		return "TEXT"
 	case String.Kind:
-		if kd.OptionalRedshiftStrPrecision != nil {
-			return fmt.Sprintf("VARCHAR(%d)", *kd.OptionalRedshiftStrPrecision)
+		if kd.OptionalStringPrecision != nil {
+			return fmt.Sprintf("VARCHAR(%d)", *kd.OptionalStringPrecision)
 		}
 
 		return "TEXT"
 	case Boolean.Kind:
-		// We need to append `NULL` to let Redshift know that NULL is an acceptable data type.
-		return "BOOLEAN NULL"
+		return "BOOLEAN"
 	case ETime.Kind:
 		switch kd.ExtendedTimeDetails.Type {
 		case ext.DateTimeKindType:
@@ -80,7 +71,7 @@ func kindToPostgreSQL(kd KindDetails) string {
 			return "time"
 		}
 	case EDecimal.Kind:
-		return kd.ExtendedDecimalDetails.RedshiftKind()
+		return kd.ExtendedDecimalDetails.PostgreSQLKind()
 	}
 
 	return kd.Kind
