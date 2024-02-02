@@ -80,10 +80,5 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 	}
 
 	// Commit the transaction
-	err = tx.Commit()
-	if err != nil {
-		return fmt.Errorf("failed to commit transaction, err: %w", err)
-	}
-
-	return nil
+	return tx.Commit()
 }
