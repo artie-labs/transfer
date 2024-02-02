@@ -2,11 +2,11 @@ package redshift
 
 import (
 	"context"
-	"encoding/csv"
 	"fmt"
-	"log/slog"
-	"os"
+	"strings"
 	"time"
+
+	"github.com/lib/pq"
 
 	"github.com/artie-labs/transfer/lib/typing"
 
@@ -37,61 +37,54 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 		return fmt.Errorf("failed to add comment to table, tableName: %v, err: %v", tempTableName, err)
 	}
 
-	fp, err := s.loadTemporaryTable(tableData, tempTableName)
-	if err != nil {
-		return fmt.Errorf("failed to load temporary table, err: %v", err)
-	}
-
-	// COPY table_name FROM '/path/to/local/file' DELIMITER '\t' NULL '\\N' FORMAT csv;
-	// Note, we need to specify `\\N` here and in `CastColVal(..)` we are only doing `\N`, this is because Redshift treats backslashes as an escape character.
-	// So, it'll convert `\N` => `\\N` during COPY.
-	//copyStmt := fmt.Sprintf(`COPY %s FROM '%s' DELIMITER '\t' NULL AS '\\N' GZIP FORMAT CSV %s dateformat 'auto' timeformat 'auto';`, tempTableName, s3Uri, s.credentialsClause)
-	copyStmt := fmt.Sprintf(`COPY %s FROM '%s' DELIMITER E'\t' CSV;`, tempTableName, fp)
-	if _, err = s.Exec(copyStmt); err != nil {
-		return fmt.Errorf("failed to run COPY for temporary table, err: %v, copy: %v", err, copyStmt)
-	}
-
-	if deleteErr := os.RemoveAll(fp); deleteErr != nil {
-		slog.Warn("Failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
-	}
-
-	return nil
+	return s.loadTemporaryTable(tableData, tempTableName)
 }
 
-func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableName string) (string, error) {
-	filePath := fmt.Sprintf("/tmp/%s.csv", newTableName)
-	file, err := os.Create(filePath)
+func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableName string) error {
+	tx, err := s.Begin()
 	if err != nil {
-		return "", err
+		return fmt.Errorf("failed to start tx, err: %w", err)
 	}
 
-	defer file.Close()
+	columns := tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil)
 
-	writer := csv.NewWriter(file)
-	writer.Comma = '\t'
+	after, _ := strings.CutPrefix(newTableName, "public.")
+	fmt.Println("after", after, "newTableName", newTableName)
+
+	stmt, err := tx.Prepare(pq.CopyIn(strings.ToLower(after), columns...))
+	if err != nil {
+		return fmt.Errorf("failed to prepare table, err: %w", err)
+	}
 
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.RowsData() {
-		var row []string
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil) {
+		var row []any
+		for _, col := range columns {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			castedValue, castErr := s.CastColValStaging(value[col], colKind, additionalDateFmts)
 			if castErr != nil {
-				return "", castErr
+				return castErr
 			}
 
 			row = append(row, castedValue)
 		}
 
-		if err = writer.Write(row); err != nil {
-			return "", fmt.Errorf("failed to write to csv, err: %v", err)
+		if _, err = stmt.Exec(row...); err != nil {
+			return fmt.Errorf("failed to copy row, err: %w", err)
 		}
 	}
 
-	writer.Flush()
-	if err = writer.Error(); err != nil {
-		return "", fmt.Errorf("failed to flush csv writer, err: %v", err)
+	// Close the statement to finish the COPY operation
+	_, err = stmt.Exec()
+	if err != nil {
+		return fmt.Errorf("failed to finalize COPY, err: %w", err)
 	}
 
-	return filePath, nil
+	// Commit the transaction
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("failed to commit transaction, err: %w", err)
+	}
+
+	return nil
 }
