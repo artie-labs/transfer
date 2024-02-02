@@ -1,7 +1,6 @@
 package redshift
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -16,7 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 )
 
-func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string) error {
+func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string) error {
 	tempAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               s,
 		Tc:                tableConfig,

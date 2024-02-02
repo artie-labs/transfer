@@ -73,7 +73,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	// Temporary tables cannot specify schemas, so we just prefix it instead.
 	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.config.SharedDestinationConfig.UppercaseEscapedNames, ""), tableData.TempTableSuffix())
-	if err = s.prepareTempTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {
+	if err = s.prepareTempTable(tableData, tableConfig, temporaryTableName); err != nil {
 		return err
 	}
 
@@ -117,7 +117,6 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	for _, mergeQuery := range mergeParts {
-		fmt.Println("mergeQuery", mergeQuery)
 		_, err = tx.Exec(mergeQuery)
 		if err != nil {
 			return fmt.Errorf("failed to merge, query: %v, err: %v", mergeQuery, err)

@@ -18,12 +18,8 @@ import (
 )
 
 type Store struct {
-	credentialsClause string
-	bucket            string
-	optionalS3Prefix  string
-	configMap         *types.DwhToTablesConfigMap
-	skipLgCols        bool
-	config            config.Config
+	configMap *types.DwhToTablesConfigMap
+	config    config.Config
 
 	db.Store
 }
@@ -74,9 +70,8 @@ func LoadPostgreSQL(cfg config.Config, _store *db.Store) *Store {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			configMap:  &types.DwhToTablesConfigMap{},
-			skipLgCols: cfg.Redshift.SkipLgCols,
-			config:     cfg,
+			configMap: &types.DwhToTablesConfigMap{},
+			config:    cfg,
 
 			Store: *_store,
 		}
@@ -87,12 +82,8 @@ func LoadPostgreSQL(cfg config.Config, _store *db.Store) *Store {
 		cfg.Redshift.Password, cfg.Redshift.Database)
 
 	return &Store{
-		credentialsClause: cfg.Redshift.CredentialsClause,
-		bucket:            cfg.Redshift.Bucket,
-		optionalS3Prefix:  cfg.Redshift.OptionalS3Prefix,
-		skipLgCols:        cfg.Redshift.SkipLgCols,
-		configMap:         &types.DwhToTablesConfigMap{},
-		config:            cfg,
+		configMap: &types.DwhToTablesConfigMap{},
+		config:    cfg,
 
 		Store: db.Open("postgres", connStr),
 	}
