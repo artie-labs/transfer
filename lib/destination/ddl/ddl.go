@@ -122,7 +122,7 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 		if args.TemporaryTable {
 			expiryString := typing.ExpiresDate(time.Now().UTC().Add(TempTableTTL))
 			switch args.Dwh.Label() {
-			case constants.Redshift:
+			case constants.Redshift, constants.PostgreSQL:
 				sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", args.FqTableName, strings.Join(colSQLParts, ","))
 			case constants.BigQuery:
 				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,

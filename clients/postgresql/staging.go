@@ -1,0 +1,97 @@
+package redshift
+
+import (
+	"context"
+	"encoding/csv"
+	"fmt"
+	"log/slog"
+	"os"
+	"time"
+
+	"github.com/artie-labs/transfer/lib/typing"
+
+	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/destination/ddl"
+	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/optimization"
+)
+
+func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string) error {
+	tempAlterTableArgs := ddl.AlterTableArgs{
+		Dwh:               s,
+		Tc:                tableConfig,
+		FqTableName:       tempTableName,
+		CreateTable:       true,
+		TemporaryTable:    true,
+		ColumnOp:          constants.Add,
+		UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
+	}
+
+	if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
+		return fmt.Errorf("failed to create temp table, err: %v", err)
+	}
+
+	expiryString := typing.ExpiresDate(time.Now().UTC().Add(ddl.TempTableTTL))
+	// Now add a comment to the temporary table.
+	if _, err := s.Exec(fmt.Sprintf(`COMMENT ON TABLE %s IS '%s';`, tempTableName, ddl.ExpiryComment(expiryString))); err != nil {
+		return fmt.Errorf("failed to add comment to table, tableName: %v, err: %v", tempTableName, err)
+	}
+
+	fp, err := s.loadTemporaryTable(tableData, tempTableName)
+	if err != nil {
+		return fmt.Errorf("failed to load temporary table, err: %v", err)
+	}
+
+	// COPY table_name FROM '/path/to/local/file' DELIMITER '\t' NULL '\\N' FORMAT csv;
+	// Note, we need to specify `\\N` here and in `CastColVal(..)` we are only doing `\N`, this is because Redshift treats backslashes as an escape character.
+	// So, it'll convert `\N` => `\\N` during COPY.
+	//copyStmt := fmt.Sprintf(`COPY %s FROM '%s' DELIMITER '\t' NULL AS '\\N' GZIP FORMAT CSV %s dateformat 'auto' timeformat 'auto';`, tempTableName, s3Uri, s.credentialsClause)
+	copyStmt := fmt.Sprintf(`COPY %s FROM '%s' DELIMITER E'\t' CSV;`, tempTableName, fp)
+	if _, err = s.Exec(copyStmt); err != nil {
+		return fmt.Errorf("failed to run COPY for temporary table, err: %v, copy: %v", err, copyStmt)
+	}
+
+	if deleteErr := os.RemoveAll(fp); deleteErr != nil {
+		slog.Warn("Failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
+	}
+
+	return nil
+}
+
+func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableName string) (string, error) {
+	filePath := fmt.Sprintf("/tmp/%s.csv", newTableName)
+	file, err := os.Create(filePath)
+	if err != nil {
+		return "", err
+	}
+
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	writer.Comma = '\t'
+
+	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
+	for _, value := range tableData.RowsData() {
+		var row []string
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil) {
+			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
+			castedValue, castErr := s.CastColValStaging(value[col], colKind, additionalDateFmts)
+			if castErr != nil {
+				return "", castErr
+			}
+
+			row = append(row, castedValue)
+		}
+
+		if err = writer.Write(row); err != nil {
+			return "", fmt.Errorf("failed to write to csv, err: %v", err)
+		}
+	}
+
+	writer.Flush()
+	if err = writer.Error(); err != nil {
+		return "", fmt.Errorf("failed to flush csv writer, err: %v", err)
+	}
+
+	return filePath, nil
+}
