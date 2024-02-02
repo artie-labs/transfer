@@ -7,12 +7,11 @@ import (
 
 	"github.com/lib/pq"
 
-	"github.com/artie-labs/transfer/lib/typing"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string) error {
@@ -46,11 +45,12 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 	}
 
 	columns := tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil)
+	newTableNameParts := strings.Split(newTableName, ".")
+	if len(newTableNameParts) != 2 {
+		return fmt.Errorf("invalid table name, tableName: %v", newTableName)
+	}
 
-	after, _ := strings.CutPrefix(newTableName, "public.")
-	fmt.Println("after", after, "newTableName", newTableName)
-
-	stmt, err := tx.Prepare(pq.CopyIn(strings.ToLower(newTableName), columns...))
+	stmt, err := tx.Prepare(pq.CopyInSchema(newTableNameParts[0], newTableNameParts[1], columns...))
 	if err != nil {
 		return fmt.Errorf("failed to prepare table, err: %w", err)
 	}

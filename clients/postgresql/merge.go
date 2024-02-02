@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/artie-labs/transfer/lib/sql"
 
@@ -71,8 +72,8 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
 	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 
-	// Temporary tables cannot specify schemas, so we just prefix it instead.
-	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.config.SharedDestinationConfig.UppercaseEscapedNames, ""), tableData.TempTableSuffix())
+	// TODO: Remove strings.toLower() in favor of pq.quoteIdentifer.
+	temporaryTableName := strings.ToLower(fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.config.SharedDestinationConfig.UppercaseEscapedNames, ""), tableData.TempTableSuffix()))
 	if err = s.prepareTempTable(tableData, tableConfig, temporaryTableName); err != nil {
 		return err
 	}
