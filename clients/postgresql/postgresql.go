@@ -1,8 +1,6 @@
 package redshift
 
 import (
-	"fmt"
-
 	"github.com/artie-labs/transfer/lib/optimization"
 
 	"github.com/artie-labs/transfer/clients/utils"
@@ -72,19 +70,13 @@ func LoadPostgreSQL(cfg config.Config, _store *db.Store) *Store {
 		return &Store{
 			configMap: &types.DwhToTablesConfigMap{},
 			config:    cfg,
-
-			Store: *_store,
+			Store:     *_store,
 		}
 	}
-
-	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require",
-		cfg.Redshift.Host, cfg.Redshift.Port, cfg.Redshift.Username,
-		cfg.Redshift.Password, cfg.Redshift.Database)
 
 	return &Store{
 		configMap: &types.DwhToTablesConfigMap{},
 		config:    cfg,
-
-		Store: db.Open("postgres", connStr),
+		Store:     db.Open("postgres", cfg.PostgreSQL.ConnectionString()),
 	}
 }

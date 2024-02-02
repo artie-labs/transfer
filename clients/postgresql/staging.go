@@ -50,7 +50,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 	after, _ := strings.CutPrefix(newTableName, "public.")
 	fmt.Println("after", after, "newTableName", newTableName)
 
-	stmt, err := tx.Prepare(pq.CopyIn(strings.ToLower(after), columns...))
+	stmt, err := tx.Prepare(pq.CopyIn(strings.ToLower(newTableName), columns...))
 	if err != nil {
 		return fmt.Errorf("failed to prepare table, err: %w", err)
 	}
