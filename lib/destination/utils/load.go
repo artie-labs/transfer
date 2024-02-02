@@ -3,7 +3,7 @@ package utils
 import (
 	"log/slog"
 
-	redshift2 "github.com/artie-labs/transfer/clients/postgresql"
+	"github.com/artie-labs/transfer/clients/postgresql"
 
 	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/clients/redshift"
@@ -65,8 +65,10 @@ func DataWarehouse(cfg config.Config, store *db.Store) destination.DataWarehouse
 		}
 		return s
 	case constants.PostgreSQL:
-		s := redshift2.LoadPostgreSQL(cfg, store)
-		// TODO: Sweep
+		s := postgresql.LoadPostgreSQL(cfg, store)
+		if err := s.Sweep(); err != nil {
+			logger.Panic("Failed to clean up postgres", slog.Any("err", err))
+		}
 		return s
 	}
 

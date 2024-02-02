@@ -1,4 +1,4 @@
-package redshift
+package postgresql
 
 import (
 	"context"

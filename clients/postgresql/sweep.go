@@ -1,4 +1,4 @@
-package redshift
+package postgresql
 
 import (
 	"database/sql"
@@ -11,6 +11,8 @@ import (
 )
 
 func (s *Store) Sweep() error {
+	// TODO: Build an abstraction out for this, this is the same functionality as Redshift.
+
 	slog.Info("Looking to see if there are any dangling artie temporary tables to delete...")
 	// Find all the database and schema pairings
 	// Then iterate over information schema
