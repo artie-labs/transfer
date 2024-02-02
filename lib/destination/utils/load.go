@@ -3,6 +3,8 @@ package utils
 import (
 	"log/slog"
 
+	"github.com/artie-labs/transfer/clients/utils"
+
 	"github.com/artie-labs/transfer/clients/postgresql"
 
 	"github.com/artie-labs/transfer/clients/bigquery"
@@ -60,19 +62,29 @@ func DataWarehouse(cfg config.Config, store *db.Store) destination.DataWarehouse
 		return bigquery.LoadBigQuery(cfg, store)
 	case constants.Redshift:
 		s := redshift.LoadRedshift(cfg, store)
-		if err := s.Sweep(); err != nil {
+		tcs, err := cfg.TopicConfigs()
+		if err != nil {
+			logger.Panic("Failed to load topic configs", slog.Any("err", err))
+		}
+
+		if err = utils.PostgresSweep(s, tcs); err != nil {
 			logger.Panic("Failed to clean up redshift", slog.Any("err", err))
 		}
+
 		return s
 	case constants.PostgreSQL:
 		s := postgresql.LoadPostgreSQL(cfg, store)
-		if err := s.Sweep(); err != nil {
-			logger.Panic("Failed to clean up postgres", slog.Any("err", err))
+		tcs, err := cfg.TopicConfigs()
+		if err != nil {
+			logger.Panic("Failed to load topic configs", slog.Any("err", err))
+		}
+
+		if err = utils.PostgresSweep(s, tcs); err != nil {
+			logger.Panic("Failed to clean up redshift", slog.Any("err", err))
 		}
 		return s
 	}
 
 	logger.Panic("No valid output sources specified", slog.Any("source", cfg.Output))
-
 	return nil
 }
