@@ -1,37 +1,11 @@
 package redshift
 
 import (
-	"fmt"
-
 	"github.com/artie-labs/transfer/lib/typing/values"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
-
-const (
-	maxRedshiftVarCharLen = 65535
-	maxRedshiftSuperLen   = 1 * 1024 * 1024 // 1 MB
-)
-
-// replaceExceededValues - takes `colVal` interface{} and `colKind` columns.Column and replaces the value with an empty string if it exceeds the max length.
-// This currently only works for STRING and SUPER data types.
-func replaceExceededValues(colVal string, colKind columns.Column) string {
-	numOfChars := len(colVal)
-	switch colKind.KindDetails.Kind {
-	case typing.Struct.Kind: // Assuming this corresponds to SUPER type in Redshift
-		if numOfChars > maxRedshiftSuperLen {
-			return fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker)
-		}
-	case typing.String.Kind:
-		if numOfChars > maxRedshiftVarCharLen {
-			return constants.ExceededValueMarker
-		}
-	}
-
-	return colVal
-}
 
 // CastColValStaging - takes `colVal` interface{} and `colKind` typing.Column and converts the value into a string value
 // This is necessary because CSV writers require values to in `string`.
@@ -49,11 +23,6 @@ func (s *Store) CastColValStaging(colVal interface{}, colKind columns.Column, ad
 	colValString, err := values.ToString(colVal, colKind, additionalDateFmts)
 	if err != nil {
 		return "", err
-	}
-
-	// Checks for DDL overflow needs to be done at the end in case there are any conversions that need to be done.
-	if s.skipLgCols {
-		colValString = replaceExceededValues(colValString, colKind)
 	}
 
 	return colValString, nil

@@ -75,9 +75,9 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		return nil, err
 	}
 
-	//if true {
-	//	return nil, fmt.Errorf("err - this is meant for redshift only")
-	//}
+	if !(m.DestKind == constants.Redshift || m.DestKind == constants.PostgreSQL) {
+		return nil, fmt.Errorf("err - this is meant for redshift only")
+	}
 
 	// We should not need idempotency key for DELETE
 	// This is based on the assumption that the primary key would be atomically increasing or UUID based
