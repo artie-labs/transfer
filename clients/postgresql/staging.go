@@ -44,12 +44,12 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 		return fmt.Errorf("failed to start tx, err: %w", err)
 	}
 
-	columns := tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil)
 	newTableNameParts := strings.Split(newTableName, ".")
 	if len(newTableNameParts) != 2 {
 		return fmt.Errorf("invalid table name, tableName: %v", newTableName)
 	}
 
+	columns := tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil)
 	stmt, err := tx.Prepare(pq.CopyInSchema(newTableNameParts[0], newTableNameParts[1], columns...))
 	if err != nil {
 		return fmt.Errorf("failed to prepare table, err: %w", err)
@@ -74,8 +74,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 	}
 
 	// Close the statement to finish the COPY operation
-	_, err = stmt.Exec()
-	if err != nil {
+	if _, err = stmt.Exec(); err != nil {
 		return fmt.Errorf("failed to finalize COPY, err: %w", err)
 	}
 
