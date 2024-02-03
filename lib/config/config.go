@@ -129,7 +129,15 @@ func (c Config) TopicConfigs() ([]*kafkalib.TopicConfig, error) {
 	return nil, fmt.Errorf("unsupported queue: %v", c.Queue)
 }
 
+type Mode string
+
+const (
+	History     Mode = "history"
+	Replication Mode = "replication"
+)
+
 type Config struct {
+	Mode   Mode                      `yaml:"mode"`
 	Output constants.DestinationKind `yaml:"outputSource"`
 	Queue  constants.QueueKind       `yaml:"queue"`
 
@@ -203,6 +211,10 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 		config.FlushSizeKb = defaultFlushSizeKb
 	}
 
+	if config.Mode == "" {
+		config.Mode = Replication
+	}
+
 	return &config, nil
 }
 
@@ -268,12 +280,6 @@ func (c Config) Validate() error {
 			return fmt.Errorf("config is invalid, no kafka topic configs, kafka: %v", c.Kafka)
 		}
 
-		for _, topicConfig := range c.Kafka.TopicConfigs {
-			if err := topicConfig.Validate(); err != nil {
-				return fmt.Errorf("config is invalid, topic config is invalid, tc: %s, err: %v", topicConfig.String(), err)
-			}
-		}
-
 		// Username and password are not required (if it's within the same VPC or connecting locally
 		if array.Empty([]string{c.Kafka.GroupID, c.Kafka.BootstrapServer}) {
 			return fmt.Errorf("config is invalid, kafka settings is invalid, kafka: %s", c.Kafka.String())
@@ -285,14 +291,25 @@ func (c Config) Validate() error {
 			return fmt.Errorf("config is invalid, no pubsub topic configs, pubsub: %v", c.Pubsub)
 		}
 
-		for _, topicConfig := range c.Pubsub.TopicConfigs {
-			if err := topicConfig.Validate(); err != nil {
-				return fmt.Errorf("config is invalid, topic config is invalid, tc: %s, err: %v", topicConfig.String(), err)
-			}
-		}
-
 		if array.Empty([]string{c.Pubsub.ProjectID, c.Pubsub.PathToCredentials}) {
 			return fmt.Errorf("config is invalid, pubsub settings is invalid, pubsub: %s", c.Pubsub.String())
+		}
+	}
+
+	tcs, err := c.TopicConfigs()
+	if err != nil {
+		return fmt.Errorf("failed to get topic configs, err: %w", err)
+	}
+
+	for _, tc := range tcs {
+		if err = tc.Validate(); err != nil {
+			return fmt.Errorf("failed to validate topic config, err: %w", err)
+		}
+
+		if c.Mode == History {
+			if tc.DropDeletedColumns {
+				return fmt.Errorf("config is invalid, drop deleted columns is not supported in history mode, topic: %s", tc.String())
+			}
 		}
 	}
 
