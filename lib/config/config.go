@@ -310,6 +310,10 @@ func (c Config) Validate() error {
 			if tc.DropDeletedColumns {
 				return fmt.Errorf("config is invalid, drop deleted columns is not supported in history mode, topic: %s", tc.String())
 			}
+
+			if !tc.IncludeDatabaseUpdatedAt {
+				return fmt.Errorf("config is invalid, include database updated at is required in history mode, topic: %s", tc.String())
+			}
 		}
 	}
 
