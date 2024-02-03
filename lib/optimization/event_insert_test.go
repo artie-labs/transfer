@@ -118,21 +118,21 @@ func TestInsertRow_Toast(t *testing.T) {
 
 func TestTableData_InsertRow(t *testing.T) {
 	td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
-	assert.Equal(t, 0, int(td.Rows()))
+	assert.Equal(t, 0, int(td.RowCount()))
 
 	// See if we can add rows to the private method.
 	td.RowsData()["foo"] = map[string]interface{}{
 		"foo": "bar",
 	}
 
-	assert.Equal(t, 0, int(td.Rows()))
+	assert.Equal(t, 0, int(td.RowCount()))
 
 	// Now insert the right way.
 	td.InsertRow("foo", map[string]interface{}{
 		"foo": "bar",
 	}, false)
 
-	assert.Equal(t, 1, int(td.Rows()))
+	assert.Equal(t, 1, int(td.RowCount()))
 }
 
 func TestTableData_InsertRowApproxSize(t *testing.T) {

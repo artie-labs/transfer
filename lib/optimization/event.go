@@ -18,9 +18,15 @@ import (
 )
 
 type TableData struct {
-	inMemoryColumns *columns.Columns                  // list of columns
-	rowsData        map[string]map[string]interface{} // pk -> { col -> val }
-	primaryKeys     []string
+	mode            config.Mode
+	inMemoryColumns *columns.Columns // list of columns
+
+	// rowsData is used for replication
+	rowsData map[string]map[string]interface{} // pk -> { col -> val }
+	// rows is used for history mode, since it's append only.
+	rows []map[string]interface{}
+
+	primaryKeys []string
 
 	TopicConfig kafkalib.TopicConfig
 	// Partition to the latest offset(s).
@@ -92,8 +98,9 @@ func (t *TableData) ReadOnlyInMemoryCols() *columns.Columns {
 	return &cols
 }
 
-func NewTableData(inMemoryColumns *columns.Columns, primaryKeys []string, topicConfig kafkalib.TopicConfig, name string) *TableData {
+func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKeys []string, topicConfig kafkalib.TopicConfig, name string) *TableData {
 	return &TableData{
+		mode:            mode,
 		inMemoryColumns: inMemoryColumns,
 		rowsData:        map[string]map[string]interface{}{},
 		primaryKeys:     primaryKeys,
@@ -109,6 +116,12 @@ func NewTableData(inMemoryColumns *columns.Columns, primaryKeys []string, topicC
 // This is important to avoid concurrent r/w, but also the ability for us to add or decrement row size by keeping a running total
 // With this, we are able to reduce the latency by 500x+ on a 5k row table. See event_bench_test.go vs. size_bench_test.go
 func (t *TableData) InsertRow(pk string, rowData map[string]interface{}, delete bool) {
+	if t.mode == config.History {
+		t.rows = append(t.rows, rowData)
+		t.approxSize += size.GetApproxSize(rowData)
+		return
+	}
+
 	var prevRowSize int
 	prevRow, isOk := t.rowsData[pk]
 	if isOk {
@@ -141,6 +154,16 @@ func (t *TableData) InsertRow(pk string, rowData map[string]interface{}, delete 
 	if !t.containsHardDeletes && !t.TopicConfig.SoftDelete && delete {
 		t.containsHardDeletes = true
 	}
+}
+
+// Rows returns a read only slice of tableData's rows.
+func (t *TableData) Rows() []map[string]interface{} {
+	var rows []map[string]interface{}
+	for _, row := range t.rows {
+		rows = append(rows, row)
+	}
+
+	return rows
 }
 
 // RowsData returns a read only map of tableData's rowData.
@@ -182,9 +205,13 @@ func (t *TableData) ToFqName(kind constants.DestinationKind, escape bool, upperc
 	}
 }
 
-func (t *TableData) Rows() uint {
+func (t *TableData) RowCount() uint {
 	if t == nil {
 		return 0
+	}
+
+	if t.mode == config.History {
+		return uint(len(t.rows))
 	}
 
 	return uint(len(t.rowsData))
@@ -230,7 +257,7 @@ func (t *TableData) TempTableSuffix() string {
 // ShouldFlush will return whether Transfer should flush
 // If so, what is the reason?
 func (t *TableData) ShouldFlush(cfg config.Config) (bool, string) {
-	if t.Rows() > cfg.BufferRows {
+	if t.RowCount() > cfg.BufferRows {
 		return true, "rows"
 	}
 
