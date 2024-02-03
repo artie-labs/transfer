@@ -208,7 +208,7 @@ kafka:
 
 	validErr = config.Validate()
 	assert.Error(t, validErr)
-	assert.True(t, strings.Contains(validErr.Error(), "topic config is invalid"), validErr.Error())
+	assert.ErrorContains(t, validErr, "failed to validate topic config")
 }
 
 func TestConfig_Validate_ErrorKafkaInvalid(t *testing.T) {
@@ -506,10 +506,10 @@ func TestConfig_Validate(t *testing.T) {
 
 	pubsub.TopicConfigs = []*kafkalib.TopicConfig{&tc}
 
-	assert.Contains(t, cfg.Validate().Error(), "topic config is invalid")
+	assert.ErrorContains(t, cfg.Validate(), "config is invalid, pubsub settings is invalid")
 	pubsub.TopicConfigs[0].CDCFormat = constants.DBZPostgresAltFormat
 	pubsub.TopicConfigs[0].CDCKeyFormat = "org.apache.kafka.connect.json.JsonConverter"
-	assert.Contains(t, cfg.Validate().Error(), "pubsub settings is invalid")
+	assert.ErrorContains(t, cfg.Validate(), "pubsub settings is invalid")
 
 	pubsub.ProjectID = "project_id"
 	pubsub.PathToCredentials = "/tmp/abc"

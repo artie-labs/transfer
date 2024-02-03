@@ -117,7 +117,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, topicConfi
 			cols = e.Columns
 		}
 
-		td.SetTableData(optimization.NewTableData(cols, e.PrimaryKeys(), *topicConfig, e.Table))
+		td.SetTableData(optimization.NewTableData(cols, cfg.Mode, e.PrimaryKeys(), *topicConfig, e.Table))
 	} else {
 		if e.Columns != nil {
 			// Iterate over this again just in case.

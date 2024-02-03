@@ -5,11 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
 func BenchmarkTableData_ApproxSize_TallTable(b *testing.B) {
-	td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "tallTable")
+	td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "tallTable")
 	for n := 0; n < b.N; n++ {
 		td.InsertRow(fmt.Sprint(n), map[string]interface{}{
 			"id":   n,
@@ -20,7 +22,7 @@ func BenchmarkTableData_ApproxSize_TallTable(b *testing.B) {
 }
 
 func BenchmarkTableData_ApproxSize_WideTable(b *testing.B) {
-	td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "wideTable")
+	td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "wideTable")
 	for n := 0; n < b.N; n++ {
 		td.InsertRow(fmt.Sprint(n), map[string]interface{}{
 			"id":                 n,

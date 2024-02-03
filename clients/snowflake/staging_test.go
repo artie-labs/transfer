@@ -131,7 +131,7 @@ func generateTableData(rows int) (string, *optimization.TableData) {
 		cols.AddColumn(columns.NewColumn(col, typing.String))
 	}
 
-	td := optimization.NewTableData(cols, []string{"user_id"}, kafkalib.TopicConfig{}, "")
+	td := optimization.NewTableData(cols, config.Replication, []string{"user_id"}, kafkalib.TopicConfig{}, "")
 	for i := 0; i < rows; i++ {
 		key := fmt.Sprint(i)
 		rowData := map[string]interface{}{

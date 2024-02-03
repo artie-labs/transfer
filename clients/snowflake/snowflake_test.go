@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/stretchr/testify/assert"
@@ -47,7 +49,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		Schema:    "public",
 	}
 
-	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, "foo")
+	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, topicConfig, "foo")
 	assert.Equal(s.T(), topicConfig.TableName, tableData.RawName(), "override is working")
 
 	for pk, row := range rowsData {
@@ -105,7 +107,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		Schema:    "public",
 	}
 
-	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, "foo")
+	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, topicConfig, "foo")
 	tableData.ResetTempTableSuffix()
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row, false)
@@ -153,7 +155,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		Schema:    "public",
 	}
 
-	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, "foo")
+	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, topicConfig, "foo")
 	tableData.ResetTempTableSuffix()
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row, false)
@@ -223,7 +225,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
 
-	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, "foo")
+	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, topicConfig, "foo")
 	tableData.ResetTempTableSuffix()
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row, false)
@@ -280,7 +282,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
-	tableData := optimization.NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
+	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
 	err := s.stageStore.Merge(context.Background(), tableData)
 	assert.Nil(s.T(), err)
 }
