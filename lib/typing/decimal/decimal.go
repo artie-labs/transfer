@@ -88,7 +88,7 @@ func (d *Decimal) PostgreSQLKind() string {
 		return "TEXT"
 	}
 
-	return fmt.Sprintf("NUMERIC(%v, %v)", d.precision, d.scale)
+	return fmt.Sprintf("NUMERIC(%d, %v)", *d.precision, d.scale)
 }
 
 // RedshiftKind - is used to determine whether a NUMERIC data type should be a STRING or NUMERIC(p, s).

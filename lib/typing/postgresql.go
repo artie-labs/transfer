@@ -28,6 +28,8 @@ func PostgreSQLType(rawType string, stringPrecision string) KindDetails {
 	}
 
 	switch rawType {
+	case "text":
+		return String
 	case "jsonb":
 		return Struct
 	case "integer", "bigint":
@@ -44,13 +46,15 @@ func PostgreSQLType(rawType string, stringPrecision string) KindDetails {
 		return Boolean
 	}
 
+	fmt.Println("here", rawType)
+
 	return Invalid
 }
 
 func kindToPostgreSQL(kd KindDetails) string {
 	switch kd.Kind {
 	case Integer.Kind:
-		return "INTEGER"
+		return "BIGINT"
 	case Struct.Kind, Array.Kind:
 		return "JSONB"
 	case String.Kind:

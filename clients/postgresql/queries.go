@@ -20,7 +20,7 @@ func describeTableQuery(args describeArgs) (string, error) {
 	// This query is a modified fork from: https://gist.github.com/alexanderlz/7302623
 	return fmt.Sprintf(`
 SELECT 
-    c.column_name,
+    c.column_name::text,
     CASE 
         WHEN c.data_type = 'numeric' THEN 
             'numeric(' || COALESCE(CAST(c.numeric_precision AS VARCHAR), '') || ',' || COALESCE(CAST(c.numeric_scale AS VARCHAR), '') || ')'

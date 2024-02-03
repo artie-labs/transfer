@@ -91,11 +91,13 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 	var colSQLParts []string
 	for _, col := range cols {
 		if col.ShouldSkip() {
+			fmt.Println("col got skipped", col.RawName())
 			// Let's not modify the table if the column kind is invalid
 			continue
 		}
 
 		if args.ColumnOp == constants.Delete {
+			fmt.Println("col", col.RawName())
 			if !args.Tc.ShouldDeleteColumn(col.RawName(), args.CdcTime, args.ContainOtherOperations) {
 				continue
 			}
