@@ -1,3 +1,7 @@
+---
+description: Databases managed by
+---
+
 # Supabase
 
 {% hint style="warning" %}
