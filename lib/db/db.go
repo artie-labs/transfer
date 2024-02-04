@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	maxAttempts     = 3
-	sleepIntervalMs = 500
+	maxAttempts = 3
+	sleepBaseMs = 500
+	sleepMaxMs  = 3500
 )
 
 type Store interface {
@@ -29,7 +30,7 @@ func (s *storeWrapper) Exec(query string, args ...any) (sql.Result, error) {
 	var err error
 	for attempts := 0; attempts < maxAttempts; attempts++ {
 		if attempts > 0 {
-			sleepDuration := jitter.Jitter(sleepIntervalMs, 3500, attempts-1)
+			sleepDuration := jitter.Jitter(sleepBaseMs, sleepMaxMs, attempts-1)
 			slog.Warn("Failed to execute the query, retrying...",
 				slog.Any("err", err),
 				slog.Duration("sleep", sleepDuration),
