@@ -77,6 +77,30 @@ func (s *S3Settings) Validate() error {
 	return nil
 }
 
+type PostgreSQL struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	Database string `yaml:"database"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+}
+
+func (p PostgreSQL) Validate() error {
+	if empty := stringutil.Empty(p.Host, p.Database, p.Username, p.Password); empty {
+		return fmt.Errorf("one of postgres settings is empty")
+	}
+
+	if p.Port <= 0 {
+		return fmt.Errorf("postgres invalid port")
+	}
+
+	return nil
+}
+
+func (p PostgreSQL) ConnectionString() string {
+	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require", p.Host, p.Port, p.Username, p.Password, p.Database)
+}
+
 type Redshift struct {
 	Host             string `yaml:"host"`
 	Port             int    `yaml:"port"`
@@ -149,10 +173,11 @@ type Config struct {
 	SharedDestinationConfig SharedDestinationConfig `yaml:"sharedDestinationConfig"`
 
 	// Supported destinations
-	BigQuery  *BigQuery   `yaml:"bigquery"`
-	Snowflake *Snowflake  `yaml:"snowflake"`
-	Redshift  *Redshift   `yaml:"redshift"`
-	S3        *S3Settings `yaml:"s3"`
+	BigQuery   *BigQuery   `yaml:"bigquery"`
+	Snowflake  *Snowflake  `yaml:"snowflake"`
+	Redshift   *Redshift   `yaml:"redshift"`
+	PostgreSQL *PostgreSQL `yaml:"postgresql"`
+	S3         *S3Settings `yaml:"s3"`
 
 	Reporting struct {
 		Sentry *Sentry `yaml:"sentry"`
@@ -259,6 +284,10 @@ func (c Config) Validate() error {
 		}
 	case constants.S3:
 		if err := c.S3.Validate(); err != nil {
+			return err
+		}
+	case constants.PostgreSQL:
+		if err := c.PostgreSQL.Validate(); err != nil {
 			return err
 		}
 	}

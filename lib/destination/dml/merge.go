@@ -75,7 +75,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		return nil, err
 	}
 
-	if m.DestKind != constants.Redshift {
+	if !(m.DestKind == constants.Redshift || m.DestKind == constants.PostgreSQL) {
 		return nil, fmt.Errorf("err - this is meant for redshift only")
 	}
 

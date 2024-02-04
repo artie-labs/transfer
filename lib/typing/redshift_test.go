@@ -51,8 +51,8 @@ func TestRedshiftTypeToKind(t *testing.T) {
 				},
 			},
 			expectedKd: KindDetails{
-				Kind:                         String.Kind,
-				OptionalRedshiftStrPrecision: ptr.ToInt(65535),
+				Kind:                    String.Kind,
+				OptionalStringPrecision: ptr.ToInt(65535),
 			},
 		},
 		{
@@ -95,10 +95,10 @@ func TestRedshiftTypeToKind(t *testing.T) {
 			kd := RedshiftTypeToKind(rawTypeAndPrec.rawType, rawTypeAndPrec.precision)
 			assert.Equal(t, testCase.expectedKd.Kind, kd.Kind, testCase.name)
 
-			if kd.OptionalRedshiftStrPrecision != nil {
-				assert.Equal(t, *testCase.expectedKd.OptionalRedshiftStrPrecision, *kd.OptionalRedshiftStrPrecision, testCase.name)
+			if kd.OptionalStringPrecision != nil {
+				assert.Equal(t, *testCase.expectedKd.OptionalStringPrecision, *kd.OptionalStringPrecision, testCase.name)
 			} else {
-				assert.Nil(t, kd.OptionalRedshiftStrPrecision, testCase.name)
+				assert.Nil(t, kd.OptionalStringPrecision, testCase.name)
 			}
 		}
 	}

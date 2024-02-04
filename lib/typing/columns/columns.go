@@ -29,6 +29,10 @@ type Column struct {
 	backfilled   bool
 }
 
+func (c *Column) PrimaryKey() bool {
+	return c.primaryKey
+}
+
 func (c *Column) ShouldSkip() bool {
 	if c == nil || c.KindDetails.Kind == typing.Invalid.Kind {
 		return true

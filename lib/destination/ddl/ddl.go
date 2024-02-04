@@ -91,11 +91,13 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 	var colSQLParts []string
 	for _, col := range cols {
 		if col.ShouldSkip() {
+			fmt.Println("col got skipped", col.RawName())
 			// Let's not modify the table if the column kind is invalid
 			continue
 		}
 
 		if args.ColumnOp == constants.Delete {
+			fmt.Println("col", col.RawName())
 			if !args.Tc.ShouldDeleteColumn(col.RawName(), args.CdcTime, args.ContainOtherOperations) {
 				continue
 			}
@@ -104,10 +106,11 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 		mutateCol = append(mutateCol, col)
 		switch args.ColumnOp {
 		case constants.Add:
-			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, col.Name(*args.UppercaseEscNames, &sql.NameArgs{
-				Escape:   true,
-				DestKind: args.Dwh.Label(),
-			}), typing.KindToDWHType(col.KindDetails, args.Dwh.Label())))
+			colSqlPart := fmt.Sprintf(`%s %s`, col.Name(*args.UppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: args.Dwh.Label()}), typing.KindToDWHType(col.KindDetails, args.Dwh.Label()))
+			if args.Dwh.Label() == constants.PostgreSQL && col.PrimaryKey() {
+				colSqlPart += " PRIMARY KEY"
+			}
+			colSQLParts = append(colSQLParts, colSqlPart)
 		case constants.Delete:
 			colSQLParts = append(colSQLParts, col.Name(*args.UppercaseEscNames, &sql.NameArgs{
 				Escape:   true,
@@ -122,7 +125,7 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 		if args.TemporaryTable {
 			expiryString := typing.ExpiresDate(time.Now().UTC().Add(TempTableTTL))
 			switch args.Dwh.Label() {
-			case constants.Redshift:
+			case constants.Redshift, constants.PostgreSQL:
 				sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", args.FqTableName, strings.Join(colSQLParts, ","))
 			case constants.BigQuery:
 				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,

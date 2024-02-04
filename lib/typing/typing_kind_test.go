@@ -25,8 +25,8 @@ func Test_KindToDWHType(t *testing.T) {
 		},
 		{
 			kd: KindDetails{
-				Kind:                         String.Kind,
-				OptionalRedshiftStrPrecision: ptr.ToInt(12345),
+				Kind:                    String.Kind,
+				OptionalStringPrecision: ptr.ToInt(12345),
 			},
 			expectedSnowflakeType: "string",
 			expectedBigQueryType:  "string",

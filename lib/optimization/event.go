@@ -161,7 +161,7 @@ func (t *TableData) ToFqName(kind constants.DestinationKind, escape bool, upperc
 			Escape:   false,
 			DestKind: kind,
 		}))
-	case constants.Redshift:
+	case constants.Redshift, constants.PostgreSQL:
 		// Redshift is Postgres compatible, so when establishing a connection, we'll specify a database.
 		// Thus, we only need to specify schema and table name here.
 		return fmt.Sprintf("%s.%s", t.TopicConfig.Schema, t.Name(uppercaseEscNames, &sql.NameArgs{
@@ -275,8 +275,8 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) {
 				// Note: If our in-memory column is `Invalid`, it would get skipped during merge. However, if the column exists in
 				// the destination, we'll copy the type over. This is to make sure we don't miss batch updates where the whole column in the batch is NULL.
 				inMemoryCol.KindDetails.Kind = foundColumn.KindDetails.Kind
-				if foundColumn.KindDetails.OptionalRedshiftStrPrecision != nil {
-					inMemoryCol.KindDetails.OptionalRedshiftStrPrecision = foundColumn.KindDetails.OptionalRedshiftStrPrecision
+				if foundColumn.KindDetails.OptionalStringPrecision != nil {
+					inMemoryCol.KindDetails.OptionalStringPrecision = foundColumn.KindDetails.OptionalStringPrecision
 				}
 			}
 

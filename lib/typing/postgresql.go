@@ -8,7 +8,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func RedshiftTypeToKind(rawType string, stringPrecision string) KindDetails {
+func PostgreSQLType(rawType string, stringPrecision string) KindDetails {
 	rawType = strings.ToLower(rawType)
 	if strings.HasPrefix(rawType, "numeric") {
 		return ParseNumeric(defaultPrefix, rawType)
@@ -28,7 +28,9 @@ func RedshiftTypeToKind(rawType string, stringPrecision string) KindDetails {
 	}
 
 	switch rawType {
-	case "super":
+	case "text":
+		return String
+	case "jsonb":
 		return Struct
 	case "integer", "bigint":
 		return Integer
@@ -44,32 +46,25 @@ func RedshiftTypeToKind(rawType string, stringPrecision string) KindDetails {
 		return Boolean
 	}
 
+	fmt.Println("here", rawType)
+
 	return Invalid
 }
 
-func kindToRedshift(kd KindDetails) string {
+func kindToPostgreSQL(kd KindDetails) string {
 	switch kd.Kind {
 	case Integer.Kind:
-		// int4 is 2^31, whereas int8 is 2^63.
-		// we're using a larger data type to not have an integer overflow.
-		return "INT8"
-	case Struct.Kind:
-		return "SUPER"
-	case Array.Kind:
-		// Redshift does not have a built-in JSON type (which means we'll cast STRUCT and ARRAY kinds as TEXT).
-		// As a result, Artie will store this in JSON string and customers will need to extract this data out via SQL.
-		// Columns that are automatically created by Artie are created as VARCHAR(MAX).
-		// Rationale: https://github.com/artie-labs/transfer/pull/173
-		return "VARCHAR(MAX)"
+		return "BIGINT"
+	case Struct.Kind, Array.Kind:
+		return "JSONB"
 	case String.Kind:
 		if kd.OptionalStringPrecision != nil {
 			return fmt.Sprintf("VARCHAR(%d)", *kd.OptionalStringPrecision)
 		}
 
-		return "VARCHAR(MAX)"
+		return "TEXT"
 	case Boolean.Kind:
-		// We need to append `NULL` to let Redshift know that NULL is an acceptable data type.
-		return "BOOLEAN NULL"
+		return "BOOLEAN"
 	case ETime.Kind:
 		switch kd.ExtendedTimeDetails.Type {
 		case ext.DateTimeKindType:
@@ -80,7 +75,7 @@ func kindToRedshift(kd KindDetails) string {
 			return "time"
 		}
 	case EDecimal.Kind:
-		return kd.ExtendedDecimalDetails.RedshiftKind()
+		return kd.ExtendedDecimalDetails.PostgreSQLKind()
 	}
 
 	return kd.Kind
