@@ -13,6 +13,7 @@
 * [PostgreSQL](real-time-sources/postgresql/README.md)
   * [GCP CloudSQL - PostgreSQL](real-time-sources/postgresql/gcp-cloudsql-postgresql.md)
   * [Amazon RDS - PostgreSQL](real-time-sources/postgresql/amazon-rds-postgresql.md)
+  * [Supabase](real-time-sources/postgresql/supabase.md)
   * [Troubleshooting](real-time-sources/postgresql/troubleshooting.md)
 * [MySQL](real-time-sources/mysql.md)
   * [Amazon RDS or Aurora](real-time-sources/mysql/amazon-rds-or-aurora.md)
