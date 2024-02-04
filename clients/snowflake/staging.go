@@ -121,8 +121,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 
 func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 	// TODO - better test coverage for `mergeWithStages`
-	if tableData.NumberOfRows() == 0 || tableData.ReadOnlyInMemoryCols() == nil {
-		// There's no rows. Let's skip.
+	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
 

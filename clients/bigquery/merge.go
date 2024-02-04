@@ -97,8 +97,7 @@ func (s *Store) backfillColumn(column columns.Column, fqTableName string) error 
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
 	// TODO - write test for this.
-	if tableData.NumberOfRows() == 0 || tableData.ReadOnlyInMemoryCols() == nil {
-		// There's no rows or columns. Let's skip.
+	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
 

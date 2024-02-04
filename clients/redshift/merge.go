@@ -17,8 +17,7 @@ import (
 )
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
-	if tableData.NumberOfRows() == 0 || tableData.ReadOnlyInMemoryCols() == nil {
-		// There's no rows or columns. Let's skip.
+	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
 
