@@ -1,5 +1,8 @@
 ---
-description: Databases managed by
+description: >-
+  Databases managed by Supabase have logical replication enabled already. We
+  will just need to find the connection string for Artie to connect and start
+  replicating.
 ---
 
 # Supabase
