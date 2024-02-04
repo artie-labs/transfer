@@ -481,19 +481,22 @@ bigquery:
 }
 
 func TestConfig_Validate(t *testing.T) {
-	pubsub := &Pubsub{}
+	pubsub := &Pubsub{
+		ProjectID:         "foo",
+		PathToCredentials: "bar",
+	}
 	cfg := &Config{
 		Pubsub:               pubsub,
 		FlushIntervalSeconds: 5,
 		BufferRows:           500,
 	}
 
-	assert.Contains(t, cfg.Validate().Error(), "is invalid")
+	assert.ErrorContains(t, cfg.Validate(), "is invalid")
 
 	cfg.Output = constants.Snowflake
 	cfg.Queue = constants.PubSub
 	cfg.FlushSizeKb = 5
-	assert.Contains(t, cfg.Validate().Error(), "no pubsub topic configs")
+	assert.ErrorContains(t, cfg.Validate(), "no topic configs")
 
 	tc := kafkalib.TopicConfig{
 		Database:  "db",
@@ -505,11 +508,13 @@ func TestConfig_Validate(t *testing.T) {
 	tc.Load()
 
 	pubsub.TopicConfigs = []*kafkalib.TopicConfig{&tc}
+	pubsub.ProjectID = ""
+	assert.ErrorContains(t, cfg.Validate(), "pubsub settings is invalid")
+	pubsub.ProjectID = "foo"
 
-	assert.Contains(t, cfg.Validate().Error(), "topic config is invalid")
+	assert.ErrorContains(t, cfg.Validate(), "topic config is invalid")
 	pubsub.TopicConfigs[0].CDCFormat = constants.DBZPostgresAltFormat
 	pubsub.TopicConfigs[0].CDCKeyFormat = "org.apache.kafka.connect.json.JsonConverter"
-	assert.Contains(t, cfg.Validate().Error(), "pubsub settings is invalid")
 
 	pubsub.ProjectID = "project_id"
 	pubsub.PathToCredentials = "/tmp/abc"

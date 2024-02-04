@@ -182,7 +182,7 @@ func (t *TableData) ToFqName(kind constants.DestinationKind, escape bool, upperc
 	}
 }
 
-func (t *TableData) Rows() uint {
+func (t *TableData) NumberOfRows() uint {
 	if t == nil {
 		return 0
 	}
@@ -230,7 +230,7 @@ func (t *TableData) TempTableSuffix() string {
 // ShouldFlush will return whether Transfer should flush
 // If so, what is the reason?
 func (t *TableData) ShouldFlush(cfg config.Config) (bool, string) {
-	if t.Rows() > cfg.BufferRows {
+	if t.NumberOfRows() > cfg.BufferRows {
 		return true, "rows"
 	}
 

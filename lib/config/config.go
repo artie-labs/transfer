@@ -264,14 +264,8 @@ func (c Config) Validate() error {
 	}
 
 	if c.Queue == constants.Kafka {
-		if c.Kafka == nil || len(c.Kafka.TopicConfigs) == 0 {
+		if c.Kafka == nil {
 			return fmt.Errorf("config is invalid, no kafka topic configs, kafka: %v", c.Kafka)
-		}
-
-		for _, topicConfig := range c.Kafka.TopicConfigs {
-			if err := topicConfig.Validate(); err != nil {
-				return fmt.Errorf("config is invalid, topic config is invalid, tc: %s, err: %v", topicConfig.String(), err)
-			}
 		}
 
 		// Username and password are not required (if it's within the same VPC or connecting locally
@@ -281,18 +275,27 @@ func (c Config) Validate() error {
 	}
 
 	if c.Queue == constants.PubSub {
-		if c.Pubsub == nil || len(c.Pubsub.TopicConfigs) == 0 {
+		if c.Pubsub == nil {
 			return fmt.Errorf("config is invalid, no pubsub topic configs, pubsub: %v", c.Pubsub)
-		}
-
-		for _, topicConfig := range c.Pubsub.TopicConfigs {
-			if err := topicConfig.Validate(); err != nil {
-				return fmt.Errorf("config is invalid, topic config is invalid, tc: %s, err: %v", topicConfig.String(), err)
-			}
 		}
 
 		if array.Empty([]string{c.Pubsub.ProjectID, c.Pubsub.PathToCredentials}) {
 			return fmt.Errorf("config is invalid, pubsub settings is invalid, pubsub: %s", c.Pubsub.String())
+		}
+	}
+
+	tcs, err := c.TopicConfigs()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve tcs, err: %w", err)
+	}
+
+	if len(tcs) == 0 {
+		return fmt.Errorf("config is invalid, no topic configs")
+	}
+
+	for _, topicConfig := range tcs {
+		if err = topicConfig.Validate(); err != nil {
+			return fmt.Errorf("config is invalid, topic config is invalid, tc: %s, err: %w", topicConfig.String(), err)
 		}
 	}
 

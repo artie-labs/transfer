@@ -41,7 +41,7 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 		assert.Nil(f.T(), err)
 
 		td := f.db.GetOrCreateTableData("foo")
-		assert.Equal(f.T(), int(td.Rows()), i+1)
+		assert.Equal(f.T(), int(td.NumberOfRows()), i+1)
 	}
 }
 
