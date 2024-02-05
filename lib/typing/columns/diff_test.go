@@ -3,6 +3,8 @@ package columns
 import (
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/artie-labs/transfer/lib/typing"
@@ -18,7 +20,9 @@ func TestShouldSkipColumn(t *testing.T) {
 		softDelete               bool
 		includeArtieUpdatedAt    bool
 		includeDatabaseUpdatedAt bool
-		expectedResult           bool
+		cfgMode                  config.Mode
+
+		expectedResult bool
 	}
 
 	testCases := []_testCase{
@@ -64,10 +68,22 @@ func TestShouldSkipColumn(t *testing.T) {
 			includeDatabaseUpdatedAt: true,
 			expectedResult:           false,
 		},
+		{
+			name:           "operation col AND mode is replication mode",
+			colName:        constants.OperationColumnMarker,
+			cfgMode:        config.Replication,
+			expectedResult: true,
+		},
+		{
+			name:           "operation col AND mode is history mode",
+			colName:        constants.OperationColumnMarker,
+			cfgMode:        config.History,
+			expectedResult: false,
+		},
 	}
 
 	for _, testCase := range testCases {
-		actualResult := shouldSkipColumn(testCase.colName, testCase.softDelete, testCase.includeArtieUpdatedAt, testCase.includeDatabaseUpdatedAt)
+		actualResult := shouldSkipColumn(testCase.colName, testCase.softDelete, testCase.includeArtieUpdatedAt, testCase.includeDatabaseUpdatedAt, testCase.cfgMode)
 		assert.Equal(t, testCase.expectedResult, actualResult, testCase.name)
 	}
 }
@@ -124,7 +140,7 @@ func TestDiff_VariousNils(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		actualSrcKeysMissing, actualTargKeysMissing := Diff(testCase.sourceCols, testCase.targCols, false, false, false)
+		actualSrcKeysMissing, actualTargKeysMissing := Diff(testCase.sourceCols, testCase.targCols, false, false, false, config.Replication)
 		assert.Equal(t, testCase.expectedSrcKeyLength, len(actualSrcKeysMissing), testCase.name)
 		assert.Equal(t, testCase.expectedTargKeyLength, len(actualTargKeysMissing), testCase.name)
 	}
@@ -134,7 +150,7 @@ func TestDiffBasic(t *testing.T) {
 	var source Columns
 	source.AddColumn(NewColumn("a", typing.Integer))
 
-	srcKeyMissing, targKeyMissing := Diff(&source, &source, false, false, false)
+	srcKeyMissing, targKeyMissing := Diff(&source, &source, false, false, false, config.Replication)
 	assert.Equal(t, len(srcKeyMissing), 0)
 	assert.Equal(t, len(targKeyMissing), 0)
 }
@@ -158,7 +174,7 @@ func TestDiffDelta1(t *testing.T) {
 		targCols.AddColumn(NewColumn(colName, kindDetails))
 	}
 
-	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targCols, false, false, false)
+	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targCols, false, false, false, config.Replication)
 	assert.Equal(t, len(srcKeyMissing), 2, srcKeyMissing)   // Missing aa, cc
 	assert.Equal(t, len(targKeyMissing), 2, targKeyMissing) // Missing aa, cc
 }
@@ -190,7 +206,7 @@ func TestDiffDelta2(t *testing.T) {
 		targetCols.AddColumn(NewColumn(colName, kindDetails))
 	}
 
-	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targetCols, false, false, false)
+	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targetCols, false, false, false, config.Replication)
 	assert.Equal(t, len(srcKeyMissing), 1, srcKeyMissing)   // Missing dd
 	assert.Equal(t, len(targKeyMissing), 3, targKeyMissing) // Missing a, c, d
 }
@@ -205,7 +221,7 @@ func TestDiffDeterministic(t *testing.T) {
 	sourceCols.AddColumn(NewColumn("name", typing.String))
 
 	for i := 0; i < 500; i++ {
-		keysMissing, targetKeysMissing := Diff(&sourceCols, &targCols, false, false, false)
+		keysMissing, targetKeysMissing := Diff(&sourceCols, &targCols, false, false, false, config.Replication)
 		assert.Equal(t, 0, len(keysMissing), keysMissing)
 
 		var key string

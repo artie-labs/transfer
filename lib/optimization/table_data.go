@@ -51,6 +51,10 @@ type TableData struct {
 	name string
 }
 
+func (t *TableData) Mode() config.Mode {
+	return t.mode
+}
+
 // ShouldSkipUpdate will check if there are any rows or any columns
 func (t *TableData) ShouldSkipUpdate() bool {
 	return t.NumberOfRows() == 0 || t.ReadOnlyInMemoryCols() == nil

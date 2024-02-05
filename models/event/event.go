@@ -43,9 +43,13 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.T
 		}
 	}
 
+	evtData := event.GetData(pkMap, tc)
 	tblName := stringutil.Override(event.GetTableName(), tc.TableName)
+
 	if cfgMode == config.History {
+		// History mode will include a table suffix and operation column
 		tblName += constants.HistoryModeSuffix
+		evtData[constants.OperationColumnMarker] = event.Operation()
 	}
 
 	return Event{
@@ -54,7 +58,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.T
 		ExecutionTime:  event.GetExecutionTime(),
 		OptionalSchema: event.GetOptionalSchema(),
 		Columns:        cols,
-		Data:           event.GetData(pkMap, tc),
+		Data:           evtData,
 		Deleted:        event.DeletePayload(),
 	}
 }
