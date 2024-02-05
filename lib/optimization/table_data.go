@@ -51,6 +51,11 @@ type TableData struct {
 	name string
 }
 
+// ShouldSkipUpdate will check if there are any rows or any columns
+func (t *TableData) ShouldSkipUpdate() bool {
+	return t.NumberOfRows() == 0 || t.ReadOnlyInMemoryCols() == nil
+}
+
 func (t *TableData) ContainsHardDeletes() bool {
 	return t.containsHardDeletes
 }
@@ -205,7 +210,7 @@ func (t *TableData) ToFqName(kind constants.DestinationKind, escape bool, upperc
 	}
 }
 
-func (t *TableData) RowCount() uint {
+func (t *TableData) NumberOfRows() uint {
 	if t == nil {
 		return 0
 	}
@@ -257,7 +262,7 @@ func (t *TableData) TempTableSuffix() string {
 // ShouldFlush will return whether Transfer should flush
 // If so, what is the reason?
 func (t *TableData) ShouldFlush(cfg config.Config) (bool, string) {
-	if t.RowCount() > cfg.BufferRows {
+	if t.NumberOfRows() > cfg.BufferRows {
 		return true, "rows"
 	}
 

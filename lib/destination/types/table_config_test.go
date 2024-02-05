@@ -1,14 +1,13 @@
 package types
 
 import (
+	"math/rand"
 	"sort"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
-
-	"github.com/artie-labs/transfer/lib/jitter"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 
@@ -115,7 +114,7 @@ func (t *TypesTestSuite) TestDwhTableConfig_ReadOnlyColumnsToDelete() {
 	for i := 0; i < 100; i++ {
 		wg.Add(1)
 		go func() {
-			time.Sleep(time.Duration(jitter.JitterMs(50, 1)) * time.Millisecond)
+			time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
 			defer wg.Done()
 			actualColsToDelete := tc.ReadOnlyColumnsToDelete()
 			assert.Equal(t.T(), colsToDelete, actualColsToDelete)

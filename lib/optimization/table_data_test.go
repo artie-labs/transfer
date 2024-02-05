@@ -271,19 +271,20 @@ func TestTableData_ContainsHardDeletes(t *testing.T) {
 	{
 		// Hard delete = true
 		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
-		assert.Equal(t, 0, int(td.RowCount()))
+		assert.Equal(t, 0, int(td.NumberOfRows()))
 
 		td.InsertRow("123", nil, true)
-		assert.Equal(t, 1, int(td.RowCount()))
+		assert.Equal(t, 1, int(td.NumberOfRows()))
+
 		assert.True(t, td.ContainsHardDeletes())
 	}
 	{
 		// TopicConfig has soft delete turned on, so hard delete = false
 		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{SoftDelete: true}, "foo")
-		assert.Equal(t, 0, int(td.RowCount()))
+		assert.Equal(t, 0, int(td.NumberOfRows()))
 
 		td.InsertRow("123", nil, true)
-		assert.Equal(t, 1, int(td.RowCount()))
+		assert.Equal(t, 1, int(td.NumberOfRows()))
 		assert.False(t, td.ContainsHardDeletes())
 	}
 }
@@ -330,7 +331,7 @@ func TestTableData_ShouldFlushRowSize(t *testing.T) {
 
 func TestTableData_InsertRowIntegrity(t *testing.T) {
 	td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
-	assert.Equal(t, 0, int(td.RowCount()))
+	assert.Equal(t, 0, int(td.NumberOfRows()))
 	assert.False(t, td.ContainOtherOperations())
 
 	for i := 0; i < 100; i++ {

@@ -212,7 +212,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	tableName, err = processMessage(ctx, cfg, memDB, MockDestination{}, processArgs)
 	assert.Error(t, err)
 	assert.Empty(t, tableName)
-	assert.True(t, td.RowCount() > 0)
+	assert.True(t, td.NumberOfRows() > 0)
 }
 
 func TestProcessMessageSkip(t *testing.T) {
@@ -347,12 +347,12 @@ func TestProcessMessageSkip(t *testing.T) {
 		}
 
 		td := memoryDB.GetOrCreateTableData(table)
-		assert.Equal(t, 0, int(td.RowCount()))
+		assert.Equal(t, 0, int(td.NumberOfRows()))
 
 		tableName, err := processMessage(ctx, cfg, memDB, MockDestination{}, processArgs)
 		assert.NoError(t, err)
 		assert.Equal(t, table, tableName)
 		// Because it got skipped.
-		assert.Equal(t, 0, int(td.RowCount()))
+		assert.Equal(t, 0, int(td.NumberOfRows()))
 	}
 }

@@ -276,7 +276,7 @@ func (c Config) Validate() error {
 	}
 
 	if c.Queue == constants.Kafka {
-		if c.Kafka == nil || len(c.Kafka.TopicConfigs) == 0 {
+		if c.Kafka == nil {
 			return fmt.Errorf("config is invalid, no kafka topic configs, kafka: %v", c.Kafka)
 		}
 
@@ -287,7 +287,7 @@ func (c Config) Validate() error {
 	}
 
 	if c.Queue == constants.PubSub {
-		if c.Pubsub == nil || len(c.Pubsub.TopicConfigs) == 0 {
+		if c.Pubsub == nil {
 			return fmt.Errorf("config is invalid, no pubsub topic configs, pubsub: %v", c.Pubsub)
 		}
 
@@ -298,23 +298,29 @@ func (c Config) Validate() error {
 
 	tcs, err := c.TopicConfigs()
 	if err != nil {
-		return fmt.Errorf("failed to get topic configs, err: %w", err)
+		return fmt.Errorf("failed to retrieve topic configs, err: %w", err)
 	}
 
-	for _, tc := range tcs {
-		if err = tc.Validate(); err != nil {
-			return fmt.Errorf("failed to validate topic config, err: %w", err)
+	if len(tcs) == 0 {
+		return fmt.Errorf("config is invalid, no topic configs")
+	}
+
+	for _, topicConfig := range tcs {
+		if err = topicConfig.Validate(); err != nil {
+			return fmt.Errorf("config is invalid, topic config is invalid, tc: %s, err: %w", topicConfig.String(), err)
 		}
 
+		// History Mode Validation
 		if c.Mode == History {
-			if tc.DropDeletedColumns {
-				return fmt.Errorf("config is invalid, drop deleted columns is not supported in history mode, topic: %s", tc.String())
+			if topicConfig.DropDeletedColumns {
+				return fmt.Errorf("config is invalid, drop deleted columns is not supported in history mode, topic: %s", topicConfig.String())
 			}
 
-			if !tc.IncludeDatabaseUpdatedAt {
-				return fmt.Errorf("config is invalid, include database updated at is required in history mode, topic: %s", tc.String())
+			if !topicConfig.IncludeDatabaseUpdatedAt {
+				return fmt.Errorf("config is invalid, include database updated at is required in history mode, topic: %s", topicConfig.String())
 			}
 		}
+
 	}
 
 	return nil
