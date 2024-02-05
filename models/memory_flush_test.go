@@ -33,11 +33,11 @@ func TestShouldSkipMerge(t *testing.T) {
 	coolDown = 5 * time.Minute
 	now := time.Now()
 
-	// We merged 4 mins ago, so let's test the confidence interval.
+	// We flushed 4 min ago, so let's test the confidence interval.
 	td.lastFlushTime = now.Add(-4 * time.Minute)
 	assert.False(t, td.ShouldSkipFlush(coolDown))
 
-	// Let's try if we merged 2 mins ago, we should skip.
+	// Let's try if we flushed 2 min ago, we should skip.
 	td.lastFlushTime = now.Add(-2 * time.Minute)
 	assert.True(t, td.ShouldSkipFlush(coolDown))
 }

@@ -12,7 +12,7 @@ import (
 )
 
 type Args struct {
-	// If cooldown is passed in, we'll skip the merge if the table has been recently flushed
+	// If cooldown is passed in, we'll skip the flush if the table has been recently flushed
 	CoolDown *time.Duration
 	// If specificTable is not passed in, we'll just flush everything.
 	SpecificTable string
