@@ -12,7 +12,7 @@ import (
 )
 
 type Args struct {
-	// If cooldown is passed in, we'll skip the merge if the table has been recently merged
+	// If cooldown is passed in, we'll skip the merge if the table has been recently flushed
 	CoolDown *time.Duration
 	// If specificTable is not passed in, we'll just flush everything.
 	SpecificTable string
@@ -50,8 +50,8 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 				slog.String("tableName", _tableName),
 			}
 
-			if args.CoolDown != nil && _tableData.ShouldSkipMerge(*args.CoolDown) {
-				slog.With(logFields...).Info("Skipping merge because we are currently in a merge cooldown")
+			if args.CoolDown != nil && _tableData.ShouldSkipFlush(*args.CoolDown) {
+				slog.With(logFields...).Info("Skipping flush because we are currently in a flush cooldown")
 				return
 			}
 

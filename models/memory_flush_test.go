@@ -18,26 +18,26 @@ func TestShouldSkipMerge(t *testing.T) {
 	}
 
 	// Before wiping, we should not skip the merge since ts did not get set yet.
-	assert.False(t, td.ShouldSkipMerge(coolDown))
+	assert.False(t, td.ShouldSkipFlush(coolDown))
 
 	td.Wipe()
 	for i := 0; i < 10; i++ {
-		assert.True(t, td.ShouldSkipMerge(coolDown))
+		assert.True(t, td.ShouldSkipFlush(coolDown))
 		time.Sleep(checkInterval)
 	}
 
 	time.Sleep(3 * time.Second)
-	assert.False(t, td.ShouldSkipMerge(coolDown))
+	assert.False(t, td.ShouldSkipFlush(coolDown))
 
 	// 5 minutes now
 	coolDown = 5 * time.Minute
 	now := time.Now()
 
 	// We merged 4 mins ago, so let's test the confidence interval.
-	td.lastMergeTime = now.Add(-4 * time.Minute)
-	assert.False(t, td.ShouldSkipMerge(coolDown))
+	td.lastFlushTime = now.Add(-4 * time.Minute)
+	assert.False(t, td.ShouldSkipFlush(coolDown))
 
 	// Let's try if we merged 2 mins ago, we should skip.
-	td.lastMergeTime = now.Add(-2 * time.Minute)
-	assert.True(t, td.ShouldSkipMerge(coolDown))
+	td.lastFlushTime = now.Add(-2 * time.Minute)
+	assert.True(t, td.ShouldSkipFlush(coolDown))
 }
