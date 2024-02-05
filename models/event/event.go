@@ -32,7 +32,7 @@ type Event struct {
 	Deleted        bool
 }
 
-func ToMemoryEvent(event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) Event {
+func ToMemoryEvent(event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.TopicConfig, cfgMode config.Mode) Event {
 	cols := event.GetColumns()
 	// Now iterate over pkMap and tag each column that is a primary key
 	if cols != nil {
@@ -43,8 +43,13 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.T
 		}
 	}
 
+	tblName := stringutil.Override(event.GetTableName(), tc.TableName)
+	if cfgMode == config.History {
+		tblName += constants.HistoryModeSuffix
+	}
+
 	return Event{
-		Table:          stringutil.Override(event.GetTableName(), tc.TableName),
+		Table:          tblName,
 		PrimaryKeyMap:  pkMap,
 		ExecutionTime:  event.GetExecutionTime(),
 		OptionalSchema: event.GetOptionalSchema(),

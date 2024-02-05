@@ -61,8 +61,8 @@ func processMessage(ctx context.Context, cfg config.Config, inMemDB *models.Data
 	}
 
 	tags["op"] = _event.Operation()
-	evt := event.ToMemoryEvent(_event, pkMap, topicConfig.tc)
-	// Table name is only available after event has been casted
+	evt := event.ToMemoryEvent(_event, pkMap, topicConfig.tc, cfg.Mode)
+	// Table name is only available after event has been cast
 	tags["table"] = evt.Table
 
 	if topicConfig.tc.ShouldSkip(_event.Operation()) {

@@ -163,11 +163,9 @@ func (t *TableData) InsertRow(pk string, rowData map[string]interface{}, delete 
 
 // Rows returns a read only slice of tableData's rows.
 func (t *TableData) Rows() []map[string]interface{} {
+	// TODO: Does it matter if it's not ready-only?
 	var rows []map[string]interface{}
-	for _, row := range t.rows {
-		rows = append(rows, row)
-	}
-
+	rows = append(rows, t.rows...)
 	return rows
 }
 

@@ -12,6 +12,7 @@ const (
 	// We will strip this out from our partition key parsing.
 	DebeziumTopicRoutingKey = "__dbz__physicalTableIdentifier"
 
+	HistoryModeSuffix           = "__history"
 	ArtiePrefix                 = "__artie"
 	DeleteColumnMarker          = ArtiePrefix + "_delete"
 	DeletionConfidencePadding   = 4 * time.Hour
