@@ -29,6 +29,7 @@ func processMessage(ctx context.Context, cfg config.Config, inMemDB *models.Data
 	}
 
 	tags := map[string]string{
+		"mode":    cfg.Mode.String(),
 		"groupID": processArgs.GroupID,
 		"topic":   processArgs.Msg.Topic(),
 		"what":    "success",

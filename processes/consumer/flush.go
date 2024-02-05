@@ -73,6 +73,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 			start := time.Now()
 			tags := map[string]string{
 				"what":     "success",
+				"mode":     _tableData.Mode().String(),
 				"table":    _tableName,
 				"database": _tableData.TopicConfig.Database,
 				"schema":   _tableData.TopicConfig.Schema,

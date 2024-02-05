@@ -136,6 +136,10 @@ const (
 	Replication Mode = "replication"
 )
 
+func (m Mode) String() string {
+	return string(m)
+}
+
 type Config struct {
 	Mode   Mode                      `yaml:"mode"`
 	Output constants.DestinationKind `yaml:"outputSource"`
