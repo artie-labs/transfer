@@ -2,13 +2,15 @@ package jitter
 
 import (
 	"math/rand"
+	"time"
 )
 
-const maxMilliSeconds = 3500
+const DefaultMaxMs = 3500
 
-func JitterMs(baseMilliSeconds, attempts int) int {
+func Jitter(baseMs, maxMs, attempts int) time.Duration {
 	// https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
 	// sleep = random_between(0, min(cap, base * 2 ** attempt))
 	// 2 ** x == 1 << x
-	return rand.Intn(min(maxMilliSeconds, baseMilliSeconds*(1<<attempts)))
+	ms := rand.Intn(min(maxMs, baseMs*(1<<attempts)))
+	return time.Duration(ms) * time.Millisecond
 }
