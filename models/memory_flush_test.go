@@ -17,7 +17,7 @@ func TestShouldSkipMerge(t *testing.T) {
 		TableData: &optimization.TableData{},
 	}
 
-	// Before wiping, we should not skip the merge since ts did not get set yet.
+	// Before wiping, we should not skip the flush since ts did not get set yet.
 	assert.False(t, td.ShouldSkipFlush(coolDown))
 
 	td.Wipe()
