@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"
@@ -74,7 +76,14 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 				"reason":   args.Reason,
 			}
 
-			err := dest.Merge(ctx, _tableData.TableData)
+			var err error
+			// Merge or Append depending on the mode.
+			if _tableData.Mode() == config.History {
+				err = dest.Append(ctx, _tableData.TableData)
+			} else {
+				err = dest.Merge(ctx, _tableData.TableData)
+			}
+
 			if err != nil {
 				tags["what"] = "merge_fail"
 				slog.With(logFields...).Warn("Failed to execute merge...not going to flush memory", slog.Any("err", err))

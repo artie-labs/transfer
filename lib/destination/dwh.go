@@ -19,4 +19,5 @@ type DataWarehouse interface {
 type Baseline interface {
 	Label() constants.DestinationKind
 	Merge(ctx context.Context, tableData *optimization.TableData) error
+	Append(ctx context.Context, tableData *optimization.TableData) error
 }

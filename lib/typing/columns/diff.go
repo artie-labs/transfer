@@ -11,7 +11,6 @@ import (
 // shouldSkipColumn takes the `colName` and `softDelete` and will return whether we should skip this column when calculating the diff.
 func shouldSkipColumn(colName string, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, mode config.Mode) bool {
 	// TODO: Figure out a better way to not pass in so many variables when calculating shouldSkipColumn
-
 	if colName == constants.DeleteColumnMarker && softDelete {
 		// We need this column to be created if soft deletion is turned on.
 		return false
