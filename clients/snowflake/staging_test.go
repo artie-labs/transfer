@@ -151,7 +151,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	s.stageStore.GetConfigMap().AddTableToConfig(tempTableName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	sflkTc := s.stageStore.GetConfigMap().TableConfig(tempTableName)
 
-	assert.NoError(s.T(), s.stageStore.prepareTempTable(tableData, sflkTc, tempTableName))
+	assert.NoError(s.T(), s.stageStore.prepareTempTable(tableData, sflkTc, tempTableName, ""))
 	assert.Equal(s.T(), 3, s.fakeStageStore.ExecCallCount())
 
 	// First call is to create the temp table

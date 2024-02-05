@@ -6,6 +6,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestCapitalizeFirstLetter(t *testing.T) {
+	{
+		assert.Equal(t, "Hello", CapitalizeFirstLetter("hello"))
+	}
+	{
+		assert.Equal(t, "", CapitalizeFirstLetter(""))
+	}
+	{
+		assert.Equal(t, "H", CapitalizeFirstLetter("H"))
+	}
+}
+
 func TestOverride(t *testing.T) {
 	type _testCase struct {
 		name        string
