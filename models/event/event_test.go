@@ -64,21 +64,25 @@ func (e *EventsTestSuite) TestEvent_IsValid() {
 
 func (e *EventsTestSuite) TestEvent_TableName() {
 	var f fakeEvent
-	// Don't pass in tableName.
-	evt := ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{}, config.Replication)
-	assert.Equal(e.T(), f.GetTableName(), evt.Table)
-
-	// Now pass it in, it should override.
-	evt = ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{
-		TableName: "orders",
-	}, config.Replication)
-	assert.Equal(e.T(), "orders", evt.Table)
-
-	// Now, if it's history mode...
-	evt = ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{
-		TableName: "orders",
-	}, config.History)
-	assert.Equal(e.T(), "orders__history", evt.Table)
+	{
+		// Don't pass in tableName.
+		evt := ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{}, config.Replication)
+		assert.Equal(e.T(), f.GetTableName(), evt.Table)
+	}
+	{
+		// Now pass it in, it should override.
+		evt := ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{
+			TableName: "orders",
+		}, config.Replication)
+		assert.Equal(e.T(), "orders", evt.Table)
+	}
+	{
+		// Now, if it's history mode...
+		evt := ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{
+			TableName: "orders",
+		}, config.History)
+		assert.Equal(e.T(), "orders__history", evt.Table)
+	}
 }
 
 func (e *EventsTestSuite) TestEventPrimaryKeys() {
