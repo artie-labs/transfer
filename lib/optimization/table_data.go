@@ -148,7 +148,17 @@ func (t *TableData) InsertRow(pk string, rowData map[string]interface{}, delete 
 	}
 }
 
-// RowsData returns a read only map of tableData's rowData.
+// Rows returns a read only slice of tableData's rows or rowsData depending on mode
+func (t *TableData) Rows() []map[string]interface{} {
+	var rows []map[string]interface{}
+	for _, v := range t.rowsData {
+		rows = append(rows, v)
+	}
+
+	return rows
+}
+
+// RowsData will create a read-only map of `rowsData`, this should be strictly used for testing only.
 func (t *TableData) RowsData() map[string]map[string]interface{} {
 	_rowsData := make(map[string]map[string]interface{}, len(t.rowsData))
 	for k, v := range t.rowsData {

@@ -107,7 +107,7 @@ func TestInsertRow_Toast(t *testing.T) {
 		}
 
 		var actualSize int
-		for _, rowData := range td.RowsData() {
+		for _, rowData := range td.Rows() {
 			actualSize += size.GetApproxSize(rowData)
 		}
 
@@ -118,13 +118,6 @@ func TestInsertRow_Toast(t *testing.T) {
 
 func TestTableData_InsertRow(t *testing.T) {
 	td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
-	assert.Equal(t, 0, int(td.NumberOfRows()))
-
-	// See if we can add rows to the private method.
-	td.RowsData()["foo"] = map[string]interface{}{
-		"foo": "bar",
-	}
-
 	assert.Equal(t, 0, int(td.NumberOfRows()))
 
 	// Now insert the right way.
@@ -159,7 +152,7 @@ func TestTableData_InsertRowApproxSize(t *testing.T) {
 	}
 
 	var updateCount int
-	for updateKey := range td.RowsData() {
+	for updateKey := range td.rowsData {
 		updateCount += 1
 		td.InsertRow(updateKey, map[string]interface{}{
 			"foo": "foo",
@@ -172,7 +165,7 @@ func TestTableData_InsertRowApproxSize(t *testing.T) {
 	}
 
 	var deleteCount int
-	for deleteKey := range td.RowsData() {
+	for deleteKey := range td.rowsData {
 		deleteCount += 1
 		td.InsertRow(deleteKey, map[string]interface{}{
 			"__artie_deleted": true,
@@ -184,7 +177,7 @@ func TestTableData_InsertRowApproxSize(t *testing.T) {
 	}
 
 	var actualSize int
-	for _, rowData := range td.RowsData() {
+	for _, rowData := range td.rowsData {
 		actualSize += size.GetApproxSize(rowData)
 	}
 

@@ -113,8 +113,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 	// Verify all the tables exist.
 	for idx := range tableNames {
 		td := f.db.GetOrCreateTableData(tableNames[idx])
-		tableConfig := td.RowsData()
-		assert.Equal(f.T(), len(tableConfig), 5)
+		assert.Len(f.T(), td.Rows(), 5)
 	}
 
 	assert.Nil(f.T(), Flush(context.Background(), f.db, f.dwh, Args{}), "flush failed")
