@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const DefaultMaxMs = 3500
+
 func Jitter(baseMs, maxMs, attempts int) time.Duration {
 	// https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
 	// sleep = random_between(0, min(cap, base * 2 ** attempt))
