@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	maxAttempts = 3
+	maxAttempts = 5
 	sleepBaseMs = 500
 )
 
