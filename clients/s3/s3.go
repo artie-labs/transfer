@@ -104,7 +104,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	pw.CompressionType = parquet.CompressionCodec_GZIP
-	for _, val := range tableData.RowsData() {
+	for _, val := range tableData.Rows() {
 		row := make(map[string]interface{})
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.uppercaseEscNames, nil) {
 			colKind, isOk := tableData.ReadOnlyInMemoryCols().GetColumn(col)

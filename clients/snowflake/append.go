@@ -12,8 +12,6 @@ import (
 )
 
 func (s *Store) Append(ctx context.Context, tableData *optimization.TableData) error {
-	// TODO: Remove ctx.
-
 	err := s.append(tableData)
 	if IsAuthExpiredError(err) {
 		slog.Warn("authentication has expired, will reload the Snowflake store and retry appending", slog.Any("err", err))
@@ -35,7 +33,7 @@ func (s *Store) append(tableData *optimization.TableData) error {
 		return err
 	}
 
-	// We don't care about srcKeysMissing because we don't drop columns in append
+	// We don't care about srcKeysMissing because we don't drop columns when we append.
 	_, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
 		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt,
 		tableData.TopicConfig.IncludeDatabaseUpdatedAt, tableData.Mode())
@@ -56,6 +54,7 @@ func (s *Store) append(tableData *optimization.TableData) error {
 		return err
 	}
 
+	// TODO: For history mode - in the future, we could also have a separate stage name for history mode so we can enable parallel processing.
 	return s.prepareTempTable(tableData, tableConfig, fqName,
 		`FILE_FORMAT = (TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE) PURGE = TRUE`)
 }

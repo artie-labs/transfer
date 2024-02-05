@@ -40,7 +40,6 @@ func castColValStaging(colVal interface{}, colKind columns.Column, additionalDat
 // 4) Runs COPY INTO with the columns specified into temporary table
 // 5) Deletes CSV generated from (2)
 func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalCopyClause string) error {
-	// TODO: For history mode - in the future, we could also have a separate stage name for history mode so we can enable parallel processing.
 	if tableData.Mode() != config.History {
 		tempAlterTableArgs := ddl.AlterTableArgs{
 			Dwh:               s,

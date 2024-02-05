@@ -8,5 +8,5 @@ import (
 )
 
 func (s *Store) Append(ctx context.Context, tableData *optimization.TableData) error {
-	return fmt.Errorf("bigquery: %s did not implement this yet", s.Label())
+	return fmt.Errorf("bigquery: did not implement this yet")
 }

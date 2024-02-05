@@ -198,7 +198,7 @@ func TestProcessMessageFailures(t *testing.T) {
 
 		td := memoryDB.GetOrCreateTableData(table)
 		// Check that there are corresponding row(s) in the memory DB
-		assert.Equal(t, len(td.RowsData()), idx)
+		assert.Len(t, td.Rows(), idx)
 	}
 
 	td := memoryDB.GetOrCreateTableData(table)

@@ -188,7 +188,7 @@ func (t *TableData) Rows() []map[string]interface{} {
 	return rows
 }
 
-// RowsData returns a read only map of tableData's rowData.
+// RowsData will create a read-only map of `rowsData`, this should be strictly used for testing only.
 func (t *TableData) RowsData() map[string]map[string]interface{} {
 	_rowsData := make(map[string]map[string]interface{}, len(t.rowsData))
 	for k, v := range t.rowsData {
