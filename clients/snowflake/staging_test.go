@@ -204,9 +204,9 @@ func (s *SnowflakeTestSuite) TestLoadTemporaryTable() {
 		seenLastName[record[2]] = true
 	}
 
-	assert.Equal(s.T(), len(seenUserID), int(tableData.NumberOfRows()))
-	assert.Equal(s.T(), len(seenFirstName), int(tableData.NumberOfRows()))
-	assert.Equal(s.T(), len(seenLastName), int(tableData.NumberOfRows()))
+	assert.Len(s.T(), seenUserID, int(tableData.NumberOfRows()))
+	assert.Len(s.T(), seenFirstName, int(tableData.NumberOfRows()))
+	assert.Len(s.T(), seenLastName, int(tableData.NumberOfRows()))
 
 	// Delete the file.
 	assert.NoError(s.T(), os.RemoveAll(fp))

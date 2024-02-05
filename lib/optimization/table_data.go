@@ -47,11 +47,7 @@ type TableData struct {
 
 // ShouldSkipUpdate will check if there are any rows or any columns
 func (t *TableData) ShouldSkipUpdate() bool {
-	if t.NumberOfRows() == 0 || t.ReadOnlyInMemoryCols() == nil {
-		return true
-	}
-
-	return false
+	return t.NumberOfRows() == 0 || t.ReadOnlyInMemoryCols() == nil
 }
 
 func (t *TableData) ContainsHardDeletes() bool {

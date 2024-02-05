@@ -286,7 +286,7 @@ func (c Config) Validate() error {
 
 	tcs, err := c.TopicConfigs()
 	if err != nil {
-		return fmt.Errorf("failed to retrieve tcs, err: %w", err)
+		return fmt.Errorf("failed to retrieve topic configs, err: %w", err)
 	}
 
 	if len(tcs) == 0 {
