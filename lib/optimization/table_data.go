@@ -2,6 +2,7 @@ package optimization
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -108,6 +109,13 @@ func (t *TableData) ReadOnlyInMemoryCols() *columns.Columns {
 }
 
 func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKeys []string, topicConfig kafkalib.TopicConfig, name string) *TableData {
+	tableName := stringutil.Override(name, topicConfig.TableName)
+
+	if mode == config.History && !strings.HasSuffix(tableName, constants.HistoryModeSuffix) {
+		slog.Warn(fmt.Sprintf("History mode is enabled and the tableName doesn't have %s suffix, adding it...", constants.HistoryModeSuffix))
+		tableName += constants.HistoryModeSuffix
+	}
+
 	return &TableData{
 		mode:            mode,
 		inMemoryColumns: inMemoryColumns,
@@ -117,7 +125,7 @@ func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKey
 		// temporaryTableSuffix is being set in `ResetTempTableSuffix`
 		temporaryTableSuffix:    "",
 		PartitionsToLastMessage: map[string][]artie.Message{},
-		name:                    stringutil.Override(name, topicConfig.TableName),
+		name:                    tableName,
 	}
 }
 
@@ -165,11 +173,18 @@ func (t *TableData) InsertRow(pk string, rowData map[string]interface{}, delete 
 	}
 }
 
-// Rows returns a read only slice of tableData's rows.
+// Rows returns a read only slice of tableData's rows or rowsData depending on mode
 func (t *TableData) Rows() []map[string]interface{} {
-	// TODO: Does it matter if it's not ready-only?
 	var rows []map[string]interface{}
-	rows = append(rows, t.rows...)
+
+	if t.Mode() == config.History {
+		rows = append(rows, t.rows...)
+	} else {
+		for _, v := range t.rowsData {
+			rows = append(rows, v)
+		}
+	}
+
 	return rows
 }
 

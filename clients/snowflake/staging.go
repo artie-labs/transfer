@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/typing/values"
 
 	"github.com/artie-labs/transfer/clients/utils"
@@ -37,19 +39,22 @@ func castColValStaging(colVal interface{}, colKind columns.Column, additionalDat
 // 3) Runs PUT to upload CSV to Snowflake staging (auto-compression with GZIP)
 // 4) Runs COPY INTO with the columns specified into temporary table
 // 5) Deletes CSV generated from (2)
-func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string) error {
-	tempAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:               s,
-		Tc:                tableConfig,
-		FqTableName:       tempTableName,
-		CreateTable:       true,
-		TemporaryTable:    true,
-		ColumnOp:          constants.Add,
-		UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
-	}
+func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalCopyClause string) error {
+	// TODO: For history mode - in the future, we could also have a separate stage name for history mode so we can enable parallel processing.
+	if tableData.Mode() != config.History {
+		tempAlterTableArgs := ddl.AlterTableArgs{
+			Dwh:               s,
+			Tc:                tableConfig,
+			FqTableName:       tempTableName,
+			CreateTable:       true,
+			TemporaryTable:    true,
+			ColumnOp:          constants.Add,
+			UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
+		}
 
-	if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
-		return fmt.Errorf("failed to create temp table, err: %v", err)
+		if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
+			return fmt.Errorf("failed to create temp table, err: %v", err)
+		}
 	}
 
 	fp, err := s.loadTemporaryTable(tableData, tempTableName)
@@ -61,15 +66,20 @@ func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig 
 		return fmt.Errorf("failed to run PUT for temporary table, err: %v", err)
 	}
 
-	_, err = s.Exec(fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
+	copyCommand := fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
 		// Copy into temporary tables (column ...)
 		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, &sql.NameArgs{
 			Escape:   true,
 			DestKind: s.Label(),
 		}), ","),
 		// Escaped columns, TABLE NAME
-		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableName, "%")))
+		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableName, "%"))
 
+	if additionalCopyClause != "" {
+		copyCommand += " " + additionalCopyClause
+	}
+
+	_, err = s.Exec(copyCommand)
 	if err != nil {
 		return fmt.Errorf("failed to load staging file into temporary table, err: %v", err)
 	}
@@ -96,7 +106,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 	writer.Comma = '\t'
 
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
-	for _, value := range tableData.RowsData() {
+	for _, value := range tableData.Rows() {
 		var row []string
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
@@ -175,7 +185,7 @@ func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
 	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.config.SharedDestinationConfig.UppercaseEscapedNames, ""), tableData.TempTableSuffix())
-	if err = s.prepareTempTable(tableData, tableConfig, temporaryTableName); err != nil {
+	if err = s.prepareTempTable(tableData, tableConfig, temporaryTableName, ""); err != nil {
 		return err
 	}
 

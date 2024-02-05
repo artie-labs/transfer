@@ -56,6 +56,6 @@ func (s *Store) append(tableData *optimization.TableData) error {
 		return err
 	}
 
-	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
-	return s.prepareTempTable(tableData, tableConfig, fqName)
+	return s.prepareTempTable(tableData, tableConfig, fqName,
+		`FILE_FORMAT = (TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE) PURGE = TRUE`)
 }

@@ -30,6 +30,8 @@ type Event struct {
 	Columns        *columns.Columns
 	ExecutionTime  time.Time // When the SQL command was executed
 	Deleted        bool
+
+	mode config.Mode
 }
 
 func ToMemoryEvent(event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.TopicConfig, cfgMode config.Mode) Event {
@@ -50,9 +52,13 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.T
 		// History mode will include a table suffix and operation column
 		tblName += constants.HistoryModeSuffix
 		evtData[constants.OperationColumnMarker] = event.Operation()
+
+		// We don't need this either.
+		delete(evtData, constants.DeleteColumnMarker)
 	}
 
 	return Event{
+		mode:           cfgMode,
 		Table:          tblName,
 		PrimaryKeyMap:  pkMap,
 		ExecutionTime:  event.GetExecutionTime(),
@@ -75,6 +81,11 @@ func (e *Event) IsValid() bool {
 
 	if len(e.Data) == 0 {
 		return false
+	}
+
+	if e.mode == config.History {
+		// History mode does not have the delete column marker.
+		return true
 	}
 
 	// Check if delete flag exists.
