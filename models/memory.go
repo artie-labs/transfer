@@ -23,7 +23,7 @@ func (t *TableData) Wipe() {
 
 // ShouldSkipFlush - this function is only used when the flush reason was time-based.
 // We want to add this in so that it can strike a balance between the Flush and Consumer go-routines on when to merge.
-// Say our flush interval is 5 mins and it flushed 4 mins ago based on size or rows - we don't want to flush right after since the buffer would be mostly empty.
+// Say our flush interval is 5 min, and it flushed 4 min ago based on size or rows - we don't want to flush right after since the buffer would be mostly empty.
 func (t *TableData) ShouldSkipFlush(cooldown time.Duration) bool {
 	if cooldown > 1*time.Minute {
 		confidenceInterval := 0.25

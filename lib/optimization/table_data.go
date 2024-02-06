@@ -178,6 +178,7 @@ func (t *TableData) Rows() []map[string]interface{} {
 	var rows []map[string]interface{}
 
 	if t.Mode() == config.History {
+		// History mode, the data is stored under `rows`
 		rows = append(rows, t.rows...)
 	} else {
 		for _, v := range t.rowsData {
