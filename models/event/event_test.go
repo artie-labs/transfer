@@ -3,10 +3,9 @@ package event
 import (
 	"time"
 
-	"github.com/artie-labs/transfer/lib/config"
-
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -48,18 +47,44 @@ func (f fakeEvent) GetData(pkMap map[string]interface{}, config *kafkalib.TopicC
 }
 
 func (e *EventsTestSuite) TestEvent_IsValid() {
-	var _evt Event
-	assert.False(e.T(), _evt.IsValid())
-
-	_evt.Table = "foo"
-	assert.False(e.T(), _evt.IsValid())
-
-	_evt.PrimaryKeyMap = idMap
-	assert.False(e.T(), _evt.IsValid())
-
-	_evt.Data = make(map[string]interface{})
-	_evt.Data[constants.DeleteColumnMarker] = false
-	assert.True(e.T(), _evt.IsValid(), _evt)
+	{
+		_evt := Event{
+			Table: "foo",
+		}
+		assert.False(e.T(), _evt.IsValid())
+	}
+	{
+		_evt := Event{
+			Table:         "foo",
+			PrimaryKeyMap: idMap,
+		}
+		assert.False(e.T(), _evt.IsValid())
+	}
+	{
+		_evt := Event{
+			Table:         "foo",
+			PrimaryKeyMap: idMap,
+			Data:          map[string]interface{}{},
+			mode:          config.History,
+		}
+		assert.True(e.T(), _evt.IsValid())
+	}
+	{
+		_evt := Event{
+			Table:         "foo",
+			PrimaryKeyMap: idMap,
+			Data:          map[string]interface{}{},
+		}
+		assert.False(e.T(), _evt.IsValid())
+	}
+	{
+		_evt := Event{
+			Table:         "foo",
+			PrimaryKeyMap: idMap,
+			Data:          map[string]interface{}{constants.DeleteColumnMarker: true},
+		}
+		assert.True(e.T(), _evt.IsValid())
+	}
 }
 
 func (e *EventsTestSuite) TestEvent_TableName() {

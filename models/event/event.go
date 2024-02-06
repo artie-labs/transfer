@@ -87,7 +87,6 @@ func (e *Event) IsValid() bool {
 		// History mode does not have the delete column marker.
 		return true
 	}
-
 	// Check if delete flag exists.
 	_, isOk := e.Data[constants.DeleteColumnMarker]
 	return isOk

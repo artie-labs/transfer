@@ -26,14 +26,8 @@ func shouldSkipColumn(colName string, softDelete bool, includeArtieUpdatedAt boo
 		return false
 	}
 
-	if mode == config.History {
-		if colName == constants.OperationColumnMarker {
-			return false
-		}
-
-		if colName == constants.DeleteColumnMarker {
-			return false
-		}
+	if mode == config.History && colName == constants.OperationColumnMarker {
+		return false
 	}
 
 	return strings.Contains(colName, constants.ArtiePrefix)
