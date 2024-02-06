@@ -64,8 +64,10 @@ func (e *EventsTestSuite) TestEvent_IsValid() {
 		_evt := Event{
 			Table:         "foo",
 			PrimaryKeyMap: idMap,
-			Data:          map[string]interface{}{},
-			mode:          config.History,
+			Data: map[string]interface{}{
+				"foo": "bar",
+			},
+			mode: config.History,
 		}
 		assert.True(e.T(), _evt.IsValid())
 	}
@@ -73,7 +75,9 @@ func (e *EventsTestSuite) TestEvent_IsValid() {
 		_evt := Event{
 			Table:         "foo",
 			PrimaryKeyMap: idMap,
-			Data:          map[string]interface{}{},
+			Data: map[string]interface{}{
+				"foo": "bar",
+			},
 		}
 		assert.False(e.T(), _evt.IsValid())
 	}
