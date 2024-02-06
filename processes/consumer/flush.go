@@ -92,7 +92,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 				tags["what"] = "merge_fail"
 				slog.With(logFields...).Warn(fmt.Sprintf("Failed to execute %s...not going to flush memory", action), slog.Any("err", err))
 			} else {
-				slog.With(logFields...).Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)))
+				slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), logFields...)
 				commitErr := commitOffset(ctx, _tableData.TopicConfig.Topic, _tableData.PartitionsToLastMessage)
 				if commitErr == nil {
 					inMemDB.ClearTableConfig(_tableName)

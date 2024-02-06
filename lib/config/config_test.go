@@ -572,7 +572,7 @@ func TestConfig_Validate(t *testing.T) {
 	assert.ErrorContains(t, cfg.Validate(), "config is invalid, include database updated at is required in history mode")
 
 	pubsub.TopicConfigs[0].IncludeDatabaseUpdatedAt = true
-	assert.Nil(t, cfg.Validate())
+	assert.NoError(t, cfg.Validate())
 	// End history mode
 
 	for _, num := range []int{-500, -300, -5, 0} {

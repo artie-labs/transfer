@@ -26,7 +26,7 @@ func shouldSkipColumn(colName string, softDelete bool, includeArtieUpdatedAt boo
 		return false
 	}
 
-	if mode == config.History && colName == constants.OperationColumnMarker {
+	if colName == constants.OperationColumnMarker && mode == config.History {
 		return false
 	}
 
