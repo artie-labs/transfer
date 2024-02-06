@@ -115,11 +115,10 @@ func slicesEqualUnordered(s1, s2 []string) bool {
 
 func TestNewTableData_TableName(t *testing.T) {
 	type _testCase struct {
-		name         string
-		tableName    string
-		overrideName string
-		schema       string
-		db           string
+		name      string
+		tableName string
+		schema    string
+		db        string
 
 		expectedName            string
 		expectedSnowflakeFqName string
@@ -141,26 +140,11 @@ func TestNewTableData_TableName(t *testing.T) {
 			expectedRedshiftFqName:  "public.food",
 			expectedS3FqName:        "db.public.food",
 		},
-		{
-			name:         "override is provided",
-			tableName:    "food",
-			schema:       "public",
-			overrideName: "drinks",
-			db:           "db",
-
-			expectedName:            "drinks",
-			expectedSnowflakeFqName: "db.public.drinks",
-			expectedBigQueryFqName:  "artie.db.drinks",
-			expectedRedshiftFqName:  "public.food",
-			expectedS3FqName:        "db.public.drinks",
-		},
 	}
 
 	bqProjectID := "artie"
 	for _, testCase := range testCases {
-		td := NewTableData(nil, nil,
-			kafkalib.TopicConfig{Database: testCase.db, TableName: testCase.overrideName, Schema: testCase.schema},
-			testCase.tableName)
+		td := NewTableData(nil, nil, kafkalib.TopicConfig{Database: testCase.db, Schema: testCase.schema}, testCase.tableName)
 
 		assert.Equal(t, testCase.expectedName, td.RawName(), testCase.name)
 		assert.Equal(t, testCase.expectedName, td.name, testCase.name)

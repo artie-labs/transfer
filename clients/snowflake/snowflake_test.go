@@ -48,8 +48,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	}
 
 	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, "foo")
-	assert.Equal(s.T(), topicConfig.TableName, tableData.RawName(), "override is working")
-
+	assert.Equal(s.T(), "foo", tableData.RawName())
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row, false)
 	}
@@ -147,13 +146,15 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		}
 	}
 
+	tblName := "orders"
+
 	topicConfig := kafkalib.TopicConfig{
 		Database:  "customer",
-		TableName: "orders",
+		TableName: tblName,
 		Schema:    "public",
 	}
 
-	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, "foo")
+	tableData := optimization.NewTableData(&cols, []string{"id"}, topicConfig, tblName)
 	tableData.ResetTempTableSuffix()
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row, false)

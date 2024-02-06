@@ -106,7 +106,7 @@ func NewTableData(inMemoryColumns *columns.Columns, primaryKeys []string, topicC
 		// temporaryTableSuffix is being set in `ResetTempTableSuffix`
 		temporaryTableSuffix:    "",
 		PartitionsToLastMessage: map[string][]artie.Message{},
-		name:                    stringutil.Override(name, topicConfig.TableName),
+		name:                    name,
 	}
 }
 
