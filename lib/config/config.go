@@ -219,6 +219,10 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 		config.Mode = Replication
 	}
 
+	if config.Mode == "" {
+		config.Mode = Replication
+	}
+
 	return &config, nil
 }
 
