@@ -344,3 +344,30 @@ func TestTableData_InsertRowIntegrity(t *testing.T) {
 		assert.True(t, td.ContainOtherOperations())
 	}
 }
+
+func TestTableData_Name(t *testing.T) {
+	{
+		// Reading the table name from `name`
+		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
+		assert.Equal(t, "foo", td.Name(false, nil))
+	}
+	{
+		// Table name override.
+		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{
+			TableName: "bar",
+		}, "foo")
+		assert.Equal(t, "bar", td.Name(true, nil))
+	}
+	{
+		// Table name does not contain history suffix when history mode is enabled.
+		td := NewTableData(nil, config.History, nil, kafkalib.TopicConfig{}, "abc")
+		assert.Equal(t, "abc__history", td.Name(false, nil))
+	}
+	{
+		// Table name does not contain history suffix when history mode is enabled (table name override).
+		td := NewTableData(nil, config.History, nil, kafkalib.TopicConfig{
+			TableName: "def",
+		}, "abc")
+		assert.Equal(t, "def__history", td.Name(false, nil))
+	}
+}
