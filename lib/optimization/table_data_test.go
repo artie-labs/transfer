@@ -115,11 +115,10 @@ func slicesEqualUnordered(s1, s2 []string) bool {
 
 func TestNewTableData_TableName(t *testing.T) {
 	type _testCase struct {
-		name         string
-		tableName    string
-		overrideName string
-		schema       string
-		db           string
+		name      string
+		tableName string
+		schema    string
+		db        string
 
 		expectedName            string
 		expectedSnowflakeFqName string
@@ -141,27 +140,11 @@ func TestNewTableData_TableName(t *testing.T) {
 			expectedRedshiftFqName:  "public.food",
 			expectedS3FqName:        "db.public.food",
 		},
-		{
-			name:         "override is provided",
-			tableName:    "food",
-			schema:       "public",
-			overrideName: "drinks",
-			db:           "db",
-
-			expectedName:            "drinks",
-			expectedSnowflakeFqName: "db.public.drinks",
-			expectedBigQueryFqName:  "artie.db.drinks",
-			expectedRedshiftFqName:  "public.food",
-			expectedS3FqName:        "db.public.drinks",
-		},
 	}
 
 	bqProjectID := "artie"
 	for _, testCase := range testCases {
-		td := NewTableData(nil, config.Replication, nil,
-			kafkalib.TopicConfig{Database: testCase.db, TableName: testCase.overrideName, Schema: testCase.schema},
-			testCase.tableName)
-
+		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: testCase.db, Schema: testCase.schema}, testCase.tableName)
 		assert.Equal(t, testCase.expectedName, td.RawName(), testCase.name)
 		assert.Equal(t, testCase.expectedName, td.name, testCase.name)
 		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(constants.Snowflake, true, false, ""), testCase.name)
@@ -342,32 +325,5 @@ func TestTableData_InsertRowIntegrity(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		td.InsertRow("123", nil, false)
 		assert.True(t, td.ContainOtherOperations())
-	}
-}
-
-func TestTableData_Name(t *testing.T) {
-	{
-		// Reading the table name from `name`
-		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
-		assert.Equal(t, "foo", td.Name(false, nil))
-	}
-	{
-		// Table name override.
-		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{
-			TableName: "bar",
-		}, "foo")
-		assert.Equal(t, "bar", td.Name(true, nil))
-	}
-	{
-		// Table name does not contain history suffix when history mode is enabled.
-		td := NewTableData(nil, config.History, nil, kafkalib.TopicConfig{}, "abc")
-		assert.Equal(t, "abc__history", td.Name(false, nil))
-	}
-	{
-		// Table name does not contain history suffix when history mode is enabled (table name override).
-		td := NewTableData(nil, config.History, nil, kafkalib.TopicConfig{
-			TableName: "def",
-		}, "abc")
-		assert.Equal(t, "def__history", td.Name(false, nil))
 	}
 }

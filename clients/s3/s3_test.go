@@ -27,7 +27,7 @@ func TestObjectPrefix(t *testing.T) {
 		Database:  "db",
 		TableName: "table",
 		Schema:    "public",
-	}, "")
+	}, "table")
 
 	td.LatestCDCTs = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	testCases := []_testCase{

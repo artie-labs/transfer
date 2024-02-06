@@ -2,7 +2,6 @@ package optimization
 
 import (
 	"fmt"
-	"log/slog"
 	"strings"
 	"time"
 
@@ -109,13 +108,6 @@ func (t *TableData) ReadOnlyInMemoryCols() *columns.Columns {
 }
 
 func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKeys []string, topicConfig kafkalib.TopicConfig, name string) *TableData {
-	tableName := stringutil.Override(name, topicConfig.TableName)
-
-	if mode == config.History && !strings.HasSuffix(tableName, constants.HistoryModeSuffix) {
-		slog.Warn(fmt.Sprintf("History mode is enabled and the tableName doesn't have %s suffix, adding it...", constants.HistoryModeSuffix))
-		tableName += constants.HistoryModeSuffix
-	}
-
 	return &TableData{
 		mode:            mode,
 		inMemoryColumns: inMemoryColumns,
@@ -125,7 +117,7 @@ func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKey
 		// temporaryTableSuffix is being set in `ResetTempTableSuffix`
 		temporaryTableSuffix:    "",
 		PartitionsToLastMessage: map[string][]artie.Message{},
-		name:                    tableName,
+		name:                    name,
 	}
 }
 
