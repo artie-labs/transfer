@@ -96,7 +96,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 	writer.Comma = '\t'
 
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
-	for _, value := range tableData.RowsData() {
+	for _, value := range tableData.Rows() {
 		var row []string
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)

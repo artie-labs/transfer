@@ -36,7 +36,7 @@ func (s *Store) merge(tableData *optimization.TableData) ([]*Row, error) {
 	var rows []*Row
 
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
-	for _, value := range tableData.RowsData() {
+	for _, value := range tableData.Rows() {
 		data := make(map[string]bigquery.Value)
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
