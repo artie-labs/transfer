@@ -50,9 +50,9 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.T
 	tblName := stringutil.Override(event.GetTableName(), tc.TableName)
 	if cfgMode == config.History {
 		if !strings.HasSuffix(tblName, constants.HistoryModeSuffix) {
-			slog.Warn(fmt.Sprintf("History mode is enabled, but table name does not have a %s suffix, so we're adding it...", constants.HistoryModeSuffix))
 			// History mode will include a table suffix and operation column
 			tblName += constants.HistoryModeSuffix
+			slog.Warn(fmt.Sprintf("History mode is enabled, but table name does not have a %s suffix, so we're adding it...", constants.HistoryModeSuffix), slog.String("tblName", tblName))
 		}
 
 		evtData[constants.OperationColumnMarker] = event.Operation()
