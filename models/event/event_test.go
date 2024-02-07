@@ -100,17 +100,17 @@ func (e *EventsTestSuite) TestEvent_TableName() {
 	}
 	{
 		// Now pass it in, it should override.
-		evt := ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{
-			TableName: "orders",
-		}, config.Replication)
+		evt := ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{TableName: "orders"}, config.Replication)
 		assert.Equal(e.T(), "orders", evt.Table)
 	}
 	{
 		// Now, if it's history mode...
-		evt := ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{
-			TableName: "orders",
-		}, config.History)
+		evt := ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{TableName: "orders"}, config.History)
 		assert.Equal(e.T(), "orders__history", evt.Table)
+
+		// Table already has history suffix, so it won't add extra.
+		evt = ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{TableName: "dusty__history"}, config.History)
+		assert.Equal(e.T(), "dusty__history", evt.Table)
 	}
 }
 
