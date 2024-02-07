@@ -10,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/artie-labs/transfer/models"
 	awsCfg "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2"
@@ -53,7 +54,7 @@ func SetKafkaConsumer(_topicToConsumer map[string]kafkalib.Consumer) {
 	}
 }
 
-func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline) {
+func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) {
 	slog.Info("Starting Kafka consumer...", slog.Any("config", cfg.Kafka))
 
 	dialer := &kafka.Dialer{
@@ -123,14 +124,14 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 				}
 
 				msg := artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)
-				tableName, processErr := processMessage(ctx, cfg, inMemDB, dest, ProcessArgs{
+				tableName, processErr := processMessage(ctx, cfg, inMemDB, dest, metricsClient, ProcessArgs{
 					Msg:                    msg,
 					GroupID:                kafkaConsumer.Config().GroupID,
 					TopicToConfigFormatMap: tcFmtMap,
 				})
 
-				msg.EmitIngestionLag(ctx, kafkaConsumer.Config().GroupID, tableName)
-				msg.EmitRowLag(ctx, kafkaConsumer.Config().GroupID, tableName)
+				msg.EmitIngestionLag(metricsClient, kafkaConsumer.Config().GroupID, tableName)
+				msg.EmitRowLag(metricsClient, kafkaConsumer.Config().GroupID, tableName)
 				if processErr != nil {
 					slog.With(artie.KafkaMsgLogFields(kafkaMsg)...).Warn("Skipping message...", slog.Any("err", processErr))
 				}

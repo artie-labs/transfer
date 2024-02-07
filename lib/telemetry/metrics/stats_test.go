@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -52,8 +51,8 @@ func TestLoadExporter(t *testing.T) {
 			},
 		}
 
-		ctx := LoadExporter(context.Background(), cfg)
-		_, isOk := FromContext(ctx).(NullMetricsProvider)
+		client := LoadExporter(cfg)
+		_, isOk := client.(NullMetricsProvider)
 		assert.Equal(t, result, isOk)
 	}
 }
