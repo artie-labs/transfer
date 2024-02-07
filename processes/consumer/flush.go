@@ -6,9 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/destination"
-	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/artie-labs/transfer/models"
+	"github.com/artie-labs/transfer/transfer"
 )
 
 type Args struct {
@@ -24,16 +23,16 @@ type Args struct {
 // Flush will merge and commit the offset on the specified topics within `args.SpecificTable`.
 // If the table list is empty, it'll flush everything. This is the default behavior for the time duration based flush.
 // Table specific flushes will be triggered based on the size of the pool (length and size wise).
-func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, args Args) error {
-	if inMemDB == nil {
+func Flush(ctx context.Context, core transfer.Core, args Args) error {
+	if core.InMemDB == nil {
 		return nil
 	}
 
 	var wg sync.WaitGroup
 	// Read lock to examine the map of tables
-	inMemDB.RLock()
-	allTables := inMemDB.TableData()
-	inMemDB.RUnlock()
+	core.InMemDB.RLock()
+	allTables := core.InMemDB.TableData()
+	core.InMemDB.RUnlock()
 
 	// Flush will take everything in memory and call Snowflake to create temp tables.
 	for tableName, tableData := range allTables {
@@ -74,7 +73,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 				"reason":   args.Reason,
 			}
 
-			err := dest.Merge(ctx, _tableData.TableData)
+			err := core.Dest.Merge(ctx, _tableData.TableData)
 			if err != nil {
 				tags["what"] = "merge_fail"
 				slog.With(logFields...).Warn("Failed to execute merge...not going to flush memory", slog.Any("err", err))
@@ -82,13 +81,13 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 				slog.With(logFields...).Info("Merge success, clearing memory...")
 				commitErr := commitOffset(ctx, _tableData.TopicConfig.Topic, _tableData.PartitionsToLastMessage)
 				if commitErr == nil {
-					inMemDB.ClearTableConfig(_tableName)
+					core.InMemDB.ClearTableConfig(_tableName)
 				} else {
 					tags["what"] = "commit_fail"
 					slog.Warn("Commit error...", slog.Any("err", commitErr))
 				}
 			}
-			metricsClient.Timing("flush", time.Since(start), tags)
+			core.MetricsClient.Timing("flush", time.Since(start), tags)
 		}(tableName, tableData)
 	}
 	wg.Wait()

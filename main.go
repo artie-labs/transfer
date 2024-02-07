@@ -17,6 +17,7 @@ import (
 	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/processes/consumer"
 	"github.com/artie-labs/transfer/processes/pool"
+	"github.com/artie-labs/transfer/transfer"
 	"github.com/getsentry/sentry-go"
 )
 
@@ -43,8 +44,8 @@ func main() {
 
 	ctx := context.Background()
 
-	// Loading telemetry
 	metricsClient := metrics.LoadExporter(settings.Config)
+
 	var dest destination.Baseline
 	if utils.IsOutputBaseline(settings.Config) {
 		dest = utils.Baseline(settings.Config)
@@ -54,11 +55,13 @@ func main() {
 
 	inMemDB := models.NewMemoryDB()
 
+	core := transfer.NewCore(settings.Config, inMemDB, dest, metricsClient)
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		pool.StartPool(ctx, inMemDB, dest, metricsClient, time.Duration(settings.Config.FlushIntervalSeconds)*time.Second)
+		pool.StartPool(ctx, core, time.Duration(settings.Config.FlushIntervalSeconds)*time.Second)
 	}()
 
 	wg.Add(1)
@@ -66,9 +69,9 @@ func main() {
 		defer wg.Done()
 		switch settings.Config.Queue {
 		case constants.Kafka:
-			consumer.StartConsumer(ctx, settings.Config, inMemDB, dest, metricsClient)
+			consumer.StartConsumer(ctx, core)
 		case constants.PubSub:
-			consumer.StartSubscriber(ctx, settings.Config, inMemDB, dest, metricsClient)
+			consumer.StartSubscriber(ctx, core)
 		default:
 			logger.Fatal(fmt.Sprintf("Message queue: %s not supported", settings.Config.Queue))
 		}

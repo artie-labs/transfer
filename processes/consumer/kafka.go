@@ -8,16 +8,13 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/artie"
-	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/logger"
-	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
-	"github.com/artie-labs/transfer/models"
+	"github.com/artie-labs/transfer/transfer"
 	awsCfg "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2"
 	"github.com/segmentio/kafka-go/sasl/plain"
 
 	"github.com/artie-labs/transfer/lib/cdc/format"
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/segmentio/kafka-go"
 )
@@ -54,8 +51,8 @@ func SetKafkaConsumer(_topicToConsumer map[string]kafkalib.Consumer) {
 	}
 }
 
-func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) {
-	slog.Info("Starting Kafka consumer...", slog.Any("config", cfg.Kafka))
+func StartConsumer(ctx context.Context, core transfer.Core) {
+	slog.Info("Starting Kafka consumer...", slog.Any("config", core.Config.Kafka))
 
 	dialer := &kafka.Dialer{
 		Timeout:   10 * time.Second,
@@ -64,7 +61,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 
 	// If using AWS MSK IAM, we expect this to be set in the ENV VAR
 	// (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, or the AWS Profile should be called default.)
-	if cfg.Kafka.EnableAWSMSKIAM {
+	if core.Config.Kafka.EnableAWSMSKIAM {
 		cfg, err := awsCfg.LoadDefaultConfig(ctx)
 		if err != nil {
 			logger.Panic("Failed to load aws configuration", slog.Any("err", err))
@@ -76,10 +73,10 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 
 	// If username or password is set, then let's enable PLAIN.
 	// By default, we will support no auth (local testing) and PLAIN SASL.
-	if cfg.Kafka.Username != "" {
+	if core.Config.Kafka.Username != "" {
 		dialer.SASLMechanism = plain.Mechanism{
-			Username: cfg.Kafka.Username,
-			Password: cfg.Kafka.Password,
+			Username: core.Config.Kafka.Username,
+			Password: core.Config.Kafka.Password,
 		}
 
 		dialer.TLS = &tls.Config{}
@@ -88,7 +85,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 	tcFmtMap := NewTcFmtMap()
 	topicToConsumer = NewTopicToConsumer()
 	var topics []string
-	for _, topicConfig := range cfg.Kafka.TopicConfigs {
+	for _, topicConfig := range core.Config.Kafka.TopicConfigs {
 		tcFmtMap.Add(topicConfig.Topic, TopicConfigFormatter{
 			tc:     topicConfig,
 			Format: format.GetFormatParser(topicConfig.CDCFormat, topicConfig.Topic),
@@ -103,10 +100,10 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 			defer wg.Done()
 
 			kafkaCfg := kafka.ReaderConfig{
-				GroupID: cfg.Kafka.GroupID,
+				GroupID: core.Config.Kafka.GroupID,
 				Dialer:  dialer,
 				Topic:   topic,
-				Brokers: cfg.Kafka.BootstrapServers(),
+				Brokers: core.Config.Kafka.BootstrapServers(),
 			}
 
 			kafkaConsumer := kafka.NewReader(kafkaCfg)
@@ -124,14 +121,14 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 				}
 
 				msg := artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)
-				tableName, processErr := processMessage(ctx, cfg, inMemDB, dest, metricsClient, ProcessArgs{
+				tableName, processErr := processMessage(ctx, core, ProcessArgs{
 					Msg:                    msg,
 					GroupID:                kafkaConsumer.Config().GroupID,
 					TopicToConfigFormatMap: tcFmtMap,
 				})
 
-				msg.EmitIngestionLag(metricsClient, kafkaConsumer.Config().GroupID, tableName)
-				msg.EmitRowLag(metricsClient, kafkaConsumer.Config().GroupID, tableName)
+				msg.EmitIngestionLag(core.MetricsClient, kafkaConsumer.Config().GroupID, tableName)
+				msg.EmitRowLag(core.MetricsClient, kafkaConsumer.Config().GroupID, tableName)
 				if processErr != nil {
 					slog.With(artie.KafkaMsgLogFields(kafkaMsg)...).Warn("Skipping message...", slog.Any("err", processErr))
 				}

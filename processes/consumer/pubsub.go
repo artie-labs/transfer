@@ -11,10 +11,8 @@ import (
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/logger"
-	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
-	"github.com/artie-labs/transfer/models"
+	"github.com/artie-labs/transfer/transfer"
 	"google.golang.org/api/option"
 )
 
@@ -58,15 +56,15 @@ func findOrCreateSubscription(ctx context.Context, cfg config.Config, client *gc
 	return sub, err
 }
 
-func StartSubscriber(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) {
-	client, clientErr := gcp_pubsub.NewClient(ctx, cfg.Pubsub.ProjectID,
-		option.WithCredentialsFile(cfg.Pubsub.PathToCredentials))
+func StartSubscriber(ctx context.Context, core transfer.Core) {
+	client, clientErr := gcp_pubsub.NewClient(ctx, core.Config.Pubsub.ProjectID,
+		option.WithCredentialsFile(core.Config.Pubsub.PathToCredentials))
 	if clientErr != nil {
 		logger.Panic("Failed to create a pubsub client", slog.Any("err", clientErr))
 	}
 
 	tcFmtMap := NewTcFmtMap()
-	for _, topicConfig := range cfg.Pubsub.TopicConfigs {
+	for _, topicConfig := range core.Config.Pubsub.TopicConfigs {
 		tcFmtMap.Add(topicConfig.Topic, TopicConfigFormatter{
 			tc:     topicConfig,
 			Format: format.GetFormatParser(topicConfig.CDCFormat, topicConfig.Topic),
@@ -74,12 +72,12 @@ func StartSubscriber(ctx context.Context, cfg config.Config, inMemDB *models.Dat
 	}
 
 	var wg sync.WaitGroup
-	for _, topicConfig := range cfg.Pubsub.TopicConfigs {
+	for _, topicConfig := range core.Config.Pubsub.TopicConfigs {
 		wg.Add(1)
 		go func(ctx context.Context, client *gcp_pubsub.Client, topic string) {
 			defer wg.Done()
 			subName := fmt.Sprintf("transfer_%s", topic)
-			sub, err := findOrCreateSubscription(ctx, cfg, client, topic, subName)
+			sub, err := findOrCreateSubscription(ctx, core.Config, client, topic, subName)
 			if err != nil {
 				logger.Panic("Failed to find or create subscription", slog.Any("err", err))
 			}
@@ -94,13 +92,13 @@ func StartSubscriber(ctx context.Context, cfg config.Config, inMemDB *models.Dat
 						slog.String("value", string(msg.Value())),
 					}
 
-					tableName, processErr := processMessage(ctx, cfg, inMemDB, dest, metricsClient, ProcessArgs{
+					tableName, processErr := processMessage(ctx, core, ProcessArgs{
 						Msg:                    msg,
 						GroupID:                subName,
 						TopicToConfigFormatMap: tcFmtMap,
 					})
 
-					msg.EmitIngestionLag(metricsClient, subName, tableName)
+					msg.EmitIngestionLag(core.MetricsClient, subName, tableName)
 					if processErr != nil {
 						slog.With(logFields...).Warn("Skipping message...", slog.Any("err", processErr))
 					}
