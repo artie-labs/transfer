@@ -76,6 +76,12 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
+	defer func() {
+		if dropErr := ddl.DropTemporaryTable(s, temporaryTableName, false); dropErr != nil {
+			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableName))
+		}
+	}()
+
 	// Now iterate over all the in-memory cols and see which one requires backfill.
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
 		if col.ShouldSkip() {
@@ -92,7 +98,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		})
 	}
 
-	mergArg := dml.MergeArgument{
+	mergeArg := dml.MergeArgument{
 		FqTableName: fqName,
 		// We are adding SELECT DISTINCT here for the temporary table as an extra guardrail.
 		// Redshift does not enforce any row uniqueness and there could be potential LOAD errors which will cause duplicate rows to arise.
@@ -107,7 +113,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	// Prepare merge statement
-	mergeParts, err := mergArg.GetParts()
+	mergeParts, err := mergeArg.GetParts()
 	if err != nil {
 		return fmt.Errorf("failed to generate merge statement, err: %v", err)
 	}
@@ -128,6 +134,5 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return fmt.Errorf("failed to merge, parts: %v, err: %v", mergeParts, err)
 	}
 
-	_ = ddl.DropTemporaryTable(s, temporaryTableName, false)
 	return err
 }

@@ -41,8 +41,10 @@ func main() {
 		slog.Int("flushPoolSizeKb", settings.Config.FlushSizeKb),
 	)
 
+	ctx := context.Background()
+
 	// Loading telemetry
-	ctx := metrics.LoadExporter(context.Background(), settings.Config)
+	metricsClient := metrics.LoadExporter(settings.Config)
 	var dest destination.Baseline
 	if utils.IsOutputBaseline(settings.Config) {
 		dest = utils.Baseline(settings.Config)
@@ -56,7 +58,7 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		pool.StartPool(ctx, inMemDB, dest, time.Duration(settings.Config.FlushIntervalSeconds)*time.Second)
+		pool.StartPool(ctx, inMemDB, dest, metricsClient, time.Duration(settings.Config.FlushIntervalSeconds)*time.Second)
 	}()
 
 	wg.Add(1)
@@ -64,9 +66,9 @@ func main() {
 		defer wg.Done()
 		switch settings.Config.Queue {
 		case constants.Kafka:
-			consumer.StartConsumer(ctx, settings.Config, inMemDB, dest)
+			consumer.StartConsumer(ctx, settings.Config, inMemDB, dest, metricsClient)
 		case constants.PubSub:
-			consumer.StartSubscriber(ctx, settings.Config, inMemDB, dest)
+			consumer.StartSubscriber(ctx, settings.Config, inMemDB, dest, metricsClient)
 		default:
 			logger.Fatal(fmt.Sprintf("Message queue: %s not supported", settings.Config.Queue))
 		}

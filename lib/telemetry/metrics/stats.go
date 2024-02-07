@@ -1,11 +1,11 @@
 package metrics
 
 import (
-	"context"
 	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/datadog"
 )
 
@@ -23,7 +23,7 @@ func exporterKindValid(kind constants.ExporterKind) bool {
 	return valid
 }
 
-func LoadExporter(ctx context.Context, cfg config.Config) context.Context {
+func LoadExporter(cfg config.Config) base.Client {
 	kind := cfg.Telemetry.Metrics.Provider
 	ddSettings := cfg.Telemetry.Metrics.Settings
 
@@ -37,10 +37,10 @@ func LoadExporter(ctx context.Context, cfg config.Config) context.Context {
 		if exportErr != nil {
 			slog.Error("Metrics client error", slog.Any("err", exportErr), slog.Any("provider", kind))
 		} else {
-			ctx = InjectMetricsClientIntoCtx(ctx, statsClient)
 			slog.Info("Metrics client loaded", slog.Any("provider", kind))
+			return statsClient
 		}
 	}
 
-	return ctx
+	return NullMetricsProvider{}
 }

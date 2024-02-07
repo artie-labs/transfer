@@ -154,9 +154,3 @@ const (
 func IsValidS3OutputFormat(format S3OutputFormat) bool {
 	return format == ParquetFormat
 }
-
-type contextKey string
-
-const (
-	MetricsKey contextKey = "__metrics"
-)

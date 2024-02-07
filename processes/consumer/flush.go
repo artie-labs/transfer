@@ -10,7 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/stringutil"
-	"github.com/artie-labs/transfer/lib/telemetry/metrics"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/artie-labs/transfer/models"
 )
 
@@ -27,7 +27,7 @@ type Args struct {
 // Flush will merge/append and commit the offset on the specified topics within `args.SpecificTable`.
 // If the table list is empty, it'll flush everything. This is the default behavior for the time duration based flush.
 // Table specific flushes will be triggered based on the size of the pool (length and size wise).
-func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, args Args) error {
+func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, args Args) error {
 	if inMemDB == nil {
 		return nil
 	}
@@ -101,7 +101,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 					slog.Warn("Commit error...", slog.Any("err", commitErr))
 				}
 			}
-			metrics.FromContext(ctx).Timing("flush", time.Since(start), tags)
+			metricsClient.Timing("flush", time.Since(start), tags)
 		}(tableName, tableData)
 	}
 	wg.Wait()

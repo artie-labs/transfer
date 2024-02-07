@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -138,6 +139,13 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return fmt.Errorf("failed to close filewriter, err: %v", err)
 	}
 
+	defer func() {
+		// Delete the file regardless of outcome to avoid fs build up.
+		if removeErr := os.RemoveAll(fp); removeErr != nil {
+			slog.Warn("Failed to delete temp file", slog.Any("err", removeErr), slog.String("filePath", fp))
+		}
+	}()
+
 	if _, err = s3lib.UploadLocalFileToS3(ctx, s3lib.UploadArgs{
 		Bucket:                     s.config.S3.Bucket,
 		OptionalS3Prefix:           s.ObjectPrefix(tableData),
@@ -148,7 +156,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return fmt.Errorf("failed to upload file to s3, err: %v", err)
 	}
 
-	return os.RemoveAll(fp)
+	return nil
 }
 
 func LoadStore(cfg config.Config) (*Store, error) {
