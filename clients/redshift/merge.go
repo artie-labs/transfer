@@ -76,6 +76,12 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return err
 	}
 
+	defer func() {
+		if dropErr := ddl.DropTemporaryTable(s, temporaryTableName, false); dropErr != nil {
+			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableName))
+		}
+	}()
+
 	// Now iterate over all the in-memory cols and see which one requires backfill.
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
 		if col.ShouldSkip() {
@@ -128,6 +134,5 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return fmt.Errorf("failed to merge, parts: %v, err: %v", mergeParts, err)
 	}
 
-	_ = ddl.DropTemporaryTable(s, temporaryTableName, false)
 	return err
 }

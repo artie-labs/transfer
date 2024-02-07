@@ -57,8 +57,8 @@ func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig 
 		return fmt.Errorf("failed to load temporary table, err: %v", err)
 	}
 
-	// Delete the file regardless of outcome to avoid fs build up.
 	defer func() {
+		// Delete the file regardless of outcome to avoid fs build up.
 		if removeErr := os.RemoveAll(fp); removeErr != nil {
 			slog.Warn("Failed to delete temp file", slog.Any("err", removeErr), slog.String("filePath", fp))
 		}
@@ -182,6 +182,12 @@ func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 		return err
 	}
 
+	defer func() {
+		if dropErr := ddl.DropTemporaryTable(s, temporaryTableName, false); dropErr != nil {
+			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableName))
+		}
+	}()
+
 	// Now iterate over all the in-memory cols and see which one requires backfill.
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
 		if col.ShouldSkip() {
@@ -219,6 +225,5 @@ func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 		return err
 	}
 
-	_ = ddl.DropTemporaryTable(s, temporaryTableName, false)
 	return err
 }

@@ -135,6 +135,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	defer func() {
+		// Delete the file regardless of outcome to avoid fs build up.
 		if removeErr := os.RemoveAll(fp); removeErr != nil {
 			slog.Warn("Failed to delete temp file", slog.Any("err", removeErr), slog.String("filePath", fp))
 		}
