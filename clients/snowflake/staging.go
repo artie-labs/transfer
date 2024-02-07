@@ -221,9 +221,5 @@ func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 
 	slog.Debug("Executing...", slog.String("query", mergeQuery))
 	_, err = s.Exec(mergeQuery)
-	if err != nil {
-		return err
-	}
-
 	return err
 }

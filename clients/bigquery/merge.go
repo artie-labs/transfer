@@ -252,9 +252,5 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	_, err = s.Exec(mergeQuery)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
