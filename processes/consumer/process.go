@@ -34,6 +34,8 @@ func processMessage(ctx context.Context, cfg config.Config, inMemDB *models.Data
 		"what":    "success",
 	}
 	st := time.Now()
+
+	// We are wrapping this in a defer function so that the values do not get immediately evaluated and miss with our actual process duration.
 	defer func() {
 		metricsClient.Timing("process.message", time.Since(st), tags)
 	}()
