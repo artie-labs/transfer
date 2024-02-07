@@ -98,7 +98,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		})
 	}
 
-	mergArg := dml.MergeArgument{
+	mergeArg := dml.MergeArgument{
 		FqTableName: fqName,
 		// We are adding SELECT DISTINCT here for the temporary table as an extra guardrail.
 		// Redshift does not enforce any row uniqueness and there could be potential LOAD errors which will cause duplicate rows to arise.
@@ -113,7 +113,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	// Prepare merge statement
-	mergeParts, err := mergArg.GetParts()
+	mergeParts, err := mergeArg.GetParts()
 	if err != nil {
 		return fmt.Errorf("failed to generate merge statement, err: %v", err)
 	}
