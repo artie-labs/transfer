@@ -57,6 +57,13 @@ func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig 
 		return fmt.Errorf("failed to load temporary table, err: %v", err)
 	}
 
+	defer func() {
+		// Delete the file regardless of outcome to avoid fs build up.
+		if removeErr := os.RemoveAll(fp); removeErr != nil {
+			slog.Warn("Failed to delete temp file", slog.Any("err", removeErr), slog.String("filePath", fp))
+		}
+	}()
+
 	if _, err = s.Exec(fmt.Sprintf("PUT file://%s @%s AUTO_COMPRESS=TRUE", fp, addPrefixToTableName(tempTableName, "%"))); err != nil {
 		return fmt.Errorf("failed to run PUT for temporary table, err: %v", err)
 	}
@@ -72,10 +79,6 @@ func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig 
 
 	if err != nil {
 		return fmt.Errorf("failed to load staging file into temporary table, err: %v", err)
-	}
-
-	if deleteErr := os.RemoveAll(fp); deleteErr != nil {
-		slog.Warn("Failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
 	}
 
 	return nil
@@ -179,6 +182,12 @@ func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 		return err
 	}
 
+	defer func() {
+		if dropErr := ddl.DropTemporaryTable(s, temporaryTableName, false); dropErr != nil {
+			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableName))
+		}
+	}()
+
 	// Now iterate over all the in-memory cols and see which one requires backfill.
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
 		if col.ShouldSkip() {
@@ -212,10 +221,5 @@ func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 
 	slog.Debug("Executing...", slog.String("query", mergeQuery))
 	_, err = s.Exec(mergeQuery)
-	if err != nil {
-		return err
-	}
-
-	_ = ddl.DropTemporaryTable(s, temporaryTableName, false)
 	return err
 }
