@@ -45,6 +45,13 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 		return fmt.Errorf("failed to load temporary table, err: %v", err)
 	}
 
+	defer func() {
+		// Remove file regardless of outcome to avoid fs build up.
+		if removeErr := os.RemoveAll(fp); removeErr != nil {
+			slog.Warn("Failed to delete temp file", slog.Any("err", removeErr), slog.String("filePath", fp))
+		}
+	}()
+
 	// Load fp into s3, get S3 URI and pass it down.
 	s3Uri, err := s3lib.UploadLocalFileToS3(ctx, s3lib.UploadArgs{
 		OptionalS3Prefix: s.optionalS3Prefix,
@@ -62,10 +69,6 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 	copyStmt := fmt.Sprintf(`COPY %s FROM '%s' DELIMITER '\t' NULL AS '\\N' GZIP FORMAT CSV %s dateformat 'auto' timeformat 'auto';`, tempTableName, s3Uri, s.credentialsClause)
 	if _, err = s.Exec(copyStmt); err != nil {
 		return fmt.Errorf("failed to run COPY for temporary table, err: %v, copy: %v", err, copyStmt)
-	}
-
-	if deleteErr := os.RemoveAll(fp); deleteErr != nil {
-		slog.Warn("Failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
 	}
 
 	return nil

@@ -210,6 +210,13 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return fmt.Errorf("failed to insert into temp table: %s, err: %v", tableName, err)
 	}
 
+	defer func() {
+		// Regardless of outcome, drop the temporary table once this function is returning.
+		if dropErr := ddl.DropTemporaryTable(s, tempAlterTableArgs.FqTableName, false); dropErr != nil {
+			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", tempAlterTableArgs.FqTableName))
+		}
+	}()
+
 	var additionalEqualityStrings []string
 	if tableData.TopicConfig.BigQueryPartitionSettings != nil {
 		additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
@@ -245,9 +252,6 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	_, err = s.Exec(mergeQuery)
-	// This is above, in the case we have a head of line blocking because of an error
-	// We will not create infinite temporary tables.
-	_ = ddl.DropTemporaryTable(s, tempAlterTableArgs.FqTableName, false)
 	if err != nil {
 		return err
 	}

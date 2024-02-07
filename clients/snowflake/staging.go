@@ -57,6 +57,13 @@ func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig 
 		return fmt.Errorf("failed to load temporary table, err: %v", err)
 	}
 
+	// Delete the file regardless of outcome to avoid fs build up.
+	defer func() {
+		if removeErr := os.RemoveAll(fp); removeErr != nil {
+			slog.Warn("Failed to delete temp file", slog.Any("err", removeErr), slog.String("filePath", fp))
+		}
+	}()
+
 	if _, err = s.Exec(fmt.Sprintf("PUT file://%s @%s AUTO_COMPRESS=TRUE", fp, addPrefixToTableName(tempTableName, "%"))); err != nil {
 		return fmt.Errorf("failed to run PUT for temporary table, err: %v", err)
 	}
@@ -72,10 +79,6 @@ func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig 
 
 	if err != nil {
 		return fmt.Errorf("failed to load staging file into temporary table, err: %v", err)
-	}
-
-	if deleteErr := os.RemoveAll(fp); deleteErr != nil {
-		slog.Warn("Failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
 	}
 
 	return nil
