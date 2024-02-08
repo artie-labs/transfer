@@ -60,7 +60,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to upload this to s3, err: %w", err)
+		return fmt.Errorf("failed to upload %s to s3, err: %w", fp, err)
 	}
 
 	// COPY table_name FROM '/path/to/local/file' DELIMITER '\t' NULL '\\N' FORMAT csv;
