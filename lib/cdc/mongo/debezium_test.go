@@ -70,7 +70,7 @@ func (p *MongoTestSuite) TestGetPrimaryKey() {
 }
 
 func (p *MongoTestSuite) TestSource_GetExecutionTime() {
-	schemaEvtPayload := &SchemaEventPayload{Payload: payload{
+	schemaEvtPayload := &SchemaEventPayload{Payload: Payload{
 		Before:    nil,
 		After:     nil,
 		BeforeMap: nil,
