@@ -129,7 +129,19 @@ func (c Config) TopicConfigs() ([]*kafkalib.TopicConfig, error) {
 	return nil, fmt.Errorf("unsupported queue: %v", c.Queue)
 }
 
+type Mode string
+
+const (
+	History     Mode = "history"
+	Replication Mode = "replication"
+)
+
+func (m Mode) String() string {
+	return string(m)
+}
+
 type Config struct {
+	Mode   Mode                      `yaml:"mode"`
 	Output constants.DestinationKind `yaml:"outputSource"`
 	Queue  constants.QueueKind       `yaml:"queue"`
 
@@ -201,6 +213,10 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 
 	if config.FlushSizeKb == 0 {
 		config.FlushSizeKb = defaultFlushSizeKb
+	}
+
+	if config.Mode == "" {
+		config.Mode = Replication
 	}
 
 	return &config, nil
@@ -297,6 +313,18 @@ func (c Config) Validate() error {
 		if err = topicConfig.Validate(); err != nil {
 			return fmt.Errorf("config is invalid, topic config is invalid, tc: %s, err: %w", topicConfig.String(), err)
 		}
+
+		// History Mode Validation
+		if c.Mode == History {
+			if topicConfig.DropDeletedColumns {
+				return fmt.Errorf("config is invalid, drop deleted columns is not supported in history mode, topic: %s", topicConfig.String())
+			}
+
+			if !topicConfig.IncludeDatabaseUpdatedAt {
+				return fmt.Errorf("config is invalid, include database updated at is required in history mode, topic: %s", topicConfig.String())
+			}
+		}
+
 	}
 
 	return nil

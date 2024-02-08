@@ -208,7 +208,7 @@ kafka:
 
 	validErr = config.Validate()
 	assert.Error(t, validErr)
-	assert.True(t, strings.Contains(validErr.Error(), "topic config is invalid"), validErr.Error())
+	assert.ErrorContains(t, validErr, "config is invalid, topic config is invalid")
 }
 
 func TestConfig_Validate_ErrorKafkaInvalid(t *testing.T) {
@@ -562,11 +562,23 @@ func TestConfig_Validate(t *testing.T) {
 
 	assert.Nil(t, cfg.Validate())
 
+	// Now let's change to history mode and see.
+	cfg.Mode = History
+	pubsub.TopicConfigs[0].DropDeletedColumns = true
+	assert.ErrorContains(t, cfg.Validate(), "config is invalid, drop deleted columns is not supported in history mode")
+
+	pubsub.TopicConfigs[0].DropDeletedColumns = false
+	pubsub.TopicConfigs[0].IncludeDatabaseUpdatedAt = false
+	assert.ErrorContains(t, cfg.Validate(), "config is invalid, include database updated at is required in history mode")
+
+	pubsub.TopicConfigs[0].IncludeDatabaseUpdatedAt = true
+	assert.NoError(t, cfg.Validate())
+	// End history mode
+
 	for _, num := range []int{-500, -300, -5, 0} {
 		cfg.FlushSizeKb = num
 		assert.ErrorContains(t, cfg.Validate(), "config is invalid, flush size pool has to be a positive number")
 	}
-
 }
 
 func TestCfg_KafkaBootstrapServers(t *testing.T) {

@@ -63,6 +63,11 @@ func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
 	return strings.Join([]string{fqTableName, yyyyMMDDFormat}, "/")
 }
 
+func (s *Store) Append(ctx context.Context, tableData *optimization.TableData) error {
+	// There's no difference in appending or merging for S3.
+	return s.Merge(ctx, tableData)
+}
+
 // Merge - will take tableData, write it into a particular file in the specified format, in these steps:
 // 1. Load a ParquetWriter from a JSON schema (auto-generated)
 // 2. Load the temporary file, under this format: s3://bucket/optionalS3Prefix/fullyQualifiedTableName/YYYY-MM-DD/{{unix_timestamp}}.parquet.gz

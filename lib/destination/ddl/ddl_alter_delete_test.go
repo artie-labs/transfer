@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/ptr"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -24,7 +26,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 		cols.AddColumn(columns.NewColumn(colName, typing.String))
 	}
 
-	td := optimization.NewTableData(&cols, nil, kafkalib.TopicConfig{
+	td := optimization.NewTableData(&cols, config.Replication, nil, kafkalib.TopicConfig{
 		Database:  "db",
 		TableName: "table",
 		Schema:    "public",

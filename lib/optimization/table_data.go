@@ -18,9 +18,15 @@ import (
 )
 
 type TableData struct {
-	inMemoryColumns *columns.Columns                  // list of columns
-	rowsData        map[string]map[string]interface{} // pk -> { col -> val }
-	primaryKeys     []string
+	mode            config.Mode
+	inMemoryColumns *columns.Columns // list of columns
+
+	// rowsData is used for replication
+	rowsData map[string]map[string]interface{} // pk -> { col -> val }
+	// rows is used for history mode, since it's append only.
+	rows []map[string]interface{}
+
+	primaryKeys []string
 
 	TopicConfig kafkalib.TopicConfig
 	// Partition to the latest offset(s).
@@ -43,6 +49,10 @@ type TableData struct {
 	// Name of the table in the destination
 	// Prefer calling .Name() everywhere
 	name string
+}
+
+func (t *TableData) Mode() config.Mode {
+	return t.mode
 }
 
 // ShouldSkipUpdate will check if there are any rows or any columns
@@ -97,8 +107,9 @@ func (t *TableData) ReadOnlyInMemoryCols() *columns.Columns {
 	return &cols
 }
 
-func NewTableData(inMemoryColumns *columns.Columns, primaryKeys []string, topicConfig kafkalib.TopicConfig, name string) *TableData {
+func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKeys []string, topicConfig kafkalib.TopicConfig, name string) *TableData {
 	return &TableData{
+		mode:            mode,
 		inMemoryColumns: inMemoryColumns,
 		rowsData:        map[string]map[string]interface{}{},
 		primaryKeys:     primaryKeys,
@@ -114,6 +125,12 @@ func NewTableData(inMemoryColumns *columns.Columns, primaryKeys []string, topicC
 // This is important to avoid concurrent r/w, but also the ability for us to add or decrement row size by keeping a running total
 // With this, we are able to reduce the latency by 500x+ on a 5k row table. See event_bench_test.go vs. size_bench_test.go
 func (t *TableData) InsertRow(pk string, rowData map[string]interface{}, delete bool) {
+	if t.mode == config.History {
+		t.rows = append(t.rows, rowData)
+		t.approxSize += size.GetApproxSize(rowData)
+		return
+	}
+
 	var prevRowSize int
 	prevRow, isOk := t.rowsData[pk]
 	if isOk {
@@ -151,8 +168,14 @@ func (t *TableData) InsertRow(pk string, rowData map[string]interface{}, delete 
 // Rows returns a read only slice of tableData's rows or rowsData depending on mode
 func (t *TableData) Rows() []map[string]interface{} {
 	var rows []map[string]interface{}
-	for _, v := range t.rowsData {
-		rows = append(rows, v)
+
+	if t.Mode() == config.History {
+		// History mode, the data is stored under `rows`
+		rows = append(rows, t.rows...)
+	} else {
+		for _, v := range t.rowsData {
+			rows = append(rows, v)
+		}
 	}
 
 	return rows
@@ -200,6 +223,10 @@ func (t *TableData) ToFqName(kind constants.DestinationKind, escape bool, upperc
 func (t *TableData) NumberOfRows() uint {
 	if t == nil {
 		return 0
+	}
+
+	if t.mode == config.History {
+		return uint(len(t.rows))
 	}
 
 	return uint(len(t.rowsData))

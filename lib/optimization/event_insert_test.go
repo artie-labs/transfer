@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -101,7 +103,7 @@ func TestInsertRow_Toast(t *testing.T) {
 
 	for _, testCase := range testCases {
 		// Wipe the table data per test run.
-		td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
+		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
 		for _, rowData := range testCase.rowsDataToUpdate {
 			td.InsertRow(testCase.primaryKey, rowData, false)
 		}
@@ -117,7 +119,7 @@ func TestInsertRow_Toast(t *testing.T) {
 }
 
 func TestTableData_InsertRow(t *testing.T) {
-	td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
+	td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
 	assert.Equal(t, 0, int(td.NumberOfRows()))
 
 	// Now insert the right way.
@@ -132,7 +134,7 @@ func TestTableData_InsertRowApproxSize(t *testing.T) {
 	// In this test, we'll insert 1000 rows, update X and then delete Y
 	// Does the size then match up? We will iterate over a map to take advantage of the in-deterministic ordering of a map
 	// So we can test multiple updates, deletes, etc.
-	td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
+	td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
 	numInsertRows := 1000
 	numUpdateRows := 420
 	numDeleteRows := 250

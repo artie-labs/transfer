@@ -144,8 +144,7 @@ func TestNewTableData_TableName(t *testing.T) {
 
 	bqProjectID := "artie"
 	for _, testCase := range testCases {
-		td := NewTableData(nil, nil, kafkalib.TopicConfig{Database: testCase.db, Schema: testCase.schema}, testCase.tableName)
-
+		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: testCase.db, Schema: testCase.schema}, testCase.tableName)
 		assert.Equal(t, testCase.expectedName, td.RawName(), testCase.name)
 		assert.Equal(t, testCase.expectedName, td.name, testCase.name)
 		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(constants.Snowflake, true, false, ""), testCase.name)
@@ -163,7 +162,7 @@ func TestTableData_ReadOnlyInMemoryCols(t *testing.T) {
 	var cols columns.Columns
 	cols.AddColumn(columns.NewColumn("name", typing.String))
 
-	td := NewTableData(&cols, nil, kafkalib.TopicConfig{}, "foo")
+	td := NewTableData(&cols, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
 	readOnlyCols := td.ReadOnlyInMemoryCols()
 	readOnlyCols.AddColumn(columns.NewColumn("last_name", typing.String))
 
@@ -235,7 +234,7 @@ func TestTableData_ShouldFlushRowLength(t *testing.T) {
 	}
 
 	// Insert 3 rows and confirm that we need to flush.
-	td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
+	td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
 	for i := 0; i < 3; i++ {
 		shouldFlush, flushReason := td.ShouldFlush(cfg)
 		assert.False(t, shouldFlush)
@@ -254,16 +253,17 @@ func TestTableData_ShouldFlushRowLength(t *testing.T) {
 func TestTableData_ContainsHardDeletes(t *testing.T) {
 	{
 		// Hard delete = true
-		td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
+		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
 		assert.Equal(t, 0, int(td.NumberOfRows()))
 
 		td.InsertRow("123", nil, true)
 		assert.Equal(t, 1, int(td.NumberOfRows()))
+
 		assert.True(t, td.ContainsHardDeletes())
 	}
 	{
 		// TopicConfig has soft delete turned on, so hard delete = false
-		td := NewTableData(nil, nil, kafkalib.TopicConfig{SoftDelete: true}, "foo")
+		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{SoftDelete: true}, "foo")
 		assert.Equal(t, 0, int(td.NumberOfRows()))
 
 		td.InsertRow("123", nil, true)
@@ -279,7 +279,7 @@ func TestTableData_ShouldFlushRowSize(t *testing.T) {
 	}
 
 	// Insert 3 rows and confirm that we need to flush.
-	td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
+	td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
 	for i := 0; i < 100; i++ {
 		shouldFlush, flushReason := td.ShouldFlush(cfg)
 		assert.False(t, shouldFlush)
@@ -313,7 +313,7 @@ func TestTableData_ShouldFlushRowSize(t *testing.T) {
 }
 
 func TestTableData_InsertRowIntegrity(t *testing.T) {
-	td := NewTableData(nil, nil, kafkalib.TopicConfig{}, "foo")
+	td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
 	assert.Equal(t, 0, int(td.NumberOfRows()))
 	assert.False(t, td.ContainOtherOperations())
 

@@ -23,7 +23,7 @@ func TestObjectPrefix(t *testing.T) {
 		expectedFormat string
 	}
 
-	td := optimization.NewTableData(nil, nil, kafkalib.TopicConfig{
+	td := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{
 		Database:  "db",
 		TableName: "table",
 		Schema:    "public",

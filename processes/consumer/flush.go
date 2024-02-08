@@ -2,11 +2,14 @@ package consumer
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"sync"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
+	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/artie-labs/transfer/models"
 )
@@ -21,7 +24,7 @@ type Args struct {
 	Reason string
 }
 
-// Flush will merge and commit the offset on the specified topics within `args.SpecificTable`.
+// Flush will merge/append and commit the offset on the specified topics within `args.SpecificTable`.
 // If the table list is empty, it'll flush everything. This is the default behavior for the time duration based flush.
 // Table specific flushes will be triggered based on the size of the pool (length and size wise).
 func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, args Args) error {
@@ -55,31 +58,41 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 				return
 			}
 
-			// Lock the tables when executing merge.
+			// Lock the tables when executing merge / append.
 			_tableData.Lock()
 			defer _tableData.Unlock()
 			if _tableData.Empty() {
 				return
 			}
 
-			// This is added so that we have a new temporary table suffix for each merge.
+			// This is added so that we have a new temporary table suffix for each merge / append.
 			_tableData.ResetTempTableSuffix()
 
 			start := time.Now()
 			tags := map[string]string{
 				"what":     "success",
+				"mode":     _tableData.Mode().String(),
 				"table":    _tableName,
 				"database": _tableData.TopicConfig.Database,
 				"schema":   _tableData.TopicConfig.Schema,
 				"reason":   args.Reason,
 			}
 
-			err := dest.Merge(ctx, _tableData.TableData)
+			var err error
+			action := "merge"
+			// Merge or Append depending on the mode.
+			if _tableData.Mode() == config.History {
+				err = dest.Append(ctx, _tableData.TableData)
+				action = "append"
+			} else {
+				err = dest.Merge(ctx, _tableData.TableData)
+			}
+
 			if err != nil {
 				tags["what"] = "merge_fail"
-				slog.With(logFields...).Warn("Failed to execute merge...not going to flush memory", slog.Any("err", err))
+				slog.With(logFields...).Warn(fmt.Sprintf("Failed to execute %s...not going to flush memory", action), slog.Any("err", err))
 			} else {
-				slog.With(logFields...).Info("Merge success, clearing memory...")
+				slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), logFields...)
 				commitErr := commitOffset(ctx, _tableData.TopicConfig.Topic, _tableData.PartitionsToLastMessage)
 				if commitErr == nil {
 					inMemDB.ClearTableConfig(_tableName)

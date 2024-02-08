@@ -109,7 +109,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	// Check if all the columns exist in BigQuery
 	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(),
 		tableConfig.Columns(), tableData.TopicConfig.SoftDelete,
-		tableData.TopicConfig.IncludeArtieUpdatedAt, tableData.TopicConfig.IncludeDatabaseUpdatedAt)
+		tableData.TopicConfig.IncludeArtieUpdatedAt, tableData.TopicConfig.IncludeDatabaseUpdatedAt, tableData.Mode())
 
 	fqName := tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, s.config.BigQuery.ProjectID)
 	createAlterTableArgs := ddl.AlterTableArgs{

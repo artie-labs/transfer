@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/typing/values"
 
 	"github.com/artie-labs/transfer/clients/utils"
@@ -37,19 +39,21 @@ func castColValStaging(colVal interface{}, colKind columns.Column, additionalDat
 // 3) Runs PUT to upload CSV to Snowflake staging (auto-compression with GZIP)
 // 4) Runs COPY INTO with the columns specified into temporary table
 // 5) Deletes CSV generated from (2)
-func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string) error {
-	tempAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:               s,
-		Tc:                tableConfig,
-		FqTableName:       tempTableName,
-		CreateTable:       true,
-		TemporaryTable:    true,
-		ColumnOp:          constants.Add,
-		UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
-	}
+func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalCopyClause string) error {
+	if tableData.Mode() != config.History {
+		tempAlterTableArgs := ddl.AlterTableArgs{
+			Dwh:               s,
+			Tc:                tableConfig,
+			FqTableName:       tempTableName,
+			CreateTable:       true,
+			TemporaryTable:    true,
+			ColumnOp:          constants.Add,
+			UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
+		}
 
-	if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
-		return fmt.Errorf("failed to create temp table, err: %v", err)
+		if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
+			return fmt.Errorf("failed to create temp table, err: %v", err)
+		}
 	}
 
 	fp, err := s.loadTemporaryTable(tableData, tempTableName)
@@ -58,9 +62,9 @@ func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig 
 	}
 
 	defer func() {
-		// Delete the file regardless of outcome to avoid fs build up.
-		if removeErr := os.RemoveAll(fp); removeErr != nil {
-			slog.Warn("Failed to delete temp file", slog.Any("err", removeErr), slog.String("filePath", fp))
+		// In the case where PUT or COPY fails, we'll at least delete the temporary file.
+		if deleteErr := os.RemoveAll(fp); deleteErr != nil {
+			slog.Warn("Failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
 		}
 	}()
 
@@ -68,15 +72,20 @@ func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig 
 		return fmt.Errorf("failed to run PUT for temporary table, err: %v", err)
 	}
 
-	_, err = s.Exec(fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
+	copyCommand := fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
 		// Copy into temporary tables (column ...)
 		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, &sql.NameArgs{
 			Escape:   true,
 			DestKind: s.Label(),
 		}), ","),
 		// Escaped columns, TABLE NAME
-		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableName, "%")))
+		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableName, "%"))
 
+	if additionalCopyClause != "" {
+		copyCommand += " " + additionalCopyClause
+	}
+
+	_, err = s.Exec(copyCommand)
 	if err != nil {
 		return fmt.Errorf("failed to load staging file into temporary table, err: %v", err)
 	}
@@ -136,8 +145,8 @@ func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 
 	// Check if all the columns exist in Snowflake
 	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
-		tableData.TopicConfig.SoftDelete,
-		tableData.TopicConfig.IncludeArtieUpdatedAt, tableData.TopicConfig.IncludeDatabaseUpdatedAt)
+		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt,
+		tableData.TopicConfig.IncludeDatabaseUpdatedAt, tableData.Mode())
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               s,
 		Tc:                tableConfig,
@@ -178,7 +187,7 @@ func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
 	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.config.SharedDestinationConfig.UppercaseEscapedNames, ""), tableData.TempTableSuffix())
-	if err = s.prepareTempTable(tableData, tableConfig, temporaryTableName); err != nil {
+	if err = s.prepareTempTable(tableData, tableConfig, temporaryTableName, ""); err != nil {
 		return err
 	}
 

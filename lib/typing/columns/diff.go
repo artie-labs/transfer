@@ -3,11 +3,14 @@ package columns
 import (
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
 // shouldSkipColumn takes the `colName` and `softDelete` and will return whether we should skip this column when calculating the diff.
-func shouldSkipColumn(colName string, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool) bool {
+func shouldSkipColumn(colName string, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, mode config.Mode) bool {
+	// TODO: Figure out a better way to not pass in so many variables when calculating shouldSkipColumn
 	if colName == constants.DeleteColumnMarker && softDelete {
 		// We need this column to be created if soft deletion is turned on.
 		return false
@@ -23,12 +26,16 @@ func shouldSkipColumn(colName string, softDelete bool, includeArtieUpdatedAt boo
 		return false
 	}
 
+	if colName == constants.OperationColumnMarker && mode == config.History {
+		return false
+	}
+
 	return strings.Contains(colName, constants.ArtiePrefix)
 }
 
 // Diff - when given 2 maps, a source and target
 // It will provide a diff in the form of 2 variables
-func Diff(columnsInSource *Columns, columnsInDestination *Columns, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool) ([]Column, []Column) {
+func Diff(columnsInSource *Columns, columnsInDestination *Columns, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, mode config.Mode) ([]Column, []Column) {
 	src := CloneColumns(columnsInSource)
 	targ := CloneColumns(columnsInDestination)
 	var colsToDelete []Column
@@ -48,7 +55,7 @@ func Diff(columnsInSource *Columns, columnsInDestination *Columns, softDelete bo
 
 	var targetColumnsMissing Columns
 	for _, col := range src.GetColumns() {
-		if shouldSkipColumn(col.RawName(), softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt) {
+		if shouldSkipColumn(col.RawName(), softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode) {
 			continue
 		}
 
@@ -57,7 +64,7 @@ func Diff(columnsInSource *Columns, columnsInDestination *Columns, softDelete bo
 
 	var sourceColumnsMissing Columns
 	for _, col := range targ.GetColumns() {
-		if shouldSkipColumn(col.RawName(), softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt) {
+		if shouldSkipColumn(col.RawName(), softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode) {
 			continue
 		}
 

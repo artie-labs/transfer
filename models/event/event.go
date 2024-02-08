@@ -3,6 +3,7 @@ package event
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"sort"
 	"strings"
 	"time"
@@ -30,9 +31,11 @@ type Event struct {
 	Columns        *columns.Columns
 	ExecutionTime  time.Time // When the SQL command was executed
 	Deleted        bool
+
+	mode config.Mode
 }
 
-func ToMemoryEvent(event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.TopicConfig) Event {
+func ToMemoryEvent(event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.TopicConfig, cfgMode config.Mode) Event {
 	cols := event.GetColumns()
 	// Now iterate over pkMap and tag each column that is a primary key
 	if cols != nil {
@@ -43,13 +46,29 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.T
 		}
 	}
 
+	evtData := event.GetData(pkMap, tc)
+	tblName := stringutil.Override(event.GetTableName(), tc.TableName)
+	if cfgMode == config.History {
+		if !strings.HasSuffix(tblName, constants.HistoryModeSuffix) {
+			// History mode will include a table suffix and operation column
+			tblName += constants.HistoryModeSuffix
+			slog.Warn(fmt.Sprintf("History mode is enabled, but table name does not have a %s suffix, so we're adding it...", constants.HistoryModeSuffix), slog.String("tblName", tblName))
+		}
+
+		evtData[constants.OperationColumnMarker] = event.Operation()
+
+		// We don't need this either.
+		delete(evtData, constants.DeleteColumnMarker)
+	}
+
 	return Event{
-		Table:          stringutil.Override(event.GetTableName(), tc.TableName),
+		mode:           cfgMode,
+		Table:          tblName,
 		PrimaryKeyMap:  pkMap,
 		ExecutionTime:  event.GetExecutionTime(),
 		OptionalSchema: event.GetOptionalSchema(),
 		Columns:        cols,
-		Data:           event.GetData(pkMap, tc),
+		Data:           evtData,
 		Deleted:        event.DeletePayload(),
 	}
 }
@@ -68,6 +87,10 @@ func (e *Event) IsValid() bool {
 		return false
 	}
 
+	if e.mode == config.History {
+		// History mode does not have the delete column marker.
+		return true
+	}
 	// Check if delete flag exists.
 	_, isOk := e.Data[constants.DeleteColumnMarker]
 	return isOk
@@ -117,7 +140,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, topicConfi
 			cols = e.Columns
 		}
 
-		td.SetTableData(optimization.NewTableData(cols, e.PrimaryKeys(), *topicConfig, e.Table))
+		td.SetTableData(optimization.NewTableData(cols, cfg.Mode, e.PrimaryKeys(), *topicConfig, e.Table))
 	} else {
 		if e.Columns != nil {
 			// Iterate over this again just in case.

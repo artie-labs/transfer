@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -46,31 +47,71 @@ func (f fakeEvent) GetData(pkMap map[string]interface{}, config *kafkalib.TopicC
 }
 
 func (e *EventsTestSuite) TestEvent_IsValid() {
-	var _evt Event
-	assert.False(e.T(), _evt.IsValid())
-
-	_evt.Table = "foo"
-	assert.False(e.T(), _evt.IsValid())
-
-	_evt.PrimaryKeyMap = idMap
-	assert.False(e.T(), _evt.IsValid())
-
-	_evt.Data = make(map[string]interface{})
-	_evt.Data[constants.DeleteColumnMarker] = false
-	assert.True(e.T(), _evt.IsValid(), _evt)
+	{
+		_evt := Event{
+			Table: "foo",
+		}
+		assert.False(e.T(), _evt.IsValid())
+	}
+	{
+		_evt := Event{
+			Table:         "foo",
+			PrimaryKeyMap: idMap,
+		}
+		assert.False(e.T(), _evt.IsValid())
+	}
+	{
+		_evt := Event{
+			Table:         "foo",
+			PrimaryKeyMap: idMap,
+			Data: map[string]interface{}{
+				"foo": "bar",
+			},
+			mode: config.History,
+		}
+		assert.True(e.T(), _evt.IsValid())
+	}
+	{
+		_evt := Event{
+			Table:         "foo",
+			PrimaryKeyMap: idMap,
+			Data: map[string]interface{}{
+				"foo": "bar",
+			},
+		}
+		assert.False(e.T(), _evt.IsValid())
+	}
+	{
+		_evt := Event{
+			Table:         "foo",
+			PrimaryKeyMap: idMap,
+			Data:          map[string]interface{}{constants.DeleteColumnMarker: true},
+		}
+		assert.True(e.T(), _evt.IsValid())
+	}
 }
 
 func (e *EventsTestSuite) TestEvent_TableName() {
 	var f fakeEvent
-	// Don't pass in tableName.
-	evt := ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{})
-	assert.Equal(e.T(), "foo", evt.Table)
+	{
+		// Don't pass in tableName.
+		evt := ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{}, config.Replication)
+		assert.Equal(e.T(), f.GetTableName(), evt.Table)
+	}
+	{
+		// Now pass it in, it should override.
+		evt := ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{TableName: "orders"}, config.Replication)
+		assert.Equal(e.T(), "orders", evt.Table)
+	}
+	{
+		// Now, if it's history mode...
+		evt := ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{TableName: "orders"}, config.History)
+		assert.Equal(e.T(), "orders__history", evt.Table)
 
-	// Now pass it in, it should override.
-	evt = ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{
-		TableName: "orders",
-	})
-	assert.Equal(e.T(), "orders", evt.Table)
+		// Table already has history suffix, so it won't add extra.
+		evt = ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{TableName: "dusty__history"}, config.History)
+		assert.Equal(e.T(), "dusty__history", evt.Table)
+	}
 }
 
 func (e *EventsTestSuite) TestEventPrimaryKeys() {

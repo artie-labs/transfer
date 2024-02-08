@@ -58,9 +58,10 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
+	// TODO: Implement max retry count
 	err := s.mergeWithStages(tableData)
 	if IsAuthExpiredError(err) {
-		slog.Warn("authentication has expired, will reload the Snowflake store and retry merging", slog.Any("err", err))
+		slog.Warn("Authentication has expired, will reload the Snowflake store and retry merging", slog.Any("err", err))
 		s.reestablishConnection()
 		return s.Merge(ctx, tableData)
 	}

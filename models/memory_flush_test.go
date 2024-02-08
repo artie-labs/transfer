@@ -19,7 +19,6 @@ func TestShouldSkipMerge(t *testing.T) {
 
 	// Before wiping, we should not skip the flush since ts did not get set yet.
 	assert.False(t, td.ShouldSkipFlush(coolDown))
-
 	td.Wipe()
 	for i := 0; i < 10; i++ {
 		assert.True(t, td.ShouldSkipFlush(coolDown))

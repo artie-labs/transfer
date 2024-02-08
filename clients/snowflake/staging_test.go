@@ -131,7 +131,7 @@ func generateTableData(rows int) (string, *optimization.TableData) {
 		cols.AddColumn(columns.NewColumn(col, typing.String))
 	}
 
-	td := optimization.NewTableData(cols, []string{"user_id"}, kafkalib.TopicConfig{}, "")
+	td := optimization.NewTableData(cols, config.Replication, []string{"user_id"}, kafkalib.TopicConfig{}, "")
 	for i := 0; i < rows; i++ {
 		key := fmt.Sprint(i)
 		rowData := map[string]interface{}{
@@ -151,7 +151,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	s.stageStore.GetConfigMap().AddTableToConfig(tempTableName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	sflkTc := s.stageStore.GetConfigMap().TableConfig(tempTableName)
 
-	assert.NoError(s.T(), s.stageStore.prepareTempTable(tableData, sflkTc, tempTableName))
+	assert.NoError(s.T(), s.stageStore.prepareTempTable(tableData, sflkTc, tempTableName, ""))
 	assert.Equal(s.T(), 3, s.fakeStageStore.ExecCallCount())
 
 	// First call is to create the temp table

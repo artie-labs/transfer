@@ -6,6 +6,14 @@ import (
 	"strings"
 )
 
+func CapitalizeFirstLetter(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+
+	return strings.ToUpper(s[:1]) + s[1:]
+}
+
 // Override - pass in a list of vals, the right most value that is not empty will override.
 func Override(vals ...string) string {
 	var retVal string
