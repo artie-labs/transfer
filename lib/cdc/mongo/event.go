@@ -7,10 +7,10 @@ import (
 // SchemaEventPayload is our struct for an event with schema enabled. For reference, this is an example payload https://gist.github.com/Tang8330/d0998d8d1ebcbeaa4ecb8e098445cc3a
 type SchemaEventPayload struct {
 	Schema  debezium.Schema `json:"schema"`
-	Payload payload         `json:"payload"`
+	Payload Payload         `json:"payload"`
 }
 
-type payload struct {
+type Payload struct {
 	Before    *string `json:"before"`
 	After     *string `json:"after"`
 	BeforeMap map[string]interface{}
