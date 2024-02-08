@@ -82,10 +82,14 @@ func processMessage(ctx context.Context, cfg config.Config, inMemDB *models.Data
 	}
 
 	if shouldFlush {
-		return evt.Table, Flush(ctx, inMemDB, dest, metricsClient, Args{
+		err = Flush(ctx, inMemDB, dest, metricsClient, Args{
 			Reason:        flushReason,
 			SpecificTable: evt.Table,
 		})
+		if err != nil {
+			tags["what"] = "flush_fail"
+		}
+		return evt.Table, err
 	}
 
 	return evt.Table, nil
