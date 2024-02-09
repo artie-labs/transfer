@@ -76,7 +76,6 @@ func processMessage(ctx context.Context, cfg config.Config, inMemDB *models.Data
 	}
 
 	shouldFlush, flushReason, err := evt.Save(cfg, inMemDB, topicConfig.tc, processArgs.Msg)
-	shouldFlush = true
 	if err != nil {
 		tags["what"] = "save_fail"
 		return "", fmt.Errorf("event failed to save, err: %v", err)
