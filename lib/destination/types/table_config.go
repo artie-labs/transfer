@@ -2,6 +2,7 @@ package types
 
 import (
 	"log/slog"
+	"maps"
 	"sync"
 	"time"
 
@@ -105,12 +106,7 @@ func (d *DwhTableConfig) AuditColumnsToDelete(colsToDelete []columns.Column) {
 func (d *DwhTableConfig) ReadOnlyColumnsToDelete() map[string]time.Time {
 	d.RLock()
 	defer d.RUnlock()
-	colsToDelete := make(map[string]time.Time)
-	for k, v := range d.columnsToDelete {
-		colsToDelete[k] = v
-	}
-
-	return colsToDelete
+	return maps.Clone(d.columnsToDelete)
 }
 
 func (d *DwhTableConfig) ShouldDeleteColumn(colName string, cdcTime time.Time, containOtherOperations bool) bool {
