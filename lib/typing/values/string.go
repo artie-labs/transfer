@@ -25,7 +25,7 @@ func ToString(colVal interface{}, colKind columns.Column, additionalDateFmts []s
 	case typing.ETime.Kind:
 		extTime, err := ext.ParseFromInterface(colVal, additionalDateFmts)
 		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
+			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", colVal, err)
 		}
 
 		if colKind.KindDetails.ExtendedTimeDetails == nil {

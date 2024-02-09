@@ -31,18 +31,18 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 	}
 
 	if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
-		return fmt.Errorf("failed to create temp table, err: %w", err)
+		return fmt.Errorf("failed to create temp table: %w", err)
 	}
 
 	expiryString := typing.ExpiresDate(time.Now().UTC().Add(ddl.TempTableTTL))
 	// Now add a comment to the temporary table.
 	if _, err := s.Exec(fmt.Sprintf(`COMMENT ON TABLE %s IS '%s';`, tempTableName, ddl.ExpiryComment(expiryString))); err != nil {
-		return fmt.Errorf("failed to add comment to table, tableName: %v, err: %w", tempTableName, err)
+		return fmt.Errorf("failed to add comment to table %s: %w", tempTableName, err)
 	}
 
 	fp, err := s.loadTemporaryTable(tableData, tempTableName)
 	if err != nil {
-		return fmt.Errorf("failed to load temporary table, err: %w", err)
+		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
 
 	defer func() {
@@ -60,7 +60,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to upload %s to s3, err: %w", fp, err)
+		return fmt.Errorf("failed to upload %s to s3: %w", fp, err)
 	}
 
 	// COPY table_name FROM '/path/to/local/file' DELIMITER '\t' NULL '\\N' FORMAT csv;
@@ -68,7 +68,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 	// So, it'll convert `\N` => `\\N` during COPY.
 	copyStmt := fmt.Sprintf(`COPY %s FROM '%s' DELIMITER '\t' NULL AS '\\N' GZIP FORMAT CSV %s dateformat 'auto' timeformat 'auto';`, tempTableName, s3Uri, s.credentialsClause)
 	if _, err = s.Exec(copyStmt); err != nil {
-		return fmt.Errorf("failed to run COPY for temporary table, err: %w", err)
+		return fmt.Errorf("failed to run COPY for temporary table: %w", err)
 	}
 
 	return nil
