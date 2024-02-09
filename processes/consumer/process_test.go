@@ -103,9 +103,8 @@ func TestProcessMessageFailures(t *testing.T) {
 	assert.True(t, isOk)
 
 	tableName, err = processMessage(ctx, cfg, memDB, MockDestination{}, metrics.NullMetricsProvider{}, processArgs)
-	assert.True(t, strings.Contains(err.Error(),
-		fmt.Sprintf("err: format: %s is not supported", tcFmt.tc.CDCKeyFormat)), err.Error())
-	assert.True(t, strings.Contains(err.Error(), "cannot unmarshall key"), err.Error())
+	assert.ErrorContains(t, err, fmt.Sprintf("format: %s is not supported", tcFmt.tc.CDCKeyFormat), err.Error())
+	assert.ErrorContains(t, err, "cannot unmarshall key", err.Error())
 	assert.Equal(t, 0, len(memDB.TableData()))
 	assert.Empty(t, tableName)
 
