@@ -18,6 +18,7 @@ type Store interface {
 	Exec(query string, args ...any) (sql.Result, error)
 	Query(query string, args ...any) (*sql.Rows, error)
 	Begin() (*sql.Tx, error)
+	IsRetryableError(err error) bool
 }
 
 type storeWrapper struct {
@@ -52,6 +53,10 @@ func (s *storeWrapper) Query(query string, args ...any) (*sql.Rows, error) {
 
 func (s *storeWrapper) Begin() (*sql.Tx, error) {
 	return s.DB.Begin()
+}
+
+func (s *storeWrapper) IsRetryableError(err error) bool {
+	return retryableError(err)
 }
 
 func Open(driverName, dsn string) Store {

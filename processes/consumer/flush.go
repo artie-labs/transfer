@@ -90,6 +90,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 
 			if err != nil {
 				tags["what"] = "merge_fail"
+				tags["retryable"] = fmt.Sprintf("%t", dest.IsRetryableError(err))
 				slog.With(logFields...).Error(fmt.Sprintf("Failed to execute %s...not going to flush memory", action), slog.Any("err", err))
 			} else {
 				slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), logFields...)

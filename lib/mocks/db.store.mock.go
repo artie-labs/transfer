@@ -35,6 +35,17 @@ type FakeStore struct {
 		result1 sql.Result
 		result2 error
 	}
+	IsRetryableErrorStub        func(error) bool
+	isRetryableErrorMutex       sync.RWMutex
+	isRetryableErrorArgsForCall []struct {
+		arg1 error
+	}
+	isRetryableErrorReturns struct {
+		result1 bool
+	}
+	isRetryableErrorReturnsOnCall map[int]struct {
+		result1 bool
+	}
 	QueryStub        func(string, ...any) (*sql.Rows, error)
 	queryMutex       sync.RWMutex
 	queryArgsForCall []struct {
@@ -174,6 +185,67 @@ func (fake *FakeStore) ExecReturnsOnCall(i int, result1 sql.Result, result2 erro
 	}{result1, result2}
 }
 
+func (fake *FakeStore) IsRetryableError(arg1 error) bool {
+	fake.isRetryableErrorMutex.Lock()
+	ret, specificReturn := fake.isRetryableErrorReturnsOnCall[len(fake.isRetryableErrorArgsForCall)]
+	fake.isRetryableErrorArgsForCall = append(fake.isRetryableErrorArgsForCall, struct {
+		arg1 error
+	}{arg1})
+	stub := fake.IsRetryableErrorStub
+	fakeReturns := fake.isRetryableErrorReturns
+	fake.recordInvocation("IsRetryableError", []interface{}{arg1})
+	fake.isRetryableErrorMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeStore) IsRetryableErrorCallCount() int {
+	fake.isRetryableErrorMutex.RLock()
+	defer fake.isRetryableErrorMutex.RUnlock()
+	return len(fake.isRetryableErrorArgsForCall)
+}
+
+func (fake *FakeStore) IsRetryableErrorCalls(stub func(error) bool) {
+	fake.isRetryableErrorMutex.Lock()
+	defer fake.isRetryableErrorMutex.Unlock()
+	fake.IsRetryableErrorStub = stub
+}
+
+func (fake *FakeStore) IsRetryableErrorArgsForCall(i int) error {
+	fake.isRetryableErrorMutex.RLock()
+	defer fake.isRetryableErrorMutex.RUnlock()
+	argsForCall := fake.isRetryableErrorArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeStore) IsRetryableErrorReturns(result1 bool) {
+	fake.isRetryableErrorMutex.Lock()
+	defer fake.isRetryableErrorMutex.Unlock()
+	fake.IsRetryableErrorStub = nil
+	fake.isRetryableErrorReturns = struct {
+		result1 bool
+	}{result1}
+}
+
+func (fake *FakeStore) IsRetryableErrorReturnsOnCall(i int, result1 bool) {
+	fake.isRetryableErrorMutex.Lock()
+	defer fake.isRetryableErrorMutex.Unlock()
+	fake.IsRetryableErrorStub = nil
+	if fake.isRetryableErrorReturnsOnCall == nil {
+		fake.isRetryableErrorReturnsOnCall = make(map[int]struct {
+			result1 bool
+		})
+	}
+	fake.isRetryableErrorReturnsOnCall[i] = struct {
+		result1 bool
+	}{result1}
+}
+
 func (fake *FakeStore) Query(arg1 string, arg2 ...any) (*sql.Rows, error) {
 	fake.queryMutex.Lock()
 	ret, specificReturn := fake.queryReturnsOnCall[len(fake.queryArgsForCall)]
@@ -246,6 +318,8 @@ func (fake *FakeStore) Invocations() map[string][][]interface{} {
 	defer fake.beginMutex.RUnlock()
 	fake.execMutex.RLock()
 	defer fake.execMutex.RUnlock()
+	fake.isRetryableErrorMutex.RLock()
+	defer fake.isRetryableErrorMutex.RUnlock()
 	fake.queryMutex.RLock()
 	defer fake.queryMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

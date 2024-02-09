@@ -159,6 +159,10 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	return nil
 }
 
+func (s *Store) IsRetryableError(err error) bool {
+	return false // not supported for S3
+}
+
 func LoadStore(cfg config.Config) (*Store, error) {
 	store := &Store{
 		config:            cfg,
