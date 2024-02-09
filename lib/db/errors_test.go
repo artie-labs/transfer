@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"syscall"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -33,6 +34,26 @@ func TestRetryable_Errors(t *testing.T) {
 		{
 			name:           "retryable error - connection refused",
 			err:            fmt.Errorf("err: dial tcp [::1]:28889: connect: connection refused"),
+			expectedResult: true,
+		},
+		{
+			name:           "direct error - connection refused",
+			err:            syscall.ECONNREFUSED,
+			expectedResult: true,
+		},
+		{
+			name:           "direct error - connection reset",
+			err:            syscall.ECONNRESET,
+			expectedResult: true,
+		},
+		{
+			name:           "wrapped error - connection refused",
+			err:            fmt.Errorf("foo: %w", syscall.ECONNREFUSED),
+			expectedResult: true,
+		},
+		{
+			name:           "wrapped error - connection reset",
+			err:            fmt.Errorf("foo: %w", syscall.ECONNRESET),
 			expectedResult: true,
 		},
 	}
