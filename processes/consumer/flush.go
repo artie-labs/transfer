@@ -38,6 +38,13 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 	allTables := inMemDB.TableData()
 	inMemDB.RUnlock()
 
+	if args.SpecificTable != "" {
+		if _, ok := allTables[args.SpecificTable]; !ok {
+			// Should never happen
+			return fmt.Errorf("table %s does not exist in the in-memory database", args.SpecificTable)
+		}
+	}
+
 	// Flush will take everything in memory and call Snowflake to create temp tables.
 	for tableName, tableData := range allTables {
 		if args.SpecificTable != "" && tableName != args.SpecificTable {
