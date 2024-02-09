@@ -32,13 +32,20 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 		return nil
 	}
 
-	var wg sync.WaitGroup
 	// Read lock to examine the map of tables
 	inMemDB.RLock()
 	allTables := inMemDB.TableData()
 	inMemDB.RUnlock()
 
-	// Flush will take everything in memory and call Snowflake to create temp tables.
+	if args.SpecificTable != "" {
+		if _, ok := allTables[args.SpecificTable]; !ok {
+			// Should never happen
+			return fmt.Errorf("table %s does not exist in the in-memory database", args.SpecificTable)
+		}
+	}
+
+	// Flush will take everything in memory and call the destination to create temp tables.
+	var wg sync.WaitGroup
 	for tableName, tableData := range allTables {
 		if args.SpecificTable != "" && tableName != args.SpecificTable {
 			// If the table is specified within args and the table does not match the database, skip this flush.
