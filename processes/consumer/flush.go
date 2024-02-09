@@ -44,7 +44,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 		}
 	}
 
-	// Flush will take everything in memory and call Snowflake to create temp tables.
+	// Flush will take everything in memory and call the destination to create temp tables.
 	var wg sync.WaitGroup
 	for tableName, tableData := range allTables {
 		if args.SpecificTable != "" && tableName != args.SpecificTable {
