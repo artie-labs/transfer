@@ -79,7 +79,7 @@ func (s *Store) PutTable(ctx context.Context, dataset, tableName string, rows []
 	inserter := client.Dataset(dataset).Table(tableName).Inserter()
 	for batch.HasNext() {
 		if err := inserter.Put(ctx, batch.NextChunk()); err != nil {
-			return fmt.Errorf("failed to insert rows, err: %v", err)
+			return fmt.Errorf("failed to insert rows: %w", err)
 		}
 	}
 

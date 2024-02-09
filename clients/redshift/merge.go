@@ -90,7 +90,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 		err = utils.BackfillColumn(s.config, s, col, fqName)
 		if err != nil {
-			return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v", col.RawName(), col.RawDefaultValue(), err)
+			return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %w", col.RawName(), col.RawDefaultValue(), err)
 		}
 
 		tableConfig.Columns().UpsertColumn(col.RawName(), columns.UpsertColumnArg{
@@ -115,23 +115,23 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	// Prepare merge statement
 	mergeParts, err := mergeArg.GetParts()
 	if err != nil {
-		return fmt.Errorf("failed to generate merge statement, err: %v", err)
+		return fmt.Errorf("failed to generate merge statement: %w", err)
 	}
 
 	tx, err := s.Begin()
 	if err != nil {
-		return fmt.Errorf("failed to start tx, err: %v", err)
+		return fmt.Errorf("failed to start tx: %w", err)
 	}
 
 	for _, mergeQuery := range mergeParts {
 		_, err = tx.Exec(mergeQuery)
 		if err != nil {
-			return fmt.Errorf("failed to merge, query: %v, err: %v", mergeQuery, err)
+			return fmt.Errorf("failed to merge, query: %v, err: %w", mergeQuery, err)
 		}
 	}
 
 	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("failed to merge, parts: %v, err: %v", mergeParts, err)
+		return fmt.Errorf("failed to merge, parts: %v, err: %w", mergeParts, err)
 	}
 
 	return err

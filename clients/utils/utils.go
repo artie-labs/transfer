@@ -27,7 +27,7 @@ func BackfillColumn(cfg config.Config, dwh destination.DataWarehouse, column col
 	additionalDateFmts := cfg.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{Escape: true, DestKind: dwh.Label()}, additionalDateFmts)
 	if err != nil {
-		return fmt.Errorf("failed to escape default value, err: %v", err)
+		return fmt.Errorf("failed to escape default value: %w", err)
 	}
 
 	uppercaseEscNames := cfg.SharedDestinationConfig.UppercaseEscapedNames
@@ -53,7 +53,7 @@ func BackfillColumn(cfg config.Config, dwh destination.DataWarehouse, column col
 
 	_, err = dwh.Exec(query)
 	if err != nil {
-		return fmt.Errorf("failed to backfill, err: %v, query: %v", err, query)
+		return fmt.Errorf("failed to backfill, err: %w, query: %v", err, query)
 	}
 
 	query = fmt.Sprintf(`COMMENT ON COLUMN %s.%s IS '%v';`, fqTableName, escapedCol, `{"backfilled": true}`)

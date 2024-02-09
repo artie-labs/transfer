@@ -32,7 +32,7 @@ func DropTemporaryTable(dwh destination.DataWarehouse, fqTableName string, shoul
 		if err != nil {
 			slog.Warn("Failed to drop temporary table, it will get garbage collected by the TTL...", slog.Any("err", err))
 			if shouldReturnError {
-				return fmt.Errorf("failed to drop temp table - err %v", err)
+				return fmt.Errorf("failed to drop temp table: %w", err)
 			}
 		}
 	} else {
@@ -159,7 +159,7 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 			if ColumnAlreadyExistErr(err, args.Dwh.Label()) {
 				err = nil
 			} else if err != nil {
-				return fmt.Errorf("failed to apply ddl, sql: %v, err: %v", sqlQuery, err)
+				return fmt.Errorf("failed to apply ddl, sql: %v, err: %w", sqlQuery, err)
 			}
 		}
 	}

@@ -30,7 +30,7 @@ func GetIntegerFromMap(obj map[string]interface{}, key string) (int, error) {
 
 	val, err := strconv.Atoi(fmt.Sprint(valInterface))
 	if err != nil {
-		return 0, fmt.Errorf("key: %s is not type integer, err: %v", key, err)
+		return 0, fmt.Errorf("key: %s is not type integer: %w", key, err)
 	}
 
 	return val, nil

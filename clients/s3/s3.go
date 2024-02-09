@@ -39,7 +39,7 @@ func (s *Store) Validate() error {
 	}
 
 	if err := s.config.S3.Validate(); err != nil {
-		return fmt.Errorf("failed to validate settings, err :%v", err)
+		return fmt.Errorf("failed to validate settings: %w", err)
 	}
 
 	return nil
@@ -89,18 +89,18 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	schema, err := parquetutil.GenerateJSONSchema(cols)
 	if err != nil {
-		return fmt.Errorf("failed to generate parquet schema, err: %v", err)
+		return fmt.Errorf("failed to generate parquet schema: %w", err)
 	}
 
 	fp := fmt.Sprintf("/tmp/%v_%s.parquet.gz", tableData.LatestCDCTs.UnixMilli(), stringutil.Random(4))
 	fw, err := local.NewLocalFileWriter(fp)
 	if err != nil {
-		return fmt.Errorf("failed to create a local parquet file, err: %v", err)
+		return fmt.Errorf("failed to create a local parquet file: %w", err)
 	}
 
 	pw, err := writer.NewJSONWriter(schema, fw, 4)
 	if err != nil {
-		return fmt.Errorf("failed to instantiate parquet writer, err: %v", err)
+		return fmt.Errorf("failed to instantiate parquet writer: %w", err)
 	}
 
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
@@ -115,7 +115,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 			value, err := parquetutil.ParseValue(val[col], colKind, additionalDateFmts)
 			if err != nil {
-				return fmt.Errorf("failed to parse value, err: %v, value: %v, column: %v", err, val[col], col)
+				return fmt.Errorf("failed to parse value, err: %w, value: %v, column: %v", err, val[col], col)
 			}
 
 			row[col] = value
@@ -123,20 +123,20 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 		rowBytes, err := json.Marshal(row)
 		if err != nil {
-			return fmt.Errorf("failed to marshal row, err: %v", err)
+			return fmt.Errorf("failed to marshal row: %w", err)
 		}
 
 		if err = pw.Write(string(rowBytes)); err != nil {
-			return fmt.Errorf("failed to write row, err: %v", err)
+			return fmt.Errorf("failed to write row: %w", err)
 		}
 	}
 
 	if err = pw.WriteStop(); err != nil {
-		return fmt.Errorf("failed to write stop, err: %v", err)
+		return fmt.Errorf("failed to write stop: %w", err)
 	}
 
 	if err = fw.Close(); err != nil {
-		return fmt.Errorf("failed to close filewriter, err: %v", err)
+		return fmt.Errorf("failed to close filewriter: %w", err)
 	}
 
 	defer func() {
@@ -153,7 +153,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		OverrideAWSAccessKeyID:     ptr.ToString(s.config.S3.AwsAccessKeyID),
 		OverrideAWSAccessKeySecret: ptr.ToString(s.config.S3.AwsSecretAccessKey),
 	}); err != nil {
-		return fmt.Errorf("failed to upload file to s3, err: %v", err)
+		return fmt.Errorf("failed to upload file to s3: %w", err)
 	}
 
 	return nil

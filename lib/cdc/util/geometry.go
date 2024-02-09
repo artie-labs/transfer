@@ -78,12 +78,12 @@ func parseGeometry(value interface{}) (string, error) {
 
 	wkbBytes, err := base64.StdEncoding.DecodeString(fmt.Sprint(wkbVal))
 	if err != nil {
-		return "", fmt.Errorf("error decoding base64: %v", err)
+		return "", fmt.Errorf("error decoding base64: %w", err)
 	}
 
 	geom, err := wkb.Unmarshal(wkbBytes)
 	if err != nil {
-		return "", fmt.Errorf("error unmarshalling WKB bytes: %v", err)
+		return "", fmt.Errorf("error unmarshalling WKB bytes: %w", err)
 	}
 
 	feature := geojson.Feature{
@@ -92,7 +92,7 @@ func parseGeometry(value interface{}) (string, error) {
 
 	bytes, err := feature.MarshalJSON()
 	if err != nil {
-		return "", fmt.Errorf("error marshalling GeoJSON: %v", err)
+		return "", fmt.Errorf("error marshalling GeoJSON: %w", err)
 	}
 
 	return string(bytes), nil

@@ -111,12 +111,12 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ex
 func (f Field) DecodeDecimal(encoded string) (*decimal.Decimal, error) {
 	results, err := f.GetScaleAndPrecision()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get scale and/or precision, err: %v", err)
+		return nil, fmt.Errorf("failed to get scale and/or precision: %w", err)
 	}
 
 	data, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {
-		return nil, fmt.Errorf("failed to bae64 decode, err: %v", err)
+		return nil, fmt.Errorf("failed to base64 decode: %w", err)
 	}
 
 	bigInt := new(big.Int)

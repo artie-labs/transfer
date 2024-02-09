@@ -34,7 +34,7 @@ func UploadLocalFileToS3(ctx context.Context, args UploadArgs) (string, error) {
 	}
 
 	if err != nil {
-		return "", fmt.Errorf("failed loading config, err: %v", err)
+		return "", fmt.Errorf("failed loading s3 config: %w", err)
 	}
 
 	s3Client := s3.NewFromConfig(cfg)

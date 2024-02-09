@@ -42,7 +42,7 @@ func (s *Store) merge(tableData *optimization.TableData) ([]*Row, error) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal, err := castColVal(value[col], colKind, additionalDateFmts)
 			if err != nil {
-				return nil, fmt.Errorf("failed to cast col: %v, err: %v", col, err)
+				return nil, fmt.Errorf("failed to cast col: %v, err: %w", col, err)
 			}
 
 			if colVal != nil {
@@ -68,7 +68,7 @@ func (s *Store) backfillColumn(column columns.Column, fqTableName string) error 
 
 	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{Escape: true, DestKind: s.Label()}, additionalDateFmts)
 	if err != nil {
-		return fmt.Errorf("failed to escape default value, err: %v", err)
+		return fmt.Errorf("failed to escape default value: %w", err)
 	}
 
 	escapedCol := column.Name(s.config.SharedDestinationConfig.UppercaseEscapedNames, &sql.NameArgs{Escape: true, DestKind: s.Label()})
@@ -84,7 +84,7 @@ func (s *Store) backfillColumn(column columns.Column, fqTableName string) error 
 	)
 	_, err = s.Exec(query)
 	if err != nil {
-		return fmt.Errorf("failed to backfill, err: %v, query: %v", err, query)
+		return fmt.Errorf("failed to backfill, err: %w, query: %v", err, query)
 	}
 
 	query = fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET OPTIONS (description=`%s`);",
@@ -166,7 +166,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	if err = ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
-		return fmt.Errorf("failed to create temp table, err: %v", err)
+		return fmt.Errorf("failed to create temp table: %w", err)
 	}
 	// End temporary table creation
 
@@ -191,7 +191,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 				attempts += 1
 				time.Sleep(jitter.Jitter(1500, jitter.DefaultMaxMs, attempts))
 			} else {
-				return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v", col.RawName(), col.RawDefaultValue(), err)
+				return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %w", col.RawName(), col.RawDefaultValue(), err)
 			}
 		}
 
@@ -207,7 +207,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	tableName := fmt.Sprintf("%s_%s", tableData.RawName(), tableData.TempTableSuffix())
 	err = s.PutTable(ctx, tableData.TopicConfig.Database, tableName, rows)
 	if err != nil {
-		return fmt.Errorf("failed to insert into temp table: %s, err: %v", tableName, err)
+		return fmt.Errorf("failed to insert into temp table: %s, err: %w", tableName, err)
 	}
 
 	defer func() {
@@ -222,7 +222,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 		distinctDates, err := tableData.DistinctDates(tableData.TopicConfig.BigQueryPartitionSettings.PartitionField, additionalDateFmts)
 		if err != nil {
-			return fmt.Errorf("failed to generate distinct dates, err: %v", err)
+			return fmt.Errorf("failed to generate distinct dates: %w", err)
 		}
 
 		mergeString, err := tableData.TopicConfig.BigQueryPartitionSettings.GenerateMergeString(distinctDates)

@@ -103,13 +103,13 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 		}
 
 		if err = writer.Write(row); err != nil {
-			return "", fmt.Errorf("failed to write to csv, err: %v", err)
+			return "", fmt.Errorf("failed to write to csv: %w", err)
 		}
 	}
 
 	writer.Flush()
 	if err = writer.Error(); err != nil {
-		return "", fmt.Errorf("failed to flush csv writer, err: %v", err)
+		return "", fmt.Errorf("failed to flush csv writer: %w", err)
 	}
 
 	return filePath, nil

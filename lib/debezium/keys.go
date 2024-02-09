@@ -72,7 +72,7 @@ func parsePartitionKeyStruct(keyBytes []byte) (map[string]interface{}, error) {
 	var pkStruct map[string]interface{}
 	err := json.Unmarshal(keyBytes, &pkStruct)
 	if err != nil {
-		return nil, fmt.Errorf("failed to json unmarshal, err: %v", err)
+		return nil, fmt.Errorf("failed to json unmarshal: %w", err)
 	}
 
 	if len(pkStruct) == 0 {

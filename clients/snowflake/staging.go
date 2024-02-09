@@ -52,13 +52,13 @@ func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig 
 		}
 
 		if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
-			return fmt.Errorf("failed to create temp table, err: %v", err)
+			return fmt.Errorf("failed to create temp table: %w", err)
 		}
 	}
 
 	fp, err := s.loadTemporaryTable(tableData, tempTableName)
 	if err != nil {
-		return fmt.Errorf("failed to load temporary table, err: %v", err)
+		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
 
 	defer func() {
@@ -69,7 +69,7 @@ func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig 
 	}()
 
 	if _, err = s.Exec(fmt.Sprintf("PUT file://%s @%s AUTO_COMPRESS=TRUE", fp, addPrefixToTableName(tempTableName, "%"))); err != nil {
-		return fmt.Errorf("failed to run PUT for temporary table, err: %v", err)
+		return fmt.Errorf("failed to run PUT for temporary table: %w", err)
 	}
 
 	copyCommand := fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
@@ -87,7 +87,7 @@ func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig 
 
 	_, err = s.Exec(copyCommand)
 	if err != nil {
-		return fmt.Errorf("failed to load staging file into temporary table, err: %v", err)
+		return fmt.Errorf("failed to load staging file into temporary table: %w", err)
 	}
 
 	return nil
@@ -123,7 +123,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 		}
 
 		if err = writer.Write(row); err != nil {
-			return "", fmt.Errorf("failed to write to csv, err: %v", err)
+			return "", fmt.Errorf("failed to write to csv: %w", err)
 		}
 	}
 
@@ -205,7 +205,7 @@ func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 
 		err = utils.BackfillColumn(s.config, s, col, fqName)
 		if err != nil {
-			return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %v", col.RawName(), col.RawDefaultValue(), err)
+			return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %w", col.RawName(), col.RawDefaultValue(), err)
 		}
 
 		tableConfig.Columns().UpsertColumn(col.RawName(), columns.UpsertColumnArg{
@@ -225,7 +225,7 @@ func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 
 	mergeQuery, err := mergeArg.GetStatement()
 	if err != nil {
-		return fmt.Errorf("failed to generate merge statement, err: %v", err)
+		return fmt.Errorf("failed to generate merge statement: %w", err)
 	}
 
 	slog.Debug("Executing...", slog.String("query", mergeQuery))
