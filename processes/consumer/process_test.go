@@ -33,6 +33,10 @@ func (m MockDestination) Append(ctx context.Context, tableData *optimization.Tab
 	return fmt.Errorf("should not be called")
 }
 
+func (m MockDestination) IsRetryableError(err error) bool {
+	return false
+}
+
 func TestProcessMessageFailures(t *testing.T) {
 	cfg := config.Config{
 		FlushIntervalSeconds: 10,

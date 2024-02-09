@@ -14,10 +14,12 @@ type DataWarehouse interface {
 	Append(ctx context.Context, tableData *optimization.TableData) error
 	Exec(query string, args ...any) (sql.Result, error)
 	Query(query string, args ...any) (*sql.Rows, error)
+	IsRetryableError(err error) bool
 }
 
 type Baseline interface {
 	Label() constants.DestinationKind
 	Merge(ctx context.Context, tableData *optimization.TableData) error
 	Append(ctx context.Context, tableData *optimization.TableData) error
+	IsRetryableError(err error) bool
 }

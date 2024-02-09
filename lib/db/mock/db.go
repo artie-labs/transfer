@@ -27,3 +27,7 @@ func (m *DB) Begin() (*sql.Tx, error) {
 	fmt.Println("Mock DB Begin()")
 	return m.Fake.Begin()
 }
+
+func (m *DB) IsRetryableError(err error) bool {
+	return false
+}
