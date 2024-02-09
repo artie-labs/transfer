@@ -18,7 +18,7 @@ func ParseFromInterface(val interface{}, additionalDateFormats []string) (*Exten
 	var err error
 	extendedTime, err = ParseExtendedDateTime(fmt.Sprint(val), additionalDateFormats)
 	if err != nil {
-		return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %v", val, err)
+		return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", val, err)
 	}
 
 	return extendedTime, nil

@@ -65,10 +65,10 @@ func GetTableConfig(args GetTableCfgArgs) (*types.DwhTableConfig, error) {
 				tableMissing = true
 				err = nil
 			} else {
-				return nil, fmt.Errorf("failed to query %v, err: %v, query: %v", args.Dwh.Label(), err, args.Query)
+				return nil, fmt.Errorf("failed to query %v, err: %w, query: %v", args.Dwh.Label(), err, args.Query)
 			}
 		default:
-			return nil, fmt.Errorf("failed to query %v, err: %v", args.Dwh.Label(), err)
+			return nil, fmt.Errorf("failed to query %v, err: %w", args.Dwh.Label(), err)
 		}
 	}
 
@@ -124,7 +124,7 @@ func GetTableConfig(args GetTableCfgArgs) (*types.DwhTableConfig, error) {
 			var _colComment constants.ColComment
 			err = json.Unmarshal([]byte(comment), &_colComment)
 			if err != nil {
-				return nil, fmt.Errorf("failed to unmarshal comment, err: %v", err)
+				return nil, fmt.Errorf("failed to unmarshal comment: %w", err)
 			}
 
 			col.SetBackfilled(_colComment.Backfilled)

@@ -30,7 +30,7 @@ func (d *Debezium) GetEventFromBytes(typingSettings typing.Settings, bytes []byt
 
 	err := json.Unmarshal(bytes, &schemaEventPayload)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal json, err: %v", err)
+		return nil, fmt.Errorf("failed to unmarshal json: %w", err)
 	}
 
 	// Now marshal before & after string.
@@ -46,7 +46,7 @@ func (d *Debezium) GetEventFromBytes(typingSettings typing.Settings, bytes []byt
 	if schemaEventPayload.Payload.After != nil {
 		after, err := mongo.JSONEToMap([]byte(*schemaEventPayload.Payload.After))
 		if err != nil {
-			return nil, fmt.Errorf("mongo JSONEToMap err: %v", err)
+			return nil, fmt.Errorf("failed to call mongo JSONEToMap: %w", err)
 		}
 
 		// Now, we need to iterate over each key and if the value is JSON
@@ -55,7 +55,7 @@ func (d *Debezium) GetEventFromBytes(typingSettings typing.Settings, bytes []byt
 			if typing.ParseValue(typingSettings, key, nil, value) == typing.Struct {
 				valBytes, err := json.Marshal(value)
 				if err != nil {
-					return nil, fmt.Errorf("failed to marshal, err: %v", err)
+					return nil, fmt.Errorf("failed to marshal: %w", err)
 				}
 
 				after[key] = string(valBytes)

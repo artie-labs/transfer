@@ -26,7 +26,7 @@ type BigQuerySettings struct {
 // GenerateMergeString this is used as an equality string for the MERGE statement.
 func (b *BigQuerySettings) GenerateMergeString(values []string) (string, error) {
 	if err := b.Valid(); err != nil {
-		return "", fmt.Errorf("failed to validate bigQuerySettings, err: %v", err)
+		return "", fmt.Errorf("failed to validate bigQuerySettings: %w", err)
 	}
 
 	if len(values) == 0 {

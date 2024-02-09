@@ -53,14 +53,14 @@ func processMessage(ctx context.Context, cfg config.Config, inMemDB *models.Data
 	pkMap, err := topicConfig.GetPrimaryKey(processArgs.Msg.Key(), topicConfig.tc)
 	if err != nil {
 		tags["what"] = "marshall_pk_err"
-		return "", fmt.Errorf("cannot unmarshall key, key: %s, err: %v", string(processArgs.Msg.Key()), err)
+		return "", fmt.Errorf("cannot unmarshall key, key: %s, err: %w", string(processArgs.Msg.Key()), err)
 	}
 
 	typingSettings := cfg.SharedTransferConfig.TypingSettings
 	_event, err := topicConfig.GetEventFromBytes(typingSettings, processArgs.Msg.Value())
 	if err != nil {
 		tags["what"] = "marshall_value_err"
-		return "", fmt.Errorf("cannot unmarshall event, err: %v", err)
+		return "", fmt.Errorf("cannot unmarshall event: %w", err)
 	}
 
 	tags["op"] = _event.Operation()
@@ -78,7 +78,7 @@ func processMessage(ctx context.Context, cfg config.Config, inMemDB *models.Data
 	shouldFlush, flushReason, err := evt.Save(cfg, inMemDB, topicConfig.tc, processArgs.Msg)
 	if err != nil {
 		tags["what"] = "save_fail"
-		return "", fmt.Errorf("event failed to save, err: %v", err)
+		return "", fmt.Errorf("event failed to save: %w", err)
 	}
 
 	if shouldFlush {

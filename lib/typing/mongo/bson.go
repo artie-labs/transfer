@@ -34,7 +34,7 @@ func JSONEToMap(val []byte) (map[string]interface{}, error) {
 	var bsonDoc bson.D
 	err := bson.UnmarshalExtJSON(val, false, &bsonDoc)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal ext json, err: %v", err)
+		return nil, fmt.Errorf("failed to unmarshal ext json: %w", err)
 	}
 
 	bytes, err := bson.MarshalExtJSONWithRegistry(createCustomRegistry().Build(),
