@@ -2,7 +2,6 @@ package optimization
 
 import (
 	"fmt"
-	"maps"
 	"strings"
 	"time"
 
@@ -184,7 +183,12 @@ func (t *TableData) Rows() []map[string]interface{} {
 
 // RowsData will create a read-only map of `rowsData`, this should be strictly used for testing only.
 func (t *TableData) RowsData() map[string]map[string]interface{} {
-	return maps.Clone(t.rowsData)
+	_rowsData := make(map[string]map[string]interface{}, len(t.rowsData))
+	for k, v := range t.rowsData {
+		_rowsData[k] = v
+	}
+
+	return _rowsData
 }
 
 func (t *TableData) ToFqName(kind constants.DestinationKind, escape bool, uppercaseEscNames bool, bigQueryProjectID string) string {
