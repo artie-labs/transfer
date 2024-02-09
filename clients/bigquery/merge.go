@@ -42,7 +42,7 @@ func (s *Store) merge(tableData *optimization.TableData) ([]*Row, error) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal, err := castColVal(value[col], colKind, additionalDateFmts)
 			if err != nil {
-				return nil, fmt.Errorf("failed to cast col %v: %w", col, err)
+				return nil, fmt.Errorf("failed to cast col %s: %w", col, err)
 			}
 
 			if colVal != nil {
