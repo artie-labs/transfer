@@ -90,6 +90,39 @@ func TestParseField(t *testing.T) {
 			expectedValue:   "123.45",
 			expectedDecimal: true,
 		},
+		{
+			name: "geometry (no srid)",
+			field: debezium.Field{
+				DebeziumType: string(debezium.GeometryType),
+			},
+			value: map[string]interface{}{
+				"srid": nil,
+				"wkb":  "AQEAAAAAAAAAAADwPwAAAAAAABRA",
+			},
+			expectedValue: `{"type":"Feature","geometry":{"type":"Point","coordinates":[1,5]},"properties":null}`,
+		},
+		{
+			name: "geometry (w/ srid)",
+			field: debezium.Field{
+				DebeziumType: string(debezium.GeometryType),
+			},
+			value: map[string]interface{}{
+				"srid": 4326,
+				"wkb":  "AQEAACDmEAAAAAAAAAAA8D8AAAAAAAAYQA==",
+			},
+			expectedValue: `{"type":"Feature","geometry":{"type":"Point","coordinates":[1,6]},"properties":null}`,
+		},
+		{
+			name: "geography (w/ srid)",
+			field: debezium.Field{
+				DebeziumType: string(debezium.GeographyType),
+			},
+			value: map[string]interface{}{
+				"srid": 4326,
+				"wkb":  "AQEAACDmEAAAAAAAAADAXkAAAAAAAIBDwA==",
+			},
+			expectedValue: `{"type":"Feature","geometry":{"type":"Point","coordinates":[123,-39]},"properties":null}`,
+		},
 	}
 
 	for _, testCase := range testCases {

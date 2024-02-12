@@ -36,6 +36,7 @@ const (
 	// PostGIS data types
 	GeometryPointType SupportedDebeziumType = "io.debezium.data.geometry.Point"
 	GeometryType      SupportedDebeziumType = "io.debezium.data.geometry.Geometry"
+	GeographyType     SupportedDebeziumType = "io.debezium.data.geometry.Geography"
 
 	KafkaDecimalPrecisionKey = "connect.decimal.precision"
 )
@@ -54,6 +55,7 @@ var typesThatRequireTypeCasting = []SupportedDebeziumType{
 	JSON,
 	GeometryPointType,
 	GeometryType,
+	GeographyType,
 }
 
 func RequiresSpecialTypeCasting(typeLabel string) (bool, SupportedDebeziumType) {
