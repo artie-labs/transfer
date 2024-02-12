@@ -36,7 +36,6 @@ func parseField(field debezium.Field, value interface{}) interface{} {
 			}
 		case debezium.GeometryType, debezium.GeographyType:
 			geometryString, err := parseGeometry(value)
-			fmt.Println("err", err)
 			if err == nil {
 				return geometryString
 			}
