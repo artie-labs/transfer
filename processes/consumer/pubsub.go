@@ -44,7 +44,7 @@ func findOrCreateSubscription(ctx context.Context, cfg config.Config, client *gc
 		})
 
 		if err != nil {
-			return nil, fmt.Errorf("failed to create subscription, topic: %s, err: %w", topic, err)
+			return nil, fmt.Errorf("failed to create subscription for topic %s: %w", topic, err)
 		}
 	}
 

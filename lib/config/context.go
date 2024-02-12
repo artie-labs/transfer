@@ -20,7 +20,7 @@ func LoadSettings(args []string, loadConfig bool) (*Settings, error) {
 
 	_, err := flags.ParseArgs(&opts, args)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse args, err: %w", err)
+		return nil, fmt.Errorf("failed to parse args: %w", err)
 	}
 
 	settings := &Settings{
@@ -30,7 +30,7 @@ func LoadSettings(args []string, loadConfig bool) (*Settings, error) {
 	if loadConfig {
 		config, err := readFileToConfig(opts.ConfigFilePath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse config file. Please check your config, err: %w", err)
+			return nil, fmt.Errorf("failed to parse config file: %w", err)
 		}
 
 		tcs, err := config.TopicConfigs()
@@ -43,7 +43,7 @@ func LoadSettings(args []string, loadConfig bool) (*Settings, error) {
 		}
 
 		if err = config.Validate(); err != nil {
-			return nil, fmt.Errorf("failed to validate config, err: %w", err)
+			return nil, fmt.Errorf("failed to validate config: %w", err)
 		}
 
 		settings.Config = *config

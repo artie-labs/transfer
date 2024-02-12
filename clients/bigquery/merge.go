@@ -42,7 +42,7 @@ func (s *Store) merge(tableData *optimization.TableData) ([]*Row, error) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal, err := castColVal(value[col], colKind, additionalDateFmts)
 			if err != nil {
-				return nil, fmt.Errorf("failed to cast col: %v, err: %w", col, err)
+				return nil, fmt.Errorf("failed to cast col %s: %w", col, err)
 			}
 
 			if colVal != nil {
@@ -207,7 +207,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	tableName := fmt.Sprintf("%s_%s", tableData.RawName(), tableData.TempTableSuffix())
 	err = s.PutTable(ctx, tableData.TopicConfig.Database, tableName, rows)
 	if err != nil {
-		return fmt.Errorf("failed to insert into temp table: %s, err: %w", tableName, err)
+		return fmt.Errorf("failed to insert into temp table %s: %w", tableName, err)
 	}
 
 	defer func() {

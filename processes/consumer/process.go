@@ -53,7 +53,7 @@ func processMessage(ctx context.Context, cfg config.Config, inMemDB *models.Data
 	pkMap, err := topicConfig.GetPrimaryKey(processArgs.Msg.Key(), topicConfig.tc)
 	if err != nil {
 		tags["what"] = "marshall_pk_err"
-		return "", fmt.Errorf("cannot unmarshall key, key: %s, err: %w", string(processArgs.Msg.Key()), err)
+		return "", fmt.Errorf("cannot unmarshall key %s: %w", string(processArgs.Msg.Key()), err)
 	}
 
 	typingSettings := cfg.SharedTransferConfig.TypingSettings
