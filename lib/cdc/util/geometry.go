@@ -5,9 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/twpayne/go-geom/encoding/ewkb"
 	"github.com/twpayne/go-geom/encoding/geojson"
-
-	"github.com/twpayne/go-geom/encoding/wkb"
 )
 
 type GeoJSON struct {
@@ -81,7 +80,7 @@ func parseGeometry(value interface{}) (string, error) {
 		return "", fmt.Errorf("error decoding base64: %w", err)
 	}
 
-	geom, err := wkb.Unmarshal(wkbBytes)
+	geom, err := ewkb.Unmarshal(wkbBytes)
 	if err != nil {
 		return "", fmt.Errorf("error unmarshalling WKB bytes: %w", err)
 	}
