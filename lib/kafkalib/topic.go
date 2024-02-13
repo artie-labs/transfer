@@ -92,9 +92,8 @@ func (t TopicConfig) ShouldSkip(op string) bool {
 }
 
 func (t TopicConfig) String() string {
-	return fmt.Sprintf(
-		"db=%s, schema=%s, tableNameOverride=%s, topic=%s, idempotentKey=%s, cdcFormat=%s, dropDeletedColumns=%v",
-		t.Database, t.Schema, t.TableName, t.Topic, t.IdempotentKey, t.CDCFormat, t.DropDeletedColumns)
+	return fmt.Sprintf("db=%s, schema=%s, tableNameOverride=%s, topic=%s, idempotentKey=%s, cdcFormat=%s, dropDeletedColumns=%v, skippedOperations=%v",
+		t.Database, t.Schema, t.TableName, t.Topic, t.IdempotentKey, t.CDCFormat, t.DropDeletedColumns, t.SkippedOperations)
 }
 
 func (t TopicConfig) Validate() error {

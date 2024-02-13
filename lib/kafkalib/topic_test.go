@@ -2,7 +2,6 @@ package kafkalib
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -99,20 +98,22 @@ func TestGetUniqueDatabaseAndSchema(t *testing.T) {
 
 func TestTopicConfig_String(t *testing.T) {
 	tc := TopicConfig{
-		Database:      "aaa",
-		TableName:     "bbb",
-		Schema:        "ccc",
-		Topic:         "d",
-		IdempotentKey: "e",
-		CDCFormat:     "f",
+		Database:          "aaa",
+		TableName:         "bbb",
+		Schema:            "ccc",
+		Topic:             "d",
+		IdempotentKey:     "e",
+		CDCFormat:         "f",
+		SkippedOperations: "d",
 	}
 
-	assert.True(t, strings.Contains(tc.String(), fmt.Sprintf("tableNameOverride=%s", tc.TableName)), tc.String())
-	assert.True(t, strings.Contains(tc.String(), fmt.Sprintf("db=%s", tc.Database)), tc.String())
-	assert.True(t, strings.Contains(tc.String(), fmt.Sprintf("schema=%s", tc.Schema)), tc.String())
-	assert.True(t, strings.Contains(tc.String(), fmt.Sprintf("topic=%s", tc.Topic)), tc.String())
-	assert.True(t, strings.Contains(tc.String(), fmt.Sprintf("idempotentKey=%s", tc.IdempotentKey)), tc.String())
-	assert.True(t, strings.Contains(tc.String(), fmt.Sprintf("cdcFormat=%s", tc.CDCFormat)), tc.String())
+	assert.Contains(t, tc.String(), fmt.Sprintf("tableNameOverride=%s", tc.TableName), tc.String())
+	assert.Contains(t, tc.String(), fmt.Sprintf("db=%s", tc.Database), tc.String())
+	assert.Contains(t, tc.String(), fmt.Sprintf("schema=%s", tc.Schema), tc.String())
+	assert.Contains(t, tc.String(), fmt.Sprintf("topic=%s", tc.Topic), tc.String())
+	assert.Contains(t, tc.String(), fmt.Sprintf("idempotentKey=%s", tc.IdempotentKey), tc.String())
+	assert.Contains(t, tc.String(), fmt.Sprintf("cdcFormat=%s", tc.CDCFormat), tc.String())
+	assert.Contains(t, tc.String(), fmt.Sprintf("skippedOperations=%s", tc.SkippedOperations), tc.String())
 }
 
 func TestTopicConfig_Validate(t *testing.T) {
