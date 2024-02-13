@@ -26,6 +26,9 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 		expectedResult string
 	}
 
+	randomJSONString := fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(maxRedshiftVarCharLen+1))
+	randomArrayString := fmt.Sprintf(`["a", "%s"]`, stringutil.Random(maxRedshiftVarCharLen+1))
+
 	tcs := []_tc{
 		{
 			name:   "string",
@@ -50,6 +53,30 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 				KindDetails: typing.Struct,
 			},
 			expectedResult: fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker),
+		},
+		{
+			name:   "string, but the data type is a SUPER",
+			colVal: stringutil.Random(maxRedshiftVarCharLen + 1),
+			colKind: columns.Column{
+				KindDetails: typing.Struct,
+			},
+			expectedResult: fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker),
+		},
+		{
+			name:   "struct, exceeded 65k but under 1mb",
+			colVal: randomJSONString,
+			colKind: columns.Column{
+				KindDetails: typing.Struct,
+			},
+			expectedResult: randomJSONString,
+		},
+		{
+			name:   "array, exceeded 65k but under 1mb",
+			colVal: randomArrayString,
+			colKind: columns.Column{
+				KindDetails: typing.Struct,
+			},
+			expectedResult: randomArrayString,
 		},
 		{
 			name:   "struct - not masked",
