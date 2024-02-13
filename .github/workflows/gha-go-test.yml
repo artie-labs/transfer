@@ -10,7 +10,7 @@ jobs:
     name: Go ${{ matrix.go }}
     steps:
       - uses: actions/checkout@v4 # Checks out the code
-      - name: Setting Go up
+      - name: Set Go up
         uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go }}
