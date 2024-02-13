@@ -9,7 +9,7 @@ Below, you can see sample configuration files to describe different workloads. T
 ### Postgres --> Snowflake
 
 ```yaml
-outputSource: snowflake_stage
+outputSource: snowflake
 kafka:
   bootstrapServer: kafka:9092
   groupID: group_abc
@@ -53,7 +53,7 @@ bigquery:
 ### MongoDB --> Snowflake
 
 ```yaml
-outputSource: snowflake_stage
+outputSource: snowflake
 kafka:
   bootstrapServer: kafka:9092
   groupID: group_abc
