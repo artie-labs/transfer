@@ -130,8 +130,8 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 					TopicToConfigFormatMap: tcFmtMap,
 				})
 
-				msg.EmitIngestionLag(metricsClient, kafkaConsumer.Config().GroupID, tableName)
-				msg.EmitRowLag(metricsClient, kafkaConsumer.Config().GroupID, tableName)
+				msg.EmitIngestionLag(metricsClient, cfg.Mode, kafkaConsumer.Config().GroupID, tableName)
+				msg.EmitRowLag(metricsClient, cfg.Mode, kafkaConsumer.Config().GroupID, tableName)
 				if processErr != nil {
 					slog.With(artie.KafkaMsgLogFields(kafkaMsg)...).Warn("Skipping message...", slog.Any("err", processErr))
 				}

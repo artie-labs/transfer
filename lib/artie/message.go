@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"cloud.google.com/go/pubsub"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/segmentio/kafka-go"
@@ -67,12 +69,13 @@ func (m *Message) Kind() Kind {
 
 // EmitRowLag will diff against the partition's high watermark and the message's offset
 // This function is only available for Kafka since Kafka has the concept of offsets and watermarks.
-func (m *Message) EmitRowLag(metricsClient base.Client, groupID, table string) {
+func (m *Message) EmitRowLag(metricsClient base.Client, mode config.Mode, groupID, table string) {
 	if m.KafkaMsg == nil {
 		return
 	}
 
 	metricsClient.GaugeWithSample("row.lag", float64(m.KafkaMsg.HighWaterMark-m.KafkaMsg.Offset), map[string]string{
+		"mode":      mode.String(),
 		"groupID":   groupID,
 		"topic":     m.Topic(),
 		"table":     table,
@@ -80,8 +83,9 @@ func (m *Message) EmitRowLag(metricsClient base.Client, groupID, table string) {
 	}, 0.5)
 }
 
-func (m *Message) EmitIngestionLag(metricsClient base.Client, groupID, table string) {
+func (m *Message) EmitIngestionLag(metricsClient base.Client, mode config.Mode, groupID, table string) {
 	metricsClient.Timing("ingestion.lag", time.Since(m.PublishTime()), map[string]string{
+		"mode":      mode.String(),
 		"groupID":   groupID,
 		"topic":     m.Topic(),
 		"table":     table,
