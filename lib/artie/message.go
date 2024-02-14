@@ -5,11 +5,11 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/config"
-
 	"cloud.google.com/go/pubsub"
-	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/segmentio/kafka-go"
+
+	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 )
 
 type Kind int
