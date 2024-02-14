@@ -14,10 +14,12 @@ type Payload struct {
 	Before *string `json:"before"`
 	After  *string `json:"after"`
 
-	BeforeMap map[string]interface{} `json:"beforeMap,omitempty"`
-	AfterMap  map[string]interface{} `json:"afterMap,omitempty"`
-	Source    Source                 `json:"source"`
-	Operation string                 `json:"op"`
+	Source    Source `json:"source"`
+	Operation string `json:"op"`
+
+	// These maps are used to store the before and after JSONE as a map as opposed to a string.
+	beforeMap map[string]interface{}
+	afterMap  map[string]interface{}
 }
 
 type Source struct {

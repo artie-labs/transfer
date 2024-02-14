@@ -73,8 +73,8 @@ func (p *MongoTestSuite) TestSource_GetExecutionTime() {
 	schemaEvtPayload := &SchemaEventPayload{Payload: Payload{
 		Before:    nil,
 		After:     nil,
-		BeforeMap: nil,
-		AfterMap:  nil,
+		beforeMap: nil,
+		afterMap:  nil,
 		Source: Source{
 			Connector: "mongodb",
 			TsMs:      1668753321000, // Tue Oct 11 2022 03:19:24
