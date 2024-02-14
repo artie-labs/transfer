@@ -11,12 +11,15 @@ type SchemaEventPayload struct {
 }
 
 type Payload struct {
-	Before    *string `json:"before"`
-	After     *string `json:"after"`
-	BeforeMap map[string]interface{}
-	AfterMap  map[string]interface{}
+	Before *string `json:"before"`
+	After  *string `json:"after"`
+
 	Source    Source `json:"source"`
 	Operation string `json:"op"`
+
+	// These maps are used to store the before and after JSONE as a map, since `before` and `after` come in as a JSONE string.
+	beforeMap map[string]interface{}
+	afterMap  map[string]interface{}
 }
 
 type Source struct {
