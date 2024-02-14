@@ -100,7 +100,7 @@ func StartSubscriber(ctx context.Context, cfg config.Config, inMemDB *models.Dat
 						TopicToConfigFormatMap: tcFmtMap,
 					})
 
-					msg.EmitIngestionLag(metricsClient, subName, tableName)
+					msg.EmitIngestionLag(metricsClient, cfg.Mode, subName, tableName)
 					if processErr != nil {
 						slog.With(logFields...).Warn("Skipping message...", slog.Any("err", processErr))
 					}
