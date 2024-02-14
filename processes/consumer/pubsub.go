@@ -94,7 +94,7 @@ func StartSubscriber(ctx context.Context, cfg config.Config, inMemDB *models.Dat
 						slog.String("value", string(msg.Value())),
 					}
 
-					tableName, processErr := processMessage(ctx, cfg, inMemDB, dest, metricsClient, ProcessArgs{
+					tableName, processErr := ProcessMessage(ctx, cfg, inMemDB, dest, metricsClient, ProcessArgs{
 						Msg:                    msg,
 						GroupID:                subName,
 						TopicToConfigFormatMap: tcFmtMap,

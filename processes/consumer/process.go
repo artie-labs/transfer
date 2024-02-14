@@ -19,11 +19,11 @@ type ProcessArgs struct {
 	TopicToConfigFormatMap *TcFmtMap
 }
 
-// processMessage will return:
+// ProcessMessage will return:
 // 1. TableName (string)
 // 2. Error
 // We are using the TableName for emitting Kafka ingestion lag
-func processMessage(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, processArgs ProcessArgs) (string, error) {
+func ProcessMessage(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, processArgs ProcessArgs) (string, error) {
 	if processArgs.TopicToConfigFormatMap == nil {
 		return "", fmt.Errorf("failed to process, topicConfig is nil")
 	}

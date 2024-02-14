@@ -124,7 +124,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 				}
 
 				msg := artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)
-				tableName, processErr := processMessage(ctx, cfg, inMemDB, dest, metricsClient, ProcessArgs{
+				tableName, processErr := ProcessMessage(ctx, cfg, inMemDB, dest, metricsClient, ProcessArgs{
 					Msg:                    msg,
 					GroupID:                kafkaConsumer.Config().GroupID,
 					TopicToConfigFormatMap: tcFmtMap,
