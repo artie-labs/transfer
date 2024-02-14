@@ -92,6 +92,7 @@ ALTER USER artie_transfer REPLICATION;
   * `Longitude`
   * `Point`
   * `Geometry`
+  * `Geography`
   * More coming soon!
 
 ## Additional features
