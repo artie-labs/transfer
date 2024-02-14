@@ -6,9 +6,8 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 func (s *Store) Append(ctx context.Context, tableData *optimization.TableData) error {
