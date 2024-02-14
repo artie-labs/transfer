@@ -31,7 +31,9 @@ const (
 	describeCommentCol = "comment"
 )
 
-func (s *Store) getTableConfig(fqName string, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
+func (s *Store) getTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+	fqName := tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, "")
+
 	return utils.GetTableConfig(utils.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             fqName,
@@ -41,7 +43,7 @@ func (s *Store) getTableConfig(fqName string, dropDeletedColumns bool) (*types.D
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeCommentCol,
 		EmptyCommentValue:  ptr.ToString("<nil>"),
-		DropDeletedColumns: dropDeletedColumns,
+		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
 	})
 }
 

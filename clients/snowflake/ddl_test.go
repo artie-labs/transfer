@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/optimization"
+
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -108,10 +111,19 @@ func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
 
 func (s *SnowflakeTestSuite) TestGetTableConfig() {
 	// If the table does not exist, snowflakeTableConfig should say so.
-	fqName := "customers.public.orders22"
-	s.fakeStageStore.QueryReturns(nil, fmt.Errorf("Table '%s' does not exist or not authorized", fqName))
+	s.fakeStageStore.QueryReturns(nil, fmt.Errorf("Table '%s' does not exist or not authorized", "customers.public.orders22"))
 
-	tableConfig, err := s.stageStore.getTableConfig(fqName, false)
+	tableData := &optimization.TableData{
+		TopicConfig: kafkalib.TopicConfig{
+			Database:  "customers",
+			Schema:    "public",
+			TableName: "orders22",
+		},
+		PartitionsToLastMessage: nil,
+		LatestCDCTs:             time.Time{},
+	}
+
+	tableConfig, err := s.stageStore.getTableConfig(tableData)
 	assert.NotNil(s.T(), tableConfig, "config is nil")
 	assert.NoError(s.T(), err)
 

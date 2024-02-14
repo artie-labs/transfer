@@ -137,8 +137,7 @@ func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 		return nil
 	}
 
-	fqName := tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, "")
-	tableConfig, err := s.getTableConfig(fqName, tableData.TopicConfig.DropDeletedColumns)
+	tableConfig, err := s.getTableConfig(tableData)
 	if err != nil {
 		return err
 	}
@@ -147,6 +146,8 @@ func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
 	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
 		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt,
 		tableData.TopicConfig.IncludeDatabaseUpdatedAt, tableData.Mode())
+
+	fqName := tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, "")
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               s,
 		Tc:                tableConfig,
