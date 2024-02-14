@@ -2,6 +2,7 @@ package redshift
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -43,5 +44,12 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData) e
 	}
 
 	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
-	return s.prepareTempTable(ctx, tableData, tableConfig, fqName)
+
+	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.config.SharedDestinationConfig.UppercaseEscapedNames, ""), tableData.TempTableSuffix())
+	if err = s.prepareTempTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {
+		return fmt.Errorf("failed to load temporary table: %w", err)
+	}
+
+	_, err = s.Exec(fmt.Sprintf(`ALTER TABLE %s APPEND FROM %s;`, fqName, temporaryTableName))
+	return err
 }
