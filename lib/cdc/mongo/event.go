@@ -11,12 +11,13 @@ type SchemaEventPayload struct {
 }
 
 type Payload struct {
-	Before    *string `json:"before"`
-	After     *string `json:"after"`
-	BeforeMap map[string]interface{}
-	AfterMap  map[string]interface{}
-	Source    Source `json:"source"`
-	Operation string `json:"op"`
+	Before *string `json:"before"`
+	After  *string `json:"after"`
+
+	BeforeMap map[string]interface{} `json:"beforeMap,omitempty"`
+	AfterMap  map[string]interface{} `json:"afterMap,omitempty"`
+	Source    Source                 `json:"source"`
+	Operation string                 `json:"op"`
 }
 
 type Source struct {
