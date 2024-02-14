@@ -17,7 +17,7 @@ type Payload struct {
 	Source    Source `json:"source"`
 	Operation string `json:"op"`
 
-	// These maps are used to store the before and after JSONE as a map as opposed to a string.
+	// These maps are used to store the before and after JSONE as a map, since `before` and `after` come in as a JSONE string.
 	beforeMap map[string]interface{}
 	afterMap  map[string]interface{}
 }
