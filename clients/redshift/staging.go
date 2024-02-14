@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/typing"
 
 	"github.com/artie-labs/transfer/lib/s3lib"
@@ -20,24 +22,26 @@ import (
 )
 
 func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string) error {
-	tempAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:               s,
-		Tc:                tableConfig,
-		FqTableName:       tempTableName,
-		CreateTable:       true,
-		TemporaryTable:    true,
-		ColumnOp:          constants.Add,
-		UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
-	}
+	if tableData.Mode() != config.History {
+		tempAlterTableArgs := ddl.AlterTableArgs{
+			Dwh:               s,
+			Tc:                tableConfig,
+			FqTableName:       tempTableName,
+			CreateTable:       true,
+			TemporaryTable:    true,
+			ColumnOp:          constants.Add,
+			UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
+		}
 
-	if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
-		return fmt.Errorf("failed to create temp table: %w", err)
-	}
+		if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
+			return fmt.Errorf("failed to create temp table: %w", err)
+		}
 
-	expiryString := typing.ExpiresDate(time.Now().UTC().Add(ddl.TempTableTTL))
-	// Now add a comment to the temporary table.
-	if _, err := s.Exec(fmt.Sprintf(`COMMENT ON TABLE %s IS '%s';`, tempTableName, ddl.ExpiryComment(expiryString))); err != nil {
-		return fmt.Errorf("failed to add comment to table %s: %w", tempTableName, err)
+		expiryString := typing.ExpiresDate(time.Now().UTC().Add(ddl.TempTableTTL))
+		// Now add a comment to the temporary table.
+		if _, err := s.Exec(fmt.Sprintf(`COMMENT ON TABLE %s IS '%s';`, tempTableName, ddl.ExpiryComment(expiryString))); err != nil {
+			return fmt.Errorf("failed to add comment to table %s: %w", tempTableName, err)
+		}
 	}
 
 	fp, err := s.loadTemporaryTable(tableData, tempTableName)
