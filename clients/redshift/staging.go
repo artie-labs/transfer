@@ -9,14 +9,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/typing"
-
-	"github.com/artie-labs/transfer/lib/s3lib"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/s3lib"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string) error {
