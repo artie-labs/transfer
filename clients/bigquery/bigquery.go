@@ -6,19 +6,17 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/artie-labs/transfer/clients/shared"
-
-	"github.com/artie-labs/transfer/lib/ptr"
-
 	"cloud.google.com/go/bigquery"
 	_ "github.com/viant/bigquery"
 
+	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/ptr"
 )
 
 const (
