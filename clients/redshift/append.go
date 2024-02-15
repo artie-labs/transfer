@@ -7,6 +7,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
+	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -16,7 +17,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData) e
 		return nil
 	}
 
-	tableConfig, err := s.getTableConfig(tableData)
+	tableConfig, err := s.GetTableConfig(tableData)
 	if err != nil {
 		return err
 	}
@@ -46,7 +47,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData) e
 	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 
 	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.config.SharedDestinationConfig.UppercaseEscapedNames, ""), tableData.TempTableSuffix())
-	if err = s.prepareTempTable(ctx, tableData, tableConfig, temporaryTableName); err != nil {
+	if err = s.PrepareTemporaryTable(tableData, tableConfig, temporaryTableName, types.AdditionalSettings{}); err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
 

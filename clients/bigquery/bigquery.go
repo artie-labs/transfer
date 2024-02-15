@@ -6,12 +6,13 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/artie-labs/transfer/clients/shared"
+
 	"github.com/artie-labs/transfer/lib/ptr"
 
 	"cloud.google.com/go/bigquery"
 	_ "github.com/viant/bigquery"
 
-	"github.com/artie-labs/transfer/clients/utils"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
@@ -35,8 +36,33 @@ type Store struct {
 	db.Store
 }
 
-func (s *Store) getTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	return utils.GetTableConfig(utils.GetTableCfgArgs{
+func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalSettings types.AdditionalSettings) error {
+	// 1. Cast all the data into rows.
+	var rows []*Row
+	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
+	for _, value := range tableData.Rows() {
+		data := make(map[string]bigquery.Value)
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil) {
+			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
+			colVal, err := castColVal(value[col], colKind, additionalDateFmts)
+			if err != nil {
+				return fmt.Errorf("failed to cast col %s: %w", col, err)
+			}
+
+			if colVal != nil {
+				data[col] = colVal
+			}
+		}
+
+		rows = append(rows, NewRow(data))
+	}
+
+	// 2. Load the data into the temporary table.
+	return s.putTable(context.Background(), tableData.TopicConfig.Database, tempTableName, rows)
+}
+
+func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+	return shared.GetTableConfig(shared.GetTableCfgArgs{
 		Dwh:       s,
 		FqName:    tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, s.config.BigQuery.ProjectID),
 		ConfigMap: s.configMap,
@@ -71,7 +97,7 @@ func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 	return client
 }
 
-func (s *Store) PutTable(ctx context.Context, dataset, tableName string, rows []*Row) error {
+func (s *Store) putTable(ctx context.Context, dataset, tableName string, rows []*Row) error {
 	client := s.GetClient(ctx)
 	defer client.Close()
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/artie-labs/transfer/clients/utils"
+	"github.com/artie-labs/transfer/clients/shared"
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -31,8 +31,10 @@ const (
 	describeCommentCol = "comment"
 )
 
-func (s *Store) getTableConfig(fqName string, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
-	return utils.GetTableConfig(utils.GetTableCfgArgs{
+func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+	fqName := tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, "")
+
+	return shared.GetTableConfig(shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             fqName,
 		ConfigMap:          s.configMap,
@@ -41,7 +43,7 @@ func (s *Store) getTableConfig(fqName string, dropDeletedColumns bool) (*types.D
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeCommentCol,
 		EmptyCommentValue:  ptr.ToString("<nil>"),
-		DropDeletedColumns: dropDeletedColumns,
+		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
 	})
 }
 
@@ -59,7 +61,7 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
 	// TODO: Implement max retry count
-	err := s.mergeWithStages(tableData)
+	err := shared.Merge(s, tableData, s.config, types.MergeOpts{})
 	if IsAuthExpiredError(err) {
 		slog.Warn("Authentication has expired, will reload the Snowflake store and retry merging", slog.Any("err", err))
 		s.reestablishConnection()

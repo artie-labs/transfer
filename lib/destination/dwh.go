@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 )
 
@@ -14,7 +15,13 @@ type DataWarehouse interface {
 	Append(ctx context.Context, tableData *optimization.TableData) error
 	Exec(query string, args ...any) (sql.Result, error)
 	Query(query string, args ...any) (*sql.Rows, error)
+	Begin() (*sql.Tx, error)
+
+	// Helper functions for merge
+
 	IsRetryableError(err error) bool
+	GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error)
+	PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalSettings types.AdditionalSettings) error
 }
 
 type Baseline interface {

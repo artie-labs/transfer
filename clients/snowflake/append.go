@@ -6,6 +6,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
+	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -29,7 +30,7 @@ func (s *Store) append(tableData *optimization.TableData) error {
 	}
 
 	fqName := tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, "")
-	tableConfig, err := s.getTableConfig(fqName, tableData.TopicConfig.DropDeletedColumns)
+	tableConfig, err := s.GetTableConfig(tableData)
 	if err != nil {
 		return err
 	}
@@ -58,6 +59,7 @@ func (s *Store) append(tableData *optimization.TableData) error {
 	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 
 	// TODO: For history mode - in the future, we could also have a separate stage name for history mode so we can enable parallel processing.
-	return s.prepareTempTable(tableData, tableConfig, fqName,
-		`FILE_FORMAT = (TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE) PURGE = TRUE`)
+	return s.PrepareTemporaryTable(tableData, tableConfig, fqName, types.AdditionalSettings{
+		AdditionalCopyClause: `FILE_FORMAT = (TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE) PURGE = TRUE`,
+	})
 }

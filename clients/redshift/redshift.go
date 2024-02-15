@@ -3,9 +3,9 @@ package redshift
 import (
 	"fmt"
 
-	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/clients/shared"
 
-	"github.com/artie-labs/transfer/clients/utils"
+	"github.com/artie-labs/transfer/lib/optimization"
 
 	"github.com/artie-labs/transfer/lib/ptr"
 
@@ -46,7 +46,7 @@ const (
 	describeDescriptionCol = "description"
 )
 
-func (s *Store) getTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	describeQuery, err := describeTableQuery(describeArgs{
 		RawTableName: tableData.RawName(),
 		Schema:       tableData.TopicConfig.Schema,
@@ -56,7 +56,7 @@ func (s *Store) getTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		return nil, err
 	}
 
-	return utils.GetTableConfig(utils.GetTableCfgArgs{
+	return shared.GetTableConfig(shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, ""),
 		ConfigMap:          s.configMap,
