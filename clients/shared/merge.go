@@ -98,7 +98,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 
 	subQuery := temporaryTableName
 	if opts.SubQueryDedupe {
-		subQuery = fmt.Sprintf(`( SELECT DISTINCT *  FROM %s )`, temporaryTableName)
+		subQuery = fmt.Sprintf(`( SELECT DISTINCT * FROM %s )`, temporaryTableName)
 	}
 
 	mergeArg := dml.MergeArgument{
