@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 
 	"cloud.google.com/go/bigquery"
 	_ "github.com/viant/bigquery"
@@ -32,6 +33,15 @@ type Store struct {
 	config    config.Config
 
 	db.Store
+}
+
+func tableRelName(fqName string) (string, error) {
+	fqNameParts := strings.Split(fqName, ".")
+	if len(fqNameParts) < 3 {
+		return "", fmt.Errorf("invalid fully qualified name: %s", fqName)
+	}
+
+	return strings.Join(fqNameParts[2:], "."), nil
 }
 
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, _ *types.DwhTableConfig, tempTableName string, _ types.AdditionalSettings) error {
@@ -100,13 +110,18 @@ func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 }
 
 func (s *Store) putTable(ctx context.Context, dataset, tableName string, rows []*Row) error {
+	relTableName, err := tableRelName(tableName)
+	if err != nil {
+		return fmt.Errorf("failed to get table name: %w", err)
+	}
+
 	client := s.GetClient(ctx)
 	defer client.Close()
 
 	batch := NewBatch(rows, s.batchSize)
-	inserter := client.Dataset(dataset).Table(tableName).Inserter()
+	inserter := client.Dataset(dataset).Table(relTableName).Inserter()
 	for batch.HasNext() {
-		if err := inserter.Put(ctx, batch.NextChunk()); err != nil {
+		if err = inserter.Put(ctx, batch.NextChunk()); err != nil {
 			return fmt.Errorf("failed to insert rows: %w", err)
 		}
 	}
