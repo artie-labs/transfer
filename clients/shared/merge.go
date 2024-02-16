@@ -23,8 +23,6 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
-
-	fqName := tableData.ToFqName(dwh.Label(), true, cfg.SharedDestinationConfig.UppercaseEscapedNames, "")
 	tableConfig, err := dwh.GetTableConfig(tableData)
 	if err != nil {
 		return err
@@ -34,6 +32,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt,
 		tableData.TopicConfig.IncludeDatabaseUpdatedAt, tableData.Mode())
 
+	fqName := dwh.ToFullyQualifiedName(tableData, true)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               dwh,
 		Tc:                tableConfig,
@@ -70,7 +69,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
 	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
-	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(dwh.Label(), false, cfg.SharedDestinationConfig.UppercaseEscapedNames, ""), tableData.TempTableSuffix())
+	temporaryTableName := fmt.Sprintf("%s_%s", dwh.ToFullyQualifiedName(tableData, false), tableData.TempTableSuffix())
 	if err = dwh.PrepareTemporaryTable(tableData, tableConfig, temporaryTableName, types.AdditionalSettings{}); err != nil {
 		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}

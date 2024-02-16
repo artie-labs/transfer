@@ -22,11 +22,11 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData) e
 		return err
 	}
 
-	fqName := tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, "")
 	// Check if all the columns exist in Redshift
 	_, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
 		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt, tableData.TopicConfig.IncludeDatabaseUpdatedAt, tableData.Mode())
 
+	fqName := s.ToFullyQualifiedName(tableData, true)
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               s,
 		Tc:                tableConfig,
@@ -46,7 +46,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData) e
 
 	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 
-	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.config.SharedDestinationConfig.UppercaseEscapedNames, ""), tableData.TempTableSuffix())
+	temporaryTableName := fmt.Sprintf("%s_%s", s.ToFullyQualifiedName(tableData, false), tableData.TempTableSuffix())
 	if err = s.PrepareTemporaryTable(tableData, tableConfig, temporaryTableName, types.AdditionalSettings{}); err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}

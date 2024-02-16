@@ -31,9 +31,12 @@ const (
 	describeCommentCol = "comment"
 )
 
-func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	fqName := tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, "")
+func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
+	return tableData.ToFqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, "")
+}
 
+func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+	fqName := s.ToFullyQualifiedName(tableData, true)
 	return shared.GetTableConfig(shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             fqName,

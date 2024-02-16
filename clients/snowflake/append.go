@@ -29,7 +29,7 @@ func (s *Store) append(tableData *optimization.TableData) error {
 		return nil
 	}
 
-	fqName := tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, "")
+	fqName := s.ToFullyQualifiedName(tableData, true)
 	tableConfig, err := s.GetTableConfig(tableData)
 	if err != nil {
 		return err

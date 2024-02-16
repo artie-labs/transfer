@@ -26,6 +26,10 @@ type Store struct {
 	db.Store
 }
 
+func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
+	return tableData.ToFqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, "")
+}
+
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 	if s == nil {
 		return nil
@@ -65,7 +69,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 
 	return shared.GetTableConfig(shared.GetTableCfgArgs{
 		Dwh:                s,
-		FqName:             tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, ""),
+		FqName:             s.ToFullyQualifiedName(tableData, true),
 		ConfigMap:          s.configMap,
 		Query:              describeQuery,
 		ColumnNameLabel:    describeNameCol,

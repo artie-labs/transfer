@@ -34,7 +34,7 @@ type Store struct {
 	db.Store
 }
 
-func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalSettings types.AdditionalSettings) error {
+func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, _ *types.DwhTableConfig, tempTableName string, _ types.AdditionalSettings) error {
 	// 1. Cast all the data into rows.
 	var rows []*Row
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
@@ -59,10 +59,14 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	return s.putTable(context.Background(), tableData.TopicConfig.Database, tempTableName, rows)
 }
 
+func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
+	return tableData.ToFqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, s.config.BigQuery.ProjectID)
+}
+
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	return shared.GetTableConfig(shared.GetTableCfgArgs{
 		Dwh:       s,
-		FqName:    tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, s.config.BigQuery.ProjectID),
+		FqName:    s.ToFullyQualifiedName(tableData, true),
 		ConfigMap: s.configMap,
 		Query: fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name='%s';",
 			tableData.TopicConfig.Database, tableData.RawName()),
