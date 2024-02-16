@@ -1,7 +1,6 @@
 package redshift
 
 import (
-	"context"
 	"fmt"
 
 	_ "github.com/lib/pq"
@@ -42,7 +41,7 @@ func (s *Store) Label() constants.DestinationKind {
 	return constants.Redshift
 }
 
-func (s *Store) Merge(_ context.Context, tableData *optimization.TableData) error {
+func (s *Store) Merge(tableData *optimization.TableData) error {
 	return shared.Merge(s, tableData, s.config, types.MergeOpts{
 		UseMergeParts: true,
 		// We are adding SELECT DISTINCT here for the temporary table as an extra guardrail.

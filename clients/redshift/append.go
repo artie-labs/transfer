@@ -1,7 +1,6 @@
 package redshift
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 
@@ -12,7 +11,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func (s *Store) Append(ctx context.Context, tableData *optimization.TableData) error {
+func (s *Store) Append(tableData *optimization.TableData) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
