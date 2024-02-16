@@ -31,3 +31,14 @@ func (d *DwhToTablesConfigMap) AddTableToConfig(fqName string, config *DwhTableC
 
 	d.fqNameToDwhTableConfig[fqName] = config
 }
+
+type MergeOpts struct {
+	UseMergeParts             bool
+	SubQueryDedupe            bool
+	AdditionalEqualityStrings []string
+	RetryColBackfill          bool
+}
+
+type AdditionalSettings struct {
+	AdditionalCopyClause string
+}

@@ -17,7 +17,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string) error {
+func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, _ types.AdditionalSettings) error {
 	tempAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               s,
 		Tc:                tableConfig,
@@ -51,7 +51,7 @@ func (s *Store) prepareTempTable(ctx context.Context, tableData *optimization.Ta
 	}()
 
 	// Load fp into s3, get S3 URI and pass it down.
-	s3Uri, err := s3lib.UploadLocalFileToS3(ctx, s3lib.UploadArgs{
+	s3Uri, err := s3lib.UploadLocalFileToS3(context.Background(), s3lib.UploadArgs{
 		OptionalS3Prefix: s.optionalS3Prefix,
 		Bucket:           s.bucket,
 		FilePath:         fp,

@@ -1,7 +1,7 @@
 package bigquery
 
 import (
-	"github.com/artie-labs/transfer/clients/utils"
+	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -61,7 +61,7 @@ func (b *BigQueryTestSuite) TestBackfillColumn() {
 
 	var index int
 	for _, testCase := range testCases {
-		err := utils.BackfillColumn(config.Config{}, b.store, testCase.col, fqTableName)
+		err := shared.BackfillColumn(config.Config{}, b.store, testCase.col, fqTableName)
 		if testCase.expectErr {
 			assert.Error(b.T(), err, testCase.name)
 			continue

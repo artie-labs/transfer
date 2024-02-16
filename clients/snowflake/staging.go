@@ -11,13 +11,10 @@ import (
 
 	"github.com/artie-labs/transfer/lib/typing/values"
 
-	"github.com/artie-labs/transfer/clients/utils"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
-	"github.com/artie-labs/transfer/lib/destination/dml"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -33,13 +30,13 @@ func castColValStaging(colVal interface{}, colKind columns.Column, additionalDat
 	return values.ToString(colVal, colKind, additionalDateFmts)
 }
 
-// prepareTempTable does the following:
+// PrepareTemporaryTable does the following:
 // 1) Create the temporary table
 // 2) Load in-memory table -> CSV
 // 3) Runs PUT to upload CSV to Snowflake staging (auto-compression with GZIP)
 // 4) Runs COPY INTO with the columns specified into temporary table
 // 5) Deletes CSV generated from (2)
-func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalCopyClause string) error {
+func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalSettings types.AdditionalSettings) error {
 	if tableData.Mode() != config.History {
 		tempAlterTableArgs := ddl.AlterTableArgs{
 			Dwh:               s,
@@ -81,8 +78,8 @@ func (s *Store) prepareTempTable(tableData *optimization.TableData, tableConfig 
 		// Escaped columns, TABLE NAME
 		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableName, "%"))
 
-	if additionalCopyClause != "" {
-		copyCommand += " " + additionalCopyClause
+	if additionalSettings.AdditionalCopyClause != "" {
+		copyCommand += " " + additionalSettings.AdditionalCopyClause
 	}
 
 	_, err = s.Exec(copyCommand)
@@ -129,106 +126,4 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 
 	writer.Flush()
 	return filePath, writer.Error()
-}
-
-func (s *Store) mergeWithStages(tableData *optimization.TableData) error {
-	// TODO - better test coverage for `mergeWithStages`
-	if tableData.ShouldSkipUpdate() {
-		return nil
-	}
-
-	fqName := tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, "")
-	tableConfig, err := s.getTableConfig(fqName, tableData.TopicConfig.DropDeletedColumns)
-	if err != nil {
-		return err
-	}
-
-	// Check if all the columns exist in Snowflake
-	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
-		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt,
-		tableData.TopicConfig.IncludeDatabaseUpdatedAt, tableData.Mode())
-	createAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:               s,
-		Tc:                tableConfig,
-		FqTableName:       fqName,
-		CreateTable:       tableConfig.CreateTable(),
-		ColumnOp:          constants.Add,
-		CdcTime:           tableData.LatestCDCTs,
-		UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
-	}
-
-	// Keys that exist in CDC stream, but not in Snowflake
-	err = ddl.AlterTable(createAlterTableArgs, targetKeysMissing...)
-	if err != nil {
-		slog.Warn("Failed to apply alter table", slog.Any("err", err))
-		return err
-	}
-
-	// Keys that exist in Snowflake, but don't exist in our CDC stream.
-	// createTable is set to false because table creation requires a column to be added
-	// Which means, we'll only do it upon Add columns.
-	deleteAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:                    s,
-		Tc:                     tableConfig,
-		FqTableName:            fqName,
-		CreateTable:            false,
-		ColumnOp:               constants.Delete,
-		ContainOtherOperations: tableData.ContainOtherOperations(),
-		CdcTime:                tableData.LatestCDCTs,
-		UppercaseEscNames:      &s.config.SharedDestinationConfig.UppercaseEscapedNames,
-	}
-
-	err = ddl.AlterTable(deleteAlterTableArgs, srcKeysMissing...)
-	if err != nil {
-		slog.Warn("Failed to apply alter table", slog.Any("err", err))
-		return err
-	}
-
-	tableConfig.AuditColumnsToDelete(srcKeysMissing)
-	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
-	temporaryTableName := fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.config.SharedDestinationConfig.UppercaseEscapedNames, ""), tableData.TempTableSuffix())
-	if err = s.prepareTempTable(tableData, tableConfig, temporaryTableName, ""); err != nil {
-		return err
-	}
-
-	defer func() {
-		if dropErr := ddl.DropTemporaryTable(s, temporaryTableName, false); dropErr != nil {
-			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableName))
-		}
-	}()
-
-	// Now iterate over all the in-memory cols and see which one requires backfill.
-	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
-		if col.ShouldSkip() {
-			continue
-		}
-
-		err = utils.BackfillColumn(s.config, s, col, fqName)
-		if err != nil {
-			return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %w", col.RawName(), col.RawDefaultValue(), err)
-		}
-
-		tableConfig.Columns().UpsertColumn(col.RawName(), columns.UpsertColumnArg{
-			Backfilled: ptr.ToBool(true),
-		})
-	}
-
-	mergeArg := dml.MergeArgument{
-		FqTableName:       fqName,
-		SubQuery:          temporaryTableName,
-		IdempotentKey:     tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys:       tableData.PrimaryKeys(s.config.SharedDestinationConfig.UppercaseEscapedNames, &sql.NameArgs{Escape: true, DestKind: s.Label()}),
-		ColumnsToTypes:    *tableData.ReadOnlyInMemoryCols(),
-		SoftDelete:        tableData.TopicConfig.SoftDelete,
-		UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
-	}
-
-	mergeQuery, err := mergeArg.GetStatement()
-	if err != nil {
-		return fmt.Errorf("failed to generate merge statement: %w", err)
-	}
-
-	slog.Debug("Executing...", slog.String("query", mergeQuery))
-	_, err = s.Exec(mergeQuery)
-	return err
 }

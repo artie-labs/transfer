@@ -1,20 +1,18 @@
 package redshift
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/artie-labs/transfer/lib/optimization"
-
-	"github.com/artie-labs/transfer/clients/utils"
-
-	"github.com/artie-labs/transfer/lib/ptr"
-
-	"github.com/artie-labs/transfer/lib/config"
 	_ "github.com/lib/pq"
 
+	"github.com/artie-labs/transfer/clients/shared"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/ptr"
 )
 
 type Store struct {
@@ -26,6 +24,10 @@ type Store struct {
 	config            config.Config
 
 	db.Store
+}
+
+func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
+	return tableData.ToFqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, "")
 }
 
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
@@ -40,13 +42,22 @@ func (s *Store) Label() constants.DestinationKind {
 	return constants.Redshift
 }
 
+func (s *Store) Merge(_ context.Context, tableData *optimization.TableData) error {
+	return shared.Merge(s, tableData, s.config, types.MergeOpts{
+		UseMergeParts: true,
+		// We are adding SELECT DISTINCT here for the temporary table as an extra guardrail.
+		// Redshift does not enforce any row uniqueness and there could be potential LOAD errors which will cause duplicate rows to arise.
+		SubQueryDedupe: true,
+	})
+}
+
 const (
 	describeNameCol        = "column_name"
 	describeTypeCol        = "data_type"
 	describeDescriptionCol = "description"
 )
 
-func (s *Store) getTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	describeQuery, err := describeTableQuery(describeArgs{
 		RawTableName: tableData.RawName(),
 		Schema:       tableData.TopicConfig.Schema,
@@ -56,9 +67,9 @@ func (s *Store) getTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		return nil, err
 	}
 
-	return utils.GetTableConfig(utils.GetTableCfgArgs{
+	return shared.GetTableConfig(shared.GetTableCfgArgs{
 		Dwh:                s,
-		FqName:             tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, ""),
+		FqName:             s.ToFullyQualifiedName(tableData, true),
 		ConfigMap:          s.configMap,
 		Query:              describeQuery,
 		ColumnNameLabel:    describeNameCol,

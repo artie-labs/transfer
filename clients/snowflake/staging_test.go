@@ -7,8 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/artie-labs/transfer/clients/utils"
-
+	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
@@ -101,7 +100,7 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 
 	var count int
 	for _, testCase := range testCases {
-		err := utils.BackfillColumn(config.Config{}, s.stageStore, testCase.col, fqTableName)
+		err := shared.BackfillColumn(config.Config{}, s.stageStore, testCase.col, fqTableName)
 		if testCase.expectErr {
 			assert.Error(s.T(), err, testCase.name)
 			continue
@@ -151,7 +150,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	s.stageStore.GetConfigMap().AddTableToConfig(tempTableName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	sflkTc := s.stageStore.GetConfigMap().TableConfig(tempTableName)
 
-	assert.NoError(s.T(), s.stageStore.prepareTempTable(tableData, sflkTc, tempTableName, ""))
+	assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableName, types.AdditionalSettings{}))
 	assert.Equal(s.T(), 3, s.fakeStageStore.ExecCallCount())
 
 	// First call is to create the temp table

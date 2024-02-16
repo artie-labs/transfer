@@ -3,6 +3,8 @@ package dml
 import (
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
+
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -80,6 +82,17 @@ func TestMergeArgument_Valid(t *testing.T) {
 			expectErrorMessage: "uppercaseEscNames cannot be nil",
 		},
 		{
+			name: "missing dest kind",
+			mergeArg: &MergeArgument{
+				PrimaryKeys:       primaryKeys,
+				ColumnsToTypes:    cols,
+				SubQuery:          "schema.tableName",
+				FqTableName:       "schema.tableName",
+				UppercaseEscNames: ptr.ToBool(false),
+			},
+			expectErrorMessage: "invalid destination",
+		},
+		{
 			name: "everything exists",
 			mergeArg: &MergeArgument{
 				PrimaryKeys:       primaryKeys,
@@ -87,6 +100,7 @@ func TestMergeArgument_Valid(t *testing.T) {
 				SubQuery:          "schema.tableName",
 				FqTableName:       "schema.tableName",
 				UppercaseEscNames: ptr.ToBool(false),
+				DestKind:          constants.BigQuery,
 			},
 		},
 	}
@@ -95,7 +109,7 @@ func TestMergeArgument_Valid(t *testing.T) {
 		actualErr := testCase.mergeArg.Valid()
 		if len(testCase.expectErrorMessage) > 0 {
 			assert.Error(t, actualErr, testCase.name)
-			assert.Equal(t, testCase.expectErrorMessage, actualErr.Error(), testCase.name)
+			assert.ErrorContains(t, actualErr, testCase.expectErrorMessage, testCase.name)
 		} else {
 			assert.NoError(t, actualErr, testCase.name)
 		}

@@ -5,19 +5,20 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-
-	"github.com/artie-labs/transfer/lib/ptr"
+	"strings"
 
 	"cloud.google.com/go/bigquery"
 	_ "github.com/viant/bigquery"
 
-	"github.com/artie-labs/transfer/clients/utils"
+	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
+	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/ptr"
 )
 
 const (
@@ -35,10 +36,54 @@ type Store struct {
 	db.Store
 }
 
-func (s *Store) getTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	return utils.GetTableConfig(utils.GetTableCfgArgs{
+func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, _ types.AdditionalSettings) error {
+	// 1. Create Temporary table
+	tempAlterTableArgs := ddl.AlterTableArgs{
+		Dwh:               s,
+		Tc:                tableConfig,
+		FqTableName:       tempTableName,
+		CreateTable:       true,
+		TemporaryTable:    true,
+		ColumnOp:          constants.Add,
+		UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
+	}
+
+	if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
+		return fmt.Errorf("failed to create temp table: %w", err)
+	}
+
+	// 2. Cast all the data into rows.
+	var rows []*Row
+	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
+	for _, value := range tableData.Rows() {
+		data := make(map[string]bigquery.Value)
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil) {
+			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
+			colVal, err := castColVal(value[col], colKind, additionalDateFmts)
+			if err != nil {
+				return fmt.Errorf("failed to cast col %s: %w", col, err)
+			}
+
+			if colVal != nil {
+				data[col] = colVal
+			}
+		}
+
+		rows = append(rows, NewRow(data))
+	}
+
+	// 3. Load the data into the temporary table.
+	return s.putTable(context.Background(), tableData.TopicConfig.Database, tempTableName, rows)
+}
+
+func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
+	return tableData.ToFqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, s.config.BigQuery.ProjectID)
+}
+
+func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+	return shared.GetTableConfig(shared.GetTableCfgArgs{
 		Dwh:       s,
-		FqName:    tableData.ToFqName(s.Label(), true, s.config.SharedDestinationConfig.UppercaseEscapedNames, s.config.BigQuery.ProjectID),
+		FqName:    s.ToFullyQualifiedName(tableData, true),
 		ConfigMap: s.configMap,
 		Query: fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name='%s';",
 			tableData.TopicConfig.Database, tableData.RawName()),
@@ -71,14 +116,28 @@ func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 	return client
 }
 
-func (s *Store) PutTable(ctx context.Context, dataset, tableName string, rows []*Row) error {
+func tableRelName(fqName string) (string, error) {
+	fqNameParts := strings.Split(fqName, ".")
+	if len(fqNameParts) < 3 {
+		return "", fmt.Errorf("invalid fully qualified name: %s", fqName)
+	}
+
+	return strings.Join(fqNameParts[2:], "."), nil
+}
+
+func (s *Store) putTable(ctx context.Context, dataset, tableName string, rows []*Row) error {
+	relTableName, err := tableRelName(tableName)
+	if err != nil {
+		return fmt.Errorf("failed to get table name: %w", err)
+	}
+
 	client := s.GetClient(ctx)
 	defer client.Close()
 
 	batch := NewBatch(rows, s.batchSize)
-	inserter := client.Dataset(dataset).Table(tableName).Inserter()
+	inserter := client.Dataset(dataset).Table(relTableName).Inserter()
 	for batch.HasNext() {
-		if err := inserter.Put(ctx, batch.NextChunk()); err != nil {
+		if err = inserter.Put(ctx, batch.NextChunk()); err != nil {
 			return fmt.Errorf("failed to insert rows: %w", err)
 		}
 	}

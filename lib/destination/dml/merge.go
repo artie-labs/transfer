@@ -67,6 +67,10 @@ func (m *MergeArgument) Valid() error {
 		return fmt.Errorf("uppercaseEscNames cannot be nil")
 	}
 
+	if !constants.IsValidDestination(m.DestKind) {
+		return fmt.Errorf("invalid destination: %s", m.DestKind)
+	}
+
 	return nil
 }
 
