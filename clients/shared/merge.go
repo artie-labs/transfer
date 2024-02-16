@@ -87,6 +87,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 
 		var attempts int
 		for {
+			// TODO: Set an upper limit, so we don't attempt indefinitely.
 			err = BackfillColumn(cfg, dwh, col, fqName)
 			if err == nil {
 				tableConfig.Columns().UpsertColumn(col.RawName(), columns.UpsertColumnArg{
