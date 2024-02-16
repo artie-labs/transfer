@@ -15,10 +15,6 @@ import (
 )
 
 func BackfillColumn(cfg config.Config, dwh destination.DataWarehouse, column columns.Column, fqTableName string) error {
-	if dwh.Label() == constants.BigQuery {
-		return fmt.Errorf("bigquery does not use this method")
-	}
-
 	if !column.ShouldBackfill() {
 		// If we don't need to backfill, don't backfill.
 		return nil
@@ -57,6 +53,13 @@ func BackfillColumn(cfg config.Config, dwh destination.DataWarehouse, column col
 	}
 
 	query = fmt.Sprintf(`COMMENT ON COLUMN %s.%s IS '%v';`, fqTableName, escapedCol, `{"backfilled": true}`)
+	if dwh.Label() == constants.BigQuery {
+		query = fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET OPTIONS (description=`%s`);",
+			// ALTER TABLE table ALTER COLUMN col set OPTIONS (description=...)
+			fqTableName, escapedCol, `{"backfilled": true}`,
+		)
+	}
+
 	_, err = dwh.Exec(query)
 	return err
 }
