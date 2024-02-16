@@ -46,5 +46,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	return shared.Merge(s, tableData, s.config, types.MergeOpts{
 		AdditionalEqualityStrings: additionalEqualityStrings,
+		// BigQuery has DDL quotas.
+		RetryColBackfill: true,
 	})
 }
