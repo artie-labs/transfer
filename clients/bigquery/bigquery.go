@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/destination/ddl"
+
 	"cloud.google.com/go/bigquery"
 	_ "github.com/viant/bigquery"
 
@@ -44,8 +46,23 @@ func tableRelName(fqName string) (string, error) {
 	return strings.Join(fqNameParts[2:], "."), nil
 }
 
-func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, _ *types.DwhTableConfig, tempTableName string, _ types.AdditionalSettings) error {
-	// 1. Cast all the data into rows.
+func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, _ types.AdditionalSettings) error {
+	// 1. Create Temporary table
+	tempAlterTableArgs := ddl.AlterTableArgs{
+		Dwh:               s,
+		Tc:                tableConfig,
+		FqTableName:       fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.config.SharedDestinationConfig.UppercaseEscapedNames, s.config.BigQuery.ProjectID), tableData.TempTableSuffix()),
+		CreateTable:       true,
+		TemporaryTable:    true,
+		ColumnOp:          constants.Add,
+		UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
+	}
+
+	if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
+		return fmt.Errorf("failed to create temp table: %w", err)
+	}
+
+	// 2. Cast all the data into rows.
 	var rows []*Row
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.Rows() {
@@ -65,7 +82,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, _ *type
 		rows = append(rows, NewRow(data))
 	}
 
-	// 2. Load the data into the temporary table.
+	// 3. Load the data into the temporary table.
 	return s.putTable(context.Background(), tableData.TopicConfig.Database, tempTableName, rows)
 }
 
