@@ -7,8 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/destination/ddl"
-
 	"cloud.google.com/go/bigquery"
 	_ "github.com/viant/bigquery"
 
@@ -16,6 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
+	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -35,15 +34,6 @@ type Store struct {
 	config    config.Config
 
 	db.Store
-}
-
-func tableRelName(fqName string) (string, error) {
-	fqNameParts := strings.Split(fqName, ".")
-	if len(fqNameParts) < 3 {
-		return "", fmt.Errorf("invalid fully qualified name: %s", fqName)
-	}
-
-	return strings.Join(fqNameParts[2:], "."), nil
 }
 
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, _ types.AdditionalSettings) error {
@@ -124,6 +114,15 @@ func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 	}
 
 	return client
+}
+
+func tableRelName(fqName string) (string, error) {
+	fqNameParts := strings.Split(fqName, ".")
+	if len(fqNameParts) < 3 {
+		return "", fmt.Errorf("invalid fully qualified name: %s", fqName)
+	}
+
+	return strings.Join(fqNameParts[2:], "."), nil
 }
 
 func (s *Store) putTable(ctx context.Context, dataset, tableName string, rows []*Row) error {
