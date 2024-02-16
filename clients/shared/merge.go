@@ -80,7 +80,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		}
 	}()
 
-	// Now iterate over all the in-memory cols and see which one requires backfill.
+	// Now iterate over all the in-memory cols and see which ones require a backfill.
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
 		if col.ShouldSkip() {
 			continue
@@ -97,7 +97,6 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 			}
 
 			if opts.RetryColBackfill && dwh.IsRetryableError(err) {
-				err = nil
 				attempts += 1
 				time.Sleep(jitter.Jitter(1500, jitter.DefaultMaxMs, attempts))
 			} else {
