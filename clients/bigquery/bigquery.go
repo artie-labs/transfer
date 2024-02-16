@@ -41,7 +41,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	tempAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               s,
 		Tc:                tableConfig,
-		FqTableName:       fmt.Sprintf("%s_%s", tableData.ToFqName(s.Label(), false, s.config.SharedDestinationConfig.UppercaseEscapedNames, s.config.BigQuery.ProjectID), tableData.TempTableSuffix()),
+		FqTableName:       fmt.Sprintf("%s_%s", s.ToFullyQualifiedName(tableData, false), tableData.TempTableSuffix()),
 		CreateTable:       true,
 		TemporaryTable:    true,
 		ColumnOp:          constants.Add,
