@@ -6,10 +6,9 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/artie-labs/transfer/clients/utils"
-
 	"cloud.google.com/go/bigquery"
 
+	"github.com/artie-labs/transfer/clients/utils"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/dml"
