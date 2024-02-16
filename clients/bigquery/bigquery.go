@@ -41,7 +41,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	tempAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               s,
 		Tc:                tableConfig,
-		FqTableName:       fmt.Sprintf("%s_%s", s.ToFullyQualifiedName(tableData, false), tableData.TempTableSuffix()),
+		FqTableName:       tempTableName,
 		CreateTable:       true,
 		TemporaryTable:    true,
 		ColumnOp:          constants.Add,
