@@ -27,10 +27,10 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		return err
 	}
 
-	// Check if all the columns exist in Snowflake
 	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
 		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt,
 		tableData.TopicConfig.IncludeDatabaseUpdatedAt, tableData.Mode())
+
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               dwh,
 		Tc:                tableConfig,
@@ -40,16 +40,15 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		CdcTime:           tableData.LatestCDCTs,
 		UppercaseEscNames: &cfg.SharedDestinationConfig.UppercaseEscapedNames,
 	}
-	// Keys that exist in CDC stream, but not in Snowflake
+
+	// Columns that are missing in DWH, but exist in our CDC stream.
 	err = ddl.AlterTable(createAlterTableArgs, targetKeysMissing...)
 	if err != nil {
 		slog.Warn("Failed to apply alter table", slog.Any("err", err))
 		return err
 	}
 
-	// Keys that exist in dwh, but don't exist in our CDC stream.
-	// createTable is set to false because table creation requires a column to be added
-	// Which means, we'll only do it upon Add columns.
+	// Keys that exist in DWH, but not in our CDC stream.
 	deleteAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:                    dwh,
 		Tc:                     tableConfig,
@@ -61,8 +60,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		UppercaseEscNames:      &cfg.SharedDestinationConfig.UppercaseEscapedNames,
 	}
 
-	err = ddl.AlterTable(deleteAlterTableArgs, srcKeysMissing...)
-	if err != nil {
+	if err = ddl.AlterTable(deleteAlterTableArgs, srcKeysMissing...); err != nil {
 		slog.Warn("Failed to apply alter table", slog.Any("err", err))
 		return err
 	}
@@ -138,14 +136,14 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		}
 
 		return nil
-	}
+	} else {
+		mergeQuery, err := mergeArg.GetStatement()
+		if err != nil {
+			return fmt.Errorf("failed to generate merge statement: %w", err)
+		}
 
-	mergeQuery, err := mergeArg.GetStatement()
-	if err != nil {
-		return fmt.Errorf("failed to generate merge statement: %w", err)
+		slog.Debug("Executing...", slog.String("query", mergeQuery))
+		_, err = dwh.Exec(mergeQuery)
+		return err
 	}
-
-	slog.Debug("Executing...", slog.String("query", mergeQuery))
-	_, err = dwh.Exec(mergeQuery)
-	return err
 }
