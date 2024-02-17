@@ -147,6 +147,14 @@ func TestParseField(t *testing.T) {
 			value:         `[{"foo":"bar", "foo": "bar"}, {"hello":"world"}, {"dusty":"the mini aussie"}]`,
 			expectedValue: `[{"foo":"bar"},{"hello":"world"},{"dusty":"the mini aussie"}]`,
 		},
+		{
+			name: "array of arrays of objects in JSONB",
+			field: debezium.Field{
+				DebeziumType: string(debezium.JSON),
+			},
+			value:         `[[{"foo":"bar", "foo": "bar"}], [{"hello":"world"}, {"dusty":"the mini aussie"}]]`,
+			expectedValue: `[[{"foo":"bar"}],[{"hello":"world"},{"dusty":"the mini aussie"}]]`,
+		},
 	}
 
 	for _, testCase := range testCases {
