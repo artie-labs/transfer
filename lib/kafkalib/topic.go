@@ -2,7 +2,6 @@ package kafkalib
 
 import (
 	"fmt"
-	"log/slog"
 	"slices"
 	"strings"
 
@@ -35,17 +34,15 @@ func GetUniqueDatabaseAndSchema(tcs []*TopicConfig) []DatabaseSchemaPair {
 }
 
 type TopicConfig struct {
-	Database           string `yaml:"db"`
-	TableName          string `yaml:"tableName"`
-	Schema             string `yaml:"schema"`
-	Topic              string `yaml:"topic"`
-	IdempotentKey      string `yaml:"idempotentKey"`
-	CDCFormat          string `yaml:"cdcFormat"`
-	CDCKeyFormat       string `yaml:"cdcKeyFormat"`
-	DropDeletedColumns bool   `yaml:"dropDeletedColumns"`
-	SoftDelete         bool   `yaml:"softDelete"`
-	// TODO: Deprecate SkipDelete in the next version and add it to the Release Notes.
-	SkipDelete                bool                        `yaml:"skipDelete"`
+	Database                  string                      `yaml:"db"`
+	TableName                 string                      `yaml:"tableName"`
+	Schema                    string                      `yaml:"schema"`
+	Topic                     string                      `yaml:"topic"`
+	IdempotentKey             string                      `yaml:"idempotentKey"`
+	CDCFormat                 string                      `yaml:"cdcFormat"`
+	CDCKeyFormat              string                      `yaml:"cdcKeyFormat"`
+	DropDeletedColumns        bool                        `yaml:"dropDeletedColumns"`
+	SoftDelete                bool                        `yaml:"softDelete"`
 	SkippedOperations         string                      `yaml:"skippedOperations"`
 	IncludeArtieUpdatedAt     bool                        `yaml:"includeArtieUpdatedAt"`
 	IncludeDatabaseUpdatedAt  bool                        `yaml:"includeDatabaseUpdatedAt"`
@@ -73,12 +70,6 @@ func (t *TopicConfig) Load() {
 	for _, op := range strings.Split(t.SkippedOperations, ",") {
 		// Lowercase and trim space.
 		t.opsToSkipMap[strings.ToLower(strings.TrimSpace(op))] = true
-	}
-
-	// TODO: For backwards compatibility, remove in a later version.
-	if t.SkipDelete {
-		slog.Warn("skipDelete is deprecated, use skippedOperations instead")
-		t.opsToSkipMap["d"] = true
 	}
 }
 

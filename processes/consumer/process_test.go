@@ -266,14 +266,14 @@ func TestProcessMessageSkip(t *testing.T) {
 	})
 
 	tc := &kafkalib.TopicConfig{
-		Database:      db,
-		TableName:     table,
-		Schema:        schema,
-		Topic:         msg.Topic(),
-		IdempotentKey: "",
-		CDCFormat:     "",
-		CDCKeyFormat:  "org.apache.kafka.connect.storage.StringConverter",
-		SkipDelete:    true,
+		Database:          db,
+		TableName:         table,
+		Schema:            schema,
+		Topic:             msg.Topic(),
+		IdempotentKey:     "",
+		CDCFormat:         "",
+		CDCKeyFormat:      "org.apache.kafka.connect.storage.StringConverter",
+		SkippedOperations: "d",
 	}
 	tc.Load()
 

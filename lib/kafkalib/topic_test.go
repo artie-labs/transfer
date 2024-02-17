@@ -145,18 +145,6 @@ func TestTopicConfig_Validate(t *testing.T) {
 
 func TestTopicConfig_Load_ShouldSkip(t *testing.T) {
 	{
-		// Test backwards compat
-		tc := TopicConfig{
-			SkipDelete: true,
-		}
-
-		tc.Load()
-		assert.True(t, tc.ShouldSkip("d"), tc.String())
-		for _, op := range []string{"c", "r", "u"} {
-			assert.False(t, tc.ShouldSkip(op), tc.String())
-		}
-	}
-	{
 		tc := TopicConfig{
 			SkippedOperations: "c, r, u",
 		}
