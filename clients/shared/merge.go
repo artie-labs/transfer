@@ -98,7 +98,6 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 			}
 
 			if opts.RetryColBackfill && dwh.IsRetryableError(backfillErr) {
-				attempts += 1
 				time.Sleep(jitter.Jitter(1500, jitter.DefaultMaxMs, attempts))
 			} else {
 				break
