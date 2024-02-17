@@ -18,6 +18,8 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+const backfillMaxRetries = 1000
+
 func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg config.Config, opts types.MergeOpts) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
@@ -85,25 +87,27 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 			continue
 		}
 
-		var attempts int
-		for {
-			// TODO: Set an upper limit, so we don't attempt indefinitely.
-			err = BackfillColumn(cfg, dwh, col, fqName)
-			if err == nil {
+		var backfillErr error
+		for attempts := 0; attempts < backfillMaxRetries; attempts++ {
+			backfillErr = BackfillColumn(cfg, dwh, col, fqName)
+			if backfillErr == nil {
 				tableConfig.Columns().UpsertColumn(col.RawName(), columns.UpsertColumnArg{
 					Backfilled: ptr.ToBool(true),
 				})
 				break
 			}
 
-			if opts.RetryColBackfill && dwh.IsRetryableError(err) {
+			if opts.RetryColBackfill && dwh.IsRetryableError(backfillErr) {
 				attempts += 1
 				time.Sleep(jitter.Jitter(1500, jitter.DefaultMaxMs, attempts))
 			} else {
-				return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %w", col.RawName(), col.RawDefaultValue(), err)
+				break
 			}
 		}
 
+		if backfillErr != nil {
+			return fmt.Errorf("failed to backfill col: %v, default value: %v, err: %w", col.RawName(), col.RawDefaultValue(), backfillErr)
+		}
 	}
 
 	subQuery := temporaryTableName
