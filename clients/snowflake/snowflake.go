@@ -16,6 +16,8 @@ import (
 	"github.com/artie-labs/transfer/lib/ptr"
 )
 
+const maxRetries = 10
+
 type Store struct {
 	db.Store
 	testDB    bool // Used for testing
@@ -62,14 +64,19 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 }
 
 func (s *Store) Merge(tableData *optimization.TableData) error {
-	// TODO: Implement max retry count
-	err := shared.Merge(s, tableData, s.config, types.MergeOpts{})
-	if IsAuthExpiredError(err) {
-		slog.Warn("Authentication has expired, will reload the Snowflake store and retry merging", slog.Any("err", err))
-		s.reestablishConnection()
-		return s.Merge(tableData)
-	}
+	var err error
+	for i := 0; i < maxRetries; i++ {
+		if i > 0 {
+			if IsAuthExpiredError(err) {
+				slog.Warn("Authentication has expired, will reload the Snowflake store and retry merging", slog.Any("err", err))
+				s.reestablishConnection()
+			} else {
+				break
+			}
+		}
 
+		err = shared.Merge(s, tableData, s.config, types.MergeOpts{})
+	}
 	return err
 }
 

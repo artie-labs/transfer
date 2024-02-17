@@ -12,12 +12,18 @@ import (
 )
 
 func (s *Store) Append(tableData *optimization.TableData) error {
-	// TODO: Implement max retry count
-	err := s.append(tableData)
-	if IsAuthExpiredError(err) {
-		slog.Warn("Authentication has expired, will reload the Snowflake store and retry appending", slog.Any("err", err))
-		s.reestablishConnection()
-		return s.Append(tableData)
+	var err error
+	for i := 0; i < maxRetries; i++ {
+		if i > 0 {
+			if IsAuthExpiredError(err) {
+				slog.Warn("Authentication has expired, will reload the Snowflake store and retry appending", slog.Any("err", err))
+				s.reestablishConnection()
+			} else {
+				break
+			}
+		}
+
+		err = s.append(tableData)
 	}
 
 	return err
