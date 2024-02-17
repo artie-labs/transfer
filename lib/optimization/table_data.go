@@ -286,8 +286,7 @@ func (t *TableData) ShouldFlush(cfg config.Config) (bool, string) {
 // We will prioritize using the values coming from (2) TableConfig. We also cannot simply do a replacement, as we have in-memory columns
 // That carry metadata for Artie Transfer. They are prefixed with __artie.
 func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) {
-	// TODO: Should add an early exit for when `destCols` is empty
-	if t == nil {
+	if t == nil || len(destCols) == 0 {
 		return
 	}
 
