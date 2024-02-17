@@ -1,7 +1,6 @@
 package destination
 
 import (
-	"context"
 	"database/sql"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -11,8 +10,8 @@ import (
 
 type DataWarehouse interface {
 	Label() constants.DestinationKind
-	Merge(ctx context.Context, tableData *optimization.TableData) error
-	Append(ctx context.Context, tableData *optimization.TableData) error
+	Merge(tableData *optimization.TableData) error
+	Append(tableData *optimization.TableData) error
 	Exec(query string, args ...any) (sql.Result, error)
 	Query(query string, args ...any) (*sql.Rows, error)
 	Begin() (*sql.Tx, error)
@@ -27,7 +26,7 @@ type DataWarehouse interface {
 
 type Baseline interface {
 	Label() constants.DestinationKind
-	Merge(ctx context.Context, tableData *optimization.TableData) error
-	Append(ctx context.Context, tableData *optimization.TableData) error
+	Merge(tableData *optimization.TableData) error
+	Append(tableData *optimization.TableData) error
 	IsRetryableError(err error) bool
 }

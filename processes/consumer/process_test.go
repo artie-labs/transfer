@@ -25,11 +25,11 @@ func (m MockDestination) Label() constants.DestinationKind {
 	return "mock"
 }
 
-func (m MockDestination) Merge(ctx context.Context, tableData *optimization.TableData) error {
+func (m MockDestination) Merge(tableData *optimization.TableData) error {
 	return fmt.Errorf("should not be called")
 }
 
-func (m MockDestination) Append(ctx context.Context, tableData *optimization.TableData) error {
+func (m MockDestination) Append(tableData *optimization.TableData) error {
 	return fmt.Errorf("should not be called")
 }
 

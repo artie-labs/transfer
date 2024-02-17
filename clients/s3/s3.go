@@ -63,9 +63,9 @@ func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
 	return strings.Join([]string{fqTableName, yyyyMMDDFormat}, "/")
 }
 
-func (s *Store) Append(ctx context.Context, tableData *optimization.TableData) error {
+func (s *Store) Append(tableData *optimization.TableData) error {
 	// There's no difference in appending or merging for S3.
-	return s.Merge(ctx, tableData)
+	return s.Merge(tableData)
 }
 
 // Merge - will take tableData, write it into a particular file in the specified format, in these steps:
@@ -73,7 +73,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData) e
 // 2. Load the temporary file, under this format: s3://bucket/optionalS3Prefix/fullyQualifiedTableName/YYYY-MM-DD/{{unix_timestamp}}.parquet.gz
 // 3. It will then upload this to S3
 // 4. Delete the temporary file
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
+func (s *Store) Merge(tableData *optimization.TableData) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
@@ -146,7 +146,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		}
 	}()
 
-	if _, err = s3lib.UploadLocalFileToS3(ctx, s3lib.UploadArgs{
+	if _, err = s3lib.UploadLocalFileToS3(context.Background(), s3lib.UploadArgs{
 		Bucket:                     s.config.S3.Bucket,
 		OptionalS3Prefix:           s.ObjectPrefix(tableData),
 		FilePath:                   fp,
@@ -159,7 +159,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	return nil
 }
 
-func (s *Store) IsRetryableError(err error) bool {
+func (s *Store) IsRetryableError(_ error) bool {
 	return false // not supported for S3
 }
 

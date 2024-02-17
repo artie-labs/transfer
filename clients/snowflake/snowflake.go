@@ -1,7 +1,6 @@
 package snowflake
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 
@@ -62,13 +61,13 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 	return s.configMap
 }
 
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
+func (s *Store) Merge(tableData *optimization.TableData) error {
 	// TODO: Implement max retry count
 	err := shared.Merge(s, tableData, s.config, types.MergeOpts{})
 	if IsAuthExpiredError(err) {
 		slog.Warn("Authentication has expired, will reload the Snowflake store and retry merging", slog.Any("err", err))
 		s.reestablishConnection()
-		return s.Merge(ctx, tableData)
+		return s.Merge(tableData)
 	}
 
 	return err

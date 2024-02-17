@@ -1,7 +1,6 @@
 package bigquery
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 
@@ -26,7 +25,7 @@ func (r *Row) Save() (map[string]bigquery.Value, string, error) {
 	return r.data, bigquery.NoDedupeID, nil
 }
 
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
+func (s *Store) Merge(tableData *optimization.TableData) error {
 	var additionalEqualityStrings []string
 	if tableData.TopicConfig.BigQueryPartitionSettings != nil {
 		additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats

@@ -1,7 +1,6 @@
 package snowflake
 
 import (
-	"context"
 	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -12,13 +11,13 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 )
 
-func (s *Store) Append(ctx context.Context, tableData *optimization.TableData) error {
+func (s *Store) Append(tableData *optimization.TableData) error {
 	// TODO: Implement max retry count
 	err := s.append(tableData)
 	if IsAuthExpiredError(err) {
 		slog.Warn("Authentication has expired, will reload the Snowflake store and retry appending", slog.Any("err", err))
 		s.reestablishConnection()
-		return s.Append(ctx, tableData)
+		return s.Append(tableData)
 	}
 
 	return err
