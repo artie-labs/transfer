@@ -29,7 +29,6 @@ func parseField(field debezium.Field, value interface{}) interface{} {
 	if valid, supportedType := debezium.RequiresSpecialTypeCasting(field.DebeziumType); valid {
 		switch debezium.SupportedDebeziumType(field.DebeziumType) {
 		case debezium.JSON:
-			// TODO: What about arrays?
 			valString, err := jsonutil.SanitizePayload(value)
 			if err == nil {
 				return valString

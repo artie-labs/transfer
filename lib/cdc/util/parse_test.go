@@ -123,6 +123,38 @@ func TestParseField(t *testing.T) {
 			},
 			expectedValue: `{"type":"Feature","geometry":{"type":"Point","coordinates":[123,-39]},"properties":null}`,
 		},
+		{
+			name: "json",
+			field: debezium.Field{
+				DebeziumType: string(debezium.JSON),
+			},
+			value:         `{"foo": "bar", "foo": "bar"}`,
+			expectedValue: `{"foo":"bar"}`,
+		},
+		{
+			name: "array value in JSONB",
+			field: debezium.Field{
+				DebeziumType: string(debezium.JSON),
+			},
+			value:         `[1,2,3]`,
+			expectedValue: `[1,2,3]`,
+		},
+		{
+			name: "array of objects in JSONB",
+			field: debezium.Field{
+				DebeziumType: string(debezium.JSON),
+			},
+			value:         `[{"foo":"bar", "foo": "bar"}, {"hello":"world"}, {"dusty":"the mini aussie"}]`,
+			expectedValue: `[{"foo":"bar"},{"hello":"world"},{"dusty":"the mini aussie"}]`,
+		},
+		{
+			name: "array of arrays of objects in JSONB",
+			field: debezium.Field{
+				DebeziumType: string(debezium.JSON),
+			},
+			value:         `[[{"foo":"bar", "foo": "bar"}], [{"hello":"world"}, {"dusty":"the mini aussie"}]]`,
+			expectedValue: `[[{"foo":"bar"}],[{"hello":"world"},{"dusty":"the mini aussie"}]]`,
+		},
 	}
 
 	for _, testCase := range testCases {

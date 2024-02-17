@@ -11,10 +11,10 @@ func SanitizePayload(val interface{}) (interface{}, error) {
 		return val, nil
 	}
 
-	var jsonMap map[string]interface{}
-	err := json.Unmarshal([]byte(valString), &jsonMap)
+	var obj interface{}
+	err := json.Unmarshal([]byte(valString), &obj)
 	if err == nil {
-		valBytes, err := json.Marshal(jsonMap)
+		valBytes, err := json.Marshal(obj)
 		if err == nil {
 			return string(valBytes), nil
 		}
