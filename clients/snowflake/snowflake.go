@@ -63,23 +63,6 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 	return s.configMap
 }
 
-func (s *Store) Merge(tableData *optimization.TableData) error {
-	var err error
-	for i := 0; i < maxRetries; i++ {
-		if i > 0 {
-			if IsAuthExpiredError(err) {
-				slog.Warn("Authentication has expired, will reload the Snowflake store and retry merging", slog.Any("err", err))
-				s.reestablishConnection()
-			} else {
-				break
-			}
-		}
-
-		err = shared.Merge(s, tableData, s.config, types.MergeOpts{})
-	}
-	return err
-}
-
 func (s *Store) reestablishConnection() {
 	if s.testDB {
 		// Don't actually re-establish for tests.

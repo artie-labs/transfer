@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"sync"
 )
 
@@ -41,4 +42,17 @@ type MergeOpts struct {
 
 type AdditionalSettings struct {
 	AdditionalCopyClause string
+}
+
+type AppendOpts struct {
+	TempTableName        string
+	AdditionalCopyClause string
+}
+
+func (a AppendOpts) Validate() error {
+	if a.TempTableName == "" {
+		return fmt.Errorf("temp table name is required")
+	}
+
+	return nil
 }

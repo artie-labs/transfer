@@ -1,41 +1,29 @@
-package snowflake
+package shared
 
 import (
+	"fmt"
 	"log/slog"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func (s *Store) Append(tableData *optimization.TableData) error {
-	var err error
-	for i := 0; i < maxRetries; i++ {
-		if i > 0 {
-			if IsAuthExpiredError(err) {
-				slog.Warn("Authentication has expired, will reload the Snowflake store and retry appending", slog.Any("err", err))
-				s.reestablishConnection()
-			} else {
-				break
-			}
-		}
-
-		err = s.append(tableData)
-	}
-
-	return err
-}
-
-func (s *Store) append(tableData *optimization.TableData) error {
+func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg config.Config, opts types.AppendOpts) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
 
-	fqName := s.ToFullyQualifiedName(tableData, true)
-	tableConfig, err := s.GetTableConfig(tableData)
+	if err := opts.Validate(); err != nil {
+		return fmt.Errorf("failed to validate append options: %w", err)
+	}
+
+	fqName := dwh.ToFullyQualifiedName(tableData, true)
+	tableConfig, err := dwh.GetTableConfig(tableData)
 	if err != nil {
 		return err
 	}
@@ -45,13 +33,13 @@ func (s *Store) append(tableData *optimization.TableData) error {
 		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt,
 		tableData.TopicConfig.IncludeDatabaseUpdatedAt, tableData.Mode())
 	createAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:               s,
+		Dwh:               dwh,
 		Tc:                tableConfig,
 		FqTableName:       fqName,
 		CreateTable:       tableConfig.CreateTable(),
 		ColumnOp:          constants.Add,
 		CdcTime:           tableData.LatestCDCTs,
-		UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
+		UppercaseEscNames: &cfg.SharedDestinationConfig.UppercaseEscapedNames,
 	}
 
 	// Keys that exist in CDC stream, but not in Snowflake
@@ -63,8 +51,9 @@ func (s *Store) append(tableData *optimization.TableData) error {
 
 	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 
-	// TODO: For history mode - in the future, we could also have a separate stage name for history mode so we can enable parallel processing.
-	return s.PrepareTemporaryTable(tableData, tableConfig, fqName, types.AdditionalSettings{
-		AdditionalCopyClause: `FILE_FORMAT = (TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE) PURGE = TRUE`,
-	})
+	additionalSettings := types.AdditionalSettings{
+		AdditionalCopyClause: opts.AdditionalCopyClause,
+	}
+
+	return dwh.PrepareTemporaryTable(tableData, tableConfig, opts.TempTableName, additionalSettings)
 }
