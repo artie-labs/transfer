@@ -14,12 +14,12 @@ import (
 )
 
 func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg config.Config, opts types.AppendOpts) error {
-	if tableData.ShouldSkipUpdate() {
-		return nil
-	}
-
 	if err := opts.Validate(); err != nil {
 		return fmt.Errorf("failed to validate append options: %w", err)
+	}
+
+	if tableData.ShouldSkipUpdate() {
+		return nil
 	}
 
 	fqName := dwh.ToFullyQualifiedName(tableData, true)
@@ -42,7 +42,7 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, cf
 		UppercaseEscNames: &cfg.SharedDestinationConfig.UppercaseEscapedNames,
 	}
 
-	// Keys that exist in CDC stream, but not in Snowflake
+	// Keys that exist in CDC stream, but not in DWH
 	err = ddl.AlterTable(createAlterTableArgs, targetKeysMissing...)
 	if err != nil {
 		slog.Warn("Failed to apply alter table", slog.Any("err", err))
