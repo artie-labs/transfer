@@ -24,6 +24,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
+
 	tableConfig, err := dwh.GetTableConfig(tableData)
 	if err != nil {
 		return err
