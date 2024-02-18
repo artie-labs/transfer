@@ -37,22 +37,24 @@ type Store struct {
 }
 
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, _ types.AdditionalSettings) error {
-	// 1. Create Temporary table
-	tempAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:               s,
-		Tc:                tableConfig,
-		FqTableName:       tempTableName,
-		CreateTable:       true,
-		TemporaryTable:    true,
-		ColumnOp:          constants.Add,
-		UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
+	// Create a temporary table
+	if tableData.Mode() != config.History {
+		tempAlterTableArgs := ddl.AlterTableArgs{
+			Dwh:               s,
+			Tc:                tableConfig,
+			FqTableName:       tempTableName,
+			CreateTable:       true,
+			TemporaryTable:    true,
+			ColumnOp:          constants.Add,
+			UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
+		}
+
+		if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
+			return fmt.Errorf("failed to create temp table: %w", err)
+		}
 	}
 
-	if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
-		return fmt.Errorf("failed to create temp table: %w", err)
-	}
-
-	// 2. Cast all the data into rows.
+	// Cast the data into BigQuery values
 	var rows []*Row
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.Rows() {
@@ -72,7 +74,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		rows = append(rows, NewRow(data))
 	}
 
-	// 3. Load the data into the temporary table.
+	// Load the data
 	return s.putTable(context.Background(), tableData.TopicConfig.Database, tempTableName, rows)
 }
 
@@ -167,8 +169,7 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) *Store {
 	}
 
 	return &Store{
-		Store: db.Open("bigquery", cfg.BigQuery.DSN()),
-
+		Store:     db.Open("bigquery", cfg.BigQuery.DSN()),
 		configMap: &types.DwhToTablesConfigMap{},
 		batchSize: cfg.BigQuery.BatchSize,
 		config:    cfg,

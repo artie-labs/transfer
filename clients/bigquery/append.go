@@ -1,11 +1,13 @@
 package bigquery
 
 import (
-	"fmt"
-
+	"github.com/artie-labs/transfer/clients/shared"
+	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 )
 
 func (s *Store) Append(tableData *optimization.TableData) error {
-	return fmt.Errorf("bigquery: did not implement this yet")
+	return shared.Append(s, tableData, s.config, types.AppendOpts{
+		TempTableName: s.ToFullyQualifiedName(tableData, true),
+	})
 }
