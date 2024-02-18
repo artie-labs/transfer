@@ -14,12 +14,12 @@ import (
 )
 
 func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg config.Config, opts types.AppendOpts) error {
-	if tableData.ShouldSkipUpdate() {
-		return nil
-	}
-
 	if err := opts.Validate(); err != nil {
 		return fmt.Errorf("failed to validate append options: %w", err)
+	}
+
+	if tableData.ShouldSkipUpdate() {
+		return nil
 	}
 
 	fqName := dwh.ToFullyQualifiedName(tableData, true)
