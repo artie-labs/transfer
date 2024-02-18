@@ -45,6 +45,8 @@ type AdditionalSettings struct {
 }
 
 type AppendOpts struct {
+	// TempTableName - sometimes the destination requires 2 steps to append to the table (e.g. Redshift), so we'll create and load the data into a staging table
+	// Redshift then has a separate step after `shared.Append(...)` to merge the two tables together.
 	TempTableName        string
 	AdditionalCopyClause string
 }
