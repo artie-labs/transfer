@@ -16,11 +16,12 @@ To integrate Redshift with Artie, we will need the following settings.
 
 ### Giving a limited user account
 
-Instead of giving an admin user, you could opt to give a limited user with less permissions. When doing so, ensure that we have the ability to:
+Instead of giving an admin user, you could opt to give a limited user with less permissions.&#x20;
 
-* Create (creating new tables)
-* Delete (deleting staging tables)
-* Alter (adding and dropping columns)
+```sql
+CREATE USER artie_transfer WITH PASSWORD 'password';
+GRANT SELECT, INSERT, UPDATE, DELETE, DROP, ALTER ON ALL TABLES IN SCHEMA schema_name TO artie_transfer;
+```
 
 ### Typing
 
