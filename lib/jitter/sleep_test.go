@@ -73,7 +73,7 @@ func TestWithRetries(t *testing.T) {
 			} else if attempt == 1 {
 				return 0, fmt.Errorf("oops I failed again")
 			}
-			assert.Fail(t, "Should not  happen")
+			assert.Fail(t, "Should not happen")
 			return 0, nil
 		})
 		assert.ErrorContains(t, err, "oops I failed again")
