@@ -38,19 +38,12 @@ func NewRetryConfig(args NewRetryConfigArgs) RetryConfig {
 func (r RetryConfig) sleepIfNecessary(attempt int, err error) {
 	if attempt > 0 {
 		sleepDuration := jitter.Jitter(r.jitterBaseMs, r.jitterMaxMs, attempt)
-		if sleepDuration > 0 {
-			slog.Info("An error occurred, retrying after delay...",
-				slog.Duration("sleep", sleepDuration),
-				slog.Any("attemptsLeft", r.maxAttempts-attempt),
-				slog.Any("err", err),
-			)
-			time.Sleep(sleepDuration)
-		} else {
-			slog.Info("An error occurred, retrying...",
-				slog.Any("attemptsLeft", r.maxAttempts-attempt),
-				slog.Any("err", err),
-			)
-		}
+		slog.Info("An error occurred, retrying...",
+			slog.Duration("delay", sleepDuration),
+			slog.Int("attemptsLeft", r.maxAttempts-attempt),
+			slog.Any("err", err),
+		)
+		time.Sleep(sleepDuration)
 	}
 }
 
