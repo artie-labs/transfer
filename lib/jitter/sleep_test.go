@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWithJitteredRetries(t *testing.T) {
+func TestWithRetries(t *testing.T) {
 	{
 		// 0 max attempts - still runs
 		retryCfg := NewRetryConfig(NewRetryConfigArgs{})
