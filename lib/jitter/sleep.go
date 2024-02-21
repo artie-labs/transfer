@@ -48,22 +48,21 @@ func NewRetryConfig(args NewRetryConfigArgs) RetryConfig {
 }
 
 func WithRetries[T any](retryCfg RetryConfig, f func(attempt int) (T, error)) (T, error) {
-	maxAttempts := max(retryCfg.maxAttempts, 1)
 	var result T
 	var err error
-	for attempt := 0; attempt < maxAttempts; attempt++ {
+	for attempt := 0; attempt < retryCfg.maxAttempts; attempt++ {
 		if attempt > 0 {
 			sleepDuration := Jitter(retryCfg.jitterBaseMs, retryCfg.jitterMaxMs, attempt)
 			if sleepDuration > 0 {
 				slog.Info("An error occurred, retrying after delay...",
 					slog.Duration("sleep", sleepDuration),
-					slog.Any("attemptsLeft", maxAttempts-attempt),
+					slog.Any("attemptsLeft", retryCfg.maxAttempts-attempt),
 					slog.Any("err", err),
 				)
 				time.Sleep(sleepDuration)
 			} else {
 				slog.Info("An error occurred, retrying...",
-					slog.Any("attemptsLeft", maxAttempts-attempt),
+					slog.Any("attemptsLeft", retryCfg.maxAttempts-attempt),
 					slog.Any("err", err),
 				)
 			}
