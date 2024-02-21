@@ -79,7 +79,7 @@ func WithRetries(cfg RetryConfig, f func(attempt int, err error) error) error {
 	return err
 }
 
-// WithRetriesAndResult runs function `f` and return the result + error if one occurres.
+// WithRetriesAndResult runs function `f` and returns the result + error if one occurres.
 func WithRetriesAndResult[T any](cfg RetryConfig, f func(attempt int, err error) (T, error)) (T, error) {
 	var result T
 	var err error
