@@ -1,4 +1,4 @@
-package jitter
+package retry
 
 import (
 	"fmt"
