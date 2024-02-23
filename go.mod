@@ -15,6 +15,7 @@ require (
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/lib/pq v1.10.9
 	github.com/lmittmann/tint v1.0.4
+	github.com/microsoft/go-mssqldb v1.7.0
 	github.com/samber/slog-multi v1.0.2
 	github.com/samber/slog-sentry/v2 v2.4.0
 	github.com/segmentio/kafka-go v0.4.38
@@ -93,7 +94,6 @@ require (
 	github.com/lestrrat-go/iter v1.0.2 // indirect
 	github.com/lestrrat-go/jwx v1.2.28 // indirect
 	github.com/lestrrat-go/option v1.0.1 // indirect
-	github.com/microsoft/go-mssqldb v1.7.0 // indirect
 	github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 // indirect
 	github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3 // indirect
 	github.com/mtibben/percent v0.2.1 // indirect

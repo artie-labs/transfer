@@ -3,12 +3,11 @@ package utils
 import (
 	"log/slog"
 
-	"github.com/artie-labs/transfer/clients/sql_server"
-
 	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/clients/redshift"
 	"github.com/artie-labs/transfer/clients/s3"
 	"github.com/artie-labs/transfer/clients/snowflake"
+	"github.com/artie-labs/transfer/clients/sql_server"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
