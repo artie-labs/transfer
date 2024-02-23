@@ -14,7 +14,7 @@ const (
 	maxRedshiftSuperLen   = 1 * 1024 * 1024 // 1 MB
 )
 
-// replaceExceededValues - takes `colVal` any and `colKind` columns.Column and replaces the value with an empty string if it exceeds the max length.
+// replaceExceededValues - takes `colVal` string and `colKind` columns.Column and replaces the value with an empty string if it exceeds the max length.
 // This currently only works for STRING and SUPER data types.
 func replaceExceededValues(colVal string, colKind columns.Column) string {
 	numOfChars := len(colVal)
