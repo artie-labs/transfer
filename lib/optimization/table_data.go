@@ -23,9 +23,9 @@ type TableData struct {
 	inMemoryColumns *columns.Columns // list of columns
 
 	// rowsData is used for replication
-	rowsData map[string]map[string]interface{} // pk -> { col -> val }
+	rowsData map[string]map[string]any // pk -> { col -> val }
 	// rows is used for history mode, since it's append only.
-	rows []map[string]interface{}
+	rows []map[string]any
 
 	primaryKeys []string
 
@@ -112,7 +112,7 @@ func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKey
 	return &TableData{
 		mode:            mode,
 		inMemoryColumns: inMemoryColumns,
-		rowsData:        map[string]map[string]interface{}{},
+		rowsData:        map[string]map[string]any{},
 		primaryKeys:     primaryKeys,
 		TopicConfig:     topicConfig,
 		// temporaryTableSuffix is being set in `ResetTempTableSuffix`
@@ -125,7 +125,7 @@ func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKey
 // InsertRow creates a single entrypoint for how rows get added to TableData
 // This is important to avoid concurrent r/w, but also the ability for us to add or decrement row size by keeping a running total
 // With this, we are able to reduce the latency by 500x+ on a 5k row table. See event_bench_test.go vs. size_bench_test.go
-func (t *TableData) InsertRow(pk string, rowData map[string]interface{}, delete bool) {
+func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 	if t.mode == config.History {
 		t.rows = append(t.rows, rowData)
 		t.approxSize += size.GetApproxSize(rowData)
@@ -167,8 +167,8 @@ func (t *TableData) InsertRow(pk string, rowData map[string]interface{}, delete 
 }
 
 // Rows returns a read only slice of tableData's rows or rowsData depending on mode
-func (t *TableData) Rows() []map[string]interface{} {
-	var rows []map[string]interface{}
+func (t *TableData) Rows() []map[string]any {
+	var rows []map[string]any
 
 	if t.Mode() == config.History {
 		// History mode, the data is stored under `rows`
@@ -183,7 +183,7 @@ func (t *TableData) Rows() []map[string]interface{} {
 }
 
 // RowsData will create a read-only map of `rowsData`, this should be strictly used for testing only.
-func (t *TableData) RowsData() map[string]map[string]interface{} {
+func (t *TableData) RowsData() map[string]map[string]any {
 	return maps.Clone(t.rowsData)
 }
 

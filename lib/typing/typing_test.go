@@ -99,14 +99,14 @@ func TestParseValueBasic(t *testing.T) {
 
 func TestParseValueArrays(t *testing.T) {
 	assert.Equal(t, ParseValue(Settings{}, "", nil, []string{"a", "b", "c"}), Array)
-	assert.Equal(t, ParseValue(Settings{}, "", nil, []interface{}{"a", 123, "c"}), Array)
+	assert.Equal(t, ParseValue(Settings{}, "", nil, []any{"a", 123, "c"}), Array)
 	assert.Equal(t, ParseValue(Settings{}, "", nil, []int64{1}), Array)
 	assert.Equal(t, ParseValue(Settings{}, "", nil, []bool{false}), Array)
 }
 
 func TestParseValueMaps(t *testing.T) {
-	randomMaps := []interface{}{
-		map[string]interface{}{
+	randomMaps := []any{
+		map[string]any{
 			"foo":   "bar",
 			"dog":   "dusty",
 			"breed": "australian shepherd",
@@ -120,8 +120,8 @@ func TestParseValueMaps(t *testing.T) {
 			2: 2,
 			3: 3,
 		},
-		map[string]interface{}{
-			"food": map[string]interface{}{
+		map[string]any{
+			"food": map[string]any{
 				"pizza": "slice",
 				"fruit": "apple",
 			},
@@ -136,7 +136,7 @@ func TestParseValueMaps(t *testing.T) {
 
 func TestDateTime(t *testing.T) {
 	// Took this list from the Go time library.
-	possibleDates := []interface{}{
+	possibleDates := []any{
 		"01/02 03:04:05PM '06 -0700", // The reference time, in numerical order.
 		"Mon Jan 2 15:04:05 2006",
 		"Mon Jan 2 15:04:05 MST 2006",

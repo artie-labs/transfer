@@ -20,7 +20,7 @@ import (
 
 // JSONEToMap will take JSONE data in bytes, parse all the custom types
 // Then from all the custom types,
-func JSONEToMap(val []byte) (map[string]interface{}, error) {
+func JSONEToMap(val []byte) (map[string]any, error) {
 	// We are escaping `NaN`, `Infinity` and `-Infinity` (literal values)
 	re := regexp.MustCompile(`\bNaN\b|"\bNaN\b"|-\bInfinity\b|"-\bInfinity\b"|\bInfinity\b|"\bInfinity\b"`)
 	val = []byte(re.ReplaceAllStringFunc(string(val), func(match string) string {
@@ -30,7 +30,7 @@ func JSONEToMap(val []byte) (map[string]interface{}, error) {
 		return "null"
 	}))
 
-	var jsonMap map[string]interface{}
+	var jsonMap map[string]any
 	var bsonDoc bson.D
 	err := bson.UnmarshalExtJSON(val, false, &bsonDoc)
 	if err != nil {

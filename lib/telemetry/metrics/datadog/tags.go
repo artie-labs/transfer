@@ -6,7 +6,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func getTags(tags interface{}) []string {
+func getTags(tags any) []string {
 	// Yaml parses lists as a sequence, so we'll unpack it again with the same library.
 	if tags == nil {
 		return []string{}

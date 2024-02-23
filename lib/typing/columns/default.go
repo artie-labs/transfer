@@ -17,11 +17,11 @@ type DefaultValueArgs struct {
 	DestKind constants.DestinationKind
 }
 
-func (c *Column) RawDefaultValue() interface{} {
+func (c *Column) RawDefaultValue() any {
 	return c.defaultValue
 }
 
-func (c *Column) DefaultValue(args *DefaultValueArgs, additionalDateFmts []string) (interface{}, error) {
+func (c *Column) DefaultValue(args *DefaultValueArgs, additionalDateFmts []string) (any, error) {
 	if args == nil || !args.Escape || c.defaultValue == nil {
 		return c.defaultValue, nil
 	}

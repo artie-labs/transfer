@@ -13,7 +13,7 @@ import (
 func BenchmarkTableData_ApproxSize_TallTable(b *testing.B) {
 	td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "tallTable")
 	for n := 0; n < b.N; n++ {
-		td.InsertRow(fmt.Sprint(n), map[string]interface{}{
+		td.InsertRow(fmt.Sprint(n), map[string]any{
 			"id":   n,
 			"name": "Robin",
 			"dog":  "dusty the mini aussie",
@@ -24,7 +24,7 @@ func BenchmarkTableData_ApproxSize_TallTable(b *testing.B) {
 func BenchmarkTableData_ApproxSize_WideTable(b *testing.B) {
 	td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "wideTable")
 	for n := 0; n < b.N; n++ {
-		td.InsertRow(fmt.Sprint(n), map[string]interface{}{
+		td.InsertRow(fmt.Sprint(n), map[string]any{
 			"id":                 n,
 			"name":               "Robin",
 			"dog":                "dusty the mini aussie",
@@ -37,16 +37,16 @@ func BenchmarkTableData_ApproxSize_WideTable(b *testing.B) {
 			"created_at":         time.Now(),
 			"updated_at":         time.Now(),
 			"negative_number":    -500,
-			"nestedObject": map[string]interface{}{
+			"nestedObject": map[string]any{
 				"foo": "bar",
 				"abc": "def",
 			},
-			"array_of_objects": []map[string]interface{}{
+			"array_of_objects": []map[string]any{
 				{
 					"foo": "bar",
 				},
 				{
-					"foo_nested": map[string]interface{}{
+					"foo_nested": map[string]any{
 						"foo_foo": "bar_bar",
 					},
 				},

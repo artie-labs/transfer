@@ -36,7 +36,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
 
-	rowsData := map[string]map[string]interface{}{
+	rowsData := map[string]map[string]any{
 		"pk-1": {
 			"first_name": "bob",
 		},
@@ -90,10 +90,10 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
 
-	rowsData := make(map[string]map[string]interface{})
+	rowsData := make(map[string]map[string]any)
 
 	for i := 0; i < 5; i++ {
-		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]interface{}{
+		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]any{
 			"id":         fmt.Sprintf("pk-%d", i),
 			"created_at": time.Now().Format(time.RFC3339Nano),
 			"name":       fmt.Sprintf("Robin-%d", i),
@@ -138,10 +138,10 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
 
-	rowsData := make(map[string]map[string]interface{})
+	rowsData := make(map[string]map[string]any)
 
 	for i := 0; i < 5; i++ {
-		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]interface{}{
+		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]any{
 			"id":         fmt.Sprintf("pk-%d", i),
 			"created_at": time.Now().Format(time.RFC3339Nano),
 			"name":       fmt.Sprintf("Robin-%d", i),
@@ -204,9 +204,9 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		Schema:    "public",
 	}
 
-	rowsData := make(map[string]map[string]interface{})
+	rowsData := make(map[string]map[string]any)
 	for i := 0; i < 5; i++ {
-		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]interface{}{
+		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]any{
 			"id":         fmt.Sprintf("pk-%d", i),
 			"created_at": time.Now().Format(time.RFC3339Nano),
 			"name":       fmt.Sprintf("Robin-%d", i),

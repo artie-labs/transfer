@@ -19,8 +19,8 @@ func TestColumn_DefaultValue(t *testing.T) {
 		name                       string
 		col                        *Column
 		args                       *DefaultValueArgs
-		expectedValue              interface{}
-		destKindToExpectedValueMap map[constants.DestinationKind]interface{}
+		expectedValue              any
+		destKindToExpectedValueMap map[constants.DestinationKind]any
 		expectedEr                 bool
 	}
 
@@ -88,7 +88,7 @@ func TestColumn_DefaultValue(t *testing.T) {
 				Escape: true,
 			},
 			expectedValue: `{}`,
-			destKindToExpectedValueMap: map[constants.DestinationKind]interface{}{
+			destKindToExpectedValueMap: map[constants.DestinationKind]any{
 				constants.BigQuery:  "JSON'{}'",
 				constants.Redshift:  `JSON_PARSE('{}')`,
 				constants.Snowflake: `'{}'`,
@@ -104,7 +104,7 @@ func TestColumn_DefaultValue(t *testing.T) {
 				Escape: true,
 			},
 			expectedValue: "{\"age\": 0, \"membership_level\": \"standard\"}",
-			destKindToExpectedValueMap: map[constants.DestinationKind]interface{}{
+			destKindToExpectedValueMap: map[constants.DestinationKind]any{
 				constants.BigQuery:  "JSON'{\"age\": 0, \"membership_level\": \"standard\"}'",
 				constants.Redshift:  "JSON_PARSE('{\"age\": 0, \"membership_level\": \"standard\"}')",
 				constants.Snowflake: "'{\"age\": 0, \"membership_level\": \"standard\"}'",

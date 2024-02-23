@@ -95,7 +95,7 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 
 type _testCase struct {
 	name    string
-	colVal  interface{}
+	colVal  any
 	colKind columns.Column
 
 	expectedString string
@@ -151,7 +151,7 @@ func (r *RedshiftTestSuite) TestCastColValStaging_ExceededValues() {
 		},
 		{
 			name:   "struct",
-			colVal: map[string]interface{}{"foo": stringutil.Random(maxRedshiftSuperLen + 1)},
+			colVal: map[string]any{"foo": stringutil.Random(maxRedshiftSuperLen + 1)},
 			colKind: columns.Column{
 				KindDetails: typing.Struct,
 			},
@@ -159,7 +159,7 @@ func (r *RedshiftTestSuite) TestCastColValStaging_ExceededValues() {
 		},
 		{
 			name:   "struct",
-			colVal: map[string]interface{}{"foo": stringutil.Random(maxRedshiftSuperLen + 1)},
+			colVal: map[string]any{"foo": stringutil.Random(maxRedshiftSuperLen + 1)},
 			colKind: columns.Column{
 				KindDetails: typing.Struct,
 			},

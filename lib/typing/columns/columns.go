@@ -25,7 +25,7 @@ type Column struct {
 	// We have stripped this out.
 	// Whenever we see the same column where there's an opposite value in `toastColumn`, we will trigger a flush
 	ToastColumn  bool
-	defaultValue interface{}
+	defaultValue any
 	backfilled   bool
 }
 
@@ -52,7 +52,7 @@ func (c *Column) Backfilled() bool {
 	return c.backfilled
 }
 
-func (c *Column) SetDefaultValue(value interface{}) {
+func (c *Column) SetDefaultValue(value any) {
 	c.defaultValue = value
 }
 

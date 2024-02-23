@@ -8,7 +8,7 @@ import (
 )
 
 func TestParseFromInterface(t *testing.T) {
-	var vals []interface{}
+	var vals []any
 	vals = append(vals, &ExtendedTime{
 		Time: time.Now().UTC(),
 		NestedKind: NestedKind{
@@ -35,7 +35,7 @@ func TestParseFromInterface(t *testing.T) {
 		assert.Equal(t, val, extTime)
 	}
 
-	invalidVals := []interface{}{
+	invalidVals := []any{
 		nil,
 		true,
 		false,

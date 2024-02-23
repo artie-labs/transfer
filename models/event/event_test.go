@@ -14,7 +14,7 @@ import (
 
 type fakeEvent struct{}
 
-var idMap = map[string]interface{}{
+var idMap = map[string]any{
 	"id": 123,
 }
 
@@ -42,8 +42,8 @@ func (f fakeEvent) GetColumns() *columns.Columns {
 	return &columns.Columns{}
 }
 
-func (f fakeEvent) GetData(pkMap map[string]interface{}, config *kafkalib.TopicConfig) map[string]interface{} {
-	return map[string]interface{}{constants.DeleteColumnMarker: false}
+func (f fakeEvent) GetData(pkMap map[string]any, config *kafkalib.TopicConfig) map[string]any {
+	return map[string]any{constants.DeleteColumnMarker: false}
 }
 
 func (e *EventsTestSuite) TestEvent_IsValid() {
@@ -64,7 +64,7 @@ func (e *EventsTestSuite) TestEvent_IsValid() {
 		_evt := Event{
 			Table:         "foo",
 			PrimaryKeyMap: idMap,
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"foo": "bar",
 			},
 			mode: config.History,
@@ -75,7 +75,7 @@ func (e *EventsTestSuite) TestEvent_IsValid() {
 		_evt := Event{
 			Table:         "foo",
 			PrimaryKeyMap: idMap,
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"foo": "bar",
 			},
 		}
@@ -85,7 +85,7 @@ func (e *EventsTestSuite) TestEvent_IsValid() {
 		_evt := Event{
 			Table:         "foo",
 			PrimaryKeyMap: idMap,
-			Data:          map[string]interface{}{constants.DeleteColumnMarker: true},
+			Data:          map[string]any{constants.DeleteColumnMarker: true},
 		}
 		assert.True(e.T(), _evt.IsValid())
 	}
@@ -117,7 +117,7 @@ func (e *EventsTestSuite) TestEvent_TableName() {
 func (e *EventsTestSuite) TestEventPrimaryKeys() {
 	evt := &Event{
 		Table: "foo",
-		PrimaryKeyMap: map[string]interface{}{
+		PrimaryKeyMap: map[string]any{
 			"id":  true,
 			"id1": true,
 			"id2": true,
@@ -141,7 +141,7 @@ func (e *EventsTestSuite) TestEventPrimaryKeys() {
 
 	anotherEvt := &Event{
 		Table: "foo",
-		PrimaryKeyMap: map[string]interface{}{
+		PrimaryKeyMap: map[string]any{
 			"id":        1,
 			"course_id": 2,
 		},
@@ -169,7 +169,7 @@ func (e *EventsTestSuite) TestEventPrimaryKeys() {
 
 func (e *EventsTestSuite) TestPrimaryKeyValueDeterministic() {
 	evt := &Event{
-		PrimaryKeyMap: map[string]interface{}{
+		PrimaryKeyMap: map[string]any{
 			"aa":    1,
 			"bb":    5,
 			"zz":    "ff",

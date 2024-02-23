@@ -84,9 +84,9 @@ func GetTableConfig(args GetTableCfgArgs) (*types.DwhTableConfig, error) {
 		var columnNameList []string
 		// Scan needs an array of pointers to the values it is setting
 		// This creates the object and sets the values correctly
-		values := make([]interface{}, len(colTypes))
+		values := make([]any, len(colTypes))
 		for idx, column := range colTypes {
-			values[idx] = new(interface{})
+			values[idx] = new(any)
 			columnNameList = append(columnNameList, strings.ToLower(column.Name()))
 		}
 
@@ -97,7 +97,7 @@ func GetTableConfig(args GetTableCfgArgs) (*types.DwhTableConfig, error) {
 
 		row := make(map[string]string)
 		for idx, val := range values {
-			interfaceVal, isOk := val.(*interface{})
+			interfaceVal, isOk := val.(*any)
 			if !isOk || interfaceVal == nil {
 				return nil, errors.New("invalid value")
 			}

@@ -106,7 +106,7 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	pw.CompressionType = parquet.CompressionCodec_GZIP
 	for _, val := range tableData.Rows() {
-		row := make(map[string]interface{})
+		row := make(map[string]any)
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.uppercaseEscNames, nil) {
 			colKind, isOk := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			if !isOk {
