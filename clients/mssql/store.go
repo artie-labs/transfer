@@ -1,6 +1,9 @@
 package mssql
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -15,6 +18,14 @@ type Store struct {
 	configMap *types.DwhToTablesConfigMap
 	config    config.Config
 	db.Store
+}
+
+func (s *Store) Schema(tableData *optimization.TableData) string {
+	if strings.ToLower(tableData.TopicConfig.Schema) == "public" {
+		return "dbo"
+	}
+
+	return tableData.TopicConfig.Schema
 }
 
 func (s *Store) Label() constants.DestinationKind {
@@ -53,6 +64,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		return nil, err
 	}
 
+	fmt.Println("describeQuery", describeQuery)
 	return shared.GetTableConfig(shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             s.ToFullyQualifiedName(tableData, true),
@@ -81,7 +93,7 @@ func LoadStore(cfg config.Config, _store *db.Store) *Store {
 	}
 
 	return &Store{
-		Store:     db.Open("mssql", cfg.SQLServer.DSN()),
+		Store:     db.Open("mssql", cfg.MsSQL.DSN()),
 		configMap: &types.DwhToTablesConfigMap{},
 		config:    cfg,
 	}

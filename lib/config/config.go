@@ -173,7 +173,7 @@ type Config struct {
 	SharedDestinationConfig SharedDestinationConfig `yaml:"sharedDestinationConfig"`
 
 	// Supported destinations
-	SQLServer *MsSQL      `yaml:"mssql"`
+	MsSQL     *MsSQL      `yaml:"mssql"`
 	BigQuery  *BigQuery   `yaml:"bigquery"`
 	Snowflake *Snowflake  `yaml:"snowflake"`
 	Redshift  *Redshift   `yaml:"redshift"`
