@@ -4,10 +4,10 @@ import (
 	"log/slog"
 
 	"github.com/artie-labs/transfer/clients/bigquery"
+	"github.com/artie-labs/transfer/clients/mssql"
 	"github.com/artie-labs/transfer/clients/redshift"
 	"github.com/artie-labs/transfer/clients/s3"
 	"github.com/artie-labs/transfer/clients/snowflake"
-	"github.com/artie-labs/transfer/clients/sql_server"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
@@ -57,8 +57,8 @@ func DataWarehouse(cfg config.Config, store *db.Store) destination.DataWarehouse
 		return s
 	case constants.BigQuery:
 		return bigquery.LoadBigQuery(cfg, store)
-	case constants.SQLServer:
-		return sql_server.LoadStore(cfg, store)
+	case constants.MsSQL:
+		return mssql.LoadStore(cfg, store)
 	case constants.Redshift:
 		s := redshift.LoadRedshift(cfg, store)
 		if err := s.Sweep(); err != nil {

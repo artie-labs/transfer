@@ -195,7 +195,7 @@ func (t *TableData) ToFqName(kind constants.DestinationKind, escape bool, upperc
 			Escape:   false,
 			DestKind: kind,
 		}))
-	case constants.Redshift, constants.SQLServer:
+	case constants.Redshift, constants.MsSQL:
 		// Redshift is Postgres compatible, so when establishing a connection, we'll specify a database.
 		// Thus, we only need to specify schema and table name here.
 		return fmt.Sprintf("%s.%s", t.TopicConfig.Schema, t.Name(uppercaseEscNames, &sql.NameArgs{

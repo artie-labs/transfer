@@ -113,6 +113,8 @@ func GetTableConfig(args GetTableCfgArgs) (*types.DwhTableConfig, error) {
 			kd = typing.BigQueryTypeToKind(row[args.ColumnTypeLabel])
 		case constants.Redshift:
 			kd = typing.RedshiftTypeToKind(row[args.ColumnTypeLabel], row[constants.StrPrecisionCol])
+		case constants.MsSQL:
+			kd = typing.MsSQLTypeToKind(row[args.ColumnTypeLabel], row[constants.StrPrecisionCol])
 		default:
 			return nil, fmt.Errorf("unexpected dwh kind, label: %v", args.Dwh.Label())
 		}
