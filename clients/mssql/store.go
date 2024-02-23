@@ -60,7 +60,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 
 	describeQuery, err := describeTableQuery(describeArgs{
 		RawTableName: tableData.RawName(),
-		Schema:       tableData.TopicConfig.Schema,
+		Schema:       s.Schema(tableData),
 	})
 
 	if err != nil {

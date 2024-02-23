@@ -122,6 +122,9 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 		if args.TemporaryTable {
 			expiryString := typing.ExpiresDate(time.Now().UTC().Add(TempTableTTL))
 			switch args.Dwh.Label() {
+			case constants.MsSQL:
+				// TODO: How do we deal with idempotency
+				sqlQuery = fmt.Sprintf("CREATE TABLE %s (%s);", args.FqTableName, strings.Join(colSQLParts, ","))
 			case constants.Redshift:
 				sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", args.FqTableName, strings.Join(colSQLParts, ","))
 			case constants.BigQuery:
