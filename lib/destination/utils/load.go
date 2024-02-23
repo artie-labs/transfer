@@ -3,6 +3,8 @@ package utils
 import (
 	"log/slog"
 
+	"github.com/artie-labs/transfer/clients/sql_server"
+
 	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/clients/redshift"
 	"github.com/artie-labs/transfer/clients/s3"
@@ -56,6 +58,8 @@ func DataWarehouse(cfg config.Config, store *db.Store) destination.DataWarehouse
 		return s
 	case constants.BigQuery:
 		return bigquery.LoadBigQuery(cfg, store)
+	case constants.SQLServer:
+		return sql_server.LoadStore(cfg, store)
 	case constants.Redshift:
 		s := redshift.LoadRedshift(cfg, store)
 		if err := s.Sweep(); err != nil {
