@@ -69,6 +69,5 @@ func DataWarehouse(cfg config.Config, store *db.Store) destination.DataWarehouse
 	}
 
 	logger.Panic("No valid output sources specified", slog.Any("source", cfg.Output))
-
 	return nil
 }
