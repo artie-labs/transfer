@@ -187,7 +187,12 @@ func (t *TableData) RowsData() map[string]map[string]interface{} {
 	return maps.Clone(t.rowsData)
 }
 
-func (t *TableData) ToFqName(kind constants.DestinationKind, escape bool, uppercaseEscNames bool, bigQueryProjectID string) string {
+type ToFqNameOpts struct {
+	BigQueryProjectID   string
+	MsSQLSchemaOverride string
+}
+
+func (t *TableData) ToFqName(kind constants.DestinationKind, escape bool, uppercaseEscNames bool, opts ToFqNameOpts) string {
 	switch kind {
 	case constants.S3:
 		// S3 should be db.schema.tableName, but we don't need to escape, since it's not a SQL db.
@@ -195,16 +200,21 @@ func (t *TableData) ToFqName(kind constants.DestinationKind, escape bool, upperc
 			Escape:   false,
 			DestKind: kind,
 		}))
-	case constants.Redshift, constants.MsSQL:
+	case constants.Redshift:
 		// Redshift is Postgres compatible, so when establishing a connection, we'll specify a database.
 		// Thus, we only need to specify schema and table name here.
 		return fmt.Sprintf("%s.%s", t.TopicConfig.Schema, t.Name(uppercaseEscNames, &sql.NameArgs{
 			Escape:   escape,
 			DestKind: kind,
 		}))
+	case constants.MsSQL:
+		return fmt.Sprintf("%s.%s", stringutil.Override(t.TopicConfig.Schema, opts.MsSQLSchemaOverride), t.Name(uppercaseEscNames, &sql.NameArgs{
+			Escape:   escape,
+			DestKind: kind,
+		}))
 	case constants.BigQuery:
 		// The fully qualified name for BigQuery is: project_id.dataset.tableName.
-		return fmt.Sprintf("%s.%s.%s", bigQueryProjectID, t.TopicConfig.Database, t.Name(uppercaseEscNames, &sql.NameArgs{
+		return fmt.Sprintf("%s.%s.%s", opts.BigQueryProjectID, t.TopicConfig.Database, t.Name(uppercaseEscNames, &sql.NameArgs{
 			Escape:   escape,
 			DestKind: kind,
 		}))

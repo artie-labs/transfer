@@ -21,6 +21,7 @@ type Store struct {
 }
 
 func (s *Store) Schema(tableData *optimization.TableData) string {
+	// MSSQL has their default schema called `dbo`, `public` is a reserved keyword.
 	if strings.ToLower(tableData.TopicConfig.Schema) == "public" {
 		return "dbo"
 	}
@@ -45,7 +46,9 @@ func (s *Store) Append(tableData *optimization.TableData) error {
 }
 
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	return tableData.ToFqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, "")
+	return tableData.ToFqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.ToFqNameOpts{
+		MsSQLSchemaOverride: s.Schema(tableData),
+	})
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {

@@ -53,7 +53,7 @@ func (s *Store) Label() constants.DestinationKind {
 // It will look like something like this:
 // > optionalPrefix/fullyQualifiedTableName/YYYY-MM-DD
 func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
-	fqTableName := tableData.ToFqName(s.Label(), false, s.uppercaseEscNames, "")
+	fqTableName := tableData.ToFqName(s.Label(), false, s.uppercaseEscNames, optimization.ToFqNameOpts{})
 	yyyyMMDDFormat := tableData.LatestCDCTs.Format(ext.PostgresDateFormat)
 
 	if len(s.config.S3.OptionalPrefix) > 0 {

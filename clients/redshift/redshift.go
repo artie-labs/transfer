@@ -26,7 +26,7 @@ type Store struct {
 }
 
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	return tableData.ToFqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, "")
+	return tableData.ToFqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.ToFqNameOpts{})
 }
 
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
