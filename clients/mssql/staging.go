@@ -5,9 +5,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
-
-	"github.com/artie-labs/transfer/lib/typing/values"
-
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	mssql "github.com/microsoft/go-mssqldb"
@@ -37,6 +34,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	defer tx.Rollback() // Ensure rollback in case of error
 
 	columns := tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil)
+	fmt.Println("columns", columns)
 	stmt, err := tx.Prepare(mssql.CopyIn(tempTableName, mssql.BulkOptions{}, columns...))
 	if err != nil {
 		return fmt.Errorf("failed to prepare bulk insert: %w", err)
@@ -49,10 +47,12 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		var row []any
 		for _, col := range columns {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
-			castedValue, castErr := values.ToString(value[col], colKind, additionalDateFmts)
+			castedValue, castErr := parseValue(value[col], colKind, additionalDateFmts)
 			if castErr != nil {
 				return castErr
 			}
+
+			fmt.Println("castedValue", castedValue, "castErr", castErr, fmt.Sprintf("type: %T", castedValue))
 
 			row = append(row, castedValue)
 		}

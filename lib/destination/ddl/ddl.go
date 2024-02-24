@@ -145,6 +145,10 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 			}
 		} else {
 			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
+			if args.Dwh.Label() == constants.MsSQL {
+				// MSSQL doesn't like the IF NOT EXISTS clause
+				sqlQuery = fmt.Sprintf("CREATE TABLE %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
+			}
 		}
 
 		slog.Info("DDL - executing sql", slog.String("query", sqlQuery))

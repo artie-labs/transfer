@@ -23,6 +23,11 @@ func MsSQLTypeToKind(rawType string, stringPrecision string) KindDetails {
 			strPrecision = &precision
 		}
 
+		// precision of -1 means it's MAX.
+		if precision == -1 {
+			strPrecision = nil
+		}
+
 		return KindDetails{
 			Kind:                    String.Kind,
 			OptionalStringPrecision: strPrecision,

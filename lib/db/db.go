@@ -40,7 +40,7 @@ func (s *storeWrapper) Exec(query string, args ...any) (sql.Result, error) {
 			time.Sleep(sleepDuration)
 		}
 
-		fmt.Println("query", query, args)
+		fmt.Println("exec", query, args)
 		result, err = s.DB.Exec(query, args...)
 		if err == nil || !retryableError(err) {
 			break
