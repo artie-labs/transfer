@@ -83,6 +83,21 @@ func (d *Decimal) SnowflakeKind() string {
 	return fmt.Sprintf("NUMERIC(%v, %v)", precision, d.scale)
 }
 
+// MsSQLKind - Has the same limitation as Redshift
+// Spec: https://learn.microsoft.com/en-us/sql/t-sql/data-types/decimal-and-numeric-transact-sql?view=sql-server-ver16#arguments
+func (d *Decimal) MsSQLKind() string {
+	precision := MaxPrecisionBeforeString
+	if d.precision != nil {
+		precision = *d.precision
+	}
+
+	if precision > MaxPrecisionBeforeString || precision == -1 {
+		return "TEXT"
+	}
+
+	return fmt.Sprintf("NUMERIC(%v, %v)", precision, d.scale)
+}
+
 // RedshiftKind - is used to determine whether a NUMERIC data type should be a STRING or NUMERIC(p, s).
 // This has the same max precision of 38 digits like Snowflake.
 func (d *Decimal) RedshiftKind() string {

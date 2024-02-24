@@ -22,8 +22,8 @@ func RedshiftTypeToKind(rawType string, stringPrecision string) KindDetails {
 		}
 
 		return KindDetails{
-			Kind:                         String.Kind,
-			OptionalRedshiftStrPrecision: strPrecision,
+			Kind:                    String.Kind,
+			OptionalStringPrecision: strPrecision,
 		}
 	}
 
@@ -62,8 +62,8 @@ func kindToRedshift(kd KindDetails) string {
 		// Rationale: https://github.com/artie-labs/transfer/pull/173
 		return "VARCHAR(MAX)"
 	case String.Kind:
-		if kd.OptionalRedshiftStrPrecision != nil {
-			return fmt.Sprintf("VARCHAR(%d)", *kd.OptionalRedshiftStrPrecision)
+		if kd.OptionalStringPrecision != nil {
+			return fmt.Sprintf("VARCHAR(%d)", *kd.OptionalStringPrecision)
 		}
 
 		return "VARCHAR(MAX)"

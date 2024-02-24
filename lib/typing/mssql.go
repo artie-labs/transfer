@@ -1,6 +1,7 @@
 package typing
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -23,8 +24,8 @@ func MsSQLTypeToKind(rawType string, stringPrecision string) KindDetails {
 		}
 
 		return KindDetails{
-			Kind:                         String.Kind,
-			OptionalRedshiftStrPrecision: strPrecision,
+			Kind:                    String.Kind,
+			OptionalStringPrecision: strPrecision,
 		}
 	case "numeric":
 		return ParseNumeric(defaultPrefix, rawType)
@@ -51,4 +52,34 @@ func MsSQLTypeToKind(rawType string, stringPrecision string) KindDetails {
 	}
 
 	return Invalid
+}
+
+func kindToMsSQL(kd KindDetails) string {
+	switch kd.Kind {
+	case Integer.Kind:
+		return "bigint"
+	case Struct.Kind, Array.Kind:
+		return "NVARCHAR(MAX)"
+	case String.Kind:
+		if kd.OptionalStringPrecision != nil {
+			return fmt.Sprintf("VARCHAR(%d)", *kd.OptionalStringPrecision)
+		}
+
+		return "VARCHAR(MAX)"
+	case Boolean.Kind:
+		return "BIT"
+	case ETime.Kind:
+		switch kd.ExtendedTimeDetails.Type {
+		case ext.DateTimeKindType:
+			return "datetime2"
+		case ext.DateKindType:
+			return "date"
+		case ext.TimeKindType:
+			return "time"
+		}
+	case EDecimal.Kind:
+		return kd.ExtendedDecimalDetails.MsSQLKind()
+	}
+
+	return kd.Kind
 }

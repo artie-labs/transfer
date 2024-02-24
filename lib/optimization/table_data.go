@@ -322,8 +322,8 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) {
 				// Note: If our in-memory column is `Invalid`, it would get skipped during merge. However, if the column exists in
 				// the destination, we'll copy the type over. This is to make sure we don't miss batch updates where the whole column in the batch is NULL.
 				inMemoryCol.KindDetails.Kind = foundColumn.KindDetails.Kind
-				if foundColumn.KindDetails.OptionalRedshiftStrPrecision != nil {
-					inMemoryCol.KindDetails.OptionalRedshiftStrPrecision = foundColumn.KindDetails.OptionalRedshiftStrPrecision
+				if foundColumn.KindDetails.OptionalStringPrecision != nil {
+					inMemoryCol.KindDetails.OptionalStringPrecision = foundColumn.KindDetails.OptionalStringPrecision
 				}
 			}
 
