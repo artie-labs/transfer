@@ -6,11 +6,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
-type describeArgs struct {
-	RawTableName string
-	Schema       string
-}
-
 func describeTableQuery(schema, rawTableName string) string {
 	return fmt.Sprintf(`
 SELECT 
