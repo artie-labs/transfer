@@ -75,10 +75,15 @@ func parseValue(colVal interface{}, colKind columns.Column, additionalDateFmts [
 	case typing.Integer.Kind:
 		return colVal, nil
 	case typing.Boolean.Kind:
+		// If it's already a boolean, return it. Else, convert it.
+		val, isOk := colVal.(bool)
+		if isOk {
+			return val, nil
+		}
+
 		return strconv.ParseBool(colValString)
 	case typing.EDecimal.Kind:
-		val, isOk := colVal.(*decimal.Decimal)
-		if isOk {
+		if val, isOk := colVal.(*decimal.Decimal); isOk {
 			return val.Value(), nil
 		}
 
