@@ -20,6 +20,11 @@ func BackfillColumn(cfg config.Config, dwh destination.DataWarehouse, column col
 		return nil
 	}
 
+	if dwh.Label() == constants.MSSQL {
+		// TODO: Support MSSQL column backfill
+		return nil
+	}
+
 	additionalDateFmts := cfg.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{Escape: true, DestKind: dwh.Label()}, additionalDateFmts)
 	if err != nil {
