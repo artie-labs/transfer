@@ -147,13 +147,14 @@ func TestNewTableData_TableName(t *testing.T) {
 		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: testCase.db, Schema: testCase.schema}, testCase.tableName)
 		assert.Equal(t, testCase.expectedName, td.RawName(), testCase.name)
 		assert.Equal(t, testCase.expectedName, td.name, testCase.name)
-		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(constants.Snowflake, true, false, ToFqNameOpts{}), testCase.name)
-		assert.Equal(t, testCase.expectedBigQueryFqName, td.ToFqName(constants.BigQuery, true, false, ToFqNameOpts{BigQueryProjectID: bqProjectID}), testCase.name)
-		assert.Equal(t, testCase.expectedBigQueryFqName, td.ToFqName(constants.BigQuery, true, false, ToFqNameOpts{BigQueryProjectID: bqProjectID}), testCase.name)
+
+		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(constants.Snowflake, true, false, FqNameOpts{}), testCase.name)
+		assert.Equal(t, testCase.expectedBigQueryFqName, td.ToFqName(constants.BigQuery, true, false, FqNameOpts{BigQueryProjectID: bqProjectID}), testCase.name)
+		assert.Equal(t, testCase.expectedBigQueryFqName, td.ToFqName(constants.BigQuery, true, false, FqNameOpts{BigQueryProjectID: bqProjectID}), testCase.name)
 
 		// S3 does not escape, so let's test both to make sure.
-		assert.Equal(t, testCase.expectedS3FqName, td.ToFqName(constants.S3, true, false, ToFqNameOpts{}), testCase.name)
-		assert.Equal(t, testCase.expectedS3FqName, td.ToFqName(constants.S3, false, false, ToFqNameOpts{}), testCase.name)
+		assert.Equal(t, testCase.expectedS3FqName, td.ToFqName(constants.S3, true, false, FqNameOpts{}), testCase.name)
+		assert.Equal(t, testCase.expectedS3FqName, td.ToFqName(constants.S3, false, false, FqNameOpts{}), testCase.name)
 	}
 }
 

@@ -187,12 +187,12 @@ func (t *TableData) RowsData() map[string]map[string]interface{} {
 	return maps.Clone(t.rowsData)
 }
 
-type ToFqNameOpts struct {
+type FqNameOpts struct {
 	BigQueryProjectID   string
 	MsSQLSchemaOverride string
 }
 
-func (t *TableData) ToFqName(kind constants.DestinationKind, escape bool, uppercaseEscNames bool, opts ToFqNameOpts) string {
+func (t *TableData) ToFqName(kind constants.DestinationKind, escape bool, uppercaseEscNames bool, opts FqNameOpts) string {
 	switch kind {
 	case constants.S3:
 		// S3 should be db.schema.tableName, but we don't need to escape, since it's not a SQL db.

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/artie-labs/transfer/lib/numbers"
-
 	"github.com/artie-labs/transfer/lib/ptr"
 )
 
@@ -71,91 +69,27 @@ func (d *Decimal) Value() interface{} {
 
 // SnowflakeKind - is used to determine whether a NUMERIC data type should be a STRING or NUMERIC(p, s).
 func (d *Decimal) SnowflakeKind() string {
-	precision := MaxPrecisionBeforeString
-	if d.precision != nil {
-		precision = *d.precision
-	}
-
-	if precision > MaxPrecisionBeforeString || precision == -1 {
-		return "STRING"
-	}
-
-	return fmt.Sprintf("NUMERIC(%v, %v)", precision, d.scale)
+	return d.toKind(MaxPrecisionBeforeString, "STRING")
 }
 
 // MsSQLKind - Has the same limitation as Redshift
 // Spec: https://learn.microsoft.com/en-us/sql/t-sql/data-types/decimal-and-numeric-transact-sql?view=sql-server-ver16#arguments
 func (d *Decimal) MsSQLKind() string {
-	precision := MaxPrecisionBeforeString
-	if d.precision != nil {
-		precision = *d.precision
-	}
-
-	if precision > MaxPrecisionBeforeString || precision == -1 {
-		return "TEXT"
-	}
-
-	return fmt.Sprintf("NUMERIC(%v, %v)", precision, d.scale)
+	return d.toKind(MaxPrecisionBeforeString, "TEXT")
 }
 
-// RedshiftKind - is used to determine whether a NUMERIC data type should be a STRING or NUMERIC(p, s).
-// This has the same max precision of 38 digits like Snowflake.
+// RedshiftKind - is used to determine whether a NUMERIC data type should be a TEXT or NUMERIC(p, s).
 func (d *Decimal) RedshiftKind() string {
-	precision := MaxPrecisionBeforeString
-	if d.precision != nil {
-		precision = *d.precision
-	}
-
-	if precision > MaxPrecisionBeforeString || precision == -1 {
-		return "TEXT"
-	}
-
-	return fmt.Sprintf("NUMERIC(%v, %v)", precision, d.scale)
+	return d.toKind(MaxPrecisionBeforeString, "TEXT")
 }
 
 // BigQueryKind - is inferring logic from: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#decimal_types
 func (d *Decimal) BigQueryKind() string {
-	if d.Numeric() {
+	if d.isNumeric() {
 		return fmt.Sprintf("NUMERIC(%v, %v)", *d.precision, d.scale)
-	} else if d.BigNumeric() {
+	} else if d.isBigNumeric() {
 		return fmt.Sprintf("BIGNUMERIC(%v, %v)", *d.precision, d.scale)
 	}
 
 	return "STRING"
-}
-
-func (d *Decimal) Numeric() bool {
-	if d.precision == nil || *d.precision == PrecisionNotSpecified {
-		return false
-	}
-
-	// 0 <= s <= 9
-	if !numbers.BetweenEq(numbers.BetweenEqArgs{Start: 0, End: 9, Number: d.scale}) {
-		return false
-	}
-
-	// max(1,s) <= p <= s + 29
-	return numbers.BetweenEq(numbers.BetweenEqArgs{
-		Start:  max(1, d.scale),
-		End:    d.scale + 29,
-		Number: *d.precision,
-	})
-}
-
-func (d *Decimal) BigNumeric() bool {
-	if d.precision == nil || *d.precision == -1 {
-		return false
-	}
-
-	// 0 <= s <= 38
-	if !numbers.BetweenEq(numbers.BetweenEqArgs{Start: 0, End: 38, Number: d.scale}) {
-		return false
-	}
-
-	// max(1,s) <= p <= s + 38
-	return numbers.BetweenEq(numbers.BetweenEqArgs{
-		Start:  max(1, d.scale),
-		End:    d.scale + 38,
-		Number: *d.precision,
-	})
 }
