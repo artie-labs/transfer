@@ -44,8 +44,6 @@ type MergeArgument struct {
 	// These are only used for MergeStatementParts:
 	// If ContainsHardDeletes = false, then we won't issue a DELETE statement
 	ContainsHardDeletes bool
-	// TurnOffAs - This is used by MSSQL since they do not like the keyword `AS` for table aliases.
-	TurnOffAs bool
 }
 
 func (m *MergeArgument) Valid() error {
@@ -296,6 +294,94 @@ func (m *MergeArgument) GetStatement() (string, error) {
 						%s
 					);
 		`, m.FqTableName, subQuery, strings.Join(equalitySQLParts, " and "),
+		// Delete
+		constants.DeleteColumnMarker,
+		// Update
+		constants.DeleteColumnMarker, idempotentClause, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
+		// Insert
+		constants.DeleteColumnMarker, strings.Join(cols, ","),
+		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
+			Vals:      cols,
+			Separator: ",",
+			Prefix:    "cc.",
+		})), nil
+}
+
+func (m *MergeArgument) GetMSSQLStatement() (string, error) {
+	if err := m.Valid(); err != nil {
+		return "", err
+	}
+
+	var idempotentClause string
+	if m.IdempotentKey != "" {
+		idempotentClause = fmt.Sprintf("AND cc.%s >= c.%s ", m.IdempotentKey, m.IdempotentKey)
+	}
+
+	var equalitySQLParts []string
+	for _, primaryKey := range m.PrimaryKeys {
+		// We'll need to escape the primary key as well.
+		equalitySQL := fmt.Sprintf("c.%s = cc.%s", primaryKey.EscapedName(), primaryKey.EscapedName())
+		equalitySQLParts = append(equalitySQLParts, equalitySQL)
+	}
+
+	cols := m.ColumnsToTypes.GetColumnsToUpdate(*m.UppercaseEscNames, &sql.NameArgs{
+		Escape:   true,
+		DestKind: m.DestKind,
+	})
+
+	if m.SoftDelete {
+		return fmt.Sprintf(`
+			MERGE INTO %s c using %s as cc on %s
+				when matched %sthen UPDATE
+					SET %s
+				when not matched AND COALESCE(cc.%s, 0) = 0 then INSERT
+					(
+						%s
+					)
+					VALUES
+					(
+						%s
+					);
+		`, m.FqTableName, m.SubQuery, strings.Join(equalitySQLParts, " and "),
+			// Update + Soft Deletion
+			idempotentClause, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
+			// Insert
+			constants.DeleteColumnMarker, strings.Join(cols, ","),
+			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
+				Vals:      cols,
+				Separator: ",",
+				Prefix:    "cc.",
+			})), nil
+	}
+
+	// We also need to remove __artie flags since it does not exist in the destination table
+	var removed bool
+	for idx, col := range cols {
+		if col == constants.DeleteColumnMarker {
+			cols = append(cols[:idx], cols[idx+1:]...)
+			removed = true
+			break
+		}
+	}
+
+	if !removed {
+		return "", errors.New("artie delete flag doesn't exist")
+	}
+
+	return fmt.Sprintf(`
+			MERGE INTO %s c using %s as cc on %s
+				when matched AND cc.%s = 1 then DELETE
+				when matched AND COALESCE(cc.%s, 0) = 0 %sthen UPDATE
+					SET %s
+				when not matched AND COALESCE(cc.%s, 1) = 0 then INSERT
+					(
+						%s
+					)
+					VALUES
+					(
+						%s
+					);
+		`, m.FqTableName, m.SubQuery, strings.Join(equalitySQLParts, " and "),
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update

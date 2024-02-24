@@ -31,8 +31,6 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
-	defer tx.Rollback() // Ensure rollback in case of error
-
 	columns := tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil)
 	fmt.Println("columns", columns)
 	stmt, err := tx.Prepare(mssql.CopyIn(tempTableName, mssql.BulkOptions{}, columns...))
@@ -51,8 +49,6 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 			if castErr != nil {
 				return castErr
 			}
-
-			fmt.Println("castedValue", castedValue, "castErr", castErr, fmt.Sprintf("type: %T", castedValue))
 
 			row = append(row, castedValue)
 		}
