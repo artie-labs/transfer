@@ -157,6 +157,11 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 	} else {
 		for _, colSQLPart := range colSQLParts {
 			sqlQuery := fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", args.FqTableName, args.ColumnOp, colSQLPart)
+			if args.Dwh.Label() == constants.MsSQL {
+				// MSSQL ALTER statement omits COLUMN
+				sqlQuery = fmt.Sprintf("ALTER TABLE %s %s %s", args.FqTableName, args.ColumnOp, colSQLPart)
+			}
+
 			slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
 			_, err = args.Dwh.Exec(sqlQuery)
 			if ColumnAlreadyExistErr(err, args.Dwh.Label()) {
