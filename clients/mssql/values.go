@@ -50,7 +50,7 @@ func parseValue(colVal interface{}, colKind columns.Column, additionalDateFmts [
 		return colValString, nil
 	case typing.Struct.Kind:
 		if colKind.KindDetails == typing.Struct {
-			if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
+			if strings.Contains(colValString, constants.ToastUnavailableValuePlaceholder) {
 				colVal = map[string]interface{}{
 					"key": constants.ToastUnavailableValuePlaceholder,
 				}
@@ -76,8 +76,7 @@ func parseValue(colVal interface{}, colKind columns.Column, additionalDateFmts [
 		return colVal, nil
 	case typing.Boolean.Kind:
 		// If it's already a boolean, return it. Else, convert it.
-		val, isOk := colVal.(bool)
-		if isOk {
+		if val, isOk := colVal.(bool); isOk {
 			return val, nil
 		}
 
