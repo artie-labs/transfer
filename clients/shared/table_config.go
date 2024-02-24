@@ -95,8 +95,6 @@ func GetTableConfig(args GetTableCfgArgs) (*types.DwhTableConfig, error) {
 			return nil, err
 		}
 
-		fmt.Println("vals", values)
-
 		row := make(map[string]string)
 		for idx, val := range values {
 			interfaceVal, isOk := val.(*interface{})
@@ -106,8 +104,6 @@ func GetTableConfig(args GetTableCfgArgs) (*types.DwhTableConfig, error) {
 
 			row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
 		}
-
-		fmt.Println("row", row)
 
 		var kd typing.KindDetails
 		switch args.Dwh.Label() {

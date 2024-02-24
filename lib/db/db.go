@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -39,6 +40,7 @@ func (s *storeWrapper) Exec(query string, args ...any) (sql.Result, error) {
 			time.Sleep(sleepDuration)
 		}
 
+		fmt.Println("query", query, args)
 		result, err = s.DB.Exec(query, args...)
 		if err == nil || !retryableError(err) {
 			break

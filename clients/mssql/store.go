@@ -1,7 +1,6 @@
 package mssql
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/artie-labs/transfer/clients/shared"
@@ -67,7 +66,6 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		return nil, err
 	}
 
-	fmt.Println("describeQuery", describeQuery)
 	return shared.GetTableConfig(shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             s.ToFullyQualifiedName(tableData, true),
@@ -79,10 +77,6 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		EmptyCommentValue:  ptr.ToString("<nil>"),
 		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
 	})
-}
-
-func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalSettings types.AdditionalSettings) error {
-	return nil
 }
 
 func LoadStore(cfg config.Config, _store *db.Store) *Store {
