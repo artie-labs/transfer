@@ -2,6 +2,8 @@ package mssql
 
 import (
 	"fmt"
+
+	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
 type describeArgs struct {
@@ -21,5 +23,15 @@ SELECT
 FROM 
     INFORMATION_SCHEMA.COLUMNS
 WHERE 
-    LOWER(table_name) = LOWER('%s') AND LOWER(table_schema) = LOWER('%s');`, rawTableName, schema)
+    LOWER(TABLE_NAME) = LOWER('%s') AND LOWER(TABLE_SCHEMA) = LOWER('%s');`, rawTableName, schema)
+}
+
+func sweepQuery(schema string) string {
+	return fmt.Sprintf(`
+SELECT
+	TABLE_NAME
+FROM
+	INFORMATION_SCHEMA.TABLES
+WHERE
+	where TABLE_NAME ILIKE '%s' AND LOWER(TABLE_SCHEMA) = LOWER('%s')`, "%"+constants.ArtiePrefix+"%", schema)
 }

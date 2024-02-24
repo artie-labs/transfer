@@ -2,6 +2,7 @@ package ddl
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -31,4 +32,14 @@ func ShouldDelete(comment string) (shouldDelete bool) {
 	}
 
 	return false
+}
+
+func ShouldDeleteUnix(unixString string) bool {
+	unix, err := strconv.Atoi(unixString)
+	if err != nil {
+		return false
+	}
+
+	ts := time.Unix(int64(unix), 0)
+	return time.Now().UTC().After(ts)
 }

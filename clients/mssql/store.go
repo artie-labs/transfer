@@ -19,13 +19,17 @@ type Store struct {
 	db.Store
 }
 
-func (s *Store) Schema(tableData *optimization.TableData) string {
+func getSchema(schema string) string {
 	// MSSQL has their default schema called `dbo`, `public` is a reserved keyword.
-	if strings.ToLower(tableData.TopicConfig.Schema) == "public" {
+	if strings.ToLower(schema) == "public" {
 		return "dbo"
 	}
 
-	return tableData.TopicConfig.Schema
+	return schema
+}
+
+func (s *Store) Schema(tableData *optimization.TableData) string {
+	return getSchema(tableData.TopicConfig.Schema)
 }
 
 func (s *Store) Label() constants.DestinationKind {
