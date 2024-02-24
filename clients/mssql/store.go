@@ -50,27 +50,17 @@ func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape b
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	// TODO: Figure out how to leave a comment.
-
 	const (
 		describeNameCol        = "column_name"
 		describeTypeCol        = "data_type"
 		describeDescriptionCol = "description"
 	)
 
-	describeQuery, err := describeTableQuery(describeArgs{
-		RawTableName: tableData.RawName(),
-		Schema:       s.Schema(tableData),
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
 	return shared.GetTableConfig(shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             s.ToFullyQualifiedName(tableData, true),
 		ConfigMap:          s.configMap,
-		Query:              describeQuery,
+		Query:              describeTableQuery(s.Schema(tableData), tableData.RawName()),
 		ColumnNameLabel:    describeNameCol,
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeDescriptionCol,

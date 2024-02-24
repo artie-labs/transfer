@@ -2,7 +2,6 @@ package mssql
 
 import (
 	"fmt"
-	"strings"
 )
 
 type describeArgs struct {
@@ -10,10 +9,7 @@ type describeArgs struct {
 	Schema       string
 }
 
-func describeTableQuery(args describeArgs) (string, error) {
-	if strings.Contains(args.RawTableName, `"`) {
-		return "", fmt.Errorf("table name cannot contain double quotes")
-	}
+func describeTableQuery(schema, rawTableName string) string {
 	return fmt.Sprintf(`
 SELECT 
     COLUMN_NAME, 
@@ -25,6 +21,5 @@ SELECT
 FROM 
     INFORMATION_SCHEMA.COLUMNS
 WHERE 
-    LOWER(table_name) = LOWER('%s') AND LOWER(table_schema) = LOWER('%s');
-`, args.RawTableName, args.Schema), nil
+    LOWER(table_name) = LOWER('%s') AND LOWER(table_schema) = LOWER('%s');`, rawTableName, schema)
 }
