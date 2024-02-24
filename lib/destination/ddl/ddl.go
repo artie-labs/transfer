@@ -153,7 +153,7 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 		} else {
 			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
 			if args.Dwh.Label() == constants.MSSQL {
-				// MSSQL doesn't like the IF NOT EXISTS clause
+				// MSSQL doesn't support IF NOT EXISTS
 				sqlQuery = fmt.Sprintf("CREATE TABLE %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
 			}
 		}
@@ -169,7 +169,7 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 		for _, colSQLPart := range colSQLParts {
 			sqlQuery := fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", args.FqTableName, args.ColumnOp, colSQLPart)
 			if args.Dwh.Label() == constants.MSSQL {
-				// MSSQL ALTER statement omits COLUMN
+				// MSSQL doesn't support the COLUMN keyword
 				sqlQuery = fmt.Sprintf("ALTER TABLE %s %s %s", args.FqTableName, args.ColumnOp, colSQLPart)
 			}
 
