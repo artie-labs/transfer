@@ -104,10 +104,17 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 		mutateCol = append(mutateCol, col)
 		switch args.ColumnOp {
 		case constants.Add:
-			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, col.Name(*args.UppercaseEscNames, &sql.NameArgs{
+			colSQLPart := fmt.Sprintf(`%s %s`, col.Name(*args.UppercaseEscNames, &sql.NameArgs{
 				Escape:   true,
 				DestKind: args.Dwh.Label(),
-			}), typing.KindToDWHType(col.KindDetails, args.Dwh.Label())))
+			}), typing.KindToDWHType(col.KindDetails, args.Dwh.Label()))
+
+			// TODO: Would it be beneficial to have this enabled for every DWH?
+			if args.Dwh.Label() == constants.MSSQL && col.PrimaryKey() {
+				colSQLPart += " PRIMARY KEY"
+			}
+
+			colSQLParts = append(colSQLParts, colSQLPart)
 		case constants.Delete:
 			colSQLParts = append(colSQLParts, col.Name(*args.UppercaseEscNames, &sql.NameArgs{
 				Escape:   true,
