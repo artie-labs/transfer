@@ -33,5 +33,5 @@ SELECT
 FROM
 	INFORMATION_SCHEMA.TABLES
 WHERE
-	where TABLE_NAME ILIKE '%s' AND LOWER(TABLE_SCHEMA) = LOWER('%s')`, "%"+constants.ArtiePrefix+"%", schema)
+	LOWER(TABLE_NAME) LIKE '%s' AND LOWER(TABLE_SCHEMA) = LOWER('%s')`, "%"+constants.ArtiePrefix+"%", schema)
 }
