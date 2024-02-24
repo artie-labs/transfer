@@ -187,7 +187,11 @@ func (t *TableData) RowsData() map[string]map[string]interface{} {
 	return maps.Clone(t.rowsData)
 }
 
-func (t *TableData) ToFqName(kind constants.DestinationKind, escape bool, uppercaseEscNames bool, bigQueryProjectID string) string {
+type FqNameOpts struct {
+	BigQueryProjectID string
+}
+
+func (t *TableData) ToFqName(kind constants.DestinationKind, escape bool, uppercaseEscNames bool, opts FqNameOpts) string {
 	switch kind {
 	case constants.S3:
 		// S3 should be db.schema.tableName, but we don't need to escape, since it's not a SQL db.
@@ -204,7 +208,7 @@ func (t *TableData) ToFqName(kind constants.DestinationKind, escape bool, upperc
 		}))
 	case constants.BigQuery:
 		// The fully qualified name for BigQuery is: project_id.dataset.tableName.
-		return fmt.Sprintf("%s.%s.%s", bigQueryProjectID, t.TopicConfig.Database, t.Name(uppercaseEscNames, &sql.NameArgs{
+		return fmt.Sprintf("%s.%s.%s", opts.BigQueryProjectID, t.TopicConfig.Database, t.Name(uppercaseEscNames, &sql.NameArgs{
 			Escape:   escape,
 			DestKind: kind,
 		}))
