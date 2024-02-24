@@ -14,8 +14,6 @@ func describeTableQuery(args describeArgs) (string, error) {
 	if strings.Contains(args.RawTableName, `"`) {
 		return "", fmt.Errorf("table name cannot contain double quotes")
 	}
-
-	// This query is a modified fork from: https://gist.github.com/alexanderlz/7302623
 	return fmt.Sprintf(`
 SELECT 
     COLUMN_NAME, 

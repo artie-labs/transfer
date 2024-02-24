@@ -4,7 +4,6 @@ import "time"
 
 const (
 	BigQueryDateTimeFormat = "2006-01-02 15:04:05.999999"
-	MSSQLDateTimeFormat    = "2006-01-02T15:04:05.9999999Z07:00"
 	ISO8601                = "2006-01-02T15:04:05-07:00"
 
 	PostgresDateFormat     = "2006-01-02"

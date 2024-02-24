@@ -17,10 +17,9 @@ import (
 
 func parseValue(colVal interface{}, colKind columns.Column, additionalDateFmts []string) (any, error) {
 	if colVal == nil {
-		return nil, fmt.Errorf("colVal is nil")
+		// TODO: Test nil
+		return colVal, nil
 	}
-
-	fmt.Println("colVal", colVal, "kd", colKind.KindDetails.Kind)
 
 	colValString := fmt.Sprint(colVal)
 	switch colKind.KindDetails.Kind {

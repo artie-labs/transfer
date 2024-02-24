@@ -57,7 +57,7 @@ func DataWarehouse(cfg config.Config, store *db.Store) destination.DataWarehouse
 		return s
 	case constants.BigQuery:
 		return bigquery.LoadBigQuery(cfg, store)
-	case constants.MsSQL:
+	case constants.MSSQL:
 		return mssql.LoadStore(cfg, store)
 	case constants.Redshift:
 		s := redshift.LoadRedshift(cfg, store)

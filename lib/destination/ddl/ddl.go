@@ -122,7 +122,7 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 		if args.TemporaryTable {
 			expiryString := typing.ExpiresDate(time.Now().UTC().Add(TempTableTTL))
 			switch args.Dwh.Label() {
-			case constants.MsSQL:
+			case constants.MSSQL:
 				// TODO: How do we deal with idempotency
 				sqlQuery = fmt.Sprintf("CREATE TABLE %s (%s);", args.FqTableName, strings.Join(colSQLParts, ","))
 			case constants.Redshift:
@@ -145,7 +145,7 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 			}
 		} else {
 			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
-			if args.Dwh.Label() == constants.MsSQL {
+			if args.Dwh.Label() == constants.MSSQL {
 				// MSSQL doesn't like the IF NOT EXISTS clause
 				sqlQuery = fmt.Sprintf("CREATE TABLE %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
 			}
@@ -161,7 +161,7 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 	} else {
 		for _, colSQLPart := range colSQLParts {
 			sqlQuery := fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", args.FqTableName, args.ColumnOp, colSQLPart)
-			if args.Dwh.Label() == constants.MsSQL {
+			if args.Dwh.Label() == constants.MSSQL {
 				// MSSQL ALTER statement omits COLUMN
 				sqlQuery = fmt.Sprintf("ALTER TABLE %s %s %s", args.FqTableName, args.ColumnOp, colSQLPart)
 			}

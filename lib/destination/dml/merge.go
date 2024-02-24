@@ -37,13 +37,13 @@ type MergeArgument struct {
 		- Redshift is used to:
 			1) Using as part of the MergeStatementIndividual
 	*/
-	DestKind          constants.DestinationKind
-	SoftDelete        bool
-	UppercaseEscNames *bool
-
-	// These are only used for MergeStatementParts:
-	// If ContainsHardDeletes = false, then we won't issue a DELETE statement
+	DestKind   constants.DestinationKind
+	SoftDelete bool
+	// ContainsHardDeletes is only used for Redshift and MergeStatementParts,
+	// where we do not issue a DELETE statement if there are no hard deletes in the batch
 	ContainsHardDeletes bool
+
+	UppercaseEscNames *bool
 }
 
 func (m *MergeArgument) Valid() error {
@@ -79,6 +79,10 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		return nil, err
 	}
 
+	if m.DestKind != constants.Redshift {
+		return nil, fmt.Errorf("err - this is meant for redshift only")
+	}
+
 	// We should not need idempotency key for DELETE
 	// This is based on the assumption that the primary key would be atomically increasing or UUID based
 	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
@@ -104,9 +108,6 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 	})
 
 	if m.SoftDelete {
-		targetTable := fmt.Sprintf("%s as cc", m.FqTableName)
-		stagingTable := fmt.Sprintf("%s as c", m.SubQuery)
-
 		return []string{
 			// INSERT
 			fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
@@ -123,11 +124,11 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 				// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
 				m.PrimaryKeys[0].EscapedName()),
 			// UPDATE
-			fmt.Sprintf(`UPDATE %s SET %s FROM %s WHERE %s%s;`,
+			fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s;`,
 				// UPDATE table set col1 = cc. col1
-				targetTable, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
+				m.FqTableName, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
 				// FROM table (temp) WHERE join on PK(s)
-				stagingTable, strings.Join(equalitySQLParts, " and "), idempotentClause,
+				m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause,
 			),
 		}, nil
 	}

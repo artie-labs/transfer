@@ -207,7 +207,7 @@ func (t *TableData) ToFqName(kind constants.DestinationKind, escape bool, upperc
 			Escape:   escape,
 			DestKind: kind,
 		}))
-	case constants.MsSQL:
+	case constants.MSSQL:
 		return fmt.Sprintf("%s.%s", stringutil.Override(t.TopicConfig.Schema, opts.MsSQLSchemaOverride), t.Name(uppercaseEscNames, &sql.NameArgs{
 			Escape:   escape,
 			DestKind: kind,

@@ -98,7 +98,7 @@ type SharedTransferConfig struct {
 	TypingSettings typing.Settings `yaml:"typingSettings"`
 }
 
-type MsSQL struct {
+type MSSQL struct {
 	Host     string `yaml:"host"`
 	Port     int    `yaml:"port"`
 	Username string `yaml:"username"`
@@ -106,7 +106,7 @@ type MsSQL struct {
 	Database string `yaml:"database"`
 }
 
-func (m *MsSQL) DSN() string {
+func (m *MSSQL) DSN() string {
 	return fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s", m.Username, m.Password, m.Host, m.Port, m.Database)
 }
 
@@ -173,7 +173,7 @@ type Config struct {
 	SharedDestinationConfig SharedDestinationConfig `yaml:"sharedDestinationConfig"`
 
 	// Supported destinations
-	MsSQL     *MsSQL      `yaml:"mssql"`
+	MSSQL     *MSSQL      `yaml:"mssql"`
 	BigQuery  *BigQuery   `yaml:"bigquery"`
 	Snowflake *Snowflake  `yaml:"snowflake"`
 	Redshift  *Redshift   `yaml:"redshift"`

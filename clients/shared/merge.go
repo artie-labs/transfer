@@ -156,7 +156,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		}
 
 		return nil
-	} else if dwh.Label() == constants.MsSQL {
+	} else if dwh.Label() == constants.MSSQL {
 		mergeQuery, err := mergeArg.GetMSSQLStatement()
 		if err != nil {
 			return fmt.Errorf("failed to generate merge statement: %w", err)

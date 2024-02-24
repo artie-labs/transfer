@@ -120,7 +120,7 @@ const (
 	BigQuery  DestinationKind = "bigquery"
 	Redshift  DestinationKind = "redshift"
 	S3        DestinationKind = "s3"
-	MsSQL     DestinationKind = "mssql"
+	MSSQL     DestinationKind = "mssql"
 )
 
 var ValidDestinations = []DestinationKind{
@@ -128,7 +128,7 @@ var ValidDestinations = []DestinationKind{
 	Snowflake,
 	Redshift,
 	S3,
-	MsSQL,
+	MSSQL,
 	Test,
 }
 

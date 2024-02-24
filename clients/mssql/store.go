@@ -29,14 +29,11 @@ func (s *Store) Schema(tableData *optimization.TableData) string {
 }
 
 func (s *Store) Label() constants.DestinationKind {
-	return constants.MsSQL
+	return constants.MSSQL
 }
 
 func (s *Store) Merge(tableData *optimization.TableData) error {
-	return shared.Merge(s, tableData, s.config, types.MergeOpts{
-		// We are adding SELECT DISTINCT here for the temporary table as an extra guardrail.
-		// Redshift does not enforce any row uniqueness and there could be potential LOAD errors which will cause duplicate rows to arise.
-	})
+	return shared.Merge(s, tableData, s.config, types.MergeOpts{})
 }
 
 func (s *Store) Append(tableData *optimization.TableData) error {
@@ -50,6 +47,8 @@ func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape b
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+	// TODO: Figure out how to leave a comment.
+
 	const (
 		describeNameCol        = "column_name"
 		describeTypeCol        = "data_type"
@@ -89,7 +88,7 @@ func LoadStore(cfg config.Config, _store *db.Store) *Store {
 	}
 
 	return &Store{
-		Store:     db.Open("mssql", cfg.MsSQL.DSN()),
+		Store:     db.Open("mssql", cfg.MSSQL.DSN()),
 		configMap: &types.DwhToTablesConfigMap{},
 		config:    cfg,
 	}
