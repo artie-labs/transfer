@@ -37,7 +37,9 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 }
 
 func (s *Store) Append(tableData *optimization.TableData) error {
-	return nil
+	return shared.Append(s, tableData, s.config, types.AppendOpts{
+		TempTableName: s.ToFullyQualifiedName(tableData, true),
+	})
 }
 
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
