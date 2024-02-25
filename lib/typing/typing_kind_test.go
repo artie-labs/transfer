@@ -14,6 +14,10 @@ func Test_KindToDWHType(t *testing.T) {
 		expectedSnowflakeType string
 		expectedBigQueryType  string
 		expectedRedshiftType  string
+
+		// MSSQL is sensitive based on primary key
+		expectedMSSQLType   string
+		expectedMSSQLTypePk string
 	}
 
 	tcs := []_tc{
@@ -22,6 +26,8 @@ func Test_KindToDWHType(t *testing.T) {
 			expectedSnowflakeType: "string",
 			expectedBigQueryType:  "string",
 			expectedRedshiftType:  "VARCHAR(MAX)",
+			expectedMSSQLType:     "VARCHAR(MAX)",
+			expectedMSSQLTypePk:   "VARCHAR(900)",
 		},
 		{
 			kd: KindDetails{
@@ -31,12 +37,19 @@ func Test_KindToDWHType(t *testing.T) {
 			expectedSnowflakeType: "string",
 			expectedBigQueryType:  "string",
 			expectedRedshiftType:  "VARCHAR(12345)",
+			expectedMSSQLType:     "VARCHAR(12345)",
+			expectedMSSQLTypePk:   "VARCHAR(900)",
 		},
 	}
 
 	for idx, tc := range tcs {
-		assert.Equal(t, tc.expectedSnowflakeType, KindToDWHType(tc.kd, constants.Snowflake), idx)
-		assert.Equal(t, tc.expectedBigQueryType, KindToDWHType(tc.kd, constants.BigQuery), idx)
-		assert.Equal(t, tc.expectedRedshiftType, KindToDWHType(tc.kd, constants.Redshift), idx)
+		for _, isPk := range []bool{true, false} {
+			assert.Equal(t, tc.expectedSnowflakeType, KindToDWHType(tc.kd, constants.Snowflake, isPk), idx)
+			assert.Equal(t, tc.expectedBigQueryType, KindToDWHType(tc.kd, constants.BigQuery, isPk), idx)
+			assert.Equal(t, tc.expectedRedshiftType, KindToDWHType(tc.kd, constants.Redshift, isPk), idx)
+		}
+
+		assert.Equal(t, tc.expectedMSSQLType, KindToDWHType(tc.kd, constants.MSSQL, false), idx)
+		assert.Equal(t, tc.expectedMSSQLTypePk, KindToDWHType(tc.kd, constants.MSSQL, true), idx)
 	}
 }

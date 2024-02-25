@@ -69,7 +69,12 @@ func kindToMsSQL(kd KindDetails, isPk bool) string {
 		return "NVARCHAR(MAX)"
 	case String.Kind:
 		if kd.OptionalStringPrecision != nil {
-			return fmt.Sprintf("VARCHAR(%d)", *kd.OptionalStringPrecision)
+			precision := *kd.OptionalStringPrecision
+			if isPk {
+				precision = min(900, precision)
+			}
+
+			return fmt.Sprintf("VARCHAR(%d)", precision)
 		}
 
 		if isPk {

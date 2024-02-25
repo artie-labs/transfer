@@ -3,11 +3,12 @@ package mssql
 import (
 	"fmt"
 
+	mssql "github.com/microsoft/go-mssqldb"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
-	mssql "github.com/microsoft/go-mssqldb"
 )
 
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalSettings types.AdditionalSettings) error {

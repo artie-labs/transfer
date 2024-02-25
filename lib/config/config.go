@@ -98,18 +98,6 @@ type SharedTransferConfig struct {
 	TypingSettings typing.Settings `yaml:"typingSettings"`
 }
 
-type MSSQL struct {
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	Database string `yaml:"database"`
-}
-
-func (m *MSSQL) DSN() string {
-	return fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s", m.Username, m.Password, m.Host, m.Port, m.Database)
-}
-
 type Snowflake struct {
 	AccountID   string `yaml:"account"`
 	Username    string `yaml:"username"`
@@ -282,6 +270,10 @@ func (c Config) Validate() error {
 	}
 
 	switch c.Output {
+	case constants.MSSQL:
+		if err := c.ValidateMSSQL(); err != nil {
+			return err
+		}
 	case constants.Redshift:
 		if err := c.ValidateRedshift(); err != nil {
 			return err

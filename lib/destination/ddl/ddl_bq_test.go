@@ -154,8 +154,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, col.Name(false, &artieSQL.NameArgs{
 			Escape:   true,
 			DestKind: d.bigQueryStore.Label(),
-		}),
-			typing.KindToDWHType(kind, d.bigQueryStore.Label())), query)
+		}), typing.KindToDWHType(kind, d.bigQueryStore.Label(), false)), query)
 		callIdx += 1
 	}
 
@@ -215,7 +214,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, column.Name(false, &artieSQL.NameArgs{
 			Escape:   true,
 			DestKind: d.bigQueryStore.Label(),
-		}), typing.KindToDWHType(column.KindDetails, d.bigQueryStore.Label())), query)
+		}), typing.KindToDWHType(column.KindDetails, d.bigQueryStore.Label(), false)), query)
 		callIdx += 1
 	}
 

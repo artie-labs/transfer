@@ -49,7 +49,7 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 			Escape:   true,
 			DestKind: d.snowflakeStagesStore.Label(),
 		}),
-			typing.KindToDWHType(cols[i].KindDetails, d.snowflakeStagesStore.Label())), execQuery)
+			typing.KindToDWHType(cols[i].KindDetails, d.snowflakeStagesStore.Label(), false)), execQuery)
 	}
 
 	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecCallCount(), "called SFLK the same amt to create cols")
