@@ -176,7 +176,7 @@ func ParseValue(settings Settings, key string, optionalSchema map[string]KindDet
 	return Invalid
 }
 
-func KindToDWHType(kd KindDetails, dwh constants.DestinationKind) string {
+func KindToDWHType(kd KindDetails, dwh constants.DestinationKind, isPk bool) string {
 	switch dwh {
 	case constants.Snowflake:
 		return kindToSnowflake(kd)
@@ -185,7 +185,7 @@ func KindToDWHType(kd KindDetails, dwh constants.DestinationKind) string {
 	case constants.Redshift:
 		return kindToRedshift(kd)
 	case constants.MSSQL:
-		return kindToMsSQL(kd)
+		return kindToMsSQL(kd, isPk)
 	}
 
 	return ""

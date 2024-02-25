@@ -83,7 +83,7 @@ func parseValue(colVal interface{}, colKind columns.Column, additionalDateFmts [
 		return strconv.ParseBool(colValString)
 	case typing.EDecimal.Kind:
 		if val, isOk := colVal.(*decimal.Decimal); isOk {
-			return val.Value(), nil
+			return val.String(), nil
 		}
 
 		switch castedColVal := colVal.(type) {

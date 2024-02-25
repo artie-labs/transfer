@@ -10,11 +10,13 @@ func describeTableQuery(schema, rawTableName string) string {
 	return fmt.Sprintf(`
 SELECT 
     COLUMN_NAME, 
-    DATA_TYPE, 
-    CHARACTER_MAXIMUM_LENGTH, 
-    NUMERIC_PRECISION, 
-    NUMERIC_SCALE, 
-    IS_NULLABLE
+    CASE
+        WHEN DATA_TYPE = 'numeric' THEN
+		'numeric(' + COALESCE(CAST(NUMERIC_PRECISION AS VARCHAR), '') + ',' + COALESCE(CAST(NUMERIC_SCALE AS VARCHAR), '') + ')'
+		ELSE
+		DATA_TYPE
+	END AS DATA_TYPE,
+    CHARACTER_MAXIMUM_LENGTH
 FROM 
     INFORMATION_SCHEMA.COLUMNS
 WHERE 

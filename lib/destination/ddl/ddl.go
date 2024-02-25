@@ -107,7 +107,7 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 			colSQLPart := fmt.Sprintf(`%s %s`, col.Name(*args.UppercaseEscNames, &sql.NameArgs{
 				Escape:   true,
 				DestKind: args.Dwh.Label(),
-			}), typing.KindToDWHType(col.KindDetails, args.Dwh.Label()))
+			}), typing.KindToDWHType(col.KindDetails, args.Dwh.Label(), col.PrimaryKey()))
 
 			// TODO: Would it be beneficial to have this enabled for every DWH?
 			if args.Dwh.Label() == constants.MSSQL && col.PrimaryKey() {
