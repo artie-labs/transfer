@@ -185,7 +185,7 @@ func KindToDWHType(kd KindDetails, dwh constants.DestinationKind, isPk bool) str
 	case constants.Redshift:
 		return kindToRedshift(kd)
 	case constants.MSSQL:
-		return kindToMsSQL(kd, isPk)
+		return kindToMSSQL(kd, isPk)
 	}
 
 	return ""

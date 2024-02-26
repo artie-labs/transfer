@@ -8,7 +8,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func MsSQLTypeToKind(rawType string, stringPrecision string) KindDetails {
+func MSSQLTypeToKind(rawType string, stringPrecision string) KindDetails {
 	rawType = strings.ToLower(rawType)
 	if strings.HasPrefix(rawType, "numeric") {
 		return ParseNumeric(defaultPrefix, rawType)
@@ -61,7 +61,7 @@ func MsSQLTypeToKind(rawType string, stringPrecision string) KindDetails {
 	return Invalid
 }
 
-func kindToMsSQL(kd KindDetails, isPk bool) string {
+func kindToMSSQL(kd KindDetails, isPk bool) string {
 	// Primary keys cannot exceed 900 chars in length.
 	// https://learn.microsoft.com/en-us/sql/relational-databases/tables/primary-and-foreign-key-constraints?view=sql-server-ver16#PKeys
 	const maxVarCharLengthForPrimaryKey = 900
