@@ -23,7 +23,9 @@ func (s *Store) Sweep() error {
 	dbAndSchemaPairs := kafkalib.GetUniqueDatabaseAndSchema(tcs)
 	for _, dbAndSchemaPair := range dbAndSchemaPairs {
 		schema := getSchema(dbAndSchemaPair.Schema)
-		rows, err := s.Store.Query(sweepQuery(schema))
+
+		query, args := sweepQuery(schema)
+		rows, err := s.Store.Query(query, args...)
 		if err != nil {
 			return err
 		}

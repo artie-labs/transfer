@@ -1,13 +1,12 @@
 package mssql
 
 import (
-	"fmt"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
+	mssql "github.com/microsoft/go-mssqldb"
 )
 
-func describeTableQuery(schema, rawTableName string) string {
-	return fmt.Sprintf(`
+func describeTableQuery(schema, rawTableName string) (string, []any) {
+	return `
 SELECT 
     COLUMN_NAME, 
     CASE
@@ -20,15 +19,15 @@ SELECT
 FROM 
     INFORMATION_SCHEMA.COLUMNS
 WHERE 
-    LOWER(TABLE_NAME) = LOWER('%s') AND LOWER(TABLE_SCHEMA) = LOWER('%s');`, rawTableName, schema)
+    LOWER(TABLE_NAME) = LOWER(?) AND LOWER(TABLE_SCHEMA) = LOWER(?);`, []any{mssql.VarChar(rawTableName), mssql.VarChar(schema)}
 }
 
-func sweepQuery(schema string) string {
-	return fmt.Sprintf(`
+func sweepQuery(schema string) (string, []any) {
+	return `
 SELECT
 	TABLE_NAME
 FROM
 	INFORMATION_SCHEMA.TABLES
 WHERE
-	LOWER(TABLE_NAME) LIKE '%s' AND LOWER(TABLE_SCHEMA) = LOWER('%s')`, "%"+constants.ArtiePrefix+"%", schema)
+	LOWER(TABLE_NAME) LIKE ? AND LOWER(TABLE_SCHEMA) = LOWER(?)`, []any{mssql.VarChar("%" + constants.ArtiePrefix + "%"), mssql.VarChar(schema)}
 }

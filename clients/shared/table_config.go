@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,6 +20,7 @@ type GetTableCfgArgs struct {
 	FqName    string
 	ConfigMap *types.DwhToTablesConfigMap
 	Query     string
+	Args      []any
 	// Name of the column
 	ColumnNameLabel string
 	// Column type
@@ -46,7 +48,16 @@ func GetTableConfig(args GetTableCfgArgs) (*types.DwhTableConfig, error) {
 		return tableConfig, nil
 	}
 
-	rows, err := args.Dwh.Query(args.Query)
+	var rows *sql.Rows
+	var err error
+
+	// TODO: Get everyone to pass in args.
+	if len(args.Args) > 0 {
+		rows, err = args.Dwh.Query(args.Query, args.Args...)
+	} else {
+		rows, err = args.Dwh.Query(args.Query)
+	}
+
 	defer func() {
 		if rows != nil {
 			err = rows.Close()

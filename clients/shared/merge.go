@@ -83,9 +83,9 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 	}
 
 	defer func() {
-		if dropErr := ddl.DropTemporaryTable(dwh, temporaryTableName, false); dropErr != nil {
-			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableName))
-		}
+		//if dropErr := ddl.DropTemporaryTable(dwh, temporaryTableName, false); dropErr != nil {
+		//	slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableName))
+		//}
 	}()
 
 	// Now iterate over all the in-memory cols and see which ones require a backfill.

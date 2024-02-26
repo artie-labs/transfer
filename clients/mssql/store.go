@@ -60,11 +60,13 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		describeDescriptionCol = "description"
 	)
 
+	query, args := describeTableQuery(s.Schema(tableData), tableData.RawName())
 	return shared.GetTableConfig(shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             s.ToFullyQualifiedName(tableData, true),
 		ConfigMap:          s.configMap,
-		Query:              describeTableQuery(s.Schema(tableData), tableData.RawName()),
+		Query:              query,
+		Args:               args,
 		ColumnNameLabel:    describeNameCol,
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeDescriptionCol,
