@@ -10,11 +10,11 @@ import (
 
 func TestValidateMSSQL(t *testing.T) {
 	var cfg Config
-	assert.Error(t, cfg.ValidateMSSQL())
+	assert.ErrorContains(t, cfg.ValidateMSSQL(), "output is not mssql")
 	cfg.Output = constants.MSSQL
-	assert.Error(t, cfg.ValidateMSSQL())
+	assert.ErrorContains(t, cfg.ValidateMSSQL(), "mssql config is nil")
 	cfg.MSSQL = &MSSQL{}
-	assert.Error(t, cfg.ValidateMSSQL())
+	assert.ErrorContains(t, cfg.ValidateMSSQL(), "one of mssql settings is empty (host, username, password, database)")
 
 	cfg.MSSQL = &MSSQL{
 		Host:     "localhost",
