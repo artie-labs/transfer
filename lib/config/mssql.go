@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/stringutil"
@@ -16,7 +17,17 @@ type MSSQL struct {
 }
 
 func (m *MSSQL) DSN() string {
-	return fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s", m.Username, m.Password, m.Host, m.Port, m.Database)
+	query := url.Values{}
+	query.Add("database", m.Database)
+
+	u := &url.URL{
+		Scheme:   "sqlserver",
+		User:     url.UserPassword(m.Username, m.Password),
+		Host:     fmt.Sprintf("%s:%d", m.Host, m.Port),
+		RawQuery: query.Encode(),
+	}
+
+	return u.String()
 }
 
 func (c Config) ValidateMSSQL() error {
