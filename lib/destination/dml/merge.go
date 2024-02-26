@@ -309,6 +309,8 @@ func (m *MergeArgument) GetStatement() (string, error) {
 }
 
 func (m *MergeArgument) GetMSSQLStatement() (string, error) {
+	// TODO: Add tests
+
 	if err := m.Valid(); err != nil {
 		return "", err
 	}
@@ -330,6 +332,7 @@ func (m *MergeArgument) GetMSSQLStatement() (string, error) {
 		DestKind: m.DestKind,
 	})
 
+	// TODO: Should be consistent about uppercasing
 	if m.SoftDelete {
 		return fmt.Sprintf(`
 			MERGE INTO %s c using %s as cc on %s
