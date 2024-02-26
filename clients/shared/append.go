@@ -32,6 +32,7 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, cf
 	_, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
 		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt,
 		tableData.TopicConfig.IncludeDatabaseUpdatedAt, tableData.Mode())
+
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               dwh,
 		Tc:                tableConfig,
@@ -40,6 +41,7 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, cf
 		ColumnOp:          constants.Add,
 		CdcTime:           tableData.LatestCDCTs,
 		UppercaseEscNames: &cfg.SharedDestinationConfig.UppercaseEscapedNames,
+		Mode:              tableData.Mode(),
 	}
 
 	// Keys that exist in CDC stream, but not in DWH

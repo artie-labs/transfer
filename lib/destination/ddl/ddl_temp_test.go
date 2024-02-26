@@ -3,6 +3,8 @@ package ddl_test
 import (
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/ptr"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -19,6 +21,7 @@ func (d *DDLTestSuite) TestValidate_AlterTableArgs() {
 		ColumnOp:          constants.Delete,
 		CreateTable:       true,
 		UppercaseEscNames: ptr.ToBool(false),
+		Mode:              config.Replication,
 	}
 
 	assert.Contains(d.T(), a.Validate().Error(), "incompatible operation - cannot drop columns and create table at the same time")
@@ -42,6 +45,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 		ColumnOp:          constants.Add,
 		CdcTime:           time.Time{},
 		UppercaseEscNames: ptr.ToBool(false),
+		Mode:              config.Replication,
 	}
 
 	err := ddl.AlterTable(args)
@@ -76,6 +80,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 		ColumnOp:          constants.Add,
 		CdcTime:           time.Time{},
 		UppercaseEscNames: ptr.ToBool(false),
+		Mode:              config.Replication,
 	}
 
 	err := ddl.AlterTable(args, columns.NewColumn("foo", typing.String), columns.NewColumn("bar", typing.Float), columns.NewColumn("start", typing.String))

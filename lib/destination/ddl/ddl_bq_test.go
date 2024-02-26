@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/ptr"
 
 	artieSQL "github.com/artie-labs/transfer/lib/sql"
@@ -62,6 +64,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 			ContainOtherOperations: true,
 			CdcTime:                ts,
 			UppercaseEscNames:      ptr.ToBool(false),
+			Mode:                   config.Replication,
 		}
 
 		err := ddl.AlterTable(alterTableArgs, column)
@@ -85,6 +88,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 			ContainOtherOperations: true,
 			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
 			UppercaseEscNames:      ptr.ToBool(false),
+			Mode:                   config.Replication,
 		}
 
 		err := ddl.AlterTable(alterTableArgs, column)
@@ -144,6 +148,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 			ColumnOp:          constants.Add,
 			CdcTime:           ts,
 			UppercaseEscNames: ptr.ToBool(false),
+			Mode:              config.Replication,
 		}
 
 		col := columns.NewColumn(name, kind)
@@ -207,6 +212,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 			ColumnOp:          constants.Add,
 			CdcTime:           ts,
 			UppercaseEscNames: ptr.ToBool(false),
+			Mode:              config.Replication,
 		}
 		err := ddl.AlterTable(alterTableArgs, column)
 		assert.NoError(d.T(), err)
@@ -264,6 +270,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 			ColumnOp:          constants.Delete,
 			CdcTime:           ts,
 			UppercaseEscNames: ptr.ToBool(false),
+			Mode:              config.Replication,
 		}
 		err := ddl.AlterTable(alterTableArgs, column)
 		assert.NoError(d.T(), err)
@@ -282,6 +289,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 			ColumnOp:          constants.Delete,
 			CdcTime:           ts.Add(2 * constants.DeletionConfidencePadding),
 			UppercaseEscNames: ptr.ToBool(false),
+			Mode:              config.Replication,
 		}
 
 		err := ddl.AlterTable(alterTableArgs, column)

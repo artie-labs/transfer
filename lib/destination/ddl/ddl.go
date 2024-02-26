@@ -66,6 +66,10 @@ func (a *AlterTableArgs) Validate() error {
 		return fmt.Errorf("incompatible operation - cannot drop columns and create table at the same time")
 	}
 
+	if !(a.Mode == config.History || a.Mode == config.Replication) {
+		return fmt.Errorf("unexpected mode: %s", a.Mode.String())
+	}
+
 	// Temporary tables should only be created, not altered.
 	if a.TemporaryTable {
 		if !a.CreateTable {

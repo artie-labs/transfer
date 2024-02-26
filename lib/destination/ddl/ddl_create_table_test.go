@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/ptr"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -50,6 +52,7 @@ func (d *DDLTestSuite) Test_CreateTable() {
 			CreateTable:       dwhTc._tableConfig.CreateTable(),
 			ColumnOp:          constants.Add,
 			UppercaseEscNames: ptr.ToBool(false),
+			Mode:              config.Replication,
 		}
 
 		err := ddl.AlterTable(alterTableArgs, columns.NewColumn("name", typing.String))
@@ -117,6 +120,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 			ColumnOp:          constants.Add,
 			CdcTime:           time.Now().UTC(),
 			UppercaseEscNames: ptr.ToBool(false),
+			Mode:              config.Replication,
 		}
 
 		err := ddl.AlterTable(alterTableArgs, testCase.cols...)
