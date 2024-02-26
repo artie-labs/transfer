@@ -70,18 +70,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 	})
 }
 
-func LoadRedshift(cfg config.Config, _store *db.Store) *Store {
-	if _store != nil {
-		// Used for tests.
-		return &Store{
-			configMap:  &types.DwhToTablesConfigMap{},
-			skipLgCols: cfg.Redshift.SkipLgCols,
-			config:     cfg,
-
-			Store: *_store,
-		}
-	}
-
+func LoadRedshift(cfg config.Config) *Store {
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require",
 		cfg.Redshift.Host, cfg.Redshift.Port, cfg.Redshift.Username,
 		cfg.Redshift.Password, cfg.Redshift.Database)

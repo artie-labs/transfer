@@ -24,8 +24,8 @@ func (b *BigQueryTestSuite) SetupTest() {
 	}
 
 	b.fakeStore = &mocks.FakeStore{}
-	store := db.Store(b.fakeStore)
-	b.store = LoadBigQuery(cfg, &store)
+	b.store = LoadBigQuery(cfg)
+	b.store.Store = db.Store(b.fakeStore)
 }
 
 func TestBigQueryTestSuite(t *testing.T) {

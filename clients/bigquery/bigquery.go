@@ -148,18 +148,8 @@ func (s *Store) putTable(ctx context.Context, dataset, tableName string, rows []
 	return nil
 }
 
-func LoadBigQuery(cfg config.Config, _store *db.Store) *Store {
+func LoadBigQuery(cfg config.Config) *Store {
 	cfg.BigQuery.LoadDefaultValues()
-	if _store != nil {
-		// Used for tests.
-		return &Store{
-			Store: *_store,
-
-			configMap: &types.DwhToTablesConfigMap{},
-			config:    cfg,
-		}
-	}
-
 	if credPath := cfg.BigQuery.PathToCredentials; credPath != "" {
 		// If the credPath is set, let's set it into the env var.
 		slog.Debug("Writing the path to BQ credentials to env var for google auth")
