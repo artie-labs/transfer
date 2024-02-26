@@ -110,7 +110,7 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 			}), typing.KindToDWHType(col.KindDetails, args.Dwh.Label(), col.PrimaryKey()))
 
 			// TODO: Would it be beneficial to have this enabled for every DWH?
-			if args.Dwh.Label() == constants.MSSQL && col.PrimaryKey() {
+			if col.PrimaryKey() && args.Dwh.Label() == constants.MSSQL {
 				colSQLPart += " PRIMARY KEY"
 			}
 
@@ -130,7 +130,6 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 			expiryString := typing.ExpiresDate(time.Now().UTC().Add(TempTableTTL))
 			switch args.Dwh.Label() {
 			case constants.MSSQL:
-				// TODO: How do we deal with idempotency
 				sqlQuery = fmt.Sprintf("CREATE TABLE %s (%s);", args.FqTableName, strings.Join(colSQLParts, ","))
 			case constants.Redshift:
 				sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", args.FqTableName, strings.Join(colSQLParts, ","))
@@ -151,10 +150,11 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 				return fmt.Errorf("unexpected dwh: %v trying to create a temporary table", args.Dwh.Label())
 			}
 		} else {
-			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
 			if args.Dwh.Label() == constants.MSSQL {
 				// MSSQL doesn't support IF NOT EXISTS
 				sqlQuery = fmt.Sprintf("CREATE TABLE %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
+			} else {
+				sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
 			}
 		}
 
@@ -167,10 +167,12 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 		}
 	} else {
 		for _, colSQLPart := range colSQLParts {
-			sqlQuery := fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", args.FqTableName, args.ColumnOp, colSQLPart)
+			var sqlQuery string
 			if args.Dwh.Label() == constants.MSSQL {
 				// MSSQL doesn't support the COLUMN keyword
 				sqlQuery = fmt.Sprintf("ALTER TABLE %s %s %s", args.FqTableName, args.ColumnOp, colSQLPart)
+			} else {
+				sqlQuery = fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", args.FqTableName, args.ColumnOp, colSQLPart)
 			}
 
 			slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
