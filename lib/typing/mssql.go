@@ -91,6 +91,7 @@ func kindToMsSQL(kd KindDetails, isPk bool) string {
 	case ETime.Kind:
 		switch kd.ExtendedTimeDetails.Type {
 		case ext.DateTimeKindType:
+			// Using datetime2 because it's the recommendation, and it provides more precision: https://stackoverflow.com/a/1884088
 			return "datetime2"
 		case ext.DateKindType:
 			return "date"
