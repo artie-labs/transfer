@@ -43,6 +43,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		ColumnOp:          constants.Add,
 		CdcTime:           tableData.LatestCDCTs,
 		UppercaseEscNames: &cfg.SharedDestinationConfig.UppercaseEscapedNames,
+		Mode:              tableData.Mode(),
 	}
 
 	// Columns that are missing in DWH, but exist in our CDC stream.
@@ -62,6 +63,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		ContainOtherOperations: tableData.ContainOtherOperations(),
 		CdcTime:                tableData.LatestCDCTs,
 		UppercaseEscNames:      &cfg.SharedDestinationConfig.UppercaseEscapedNames,
+		Mode:                   tableData.Mode(),
 	}
 
 	if err = ddl.AlterTable(deleteAlterTableArgs, srcKeysMissing...); err != nil {

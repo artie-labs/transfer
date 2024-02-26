@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -53,6 +55,7 @@ type AlterTableArgs struct {
 	UppercaseEscNames      *bool
 
 	ColumnOp constants.ColumnOperation
+	Mode     config.Mode
 
 	CdcTime time.Time
 }
@@ -89,6 +92,7 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 	var mutateCol []columns.Column
 	// It's okay to combine since args.ColumnOp only takes one of: `Delete` or `Add`
 	var colSQLParts []string
+	var pkCols []string
 	for _, col := range cols {
 		if col.ShouldSkip() {
 			// Let's not modify the table if the column kind is invalid
@@ -104,23 +108,28 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 		mutateCol = append(mutateCol, col)
 		switch args.ColumnOp {
 		case constants.Add:
-			colSQLPart := fmt.Sprintf(`%s %s`, col.Name(*args.UppercaseEscNames, &sql.NameArgs{
+			colName := col.Name(*args.UppercaseEscNames, &sql.NameArgs{
 				Escape:   true,
 				DestKind: args.Dwh.Label(),
-			}), typing.KindToDWHType(col.KindDetails, args.Dwh.Label(), col.PrimaryKey()))
+			})
 
-			// TODO: Would it be beneficial to have this enabled for every DWH?
-			if col.PrimaryKey() && args.Dwh.Label() == constants.MSSQL {
-				colSQLPart += " PRIMARY KEY"
+			// TODO: Enable this for all DWHs.
+			if col.PrimaryKey() && args.Mode != config.History && args.Dwh.Label() == constants.MSSQL {
+				// Don't create a PK for history mode because it's append-only, so the primary key should not be enforced.
+				pkCols = append(pkCols, colName)
 			}
 
-			colSQLParts = append(colSQLParts, colSQLPart)
+			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, colName, typing.KindToDWHType(col.KindDetails, args.Dwh.Label(), col.PrimaryKey())))
 		case constants.Delete:
 			colSQLParts = append(colSQLParts, col.Name(*args.UppercaseEscNames, &sql.NameArgs{
 				Escape:   true,
 				DestKind: args.Dwh.Label(),
 			}))
 		}
+	}
+
+	if len(pkCols) > 0 {
+		colSQLParts = append(colSQLParts, fmt.Sprintf("PRIMARY KEY (%s)", strings.Join(pkCols, ", ")))
 	}
 
 	var err error

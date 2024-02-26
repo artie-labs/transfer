@@ -23,6 +23,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 			TemporaryTable:    true,
 			ColumnOp:          constants.Add,
 			UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
+			Mode:              tableData.Mode(),
 		}
 
 		if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
@@ -35,7 +36,11 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
-	defer tx.Rollback()
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
 
 	columns := tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil)
 	stmt, err := tx.Prepare(mssql.CopyIn(tempTableName, mssql.BulkOptions{}, columns...))
@@ -46,7 +51,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	defer stmt.Close()
 
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
-	for _, value := range tableData.RowsData() {
+	for _, value := range tableData.Rows() {
 		var row []any
 		for _, col := range columns {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
