@@ -73,16 +73,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 	})
 }
 
-func LoadStore(cfg config.Config, _store *db.Store) *Store {
-	if _store != nil {
-		// Used for tests.
-		return &Store{
-			Store:     *_store,
-			configMap: &types.DwhToTablesConfigMap{},
-			config:    cfg,
-		}
-	}
-
+func LoadStore(cfg config.Config) *Store {
 	return &Store{
 		Store:     db.Open("mssql", cfg.MSSQL.DSN()),
 		configMap: &types.DwhToTablesConfigMap{},
