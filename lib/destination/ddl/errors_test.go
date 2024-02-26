@@ -41,6 +41,11 @@ func (d *DDLTestSuite) TestColumnAlreadyExistErr() {
 			kind:           constants.MSSQL,
 			expectedResult: true,
 		},
+		{
+			name: "MSSQL, random error",
+			err:  fmt.Errorf("hello there qux"),
+			kind: constants.MSSQL,
+		},
 	}
 
 	for _, tc := range testCases {

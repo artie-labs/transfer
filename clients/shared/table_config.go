@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -48,16 +47,8 @@ func GetTableConfig(args GetTableCfgArgs) (*types.DwhTableConfig, error) {
 		return tableConfig, nil
 	}
 
-	var rows *sql.Rows
-	var err error
-
 	// TODO: Get everyone to pass in args.
-	if len(args.Args) > 0 {
-		rows, err = args.Dwh.Query(args.Query, args.Args...)
-	} else {
-		rows, err = args.Dwh.Query(args.Query)
-	}
-
+	rows, err := args.Dwh.Query(args.Query, args.Args...)
 	defer func() {
 		if rows != nil {
 			err = rows.Close()

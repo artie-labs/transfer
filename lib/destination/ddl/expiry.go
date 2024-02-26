@@ -2,6 +2,7 @@ package ddl
 
 import (
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -47,6 +48,7 @@ func shouldDeleteUnix(unixString string) bool {
 	// TODO: Migrate everyone to use shouldDeleteUnix so we don't need to parse comments.
 	unix, err := strconv.Atoi(unixString)
 	if err != nil {
+		slog.Warn("Failed to parse unix string", slog.Any("err", err), slog.String("unixString", unixString))
 		return false
 	}
 

@@ -36,8 +36,9 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
+	var txCommitted bool
 	defer func() {
-		if err != nil {
+		if !txCommitted {
 			tx.Rollback()
 		}
 	}()
@@ -76,5 +77,6 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
+	txCommitted = true
 	return nil
 }
