@@ -43,6 +43,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		ColumnOp:          constants.Add,
 		CdcTime:           tableData.LatestCDCTs,
 		UppercaseEscNames: &cfg.SharedDestinationConfig.UppercaseEscapedNames,
+		Mode:              tableData.Mode(),
 	}
 
 	// Columns that are missing in DWH, but exist in our CDC stream.
@@ -62,6 +63,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		ContainOtherOperations: tableData.ContainOtherOperations(),
 		CdcTime:                tableData.LatestCDCTs,
 		UppercaseEscNames:      &cfg.SharedDestinationConfig.UppercaseEscapedNames,
+		Mode:                   tableData.Mode(),
 	}
 
 	if err = ddl.AlterTable(deleteAlterTableArgs, srcKeysMissing...); err != nil {
@@ -72,6 +74,12 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
 	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 	temporaryTableName := fmt.Sprintf("%s_%s", dwh.ToFullyQualifiedName(tableData, false), tableData.TempTableSuffix())
+
+	// TODO: Every DWH should also use a suffix like this for temporary tables so we don't have to rely on comments
+	if dwh.Label() == constants.MSSQL {
+		temporaryTableName += fmt.Sprintf("_%d", time.Now().Add(ddl.TempTableTTL).Unix())
+	}
+
 	if err = dwh.PrepareTemporaryTable(tableData, tableConfig, temporaryTableName, types.AdditionalSettings{}); err != nil {
 		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
@@ -156,6 +164,15 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		}
 
 		return nil
+	} else if dwh.Label() == constants.MSSQL {
+		mergeQuery, err := mergeArg.GetMSSQLStatement()
+		if err != nil {
+			return fmt.Errorf("failed to generate merge statement: %w", err)
+		}
+
+		slog.Debug("Executing...", slog.String("query", mergeQuery))
+		_, err = dwh.Exec(mergeQuery)
+		return err
 	} else {
 		mergeQuery, err := mergeArg.GetStatement()
 		if err != nil {

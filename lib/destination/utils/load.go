@@ -4,6 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/artie-labs/transfer/clients/bigquery"
+	"github.com/artie-labs/transfer/clients/mssql"
 	"github.com/artie-labs/transfer/clients/redshift"
 	"github.com/artie-labs/transfer/clients/s3"
 	"github.com/artie-labs/transfer/clients/snowflake"
@@ -56,6 +57,12 @@ func DataWarehouse(cfg config.Config, store *db.Store) destination.DataWarehouse
 		return s
 	case constants.BigQuery:
 		return bigquery.LoadBigQuery(cfg, store)
+	case constants.MSSQL:
+		s := mssql.LoadStore(cfg)
+		if err := s.Sweep(); err != nil {
+			logger.Panic("Failed to clean up mssql", slog.Any("err", err))
+		}
+		return s
 	case constants.Redshift:
 		s := redshift.LoadRedshift(cfg, store)
 		if err := s.Sweep(); err != nil {
@@ -65,6 +72,5 @@ func DataWarehouse(cfg config.Config, store *db.Store) destination.DataWarehouse
 	}
 
 	logger.Panic("No valid output sources specified", slog.Any("source", cfg.Output))
-
 	return nil
 }

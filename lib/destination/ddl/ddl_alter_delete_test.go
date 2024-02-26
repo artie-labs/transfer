@@ -64,6 +64,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
 			UppercaseEscNames:      ptr.ToBool(false),
+			Mode:                   config.Replication,
 		}
 
 		err := ddl.AlterTable(alterTableArgs, column)
@@ -85,6 +86,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
 			UppercaseEscNames:      ptr.ToBool(false),
+			Mode:                   config.Replication,
 		}
 
 		err := ddl.AlterTable(alterTableArgs, column)
@@ -106,6 +108,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
 			UppercaseEscNames:      ptr.ToBool(false),
+			Mode:                   config.Replication,
 		}
 
 		err := ddl.AlterTable(alterTableArgs, column)
@@ -141,6 +144,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
 			UppercaseEscNames:      ptr.ToBool(false),
+			Mode:                   config.Replication,
 		}
 
 		err := ddl.AlterTable(alterTableArgs, column)
@@ -162,6 +166,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
 			UppercaseEscNames:      ptr.ToBool(false),
+			Mode:                   config.Replication,
 		}
 
 		err := ddl.AlterTable(alterTableArgs, column)
@@ -183,6 +188,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
 			UppercaseEscNames:      ptr.ToBool(false),
+			Mode:                   config.Replication,
 		}
 
 		err := ddl.AlterTable(alterTableArgs, column)
@@ -220,6 +226,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
 			UppercaseEscNames:      ptr.ToBool(false),
+			Mode:                   config.Replication,
 		}
 
 		err := ddl.AlterTable(alterTableArgs, column)
@@ -237,6 +244,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
 			UppercaseEscNames:      ptr.ToBool(false),
+			Mode:                   config.Replication,
 		}
 
 		err := ddl.AlterTable(alterTableArgs, column)
@@ -254,6 +262,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
 			UppercaseEscNames:      ptr.ToBool(false),
+			Mode:                   config.Replication,
 		}
 
 		err := ddl.AlterTable(alterTableArgs, column)
@@ -279,6 +288,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
 			UppercaseEscNames:      ptr.ToBool(false),
+			Mode:                   config.Replication,
 		}
 
 		err := ddl.AlterTable(alterTableArgs, column)
@@ -294,6 +304,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
 			UppercaseEscNames:      ptr.ToBool(false),
+			Mode:                   config.Replication,
 		}
 
 		err = ddl.AlterTable(alterTableArgs, column)
@@ -309,6 +320,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
 			UppercaseEscNames:      ptr.ToBool(false),
+			Mode:                   config.Replication,
 		}
 
 		err = ddl.AlterTable(alterTableArgs, column)

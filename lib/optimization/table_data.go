@@ -188,7 +188,8 @@ func (t *TableData) RowsData() map[string]map[string]interface{} {
 }
 
 type FqNameOpts struct {
-	BigQueryProjectID string
+	BigQueryProjectID   string
+	MsSQLSchemaOverride string
 }
 
 func (t *TableData) ToFqName(kind constants.DestinationKind, escape bool, uppercaseEscNames bool, opts FqNameOpts) string {
@@ -203,6 +204,11 @@ func (t *TableData) ToFqName(kind constants.DestinationKind, escape bool, upperc
 		// Redshift is Postgres compatible, so when establishing a connection, we'll specify a database.
 		// Thus, we only need to specify schema and table name here.
 		return fmt.Sprintf("%s.%s", t.TopicConfig.Schema, t.Name(uppercaseEscNames, &sql.NameArgs{
+			Escape:   escape,
+			DestKind: kind,
+		}))
+	case constants.MSSQL:
+		return fmt.Sprintf("%s.%s", stringutil.Override(t.TopicConfig.Schema, opts.MsSQLSchemaOverride), t.Name(uppercaseEscNames, &sql.NameArgs{
 			Escape:   escape,
 			DestKind: kind,
 		}))
@@ -316,8 +322,8 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) {
 				// Note: If our in-memory column is `Invalid`, it would get skipped during merge. However, if the column exists in
 				// the destination, we'll copy the type over. This is to make sure we don't miss batch updates where the whole column in the batch is NULL.
 				inMemoryCol.KindDetails.Kind = foundColumn.KindDetails.Kind
-				if foundColumn.KindDetails.OptionalRedshiftStrPrecision != nil {
-					inMemoryCol.KindDetails.OptionalRedshiftStrPrecision = foundColumn.KindDetails.OptionalRedshiftStrPrecision
+				if foundColumn.KindDetails.OptionalStringPrecision != nil {
+					inMemoryCol.KindDetails.OptionalStringPrecision = foundColumn.KindDetails.OptionalStringPrecision
 				}
 			}
 

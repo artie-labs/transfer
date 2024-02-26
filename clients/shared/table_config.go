@@ -19,6 +19,7 @@ type GetTableCfgArgs struct {
 	FqName    string
 	ConfigMap *types.DwhToTablesConfigMap
 	Query     string
+	Args      []any
 	// Name of the column
 	ColumnNameLabel string
 	// Column type
@@ -46,7 +47,8 @@ func GetTableConfig(args GetTableCfgArgs) (*types.DwhTableConfig, error) {
 		return tableConfig, nil
 	}
 
-	rows, err := args.Dwh.Query(args.Query)
+	// TODO: Get everyone to pass in args.
+	rows, err := args.Dwh.Query(args.Query, args.Args...)
 	defer func() {
 		if rows != nil {
 			err = rows.Close()
@@ -113,6 +115,8 @@ func GetTableConfig(args GetTableCfgArgs) (*types.DwhTableConfig, error) {
 			kd = typing.BigQueryTypeToKind(row[args.ColumnTypeLabel])
 		case constants.Redshift:
 			kd = typing.RedshiftTypeToKind(row[args.ColumnTypeLabel], row[constants.StrPrecisionCol])
+		case constants.MSSQL:
+			kd = typing.MSSQLTypeToKind(row[args.ColumnTypeLabel], row[constants.StrPrecisionCol])
 		default:
 			return nil, fmt.Errorf("unexpected dwh kind, label: %v", args.Dwh.Label())
 		}

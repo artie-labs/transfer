@@ -47,6 +47,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 			TemporaryTable:    true,
 			ColumnOp:          constants.Add,
 			UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
+			Mode:              tableData.Mode(),
 		}
 
 		if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {

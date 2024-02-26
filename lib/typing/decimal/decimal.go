@@ -72,6 +72,12 @@ func (d *Decimal) SnowflakeKind() string {
 	return d.toKind(MaxPrecisionBeforeString, "STRING")
 }
 
+// MsSQLKind - Has the same limitation as Redshift
+// Spec: https://learn.microsoft.com/en-us/sql/t-sql/data-types/decimal-and-numeric-transact-sql?view=sql-server-ver16#arguments
+func (d *Decimal) MsSQLKind() string {
+	return d.toKind(MaxPrecisionBeforeString, "TEXT")
+}
+
 // RedshiftKind - is used to determine whether a NUMERIC data type should be a TEXT or NUMERIC(p, s).
 func (d *Decimal) RedshiftKind() string {
 	return d.toKind(MaxPrecisionBeforeString, "TEXT")

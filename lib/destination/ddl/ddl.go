@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -53,6 +55,7 @@ type AlterTableArgs struct {
 	UppercaseEscNames      *bool
 
 	ColumnOp constants.ColumnOperation
+	Mode     config.Mode
 
 	CdcTime time.Time
 }
@@ -61,6 +64,10 @@ func (a *AlterTableArgs) Validate() error {
 	// You can't DROP a column and try to create a table at the same time.
 	if a.ColumnOp == constants.Delete && a.CreateTable {
 		return fmt.Errorf("incompatible operation - cannot drop columns and create table at the same time")
+	}
+
+	if !(a.Mode == config.History || a.Mode == config.Replication) {
+		return fmt.Errorf("unexpected mode: %s", a.Mode.String())
 	}
 
 	// Temporary tables should only be created, not altered.
@@ -89,6 +96,7 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 	var mutateCol []columns.Column
 	// It's okay to combine since args.ColumnOp only takes one of: `Delete` or `Add`
 	var colSQLParts []string
+	var pkCols []string
 	for _, col := range cols {
 		if col.ShouldSkip() {
 			// Let's not modify the table if the column kind is invalid
@@ -104,10 +112,18 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 		mutateCol = append(mutateCol, col)
 		switch args.ColumnOp {
 		case constants.Add:
-			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, col.Name(*args.UppercaseEscNames, &sql.NameArgs{
+			colName := col.Name(*args.UppercaseEscNames, &sql.NameArgs{
 				Escape:   true,
 				DestKind: args.Dwh.Label(),
-			}), typing.KindToDWHType(col.KindDetails, args.Dwh.Label())))
+			})
+
+			// TODO: Enable this for all DWHs.
+			if col.PrimaryKey() && args.Mode != config.History && args.Dwh.Label() == constants.MSSQL {
+				// Don't create a PK for history mode because it's append-only, so the primary key should not be enforced.
+				pkCols = append(pkCols, colName)
+			}
+
+			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, colName, typing.KindToDWHType(col.KindDetails, args.Dwh.Label(), col.PrimaryKey())))
 		case constants.Delete:
 			colSQLParts = append(colSQLParts, col.Name(*args.UppercaseEscNames, &sql.NameArgs{
 				Escape:   true,
@@ -116,12 +132,18 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 		}
 	}
 
+	if len(pkCols) > 0 {
+		colSQLParts = append(colSQLParts, fmt.Sprintf("PRIMARY KEY (%s)", strings.Join(pkCols, ", ")))
+	}
+
 	var err error
 	if args.CreateTable {
 		var sqlQuery string
 		if args.TemporaryTable {
 			expiryString := typing.ExpiresDate(time.Now().UTC().Add(TempTableTTL))
 			switch args.Dwh.Label() {
+			case constants.MSSQL:
+				sqlQuery = fmt.Sprintf("CREATE TABLE %s (%s);", args.FqTableName, strings.Join(colSQLParts, ","))
 			case constants.Redshift:
 				sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", args.FqTableName, strings.Join(colSQLParts, ","))
 			case constants.BigQuery:
@@ -141,7 +163,12 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 				return fmt.Errorf("unexpected dwh: %v trying to create a temporary table", args.Dwh.Label())
 			}
 		} else {
-			sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
+			if args.Dwh.Label() == constants.MSSQL {
+				// MSSQL doesn't support IF NOT EXISTS
+				sqlQuery = fmt.Sprintf("CREATE TABLE %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
+			} else {
+				sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", args.FqTableName, strings.Join(colSQLParts, ","))
+			}
 		}
 
 		slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
@@ -153,7 +180,14 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 		}
 	} else {
 		for _, colSQLPart := range colSQLParts {
-			sqlQuery := fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", args.FqTableName, args.ColumnOp, colSQLPart)
+			var sqlQuery string
+			if args.Dwh.Label() == constants.MSSQL {
+				// MSSQL doesn't support the COLUMN keyword
+				sqlQuery = fmt.Sprintf("ALTER TABLE %s %s %s", args.FqTableName, args.ColumnOp, colSQLPart)
+			} else {
+				sqlQuery = fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", args.FqTableName, args.ColumnOp, colSQLPart)
+			}
+
 			slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
 			_, err = args.Dwh.Exec(sqlQuery)
 			if ColumnAlreadyExistErr(err, args.Dwh.Label()) {

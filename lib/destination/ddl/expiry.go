@@ -2,6 +2,8 @@ package ddl
 
 import (
 	"fmt"
+	"log/slog"
+	"strconv"
 	"strings"
 	"time"
 
@@ -31,4 +33,25 @@ func ShouldDelete(comment string) (shouldDelete bool) {
 	}
 
 	return false
+}
+
+func ShouldDeleteFromName(name string) bool {
+	nameParts := strings.Split(name, "_")
+	if len(nameParts) < 2 {
+		return false
+	}
+
+	return shouldDeleteUnix(nameParts[len(nameParts)-1])
+}
+
+func shouldDeleteUnix(unixString string) bool {
+	// TODO: Migrate everyone to use shouldDeleteUnix so we don't need to parse comments.
+	unix, err := strconv.Atoi(unixString)
+	if err != nil {
+		slog.Warn("Failed to parse unix string", slog.Any("err", err), slog.String("unixString", unixString))
+		return false
+	}
+
+	ts := time.Unix(int64(unix), 0)
+	return time.Now().UTC().After(ts)
 }

@@ -25,7 +25,7 @@ type KindDetails struct {
 	ExtendedDecimalDetails *decimal.Decimal
 
 	// Optional kind details metadata
-	OptionalRedshiftStrPrecision *int
+	OptionalStringPrecision *int
 }
 
 // Summarized this from Snowflake + Reflect.
@@ -176,7 +176,7 @@ func ParseValue(settings Settings, key string, optionalSchema map[string]KindDet
 	return Invalid
 }
 
-func KindToDWHType(kd KindDetails, dwh constants.DestinationKind) string {
+func KindToDWHType(kd KindDetails, dwh constants.DestinationKind, isPk bool) string {
 	switch dwh {
 	case constants.Snowflake:
 		return kindToSnowflake(kd)
@@ -184,6 +184,8 @@ func KindToDWHType(kd KindDetails, dwh constants.DestinationKind) string {
 		return kindToBigQuery(kd)
 	case constants.Redshift:
 		return kindToRedshift(kd)
+	case constants.MSSQL:
+		return kindToMSSQL(kd, isPk)
 	}
 
 	return ""

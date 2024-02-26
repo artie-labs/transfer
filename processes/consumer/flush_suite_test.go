@@ -39,6 +39,7 @@ func (f *FlushTestSuite) SetupTest() {
 	tc.Load()
 
 	f.cfg = config.Config{
+		Mode: config.Replication,
 		Kafka: &config.Kafka{
 			BootstrapServer: "foo",
 			GroupID:         "bar",

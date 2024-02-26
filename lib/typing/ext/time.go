@@ -82,6 +82,10 @@ func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat 
 	}, nil
 }
 
+func (e *ExtendedTime) GetTime() time.Time {
+	return e.Time
+}
+
 func (e *ExtendedTime) String(overrideFormat string) string {
 	if overrideFormat != "" {
 		return e.Time.Format(overrideFormat)

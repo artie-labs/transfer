@@ -161,6 +161,7 @@ type Config struct {
 	SharedDestinationConfig SharedDestinationConfig `yaml:"sharedDestinationConfig"`
 
 	// Supported destinations
+	MSSQL     *MSSQL      `yaml:"mssql"`
 	BigQuery  *BigQuery   `yaml:"bigquery"`
 	Snowflake *Snowflake  `yaml:"snowflake"`
 	Redshift  *Redshift   `yaml:"redshift"`
@@ -269,6 +270,10 @@ func (c Config) Validate() error {
 	}
 
 	switch c.Output {
+	case constants.MSSQL:
+		if err := c.ValidateMSSQL(); err != nil {
+			return err
+		}
 	case constants.Redshift:
 		if err := c.ValidateRedshift(); err != nil {
 			return err

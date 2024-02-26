@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/ptr"
 
 	"github.com/artie-labs/transfer/lib/sql"
@@ -39,6 +41,7 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 		ColumnOp:          constants.Add,
 		CdcTime:           time.Now().UTC(),
 		UppercaseEscNames: ptr.ToBool(false),
+		Mode:              config.Replication,
 	}
 
 	err := ddl.AlterTable(alterTableArgs, cols...)
@@ -49,7 +52,7 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 			Escape:   true,
 			DestKind: d.snowflakeStagesStore.Label(),
 		}),
-			typing.KindToDWHType(cols[i].KindDetails, d.snowflakeStagesStore.Label())), execQuery)
+			typing.KindToDWHType(cols[i].KindDetails, d.snowflakeStagesStore.Label(), false)), execQuery)
 	}
 
 	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecCallCount(), "called SFLK the same amt to create cols")
@@ -76,6 +79,7 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 		ColumnOp:          constants.Add,
 		CdcTime:           time.Now().UTC(),
 		UppercaseEscNames: ptr.ToBool(false),
+		Mode:              config.Replication,
 	}
 
 	err := ddl.AlterTable(alterTableArgs, cols...)
@@ -107,6 +111,7 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 		ColumnOp:          constants.Add,
 		CdcTime:           time.Now().UTC(),
 		UppercaseEscNames: ptr.ToBool(false),
+		Mode:              config.Replication,
 	}
 	err := ddl.AlterTable(alterTableArgs, cols...)
 	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecCallCount(), "called SFLK the same amt to create cols")
@@ -149,6 +154,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 		ColumnOp:               constants.Delete,
 		CdcTime:                time.Now().UTC(),
 		UppercaseEscNames:      ptr.ToBool(false),
+		Mode:                   config.Replication,
 	}
 	err := ddl.AlterTable(alterTableArgs, cols...)
 	assert.Equal(d.T(), 0, d.fakeSnowflakeStagesStore.ExecCallCount(), "tried to delete, but not yet.")
@@ -214,6 +220,7 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 		ContainOtherOperations: true,
 		CdcTime:                time.Now(),
 		UppercaseEscNames:      ptr.ToBool(false),
+		Mode:                   config.Replication,
 	}
 	err := ddl.AlterTable(alterTableArgs, cols...)
 	assert.Equal(d.T(), 3, d.fakeSnowflakeStagesStore.ExecCallCount(), "tried to delete, but not yet.")

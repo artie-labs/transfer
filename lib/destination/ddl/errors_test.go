@@ -29,6 +29,23 @@ func (d *DDLTestSuite) TestColumnAlreadyExistErr() {
 			err:  fmt.Errorf("foo"),
 			kind: constants.Redshift,
 		},
+		{
+			name:           "MSSQL, table already exist error",
+			err:            fmt.Errorf(`There is already an object named 'customers' in the database.`),
+			kind:           constants.MSSQL,
+			expectedResult: true,
+		},
+		{
+			name:           "MSSQL, column already exists error",
+			err:            fmt.Errorf("Column names in each table must be unique. Column name 'first_name' in table 'users' is specified more than once."),
+			kind:           constants.MSSQL,
+			expectedResult: true,
+		},
+		{
+			name: "MSSQL, random error",
+			err:  fmt.Errorf("hello there qux"),
+			kind: constants.MSSQL,
+		},
 	}
 
 	for _, tc := range testCases {

@@ -147,6 +147,7 @@ func TestNewTableData_TableName(t *testing.T) {
 		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: testCase.db, Schema: testCase.schema}, testCase.tableName)
 		assert.Equal(t, testCase.expectedName, td.RawName(), testCase.name)
 		assert.Equal(t, testCase.expectedName, td.name, testCase.name)
+
 		assert.Equal(t, testCase.expectedSnowflakeFqName, td.ToFqName(constants.Snowflake, true, false, FqNameOpts{}), testCase.name)
 		assert.Equal(t, testCase.expectedBigQueryFqName, td.ToFqName(constants.BigQuery, true, false, FqNameOpts{BigQueryProjectID: bqProjectID}), testCase.name)
 		assert.Equal(t, testCase.expectedBigQueryFqName, td.ToFqName(constants.BigQuery, true, false, FqNameOpts{BigQueryProjectID: bqProjectID}), testCase.name)
