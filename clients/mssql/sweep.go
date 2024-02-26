@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
-	"strings"
 
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 
@@ -39,13 +38,7 @@ func (s *Store) Sweep() error {
 				return err
 			}
 
-			// TODO: Test
-			tableNameParts := strings.Split(tableName, "_")
-			if len(tableNameParts) < 2 {
-				continue
-			}
-
-			if ddl.ShouldDeleteUnix(tableNameParts[len(tableNameParts)-1]) {
+			if ddl.ShouldDeleteFromName(tableName) {
 				if err = ddl.DropTemporaryTable(s, fmt.Sprintf("%s.%s", schema, tableName), true); err != nil {
 					return err
 				}

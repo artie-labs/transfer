@@ -34,7 +34,17 @@ func ShouldDelete(comment string) (shouldDelete bool) {
 	return false
 }
 
-func ShouldDeleteUnix(unixString string) bool {
+func ShouldDeleteFromName(name string) bool {
+	nameParts := strings.Split(name, "_")
+	if len(nameParts) < 2 {
+		return false
+	}
+
+	return shouldDeleteUnix(nameParts[len(nameParts)-1])
+}
+
+func shouldDeleteUnix(unixString string) bool {
+	// TODO: Migrate everyone to use shouldDeleteUnix so we don't need to parse comments.
 	unix, err := strconv.Atoi(unixString)
 	if err != nil {
 		return false
