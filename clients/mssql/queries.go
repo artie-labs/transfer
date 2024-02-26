@@ -25,9 +25,9 @@ WHERE
 func sweepQuery(schema string) (string, []any) {
 	return `
 SELECT
-	TABLE_NAME
+    TABLE_NAME
 FROM
-	INFORMATION_SCHEMA.TABLES
+    INFORMATION_SCHEMA.TABLES
 WHERE
-	LOWER(TABLE_NAME) LIKE ? AND LOWER(TABLE_SCHEMA) = LOWER(?)`, []any{mssql.VarChar("%" + constants.ArtiePrefix + "%"), mssql.VarChar(schema)}
+    LOWER(TABLE_NAME) LIKE ? AND LOWER(TABLE_SCHEMA) = LOWER(?)`, []any{mssql.VarChar("%" + constants.ArtiePrefix + "%"), mssql.VarChar(schema)}
 }
