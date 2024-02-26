@@ -54,7 +54,7 @@ func TestGetTableCfgArgs_ShouldParseComment(t *testing.T) {
 func TestGetTableConfig(t *testing.T) {
 	// Return early because table is found in configMap.
 	cols := &columns.Columns{}
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		cols.AddColumn(columns.NewColumn(fmt.Sprintf("col-%v", i), typing.Invalid))
 	}
 
