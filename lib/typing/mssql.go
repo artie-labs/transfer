@@ -62,6 +62,10 @@ func MsSQLTypeToKind(rawType string, stringPrecision string) KindDetails {
 }
 
 func kindToMsSQL(kd KindDetails, isPk bool) string {
+	// Primary keys cannot exceed 900 chars in length.
+	// https://learn.microsoft.com/en-us/sql/relational-databases/tables/primary-and-foreign-key-constraints?view=sql-server-ver16#PKeys
+	const maxVarCharLengthForPrimaryKey = 900
+
 	switch kd.Kind {
 	case Integer.Kind:
 		return "bigint"
@@ -71,16 +75,14 @@ func kindToMsSQL(kd KindDetails, isPk bool) string {
 		if kd.OptionalStringPrecision != nil {
 			precision := *kd.OptionalStringPrecision
 			if isPk {
-				precision = min(900, precision)
+				precision = min(maxVarCharLengthForPrimaryKey, precision)
 			}
 
 			return fmt.Sprintf("VARCHAR(%d)", precision)
 		}
 
 		if isPk {
-			// Primary keys cannot exceed 900 chars in length.
-			// https://learn.microsoft.com/en-us/sql/relational-databases/tables/primary-and-foreign-key-constraints?view=sql-server-ver16#PKeys
-			return "VARCHAR(900)"
+			return fmt.Sprintf("VARCHAR(%d)", maxVarCharLengthForPrimaryKey)
 		}
 
 		return "VARCHAR(MAX)"
