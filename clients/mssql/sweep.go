@@ -1,7 +1,6 @@
 package mssql
 
 import (
-	"database/sql"
 	"fmt"
 	"log/slog"
 
@@ -14,8 +13,7 @@ func (s *Store) Sweep() error {
 	slog.Info("Looking to see if there are any dangling artie temporary tables to delete...")
 	// Find all the database and schema pairings
 	// Then iterate over information schema
-	// Find anything that has __artie__ in the table name
-	// Find the comment
+	// Find anything that has __artie__ in the table name, eval against `ShouldDeleteFromName`
 	// If the table should be killed, it will drop it.
 	tcs, err := s.config.TopicConfigs()
 	if err != nil {
@@ -25,8 +23,6 @@ func (s *Store) Sweep() error {
 	dbAndSchemaPairs := kafkalib.GetUniqueDatabaseAndSchema(tcs)
 	for _, dbAndSchemaPair := range dbAndSchemaPairs {
 		schema := getSchema(dbAndSchemaPair.Schema)
-
-		var rows *sql.Rows
 		rows, err := s.Store.Query(sweepQuery(schema))
 		if err != nil {
 			return err
