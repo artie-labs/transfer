@@ -16,7 +16,7 @@ type MSSQL struct {
 	Database string `yaml:"database"`
 }
 
-func (m *MSSQL) DSN() string {
+func (m MSSQL) DSN() string {
 	query := url.Values{}
 	query.Add("database", m.Database)
 
