@@ -80,7 +80,7 @@ SELECT
 FROM 
     PG_CATALOG.PG_CLASS c
 JOIN 
-	PG_CATALOG.PG_NAMESPACE n ON n.oid = c.relnamespace
+    PG_CATALOG.PG_NAMESPACE n ON n.oid = c.relnamespace
 WHERE 
     n.nspname = $1 AND c.relname ILIKE $2;`, []any{dbAndSchemaPair.Schema, "%" + constants.ArtiePrefix + "%"}
 	}
