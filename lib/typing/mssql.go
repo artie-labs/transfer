@@ -67,6 +67,8 @@ func kindToMSSQL(kd KindDetails, isPk bool) string {
 	const maxVarCharLengthForPrimaryKey = 900
 
 	switch kd.Kind {
+	case Float.Kind:
+		return "float"
 	case Integer.Kind:
 		return "bigint"
 	case Struct.Kind, Array.Kind:
