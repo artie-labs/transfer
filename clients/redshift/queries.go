@@ -33,6 +33,6 @@ LEFT JOIN
 LEFT JOIN 
     pg_catalog.pg_description d ON d.objsubid=c.ordinal_position AND d.objoid=c1.oid 
 WHERE 
-    LOWER(c.table_name) = LOWER(?) AND LOWER(c.table_schema) = LOWER(?);
+    LOWER(c.table_name) = LOWER($1) AND LOWER(c.table_schema) = LOWER($2);
 `, constants.StrPrecisionCol), []any{args.RawTableName, args.Schema}
 }

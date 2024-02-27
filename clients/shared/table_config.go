@@ -47,7 +47,6 @@ func GetTableConfig(args GetTableCfgArgs) (*types.DwhTableConfig, error) {
 		return tableConfig, nil
 	}
 
-	// TODO: Get everyone to pass in args.
 	rows, err := args.Dwh.Query(args.Query, args.Args...)
 	defer func() {
 		if rows != nil {
