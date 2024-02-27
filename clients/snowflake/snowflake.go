@@ -42,7 +42,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		Dwh:                s,
 		FqName:             fqName,
 		ConfigMap:          s.configMap,
-		Query:              fmt.Sprintf("DESC table %s;", fqName),
+		Query:              fmt.Sprintf("DESC TABLE %s;", fqName),
 		ColumnNameLabel:    describeNameCol,
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeCommentCol,

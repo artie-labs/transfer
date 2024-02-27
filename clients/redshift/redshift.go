@@ -48,20 +48,16 @@ const (
 )
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	describeQuery, err := describeTableQuery(describeArgs{
+	query, args := describeTableQuery(describeArgs{
 		RawTableName: tableData.RawName(),
 		Schema:       tableData.TopicConfig.Schema,
 	})
-
-	if err != nil {
-		return nil, err
-	}
-
 	return shared.GetTableConfig(shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             s.ToFullyQualifiedName(tableData, true),
 		ConfigMap:          s.configMap,
-		Query:              describeQuery,
+		Query:              query,
+		Args:               args,
 		ColumnNameLabel:    describeNameCol,
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeDescriptionCol,
