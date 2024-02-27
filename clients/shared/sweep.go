@@ -17,7 +17,6 @@ func Sweep(dwh destination.DataWarehouse, topicConfigs []*kafkalib.TopicConfig, 
 	dbAndSchemaPairs := kafkalib.GetUniqueDatabaseAndSchema(topicConfigs)
 	for _, dbAndSchemaPair := range dbAndSchemaPairs {
 		query, args := getQueryFunc(dbAndSchemaPair)
-
 		rows, err := dwh.Query(query, args...)
 		if err != nil {
 			return err
