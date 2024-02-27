@@ -72,7 +72,7 @@ func parseValue(colVal interface{}, colKind columns.Column, additionalDateFmts [
 		}
 
 		return string(colValBytes), nil
-	case typing.Integer.Kind:
+	case typing.Integer.Kind, typing.Float.Kind:
 		return colVal, nil
 	case typing.Boolean.Kind:
 		// If it's already a boolean, return it. Else, convert it.
