@@ -21,6 +21,8 @@ const (
 	OperationColumnMarker       = ArtiePrefix + "_operation"
 	ExceededValueMarker         = ArtiePrefix + "_exceeded_value"
 
+	TemporaryTableTTL = 6 * time.Hour
+
 	// DBZPostgresFormat is the only supported CDC format right now
 	DBZPostgresFormat    = "debezium.postgres"
 	DBZPostgresAltFormat = "debezium.postgres.wal2json"

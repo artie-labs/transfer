@@ -26,13 +26,12 @@ func (s *Store) Sweep() error {
 	for _, dbAndSchemaPair := range dbAndSchemaPairs {
 		// ILIKE is used to be case-insensitive since Snowflake stores all the tables in UPPER.
 		var rows *sql.Rows
-		rows, err = s.Store.Query(fmt.Sprintf(
-			`select c.relname, d.description from pg_catalog.pg_description d
-JOIN pg_class c on d.objoid = c.oid
-JOIN pg_catalog.pg_namespace n on n.oid = c.relnamespace
-WHERE n.nspname = '%s' and c.relname ILIKE '%s';`,
-			dbAndSchemaPair.Schema,
-			"%"+constants.ArtiePrefix+"%"))
+		rows, err = s.Store.Query(`
+SELECT c.relname, COALESCE(d.description, '')
+FROM pg_catalog.pg_class c
+FULL OUTER JOIN pg_catalog.pg_description d on d.objoid = c.oid
+JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = $1 AND c.relname ILIKE $2;`, dbAndSchemaPair.Schema, "%"+constants.ArtiePrefix+"%")
 		if err != nil {
 			return err
 		}
@@ -43,8 +42,9 @@ WHERE n.nspname = '%s' and c.relname ILIKE '%s';`,
 			if err != nil {
 				return err
 			}
-
-			if ddl.ShouldDelete(comment) {
+			// TODO: Deprecate the use of comments and standardize on ShouldDeleteFromName
+			// Combine Sweep (Redshift, Snowflake, MSSQL)
+			if ddl.ShouldDeleteFromName(tableName) || ddl.ShouldDelete(comment) {
 				err = ddl.DropTemporaryTable(s,
 					fmt.Sprintf("%s.%s.%s", dbAndSchemaPair.Database, dbAndSchemaPair.Schema, tableName), true)
 				if err != nil {

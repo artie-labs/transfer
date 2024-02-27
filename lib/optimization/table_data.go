@@ -268,11 +268,11 @@ func (t *TableData) ResetTempTableSuffix() {
 		return
 	}
 
-	t.temporaryTableSuffix = fmt.Sprintf("%s_%s", constants.ArtiePrefix, stringutil.Random(10))
+	t.temporaryTableSuffix = fmt.Sprintf("%s_%s", constants.ArtiePrefix, stringutil.Random(5))
 }
 
 func (t *TableData) TempTableSuffix() string {
-	return t.temporaryTableSuffix
+	return fmt.Sprintf("%s_%d", t.temporaryTableSuffix, time.Now().Add(constants.TemporaryTableTTL).Unix())
 }
 
 // ShouldFlush will return whether Transfer should flush

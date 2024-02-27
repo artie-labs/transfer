@@ -1,7 +1,6 @@
 package ddl
 
 import (
-	"fmt"
 	"log/slog"
 	"strconv"
 	"strings"
@@ -10,14 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-const (
-	ExpireCommentPrefix = "expires:"
-	TempTableTTL        = 6 * time.Hour
-)
-
-func ExpiryComment(expiryString string) string {
-	return fmt.Sprintf("%s%s", ExpireCommentPrefix, expiryString)
-}
+const ExpireCommentPrefix = "expires:"
 
 func ShouldDelete(comment string) (shouldDelete bool) {
 	// expires:2023-05-26 05:57:48 UTC
