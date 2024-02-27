@@ -28,7 +28,7 @@ func (s *Store) Sweep() error {
 		// ILIKE is used to be case-insensitive since Snowflake stores all the tables in UPPER.
 		var rows *sql.Rows
 		rows, err = s.Store.Query(fmt.Sprintf(
-			`SELECT table_name, comment FROM %s.information_schema.tables where table_name ILIKE '%s' AND table_schema = UPPER('%s')`,
+			`SELECT table_name, IFNULL(comment, '') FROM %s.information_schema.tables where table_name ILIKE '%s' AND table_schema = UPPER('%s')`,
 			dbAndSchemaPair.Database,
 			"%"+constants.ArtiePrefix+"%", dbAndSchemaPair.Schema))
 		if err != nil {
