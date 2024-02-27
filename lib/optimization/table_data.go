@@ -9,7 +9,6 @@ import (
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/size"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -273,7 +272,7 @@ func (t *TableData) ResetTempTableSuffix() {
 }
 
 func (t *TableData) TempTableSuffix() string {
-	return fmt.Sprintf("%s_%d", t.temporaryTableSuffix, time.Now().Add(ddl.TempTableTTL).Unix())
+	return fmt.Sprintf("%s_%d", t.temporaryTableSuffix, time.Now().Add(constants.TemporaryTableTTL).Unix())
 }
 
 // ShouldFlush will return whether Transfer should flush

@@ -147,7 +147,7 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 				sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", args.FqTableName, strings.Join(colSQLParts, ","))
 			case constants.BigQuery:
 				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
-					args.FqTableName, strings.Join(colSQLParts, ","), typing.ExpiresDate(time.Now().UTC().Add(TempTableTTL)))
+					args.FqTableName, strings.Join(colSQLParts, ","), typing.ExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)))
 			// Not enabled for constants.Snowflake yet
 			case constants.Snowflake:
 				// TEMPORARY Table syntax - https://docs.snowflake.com/en/sql-reference/sql/create-table
