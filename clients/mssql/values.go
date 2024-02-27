@@ -17,7 +17,6 @@ import (
 
 func parseValue(colVal interface{}, colKind columns.Column, additionalDateFmts []string) (any, error) {
 	if colVal == nil {
-		// TODO: Test nil
 		return colVal, nil
 	}
 
@@ -72,7 +71,21 @@ func parseValue(colVal interface{}, colKind columns.Column, additionalDateFmts [
 		}
 
 		return string(colValBytes), nil
-	case typing.Integer.Kind, typing.Float.Kind:
+	case typing.Integer.Kind:
+		_, isString := colVal.(string)
+		if isString {
+			// If the value is a string, convert it back into a number
+			return strconv.Atoi(colValString)
+		}
+
+		return colVal, nil
+	case typing.Float.Kind:
+		_, isString := colVal.(string)
+		if isString {
+			// If the value is a string, convert it back into a number
+			return strconv.ParseFloat(colValString, 64)
+		}
+
 		return colVal, nil
 	case typing.Boolean.Kind:
 		// If it's already a boolean, return it. Else, convert it.
