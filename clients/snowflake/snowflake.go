@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/artie-labs/transfer/lib/kafkalib"
+
 	"github.com/snowflakedb/gosnowflake"
 
 	"github.com/artie-labs/transfer/clients/shared"
@@ -49,6 +51,20 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		EmptyCommentValue:  ptr.ToString("<nil>"),
 		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
 	})
+}
+
+func (s *Store) Sweep() error {
+	tcs, err := s.config.TopicConfigs()
+	if err != nil {
+		return err
+	}
+
+	queryFunc := func(dbAndSchemaPair kafkalib.DatabaseSchemaPair) (string, []any) {
+		return fmt.Sprintf(`SELECT table_schema, table_name FROM %s.information_schema.tables where table_schema = UPPER(?) AND table_name ILIKE ?`, dbAndSchemaPair.Database),
+			[]any{dbAndSchemaPair.Schema, "%" + constants.ArtiePrefix + "%"}
+	}
+
+	return shared.Sweep(s, tcs, queryFunc)
 }
 
 func (s *Store) Label() constants.DestinationKind {
