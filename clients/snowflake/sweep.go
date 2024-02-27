@@ -42,7 +42,9 @@ func (s *Store) Sweep() error {
 				return err
 			}
 
-			if ddl.ShouldDelete(comment) {
+			// TODO: Deprecate use of comments, standardize on ShouldDeleteFromName
+			// Combine Sweep (Redshift, Snowflake, MSSQL)
+			if ddl.ShouldDeleteFromName(tableName) || ddl.ShouldDelete(comment) {
 				err = ddl.DropTemporaryTable(s,
 					fmt.Sprintf("%s.%s.%s", dbAndSchemaPair.Database, dbAndSchemaPair.Schema, tableName), true)
 				if err != nil {

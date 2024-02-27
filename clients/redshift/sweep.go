@@ -43,8 +43,9 @@ WHERE n.nspname = '%s' and c.relname ILIKE '%s';`,
 			if err != nil {
 				return err
 			}
-
-			if ddl.ShouldDelete(comment) {
+			// TODO: Deprecate the use of comments and standardize on ShouldDeleteFromName
+			// Combine Sweep (Redshift, Snowflake, MSSQL)
+			if ddl.ShouldDeleteFromName(tableName) || ddl.ShouldDelete(comment) {
 				err = ddl.DropTemporaryTable(s,
 					fmt.Sprintf("%s.%s.%s", dbAndSchemaPair.Database, dbAndSchemaPair.Schema, tableName), true)
 				if err != nil {

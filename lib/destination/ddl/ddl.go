@@ -140,7 +140,6 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 	if args.CreateTable {
 		var sqlQuery string
 		if args.TemporaryTable {
-			expiryString := typing.ExpiresDate(time.Now().UTC().Add(TempTableTTL))
 			switch args.Dwh.Label() {
 			case constants.MSSQL:
 				sqlQuery = fmt.Sprintf("CREATE TABLE %s (%s);", args.FqTableName, strings.Join(colSQLParts, ","))
@@ -148,17 +147,14 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 				sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", args.FqTableName, strings.Join(colSQLParts, ","))
 			case constants.BigQuery:
 				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
-					args.FqTableName, strings.Join(colSQLParts, ","), expiryString)
+					args.FqTableName, strings.Join(colSQLParts, ","), typing.ExpiresDate(time.Now().UTC().Add(TempTableTTL)))
 			// Not enabled for constants.Snowflake yet
 			case constants.Snowflake:
 				// TEMPORARY Table syntax - https://docs.snowflake.com/en/sql-reference/sql/create-table
 				// PURGE syntax - https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#purging-files-after-loading
 				// FIELD_OPTIONALLY_ENCLOSED_BY - is needed because CSV will try to escape any values that have `"`
-				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE) COMMENT='%s'`,
-					args.FqTableName, strings.Join(colSQLParts, ","),
-					// Comment on the table
-					ExpiryComment(expiryString),
-				)
+				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`,
+					args.FqTableName, strings.Join(colSQLParts, ","))
 			default:
 				return fmt.Errorf("unexpected dwh: %v trying to create a temporary table", args.Dwh.Label())
 			}

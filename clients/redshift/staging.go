@@ -7,14 +7,12 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/s3lib"
-	"github.com/artie-labs/transfer/lib/typing"
 )
 
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, _ types.AdditionalSettings) error {
@@ -31,12 +29,6 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 
 	if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
 		return fmt.Errorf("failed to create temp table: %w", err)
-	}
-
-	expiryString := typing.ExpiresDate(time.Now().UTC().Add(ddl.TempTableTTL))
-	// Now add a comment to the temporary table.
-	if _, err := s.Exec(fmt.Sprintf(`COMMENT ON TABLE %s IS '%s';`, tempTableName, ddl.ExpiryComment(expiryString))); err != nil {
-		return fmt.Errorf("failed to add comment to table %s: %w", tempTableName, err)
 	}
 
 	fp, err := s.loadTemporaryTable(tableData, tempTableName)

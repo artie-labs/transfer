@@ -28,6 +28,6 @@ func (m *DB) Begin() (*sql.Tx, error) {
 	return m.Fake.Begin()
 }
 
-func (m *DB) IsRetryableError(err error) bool {
+func (m *DB) IsRetryableError(_ error) bool {
 	return false
 }

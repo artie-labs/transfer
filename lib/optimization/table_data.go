@@ -268,7 +268,7 @@ func (t *TableData) ResetTempTableSuffix() {
 		return
 	}
 
-	t.temporaryTableSuffix = fmt.Sprintf("%s_%s", constants.ArtiePrefix, stringutil.Random(10))
+	t.temporaryTableSuffix = fmt.Sprintf("%s_%s", constants.ArtiePrefix, stringutil.Random(5))
 }
 
 func (t *TableData) TempTableSuffix() string {
