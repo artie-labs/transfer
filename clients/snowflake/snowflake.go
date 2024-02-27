@@ -1,7 +1,6 @@
 package snowflake
 
 import (
-	"fmt"
 	"log/slog"
 
 	"github.com/snowflakedb/gosnowflake"
@@ -42,7 +41,8 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		Dwh:                s,
 		FqName:             fqName,
 		ConfigMap:          s.configMap,
-		Query:              fmt.Sprintf("DESC table %s;", fqName),
+		Query:              "DESC TABLE ?",
+		Args:               []any{fqName},
 		ColumnNameLabel:    describeNameCol,
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeCommentCol,
