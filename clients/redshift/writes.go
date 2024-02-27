@@ -2,9 +2,6 @@ package redshift
 
 import (
 	"fmt"
-	"time"
-
-	"github.com/artie-labs/transfer/lib/destination/ddl"
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -14,7 +11,7 @@ import (
 func (s *Store) Append(tableData *optimization.TableData) error {
 	// Redshift is slightly different, we'll load and create the temporary table via shared.Append
 	// Then, we'll invoke `ALTER TABLE target APPEND FROM staging` to combine the diffs.
-	temporaryTableName := fmt.Sprintf("%s_%s_%d", s.ToFullyQualifiedName(tableData, false), tableData.TempTableSuffix(), time.Now().Add(ddl.TempTableTTL).Unix())
+	temporaryTableName := fmt.Sprintf("%s_%s", s.ToFullyQualifiedName(tableData, false), tableData.TempTableSuffix())
 	if err := shared.Append(s, tableData, s.config, types.AppendOpts{TempTableName: temporaryTableName}); err != nil {
 		return err
 	}

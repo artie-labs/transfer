@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/destination/ddl"
+
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -272,7 +274,7 @@ func (t *TableData) ResetTempTableSuffix() {
 }
 
 func (t *TableData) TempTableSuffix() string {
-	return t.temporaryTableSuffix
+	return fmt.Sprintf("%s_%d", t.temporaryTableSuffix, time.Now().Add(ddl.TempTableTTL).Unix())
 }
 
 // ShouldFlush will return whether Transfer should flush
