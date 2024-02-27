@@ -2,7 +2,7 @@
 
 * [Start here](README.md)
 
-## ☁ Artie Cloud
+## ☁️ Artie Cloud
 
 * [Fixed IP Addresses](artie-cloud/fixed-ip-addresses.md)
 * [Dashboard Functionality](artie-cloud/dashboard-functionality.md)
@@ -25,10 +25,11 @@
 ## Real-time Destinations
 
 * [Overview](real-time-destinations/overview.md)
+* [BigQuery](real-time-destinations/bigquery.md)
+* [Microsoft SQL Server](real-time-destinations/microsoft-sql-server.md)
+* [S3](real-time-destinations/s3.md)
 * [Snowflake](real-time-destinations/snowflake.md)
 * [Redshift](real-time-destinations/redshift.md)
-* [BigQuery](real-time-destinations/bigquery.md)
-* [S3](real-time-destinations/s3.md)
 
 ## Running Transfer
 
@@ -40,7 +41,7 @@
 
 * [Overview](telemetry/overview.md)
 
-## 👨💻 Tutorials
+## 👨‍💻 Tutorials
 
 * [Enabling BigQuery Time Partitioning](tutorials/enabling-bigquery-time-partitioning.md)
 * [Enabling SSH Tunneling](tutorials/enabling-ssh-tunneling.md)
@@ -57,11 +58,11 @@
 
 * [More ways for support](more-ways-for-support.md)
 
-## ✍ Product Updates
+## ✍️ Product Updates
 
 * [November 2023](product-updates/november-2023.md)
 
-## ⚖ Legal
+## ⚖️ Legal
 
 * [Terms of Service](legal/terms-of-service.md)
 * [Data Processing Addendum](legal/data-processing-addendum.md)
