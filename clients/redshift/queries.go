@@ -24,14 +24,14 @@ SELECT
     END AS data_type,
     c.%s,
     d.description
-FROM 
-    information_schema.columns c 
+FROM
+    INFORMATION_SCHEMA.COLUMNS c
 LEFT JOIN 
-    pg_class c1 ON c.table_name=c1.relname 
+    PG_CLASS c1 ON c.table_name = c1.relname 
 LEFT JOIN 
-    pg_catalog.pg_namespace n ON c.table_schema=n.nspname AND c1.relnamespace=n.oid 
+    PG_CATALOG.PG_NAMESPACE n ON c.table_schema = n.nspname AND c1.relnamespace = n.oid 
 LEFT JOIN 
-    pg_catalog.pg_description d ON d.objsubid=c.ordinal_position AND d.objoid=c1.oid 
+    PG_CATALOG.PG_DESCRIPTION d ON d.objsubid = c.ordinal_position AND d.objoid = c1.oid 
 WHERE 
     LOWER(c.table_name) = LOWER($1) AND LOWER(c.table_schema) = LOWER($2);
 `, constants.StrPrecisionCol), []any{args.RawTableName, args.Schema}
