@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/artie-labs/transfer/lib/kafkalib"
-
 	"github.com/snowflakedb/gosnowflake"
 
 	"github.com/artie-labs/transfer/clients/shared"
@@ -13,6 +11,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"

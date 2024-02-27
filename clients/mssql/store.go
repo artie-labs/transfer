@@ -3,16 +3,16 @@ package mssql
 import (
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/kafkalib"
+	_ "github.com/microsoft/go-mssqldb"
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
-	_ "github.com/microsoft/go-mssqldb"
 )
 
 type Store struct {

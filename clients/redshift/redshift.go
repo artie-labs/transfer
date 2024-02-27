@@ -3,8 +3,6 @@ package redshift
 import (
 	"fmt"
 
-	"github.com/artie-labs/transfer/lib/kafkalib"
-
 	_ "github.com/lib/pq"
 
 	"github.com/artie-labs/transfer/clients/shared"
@@ -12,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
 )
