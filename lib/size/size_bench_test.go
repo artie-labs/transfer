@@ -7,7 +7,7 @@ import (
 )
 
 func BenchmarkGetApproxSize_TallTable(b *testing.B) {
-	rowsData := make(map[string]interface{})
+	rowsData := make(map[string]any)
 	for i := 0; i < 5000; i++ {
 		rowsData[fmt.Sprint(i)] = map[string]any{
 			"id":   i,

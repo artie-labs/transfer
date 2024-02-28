@@ -8,21 +8,21 @@ import (
 )
 
 func TestGetApproxSize(t *testing.T) {
-	rowsData := make(map[string]interface{}) // pk -> { col -> val }
+	rowsData := make(map[string]any) // pk -> { col -> val }
 	for i := 0; i < 500; i++ {
-		rowsData[fmt.Sprintf("key-%v", i)] = map[string]interface{}{
+		rowsData[fmt.Sprintf("key-%v", i)] = map[string]any{
 			"id":         fmt.Sprintf("key-%v", i),
 			"artie":      "transfer",
 			"dusty":      "the mini aussie",
 			"next_puppy": true,
-			"foo":        []interface{}{"bar", "baz", "qux"},
+			"foo":        []any{"bar", "baz", "qux"},
 			"team":       []string{"charlie", "robin", "jacqueline"},
 			"arrays":     []string{"foo", "bar", "baz"},
-			"nested": map[string]interface{}{
+			"nested": map[string]any{
 				"foo": "bar",
 				"abc": "xyz",
 			},
-			"array_of_maps": []map[string]interface{}{
+			"array_of_maps": []map[string]any{
 				{
 					"foo": "bar",
 				},

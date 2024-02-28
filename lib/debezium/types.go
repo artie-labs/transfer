@@ -152,8 +152,8 @@ func (f Field) DecodeDecimal(encoded string) (*decimal.Decimal, error) {
 	return decimal.NewDecimal(results.Scale, results.Precision, bigFloat), nil
 }
 
-func (f Field) DecodeDebeziumVariableDecimal(value interface{}) (*decimal.Decimal, error) {
-	valueStruct, isOk := value.(map[string]interface{})
+func (f Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error) {
+	valueStruct, isOk := value.(map[string]any)
 	if !isOk {
 		return nil, fmt.Errorf("value is not map[string]interface{} type")
 	}
@@ -168,7 +168,7 @@ func (f Field) DecodeDebeziumVariableDecimal(value interface{}) (*decimal.Decima
 		return nil, fmt.Errorf("encoded value does not exist")
 	}
 
-	f.Parameters = map[string]interface{}{
+	f.Parameters = map[string]any{
 		"scale":                  scale,
 		KafkaDecimalPrecisionKey: "-1",
 	}

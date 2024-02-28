@@ -19,7 +19,7 @@ import (
 func TestField_GetScaleAndPrecision(t *testing.T) {
 	type _tc struct {
 		name              string
-		parameters        map[string]interface{}
+		parameters        map[string]any
 		expectErr         bool
 		expectedScale     int
 		expectedPrecision *int
@@ -28,19 +28,19 @@ func TestField_GetScaleAndPrecision(t *testing.T) {
 	tcs := []_tc{
 		{
 			name:       "Test Case 1: Empty Parameters",
-			parameters: map[string]interface{}{},
+			parameters: map[string]any{},
 			expectErr:  true,
 		},
 		{
 			name: "Test Case 2: Valid Scale Only",
-			parameters: map[string]interface{}{
+			parameters: map[string]any{
 				"scale": 5,
 			},
 			expectedScale: 5,
 		},
 		{
 			name: "Test Case 3: Valid Scale and Precision",
-			parameters: map[string]interface{}{
+			parameters: map[string]any{
 				"scale":                  5,
 				KafkaDecimalPrecisionKey: 10,
 			},
@@ -49,14 +49,14 @@ func TestField_GetScaleAndPrecision(t *testing.T) {
 		},
 		{
 			name: "Test Case 4: Invalid Scale Type",
-			parameters: map[string]interface{}{
+			parameters: map[string]any{
 				"scale": "invalid",
 			},
 			expectErr: true,
 		},
 		{
 			name: "Test Case 5: Invalid Precision Type",
-			parameters: map[string]interface{}{
+			parameters: map[string]any{
 				"scale":                  5,
 				KafkaDecimalPrecisionKey: "invalid",
 			},
@@ -311,7 +311,7 @@ func TestField_ToKindDetails(t *testing.T) {
 			name: "KafkaDecimalType",
 			field: Field{
 				DebeziumType: string(KafkaDecimalType),
-				Parameters: map[string]interface{}{
+				Parameters: map[string]any{
 					"scale":                  5,
 					KafkaDecimalPrecisionKey: 10,
 				},
@@ -322,7 +322,7 @@ func TestField_ToKindDetails(t *testing.T) {
 			name: "KafkaVariableNumericType",
 			field: Field{
 				DebeziumType: string(KafkaVariableNumericType),
-				Parameters: map[string]interface{}{
+				Parameters: map[string]any{
 					"scale": 5,
 				},
 			},

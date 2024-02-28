@@ -21,10 +21,10 @@ type SchemaEventPayload struct {
 }
 
 type Payload struct {
-	Before    map[string]interface{} `json:"before"`
-	After     map[string]interface{} `json:"after"`
-	Source    Source                 `json:"source"`
-	Operation string                 `json:"op"`
+	Before    map[string]any `json:"before"`
+	After     map[string]any `json:"after"`
+	Source    Source         `json:"source"`
+	Operation string         `json:"op"`
 }
 
 type Source struct {
@@ -70,14 +70,14 @@ func (s *SchemaEventPayload) GetTableName() string {
 	return s.Payload.Source.Table
 }
 
-func (s *SchemaEventPayload) GetData(pkMap map[string]interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
-	var retMap map[string]interface{}
+func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicConfig) map[string]any {
+	var retMap map[string]any
 	if len(s.Payload.After) == 0 {
 		// This is a delete payload, so mark it as deleted.
 		// And we need to reconstruct the data bit since it will be empty.
 		// We _can_ rely on *before* since even without running replicate identity, it will still copy over
 		// the PK. We can explore simplifying this interface in the future by leveraging before.
-		retMap = map[string]interface{}{
+		retMap = map[string]any{
 			constants.DeleteColumnMarker: true,
 		}
 
