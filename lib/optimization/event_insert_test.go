@@ -123,7 +123,7 @@ func TestTableData_InsertRow(t *testing.T) {
 	assert.Equal(t, 0, int(td.NumberOfRows()))
 
 	// Now insert the right way.
-	td.InsertRow("foo", map[string]interface{}{"foo": "bar"}, false)
+	td.InsertRow("foo", map[string]any{"foo": "bar"}, false)
 
 	assert.Equal(t, 1, int(td.NumberOfRows()))
 }
