@@ -28,7 +28,7 @@ type GeometricShapes string
 
 const Point GeometricShapes = "Point"
 
-// ParseGeometry takes in a map[string]interface{} and returns a GeoJSON string.
+// ParseGeometry takes in a map[string]any and returns a GeoJSON string.
 // This function does not use WKB or SRID and leverages X, Y.
 // https://debezium.io/documentation/reference/stable/connectors/postgresql.html#:~:text=io.debezium.data.geometry.Point
 func parseGeometryPoint(value any) (string, error) {

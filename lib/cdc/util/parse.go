@@ -12,7 +12,7 @@ import (
 )
 
 // ParseField returns a `parsedValue` as type any
-func parseField(field debezium.Field, value any) interface{} {
+func parseField(field debezium.Field, value any) any {
 	// TODO: We should surface the errors from `parseField`.
 	if value == nil {
 		return nil
