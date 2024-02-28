@@ -9,7 +9,7 @@ import (
 func BenchmarkGetApproxSize_TallTable(b *testing.B) {
 	rowsData := make(map[string]interface{})
 	for i := 0; i < 5000; i++ {
-		rowsData[fmt.Sprint(i)] = map[string]interface{}{
+		rowsData[fmt.Sprint(i)] = map[string]any{
 			"id":   i,
 			"name": "Robin",
 			"dog":  "dusty the mini aussie",
@@ -22,9 +22,9 @@ func BenchmarkGetApproxSize_TallTable(b *testing.B) {
 }
 
 func BenchmarkGetApproxSize_WideTable(b *testing.B) {
-	rowsData := make(map[string]interface{})
+	rowsData := make(map[string]any)
 	for i := 0; i < 5000; i++ {
-		rowsData[fmt.Sprint(i)] = map[string]interface{}{
+		rowsData[fmt.Sprint(i)] = map[string]any{
 			"id":                 i,
 			"name":               "Robin",
 			"dog":                "dusty the mini aussie",
@@ -37,16 +37,16 @@ func BenchmarkGetApproxSize_WideTable(b *testing.B) {
 			"created_at":         time.Now(),
 			"updated_at":         time.Now(),
 			"negative_number":    -500,
-			"nestedObject": map[string]interface{}{
+			"nestedObject": map[string]any{
 				"foo": "bar",
 				"abc": "def",
 			},
-			"array_of_objects": []map[string]interface{}{
+			"array_of_objects": []map[string]any{
 				{
 					"foo": "bar",
 				},
 				{
-					"foo_nested": map[string]interface{}{
+					"foo_nested": map[string]any{
 						"foo_foo": "bar_bar",
 					},
 				},

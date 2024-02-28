@@ -11,8 +11,8 @@ import (
 	"github.com/artie-labs/transfer/lib/debezium"
 )
 
-// ParseField returns a `parsedValue` as type interface{}
-func parseField(field debezium.Field, value interface{}) interface{} {
+// ParseField returns a `parsedValue` as type any
+func parseField(field debezium.Field, value any) interface{} {
 	// TODO: We should surface the errors from `parseField`.
 	if value == nil {
 		return nil

@@ -19,9 +19,9 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-// castColValStaging - takes `colVal` interface{} and `colKind` typing.Column and converts the value into a string value
+// castColValStaging - takes `colVal` any and `colKind` typing.Column and converts the value into a string value
 // This is necessary because CSV writers require values to in `string`.
-func castColValStaging(colVal interface{}, colKind columns.Column, additionalDateFmts []string) (string, error) {
+func castColValStaging(colVal any, colKind columns.Column, additionalDateFmts []string) (string, error) {
 	if colVal == nil {
 		// \\N needs to match NULL_IF(...) from ddl.go
 		return `\\N`, nil
