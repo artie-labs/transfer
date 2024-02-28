@@ -18,11 +18,11 @@ import (
 func (b *BigQueryTestSuite) TestCastColVal() {
 	type _testCase struct {
 		name    string
-		colVal  interface{}
+		colVal  any
 		colKind columns.Column
 
 		expectedErr   error
-		expectedValue interface{}
+		expectedValue any
 	}
 
 	tsKind := typing.ETime

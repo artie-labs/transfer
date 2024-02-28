@@ -9,7 +9,7 @@ import (
 )
 
 func BenchmarkDecodeDecimal_P64_S10(b *testing.B) {
-	parameters := map[string]interface{}{
+	parameters := map[string]any{
 		"scale":                  10,
 		KafkaDecimalPrecisionKey: 64,
 	}
@@ -23,7 +23,7 @@ func BenchmarkDecodeDecimal_P64_S10(b *testing.B) {
 }
 
 func BenchmarkDecodeDecimal_P38_S2(b *testing.B) {
-	parameters := map[string]interface{}{
+	parameters := map[string]any{
 		"scale":                  2,
 		KafkaDecimalPrecisionKey: 38,
 	}
@@ -36,7 +36,7 @@ func BenchmarkDecodeDecimal_P38_S2(b *testing.B) {
 }
 
 func BenchmarkDecodeDecimal_P5_S2(b *testing.B) {
-	parameters := map[string]interface{}{
+	parameters := map[string]any{
 		"scale":                  2,
 		KafkaDecimalPrecisionKey: 5,
 	}

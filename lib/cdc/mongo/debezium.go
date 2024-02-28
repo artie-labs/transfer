@@ -72,7 +72,7 @@ func (d *Debezium) Labels() []string {
 	return []string{constants.DBZMongoFormat}
 }
 
-func (d *Debezium) GetPrimaryKey(key []byte, tc *kafkalib.TopicConfig) (map[string]interface{}, error) {
+func (d *Debezium) GetPrimaryKey(key []byte, tc *kafkalib.TopicConfig) (map[string]any, error) {
 	kvMap, err := debezium.ParsePartitionKey(key, tc.CDCKeyFormat)
 	if err != nil {
 		return nil, err
@@ -81,7 +81,7 @@ func (d *Debezium) GetPrimaryKey(key []byte, tc *kafkalib.TopicConfig) (map[stri
 	// This code is needed because the partition key bytes returns nested objects as a string
 	// Such that, the value looks like this: {"id":"{\"$oid\": \"640127e4beeb1ccfc821c25b\"}"}
 	for k, v := range kvMap {
-		var obj map[string]interface{}
+		var obj map[string]any
 		if err = json.Unmarshal([]byte(fmt.Sprint(v)), &obj); err != nil {
 			continue
 		}
@@ -149,14 +149,14 @@ func (s *SchemaEventPayload) GetColumns() *columns.Columns {
 	return &cols
 }
 
-func (s *SchemaEventPayload) GetData(pkMap map[string]interface{}, tc *kafkalib.TopicConfig) map[string]interface{} {
-	var retMap map[string]interface{}
+func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicConfig) map[string]any {
+	var retMap map[string]any
 	if len(s.Payload.afterMap) == 0 {
 		// This is a delete event, so mark it as deleted.
 		// And we need to reconstruct the data bit since it will be empty.
 		// We _can_ rely on *before* since even without running replicate identity, it will still copy over
 		// the PK. We can explore simplifying this interface in the future by leveraging before.
-		retMap = map[string]interface{}{
+		retMap = map[string]any{
 			constants.DeleteColumnMarker: true,
 		}
 

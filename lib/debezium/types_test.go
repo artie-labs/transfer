@@ -35,7 +35,7 @@ func TestDecodeDecimal(t *testing.T) {
 	type _testCase struct {
 		name    string
 		encoded string
-		params  map[string]interface{}
+		params  map[string]any
 
 		expectedValue         string
 		expectedPrecision     int
@@ -52,14 +52,14 @@ func TestDecodeDecimal(t *testing.T) {
 		},
 		{
 			name: "No scale (not provided)",
-			params: map[string]interface{}{
+			params: map[string]any{
 				"connect.decimal.precision": "5",
 			},
 			expectError: true,
 		},
 		{
 			name: "Precision is not an integer",
-			params: map[string]interface{}{
+			params: map[string]any{
 				"scale":                     "2",
 				"connect.decimal.precision": "abc",
 			},
@@ -68,7 +68,7 @@ func TestDecodeDecimal(t *testing.T) {
 		{
 			name:    "NUMERIC(5,0)",
 			encoded: "BQ==",
-			params: map[string]interface{}{
+			params: map[string]any{
 				"scale":                     "0",
 				"connect.decimal.precision": "5",
 			},
@@ -80,7 +80,7 @@ func TestDecodeDecimal(t *testing.T) {
 		{
 			name:    "NUMERIC(5,2)",
 			encoded: "AOHJ",
-			params: map[string]interface{}{
+			params: map[string]any{
 				"scale":                     "2",
 				"connect.decimal.precision": "5",
 			},
@@ -92,7 +92,7 @@ func TestDecodeDecimal(t *testing.T) {
 		{
 			name:    "NUMERIC(38, 0) - small #",
 			encoded: "Ajc=",
-			params: map[string]interface{}{
+			params: map[string]any{
 				"scale":                     "0",
 				"connect.decimal.precision": "38",
 			},
@@ -104,7 +104,7 @@ func TestDecodeDecimal(t *testing.T) {
 		{
 			name:    "NUMERIC(38, 0) - large #",
 			encoded: "SztMqFqGxHoJiiI//////w==",
-			params: map[string]interface{}{
+			params: map[string]any{
 				"scale":                     "0",
 				"connect.decimal.precision": "38",
 			},
@@ -116,7 +116,7 @@ func TestDecodeDecimal(t *testing.T) {
 		{
 			name:    "NUMERIC(38, 2) - small #",
 			encoded: "DPk=",
-			params: map[string]interface{}{
+			params: map[string]any{
 				"scale":                     "2",
 				"connect.decimal.precision": "38",
 			},
@@ -128,7 +128,7 @@ func TestDecodeDecimal(t *testing.T) {
 		{
 			name:    "NUMERIC(38, 2) - large #",
 			encoded: "AMCXznvJBxWzS58P/////w==",
-			params: map[string]interface{}{
+			params: map[string]any{
 				"scale":                     "2",
 				"connect.decimal.precision": "38",
 			},
@@ -140,7 +140,7 @@ func TestDecodeDecimal(t *testing.T) {
 		{
 			name:    "NUMERIC(38, 4) - small #",
 			encoded: "SeuD",
-			params: map[string]interface{}{
+			params: map[string]any{
 				"scale":                     "4",
 				"connect.decimal.precision": "38",
 			},
@@ -152,7 +152,7 @@ func TestDecodeDecimal(t *testing.T) {
 		{
 			name:    "NUMERIC(38, 4) - large #",
 			encoded: "Ae0Jvq2HwDeNjmP/////",
-			params: map[string]interface{}{
+			params: map[string]any{
 				"scale":                     "4",
 				"connect.decimal.precision": "38",
 			},
@@ -164,7 +164,7 @@ func TestDecodeDecimal(t *testing.T) {
 		{
 			name:    "NUMERIC(39,4) - small #",
 			encoded: "AKQQ",
-			params: map[string]interface{}{
+			params: map[string]any{
 				"scale":                     "4",
 				"connect.decimal.precision": "39",
 			},
@@ -175,7 +175,7 @@ func TestDecodeDecimal(t *testing.T) {
 		{
 			name:    "NUMERIC(39,4) - large # ",
 			encoded: "AuM++mE16PeIpWp/trI=",
-			params: map[string]interface{}{
+			params: map[string]any{
 				"scale":                     "4",
 				"connect.decimal.precision": "39",
 			},
@@ -186,7 +186,7 @@ func TestDecodeDecimal(t *testing.T) {
 		{
 			name:    "MONEY",
 			encoded: "ALxhYg==",
-			params: map[string]interface{}{
+			params: map[string]any{
 				"scale": "2",
 			},
 			expectBigFloat:        true,
@@ -225,7 +225,7 @@ func TestDecodeDecimal(t *testing.T) {
 func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 	type _testCase struct {
 		name        string
-		value       interface{}
+		value       any
 		expectValue string
 		expectError bool
 		expectScale int
@@ -238,19 +238,19 @@ func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 		},
 		{
 			name:        "empty map",
-			value:       map[string]interface{}{},
+			value:       map[string]any{},
 			expectError: true,
 		},
 		{
 			name: "scale is not an integer",
-			value: map[string]interface{}{
+			value: map[string]any{
 				"scale": "foo",
 			},
 			expectError: true,
 		},
 		{
 			name: "value exists (scale 3)",
-			value: map[string]interface{}{
+			value: map[string]any{
 				"scale": 3,
 				"value": "SOx4FQ==",
 			},
@@ -259,7 +259,7 @@ func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 		},
 		{
 			name: "value exists (scale 2)",
-			value: map[string]interface{}{
+			value: map[string]any{
 				"scale": 2,
 				"value": "MDk=",
 			},
@@ -268,7 +268,7 @@ func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 		},
 		{
 			name: "negative numbers (scale 7)",
-			value: map[string]interface{}{
+			value: map[string]any{
 				"scale": 7,
 				"value": "wT9Wmw==",
 			},

@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-func GetApproxSize(value interface{}) int {
+func GetApproxSize(value any) int {
 	// We chose not to use unsafe.SizeOf or reflect.Type.Size (both are akin) because they do not do recursive traversal.
 	// We also chose not to use gob.NewEncoder because it does not work for all data types and had a huge computational overhead.
 	// Another plus here is that this will not error out.
@@ -30,13 +30,13 @@ func GetApproxSize(value interface{}) int {
 		return 8
 	case complex128:
 		return 16
-	case map[string]interface{}:
+	case map[string]any:
 		var size int
 		for _, val := range v {
 			size += GetApproxSize(val)
 		}
 		return size
-	case []map[string]interface{}:
+	case []map[string]any:
 		var size int
 		for _, val := range v {
 			size += GetApproxSize(val)
@@ -48,7 +48,7 @@ func GetApproxSize(value interface{}) int {
 			size += GetApproxSize(val)
 		}
 		return size
-	case []interface{}:
+	case []any:
 		var size int
 		for _, val := range v {
 			size += GetApproxSize(val)
