@@ -244,7 +244,7 @@ func (m *MergeArgument) GetStatement() (string, error) {
 
 	if m.SoftDelete {
 		return fmt.Sprintf(`
-MERGE INTO %s c using %s as cc on %s
+MERGE INTO %s c using %s as cc ON %s
 WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
 			m.FqTableName, subQuery, strings.Join(equalitySQLParts, " and "),
@@ -274,7 +274,7 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 	}
 
 	return fmt.Sprintf(`
-MERGE INTO %s c using %s AS cc on %s
+MERGE INTO %s c using %s AS cc ON %s
 WHEN MATCHED AND cc.%s THEN DELETE
 WHEN MATCHED AND IFNULL(cc.%s, false) = false %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
