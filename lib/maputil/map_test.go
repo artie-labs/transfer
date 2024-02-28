@@ -8,11 +8,11 @@ import (
 )
 
 func TestGetKeyFromMap(t *testing.T) {
-	var obj map[string]interface{}
+	var obj map[string]any
 	val := GetKeyFromMap(obj, "invalid", "dusty the mini aussie")
 	assert.Equal(t, val, "dusty the mini aussie")
 
-	obj = make(map[string]interface{})
+	obj = make(map[string]any)
 	val = GetKeyFromMap(obj, "invalid", "dusty the mini aussie")
 	assert.Equal(t, val, "dusty the mini aussie")
 
@@ -28,7 +28,7 @@ func TestGetKeyFromMap(t *testing.T) {
 }
 
 func TestGetIntegerFromMap(t *testing.T) {
-	object := map[string]interface{}{
+	object := map[string]any{
 		"abc":          "123",
 		"abc (number)": 123,
 		"def":          true,
@@ -39,7 +39,7 @@ func TestGetIntegerFromMap(t *testing.T) {
 
 	type _testCase struct {
 		name          string
-		obj           map[string]interface{}
+		obj           map[string]any
 		key           string
 		expectedValue int
 		expectError   bool

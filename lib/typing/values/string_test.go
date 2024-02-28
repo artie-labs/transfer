@@ -18,7 +18,7 @@ import (
 
 type _testCase struct {
 	name    string
-	colVal  interface{}
+	colVal  any
 	colKind columns.Column
 
 	errorMessage   string
@@ -44,7 +44,7 @@ func TestCastColValStaging_Basic(t *testing.T) {
 		},
 		{
 			name:   "colKind = string, colVal = JSON (this happens because of schema inference)",
-			colVal: map[string]interface{}{"hello": "world"},
+			colVal: map[string]any{"hello": "world"},
 			colKind: columns.Column{
 				KindDetails: typing.String,
 			},
@@ -173,7 +173,7 @@ func TestCastColValStaging_Array(t *testing.T) {
 			colKind: columns.Column{
 				KindDetails: typing.Array,
 			},
-			colVal: []map[string]interface{}{
+			colVal: []map[string]any{
 				{
 					"dusty": "the mini aussie",
 				},
