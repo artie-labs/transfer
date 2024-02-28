@@ -10,9 +10,9 @@ import (
 )
 
 type GeoJSON struct {
-	Type       GeoJSONType            `json:"type"`
-	Geometry   Geometry               `json:"geometry"`
-	Properties map[string]interface{} `json:"properties,omitempty"`
+	Type       GeoJSONType    `json:"type"`
+	Geometry   Geometry       `json:"geometry"`
+	Properties map[string]any `json:"properties,omitempty"`
 }
 
 type GeoJSONType string
@@ -21,20 +21,20 @@ const FeatureType GeoJSONType = "Feature"
 
 type Geometry struct {
 	Type        GeometricShapes `json:"type"`
-	Coordinates interface{}     `json:"coordinates"`
+	Coordinates any             `json:"coordinates"`
 }
 
 type GeometricShapes string
 
 const Point GeometricShapes = "Point"
 
-// ParseGeometry takes in a map[string]interface{} and returns a GeoJSON string.
+// ParseGeometry takes in a map[string]any and returns a GeoJSON string.
 // This function does not use WKB or SRID and leverages X, Y.
 // https://debezium.io/documentation/reference/stable/connectors/postgresql.html#:~:text=io.debezium.data.geometry.Point
-func parseGeometryPoint(value interface{}) (string, error) {
-	valMap, isOk := value.(map[string]interface{})
+func parseGeometryPoint(value any) (string, error) {
+	valMap, isOk := value.(map[string]any)
 	if !isOk {
-		return "", fmt.Errorf("value is not map[string]interface{} type")
+		return "", fmt.Errorf("value is not map[string]any type")
 	}
 
 	x, isOk := valMap["x"]
@@ -51,7 +51,7 @@ func parseGeometryPoint(value interface{}) (string, error) {
 		Type: FeatureType,
 		Geometry: Geometry{
 			Type:        Point,
-			Coordinates: []interface{}{x, y},
+			Coordinates: []any{x, y},
 		},
 	}
 
@@ -64,10 +64,10 @@ func parseGeometryPoint(value interface{}) (string, error) {
 }
 
 // parseGeometry will take in an object with b64 encoded wkb and return a GeoJSON string.
-func parseGeometry(value interface{}) (string, error) {
-	valMap, isOk := value.(map[string]interface{})
+func parseGeometry(value any) (string, error) {
+	valMap, isOk := value.(map[string]any)
 	if !isOk {
-		return "", fmt.Errorf("value is not map[string]interface{} type")
+		return "", fmt.Errorf("value is not map[string]any type")
 	}
 
 	wkbVal, isOk := valMap["wkb"]

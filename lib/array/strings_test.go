@@ -21,7 +21,7 @@ func TestStringsJoinAddSingleQuotes(t *testing.T) {
 func TestToArrayString(t *testing.T) {
 	type _testCase struct {
 		name          string
-		val           interface{}
+		val           any
 		recastAsArray bool
 		expectedList  []string
 		expectedErr   error
@@ -54,7 +54,7 @@ func TestToArrayString(t *testing.T) {
 		},
 		{
 			name: "array of nested objects",
-			val: []map[string]interface{}{
+			val: []map[string]any{
 				{
 					"foo": "bar",
 				},

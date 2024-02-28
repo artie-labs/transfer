@@ -12,8 +12,8 @@ func TestParseField(t *testing.T) {
 	type _testCase struct {
 		name          string
 		field         debezium.Field
-		value         interface{}
-		expectedValue interface{}
+		value         any
+		expectedValue any
 
 		expectedDecimal bool
 	}
@@ -41,7 +41,7 @@ func TestParseField(t *testing.T) {
 			name: "decimal",
 			field: debezium.Field{
 				DebeziumType: string(debezium.KafkaDecimalType),
-				Parameters: map[string]interface{}{
+				Parameters: map[string]any{
 					"scale":                           "0",
 					debezium.KafkaDecimalPrecisionKey: "5",
 				},
@@ -54,7 +54,7 @@ func TestParseField(t *testing.T) {
 			name: "numeric",
 			field: debezium.Field{
 				DebeziumType: string(debezium.KafkaDecimalType),
-				Parameters: map[string]interface{}{
+				Parameters: map[string]any{
 					"scale":                           "2",
 					debezium.KafkaDecimalPrecisionKey: "5",
 				},
@@ -67,7 +67,7 @@ func TestParseField(t *testing.T) {
 			name: "money",
 			field: debezium.Field{
 				DebeziumType: string(debezium.KafkaDecimalType),
-				Parameters: map[string]interface{}{
+				Parameters: map[string]any{
 					"scale": "2",
 				},
 			},
@@ -79,11 +79,11 @@ func TestParseField(t *testing.T) {
 			name: "variable decimal",
 			field: debezium.Field{
 				DebeziumType: string(debezium.KafkaVariableNumericType),
-				Parameters: map[string]interface{}{
+				Parameters: map[string]any{
 					"scale": "2",
 				},
 			},
-			value: map[string]interface{}{
+			value: map[string]any{
 				"scale": 2,
 				"value": "MDk=",
 			},
@@ -95,7 +95,7 @@ func TestParseField(t *testing.T) {
 			field: debezium.Field{
 				DebeziumType: string(debezium.GeometryType),
 			},
-			value: map[string]interface{}{
+			value: map[string]any{
 				"srid": nil,
 				"wkb":  "AQEAAAAAAAAAAADwPwAAAAAAABRA",
 			},
@@ -106,7 +106,7 @@ func TestParseField(t *testing.T) {
 			field: debezium.Field{
 				DebeziumType: string(debezium.GeometryType),
 			},
-			value: map[string]interface{}{
+			value: map[string]any{
 				"srid": 4326,
 				"wkb":  "AQEAACDmEAAAAAAAAAAA8D8AAAAAAAAYQA==",
 			},
@@ -117,7 +117,7 @@ func TestParseField(t *testing.T) {
 			field: debezium.Field{
 				DebeziumType: string(debezium.GeographyType),
 			},
-			value: map[string]interface{}{
+			value: map[string]any{
 				"srid": 4326,
 				"wkb":  "AQEAACDmEAAAAAAAAADAXkAAAAAAAIBDwA==",
 			},

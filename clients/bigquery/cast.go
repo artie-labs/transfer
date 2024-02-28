@@ -15,7 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func castColVal(colVal interface{}, colKind columns.Column, additionalDateFmts []string) (interface{}, error) {
+func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string) (any, error) {
 	if colVal != nil {
 		switch colKind.KindDetails.Kind {
 		case typing.EDecimal.Kind:

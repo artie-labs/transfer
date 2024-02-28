@@ -24,7 +24,7 @@ import (
 func (s *SnowflakeTestSuite) TestCastColValStaging() {
 	type _tc struct {
 		name    string
-		colVal  interface{}
+		colVal  any
 		colKind columns.Column
 
 		errorMessage  string
@@ -133,7 +133,7 @@ func generateTableData(rows int) (string, *optimization.TableData) {
 	td := optimization.NewTableData(cols, config.Replication, []string{"user_id"}, kafkalib.TopicConfig{}, "")
 	for i := 0; i < rows; i++ {
 		key := fmt.Sprint(i)
-		rowData := map[string]interface{}{
+		rowData := map[string]any{
 			"user_id":    key,
 			"first_name": fmt.Sprintf("first_name %d", i),
 			"last_name":  fmt.Sprintf("last_name %d", i),
