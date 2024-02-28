@@ -29,7 +29,7 @@ func TestMergeStatement_TempTable(t *testing.T) {
 	mergeSQL, err := mergeArg.GetStatement()
 	assert.NoError(t, err)
 
-	assert.Contains(t, mergeSQL, "MERGE INTO customers.orders c using customers.orders_tmp as cc on c.order_id = cc.order_id", mergeSQL)
+	assert.Contains(t, mergeSQL, "MERGE INTO customers.orders c using customers.orders_tmp AS cc ON c.order_id = cc.order_id", mergeSQL)
 }
 
 func TestMergeStatement_JSONKey(t *testing.T) {
@@ -50,5 +50,5 @@ func TestMergeStatement_JSONKey(t *testing.T) {
 
 	mergeSQL, err := mergeArg.GetStatement()
 	assert.NoError(t, err)
-	assert.Contains(t, mergeSQL, "MERGE INTO customers.orders c using customers.orders_tmp as cc on TO_JSON_STRING(c.order_oid) = TO_JSON_STRING(cc.order_oid)", mergeSQL)
+	assert.Contains(t, mergeSQL, "MERGE INTO customers.orders c using customers.orders_tmp AS cc ON TO_JSON_STRING(c.order_oid) = TO_JSON_STRING(cc.order_oid)", mergeSQL)
 }
