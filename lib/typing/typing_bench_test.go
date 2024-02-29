@@ -7,7 +7,7 @@ import (
 )
 
 func BenchmarkLargeMapLengthQuery(b *testing.B) {
-	retMap := make(map[string]interface{})
+	retMap := make(map[string]any)
 	for i := 0; i < 15000; i++ {
 		retMap[fmt.Sprintf("key-%v", i)] = true
 	}
@@ -18,9 +18,9 @@ func BenchmarkLargeMapLengthQuery(b *testing.B) {
 }
 
 func BenchmarkLargeMapLengthQuery_WithMassiveValues(b *testing.B) {
-	retMap := make(map[string]interface{})
+	retMap := make(map[string]any)
 	for i := 0; i < 15000; i++ {
-		retMap[fmt.Sprintf("key-%v", i)] = map[string]interface{}{
+		retMap[fmt.Sprintf("key-%v", i)] = map[string]any{
 			"foo":   "bar",
 			"hello": "world",
 			"true":  true,

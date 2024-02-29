@@ -16,11 +16,11 @@ import (
 func TestParseValue(t *testing.T) {
 	type _testStruct struct {
 		name    string
-		colVal  interface{}
+		colVal  any
 		colKind columns.Column
 
 		expectErr     bool
-		expectedValue interface{}
+		expectedValue any
 	}
 
 	eDecimal := typing.EDecimal
@@ -49,7 +49,7 @@ func TestParseValue(t *testing.T) {
 		},
 		{
 			name: "struct value",
-			colVal: map[string]interface{}{
+			colVal: map[string]any{
 				"foo": "bar",
 			},
 			colKind:       columns.NewColumn("", typing.Struct),
@@ -57,13 +57,13 @@ func TestParseValue(t *testing.T) {
 		},
 		{
 			name:          "array (numbers - converted to string)",
-			colVal:        []interface{}{123, 456},
+			colVal:        []any{123, 456},
 			colKind:       columns.NewColumn("", typing.Array),
 			expectedValue: []string{"123", "456"},
 		},
 		{
 			name:          "array (boolean - converted to string)",
-			colVal:        []interface{}{true, false, true},
+			colVal:        []any{true, false, true},
 			colKind:       columns.NewColumn("", typing.Array),
 			expectedValue: []string{"true", "false", "true"},
 		},

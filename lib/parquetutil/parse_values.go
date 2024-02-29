@@ -14,7 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func ParseValue(colVal interface{}, colKind columns.Column, additionalDateFmts []string) (interface{}, error) {
+func ParseValue(colVal any, colKind columns.Column, additionalDateFmts []string) (any, error) {
 	if colVal == nil {
 		return nil, nil
 	}
@@ -40,7 +40,7 @@ func ParseValue(colVal interface{}, colKind columns.Column, additionalDateFmts [
 	case typing.Struct.Kind:
 		if colKind.KindDetails == typing.Struct {
 			if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
-				colVal = map[string]interface{}{
+				colVal = map[string]any{
 					"key": constants.ToastUnavailableValuePlaceholder,
 				}
 			}

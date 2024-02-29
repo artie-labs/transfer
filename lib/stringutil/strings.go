@@ -26,7 +26,7 @@ func Override(vals ...string) string {
 	return retVal
 }
 
-func Wrap(colVal interface{}, noQuotes bool) string {
+func Wrap(colVal any, noQuotes bool) string {
 	colVal = strings.ReplaceAll(fmt.Sprint(colVal), `\`, `\\`)
 	// The normal string escape is to do for O'Reilly is O\\'Reilly, but Snowflake escapes via \'
 	if noQuotes {

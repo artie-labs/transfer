@@ -99,7 +99,7 @@ func IsJSON(str string) bool {
 	return false
 }
 
-func ParseValue(settings Settings, key string, optionalSchema map[string]KindDetails, val interface{}) KindDetails {
+func ParseValue(settings Settings, key string, optionalSchema map[string]KindDetails, val any) KindDetails {
 	if val == nil && !settings.CreateAllColumnsIfAvailable {
 		// If the value is nil and `createAllColumnsIfAvailable` = false, then return `Invalid
 		return Invalid

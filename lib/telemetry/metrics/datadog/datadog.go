@@ -32,7 +32,7 @@ const (
 // getSampleRate will first parse the val to get a float
 // Then it will check if float is a valid sample rate.
 // If it's invalid, it will return the default sample, else the passed in rate
-func getSampleRate(val interface{}) float64 {
+func getSampleRate(val any) float64 {
 	floatVal, err := strconv.ParseFloat(fmt.Sprint(val), 64)
 	if err != nil {
 		return DefaultSampleRate
@@ -45,7 +45,7 @@ func getSampleRate(val interface{}) float64 {
 	return floatVal
 }
 
-func NewDatadogClient(settings map[string]interface{}) (base.Client, error) {
+func NewDatadogClient(settings map[string]any) (base.Client, error) {
 	address := fmt.Sprint(maputil.GetKeyFromMap(settings, DatadogAddr, DefaultAddr))
 	host := os.Getenv("TELEMETRY_HOST")
 	port := os.Getenv("TELEMETRY_PORT")

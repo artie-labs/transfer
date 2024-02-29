@@ -27,10 +27,10 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 	for i := 0; i < 5; i++ {
 		evt := event.Event{
 			Table: "foo",
-			PrimaryKeyMap: map[string]interface{}{
+			PrimaryKeyMap: map[string]any{
 				"id": fmt.Sprintf("pk-%d", i),
 			},
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				constants.DeleteColumnMarker: true,
 				"abc":                        "def",
 				"hi":                         "hello",
@@ -53,10 +53,10 @@ func (f *FlushTestSuite) TestShouldFlush() {
 	for i := 0; i < int(float64(f.cfg.BufferRows)*1.5); i++ {
 		evt := event.Event{
 			Table: "postgres",
-			PrimaryKeyMap: map[string]interface{}{
+			PrimaryKeyMap: map[string]any{
 				"id": fmt.Sprintf("pk-%d", i),
 			},
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				constants.DeleteColumnMarker: true,
 				"pk":                         fmt.Sprintf("pk-%d", i),
 				"foo":                        "bar",
@@ -90,10 +90,10 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 			for i := 0; i < 5; i++ {
 				evt := event.Event{
 					Table: tableName,
-					PrimaryKeyMap: map[string]interface{}{
+					PrimaryKeyMap: map[string]any{
 						"id": fmt.Sprintf("pk-%d", i),
 					},
-					Data: map[string]interface{}{
+					Data: map[string]any{
 						"id":                         fmt.Sprintf("pk-%d", i),
 						constants.DeleteColumnMarker: true,
 						"pk":                         fmt.Sprintf("pk-%d", i),

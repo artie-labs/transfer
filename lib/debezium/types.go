@@ -155,7 +155,7 @@ func (f Field) DecodeDecimal(encoded string) (*decimal.Decimal, error) {
 func (f Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error) {
 	valueStruct, isOk := value.(map[string]any)
 	if !isOk {
-		return nil, fmt.Errorf("value is not map[string]interface{} type")
+		return nil, fmt.Errorf("value is not map[string]any type")
 	}
 
 	scale, err := maputil.GetIntegerFromMap(valueStruct, "scale")
