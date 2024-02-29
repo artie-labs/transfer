@@ -12,7 +12,7 @@ import (
 
 type Format interface {
 	Labels() []string // Labels() to return a list of strings to maintain backward compatibility.
-	GetPrimaryKey(key []byte, tc *kafkalib.TopicConfig) (map[string]interface{}, error)
+	GetPrimaryKey(key []byte, tc *kafkalib.TopicConfig) (map[string]any, error)
 	GetEventFromBytes(typingSettings typing.Settings, bytes []byte) (Event, error)
 }
 
@@ -21,7 +21,7 @@ type Event interface {
 	Operation() string
 	DeletePayload() bool
 	GetTableName() string
-	GetData(pkMap map[string]interface{}, config *kafkalib.TopicConfig) map[string]interface{}
+	GetData(pkMap map[string]any, config *kafkalib.TopicConfig) map[string]any
 	GetOptionalSchema() map[string]typing.KindDetails
 	// GetColumns will inspect the envelope's payload right now and return.
 	GetColumns() *columns.Columns

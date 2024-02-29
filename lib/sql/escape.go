@@ -25,6 +25,8 @@ func EscapeName(name string, uppercaseEscNames bool, args *NameArgs) string {
 	var reservedKeywords []string
 	if args.DestKind == constants.Redshift {
 		reservedKeywords = constants.RedshiftReservedKeywords
+	} else if args.DestKind == constants.MSSQL {
+		reservedKeywords = constants.MSSQLReservedKeywords
 	} else {
 		reservedKeywords = constants.ReservedKeywords
 	}

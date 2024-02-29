@@ -319,7 +319,7 @@ func (m *MySQLTestSuite) TestGetEventFromBytes() {
 	schema := evt.GetOptionalSchema()
 	assert.Equal(m.T(), typing.Struct, schema["custom_fields"])
 
-	kvMap := map[string]interface{}{
+	kvMap := map[string]any{
 		"id": 1001,
 	}
 

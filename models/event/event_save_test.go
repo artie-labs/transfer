@@ -30,10 +30,10 @@ func (e *EventsTestSuite) TestSaveEvent() {
 
 	event := Event{
 		Table: "foo",
-		PrimaryKeyMap: map[string]interface{}{
+		PrimaryKeyMap: map[string]any{
 			"id": "123",
 		},
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			constants.DeleteColumnMarker: true,
 			expectedCol:                  "dusty",
 			anotherCol:                   13.37,
@@ -61,10 +61,10 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	badColumn := "other"
 	edgeCaseEvent := Event{
 		Table: "foo",
-		PrimaryKeyMap: map[string]interface{}{
+		PrimaryKeyMap: map[string]any{
 			"id": "12344",
 		},
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			constants.DeleteColumnMarker: true,
 			expectedCol:                  "dusty",
 			anotherCol:                   13.37,
@@ -85,10 +85,10 @@ func (e *EventsTestSuite) TestSaveEvent() {
 func (e *EventsTestSuite) TestEvent_SaveCasing() {
 	event := Event{
 		Table: "foo",
-		PrimaryKeyMap: map[string]interface{}{
+		PrimaryKeyMap: map[string]any{
 			"id": "123",
 		},
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			constants.DeleteColumnMarker: true,
 			"randomCol":                  "dusty",
 			"anotherCOL":                 13.37,
@@ -112,10 +112,10 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 	event := Event{
 		Table: "foo",
-		PrimaryKeyMap: map[string]interface{}{
+		PrimaryKeyMap: map[string]any{
 			"id": "123",
 		},
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			constants.DeleteColumnMarker: true,
 			"randomCol":                  "dusty",
 			"anotherCOL":                 13.37,
@@ -162,11 +162,11 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	evt := Event{
 		Table:   "non_existent",
 		Columns: &cols,
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			"1":                          "123",
 			constants.DeleteColumnMarker: true,
 		},
-		PrimaryKeyMap: map[string]interface{}{
+		PrimaryKeyMap: map[string]any{
 			"1": "123",
 		},
 	}
@@ -216,10 +216,10 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 	event := Event{
 		Table:   "foo",
 		Columns: &cols,
-		PrimaryKeyMap: map[string]interface{}{
+		PrimaryKeyMap: map[string]any{
 			"id": "123",
 		},
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			constants.DeleteColumnMarker: true,
 			"randomCol":                  "dusty",
 			"anotherCOL":                 13.37,
@@ -253,10 +253,10 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
 	event := Event{
 		Table: "foo",
-		PrimaryKeyMap: map[string]interface{}{
+		PrimaryKeyMap: map[string]any{
 			"id": "123",
 		},
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			constants.DeleteColumnMarker: true,
 		},
 		Deleted: true,

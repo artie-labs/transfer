@@ -14,7 +14,7 @@ const (
 	maxRedshiftSuperLen   = 1 * 1024 * 1024 // 1 MB
 )
 
-// replaceExceededValues - takes `colVal` interface{} and `colKind` columns.Column and replaces the value with an empty string if it exceeds the max length.
+// replaceExceededValues - takes `colVal` any and `colKind` columns.Column and replaces the value with an empty string if it exceeds the max length.
 // This currently only works for STRING and SUPER data types.
 func replaceExceededValues(colVal string, colKind columns.Column) string {
 	numOfChars := len(colVal)
@@ -42,9 +42,9 @@ func replaceExceededValues(colVal string, colKind columns.Column) string {
 	return colVal
 }
 
-// CastColValStaging - takes `colVal` interface{} and `colKind` typing.Column and converts the value into a string value
+// CastColValStaging - takes `colVal` any and `colKind` typing.Column and converts the value into a string value
 // This is necessary because CSV writers require values to in `string`.
-func (s *Store) CastColValStaging(colVal interface{}, colKind columns.Column, additionalDateFmts []string) (string, error) {
+func (s *Store) CastColValStaging(colVal any, colKind columns.Column, additionalDateFmts []string) (string, error) {
 	if colVal == nil {
 		if colKind.KindDetails == typing.Struct {
 			// Returning empty here because if it's a struct, it will go through JSON PARSE and JSON_PARSE("") = null

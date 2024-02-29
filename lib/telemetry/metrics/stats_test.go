@@ -36,15 +36,15 @@ func TestLoadExporter(t *testing.T) {
 			Telemetry: struct {
 				Metrics struct {
 					Provider constants.ExporterKind `yaml:"provider"`
-					Settings map[string]interface{} `yaml:"settings,omitempty"`
+					Settings map[string]any         `yaml:"settings,omitempty"`
 				}
 			}{
 				Metrics: struct {
 					Provider constants.ExporterKind `yaml:"provider"`
-					Settings map[string]interface{} `yaml:"settings,omitempty"`
+					Settings map[string]any         `yaml:"settings,omitempty"`
 				}{
 					Provider: kind,
-					Settings: map[string]interface{}{
+					Settings: map[string]any{
 						"url": "localhost:8125",
 					},
 				},

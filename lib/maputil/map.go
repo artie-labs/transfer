@@ -5,7 +5,7 @@ import (
 	"strconv"
 )
 
-func GetKeyFromMap(obj map[string]interface{}, key string, defaultValue interface{}) interface{} {
+func GetKeyFromMap(obj map[string]any, key string, defaultValue any) any {
 	if len(obj) == 0 {
 		return defaultValue
 	}
@@ -18,7 +18,7 @@ func GetKeyFromMap(obj map[string]interface{}, key string, defaultValue interfac
 	return val
 }
 
-func GetIntegerFromMap(obj map[string]interface{}, key string) (int, error) {
+func GetIntegerFromMap(obj map[string]any, key string) (int, error) {
 	if len(obj) == 0 {
 		return 0, fmt.Errorf("object is empty")
 	}

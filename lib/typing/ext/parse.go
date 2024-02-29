@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func ParseFromInterface(val interface{}, additionalDateFormats []string) (*ExtendedTime, error) {
+func ParseFromInterface(val any, additionalDateFormats []string) (*ExtendedTime, error) {
 	if val == nil {
 		return nil, fmt.Errorf("val is nil")
 	}

@@ -9,7 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
-func InterfaceToArrayString(val interface{}, recastAsArray bool) ([]string, error) {
+func InterfaceToArrayString(val any, recastAsArray bool) ([]string, error) {
 	if val == nil {
 		return nil, nil
 	}
@@ -18,7 +18,7 @@ func InterfaceToArrayString(val interface{}, recastAsArray bool) ([]string, erro
 	if list.Kind() != reflect.Slice {
 		if recastAsArray {
 			// Since it's not a slice, let's cast it as a slice and re-enter this function.
-			return InterfaceToArrayString([]interface{}{val}, recastAsArray)
+			return InterfaceToArrayString([]any{val}, recastAsArray)
 		} else {
 			return nil, fmt.Errorf("wrong data type, kind: %v", list.Kind())
 		}
@@ -31,7 +31,7 @@ func InterfaceToArrayString(val interface{}, recastAsArray bool) ([]string, erro
 		value := list.Index(i).Interface()
 		var shouldParse bool
 		if kind == reflect.Interface {
-			valMap, isOk := value.(map[string]interface{})
+			valMap, isOk := value.(map[string]any)
 			if isOk {
 				value = valMap
 			}

@@ -37,7 +37,7 @@ func TestSanitizePayload(t *testing.T) {
 		val, err := SanitizePayload(`{"hello":"world","foo":"bar","hello":"world"}`)
 		assert.NoError(t, err)
 
-		var jsonMap map[string]interface{}
+		var jsonMap map[string]any
 		err = json.Unmarshal([]byte(fmt.Sprint(val)), &jsonMap)
 		assert.NoError(t, err)
 

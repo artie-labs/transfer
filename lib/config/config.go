@@ -174,7 +174,7 @@ type Config struct {
 	Telemetry struct {
 		Metrics struct {
 			Provider constants.ExporterKind `yaml:"provider"`
-			Settings map[string]interface{} `yaml:"settings,omitempty"`
+			Settings map[string]any         `yaml:"settings,omitempty"`
 		}
 	}
 }

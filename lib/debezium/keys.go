@@ -17,7 +17,7 @@ const (
 	stringSuffix = "}"
 )
 
-func ParsePartitionKey(key []byte, cdcKeyFormat string) (map[string]interface{}, error) {
+func ParsePartitionKey(key []byte, cdcKeyFormat string) (map[string]any, error) {
 	switch cdcKeyFormat {
 	case kafkalib.JSONKeyFmt:
 		return parsePartitionKeyStruct(key)
@@ -34,7 +34,7 @@ func ParsePartitionKey(key []byte, cdcKeyFormat string) (map[string]interface{},
 // However, if the k or v has `,` or `=` within it, it is not escaped and thus difficult to delineate between a separator or a continuation of the column or value.
 // In the case where there are multiple `=`, we will use the first one to separate between the key and value.
 // TL;DR - Use `org.apache.kafka.connect.json.JsonConverter` over `org.apache.kafka.connect.storage.StringConverter`
-func parsePartitionKeyString(keyBytes []byte) (map[string]interface{}, error) {
+func parsePartitionKeyString(keyBytes []byte) (map[string]any, error) {
 	// Key will look like key: Struct{quarter_id=1,course_id=course1,student_id=1}
 	if len(keyBytes) == 0 {
 		return nil, fmt.Errorf("key is nil")
@@ -49,7 +49,7 @@ func parsePartitionKeyString(keyBytes []byte) (map[string]interface{}, error) {
 		return nil, fmt.Errorf("incorrect key structure")
 	}
 
-	retMap := make(map[string]interface{})
+	retMap := make(map[string]any)
 	parsedKeyString := keyString[len(stringPrefix) : len(keyString)-1]
 	for _, kvPartString := range strings.Split(parsedKeyString, ",") {
 		kvParts := strings.Split(kvPartString, "=")
@@ -64,12 +64,12 @@ func parsePartitionKeyString(keyBytes []byte) (map[string]interface{}, error) {
 	return sanitizePayload(retMap), nil
 }
 
-func parsePartitionKeyStruct(keyBytes []byte) (map[string]interface{}, error) {
+func parsePartitionKeyStruct(keyBytes []byte) (map[string]any, error) {
 	if len(keyBytes) == 0 {
 		return nil, fmt.Errorf("key is nil")
 	}
 
-	var pkStruct map[string]interface{}
+	var pkStruct map[string]any
 	err := json.Unmarshal(keyBytes, &pkStruct)
 	if err != nil {
 		return nil, fmt.Errorf("failed to json unmarshal: %w", err)
@@ -85,7 +85,7 @@ func parsePartitionKeyStruct(keyBytes []byte) (map[string]interface{}, error) {
 		return sanitizePayload(pkStruct), nil
 	}
 
-	pkStruct, isOk = pkStruct["payload"].(map[string]interface{})
+	pkStruct, isOk = pkStruct["payload"].(map[string]any)
 	if !isOk {
 		return nil, fmt.Errorf("key object is malformated")
 	}
@@ -95,8 +95,8 @@ func parsePartitionKeyStruct(keyBytes []byte) (map[string]interface{}, error) {
 	return sanitizePayload(pkStruct), nil
 }
 
-func sanitizePayload(retMap map[string]interface{}) map[string]interface{} {
-	escapedRetMap := make(map[string]interface{})
+func sanitizePayload(retMap map[string]any) map[string]any {
+	escapedRetMap := make(map[string]any)
 	for key, value := range retMap {
 		escapedRetMap[columns.EscapeName(key)] = value
 	}

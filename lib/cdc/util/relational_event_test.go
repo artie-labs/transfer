@@ -92,7 +92,7 @@ func TestSource_GetExecutionTime(t *testing.T) {
 }
 
 func TestGetDataTestInsert(t *testing.T) {
-	after := map[string]interface{}{
+	after := map[string]any{
 		"pk":           1,
 		"foo":          "bar",
 		"name":         "dusty",
@@ -109,7 +109,7 @@ func TestGetDataTestInsert(t *testing.T) {
 
 	assert.False(t, schemaEventPayload.DeletePayload())
 
-	evtData := schemaEventPayload.GetData(map[string]interface{}{"pk": 1}, &kafkalib.TopicConfig{})
+	evtData := schemaEventPayload.GetData(map[string]any{"pk": 1}, &kafkalib.TopicConfig{})
 	assert.Equal(t, len(after), len(evtData), "has deletion flag")
 
 	deletionFlag, isOk := evtData[constants.DeleteColumnMarker]
@@ -122,7 +122,7 @@ func TestGetDataTestInsert(t *testing.T) {
 	delete(evtData, constants.DeleteColumnMarker)
 	assert.Equal(t, after, evtData)
 
-	evtData = schemaEventPayload.GetData(map[string]interface{}{"pk": 1}, &kafkalib.TopicConfig{
+	evtData = schemaEventPayload.GetData(map[string]any{"pk": 1}, &kafkalib.TopicConfig{
 		IncludeArtieUpdatedAt: true,
 	})
 
@@ -147,7 +147,7 @@ func TestGetDataTestDelete(t *testing.T) {
 
 	assert.False(t, schemaEventPayload.DeletePayload())
 
-	kvMap := map[string]interface{}{"pk": 1}
+	kvMap := map[string]any{"pk": 1}
 	evtData := schemaEventPayload.GetData(kvMap, tc)
 	shouldDelete, isOk := evtData[constants.DeleteColumnMarker]
 	assert.True(t, isOk)
@@ -164,7 +164,7 @@ func TestGetDataTestDelete(t *testing.T) {
 }
 
 func TestGetDataTestUpdate(t *testing.T) {
-	before := map[string]interface{}{
+	before := map[string]any{
 		"pk":           1,
 		"foo":          "bar",
 		"name":         "dusty",
@@ -173,7 +173,7 @@ func TestGetDataTestUpdate(t *testing.T) {
 		"weight_lbs":   25,
 	}
 
-	after := map[string]interface{}{
+	after := map[string]any{
 		"pk":           1,
 		"foo":          "bar",
 		"name":         "dusty",
@@ -191,7 +191,7 @@ func TestGetDataTestUpdate(t *testing.T) {
 	}
 
 	assert.False(t, schemaEventPayload.DeletePayload())
-	kvMap := map[string]interface{}{"pk": 1}
+	kvMap := map[string]any{"pk": 1}
 
 	evtData := schemaEventPayload.GetData(kvMap, &kafkalib.TopicConfig{})
 	assert.Equal(t, len(after), len(evtData), "has deletion flag")

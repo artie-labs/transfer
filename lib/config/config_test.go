@@ -165,7 +165,7 @@ outputSource: none
 
 	validErr := config.Validate()
 	assert.Error(t, validErr)
-	assert.True(t, strings.Contains(validErr.Error(), "is invalid"), validErr.Error())
+	assert.ErrorContains(t, validErr, "is invalid", validErr.Error())
 }
 
 func TestConfig_Validate_ErrorTopicConfigInvalid(t *testing.T) {
@@ -303,12 +303,12 @@ telemetry:
 	assert.Nil(t, err, "failed to read config file")
 	assert.Equal(t, config.Reporting.Sentry.DSN, "abc123", config)
 	assert.Equal(t, string(config.Telemetry.Metrics.Provider), "datadog")
-	assert.Equal(t, config.Telemetry.Metrics.Settings, map[string]interface{}{
+	assert.Equal(t, config.Telemetry.Metrics.Settings, map[string]any{
 		"a":       "b",
 		"foo":     "bar",
 		"bar":     true,
 		"aNumber": 0.88,
-		"tags":    []interface{}{"env:bar"},
+		"tags":    []any{"env:bar"},
 	})
 }
 

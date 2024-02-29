@@ -24,8 +24,8 @@ import (
 
 type Event struct {
 	Table         string
-	PrimaryKeyMap map[string]interface{}
-	Data          map[string]interface{} // json serialized column data
+	PrimaryKeyMap map[string]any
+	Data          map[string]any // json serialized column data
 
 	OptionalSchema map[string]typing.KindDetails
 	Columns        *columns.Columns
@@ -35,7 +35,7 @@ type Event struct {
 	mode config.Mode
 }
 
-func ToMemoryEvent(event cdc.Event, pkMap map[string]interface{}, tc *kafkalib.TopicConfig, cfgMode config.Mode) Event {
+func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc *kafkalib.TopicConfig, cfgMode config.Mode) Event {
 	cols := event.GetColumns()
 	// Now iterate over pkMap and tag each column that is a primary key
 	if cols != nil {
@@ -155,7 +155,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, topicConfi
 	// Table columns
 	inMemoryColumns := td.ReadOnlyInMemoryCols()
 	// Update col if necessary
-	sanitizedData := make(map[string]interface{})
+	sanitizedData := make(map[string]any)
 	for _col, val := range e.Data {
 		// TODO: Refactor this to call columns.EscapeName(...)
 		// columns need to all be normalized and lower cased.
@@ -174,7 +174,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, topicConfi
 		toastedCol := val == constants.ToastUnavailableValuePlaceholder
 		if !toastedCol {
 			// If the value is in map[string]string, the TOASTED value will look like map[__debezium_unavailable_value:__debezium_unavailable_value]
-			valMap, isOk := val.(map[string]interface{})
+			valMap, isOk := val.(map[string]any)
 			if isOk {
 				if _, isOk = valMap[constants.ToastUnavailableValuePlaceholder]; isOk {
 					// Casting the value back into how other TOASTED values look like.

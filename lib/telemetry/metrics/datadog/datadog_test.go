@@ -18,11 +18,11 @@ func TestGetSampleRate(t *testing.T) {
 func TestGetTags(t *testing.T) {
 	assert.Equal(t, getTags(nil), []string{})
 	assert.Equal(t, getTags([]string{}), []string{})
-	assert.Equal(t, getTags([]interface{}{"env:bar", "a:b"}), []string{"env:bar", "a:b"})
+	assert.Equal(t, getTags([]any{"env:bar", "a:b"}), []string{"env:bar", "a:b"})
 }
 
 func TestNewDatadogClient(t *testing.T) {
-	client, err := NewDatadogClient(map[string]interface{}{
+	client, err := NewDatadogClient(map[string]any{
 		Tags: []string{
 			"env:production",
 		},

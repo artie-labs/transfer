@@ -17,22 +17,22 @@ func TestInsertRow_Toast(t *testing.T) {
 	type testCaseStruct struct {
 		name             string
 		primaryKey       string
-		rowsDataToUpdate []map[string]interface{}
-		expectedFinalRow map[string]interface{}
+		rowsDataToUpdate []map[string]any
+		expectedFinalRow map[string]any
 	}
 
 	testCases := []testCaseStruct{
 		{
 			name:       "happy path",
 			primaryKey: "123",
-			rowsDataToUpdate: []map[string]interface{}{
+			rowsDataToUpdate: []map[string]any{
 				{
 					"foo":   "bar",
 					"dusty": "the mini aussie",
 					"artie": "transfer",
 				},
 			},
-			expectedFinalRow: map[string]interface{}{
+			expectedFinalRow: map[string]any{
 				"foo":   "bar",
 				"dusty": "the mini aussie",
 				"artie": "transfer",
@@ -41,7 +41,7 @@ func TestInsertRow_Toast(t *testing.T) {
 		{
 			name:       "row that is followed by a TOASTED value (we skip) and drops an old column",
 			primaryKey: "123",
-			rowsDataToUpdate: []map[string]interface{}{
+			rowsDataToUpdate: []map[string]any{
 				{
 					"foo":                        "bar",
 					"dusty":                      "the mini aussie",
@@ -54,7 +54,7 @@ func TestInsertRow_Toast(t *testing.T) {
 					"artie": "transfer5",
 				},
 			},
-			expectedFinalRow: map[string]interface{}{
+			expectedFinalRow: map[string]any{
 				"foo":   "bar",
 				"dusty": "the mini aussie",
 				"artie": "transfer5",
@@ -63,14 +63,14 @@ func TestInsertRow_Toast(t *testing.T) {
 		{
 			name:       "row that starts with TOASTED value",
 			primaryKey: "123",
-			rowsDataToUpdate: []map[string]interface{}{
+			rowsDataToUpdate: []map[string]any{
 				{
 					"foo":   "bar",
 					"dusty": constants.ToastUnavailableValuePlaceholder,
 					"artie": "transfer5",
 				},
 			},
-			expectedFinalRow: map[string]interface{}{
+			expectedFinalRow: map[string]any{
 				"foo":   "bar",
 				"dusty": constants.ToastUnavailableValuePlaceholder,
 				"artie": "transfer5",
@@ -79,7 +79,7 @@ func TestInsertRow_Toast(t *testing.T) {
 		{
 			name:       "row that starts with a TOASTED value, then another update comes in with a new value AND new column",
 			primaryKey: "123",
-			rowsDataToUpdate: []map[string]interface{}{
+			rowsDataToUpdate: []map[string]any{
 				{
 					"foo":   "bar",
 					"dusty": constants.ToastUnavailableValuePlaceholder,
@@ -92,7 +92,7 @@ func TestInsertRow_Toast(t *testing.T) {
 					"new_col": true,
 				},
 			},
-			expectedFinalRow: map[string]interface{}{
+			expectedFinalRow: map[string]any{
 				"foo":     "bar",
 				"dusty":   "the aussie",
 				"artie":   "transfer5",
@@ -123,9 +123,7 @@ func TestTableData_InsertRow(t *testing.T) {
 	assert.Equal(t, 0, int(td.NumberOfRows()))
 
 	// Now insert the right way.
-	td.InsertRow("foo", map[string]interface{}{
-		"foo": "bar",
-	}, false)
+	td.InsertRow("foo", map[string]any{"foo": "bar"}, false)
 
 	assert.Equal(t, 1, int(td.NumberOfRows()))
 }
@@ -140,12 +138,12 @@ func TestTableData_InsertRowApproxSize(t *testing.T) {
 	numDeleteRows := 250
 
 	for i := 0; i < numInsertRows; i++ {
-		td.InsertRow(fmt.Sprint(i), map[string]interface{}{
+		td.InsertRow(fmt.Sprint(i), map[string]any{
 			"foo":     "bar",
 			"array":   []int{1, 2, 3, 4, 5},
 			"boolean": true,
-			"nested_object": map[string]interface{}{
-				"nested": map[string]interface{}{
+			"nested_object": map[string]any{
+				"nested": map[string]any{
 					"foo":  "bar",
 					"true": false,
 				},
@@ -156,11 +154,7 @@ func TestTableData_InsertRowApproxSize(t *testing.T) {
 	var updateCount int
 	for updateKey := range td.rowsData {
 		updateCount += 1
-		td.InsertRow(updateKey, map[string]interface{}{
-			"foo": "foo",
-			"bar": "bar",
-		}, false)
-
+		td.InsertRow(updateKey, map[string]any{"foo": "foo", "bar": "bar"}, false)
 		if updateCount > numUpdateRows {
 			break
 		}
@@ -169,10 +163,7 @@ func TestTableData_InsertRowApproxSize(t *testing.T) {
 	var deleteCount int
 	for deleteKey := range td.rowsData {
 		deleteCount += 1
-		td.InsertRow(deleteKey, map[string]interface{}{
-			"__artie_deleted": true,
-		}, true)
-
+		td.InsertRow(deleteKey, map[string]any{"__artie_deleted": true}, true)
 		if deleteCount > numDeleteRows {
 			break
 		}

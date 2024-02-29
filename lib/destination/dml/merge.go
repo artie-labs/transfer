@@ -244,18 +244,10 @@ func (m *MergeArgument) GetStatement() (string, error) {
 
 	if m.SoftDelete {
 		return fmt.Sprintf(`
-			MERGE INTO %s c using %s as cc on %s
-				when matched %sthen UPDATE
-					SET %s
-				when not matched AND IFNULL(cc.%s, false) = false then INSERT
-					(
-						%s
-					)
-					VALUES
-					(
-						%s
-					);
-		`, m.FqTableName, subQuery, strings.Join(equalitySQLParts, " and "),
+MERGE INTO %s c USING %s AS cc ON %s
+WHEN MATCHED %sTHEN UPDATE SET %s
+WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
+			m.FqTableName, subQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
 			idempotentClause, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
 			// Insert
@@ -282,19 +274,11 @@ func (m *MergeArgument) GetStatement() (string, error) {
 	}
 
 	return fmt.Sprintf(`
-			MERGE INTO %s c using %s as cc on %s
-				when matched AND cc.%s then DELETE
-				when matched AND IFNULL(cc.%s, false) = false %sthen UPDATE
-					SET %s
-				when not matched AND IFNULL(cc.%s, false) = false then INSERT
-					(
-						%s
-					)
-					VALUES
-					(
-						%s
-					);
-		`, m.FqTableName, subQuery, strings.Join(equalitySQLParts, " and "),
+MERGE INTO %s c USING %s AS cc ON %s
+WHEN MATCHED AND cc.%s THEN DELETE
+WHEN MATCHED AND IFNULL(cc.%s, false) = false %sTHEN UPDATE SET %s
+WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
+		m.FqTableName, subQuery, strings.Join(equalitySQLParts, " and "),
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update
@@ -332,21 +316,13 @@ func (m *MergeArgument) GetMSSQLStatement() (string, error) {
 		DestKind: m.DestKind,
 	})
 
-	// TODO: Should be consistent about uppercasing
 	if m.SoftDelete {
 		return fmt.Sprintf(`
-			MERGE INTO %s c using %s as cc on %s
-				when matched %sthen UPDATE
-					SET %s
-				when not matched AND COALESCE(cc.%s, 0) = 0 then INSERT
-					(
-						%s
-					)
-					VALUES
-					(
-						%s
-					);
-		`, m.FqTableName, m.SubQuery, strings.Join(equalitySQLParts, " and "),
+MERGE INTO %s c
+USING %s AS cc ON %s
+WHEN MATCHED %sTHEN UPDATE SET %s
+WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
+			m.FqTableName, m.SubQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
 			idempotentClause, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
 			// Insert
@@ -373,19 +349,12 @@ func (m *MergeArgument) GetMSSQLStatement() (string, error) {
 	}
 
 	return fmt.Sprintf(`
-			MERGE INTO %s c using %s as cc on %s
-				when matched AND cc.%s = 1 then DELETE
-				when matched AND COALESCE(cc.%s, 0) = 0 %sthen UPDATE
-					SET %s
-				when not matched AND COALESCE(cc.%s, 1) = 0 then INSERT
-					(
-						%s
-					)
-					VALUES
-					(
-						%s
-					);
-		`, m.FqTableName, m.SubQuery, strings.Join(equalitySQLParts, " and "),
+MERGE INTO %s c
+USING %s AS cc ON %s
+WHEN MATCHED AND cc.%s = 1 THEN DELETE
+WHEN MATCHED AND COALESCE(cc.%s, 0) = 0 %sTHEN UPDATE SET %s
+WHEN NOT MATCHED AND COALESCE(cc.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
+		m.FqTableName, m.SubQuery, strings.Join(equalitySQLParts, " and "),
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update

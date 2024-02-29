@@ -36,12 +36,12 @@ func NewLogger(verbose bool, sentryCfg *config.Sentry) (*slog.Logger, bool) {
 	return slog.New(handler), loggingToSentry
 }
 
-func Fatal(msg string, args ...interface{}) {
+func Fatal(msg string, args ...any) {
 	slog.Error(msg, args...)
 	os.Exit(1)
 }
 
-func Panic(msg string, args ...interface{}) {
+func Panic(msg string, args ...any) {
 	slog.Error(msg, args...)
 	panic(msg)
 }

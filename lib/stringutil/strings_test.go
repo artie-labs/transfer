@@ -71,7 +71,7 @@ func TestOverride(t *testing.T) {
 func TestWrap(t *testing.T) {
 	type _testCase struct {
 		name           string
-		colVal         interface{}
+		colVal         any
 		noQuotes       bool
 		expectedString string
 	}
@@ -143,7 +143,7 @@ func TestEmpty(t *testing.T) {
 }
 
 func TestEscapeSpaces(t *testing.T) {
-	colsToExpectation := map[string]map[string]interface{}{
+	colsToExpectation := map[string]map[string]any{
 		"columnA":  {"escaped": "columnA", "space": false},
 		"column_a": {"escaped": "column_a", "space": false},
 		"column a": {"escaped": "column__a", "space": true},

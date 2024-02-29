@@ -15,9 +15,8 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func parseValue(colVal interface{}, colKind columns.Column, additionalDateFmts []string) (any, error) {
+func parseValue(colVal any, colKind columns.Column, additionalDateFmts []string) (any, error) {
 	if colVal == nil {
-		// TODO: Test nil
 		return colVal, nil
 	}
 
@@ -32,7 +31,7 @@ func parseValue(colVal interface{}, colKind columns.Column, additionalDateFmts [
 		return extTime.GetTime(), nil
 	case typing.String.Kind:
 		isArray := reflect.ValueOf(colVal).Kind() == reflect.Slice
-		_, isMap := colVal.(map[string]interface{})
+		_, isMap := colVal.(map[string]any)
 
 		// If colVal is either an array or a JSON object, we should run JSON parse.
 		if isMap || isArray {
@@ -51,7 +50,7 @@ func parseValue(colVal interface{}, colKind columns.Column, additionalDateFmts [
 	case typing.Struct.Kind:
 		if colKind.KindDetails == typing.Struct {
 			if strings.Contains(colValString, constants.ToastUnavailableValuePlaceholder) {
-				colVal = map[string]interface{}{
+				colVal = map[string]any{
 					"key": constants.ToastUnavailableValuePlaceholder,
 				}
 			}
@@ -73,6 +72,20 @@ func parseValue(colVal interface{}, colKind columns.Column, additionalDateFmts [
 
 		return string(colValBytes), nil
 	case typing.Integer.Kind:
+		_, isString := colVal.(string)
+		if isString {
+			// If the value is a string, convert it back into a number
+			return strconv.Atoi(colValString)
+		}
+
+		return colVal, nil
+	case typing.Float.Kind:
+		_, isString := colVal.(string)
+		if isString {
+			// If the value is a string, convert it back into a number
+			return strconv.ParseFloat(colValString, 64)
+		}
+
 		return colVal, nil
 	case typing.Boolean.Kind:
 		// If it's already a boolean, return it. Else, convert it.
