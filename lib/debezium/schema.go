@@ -37,12 +37,12 @@ type FieldsObject struct {
 }
 
 type Field struct {
-	Type         string                 `json:"type"`
-	Optional     bool                   `json:"optional"`
-	Default      interface{}            `json:"default"`
-	FieldName    string                 `json:"field"`
-	DebeziumType string                 `json:"name"`
-	Parameters   map[string]interface{} `json:"parameters"`
+	Type         string         `json:"type"`
+	Optional     bool           `json:"optional"`
+	Default      any            `json:"default"`
+	FieldName    string         `json:"field"`
+	DebeziumType string         `json:"name"`
+	Parameters   map[string]any `json:"parameters"`
 }
 
 func (f Field) IsInteger() (valid bool) {

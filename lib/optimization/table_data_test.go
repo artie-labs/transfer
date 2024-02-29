@@ -20,7 +20,7 @@ import (
 func TestDistinctDates(t *testing.T) {
 	type _testCase struct {
 		name                string
-		rowData             map[string]map[string]interface{} // pk -> { col -> val }
+		rowData             map[string]map[string]any // pk -> { col -> val }
 		expectErr           bool
 		expectedDatesString []string
 	}
@@ -31,7 +31,7 @@ func TestDistinctDates(t *testing.T) {
 		},
 		{
 			name: "one date",
-			rowData: map[string]map[string]interface{}{
+			rowData: map[string]map[string]any{
 				"1": {
 					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
 				},
@@ -40,7 +40,7 @@ func TestDistinctDates(t *testing.T) {
 		},
 		{
 			name: "two dates",
-			rowData: map[string]map[string]interface{}{
+			rowData: map[string]map[string]any{
 				"1": {
 					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
 				},
@@ -52,7 +52,7 @@ func TestDistinctDates(t *testing.T) {
 		},
 		{
 			name: "3 dates, 2 unique",
-			rowData: map[string]map[string]interface{}{
+			rowData: map[string]map[string]any{
 				"1": {
 					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
 				},
@@ -67,7 +67,7 @@ func TestDistinctDates(t *testing.T) {
 		},
 		{
 			name: "two dates, one is nil",
-			rowData: map[string]map[string]interface{}{
+			rowData: map[string]map[string]any{
 				"1": {
 					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
 				},
@@ -241,7 +241,7 @@ func TestTableData_ShouldFlushRowLength(t *testing.T) {
 		assert.False(t, shouldFlush)
 		assert.Empty(t, flushReason)
 
-		td.InsertRow(fmt.Sprint(i), map[string]interface{}{
+		td.InsertRow(fmt.Sprint(i), map[string]any{
 			"foo": "bar",
 		}, false)
 	}
@@ -285,23 +285,23 @@ func TestTableData_ShouldFlushRowSize(t *testing.T) {
 		shouldFlush, flushReason := td.ShouldFlush(cfg)
 		assert.False(t, shouldFlush)
 		assert.Empty(t, flushReason)
-		td.InsertRow(fmt.Sprint(i), map[string]interface{}{
+		td.InsertRow(fmt.Sprint(i), map[string]any{
 			"foo":   "bar",
 			"array": []string{"foo", "bar", "dusty", "the aussie", "robin", "jacqueline", "charlie"},
 			"true":  true,
 			"false": false,
-			"nested": map[string]interface{}{
+			"nested": map[string]any{
 				"foo": "bar",
 			},
 		}, false)
 	}
 
-	td.InsertRow("33333", map[string]interface{}{
+	td.InsertRow("33333", map[string]any{
 		"foo":   "bar",
 		"array": []string{"foo", "bar", "dusty", "the aussie", "robin", "jacqueline", "charlie"},
 		"true":  true,
 		"false": false,
-		"nested": map[string]interface{}{
+		"nested": map[string]any{
 			"foo": "bar",
 			"bar": "xyz",
 			"123": "9222213213j1i31j3k21j321k3j1k31jk31213123213213121322j31k2",
