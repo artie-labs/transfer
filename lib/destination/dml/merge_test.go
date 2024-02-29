@@ -55,9 +55,9 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 
 		mergeSQL, err := mergeArg.GetStatement()
 		assert.NoError(t, err)
-		assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
+		assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
 		// Soft deletion flag being passed.
-		assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("%s=cc.%s", constants.DeleteColumnMarker, constants.DeleteColumnMarker)), mergeSQL)
+		assert.Contains(t, mergeSQL, fmt.Sprintf("%s=cc.%s", constants.DeleteColumnMarker, constants.DeleteColumnMarker), mergeSQL)
 
 		assert.Equal(t, len(idempotentKey) > 0, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")))
 	}
@@ -105,16 +105,16 @@ func TestMergeStatement(t *testing.T) {
 
 	mergeSQL, err := mergeArg.GetStatement()
 	assert.NoError(t, err)
-	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
-	assert.False(t, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")), fmt.Sprintf("Idempotency key: %s", mergeSQL))
+	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
+	assert.NotContains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at"), fmt.Sprintf("Idempotency key: %s", mergeSQL))
 	// Check primary keys clause
-	assert.True(t, strings.Contains(mergeSQL, "as cc on c.id = cc.id"), mergeSQL)
+	assert.Contains(t, mergeSQL, "AS cc ON c.id = cc.id", mergeSQL)
 
 	// Check setting for update
-	assert.True(t, strings.Contains(mergeSQL, `SET id=cc.id,bar=cc.bar,updated_at=cc.updated_at,"start"=cc."start"`), mergeSQL)
+	assert.Contains(t, mergeSQL, `SET id=cc.id,bar=cc.bar,updated_at=cc.updated_at,"start"=cc."start"`, mergeSQL)
 	// Check for INSERT
-	assert.True(t, strings.Contains(mergeSQL, `id,bar,updated_at,"start"`), mergeSQL)
-	assert.True(t, strings.Contains(mergeSQL, `cc.id,cc.bar,cc.updated_at,cc."start"`), mergeSQL)
+	assert.Contains(t, mergeSQL, `id,bar,updated_at,"start"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `cc.id,cc.bar,cc.updated_at,cc."start"`, mergeSQL)
 }
 
 func TestMergeStatementIdempotentKey(t *testing.T) {
@@ -153,8 +153,8 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 
 	mergeSQL, err := mergeArg.GetStatement()
 	assert.NoError(t, err)
-	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
-	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")), fmt.Sprintf("Idempotency key: %s", mergeSQL))
+	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
+	assert.Contains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at"), fmt.Sprintf("Idempotency key: %s", mergeSQL))
 }
 
 func TestMergeStatementCompositeKey(t *testing.T) {
@@ -196,9 +196,9 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 
 	mergeSQL, err := mergeArg.GetStatement()
 	assert.NoError(t, err)
-	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
-	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")), fmt.Sprintf("Idempotency key: %s", mergeSQL))
-	assert.True(t, strings.Contains(mergeSQL, "cc on c.id = cc.id and c.another_id = cc.another_id"))
+	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
+	assert.Contains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at"), fmt.Sprintf("Idempotency key: %s", mergeSQL))
+	assert.Contains(t, mergeSQL, "cc ON c.id = cc.id and c.another_id = cc.another_id", mergeSQL)
 }
 
 func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
@@ -251,14 +251,13 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 
 	mergeSQL, err := mergeArg.GetStatement()
 	assert.NoError(t, err)
-	assert.True(t, strings.Contains(mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable)), mergeSQL)
-	assert.False(t, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")), fmt.Sprintf("Idempotency key: %s", mergeSQL))
+	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
+	assert.NotContains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at"), fmt.Sprintf("Idempotency key: %s", mergeSQL))
 	// Check primary keys clause
-	assert.True(t, strings.Contains(mergeSQL, `as cc on c.id = cc.id and c."group" = cc."group"`), mergeSQL)
-
+	assert.Contains(t, mergeSQL, `AS cc ON c.id = cc.id and c."group" = cc."group"`, mergeSQL)
 	// Check setting for update
-	assert.True(t, strings.Contains(mergeSQL, `SET id=cc.id,"group"=cc."group",updated_at=cc.updated_at,"start"=cc."start"`), mergeSQL)
+	assert.Contains(t, mergeSQL, `SET id=cc.id,"group"=cc."group",updated_at=cc.updated_at,"start"=cc."start"`, mergeSQL)
 	// Check for INSERT
-	assert.True(t, strings.Contains(mergeSQL, `id,"group",updated_at,"start"`), mergeSQL)
-	assert.True(t, strings.Contains(mergeSQL, `cc.id,cc."group",cc.updated_at,cc."start"`), mergeSQL)
+	assert.Contains(t, mergeSQL, `id,"group",updated_at,"start"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `cc.id,cc."group",cc.updated_at,cc."start"`, mergeSQL)
 }

@@ -3,7 +3,6 @@ package consumer
 import (
 	"context"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -63,12 +62,12 @@ func TestProcessMessageFailures(t *testing.T) {
 	}
 
 	tableName, err := ProcessMessage(ctx, cfg, memDB, MockDestination{}, metrics.NullMetricsProvider{}, processArgs)
-	assert.True(t, strings.Contains(err.Error(), "failed to process, topicConfig is nil"), err.Error())
+	assert.ErrorContains(t, err, "failed to process, topicConfig is nil", err.Error())
 	assert.Empty(t, tableName)
 
 	processArgs.TopicToConfigFormatMap = NewTcFmtMap()
 	tableName, err = ProcessMessage(ctx, cfg, memDB, MockDestination{}, metrics.NullMetricsProvider{}, processArgs)
-	assert.True(t, strings.Contains(err.Error(), "failed to get topic"), err.Error())
+	assert.ErrorContains(t, err, "failed to get topic", err.Error())
 	assert.Equal(t, 0, len(memDB.TableData()))
 	assert.Empty(t, tableName)
 
