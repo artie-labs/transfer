@@ -15,7 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func ToString(colVal interface{}, colKind columns.Column, additionalDateFmts []string) (string, error) {
+func ToString(colVal any, colKind columns.Column, additionalDateFmts []string) (string, error) {
 	if colVal == nil {
 		return "", fmt.Errorf("colVal is nil")
 	}
@@ -42,7 +42,7 @@ func ToString(colVal interface{}, colKind columns.Column, additionalDateFmts []s
 		return colValString, nil
 	case typing.String.Kind:
 		isArray := reflect.ValueOf(colVal).Kind() == reflect.Slice
-		_, isMap := colVal.(map[string]interface{})
+		_, isMap := colVal.(map[string]any)
 
 		// If colVal is either an array or a JSON object, we should run JSON parse.
 		if isMap || isArray {
@@ -61,7 +61,7 @@ func ToString(colVal interface{}, colKind columns.Column, additionalDateFmts []s
 	case typing.Struct.Kind:
 		if colKind.KindDetails == typing.Struct {
 			if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
-				colVal = map[string]interface{}{
+				colVal = map[string]any{
 					"key": constants.ToastUnavailableValuePlaceholder,
 				}
 			}

@@ -30,12 +30,12 @@ func BenchmarkMethods(b *testing.B) {
 	})
 }
 
-func replaceExceededValuesOld(colVal interface{}, colKind columns.Column) interface{} {
+func replaceExceededValuesOld(colVal any, colKind columns.Column) any {
 	colValString := fmt.Sprint(colVal)
 	switch colKind.KindDetails.Kind {
 	case typing.Struct.Kind:
 		if len(colValString) > maxRedshiftSuperLen {
-			return map[string]interface{}{
+			return map[string]any{
 				"key": constants.ExceededValueMarker,
 			}
 		}
@@ -48,13 +48,13 @@ func replaceExceededValuesOld(colVal interface{}, colKind columns.Column) interf
 	return colVal
 }
 
-func replaceExceededValuesNew(colVal interface{}, colKind columns.Column) interface{} {
+func replaceExceededValuesNew(colVal any, colKind columns.Column) any {
 	colValString := fmt.Sprint(colVal)
 	colValBytes := len(colValString)
 	switch colKind.KindDetails.Kind {
 	case typing.Struct.Kind:
 		if colValBytes > maxRedshiftSuperLen {
-			return map[string]interface{}{
+			return map[string]any{
 				"key": constants.ExceededValueMarker,
 			}
 		}

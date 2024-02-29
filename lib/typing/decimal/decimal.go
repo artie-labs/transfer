@@ -56,7 +56,7 @@ func (d *Decimal) String() string {
 	return d.value.Text('f', d.scale)
 }
 
-func (d *Decimal) Value() interface{} {
+func (d *Decimal) Value() any {
 	// -1 precision is used for variable scaled decimal
 	// We are opting to emit this as a STRING because the value is technically unbounded (can get to ~1 GB).
 	if d.precision != nil && (*d.precision > MaxPrecisionBeforeString || *d.precision == -1) {
