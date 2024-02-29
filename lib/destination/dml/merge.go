@@ -274,7 +274,7 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 	}
 
 	return fmt.Sprintf(`
-MERGE INTO %s c using %s AS cc ON %s
+MERGE INTO %s c USING %s AS cc ON %s
 WHEN MATCHED AND cc.%s THEN DELETE
 WHEN MATCHED AND IFNULL(cc.%s, false) = false %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
