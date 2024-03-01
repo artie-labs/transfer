@@ -22,14 +22,7 @@ import (
 // It has a safety check to make sure the tableName contains the `constants.ArtiePrefix` key.
 // Temporary tables look like this: database.schema.tableName__artie__RANDOM_STRING(10)
 func DropTemporaryTable(dwh destination.DataWarehouse, fqTableName string, shouldReturnError bool) error {
-	if dwh.Label() != constants.BigQuery {
-		// BigQuery is case-sensitive, so lets no lower.
-		fqTableName = strings.ToLower(fqTableName)
-	}
-
 	if strings.Contains(fqTableName, constants.ArtiePrefix) {
-		// https://cloud.google.com/bigquery/docs/reference/standard-sql/data-definition-language#drop_table_statement
-		// https://docs.snowflake.com/en/sql-reference/sql/drop-table
 		_, err := dwh.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", fqTableName))
 		if err != nil {
 			slog.Warn("Failed to drop temporary table, it will get garbage collected by the TTL...", slog.Any("err", err))
