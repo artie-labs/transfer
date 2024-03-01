@@ -23,8 +23,8 @@ func Sweep(dwh destination.DataWarehouse, topicConfigs []*kafkalib.TopicConfig, 
 
 		for rows != nil && rows.Next() {
 			var tableSchema, tableName string
+			err = rows.Scan(&tableSchema, &tableName)
 			if err != nil {
-				err = rows.Scan(&tableSchema, &tableName)
 				return err
 			}
 
