@@ -10,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
 )
@@ -41,13 +42,13 @@ func (s *Store) Label() constants.DestinationKind {
 	return constants.Redshift
 }
 
-const (
-	describeNameCol        = "column_name"
-	describeTypeCol        = "data_type"
-	describeDescriptionCol = "description"
-)
-
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+	const (
+		describeNameCol        = "column_name"
+		describeTypeCol        = "data_type"
+		describeDescriptionCol = "description"
+	)
+
 	query, args := describeTableQuery(describeArgs{
 		RawTableName: tableData.RawName(),
 		Schema:       tableData.TopicConfig.Schema,
@@ -64,6 +65,27 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		EmptyCommentValue:  ptr.ToString("<nil>"),
 		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
 	})
+}
+
+func (s *Store) Sweep() error {
+	tcs, err := s.config.TopicConfigs()
+	if err != nil {
+		return err
+	}
+
+	queryFunc := func(dbAndSchemaPair kafkalib.DatabaseSchemaPair) (string, []any) {
+		return `
+SELECT 
+    n.nspname, c.relname
+FROM 
+    PG_CATALOG.PG_CLASS c
+JOIN 
+    PG_CATALOG.PG_NAMESPACE n ON n.oid = c.relnamespace
+WHERE 
+    n.nspname = $1 AND c.relname ILIKE $2;`, []any{dbAndSchemaPair.Schema, "%" + constants.ArtiePrefix + "%"}
+	}
+
+	return shared.Sweep(s, tcs, queryFunc)
 }
 
 func LoadRedshift(cfg config.Config, _store *db.Store) *Store {

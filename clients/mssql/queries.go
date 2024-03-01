@@ -25,7 +25,7 @@ WHERE
 func sweepQuery(schema string) (string, []any) {
 	return `
 SELECT
-    TABLE_NAME
+    TABLE_SCHEMA, TABLE_NAME
 FROM
     INFORMATION_SCHEMA.TABLES
 WHERE

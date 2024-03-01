@@ -3,14 +3,16 @@ package mssql
 import (
 	"strings"
 
+	_ "github.com/microsoft/go-mssqldb"
+
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
-	_ "github.com/microsoft/go-mssqldb"
 )
 
 type Store struct {
@@ -50,6 +52,19 @@ func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape b
 	return tableData.ToFqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{
 		MsSQLSchemaOverride: s.Schema(tableData),
 	})
+}
+
+func (s *Store) Sweep() error {
+	tcs, err := s.config.TopicConfigs()
+	if err != nil {
+		return err
+	}
+
+	queryFunc := func(dbAndSchemaPair kafkalib.DatabaseSchemaPair) (string, []any) {
+		return sweepQuery(getSchema(dbAndSchemaPair.Schema))
+	}
+
+	return shared.Sweep(s, tcs, queryFunc)
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
