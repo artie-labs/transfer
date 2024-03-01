@@ -13,7 +13,6 @@ type GetQueryFunc func(dbAndSchemaPair kafkalib.DatabaseSchemaPair) (string, []a
 
 func Sweep(dwh destination.DataWarehouse, topicConfigs []*kafkalib.TopicConfig, getQueryFunc GetQueryFunc) error {
 	slog.Info("Looking to see if there are any dangling artie temporary tables to delete...")
-
 	dbAndSchemaPairs := kafkalib.GetUniqueDatabaseAndSchema(topicConfigs)
 	for _, dbAndSchemaPair := range dbAndSchemaPairs {
 		query, args := getQueryFunc(dbAndSchemaPair)

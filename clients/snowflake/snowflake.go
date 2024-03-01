@@ -65,7 +65,7 @@ SELECT
 FROM
     %s.information_schema.tables
 WHERE
-    table_schema = UPPER(?) AND table_name ILIKE ?`, dbAndSchemaPair.Database), []any{dbAndSchemaPair.Schema, "%" + constants.ArtiePrefix + "%"}
+    UPPER(table_schema) = UPPER(?) AND table_name ILIKE ?`, dbAndSchemaPair.Database), []any{dbAndSchemaPair.Schema, "%" + constants.ArtiePrefix + "%"}
 	}
 
 	return shared.Sweep(s, tcs, queryFunc)
