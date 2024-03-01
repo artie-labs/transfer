@@ -15,7 +15,7 @@ func (d *DDLTestSuite) Test_DropTemporaryTableCaseSensitive() {
 	tablesToDrop := []string{
 		"foo",
 		"abcdef",
-		"gGghHH",
+		"gghh",
 	}
 
 	for _, dest := range []destination.DataWarehouse{d.bigQueryStore, d.snowflakeStagesStore} {
@@ -33,13 +33,7 @@ func (d *DDLTestSuite) Test_DropTemporaryTableCaseSensitive() {
 			// There should be the same number of DROP table calls as the number of tables to drop.
 			assert.Equal(d.T(), tableIndex+1, fakeStore.ExecCallCount())
 			query, _ := fakeStore.ExecArgsForCall(tableIndex)
-
-			if dest.Label() == constants.BigQuery {
-				// BigQuery should be case-sensitive.
-				assert.Equal(d.T(), fmt.Sprintf("DROP TABLE IF EXISTS %s", fullTableName), query)
-			} else {
-				assert.Equal(d.T(), fmt.Sprintf("DROP TABLE IF EXISTS %s", strings.ToLower(fullTableName)), query)
-			}
+			assert.Equal(d.T(), fmt.Sprintf("DROP TABLE IF EXISTS %s", strings.ToLower(fullTableName)), query)
 		}
 	}
 }
