@@ -1,6 +1,6 @@
 # Fixed IP Addresses
 
-To ensure that Artie is able to subscribe to your sources and push data to your destination, please  add all of Artie's IP addresses below to your allowlist.
+To ensure that Artie is able to subscribe to your sources and push data to your destination, please add all of Artie's IP addresses below to your allowlist.
 
 Today, we support the following cloud providers:
 
@@ -15,17 +15,6 @@ Please make sure to add all the IP addresses from the **Control Plane** + **AWS 
 
 {% hint style="info" %}
 Add the following IP addresses so that the dashboard is able to validate connectivity!
-{% endhint %}
-
-* 164.90.147.255/32
-* 164.90.147.217/32
-* 147.182.226.70/32
-* 24.199.76.121/32
-* 143.198.244.128/32
-* 164.92.90.51/32
-
-{% hint style="info" %}
-We are planning to migrate our Control Plane to Amazon by March 2024, with the following IP addresses:
 {% endhint %}
 
 * 52.55.119.205/32
