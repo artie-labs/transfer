@@ -43,8 +43,8 @@ type Kafka struct {
 	// Following kafka's spec mentioned here: https://kafka.apache.org/documentation/#producerconfigs_bootstrap.servers
 	BootstrapServer string                  `yaml:"bootstrapServer"`
 	GroupID         string                  `yaml:"groupID"`
-	Username        string                  `yaml:"username"`
-	Password        string                  `yaml:"password"`
+	Username        string                  `yaml:"username,omitempty"`
+	Password        string                  `yaml:"password,omitempty"`
 	EnableAWSMSKIAM bool                    `yaml:"enableAWSMKSIAM"`
 	TopicConfigs    []*kafkalib.TopicConfig `yaml:"topicConfigs"`
 }
@@ -151,8 +151,8 @@ type Config struct {
 	BufferRows           uint `yaml:"bufferRows"`
 
 	// Supported message queues
-	Pubsub *Pubsub
-	Kafka  *Kafka
+	Pubsub *Pubsub `yaml:"pubsub,omitempty"`
+	Kafka  *Kafka  `yaml:"kafka,omitempty"`
 
 	// Shared Transfer settings
 	SharedTransferConfig SharedTransferConfig `yaml:"sharedTransferConfig"`
@@ -161,11 +161,11 @@ type Config struct {
 	SharedDestinationConfig SharedDestinationConfig `yaml:"sharedDestinationConfig"`
 
 	// Supported destinations
-	MSSQL     *MSSQL      `yaml:"mssql"`
-	BigQuery  *BigQuery   `yaml:"bigquery"`
-	Snowflake *Snowflake  `yaml:"snowflake"`
-	Redshift  *Redshift   `yaml:"redshift"`
-	S3        *S3Settings `yaml:"s3"`
+	MSSQL     *MSSQL      `yaml:"mssql,omitempty"`
+	BigQuery  *BigQuery   `yaml:"bigquery,omitempty"`
+	Snowflake *Snowflake  `yaml:"snowflake,omitempty"`
+	Redshift  *Redshift   `yaml:"redshift,omitempty"`
+	S3        *S3Settings `yaml:"s3,omitempty"`
 
 	Reporting struct {
 		Sentry *Sentry `yaml:"sentry"`
