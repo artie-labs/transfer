@@ -9,6 +9,6 @@ COPY . .
 
 RUN go build -o transfer .
 
-FROM --platform=linux/amd64 alpine:3.16 AS runner
+FROM --platform=linux/amd64 alpine:3.19 AS runner
 
 COPY --from=builder /app/transfer /
