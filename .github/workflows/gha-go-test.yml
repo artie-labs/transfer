@@ -19,5 +19,5 @@ jobs:
           make static
       - name: Run test
         run: make test
-      - name: Run race test
+      - name: Run race condition test
         run: make race
