@@ -79,13 +79,13 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		return nil, err
 	}
 
+	if m.DestKind != constants.Redshift {
+		return nil, fmt.Errorf("err - this is meant for redshift only")
+	}
+
 	// ContainsHardDeletes is only used for Redshift, so we'll validate it now
 	if m.ContainsHardDeletes == nil {
 		return nil, fmt.Errorf("containsHardDeletes cannot be nil")
-	}
-
-	if m.DestKind != constants.Redshift {
-		return nil, fmt.Errorf("err - this is meant for redshift only")
 	}
 
 	// We should not need idempotency key for DELETE
