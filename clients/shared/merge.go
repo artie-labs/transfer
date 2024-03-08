@@ -121,14 +121,15 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 	}
 
 	mergeArg := dml.MergeArgument{
-		FqTableName:       fqName,
-		SubQuery:          subQuery,
-		IdempotentKey:     tableData.TopicConfig.IdempotentKey,
-		PrimaryKeys:       tableData.PrimaryKeys(cfg.SharedDestinationConfig.UppercaseEscapedNames, &sql.NameArgs{Escape: true, DestKind: dwh.Label()}),
-		ColumnsToTypes:    *tableData.ReadOnlyInMemoryCols(),
-		SoftDelete:        tableData.TopicConfig.SoftDelete,
-		DestKind:          dwh.Label(),
-		UppercaseEscNames: &cfg.SharedDestinationConfig.UppercaseEscapedNames,
+		FqTableName:         fqName,
+		SubQuery:            subQuery,
+		IdempotentKey:       tableData.TopicConfig.IdempotentKey,
+		PrimaryKeys:         tableData.PrimaryKeys(cfg.SharedDestinationConfig.UppercaseEscapedNames, &sql.NameArgs{Escape: true, DestKind: dwh.Label()}),
+		ColumnsToTypes:      *tableData.ReadOnlyInMemoryCols(),
+		SoftDelete:          tableData.TopicConfig.SoftDelete,
+		DestKind:            dwh.Label(),
+		UppercaseEscNames:   &cfg.SharedDestinationConfig.UppercaseEscapedNames,
+		ContainsHardDeletes: ptr.ToBool(tableData.ContainsHardDeletes()),
 	}
 
 	if len(opts.AdditionalEqualityStrings) > 0 {

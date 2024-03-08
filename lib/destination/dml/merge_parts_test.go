@@ -79,7 +79,7 @@ func TestMergeStatementParts_SkipDelete(t *testing.T) {
 		PrimaryKeys:         res.PrimaryKeys,
 		ColumnsToTypes:      res.ColumnsToTypes,
 		DestKind:            constants.Redshift,
-		ContainsHardDeletes: false,
+		ContainsHardDeletes: ptr.ToBool(false),
 		UppercaseEscNames:   ptr.ToBool(false),
 	}
 
@@ -101,13 +101,14 @@ func TestMergeStatementPartsSoftDelete(t *testing.T) {
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(false, false)
 	mergeArg := &MergeArgument{
-		FqTableName:       fqTableName,
-		SubQuery:          tempTableName,
-		PrimaryKeys:       res.PrimaryKeys,
-		ColumnsToTypes:    res.ColumnsToTypes,
-		DestKind:          constants.Redshift,
-		SoftDelete:        true,
-		UppercaseEscNames: ptr.ToBool(false),
+		FqTableName:         fqTableName,
+		SubQuery:            tempTableName,
+		PrimaryKeys:         res.PrimaryKeys,
+		ColumnsToTypes:      res.ColumnsToTypes,
+		DestKind:            constants.Redshift,
+		SoftDelete:          true,
+		UppercaseEscNames:   ptr.ToBool(false),
+		ContainsHardDeletes: ptr.ToBool(false),
 	}
 
 	parts, err := mergeArg.GetParts()
@@ -140,13 +141,14 @@ func TestMergeStatementPartsSoftDeleteComposite(t *testing.T) {
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(true, false)
 	mergeArg := &MergeArgument{
-		FqTableName:       fqTableName,
-		SubQuery:          tempTableName,
-		PrimaryKeys:       res.PrimaryKeys,
-		ColumnsToTypes:    res.ColumnsToTypes,
-		DestKind:          constants.Redshift,
-		SoftDelete:        true,
-		UppercaseEscNames: ptr.ToBool(false),
+		FqTableName:         fqTableName,
+		SubQuery:            tempTableName,
+		PrimaryKeys:         res.PrimaryKeys,
+		ColumnsToTypes:      res.ColumnsToTypes,
+		DestKind:            constants.Redshift,
+		SoftDelete:          true,
+		UppercaseEscNames:   ptr.ToBool(false),
+		ContainsHardDeletes: ptr.ToBool(false),
 	}
 
 	parts, err := mergeArg.GetParts()
@@ -187,7 +189,7 @@ func TestMergeStatementParts(t *testing.T) {
 		PrimaryKeys:         res.PrimaryKeys,
 		ColumnsToTypes:      res.ColumnsToTypes,
 		DestKind:            constants.Redshift,
-		ContainsHardDeletes: true,
+		ContainsHardDeletes: ptr.ToBool(true),
 		UppercaseEscNames:   ptr.ToBool(false),
 	}
 
@@ -214,7 +216,7 @@ func TestMergeStatementParts(t *testing.T) {
 		ColumnsToTypes:      res.ColumnsToTypes,
 		DestKind:            constants.Redshift,
 		IdempotentKey:       "created_at",
-		ContainsHardDeletes: true,
+		ContainsHardDeletes: ptr.ToBool(true),
 		UppercaseEscNames:   ptr.ToBool(false),
 	}
 
@@ -245,7 +247,7 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 		PrimaryKeys:         res.PrimaryKeys,
 		ColumnsToTypes:      res.ColumnsToTypes,
 		DestKind:            constants.Redshift,
-		ContainsHardDeletes: true,
+		ContainsHardDeletes: ptr.ToBool(true),
 		UppercaseEscNames:   ptr.ToBool(false),
 	}
 
@@ -271,7 +273,7 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 		PrimaryKeys:         res.PrimaryKeys,
 		ColumnsToTypes:      res.ColumnsToTypes,
 		DestKind:            constants.Redshift,
-		ContainsHardDeletes: true,
+		ContainsHardDeletes: ptr.ToBool(true),
 		IdempotentKey:       "created_at",
 		UppercaseEscNames:   ptr.ToBool(false),
 	}
