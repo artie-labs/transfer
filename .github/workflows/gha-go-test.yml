@@ -1,5 +1,5 @@
 name: Go tests
-run-name: Running tests 🚀
+run-name: Running tests
 on: [push]
 jobs:
   build:
@@ -15,7 +15,7 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - name: staticcheck
-        params:
+        env:
           SC_VERSION="2023.1.7"
           SC_URL="https://github.com/dominikh/go-tools/releases/download/$SC_VERSION/staticcheck_linux_amd64.tar.gz"
         run: |
