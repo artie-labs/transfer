@@ -16,8 +16,8 @@ jobs:
           go-version: ${{ matrix.go }}
       - name: staticcheck
         env:
-          SC_VERSION="2023.1.7"
-          SC_URL="https://github.com/dominikh/go-tools/releases/download/$SC_VERSION/staticcheck_linux_amd64.tar.gz"
+          SC_VERSION: 2023.1.7
+          SC_URL: https://github.com/dominikh/go-tools/releases/download/$SC_VERSION/staticcheck_linux_amd64.tar.gz
         run: |
           wget -q ${SC_URL} -O - | tar -xzf - --strip-components 1 -C /usr/local/bin staticcheck/staticcheck
           make static
