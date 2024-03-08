@@ -68,6 +68,21 @@ func ProcessMessage(ctx context.Context, cfg config.Config, inMemDB *models.Data
 	// Table name is only available after event has been cast
 	tags["table"] = evt.Table
 
+	possibleIDs := []float64{
+		1551002,
+		1551000,
+		1551062,
+		1551040,
+		1551042,
+		1551022,
+	}
+
+	for _, possibleID := range possibleIDs {
+		if evt.PrimaryKeyMap["id"] == possibleID {
+			fmt.Println("keys", evt.PrimaryKeyMap, evt.Data, "value", string(processArgs.Msg.Value()), "shouldSkip", topicConfig.tc.ShouldSkip(_event.Operation()))
+		}
+	}
+
 	if topicConfig.tc.ShouldSkip(_event.Operation()) {
 		// Check to see if we should skip first
 		// This way, we can emit a specific tag to be more clear

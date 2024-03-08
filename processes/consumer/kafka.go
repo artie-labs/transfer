@@ -56,7 +56,6 @@ func SetKafkaConsumer(_topicToConsumer map[string]kafkalib.Consumer) {
 
 func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) {
 	slog.Info("Starting Kafka consumer...", slog.Any("config", cfg.Kafka))
-
 	dialer := &kafka.Dialer{
 		Timeout:   10 * time.Second,
 		DualStack: true,
