@@ -148,8 +148,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		}
 
 		for _, mergeQuery := range mergeParts {
-			_, err = tx.Exec(mergeQuery)
-			if err != nil {
+			if _, err = tx.Exec(mergeQuery); err != nil {
 				return fmt.Errorf("failed to merge, query: %v, err: %w", mergeQuery, err)
 			}
 		}
