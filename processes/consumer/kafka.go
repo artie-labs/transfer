@@ -55,14 +55,14 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 	}
 
 	// If using AWS MSK IAM, we expect this to be set in the ENV VAR
-	// (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, or the AWS Profile should be called default.)
+	// (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_REGION, or the AWS Profile should be called default.)
 	if cfg.Kafka.EnableAWSMSKIAM {
-		cfg, err := awsCfg.LoadDefaultConfig(ctx)
+		_awsCfg, err := awsCfg.LoadDefaultConfig(ctx)
 		if err != nil {
 			logger.Panic("Failed to load aws configuration", slog.Any("err", err))
 		}
 
-		dialer.SASLMechanism = aws_msk_iam_v2.NewMechanism(cfg)
+		dialer.SASLMechanism = aws_msk_iam_v2.NewMechanism(_awsCfg)
 		dialer.TLS = &tls.Config{}
 	}
 
