@@ -7,19 +7,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/artie"
-	"github.com/artie-labs/transfer/lib/destination"
-	"github.com/artie-labs/transfer/lib/logger"
-	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
-	"github.com/artie-labs/transfer/models"
 	awsCfg "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2"
 	"github.com/segmentio/kafka-go/sasl/plain"
 
+	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/segmentio/kafka-go"
+	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
+	"github.com/artie-labs/transfer/models"
 )
 
 var topicToConsumer *TopicToConsumer
@@ -45,13 +45,6 @@ func (t *TopicToConsumer) Get(topic string) kafkalib.Consumer {
 	t.RLock()
 	defer t.RUnlock()
 	return t.topicToConsumer[topic]
-}
-
-// SetKafkaConsumer - This is used for tests.
-func SetKafkaConsumer(_topicToConsumer map[string]kafkalib.Consumer) {
-	topicToConsumer = &TopicToConsumer{
-		topicToConsumer: _topicToConsumer,
-	}
 }
 
 func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) {

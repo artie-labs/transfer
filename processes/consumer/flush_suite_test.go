@@ -15,6 +15,12 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+func SetKafkaConsumer(_topicToConsumer map[string]kafkalib.Consumer) {
+	topicToConsumer = &TopicToConsumer{
+		topicToConsumer: _topicToConsumer,
+	}
+}
+
 type FlushTestSuite struct {
 	suite.Suite
 	fakeStore    *mocks.FakeStore
