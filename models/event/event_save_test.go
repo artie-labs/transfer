@@ -89,6 +89,7 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 			"id": "123",
 		},
 		Data: map[string]any{
+			"id":                         "123",
 			constants.DeleteColumnMarker: true,
 			"randomCol":                  "dusty",
 			"anotherCOL":                 13.37,
@@ -100,9 +101,14 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 	assert.Nil(e.T(), err)
 
 	td := e.db.GetOrCreateTableData("foo")
-	rowData := td.RowsData()[event.PrimaryKeyValue()]
-	expectedColumns := []string{"randomcol", "anothercol"}
-	for _, expectedColumn := range expectedColumns {
+	var rowData map[string]any
+	for _, row := range td.Rows() {
+		if row["id"] == "123" {
+			rowData = row
+		}
+	}
+
+	for _, expectedColumn := range []string{"randomcol", "anothercol"} {
 		_, isOk := rowData[expectedColumn]
 		assert.True(e.T(), isOk, fmt.Sprintf("expected col: %s, rowsData: %v", expectedColumn, rowData))
 	}

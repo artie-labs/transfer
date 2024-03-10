@@ -2,7 +2,6 @@ package optimization
 
 import (
 	"fmt"
-	"maps"
 	"strings"
 	"time"
 
@@ -180,11 +179,6 @@ func (t *TableData) Rows() []map[string]any {
 	}
 
 	return rows
-}
-
-// RowsData will create a read-only map of `rowsData`, this should be strictly used for testing only.
-func (t *TableData) RowsData() map[string]map[string]any {
-	return maps.Clone(t.rowsData)
 }
 
 type FqNameOpts struct {

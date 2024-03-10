@@ -205,7 +205,16 @@ func TestProcessMessageFailures(t *testing.T) {
 	}
 
 	td := memoryDB.GetOrCreateTableData(table)
-	val, isOk := td.RowsData()["_id=1"][constants.DeleteColumnMarker]
+
+	var rowData map[string]any
+	for _, row := range td.Rows() {
+		fmt.Println("row", row)
+		if row["_id"] == "1" {
+			rowData = row
+		}
+	}
+
+	val, isOk := rowData[constants.DeleteColumnMarker]
 	assert.True(t, isOk)
 	assert.False(t, val.(bool))
 
