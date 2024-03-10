@@ -208,7 +208,6 @@ func TestProcessMessageFailures(t *testing.T) {
 
 	var rowData map[string]any
 	for _, row := range td.Rows() {
-		fmt.Println("row", row)
 		if row["_id"] == "1" {
 			rowData = row
 		}
