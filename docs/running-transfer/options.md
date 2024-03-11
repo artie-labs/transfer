@@ -72,13 +72,31 @@ bigQueryPartitionSettings:
 
 ### Shared Transfer config
 
+Example
 
-
-<table><thead><tr><th width="425.3333333333333">Key</th><th width="101" align="center">Optional</th><th>Description</th></tr></thead><tbody><tr><td><code>sharedTransferConfig.additionalDateFormats</code></td><td align="center">Y</td><td><p>You can specify additional date formats if they are <a href="https://github.com/artie-labs/transfer/blob/master/lib/typing/ext/variables.go">not already supported</a>.</p><p></p><p>Example:</p><pre><code>sharedTransferConfig:
+```yaml
+sharedTransferConfig:
   additionalDateFormats:
     - 02/01/06 # DD/MM/YY
     - 02/01/2006 # DD/MM/YYYY
-</code></pre><p>If you are unsure, refer to this <a href="https://yourbasic.org/golang/format-parse-string-time-date-example/">guide</a>. </p></td></tr><tr><td><code>sharedTransferConfig.createAllColumnsIfAvailable</code></td><td align="center">Y</td><td><p>Boolean field.</p><p><br>If this is set <code>true</code>, it will create columns even if the value is <code>NULL</code>.</p></td></tr></tbody></table>
+  createAllColumnsIfAvailable: true
+```
+
+#### **additionalDateFormats**
+
+By default, Artie Transfer supports a [wide array of date formats](https://github.com/artie-labs/transfer/blob/master/lib/typing/ext/variables.go). If your layout is supported, you can specify additional ones here. If you're unsure, please refer to this [guide](https://yourbasic.org/golang/format-parse-string-time-date-example/).
+
+**Type:** List of layouts
+
+**Optional:** Yes
+
+#### createAllColumnsIfAvailable
+
+By default, Artie Transfer will only create the column within the destination if the column contains a not null value. You can override this behavior by setting this value to `true`.
+
+**Type:** Boolean
+
+**Optional:** Yes
 
 ### Shared destination config
 
