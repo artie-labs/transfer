@@ -49,8 +49,6 @@ pubsub:
 
 This is the object stored under [Topic Config](options.md#topic-configs).&#x20;
 
-_Example_
-
 ```yaml
 bigQueryPartitionSettings:
   partitionType: time
