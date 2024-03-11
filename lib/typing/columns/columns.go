@@ -270,6 +270,12 @@ func ColumnsUpdateQuery(columns []string, columnsToTypes Columns, destKind const
 							column, column, constants.ToastUnavailableValuePlaceholder,
 							// cc.col ELSE c.col END
 							column, column))
+				} else if destKind == constants.MSSQL {
+					// TODO: Add tests.
+					// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
+					_columns = append(_columns,
+						fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s, {}) != {'key': '%s'} THEN cc.%s ELSE c.%s END",
+							column, column, constants.ToastUnavailableValuePlaceholder, column, column))
 				} else {
 					_columns = append(_columns,
 						fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s != {'key': '%s'}, true) THEN cc.%s ELSE c.%s END",
@@ -279,13 +285,23 @@ func ColumnsUpdateQuery(columns []string, columnsToTypes Columns, destKind const
 							constants.ToastUnavailableValuePlaceholder, column, column))
 				}
 			} else {
-				// t.column3 = CASE WHEN t.column3 != '__debezium_unavailable_value' THEN t.column3 ELSE s.column3 END
-				_columns = append(_columns,
-					fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s != '%s', true) THEN cc.%s ELSE c.%s END",
-						// col = CASE WHEN cc.col != TOAST_UNAVAILABLE_VALUE
-						column, column, constants.ToastUnavailableValuePlaceholder,
-						// THEN cc.col ELSE c.col END
-						column, column))
+				if destKind == constants.MSSQL {
+					// TODO: Add tests.
+					_columns = append(_columns,
+						fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s, '') != '%s' THEN cc.%s ELSE c.%s END",
+							// col = CASE WHEN cc.col != TOAST_UNAVAILABLE_VALUE
+							column, column, constants.ToastUnavailableValuePlaceholder,
+							// THEN cc.col ELSE c.col END
+							column, column))
+				} else {
+					// t.column3 = CASE WHEN t.column3 != '__debezium_unavailable_value' THEN t.column3 ELSE s.column3 END
+					_columns = append(_columns,
+						fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s != '%s', true) THEN cc.%s ELSE c.%s END",
+							// col = CASE WHEN cc.col != TOAST_UNAVAILABLE_VALUE
+							column, column, constants.ToastUnavailableValuePlaceholder,
+							// THEN cc.col ELSE c.col END
+							column, column))
+				}
 			}
 
 		} else {
