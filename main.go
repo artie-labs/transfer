@@ -17,7 +17,6 @@ import (
 	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/processes/consumer"
 	"github.com/artie-labs/transfer/processes/pool"
-	"github.com/getsentry/sentry-go"
 )
 
 func main() {
@@ -28,12 +27,10 @@ func main() {
 	}
 
 	// Initialize default logger
-	_logger, usingSentry := logger.NewLogger(settings.VerboseLogging, settings.Config.Reporting.Sentry)
+	_logger, cleanUpHandlers := logger.NewLogger(settings.VerboseLogging, settings.Config.Reporting.Sentry)
 	slog.SetDefault(_logger)
-	if usingSentry {
-		defer sentry.Flush(2 * time.Second)
-		slog.Info("Sentry logger enabled")
-	}
+
+	defer cleanUpHandlers()
 
 	slog.Info("Config is loaded",
 		slog.Int("flushIntervalSeconds", settings.Config.FlushIntervalSeconds),
