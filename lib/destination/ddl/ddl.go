@@ -20,7 +20,7 @@ import (
 
 // DropTemporaryTable - this will drop the temporary table from Snowflake w/ stages and BigQuery
 // It has a safety check to make sure the tableName contains the `constants.ArtiePrefix` key.
-// Temporary tables look like this: database.schema.tableName__artie__RANDOM_STRING(10)
+// Temporary tables look like this: database.schema.tableName__artie__RANDOM_STRING(5)_expiryUnixTs
 func DropTemporaryTable(dwh destination.DataWarehouse, fqTableName string, shouldReturnError bool) error {
 	if strings.Contains(strings.ToLower(fqTableName), constants.ArtiePrefix) {
 		_, err := dwh.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", fqTableName))
