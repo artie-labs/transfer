@@ -64,15 +64,39 @@ bigQueryPartitionSettings:
 
 ### Google Pub/Sub
 
-<table><thead><tr><th width="389.3333333333333">Key</th><th width="107" align="center">Optional</th><th>Description</th></tr></thead><tbody><tr><td><code>pubsub.projectID</code></td><td align="center">N</td><td>This is your GCP project ID. See <a data-mention href="../real-time-destinations/bigquery.md#getting-your-project-identifier">#getting-your-project-identifier</a>on how to find it.</td></tr><tr><td><code>pubsub.pathToCredentials</code></td><td align="center">N</td><td>Note: Transfer can support different credentials for BigQuery and Pub/Sub. Such that you can consume from one project and write to BQ on another.</td></tr><tr><td><code>pubsub.topicConfigs</code></td><td align="center">N</td><td>The topicConfigs here follows the same convention as <code>kafka.topicConfigs</code>. Please see above.</td></tr></tbody></table>
+```yaml
+pubsub:
+  projectID: 123
+  pathToCredentials: /path/to/pubsub.json
+  topicConfigs:
+  - { }
+```
+
+#### projectID
+
+This is your GCP Project ID, click here to see how you can find it.[#getting-your-project-identifier](../real-time-destinations/bigquery.md#getting-your-project-identifier "mention")
+
+**Type:** String
+
+**Optional**: No
+
+#### pathToCredentials
+
+This is the path to the credentials for the service account to use. You can re-use the same credentials as BigQuery, or you can use a different service account to support use cases of cross-account transfers.
+
+**Type:** String
+
+**Optional:** No
+
+#### topicConfigs
+
+Follow the same convention as `kafka.topicConfigs` above.
 
 ### BigQuery
 
 <table><thead><tr><th width="390">Key</th><th width="103.33333333333331" align="center">Optional</th><th>Description</th></tr></thead><tbody><tr><td><code>bigquery.pathToCredentials</code></td><td align="center">Y</td><td>Path to the credentials file for Google. <br><br>You can also directly inject <code>GOOGLE_APPLICATION_CREDENTIALS</code> ENV VAR, else Transfer will set it for you based on this value provided.</td></tr><tr><td><code>bigquery.projectID</code></td><td align="center">N</td><td>Google Cloud Project ID</td></tr><tr><td><code>bigquery.location</code></td><td align="center">Y</td><td>Location of the BigQuery dataset. <br><br>Defaults to <code>us</code>.</td></tr><tr><td><code>bigquery.defaultDataset</code></td><td align="center">N</td><td><p>The default dataset used. </p><p></p><p>This just allows us to connect to BigQuery using data source  notation (DSN). </p></td></tr><tr><td><code>bigquery.batchSize</code></td><td align="center">Y</td><td>Batch size is used to chunk the request to BigQuery's Storage API to avoid the 10 mb limit.<br><br>If this is not passed in, we will just default to <code>1,000</code>.</td></tr></tbody></table>
 
 ### Shared Transfer config
-
-Example
 
 ```yaml
 sharedTransferConfig:
