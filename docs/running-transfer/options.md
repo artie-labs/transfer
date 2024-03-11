@@ -18,7 +18,46 @@ _Note: Keys here are formatted in dot notation for readability purposes, please 
 
 ### Kafka
 
-<table><thead><tr><th width="357">Key</th><th width="104.33333333333331" align="center">Optional</th><th>Description</th></tr></thead><tbody><tr><td><code>kafka.bootstrapServer</code></td><td align="center">N</td><td><p>Comma separated list of bootstrap servers.<br><br>Following the <a href="https://kafka.apache.org/documentation/#producerconfigs_bootstrap.servers">same spec as Kafka</a>.<br><br>Example:</p><ul><li><code>localhost:9092</code></li><li><code>host1:port1,host2:port2</code></li></ul></td></tr><tr><td><code>kafka.groupID</code></td><td align="center">N</td><td>Consumer group</td></tr><tr><td><code>kafka.username</code></td><td align="center">Y</td><td><p>Username</p><p></p><p>Transfer currently supports the following auth:</p><ul><li>Plain</li><li>SASL</li><li>AWS IAM</li></ul></td></tr><tr><td><code>kafka.password</code></td><td align="center">Y</td><td>Password</td></tr><tr><td><code>kafka.enableAWSMKSIAM</code></td><td align="center">Y</td><td><p>Defaults to <code>false</code>, turn this on if you want to use IAM authentication for communicating with Amazon MSK. <br><br>Make sure to unset username and password and provide: </p><ul><li><code>AWS_REGION</code></li><li><code>AWS_ACCESS_KEY_ID</code></li><li><code>AWS_SECRET_ACCESS_KEY</code></li></ul></td></tr></tbody></table>
+```
+kafka:
+    bootstrapServer: localhost:9092,localhost:9093
+    groupID: transfer
+    username: artie
+    password: transfer
+    enableAWSMSKIAM: false
+```
+
+#### bootstrapServer
+
+Pass in the Kafka bootstrap server. For best practices, pass in a comma separated list of bootstrap servers to maintain high availability. This is the [same spec as Kafka](https://kafka.apache.org/documentation/#producerconfigs\_bootstrap.servers).
+
+**Type:** String
+
+**Optional:** No
+
+#### groupID
+
+This is the name of the Kafka consumer group. You can set to whatever you'd like. Just remember that the offsets are associated to a particular consumer group.
+
+**Type:** String
+
+**Optional:** No
+
+#### username + password
+
+If you'd like to use SASL auth, you can pass the username and password.
+
+**Type:** String
+
+**Optional:** Yes
+
+#### enableAWSMSKIAM
+
+Turn this on if you would like to use IAM authentication to communicate with Amazon MSK. If you enabel this, make sure to pass in `AWS_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
+
+**Type:** Boolean
+
+**Optional:** Yes
 
 ### Topic Configs
 
