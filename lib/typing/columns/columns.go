@@ -240,12 +240,12 @@ func (c *Columns) DeleteColumn(name string) {
 	}
 }
 
-// ColumnsUpdateQuery takes:
+// UpdateQuery takes:
 // columns - list of columns to iterate
 // columnsToTypes - given that list, provide the types (separate list because this list may contain invalid columns
 // bigQueryTypeCasting - We'll need to escape the column comparison if the column's a struct.
 // It then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email
-func ColumnsUpdateQuery(columns []string, columnsToTypes Columns, destKind constants.DestinationKind, uppercaseEscNames bool) string {
+func UpdateQuery(columns []string, columnsToTypes Columns, destKind constants.DestinationKind, uppercaseEscNames bool) string {
 	columnsToTypes.EscapeName(uppercaseEscNames, &sql.NameArgs{
 		Escape:   true,
 		DestKind: destKind,

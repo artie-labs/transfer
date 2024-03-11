@@ -489,7 +489,7 @@ func TestColumnsUpdateQuery(t *testing.T) {
 	}
 
 	for _, _testCase := range testCases {
-		actualQuery := ColumnsUpdateQuery(_testCase.columns, _testCase.columnsToTypes, _testCase.destKind, false)
+		actualQuery := UpdateQuery(_testCase.columns, _testCase.columnsToTypes, _testCase.destKind, false)
 		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
 	}
 }
