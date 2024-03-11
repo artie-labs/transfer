@@ -289,10 +289,7 @@ func ColumnsUpdateQuery(columns []string, columnsToTypes Columns, destKind const
 					// TODO: Add tests.
 					_columns = append(_columns,
 						fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s, '') != '%s' THEN cc.%s ELSE c.%s END",
-							// col = CASE WHEN cc.col != TOAST_UNAVAILABLE_VALUE
-							column, column, constants.ToastUnavailableValuePlaceholder,
-							// THEN cc.col ELSE c.col END
-							column, column))
+							column, column, constants.ToastUnavailableValuePlaceholder, column, column))
 				} else {
 					// t.column3 = CASE WHEN t.column3 != '__debezium_unavailable_value' THEN t.column3 ELSE s.column3 END
 					_columns = append(_columns,
