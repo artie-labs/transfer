@@ -258,21 +258,21 @@ func ColumnsUpdateQuery(columns []string, columnsToTypes Columns, destKind const
 			if columnType.KindDetails == typing.Struct {
 				if destKind == constants.BigQuery {
 					_columns = append(_columns,
-						fmt.Sprintf(`%s= CASE WHEN TO_JSON_STRING(cc.%s) != '{"key":"%s"}' THEN cc.%s ELSE c.%s END`,
+						fmt.Sprintf(`%s= CASE WHEN COALESCE(TO_JSON_STRING(cc.%s) != '{"key":"%s"}', true) THEN cc.%s ELSE c.%s END`,
 							// col CASE when TO_JSON_STRING(cc.col) != { 'key': TOAST_UNAVAILABLE_VALUE }
 							column, column, constants.ToastUnavailableValuePlaceholder,
 							// cc.col ELSE c.col END
 							column, column))
 				} else if destKind == constants.Redshift {
 					_columns = append(_columns,
-						fmt.Sprintf(`%s= CASE WHEN cc.%s != JSON_PARSE('{"key":"%s"}') THEN cc.%s ELSE c.%s END`,
+						fmt.Sprintf(`%s= CASE WHEN COALESCE(cc.%s != JSON_PARSE('{"key":"%s"}'), true) THEN cc.%s ELSE c.%s END`,
 							// col CASE when TO_JSON_STRING(cc.col) != { 'key': TOAST_UNAVAILABLE_VALUE }
 							column, column, constants.ToastUnavailableValuePlaceholder,
 							// cc.col ELSE c.col END
 							column, column))
 				} else {
 					_columns = append(_columns,
-						fmt.Sprintf("%s= CASE WHEN cc.%s != {'key': '%s'} THEN cc.%s ELSE c.%s END",
+						fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s != {'key': '%s'}, true) THEN cc.%s ELSE c.%s END",
 							// col CASE WHEN cc.col
 							column, column,
 							// { 'key': TOAST_UNAVAILABLE_VALUE } THEN cc.col ELSE c.col END",
@@ -281,7 +281,7 @@ func ColumnsUpdateQuery(columns []string, columnsToTypes Columns, destKind const
 			} else {
 				// t.column3 = CASE WHEN t.column3 != '__debezium_unavailable_value' THEN t.column3 ELSE s.column3 END
 				_columns = append(_columns,
-					fmt.Sprintf("%s= CASE WHEN cc.%s != '%s' THEN cc.%s ELSE c.%s END",
+					fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s != '%s', true) THEN cc.%s ELSE c.%s END",
 						// col = CASE WHEN cc.col != TOAST_UNAVAILABLE_VALUE
 						column, column, constants.ToastUnavailableValuePlaceholder,
 						// THEN cc.col ELSE c.col END
