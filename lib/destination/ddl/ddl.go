@@ -22,7 +22,7 @@ import (
 // It has a safety check to make sure the tableName contains the `constants.ArtiePrefix` key.
 // Temporary tables look like this: database.schema.tableName__artie__RANDOM_STRING(10)
 func DropTemporaryTable(dwh destination.DataWarehouse, fqTableName string, shouldReturnError bool) error {
-	if strings.Contains(fqTableName, constants.ArtiePrefix) {
+	if strings.Contains(strings.ToLower(fqTableName), constants.ArtiePrefix) {
 		_, err := dwh.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", fqTableName))
 		if err != nil {
 			slog.Warn("Failed to drop temporary table, it will get garbage collected by the TTL...", slog.Any("err", err))
