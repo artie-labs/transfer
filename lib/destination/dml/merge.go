@@ -131,7 +131,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 			// UPDATE
 			fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s;`,
 				// UPDATE table set col1 = cc. col1
-				m.FqTableName, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
+				m.FqTableName, columns.UpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
 				// FROM table (temp) WHERE join on PK(s)
 				m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause,
 			),
@@ -175,7 +175,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		// UPDATE
 		fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s AND COALESCE(cc.%s, false) = false;`,
 			// UPDATE table set col1 = cc. col1
-			m.FqTableName, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
+			m.FqTableName, columns.UpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
 			// FROM staging WHERE join on PK(s)
 			m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause, constants.DeleteColumnMarker,
 		),
@@ -254,7 +254,7 @@ WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
 			m.FqTableName, subQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
+			idempotentClause, columns.UpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
 			// Insert
 			constants.DeleteColumnMarker, strings.Join(cols, ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -287,7 +287,7 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update
-		constants.DeleteColumnMarker, idempotentClause, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
+		constants.DeleteColumnMarker, idempotentClause, columns.UpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
 		// Insert
 		constants.DeleteColumnMarker, strings.Join(cols, ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -329,7 +329,7 @@ WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 			m.FqTableName, m.SubQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
+			idempotentClause, columns.UpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
 			// Insert
 			constants.DeleteColumnMarker, strings.Join(cols, ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -363,7 +363,7 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update
-		constants.DeleteColumnMarker, idempotentClause, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
+		constants.DeleteColumnMarker, idempotentClause, columns.UpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
 		// Insert
 		constants.DeleteColumnMarker, strings.Join(cols, ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
