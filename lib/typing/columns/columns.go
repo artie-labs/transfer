@@ -246,6 +246,7 @@ func (c *Columns) DeleteColumn(name string) {
 // bigQueryTypeCasting - We'll need to escape the column comparison if the column's a struct.
 // It then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email
 func UpdateQuery(columns []string, columnsToTypes Columns, destKind constants.DestinationKind, uppercaseEscNames bool) string {
+	// TODO: We most likely don't need to pass in columns since we already have it from `Columns`.
 	columnsToTypes.EscapeName(uppercaseEscNames, &sql.NameArgs{
 		Escape:   true,
 		DestKind: destKind,
