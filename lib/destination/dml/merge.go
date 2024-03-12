@@ -29,21 +29,12 @@ type MergeArgument struct {
 	// Columns will need to be escaped
 	Columns *columns.Columns
 
-	/*
-		DestKind is used needed because:
-		- BigQuery is used to:
-			1) escape JSON columns
-			2) merge temp table vs. subquery
-		- Redshift is used to:
-			1) Using as part of the MergeStatementIndividual
-	*/
 	DestKind   constants.DestinationKind
 	SoftDelete bool
 	// ContainsHardDeletes is only used for Redshift and MergeStatementParts,
 	// where we do not issue a DELETE statement if there are no hard deletes in the batch
 	ContainsHardDeletes *bool
-
-	UppercaseEscNames *bool
+	UppercaseEscNames   *bool
 }
 
 func (m *MergeArgument) Valid() error {
