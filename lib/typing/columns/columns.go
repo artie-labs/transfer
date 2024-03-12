@@ -273,18 +273,19 @@ func UpdateQuery(columns []string, columnsToTypes Columns, destKind constants.De
 }
 
 func processToastStructCol(colName string, destKind constants.DestinationKind) string {
-	if destKind == constants.BigQuery {
+	switch destKind {
+	case constants.BigQuery:
 		return fmt.Sprintf(`%s= CASE WHEN COALESCE(TO_JSON_STRING(cc.%s) != '{"key":"%s"}', true) THEN cc.%s ELSE c.%s END`,
 			colName, colName, constants.ToastUnavailableValuePlaceholder,
 			colName, colName)
-	} else if destKind == constants.Redshift {
+	case constants.Redshift:
 		return fmt.Sprintf(`%s= CASE WHEN COALESCE(cc.%s != JSON_PARSE('{"key":"%s"}'), true) THEN cc.%s ELSE c.%s END`,
 			colName, colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
-	} else if destKind == constants.MSSQL {
+	case constants.MSSQL:
 		// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
 		return fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s, {}) != {'key': '%s'} THEN cc.%s ELSE c.%s END",
 			colName, colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
-	} else {
+	default:
 		return fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s != {'key': '%s'}, true) THEN cc.%s ELSE c.%s END",
 			colName, colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
 	}
