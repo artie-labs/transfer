@@ -79,29 +79,3 @@ Snowflake's native RBAC makes it so that the account that created the resource i
 
 <figure><img src="../.gitbook/assets/SFLK.gif" alt=""><figcaption></figcaption></figure>
 
-## Typing
-
-| Snowflake type                                          | Artie type                  |
-| ------------------------------------------------------- | --------------------------- |
-| Number / Double / Double Precision / Real               | Float                       |
-| Numeric / Decimal                                       | Numeric                     |
-| Int / Integer / Big Int / Small Int / Tiny Int Byte Int | Integer                     |
-| Float / Float4 / Float8                                 | Float                       |
-| Varchar                                                 | String                      |
-| Char, Character                                         | String                      |
-| String                                                  | String                      |
-| Text                                                    | String                      |
-| Binary / Var Binary                                     | 🟠 Currently not supported. |
-| Boolean                                                 | Boolean                     |
-| Date                                                    | Date                        |
-| Datetime                                                | Datetime                    |
-| Timestamp                                               | Datetime                    |
-| Timestamp LTZ                                           | Datetime                    |
-| Timestamp NTZ                                           | Datetime with UTC TZ        |
-| Timestamp TZ                                            | Datetime                    |
-| Variant                                                 | Struct                      |
-| Object                                                  | Struct                      |
-| Array                                                   | Array                       |
-| Geography                                               | 🟠 Currently not supported. |
-| Geometry                                                | 🟠 Currently not supported. |
-

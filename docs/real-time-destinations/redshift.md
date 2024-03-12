@@ -22,16 +22,3 @@ Instead of giving an admin user, you could opt to give a limited user with less 
 CREATE USER artie_transfer WITH PASSWORD 'password';
 GRANT SELECT, INSERT, UPDATE, DELETE, DROP, ALTER ON ALL TABLES IN SCHEMA schema_name TO artie_transfer;
 ```
-
-### Typing
-
-| Redshift type     | Artie type |
-| ----------------- | ---------- |
-| BIGINT / INT8     | Integer    |
-| Decimal / Numeric | Numeric    |
-| Double Precision  | Float      |
-| Boolean           | Boolean    |
-| VARCHAR           | String     |
-| Date              | Date       |
-| Timestamp         | Timestamp  |
-| Time              | Time       |
