@@ -275,16 +275,11 @@ func UpdateQuery(columns []string, columnsToTypes Columns, destKind constants.De
 func processToastStructCol(colName string, destKind constants.DestinationKind) string {
 	if destKind == constants.BigQuery {
 		return fmt.Sprintf(`%s= CASE WHEN COALESCE(TO_JSON_STRING(cc.%s) != '{"key":"%s"}', true) THEN cc.%s ELSE c.%s END`,
-			// col CASE when TO_JSON_STRING(cc.col) != { 'key': TOAST_UNAVAILABLE_VALUE }
 			colName, colName, constants.ToastUnavailableValuePlaceholder,
-			// cc.col ELSE c.col END
 			colName, colName)
 	} else if destKind == constants.Redshift {
 		return fmt.Sprintf(`%s= CASE WHEN COALESCE(cc.%s != JSON_PARSE('{"key":"%s"}'), true) THEN cc.%s ELSE c.%s END`,
-			// col CASE when TO_JSON_STRING(cc.col) != { 'key': TOAST_UNAVAILABLE_VALUE }
-			colName, colName, constants.ToastUnavailableValuePlaceholder,
-			// cc.col ELSE c.col END
-			colName, colName)
+			colName, colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
 	} else if destKind == constants.MSSQL {
 		// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
 		return fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s, {}) != {'key': '%s'} THEN cc.%s ELSE c.%s END",
@@ -297,14 +292,11 @@ func processToastStructCol(colName string, destKind constants.DestinationKind) s
 
 func processToastCol(colName string, destKind constants.DestinationKind) string {
 	if destKind == constants.MSSQL {
+		// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
 		return fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s, '') != '%s' THEN cc.%s ELSE c.%s END", colName, colName,
 			constants.ToastUnavailableValuePlaceholder, colName, colName)
 	} else {
-		// t.column3 = CASE WHEN t.column3 != '__debezium_unavailable_value' THEN t.column3 ELSE s.column3 END
 		return fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s != '%s', true) THEN cc.%s ELSE c.%s END",
-			// col = CASE WHEN cc.col != TOAST_UNAVAILABLE_VALUE
-			colName, colName, constants.ToastUnavailableValuePlaceholder,
-			// THEN cc.col ELSE c.col END
-			colName, colName)
+			colName, colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
 	}
 }
