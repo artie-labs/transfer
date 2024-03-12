@@ -10,31 +10,18 @@ import (
 )
 
 const (
-	maxRedshiftVarCharLen = 65535
-	maxRedshiftSuperLen   = 1 * 1024 * 1024 // 1 MB
+	maxRedshiftLength = 65535
 )
 
 // replaceExceededValues - takes `colVal` any and `colKind` columns.Column and replaces the value with an empty string if it exceeds the max length.
 // This currently only works for STRING and SUPER data types.
 func replaceExceededValues(colVal string, colKind columns.Column) string {
-	numOfChars := len(colVal)
-	switch colKind.KindDetails.Kind {
-	// Assuming this corresponds to SUPER type in Redshift
-	case typing.Struct.Kind:
-		shouldReplace := numOfChars > maxRedshiftSuperLen
-		potentiallyReplace := numOfChars > maxRedshiftVarCharLen
-
-		// If the data value is a string, there's still a 2^16 character limit despite it being a SUPER data type.
-		// https://docs.aws.amazon.com/redshift/latest/dg/limitations-super.html
-		if !shouldReplace && potentiallyReplace && !typing.IsJSON(colVal) {
-			shouldReplace = true
-		}
-
-		if shouldReplace {
+	structOrString := colKind.KindDetails.Kind == typing.Struct.Kind || colKind.KindDetails.Kind == typing.String.Kind
+	shouldReplace := len(colVal) > maxRedshiftLength
+	if structOrString && shouldReplace {
+		if colKind.KindDetails.Kind == typing.Struct.Kind {
 			return fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker)
-		}
-	case typing.String.Kind:
-		if numOfChars > maxRedshiftVarCharLen {
+		} else {
 			return constants.ExceededValueMarker
 		}
 	}
