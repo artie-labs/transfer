@@ -253,11 +253,7 @@ func (c *Columns) UpdateQuery(destKind constants.DestinationKind, uppercaseEscNa
 			continue
 		}
 
-		colName := column.Name(uppercaseEscNames, &sql.NameArgs{
-			Escape:   true,
-			DestKind: destKind,
-		})
-
+		colName := column.Name(uppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: destKind})
 		if column.ToastColumn {
 			if column.KindDetails == typing.Struct {
 				cols = append(cols, processToastStructCol(colName, destKind))
