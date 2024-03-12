@@ -9,9 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
-const (
-	maxRedshiftLength = 65535
-)
+const maxRedshiftLength = 65535
 
 // replaceExceededValues - takes `colVal` any and `colKind` columns.Column and replaces the value with an empty string if it exceeds the max length.
 // This currently only works for STRING and SUPER data types.
