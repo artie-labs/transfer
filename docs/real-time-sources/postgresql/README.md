@@ -12,18 +12,17 @@ This is necessary so that we are able to run a Debezium deployment to read from 
 
 We will need the following:
 
-| Name               | Description                                                    | Default value |
-| ------------------ | -------------------------------------------------------------- | ------------- |
-| Database Host Name | IP address or hostname of your database server.                | No default    |
-| Database Port      | Port for where your server is running.                         | `5432`        |
-| Database Username  | Username for authentication into your database.                | No default    |
-| Database Password  | Password for authentication into your database.                | No default    |
-| Database Name      | The name of the database that you want to capture changes for. | No default.   |
+| Name                        | Description                                                                                                                                       | Default value |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| Host Name                   | IP address or hostname of your database server.                                                                                                   | No default    |
+| Port                        | Port for where your server is running.                                                                                                            | `5432`        |
+| <p>Username<br>Password</p> | <p>Username and Password for authentication into your database.<br><br>See below if you'd like to create a service account specific to Artie.</p> | No default    |
+| Database                    | The name of the database that you want to capture changes for.                                                                                    | No default.   |
 
 ### Creating a new user
 
 {% hint style="info" %}
-Using Amazon RDS? RDS has its own internal permissioning model. Run this command instead of `ALTER USER REPLICATION`!
+**Using Amazon RDS?** RDS has its own internal permissioning model. Run this command instead of `ALTER USER REPLICATION`!
 
 `GRANT rds_replication to username;`
 {% endhint %}
