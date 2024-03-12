@@ -286,6 +286,7 @@ func processToastStructCol(colName string, destKind constants.DestinationKind) s
 		return fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s, {}) != {'key': '%s'} THEN cc.%s ELSE c.%s END",
 			colName, colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
 	default:
+		// TODO: Change this to Snowflake and error out if the destKind isn't supported so we're explicit.
 		return fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s != {'key': '%s'}, true) THEN cc.%s ELSE c.%s END",
 			colName, colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
 	}
