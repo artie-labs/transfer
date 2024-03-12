@@ -248,6 +248,7 @@ func (c *Columns) UpdateQuery(destKind constants.DestinationKind, uppercaseEscNa
 			continue
 		}
 
+		// skipDeleteCol is useful because we don't want to copy the deleted column over to the source table if we're doing a hard row delete.
 		if skipDeleteCol && column.RawName() == constants.DeleteColumnMarker {
 			continue
 		}

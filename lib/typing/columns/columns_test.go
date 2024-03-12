@@ -366,10 +366,10 @@ func TestColumns_Mutation(t *testing.T) {
 func TestColumnsUpdateQuery(t *testing.T) {
 	type testCase struct {
 		name           string
-		columns        []string
 		columnsToTypes Columns
 		expectedString string
 		destKind       constants.DestinationKind
+		skipDeleteCol  bool
 	}
 
 	fooBarCols := []string{"foo", "bar"}
@@ -452,35 +452,30 @@ func TestColumnsUpdateQuery(t *testing.T) {
 	testCases := []testCase{
 		{
 			name:           "happy path",
-			columns:        fooBarCols,
 			columnsToTypes: happyPathCols,
 			destKind:       constants.Redshift,
 			expectedString: "foo=cc.foo,bar=cc.bar",
 		},
 		{
 			name:           "string and toast",
-			columns:        fooBarCols,
 			columnsToTypes: stringAndToastCols,
 			destKind:       constants.Snowflake,
 			expectedString: "foo= CASE WHEN COALESCE(cc.foo != '__debezium_unavailable_value', true) THEN cc.foo ELSE c.foo END,bar=cc.bar",
 		},
 		{
 			name:           "struct, string and toast string",
-			columns:        lastCaseCols,
 			columnsToTypes: lastCaseColTypes,
 			destKind:       constants.Redshift,
 			expectedString: `a1= CASE WHEN COALESCE(cc.a1 != JSON_PARSE('{"key":"__debezium_unavailable_value"}'), true) THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN COALESCE(cc.b2 != '__debezium_unavailable_value', true) THEN cc.b2 ELSE c.b2 END,c3=cc.c3`,
 		},
 		{
 			name:           "struct, string and toast string (bigquery)",
-			columns:        lastCaseCols,
 			columnsToTypes: lastCaseColTypes,
 			destKind:       constants.BigQuery,
 			expectedString: `a1= CASE WHEN COALESCE(TO_JSON_STRING(cc.a1) != '{"key":"__debezium_unavailable_value"}', true) THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN COALESCE(cc.b2 != '__debezium_unavailable_value', true) THEN cc.b2 ELSE c.b2 END,c3=cc.c3`,
 		},
 		{
 			name:           "struct, string and toast string (bigquery) w/ reserved keywords",
-			columns:        lastCaseColsEsc,
 			columnsToTypes: lastCaseEscapeTypes,
 			destKind:       constants.BigQuery,
 			expectedString: fmt.Sprintf(`a1= CASE WHEN COALESCE(TO_JSON_STRING(cc.a1) != '%s', true) THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN COALESCE(cc.b2 != '__debezium_unavailable_value', true) THEN cc.b2 ELSE c.b2 END,c3=cc.c3,%s,%s`,
@@ -489,7 +484,7 @@ func TestColumnsUpdateQuery(t *testing.T) {
 	}
 
 	for _, _testCase := range testCases {
-		actualQuery := _testCase.columnsToTypes.UpdateQuery(_testCase.destKind, false, false)
+		actualQuery := _testCase.columnsToTypes.UpdateQuery(_testCase.destKind, false, _testCase.skipDeleteCol)
 		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
 	}
 }
