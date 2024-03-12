@@ -17,11 +17,12 @@ const (
 // This currently only works for STRING and SUPER data types.
 func replaceExceededValues(colVal string, colKind columns.Column) string {
 	structOrString := colKind.KindDetails.Kind == typing.Struct.Kind || colKind.KindDetails.Kind == typing.String.Kind
-	shouldReplace := len(colVal) > maxRedshiftLength
-	if structOrString && shouldReplace {
-		if colKind.KindDetails.Kind == typing.Struct.Kind {
-			return fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker)
-		} else {
+	if structOrString {
+		if shouldReplace := len(colVal) > maxRedshiftLength; shouldReplace {
+			if colKind.KindDetails.Kind == typing.Struct.Kind {
+				return fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker)
+			}
+
 			return constants.ExceededValueMarker
 		}
 	}
