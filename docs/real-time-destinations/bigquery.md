@@ -26,6 +26,10 @@ The default dataset is only meant to establish the initial connection with BigQu
 
 For best practice, create a separate service account for `Transfer` and download the keys by following [this guide](https://cloud.google.com/iam/docs/creating-managing-service-account-keys#creating) from Google!
 
+### Best practices
+
+* For large tables, consider turning on Time Partitioning 👉 [enabling-bigquery-time-partitioning.md](../tutorials/enabling-bigquery-time-partitioning.md "mention")
+
 ## Typing
 
 | BigQuery type                       | Artie type                                                                                                                                                                                                                                                            |
