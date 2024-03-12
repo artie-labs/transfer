@@ -43,41 +43,41 @@ func TestMergeArgument_Valid(t *testing.T) {
 			mergeArg: &MergeArgument{
 				PrimaryKeys: primaryKeys,
 			},
-			expectErrorMessage: "columnToTypes cannot be empty",
+			expectErrorMessage: "columns cannot be empty",
 		},
 		{
 			name: "pks, cols, colsTpTypes exists but no subquery or fqTableName",
 			mergeArg: &MergeArgument{
-				PrimaryKeys:    primaryKeys,
-				ColumnsToTypes: cols,
+				PrimaryKeys: primaryKeys,
+				Columns:     &cols,
 			},
 			expectErrorMessage: "one of these arguments is empty: fqTableName, subQuery",
 		},
 		{
 			name: "pks, cols, colsTpTypes, subquery exists but no fqTableName",
 			mergeArg: &MergeArgument{
-				PrimaryKeys:    primaryKeys,
-				ColumnsToTypes: cols,
-				SubQuery:       "schema.tableName",
+				PrimaryKeys: primaryKeys,
+				Columns:     &cols,
+				SubQuery:    "schema.tableName",
 			},
 			expectErrorMessage: "one of these arguments is empty: fqTableName, subQuery",
 		},
 		{
 			name: "pks, cols, colsTpTypes, fqTableName exists but no subquery",
 			mergeArg: &MergeArgument{
-				PrimaryKeys:    primaryKeys,
-				ColumnsToTypes: cols,
-				FqTableName:    "schema.tableName",
+				PrimaryKeys: primaryKeys,
+				Columns:     &cols,
+				FqTableName: "schema.tableName",
 			},
 			expectErrorMessage: "one of these arguments is empty: fqTableName, subQuery",
 		},
 		{
 			name: "did not pass in uppercase esc col",
 			mergeArg: &MergeArgument{
-				PrimaryKeys:    primaryKeys,
-				ColumnsToTypes: cols,
-				FqTableName:    "schema.tableName",
-				SubQuery:       "schema.tableName",
+				PrimaryKeys: primaryKeys,
+				Columns:     &cols,
+				FqTableName: "schema.tableName",
+				SubQuery:    "schema.tableName",
 			},
 			expectErrorMessage: "uppercaseEscNames cannot be nil",
 		},
@@ -85,7 +85,7 @@ func TestMergeArgument_Valid(t *testing.T) {
 			name: "missing dest kind",
 			mergeArg: &MergeArgument{
 				PrimaryKeys:       primaryKeys,
-				ColumnsToTypes:    cols,
+				Columns:           &cols,
 				SubQuery:          "schema.tableName",
 				FqTableName:       "schema.tableName",
 				UppercaseEscNames: ptr.ToBool(false),
@@ -96,7 +96,7 @@ func TestMergeArgument_Valid(t *testing.T) {
 			name: "everything exists",
 			mergeArg: &MergeArgument{
 				PrimaryKeys:       primaryKeys,
-				ColumnsToTypes:    cols,
+				Columns:           &cols,
 				SubQuery:          "schema.tableName",
 				FqTableName:       "schema.tableName",
 				UppercaseEscNames: ptr.ToBool(false),

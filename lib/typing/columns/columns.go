@@ -240,36 +240,37 @@ func (c *Columns) DeleteColumn(name string) {
 	}
 }
 
-// UpdateQuery takes:
-// columns - list of columns to iterate
-// columnsToTypes - given that list, provide the types (separate list because this list may contain invalid columns
-// bigQueryTypeCasting - We'll need to escape the column comparison if the column's a struct.
-// It then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email
-func UpdateQuery(columns []string, columnsToTypes Columns, destKind constants.DestinationKind, uppercaseEscNames bool) string {
-	// TODO: We most likely don't need to pass in columns since we already have it from `Columns`.
-	columnsToTypes.EscapeName(uppercaseEscNames, &sql.NameArgs{
-		Escape:   true,
-		DestKind: destKind,
-	})
+// UpdateQuery will parse the columns and then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email
+func (c *Columns) UpdateQuery(destKind constants.DestinationKind, uppercaseEscNames bool, skipDeleteCol bool) string {
+	var cols []string
+	for _, column := range c.GetColumns() {
+		if column.ShouldSkip() {
+			continue
+		}
 
-	var _columns []string
-	for _, column := range columns {
-		columnType, isOk := columnsToTypes.GetColumn(column)
-		if isOk && columnType.ToastColumn {
-			if columnType.KindDetails == typing.Struct {
-				_columns = append(_columns, processToastStructCol(column, destKind))
+		if skipDeleteCol && column.RawName() == constants.DeleteColumnMarker {
+			continue
+		}
+
+		colName := column.Name(uppercaseEscNames, &sql.NameArgs{
+			Escape:   true,
+			DestKind: destKind,
+		})
+
+		if column.ToastColumn {
+			if column.KindDetails == typing.Struct {
+				cols = append(cols, processToastStructCol(colName, destKind))
 			} else {
-				_columns = append(_columns, processToastCol(column, destKind))
+				cols = append(cols, processToastCol(colName, destKind))
 			}
 
 		} else {
 			// This is to make it look like: objCol = cc.objCol
-			_columns = append(_columns, fmt.Sprintf("%s=cc.%s", column, column))
+			cols = append(cols, fmt.Sprintf("%s=cc.%s", colName, colName))
 		}
-
 	}
 
-	return strings.Join(_columns, ",")
+	return strings.Join(cols, ",")
 }
 
 func processToastStructCol(colName string, destKind constants.DestinationKind) string {
