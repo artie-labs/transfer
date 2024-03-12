@@ -256,49 +256,9 @@ func UpdateQuery(columns []string, columnsToTypes Columns, destKind constants.De
 		columnType, isOk := columnsToTypes.GetColumn(column)
 		if isOk && columnType.ToastColumn {
 			if columnType.KindDetails == typing.Struct {
-				if destKind == constants.BigQuery {
-					_columns = append(_columns,
-						fmt.Sprintf(`%s= CASE WHEN COALESCE(TO_JSON_STRING(cc.%s) != '{"key":"%s"}', true) THEN cc.%s ELSE c.%s END`,
-							// col CASE when TO_JSON_STRING(cc.col) != { 'key': TOAST_UNAVAILABLE_VALUE }
-							column, column, constants.ToastUnavailableValuePlaceholder,
-							// cc.col ELSE c.col END
-							column, column))
-				} else if destKind == constants.Redshift {
-					_columns = append(_columns,
-						fmt.Sprintf(`%s= CASE WHEN COALESCE(cc.%s != JSON_PARSE('{"key":"%s"}'), true) THEN cc.%s ELSE c.%s END`,
-							// col CASE when TO_JSON_STRING(cc.col) != { 'key': TOAST_UNAVAILABLE_VALUE }
-							column, column, constants.ToastUnavailableValuePlaceholder,
-							// cc.col ELSE c.col END
-							column, column))
-				} else if destKind == constants.MSSQL {
-					// TODO: Add tests.
-					// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
-					_columns = append(_columns,
-						fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s, {}) != {'key': '%s'} THEN cc.%s ELSE c.%s END",
-							column, column, constants.ToastUnavailableValuePlaceholder, column, column))
-				} else {
-					_columns = append(_columns,
-						fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s != {'key': '%s'}, true) THEN cc.%s ELSE c.%s END",
-							// col CASE WHEN cc.col
-							column, column,
-							// { 'key': TOAST_UNAVAILABLE_VALUE } THEN cc.col ELSE c.col END",
-							constants.ToastUnavailableValuePlaceholder, column, column))
-				}
+				_columns = append(_columns, processToastStructCol(column, destKind))
 			} else {
-				if destKind == constants.MSSQL {
-					// TODO: Add tests.
-					_columns = append(_columns,
-						fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s, '') != '%s' THEN cc.%s ELSE c.%s END",
-							column, column, constants.ToastUnavailableValuePlaceholder, column, column))
-				} else {
-					// t.column3 = CASE WHEN t.column3 != '__debezium_unavailable_value' THEN t.column3 ELSE s.column3 END
-					_columns = append(_columns,
-						fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s != '%s', true) THEN cc.%s ELSE c.%s END",
-							// col = CASE WHEN cc.col != TOAST_UNAVAILABLE_VALUE
-							column, column, constants.ToastUnavailableValuePlaceholder,
-							// THEN cc.col ELSE c.col END
-							column, column))
-				}
+				_columns = append(_columns, processToastCol(column, destKind))
 			}
 
 		} else {
@@ -309,4 +269,41 @@ func UpdateQuery(columns []string, columnsToTypes Columns, destKind constants.De
 	}
 
 	return strings.Join(_columns, ",")
+}
+
+func processToastStructCol(colName string, destKind constants.DestinationKind) string {
+	if destKind == constants.BigQuery {
+		return fmt.Sprintf(`%s= CASE WHEN COALESCE(TO_JSON_STRING(cc.%s) != '{"key":"%s"}', true) THEN cc.%s ELSE c.%s END`,
+			// col CASE when TO_JSON_STRING(cc.col) != { 'key': TOAST_UNAVAILABLE_VALUE }
+			colName, colName, constants.ToastUnavailableValuePlaceholder,
+			// cc.col ELSE c.col END
+			colName, colName)
+	} else if destKind == constants.Redshift {
+		return fmt.Sprintf(`%s= CASE WHEN COALESCE(cc.%s != JSON_PARSE('{"key":"%s"}'), true) THEN cc.%s ELSE c.%s END`,
+			// col CASE when TO_JSON_STRING(cc.col) != { 'key': TOAST_UNAVAILABLE_VALUE }
+			colName, colName, constants.ToastUnavailableValuePlaceholder,
+			// cc.col ELSE c.col END
+			colName, colName)
+	} else if destKind == constants.MSSQL {
+		// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
+		return fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s, {}) != {'key': '%s'} THEN cc.%s ELSE c.%s END",
+			colName, colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
+	} else {
+		return fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s != {'key': '%s'}, true) THEN cc.%s ELSE c.%s END",
+			colName, colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
+	}
+}
+
+func processToastCol(colName string, destKind constants.DestinationKind) string {
+	if destKind == constants.MSSQL {
+		return fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s, '') != '%s' THEN cc.%s ELSE c.%s END", colName, colName,
+			constants.ToastUnavailableValuePlaceholder, colName, colName)
+	} else {
+		// t.column3 = CASE WHEN t.column3 != '__debezium_unavailable_value' THEN t.column3 ELSE s.column3 END
+		return fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s != '%s', true) THEN cc.%s ELSE c.%s END",
+			// col = CASE WHEN cc.col != TOAST_UNAVAILABLE_VALUE
+			colName, colName, constants.ToastUnavailableValuePlaceholder,
+			// THEN cc.col ELSE c.col END
+			colName, colName)
+	}
 }
