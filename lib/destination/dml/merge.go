@@ -26,7 +26,7 @@ type MergeArgument struct {
 	// AdditionalEqualityStrings is used for handling BigQuery partitioned table merges
 	AdditionalEqualityStrings []string
 
-	// ColumnsToTypes also needs to be escaped.
+	// Columns will need to be escaped
 	Columns *columns.Columns
 
 	/*
