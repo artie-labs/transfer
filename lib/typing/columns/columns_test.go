@@ -419,7 +419,7 @@ func TestColumnsUpdateQuery(t *testing.T) {
 		})
 	}
 
-	lastCaseColsEsc := []string{"a1", "b2", "c3", "`start`", "`select`"}
+	lastCaseColsEsc := []string{"a1", "b2", "c3", "start", "select"}
 	for _, lastCaseColEsc := range lastCaseColsEsc {
 		kd := typing.String
 		var toast bool
@@ -429,19 +429,13 @@ func TestColumnsUpdateQuery(t *testing.T) {
 			toast = true
 		} else if lastCaseColEsc == "b2" {
 			toast = true
-		} else if lastCaseColEsc == "`start`" {
+		} else if lastCaseColEsc == "start" {
 			kd = typing.Struct
 			toast = true
 		}
 
-		name := lastCaseColEsc
-		if name == "`select`" {
-			// Unescape (to test that this function escapes it).
-			name = "select"
-		}
-
 		lastCaseEscapeTypes.AddColumn(Column{
-			name:        name,
+			name:        lastCaseColEsc,
 			KindDetails: kd,
 			ToastColumn: toast,
 		})
