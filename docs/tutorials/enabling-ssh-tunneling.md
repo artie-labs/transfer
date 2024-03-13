@@ -27,6 +27,10 @@ If you have one already, skip this step. However, if you don't - then make sure 
 
 * Once the SSH tunnel is created, copy the public key and add it to your server
 
+{% hint style="info" %}
+You can create the SSH tunnel from [**Company Settings**](https://app.artie.so/settings) or under **Advanced Settings** when you edit a deployment!
+{% endhint %}
+
 <figure><img src="../.gitbook/assets/image (14).png" alt="" width="563"><figcaption><p>Artie advanced settings</p></figcaption></figure>
 
 ```bash
