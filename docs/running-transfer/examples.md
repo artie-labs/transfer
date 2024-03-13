@@ -6,7 +6,7 @@ Below, you can see sample configuration files to describe different workloads. T
 
 ## Postgres options
 
-### Postgres --> Snowflake
+### Postgres -> Snowflake
 
 ```yaml
 outputSource: snowflake
@@ -28,7 +28,7 @@ snowflake:
   region: us-east-2.aws
 ```
 
-### Postgres --> BigQuery
+### Postgres -> BigQuery
 
 ```yaml
 outputSource: bigquery
@@ -50,7 +50,7 @@ bigquery:
 
 ## MongoDB options
 
-### MongoDB --> Snowflake
+### MongoDB -> Snowflake
 
 ```yaml
 outputSource: snowflake
@@ -72,7 +72,7 @@ snowflake:
   region: us-east-2.aws
 ```
 
-### MongoDB --> BigQuery
+### MongoDB -> BigQuery
 
 ```yaml
 outputSource: bigquery
@@ -100,7 +100,7 @@ If you provide your Sentry DSN; Artie Transfer will automatically report any err
 
 Visit this [link](https://docs.sentry.io/product/sentry-basics/dsn-explainer/) to see how you can find your Sentry DSN.
 
-```
+```yaml
 reporting:
   sentry:
     dsn: https://docs.sentry.io/product/sentry-basics/dsn-explainer/    
