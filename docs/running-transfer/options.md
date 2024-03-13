@@ -29,34 +29,26 @@ kafka:
 
 #### bootstrapServer
 
-Pass in the Kafka bootstrap server. For best practices, pass in a comma separated list of bootstrap servers to maintain high availability. This is the [same spec as Kafka](https://kafka.apache.org/documentation/#producerconfigs\_bootstrap.servers).
-
-**Type:** String
-
+Pass in the Kafka bootstrap server. For best practices, pass in a comma separated list of bootstrap servers to maintain high availability. This is the [same spec as Kafka](https://kafka.apache.org/documentation/#producerconfigs\_bootstrap.servers).\
+**Type:** String\
 **Optional:** No
 
 #### groupID
 
-This is the name of the Kafka consumer group. You can set to whatever you'd like. Just remember that the offsets are associated to a particular consumer group.
-
-**Type:** String
-
+This is the name of the Kafka consumer group. You can set to whatever you'd like. Just remember that the offsets are associated to a particular consumer group.\
+**Type:** String\
 **Optional:** No
 
 #### username + password
 
-If you'd like to use SASL auth, you can pass the username and password.
-
-**Type:** String
-
+If you'd like to use SASL auth, you can pass the username and password.\
+**Type:** String\
 **Optional:** Yes
 
 #### enableAWSMSKIAM
 
-Turn this on if you would like to use IAM authentication to communicate with Amazon MSK. If you enabel this, make sure to pass in `AWS_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
-
-**Type:** Boolean
-
+Turn this on if you would like to use IAM authentication to communicate with Amazon MSK. If you enabel this, make sure to pass in `AWS_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.\
+**Type:** Boolean\
 **Optional:** Yes
 
 ### Topic Configs
@@ -95,9 +87,23 @@ bigQueryPartitionSettings:
   partitionBy: daily
 ```
 
-<table><thead><tr><th width="380.3333333333333">Key</th><th width="99" align="center">Optional</th><th>Description</th></tr></thead><tbody><tr><td><code>partitionType</code></td><td align="center">N</td><td>Type of partitioning. Currently, we support only time-based partitioning.<br><br>Valid values right now are just <code>time</code></td></tr><tr><td><code>partitionField</code></td><td align="center">N</td><td>Which field or column is being partitioned on.</td></tr><tr><td><code>partitionBy</code></td><td align="center">N</td><td>This is used for time partitioning, what is the time granularity?<br><br>Valid values right now are just <code>daily</code></td></tr></tbody></table>
+#### partitionType
 
+Type of partitioning. We currently support only time-based partitioning. The valid values right now are just `time`.\
+**Type:** String\
+**Optional:** Yes
 
+#### partitionField
+
+Which field or column is being partitioned on.\
+**Type:** String\
+**Optional:** Yes
+
+#### partitionBy
+
+This is used for time partitioning, what is the time granularity? Valid values right now are just `daily`\
+**Type:** String\
+**Optional:** Yes
 
 ### Google Pub/Sub
 
@@ -111,18 +117,13 @@ pubsub:
 
 #### projectID
 
-This is your GCP Project ID, click here to see how you can find it.[#getting-your-project-identifier](../real-time-destinations/bigquery.md#getting-your-project-identifier "mention")
-
-**Type:** String
-
+This is your GCP Project ID, click here to see how you can find it.[#getting-your-project-identifier](../real-time-destinations/bigquery.md#getting-your-project-identifier "mention")**Type:** String\
 **Optional**: No
 
 #### pathToCredentials
 
-This is the path to the credentials for the service account to use. You can re-use the same credentials as BigQuery, or you can use a different service account to support use cases of cross-account transfers.
-
-**Type:** String
-
+This is the path to the credentials for the service account to use. You can re-use the same credentials as BigQuery, or you can use a different service account to support use cases of cross-account transfers.\
+**Type:** String\
 **Optional:** No
 
 #### topicConfigs
@@ -145,18 +146,14 @@ sharedTransferConfig:
 
 #### **additionalDateFormats**
 
-By default, Artie Transfer supports a [wide array of date formats](https://github.com/artie-labs/transfer/blob/master/lib/typing/ext/variables.go). If your layout is supported, you can specify additional ones here. If you're unsure, please refer to this [guide](https://yourbasic.org/golang/format-parse-string-time-date-example/).
-
-**Type:** List of layouts
-
+By default, Artie Transfer supports a [wide array of date formats](https://github.com/artie-labs/transfer/blob/master/lib/typing/ext/variables.go). If your layout is supported, you can specify additional ones here. If you're unsure, please refer to this [guide](https://yourbasic.org/golang/format-parse-string-time-date-example/).\
+**Type:** List of layouts\
 **Optional:** Yes
 
 #### createAllColumnsIfAvailable
 
-By default, Artie Transfer will only create the column within the destination if the column contains a not null value. You can override this behavior by setting this value to `true`.
-
-**Type:** Boolean
-
+By default, Artie Transfer will only create the column within the destination if the column contains a not null value. You can override this behavior by setting this value to `true`.\
+**Type:** Boolean\
 **Optional:** Yes
 
 ### Shared destination config
