@@ -18,13 +18,13 @@ _Note: Keys here are formatted in dot notation for readability purposes, please 
 
 ### Kafka
 
-```
+```yaml
 kafka:
-    bootstrapServer: localhost:9092,localhost:9093
-    groupID: transfer
-    username: artie
-    password: transfer
-    enableAWSMSKIAM: false
+  bootstrapServer: localhost:9092,localhost:9093
+  groupID: transfer
+  username: artie
+  password: transfer
+  enableAWSMSKIAM: false
 ```
 
 #### bootstrapServer
@@ -64,14 +64,14 @@ These are stored in this particular fashion. See [examples.md](examples.md "ment
 
 ```yaml
 kafka:
-    topicConfigs:
-    - { }
-    - { }
+  topicConfigs:
+  - { }
+  - { }
 # OR as
 pubsub:
-    topicConfigs:
-    - { }
-    - { }
+  topicConfigs:
+  - { }
+  - { }
 ```
 
 <table><thead><tr><th width="386">Key</th><th width="101.33333333333331" align="center">Optional</th><th>Description</th></tr></thead><tbody><tr><td><code>*.topicConfigs[0].db</code></td><td align="center">N</td><td>Name of the database in destination.</td></tr><tr><td><code>*.topicConfigs[0].tableName</code></td><td align="center">Y</td><td><p>Name of the table in destination.</p><p></p><ul><li>If not provided, will use table name from event</li><li>If provided, tableName acts an override</li></ul></td></tr><tr><td><code>*.topicConfigs[0].schema</code></td><td align="center">N</td><td>Name of the schema in Snowflake.<br><br>Not needed for BigQuery.</td></tr><tr><td><code>*.topicConfigs[0].topic</code></td><td align="center">N</td><td>Name of the Kafka topic.</td></tr><tr><td><code>*.topicConfigs[0].idempotentKey</code></td><td align="center">N</td><td>Name of the column that is used for idempotency. This field is highly recommended.<br>For example: <code>updated_at</code> or another timestamp column.</td></tr><tr><td><code>*.topicConfigs[0].cdcFormat</code></td><td align="center">N</td><td><p>Name of the CDC connector (thus format) we should be expecting to parse against.<br><br>Currently, the supported values are:</p><ol><li><code>debezium.postgres</code></li><li><code>debezium.mongodb</code></li><li><code>debezium.mysql</code></li></ol></td></tr><tr><td><code>*.topicConfigs[0].cdcKeyFormat</code></td><td align="center">N</td><td>Format for what Kafka Connect will the key to be. This is called <code>key.converter</code> in the Kafka Connect properties file.<br>The supported values are: <code>org.apache.kafka.connect.storage.StringConverter</code>, <code>org.apache.kafka.connect.json.JsonConverter</code><br>If not provided, the default value will be <code>org.apache.kafka.connect.storage.StringConverter</code>. </td></tr><tr><td><code>*.topicConfigs[0].dropDeletedColumns</code></td><td align="center">Y</td><td>Defaults to <code>false</code>. <br><br>When set to <code>true</code>, Transfer will drop columns in the destination when Transfer detects that the source has dropped these columns. This column should be turned on if your organization follows standard practice around database migrations.<br><br>This is available starting <code>transfer:1.4.4</code>.</td></tr><tr><td><code>*.topicConfigs[0].softDelete</code></td><td align="center">Y</td><td>Defaults to <code>false</code>.<br><br>When set to <code>true</code>, Transfer will add an additional column called <code>__artie_delete</code> and will set the column to true instead of issuing a hard deletion. <br><br>This is available starting <code>transfer:1.4.4</code>.</td></tr><tr><td><code>*.topicConfigs[0].skippedOperations</code></td><td align="center">Y</td><td><p>Comma-separated string for Transfer to specified operations. <br><br>Valid values are:</p><ul><li>c (create)</li><li>r (replication or backfill)</li><li>u (update)</li><li>d (delete)</li></ul><p>Can be specified like: <code>c,d</code> to skip create and deletes.<br><br>This is available starting <code>transfer:2.2.3</code></p></td></tr><tr><td><p><code>*.topicConfigs[0].skipDelete</code></p><p><br>This is getting deprecated in the next Transfer version. Use <code>skippedOperations</code> instead.</p></td><td align="center">Y</td><td>Defaults to <code>false</code>.<br><br>When set to <code>true</code>, Transfer will skip the delete events.<br><br>This is available starting <code>transfer:2.0.48</code></td></tr><tr><td><code>*.topicConfigs[0].includeArtieUpdatedAt</code></td><td align="center">Y</td><td>Defaults to <code>false</code>. <br><br>When set to <code>true</code>, Transfer will emit an additional timestamp column named <code>__artie_updated_at</code> which signifies when this row was processed.<br><br>This is available starting <code>transfer:2.0.17</code></td></tr><tr><td><code>*.topicConfig[0].includeDatabaseUpdatedAt</code></td><td align="center">Y</td><td>Defaults to <code>false</code>.<br><br>When set to <code>true</code>, Transfer will emit an additional timestamp column called <code>__artie_db_updated_at</code> which signifies the database time of when the row was processed.<br><br>This is available starting <code>transfer:2.2.2+</code></td></tr><tr><td><code>*.topicConfigs[0].bigQueryPartitionSettings</code></td><td align="center">Y</td><td>Enable this to turn on BigQuery table partitioning. <br><br>This is available starting <code>transfer:2.0.24</code></td></tr></tbody></table>
@@ -172,7 +172,37 @@ Please see: [snowflake.md](../real-time-destinations/snowflake.md "mention") on 
 
 ### S3
 
-<table><thead><tr><th width="300">Key</th><th width="190.33333333333331" align="center">Optional</th><th>Description</th></tr></thead><tbody><tr><td><code>s3.optionalPrefix</code></td><td align="center">Y</td><td>Prefix after the bucket name.</td></tr><tr><td><code>s3.bucket</code></td><td align="center">N</td><td>S3 bucket name</td></tr><tr><td><code>s3.awsAccessKeyID</code></td><td align="center">N</td><td>The <code>AWS_ACCESS_KEY_ID</code> for the service account.</td></tr><tr><td><code>s3.awsSecretAccessKey</code></td><td align="center">N</td><td>The <code>AWS_SECRET_ACCESS_KEY</code> for the service account.</td></tr></tbody></table>
+```yaml
+s3:
+  optionalPrefix: foo # Files will be saved under s3://artie-transfer/foo/...
+  bucket: artie-transfer
+  awsAccessKeyID: AWS_ACCESS_KEY_ID
+  awsSecretAccessKey: AWS_SECRET_ACCESS_KEY
+```
+
+#### optionalPrefix
+
+Prefix after the bucket name. If this is specified, Artie Transfer will save the files under `s3://artie-transfer/optionalPrefix/...`\
+**Type:** String\
+Optional: Yes
+
+#### bucket
+
+S3 bucket name. Example: `foo`.\
+**Type:** String\
+**Optional:** No
+
+#### awsAccessKeyID
+
+The `AWS_ACCESS_KEY_ID` for the service account.\
+**Type:** String\
+**Optional:** No
+
+#### awsSecretAccessKey
+
+The `AWS_SECRET_ACCESS_KEY` for the service account.\
+**Type:** String\
+**Optional:** No
 
 ### Telemetry
 
