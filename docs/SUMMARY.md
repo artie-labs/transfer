@@ -58,10 +58,6 @@
 
 * [More ways for support](more-ways-for-support.md)
 
-## ✍️ Product Updates
-
-* [November 2023](product-updates/november-2023.md)
-
 ## ⚖️ Legal
 
 * [Terms of Service](legal/terms-of-service.md)
