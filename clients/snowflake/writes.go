@@ -42,7 +42,9 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 			}
 		}
 
-		err = shared.Merge(s, tableData, s.config, types.MergeOpts{})
+		err = shared.Merge(s, tableData, s.config, types.MergeOpts{
+			SubQueryDedupe: true,
+		})
 	}
 	return err
 }
