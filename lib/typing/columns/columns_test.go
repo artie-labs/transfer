@@ -366,10 +366,10 @@ func TestColumns_Mutation(t *testing.T) {
 func TestColumnsUpdateQuery(t *testing.T) {
 	type testCase struct {
 		name           string
-		columns        []string
-		columnsToTypes Columns
+		columns        Columns
 		expectedString string
 		destKind       constants.DestinationKind
+		skipDeleteCol  bool
 	}
 
 	fooBarCols := []string{"foo", "bar"}
@@ -419,7 +419,7 @@ func TestColumnsUpdateQuery(t *testing.T) {
 		})
 	}
 
-	lastCaseColsEsc := []string{"a1", "b2", "c3", "`start`", "`select`"}
+	lastCaseColsEsc := []string{"a1", "b2", "c3", "start", "select"}
 	for _, lastCaseColEsc := range lastCaseColsEsc {
 		kd := typing.String
 		var toast bool
@@ -429,67 +429,69 @@ func TestColumnsUpdateQuery(t *testing.T) {
 			toast = true
 		} else if lastCaseColEsc == "b2" {
 			toast = true
-		} else if lastCaseColEsc == "`start`" {
+		} else if lastCaseColEsc == "start" {
 			kd = typing.Struct
 			toast = true
 		}
 
-		name := lastCaseColEsc
-		if name == "`select`" {
-			// Unescape (to test that this function escapes it).
-			name = "select"
-		}
-
 		lastCaseEscapeTypes.AddColumn(Column{
-			name:        name,
+			name:        lastCaseColEsc,
 			KindDetails: kd,
 			ToastColumn: toast,
 		})
 	}
 
-	key := `{"key":"__debezium_unavailable_value"}`
+	lastCaseEscapeTypes.AddColumn(Column{
+		name:        constants.DeleteColumnMarker,
+		KindDetails: typing.Boolean,
+	})
 
+	key := `{"key":"__debezium_unavailable_value"}`
 	testCases := []testCase{
 		{
 			name:           "happy path",
-			columns:        fooBarCols,
-			columnsToTypes: happyPathCols,
+			columns:        happyPathCols,
 			destKind:       constants.Redshift,
 			expectedString: "foo=cc.foo,bar=cc.bar",
 		},
 		{
 			name:           "string and toast",
-			columns:        fooBarCols,
-			columnsToTypes: stringAndToastCols,
+			columns:        stringAndToastCols,
 			destKind:       constants.Snowflake,
-			expectedString: "foo= CASE WHEN cc.foo != '__debezium_unavailable_value' THEN cc.foo ELSE c.foo END,bar=cc.bar",
+			expectedString: "foo= CASE WHEN COALESCE(cc.foo != '__debezium_unavailable_value', true) THEN cc.foo ELSE c.foo END,bar=cc.bar",
 		},
 		{
 			name:           "struct, string and toast string",
-			columns:        lastCaseCols,
-			columnsToTypes: lastCaseColTypes,
+			columns:        lastCaseColTypes,
 			destKind:       constants.Redshift,
-			expectedString: `a1= CASE WHEN cc.a1 != JSON_PARSE('{"key":"__debezium_unavailable_value"}') THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN cc.b2 != '__debezium_unavailable_value' THEN cc.b2 ELSE c.b2 END,c3=cc.c3`,
+			expectedString: `a1= CASE WHEN COALESCE(cc.a1 != JSON_PARSE('{"key":"__debezium_unavailable_value"}'), true) THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN COALESCE(cc.b2 != '__debezium_unavailable_value', true) THEN cc.b2 ELSE c.b2 END,c3=cc.c3`,
 		},
 		{
 			name:           "struct, string and toast string (bigquery)",
-			columns:        lastCaseCols,
-			columnsToTypes: lastCaseColTypes,
+			columns:        lastCaseColTypes,
 			destKind:       constants.BigQuery,
-			expectedString: `a1= CASE WHEN TO_JSON_STRING(cc.a1) != '{"key":"__debezium_unavailable_value"}' THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN cc.b2 != '__debezium_unavailable_value' THEN cc.b2 ELSE c.b2 END,c3=cc.c3`,
+			expectedString: `a1= CASE WHEN COALESCE(TO_JSON_STRING(cc.a1) != '{"key":"__debezium_unavailable_value"}', true) THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN COALESCE(cc.b2 != '__debezium_unavailable_value', true) THEN cc.b2 ELSE c.b2 END,c3=cc.c3`,
 		},
 		{
-			name:           "struct, string and toast string (bigquery) w/ reserved keywords",
-			columns:        lastCaseColsEsc,
-			columnsToTypes: lastCaseEscapeTypes,
-			destKind:       constants.BigQuery,
-			expectedString: fmt.Sprintf(`a1= CASE WHEN TO_JSON_STRING(cc.a1) != '%s' THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN cc.b2 != '__debezium_unavailable_value' THEN cc.b2 ELSE c.b2 END,c3=cc.c3,%s,%s`,
-				key, fmt.Sprintf("`start`= CASE WHEN TO_JSON_STRING(cc.`start`) != '%s' THEN cc.`start` ELSE c.`start` END", key), "`select`=cc.`select`"),
+			name:     "struct, string and toast string (bigquery) w/ reserved keywords",
+			columns:  lastCaseEscapeTypes,
+			destKind: constants.BigQuery,
+			expectedString: fmt.Sprintf(`a1= CASE WHEN COALESCE(TO_JSON_STRING(cc.a1) != '%s', true) THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN COALESCE(cc.b2 != '__debezium_unavailable_value', true) THEN cc.b2 ELSE c.b2 END,c3=cc.c3,%s,%s`,
+				key, fmt.Sprintf("`start`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`start`) != '%s', true) THEN cc.`start` ELSE c.`start` END", key), "`select`=cc.`select`"),
+			skipDeleteCol: true,
+		},
+		{
+			name:     "struct, string and toast string (bigquery) w/ reserved keywords",
+			columns:  lastCaseEscapeTypes,
+			destKind: constants.BigQuery,
+			expectedString: fmt.Sprintf(`a1= CASE WHEN COALESCE(TO_JSON_STRING(cc.a1) != '%s', true) THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN COALESCE(cc.b2 != '__debezium_unavailable_value', true) THEN cc.b2 ELSE c.b2 END,c3=cc.c3,%s,%s`,
+				key, fmt.Sprintf("`start`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`start`) != '%s', true) THEN cc.`start` ELSE c.`start` END", key), "`select`=cc.`select`,__artie_delete=cc.__artie_delete"),
+			skipDeleteCol: false,
 		},
 	}
 
 	for _, _testCase := range testCases {
-		actualQuery := ColumnsUpdateQuery(_testCase.columns, _testCase.columnsToTypes, _testCase.destKind, false)
+		actualQuery := _testCase.columns.UpdateQuery(_testCase.destKind, false, _testCase.skipDeleteCol)
 		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
 	}
 }

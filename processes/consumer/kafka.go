@@ -7,19 +7,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/artie"
-	"github.com/artie-labs/transfer/lib/destination"
-	"github.com/artie-labs/transfer/lib/logger"
-	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
-	"github.com/artie-labs/transfer/models"
 	awsCfg "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2"
 	"github.com/segmentio/kafka-go/sasl/plain"
 
+	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/segmentio/kafka-go"
+	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
+	"github.com/artie-labs/transfer/models"
 )
 
 var topicToConsumer *TopicToConsumer
@@ -47,30 +47,22 @@ func (t *TopicToConsumer) Get(topic string) kafkalib.Consumer {
 	return t.topicToConsumer[topic]
 }
 
-// SetKafkaConsumer - This is used for tests.
-func SetKafkaConsumer(_topicToConsumer map[string]kafkalib.Consumer) {
-	topicToConsumer = &TopicToConsumer{
-		topicToConsumer: _topicToConsumer,
-	}
-}
-
 func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) {
 	slog.Info("Starting Kafka consumer...", slog.Any("config", cfg.Kafka))
-
 	dialer := &kafka.Dialer{
 		Timeout:   10 * time.Second,
 		DualStack: true,
 	}
 
 	// If using AWS MSK IAM, we expect this to be set in the ENV VAR
-	// (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, or the AWS Profile should be called default.)
+	// (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_REGION, or the AWS Profile should be called default.)
 	if cfg.Kafka.EnableAWSMSKIAM {
-		cfg, err := awsCfg.LoadDefaultConfig(ctx)
+		_awsCfg, err := awsCfg.LoadDefaultConfig(ctx)
 		if err != nil {
 			logger.Panic("Failed to load aws configuration", slog.Any("err", err))
 		}
 
-		dialer.SASLMechanism = aws_msk_iam_v2.NewMechanism(cfg)
+		dialer.SASLMechanism = aws_msk_iam_v2.NewMechanism(_awsCfg)
 		dialer.TLS = &tls.Config{}
 	}
 

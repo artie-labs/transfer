@@ -26,24 +26,15 @@ type MergeArgument struct {
 	// AdditionalEqualityStrings is used for handling BigQuery partitioned table merges
 	AdditionalEqualityStrings []string
 
-	// ColumnsToTypes also needs to be escaped.
-	ColumnsToTypes columns.Columns
+	// Columns will need to be escaped
+	Columns *columns.Columns
 
-	/*
-		DestKind is used needed because:
-		- BigQuery is used to:
-			1) escape JSON columns
-			2) merge temp table vs. subquery
-		- Redshift is used to:
-			1) Using as part of the MergeStatementIndividual
-	*/
 	DestKind   constants.DestinationKind
 	SoftDelete bool
 	// ContainsHardDeletes is only used for Redshift and MergeStatementParts,
 	// where we do not issue a DELETE statement if there are no hard deletes in the batch
-	ContainsHardDeletes bool
-
-	UppercaseEscNames *bool
+	ContainsHardDeletes *bool
+	UppercaseEscNames   *bool
 }
 
 func (m *MergeArgument) Valid() error {
@@ -55,8 +46,8 @@ func (m *MergeArgument) Valid() error {
 		return fmt.Errorf("merge argument does not contain primary keys")
 	}
 
-	if len(m.ColumnsToTypes.GetColumns()) == 0 {
-		return fmt.Errorf("columnToTypes cannot be empty")
+	if len(m.Columns.GetColumns()) == 0 {
+		return fmt.Errorf("columns cannot be empty")
 	}
 
 	if stringutil.Empty(m.FqTableName, m.SubQuery) {
@@ -83,6 +74,11 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		return nil, fmt.Errorf("err - this is meant for redshift only")
 	}
 
+	// ContainsHardDeletes is only used for Redshift, so we'll validate it now
+	if m.ContainsHardDeletes == nil {
+		return nil, fmt.Errorf("containsHardDeletes cannot be nil")
+	}
+
 	// We should not need idempotency key for DELETE
 	// This is based on the assumption that the primary key would be atomically increasing or UUID based
 	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
@@ -102,7 +98,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	cols := m.ColumnsToTypes.GetColumnsToUpdate(*m.UppercaseEscNames, &sql.NameArgs{
+	cols := m.Columns.GetColumnsToUpdate(*m.UppercaseEscNames, &sql.NameArgs{
 		Escape:   true,
 		DestKind: m.DestKind,
 	})
@@ -126,7 +122,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 			// UPDATE
 			fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s;`,
 				// UPDATE table set col1 = cc. col1
-				m.FqTableName, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
+				m.FqTableName, m.Columns.UpdateQuery(m.DestKind, *m.UppercaseEscNames, false),
 				// FROM table (temp) WHERE join on PK(s)
 				m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause,
 			),
@@ -170,13 +166,13 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		// UPDATE
 		fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s AND COALESCE(cc.%s, false) = false;`,
 			// UPDATE table set col1 = cc. col1
-			m.FqTableName, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
+			m.FqTableName, m.Columns.UpdateQuery(m.DestKind, *m.UppercaseEscNames, true),
 			// FROM staging WHERE join on PK(s)
 			m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause, constants.DeleteColumnMarker,
 		),
 	}
 
-	if m.ContainsHardDeletes {
+	if *m.ContainsHardDeletes {
 		parts = append(parts,
 			// DELETE
 			fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s as cc WHERE cc.%s = true);`,
@@ -215,9 +211,9 @@ func (m *MergeArgument) GetStatement() (string, error) {
 	for _, primaryKey := range m.PrimaryKeys {
 		// We'll need to escape the primary key as well.
 		equalitySQL := fmt.Sprintf("c.%s = cc.%s", primaryKey.EscapedName(), primaryKey.EscapedName())
-		pkCol, isOk := m.ColumnsToTypes.GetColumn(primaryKey.RawName())
+		pkCol, isOk := m.Columns.GetColumn(primaryKey.RawName())
 		if !isOk {
-			return "", fmt.Errorf("column: %s does not exist in columnToType: %v", primaryKey.RawName(), m.ColumnsToTypes)
+			return "", fmt.Errorf("column: %s does not exist in columnToType: %v", primaryKey.RawName(), m.Columns)
 		}
 
 		if m.DestKind == constants.BigQuery && pkCol.KindDetails.Kind == typing.Struct.Kind {
@@ -237,7 +233,7 @@ func (m *MergeArgument) GetStatement() (string, error) {
 		}
 	}
 
-	cols := m.ColumnsToTypes.GetColumnsToUpdate(*m.UppercaseEscNames, &sql.NameArgs{
+	cols := m.Columns.GetColumnsToUpdate(*m.UppercaseEscNames, &sql.NameArgs{
 		Escape:   true,
 		DestKind: m.DestKind,
 	})
@@ -249,7 +245,7 @@ WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
 			m.FqTableName, subQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
+			idempotentClause, m.Columns.UpdateQuery(m.DestKind, *m.UppercaseEscNames, false),
 			// Insert
 			constants.DeleteColumnMarker, strings.Join(cols, ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -282,7 +278,7 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update
-		constants.DeleteColumnMarker, idempotentClause, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
+		constants.DeleteColumnMarker, idempotentClause, m.Columns.UpdateQuery(m.DestKind, *m.UppercaseEscNames, true),
 		// Insert
 		constants.DeleteColumnMarker, strings.Join(cols, ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -311,7 +307,7 @@ func (m *MergeArgument) GetMSSQLStatement() (string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	cols := m.ColumnsToTypes.GetColumnsToUpdate(*m.UppercaseEscNames, &sql.NameArgs{
+	cols := m.Columns.GetColumnsToUpdate(*m.UppercaseEscNames, &sql.NameArgs{
 		Escape:   true,
 		DestKind: m.DestKind,
 	})
@@ -324,7 +320,7 @@ WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 			m.FqTableName, m.SubQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
+			idempotentClause, m.Columns.UpdateQuery(m.DestKind, *m.UppercaseEscNames, false),
 			// Insert
 			constants.DeleteColumnMarker, strings.Join(cols, ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -358,7 +354,7 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update
-		constants.DeleteColumnMarker, idempotentClause, columns.ColumnsUpdateQuery(cols, m.ColumnsToTypes, m.DestKind, *m.UppercaseEscNames),
+		constants.DeleteColumnMarker, idempotentClause, m.Columns.UpdateQuery(m.DestKind, *m.UppercaseEscNames, true),
 		// Insert
 		constants.DeleteColumnMarker, strings.Join(cols, ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{

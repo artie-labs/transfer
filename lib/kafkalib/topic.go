@@ -38,15 +38,15 @@ type TopicConfig struct {
 	TableName                 string                      `yaml:"tableName"`
 	Schema                    string                      `yaml:"schema"`
 	Topic                     string                      `yaml:"topic"`
-	IdempotentKey             string                      `yaml:"idempotentKey"`
+	IdempotentKey             string                      `yaml:"idempotentKey,omitempty"`
 	CDCFormat                 string                      `yaml:"cdcFormat"`
 	CDCKeyFormat              string                      `yaml:"cdcKeyFormat"`
 	DropDeletedColumns        bool                        `yaml:"dropDeletedColumns"`
 	SoftDelete                bool                        `yaml:"softDelete"`
-	SkippedOperations         string                      `yaml:"skippedOperations"`
+	SkippedOperations         string                      `yaml:"skippedOperations,omitempty"`
 	IncludeArtieUpdatedAt     bool                        `yaml:"includeArtieUpdatedAt"`
 	IncludeDatabaseUpdatedAt  bool                        `yaml:"includeDatabaseUpdatedAt"`
-	BigQueryPartitionSettings *partition.BigQuerySettings `yaml:"bigQueryPartitionSettings"`
+	BigQueryPartitionSettings *partition.BigQuerySettings `yaml:"bigQueryPartitionSettings,omitempty"`
 
 	// Internal metadata
 	opsToSkipMap map[string]bool `yaml:"-"`

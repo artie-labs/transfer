@@ -240,60 +240,63 @@ func (c *Columns) DeleteColumn(name string) {
 	}
 }
 
-// ColumnsUpdateQuery takes:
-// columns - list of columns to iterate
-// columnsToTypes - given that list, provide the types (separate list because this list may contain invalid columns
-// bigQueryTypeCasting - We'll need to escape the column comparison if the column's a struct.
-// It then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email
-func ColumnsUpdateQuery(columns []string, columnsToTypes Columns, destKind constants.DestinationKind, uppercaseEscNames bool) string {
-	columnsToTypes.EscapeName(uppercaseEscNames, &sql.NameArgs{
-		Escape:   true,
-		DestKind: destKind,
-	})
+// UpdateQuery will parse the columns and then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email
+func (c *Columns) UpdateQuery(destKind constants.DestinationKind, uppercaseEscNames bool, skipDeleteCol bool) string {
+	var cols []string
+	for _, column := range c.GetColumns() {
+		if column.ShouldSkip() {
+			continue
+		}
 
-	var _columns []string
-	for _, column := range columns {
-		columnType, isOk := columnsToTypes.GetColumn(column)
-		if isOk && columnType.ToastColumn {
-			if columnType.KindDetails == typing.Struct {
-				if destKind == constants.BigQuery {
-					_columns = append(_columns,
-						fmt.Sprintf(`%s= CASE WHEN TO_JSON_STRING(cc.%s) != '{"key":"%s"}' THEN cc.%s ELSE c.%s END`,
-							// col CASE when TO_JSON_STRING(cc.col) != { 'key': TOAST_UNAVAILABLE_VALUE }
-							column, column, constants.ToastUnavailableValuePlaceholder,
-							// cc.col ELSE c.col END
-							column, column))
-				} else if destKind == constants.Redshift {
-					_columns = append(_columns,
-						fmt.Sprintf(`%s= CASE WHEN cc.%s != JSON_PARSE('{"key":"%s"}') THEN cc.%s ELSE c.%s END`,
-							// col CASE when TO_JSON_STRING(cc.col) != { 'key': TOAST_UNAVAILABLE_VALUE }
-							column, column, constants.ToastUnavailableValuePlaceholder,
-							// cc.col ELSE c.col END
-							column, column))
-				} else {
-					_columns = append(_columns,
-						fmt.Sprintf("%s= CASE WHEN cc.%s != {'key': '%s'} THEN cc.%s ELSE c.%s END",
-							// col CASE WHEN cc.col
-							column, column,
-							// { 'key': TOAST_UNAVAILABLE_VALUE } THEN cc.col ELSE c.col END",
-							constants.ToastUnavailableValuePlaceholder, column, column))
-				}
+		// skipDeleteCol is useful because we don't want to copy the deleted column over to the source table if we're doing a hard row delete.
+		if skipDeleteCol && column.RawName() == constants.DeleteColumnMarker {
+			continue
+		}
+
+		colName := column.Name(uppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: destKind})
+		if column.ToastColumn {
+			if column.KindDetails == typing.Struct {
+				cols = append(cols, processToastStructCol(colName, destKind))
 			} else {
-				// t.column3 = CASE WHEN t.column3 != '__debezium_unavailable_value' THEN t.column3 ELSE s.column3 END
-				_columns = append(_columns,
-					fmt.Sprintf("%s= CASE WHEN cc.%s != '%s' THEN cc.%s ELSE c.%s END",
-						// col = CASE WHEN cc.col != TOAST_UNAVAILABLE_VALUE
-						column, column, constants.ToastUnavailableValuePlaceholder,
-						// THEN cc.col ELSE c.col END
-						column, column))
+				cols = append(cols, processToastCol(colName, destKind))
 			}
 
 		} else {
 			// This is to make it look like: objCol = cc.objCol
-			_columns = append(_columns, fmt.Sprintf("%s=cc.%s", column, column))
+			cols = append(cols, fmt.Sprintf("%s=cc.%s", colName, colName))
 		}
-
 	}
 
-	return strings.Join(_columns, ",")
+	return strings.Join(cols, ",")
+}
+
+func processToastStructCol(colName string, destKind constants.DestinationKind) string {
+	switch destKind {
+	case constants.BigQuery:
+		return fmt.Sprintf(`%s= CASE WHEN COALESCE(TO_JSON_STRING(cc.%s) != '{"key":"%s"}', true) THEN cc.%s ELSE c.%s END`,
+			colName, colName, constants.ToastUnavailableValuePlaceholder,
+			colName, colName)
+	case constants.Redshift:
+		return fmt.Sprintf(`%s= CASE WHEN COALESCE(cc.%s != JSON_PARSE('{"key":"%s"}'), true) THEN cc.%s ELSE c.%s END`,
+			colName, colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
+	case constants.MSSQL:
+		// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
+		return fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s, {}) != {'key': '%s'} THEN cc.%s ELSE c.%s END",
+			colName, colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
+	default:
+		// TODO: Change this to Snowflake and error out if the destKind isn't supported so we're explicit.
+		return fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s != {'key': '%s'}, true) THEN cc.%s ELSE c.%s END",
+			colName, colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
+	}
+}
+
+func processToastCol(colName string, destKind constants.DestinationKind) string {
+	if destKind == constants.MSSQL {
+		// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
+		return fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s, '') != '%s' THEN cc.%s ELSE c.%s END", colName, colName,
+			constants.ToastUnavailableValuePlaceholder, colName, colName)
+	} else {
+		return fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s != '%s', true) THEN cc.%s ELSE c.%s END",
+			colName, colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
+	}
 }

@@ -26,13 +26,10 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 		expectedResult string
 	}
 
-	randomJSONString := fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(maxRedshiftVarCharLen+1))
-	randomArrayString := fmt.Sprintf(`["a", "%s"]`, stringutil.Random(maxRedshiftVarCharLen+1))
-
 	tcs := []_tc{
 		{
 			name:   "string",
-			colVal: stringutil.Random(maxRedshiftVarCharLen + 1),
+			colVal: stringutil.Random(maxRedshiftLength + 1),
 			colKind: columns.Column{
 				KindDetails: typing.String,
 			},
@@ -48,7 +45,7 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 		},
 		{
 			name:   "struct",
-			colVal: fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(maxRedshiftSuperLen+1)),
+			colVal: fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(maxRedshiftLength+1)),
 			colKind: columns.Column{
 				KindDetails: typing.Struct,
 			},
@@ -56,27 +53,11 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 		},
 		{
 			name:   "string, but the data type is a SUPER",
-			colVal: stringutil.Random(maxRedshiftVarCharLen + 1),
+			colVal: stringutil.Random(maxRedshiftLength + 1),
 			colKind: columns.Column{
 				KindDetails: typing.Struct,
 			},
 			expectedResult: fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker),
-		},
-		{
-			name:   "struct, exceeded 65k but under 1mb",
-			colVal: randomJSONString,
-			colKind: columns.Column{
-				KindDetails: typing.Struct,
-			},
-			expectedResult: randomJSONString,
-		},
-		{
-			name:   "array, exceeded 65k but under 1mb",
-			colVal: randomArrayString,
-			colKind: columns.Column{
-				KindDetails: typing.Struct,
-			},
-			expectedResult: randomArrayString,
 		},
 		{
 			name:   "struct - not masked",
@@ -112,30 +93,11 @@ func evaluateTestCase(t *testing.T, store *Store, testCase _testCase) {
 	}
 }
 
-func (r *RedshiftTestSuite) TestCastColValStaging_TOAST() {
-	// Toast only really matters for JSON blobs since it'll return a STRING value that's not a JSON object.
-	// We're testing that we're casting the unavailable value correctly into a JSON object so that it can compile.
-	testCases := []_testCase{
-		{
-			name:   "struct with TOAST value",
-			colVal: constants.ToastUnavailableValuePlaceholder,
-			colKind: columns.Column{
-				KindDetails: typing.Struct,
-			},
-			expectedString: fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder),
-		},
-	}
-
-	for _, testCase := range testCases {
-		evaluateTestCase(r.T(), r.store, testCase)
-	}
-}
-
 func (r *RedshiftTestSuite) TestCastColValStaging_ExceededValues() {
 	testCases := []_testCase{
 		{
 			name:   "string",
-			colVal: stringutil.Random(maxRedshiftVarCharLen + 1),
+			colVal: stringutil.Random(maxRedshiftLength + 1),
 			colKind: columns.Column{
 				KindDetails: typing.String,
 			},
@@ -151,7 +113,7 @@ func (r *RedshiftTestSuite) TestCastColValStaging_ExceededValues() {
 		},
 		{
 			name:   "struct",
-			colVal: map[string]any{"foo": stringutil.Random(maxRedshiftSuperLen + 1)},
+			colVal: map[string]any{"foo": stringutil.Random(maxRedshiftLength + 1)},
 			colKind: columns.Column{
 				KindDetails: typing.Struct,
 			},
@@ -159,7 +121,7 @@ func (r *RedshiftTestSuite) TestCastColValStaging_ExceededValues() {
 		},
 		{
 			name:   "struct",
-			colVal: map[string]any{"foo": stringutil.Random(maxRedshiftSuperLen + 1)},
+			colVal: map[string]any{"foo": stringutil.Random(maxRedshiftLength + 1)},
 			colKind: columns.Column{
 				KindDetails: typing.Struct,
 			},
