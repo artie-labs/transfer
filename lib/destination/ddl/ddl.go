@@ -110,8 +110,7 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 				DestKind: args.Dwh.Label(),
 			})
 
-			// TODO: Enable this for all DWHs.
-			if col.PrimaryKey() && args.Mode != config.History && args.Dwh.Label() == constants.MSSQL {
+			if col.PrimaryKey() && args.Mode != config.History {
 				// Don't create a PK for history mode because it's append-only, so the primary key should not be enforced.
 				pkCols = append(pkCols, colName)
 			}
@@ -126,7 +125,12 @@ func AlterTable(args AlterTableArgs, cols ...columns.Column) error {
 	}
 
 	if len(pkCols) > 0 {
-		colSQLParts = append(colSQLParts, fmt.Sprintf("PRIMARY KEY (%s)", strings.Join(pkCols, ", ")))
+		pkStatement := fmt.Sprintf("PRIMARY KEY (%s)", strings.Join(pkCols, ", "))
+		if args.Dwh.Label() == constants.BigQuery {
+			pkStatement += " NOT ENFORCED"
+		}
+
+		colSQLParts = append(colSQLParts, pkStatement)
 	}
 
 	var err error
