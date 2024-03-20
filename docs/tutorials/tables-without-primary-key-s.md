@@ -1,10 +1,10 @@
 ---
-description: We will go over how we can add primary keys to tables that do not have them.
+description: We will go over how we can add primary key(s) to tables that do not have them.
 ---
 
-# Tables without primary keys
+# Tables without primary key(s)
 
-## Why do we only replicate tables with primary keys?
+## Why do we only replicate tables with primary key(s)?
 
 1. We need a way to uniquely identify each row as we use the primary key(s) as the partition key in Kafka to **guarantee ordering**.&#x20;
 2. For us to guarantee data integrity, we perform `MERGE` with the table's primary key(s)
