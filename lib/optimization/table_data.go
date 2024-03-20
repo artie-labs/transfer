@@ -208,7 +208,7 @@ func (t *TableData) ToFqName(kind constants.DestinationKind, escape bool, upperc
 		}))
 	case constants.BigQuery:
 		// The fully qualified name for BigQuery is: project_id.dataset.tableName.
-		return fmt.Sprintf("%s.%s.%s", opts.BigQueryProjectID, t.TopicConfig.Database, t.Name(uppercaseEscNames, &sql.NameArgs{
+		return fmt.Sprintf("`%s`.%s.%s", opts.BigQueryProjectID, t.TopicConfig.Database, t.Name(uppercaseEscNames, &sql.NameArgs{
 			Escape:   escape,
 			DestKind: kind,
 		}))
