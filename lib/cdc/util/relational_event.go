@@ -70,21 +70,11 @@ func (s *SchemaEventPayload) GetTableName() string {
 	return s.Payload.Source.Table
 }
 
-func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicConfig) map[string]any {
+func (s *SchemaEventPayload) GetData(_ map[string]any, tc *kafkalib.TopicConfig) map[string]any {
 	var retMap map[string]any
 	if len(s.Payload.After) == 0 {
-		// This is a delete payload, so mark it as deleted.
-		// And we need to reconstruct the data bit since it will be empty.
-		// We _can_ rely on *before* since even without running replicate identity, it will still copy over
-		// the PK. We can explore simplifying this interface in the future by leveraging before.
-		retMap = map[string]any{
-			constants.DeleteColumnMarker: true,
-		}
-
-		for k, v := range pkMap {
-			retMap[k] = v
-		}
-
+		retMap = s.Payload.Before
+		retMap[constants.DeleteColumnMarker] = true
 		// If idempotency key is an empty string, don't put it in the payload data
 		if tc.IdempotentKey != "" {
 			retMap[tc.IdempotentKey] = s.GetExecutionTime().Format(ext.ISO8601)
