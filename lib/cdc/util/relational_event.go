@@ -1,6 +1,7 @@
 package util
 
 import (
+	"slices"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -81,48 +82,39 @@ func (s *SchemaEventPayload) GetData(_ map[string]any, tc *kafkalib.TopicConfig)
 	}
 
 	if len(s.Payload.After) == 0 {
+		return s.processPayload(retMap, cdc.Before)
+	}
+
+	return s.processPayload(retMap, cdc.After)
+}
+
+func (s *SchemaEventPayload) processPayload(retMap map[string]any, kind cdc.FieldLabelKind) map[string]any {
+	if !slices.Contains([]cdc.FieldLabelKind{cdc.After, cdc.Before}, kind) {
+		return nil
+	}
+
+	if kind == cdc.Before {
 		for key, value := range s.Payload.Before {
 			retMap[key] = value
 		}
-
 		retMap[constants.DeleteColumnMarker] = true
-		// If idempotency key is an empty string, don't put it in the payload data
-		if tc.IdempotentKey != "" {
-			retMap[tc.IdempotentKey] = s.GetExecutionTime().Format(ext.ISO8601)
-		}
-
-		// Iterate over the schema and identify if there are any fields that require extra care.
-		beforeSchemaObject := s.Schema.GetSchemaFromLabel(cdc.Before)
-		if beforeSchemaObject != nil {
-			for _, field := range beforeSchemaObject.Fields {
-				_, isOk := retMap[field.FieldName]
-				if !isOk {
-					// Skipping b/c envelope mismatch with the actual request body
-					continue
-				}
-
-				retMap[field.FieldName] = parseField(field, retMap[field.FieldName])
-			}
-		}
-
 	} else {
 		for key, value := range s.Payload.After {
 			retMap[key] = value
 		}
-
 		retMap[constants.DeleteColumnMarker] = false
-		// Iterate over the schema and identify if there are any fields that require extra care.
-		afterSchemaObject := s.Schema.GetSchemaFromLabel(cdc.After)
-		if afterSchemaObject != nil {
-			for _, field := range afterSchemaObject.Fields {
-				_, isOk := retMap[field.FieldName]
-				if !isOk {
-					// Skipping b/c envelope mismatch with the actual request body
-					continue
-				}
+	}
 
-				retMap[field.FieldName] = parseField(field, retMap[field.FieldName])
+	schemaObject := s.Schema.GetSchemaFromLabel(kind)
+	if schemaObject != nil {
+		for _, field := range schemaObject.Fields {
+			_, isOk := retMap[field.FieldName]
+			if !isOk {
+				// Skipping b/c envelope mismatch with the actual request body
+				continue
 			}
+
+			retMap[field.FieldName] = parseField(field, retMap[field.FieldName])
 		}
 	}
 
