@@ -162,6 +162,7 @@ func TestGetDataTestDelete_Postgres(t *testing.T) {
 
 	payload := schemaEventPayload.GetData(nil, &kafkalib.TopicConfig{})
 	assert.True(t, payload[constants.DeleteColumnMarker].(bool))
+	assert.Equal(t, 1004, payload["id"])
 }
 
 func TestGetDataTestDelete_MySQL(t *testing.T) {
