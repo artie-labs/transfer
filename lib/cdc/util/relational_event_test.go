@@ -128,7 +128,42 @@ func TestGetDataTestInsert(t *testing.T) {
 func TestGetDataTestDelete_Postgres(t *testing.T) {
 	var schemaEventPayload SchemaEventPayload
 	err := json.Unmarshal([]byte(`{
-    "schema": {},
+    "schema": {
+        "type": "struct",
+        "fields": [
+            {
+                "type": "struct",
+                "fields": [
+                    {
+                        "type": "int32",
+                        "optional": false,
+                        "field": "id"
+                    },
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "field": "first_name"
+                    },
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "field": "last_name"
+                    },
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "field": "email"
+                    }
+                ],
+                "optional": true,
+                "name": "dbserver1.inventory.customers.Value",
+                "field": "before"
+            }
+        ],
+        "optional": false,
+        "name": "dbserver1.inventory.customers.Envelope",
+        "version": 1
+    },
     "payload": {
         "before": {
             "id": 1004,
