@@ -153,6 +153,12 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 	var retMap map[string]any
 	if len(s.Payload.afterMap) == 0 {
 		retMap = s.Payload.beforeMap
+		if len(retMap) == 0 {
+			// The before object may be empty because this needs to be enabled per collection, see:
+			// https://www.mongodb.com/docs/manual/reference/command/collMod/#change-streams-with-document-pre--and-post-images
+			retMap = make(map[string]any)
+		}
+
 		retMap[constants.DeleteColumnMarker] = true
 		// If idempotency key is an empty string, don't put it in the event data
 		if tc.IdempotentKey != "" {

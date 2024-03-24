@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/typing/ext"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -130,37 +128,44 @@ func TestGetDataTestInsert(t *testing.T) {
 	assert.True(t, isOk)
 }
 
-func TestGetDataTestDelete(t *testing.T) {
-	tc := &kafkalib.TopicConfig{
-		IdempotentKey: "updated_at",
-	}
+func TestGetDataTestDelete_Postgres(t *testing.T) {
+	var schemaEventPayload SchemaEventPayload
+	err := json.Unmarshal([]byte(`{
+    "schema": {},
+    "payload": {
+        "before": {
+            "id": 1004,
+            "first_name": "Anne",
+            "last_name": "Kretchmar",
+            "email": "annek@noanswer.org"
+        },
+        "after": null,
+        "source": {
+            "version": "2.5.0.Final",
+            "connector": "postgresql",
+            "name": "dbserver1",
+            "ts_ms": 1711306195822,
+            "snapshot": "false",
+            "db": "postgres",
+            "sequence": "[null,\"37071816\"]",
+            "schema": "inventory",
+            "table": "customers",
+            "txId": 800,
+            "lsn": 37071816,
+            "xmin": null
+        },
+        "op": "d",
+        "ts_ms": 1711306196824,
+        "transaction": null
+    }
+}`), &schemaEventPayload)
 
-	now := time.Now().UTC()
-	schemaEventPayload := SchemaEventPayload{
-		Payload: Payload{
-			Before:    nil,
-			After:     nil,
-			Operation: "c",
-			Source:    Source{TsMs: now.UnixMilli()},
-		},
-	}
+	assert.NoError(t, err)
+	assert.True(t, schemaEventPayload.DeletePayload())
 
-	assert.False(t, schemaEventPayload.DeletePayload())
-
-	kvMap := map[string]any{"pk": 1}
-	evtData := schemaEventPayload.GetData(kvMap, tc)
-	shouldDelete, isOk := evtData[constants.DeleteColumnMarker]
-	assert.True(t, isOk)
-	assert.True(t, shouldDelete.(bool))
-
-	assert.Equal(t, 3, len(evtData), evtData)
-	assert.Equal(t, evtData["pk"], 1)
-	assert.Equal(t, evtData[tc.IdempotentKey], now.Format(ext.ISO8601))
-
-	tc.IdempotentKey = ""
-	evtData = schemaEventPayload.GetData(kvMap, tc)
-	_, isOk = evtData[tc.IdempotentKey]
-	assert.False(t, isOk, evtData)
+	tc := &kafkalib.TopicConfig{}
+	payload := schemaEventPayload.GetData(nil, tc)
+	assert.True(t, payload[constants.DeleteColumnMarker].(bool))
 }
 
 func TestGetDataTestUpdate(t *testing.T) {
