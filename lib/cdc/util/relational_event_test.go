@@ -163,8 +163,49 @@ func TestGetDataTestDelete_Postgres(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, schemaEventPayload.DeletePayload())
 
-	tc := &kafkalib.TopicConfig{}
-	payload := schemaEventPayload.GetData(nil, tc)
+	payload := schemaEventPayload.GetData(nil, &kafkalib.TopicConfig{})
+	assert.True(t, payload[constants.DeleteColumnMarker].(bool))
+}
+
+func TestGetDataTestDelete_MySQL(t *testing.T) {
+	var schemaEventPayload SchemaEventPayload
+	err := json.Unmarshal([]byte(`{
+    "schema": {},
+    "payload": {
+        "before": {
+            "id": 1004,
+            "first_name": "Anne",
+            "last_name": "Kretchmar",
+            "email": "annek@noanswer.org"
+        },
+        "after": null,
+        "source": {
+            "version": "2.0.1.Final",
+            "connector": "mysql",
+            "name": "dbserver1",
+            "ts_ms": 1711308110000,
+            "snapshot": "false",
+            "db": "inventory",
+            "sequence": null,
+            "table": "customers",
+            "server_id": 223344,
+            "gtid": null,
+            "file": "mysql-bin.000003",
+            "pos": 569,
+            "row": 0,
+            "thread": 11,
+            "query": null
+        },
+        "op": "d",
+        "ts_ms": 1711308110465,
+        "transaction": null
+    }
+}`), &schemaEventPayload)
+
+	assert.NoError(t, err)
+	assert.True(t, schemaEventPayload.DeletePayload())
+
+	payload := schemaEventPayload.GetData(nil, &kafkalib.TopicConfig{})
 	assert.True(t, payload[constants.DeleteColumnMarker].(bool))
 }
 
