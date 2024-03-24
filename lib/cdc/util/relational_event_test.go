@@ -108,13 +108,10 @@ func TestGetDataTestInsert(t *testing.T) {
 	assert.False(t, schemaEventPayload.DeletePayload())
 
 	evtData := schemaEventPayload.GetData(map[string]any{"pk": 1}, &kafkalib.TopicConfig{})
-	assert.Equal(t, len(after), len(evtData), "has deletion flag")
+	assert.False(t, evtData[constants.DeleteColumnMarker].(bool))
+	assert.Equal(t, len(after)+1, len(evtData), "has deletion flag")
 
-	deletionFlag, isOk := evtData[constants.DeleteColumnMarker]
-	assert.True(t, isOk)
-	assert.False(t, deletionFlag.(bool))
-
-	_, isOk = evtData[constants.UpdateColumnMarker]
+	_, isOk := evtData[constants.UpdateColumnMarker]
 	assert.False(t, isOk)
 
 	delete(evtData, constants.DeleteColumnMarker)
@@ -170,7 +167,43 @@ func TestGetDataTestDelete_Postgres(t *testing.T) {
 func TestGetDataTestDelete_MySQL(t *testing.T) {
 	var schemaEventPayload SchemaEventPayload
 	err := json.Unmarshal([]byte(`{
-    "schema": {},
+    "schema": {
+        "type": "struct",
+        "fields": [
+            {
+                "type": "struct",
+                "fields": [
+                    {
+                        "type": "int32",
+                        "optional": false,
+                        "default": 0,
+                        "field": "id"
+                    },
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "field": "first_name"
+                    },
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "field": "last_name"
+                    },
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "field": "email"
+                    }
+                ],
+                "optional": true,
+                "name": "dbserver1.inventory.customers.Value",
+                "field": "before"
+            }
+        ],
+        "optional": false,
+        "name": "dbserver1.inventory.customers.Envelope",
+        "version": 1
+    },
     "payload": {
         "before": {
             "id": 1004,
@@ -207,6 +240,7 @@ func TestGetDataTestDelete_MySQL(t *testing.T) {
 
 	payload := schemaEventPayload.GetData(nil, &kafkalib.TopicConfig{})
 	assert.True(t, payload[constants.DeleteColumnMarker].(bool))
+	assert.Equal(t, 1004, payload["id"])
 }
 
 func TestGetDataTestUpdate(t *testing.T) {
@@ -240,13 +274,9 @@ func TestGetDataTestUpdate(t *testing.T) {
 	kvMap := map[string]any{"pk": 1}
 
 	evtData := schemaEventPayload.GetData(kvMap, &kafkalib.TopicConfig{})
-	assert.Equal(t, len(after), len(evtData), "has deletion flag")
-
-	deletionFlag, isOk := evtData[constants.DeleteColumnMarker]
-	assert.True(t, isOk)
-	assert.False(t, deletionFlag.(bool))
-
-	_, isOk = evtData[constants.UpdateColumnMarker]
+	assert.Equal(t, len(after)+1, len(evtData), "has deletion flag")
+	assert.False(t, evtData[constants.DeleteColumnMarker].(bool))
+	_, isOk := evtData[constants.UpdateColumnMarker]
 	assert.False(t, isOk)
 
 	delete(evtData, constants.DeleteColumnMarker)

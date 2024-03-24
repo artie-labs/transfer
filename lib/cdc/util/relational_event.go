@@ -71,19 +71,7 @@ func (s *SchemaEventPayload) GetTableName() string {
 }
 
 func (s *SchemaEventPayload) GetData(_ map[string]any, tc *kafkalib.TopicConfig) map[string]any {
-	var retMap map[string]any
-	if len(s.Payload.After) == 0 {
-		retMap = s.Payload.Before
-		retMap[constants.DeleteColumnMarker] = true
-		// If idempotency key is an empty string, don't put it in the payload data
-		if tc.IdempotentKey != "" {
-			retMap[tc.IdempotentKey] = s.GetExecutionTime().Format(ext.ISO8601)
-		}
-	} else {
-		retMap = s.Payload.After
-		retMap[constants.DeleteColumnMarker] = false
-	}
-
+	retMap := make(map[string]any)
 	if tc.IncludeArtieUpdatedAt {
 		retMap[constants.UpdateColumnMarker] = ext.NewUTCTime(ext.ISO8601)
 	}
@@ -92,17 +80,49 @@ func (s *SchemaEventPayload) GetData(_ map[string]any, tc *kafkalib.TopicConfig)
 		retMap[constants.DatabaseUpdatedColumnMarker] = s.GetExecutionTime().Format(ext.ISO8601)
 	}
 
-	// Iterate over the schema and identify if there are any fields that require extra care.
-	afterSchemaObject := s.Schema.GetSchemaFromLabel(cdc.After)
-	if afterSchemaObject != nil {
-		for _, field := range afterSchemaObject.Fields {
-			_, isOk := retMap[field.FieldName]
-			if !isOk {
-				// Skipping b/c envelope mismatch with the actual request body
-				continue
-			}
+	if len(s.Payload.After) == 0 {
+		for key, value := range s.Payload.Before {
+			retMap[key] = value
+		}
 
-			retMap[field.FieldName] = parseField(field, retMap[field.FieldName])
+		retMap[constants.DeleteColumnMarker] = true
+		// If idempotency key is an empty string, don't put it in the payload data
+		if tc.IdempotentKey != "" {
+			retMap[tc.IdempotentKey] = s.GetExecutionTime().Format(ext.ISO8601)
+		}
+
+		// Iterate over the schema and identify if there are any fields that require extra care.
+		beforeSchemaObject := s.Schema.GetSchemaFromLabel(cdc.Before)
+		if beforeSchemaObject != nil {
+			for _, field := range beforeSchemaObject.Fields {
+				_, isOk := retMap[field.FieldName]
+				if !isOk {
+					// Skipping b/c envelope mismatch with the actual request body
+					continue
+				}
+
+				retMap[field.FieldName] = parseField(field, retMap[field.FieldName])
+			}
+		}
+
+	} else {
+		for key, value := range s.Payload.After {
+			retMap[key] = value
+		}
+
+		retMap[constants.DeleteColumnMarker] = false
+		// Iterate over the schema and identify if there are any fields that require extra care.
+		afterSchemaObject := s.Schema.GetSchemaFromLabel(cdc.After)
+		if afterSchemaObject != nil {
+			for _, field := range afterSchemaObject.Fields {
+				_, isOk := retMap[field.FieldName]
+				if !isOk {
+					// Skipping b/c envelope mismatch with the actual request body
+					continue
+				}
+
+				retMap[field.FieldName] = parseField(field, retMap[field.FieldName])
+			}
 		}
 	}
 
