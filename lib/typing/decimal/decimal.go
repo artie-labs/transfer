@@ -17,11 +17,10 @@ type Decimal struct {
 const (
 	DefaultScale          = 5
 	PrecisionNotSpecified = -1
+	// MaxPrecisionBeforeString - if the precision is greater than 38, we'll cast it as a string.
+	// This is because Snowflake and BigQuery both do not have NUMERIC data types that go beyond 38.
+	MaxPrecisionBeforeString = 38
 )
-
-// MaxPrecisionBeforeString - if the precision is greater than 38, we'll cast it as a string.
-// This is because Snowflake and BigQuery both do not have NUMERIC data types that go beyond 38.
-const MaxPrecisionBeforeString = 38
 
 func NewDecimal(precision *int, scale int, value *big.Float) *Decimal {
 	if precision != nil {
