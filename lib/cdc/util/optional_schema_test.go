@@ -67,35 +67,35 @@ func TestGetOptionalSchema(t *testing.T) {
 				"bit_test":     typing.Boolean,
 				"numeric_test": {
 					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimal(decimal.DefaultScale, ptr.ToInt(decimal.PrecisionNotSpecified), nil),
+					ExtendedDecimalDetails: decimal.NewDecimal(ptr.ToInt(decimal.PrecisionNotSpecified), decimal.DefaultScale, nil),
 				},
 				"numeric_5": {
 					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimal(0, ptr.ToInt(5), nil),
+					ExtendedDecimalDetails: decimal.NewDecimal(ptr.ToInt(5), 0, nil),
 				},
 				"numeric_5_2": {
 					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimal(2, ptr.ToInt(5), nil),
+					ExtendedDecimalDetails: decimal.NewDecimal(ptr.ToInt(5), 2, nil),
 				},
 				"numeric_5_6": {
 					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimal(6, ptr.ToInt(5), nil),
+					ExtendedDecimalDetails: decimal.NewDecimal(ptr.ToInt(5), 6, nil),
 				},
 				"numeric_5_0": {
 					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimal(0, ptr.ToInt(5), nil),
+					ExtendedDecimalDetails: decimal.NewDecimal(ptr.ToInt(5), 0, nil),
 				},
 				"numeric_39_0": {
 					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimal(0, ptr.ToInt(39), nil),
+					ExtendedDecimalDetails: decimal.NewDecimal(ptr.ToInt(39), 0, nil),
 				},
 				"numeric_39_2": {
 					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimal(2, ptr.ToInt(39), nil),
+					ExtendedDecimalDetails: decimal.NewDecimal(ptr.ToInt(39), 2, nil),
 				},
 				"numeric_39_6": {
 					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimal(6, ptr.ToInt(39), nil),
+					ExtendedDecimalDetails: decimal.NewDecimal(ptr.ToInt(39), 6, nil),
 				},
 			},
 		},

@@ -23,7 +23,7 @@ const (
 // This is because Snowflake and BigQuery both do not have NUMERIC data types that go beyond 38.
 const MaxPrecisionBeforeString = 38
 
-func NewDecimal(scale int, precision *int, value *big.Float) *Decimal {
+func NewDecimal(precision *int, scale int, value *big.Float) *Decimal {
 	if precision != nil {
 		if scale > *precision && *precision != -1 {
 			// Note: -1 precision means it's not specified.
