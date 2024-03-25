@@ -1,104 +1,83 @@
 package typing
 
 import (
-	"fmt"
 	"testing"
+
+	"github.com/artie-labs/transfer/lib/ptr"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestParseNumeric(t *testing.T) {
 	type _testCase struct {
-		prefix              string
 		valString           string
 		expectedKindDetails KindDetails
+		expectedPrecision   *int // Using a pointer to int so we can differentiate between unset (nil) and set (0 included)
+		expectedScale       int
 	}
 
 	testCases := []_testCase{
 		{
-			prefix:              "random prefix",
 			valString:           "numeri232321c(5,2)",
 			expectedKindDetails: Invalid,
 		},
 		{
-			prefix:              defaultPrefix,
 			valString:           "numeric",
 			expectedKindDetails: Invalid,
 		},
 		{
-			prefix:              defaultPrefix,
 			valString:           "numeric(5, a)",
 			expectedKindDetails: Invalid,
 		},
 		{
-			prefix:              defaultPrefix,
 			valString:           "numeric(b, 5)",
 			expectedKindDetails: Invalid,
 		},
 		{
-			prefix:              defaultPrefix,
 			valString:           "numeric(b, a)",
 			expectedKindDetails: Invalid,
 		},
 		{
-			prefix:              defaultPrefix,
 			valString:           "numeric(5, 2)",
 			expectedKindDetails: EDecimal,
+			expectedPrecision:   ptr.ToInt(5),
+			expectedScale:       2,
 		},
 		{
-			prefix:              defaultPrefix,
 			valString:           "numeric(5,2)",
 			expectedKindDetails: EDecimal,
+			expectedPrecision:   ptr.ToInt(5),
+			expectedScale:       2,
 		},
 		{
-			prefix:              defaultPrefix,
+			valString:           "numeric(39, 6)",
+			expectedKindDetails: EDecimal,
+			expectedPrecision:   ptr.ToInt(39),
+			expectedScale:       6,
+		},
+		{
 			valString:           "numeric(5)",
 			expectedKindDetails: Integer,
+			expectedPrecision:   ptr.ToInt(5),
+			expectedScale:       0,
 		},
 		{
-			prefix:              defaultPrefix,
 			valString:           "numeric(5, 0)",
 			expectedKindDetails: Integer,
+			expectedPrecision:   ptr.ToInt(5),
+			expectedScale:       0,
 		},
 	}
 
 	for _, testCase := range testCases {
-		assert.Equal(t, testCase.expectedKindDetails.Kind, ParseNumeric(testCase.prefix, testCase.valString).Kind, fmt.Sprintf("prefix:%s, valString:%s", testCase.prefix, testCase.valString))
-	}
-}
+		result := ParseNumeric(defaultPrefix, testCase.valString)
+		assert.Equal(t, testCase.expectedKindDetails.Kind, result.Kind, testCase.valString)
+		if result.ExtendedDecimalDetails != nil {
+			assert.Equal(t, testCase.expectedScale, result.ExtendedDecimalDetails.Scale(), testCase.valString)
 
-func TestParseNumeric_PrecisionAndScale(t *testing.T) {
-	type _testCase struct {
-		inputs            []string
-		expectedPrecision int
-		expectedScale     int
-	}
-
-	testCases := []_testCase{
-		{
-			inputs: []string{
-				"numeric(5, 2)",
-				"numeric(5,2)",
-			},
-			expectedPrecision: 5,
-			expectedScale:     2,
-		},
-		{
-			inputs: []string{
-				"numeric(39, 4)",
-				"numeric(39,4)",
-			},
-			expectedPrecision: 39,
-			expectedScale:     4,
-		},
-	}
-
-	for _, tc := range testCases {
-		for _, input := range tc.inputs {
-			numeric := ParseNumeric(defaultPrefix, input)
-			assert.Equal(t, tc.expectedPrecision, *numeric.ExtendedDecimalDetails.Precision(), input)
-			assert.Equal(t, tc.expectedScale, numeric.ExtendedDecimalDetails.Scale(), input)
+			if result.ExtendedDecimalDetails.Precision() != nil {
+				assert.Equal(t, *testCase.expectedPrecision, *result.ExtendedDecimalDetails.Precision(), testCase.valString)
+			}
 		}
-
 	}
 }
