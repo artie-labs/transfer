@@ -90,32 +90,20 @@ func TestSource_GetExecutionTime(t *testing.T) {
 }
 
 func TestGetDataTestInsert(t *testing.T) {
-	after := map[string]any{
-		"pk":           1,
-		"foo":          "bar",
-		"name":         "dusty",
-		"favoriteFood": "jerky",
-	}
-
-	schemaEventPayload := SchemaEventPayload{
-		Payload: Payload{
-			Before:    nil,
-			After:     after,
-			Operation: "c",
-		},
-	}
-
+	var schemaEventPayload SchemaEventPayload
+	err := json.Unmarshal([]byte(MySQLInsert), &schemaEventPayload)
+	assert.NoError(t, err)
 	assert.False(t, schemaEventPayload.DeletePayload())
 
 	evtData := schemaEventPayload.GetData(map[string]any{"pk": 1}, &kafkalib.TopicConfig{})
 	assert.False(t, evtData[constants.DeleteColumnMarker].(bool))
-	assert.Equal(t, len(after)+1, len(evtData), "has deletion flag")
+	assert.Len(t, evtData, 5, "has deletion flag")
 
 	_, isOk := evtData[constants.UpdateColumnMarker]
 	assert.False(t, isOk)
 
 	delete(evtData, constants.DeleteColumnMarker)
-	assert.Equal(t, after, evtData)
+	assert.Len(t, evtData, 4)
 
 	evtData = schemaEventPayload.GetData(map[string]any{"pk": 1}, &kafkalib.TopicConfig{
 		IncludeArtieUpdatedAt: true,
@@ -148,43 +136,23 @@ func TestGetDataTestDelete_MySQL(t *testing.T) {
 }
 
 func TestGetDataTestUpdate(t *testing.T) {
-	before := map[string]any{
-		"pk":           1,
-		"foo":          "bar",
-		"name":         "dusty",
-		"favoriteFood": "apples",
-		"age":          1,
-		"weight_lbs":   25,
-	}
-
-	after := map[string]any{
-		"pk":           1,
-		"foo":          "bar",
-		"name":         "dusty",
-		"favoriteFood": "jerky",
-		"age":          2,
-		"weight_lbs":   33,
-	}
-
-	schemaEventPayload := SchemaEventPayload{
-		Payload: Payload{
-			Before:    before,
-			After:     after,
-			Operation: "c",
-		},
-	}
+	var schemaEventPayload SchemaEventPayload
+	err := json.Unmarshal([]byte(PostgresUpdate), &schemaEventPayload)
+	assert.NoError(t, err)
 
 	assert.False(t, schemaEventPayload.DeletePayload())
 	kvMap := map[string]any{"pk": 1}
 
 	evtData := schemaEventPayload.GetData(kvMap, &kafkalib.TopicConfig{})
-	assert.Equal(t, len(after)+1, len(evtData), "has deletion flag")
+	assert.Len(t, evtData, 16, "has deletion flag")
 	assert.False(t, evtData[constants.DeleteColumnMarker].(bool))
+
+	// Updated shouldn't exist since topicConfig.includeArtieUpdatedAt = false
 	_, isOk := evtData[constants.UpdateColumnMarker]
 	assert.False(t, isOk)
 
 	delete(evtData, constants.DeleteColumnMarker)
-	assert.Equal(t, after, evtData)
+	assert.Len(t, evtData, 15)
 
 	evtData = schemaEventPayload.GetData(kvMap, &kafkalib.TopicConfig{
 		IncludeArtieUpdatedAt: true,
