@@ -127,73 +127,8 @@ func TestGetDataTestInsert(t *testing.T) {
 
 func TestGetDataTestDelete_Postgres(t *testing.T) {
 	var schemaEventPayload SchemaEventPayload
-	err := json.Unmarshal([]byte(`{
-    "schema": {
-        "type": "struct",
-        "fields": [
-            {
-                "type": "struct",
-                "fields": [
-                    {
-                        "type": "int32",
-                        "optional": false,
-                        "field": "id"
-                    },
-                    {
-                        "type": "string",
-                        "optional": false,
-                        "field": "first_name"
-                    },
-                    {
-                        "type": "string",
-                        "optional": false,
-                        "field": "last_name"
-                    },
-                    {
-                        "type": "string",
-                        "optional": false,
-                        "field": "email"
-                    }
-                ],
-                "optional": true,
-                "name": "dbserver1.inventory.customers.Value",
-                "field": "before"
-            }
-        ],
-        "optional": false,
-        "name": "dbserver1.inventory.customers.Envelope",
-        "version": 1
-    },
-    "payload": {
-        "before": {
-            "id": 1004,
-            "first_name": "Anne",
-            "last_name": "Kretchmar",
-            "email": "annek@noanswer.org"
-        },
-        "after": null,
-        "source": {
-            "version": "2.5.0.Final",
-            "connector": "postgresql",
-            "name": "dbserver1",
-            "ts_ms": 1711306195822,
-            "snapshot": "false",
-            "db": "postgres",
-            "sequence": "[null,\"37071816\"]",
-            "schema": "inventory",
-            "table": "customers",
-            "txId": 800,
-            "lsn": 37071816,
-            "xmin": null
-        },
-        "op": "d",
-        "ts_ms": 1711306196824,
-        "transaction": null
-    }
-}`), &schemaEventPayload)
-
+	err := json.Unmarshal([]byte(PostgresDelete), &schemaEventPayload)
 	assert.NoError(t, err)
-	assert.True(t, schemaEventPayload.DeletePayload())
 
 	payload := schemaEventPayload.GetData(nil, &kafkalib.TopicConfig{})
 	assert.True(t, payload[constants.DeleteColumnMarker].(bool))
@@ -202,74 +137,7 @@ func TestGetDataTestDelete_Postgres(t *testing.T) {
 
 func TestGetDataTestDelete_MySQL(t *testing.T) {
 	var schemaEventPayload SchemaEventPayload
-	err := json.Unmarshal([]byte(`{
-    "schema": {
-        "type": "struct",
-        "fields": [
-            {
-                "type": "struct",
-                "fields": [
-                    {
-                        "type": "int32",
-                        "optional": false,
-                        "default": 0,
-                        "field": "id"
-                    },
-                    {
-                        "type": "string",
-                        "optional": false,
-                        "field": "first_name"
-                    },
-                    {
-                        "type": "string",
-                        "optional": false,
-                        "field": "last_name"
-                    },
-                    {
-                        "type": "string",
-                        "optional": false,
-                        "field": "email"
-                    }
-                ],
-                "optional": true,
-                "name": "dbserver1.inventory.customers.Value",
-                "field": "before"
-            }
-        ],
-        "optional": false,
-        "name": "dbserver1.inventory.customers.Envelope",
-        "version": 1
-    },
-    "payload": {
-        "before": {
-            "id": 1004,
-            "first_name": "Anne",
-            "last_name": "Kretchmar",
-            "email": "annek@noanswer.org"
-        },
-        "after": null,
-        "source": {
-            "version": "2.0.1.Final",
-            "connector": "mysql",
-            "name": "dbserver1",
-            "ts_ms": 1711308110000,
-            "snapshot": "false",
-            "db": "inventory",
-            "sequence": null,
-            "table": "customers",
-            "server_id": 223344,
-            "gtid": null,
-            "file": "mysql-bin.000003",
-            "pos": 569,
-            "row": 0,
-            "thread": 11,
-            "query": null
-        },
-        "op": "d",
-        "ts_ms": 1711308110465,
-        "transaction": null
-    }
-}`), &schemaEventPayload)
+	err := json.Unmarshal([]byte(MySQLDelete), &schemaEventPayload)
 
 	assert.NoError(t, err)
 	assert.True(t, schemaEventPayload.DeletePayload())
