@@ -15,9 +15,22 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
+func booleanToBit(val bool) int {
+	if val {
+		return 1
+	} else {
+		return 0
+	}
+}
+
 func parseValue(colVal any, colKind columns.Column, additionalDateFmts []string) (any, error) {
 	if colVal == nil {
 		return colVal, nil
+	}
+
+	boolVal, isOk := colVal.(bool)
+	if isOk {
+		colVal = booleanToBit(boolVal)
 	}
 
 	colValString := fmt.Sprint(colVal)
@@ -77,7 +90,6 @@ func parseValue(colVal any, colKind columns.Column, additionalDateFmts []string)
 			// If the value is a string, convert it back into a number
 			return strconv.Atoi(colValString)
 		}
-
 		return colVal, nil
 	case typing.Float.Kind:
 		_, isString := colVal.(string)
@@ -88,21 +100,17 @@ func parseValue(colVal any, colKind columns.Column, additionalDateFmts []string)
 
 		return colVal, nil
 	case typing.Boolean.Kind:
-		// We need to convert boolean into a bit for Microsoft SQL Server.
-		if val, isOk := colVal.(bool); isOk {
-			if val {
-				return 1, nil
-			} else {
-				return 0, nil
+		_, isString := colVal.(string)
+		if isString {
+			val, err := strconv.ParseBool(colValString)
+			if err != nil {
+				return nil, err
 			}
+
+			return booleanToBit(val), nil
 		}
 
-		val, err := strconv.ParseBool(colValString)
-		if err != nil {
-			return nil, err
-		}
-
-		return parseValue(val, colKind, additionalDateFmts)
+		return colVal, nil
 	case typing.EDecimal.Kind:
 		if val, isOk := colVal.(*decimal.Decimal); isOk {
 			return val.String(), nil
