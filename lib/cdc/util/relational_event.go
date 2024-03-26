@@ -1,6 +1,7 @@
 package util
 
 import (
+	"log/slog"
 	"slices"
 	"time"
 
@@ -48,7 +49,15 @@ func (s *SchemaEventPayload) GetColumns() *columns.Columns {
 		// We are purposefully doing this to ensure that the correct typing is set
 		// When we invoke event.Save()
 		col := columns.NewColumn(columns.EscapeName(field.FieldName), typing.Invalid)
-		col.SetDefaultValue(parseField(field, field.Default))
+		val, parseErr := parseField(field, field.Default)
+		if parseErr != nil {
+			slog.Warn("Failed to parse field, using original value", slog.Any("err", parseErr),
+				slog.String("field", field.FieldName), slog.Any("value", field.Default))
+			col.SetDefaultValue(field.Default)
+		} else {
+			col.SetDefaultValue(val)
+		}
+
 		cols.AddColumn(col)
 	}
 
@@ -114,7 +123,13 @@ func (s *SchemaEventPayload) processPayload(retMap map[string]any, kind cdc.Fiel
 				continue
 			}
 
-			retMap[field.FieldName] = parseField(field, retMap[field.FieldName])
+			val, parseErr := parseField(field, retMap[field.FieldName])
+			if parseErr == nil {
+				retMap[field.FieldName] = val
+			} else {
+				slog.Warn("Failed to parse field, using original value", slog.Any("err", parseErr),
+					slog.String("field", field.FieldName), slog.Any("value", retMap[field.FieldName]))
+			}
 		}
 	}
 

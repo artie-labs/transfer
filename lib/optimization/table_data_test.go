@@ -136,7 +136,7 @@ func TestNewTableData_TableName(t *testing.T) {
 
 			expectedName:            "food",
 			expectedSnowflakeFqName: "db.public.food",
-			expectedBigQueryFqName:  "artie.db.food",
+			expectedBigQueryFqName:  "`artie`.`db`.food",
 			expectedRedshiftFqName:  "public.food",
 			expectedS3FqName:        "db.public.food",
 		},

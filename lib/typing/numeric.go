@@ -40,6 +40,6 @@ func ParseNumeric(prefix, valString string) KindDetails {
 	}
 
 	eDec := EDecimal
-	eDec.ExtendedDecimalDetails = decimal.NewDecimal(parsedNumbers[1], &parsedNumbers[0], nil)
+	eDec.ExtendedDecimalDetails = decimal.NewDecimal(&parsedNumbers[0], parsedNumbers[1], nil)
 	return eDec
 }

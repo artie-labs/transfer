@@ -111,7 +111,7 @@ func TestCastColValStaging_Basic(t *testing.T) {
 		},
 		{
 			name:   "numeric data types (backwards compatibility)",
-			colVal: decimal.NewDecimal(2, ptr.ToInt(5), big.NewFloat(55.22)),
+			colVal: decimal.NewDecimal(ptr.ToInt(5), 2, big.NewFloat(55.22)),
 			colKind: columns.Column{
 				KindDetails: typing.Float,
 			},
@@ -137,7 +137,7 @@ func TestCastColValStaging_Basic(t *testing.T) {
 		},
 		{
 			name:   "numeric data types",
-			colVal: decimal.NewDecimal(2, ptr.ToInt(38), big.NewFloat(585692791691858.25)),
+			colVal: decimal.NewDecimal(ptr.ToInt(38), 2, big.NewFloat(585692791691858.25)),
 			colKind: columns.Column{
 				KindDetails: typing.EDecimal,
 			},

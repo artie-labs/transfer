@@ -1,7 +1,6 @@
 package ext
 
 import (
-	"strings"
 	"time"
 )
 
@@ -40,16 +39,6 @@ var (
 type ExtendedTime struct {
 	time.Time
 	NestedKind NestedKind
-}
-
-const InvalidErrPrefix = "extTime is not valid"
-
-func IsInvalidErr(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	return strings.HasPrefix(err.Error(), InvalidErrPrefix)
 }
 
 func (e *ExtendedTime) IsValid() bool {
