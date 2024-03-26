@@ -55,7 +55,7 @@ func EscapeName(name string, uppercaseEscNames bool, args *NameArgs) string {
 			name = strings.ToUpper(name)
 		}
 
-		if args != nil && args.DestKind == constants.BigQuery {
+		if args.DestKind == constants.BigQuery {
 			// BigQuery needs backticks to escape.
 			return fmt.Sprintf("`%s`", name)
 		} else {
