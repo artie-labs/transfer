@@ -158,7 +158,8 @@ func TestParseField(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		actualField := parseField(testCase.field, testCase.value)
+		actualField, err := parseField(testCase.field, testCase.value)
+		assert.NoError(t, err, testCase.name)
 		if testCase.expectedDecimal {
 			decVal, isOk := actualField.(*decimal.Decimal)
 			assert.True(t, isOk)
