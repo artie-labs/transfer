@@ -117,6 +117,7 @@ func TestGetDataTestDelete_Postgres(t *testing.T) {
 	var schemaEventPayload SchemaEventPayload
 	err := json.Unmarshal([]byte(PostgresDelete), &schemaEventPayload)
 	assert.NoError(t, err)
+	assert.True(t, schemaEventPayload.DeletePayload())
 
 	payload := schemaEventPayload.GetData(nil, &kafkalib.TopicConfig{})
 	assert.True(t, payload[constants.DeleteColumnMarker].(bool))
@@ -126,7 +127,6 @@ func TestGetDataTestDelete_Postgres(t *testing.T) {
 func TestGetDataTestDelete_MySQL(t *testing.T) {
 	var schemaEventPayload SchemaEventPayload
 	err := json.Unmarshal([]byte(MySQLDelete), &schemaEventPayload)
-
 	assert.NoError(t, err)
 	assert.True(t, schemaEventPayload.DeletePayload())
 
