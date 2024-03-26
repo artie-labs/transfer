@@ -100,17 +100,12 @@ func parseValue(colVal any, colKind columns.Column, additionalDateFmts []string)
 
 		return colVal, nil
 	case typing.Boolean.Kind:
-		_, isString := colVal.(string)
-		if isString {
-			val, err := strconv.ParseBool(colValString)
-			if err != nil {
-				return nil, err
-			}
-
-			return booleanToBit(val), nil
+		// If it's already a boolean, return it. Else, convert it.
+		if val, isOk := colVal.(bool); isOk {
+			return val, nil
 		}
 
-		return colVal, nil
+		return strconv.ParseBool(colValString)
 	case typing.EDecimal.Kind:
 		if val, isOk := colVal.(*decimal.Decimal); isOk {
 			return val.String(), nil

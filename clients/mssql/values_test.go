@@ -53,22 +53,27 @@ func TestParseValue(t *testing.T) {
 		assert.Equal(t, 1234.5678, val)
 	}
 	{
-		// Booleans
-		val, err := parseValue(true, columns.NewColumn("bool", typing.Boolean), nil)
+		// Boolean, but the column is an integer column.
+		val, err := parseValue(true, columns.NewColumn("bigint", typing.Integer), nil)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, val)
 
+		// Booleans
+		val, err = parseValue(true, columns.NewColumn("bool", typing.Boolean), nil)
+		assert.NoError(t, err)
+		assert.True(t, val.(bool))
+
 		val, err = parseValue(false, columns.NewColumn("bool", typing.Boolean), nil)
 		assert.NoError(t, err)
-		assert.Equal(t, 0, val)
+		assert.False(t, val.(bool))
 
 		// Should be able to handle string booleans
 		val, err = parseValue("true", columns.NewColumn("bool", typing.Boolean), nil)
 		assert.NoError(t, err)
-		assert.Equal(t, 1, val)
+		assert.True(t, val.(bool))
 
 		val, err = parseValue("false", columns.NewColumn("bool", typing.Boolean), nil)
 		assert.NoError(t, err)
-		assert.Equal(t, 0, val)
+		assert.False(t, val.(bool))
 	}
 }
