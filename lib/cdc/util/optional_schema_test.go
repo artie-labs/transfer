@@ -114,8 +114,11 @@ func TestGetOptionalSchema(t *testing.T) {
 			assert.True(t, isOk, testMsg)
 			assert.Equal(t, expectedValue.Kind, actualVal.Kind, testMsg)
 			if expectedValue.ExtendedDecimalDetails != nil || actualVal.ExtendedDecimalDetails != nil {
+				assert.NotNil(t, actualVal.ExtendedDecimalDetails, testMsg)
 				assert.Equal(t, expectedValue.ExtendedDecimalDetails.Scale(), actualVal.ExtendedDecimalDetails.Scale(), testMsg)
 				assert.Equal(t, *expectedValue.ExtendedDecimalDetails.Precision(), *actualVal.ExtendedDecimalDetails.Precision(), testMsg)
+			} else {
+				assert.Nil(t, actualVal.ExtendedDecimalDetails, testMsg)
 			}
 		}
 	}
