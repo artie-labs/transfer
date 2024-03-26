@@ -164,10 +164,10 @@ func TestField_ToKindDetails(t *testing.T) {
 	}
 
 	eDecimal := typing.EDecimal
-	eDecimal.ExtendedDecimalDetails = decimal.NewDecimal(decimal.DefaultScale, ptr.ToInt(decimal.PrecisionNotSpecified), nil)
+	eDecimal.ExtendedDecimalDetails = decimal.NewDecimal(ptr.ToInt(decimal.PrecisionNotSpecified), decimal.DefaultScale, nil)
 
 	kafkaDecimalType := typing.EDecimal
-	kafkaDecimalType.ExtendedDecimalDetails = decimal.NewDecimal(5, ptr.ToInt(10), nil)
+	kafkaDecimalType.ExtendedDecimalDetails = decimal.NewDecimal(ptr.ToInt(10), 5, nil)
 
 	tcs := []_tc{
 		{
