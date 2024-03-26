@@ -53,8 +53,13 @@ func TestParseValue(t *testing.T) {
 		assert.Equal(t, 1234.5678, val)
 	}
 	{
+		// Boolean, but the column is an integer column.
+		val, err := parseValue(true, columns.NewColumn("bigint", typing.Integer), nil)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, val)
+
 		// Booleans
-		val, err := parseValue(true, columns.NewColumn("bool", typing.Boolean), nil)
+		val, err = parseValue(true, columns.NewColumn("bool", typing.Boolean), nil)
 		assert.NoError(t, err)
 		assert.True(t, val.(bool))
 
