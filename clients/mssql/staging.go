@@ -61,8 +61,6 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 				return castErr
 			}
 
-			fmt.Println("castedValue", castedValue, "col", colKind.RawName(), colKind.KindDetails.Kind)
-
 			row = append(row, castedValue)
 		}
 
