@@ -2,6 +2,7 @@ package util
 
 import (
 	"log/slog"
+	"slices"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -79,30 +80,8 @@ func (s *SchemaEventPayload) GetTableName() string {
 	return s.Payload.Source.Table
 }
 
-func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicConfig) map[string]any {
-	var retMap map[string]any
-	if len(s.Payload.After) == 0 {
-		// This is a delete payload, so mark it as deleted.
-		// And we need to reconstruct the data bit since it will be empty.
-		// We _can_ rely on *before* since even without running replicate identity, it will still copy over
-		// the PK. We can explore simplifying this interface in the future by leveraging before.
-		retMap = map[string]any{
-			constants.DeleteColumnMarker: true,
-		}
-
-		for k, v := range pkMap {
-			retMap[k] = v
-		}
-
-		// If idempotency key is an empty string, don't put it in the payload data
-		if tc.IdempotentKey != "" {
-			retMap[tc.IdempotentKey] = s.GetExecutionTime().Format(ext.ISO8601)
-		}
-	} else {
-		retMap = s.Payload.After
-		retMap[constants.DeleteColumnMarker] = false
-	}
-
+func (s *SchemaEventPayload) GetData(_ map[string]any, tc *kafkalib.TopicConfig) map[string]any {
+	retMap := make(map[string]any)
 	if tc.IncludeArtieUpdatedAt {
 		retMap[constants.UpdateColumnMarker] = ext.NewUTCTime(ext.ISO8601)
 	}
@@ -111,10 +90,33 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 		retMap[constants.DatabaseUpdatedColumnMarker] = s.GetExecutionTime().Format(ext.ISO8601)
 	}
 
-	// Iterate over the schema and identify if there are any fields that require extra care.
-	afterSchemaObject := s.Schema.GetSchemaFromLabel(cdc.After)
-	if afterSchemaObject != nil {
-		for _, field := range afterSchemaObject.Fields {
+	if len(s.Payload.After) == 0 {
+		return s.processPayload(retMap, cdc.Before)
+	}
+
+	return s.processPayload(retMap, cdc.After)
+}
+
+func (s *SchemaEventPayload) processPayload(retMap map[string]any, kind cdc.FieldLabelKind) map[string]any {
+	if !slices.Contains([]cdc.FieldLabelKind{cdc.After, cdc.Before}, kind) {
+		return nil
+	}
+
+	if kind == cdc.Before {
+		for key, value := range s.Payload.Before {
+			retMap[key] = value
+		}
+		retMap[constants.DeleteColumnMarker] = true
+	} else {
+		for key, value := range s.Payload.After {
+			retMap[key] = value
+		}
+		retMap[constants.DeleteColumnMarker] = false
+	}
+
+	schemaObject := s.Schema.GetSchemaFromLabel(kind)
+	if schemaObject != nil {
+		for _, field := range schemaObject.Fields {
 			_, isOk := retMap[field.FieldName]
 			if !isOk {
 				// Skipping b/c envelope mismatch with the actual request body

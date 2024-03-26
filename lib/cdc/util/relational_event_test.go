@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/typing/ext"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -92,35 +90,20 @@ func TestSource_GetExecutionTime(t *testing.T) {
 }
 
 func TestGetDataTestInsert(t *testing.T) {
-	after := map[string]any{
-		"pk":           1,
-		"foo":          "bar",
-		"name":         "dusty",
-		"favoriteFood": "jerky",
-	}
-
-	schemaEventPayload := SchemaEventPayload{
-		Payload: Payload{
-			Before:    nil,
-			After:     after,
-			Operation: "c",
-		},
-	}
-
+	var schemaEventPayload SchemaEventPayload
+	err := json.Unmarshal([]byte(MySQLInsert), &schemaEventPayload)
+	assert.NoError(t, err)
 	assert.False(t, schemaEventPayload.DeletePayload())
 
 	evtData := schemaEventPayload.GetData(map[string]any{"pk": 1}, &kafkalib.TopicConfig{})
-	assert.Equal(t, len(after), len(evtData), "has deletion flag")
+	assert.False(t, evtData[constants.DeleteColumnMarker].(bool))
+	assert.Len(t, evtData, 5, "has deletion flag")
 
-	deletionFlag, isOk := evtData[constants.DeleteColumnMarker]
-	assert.True(t, isOk)
-	assert.False(t, deletionFlag.(bool))
-
-	_, isOk = evtData[constants.UpdateColumnMarker]
+	_, isOk := evtData[constants.UpdateColumnMarker]
 	assert.False(t, isOk)
 
 	delete(evtData, constants.DeleteColumnMarker)
-	assert.Equal(t, after, evtData)
+	assert.Len(t, evtData, 4)
 
 	evtData = schemaEventPayload.GetData(map[string]any{"pk": 1}, &kafkalib.TopicConfig{
 		IncludeArtieUpdatedAt: true,
@@ -130,81 +113,46 @@ func TestGetDataTestInsert(t *testing.T) {
 	assert.True(t, isOk)
 }
 
-func TestGetDataTestDelete(t *testing.T) {
-	tc := &kafkalib.TopicConfig{
-		IdempotentKey: "updated_at",
-	}
+func TestGetDataTestDelete_Postgres(t *testing.T) {
+	var schemaEventPayload SchemaEventPayload
+	err := json.Unmarshal([]byte(PostgresDelete), &schemaEventPayload)
+	assert.NoError(t, err)
+	assert.True(t, schemaEventPayload.DeletePayload())
 
-	now := time.Now().UTC()
-	schemaEventPayload := SchemaEventPayload{
-		Payload: Payload{
-			Before:    nil,
-			After:     nil,
-			Operation: "c",
-			Source:    Source{TsMs: now.UnixMilli()},
-		},
-	}
+	payload := schemaEventPayload.GetData(nil, &kafkalib.TopicConfig{})
+	assert.True(t, payload[constants.DeleteColumnMarker].(bool))
+	assert.Equal(t, 1004, payload["id"])
+}
 
-	assert.False(t, schemaEventPayload.DeletePayload())
+func TestGetDataTestDelete_MySQL(t *testing.T) {
+	var schemaEventPayload SchemaEventPayload
+	err := json.Unmarshal([]byte(MySQLDelete), &schemaEventPayload)
+	assert.NoError(t, err)
+	assert.True(t, schemaEventPayload.DeletePayload())
 
-	kvMap := map[string]any{"pk": 1}
-	evtData := schemaEventPayload.GetData(kvMap, tc)
-	shouldDelete, isOk := evtData[constants.DeleteColumnMarker]
-	assert.True(t, isOk)
-	assert.True(t, shouldDelete.(bool))
-
-	assert.Equal(t, 3, len(evtData), evtData)
-	assert.Equal(t, evtData["pk"], 1)
-	assert.Equal(t, evtData[tc.IdempotentKey], now.Format(ext.ISO8601))
-
-	tc.IdempotentKey = ""
-	evtData = schemaEventPayload.GetData(kvMap, tc)
-	_, isOk = evtData[tc.IdempotentKey]
-	assert.False(t, isOk, evtData)
+	payload := schemaEventPayload.GetData(nil, &kafkalib.TopicConfig{})
+	assert.True(t, payload[constants.DeleteColumnMarker].(bool))
+	assert.Equal(t, 1004, payload["id"])
 }
 
 func TestGetDataTestUpdate(t *testing.T) {
-	before := map[string]any{
-		"pk":           1,
-		"foo":          "bar",
-		"name":         "dusty",
-		"favoriteFood": "apples",
-		"age":          1,
-		"weight_lbs":   25,
-	}
-
-	after := map[string]any{
-		"pk":           1,
-		"foo":          "bar",
-		"name":         "dusty",
-		"favoriteFood": "jerky",
-		"age":          2,
-		"weight_lbs":   33,
-	}
-
-	schemaEventPayload := SchemaEventPayload{
-		Payload: Payload{
-			Before:    before,
-			After:     after,
-			Operation: "c",
-		},
-	}
+	var schemaEventPayload SchemaEventPayload
+	err := json.Unmarshal([]byte(PostgresUpdate), &schemaEventPayload)
+	assert.NoError(t, err)
 
 	assert.False(t, schemaEventPayload.DeletePayload())
 	kvMap := map[string]any{"pk": 1}
 
 	evtData := schemaEventPayload.GetData(kvMap, &kafkalib.TopicConfig{})
-	assert.Equal(t, len(after), len(evtData), "has deletion flag")
+	assert.Len(t, evtData, 16, "has deletion flag")
+	assert.False(t, evtData[constants.DeleteColumnMarker].(bool))
 
-	deletionFlag, isOk := evtData[constants.DeleteColumnMarker]
-	assert.True(t, isOk)
-	assert.False(t, deletionFlag.(bool))
-
-	_, isOk = evtData[constants.UpdateColumnMarker]
+	// Updated shouldn't exist since topicConfig.includeArtieUpdatedAt = false
+	_, isOk := evtData[constants.UpdateColumnMarker]
 	assert.False(t, isOk)
 
 	delete(evtData, constants.DeleteColumnMarker)
-	assert.Equal(t, after, evtData)
+	assert.Len(t, evtData, 15)
 
 	evtData = schemaEventPayload.GetData(kvMap, &kafkalib.TopicConfig{
 		IncludeArtieUpdatedAt: true,
