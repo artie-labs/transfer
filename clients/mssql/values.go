@@ -88,12 +88,21 @@ func parseValue(colVal any, colKind columns.Column, additionalDateFmts []string)
 
 		return colVal, nil
 	case typing.Boolean.Kind:
-		// If it's already a boolean, return it. Else, convert it.
+		// We need to convert boolean into a bit for Microsoft SQL Server.
 		if val, isOk := colVal.(bool); isOk {
-			return val, nil
+			if val {
+				return 1, nil
+			} else {
+				return 0, nil
+			}
 		}
 
-		return strconv.ParseBool(colValString)
+		val, err := strconv.ParseBool(colValString)
+		if err != nil {
+			return nil, err
+		}
+
+		return parseValue(val, colKind, additionalDateFmts)
 	case typing.EDecimal.Kind:
 		if val, isOk := colVal.(*decimal.Decimal); isOk {
 			return val.String(), nil
