@@ -60,8 +60,14 @@ func parseValue(colVal any, colKind columns.Column, additionalDateFmts []string)
 			colValString = stringutil.Wrap(colVal, true)
 		}
 
-		if len(colValString) > 8_000 {
-			slog.Warn("String is too long", slog.Int("length", len(colValString)))
+		if colKind.KindDetails.OptionalStringPrecision != nil {
+			if len(colValString) > *colKind.KindDetails.OptionalStringPrecision {
+				slog.Warn("String is too long",
+					slog.String("name", colKind.RawName()),
+					slog.Int("length", len(colValString)),
+					slog.Int("optionalStringPrecision", *colKind.KindDetails.OptionalStringPrecision),
+				)
+			}
 		}
 
 		return colValString, nil
