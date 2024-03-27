@@ -62,11 +62,12 @@ func parseValue(colVal any, colKind columns.Column, additionalDateFmts []string)
 
 		if colKind.KindDetails.OptionalStringPrecision != nil {
 			if len(colValString) > *colKind.KindDetails.OptionalStringPrecision {
-				slog.Warn("String is too long",
+				slog.Warn("String length exceeds OptionalStringPrecision",
 					slog.String("name", colKind.RawName()),
 					slog.Int("length", len(colValString)),
 					slog.Int("optionalStringPrecision", *colKind.KindDetails.OptionalStringPrecision),
 				)
+				colValString = constants.ExceededValueMarker
 			}
 		}
 
