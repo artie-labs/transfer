@@ -3,6 +3,7 @@ package mssql
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"reflect"
 	"strconv"
 	"strings"
@@ -57,6 +58,10 @@ func parseValue(colVal any, colKind columns.Column, additionalDateFmts []string)
 		} else {
 			// Else, make sure we escape the quotes.
 			colValString = stringutil.Wrap(colVal, true)
+		}
+
+		if len(colValString) > 8_000 {
+			slog.Warn("String is too long", slog.Int("length", len(colValString)))
 		}
 
 		return colValString, nil
