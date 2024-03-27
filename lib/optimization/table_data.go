@@ -69,13 +69,12 @@ func (t *TableData) ContainOtherOperations() bool {
 }
 
 func (t *TableData) PrimaryKeys(uppercaseEscNames bool, args *sql.NameArgs) []columns.Wrapper {
-	var primaryKeysEscaped []columns.Wrapper
+	var pks []columns.Wrapper
 	for _, pk := range t.primaryKeys {
-		col := columns.NewColumn(pk, typing.Invalid)
-		primaryKeysEscaped = append(primaryKeysEscaped, columns.NewWrapper(col, uppercaseEscNames, args))
+		pks = append(pks, columns.NewWrapper(columns.NewColumn(pk, typing.Invalid), uppercaseEscNames, args))
 	}
 
-	return primaryKeysEscaped
+	return pks
 }
 
 func (t *TableData) RawName() string {

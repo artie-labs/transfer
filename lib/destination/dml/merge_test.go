@@ -61,7 +61,6 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 
 		assert.Equal(t, len(idempotentKey) > 0, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")))
 	}
-
 }
 
 func TestMergeStatement(t *testing.T) {

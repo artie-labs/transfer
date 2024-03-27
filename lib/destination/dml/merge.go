@@ -289,8 +289,6 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 }
 
 func (m *MergeArgument) GetMSSQLStatement() (string, error) {
-	// TODO: Add tests
-
 	if err := m.Valid(); err != nil {
 		return "", err
 	}
