@@ -16,10 +16,10 @@ func NewWrapper(col Column, uppercaseEscNames bool, args *sql.NameArgs) Wrapper 
 	}
 }
 
-func (w *Wrapper) EscapedName() string {
+func (w Wrapper) EscapedName() string {
 	return w.escapedName
 }
 
-func (w *Wrapper) RawName() string {
+func (w Wrapper) RawName() string {
 	return w.name
 }
