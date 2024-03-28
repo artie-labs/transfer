@@ -3,6 +3,7 @@ package mssql
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"reflect"
 	"strconv"
 	"strings"
@@ -57,6 +58,17 @@ func parseValue(colVal any, colKind columns.Column, additionalDateFmts []string)
 		} else {
 			// Else, make sure we escape the quotes.
 			colValString = stringutil.Wrap(colVal, true)
+		}
+
+		if colKind.KindDetails.OptionalStringPrecision != nil {
+			if len(colValString) > *colKind.KindDetails.OptionalStringPrecision {
+				slog.Warn("String length exceeds OptionalStringPrecision",
+					slog.String("name", colKind.RawName()),
+					slog.Int("length", len(colValString)),
+					slog.Int("optionalStringPrecision", *colKind.KindDetails.OptionalStringPrecision),
+				)
+				colValString = constants.ExceededValueMarker
+			}
 		}
 
 		return colValString, nil
