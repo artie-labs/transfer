@@ -111,7 +111,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 				}
 
 				if len(kafkaMsg.Value) == 0 {
-					slog.Info("Found a tombstone message, skipping...", artie.KafkaMsgLogFields(kafkaMsg)...)
+					slog.Debug("Found a tombstone message, skipping...", artie.KafkaMsgLogFields(kafkaMsg)...)
 					continue
 				}
 
