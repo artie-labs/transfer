@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -54,9 +53,12 @@ func parseValue(colVal any, colKind columns.Column, additionalDateFmts []string)
 			}
 
 			colValString = string(colValBytes)
-		} else {
-			// Else, make sure we escape the quotes.
-			colValString = stringutil.Wrap(colVal, true)
+		}
+
+		if colKind.KindDetails.OptionalStringPrecision != nil {
+			if len(colValString) > *colKind.KindDetails.OptionalStringPrecision {
+				colValString = constants.ExceededValueMarker
+			}
 		}
 
 		return colValString, nil
