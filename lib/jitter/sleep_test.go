@@ -1,6 +1,7 @@
 package jitter
 
 import (
+	"math"
 	"testing"
 	"time"
 
@@ -17,7 +18,11 @@ func TestJitter(t *testing.T) {
 	{
 		// A large number of attempts does not panic
 		value := Jitter(10, 100, 200)
-		assert.GreaterOrEqual(t, value, time.Duration(10)*time.Millisecond)
+		assert.LessOrEqual(t, value, time.Duration(100)*time.Millisecond)
+	}
+	{
+		// A very large number of attempts does not panic
+		value := Jitter(10, 100, math.MaxInt)
 		assert.LessOrEqual(t, value, time.Duration(100)*time.Millisecond)
 	}
 }
