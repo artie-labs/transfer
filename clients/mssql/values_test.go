@@ -3,6 +3,10 @@ package mssql
 import (
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
+
+	"github.com/artie-labs/transfer/lib/ptr"
+
 	"github.com/artie-labs/transfer/lib/typing"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -19,6 +23,19 @@ func TestParseValue(t *testing.T) {
 		val, err := parseValue("string value", columns.NewColumn("foo", typing.String), nil)
 		assert.NoError(t, err)
 		assert.Equal(t, "string value", val)
+
+		// We don't need to escape backslashes.
+		val, err = parseValue(`dusty o\donald`, columns.NewColumn("foo", typing.String), nil)
+		assert.NoError(t, err)
+		assert.Equal(t, `dusty o\donald`, val)
+
+		// If the string precision exceeds the value, we'll need to insert an exceeded value.
+		stringCol := columns.NewColumn("foo", typing.String)
+		stringCol.KindDetails.OptionalStringPrecision = ptr.ToInt(25)
+
+		val, err = parseValue(`abcdefabcdefabcdefabcdef113321`, stringCol, nil)
+		assert.NoError(t, err)
+		assert.Equal(t, constants.ExceededValueMarker, val)
 	}
 	{
 		val, err := parseValue(map[string]any{"foo": "bar"}, columns.NewColumn("json", typing.Struct), nil)
