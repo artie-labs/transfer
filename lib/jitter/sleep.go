@@ -14,6 +14,12 @@ func Jitter(baseMs, maxMs, attempts int) time.Duration {
 	if maxMs <= 0 {
 		return time.Duration(0)
 	}
-	ms := rand.Intn(min(maxMs, baseMs*(1<<attempts)))
+
+	// Check for overflows when computing 2 ** x
+	if attemptsMaxMs := baseMs * (1 << attempts); attemptsMaxMs > 0 {
+		maxMs = min(maxMs, attemptsMaxMs)
+	}
+
+	ms := rand.Intn(maxMs)
 	return time.Duration(ms) * time.Millisecond
 }
