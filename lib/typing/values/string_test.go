@@ -70,6 +70,22 @@ func TestCastColValStaging_Basic(t *testing.T) {
 			expectedString: "foo",
 		},
 		{
+			name:   "integer w/ bool",
+			colVal: true,
+			colKind: columns.Column{
+				KindDetails: typing.Integer,
+			},
+			expectedString: "1",
+		},
+		{
+			name:   "integer w/ bool",
+			colVal: false,
+			colKind: columns.Column{
+				KindDetails: typing.Integer,
+			},
+			expectedString: "0",
+		},
+		{
 			name:   "integer",
 			colVal: 7,
 			colKind: columns.Column{

@@ -15,6 +15,14 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
+func BooleanToBit(val bool) int {
+	if val {
+		return 1
+	} else {
+		return 0
+	}
+}
+
 func ToString(colVal any, colKind columns.Column, additionalDateFmts []string) (string, error) {
 	if colVal == nil {
 		return "", fmt.Errorf("colVal is nil")
@@ -83,10 +91,12 @@ func ToString(colVal any, colKind columns.Column, additionalDateFmts []string) (
 
 		return string(colValBytes), nil
 	case typing.Integer.Kind:
-		switch colVal.(type) {
+		switch parsedVal := colVal.(type) {
 		case float64, float32:
 			// This will remove trailing zeros and print the float value as an integer, no scientific numbers.
 			return fmt.Sprintf("%.0f", colVal), nil
+		case bool:
+			return fmt.Sprint(BooleanToBit(parsedVal)), nil
 		}
 	case typing.EDecimal.Kind:
 		val, isOk := colVal.(*decimal.Decimal)
