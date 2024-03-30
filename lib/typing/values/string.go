@@ -27,7 +27,6 @@ func ToString(colVal any, colKind columns.Column, additionalDateFmts []string) (
 		return "", fmt.Errorf("colVal is nil")
 	}
 
-	colValString := fmt.Sprint(colVal)
 	switch colKind.KindDetails.Kind {
 	case typing.ETime.Kind:
 		extTime, err := ext.ParseFromInterface(colVal, additionalDateFmts)
@@ -39,14 +38,11 @@ func ToString(colVal any, colKind columns.Column, additionalDateFmts []string) (
 			return "", fmt.Errorf("column kind details for extended time details is null")
 		}
 
-		switch colKind.KindDetails.ExtendedTimeDetails.Type {
-		case ext.TimeKindType:
-			colValString = extTime.String(ext.PostgresTimeFormatNoTZ)
-		default:
-			colValString = extTime.String(colKind.KindDetails.ExtendedTimeDetails.Format)
+		if colKind.KindDetails.ExtendedTimeDetails.Type == ext.TimeKindType {
+			return extTime.String(ext.PostgresTimeFormatNoTZ), nil
 		}
 
-		return colValString, nil
+		return extTime.String(colKind.KindDetails.ExtendedTimeDetails.Format), nil
 	case typing.String.Kind:
 		isArray := reflect.ValueOf(colVal).Kind() == reflect.Slice
 		_, isMap := colVal.(map[string]any)
@@ -58,13 +54,10 @@ func ToString(colVal any, colKind columns.Column, additionalDateFmts []string) (
 				return "", err
 			}
 
-			colValString = string(colValBytes)
-		} else {
-			// Else, make sure we escape the quotes.
-			colValString = stringutil.Wrap(colVal, true)
+			return string(colValBytes), nil
 		}
 
-		return colValString, nil
+		return stringutil.Wrap(colVal, true), nil
 	case typing.Struct.Kind:
 		if colKind.KindDetails == typing.Struct {
 			if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
@@ -79,7 +72,7 @@ func ToString(colVal any, colKind columns.Column, additionalDateFmts []string) (
 					return "", err
 				}
 
-				colValString = string(colValBytes)
+				return string(colValBytes), nil
 			}
 		}
 	case typing.Array.Kind:
@@ -112,5 +105,5 @@ func ToString(colVal any, colKind columns.Column, additionalDateFmts []string) (
 		return "", fmt.Errorf("colVal is not *decimal.Decimal type, type is: %T", colVal)
 	}
 
-	return colValString, nil
+	return fmt.Sprint(colVal), nil
 }
