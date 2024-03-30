@@ -35,6 +35,7 @@ func TestToString(t *testing.T) {
 		eTimeCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{Type: ext.TimeKindType}
 		// Using `string`
 		val, err := ToString("2021-01-01T03:52:00Z", eTimeCol, nil)
+		assert.NoError(t, err)
 		assert.Equal(t, "03:52:00", val)
 
 		// Using `*ExtendedTime`
