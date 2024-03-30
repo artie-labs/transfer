@@ -6,9 +6,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/stringutil"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -99,11 +98,6 @@ func ToString(colVal any, colKind columns.Column, additionalDateFmts []string) (
 			return fmt.Sprint(BooleanToBit(parsedVal)), nil
 		}
 	case typing.EDecimal.Kind:
-		val, isOk := colVal.(*decimal.Decimal)
-		if isOk {
-			return val.String(), nil
-		}
-
 		switch castedColVal := colVal.(type) {
 		// It's okay if it's not a *decimal.Decimal, so long as it's a float or string.
 		// By having the flexibility of handling both *decimal.Decimal and float64/float32/string values within the same batch will increase our ability for data digestion.
@@ -111,6 +105,8 @@ func ToString(colVal any, colKind columns.Column, additionalDateFmts []string) (
 			return fmt.Sprint(castedColVal), nil
 		case string:
 			return castedColVal, nil
+		case *decimal.Decimal:
+			return castedColVal.String(), nil
 		}
 
 		return "", fmt.Errorf("colVal is not *decimal.Decimal type, type is: %T", colVal)
