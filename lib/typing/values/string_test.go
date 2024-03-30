@@ -1,8 +1,14 @@
 package values
 
 import (
+	"math/big"
 	"testing"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
+
+	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
 
@@ -48,23 +54,82 @@ func TestToString(t *testing.T) {
 	}
 	{
 		// String
-
-		// 1. JSON
+		// JSON
 		val, err := ToString(map[string]any{"foo": "bar"}, columns.Column{KindDetails: typing.String}, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, `{"foo":"bar"}`, val)
 
-		// 2. Array
+		// Array
 		val, err = ToString([]string{"foo", "bar"}, columns.Column{KindDetails: typing.String}, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, `["foo","bar"]`, val)
 
-		// 3. Normal strings
+		// Normal strings
 		val, err = ToString("foo", columns.Column{KindDetails: typing.String}, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, "foo", val)
 	}
 	{
+		// Struct
+		val, err := ToString(map[string]any{"foo": "bar"}, columns.Column{KindDetails: typing.Struct}, nil)
+		assert.NoError(t, err)
+		assert.Equal(t, `{"foo":"bar"}`, val)
 
+		val, err = ToString(constants.ToastUnavailableValuePlaceholder, columns.Column{KindDetails: typing.Struct}, nil)
+		assert.NoError(t, err)
+		assert.Equal(t, `{"key":"__debezium_unavailable_value"}`, val)
+	}
+	{
+		// Array
+		val, err := ToString([]string{"foo", "bar"}, columns.Column{KindDetails: typing.Array}, nil)
+		assert.NoError(t, err)
+		assert.Equal(t, `["foo","bar"]`, val)
+	}
+	{
+		// Integer
+		// Floats first.
+		val, err := ToString(float32(45452.999991), columns.Column{KindDetails: typing.Integer}, nil)
+		assert.NoError(t, err)
+		assert.Equal(t, "45453", val)
+
+		val, err = ToString(45452.999991, columns.Column{KindDetails: typing.Integer}, nil)
+		assert.NoError(t, err)
+		assert.Equal(t, "45453", val)
+
+		// Integer
+		val, err = ToString(32, columns.Column{KindDetails: typing.Integer}, nil)
+		assert.NoError(t, err)
+		assert.Equal(t, "32", val)
+
+		// Booleans
+		val, err = ToString(true, columns.Column{KindDetails: typing.Integer}, nil)
+		assert.NoError(t, err)
+		assert.Equal(t, "1", val)
+
+		val, err = ToString(false, columns.Column{KindDetails: typing.Integer}, nil)
+		assert.NoError(t, err)
+		assert.Equal(t, "0", val)
+	}
+	{
+		// Extended Decimal
+		// Floats
+		val, err := ToString(float32(123.45), columns.Column{KindDetails: typing.EDecimal}, nil)
+		assert.NoError(t, err)
+		assert.Equal(t, "123.45", val)
+
+		val, err = ToString(123.45, columns.Column{KindDetails: typing.EDecimal}, nil)
+		assert.NoError(t, err)
+		assert.Equal(t, "123.45", val)
+
+		// String
+		val, err = ToString("123.45", columns.Column{KindDetails: typing.EDecimal}, nil)
+		assert.NoError(t, err)
+		assert.Equal(t, "123.45", val)
+
+		// Decimals
+		value := decimal.NewDecimal(ptr.ToInt(38), 2, big.NewFloat(585692791691858.25))
+		val, err = ToString(value, columns.Column{KindDetails: typing.EDecimal}, nil)
+		assert.NoError(t, err)
+		assert.Equal(t, "585692791691858.25", val)
 	}
 }
