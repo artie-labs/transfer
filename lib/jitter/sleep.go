@@ -7,6 +7,10 @@ import (
 
 const DefaultMaxMs = 3500
 
+func powerOfTwo(n int) int {
+	return 1 << n
+}
+
 func Jitter(baseMs, maxMs, attempts int) time.Duration {
 	// https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
 	// sleep = random_between(0, min(cap, base * 2 ** attempt))
@@ -15,11 +19,10 @@ func Jitter(baseMs, maxMs, attempts int) time.Duration {
 		return time.Duration(0)
 	}
 
-	// Check for overflows when computing base * 2 ** attempts.
-	if attemptsMaxMs := baseMs * (1 << attempts); attemptsMaxMs > 0 {
+	// Cap the attempts to be 30 so we don't have integer overflows.
+	if attemptsMaxMs := baseMs * powerOfTwo(max(attempts, 30)); attemptsMaxMs > 0 {
 		maxMs = min(maxMs, attemptsMaxMs)
 	}
 
-	ms := rand.Intn(maxMs)
-	return time.Duration(ms) * time.Millisecond
+	return time.Duration(rand.Intn(maxMs)) * time.Millisecond
 }
