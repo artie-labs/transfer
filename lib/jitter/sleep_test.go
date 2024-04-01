@@ -30,6 +30,11 @@ func TestJitter(t *testing.T) {
 	assert.Equal(t, time.Duration(0), Jitter(10, -1, 100))
 
 	{
+		// A large maxMs and large attempts
+		value := Jitter(10, math.MaxInt, 200)
+		assert.LessOrEqual(t, value, time.Duration(math.MaxInt/1_000_000)*time.Millisecond)
+	}
+	{
 		// A large number of attempts does not panic.
 		value := Jitter(10, 100, 200)
 		assert.LessOrEqual(t, value, time.Duration(100)*time.Millisecond)

@@ -1,6 +1,7 @@
 package jitter
 
 import (
+	"math"
 	"math/rand"
 	"time"
 )
@@ -19,9 +20,11 @@ func Jitter(baseMs, maxMs, attempts int) time.Duration {
 		return time.Duration(0)
 	}
 
-	// Cap the attempts to be 30 so we don't have integer overflows.
-	if attemptsMaxMs := baseMs * powerOfTwo(max(attempts, 30)); attemptsMaxMs > 0 {
-		maxMs = min(maxMs, attemptsMaxMs)
+	// maxThreshold is used to make sure the multiplier does not cause any value overflow.
+	// The 1 million comes from `ms` and `ns` conversion.
+	maxThreshold := math.MaxInt / baseMs / 1_000_000
+	if multiplier := powerOfTwo(min(attempts, 20)); multiplier <= maxThreshold {
+		maxMs = min(maxMs, baseMs*multiplier)
 	}
 
 	return time.Duration(rand.Intn(maxMs)) * time.Millisecond
