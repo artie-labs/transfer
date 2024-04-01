@@ -12,15 +12,8 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
+	"github.com/artie-labs/transfer/lib/typing/values"
 )
-
-func booleanToBit(val bool) int {
-	if val {
-		return 1
-	} else {
-		return 0
-	}
-}
 
 func parseValue(colVal any, colKind columns.Column, additionalDateFmts []string) (any, error) {
 	if colVal == nil {
@@ -29,7 +22,7 @@ func parseValue(colVal any, colKind columns.Column, additionalDateFmts []string)
 
 	boolVal, isOk := colVal.(bool)
 	if isOk {
-		colVal = booleanToBit(boolVal)
+		colVal = values.BooleanToBit(boolVal)
 	}
 
 	colValString := fmt.Sprint(colVal)
