@@ -13,25 +13,21 @@ import (
 	"github.com/artie-labs/transfer/models/event"
 )
 
-type ProcessArgs struct {
+type processArgs struct {
 	Msg                    artie.Message
 	GroupID                string
 	TopicToConfigFormatMap *TcFmtMap
 }
 
-// ProcessMessage will return:
-// 1. TableName (string)
-// 2. Error
-// We are using the TableName for emitting Kafka ingestion lag
-func ProcessMessage(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, processArgs ProcessArgs) (string, error) {
-	if processArgs.TopicToConfigFormatMap == nil {
+func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) (string, error) {
+	if p.TopicToConfigFormatMap == nil {
 		return "", fmt.Errorf("failed to process, topicConfig is nil")
 	}
 
 	tags := map[string]string{
 		"mode":    cfg.Mode.String(),
-		"groupID": processArgs.GroupID,
-		"topic":   processArgs.Msg.Topic(),
+		"groupID": p.GroupID,
+		"topic":   p.Msg.Topic(),
 		"what":    "success",
 	}
 
@@ -41,23 +37,23 @@ func ProcessMessage(ctx context.Context, cfg config.Config, inMemDB *models.Data
 		metricsClient.Timing("process.message", time.Since(st), tags)
 	}()
 
-	topicConfig, isOk := processArgs.TopicToConfigFormatMap.GetTopicFmt(processArgs.Msg.Topic())
+	topicConfig, isOk := p.TopicToConfigFormatMap.GetTopicFmt(p.Msg.Topic())
 	if !isOk {
 		tags["what"] = "failed_topic_lookup"
-		return "", fmt.Errorf("failed to get topic name: %s", processArgs.Msg.Topic())
+		return "", fmt.Errorf("failed to get topic name: %s", p.Msg.Topic())
 	}
 
 	tags["database"] = topicConfig.tc.Database
 	tags["schema"] = topicConfig.tc.Schema
 
-	pkMap, err := topicConfig.GetPrimaryKey(processArgs.Msg.Key(), topicConfig.tc)
+	pkMap, err := topicConfig.GetPrimaryKey(p.Msg.Key(), topicConfig.tc)
 	if err != nil {
 		tags["what"] = "marshall_pk_err"
-		return "", fmt.Errorf("cannot unmarshall key %s: %w", string(processArgs.Msg.Key()), err)
+		return "", fmt.Errorf("cannot unmarshall key %s: %w", string(p.Msg.Key()), err)
 	}
 
 	typingSettings := cfg.SharedTransferConfig.TypingSettings
-	_event, err := topicConfig.GetEventFromBytes(typingSettings, processArgs.Msg.Value())
+	_event, err := topicConfig.GetEventFromBytes(typingSettings, p.Msg.Value())
 	if err != nil {
 		tags["what"] = "marshall_value_err"
 		return "", fmt.Errorf("cannot unmarshall event: %w", err)
@@ -75,7 +71,7 @@ func ProcessMessage(ctx context.Context, cfg config.Config, inMemDB *models.Data
 		return evt.Table, nil
 	}
 
-	shouldFlush, flushReason, err := evt.Save(cfg, inMemDB, topicConfig.tc, processArgs.Msg)
+	shouldFlush, flushReason, err := evt.Save(cfg, inMemDB, topicConfig.tc, p.Msg)
 	if err != nil {
 		tags["what"] = "save_fail"
 		return "", fmt.Errorf("event failed to save: %w", err)

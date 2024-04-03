@@ -116,12 +116,13 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 				}
 
 				msg := artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)
-				tableName, processErr := ProcessMessage(ctx, cfg, inMemDB, dest, metricsClient, ProcessArgs{
+				args := processArgs{
 					Msg:                    msg,
 					GroupID:                kafkaConsumer.Config().GroupID,
 					TopicToConfigFormatMap: tcFmtMap,
-				})
+				}
 
+				tableName, processErr := args.process(ctx, cfg, inMemDB, dest, metricsClient)
 				msg.EmitIngestionLag(metricsClient, cfg.Mode, kafkaConsumer.Config().GroupID, tableName)
 				msg.EmitRowLag(metricsClient, cfg.Mode, kafkaConsumer.Config().GroupID, tableName)
 				if processErr != nil {

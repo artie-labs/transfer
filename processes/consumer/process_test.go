@@ -56,17 +56,17 @@ func TestProcessMessageFailures(t *testing.T) {
 	}
 
 	msg := artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)
-	processArgs := ProcessArgs{
+	args := processArgs{
 		Msg:     msg,
 		GroupID: "foo",
 	}
 
-	tableName, err := ProcessMessage(ctx, cfg, memDB, MockDestination{}, metrics.NullMetricsProvider{}, processArgs)
+	tableName, err := args.process(ctx, cfg, memDB, MockDestination{}, metrics.NullMetricsProvider{})
 	assert.ErrorContains(t, err, "failed to process, topicConfig is nil", err.Error())
 	assert.Empty(t, tableName)
 
-	processArgs.TopicToConfigFormatMap = NewTcFmtMap()
-	tableName, err = ProcessMessage(ctx, cfg, memDB, MockDestination{}, metrics.NullMetricsProvider{}, processArgs)
+	args.TopicToConfigFormatMap = NewTcFmtMap()
+	tableName, err = args.process(ctx, cfg, memDB, MockDestination{}, metrics.NullMetricsProvider{})
 	assert.ErrorContains(t, err, "failed to get topic", err.Error())
 	assert.Equal(t, 0, len(memDB.TableData()))
 	assert.Empty(t, tableName)
@@ -92,7 +92,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		Format: &mgo,
 	})
 
-	processArgs = ProcessArgs{
+	args = processArgs{
 		Msg:                    msg,
 		GroupID:                "foo",
 		TopicToConfigFormatMap: tcFmtMap,
@@ -101,7 +101,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	tcFmt, isOk := tcFmtMap.GetTopicFmt(msg.Topic())
 	assert.True(t, isOk)
 
-	tableName, err = ProcessMessage(ctx, cfg, memDB, MockDestination{}, metrics.NullMetricsProvider{}, processArgs)
+	tableName, err = args.process(ctx, cfg, memDB, MockDestination{}, metrics.NullMetricsProvider{})
 	assert.ErrorContains(t, err, fmt.Sprintf("format: %s is not supported", tcFmt.tc.CDCKeyFormat), err.Error())
 	assert.ErrorContains(t, err, "cannot unmarshall key", err.Error())
 	assert.Equal(t, 0, len(memDB.TableData()))
@@ -189,13 +189,13 @@ func TestProcessMessageFailures(t *testing.T) {
 			msg.KafkaMsg.Value = []byte(val)
 		}
 
-		processArgs = ProcessArgs{
+		args = processArgs{
 			Msg:                    msg,
 			GroupID:                "foo",
 			TopicToConfigFormatMap: tcFmtMap,
 		}
 
-		tableName, err = ProcessMessage(ctx, cfg, memDB, MockDestination{}, metrics.NullMetricsProvider{}, processArgs)
+		tableName, err = args.process(ctx, cfg, memDB, MockDestination{}, metrics.NullMetricsProvider{})
 		assert.NoError(t, err)
 		assert.Equal(t, table, tableName)
 
@@ -218,13 +218,13 @@ func TestProcessMessageFailures(t *testing.T) {
 	assert.False(t, val.(bool))
 
 	msg.KafkaMsg.Value = []byte("not a json object")
-	processArgs = ProcessArgs{
+	args = processArgs{
 		Msg:                    msg,
 		GroupID:                "foo",
 		TopicToConfigFormatMap: tcFmtMap,
 	}
 
-	tableName, err = ProcessMessage(ctx, cfg, memDB, MockDestination{}, metrics.NullMetricsProvider{}, processArgs)
+	tableName, err = args.process(ctx, cfg, memDB, MockDestination{}, metrics.NullMetricsProvider{})
 	assert.Error(t, err)
 	assert.Empty(t, tableName)
 	assert.True(t, td.NumberOfRows() > 0)
@@ -355,7 +355,7 @@ func TestProcessMessageSkip(t *testing.T) {
 			msg.KafkaMsg.Value = []byte(val)
 		}
 
-		processArgs := ProcessArgs{
+		args := processArgs{
 			Msg:                    msg,
 			GroupID:                "foo",
 			TopicToConfigFormatMap: tcFmtMap,
@@ -364,7 +364,7 @@ func TestProcessMessageSkip(t *testing.T) {
 		td := memoryDB.GetOrCreateTableData(table)
 		assert.Equal(t, 0, int(td.NumberOfRows()))
 
-		tableName, err := ProcessMessage(ctx, cfg, memDB, MockDestination{}, metrics.NullMetricsProvider{}, processArgs)
+		tableName, err := args.process(ctx, cfg, memDB, MockDestination{}, metrics.NullMetricsProvider{})
 		assert.NoError(t, err)
 		assert.Equal(t, table, tableName)
 		// Because it got skipped.
