@@ -39,12 +39,10 @@ type TopicConfigFormatter struct {
 }
 
 func commitOffset(ctx context.Context, topic string, partitionsToOffset map[string][]artie.Message) error {
-	var err error
 	for _, msgs := range partitionsToOffset {
 		for _, msg := range msgs {
 			if msg.KafkaMsg != nil {
-				err = topicToConsumer.Get(topic).CommitMessages(ctx, *msg.KafkaMsg)
-				if err != nil {
+				if err := topicToConsumer.Get(topic).CommitMessages(ctx, *msg.KafkaMsg); err != nil {
 					return err
 				}
 			}
@@ -55,5 +53,5 @@ func commitOffset(ctx context.Context, topic string, partitionsToOffset map[stri
 		}
 	}
 
-	return err
+	return nil
 }
