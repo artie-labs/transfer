@@ -3,8 +3,6 @@ package mssql
 import (
 	"fmt"
 
-	"github.com/artie-labs/transfer/lib/config"
-
 	mssql "github.com/microsoft/go-mssqldb"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -13,8 +11,8 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 )
 
-func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, _ types.AdditionalSettings) error {
-	if tableData.Mode() != config.History {
+func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, _ types.AdditionalSettings, createTempTable bool) error {
+	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
 			Dwh:               s,
 			Tc:                tableConfig,

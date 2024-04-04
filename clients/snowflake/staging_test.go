@@ -150,26 +150,34 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	s.stageStore.GetConfigMap().AddTableToConfig(tempTableName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	sflkTc := s.stageStore.GetConfigMap().TableConfig(tempTableName)
 
-	assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableName, types.AdditionalSettings{}))
-	assert.Equal(s.T(), 3, s.fakeStageStore.ExecCallCount())
+	{
+		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableName, types.AdditionalSettings{}, true))
+		assert.Equal(s.T(), 3, s.fakeStageStore.ExecCallCount())
 
-	// First call is to create the temp table
-	createQuery, _ := s.fakeStageStore.ExecArgsForCall(0)
+		// First call is to create the temp table
+		createQuery, _ := s.fakeStageStore.ExecArgsForCall(0)
 
-	prefixQuery := fmt.Sprintf(
-		`CREATE TABLE IF NOT EXISTS %s (user_id string,first_name string,last_name string) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`, tempTableName)
-	containsPrefix := strings.HasPrefix(createQuery, prefixQuery)
-	assert.True(s.T(), containsPrefix, fmt.Sprintf("createQuery:%v, prefixQuery:%s", createQuery, prefixQuery))
-	resourceName := addPrefixToTableName(tempTableName, "%")
-	// Second call is a PUT
-	putQuery, _ := s.fakeStageStore.ExecArgsForCall(1)
-	assert.Equal(s.T(), fmt.Sprintf(`PUT file:///tmp/%s.csv @%s AUTO_COMPRESS=TRUE`,
-		tempTableName, resourceName), putQuery)
+		prefixQuery := fmt.Sprintf(
+			`CREATE TABLE IF NOT EXISTS %s (user_id string,first_name string,last_name string) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`, tempTableName)
+		containsPrefix := strings.HasPrefix(createQuery, prefixQuery)
+		assert.True(s.T(), containsPrefix, fmt.Sprintf("createQuery:%v, prefixQuery:%s", createQuery, prefixQuery))
+		resourceName := addPrefixToTableName(tempTableName, "%")
+		// Second call is a PUT
+		putQuery, _ := s.fakeStageStore.ExecArgsForCall(1)
+		assert.Equal(s.T(), fmt.Sprintf(`PUT file:///tmp/%s.csv @%s AUTO_COMPRESS=TRUE`,
+			tempTableName, resourceName), putQuery)
 
-	// Third call is a COPY INTO
-	copyQuery, _ := s.fakeStageStore.ExecArgsForCall(2)
-	assert.Equal(s.T(), fmt.Sprintf(`COPY INTO %s (user_id,first_name,last_name) FROM (SELECT $1,$2,$3 FROM @%s)`,
-		tempTableName, resourceName), copyQuery)
+		// Third call is a COPY INTO
+		copyQuery, _ := s.fakeStageStore.ExecArgsForCall(2)
+		assert.Equal(s.T(), fmt.Sprintf(`COPY INTO %s (user_id,first_name,last_name) FROM (SELECT $1,$2,$3 FROM @%s)`,
+			tempTableName, resourceName), copyQuery)
+	}
+	{
+		// Don't create the temporary table.
+		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableName, types.AdditionalSettings{}, false))
+		assert.Equal(s.T(), 5, s.fakeStageStore.ExecCallCount())
+	}
+
 }
 
 func (s *SnowflakeTestSuite) TestLoadTemporaryTable() {
