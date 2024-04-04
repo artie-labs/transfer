@@ -7,14 +7,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/typing/values"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
 // castColValStaging - takes `colVal` any and `colKind` typing.Column and converts the value into a string value
