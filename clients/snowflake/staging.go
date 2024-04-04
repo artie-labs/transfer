@@ -46,7 +46,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	}
 
 	// Write data into CSV
-	fp, err := s.loadTemporaryTable(tableData, tempTableName)
+	fp, err := s.writeTemporaryTable(tableData, tempTableName)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
@@ -82,10 +82,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	return nil
 }
 
-// loadTemporaryTable will write the data into /tmp/newTableName.csv
-// This way, another function can call this and then invoke a Snowflake PUT.
-// Returns the file path and potential error
-func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableName string) (string, error) {
+func (s *Store) writeTemporaryTable(tableData *optimization.TableData, newTableName string) (string, error) {
 	filePath := fmt.Sprintf("/tmp/%s.csv", newTableName)
 	file, err := os.Create(filePath)
 	if err != nil {
