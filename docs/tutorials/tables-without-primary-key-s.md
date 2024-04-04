@@ -9,7 +9,25 @@ description: We will go over how we can add primary key(s) to tables that do not
 1. We need a way to uniquely identify each row as we use the primary key(s) as the partition key in Kafka to **guarantee ordering**.&#x20;
 2. For us to guarantee data integrity, we perform `MERGE` with the table's primary key(s)
 
-## How do I add primary key(s) to an existing table?
+## Scenario #1: I already have pseudo primary key(s)
+
+Let's use the example of `users_no_pk` as our example.
+
+```sql
+CREATE TABLE users_no_pk (
+    email VARCHAR(255) UNIQUE NOT NULL,
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL
+);
+```
+
+Email is unique, however not the primary key. To make `email` unique, we'll run the following command:
+
+```sql
+ALTER TABLE users_no_pk ADD PRIMARY KEY (email);
+```
+
+## Scenario #2: How do I add primary key(s) to an existing table?
 
 Let's use this table `no_primary_keys` as our example.
 
