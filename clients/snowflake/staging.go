@@ -7,8 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/config"
-
 	"github.com/artie-labs/transfer/lib/typing/values"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -36,8 +34,8 @@ func castColValStaging(colVal any, colKind columns.Column, additionalDateFmts []
 // 3) Runs PUT to upload CSV to Snowflake staging (auto-compression with GZIP)
 // 4) Runs COPY INTO with the columns specified into temporary table
 // 5) Deletes CSV generated from (2)
-func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalSettings types.AdditionalSettings) error {
-	if tableData.Mode() != config.History {
+func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalSettings types.AdditionalSettings, createTempTable bool) error {
+	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
 			Dwh:               s,
 			Tc:                tableConfig,

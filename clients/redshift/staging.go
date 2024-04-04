@@ -15,7 +15,8 @@ import (
 	"github.com/artie-labs/transfer/lib/s3lib"
 )
 
-func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, _ types.AdditionalSettings) error {
+func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, _ types.AdditionalSettings, _ bool) error {
+	// Redshift always creates a temporary table.
 	tempAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               s,
 		Tc:                tableConfig,

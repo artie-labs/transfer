@@ -36,9 +36,8 @@ type Store struct {
 	db.Store
 }
 
-func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, _ types.AdditionalSettings) error {
-	// Create a temporary table
-	if tableData.Mode() != config.History {
+func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, _ types.AdditionalSettings, createTempTable bool) error {
+	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
 			Dwh:               s,
 			Tc:                tableConfig,

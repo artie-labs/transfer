@@ -21,7 +21,7 @@ type DataWarehouse interface {
 	IsRetryableError(err error) bool
 	ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string
 	GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error)
-	PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalSettings types.AdditionalSettings) error
+	PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalSettings types.AdditionalSettings, createTempTable bool) error
 }
 
 type Baseline interface {

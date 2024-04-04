@@ -57,5 +57,5 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, cf
 		AdditionalCopyClause: opts.AdditionalCopyClause,
 	}
 
-	return dwh.PrepareTemporaryTable(tableData, tableConfig, opts.TempTableName, additionalSettings)
+	return dwh.PrepareTemporaryTable(tableData, tableConfig, opts.TempTableName, additionalSettings, false)
 }
