@@ -106,10 +106,8 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 	for _, value := range tableData.Rows() {
 		var row []string
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil) {
-			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
-			colVal := value[col]
-			// Check
-			castedValue, castErr := castColValStaging(colVal, colKind, additionalDateFmts)
+			column, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
+			castedValue, castErr := castColValStaging(value[col], column, additionalDateFmts)
 			if castErr != nil {
 				return "", castErr
 			}
