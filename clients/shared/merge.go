@@ -30,6 +30,8 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		return err
 	}
 
+	fmt.Println("tableConfig", tableConfig.CreateTable())
+
 	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
 		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt,
 		tableData.TopicConfig.IncludeDatabaseUpdatedAt, tableData.Mode())

@@ -39,6 +39,8 @@ func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape b
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	fqName := s.ToFullyQualifiedName(tableData, true)
+
+	fmt.Println("## fqName", fqName)
 	return shared.GetTableConfig(shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             fqName,

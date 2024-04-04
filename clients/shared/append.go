@@ -28,6 +28,8 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, cf
 		return err
 	}
 
+	fmt.Println("tableConfig", tableConfig.CreateTable())
+
 	// We don't care about srcKeysMissing because we don't drop columns when we append.
 	_, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
 		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt,

@@ -62,6 +62,7 @@ func GetTableConfig(args GetTableCfgArgs) (*types.DwhTableConfig, error) {
 		switch args.Dwh.Label() {
 		case constants.Snowflake:
 			if SnowflakeTableDoesNotExistErr(err) {
+				fmt.Println("### Place #1: tableMissing = true", err)
 				// Swallow the error, make sure all the metadata is created
 				tableMissing = true
 				err = nil
@@ -139,6 +140,7 @@ func GetTableConfig(args GetTableCfgArgs) (*types.DwhTableConfig, error) {
 
 	// Do it this way via rows.Next() because that will move the iterator and cause us to miss a column.
 	if len(cols.GetColumns()) == 0 {
+		fmt.Println("### Place #2: tableMissing = true because there are no columns", err)
 		tableMissing = true
 	}
 
