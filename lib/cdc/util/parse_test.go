@@ -32,7 +32,7 @@ func TestParseField(t *testing.T) {
 		{
 			name: "integer",
 			field: debezium.Field{
-				Type: "int32",
+				Type: debezium.Int32,
 			},
 			value:         float64(3),
 			expectedValue: 3,

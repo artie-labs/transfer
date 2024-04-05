@@ -453,7 +453,7 @@ func (p *MongoTestSuite) TestMongoDBEventWithSchema() {
 		Optional:     false,
 		FieldName:    "version",
 		DebeziumType: "",
-		Type:         "string",
+		Type:         debezium.String,
 	})
 	assert.False(p.T(), evt.DeletePayload())
 	cols := schemaEvt.GetColumns()
