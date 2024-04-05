@@ -100,7 +100,7 @@ func (f Field) ToKindDetails() typing.KindDetails {
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)
 	case Date, DateKafkaConnect:
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType)
-	case Time, TimeMicro, TimeKafkaConnect, TimeWithTimezone:
+	case Time, MicroTime, TimeKafkaConnect, TimeWithTimezone:
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
 	case JSON, GeometryPointType, GeometryType, GeographyType:
 		return typing.Struct
