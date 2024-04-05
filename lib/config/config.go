@@ -20,7 +20,7 @@ const (
 	defaultFlushTimeSeconds = 10
 	defaultFlushSizeKb      = 25 * 1024 // 25 mb
 	defaultBufferPoolSize   = 30000
-	bufferPoolSizeStart     = 5
+	bufferPoolSizeMin       = 5
 
 	FlushIntervalSecondsMin = 5
 	FlushIntervalSecondsMax = 6 * 60 * 60
@@ -256,8 +256,8 @@ func (c Config) Validate() error {
 			c.FlushIntervalSeconds, FlushIntervalSecondsMin, FlushIntervalSecondsMax)
 	}
 
-	if bufferPoolSizeStart > int(c.BufferRows) {
-		return fmt.Errorf("buffer pool is too small, min value: %d, actual: %d", bufferPoolSizeStart, int(c.BufferRows))
+	if bufferPoolSizeMin > int(c.BufferRows) {
+		return fmt.Errorf("buffer pool is too small, min value: %d, actual: %d", bufferPoolSizeMin, int(c.BufferRows))
 	}
 
 	if !constants.IsValidDestination(c.Output) {

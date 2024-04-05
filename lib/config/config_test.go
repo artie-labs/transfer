@@ -526,7 +526,7 @@ func TestConfig_Validate(t *testing.T) {
 	}
 
 	// Test the various flush error settings.
-	for i := 0; i < bufferPoolSizeStart; i++ {
+	for i := 0; i < bufferPoolSizeMin; i++ {
 		// Reset buffer rows.
 		cfg.BufferRows = 500
 		cfg.FlushIntervalSeconds = i
