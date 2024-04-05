@@ -26,10 +26,11 @@ const (
 	MicroTimestamp       SupportedDebeziumType = "io.debezium.time.MicroTimestamp"
 	Date                 SupportedDebeziumType = "io.debezium.time.Date"
 	Time                 SupportedDebeziumType = "io.debezium.time.Time"
-	TimeMicro            SupportedDebeziumType = "io.debezium.time.MicroTime"
+	MicroTime            SupportedDebeziumType = "io.debezium.time.MicroTime"
 	Year                 SupportedDebeziumType = "io.debezium.time.Year"
 	TimeWithTimezone     SupportedDebeziumType = "io.debezium.time.ZonedTime"
 	DateTimeWithTimezone SupportedDebeziumType = "io.debezium.time.ZonedTimestamp"
+	MicroDuration        SupportedDebeziumType = "io.debezium.time.MicroDuration"
 	DateKafkaConnect     SupportedDebeziumType = "org.apache.kafka.connect.data.Date"
 	TimeKafkaConnect     SupportedDebeziumType = "org.apache.kafka.connect.data.Time"
 	DateTimeKafkaConnect SupportedDebeziumType = "org.apache.kafka.connect.data.Timestamp"
@@ -50,7 +51,7 @@ var typesThatRequireTypeCasting = []SupportedDebeziumType{
 	MicroTimestamp,
 	Date,
 	Time,
-	TimeMicro,
+	MicroTime,
 	DateKafkaConnect,
 	TimeKafkaConnect,
 	DateTimeKafkaConnect,
@@ -91,7 +92,7 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ex
 	case Time, TimeKafkaConnect:
 		// Represents the number of milliseconds past midnight, and does not include timezone information.
 		extTime, err = ext.NewExtendedTime(time.UnixMilli(val).In(time.UTC), ext.TimeKindType, "")
-	case TimeMicro:
+	case MicroTime:
 		// Represents the number of microseconds past midnight, and does not include timezone information.
 		extTime, err = ext.NewExtendedTime(time.UnixMicro(val).In(time.UTC), ext.TimeKindType, "")
 	default:

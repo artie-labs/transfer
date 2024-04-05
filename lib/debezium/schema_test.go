@@ -280,7 +280,7 @@ func TestField_ToKindDetails(t *testing.T) {
 		{
 			name: "Time Micro",
 			field: Field{
-				DebeziumType: TimeMicro,
+				DebeziumType: MicroTime,
 			},
 			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
 		},
