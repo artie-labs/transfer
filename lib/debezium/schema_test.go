@@ -229,28 +229,28 @@ func TestField_ToKindDetails(t *testing.T) {
 		{
 			name: "Timestamp",
 			field: Field{
-				DebeziumType: string(Timestamp),
+				DebeziumType: Timestamp,
 			},
 			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},
 		{
 			name: "Micro Timestamp",
 			field: Field{
-				DebeziumType: string(MicroTimestamp),
+				DebeziumType: MicroTimestamp,
 			},
 			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},
 		{
 			name: "Date Time Kafka Connect",
 			field: Field{
-				DebeziumType: string(DateTimeKafkaConnect),
+				DebeziumType: DateTimeKafkaConnect,
 			},
 			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},
 		{
 			name: "Date Time w/ TZ",
 			field: Field{
-				DebeziumType: string(DateTimeWithTimezone),
+				DebeziumType: DateTimeWithTimezone,
 			},
 			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},
@@ -258,14 +258,14 @@ func TestField_ToKindDetails(t *testing.T) {
 		{
 			name: "Date",
 			field: Field{
-				DebeziumType: string(Date),
+				DebeziumType: Date,
 			},
 			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType),
 		},
 		{
 			name: "Date Kafka Connect",
 			field: Field{
-				DebeziumType: string(DateKafkaConnect),
+				DebeziumType: DateKafkaConnect,
 			},
 			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType),
 		},
@@ -273,28 +273,28 @@ func TestField_ToKindDetails(t *testing.T) {
 		{
 			name: "Time",
 			field: Field{
-				DebeziumType: string(Time),
+				DebeziumType: Time,
 			},
 			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
 		},
 		{
 			name: "Time Micro",
 			field: Field{
-				DebeziumType: string(TimeMicro),
+				DebeziumType: TimeMicro,
 			},
 			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
 		},
 		{
 			name: "Time Kafka Connect",
 			field: Field{
-				DebeziumType: string(TimeKafkaConnect),
+				DebeziumType: TimeKafkaConnect,
 			},
 			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
 		},
 		{
 			name: "Time w/ TZ",
 			field: Field{
-				DebeziumType: string(TimeWithTimezone),
+				DebeziumType: TimeWithTimezone,
 			},
 			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
 		},
@@ -302,7 +302,7 @@ func TestField_ToKindDetails(t *testing.T) {
 		{
 			name: "JSON",
 			field: Field{
-				DebeziumType: string(JSON),
+				DebeziumType: JSON,
 			},
 			expectedKindDetails: typing.Struct,
 		},
@@ -310,7 +310,7 @@ func TestField_ToKindDetails(t *testing.T) {
 		{
 			name: "KafkaDecimalType",
 			field: Field{
-				DebeziumType: string(KafkaDecimalType),
+				DebeziumType: KafkaDecimalType,
 				Parameters: map[string]any{
 					"scale":                  5,
 					KafkaDecimalPrecisionKey: 10,
@@ -321,7 +321,7 @@ func TestField_ToKindDetails(t *testing.T) {
 		{
 			name: "KafkaVariableNumericType",
 			field: Field{
-				DebeziumType: string(KafkaVariableNumericType),
+				DebeziumType: KafkaVariableNumericType,
 				Parameters: map[string]any{
 					"scale": 5,
 				},
