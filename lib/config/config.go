@@ -22,8 +22,8 @@ const (
 	defaultBufferPoolSize   = 30000
 	bufferPoolSizeStart     = 5
 
-	FlushIntervalSecondsStart = 5
-	FlushIntervalSecondsEnd   = 6 * 60 * 60
+	FlushIntervalSecondsMin = 5
+	FlushIntervalSecondsMax = 6 * 60 * 60
 )
 
 type Sentry struct {
@@ -251,9 +251,9 @@ func (c Config) Validate() error {
 		return fmt.Errorf("flush size pool has to be a positive number, current value: %v", c.FlushSizeKb)
 	}
 
-	if !numbers.BetweenEq(FlushIntervalSecondsStart, FlushIntervalSecondsEnd, c.FlushIntervalSeconds) {
+	if !numbers.BetweenEq(FlushIntervalSecondsMin, FlushIntervalSecondsMax, c.FlushIntervalSeconds) {
 		return fmt.Errorf("flush interval is outside of our range, seconds: %d, expected start: %d, end: %d",
-			c.FlushIntervalSeconds, FlushIntervalSecondsStart, FlushIntervalSecondsEnd)
+			c.FlushIntervalSeconds, FlushIntervalSecondsMin, FlushIntervalSecondsMax)
 	}
 
 	if bufferPoolSizeStart > int(c.BufferRows) {
@@ -261,7 +261,7 @@ func (c Config) Validate() error {
 	}
 
 	if !constants.IsValidDestination(c.Output) {
-		return fmt.Errorf("invalid output: %s", c.Output)
+		return fmt.Errorf("invalid destination: %s", c.Output)
 	}
 
 	switch c.Output {

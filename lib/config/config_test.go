@@ -165,7 +165,7 @@ outputSource: none
 
 	validErr := config.Validate()
 	assert.Error(t, validErr)
-	assert.ErrorContains(t, validErr, "invalid output", validErr.Error())
+	assert.ErrorContains(t, validErr, "invalid destination")
 }
 
 func TestConfig_Validate_ErrorTopicConfigInvalid(t *testing.T) {
