@@ -40,7 +40,7 @@ func TestParseField(t *testing.T) {
 		{
 			name: "decimal",
 			field: debezium.Field{
-				DebeziumType: string(debezium.KafkaDecimalType),
+				DebeziumType: debezium.KafkaDecimalType,
 				Parameters: map[string]any{
 					"scale":                           "0",
 					debezium.KafkaDecimalPrecisionKey: "5",
@@ -53,7 +53,7 @@ func TestParseField(t *testing.T) {
 		{
 			name: "numeric",
 			field: debezium.Field{
-				DebeziumType: string(debezium.KafkaDecimalType),
+				DebeziumType: debezium.KafkaDecimalType,
 				Parameters: map[string]any{
 					"scale":                           "2",
 					debezium.KafkaDecimalPrecisionKey: "5",
@@ -66,7 +66,7 @@ func TestParseField(t *testing.T) {
 		{
 			name: "money",
 			field: debezium.Field{
-				DebeziumType: string(debezium.KafkaDecimalType),
+				DebeziumType: debezium.KafkaDecimalType,
 				Parameters: map[string]any{
 					"scale": "2",
 				},
@@ -78,7 +78,7 @@ func TestParseField(t *testing.T) {
 		{
 			name: "variable decimal",
 			field: debezium.Field{
-				DebeziumType: string(debezium.KafkaVariableNumericType),
+				DebeziumType: debezium.KafkaVariableNumericType,
 				Parameters: map[string]any{
 					"scale": "2",
 				},
@@ -93,7 +93,7 @@ func TestParseField(t *testing.T) {
 		{
 			name: "geometry (no srid)",
 			field: debezium.Field{
-				DebeziumType: string(debezium.GeometryType),
+				DebeziumType: debezium.GeometryType,
 			},
 			value: map[string]any{
 				"srid": nil,
@@ -104,7 +104,7 @@ func TestParseField(t *testing.T) {
 		{
 			name: "geometry (w/ srid)",
 			field: debezium.Field{
-				DebeziumType: string(debezium.GeometryType),
+				DebeziumType: debezium.GeometryType,
 			},
 			value: map[string]any{
 				"srid": 4326,
@@ -115,7 +115,7 @@ func TestParseField(t *testing.T) {
 		{
 			name: "geography (w/ srid)",
 			field: debezium.Field{
-				DebeziumType: string(debezium.GeographyType),
+				DebeziumType: debezium.GeographyType,
 			},
 			value: map[string]any{
 				"srid": 4326,
@@ -126,7 +126,7 @@ func TestParseField(t *testing.T) {
 		{
 			name: "json",
 			field: debezium.Field{
-				DebeziumType: string(debezium.JSON),
+				DebeziumType: debezium.JSON,
 			},
 			value:         `{"foo": "bar", "foo": "bar"}`,
 			expectedValue: `{"foo":"bar"}`,
@@ -134,7 +134,7 @@ func TestParseField(t *testing.T) {
 		{
 			name: "array value in JSONB",
 			field: debezium.Field{
-				DebeziumType: string(debezium.JSON),
+				DebeziumType: debezium.JSON,
 			},
 			value:         `[1,2,3]`,
 			expectedValue: `[1,2,3]`,
@@ -142,7 +142,7 @@ func TestParseField(t *testing.T) {
 		{
 			name: "array of objects in JSONB",
 			field: debezium.Field{
-				DebeziumType: string(debezium.JSON),
+				DebeziumType: debezium.JSON,
 			},
 			value:         `[{"foo":"bar", "foo": "bar"}, {"hello":"world"}, {"dusty":"the mini aussie"}]`,
 			expectedValue: `[{"foo":"bar"},{"hello":"world"},{"dusty":"the mini aussie"}]`,
@@ -150,7 +150,7 @@ func TestParseField(t *testing.T) {
 		{
 			name: "array of arrays of objects in JSONB",
 			field: debezium.Field{
-				DebeziumType: string(debezium.JSON),
+				DebeziumType: debezium.JSON,
 			},
 			value:         `[[{"foo":"bar", "foo": "bar"}], [{"hello":"world"}, {"dusty":"the mini aussie"}]]`,
 			expectedValue: `[[{"foo":"bar"}],[{"hello":"world"},{"dusty":"the mini aussie"}]]`,

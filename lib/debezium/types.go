@@ -18,16 +18,20 @@ type SupportedDebeziumType string
 const (
 	Invalid SupportedDebeziumType = "invalid"
 	JSON    SupportedDebeziumType = "io.debezium.data.Json"
+	Enum    SupportedDebeziumType = "io.debezium.data.Enum"
+	EnumSet SupportedDebeziumType = "io.debezium.data.EnumSet"
+	UUID    SupportedDebeziumType = "io.debezium.data.Uuid"
 
 	Timestamp            SupportedDebeziumType = "io.debezium.time.Timestamp"
 	MicroTimestamp       SupportedDebeziumType = "io.debezium.time.MicroTimestamp"
 	Date                 SupportedDebeziumType = "io.debezium.time.Date"
 	Time                 SupportedDebeziumType = "io.debezium.time.Time"
 	TimeMicro            SupportedDebeziumType = "io.debezium.time.MicroTime"
-	DateKafkaConnect     SupportedDebeziumType = "org.apache.kafka.connect.data.Date"
-	TimeKafkaConnect     SupportedDebeziumType = "org.apache.kafka.connect.data.Time"
+	Year                 SupportedDebeziumType = "io.debezium.time.Year"
 	TimeWithTimezone     SupportedDebeziumType = "io.debezium.time.ZonedTime"
 	DateTimeWithTimezone SupportedDebeziumType = "io.debezium.time.ZonedTimestamp"
+	DateKafkaConnect     SupportedDebeziumType = "org.apache.kafka.connect.data.Date"
+	TimeKafkaConnect     SupportedDebeziumType = "org.apache.kafka.connect.data.Time"
 	DateTimeKafkaConnect SupportedDebeziumType = "org.apache.kafka.connect.data.Timestamp"
 
 	KafkaDecimalType         SupportedDebeziumType = "org.apache.kafka.connect.data.Decimal"
@@ -58,9 +62,9 @@ var typesThatRequireTypeCasting = []SupportedDebeziumType{
 	GeographyType,
 }
 
-func RequiresSpecialTypeCasting(typeLabel string) (bool, SupportedDebeziumType) {
+func RequiresSpecialTypeCasting(typeLabel SupportedDebeziumType) (bool, SupportedDebeziumType) {
 	for _, supportedType := range typesThatRequireTypeCasting {
-		if typeLabel == string(supportedType) {
+		if typeLabel == supportedType {
 			return true, supportedType
 		}
 	}
