@@ -165,7 +165,7 @@ outputSource: none
 
 	validErr := config.Validate()
 	assert.Error(t, validErr)
-	assert.ErrorContains(t, validErr, "is invalid", validErr.Error())
+	assert.ErrorContains(t, validErr, "invalid destination")
 }
 
 func TestConfig_Validate_ErrorTopicConfigInvalid(t *testing.T) {
@@ -186,9 +186,7 @@ outputSource: test
 	config, err := readFileToConfig(randomFile)
 	assert.Nil(t, err)
 
-	validErr := config.Validate()
-	assert.Error(t, validErr)
-	assert.True(t, strings.Contains(validErr.Error(), "no kafka"), validErr.Error())
+	assert.ErrorContains(t, config.Validate(), "kafka config is nil")
 
 	_, err = io.WriteString(file, `
 kafka:
@@ -205,10 +203,7 @@ kafka:
 
 	config, err = readFileToConfig(randomFile)
 	assert.Nil(t, err)
-
-	validErr = config.Validate()
-	assert.Error(t, validErr)
-	assert.ErrorContains(t, validErr, "config is invalid, topic config is invalid")
+	assert.ErrorContains(t, config.Validate(), "failed to validate topic config")
 }
 
 func TestConfig_Validate_ErrorKafkaInvalid(t *testing.T) {
@@ -228,10 +223,7 @@ outputSource: test
 
 	config, err := readFileToConfig(randomFile)
 	assert.Nil(t, err)
-
-	validErr := config.Validate()
-	assert.Error(t, validErr)
-	assert.True(t, strings.Contains(validErr.Error(), "no kafka"), validErr.Error())
+	assert.ErrorContains(t, config.Validate(), "kafka config is nil")
 
 	_, err = io.WriteString(file, `
 kafka:
@@ -251,7 +243,7 @@ kafka:
 	assert.Nil(t, err)
 
 	assert.Equal(t, config.FlushIntervalSeconds, defaultFlushTimeSeconds)
-	assert.Equal(t, int(config.BufferRows), bufferPoolSizeEnd)
+	assert.Equal(t, int(config.BufferRows), defaultBufferPoolSize)
 
 	tcs, err := config.TopicConfigs()
 	assert.NoError(t, err)
@@ -259,7 +251,7 @@ kafka:
 		tc.Load()
 	}
 
-	assert.ErrorContains(t, config.Validate(), "kafka settings is invalid")
+	assert.ErrorContains(t, config.Validate(), "kafka group or bootstrap server is empty")
 	for _, tc := range config.Kafka.TopicConfigs {
 		if tc.TableName == "orders" {
 			assert.Equal(t, tc.DropDeletedColumns, true)
@@ -481,18 +473,18 @@ bigquery:
 }
 
 func TestConfig_Validate(t *testing.T) {
-	pubsub := &Pubsub{
+	pubsub := Pubsub{
 		ProjectID:         "foo",
 		PathToCredentials: "bar",
 	}
-	cfg := &Config{
-		Pubsub:               pubsub,
+
+	cfg := Config{
+		Pubsub:               &pubsub,
 		FlushIntervalSeconds: 5,
 		BufferRows:           500,
 	}
 
-	assert.ErrorContains(t, cfg.Validate(), "is invalid")
-
+	assert.ErrorContains(t, cfg.Validate(), "flush size pool has to be a positive number")
 	cfg.Output = constants.Snowflake
 	cfg.Queue = constants.PubSub
 	cfg.FlushSizeKb = 5
@@ -509,10 +501,10 @@ func TestConfig_Validate(t *testing.T) {
 
 	pubsub.TopicConfigs = []*kafkalib.TopicConfig{&tc}
 	pubsub.ProjectID = ""
-	assert.ErrorContains(t, cfg.Validate(), "pubsub settings is invalid")
+	assert.ErrorContains(t, cfg.Validate(), "pubsub projectID or pathToCredentials is empty")
 	pubsub.ProjectID = "foo"
 
-	assert.ErrorContains(t, cfg.Validate(), "topic config is invalid")
+	assert.ErrorContains(t, cfg.Validate(), "failed to validate topic config")
 	pubsub.TopicConfigs[0].CDCFormat = constants.DBZPostgresAltFormat
 	pubsub.TopicConfigs[0].CDCKeyFormat = "org.apache.kafka.connect.json.JsonConverter"
 
@@ -529,12 +521,12 @@ func TestConfig_Validate(t *testing.T) {
 	// All should be fine.
 	for _, destKind := range []constants.DestinationKind{constants.Snowflake, constants.BigQuery} {
 		cfg.Output = destKind
-		cfg.BufferRows = bufferPoolSizeEnd + 1
+		cfg.BufferRows = defaultBufferPoolSize + 1
 		assert.Nil(t, cfg.Validate())
 	}
 
 	// Test the various flush error settings.
-	for i := 0; i < bufferPoolSizeStart; i++ {
+	for i := 0; i < bufferPoolSizeMin; i++ {
 		// Reset buffer rows.
 		cfg.BufferRows = 500
 		cfg.FlushIntervalSeconds = i
@@ -565,11 +557,11 @@ func TestConfig_Validate(t *testing.T) {
 	// Now let's change to history mode and see.
 	cfg.Mode = History
 	pubsub.TopicConfigs[0].DropDeletedColumns = true
-	assert.ErrorContains(t, cfg.Validate(), "config is invalid, drop deleted columns is not supported in history mode")
+	assert.ErrorContains(t, cfg.Validate(), "dropDeletedColumns is not supported in history mode")
 
 	pubsub.TopicConfigs[0].DropDeletedColumns = false
 	pubsub.TopicConfigs[0].IncludeDatabaseUpdatedAt = false
-	assert.ErrorContains(t, cfg.Validate(), "config is invalid, include database updated at is required in history mode")
+	assert.ErrorContains(t, cfg.Validate(), "includeDatabaseUpdatedAt is required in history mode")
 
 	pubsub.TopicConfigs[0].IncludeDatabaseUpdatedAt = true
 	assert.NoError(t, cfg.Validate())
@@ -577,7 +569,7 @@ func TestConfig_Validate(t *testing.T) {
 
 	for _, num := range []int{-500, -300, -5, 0} {
 		cfg.FlushSizeKb = num
-		assert.ErrorContains(t, cfg.Validate(), "config is invalid, flush size pool has to be a positive number")
+		assert.ErrorContains(t, cfg.Validate(), "flush size pool has to be a positive number")
 	}
 }
 
