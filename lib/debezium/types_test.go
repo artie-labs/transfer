@@ -201,7 +201,10 @@ func TestDecodeDecimal(t *testing.T) {
 			Parameters: testCase.params,
 		}
 
-		dec, err := field.DecodeDecimal(testCase.encoded)
+		bytes, err := ToBytes(testCase.encoded)
+		assert.NoError(t, err)
+
+		dec, err := field.DecodeDecimal(bytes)
 		if testCase.expectError {
 			assert.Error(t, err, testCase.name)
 			continue
