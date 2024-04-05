@@ -55,12 +55,11 @@ func (d *DDLTestSuite) Test_CreateTable() {
 			Mode:              config.Replication,
 		}
 
-		err := ddl.AlterTable(alterTableArgs, columns.NewColumn("name", typing.String))
+		assert.NoError(d.T(), alterTableArgs.Alter(columns.NewColumn("name", typing.String)))
 		assert.Equal(d.T(), 1, dwhTc._fakeStore.ExecCallCount())
 
 		query, _ := dwhTc._fakeStore.ExecArgsForCall(0)
 		assert.Equal(d.T(), query, fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (name string)", fqName), query)
-		assert.NoError(d.T(), err, err)
 		assert.Equal(d.T(), false, dwhTc._tableConfig.CreateTable())
 	}
 }
@@ -123,8 +122,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 			Mode:              config.Replication,
 		}
 
-		err := ddl.AlterTable(alterTableArgs, testCase.cols...)
-		assert.NoError(d.T(), err, testCase.name)
+		assert.NoError(d.T(), alterTableArgs.Alter(testCase.cols...), testCase.name)
 
 		execQuery, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(index)
 		assert.Equal(d.T(), testCase.expectedQuery, execQuery, testCase.name)

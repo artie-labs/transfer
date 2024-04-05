@@ -48,12 +48,11 @@ func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 		Mode:              config.Replication,
 	}
 
-	err := ddl.AlterTable(args)
-	assert.Nil(d.T(), err)
+	// No columns.
+	assert.NoError(d.T(), args.Alter())
 
 	args.ColumnOp = constants.Delete
-	err = ddl.AlterTable(args)
-	assert.Contains(d.T(), err.Error(), "incompatible operation - cannot drop columns and create table at the same time")
+	assert.ErrorContains(d.T(), args.Alter(), "incompatible operation - cannot drop columns and create table at the same time")
 
 	// Change it to SFLK + Stage
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
@@ -62,8 +61,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 	args.Tc = snowflakeStagesTc
 	args.CreateTable = false
 
-	err = ddl.AlterTable(args)
-	assert.Equal(d.T(), "incompatible operation - we should not be altering temporary tables, only create", err.Error())
+	assert.ErrorContains(d.T(), args.Alter(), "incompatible operation - we should not be altering temporary tables, only create")
 }
 
 func (d *DDLTestSuite) TestCreateTemporaryTable() {
@@ -83,9 +81,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 		Mode:              config.Replication,
 	}
 
-	err := ddl.AlterTable(args, columns.NewColumn("foo", typing.String), columns.NewColumn("bar", typing.Float), columns.NewColumn("start", typing.String))
-
-	assert.NoError(d.T(), err)
+	assert.NoError(d.T(), args.Alter(columns.NewColumn("foo", typing.String), columns.NewColumn("bar", typing.Float), columns.NewColumn("start", typing.String)))
 	assert.Equal(d.T(), 1, d.fakeSnowflakeStagesStore.ExecCallCount())
 	query, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(0)
 
@@ -100,8 +96,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 	args.Dwh = d.bigQueryStore
 	args.Tc = bqTc
 
-	err = ddl.AlterTable(args, columns.NewColumn("foo", typing.String), columns.NewColumn("bar", typing.Float), columns.NewColumn("select", typing.String))
-	assert.NoError(d.T(), err)
+	assert.NoError(d.T(), args.Alter(columns.NewColumn("foo", typing.String), columns.NewColumn("bar", typing.Float), columns.NewColumn("select", typing.String)))
 	assert.Equal(d.T(), 1, d.fakeBigQueryStore.ExecCallCount())
 	bqQuery, _ := d.fakeBigQueryStore.ExecArgsForCall(0)
 	// Cutting off the expiration_timestamp since it's time based.
