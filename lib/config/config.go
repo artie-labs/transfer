@@ -19,12 +19,11 @@ import (
 const (
 	defaultFlushTimeSeconds = 10
 	defaultFlushSizeKb      = 25 * 1024 // 25 mb
+	defaultBufferPoolSize   = 30000
+	bufferPoolSizeStart     = 5
 
 	FlushIntervalSecondsStart = 5
 	FlushIntervalSecondsEnd   = 6 * 60 * 60
-
-	bufferPoolSizeStart = 5
-	bufferPoolSizeEnd   = 30000
 )
 
 type Sentry struct {
@@ -209,7 +208,7 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 	}
 
 	if config.BufferRows == 0 {
-		config.BufferRows = bufferPoolSizeEnd
+		config.BufferRows = defaultBufferPoolSize
 	}
 
 	if config.FlushSizeKb == 0 {

@@ -243,7 +243,7 @@ kafka:
 	assert.Nil(t, err)
 
 	assert.Equal(t, config.FlushIntervalSeconds, defaultFlushTimeSeconds)
-	assert.Equal(t, int(config.BufferRows), bufferPoolSizeEnd)
+	assert.Equal(t, int(config.BufferRows), defaultBufferPoolSize)
 
 	tcs, err := config.TopicConfigs()
 	assert.NoError(t, err)
@@ -521,7 +521,7 @@ func TestConfig_Validate(t *testing.T) {
 	// All should be fine.
 	for _, destKind := range []constants.DestinationKind{constants.Snowflake, constants.BigQuery} {
 		cfg.Output = destKind
-		cfg.BufferRows = bufferPoolSizeEnd + 1
+		cfg.BufferRows = defaultBufferPoolSize + 1
 		assert.Nil(t, cfg.Validate())
 	}
 
