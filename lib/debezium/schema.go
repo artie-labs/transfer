@@ -36,8 +36,24 @@ type FieldsObject struct {
 	FieldLabel cdc.FieldLabelKind `json:"field"`
 }
 
+type FieldType string
+
+const (
+	String  FieldType = "string"
+	Bytes   FieldType = "bytes"
+	Boolean FieldType = "boolean"
+	Int16   FieldType = "int16"
+	Int32   FieldType = "int32"
+	Int64   FieldType = "int64"
+	Float   FieldType = "float"
+	Double  FieldType = "double"
+	Struct  FieldType = "struct"
+	Array   FieldType = "array"
+	Map     FieldType = "map"
+)
+
 type Field struct {
-	Type         string         `json:"type"`
+	Type         FieldType      `json:"type"`
 	Optional     bool           `json:"optional"`
 	Default      any            `json:"default"`
 	FieldName    string         `json:"field"`
@@ -107,19 +123,19 @@ func (f Field) ToKindDetails() typing.KindDetails {
 	}
 
 	switch f.Type {
-	case "map":
+	case Map:
 		return typing.Struct
-	case "int16", "int32", "int64":
+	case Int16, Int32, Int64:
 		return typing.Integer
-	case "float", "double":
+	case Float, Double:
 		return typing.Float
-	case "string", "bytes":
+	case String, Bytes:
 		return typing.String
-	case "struct":
+	case Struct:
 		return typing.Struct
-	case "boolean":
+	case Boolean:
 		return typing.Boolean
-	case "array":
+	case Array:
 		return typing.Array
 	default:
 		return typing.Invalid
