@@ -12,16 +12,12 @@ func (d *Decimal) isNumeric() bool {
 	}
 
 	// 0 <= s <= 9
-	if !numbers.BetweenEq(numbers.BetweenEqArgs{Start: 0, End: 9, Number: d.scale}) {
+	if !numbers.BetweenEq(0, 9, d.scale) {
 		return false
 	}
 
 	// max(1,s) <= p <= s + 29
-	return numbers.BetweenEq(numbers.BetweenEqArgs{
-		Start:  max(1, d.scale),
-		End:    d.scale + 29,
-		Number: *d.precision,
-	})
+	return numbers.BetweenEq(max(1, d.scale), d.scale+29, *d.precision)
 }
 
 func (d *Decimal) isBigNumeric() bool {
@@ -30,16 +26,12 @@ func (d *Decimal) isBigNumeric() bool {
 	}
 
 	// 0 <= s <= 38
-	if !numbers.BetweenEq(numbers.BetweenEqArgs{Start: 0, End: 38, Number: d.scale}) {
+	if !numbers.BetweenEq(0, 38, d.scale) {
 		return false
 	}
 
 	// max(1,s) <= p <= s + 38
-	return numbers.BetweenEq(numbers.BetweenEqArgs{
-		Start:  max(1, d.scale),
-		End:    d.scale + 38,
-		Number: *d.precision,
-	})
+	return numbers.BetweenEq(max(1, d.scale), d.scale+38, *d.precision)
 }
 
 func (d *Decimal) toKind(maxPrecision int, exceededKind string) string {

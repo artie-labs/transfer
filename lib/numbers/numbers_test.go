@@ -7,14 +7,14 @@ import (
 )
 
 func TestBetweenEq(t *testing.T) {
-	type testCase struct {
+	type _tc struct {
 		result bool
 		start  int
 		end    int
 		number int
 	}
 
-	cases := []testCase{
+	tcs := []_tc{
 		{result: true, start: 5, end: 500, number: 100},
 		{result: true, start: 5, end: 500, number: 5},
 		{result: true, start: 5, end: 500, number: 500},
@@ -22,11 +22,7 @@ func TestBetweenEq(t *testing.T) {
 		{result: false, start: 5, end: 500, number: 4},
 	}
 
-	for _, _case := range cases {
-		assert.Equal(t, _case.result, BetweenEq(BetweenEqArgs{
-			Start:  _case.start,
-			End:    _case.end,
-			Number: _case.number,
-		}), _case)
+	for _, tc := range tcs {
+		assert.Equal(t, tc.result, BetweenEq(tc.start, tc.end, tc.number), tc)
 	}
 }

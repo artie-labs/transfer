@@ -20,8 +20,8 @@ const (
 	defaultFlushTimeSeconds = 10
 	defaultFlushSizeKb      = 25 * 1024 // 25 mb
 
-	flushIntervalSecondsStart = 5
-	flushIntervalSecondsEnd   = 6 * 60 * 60
+	FlushIntervalSecondsStart = 5
+	FlushIntervalSecondsEnd   = 6 * 60 * 60
 
 	bufferPoolSizeStart = 5
 	bufferPoolSizeEnd   = 30000
@@ -249,24 +249,20 @@ func (c Config) ValidateRedshift() error {
 // The actual output source (like Snowflake) and CDC parser will be loaded and checked by other funcs.
 func (c Config) Validate() error {
 	if c.FlushSizeKb <= 0 {
-		return fmt.Errorf("config is invalid, flush size pool has to be a positive number, current value: %v", c.FlushSizeKb)
+		return fmt.Errorf("flush size pool has to be a positive number, current value: %v", c.FlushSizeKb)
 	}
 
-	if !numbers.BetweenEq(numbers.BetweenEqArgs{
-		Start:  flushIntervalSecondsStart,
-		End:    flushIntervalSecondsEnd,
-		Number: c.FlushIntervalSeconds,
-	}) {
-		return fmt.Errorf("config is invalid, flush interval is outside of our range, seconds: %v, expected start: %v, end: %v",
-			c.FlushIntervalSeconds, flushIntervalSecondsStart, flushIntervalSecondsEnd)
+	if !numbers.BetweenEq(FlushIntervalSecondsStart, FlushIntervalSecondsEnd, c.FlushIntervalSeconds) {
+		return fmt.Errorf("flush interval is outside of our range, seconds: %d, expected start: %d, end: %d",
+			c.FlushIntervalSeconds, FlushIntervalSecondsStart, FlushIntervalSecondsEnd)
 	}
 
 	if bufferPoolSizeStart > int(c.BufferRows) {
-		return fmt.Errorf("config is invalid, buffer pool is too small, min value: %v, actual: %v", bufferPoolSizeStart, int(c.BufferRows))
+		return fmt.Errorf("buffer pool is too small, min value: %d, actual: %d", bufferPoolSizeStart, int(c.BufferRows))
 	}
 
 	if !constants.IsValidDestination(c.Output) {
-		return fmt.Errorf("config is invalid, output: %s is invalid", c.Output)
+		return fmt.Errorf("invalid output: %s", c.Output)
 	}
 
 	switch c.Output {
@@ -286,22 +282,22 @@ func (c Config) Validate() error {
 
 	if c.Queue == constants.Kafka {
 		if c.Kafka == nil {
-			return fmt.Errorf("config is invalid, no kafka topic configs, kafka: %v", c.Kafka)
+			return fmt.Errorf("kafka config is nil")
 		}
 
 		// Username and password are not required (if it's within the same VPC or connecting locally
 		if array.Empty([]string{c.Kafka.GroupID, c.Kafka.BootstrapServer}) {
-			return fmt.Errorf("config is invalid, kafka settings is invalid, kafka: %s", c.Kafka.String())
+			return fmt.Errorf("kafka group or bootstrap server is empty")
 		}
 	}
 
 	if c.Queue == constants.PubSub {
 		if c.Pubsub == nil {
-			return fmt.Errorf("config is invalid, no pubsub topic configs, pubsub: %v", c.Pubsub)
+			return fmt.Errorf("pubsub config is nil")
 		}
 
 		if array.Empty([]string{c.Pubsub.ProjectID, c.Pubsub.PathToCredentials}) {
-			return fmt.Errorf("config is invalid, pubsub settings is invalid, pubsub: %s", c.Pubsub.String())
+			return fmt.Errorf("pubsub projectID or pathToCredentials is empty")
 		}
 	}
 
@@ -311,22 +307,22 @@ func (c Config) Validate() error {
 	}
 
 	if len(tcs) == 0 {
-		return fmt.Errorf("config is invalid, no topic configs")
+		return fmt.Errorf("no topic configs found")
 	}
 
 	for _, topicConfig := range tcs {
 		if err = topicConfig.Validate(); err != nil {
-			return fmt.Errorf("config is invalid, topic config is invalid, tc: %s, err: %w", topicConfig.String(), err)
+			return fmt.Errorf("failed to validate topic config: %w", err)
 		}
 
 		// History Mode Validation
 		if c.Mode == History {
 			if topicConfig.DropDeletedColumns {
-				return fmt.Errorf("config is invalid, drop deleted columns is not supported in history mode, topic: %s", topicConfig.String())
+				return fmt.Errorf("dropDeletedColumns is not supported in history mode, topic: %s", topicConfig.String())
 			}
 
 			if !topicConfig.IncludeDatabaseUpdatedAt {
-				return fmt.Errorf("config is invalid, include database updated at is required in history mode, topic: %s", topicConfig.String())
+				return fmt.Errorf("includeDatabaseUpdatedAt is required in history mode, topic: %s", topicConfig.String())
 			}
 		}
 
