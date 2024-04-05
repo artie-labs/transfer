@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -27,12 +28,6 @@ func castColValStaging(colVal any, colKind columns.Column, additionalDateFmts []
 	return values.ToString(colVal, colKind, additionalDateFmts)
 }
 
-// PrepareTemporaryTable does the following:
-// 1) Create the temporary table
-// 2) Load in-memory table -> CSV
-// 3) Runs PUT to upload CSV to Snowflake staging (auto-compression with GZIP)
-// 4) Runs COPY INTO with the columns specified into temporary table
-// 5) Deletes CSV generated from (2)
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalSettings types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
@@ -51,7 +46,8 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		}
 	}
 
-	fp, err := s.loadTemporaryTable(tableData, tempTableName)
+	// Write data into CSV
+	fp, err := s.writeTemporaryTableFile(tableData, tempTableName)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
@@ -63,37 +59,33 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		}
 	}()
 
+	// Upload the CSV file to Snowflake
 	if _, err = s.Exec(fmt.Sprintf("PUT file://%s @%s AUTO_COMPRESS=TRUE", fp, addPrefixToTableName(tempTableName, "%"))); err != nil {
 		return fmt.Errorf("failed to run PUT for temporary table: %w", err)
 	}
 
+	// COPY the CSV file (in Snowflake) into a table
 	copyCommand := fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
-		// Copy into temporary tables (column ...)
 		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, &sql.NameArgs{
 			Escape:   true,
 			DestKind: s.Label(),
 		}), ","),
-		// Escaped columns, TABLE NAME
 		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableName, "%"))
 
 	if additionalSettings.AdditionalCopyClause != "" {
 		copyCommand += " " + additionalSettings.AdditionalCopyClause
 	}
 
-	_, err = s.Exec(copyCommand)
-	if err != nil {
-		return fmt.Errorf("failed to load staging file into temporary table: %w", err)
+	if _, err = s.Exec(copyCommand); err != nil {
+		return fmt.Errorf("failed to run copy into temporary table: %w", err)
 	}
 
 	return nil
 }
 
-// loadTemporaryTable will write the data into /tmp/newTableName.csv
-// This way, another function can call this and then invoke a Snowflake PUT.
-// Returns the file path and potential error
-func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableName string) (string, error) {
-	filePath := fmt.Sprintf("/tmp/%s.csv", newTableName)
-	file, err := os.Create(filePath)
+func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableName string) (string, error) {
+	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv", newTableName))
+	file, err := os.Create(fp)
 	if err != nil {
 		return "", err
 	}
@@ -106,10 +98,8 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 	for _, value := range tableData.Rows() {
 		var row []string
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil) {
-			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
-			colVal := value[col]
-			// Check
-			castedValue, castErr := castColValStaging(colVal, colKind, additionalDateFmts)
+			column, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
+			castedValue, castErr := castColValStaging(value[col], column, additionalDateFmts)
 			if castErr != nil {
 				return "", castErr
 			}
@@ -123,5 +113,5 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 	}
 
 	writer.Flush()
-	return filePath, writer.Error()
+	return fp, writer.Error()
 }
