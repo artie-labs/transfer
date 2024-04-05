@@ -165,9 +165,8 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 		resourceName := addPrefixToTableName(tempTableName, "%")
 		// Second call is a PUT
 		putQuery, _ := s.fakeStageStore.ExecArgsForCall(1)
-		assert.Equal(s.T(), fmt.Sprintf(`PUT file:///tmp/%s.csv @%s AUTO_COMPRESS=TRUE`,
-			tempTableName, resourceName), putQuery)
-
+		assert.Contains(s.T(), putQuery, "PUT file://", putQuery)
+		assert.Contains(s.T(), putQuery, fmt.Sprintf("@%s AUTO_COMPRESS=TRUE", resourceName))
 		// Third call is a COPY INTO
 		copyQuery, _ := s.fakeStageStore.ExecArgsForCall(2)
 		assert.Equal(s.T(), fmt.Sprintf(`COPY INTO %s (user_id,first_name,last_name,dusty) FROM (SELECT $1,$2,$3,$4 FROM @%s)`,
@@ -183,7 +182,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 
 func (s *SnowflakeTestSuite) TestLoadTemporaryTable() {
 	tempTableName, tableData := generateTableData(100)
-	fp, err := s.stageStore.writeTemporaryTable(tableData, tempTableName)
+	fp, err := s.stageStore.writeTemporaryTableFile(tableData, tempTableName)
 	assert.NoError(s.T(), err)
 	// Read the CSV and confirm.
 	csvfile, err := os.Open(fp)

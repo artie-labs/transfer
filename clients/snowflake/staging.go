@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -46,7 +47,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	}
 
 	// Write data into CSV
-	fp, err := s.writeTemporaryTable(tableData, tempTableName)
+	fp, err := s.writeTemporaryTableFile(tableData, tempTableName)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
@@ -82,9 +83,9 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	return nil
 }
 
-func (s *Store) writeTemporaryTable(tableData *optimization.TableData, newTableName string) (string, error) {
-	filePath := fmt.Sprintf("/tmp/%s.csv", newTableName)
-	file, err := os.Create(filePath)
+func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableName string) (string, error) {
+	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv", newTableName))
+	file, err := os.Create(fp)
 	if err != nil {
 		return "", err
 	}
@@ -112,5 +113,5 @@ func (s *Store) writeTemporaryTable(tableData *optimization.TableData, newTableN
 	}
 
 	writer.Flush()
-	return filePath, writer.Error()
+	return fp, writer.Error()
 }
