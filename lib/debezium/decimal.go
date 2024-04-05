@@ -6,6 +6,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
+// EncodeDecimal is used to encode a string representation of a number to `org.apache.kafka.connect.data.Decimal`.
 func EncodeDecimal(value string, scale int) []byte {
 	scaledValue := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
 	bigFloatValue := new(big.Float)
@@ -44,11 +45,7 @@ func EncodeDecimal(value string, scale int) []byte {
 	return data
 }
 
-// DecodeDecimal is used to handle `org.apache.kafka.connect.data.Decimal` where this would be emitted by Debezium when the `decimal.handling.mode` is `precise`
-// * Data - takes a slice of bytes
-// * Parameters - which contains:
-//   - `scale` (number of digits following decimal point)
-//   - `connect.decimal.precision` which is an optional parameter. (If -1, then it's variable and .Value() will be in STRING).
+// DecodeDecimal is used to decode `org.apache.kafka.connect.data.Decimal`.
 func DecodeDecimal(data []byte, precision *int, scale int) (*decimal.Decimal, error) {
 	bigInt := new(big.Int)
 

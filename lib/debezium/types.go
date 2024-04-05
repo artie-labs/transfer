@@ -139,6 +139,11 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ex
 	return extTime, err
 }
 
+// DecodeDecimal is used to handle `org.apache.kafka.connect.data.Decimal` where this would be emitted by Debezium when the `decimal.handling.mode` is `precise`
+// * Data - takes a slice of bytes
+// * Parameters - which contains:
+//   - `scale` (number of digits following decimal point)
+//   - `connect.decimal.precision` which is an optional parameter. (If -1, then it's variable and .Value() will be in STRING).
 func (f Field) DecodeDecimal(encoded []byte) (*decimal.Decimal, error) {
 	results, err := f.GetScaleAndPrecision()
 	if err != nil {
