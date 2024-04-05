@@ -53,12 +53,12 @@ const (
 )
 
 type Field struct {
-	Type         FieldType      `json:"type"`
-	Optional     bool           `json:"optional"`
-	Default      any            `json:"default"`
-	FieldName    string         `json:"field"`
-	DebeziumType string         `json:"name"`
-	Parameters   map[string]any `json:"parameters"`
+	Type         FieldType             `json:"type"`
+	Optional     bool                  `json:"optional"`
+	Default      any                   `json:"default"`
+	FieldName    string                `json:"field"`
+	DebeziumType SupportedDebeziumType `json:"name"`
+	Parameters   map[string]any        `json:"parameters"`
 }
 
 func (f Field) IsInteger() (valid bool) {
@@ -96,15 +96,15 @@ func (f Field) ToKindDetails() typing.KindDetails {
 	// We'll first cast based on Debezium types
 	// Then, we'll fall back on the actual data types.
 	switch f.DebeziumType {
-	case string(Timestamp), string(MicroTimestamp), string(DateTimeKafkaConnect), string(DateTimeWithTimezone):
+	case Timestamp, MicroTimestamp, DateTimeKafkaConnect, DateTimeWithTimezone:
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)
-	case string(Date), string(DateKafkaConnect):
+	case Date, DateKafkaConnect:
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType)
-	case string(Time), string(TimeMicro), string(TimeKafkaConnect), string(TimeWithTimezone):
+	case Time, TimeMicro, TimeKafkaConnect, TimeWithTimezone:
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
-	case string(JSON), string(GeometryPointType), string(GeometryType), string(GeographyType):
+	case JSON, GeometryPointType, GeometryType, GeographyType:
 		return typing.Struct
-	case string(KafkaDecimalType):
+	case KafkaDecimalType:
 		scaleAndPrecision, err := f.GetScaleAndPrecision()
 		if err != nil {
 			return typing.Invalid
@@ -113,7 +113,7 @@ func (f Field) ToKindDetails() typing.KindDetails {
 		eDecimal := typing.EDecimal
 		eDecimal.ExtendedDecimalDetails = decimal.NewDecimal(scaleAndPrecision.Precision, scaleAndPrecision.Scale, nil)
 		return eDecimal
-	case string(KafkaVariableNumericType):
+	case KafkaVariableNumericType:
 		// For variable numeric types, we are defaulting to a scale of 5
 		// This is because scale is not specified at the column level, rather at the row level
 		// It shouldn't matter much anyway since the column type we are creating is `TEXT` to avoid boundary errors.
