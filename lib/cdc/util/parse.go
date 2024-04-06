@@ -2,7 +2,6 @@ package util
 
 import (
 	"fmt"
-	"log/slog"
 	"strconv"
 
 	"github.com/artie-labs/transfer/lib/debezium"
@@ -41,13 +40,6 @@ func parseField(field debezium.Field, value any) (any, error) {
 		case debezium.KafkaVariableNumericType:
 			return field.DecodeDebeziumVariableDecimal(value)
 		default:
-			if _, ok := value.(float64); !ok {
-				slog.Error("Time value is not a float64",
-					slog.Any("value", value),
-					slog.String("type", fmt.Sprintf("%T", value)),
-				)
-			}
-
 			// Need to cast this as a FLOAT first because the number may come out in scientific notation
 			// ParseFloat is apt to handle it, and ParseInt is not, see: https://github.com/golang/go/issues/19288
 			floatVal, castErr := strconv.ParseFloat(fmt.Sprint(value), 64)
