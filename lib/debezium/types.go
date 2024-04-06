@@ -87,9 +87,9 @@ func ToBytes(value any) ([]byte, error) {
 		stringVal = typedValue
 	default:
 		// TODO: Make this a hard error if we don't observe this happening.
-		slog.Error("Expected string/[]byte, falling back to string",
+		slog.Error("Expected string/[]byte, falling back to fmt.Sprint(value)",
 			slog.String("type", fmt.Sprintf("%T", value)),
-			slog.Any("value", fmt.Sprintf("%T", value)),
+			slog.Any("value", value),
 		)
 		stringVal = fmt.Sprint(value)
 	}
