@@ -46,7 +46,7 @@ func EncodeDecimal(value string, scale int) []byte {
 }
 
 // DecodeDecimal is used to decode `org.apache.kafka.connect.data.Decimal`.
-func DecodeDecimal(data []byte, precision *int, scale int) (*decimal.Decimal, error) {
+func DecodeDecimal(data []byte, precision *int, scale int) *decimal.Decimal {
 	bigInt := new(big.Int)
 
 	// If the data represents a negative number, the sign bit will be set.
@@ -75,5 +75,5 @@ func DecodeDecimal(data []byte, precision *int, scale int) (*decimal.Decimal, er
 
 	// Perform the division
 	bigFloat.Quo(bigFloat, divisorFloat)
-	return decimal.NewDecimal(precision, scale, bigFloat), nil
+	return decimal.NewDecimal(precision, scale, bigFloat)
 }

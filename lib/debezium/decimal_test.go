@@ -69,9 +69,8 @@ func TestEncodeDecimal(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		actualEncodedValue := EncodeDecimal(tc.value, tc.scale)
-		decodedValue, err := DecodeDecimal(actualEncodedValue, nil, tc.scale)
-		assert.NoError(t, err, tc.name)
+		encodedValue := EncodeDecimal(tc.value, tc.scale)
+		decodedValue := DecodeDecimal(encodedValue, nil, tc.scale)
 		assert.Equal(t, tc.value, decodedValue.String(), tc.name)
 	}
 }

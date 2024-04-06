@@ -148,7 +148,7 @@ func (f Field) DecodeDecimal(encoded []byte) (*decimal.Decimal, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get scale and/or precision: %w", err)
 	}
-	return DecodeDecimal(encoded, results.Precision, results.Scale)
+	return DecodeDecimal(encoded, results.Precision, results.Scale), nil
 }
 
 func (f Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error) {

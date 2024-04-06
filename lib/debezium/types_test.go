@@ -273,26 +273,26 @@ func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 		name        string
 		value       any
 		expectValue string
-		expectError bool
+		expectError string
 		expectScale int
 	}
 
 	testCases := []_testCase{
 		{
 			name:        "empty val (nil)",
-			expectError: true,
+			expectError: "value is not map[string]any type",
 		},
 		{
 			name:        "empty map",
 			value:       map[string]any{},
-			expectError: true,
+			expectError: "object is empty",
 		},
 		{
 			name: "scale is not an integer",
 			value: map[string]any{
 				"scale": "foo",
 			},
-			expectError: true,
+			expectError: "key: scale is not type integer:",
 		},
 		{
 			name: "value exists (scale 3)",
@@ -321,13 +321,30 @@ func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 			expectValue: "-105.2813669",
 			expectScale: 7,
 		},
+		{
+			name: "malformed base64 value",
+			value: map[string]any{
+				"scale": 7,
+				"value": "==wT9Wmw==",
+			},
+			expectError: "failed to base64 decode",
+		},
+		{
+			name: "[]byte value",
+			value: map[string]any{
+				"scale": 7,
+				"value": []byte{193, 63, 86, 155},
+			},
+			expectValue: "-105.2813669",
+			expectScale: 7,
+		},
 	}
 
 	for _, testCase := range testCases {
 		field := Field{}
 		dec, err := field.DecodeDebeziumVariableDecimal(testCase.value)
-		if testCase.expectError {
-			assert.Error(t, err, testCase.name)
+		if testCase.expectError != "" {
+			assert.ErrorContains(t, err, testCase.expectError, testCase.name)
 			continue
 		}
 
