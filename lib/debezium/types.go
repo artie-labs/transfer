@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 
 	"github.com/artie-labs/transfer/lib/maputil"
@@ -173,5 +172,10 @@ func (f Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error
 		return nil, err
 	}
 
-	return DecodeDecimal(bytes, ptr.ToInt(-1), scale)
+	f.Parameters = map[string]any{
+		"scale":                  scale,
+		KafkaDecimalPrecisionKey: "-1",
+	}
+
+	return f.DecodeDecimal(bytes)
 }
