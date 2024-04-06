@@ -78,14 +78,14 @@ func RequiresSpecialTypeCasting(typeLabel SupportedDebeziumType) (bool, Supporte
 // - If value is a string we will attempt to base64 decode it.
 // - If value is any other type we will convert it to a string and then attempt to base64 decode it.
 func ToBytes(value any) ([]byte, error) {
-	if bytes, ok := value.([]byte); ok {
-		return bytes, nil
-	}
-
 	var stringVal string
-	if str, ok := value.(string); ok {
-		stringVal = str
-	} else {
+
+	switch typedValue := value.(type) {
+	case []byte:
+		return typedValue, nil
+	case string:
+		stringVal = typedValue
+	default:
 		// TODO: Make this a hard error if we don't observe this happening.
 		slog.Error("Expected string/[]byte, falling back to string",
 			slog.String("type", fmt.Sprintf("%T", value)),
