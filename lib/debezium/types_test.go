@@ -293,7 +293,7 @@ func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 			value: map[string]any{
 				"scale": "foo",
 			},
-			expectedErr: "key: scale is not type integer:",
+			expectedErr: "key: scale is not type integer",
 		},
 		{
 			name: "value exists (scale 3)",
