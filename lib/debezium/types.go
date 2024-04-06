@@ -172,6 +172,7 @@ func (f Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error
 		return nil, err
 	}
 
+	// TODO: Could probably just call [DecodeDecimal] directly with scale and -1.
 	f.Parameters = map[string]any{
 		"scale":                  scale,
 		KafkaDecimalPrecisionKey: "-1",
