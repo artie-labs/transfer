@@ -20,8 +20,8 @@ func TestToBytes(t *testing.T) {
 	testCases := []_testCase{
 		{
 			name:          "[]byte",
-			value:         []byte{byte(40), byte(39), byte(38)},
-			expectedValue: []byte{byte(40), byte(39), byte(38)},
+			value:         []byte{40, 39, 38},
+			expectedValue: []byte{40, 39, 38},
 		},
 		{
 			name:          "base64 encoded string",
