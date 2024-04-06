@@ -270,29 +270,30 @@ func TestDecodeDecimal(t *testing.T) {
 
 func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 	type _testCase struct {
-		name        string
-		value       any
-		expectValue string
-		expectError string
-		expectScale int
+		name  string
+		value any
+
+		expectedValue string
+		expectedScale int
+		expectedErr   string
 	}
 
 	testCases := []_testCase{
 		{
 			name:        "empty val (nil)",
-			expectError: "value is not map[string]any type",
+			expectedErr: "value is not map[string]any type",
 		},
 		{
 			name:        "empty map",
 			value:       map[string]any{},
-			expectError: "object is empty",
+			expectedErr: "object is empty",
 		},
 		{
 			name: "scale is not an integer",
 			value: map[string]any{
 				"scale": "foo",
 			},
-			expectError: "key: scale is not type integer:",
+			expectedErr: "key: scale is not type integer:",
 		},
 		{
 			name: "value exists (scale 3)",
@@ -300,8 +301,8 @@ func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 				"scale": 3,
 				"value": "SOx4FQ==",
 			},
-			expectValue: "1223456.789",
-			expectScale: 3,
+			expectedValue: "1223456.789",
+			expectedScale: 3,
 		},
 		{
 			name: "value exists (scale 2)",
@@ -309,8 +310,8 @@ func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 				"scale": 2,
 				"value": "MDk=",
 			},
-			expectValue: "123.45",
-			expectScale: 2,
+			expectedValue: "123.45",
+			expectedScale: 2,
 		},
 		{
 			name: "negative numbers (scale 7)",
@@ -318,8 +319,8 @@ func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 				"scale": 7,
 				"value": "wT9Wmw==",
 			},
-			expectValue: "-105.2813669",
-			expectScale: 7,
+			expectedValue: "-105.2813669",
+			expectedScale: 7,
 		},
 		{
 			name: "malformed base64 value",
@@ -327,7 +328,7 @@ func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 				"scale": 7,
 				"value": "==wT9Wmw==",
 			},
-			expectError: "failed to base64 decode",
+			expectedErr: "failed to base64 decode",
 		},
 		{
 			name: "[]byte value",
@@ -335,16 +336,16 @@ func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 				"scale": 7,
 				"value": []byte{193, 63, 86, 155},
 			},
-			expectValue: "-105.2813669",
-			expectScale: 7,
+			expectedValue: "-105.2813669",
+			expectedScale: 7,
 		},
 	}
 
 	for _, testCase := range testCases {
 		field := Field{}
 		dec, err := field.DecodeDebeziumVariableDecimal(testCase.value)
-		if testCase.expectError != "" {
-			assert.ErrorContains(t, err, testCase.expectError, testCase.name)
+		if testCase.expectedErr != "" {
+			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
 			continue
 		}
 
@@ -356,8 +357,8 @@ func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 		_, isOk = dec.Value().(string)
 		assert.True(t, isOk, testCase.name)
 		assert.Equal(t, -1, *dec.Precision(), testCase.name)
-		assert.Equal(t, testCase.expectScale, dec.Scale(), testCase.name)
-		assert.Equal(t, testCase.expectValue, dec.Value(), testCase.name)
+		assert.Equal(t, testCase.expectedScale, dec.Scale(), testCase.name)
+		assert.Equal(t, testCase.expectedValue, dec.Value(), testCase.name)
 	}
 
 }
