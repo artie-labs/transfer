@@ -8,6 +8,49 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestToBytes(t *testing.T) {
+	type _testCase struct {
+		name  string
+		value any
+
+		expectedValue []byte
+		expectedErr   string
+	}
+
+	testCases := []_testCase{
+		{
+			name:          "[]byte",
+			value:         []byte{byte(40), byte(39), byte(38)},
+			expectedValue: []byte{byte(40), byte(39), byte(38)},
+		},
+		{
+			name:          "base64 encoded string",
+			value:         "aGVsbG8gd29ybGQK",
+			expectedValue: []byte{0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x77, 0x6f, 0x72, 0x6c, 0x64, 0xa},
+		},
+		{
+			name:        "malformed string",
+			value:       "asdf$$$",
+			expectedErr: "failed to base64 decode",
+		},
+		{
+			name:        "type that isn't a string or []byte",
+			value:       map[string]any{},
+			expectedErr: "failed to base64 decode",
+		},
+	}
+
+	for _, testCase := range testCases {
+		actual, err := ToBytes(testCase.value)
+
+		if testCase.expectedErr == "" {
+			assert.Equal(t, testCase.expectedValue, actual, testCase.name)
+		} else {
+			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
+		}
+	}
+}
+
 func TestFromDebeziumTypeToTime(t *testing.T) {
 	dt, err := FromDebeziumTypeToTime(Date, int64(19401))
 	assert.Equal(t, "2023-02-13", dt.String(""))
