@@ -32,7 +32,11 @@ func parseField(field debezium.Field, value any) (any, error) {
 		case debezium.GeometryPointType:
 			return parseGeometryPoint(value)
 		case debezium.KafkaDecimalType:
-			return field.DecodeDecimal(fmt.Sprint(value))
+			bytes, err := debezium.ToBytes(value)
+			if err != nil {
+				return nil, err
+			}
+			return field.DecodeDecimal(bytes)
 		case debezium.KafkaVariableNumericType:
 			return field.DecodeDebeziumVariableDecimal(value)
 		default:

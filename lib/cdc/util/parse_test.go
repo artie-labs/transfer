@@ -10,12 +10,13 @@ import (
 
 func TestParseField(t *testing.T) {
 	type _testCase struct {
-		name          string
-		field         debezium.Field
-		value         any
-		expectedValue any
+		name  string
+		field debezium.Field
+		value any
 
+		expectedValue   any
 		expectedDecimal bool
+		expectedErr     string
 	}
 
 	testCases := []_testCase{
@@ -47,6 +48,31 @@ func TestParseField(t *testing.T) {
 				},
 			},
 			value:           "ew==",
+			expectedValue:   "123",
+			expectedDecimal: true,
+		},
+		{
+			name: "decimal malformed",
+			field: debezium.Field{
+				DebeziumType: debezium.KafkaDecimalType,
+				Parameters: map[string]any{
+					"scale":                           "0",
+					debezium.KafkaDecimalPrecisionKey: "5",
+				},
+			},
+			value:       "==ew==",
+			expectedErr: "failed to base64 decode",
+		},
+		{
+			name: "decimal []byte",
+			field: debezium.Field{
+				DebeziumType: debezium.KafkaDecimalType,
+				Parameters: map[string]any{
+					"scale":                           "0",
+					debezium.KafkaDecimalPrecisionKey: "5",
+				},
+			},
+			value:           []byte{123},
 			expectedValue:   "123",
 			expectedDecimal: true,
 		},
@@ -159,13 +185,17 @@ func TestParseField(t *testing.T) {
 
 	for _, testCase := range testCases {
 		actualField, err := parseField(testCase.field, testCase.value)
-		assert.NoError(t, err, testCase.name)
-		if testCase.expectedDecimal {
-			decVal, isOk := actualField.(*decimal.Decimal)
-			assert.True(t, isOk)
-			assert.Equal(t, testCase.expectedValue, decVal.String(), testCase.name)
+		if testCase.expectedErr != "" {
+			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
 		} else {
-			assert.Equal(t, testCase.expectedValue, actualField, testCase.name)
+			assert.NoError(t, err, testCase.name)
+			if testCase.expectedDecimal {
+				decVal, isOk := actualField.(*decimal.Decimal)
+				assert.True(t, isOk)
+				assert.Equal(t, testCase.expectedValue, decVal.String(), testCase.name)
+			} else {
+				assert.Equal(t, testCase.expectedValue, actualField, testCase.name)
+			}
 		}
 	}
 }

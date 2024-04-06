@@ -8,6 +8,49 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestToBytes(t *testing.T) {
+	type _testCase struct {
+		name  string
+		value any
+
+		expectedValue []byte
+		expectedErr   string
+	}
+
+	testCases := []_testCase{
+		{
+			name:          "[]byte",
+			value:         []byte{40, 39, 38},
+			expectedValue: []byte{40, 39, 38},
+		},
+		{
+			name:          "base64 encoded string",
+			value:         "aGVsbG8gd29ybGQK",
+			expectedValue: []byte{0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x77, 0x6f, 0x72, 0x6c, 0x64, 0xa},
+		},
+		{
+			name:        "malformed string",
+			value:       "asdf$$$",
+			expectedErr: "failed to base64 decode",
+		},
+		{
+			name:        "type that isn't a string or []byte",
+			value:       map[string]any{},
+			expectedErr: "failed to base64 decode",
+		},
+	}
+
+	for _, testCase := range testCases {
+		actual, err := ToBytes(testCase.value)
+
+		if testCase.expectedErr == "" {
+			assert.Equal(t, testCase.expectedValue, actual, testCase.name)
+		} else {
+			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
+		}
+	}
+}
+
 func TestFromDebeziumTypeToTime(t *testing.T) {
 	dt, err := FromDebeziumTypeToTime(Date, int64(19401))
 	assert.Equal(t, "2023-02-13", dt.String(""))
@@ -201,7 +244,10 @@ func TestDecodeDecimal(t *testing.T) {
 			Parameters: testCase.params,
 		}
 
-		dec, err := field.DecodeDecimal(testCase.encoded)
+		bytes, err := ToBytes(testCase.encoded)
+		assert.NoError(t, err)
+
+		dec, err := field.DecodeDecimal(bytes)
 		if testCase.expectError {
 			assert.Error(t, err, testCase.name)
 			continue
@@ -224,29 +270,30 @@ func TestDecodeDecimal(t *testing.T) {
 
 func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 	type _testCase struct {
-		name        string
-		value       any
-		expectValue string
-		expectError bool
-		expectScale int
+		name  string
+		value any
+
+		expectedValue string
+		expectedScale int
+		expectedErr   string
 	}
 
 	testCases := []_testCase{
 		{
 			name:        "empty val (nil)",
-			expectError: true,
+			expectedErr: "value is not map[string]any type",
 		},
 		{
 			name:        "empty map",
 			value:       map[string]any{},
-			expectError: true,
+			expectedErr: "object is empty",
 		},
 		{
 			name: "scale is not an integer",
 			value: map[string]any{
 				"scale": "foo",
 			},
-			expectError: true,
+			expectedErr: "key: scale is not type integer",
 		},
 		{
 			name: "value exists (scale 3)",
@@ -254,8 +301,8 @@ func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 				"scale": 3,
 				"value": "SOx4FQ==",
 			},
-			expectValue: "1223456.789",
-			expectScale: 3,
+			expectedValue: "1223456.789",
+			expectedScale: 3,
 		},
 		{
 			name: "value exists (scale 2)",
@@ -263,8 +310,8 @@ func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 				"scale": 2,
 				"value": "MDk=",
 			},
-			expectValue: "123.45",
-			expectScale: 2,
+			expectedValue: "123.45",
+			expectedScale: 2,
 		},
 		{
 			name: "negative numbers (scale 7)",
@@ -272,16 +319,33 @@ func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 				"scale": 7,
 				"value": "wT9Wmw==",
 			},
-			expectValue: "-105.2813669",
-			expectScale: 7,
+			expectedValue: "-105.2813669",
+			expectedScale: 7,
+		},
+		{
+			name: "malformed base64 value",
+			value: map[string]any{
+				"scale": 7,
+				"value": "==wT9Wmw==",
+			},
+			expectedErr: "failed to base64 decode",
+		},
+		{
+			name: "[]byte value",
+			value: map[string]any{
+				"scale": 7,
+				"value": []byte{193, 63, 86, 155},
+			},
+			expectedValue: "-105.2813669",
+			expectedScale: 7,
 		},
 	}
 
 	for _, testCase := range testCases {
 		field := Field{}
 		dec, err := field.DecodeDebeziumVariableDecimal(testCase.value)
-		if testCase.expectError {
-			assert.Error(t, err, testCase.name)
+		if testCase.expectedErr != "" {
+			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
 			continue
 		}
 
@@ -293,8 +357,8 @@ func TestDecodeDebeziumVariableDecimal(t *testing.T) {
 		_, isOk = dec.Value().(string)
 		assert.True(t, isOk, testCase.name)
 		assert.Equal(t, -1, *dec.Precision(), testCase.name)
-		assert.Equal(t, testCase.expectScale, dec.Scale(), testCase.name)
-		assert.Equal(t, testCase.expectValue, dec.Value(), testCase.name)
+		assert.Equal(t, testCase.expectedScale, dec.Scale(), testCase.name)
+		assert.Equal(t, testCase.expectedValue, dec.Value(), testCase.name)
 	}
 
 }

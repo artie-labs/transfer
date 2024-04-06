@@ -3,7 +3,7 @@ package debezium
 import (
 	"encoding/base64"
 	"fmt"
-	"math/big"
+	"log/slog"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -73,6 +73,34 @@ func RequiresSpecialTypeCasting(typeLabel SupportedDebeziumType) (bool, Supporte
 	return false, Invalid
 }
 
+// ToBytes attempts to convert a value of unknown type to a slice of bytes.
+// - If value is already a slice of bytes it will be directly returned.
+// - If value is a string we will attempt to base64 decode it.
+// - If value is any other type we will convert it to a string and then attempt to base64 decode it.
+func ToBytes(value any) ([]byte, error) {
+	var stringVal string
+
+	switch typedValue := value.(type) {
+	case []byte:
+		return typedValue, nil
+	case string:
+		stringVal = typedValue
+	default:
+		// TODO: Make this a hard error if we don't observe this happening.
+		slog.Error("Expected string/[]byte, falling back to fmt.Sprint(value)",
+			slog.String("type", fmt.Sprintf("%T", value)),
+			slog.Any("value", value),
+		)
+		stringVal = fmt.Sprint(value)
+	}
+
+	data, err := base64.StdEncoding.DecodeString(stringVal)
+	if err != nil {
+		return nil, fmt.Errorf("failed to base64 decode: %w", err)
+	}
+	return data, nil
+}
+
 // FromDebeziumTypeToTime is implemented by following this spec: https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-temporal-types
 func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ext.ExtendedTime, error) {
 	var extTime *ext.ExtendedTime
@@ -111,50 +139,16 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ex
 }
 
 // DecodeDecimal is used to handle `org.apache.kafka.connect.data.Decimal` where this would be emitted by Debezium when the `decimal.handling.mode` is `precise`
-// * Encoded - takes the base64 encoded value
+// * Encoded - takes the encoded value as a slice of bytes
 // * Parameters - which contains:
 //   - `scale` (number of digits following decimal point)
 //   - `connect.decimal.precision` which is an optional parameter. (If -1, then it's variable and .Value() will be in STRING).
-func (f Field) DecodeDecimal(encoded string) (*decimal.Decimal, error) {
+func (f Field) DecodeDecimal(encoded []byte) (*decimal.Decimal, error) {
 	results, err := f.GetScaleAndPrecision()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get scale and/or precision: %w", err)
 	}
-
-	data, err := base64.StdEncoding.DecodeString(encoded)
-	if err != nil {
-		return nil, fmt.Errorf("failed to base64 decode: %w", err)
-	}
-
-	bigInt := new(big.Int)
-
-	// If the data represents a negative number, the sign bit will be set.
-	if len(data) > 0 && data[0] >= 0x80 {
-		// To convert the data to a two's complement integer, we need to invert the bytes and add one.
-		for i := range data {
-			data[i] = ^data[i]
-		}
-
-		bigInt.SetBytes(data)
-		// We are adding this because Debezium (Java) encoded this value and uses two's complement binary representation for negative numbers
-		bigInt.Add(bigInt, big.NewInt(1))
-		bigInt.Neg(bigInt)
-	} else {
-		bigInt.SetBytes(data)
-	}
-
-	// Convert the big integer to a big float
-	bigFloat := new(big.Float).SetInt(bigInt)
-
-	// Compute divisor as 10^scale with big.Int's Exp, then convert to big.Float
-	scaleInt := big.NewInt(int64(results.Scale))
-	ten := big.NewInt(10)
-	divisorInt := new(big.Int).Exp(ten, scaleInt, nil)
-	divisorFloat := new(big.Float).SetInt(divisorInt)
-
-	// Perform the division
-	bigFloat.Quo(bigFloat, divisorFloat)
-	return decimal.NewDecimal(results.Precision, results.Scale, bigFloat), nil
+	return DecodeDecimal(encoded, results.Precision, results.Scale), nil
 }
 
 func (f Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error) {
@@ -173,10 +167,16 @@ func (f Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error
 		return nil, fmt.Errorf("encoded value does not exist")
 	}
 
+	bytes, err := ToBytes(val)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Could probably just call [DecodeDecimal] directly with scale and -1.
 	f.Parameters = map[string]any{
 		"scale":                  scale,
 		KafkaDecimalPrecisionKey: "-1",
 	}
 
-	return f.DecodeDecimal(fmt.Sprint(val))
+	return f.DecodeDecimal(bytes)
 }
