@@ -73,7 +73,7 @@ func RequiresSpecialTypeCasting(typeLabel SupportedDebeziumType) (bool, Supporte
 	return false, Invalid
 }
 
-// toBytes attempts to convert a value of unknown type to a slice of bytes.
+// ToBytes attempts to convert a value of unknown type to a slice of bytes.
 // - If value is already a slice of bytes it will be directly returned.
 // - If value is a string we will attempt to base64 decode it.
 // - If value is any other type we will convert it to a string and then attempt to base64 decode it.
