@@ -38,7 +38,8 @@ func parseField(field debezium.Field, value any) (any, error) {
 		return field.DecodeDecimal(bytes)
 	case debezium.KafkaVariableNumericType:
 		return field.DecodeDebeziumVariableDecimal(value)
-	case debezium.Timestamp,
+	case
+		debezium.Timestamp,
 		debezium.MicroTimestamp,
 		debezium.Date,
 		debezium.Time,
