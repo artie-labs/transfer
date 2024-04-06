@@ -34,7 +34,7 @@ func parseField(field debezium.Field, value any) (any, error) {
 		case debezium.KafkaDecimalType:
 			bytes, err := debezium.ToBytes(value)
 			if err != nil {
-				return nil, nil
+				return nil, err
 			}
 			return field.DecodeDecimal(bytes)
 		case debezium.KafkaVariableNumericType:
