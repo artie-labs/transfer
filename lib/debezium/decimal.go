@@ -68,12 +68,12 @@ func DecodeDecimal(data []byte, precision *int, scale int) (*decimal.Decimal, er
 	bigFloat := new(big.Float).SetInt(bigInt)
 
 	// Compute divisor as 10^scale with big.Int's Exp, then convert to big.Float
-	scaleInt := big.NewInt(int64(scale))
+	scaleInt := big.NewInt(int64(results.Scale))
 	ten := big.NewInt(10)
 	divisorInt := new(big.Int).Exp(ten, scaleInt, nil)
 	divisorFloat := new(big.Float).SetInt(divisorInt)
 
 	// Perform the division
 	bigFloat.Quo(bigFloat, divisorFloat)
-	return decimal.NewDecimal(precision, scale, bigFloat), nil
+	return decimal.NewDecimal(results.Precision, results.Scale, bigFloat), nil
 }
