@@ -17,7 +17,6 @@ import (
 type SupportedDebeziumType string
 
 const (
-	Invalid SupportedDebeziumType = "invalid"
 	JSON    SupportedDebeziumType = "io.debezium.data.Json"
 	Enum    SupportedDebeziumType = "io.debezium.data.Enum"
 	EnumSet SupportedDebeziumType = "io.debezium.data.EnumSet"
@@ -46,33 +45,6 @@ const (
 
 	KafkaDecimalPrecisionKey = "connect.decimal.precision"
 )
-
-var typesThatRequireTypeCasting = []SupportedDebeziumType{
-	Timestamp,
-	MicroTimestamp,
-	Date,
-	Time,
-	MicroTime,
-	DateKafkaConnect,
-	TimeKafkaConnect,
-	DateTimeKafkaConnect,
-	KafkaDecimalType,
-	KafkaVariableNumericType,
-	JSON,
-	GeometryPointType,
-	GeometryType,
-	GeographyType,
-}
-
-func RequiresSpecialTypeCasting(typeLabel SupportedDebeziumType) (bool, SupportedDebeziumType) {
-	for _, supportedType := range typesThatRequireTypeCasting {
-		if typeLabel == supportedType {
-			return true, supportedType
-		}
-	}
-
-	return false, Invalid
-}
 
 // ToBytes attempts to convert a value of unknown type to a slice of bytes.
 // - If value is already a slice of bytes it will be directly returned.

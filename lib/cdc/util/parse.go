@@ -23,32 +23,38 @@ func parseField(field debezium.Field, value any) (any, error) {
 		return int(valFloat), nil
 	}
 
-	if valid, supportedType := debezium.RequiresSpecialTypeCasting(field.DebeziumType); valid {
-		switch debezium.SupportedDebeziumType(field.DebeziumType) {
-		case debezium.JSON:
-			return jsonutil.SanitizePayload(value)
-		case debezium.GeometryType, debezium.GeographyType:
-			return parseGeometry(value)
-		case debezium.GeometryPointType:
-			return parseGeometryPoint(value)
-		case debezium.KafkaDecimalType:
-			bytes, err := debezium.ToBytes(value)
-			if err != nil {
-				return nil, err
-			}
-			return field.DecodeDecimal(bytes)
-		case debezium.KafkaVariableNumericType:
-			return field.DecodeDebeziumVariableDecimal(value)
-		default:
-			// Need to cast this as a FLOAT first because the number may come out in scientific notation
-			// ParseFloat is apt to handle it, and ParseInt is not, see: https://github.com/golang/go/issues/19288
-			floatVal, castErr := strconv.ParseFloat(fmt.Sprint(value), 64)
-			if castErr != nil {
-				return nil, castErr
-			}
-
-			return debezium.FromDebeziumTypeToTime(supportedType, int64(floatVal))
+	switch field.DebeziumType {
+	case debezium.JSON:
+		return jsonutil.SanitizePayload(value)
+	case debezium.GeometryType, debezium.GeographyType:
+		return parseGeometry(value)
+	case debezium.GeometryPointType:
+		return parseGeometryPoint(value)
+	case debezium.KafkaDecimalType:
+		bytes, err := debezium.ToBytes(value)
+		if err != nil {
+			return nil, err
 		}
+		return field.DecodeDecimal(bytes)
+	case debezium.KafkaVariableNumericType:
+		return field.DecodeDebeziumVariableDecimal(value)
+	case
+		debezium.Timestamp,
+		debezium.MicroTimestamp,
+		debezium.Date,
+		debezium.Time,
+		debezium.MicroTime,
+		debezium.DateKafkaConnect,
+		debezium.TimeKafkaConnect,
+		debezium.DateTimeKafkaConnect:
+		// Need to cast this as a FLOAT first because the number may come out in scientific notation
+		// ParseFloat is apt to handle it, and ParseInt is not, see: https://github.com/golang/go/issues/19288
+		floatVal, castErr := strconv.ParseFloat(fmt.Sprint(value), 64)
+		if castErr != nil {
+			return nil, castErr
+		}
+
+		return debezium.FromDebeziumTypeToTime(field.DebeziumType, int64(floatVal))
 	}
 
 	return value, nil
