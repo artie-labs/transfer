@@ -11,8 +11,7 @@ import (
 func EncodeDecimal(value string, scale int) ([]byte, error) {
 	scaledValue := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
 	bigFloatValue := new(big.Float)
-	_, success := bigFloatValue.SetString(value)
-	if !success {
+	if _, success := bigFloatValue.SetString(value); !success {
 		return nil, fmt.Errorf("unable to use '%s' as a floating-point number", value)
 	}
 	bigFloatValue.Mul(bigFloatValue, new(big.Float).SetInt(scaledValue))
