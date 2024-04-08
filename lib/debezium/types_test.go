@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -47,6 +48,198 @@ func TestToBytes(t *testing.T) {
 			assert.Equal(t, testCase.expectedValue, actual, testCase.name)
 		} else {
 			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
+		}
+	}
+}
+
+func TestField_ParseValue(t *testing.T) {
+	type _testCase struct {
+		name  string
+		field Field
+		value any
+
+		expectedValue   any
+		expectedDecimal bool
+		expectedErr     string
+	}
+
+	testCases := []_testCase{
+		{
+			name:          "nil",
+			value:         nil,
+			expectedValue: nil,
+		},
+		{
+			name:          "string",
+			value:         "robin",
+			expectedValue: "robin",
+		},
+		{
+			name: "integer",
+			field: Field{
+				Type: Int32,
+			},
+			value:         float64(3),
+			expectedValue: 3,
+		},
+		{
+			name: "decimal",
+			field: Field{
+				DebeziumType: KafkaDecimalType,
+				Parameters: map[string]any{
+					"scale":                  "0",
+					KafkaDecimalPrecisionKey: "5",
+				},
+			},
+			value:           "ew==",
+			expectedValue:   "123",
+			expectedDecimal: true,
+		},
+		{
+			name: "decimal malformed",
+			field: Field{
+				DebeziumType: KafkaDecimalType,
+				Parameters: map[string]any{
+					"scale":                  "0",
+					KafkaDecimalPrecisionKey: "5",
+				},
+			},
+			value:       "==ew==",
+			expectedErr: "failed to base64 decode",
+		},
+		{
+			name: "decimal []byte",
+			field: Field{
+				DebeziumType: KafkaDecimalType,
+				Parameters: map[string]any{
+					"scale":                  "0",
+					KafkaDecimalPrecisionKey: "5",
+				},
+			},
+			value:           []byte{123},
+			expectedValue:   "123",
+			expectedDecimal: true,
+		},
+		{
+			name: "numeric",
+			field: Field{
+				DebeziumType: KafkaDecimalType,
+				Parameters: map[string]any{
+					"scale":                  "2",
+					KafkaDecimalPrecisionKey: "5",
+				},
+			},
+			value:           "AN3h",
+			expectedValue:   "568.01",
+			expectedDecimal: true,
+		},
+		{
+			name: "money",
+			field: Field{
+				DebeziumType: KafkaDecimalType,
+				Parameters: map[string]any{
+					"scale": "2",
+				},
+			},
+			value:           "ALxhTg==",
+			expectedValue:   "123456.78",
+			expectedDecimal: true,
+		},
+		{
+			name: "variable decimal",
+			field: Field{
+				DebeziumType: KafkaVariableNumericType,
+				Parameters: map[string]any{
+					"scale": "2",
+				},
+			},
+			value: map[string]any{
+				"scale": 2,
+				"value": "MDk=",
+			},
+			expectedValue:   "123.45",
+			expectedDecimal: true,
+		},
+		{
+			name: "geometry (no srid)",
+			field: Field{
+				DebeziumType: GeometryType,
+			},
+			value: map[string]any{
+				"srid": nil,
+				"wkb":  "AQEAAAAAAAAAAADwPwAAAAAAABRA",
+			},
+			expectedValue: `{"type":"Feature","geometry":{"type":"Point","coordinates":[1,5]},"properties":null}`,
+		},
+		{
+			name: "geometry (w/ srid)",
+			field: Field{
+				DebeziumType: GeometryType,
+			},
+			value: map[string]any{
+				"srid": 4326,
+				"wkb":  "AQEAACDmEAAAAAAAAAAA8D8AAAAAAAAYQA==",
+			},
+			expectedValue: `{"type":"Feature","geometry":{"type":"Point","coordinates":[1,6]},"properties":null}`,
+		},
+		{
+			name: "geography (w/ srid)",
+			field: Field{
+				DebeziumType: GeographyType,
+			},
+			value: map[string]any{
+				"srid": 4326,
+				"wkb":  "AQEAACDmEAAAAAAAAADAXkAAAAAAAIBDwA==",
+			},
+			expectedValue: `{"type":"Feature","geometry":{"type":"Point","coordinates":[123,-39]},"properties":null}`,
+		},
+		{
+			name: "json",
+			field: Field{
+				DebeziumType: JSON,
+			},
+			value:         `{"foo": "bar", "foo": "bar"}`,
+			expectedValue: `{"foo":"bar"}`,
+		},
+		{
+			name: "array value in JSONB",
+			field: Field{
+				DebeziumType: JSON,
+			},
+			value:         `[1,2,3]`,
+			expectedValue: `[1,2,3]`,
+		},
+		{
+			name: "array of objects in JSONB",
+			field: Field{
+				DebeziumType: JSON,
+			},
+			value:         `[{"foo":"bar", "foo": "bar"}, {"hello":"world"}, {"dusty":"the mini aussie"}]`,
+			expectedValue: `[{"foo":"bar"},{"hello":"world"},{"dusty":"the mini aussie"}]`,
+		},
+		{
+			name: "array of arrays of objects in JSONB",
+			field: Field{
+				DebeziumType: JSON,
+			},
+			value:         `[[{"foo":"bar", "foo": "bar"}], [{"hello":"world"}, {"dusty":"the mini aussie"}]]`,
+			expectedValue: `[[{"foo":"bar"}],[{"hello":"world"},{"dusty":"the mini aussie"}]]`,
+		},
+	}
+
+	for _, testCase := range testCases {
+		actualField, err := testCase.field.ParseValue(testCase.value)
+		if testCase.expectedErr != "" {
+			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
+		} else {
+			assert.NoError(t, err, testCase.name)
+			if testCase.expectedDecimal {
+				decVal, isOk := actualField.(*decimal.Decimal)
+				assert.True(t, isOk)
+				assert.Equal(t, testCase.expectedValue, decVal.String(), testCase.name)
+			} else {
+				assert.Equal(t, testCase.expectedValue, actualField, testCase.name)
+			}
 		}
 	}
 }

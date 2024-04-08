@@ -48,7 +48,7 @@ func (s *SchemaEventPayload) GetColumns() *columns.Columns {
 		// We are purposefully doing this to ensure that the correct typing is set
 		// When we invoke event.Save()
 		col := columns.NewColumn(columns.EscapeName(field.FieldName), typing.Invalid)
-		val, parseErr := parseField(field, field.Default)
+		val, parseErr := field.ParseValue(field.Default)
 		if parseErr != nil {
 			slog.Warn("Failed to parse field, using original value", slog.Any("err", parseErr),
 				slog.String("field", field.FieldName), slog.Any("value", field.Default))
@@ -121,7 +121,7 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 				continue
 			}
 
-			val, parseErr := parseField(field, retMap[field.FieldName])
+			val, parseErr := field.ParseValue(retMap[field.FieldName])
 			if parseErr == nil {
 				retMap[field.FieldName] = val
 			} else {
