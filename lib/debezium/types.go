@@ -121,7 +121,6 @@ func (f Field) ParseValue(value any) (any, error) {
 			// aren't doing float -> string -> float.
 			slog.Error(fmt.Sprintf("Expected float64 received %T with value '%v'", value, value))
 		}
-
 		// Need to cast this as a FLOAT first because the number may come out in scientific notation
 		// ParseFloat is apt to handle it, and ParseInt is not, see: https://github.com/golang/go/issues/19288
 		floatVal, castErr := strconv.ParseFloat(fmt.Sprint(value), 64)
