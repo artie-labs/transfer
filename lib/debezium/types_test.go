@@ -61,11 +61,6 @@ func TestToInt64(t *testing.T) {
 		expectedErr   string
 	}{
 		{
-			name:          "float64",
-			value:         float64(12321),
-			expectedValue: int64(12321),
-		},
-		{
 			name:          "int",
 			value:         int(12321),
 			expectedValue: int64(12321),
@@ -76,13 +71,18 @@ func TestToInt64(t *testing.T) {
 			expectedValue: int64(12321),
 		},
 		{
-			name:          "int16",
+			name:          "int32",
 			value:         int32(12321),
 			expectedValue: int64(12321),
 		},
 		{
 			name:          "int64",
 			value:         int64(12321),
+			expectedValue: int64(12321),
+		},
+		{
+			name:          "float64",
+			value:         float64(12321),
 			expectedValue: int64(12321),
 		},
 		{
