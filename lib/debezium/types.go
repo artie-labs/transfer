@@ -48,11 +48,11 @@ const (
 	KafkaDecimalPrecisionKey = "connect.decimal.precision"
 )
 
-// ToBytes attempts to convert a value of unknown type to a slice of bytes.
+// toBytes attempts to convert a value of unknown type to a slice of bytes.
 // - If value is already a slice of bytes it will be directly returned.
 // - If value is a string we will attempt to base64 decode it.
 // - If value is any other type we will convert it to a string and then attempt to base64 decode it.
-func ToBytes(value any) ([]byte, error) {
+func toBytes(value any) ([]byte, error) {
 	var stringVal string
 
 	switch typedValue := value.(type) {
@@ -99,7 +99,7 @@ func (f Field) ParseValue(value any) (any, error) {
 	case GeometryPointType:
 		return parseGeometryPoint(value)
 	case KafkaDecimalType:
-		bytes, err := ToBytes(value)
+		bytes, err := toBytes(value)
 		if err != nil {
 			return nil, err
 		}
@@ -115,6 +115,12 @@ func (f Field) ParseValue(value any) (any, error) {
 		DateKafkaConnect,
 		TimeKafkaConnect,
 		DateTimeKafkaConnect:
+		if _, ok := value.(float64); !ok {
+			// Since this value is coming from Kafka, and will have been marshaled to a JSON string, it should always
+			// be a float64. Let's check this if this assumption holds and if so clean up the code below so that we
+			// aren't doing float -> string -> float.
+			slog.Error(fmt.Sprintf("Expected float64 received %T with value '%v'", value, value))
+		}
 		// Need to cast this as a FLOAT first because the number may come out in scientific notation
 		// ParseFloat is apt to handle it, and ParseInt is not, see: https://github.com/golang/go/issues/19288
 		floatVal, castErr := strconv.ParseFloat(fmt.Sprint(value), 64)
@@ -194,7 +200,7 @@ func (f Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error
 		return nil, fmt.Errorf("encoded value does not exist")
 	}
 
-	bytes, err := ToBytes(val)
+	bytes, err := toBytes(val)
 	if err != nil {
 		return nil, err
 	}
