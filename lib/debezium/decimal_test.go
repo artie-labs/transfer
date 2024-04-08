@@ -7,13 +7,13 @@ import (
 )
 
 func TestEncodeDecimal(t *testing.T) {
-	type _tc struct {
+	testCases := []struct {
 		name  string
 		value string
 		scale int
-	}
 
-	tcs := []_tc{
+		expectedErr string
+	}{
 		{
 			name:  "0 scale",
 			value: "5",
@@ -66,11 +66,25 @@ func TestEncodeDecimal(t *testing.T) {
 			value: "6408.355",
 			scale: 3,
 		},
+		{
+			name:        "malformed - empty string",
+			value:       "",
+			expectedErr: "unable to use '' as a floating-point number",
+		},
+		{
+			name:        "malformed - characters",
+			value:       "abcdefg",
+			expectedErr: "unable to use 'abcdefg' as a floating-point number",
+		},
 	}
 
-	for _, tc := range tcs {
-		encodedValue := EncodeDecimal(tc.value, tc.scale)
-		decodedValue := DecodeDecimal(encodedValue, nil, tc.scale)
-		assert.Equal(t, tc.value, decodedValue.String(), tc.name)
+	for _, testCase := range testCases {
+		encodedValue, err := EncodeDecimal(testCase.value, testCase.scale)
+		if testCase.expectedErr == "" {
+			decodedValue := DecodeDecimal(encodedValue, nil, testCase.scale)
+			assert.Equal(t, testCase.value, decodedValue.String(), testCase.name)
+		} else {
+			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
+		}
 	}
 }
