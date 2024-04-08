@@ -117,8 +117,8 @@ func (f Field) ParseValue(value any) (any, error) {
 		DateTimeKafkaConnect:
 		if _, ok := value.(float64); !ok {
 			// Since this value is coming from Kafka, and will have been marshaled to a JSON string, it should always
-			// be a float64. Let's check this if this assumption holds and if so clean up float parsing code below so
-			// that we aren't doing float -> string -> float.
+			// be a float64. Let's check this if this assumption holds and if so clean up the code below so that we
+			// aren't doing float -> string -> float.
 			slog.Error(fmt.Sprintf("Expected float64 received %T with value '%v'", value, value))
 		}
 
