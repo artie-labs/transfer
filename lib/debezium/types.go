@@ -144,7 +144,7 @@ func (f Field) ParseValue(value any) (any, error) {
 			// This value is coming from reader.
 			// -> Pass.
 		default:
-			// Value should always be a float64 int64, but let's check this if this assumption holds and if so clean up
+			// Value should always be a float64/int64, but let's check this if this assumption holds and if so clean up
 			// the code below so that we aren't doing float -> string -> float.
 			slog.Error(fmt.Sprintf("Expected float64 received %T with value '%v'", value, value))
 		}
