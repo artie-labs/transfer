@@ -42,7 +42,7 @@ func TestToBytes(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		actual, err := ToBytes(testCase.value)
+		actual, err := toBytes(testCase.value)
 
 		if testCase.expectedErr == "" {
 			assert.Equal(t, testCase.expectedValue, actual, testCase.name)
@@ -267,7 +267,7 @@ func TestFromDebeziumTypeTimePrecisionConnect(t *testing.T) {
 	assert.Equal(t, "2023-03-13", extendedDate.String(""))
 }
 
-func TestDecodeDecimal(t *testing.T) {
+func TestField_DecodeDecimal(t *testing.T) {
 	type _testCase struct {
 		name    string
 		encoded string
@@ -437,7 +437,7 @@ func TestDecodeDecimal(t *testing.T) {
 			Parameters: testCase.params,
 		}
 
-		bytes, err := ToBytes(testCase.encoded)
+		bytes, err := toBytes(testCase.encoded)
 		assert.NoError(t, err)
 
 		dec, err := field.DecodeDecimal(bytes)
@@ -461,7 +461,7 @@ func TestDecodeDecimal(t *testing.T) {
 	}
 }
 
-func TestDecodeDebeziumVariableDecimal(t *testing.T) {
+func TestField_DecodeDebeziumVariableDecimal(t *testing.T) {
 	type _testCase struct {
 		name  string
 		value any

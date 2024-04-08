@@ -15,7 +15,7 @@ func BenchmarkDecodeDecimal_P64_S10(b *testing.B) {
 	}
 	field := Field{Parameters: parameters}
 	for i := 0; i < b.N; i++ {
-		bytes, err := ToBytes("AwBGAw8m9GLXrCGifrnVP/8jPHrNEtd1r4rS")
+		bytes, err := toBytes("AwBGAw8m9GLXrCGifrnVP/8jPHrNEtd1r4rS")
 		assert.NoError(b, err)
 		dec, err := field.DecodeDecimal(bytes)
 		assert.NoError(b, err)
@@ -31,7 +31,7 @@ func BenchmarkDecodeDecimal_P38_S2(b *testing.B) {
 	}
 	field := Field{Parameters: parameters}
 	for i := 0; i < b.N; i++ {
-		bytes, err := ToBytes(`AMCXznvJBxWzS58P/////w==`)
+		bytes, err := toBytes(`AMCXznvJBxWzS58P/////w==`)
 		assert.NoError(b, err)
 		dec, err := field.DecodeDecimal(bytes)
 		assert.NoError(b, err)
@@ -47,7 +47,7 @@ func BenchmarkDecodeDecimal_P5_S2(b *testing.B) {
 
 	field := Field{Parameters: parameters}
 	for i := 0; i < b.N; i++ {
-		bytes, err := ToBytes(`AOHJ`)
+		bytes, err := toBytes(`AOHJ`)
 		assert.NoError(b, err)
 		dec, err := field.DecodeDecimal(bytes)
 		assert.NoError(b, err)
