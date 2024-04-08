@@ -130,7 +130,7 @@ func TestField_ParseValue(t *testing.T) {
 				Type: Int32,
 			},
 			value:         float64(3),
-			expectedValue: int(3),
+			expectedValue: 3,
 		},
 		{
 			name: "decimal",
