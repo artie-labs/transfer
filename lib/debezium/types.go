@@ -4,8 +4,10 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/jsonutil"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 
@@ -72,6 +74,58 @@ func ToBytes(value any) ([]byte, error) {
 		return nil, fmt.Errorf("failed to base64 decode: %w", err)
 	}
 	return data, nil
+}
+
+func (f Field) ParseValue(value any) (any, error) {
+	if value == nil {
+		return nil, nil
+	}
+
+	// Check if the field is an integer and requires us to cast it as such.
+	if f.IsInteger() {
+		valFloat, isOk := value.(float64)
+		if !isOk {
+			return nil, fmt.Errorf("failed to cast value to float64")
+		}
+
+		return int(valFloat), nil
+	}
+
+	switch f.DebeziumType {
+	case JSON:
+		return jsonutil.SanitizePayload(value)
+	case GeometryType, GeographyType:
+		return parseGeometry(value)
+	case GeometryPointType:
+		return parseGeometryPoint(value)
+	case KafkaDecimalType:
+		bytes, err := ToBytes(value)
+		if err != nil {
+			return nil, err
+		}
+		return f.DecodeDecimal(bytes)
+	case KafkaVariableNumericType:
+		return f.DecodeDebeziumVariableDecimal(value)
+	case
+		Timestamp,
+		MicroTimestamp,
+		Date,
+		Time,
+		MicroTime,
+		DateKafkaConnect,
+		TimeKafkaConnect,
+		DateTimeKafkaConnect:
+		// Need to cast this as a FLOAT first because the number may come out in scientific notation
+		// ParseFloat is apt to handle it, and ParseInt is not, see: https://github.com/golang/go/issues/19288
+		floatVal, castErr := strconv.ParseFloat(fmt.Sprint(value), 64)
+		if castErr != nil {
+			return nil, castErr
+		}
+
+		return FromDebeziumTypeToTime(f.DebeziumType, int64(floatVal))
+	}
+
+	return value, nil
 }
 
 // FromDebeziumTypeToTime is implemented by following this spec: https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-temporal-types
