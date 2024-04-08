@@ -321,6 +321,22 @@ func TestField_ParseValue(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "[]byte",
+			field: Field{
+				Type: Bytes,
+			},
+			value:         []byte{40, 30, 20, 10},
+			expectedValue: "KB4UCg==",
+		},
+		{
+			name: "string",
+			field: Field{
+				Type: String,
+			},
+			value:         "string value",
+			expectedValue: "string value",
+		},
 	}
 
 	for _, testCase := range testCases {

@@ -159,6 +159,11 @@ func (f Field) ParseValue(value any) (any, error) {
 		return FromDebeziumTypeToTime(f.DebeziumType, int64(floatVal))
 	}
 
+	if bytes, ok := value.([]byte); ok {
+		// Preserve existing behavior by base64 encoding []byte values to a string.
+		return base64.StdEncoding.EncodeToString(bytes), nil
+	}
+
 	return value, nil
 }
 
