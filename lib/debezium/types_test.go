@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -274,6 +275,51 @@ func TestField_ParseValue(t *testing.T) {
 			},
 			value:         `[[{"foo":"bar", "foo": "bar"}], [{"hello":"world"}, {"dusty":"the mini aussie"}]]`,
 			expectedValue: `[[{"foo":"bar"}],[{"hello":"world"},{"dusty":"the mini aussie"}]]`,
+		},
+		{
+			name: "int64 micro-timestamp",
+			field: Field{
+				Type:         Int64,
+				DebeziumType: MicroTimestamp,
+			},
+			value: int64(1712609795827000),
+			expectedValue: &ext.ExtendedTime{
+				Time: time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC),
+				NestedKind: ext.NestedKind{
+					Type:   ext.DateTimeKindType,
+					Format: "2006-01-02T15:04:05.999999999Z07:00",
+				},
+			},
+		},
+		{
+			name: "float64 micro-timestamp",
+			field: Field{
+				Type:         Int64,
+				DebeziumType: MicroTimestamp,
+			},
+			value: float64(1712609795827000),
+			expectedValue: &ext.ExtendedTime{
+				Time: time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC),
+				NestedKind: ext.NestedKind{
+					Type:   ext.DateTimeKindType,
+					Format: "2006-01-02T15:04:05.999999999Z07:00",
+				},
+			},
+		},
+		{
+			name: "string micro-timestamp",
+			field: Field{
+				Type:         Int64,
+				DebeziumType: MicroTimestamp,
+			},
+			value: "1712609795827000",
+			expectedValue: &ext.ExtendedTime{
+				Time: time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC),
+				NestedKind: ext.NestedKind{
+					Type:   ext.DateTimeKindType,
+					Format: "2006-01-02T15:04:05.999999999Z07:00",
+				},
+			},
 		},
 	}
 

@@ -134,12 +134,21 @@ func (f Field) ParseValue(value any) (any, error) {
 		DateKafkaConnect,
 		TimeKafkaConnect,
 		DateTimeKafkaConnect:
-		if _, ok := value.(float64); !ok {
-			// Since this value is coming from Kafka, and will have been marshaled to a JSON string, it should always
-			// be a float64. Let's check this if this assumption holds and if so clean up the code below so that we
-			// aren't doing float -> string -> float.
+
+		switch value.(type) {
+		case float64:
+			// This value is coming from Kafka, and will have been marshaled to a JSON string, so when it is
+			// unmarshalled it will be a float64
+			// -> Pass.
+		case int64:
+			// This value is coming from reader.
+			// -> Pass.
+		default:
+			// Value should always be a float64 int64, but let's check this if this assumption holds and if so clean up
+			// the code below so that we aren't doing float -> string -> float.
 			slog.Error(fmt.Sprintf("Expected float64 received %T with value '%v'", value, value))
 		}
+
 		// Need to cast this as a FLOAT first because the number may come out in scientific notation
 		// ParseFloat is apt to handle it, and ParseInt is not, see: https://github.com/golang/go/issues/19288
 		floatVal, castErr := strconv.ParseFloat(fmt.Sprint(value), 64)
