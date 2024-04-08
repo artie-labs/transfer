@@ -76,6 +76,25 @@ func toBytes(value any) ([]byte, error) {
 	return data, nil
 }
 
+// toInt64 attempts to convert a value of unknown type to a an int64.
+// - If the value is coming from Kafka it will be decoded as a float64 when it is unmarshalled from JSON.
+// - If the value is coming from reader the value will be an int16/int32/int64.
+func toInt64(value any) (int64, error) {
+	switch typedValue := value.(type) {
+	case int:
+		return int64(typedValue), nil
+	case int16:
+		return int64(typedValue), nil
+	case int32:
+		return int64(typedValue), nil
+	case int64:
+		return typedValue, nil
+	case float64:
+		return int64(typedValue), nil
+	}
+	return 0, fmt.Errorf("failed to cast value '%v' with type '%T' to int64", value, value)
+}
+
 func (f Field) ParseValue(value any) (any, error) {
 	if value == nil {
 		return nil, nil
@@ -83,12 +102,12 @@ func (f Field) ParseValue(value any) (any, error) {
 
 	// Check if the field is an integer and requires us to cast it as such.
 	if f.IsInteger() {
-		valFloat, isOk := value.(float64)
-		if !isOk {
-			return nil, fmt.Errorf("failed to cast value to float64")
+		value, err := toInt64(value)
+		if err != nil {
+			return nil, err
 		}
-
-		return int(valFloat), nil
+		// TODO: Returning an int to preserve existing behavior, however we should see if we can return an int64 instead.
+		return int(value), err
 	}
 
 	switch f.DebeziumType {

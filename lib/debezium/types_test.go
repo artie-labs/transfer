@@ -52,6 +52,56 @@ func TestToBytes(t *testing.T) {
 	}
 }
 
+func TestToInt64(t *testing.T) {
+	testCases := []struct {
+		name  string
+		value any
+
+		expectedValue int64
+		expectedErr   string
+	}{
+		{
+			name:          "int",
+			value:         int(12321),
+			expectedValue: int64(12321),
+		},
+		{
+			name:          "int16",
+			value:         int16(12321),
+			expectedValue: int64(12321),
+		},
+		{
+			name:          "int32",
+			value:         int32(12321),
+			expectedValue: int64(12321),
+		},
+		{
+			name:          "int64",
+			value:         int64(12321),
+			expectedValue: int64(12321),
+		},
+		{
+			name:          "float64",
+			value:         float64(12321),
+			expectedValue: int64(12321),
+		},
+		{
+			name:        "different type",
+			value:       map[string]any{},
+			expectedErr: "failed to cast value 'map[]' with type 'map[string]interface {}' to int64",
+		},
+	}
+
+	for _, testCase := range testCases {
+		actual, err := toInt64(testCase.value)
+		if testCase.expectedErr == "" {
+			assert.Equal(t, testCase.expectedValue, actual, testCase.name)
+		} else {
+			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
+		}
+	}
+}
+
 func TestField_ParseValue(t *testing.T) {
 	type _testCase struct {
 		name  string
