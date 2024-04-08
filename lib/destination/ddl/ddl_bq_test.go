@@ -67,7 +67,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 			Mode:                   config.Replication,
 		}
 
-		assert.NoError(d.T(), alterTableArgs.Alter(column))
+		assert.NoError(d.T(), alterTableArgs.AlterTable(column))
 	}
 
 	// Have not deleted, but tried to!
@@ -90,7 +90,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 			Mode:                   config.Replication,
 		}
 
-		assert.NoError(d.T(), alterTableArgs.Alter(column))
+		assert.NoError(d.T(), alterTableArgs.AlterTable(column))
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s drop COLUMN %s", fqName, column.Name(false, &artieSQL.NameArgs{
 			Escape:   true,
@@ -150,7 +150,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 
 		col := columns.NewColumn(name, kind)
 
-		assert.NoError(d.T(), alterTableArgs.Alter(col))
+		assert.NoError(d.T(), alterTableArgs.AlterTable(col))
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, col.Name(false, &artieSQL.NameArgs{
 			Escape:   true,
@@ -211,7 +211,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 			Mode:              config.Replication,
 		}
 
-		assert.NoError(d.T(), alterTableArgs.Alter(column))
+		assert.NoError(d.T(), alterTableArgs.AlterTable(column))
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, column.Name(false, &artieSQL.NameArgs{
 			Escape:   true,
@@ -268,7 +268,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 			UppercaseEscNames: ptr.ToBool(false),
 			Mode:              config.Replication,
 		}
-		assert.NoError(d.T(), alterTableArgs.Alter(column))
+		assert.NoError(d.T(), alterTableArgs.AlterTable(column))
 	}
 
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(fqName).ReadOnlyColumnsToDelete()))
@@ -287,7 +287,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 			Mode:              config.Replication,
 		}
 
-		assert.NoError(d.T(), alterTableArgs.Alter(column))
+		assert.NoError(d.T(), alterTableArgs.AlterTable(column))
 		assert.Equal(d.T(), 0, d.fakeBigQueryStore.ExecCallCount())
 	}
 

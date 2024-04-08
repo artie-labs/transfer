@@ -79,7 +79,7 @@ func (a *AlterTableArgs) Validate() error {
 	return nil
 }
 
-func (a *AlterTableArgs) Alter(cols ...columns.Column) error {
+func (a *AlterTableArgs) AlterTable(cols ...columns.Column) error {
 	if err := a.Validate(); err != nil {
 		return err
 	}

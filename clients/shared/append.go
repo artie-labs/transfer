@@ -45,7 +45,7 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, cf
 	}
 
 	// Keys that exist in CDC stream, but not in DWH
-	err = createAlterTableArgs.Alter(targetKeysMissing...)
+	err = createAlterTableArgs.AlterTable(targetKeysMissing...)
 	if err != nil {
 		slog.Warn("Failed to apply alter table", slog.Any("err", err))
 		return err

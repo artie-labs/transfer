@@ -55,7 +55,7 @@ func (d *DDLTestSuite) Test_CreateTable() {
 			Mode:              config.Replication,
 		}
 
-		assert.NoError(d.T(), alterTableArgs.Alter(columns.NewColumn("name", typing.String)))
+		assert.NoError(d.T(), alterTableArgs.AlterTable(columns.NewColumn("name", typing.String)))
 		assert.Equal(d.T(), 1, dwhTc._fakeStore.ExecCallCount())
 
 		query, _ := dwhTc._fakeStore.ExecArgsForCall(0)
@@ -122,7 +122,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 			Mode:              config.Replication,
 		}
 
-		assert.NoError(d.T(), alterTableArgs.Alter(testCase.cols...), testCase.name)
+		assert.NoError(d.T(), alterTableArgs.AlterTable(testCase.cols...), testCase.name)
 
 		execQuery, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(index)
 		assert.Equal(d.T(), testCase.expectedQuery, execQuery, testCase.name)

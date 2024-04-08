@@ -47,7 +47,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 	}
 
 	// Columns that are missing in DWH, but exist in our CDC stream.
-	err = createAlterTableArgs.Alter(targetKeysMissing...)
+	err = createAlterTableArgs.AlterTable(targetKeysMissing...)
 	if err != nil {
 		slog.Warn("Failed to apply alter table", slog.Any("err", err))
 		return err
@@ -66,7 +66,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		Mode:                   tableData.Mode(),
 	}
 
-	if err = deleteAlterTableArgs.Alter(srcKeysMissing...); err != nil {
+	if err = deleteAlterTableArgs.AlterTable(srcKeysMissing...); err != nil {
 		slog.Warn("Failed to apply alter table", slog.Any("err", err))
 		return err
 	}
