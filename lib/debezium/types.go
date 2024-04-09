@@ -161,7 +161,7 @@ func (f Field) ParseValue(value any) (any, error) {
 
 	if bytes, ok := value.([]byte); ok {
 		// Preserve existing behavior by base64 encoding []byte values to a string.
-		// TODO: Look into inverting this logic so that in the case the field type is "bytes" but the value is a string we  
+		// TODO: Look into inverting this logic so that in the case the field type is "bytes" but the value is a string we
 		// base64 decode it here. Then things downstream from here can just deal with []byte values.
 		return base64.StdEncoding.EncodeToString(bytes), nil
 	}
@@ -172,38 +172,33 @@ func (f Field) ParseValue(value any) (any, error) {
 // FromDebeziumTypeToTime is implemented by following this spec: https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-temporal-types
 func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ext.ExtendedTime, error) {
 	var extTime *ext.ExtendedTime
-	var err error
 
 	switch supportedType {
 	case Timestamp, DateTimeKafkaConnect:
 		// Represents the number of milliseconds since the epoch, and does not include timezone information.
-		extTime, err = ext.NewExtendedTime(time.UnixMilli(val).In(time.UTC), ext.DateTimeKindType, time.RFC3339Nano)
+		extTime = ext.NewExtendedTime(time.UnixMilli(val).In(time.UTC), ext.DateTimeKindType, time.RFC3339Nano)
 	case MicroTimestamp:
 		// Represents the number of microseconds since the epoch, and does not include timezone information.
-		extTime, err = ext.NewExtendedTime(time.UnixMicro(val).In(time.UTC), ext.DateTimeKindType, time.RFC3339Nano)
+		extTime = ext.NewExtendedTime(time.UnixMicro(val).In(time.UTC), ext.DateTimeKindType, time.RFC3339Nano)
 	case Date, DateKafkaConnect:
 		unix := time.UnixMilli(0).In(time.UTC) // 1970-01-01
 		// Represents the number of days since the epoch.
-		extTime, err = ext.NewExtendedTime(unix.AddDate(0, 0, int(val)), ext.DateKindType, "")
+		extTime = ext.NewExtendedTime(unix.AddDate(0, 0, int(val)), ext.DateKindType, "")
 	case Time, TimeKafkaConnect:
 		// Represents the number of milliseconds past midnight, and does not include timezone information.
-		extTime, err = ext.NewExtendedTime(time.UnixMilli(val).In(time.UTC), ext.TimeKindType, "")
+		extTime = ext.NewExtendedTime(time.UnixMilli(val).In(time.UTC), ext.TimeKindType, "")
 	case MicroTime:
 		// Represents the number of microseconds past midnight, and does not include timezone information.
-		extTime, err = ext.NewExtendedTime(time.UnixMicro(val).In(time.UTC), ext.TimeKindType, "")
+		extTime = ext.NewExtendedTime(time.UnixMicro(val).In(time.UTC), ext.TimeKindType, "")
 	default:
 		return nil, fmt.Errorf("supportedType: %s, val: %v failed to be matched", supportedType, val)
-	}
-
-	if err != nil {
-		return nil, err
 	}
 
 	if extTime != nil && !extTime.IsValid() {
 		return nil, fmt.Errorf("extTime is invalid: %v", extTime)
 	}
 
-	return extTime, err
+	return extTime, nil
 }
 
 // DecodeDecimal is used to handle `org.apache.kafka.connect.data.Decimal` where this would be emitted by Debezium when the `decimal.handling.mode` is `precise`

@@ -50,7 +50,7 @@ func (e *ExtendedTime) IsValid() bool {
 	return true
 }
 
-func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat string) (*ExtendedTime, error) {
+func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat string) *ExtendedTime {
 	if originalFormat == "" {
 		switch kindType {
 		case DateTimeKindType:
@@ -68,7 +68,7 @@ func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat 
 			Type:   kindType,
 			Format: originalFormat,
 		},
-	}, nil
+	}
 }
 
 func (e *ExtendedTime) GetTime() time.Time {

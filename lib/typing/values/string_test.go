@@ -41,8 +41,7 @@ func TestToString(t *testing.T) {
 		// Using `*ExtendedTime`
 		dustyBirthday := time.Date(2019, time.December, 31, 0, 0, 0, 0, time.UTC)
 		originalFmt := "2006-01-02T15:04:05Z07:00"
-		extendedTime, err := ext.NewExtendedTime(dustyBirthday, ext.DateTimeKindType, originalFmt)
-		assert.NoError(t, err)
+		extendedTime := ext.NewExtendedTime(dustyBirthday, ext.DateTimeKindType, originalFmt)
 
 		eTimeCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{Type: ext.DateTimeKindType}
 		actualValue, err := ToString(extendedTime, eTimeCol, nil)
