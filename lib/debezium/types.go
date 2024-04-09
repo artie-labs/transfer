@@ -190,7 +190,7 @@ func (f Field) ParseValue(value any) (any, error) {
 	if bytes, ok := value.([]byte); ok {
 		// Preserve existing behavior by base64 encoding []byte values to a string.
 		// TODO: Look into inverting this logic so that in the case the field type is "bytes" but the value is a string we
-		// base64 decode it here. Then things downstream from here can just deal with []byte values.
+		// base64 decode it in a preprocessing step above. Then things downstream from this method can just deal with []byte values.
 		return base64.StdEncoding.EncodeToString(bytes), nil
 	}
 
