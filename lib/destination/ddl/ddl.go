@@ -54,7 +54,7 @@ type AlterTableArgs struct {
 	CdcTime time.Time
 }
 
-func (a *AlterTableArgs) Validate() error {
+func (a AlterTableArgs) Validate() error {
 	// You can't DROP a column and try to create a table at the same time.
 	if a.ColumnOp == constants.Delete && a.CreateTable {
 		return fmt.Errorf("incompatible operation - cannot drop columns and create table at the same time")
@@ -78,7 +78,7 @@ func (a *AlterTableArgs) Validate() error {
 	return nil
 }
 
-func (a *AlterTableArgs) AlterTable(cols ...columns.Column) error {
+func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 	if err := a.Validate(); err != nil {
 		return err
 	}
