@@ -109,7 +109,3 @@ func ExpiresDate(time time.Time) string {
 	// This is used as part of table options.
 	return time.Format(bqLayout)
 }
-
-func FromExpiresDateStringToTime(tsString string) (time.Time, error) {
-	return time.Parse(bqLayout, tsString)
-}
