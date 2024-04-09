@@ -172,7 +172,7 @@ func (f Field) ParseValue(value any) (any, error) {
 			// Assuming we always receive an int type for Debeziumn time types, we should be able to add a preprocessing
 			// step above that inspects the field type and if it is an int type casts `value` to `int64`.
 			slog.Error(fmt.Sprintf("Unexpected field type '%s' for Debezium time type '%s'", f.Type, f.DebeziumType),
-				slog.Any("type", fmt.Sprintf("%T", value)),
+				slog.String("type", fmt.Sprintf("%T", value)),
 				slog.Any("value", value),
 			)
 		}
