@@ -112,8 +112,7 @@ func (f Field) ParseValue(value any) (any, error) {
 	// if err != nil {
 	// 	return nil, err
 	// }
-	// Once this is in place, the cases in the f.DebeziumType switch statement should be able to get away with doing
-	// less parsing. We may just want a type check for each case as an aditional safeguard.
+	// Once this is in place, the cases in the f.DebeziumType switch statement below won't need to parse int64s or bytes.
 
 	// Check if the field is an integer and requires us to cast it as such.
 	if f.IsInteger() {
