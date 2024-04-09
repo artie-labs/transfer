@@ -207,11 +207,11 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ex
 //   - `scale` (number of digits following decimal point)
 //   - `connect.decimal.precision` which is an optional parameter. (If -1, then it's variable and .Value() will be in STRING).
 func (f Field) DecodeDecimal(encoded []byte) (*decimal.Decimal, error) {
-	results, err := f.GetScaleAndPrecision()
+	scale, precision, err := f.GetScaleAndPrecision()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get scale and/or precision: %w", err)
 	}
-	return DecodeDecimal(encoded, results.Precision, results.Scale), nil
+	return DecodeDecimal(encoded, precision, scale), nil
 }
 
 func (f Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error) {
