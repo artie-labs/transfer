@@ -25,8 +25,7 @@ func DropTemporaryTable(dwh destination.DataWarehouse, fqTableName string, shoul
 	if strings.Contains(strings.ToLower(fqTableName), constants.ArtiePrefix) {
 		sqlCommand := fmt.Sprintf("DROP TABLE IF EXISTS %s", fqTableName)
 		slog.Debug("Dropping temporary table", slog.String("sql", sqlCommand))
-		_, err := dwh.Exec(sqlCommand)
-		if err != nil {
+		if _, err := dwh.Exec(sqlCommand); err != nil {
 			slog.Warn("Failed to drop temporary table, it will get garbage collected by the TTL...", slog.Any("err", err))
 			if shouldReturnError {
 				return fmt.Errorf("failed to drop temp table: %w", err)
