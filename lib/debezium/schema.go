@@ -65,31 +65,23 @@ func (f Field) IsInteger() (valid bool) {
 	return f.ToKindDetails() == typing.Integer
 }
 
-type ScaleAndPrecisionResults struct {
-	Scale     int
-	Precision *int
-}
-
-func (f Field) GetScaleAndPrecision() (ScaleAndPrecisionResults, error) {
+func (f Field) GetScaleAndPrecision() (int, *int, error) {
 	scale, scaleErr := maputil.GetIntegerFromMap(f.Parameters, "scale")
 	if scaleErr != nil {
-		return ScaleAndPrecisionResults{}, scaleErr
+		return 0, ptr.ToInt(0), scaleErr
 	}
 
 	var precisionPtr *int
 	if _, isOk := f.Parameters[KafkaDecimalPrecisionKey]; isOk {
 		precision, precisionErr := maputil.GetIntegerFromMap(f.Parameters, KafkaDecimalPrecisionKey)
 		if precisionErr != nil {
-			return ScaleAndPrecisionResults{}, precisionErr
+			return 0, ptr.ToInt(0), precisionErr
 		}
 
 		precisionPtr = ptr.ToInt(precision)
 	}
 
-	return ScaleAndPrecisionResults{
-		Scale:     scale,
-		Precision: precisionPtr,
-	}, nil
+	return scale, precisionPtr, nil
 }
 
 func (f Field) ToKindDetails() typing.KindDetails {
@@ -105,13 +97,13 @@ func (f Field) ToKindDetails() typing.KindDetails {
 	case JSON, GeometryPointType, GeometryType, GeographyType:
 		return typing.Struct
 	case KafkaDecimalType:
-		scaleAndPrecision, err := f.GetScaleAndPrecision()
+		scale, precision, err := f.GetScaleAndPrecision()
 		if err != nil {
 			return typing.Invalid
 		}
 
 		eDecimal := typing.EDecimal
-		eDecimal.ExtendedDecimalDetails = decimal.NewDecimal(scaleAndPrecision.Precision, scaleAndPrecision.Scale, nil)
+		eDecimal.ExtendedDecimalDetails = decimal.NewDecimal(precision, scale, nil)
 		return eDecimal
 	case KafkaVariableNumericType:
 		// For variable numeric types, we are defaulting to a scale of 5

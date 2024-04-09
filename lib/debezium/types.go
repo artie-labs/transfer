@@ -161,7 +161,7 @@ func (f Field) ParseValue(value any) (any, error) {
 
 	if bytes, ok := value.([]byte); ok {
 		// Preserve existing behavior by base64 encoding []byte values to a string.
-		// TODO: Look into inverting this logic so that in the case the field type is "bytes" but the value is a string we  
+		// TODO: Look into inverting this logic so that in the case the field type is "bytes" but the value is a string we
 		// base64 decode it here. Then things downstream from here can just deal with []byte values.
 		return base64.StdEncoding.EncodeToString(bytes), nil
 	}
@@ -212,11 +212,11 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ex
 //   - `scale` (number of digits following decimal point)
 //   - `connect.decimal.precision` which is an optional parameter. (If -1, then it's variable and .Value() will be in STRING).
 func (f Field) DecodeDecimal(encoded []byte) (*decimal.Decimal, error) {
-	results, err := f.GetScaleAndPrecision()
+	scale, precision, err := f.GetScaleAndPrecision()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get scale and/or precision: %w", err)
 	}
-	return DecodeDecimal(encoded, results.Precision, results.Scale), nil
+	return DecodeDecimal(encoded, precision, scale), nil
 }
 
 func (f Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error) {

@@ -69,17 +69,17 @@ func TestField_GetScaleAndPrecision(t *testing.T) {
 			Parameters: tc.parameters,
 		}
 
-		results, err := field.GetScaleAndPrecision()
+		scale, precision, err := field.GetScaleAndPrecision()
 		if tc.expectErr {
 			assert.Error(t, err, tc.name)
 		} else {
 			assert.NoError(t, err, tc.name)
-			assert.Equal(t, tc.expectedScale, results.Scale, tc.name)
+			assert.Equal(t, tc.expectedScale, scale, tc.name)
 
 			if tc.expectedPrecision == nil {
-				assert.Nil(t, results.Precision, tc.name)
+				assert.Nil(t, precision, tc.name)
 			} else {
-				assert.Equal(t, *tc.expectedPrecision, *results.Precision, tc.name)
+				assert.Equal(t, *tc.expectedPrecision, *precision, tc.name)
 			}
 		}
 	}
