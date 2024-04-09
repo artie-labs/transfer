@@ -24,7 +24,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 			Mode:              tableData.Mode(),
 		}
 
-		if err := ddl.AlterTable(tempAlterTableArgs, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
+		if err := tempAlterTableArgs.AlterTable(tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
 			return fmt.Errorf("failed to create temp table: %w", err)
 		}
 	}

@@ -44,8 +44,7 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 		Mode:              config.Replication,
 	}
 
-	err := ddl.AlterTable(alterTableArgs, cols...)
-
+	assert.NoError(d.T(), alterTableArgs.AlterTable(cols...))
 	for i := 0; i < len(cols); i++ {
 		execQuery, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(i)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN %s %s", fqTable, cols[i].Name(false, &sql.NameArgs{
@@ -56,7 +55,6 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 	}
 
 	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecCallCount(), "called SFLK the same amt to create cols")
-	assert.NoError(d.T(), err)
 }
 
 func (d *DDLTestSuite) TestAlterIdempotency() {
@@ -82,13 +80,11 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 		Mode:              config.Replication,
 	}
 
-	err := ddl.AlterTable(alterTableArgs, cols...)
+	assert.NoError(d.T(), alterTableArgs.AlterTable(cols...))
 	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecCallCount(), "called SFLK the same amt to create cols")
-	assert.NoError(d.T(), err)
 
 	d.fakeSnowflakeStagesStore.ExecReturns(nil, errors.New("table does not exist"))
-	err = ddl.AlterTable(alterTableArgs, cols...)
-	assert.Error(d.T(), err)
+	assert.Error(d.T(), alterTableArgs.AlterTable(cols...))
 }
 
 func (d *DDLTestSuite) TestAlterTableAdd() {
@@ -113,9 +109,9 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 		UppercaseEscNames: ptr.ToBool(false),
 		Mode:              config.Replication,
 	}
-	err := ddl.AlterTable(alterTableArgs, cols...)
+
+	assert.NoError(d.T(), alterTableArgs.AlterTable(cols...))
 	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecCallCount(), "called SFLK the same amt to create cols")
-	assert.NoError(d.T(), err)
 
 	// Check the table config
 	tableConfig := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
@@ -156,9 +152,9 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 		UppercaseEscNames:      ptr.ToBool(false),
 		Mode:                   config.Replication,
 	}
-	err := ddl.AlterTable(alterTableArgs, cols...)
+
+	assert.NoError(d.T(), alterTableArgs.AlterTable(cols...))
 	assert.Equal(d.T(), 0, d.fakeSnowflakeStagesStore.ExecCallCount(), "tried to delete, but not yet.")
-	assert.NoError(d.T(), err)
 
 	// Check the table config
 	tableConfig := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
@@ -182,8 +178,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 		// Now let's actually try to dial the time back, and it should actually try to delete.
 		tableConfig.AddColumnsToDelete(colToActuallyDelete, time.Now().Add(-1*time.Hour))
 
-		err = ddl.AlterTable(alterTableArgs, cols...)
-		assert.Nil(d.T(), err)
+		assert.NoError(d.T(), alterTableArgs.AlterTable(cols...))
 		assert.Equal(d.T(), i+1, d.fakeSnowflakeStagesStore.ExecCallCount(), "tried to delete one column")
 
 		execArg, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(i)
@@ -222,9 +217,9 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 		UppercaseEscNames:      ptr.ToBool(false),
 		Mode:                   config.Replication,
 	}
-	err := ddl.AlterTable(alterTableArgs, cols...)
+
+	assert.NoError(d.T(), alterTableArgs.AlterTable(cols...))
 	assert.Equal(d.T(), 3, d.fakeSnowflakeStagesStore.ExecCallCount(), "tried to delete, but not yet.")
-	assert.NoError(d.T(), err)
 
 	// Check the table config
 	tableConfig := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)

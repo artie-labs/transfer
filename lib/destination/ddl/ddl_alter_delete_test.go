@@ -67,8 +67,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			Mode:                   config.Replication,
 		}
 
-		err := ddl.AlterTable(alterTableArgs, column)
-		assert.NoError(d.T(), err)
+		assert.NoError(d.T(), alterTableArgs.AlterTable(column))
 	}
 
 	// Never actually deleted.
@@ -89,7 +88,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			Mode:                   config.Replication,
 		}
 
-		err := ddl.AlterTable(alterTableArgs, column)
+		err := alterTableArgs.AlterTable(column)
 		assert.NoError(d.T(), err)
 	}
 
@@ -111,8 +110,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			Mode:                   config.Replication,
 		}
 
-		err := ddl.AlterTable(alterTableArgs, column)
-		assert.NoError(d.T(), err)
+		assert.NoError(d.T(), alterTableArgs.AlterTable(column))
 	}
 
 	// Never actually deleted.
@@ -147,8 +145,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			Mode:                   config.Replication,
 		}
 
-		err := ddl.AlterTable(alterTableArgs, column)
-		assert.NoError(d.T(), err)
+		assert.NoError(d.T(), alterTableArgs.AlterTable(column))
 	}
 
 	// Never actually deleted.
@@ -169,8 +166,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			Mode:                   config.Replication,
 		}
 
-		err := ddl.AlterTable(alterTableArgs, column)
-		assert.NoError(d.T(), err)
+		assert.NoError(d.T(), alterTableArgs.AlterTable(column))
 	}
 
 	// Never actually deleted.
@@ -191,8 +187,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			Mode:                   config.Replication,
 		}
 
-		err := ddl.AlterTable(alterTableArgs, column)
-		assert.NoError(d.T(), err)
+		assert.NoError(d.T(), alterTableArgs.AlterTable(column))
 	}
 
 	// Never actually deleted.
@@ -229,8 +224,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			Mode:                   config.Replication,
 		}
 
-		err := ddl.AlterTable(alterTableArgs, column)
-		assert.NoError(d.T(), err)
+		assert.NoError(d.T(), alterTableArgs.AlterTable(column))
 	}
 
 	// BigQuery
@@ -247,8 +241,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			Mode:                   config.Replication,
 		}
 
-		err := ddl.AlterTable(alterTableArgs, column)
-		assert.NoError(d.T(), err)
+		assert.NoError(d.T(), alterTableArgs.AlterTable(column))
 	}
 
 	// Redshift
@@ -265,8 +258,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			Mode:                   config.Replication,
 		}
 
-		err := ddl.AlterTable(alterTableArgs, column)
-		assert.NoError(d.T(), err)
+		assert.NoError(d.T(), alterTableArgs.AlterTable(column))
 	}
 
 	// Nothing has been deleted, but it is all added to the permissions table.
@@ -291,8 +283,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			Mode:                   config.Replication,
 		}
 
-		err := ddl.AlterTable(alterTableArgs, column)
-		assert.NoError(d.T(), err)
+		assert.NoError(d.T(), alterTableArgs.AlterTable(column))
 
 		// BigQuery
 		alterTableArgs = ddl.AlterTableArgs{
@@ -307,8 +298,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			Mode:                   config.Replication,
 		}
 
-		err = ddl.AlterTable(alterTableArgs, column)
-		assert.NoError(d.T(), err)
+		assert.NoError(d.T(), alterTableArgs.AlterTable(column))
 
 		// Redshift
 		alterTableArgs = ddl.AlterTableArgs{
@@ -323,8 +313,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			Mode:                   config.Replication,
 		}
 
-		err = ddl.AlterTable(alterTableArgs, column)
-		assert.NoError(d.T(), err)
+		assert.NoError(d.T(), alterTableArgs.AlterTable(column))
 	}
 
 	// Everything has been deleted.
