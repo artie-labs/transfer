@@ -100,6 +100,21 @@ func (f Field) ParseValue(value any) (any, error) {
 		return nil, nil
 	}
 
+	// TODO: Implement a preprocessing step here that reverses the effects of values being JSON marshalled and
+	// unmarshalled when they pass through Kafka. This would replace calling f.IsInteger below and might look like:
+	// var err error
+	// switch f.Type {
+	// case Int16, Int32, Int64:
+	// 	value, err = toInt64(value)
+	// case Bytes:
+	// 	value, err = toBytes(value)
+	// }
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// Once this is in place, the conditions in the f.DebeziumType switch statement should be able to get away with doing
+	// less parsing. We may just want a type check as an aditional safeguard.
+
 	// Check if the field is an integer and requires us to cast it as such.
 	if f.IsInteger() {
 		value, err := toInt64(value)
