@@ -68,14 +68,14 @@ func (f Field) IsInteger() (valid bool) {
 func (f Field) GetScaleAndPrecision() (int, *int, error) {
 	scale, scaleErr := maputil.GetIntegerFromMap(f.Parameters, "scale")
 	if scaleErr != nil {
-		return 0, ptr.ToInt(0), scaleErr
+		return 0, nil, scaleErr
 	}
 
 	var precisionPtr *int
 	if _, isOk := f.Parameters[KafkaDecimalPrecisionKey]; isOk {
 		precision, precisionErr := maputil.GetIntegerFromMap(f.Parameters, KafkaDecimalPrecisionKey)
 		if precisionErr != nil {
-			return 0, ptr.ToInt(0), precisionErr
+			return 0, nil, precisionErr
 		}
 
 		precisionPtr = ptr.ToInt(precision)
