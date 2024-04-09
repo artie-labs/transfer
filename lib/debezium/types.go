@@ -149,6 +149,19 @@ func (f Field) ParseValue(value any) (any, error) {
 			slog.Error(fmt.Sprintf("Expected float64 received %T with value '%v'", value, value))
 		}
 
+		switch f.Type {
+		case Int16, Int32, Int64:
+			// These are the types we expect.
+			// -> Pass
+		default:
+			// Assuming we always receive an int type for Debeziumn time types, we should be able to add a preprocessing
+			// step above that inspects the field type and if it is an int type casts `value` to `int64`.
+			slog.Error(fmt.Sprintf("Unexpected field type '%s' for Debezium time type '%s'", f.Type, f.DebeziumType),
+				slog.Any("type", fmt.Sprintf("%T", value)),
+				slog.Any("value", value),
+			)
+		}
+
 		// Need to cast this as a FLOAT first because the number may come out in scientific notation
 		// ParseFloat is apt to handle it, and ParseInt is not, see: https://github.com/golang/go/issues/19288
 		floatVal, castErr := strconv.ParseFloat(fmt.Sprint(value), 64)
