@@ -166,11 +166,12 @@ func (a *AlterTableArgs) AlterTable(cols ...columns.Column) error {
 		}
 
 		slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
-		_, err = a.Dwh.Exec(sqlQuery)
-		if ColumnAlreadyExistErr(err, a.Dwh.Label()) {
-			err = nil
-		} else if err != nil {
-			return err
+		if _, err = a.Dwh.Exec(sqlQuery); err != nil {
+			if ColumnAlreadyExistErr(err, a.Dwh.Label()) {
+				err = nil
+			} else if err != nil {
+				return err
+			}
 		}
 	} else {
 		for _, colSQLPart := range colSQLParts {
@@ -183,11 +184,12 @@ func (a *AlterTableArgs) AlterTable(cols ...columns.Column) error {
 			}
 
 			slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
-			_, err = a.Dwh.Exec(sqlQuery)
-			if ColumnAlreadyExistErr(err, a.Dwh.Label()) {
-				err = nil
-			} else if err != nil {
-				return fmt.Errorf("failed to apply ddl, sql: %v, err: %w", sqlQuery, err)
+			if _, err = a.Dwh.Exec(sqlQuery); err != nil {
+				if ColumnAlreadyExistErr(err, a.Dwh.Label()) {
+					err = nil
+				} else if err != nil {
+					return fmt.Errorf("failed to apply ddl, sql: %v, err: %w", sqlQuery, err)
+				}
 			}
 		}
 	}
