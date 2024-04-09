@@ -32,20 +32,16 @@ func (b *BigQueryTestSuite) TestCastColVal() {
 	dateKind.ExtendedTimeDetails = &ext.Date
 
 	birthday := time.Date(2022, time.September, 6, 3, 19, 24, 942000000, time.UTC)
-	birthdayTSExt, err := ext.NewExtendedTime(birthday, tsKind.ExtendedTimeDetails.Type, "")
-	assert.NoError(b.T(), err)
+	birthdayTSExt := ext.NewExtendedTime(birthday, tsKind.ExtendedTimeDetails.Type, "")
 
-	birthdayDateExt, err := ext.NewExtendedTime(birthday, dateKind.ExtendedTimeDetails.Type, "")
-	assert.NoError(b.T(), err)
+	birthdayDateExt := ext.NewExtendedTime(birthday, dateKind.ExtendedTimeDetails.Type, "")
 
 	timeKind := typing.ETime
 	timeKind.ExtendedTimeDetails = &ext.Time
-	birthdayTimeExt, err := ext.NewExtendedTime(birthday, timeKind.ExtendedTimeDetails.Type, "")
-	assert.NoError(b.T(), err)
+	birthdayTimeExt := ext.NewExtendedTime(birthday, timeKind.ExtendedTimeDetails.Type, "")
 
 	invalidDate := time.Date(0, time.September, 6, 3, 19, 24, 942000000, time.UTC)
-	invalidDateTsExt, err := ext.NewExtendedTime(invalidDate, tsKind.ExtendedTimeDetails.Type, "")
-	assert.NoError(b.T(), err)
+	invalidDateTsExt := ext.NewExtendedTime(invalidDate, tsKind.ExtendedTimeDetails.Type, "")
 
 	testCases := []_testCase{
 		{

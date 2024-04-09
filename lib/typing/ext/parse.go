@@ -56,7 +56,7 @@ func ParseExtendedDateTime(dtString string, additionalDateFormats []string) (*Ex
 			potentialFormat = supportedDateTimeLayout
 			potentialTime = ts
 			if exactMatch {
-				return NewExtendedTime(ts, DateTimeKindType, supportedDateTimeLayout)
+				return NewExtendedTime(ts, DateTimeKindType, supportedDateTimeLayout), nil
 			}
 		}
 	}
@@ -65,7 +65,7 @@ func ParseExtendedDateTime(dtString string, additionalDateFormats []string) (*Ex
 	for _, supportedDateFormat := range append(supportedDateFormats, additionalDateFormats...) {
 		ts, exactMatch, err := ParseTimeExactMatch(supportedDateFormat, dtString)
 		if err == nil && exactMatch {
-			return NewExtendedTime(ts, DateKindType, supportedDateFormat)
+			return NewExtendedTime(ts, DateKindType, supportedDateFormat), nil
 		}
 	}
 
@@ -73,14 +73,14 @@ func ParseExtendedDateTime(dtString string, additionalDateFormats []string) (*Ex
 	for _, supportedTimeFormat := range supportedTimeFormats {
 		ts, exactMatch, err := ParseTimeExactMatch(supportedTimeFormat, dtString)
 		if err == nil && exactMatch {
-			return NewExtendedTime(ts, TimeKindType, supportedTimeFormat)
+			return NewExtendedTime(ts, TimeKindType, supportedTimeFormat), nil
 
 		}
 	}
 
 	// If nothing fits, return the next best thing.
 	if potentialFormat != "" {
-		return NewExtendedTime(potentialTime, DateTimeKindType, potentialFormat)
+		return NewExtendedTime(potentialTime, DateTimeKindType, potentialFormat), nil
 	}
 
 	return nil, fmt.Errorf("dtString: %s is not supported", dtString)
