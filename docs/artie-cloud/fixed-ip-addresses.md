@@ -13,7 +13,7 @@ We leverage a split plane architecture:
 * Our control plane houses our API server.
 * Our data plane performs the actual data transfer.
 
-When you add IPs, please add both the **control plane** and your **data plane**. Check out [#questions](fixed-ip-addresses.md#questions "mention") to find out which data plane your account is in.
+When you add IPs, please add both the **control plane** and your **data plane**. Need help? Check out [#how-do-i-know-which-data-plane-my-account-is-in](fixed-ip-addresses.md#how-do-i-know-which-data-plane-my-account-is-in "mention")
 
 ## Control Plane IP ranges (CIDR format)
 
@@ -53,16 +53,16 @@ When you add IPs, please add both the **control plane** and your **data plane**.
 
 ## Questions
 
-> How do I know which data plane my account is in?
+### How do I know which data plane my account is in?
 
 You can see which data plane you are in by going to [https://app.artie.so/settings](https://app.artie.so/settings) and see `Data Processing Location` under `Advanced Settings`.
 
 <figure><img src="../.gitbook/assets/image (44).png" alt="" width="563"><figcaption></figcaption></figure>
 
-> Why is there so many IPs?
+### Why is there so many IPs?
 
 We're sorry! When we first launched, we weren't able to secure a CIDR range. We have now worked this out with AWS and will be using CIDR ranges for the next data plane we set up.
 
-> I am hosted in another region
+### I am hosted in another region
 
 Get in touch with us either through our Slack or email. We'll be happy to set up another region.
