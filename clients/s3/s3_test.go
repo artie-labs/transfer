@@ -26,12 +26,12 @@ func TestObjectPrefix(t *testing.T) {
 		tableData *optimization.TableData
 		config    *config.S3Settings
 
-		expectedError  string
+		expectedErr    string
 		expectedFormat string
 	}{
 		{
-			name:          "nil",
-			expectedError: "failed to validate settings: s3 settings are nil",
+			name:        "nil",
+			expectedErr: "failed to validate settings: s3 settings are nil",
 		},
 		{
 			name:      "valid #1 (no prefix)",
@@ -60,8 +60,8 @@ func TestObjectPrefix(t *testing.T) {
 
 	for _, tc := range testCases {
 		store, err := LoadStore(config.Config{S3: tc.config})
-		if tc.expectedError != "" {
-			assert.ErrorContains(t, err, tc.expectedError, tc.name)
+		if tc.expectedErr != "" {
+			assert.ErrorContains(t, err, tc.expectedErr, tc.name)
 		} else {
 			assert.NoError(t, err, tc.name)
 			actualObjectPrefix := store.ObjectPrefix(tc.tableData)
