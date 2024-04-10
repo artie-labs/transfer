@@ -15,7 +15,7 @@ func safePowerOfTwo(n int64) int64 {
 	} else if n > 62 {
 		return math.MaxInt64 // 2 ** n will overflow
 	}
-	return 1 << n // 2 ** n == 1 << n
+	return 1 << n // equal to 2 ** n
 }
 
 // computeJitterUpperBoundMs calculates min(maxMs, baseMs * 2 ** attempt).
