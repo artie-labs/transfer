@@ -6,7 +6,7 @@ description: >-
 
 # Fixed IP Addresses
 
-## Brief Architecture
+## How is Artie deployed?
 
 We leverage a split plane architecture:
 
