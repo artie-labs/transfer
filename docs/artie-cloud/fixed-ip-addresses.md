@@ -17,14 +17,6 @@ When you add IPs, please add both the **control plane** and your **data plane**.
 
 ## Control Plane IP ranges (CIDR format)
 
-{% hint style="warning" %}
-Please make sure to add all the IP addresses from the **Control Plane** + **AWS US-East-1.**  By default, you will be put in the US-East-1 region, please make sure to contact support if you'd like to be moved to another region.
-{% endhint %}
-
-{% hint style="info" %}
-Add the following IP addresses so that the dashboard is able to validate connectivity!
-{% endhint %}
-
 * 52.55.119.205/32
 * 54.204.194.211/32
 * 52.200.253.111/32
