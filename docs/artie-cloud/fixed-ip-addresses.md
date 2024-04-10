@@ -13,7 +13,7 @@ We leverage a split plane architecture:
 * Our control plane houses our API server.
 * Our data plane performs the actual data transfer.
 
-When you add IPs, please add both the **control plane** and your **data plane**. Need help? Check out [#how-do-i-know-which-data-plane-my-account-is-in](fixed-ip-addresses.md#how-do-i-know-which-data-plane-my-account-is-in "mention")
+When you add IPs, please add both the **control plane** and your **data plane**. Need help? Check out [#which-data-plane-is-my-account-in](fixed-ip-addresses.md#which-data-plane-is-my-account-in "mention")
 
 ## Control Plane IP ranges (CIDR format)
 
@@ -53,7 +53,7 @@ When you add IPs, please add both the **control plane** and your **data plane**.
 
 ## Questions
 
-### How do I know which data plane my account is in?
+### Which data plane is my account in?
 
 You can see which data plane you are in by going to [https://app.artie.so/settings](https://app.artie.so/settings) and see `Data Processing Location` under `Advanced Settings`.
 
