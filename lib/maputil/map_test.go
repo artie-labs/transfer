@@ -66,7 +66,7 @@ func TestGetIntegerFromMap(t *testing.T) {
 			name:        "boolean value",
 			obj:         object,
 			key:         "def",
-			expectedErr: "true",
+			expectedErr: "key: def is not type integer",
 		},
 		{
 			name:        "non-numeric string value",
