@@ -13,8 +13,7 @@ func safePowerOfTwo(n int64) int64 {
 	if n < 0 {
 		return 0
 	} else if n > 62 {
-		// 2 ** n will overflow, return [math.MaxInt64] instead.
-		return math.MaxInt64
+		return math.MaxInt64 // 2 ** n will overflow
 	}
 	return 1 << n // 2 ** n == 1 << n
 }
