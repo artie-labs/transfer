@@ -1,17 +1,25 @@
+---
+description: >-
+  To ensure all of our services are able to connect to your data sources, please
+  ensure you add Artie's IP addresses to your firewall's allowlist.
+---
+
 # Fixed IP Addresses
 
-To ensure that Artie is able to subscribe to your sources and push data to your destination, please add all of Artie's IP addresses below to your allowlist.
+## Brief Architecture
 
-Today, we support the following cloud providers:
+We leverage a split plane architecture:
 
-* Google Cloud Platform
-* Amazon Web Services
+* Our control plane houses our API server.
+* Our data plane performs the actual data transfer.
+
+When you add IPs, please add both the **control plane** and your **data plane**. Check out [#questions](fixed-ip-addresses.md#questions "mention") to find out which data plane your account is in.
+
+## Control Plane IP ranges (CIDR format)
 
 {% hint style="warning" %}
 Please make sure to add all the IP addresses from the **Control Plane** + **AWS US-East-1.**  By default, you will be put in the US-East-1 region, please make sure to contact support if you'd like to be moved to another region.
 {% endhint %}
-
-## Control Plane IP ranges (CIDR format)
 
 {% hint style="info" %}
 Add the following IP addresses so that the dashboard is able to validate connectivity!
@@ -50,3 +58,19 @@ Add the following IP addresses so that the dashboard is able to validate connect
 * 44.238.174.20/32
 * 54.70.103.212/32
 * 54.185.25.39/32
+
+## Questions
+
+> How do I know which data plane my account is in?
+
+You can see which data plane you are in by going to [https://app.artie.so/settings](https://app.artie.so/settings) and see `Data Processing Location` under `Advanced Settings`.
+
+<figure><img src="../.gitbook/assets/image (44).png" alt="" width="563"><figcaption></figcaption></figure>
+
+> Why is there so many IPs?
+
+We're sorry! When we first launched, we weren't able to secure a CIDR range. We have now worked this out with AWS and will be using CIDR ranges for the next data plane we set up.
+
+> I am hosted in another region
+
+Get in touch with us either through our Slack or email. We'll be happy to set up another region.
