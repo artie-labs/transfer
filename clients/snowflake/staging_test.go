@@ -57,13 +57,6 @@ func (s *SnowflakeTestSuite) TestCastColValStaging() {
 
 func (s *SnowflakeTestSuite) TestBackfillColumn() {
 	fqTableName := "db.public.tableName"
-	type _testCase struct {
-		name        string
-		col         columns.Column
-		expectErr   bool
-		backfillSQL string
-		commentSQL  string
-	}
 
 	backfilledCol := columns.NewColumn("foo", typing.Boolean)
 	backfilledCol.SetDefaultValue(true)
@@ -75,7 +68,12 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 	needsBackfillColDefault := columns.NewColumn("default", typing.Boolean)
 	needsBackfillColDefault.SetDefaultValue(true)
 
-	testCases := []_testCase{
+	testCases := []struct {
+		name        string
+		col         columns.Column
+		backfillSQL string
+		commentSQL  string
+	}{
 		{
 			name: "col that doesn't have default val",
 			col:  columns.NewColumn("foo", typing.Invalid),
@@ -101,11 +99,6 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 	var count int
 	for _, testCase := range testCases {
 		err := shared.BackfillColumn(config.Config{}, s.stageStore, testCase.col, fqTableName)
-		if testCase.expectErr {
-			assert.Error(s.T(), err, testCase.name)
-			continue
-		}
-
 		assert.NoError(s.T(), err, testCase.name)
 		if testCase.backfillSQL != "" && testCase.commentSQL != "" {
 			backfillSQL, _ := s.fakeStageStore.ExecArgsForCall(count)

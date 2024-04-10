@@ -15,15 +15,6 @@ import (
 )
 
 func TestColumn_DefaultValue(t *testing.T) {
-	type _testCase struct {
-		name                       string
-		col                        *Column
-		args                       *DefaultValueArgs
-		expectedValue              any
-		destKindToExpectedValueMap map[constants.DestinationKind]any
-		expectedEr                 bool
-	}
-
 	birthday := time.Date(2022, time.September, 6, 3, 19, 24, 942000000, time.UTC)
 	birthdayExtDateTime, err := ext.ParseExtendedDateTime(birthday.Format(ext.ISO8601), nil)
 	assert.NoError(t, err)
@@ -38,7 +29,13 @@ func TestColumn_DefaultValue(t *testing.T) {
 	dateTimeKind := typing.ETime
 	dateTimeKind.ExtendedTimeDetails = &ext.DateTime
 
-	testCases := []_testCase{
+	testCases := []struct {
+		name                       string
+		col                        *Column
+		args                       *DefaultValueArgs
+		expectedValue              any
+		destKindToExpectedValueMap map[constants.DestinationKind]any
+	}{
 		{
 			name: "default value = nil",
 			col: &Column{
@@ -152,11 +149,7 @@ func TestColumn_DefaultValue(t *testing.T) {
 			}
 
 			actualValue, actualErr := testCase.col.DefaultValue(testCase.args, nil)
-			if testCase.expectedEr {
-				assert.Error(t, actualErr, fmt.Sprintf("%s %s", testCase.name, validDest))
-			} else {
-				assert.NoError(t, actualErr, fmt.Sprintf("%s %s", testCase.name, validDest))
-			}
+			assert.NoError(t, actualErr, fmt.Sprintf("%s %s", testCase.name, validDest))
 
 			expectedValue := testCase.expectedValue
 			if potentialValue, isOk := testCase.destKindToExpectedValueMap[validDest]; isOk {

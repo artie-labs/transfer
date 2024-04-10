@@ -86,6 +86,6 @@ func TestExpiresDate(t *testing.T) {
 
 	for _, badString := range []string{"foo", "bad_string", " 2022-09-01"} {
 		_, err := fromExpiresDateStringToTime(badString)
-		assert.Error(t, err, badString)
+		assert.ErrorContains(t, err, "cannot parse", badString)
 	}
 }

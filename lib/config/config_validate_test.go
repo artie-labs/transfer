@@ -9,58 +9,56 @@ import (
 )
 
 func TestS3Settings_Validate(t *testing.T) {
-	type _testCase struct {
-		Name      string
-		S3        *S3Settings
-		ExpectErr bool
-	}
-
-	testCases := []_testCase{
+	testCases := []struct {
+		name        string
+		s3          *S3Settings
+		expectedErr string
+	}{
 		{
-			Name:      "nil",
-			ExpectErr: true,
+			name:        "nil",
+			expectedErr: "s3 settings are nil",
 		},
 		{
-			Name:      "empty",
-			S3:        &S3Settings{},
-			ExpectErr: true,
+			name:        "empty",
+			s3:          &S3Settings{},
+			expectedErr: "one of s3 settings is empty",
 		},
 		{
-			Name: "missing bucket",
-			S3: &S3Settings{
+			name: "missing bucket",
+			s3: &S3Settings{
 				AwsSecretAccessKey: "foo",
 				AwsAccessKeyID:     "bar",
 			},
-			ExpectErr: true,
+			expectedErr: "one of s3 settings is empty",
 		},
 		{
-			Name: "missing aws access key id",
-			S3: &S3Settings{
+			name: "missing aws access key id",
+			s3: &S3Settings{
 				AwsSecretAccessKey: "foo",
 				Bucket:             "bucket",
 			},
-			ExpectErr: true,
+			expectedErr: "one of s3 settings is empty",
 		},
 		{
-			Name: "missing aws secret access key",
-			S3: &S3Settings{
+			name: "missing aws secret access key",
+			s3: &S3Settings{
 				AwsAccessKeyID: "bar",
 				Bucket:         "bucket",
 			},
-			ExpectErr: true,
+			expectedErr: "one of s3 settings is empty",
 		},
 		{
-			Name: "missing output format",
-			S3: &S3Settings{
+			name: "missing output format",
+			s3: &S3Settings{
 				Bucket:             "bucket",
 				AwsSecretAccessKey: "foo",
 				AwsAccessKeyID:     "bar",
 			},
-			ExpectErr: true,
+			expectedErr: `invalid s3 output format ""`,
 		},
 		{
-			Name: "valid",
-			S3: &S3Settings{
+			name: "valid",
+			s3: &S3Settings{
 				Bucket:             "bucket",
 				AwsSecretAccessKey: "foo",
 				AwsAccessKeyID:     "bar",
@@ -70,36 +68,34 @@ func TestS3Settings_Validate(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		err := testCase.S3.Validate()
-		if testCase.ExpectErr {
-			assert.Error(t, err, testCase.Name)
+		err := testCase.s3.Validate()
+		if testCase.expectedErr != "" {
+			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
 		} else {
-			assert.NoError(t, err, testCase.Name)
+			assert.NoError(t, err, testCase.name)
 		}
 	}
 }
 
 func TestCfg_ValidateRedshift(t *testing.T) {
-	type _testCase struct {
-		Name      string
-		Redshift  *Redshift
-		ExpectErr bool
-	}
-
-	testCases := []_testCase{
+	testCases := []struct {
+		name      string
+		redshift  *Redshift
+		expectErr string
+	}{
 		{
-			Name:      "nil",
-			Redshift:  nil,
-			ExpectErr: true,
+			name:      "nil",
+			redshift:  nil,
+			expectErr: "redshift cfg is nil",
 		},
 		{
-			Name:      "redshift settings exist, but all empty",
-			Redshift:  &Redshift{},
-			ExpectErr: true,
+			name:      "redshift settings exist, but all empty",
+			redshift:  &Redshift{},
+			expectErr: "one of redshift settings is empty",
 		},
 		{
-			Name: "redshift settings all set (missing port)",
-			Redshift: &Redshift{
+			name: "redshift settings all set (missing port)",
+			redshift: &Redshift{
 				Host:              "host",
 				Database:          "db",
 				Username:          "user",
@@ -107,11 +103,11 @@ func TestCfg_ValidateRedshift(t *testing.T) {
 				Bucket:            "bucket",
 				CredentialsClause: "creds",
 			},
-			ExpectErr: true,
+			expectErr: "redshift invalid port",
 		},
 		{
-			Name: "redshift settings all set (neg port)",
-			Redshift: &Redshift{
+			name: "redshift settings all set (neg port)",
+			redshift: &Redshift{
 				Host:              "host",
 				Port:              -500,
 				Database:          "db",
@@ -120,11 +116,11 @@ func TestCfg_ValidateRedshift(t *testing.T) {
 				Bucket:            "bucket",
 				CredentialsClause: "creds",
 			},
-			ExpectErr: true,
+			expectErr: "redshift invalid port",
 		},
 		{
-			Name: "redshift settings all set",
-			Redshift: &Redshift{
+			name: "redshift settings all set",
+			redshift: &Redshift{
 				Host:              "host",
 				Port:              123,
 				Database:          "db",
@@ -138,14 +134,14 @@ func TestCfg_ValidateRedshift(t *testing.T) {
 
 	for _, testCase := range testCases {
 		cfg := &Config{
-			Redshift: testCase.Redshift,
+			Redshift: testCase.redshift,
 			Output:   constants.Redshift,
 		}
 		err := cfg.ValidateRedshift()
-		if testCase.ExpectErr {
-			assert.Error(t, err, testCase.Name)
+		if testCase.expectErr != "" {
+			assert.ErrorContains(t, err, testCase.expectErr, testCase.name)
 		} else {
-			assert.NoError(t, err, testCase.Name)
+			assert.NoError(t, err, testCase.name)
 		}
 	}
 }

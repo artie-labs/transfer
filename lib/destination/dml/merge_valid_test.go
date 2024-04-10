@@ -13,12 +13,6 @@ import (
 )
 
 func TestMergeArgument_Valid(t *testing.T) {
-	type _testCase struct {
-		name               string
-		mergeArg           *MergeArgument
-		expectErrorMessage string
-	}
-
 	primaryKeys := []columns.Wrapper{
 		columns.NewWrapper(columns.NewColumn("id", typing.Integer), false, nil),
 	}
@@ -28,22 +22,26 @@ func TestMergeArgument_Valid(t *testing.T) {
 	cols.AddColumn(columns.NewColumn("firstName", typing.String))
 	cols.AddColumn(columns.NewColumn("lastName", typing.String))
 
-	testCases := []_testCase{
+	testCases := []struct {
+		name        string
+		mergeArg    *MergeArgument
+		expectedErr string
+	}{
 		{
-			name:               "nil",
-			expectErrorMessage: "merge argument is nil",
+			name:        "nil",
+			expectedErr: "merge argument is nil",
 		},
 		{
-			name:               "no pks",
-			mergeArg:           &MergeArgument{},
-			expectErrorMessage: "merge argument does not contain primary keys",
+			name:        "no pks",
+			mergeArg:    &MergeArgument{},
+			expectedErr: "merge argument does not contain primary keys",
 		},
 		{
 			name: "pks but no colsToTypes",
 			mergeArg: &MergeArgument{
 				PrimaryKeys: primaryKeys,
 			},
-			expectErrorMessage: "columns cannot be empty",
+			expectedErr: "columns cannot be empty",
 		},
 		{
 			name: "pks, cols, colsTpTypes exists but no subquery or fqTableName",
@@ -51,7 +49,7 @@ func TestMergeArgument_Valid(t *testing.T) {
 				PrimaryKeys: primaryKeys,
 				Columns:     &cols,
 			},
-			expectErrorMessage: "one of these arguments is empty: fqTableName, subQuery",
+			expectedErr: "one of these arguments is empty: fqTableName, subQuery",
 		},
 		{
 			name: "pks, cols, colsTpTypes, subquery exists but no fqTableName",
@@ -60,7 +58,7 @@ func TestMergeArgument_Valid(t *testing.T) {
 				Columns:     &cols,
 				SubQuery:    "schema.tableName",
 			},
-			expectErrorMessage: "one of these arguments is empty: fqTableName, subQuery",
+			expectedErr: "one of these arguments is empty: fqTableName, subQuery",
 		},
 		{
 			name: "pks, cols, colsTpTypes, fqTableName exists but no subquery",
@@ -69,7 +67,7 @@ func TestMergeArgument_Valid(t *testing.T) {
 				Columns:     &cols,
 				FqTableName: "schema.tableName",
 			},
-			expectErrorMessage: "one of these arguments is empty: fqTableName, subQuery",
+			expectedErr: "one of these arguments is empty: fqTableName, subQuery",
 		},
 		{
 			name: "did not pass in uppercase esc col",
@@ -79,7 +77,7 @@ func TestMergeArgument_Valid(t *testing.T) {
 				FqTableName: "schema.tableName",
 				SubQuery:    "schema.tableName",
 			},
-			expectErrorMessage: "uppercaseEscNames cannot be nil",
+			expectedErr: "uppercaseEscNames cannot be nil",
 		},
 		{
 			name: "missing dest kind",
@@ -90,7 +88,7 @@ func TestMergeArgument_Valid(t *testing.T) {
 				FqTableName:       "schema.tableName",
 				UppercaseEscNames: ptr.ToBool(false),
 			},
-			expectErrorMessage: "invalid destination",
+			expectedErr: "invalid destination",
 		},
 		{
 			name: "everything exists",
@@ -107,9 +105,8 @@ func TestMergeArgument_Valid(t *testing.T) {
 
 	for _, testCase := range testCases {
 		actualErr := testCase.mergeArg.Valid()
-		if len(testCase.expectErrorMessage) > 0 {
-			assert.Error(t, actualErr, testCase.name)
-			assert.ErrorContains(t, actualErr, testCase.expectErrorMessage, testCase.name)
+		if testCase.expectedErr != "" {
+			assert.ErrorContains(t, actualErr, testCase.expectedErr, testCase.name)
 		} else {
 			assert.NoError(t, actualErr, testCase.name)
 		}

@@ -37,15 +37,13 @@ func TestGetIntegerFromMap(t *testing.T) {
 		"123 (number)": -321,
 	}
 
-	type _testCase struct {
+	testCases := []struct {
 		name          string
 		obj           map[string]any
 		key           string
 		expectedValue int
-		expectError   bool
-	}
-
-	testCases := []_testCase{
+		expectedErr   string
+	}{
 		{
 			name:          "happy path with string value",
 			obj:           object,
@@ -62,19 +60,19 @@ func TestGetIntegerFromMap(t *testing.T) {
 			name:        "non-existing key",
 			obj:         object,
 			key:         "xyz",
-			expectError: true,
+			expectedErr: "key: xyz does not exist in object",
 		},
 		{
 			name:        "boolean value",
 			obj:         object,
 			key:         "def",
-			expectError: true,
+			expectedErr: "true",
 		},
 		{
 			name:        "non-numeric string value",
 			obj:         object,
 			key:         "ghi",
-			expectError: true,
+			expectedErr: "key: ghi is not type integer",
 		},
 		{
 			name:          "negative number as string",
@@ -92,8 +90,8 @@ func TestGetIntegerFromMap(t *testing.T) {
 
 	for _, testCase := range testCases {
 		value, err := GetIntegerFromMap(testCase.obj, testCase.key)
-		if testCase.expectError {
-			assert.Error(t, err, testCase.name)
+		if testCase.expectedErr != "" {
+			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
 		} else {
 			assert.Equal(t, reflect.Int, reflect.TypeOf(value).Kind())
 			assert.Equal(t, testCase.expectedValue, value)

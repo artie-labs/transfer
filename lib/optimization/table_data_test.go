@@ -18,14 +18,12 @@ import (
 )
 
 func TestDistinctDates(t *testing.T) {
-	type _testCase struct {
+	testCases := []struct {
 		name                string
 		rowData             map[string]map[string]any // pk -> { col -> val }
-		expectErr           bool
+		expectedErr         string
 		expectedDatesString []string
-	}
-
-	testCases := []_testCase{
+	}{
 		{
 			name: "no dates",
 		},
@@ -75,7 +73,7 @@ func TestDistinctDates(t *testing.T) {
 					"ts": nil,
 				},
 			},
-			expectErr: true,
+			expectedErr: "col: ts is not a time column",
 		},
 	}
 
@@ -85,8 +83,8 @@ func TestDistinctDates(t *testing.T) {
 		}
 
 		actualValues, actualErr := td.DistinctDates("ts", nil)
-		if testCase.expectErr {
-			assert.Error(t, actualErr, testCase.name)
+		if testCase.expectedErr != "" {
+			assert.ErrorContains(t, actualErr, testCase.expectedErr, testCase.name)
 		} else {
 			assert.NoError(t, actualErr, testCase.name)
 			assert.Equal(t, true, slicesEqualUnordered(testCase.expectedDatesString, actualValues),

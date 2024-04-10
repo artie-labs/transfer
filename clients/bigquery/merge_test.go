@@ -13,7 +13,6 @@ func (b *BigQueryTestSuite) TestBackfillColumn() {
 	type _testCase struct {
 		name        string
 		col         columns.Column
-		expectErr   bool
 		backfillSQL string
 		commentSQL  string
 	}
@@ -62,11 +61,6 @@ func (b *BigQueryTestSuite) TestBackfillColumn() {
 	var index int
 	for _, testCase := range testCases {
 		err := shared.BackfillColumn(config.Config{}, b.store, testCase.col, fqTableName)
-		if testCase.expectErr {
-			assert.Error(b.T(), err, testCase.name)
-			continue
-		}
-
 		assert.NoError(b.T(), err, testCase.name)
 		if testCase.backfillSQL != "" && testCase.commentSQL != "" {
 			backfillSQL, _ := b.fakeStore.ExecArgsForCall(index)

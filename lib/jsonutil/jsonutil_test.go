@@ -18,7 +18,7 @@ func TestSanitizePayload(t *testing.T) {
 	{
 		// Invalid JSON string
 		_, err := SanitizePayload("hello")
-		assert.Error(t, err)
+		assert.ErrorContains(t, err, "invalid character 'h' looking for beginning of value")
 	}
 	{
 		// Valid JSON string, nothing changed.

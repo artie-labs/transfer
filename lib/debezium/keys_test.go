@@ -34,32 +34,35 @@ func TestParsePartitionKeyString(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, kv["uuid"], "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c")
 
-	badDataCases := []string{
-		"",
-		"Struct{",
-		"Struct{}",
-		"}",
-		"Struct{uuid=a,,}",
-		"Struct{,,}",
+	badDataCases := []struct {
+		value       string
+		expectedErr string
+	}{
+		{"", "key is nil"},
+		{"Struct{", "key is too short"},
+		{"Struct{}", "key is too short"},
+		{"}", "key is too short"},
+		{"Struct{uuid=a,,}", `malformed key value pair: ""`},
+		{"Struct{,,}", `malformed key value pair: ""`},
 	}
 
 	for _, badData := range badDataCases {
-		_, err = parsePartitionKeyString([]byte(badData))
-		assert.Error(t, err)
+		_, err = parsePartitionKeyString([]byte(badData.value))
+		assert.ErrorContains(t, err, badData.expectedErr)
 	}
 }
 
 func TestParsePartitionKeyStruct(t *testing.T) {
-	badDataCases := []string{
-		"",
-		"{}",
-		"{id:",
-		`{"id":`,
+	badDataCases := []struct{ value, expectedErr string }{
+		{"", "key is nil"},
+		{"{}", "key is nil"},
+		{"{id:", "failed to json unmarshal: invalid character 'i' looking for beginning of object key string"},
+		{`{"id":`, "failed to json unmarshal: unexpected end of JSON input"},
 	}
 
 	for _, badData := range badDataCases {
-		_, err := parsePartitionKeyStruct([]byte(badData))
-		assert.Error(t, err, badData)
+		_, err := parsePartitionKeyStruct([]byte(badData.value))
+		assert.ErrorContains(t, err, badData.expectedErr, badData)
 	}
 
 	kv, err := parsePartitionKeyStruct([]byte(`{"id": 47}`))
