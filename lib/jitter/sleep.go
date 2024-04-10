@@ -7,7 +7,7 @@ import (
 
 const DefaultMaxMs = 3500
 
-// computeJitterUpperBoundMs calculates min(maxMs, baseMs * 2 ** attempt)
+// computeJitterUpperBoundMs calculates min(maxMs, baseMs * 2 ** attempt).
 func computeJitterUpperBoundMs(baseMs int64, maxMs int64, attempts int64) int64 {
 	if maxMs <= 0 {
 		return 0
@@ -24,7 +24,7 @@ func computeJitterUpperBoundMs(baseMs int64, maxMs int64, attempts int64) int64 
 
 // Jitter implements exponential backoff + jitter.
 // See: https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
-// sleep = random_between(0, min(cap, base * 2 ** attempt))
+// Algorithm: sleep = random_between(0, min(cap, base * 2 ** attempt))
 func Jitter(baseMs, maxMs, attempts int) time.Duration {
 	upperBoundMs := computeJitterUpperBoundMs(int64(baseMs), int64(maxMs), int64(attempts))
 	if upperBoundMs <= 0 {
