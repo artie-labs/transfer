@@ -79,19 +79,19 @@ func TestS3Settings_Validate(t *testing.T) {
 
 func TestCfg_ValidateRedshift(t *testing.T) {
 	testCases := []struct {
-		name      string
-		redshift  *Redshift
-		expectErr string
+		name        string
+		redshift    *Redshift
+		expectedErr string
 	}{
 		{
-			name:      "nil",
-			redshift:  nil,
-			expectErr: "redshift cfg is nil",
+			name:        "nil",
+			redshift:    nil,
+			expectedErr: "redshift cfg is nil",
 		},
 		{
-			name:      "redshift settings exist, but all empty",
-			redshift:  &Redshift{},
-			expectErr: "one of redshift settings is empty",
+			name:        "redshift settings exist, but all empty",
+			redshift:    &Redshift{},
+			expectedErr: "one of redshift settings is empty",
 		},
 		{
 			name: "redshift settings all set (missing port)",
@@ -103,7 +103,7 @@ func TestCfg_ValidateRedshift(t *testing.T) {
 				Bucket:            "bucket",
 				CredentialsClause: "creds",
 			},
-			expectErr: "redshift invalid port",
+			expectedErr: "redshift invalid port",
 		},
 		{
 			name: "redshift settings all set (neg port)",
@@ -116,7 +116,7 @@ func TestCfg_ValidateRedshift(t *testing.T) {
 				Bucket:            "bucket",
 				CredentialsClause: "creds",
 			},
-			expectErr: "redshift invalid port",
+			expectedErr: "redshift invalid port",
 		},
 		{
 			name: "redshift settings all set",
@@ -138,8 +138,8 @@ func TestCfg_ValidateRedshift(t *testing.T) {
 			Output:   constants.Redshift,
 		}
 		err := cfg.ValidateRedshift()
-		if testCase.expectErr != "" {
-			assert.ErrorContains(t, err, testCase.expectErr, testCase.name)
+		if testCase.expectedErr != "" {
+			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
 		} else {
 			assert.NoError(t, err, testCase.name)
 		}
