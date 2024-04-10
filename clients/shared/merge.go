@@ -27,7 +27,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 
 	tableConfig, err := dwh.GetTableConfig(tableData)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get table config: %w", err)
 	}
 
 	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
@@ -49,8 +49,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 	// Columns that are missing in DWH, but exist in our CDC stream.
 	err = createAlterTableArgs.AlterTable(targetKeysMissing...)
 	if err != nil {
-		slog.Warn("Failed to apply alter table", slog.Any("err", err))
-		return err
+		return fmt.Errorf("failed to alter table: %w", err)
 	}
 
 	// Keys that exist in DWH, but not in our CDC stream.
@@ -67,8 +66,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 	}
 
 	if err = deleteAlterTableArgs.AlterTable(srcKeysMissing...); err != nil {
-		slog.Warn("Failed to apply alter table", slog.Any("err", err))
-		return err
+		return fmt.Errorf("failed to apply alter table: %w", err)
 	}
 
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
@@ -166,7 +164,11 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 
 		slog.Debug("Executing...", slog.String("query", mergeQuery))
 		_, err = dwh.Exec(mergeQuery)
-		return err
+		if err != nil {
+			return fmt.Errorf("failed to execute merge: %w", err)
+		}
+
+		return nil
 	} else {
 		mergeQuery, err := mergeArg.GetStatement()
 		if err != nil {
