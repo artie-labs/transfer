@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const DefaultMaxMs = int64(3500)
+const DefaultMaxMs = 3500
 
 func computeJitterUpperBoundMs(baseMs, maxMs, attempts int) int {
 	// https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
