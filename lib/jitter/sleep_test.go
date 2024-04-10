@@ -8,6 +8,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSafePowerOfTwo(t *testing.T) {
+	assert.Equal(t, int64(0), safePowerOfTwo(-2))
+	assert.Equal(t, int64(0), safePowerOfTwo(-1))
+	assert.Equal(t, int64(1), safePowerOfTwo(0))
+	assert.Equal(t, int64(2), safePowerOfTwo(1))
+	assert.Equal(t, int64(4), safePowerOfTwo(2))
+	assert.Equal(t, int64(4611686018427387904), safePowerOfTwo(62))
+	assert.Equal(t, int64(math.MaxInt64), safePowerOfTwo(63))
+	assert.Equal(t, int64(math.MaxInt64), safePowerOfTwo(64))
+	assert.Equal(t, int64(math.MaxInt64), safePowerOfTwo(100))
+}
+
 func TestComputeJitterUpperBoundMs(t *testing.T) {
 	// A maxMs that is <= 0 returns 0.
 	assert.Equal(t, int64(0), computeJitterUpperBoundMs(0, 0, 0))
