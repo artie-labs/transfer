@@ -8,7 +8,7 @@ import (
 const DefaultMaxMs = 3500
 
 // computeJitterUpperBoundMs calculates min(maxMs, baseMs * 2 ** attempt).
-func computeJitterUpperBoundMs(baseMs int64, maxMs int64, attempts int64) int64 {
+func computeJitterUpperBoundMs(baseMs, maxMs, attempts int64) int64 {
 	if maxMs <= 0 {
 		return 0
 	}
