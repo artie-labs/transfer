@@ -16,9 +16,9 @@ func (b *BigQueryTestSuite) TestTableRelName() {
 	{
 		// All the possible errors
 		_, err := tableRelName("project.dataset")
-		assert.Error(b.T(), err)
+		assert.ErrorContains(b.T(), err, "invalid fully qualified name: project.dataset")
 
 		_, err = tableRelName("project")
-		assert.Error(b.T(), err)
+		assert.ErrorContains(b.T(), err, "invalid fully qualified name: project")
 	}
 }

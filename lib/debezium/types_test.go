@@ -399,7 +399,7 @@ func TestFromDebeziumTypeTimePrecisionConnect(t *testing.T) {
 }
 
 func TestField_DecodeDecimal(t *testing.T) {
-	type _testCase struct {
+	testCases := []struct {
 		name    string
 		encoded string
 		params  map[string]any
@@ -409,20 +409,18 @@ func TestField_DecodeDecimal(t *testing.T) {
 		expectNilPtrPrecision bool
 		expectedScale         int
 		expectBigFloat        bool
-		expectError           bool
-	}
-
-	testCases := []_testCase{
+		expectedErr           string
+	}{
 		{
 			name:        "No scale (nil map)",
-			expectError: true,
+			expectedErr: "object is empty",
 		},
 		{
 			name: "No scale (not provided)",
 			params: map[string]any{
 				"connect.decimal.precision": "5",
 			},
-			expectError: true,
+			expectedErr: "key: scale does not exist in object",
 		},
 		{
 			name: "Precision is not an integer",
@@ -430,7 +428,7 @@ func TestField_DecodeDecimal(t *testing.T) {
 				"scale":                     "2",
 				"connect.decimal.precision": "abc",
 			},
-			expectError: true,
+			expectedErr: "key: connect.decimal.precision is not type integer",
 		},
 		{
 			name:    "NUMERIC(5,0)",
@@ -572,8 +570,8 @@ func TestField_DecodeDecimal(t *testing.T) {
 		assert.NoError(t, err)
 
 		dec, err := field.DecodeDecimal(bytes)
-		if testCase.expectError {
-			assert.Error(t, err, testCase.name)
+		if testCase.expectedErr != "" {
+			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
 			continue
 		}
 

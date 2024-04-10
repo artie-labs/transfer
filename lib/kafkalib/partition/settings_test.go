@@ -7,28 +7,26 @@ import (
 )
 
 func TestBigQuerySettings_Valid(t *testing.T) {
-	type _testCase struct {
+	testCases := []struct {
 		name             string
 		bigQuerySettings *BigQuerySettings
-		expectError      bool
-	}
-
-	testCases := []_testCase{
+		expectedErr      string
+	}{
 		{
 			name:        "nil",
-			expectError: true,
+			expectedErr: "bigQuerySettings is nil",
 		},
 		{
 			name:             "empty partitionType",
 			bigQuerySettings: &BigQuerySettings{},
-			expectError:      true,
+			expectedErr:      "partitionTypes cannot be empty",
 		},
 		{
 			name: "empty partitionField",
 			bigQuerySettings: &BigQuerySettings{
 				PartitionType: "time",
 			},
-			expectError: true,
+			expectedErr: "partitionField cannot be empty",
 		},
 		{
 			name: "empty partitionBy",
@@ -36,7 +34,7 @@ func TestBigQuerySettings_Valid(t *testing.T) {
 				PartitionType:  "time",
 				PartitionField: "created_at",
 			},
-			expectError: true,
+			expectedErr: "partitionBy cannot be empty",
 		},
 		{
 			name: "invalid partitionType",
@@ -45,7 +43,7 @@ func TestBigQuerySettings_Valid(t *testing.T) {
 				PartitionField: "created_at",
 				PartitionBy:    "daily",
 			},
-			expectError: true,
+			expectedErr: "partitionType must be one of:",
 		},
 		{
 			name: "invalid partitionBy",
@@ -54,7 +52,7 @@ func TestBigQuerySettings_Valid(t *testing.T) {
 				PartitionField: "created_at",
 				PartitionBy:    "invalid",
 			},
-			expectError: true,
+			expectedErr: "partitionBy must be one of:",
 		},
 		{
 			name: "valid",
@@ -68,8 +66,8 @@ func TestBigQuerySettings_Valid(t *testing.T) {
 
 	for _, testCase := range testCases {
 		actualErr := testCase.bigQuerySettings.Valid()
-		if testCase.expectError {
-			assert.Error(t, actualErr, testCase.name)
+		if testCase.expectedErr != "" {
+			assert.ErrorContains(t, actualErr, testCase.expectedErr, testCase.name)
 		} else {
 			assert.NoError(t, actualErr, testCase.name)
 		}
@@ -77,22 +75,20 @@ func TestBigQuerySettings_Valid(t *testing.T) {
 }
 
 func TestBigQuerySettings_GenerateMergeString(t *testing.T) {
-	type _testCase struct {
+	testCases := []struct {
 		name           string
 		values         []string
-		expectError    bool
+		expectedErr    string
 		expectedString string
-	}
-
-	testCases := []_testCase{
+	}{
 		{
 			name:        "nil",
-			expectError: true,
+			expectedErr: "values cannot be empty",
 		},
 		{
 			name:        "empty values",
 			values:      []string{},
-			expectError: true,
+			expectedErr: "values cannot be empty",
 		},
 		{
 			name:           "valid",
@@ -114,8 +110,8 @@ func TestBigQuerySettings_GenerateMergeString(t *testing.T) {
 		}
 
 		actualValue, actualErr := bigquery.GenerateMergeString(testCase.values)
-		if testCase.expectError {
-			assert.Error(t, actualErr, testCase.name)
+		if testCase.expectedErr != "" {
+			assert.ErrorContains(t, actualErr, testCase.expectedErr, testCase.name)
 		} else {
 			assert.NoError(t, actualErr, testCase.name)
 			assert.Equal(t, testCase.expectedString, actualValue, testCase.name)

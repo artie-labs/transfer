@@ -104,8 +104,7 @@ func (d *DDLTestSuite) Test_DropTemporaryTable_Errors() {
 				fullTableName := fmt.Sprintf("%s_%s", table, constants.ArtiePrefix)
 				err := ddl.DropTemporaryTable(_dwh, fullTableName, shouldReturnErr)
 				if shouldReturnErr {
-					assert.Error(d.T(), err)
-					assert.Contains(d.T(), err.Error(), randomErr.Error())
+					assert.ErrorContains(d.T(), err, randomErr.Error())
 				} else {
 					assert.NoError(d.T(), err)
 				}

@@ -255,7 +255,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 
 func (p *MongoTestSuite) TestGetEventFromBytesTombstone() {
 	_, err := p.Debezium.GetEventFromBytes(typing.Settings{}, nil)
-	assert.Error(p.T(), err)
+	assert.ErrorContains(p.T(), err, "empty message")
 }
 
 func (p *MongoTestSuite) TestMongoDBEventWithSchema() {

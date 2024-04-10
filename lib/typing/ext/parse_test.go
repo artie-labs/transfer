@@ -35,14 +35,20 @@ func TestParseFromInterface(t *testing.T) {
 		assert.Equal(t, val, extTime)
 	}
 
-	invalidVals := []any{
-		nil,
-		true,
-		false,
+	{
+		// Nil
+		_, err := ParseFromInterface(nil, nil)
+		assert.ErrorContains(t, err, "val is nil")
 	}
-	for _, invalidVal := range invalidVals {
-		_, err := ParseFromInterface(invalidVal, nil)
-		assert.Error(t, err)
+	{
+		// True
+		_, err := ParseFromInterface(true, nil)
+		assert.ErrorContains(t, err, "true is not supported")
+	}
+	{
+		// False
+		_, err := ParseFromInterface(false, nil)
+		assert.ErrorContains(t, err, "false is not supported")
 	}
 }
 

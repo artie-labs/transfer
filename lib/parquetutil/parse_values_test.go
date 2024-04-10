@@ -14,15 +14,6 @@ import (
 )
 
 func TestParseValue(t *testing.T) {
-	type _testStruct struct {
-		name    string
-		colVal  any
-		colKind columns.Column
-
-		expectErr     bool
-		expectedValue any
-	}
-
 	eDecimal := typing.EDecimal
 	eDecimal.ExtendedDecimalDetails = decimal.NewDecimal(ptr.ToInt(30), 5, nil)
 
@@ -35,7 +26,13 @@ func TestParseValue(t *testing.T) {
 	eDateTime := typing.ETime
 	eDateTime.ExtendedTimeDetails = &ext.DateTime
 
-	testCases := []_testStruct{
+	testCases := []struct {
+		name    string
+		colVal  any
+		colKind columns.Column
+
+		expectedValue any
+	}{
 		{
 			name:          "nil value",
 			colVal:        nil,
@@ -95,11 +92,7 @@ func TestParseValue(t *testing.T) {
 
 	for _, tc := range testCases {
 		actualValue, actualErr := ParseValue(tc.colVal, tc.colKind, nil)
-		if tc.expectErr {
-			assert.Error(t, actualErr, tc.name)
-		} else {
-			assert.NoError(t, actualErr, tc.name)
-			assert.Equal(t, tc.expectedValue, actualValue, tc.name)
-		}
+		assert.NoError(t, actualErr, tc.name)
+		assert.Equal(t, tc.expectedValue, actualValue, tc.name)
 	}
 }

@@ -159,7 +159,7 @@ func TestDateTime(t *testing.T) {
 	}
 
 	ts, err := ext.ParseExtendedDateTime("random", []string{})
-	assert.Error(t, err, err)
+	assert.ErrorContains(t, err, "dtString: random is not supported")
 	assert.Nil(t, ts)
 }
 

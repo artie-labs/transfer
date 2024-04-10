@@ -14,15 +14,6 @@ import (
 )
 
 func TestObjectPrefix(t *testing.T) {
-	type _testCase struct {
-		name      string
-		tableData *optimization.TableData
-		config    *config.S3Settings
-
-		expectError    bool
-		expectedFormat string
-	}
-
 	td := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{
 		Database:  "db",
 		TableName: "table",
@@ -30,10 +21,17 @@ func TestObjectPrefix(t *testing.T) {
 	}, "table")
 
 	td.LatestCDCTs = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
-	testCases := []_testCase{
+	testCases := []struct {
+		name      string
+		tableData *optimization.TableData
+		config    *config.S3Settings
+
+		expectedErr    string
+		expectedFormat string
+	}{
 		{
 			name:        "nil",
-			expectError: true,
+			expectedErr: "failed to validate settings: s3 settings are nil",
 		},
 		{
 			name:      "valid #1 (no prefix)",
@@ -62,8 +60,8 @@ func TestObjectPrefix(t *testing.T) {
 
 	for _, tc := range testCases {
 		store, err := LoadStore(config.Config{S3: tc.config})
-		if tc.expectError {
-			assert.Error(t, err, tc.name)
+		if tc.expectedErr != "" {
+			assert.ErrorContains(t, err, tc.expectedErr, tc.name)
 		} else {
 			assert.NoError(t, err, tc.name)
 			actualObjectPrefix := store.ObjectPrefix(tc.tableData)

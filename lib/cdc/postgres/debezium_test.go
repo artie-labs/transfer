@@ -18,7 +18,7 @@ var validTc = &kafkalib.TopicConfig{
 
 func (p *PostgresTestSuite) TestGetEventFromBytesTombstone() {
 	_, err := p.GetEventFromBytes(typing.Settings{}, nil)
-	assert.Error(p.T(), err)
+	assert.ErrorContains(p.T(), err, "empty message")
 }
 
 func (p *PostgresTestSuite) TestGetPrimaryKey() {

@@ -70,7 +70,7 @@ func (s *S3Settings) Validate() error {
 	}
 
 	if !constants.IsValidS3OutputFormat(s.OutputFormat) {
-		return fmt.Errorf("invalid s3 output format, format: %v", s.OutputFormat)
+		return fmt.Errorf("invalid s3 output format %q", s.OutputFormat)
 	}
 
 	return nil

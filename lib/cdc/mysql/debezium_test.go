@@ -13,7 +13,7 @@ import (
 
 func (m *MySQLTestSuite) TestGetEventFromBytesTombstone() {
 	_, err := m.GetEventFromBytes(typing.Settings{}, nil)
-	assert.Error(m.T(), err)
+	assert.ErrorContains(m.T(), err, "empty message")
 }
 
 func (m *MySQLTestSuite) TestGetEventFromBytes() {

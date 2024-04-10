@@ -17,19 +17,17 @@ import (
 )
 
 func TestField_GetScaleAndPrecision(t *testing.T) {
-	type _tc struct {
+	tcs := []struct {
 		name              string
 		parameters        map[string]any
-		expectErr         bool
+		expectedErr       string
 		expectedScale     int
 		expectedPrecision *int
-	}
-
-	tcs := []_tc{
+	}{
 		{
-			name:       "Test Case 1: Empty Parameters",
-			parameters: map[string]any{},
-			expectErr:  true,
+			name:        "Test Case 1: Empty Parameters",
+			parameters:  map[string]any{},
+			expectedErr: "object is empty",
 		},
 		{
 			name: "Test Case 2: Valid Scale Only",
@@ -52,7 +50,7 @@ func TestField_GetScaleAndPrecision(t *testing.T) {
 			parameters: map[string]any{
 				"scale": "invalid",
 			},
-			expectErr: true,
+			expectedErr: "key: scale is not type integer",
 		},
 		{
 			name: "Test Case 5: Invalid Precision Type",
@@ -60,7 +58,7 @@ func TestField_GetScaleAndPrecision(t *testing.T) {
 				"scale":                  5,
 				KafkaDecimalPrecisionKey: "invalid",
 			},
-			expectErr: true,
+			expectedErr: "key: connect.decimal.precision is not type integer",
 		},
 	}
 
@@ -70,8 +68,8 @@ func TestField_GetScaleAndPrecision(t *testing.T) {
 		}
 
 		scale, precision, err := field.GetScaleAndPrecision()
-		if tc.expectErr {
-			assert.Error(t, err, tc.name)
+		if tc.expectedErr != "" {
+			assert.ErrorContains(t, err, tc.expectedErr, tc.name)
 		} else {
 			assert.NoError(t, err, tc.name)
 			assert.Equal(t, tc.expectedScale, scale, tc.name)

@@ -84,7 +84,7 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecCallCount(), "called SFLK the same amt to create cols")
 
 	d.fakeSnowflakeStagesStore.ExecReturns(nil, errors.New("table does not exist"))
-	assert.Error(d.T(), alterTableArgs.AlterTable(cols...))
+	assert.ErrorContains(d.T(), alterTableArgs.AlterTable(cols...), "failed to apply ddl")
 }
 
 func (d *DDLTestSuite) TestAlterTableAdd() {

@@ -19,7 +19,7 @@ func TestMergeStatementPartsValidation(t *testing.T) {
 		{DestKind: constants.BigQuery},
 	} {
 		parts, err := arg.GetParts()
-		assert.Error(t, err)
+		assert.ErrorContains(t, err, "merge argument does not contain primary keys")
 		assert.Nil(t, parts)
 	}
 }

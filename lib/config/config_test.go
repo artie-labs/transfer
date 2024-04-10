@@ -164,7 +164,6 @@ outputSource: none
 	assert.Nil(t, err)
 
 	validErr := config.Validate()
-	assert.Error(t, validErr)
 	assert.ErrorContains(t, validErr, "invalid destination")
 }
 
@@ -318,7 +317,7 @@ func TestReadFileNotYAML(t *testing.T) {
 
 	config, err := readFileToConfig(randomFile)
 	assert.Nil(t, config)
-	assert.Error(t, err, "failed to read config file, because it's not proper yaml.")
+	assert.ErrorContains(t, err, "yaml: unmarshal errors", "failed to read config file, because it's not proper yaml.")
 }
 
 func TestReadFileToConfig_Snowflake(t *testing.T) {
@@ -544,7 +543,7 @@ func TestConfig_Validate(t *testing.T) {
 
 	// Now that we have a valid output, let's test with S3.
 	cfg.Output = constants.S3
-	assert.Error(t, cfg.Validate())
+	assert.ErrorContains(t, cfg.Validate(), "s3 settings are nil")
 	cfg.S3 = &S3Settings{
 		Bucket:             "foo",
 		AwsSecretAccessKey: "foo",

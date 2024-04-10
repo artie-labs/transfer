@@ -54,7 +54,7 @@ func parsePartitionKeyString(keyBytes []byte) (map[string]any, error) {
 	for _, kvPartString := range strings.Split(parsedKeyString, ",") {
 		kvParts := strings.Split(kvPartString, "=")
 		if len(kvParts) < 2 {
-			return nil, fmt.Errorf("malformed key value pair: %s", kvPartString)
+			return nil, fmt.Errorf("malformed key value pair: %q", kvPartString)
 		}
 
 		retMap[kvParts[0]] = strings.Join(kvParts[1:], "=")
