@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/jsonutil"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -126,6 +127,9 @@ func (f Field) ParseValue(value any) (any, error) {
 
 	switch f.DebeziumType {
 	case JSON:
+		if value == constants.ToastUnavailableValuePlaceholder {
+			return value, nil
+		}
 		return jsonutil.SanitizePayload(value)
 	case GeometryType, GeographyType:
 		return parseGeometry(value)

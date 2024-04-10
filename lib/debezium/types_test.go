@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
@@ -336,6 +337,24 @@ func TestField_ParseValue(t *testing.T) {
 			},
 			value:         "string value",
 			expectedValue: "string value",
+		},
+		{
+			name: "JSON toast",
+			field: Field{
+				Type:         String,
+				DebeziumType: JSON,
+			},
+			value:         constants.ToastUnavailableValuePlaceholder,
+			expectedValue: constants.ToastUnavailableValuePlaceholder,
+		},
+		{
+			name: "JSON malformed",
+			field: Field{
+				Type:         String,
+				DebeziumType: JSON,
+			},
+			value:       "i'm not json",
+			expectedErr: "invalid character 'i' looking for beginning of value",
 		},
 	}
 
