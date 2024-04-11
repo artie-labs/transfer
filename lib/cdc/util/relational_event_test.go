@@ -134,10 +134,11 @@ func TestGetData_TestDelete(t *testing.T) {
 	}
 
 	expectedKeyValues := map[string]any{
-		"id":         1004,
-		"first_name": "Anne",
-		"last_name":  "Kretchmar",
-		"email":      "annek@noanswer.org",
+		"id":                         1004,
+		"first_name":                 "Anne",
+		"last_name":                  "Kretchmar",
+		"email":                      "annek@noanswer.org",
+		constants.DeleteColumnMarker: true,
 	}
 
 	kvMap := map[string]any{"pk": 1004}
