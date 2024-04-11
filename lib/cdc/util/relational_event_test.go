@@ -2,7 +2,6 @@ package util
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
@@ -134,14 +133,6 @@ func TestGetData_TestDelete(t *testing.T) {
 		IdempotentKey: "updated_at",
 	}
 
-	kvMap := map[string]any{"pk": 1004}
-	var schemaEventPayload SchemaEventPayload
-	assert.NoError(t, json.Unmarshal([]byte(PostgresDelete), &schemaEventPayload))
-
-	assert.True(t, schemaEventPayload.DeletePayload())
-	data := schemaEventPayload.GetData(kvMap, tc)
-	fmt.Println("data", data)
-
 	expectedKeyValues := map[string]any{
 		"id":         1004,
 		"first_name": "Anne",
@@ -149,10 +140,30 @@ func TestGetData_TestDelete(t *testing.T) {
 		"email":      "annek@noanswer.org",
 	}
 
-	for expectedKey, expectedValue := range expectedKeyValues {
-		value, isOk := data[expectedKey]
-		assert.True(t, isOk)
-		assert.Equal(t, expectedValue, value)
+	kvMap := map[string]any{"pk": 1004}
+	{
+		// Postgres
+		var schemaEventPayload SchemaEventPayload
+		assert.NoError(t, json.Unmarshal([]byte(PostgresDelete), &schemaEventPayload))
+		assert.True(t, schemaEventPayload.DeletePayload())
+		data := schemaEventPayload.GetData(kvMap, tc)
+		for expectedKey, expectedValue := range expectedKeyValues {
+			value, isOk := data[expectedKey]
+			assert.True(t, isOk)
+			assert.Equal(t, expectedValue, value)
+		}
+	}
+	{
+		// MySQL
+		var schemaEventPayload SchemaEventPayload
+		assert.NoError(t, json.Unmarshal([]byte(MySQLDelete), &schemaEventPayload))
+		assert.True(t, schemaEventPayload.DeletePayload())
+		data := schemaEventPayload.GetData(kvMap, tc)
+		for expectedKey, expectedValue := range expectedKeyValues {
+			value, isOk := data[expectedKey]
+			assert.True(t, isOk)
+			assert.Equal(t, expectedValue, value)
+		}
 	}
 }
 
