@@ -7,6 +7,7 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/lmittmann/tint"
+	"github.com/mattn/go-isatty"
 	slogmulti "github.com/samber/slog-multi"
 	slogsentry "github.com/samber/slog-sentry/v2"
 
@@ -21,7 +22,10 @@ func NewLogger(verbose bool, sentryCfg *config.Sentry) (*slog.Logger, func()) {
 		tintLogLevel = slog.LevelDebug
 	}
 
-	handler := tint.NewHandler(os.Stderr, &tint.Options{Level: tintLogLevel})
+	handler := tint.NewHandler(os.Stderr, &tint.Options{
+		Level:   tintLogLevel,
+		NoColor: !isatty.IsTerminal(os.Stderr.Fd()),
+	})
 	if sentryCfg != nil && sentryCfg.DSN != "" {
 		if err := sentry.Init(sentry.ClientOptions{Dsn: sentryCfg.DSN}); err != nil {
 			slog.New(handler).Warn("Failed to enable Sentry output", slog.Any("err", err))
