@@ -2,10 +2,9 @@ package util
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
-
-	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -130,37 +129,31 @@ func TestGetDataTestInsert(t *testing.T) {
 	assert.True(t, isOk)
 }
 
-func TestGetDataTestDelete(t *testing.T) {
+func TestGetData_TestDelete(t *testing.T) {
 	tc := &kafkalib.TopicConfig{
 		IdempotentKey: "updated_at",
 	}
 
-	now := time.Now().UTC()
-	schemaEventPayload := SchemaEventPayload{
-		Payload: Payload{
-			Before:    nil,
-			After:     nil,
-			Operation: "c",
-			Source:    Source{TsMs: now.UnixMilli()},
-		},
+	kvMap := map[string]any{"pk": 1004}
+	var schemaEventPayload SchemaEventPayload
+	assert.NoError(t, json.Unmarshal([]byte(PostgresDelete), &schemaEventPayload))
+
+	assert.True(t, schemaEventPayload.DeletePayload())
+	data := schemaEventPayload.GetData(kvMap, tc)
+	fmt.Println("data", data)
+
+	expectedKeyValues := map[string]any{
+		"id":         1004,
+		"first_name": "Anne",
+		"last_name":  "Kretchmar",
+		"email":      "annek@noanswer.org",
 	}
 
-	assert.False(t, schemaEventPayload.DeletePayload())
-
-	kvMap := map[string]any{"pk": 1}
-	evtData := schemaEventPayload.GetData(kvMap, tc)
-	shouldDelete, isOk := evtData[constants.DeleteColumnMarker]
-	assert.True(t, isOk)
-	assert.True(t, shouldDelete.(bool))
-
-	assert.Equal(t, 3, len(evtData), evtData)
-	assert.Equal(t, evtData["pk"], 1)
-	assert.Equal(t, evtData[tc.IdempotentKey], now.Format(ext.ISO8601))
-
-	tc.IdempotentKey = ""
-	evtData = schemaEventPayload.GetData(kvMap, tc)
-	_, isOk = evtData[tc.IdempotentKey]
-	assert.False(t, isOk, evtData)
+	for expectedKey, expectedValue := range expectedKeyValues {
+		value, isOk := data[expectedKey]
+		assert.True(t, isOk)
+		assert.Equal(t, expectedValue, value)
+	}
 }
 
 func TestGetDataTestUpdate(t *testing.T) {
