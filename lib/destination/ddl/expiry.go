@@ -13,13 +13,10 @@ func ShouldDeleteFromName(name string) bool {
 		return false
 	}
 
-	return shouldDeleteUnix(nameParts[len(nameParts)-1])
-}
-
-func shouldDeleteUnix(unixString string) bool {
+	unixString := nameParts[len(nameParts)-1]
 	unix, err := strconv.Atoi(unixString)
 	if err != nil {
-		slog.Error("Failed to parse unix string", slog.Any("err", err), slog.String("unixString", unixString))
+		slog.Error("Failed to parse unix string", slog.Any("err", err), slog.String("tableName", name), slog.String("unixString", unixString))
 		return false
 	}
 
