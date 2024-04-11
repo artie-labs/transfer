@@ -1,11 +1,22 @@
 package jitter
 
 import (
+	"math"
 	"math/rand"
 	"time"
 )
 
 const DefaultMaxMs = 3500
+
+// safePowerOfTwo calculates 2 ** n without panicking for values of n below 0 or above 62.
+func safePowerOfTwo(n int64) int64 {
+	if n < 0 {
+		return 0
+	} else if n > 62 {
+		return math.MaxInt64 // 2 ** n will overflow
+	}
+	return 1 << n // equal to 2 ** n
+}
 
 // computeJitterUpperBoundMs calculates min(maxMs, baseMs * 2 ** attempt).
 func computeJitterUpperBoundMs(baseMs, maxMs, attempts int64) int64 {
@@ -13,13 +24,11 @@ func computeJitterUpperBoundMs(baseMs, maxMs, attempts int64) int64 {
 		return 0
 	}
 
-	// Check for overflows when computing base * 2 ** attempts.
-	// 2 ** x == 1 << x
-	if attemptsMaxMs := baseMs * (1 << attempts); attemptsMaxMs > 0 {
-		maxMs = min(maxMs, attemptsMaxMs)
+	powerOfTwo := safePowerOfTwo(attempts)
+	if powerOfTwo > math.MaxInt64/baseMs { // check for overflow
+		return maxMs
 	}
-
-	return maxMs
+	return min(maxMs, baseMs*powerOfTwo)
 }
 
 // Jitter implements exponential backoff + jitter.
