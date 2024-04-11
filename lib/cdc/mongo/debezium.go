@@ -40,7 +40,7 @@ func (d *Debezium) GetEventFromBytes(typingSettings typing.Settings, bytes []byt
 			return nil, err
 		}
 
-		schemaEventPayload.Payload.beforeMap = before
+		schemaEventPayload.Payload.SetBeforeMap(before)
 	}
 
 	if schemaEventPayload.Payload.After != nil {
@@ -62,7 +62,7 @@ func (d *Debezium) GetEventFromBytes(typingSettings typing.Settings, bytes []byt
 			}
 		}
 
-		schemaEventPayload.Payload.afterMap = after
+		schemaEventPayload.Payload.SetAfterMap(after)
 	}
 
 	return &schemaEventPayload, nil

@@ -22,6 +22,22 @@ type Payload struct {
 	afterMap  map[string]any
 }
 
+func (p *Payload) SetAfterMap(afterMap map[string]any) {
+	p.afterMap = afterMap
+}
+
+func (p *Payload) GetAfterMap() map[string]any {
+	return p.afterMap
+}
+
+func (p *Payload) SetBeforeMap(beforeMap map[string]any) {
+	p.beforeMap = beforeMap
+}
+
+func (p *Payload) GetBeforeMap() map[string]any {
+	return p.beforeMap
+}
+
 type Source struct {
 	Connector  string `json:"connector"`
 	TsMs       int64  `json:"ts_ms"`
