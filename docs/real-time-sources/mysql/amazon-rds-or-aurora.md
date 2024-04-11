@@ -21,7 +21,7 @@ For Aurora clusters, please ensure that you are creating this parameter group as
 
 Once this has been created, click on the paramter group and find `binlog_format` and change it to `ROW`.&#x20;
 
-<figure><img src="../../.gitbook/assets/image (2).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (2) (1).png" alt=""><figcaption></figcaption></figure>
 
 Now, go to your database and modify the instance to attach the newly created parameter group and restart your database so it can pick up the change.&#x20;
 

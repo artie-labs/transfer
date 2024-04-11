@@ -28,42 +28,49 @@ This is necessary so that we are able to run a Debezium deployment to subscribe 
 | Password              | Password for authentication into your database.                                                                                                                               | No default    |
 | Authentication source | MongoDB [authSource](https://www.mongodb.com/docs/manual/reference/connection-string/#mongodb-urioption-urioption.authSource) (which database should we authenticate against) | admin         |
 
-### Creating a new user
+### Creating a service account
 
-```mongodb
+You can either use the Atlas UI or use MongoDB CLI.
+
+#### Option #1 - Atlas UI
+
+* Click on "Database Access" on the left
+* Click on "Add New Database User"
+* Under "Database User Privileges", open "Built-in Role" and Select "Only read any database"
+
+<figure><img src="../../.gitbook/assets/image.png" alt="" width="563"><figcaption></figcaption></figure>
+
+#### Option #2 - Service account script
+
+```javascript
+# If the user does not exist.
 use admin;
-
-# Creating a role to allow listing DBs and finding the changeStream
-db.runCommand({
-    createRole: "listDatabases",
-    privileges: [
-        { resource: { cluster : true }, actions: ["listDatabases"]}
-    ],
-    roles: []
-});
-
-db.runCommand({
-    createRole: "readChangeStream",
-    privileges: [
-        { resource: { db: "", collection: ""}, actions: [ "find", "changeStream" ] },
-    ],
-    roles: []
-});
-
-# Creating a service account, assign permissions
 db.createUser({
-    user: 'artie',
-    pwd: 'artie',
-    roles: [
-        { role: "read", db: <COLLECTION_NAME> },
-        { role: "read", db: "local" },
-        { role: "listDatabases", db: "admin" },
-        { role: "readChangeStream", db: "admin" },
-        { role: "read", db: "config" },
-        { role: "read", db: "admin" }
-    ]
+    user: "robin1",
+    pwd: "<password>",
+    roles: ["readAnyDatabase", {
+        role: "read",
+        db: "local"
+    }]
+});
+
+# If the user already exists
+db.updateUser("robin1", {
+    roles: ["readAnyDatabase", {
+        role: "read",
+        db: "local"
+    }]
 });
 ```
+
+### Connection string
+
+1. Go to Atlas UI
+2. Find your deployment and click "Connect"
+
+We support both MongoDB SRV format or standard connection string.
+
+<figure><img src="../../.gitbook/assets/image (1).png" alt=""><figcaption></figcaption></figure>
 
 ### Supported types
 

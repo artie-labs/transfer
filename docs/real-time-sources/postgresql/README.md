@@ -119,7 +119,7 @@ By default, Artie will create a [publication](https://www.postgresql.org/docs/cu
 
 **If you change this to be filtered**, this means that we will update the publications whenever tables get added or removed. Additionally, the service account must be the owner of the tables as this is a [PostgreSQL requirement](https://www.postgresql.org/docs/current/sql-alterpublication.html).&#x20;
 
-<figure><img src="../../.gitbook/assets/image (1) (1) (1).png" alt="" width="563"><figcaption><p>Changing the behavior of Postgres publications</p></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (1) (1) (1) (1).png" alt="" width="563"><figcaption><p>Changing the behavior of Postgres publications</p></figcaption></figure>
 
 ### PostgreSQL Watcher
 

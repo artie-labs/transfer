@@ -20,7 +20,7 @@ The table and and AWS region can be derived from the Streams ARN.
 
 ### Getting DynamoDB Streams ARN
 
-<figure><img src="../.gitbook/assets/image (2) (1).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (2) (1) (1).png" alt=""><figcaption></figcaption></figure>
 
 ### Generating a service account
 
