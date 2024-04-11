@@ -15,6 +15,7 @@ require (
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/lib/pq v1.10.9
 	github.com/lmittmann/tint v1.0.4
+	github.com/mattn/go-isatty v0.0.20
 	github.com/microsoft/go-mssqldb v1.7.0
 	github.com/samber/slog-multi v1.0.2
 	github.com/samber/slog-sentry/v2 v2.4.0
