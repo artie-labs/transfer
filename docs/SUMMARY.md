@@ -17,8 +17,7 @@
   * [Troubleshooting](real-time-sources/postgresql/troubleshooting.md)
 * [MySQL](real-time-sources/mysql.md)
   * [Amazon RDS or Aurora](real-time-sources/mysql/amazon-rds-or-aurora.md)
-* [MongoDB](real-time-sources/mongodb/README.md)
-  * [Atlas - MongoDB](real-time-sources/mongodb/atlas-mongodb.md)
+* [MongoDB](real-time-sources/mongodb.md)
 * [DocumentDB](real-time-sources/documentdb.md)
 * [DynamoDB](real-time-sources/dynamodb.md)
 

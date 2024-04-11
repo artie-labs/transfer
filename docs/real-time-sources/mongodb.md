@@ -38,7 +38,7 @@ You can either use the Atlas UI or use MongoDB CLI.
 * Click on "Add New Database User"
 * Under "Database User Privileges", open "Built-in Role" and Select "Only read any database"
 
-<figure><img src="../../.gitbook/assets/image.png" alt="" width="563"><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image.png" alt="" width="563"><figcaption></figcaption></figure>
 
 #### Option #2 - Service account script
 
@@ -70,7 +70,7 @@ db.updateUser("robin1", {
 
 We support both MongoDB SRV format or standard connection string.
 
-<figure><img src="../../.gitbook/assets/image (1).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (1).png" alt=""><figcaption></figcaption></figure>
 
 ### Supported types
 
