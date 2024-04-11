@@ -19,7 +19,7 @@ func ShouldDeleteFromName(name string) bool {
 func shouldDeleteUnix(unixString string) bool {
 	unix, err := strconv.Atoi(unixString)
 	if err != nil {
-		slog.Warn("Failed to parse unix string", slog.Any("err", err), slog.String("unixString", unixString))
+		slog.Error("Failed to parse unix string", slog.Any("err", err), slog.String("unixString", unixString))
 		return false
 	}
 
