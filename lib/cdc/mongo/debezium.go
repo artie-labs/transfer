@@ -151,7 +151,7 @@ func (s *SchemaEventPayload) GetColumns() *columns.Columns {
 
 func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicConfig) map[string]any {
 	var retMap map[string]any
-	if len(s.Payload.afterMap) == 0 {
+	if len(s.Payload.GetAfterMap()) == 0 {
 		// This is a delete event, so mark it as deleted.
 		// And we need to reconstruct the data bit since it will be empty.
 		// We _can_ rely on *before* since even without running replicate identity, it will still copy over
@@ -169,7 +169,7 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 			retMap[tc.IdempotentKey] = s.GetExecutionTime().Format(ext.ISO8601)
 		}
 	} else {
-		retMap = s.Payload.afterMap
+		retMap = s.Payload.GetAfterMap()
 		// We need this because there's an edge case with Debezium
 		// Where _id gets rewritten as id in the partition key.
 		for k, v := range pkMap {
