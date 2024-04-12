@@ -30,7 +30,7 @@ func bigQueryTypeToKind(rawBqType string) KindDetails {
 	}
 
 	// Geography, geometry date, time, varbinary, binary are currently not supported.
-	switch strings.TrimSpace(strings.ToLower(bqType[:idxStop])) {
+	switch strings.TrimSpace(bqType[:idxStop]) {
 	case "numeric":
 		if rawBqType == "numeric" || rawBqType == "bignumeric" {
 			// This is a specific thing to BigQuery

@@ -22,7 +22,7 @@ func snowflakeTypeToKind(snowflakeType string) KindDetails {
 	}
 
 	// Geography, geometry date, time, varbinary, binary are currently not supported.
-	switch strings.TrimSpace(strings.ToLower(snowflakeType[:idxStop])) {
+	switch strings.TrimSpace(snowflakeType[:idxStop]) {
 	case "number":
 		return ParseNumeric("number", snowflakeType)
 	case "numeric":
