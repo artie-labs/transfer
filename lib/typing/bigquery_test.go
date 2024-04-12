@@ -1,9 +1,10 @@
 package typing
 
 import (
-	"fmt"
 	"testing"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
@@ -50,7 +51,9 @@ func TestBigQueryTypeToKind(t *testing.T) {
 	}
 
 	for bqCol, expectedKind := range bqColToExpectedKind {
-		assert.Equal(t, expectedKind.Kind, bigQueryTypeToKind(bqCol).Kind, fmt.Sprintf("bqCol: %s did not match", bqCol))
+		kd, err := DwhTypeToKind(constants.BigQuery, bqCol, "")
+		assert.NoError(t, err)
+		assert.Equal(t, expectedKind.Kind, kd.Kind, bqCol)
 	}
 }
 
@@ -65,7 +68,9 @@ func TestBigQueryTypeNoDataLoss(t *testing.T) {
 	}
 
 	for _, kindDetail := range kindDetails {
-		assert.Equal(t, kindDetail, bigQueryTypeToKind(kindToBigQuery(kindDetail)))
+		kd, err := DwhTypeToKind(constants.BigQuery, kindDetail.Kind, "")
+		assert.NoError(t, err)
+		assert.Equal(t, kindDetail, kd)
 	}
 }
 
