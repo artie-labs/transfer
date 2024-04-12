@@ -76,17 +76,21 @@ func (s *Store) Sweep() error {
 	// `relkind` will filter for only ordinary tables and exclude sequences, views, etc.
 	queryFunc := func(dbAndSchemaPair kafkalib.DatabaseSchemaPair) (string, []any) {
 		return `
-SELECT 
+SELECT
     n.nspname, c.relname
-FROM 
+FROM
     PG_CATALOG.PG_CLASS c
-JOIN 
+JOIN
     PG_CATALOG.PG_NAMESPACE n ON n.oid = c.relnamespace
-WHERE 
+WHERE
     n.nspname = $1 AND c.relname ILIKE $2 AND c.relkind = 'r';`, []any{dbAndSchemaPair.Schema, "%" + constants.ArtiePrefix + "%"}
 	}
 
 	return shared.Sweep(s, tcs, queryFunc)
+}
+
+func (s *Store) Dedupe(fqTableName string) error {
+	return fmt.Errorf("dedupe is not yet implemented")
 }
 
 func LoadRedshift(cfg config.Config, _store *db.Store) *Store {

@@ -67,6 +67,10 @@ func (s *Store) Sweep() error {
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
+func (s *Store) Dedupe(fqTableName string) error {
+	return nil // dedupe is not necessary for MS SQL
+}
+
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	// TODO: Figure out how to leave a comment.
 	const (
