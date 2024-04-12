@@ -40,14 +40,14 @@ func (g *GetTableCfgArgs) ShouldParseComment(comment string) bool {
 	return true
 }
 
-func GetTableConfig(args GetTableCfgArgs) (*types.DwhTableConfig, error) {
+func (g *GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 	// Check if it already exists in cache
-	tableConfig := args.ConfigMap.TableConfig(args.FqName)
+	tableConfig := g.ConfigMap.TableConfig(g.FqName)
 	if tableConfig != nil {
 		return tableConfig, nil
 	}
 
-	rows, err := args.Dwh.Query(args.Query, args.Args...)
+	rows, err := g.Dwh.Query(g.Query, g.Args...)
 	defer func() {
 		if rows != nil {
 			err = rows.Close()
@@ -59,17 +59,17 @@ func GetTableConfig(args GetTableCfgArgs) (*types.DwhTableConfig, error) {
 
 	var tableMissing bool
 	if err != nil {
-		switch args.Dwh.Label() {
+		switch g.Dwh.Label() {
 		case constants.Snowflake:
 			if SnowflakeTableDoesNotExistErr(err) {
 				// Swallow the error, make sure all the metadata is created
 				tableMissing = true
 				err = nil
 			} else {
-				return nil, fmt.Errorf("failed to query %v, err: %w, query: %v", args.Dwh.Label(), err, args.Query)
+				return nil, fmt.Errorf("failed to query %v, err: %w, query: %v", g.Dwh.Label(), err, g.Query)
 			}
 		default:
-			return nil, fmt.Errorf("failed to query %v, err: %w", args.Dwh.Label(), err)
+			return nil, fmt.Errorf("failed to query %v, err: %w", g.Dwh.Label(), err)
 		}
 	}
 
@@ -91,8 +91,7 @@ func GetTableConfig(args GetTableCfgArgs) (*types.DwhTableConfig, error) {
 			columnNameList = append(columnNameList, strings.ToLower(column.Name()))
 		}
 
-		err = rows.Scan(values...)
-		if err != nil {
+		if err = rows.Scan(values...); err != nil {
 			return nil, err
 		}
 
@@ -106,27 +105,17 @@ func GetTableConfig(args GetTableCfgArgs) (*types.DwhTableConfig, error) {
 			row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
 		}
 
-		var kd typing.KindDetails
-		switch args.Dwh.Label() {
-		case constants.Snowflake:
-			kd = typing.SnowflakeTypeToKind(row[args.ColumnTypeLabel])
-		case constants.BigQuery:
-			kd = typing.BigQueryTypeToKind(row[args.ColumnTypeLabel])
-		case constants.Redshift:
-			kd = typing.RedshiftTypeToKind(row[args.ColumnTypeLabel], row[constants.StrPrecisionCol])
-		case constants.MSSQL:
-			kd = typing.MSSQLTypeToKind(row[args.ColumnTypeLabel], row[constants.StrPrecisionCol])
-		default:
-			return nil, fmt.Errorf("unexpected dwh kind, label: %v", args.Dwh.Label())
+		kindDetails, err := typing.DwhTypeToKind(g.Dwh.Label(), row[g.ColumnTypeLabel], row[constants.StrPrecisionCol])
+		if err != nil {
+			return nil, fmt.Errorf("failed to get kind details: %w", err)
 		}
 
-		col := columns.NewColumn(row[args.ColumnNameLabel], kd)
-		comment, isOk := row[args.ColumnDescLabel]
-		if isOk && args.ShouldParseComment(comment) {
+		col := columns.NewColumn(row[g.ColumnNameLabel], kindDetails)
+		comment, isOk := row[g.ColumnDescLabel]
+		if isOk && g.ShouldParseComment(comment) {
 			// Try to parse the comment.
 			var _colComment constants.ColComment
-			err = json.Unmarshal([]byte(comment), &_colComment)
-			if err != nil {
+			if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
 				return nil, fmt.Errorf("failed to unmarshal comment: %w", err)
 			}
 
@@ -142,7 +131,7 @@ func GetTableConfig(args GetTableCfgArgs) (*types.DwhTableConfig, error) {
 		tableMissing = true
 	}
 
-	tableCfg := types.NewDwhTableConfig(&cols, nil, tableMissing, args.DropDeletedColumns)
-	args.ConfigMap.AddTableToConfig(args.FqName, tableCfg)
+	tableCfg := types.NewDwhTableConfig(&cols, nil, tableMissing, g.DropDeletedColumns)
+	g.ConfigMap.AddTableToConfig(g.FqName, tableCfg)
 	return tableCfg, nil
 }
