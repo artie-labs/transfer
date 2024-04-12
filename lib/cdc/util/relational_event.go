@@ -116,13 +116,13 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 	return retMap
 }
 
+// parseValues will take `retMap` and `kind` (which part of the schema should we be inspecting) and then parse the values accordingly.
+// This will unpack any Debezium-specific values and convert them back into their original types.
 func (s *SchemaEventPayload) parseValues(retMap map[string]any, kind cdc.FieldLabelKind) map[string]any {
-	// Iterate over the schema and identify if there are any fields that require extra care.
 	if schemaObject := s.Schema.GetSchemaFromLabel(kind); schemaObject != nil {
 		for _, field := range schemaObject.Fields {
 			_, isOk := retMap[field.FieldName]
 			if !isOk {
-				// Skipping b/c envelope mismatch with the actual request body
 				continue
 			}
 
