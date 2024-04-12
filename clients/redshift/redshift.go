@@ -53,7 +53,8 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		RawTableName: tableData.RawName(),
 		Schema:       tableData.TopicConfig.Schema,
 	})
-	return shared.GetTableConfig(shared.GetTableCfgArgs{
+
+	getTableArgs := shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             s.ToFullyQualifiedName(tableData, true),
 		ConfigMap:          s.configMap,
@@ -64,7 +65,9 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		ColumnDescLabel:    describeDescriptionCol,
 		EmptyCommentValue:  ptr.ToString("<nil>"),
 		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
-	})
+	}
+
+	return getTableArgs.GetTableConfig()
 }
 
 func (s *Store) Sweep() error {

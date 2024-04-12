@@ -3,6 +3,8 @@ package typing
 import (
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
+
 	"github.com/artie-labs/transfer/lib/ptr"
 
 	"github.com/stretchr/testify/assert"
@@ -92,7 +94,8 @@ func TestRedshiftTypeToKind(t *testing.T) {
 
 	for _, testCase := range testCases {
 		for _, rawTypeAndPrec := range testCase.rawTypes {
-			kd := RedshiftTypeToKind(rawTypeAndPrec.rawType, rawTypeAndPrec.precision)
+			kd, err := DwhTypeToKind(constants.Redshift, rawTypeAndPrec.rawType, rawTypeAndPrec.precision)
+			assert.NoError(t, err)
 			assert.Equal(t, testCase.expectedKd.Kind, kd.Kind, testCase.name)
 
 			if kd.OptionalStringPrecision != nil {

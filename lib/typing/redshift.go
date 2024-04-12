@@ -8,8 +8,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func RedshiftTypeToKind(rawType string, stringPrecision string) KindDetails {
-	rawType = strings.ToLower(rawType)
+func redshiftTypeToKind(rawType string, stringPrecision string) KindDetails {
 	if strings.HasPrefix(rawType, "numeric") {
 		return ParseNumeric(defaultPrefix, rawType)
 	}

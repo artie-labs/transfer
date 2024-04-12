@@ -85,8 +85,7 @@ func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape b
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	query := fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name = ?;", tableData.TopicConfig.Database)
-
-	return shared.GetTableConfig(shared.GetTableCfgArgs{
+	getTableArgs := shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             s.ToFullyQualifiedName(tableData, true),
 		ConfigMap:          s.configMap,
@@ -97,7 +96,9 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		ColumnDescLabel:    describeCommentCol,
 		EmptyCommentValue:  ptr.ToString(""),
 		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
-	})
+	}
+
+	return getTableArgs.GetTableConfig()
 }
 
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {

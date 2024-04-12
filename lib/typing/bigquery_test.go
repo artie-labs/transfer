@@ -50,7 +50,7 @@ func TestBigQueryTypeToKind(t *testing.T) {
 	}
 
 	for bqCol, expectedKind := range bqColToExpectedKind {
-		assert.Equal(t, expectedKind.Kind, BigQueryTypeToKind(bqCol).Kind, fmt.Sprintf("bqCol: %s did not match", bqCol))
+		assert.Equal(t, expectedKind.Kind, bigQueryTypeToKind(bqCol).Kind, fmt.Sprintf("bqCol: %s did not match", bqCol))
 	}
 }
 
@@ -65,7 +65,7 @@ func TestBigQueryTypeNoDataLoss(t *testing.T) {
 	}
 
 	for _, kindDetail := range kindDetails {
-		assert.Equal(t, kindDetail, BigQueryTypeToKind(kindToBigQuery(kindDetail)))
+		assert.Equal(t, kindDetail, bigQueryTypeToKind(kindToBigQuery(kindDetail)))
 	}
 }
 

@@ -76,7 +76,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 	)
 
 	query, args := describeTableQuery(s.Schema(tableData), tableData.RawName())
-	return shared.GetTableConfig(shared.GetTableCfgArgs{
+	getTableArgs := shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             s.ToFullyQualifiedName(tableData, true),
 		ConfigMap:          s.configMap,
@@ -87,7 +87,9 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		ColumnDescLabel:    describeDescriptionCol,
 		EmptyCommentValue:  ptr.ToString("<nil>"),
 		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
-	})
+	}
+
+	return getTableArgs.GetTableConfig()
 }
 
 func LoadStore(cfg config.Config) *Store {
