@@ -83,7 +83,7 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 	var retMap map[string]any
 	if len(s.Payload.After) == 0 {
 		if len(s.Payload.Before) > 0 {
-			retMap = s.Payload.Before
+			retMap = s.parseValues(s.Payload.Before, cdc.Before)
 		} else {
 			retMap = make(map[string]any)
 		}
@@ -101,7 +101,7 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 			retMap[tc.IdempotentKey] = s.GetExecutionTime().Format(ext.ISO8601)
 		}
 	} else {
-		retMap = s.Payload.After
+		retMap = s.parseValues(s.Payload.After, cdc.After)
 		retMap[constants.DeleteColumnMarker] = false
 	}
 
@@ -113,10 +113,14 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 		retMap[constants.DatabaseUpdatedColumnMarker] = s.GetExecutionTime().Format(ext.ISO8601)
 	}
 
+	return retMap
+}
+
+func (s *SchemaEventPayload) parseValues(retMap map[string]any, kind cdc.FieldLabelKind) map[string]any {
 	// Iterate over the schema and identify if there are any fields that require extra care.
-	afterSchemaObject := s.Schema.GetSchemaFromLabel(cdc.After)
-	if afterSchemaObject != nil {
-		for _, field := range afterSchemaObject.Fields {
+	schemaObject := s.Schema.GetSchemaFromLabel(kind)
+	if schemaObject != nil {
+		for _, field := range schemaObject.Fields {
 			_, isOk := retMap[field.FieldName]
 			if !isOk {
 				// Skipping b/c envelope mismatch with the actual request body
