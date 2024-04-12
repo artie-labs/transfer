@@ -118,8 +118,7 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 
 func (s *SchemaEventPayload) parseValues(retMap map[string]any, kind cdc.FieldLabelKind) map[string]any {
 	// Iterate over the schema and identify if there are any fields that require extra care.
-	schemaObject := s.Schema.GetSchemaFromLabel(kind)
-	if schemaObject != nil {
+	if schemaObject := s.Schema.GetSchemaFromLabel(kind); schemaObject != nil {
 		for _, field := range schemaObject.Fields {
 			_, isOk := retMap[field.FieldName]
 			if !isOk {
