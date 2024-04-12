@@ -64,12 +64,11 @@ func TestGetTableConfig(t *testing.T) {
 	cm := &types.DwhToTablesConfigMap{}
 	cm.AddTableToConfig(fqName, dwhTableCfg)
 
-	args := GetTableCfgArgs{
+	actualTableCfg, err := GetTableCfgArgs{
 		FqName:    fqName,
 		ConfigMap: cm,
-	}
+	}.GetTableConfig()
 
-	actualTableCfg, err := args.GetTableConfig()
 	assert.NoError(t, err)
 	assert.Equal(t, dwhTableCfg, actualTableCfg)
 }
