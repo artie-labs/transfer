@@ -39,7 +39,7 @@ func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape b
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	fqName := s.ToFullyQualifiedName(tableData, true)
-	return shared.GetTableConfig(shared.GetTableCfgArgs{
+	return shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             fqName,
 		ConfigMap:          s.configMap,
@@ -49,7 +49,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		ColumnDescLabel:    describeCommentCol,
 		EmptyCommentValue:  ptr.ToString("<nil>"),
 		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
-	})
+	}.GetTableConfig()
 }
 
 func (s *Store) Sweep() error {

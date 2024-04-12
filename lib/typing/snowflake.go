@@ -6,11 +6,9 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-// https://docs.snowflake.com/en/sql-reference/intro-summary-data-types.html
-
-func SnowflakeTypeToKind(snowflakeType string) KindDetails {
-	snowflakeType = strings.ToLower(snowflakeType)
-
+// snowflakeTypeToKind - Converts a Snowflake type to a KindDetails.
+// Following this spec: https://docs.snowflake.com/en/sql-reference/intro-summary-data-types.html
+func snowflakeTypeToKind(snowflakeType string) KindDetails {
 	// We need to strip away the variable
 	// For example, a Column can look like: TEXT, or Number(38, 0) or VARCHAR(255).
 	// We need to strip out all the content from ( ... )
@@ -24,7 +22,7 @@ func SnowflakeTypeToKind(snowflakeType string) KindDetails {
 	}
 
 	// Geography, geometry date, time, varbinary, binary are currently not supported.
-	switch strings.TrimSpace(strings.ToLower(snowflakeType[:idxStop])) {
+	switch strings.TrimSpace(snowflakeType[:idxStop]) {
 	case "number":
 		return ParseNumeric("number", snowflakeType)
 	case "numeric":
