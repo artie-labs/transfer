@@ -60,7 +60,7 @@ func (s *Store) Sweep() error {
 
 	queryFunc := func(dbAndSchemaPair kafkalib.DatabaseSchemaPair) (string, []any) {
 		return fmt.Sprintf(`
-SELECT 
+SELECT
     table_schema, table_name
 FROM
     %s.information_schema.tables
@@ -110,6 +110,11 @@ func (s *Store) reestablishConnection() {
 	}
 
 	s.Store = db.Open("snowflake", dsn)
+}
+
+func (s *Store) Dedupe(fqTableName string) error {
+	_, err := s.Exec(fmt.Sprintf("CREATE OR REPLACE TABLE %s AS SELECT DISTINCT * FROM %s", fqTableName, fqTableName))
+	return err
 }
 
 func LoadSnowflake(cfg config.Config, _store *db.Store) *Store {

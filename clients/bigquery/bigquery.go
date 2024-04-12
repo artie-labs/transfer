@@ -149,6 +149,10 @@ func (s *Store) putTable(ctx context.Context, dataset, tableName string, rows []
 	return nil
 }
 
+func (s *Store) Dedupe(fqTableName string) error {
+	return fmt.Errorf("dedupe is not yet implemented")
+}
+
 func LoadBigQuery(cfg config.Config, _store *db.Store) *Store {
 	cfg.BigQuery.LoadDefaultValues()
 	if _store != nil {
