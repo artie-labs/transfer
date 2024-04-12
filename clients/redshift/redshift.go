@@ -54,7 +54,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		Schema:       tableData.TopicConfig.Schema,
 	})
 
-	getTableArgs := shared.GetTableCfgArgs{
+	return shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             s.ToFullyQualifiedName(tableData, true),
 		ConfigMap:          s.configMap,
@@ -65,9 +65,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		ColumnDescLabel:    describeDescriptionCol,
 		EmptyCommentValue:  ptr.ToString("<nil>"),
 		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
-	}
-
-	return getTableArgs.GetTableConfig()
+	}.GetTableConfig()
 }
 
 func (s *Store) Sweep() error {

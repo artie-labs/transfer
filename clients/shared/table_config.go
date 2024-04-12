@@ -30,7 +30,7 @@ type GetTableCfgArgs struct {
 	DropDeletedColumns bool
 }
 
-func (g *GetTableCfgArgs) ShouldParseComment(comment string) bool {
+func (g GetTableCfgArgs) ShouldParseComment(comment string) bool {
 	if g.EmptyCommentValue != nil && comment == *g.EmptyCommentValue {
 		return false
 	}
@@ -40,7 +40,7 @@ func (g *GetTableCfgArgs) ShouldParseComment(comment string) bool {
 	return true
 }
 
-func (g *GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
+func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 	// Check if it already exists in cache
 	tableConfig := g.ConfigMap.TableConfig(g.FqName)
 	if tableConfig != nil {
