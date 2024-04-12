@@ -121,17 +121,17 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 func (s *SchemaEventPayload) parseValues(retMap map[string]any, kind cdc.FieldLabelKind) map[string]any {
 	if schemaObject := s.Schema.GetSchemaFromLabel(kind); schemaObject != nil {
 		for _, field := range schemaObject.Fields {
-			_, isOk := retMap[field.FieldName]
+			fieldVal, isOk := retMap[field.FieldName]
 			if !isOk {
 				continue
 			}
 
-			val, parseErr := field.ParseValue(retMap[field.FieldName])
+			val, parseErr := field.ParseValue(fieldVal)
 			if parseErr == nil {
 				retMap[field.FieldName] = val
 			} else {
 				slog.Warn("Failed to parse field, using original value", slog.Any("err", parseErr),
-					slog.String("field", field.FieldName), slog.Any("value", retMap[field.FieldName]))
+					slog.String("field", field.FieldName), slog.Any("value", fieldVal))
 			}
 		}
 	}
