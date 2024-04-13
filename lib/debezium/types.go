@@ -186,8 +186,20 @@ func (f Field) ParseValue(value any) (any, error) {
 		if castErr != nil {
 			return nil, castErr
 		}
+		int64Val := int64(floatVal)
 
-		return FromDebeziumTypeToTime(f.DebeziumType, int64(floatVal))
+		int64ValFromFunc, err := toInt64(value)
+		if err != nil {
+			slog.Error("Unable to call toInt64", slog.Any("err", err), slog.Any("value", value))
+		} else if int64Val != int64ValFromFunc {
+			slog.Error("int64Val is different from int64ValFromFunc",
+				slog.Int64("int64Val", int64Val),
+				slog.Int64("int64ValFromFunc", int64ValFromFunc),
+				slog.Any("value", value),
+			)
+		}
+
+		return FromDebeziumTypeToTime(f.DebeziumType, int64Val)
 	}
 
 	if bytes, ok := value.([]byte); ok {
