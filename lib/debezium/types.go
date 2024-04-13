@@ -164,7 +164,11 @@ func (f Field) ParseValue(value any) (any, error) {
 		default:
 			// Value should always be a float64/int64, but let's check this if this assumption holds and if so clean up
 			// the code below so that we aren't doing float -> string -> float.
-			slog.Error(fmt.Sprintf("Expected float64 received %T with value '%v'", value, value))
+			return nil, fmt.Errorf("expected int64/float64 received %T with value '%v'", value, value)
+		}
+		int64ValFromFunc, err := toInt64(value)
+		if err != nil {
+			slog.Error("Unable to call toInt64", slog.Any("err", err))
 		}
 
 		switch f.Type {
@@ -186,8 +190,17 @@ func (f Field) ParseValue(value any) (any, error) {
 		if castErr != nil {
 			return nil, castErr
 		}
+		int64Val := int64(floatVal)
 
-		return FromDebeziumTypeToTime(f.DebeziumType, int64(floatVal))
+		if int64Val != int64ValFromFunc {
+			slog.Error("int64Val is different from int64ValFromFunc",
+				slog.Int64("int64Val", int64Val),
+				slog.Int64("int64ValFromFunc", int64ValFromFunc),
+				slog.Any("value", value),
+			)
+		}
+
+		return FromDebeziumTypeToTime(f.DebeziumType, int64Val)
 	}
 
 	if bytes, ok := value.([]byte); ok {
