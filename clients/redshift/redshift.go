@@ -13,6 +13,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
 )
 
 type Store struct {
@@ -27,7 +28,13 @@ type Store struct {
 }
 
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	return tableData.ToFqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{})
+	return fmt.Sprintf("%s.%s",
+		tableData.TopicConfig.Schema,
+		tableData.Name(
+			s.config.SharedDestinationConfig.UppercaseEscapedNames,
+			&sql.NameArgs{Escape: escape, DestKind: s.Label()},
+		),
+	)
 }
 
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {

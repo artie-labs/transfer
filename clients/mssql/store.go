@@ -5,6 +5,8 @@ import (
 
 	_ "github.com/microsoft/go-mssqldb"
 
+	"fmt"
+
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -13,6 +15,8 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
 type Store struct {
@@ -49,9 +53,13 @@ func (s *Store) Append(tableData *optimization.TableData) error {
 }
 
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	return tableData.ToFqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{
-		MsSQLSchemaOverride: s.Schema(tableData),
-	})
+	return fmt.Sprintf("%s.%s",
+		stringutil.Override(tableData.TopicConfig.Schema, s.Schema(tableData)),
+		tableData.Name(
+			s.config.SharedDestinationConfig.UppercaseEscapedNames,
+			&sql.NameArgs{Escape: escape, DestKind: s.Label()},
+		),
+	)
 }
 
 func (s *Store) Sweep() error {

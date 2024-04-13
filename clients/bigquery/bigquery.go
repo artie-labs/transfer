@@ -19,6 +19,7 @@ import (
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
 )
 
 const (
@@ -79,8 +80,12 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 }
 
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	return tableData.ToFqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames,
-		optimization.FqNameOpts{BigQueryProjectID: s.config.BigQuery.ProjectID})
+	return fmt.Sprintf("`%s`.`%s`.%s",
+		s.config.BigQuery.ProjectID,
+		tableData.TopicConfig.Database,
+		tableData.Name(s.config.SharedDestinationConfig.UppercaseEscapedNames,
+			&sql.NameArgs{Escape: escape, DestKind: s.Label()},
+		))
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {

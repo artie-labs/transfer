@@ -22,6 +22,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/parquetutil"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/xitongsys/parquet-go-source/local"
@@ -49,11 +50,19 @@ func (s *Store) Label() constants.DestinationKind {
 	return constants.S3
 }
 
+func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
+	return fmt.Sprintf("%s.%s.%s",
+		tableData.TopicConfig.Database,
+		tableData.TopicConfig.Schema,
+		tableData.Name(s.uppercaseEscNames, &sql.NameArgs{Escape: false, DestKind: s.Label()}),
+	)
+}
+
 // ObjectPrefix - this will generate the exact right prefix that we need to write into S3.
 // It will look like something like this:
 // > optionalPrefix/fullyQualifiedTableName/YYYY-MM-DD
 func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
-	fqTableName := tableData.ToFqName(s.Label(), false, s.uppercaseEscNames, optimization.FqNameOpts{})
+	fqTableName := s.ToFullyQualifiedName(tableData, false)
 	yyyyMMDDFormat := tableData.LatestCDCTs.Format(ext.PostgresDateFormat)
 
 	if len(s.config.S3.OptionalPrefix) > 0 {

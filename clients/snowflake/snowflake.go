@@ -15,6 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
 )
 
 const maxRetries = 10
@@ -34,7 +35,14 @@ const (
 )
 
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	return tableData.ToFqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{})
+	return fmt.Sprintf("%s.%s.%s",
+		tableData.TopicConfig.Database,
+		tableData.TopicConfig.Schema,
+		tableData.Name(
+			s.config.SharedDestinationConfig.UppercaseEscapedNames,
+			&sql.NameArgs{Escape: escape, DestKind: s.Label()},
+		),
+	)
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
