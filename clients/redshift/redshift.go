@@ -28,6 +28,8 @@ type Store struct {
 }
 
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
+	// Redshift is Postgres compatible, so when establishing a connection, we'll specify a database.
+	// Thus, we only need to specify schema and table name here.
 	return fmt.Sprintf("%s.%s",
 		tableData.TopicConfig.Schema,
 		tableData.Name(

@@ -80,6 +80,8 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 }
 
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
+	// The fully qualified name for BigQuery is: project_id.dataset.tableName.
+	// We are escaping the project_id and dataset because there could be special characters.
 	return fmt.Sprintf("`%s`.`%s`.%s",
 		s.config.BigQuery.ProjectID,
 		tableData.TopicConfig.Database,

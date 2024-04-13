@@ -51,10 +51,11 @@ func (s *Store) Label() constants.DestinationKind {
 }
 
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
+	// S3 should be db.schema.tableName, but we don't need to escape, since it's not a SQL db.
 	return fmt.Sprintf("%s.%s.%s",
 		tableData.TopicConfig.Database,
 		tableData.TopicConfig.Schema,
-		tableData.Name(s.uppercaseEscNames, &sql.NameArgs{Escape: false, DestKind: s.Label()}),
+		tableData.Name(s.uppercaseEscNames, &sql.NameArgs{Escape: escape, DestKind: s.Label()}),
 	)
 }
 
