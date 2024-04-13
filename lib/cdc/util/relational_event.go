@@ -127,8 +127,7 @@ func (s *SchemaEventPayload) parseAndMutateMapInPlace(retMap map[string]any, kin
 				continue
 			}
 
-			val, parseErr := field.ParseValue(fieldVal)
-			if parseErr == nil {
+			if val, parseErr := field.ParseValue(fieldVal); parseErr == nil {
 				retMap[field.FieldName] = val
 			} else {
 				slog.Warn("Failed to parse field, using original value", slog.Any("err", parseErr),
