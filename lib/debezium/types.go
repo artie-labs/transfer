@@ -191,9 +191,7 @@ func (f Field) ParseValue(value any) (any, error) {
 		int64ValFromFunc, err := toInt64(value)
 		if err != nil {
 			slog.Error("Unable to call toInt64", slog.Any("err", err), slog.Any("value", value))
-		}
-
-		if int64Val != int64ValFromFunc {
+		} else if int64Val != int64ValFromFunc {
 			slog.Error("int64Val is different from int64ValFromFunc",
 				slog.Int64("int64Val", int64Val),
 				slog.Int64("int64ValFromFunc", int64ValFromFunc),
