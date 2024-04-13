@@ -130,6 +130,7 @@ func (s *SchemaEventPayload) parseAndMutateMapInPlace(retMap map[string]any, kin
 			if val, parseErr := field.ParseValue(fieldVal); parseErr == nil {
 				retMap[field.FieldName] = val
 			} else {
+				// TODO: Make this a hard failure, confirm this with Datadog logs.
 				slog.Warn("Failed to parse field, using original value", slog.Any("err", parseErr),
 					slog.String("field", field.FieldName), slog.Any("value", fieldVal))
 			}
