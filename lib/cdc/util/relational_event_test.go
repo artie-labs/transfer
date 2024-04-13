@@ -5,6 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/debezium"
+
+	"github.com/artie-labs/transfer/lib/cdc"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -217,4 +221,33 @@ func TestGetDataTestUpdate(t *testing.T) {
 
 	_, isOk = evtData[constants.UpdateColumnMarker]
 	assert.True(t, isOk)
+}
+
+func TestSchemaEventPayload_ParseAndMutateMapInPlace(t *testing.T) {
+	mapToPassIn := map[string]any{
+		"foo": "bar",
+		"abc": "def",
+		"id":  float64(123),
+	}
+
+	schemaEventPayload := SchemaEventPayload{
+		Schema: debezium.Schema{
+			SchemaType: "struct",
+			FieldsObject: []debezium.FieldsObject{
+				{
+					FieldObjectType: "struct",
+					Fields: []debezium.Field{
+						{
+							Type:      debezium.Int64,
+							FieldName: "id",
+						},
+					},
+					FieldLabel: cdc.After,
+				},
+			},
+		},
+	}
+	returnedMap := schemaEventPayload.parseAndMutateMapInPlace(mapToPassIn, cdc.After)
+	assert.Equal(t, mapToPassIn, returnedMap)
+	assert.Equal(t, 123, mapToPassIn["id"])
 }
