@@ -83,7 +83,7 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 	var retMap map[string]any
 	if len(s.Payload.After) == 0 {
 		if len(s.Payload.Before) > 0 {
-			retMap = s.parseValues(s.Payload.Before, cdc.Before)
+			retMap = s.parseAndMutateMapInPlace(s.Payload.Before, cdc.Before)
 		} else {
 			retMap = make(map[string]any)
 		}
@@ -101,7 +101,7 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 			retMap[tc.IdempotentKey] = s.GetExecutionTime().Format(ext.ISO8601)
 		}
 	} else {
-		retMap = s.parseValues(s.Payload.After, cdc.After)
+		retMap = s.parseAndMutateMapInPlace(s.Payload.After, cdc.After)
 		retMap[constants.DeleteColumnMarker] = false
 	}
 
@@ -116,9 +116,10 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 	return retMap
 }
 
-// parseValues will take `retMap` and `kind` (which part of the schema should we be inspecting) and then parse the values accordingly.
+// parseAndMutateMapInPlace will take `retMap` and `kind` (which part of the schema should we be inspecting) and then parse the values accordingly.
 // This will unpack any Debezium-specific values and convert them back into their original types.
-func (s *SchemaEventPayload) parseValues(retMap map[string]any, kind cdc.FieldLabelKind) map[string]any {
+// NOTE: `retMap` and the returned object are the same object.
+func (s *SchemaEventPayload) parseAndMutateMapInPlace(retMap map[string]any, kind cdc.FieldLabelKind) map[string]any {
 	if schemaObject := s.Schema.GetSchemaFromLabel(kind); schemaObject != nil {
 		for _, field := range schemaObject.Fields {
 			fieldVal, isOk := retMap[field.FieldName]
