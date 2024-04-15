@@ -57,7 +57,7 @@ func DataWarehouse(cfg config.Config, store *db.Store) (destination.DataWarehous
 		if err := s.Sweep(); err != nil {
 			logger.Panic("Failed to clean up snowflake", slog.Any("err", err))
 		}
-		return s, err
+		return s, nil
 	case constants.BigQuery:
 		return bigquery.LoadBigQuery(cfg, store)
 	case constants.MSSQL:
