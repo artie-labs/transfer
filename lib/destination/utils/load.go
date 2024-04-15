@@ -31,7 +31,7 @@ func LoadBaseline(cfg config.Config) (destination.Baseline, error) {
 		return store, nil
 	}
 
-	return nil, fmt.Errorf("ivalid baseline output source specified: %q", cfg.Output)
+	return nil, fmt.Errorf("invalid baseline output source specified: %q", cfg.Output)
 }
 
 func LoadDataWarehouse(cfg config.Config, store *db.Store) (destination.DataWarehouse, error) {
@@ -51,7 +51,7 @@ func LoadDataWarehouse(cfg config.Config, store *db.Store) (destination.DataWare
 		if err != nil {
 			return nil, err
 		}
-		if err := s.Sweep(); err != nil {
+		if err = s.Sweep(); err != nil {
 			return nil, fmt.Errorf("failed to clean up Snowflake: %w", err)
 		}
 		return s, nil
@@ -62,7 +62,7 @@ func LoadDataWarehouse(cfg config.Config, store *db.Store) (destination.DataWare
 		if err != nil {
 			return nil, err
 		}
-		if err := s.Sweep(); err != nil {
+		if err = s.Sweep(); err != nil {
 			return nil, fmt.Errorf("failed to clean up MS SQL: %w", err)
 		}
 		return s, nil
@@ -71,11 +71,11 @@ func LoadDataWarehouse(cfg config.Config, store *db.Store) (destination.DataWare
 		if err != nil {
 			return nil, err
 		}
-		if err := s.Sweep(); err != nil {
+		if err = s.Sweep(); err != nil {
 			return nil, fmt.Errorf("failed to clean up Redshift: %w", err)
 		}
 		return s, nil
 	}
 
-	return nil, fmt.Errorf("ivalid data warehouse output source specified: %q", cfg.Output)
+	return nil, fmt.Errorf("invalid data warehouse output source specified: %q", cfg.Output)
 }
