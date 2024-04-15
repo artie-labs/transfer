@@ -150,7 +150,8 @@ func (s *Store) putTable(ctx context.Context, dataset, tableName string, rows []
 }
 
 func (s *Store) Dedupe(fqTableName string) error {
-	return fmt.Errorf("dedupe is not yet implemented")
+	_, err := s.Exec(fmt.Sprintf("CREATE OR REPLACE TABLE %s AS SELECT DISTINCT * FROM %s", fqTableName, fqTableName))
+	return err
 }
 
 func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
