@@ -44,7 +44,10 @@ func main() {
 	metricsClient := metrics.LoadExporter(settings.Config)
 	var dest destination.Baseline
 	if utils.IsOutputBaseline(settings.Config) {
-		dest = utils.Baseline(settings.Config)
+		dest, err = utils.LoadBaseline(settings.Config)
+		if err != nil {
+			logger.Fatal("Unable to load baseline destination", slog.Any("err", err))
+		}
 	} else {
 		dest, err = utils.LoadDataWarehouse(settings.Config, nil)
 		if err != nil {

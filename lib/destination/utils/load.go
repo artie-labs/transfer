@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/clients/mssql"
@@ -14,7 +13,6 @@ import (
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/db/mock"
 	"github.com/artie-labs/transfer/lib/destination"
-	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/mocks"
 )
 
@@ -22,20 +20,18 @@ func IsOutputBaseline(cfg config.Config) bool {
 	return cfg.Output == constants.S3
 }
 
-func Baseline(cfg config.Config) destination.Baseline {
+func LoadBaseline(cfg config.Config) (destination.Baseline, error) {
 	switch cfg.Output {
 	case constants.S3:
 		store, err := s3.LoadStore(cfg)
 		if err != nil {
-			logger.Panic("Failed to load s3", slog.Any("err", err))
+			return nil, fmt.Errorf("failed to load S3: %w", err)
 		}
 
-		return store
+		return store, nil
 	}
 
-	logger.Panic("No valid output sources specified", slog.Any("source", cfg.Output))
-
-	return nil
+	return nil, fmt.Errorf("ivalid baseline output source specified: %q", cfg.Output)
 }
 
 func LoadDataWarehouse(cfg config.Config, store *db.Store) (destination.DataWarehouse, error) {
@@ -81,5 +77,5 @@ func LoadDataWarehouse(cfg config.Config, store *db.Store) (destination.DataWare
 		return s, nil
 	}
 
-	return nil, fmt.Errorf("ivalid output source specified: %q", cfg.Output)
+	return nil, fmt.Errorf("ivalid data warehouse output source specified: %q", cfg.Output)
 }
