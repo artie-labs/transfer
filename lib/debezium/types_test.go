@@ -308,7 +308,7 @@ func TestField_ParseValue(t *testing.T) {
 			},
 		},
 		{
-			name: "string micro-timestamp",
+			name: "string micro-timestamp - should error",
 			field: Field{
 				Type:         Int64,
 				DebeziumType: MicroTimestamp,
