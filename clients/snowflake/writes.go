@@ -16,7 +16,7 @@ func (s *Store) Append(tableData *optimization.TableData) error {
 			if IsAuthExpiredError(err) {
 				slog.Warn("Authentication has expired, will reload the Snowflake store and retry appending", slog.Any("err", err))
 				if connErr := s.reestablishConnection(); connErr != nil {
-					// TODO: Remove this panic and return an error instead
+					// TODO: Remove this panic and return an error instead. Ensure the callers of [Append] handle this properly.
 					logger.Panic("Failed to reestablish connection", slog.Any("err", connErr))
 				}
 			} else {
@@ -41,7 +41,7 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 			if IsAuthExpiredError(err) {
 				slog.Warn("Authentication has expired, will reload the Snowflake store and retry merging", slog.Any("err", err))
 				if connErr := s.reestablishConnection(); connErr != nil {
-					// TODO: Remove this panic and return an error instead
+					// TODO: Remove this panic and return an error instead. Ensure the callers of [Merge] handle this properly.
 					logger.Panic("Failed to reestablish connection", slog.Any("err", connErr))
 				}
 			} else {
