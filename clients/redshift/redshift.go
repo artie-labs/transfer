@@ -94,7 +94,7 @@ func (s *Store) Dedupe(fqTableName string) error {
 	return fmt.Errorf("dedupe is not yet implemented")
 }
 
-func LoadRedshift(cfg config.Config, _store *db.Store) *Store {
+func LoadRedshift(cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
@@ -103,12 +103,17 @@ func LoadRedshift(cfg config.Config, _store *db.Store) *Store {
 			config:     cfg,
 
 			Store: *_store,
-		}
+		}, nil
 	}
 
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require",
 		cfg.Redshift.Host, cfg.Redshift.Port, cfg.Redshift.Username,
 		cfg.Redshift.Password, cfg.Redshift.Database)
+
+	store, err := db.Open("postgres", connStr)
+	if err != nil {
+		return nil, err
+	}
 
 	return &Store{
 		credentialsClause: cfg.Redshift.CredentialsClause,
@@ -118,6 +123,6 @@ func LoadRedshift(cfg config.Config, _store *db.Store) *Store {
 		configMap:         &types.DwhToTablesConfigMap{},
 		config:            cfg,
 
-		Store: db.Open("postgres", connStr),
-	}
+		Store: store,
+	}, nil
 }

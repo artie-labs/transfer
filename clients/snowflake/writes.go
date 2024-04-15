@@ -5,6 +5,7 @@ import (
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 )
 
@@ -14,7 +15,10 @@ func (s *Store) Append(tableData *optimization.TableData) error {
 		if i > 0 {
 			if IsAuthExpiredError(err) {
 				slog.Warn("Authentication has expired, will reload the Snowflake store and retry appending", slog.Any("err", err))
-				s.reestablishConnection()
+				if connErr := s.reestablishConnection(); connErr != nil {
+					// TODO: Remove this panic and return an error instead. Ensure the callers of [Append] handle this properly.
+					logger.Panic("Failed to reestablish connection", slog.Any("err", connErr))
+				}
 			} else {
 				break
 			}
@@ -36,7 +40,10 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 		if i > 0 {
 			if IsAuthExpiredError(err) {
 				slog.Warn("Authentication has expired, will reload the Snowflake store and retry merging", slog.Any("err", err))
-				s.reestablishConnection()
+				if connErr := s.reestablishConnection(); connErr != nil {
+					// TODO: Remove this panic and return an error instead. Ensure the callers of [Merge] handle this properly.
+					logger.Panic("Failed to reestablish connection", slog.Any("err", connErr))
+				}
 			} else {
 				break
 			}

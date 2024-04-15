@@ -6,6 +6,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/mocks"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -22,7 +23,9 @@ func (r *RedshiftTestSuite) SetupTest() {
 
 	r.fakeStore = &mocks.FakeStore{}
 	store := db.Store(r.fakeStore)
-	r.store = LoadRedshift(cfg, &store)
+	var err error
+	r.store, err = LoadRedshift(cfg, &store)
+	assert.NoError(r.T(), err)
 	r.store.skipLgCols = true
 }
 

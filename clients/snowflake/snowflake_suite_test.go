@@ -3,6 +3,7 @@ package snowflake
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -23,7 +24,9 @@ func (s *SnowflakeTestSuite) SetupTest() {
 func (s *SnowflakeTestSuite) ResetStore() {
 	s.fakeStageStore = &mocks.FakeStore{}
 	stageStore := db.Store(s.fakeStageStore)
-	s.stageStore = LoadSnowflake(config.Config{}, &stageStore)
+	var err error
+	s.stageStore, err = LoadSnowflake(config.Config{}, &stageStore)
+	assert.NoError(s.T(), err)
 }
 
 func TestSnowflakeTestSuite(t *testing.T) {
