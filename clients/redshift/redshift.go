@@ -94,7 +94,7 @@ WHERE
 func (s *Store) Dedupe(fqTableName string) error {
 	stagingTableName := fmt.Sprintf("%s_dedupe_staging_%.5d", constants.ArtiePrefix, rand.Intn(100_000))
 
-	_, err := s.Exec(fmt.Sprintf(`
+	query := fmt.Sprintf(`
 BEGIN TRANSACTION;
 
 CREATE TABLE %s AS SELECT DISTINCT * FROM %s;
@@ -116,7 +116,9 @@ END TRANSACTION;`,
 		// ; DROP TABLE
 		stagingTableName,
 		// ;
-	))
+	)
+
+	_, err := s.Exec(query)
 	return err
 }
 
