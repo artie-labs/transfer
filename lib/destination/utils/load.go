@@ -37,7 +37,7 @@ func Baseline(cfg config.Config) destination.Baseline {
 	return nil
 }
 
-func DataWarehouse(cfg config.Config, store *db.Store) (destination.DataWarehouse, error) {
+func LoadDataWarehouse(cfg config.Config, store *db.Store) (destination.DataWarehouse, error) {
 	switch cfg.Output {
 	case "test":
 		// TODO - In the future, we can create a fake store that follows the MERGE syntax for SQL standard.

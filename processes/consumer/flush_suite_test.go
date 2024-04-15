@@ -62,7 +62,7 @@ func (f *FlushTestSuite) SetupTest() {
 	}
 
 	var err error
-	f.dwh, err = utils.DataWarehouse(f.cfg, &store)
+	f.dwh, err = utils.LoadDataWarehouse(f.cfg, &store)
 	assert.NoError(f.T(), err)
 
 	f.db = models.NewMemoryDB()
