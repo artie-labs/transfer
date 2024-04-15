@@ -2,6 +2,7 @@ package redshift
 
 import (
 	"fmt"
+	"math/rand"
 
 	_ "github.com/lib/pq"
 
@@ -91,7 +92,32 @@ WHERE
 }
 
 func (s *Store) Dedupe(fqTableName string) error {
-	return fmt.Errorf("dedupe is not yet implemented")
+	stagingTableName := fmt.Sprintf("%s_dedupe_staging_%.5d", constants.ArtiePrefix, rand.Intn(100_000))
+
+	_, err := s.Exec(fmt.Sprintf(`
+BEGIN TRANSACTION;
+
+CREATE TABLE %s AS SELECT DISTINCT * FROM %s;
+DELETE FROM %s;
+INSERT INTO %s SELECT * FROM %s;
+DROP TABLE %s;
+
+END TRANSACTION`,
+		// CREATE TABLE
+		stagingTableName,
+		// AS SELECT DISTINCT * FROM
+		fqTableName,
+		// ; DELETE FROM
+		fqTableName,
+		// ; INSERT INTO
+		fqTableName,
+		// SELECT * FROM
+		stagingTableName,
+		// ; DROP TABLE
+		stagingTableName,
+		// ;
+	))
+	return err
 }
 
 func LoadRedshift(cfg config.Config, _store *db.Store) (*Store, error) {
