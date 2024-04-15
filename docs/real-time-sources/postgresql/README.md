@@ -48,6 +48,51 @@ CREATE PUBLICATION dbz_publication FOR ALL TABLES;
 ALTER USER artie_transfer REPLICATION;
 ```
 
+## Additional features
+
+### PostgreSQL 16&#x20;
+
+With PostgreSQL 16, comes the ability for consumers to use logical replication on a standby / replica server. Instead of providing us with your primary database, you can provide us with your standby instead.
+
+One thing to note here is that the publications `dbz_publication` **must be created** on the **primary** database.
+
+### Heartbeats
+
+(following GeoJSON feature spec)
+
+Once you selected `Enable heartbeats` under Advanced Settings, you will then need to run the following command:
+
+```sql
+CREATE TABLE test_heartbeat_table (id text PRIMARY KEY, ts timestamp);
+-- Grant access to the heartbeat table
+GRANT UPDATE ON TABLE test_heartbeat_table TO artie_transfer;
+-- Then insert one row into this table.
+-- Artie's periodic pings will be this:
+-- UPDATE test_heartbeat_table set ts = now() where id = '1';
+-- Such that we never end up adding additional rows.
+INSERT INTO test_heartbeat_table (id, ts) VALUES (1, NOW());
+```
+
+### Customize PostgreSQL publications
+
+By default, Artie will create a [publication](https://www.postgresql.org/docs/current/logical-replication-publication.html) that includes all table changes. You can override this behavior by selecting `Filtered` under the Deployment advanced settings.
+
+**If you change this to be filtered**, this means that we will update the publications whenever tables get added or removed. Additionally, the service account must be the owner of the tables as this is a [PostgreSQL requirement](https://www.postgresql.org/docs/current/sql-alterpublication.html).&#x20;
+
+<figure><img src="../../.gitbook/assets/image (1) (1) (1) (1).png" alt="" width="563"><figcaption><p>Changing the behavior of Postgres publications</p></figcaption></figure>
+
+### PostgreSQL Watcher
+
+To set up your PostgreSQL database for CDC-based replication, you will need to enable replication slots. When this is done incorrectly, it could potentially cause a replication slot overflow and bring your production database down.
+
+PostgreSQL Watcher provides additional guardrails around your database replication, and will do the following:
+
+* **Regularly check and monitor** your replication slot size in 15-minute intervals and notify if the slot exceeds a certain threshold.
+* **Heartbeats verification.** For folks that are leveraging [Heartbeats](https://docs.artie.so/tutorials/preventing-wal-growth-on-postgres-running-on-aws-rds), PostgreSQL Watcher will also check to make sure table permissions are updated and our service account has access to run Heartbeats. Watcher will notify you if the verification fails.
+* **Terminate any idle queries** that are lingering for more than a day. You can avoid having this problem by setting `idle_in_transaction_session_timeout`.&#x20;
+
+PostgreSQL Watcher is available to all Artie Cloud customers using PostgreSQL as a data source.&#x20;
+
 ### Supported types
 
 * `BOOLEAN` / `BOOL`
@@ -93,45 +138,6 @@ ALTER USER artie_transfer REPLICATION;
   * `Geometry`
   * `Geography`
   * More coming soon!
-
-## Additional features
-
-### Heartbeats
-
-(following GeoJSON feature spec)
-
-Once you selected `Enable heartbeats` under Advanced Settings, you will then need to run the following command:
-
-```sql
-CREATE TABLE test_heartbeat_table (id text PRIMARY KEY, ts timestamp);
--- Grant access to the heartbeat table
-GRANT UPDATE ON TABLE test_heartbeat_table TO artie_transfer;
--- Then insert one row into this table.
--- Artie's periodic pings will be this:
--- UPDATE test_heartbeat_table set ts = now() where id = '1';
--- Such that we never end up adding additional rows.
-INSERT INTO test_heartbeat_table (id, ts) VALUES (1, NOW());
-```
-
-### Customize PostgreSQL publications
-
-By default, Artie will create a [publication](https://www.postgresql.org/docs/current/logical-replication-publication.html) that includes all table changes. You can override this behavior by selecting `Filtered` under the Deployment advanced settings.
-
-**If you change this to be filtered**, this means that we will update the publications whenever tables get added or removed. Additionally, the service account must be the owner of the tables as this is a [PostgreSQL requirement](https://www.postgresql.org/docs/current/sql-alterpublication.html).&#x20;
-
-<figure><img src="../../.gitbook/assets/image (1) (1) (1) (1).png" alt="" width="563"><figcaption><p>Changing the behavior of Postgres publications</p></figcaption></figure>
-
-### PostgreSQL Watcher
-
-To set up your PostgreSQL database for CDC-based replication, you will need to enable replication slots. When this is done incorrectly, it could potentially cause a replication slot overflow and bring your production database down.
-
-PostgreSQL Watcher provides additional guardrails around your database replication, and will do the following:
-
-* **Regularly check and monitor** your replication slot size in 15-minute intervals and notify if the slot exceeds a certain threshold.
-* **Heartbeats verification.** For folks that are leveraging [Heartbeats](https://docs.artie.so/tutorials/preventing-wal-growth-on-postgres-running-on-aws-rds), PostgreSQL Watcher will also check to make sure table permissions are updated and our service account has access to run Heartbeats. Watcher will notify you if the verification fails.
-* **Terminate any idle queries** that are lingering for more than a day. You can avoid having this problem by setting `idle_in_transaction_session_timeout`.&#x20;
-
-PostgreSQL Watcher is available to all Artie Cloud customers using PostgreSQL as a data source.&#x20;
 
 ## Running it yourself
 
