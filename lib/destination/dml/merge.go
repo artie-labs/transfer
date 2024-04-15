@@ -227,10 +227,10 @@ func (m *MergeArgument) GetStatement() (string, error) {
 	subQuery := fmt.Sprintf("( %s )", m.SubQuery)
 	if m.DestKind == constants.BigQuery {
 		subQuery = m.SubQuery
+	}
 
-		if len(m.AdditionalEqualityStrings) > 0 {
-			equalitySQLParts = append(equalitySQLParts, m.AdditionalEqualityStrings...)
-		}
+	if len(m.AdditionalEqualityStrings) > 0 {
+		equalitySQLParts = append(equalitySQLParts, m.AdditionalEqualityStrings...)
 	}
 
 	cols := m.Columns.GetColumnsToUpdate(*m.UppercaseEscNames, &sql.NameArgs{
