@@ -152,11 +152,6 @@ func (f Field) ParseValue(value any) (any, error) {
 		TimeKafkaConnect,
 		DateTimeKafkaConnect:
 
-		int64Value, err := toInt64(value)
-		if err != nil {
-			return nil, err
-		}
-
 		switch f.Type {
 		case Int16, Int32, Int64:
 			// These are the types we expect.
@@ -170,6 +165,10 @@ func (f Field) ParseValue(value any) (any, error) {
 			)
 		}
 
+		int64Value, err := toInt64(value)
+		if err != nil {
+			return nil, err
+		}
 		return FromDebeziumTypeToTime(f.DebeziumType, int64Value)
 	}
 
