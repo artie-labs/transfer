@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"log/slog"
 
 	"github.com/artie-labs/transfer/clients/bigquery"
@@ -55,7 +56,7 @@ func LoadDataWarehouse(cfg config.Config, store *db.Store) (destination.DataWare
 			return nil, err
 		}
 		if err := s.Sweep(); err != nil {
-			logger.Panic("Failed to clean up snowflake", slog.Any("err", err))
+			return nil, fmt.Errorf("failed to clean up Snowflake: %w", err)
 		}
 		return s, nil
 	case constants.BigQuery:
@@ -66,7 +67,7 @@ func LoadDataWarehouse(cfg config.Config, store *db.Store) (destination.DataWare
 			return nil, err
 		}
 		if err := s.Sweep(); err != nil {
-			logger.Panic("Failed to clean up mssql", slog.Any("err", err))
+			return nil, fmt.Errorf("failed to clean up MS SQL: %w", err)
 		}
 		return s, nil
 	case constants.Redshift:
@@ -75,11 +76,10 @@ func LoadDataWarehouse(cfg config.Config, store *db.Store) (destination.DataWare
 			return nil, err
 		}
 		if err := s.Sweep(); err != nil {
-			logger.Panic("Failed to clean up redshift", slog.Any("err", err))
+			return nil, fmt.Errorf("failed to clean up Redshift: %w", err)
 		}
 		return s, nil
 	}
 
-	logger.Panic("No valid output sources specified", slog.Any("source", cfg.Output))
-	return nil, nil
+	return nil, fmt.Errorf("ivalid output source specified: %q", cfg.Output)
 }
