@@ -11,6 +11,7 @@ import (
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/mocks"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -41,15 +42,19 @@ func (d *DDLTestSuite) SetupTest() {
 	d.fakeBigQueryStore = &mocks.FakeStore{}
 	bqStore := db.Store(d.fakeBigQueryStore)
 
-	d.bigQueryStore = bigquery.LoadBigQuery(d.bigQueryCfg, &bqStore)
+	var err error
+	d.bigQueryStore, err = bigquery.LoadBigQuery(d.bigQueryCfg, &bqStore)
+	assert.NoError(d.T(), err)
 
 	d.fakeSnowflakeStagesStore = &mocks.FakeStore{}
 	snowflakeStagesStore := db.Store(d.fakeSnowflakeStagesStore)
-	d.snowflakeStagesStore = snowflake.LoadSnowflake(cfg, &snowflakeStagesStore)
+	d.snowflakeStagesStore, err = snowflake.LoadSnowflake(cfg, &snowflakeStagesStore)
+	assert.NoError(d.T(), err)
 
 	d.fakeRedshiftStore = &mocks.FakeStore{}
 	redshiftStore := db.Store(d.fakeRedshiftStore)
-	d.redshiftStore = redshift.LoadRedshift(cfg, &redshiftStore)
+	d.redshiftStore, err = redshift.LoadRedshift(cfg, &redshiftStore)
+	assert.NoError(d.T(), err)
 }
 
 func TestDDLTestSuite(t *testing.T) {

@@ -83,10 +83,10 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 	return s.configMap
 }
 
-func (s *Store) reestablishConnection() {
+func (s *Store) reestablishConnection() error {
 	if s.testDB {
 		// Don't actually re-establish for tests.
-		return
+		return nil
 	}
 
 	cfg := &gosnowflake.Config{
@@ -109,7 +109,12 @@ func (s *Store) reestablishConnection() {
 		logger.Panic("Failed to get snowflake dsn", slog.Any("err", err))
 	}
 
-	s.Store = db.Open("snowflake", dsn)
+	store, err := db.Open("snowflake", dsn)
+	if err != nil {
+		return err
+	}
+	s.Store = store
+	return nil
 }
 
 func (s *Store) Dedupe(fqTableName string) error {
@@ -117,7 +122,7 @@ func (s *Store) Dedupe(fqTableName string) error {
 	return err
 }
 
-func LoadSnowflake(cfg config.Config, _store *db.Store) *Store {
+func LoadSnowflake(cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
@@ -126,7 +131,7 @@ func LoadSnowflake(cfg config.Config, _store *db.Store) *Store {
 			config:    cfg,
 
 			Store: *_store,
-		}
+		}, nil
 	}
 
 	s := &Store{
@@ -134,6 +139,8 @@ func LoadSnowflake(cfg config.Config, _store *db.Store) *Store {
 		config:    cfg,
 	}
 
-	s.reestablishConnection()
-	return s
+	if err := s.reestablishConnection(); err != nil {
+		return nil, err
+	}
+	return s, nil
 }

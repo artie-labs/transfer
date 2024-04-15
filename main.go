@@ -46,7 +46,10 @@ func main() {
 	if utils.IsOutputBaseline(settings.Config) {
 		dest = utils.Baseline(settings.Config)
 	} else {
-		dest = utils.DataWarehouse(settings.Config, nil)
+		dest, err = utils.DataWarehouse(settings.Config, nil)
+		if err != nil {
+			logger.Fatal("Unable to load data warehouse destination", slog.Any("err", err))
+		}
 	}
 
 	inMemDB := models.NewMemoryDB()

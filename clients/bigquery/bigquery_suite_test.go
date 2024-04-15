@@ -7,6 +7,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/mocks"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -25,7 +26,9 @@ func (b *BigQueryTestSuite) SetupTest() {
 
 	b.fakeStore = &mocks.FakeStore{}
 	store := db.Store(b.fakeStore)
-	b.store = LoadBigQuery(cfg, &store)
+	var err error
+	b.store, err = LoadBigQuery(cfg, &store)
+	assert.NoError(b.T(), err)
 }
 
 func TestBigQueryTestSuite(t *testing.T) {

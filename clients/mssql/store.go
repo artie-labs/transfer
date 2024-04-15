@@ -94,10 +94,14 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 	}.GetTableConfig()
 }
 
-func LoadStore(cfg config.Config) *Store {
+func LoadStore(cfg config.Config) (*Store, error) {
+	store, err := db.Open("mssql", cfg.MSSQL.DSN())
+	if err != nil {
+		return nil, err
+	}
 	return &Store{
-		Store:     db.Open("mssql", cfg.MSSQL.DSN()),
+		Store:     store,
 		configMap: &types.DwhToTablesConfigMap{},
 		config:    cfg,
-	}
+	}, nil
 }

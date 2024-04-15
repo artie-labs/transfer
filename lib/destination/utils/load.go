@@ -37,7 +37,7 @@ func Baseline(cfg config.Config) destination.Baseline {
 	return nil
 }
 
-func DataWarehouse(cfg config.Config, store *db.Store) destination.DataWarehouse {
+func DataWarehouse(cfg config.Config, store *db.Store) (destination.DataWarehouse, error) {
 	switch cfg.Output {
 	case "test":
 		// TODO - In the future, we can create a fake store that follows the MERGE syntax for SQL standard.
@@ -50,27 +50,36 @@ func DataWarehouse(cfg config.Config, store *db.Store) destination.DataWarehouse
 		})
 		return snowflake.LoadSnowflake(cfg, &store)
 	case constants.Snowflake:
-		s := snowflake.LoadSnowflake(cfg, store)
+		s, err := snowflake.LoadSnowflake(cfg, store)
+		if err != nil {
+			return nil, err
+		}
 		if err := s.Sweep(); err != nil {
 			logger.Panic("Failed to clean up snowflake", slog.Any("err", err))
 		}
-		return s
+		return s, err
 	case constants.BigQuery:
 		return bigquery.LoadBigQuery(cfg, store)
 	case constants.MSSQL:
-		s := mssql.LoadStore(cfg)
+		s, err := mssql.LoadStore(cfg)
+		if err != nil {
+			return nil, err
+		}
 		if err := s.Sweep(); err != nil {
 			logger.Panic("Failed to clean up mssql", slog.Any("err", err))
 		}
-		return s
+		return s, nil
 	case constants.Redshift:
-		s := redshift.LoadRedshift(cfg, store)
+		s, err := redshift.LoadRedshift(cfg, store)
+		if err != nil {
+			return nil, err
+		}
 		if err := s.Sweep(); err != nil {
 			logger.Panic("Failed to clean up redshift", slog.Any("err", err))
 		}
-		return s
+		return s, nil
 	}
 
 	logger.Panic("No valid output sources specified", slog.Any("source", cfg.Output))
-	return nil
+	return nil, nil
 }

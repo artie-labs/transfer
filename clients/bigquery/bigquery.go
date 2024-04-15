@@ -153,7 +153,7 @@ func (s *Store) Dedupe(fqTableName string) error {
 	return fmt.Errorf("dedupe is not yet implemented")
 }
 
-func LoadBigQuery(cfg config.Config, _store *db.Store) *Store {
+func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
 	cfg.BigQuery.LoadDefaultValues()
 	if _store != nil {
 		// Used for tests.
@@ -162,7 +162,7 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) *Store {
 
 			configMap: &types.DwhToTablesConfigMap{},
 			config:    cfg,
-		}
+		}, nil
 	}
 
 	if credPath := cfg.BigQuery.PathToCredentials; credPath != "" {
@@ -170,14 +170,18 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) *Store {
 		slog.Debug("Writing the path to BQ credentials to env var for google auth")
 		err := os.Setenv(GooglePathToCredentialsEnvKey, credPath)
 		if err != nil {
-			logger.Panic(fmt.Sprintf("Error setting env var for %s", GooglePathToCredentialsEnvKey), slog.Any("err", err))
+			return nil, fmt.Errorf("error setting env var for %q : %w", GooglePathToCredentialsEnvKey, err)
 		}
 	}
 
+	store, err := db.Open("bigquery", cfg.BigQuery.DSN())
+	if err != nil {
+		return nil, err
+	}
 	return &Store{
-		Store:     db.Open("bigquery", cfg.BigQuery.DSN()),
+		Store:     store,
 		configMap: &types.DwhToTablesConfigMap{},
 		batchSize: cfg.BigQuery.BatchSize,
 		config:    cfg,
-	}
+	}, nil
 }
