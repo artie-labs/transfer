@@ -47,6 +47,7 @@ type TopicConfig struct {
 	IncludeArtieUpdatedAt     bool                        `yaml:"includeArtieUpdatedAt"`
 	IncludeDatabaseUpdatedAt  bool                        `yaml:"includeDatabaseUpdatedAt"`
 	BigQueryPartitionSettings *partition.BigQuerySettings `yaml:"bigQueryPartitionSettings,omitempty"`
+	AdditionalMergeColumns    []string                    `yaml:"additionalMergeColumns,omitempty"`
 
 	// Internal metadata
 	opsToSkipMap map[string]bool `yaml:"-"`

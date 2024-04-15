@@ -1,6 +1,7 @@
 package snowflake
 
 import (
+	"fmt"
 	"log/slog"
 
 	"github.com/artie-labs/transfer/clients/shared"
@@ -49,7 +50,16 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 			}
 		}
 
-		err = shared.Merge(s, tableData, s.config, types.MergeOpts{})
+		var additionalEqualityStrings []string
+		if len(tableData.TopicConfig.AdditionalMergeColumns) > 0 {
+			for _, additionalMergeCol := range tableData.TopicConfig.AdditionalMergeColumns {
+				additionalEqualityStrings = append(additionalEqualityStrings, fmt.Sprintf("c.%s = cc.%s", additionalMergeCol, additionalMergeCol))
+			}
+		}
+
+		err = shared.Merge(s, tableData, s.config, types.MergeOpts{
+			AdditionalEqualityStrings: additionalEqualityStrings,
+		})
 	}
 	return err
 }
