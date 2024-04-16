@@ -2,6 +2,7 @@ package redshift
 
 import (
 	"fmt"
+	"log/slog"
 	"math/rand"
 
 	_ "github.com/lib/pq"
@@ -95,14 +96,10 @@ func (s *Store) Dedupe(fqTableName string) error {
 	stagingTableName := fmt.Sprintf("%s_dedupe_staging_%.5d", constants.ArtiePrefix, rand.Intn(100_000))
 
 	query := fmt.Sprintf(`
-BEGIN TRANSACTION;
-
 CREATE TABLE %s AS SELECT DISTINCT * FROM %s;
 DELETE FROM %s;
 INSERT INTO %s SELECT * FROM %s;
-DROP TABLE %s;
-
-END TRANSACTION;`,
+DROP TABLE %s;`,
 		// CREATE TABLE
 		stagingTableName,
 		// AS SELECT DISTINCT * FROM
@@ -118,8 +115,28 @@ END TRANSACTION;`,
 		// ;
 	)
 
-	_, err := s.Exec(query)
-	return err
+	transaction, err := s.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer func() {
+		if err := transaction.Rollback(); err != nil {
+			slog.Error("Failed to roll back transaction",
+				slog.Any("err", err),
+				slog.Any("queryErr", err),
+			)
+		}
+	}()
+
+	if _, err = transaction.Exec(query); err != nil {
+		return fmt.Errorf("failed to execute query: %w", err)
+	}
+
+	if err = transaction.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
 }
 
 func LoadRedshift(cfg config.Config, _store *db.Store) (*Store, error) {
