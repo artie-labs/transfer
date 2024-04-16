@@ -139,12 +139,12 @@ func (f Field) ParseValue(value any) (any, error) {
 
 	// Check if the field is an integer and requires us to cast it as such.
 	if f.IsInteger() {
-		int64Value, ok := value.(int64)
+		value, ok := value.(int64)
 		if !ok {
 			return nil, fmt.Errorf("expected int64 got '%v' with type %T", value, value)
 		}
 		// TODO: Returning an int to preserve existing behavior, however we should see if we can return an int64 instead.
-		return int(int64Value), nil
+		return int(value), nil
 	}
 
 	switch f.DebeziumType {
