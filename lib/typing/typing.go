@@ -2,6 +2,7 @@ package typing
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -189,4 +190,21 @@ func KindToDWHType(kd KindDetails, dwh constants.DestinationKind, isPk bool) str
 	}
 
 	return ""
+}
+
+func DwhTypeToKind(dwh constants.DestinationKind, dwhType, stringPrecision string) (KindDetails, error) {
+	dwhType = strings.ToLower(dwhType)
+
+	switch dwh {
+	case constants.Snowflake:
+		return snowflakeTypeToKind(dwhType), nil
+	case constants.BigQuery:
+		return bigQueryTypeToKind(dwhType), nil
+	case constants.Redshift:
+		return redshiftTypeToKind(dwhType, stringPrecision), nil
+	case constants.MSSQL:
+		return mssqlTypeToKind(dwhType, stringPrecision), nil
+	}
+
+	return Invalid, fmt.Errorf("unexpected dwh kind, label: %v", dwh)
 }

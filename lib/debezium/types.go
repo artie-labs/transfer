@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log/slog"
-	"strconv"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -153,20 +152,6 @@ func (f Field) ParseValue(value any) (any, error) {
 		TimeKafkaConnect,
 		DateTimeKafkaConnect:
 
-		switch value.(type) {
-		case float64:
-			// This value is coming from Kafka, and will have been marshaled to a JSON string, so when it is
-			// unmarshalled it will be a float64
-			// -> Pass.
-		case int64:
-			// This value is coming from reader.
-			// -> Pass.
-		default:
-			// Value should always be a float64/int64, but let's check this if this assumption holds and if so clean up
-			// the code below so that we aren't doing float -> string -> float.
-			slog.Error(fmt.Sprintf("Expected float64 received %T with value '%v'", value, value))
-		}
-
 		switch f.Type {
 		case Int16, Int32, Int64:
 			// These are the types we expect.
@@ -180,14 +165,11 @@ func (f Field) ParseValue(value any) (any, error) {
 			)
 		}
 
-		// Need to cast this as a FLOAT first because the number may come out in scientific notation
-		// ParseFloat is apt to handle it, and ParseInt is not, see: https://github.com/golang/go/issues/19288
-		floatVal, castErr := strconv.ParseFloat(fmt.Sprint(value), 64)
-		if castErr != nil {
-			return nil, castErr
+		int64Value, err := toInt64(value)
+		if err != nil {
+			return nil, err
 		}
-
-		return FromDebeziumTypeToTime(f.DebeziumType, int64(floatVal))
+		return FromDebeziumTypeToTime(f.DebeziumType, int64Value)
 	}
 
 	if bytes, ok := value.([]byte); ok {

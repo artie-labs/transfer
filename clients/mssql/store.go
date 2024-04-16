@@ -67,6 +67,10 @@ func (s *Store) Sweep() error {
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
+func (s *Store) Dedupe(fqTableName string) error {
+	return nil // dedupe is not necessary for MS SQL
+}
+
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	// TODO: Figure out how to leave a comment.
 	const (
@@ -76,7 +80,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 	)
 
 	query, args := describeTableQuery(s.Schema(tableData), tableData.RawName())
-	return shared.GetTableConfig(shared.GetTableCfgArgs{
+	return shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             s.ToFullyQualifiedName(tableData, true),
 		ConfigMap:          s.configMap,
@@ -87,13 +91,17 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		ColumnDescLabel:    describeDescriptionCol,
 		EmptyCommentValue:  ptr.ToString("<nil>"),
 		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
-	})
+	}.GetTableConfig()
 }
 
-func LoadStore(cfg config.Config) *Store {
+func LoadStore(cfg config.Config) (*Store, error) {
+	store, err := db.Open("mssql", cfg.MSSQL.DSN())
+	if err != nil {
+		return nil, err
+	}
 	return &Store{
-		Store:     db.Open("mssql", cfg.MSSQL.DSN()),
+		Store:     store,
 		configMap: &types.DwhToTablesConfigMap{},
 		config:    cfg,
-	}
+	}, nil
 }

@@ -53,7 +53,8 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		RawTableName: tableData.RawName(),
 		Schema:       tableData.TopicConfig.Schema,
 	})
-	return shared.GetTableConfig(shared.GetTableCfgArgs{
+
+	return shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             s.ToFullyQualifiedName(tableData, true),
 		ConfigMap:          s.configMap,
@@ -64,7 +65,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		ColumnDescLabel:    describeDescriptionCol,
 		EmptyCommentValue:  ptr.ToString("<nil>"),
 		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
-	})
+	}.GetTableConfig()
 }
 
 func (s *Store) Sweep() error {
@@ -76,20 +77,24 @@ func (s *Store) Sweep() error {
 	// `relkind` will filter for only ordinary tables and exclude sequences, views, etc.
 	queryFunc := func(dbAndSchemaPair kafkalib.DatabaseSchemaPair) (string, []any) {
 		return `
-SELECT 
+SELECT
     n.nspname, c.relname
-FROM 
+FROM
     PG_CATALOG.PG_CLASS c
-JOIN 
+JOIN
     PG_CATALOG.PG_NAMESPACE n ON n.oid = c.relnamespace
-WHERE 
+WHERE
     n.nspname = $1 AND c.relname ILIKE $2 AND c.relkind = 'r';`, []any{dbAndSchemaPair.Schema, "%" + constants.ArtiePrefix + "%"}
 	}
 
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func LoadRedshift(cfg config.Config, _store *db.Store) *Store {
+func (s *Store) Dedupe(fqTableName string) error {
+	return fmt.Errorf("dedupe is not yet implemented")
+}
+
+func LoadRedshift(cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
@@ -98,12 +103,17 @@ func LoadRedshift(cfg config.Config, _store *db.Store) *Store {
 			config:     cfg,
 
 			Store: *_store,
-		}
+		}, nil
 	}
 
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require",
 		cfg.Redshift.Host, cfg.Redshift.Port, cfg.Redshift.Username,
 		cfg.Redshift.Password, cfg.Redshift.Database)
+
+	store, err := db.Open("postgres", connStr)
+	if err != nil {
+		return nil, err
+	}
 
 	return &Store{
 		credentialsClause: cfg.Redshift.CredentialsClause,
@@ -113,6 +123,6 @@ func LoadRedshift(cfg config.Config, _store *db.Store) *Store {
 		configMap:         &types.DwhToTablesConfigMap{},
 		config:            cfg,
 
-		Store: db.Open("postgres", connStr),
-	}
+		Store: store,
+	}, nil
 }

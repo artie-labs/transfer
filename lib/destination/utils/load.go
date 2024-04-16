@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"log/slog"
+	"fmt"
 
 	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/clients/mssql"
@@ -13,7 +13,6 @@ import (
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/db/mock"
 	"github.com/artie-labs/transfer/lib/destination"
-	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/mocks"
 )
 
@@ -21,23 +20,21 @@ func IsOutputBaseline(cfg config.Config) bool {
 	return cfg.Output == constants.S3
 }
 
-func Baseline(cfg config.Config) destination.Baseline {
+func LoadBaseline(cfg config.Config) (destination.Baseline, error) {
 	switch cfg.Output {
 	case constants.S3:
 		store, err := s3.LoadStore(cfg)
 		if err != nil {
-			logger.Panic("Failed to load s3", slog.Any("err", err))
+			return nil, fmt.Errorf("failed to load S3: %w", err)
 		}
 
-		return store
+		return store, nil
 	}
 
-	logger.Panic("No valid output sources specified", slog.Any("source", cfg.Output))
-
-	return nil
+	return nil, fmt.Errorf("invalid baseline output source specified: %q", cfg.Output)
 }
 
-func DataWarehouse(cfg config.Config, store *db.Store) destination.DataWarehouse {
+func LoadDataWarehouse(cfg config.Config, store *db.Store) (destination.DataWarehouse, error) {
 	switch cfg.Output {
 	case "test":
 		// TODO - In the future, we can create a fake store that follows the MERGE syntax for SQL standard.
@@ -50,27 +47,35 @@ func DataWarehouse(cfg config.Config, store *db.Store) destination.DataWarehouse
 		})
 		return snowflake.LoadSnowflake(cfg, &store)
 	case constants.Snowflake:
-		s := snowflake.LoadSnowflake(cfg, store)
-		if err := s.Sweep(); err != nil {
-			logger.Panic("Failed to clean up snowflake", slog.Any("err", err))
+		s, err := snowflake.LoadSnowflake(cfg, store)
+		if err != nil {
+			return nil, err
 		}
-		return s
+		if err = s.Sweep(); err != nil {
+			return nil, fmt.Errorf("failed to clean up Snowflake: %w", err)
+		}
+		return s, nil
 	case constants.BigQuery:
 		return bigquery.LoadBigQuery(cfg, store)
 	case constants.MSSQL:
-		s := mssql.LoadStore(cfg)
-		if err := s.Sweep(); err != nil {
-			logger.Panic("Failed to clean up mssql", slog.Any("err", err))
+		s, err := mssql.LoadStore(cfg)
+		if err != nil {
+			return nil, err
 		}
-		return s
+		if err = s.Sweep(); err != nil {
+			return nil, fmt.Errorf("failed to clean up MS SQL: %w", err)
+		}
+		return s, nil
 	case constants.Redshift:
-		s := redshift.LoadRedshift(cfg, store)
-		if err := s.Sweep(); err != nil {
-			logger.Panic("Failed to clean up redshift", slog.Any("err", err))
+		s, err := redshift.LoadRedshift(cfg, store)
+		if err != nil {
+			return nil, err
 		}
-		return s
+		if err = s.Sweep(); err != nil {
+			return nil, fmt.Errorf("failed to clean up Redshift: %w", err)
+		}
+		return s, nil
 	}
 
-	logger.Panic("No valid output sources specified", slog.Any("source", cfg.Output))
-	return nil
+	return nil, fmt.Errorf("invalid data warehouse output source specified: %q", cfg.Output)
 }

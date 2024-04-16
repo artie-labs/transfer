@@ -12,6 +12,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/models"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -60,7 +61,9 @@ func (f *FlushTestSuite) SetupTest() {
 		FlushSizeKb:          500,
 	}
 
-	f.dwh = utils.DataWarehouse(f.cfg, &store)
+	var err error
+	f.dwh, err = utils.LoadDataWarehouse(f.cfg, &store)
+	assert.NoError(f.T(), err)
 
 	f.db = models.NewMemoryDB()
 

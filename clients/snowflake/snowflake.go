@@ -2,7 +2,6 @@ package snowflake
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/snowflakedb/gosnowflake"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
 )
@@ -39,7 +37,7 @@ func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape b
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	fqName := s.ToFullyQualifiedName(tableData, true)
-	return shared.GetTableConfig(shared.GetTableCfgArgs{
+	return shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             fqName,
 		ConfigMap:          s.configMap,
@@ -49,7 +47,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		ColumnDescLabel:    describeCommentCol,
 		EmptyCommentValue:  ptr.ToString("<nil>"),
 		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
-	})
+	}.GetTableConfig()
 }
 
 func (s *Store) Sweep() error {
@@ -60,7 +58,7 @@ func (s *Store) Sweep() error {
 
 	queryFunc := func(dbAndSchemaPair kafkalib.DatabaseSchemaPair) (string, []any) {
 		return fmt.Sprintf(`
-SELECT 
+SELECT
     table_schema, table_name
 FROM
     %s.information_schema.tables
@@ -83,10 +81,10 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 	return s.configMap
 }
 
-func (s *Store) reestablishConnection() {
+func (s *Store) reestablishConnection() error {
 	if s.testDB {
 		// Don't actually re-establish for tests.
-		return
+		return nil
 	}
 
 	cfg := &gosnowflake.Config{
@@ -106,13 +104,23 @@ func (s *Store) reestablishConnection() {
 
 	dsn, err := gosnowflake.DSN(cfg)
 	if err != nil {
-		logger.Panic("Failed to get snowflake dsn", slog.Any("err", err))
+		return fmt.Errorf("failed to get Snowflake DSN: %w", err)
 	}
 
-	s.Store = db.Open("snowflake", dsn)
+	store, err := db.Open("snowflake", dsn)
+	if err != nil {
+		return err
+	}
+	s.Store = store
+	return nil
 }
 
-func LoadSnowflake(cfg config.Config, _store *db.Store) *Store {
+func (s *Store) Dedupe(fqTableName string) error {
+	_, err := s.Exec(fmt.Sprintf("CREATE OR REPLACE TABLE %s AS SELECT DISTINCT * FROM %s", fqTableName, fqTableName))
+	return err
+}
+
+func LoadSnowflake(cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
@@ -121,7 +129,7 @@ func LoadSnowflake(cfg config.Config, _store *db.Store) *Store {
 			config:    cfg,
 
 			Store: *_store,
-		}
+		}, nil
 	}
 
 	s := &Store{
@@ -129,6 +137,8 @@ func LoadSnowflake(cfg config.Config, _store *db.Store) *Store {
 		config:    cfg,
 	}
 
-	s.reestablishConnection()
-	return s
+	if err := s.reestablishConnection(); err != nil {
+		return nil, err
+	}
+	return s, nil
 }

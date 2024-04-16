@@ -2,11 +2,11 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/jitter"
-	"github.com/artie-labs/transfer/lib/logger"
 )
 
 const (
@@ -59,24 +59,18 @@ func (s *storeWrapper) IsRetryableError(err error) bool {
 	return retryableError(err)
 }
 
-func Open(driverName, dsn string) Store {
+func Open(driverName, dsn string) (Store, error) {
 	db, err := sql.Open(driverName, dsn)
 	if err != nil {
-		logger.Panic("Failed to start a SQL client",
-			slog.String("driverName", driverName),
-			slog.Any("err", err),
-		)
+		return nil, fmt.Errorf("failed to start a SQL client for driver %q: %w", driverName, err)
 	}
 
 	err = db.Ping()
 	if err != nil {
-		logger.Panic("Failed to validate the DB connection",
-			slog.String("driverName", driverName),
-			slog.Any("err", err),
-		)
+		return nil, fmt.Errorf("failed to validate the DB connection for driver %q: %w", driverName, err)
 	}
 
 	return &storeWrapper{
 		DB: db,
-	}
+	}, nil
 }

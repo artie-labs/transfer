@@ -8,8 +8,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func MSSQLTypeToKind(rawType string, stringPrecision string) KindDetails {
-	rawType = strings.ToLower(rawType)
+func mssqlTypeToKind(rawType string, stringPrecision string) KindDetails {
 	if strings.HasPrefix(rawType, "numeric") {
 		return ParseNumeric(defaultPrefix, rawType)
 	}
