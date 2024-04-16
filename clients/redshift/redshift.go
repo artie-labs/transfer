@@ -129,7 +129,7 @@ DROP TABLE %s;`,
 	}()
 
 	if _, err = transaction.Exec(query); err != nil {
-		return fmt.Errorf("failed to execute query: %w", err)
+		return fmt.Errorf("failed to execute dedupe query: %w", err)
 	}
 
 	if err = transaction.Commit(); err != nil {
