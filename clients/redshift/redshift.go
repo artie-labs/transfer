@@ -115,13 +115,16 @@ DROP TABLE %s;`,
 		// ;
 	)
 
+	var transactionCommitted bool
 	transaction, err := s.Begin()
 	if err != nil {
 		return fmt.Errorf("failed to start transaction: %w", err)
 	}
 	defer func() {
-		if err := transaction.Rollback(); err != nil {
-			slog.Error("Failed to roll back transaction", slog.Any("err", err))
+		if transactionCommitted {
+			if err := transaction.Rollback(); err != nil {
+				slog.Error("Failed to roll back transaction", slog.Any("err", err))
+			}
 		}
 	}()
 
@@ -133,6 +136,7 @@ DROP TABLE %s;`,
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
+	transactionCommitted = true
 	return nil
 }
 
