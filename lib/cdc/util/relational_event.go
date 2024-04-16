@@ -82,14 +82,16 @@ func (s *SchemaEventPayload) GetTableName() string {
 func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicConfig) map[string]any {
 	var retMap map[string]any
 	if len(s.Payload.After) == 0 {
+		if len(s.Payload.Before) > 0 {
+			retMap = s.parseAndMutateMapInPlace(s.Payload.Before, cdc.Before)
+		} else {
+			retMap = make(map[string]any)
+		}
 		// This is a delete payload, so mark it as deleted.
 		// And we need to reconstruct the data bit since it will be empty.
 		// We _can_ rely on *before* since even without running replicate identity, it will still copy over
 		// the PK. We can explore simplifying this interface in the future by leveraging before.
-		retMap = map[string]any{
-			constants.DeleteColumnMarker: true,
-		}
-
+		retMap[constants.DeleteColumnMarker] = true
 		for k, v := range pkMap {
 			retMap[k] = v
 		}
@@ -99,7 +101,7 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 			retMap[tc.IdempotentKey] = s.GetExecutionTime().Format(ext.ISO8601)
 		}
 	} else {
-		retMap = s.Payload.After
+		retMap = s.parseAndMutateMapInPlace(s.Payload.After, cdc.After)
 		retMap[constants.DeleteColumnMarker] = false
 	}
 
@@ -111,22 +113,26 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 		retMap[constants.DatabaseUpdatedColumnMarker] = s.GetExecutionTime().Format(ext.ISO8601)
 	}
 
-	// Iterate over the schema and identify if there are any fields that require extra care.
-	afterSchemaObject := s.Schema.GetSchemaFromLabel(cdc.After)
-	if afterSchemaObject != nil {
-		for _, field := range afterSchemaObject.Fields {
-			_, isOk := retMap[field.FieldName]
+	return retMap
+}
+
+// parseAndMutateMapInPlace will take `retMap` and `kind` (which part of the schema should we be inspecting) and then parse the values accordingly.
+// This will unpack any Debezium-specific values and convert them back into their original types.
+// NOTE: `retMap` and the returned object are the same object.
+func (s *SchemaEventPayload) parseAndMutateMapInPlace(retMap map[string]any, kind cdc.FieldLabelKind) map[string]any {
+	if schemaObject := s.Schema.GetSchemaFromLabel(kind); schemaObject != nil {
+		for _, field := range schemaObject.Fields {
+			fieldVal, isOk := retMap[field.FieldName]
 			if !isOk {
-				// Skipping b/c envelope mismatch with the actual request body
 				continue
 			}
 
-			val, parseErr := field.ParseValue(retMap[field.FieldName])
-			if parseErr == nil {
+			if val, parseErr := field.ParseValue(fieldVal); parseErr == nil {
 				retMap[field.FieldName] = val
 			} else {
+				// TODO: Make this a hard failure, confirm this with Datadog logs.
 				slog.Warn("Failed to parse field, using original value", slog.Any("err", parseErr),
-					slog.String("field", field.FieldName), slog.Any("value", retMap[field.FieldName]))
+					slog.String("field", field.FieldName), slog.Any("value", fieldVal))
 			}
 		}
 	}
