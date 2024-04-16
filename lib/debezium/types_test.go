@@ -104,6 +104,113 @@ func TestToInt64(t *testing.T) {
 	}
 }
 
+func TestField_ShouldCastToInt64(t *testing.T) {
+	testCases := []struct {
+		name     string
+		field    Field
+		expected bool
+	}{
+		// Test cases that should return true:
+		{
+			name: "int16",
+			field: Field{
+				Type: Int16,
+			},
+			expected: true,
+		},
+		{
+			name: "int32",
+			field: Field{
+				Type: Int32,
+			},
+			expected: true,
+		},
+		{
+			name: "int64",
+			field: Field{
+				Type: Int64,
+			},
+			expected: true,
+		},
+		{
+			name: "micro-timestamp - no type specified",
+			field: Field{
+				DebeziumType: MicroTimestamp,
+			},
+			expected: true,
+		},
+		{
+			name: "date kafka connect - no type specified",
+			field: Field{
+				DebeziumType: DateKafkaConnect,
+			},
+			expected: true,
+		},
+		// Test cases that should return false:
+		{
+			name: "string",
+			field: Field{
+				Type: String,
+			},
+			expected: false,
+		},
+		{
+			name: "decimal",
+			field: Field{
+				DebeziumType: KafkaDecimalType,
+			},
+			expected: false,
+		},
+		{
+			name: "variable decimal",
+			field: Field{
+				DebeziumType: KafkaVariableNumericType,
+			},
+			expected: false,
+		},
+		{
+			name: "geometry",
+			field: Field{
+				DebeziumType: GeometryType,
+			},
+			expected: false,
+		},
+		{
+			name: "geography",
+			field: Field{
+				DebeziumType: GeographyType,
+			},
+			expected: false,
+		},
+		{
+			name: "json",
+			field: Field{
+				DebeziumType: JSON,
+			},
+			expected: false,
+		},
+		{
+			name: "[]byte",
+			field: Field{
+				Type: Bytes,
+			},
+			expected: false,
+		},
+		{
+			name: "JSON toast",
+			field: Field{
+				Type:         String,
+				DebeziumType: JSON,
+			},
+			expected: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		assert.Equal(t, testCase.expected, testCase.field.shouldCastToInt64(), testCase.name)
+	}
+}
+
 func TestField_ParseValue(t *testing.T) {
 	type _testCase struct {
 		name  string
