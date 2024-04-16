@@ -95,33 +95,56 @@ func toInt64(value any) (int64, error) {
 	return 0, fmt.Errorf("failed to cast value '%v' with type '%T' to int64", value, value)
 }
 
+func (f Field) shouldCastToInt64() bool {
+	if f.IsInteger() {
+		return true
+	}
+
+	switch f.DebeziumType {
+	case
+		Timestamp,
+		MicroTimestamp,
+		Date,
+		Time,
+		MicroTime,
+		DateKafkaConnect,
+		TimeKafkaConnect,
+		DateTimeKafkaConnect:
+		return true
+	}
+
+	return false
+}
+
 func (f Field) ParseValue(value any) (any, error) {
 	if value == nil {
 		return nil, nil
 	}
 
-	// TODO: Implement a preprocessing step here that reverses the effects of values being JSON marshalled and
-	// unmarshalled when they pass through Kafka. This would replace calling f.IsInteger below and might look like:
-	// var err error
-	// switch f.Type {
-	// case Int16, Int32, Int64:
-	// 	value, err = toInt64(value)
-	// case Bytes:
-	// 	value, err = toBytes(value)
-	// }
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// Once this is in place, the cases in the f.DebeziumType switch statement below won't need to parse int64s or bytes.
-
-	// Check if the field is an integer and requires us to cast it as such.
-	if f.IsInteger() {
-		value, err := toInt64(value)
+	// Preprocess [value] to reverse the effects of being JSON marshalled and unmarshalled when passing through Kafka.
+	if f.shouldCastToInt64() {
+		var err error
+		value, err = toInt64(value)
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		// TODO: If we don't see the following error in the logs replace [Field.shouldCastToInt64] call with a simple
+		// check that [Field.Type] is [Int16], [Int32], or [Int64].
+		switch f.Type {
+		case Int16, Int32, Int64:
+			slog.Error(fmt.Sprintf("Field type is %q but shouldCastToInt64 is false", f.Type), slog.Any("value", value))
+		}
+	}
+
+	// Check if the field is an integer and requires us to cast it as such.
+	if f.IsInteger() {
+		int64Value, ok := value.(int64)
+		if !ok {
+			return nil, fmt.Errorf("expected int64 got '%v' with type %T", value, value)
+		}
 		// TODO: Returning an int to preserve existing behavior, however we should see if we can return an int64 instead.
-		return int(value), err
+		return int(int64Value), nil
 	}
 
 	switch f.DebeziumType {
@@ -152,22 +175,9 @@ func (f Field) ParseValue(value any) (any, error) {
 		TimeKafkaConnect,
 		DateTimeKafkaConnect:
 
-		switch f.Type {
-		case Int16, Int32, Int64:
-			// These are the types we expect.
-			// -> Pass
-		default:
-			// Assuming we always receive an int type for Debeziumn time types, we should be able to add a preprocessing
-			// step above that inspects the field type and if it is an int type casts `value` to `int64`.
-			slog.Error(fmt.Sprintf("Unexpected field type '%s' for Debezium time type '%s'", f.Type, f.DebeziumType),
-				slog.String("type", fmt.Sprintf("%T", value)),
-				slog.Any("value", value),
-			)
-		}
-
-		int64Value, err := toInt64(value)
-		if err != nil {
-			return nil, err
+		int64Value, ok := value.(int64)
+		if !ok {
+			return nil, fmt.Errorf("expected int64 got '%v' with type %T", value, value)
 		}
 		return FromDebeziumTypeToTime(f.DebeziumType, int64Value)
 	}
