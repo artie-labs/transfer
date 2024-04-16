@@ -115,7 +115,8 @@ func (s *Store) reestablishConnection() error {
 	return nil
 }
 
-func (s *Store) Dedupe(fqTableName string) error {
+func (s *Store) Dedupe(tableData *optimization.TableData) error {
+	fqTableName := s.ToFullyQualifiedName(tableData, true)
 	_, err := s.Exec(fmt.Sprintf("CREATE OR REPLACE TABLE %s AS SELECT DISTINCT * FROM %s", fqTableName, fqTableName))
 	return err
 }
