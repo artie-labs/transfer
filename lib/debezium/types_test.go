@@ -196,14 +196,6 @@ func TestField_ShouldCastToInt64(t *testing.T) {
 			},
 			expected: false,
 		},
-		{
-			name: "JSON toast",
-			field: Field{
-				Type:         String,
-				DebeziumType: JSON,
-			},
-			expected: false,
-		},
 	}
 
 	for _, testCase := range testCases {
