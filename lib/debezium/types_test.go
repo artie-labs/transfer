@@ -308,19 +308,13 @@ func TestField_ParseValue(t *testing.T) {
 			},
 		},
 		{
-			name: "string micro-timestamp",
+			name: "string micro-timestamp - should error",
 			field: Field{
 				Type:         Int64,
 				DebeziumType: MicroTimestamp,
 			},
-			value: "1712609795827000",
-			expectedValue: &ext.ExtendedTime{
-				Time: time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC),
-				NestedKind: ext.NestedKind{
-					Type:   ext.DateTimeKindType,
-					Format: "2006-01-02T15:04:05.999999999Z07:00",
-				},
-			},
+			value:       "1712609795827000",
+			expectedErr: "failed to cast value '1712609795827000' with type 'string' to int64",
 		},
 		{
 			name: "[]byte",
