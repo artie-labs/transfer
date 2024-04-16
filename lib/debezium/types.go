@@ -110,6 +110,7 @@ func (f Field) shouldCastToInt64() bool {
 		DateKafkaConnect,
 		TimeKafkaConnect,
 		DateTimeKafkaConnect:
+		// We have verfied that these [Field.DebeziumType]s are always caled with a [Field.Type] of [Int16], [Int32], or [Int64].
 		return true
 	}
 
