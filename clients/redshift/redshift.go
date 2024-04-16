@@ -121,7 +121,7 @@ DROP TABLE %s;`,
 		return fmt.Errorf("failed to start transaction: %w", err)
 	}
 	defer func() {
-		if transactionCommitted {
+		if !transactionCommitted {
 			if err := transaction.Rollback(); err != nil {
 				slog.Error("Failed to roll back transaction", slog.Any("err", err))
 			}
