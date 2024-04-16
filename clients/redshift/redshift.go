@@ -121,10 +121,7 @@ DROP TABLE %s;`,
 	}
 	defer func() {
 		if err := transaction.Rollback(); err != nil {
-			slog.Error("Failed to roll back transaction",
-				slog.Any("err", err),
-				slog.Any("queryErr", err),
-			)
+			slog.Error("Failed to roll back transaction", slog.Any("err", err))
 		}
 	}()
 
