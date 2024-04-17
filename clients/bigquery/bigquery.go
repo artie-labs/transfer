@@ -78,8 +78,8 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	return s.putTable(context.Background(), tableData.TopicConfig.Database, tempTableName, rows)
 }
 
-func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	return tableData.TableIdentifier().FqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames,
+func (s *Store) ToFullyQualifiedName(tableID optimization.TableIdentifier, escape bool) string {
+	return tableID.FqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames,
 		optimization.FqNameOpts{BigQueryProjectID: s.config.BigQuery.ProjectID})
 }
 
@@ -87,7 +87,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 	query := fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name = ?;", tableData.TopicConfig.Database)
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
-		FqName:             s.ToFullyQualifiedName(tableData, true),
+		FqName:             s.ToFullyQualifiedName(tableData.TableIdentifier(), true),
 		ConfigMap:          s.configMap,
 		Query:              query,
 		Args:               []any{tableData.RawName()},
