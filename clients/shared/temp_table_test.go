@@ -50,22 +50,15 @@ func TestTempTableName(t *testing.T) {
 	)
 	tableData.ResetTempTableSuffix()
 
-	tempTableName := TempTableName(dwh, tableData.TableIdentifier(), tableData.TempTableSuffix())
+	tempTableName := TempTableName(dwh, tableData.TableIdentifier(), "sUfFiX")
 
-	expectedPrefix := "schema.table___artie_"
+	expectedPrefix := "schema.table___artie_sUfFiX_"
 	assert.True(t, strings.HasPrefix(tempTableName, expectedPrefix))
 
+	// Check the TTL:
 	suffix := tempTableName[len(expectedPrefix):]
-	assert.Len(t, suffix, 16)
-	parts := strings.Split(suffix, "_")
-	assert.Len(t, parts, 2)
-
-	// Check the first part (five random characters):
-	assert.Len(t, parts[0], 5)
-
-	// Check the second part (TTL):
-	assert.Len(t, parts[1], 10)
-	epoch, err := strconv.ParseInt(parts[1], 10, 64)
+	assert.Len(t, suffix, 10)
+	epoch, err := strconv.ParseInt(suffix, 10, 64)
 	assert.NoError(t, err)
 	assert.Greater(t, time.Unix(epoch, 0), time.Now())
 }
