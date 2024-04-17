@@ -75,5 +75,4 @@ func TestTempTableName(t *testing.T) {
 		tempTableName := TempTableName(MockDWH{kind: constants.Snowflake}, tableID, "sUfFiX")
 		assert.Equal(t, "db.schema.table___artie_sUfFiX", trimTTL(tempTableName))
 	}
-
 }
