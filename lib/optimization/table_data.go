@@ -223,11 +223,11 @@ func (t *TableData) ResetTempTableSuffix() {
 	}
 
 	// Lowercase this because BigQuery is case-sensitive.
-	t.temporaryTableSuffix = strings.ToLower(fmt.Sprintf("%s_%s", constants.ArtiePrefix, stringutil.Random(5)))
+	t.temporaryTableSuffix = strings.ToLower(stringutil.Random(5))
 }
 
 func (t *TableData) TempTableSuffix() string {
-	return fmt.Sprintf("%s_%d", t.temporaryTableSuffix, time.Now().Add(constants.TemporaryTableTTL).Unix())
+	return t.temporaryTableSuffix
 }
 
 // ShouldFlush will return whether Transfer should flush
