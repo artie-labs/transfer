@@ -92,106 +92,107 @@ func Test_ParsePartitionKeyStruct(t *testing.T) {
 	}
 }
 
-//func TestParsePartitionKeyStruct(t *testing.T) {
-//	badDataCases := []struct{ value, expectedErr string }{
-//		{"", "key is nil"},
-//		{"{}", "key is nil"},
-//		{"{id:", "failed to json unmarshal: invalid character 'i' looking for beginning of object key string"},
-//		{`{"id":`, "failed to json unmarshal: unexpected end of JSON input"},
-//	}
-//
-//	for _, badData := range badDataCases {
-//		_, err := parsePartitionKeyStruct([]byte(badData.value))
-//		assert.ErrorContains(t, err, badData.expectedErr, badData)
-//	}
-//
-//	kv, err := parsePartitionKeyStruct([]byte(`{"id": 47}`))
-//	assert.Nil(t, err)
-//	assert.Equal(t, kv["id"], float64(47))
-//
-//	kv, err = parsePartitionKeyStruct([]byte(`{"uuid": "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c", "FOO": "bar"}`))
-//	assert.Nil(t, err)
-//	assert.Equal(t, kv["uuid"], "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c")
-//	assert.Equal(t, kv["foo"], "bar")
-//
-//	kv, err = parsePartitionKeyStruct([]byte(`{
-//	"schema": {
-//		"type": "struct",
-//		"fields": [{
-//			"type": "int32",
-//			"optional": false,
-//			"default": 0,
-//			"field": "id"
-//		}],
-//		"optional": false,
-//		"name": "dbserver1.inventory.customers.Key"
-//	},
-//	"payload": {
-//		"id": 1002
-//	}
-//}`))
-//
-//	assert.NoError(t, err)
-//	assert.Equal(t, kv["id"], float64(1002))
-//
-//	// Composite key
-//	compositeKeyString := `{
-//	"schema": {
-//		"type": "struct",
-//		"fields": [{
-//			"type": "int32",
-//			"optional": false,
-//			"field": "quarter_id"
-//		}, {
-//			"type": "string",
-//			"optional": false,
-//			"field": "course_id"
-//		}, {
-//			"type": "int32",
-//			"optional": false,
-//			"field": "student_id"
-//		}],
-//		"optional": false,
-//		"name": "dbserver1.inventory.course_grades.Key"
-//	},
-//	"payload": {
-//		"quarter_id": 1,
-//		"course_id": "course1",
-//		"student_id": 1
-//	}
-//}`
-//
-//	kv, err = parsePartitionKeyStruct([]byte(compositeKeyString))
-//	assert.NoError(t, err)
-//	assert.Equal(t, kv["quarter_id"], float64(1))
-//	assert.Equal(t, kv["student_id"], float64(1))
-//	assert.Equal(t, kv["course_id"], "course1")
-//
-//	// Normal key with Debezium change event key (SMT)
-//	smtKey := `{
-//	"schema": {
-//		"type": "struct",
-//		"fields": [{
-//			"type": "int32",
-//			"optional": false,
-//			"default": 0,
-//			"field": "id"
-//		}, {
-//			"type": "string",
-//			"optional": false,
-//			"field": "__dbz__physicalTableIdentifier"
-//		}],
-//		"optional": false,
-//		"name": "dbserver1.inventory.all_tables.Key"
-//	},
-//	"payload": {
-//		"id": 1001,
-//		"__dbz__physicalTableIdentifier": "dbserver1.inventory.customers"
-//	}
-//}`
-//
-//	kv, err = parsePartitionKeyStruct([]byte(smtKey))
-//	assert.NoError(t, err)
-//	assert.Equal(t, kv["id"], float64(1001))
-//	assert.Equal(t, 1, len(kv))
-//}
+func TestParsePartitionKeyStruct(t *testing.T) {
+	// TODO: Rewrite these tests.
+	badDataCases := []struct{ value, expectedErr string }{
+		{"", "key is nil"},
+		{"{}", "key is nil"},
+		{"{id:", "failed to json unmarshal: invalid character 'i' looking for beginning of object key string"},
+		{`{"id":`, "failed to json unmarshal: unexpected end of JSON input"},
+	}
+
+	for _, badData := range badDataCases {
+		_, err := parsePartitionKeyStruct([]byte(badData.value))
+		assert.ErrorContains(t, err, badData.expectedErr, badData)
+	}
+
+	kv, err := parsePartitionKeyStruct([]byte(`{"id": 47}`))
+	assert.Nil(t, err)
+	assert.Equal(t, kv["id"], float64(47))
+
+	kv, err = parsePartitionKeyStruct([]byte(`{"uuid": "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c", "FOO": "bar"}`))
+	assert.Nil(t, err)
+	assert.Equal(t, kv["uuid"], "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c")
+	assert.Equal(t, kv["foo"], "bar")
+
+	kv, err = parsePartitionKeyStruct([]byte(`{
+	"schema": {
+		"type": "struct",
+		"fields": [{
+			"type": "int32",
+			"optional": false,
+			"default": 0,
+			"field": "id"
+		}],
+		"optional": false,
+		"name": "dbserver1.inventory.customers.Key"
+	},
+	"payload": {
+		"id": 1002
+	}
+}`))
+
+	assert.NoError(t, err)
+	assert.Equal(t, kv["id"], 1002)
+
+	// Composite key
+	compositeKeyString := `{
+	"schema": {
+		"type": "struct",
+		"fields": [{
+			"type": "int32",
+			"optional": false,
+			"field": "quarter_id"
+		}, {
+			"type": "string",
+			"optional": false,
+			"field": "course_id"
+		}, {
+			"type": "int32",
+			"optional": false,
+			"field": "student_id"
+		}],
+		"optional": false,
+		"name": "dbserver1.inventory.course_grades.Key"
+	},
+	"payload": {
+		"quarter_id": 1,
+		"course_id": "course1",
+		"student_id": 1
+	}
+}`
+
+	kv, err = parsePartitionKeyStruct([]byte(compositeKeyString))
+	assert.NoError(t, err)
+	assert.Equal(t, kv["quarter_id"], 1)
+	assert.Equal(t, kv["student_id"], 1)
+	assert.Equal(t, kv["course_id"], "course1")
+
+	// Normal key with Debezium change event key (SMT)
+	smtKey := `{
+	"schema": {
+		"type": "struct",
+		"fields": [{
+			"type": "int32",
+			"optional": false,
+			"default": 0,
+			"field": "id"
+		}, {
+			"type": "string",
+			"optional": false,
+			"field": "__dbz__physicalTableIdentifier"
+		}],
+		"optional": false,
+		"name": "dbserver1.inventory.all_tables.Key"
+	},
+	"payload": {
+		"id": 1001,
+		"__dbz__physicalTableIdentifier": "dbserver1.inventory.customers"
+	}
+}`
+
+	kv, err = parsePartitionKeyStruct([]byte(smtKey))
+	assert.NoError(t, err)
+	assert.Equal(t, kv["id"], 1001)
+	assert.Equal(t, 1, len(kv))
+}
