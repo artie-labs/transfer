@@ -44,11 +44,12 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 
 func (s *Store) Append(tableData *optimization.TableData) error {
 	return shared.Append(s, tableData, s.config, types.AppendOpts{
-		TempTableName: s.ToFullyQualifiedName(tableData.TableIdentifier(), true),
+		TempTableName: s.ToFullyQualifiedName(tableData, true),
 	})
 }
 
-func (s *Store) ToFullyQualifiedName(tableID optimization.TableIdentifier, escape bool) string {
+func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
+	tableID := tableData.TableIdentifier()
 	return tableID.FqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{
 		MsSQLSchemaOverride: s.Schema(tableID),
 	})
@@ -67,7 +68,7 @@ func (s *Store) Sweep() error {
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func (s *Store) Dedupe(_ optimization.TableIdentifier) error {
+func (s *Store) Dedupe(_ *optimization.TableData) error {
 	return nil // dedupe is not necessary for MS SQL
 }
 
@@ -82,7 +83,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 	query, args := describeTableQuery(s.Schema(tableData.TableIdentifier()), tableData.RawName())
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
-		FqName:             s.ToFullyQualifiedName(tableData.TableIdentifier(), true),
+		FqName:             s.ToFullyQualifiedName(tableData, true),
 		ConfigMap:          s.configMap,
 		Query:              query,
 		Args:               args,

@@ -7,8 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/stretchr/testify/assert"
 )
@@ -21,7 +23,7 @@ type MockDWH struct {
 func (MockDWH) Label() constants.DestinationKind                   { panic("not implemented") }
 func (MockDWH) Merge(tableData *optimization.TableData) error      { panic("not implemented") }
 func (MockDWH) Append(tableData *optimization.TableData) error     { panic("not implemented") }
-func (MockDWH) Dedupe(tableID optimization.TableIdentifier) error  { panic("not implemented") }
+func (MockDWH) Dedupe(tableData *optimization.TableData) error     { panic("not implemented") }
 func (MockDWH) Exec(query string, args ...any) (sql.Result, error) { panic("not implemented") }
 func (MockDWH) Query(query string, args ...any) (*sql.Rows, error) { panic("not implemented") }
 func (MockDWH) Begin() (*sql.Tx, error)                            { panic("not implemented") }
@@ -33,8 +35,8 @@ func (MockDWH) PrepareTemporaryTable(tableData *optimization.TableData, tableCon
 	panic("not implemented")
 }
 
-func (m MockDWH) ToFullyQualifiedName(tableID optimization.TableIdentifier, escape bool) string {
-	return tableID.FqName(m.kind, escape, true, m.opts)
+func (m MockDWH) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
+	return tableData.TableIdentifier().FqName(m.kind, escape, true, m.opts)
 }
 
 func TestTempTableName(t *testing.T) {
@@ -47,32 +49,32 @@ func TestTempTableName(t *testing.T) {
 		return tableName[:lastUnderscore]
 	}
 
-	tableID := optimization.NewTableIdentifier("db", "schema", "table")
+	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "schema"}, "table")
 	{
 		// BigQuery:
 		opts := optimization.FqNameOpts{BigQueryProjectID: "123454321"}
-		tempTableName := TempTableName(MockDWH{kind: constants.BigQuery, opts: opts}, tableID, "sUfFiX")
+		tempTableName := TempTableName(MockDWH{kind: constants.BigQuery, opts: opts}, tableData, "sUfFiX")
 		assert.Equal(t, "`123454321`.`db`.table___artie_sUfFiX", trimTTL(tempTableName))
 	}
 	{
 		// MS SQL:
 		opts := optimization.FqNameOpts{MsSQLSchemaOverride: "mschema"}
-		tempTableName := TempTableName(MockDWH{kind: constants.MSSQL, opts: opts}, tableID, "sUfFiX")
+		tempTableName := TempTableName(MockDWH{kind: constants.MSSQL, opts: opts}, tableData, "sUfFiX")
 		assert.Equal(t, "mschema.table___artie_sUfFiX", trimTTL(tempTableName))
 	}
 	{
 		// Redshift:
-		tempTableName := TempTableName(MockDWH{kind: constants.Redshift}, tableID, "sUfFiX")
+		tempTableName := TempTableName(MockDWH{kind: constants.Redshift}, tableData, "sUfFiX")
 		assert.Equal(t, "schema.table___artie_sUfFiX", trimTTL(tempTableName))
 	}
 	{
 		// S3:
-		tempTableName := TempTableName(MockDWH{kind: constants.S3}, tableID, "sUfFiX")
+		tempTableName := TempTableName(MockDWH{kind: constants.S3}, tableData, "sUfFiX")
 		assert.Equal(t, "db.schema.table___artie_sUfFiX", trimTTL(tempTableName))
 	}
 	{
 		// Snowflake:
-		tempTableName := TempTableName(MockDWH{kind: constants.Snowflake}, tableID, "sUfFiX")
+		tempTableName := TempTableName(MockDWH{kind: constants.Snowflake}, tableData, "sUfFiX")
 		assert.Equal(t, "db.schema.table___artie_sUfFiX", trimTTL(tempTableName))
 	}
 }

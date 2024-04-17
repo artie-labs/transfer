@@ -29,8 +29,8 @@ type Store struct {
 	db.Store
 }
 
-func (s *Store) ToFullyQualifiedName(tableID optimization.TableIdentifier, escape bool) string {
-	return tableID.FqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{})
+func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
+	return tableData.TableIdentifier().FqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{})
 }
 
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
@@ -59,7 +59,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
-		FqName:             s.ToFullyQualifiedName(tableData.TableIdentifier(), true),
+		FqName:             s.ToFullyQualifiedName(tableData, true),
 		ConfigMap:          s.configMap,
 		Query:              query,
 		Args:               args,
@@ -93,9 +93,9 @@ WHERE
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func (s *Store) Dedupe(tableID optimization.TableIdentifier) error {
-	fqTableName := s.ToFullyQualifiedName(tableID, true)
-	stagingTableName := shared.TempTableName(s, tableID, strings.ToLower(stringutil.Random(5)))
+func (s *Store) Dedupe(tableData *optimization.TableData) error {
+	fqTableName := s.ToFullyQualifiedName(tableData, true)
+	stagingTableName := shared.TempTableName(s, tableData, strings.ToLower(stringutil.Random(5)))
 
 	query := fmt.Sprintf(`
 CREATE TABLE %s AS SELECT DISTINCT * FROM %s;

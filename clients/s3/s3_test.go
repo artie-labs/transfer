@@ -71,7 +71,7 @@ func TestObjectPrefix(t *testing.T) {
 }
 
 func TestFullyQualifiedName(t *testing.T) {
-	tableID := optimization.NewTableIdentifier("database", "schema", "table")
+	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "database", Schema: "schema"}, "table")
 
 	{
 		// With UppercaseEscapedNames: true
@@ -82,7 +82,7 @@ func TestFullyQualifiedName(t *testing.T) {
 				},
 			},
 		}
-		assert.Equal(t, "database.schema.table", store.ToFullyQualifiedName(tableID), "unescaped")
+		assert.Equal(t, "database.schema.table", store.ToFullyQualifiedName(tableData), "unescaped")
 	}
 	{
 		// With UppercaseEscapedNames: false
@@ -93,6 +93,6 @@ func TestFullyQualifiedName(t *testing.T) {
 				},
 			},
 		}
-		assert.Equal(t, "database.schema.table", store.ToFullyQualifiedName(tableID), "unescaped")
+		assert.Equal(t, "database.schema.table", store.ToFullyQualifiedName(tableData), "unescaped")
 	}
 }

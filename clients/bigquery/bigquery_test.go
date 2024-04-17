@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/stretchr/testify/assert"
 )
@@ -30,7 +31,7 @@ func (b *BigQueryTestSuite) TestTableRelName() {
 }
 
 func TestFullyQualifiedName(t *testing.T) {
-	tableID := optimization.NewTableIdentifier("database", "schema", "table")
+	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "database", Schema: "schema"}, "table")
 
 	{
 		// With UppercaseEscapedNames: true
@@ -44,8 +45,8 @@ func TestFullyQualifiedName(t *testing.T) {
 				},
 			},
 		}
-		assert.Equal(t, "`project`.`database`.`TABLE`", store.ToFullyQualifiedName(tableID, true), "escaped")
-		assert.Equal(t, "`project`.`database`.table", store.ToFullyQualifiedName(tableID, false), "unescaped")
+		assert.Equal(t, "`project`.`database`.`TABLE`", store.ToFullyQualifiedName(tableData, true), "escaped")
+		assert.Equal(t, "`project`.`database`.table", store.ToFullyQualifiedName(tableData, false), "unescaped")
 	}
 	{
 		// With UppercaseEscapedNames: false
@@ -59,7 +60,7 @@ func TestFullyQualifiedName(t *testing.T) {
 				},
 			},
 		}
-		assert.Equal(t, "`project`.`database`.`table`", store.ToFullyQualifiedName(tableID, true), "escaped")
-		assert.Equal(t, "`project`.`database`.table", store.ToFullyQualifiedName(tableID, false), "unescaped")
+		assert.Equal(t, "`project`.`database`.`table`", store.ToFullyQualifiedName(tableData, true), "escaped")
+		assert.Equal(t, "`project`.`database`.table", store.ToFullyQualifiedName(tableData, false), "unescaped")
 	}
 }

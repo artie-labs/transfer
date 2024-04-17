@@ -26,7 +26,7 @@ func (s *Store) Append(tableData *optimization.TableData) error {
 
 		// TODO: For history mode - in the future, we could also have a separate stage name for history mode so we can enable parallel processing.
 		err = shared.Append(s, tableData, s.config, types.AppendOpts{
-			TempTableName:        s.ToFullyQualifiedName(tableData.TableIdentifier(), true),
+			TempTableName:        s.ToFullyQualifiedName(tableData, true),
 			AdditionalCopyClause: `FILE_FORMAT = (TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE) PURGE = TRUE`,
 		})
 	}
