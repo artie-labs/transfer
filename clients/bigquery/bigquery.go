@@ -79,7 +79,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 }
 
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	return tableData.ToFqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames,
+	return tableData.TableIdentifier().FqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames,
 		optimization.FqNameOpts{BigQueryProjectID: s.config.BigQuery.ProjectID})
 }
 
