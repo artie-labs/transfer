@@ -53,17 +53,17 @@ func TestTempTableName(t *testing.T) {
 
 	expectedPrefix := "schema.table___artie_"
 	assert.True(t, strings.HasPrefix(tempTableName, expectedPrefix))
-	assert.Len(t, tempTableName, len(expectedPrefix)+16)
 
-	parts := strings.Split(tempTableName, "_")
+	suffix := tempTableName[len(expectedPrefix):]
+	assert.Len(t, suffix, 16)
+	parts := strings.Split(suffix, "_")
+	assert.Len(t, parts, 2)
 
-	// Check the penultimate part:
-	penultimatePart := parts[len(parts)-2]
-	assert.Len(t, penultimatePart, 5)
+	// Check the first part:
+	assert.Len(t, parts[0], 5)
 
-	// Check the last part:
-	lastPart := parts[len(parts)-1]
-	assert.Len(t, lastPart, 10)
-	_, err := strconv.ParseInt(lastPart, 10, 64)
+	// Check the second part:
+	assert.Len(t, parts[1], 10)
+	_, err := strconv.ParseInt(parts[1], 10, 64)
 	assert.NoError(t, err)
 }
