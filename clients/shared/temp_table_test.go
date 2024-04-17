@@ -37,7 +37,6 @@ func (m MockDWH) ToFullyQualifiedName(tableID optimization.TableIdentifier, esca
 }
 
 func TestTempTableName(t *testing.T) {
-	dwh := MockDWH{}
 	tableData := optimization.NewTableData(
 		nil,
 		config.Replication,
@@ -48,9 +47,8 @@ func TestTempTableName(t *testing.T) {
 		},
 		"table",
 	)
-	tableData.ResetTempTableSuffix()
 
-	tempTableName := TempTableName(dwh, tableData.TableIdentifier(), "sUfFiX")
+	tempTableName := TempTableName(MockDWH{}, tableData.TableIdentifier(), "sUfFiX")
 
 	expectedPrefix := "schema.table___artie_sUfFiX_"
 	assert.True(t, strings.HasPrefix(tempTableName, expectedPrefix))
