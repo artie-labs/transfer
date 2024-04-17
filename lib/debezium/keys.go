@@ -16,14 +16,9 @@ const (
 	stringSuffix = "}"
 )
 
-type PrimaryKeySchema struct {
-	Type   string  `json:"type"`
-	Fields []Field `json:"fields"`
-}
-
 type PrimaryKeyPayload struct {
-	Schema  PrimaryKeySchema `json:"schema"`
-	Payload map[string]any   `json:"payload"`
+	Schema  FieldsObject   `json:"schema"`
+	Payload map[string]any `json:"payload"`
 }
 
 func (p PrimaryKeyPayload) ParseAndReturnPayload() (map[string]any, error) {
