@@ -37,7 +37,7 @@ func (p PrimaryKeyPayload) parseAndReturnPayload() (map[string]any, error) {
 		} else {
 			parsedValue, err := p.Schema.Fields[idx].ParseValue(value)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse primary key: %w", err)
+				return nil, fmt.Errorf("failed to parse primary key: %q: %w", key, err)
 			}
 
 			retMap[key] = parsedValue
