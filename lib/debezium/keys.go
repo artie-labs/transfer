@@ -101,7 +101,7 @@ func parsePartitionKeyStruct(keyBytes []byte) (map[string]any, error) {
 
 	var pkStruct map[string]any
 	if err := json.Unmarshal(keyBytes, &pkStruct); err != nil {
-		return nil, fmt.Errorf("failed to json unmarshal: %w", err)
+		return nil, fmt.Errorf("failed to json unmarshal into map[string]any: %w", err)
 	}
 
 	if len(pkStruct) == 0 {
@@ -117,7 +117,7 @@ func parsePartitionKeyStruct(keyBytes []byte) (map[string]any, error) {
 	// If it does have a `payload` object, it should also have a schema object.
 	var primaryKeyPayload PrimaryKeyPayload
 	if err := json.Unmarshal(keyBytes, &primaryKeyPayload); err != nil {
-		return nil, fmt.Errorf("failed to json unmarshal: %w", err)
+		return nil, fmt.Errorf("failed to json unmarshal into PrimaryKeyPayload: %w", err)
 	}
 
 	keys, err := primaryKeyPayload.parseAndReturnPayload()
