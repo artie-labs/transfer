@@ -3,7 +3,6 @@ package redshift
 import (
 	"fmt"
 	"log/slog"
-	"strings"
 
 	_ "github.com/lib/pq"
 
@@ -95,9 +94,7 @@ WHERE
 
 func (s *Store) Dedupe(tableID optimization.TableIdentifier) error {
 	fqTableName := s.ToFullyQualifiedName(tableID, true)
-
-	temporaryTableSuffix := strings.ToLower(fmt.Sprintf("%s_%s", constants.ArtiePrefix, stringutil.Random(5)))
-	stagingTableName := fmt.Sprintf("%s_%s", s.ToFullyQualifiedName(tableID, false), temporaryTableSuffix)
+	stagingTableName := fmt.Sprintf("%s_%s_%s", s.ToFullyQualifiedName(tableID, false), constants.ArtiePrefix, stringutil.Random(5))
 
 	query := fmt.Sprintf(`
 CREATE TABLE %s AS SELECT DISTINCT * FROM %s;
