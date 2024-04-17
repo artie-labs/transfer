@@ -30,8 +30,8 @@ func getSchema(schema string) string {
 	return schema
 }
 
-func (s *Store) Schema(tableData *optimization.TableData) string {
-	return getSchema(tableData.TopicConfig.Schema)
+func (s *Store) Schema(tableID optimization.TableIdentifier) string {
+	return getSchema(tableID.Schema())
 }
 
 func (s *Store) Label() constants.DestinationKind {
@@ -44,13 +44,13 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 
 func (s *Store) Append(tableData *optimization.TableData) error {
 	return shared.Append(s, tableData, s.config, types.AppendOpts{
-		TempTableName: s.ToFullyQualifiedName(tableData, true),
+		TempTableName: s.ToFullyQualifiedName(tableData.TableIdentifier(), true),
 	})
 }
 
-func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	return tableData.ToFqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{
-		MsSQLSchemaOverride: s.Schema(tableData),
+func (s *Store) ToFullyQualifiedName(tableID optimization.TableIdentifier, escape bool) string {
+	return tableID.FqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{
+		MsSQLSchemaOverride: s.Schema(tableID),
 	})
 }
 
@@ -67,7 +67,7 @@ func (s *Store) Sweep() error {
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func (s *Store) Dedupe(fqTableName string) error {
+func (s *Store) Dedupe(_ optimization.TableIdentifier) error {
 	return nil // dedupe is not necessary for MS SQL
 }
 
@@ -79,10 +79,10 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		describeDescriptionCol = "description"
 	)
 
-	query, args := describeTableQuery(s.Schema(tableData), tableData.RawName())
+	query, args := describeTableQuery(s.Schema(tableData.TableIdentifier()), tableData.RawName())
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
-		FqName:             s.ToFullyQualifiedName(tableData, true),
+		FqName:             s.ToFullyQualifiedName(tableData.TableIdentifier(), true),
 		ConfigMap:          s.configMap,
 		Query:              query,
 		Args:               args,

@@ -28,8 +28,8 @@ type Store struct {
 	db.Store
 }
 
-func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	return tableData.ToFqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{})
+func (s *Store) ToFullyQualifiedName(tableID optimization.TableIdentifier, escape bool) string {
+	return tableID.FqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{})
 }
 
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
@@ -58,7 +58,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
-		FqName:             s.ToFullyQualifiedName(tableData, true),
+		FqName:             s.ToFullyQualifiedName(tableData.TableIdentifier(), true),
 		ConfigMap:          s.configMap,
 		Query:              query,
 		Args:               args,
@@ -92,7 +92,8 @@ WHERE
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func (s *Store) Dedupe(fqTableName string) error {
+func (s *Store) Dedupe(tableID optimization.TableIdentifier) error {
+	fqTableName := s.ToFullyQualifiedName(tableID, true)
 	stagingTableName := fmt.Sprintf("%s_dedupe_staging_%.5d", constants.ArtiePrefix, rand.Intn(100_000))
 
 	query := fmt.Sprintf(`
