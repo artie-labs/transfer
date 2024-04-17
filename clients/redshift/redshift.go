@@ -94,6 +94,7 @@ WHERE
 
 func (s *Store) Dedupe(tableID optimization.TableIdentifier) error {
 	fqTableName := s.ToFullyQualifiedName(tableID, true)
+	// TODO: Use https://github.com/artie-labs/transfer/blob/a857a7fd9521bb14933270483279185444f81aa5/clients/redshift/writes.go#L14
 	stagingTableName := fmt.Sprintf("%s_dedupe_staging_%.5d", constants.ArtiePrefix, rand.Intn(100_000))
 
 	query := fmt.Sprintf(`
