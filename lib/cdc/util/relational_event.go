@@ -4,15 +4,13 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/typing/ext"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 // SchemaEventPayload is our struct for an event with schema enabled. For reference, this is an example payload https://gist.github.com/Tang8330/3b9989ed8c659771958fe481f248397a

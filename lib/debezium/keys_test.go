@@ -2,6 +2,9 @@ package debezium
 
 import (
 	"testing"
+	"time"
+
+	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -52,12 +55,50 @@ func TestParsePartitionKeyString(t *testing.T) {
 	}
 }
 
+func Test_ParsePartitionKeyStruct(t *testing.T) {
+	{
+
+		keys, err := parsePartitionKeyStruct([]byte(`
+{
+    "schema": {
+        "type": "struct",
+        "fields": [
+            {
+                "type": "string",
+                "optional": false,
+                "field": "id"
+            },
+            {
+                "type": "int64",
+                "optional": false,
+                "name": "io.debezium.time.Timestamp",
+                "version": 1,
+                "default": 0,
+                "field": "created_at"
+            }
+        ],
+        "optional": false,
+        "name": "b2810475-5d57-48b5-b525-7eaa208d75a0.8024ffce-67eb-472c-99e5-1d9419cdf943.public.message_consents.Key"
+    },
+    "payload": {
+        "id": "339f3f2f-f29f-4f00-869e-476122310eff",
+        "created_at": 1713229699440
+    }
+}
+`))
+		assert.NoError(t, err)
+		assert.Equal(t, "339f3f2f-f29f-4f00-869e-476122310eff", keys["id"])
+		assert.Equal(t, time.Date(2024, 4, 16, 1, 8, 19, 440000000, time.UTC), keys["created_at"].(*ext.ExtendedTime).Time)
+	}
+}
+
 func TestParsePartitionKeyStruct(t *testing.T) {
+	// TODO: Rewrite these tests.
 	badDataCases := []struct{ value, expectedErr string }{
 		{"", "key is nil"},
 		{"{}", "key is nil"},
-		{"{id:", "failed to json unmarshal: invalid character 'i' looking for beginning of object key string"},
-		{`{"id":`, "failed to json unmarshal: unexpected end of JSON input"},
+		{"{id:", "failed to json unmarshal into map[string]any: invalid character 'i' looking for beginning of object key string"},
+		{`{"id":`, "failed to json unmarshal into map[string]any: unexpected end of JSON input"},
 	}
 
 	for _, badData := range badDataCases {
@@ -92,7 +133,7 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 }`))
 
 	assert.NoError(t, err)
-	assert.Equal(t, kv["id"], float64(1002))
+	assert.Equal(t, kv["id"], 1002)
 
 	// Composite key
 	compositeKeyString := `{
@@ -123,8 +164,8 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 
 	kv, err = parsePartitionKeyStruct([]byte(compositeKeyString))
 	assert.NoError(t, err)
-	assert.Equal(t, kv["quarter_id"], float64(1))
-	assert.Equal(t, kv["student_id"], float64(1))
+	assert.Equal(t, kv["quarter_id"], 1)
+	assert.Equal(t, kv["student_id"], 1)
 	assert.Equal(t, kv["course_id"], "course1")
 
 	// Normal key with Debezium change event key (SMT)
@@ -152,6 +193,6 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 
 	kv, err = parsePartitionKeyStruct([]byte(smtKey))
 	assert.NoError(t, err)
-	assert.Equal(t, kv["id"], float64(1001))
+	assert.Equal(t, kv["id"], 1001)
 	assert.Equal(t, 1, len(kv))
 }
