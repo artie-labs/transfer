@@ -11,15 +11,27 @@ import (
 type TableIdentifier struct {
 	database string
 	schema   string
-	name     string
+	table    string
 }
 
-func NewTableIdentifier(database, schema, name string) TableIdentifier {
-	return TableIdentifier{database: database, schema: schema, name: name}
+func NewTableIdentifier(database, schema, table string) TableIdentifier {
+	return TableIdentifier{database: database, schema: schema, table: table}
+}
+
+func (t TableIdentifier) Database() string {
+	return t.database
+}
+
+func (t TableIdentifier) Schema() string {
+	return t.schema
+}
+
+func (t TableIdentifier) Table() string {
+	return t.table
 }
 
 func (t TableIdentifier) escapeName(uppercaseEscNames bool, args *sql.NameArgs) string {
-	return sql.EscapeName(t.name, uppercaseEscNames, args)
+	return sql.EscapeName(t.table, uppercaseEscNames, args)
 }
 
 type FqNameOpts struct {

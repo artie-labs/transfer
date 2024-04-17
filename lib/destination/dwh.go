@@ -20,7 +20,7 @@ type DataWarehouse interface {
 	// Helper functions for merge
 
 	IsRetryableError(err error) bool
-	ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string
+	ToFullyQualifiedName(tableID optimization.TableIdentifier, escape bool) string
 	GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error)
 	PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalSettings types.AdditionalSettings, createTempTable bool) error
 }
