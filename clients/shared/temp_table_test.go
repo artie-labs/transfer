@@ -13,7 +13,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type MockDWH struct{}
+type MockDWH struct {
+	kind constants.DestinationKind
+	opts optimization.FqNameOpts
+}
 
 func (MockDWH) Label() constants.DestinationKind                   { panic("not implemented") }
 func (MockDWH) Merge(tableData *optimization.TableData) error      { panic("not implemented") }
@@ -31,19 +34,46 @@ func (MockDWH) PrepareTemporaryTable(tableData *optimization.TableData, tableCon
 }
 
 func (m MockDWH) ToFullyQualifiedName(tableID optimization.TableIdentifier, escape bool) string {
-	return tableID.FqName(constants.Redshift, false, true, optimization.FqNameOpts{})
+	return tableID.FqName(m.kind, escape, true, m.opts)
 }
 
 func TestTempTableName(t *testing.T) {
-	tempTableName := TempTableName(MockDWH{}, optimization.NewTableIdentifier("db", "schema", "table"), "sUfFiX")
+	trimTTL := func(tableName string) string {
+		lastUnderscore := strings.LastIndex(tableName, "_")
+		assert.GreaterOrEqual(t, lastUnderscore, 0)
+		epoch, err := strconv.ParseInt(tableName[lastUnderscore+1:], 10, 64)
+		assert.NoError(t, err)
+		assert.Greater(t, time.Unix(epoch, 0), time.Now().Add(5*time.Hour)) // default TTL is 6 hours from now
+		return tableName[:lastUnderscore]
+	}
 
-	expectedPrefix := "schema.table___artie_sUfFiX_"
-	assert.True(t, strings.HasPrefix(tempTableName, expectedPrefix))
+	tableID := optimization.NewTableIdentifier("db", "schema", "table")
+	{
+		// BigQuery:
+		opts := optimization.FqNameOpts{BigQueryProjectID: "123454321"}
+		tempTableName := TempTableName(MockDWH{kind: constants.BigQuery, opts: opts}, tableID, "sUfFiX")
+		assert.Equal(t, "`123454321`.`db`.table___artie_sUfFiX", trimTTL(tempTableName))
+	}
+	{
+		// MS SQL:
+		opts := optimization.FqNameOpts{MsSQLSchemaOverride: "mschema"}
+		tempTableName := TempTableName(MockDWH{kind: constants.MSSQL, opts: opts}, tableID, "sUfFiX")
+		assert.Equal(t, "mschema.table___artie_sUfFiX", trimTTL(tempTableName))
+	}
+	{
+		// Redshift:
+		tempTableName := TempTableName(MockDWH{kind: constants.Redshift}, tableID, "sUfFiX")
+		assert.Equal(t, "schema.table___artie_sUfFiX", trimTTL(tempTableName))
+	}
+	{
+		// S3:
+		tempTableName := TempTableName(MockDWH{kind: constants.S3}, tableID, "sUfFiX")
+		assert.Equal(t, "db.schema.table___artie_sUfFiX", trimTTL(tempTableName))
+	}
+	{
+		// Snowflake:
+		tempTableName := TempTableName(MockDWH{kind: constants.Snowflake}, tableID, "sUfFiX")
+		assert.Equal(t, "db.schema.table___artie_sUfFiX", trimTTL(tempTableName))
+	}
 
-	// Check the TTL:
-	suffix := tempTableName[len(expectedPrefix):]
-	assert.Len(t, suffix, 10)
-	epoch, err := strconv.ParseInt(suffix, 10, 64)
-	assert.NoError(t, err)
-	assert.Greater(t, time.Unix(epoch, 0), time.Now())
 }
