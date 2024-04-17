@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -59,11 +60,12 @@ func TestTempTableName(t *testing.T) {
 	parts := strings.Split(suffix, "_")
 	assert.Len(t, parts, 2)
 
-	// Check the first part:
+	// Check the first part (five random characters):
 	assert.Len(t, parts[0], 5)
 
-	// Check the second part:
+	// Check the second part (TTL):
 	assert.Len(t, parts[1], 10)
-	_, err := strconv.ParseInt(parts[1], 10, 64)
+	epoch, err := strconv.ParseInt(parts[1], 10, 64)
 	assert.NoError(t, err)
+	assert.Greater(t, time.Unix(epoch, 0), time.Now())
 }
