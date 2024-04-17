@@ -49,7 +49,7 @@ func (s *Store) Append(tableData *optimization.TableData) error {
 }
 
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	return tableData.ToFqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{
+	return tableData.TableIdentifier().FqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{
 		MsSQLSchemaOverride: s.Schema(tableData),
 	})
 }

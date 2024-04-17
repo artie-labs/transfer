@@ -47,7 +47,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	}
 
 	bqProjectID := d.bigQueryCfg.BigQuery.ProjectID
-	fqName := td.ToFqName(d.bigQueryStore.Label(), true, false, optimization.FqNameOpts{BigQueryProjectID: bqProjectID})
+	fqName := td.TableIdentifier().FqName(d.bigQueryStore.Label(), true, false, optimization.FqNameOpts{BigQueryProjectID: bqProjectID})
 	originalColumnLength := len(cols.GetColumns())
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, true))
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
@@ -250,7 +250,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 	}
 
 	bqProjectID := d.bigQueryCfg.BigQuery.ProjectID
-	fqName := td.ToFqName(d.bigQueryStore.Label(), true, false, optimization.FqNameOpts{BigQueryProjectID: bqProjectID})
+	fqName := td.TableIdentifier().FqName(d.bigQueryStore.Label(), true, false, optimization.FqNameOpts{BigQueryProjectID: bqProjectID})
 	originalColumnLength := len(columnNameToKindDetailsMap)
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, false))
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
