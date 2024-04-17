@@ -67,7 +67,7 @@ func (s *Store) Sweep() error {
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func (s *Store) Dedupe(_ *optimization.TableData) error {
+func (s *Store) Dedupe(_ optimization.TableIdentifier) error {
 	return nil // dedupe is not necessary for MS SQL
 }
 

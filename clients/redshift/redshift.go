@@ -90,7 +90,7 @@ WHERE
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func (s *Store) Dedupe(tableData *optimization.TableData) error {
+func (s *Store) Dedupe(_ optimization.TableIdentifier) error {
 	return fmt.Errorf("dedupe is not yet implemented")
 }
 
