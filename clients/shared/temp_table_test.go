@@ -7,10 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
-	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/stretchr/testify/assert"
 )
@@ -37,18 +35,7 @@ func (m MockDWH) ToFullyQualifiedName(tableID optimization.TableIdentifier, esca
 }
 
 func TestTempTableName(t *testing.T) {
-	tableData := optimization.NewTableData(
-		nil,
-		config.Replication,
-		[]string{},
-		kafkalib.TopicConfig{
-			Schema:   "schema",
-			Database: "db",
-		},
-		"table",
-	)
-
-	tempTableName := TempTableName(MockDWH{}, tableData.TableIdentifier(), "sUfFiX")
+	tempTableName := TempTableName(MockDWH{}, optimization.NewTableIdentifier("db", "schema", "table"), "sUfFiX")
 
 	expectedPrefix := "schema.table___artie_sUfFiX_"
 	assert.True(t, strings.HasPrefix(tempTableName, expectedPrefix))
