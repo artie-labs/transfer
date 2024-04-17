@@ -227,7 +227,7 @@ func (t *TableData) ResetTempTableSuffix() {
 }
 
 func (t *TableData) TempTableSuffix() string {
-	return fmt.Sprintf("%s_%d", t.temporaryTableSuffix, time.Now().Add(constants.TemporaryTableTTL).Unix())
+	return t.temporaryTableSuffix
 }
 
 // ShouldFlush will return whether Transfer should flush
