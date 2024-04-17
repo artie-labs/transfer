@@ -69,3 +69,30 @@ func TestObjectPrefix(t *testing.T) {
 		}
 	}
 }
+
+func TestFullyQualifiedName(t *testing.T) {
+	tableID := optimization.NewTableIdentifier("database", "schema", "table")
+
+	{
+		// With UppercaseEscapedNames: true
+		store := Store{
+			config: config.Config{
+				SharedDestinationConfig: config.SharedDestinationConfig{
+					UppercaseEscapedNames: true,
+				},
+			},
+		}
+		assert.Equal(t, "database.schema.table", store.ToFullyQualifiedName(tableID), "unescaped")
+	}
+	{
+		// With UppercaseEscapedNames: false
+		store := Store{
+			config: config.Config{
+				SharedDestinationConfig: config.SharedDestinationConfig{
+					UppercaseEscapedNames: false,
+				},
+			},
+		}
+		assert.Equal(t, "database.schema.table", store.ToFullyQualifiedName(tableID), "unescaped")
+	}
+}
