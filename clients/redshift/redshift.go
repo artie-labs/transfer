@@ -2,6 +2,8 @@ package redshift
 
 import (
 	"fmt"
+	"log/slog"
+	"math/rand"
 
 	_ "github.com/lib/pq"
 
@@ -90,8 +92,54 @@ WHERE
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func (s *Store) Dedupe(_ optimization.TableIdentifier) error {
-	return fmt.Errorf("dedupe is not yet implemented")
+func (s *Store) Dedupe(tableID optimization.TableIdentifier) error {
+	fqTableName := s.ToFullyQualifiedName(tableID, true)
+	// TODO: Use https://github.com/artie-labs/transfer/blob/a857a7fd9521bb14933270483279185444f81aa5/clients/redshift/writes.go#L14
+	stagingTableName := fmt.Sprintf("%s_dedupe_staging_%.5d", constants.ArtiePrefix, rand.Intn(100_000))
+
+	query := fmt.Sprintf(`
+CREATE TABLE %s AS SELECT DISTINCT * FROM %s;
+DELETE FROM %s;
+INSERT INTO %s SELECT * FROM %s;
+DROP TABLE %s;`,
+		// CREATE TABLE
+		stagingTableName,
+		// AS SELECT DISTINCT * FROM
+		fqTableName,
+		// ; DELETE FROM
+		fqTableName,
+		// ; INSERT INTO
+		fqTableName,
+		// SELECT * FROM
+		stagingTableName,
+		// ; DROP TABLE
+		stagingTableName,
+		// ;
+	)
+
+	var transactionCommitted bool
+	transaction, err := s.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer func() {
+		if !transactionCommitted {
+			if err := transaction.Rollback(); err != nil {
+				slog.Error("Failed to roll back transaction", slog.Any("err", err))
+			}
+		}
+	}()
+
+	if _, err = transaction.Exec(query); err != nil {
+		return fmt.Errorf("failed to execute dedupe query: %w", err)
+	}
+
+	if err = transaction.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	transactionCommitted = true
+	return nil
 }
 
 func LoadRedshift(cfg config.Config, _store *db.Store) (*Store, error) {
