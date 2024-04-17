@@ -223,7 +223,7 @@ func (t *TableData) ResetTempTableSuffix() {
 	}
 
 	// Lowercase this because BigQuery is case-sensitive.
-	t.temporaryTableSuffix = strings.ToLower(fmt.Sprintf("%s_%s", constants.ArtiePrefix, stringutil.Random(5)))
+	t.temporaryTableSuffix = strings.ToLower(stringutil.Random(5))
 }
 
 func (t *TableData) TempTableSuffix() string {
