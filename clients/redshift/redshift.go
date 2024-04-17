@@ -3,6 +3,7 @@ package redshift
 import (
 	"fmt"
 	"log/slog"
+	"math/rand"
 
 	_ "github.com/lib/pq"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
-	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
 type Store struct {
@@ -94,7 +94,7 @@ WHERE
 
 func (s *Store) Dedupe(tableID optimization.TableIdentifier) error {
 	fqTableName := s.ToFullyQualifiedName(tableID, true)
-	stagingTableName := fmt.Sprintf("%s_%s_%s", s.ToFullyQualifiedName(tableID, false), constants.ArtiePrefix, stringutil.Random(5))
+	stagingTableName := fmt.Sprintf("%s_dedupe_staging_%.5d", constants.ArtiePrefix, rand.Intn(100_000))
 
 	query := fmt.Sprintf(`
 CREATE TABLE %s AS SELECT DISTINCT * FROM %s;
