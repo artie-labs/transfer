@@ -97,8 +97,8 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 	badDataCases := []struct{ value, expectedErr string }{
 		{"", "key is nil"},
 		{"{}", "key is nil"},
-		{"{id:", "failed to json unmarshal: invalid character 'i' looking for beginning of object key string"},
-		{`{"id":`, "failed to json unmarshal: unexpected end of JSON input"},
+		{"{id:", "failed to json unmarshal into map[string]any: invalid character 'i' looking for beginning of object key string"},
+		{`{"id":`, "failed to json unmarshal into map[string]any: unexpected end of JSON input"},
 	}
 
 	for _, badData := range badDataCases {
