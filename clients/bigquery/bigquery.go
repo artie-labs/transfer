@@ -149,7 +149,8 @@ func (s *Store) putTable(ctx context.Context, dataset, tableName string, rows []
 	return nil
 }
 
-func (s *Store) Dedupe(fqTableName string) error {
+func (s *Store) Dedupe(tableID optimization.TableIdentifier) error {
+	fqTableName := s.ToFullyQualifiedName(tableID, true)
 	_, err := s.Exec(fmt.Sprintf("CREATE OR REPLACE TABLE %s AS SELECT DISTINCT * FROM %s", fqTableName, fqTableName))
 	return err
 }

@@ -12,7 +12,7 @@ type DataWarehouse interface {
 	Label() constants.DestinationKind
 	Merge(tableData *optimization.TableData) error
 	Append(tableData *optimization.TableData) error
-	Dedupe(fqTableName string) error
+	Dedupe(tableID optimization.TableIdentifier) error
 	Exec(query string, args ...any) (sql.Result, error)
 	Query(query string, args ...any) (*sql.Rows, error)
 	Begin() (*sql.Tx, error)
