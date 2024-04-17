@@ -10,12 +10,12 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 )
 
-func TempTableName(dwh destination.DataWarehouse, tableData *optimization.TableData) string {
+func TempTableName(dwh destination.DataWarehouse, tableID optimization.TableIdentifier, suffix string) string {
 	return fmt.Sprintf(
 		"%s_%s_%s_%d",
-		dwh.ToFullyQualifiedName(tableData.TableIdentifier(), false),
+		dwh.ToFullyQualifiedName(tableID, false),
 		constants.ArtiePrefix,
-		tableData.TempTableSuffix(),
+		suffix,
 		time.Now().Add(constants.TemporaryTableTTL).Unix(),
 	)
 }

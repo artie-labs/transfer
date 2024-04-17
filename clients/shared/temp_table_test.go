@@ -50,7 +50,7 @@ func TestTempTableName(t *testing.T) {
 	)
 	tableData.ResetTempTableSuffix()
 
-	tempTableName := TempTableName(dwh, tableData)
+	tempTableName := TempTableName(dwh, tableData.TableIdentifier(), tableData.TempTableSuffix())
 
 	expectedPrefix := "schema.table___artie_"
 	assert.True(t, strings.HasPrefix(tempTableName, expectedPrefix))
