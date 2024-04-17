@@ -10,54 +10,85 @@ import (
 )
 
 func TestParsePartitionKeyString(t *testing.T) {
-	kv, err := parsePartitionKeyString([]byte("Struct{hi=world,foo=bar}"))
-	assert.NoError(t, err)
-	assert.Equal(t, kv["hi"], "world")
-	assert.Equal(t, kv["foo"], "bar")
+	{
+		// All the bad rows.
+		_, err := parsePartitionKeyString([]byte(""))
+		assert.ErrorContains(t, err, "key is nil")
 
-	kv, err = parsePartitionKeyString([]byte("Struct{hi==world}"))
-	assert.NoError(t, err)
-	assert.Equal(t, kv["hi"], "=world")
+		_, err = parsePartitionKeyString([]byte("Struct{"))
+		assert.ErrorContains(t, err, "key is too short")
 
-	kv, err = parsePartitionKeyString([]byte("Struct{Foo=bar,abc=def}"))
-	assert.NoError(t, err)
-	assert.Equal(t, kv["foo"], "bar")
-	assert.Equal(t, kv["abc"], "def")
+		_, err = parsePartitionKeyString([]byte("Struct{}"))
+		assert.ErrorContains(t, err, "key is too short")
 
-	kv, err = parsePartitionKeyString([]byte("Struct{id=47}"))
-	assert.NoError(t, err)
-	assert.Equal(t, kv["id"], "47")
+		_, err = parsePartitionKeyString([]byte("}"))
+		assert.ErrorContains(t, err, "key is too short")
 
-	kv, err = parsePartitionKeyString([]byte("Struct{id=47,__dbz__physicalTableIdentifier=dbserver1.inventory.customers}"))
-	assert.NoError(t, err)
-	assert.Equal(t, kv["id"], "47")
-	assert.Equal(t, 1, len(kv))
+		_, err = parsePartitionKeyString([]byte("Struct{uuid=a,,}"))
+		assert.ErrorContains(t, err, `malformed key value pair: ""`)
 
-	kv, err = parsePartitionKeyString([]byte("Struct{uuid=d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c}"))
-	assert.Nil(t, err)
-	assert.Equal(t, kv["uuid"], "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c")
-
-	badDataCases := []struct {
-		value       string
-		expectedErr string
-	}{
-		{"", "key is nil"},
-		{"Struct{", "key is too short"},
-		{"Struct{}", "key is too short"},
-		{"}", "key is too short"},
-		{"Struct{uuid=a,,}", `malformed key value pair: ""`},
-		{"Struct{,,}", `malformed key value pair: ""`},
+		_, err = parsePartitionKeyString([]byte("Struct{,,}"))
+		assert.ErrorContains(t, err, `malformed key value pair: ""`)
 	}
+	{
+		// Valid rows
+		kv, err := parsePartitionKeyString([]byte("Struct{hi=world,foo=bar}"))
+		assert.NoError(t, err)
+		assert.Equal(t, kv["hi"], "world")
+		assert.Equal(t, kv["foo"], "bar")
 
-	for _, badData := range badDataCases {
-		_, err = parsePartitionKeyString([]byte(badData.value))
-		assert.ErrorContains(t, err, badData.expectedErr)
+		kv, err = parsePartitionKeyString([]byte("Struct{hi==world}"))
+		assert.NoError(t, err)
+		assert.Equal(t, kv["hi"], "=world")
+
+		kv, err = parsePartitionKeyString([]byte("Struct{Foo=bar,abc=def}"))
+		assert.NoError(t, err)
+		assert.Equal(t, kv["foo"], "bar")
+		assert.Equal(t, kv["abc"], "def")
+
+		kv, err = parsePartitionKeyString([]byte("Struct{id=47}"))
+		assert.NoError(t, err)
+		assert.Equal(t, kv["id"], "47")
+
+		kv, err = parsePartitionKeyString([]byte("Struct{id=47,__dbz__physicalTableIdentifier=dbserver1.inventory.customers}"))
+		assert.NoError(t, err)
+		assert.Equal(t, kv["id"], "47")
+		assert.Equal(t, 1, len(kv))
+
+		kv, err = parsePartitionKeyString([]byte("Struct{uuid=d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c}"))
+		assert.Nil(t, err)
+		assert.Equal(t, kv["uuid"], "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c")
 	}
 }
 
 func Test_ParsePartitionKeyStruct(t *testing.T) {
 	{
+		// Errors
+		_, err := parsePartitionKeyStruct([]byte(""))
+		assert.ErrorContains(t, err, "key is nil")
 
+		_, err = parsePartitionKeyStruct([]byte("{}"))
+		assert.ErrorContains(t, err, "key is nil")
+
+		_, err = parsePartitionKeyStruct([]byte("{id:"))
+		assert.ErrorContains(t, err, "failed to json unmarshal into map[string]any: invalid character 'i' looking for beginning of object key string")
+
+		_, err = parsePartitionKeyStruct([]byte(`{"id":`))
+		assert.ErrorContains(t, err, "failed to json unmarshal into map[string]any: unexpected end of JSON input")
+	}
+	{
+		// No schema.
+		keys, err := parsePartitionKeyStruct([]byte(`{"id": 47}`))
+		assert.NoError(t, err)
+		assert.Equal(t, keys["id"], float64(47))
+
+		keys, err = parsePartitionKeyStruct([]byte(`{"uuid": "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c", "FOO": "bar"}`))
+		assert.Nil(t, err)
+		assert.Equal(t, keys["uuid"], "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c")
+		assert.Equal(t, keys["foo"], "bar")
+	}
+	{
+		// Schema
 		keys, err := parsePartitionKeyStruct([]byte(`
 {
     "schema": {
@@ -89,33 +120,8 @@ func Test_ParsePartitionKeyStruct(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "339f3f2f-f29f-4f00-869e-476122310eff", keys["id"])
 		assert.Equal(t, time.Date(2024, 4, 16, 1, 8, 19, 440000000, time.UTC), keys["created_at"].(*ext.ExtendedTime).Time)
-	}
-}
 
-func TestParsePartitionKeyStruct(t *testing.T) {
-	// TODO: Rewrite these tests.
-	badDataCases := []struct{ value, expectedErr string }{
-		{"", "key is nil"},
-		{"{}", "key is nil"},
-		{"{id:", "failed to json unmarshal into map[string]any: invalid character 'i' looking for beginning of object key string"},
-		{`{"id":`, "failed to json unmarshal into map[string]any: unexpected end of JSON input"},
-	}
-
-	for _, badData := range badDataCases {
-		_, err := parsePartitionKeyStruct([]byte(badData.value))
-		assert.ErrorContains(t, err, badData.expectedErr, badData)
-	}
-
-	kv, err := parsePartitionKeyStruct([]byte(`{"id": 47}`))
-	assert.Nil(t, err)
-	assert.Equal(t, kv["id"], float64(47))
-
-	kv, err = parsePartitionKeyStruct([]byte(`{"uuid": "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c", "FOO": "bar"}`))
-	assert.Nil(t, err)
-	assert.Equal(t, kv["uuid"], "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c")
-	assert.Equal(t, kv["foo"], "bar")
-
-	kv, err = parsePartitionKeyStruct([]byte(`{
+		keys, err = parsePartitionKeyStruct([]byte(`{
 	"schema": {
 		"type": "struct",
 		"fields": [{
@@ -132,11 +138,11 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 	}
 }`))
 
-	assert.NoError(t, err)
-	assert.Equal(t, kv["id"], 1002)
+		assert.NoError(t, err)
+		assert.Equal(t, keys["id"], 1002)
 
-	// Composite key
-	compositeKeyString := `{
+		// Composite key
+		compositeKeyString := `{
 	"schema": {
 		"type": "struct",
 		"fields": [{
@@ -162,14 +168,14 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 	}
 }`
 
-	kv, err = parsePartitionKeyStruct([]byte(compositeKeyString))
-	assert.NoError(t, err)
-	assert.Equal(t, kv["quarter_id"], 1)
-	assert.Equal(t, kv["student_id"], 1)
-	assert.Equal(t, kv["course_id"], "course1")
+		keys, err = parsePartitionKeyStruct([]byte(compositeKeyString))
+		assert.NoError(t, err)
+		assert.Equal(t, keys["quarter_id"], 1)
+		assert.Equal(t, keys["student_id"], 1)
+		assert.Equal(t, keys["course_id"], "course1")
 
-	// Normal key with Debezium change event key (SMT)
-	smtKey := `{
+		// Normal key with Debezium change event key (SMT)
+		smtKey := `{
 	"schema": {
 		"type": "struct",
 		"fields": [{
@@ -191,8 +197,9 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 	}
 }`
 
-	kv, err = parsePartitionKeyStruct([]byte(smtKey))
-	assert.NoError(t, err)
-	assert.Equal(t, kv["id"], 1001)
-	assert.Equal(t, 1, len(kv))
+		keys, err = parsePartitionKeyStruct([]byte(smtKey))
+		assert.NoError(t, err)
+		assert.Equal(t, keys["id"], 1001)
+		assert.Equal(t, 1, len(keys))
+	}
 }
