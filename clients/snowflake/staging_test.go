@@ -22,36 +22,30 @@ import (
 )
 
 func (s *SnowflakeTestSuite) TestCastColValStaging() {
-	type _tc struct {
-		name    string
-		colVal  any
-		colKind columns.Column
-
-		errorMessage  string
-		expectedValue string
+	{
+		// Null
+		value, err := castColValStaging(nil, columns.Column{KindDetails: typing.String}, nil)
+		assert.NoError(s.T(), err)
+		assert.Equal(s.T(), `\\N`, value)
 	}
+	{
+		// Struct field
 
-	tcs := []_tc{
-		{
-			name:   "null value (string, not that it matters)",
-			colVal: nil,
-			colKind: columns.Column{
-				KindDetails: typing.String,
-			},
+		// Did not exceed lob size
+		value, err := castColValStaging(map[string]any{"key": "value"}, columns.Column{KindDetails: typing.Struct}, nil)
+		assert.NoError(s.T(), err)
+		assert.Equal(s.T(), `{"key":"value"}`, value)
 
-			expectedValue: `\\N`,
-		},
+		// Did exceed lob size
+		value, err = castColValStaging(map[string]any{"key": strings.Repeat("a", 16777216)}, columns.Column{KindDetails: typing.Struct}, nil)
+		assert.NoError(s.T(), err)
+		assert.Equal(s.T(), `{"key":"__artie_exceeded_value"}`, value)
 	}
-
-	for _, tc := range tcs {
-		actualValue, err := castColValStaging(tc.colVal, tc.colKind, nil)
-
-		if len(tc.errorMessage) > 0 {
-			assert.Contains(s.T(), err.Error(), tc.errorMessage, tc.name)
-		} else {
-			assert.NoError(s.T(), err, tc.name)
-			assert.Equal(s.T(), tc.expectedValue, actualValue, tc.name)
-		}
+	{
+		// String field
+		value, err := castColValStaging("foo", columns.Column{KindDetails: typing.String}, nil)
+		assert.NoError(s.T(), err)
+		assert.Equal(s.T(), "foo", value)
 	}
 }
 

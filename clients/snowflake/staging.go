@@ -13,9 +13,22 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
+
+func replaceExceededValues(colVal string, colKind columns.Column) string {
+	// https://community.snowflake.com/s/article/Max-LOB-size-exceeded
+	const maxLobLength = 16777216
+	if colKind.KindDetails.Kind == typing.Struct.Kind {
+		if len(colVal) > maxLobLength {
+			return fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker)
+		}
+	}
+
+	return colVal
+}
 
 // castColValStaging - takes `colVal` any and `colKind` typing.Column and converts the value into a string value
 // This is necessary because CSV writers require values to in `string`.
@@ -25,7 +38,12 @@ func castColValStaging(colVal any, colKind columns.Column, additionalDateFmts []
 		return `\\N`, nil
 	}
 
-	return values.ToString(colVal, colKind, additionalDateFmts)
+	value, err := values.ToString(colVal, colKind, additionalDateFmts)
+	if err != nil {
+		return "", err
+	}
+
+	return replaceExceededValues(value, colKind), nil
 }
 
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalSettings types.AdditionalSettings, createTempTable bool) error {
