@@ -21,7 +21,7 @@ type PrimaryKeyPayload struct {
 	Payload map[string]any `json:"payload"`
 }
 
-func (p PrimaryKeyPayload) ParseAndReturnPayload() (map[string]any, error) {
+func (p PrimaryKeyPayload) parseAndReturnPayload() (map[string]any, error) {
 	if len(p.Schema.Fields) == 0 {
 		return p.Payload, nil
 	}
@@ -120,7 +120,7 @@ func parsePartitionKeyStruct(keyBytes []byte) (map[string]any, error) {
 		return nil, fmt.Errorf("failed to json unmarshal: %w", err)
 	}
 
-	keys, err := primaryKeyPayload.ParseAndReturnPayload()
+	keys, err := primaryKeyPayload.parseAndReturnPayload()
 	if err != nil {
 		return nil, err
 	}
