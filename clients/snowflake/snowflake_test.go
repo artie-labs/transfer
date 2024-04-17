@@ -2,6 +2,7 @@ package snowflake
 
 import (
 	"fmt"
+	"testing"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -286,4 +287,33 @@ func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
 	err := s.stageStore.Merge(tableData)
 	assert.Nil(s.T(), err)
+}
+
+func TestFullyQualifiedName(t *testing.T) {
+	tableID := optimization.NewTableIdentifier("database", "schema", "table")
+
+	{
+		// With UppercaseEscapedNames: true
+		store := Store{
+			config: config.Config{
+				SharedDestinationConfig: config.SharedDestinationConfig{
+					UppercaseEscapedNames: true,
+				},
+			},
+		}
+		assert.Equal(t, `database.schema."TABLE"`, store.ToFullyQualifiedName(tableID, true), "escaped")
+		assert.Equal(t, "database.schema.table", store.ToFullyQualifiedName(tableID, false), "unescaped")
+	}
+	{
+		// With UppercaseEscapedNames: false
+		store := Store{
+			config: config.Config{
+				SharedDestinationConfig: config.SharedDestinationConfig{
+					UppercaseEscapedNames: false,
+				},
+			},
+		}
+		assert.Equal(t, `database.schema."table"`, store.ToFullyQualifiedName(tableID, true), "escaped")
+		assert.Equal(t, "database.schema.table", store.ToFullyQualifiedName(tableID, false), "unescaped")
+	}
 }
