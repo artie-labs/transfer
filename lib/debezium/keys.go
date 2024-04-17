@@ -29,7 +29,6 @@ func (p PrimaryKeyPayload) ParseAndReturnPayload() (map[string]any, error) {
 	retMap := make(map[string]any)
 	for key, value := range p.Payload {
 		idx := slices.IndexFunc(p.Schema.Fields, func(field Field) bool {
-			fmt.Println("key", key, "field.FieldName", field.FieldName)
 			return field.FieldName == key
 		})
 
@@ -120,8 +119,6 @@ func parsePartitionKeyStruct(keyBytes []byte) (map[string]any, error) {
 	if err := json.Unmarshal(keyBytes, &primaryKeyPayload); err != nil {
 		return nil, fmt.Errorf("failed to json unmarshal: %w", err)
 	}
-
-	fmt.Println("here", primaryKeyPayload)
 
 	keys, err := primaryKeyPayload.ParseAndReturnPayload()
 	if err != nil {
