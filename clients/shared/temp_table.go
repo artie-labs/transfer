@@ -8,5 +8,9 @@ import (
 )
 
 func TempTableName(dwh destination.DataWarehouse, tableData *optimization.TableData) string {
-	return fmt.Sprintf("%s_%s", dwh.ToFullyQualifiedName(tableData.TableIdentifier(), false), tableData.TempTableSuffix())
+	return fmt.Sprintf(
+		"%s_%s",
+		dwh.ToFullyQualifiedName(tableData.TableIdentifier(), false),
+		tableData.TempTableSuffix(),
+	)
 }
