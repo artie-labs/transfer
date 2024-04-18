@@ -14,7 +14,7 @@ WAL stands for Write-Ahead Logging, which is a method for Postgres to handle cha
 
 The WAL also makes it accessible to downstream applications to subscribe to a replication slot and consume database CDC changes reliably.
 
-WAL growth is a problem and can result in replication slot overflow. Replication slot overflow happens when the WAL accumulates and grows, consumes all your database’s memory, and causes your database to go down.&#x20;
+WAL growth is a problem and can result in replication slot overflow. Replication slot overflow happens when the WAL accumulates and grows, consumes all your database’s storage and causes your database to go down.&#x20;
 
 ### Why is WAL growth an issue on AWS RDS?
 
