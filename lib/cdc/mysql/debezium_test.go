@@ -345,7 +345,8 @@ func (m *MySQLTestSuite) TestGetEventFromBytes() {
 	assert.Equal(m.T(), evtData["id"], 1001)
 	assert.Equal(m.T(), evtData["first_name"], "Sally")
 	assert.Equal(m.T(), evtData["bool_test"], false)
-	cols := evt.GetColumns()
+	cols, err := evt.GetColumns()
+	assert.NoError(m.T(), err)
 	assert.NotNil(m.T(), cols)
 
 	col, isOk := cols.GetColumn("abcdef")

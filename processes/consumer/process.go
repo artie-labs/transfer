@@ -60,7 +60,10 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	}
 
 	tags["op"] = _event.Operation()
-	evt := event.ToMemoryEvent(_event, pkMap, topicConfig.tc, cfg.Mode)
+	evt, err := event.ToMemoryEvent(_event, pkMap, topicConfig.tc, cfg.Mode)
+	if err != nil {
+		return "", err
+	}
 	// Table name is only available after event has been cast
 	tags["table"] = evt.Table
 

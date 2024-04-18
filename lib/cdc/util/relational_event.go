@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -34,11 +35,11 @@ type Source struct {
 	Table     string `json:"table"`
 }
 
-func (s *SchemaEventPayload) GetColumns() *columns.Columns {
+func (s *SchemaEventPayload) GetColumns() (*columns.Columns, error) {
 	fieldsObject := s.Schema.GetSchemaFromLabel(cdc.After)
 	if fieldsObject == nil {
 		// AFTER schema does not exist.
-		return nil
+		return nil, nil
 	}
 
 	var cols columns.Columns
@@ -48,9 +49,7 @@ func (s *SchemaEventPayload) GetColumns() *columns.Columns {
 		col := columns.NewColumn(columns.EscapeName(field.FieldName), typing.Invalid)
 		val, parseErr := field.ParseValue(field.Default)
 		if parseErr != nil {
-			slog.Warn("Failed to parse field, using original value", slog.Any("err", parseErr),
-				slog.String("field", field.FieldName), slog.Any("value", field.Default))
-			col.SetDefaultValue(field.Default)
+			return nil, fmt.Errorf("failed to parse field %w: ", parseErr)
 		} else {
 			col.SetDefaultValue(val)
 		}
@@ -58,7 +57,7 @@ func (s *SchemaEventPayload) GetColumns() *columns.Columns {
 		cols.AddColumn(col)
 	}
 
-	return &cols
+	return &cols, nil
 }
 
 func (s *SchemaEventPayload) Operation() string {
