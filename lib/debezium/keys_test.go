@@ -34,34 +34,34 @@ func TestParsePartitionKeyString(t *testing.T) {
 		// Valid rows
 		kv, err := parsePartitionKeyString([]byte("Struct{hi=world,foo=bar}"))
 		assert.NoError(t, err)
-		assert.Equal(t, kv["hi"], "world")
-		assert.Equal(t, kv["foo"], "bar")
+		assert.Equal(t, "world", kv["hi"])
+		assert.Equal(t, "bar", kv["foo"])
 
 		kv, err = parsePartitionKeyString([]byte("Struct{hi==world}"))
 		assert.NoError(t, err)
-		assert.Equal(t, kv["hi"], "=world")
+		assert.Equal(t, "=world", kv["hi"])
 
 		kv, err = parsePartitionKeyString([]byte("Struct{Foo=bar,abc=def}"))
 		assert.NoError(t, err)
-		assert.Equal(t, kv["foo"], "bar")
-		assert.Equal(t, kv["abc"], "def")
+		assert.Equal(t, "bar", kv["foo"])
+		assert.Equal(t, "def", kv["abc"])
 
 		kv, err = parsePartitionKeyString([]byte("Struct{id=47}"))
 		assert.NoError(t, err)
-		assert.Equal(t, kv["id"], "47")
+		assert.Equal(t, "47", kv["id"])
 
 		kv, err = parsePartitionKeyString([]byte("Struct{id=47,__dbz__physicalTableIdentifier=dbserver1.inventory.customers}"))
 		assert.NoError(t, err)
-		assert.Equal(t, kv["id"], "47")
+		assert.Equal(t, "47", kv["id"])
 		assert.Equal(t, 1, len(kv))
 
 		kv, err = parsePartitionKeyString([]byte("Struct{uuid=d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c}"))
 		assert.Nil(t, err)
-		assert.Equal(t, kv["uuid"], "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c")
+		assert.Equal(t, "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c", kv["uuid"])
 	}
 }
 
-func Test_ParsePartitionKeyStruct(t *testing.T) {
+func TestParsePartitionKeyStruct(t *testing.T) {
 	{
 		// Errors
 		_, err := parsePartitionKeyStruct([]byte(""))
@@ -80,12 +80,12 @@ func Test_ParsePartitionKeyStruct(t *testing.T) {
 		// No schema.
 		keys, err := parsePartitionKeyStruct([]byte(`{"id": 47}`))
 		assert.NoError(t, err)
-		assert.Equal(t, keys["id"], float64(47))
+		assert.Equal(t, float64(47), keys["id"])
 
 		keys, err = parsePartitionKeyStruct([]byte(`{"uuid": "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c", "FOO": "bar"}`))
 		assert.Nil(t, err)
-		assert.Equal(t, keys["uuid"], "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c")
-		assert.Equal(t, keys["foo"], "bar")
+		assert.Equal(t, "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c", keys["uuid"])
+		assert.Equal(t, "bar", keys["foo"])
 	}
 	{
 		// Schema
@@ -170,9 +170,9 @@ func Test_ParsePartitionKeyStruct(t *testing.T) {
 
 		keys, err = parsePartitionKeyStruct([]byte(compositeKeyString))
 		assert.NoError(t, err)
-		assert.Equal(t, keys["quarter_id"], 1)
-		assert.Equal(t, keys["student_id"], 1)
-		assert.Equal(t, keys["course_id"], "course1")
+		assert.Equal(t, 1, keys["quarter_id"])
+		assert.Equal(t, 1, keys["student_id"])
+		assert.Equal(t, "course1", keys["course_id"])
 
 		// Normal key with Debezium change event key (SMT)
 		smtKey := `{
@@ -199,7 +199,7 @@ func Test_ParsePartitionKeyStruct(t *testing.T) {
 
 		keys, err = parsePartitionKeyStruct([]byte(smtKey))
 		assert.NoError(t, err)
-		assert.Equal(t, keys["id"], 1001)
+		assert.Equal(t, 1001, keys["id"])
 		assert.Equal(t, 1, len(keys))
 	}
 }
