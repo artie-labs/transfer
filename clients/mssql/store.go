@@ -48,8 +48,12 @@ func (s *Store) Append(tableData *optimization.TableData) error {
 	})
 }
 
-func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
+func (s *Store) identifierFor(topicConfig kafkalib.TopicConfig, table string) TableIdentifier {
 	return NewTableIdentifier(getSchema(topicConfig.Schema), table)
+}
+
+func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
+	return s.identifierFor(topicConfig, table)
 }
 
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
@@ -82,7 +86,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		describeDescriptionCol = "description"
 	)
 
-	query, args := describeTableQuery(getSchema(tableData.TopicConfig.Schema), tableData.Name())
+	query, args := describeTableQuery(s.identifierFor(tableData.TopicConfig, tableData.Name()))
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             s.ToFullyQualifiedName(tableData, true),
