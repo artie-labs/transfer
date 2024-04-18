@@ -48,8 +48,12 @@ func (s *SchemaEventPayload) GetColumns() *columns.Columns {
 		col := columns.NewColumn(columns.EscapeName(field.FieldName), typing.Invalid)
 		val, parseErr := field.ParseValue(field.Default)
 		if parseErr != nil {
-			slog.Warn("Failed to parse field, using original value", slog.Any("err", parseErr),
-				slog.String("field", field.FieldName), slog.Any("value", field.Default))
+			slog.Warn("Failed to parse field for default value, using original value",
+				slog.Any("err", parseErr),
+				slog.String("field", field.FieldName),
+				slog.Any("value", field.Default),
+				slog.String("debezium_type", string(field.DebeziumType)),
+			)
 			col.SetDefaultValue(field.Default)
 		} else {
 			col.SetDefaultValue(val)
