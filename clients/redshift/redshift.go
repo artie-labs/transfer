@@ -102,9 +102,9 @@ WHERE
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func (s *Store) Dedupe(tableData *optimization.TableData) error {
-	fqTableName := s.ToFullyQualifiedName(tableData, true)
-	stagingTableName := shared.TempTableName(s, tableData, strings.ToLower(stringutil.Random(5)))
+func (s *Store) Dedupe(tableID types.TableIdentifier) error {
+	fqTableName := tableID.FullyQualifiedName(true, s.ShouldUppercaseEscapedNames())
+	stagingTableName := shared.TempTableName(s, tableID, strings.ToLower(stringutil.Random(5)))
 
 	query := fmt.Sprintf(`
 CREATE TABLE %s AS SELECT DISTINCT * FROM %s;

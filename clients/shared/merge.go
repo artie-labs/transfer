@@ -71,7 +71,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
 	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
-	temporaryTableName := TempTableName(dwh, tableData, tableData.TempTableSuffix())
+	temporaryTableName := TempTableName(dwh, dwh.IdentifierFor(tableData.TopicConfig, tableData.Name()), tableData.TempTableSuffix())
 	if err = dwh.PrepareTemporaryTable(tableData, tableConfig, temporaryTableName, types.AdditionalSettings{}, true); err != nil {
 		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
