@@ -32,6 +32,9 @@ func (MockDWH) GetTableConfig(tableData *optimization.TableData) (*types.DwhTabl
 func (MockDWH) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalSettings types.AdditionalSettings, createTempTable bool) error {
 	panic("not implemented")
 }
+func (m MockDWH) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
+	panic("not implemented")
+}
 
 func (m MockDWH) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
 	if escape {

@@ -31,7 +31,7 @@ const (
 	describeCommentCol = "comment"
 )
 
-func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) TableIdentifier {
+func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
 	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
 

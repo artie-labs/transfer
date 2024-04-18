@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/ptr"
 
@@ -50,7 +51,7 @@ func (s *Store) Label() constants.DestinationKind {
 	return constants.S3
 }
 
-func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) TableIdentifier {
+func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
 	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
 

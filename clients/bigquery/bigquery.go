@@ -79,7 +79,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	return s.putTable(context.Background(), tableData.TopicConfig.Database, tempTableName, rows)
 }
 
-func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) TableIdentifier {
+func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
 	return NewTableIdentifier(s.config.BigQuery.ProjectID, topicConfig.Database, table)
 }
 
