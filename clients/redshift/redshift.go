@@ -53,7 +53,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 	)
 
 	query, args := describeTableQuery(describeArgs{
-		RawTableName: tableData.RawName(),
+		RawTableName: tableData.Name(),
 		Schema:       tableData.TopicConfig.Schema,
 	})
 
