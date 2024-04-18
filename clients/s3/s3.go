@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/ptr"
 
 	"github.com/artie-labs/transfer/lib/stringutil"
@@ -49,8 +51,13 @@ func (s *Store) Label() constants.DestinationKind {
 	return constants.S3
 }
 
+func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
+	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
+}
+
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData) string {
-	return tableData.TableIdentifier().FqName(s.Label(), false, s.uppercaseEscNames, optimization.FqNameOpts{})
+	tableID := s.IdentifierFor(tableData.TopicConfig, tableData.Name())
+	return tableID.FullyQualifiedName(false, s.uppercaseEscNames)
 }
 
 // ObjectPrefix - this will generate the exact right prefix that we need to write into S3.

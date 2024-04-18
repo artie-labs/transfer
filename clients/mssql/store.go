@@ -44,11 +44,13 @@ func (s *Store) Append(tableData *optimization.TableData) error {
 	})
 }
 
+func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
+	return NewTableIdentifier(getSchema(topicConfig.Schema), table)
+}
+
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	tableID := tableData.TableIdentifier()
-	return tableID.FqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{
-		MsSQLSchemaOverride: getSchema(tableID.Schema()),
-	})
+	tableID := s.IdentifierFor(tableData.TopicConfig, tableData.Name())
+	return tableID.FullyQualifiedName(escape, s.config.SharedDestinationConfig.UppercaseEscapedNames)
 }
 
 func (s *Store) Sweep() error {
@@ -76,7 +78,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		describeDescriptionCol = "description"
 	)
 
-	query, args := describeTableQuery(getSchema(tableData.TableIdentifier().Schema()), tableData.Name())
+	query, args := describeTableQuery(getSchema(tableData.TopicConfig.Schema), tableData.Name())
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             s.ToFullyQualifiedName(tableData, true),

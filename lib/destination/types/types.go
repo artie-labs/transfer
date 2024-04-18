@@ -58,3 +58,8 @@ func (a AppendOpts) Validate() error {
 
 	return nil
 }
+
+type TableIdentifier interface {
+	Table() string
+	FullyQualifiedName(escape, uppercaseEscNames bool) string
+}

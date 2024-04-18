@@ -23,7 +23,8 @@ import (
 )
 
 func (s *SnowflakeTestSuite) fullyQualifiedName(tableData *optimization.TableData) string {
-	return tableData.TableIdentifier().FqName(s.stageStore.Label(), true, s.stageStore.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{})
+	tableID := s.stageStore.IdentifierFor(tableData.TopicConfig, tableData.Name())
+	return tableID.FullyQualifiedName(true, s.stageStore.config.SharedDestinationConfig.UppercaseEscapedNames)
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {

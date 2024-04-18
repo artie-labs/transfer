@@ -175,10 +175,6 @@ func (t *TableData) Rows() []map[string]any {
 	return rows
 }
 
-func (t *TableData) TableIdentifier() TableIdentifier {
-	return NewTableIdentifier(t.TopicConfig.Database, t.TopicConfig.Schema, t.name)
-}
-
 func (t *TableData) NumberOfRows() uint {
 	if t == nil {
 		return 0
