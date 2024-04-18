@@ -6,7 +6,7 @@ description: >-
 
 # Preventing WAL growth on Postgres running on AWS RDS
 
-Last updated: 11/08/2023
+Last updated: 04/17/2024
 
 ## What is WAL?
 
