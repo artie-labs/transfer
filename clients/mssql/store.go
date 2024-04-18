@@ -34,6 +34,10 @@ func (s *Store) Label() constants.DestinationKind {
 	return constants.MSSQL
 }
 
+func (s *Store) ShouldUppercaseEscapedNames() bool {
+	return s.config.SharedDestinationConfig.UppercaseEscapedNames
+}
+
 func (s *Store) Merge(tableData *optimization.TableData) error {
 	return shared.Merge(s, tableData, s.config, types.MergeOpts{})
 }
@@ -50,7 +54,7 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) ty
 
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
 	tableID := s.IdentifierFor(tableData.TopicConfig, tableData.Name())
-	return tableID.FullyQualifiedName(escape, s.config.SharedDestinationConfig.UppercaseEscapedNames)
+	return tableID.FullyQualifiedName(escape, s.ShouldUppercaseEscapedNames())
 }
 
 func (s *Store) Sweep() error {

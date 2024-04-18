@@ -19,7 +19,7 @@ type DataWarehouse interface {
 	Begin() (*sql.Tx, error)
 
 	// Helper functions for merge
-
+	ShouldUppercaseEscapedNames() bool
 	IsRetryableError(err error) bool
 	IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier
 	ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string
