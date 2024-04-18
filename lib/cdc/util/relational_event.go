@@ -129,8 +129,12 @@ func (s *SchemaEventPayload) parseAndMutateMapInPlace(retMap map[string]any, kin
 				retMap[field.FieldName] = val
 			} else {
 				// TODO: Make this a hard failure, confirm this with Datadog logs.
-				slog.Warn("Failed to parse field, using original value", slog.Any("err", parseErr),
-					slog.String("field", field.FieldName), slog.Any("value", fieldVal))
+				slog.Warn("Failed to parse field, using original value",
+					slog.Any("err", parseErr),
+					slog.String("field", field.FieldName),
+					slog.Any("value", fieldVal),
+					slog.String("debezium_type", string(field.DebeziumType)),
+				)
 			}
 		}
 	}
