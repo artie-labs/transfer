@@ -31,12 +31,12 @@ const (
 	describeCommentCol = "comment"
 )
 
-func (s *Store) ToFullyQualifiedName(tableID optimization.TableIdentifier, escape bool) string {
-	return tableID.FqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{})
+func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
+	return tableData.TableIdentifier().FqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{})
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	fqName := s.ToFullyQualifiedName(tableData.TableIdentifier(), true)
+	fqName := s.ToFullyQualifiedName(tableData, true)
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             fqName,
@@ -115,8 +115,8 @@ func (s *Store) reestablishConnection() error {
 	return nil
 }
 
-func (s *Store) Dedupe(tableID optimization.TableIdentifier) error {
-	fqTableName := s.ToFullyQualifiedName(tableID, true)
+func (s *Store) Dedupe(tableData *optimization.TableData) error {
+	fqTableName := s.ToFullyQualifiedName(tableData, true)
 	_, err := s.Exec(fmt.Sprintf("CREATE OR REPLACE TABLE %s AS SELECT DISTINCT * FROM %s", fqTableName, fqTableName))
 	return err
 }

@@ -12,7 +12,7 @@ type DataWarehouse interface {
 	Label() constants.DestinationKind
 	Merge(tableData *optimization.TableData) error
 	Append(tableData *optimization.TableData) error
-	Dedupe(tableID optimization.TableIdentifier) error
+	Dedupe(tableID *optimization.TableData) error
 	Exec(query string, args ...any) (sql.Result, error)
 	Query(query string, args ...any) (*sql.Rows, error)
 	Begin() (*sql.Tx, error)
@@ -20,7 +20,7 @@ type DataWarehouse interface {
 	// Helper functions for merge
 
 	IsRetryableError(err error) bool
-	ToFullyQualifiedName(tableID optimization.TableIdentifier, escape bool) string
+	ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string
 	GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error)
 	PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalSettings types.AdditionalSettings, createTempTable bool) error
 }

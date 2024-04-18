@@ -8,6 +8,6 @@ import (
 
 func (s *Store) Append(tableData *optimization.TableData) error {
 	return shared.Append(s, tableData, s.config, types.AppendOpts{
-		TempTableName: s.ToFullyQualifiedName(tableData.TableIdentifier(), true),
+		TempTableName: s.ToFullyQualifiedName(tableData, true),
 	})
 }

@@ -49,15 +49,15 @@ func (s *Store) Label() constants.DestinationKind {
 	return constants.S3
 }
 
-func (s *Store) ToFullyQualifiedName(tableID optimization.TableIdentifier) string {
-	return tableID.FqName(s.Label(), false, s.uppercaseEscNames, optimization.FqNameOpts{})
+func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData) string {
+	return tableData.TableIdentifier().FqName(s.Label(), false, s.uppercaseEscNames, optimization.FqNameOpts{})
 }
 
 // ObjectPrefix - this will generate the exact right prefix that we need to write into S3.
 // It will look like something like this:
 // > optionalPrefix/fullyQualifiedTableName/YYYY-MM-DD
 func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
-	fqTableName := s.ToFullyQualifiedName(tableData.TableIdentifier())
+	fqTableName := s.ToFullyQualifiedName(tableData)
 	yyyyMMDDFormat := tableData.LatestCDCTs.Format(ext.PostgresDateFormat)
 
 	if len(s.config.S3.OptionalPrefix) > 0 {
