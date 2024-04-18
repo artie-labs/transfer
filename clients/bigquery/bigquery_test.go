@@ -63,17 +63,16 @@ func TestFullyQualifiedName(t *testing.T) {
 		assert.Equal(t, "`project`.`database`.`table`", store.ToFullyQualifiedName(tableData, true), "escaped")
 		assert.Equal(t, "`project`.`database`.table", store.ToFullyQualifiedName(tableData, false), "unescaped")
 	}
-}
-
-func TestNewTableData_TableName(t *testing.T) {
-	store := Store{
-		config: config.Config{
-			BigQuery: &config.BigQuery{
-				ProjectID: "artie",
+	{
+		store := Store{
+			config: config.Config{
+				BigQuery: &config.BigQuery{
+					ProjectID: "artie",
+				},
 			},
-		},
+		}
+		td := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "public"}, "food")
+		assert.Equal(t, "food", td.RawName())
+		assert.Equal(t, "`artie`.`db`.food", store.ToFullyQualifiedName(td, true))
 	}
-	td := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "public"}, "food")
-	assert.Equal(t, "food", td.RawName())
-	assert.Equal(t, "`artie`.`db`.food", store.ToFullyQualifiedName(td, true))
 }
