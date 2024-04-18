@@ -30,10 +30,6 @@ func getSchema(schema string) string {
 	return schema
 }
 
-func (s *Store) Schema(tableID optimization.TableIdentifier) string {
-	return getSchema(tableID.Schema())
-}
-
 func (s *Store) Label() constants.DestinationKind {
 	return constants.MSSQL
 }
@@ -51,7 +47,7 @@ func (s *Store) Append(tableData *optimization.TableData) error {
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
 	tableID := tableData.TableIdentifier()
 	return tableID.FqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{
-		MsSQLSchemaOverride: s.Schema(tableID),
+		MsSQLSchemaOverride: getSchema(tableID.Schema()),
 	})
 }
 
@@ -80,7 +76,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		describeDescriptionCol = "description"
 	)
 
-	query, args := describeTableQuery(s.Schema(tableData.TableIdentifier()), tableData.Name())
+	query, args := describeTableQuery(getSchema(tableData.TableIdentifier().Schema()), tableData.Name())
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             s.ToFullyQualifiedName(tableData, true),
