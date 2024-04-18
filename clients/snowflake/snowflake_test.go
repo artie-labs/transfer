@@ -57,7 +57,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	}
 
 	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, topicConfig, "foo")
-	assert.Equal(s.T(), "foo", tableData.RawName())
+	assert.Equal(s.T(), "foo", tableData.Name())
 
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row, false)

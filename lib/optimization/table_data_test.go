@@ -143,7 +143,7 @@ func TestNewTableData_TableName(t *testing.T) {
 	bqProjectID := "artie"
 	for _, testCase := range testCases {
 		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: testCase.db, Schema: testCase.schema}, testCase.tableName)
-		assert.Equal(t, testCase.expectedName, td.RawName(), testCase.name)
+		assert.Equal(t, testCase.expectedName, td.Name(), testCase.name)
 		assert.Equal(t, testCase.expectedName, td.name, testCase.name)
 
 		assert.Equal(t, testCase.expectedSnowflakeFqName, td.TableIdentifier().FqName(constants.Snowflake, true, false, FqNameOpts{}), testCase.name)

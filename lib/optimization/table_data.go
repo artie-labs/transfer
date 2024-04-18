@@ -47,7 +47,6 @@ type TableData struct {
 	temporaryTableSuffix string
 
 	// Name of the table in the destination
-	// Prefer calling .Name() everywhere
 	name string
 }
 
@@ -77,7 +76,7 @@ func (t *TableData) PrimaryKeys(uppercaseEscNames bool, args *sql.NameArgs) []co
 	return pks
 }
 
-func (t *TableData) RawName() string {
+func (t *TableData) Name() string {
 	return t.name
 }
 
