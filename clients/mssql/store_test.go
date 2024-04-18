@@ -57,18 +57,19 @@ func TestTempTableName(t *testing.T) {
 		return tableName[:lastUnderscore]
 	}
 
+	store := Store{}
 	{
 		// Schema is "schema":
 		tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "schema"}, "table")
-		tableID := (&Store{}).IdentifierFor(tableData.TopicConfig, tableData.Name())
-		tempTableName := shared.TempTableName(&Store{}, tableID, "sUfFiX")
+		tableID := store.IdentifierFor(tableData.TopicConfig, tableData.Name())
+		tempTableName := shared.TempTableName(&store, tableID, "sUfFiX")
 		assert.Equal(t, "schema.table___artie_sUfFiX", trimTTL(tempTableName))
 	}
 	{
 		// Schema is "public" -> "dbo":
 		tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "public"}, "table")
-		tableID := (&Store{}).IdentifierFor(tableData.TopicConfig, tableData.Name())
-		tempTableName := shared.TempTableName(&Store{}, tableID, "sUfFiX")
+		tableID := store.IdentifierFor(tableData.TopicConfig, tableData.Name())
+		tempTableName := shared.TempTableName(&store, tableID, "sUfFiX")
 		assert.Equal(t, "dbo.table___artie_sUfFiX", trimTTL(tempTableName))
 	}
 }
