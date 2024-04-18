@@ -52,7 +52,16 @@ func TestTempTableName(t *testing.T) {
 		return tableName[:lastUnderscore]
 	}
 
-	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "schema"}, "table")
-	tempTableName := shared.TempTableName(&Store{}, tableData, "sUfFiX")
-	assert.Equal(t, "schema.table___artie_sUfFiX", trimTTL(tempTableName))
+	{
+		// Schema is "schema":
+		tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "schema"}, "table")
+		tempTableName := shared.TempTableName(&Store{}, tableData, "sUfFiX")
+		assert.Equal(t, "schema.table___artie_sUfFiX", trimTTL(tempTableName))
+	}
+	{
+		// Schema is "public" -> "dbo":
+		tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "public"}, "table")
+		tempTableName := shared.TempTableName(&Store{}, tableData, "sUfFiX")
+		assert.Equal(t, "dbo.table___artie_sUfFiX", trimTTL(tempTableName))
+	}
 }
