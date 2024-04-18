@@ -40,6 +40,11 @@ func TestFullyQualifiedName(t *testing.T) {
 		assert.Equal(t, `schema."table"`, store.ToFullyQualifiedName(tableData, true), "escaped")
 		assert.Equal(t, "schema.table", store.ToFullyQualifiedName(tableData, false), "unescaped")
 	}
+	{
+		td := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "public"}, "food")
+		assert.Equal(t, "food", td.RawName())
+		assert.Equal(t, "public.food", (&Store{}).ToFullyQualifiedName(td, true))
+	}
 }
 
 func TestTempTableName(t *testing.T) {
