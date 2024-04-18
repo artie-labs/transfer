@@ -2,9 +2,12 @@ package snowflake
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -18,6 +21,10 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
+
+func (s *SnowflakeTestSuite) fullyQualifiedName(tableData *optimization.TableData) string {
+	return tableData.TableIdentifier().FqName(s.stageStore.Label(), true, s.stageStore.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{})
+}
 
 func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	// This test was written for https://github.com/artie-labs/transfer/pull/26
@@ -67,8 +74,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		anotherCols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
-	s.stageStore.configMap.AddTableToConfig(tableData.TableIdentifier().FqName(s.stageStore.Label(), true, s.stageStore.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{}),
-		types.NewDwhTableConfig(&anotherCols, nil, false, true))
+	s.stageStore.configMap.AddTableToConfig(s.fullyQualifiedName(tableData), types.NewDwhTableConfig(&anotherCols, nil, false, true))
 
 	err := s.stageStore.Merge(tableData)
 	_col, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("first_name")
@@ -113,8 +119,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		tableData.InsertRow(pk, row, false)
 	}
 
-	s.stageStore.configMap.AddTableToConfig(tableData.TableIdentifier().FqName(s.stageStore.Label(), true, s.stageStore.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{}),
-		types.NewDwhTableConfig(&cols, nil, false, true))
+	s.stageStore.configMap.AddTableToConfig(s.fullyQualifiedName(tableData), types.NewDwhTableConfig(&cols, nil, false, true))
 
 	s.fakeStageStore.ExecReturnsOnCall(0, nil, fmt.Errorf("390114: Authentication token has expired. The user must authenticate again."))
 	err := s.stageStore.Merge(tableData)
@@ -165,7 +170,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 
 	var idx int
 
-	fqName := tableData.TableIdentifier().FqName(s.stageStore.Label(), true, s.stageStore.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{})
+	fqName := s.fullyQualifiedName(tableData)
 	s.stageStore.configMap.AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, true))
 	err := s.stageStore.Merge(tableData)
 	assert.Nil(s.T(), err)
@@ -247,7 +252,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 	sflkCols.AddColumn(columns.NewColumn("new", typing.String))
 	_config := types.NewDwhTableConfig(&sflkCols, nil, false, true)
-	s.stageStore.configMap.AddTableToConfig(tableData.TableIdentifier().FqName(s.stageStore.Label(), true, s.stageStore.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{}), _config)
+	s.stageStore.configMap.AddTableToConfig(s.fullyQualifiedName(tableData), _config)
 
 	err := s.stageStore.Merge(tableData)
 	assert.Nil(s.T(), err)
@@ -255,10 +260,10 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	assert.Equal(s.T(), s.fakeStageStore.ExecCallCount(), 5, "called merge")
 
 	// Check the temp deletion table now.
-	assert.Equal(s.T(), len(s.stageStore.configMap.TableConfig(tableData.TableIdentifier().FqName(s.stageStore.Label(), true, s.stageStore.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{})).ReadOnlyColumnsToDelete()), 1,
-		s.stageStore.configMap.TableConfig(tableData.TableIdentifier().FqName(s.stageStore.Label(), true, s.stageStore.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{})).ReadOnlyColumnsToDelete())
+	assert.Equal(s.T(), len(s.stageStore.configMap.TableConfig(s.fullyQualifiedName(tableData)).ReadOnlyColumnsToDelete()), 1,
+		s.stageStore.configMap.TableConfig(s.fullyQualifiedName(tableData)).ReadOnlyColumnsToDelete())
 
-	_, isOk := s.stageStore.configMap.TableConfig(tableData.TableIdentifier().FqName(s.stageStore.Label(), true, s.stageStore.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{})).ReadOnlyColumnsToDelete()["new"]
+	_, isOk := s.stageStore.configMap.TableConfig(s.fullyQualifiedName(tableData)).ReadOnlyColumnsToDelete()["new"]
 	assert.True(s.T(), isOk)
 
 	// Now try to execute merge where 1 of the rows have the column now
@@ -279,8 +284,8 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	assert.Equal(s.T(), s.fakeStageStore.ExecCallCount(), 10, "called merge again")
 
 	// Caught up now, so columns should be 0.
-	assert.Equal(s.T(), len(s.stageStore.configMap.TableConfig(tableData.TableIdentifier().FqName(s.stageStore.Label(), true, s.stageStore.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{})).ReadOnlyColumnsToDelete()), 0,
-		s.stageStore.configMap.TableConfig(tableData.TableIdentifier().FqName(s.stageStore.Label(), true, s.stageStore.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{})).ReadOnlyColumnsToDelete())
+	assert.Equal(s.T(), len(s.stageStore.configMap.TableConfig(s.fullyQualifiedName(tableData)).ReadOnlyColumnsToDelete()), 0,
+		s.stageStore.configMap.TableConfig(s.fullyQualifiedName(tableData)).ReadOnlyColumnsToDelete())
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
@@ -316,4 +321,19 @@ func TestFullyQualifiedName(t *testing.T) {
 		assert.Equal(t, `database.schema."table"`, store.ToFullyQualifiedName(tableData, true), "escaped")
 		assert.Equal(t, "database.schema.table", store.ToFullyQualifiedName(tableData, false), "unescaped")
 	}
+}
+
+func TestTempTableName(t *testing.T) {
+	trimTTL := func(tableName string) string {
+		lastUnderscore := strings.LastIndex(tableName, "_")
+		assert.GreaterOrEqual(t, lastUnderscore, 0)
+		epoch, err := strconv.ParseInt(tableName[lastUnderscore+1:], 10, 64)
+		assert.NoError(t, err)
+		assert.Greater(t, time.Unix(epoch, 0), time.Now().Add(5*time.Hour)) // default TTL is 6 hours from now
+		return tableName[:lastUnderscore]
+	}
+
+	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "schema"}, "table")
+	tempTableName := shared.TempTableName(&Store{}, tableData, "sUfFiX")
+	assert.Equal(t, "db.schema.table___artie_sUfFiX", trimTTL(tempTableName))
 }
