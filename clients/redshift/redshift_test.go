@@ -58,6 +58,7 @@ func TestTempTableName(t *testing.T) {
 	}
 
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "schema"}, "table")
-	tempTableName := shared.TempTableName(&Store{}, tableData, "sUfFiX")
+	tableID := (&Store{}).IdentifierFor(tableData.TopicConfig, tableData.Name())
+	tempTableName := shared.TempTableName(&Store{}, tableID, "sUfFiX")
 	assert.Equal(t, "schema.table___artie_sUfFiX", trimTTL(tempTableName))
 }

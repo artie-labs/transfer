@@ -91,7 +91,9 @@ func TestTempTableName(t *testing.T) {
 		return tableName[:lastUnderscore]
 	}
 
+	store := &Store{config: config.Config{BigQuery: &config.BigQuery{ProjectID: "123454321"}}}
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "schema"}, "table")
-	tempTableName := shared.TempTableName(&Store{config: config.Config{BigQuery: &config.BigQuery{ProjectID: "123454321"}}}, tableData, "sUfFiX")
+	tableID := store.IdentifierFor(tableData.TopicConfig, tableData.Name())
+	tempTableName := shared.TempTableName(store, tableID, "sUfFiX")
 	assert.Equal(t, "`123454321`.`db`.table___artie_sUfFiX", trimTTL(tempTableName))
 }
