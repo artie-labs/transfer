@@ -86,10 +86,11 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		describeDescriptionCol = "description"
 	)
 
-	query, args := describeTableQuery(s.identifierFor(tableData.TopicConfig, tableData.Name()))
+	tableID := s.identifierFor(tableData.TopicConfig, tableData.Name())
+	query, args := describeTableQuery(tableID)
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
-		FqName:             s.ToFullyQualifiedName(tableData, true),
+		FqName:             tableID.FullyQualifiedName(true, s.ShouldUppercaseEscapedNames()),
 		ConfigMap:          s.configMap,
 		Query:              query,
 		Args:               args,
