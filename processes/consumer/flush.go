@@ -80,8 +80,8 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 				"what":     "success",
 				"mode":     _tableData.Mode().String(),
 				"table":    _tableName,
-				"database": _tableData.TopicConfig.Database,
-				"schema":   _tableData.TopicConfig.Schema,
+				"database": _tableData.TopicConfig().Database,
+				"schema":   _tableData.TopicConfig().Schema,
 				"reason":   args.Reason,
 			}
 
@@ -102,7 +102,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 				time.Sleep(3 * time.Second)
 			} else {
 				slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), logFields...)
-				commitErr := commitOffset(ctx, _tableData.TopicConfig.Topic, _tableData.PartitionsToLastMessage)
+				commitErr := commitOffset(ctx, _tableData.TopicConfig().Topic, _tableData.PartitionsToLastMessage)
 				if commitErr == nil {
 					inMemDB.ClearTableConfig(_tableName)
 				} else {

@@ -61,14 +61,14 @@ func TestTempTableName(t *testing.T) {
 	{
 		// Schema is "schema":
 		tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "schema"}, "table")
-		tableID := store.IdentifierFor(tableData.TopicConfig, tableData.Name())
+		tableID := store.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 		tempTableName := shared.TempTableName(&store, tableID, "sUfFiX")
 		assert.Equal(t, "schema.table___artie_sUfFiX", trimTTL(tempTableName))
 	}
 	{
 		// Schema is "public" -> "dbo":
 		tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "public"}, "table")
-		tableID := store.IdentifierFor(tableData.TopicConfig, tableData.Name())
+		tableID := store.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 		tempTableName := shared.TempTableName(&store, tableID, "sUfFiX")
 		assert.Equal(t, "dbo.table___artie_sUfFiX", trimTTL(tempTableName))
 	}
