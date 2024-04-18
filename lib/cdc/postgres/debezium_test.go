@@ -85,9 +85,10 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
 	assert.Nil(p.T(), err)
 	assert.False(p.T(), evt.DeletePayload())
 
-	evtData := evt.GetData(map[string]any{"id": 59}, &kafkalib.TopicConfig{
+	evtData, err := evt.GetData(map[string]any{"id": 59}, &kafkalib.TopicConfig{
 		IncludeDatabaseUpdatedAt: true,
 	})
+	assert.NoError(p.T(), err)
 	assert.Equal(p.T(), float64(59), evtData["id"])
 	assert.Equal(p.T(), "2022-11-16T04:01:53+00:00", evtData[constants.DatabaseUpdatedColumnMarker])
 
@@ -190,7 +191,8 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	assert.Nil(p.T(), err)
 	assert.False(p.T(), evt.DeletePayload())
 
-	evtData := evt.GetData(map[string]any{"id": 1001}, &kafkalib.TopicConfig{})
+	evtData, err := evt.GetData(map[string]any{"id": 1001}, &kafkalib.TopicConfig{})
+	assert.NoError(p.T(), err)
 
 	// Testing typing.
 	assert.Equal(p.T(), evtData["id"], 1001)

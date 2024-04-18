@@ -112,7 +112,8 @@ func TestGetDataTestInsert(t *testing.T) {
 
 	assert.False(t, schemaEventPayload.DeletePayload())
 
-	evtData := schemaEventPayload.GetData(map[string]any{"pk": 1}, &kafkalib.TopicConfig{})
+	evtData, err := schemaEventPayload.GetData(map[string]any{"pk": 1}, &kafkalib.TopicConfig{})
+	assert.NoError(t, err)
 	assert.Equal(t, len(after), len(evtData), "has deletion flag")
 
 	deletionFlag, isOk := evtData[constants.DeleteColumnMarker]
@@ -125,9 +126,10 @@ func TestGetDataTestInsert(t *testing.T) {
 	delete(evtData, constants.DeleteColumnMarker)
 	assert.Equal(t, after, evtData)
 
-	evtData = schemaEventPayload.GetData(map[string]any{"pk": 1}, &kafkalib.TopicConfig{
+	evtData, err = schemaEventPayload.GetData(map[string]any{"pk": 1}, &kafkalib.TopicConfig{
 		IncludeArtieUpdatedAt: true,
 	})
+	assert.NoError(t, err)
 
 	_, isOk = evtData[constants.UpdateColumnMarker]
 	assert.True(t, isOk)
@@ -152,7 +154,8 @@ func TestGetData_TestDelete(t *testing.T) {
 		var schemaEventPayload SchemaEventPayload
 		assert.NoError(t, json.Unmarshal([]byte(PostgresDelete), &schemaEventPayload))
 		assert.True(t, schemaEventPayload.DeletePayload())
-		data := schemaEventPayload.GetData(kvMap, tc)
+		data, err := schemaEventPayload.GetData(kvMap, tc)
+		assert.NoError(t, err)
 		for expectedKey, expectedValue := range expectedKeyValues {
 			value, isOk := data[expectedKey]
 			assert.True(t, isOk)
@@ -164,7 +167,8 @@ func TestGetData_TestDelete(t *testing.T) {
 		var schemaEventPayload SchemaEventPayload
 		assert.NoError(t, json.Unmarshal([]byte(MySQLDelete), &schemaEventPayload))
 		assert.True(t, schemaEventPayload.DeletePayload())
-		data := schemaEventPayload.GetData(kvMap, tc)
+		data, err := schemaEventPayload.GetData(kvMap, tc)
+		assert.NoError(t, err)
 		for expectedKey, expectedValue := range expectedKeyValues {
 			value, isOk := data[expectedKey]
 			assert.True(t, isOk)
@@ -203,7 +207,8 @@ func TestGetDataTestUpdate(t *testing.T) {
 	assert.False(t, schemaEventPayload.DeletePayload())
 	kvMap := map[string]any{"pk": 1}
 
-	evtData := schemaEventPayload.GetData(kvMap, &kafkalib.TopicConfig{})
+	evtData, err := schemaEventPayload.GetData(kvMap, &kafkalib.TopicConfig{})
+	assert.NoError(t, err)
 	assert.Equal(t, len(after), len(evtData), "has deletion flag")
 
 	deletionFlag, isOk := evtData[constants.DeleteColumnMarker]
@@ -216,9 +221,10 @@ func TestGetDataTestUpdate(t *testing.T) {
 	delete(evtData, constants.DeleteColumnMarker)
 	assert.Equal(t, after, evtData)
 
-	evtData = schemaEventPayload.GetData(kvMap, &kafkalib.TopicConfig{
+	evtData, err = schemaEventPayload.GetData(kvMap, &kafkalib.TopicConfig{
 		IncludeArtieUpdatedAt: true,
 	})
+	assert.NoError(t, err)
 
 	_, isOk = evtData[constants.UpdateColumnMarker]
 	assert.True(t, isOk)
@@ -248,7 +254,8 @@ func TestSchemaEventPayload_ParseAndMutateMapInPlace(t *testing.T) {
 			},
 		},
 	}
-	returnedMap := schemaEventPayload.parseAndMutateMapInPlace(mapToPassIn, cdc.After)
+	returnedMap, err := schemaEventPayload.parseAndMutateMapInPlace(mapToPassIn, cdc.After)
+	assert.NoError(t, err)
 	assert.Equal(t, mapToPassIn, returnedMap)
 	assert.Equal(t, 123, mapToPassIn["id"])
 }

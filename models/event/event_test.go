@@ -42,8 +42,8 @@ func (f fakeEvent) GetColumns() (*columns.Columns, error) {
 	return &columns.Columns{}, nil
 }
 
-func (f fakeEvent) GetData(pkMap map[string]any, config *kafkalib.TopicConfig) map[string]any {
-	return map[string]any{constants.DeleteColumnMarker: false}
+func (f fakeEvent) GetData(pkMap map[string]any, config *kafkalib.TopicConfig) (map[string]any, error) {
+	return map[string]any{constants.DeleteColumnMarker: false}, nil
 }
 
 func (e *EventsTestSuite) TestEvent_IsValid() {

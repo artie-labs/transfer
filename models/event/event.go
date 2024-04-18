@@ -49,7 +49,10 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc *kafkalib.TopicConf
 		}
 	}
 
-	evtData := event.GetData(pkMap, tc)
+	evtData, err := event.GetData(pkMap, tc)
+	if err != nil {
+		return Event{}, err
+	}
 	tblName := stringutil.Override(event.GetTableName(), tc.TableName)
 	if cfgMode == config.History {
 		if !strings.HasSuffix(tblName, constants.HistoryModeSuffix) {

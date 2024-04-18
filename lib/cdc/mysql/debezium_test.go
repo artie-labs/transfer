@@ -323,7 +323,8 @@ func (m *MySQLTestSuite) TestGetEventFromBytes() {
 		"id": 1001,
 	}
 
-	evtData := evt.GetData(kvMap, &kafkalib.TopicConfig{})
+	evtData, err := evt.GetData(kvMap, &kafkalib.TopicConfig{})
+	assert.NoError(m.T(), err)
 
 	// Should have no Artie updated or database updated fields
 	_, isOk := evtData[constants.UpdateColumnMarker]
@@ -332,10 +333,11 @@ func (m *MySQLTestSuite) TestGetEventFromBytes() {
 	_, isOk = evtData[constants.DatabaseUpdatedColumnMarker]
 	assert.False(m.T(), isOk)
 
-	evtData = evt.GetData(kvMap, &kafkalib.TopicConfig{
+	evtData, err = evt.GetData(kvMap, &kafkalib.TopicConfig{
 		IncludeDatabaseUpdatedAt: true,
 		IncludeArtieUpdatedAt:    true,
 	})
+	assert.NoError(m.T(), err)
 
 	assert.Equal(m.T(), "2023-03-13T19:19:24+00:00", evtData[constants.DatabaseUpdatedColumnMarker])
 
