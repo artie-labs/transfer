@@ -30,10 +30,6 @@ func getSchema(schema string) string {
 	return schema
 }
 
-func (s *Store) Schema(tableID optimization.TableIdentifier) string {
-	return getSchema(tableID.Schema())
-}
-
 func (s *Store) Label() constants.DestinationKind {
 	return constants.MSSQL
 }
@@ -48,11 +44,13 @@ func (s *Store) Append(tableData *optimization.TableData) error {
 	})
 }
 
+func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) TableIdentifier {
+	return NewTableIdentifier(getSchema(topicConfig.Schema), table)
+}
+
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	tableID := tableData.TableIdentifier()
-	return tableID.FqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{
-		MsSQLSchemaOverride: s.Schema(tableID),
-	})
+	tableID := s.IdentifierFor(tableData.TopicConfig, tableData.RawName())
+	return tableID.FullyQualifiedName(escape, s.config.SharedDestinationConfig.UppercaseEscapedNames)
 }
 
 func (s *Store) Sweep() error {
@@ -80,7 +78,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		describeDescriptionCol = "description"
 	)
 
-	query, args := describeTableQuery(s.Schema(tableData.TableIdentifier()), tableData.RawName())
+	query, args := describeTableQuery(s.IdentifierFor(tableData.TopicConfig, tableData.RawName()))
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
 		FqName:             s.ToFullyQualifiedName(tableData, true),
