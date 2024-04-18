@@ -32,4 +32,5 @@ type Baseline interface {
 	Merge(tableData *optimization.TableData) error
 	Append(tableData *optimization.TableData) error
 	IsRetryableError(err error) bool
+	IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier
 }
