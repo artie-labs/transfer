@@ -8,8 +8,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
-
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -109,51 +107,6 @@ func slicesEqualUnordered(s1, s2 []string) bool {
 	}
 
 	return true
-}
-
-func TestNewTableData_TableName(t *testing.T) {
-	type _testCase struct {
-		name      string
-		tableName string
-		schema    string
-		db        string
-
-		expectedName            string
-		expectedSnowflakeFqName string
-		expectedBigQueryFqName  string
-		expectedRedshiftFqName  string
-		expectedS3FqName        string
-	}
-
-	testCases := []_testCase{
-		{
-			name:      "no override is provided",
-			tableName: "food",
-			schema:    "public",
-			db:        "db",
-
-			expectedName:            "food",
-			expectedSnowflakeFqName: "db.public.food",
-			expectedBigQueryFqName:  "`artie`.`db`.food",
-			expectedRedshiftFqName:  "public.food",
-			expectedS3FqName:        "db.public.food",
-		},
-	}
-
-	bqProjectID := "artie"
-	for _, testCase := range testCases {
-		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: testCase.db, Schema: testCase.schema}, testCase.tableName)
-		assert.Equal(t, testCase.expectedName, td.RawName(), testCase.name)
-		assert.Equal(t, testCase.expectedName, td.name, testCase.name)
-
-		assert.Equal(t, testCase.expectedSnowflakeFqName, td.TableIdentifier().FqName(constants.Snowflake, true, false, FqNameOpts{}), testCase.name)
-		assert.Equal(t, testCase.expectedBigQueryFqName, td.TableIdentifier().FqName(constants.BigQuery, true, false, FqNameOpts{BigQueryProjectID: bqProjectID}), testCase.name)
-		assert.Equal(t, testCase.expectedBigQueryFqName, td.TableIdentifier().FqName(constants.BigQuery, true, false, FqNameOpts{BigQueryProjectID: bqProjectID}), testCase.name)
-
-		// S3 does not escape, so let's test both to make sure.
-		assert.Equal(t, testCase.expectedS3FqName, td.TableIdentifier().FqName(constants.S3, true, false, FqNameOpts{}), testCase.name)
-		assert.Equal(t, testCase.expectedS3FqName, td.TableIdentifier().FqName(constants.S3, false, false, FqNameOpts{}), testCase.name)
-	}
 }
 
 func TestTableData_ReadOnlyInMemoryCols(t *testing.T) {
