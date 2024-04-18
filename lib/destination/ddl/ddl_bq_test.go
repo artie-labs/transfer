@@ -46,7 +46,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
-	fqName := d.bigQueryStore.IdentifierFor(td.TopicConfig, td.RawName()).FullyQualifiedName(true, false)
+	fqName := d.bigQueryStore.IdentifierFor(td.TopicConfig, td.Name()).FullyQualifiedName(true, false)
 	originalColumnLength := len(cols.GetColumns())
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, true))
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
@@ -248,7 +248,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
-	fqName := d.bigQueryStore.IdentifierFor(td.TopicConfig, td.RawName()).FullyQualifiedName(true, false)
+	fqName := d.bigQueryStore.IdentifierFor(td.TopicConfig, td.Name()).FullyQualifiedName(true, false)
 	originalColumnLength := len(columnNameToKindDetailsMap)
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, false))
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)

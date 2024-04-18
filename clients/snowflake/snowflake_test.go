@@ -23,7 +23,7 @@ import (
 )
 
 func (s *SnowflakeTestSuite) fullyQualifiedName(tableData *optimization.TableData) string {
-	tableID := s.stageStore.IdentifierFor(tableData.TopicConfig, tableData.RawName())
+	tableID := s.stageStore.IdentifierFor(tableData.TopicConfig, tableData.Name())
 	return tableID.FullyQualifiedName(true, s.stageStore.config.SharedDestinationConfig.UppercaseEscapedNames)
 }
 
@@ -58,7 +58,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	}
 
 	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, topicConfig, "foo")
-	assert.Equal(s.T(), "foo", tableData.RawName())
+	assert.Equal(s.T(), "foo", tableData.Name())
 
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row, false)
@@ -324,7 +324,7 @@ func TestFullyQualifiedName(t *testing.T) {
 	}
 	{
 		td := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "public"}, "food")
-		assert.Equal(t, "food", td.RawName())
+		assert.Equal(t, "food", td.Name())
 		assert.Equal(t, "db.public.food", (&Store{}).ToFullyQualifiedName(td, true))
 	}
 }

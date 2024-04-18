@@ -76,7 +76,7 @@ func TestFullyQualifiedName(t *testing.T) {
 			},
 		}
 		td := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "public"}, "food")
-		assert.Equal(t, "food", td.RawName())
+		assert.Equal(t, "food", td.Name())
 		assert.Equal(t, "`artie`.`db`.food", store.ToFullyQualifiedName(td, true))
 	}
 }
