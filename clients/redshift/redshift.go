@@ -35,7 +35,7 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) ty
 
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
 	tableID := s.IdentifierFor(tableData.TopicConfig, tableData.Name())
-	return tableID.FullyQualifiedName(escape, s.config.SharedDestinationConfig.UppercaseEscapedNames)
+	return tableID.FullyQualifiedName(escape, s.ShouldUppercaseEscapedNames())
 }
 
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
@@ -48,6 +48,10 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 
 func (s *Store) Label() constants.DestinationKind {
 	return constants.Redshift
+}
+
+func (s *Store) ShouldUppercaseEscapedNames() bool {
+	return s.config.SharedDestinationConfig.UppercaseEscapedNames
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {

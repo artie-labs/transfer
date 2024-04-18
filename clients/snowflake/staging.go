@@ -12,6 +12,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -55,7 +56,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 			CreateTable:       true,
 			TemporaryTable:    true,
 			ColumnOp:          constants.Add,
-			UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
+			UppercaseEscNames: ptr.ToBool(s.ShouldUppercaseEscapedNames()),
 			Mode:              tableData.Mode(),
 		}
 
@@ -84,7 +85,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 
 	// COPY the CSV file (in Snowflake) into a table
 	copyCommand := fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
-		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, &sql.NameArgs{
+		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.ShouldUppercaseEscapedNames(), &sql.NameArgs{
 			Escape:   true,
 			DestKind: s.Label(),
 		}), ","),
@@ -115,7 +116,7 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.Rows() {
 		var row []string
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.ShouldUppercaseEscapedNames(), nil) {
 			column, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			castedValue, castErr := castColValStaging(value[col], column, additionalDateFmts)
 			if castErr != nil {

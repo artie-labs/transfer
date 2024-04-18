@@ -46,7 +46,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 			CreateTable:       true,
 			TemporaryTable:    true,
 			ColumnOp:          constants.Add,
-			UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
+			UppercaseEscNames: ptr.ToBool(s.ShouldUppercaseEscapedNames()),
 			Mode:              tableData.Mode(),
 		}
 
@@ -60,7 +60,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.Rows() {
 		data := make(map[string]bigquery.Value)
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.ShouldUppercaseEscapedNames(), nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal, err := castColVal(value[col], colKind, additionalDateFmts)
 			if err != nil {
@@ -85,7 +85,7 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) ty
 
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
 	tableID := s.IdentifierFor(tableData.TopicConfig, tableData.Name())
-	return tableID.FullyQualifiedName(escape, s.config.SharedDestinationConfig.UppercaseEscapedNames)
+	return tableID.FullyQualifiedName(escape, s.ShouldUppercaseEscapedNames())
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
@@ -114,6 +114,10 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 
 func (s *Store) Label() constants.DestinationKind {
 	return constants.BigQuery
+}
+
+func (s *Store) ShouldUppercaseEscapedNames() bool {
+	return s.config.SharedDestinationConfig.UppercaseEscapedNames
 }
 
 func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
