@@ -2,13 +2,14 @@ package jsonutil
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 // SanitizePayload will take in a JSON string, and return a JSON string that has been sanitized (removed duplicate keys)
 func SanitizePayload(val any) (any, error) {
 	valString, isOk := val.(string)
 	if !isOk {
-		return val, nil
+		return val, fmt.Errorf("expected string, got: %T", val)
 	}
 
 	var obj any

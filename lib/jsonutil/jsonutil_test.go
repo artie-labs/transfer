@@ -12,7 +12,7 @@ func TestSanitizePayload(t *testing.T) {
 	{
 		// Don't touch if the value isn't a string
 		val, err := SanitizePayload(123)
-		assert.NoError(t, err)
+		assert.ErrorContains(t, err, "expected string, got: int")
 		assert.Equal(t, 123, val)
 	}
 	{
