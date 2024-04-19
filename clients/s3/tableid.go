@@ -2,6 +2,8 @@ package s3
 
 import (
 	"fmt"
+
+	"github.com/artie-labs/transfer/lib/destination/types"
 )
 
 type TableIdentifier struct {
@@ -24,6 +26,10 @@ func (ti TableIdentifier) Schema() string {
 
 func (ti TableIdentifier) Table() string {
 	return ti.table
+}
+
+func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
+	return NewTableIdentifier(ti.database, ti.schema, table)
 }
 
 func (ti TableIdentifier) FullyQualifiedName(_, _ bool) string {

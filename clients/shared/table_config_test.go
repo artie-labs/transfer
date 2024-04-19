@@ -78,8 +78,9 @@ func (MockDWH) ShouldUppercaseEscapedNames() bool { return true }
 
 type MockTableIdentifier struct{ fqName string }
 
-func (MockTableIdentifier) Table() string                         { panic("not implemented") }
-func (m MockTableIdentifier) FullyQualifiedName(_, _ bool) string { return m.fqName }
+func (MockTableIdentifier) Table() string                                { panic("not implemented") }
+func (MockTableIdentifier) WithTable(table string) types.TableIdentifier { panic("not implemented") }
+func (m MockTableIdentifier) FullyQualifiedName(_, _ bool) string        { return m.fqName }
 
 func TestGetTableConfig(t *testing.T) {
 	// Return early because table is found in configMap.

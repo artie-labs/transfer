@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/sql"
 )
 
@@ -27,6 +28,10 @@ func (ti TableIdentifier) Schema() string {
 
 func (ti TableIdentifier) Table() string {
 	return ti.table
+}
+
+func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
+	return NewTableIdentifier(ti.database, ti.schema, table)
 }
 
 func (ti TableIdentifier) FullyQualifiedName(escape, uppercaseEscNames bool) string {
