@@ -22,7 +22,8 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, cf
 		return nil
 	}
 
-	fqName := dwh.ToFullyQualifiedName(tableData, true)
+	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	fqName := tableID.FullyQualifiedName(true, dwh.ShouldUppercaseEscapedNames())
 	tableConfig, err := dwh.GetTableConfig(tableData)
 	if err != nil {
 		return err

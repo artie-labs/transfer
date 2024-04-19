@@ -7,7 +7,8 @@ import (
 )
 
 func (s *Store) Append(tableData *optimization.TableData) error {
+	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	return shared.Append(s, tableData, s.config, types.AppendOpts{
-		TempTableName: s.ToFullyQualifiedName(tableData, true),
+		TempTableName: tableID.FullyQualifiedName(true, s.ShouldUppercaseEscapedNames()),
 	})
 }

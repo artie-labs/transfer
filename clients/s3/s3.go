@@ -31,8 +31,7 @@ import (
 )
 
 type Store struct {
-	config            config.Config
-	uppercaseEscNames bool
+	config config.Config
 }
 
 func (s *Store) Validate() error {
@@ -55,16 +54,12 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) ty
 	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
 
-func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData) string {
-	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	return tableID.FullyQualifiedName(false, s.uppercaseEscNames)
-}
-
 // ObjectPrefix - this will generate the exact right prefix that we need to write into S3.
 // It will look like something like this:
 // > optionalPrefix/fullyQualifiedTableName/YYYY-MM-DD
 func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
-	fqTableName := s.ToFullyQualifiedName(tableData)
+	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	fqTableName := tableID.FullyQualifiedName(false, false)
 	yyyyMMDDFormat := tableData.LatestCDCTs.Format(ext.PostgresDateFormat)
 
 	if len(s.config.S3.OptionalPrefix) > 0 {
@@ -118,7 +113,7 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 	pw.CompressionType = parquet.CompressionCodec_GZIP
 	for _, val := range tableData.Rows() {
 		row := make(map[string]any)
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.uppercaseEscNames, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(false, nil) {
 			colKind, isOk := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			if !isOk {
 				return fmt.Errorf("expected column: %v to exist in readOnlyInMemoryCols(...) but it does not", col)
@@ -175,10 +170,7 @@ func (s *Store) IsRetryableError(_ error) bool {
 }
 
 func LoadStore(cfg config.Config) (*Store, error) {
-	store := &Store{
-		config:            cfg,
-		uppercaseEscNames: false,
-	}
+	store := &Store{config: cfg}
 
 	if err := store.Validate(); err != nil {
 		return nil, err

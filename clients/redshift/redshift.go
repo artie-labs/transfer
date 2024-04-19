@@ -33,11 +33,6 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) ty
 	return NewTableIdentifier(topicConfig.Schema, table)
 }
 
-func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	return tableID.FullyQualifiedName(escape, s.ShouldUppercaseEscapedNames())
-}
-
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 	if s == nil {
 		return nil
@@ -104,7 +99,7 @@ WHERE
 
 func (s *Store) Dedupe(tableID types.TableIdentifier) error {
 	fqTableName := tableID.FullyQualifiedName(true, s.ShouldUppercaseEscapedNames())
-	stagingTableName := shared.TempTableName(s, tableID, strings.ToLower(stringutil.Random(5)))
+	stagingTableName := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5))).FullyQualifiedName(true, s.ShouldUppercaseEscapedNames())
 
 	query := fmt.Sprintf(`
 CREATE TABLE %s AS SELECT DISTINCT * FROM %s;

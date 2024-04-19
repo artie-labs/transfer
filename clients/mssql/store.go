@@ -43,8 +43,9 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 }
 
 func (s *Store) Append(tableData *optimization.TableData) error {
+	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	return shared.Append(s, tableData, s.config, types.AppendOpts{
-		TempTableName: s.ToFullyQualifiedName(tableData, true),
+		TempTableName: tableID.FullyQualifiedName(true, s.ShouldUppercaseEscapedNames()),
 	})
 }
 
@@ -54,11 +55,6 @@ func (s *Store) identifierFor(topicConfig kafkalib.TopicConfig, table string) Ta
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
 	return s.identifierFor(topicConfig, table)
-}
-
-func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	return tableID.FullyQualifiedName(escape, s.ShouldUppercaseEscapedNames())
 }
 
 func (s *Store) Sweep() error {
