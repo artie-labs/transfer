@@ -34,53 +34,6 @@ func (b *BigQueryTestSuite) TestTableRelName() {
 	}
 }
 
-func TestFullyQualifiedName(t *testing.T) {
-	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "database", Schema: "schema"}, "table")
-
-	{
-		// With UppercaseEscapedNames: true
-		store := Store{
-			config: config.Config{
-				BigQuery: &config.BigQuery{
-					ProjectID: "project",
-				},
-				SharedDestinationConfig: config.SharedDestinationConfig{
-					UppercaseEscapedNames: true,
-				},
-			},
-		}
-		assert.Equal(t, "`project`.`database`.`TABLE`", store.ToFullyQualifiedName(tableData, true), "escaped")
-		assert.Equal(t, "`project`.`database`.table", store.ToFullyQualifiedName(tableData, false), "unescaped")
-	}
-	{
-		// With UppercaseEscapedNames: false
-		store := Store{
-			config: config.Config{
-				BigQuery: &config.BigQuery{
-					ProjectID: "project",
-				},
-				SharedDestinationConfig: config.SharedDestinationConfig{
-					UppercaseEscapedNames: false,
-				},
-			},
-		}
-		assert.Equal(t, "`project`.`database`.`table`", store.ToFullyQualifiedName(tableData, true), "escaped")
-		assert.Equal(t, "`project`.`database`.table", store.ToFullyQualifiedName(tableData, false), "unescaped")
-	}
-	{
-		store := Store{
-			config: config.Config{
-				BigQuery: &config.BigQuery{
-					ProjectID: "artie",
-				},
-			},
-		}
-		td := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "public"}, "food")
-		assert.Equal(t, "food", td.Name())
-		assert.Equal(t, "`artie`.`db`.food", store.ToFullyQualifiedName(td, true))
-	}
-}
-
 func TestTempTableName(t *testing.T) {
 	trimTTL := func(tableName string) string {
 		lastUnderscore := strings.LastIndex(tableName, "_")

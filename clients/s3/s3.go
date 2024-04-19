@@ -55,16 +55,12 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) ty
 	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
 
-func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData) string {
-	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	return tableID.FullyQualifiedName(false, s.uppercaseEscNames)
-}
-
 // ObjectPrefix - this will generate the exact right prefix that we need to write into S3.
 // It will look like something like this:
 // > optionalPrefix/fullyQualifiedTableName/YYYY-MM-DD
 func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
-	fqTableName := s.ToFullyQualifiedName(tableData)
+	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	fqTableName := tableID.FullyQualifiedName(false, s.uppercaseEscNames)
 	yyyyMMDDFormat := tableData.LatestCDCTs.Format(ext.PostgresDateFormat)
 
 	if len(s.config.S3.OptionalPrefix) > 0 {

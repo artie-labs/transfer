@@ -35,11 +35,6 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) ty
 	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
 
-func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	return tableID.FullyQualifiedName(escape, s.ShouldUppercaseEscapedNames())
-}
-
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	fqName := tableID.FullyQualifiedName(true, s.ShouldUppercaseEscapedNames())

@@ -34,7 +34,8 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		tableData.TopicConfig().SoftDelete, tableData.TopicConfig().IncludeArtieUpdatedAt,
 		tableData.TopicConfig().IncludeDatabaseUpdatedAt, tableData.Mode())
 
-	fqName := dwh.ToFullyQualifiedName(tableData, true)
+	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	fqName := tableID.FullyQualifiedName(true, dwh.ShouldUppercaseEscapedNames())
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               dwh,
 		Tc:                tableConfig,
