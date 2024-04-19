@@ -95,57 +95,19 @@ func toInt64(value any) (int64, error) {
 	return 0, fmt.Errorf("failed to cast value '%v' with type '%T' to int64", value, value)
 }
 
-func (f Field) shouldCastToInt64() bool {
-	if f.IsInteger() {
-		return true
-	}
-
-	switch f.DebeziumType {
-	case
-		Timestamp,
-		MicroTimestamp,
-		Date,
-		Time,
-		MicroTime,
-		DateKafkaConnect,
-		TimeKafkaConnect,
-		DateTimeKafkaConnect:
-		// We have verfied that these [Field.DebeziumType]s are always used with a [Field.Type] of [Int16], [Int32], or [Int64].
-		return true
-	}
-
-	return false
-}
-
 func (f Field) ParseValue(value any) (any, error) {
 	if value == nil {
 		return nil, nil
 	}
 
 	// Preprocess [value] to reverse the effects of being JSON marshalled and unmarshalled when passing through Kafka.
-	if f.shouldCastToInt64() {
+	switch f.Type {
+	case Int16, Int32, Int64:
 		var err error
 		value, err = toInt64(value)
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		// TODO: If we don't see the following error in the logs replace [Field.shouldCastToInt64] call with a simple
-		// check that [Field.Type] is [Int16], [Int32], or [Int64].
-		switch f.Type {
-		case Int16, Int32, Int64:
-			slog.Error(fmt.Sprintf("Field type is %q but shouldCastToInt64 is false", f.Type), slog.Any("value", value))
-		}
-	}
-
-	// Check if the field is an integer and requires us to cast it as such.
-	if f.IsInteger() {
-		value, ok := value.(int64)
-		if !ok {
-			return nil, fmt.Errorf("expected int64 got '%v' with type %T", value, value)
-		}
-		// TODO: Returning an int to preserve existing behavior, however we should see if we can return an int64 instead.
-		return int(value), nil
 	}
 
 	switch f.DebeziumType {
@@ -188,6 +150,16 @@ func (f Field) ParseValue(value any) (any, error) {
 		// TODO: Look into inverting this logic so that in the case the field type is "bytes" but the value is a string we
 		// base64 decode it in a preprocessing step above. Then things downstream from this method can just deal with []byte values.
 		return base64.StdEncoding.EncodeToString(bytes), nil
+	}
+
+	switch f.Type {
+	case Int16, Int32, Int64:
+		value, ok := value.(int64)
+		if !ok {
+			return nil, fmt.Errorf("expected int64 got '%v' with type %T", value, value)
+		}
+		// TODO: Returning an int to preserve existing behavior, however we should see if we can return an int64 instead.
+		return int(value), nil
 	}
 
 	return value, nil
