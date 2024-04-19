@@ -54,10 +54,8 @@ func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string)
 				colVal = extTime.String(typing.StreamingTimeFormat)
 			}
 		case typing.Struct.Kind:
-			if colKind.KindDetails == typing.Struct {
-				if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
-					colVal = fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder)
-				}
+			if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
+				colVal = fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder)
 			}
 
 			colValString, isOk := colVal.(string)
