@@ -28,7 +28,7 @@ type TableData struct {
 
 	primaryKeys []string
 
-	TopicConfig kafkalib.TopicConfig
+	topicConfig kafkalib.TopicConfig
 	// Partition to the latest offset(s).
 	// For Kafka, we only need the last message to commit the offset
 	// However, pub/sub requires every single message to be acked
@@ -101,13 +101,17 @@ func (t *TableData) ReadOnlyInMemoryCols() *columns.Columns {
 	return &cols
 }
 
+func (t *TableData) TopicConfig() kafkalib.TopicConfig {
+	return t.topicConfig
+}
+
 func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKeys []string, topicConfig kafkalib.TopicConfig, name string) *TableData {
 	return &TableData{
 		mode:            mode,
 		inMemoryColumns: inMemoryColumns,
 		rowsData:        map[string]map[string]any{},
 		primaryKeys:     primaryKeys,
-		TopicConfig:     topicConfig,
+		topicConfig:     topicConfig,
 		// temporaryTableSuffix is being set in `ResetTempTableSuffix`
 		temporaryTableSuffix:    "",
 		PartitionsToLastMessage: map[string][]artie.Message{},
@@ -154,7 +158,7 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 
 	// If there's an actual hard delete, let's update it.
 	// We know because we have a delete operation and this topic is not configured to do soft deletes.
-	if !t.containsHardDeletes && !t.TopicConfig.SoftDelete && delete {
+	if !t.containsHardDeletes && !t.topicConfig.SoftDelete && delete {
 		t.containsHardDeletes = true
 	}
 }

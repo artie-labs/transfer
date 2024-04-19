@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 
@@ -114,17 +116,10 @@ func (s *SnowflakeTestSuite) TestGetTableConfig() {
 	fqName := "customers.public.orders22"
 	s.fakeStageStore.QueryReturns(nil, fmt.Errorf("Table '%s' does not exist or not authorized", fqName))
 
-	tableData := optimization.TableData{
-		TopicConfig: kafkalib.TopicConfig{
-			Database:  "customers",
-			Schema:    "public",
-			TableName: "orders22",
-		},
-		PartitionsToLastMessage: nil,
-		LatestCDCTs:             time.Time{},
-	}
+	tableData := optimization.NewTableData(nil, config.Replication, nil,
+		kafkalib.TopicConfig{Database: "customers", Schema: "public", TableName: "orders22"}, "foo")
 
-	tableConfig, err := s.stageStore.GetTableConfig(&tableData)
+	tableConfig, err := s.stageStore.GetTableConfig(tableData)
 	assert.NotNil(s.T(), tableConfig, "config is nil")
 	assert.NoError(s.T(), err)
 
