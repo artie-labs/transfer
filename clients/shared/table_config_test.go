@@ -57,15 +57,14 @@ func TestGetTableCfgArgs_ShouldParseComment(t *testing.T) {
 
 type MockDWH struct{}
 
-func (MockDWH) Label() constants.DestinationKind                          { panic("not implemented") }
-func (MockDWH) Merge(tableData *optimization.TableData) error             { panic("not implemented") }
-func (MockDWH) Append(tableData *optimization.TableData) error            { panic("not implemented") }
-func (MockDWH) Dedupe(tableID types.TableIdentifier) error                { panic("not implemented") }
-func (MockDWH) Exec(query string, args ...any) (sql.Result, error)        { panic("not implemented") }
-func (MockDWH) Query(query string, args ...any) (*sql.Rows, error)        { panic("not implemented") }
-func (MockDWH) Begin() (*sql.Tx, error)                                   { panic("not implemented") }
-func (MockDWH) IsRetryableError(err error) bool                           { panic("not implemented") }
-func (MockDWH) ToFullyQualifiedName(*optimization.TableData, bool) string { panic("not implemented") }
+func (MockDWH) Label() constants.DestinationKind                   { panic("not implemented") }
+func (MockDWH) Merge(tableData *optimization.TableData) error      { panic("not implemented") }
+func (MockDWH) Append(tableData *optimization.TableData) error     { panic("not implemented") }
+func (MockDWH) Dedupe(tableID types.TableIdentifier) error         { panic("not implemented") }
+func (MockDWH) Exec(query string, args ...any) (sql.Result, error) { panic("not implemented") }
+func (MockDWH) Query(query string, args ...any) (*sql.Rows, error) { panic("not implemented") }
+func (MockDWH) Begin() (*sql.Tx, error)                            { panic("not implemented") }
+func (MockDWH) IsRetryableError(err error) bool                    { panic("not implemented") }
 func (MockDWH) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	panic("not implemented")
 }

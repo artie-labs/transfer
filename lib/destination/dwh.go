@@ -22,7 +22,6 @@ type DataWarehouse interface {
 	ShouldUppercaseEscapedNames() bool
 	IsRetryableError(err error) bool
 	IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier
-	ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string
 	GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error)
 	PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalSettings types.AdditionalSettings, createTempTable bool) error
 }

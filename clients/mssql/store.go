@@ -53,11 +53,6 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) ty
 	return NewTableIdentifier(getSchema(topicConfig.Schema), table)
 }
 
-func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	return tableID.FullyQualifiedName(escape, s.ShouldUppercaseEscapedNames())
-}
-
 func (s *Store) Sweep() error {
 	tcs, err := s.config.TopicConfigs()
 	if err != nil {
