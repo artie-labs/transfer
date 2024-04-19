@@ -44,7 +44,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 	fqName := s.ToFullyQualifiedName(tableData, true)
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
-		FqName:             fqName,
+		TableID:            s.IdentifierFor(tableData.TopicConfig, tableData.Name()),
 		ConfigMap:          s.configMap,
 		Query:              fmt.Sprintf("DESC TABLE %s;", fqName),
 		ColumnNameLabel:    describeNameCol,
