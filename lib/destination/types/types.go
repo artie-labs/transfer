@@ -61,5 +61,6 @@ func (a AppendOpts) Validate() error {
 
 type TableIdentifier interface {
 	Table() string
+	WithTable(table string) TableIdentifier
 	FullyQualifiedName(escape, uppercaseEscNames bool) string
 }

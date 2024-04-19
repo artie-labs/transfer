@@ -6,6 +6,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestTableIdentifier_WithTable(t *testing.T) {
+	tableID := NewTableIdentifier("project", "dataset", "foo")
+	tableID2 := tableID.WithTable("bar")
+	typedTableID2, ok := tableID2.(TableIdentifier)
+	assert.True(t, ok)
+	assert.Equal(t, "project", typedTableID2.ProjectID())
+	assert.Equal(t, "dataset", typedTableID2.Dataset())
+	assert.Equal(t, "bar", tableID2.Table())
+}
+
 func TestTableIdentifier_FullyQualifiedName(t *testing.T) {
 	{
 		// Table name that does not need escaping:
