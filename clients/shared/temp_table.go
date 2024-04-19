@@ -9,7 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 )
 
-func TempTableName(tableID types.TableIdentifier, suffix string) types.TableIdentifier {
+func TempTableID(tableID types.TableIdentifier, suffix string) types.TableIdentifier {
 	tempTable := fmt.Sprintf(
 		"%s_%s_%s_%d",
 		tableID.Table(),
