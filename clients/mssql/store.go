@@ -86,7 +86,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		describeDescriptionCol = "description"
 	)
 
-	tableID := s.identifierFor(tableData.TopicConfig, tableData.Name())
+	tableID := s.identifierFor(tableData.TopicConfig(), tableData.Name())
 	query, args := describeTableQuery(tableID)
 	return shared.GetTableCfgArgs{
 		Dwh:                s,

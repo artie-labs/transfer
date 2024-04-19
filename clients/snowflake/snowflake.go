@@ -41,7 +41,7 @@ func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape b
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	tableID := s.IdentifierFor(tableData.TopicConfig, tableData.Name())
+	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	fqName := tableID.FullyQualifiedName(true, s.ShouldUppercaseEscapedNames())
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
