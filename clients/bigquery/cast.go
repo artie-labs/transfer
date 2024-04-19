@@ -59,6 +59,12 @@ func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string)
 					colVal = fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder)
 				}
 			}
+
+			colValString, isOk := colVal.(string)
+			if isOk && colValString == "" {
+				// Empty string is not a valid JSON object, so let's return nil.
+				return nil, nil
+			}
 		case typing.Array.Kind:
 			var err error
 			arrayString, err := array.InterfaceToArrayString(colVal, true)
