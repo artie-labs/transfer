@@ -68,7 +68,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
-		TableID:            s.IdentifierFor(tableData.TopicConfig, tableData.Name()),
+		TableID:            s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
 		ConfigMap:          s.configMap,
 		Query:              query,
 		Args:               args,
