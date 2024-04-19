@@ -9,7 +9,6 @@ import (
 func TestTableIdentifier_WithTable(t *testing.T) {
 	tableID := NewTableIdentifier("database", "schema", "foo")
 	tableID2 := tableID.WithTable("bar")
-	assert.IsType(t, TableIdentifier{}, tableID2)
 	typedTableID2, ok := tableID2.(TableIdentifier)
 	assert.True(t, ok)
 	assert.Equal(t, "database", typedTableID2.Database())
