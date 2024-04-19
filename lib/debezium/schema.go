@@ -61,10 +61,6 @@ type Field struct {
 	Parameters   map[string]any        `json:"parameters"`
 }
 
-func (f Field) IsInteger() (valid bool) {
-	return f.ToKindDetails() == typing.Integer
-}
-
 func (f Field) GetScaleAndPrecision() (int, *int, error) {
 	scale, scaleErr := maputil.GetIntegerFromMap(f.Parameters, "scale")
 	if scaleErr != nil {
