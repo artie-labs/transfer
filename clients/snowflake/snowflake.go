@@ -41,10 +41,11 @@ func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape b
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	fqName := s.ToFullyQualifiedName(tableData, true)
+	tableID := s.IdentifierFor(tableData.TopicConfig, tableData.Name())
+	fqName := tableID.FullyQualifiedName(true, s.ShouldUppercaseEscapedNames())
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
-		TableID:            s.IdentifierFor(tableData.TopicConfig, tableData.Name()),
+		TableID:            tableID,
 		ConfigMap:          s.configMap,
 		Query:              fmt.Sprintf("DESC TABLE %s;", fqName),
 		ColumnNameLabel:    describeNameCol,
