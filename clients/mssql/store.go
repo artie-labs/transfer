@@ -49,8 +49,14 @@ func (s *Store) Append(tableData *optimization.TableData) error {
 	})
 }
 
-func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
+// specificIdentifierFor returns a MS SQL [TableIdentifier] for a [TopicConfig] + table name.
+func (s *Store) specificIdentifierFor(topicConfig kafkalib.TopicConfig, table string) TableIdentifier {
 	return NewTableIdentifier(getSchema(topicConfig.Schema), table)
+}
+
+// IdentifierFor returns a generic [types.TableIdentifier] interface for a [TopicConfig] + table name.
+func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
+	return s.specificIdentifierFor(topicConfig, table)
 }
 
 func (s *Store) Sweep() error {
@@ -78,10 +84,11 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		describeDescriptionCol = "description"
 	)
 
-	query, args := describeTableQuery(getSchema(tableData.TopicConfig().Schema), tableData.Name())
+	tableID := s.specificIdentifierFor(tableData.TopicConfig(), tableData.Name())
+	query, args := describeTableQuery(tableID)
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
-		TableID:            s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
+		TableID:            tableID,
 		ConfigMap:          s.configMap,
 		Query:              query,
 		Args:               args,
