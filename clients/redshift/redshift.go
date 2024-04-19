@@ -99,7 +99,7 @@ WHERE
 
 func (s *Store) Dedupe(tableID types.TableIdentifier) error {
 	fqTableName := tableID.FullyQualifiedName(true, s.ShouldUppercaseEscapedNames())
-	stagingTableName := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5))).FullyQualifiedName(false, s.ShouldUppercaseEscapedNames())
+	stagingTableName := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5))).FullyQualifiedName(true, s.ShouldUppercaseEscapedNames())
 
 	query := fmt.Sprintf(`
 CREATE TABLE %s AS SELECT DISTINCT * FROM %s;
