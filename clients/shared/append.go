@@ -22,7 +22,8 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, cf
 		return nil
 	}
 
-	fqName := dwh.ToFullyQualifiedName(tableData, true)
+	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	fqName := tableID.FullyQualifiedName(true, dwh.ShouldUppercaseEscapedNames())
 	tableConfig, err := dwh.GetTableConfig(tableData)
 	if err != nil {
 		return err
@@ -30,8 +31,8 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, cf
 
 	// We don't care about srcKeysMissing because we don't drop columns when we append.
 	_, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
-		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt,
-		tableData.TopicConfig.IncludeDatabaseUpdatedAt, tableData.Mode())
+		tableData.TopicConfig().SoftDelete, tableData.TopicConfig().IncludeArtieUpdatedAt,
+		tableData.TopicConfig().IncludeDatabaseUpdatedAt, tableData.Mode())
 
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               dwh,

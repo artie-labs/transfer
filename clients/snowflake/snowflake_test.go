@@ -23,7 +23,8 @@ import (
 )
 
 func (s *SnowflakeTestSuite) fullyQualifiedName(tableData *optimization.TableData) string {
-	return tableData.TableIdentifier().FqName(s.stageStore.Label(), true, s.stageStore.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{})
+	tableID := s.stageStore.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	return tableID.FullyQualifiedName(true, s.stageStore.config.SharedDestinationConfig.UppercaseEscapedNames)
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
@@ -57,7 +58,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	}
 
 	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, topicConfig, "foo")
-	assert.Equal(s.T(), "foo", tableData.RawName())
+	assert.Equal(s.T(), "foo", tableData.Name())
 
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row, false)
@@ -294,35 +295,6 @@ func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
 	assert.Nil(s.T(), err)
 }
 
-func TestFullyQualifiedName(t *testing.T) {
-	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "database", Schema: "schema"}, "table")
-
-	{
-		// With UppercaseEscapedNames: true
-		store := Store{
-			config: config.Config{
-				SharedDestinationConfig: config.SharedDestinationConfig{
-					UppercaseEscapedNames: true,
-				},
-			},
-		}
-		assert.Equal(t, `database.schema."TABLE"`, store.ToFullyQualifiedName(tableData, true), "escaped")
-		assert.Equal(t, "database.schema.table", store.ToFullyQualifiedName(tableData, false), "unescaped")
-	}
-	{
-		// With UppercaseEscapedNames: false
-		store := Store{
-			config: config.Config{
-				SharedDestinationConfig: config.SharedDestinationConfig{
-					UppercaseEscapedNames: false,
-				},
-			},
-		}
-		assert.Equal(t, `database.schema."table"`, store.ToFullyQualifiedName(tableData, true), "escaped")
-		assert.Equal(t, "database.schema.table", store.ToFullyQualifiedName(tableData, false), "unescaped")
-	}
-}
-
 func TestTempTableName(t *testing.T) {
 	trimTTL := func(tableName string) string {
 		lastUnderscore := strings.LastIndex(tableName, "_")
@@ -334,6 +306,7 @@ func TestTempTableName(t *testing.T) {
 	}
 
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "schema"}, "table")
-	tempTableName := shared.TempTableName(&Store{}, tableData, "sUfFiX")
+	tableID := (&Store{}).IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	tempTableName := shared.TempTableID(tableID, "sUfFiX").FullyQualifiedName(false, false)
 	assert.Equal(t, "db.schema.table___artie_sUfFiX", trimTTL(tempTableName))
 }

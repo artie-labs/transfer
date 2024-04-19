@@ -29,8 +29,8 @@ type Store struct {
 	db.Store
 }
 
-func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	return tableData.TableIdentifier().FqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{})
+func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
+	return NewTableIdentifier(topicConfig.Schema, table)
 }
 
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
@@ -45,6 +45,10 @@ func (s *Store) Label() constants.DestinationKind {
 	return constants.Redshift
 }
 
+func (s *Store) ShouldUppercaseEscapedNames() bool {
+	return s.config.SharedDestinationConfig.UppercaseEscapedNames
+}
+
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	const (
 		describeNameCol        = "column_name"
@@ -53,13 +57,13 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 	)
 
 	query, args := describeTableQuery(describeArgs{
-		RawTableName: tableData.RawName(),
-		Schema:       tableData.TopicConfig.Schema,
+		RawTableName: tableData.Name(),
+		Schema:       tableData.TopicConfig().Schema,
 	})
 
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
-		FqName:             s.ToFullyQualifiedName(tableData, true),
+		TableID:            s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
 		ConfigMap:          s.configMap,
 		Query:              query,
 		Args:               args,
@@ -67,7 +71,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeDescriptionCol,
 		EmptyCommentValue:  ptr.ToString("<nil>"),
-		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
+		DropDeletedColumns: tableData.TopicConfig().DropDeletedColumns,
 	}.GetTableConfig()
 }
 
@@ -93,9 +97,9 @@ WHERE
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func (s *Store) Dedupe(tableData *optimization.TableData) error {
-	fqTableName := s.ToFullyQualifiedName(tableData, true)
-	stagingTableName := shared.TempTableName(s, tableData, strings.ToLower(stringutil.Random(5)))
+func (s *Store) Dedupe(tableID types.TableIdentifier) error {
+	fqTableName := tableID.FullyQualifiedName(true, s.ShouldUppercaseEscapedNames())
+	stagingTableName := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5))).FullyQualifiedName(true, s.ShouldUppercaseEscapedNames())
 
 	query := fmt.Sprintf(`
 CREATE TABLE %s AS SELECT DISTINCT * FROM %s;

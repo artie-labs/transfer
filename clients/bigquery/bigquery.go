@@ -16,6 +16,7 @@ import (
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -45,7 +46,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 			CreateTable:       true,
 			TemporaryTable:    true,
 			ColumnOp:          constants.Add,
-			UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
+			UppercaseEscNames: ptr.ToBool(s.ShouldUppercaseEscapedNames()),
 			Mode:              tableData.Mode(),
 		}
 
@@ -59,7 +60,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.Rows() {
 		data := make(map[string]bigquery.Value)
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.ShouldUppercaseEscapedNames(), nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal, err := castColVal(value[col], colKind, additionalDateFmts)
 			if err != nil {
@@ -75,27 +76,26 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	}
 
 	// Load the data
-	return s.putTable(context.Background(), tableData.TopicConfig.Database, tempTableName, rows)
+	return s.putTable(context.Background(), tableData.TopicConfig().Database, tempTableName, rows)
 }
 
-func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	return tableData.TableIdentifier().FqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames,
-		optimization.FqNameOpts{BigQueryProjectID: s.config.BigQuery.ProjectID})
+func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
+	return NewTableIdentifier(s.config.BigQuery.ProjectID, topicConfig.Database, table)
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	query := fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name = ?;", tableData.TopicConfig.Database)
+	query := fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name = ?;", tableData.TopicConfig().Database)
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
-		FqName:             s.ToFullyQualifiedName(tableData, true),
+		TableID:            s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
 		ConfigMap:          s.configMap,
 		Query:              query,
-		Args:               []any{tableData.RawName()},
+		Args:               []any{tableData.Name()},
 		ColumnNameLabel:    describeNameCol,
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeCommentCol,
 		EmptyCommentValue:  ptr.ToString(""),
-		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
+		DropDeletedColumns: tableData.TopicConfig().DropDeletedColumns,
 	}.GetTableConfig()
 }
 
@@ -109,6 +109,10 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 
 func (s *Store) Label() constants.DestinationKind {
 	return constants.BigQuery
+}
+
+func (s *Store) ShouldUppercaseEscapedNames() bool {
+	return s.config.SharedDestinationConfig.UppercaseEscapedNames
 }
 
 func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
@@ -149,8 +153,8 @@ func (s *Store) putTable(ctx context.Context, dataset, tableName string, rows []
 	return nil
 }
 
-func (s *Store) Dedupe(tableData *optimization.TableData) error {
-	fqTableName := s.ToFullyQualifiedName(tableData, true)
+func (s *Store) Dedupe(tableID types.TableIdentifier) error {
+	fqTableName := tableID.FullyQualifiedName(true, s.ShouldUppercaseEscapedNames())
 	_, err := s.Exec(fmt.Sprintf("CREATE OR REPLACE TABLE %s AS SELECT DISTINCT * FROM %s", fqTableName, fqTableName))
 	return err
 }

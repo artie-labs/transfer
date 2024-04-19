@@ -18,7 +18,7 @@ type NameArgs struct {
 var symbolsToEscape = []string{":"}
 
 func EscapeName(name string, uppercaseEscNames bool, args *NameArgs) string {
-	if args == nil {
+	if args == nil || !args.Escape {
 		return name
 	}
 
@@ -50,7 +50,7 @@ func EscapeName(name string, uppercaseEscNames bool, args *NameArgs) string {
 		}
 	}
 
-	if args.Escape && needsEscaping {
+	if needsEscaping {
 		if uppercaseEscNames {
 			name = strings.ToUpper(name)
 		}

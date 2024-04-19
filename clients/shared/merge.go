@@ -31,10 +31,11 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 	}
 
 	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
-		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt,
-		tableData.TopicConfig.IncludeDatabaseUpdatedAt, tableData.Mode())
+		tableData.TopicConfig().SoftDelete, tableData.TopicConfig().IncludeArtieUpdatedAt,
+		tableData.TopicConfig().IncludeDatabaseUpdatedAt, tableData.Mode())
 
-	fqName := dwh.ToFullyQualifiedName(tableData, true)
+	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	fqName := tableID.FullyQualifiedName(true, dwh.ShouldUppercaseEscapedNames())
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               dwh,
 		Tc:                tableConfig,
@@ -71,7 +72,8 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
 	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
-	temporaryTableName := TempTableName(dwh, tableData, tableData.TempTableSuffix())
+	temporaryTableID := TempTableID(dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name()), tableData.TempTableSuffix())
+	temporaryTableName := temporaryTableID.FullyQualifiedName(false, dwh.ShouldUppercaseEscapedNames())
 	if err = dwh.PrepareTemporaryTable(tableData, tableConfig, temporaryTableName, types.AdditionalSettings{}, true); err != nil {
 		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
@@ -121,10 +123,10 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 	mergeArg := dml.MergeArgument{
 		FqTableName:         fqName,
 		SubQuery:            subQuery,
-		IdempotentKey:       tableData.TopicConfig.IdempotentKey,
+		IdempotentKey:       tableData.TopicConfig().IdempotentKey,
 		PrimaryKeys:         tableData.PrimaryKeys(cfg.SharedDestinationConfig.UppercaseEscapedNames, &sql.NameArgs{Escape: true, DestKind: dwh.Label()}),
 		Columns:             tableData.ReadOnlyInMemoryCols(),
-		SoftDelete:          tableData.TopicConfig.SoftDelete,
+		SoftDelete:          tableData.TopicConfig().SoftDelete,
 		DestKind:            dwh.Label(),
 		UppercaseEscNames:   &cfg.SharedDestinationConfig.UppercaseEscapedNames,
 		ContainsHardDeletes: ptr.ToBool(tableData.ContainsHardDeletes()),

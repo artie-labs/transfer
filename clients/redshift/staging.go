@@ -12,6 +12,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/s3lib"
 )
 
@@ -24,7 +25,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		CreateTable:       true,
 		TemporaryTable:    true,
 		ColumnOp:          constants.Add,
-		UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
+		UppercaseEscNames: ptr.ToBool(s.ShouldUppercaseEscapedNames()),
 		Mode:              tableData.Mode(),
 	}
 
@@ -84,7 +85,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableNa
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.Rows() {
 		var row []string
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.ShouldUppercaseEscapedNames(), nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			castedValue, castErr := s.CastColValStaging(value[col], colKind, additionalDateFmts)
 			if castErr != nil {

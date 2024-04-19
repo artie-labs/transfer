@@ -13,35 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFullyQualifiedName(t *testing.T) {
-	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "database", Schema: "schema"}, "table")
-
-	{
-		// With UppercaseEscapedNames: true
-		store := Store{
-			config: config.Config{
-				SharedDestinationConfig: config.SharedDestinationConfig{
-					UppercaseEscapedNames: true,
-				},
-			},
-		}
-		assert.Equal(t, `schema."TABLE"`, store.ToFullyQualifiedName(tableData, true), "escaped")
-		assert.Equal(t, "schema.table", store.ToFullyQualifiedName(tableData, false), "unescaped")
-	}
-	{
-		// With UppercaseEscapedNames: false
-		store := Store{
-			config: config.Config{
-				SharedDestinationConfig: config.SharedDestinationConfig{
-					UppercaseEscapedNames: false,
-				},
-			},
-		}
-		assert.Equal(t, `schema."table"`, store.ToFullyQualifiedName(tableData, true), "escaped")
-		assert.Equal(t, "schema.table", store.ToFullyQualifiedName(tableData, false), "unescaped")
-	}
-}
-
 func TestTempTableName(t *testing.T) {
 	trimTTL := func(tableName string) string {
 		lastUnderscore := strings.LastIndex(tableName, "_")
@@ -53,6 +24,7 @@ func TestTempTableName(t *testing.T) {
 	}
 
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "schema"}, "table")
-	tempTableName := shared.TempTableName(&Store{}, tableData, "sUfFiX")
+	tableID := (&Store{}).IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	tempTableName := shared.TempTableID(tableID, "sUfFiX").FullyQualifiedName(false, false)
 	assert.Equal(t, "schema.table___artie_sUfFiX", trimTTL(tempTableName))
 }

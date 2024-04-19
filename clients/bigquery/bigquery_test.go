@@ -34,41 +34,6 @@ func (b *BigQueryTestSuite) TestTableRelName() {
 	}
 }
 
-func TestFullyQualifiedName(t *testing.T) {
-	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "database", Schema: "schema"}, "table")
-
-	{
-		// With UppercaseEscapedNames: true
-		store := Store{
-			config: config.Config{
-				BigQuery: &config.BigQuery{
-					ProjectID: "project",
-				},
-				SharedDestinationConfig: config.SharedDestinationConfig{
-					UppercaseEscapedNames: true,
-				},
-			},
-		}
-		assert.Equal(t, "`project`.`database`.`TABLE`", store.ToFullyQualifiedName(tableData, true), "escaped")
-		assert.Equal(t, "`project`.`database`.table", store.ToFullyQualifiedName(tableData, false), "unescaped")
-	}
-	{
-		// With UppercaseEscapedNames: false
-		store := Store{
-			config: config.Config{
-				BigQuery: &config.BigQuery{
-					ProjectID: "project",
-				},
-				SharedDestinationConfig: config.SharedDestinationConfig{
-					UppercaseEscapedNames: false,
-				},
-			},
-		}
-		assert.Equal(t, "`project`.`database`.`table`", store.ToFullyQualifiedName(tableData, true), "escaped")
-		assert.Equal(t, "`project`.`database`.table", store.ToFullyQualifiedName(tableData, false), "unescaped")
-	}
-}
-
 func TestTempTableName(t *testing.T) {
 	trimTTL := func(tableName string) string {
 		lastUnderscore := strings.LastIndex(tableName, "_")
@@ -79,7 +44,9 @@ func TestTempTableName(t *testing.T) {
 		return tableName[:lastUnderscore]
 	}
 
+	store := &Store{config: config.Config{BigQuery: &config.BigQuery{ProjectID: "123454321"}}}
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "schema"}, "table")
-	tempTableName := shared.TempTableName(&Store{config: config.Config{BigQuery: &config.BigQuery{ProjectID: "123454321"}}}, tableData, "sUfFiX")
+	tableID := store.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	tempTableName := shared.TempTableID(tableID, "sUfFiX").FullyQualifiedName(false, store.ShouldUppercaseEscapedNames())
 	assert.Equal(t, "`123454321`.`db`.table___artie_sUfFiX", trimTTL(tempTableName))
 }

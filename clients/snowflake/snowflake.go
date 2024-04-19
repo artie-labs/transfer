@@ -31,22 +31,23 @@ const (
 	describeCommentCol = "comment"
 )
 
-func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	return tableData.TableIdentifier().FqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{})
+func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
+	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	fqName := s.ToFullyQualifiedName(tableData, true)
+	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	fqName := tableID.FullyQualifiedName(true, s.ShouldUppercaseEscapedNames())
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
-		FqName:             fqName,
+		TableID:            tableID,
 		ConfigMap:          s.configMap,
 		Query:              fmt.Sprintf("DESC TABLE %s;", fqName),
 		ColumnNameLabel:    describeNameCol,
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeCommentCol,
 		EmptyCommentValue:  ptr.ToString("<nil>"),
-		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
+		DropDeletedColumns: tableData.TopicConfig().DropDeletedColumns,
 	}.GetTableConfig()
 }
 
@@ -71,6 +72,10 @@ WHERE
 
 func (s *Store) Label() constants.DestinationKind {
 	return constants.Snowflake
+}
+
+func (s *Store) ShouldUppercaseEscapedNames() bool {
+	return s.config.SharedDestinationConfig.UppercaseEscapedNames
 }
 
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
@@ -115,8 +120,8 @@ func (s *Store) reestablishConnection() error {
 	return nil
 }
 
-func (s *Store) Dedupe(tableData *optimization.TableData) error {
-	fqTableName := s.ToFullyQualifiedName(tableData, true)
+func (s *Store) Dedupe(tableID types.TableIdentifier) error {
+	fqTableName := tableID.FullyQualifiedName(true, s.ShouldUppercaseEscapedNames())
 	_, err := s.Exec(fmt.Sprintf("CREATE OR REPLACE TABLE %s AS SELECT DISTINCT * FROM %s", fqTableName, fqTableName))
 	return err
 }

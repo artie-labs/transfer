@@ -69,30 +69,3 @@ func TestObjectPrefix(t *testing.T) {
 		}
 	}
 }
-
-func TestFullyQualifiedName(t *testing.T) {
-	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "database", Schema: "schema"}, "table")
-
-	{
-		// With UppercaseEscapedNames: true
-		store := Store{
-			config: config.Config{
-				SharedDestinationConfig: config.SharedDestinationConfig{
-					UppercaseEscapedNames: true,
-				},
-			},
-		}
-		assert.Equal(t, "database.schema.table", store.ToFullyQualifiedName(tableData), "unescaped")
-	}
-	{
-		// With UppercaseEscapedNames: false
-		store := Store{
-			config: config.Config{
-				SharedDestinationConfig: config.SharedDestinationConfig{
-					UppercaseEscapedNames: false,
-				},
-			},
-		}
-		assert.Equal(t, "database.schema.table", store.ToFullyQualifiedName(tableData), "unescaped")
-	}
-}

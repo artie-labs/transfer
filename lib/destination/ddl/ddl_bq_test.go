@@ -27,12 +27,11 @@ import (
 func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	ts := time.Now()
 
-	td := &optimization.TableData{
-		TopicConfig: kafkalib.TopicConfig{
+	td := optimization.NewTableData(nil, config.Replication, nil,
+		kafkalib.TopicConfig{
 			Database:  "mock_dataset",
-			TableName: "delete_col",
-		},
-	}
+			TableName: "delete_col"},
+		"delete_col")
 
 	colNameToKindDetailsMap := map[string]typing.KindDetails{
 		"foo":    typing.String,
@@ -46,8 +45,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
-	bqProjectID := d.bigQueryCfg.BigQuery.ProjectID
-	fqName := td.TableIdentifier().FqName(d.bigQueryStore.Label(), true, false, optimization.FqNameOpts{BigQueryProjectID: bqProjectID})
+	fqName := d.bigQueryStore.IdentifierFor(td.TopicConfig(), td.Name()).FullyQualifiedName(true, false)
 	originalColumnLength := len(cols.GetColumns())
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, true))
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
@@ -232,12 +230,11 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 
 func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 	ts := time.Now()
-	td := &optimization.TableData{
-		TopicConfig: kafkalib.TopicConfig{
+	td := optimization.NewTableData(nil, config.Replication, nil,
+		kafkalib.TopicConfig{
 			Database:  "mock_dataset",
 			TableName: "delete_col",
-		},
-	}
+		}, "foo")
 
 	columnNameToKindDetailsMap := map[string]typing.KindDetails{
 		"foo": typing.String,
@@ -249,8 +246,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
-	bqProjectID := d.bigQueryCfg.BigQuery.ProjectID
-	fqName := td.TableIdentifier().FqName(d.bigQueryStore.Label(), true, false, optimization.FqNameOpts{BigQueryProjectID: bqProjectID})
+	fqName := d.bigQueryStore.IdentifierFor(td.TopicConfig(), td.Name()).FullyQualifiedName(true, false)
 	originalColumnLength := len(columnNameToKindDetailsMap)
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, false))
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
