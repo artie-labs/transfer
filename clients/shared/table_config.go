@@ -16,7 +16,7 @@ import (
 
 type GetTableCfgArgs struct {
 	Dwh       destination.DataWarehouse
-	FqName    string
+	TableID   types.TableIdentifier
 	ConfigMap *types.DwhToTablesConfigMap
 	Query     string
 	Args      []any
@@ -41,8 +41,10 @@ func (g GetTableCfgArgs) ShouldParseComment(comment string) bool {
 }
 
 func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
+	fqName := g.TableID.FullyQualifiedName(true, g.Dwh.ShouldUppercaseEscapedNames())
+
 	// Check if it already exists in cache
-	tableConfig := g.ConfigMap.TableConfig(g.FqName)
+	tableConfig := g.ConfigMap.TableConfig(fqName)
 	if tableConfig != nil {
 		return tableConfig, nil
 	}
@@ -132,6 +134,6 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 	}
 
 	tableCfg := types.NewDwhTableConfig(&cols, nil, tableMissing, g.DropDeletedColumns)
-	g.ConfigMap.AddTableToConfig(g.FqName, tableCfg)
+	g.ConfigMap.AddTableToConfig(fqName, tableCfg)
 	return tableCfg, nil
 }
