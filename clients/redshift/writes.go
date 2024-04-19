@@ -9,14 +9,15 @@ import (
 )
 
 func (s *Store) Append(tableData *optimization.TableData) error {
+	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+
 	// Redshift is slightly different, we'll load and create the temporary table via shared.Append
 	// Then, we'll invoke `ALTER TABLE target APPEND FROM staging` to combine the diffs.
-	temporaryTableName := shared.TempTableName(s, s.IdentifierFor(tableData.TopicConfig(), tableData.Name()), tableData.TempTableSuffix())
+	temporaryTableName := shared.TempTableName(s, tableID, tableData.TempTableSuffix())
 	if err := shared.Append(s, tableData, s.config, types.AppendOpts{TempTableName: temporaryTableName}); err != nil {
 		return err
 	}
 
-	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	_, err := s.Exec(fmt.Sprintf(`ALTER TABLE %s APPEND FROM %s;`, tableID.FullyQualifiedName(true, s.ShouldUppercaseEscapedNames()), temporaryTableName))
 	return err
 }
