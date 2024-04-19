@@ -16,7 +16,8 @@ func (s *Store) Append(tableData *optimization.TableData) error {
 		return err
 	}
 
-	_, err := s.Exec(fmt.Sprintf(`ALTER TABLE %s APPEND FROM %s;`, s.ToFullyQualifiedName(tableData, true), temporaryTableName))
+	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	_, err := s.Exec(fmt.Sprintf(`ALTER TABLE %s APPEND FROM %s;`, tableID.FullyQualifiedName(true, s.ShouldUppercaseEscapedNames()), temporaryTableName))
 	return err
 }
 
