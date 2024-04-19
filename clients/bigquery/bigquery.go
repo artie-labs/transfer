@@ -76,7 +76,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	}
 
 	// Load the data
-	return s.putTable(context.Background(), tableData.TopicConfig.Database, tempTableName, rows)
+	return s.putTable(context.Background(), tableData.TopicConfig().Database, tempTableName, rows)
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
@@ -84,15 +84,15 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) ty
 }
 
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	tableID := s.IdentifierFor(tableData.TopicConfig, tableData.Name())
+	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	return tableID.FullyQualifiedName(escape, s.ShouldUppercaseEscapedNames())
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	query := fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name = ?;", tableData.TopicConfig.Database)
+	query := fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name = ?;", tableData.TopicConfig().Database)
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
-		FqName:             s.ToFullyQualifiedName(tableData, true),
+		TableID:            s.IdentifierFor(tableData.TopicConfig, tableData.Name()),
 		ConfigMap:          s.configMap,
 		Query:              query,
 		Args:               []any{tableData.Name()},
@@ -100,7 +100,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeCommentCol,
 		EmptyCommentValue:  ptr.ToString(""),
-		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
+		DropDeletedColumns: tableData.TopicConfig().DropDeletedColumns,
 	}.GetTableConfig()
 }
 

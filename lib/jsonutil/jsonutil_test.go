@@ -21,6 +21,12 @@ func TestSanitizePayload(t *testing.T) {
 		assert.ErrorContains(t, err, "invalid character 'h' looking for beginning of value")
 	}
 	{
+		// Empty JSON string edge case
+		val, err := SanitizePayload("")
+		assert.NoError(t, err)
+		assert.Equal(t, "", val)
+	}
+	{
 		// Valid JSON string, nothing changed.
 		val, err := SanitizePayload(`{"hello":"world"}`)
 		assert.NoError(t, err)

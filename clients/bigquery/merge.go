@@ -27,14 +27,14 @@ func (r *Row) Save() (map[string]bigquery.Value, string, error) {
 
 func (s *Store) Merge(tableData *optimization.TableData) error {
 	var additionalEqualityStrings []string
-	if tableData.TopicConfig.BigQueryPartitionSettings != nil {
+	if tableData.TopicConfig().BigQueryPartitionSettings != nil {
 		additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
-		distinctDates, err := tableData.DistinctDates(tableData.TopicConfig.BigQueryPartitionSettings.PartitionField, additionalDateFmts)
+		distinctDates, err := tableData.DistinctDates(tableData.TopicConfig().BigQueryPartitionSettings.PartitionField, additionalDateFmts)
 		if err != nil {
 			return fmt.Errorf("failed to generate distinct dates: %w", err)
 		}
 
-		mergeString, err := tableData.TopicConfig.BigQueryPartitionSettings.GenerateMergeString(distinctDates)
+		mergeString, err := tableData.TopicConfig().BigQueryPartitionSettings.GenerateMergeString(distinctDates)
 		if err != nil {
 			slog.Warn("Failed to generate merge string", slog.Any("err", err))
 			return err

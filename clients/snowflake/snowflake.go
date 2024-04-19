@@ -36,22 +36,23 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) ty
 }
 
 func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	tableID := s.IdentifierFor(tableData.TopicConfig, tableData.Name())
+	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	return tableID.FullyQualifiedName(escape, s.ShouldUppercaseEscapedNames())
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	fqName := s.ToFullyQualifiedName(tableData, true)
+	tableID := s.IdentifierFor(tableData.TopicConfig, tableData.Name())
+	fqName := tableID.FullyQualifiedName(true, s.ShouldUppercaseEscapedNames())
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
-		FqName:             fqName,
+		TableID:            tableID,
 		ConfigMap:          s.configMap,
 		Query:              fmt.Sprintf("DESC TABLE %s;", fqName),
 		ColumnNameLabel:    describeNameCol,
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeCommentCol,
 		EmptyCommentValue:  ptr.ToString("<nil>"),
-		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
+		DropDeletedColumns: tableData.TopicConfig().DropDeletedColumns,
 	}.GetTableConfig()
 }
 

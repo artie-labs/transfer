@@ -12,14 +12,21 @@ func SanitizePayload(val any) (any, error) {
 		return val, fmt.Errorf("expected string, got: %T", val)
 	}
 
-	var obj any
-	err := json.Unmarshal([]byte(valString), &obj)
-	if err == nil {
-		valBytes, err := json.Marshal(obj)
-		if err == nil {
-			return string(valBytes), nil
-		}
+	// There are edge cases for when this may happen
+	// Example: JSONB column in a table in Postgres where the table replica identity is set to `default` and it was a delete event.
+	if valString == "" {
+		return "", nil
 	}
 
-	return nil, err
+	var obj any
+	if err := json.Unmarshal([]byte(valString), &obj); err != nil {
+		return nil, err
+	}
+
+	valBytes, err := json.Marshal(obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return string(valBytes), nil
 }
