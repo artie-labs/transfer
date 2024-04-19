@@ -20,17 +20,13 @@ func TestTableIdentifier_FullyQualifiedName(t *testing.T) {
 	{
 		// Table name that does not need escaping:
 		tableID := NewTableIdentifier("project", "dataset", "foo")
-		assert.Equal(t, "`project`.`dataset`.foo", tableID.FullyQualifiedName(true, false), "escaped")
-		assert.Equal(t, "`project`.`dataset`.foo", tableID.FullyQualifiedName(true, true), "escaped + upper")
-		assert.Equal(t, "`project`.`dataset`.foo", tableID.FullyQualifiedName(false, false), "unescaped")
-		assert.Equal(t, "`project`.`dataset`.foo", tableID.FullyQualifiedName(false, true), "unescaped + upper")
+		assert.Equal(t, "`project`.`dataset`.foo", tableID.FullyQualifiedName(false), "escaped")
+		assert.Equal(t, "`project`.`dataset`.foo", tableID.FullyQualifiedName(true), "escaped + upper")
 	}
 	{
 		// Table name that needs escaping:
 		tableID := NewTableIdentifier("project", "dataset", "table")
-		assert.Equal(t, "`project`.`dataset`.`table`", tableID.FullyQualifiedName(true, false), "escaped")
-		assert.Equal(t, "`project`.`dataset`.`TABLE`", tableID.FullyQualifiedName(true, true), "escaped + upper")
-		assert.Equal(t, "`project`.`dataset`.table", tableID.FullyQualifiedName(false, false), "unescaped")
-		assert.Equal(t, "`project`.`dataset`.table", tableID.FullyQualifiedName(false, true), "unescaped + upper")
+		assert.Equal(t, "`project`.`dataset`.`table`", tableID.FullyQualifiedName(false), "escaped")
+		assert.Equal(t, "`project`.`dataset`.`TABLE`", tableID.FullyQualifiedName(true), "escaped + upper")
 	}
 }

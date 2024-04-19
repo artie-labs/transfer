@@ -29,10 +29,10 @@ func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
 	return NewTableIdentifier(ti.schema, table)
 }
 
-func (ti TableIdentifier) FullyQualifiedName(escape, uppercaseEscNames bool) string {
+func (ti TableIdentifier) FullyQualifiedName(uppercaseEscNames bool) string {
 	return fmt.Sprintf(
 		"%s.%s",
 		ti.schema,
-		sql.EscapeName(ti.table, uppercaseEscNames, &sql.NameArgs{Escape: escape, DestKind: constants.MSSQL}),
+		sql.EscapeName(ti.table, uppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: constants.MSSQL}),
 	)
 }

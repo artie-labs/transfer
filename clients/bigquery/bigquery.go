@@ -154,7 +154,7 @@ func (s *Store) putTable(ctx context.Context, dataset, tableName string, rows []
 }
 
 func (s *Store) Dedupe(tableID types.TableIdentifier) error {
-	fqTableName := tableID.FullyQualifiedName(true, s.ShouldUppercaseEscapedNames())
+	fqTableName := tableID.FullyQualifiedName(s.ShouldUppercaseEscapedNames())
 	_, err := s.Exec(fmt.Sprintf("CREATE OR REPLACE TABLE %s AS SELECT DISTINCT * FROM %s", fqTableName, fqTableName))
 	return err
 }
