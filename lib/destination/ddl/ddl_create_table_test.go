@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/lib/config"
 
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -20,6 +21,7 @@ import (
 )
 
 func (d *DDLTestSuite) Test_CreateTable() {
+	tableID := bigquery.NewTableIdentifier("", "mock_dataset", "mock_table")
 	fqName := "mock_dataset.mock_table"
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
@@ -48,7 +50,7 @@ func (d *DDLTestSuite) Test_CreateTable() {
 		alterTableArgs := ddl.AlterTableArgs{
 			Dwh:               dwhTc._dwh,
 			Tc:                dwhTc._tableConfig,
-			FqTableName:       fqName,
+			TableID:           tableID,
 			CreateTable:       dwhTc._tableConfig.CreateTable(),
 			ColumnOp:          constants.Add,
 			UppercaseEscNames: ptr.ToBool(false),
@@ -107,6 +109,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 	}
 
 	for index, testCase := range testCases {
+		tableID := bigquery.NewTableIdentifier("demo", "public", "experiments")
 		fqTable := "demo.public.experiments"
 		d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 		tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
@@ -114,7 +117,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 		alterTableArgs := ddl.AlterTableArgs{
 			Dwh:               d.snowflakeStagesStore,
 			Tc:                tc,
-			FqTableName:       fqTable,
+			TableID:           tableID,
 			CreateTable:       tc.CreateTable(),
 			ColumnOp:          constants.Add,
 			CdcTime:           time.Now().UTC(),

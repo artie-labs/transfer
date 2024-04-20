@@ -3,6 +3,7 @@ package ddl_test
 import (
 	"time"
 
+	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/lib/config"
 
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -33,13 +34,14 @@ func (d *DDLTestSuite) TestValidate_AlterTableArgs() {
 }
 
 func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
+	tableID := bigquery.NewTableIdentifier("", "mock_dataset", "mock_table")
 	fqName := "mock_dataset.mock_table"
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	snowflakeTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqName)
 	args := ddl.AlterTableArgs{
 		Dwh:               d.snowflakeStagesStore,
 		Tc:                snowflakeTc,
-		FqTableName:       fqName,
+		TableID:           tableID,
 		CreateTable:       true,
 		TemporaryTable:    true,
 		ColumnOp:          constants.Add,
@@ -65,6 +67,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 }
 
 func (d *DDLTestSuite) TestCreateTemporaryTable() {
+	tableID := bigquery.NewTableIdentifier("db", "schema", "tempTableName")
 	fqName := "db.schema.tempTableName"
 	// Snowflake Stage
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
@@ -72,7 +75,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 	args := ddl.AlterTableArgs{
 		Dwh:               d.snowflakeStagesStore,
 		Tc:                sflkStageTc,
-		FqTableName:       fqName,
+		TableID:           tableID,
 		CreateTable:       true,
 		TemporaryTable:    true,
 		ColumnOp:          constants.Add,

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/config"
 
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -30,6 +31,7 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 		columns.NewColumn("select", typing.String),
 	}
 
+	tableID := snowflake.NewTableIdentifier("shop", "public", "complex_columns")
 	fqTable := "shop.public.complex_columns"
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
@@ -37,7 +39,7 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 	alterTableArgs := ddl.AlterTableArgs{
 		Dwh:               d.snowflakeStagesStore,
 		Tc:                tc,
-		FqTableName:       fqTable,
+		TableID:           tableID,
 		ColumnOp:          constants.Add,
 		CdcTime:           time.Now().UTC(),
 		UppercaseEscNames: ptr.ToBool(false),
@@ -65,6 +67,7 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 		columns.NewColumn("start", typing.String),
 	}
 
+	tableID := snowflake.NewTableIdentifier("shop", "public", "orders")
 	fqTable := "shop.public.orders"
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
@@ -73,7 +76,7 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 	alterTableArgs := ddl.AlterTableArgs{
 		Dwh:               d.snowflakeStagesStore,
 		Tc:                tc,
-		FqTableName:       fqTable,
+		TableID:           tableID,
 		ColumnOp:          constants.Add,
 		CdcTime:           time.Now().UTC(),
 		UppercaseEscNames: ptr.ToBool(false),
@@ -96,6 +99,7 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 		columns.NewColumn("start", typing.String),
 	}
 
+	tableID := snowflake.NewTableIdentifier("shop", "public", "orders")
 	fqTable := "shop.public.orders"
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
@@ -103,7 +107,7 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 	alterTableArgs := ddl.AlterTableArgs{
 		Dwh:               d.snowflakeStagesStore,
 		Tc:                tc,
-		FqTableName:       fqTable,
+		TableID:           tableID,
 		ColumnOp:          constants.Add,
 		CdcTime:           time.Now().UTC(),
 		UppercaseEscNames: ptr.ToBool(false),
@@ -139,13 +143,14 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 		columns.NewColumn("start", typing.String),
 	}
 
+	tableID := snowflake.NewTableIdentifier("shop", "public", "users")
 	fqTable := "shop.public.users"
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
 	alterTableArgs := ddl.AlterTableArgs{
 		Dwh:                    d.snowflakeStagesStore,
 		Tc:                     tc,
-		FqTableName:            fqTable,
+		TableID:                tableID,
 		ContainOtherOperations: true,
 		ColumnOp:               constants.Delete,
 		CdcTime:                time.Now().UTC(),
@@ -198,6 +203,7 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 		columns.NewColumn("start", typing.String),
 	}
 
+	tableID := snowflake.NewTableIdentifier("shop", "public", "users1")
 	fqTable := "shop.public.users1"
 
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, map[string]time.Time{
@@ -210,7 +216,7 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 	alterTableArgs := ddl.AlterTableArgs{
 		Dwh:                    d.snowflakeStagesStore,
 		Tc:                     tc,
-		FqTableName:            fqTable,
+		TableID:                tableID,
 		ColumnOp:               constants.Delete,
 		ContainOtherOperations: true,
 		CdcTime:                time.Now(),

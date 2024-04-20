@@ -38,13 +38,11 @@ type Store struct {
 }
 
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
-	tempTableName := tempTableID.FullyQualifiedName(s.ShouldUppercaseEscapedNames())
-
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
 			Dwh:               s,
 			Tc:                tableConfig,
-			FqTableName:       tempTableName,
+			TableID:           tempTableID,
 			CreateTable:       true,
 			TemporaryTable:    true,
 			ColumnOp:          constants.Add,
@@ -78,7 +76,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	}
 
 	// Load the data
-	return s.putTable(context.Background(), tableData.TopicConfig().Database, tempTableName, rows)
+	return s.putTable(context.Background(), tableData.TopicConfig().Database, tempTableID, rows)
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
@@ -135,7 +133,8 @@ func tableRelName(fqName string) (string, error) {
 	return strings.Join(fqNameParts[2:], "."), nil
 }
 
-func (s *Store) putTable(ctx context.Context, dataset, tableName string, rows []*Row) error {
+func (s *Store) putTable(ctx context.Context, dataset string, tableID types.TableIdentifier, rows []*Row) error {
+	tableName := tableID.FullyQualifiedName(s.ShouldUppercaseEscapedNames())
 	relTableName, err := tableRelName(tableName)
 	if err != nil {
 		return fmt.Errorf("failed to get table name: %w", err)

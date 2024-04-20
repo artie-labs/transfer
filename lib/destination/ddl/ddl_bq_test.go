@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/lib/config"
 
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -45,7 +46,8 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
-	fqName := d.bigQueryStore.IdentifierFor(td.TopicConfig(), td.Name()).FullyQualifiedName(false)
+	tableID := d.bigQueryStore.IdentifierFor(td.TopicConfig(), td.Name())
+	fqName := tableID.FullyQualifiedName(false)
 	originalColumnLength := len(cols.GetColumns())
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, true))
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
@@ -56,7 +58,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 		alterTableArgs := ddl.AlterTableArgs{
 			Dwh:                    d.bigQueryStore,
 			Tc:                     tc,
-			FqTableName:            fqName,
+			TableID:                tableID,
 			CreateTable:            tc.CreateTable(),
 			ColumnOp:               constants.Delete,
 			ContainOtherOperations: true,
@@ -79,7 +81,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 		alterTableArgs := ddl.AlterTableArgs{
 			Dwh:                    d.bigQueryStore,
 			Tc:                     tc,
-			FqTableName:            fqName,
+			TableID:                tableID,
 			CreateTable:            tc.CreateTable(),
 			ColumnOp:               constants.Delete,
 			ContainOtherOperations: true,
@@ -105,6 +107,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 }
 
 func (d *DDLTestSuite) TestAlterTableAddColumns() {
+	tableID := bigquery.NewTableIdentifier("", "mock_dataset", "add_cols")
 	fqName := "mock_dataset.add_cols"
 	ts := time.Now()
 	existingColNameToKindDetailsMap := map[string]typing.KindDetails{
@@ -138,7 +141,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 		alterTableArgs := ddl.AlterTableArgs{
 			Dwh:               d.bigQueryStore,
 			Tc:                tc,
-			FqTableName:       fqName,
+			TableID:           tableID,
 			CreateTable:       tc.CreateTable(),
 			ColumnOp:          constants.Add,
 			CdcTime:           ts,
@@ -173,6 +176,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 }
 
 func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
+	tableID := bigquery.NewTableIdentifier("", "mock_dataset", "add_cols")
 	fqName := "mock_dataset.add_cols"
 	ts := time.Now()
 	existingColNameToKindDetailsMap := map[string]typing.KindDetails{
@@ -201,7 +205,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 		alterTableArgs := ddl.AlterTableArgs{
 			Dwh:               d.bigQueryStore,
 			Tc:                tc,
-			FqTableName:       fqName,
+			TableID:           tableID,
 			CreateTable:       tc.CreateTable(),
 			ColumnOp:          constants.Add,
 			CdcTime:           ts,
@@ -246,7 +250,8 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
-	fqName := d.bigQueryStore.IdentifierFor(td.TopicConfig(), td.Name()).FullyQualifiedName(false)
+	tableID := d.bigQueryStore.IdentifierFor(td.TopicConfig(), td.Name())
+	fqName := tableID.FullyQualifiedName(false)
 	originalColumnLength := len(columnNameToKindDetailsMap)
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, false))
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
@@ -257,7 +262,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 		alterTableArgs := ddl.AlterTableArgs{
 			Dwh:               d.bigQueryStore,
 			Tc:                tc,
-			FqTableName:       fqName,
+			TableID:           tableID,
 			CreateTable:       tc.CreateTable(),
 			ColumnOp:          constants.Delete,
 			CdcTime:           ts,
@@ -275,7 +280,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 		alterTableArgs := ddl.AlterTableArgs{
 			Dwh:               d.bigQueryStore,
 			Tc:                tc,
-			FqTableName:       fqName,
+			TableID:           tableID,
 			CreateTable:       tc.CreateTable(),
 			ColumnOp:          constants.Delete,
 			CdcTime:           ts.Add(2 * constants.DeletionConfidencePadding),
