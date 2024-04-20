@@ -108,7 +108,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 
 func (d *DDLTestSuite) TestAlterTableAddColumns() {
 	tableID := bigquery.NewTableIdentifier("", "mock_dataset", "add_cols")
-	fqName := "mock_dataset.add_cols"
+	fqName := tableID.FullyQualifiedName(true)
 	ts := time.Now()
 	existingColNameToKindDetailsMap := map[string]typing.KindDetails{
 		"foo": typing.String,
@@ -177,7 +177,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 
 func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 	tableID := bigquery.NewTableIdentifier("", "mock_dataset", "add_cols")
-	fqName := "mock_dataset.add_cols"
+	fqName := tableID.FullyQualifiedName(true)
 	ts := time.Now()
 	existingColNameToKindDetailsMap := map[string]typing.KindDetails{
 		"foo":   typing.String,
