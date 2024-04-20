@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/clients/bigquery"
+	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/config"
 
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -109,7 +110,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 	}
 
 	for index, testCase := range testCases {
-		tableID := bigquery.NewTableIdentifier("demo", "public", "experiments")
+		tableID := snowflake.NewTableIdentifier("demo", "public", "experiments")
 		fqTable := "demo.public.experiments"
 		d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 		tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
