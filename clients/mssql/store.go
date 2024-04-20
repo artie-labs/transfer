@@ -44,9 +44,7 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 
 func (s *Store) Append(tableData *optimization.TableData) error {
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	return shared.Append(s, tableData, s.config, types.AppendOpts{
-		TempTableName: tableID.FullyQualifiedName(s.ShouldUppercaseEscapedNames()),
-	})
+	return shared.Append(s, tableData, s.config, types.AppendOpts{TempTableID: tableID})
 }
 
 // specificIdentifierFor returns a MS SQL [TableIdentifier] for a [TopicConfig] + table name.
