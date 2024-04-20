@@ -16,7 +16,9 @@ import (
 	"github.com/artie-labs/transfer/lib/s3lib"
 )
 
-func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, _ types.AdditionalSettings, _ bool) error {
+func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, _ types.AdditionalSettings, _ bool) error {
+	tempTableName := tempTableID.FullyQualifiedName(s.ShouldUppercaseEscapedNames())
+
 	// Redshift always creates a temporary table.
 	tempAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               s,

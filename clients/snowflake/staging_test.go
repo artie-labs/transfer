@@ -110,7 +110,7 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 }
 
 // generateTableData - returns tableName and tableData
-func generateTableData(rows int) (string, *optimization.TableData) {
+func generateTableData(rows int) (TableIdentifier, *optimization.TableData) {
 	randomTableName := fmt.Sprintf("temp_%s_%s", constants.ArtiePrefix, stringutil.Random(10))
 	cols := &columns.Columns{}
 	for _, col := range []string{"user_id", "first_name", "last_name", "dusty"} {
@@ -130,16 +130,17 @@ func generateTableData(rows int) (string, *optimization.TableData) {
 		td.InsertRow(key, rowData, false)
 	}
 
-	return randomTableName, td
+	return NewTableIdentifier("database", "schema", randomTableName), td
 }
 
 func (s *SnowflakeTestSuite) TestPrepareTempTable() {
-	tempTableName, tableData := generateTableData(10)
+	tempTableID, tableData := generateTableData(10)
+	tempTableName := tempTableID.FullyQualifiedName(true)
 	s.stageStore.GetConfigMap().AddTableToConfig(tempTableName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	sflkTc := s.stageStore.GetConfigMap().TableConfig(tempTableName)
 
 	{
-		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableName, types.AdditionalSettings{}, true))
+		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableID, types.AdditionalSettings{}, true))
 		assert.Equal(s.T(), 3, s.fakeStageStore.ExecCallCount())
 
 		// First call is to create the temp table
@@ -161,15 +162,15 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	}
 	{
 		// Don't create the temporary table.
-		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableName, types.AdditionalSettings{}, false))
+		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableID, types.AdditionalSettings{}, false))
 		assert.Equal(s.T(), 5, s.fakeStageStore.ExecCallCount())
 	}
 
 }
 
 func (s *SnowflakeTestSuite) TestLoadTemporaryTable() {
-	tempTableName, tableData := generateTableData(100)
-	fp, err := s.stageStore.writeTemporaryTableFile(tableData, tempTableName)
+	tempTableID, tableData := generateTableData(100)
+	fp, err := s.stageStore.writeTemporaryTableFile(tableData, tempTableID.FullyQualifiedName(true))
 	assert.NoError(s.T(), err)
 	// Read the CSV and confirm.
 	csvfile, err := os.Open(fp)

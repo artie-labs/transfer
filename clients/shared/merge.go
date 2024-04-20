@@ -74,7 +74,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 	temporaryTableID := TempTableID(dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name()), tableData.TempTableSuffix())
 	temporaryTableName := temporaryTableID.FullyQualifiedName(dwh.ShouldUppercaseEscapedNames())
-	if err = dwh.PrepareTemporaryTable(tableData, tableConfig, temporaryTableName, types.AdditionalSettings{}, true); err != nil {
+	if err = dwh.PrepareTemporaryTable(tableData, tableConfig, temporaryTableID, types.AdditionalSettings{}, true); err != nil {
 		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 

@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"fmt"
 	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -14,10 +13,6 @@ import (
 )
 
 func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg config.Config, opts types.AppendOpts) error {
-	if err := opts.Validate(); err != nil {
-		return fmt.Errorf("failed to validate append options: %w", err)
-	}
-
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
@@ -58,5 +53,5 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, cf
 		AdditionalCopyClause: opts.AdditionalCopyClause,
 	}
 
-	return dwh.PrepareTemporaryTable(tableData, tableConfig, opts.TempTableName, additionalSettings, false)
+	return dwh.PrepareTemporaryTable(tableData, tableConfig, opts.TempTableID, additionalSettings, false)
 }
