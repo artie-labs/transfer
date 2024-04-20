@@ -35,7 +35,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		tableData.TopicConfig().IncludeDatabaseUpdatedAt, tableData.Mode())
 
 	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	fqName := tableID.FullyQualifiedName(true, dwh.ShouldUppercaseEscapedNames())
+	fqName := tableID.FullyQualifiedName(dwh.ShouldUppercaseEscapedNames())
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               dwh,
 		Tc:                tableConfig,
@@ -73,7 +73,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
 	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 	temporaryTableID := TempTableID(dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name()), tableData.TempTableSuffix())
-	temporaryTableName := temporaryTableID.FullyQualifiedName(false, dwh.ShouldUppercaseEscapedNames())
+	temporaryTableName := temporaryTableID.FullyQualifiedName(dwh.ShouldUppercaseEscapedNames())
 	if err = dwh.PrepareTemporaryTable(tableData, tableConfig, temporaryTableName, types.AdditionalSettings{}, true); err != nil {
 		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}

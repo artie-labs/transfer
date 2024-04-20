@@ -29,12 +29,12 @@ func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
 	return NewTableIdentifier(ti.schema, table)
 }
 
-func (ti TableIdentifier) FullyQualifiedName(escape, uppercaseEscNames bool) string {
+func (ti TableIdentifier) FullyQualifiedName(uppercaseEscNames bool) string {
 	// Redshift is Postgres compatible, so when establishing a connection, we'll specify a database.
 	// Thus, we only need to specify schema and table name here.
 	return fmt.Sprintf(
 		"%s.%s",
 		ti.schema,
-		sql.EscapeName(ti.table, uppercaseEscNames, &sql.NameArgs{Escape: escape, DestKind: constants.Redshift}),
+		sql.EscapeName(ti.table, uppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: constants.Redshift}),
 	)
 }

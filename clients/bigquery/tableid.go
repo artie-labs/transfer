@@ -34,13 +34,13 @@ func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
 	return NewTableIdentifier(ti.projectID, ti.dataset, table)
 }
 
-func (ti TableIdentifier) FullyQualifiedName(escape, uppercaseEscNames bool) string {
+func (ti TableIdentifier) FullyQualifiedName(uppercaseEscNames bool) string {
 	// The fully qualified name for BigQuery is: project_id.dataset.tableName.
 	// We are escaping the project_id and dataset because there could be special characters.
 	return fmt.Sprintf(
 		"`%s`.`%s`.%s",
 		ti.projectID,
 		ti.dataset,
-		sql.EscapeName(ti.table, uppercaseEscNames, &sql.NameArgs{Escape: escape, DestKind: constants.BigQuery}),
+		sql.EscapeName(ti.table, uppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: constants.BigQuery}),
 	)
 }

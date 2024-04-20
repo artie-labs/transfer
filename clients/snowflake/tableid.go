@@ -34,11 +34,11 @@ func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
 	return NewTableIdentifier(ti.database, ti.schema, table)
 }
 
-func (ti TableIdentifier) FullyQualifiedName(escape, uppercaseEscNames bool) string {
+func (ti TableIdentifier) FullyQualifiedName(uppercaseEscNames bool) string {
 	return fmt.Sprintf(
 		"%s.%s.%s",
 		ti.database,
 		ti.schema,
-		sql.EscapeName(ti.table, uppercaseEscNames, &sql.NameArgs{Escape: escape, DestKind: constants.Snowflake}),
+		sql.EscapeName(ti.table, uppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: constants.Snowflake}),
 	)
 }

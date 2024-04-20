@@ -41,7 +41,7 @@ func (g GetTableCfgArgs) ShouldParseComment(comment string) bool {
 }
 
 func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
-	fqName := g.TableID.FullyQualifiedName(true, g.Dwh.ShouldUppercaseEscapedNames())
+	fqName := g.TableID.FullyQualifiedName(g.Dwh.ShouldUppercaseEscapedNames())
 
 	// Check if it already exists in cache
 	tableConfig := g.ConfigMap.TableConfig(fqName)

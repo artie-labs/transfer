@@ -28,14 +28,14 @@ func TestTempTableName(t *testing.T) {
 		// Schema is "schema":
 		tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "schema"}, "table")
 		tableID := store.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-		tempTableName := shared.TempTableID(tableID, "sUfFiX").FullyQualifiedName(false, store.ShouldUppercaseEscapedNames())
+		tempTableName := shared.TempTableID(tableID, "sUfFiX").FullyQualifiedName(store.ShouldUppercaseEscapedNames())
 		assert.Equal(t, "schema.table___artie_sUfFiX", trimTTL(tempTableName))
 	}
 	{
 		// Schema is "public" -> "dbo":
 		tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "public"}, "table")
 		tableID := store.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-		tempTableName := shared.TempTableID(tableID, "sUfFiX").FullyQualifiedName(false, store.ShouldUppercaseEscapedNames())
+		tempTableName := shared.TempTableID(tableID, "sUfFiX").FullyQualifiedName(store.ShouldUppercaseEscapedNames())
 		assert.Equal(t, "dbo.table___artie_sUfFiX", trimTTL(tempTableName))
 	}
 }
