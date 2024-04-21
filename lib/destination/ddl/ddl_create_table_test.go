@@ -22,11 +22,11 @@ import (
 )
 
 func (d *DDLTestSuite) Test_CreateTable() {
-	bqTableID := bigquery.NewTableIdentifier("", "mock_dataset", "mock_table", false)
+	bqTableID := bigquery.NewTableIdentifier("", "mock_dataset", "mock_table", true)
 	bqFqName := bqTableID.FullyQualifiedName()
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(bqFqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 
-	snowflakeTableID := snowflake.NewTableIdentifier("", "mock_dataset", "mock_table", false)
+	snowflakeTableID := snowflake.NewTableIdentifier("", "mock_dataset", "mock_table", true)
 	snowflakeFqName := snowflakeTableID.FullyQualifiedName()
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(snowflakeFqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 
