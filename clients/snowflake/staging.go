@@ -48,7 +48,7 @@ func castColValStaging(colVal any, colKind columns.Column, additionalDateFmts []
 }
 
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
-	tempTableName := tempTableID.FullyQualifiedName(s.ShouldUppercaseEscapedNames())
+	tempTableName := tempTableID.FullyQualifiedName()
 
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{

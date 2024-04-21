@@ -32,7 +32,7 @@ func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
 	return NewTableIdentifier(ti.database, ti.schema, table)
 }
 
-func (ti TableIdentifier) FullyQualifiedName(_ bool) string {
+func (ti TableIdentifier) FullyQualifiedName() string {
 	// S3 should be db.schema.tableName, but we don't need to escape, since it's not a SQL db.
 	return fmt.Sprintf("%s.%s.%s", ti.database, ti.schema, ti.table)
 }

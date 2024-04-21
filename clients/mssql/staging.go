@@ -13,7 +13,7 @@ import (
 )
 
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
-	tempTableName := tempTableID.FullyQualifiedName(s.ShouldUppercaseEscapedNames())
+	tempTableName := tempTableID.FullyQualifiedName()
 
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{

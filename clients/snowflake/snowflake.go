@@ -32,12 +32,12 @@ const (
 )
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
-	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
+	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table, s.ShouldUppercaseEscapedNames())
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	fqName := tableID.FullyQualifiedName(s.ShouldUppercaseEscapedNames())
+	fqName := tableID.FullyQualifiedName()
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
 		TableID:            tableID,
@@ -121,7 +121,7 @@ func (s *Store) reestablishConnection() error {
 }
 
 func (s *Store) Dedupe(tableID types.TableIdentifier) error {
-	fqTableName := tableID.FullyQualifiedName(s.ShouldUppercaseEscapedNames())
+	fqTableName := tableID.FullyQualifiedName()
 	_, err := s.Exec(fmt.Sprintf("CREATE OR REPLACE TABLE %s AS SELECT DISTINCT * FROM %s", fqTableName, fqTableName))
 	return err
 }

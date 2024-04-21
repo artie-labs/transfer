@@ -35,13 +35,13 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	originalColumnLength := len(cols.GetColumns())
 
 	bqTableID := d.bigQueryStore.IdentifierFor(td.TopicConfig(), td.Name())
-	bqName := bqTableID.FullyQualifiedName(false)
+	bqName := bqTableID.FullyQualifiedName()
 
 	redshiftTableID := d.redshiftStore.IdentifierFor(td.TopicConfig(), td.Name())
-	redshiftName := redshiftTableID.FullyQualifiedName(false)
+	redshiftName := redshiftTableID.FullyQualifiedName()
 
 	snowflakeTableID := d.snowflakeStagesStore.IdentifierFor(td.TopicConfig(), td.Name())
-	snowflakeName := snowflakeTableID.FullyQualifiedName(false)
+	snowflakeName := snowflakeTableID.FullyQualifiedName()
 
 	// Testing 3 scenarios here
 	// 1. DropDeletedColumns = false, ContainOtherOperations = true, don't delete ever.

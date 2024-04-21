@@ -17,7 +17,7 @@ import (
 )
 
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, _ types.AdditionalSettings, _ bool) error {
-	tempTableName := tempTableID.FullyQualifiedName(s.ShouldUppercaseEscapedNames())
+	tempTableName := tempTableID.FullyQualifiedName()
 
 	// Redshift always creates a temporary table.
 	tempAlterTableArgs := ddl.AlterTableArgs{

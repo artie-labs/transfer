@@ -53,5 +53,5 @@ type AppendOpts struct {
 type TableIdentifier interface {
 	Table() string
 	WithTable(table string) TableIdentifier
-	FullyQualifiedName(uppercaseEscNames bool) string
+	FullyQualifiedName() string
 }

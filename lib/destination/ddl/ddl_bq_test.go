@@ -47,7 +47,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	}
 
 	tableID := d.bigQueryStore.IdentifierFor(td.TopicConfig(), td.Name())
-	fqName := tableID.FullyQualifiedName(false)
+	fqName := tableID.FullyQualifiedName()
 	originalColumnLength := len(cols.GetColumns())
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, true))
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
@@ -107,8 +107,8 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 }
 
 func (d *DDLTestSuite) TestAlterTableAddColumns() {
-	tableID := bigquery.NewTableIdentifier("", "mock_dataset", "add_cols")
-	fqName := tableID.FullyQualifiedName(true)
+	tableID := bigquery.NewTableIdentifier("", "mock_dataset", "add_cols", true)
+	fqName := tableID.FullyQualifiedName()
 	ts := time.Now()
 	existingColNameToKindDetailsMap := map[string]typing.KindDetails{
 		"foo": typing.String,
@@ -176,8 +176,8 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 }
 
 func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
-	tableID := bigquery.NewTableIdentifier("", "mock_dataset", "add_cols")
-	fqName := tableID.FullyQualifiedName(true)
+	tableID := bigquery.NewTableIdentifier("", "mock_dataset", "add_cols", true)
+	fqName := tableID.FullyQualifiedName()
 	ts := time.Now()
 	existingColNameToKindDetailsMap := map[string]typing.KindDetails{
 		"foo":   typing.String,
@@ -251,7 +251,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 	}
 
 	tableID := d.bigQueryStore.IdentifierFor(td.TopicConfig(), td.Name())
-	fqName := tableID.FullyQualifiedName(false)
+	fqName := tableID.FullyQualifiedName()
 	originalColumnLength := len(columnNameToKindDetailsMap)
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, false))
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
