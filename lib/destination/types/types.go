@@ -9,11 +9,11 @@ type DwhToTablesConfigMap struct {
 	sync.RWMutex
 }
 
-func (d *DwhToTablesConfigMap) TableConfig(fqName string) *DwhTableConfig {
+func (d *DwhToTablesConfigMap) TableConfig(tableID TableIdentifier) *DwhTableConfig {
 	d.RLock()
 	defer d.RUnlock()
 
-	tableConfig, isOk := d.fqNameToDwhTableConfig[fqName]
+	tableConfig, isOk := d.fqNameToDwhTableConfig[tableID.FullyQualifiedName()]
 	if !isOk {
 		return nil
 	}
@@ -21,7 +21,7 @@ func (d *DwhToTablesConfigMap) TableConfig(fqName string) *DwhTableConfig {
 	return tableConfig
 }
 
-func (d *DwhToTablesConfigMap) AddTableToConfig(fqName string, config *DwhTableConfig) {
+func (d *DwhToTablesConfigMap) AddTableToConfig(tableID TableIdentifier, config *DwhTableConfig) {
 	d.Lock()
 	defer d.Unlock()
 
@@ -29,7 +29,7 @@ func (d *DwhToTablesConfigMap) AddTableToConfig(fqName string, config *DwhTableC
 		d.fqNameToDwhTableConfig = make(map[string]*DwhTableConfig)
 	}
 
-	d.fqNameToDwhTableConfig[fqName] = config
+	d.fqNameToDwhTableConfig[tableID.FullyQualifiedName()] = config
 }
 
 type MergeOpts struct {

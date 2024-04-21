@@ -23,12 +23,10 @@ import (
 
 func (d *DDLTestSuite) Test_CreateTable() {
 	bqTableID := bigquery.NewTableIdentifier("", "mock_dataset", "mock_table", true)
-	bqFqName := bqTableID.FullyQualifiedName()
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(bqFqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(bqTableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 
 	snowflakeTableID := snowflake.NewTableIdentifier("", "mock_dataset", "mock_table", true)
-	snowflakeFqName := snowflakeTableID.FullyQualifiedName()
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(snowflakeFqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(snowflakeTableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 
 	type dwhToTableConfig struct {
 		_tableID     types.TableIdentifier
@@ -37,8 +35,8 @@ func (d *DDLTestSuite) Test_CreateTable() {
 		_fakeStore   *mocks.FakeStore
 	}
 
-	bigQueryTc := d.bigQueryStore.GetConfigMap().TableConfig(bqFqName)
-	snowflakeStagesTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(snowflakeFqName)
+	bigQueryTc := d.bigQueryStore.GetConfigMap().TableConfig(bqTableID)
+	snowflakeStagesTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(snowflakeTableID)
 
 	for _, dwhTc := range []dwhToTableConfig{
 		{
@@ -117,9 +115,8 @@ func (d *DDLTestSuite) TestCreateTable() {
 
 	for index, testCase := range testCases {
 		tableID := snowflake.NewTableIdentifier("demo", "public", "experiments", false)
-		fqTable := "demo.public.experiments"
-		d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
-		tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
+		d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
+		tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 
 		alterTableArgs := ddl.AlterTableArgs{
 			Dwh:               d.snowflakeStagesStore,
@@ -138,7 +135,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 		assert.Equal(d.T(), testCase.expectedQuery, execQuery, testCase.name)
 
 		// Check if the table is now marked as created where `CreateTable = false`.
-		assert.Equal(d.T(), d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable).CreateTable(),
-			false, d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable), testCase.name)
+		assert.Equal(d.T(), d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID).CreateTable(),
+			false, d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID), testCase.name)
 	}
 }

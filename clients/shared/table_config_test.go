@@ -89,15 +89,15 @@ func TestGetTableConfig(t *testing.T) {
 		cols.AddColumn(columns.NewColumn(fmt.Sprintf("col-%v", i), typing.Invalid))
 	}
 
-	fqName := "dusty_the_mini_aussie"
+	tableID := MockTableIdentifier{"dusty_the_mini_aussie"}
 	dwhTableCfg := types.NewDwhTableConfig(cols, nil, false, false)
 
 	cm := &types.DwhToTablesConfigMap{}
-	cm.AddTableToConfig(fqName, dwhTableCfg)
+	cm.AddTableToConfig(tableID, dwhTableCfg)
 
 	actualTableCfg, err := GetTableCfgArgs{
 		Dwh:       MockDWH{},
-		TableID:   MockTableIdentifier{fqName},
+		TableID:   tableID,
 		ConfigMap: cm,
 	}.GetTableConfig()
 

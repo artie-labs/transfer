@@ -41,10 +41,8 @@ func (g GetTableCfgArgs) ShouldParseComment(comment string) bool {
 }
 
 func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
-	fqName := g.TableID.FullyQualifiedName()
-
 	// Check if it already exists in cache
-	tableConfig := g.ConfigMap.TableConfig(fqName)
+	tableConfig := g.ConfigMap.TableConfig(g.TableID)
 	if tableConfig != nil {
 		return tableConfig, nil
 	}
@@ -134,6 +132,6 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 	}
 
 	tableCfg := types.NewDwhTableConfig(&cols, nil, tableMissing, g.DropDeletedColumns)
-	g.ConfigMap.AddTableToConfig(fqName, tableCfg)
+	g.ConfigMap.AddTableToConfig(g.TableID, tableCfg)
 	return tableCfg, nil
 }
