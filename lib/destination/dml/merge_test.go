@@ -6,16 +6,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/destination/types"
-	"github.com/artie-labs/transfer/lib/ptr"
-
-	"github.com/artie-labs/transfer/lib/sql"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/stretchr/testify/assert"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 // Have to mock a [types.TableIdentifier ]otherwise we get circular imports.
