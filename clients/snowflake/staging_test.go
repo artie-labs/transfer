@@ -130,7 +130,7 @@ func generateTableData(rows int) (TableIdentifier, *optimization.TableData) {
 		td.InsertRow(key, rowData, false)
 	}
 
-	return NewTableIdentifier("database", "schema", randomTableName, false), td
+	return NewTableIdentifier("database", "schema", randomTableName, true), td
 }
 
 func (s *SnowflakeTestSuite) TestPrepareTempTable() {
