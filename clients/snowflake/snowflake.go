@@ -37,12 +37,11 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) ty
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	fqName := tableID.FullyQualifiedName()
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
 		TableID:            tableID,
 		ConfigMap:          s.configMap,
-		Query:              fmt.Sprintf("DESC TABLE %s;", fqName),
+		Query:              fmt.Sprintf("DESC TABLE %s;", tableID.FullyQualifiedName()),
 		ColumnNameLabel:    describeNameCol,
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeCommentCol,
