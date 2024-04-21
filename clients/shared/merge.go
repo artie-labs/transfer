@@ -39,7 +39,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               dwh,
 		Tc:                tableConfig,
-		FqTableName:       fqName,
+		TableID:           tableID,
 		CreateTable:       tableConfig.CreateTable(),
 		ColumnOp:          constants.Add,
 		CdcTime:           tableData.LatestCDCTs,
@@ -57,7 +57,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 	deleteAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:                    dwh,
 		Tc:                     tableConfig,
-		FqTableName:            fqName,
+		TableID:                tableID,
 		CreateTable:            false,
 		ColumnOp:               constants.Delete,
 		ContainOtherOperations: tableData.ContainOtherOperations(),

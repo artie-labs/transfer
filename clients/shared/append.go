@@ -18,7 +18,6 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, cf
 	}
 
 	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	fqName := tableID.FullyQualifiedName(dwh.ShouldUppercaseEscapedNames())
 	tableConfig, err := dwh.GetTableConfig(tableData)
 	if err != nil {
 		return err
@@ -32,7 +31,7 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, cf
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               dwh,
 		Tc:                tableConfig,
-		FqTableName:       fqName,
+		TableID:           tableID,
 		CreateTable:       tableConfig.CreateTable(),
 		ColumnOp:          constants.Add,
 		CdcTime:           tableData.LatestCDCTs,

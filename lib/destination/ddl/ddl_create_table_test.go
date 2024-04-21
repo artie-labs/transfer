@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/clients/bigquery"
+	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/config"
 
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -20,26 +22,33 @@ import (
 )
 
 func (d *DDLTestSuite) Test_CreateTable() {
-	fqName := "mock_dataset.mock_table"
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
+	bqTableID := bigquery.NewTableIdentifier("", "mock_dataset", "mock_table")
+	bqFqName := bqTableID.FullyQualifiedName(true)
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(bqFqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
+
+	snowflakeTableID := snowflake.NewTableIdentifier("", "mock_dataset", "mock_table")
+	snowflakeFqName := snowflakeTableID.FullyQualifiedName(true)
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(snowflakeFqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 
 	type dwhToTableConfig struct {
+		_tableID     types.TableIdentifier
 		_dwh         destination.DataWarehouse
 		_tableConfig *types.DwhTableConfig
 		_fakeStore   *mocks.FakeStore
 	}
 
-	bigQueryTc := d.bigQueryStore.GetConfigMap().TableConfig(fqName)
-	snowflakeStagesTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqName)
+	bigQueryTc := d.bigQueryStore.GetConfigMap().TableConfig(bqFqName)
+	snowflakeStagesTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(snowflakeFqName)
 
 	for _, dwhTc := range []dwhToTableConfig{
 		{
+			_tableID:     bqTableID,
 			_dwh:         d.bigQueryStore,
 			_tableConfig: bigQueryTc,
 			_fakeStore:   d.fakeBigQueryStore,
 		},
 		{
+			_tableID:     snowflakeTableID,
 			_dwh:         d.snowflakeStagesStore,
 			_tableConfig: snowflakeStagesTc,
 			_fakeStore:   d.fakeSnowflakeStagesStore,
@@ -48,7 +57,7 @@ func (d *DDLTestSuite) Test_CreateTable() {
 		alterTableArgs := ddl.AlterTableArgs{
 			Dwh:               dwhTc._dwh,
 			Tc:                dwhTc._tableConfig,
-			FqTableName:       fqName,
+			TableID:           dwhTc._tableID,
 			CreateTable:       dwhTc._tableConfig.CreateTable(),
 			ColumnOp:          constants.Add,
 			UppercaseEscNames: ptr.ToBool(false),
@@ -59,7 +68,7 @@ func (d *DDLTestSuite) Test_CreateTable() {
 		assert.Equal(d.T(), 1, dwhTc._fakeStore.ExecCallCount())
 
 		query, _ := dwhTc._fakeStore.ExecArgsForCall(0)
-		assert.Equal(d.T(), query, fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (name string)", fqName), query)
+		assert.Equal(d.T(), query, fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (name string)", dwhTc._tableID.FullyQualifiedName(true)), query)
 		assert.Equal(d.T(), false, dwhTc._tableConfig.CreateTable())
 	}
 }
@@ -107,6 +116,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 	}
 
 	for index, testCase := range testCases {
+		tableID := snowflake.NewTableIdentifier("demo", "public", "experiments")
 		fqTable := "demo.public.experiments"
 		d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 		tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
@@ -114,7 +124,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 		alterTableArgs := ddl.AlterTableArgs{
 			Dwh:               d.snowflakeStagesStore,
 			Tc:                tc,
-			FqTableName:       fqTable,
+			TableID:           tableID,
 			CreateTable:       tc.CreateTable(),
 			ColumnOp:          constants.Add,
 			CdcTime:           time.Now().UTC(),
