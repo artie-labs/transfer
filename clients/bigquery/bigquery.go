@@ -134,6 +134,7 @@ func tableRelName(fqName string) (string, error) {
 }
 
 func (s *Store) putTable(ctx context.Context, dataset string, tableID types.TableIdentifier, rows []*Row) error {
+	// TODO: [tableID] has [Dataset] on it, don't need to pass it along.
 	tableName := tableID.FullyQualifiedName(s.ShouldUppercaseEscapedNames())
 	// TODO: Can probably do `tableName := tableID.Table()` here.
 	relTableName, err := tableRelName(tableName)
