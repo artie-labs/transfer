@@ -62,7 +62,8 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	copyStmt := fmt.Sprintf(
 		`COPY %s FROM '%s' DELIMITER '\t' NULL AS '\\N' GZIP FORMAT CSV %s dateformat 'auto' timeformat 'auto';`,
 		tempTableID.FullyQualifiedName(),
-		s3Uri, s.credentialsClause,
+		s3Uri,
+		s.credentialsClause,
 	)
 	if _, err = s.Exec(copyStmt); err != nil {
 		return fmt.Errorf("failed to run COPY for temporary table: %w", err)
