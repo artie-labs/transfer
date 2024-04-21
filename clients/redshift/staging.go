@@ -17,8 +17,6 @@ import (
 )
 
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, _ types.AdditionalSettings, _ bool) error {
-	tempTableName := tempTableID.FullyQualifiedName()
-
 	// Redshift always creates a temporary table.
 	tempAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               s,
@@ -35,7 +33,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		return fmt.Errorf("failed to create temp table: %w", err)
 	}
 
-	fp, err := s.loadTemporaryTable(tableData, tempTableName)
+	fp, err := s.loadTemporaryTable(tableData, tempTableID)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
@@ -61,7 +59,11 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	// COPY table_name FROM '/path/to/local/file' DELIMITER '\t' NULL '\\N' FORMAT csv;
 	// Note, we need to specify `\\N` here and in `CastColVal(..)` we are only doing `\N`, this is because Redshift treats backslashes as an escape character.
 	// So, it'll convert `\N` => `\\N` during COPY.
-	copyStmt := fmt.Sprintf(`COPY %s FROM '%s' DELIMITER '\t' NULL AS '\\N' GZIP FORMAT CSV %s dateformat 'auto' timeformat 'auto';`, tempTableName, s3Uri, s.credentialsClause)
+	copyStmt := fmt.Sprintf(
+		`COPY %s FROM '%s' DELIMITER '\t' NULL AS '\\N' GZIP FORMAT CSV %s dateformat 'auto' timeformat 'auto';`,
+		tempTableID.FullyQualifiedName(),
+		s3Uri, s.credentialsClause,
+	)
 	if _, err = s.Exec(copyStmt); err != nil {
 		return fmt.Errorf("failed to run COPY for temporary table: %w", err)
 	}
@@ -69,8 +71,8 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	return nil
 }
 
-func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableName string) (string, error) {
-	filePath := fmt.Sprintf("/tmp/%s.csv.gz", newTableName)
+func (s *Store) loadTemporaryTable(tableData *optimization.TableData, tableID types.TableIdentifier) (string, error) {
+	filePath := fmt.Sprintf("/tmp/%s.csv.gz", tableID.FullyQualifiedName())
 	file, err := os.Create(filePath)
 	if err != nil {
 		return "", err
