@@ -68,7 +68,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	}
 
 	// Write data into CSV
-	fp, err := s.writeTemporaryTableFile(tableData, tempTableName)
+	fp, err := s.writeTemporaryTableFile(tableData, tempTableID)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
@@ -104,8 +104,8 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	return nil
 }
 
-func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableName string) (string, error) {
-	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv", newTableName))
+func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID types.TableIdentifier) (string, error) {
+	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv", newTableID.FullyQualifiedName()))
 	file, err := os.Create(fp)
 	if err != nil {
 		return "", err
