@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/destination/types"
 
 	"github.com/artie-labs/transfer/lib/sql"
 
@@ -14,7 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func BackfillColumn(cfg config.Config, dwh destination.DataWarehouse, column columns.Column, fqTableName string) error {
+func BackfillColumn(cfg config.Config, dwh destination.DataWarehouse, column columns.Column, tableID types.TableIdentifier) error {
 	if !column.ShouldBackfill() {
 		// If we don't need to backfill, don't backfill.
 		return nil
@@ -44,12 +45,12 @@ func BackfillColumn(cfg config.Config, dwh destination.DataWarehouse, column col
 
 	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
 		// UPDATE table SET col = default_val WHERE col IS NULL
-		fqTableName, escapedCol, defaultVal, additionalEscapedCol,
+		tableID.FullyQualifiedName(), escapedCol, defaultVal, additionalEscapedCol,
 	)
 	slog.Info("Backfilling column",
 		slog.String("colName", column.RawName()),
 		slog.String("query", query),
-		slog.String("table", fqTableName),
+		slog.String("table", tableID.FullyQualifiedName()),
 	)
 
 	_, err = dwh.Exec(query)
@@ -57,11 +58,11 @@ func BackfillColumn(cfg config.Config, dwh destination.DataWarehouse, column col
 		return fmt.Errorf("failed to backfill, err: %w, query: %v", err, query)
 	}
 
-	query = fmt.Sprintf(`COMMENT ON COLUMN %s.%s IS '%v';`, fqTableName, escapedCol, `{"backfilled": true}`)
+	query = fmt.Sprintf(`COMMENT ON COLUMN %s.%s IS '%v';`, tableID.FullyQualifiedName(), escapedCol, `{"backfilled": true}`)
 	if dwh.Label() == constants.BigQuery {
 		query = fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET OPTIONS (description=`%s`);",
 			// ALTER TABLE table ALTER COLUMN col set OPTIONS (description=...)
-			fqTableName, escapedCol, `{"backfilled": true}`,
+			tableID.FullyQualifiedName(), escapedCol, `{"backfilled": true}`,
 		)
 	}
 

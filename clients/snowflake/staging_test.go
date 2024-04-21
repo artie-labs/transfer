@@ -50,7 +50,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging() {
 }
 
 func (s *SnowflakeTestSuite) TestBackfillColumn() {
-	fqTableName := "db.public.tableName"
+	tableID := NewTableIdentifier("db", "public", "tableName", true)
 
 	backfilledCol := columns.NewColumn("foo", typing.Boolean)
 	backfilledCol.SetDefaultValue(true)
@@ -92,7 +92,7 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 
 	var count int
 	for _, testCase := range testCases {
-		err := shared.BackfillColumn(config.Config{}, s.stageStore, testCase.col, fqTableName)
+		err := shared.BackfillColumn(config.Config{}, s.stageStore, testCase.col, tableID)
 		assert.NoError(s.T(), err, testCase.name)
 		if testCase.backfillSQL != "" && testCase.commentSQL != "" {
 			backfillSQL, _ := s.fakeStageStore.ExecArgsForCall(count)
@@ -170,7 +170,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 
 func (s *SnowflakeTestSuite) TestLoadTemporaryTable() {
 	tempTableID, tableData := generateTableData(100)
-	fp, err := s.stageStore.writeTemporaryTableFile(tableData, tempTableID.FullyQualifiedName())
+	fp, err := s.stageStore.writeTemporaryTableFile(tableData, tempTableID)
 	assert.NoError(s.T(), err)
 	// Read the CSV and confirm.
 	csvfile, err := os.Open(fp)

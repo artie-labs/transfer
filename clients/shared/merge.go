@@ -35,7 +35,6 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		tableData.TopicConfig().IncludeDatabaseUpdatedAt, tableData.Mode())
 
 	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	fqName := tableID.FullyQualifiedName()
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               dwh,
 		Tc:                tableConfig,
@@ -92,7 +91,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 
 		var backfillErr error
 		for attempts := 0; attempts < backfillMaxRetries; attempts++ {
-			backfillErr = BackfillColumn(cfg, dwh, col, fqName)
+			backfillErr = BackfillColumn(cfg, dwh, col, tableID)
 			if backfillErr == nil {
 				tableConfig.Columns().UpsertColumn(col.RawName(), columns.UpsertColumnArg{
 					Backfilled: ptr.ToBool(true),
@@ -121,7 +120,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 	}
 
 	mergeArg := dml.MergeArgument{
-		FqTableName:         fqName,
+		TableID:             tableID,
 		SubQuery:            subQuery,
 		IdempotentKey:       tableData.TopicConfig().IdempotentKey,
 		PrimaryKeys:         tableData.PrimaryKeys(cfg.SharedDestinationConfig.UppercaseEscapedNames, &sql.NameArgs{Escape: true, DestKind: dwh.Label()}),

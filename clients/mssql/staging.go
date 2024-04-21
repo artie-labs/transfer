@@ -13,8 +13,6 @@ import (
 )
 
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
-	tempTableName := tempTableID.FullyQualifiedName()
-
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
 			Dwh:               s,
@@ -45,7 +43,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	}()
 
 	columns := tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.ShouldUppercaseEscapedNames(), nil)
-	stmt, err := tx.Prepare(mssql.CopyIn(tempTableName, mssql.BulkOptions{}, columns...))
+	stmt, err := tx.Prepare(mssql.CopyIn(tempTableID.FullyQualifiedName(), mssql.BulkOptions{}, columns...))
 	if err != nil {
 		return fmt.Errorf("failed to prepare bulk insert: %w", err)
 	}
