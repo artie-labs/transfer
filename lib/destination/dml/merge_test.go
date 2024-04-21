@@ -16,7 +16,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-// Have to mock a [types.TableIdentifier ]otherwise we get circular imports.
+// Have to mock a [types.TableIdentifier] otherwise we get circular imports.
 type MockTableIdentifier struct {
 	fqName string
 }
