@@ -18,11 +18,9 @@ func (s *Store) Append(tableData *optimization.TableData) error {
 		return err
 	}
 
-	_, err := s.Exec(fmt.Sprintf(
-		`ALTER TABLE %s APPEND FROM %s;`,
-		tableID.FullyQualifiedName(),
-		temporaryTableID.FullyQualifiedName(),
-	))
+	_, err := s.Exec(
+		fmt.Sprintf(`ALTER TABLE %s APPEND FROM %s;`, tableID.FullyQualifiedName(), temporaryTableID.FullyQualifiedName()),
+	)
 	return err
 }
 
