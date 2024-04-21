@@ -22,12 +22,12 @@ import (
 )
 
 func (d *DDLTestSuite) Test_CreateTable() {
-	bqTableID := bigquery.NewTableIdentifier("", "mock_dataset", "mock_table")
-	bqFqName := bqTableID.FullyQualifiedName(true)
+	bqTableID := bigquery.NewTableIdentifier("", "mock_dataset", "mock_table", true)
+	bqFqName := bqTableID.FullyQualifiedName()
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(bqFqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 
-	snowflakeTableID := snowflake.NewTableIdentifier("", "mock_dataset", "mock_table")
-	snowflakeFqName := snowflakeTableID.FullyQualifiedName(true)
+	snowflakeTableID := snowflake.NewTableIdentifier("", "mock_dataset", "mock_table", true)
+	snowflakeFqName := snowflakeTableID.FullyQualifiedName()
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(snowflakeFqName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 
 	type dwhToTableConfig struct {
@@ -68,7 +68,7 @@ func (d *DDLTestSuite) Test_CreateTable() {
 		assert.Equal(d.T(), 1, dwhTc._fakeStore.ExecCallCount())
 
 		query, _ := dwhTc._fakeStore.ExecArgsForCall(0)
-		assert.Equal(d.T(), query, fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (name string)", dwhTc._tableID.FullyQualifiedName(true)), query)
+		assert.Equal(d.T(), query, fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (name string)", dwhTc._tableID.FullyQualifiedName()), query)
 		assert.Equal(d.T(), false, dwhTc._tableConfig.CreateTable())
 	}
 }
@@ -116,7 +116,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 	}
 
 	for index, testCase := range testCases {
-		tableID := snowflake.NewTableIdentifier("demo", "public", "experiments")
+		tableID := snowflake.NewTableIdentifier("demo", "public", "experiments", false)
 		fqTable := "demo.public.experiments"
 		d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 		tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)

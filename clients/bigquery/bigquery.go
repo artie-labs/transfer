@@ -80,7 +80,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
-	return NewTableIdentifier(s.config.BigQuery.ProjectID, topicConfig.Database, table)
+	return NewTableIdentifier(s.config.BigQuery.ProjectID, topicConfig.Database, table, s.ShouldUppercaseEscapedNames())
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
@@ -135,7 +135,7 @@ func tableRelName(fqName string) (string, error) {
 
 func (s *Store) putTable(ctx context.Context, dataset string, tableID types.TableIdentifier, rows []*Row) error {
 	// TODO: [tableID] has [Dataset] on it, don't need to pass it along.
-	tableName := tableID.FullyQualifiedName(s.ShouldUppercaseEscapedNames())
+	tableName := tableID.FullyQualifiedName()
 	// TODO: Can probably do `tableName := tableID.Table()` here.
 	relTableName, err := tableRelName(tableName)
 	if err != nil {
@@ -157,7 +157,7 @@ func (s *Store) putTable(ctx context.Context, dataset string, tableID types.Tabl
 }
 
 func (s *Store) Dedupe(tableID types.TableIdentifier) error {
-	fqTableName := tableID.FullyQualifiedName(s.ShouldUppercaseEscapedNames())
+	fqTableName := tableID.FullyQualifiedName()
 	_, err := s.Exec(fmt.Sprintf("CREATE OR REPLACE TABLE %s AS SELECT DISTINCT * FROM %s", fqTableName, fqTableName))
 	return err
 }

@@ -24,7 +24,7 @@ import (
 
 func (s *SnowflakeTestSuite) fullyQualifiedName(tableData *optimization.TableData) string {
 	tableID := s.stageStore.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	return tableID.FullyQualifiedName(s.stageStore.config.SharedDestinationConfig.UppercaseEscapedNames)
+	return tableID.FullyQualifiedName()
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
@@ -307,6 +307,6 @@ func TestTempTableName(t *testing.T) {
 
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "schema"}, "table")
 	tableID := (&Store{}).IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	tempTableName := shared.TempTableID(tableID, "sUfFiX").FullyQualifiedName(false)
+	tempTableName := shared.TempTableID(tableID, "sUfFiX").FullyQualifiedName()
 	assert.Equal(t, "db.schema.table___artie_sUfFiX", trimTTL(tempTableName))
 }

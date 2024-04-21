@@ -49,7 +49,7 @@ func (s *Store) Append(tableData *optimization.TableData) error {
 
 // specificIdentifierFor returns a MS SQL [TableIdentifier] for a [TopicConfig] + table name.
 func (s *Store) specificIdentifierFor(topicConfig kafkalib.TopicConfig, table string) TableIdentifier {
-	return NewTableIdentifier(getSchema(topicConfig.Schema), table)
+	return NewTableIdentifier(getSchema(topicConfig.Schema), table, s.ShouldUppercaseEscapedNames())
 }
 
 // IdentifierFor returns a generic [types.TableIdentifier] interface for a [TopicConfig] + table name.

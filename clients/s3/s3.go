@@ -59,7 +59,7 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) ty
 // > optionalPrefix/fullyQualifiedTableName/YYYY-MM-DD
 func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	fqTableName := tableID.FullyQualifiedName(false)
+	fqTableName := tableID.FullyQualifiedName()
 	yyyyMMDDFormat := tableData.LatestCDCTs.Format(ext.PostgresDateFormat)
 
 	if len(s.config.S3.OptionalPrefix) > 0 {

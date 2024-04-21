@@ -134,7 +134,7 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 		colSQLParts = append(colSQLParts, pkStatement)
 	}
 
-	fqTableName := a.TableID.FullyQualifiedName(a.Dwh.ShouldUppercaseEscapedNames())
+	fqTableName := a.TableID.FullyQualifiedName()
 
 	var err error
 	if a.CreateTable {
