@@ -72,8 +72,8 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	return nil
 }
 
-func (s *Store) loadTemporaryTable(tableData *optimization.TableData, tableID types.TableIdentifier) (string, error) {
-	filePath := fmt.Sprintf("/tmp/%s.csv.gz", tableID.FullyQualifiedName())
+func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID types.TableIdentifier) (string, error) {
+	filePath := fmt.Sprintf("/tmp/%s.csv.gz", newTableID.FullyQualifiedName())
 	file, err := os.Create(filePath)
 	if err != nil {
 		return "", err
