@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/ptr"
 
 	"github.com/artie-labs/transfer/lib/sql"
@@ -16,6 +17,23 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
 )
+
+// Have to mock a [types.TableIdentifier ]otherwise we get circular imports.
+type MockTableIdentifier struct {
+	fqName string
+}
+
+func (m MockTableIdentifier) Table() string {
+	panic("not implemented")
+}
+
+func (m MockTableIdentifier) WithTable(_ string) types.TableIdentifier {
+	panic("not implemented")
+}
+
+func (m MockTableIdentifier) FullyQualifiedName() string {
+	return m.fqName
+}
 
 func TestMergeStatementSoftDelete(t *testing.T) {
 	// No idempotent key
@@ -43,7 +61,7 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 
 	for _, idempotentKey := range []string{"", "updated_at"} {
 		mergeArg := MergeArgument{
-			FqTableName:       fqTable,
+			TableID:           MockTableIdentifier{fqTable},
 			SubQuery:          subQuery,
 			IdempotentKey:     idempotentKey,
 			PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, nil)},
@@ -92,7 +110,7 @@ func TestMergeStatement(t *testing.T) {
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
 	mergeArg := MergeArgument{
-		FqTableName:       fqTable,
+		TableID:           MockTableIdentifier{fqTable},
 		SubQuery:          subQuery,
 		IdempotentKey:     "",
 		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, nil)},
@@ -140,7 +158,7 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	mergeArg := MergeArgument{
-		FqTableName:       fqTable,
+		TableID:           MockTableIdentifier{fqTable},
 		SubQuery:          subQuery,
 		IdempotentKey:     "updated_at",
 		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, nil)},
@@ -182,7 +200,7 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	mergeArg := MergeArgument{
-		FqTableName:   fqTable,
+		TableID:       MockTableIdentifier{fqTable},
 		SubQuery:      subQuery,
 		IdempotentKey: "updated_at",
 		PrimaryKeys: []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, nil),
@@ -229,7 +247,7 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
 	mergeArg := MergeArgument{
-		FqTableName:   fqTable,
+		TableID:       MockTableIdentifier{fqTable},
 		SubQuery:      subQuery,
 		IdempotentKey: "",
 		PrimaryKeys: []columns.Wrapper{
