@@ -31,7 +31,7 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 		columns.NewColumn("select", typing.String),
 	}
 
-	tableID := snowflake.NewTableIdentifier("shop", "public", "complex_columns", false)
+	tableID := snowflake.NewTableIdentifier("shop", "public", "complex_columns", true)
 	fqTable := "shop.public.complex_columns"
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
@@ -67,7 +67,7 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 		columns.NewColumn("start", typing.String),
 	}
 
-	tableID := snowflake.NewTableIdentifier("shop", "public", "orders", false)
+	tableID := snowflake.NewTableIdentifier("shop", "public", "orders", true)
 	fqTable := "shop.public.orders"
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
@@ -99,7 +99,7 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 		columns.NewColumn("start", typing.String),
 	}
 
-	tableID := snowflake.NewTableIdentifier("shop", "public", "orders", false)
+	tableID := snowflake.NewTableIdentifier("shop", "public", "orders", true)
 	fqTable := "shop.public.orders"
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
@@ -143,7 +143,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 		columns.NewColumn("start", typing.String),
 	}
 
-	tableID := snowflake.NewTableIdentifier("shop", "public", "users", false)
+	tableID := snowflake.NewTableIdentifier("shop", "public", "users", true)
 	fqTable := "shop.public.users"
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
@@ -203,7 +203,7 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 		columns.NewColumn("start", typing.String),
 	}
 
-	tableID := snowflake.NewTableIdentifier("shop", "public", "users1", false)
+	tableID := snowflake.NewTableIdentifier("shop", "public", "users1", true)
 	fqTable := "shop.public.users1"
 
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, map[string]time.Time{
