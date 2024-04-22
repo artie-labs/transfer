@@ -133,10 +133,10 @@ func TestEscapeName(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		actualName := EscapeName(testCase.nameToEscape, false, testCase.args)
+		actualName := EscapeNameIfNecessary(testCase.nameToEscape, false, testCase.args)
 		assert.Equal(t, testCase.expectedName, actualName, testCase.name)
 
-		actualUpperName := EscapeName(testCase.nameToEscape, true, testCase.args)
+		actualUpperName := EscapeNameIfNecessary(testCase.nameToEscape, true, testCase.args)
 		assert.Equal(t, testCase.expectedNameWhenUpperCfg, actualUpperName, testCase.name)
 	}
 }
