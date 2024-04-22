@@ -32,7 +32,7 @@ func BackfillColumn(cfg config.Config, dwh destination.DataWarehouse, column col
 		return fmt.Errorf("failed to escape default value: %w", err)
 	}
 
-	uppercaseEscNames := cfg.SharedDestinationConfig.UppercaseEscapedNames
+	uppercaseEscNames := dwh.ShouldUppercaseEscapedNames()
 	escapedCol := column.Name(uppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: dwh.Label()})
 
 	// TODO: This is added because `default` is not technically a column that requires escaping, but it is required when it's in the where clause.
