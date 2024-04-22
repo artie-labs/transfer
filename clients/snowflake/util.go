@@ -5,9 +5,8 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/destination/types"
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 // addPrefixToTableName will take a [types.TableIdentifier] and add a prefix in front of the table
