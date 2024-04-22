@@ -13,10 +13,6 @@ import (
 var symbolsToEscape = []string{":"}
 
 func EscapeNameIfNecessary(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
-	if destKind == "" {
-		return name
-	}
-
 	if needsEscaping(name, destKind) {
 		return escapeName(name, uppercaseEscNames, destKind)
 	}
