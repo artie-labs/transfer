@@ -16,7 +16,6 @@ func EscapeNameIfNecessary(name string, uppercaseEscNames bool, destKind constan
 	if needsEscaping(name, destKind) {
 		return escapeName(name, uppercaseEscNames, destKind)
 	}
-
 	return name
 }
 
