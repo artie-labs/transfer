@@ -10,7 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/size"
-	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -67,7 +66,7 @@ func (t *TableData) ContainOtherOperations() bool {
 	return t.containOtherOperations
 }
 
-func (t *TableData) PrimaryKeys(uppercaseEscNames bool, args *sql.NameArgs) []columns.Wrapper {
+func (t *TableData) PrimaryKeys(uppercaseEscNames bool, args *columns.NameArgs) []columns.Wrapper {
 	var pks []columns.Wrapper
 	for _, pk := range t.primaryKeys {
 		pks = append(pks, columns.NewWrapper(columns.NewColumn(pk, typing.Invalid), uppercaseEscNames, args))

@@ -45,6 +45,6 @@ func (ti TableIdentifier) FullyQualifiedName() string {
 		"`%s`.`%s`.%s",
 		ti.projectID,
 		ti.dataset,
-		sql.EscapeNameIfNecessary(ti.table, false, &sql.NameArgs{DestKind: constants.BigQuery}),
+		sql.EscapeNameIfNecessary(ti.table, false, constants.BigQuery),
 	)
 }

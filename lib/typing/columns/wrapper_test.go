@@ -3,8 +3,6 @@ package columns
 import (
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/sql"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -43,7 +41,7 @@ func TestWrapper_Complete(t *testing.T) {
 
 	for _, testCase := range testCases {
 		// Snowflake escape
-		w := NewWrapper(NewColumn(testCase.name, typing.Invalid), false, &sql.NameArgs{
+		w := NewWrapper(NewColumn(testCase.name, typing.Invalid), false, &NameArgs{
 			DestKind: constants.Snowflake,
 		})
 
@@ -51,7 +49,7 @@ func TestWrapper_Complete(t *testing.T) {
 		assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
 
 		// BigQuery escape
-		w = NewWrapper(NewColumn(testCase.name, typing.Invalid), false, &sql.NameArgs{
+		w = NewWrapper(NewColumn(testCase.name, typing.Invalid), false, &NameArgs{
 			DestKind: constants.BigQuery,
 		})
 
@@ -59,7 +57,7 @@ func TestWrapper_Complete(t *testing.T) {
 		assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
 
 		for _, destKind := range []constants.DestinationKind{constants.Snowflake, constants.BigQuery} {
-			w = NewWrapper(NewColumn(testCase.name, typing.Invalid), false, &sql.NameArgs{
+			w = NewWrapper(NewColumn(testCase.name, typing.Invalid), false, &NameArgs{
 				DestKind: destKind,
 			})
 			assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)

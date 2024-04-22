@@ -8,7 +8,6 @@ import (
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
-	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -98,7 +97,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	cols := m.Columns.GetColumnsToUpdate(*m.UppercaseEscNames, &sql.NameArgs{
+	cols := m.Columns.GetColumnsToUpdate(*m.UppercaseEscNames, &columns.NameArgs{
 		DestKind: m.DestKind,
 	})
 
@@ -232,7 +231,7 @@ func (m *MergeArgument) GetStatement() (string, error) {
 		}
 	}
 
-	cols := m.Columns.GetColumnsToUpdate(*m.UppercaseEscNames, &sql.NameArgs{
+	cols := m.Columns.GetColumnsToUpdate(*m.UppercaseEscNames, &columns.NameArgs{
 		DestKind: m.DestKind,
 	})
 
@@ -303,7 +302,7 @@ func (m *MergeArgument) GetMSSQLStatement() (string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	cols := m.Columns.GetColumnsToUpdate(*m.UppercaseEscNames, &sql.NameArgs{
+	cols := m.Columns.GetColumnsToUpdate(*m.UppercaseEscNames, &columns.NameArgs{
 		DestKind: m.DestKind,
 	})
 

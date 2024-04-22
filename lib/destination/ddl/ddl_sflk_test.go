@@ -10,8 +10,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/ptr"
 
-	"github.com/artie-labs/transfer/lib/sql"
-
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/stretchr/testify/assert"
@@ -49,7 +47,7 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 	assert.NoError(d.T(), alterTableArgs.AlterTable(cols...))
 	for i := 0; i < len(cols); i++ {
 		execQuery, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(i)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN %s %s", fqTable, cols[i].Name(false, &sql.NameArgs{
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN %s %s", fqTable, cols[i].Name(false, &columns.NameArgs{
 			DestKind: d.snowflakeStagesStore.Label(),
 		}),
 			typing.KindToDWHType(cols[i].KindDetails, d.snowflakeStagesStore.Label(), false)), execQuery)
@@ -185,7 +183,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 
 		execArg, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(i)
 		assert.Equal(d.T(), execArg, fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTable, constants.Delete,
-			cols[i].Name(false, &sql.NameArgs{DestKind: d.snowflakeStagesStore.Label()})))
+			cols[i].Name(false, &columns.NameArgs{DestKind: d.snowflakeStagesStore.Label()})))
 	}
 }
 

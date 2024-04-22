@@ -11,7 +11,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/ptr"
-	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -249,10 +248,10 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 		SubQuery:      subQuery,
 		IdempotentKey: "",
 		PrimaryKeys: []columns.Wrapper{
-			columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, &sql.NameArgs{
+			columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, &columns.NameArgs{
 				DestKind: constants.Snowflake,
 			}),
-			columns.NewWrapper(columns.NewColumn("group", typing.Invalid), false, &sql.NameArgs{
+			columns.NewWrapper(columns.NewColumn("group", typing.Invalid), false, &columns.NameArgs{
 				DestKind: constants.Snowflake,
 			}),
 		},

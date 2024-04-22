@@ -9,23 +9,13 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
-type NameArgs struct {
-	DestKind constants.DestinationKind
-}
-
 // symbolsToEscape are additional keywords that we need to escape
 var symbolsToEscape = []string{":"}
 
-func EscapeNameIfNecessary(name string, uppercaseEscNames bool, args *NameArgs) string {
-	// TODO: Kill [NameArgs] and just pass [DestinationKind].
-	if args == nil {
-		return name
+func EscapeNameIfNecessary(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
+	if needsEscaping(name, destKind) {
+		return escapeName(name, uppercaseEscNames, destKind)
 	}
-
-	if needsEscaping(name, args.DestKind) {
-		return escapeName(name, uppercaseEscNames, args.DestKind)
-	}
-
 	return name
 }
 
@@ -39,26 +29,23 @@ func needsEscaping(name string, destKind constants.DestinationKind) bool {
 		reservedKeywords = constants.ReservedKeywords
 	}
 
-	needsEscaping := slices.Contains(reservedKeywords, name)
+	if slices.Contains(reservedKeywords, name) {
+		return true
+	}
 
 	// If it does not contain any reserved words, does it contain any symbols that need to be escaped?
-	if !needsEscaping {
-		for _, symbol := range symbolsToEscape {
-			if strings.Contains(name, symbol) {
-				needsEscaping = true
-				break
-			}
+	for _, symbol := range symbolsToEscape {
+		if strings.Contains(name, symbol) {
+			return true
 		}
 	}
 
 	// If it still doesn't need to be escaped, we should check if it's a number.
-	if !needsEscaping {
-		if _, err := strconv.Atoi(name); err == nil {
-			needsEscaping = true
-		}
+	if _, err := strconv.Atoi(name); err == nil {
+		return true
 	}
 
-	return needsEscaping
+	return false
 }
 
 func escapeName(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
