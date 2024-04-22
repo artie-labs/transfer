@@ -17,6 +17,7 @@ type NameArgs struct {
 var symbolsToEscape = []string{":"}
 
 func EscapeNameIfNecessary(name string, uppercaseEscNames bool, args *NameArgs) string {
+	// TODO: Kill [NameArgs] and just pass [DestinationKind].
 	if args == nil {
 		return name
 	}
