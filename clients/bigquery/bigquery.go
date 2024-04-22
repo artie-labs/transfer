@@ -80,7 +80,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
-	return NewTableIdentifier(s.config.BigQuery.ProjectID, topicConfig.Database, table, s.ShouldUppercaseEscapedNames())
+	return NewTableIdentifier(s.config.BigQuery.ProjectID, topicConfig.Database, table)
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
@@ -112,7 +112,7 @@ func (s *Store) Label() constants.DestinationKind {
 }
 
 func (s *Store) ShouldUppercaseEscapedNames() bool {
-	return s.config.SharedDestinationConfig.UppercaseEscapedNames
+	return false
 }
 
 func (s *Store) GetClient(ctx context.Context) *bigquery.Client {

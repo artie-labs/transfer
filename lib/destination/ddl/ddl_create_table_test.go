@@ -22,7 +22,7 @@ import (
 )
 
 func (d *DDLTestSuite) Test_CreateTable() {
-	bqTableID := bigquery.NewTableIdentifier("", "mock_dataset", "mock_table", true)
+	bqTableID := bigquery.NewTableIdentifier("", "mock_dataset", "mock_table")
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(bqTableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 
 	snowflakeTableID := snowflake.NewTableIdentifier("", "mock_dataset", "mock_table", true)

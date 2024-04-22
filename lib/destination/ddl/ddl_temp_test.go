@@ -96,7 +96,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 	}
 	{
 		// BigQuery
-		tableID := bigquery.NewTableIdentifier("db", "schema", "tempTableName", false)
+		tableID := bigquery.NewTableIdentifier("db", "schema", "tempTableName")
 		d.bigQueryStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 		bqTc := d.bigQueryStore.GetConfigMap().TableConfig(tableID)
 		args := ddl.AlterTableArgs{

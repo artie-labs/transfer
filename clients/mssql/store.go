@@ -35,7 +35,7 @@ func (s *Store) Label() constants.DestinationKind {
 }
 
 func (s *Store) ShouldUppercaseEscapedNames() bool {
-	return s.config.SharedDestinationConfig.UppercaseEscapedNames
+	return false
 }
 
 func (s *Store) Merge(tableData *optimization.TableData) error {
@@ -49,7 +49,7 @@ func (s *Store) Append(tableData *optimization.TableData) error {
 
 // specificIdentifierFor returns a MS SQL [TableIdentifier] for a [TopicConfig] + table name.
 func (s *Store) specificIdentifierFor(topicConfig kafkalib.TopicConfig, table string) TableIdentifier {
-	return NewTableIdentifier(getSchema(topicConfig.Schema), table, s.ShouldUppercaseEscapedNames())
+	return NewTableIdentifier(getSchema(topicConfig.Schema), table)
 }
 
 // IdentifierFor returns a generic [types.TableIdentifier] interface for a [TopicConfig] + table name.
