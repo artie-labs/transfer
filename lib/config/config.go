@@ -265,6 +265,10 @@ func (c Config) Validate() error {
 	}
 
 	switch c.Output {
+	case constants.BigQuery:
+		if err := c.ValidateBigQuery(); err != nil {
+			return err
+		}
 	case constants.MSSQL:
 		if err := c.ValidateMSSQL(); err != nil {
 			return err
