@@ -13,9 +13,14 @@ import (
 var symbolsToEscape = []string{":"}
 
 func EscapeNameIfNecessary(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
+	if destKind == "" {
+		return name
+	}
+
 	if needsEscaping(name, destKind) {
 		return escapeName(name, uppercaseEscNames, destKind)
 	}
+
 	return name
 }
 
@@ -29,23 +34,26 @@ func needsEscaping(name string, destKind constants.DestinationKind) bool {
 		reservedKeywords = constants.ReservedKeywords
 	}
 
-	if slices.Contains(reservedKeywords, name) {
-		return true
-	}
+	needsEscaping := slices.Contains(reservedKeywords, name)
 
 	// If it does not contain any reserved words, does it contain any symbols that need to be escaped?
-	for _, symbol := range symbolsToEscape {
-		if strings.Contains(name, symbol) {
-			return true
+	if !needsEscaping {
+		for _, symbol := range symbolsToEscape {
+			if strings.Contains(name, symbol) {
+				needsEscaping = true
+				break
+			}
 		}
 	}
 
 	// If it still doesn't need to be escaped, we should check if it's a number.
-	if _, err := strconv.Atoi(name); err == nil {
-		return true
+	if !needsEscaping {
+		if _, err := strconv.Atoi(name); err == nil {
+			needsEscaping = true
+		}
 	}
 
-	return false
+	return needsEscaping
 }
 
 func escapeName(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
