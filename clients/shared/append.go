@@ -3,7 +3,6 @@ package shared
 import (
 	"log/slog"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
@@ -13,7 +12,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg config.Config, opts types.AppendOpts) error {
+func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, opts types.AppendOpts) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
