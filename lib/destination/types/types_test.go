@@ -29,21 +29,27 @@ func generateDwhTableCfg() *DwhTableConfig {
 	}
 }
 
+type MockTableIdentifier struct{ fqName string }
+
+func (MockTableIdentifier) Table() string                          { panic("not implemented") }
+func (MockTableIdentifier) WithTable(table string) TableIdentifier { panic("not implemented") }
+func (m MockTableIdentifier) FullyQualifiedName() string           { return m.fqName }
+
 func (t *TypesTestSuite) TestDwhToTablesConfigMap_TableConfigBasic() {
 	dwh := &DwhToTablesConfigMap{}
 	dwhTableConfig := generateDwhTableCfg()
 
-	fqName := "database.schema.tableName"
-	dwh.AddTableToConfig(fqName, dwhTableConfig)
-	assert.Equal(t.T(), *dwhTableConfig, *dwh.TableConfig(fqName))
+	tableID := MockTableIdentifier{"database.schema.tableName"}
+	dwh.AddTableToConfig(tableID, dwhTableConfig)
+	assert.Equal(t.T(), *dwhTableConfig, *dwh.TableConfig(tableID))
 }
 
 // TestDwhToTablesConfigMap_Concurrency - has a bunch of concurrent go-routines that are rapidly adding and reading from the tableConfig.
 func (t *TypesTestSuite) TestDwhToTablesConfigMap_Concurrency() {
 	dwh := &DwhToTablesConfigMap{}
-	fqName := "db.schema.table"
+	tableID := MockTableIdentifier{"db.schema.table"}
 	dwhTableCfg := generateDwhTableCfg()
-	dwh.AddTableToConfig(fqName, dwhTableCfg)
+	dwh.AddTableToConfig(tableID, dwhTableCfg)
 	var wg sync.WaitGroup
 	// Write
 	wg.Add(1)
@@ -51,7 +57,7 @@ func (t *TypesTestSuite) TestDwhToTablesConfigMap_Concurrency() {
 		defer wg.Done()
 		for i := 0; i < 1000; i++ {
 			time.Sleep(time.Duration(rand.Intn(10)) * time.Millisecond)
-			dwh.AddTableToConfig(fqName, dwhTableCfg)
+			dwh.AddTableToConfig(tableID, dwhTableCfg)
 		}
 	}()
 
@@ -61,7 +67,7 @@ func (t *TypesTestSuite) TestDwhToTablesConfigMap_Concurrency() {
 		defer wg.Done()
 		for i := 0; i < 1000; i++ {
 			time.Sleep(time.Duration(rand.Intn(10)) * time.Millisecond)
-			assert.Equal(t.T(), *dwhTableCfg, *dwh.TableConfig(fqName))
+			assert.Equal(t.T(), *dwhTableCfg, *dwh.TableConfig(tableID))
 		}
 
 	}()

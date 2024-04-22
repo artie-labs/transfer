@@ -33,8 +33,8 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 
 	tableID := snowflake.NewTableIdentifier("shop", "public", "complex_columns", true)
 	fqTable := "shop.public.complex_columns"
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
-	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
+	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 
 	alterTableArgs := ddl.AlterTableArgs{
 		Dwh:               d.snowflakeStagesStore,
@@ -68,9 +68,8 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 	}
 
 	tableID := snowflake.NewTableIdentifier("shop", "public", "orders", true)
-	fqTable := "shop.public.orders"
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
-	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
+	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 
 	d.fakeSnowflakeStagesStore.ExecReturns(nil, errors.New("column 'order_name' already exists"))
 	alterTableArgs := ddl.AlterTableArgs{
@@ -100,9 +99,8 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 	}
 
 	tableID := snowflake.NewTableIdentifier("shop", "public", "orders", true)
-	fqTable := "shop.public.orders"
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
-	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
+	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 
 	alterTableArgs := ddl.AlterTableArgs{
 		Dwh:               d.snowflakeStagesStore,
@@ -118,7 +116,7 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecCallCount(), "called SFLK the same amt to create cols")
 
 	// Check the table config
-	tableConfig := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
+	tableConfig := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 	for _, column := range tableConfig.Columns().GetColumns() {
 		var found bool
 		for _, expCol := range cols {
@@ -145,8 +143,8 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 
 	tableID := snowflake.NewTableIdentifier("shop", "public", "users", true)
 	fqTable := "shop.public.users"
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
-	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
+	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 	alterTableArgs := ddl.AlterTableArgs{
 		Dwh:                    d.snowflakeStagesStore,
 		Tc:                     tc,
@@ -162,7 +160,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	assert.Equal(d.T(), 0, d.fakeSnowflakeStagesStore.ExecCallCount(), "tried to delete, but not yet.")
 
 	// Check the table config
-	tableConfig := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
+	tableConfig := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 	for col := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, expCol := range cols {
@@ -204,15 +202,14 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 	}
 
 	tableID := snowflake.NewTableIdentifier("shop", "public", "users1", true)
-	fqTable := "shop.public.users1"
 
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(fqTable, types.NewDwhTableConfig(&columns.Columns{}, map[string]time.Time{
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, map[string]time.Time{
 		"col_to_delete": time.Now().Add(-2 * constants.DeletionConfidencePadding),
 		"answers":       time.Now().Add(-2 * constants.DeletionConfidencePadding),
 		"start":         time.Now().Add(-2 * constants.DeletionConfidencePadding),
 	}, false, true))
 
-	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
+	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 	alterTableArgs := ddl.AlterTableArgs{
 		Dwh:                    d.snowflakeStagesStore,
 		Tc:                     tc,
@@ -228,7 +225,7 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 	assert.Equal(d.T(), 3, d.fakeSnowflakeStagesStore.ExecCallCount(), "tried to delete, but not yet.")
 
 	// Check the table config
-	tableConfig := d.snowflakeStagesStore.GetConfigMap().TableConfig(fqTable)
+	tableConfig := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 	for col := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, expCol := range cols {

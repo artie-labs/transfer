@@ -136,8 +136,8 @@ func generateTableData(rows int) (TableIdentifier, *optimization.TableData) {
 func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	tempTableID, tableData := generateTableData(10)
 	tempTableName := tempTableID.FullyQualifiedName()
-	s.stageStore.GetConfigMap().AddTableToConfig(tempTableName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
-	sflkTc := s.stageStore.GetConfigMap().TableConfig(tempTableName)
+	s.stageStore.GetConfigMap().AddTableToConfig(tempTableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
+	sflkTc := s.stageStore.GetConfigMap().TableConfig(tempTableID)
 
 	{
 		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableID, types.AdditionalSettings{}, true))
