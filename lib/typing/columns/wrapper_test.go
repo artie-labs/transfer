@@ -44,7 +44,6 @@ func TestWrapper_Complete(t *testing.T) {
 	for _, testCase := range testCases {
 		// Snowflake escape
 		w := NewWrapper(NewColumn(testCase.name, typing.Invalid), false, &sql.NameArgs{
-			Escape:   true,
 			DestKind: constants.Snowflake,
 		})
 
@@ -53,7 +52,6 @@ func TestWrapper_Complete(t *testing.T) {
 
 		// BigQuery escape
 		w = NewWrapper(NewColumn(testCase.name, typing.Invalid), false, &sql.NameArgs{
-			Escape:   true,
 			DestKind: constants.BigQuery,
 		})
 
@@ -62,11 +60,8 @@ func TestWrapper_Complete(t *testing.T) {
 
 		for _, destKind := range []constants.DestinationKind{constants.Snowflake, constants.BigQuery} {
 			w = NewWrapper(NewColumn(testCase.name, typing.Invalid), false, &sql.NameArgs{
-				Escape:   false,
 				DestKind: destKind,
 			})
-
-			assert.Equal(t, testCase.expectedRawName, w.EscapedName(), testCase.name)
 			assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
 		}
 

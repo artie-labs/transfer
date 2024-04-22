@@ -250,11 +250,9 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 		IdempotentKey: "",
 		PrimaryKeys: []columns.Wrapper{
 			columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, &sql.NameArgs{
-				Escape:   true,
 				DestKind: constants.Snowflake,
 			}),
 			columns.NewWrapper(columns.NewColumn("group", typing.Invalid), false, &sql.NameArgs{
-				Escape:   true,
 				DestKind: constants.Snowflake,
 			}),
 		},

@@ -33,6 +33,6 @@ func (ti TableIdentifier) FullyQualifiedName() string {
 	return fmt.Sprintf(
 		"%s.%s",
 		ti.schema,
-		sql.EscapeNameIfNecessary(ti.table, false, &sql.NameArgs{Escape: true, DestKind: constants.MSSQL}),
+		sql.EscapeNameIfNecessary(ti.table, false, &sql.NameArgs{DestKind: constants.MSSQL}),
 	)
 }

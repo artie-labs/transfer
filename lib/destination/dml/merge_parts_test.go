@@ -49,13 +49,11 @@ func getBasicColumnsForTest(compositeKey bool, uppercaseEscNames bool) result {
 
 	var pks []columns.Wrapper
 	pks = append(pks, columns.NewWrapper(idCol, uppercaseEscNames, &sql.NameArgs{
-		Escape:   true,
 		DestKind: constants.Redshift,
 	}))
 
 	if compositeKey {
 		pks = append(pks, columns.NewWrapper(emailCol, uppercaseEscNames, &sql.NameArgs{
-			Escape:   true,
 			DestKind: constants.Redshift,
 		}))
 	}
