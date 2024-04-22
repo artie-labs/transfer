@@ -35,15 +35,14 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		tableData.TopicConfig().IncludeDatabaseUpdatedAt, tableData.Mode())
 
 	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	fqName := tableID.FullyQualifiedName(true, dwh.ShouldUppercaseEscapedNames())
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               dwh,
 		Tc:                tableConfig,
-		FqTableName:       fqName,
+		TableID:           tableID,
 		CreateTable:       tableConfig.CreateTable(),
 		ColumnOp:          constants.Add,
 		CdcTime:           tableData.LatestCDCTs,
-		UppercaseEscNames: &cfg.SharedDestinationConfig.UppercaseEscapedNames,
+		UppercaseEscNames: ptr.ToBool(dwh.ShouldUppercaseEscapedNames()),
 		Mode:              tableData.Mode(),
 	}
 
@@ -57,12 +56,12 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 	deleteAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:                    dwh,
 		Tc:                     tableConfig,
-		FqTableName:            fqName,
+		TableID:                tableID,
 		CreateTable:            false,
 		ColumnOp:               constants.Delete,
 		ContainOtherOperations: tableData.ContainOtherOperations(),
 		CdcTime:                tableData.LatestCDCTs,
-		UppercaseEscNames:      &cfg.SharedDestinationConfig.UppercaseEscapedNames,
+		UppercaseEscNames:      ptr.ToBool(dwh.ShouldUppercaseEscapedNames()),
 		Mode:                   tableData.Mode(),
 	}
 
@@ -73,8 +72,8 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
 	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
 	temporaryTableID := TempTableID(dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name()), tableData.TempTableSuffix())
-	temporaryTableName := temporaryTableID.FullyQualifiedName(false, dwh.ShouldUppercaseEscapedNames())
-	if err = dwh.PrepareTemporaryTable(tableData, tableConfig, temporaryTableName, types.AdditionalSettings{}, true); err != nil {
+	temporaryTableName := temporaryTableID.FullyQualifiedName()
+	if err = dwh.PrepareTemporaryTable(tableData, tableConfig, temporaryTableID, types.AdditionalSettings{}, true); err != nil {
 		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 
@@ -92,7 +91,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 
 		var backfillErr error
 		for attempts := 0; attempts < backfillMaxRetries; attempts++ {
-			backfillErr = BackfillColumn(cfg, dwh, col, fqName)
+			backfillErr = BackfillColumn(cfg, dwh, col, tableID)
 			if backfillErr == nil {
 				tableConfig.Columns().UpsertColumn(col.RawName(), columns.UpsertColumnArg{
 					Backfilled: ptr.ToBool(true),
@@ -121,14 +120,14 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 	}
 
 	mergeArg := dml.MergeArgument{
-		FqTableName:         fqName,
+		TableID:             tableID,
 		SubQuery:            subQuery,
 		IdempotentKey:       tableData.TopicConfig().IdempotentKey,
-		PrimaryKeys:         tableData.PrimaryKeys(cfg.SharedDestinationConfig.UppercaseEscapedNames, &sql.NameArgs{Escape: true, DestKind: dwh.Label()}),
+		PrimaryKeys:         tableData.PrimaryKeys(dwh.ShouldUppercaseEscapedNames(), &sql.NameArgs{Escape: true, DestKind: dwh.Label()}),
 		Columns:             tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:          tableData.TopicConfig().SoftDelete,
 		DestKind:            dwh.Label(),
-		UppercaseEscNames:   &cfg.SharedDestinationConfig.UppercaseEscapedNames,
+		UppercaseEscNames:   ptr.ToBool(dwh.ShouldUppercaseEscapedNames()),
 		ContainsHardDeletes: ptr.ToBool(tableData.ContainsHardDeletes()),
 	}
 

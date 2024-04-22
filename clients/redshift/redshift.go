@@ -30,7 +30,7 @@ type Store struct {
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
-	return NewTableIdentifier(topicConfig.Schema, table)
+	return NewTableIdentifier(topicConfig.Schema, table, s.ShouldUppercaseEscapedNames())
 }
 
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
@@ -98,8 +98,8 @@ WHERE
 }
 
 func (s *Store) Dedupe(tableID types.TableIdentifier) error {
-	fqTableName := tableID.FullyQualifiedName(true, s.ShouldUppercaseEscapedNames())
-	stagingTableName := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5))).FullyQualifiedName(true, s.ShouldUppercaseEscapedNames())
+	fqTableName := tableID.FullyQualifiedName()
+	stagingTableName := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5))).FullyQualifiedName()
 
 	query := fmt.Sprintf(`
 CREATE TABLE %s AS SELECT DISTINCT * FROM %s;

@@ -68,7 +68,7 @@ func (MockDWH) IsRetryableError(err error) bool                    { panic("not 
 func (MockDWH) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	panic("not implemented")
 }
-func (MockDWH) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalSettings types.AdditionalSettings, createTempTable bool) error {
+func (MockDWH) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
 	panic("not implemented")
 }
 func (MockDWH) IdentifierFor(topicConfig kafkalib.TopicConfig, name string) types.TableIdentifier {
@@ -80,7 +80,7 @@ type MockTableIdentifier struct{ fqName string }
 
 func (MockTableIdentifier) Table() string                                { panic("not implemented") }
 func (MockTableIdentifier) WithTable(table string) types.TableIdentifier { panic("not implemented") }
-func (m MockTableIdentifier) FullyQualifiedName(_, _ bool) string        { return m.fqName }
+func (m MockTableIdentifier) FullyQualifiedName() string                 { return m.fqName }
 
 func TestGetTableConfig(t *testing.T) {
 	// Return early because table is found in configMap.
@@ -89,15 +89,15 @@ func TestGetTableConfig(t *testing.T) {
 		cols.AddColumn(columns.NewColumn(fmt.Sprintf("col-%v", i), typing.Invalid))
 	}
 
-	fqName := "dusty_the_mini_aussie"
+	tableID := MockTableIdentifier{"dusty_the_mini_aussie"}
 	dwhTableCfg := types.NewDwhTableConfig(cols, nil, false, false)
 
 	cm := &types.DwhToTablesConfigMap{}
-	cm.AddTableToConfig(fqName, dwhTableCfg)
+	cm.AddTableToConfig(tableID, dwhTableCfg)
 
 	actualTableCfg, err := GetTableCfgArgs{
 		Dwh:       MockDWH{},
-		TableID:   MockTableIdentifier{fqName},
+		TableID:   tableID,
 		ConfigMap: cm,
 	}.GetTableConfig()
 

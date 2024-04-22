@@ -22,9 +22,8 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func (s *SnowflakeTestSuite) fullyQualifiedName(tableData *optimization.TableData) string {
-	tableID := s.stageStore.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	return tableID.FullyQualifiedName(true, s.stageStore.config.SharedDestinationConfig.UppercaseEscapedNames)
+func (s *SnowflakeTestSuite) identifierFor(tableData *optimization.TableData) types.TableIdentifier {
+	return s.stageStore.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
@@ -75,7 +74,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		anotherCols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
-	s.stageStore.configMap.AddTableToConfig(s.fullyQualifiedName(tableData), types.NewDwhTableConfig(&anotherCols, nil, false, true))
+	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDwhTableConfig(&anotherCols, nil, false, true))
 
 	err := s.stageStore.Merge(tableData)
 	_col, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("first_name")
@@ -120,7 +119,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		tableData.InsertRow(pk, row, false)
 	}
 
-	s.stageStore.configMap.AddTableToConfig(s.fullyQualifiedName(tableData), types.NewDwhTableConfig(&cols, nil, false, true))
+	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDwhTableConfig(&cols, nil, false, true))
 
 	s.fakeStageStore.ExecReturnsOnCall(0, nil, fmt.Errorf("390114: Authentication token has expired. The user must authenticate again."))
 	err := s.stageStore.Merge(tableData)
@@ -171,8 +170,9 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 
 	var idx int
 
-	fqName := s.fullyQualifiedName(tableData)
-	s.stageStore.configMap.AddTableToConfig(fqName, types.NewDwhTableConfig(&cols, nil, false, true))
+	tableID := s.identifierFor(tableData)
+	fqName := tableID.FullyQualifiedName()
+	s.stageStore.configMap.AddTableToConfig(tableID, types.NewDwhTableConfig(&cols, nil, false, true))
 	err := s.stageStore.Merge(tableData)
 	assert.Nil(s.T(), err)
 	s.fakeStageStore.ExecReturns(nil, nil)
@@ -253,7 +253,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 	sflkCols.AddColumn(columns.NewColumn("new", typing.String))
 	_config := types.NewDwhTableConfig(&sflkCols, nil, false, true)
-	s.stageStore.configMap.AddTableToConfig(s.fullyQualifiedName(tableData), _config)
+	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), _config)
 
 	err := s.stageStore.Merge(tableData)
 	assert.Nil(s.T(), err)
@@ -261,10 +261,10 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	assert.Equal(s.T(), s.fakeStageStore.ExecCallCount(), 5, "called merge")
 
 	// Check the temp deletion table now.
-	assert.Equal(s.T(), len(s.stageStore.configMap.TableConfig(s.fullyQualifiedName(tableData)).ReadOnlyColumnsToDelete()), 1,
-		s.stageStore.configMap.TableConfig(s.fullyQualifiedName(tableData)).ReadOnlyColumnsToDelete())
+	assert.Equal(s.T(), len(s.stageStore.configMap.TableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()), 1,
+		s.stageStore.configMap.TableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete())
 
-	_, isOk := s.stageStore.configMap.TableConfig(s.fullyQualifiedName(tableData)).ReadOnlyColumnsToDelete()["new"]
+	_, isOk := s.stageStore.configMap.TableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()["new"]
 	assert.True(s.T(), isOk)
 
 	// Now try to execute merge where 1 of the rows have the column now
@@ -285,8 +285,8 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	assert.Equal(s.T(), s.fakeStageStore.ExecCallCount(), 10, "called merge again")
 
 	// Caught up now, so columns should be 0.
-	assert.Equal(s.T(), len(s.stageStore.configMap.TableConfig(s.fullyQualifiedName(tableData)).ReadOnlyColumnsToDelete()), 0,
-		s.stageStore.configMap.TableConfig(s.fullyQualifiedName(tableData)).ReadOnlyColumnsToDelete())
+	assert.Equal(s.T(), len(s.stageStore.configMap.TableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()), 0,
+		s.stageStore.configMap.TableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete())
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
@@ -307,6 +307,6 @@ func TestTempTableName(t *testing.T) {
 
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "schema"}, "table")
 	tableID := (&Store{}).IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	tempTableName := shared.TempTableID(tableID, "sUfFiX").FullyQualifiedName(false, false)
+	tempTableName := shared.TempTableID(tableID, "sUfFiX").FullyQualifiedName()
 	assert.Equal(t, "db.schema.table___artie_sUfFiX", trimTTL(tempTableName))
 }

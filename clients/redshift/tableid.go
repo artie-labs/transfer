@@ -9,12 +9,13 @@ import (
 )
 
 type TableIdentifier struct {
-	schema string
-	table  string
+	schema                string
+	table                 string
+	uppercaseEscapedNames bool
 }
 
-func NewTableIdentifier(schema, table string) TableIdentifier {
-	return TableIdentifier{schema: schema, table: table}
+func NewTableIdentifier(schema, table string, uppercaseEscapedNames bool) TableIdentifier {
+	return TableIdentifier{schema: schema, table: table, uppercaseEscapedNames: uppercaseEscapedNames}
 }
 
 func (ti TableIdentifier) Schema() string {
@@ -26,15 +27,15 @@ func (ti TableIdentifier) Table() string {
 }
 
 func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
-	return NewTableIdentifier(ti.schema, table)
+	return NewTableIdentifier(ti.schema, table, ti.uppercaseEscapedNames)
 }
 
-func (ti TableIdentifier) FullyQualifiedName(escape, uppercaseEscNames bool) string {
+func (ti TableIdentifier) FullyQualifiedName() string {
 	// Redshift is Postgres compatible, so when establishing a connection, we'll specify a database.
 	// Thus, we only need to specify schema and table name here.
 	return fmt.Sprintf(
 		"%s.%s",
 		ti.schema,
-		sql.EscapeName(ti.table, uppercaseEscNames, &sql.NameArgs{Escape: escape, DestKind: constants.Redshift}),
+		sql.EscapeNameIfNecessary(ti.table, ti.uppercaseEscapedNames, &sql.NameArgs{Escape: true, DestKind: constants.Redshift}),
 	)
 }

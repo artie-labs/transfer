@@ -9,13 +9,19 @@ import (
 )
 
 type TableIdentifier struct {
-	database string
-	schema   string
-	table    string
+	database              string
+	schema                string
+	table                 string
+	uppercaseEscapedNames bool
 }
 
-func NewTableIdentifier(database, schema, table string) TableIdentifier {
-	return TableIdentifier{database: database, schema: schema, table: table}
+func NewTableIdentifier(database, schema, table string, uppercaseEscapedNames bool) TableIdentifier {
+	return TableIdentifier{
+		database:              database,
+		schema:                schema,
+		table:                 table,
+		uppercaseEscapedNames: uppercaseEscapedNames,
+	}
 }
 
 func (ti TableIdentifier) Database() string {
@@ -31,14 +37,14 @@ func (ti TableIdentifier) Table() string {
 }
 
 func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
-	return NewTableIdentifier(ti.database, ti.schema, table)
+	return NewTableIdentifier(ti.database, ti.schema, table, ti.uppercaseEscapedNames)
 }
 
-func (ti TableIdentifier) FullyQualifiedName(escape, uppercaseEscNames bool) string {
+func (ti TableIdentifier) FullyQualifiedName() string {
 	return fmt.Sprintf(
 		"%s.%s.%s",
 		ti.database,
 		ti.schema,
-		sql.EscapeName(ti.table, uppercaseEscNames, &sql.NameArgs{Escape: escape, DestKind: constants.Snowflake}),
+		sql.EscapeNameIfNecessary(ti.table, ti.uppercaseEscapedNames, &sql.NameArgs{Escape: true, DestKind: constants.Snowflake}),
 	)
 }

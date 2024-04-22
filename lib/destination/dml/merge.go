@@ -5,20 +5,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/sql"
-
-	"github.com/artie-labs/transfer/lib/stringutil"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
-	"github.com/artie-labs/transfer/lib/typing"
-
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 type MergeArgument struct {
-	FqTableName   string
+	TableID       types.TableIdentifier
 	SubQuery      string
 	IdempotentKey string
 	PrimaryKeys   []columns.Wrapper
@@ -50,8 +46,12 @@ func (m *MergeArgument) Valid() error {
 		return fmt.Errorf("columns cannot be empty")
 	}
 
-	if stringutil.Empty(m.FqTableName, m.SubQuery) {
-		return fmt.Errorf("one of these arguments is empty: fqTableName, subQuery")
+	if m.TableID == nil {
+		return fmt.Errorf("tableID cannot be nil")
+	}
+
+	if m.SubQuery == "" {
+		return fmt.Errorf("subQuery cannot be empty")
 	}
 
 	if m.UppercaseEscNames == nil {
@@ -108,7 +108,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 			// INSERT
 			fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
 				// insert into target (col1, col2, col3)
-				m.FqTableName, strings.Join(cols, ","),
+				m.TableID.FullyQualifiedName(), strings.Join(cols, ","),
 				// SELECT cc.col1, cc.col2, ... FROM staging as CC
 				array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
 					Vals:      cols,
@@ -116,13 +116,13 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 					Prefix:    "cc.",
 				}), m.SubQuery,
 				// LEFT JOIN table on pk(s)
-				m.FqTableName, strings.Join(equalitySQLParts, " and "),
+				m.TableID.FullyQualifiedName(), strings.Join(equalitySQLParts, " and "),
 				// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
 				m.PrimaryKeys[0].EscapedName()),
 			// UPDATE
 			fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s;`,
 				// UPDATE table set col1 = cc. col1
-				m.FqTableName, m.Columns.UpdateQuery(m.DestKind, *m.UppercaseEscNames, false),
+				m.TableID.FullyQualifiedName(), m.Columns.UpdateQuery(m.DestKind, *m.UppercaseEscNames, false),
 				// FROM table (temp) WHERE join on PK(s)
 				m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause,
 			),
@@ -152,7 +152,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		// INSERT
 		fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
 			// insert into target (col1, col2, col3)
-			m.FqTableName, strings.Join(cols, ","),
+			m.TableID.FullyQualifiedName(), strings.Join(cols, ","),
 			// SELECT cc.col1, cc.col2, ... FROM staging as CC
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
 				Vals:      cols,
@@ -160,13 +160,13 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 				Prefix:    "cc.",
 			}), m.SubQuery,
 			// LEFT JOIN table on pk(s)
-			m.FqTableName, strings.Join(equalitySQLParts, " and "),
+			m.TableID.FullyQualifiedName(), strings.Join(equalitySQLParts, " and "),
 			// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
 			m.PrimaryKeys[0].EscapedName()),
 		// UPDATE
 		fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s AND COALESCE(cc.%s, false) = false;`,
 			// UPDATE table set col1 = cc. col1
-			m.FqTableName, m.Columns.UpdateQuery(m.DestKind, *m.UppercaseEscNames, true),
+			m.TableID.FullyQualifiedName(), m.Columns.UpdateQuery(m.DestKind, *m.UppercaseEscNames, true),
 			// FROM staging WHERE join on PK(s)
 			m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause, constants.DeleteColumnMarker,
 		),
@@ -177,7 +177,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 			// DELETE
 			fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s as cc WHERE cc.%s = true);`,
 				// DELETE from table where (pk_1, pk_2)
-				m.FqTableName, strings.Join(pks, ","),
+				m.TableID.FullyQualifiedName(), strings.Join(pks, ","),
 				// IN (cc.pk_1, cc.pk_2) FROM staging
 				array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
 					Vals:      pks,
@@ -243,7 +243,7 @@ func (m *MergeArgument) GetStatement() (string, error) {
 MERGE INTO %s c USING %s AS cc ON %s
 WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
-			m.FqTableName, subQuery, strings.Join(equalitySQLParts, " and "),
+			m.TableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
 			idempotentClause, m.Columns.UpdateQuery(m.DestKind, *m.UppercaseEscNames, false),
 			// Insert
@@ -274,7 +274,7 @@ MERGE INTO %s c USING %s AS cc ON %s
 WHEN MATCHED AND cc.%s THEN DELETE
 WHEN MATCHED AND IFNULL(cc.%s, false) = false %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
-		m.FqTableName, subQuery, strings.Join(equalitySQLParts, " and "),
+		m.TableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " and "),
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update
@@ -316,7 +316,7 @@ MERGE INTO %s c
 USING %s AS cc ON %s
 WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
-			m.FqTableName, m.SubQuery, strings.Join(equalitySQLParts, " and "),
+			m.TableID.FullyQualifiedName(), m.SubQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
 			idempotentClause, m.Columns.UpdateQuery(m.DestKind, *m.UppercaseEscNames, false),
 			// Insert
@@ -348,7 +348,7 @@ USING %s AS cc ON %s
 WHEN MATCHED AND cc.%s = 1 THEN DELETE
 WHEN MATCHED AND COALESCE(cc.%s, 0) = 0 %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(cc.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
-		m.FqTableName, m.SubQuery, strings.Join(equalitySQLParts, " and "),
+		m.TableID.FullyQualifiedName(), m.SubQuery, strings.Join(equalitySQLParts, " and "),
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update

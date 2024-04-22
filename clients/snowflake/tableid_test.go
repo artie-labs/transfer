@@ -7,30 +7,22 @@ import (
 )
 
 func TestTableIdentifier_WithTable(t *testing.T) {
-	tableID := NewTableIdentifier("database", "schema", "foo")
+	tableID := NewTableIdentifier("database", "schema", "foo", true)
 	tableID2 := tableID.WithTable("bar")
 	typedTableID2, ok := tableID2.(TableIdentifier)
 	assert.True(t, ok)
 	assert.Equal(t, "database", typedTableID2.Database())
 	assert.Equal(t, "schema", typedTableID2.Schema())
 	assert.Equal(t, "bar", tableID2.Table())
+	assert.True(t, typedTableID2.uppercaseEscapedNames)
 }
 
 func TestTableIdentifier_FullyQualifiedName(t *testing.T) {
-	{
-		// Table name that does not need escaping:
-		tableID := NewTableIdentifier("database", "schema", "foo")
-		assert.Equal(t, "database.schema.foo", tableID.FullyQualifiedName(true, false), "escaped")
-		assert.Equal(t, "database.schema.foo", tableID.FullyQualifiedName(true, true), "escaped + upper")
-		assert.Equal(t, "database.schema.foo", tableID.FullyQualifiedName(false, false), "unescaped")
-		assert.Equal(t, "database.schema.foo", tableID.FullyQualifiedName(false, true), "unescaped + upper")
-	}
-	{
-		// Table name that needs escaping:
-		tableID := NewTableIdentifier("database", "schema", "table")
-		assert.Equal(t, `database.schema."table"`, tableID.FullyQualifiedName(true, false), "escaped")
-		assert.Equal(t, `database.schema."TABLE"`, tableID.FullyQualifiedName(true, true), "escaped + upper")
-		assert.Equal(t, "database.schema.table", tableID.FullyQualifiedName(false, false), "unescaped")
-		assert.Equal(t, "database.schema.table", tableID.FullyQualifiedName(false, true), "unescaped + upper")
-	}
+	// Table name that does not need escaping:
+	assert.Equal(t, "database.schema.foo", NewTableIdentifier("database", "schema", "foo", false).FullyQualifiedName())
+	assert.Equal(t, "database.schema.foo", NewTableIdentifier("database", "schema", "foo", true).FullyQualifiedName())
+
+	// Table name that needs escaping:
+	assert.Equal(t, `database.schema."table"`, NewTableIdentifier("database", "schema", "table", false).FullyQualifiedName())
+	assert.Equal(t, `database.schema."TABLE"`, NewTableIdentifier("database", "schema", "table", true).FullyQualifiedName())
 }

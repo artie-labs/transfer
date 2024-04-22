@@ -44,13 +44,17 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 
 func (s *Store) Append(tableData *optimization.TableData) error {
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	return shared.Append(s, tableData, s.config, types.AppendOpts{
-		TempTableName: tableID.FullyQualifiedName(true, s.ShouldUppercaseEscapedNames()),
-	})
+	return shared.Append(s, tableData, types.AppendOpts{TempTableID: tableID})
 }
 
+// specificIdentifierFor returns a MS SQL [TableIdentifier] for a [TopicConfig] + table name.
+func (s *Store) specificIdentifierFor(topicConfig kafkalib.TopicConfig, table string) TableIdentifier {
+	return NewTableIdentifier(getSchema(topicConfig.Schema), table, s.ShouldUppercaseEscapedNames())
+}
+
+// IdentifierFor returns a generic [types.TableIdentifier] interface for a [TopicConfig] + table name.
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
-	return NewTableIdentifier(getSchema(topicConfig.Schema), table)
+	return s.specificIdentifierFor(topicConfig, table)
 }
 
 func (s *Store) Sweep() error {
@@ -78,10 +82,11 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		describeDescriptionCol = "description"
 	)
 
-	query, args := describeTableQuery(getSchema(tableData.TopicConfig().Schema), tableData.Name())
+	tableID := s.specificIdentifierFor(tableData.TopicConfig(), tableData.Name())
+	query, args := describeTableQuery(tableID)
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
-		TableID:            s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
+		TableID:            tableID,
 		ConfigMap:          s.configMap,
 		Query:              query,
 		Args:               args,

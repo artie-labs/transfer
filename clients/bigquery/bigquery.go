@@ -37,12 +37,12 @@ type Store struct {
 	db.Store
 }
 
-func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, _ types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
 			Dwh:               s,
 			Tc:                tableConfig,
-			FqTableName:       tempTableName,
+			TableID:           tempTableID,
 			CreateTable:       true,
 			TemporaryTable:    true,
 			ColumnOp:          constants.Add,
@@ -76,11 +76,11 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	}
 
 	// Load the data
-	return s.putTable(context.Background(), tableData.TopicConfig().Database, tempTableName, rows)
+	return s.putTable(context.Background(), tableData.TopicConfig().Database, tempTableID, rows)
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
-	return NewTableIdentifier(s.config.BigQuery.ProjectID, topicConfig.Database, table)
+	return NewTableIdentifier(s.config.BigQuery.ProjectID, topicConfig.Database, table, s.ShouldUppercaseEscapedNames())
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
@@ -133,7 +133,10 @@ func tableRelName(fqName string) (string, error) {
 	return strings.Join(fqNameParts[2:], "."), nil
 }
 
-func (s *Store) putTable(ctx context.Context, dataset, tableName string, rows []*Row) error {
+func (s *Store) putTable(ctx context.Context, dataset string, tableID types.TableIdentifier, rows []*Row) error {
+	// TODO: [tableID] has [Dataset] on it, don't need to pass it along.
+	tableName := tableID.FullyQualifiedName()
+	// TODO: Can probably do `tableName := tableID.Table()` here.
 	relTableName, err := tableRelName(tableName)
 	if err != nil {
 		return fmt.Errorf("failed to get table name: %w", err)
@@ -154,7 +157,7 @@ func (s *Store) putTable(ctx context.Context, dataset, tableName string, rows []
 }
 
 func (s *Store) Dedupe(tableID types.TableIdentifier) error {
-	fqTableName := tableID.FullyQualifiedName(true, s.ShouldUppercaseEscapedNames())
+	fqTableName := tableID.FullyQualifiedName()
 	_, err := s.Exec(fmt.Sprintf("CREATE OR REPLACE TABLE %s AS SELECT DISTINCT * FROM %s", fqTableName, fqTableName))
 	return err
 }

@@ -41,7 +41,7 @@ func Test_GetMSSQLStatement(t *testing.T) {
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
 	mergeArg := MergeArgument{
-		FqTableName:       fqTable,
+		TableID:           MockTableIdentifier{fqTable},
 		SubQuery:          subQuery,
 		IdempotentKey:     "",
 		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, nil)},

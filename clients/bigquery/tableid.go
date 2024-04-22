@@ -9,13 +9,19 @@ import (
 )
 
 type TableIdentifier struct {
-	projectID string
-	dataset   string
-	table     string
+	projectID             string
+	dataset               string
+	table                 string
+	uppercaseEscapedNames bool
 }
 
-func NewTableIdentifier(projectID, dataset, table string) TableIdentifier {
-	return TableIdentifier{projectID: projectID, dataset: dataset, table: table}
+func NewTableIdentifier(projectID, dataset, table string, uppercaseEscapedNames bool) TableIdentifier {
+	return TableIdentifier{
+		projectID:             projectID,
+		dataset:               dataset,
+		table:                 table,
+		uppercaseEscapedNames: uppercaseEscapedNames,
+	}
 }
 
 func (ti TableIdentifier) ProjectID() string {
@@ -31,16 +37,16 @@ func (ti TableIdentifier) Table() string {
 }
 
 func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
-	return NewTableIdentifier(ti.projectID, ti.dataset, table)
+	return NewTableIdentifier(ti.projectID, ti.dataset, table, ti.uppercaseEscapedNames)
 }
 
-func (ti TableIdentifier) FullyQualifiedName(escape, uppercaseEscNames bool) string {
+func (ti TableIdentifier) FullyQualifiedName() string {
 	// The fully qualified name for BigQuery is: project_id.dataset.tableName.
 	// We are escaping the project_id and dataset because there could be special characters.
 	return fmt.Sprintf(
 		"`%s`.`%s`.%s",
 		ti.projectID,
 		ti.dataset,
-		sql.EscapeName(ti.table, uppercaseEscNames, &sql.NameArgs{Escape: escape, DestKind: constants.BigQuery}),
+		sql.EscapeNameIfNecessary(ti.table, ti.uppercaseEscapedNames, &sql.NameArgs{Escape: true, DestKind: constants.BigQuery}),
 	)
 }

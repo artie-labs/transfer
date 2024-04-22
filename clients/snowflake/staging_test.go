@@ -50,7 +50,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging() {
 }
 
 func (s *SnowflakeTestSuite) TestBackfillColumn() {
-	fqTableName := "db.public.tableName"
+	tableID := NewTableIdentifier("db", "public", "tableName", true)
 
 	backfilledCol := columns.NewColumn("foo", typing.Boolean)
 	backfilledCol.SetDefaultValue(true)
@@ -92,7 +92,7 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 
 	var count int
 	for _, testCase := range testCases {
-		err := shared.BackfillColumn(config.Config{}, s.stageStore, testCase.col, fqTableName)
+		err := shared.BackfillColumn(config.Config{}, s.stageStore, testCase.col, tableID)
 		assert.NoError(s.T(), err, testCase.name)
 		if testCase.backfillSQL != "" && testCase.commentSQL != "" {
 			backfillSQL, _ := s.fakeStageStore.ExecArgsForCall(count)
@@ -110,7 +110,7 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 }
 
 // generateTableData - returns tableName and tableData
-func generateTableData(rows int) (string, *optimization.TableData) {
+func generateTableData(rows int) (TableIdentifier, *optimization.TableData) {
 	randomTableName := fmt.Sprintf("temp_%s_%s", constants.ArtiePrefix, stringutil.Random(10))
 	cols := &columns.Columns{}
 	for _, col := range []string{"user_id", "first_name", "last_name", "dusty"} {
@@ -130,16 +130,17 @@ func generateTableData(rows int) (string, *optimization.TableData) {
 		td.InsertRow(key, rowData, false)
 	}
 
-	return randomTableName, td
+	return NewTableIdentifier("database", "schema", randomTableName, true), td
 }
 
 func (s *SnowflakeTestSuite) TestPrepareTempTable() {
-	tempTableName, tableData := generateTableData(10)
-	s.stageStore.GetConfigMap().AddTableToConfig(tempTableName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
-	sflkTc := s.stageStore.GetConfigMap().TableConfig(tempTableName)
+	tempTableID, tableData := generateTableData(10)
+	tempTableName := tempTableID.FullyQualifiedName()
+	s.stageStore.GetConfigMap().AddTableToConfig(tempTableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
+	sflkTc := s.stageStore.GetConfigMap().TableConfig(tempTableID)
 
 	{
-		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableName, types.AdditionalSettings{}, true))
+		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableID, types.AdditionalSettings{}, true))
 		assert.Equal(s.T(), 3, s.fakeStageStore.ExecCallCount())
 
 		// First call is to create the temp table
@@ -149,7 +150,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 			`CREATE TABLE IF NOT EXISTS %s (user_id string,first_name string,last_name string,dusty string) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`, tempTableName)
 		containsPrefix := strings.HasPrefix(createQuery, prefixQuery)
 		assert.True(s.T(), containsPrefix, fmt.Sprintf("createQuery:%v, prefixQuery:%s", createQuery, prefixQuery))
-		resourceName := addPrefixToTableName(tempTableName, "%")
+		resourceName := addPrefixToTableName(tempTableID, "%")
 		// Second call is a PUT
 		putQuery, _ := s.fakeStageStore.ExecArgsForCall(1)
 		assert.Contains(s.T(), putQuery, "PUT file://", putQuery)
@@ -161,15 +162,15 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	}
 	{
 		// Don't create the temporary table.
-		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableName, types.AdditionalSettings{}, false))
+		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableID, types.AdditionalSettings{}, false))
 		assert.Equal(s.T(), 5, s.fakeStageStore.ExecCallCount())
 	}
 
 }
 
 func (s *SnowflakeTestSuite) TestLoadTemporaryTable() {
-	tempTableName, tableData := generateTableData(100)
-	fp, err := s.stageStore.writeTemporaryTableFile(tableData, tempTableName)
+	tempTableID, tableData := generateTableData(100)
+	fp, err := s.stageStore.writeTemporaryTableFile(tableData, tempTableID)
 	assert.NoError(s.T(), err)
 	// Read the CSV and confirm.
 	csvfile, err := os.Open(fp)

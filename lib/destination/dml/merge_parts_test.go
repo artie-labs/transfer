@@ -74,7 +74,7 @@ func TestMergeStatementParts_SkipDelete(t *testing.T) {
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(false, false)
 	mergeArg := &MergeArgument{
-		FqTableName:         fqTableName,
+		TableID:             MockTableIdentifier{fqTableName},
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             &res.ColumnsToTypes,
@@ -101,7 +101,7 @@ func TestMergeStatementPartsSoftDelete(t *testing.T) {
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(false, false)
 	mergeArg := &MergeArgument{
-		FqTableName:         fqTableName,
+		TableID:             MockTableIdentifier{fqTableName},
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             &res.ColumnsToTypes,
@@ -141,7 +141,7 @@ func TestMergeStatementPartsSoftDeleteComposite(t *testing.T) {
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(true, false)
 	mergeArg := &MergeArgument{
-		FqTableName:         fqTableName,
+		TableID:             MockTableIdentifier{fqTableName},
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             &res.ColumnsToTypes,
@@ -184,7 +184,7 @@ func TestMergeStatementParts(t *testing.T) {
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(false, false)
 	mergeArg := &MergeArgument{
-		FqTableName:         fqTableName,
+		TableID:             MockTableIdentifier{fqTableName},
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             &res.ColumnsToTypes,
@@ -210,7 +210,7 @@ func TestMergeStatementParts(t *testing.T) {
 		parts[2])
 
 	mergeArg = &MergeArgument{
-		FqTableName:         fqTableName,
+		TableID:             MockTableIdentifier{fqTableName},
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             &res.ColumnsToTypes,
@@ -242,7 +242,7 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(true, false)
 	mergeArg := &MergeArgument{
-		FqTableName:         fqTableName,
+		TableID:             MockTableIdentifier{fqTableName},
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             &res.ColumnsToTypes,
@@ -268,7 +268,7 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 		parts[2])
 
 	mergeArg = &MergeArgument{
-		FqTableName:         fqTableName,
+		TableID:             MockTableIdentifier{fqTableName},
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             &res.ColumnsToTypes,
