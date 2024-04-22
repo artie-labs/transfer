@@ -87,7 +87,7 @@ func (c *Column) RawName() string {
 // However, if you pass in escape, we will escape if the column name is part of the reserved words from destinations.
 // If so, it'll change from `start` => `"start"` as suggested by Snowflake.
 func (c *Column) Name(uppercaseEscNames bool, args *sql.NameArgs) string {
-	return sql.EscapeName(c.name, uppercaseEscNames, args)
+	return sql.EscapeNameIfNecessary(c.name, uppercaseEscNames, args)
 }
 
 type Columns struct {

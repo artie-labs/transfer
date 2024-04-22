@@ -17,15 +17,23 @@ type NameArgs struct {
 // symbolsToEscape are additional keywords that we need to escape
 var symbolsToEscape = []string{":"}
 
-func EscapeName(name string, uppercaseEscNames bool, args *NameArgs) string {
+func EscapeNameIfNecessary(name string, uppercaseEscNames bool, args *NameArgs) string {
 	if args == nil || !args.Escape {
 		return name
 	}
 
+	if needsEscaping(name, args.DestKind) {
+		return escapeName(name, uppercaseEscNames, args.DestKind)
+	}
+
+	return name
+}
+
+func needsEscaping(name string, destKind constants.DestinationKind) bool {
 	var reservedKeywords []string
-	if args.DestKind == constants.Redshift {
+	if destKind == constants.Redshift {
 		reservedKeywords = constants.RedshiftReservedKeywords
-	} else if args.DestKind == constants.MSSQL {
+	} else if destKind == constants.MSSQL {
 		reservedKeywords = constants.MSSQLReservedKeywords
 	} else {
 		reservedKeywords = constants.ReservedKeywords
@@ -50,19 +58,19 @@ func EscapeName(name string, uppercaseEscNames bool, args *NameArgs) string {
 		}
 	}
 
-	if needsEscaping {
-		if uppercaseEscNames {
-			name = strings.ToUpper(name)
-		}
+	return needsEscaping
+}
 
-		if args.DestKind == constants.BigQuery {
-			// BigQuery needs backticks to escape.
-			return fmt.Sprintf("`%s`", name)
-		} else {
-			// Snowflake uses quotes.
-			return fmt.Sprintf(`"%s"`, name)
-		}
+func escapeName(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
+	if uppercaseEscNames {
+		name = strings.ToUpper(name)
 	}
 
-	return name
+	if destKind == constants.BigQuery {
+		// BigQuery needs backticks to escape.
+		return fmt.Sprintf("`%s`", name)
+	} else {
+		// Snowflake uses quotes.
+		return fmt.Sprintf(`"%s"`, name)
+	}
 }
