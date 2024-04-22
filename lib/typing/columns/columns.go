@@ -91,6 +91,7 @@ type NameArgs struct {
 // However, if you pass in escape, we will escape if the column name is part of the reserved words from destinations.
 // If so, it'll change from `start` => `"start"` as suggested by Snowflake.
 func (c *Column) Name(uppercaseEscNames bool, args *NameArgs) string {
+	// TODO: Kill [NameArgs] and just pass a [DestinationKind].
 	if args == nil {
 		return c.name
 	}
