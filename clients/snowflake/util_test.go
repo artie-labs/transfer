@@ -14,30 +14,30 @@ func TestAddPrefixToTableName(t *testing.T) {
 	const prefix = "%"
 	type _testCase struct {
 		name                string
-		fqTableName         string
+		fqTableName         TableIdentifier
 		expectedFqTableName string
 	}
 
 	testCases := []_testCase{
 		{
 			name:                "happy path",
-			fqTableName:         "database.schema.tableName",
+			fqTableName:         NewTableIdentifier("database", "schema", "tableName", true),
 			expectedFqTableName: "database.schema.%tableName",
 		},
 		{
 			name:                "tableName only",
-			fqTableName:         "orders",
-			expectedFqTableName: "%orders",
+			fqTableName:         NewTableIdentifier("", "", "orders", true),
+			expectedFqTableName: "..%orders",
 		},
 		{
 			name:                "schema and tableName only",
-			fqTableName:         "public.orders",
-			expectedFqTableName: "public.%orders",
+			fqTableName:         NewTableIdentifier("", "public", "orders", true),
+			expectedFqTableName: ".public.%orders",
 		},
 		{
 			name:                "db and tableName only",
-			fqTableName:         "db.tableName",
-			expectedFqTableName: "db.%tableName",
+			fqTableName:         NewTableIdentifier("db", "", "tableName", true),
+			expectedFqTableName: "db..%tableName",
 		},
 	}
 

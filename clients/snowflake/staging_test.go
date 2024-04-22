@@ -150,7 +150,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 			`CREATE TABLE IF NOT EXISTS %s (user_id string,first_name string,last_name string,dusty string) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`, tempTableName)
 		containsPrefix := strings.HasPrefix(createQuery, prefixQuery)
 		assert.True(s.T(), containsPrefix, fmt.Sprintf("createQuery:%v, prefixQuery:%s", createQuery, prefixQuery))
-		resourceName := addPrefixToTableName(tempTableName, "%")
+		resourceName := addPrefixToTableName(tempTableID, "%")
 		// Second call is a PUT
 		putQuery, _ := s.fakeStageStore.ExecArgsForCall(1)
 		assert.Contains(s.T(), putQuery, "PUT file://", putQuery)

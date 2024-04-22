@@ -4,15 +4,17 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-// addPrefixToTableName will take the fully qualified table name and add a prefix in front of the table
+// addPrefixToTableName will take a [types.TableIdentifier] and add a prefix in front of the table
 // This is necessary for `PUT` commands. The fq name looks like <namespace>.<tableName>
 // Namespace may contain both database and schema.
-func addPrefixToTableName(fqTableName string, prefix string) string {
+func addPrefixToTableName(tableID types.TableIdentifier, prefix string) string {
+	fqTableName := tableID.FullyQualifiedName()
 	tableParts := strings.Split(fqTableName, ".")
 	if len(tableParts) == 1 {
 		return prefix + fqTableName
