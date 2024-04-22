@@ -42,7 +42,7 @@ func TestAddPrefixToTableName(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		assert.Equal(t, addPrefixToTableName(testCase.tableID, prefix), testCase.expectedFqTableName, testCase.name)
+		assert.Equal(t, testCase.expectedFqTableName, addPrefixToTableName(testCase.tableID, prefix), testCase.name)
 	}
 }
 
