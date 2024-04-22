@@ -20,7 +20,7 @@ func TestTempTableName(t *testing.T) {
 		epoch, err := strconv.ParseInt(tableName[lastUnderscore+1:len(tableName)-1], 10, 64)
 		assert.NoError(t, err)
 		assert.Greater(t, time.Unix(epoch, 0), time.Now().Add(5*time.Hour)) // default TTL is 6 hours from now
-		return tableName[:lastUnderscore] + `"`
+		return tableName[:lastUnderscore] + string(tableName[len(tableName)-1])
 	}
 
 	store := Store{}
