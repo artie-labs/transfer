@@ -22,14 +22,14 @@ func EscapeNameIfNecessary(name string, uppercaseEscNames bool, args *NameArgs) 
 		return name
 	}
 
-	if needsEscaping(name, uppercaseEscNames, args.DestKind) {
+	if needsEscaping(name, args.DestKind) {
 		return escapeName(name, uppercaseEscNames, args.DestKind)
 	}
 
 	return name
 }
 
-func needsEscaping(name string, uppercaseEscNames bool, destKind constants.DestinationKind) bool {
+func needsEscaping(name string, destKind constants.DestinationKind) bool {
 	var reservedKeywords []string
 	if destKind == constants.Redshift {
 		reservedKeywords = constants.RedshiftReservedKeywords
