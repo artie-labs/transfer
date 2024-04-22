@@ -4,22 +4,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
+	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-// addPrefixToTableName will take the fully qualified table name and add a prefix in front of the table
-// This is necessary for `PUT` commands. The fq name looks like <namespace>.<tableName>
-// Namespace may contain both database and schema.
-func addPrefixToTableName(fqTableName string, prefix string) string {
-	tableParts := strings.Split(fqTableName, ".")
-	if len(tableParts) == 1 {
-		return prefix + fqTableName
-	}
-
-	return fmt.Sprintf("%s.%s%s",
-		strings.Join(tableParts[0:len(tableParts)-1], "."), prefix, tableParts[len(tableParts)-1])
+// addPrefixToTableName will take a [types.TableIdentifier] and add a prefix in front of the table.
+// This is necessary for `PUT` commands.
+func addPrefixToTableName(tableID types.TableIdentifier, prefix string) string {
+	return tableID.WithTable(prefix + tableID.Table()).FullyQualifiedName()
 }
 
 // escapeColumns will take columns, filter out invalid, escape and return them in ordered received.
