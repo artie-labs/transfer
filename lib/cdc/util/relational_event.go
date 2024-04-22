@@ -1,7 +1,7 @@
 package util
 
 import (
-	"log/slog"
+	"fmt"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -34,11 +34,11 @@ type Source struct {
 	Table     string `json:"table"`
 }
 
-func (s *SchemaEventPayload) GetColumns() *columns.Columns {
+func (s *SchemaEventPayload) GetColumns() (*columns.Columns, error) {
 	fieldsObject := s.Schema.GetSchemaFromLabel(cdc.After)
 	if fieldsObject == nil {
 		// AFTER schema does not exist.
-		return nil
+		return nil, nil
 	}
 
 	var cols columns.Columns
@@ -48,13 +48,7 @@ func (s *SchemaEventPayload) GetColumns() *columns.Columns {
 		col := columns.NewColumn(columns.EscapeName(field.FieldName), typing.Invalid)
 		val, parseErr := field.ParseValue(field.Default)
 		if parseErr != nil {
-			slog.Warn("Failed to parse field for default value, using original value",
-				slog.Any("err", parseErr),
-				slog.String("field", field.FieldName),
-				slog.Any("value", field.Default),
-				slog.String("debezium_type", string(field.DebeziumType)),
-			)
-			col.SetDefaultValue(field.Default)
+			return nil, fmt.Errorf("failed to parse field %q for default value: %w", field.FieldName, parseErr)
 		} else {
 			col.SetDefaultValue(val)
 		}
@@ -62,7 +56,7 @@ func (s *SchemaEventPayload) GetColumns() *columns.Columns {
 		cols.AddColumn(col)
 	}
 
-	return &cols
+	return &cols, nil
 }
 
 func (s *SchemaEventPayload) Operation() string {
@@ -81,11 +75,15 @@ func (s *SchemaEventPayload) GetTableName() string {
 	return s.Payload.Source.Table
 }
 
-func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicConfig) map[string]any {
+func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicConfig) (map[string]any, error) {
 	var retMap map[string]any
 	if len(s.Payload.After) == 0 {
 		if len(s.Payload.Before) > 0 {
-			retMap = s.parseAndMutateMapInPlace(s.Payload.Before, cdc.Before)
+			var err error
+			retMap, err = s.parseAndMutateMapInPlace(s.Payload.Before, cdc.Before)
+			if err != nil {
+				return nil, err
+			}
 		} else {
 			retMap = make(map[string]any)
 		}
@@ -103,7 +101,11 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 			retMap[tc.IdempotentKey] = s.GetExecutionTime().Format(ext.ISO8601)
 		}
 	} else {
-		retMap = s.parseAndMutateMapInPlace(s.Payload.After, cdc.After)
+		var err error
+		retMap, err = s.parseAndMutateMapInPlace(s.Payload.After, cdc.After)
+		if err != nil {
+			return nil, err
+		}
 		retMap[constants.DeleteColumnMarker] = false
 	}
 
@@ -115,13 +117,13 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 		retMap[constants.DatabaseUpdatedColumnMarker] = s.GetExecutionTime().Format(ext.ISO8601)
 	}
 
-	return retMap
+	return retMap, nil
 }
 
 // parseAndMutateMapInPlace will take `retMap` and `kind` (which part of the schema should we be inspecting) and then parse the values accordingly.
 // This will unpack any Debezium-specific values and convert them back into their original types.
 // NOTE: `retMap` and the returned object are the same object.
-func (s *SchemaEventPayload) parseAndMutateMapInPlace(retMap map[string]any, kind cdc.FieldLabelKind) map[string]any {
+func (s *SchemaEventPayload) parseAndMutateMapInPlace(retMap map[string]any, kind cdc.FieldLabelKind) (map[string]any, error) {
 	if schemaObject := s.Schema.GetSchemaFromLabel(kind); schemaObject != nil {
 		for _, field := range schemaObject.Fields {
 			fieldVal, isOk := retMap[field.FieldName]
@@ -132,16 +134,10 @@ func (s *SchemaEventPayload) parseAndMutateMapInPlace(retMap map[string]any, kin
 			if val, parseErr := field.ParseValue(fieldVal); parseErr == nil {
 				retMap[field.FieldName] = val
 			} else {
-				// TODO: Make this a hard failure, confirm this with Datadog logs.
-				slog.Warn("Failed to parse field, using original value",
-					slog.Any("err", parseErr),
-					slog.String("field", field.FieldName),
-					slog.Any("value", fieldVal),
-					slog.String("debezium_type", string(field.DebeziumType)),
-				)
+				return nil, fmt.Errorf("failed to parse field %q: %w", field.FieldName, parseErr)
 			}
 		}
 	}
 
-	return retMap
+	return retMap, nil
 }
