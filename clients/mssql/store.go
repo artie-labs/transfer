@@ -35,9 +35,6 @@ func (s *Store) Label() constants.DestinationKind {
 }
 
 func (s *Store) ShouldUppercaseEscapedNames() bool {
-	if s.config.SharedDestinationConfig.UppercaseEscapedNames {
-		panic("UppercaseEscapedNames is not supported for MSSQL")
-	}
 	return false
 }
 
