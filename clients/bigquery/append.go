@@ -8,5 +8,5 @@ import (
 
 func (s *Store) Append(tableData *optimization.TableData) error {
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	return shared.Append(s, tableData, s.config, types.AppendOpts{TempTableID: tableID})
+	return shared.Append(s, tableData, types.AppendOpts{TempTableID: tableID})
 }
