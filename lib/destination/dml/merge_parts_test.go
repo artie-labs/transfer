@@ -5,7 +5,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/ptr"
-	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/typing"
 
@@ -48,12 +47,12 @@ func getBasicColumnsForTest(compositeKey bool, uppercaseEscNames bool) result {
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	var pks []columns.Wrapper
-	pks = append(pks, columns.NewWrapper(idCol, uppercaseEscNames, &sql.NameArgs{
+	pks = append(pks, columns.NewWrapper(idCol, uppercaseEscNames, &columns.NameArgs{
 		DestKind: constants.Redshift,
 	}))
 
 	if compositeKey {
-		pks = append(pks, columns.NewWrapper(emailCol, uppercaseEscNames, &sql.NameArgs{
+		pks = append(pks, columns.NewWrapper(emailCol, uppercaseEscNames, &columns.NameArgs{
 			DestKind: constants.Redshift,
 		}))
 	}

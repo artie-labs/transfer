@@ -11,104 +11,78 @@ func TestEscapeNameIfNecessary(t *testing.T) {
 	type _testCase struct {
 		name                     string
 		nameToEscape             string
-		args                     *NameArgs
+		destKind                 constants.DestinationKind
 		expectedName             string
 		expectedNameWhenUpperCfg string
 	}
 
 	testCases := []_testCase{
 		{
-			name:                     "args = nil",
-			nameToEscape:             "order",
-			expectedName:             "order",
-			expectedNameWhenUpperCfg: "order",
-		},
-		{
-			name: "snowflake",
-			args: &NameArgs{
-				DestKind: constants.Snowflake,
-			},
+			name:                     "snowflake",
+			destKind:                 constants.Snowflake,
 			nameToEscape:             "order",
 			expectedName:             `"order"`,
 			expectedNameWhenUpperCfg: `"ORDER"`,
 		},
 		{
-			name: "snowflake #2",
-			args: &NameArgs{
-				DestKind: constants.Snowflake,
-			},
+			name:                     "snowflake #2",
+			destKind:                 constants.Snowflake,
 			nameToEscape:             "hello",
 			expectedName:             `hello`,
 			expectedNameWhenUpperCfg: "hello",
 		},
 		{
-			name: "redshift",
-			args: &NameArgs{
-				DestKind: constants.Redshift,
-			},
+			name:                     "redshift",
+			destKind:                 constants.Redshift,
 			nameToEscape:             "order",
 			expectedName:             `"order"`,
 			expectedNameWhenUpperCfg: `"ORDER"`,
 		},
 		{
-			name: "redshift #2",
-			args: &NameArgs{
-				DestKind: constants.Redshift,
-			},
+			name:                     "redshift #2",
+			destKind:                 constants.Redshift,
 			nameToEscape:             "hello",
 			expectedName:             `hello`,
 			expectedNameWhenUpperCfg: "hello",
 		},
 		{
-			name: "bigquery",
-			args: &NameArgs{
-				DestKind: constants.BigQuery,
-			},
+			name:                     "bigquery",
+			destKind:                 constants.BigQuery,
 			nameToEscape:             "order",
 			expectedName:             "`order`",
 			expectedNameWhenUpperCfg: "`ORDER`",
 		},
 		{
-			name: "bigquery, #2",
-			args: &NameArgs{
-				DestKind: constants.BigQuery,
-			},
+			name:                     "bigquery, #2",
+			destKind:                 constants.BigQuery,
 			nameToEscape:             "hello",
 			expectedName:             "hello",
 			expectedNameWhenUpperCfg: "hello",
 		},
 		{
-			name: "redshift, #1 (delta)",
-			args: &NameArgs{
-				DestKind: constants.Redshift,
-			},
+			name:                     "redshift, #1 (delta)",
+			destKind:                 constants.Redshift,
 			nameToEscape:             "delta",
 			expectedName:             `"delta"`,
 			expectedNameWhenUpperCfg: `"DELTA"`,
 		},
 		{
-			name: "snowflake, #1 (delta)",
-			args: &NameArgs{
-				DestKind: constants.Snowflake,
-			},
+			name:                     "snowflake, #1 (delta)",
+			destKind:                 constants.Snowflake,
 			nameToEscape:             "delta",
 			expectedName:             `delta`,
 			expectedNameWhenUpperCfg: `delta`,
 		},
 		{
-			name: "redshift, symbols",
-			args: &NameArgs{
-				DestKind: constants.Redshift,
-			},
+			name:                     "redshift, symbols",
+			destKind:                 constants.Redshift,
 			nameToEscape:             "receivedat:__",
 			expectedName:             `"receivedat:__"`,
 			expectedNameWhenUpperCfg: `"RECEIVEDAT:__"`,
 		},
 		{
-			name: "redshift, numbers",
-			args: &NameArgs{
-				DestKind: constants.Redshift,
-			},
+			name:                     "redshift, numbers",
+			destKind:                 constants.Redshift,
 			nameToEscape:             "0",
 			expectedName:             `"0"`,
 			expectedNameWhenUpperCfg: `"0"`,
@@ -116,10 +90,10 @@ func TestEscapeNameIfNecessary(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		actualName := EscapeNameIfNecessary(testCase.nameToEscape, false, testCase.args)
+		actualName := EscapeNameIfNecessary(testCase.nameToEscape, false, testCase.destKind)
 		assert.Equal(t, testCase.expectedName, actualName, testCase.name)
 
-		actualUpperName := EscapeNameIfNecessary(testCase.nameToEscape, true, testCase.args)
+		actualUpperName := EscapeNameIfNecessary(testCase.nameToEscape, true, testCase.destKind)
 		assert.Equal(t, testCase.expectedNameWhenUpperCfg, actualUpperName, testCase.name)
 	}
 }

@@ -14,7 +14,6 @@ import (
 	"github.com/artie-labs/transfer/lib/jitter"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
-	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
@@ -123,7 +122,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		TableID:             tableID,
 		SubQuery:            subQuery,
 		IdempotentKey:       tableData.TopicConfig().IdempotentKey,
-		PrimaryKeys:         tableData.PrimaryKeys(dwh.ShouldUppercaseEscapedNames(), &sql.NameArgs{DestKind: dwh.Label()}),
+		PrimaryKeys:         tableData.PrimaryKeys(dwh.ShouldUppercaseEscapedNames(), &columns.NameArgs{DestKind: dwh.Label()}),
 		Columns:             tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:          tableData.TopicConfig().SoftDelete,
 		DestKind:            dwh.Label(),

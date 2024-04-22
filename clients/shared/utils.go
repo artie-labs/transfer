@@ -7,8 +7,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination/types"
 
-	"github.com/artie-labs/transfer/lib/sql"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/artie-labs/transfer/lib/destination"
@@ -32,7 +30,7 @@ func BackfillColumn(cfg config.Config, dwh destination.DataWarehouse, column col
 		return fmt.Errorf("failed to escape default value: %w", err)
 	}
 
-	escapedCol := column.Name(dwh.ShouldUppercaseEscapedNames(), &sql.NameArgs{DestKind: dwh.Label()})
+	escapedCol := column.Name(dwh.ShouldUppercaseEscapedNames(), &columns.NameArgs{DestKind: dwh.Label()})
 
 	// TODO: This is added because `default` is not technically a column that requires escaping, but it is required when it's in the where clause.
 	// Once we escape everything by default, we can remove this patch of code.

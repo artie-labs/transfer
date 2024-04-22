@@ -9,23 +9,13 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
-type NameArgs struct {
-	DestKind constants.DestinationKind
-}
-
 // symbolsToEscape are additional keywords that we need to escape
 var symbolsToEscape = []string{":"}
 
-func EscapeNameIfNecessary(name string, uppercaseEscNames bool, args *NameArgs) string {
-	// TODO: Kill [NameArgs] and just pass [DestinationKind].
-	if args == nil {
-		return name
+func EscapeNameIfNecessary(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
+	if needsEscaping(name, destKind) {
+		return escapeName(name, uppercaseEscNames, destKind)
 	}
-
-	if needsEscaping(name, args.DestKind) {
-		return escapeName(name, uppercaseEscNames, args.DestKind)
-	}
-
 	return name
 }
 
