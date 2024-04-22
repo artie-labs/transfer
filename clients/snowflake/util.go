@@ -14,14 +14,7 @@ import (
 // This is necessary for `PUT` commands. The fq name looks like <namespace>.<tableName>
 // Namespace may contain both database and schema.
 func addPrefixToTableName(tableID types.TableIdentifier, prefix string) string {
-	fqTableName := tableID.FullyQualifiedName()
-	tableParts := strings.Split(fqTableName, ".")
-	if len(tableParts) == 1 {
-		return prefix + fqTableName
-	}
-
-	return fmt.Sprintf("%s.%s%s",
-		strings.Join(tableParts[0:len(tableParts)-1], "."), prefix, tableParts[len(tableParts)-1])
+	return tableID.WithTable(prefix + tableID.Table()).FullyQualifiedName()
 }
 
 // escapeColumns will take columns, filter out invalid, escape and return them in ordered received.
