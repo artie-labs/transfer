@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestEscapeName(t *testing.T) {
+func TestEscapeNameIfNecessary(t *testing.T) {
 	type _testCase struct {
 		name                     string
 		nameToEscape             string
