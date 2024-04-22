@@ -48,8 +48,6 @@ func castColValStaging(colVal any, colKind columns.Column, additionalDateFmts []
 }
 
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
-	tempTableName := tempTableID.FullyQualifiedName()
-
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
 			Dwh:               s,
@@ -87,7 +85,8 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 
 	// COPY the CSV file (in Snowflake) into a table
 	copyCommand := fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
-		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.ShouldUppercaseEscapedNames(), &sql.NameArgs{
+		tempTableID.FullyQualifiedName(),
+		strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.ShouldUppercaseEscapedNames(), &sql.NameArgs{
 			Escape:   true,
 			DestKind: s.Label(),
 		}), ","),
