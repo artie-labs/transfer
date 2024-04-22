@@ -24,16 +24,8 @@ func TestEscapeNameIfNecessary(t *testing.T) {
 			expectedNameWhenUpperCfg: "order",
 		},
 		{
-			name:                     "escape = false",
-			args:                     &NameArgs{},
-			nameToEscape:             "order",
-			expectedName:             "order",
-			expectedNameWhenUpperCfg: "order",
-		},
-		{
-			name: "escape = true, snowflake",
+			name: "snowflake",
 			args: &NameArgs{
-				Escape:   true,
 				DestKind: constants.Snowflake,
 			},
 			nameToEscape:             "order",
@@ -41,9 +33,8 @@ func TestEscapeNameIfNecessary(t *testing.T) {
 			expectedNameWhenUpperCfg: `"ORDER"`,
 		},
 		{
-			name: "escape = true, snowflake #2",
+			name: "snowflake #2",
 			args: &NameArgs{
-				Escape:   true,
 				DestKind: constants.Snowflake,
 			},
 			nameToEscape:             "hello",
@@ -51,9 +42,8 @@ func TestEscapeNameIfNecessary(t *testing.T) {
 			expectedNameWhenUpperCfg: "hello",
 		},
 		{
-			name: "escape = true, redshift",
+			name: "redshift",
 			args: &NameArgs{
-				Escape:   true,
 				DestKind: constants.Redshift,
 			},
 			nameToEscape:             "order",
@@ -61,9 +51,8 @@ func TestEscapeNameIfNecessary(t *testing.T) {
 			expectedNameWhenUpperCfg: `"ORDER"`,
 		},
 		{
-			name: "escape = true, redshift #2",
+			name: "redshift #2",
 			args: &NameArgs{
-				Escape:   true,
 				DestKind: constants.Redshift,
 			},
 			nameToEscape:             "hello",
@@ -71,9 +60,8 @@ func TestEscapeNameIfNecessary(t *testing.T) {
 			expectedNameWhenUpperCfg: "hello",
 		},
 		{
-			name: "escape = true, bigquery",
+			name: "bigquery",
 			args: &NameArgs{
-				Escape:   true,
 				DestKind: constants.BigQuery,
 			},
 			nameToEscape:             "order",
@@ -81,9 +69,8 @@ func TestEscapeNameIfNecessary(t *testing.T) {
 			expectedNameWhenUpperCfg: "`ORDER`",
 		},
 		{
-			name: "escape = true, bigquery, #2",
+			name: "bigquery, #2",
 			args: &NameArgs{
-				Escape:   true,
 				DestKind: constants.BigQuery,
 			},
 			nameToEscape:             "hello",
@@ -91,9 +78,8 @@ func TestEscapeNameIfNecessary(t *testing.T) {
 			expectedNameWhenUpperCfg: "hello",
 		},
 		{
-			name: "escape = true, redshift, #1 (delta)",
+			name: "redshift, #1 (delta)",
 			args: &NameArgs{
-				Escape:   true,
 				DestKind: constants.Redshift,
 			},
 			nameToEscape:             "delta",
@@ -101,9 +87,8 @@ func TestEscapeNameIfNecessary(t *testing.T) {
 			expectedNameWhenUpperCfg: `"DELTA"`,
 		},
 		{
-			name: "escape = true, snowflake, #1 (delta)",
+			name: "snowflake, #1 (delta)",
 			args: &NameArgs{
-				Escape:   true,
 				DestKind: constants.Snowflake,
 			},
 			nameToEscape:             "delta",
@@ -111,9 +96,8 @@ func TestEscapeNameIfNecessary(t *testing.T) {
 			expectedNameWhenUpperCfg: `delta`,
 		},
 		{
-			name: "escape = true, redshift, symbols",
+			name: "redshift, symbols",
 			args: &NameArgs{
-				Escape:   true,
 				DestKind: constants.Redshift,
 			},
 			nameToEscape:             "receivedat:__",
@@ -121,9 +105,8 @@ func TestEscapeNameIfNecessary(t *testing.T) {
 			expectedNameWhenUpperCfg: `"RECEIVEDAT:__"`,
 		},
 		{
-			name: "escape = true, redshift, numbers",
+			name: "redshift, numbers",
 			args: &NameArgs{
-				Escape:   true,
 				DestKind: constants.Redshift,
 			},
 			nameToEscape:             "0",

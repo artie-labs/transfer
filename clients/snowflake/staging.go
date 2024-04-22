@@ -87,7 +87,6 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	copyCommand := fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
 		tempTableID.FullyQualifiedName(),
 		strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.ShouldUppercaseEscapedNames(), &sql.NameArgs{
-			Escape:   true,
 			DestKind: s.Label(),
 		}), ","),
 		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableID, "%"))

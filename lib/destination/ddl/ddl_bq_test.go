@@ -93,7 +93,6 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 		assert.NoError(d.T(), alterTableArgs.AlterTable(column))
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s drop COLUMN %s", fqName, column.Name(false, &artieSQL.NameArgs{
-			Escape:   true,
 			DestKind: d.bigQueryStore.Label(),
 		})), query)
 		callIdx += 1
@@ -154,7 +153,6 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 		assert.NoError(d.T(), alterTableArgs.AlterTable(col))
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, col.Name(false, &artieSQL.NameArgs{
-			Escape:   true,
 			DestKind: d.bigQueryStore.Label(),
 		}), typing.KindToDWHType(kind, d.bigQueryStore.Label(), false)), query)
 		callIdx += 1
@@ -216,7 +214,6 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 		assert.NoError(d.T(), alterTableArgs.AlterTable(column))
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, column.Name(false, &artieSQL.NameArgs{
-			Escape:   true,
 			DestKind: d.bigQueryStore.Label(),
 		}), typing.KindToDWHType(column.KindDetails, d.bigQueryStore.Label(), false)), query)
 		callIdx += 1

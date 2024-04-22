@@ -170,16 +170,11 @@ func TestColumn_Name(t *testing.T) {
 		}
 
 		assert.Equal(t, testCase.expectedName, col.RawName(), testCase.colName)
-		assert.Equal(t, testCase.expectedName, col.Name(false, &sql.NameArgs{
-			Escape: false,
-		}), testCase.colName)
 
 		assert.Equal(t, testCase.expectedNameEsc, col.Name(false, &sql.NameArgs{
-			Escape:   true,
 			DestKind: constants.Snowflake,
 		}), testCase.colName)
 		assert.Equal(t, testCase.expectedNameEscBq, col.Name(false, &sql.NameArgs{
-			Escape:   true,
 			DestKind: constants.BigQuery,
 		}), testCase.colName)
 	}
@@ -242,17 +237,12 @@ func TestColumns_GetColumnsToUpdate(t *testing.T) {
 		}
 
 		assert.Equal(t, testCase.expectedCols, cols.GetColumnsToUpdate(false, nil), testCase.name)
-		assert.Equal(t, testCase.expectedCols, cols.GetColumnsToUpdate(false, &sql.NameArgs{
-			Escape: false,
-		}), testCase.name)
 
 		assert.Equal(t, testCase.expectedColsEsc, cols.GetColumnsToUpdate(false, &sql.NameArgs{
-			Escape:   true,
 			DestKind: constants.Snowflake,
 		}), testCase.name)
 
 		assert.Equal(t, testCase.expectedColsEscBq, cols.GetColumnsToUpdate(false, &sql.NameArgs{
-			Escape:   true,
 			DestKind: constants.BigQuery,
 		}), testCase.name)
 	}

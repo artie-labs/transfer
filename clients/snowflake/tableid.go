@@ -45,6 +45,6 @@ func (ti TableIdentifier) FullyQualifiedName() string {
 		"%s.%s.%s",
 		ti.database,
 		ti.schema,
-		sql.EscapeNameIfNecessary(ti.table, ti.uppercaseEscapedNames, &sql.NameArgs{Escape: true, DestKind: constants.Snowflake}),
+		sql.EscapeNameIfNecessary(ti.table, ti.uppercaseEscapedNames, &sql.NameArgs{DestKind: constants.Snowflake}),
 	)
 }

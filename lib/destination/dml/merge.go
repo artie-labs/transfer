@@ -99,7 +99,6 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 	}
 
 	cols := m.Columns.GetColumnsToUpdate(*m.UppercaseEscNames, &sql.NameArgs{
-		Escape:   true,
 		DestKind: m.DestKind,
 	})
 
@@ -234,7 +233,6 @@ func (m *MergeArgument) GetStatement() (string, error) {
 	}
 
 	cols := m.Columns.GetColumnsToUpdate(*m.UppercaseEscNames, &sql.NameArgs{
-		Escape:   true,
 		DestKind: m.DestKind,
 	})
 
@@ -306,7 +304,6 @@ func (m *MergeArgument) GetMSSQLStatement() (string, error) {
 	}
 
 	cols := m.Columns.GetColumnsToUpdate(*m.UppercaseEscNames, &sql.NameArgs{
-		Escape:   true,
 		DestKind: m.DestKind,
 	})
 

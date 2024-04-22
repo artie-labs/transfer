@@ -107,7 +107,6 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 		switch a.ColumnOp {
 		case constants.Add:
 			colName := col.Name(*a.UppercaseEscNames, &sql.NameArgs{
-				Escape:   true,
 				DestKind: a.Dwh.Label(),
 			})
 
@@ -119,7 +118,6 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, colName, typing.KindToDWHType(col.KindDetails, a.Dwh.Label(), col.PrimaryKey())))
 		case constants.Delete:
 			colSQLParts = append(colSQLParts, col.Name(*a.UppercaseEscNames, &sql.NameArgs{
-				Escape:   true,
 				DestKind: a.Dwh.Label(),
 			}))
 		}
