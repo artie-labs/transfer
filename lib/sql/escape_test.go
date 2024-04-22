@@ -18,6 +18,12 @@ func TestEscapeNameIfNecessary(t *testing.T) {
 
 	testCases := []_testCase{
 		{
+			name:                     "destKind is empty",
+			nameToEscape:             "order",
+			expectedName:             "order",
+			expectedNameWhenUpperCfg: "order",
+		},
+		{
 			name:                     "snowflake",
 			destKind:                 constants.Snowflake,
 			nameToEscape:             "order",
