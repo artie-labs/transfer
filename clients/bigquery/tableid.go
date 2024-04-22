@@ -9,18 +9,16 @@ import (
 )
 
 type TableIdentifier struct {
-	projectID             string
-	dataset               string
-	table                 string
-	uppercaseEscapedNames bool
+	projectID string
+	dataset   string
+	table     string
 }
 
-func NewTableIdentifier(projectID, dataset, table string, uppercaseEscapedNames bool) TableIdentifier {
+func NewTableIdentifier(projectID, dataset, table string) TableIdentifier {
 	return TableIdentifier{
-		projectID:             projectID,
-		dataset:               dataset,
-		table:                 table,
-		uppercaseEscapedNames: uppercaseEscapedNames,
+		projectID: projectID,
+		dataset:   dataset,
+		table:     table,
 	}
 }
 
@@ -37,7 +35,7 @@ func (ti TableIdentifier) Table() string {
 }
 
 func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
-	return NewTableIdentifier(ti.projectID, ti.dataset, table, ti.uppercaseEscapedNames)
+	return NewTableIdentifier(ti.projectID, ti.dataset, table)
 }
 
 func (ti TableIdentifier) FullyQualifiedName() string {
@@ -47,6 +45,6 @@ func (ti TableIdentifier) FullyQualifiedName() string {
 		"`%s`.`%s`.%s",
 		ti.projectID,
 		ti.dataset,
-		sql.EscapeNameIfNecessary(ti.table, ti.uppercaseEscapedNames, &sql.NameArgs{Escape: true, DestKind: constants.BigQuery}),
+		sql.EscapeNameIfNecessary(ti.table, false, &sql.NameArgs{Escape: true, DestKind: constants.BigQuery}),
 	)
 }

@@ -9,7 +9,7 @@ import (
 )
 
 func (b *BigQueryTestSuite) TestBackfillColumn() {
-	tableID := NewTableIdentifier("db", "public", "tableName", false)
+	tableID := NewTableIdentifier("db", "public", "tableName")
 	type _testCase struct {
 		name        string
 		col         columns.Column

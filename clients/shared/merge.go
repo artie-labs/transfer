@@ -42,7 +42,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		CreateTable:       tableConfig.CreateTable(),
 		ColumnOp:          constants.Add,
 		CdcTime:           tableData.LatestCDCTs,
-		UppercaseEscNames: &cfg.SharedDestinationConfig.UppercaseEscapedNames,
+		UppercaseEscNames: ptr.ToBool(dwh.ShouldUppercaseEscapedNames()),
 		Mode:              tableData.Mode(),
 	}
 
@@ -61,7 +61,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		ColumnOp:               constants.Delete,
 		ContainOtherOperations: tableData.ContainOtherOperations(),
 		CdcTime:                tableData.LatestCDCTs,
-		UppercaseEscNames:      &cfg.SharedDestinationConfig.UppercaseEscapedNames,
+		UppercaseEscNames:      ptr.ToBool(dwh.ShouldUppercaseEscapedNames()),
 		Mode:                   tableData.Mode(),
 	}
 
@@ -123,11 +123,11 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		TableID:             tableID,
 		SubQuery:            subQuery,
 		IdempotentKey:       tableData.TopicConfig().IdempotentKey,
-		PrimaryKeys:         tableData.PrimaryKeys(cfg.SharedDestinationConfig.UppercaseEscapedNames, &sql.NameArgs{Escape: true, DestKind: dwh.Label()}),
+		PrimaryKeys:         tableData.PrimaryKeys(dwh.ShouldUppercaseEscapedNames(), &sql.NameArgs{Escape: true, DestKind: dwh.Label()}),
 		Columns:             tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:          tableData.TopicConfig().SoftDelete,
 		DestKind:            dwh.Label(),
-		UppercaseEscNames:   &cfg.SharedDestinationConfig.UppercaseEscapedNames,
+		UppercaseEscNames:   ptr.ToBool(dwh.ShouldUppercaseEscapedNames()),
 		ContainsHardDeletes: ptr.ToBool(tableData.ContainsHardDeletes()),
 	}
 

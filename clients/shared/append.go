@@ -9,6 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
@@ -35,7 +36,7 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, cf
 		CreateTable:       tableConfig.CreateTable(),
 		ColumnOp:          constants.Add,
 		CdcTime:           tableData.LatestCDCTs,
-		UppercaseEscNames: &cfg.SharedDestinationConfig.UppercaseEscapedNames,
+		UppercaseEscNames: ptr.ToBool(dwh.ShouldUppercaseEscapedNames()),
 		Mode:              tableData.Mode(),
 	}
 

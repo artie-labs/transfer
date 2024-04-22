@@ -17,19 +17,7 @@ type NameArgs struct {
 // symbolsToEscape are additional keywords that we need to escape
 var symbolsToEscape = []string{":"}
 
-func EscapeNameIfNecessary(name string, uppercaseEscNames bool, args *NameArgs) string {
-	if args == nil || !args.Escape {
-		return name
-	}
-
-	if needsEscaping(name, args.DestKind) {
-		return escapeName(name, uppercaseEscNames, args.DestKind)
-	}
-
-	return name
-}
-
-func needsEscaping(name string, destKind constants.DestinationKind) bool {
+func needsEscaping(name string, uppercaseEscNames bool, destKind constants.DestinationKind) bool {
 	var reservedKeywords []string
 	if destKind == constants.Redshift {
 		reservedKeywords = constants.RedshiftReservedKeywords
@@ -59,6 +47,18 @@ func needsEscaping(name string, destKind constants.DestinationKind) bool {
 	}
 
 	return needsEscaping
+}
+
+func EscapeNameIfNecessary(name string, uppercaseEscNames bool, args *NameArgs) string {
+	if args == nil || !args.Escape {
+		return name
+	}
+
+	if needsEscaping(name, uppercaseEscNames, args.DestKind) {
+		return escapeName(name, uppercaseEscNames, args.DestKind)
+	}
+
+	return name
 }
 
 func escapeName(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
