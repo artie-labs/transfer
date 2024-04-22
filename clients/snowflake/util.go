@@ -10,8 +10,7 @@ import (
 )
 
 // addPrefixToTableName will take a [types.TableIdentifier] and add a prefix in front of the table
-// This is necessary for `PUT` commands. The fq name looks like <namespace>.<tableName>
-// Namespace may contain both database and schema.
+// This is necessary for `PUT` commands.
 func addPrefixToTableName(tableID types.TableIdentifier, prefix string) string {
 	return tableID.WithTable(prefix + tableID.Table()).FullyQualifiedName()
 }
