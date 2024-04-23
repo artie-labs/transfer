@@ -35,7 +35,7 @@ func (d *DDLTestSuite) TestValidate_AlterTableArgs() {
 }
 
 func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
-	tableID := snowflake.NewTableIdentifier("", "mock_dataset", "mock_table", false)
+	tableID := snowflake.NewTableIdentifier("", "mock_dataset", "mock_table")
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	snowflakeTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 	args := ddl.AlterTableArgs{
@@ -69,7 +69,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 func (d *DDLTestSuite) TestCreateTemporaryTable() {
 	{
 		// Snowflake Stage
-		tableID := snowflake.NewTableIdentifier("db", "schema", "tempTableName", false)
+		tableID := snowflake.NewTableIdentifier("db", "schema", "tempTableName")
 
 		d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 		sflkStageTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)

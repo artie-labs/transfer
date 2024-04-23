@@ -50,7 +50,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging() {
 }
 
 func (s *SnowflakeTestSuite) TestBackfillColumn() {
-	tableID := NewTableIdentifier("db", "public", "tableName", true)
+	tableID := NewTableIdentifier("db", "public", "tableName")
 
 	backfilledCol := columns.NewColumn("foo", typing.Boolean)
 	backfilledCol.SetDefaultValue(true)
@@ -130,7 +130,7 @@ func generateTableData(rows int) (TableIdentifier, *optimization.TableData) {
 		td.InsertRow(key, rowData, false)
 	}
 
-	return NewTableIdentifier("database", "schema", randomTableName, true), td
+	return NewTableIdentifier("database", "schema", randomTableName), td
 }
 
 func (s *SnowflakeTestSuite) TestPrepareTempTable() {
