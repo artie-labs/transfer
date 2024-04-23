@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"strings"
 
 	"cloud.google.com/go/bigquery"
 	_ "github.com/viant/bigquery"
@@ -123,32 +122,29 @@ func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 
 	return client
 }
-
-func tableRelName(fqName string) (string, error) {
-	fqNameParts := strings.Split(fqName, ".")
-	if len(fqNameParts) < 3 {
-		return "", fmt.Errorf("invalid fully qualified name: %s", fqName)
+func (s *Store) putTable(ctx context.Context, dataset string, tableID types.TableIdentifier, rows []*Row) error {
+	bqTableID, ok := tableID.(TableIdentifier)
+	if !ok {
+		return fmt.Errorf("uanble to cast tableID to a BigQuery TableIdentifier")
 	}
 
-	return strings.Join(fqNameParts[2:], "."), nil
-}
-
-func (s *Store) putTable(ctx context.Context, dataset string, tableID types.TableIdentifier, rows []*Row) error {
-	// TODO: [tableID] has [Dataset] on it, don't need to pass it along.
-	tableName := tableID.FullyQualifiedName()
-	// TODO: Can probably do `tableName := tableID.Table()` here.
-	relTableName, err := tableRelName(tableName)
-	if err != nil {
-		return fmt.Errorf("failed to get table name: %w", err)
+	if dataset != bqTableID.Dataset() {
+		// TODO: [tableID] has [Dataset] on it, don't need to pass it along.
+		// Remove if we don't see this in the logs.
+		slog.Error("dataset is different from tableID dataset",
+			slog.String("dataset", dataset),
+			slog.String("bqTableID.Dataset", bqTableID.Dataset()),
+			slog.String("fqName", bqTableID.FullyQualifiedName()),
+		)
 	}
 
 	client := s.GetClient(ctx)
 	defer client.Close()
 
 	batch := NewBatch(rows, s.batchSize)
-	inserter := client.Dataset(dataset).Table(relTableName).Inserter()
+	inserter := client.Dataset(dataset).Table(bqTableID.Table()).Inserter()
 	for batch.HasNext() {
-		if err = inserter.Put(ctx, batch.NextChunk()); err != nil {
+		if err := inserter.Put(ctx, batch.NextChunk()); err != nil {
 			return fmt.Errorf("failed to insert rows: %w", err)
 		}
 	}
