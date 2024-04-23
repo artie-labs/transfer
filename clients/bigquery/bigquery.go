@@ -75,7 +75,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	}
 
 	// Load the data
-	return s.putTable(context.Background(), tableData.TopicConfig().Database, tempTableID, rows)
+	return s.putTable(context.Background(), tempTableID, rows)
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
@@ -122,27 +122,18 @@ func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 
 	return client
 }
-func (s *Store) putTable(ctx context.Context, dataset string, tableID types.TableIdentifier, rows []*Row) error {
+
+func (s *Store) putTable(ctx context.Context, tableID types.TableIdentifier, rows []*Row) error {
 	bqTableID, ok := tableID.(TableIdentifier)
 	if !ok {
-		return fmt.Errorf("uanble to cast tableID to a BigQuery TableIdentifier")
-	}
-
-	if dataset != bqTableID.Dataset() {
-		// TODO: [tableID] has [Dataset] on it, don't need to pass it along.
-		// Remove if we don't see this in the logs.
-		slog.Error("dataset is different from tableID dataset",
-			slog.String("dataset", dataset),
-			slog.String("bqTableID.Dataset", bqTableID.Dataset()),
-			slog.String("fqName", bqTableID.FullyQualifiedName()),
-		)
+		return fmt.Errorf("unable to cast tableID to BigQuery TableIdentifier")
 	}
 
 	client := s.GetClient(ctx)
 	defer client.Close()
 
 	batch := NewBatch(rows, s.batchSize)
-	inserter := client.Dataset(dataset).Table(bqTableID.Table()).Inserter()
+	inserter := client.Dataset(bqTableID.Dataset()).Table(bqTableID.Table()).Inserter()
 	for batch.HasNext() {
 		if err := inserter.Put(ctx, batch.NextChunk()); err != nil {
 			return fmt.Errorf("failed to insert rows: %w", err)
