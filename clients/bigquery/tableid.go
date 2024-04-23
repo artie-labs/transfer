@@ -40,7 +40,7 @@ func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
 
 func (ti TableIdentifier) FullyQualifiedName() string {
 	// The fully qualified name for BigQuery is: project_id.dataset.tableName.
-	// We are escaping the project_id and dataset because there could be special characters.
+	// We are escaping the project_id, dataset, and table because there could be special characters.
 	return fmt.Sprintf(
 		"`%s`.`%s`.%s",
 		ti.projectID,
