@@ -13,13 +13,13 @@ import (
 var symbolsToEscape = []string{":"}
 
 func EscapeNameIfNecessary(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
-	if needsEscaping(name, destKind) {
+	if NeedsEscaping(name, destKind) {
 		return escapeName(name, uppercaseEscNames, destKind)
 	}
 	return name
 }
 
-func needsEscaping(name string, destKind constants.DestinationKind) bool {
+func NeedsEscaping(name string, destKind constants.DestinationKind) bool {
 	var reservedKeywords []string
 	if destKind == constants.Redshift {
 		reservedKeywords = constants.RedshiftReservedKeywords
