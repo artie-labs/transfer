@@ -35,6 +35,6 @@ func (ti TableIdentifier) FullyQualifiedName() string {
 	return fmt.Sprintf(
 		"%s.%s",
 		ti.schema,
-		sql.EscapeNameIfNecessary(ti.table, false, constants.Redshift),
+		sql.EscapeName(ti.table, false, constants.Redshift),
 	)
 }
