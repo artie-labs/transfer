@@ -46,7 +46,7 @@ func (s *Store) Label() constants.DestinationKind {
 }
 
 func (s *Store) ShouldUppercaseEscapedNames() bool {
-	return s.config.SharedDestinationConfig.UppercaseEscapedNames
+	return false
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
