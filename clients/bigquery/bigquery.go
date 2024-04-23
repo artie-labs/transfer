@@ -134,12 +134,33 @@ func tableRelName(fqName string) (string, error) {
 }
 
 func (s *Store) putTable(ctx context.Context, dataset string, tableID types.TableIdentifier, rows []*Row) error {
-	// TODO: [tableID] has [Dataset] on it, don't need to pass it along.
+	bqTableID, ok := tableID.(TableIdentifier)
+	if !ok {
+		return fmt.Errorf("unable to cast types.TableIdentifier to BigQuery TableIdentifier")
+	}
+
 	tableName := tableID.FullyQualifiedName()
-	// TODO: Can probably do `tableName := tableID.Table()` here.
 	relTableName, err := tableRelName(tableName)
 	if err != nil {
 		return fmt.Errorf("failed to get table name: %w", err)
+	}
+
+	if dataset != bqTableID.Dataset() {
+		// TODO: [tableID] has [Dataset] on it, don't need to pass it along.
+		slog.Error("BigQuery dataset is different",
+			slog.String("dataset", dataset),
+			slog.String("bqTableID.Dataset", bqTableID.Dataset()),
+			slog.String("fqn", tableName),
+		)
+	}
+
+	if relTableName != bqTableID.Table() {
+		// TODO: Use [tableID.Table] instead of [relTableName].
+		slog.Error("BigQuery table name is different",
+			slog.String("relTableName", relTableName),
+			slog.String("bqTableID.Table", bqTableID.Table()),
+			slog.String("fqn", tableName),
+		)
 	}
 
 	client := s.GetClient(ctx)
