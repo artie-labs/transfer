@@ -29,7 +29,7 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 		columns.NewColumn("select", typing.String),
 	}
 
-	tableID := snowflake.NewTableIdentifier("shop", "public", "complex_columns", true)
+	tableID := snowflake.NewTableIdentifier("shop", "public", "complex_columns")
 	fqTable := "shop.public.complex_columns"
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
@@ -64,7 +64,7 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 		columns.NewColumn("start", typing.String),
 	}
 
-	tableID := snowflake.NewTableIdentifier("shop", "public", "orders", true)
+	tableID := snowflake.NewTableIdentifier("shop", "public", "orders")
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 
@@ -95,7 +95,7 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 		columns.NewColumn("start", typing.String),
 	}
 
-	tableID := snowflake.NewTableIdentifier("shop", "public", "orders", true)
+	tableID := snowflake.NewTableIdentifier("shop", "public", "orders")
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 
@@ -138,7 +138,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 		columns.NewColumn("start", typing.String),
 	}
 
-	tableID := snowflake.NewTableIdentifier("shop", "public", "users", true)
+	tableID := snowflake.NewTableIdentifier("shop", "public", "users")
 	fqTable := "shop.public.users"
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
@@ -198,7 +198,7 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 		columns.NewColumn("start", typing.String),
 	}
 
-	tableID := snowflake.NewTableIdentifier("shop", "public", "users1", true)
+	tableID := snowflake.NewTableIdentifier("shop", "public", "users1")
 
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, map[string]time.Time{
 		"col_to_delete": time.Now().Add(-2 * constants.DeletionConfidencePadding),

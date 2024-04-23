@@ -21,7 +21,7 @@ import (
 )
 
 func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
-	tableID := NewTableIdentifier("coffee_shop", "public", "orders", true)
+	tableID := NewTableIdentifier("coffee_shop", "public", "orders")
 
 	var cols columns.Columns
 	for colName, kindDetails := range map[string]typing.KindDetails{
@@ -51,7 +51,7 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 }
 
 func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
-	tableID := NewTableIdentifier("coffee_shop", "orders", "public", true)
+	tableID := NewTableIdentifier("coffee_shop", "orders", "public")
 	var cols columns.Columns
 	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":          typing.Integer,

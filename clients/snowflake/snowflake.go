@@ -32,7 +32,7 @@ const (
 )
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
-	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table, s.ShouldUppercaseEscapedNames())
+	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
