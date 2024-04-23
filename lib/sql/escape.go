@@ -2,6 +2,7 @@ package sql
 
 import (
 	"fmt"
+	"log/slog"
 	"slices"
 	"strconv"
 	"strings"
@@ -50,6 +51,13 @@ func NeedsEscaping(name string, destKind constants.DestinationKind) bool {
 
 func EscapeName(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
 	if uppercaseEscNames {
+		if destKind == constants.Redshift {
+			slog.Warn("Escaped Redshift identifier is being uppercased",
+				slog.String("name", name),
+				slog.Bool("uppercaseEscapedNames", uppercaseEscNames),
+			)
+		}
+
 		name = strings.ToUpper(name)
 	}
 
