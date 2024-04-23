@@ -58,8 +58,6 @@ One thing to note here is that the publications `dbz_publication` **must be crea
 
 ### Heartbeats
 
-(following GeoJSON feature spec)
-
 Once you selected `Enable heartbeats` under Advanced Settings, you will then need to run the following command:
 
 ```sql
