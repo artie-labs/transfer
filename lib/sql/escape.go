@@ -14,7 +14,7 @@ var symbolsToEscape = []string{":"}
 
 func EscapeNameIfNecessary(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
 	if needsEscaping(name, destKind) {
-		return escapeName(name, uppercaseEscNames, destKind)
+		return EscapeName(name, uppercaseEscNames, destKind)
 	}
 	return name
 }
@@ -48,7 +48,7 @@ func needsEscaping(name string, destKind constants.DestinationKind) bool {
 	return false
 }
 
-func escapeName(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
+func EscapeName(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
 	if uppercaseEscNames {
 		name = strings.ToUpper(name)
 	}
