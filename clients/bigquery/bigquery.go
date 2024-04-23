@@ -155,7 +155,7 @@ func (s *Store) putTable(ctx context.Context, dataset string, tableID types.Tabl
 	}
 
 	if relTableName != bqTableID.Table() {
-		// TODO: Use [tableID.Table] instead of [relTableName].
+		// TODO: Use [bqTableID.Table] instead of [relTableName].
 		slog.Error("BigQuery table name is different",
 			slog.String("relTableName", relTableName),
 			slog.String("bqTableID.Table", bqTableID.Table()),
