@@ -17,9 +17,9 @@ func TestTableIdentifier_WithTable(t *testing.T) {
 }
 
 func TestTableIdentifier_FullyQualifiedName(t *testing.T) {
-	// Table name that does not contain a reserved word:
+	// Table name that is not a reserved word:
 	assert.Equal(t, "`project`.`dataset`.`foo`", NewTableIdentifier("project", "dataset", "foo").FullyQualifiedName())
 
-	// Table name that contains a reserved word:
+	// Table name that is a reserved word:
 	assert.Equal(t, "`project`.`dataset`.`table`", NewTableIdentifier("project", "dataset", "table").FullyQualifiedName())
 }
