@@ -126,7 +126,7 @@ func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 func (s *Store) putTable(ctx context.Context, tableID types.TableIdentifier, rows []*Row) error {
 	bqTableID, ok := tableID.(TableIdentifier)
 	if !ok {
-		return fmt.Errorf("uanble to cast tableID to a BigQuery TableIdentifier")
+		return fmt.Errorf("unable to cast tableID to BigQuery TableIdentifier")
 	}
 
 	client := s.GetClient(ctx)
