@@ -2,6 +2,7 @@ package sql
 
 import (
 	"fmt"
+	"log/slog"
 	"slices"
 	"strconv"
 	"strings"
@@ -51,6 +52,13 @@ func NeedsEscaping(name string, destKind constants.DestinationKind) bool {
 func EscapeName(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
 	if uppercaseEscNames {
 		name = strings.ToUpper(name)
+	} else {
+		if destKind == constants.Snowflake {
+			slog.Warn("Escaped Snowflake identifier is not being uppercased",
+				slog.String("name", name),
+				slog.Bool("uppercaseEscapedNames", uppercaseEscNames),
+			)
+		}
 	}
 
 	if destKind == constants.BigQuery {
