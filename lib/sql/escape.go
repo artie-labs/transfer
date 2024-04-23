@@ -54,7 +54,7 @@ func EscapeName(name string, uppercaseEscNames bool, destKind constants.Destinat
 		name = strings.ToUpper(name)
 	} else {
 		if destKind == constants.Snowflake {
-			slog.Warn("Escaped Snowflake identifier not is being uppercased",
+			slog.Warn("Escaped Snowflake identifier is not being uppercased",
 				slog.String("name", name),
 				slog.Bool("uppercaseEscapedNames", uppercaseEscNames),
 			)
