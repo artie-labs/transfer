@@ -136,7 +136,7 @@ func tableRelName(fqName string) (string, error) {
 func (s *Store) putTable(ctx context.Context, dataset string, tableID types.TableIdentifier, rows []*Row) error {
 	bqTableID, ok := tableID.(TableIdentifier)
 	if !ok {
-		return fmt.Errorf("unable to cast types.TableIdentifier to BigQuery TableIdentifier")
+		return fmt.Errorf("unable to cast tableID to BigQuery TableIdentifier")
 	}
 
 	tableName := tableID.FullyQualifiedName()
