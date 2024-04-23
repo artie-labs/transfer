@@ -2,7 +2,6 @@ package snowflake
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -42,10 +41,6 @@ func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
 }
 
 func (ti TableIdentifier) FullyQualifiedName() string {
-	if sql.NeedsEscaping(ti.table, constants.Snowflake) {
-		slog.Warn("Snowflake table name needs to be escaped", slog.String("table", ti.table), slog.Bool("uppercaseEscapedNames", ti.uppercaseEscapedNames))
-	}
-
 	return fmt.Sprintf(
 		"%s.%s.%s",
 		ti.database,
