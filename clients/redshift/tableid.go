@@ -2,6 +2,7 @@ package redshift
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -31,6 +32,10 @@ func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
 }
 
 func (ti TableIdentifier) FullyQualifiedName() string {
+	if sql.NeedsEscaping(ti.table, constants.Redshift) {
+		slog.Warn("Redshift table name needs to be escaped", slog.String("table", ti.table), slog.Bool("uppercaseEscapedNames", ti.uppercaseEscapedNames))
+	}
+
 	// Redshift is Postgres compatible, so when establishing a connection, we'll specify a database.
 	// Thus, we only need to specify schema and table name here.
 	return fmt.Sprintf(
