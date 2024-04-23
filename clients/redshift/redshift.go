@@ -30,7 +30,7 @@ type Store struct {
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
-	return NewTableIdentifier(topicConfig.Schema, table, s.ShouldUppercaseEscapedNames())
+	return NewTableIdentifier(topicConfig.Schema, table)
 }
 
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {

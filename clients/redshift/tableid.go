@@ -9,13 +9,12 @@ import (
 )
 
 type TableIdentifier struct {
-	schema                string
-	table                 string
-	uppercaseEscapedNames bool
+	schema string
+	table  string
 }
 
-func NewTableIdentifier(schema, table string, uppercaseEscapedNames bool) TableIdentifier {
-	return TableIdentifier{schema: schema, table: table, uppercaseEscapedNames: uppercaseEscapedNames}
+func NewTableIdentifier(schema, table string) TableIdentifier {
+	return TableIdentifier{schema: schema, table: table}
 }
 
 func (ti TableIdentifier) Schema() string {
@@ -27,7 +26,7 @@ func (ti TableIdentifier) Table() string {
 }
 
 func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
-	return NewTableIdentifier(ti.schema, table, ti.uppercaseEscapedNames)
+	return NewTableIdentifier(ti.schema, table)
 }
 
 func (ti TableIdentifier) FullyQualifiedName() string {
@@ -36,6 +35,6 @@ func (ti TableIdentifier) FullyQualifiedName() string {
 	return fmt.Sprintf(
 		"%s.%s",
 		ti.schema,
-		sql.EscapeNameIfNecessary(ti.table, ti.uppercaseEscapedNames, constants.Redshift),
+		sql.EscapeNameIfNecessary(ti.table, false, constants.Redshift),
 	)
 }
