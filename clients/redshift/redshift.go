@@ -97,7 +97,7 @@ WHERE
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func (s *Store) Dedupe(tableID types.TableIdentifier) error {
+func (s *Store) Dedupe(tableID types.TableIdentifier, _ *optimization.TableData) error {
 	fqTableName := tableID.FullyQualifiedName()
 	stagingTableName := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5))).FullyQualifiedName()
 

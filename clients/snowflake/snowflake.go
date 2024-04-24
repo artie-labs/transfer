@@ -2,6 +2,11 @@ package snowflake
 
 import (
 	"fmt"
+	"strings"
+
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
+	"github.com/artie-labs/transfer/lib/stringutil"
 
 	"github.com/snowflakedb/gosnowflake"
 
@@ -119,10 +124,59 @@ func (s *Store) reestablishConnection() error {
 	return nil
 }
 
-func (s *Store) Dedupe(tableID types.TableIdentifier) error {
+func (s *Store) Dedupe(tableID types.TableIdentifier, tableData *optimization.TableData) error {
+	var txCommitted bool
+	tx, err := s.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to start a transaction: %w", err)
+	}
+
+	defer func() {
+		if !txCommitted {
+			tx.Rollback()
+		}
+	}()
+
+	var primaryKeysEscaped []string
+	for _, pk := range tableData.PrimaryKeys(s.ShouldUppercaseEscapedNames(), &columns.NameArgs{DestKind: s.Label()}) {
+		primaryKeysEscaped = append(primaryKeysEscaped, pk.EscapedName())
+	}
+
+	orderByColumns := primaryKeysEscaped
+	if tableData.TopicConfig().IncludeArtieUpdatedAt {
+		orderByColumns = append(orderByColumns, constants.UpdateColumnMarker)
+	}
+
 	fqTableName := tableID.FullyQualifiedName()
-	_, err := s.Exec(fmt.Sprintf("CREATE OR REPLACE TABLE %s AS SELECT DISTINCT * FROM %s", fqTableName, fqTableName))
-	return err
+	stagingTableName := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5))).Table()
+
+	if _, err = tx.Exec(fmt.Sprintf("CREATE OR REPLACE TRANSIENT TABLE %s AS (SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY by %s ORDER BY %s ASC) = 2)",
+		stagingTableName,
+		fqTableName,
+		strings.Join(primaryKeysEscaped, ","),
+		strings.Join(orderByColumns, ","),
+	)); err != nil {
+		return fmt.Errorf("failed to create transient table: %w", err)
+	}
+
+	if _, err = tx.Exec(fmt.Sprintf("DELETE FROM %s t1 USING %s t2 WHERE %s",
+		fqTableName,
+		stagingTableName,
+		strings.Join(primaryKeysEscaped, " AND "),
+	)); err != nil {
+		return fmt.Errorf("failed to delete duplicates: %w", err)
+	}
+
+	if _, err = tx.Exec(fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", fqTableName, stagingTableName)); err != nil {
+		return fmt.Errorf("failed to insert into original table: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit tx: %w", err)
+	}
+
+	txCommitted = true
+	return nil
 }
 
 func LoadSnowflake(cfg config.Config, _store *db.Store) (*Store, error) {
