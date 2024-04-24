@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
 	"github.com/artie-labs/transfer/lib/stringutil"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/snowflakedb/gosnowflake"
 
@@ -124,6 +123,46 @@ func (s *Store) reestablishConnection() error {
 	return nil
 }
 
+func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentifier, tableData *optimization.TableData) []string {
+	var primaryKeysEscaped []string
+	for _, pk := range tableData.PrimaryKeys(s.ShouldUppercaseEscapedNames(), &columns.NameArgs{DestKind: s.Label()}) {
+		primaryKeysEscaped = append(primaryKeysEscaped, pk.EscapedName())
+	}
+
+	orderColsToIterate := primaryKeysEscaped
+	if tableData.TopicConfig().IncludeArtieUpdatedAt {
+		orderColsToIterate = append(orderColsToIterate, constants.UpdateColumnMarker)
+	}
+
+	var orderByCols []string
+	for _, pk := range orderColsToIterate {
+		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", pk))
+	}
+
+	fqTableName := tableID.FullyQualifiedName()
+	var parts []string
+	parts = append(parts, fmt.Sprintf("CREATE OR REPLACE TRANSIENT TABLE %s AS (SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY by %s ORDER BY %s) = 2)",
+		stagingTableID.Table(),
+		fqTableName,
+		strings.Join(primaryKeysEscaped, ", "),
+		strings.Join(orderByCols, ", "),
+	))
+
+	var whereClauses []string
+	for _, primaryKeyEscaped := range primaryKeysEscaped {
+		whereClauses = append(whereClauses, fmt.Sprintf("t1.%s = t2.%s", primaryKeyEscaped, primaryKeyEscaped))
+	}
+
+	parts = append(parts, fmt.Sprintf("DELETE FROM %s t1 USING %s t2 WHERE %s",
+		fqTableName,
+		stagingTableID.Table(),
+		strings.Join(whereClauses, ","),
+	))
+
+	parts = append(parts, fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", fqTableName, stagingTableID.Table()))
+	return parts
+}
+
 // Dedupe takes a table and will remove duplicates based on the primary key(s).
 // These queries are inspired and modified from: https://stackoverflow.com/a/71515946
 func (s *Store) Dedupe(tableID types.TableIdentifier, tableData *optimization.TableData) error {
@@ -139,38 +178,11 @@ func (s *Store) Dedupe(tableID types.TableIdentifier, tableData *optimization.Ta
 		}
 	}()
 
-	var primaryKeysEscaped []string
-	for _, pk := range tableData.PrimaryKeys(s.ShouldUppercaseEscapedNames(), &columns.NameArgs{DestKind: s.Label()}) {
-		primaryKeysEscaped = append(primaryKeysEscaped, pk.EscapedName())
-	}
-
-	orderByColumns := primaryKeysEscaped
-	if tableData.TopicConfig().IncludeArtieUpdatedAt {
-		orderByColumns = append(orderByColumns, constants.UpdateColumnMarker)
-	}
-
-	fqTableName := tableID.FullyQualifiedName()
-	stagingTableName := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5))).Table()
-
-	if _, err = tx.Exec(fmt.Sprintf("CREATE OR REPLACE TRANSIENT TABLE %s AS (SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY by %s ORDER BY %s ASC) = 2)",
-		stagingTableName,
-		fqTableName,
-		strings.Join(primaryKeysEscaped, ","),
-		strings.Join(orderByColumns, ","),
-	)); err != nil {
-		return fmt.Errorf("failed to create transient table: %w", err)
-	}
-
-	if _, err = tx.Exec(fmt.Sprintf("DELETE FROM %s t1 USING %s t2 WHERE %s",
-		fqTableName,
-		stagingTableName,
-		strings.Join(primaryKeysEscaped, " AND "),
-	)); err != nil {
-		return fmt.Errorf("failed to delete duplicates: %w", err)
-	}
-
-	if _, err = tx.Exec(fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", fqTableName, stagingTableName)); err != nil {
-		return fmt.Errorf("failed to insert into original table: %w", err)
+	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
+	for _, part := range s.generateDedupeQueries(tableID, stagingTableID, tableData) {
+		if _, err = tx.Exec(part); err != nil {
+			return fmt.Errorf("failed to execute tx: %w", err)
+		}
 	}
 
 	if err = tx.Commit(); err != nil {
