@@ -171,7 +171,7 @@ func (s *Store) Dedupe(tableID types.TableIdentifier, primaryKeys []string, topi
 	var txCommitted bool
 	tx, err := s.Begin()
 	if err != nil {
-		return fmt.Errorf("failed to start a transaction: %w", err)
+		return fmt.Errorf("failed to start a tx: %w", err)
 	}
 
 	defer func() {
