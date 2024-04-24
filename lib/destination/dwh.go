@@ -13,7 +13,7 @@ type DataWarehouse interface {
 	Label() constants.DestinationKind
 	Merge(tableData *optimization.TableData) error
 	Append(tableData *optimization.TableData) error
-	Dedupe(tableID types.TableIdentifier, tableData *optimization.TableData) error
+	Dedupe(tableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error
 	Exec(query string, args ...any) (sql.Result, error)
 	Query(query string, args ...any) (*sql.Rows, error)
 	Begin() (*sql.Tx, error)

@@ -5,9 +5,7 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/clients/shared"
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,10 +14,9 @@ func (s *SnowflakeTestSuite) TestDedupe() {
 	{
 		// Dedupe with one primary key + no `__artie_updated_at` flag.
 		tableID := NewTableIdentifier("db", "public", "customers")
-		tableData := optimization.NewTableData(nil, config.Replication, []string{"id"}, kafkalib.TopicConfig{}, "customers")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := s.stageStore.generateDedupeQueries(tableID, stagingTableID, tableData)
+		parts := s.stageStore.generateDedupeQueries(tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{})
 		assert.Len(s.T(), parts, 3)
 		assert.Equal(
 			s.T(),
@@ -32,12 +29,9 @@ func (s *SnowflakeTestSuite) TestDedupe() {
 	{
 		// Dedupe with one primary key + `__artie_updated_at` flag.
 		tableID := NewTableIdentifier("db", "public", "customers")
-		tableData := optimization.NewTableData(nil, config.Replication, []string{"id"}, kafkalib.TopicConfig{
-			IncludeArtieUpdatedAt: true,
-		}, "customers")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := s.stageStore.generateDedupeQueries(tableID, stagingTableID, tableData)
+		parts := s.stageStore.generateDedupeQueries(tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
 		assert.Len(s.T(), parts, 3)
 		assert.Equal(
 			s.T(),
@@ -50,10 +44,9 @@ func (s *SnowflakeTestSuite) TestDedupe() {
 	{
 		// Dedupe with composite keys + no `__artie_updated_at` flag.
 		tableID := NewTableIdentifier("db", "public", "user_settings")
-		tableData := optimization.NewTableData(nil, config.Replication, []string{"user_id", "settings"}, kafkalib.TopicConfig{}, "user_settings")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := s.stageStore.generateDedupeQueries(tableID, stagingTableID, tableData)
+		parts := s.stageStore.generateDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{})
 		assert.Len(s.T(), parts, 3)
 		assert.Equal(
 			s.T(),
@@ -66,12 +59,9 @@ func (s *SnowflakeTestSuite) TestDedupe() {
 	{
 		// Dedupe with composite keys + `__artie_updated_at` flag.
 		tableID := NewTableIdentifier("db", "public", "user_settings")
-		tableData := optimization.NewTableData(nil, config.Replication, []string{"user_id", "settings"}, kafkalib.TopicConfig{
-			IncludeArtieUpdatedAt: true,
-		}, "user_settings")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := s.stageStore.generateDedupeQueries(tableID, stagingTableID, tableData)
+		parts := s.stageStore.generateDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
 		assert.Len(s.T(), parts, 3)
 		assert.Equal(
 			s.T(),

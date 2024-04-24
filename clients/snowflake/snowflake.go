@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/typing"
+
 	"github.com/snowflakedb/gosnowflake"
 
 	"github.com/artie-labs/transfer/clients/shared"
@@ -122,14 +124,16 @@ func (s *Store) reestablishConnection() error {
 	return nil
 }
 
-func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentifier, tableData *optimization.TableData) []string {
+func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
 	var primaryKeysEscaped []string
-	for _, pk := range tableData.PrimaryKeys(s.ShouldUppercaseEscapedNames(), &columns.NameArgs{DestKind: s.Label()}) {
-		primaryKeysEscaped = append(primaryKeysEscaped, pk.EscapedName())
+	for _, pk := range primaryKeys {
+		pkCol := columns.NewColumn(pk, typing.Invalid)
+
+		primaryKeysEscaped = append(primaryKeysEscaped, pkCol.Name(s.ShouldUppercaseEscapedNames(), &columns.NameArgs{DestKind: s.Label()}))
 	}
 
 	orderColsToIterate := primaryKeysEscaped
-	if tableData.TopicConfig().IncludeArtieUpdatedAt {
+	if topicConfig.IncludeArtieUpdatedAt {
 		orderColsToIterate = append(orderColsToIterate, constants.UpdateColumnMarker)
 	}
 
@@ -164,7 +168,7 @@ func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentif
 
 // Dedupe takes a table and will remove duplicates based on the primary key(s).
 // These queries are inspired and modified from: https://stackoverflow.com/a/71515946
-func (s *Store) Dedupe(tableID types.TableIdentifier, tableData *optimization.TableData) error {
+func (s *Store) Dedupe(tableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
 	var txCommitted bool
 	tx, err := s.Begin()
 	if err != nil {
@@ -178,7 +182,7 @@ func (s *Store) Dedupe(tableID types.TableIdentifier, tableData *optimization.Ta
 	}()
 
 	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
-	for _, part := range s.generateDedupeQueries(tableID, stagingTableID, tableData) {
+	for _, part := range s.generateDedupeQueries(tableID, stagingTableID, primaryKeys, topicConfig) {
 		if _, err = tx.Exec(part); err != nil {
 			return fmt.Errorf("failed to execute tx, query: %q, err: %w", part, err)
 		}
