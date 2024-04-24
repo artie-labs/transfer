@@ -156,7 +156,7 @@ func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentif
 	parts = append(parts, fmt.Sprintf("DELETE FROM %s t1 USING %s t2 WHERE %s",
 		fqTableName,
 		stagingTableID.Table(),
-		strings.Join(whereClauses, ","),
+		strings.Join(whereClauses, ", "),
 	))
 
 	parts = append(parts, fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", fqTableName, stagingTableID.Table()))

@@ -60,7 +60,7 @@ func (s *SnowflakeTestSuite) TestDedupe() {
 			fmt.Sprintf("CREATE OR REPLACE TRANSIENT TABLE %s AS (SELECT * FROM db.public.user_settings QUALIFY ROW_NUMBER() OVER (PARTITION BY by user_id, settings ORDER BY user_id ASC, settings ASC) = 2)", stagingTableID.Table()),
 			parts[0],
 		)
-		assert.Equal(s.T(), fmt.Sprintf("DELETE FROM db.public.user_settings t1 USING %s t2 WHERE t1.user_id = t2.user_id,t1.settings = t2.settings", stagingTableID.Table()), parts[1])
+		assert.Equal(s.T(), fmt.Sprintf("DELETE FROM db.public.user_settings t1 USING %s t2 WHERE t1.user_id = t2.user_id, t1.settings = t2.settings", stagingTableID.Table()), parts[1])
 		assert.Equal(s.T(), fmt.Sprintf("INSERT INTO db.public.user_settings SELECT * FROM %s", stagingTableID.Table()), parts[2])
 	}
 	{
@@ -78,7 +78,7 @@ func (s *SnowflakeTestSuite) TestDedupe() {
 			fmt.Sprintf("CREATE OR REPLACE TRANSIENT TABLE %s AS (SELECT * FROM db.public.user_settings QUALIFY ROW_NUMBER() OVER (PARTITION BY by user_id, settings ORDER BY user_id ASC, settings ASC, __artie_updated_at ASC) = 2)", stagingTableID.Table()),
 			parts[0],
 		)
-		assert.Equal(s.T(), fmt.Sprintf("DELETE FROM db.public.user_settings t1 USING %s t2 WHERE t1.user_id = t2.user_id,t1.settings = t2.settings", stagingTableID.Table()), parts[1])
+		assert.Equal(s.T(), fmt.Sprintf("DELETE FROM db.public.user_settings t1 USING %s t2 WHERE t1.user_id = t2.user_id, t1.settings = t2.settings", stagingTableID.Table()), parts[1])
 		assert.Equal(s.T(), fmt.Sprintf("INSERT INTO db.public.user_settings SELECT * FROM %s", stagingTableID.Table()), parts[2])
 	}
 }
