@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/typing"
-
 	"github.com/snowflakedb/gosnowflake"
 
 	"github.com/artie-labs/transfer/clients/shared"
@@ -17,6 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/stringutil"
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
