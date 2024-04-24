@@ -2,6 +2,7 @@ package snowflake
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/sql"
@@ -177,7 +178,9 @@ func (s *Store) Dedupe(tableID types.TableIdentifier, primaryKeys []string, topi
 
 	defer func() {
 		if !txCommitted {
-			tx.Rollback()
+			if err = tx.Rollback(); err != nil {
+				slog.Warn("Failed to rollback tx", slog.Any("err", err))
+			}
 		}
 	}()
 
