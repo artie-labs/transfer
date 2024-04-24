@@ -103,12 +103,6 @@ type Columns struct {
 	sync.RWMutex
 }
 
-func (c *Columns) EscapeName(uppercaseEscNames bool, args *NameArgs) {
-	for idx := range c.columns {
-		c.columns[idx].name = c.columns[idx].Name(uppercaseEscNames, args)
-	}
-}
-
 type UpsertColumnArg struct {
 	ToastCol   *bool
 	PrimaryKey *bool
