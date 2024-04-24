@@ -30,7 +30,6 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 	}
 
 	tableID := snowflake.NewTableIdentifier("shop", "public", "complex_columns")
-	fqTable := "shop.public.complex_columns"
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 
@@ -47,9 +46,8 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 	assert.NoError(d.T(), alterTableArgs.AlterTable(cols...))
 	for i := 0; i < len(cols); i++ {
 		execQuery, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(i)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN %s %s", fqTable, cols[i].Name(false, &columns.NameArgs{
-			DestKind: d.snowflakeStagesStore.Label(),
-		}),
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN %s %s", `shop.public."COMPLEX_COLUMNS"`,
+			cols[i].Name(false, &columns.NameArgs{DestKind: d.snowflakeStagesStore.Label()}),
 			typing.KindToDWHType(cols[i].KindDetails, d.snowflakeStagesStore.Label(), false)), execQuery)
 	}
 
@@ -139,7 +137,6 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	}
 
 	tableID := snowflake.NewTableIdentifier("shop", "public", "users")
-	fqTable := "shop.public.users"
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 	alterTableArgs := ddl.AlterTableArgs{
@@ -182,7 +179,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 		assert.Equal(d.T(), i+1, d.fakeSnowflakeStagesStore.ExecCallCount(), "tried to delete one column")
 
 		execArg, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(i)
-		assert.Equal(d.T(), execArg, fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTable, constants.Delete,
+		assert.Equal(d.T(), execArg, fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", `shop.public."USERS"`, constants.Delete,
 			cols[i].Name(false, &columns.NameArgs{DestKind: d.snowflakeStagesStore.Label()})))
 	}
 }

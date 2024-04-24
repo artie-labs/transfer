@@ -22,22 +22,22 @@ func TestAddPrefixToTableName(t *testing.T) {
 		{
 			name:                "happy path",
 			tableID:             NewTableIdentifier("database", "schema", "tableName"),
-			expectedFqTableName: "database.schema.%tableName",
+			expectedFqTableName: `database.schema."%TABLENAME"`,
 		},
 		{
 			name:                "tableName only",
 			tableID:             NewTableIdentifier("", "", "orders"),
-			expectedFqTableName: "..%orders",
+			expectedFqTableName: `.."%ORDERS"`,
 		},
 		{
 			name:                "schema and tableName only",
 			tableID:             NewTableIdentifier("", "public", "orders"),
-			expectedFqTableName: ".public.%orders",
+			expectedFqTableName: `.public."%ORDERS"`,
 		},
 		{
 			name:                "db and tableName only",
 			tableID:             NewTableIdentifier("db", "", "tableName"),
-			expectedFqTableName: "db..%tableName",
+			expectedFqTableName: `db.."%TABLENAME"`,
 		},
 	}
 
