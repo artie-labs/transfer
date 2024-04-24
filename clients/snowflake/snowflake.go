@@ -124,6 +124,8 @@ func (s *Store) reestablishConnection() error {
 	return nil
 }
 
+// Dedupe takes a table and will remove duplicates based on the primary key(s).
+// These queries are inspired and modified from: https://stackoverflow.com/a/71515946
 func (s *Store) Dedupe(tableID types.TableIdentifier, tableData *optimization.TableData) error {
 	var txCommitted bool
 	tx, err := s.Begin()
