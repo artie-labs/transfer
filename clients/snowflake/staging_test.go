@@ -79,14 +79,14 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 		{
 			name:        "col that has default value that needs to be backfilled",
 			col:         needsBackfillCol,
-			backfillSQL: `UPDATE db.public.tableName SET foo = true WHERE foo IS NULL;`,
-			commentSQL:  `COMMENT ON COLUMN db.public.tableName.foo IS '{"backfilled": true}';`,
+			backfillSQL: `UPDATE db.public."TABLENAME" SET foo = true WHERE foo IS NULL;`,
+			commentSQL:  `COMMENT ON COLUMN db.public."TABLENAME".foo IS '{"backfilled": true}';`,
 		},
 		{
 			name:        "default col that has default value that needs to be backfilled",
 			col:         needsBackfillColDefault,
-			backfillSQL: `UPDATE db.public.tableName SET default = true WHERE "DEFAULT" IS NULL;`,
-			commentSQL:  `COMMENT ON COLUMN db.public.tableName.default IS '{"backfilled": true}';`,
+			backfillSQL: `UPDATE db.public."TABLENAME" SET default = true WHERE "DEFAULT" IS NULL;`,
+			commentSQL:  `COMMENT ON COLUMN db.public."TABLENAME".default IS '{"backfilled": true}';`,
 		},
 	}
 

@@ -99,17 +99,17 @@ func (d *DDLTestSuite) TestCreateTable() {
 		{
 			name:          "happy path",
 			cols:          happyPathCols,
-			expectedQuery: "CREATE TABLE IF NOT EXISTS demo.public.experiments (user_id string)",
+			expectedQuery: `CREATE TABLE IF NOT EXISTS demo.public."EXPERIMENTS" (user_id string)`,
 		},
 		{
 			name:          "happy path + enabled",
 			cols:          twoCols,
-			expectedQuery: "CREATE TABLE IF NOT EXISTS demo.public.experiments (user_id string,enabled boolean)",
+			expectedQuery: `CREATE TABLE IF NOT EXISTS demo.public."EXPERIMENTS" (user_id string,enabled boolean)`,
 		},
 		{
 			name:          "complex table creation",
 			cols:          bunchOfCols,
-			expectedQuery: "CREATE TABLE IF NOT EXISTS demo.public.experiments (user_id string,enabled_boolean boolean,array array,struct variant)",
+			expectedQuery: `CREATE TABLE IF NOT EXISTS demo.public."EXPERIMENTS" (user_id string,enabled_boolean boolean,array array,struct variant)`,
 		},
 	}
 
