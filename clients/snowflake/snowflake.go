@@ -129,7 +129,7 @@ func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentif
 	var primaryKeysEscaped []string
 	for _, pk := range primaryKeys {
 		pkCol := columns.NewColumn(pk, typing.Invalid)
-		primaryKeysEscaped = append(primaryKeysEscaped, pkCol.Name(s.ShouldUppercaseEscapedNames(), &columns.NameArgs{DestKind: s.Label()}))
+		primaryKeysEscaped = append(primaryKeysEscaped, pkCol.Name(s.ShouldUppercaseEscapedNames(), s.Label()))
 	}
 
 	orderColsToIterate := primaryKeysEscaped

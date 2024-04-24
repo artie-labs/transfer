@@ -47,14 +47,10 @@ func getBasicColumnsForTest(compositeKey bool, uppercaseEscNames bool) result {
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	var pks []columns.Wrapper
-	pks = append(pks, columns.NewWrapper(idCol, uppercaseEscNames, &columns.NameArgs{
-		DestKind: constants.Redshift,
-	}))
+	pks = append(pks, columns.NewWrapper(idCol, uppercaseEscNames, constants.Redshift))
 
 	if compositeKey {
-		pks = append(pks, columns.NewWrapper(emailCol, uppercaseEscNames, &columns.NameArgs{
-			DestKind: constants.Redshift,
-		}))
+		pks = append(pks, columns.NewWrapper(emailCol, uppercaseEscNames, constants.Redshift))
 	}
 
 	return result{

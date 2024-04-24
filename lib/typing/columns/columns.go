@@ -90,12 +90,8 @@ type NameArgs struct {
 // Name will give you c.name
 // However, if you pass in escape, we will escape if the column name is part of the reserved words from destinations.
 // If so, it'll change from `start` => `"start"` as suggested by Snowflake.
-func (c *Column) Name(uppercaseEscNames bool, args *NameArgs) string {
-	// TODO: Kill [NameArgs] and just pass a [DestinationKind].
-	if args == nil {
-		return c.name
-	}
-	return sql.EscapeNameIfNecessary(c.name, uppercaseEscNames, args.DestKind)
+func (c *Column) Name(uppercaseEscNames bool, destKind constants.DestinationKind) string {
+	return sql.EscapeNameIfNecessary(c.name, uppercaseEscNames, destKind)
 }
 
 type Columns struct {
@@ -198,7 +194,11 @@ func (c *Columns) GetColumnsToUpdate(uppercaseEscNames bool, args *NameArgs) []s
 			continue
 		}
 
-		cols = append(cols, col.Name(uppercaseEscNames, args))
+		if args == nil {
+			cols = append(cols, col.RawName())
+		} else {
+			cols = append(cols, col.Name(uppercaseEscNames, args.DestKind))
+		}
 	}
 
 	return cols
@@ -255,7 +255,7 @@ func (c *Columns) UpdateQuery(destKind constants.DestinationKind, uppercaseEscNa
 			continue
 		}
 
-		colName := column.Name(uppercaseEscNames, &NameArgs{DestKind: destKind})
+		colName := column.Name(uppercaseEscNames, destKind)
 		if column.ToastColumn {
 			if column.KindDetails == typing.Struct {
 				cols = append(cols, processToastStructCol(colName, destKind))
