@@ -2,6 +2,8 @@ package snowflake
 
 import (
 	"fmt"
+	"log/slog"
+	"strings"
 
 	"github.com/snowflakedb/gosnowflake"
 
@@ -13,6 +15,10 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/stringutil"
+	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 const maxRetries = 10
@@ -119,10 +125,77 @@ func (s *Store) reestablishConnection() error {
 	return nil
 }
 
-func (s *Store) Dedupe(tableID types.TableIdentifier) error {
-	fqTableName := tableID.FullyQualifiedName()
-	_, err := s.Exec(fmt.Sprintf("CREATE OR REPLACE TABLE %s AS SELECT DISTINCT * FROM %s", fqTableName, fqTableName))
-	return err
+func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
+	var primaryKeysEscaped []string
+	for _, pk := range primaryKeys {
+		pkCol := columns.NewColumn(pk, typing.Invalid)
+		primaryKeysEscaped = append(primaryKeysEscaped, pkCol.Name(s.ShouldUppercaseEscapedNames(), &columns.NameArgs{DestKind: s.Label()}))
+	}
+
+	orderColsToIterate := primaryKeysEscaped
+	if topicConfig.IncludeArtieUpdatedAt {
+		orderColsToIterate = append(orderColsToIterate, constants.UpdateColumnMarker)
+	}
+
+	var orderByCols []string
+	for _, pk := range orderColsToIterate {
+		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", pk))
+	}
+
+	temporaryTableName := sql.EscapeName(stagingTableID.Table(), s.ShouldUppercaseEscapedNames(), s.Label())
+	var parts []string
+	parts = append(parts, fmt.Sprintf("CREATE OR REPLACE TRANSIENT TABLE %s AS (SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY by %s ORDER BY %s) = 2)",
+		temporaryTableName,
+		tableID.FullyQualifiedName(),
+		strings.Join(primaryKeysEscaped, ", "),
+		strings.Join(orderByCols, ", "),
+	))
+
+	var whereClauses []string
+	for _, primaryKeyEscaped := range primaryKeysEscaped {
+		whereClauses = append(whereClauses, fmt.Sprintf("t1.%s = t2.%s", primaryKeyEscaped, primaryKeyEscaped))
+	}
+
+	parts = append(parts, fmt.Sprintf("DELETE FROM %s t1 USING %s t2 WHERE %s",
+		tableID.FullyQualifiedName(),
+		temporaryTableName,
+		strings.Join(whereClauses, " AND "),
+	))
+
+	parts = append(parts, fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", tableID.FullyQualifiedName(), temporaryTableName))
+	return parts
+}
+
+// Dedupe takes a table and will remove duplicates based on the primary key(s).
+// These queries are inspired and modified from: https://stackoverflow.com/a/71515946
+func (s *Store) Dedupe(tableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
+	var txCommitted bool
+	tx, err := s.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to start a tx: %w", err)
+	}
+
+	defer func() {
+		if !txCommitted {
+			if err = tx.Rollback(); err != nil {
+				slog.Warn("Failed to rollback tx", slog.Any("err", err))
+			}
+		}
+	}()
+
+	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
+	for _, part := range s.generateDedupeQueries(tableID, stagingTableID, primaryKeys, topicConfig) {
+		if _, err = tx.Exec(part); err != nil {
+			return fmt.Errorf("failed to execute tx, query: %q, err: %w", part, err)
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit tx: %w", err)
+	}
+
+	txCommitted = true
+	return nil
 }
 
 func LoadSnowflake(cfg config.Config, _store *db.Store) (*Store, error) {

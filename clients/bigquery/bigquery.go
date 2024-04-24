@@ -143,7 +143,7 @@ func (s *Store) putTable(ctx context.Context, tableID types.TableIdentifier, row
 	return nil
 }
 
-func (s *Store) Dedupe(tableID types.TableIdentifier) error {
+func (s *Store) Dedupe(tableID types.TableIdentifier, _ []string, _ kafkalib.TopicConfig) error {
 	fqTableName := tableID.FullyQualifiedName()
 	_, err := s.Exec(fmt.Sprintf("CREATE OR REPLACE TABLE %s AS SELECT DISTINCT * FROM %s", fqTableName, fqTableName))
 	return err
