@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/sql"
+
 	"github.com/snowflakedb/gosnowflake"
 
 	"github.com/artie-labs/transfer/clients/shared"
@@ -127,7 +129,6 @@ func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentif
 	var primaryKeysEscaped []string
 	for _, pk := range primaryKeys {
 		pkCol := columns.NewColumn(pk, typing.Invalid)
-
 		primaryKeysEscaped = append(primaryKeysEscaped, pkCol.Name(s.ShouldUppercaseEscapedNames(), &columns.NameArgs{DestKind: s.Label()}))
 	}
 
@@ -141,11 +142,11 @@ func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentif
 		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", pk))
 	}
 
-	fqTableName := tableID.FullyQualifiedName()
+	temporaryTableName := sql.EscapeName(stagingTableID.Table(), s.ShouldUppercaseEscapedNames(), s.Label())
 	var parts []string
 	parts = append(parts, fmt.Sprintf("CREATE OR REPLACE TRANSIENT TABLE %s AS (SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY by %s ORDER BY %s) = 2)",
-		stagingTableID.Table(),
-		fqTableName,
+		temporaryTableName,
+		tableID.FullyQualifiedName(),
 		strings.Join(primaryKeysEscaped, ", "),
 		strings.Join(orderByCols, ", "),
 	))
@@ -156,12 +157,12 @@ func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentif
 	}
 
 	parts = append(parts, fmt.Sprintf("DELETE FROM %s t1 USING %s t2 WHERE %s",
-		fqTableName,
-		stagingTableID.Table(),
+		tableID.FullyQualifiedName(),
+		temporaryTableName,
 		strings.Join(whereClauses, ", "),
 	))
 
-	parts = append(parts, fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", fqTableName, stagingTableID.Table()))
+	parts = append(parts, fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", tableID.FullyQualifiedName(), temporaryTableName))
 	return parts
 }
 
