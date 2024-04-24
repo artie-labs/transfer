@@ -25,7 +25,7 @@ func NeedsEscaping(name string, destKind constants.DestinationKind) bool {
 	if destKind == constants.Redshift {
 		reservedKeywords = constants.RedshiftReservedKeywords
 	} else if destKind == constants.MSSQL {
-		reservedKeywords = constants.MSSQLReservedKeywords
+		return !strings.Contains(name, constants.ArtiePrefix)
 	} else {
 		reservedKeywords = constants.ReservedKeywords
 	}
