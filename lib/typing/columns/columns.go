@@ -88,7 +88,7 @@ type NameArgs struct {
 }
 
 // Name will give you c.name
-// However, if you pass in escape, we will escape if the column name is part of the reserved words from destinations.
+// Plus we will escape it if the column name is part of the reserved words from destinations.
 // If so, it'll change from `start` => `"start"` as suggested by Snowflake.
 func (c *Column) Name(uppercaseEscNames bool, destKind constants.DestinationKind) string {
 	return sql.EscapeNameIfNecessary(c.name, uppercaseEscNames, destKind)
