@@ -46,22 +46,21 @@ func castColValStaging(colVal any, colKind columns.Column, additionalDateFmts []
 	return replaceExceededValues(value, colKind), nil
 }
 
-func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
-	if createTempTable {
-		tempAlterTableArgs := ddl.AlterTableArgs{
-			Dwh:               s,
-			Tc:                tableConfig,
-			TableID:           tempTableID,
-			CreateTable:       true,
-			TemporaryTable:    true,
-			ColumnOp:          constants.Add,
-			UppercaseEscNames: ptr.ToBool(s.ShouldUppercaseEscapedNames()),
-			Mode:              tableData.Mode(),
-		}
+func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, additionalSettings types.AdditionalSettings, _ bool) error {
+	// Snowflake always creates a temporary table
+	tempAlterTableArgs := ddl.AlterTableArgs{
+		Dwh:               s,
+		Tc:                tableConfig,
+		TableID:           tempTableID,
+		CreateTable:       true,
+		TemporaryTable:    true,
+		ColumnOp:          constants.Add,
+		UppercaseEscNames: ptr.ToBool(s.ShouldUppercaseEscapedNames()),
+		Mode:              tableData.Mode(),
+	}
 
-		if err := tempAlterTableArgs.AlterTable(tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
-			return fmt.Errorf("failed to create temp table: %w", err)
-		}
+	if err := tempAlterTableArgs.AlterTable(tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
+		return fmt.Errorf("failed to create temp table: %w", err)
 	}
 
 	// Write data into CSV
