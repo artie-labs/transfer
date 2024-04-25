@@ -97,6 +97,11 @@ func (s *Store) reestablishConnection() error {
 		return nil
 	}
 
+	params := make(map[string]*string)
+
+	// https://docs.snowflake.com/en/sql-reference/parameters#abort-detached-query
+	params["ABORT_DETACHED_QUERY"] = ptr.ToString(fmt.Sprint(true))
+
 	cfg := &gosnowflake.Config{
 		Account:     s.config.Snowflake.AccountID,
 		User:        s.config.Snowflake.Username,
@@ -104,6 +109,9 @@ func (s *Store) reestablishConnection() error {
 		Warehouse:   s.config.Snowflake.Warehouse,
 		Region:      s.config.Snowflake.Region,
 		Application: s.config.Snowflake.Application,
+
+		// Try this as our params.
+		Params: params,
 	}
 
 	if s.config.Snowflake.Host != "" {
