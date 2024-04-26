@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/artie-labs/transfer/lib/sql"
+
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/logger"
@@ -52,9 +54,10 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 		}
 
 		var additionalEqualityStrings []string
-		if len(tableData.TopicConfig.AdditionalMergeColumns) > 0 {
-			for _, additionalMergeCol := range tableData.TopicConfig.AdditionalMergeColumns {
-				additionalEqualityStrings = append(additionalEqualityStrings, fmt.Sprintf("c.%s = cc.%s", additionalMergeCol, additionalMergeCol))
+		if len(tableData.TopicConfig().AdditionalMergePredicates) > 0 {
+			for _, additionalMergePredicate := range tableData.TopicConfig().AdditionalMergePredicates {
+				mergePredicateColumn := sql.EscapeName(additionalMergePredicate.PartitionField, s.ShouldUppercaseEscapedNames(), s.Label())
+				additionalEqualityStrings = append(additionalEqualityStrings, fmt.Sprintf("c.%s = cc.%s", mergePredicateColumn, mergePredicateColumn))
 			}
 		}
 
