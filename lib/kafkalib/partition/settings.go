@@ -22,9 +22,9 @@ type MergePredicates struct {
 }
 
 type BigQuerySettings struct {
-	PartitionType  string `yaml:"partitionType" json:"partitionType"`
-	PartitionField string `yaml:"partitionField" json:"partitionField"`
-	PartitionBy    string `yaml:"partitionBy" json:"partitionBy"`
+	PartitionType  string `yaml:"partitionType"`
+	PartitionField string `yaml:"partitionField"`
+	PartitionBy    string `yaml:"partitionBy"`
 }
 
 // GenerateMergeString this is used as an equality string for the MERGE statement.
