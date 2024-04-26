@@ -17,6 +17,10 @@ var ValidPartitionBy = []string{
 	"daily",
 }
 
+type MergePredicates struct {
+	PartitionField string
+}
+
 type BigQuerySettings struct {
 	PartitionType  string `yaml:"partitionType" json:"partitionType"`
 	PartitionField string `yaml:"partitionField" json:"partitionField"`

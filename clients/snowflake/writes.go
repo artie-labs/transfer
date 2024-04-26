@@ -1,12 +1,14 @@
 package snowflake
 
 import (
+	"fmt"
 	"log/slog"
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/sql"
 )
 
 func (s *Store) Append(tableData *optimization.TableData) error {
@@ -50,7 +52,17 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 			}
 		}
 
-		err = shared.Merge(s, tableData, s.config, types.MergeOpts{})
+		var additionalEqualityStrings []string
+		if len(tableData.TopicConfig().AdditionalMergePredicates) > 0 {
+			for _, additionalMergePredicate := range tableData.TopicConfig().AdditionalMergePredicates {
+				mergePredicateCol := sql.EscapeName(additionalMergePredicate.PartitionField, s.ShouldUppercaseEscapedNames(), s.Label())
+				additionalEqualityStrings = append(additionalEqualityStrings, fmt.Sprintf("c.%s = cc.%s", mergePredicateCol, mergePredicateCol))
+			}
+		}
+
+		err = shared.Merge(s, tableData, s.config, types.MergeOpts{
+			AdditionalEqualityStrings: additionalEqualityStrings,
+		})
 	}
 	return err
 }

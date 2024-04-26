@@ -34,19 +34,21 @@ func GetUniqueDatabaseAndSchema(tcs []*TopicConfig) []DatabaseSchemaPair {
 }
 
 type TopicConfig struct {
-	Database                  string                      `yaml:"db"`
-	TableName                 string                      `yaml:"tableName"`
-	Schema                    string                      `yaml:"schema"`
-	Topic                     string                      `yaml:"topic"`
-	IdempotentKey             string                      `yaml:"idempotentKey,omitempty"`
-	CDCFormat                 string                      `yaml:"cdcFormat"`
-	CDCKeyFormat              string                      `yaml:"cdcKeyFormat"`
-	DropDeletedColumns        bool                        `yaml:"dropDeletedColumns"`
-	SoftDelete                bool                        `yaml:"softDelete"`
-	SkippedOperations         string                      `yaml:"skippedOperations,omitempty"`
-	IncludeArtieUpdatedAt     bool                        `yaml:"includeArtieUpdatedAt"`
-	IncludeDatabaseUpdatedAt  bool                        `yaml:"includeDatabaseUpdatedAt"`
+	Database                 string `yaml:"db"`
+	TableName                string `yaml:"tableName"`
+	Schema                   string `yaml:"schema"`
+	Topic                    string `yaml:"topic"`
+	IdempotentKey            string `yaml:"idempotentKey,omitempty"`
+	CDCFormat                string `yaml:"cdcFormat"`
+	CDCKeyFormat             string `yaml:"cdcKeyFormat"`
+	DropDeletedColumns       bool   `yaml:"dropDeletedColumns"`
+	SoftDelete               bool   `yaml:"softDelete"`
+	SkippedOperations        string `yaml:"skippedOperations,omitempty"`
+	IncludeArtieUpdatedAt    bool   `yaml:"includeArtieUpdatedAt"`
+	IncludeDatabaseUpdatedAt bool   `yaml:"includeDatabaseUpdatedAt"`
+	// TODO: Deprecate BigQueryPartitionSettings and use AdditionalMergePredicates instead.
 	BigQueryPartitionSettings *partition.BigQuerySettings `yaml:"bigQueryPartitionSettings,omitempty"`
+	AdditionalMergePredicates []partition.MergePredicates `yaml:"additionalMergePredicates,omitempty"`
 
 	// Internal metadata
 	opsToSkipMap map[string]bool `yaml:"-"`
