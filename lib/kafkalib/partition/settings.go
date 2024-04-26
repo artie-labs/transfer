@@ -18,7 +18,7 @@ var ValidPartitionBy = []string{
 }
 
 type MergePredicates struct {
-	PartitionField string
+	PartitionField string `yaml:"partitionField"`
 }
 
 type BigQuerySettings struct {
