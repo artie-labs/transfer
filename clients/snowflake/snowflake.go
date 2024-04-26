@@ -109,9 +109,7 @@ func (s *Store) reestablishConnection() error {
 		Warehouse:   s.config.Snowflake.Warehouse,
 		Region:      s.config.Snowflake.Region,
 		Application: s.config.Snowflake.Application,
-
-		// Try this as our params.
-		Params: params,
+		Params:      params,
 	}
 
 	if s.config.Snowflake.Host != "" {
