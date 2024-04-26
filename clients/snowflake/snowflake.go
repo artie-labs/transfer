@@ -104,6 +104,10 @@ func (s *Store) reestablishConnection() error {
 		Warehouse:   s.config.Snowflake.Warehouse,
 		Region:      s.config.Snowflake.Region,
 		Application: s.config.Snowflake.Application,
+		Params: map[string]*string{
+			// https://docs.snowflake.com/en/sql-reference/parameters#abort-detached-query
+			"ABORT_DETACHED_QUERY": ptr.ToString("true"),
+		},
 	}
 
 	if s.config.Snowflake.Host != "" {
