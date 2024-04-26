@@ -132,11 +132,11 @@ func (s *SchemaEventPayload) GetOptionalSchema() map[string]typing.KindDetails {
 	return nil
 }
 
-func (s *SchemaEventPayload) GetColumns() *columns.Columns {
+func (s *SchemaEventPayload) GetColumns() (*columns.Columns, error) {
 	fieldsObject := s.Schema.GetSchemaFromLabel(cdc.After)
 	if fieldsObject == nil {
 		// AFTER schema does not exist.
-		return nil
+		return nil, nil
 	}
 
 	var cols columns.Columns
@@ -146,10 +146,10 @@ func (s *SchemaEventPayload) GetColumns() *columns.Columns {
 		cols.AddColumn(columns.NewColumn(columns.EscapeName(field.FieldName), typing.Invalid))
 	}
 
-	return &cols
+	return &cols, nil
 }
 
-func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicConfig) map[string]any {
+func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicConfig) (map[string]any, error) {
 	var retMap map[string]any
 	if len(s.Payload.afterMap) == 0 {
 		// This is a delete event, so mark it as deleted.
@@ -187,5 +187,5 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 		retMap[constants.DatabaseUpdatedColumnMarker] = s.GetExecutionTime().Format(ext.ISO8601)
 	}
 
-	return retMap
+	return retMap, nil
 }

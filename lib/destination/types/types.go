@@ -1,7 +1,6 @@
 package types
 
 import (
-	"fmt"
 	"sync"
 )
 
@@ -10,11 +9,11 @@ type DwhToTablesConfigMap struct {
 	sync.RWMutex
 }
 
-func (d *DwhToTablesConfigMap) TableConfig(fqName string) *DwhTableConfig {
+func (d *DwhToTablesConfigMap) TableConfig(tableID TableIdentifier) *DwhTableConfig {
 	d.RLock()
 	defer d.RUnlock()
 
-	tableConfig, isOk := d.fqNameToDwhTableConfig[fqName]
+	tableConfig, isOk := d.fqNameToDwhTableConfig[tableID.FullyQualifiedName()]
 	if !isOk {
 		return nil
 	}
@@ -22,7 +21,7 @@ func (d *DwhToTablesConfigMap) TableConfig(fqName string) *DwhTableConfig {
 	return tableConfig
 }
 
-func (d *DwhToTablesConfigMap) AddTableToConfig(fqName string, config *DwhTableConfig) {
+func (d *DwhToTablesConfigMap) AddTableToConfig(tableID TableIdentifier, config *DwhTableConfig) {
 	d.Lock()
 	defer d.Unlock()
 
@@ -30,7 +29,7 @@ func (d *DwhToTablesConfigMap) AddTableToConfig(fqName string, config *DwhTableC
 		d.fqNameToDwhTableConfig = make(map[string]*DwhTableConfig)
 	}
 
-	d.fqNameToDwhTableConfig[fqName] = config
+	d.fqNameToDwhTableConfig[tableID.FullyQualifiedName()] = config
 }
 
 type MergeOpts struct {
@@ -45,16 +44,14 @@ type AdditionalSettings struct {
 }
 
 type AppendOpts struct {
-	// TempTableName - sometimes the destination requires 2 steps to append to the table (e.g. Redshift), so we'll create and load the data into a staging table
+	// TempTableID - sometimes the destination requires 2 steps to append to the table (e.g. Redshift), so we'll create and load the data into a staging table
 	// Redshift then has a separate step after `shared.Append(...)` to merge the two tables together.
-	TempTableName        string
+	TempTableID          TableIdentifier
 	AdditionalCopyClause string
 }
 
-func (a AppendOpts) Validate() error {
-	if a.TempTableName == "" {
-		return fmt.Errorf("temp table name is required")
-	}
-
-	return nil
+type TableIdentifier interface {
+	Table() string
+	WithTable(table string) TableIdentifier
+	FullyQualifiedName() string
 }

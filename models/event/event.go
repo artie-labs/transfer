@@ -35,8 +35,11 @@ type Event struct {
 	mode config.Mode
 }
 
-func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc *kafkalib.TopicConfig, cfgMode config.Mode) Event {
-	cols := event.GetColumns()
+func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc *kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
+	cols, err := event.GetColumns()
+	if err != nil {
+		return Event{}, err
+	}
 	// Now iterate over pkMap and tag each column that is a primary key
 	if cols != nil {
 		for primaryKey := range pkMap {
@@ -46,7 +49,10 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc *kafkalib.TopicConf
 		}
 	}
 
-	evtData := event.GetData(pkMap, tc)
+	evtData, err := event.GetData(pkMap, tc)
+	if err != nil {
+		return Event{}, err
+	}
 	tblName := stringutil.Override(event.GetTableName(), tc.TableName)
 	if cfgMode == config.History {
 		if !strings.HasSuffix(tblName, constants.HistoryModeSuffix) {
@@ -70,7 +76,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc *kafkalib.TopicConf
 		Columns:        cols,
 		Data:           evtData,
 		Deleted:        event.DeletePayload(),
-	}
+	}, nil
 }
 
 func (e *Event) IsValid() bool {

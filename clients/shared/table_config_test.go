@@ -1,9 +1,13 @@
 package shared
 
 import (
+	"database/sql"
 	"fmt"
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
 
 	"github.com/stretchr/testify/assert"
@@ -51,6 +55,35 @@ func TestGetTableCfgArgs_ShouldParseComment(t *testing.T) {
 	}
 }
 
+type MockDWH struct{}
+
+func (MockDWH) Label() constants.DestinationKind               { panic("not implemented") }
+func (MockDWH) Merge(tableData *optimization.TableData) error  { panic("not implemented") }
+func (MockDWH) Append(tableData *optimization.TableData) error { panic("not implemented") }
+func (MockDWH) Dedupe(tableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
+	panic("not implemented")
+}
+func (MockDWH) Exec(query string, args ...any) (sql.Result, error) { panic("not implemented") }
+func (MockDWH) Query(query string, args ...any) (*sql.Rows, error) { panic("not implemented") }
+func (MockDWH) Begin() (*sql.Tx, error)                            { panic("not implemented") }
+func (MockDWH) IsRetryableError(err error) bool                    { panic("not implemented") }
+func (MockDWH) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+	panic("not implemented")
+}
+func (MockDWH) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
+	panic("not implemented")
+}
+func (MockDWH) IdentifierFor(topicConfig kafkalib.TopicConfig, name string) types.TableIdentifier {
+	panic("not implemented")
+}
+func (MockDWH) ShouldUppercaseEscapedNames() bool { return true }
+
+type MockTableIdentifier struct{ fqName string }
+
+func (MockTableIdentifier) Table() string                                { panic("not implemented") }
+func (MockTableIdentifier) WithTable(table string) types.TableIdentifier { panic("not implemented") }
+func (m MockTableIdentifier) FullyQualifiedName() string                 { return m.fqName }
+
 func TestGetTableConfig(t *testing.T) {
 	// Return early because table is found in configMap.
 	cols := &columns.Columns{}
@@ -58,14 +91,15 @@ func TestGetTableConfig(t *testing.T) {
 		cols.AddColumn(columns.NewColumn(fmt.Sprintf("col-%v", i), typing.Invalid))
 	}
 
-	fqName := "dusty_the_mini_aussie"
+	tableID := MockTableIdentifier{"dusty_the_mini_aussie"}
 	dwhTableCfg := types.NewDwhTableConfig(cols, nil, false, false)
 
 	cm := &types.DwhToTablesConfigMap{}
-	cm.AddTableToConfig(fqName, dwhTableCfg)
+	cm.AddTableToConfig(tableID, dwhTableCfg)
 
 	actualTableCfg, err := GetTableCfgArgs{
-		FqName:    fqName,
+		Dwh:       MockDWH{},
+		TableID:   tableID,
 		ConfigMap: cm,
 	}.GetTableConfig()
 

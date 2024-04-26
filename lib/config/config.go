@@ -224,20 +224,24 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 
 func (c Config) ValidateRedshift() error {
 	if c.Output != constants.Redshift {
-		return fmt.Errorf("output is not redshift, output: %v", c.Output)
+		return fmt.Errorf("output is not Redshift, output: %v", c.Output)
 	}
 
 	if c.Redshift == nil {
-		return fmt.Errorf("redshift cfg is nil")
+		return fmt.Errorf("cfg for Redshift is nil")
 	}
 
 	if empty := stringutil.Empty(c.Redshift.Host, c.Redshift.Database, c.Redshift.Username,
 		c.Redshift.Password, c.Redshift.Bucket, c.Redshift.CredentialsClause); empty {
-		return fmt.Errorf("one of redshift settings is empty")
+		return fmt.Errorf("one of Redshift settings is empty")
 	}
 
 	if c.Redshift.Port <= 0 {
-		return fmt.Errorf("redshift invalid port")
+		return fmt.Errorf("invalid Redshift port")
+	}
+
+	if c.SharedDestinationConfig.UppercaseEscapedNames {
+		return fmt.Errorf("uppercaseEscapedNames is not supported for Redshift")
 	}
 
 	return nil
@@ -265,6 +269,10 @@ func (c Config) Validate() error {
 	}
 
 	switch c.Output {
+	case constants.BigQuery:
+		if err := c.ValidateBigQuery(); err != nil {
+			return err
+		}
 	case constants.MSSQL:
 		if err := c.ValidateMSSQL(); err != nil {
 			return err

@@ -3,19 +3,49 @@ package debezium
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/kafkalib"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 const (
 	stringPrefix = "Struct{"
 	stringSuffix = "}"
 )
+
+type PrimaryKeyPayload struct {
+	Schema  FieldsObject   `json:"schema"`
+	Payload map[string]any `json:"payload"`
+}
+
+func (p PrimaryKeyPayload) parseAndReturnPayload() (map[string]any, error) {
+	if len(p.Schema.Fields) == 0 {
+		return p.Payload, nil
+	}
+
+	retMap := make(map[string]any)
+	for key, value := range p.Payload {
+		idx := slices.IndexFunc(p.Schema.Fields, func(field Field) bool {
+			return field.FieldName == key
+		})
+
+		if idx < 0 {
+			retMap[key] = value
+		} else {
+			parsedValue, err := p.Schema.Fields[idx].ParseValue(value)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse primary key: %q: %w", key, err)
+			}
+
+			retMap[key] = parsedValue
+		}
+	}
+
+	return retMap, nil
+}
 
 func ParsePartitionKey(key []byte, cdcKeyFormat string) (map[string]any, error) {
 	switch cdcKeyFormat {
@@ -70,9 +100,8 @@ func parsePartitionKeyStruct(keyBytes []byte) (map[string]any, error) {
 	}
 
 	var pkStruct map[string]any
-	err := json.Unmarshal(keyBytes, &pkStruct)
-	if err != nil {
-		return nil, fmt.Errorf("failed to json unmarshal: %w", err)
+	if err := json.Unmarshal(keyBytes, &pkStruct); err != nil {
+		return nil, fmt.Errorf("failed to json unmarshal into map[string]any: %w", err)
 	}
 
 	if len(pkStruct) == 0 {
@@ -85,14 +114,19 @@ func parsePartitionKeyStruct(keyBytes []byte) (map[string]any, error) {
 		return sanitizePayload(pkStruct), nil
 	}
 
-	pkStruct, isOk = pkStruct["payload"].(map[string]any)
-	if !isOk {
-		return nil, fmt.Errorf("key object is malformated")
+	// If it does have a `payload` object, it should also have a schema object.
+	var primaryKeyPayload PrimaryKeyPayload
+	if err := json.Unmarshal(keyBytes, &primaryKeyPayload); err != nil {
+		return nil, fmt.Errorf("failed to json unmarshal into PrimaryKeyPayload: %w", err)
 	}
 
-	// Skip this key.
-	delete(pkStruct, constants.DebeziumTopicRoutingKey)
-	return sanitizePayload(pkStruct), nil
+	keys, err := primaryKeyPayload.parseAndReturnPayload()
+	if err != nil {
+		return nil, err
+	}
+
+	delete(keys, constants.DebeziumTopicRoutingKey)
+	return sanitizePayload(keys), nil
 }
 
 func sanitizePayload(retMap map[string]any) map[string]any {

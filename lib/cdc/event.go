@@ -21,10 +21,10 @@ type Event interface {
 	Operation() string
 	DeletePayload() bool
 	GetTableName() string
-	GetData(pkMap map[string]any, config *kafkalib.TopicConfig) map[string]any
+	GetData(pkMap map[string]any, config *kafkalib.TopicConfig) (map[string]any, error)
 	GetOptionalSchema() map[string]typing.KindDetails
 	// GetColumns will inspect the envelope's payload right now and return.
-	GetColumns() *columns.Columns
+	GetColumns() (*columns.Columns, error)
 }
 
 // FieldLabelKind is used when the schema is turned on. Each schema object will be labelled.

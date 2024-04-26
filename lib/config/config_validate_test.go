@@ -86,12 +86,12 @@ func TestCfg_ValidateRedshift(t *testing.T) {
 		{
 			name:        "nil",
 			redshift:    nil,
-			expectedErr: "redshift cfg is nil",
+			expectedErr: "cfg for Redshift is nil",
 		},
 		{
 			name:        "redshift settings exist, but all empty",
 			redshift:    &Redshift{},
-			expectedErr: "one of redshift settings is empty",
+			expectedErr: "one of Redshift settings is empty",
 		},
 		{
 			name: "redshift settings all set (missing port)",
@@ -103,7 +103,7 @@ func TestCfg_ValidateRedshift(t *testing.T) {
 				Bucket:            "bucket",
 				CredentialsClause: "creds",
 			},
-			expectedErr: "redshift invalid port",
+			expectedErr: "invalid Redshift port",
 		},
 		{
 			name: "redshift settings all set (neg port)",
@@ -116,7 +116,7 @@ func TestCfg_ValidateRedshift(t *testing.T) {
 				Bucket:            "bucket",
 				CredentialsClause: "creds",
 			},
-			expectedErr: "redshift invalid port",
+			expectedErr: "invalid Redshift port",
 		},
 		{
 			name: "redshift settings all set",

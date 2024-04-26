@@ -8,8 +8,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config"
 
-	"github.com/artie-labs/transfer/lib/sql"
-
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -43,7 +41,7 @@ type AlterTableArgs struct {
 	Tc  *types.DwhTableConfig
 	// ContainsOtherOperations - this is sourced from tableData `containOtherOperations`
 	ContainOtherOperations bool
-	FqTableName            string
+	TableID                types.TableIdentifier
 	CreateTable            bool
 	TemporaryTable         bool
 	UppercaseEscNames      *bool
@@ -106,8 +104,7 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 		mutateCol = append(mutateCol, col)
 		switch a.ColumnOp {
 		case constants.Add:
-			colName := col.Name(*a.UppercaseEscNames, &sql.NameArgs{
-				Escape:   true,
+			colName := col.Name(*a.UppercaseEscNames, &columns.NameArgs{
 				DestKind: a.Dwh.Label(),
 			})
 
@@ -118,8 +115,7 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 
 			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, colName, typing.KindToDWHType(col.KindDetails, a.Dwh.Label(), col.PrimaryKey())))
 		case constants.Delete:
-			colSQLParts = append(colSQLParts, col.Name(*a.UppercaseEscNames, &sql.NameArgs{
-				Escape:   true,
+			colSQLParts = append(colSQLParts, col.Name(*a.UppercaseEscNames, &columns.NameArgs{
 				DestKind: a.Dwh.Label(),
 			}))
 		}
@@ -134,34 +130,36 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 		colSQLParts = append(colSQLParts, pkStatement)
 	}
 
+	fqTableName := a.TableID.FullyQualifiedName()
+
 	var err error
 	if a.CreateTable {
 		var sqlQuery string
 		if a.TemporaryTable {
 			switch a.Dwh.Label() {
 			case constants.MSSQL:
-				sqlQuery = fmt.Sprintf("CREATE TABLE %s (%s);", a.FqTableName, strings.Join(colSQLParts, ","))
+				sqlQuery = fmt.Sprintf("CREATE TABLE %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
 			case constants.Redshift:
-				sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", a.FqTableName, strings.Join(colSQLParts, ","))
+				sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
 			case constants.BigQuery:
 				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
-					a.FqTableName, strings.Join(colSQLParts, ","), typing.ExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)))
+					fqTableName, strings.Join(colSQLParts, ","), typing.ExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)))
 			// Not enabled for constants.Snowflake yet
 			case constants.Snowflake:
 				// TEMPORARY Table syntax - https://docs.snowflake.com/en/sql-reference/sql/create-table
 				// PURGE syntax - https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#purging-files-after-loading
 				// FIELD_OPTIONALLY_ENCLOSED_BY - is needed because CSV will try to escape any values that have `"`
 				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`,
-					a.FqTableName, strings.Join(colSQLParts, ","))
+					fqTableName, strings.Join(colSQLParts, ","))
 			default:
 				return fmt.Errorf("unexpected dwh: %v trying to create a temporary table", a.Dwh.Label())
 			}
 		} else {
 			if a.Dwh.Label() == constants.MSSQL {
 				// MSSQL doesn't support IF NOT EXISTS
-				sqlQuery = fmt.Sprintf("CREATE TABLE %s (%s)", a.FqTableName, strings.Join(colSQLParts, ","))
+				sqlQuery = fmt.Sprintf("CREATE TABLE %s (%s)", fqTableName, strings.Join(colSQLParts, ","))
 			} else {
-				sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", a.FqTableName, strings.Join(colSQLParts, ","))
+				sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", fqTableName, strings.Join(colSQLParts, ","))
 			}
 		}
 
@@ -178,9 +176,9 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 			var sqlQuery string
 			if a.Dwh.Label() == constants.MSSQL {
 				// MSSQL doesn't support the COLUMN keyword
-				sqlQuery = fmt.Sprintf("ALTER TABLE %s %s %s", a.FqTableName, a.ColumnOp, colSQLPart)
+				sqlQuery = fmt.Sprintf("ALTER TABLE %s %s %s", fqTableName, a.ColumnOp, colSQLPart)
 			} else {
-				sqlQuery = fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", a.FqTableName, a.ColumnOp, colSQLPart)
+				sqlQuery = fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTableName, a.ColumnOp, colSQLPart)
 			}
 
 			slog.Info("DDL - executing sql", slog.String("query", sqlQuery))

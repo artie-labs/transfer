@@ -38,12 +38,12 @@ func (f fakeEvent) GetOptionalSchema() map[string]typing.KindDetails {
 	return nil
 }
 
-func (f fakeEvent) GetColumns() *columns.Columns {
-	return &columns.Columns{}
+func (f fakeEvent) GetColumns() (*columns.Columns, error) {
+	return &columns.Columns{}, nil
 }
 
-func (f fakeEvent) GetData(pkMap map[string]any, config *kafkalib.TopicConfig) map[string]any {
-	return map[string]any{constants.DeleteColumnMarker: false}
+func (f fakeEvent) GetData(pkMap map[string]any, config *kafkalib.TopicConfig) (map[string]any, error) {
+	return map[string]any{constants.DeleteColumnMarker: false}, nil
 }
 
 func (e *EventsTestSuite) TestEvent_IsValid() {
@@ -95,21 +95,25 @@ func (e *EventsTestSuite) TestEvent_TableName() {
 	var f fakeEvent
 	{
 		// Don't pass in tableName.
-		evt := ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{}, config.Replication)
+		evt, err := ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{}, config.Replication)
+		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), f.GetTableName(), evt.Table)
 	}
 	{
 		// Now pass it in, it should override.
-		evt := ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{TableName: "orders"}, config.Replication)
+		evt, err := ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{TableName: "orders"}, config.Replication)
+		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "orders", evt.Table)
 	}
 	{
 		// Now, if it's history mode...
-		evt := ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{TableName: "orders"}, config.History)
+		evt, err := ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{TableName: "orders"}, config.History)
+		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "orders__history", evt.Table)
 
 		// Table already has history suffix, so it won't add extra.
-		evt = ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{TableName: "dusty__history"}, config.History)
+		evt, err = ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{TableName: "dusty__history"}, config.History)
+		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "dusty__history", evt.Table)
 	}
 }

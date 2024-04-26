@@ -2,6 +2,8 @@ package redshift
 
 import (
 	"fmt"
+	"log/slog"
+	"strings"
 
 	_ "github.com/lib/pq"
 
@@ -13,6 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
 type Store struct {
@@ -26,8 +29,8 @@ type Store struct {
 	db.Store
 }
 
-func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	return tableData.ToFqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{})
+func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
+	return NewTableIdentifier(topicConfig.Schema, table)
 }
 
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
@@ -42,6 +45,10 @@ func (s *Store) Label() constants.DestinationKind {
 	return constants.Redshift
 }
 
+func (s *Store) ShouldUppercaseEscapedNames() bool {
+	return false
+}
+
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	const (
 		describeNameCol        = "column_name"
@@ -50,13 +57,13 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 	)
 
 	query, args := describeTableQuery(describeArgs{
-		RawTableName: tableData.RawName(),
-		Schema:       tableData.TopicConfig.Schema,
+		RawTableName: tableData.Name(),
+		Schema:       tableData.TopicConfig().Schema,
 	})
 
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
-		FqName:             s.ToFullyQualifiedName(tableData, true),
+		TableID:            s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
 		ConfigMap:          s.configMap,
 		Query:              query,
 		Args:               args,
@@ -64,7 +71,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeDescriptionCol,
 		EmptyCommentValue:  ptr.ToString("<nil>"),
-		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
+		DropDeletedColumns: tableData.TopicConfig().DropDeletedColumns,
 	}.GetTableConfig()
 }
 
@@ -90,8 +97,53 @@ WHERE
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func (s *Store) Dedupe(fqTableName string) error {
-	return fmt.Errorf("dedupe is not yet implemented")
+func (s *Store) Dedupe(tableID types.TableIdentifier, _ []string, _ kafkalib.TopicConfig) error {
+	fqTableName := tableID.FullyQualifiedName()
+	stagingTableName := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5))).FullyQualifiedName()
+
+	query := fmt.Sprintf(`
+CREATE TABLE %s AS SELECT DISTINCT * FROM %s;
+DELETE FROM %s;
+INSERT INTO %s SELECT * FROM %s;
+DROP TABLE %s;`,
+		// CREATE TABLE
+		stagingTableName,
+		// AS SELECT DISTINCT * FROM
+		fqTableName,
+		// ; DELETE FROM
+		fqTableName,
+		// ; INSERT INTO
+		fqTableName,
+		// SELECT * FROM
+		stagingTableName,
+		// ; DROP TABLE
+		stagingTableName,
+		// ;
+	)
+
+	var transactionCommitted bool
+	transaction, err := s.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer func() {
+		if !transactionCommitted {
+			if err := transaction.Rollback(); err != nil {
+				slog.Error("Failed to roll back transaction", slog.Any("err", err))
+			}
+		}
+	}()
+
+	if _, err = transaction.Exec(query); err != nil {
+		return fmt.Errorf("failed to execute dedupe query: %w", err)
+	}
+
+	if err = transaction.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	transactionCommitted = true
+	return nil
 }
 
 func LoadRedshift(cfg config.Config, _store *db.Store) (*Store, error) {

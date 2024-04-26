@@ -2,6 +2,7 @@ package sql
 
 import (
 	"fmt"
+	"log/slog"
 	"slices"
 	"strconv"
 	"strings"
@@ -9,60 +10,62 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
-type NameArgs struct {
-	Escape   bool
-	DestKind constants.DestinationKind
-}
-
 // symbolsToEscape are additional keywords that we need to escape
 var symbolsToEscape = []string{":"}
 
-func EscapeName(name string, uppercaseEscNames bool, args *NameArgs) string {
-	if args == nil {
-		return name
+func EscapeNameIfNecessary(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
+	if NeedsEscaping(name, destKind) {
+		return EscapeName(name, uppercaseEscNames, destKind)
 	}
+	return name
+}
 
+func NeedsEscaping(name string, destKind constants.DestinationKind) bool {
 	var reservedKeywords []string
-	if args.DestKind == constants.Redshift {
+	if destKind == constants.Redshift {
 		reservedKeywords = constants.RedshiftReservedKeywords
-	} else if args.DestKind == constants.MSSQL {
+	} else if destKind == constants.MSSQL {
 		reservedKeywords = constants.MSSQLReservedKeywords
 	} else {
 		reservedKeywords = constants.ReservedKeywords
 	}
 
-	needsEscaping := slices.Contains(reservedKeywords, name)
+	if slices.Contains(reservedKeywords, name) {
+		return true
+	}
 
 	// If it does not contain any reserved words, does it contain any symbols that need to be escaped?
-	if !needsEscaping {
-		for _, symbol := range symbolsToEscape {
-			if strings.Contains(name, symbol) {
-				needsEscaping = true
-				break
-			}
+	for _, symbol := range symbolsToEscape {
+		if strings.Contains(name, symbol) {
+			return true
 		}
 	}
 
 	// If it still doesn't need to be escaped, we should check if it's a number.
-	if !needsEscaping {
-		if _, err := strconv.Atoi(name); err == nil {
-			needsEscaping = true
+	if _, err := strconv.Atoi(name); err == nil {
+		return true
+	}
+
+	return false
+}
+
+func EscapeName(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
+	if uppercaseEscNames {
+		name = strings.ToUpper(name)
+	} else {
+		if destKind == constants.Snowflake {
+			slog.Warn("Escaped Snowflake identifier is not being uppercased",
+				slog.String("name", name),
+				slog.Bool("uppercaseEscapedNames", uppercaseEscNames),
+			)
 		}
 	}
 
-	if args.Escape && needsEscaping {
-		if uppercaseEscNames {
-			name = strings.ToUpper(name)
-		}
-
-		if args.DestKind == constants.BigQuery {
-			// BigQuery needs backticks to escape.
-			return fmt.Sprintf("`%s`", name)
-		} else {
-			// Snowflake uses quotes.
-			return fmt.Sprintf(`"%s"`, name)
-		}
+	if destKind == constants.BigQuery {
+		// BigQuery needs backticks to escape.
+		return fmt.Sprintf("`%s`", name)
+	} else {
+		// Snowflake uses quotes.
+		return fmt.Sprintf(`"%s"`, name)
 	}
-
-	return name
 }

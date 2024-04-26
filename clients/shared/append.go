@@ -1,28 +1,23 @@
 package shared
 
 import (
-	"fmt"
 	"log/slog"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg config.Config, opts types.AppendOpts) error {
-	if err := opts.Validate(); err != nil {
-		return fmt.Errorf("failed to validate append options: %w", err)
-	}
-
+func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, opts types.AppendOpts) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
 
-	fqName := dwh.ToFullyQualifiedName(tableData, true)
+	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	tableConfig, err := dwh.GetTableConfig(tableData)
 	if err != nil {
 		return err
@@ -30,17 +25,17 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, cf
 
 	// We don't care about srcKeysMissing because we don't drop columns when we append.
 	_, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
-		tableData.TopicConfig.SoftDelete, tableData.TopicConfig.IncludeArtieUpdatedAt,
-		tableData.TopicConfig.IncludeDatabaseUpdatedAt, tableData.Mode())
+		tableData.TopicConfig().SoftDelete, tableData.TopicConfig().IncludeArtieUpdatedAt,
+		tableData.TopicConfig().IncludeDatabaseUpdatedAt, tableData.Mode())
 
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:               dwh,
 		Tc:                tableConfig,
-		FqTableName:       fqName,
+		TableID:           tableID,
 		CreateTable:       tableConfig.CreateTable(),
 		ColumnOp:          constants.Add,
 		CdcTime:           tableData.LatestCDCTs,
-		UppercaseEscNames: &cfg.SharedDestinationConfig.UppercaseEscapedNames,
+		UppercaseEscNames: ptr.ToBool(dwh.ShouldUppercaseEscapedNames()),
 		Mode:              tableData.Mode(),
 	}
 
@@ -57,5 +52,5 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, cf
 		AdditionalCopyClause: opts.AdditionalCopyClause,
 	}
 
-	return dwh.PrepareTemporaryTable(tableData, tableConfig, opts.TempTableName, additionalSettings, false)
+	return dwh.PrepareTemporaryTable(tableData, tableConfig, opts.TempTableID, additionalSettings, false)
 }

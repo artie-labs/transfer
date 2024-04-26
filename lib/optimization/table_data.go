@@ -10,7 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/size"
-	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -28,7 +27,7 @@ type TableData struct {
 
 	primaryKeys []string
 
-	TopicConfig kafkalib.TopicConfig
+	topicConfig kafkalib.TopicConfig
 	// Partition to the latest offset(s).
 	// For Kafka, we only need the last message to commit the offset
 	// However, pub/sub requires every single message to be acked
@@ -47,7 +46,6 @@ type TableData struct {
 	temporaryTableSuffix string
 
 	// Name of the table in the destination
-	// Prefer calling .Name() everywhere
 	name string
 }
 
@@ -68,7 +66,7 @@ func (t *TableData) ContainOtherOperations() bool {
 	return t.containOtherOperations
 }
 
-func (t *TableData) PrimaryKeys(uppercaseEscNames bool, args *sql.NameArgs) []columns.Wrapper {
+func (t *TableData) PrimaryKeys(uppercaseEscNames bool, args *columns.NameArgs) []columns.Wrapper {
 	var pks []columns.Wrapper
 	for _, pk := range t.primaryKeys {
 		pks = append(pks, columns.NewWrapper(columns.NewColumn(pk, typing.Invalid), uppercaseEscNames, args))
@@ -77,12 +75,8 @@ func (t *TableData) PrimaryKeys(uppercaseEscNames bool, args *sql.NameArgs) []co
 	return pks
 }
 
-func (t *TableData) RawName() string {
+func (t *TableData) Name() string {
 	return t.name
-}
-
-func (t *TableData) Name(uppercaseEscNames bool, args *sql.NameArgs) string {
-	return sql.EscapeName(t.name, uppercaseEscNames, args)
 }
 
 func (t *TableData) SetInMemoryColumns(columns *columns.Columns) {
@@ -106,13 +100,17 @@ func (t *TableData) ReadOnlyInMemoryCols() *columns.Columns {
 	return &cols
 }
 
+func (t *TableData) TopicConfig() kafkalib.TopicConfig {
+	return t.topicConfig
+}
+
 func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKeys []string, topicConfig kafkalib.TopicConfig, name string) *TableData {
 	return &TableData{
 		mode:            mode,
 		inMemoryColumns: inMemoryColumns,
 		rowsData:        map[string]map[string]any{},
 		primaryKeys:     primaryKeys,
-		TopicConfig:     topicConfig,
+		topicConfig:     topicConfig,
 		// temporaryTableSuffix is being set in `ResetTempTableSuffix`
 		temporaryTableSuffix:    "",
 		PartitionsToLastMessage: map[string][]artie.Message{},
@@ -159,7 +157,7 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 
 	// If there's an actual hard delete, let's update it.
 	// We know because we have a delete operation and this topic is not configured to do soft deletes.
-	if !t.containsHardDeletes && !t.TopicConfig.SoftDelete && delete {
+	if !t.containsHardDeletes && !t.topicConfig.SoftDelete && delete {
 		t.containsHardDeletes = true
 	}
 }
@@ -178,46 +176,6 @@ func (t *TableData) Rows() []map[string]any {
 	}
 
 	return rows
-}
-
-type FqNameOpts struct {
-	BigQueryProjectID   string
-	MsSQLSchemaOverride string
-}
-
-func (t *TableData) ToFqName(kind constants.DestinationKind, escape bool, uppercaseEscNames bool, opts FqNameOpts) string {
-	switch kind {
-	case constants.S3:
-		// S3 should be db.schema.tableName, but we don't need to escape, since it's not a SQL db.
-		return fmt.Sprintf("%s.%s.%s", t.TopicConfig.Database, t.TopicConfig.Schema, t.Name(uppercaseEscNames, &sql.NameArgs{
-			Escape:   false,
-			DestKind: kind,
-		}))
-	case constants.Redshift:
-		// Redshift is Postgres compatible, so when establishing a connection, we'll specify a database.
-		// Thus, we only need to specify schema and table name here.
-		return fmt.Sprintf("%s.%s", t.TopicConfig.Schema, t.Name(uppercaseEscNames, &sql.NameArgs{
-			Escape:   escape,
-			DestKind: kind,
-		}))
-	case constants.MSSQL:
-		return fmt.Sprintf("%s.%s", stringutil.Override(t.TopicConfig.Schema, opts.MsSQLSchemaOverride), t.Name(uppercaseEscNames, &sql.NameArgs{
-			Escape:   escape,
-			DestKind: kind,
-		}))
-	case constants.BigQuery:
-		// The fully qualified name for BigQuery is: project_id.dataset.tableName.
-		// We are escaping the project_id and dataset because there could be special characters.
-		return fmt.Sprintf("`%s`.`%s`.%s", opts.BigQueryProjectID, t.TopicConfig.Database, t.Name(uppercaseEscNames, &sql.NameArgs{
-			Escape:   escape,
-			DestKind: kind,
-		}))
-	default:
-		return fmt.Sprintf("%s.%s.%s", t.TopicConfig.Database, t.TopicConfig.Schema, t.Name(uppercaseEscNames, &sql.NameArgs{
-			Escape:   escape,
-			DestKind: kind,
-		}))
-	}
 }
 
 func (t *TableData) NumberOfRows() uint {
@@ -263,11 +221,11 @@ func (t *TableData) ResetTempTableSuffix() {
 	}
 
 	// Lowercase this because BigQuery is case-sensitive.
-	t.temporaryTableSuffix = strings.ToLower(fmt.Sprintf("%s_%s", constants.ArtiePrefix, stringutil.Random(5)))
+	t.temporaryTableSuffix = strings.ToLower(stringutil.Random(5))
 }
 
 func (t *TableData) TempTableSuffix() string {
-	return fmt.Sprintf("%s_%d", t.temporaryTableSuffix, time.Now().Add(constants.TemporaryTableTTL).Unix())
+	return t.temporaryTableSuffix
 }
 
 // ShouldFlush will return whether Transfer should flush

@@ -22,41 +22,35 @@ import (
 )
 
 func (s *SnowflakeTestSuite) TestCastColValStaging() {
-	type _tc struct {
-		name    string
-		colVal  any
-		colKind columns.Column
-
-		errorMessage  string
-		expectedValue string
+	{
+		// Null
+		value, err := castColValStaging(nil, columns.Column{KindDetails: typing.String}, nil)
+		assert.NoError(s.T(), err)
+		assert.Equal(s.T(), `\\N`, value)
 	}
+	{
+		// Struct field
 
-	tcs := []_tc{
-		{
-			name:   "null value (string, not that it matters)",
-			colVal: nil,
-			colKind: columns.Column{
-				KindDetails: typing.String,
-			},
+		// Did not exceed lob size
+		value, err := castColValStaging(map[string]any{"key": "value"}, columns.Column{KindDetails: typing.Struct}, nil)
+		assert.NoError(s.T(), err)
+		assert.Equal(s.T(), `{"key":"value"}`, value)
 
-			expectedValue: `\\N`,
-		},
+		// Did exceed lob size
+		value, err = castColValStaging(map[string]any{"key": strings.Repeat("a", 16777216)}, columns.Column{KindDetails: typing.Struct}, nil)
+		assert.NoError(s.T(), err)
+		assert.Equal(s.T(), `{"key":"__artie_exceeded_value"}`, value)
 	}
-
-	for _, tc := range tcs {
-		actualValue, err := castColValStaging(tc.colVal, tc.colKind, nil)
-
-		if len(tc.errorMessage) > 0 {
-			assert.Contains(s.T(), err.Error(), tc.errorMessage, tc.name)
-		} else {
-			assert.NoError(s.T(), err, tc.name)
-			assert.Equal(s.T(), tc.expectedValue, actualValue, tc.name)
-		}
+	{
+		// String field
+		value, err := castColValStaging("foo", columns.Column{KindDetails: typing.String}, nil)
+		assert.NoError(s.T(), err)
+		assert.Equal(s.T(), "foo", value)
 	}
 }
 
 func (s *SnowflakeTestSuite) TestBackfillColumn() {
-	fqTableName := "db.public.tableName"
+	tableID := NewTableIdentifier("db", "public", "tableName")
 
 	backfilledCol := columns.NewColumn("foo", typing.Boolean)
 	backfilledCol.SetDefaultValue(true)
@@ -85,20 +79,20 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 		{
 			name:        "col that has default value that needs to be backfilled",
 			col:         needsBackfillCol,
-			backfillSQL: `UPDATE db.public.tableName SET foo = true WHERE foo IS NULL;`,
-			commentSQL:  `COMMENT ON COLUMN db.public.tableName.foo IS '{"backfilled": true}';`,
+			backfillSQL: `UPDATE db.public."TABLENAME" SET foo = true WHERE foo IS NULL;`,
+			commentSQL:  `COMMENT ON COLUMN db.public."TABLENAME".foo IS '{"backfilled": true}';`,
 		},
 		{
 			name:        "default col that has default value that needs to be backfilled",
 			col:         needsBackfillColDefault,
-			backfillSQL: `UPDATE db.public.tableName SET default = true WHERE "DEFAULT" IS NULL;`,
-			commentSQL:  `COMMENT ON COLUMN db.public.tableName.default IS '{"backfilled": true}';`,
+			backfillSQL: `UPDATE db.public."TABLENAME" SET default = true WHERE "DEFAULT" IS NULL;`,
+			commentSQL:  `COMMENT ON COLUMN db.public."TABLENAME".default IS '{"backfilled": true}';`,
 		},
 	}
 
 	var count int
 	for _, testCase := range testCases {
-		err := shared.BackfillColumn(config.Config{}, s.stageStore, testCase.col, fqTableName)
+		err := shared.BackfillColumn(config.Config{}, s.stageStore, testCase.col, tableID)
 		assert.NoError(s.T(), err, testCase.name)
 		if testCase.backfillSQL != "" && testCase.commentSQL != "" {
 			backfillSQL, _ := s.fakeStageStore.ExecArgsForCall(count)
@@ -116,7 +110,7 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 }
 
 // generateTableData - returns tableName and tableData
-func generateTableData(rows int) (string, *optimization.TableData) {
+func generateTableData(rows int) (TableIdentifier, *optimization.TableData) {
 	randomTableName := fmt.Sprintf("temp_%s_%s", constants.ArtiePrefix, stringutil.Random(10))
 	cols := &columns.Columns{}
 	for _, col := range []string{"user_id", "first_name", "last_name", "dusty"} {
@@ -136,16 +130,17 @@ func generateTableData(rows int) (string, *optimization.TableData) {
 		td.InsertRow(key, rowData, false)
 	}
 
-	return randomTableName, td
+	return NewTableIdentifier("database", "schema", randomTableName), td
 }
 
 func (s *SnowflakeTestSuite) TestPrepareTempTable() {
-	tempTableName, tableData := generateTableData(10)
-	s.stageStore.GetConfigMap().AddTableToConfig(tempTableName, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
-	sflkTc := s.stageStore.GetConfigMap().TableConfig(tempTableName)
+	tempTableID, tableData := generateTableData(10)
+	tempTableName := tempTableID.FullyQualifiedName()
+	s.stageStore.GetConfigMap().AddTableToConfig(tempTableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
+	sflkTc := s.stageStore.GetConfigMap().TableConfig(tempTableID)
 
 	{
-		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableName, types.AdditionalSettings{}, true))
+		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableID, types.AdditionalSettings{}, true))
 		assert.Equal(s.T(), 3, s.fakeStageStore.ExecCallCount())
 
 		// First call is to create the temp table
@@ -155,7 +150,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 			`CREATE TABLE IF NOT EXISTS %s (user_id string,first_name string,last_name string,dusty string) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`, tempTableName)
 		containsPrefix := strings.HasPrefix(createQuery, prefixQuery)
 		assert.True(s.T(), containsPrefix, fmt.Sprintf("createQuery:%v, prefixQuery:%s", createQuery, prefixQuery))
-		resourceName := addPrefixToTableName(tempTableName, "%")
+		resourceName := addPrefixToTableName(tempTableID, "%")
 		// Second call is a PUT
 		putQuery, _ := s.fakeStageStore.ExecArgsForCall(1)
 		assert.Contains(s.T(), putQuery, "PUT file://", putQuery)
@@ -167,15 +162,15 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	}
 	{
 		// Don't create the temporary table.
-		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableName, types.AdditionalSettings{}, false))
+		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableID, types.AdditionalSettings{}, false))
 		assert.Equal(s.T(), 5, s.fakeStageStore.ExecCallCount())
 	}
 
 }
 
 func (s *SnowflakeTestSuite) TestLoadTemporaryTable() {
-	tempTableName, tableData := generateTableData(100)
-	fp, err := s.stageStore.writeTemporaryTableFile(tableData, tempTableName)
+	tempTableID, tableData := generateTableData(100)
+	fp, err := s.stageStore.writeTemporaryTableFile(tableData, tempTableID)
 	assert.NoError(s.T(), err)
 	// Read the CSV and confirm.
 	csvfile, err := os.Open(fp)

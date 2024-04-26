@@ -30,12 +30,12 @@ func getSchema(schema string) string {
 	return schema
 }
 
-func (s *Store) Schema(tableData *optimization.TableData) string {
-	return getSchema(tableData.TopicConfig.Schema)
-}
-
 func (s *Store) Label() constants.DestinationKind {
 	return constants.MSSQL
+}
+
+func (s *Store) ShouldUppercaseEscapedNames() bool {
+	return false
 }
 
 func (s *Store) Merge(tableData *optimization.TableData) error {
@@ -43,15 +43,18 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 }
 
 func (s *Store) Append(tableData *optimization.TableData) error {
-	return shared.Append(s, tableData, s.config, types.AppendOpts{
-		TempTableName: s.ToFullyQualifiedName(tableData, true),
-	})
+	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	return shared.Append(s, tableData, types.AppendOpts{TempTableID: tableID})
 }
 
-func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	return tableData.ToFqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames, optimization.FqNameOpts{
-		MsSQLSchemaOverride: s.Schema(tableData),
-	})
+// specificIdentifierFor returns a MS SQL [TableIdentifier] for a [TopicConfig] + table name.
+func (s *Store) specificIdentifierFor(topicConfig kafkalib.TopicConfig, table string) TableIdentifier {
+	return NewTableIdentifier(getSchema(topicConfig.Schema), table)
+}
+
+// IdentifierFor returns a generic [types.TableIdentifier] interface for a [TopicConfig] + table name.
+func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
+	return s.specificIdentifierFor(topicConfig, table)
 }
 
 func (s *Store) Sweep() error {
@@ -67,7 +70,7 @@ func (s *Store) Sweep() error {
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func (s *Store) Dedupe(fqTableName string) error {
+func (s *Store) Dedupe(_ types.TableIdentifier, _ []string, _ kafkalib.TopicConfig) error {
 	return nil // dedupe is not necessary for MS SQL
 }
 
@@ -79,10 +82,11 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		describeDescriptionCol = "description"
 	)
 
-	query, args := describeTableQuery(s.Schema(tableData), tableData.RawName())
+	tableID := s.specificIdentifierFor(tableData.TopicConfig(), tableData.Name())
+	query, args := describeTableQuery(tableID)
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
-		FqName:             s.ToFullyQualifiedName(tableData, true),
+		TableID:            tableID,
 		ConfigMap:          s.configMap,
 		Query:              query,
 		Args:               args,
@@ -90,7 +94,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeDescriptionCol,
 		EmptyCommentValue:  ptr.ToString("<nil>"),
-		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
+		DropDeletedColumns: tableData.TopicConfig().DropDeletedColumns,
 	}.GetTableConfig()
 }
 

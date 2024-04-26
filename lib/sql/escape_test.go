@@ -7,125 +7,82 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestEscapeName(t *testing.T) {
+func TestEscapeNameIfNecessary(t *testing.T) {
 	type _testCase struct {
 		name                     string
 		nameToEscape             string
-		args                     *NameArgs
+		destKind                 constants.DestinationKind
 		expectedName             string
 		expectedNameWhenUpperCfg string
 	}
 
 	testCases := []_testCase{
 		{
-			name:                     "args = nil",
-			nameToEscape:             "order",
-			expectedName:             "order",
-			expectedNameWhenUpperCfg: "order",
-		},
-		{
-			name:                     "escape = false",
-			args:                     &NameArgs{},
-			nameToEscape:             "order",
-			expectedName:             "order",
-			expectedNameWhenUpperCfg: "order",
-		},
-		{
-			name: "escape = true, snowflake",
-			args: &NameArgs{
-				Escape:   true,
-				DestKind: constants.Snowflake,
-			},
+			name:                     "snowflake",
+			destKind:                 constants.Snowflake,
 			nameToEscape:             "order",
 			expectedName:             `"order"`,
 			expectedNameWhenUpperCfg: `"ORDER"`,
 		},
 		{
-			name: "escape = true, snowflake #2",
-			args: &NameArgs{
-				Escape:   true,
-				DestKind: constants.Snowflake,
-			},
+			name:                     "snowflake #2",
+			destKind:                 constants.Snowflake,
 			nameToEscape:             "hello",
 			expectedName:             `hello`,
 			expectedNameWhenUpperCfg: "hello",
 		},
 		{
-			name: "escape = true, redshift",
-			args: &NameArgs{
-				Escape:   true,
-				DestKind: constants.Redshift,
-			},
+			name:                     "redshift",
+			destKind:                 constants.Redshift,
 			nameToEscape:             "order",
 			expectedName:             `"order"`,
 			expectedNameWhenUpperCfg: `"ORDER"`,
 		},
 		{
-			name: "escape = true, redshift #2",
-			args: &NameArgs{
-				Escape:   true,
-				DestKind: constants.Redshift,
-			},
+			name:                     "redshift #2",
+			destKind:                 constants.Redshift,
 			nameToEscape:             "hello",
 			expectedName:             `hello`,
 			expectedNameWhenUpperCfg: "hello",
 		},
 		{
-			name: "escape = true, bigquery",
-			args: &NameArgs{
-				Escape:   true,
-				DestKind: constants.BigQuery,
-			},
+			name:                     "bigquery",
+			destKind:                 constants.BigQuery,
 			nameToEscape:             "order",
 			expectedName:             "`order`",
 			expectedNameWhenUpperCfg: "`ORDER`",
 		},
 		{
-			name: "escape = true, bigquery, #2",
-			args: &NameArgs{
-				Escape:   true,
-				DestKind: constants.BigQuery,
-			},
+			name:                     "bigquery, #2",
+			destKind:                 constants.BigQuery,
 			nameToEscape:             "hello",
 			expectedName:             "hello",
 			expectedNameWhenUpperCfg: "hello",
 		},
 		{
-			name: "escape = true, redshift, #1 (delta)",
-			args: &NameArgs{
-				Escape:   true,
-				DestKind: constants.Redshift,
-			},
+			name:                     "redshift, #1 (delta)",
+			destKind:                 constants.Redshift,
 			nameToEscape:             "delta",
 			expectedName:             `"delta"`,
 			expectedNameWhenUpperCfg: `"DELTA"`,
 		},
 		{
-			name: "escape = true, snowflake, #1 (delta)",
-			args: &NameArgs{
-				Escape:   true,
-				DestKind: constants.Snowflake,
-			},
+			name:                     "snowflake, #1 (delta)",
+			destKind:                 constants.Snowflake,
 			nameToEscape:             "delta",
 			expectedName:             `delta`,
 			expectedNameWhenUpperCfg: `delta`,
 		},
 		{
-			name: "escape = true, redshift, symbols",
-			args: &NameArgs{
-				Escape:   true,
-				DestKind: constants.Redshift,
-			},
+			name:                     "redshift, symbols",
+			destKind:                 constants.Redshift,
 			nameToEscape:             "receivedat:__",
 			expectedName:             `"receivedat:__"`,
 			expectedNameWhenUpperCfg: `"RECEIVEDAT:__"`,
 		},
 		{
-			name: "escape = true, redshift, numbers",
-			args: &NameArgs{
-				Escape:   true,
-				DestKind: constants.Redshift,
-			},
+			name:                     "redshift, numbers",
+			destKind:                 constants.Redshift,
 			nameToEscape:             "0",
 			expectedName:             `"0"`,
 			expectedNameWhenUpperCfg: `"0"`,
@@ -133,10 +90,10 @@ func TestEscapeName(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		actualName := EscapeName(testCase.nameToEscape, false, testCase.args)
+		actualName := EscapeNameIfNecessary(testCase.nameToEscape, false, testCase.destKind)
 		assert.Equal(t, testCase.expectedName, actualName, testCase.name)
 
-		actualUpperName := EscapeName(testCase.nameToEscape, true, testCase.args)
+		actualUpperName := EscapeNameIfNecessary(testCase.nameToEscape, true, testCase.destKind)
 		assert.Equal(t, testCase.expectedNameWhenUpperCfg, actualUpperName, testCase.name)
 	}
 }

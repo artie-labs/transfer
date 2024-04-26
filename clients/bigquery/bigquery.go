@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"strings"
 
 	"cloud.google.com/go/bigquery"
 	_ "github.com/viant/bigquery"
@@ -16,6 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -36,16 +36,16 @@ type Store struct {
 	db.Store
 }
 
-func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, _ types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
 			Dwh:               s,
 			Tc:                tableConfig,
-			FqTableName:       tempTableName,
+			TableID:           tempTableID,
 			CreateTable:       true,
 			TemporaryTable:    true,
 			ColumnOp:          constants.Add,
-			UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
+			UppercaseEscNames: ptr.ToBool(s.ShouldUppercaseEscapedNames()),
 			Mode:              tableData.Mode(),
 		}
 
@@ -59,7 +59,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.Rows() {
 		data := make(map[string]bigquery.Value)
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.ShouldUppercaseEscapedNames(), nil) {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal, err := castColVal(value[col], colKind, additionalDateFmts)
 			if err != nil {
@@ -75,27 +75,26 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	}
 
 	// Load the data
-	return s.putTable(context.Background(), tableData.TopicConfig.Database, tempTableName, rows)
+	return s.putTable(context.Background(), tempTableID, rows)
 }
 
-func (s *Store) ToFullyQualifiedName(tableData *optimization.TableData, escape bool) string {
-	return tableData.ToFqName(s.Label(), escape, s.config.SharedDestinationConfig.UppercaseEscapedNames,
-		optimization.FqNameOpts{BigQueryProjectID: s.config.BigQuery.ProjectID})
+func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
+	return NewTableIdentifier(s.config.BigQuery.ProjectID, topicConfig.Database, table)
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	query := fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name = ?;", tableData.TopicConfig.Database)
+	query := fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name = ?;", tableData.TopicConfig().Database)
 	return shared.GetTableCfgArgs{
 		Dwh:                s,
-		FqName:             s.ToFullyQualifiedName(tableData, true),
+		TableID:            s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
 		ConfigMap:          s.configMap,
 		Query:              query,
-		Args:               []any{tableData.RawName()},
+		Args:               []any{tableData.Name()},
 		ColumnNameLabel:    describeNameCol,
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeCommentCol,
 		EmptyCommentValue:  ptr.ToString(""),
-		DropDeletedColumns: tableData.TopicConfig.DropDeletedColumns,
+		DropDeletedColumns: tableData.TopicConfig().DropDeletedColumns,
 	}.GetTableConfig()
 }
 
@@ -111,6 +110,10 @@ func (s *Store) Label() constants.DestinationKind {
 	return constants.BigQuery
 }
 
+func (s *Store) ShouldUppercaseEscapedNames() bool {
+	return false
+}
+
 func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 	client, err := bigquery.NewClient(ctx, s.config.BigQuery.ProjectID)
 	if err != nil {
@@ -120,28 +123,19 @@ func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 	return client
 }
 
-func tableRelName(fqName string) (string, error) {
-	fqNameParts := strings.Split(fqName, ".")
-	if len(fqNameParts) < 3 {
-		return "", fmt.Errorf("invalid fully qualified name: %s", fqName)
-	}
-
-	return strings.Join(fqNameParts[2:], "."), nil
-}
-
-func (s *Store) putTable(ctx context.Context, dataset, tableName string, rows []*Row) error {
-	relTableName, err := tableRelName(tableName)
-	if err != nil {
-		return fmt.Errorf("failed to get table name: %w", err)
+func (s *Store) putTable(ctx context.Context, tableID types.TableIdentifier, rows []*Row) error {
+	bqTableID, ok := tableID.(TableIdentifier)
+	if !ok {
+		return fmt.Errorf("unable to cast tableID to BigQuery TableIdentifier")
 	}
 
 	client := s.GetClient(ctx)
 	defer client.Close()
 
 	batch := NewBatch(rows, s.batchSize)
-	inserter := client.Dataset(dataset).Table(relTableName).Inserter()
+	inserter := client.Dataset(bqTableID.Dataset()).Table(bqTableID.Table()).Inserter()
 	for batch.HasNext() {
-		if err = inserter.Put(ctx, batch.NextChunk()); err != nil {
+		if err := inserter.Put(ctx, batch.NextChunk()); err != nil {
 			return fmt.Errorf("failed to insert rows: %w", err)
 		}
 	}
@@ -149,8 +143,10 @@ func (s *Store) putTable(ctx context.Context, dataset, tableName string, rows []
 	return nil
 }
 
-func (s *Store) Dedupe(fqTableName string) error {
-	return fmt.Errorf("dedupe is not yet implemented")
+func (s *Store) Dedupe(tableID types.TableIdentifier, _ []string, _ kafkalib.TopicConfig) error {
+	fqTableName := tableID.FullyQualifiedName()
+	_, err := s.Exec(fmt.Sprintf("CREATE OR REPLACE TABLE %s AS SELECT DISTINCT * FROM %s", fqTableName, fqTableName))
+	return err
 }
 
 func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {

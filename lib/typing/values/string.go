@@ -46,7 +46,6 @@ func ToString(colVal any, colKind columns.Column, additionalDateFmts []string) (
 	case typing.String.Kind:
 		isArray := reflect.ValueOf(colVal).Kind() == reflect.Slice
 		_, isMap := colVal.(map[string]any)
-
 		// If colVal is either an array or a JSON object, we should run JSON parse.
 		if isMap || isArray {
 			colValBytes, err := json.Marshal(colVal)

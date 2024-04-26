@@ -83,22 +83,24 @@ func (c *Column) RawName() string {
 	return c.name
 }
 
+type NameArgs struct {
+	DestKind constants.DestinationKind
+}
+
 // Name will give you c.name
 // However, if you pass in escape, we will escape if the column name is part of the reserved words from destinations.
 // If so, it'll change from `start` => `"start"` as suggested by Snowflake.
-func (c *Column) Name(uppercaseEscNames bool, args *sql.NameArgs) string {
-	return sql.EscapeName(c.name, uppercaseEscNames, args)
+func (c *Column) Name(uppercaseEscNames bool, args *NameArgs) string {
+	// TODO: Kill [NameArgs] and just pass a [DestinationKind].
+	if args == nil {
+		return c.name
+	}
+	return sql.EscapeNameIfNecessary(c.name, uppercaseEscNames, args.DestKind)
 }
 
 type Columns struct {
 	columns []Column
 	sync.RWMutex
-}
-
-func (c *Columns) EscapeName(uppercaseEscNames bool, args *sql.NameArgs) {
-	for idx := range c.columns {
-		c.columns[idx].name = c.columns[idx].Name(uppercaseEscNames, args)
-	}
 }
 
 type UpsertColumnArg struct {
@@ -182,7 +184,7 @@ func (c *Columns) GetColumn(name string) (Column, bool) {
 
 // GetColumnsToUpdate will filter all the `Invalid` columns so that we do not update it.
 // It also has an option to escape the returned columns or not. This is used mostly for the SQL MERGE queries.
-func (c *Columns) GetColumnsToUpdate(uppercaseEscNames bool, args *sql.NameArgs) []string {
+func (c *Columns) GetColumnsToUpdate(uppercaseEscNames bool, args *NameArgs) []string {
 	if c == nil {
 		return []string{}
 	}
@@ -253,7 +255,7 @@ func (c *Columns) UpdateQuery(destKind constants.DestinationKind, uppercaseEscNa
 			continue
 		}
 
-		colName := column.Name(uppercaseEscNames, &sql.NameArgs{Escape: true, DestKind: destKind})
+		colName := column.Name(uppercaseEscNames, &NameArgs{DestKind: destKind})
 		if column.ToastColumn {
 			if column.KindDetails == typing.Struct {
 				cols = append(cols, processToastStructCol(colName, destKind))

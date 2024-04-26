@@ -17,7 +17,7 @@ func TestMergeStatement_TempTable(t *testing.T) {
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	mergeArg := &MergeArgument{
-		FqTableName:       "customers.orders",
+		TableID:           MockTableIdentifier{"customers.orders"},
 		SubQuery:          "customers.orders_tmp",
 		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("order_id", typing.Invalid), false, nil)},
 		Columns:           &cols,
@@ -39,7 +39,7 @@ func TestMergeStatement_JSONKey(t *testing.T) {
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	mergeArg := &MergeArgument{
-		FqTableName:       "customers.orders",
+		TableID:           MockTableIdentifier{"customers.orders"},
 		SubQuery:          "customers.orders_tmp",
 		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("order_oid", typing.Invalid), false, nil)},
 		Columns:           &cols,

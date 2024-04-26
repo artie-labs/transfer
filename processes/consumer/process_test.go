@@ -10,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/cdc/mongo"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
@@ -34,6 +35,10 @@ func (m MockDestination) Append(tableData *optimization.TableData) error {
 
 func (m MockDestination) IsRetryableError(err error) bool {
 	return false
+}
+
+func (m MockDestination) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
+	panic("not used")
 }
 
 func TestProcessMessageFailures(t *testing.T) {

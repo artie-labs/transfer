@@ -12,10 +12,23 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
-	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
+
+func replaceExceededValues(colVal string, colKind columns.Column) string {
+	// https://community.snowflake.com/s/article/Max-LOB-size-exceeded
+	const maxLobLength = 16777216
+	if colKind.KindDetails.Kind == typing.Struct.Kind {
+		if len(colVal) > maxLobLength {
+			return fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker)
+		}
+	}
+
+	return colVal
+}
 
 // castColValStaging - takes `colVal` any and `colKind` typing.Column and converts the value into a string value
 // This is necessary because CSV writers require values to in `string`.
@@ -25,19 +38,24 @@ func castColValStaging(colVal any, colKind columns.Column, additionalDateFmts []
 		return `\\N`, nil
 	}
 
-	return values.ToString(colVal, colKind, additionalDateFmts)
+	value, err := values.ToString(colVal, colKind, additionalDateFmts)
+	if err != nil {
+		return "", err
+	}
+
+	return replaceExceededValues(value, colKind), nil
 }
 
-func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableName string, additionalSettings types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
 			Dwh:               s,
 			Tc:                tableConfig,
-			FqTableName:       tempTableName,
+			TableID:           tempTableID,
 			CreateTable:       true,
 			TemporaryTable:    true,
 			ColumnOp:          constants.Add,
-			UppercaseEscNames: &s.config.SharedDestinationConfig.UppercaseEscapedNames,
+			UppercaseEscNames: ptr.ToBool(s.ShouldUppercaseEscapedNames()),
 			Mode:              tableData.Mode(),
 		}
 
@@ -47,7 +65,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	}
 
 	// Write data into CSV
-	fp, err := s.writeTemporaryTableFile(tableData, tempTableName)
+	fp, err := s.writeTemporaryTableFile(tableData, tempTableID)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
@@ -60,17 +78,17 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	}()
 
 	// Upload the CSV file to Snowflake
-	if _, err = s.Exec(fmt.Sprintf("PUT file://%s @%s AUTO_COMPRESS=TRUE", fp, addPrefixToTableName(tempTableName, "%"))); err != nil {
+	if _, err = s.Exec(fmt.Sprintf("PUT file://%s @%s AUTO_COMPRESS=TRUE", fp, addPrefixToTableName(tempTableID, "%"))); err != nil {
 		return fmt.Errorf("failed to run PUT for temporary table: %w", err)
 	}
 
 	// COPY the CSV file (in Snowflake) into a table
 	copyCommand := fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
-		tempTableName, strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, &sql.NameArgs{
-			Escape:   true,
+		tempTableID.FullyQualifiedName(),
+		strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.ShouldUppercaseEscapedNames(), &columns.NameArgs{
 			DestKind: s.Label(),
 		}), ","),
-		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableName, "%"))
+		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableID, "%"))
 
 	if additionalSettings.AdditionalCopyClause != "" {
 		copyCommand += " " + additionalSettings.AdditionalCopyClause
@@ -83,8 +101,8 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	return nil
 }
 
-func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableName string) (string, error) {
-	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv", newTableName))
+func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID types.TableIdentifier) (string, error) {
+	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv", newTableID.FullyQualifiedName()))
 	file, err := os.Create(fp)
 	if err != nil {
 		return "", err
@@ -97,7 +115,7 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.Rows() {
 		var row []string
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.config.SharedDestinationConfig.UppercaseEscapedNames, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.ShouldUppercaseEscapedNames(), nil) {
 			column, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			castedValue, castErr := castColValStaging(value[col], column, additionalDateFmts)
 			if castErr != nil {

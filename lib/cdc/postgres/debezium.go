@@ -20,8 +20,7 @@ func (d *Debezium) GetEventFromBytes(_ typing.Settings, bytes []byte) (cdc.Event
 		return nil, fmt.Errorf("empty message")
 	}
 
-	err := json.Unmarshal(bytes, &event)
-	if err != nil {
+	if err := json.Unmarshal(bytes, &event); err != nil {
 		return nil, err
 	}
 
