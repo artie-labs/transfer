@@ -194,10 +194,7 @@ func KindToDWHType(kd KindDetails, dwh constants.DestinationKind, isPk bool) str
 
 func DwhTypeToKind(dwh constants.DestinationKind, dwhType, stringPrecision string) (KindDetails, error) {
 	dwhType = strings.ToLower(dwhType)
-
 	var kd KindDetails
-	var unmatched bool
-
 	switch dwh {
 	case constants.Snowflake:
 		kd = snowflakeTypeToKind(dwhType)
@@ -208,16 +205,11 @@ func DwhTypeToKind(dwh constants.DestinationKind, dwhType, stringPrecision strin
 	case constants.MSSQL:
 		kd = mssqlTypeToKind(dwhType, stringPrecision)
 	default:
-		unmatched = true
+		return Invalid, fmt.Errorf("unexpected dwh kind, label: %v", dwh)
 	}
 
-	if !unmatched {
-		if kd.Kind == Invalid.Kind {
-			return Invalid, fmt.Errorf("unable to map type: %q to dwh type", dwhType)
-		} else {
-			return kd, nil
-		}
+	if kd.Kind == Invalid.Kind {
+		return Invalid, fmt.Errorf("unable to map type: %q to dwh type", dwhType)
 	}
-
-	return Invalid, fmt.Errorf("unexpected dwh kind, label: %v", dwh)
+	return kd, nil
 }
