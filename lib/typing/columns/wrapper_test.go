@@ -23,13 +23,13 @@ func TestWrapper_Complete(t *testing.T) {
 			name:                  "happy",
 			expectedRawName:       "happy",
 			expectedEscapedName:   "happy",
-			expectedEscapedNameBQ: "happy",
+			expectedEscapedNameBQ: "`happy`",
 		},
 		{
 			name:                  "user_id",
 			expectedRawName:       "user_id",
 			expectedEscapedName:   "user_id",
-			expectedEscapedNameBQ: "user_id",
+			expectedEscapedNameBQ: "`user_id`",
 		},
 		{
 			name:                  "group",

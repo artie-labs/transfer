@@ -7,6 +7,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNeedsEscaping(t *testing.T) {
+	// BigQuery:
+	assert.True(t, NeedsEscaping("select", constants.BigQuery))       // name that is reserved
+	assert.True(t, NeedsEscaping("foo", constants.BigQuery))          // name that is not reserved
+	assert.False(t, NeedsEscaping("__artie_foo", constants.BigQuery)) // Artie prefix
+
+	// MS SQL:
+	assert.True(t, NeedsEscaping("select", constants.MSSQL))       // name that is reserved
+	assert.True(t, NeedsEscaping("foo", constants.MSSQL))          // name that is not reserved
+	assert.False(t, NeedsEscaping("__artie_foo", constants.MSSQL)) // Artie prefix
+
+	// Redshift:
+	assert.True(t, NeedsEscaping("select", constants.Redshift))          // name that is reserved
+	assert.True(t, NeedsEscaping("truncatecolumns", constants.Redshift)) // name that is reserved for Redshift
+	assert.False(t, NeedsEscaping("foo", constants.Redshift))            // name that is not reserved
+	assert.False(t, NeedsEscaping("__artie_foo", constants.Redshift))    // Artie prefix
+
+	// Snowflake:
+	assert.True(t, NeedsEscaping("select", constants.Snowflake))       // name that is reserved
+	assert.False(t, NeedsEscaping("foo", constants.Snowflake))         // name that is not reserved
+	assert.False(t, NeedsEscaping("__artie_foo", constants.Snowflake)) // Artie prefix
+}
+
 func TestEscapeNameIfNecessary(t *testing.T) {
 	type _testCase struct {
 		name                     string
@@ -56,8 +79,8 @@ func TestEscapeNameIfNecessary(t *testing.T) {
 			name:                     "bigquery, #2",
 			destKind:                 constants.BigQuery,
 			nameToEscape:             "hello",
-			expectedName:             "hello",
-			expectedNameWhenUpperCfg: "hello",
+			expectedName:             "`hello`",
+			expectedNameWhenUpperCfg: "`HELLO`",
 		},
 		{
 			name:                     "redshift, #1 (delta)",
