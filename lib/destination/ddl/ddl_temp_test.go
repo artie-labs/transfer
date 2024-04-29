@@ -115,6 +115,6 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 		assert.Equal(d.T(), 1, d.fakeBigQueryStore.ExecCallCount())
 		bqQuery, _ := d.fakeBigQueryStore.ExecArgsForCall(0)
 		// Cutting off the expiration_timestamp since it's time based.
-		assert.Contains(d.T(), bqQuery, "CREATE TABLE IF NOT EXISTS `db`.`schema`.`tempTableName` (foo string,bar float64,`select` string) OPTIONS (expiration_timestamp =")
+		assert.Contains(d.T(), bqQuery, "CREATE TABLE IF NOT EXISTS `db`.`schema`.`tempTableName` (`foo` string,`bar` float64,`select` string) OPTIONS (expiration_timestamp =")
 	}
 }

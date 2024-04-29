@@ -351,7 +351,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 		execQuery, _ := d.fakeBigQueryStore.ExecArgsForCall(0)
 		var found bool
 		for key := range allColsMap {
-			if execQuery == fmt.Sprintf("ALTER TABLE %s drop COLUMN %s", bqName, key) {
+			if execQuery == fmt.Sprintf("ALTER TABLE %s drop COLUMN `%s`", bqName, key) {
 				found = true
 			}
 		}
