@@ -9,6 +9,7 @@ import (
 )
 
 func redshiftTypeToKind(rawType string, stringPrecision string) KindDetails {
+	// TODO: Check if there are any missing Redshift data types.
 	if strings.HasPrefix(rawType, "numeric") {
 		return ParseNumeric(defaultPrefix, rawType)
 	}
@@ -29,7 +30,7 @@ func redshiftTypeToKind(rawType string, stringPrecision string) KindDetails {
 	switch rawType {
 	case "super":
 		return Struct
-	case "integer", "bigint":
+	case "smallint", "integer", "bigint":
 		return Integer
 	case "double precision":
 		return Float
