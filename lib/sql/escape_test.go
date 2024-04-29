@@ -12,11 +12,13 @@ func TestNeedsEscaping(t *testing.T) {
 	assert.True(t, NeedsEscaping("select", constants.BigQuery))       // name that is reserved
 	assert.True(t, NeedsEscaping("foo", constants.BigQuery))          // name that is not reserved
 	assert.False(t, NeedsEscaping("__artie_foo", constants.BigQuery)) // Artie prefix
+	assert.True(t, NeedsEscaping("__artie_foo:bar", constants.MSSQL)) // Artie prefix + symbol
 
 	// MS SQL:
-	assert.True(t, NeedsEscaping("select", constants.MSSQL))       // name that is reserved
-	assert.True(t, NeedsEscaping("foo", constants.MSSQL))          // name that is not reserved
-	assert.False(t, NeedsEscaping("__artie_foo", constants.MSSQL)) // Artie prefix
+	assert.True(t, NeedsEscaping("select", constants.MSSQL))          // name that is reserved
+	assert.True(t, NeedsEscaping("foo", constants.MSSQL))             // name that is not reserved
+	assert.False(t, NeedsEscaping("__artie_foo", constants.MSSQL))    // Artie prefix
+	assert.True(t, NeedsEscaping("__artie_foo:bar", constants.MSSQL)) // Artie prefix + symbol
 
 	// Redshift:
 	assert.True(t, NeedsEscaping("select", constants.Redshift))          // name that is reserved
