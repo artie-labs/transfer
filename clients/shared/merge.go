@@ -69,7 +69,11 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 	}
 
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
-	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
+
+	if err = tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...); err != nil {
+		return fmt.Errorf("failed to merge columns from destination: %w", err)
+	}
+
 	temporaryTableID := TempTableID(dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name()), tableData.TempTableSuffix())
 	temporaryTableName := temporaryTableID.FullyQualifiedName()
 	if err = dwh.PrepareTemporaryTable(tableData, tableConfig, temporaryTableID, types.AdditionalSettings{}, true); err != nil {

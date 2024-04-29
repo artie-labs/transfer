@@ -1,7 +1,7 @@
 package shared
 
 import (
-	"log/slog"
+	"fmt"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
@@ -20,7 +20,7 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, op
 	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	tableConfig, err := dwh.GetTableConfig(tableData)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get table config: %w", err)
 	}
 
 	// We don't care about srcKeysMissing because we don't drop columns when we append.
@@ -40,13 +40,13 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, op
 	}
 
 	// Keys that exist in CDC stream, but not in DWH
-	err = createAlterTableArgs.AlterTable(targetKeysMissing...)
-	if err != nil {
-		slog.Warn("Failed to apply alter table", slog.Any("err", err))
-		return err
+	if err = createAlterTableArgs.AlterTable(targetKeysMissing...); err != nil {
+		return fmt.Errorf("failed to alter table: %w", err)
 	}
 
-	tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...)
+	if err = tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...); err != nil {
+		return fmt.Errorf("failed to merge columns from destination: %w", err)
+	}
 
 	additionalSettings := types.AdditionalSettings{
 		AdditionalCopyClause: opts.AdditionalCopyClause,
