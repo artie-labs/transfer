@@ -1,6 +1,7 @@
 package typing
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -52,7 +53,12 @@ func TestBigQueryTypeToKind(t *testing.T) {
 
 	for bqCol, expectedKind := range bqColToExpectedKind {
 		kd, err := DwhTypeToKind(constants.BigQuery, bqCol, "")
-		assert.NoError(t, err)
+		if expectedKind.Kind == Invalid.Kind {
+			assert.ErrorContains(t, err, fmt.Sprintf("unable to map type: %q to dwh type", bqCol))
+		} else {
+			assert.NoError(t, err)
+		}
+
 		assert.Equal(t, expectedKind.Kind, kd.Kind, bqCol)
 	}
 }

@@ -69,7 +69,6 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 	}
 
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
-
 	if err = tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...); err != nil {
 		return fmt.Errorf("failed to merge columns from destination: %w", err)
 	}

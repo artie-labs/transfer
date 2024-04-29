@@ -41,7 +41,7 @@ func TestSnowflakeTypeToKindFloats(t *testing.T) {
 	{
 		// Invalid because precision nor scale is included.
 		kd, err := DwhTypeToKind(constants.Snowflake, "NUMERIC", "")
-		assert.NoError(t, err)
+		assert.ErrorContains(t, err, `unable to map type: "numeric" to dwh type`)
 		assert.Equal(t, Invalid, kd)
 	}
 	{
@@ -105,12 +105,12 @@ func TestSnowflakeTypeToKindComplex(t *testing.T) {
 func TestSnowflakeTypeToKindErrors(t *testing.T) {
 	{
 		kd, err := DwhTypeToKind(constants.Snowflake, "", "")
-		assert.NoError(t, err)
+		assert.ErrorContains(t, err, `unable to map type: "" to dwh type`)
 		assert.Equal(t, Invalid, kd)
 	}
 	{
 		kd, err := DwhTypeToKind(constants.Snowflake, "abc123", "")
-		assert.NoError(t, err)
+		assert.ErrorContains(t, err, `unable to map type: "abc123" to dwh type`)
 		assert.Equal(t, Invalid, kd)
 	}
 }
