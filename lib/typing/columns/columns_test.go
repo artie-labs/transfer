@@ -145,7 +145,7 @@ func TestColumn_Name(t *testing.T) {
 		{
 			colName:           "start",
 			expectedName:      "start",
-			expectedNameEsc:   `"start"`, // since this is a reserved word.
+			expectedNameEsc:   `"START"`, // since this is a reserved word.
 			expectedNameEscBq: "`start`", // BQ escapes via backticks.
 		},
 		{
@@ -169,7 +169,7 @@ func TestColumn_Name(t *testing.T) {
 
 		assert.Equal(t, testCase.expectedName, col.RawName(), testCase.colName)
 
-		assert.Equal(t, testCase.expectedNameEsc, col.Name(false, constants.Snowflake), testCase.colName)
+		assert.Equal(t, testCase.expectedNameEsc, col.Name(true, constants.Snowflake), testCase.colName)
 		assert.Equal(t, testCase.expectedNameEscBq, col.Name(false, constants.BigQuery), testCase.colName)
 	}
 }
@@ -265,13 +265,13 @@ func TestColumns_GetEscapedColumnsToUpdate(t *testing.T) {
 		{
 			name:              "happy path",
 			cols:              happyPathCols,
-			expectedColsEsc:   []string{"hi", "bye", `"start"`},
+			expectedColsEsc:   []string{"hi", "bye", `"START"`},
 			expectedColsEscBq: []string{"hi", "bye", "`start`"},
 		},
 		{
 			name:              "happy path + extra col",
 			cols:              extraCols,
-			expectedColsEsc:   []string{"hi", "bye", `"start"`},
+			expectedColsEsc:   []string{"hi", "bye", `"START"`},
 			expectedColsEscBq: []string{"hi", "bye", "`start`"},
 		},
 	}
@@ -281,7 +281,7 @@ func TestColumns_GetEscapedColumnsToUpdate(t *testing.T) {
 			columns: testCase.cols,
 		}
 
-		assert.Equal(t, testCase.expectedColsEsc, cols.GetEscapedColumnsToUpdate(false, constants.Snowflake), testCase.name)
+		assert.Equal(t, testCase.expectedColsEsc, cols.GetEscapedColumnsToUpdate(true, constants.Snowflake), testCase.name)
 		assert.Equal(t, testCase.expectedColsEscBq, cols.GetEscapedColumnsToUpdate(false, constants.BigQuery), testCase.name)
 	}
 }
