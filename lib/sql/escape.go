@@ -25,7 +25,7 @@ func NeedsEscaping(name string, destKind constants.DestinationKind) bool {
 	if destKind == constants.Redshift {
 		reservedKeywords = constants.RedshiftReservedKeywords
 	} else if destKind == constants.MSSQL || destKind == constants.BigQuery {
-		// TODO: Escape names that start with `constants.ArtiePrefix`
+		// TODO: Escape names that start with [constants.ArtiePrefix].
 		if !strings.HasPrefix(name, constants.ArtiePrefix) {
 			return true
 		}
