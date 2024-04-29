@@ -156,9 +156,6 @@ type Config struct {
 	// Shared Transfer settings
 	SharedTransferConfig SharedTransferConfig `yaml:"sharedTransferConfig"`
 
-	// Shared destination configuration
-	SharedDestinationConfig SharedDestinationConfig `yaml:"sharedDestinationConfig"`
-
 	// Supported destinations
 	MSSQL     *MSSQL      `yaml:"mssql,omitempty"`
 	BigQuery  *BigQuery   `yaml:"bigquery,omitempty"`
@@ -240,10 +237,6 @@ func (c Config) ValidateRedshift() error {
 		return fmt.Errorf("invalid Redshift port")
 	}
 
-	if c.SharedDestinationConfig.UppercaseEscapedNames {
-		return fmt.Errorf("uppercaseEscapedNames is not supported for Redshift")
-	}
-
 	return nil
 }
 
@@ -269,10 +262,6 @@ func (c Config) Validate() error {
 	}
 
 	switch c.Output {
-	case constants.BigQuery:
-		if err := c.ValidateBigQuery(); err != nil {
-			return err
-		}
 	case constants.MSSQL:
 		if err := c.ValidateMSSQL(); err != nil {
 			return err

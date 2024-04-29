@@ -80,7 +80,7 @@ func (s *Store) Label() constants.DestinationKind {
 }
 
 func (s *Store) ShouldUppercaseEscapedNames() bool {
-	return s.config.SharedDestinationConfig.UppercaseEscapedNames
+	return true
 }
 
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
