@@ -85,9 +85,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	// COPY the CSV file (in Snowflake) into a table
 	copyCommand := fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
 		tempTableID.FullyQualifiedName(),
-		strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.ShouldUppercaseEscapedNames(), &columns.NameArgs{
-			DestKind: s.Label(),
-		}), ","),
+		strings.Join(tableData.ReadOnlyInMemoryCols().GetEscapedColumnsToUpdate(s.ShouldUppercaseEscapedNames(), s.Label()), ","),
 		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableID, "%"))
 
 	if additionalSettings.AdditionalCopyClause != "" {
@@ -115,7 +113,7 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.Rows() {
 		var row []string
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.ShouldUppercaseEscapedNames(), nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate() {
 			column, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			castedValue, castErr := castColValStaging(value[col], column, additionalDateFmts)
 			if castErr != nil {

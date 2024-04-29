@@ -83,10 +83,6 @@ func (c *Column) RawName() string {
 	return c.name
 }
 
-type NameArgs struct {
-	DestKind constants.DestinationKind
-}
-
 // Name will give you c.name
 // Plus we will escape it if the column name is part of the reserved words from destinations.
 // If so, it'll change from `start` => `"start"` as suggested by Snowflake.
@@ -179,8 +175,8 @@ func (c *Columns) GetColumn(name string) (Column, bool) {
 }
 
 // GetColumnsToUpdate will filter all the `Invalid` columns so that we do not update it.
-// It also has an option to escape the returned columns or not. This is used mostly for the SQL MERGE queries.
-func (c *Columns) GetColumnsToUpdate(uppercaseEscNames bool, args *NameArgs) []string {
+// This is used mostly for the SQL MERGE queries.
+func (c *Columns) GetColumnsToUpdate() []string {
 	if c == nil {
 		return []string{}
 	}
@@ -194,11 +190,29 @@ func (c *Columns) GetColumnsToUpdate(uppercaseEscNames bool, args *NameArgs) []s
 			continue
 		}
 
-		if args == nil {
-			cols = append(cols, col.RawName())
-		} else {
-			cols = append(cols, col.Name(uppercaseEscNames, args.DestKind))
+		cols = append(cols, col.RawName())
+	}
+
+	return cols
+}
+
+// GetEscapedColumnsToUpdate will filter all the `Invalid` columns so that we do not update it.
+// It will escape the returned columns.
+func (c *Columns) GetEscapedColumnsToUpdate(uppercaseEscNames bool, destKind constants.DestinationKind) []string {
+	if c == nil {
+		return []string{}
+	}
+
+	c.RLock()
+	defer c.RUnlock()
+
+	var cols []string
+	for _, col := range c.columns {
+		if col.KindDetails == typing.Invalid {
+			continue
 		}
+
+		cols = append(cols, col.Name(uppercaseEscNames, destKind))
 	}
 
 	return cols

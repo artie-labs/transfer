@@ -113,7 +113,7 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 	pw.CompressionType = parquet.CompressionCodec_GZIP
 	for _, val := range tableData.Rows() {
 		row := make(map[string]any)
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(false, nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate() {
 			colKind, isOk := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			if !isOk {
 				return fmt.Errorf("expected column: %v to exist in readOnlyInMemoryCols(...) but it does not", col)

@@ -176,9 +176,62 @@ func TestColumn_Name(t *testing.T) {
 
 func TestColumns_GetColumnsToUpdate(t *testing.T) {
 	type _testCase struct {
+		name         string
+		cols         []Column
+		expectedCols []string
+	}
+
+	var (
+		happyPathCols = []Column{
+			{
+				name:        "hi",
+				KindDetails: typing.String,
+			},
+			{
+				name:        "bye",
+				KindDetails: typing.String,
+			},
+			{
+				name:        "start",
+				KindDetails: typing.String,
+			},
+		}
+	)
+
+	extraCols := happyPathCols
+	for i := 0; i < 100; i++ {
+		extraCols = append(extraCols, Column{
+			name:        fmt.Sprintf("hello_%v", i),
+			KindDetails: typing.Invalid,
+		})
+	}
+
+	testCases := []_testCase{
+		{
+			name:         "happy path",
+			cols:         happyPathCols,
+			expectedCols: []string{"hi", "bye", "start"},
+		},
+		{
+			name:         "happy path + extra col",
+			cols:         extraCols,
+			expectedCols: []string{"hi", "bye", "start"},
+		},
+	}
+
+	for _, testCase := range testCases {
+		cols := &Columns{
+			columns: testCase.cols,
+		}
+
+		assert.Equal(t, testCase.expectedCols, cols.GetColumnsToUpdate(), testCase.name)
+	}
+}
+
+func TestColumns_GetEscapedColumnsToUpdate(t *testing.T) {
+	type _testCase struct {
 		name              string
 		cols              []Column
-		expectedCols      []string
 		expectedColsEsc   []string
 		expectedColsEscBq []string
 	}
@@ -212,14 +265,12 @@ func TestColumns_GetColumnsToUpdate(t *testing.T) {
 		{
 			name:              "happy path",
 			cols:              happyPathCols,
-			expectedCols:      []string{"hi", "bye", "start"},
 			expectedColsEsc:   []string{"hi", "bye", `"start"`},
 			expectedColsEscBq: []string{"hi", "bye", "`start`"},
 		},
 		{
 			name:              "happy path + extra col",
 			cols:              extraCols,
-			expectedCols:      []string{"hi", "bye", "start"},
 			expectedColsEsc:   []string{"hi", "bye", `"start"`},
 			expectedColsEscBq: []string{"hi", "bye", "`start`"},
 		},
@@ -230,15 +281,8 @@ func TestColumns_GetColumnsToUpdate(t *testing.T) {
 			columns: testCase.cols,
 		}
 
-		assert.Equal(t, testCase.expectedCols, cols.GetColumnsToUpdate(false, nil), testCase.name)
-
-		assert.Equal(t, testCase.expectedColsEsc, cols.GetColumnsToUpdate(false, &NameArgs{
-			DestKind: constants.Snowflake,
-		}), testCase.name)
-
-		assert.Equal(t, testCase.expectedColsEscBq, cols.GetColumnsToUpdate(false, &NameArgs{
-			DestKind: constants.BigQuery,
-		}), testCase.name)
+		assert.Equal(t, testCase.expectedColsEsc, cols.GetEscapedColumnsToUpdate(false, constants.Snowflake), testCase.name)
+		assert.Equal(t, testCase.expectedColsEscBq, cols.GetEscapedColumnsToUpdate(false, constants.BigQuery), testCase.name)
 	}
 }
 
