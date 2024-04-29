@@ -89,10 +89,6 @@ type Redshift struct {
 	SkipLgCols        bool   `yaml:"skipLgCols"`
 }
 
-type SharedDestinationConfig struct {
-	UppercaseEscapedNames bool `yaml:"uppercaseEscapedNames"`
-}
-
 type SharedTransferConfig struct {
 	TypingSettings typing.Settings `yaml:"typingSettings"`
 }
