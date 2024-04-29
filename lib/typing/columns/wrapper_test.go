@@ -41,33 +41,20 @@ func TestWrapper_Complete(t *testing.T) {
 
 	for _, testCase := range testCases {
 		// Snowflake escape
-		w := NewWrapper(NewColumn(testCase.name, typing.Invalid), false, &NameArgs{
-			DestKind: constants.Snowflake,
-		})
+		w := NewWrapper(NewColumn(testCase.name, typing.Invalid), false, constants.Snowflake)
 
 		assert.Equal(t, testCase.expectedEscapedName, w.EscapedName(), testCase.name)
 		assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
 
 		// BigQuery escape
-		w = NewWrapper(NewColumn(testCase.name, typing.Invalid), false, &NameArgs{
-			DestKind: constants.BigQuery,
-		})
+		w = NewWrapper(NewColumn(testCase.name, typing.Invalid), false, constants.BigQuery)
 
 		assert.Equal(t, testCase.expectedEscapedNameBQ, w.EscapedName(), testCase.name)
 		assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
 
 		for _, destKind := range []constants.DestinationKind{constants.Snowflake, constants.BigQuery} {
-			w = NewWrapper(NewColumn(testCase.name, typing.Invalid), false, &NameArgs{
-				DestKind: destKind,
-			})
+			w = NewWrapper(NewColumn(testCase.name, typing.Invalid), false, destKind)
 			assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
 		}
-
-		// Same if nil
-		w = NewWrapper(NewColumn(testCase.name, typing.Invalid), false, nil)
-
-		assert.Equal(t, testCase.expectedRawName, w.EscapedName(), testCase.name)
-		assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
-
 	}
 }
