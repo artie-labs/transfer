@@ -187,7 +187,6 @@ func (s *Store) Dedupe(tableID types.TableIdentifier, primaryKeys []string, topi
 
 	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 	for _, part := range s.generateDedupeQueries(tableID, stagingTableID, primaryKeys, topicConfig) {
-		fmt.Println("part", part)
 		if _, err = tx.Exec(part); err != nil {
 			return fmt.Errorf("failed to execute tx, query: %q, err: %w", part, err)
 		}
