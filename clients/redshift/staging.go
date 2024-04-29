@@ -90,7 +90,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.Rows() {
 		var row []string
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.ShouldUppercaseEscapedNames(), nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate() {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			castedValue, castErr := s.CastColValStaging(value[col], colKind, additionalDateFmts)
 			if castErr != nil {
