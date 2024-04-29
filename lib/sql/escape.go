@@ -22,7 +22,6 @@ func EscapeNameIfNecessary(name string, uppercaseEscNames bool, destKind constan
 
 func NeedsEscaping(name string, destKind constants.DestinationKind) bool {
 	var reservedKeywords []string
-
 	if destKind == constants.Redshift {
 		reservedKeywords = constants.RedshiftReservedKeywords
 	} else if destKind == constants.MSSQL || destKind == constants.BigQuery {
