@@ -110,11 +110,11 @@ func TestMergeStatement(t *testing.T) {
 		TableID:           MockTableIdentifier{fqTable},
 		SubQuery:          subQuery,
 		IdempotentKey:     "",
-		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, constants.Snowflake)},
+		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), true, constants.Snowflake)},
 		Columns:           &_cols,
 		DestKind:          constants.Snowflake,
 		SoftDelete:        false,
-		UppercaseEscNames: ptr.ToBool(false),
+		UppercaseEscNames: ptr.ToBool(true),
 	}
 
 	mergeSQL, err := mergeArg.GetStatement()
@@ -125,10 +125,10 @@ func TestMergeStatement(t *testing.T) {
 	assert.Contains(t, mergeSQL, "AS cc ON c.id = cc.id", mergeSQL)
 
 	// Check setting for update
-	assert.Contains(t, mergeSQL, `SET id=cc.id,bar=cc.bar,updated_at=cc.updated_at,"start"=cc."start"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `SET id=cc.id,bar=cc.bar,updated_at=cc.updated_at,"START"=cc."START"`, mergeSQL)
 	// Check for INSERT
-	assert.Contains(t, mergeSQL, `id,bar,updated_at,"start"`, mergeSQL)
-	assert.Contains(t, mergeSQL, `cc.id,cc.bar,cc.updated_at,cc."start"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `id,bar,updated_at,"START"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `cc.id,cc.bar,cc.updated_at,cc."START"`, mergeSQL)
 }
 
 func TestMergeStatementIdempotentKey(t *testing.T) {
@@ -250,13 +250,13 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 		SubQuery:      subQuery,
 		IdempotentKey: "",
 		PrimaryKeys: []columns.Wrapper{
-			columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, constants.Snowflake),
-			columns.NewWrapper(columns.NewColumn("group", typing.Invalid), false, constants.Snowflake),
+			columns.NewWrapper(columns.NewColumn("id", typing.Invalid), true, constants.Snowflake),
+			columns.NewWrapper(columns.NewColumn("group", typing.Invalid), true, constants.Snowflake),
 		},
 		Columns:           &_cols,
 		DestKind:          constants.Snowflake,
 		SoftDelete:        false,
-		UppercaseEscNames: ptr.ToBool(false),
+		UppercaseEscNames: ptr.ToBool(true),
 	}
 
 	mergeSQL, err := mergeArg.GetStatement()
@@ -264,10 +264,10 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
 	assert.NotContains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at"), fmt.Sprintf("Idempotency key: %s", mergeSQL))
 	// Check primary keys clause
-	assert.Contains(t, mergeSQL, `AS cc ON c.id = cc.id and c."group" = cc."group"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `AS cc ON c.id = cc.id and c."GROUP" = cc."GROUP"`, mergeSQL)
 	// Check setting for update
-	assert.Contains(t, mergeSQL, `SET id=cc.id,"group"=cc."group",updated_at=cc.updated_at,"start"=cc."start"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `SET id=cc.id,"GROUP"=cc."GROUP",updated_at=cc.updated_at,"START"=cc."START"`, mergeSQL)
 	// Check for INSERT
-	assert.Contains(t, mergeSQL, `id,"group",updated_at,"start"`, mergeSQL)
-	assert.Contains(t, mergeSQL, `cc.id,cc."group",cc.updated_at,cc."start"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `id,"GROUP",updated_at,"START"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `cc.id,cc."GROUP",cc.updated_at,cc."START"`, mergeSQL)
 }
