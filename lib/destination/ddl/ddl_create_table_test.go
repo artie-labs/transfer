@@ -29,10 +29,11 @@ func (d *DDLTestSuite) Test_CreateTable() {
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(snowflakeTableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 
 	type dwhToTableConfig struct {
-		_tableID     types.TableIdentifier
-		_dwh         destination.DataWarehouse
-		_tableConfig *types.DwhTableConfig
-		_fakeStore   *mocks.FakeStore
+		_tableID       types.TableIdentifier
+		_dwh           destination.DataWarehouse
+		_tableConfig   *types.DwhTableConfig
+		_fakeStore     *mocks.FakeStore
+		_expectedQuery string
 	}
 
 	bigQueryTc := d.bigQueryStore.GetConfigMap().TableConfig(bqTableID)
@@ -40,16 +41,18 @@ func (d *DDLTestSuite) Test_CreateTable() {
 
 	for _, dwhTc := range []dwhToTableConfig{
 		{
-			_tableID:     bqTableID,
-			_dwh:         d.bigQueryStore,
-			_tableConfig: bigQueryTc,
-			_fakeStore:   d.fakeBigQueryStore,
+			_tableID:       bqTableID,
+			_dwh:           d.bigQueryStore,
+			_tableConfig:   bigQueryTc,
+			_fakeStore:     d.fakeBigQueryStore,
+			_expectedQuery: fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (`name` string)", bqTableID.FullyQualifiedName()),
 		},
 		{
-			_tableID:     snowflakeTableID,
-			_dwh:         d.snowflakeStagesStore,
-			_tableConfig: snowflakeStagesTc,
-			_fakeStore:   d.fakeSnowflakeStagesStore,
+			_tableID:       snowflakeTableID,
+			_dwh:           d.snowflakeStagesStore,
+			_tableConfig:   snowflakeStagesTc,
+			_fakeStore:     d.fakeSnowflakeStagesStore,
+			_expectedQuery: fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (name string)", snowflakeTableID.FullyQualifiedName()),
 		},
 	} {
 		alterTableArgs := ddl.AlterTableArgs{
@@ -66,8 +69,8 @@ func (d *DDLTestSuite) Test_CreateTable() {
 		assert.Equal(d.T(), 1, dwhTc._fakeStore.ExecCallCount())
 
 		query, _ := dwhTc._fakeStore.ExecArgsForCall(0)
-		assert.Equal(d.T(), query, fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (name string)", dwhTc._tableID.FullyQualifiedName()), query)
-		assert.Equal(d.T(), false, dwhTc._tableConfig.CreateTable())
+		assert.Equal(d.T(), dwhTc._expectedQuery, query)
+		assert.False(d.T(), dwhTc._tableConfig.CreateTable())
 	}
 }
 

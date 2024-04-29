@@ -41,20 +41,20 @@ func (b *BigQueryTestSuite) TestBackfillColumn() {
 		{
 			name:        "col that has default value that needs to be backfilled (boolean)",
 			col:         needsBackfillCol,
-			backfillSQL: "UPDATE `db`.`public`.`tableName` SET foo = true WHERE foo IS NULL;",
-			commentSQL:  "ALTER TABLE `db`.`public`.`tableName` ALTER COLUMN foo SET OPTIONS (description=`{\"backfilled\": true}`);",
+			backfillSQL: "UPDATE `db`.`public`.`tableName` SET `foo` = true WHERE `foo` IS NULL;",
+			commentSQL:  "ALTER TABLE `db`.`public`.`tableName` ALTER COLUMN `foo` SET OPTIONS (description=`{\"backfilled\": true}`);",
 		},
 		{
 			name:        "col that has default value that needs to be backfilled (string)",
 			col:         needsBackfillColStr,
-			backfillSQL: "UPDATE `db`.`public`.`tableName` SET foo2 = 'hello there' WHERE foo2 IS NULL;",
-			commentSQL:  "ALTER TABLE `db`.`public`.`tableName` ALTER COLUMN foo2 SET OPTIONS (description=`{\"backfilled\": true}`);",
+			backfillSQL: "UPDATE `db`.`public`.`tableName` SET `foo2` = 'hello there' WHERE `foo2` IS NULL;",
+			commentSQL:  "ALTER TABLE `db`.`public`.`tableName` ALTER COLUMN `foo2` SET OPTIONS (description=`{\"backfilled\": true}`);",
 		},
 		{
 			name:        "col that has default value that needs to be backfilled (number)",
 			col:         needsBackfillColNum,
-			backfillSQL: "UPDATE `db`.`public`.`tableName` SET foo3 = 3.5 WHERE foo3 IS NULL;",
-			commentSQL:  "ALTER TABLE `db`.`public`.`tableName` ALTER COLUMN foo3 SET OPTIONS (description=`{\"backfilled\": true}`);",
+			backfillSQL: "UPDATE `db`.`public`.`tableName` SET `foo3` = 3.5 WHERE `foo3` IS NULL;",
+			commentSQL:  "ALTER TABLE `db`.`public`.`tableName` ALTER COLUMN `foo3` SET OPTIONS (description=`{\"backfilled\": true}`);",
 		},
 	}
 
