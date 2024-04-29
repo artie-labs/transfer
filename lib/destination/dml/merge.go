@@ -97,9 +97,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	cols := m.Columns.GetColumnsToUpdate(*m.UppercaseEscNames, &columns.NameArgs{
-		DestKind: m.DestKind,
-	})
+	cols := m.Columns.GetEscapedColumnsToUpdate(*m.UppercaseEscNames, m.DestKind)
 
 	if m.SoftDelete {
 		return []string{
@@ -231,9 +229,7 @@ func (m *MergeArgument) GetStatement() (string, error) {
 		equalitySQLParts = append(equalitySQLParts, m.AdditionalEqualityStrings...)
 	}
 
-	cols := m.Columns.GetColumnsToUpdate(*m.UppercaseEscNames, &columns.NameArgs{
-		DestKind: m.DestKind,
-	})
+	cols := m.Columns.GetEscapedColumnsToUpdate(*m.UppercaseEscNames, m.DestKind)
 
 	if m.SoftDelete {
 		return fmt.Sprintf(`
@@ -302,9 +298,7 @@ func (m *MergeArgument) GetMSSQLStatement() (string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	cols := m.Columns.GetColumnsToUpdate(*m.UppercaseEscNames, &columns.NameArgs{
-		DestKind: m.DestKind,
-	})
+	cols := m.Columns.GetEscapedColumnsToUpdate(*m.UppercaseEscNames, m.DestKind)
 
 	if m.SoftDelete {
 		return fmt.Sprintf(`

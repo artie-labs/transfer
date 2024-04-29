@@ -59,7 +59,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.Rows() {
 		data := make(map[string]bigquery.Value)
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.ShouldUppercaseEscapedNames(), nil) {
+		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate() {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			colVal, err := castColVal(value[col], colKind, additionalDateFmts)
 			if err != nil {

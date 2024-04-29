@@ -42,7 +42,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		}
 	}()
 
-	columns := tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(s.ShouldUppercaseEscapedNames(), nil)
+	columns := tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate()
 	stmt, err := tx.Prepare(mssql.CopyIn(tempTableID.FullyQualifiedName(), mssql.BulkOptions{}, columns...))
 	if err != nil {
 		return fmt.Errorf("failed to prepare bulk insert: %w", err)
