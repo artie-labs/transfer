@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/stretchr/testify/assert"
@@ -17,13 +16,12 @@ func TestMergeStatement_TempTable(t *testing.T) {
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	mergeArg := &MergeArgument{
-		TableID:           MockTableIdentifier{"customers.orders"},
-		SubQuery:          "customers.orders_tmp",
-		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("order_id", typing.Invalid), false, constants.BigQuery)},
-		Columns:           &cols,
-		DestKind:          constants.BigQuery,
-		SoftDelete:        false,
-		UppercaseEscNames: ptr.ToBool(false),
+		TableID:     MockTableIdentifier{"customers.orders"},
+		SubQuery:    "customers.orders_tmp",
+		PrimaryKeys: []columns.Wrapper{columns.NewWrapper(columns.NewColumn("order_id", typing.Invalid), constants.BigQuery)},
+		Columns:     &cols,
+		DestKind:    constants.BigQuery,
+		SoftDelete:  false,
 	}
 
 	mergeSQL, err := mergeArg.GetStatement()
@@ -39,13 +37,12 @@ func TestMergeStatement_JSONKey(t *testing.T) {
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	mergeArg := &MergeArgument{
-		TableID:           MockTableIdentifier{"customers.orders"},
-		SubQuery:          "customers.orders_tmp",
-		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("order_oid", typing.Invalid), false, constants.BigQuery)},
-		Columns:           &cols,
-		DestKind:          constants.BigQuery,
-		SoftDelete:        false,
-		UppercaseEscNames: ptr.ToBool(false),
+		TableID:     MockTableIdentifier{"customers.orders"},
+		SubQuery:    "customers.orders_tmp",
+		PrimaryKeys: []columns.Wrapper{columns.NewWrapper(columns.NewColumn("order_oid", typing.Invalid), constants.BigQuery)},
+		Columns:     &cols,
+		DestKind:    constants.BigQuery,
+		SoftDelete:  false,
 	}
 
 	mergeSQL, err := mergeArg.GetStatement()

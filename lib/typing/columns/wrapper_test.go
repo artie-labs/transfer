@@ -34,26 +34,26 @@ func TestWrapper_Complete(t *testing.T) {
 		{
 			name:                  "group",
 			expectedRawName:       "group",
-			expectedEscapedName:   `"group"`,
+			expectedEscapedName:   `"GROUP"`,
 			expectedEscapedNameBQ: "`group`",
 		},
 	}
 
 	for _, testCase := range testCases {
 		// Snowflake escape
-		w := NewWrapper(NewColumn(testCase.name, typing.Invalid), false, constants.Snowflake)
+		w := NewWrapper(NewColumn(testCase.name, typing.Invalid), constants.Snowflake)
 
 		assert.Equal(t, testCase.expectedEscapedName, w.EscapedName(), testCase.name)
 		assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
 
 		// BigQuery escape
-		w = NewWrapper(NewColumn(testCase.name, typing.Invalid), false, constants.BigQuery)
+		w = NewWrapper(NewColumn(testCase.name, typing.Invalid), constants.BigQuery)
 
 		assert.Equal(t, testCase.expectedEscapedNameBQ, w.EscapedName(), testCase.name)
 		assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
 
 		for _, destKind := range []constants.DestinationKind{constants.Snowflake, constants.BigQuery} {
-			w = NewWrapper(NewColumn(testCase.name, typing.Invalid), false, destKind)
+			w = NewWrapper(NewColumn(testCase.name, typing.Invalid), destKind)
 			assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
 		}
 	}

@@ -39,14 +39,13 @@ type Store struct {
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
-			Dwh:               s,
-			Tc:                tableConfig,
-			TableID:           tempTableID,
-			CreateTable:       true,
-			TemporaryTable:    true,
-			ColumnOp:          constants.Add,
-			UppercaseEscNames: ptr.ToBool(s.ShouldUppercaseEscapedNames()),
-			Mode:              tableData.Mode(),
+			Dwh:            s,
+			Tc:             tableConfig,
+			TableID:        tempTableID,
+			CreateTable:    true,
+			TemporaryTable: true,
+			ColumnOp:       constants.Add,
+			Mode:           tableData.Mode(),
 		}
 
 		if err := tempAlterTableArgs.AlterTable(tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
@@ -108,10 +107,6 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 
 func (s *Store) Label() constants.DestinationKind {
 	return constants.BigQuery
-}
-
-func (s *Store) ShouldUppercaseEscapedNames() bool {
-	return false
 }
 
 func (s *Store) GetClient(ctx context.Context) *bigquery.Client {

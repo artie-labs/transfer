@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/stretchr/testify/assert"
@@ -41,14 +40,13 @@ func Test_GetMSSQLStatement(t *testing.T) {
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
 	mergeArg := MergeArgument{
-		TableID:           MockTableIdentifier{fqTable},
-		SubQuery:          subQuery,
-		IdempotentKey:     "",
-		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, constants.MSSQL)},
-		Columns:           &_cols,
-		DestKind:          constants.MSSQL,
-		SoftDelete:        false,
-		UppercaseEscNames: ptr.ToBool(false),
+		TableID:       MockTableIdentifier{fqTable},
+		SubQuery:      subQuery,
+		IdempotentKey: "",
+		PrimaryKeys:   []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), constants.MSSQL)},
+		Columns:       &_cols,
+		DestKind:      constants.MSSQL,
+		SoftDelete:    false,
 	}
 
 	mergeSQL, err := mergeArg.GetMSSQLStatement()

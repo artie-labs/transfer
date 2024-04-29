@@ -31,7 +31,7 @@ type result struct {
 // getBasicColumnsForTest - will return you all the columns within `result` that are needed for tests.
 // * In here, we'll return if compositeKey=false - id (pk), email, first_name, last_name, created_at, toast_text (TOAST-able)
 // * Else if compositeKey=true - id(pk), email (pk), first_name, last_name, created_at, toast_text (TOAST-able)
-func getBasicColumnsForTest(compositeKey bool, uppercaseEscNames bool) result {
+func getBasicColumnsForTest(compositeKey bool) result {
 	idCol := columns.NewColumn("id", typing.Float)
 	emailCol := columns.NewColumn("email", typing.String)
 	textToastCol := columns.NewColumn("toast_text", typing.String)
@@ -47,10 +47,10 @@ func getBasicColumnsForTest(compositeKey bool, uppercaseEscNames bool) result {
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	var pks []columns.Wrapper
-	pks = append(pks, columns.NewWrapper(idCol, uppercaseEscNames, constants.Redshift))
+	pks = append(pks, columns.NewWrapper(idCol, constants.Redshift))
 
 	if compositeKey {
-		pks = append(pks, columns.NewWrapper(emailCol, uppercaseEscNames, constants.Redshift))
+		pks = append(pks, columns.NewWrapper(emailCol, constants.Redshift))
 	}
 
 	return result{
@@ -65,7 +65,7 @@ func TestMergeStatementParts_SkipDelete(t *testing.T) {
 	// 2. There are 3 SQL queries (INSERT, UPDATE and DELETE)
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
-	res := getBasicColumnsForTest(false, false)
+	res := getBasicColumnsForTest(false)
 	mergeArg := &MergeArgument{
 		TableID:             MockTableIdentifier{fqTableName},
 		SubQuery:            tempTableName,
@@ -73,7 +73,6 @@ func TestMergeStatementParts_SkipDelete(t *testing.T) {
 		Columns:             &res.ColumnsToTypes,
 		DestKind:            constants.Redshift,
 		ContainsHardDeletes: ptr.ToBool(false),
-		UppercaseEscNames:   ptr.ToBool(false),
 	}
 
 	parts, err := mergeArg.GetParts()
@@ -92,7 +91,7 @@ func TestMergeStatementParts_SkipDelete(t *testing.T) {
 func TestMergeStatementPartsSoftDelete(t *testing.T) {
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
-	res := getBasicColumnsForTest(false, false)
+	res := getBasicColumnsForTest(false)
 	mergeArg := &MergeArgument{
 		TableID:             MockTableIdentifier{fqTableName},
 		SubQuery:            tempTableName,
@@ -100,7 +99,6 @@ func TestMergeStatementPartsSoftDelete(t *testing.T) {
 		Columns:             &res.ColumnsToTypes,
 		DestKind:            constants.Redshift,
 		SoftDelete:          true,
-		UppercaseEscNames:   ptr.ToBool(false),
 		ContainsHardDeletes: ptr.ToBool(false),
 	}
 
@@ -132,7 +130,7 @@ func TestMergeStatementPartsSoftDelete(t *testing.T) {
 func TestMergeStatementPartsSoftDeleteComposite(t *testing.T) {
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
-	res := getBasicColumnsForTest(true, false)
+	res := getBasicColumnsForTest(true)
 	mergeArg := &MergeArgument{
 		TableID:             MockTableIdentifier{fqTableName},
 		SubQuery:            tempTableName,
@@ -140,7 +138,6 @@ func TestMergeStatementPartsSoftDeleteComposite(t *testing.T) {
 		Columns:             &res.ColumnsToTypes,
 		DestKind:            constants.Redshift,
 		SoftDelete:          true,
-		UppercaseEscNames:   ptr.ToBool(false),
 		ContainsHardDeletes: ptr.ToBool(false),
 	}
 
@@ -175,7 +172,7 @@ func TestMergeStatementParts(t *testing.T) {
 	// 2. There are 3 SQL queries (INSERT, UPDATE and DELETE)
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
-	res := getBasicColumnsForTest(false, false)
+	res := getBasicColumnsForTest(false)
 	mergeArg := &MergeArgument{
 		TableID:             MockTableIdentifier{fqTableName},
 		SubQuery:            tempTableName,
@@ -183,7 +180,6 @@ func TestMergeStatementParts(t *testing.T) {
 		Columns:             &res.ColumnsToTypes,
 		DestKind:            constants.Redshift,
 		ContainsHardDeletes: ptr.ToBool(true),
-		UppercaseEscNames:   ptr.ToBool(false),
 	}
 
 	parts, err := mergeArg.GetParts()
@@ -210,7 +206,6 @@ func TestMergeStatementParts(t *testing.T) {
 		DestKind:            constants.Redshift,
 		IdempotentKey:       "created_at",
 		ContainsHardDeletes: ptr.ToBool(true),
-		UppercaseEscNames:   ptr.ToBool(false),
 	}
 
 	parts, err = mergeArg.GetParts()
@@ -233,7 +228,7 @@ func TestMergeStatementParts(t *testing.T) {
 func TestMergeStatementPartsCompositeKey(t *testing.T) {
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
-	res := getBasicColumnsForTest(true, false)
+	res := getBasicColumnsForTest(true)
 	mergeArg := &MergeArgument{
 		TableID:             MockTableIdentifier{fqTableName},
 		SubQuery:            tempTableName,
@@ -241,7 +236,6 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 		Columns:             &res.ColumnsToTypes,
 		DestKind:            constants.Redshift,
 		ContainsHardDeletes: ptr.ToBool(true),
-		UppercaseEscNames:   ptr.ToBool(false),
 	}
 
 	parts, err := mergeArg.GetParts()
@@ -268,7 +262,6 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 		DestKind:            constants.Redshift,
 		ContainsHardDeletes: ptr.ToBool(true),
 		IdempotentKey:       "created_at",
-		UppercaseEscNames:   ptr.ToBool(false),
 	}
 
 	parts, err = mergeArg.GetParts()

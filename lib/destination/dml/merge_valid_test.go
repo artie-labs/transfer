@@ -5,7 +5,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
@@ -14,7 +13,7 @@ import (
 
 func TestMergeArgument_Valid(t *testing.T) {
 	primaryKeys := []columns.Wrapper{
-		columns.NewWrapper(columns.NewColumn("id", typing.Integer), false, constants.Snowflake),
+		columns.NewWrapper(columns.NewColumn("id", typing.Integer), constants.Snowflake),
 	}
 
 	var cols columns.Columns
@@ -70,35 +69,23 @@ func TestMergeArgument_Valid(t *testing.T) {
 			expectedErr: "subQuery cannot be empty",
 		},
 		{
-			name: "did not pass in uppercase esc col",
+			name: "missing dest kind",
 			mergeArg: &MergeArgument{
 				PrimaryKeys: primaryKeys,
 				Columns:     &cols,
-				TableID:     MockTableIdentifier{"schema.tableName"},
 				SubQuery:    "schema.tableName",
-			},
-			expectedErr: "uppercaseEscNames cannot be nil",
-		},
-		{
-			name: "missing dest kind",
-			mergeArg: &MergeArgument{
-				PrimaryKeys:       primaryKeys,
-				Columns:           &cols,
-				SubQuery:          "schema.tableName",
-				TableID:           MockTableIdentifier{"schema.tableName"},
-				UppercaseEscNames: ptr.ToBool(false),
+				TableID:     MockTableIdentifier{"schema.tableName"},
 			},
 			expectedErr: "invalid destination",
 		},
 		{
 			name: "everything exists",
 			mergeArg: &MergeArgument{
-				PrimaryKeys:       primaryKeys,
-				Columns:           &cols,
-				SubQuery:          "schema.tableName",
-				TableID:           MockTableIdentifier{"schema.tableName"},
-				UppercaseEscNames: ptr.ToBool(false),
-				DestKind:          constants.BigQuery,
+				PrimaryKeys: primaryKeys,
+				Columns:     &cols,
+				SubQuery:    "schema.tableName",
+				TableID:     MockTableIdentifier{"schema.tableName"},
+				DestKind:    constants.BigQuery,
 			},
 		},
 	}

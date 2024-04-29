@@ -76,7 +76,6 @@ func (MockDWH) PrepareTemporaryTable(tableData *optimization.TableData, tableCon
 func (MockDWH) IdentifierFor(topicConfig kafkalib.TopicConfig, name string) types.TableIdentifier {
 	panic("not implemented")
 }
-func (MockDWH) ShouldUppercaseEscapedNames() bool { return true }
 
 type MockTableIdentifier struct{ fqName string }
 

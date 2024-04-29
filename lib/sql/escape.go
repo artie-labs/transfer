@@ -2,7 +2,6 @@ package sql
 
 import (
 	"fmt"
-	"log/slog"
 	"slices"
 	"strconv"
 	"strings"
@@ -13,9 +12,9 @@ import (
 // symbolsToEscape are additional keywords that we need to escape
 var symbolsToEscape = []string{":"}
 
-func EscapeNameIfNecessary(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
+func EscapeNameIfNecessary(name string, destKind constants.DestinationKind) string {
 	if NeedsEscaping(name, destKind) {
-		return EscapeName(name, uppercaseEscNames, destKind)
+		return EscapeName(name, destKind)
 	}
 	return name
 }
@@ -49,16 +48,10 @@ func NeedsEscaping(name string, destKind constants.DestinationKind) bool {
 	return false
 }
 
-func EscapeName(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
-	if uppercaseEscNames {
+func EscapeName(name string, destKind constants.DestinationKind) string {
+	if destKind == constants.Snowflake {
+		// Snowflake identifiers are uppercase by default.
 		name = strings.ToUpper(name)
-	} else {
-		if destKind == constants.Snowflake {
-			slog.Warn("Escaped Snowflake identifier is not being uppercased",
-				slog.String("name", name),
-				slog.Bool("uppercaseEscapedNames", uppercaseEscNames),
-			)
-		}
 	}
 
 	if destKind == constants.BigQuery {

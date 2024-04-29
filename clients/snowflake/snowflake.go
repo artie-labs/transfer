@@ -79,10 +79,6 @@ func (s *Store) Label() constants.DestinationKind {
 	return constants.Snowflake
 }
 
-func (s *Store) ShouldUppercaseEscapedNames() bool {
-	return true
-}
-
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 	if s == nil {
 		return nil
@@ -133,7 +129,7 @@ func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentif
 	var primaryKeysEscaped []string
 	for _, pk := range primaryKeys {
 		pkCol := columns.NewColumn(pk, typing.Invalid)
-		primaryKeysEscaped = append(primaryKeysEscaped, pkCol.Name(s.ShouldUppercaseEscapedNames(), s.Label()))
+		primaryKeysEscaped = append(primaryKeysEscaped, pkCol.Name(s.Label()))
 	}
 
 	orderColsToIterate := primaryKeysEscaped
@@ -146,7 +142,7 @@ func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentif
 		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", pk))
 	}
 
-	temporaryTableName := sql.EscapeName(stagingTableID.Table(), s.ShouldUppercaseEscapedNames(), s.Label())
+	temporaryTableName := sql.EscapeName(stagingTableID.Table(), s.Label())
 	var parts []string
 	parts = append(parts, fmt.Sprintf("CREATE OR REPLACE TRANSIENT TABLE %s AS (SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY by %s ORDER BY %s) = 2)",
 		temporaryTableName,

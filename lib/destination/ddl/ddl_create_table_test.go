@@ -8,8 +8,6 @@ import (
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/config"
 
-	"github.com/artie-labs/transfer/lib/ptr"
-
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -53,13 +51,12 @@ func (d *DDLTestSuite) Test_CreateTable() {
 		},
 	} {
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:               dwhTc._dwh,
-			Tc:                dwhTc._tableConfig,
-			TableID:           dwhTc._tableID,
-			CreateTable:       dwhTc._tableConfig.CreateTable(),
-			ColumnOp:          constants.Add,
-			UppercaseEscNames: ptr.ToBool(false),
-			Mode:              config.Replication,
+			Dwh:         dwhTc._dwh,
+			Tc:          dwhTc._tableConfig,
+			TableID:     dwhTc._tableID,
+			CreateTable: dwhTc._tableConfig.CreateTable(),
+			ColumnOp:    constants.Add,
+			Mode:        config.Replication,
 		}
 
 		assert.NoError(d.T(), alterTableArgs.AlterTable(columns.NewColumn("name", typing.String)))
@@ -119,14 +116,13 @@ func (d *DDLTestSuite) TestCreateTable() {
 		tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:               d.snowflakeStagesStore,
-			Tc:                tc,
-			TableID:           tableID,
-			CreateTable:       tc.CreateTable(),
-			ColumnOp:          constants.Add,
-			CdcTime:           time.Now().UTC(),
-			UppercaseEscNames: ptr.ToBool(false),
-			Mode:              config.Replication,
+			Dwh:         d.snowflakeStagesStore,
+			Tc:          tc,
+			TableID:     tableID,
+			CreateTable: tc.CreateTable(),
+			ColumnOp:    constants.Add,
+			CdcTime:     time.Now().UTC(),
+			Mode:        config.Replication,
 		}
 
 		assert.NoError(d.T(), alterTableArgs.AlterTable(testCase.cols...), testCase.name)

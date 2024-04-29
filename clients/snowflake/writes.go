@@ -55,7 +55,7 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 		var additionalEqualityStrings []string
 		if len(tableData.TopicConfig().AdditionalMergePredicates) > 0 {
 			for _, additionalMergePredicate := range tableData.TopicConfig().AdditionalMergePredicates {
-				mergePredicateCol := sql.EscapeName(additionalMergePredicate.PartitionField, s.ShouldUppercaseEscapedNames(), s.Label())
+				mergePredicateCol := sql.EscapeName(additionalMergePredicate.PartitionField, s.Label())
 				additionalEqualityStrings = append(additionalEqualityStrings, fmt.Sprintf("c.%s = cc.%s", mergePredicateCol, mergePredicateCol))
 			}
 		}

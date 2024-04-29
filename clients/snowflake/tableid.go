@@ -43,6 +43,6 @@ func (ti TableIdentifier) FullyQualifiedName() string {
 		"%s.%s.%s",
 		ti.database,
 		ti.schema,
-		sql.EscapeName(ti.table, true, constants.Snowflake),
+		sql.EscapeName(ti.table, constants.Snowflake),
 	)
 }

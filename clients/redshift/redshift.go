@@ -45,10 +45,6 @@ func (s *Store) Label() constants.DestinationKind {
 	return constants.Redshift
 }
 
-func (s *Store) ShouldUppercaseEscapedNames() bool {
-	return false
-}
-
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	const (
 		describeNameCol        = "column_name"

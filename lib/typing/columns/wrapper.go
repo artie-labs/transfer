@@ -7,10 +7,10 @@ type Wrapper struct {
 	escapedName string
 }
 
-func NewWrapper(col Column, uppercaseEscNames bool, destKind constants.DestinationKind) Wrapper {
+func NewWrapper(col Column, destKind constants.DestinationKind) Wrapper {
 	return Wrapper{
 		name:        col.name,
-		escapedName: col.Name(uppercaseEscNames, destKind),
+		escapedName: col.Name(destKind),
 	}
 }
 

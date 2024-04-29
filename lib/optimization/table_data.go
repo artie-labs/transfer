@@ -66,10 +66,10 @@ func (t *TableData) ContainOtherOperations() bool {
 	return t.containOtherOperations
 }
 
-func (t *TableData) PrimaryKeys(uppercaseEscNames bool, destKind constants.DestinationKind) []columns.Wrapper {
+func (t *TableData) PrimaryKeys(destKind constants.DestinationKind) []columns.Wrapper {
 	var pks []columns.Wrapper
 	for _, pk := range t.primaryKeys {
-		pks = append(pks, columns.NewWrapper(columns.NewColumn(pk, typing.Invalid), uppercaseEscNames, destKind))
+		pks = append(pks, columns.NewWrapper(columns.NewColumn(pk, typing.Invalid), destKind))
 	}
 
 	return pks

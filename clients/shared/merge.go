@@ -35,14 +35,13 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 
 	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	createAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:               dwh,
-		Tc:                tableConfig,
-		TableID:           tableID,
-		CreateTable:       tableConfig.CreateTable(),
-		ColumnOp:          constants.Add,
-		CdcTime:           tableData.LatestCDCTs,
-		UppercaseEscNames: ptr.ToBool(dwh.ShouldUppercaseEscapedNames()),
-		Mode:              tableData.Mode(),
+		Dwh:         dwh,
+		Tc:          tableConfig,
+		TableID:     tableID,
+		CreateTable: tableConfig.CreateTable(),
+		ColumnOp:    constants.Add,
+		CdcTime:     tableData.LatestCDCTs,
+		Mode:        tableData.Mode(),
 	}
 
 	// Columns that are missing in DWH, but exist in our CDC stream.
@@ -60,7 +59,6 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		ColumnOp:               constants.Delete,
 		ContainOtherOperations: tableData.ContainOtherOperations(),
 		CdcTime:                tableData.LatestCDCTs,
-		UppercaseEscNames:      ptr.ToBool(dwh.ShouldUppercaseEscapedNames()),
 		Mode:                   tableData.Mode(),
 	}
 
@@ -122,11 +120,10 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		TableID:             tableID,
 		SubQuery:            subQuery,
 		IdempotentKey:       tableData.TopicConfig().IdempotentKey,
-		PrimaryKeys:         tableData.PrimaryKeys(dwh.ShouldUppercaseEscapedNames(), dwh.Label()),
+		PrimaryKeys:         tableData.PrimaryKeys(dwh.Label()),
 		Columns:             tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:          tableData.TopicConfig().SoftDelete,
 		DestKind:            dwh.Label(),
-		UppercaseEscNames:   ptr.ToBool(dwh.ShouldUppercaseEscapedNames()),
 		ContainsHardDeletes: ptr.ToBool(tableData.ContainsHardDeletes()),
 	}
 
