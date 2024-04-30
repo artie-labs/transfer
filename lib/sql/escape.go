@@ -14,23 +14,39 @@ import (
 var symbolsToEscape = []string{":"}
 
 func EscapeNameIfNecessary(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
-	if NeedsEscaping(name, destKind) {
+	if NeedsEscaping(name, uppercaseEscNames, destKind) {
 		return EscapeName(name, uppercaseEscNames, destKind)
 	}
 	return name
 }
 
-func NeedsEscaping(name string, destKind constants.DestinationKind) bool {
+func NeedsEscaping(name string, uppercaseEscNames bool, destKind constants.DestinationKind) bool {
 	switch destKind {
 	case constants.BigQuery, constants.MSSQL, constants.Redshift:
 		// TODO: Escape names that start with [constants.ArtiePrefix].
 		if !strings.HasPrefix(name, constants.ArtiePrefix) {
 			return true
 		}
-	default:
-		if slices.Contains(constants.ReservedKeywords, name) {
-			return true
+	case constants.S3:
+		return false
+	case constants.Snowflake:
+		if uppercaseEscNames {
+			// TODO: Escape names that start with [constants.ArtiePrefix].
+			if !strings.HasPrefix(name, constants.ArtiePrefix) {
+				return true
+			}
+		} else {
+			if slices.Contains(constants.ReservedKeywords, name) {
+				return true
+			}
+			// If it still doesn't need to be escaped, we should check if it's a number.
+			if _, err := strconv.Atoi(name); err == nil {
+				return true
+			}
 		}
+	default:
+		slog.Error("Unsupported destination kind", slog.String("destKind", string(destKind)))
+		return true
 	}
 
 	// If it does not contain any reserved words, does it contain any symbols that need to be escaped?
@@ -38,11 +54,6 @@ func NeedsEscaping(name string, destKind constants.DestinationKind) bool {
 		if strings.Contains(name, symbol) {
 			return true
 		}
-	}
-
-	// If it still doesn't need to be escaped, we should check if it's a number.
-	if _, err := strconv.Atoi(name); err == nil {
-		return true
 	}
 
 	return false
@@ -58,7 +69,7 @@ func EscapeName(name string, uppercaseEscNames bool, destKind constants.Destinat
 				slog.Bool("uppercaseEscapedNames", uppercaseEscNames),
 			)
 		}
-  } else if destKind == constants.Redshift {
+	} else if destKind == constants.Redshift {
 		// Preserve the existing behavior of Redshift identifiers being lowercased due to not being quoted.
 		name = strings.ToLower(name)
 	}

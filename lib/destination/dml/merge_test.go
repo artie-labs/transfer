@@ -122,13 +122,13 @@ func TestMergeStatement(t *testing.T) {
 	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
 	assert.NotContains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at"), fmt.Sprintf("Idempotency key: %s", mergeSQL))
 	// Check primary keys clause
-	assert.Contains(t, mergeSQL, "AS cc ON c.id = cc.id", mergeSQL)
+	assert.Contains(t, mergeSQL, `AS cc ON c."ID" = cc."ID"`, mergeSQL)
 
 	// Check setting for update
-	assert.Contains(t, mergeSQL, `SET id=cc.id,bar=cc.bar,updated_at=cc.updated_at,"START"=cc."START"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `SET "ID"=cc."ID","BAR"=cc."BAR","UPDATED_AT"=cc."UPDATED_AT","START"=cc."START"`, mergeSQL)
 	// Check for INSERT
-	assert.Contains(t, mergeSQL, `id,bar,updated_at,"START"`, mergeSQL)
-	assert.Contains(t, mergeSQL, `cc.id,cc.bar,cc.updated_at,cc."START"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `"ID","BAR","UPDATED_AT","START"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `cc."ID",cc."BAR",cc."UPDATED_AT",cc."START"`, mergeSQL)
 }
 
 func TestMergeStatementIdempotentKey(t *testing.T) {
@@ -262,12 +262,12 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 	mergeSQL, err := mergeArg.GetStatement()
 	assert.NoError(t, err)
 	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
-	assert.NotContains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at"), fmt.Sprintf("Idempotency key: %s", mergeSQL))
+	assert.NotContains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", `"UPDATED_AT"`, `"UPDATED_AT"`), fmt.Sprintf("Idempotency key: %s", mergeSQL))
 	// Check primary keys clause
-	assert.Contains(t, mergeSQL, `AS cc ON c.id = cc.id and c."GROUP" = cc."GROUP"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `AS cc ON c."ID" = cc."ID" and c."GROUP" = cc."GROUP"`, mergeSQL)
 	// Check setting for update
-	assert.Contains(t, mergeSQL, `SET id=cc.id,"GROUP"=cc."GROUP",updated_at=cc.updated_at,"START"=cc."START"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `SET "ID"=cc."ID","GROUP"=cc."GROUP","UPDATED_AT"=cc."UPDATED_AT","START"=cc."START"`, mergeSQL)
 	// Check for INSERT
-	assert.Contains(t, mergeSQL, `id,"GROUP",updated_at,"START"`, mergeSQL)
-	assert.Contains(t, mergeSQL, `cc.id,cc."GROUP",cc.updated_at,cc."START"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `"ID","GROUP","UPDATED_AT","START"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `cc."ID",cc."GROUP",cc."UPDATED_AT",cc."START"`, mergeSQL)
 }
