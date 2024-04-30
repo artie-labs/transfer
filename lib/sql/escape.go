@@ -31,6 +31,9 @@ func NeedsEscaping(name string, uppercaseEscNames bool, destKind constants.Desti
 		return false
 	case constants.Snowflake:
 		if uppercaseEscNames {
+			// If uppercaseEscNames is true then we will escape all identifiers that do not start with the Artie priefix.
+			// Since they will be uppercased afer they are escaped then they will result in the same value as if we
+			// we were to use them in a query without any escaping at all.
 			// TODO: Escape names that start with [constants.ArtiePrefix].
 			if !strings.HasPrefix(name, constants.ArtiePrefix) {
 				return true
