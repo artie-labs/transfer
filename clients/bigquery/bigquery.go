@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
+	"time"
 
 	"cloud.google.com/go/bigquery"
 	_ "github.com/viant/bigquery"
@@ -19,6 +21,9 @@ import (
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/stringutil"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 const (
@@ -143,10 +148,82 @@ func (s *Store) putTable(ctx context.Context, tableID types.TableIdentifier, row
 	return nil
 }
 
-func (s *Store) Dedupe(tableID types.TableIdentifier, _ []string, _ kafkalib.TopicConfig) error {
-	fqTableName := tableID.FullyQualifiedName()
-	_, err := s.Exec(fmt.Sprintf("CREATE OR REPLACE TABLE %s AS SELECT DISTINCT * FROM %s", fqTableName, fqTableName))
-	return err
+func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
+	var primaryKeysEscaped []string
+	for _, pk := range primaryKeys {
+		primaryKeysEscaped = append(primaryKeysEscaped, sql.EscapeNameIfNecessary(pk, s.ShouldUppercaseEscapedNames(), s.Label()))
+	}
+
+	orderColsToIterate := primaryKeysEscaped
+	if topicConfig.IncludeArtieUpdatedAt {
+		orderColsToIterate = append(orderColsToIterate, sql.EscapeNameIfNecessary(constants.UpdateColumnMarker, s.ShouldUppercaseEscapedNames(), s.Label()))
+	}
+
+	var orderByCols []string
+	for _, orderByCol := range orderColsToIterate {
+		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", orderByCol))
+	}
+
+	var parts []string
+	parts = append(parts,
+		fmt.Sprintf(`CREATE OR REPLACE TABLE %s OPTIONS (expiration_timestamp = TIMESTAMP("%s")) AS (SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 2)`,
+			stagingTableID.FullyQualifiedName(),
+			typing.ExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)),
+			tableID.FullyQualifiedName(),
+			strings.Join(primaryKeysEscaped, ", "),
+			strings.Join(orderByCols, ", "),
+		),
+	)
+
+	var whereClauses []string
+	for _, primaryKeyEscaped := range primaryKeysEscaped {
+		whereClauses = append(whereClauses, fmt.Sprintf("t1.%s = t2.%s", primaryKeyEscaped, primaryKeyEscaped))
+	}
+
+	// https://cloud.google.com/bigquery/docs/reference/standard-sql/dml-syntax#delete_with_subquery
+	parts = append(parts,
+		fmt.Sprintf("DELETE FROM %s t1 WHERE EXISTS (SELECT * FROM %s t2 WHERE %s)",
+			tableID.FullyQualifiedName(),
+			stagingTableID.FullyQualifiedName(),
+			strings.Join(whereClauses, " AND "),
+		),
+	)
+
+	parts = append(parts, fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName()))
+	return parts
+}
+
+func (s *Store) Dedupe(tableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
+	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
+
+	var txCommitted bool
+	tx, err := s.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to start a tx: %w", err)
+	}
+
+	defer func() {
+		if !txCommitted {
+			if err = tx.Rollback(); err != nil {
+				slog.Warn("Failed to rollback tx", slog.Any("err", err))
+			}
+		}
+
+		_ = ddl.DropTemporaryTable(s, stagingTableID.FullyQualifiedName(), false)
+	}()
+
+	for _, part := range s.generateDedupeQueries(tableID, stagingTableID, primaryKeys, topicConfig) {
+		if _, err = tx.Exec(part); err != nil {
+			return fmt.Errorf("failed to execute tx, query: %q, err: %w", part, err)
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit tx: %w", err)
+	}
+
+	txCommitted = true
+	return nil
 }
 
 func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
