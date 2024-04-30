@@ -480,7 +480,7 @@ func TestColumnsUpdateQuery(t *testing.T) {
 			name:           "happy path",
 			columns:        happyPathCols,
 			destKind:       constants.Redshift,
-			expectedString: "foo=cc.foo,bar=cc.bar",
+			expectedString: `"foo"=cc."foo","bar"=cc."bar"`,
 		},
 		{
 			name:           "string and toast",
@@ -492,7 +492,7 @@ func TestColumnsUpdateQuery(t *testing.T) {
 			name:           "struct, string and toast string",
 			columns:        lastCaseColTypes,
 			destKind:       constants.Redshift,
-			expectedString: `a1= CASE WHEN COALESCE(cc.a1 != JSON_PARSE('{"key":"__debezium_unavailable_value"}'), true) THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN COALESCE(cc.b2 != '__debezium_unavailable_value', true) THEN cc.b2 ELSE c.b2 END,c3=cc.c3`,
+			expectedString: `"a1"= CASE WHEN COALESCE(cc."a1" != JSON_PARSE('{"key":"__debezium_unavailable_value"}'), true) THEN cc."a1" ELSE c."a1" END,"b2"= CASE WHEN COALESCE(cc."b2" != '__debezium_unavailable_value', true) THEN cc."b2" ELSE c."b2" END,"c3"=cc."c3"`,
 		},
 		{
 			name:           "struct, string and toast string (bigquery)",

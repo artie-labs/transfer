@@ -21,20 +21,16 @@ func EscapeNameIfNecessary(name string, uppercaseEscNames bool, destKind constan
 }
 
 func NeedsEscaping(name string, destKind constants.DestinationKind) bool {
-	var reservedKeywords []string
-	if destKind == constants.Redshift {
-		reservedKeywords = constants.RedshiftReservedKeywords
-	} else if destKind == constants.MSSQL || destKind == constants.BigQuery {
+	switch destKind {
+	case constants.BigQuery, constants.MSSQL, constants.Redshift:
 		// TODO: Escape names that start with [constants.ArtiePrefix].
 		if !strings.HasPrefix(name, constants.ArtiePrefix) {
 			return true
 		}
-	} else {
-		reservedKeywords = constants.ReservedKeywords
-	}
-
-	if slices.Contains(reservedKeywords, name) {
-		return true
+	default:
+		if slices.Contains(constants.ReservedKeywords, name) {
+			return true
+		}
 	}
 
 	// If it does not contain any reserved words, does it contain any symbols that need to be escaped?
@@ -62,6 +58,9 @@ func EscapeName(name string, uppercaseEscNames bool, destKind constants.Destinat
 				slog.Bool("uppercaseEscapedNames", uppercaseEscNames),
 			)
 		}
+  } else if destKind == constants.Redshift {
+		// Preserve the existing behavior of Redshift identifiers being lowercased due to not being quoted.
+		name = strings.ToLower(name)
 	}
 
 	if destKind == constants.BigQuery {
