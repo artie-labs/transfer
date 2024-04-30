@@ -21,20 +21,16 @@ func EscapeNameIfNecessary(name string, uppercaseEscNames bool, destKind constan
 }
 
 func NeedsEscaping(name string, destKind constants.DestinationKind) bool {
-	var reservedKeywords []string
-	if destKind == constants.Redshift {
-		reservedKeywords = constants.RedshiftReservedKeywords
-	} else if destKind == constants.MSSQL || destKind == constants.BigQuery {
+	switch destKind {
+	case constants.BigQuery, constants.MSSQL, constants.Redshift:
 		// TODO: Escape names that start with [constants.ArtiePrefix].
 		if !strings.HasPrefix(name, constants.ArtiePrefix) {
 			return true
 		}
-	} else {
-		reservedKeywords = constants.ReservedKeywords
-	}
-
-	if slices.Contains(reservedKeywords, name) {
-		return true
+	default:
+		if slices.Contains(constants.ReservedKeywords, name) {
+			return true
+		}
 	}
 
 	// If it does not contain any reserved words, does it contain any symbols that need to be escaped?
@@ -55,13 +51,14 @@ func NeedsEscaping(name string, destKind constants.DestinationKind) bool {
 func EscapeName(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
 	if uppercaseEscNames {
 		name = strings.ToUpper(name)
-	} else {
-		if destKind == constants.Snowflake {
-			slog.Warn("Escaped Snowflake identifier is not being uppercased",
-				slog.String("name", name),
-				slog.Bool("uppercaseEscapedNames", uppercaseEscNames),
-			)
-		}
+	} else if destKind == constants.Redshift {
+		name = strings.ToLower(name)
+	} else if destKind == constants.Snowflake {
+		slog.Warn("Escaped Snowflake identifier is not being uppercased",
+			slog.String("name", name),
+			slog.Bool("uppercaseEscapedNames", uppercaseEscNames),
+		)
+
 	}
 
 	if destKind == constants.BigQuery {

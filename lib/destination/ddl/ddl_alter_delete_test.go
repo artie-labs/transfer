@@ -363,7 +363,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 		execQuery, _ := d.fakeRedshiftStore.ExecArgsForCall(0)
 		var found bool
 		for key := range allColsMap {
-			if execQuery == fmt.Sprintf("ALTER TABLE %s drop COLUMN %s", redshiftName, key) {
+			if execQuery == fmt.Sprintf(`ALTER TABLE %s drop COLUMN "%s"`, redshiftName, key) {
 				found = true
 			}
 		}

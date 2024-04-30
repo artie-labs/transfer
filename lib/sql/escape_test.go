@@ -23,8 +23,9 @@ func TestNeedsEscaping(t *testing.T) {
 	// Redshift:
 	assert.True(t, NeedsEscaping("select", constants.Redshift))          // name that is reserved
 	assert.True(t, NeedsEscaping("truncatecolumns", constants.Redshift)) // name that is reserved for Redshift
-	assert.False(t, NeedsEscaping("foo", constants.Redshift))            // name that is not reserved
+	assert.True(t, NeedsEscaping("foo", constants.Redshift))             // name that is not reserved
 	assert.False(t, NeedsEscaping("__artie_foo", constants.Redshift))    // Artie prefix
+	assert.True(t, NeedsEscaping("__artie_foo:bar", constants.Redshift)) // Artie prefix + symbol
 
 	// Snowflake:
 	assert.True(t, NeedsEscaping("select", constants.Snowflake))       // name that is reserved
@@ -67,8 +68,8 @@ func TestEscapeNameIfNecessary(t *testing.T) {
 			name:                     "redshift #2",
 			destKind:                 constants.Redshift,
 			nameToEscape:             "hello",
-			expectedName:             `hello`,
-			expectedNameWhenUpperCfg: "hello",
+			expectedName:             `"hello"`,
+			expectedNameWhenUpperCfg: `"HELLO"`,
 		},
 		{
 			name:                     "bigquery",
