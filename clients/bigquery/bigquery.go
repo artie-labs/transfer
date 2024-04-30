@@ -21,9 +21,9 @@ import (
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 const (
@@ -151,13 +151,12 @@ func (s *Store) putTable(ctx context.Context, tableID types.TableIdentifier, row
 func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
 	var primaryKeysEscaped []string
 	for _, pk := range primaryKeys {
-		pkCol := columns.NewColumn(pk, typing.Invalid)
-		primaryKeysEscaped = append(primaryKeysEscaped, pkCol.Name(s.ShouldUppercaseEscapedNames(), s.Label()))
+		primaryKeysEscaped = append(primaryKeysEscaped, sql.EscapeNameIfNecessary(pk, s.ShouldUppercaseEscapedNames(), s.Label()))
 	}
 
 	orderColsToIterate := primaryKeysEscaped
 	if topicConfig.IncludeArtieUpdatedAt {
-		orderColsToIterate = append(orderColsToIterate, constants.UpdateColumnMarker)
+		orderColsToIterate = append(orderColsToIterate, sql.EscapeNameIfNecessary(constants.UpdateColumnMarker, s.ShouldUppercaseEscapedNames(), s.Label()))
 	}
 
 	var orderByCols []string
