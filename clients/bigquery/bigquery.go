@@ -161,8 +161,8 @@ func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentif
 	}
 
 	var orderByCols []string
-	for _, pk := range orderColsToIterate {
-		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", pk))
+	for _, orderByCol := range orderColsToIterate {
+		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", orderByCol))
 	}
 
 	var parts []string
