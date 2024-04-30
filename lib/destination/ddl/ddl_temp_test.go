@@ -46,7 +46,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 		TemporaryTable:    true,
 		ColumnOp:          constants.Add,
 		CdcTime:           time.Time{},
-		UppercaseEscNames: ptr.ToBool(false),
+		UppercaseEscNames: ptr.ToBool(true),
 		Mode:              config.Replication,
 	}
 
@@ -81,7 +81,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 			TemporaryTable:    true,
 			ColumnOp:          constants.Add,
 			CdcTime:           time.Time{},
-			UppercaseEscNames: ptr.ToBool(false),
+			UppercaseEscNames: ptr.ToBool(true),
 			Mode:              config.Replication,
 		}
 
@@ -91,7 +91,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 
 		assert.Contains(d.T(),
 			query,
-			`CREATE TABLE IF NOT EXISTS db.schema."TEMPTABLENAME" (foo string,bar float,"start" string) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`,
+			`CREATE TABLE IF NOT EXISTS db.schema."TEMPTABLENAME" (foo string,bar float,"START" string) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`,
 			query)
 	}
 	{
@@ -115,6 +115,6 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 		assert.Equal(d.T(), 1, d.fakeBigQueryStore.ExecCallCount())
 		bqQuery, _ := d.fakeBigQueryStore.ExecArgsForCall(0)
 		// Cutting off the expiration_timestamp since it's time based.
-		assert.Contains(d.T(), bqQuery, "CREATE TABLE IF NOT EXISTS `db`.`schema`.`tempTableName` (foo string,bar float64,`select` string) OPTIONS (expiration_timestamp =")
+		assert.Contains(d.T(), bqQuery, "CREATE TABLE IF NOT EXISTS `db`.`schema`.`tempTableName` (`foo` string,`bar` float64,`select` string) OPTIONS (expiration_timestamp =")
 	}
 }

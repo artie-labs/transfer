@@ -15,7 +15,6 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
-	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -146,10 +145,9 @@ func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentif
 		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", pk))
 	}
 
-	temporaryTableName := sql.EscapeName(stagingTableID.Table(), s.ShouldUppercaseEscapedNames(), s.Label())
 	var parts []string
-	parts = append(parts, fmt.Sprintf("CREATE OR REPLACE TRANSIENT TABLE %s AS (SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY by %s ORDER BY %s) = 2)",
-		temporaryTableName,
+	parts = append(parts, fmt.Sprintf("CREATE OR REPLACE TRANSIENT TABLE %s AS (SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 2)",
+		stagingTableID.FullyQualifiedName(),
 		tableID.FullyQualifiedName(),
 		strings.Join(primaryKeysEscaped, ", "),
 		strings.Join(orderByCols, ", "),
@@ -162,11 +160,11 @@ func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentif
 
 	parts = append(parts, fmt.Sprintf("DELETE FROM %s t1 USING %s t2 WHERE %s",
 		tableID.FullyQualifiedName(),
-		temporaryTableName,
+		stagingTableID.FullyQualifiedName(),
 		strings.Join(whereClauses, " AND "),
 	))
 
-	parts = append(parts, fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", tableID.FullyQualifiedName(), temporaryTableName))
+	parts = append(parts, fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName()))
 	return parts
 }
 

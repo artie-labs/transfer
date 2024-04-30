@@ -145,20 +145,20 @@ func TestColumn_Name(t *testing.T) {
 		{
 			colName:           "start",
 			expectedName:      "start",
-			expectedNameEsc:   `"start"`, // since this is a reserved word.
+			expectedNameEsc:   `"START"`, // since this is a reserved word.
 			expectedNameEscBq: "`start`", // BQ escapes via backticks.
 		},
 		{
 			colName:           "foo",
 			expectedName:      "foo",
 			expectedNameEsc:   "foo",
-			expectedNameEscBq: "foo",
+			expectedNameEscBq: "`foo`",
 		},
 		{
 			colName:           "bar",
 			expectedName:      "bar",
 			expectedNameEsc:   "bar",
-			expectedNameEscBq: "bar",
+			expectedNameEscBq: "`bar`",
 		},
 	}
 
@@ -169,7 +169,7 @@ func TestColumn_Name(t *testing.T) {
 
 		assert.Equal(t, testCase.expectedName, col.RawName(), testCase.colName)
 
-		assert.Equal(t, testCase.expectedNameEsc, col.Name(false, constants.Snowflake), testCase.colName)
+		assert.Equal(t, testCase.expectedNameEsc, col.Name(true, constants.Snowflake), testCase.colName)
 		assert.Equal(t, testCase.expectedNameEscBq, col.Name(false, constants.BigQuery), testCase.colName)
 	}
 }
@@ -265,14 +265,14 @@ func TestColumns_GetEscapedColumnsToUpdate(t *testing.T) {
 		{
 			name:              "happy path",
 			cols:              happyPathCols,
-			expectedColsEsc:   []string{"hi", "bye", `"start"`},
-			expectedColsEscBq: []string{"hi", "bye", "`start`"},
+			expectedColsEsc:   []string{"hi", "bye", `"START"`},
+			expectedColsEscBq: []string{"`hi`", "`bye`", "`start`"},
 		},
 		{
 			name:              "happy path + extra col",
 			cols:              extraCols,
-			expectedColsEsc:   []string{"hi", "bye", `"start"`},
-			expectedColsEscBq: []string{"hi", "bye", "`start`"},
+			expectedColsEsc:   []string{"hi", "bye", `"START"`},
+			expectedColsEscBq: []string{"`hi`", "`bye`", "`start`"},
 		},
 	}
 
@@ -281,7 +281,7 @@ func TestColumns_GetEscapedColumnsToUpdate(t *testing.T) {
 			columns: testCase.cols,
 		}
 
-		assert.Equal(t, testCase.expectedColsEsc, cols.GetEscapedColumnsToUpdate(false, constants.Snowflake), testCase.name)
+		assert.Equal(t, testCase.expectedColsEsc, cols.GetEscapedColumnsToUpdate(true, constants.Snowflake), testCase.name)
 		assert.Equal(t, testCase.expectedColsEscBq, cols.GetEscapedColumnsToUpdate(false, constants.BigQuery), testCase.name)
 	}
 }
@@ -498,13 +498,13 @@ func TestColumnsUpdateQuery(t *testing.T) {
 			name:           "struct, string and toast string (bigquery)",
 			columns:        lastCaseColTypes,
 			destKind:       constants.BigQuery,
-			expectedString: `a1= CASE WHEN COALESCE(TO_JSON_STRING(cc.a1) != '{"key":"__debezium_unavailable_value"}', true) THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN COALESCE(cc.b2 != '__debezium_unavailable_value', true) THEN cc.b2 ELSE c.b2 END,c3=cc.c3`,
+			expectedString: "`a1`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`a1`) != '{\"key\":\"__debezium_unavailable_value\"}', true) THEN cc.`a1` ELSE c.`a1` END,`b2`= CASE WHEN COALESCE(cc.`b2` != '__debezium_unavailable_value', true) THEN cc.`b2` ELSE c.`b2` END,`c3`=cc.`c3`",
 		},
 		{
 			name:     "struct, string and toast string (bigquery) w/ reserved keywords",
 			columns:  lastCaseEscapeTypes,
 			destKind: constants.BigQuery,
-			expectedString: fmt.Sprintf(`a1= CASE WHEN COALESCE(TO_JSON_STRING(cc.a1) != '%s', true) THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN COALESCE(cc.b2 != '__debezium_unavailable_value', true) THEN cc.b2 ELSE c.b2 END,c3=cc.c3,%s,%s`,
+			expectedString: fmt.Sprintf("`a1`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`a1`) != '%s', true) THEN cc.`a1` ELSE c.`a1` END,`b2`= CASE WHEN COALESCE(cc.`b2` != '__debezium_unavailable_value', true) THEN cc.`b2` ELSE c.`b2` END,`c3`=cc.`c3`,%s,%s",
 				key, fmt.Sprintf("`start`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`start`) != '%s', true) THEN cc.`start` ELSE c.`start` END", key), "`select`=cc.`select`"),
 			skipDeleteCol: true,
 		},
@@ -512,7 +512,7 @@ func TestColumnsUpdateQuery(t *testing.T) {
 			name:     "struct, string and toast string (bigquery) w/ reserved keywords",
 			columns:  lastCaseEscapeTypes,
 			destKind: constants.BigQuery,
-			expectedString: fmt.Sprintf(`a1= CASE WHEN COALESCE(TO_JSON_STRING(cc.a1) != '%s', true) THEN cc.a1 ELSE c.a1 END,b2= CASE WHEN COALESCE(cc.b2 != '__debezium_unavailable_value', true) THEN cc.b2 ELSE c.b2 END,c3=cc.c3,%s,%s`,
+			expectedString: fmt.Sprintf("`a1`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`a1`) != '%s', true) THEN cc.`a1` ELSE c.`a1` END,`b2`= CASE WHEN COALESCE(cc.`b2` != '__debezium_unavailable_value', true) THEN cc.`b2` ELSE c.`b2` END,`c3`=cc.`c3`,%s,%s",
 				key, fmt.Sprintf("`start`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`start`) != '%s', true) THEN cc.`start` ELSE c.`start` END", key), "`select`=cc.`select`,__artie_delete=cc.__artie_delete"),
 			skipDeleteCol: false,
 		},

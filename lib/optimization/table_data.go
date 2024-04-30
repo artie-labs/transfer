@@ -248,9 +248,9 @@ func (t *TableData) ShouldFlush(cfg config.Config) (bool, string) {
 // Prior to merging, we will need to treat `tableConfig` as the source-of-truth and whenever there's discrepancies
 // We will prioritize using the values coming from (2) TableConfig. We also cannot simply do a replacement, as we have in-memory columns
 // That carry metadata for Artie Transfer. They are prefixed with __artie.
-func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) {
+func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) error {
 	if t == nil || len(destCols) == 0 {
-		return
+		return nil
 	}
 
 	for _, inMemoryCol := range t.inMemoryColumns.GetColumns() {
@@ -258,6 +258,10 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) {
 		var found bool
 		for _, destCol := range destCols {
 			if destCol.RawName() == strings.ToLower(inMemoryCol.RawName()) {
+				if destCol.KindDetails.Kind == typing.Invalid.Kind {
+					return fmt.Errorf("column %q is invalid", destCol.RawName())
+				}
+
 				foundColumn = destCol
 				found = true
 				break
@@ -297,4 +301,6 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) {
 			t.inMemoryColumns.UpdateColumn(inMemoryCol)
 		}
 	}
+
+	return nil
 }

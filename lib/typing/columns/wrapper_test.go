@@ -23,25 +23,25 @@ func TestWrapper_Complete(t *testing.T) {
 			name:                  "happy",
 			expectedRawName:       "happy",
 			expectedEscapedName:   "happy",
-			expectedEscapedNameBQ: "happy",
+			expectedEscapedNameBQ: "`happy`",
 		},
 		{
 			name:                  "user_id",
 			expectedRawName:       "user_id",
 			expectedEscapedName:   "user_id",
-			expectedEscapedNameBQ: "user_id",
+			expectedEscapedNameBQ: "`user_id`",
 		},
 		{
 			name:                  "group",
 			expectedRawName:       "group",
-			expectedEscapedName:   `"group"`,
+			expectedEscapedName:   `"GROUP"`,
 			expectedEscapedNameBQ: "`group`",
 		},
 	}
 
 	for _, testCase := range testCases {
 		// Snowflake escape
-		w := NewWrapper(NewColumn(testCase.name, typing.Invalid), false, constants.Snowflake)
+		w := NewWrapper(NewColumn(testCase.name, typing.Invalid), true, constants.Snowflake)
 
 		assert.Equal(t, testCase.expectedEscapedName, w.EscapedName(), testCase.name)
 		assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
