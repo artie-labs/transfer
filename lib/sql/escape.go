@@ -52,6 +52,7 @@ func EscapeName(name string, uppercaseEscNames bool, destKind constants.Destinat
 	if uppercaseEscNames {
 		name = strings.ToUpper(name)
 	} else if destKind == constants.Redshift {
+		// Preserve the existing functinality of redshift identifiers being lowercased.
 		name = strings.ToLower(name)
 	} else if destKind == constants.Snowflake {
 		slog.Warn("Escaped Snowflake identifier is not being uppercased",
