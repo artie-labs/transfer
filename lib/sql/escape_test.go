@@ -62,7 +62,7 @@ func TestEscapeNameIfNecessary(t *testing.T) {
 			destKind:                 constants.Redshift,
 			nameToEscape:             "order",
 			expectedName:             `"order"`,
-			expectedNameWhenUpperCfg: `"ORDER"`,
+			expectedNameWhenUpperCfg: `"order"`,
 		},
 		{
 			name:                     "redshift #2",
@@ -76,21 +76,21 @@ func TestEscapeNameIfNecessary(t *testing.T) {
 			destKind:                 constants.BigQuery,
 			nameToEscape:             "order",
 			expectedName:             "`order`",
-			expectedNameWhenUpperCfg: "`ORDER`",
+			expectedNameWhenUpperCfg: "`order`",
 		},
 		{
 			name:                     "bigquery, #2",
 			destKind:                 constants.BigQuery,
 			nameToEscape:             "hello",
 			expectedName:             "`hello`",
-			expectedNameWhenUpperCfg: "`HELLO`",
+			expectedNameWhenUpperCfg: "`hello`",
 		},
 		{
 			name:                     "redshift, #1 (delta)",
 			destKind:                 constants.Redshift,
 			nameToEscape:             "delta",
 			expectedName:             `"delta"`,
-			expectedNameWhenUpperCfg: `"DELTA"`,
+			expectedNameWhenUpperCfg: `"delta"`,
 		},
 		{
 			name:                     "snowflake, #1 (delta)",
@@ -104,7 +104,7 @@ func TestEscapeNameIfNecessary(t *testing.T) {
 			destKind:                 constants.Redshift,
 			nameToEscape:             "receivedat:__",
 			expectedName:             `"receivedat:__"`,
-			expectedNameWhenUpperCfg: `"RECEIVEDAT:__"`,
+			expectedNameWhenUpperCfg: `"receivedat:__"`,
 		},
 		{
 			name:                     "redshift, numbers",

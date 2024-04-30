@@ -49,24 +49,25 @@ func NeedsEscaping(name string, destKind constants.DestinationKind) bool {
 }
 
 func EscapeName(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
-	if uppercaseEscNames {
-		name = strings.ToUpper(name)
-	} else if destKind == constants.Redshift {
-		// Preserve the functinality of Redshift identifiers being lowercased due to not being escaped.
+	if destKind == constants.Snowflake {
+		if uppercaseEscNames {
+			name = strings.ToUpper(name)
+		} else {
+			slog.Warn("Escaped Snowflake identifier is not being uppercased",
+				slog.String("name", name),
+				slog.Bool("uppercaseEscapedNames", uppercaseEscNames),
+			)
+		}
+  } else if destKind == constants.Redshift {
+		// Preserve the existing behavior of Redshift identifiers being lowercased due to not being quoted.
 		name = strings.ToLower(name)
-	} else if destKind == constants.Snowflake {
-		slog.Warn("Escaped Snowflake identifier is not being uppercased",
-			slog.String("name", name),
-			slog.Bool("uppercaseEscapedNames", uppercaseEscNames),
-		)
-
 	}
 
 	if destKind == constants.BigQuery {
 		// BigQuery needs backticks to escape.
 		return fmt.Sprintf("`%s`", name)
 	} else {
-		// Snowflake uses quotes.
+		// Everything else uses quotes.
 		return fmt.Sprintf(`"%s"`, name)
 	}
 }
