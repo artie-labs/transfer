@@ -151,13 +151,13 @@ func TestColumn_Name(t *testing.T) {
 		{
 			colName:           "foo",
 			expectedName:      "foo",
-			expectedNameEsc:   "foo",
+			expectedNameEsc:   `"FOO"`,
 			expectedNameEscBq: "`foo`",
 		},
 		{
 			colName:           "bar",
 			expectedName:      "bar",
-			expectedNameEsc:   "bar",
+			expectedNameEsc:   `"BAR"`,
 			expectedNameEscBq: "`bar`",
 		},
 	}
@@ -265,13 +265,13 @@ func TestColumns_GetEscapedColumnsToUpdate(t *testing.T) {
 		{
 			name:              "happy path",
 			cols:              happyPathCols,
-			expectedColsEsc:   []string{"hi", "bye", `"START"`},
+			expectedColsEsc:   []string{`"HI"`, `"BYE"`, `"START"`},
 			expectedColsEscBq: []string{"`hi`", "`bye`", "`start`"},
 		},
 		{
 			name:              "happy path + extra col",
 			cols:              extraCols,
-			expectedColsEsc:   []string{"hi", "bye", `"START"`},
+			expectedColsEsc:   []string{`"HI"`, `"BYE"`, `"START"`},
 			expectedColsEscBq: []string{"`hi`", "`bye`", "`start`"},
 		},
 	}
