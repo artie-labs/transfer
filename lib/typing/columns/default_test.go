@@ -127,7 +127,7 @@ func TestColumn_DefaultValue(t *testing.T) {
 			args: &DefaultValueArgs{
 				Escape: true,
 			},
-			expectedValue: "'03:19:24'",
+			expectedValue: "'03:19:24.942'",
 		},
 		{
 			name: "datetime",
@@ -138,7 +138,7 @@ func TestColumn_DefaultValue(t *testing.T) {
 			args: &DefaultValueArgs{
 				Escape: true,
 			},
-			expectedValue: "'2022-09-06T03:19:24Z'",
+			expectedValue: "'2022-09-06T03:19:24.942Z'",
 		},
 	}
 
