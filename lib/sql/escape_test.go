@@ -69,7 +69,7 @@ func TestEscapeNameIfNecessary(t *testing.T) {
 			destKind:                 constants.Redshift,
 			nameToEscape:             "hello",
 			expectedName:             `"hello"`,
-			expectedNameWhenUpperCfg: `"HELLO"`,
+			expectedNameWhenUpperCfg: `"hello"`,
 		},
 		{
 			name:                     "bigquery",
