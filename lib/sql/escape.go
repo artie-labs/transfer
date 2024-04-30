@@ -68,7 +68,7 @@ func EscapeName(name string, uppercaseEscNames bool, destKind constants.Destinat
 		// BigQuery needs backticks to escape.
 		return fmt.Sprintf("`%s`", name)
 	} else {
-		// Snowflake uses quotes.
+		// Everything else uses quotes.
 		return fmt.Sprintf(`"%s"`, name)
 	}
 }
