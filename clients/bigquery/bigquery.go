@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
 	"cloud.google.com/go/bigquery"
 	_ "github.com/viant/bigquery"
 
@@ -25,6 +23,7 @@ import (
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 const (
