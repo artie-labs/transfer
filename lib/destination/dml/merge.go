@@ -134,7 +134,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
 	for idx, col := range cols {
-		if col == sql.EscapeNameIfNecessary(constants.DeleteColumnMarker, m.Dialect) {
+		if col == sql.EscapeNameIfNecessaryUsingDialect(constants.DeleteColumnMarker, m.Dialect) {
 			cols = append(cols[:idx], cols[idx+1:]...)
 			removed = true
 			break
@@ -257,7 +257,7 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
 	for idx, col := range cols {
-		if col == sql.EscapeNameIfNecessary(constants.DeleteColumnMarker, m.Dialect) {
+		if col == sql.EscapeNameIfNecessaryUsingDialect(constants.DeleteColumnMarker, m.Dialect) {
 			cols = append(cols[:idx], cols[idx+1:]...)
 			removed = true
 			break
@@ -327,7 +327,7 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
 	for idx, col := range cols {
-		if col == sql.EscapeNameIfNecessary(constants.DeleteColumnMarker, m.Dialect) {
+		if col == sql.EscapeNameIfNecessaryUsingDialect(constants.DeleteColumnMarker, m.Dialect) {
 			cols = append(cols[:idx], cols[idx+1:]...)
 			removed = true
 			break
