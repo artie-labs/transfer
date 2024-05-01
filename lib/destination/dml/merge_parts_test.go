@@ -109,10 +109,10 @@ func TestMergeStatementPartsSoftDelete(t *testing.T) {
 	assert.Equal(t, 2, len(parts))
 
 	assert.Equal(t,
-		`INSERT INTO public.tableName ("id","email","first_name","last_name","created_at","toast_text",__artie_delete) SELECT cc."id",cc."email",cc."first_name",cc."last_name",cc."created_at",cc."toast_text",cc.__artie_delete FROM public.tableName__temp as cc LEFT JOIN public.tableName as c on c."id" = cc."id" WHERE c."id" IS NULL;`,
+		`INSERT INTO public.tableName ("id","email","first_name","last_name","created_at","toast_text","__artie_delete") SELECT cc."id",cc."email",cc."first_name",cc."last_name",cc."created_at",cc."toast_text",cc."__artie_delete" FROM public.tableName__temp as cc LEFT JOIN public.tableName as c on c."id" = cc."id" WHERE c."id" IS NULL;`,
 		parts[0])
 	assert.Equal(t,
-		`UPDATE public.tableName as c SET "id"=cc."id","email"=cc."email","first_name"=cc."first_name","last_name"=cc."last_name","created_at"=cc."created_at","toast_text"= CASE WHEN COALESCE(cc."toast_text" != '__debezium_unavailable_value', true) THEN cc."toast_text" ELSE c."toast_text" END,__artie_delete=cc.__artie_delete FROM public.tableName__temp as cc WHERE c."id" = cc."id";`,
+		`UPDATE public.tableName as c SET "id"=cc."id","email"=cc."email","first_name"=cc."first_name","last_name"=cc."last_name","created_at"=cc."created_at","toast_text"= CASE WHEN COALESCE(cc."toast_text" != '__debezium_unavailable_value', true) THEN cc."toast_text" ELSE c."toast_text" END,"__artie_delete"=cc."__artie_delete" FROM public.tableName__temp as cc WHERE c."id" = cc."id";`,
 		parts[1])
 
 	mergeArg.IdempotentKey = "created_at"
@@ -121,11 +121,11 @@ func TestMergeStatementPartsSoftDelete(t *testing.T) {
 
 	// Parts[0] for insertion should be identical
 	assert.Equal(t,
-		`INSERT INTO public.tableName ("id","email","first_name","last_name","created_at","toast_text",__artie_delete) SELECT cc."id",cc."email",cc."first_name",cc."last_name",cc."created_at",cc."toast_text",cc.__artie_delete FROM public.tableName__temp as cc LEFT JOIN public.tableName as c on c."id" = cc."id" WHERE c."id" IS NULL;`,
+		`INSERT INTO public.tableName ("id","email","first_name","last_name","created_at","toast_text","__artie_delete") SELECT cc."id",cc."email",cc."first_name",cc."last_name",cc."created_at",cc."toast_text",cc."__artie_delete" FROM public.tableName__temp as cc LEFT JOIN public.tableName as c on c."id" = cc."id" WHERE c."id" IS NULL;`,
 		parts[0])
 	// Parts[1] where we're doing UPDATES will have idempotency key.
 	assert.Equal(t,
-		`UPDATE public.tableName as c SET "id"=cc."id","email"=cc."email","first_name"=cc."first_name","last_name"=cc."last_name","created_at"=cc."created_at","toast_text"= CASE WHEN COALESCE(cc."toast_text" != '__debezium_unavailable_value', true) THEN cc."toast_text" ELSE c."toast_text" END,__artie_delete=cc.__artie_delete FROM public.tableName__temp as cc WHERE c."id" = cc."id" AND cc.created_at >= c.created_at;`,
+		`UPDATE public.tableName as c SET "id"=cc."id","email"=cc."email","first_name"=cc."first_name","last_name"=cc."last_name","created_at"=cc."created_at","toast_text"= CASE WHEN COALESCE(cc."toast_text" != '__debezium_unavailable_value', true) THEN cc."toast_text" ELSE c."toast_text" END,"__artie_delete"=cc."__artie_delete" FROM public.tableName__temp as cc WHERE c."id" = cc."id" AND cc.created_at >= c.created_at;`,
 		parts[1])
 }
 
@@ -149,10 +149,10 @@ func TestMergeStatementPartsSoftDeleteComposite(t *testing.T) {
 	assert.Equal(t, 2, len(parts))
 
 	assert.Equal(t,
-		`INSERT INTO public.tableName ("id","email","first_name","last_name","created_at","toast_text",__artie_delete) SELECT cc."id",cc."email",cc."first_name",cc."last_name",cc."created_at",cc."toast_text",cc.__artie_delete FROM public.tableName__temp as cc LEFT JOIN public.tableName as c on c."id" = cc."id" and c."email" = cc."email" WHERE c."id" IS NULL;`,
+		`INSERT INTO public.tableName ("id","email","first_name","last_name","created_at","toast_text","__artie_delete") SELECT cc."id",cc."email",cc."first_name",cc."last_name",cc."created_at",cc."toast_text",cc."__artie_delete" FROM public.tableName__temp as cc LEFT JOIN public.tableName as c on c."id" = cc."id" and c."email" = cc."email" WHERE c."id" IS NULL;`,
 		parts[0])
 	assert.Equal(t,
-		`UPDATE public.tableName as c SET "id"=cc."id","email"=cc."email","first_name"=cc."first_name","last_name"=cc."last_name","created_at"=cc."created_at","toast_text"= CASE WHEN COALESCE(cc."toast_text" != '__debezium_unavailable_value', true) THEN cc."toast_text" ELSE c."toast_text" END,__artie_delete=cc.__artie_delete FROM public.tableName__temp as cc WHERE c."id" = cc."id" and c."email" = cc."email";`,
+		`UPDATE public.tableName as c SET "id"=cc."id","email"=cc."email","first_name"=cc."first_name","last_name"=cc."last_name","created_at"=cc."created_at","toast_text"= CASE WHEN COALESCE(cc."toast_text" != '__debezium_unavailable_value', true) THEN cc."toast_text" ELSE c."toast_text" END,"__artie_delete"=cc."__artie_delete" FROM public.tableName__temp as cc WHERE c."id" = cc."id" and c."email" = cc."email";`,
 		parts[1])
 
 	mergeArg.IdempotentKey = "created_at"
@@ -161,11 +161,11 @@ func TestMergeStatementPartsSoftDeleteComposite(t *testing.T) {
 
 	// Parts[0] for insertion should be identical
 	assert.Equal(t,
-		`INSERT INTO public.tableName ("id","email","first_name","last_name","created_at","toast_text",__artie_delete) SELECT cc."id",cc."email",cc."first_name",cc."last_name",cc."created_at",cc."toast_text",cc.__artie_delete FROM public.tableName__temp as cc LEFT JOIN public.tableName as c on c."id" = cc."id" and c."email" = cc."email" WHERE c."id" IS NULL;`,
+		`INSERT INTO public.tableName ("id","email","first_name","last_name","created_at","toast_text","__artie_delete") SELECT cc."id",cc."email",cc."first_name",cc."last_name",cc."created_at",cc."toast_text",cc."__artie_delete" FROM public.tableName__temp as cc LEFT JOIN public.tableName as c on c."id" = cc."id" and c."email" = cc."email" WHERE c."id" IS NULL;`,
 		parts[0])
 	// Parts[1] where we're doing UPDATES will have idempotency key.
 	assert.Equal(t,
-		`UPDATE public.tableName as c SET "id"=cc."id","email"=cc."email","first_name"=cc."first_name","last_name"=cc."last_name","created_at"=cc."created_at","toast_text"= CASE WHEN COALESCE(cc."toast_text" != '__debezium_unavailable_value', true) THEN cc."toast_text" ELSE c."toast_text" END,__artie_delete=cc.__artie_delete FROM public.tableName__temp as cc WHERE c."id" = cc."id" and c."email" = cc."email" AND cc.created_at >= c.created_at;`,
+		`UPDATE public.tableName as c SET "id"=cc."id","email"=cc."email","first_name"=cc."first_name","last_name"=cc."last_name","created_at"=cc."created_at","toast_text"= CASE WHEN COALESCE(cc."toast_text" != '__debezium_unavailable_value', true) THEN cc."toast_text" ELSE c."toast_text" END,"__artie_delete"=cc."__artie_delete" FROM public.tableName__temp as cc WHERE c."id" = cc."id" and c."email" = cc."email" AND cc.created_at >= c.created_at;`,
 		parts[1])
 }
 
