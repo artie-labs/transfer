@@ -5,17 +5,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/artie-labs/transfer/clients/snowflake"
-	"github.com/artie-labs/transfer/lib/config"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/clients/snowflake"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
