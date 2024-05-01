@@ -397,7 +397,6 @@ func TestColumnsUpdateQuery(t *testing.T) {
 		name           string
 		columns        Columns
 		expectedString string
-		destKind       constants.DestinationKind
 		dialect        sql.Dialect
 		skipDeleteCol  bool
 	}
