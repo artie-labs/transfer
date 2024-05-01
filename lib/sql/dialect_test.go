@@ -7,7 +7,7 @@ import (
 )
 
 func TestDefaultDialect_QuoteIdentifier(t *testing.T) {
-	dialect := DefaultDialect{}
+	dialect := MSSQLDialect{}
 	assert.Equal(t, `"foo"`, dialect.QuoteIdentifier("foo"))
 	assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("FOO"))
 }

@@ -15,11 +15,11 @@ type Dialect interface {
 	QuoteIdentifier(identifier string) string
 }
 
-type DefaultDialect struct{}
+type MSSQLDialect struct{}
 
-func (DefaultDialect) NeedsEscaping(_ string) bool { return true }
+func (MSSQLDialect) NeedsEscaping(_ string) bool { return true }
 
-func (DefaultDialect) QuoteIdentifier(identifier string) string {
+func (MSSQLDialect) QuoteIdentifier(identifier string) string {
 	return fmt.Sprintf(`"%s"`, identifier)
 }
 
