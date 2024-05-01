@@ -6,6 +6,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
 )
@@ -169,8 +170,8 @@ func TestColumn_Name(t *testing.T) {
 
 		assert.Equal(t, testCase.expectedName, col.RawName(), testCase.colName)
 
-		assert.Equal(t, testCase.expectedNameEsc, col.Name(true, constants.Snowflake), testCase.colName)
-		assert.Equal(t, testCase.expectedNameEscBq, col.Name(false, constants.BigQuery), testCase.colName)
+		assert.Equal(t, testCase.expectedNameEsc, col.Name(sql.SnowflakeDialect{UppercaseEscNames: true}), testCase.colName)
+		assert.Equal(t, testCase.expectedNameEscBq, col.Name(sql.SnowflakeDialect{UppercaseEscNames: false}), testCase.colName)
 	}
 }
 

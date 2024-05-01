@@ -1,16 +1,18 @@
 package columns
 
-import "github.com/artie-labs/transfer/lib/config/constants"
+import (
+	"github.com/artie-labs/transfer/lib/sql"
+)
 
 type Wrapper struct {
 	name        string
 	escapedName string
 }
 
-func NewWrapper(col Column, uppercaseEscNames bool, destKind constants.DestinationKind) Wrapper {
+func NewWrapper(col Column, dialect sql.Dialect) Wrapper {
 	return Wrapper{
 		name:        col.name,
-		escapedName: col.Name(uppercaseEscNames, destKind),
+		escapedName: col.Name(dialect),
 	}
 }
 

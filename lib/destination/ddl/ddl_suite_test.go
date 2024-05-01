@@ -31,6 +31,9 @@ type DDLTestSuite struct {
 func (d *DDLTestSuite) SetupTest() {
 	cfg := config.Config{
 		Redshift: &config.Redshift{},
+		SharedDestinationConfig: config.SharedDestinationConfig{
+			UppercaseEscapedNames: true,
+		},
 	}
 
 	d.bigQueryCfg = config.Config{
