@@ -30,7 +30,6 @@ type MergeArgument struct {
 	// ContainsHardDeletes is only used for Redshift and MergeStatementParts,
 	// where we do not issue a DELETE statement if there are no hard deletes in the batch
 	ContainsHardDeletes *bool
-	UppercaseEscNames   *bool
 	Dialect             sql.Dialect
 }
 
@@ -53,10 +52,6 @@ func (m *MergeArgument) Valid() error {
 
 	if m.SubQuery == "" {
 		return fmt.Errorf("subQuery cannot be empty")
-	}
-
-	if m.UppercaseEscNames == nil {
-		return fmt.Errorf("uppercaseEscNames cannot be nil")
 	}
 
 	if !constants.IsValidDestination(m.DestKind) {

@@ -39,10 +39,6 @@ func (s *Store) Dialect() sql.Dialect {
 	return sql.DefaultDialect{}
 }
 
-func (s *Store) ShouldUppercaseEscapedNames() bool {
-	return false
-}
-
 func (s *Store) Merge(tableData *optimization.TableData) error {
 	return shared.Merge(s, tableData, s.config, types.MergeOpts{})
 }

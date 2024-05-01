@@ -7,8 +7,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config"
 
-	"github.com/artie-labs/transfer/lib/ptr"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -69,7 +67,6 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: true,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
-			UppercaseEscNames:      ptr.ToBool(false),
 			Mode:                   config.Replication,
 		}
 
@@ -90,7 +87,6 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: true,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
-			UppercaseEscNames:      ptr.ToBool(false),
 			Mode:                   config.Replication,
 		}
 
@@ -112,7 +108,6 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: true,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
-			UppercaseEscNames:      ptr.ToBool(false),
 			Mode:                   config.Replication,
 		}
 
@@ -147,7 +142,6 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: false,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
-			UppercaseEscNames:      ptr.ToBool(false),
 			Mode:                   config.Replication,
 		}
 
@@ -168,7 +162,6 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: false,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
-			UppercaseEscNames:      ptr.ToBool(false),
 			Mode:                   config.Replication,
 		}
 
@@ -189,7 +182,6 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: false,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
-			UppercaseEscNames:      ptr.ToBool(false),
 			Mode:                   config.Replication,
 		}
 
@@ -226,7 +218,6 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: true,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
-			UppercaseEscNames:      ptr.ToBool(false),
 			Mode:                   config.Replication,
 		}
 
@@ -243,7 +234,6 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: true,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
-			UppercaseEscNames:      ptr.ToBool(false),
 			Mode:                   config.Replication,
 		}
 
@@ -260,7 +250,6 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: true,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts,
-			UppercaseEscNames:      ptr.ToBool(false),
 			Mode:                   config.Replication,
 		}
 
@@ -285,7 +274,6 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: true,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
-			UppercaseEscNames:      ptr.ToBool(true),
 			Mode:                   config.Replication,
 		}
 
@@ -300,7 +288,6 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: true,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
-			UppercaseEscNames:      ptr.ToBool(false),
 			Mode:                   config.Replication,
 		}
 
@@ -315,7 +302,6 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: true,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
-			UppercaseEscNames:      ptr.ToBool(false),
 			Mode:                   config.Replication,
 		}
 

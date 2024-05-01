@@ -44,7 +44,6 @@ type AlterTableArgs struct {
 	TableID                types.TableIdentifier
 	CreateTable            bool
 	TemporaryTable         bool
-	UppercaseEscNames      *bool
 
 	ColumnOp constants.ColumnOperation
 	Mode     config.Mode
@@ -67,10 +66,6 @@ func (a AlterTableArgs) Validate() error {
 		if !a.CreateTable {
 			return fmt.Errorf("incompatible operation - we should not be altering temporary tables, only create")
 		}
-	}
-
-	if a.UppercaseEscNames == nil {
-		return fmt.Errorf("uppercaseEscNames cannot be nil")
 	}
 
 	return nil
