@@ -8,7 +8,6 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
-	"github.com/artie-labs/transfer/lib/sql"
 )
 
 func (s *Store) Append(tableData *optimization.TableData) error {
@@ -55,7 +54,7 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 		var additionalEqualityStrings []string
 		if len(tableData.TopicConfig().AdditionalMergePredicates) > 0 {
 			for _, additionalMergePredicate := range tableData.TopicConfig().AdditionalMergePredicates {
-				mergePredicateCol := sql.EscapeName(additionalMergePredicate.PartitionField, s.ShouldUppercaseEscapedNames(), s.Label())
+				mergePredicateCol := s.Dialect().QuoteIdentifier(additionalMergePredicate.PartitionField)
 				additionalEqualityStrings = append(additionalEqualityStrings, fmt.Sprintf("c.%s = cc.%s", mergePredicateCol, mergePredicateCol))
 			}
 		}

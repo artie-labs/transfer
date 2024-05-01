@@ -25,8 +25,3 @@ func dialectFor(destKind constants.DestinationKind, uppercaseEscNames bool) Dial
 		return DefaultDialect{}
 	}
 }
-
-func EscapeName(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
-	// TODO: This is only used in one place, remove once [Dialect] has beem added to [Store].
-	return dialectFor(destKind, uppercaseEscNames).QuoteIdentifier(name)
-}
