@@ -36,7 +36,7 @@ func (s *Store) Label() constants.DestinationKind {
 }
 
 func (s *Store) Dialect() sql.Dialect {
-	return sql.DefaultDialect{}
+	return sql.MSSQLDialect{}
 }
 
 func (s *Store) Merge(tableData *optimization.TableData) error {
