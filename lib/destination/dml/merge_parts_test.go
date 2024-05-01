@@ -48,10 +48,10 @@ func getBasicColumnsForTest(compositeKey bool) result {
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	var pks []columns.Wrapper
-	pks = append(pks, columns.NewWrapper(idCol, false, constants.Redshift))
+	pks = append(pks, columns.NewWrapper(idCol, sql.DefaultDialect{}))
 
 	if compositeKey {
-		pks = append(pks, columns.NewWrapper(emailCol, false, constants.Redshift))
+		pks = append(pks, columns.NewWrapper(emailCol, sql.DefaultDialect{}))
 	}
 
 	return result{

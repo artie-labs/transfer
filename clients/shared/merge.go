@@ -125,7 +125,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		TableID:             tableID,
 		SubQuery:            subQuery,
 		IdempotentKey:       tableData.TopicConfig().IdempotentKey,
-		PrimaryKeys:         tableData.PrimaryKeys(dwh.ShouldUppercaseEscapedNames(), dwh.Label()),
+		PrimaryKeys:         tableData.PrimaryKeys(dwh.Dialect()),
 		Columns:             tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:          tableData.TopicConfig().SoftDelete,
 		DestKind:            dwh.Label(),

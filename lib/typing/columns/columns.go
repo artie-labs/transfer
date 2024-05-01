@@ -83,11 +83,11 @@ func (c *Column) RawName() string {
 	return c.name
 }
 
-// Name will give you c.name
+// Name will give you c.name and escape it if necessary.
 // Plus we will escape it if the column name is part of the reserved words from destinations.
 // If so, it'll change from `start` => `"start"` as suggested by Snowflake.
-func (c *Column) Name(uppercaseEscNames bool, destKind constants.DestinationKind) string {
-	return sql.EscapeNameIfNecessary(c.name, uppercaseEscNames, destKind)
+func (c *Column) Name(dialect sql.Dialect) string {
+	return sql.EscapeNameIfNecessaryUsingDialect(c.name, dialect)
 }
 
 type Columns struct {
@@ -198,7 +198,7 @@ func (c *Columns) GetColumnsToUpdate() []string {
 
 // GetEscapedColumnsToUpdate will filter all the `Invalid` columns so that we do not update it.
 // It will escape the returned columns.
-func (c *Columns) GetEscapedColumnsToUpdate(uppercaseEscNames bool, destKind constants.DestinationKind) []string {
+func (c *Columns) GetEscapedColumnsToUpdate(dialect sql.Dialect) []string {
 	if c == nil {
 		return []string{}
 	}
@@ -212,7 +212,7 @@ func (c *Columns) GetEscapedColumnsToUpdate(uppercaseEscNames bool, destKind con
 			continue
 		}
 
-		cols = append(cols, col.Name(uppercaseEscNames, destKind))
+		cols = append(cols, col.Name(dialect))
 	}
 
 	return cols
@@ -257,7 +257,7 @@ func (c *Columns) DeleteColumn(name string) {
 }
 
 // UpdateQuery will parse the columns and then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email
-func (c *Columns) UpdateQuery(destKind constants.DestinationKind, uppercaseEscNames bool, skipDeleteCol bool) string {
+func (c *Columns) UpdateQuery(destKind constants.DestinationKind, dialect sql.Dialect, skipDeleteCol bool) string {
 	var cols []string
 	for _, column := range c.GetColumns() {
 		if column.ShouldSkip() {
@@ -269,7 +269,7 @@ func (c *Columns) UpdateQuery(destKind constants.DestinationKind, uppercaseEscNa
 			continue
 		}
 
-		colName := column.Name(uppercaseEscNames, destKind)
+		colName := column.Name(dialect)
 		if column.ToastColumn {
 			if column.KindDetails == typing.Struct {
 				cols = append(cols, processToastStructCol(colName, destKind))

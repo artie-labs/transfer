@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/typing"
 )
@@ -41,20 +41,25 @@ func TestWrapper_Complete(t *testing.T) {
 
 	for _, testCase := range testCases {
 		// Snowflake escape
-		w := NewWrapper(NewColumn(testCase.name, typing.Invalid), true, constants.Snowflake)
+		w := NewWrapper(NewColumn(testCase.name, typing.Invalid), sql.SnowflakeDialect{UppercaseEscNames: true})
 
 		assert.Equal(t, testCase.expectedEscapedName, w.EscapedName(), testCase.name)
 		assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
 
 		// BigQuery escape
-		w = NewWrapper(NewColumn(testCase.name, typing.Invalid), false, constants.BigQuery)
+		w = NewWrapper(NewColumn(testCase.name, typing.Invalid), sql.BigQueryDialect{})
 
 		assert.Equal(t, testCase.expectedEscapedNameBQ, w.EscapedName(), testCase.name)
 		assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
 
-		for _, destKind := range []constants.DestinationKind{constants.Snowflake, constants.BigQuery} {
-			w = NewWrapper(NewColumn(testCase.name, typing.Invalid), false, destKind)
+		{
+			w = NewWrapper(NewColumn(testCase.name, typing.Invalid), sql.SnowflakeDialect{UppercaseEscNames: true})
 			assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
 		}
+		{
+			w = NewWrapper(NewColumn(testCase.name, typing.Invalid), sql.BigQueryDialect{})
+			assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
+		}
+
 	}
 }
