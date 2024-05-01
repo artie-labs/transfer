@@ -54,19 +54,19 @@ func NeedsEscaping(name string, uppercaseEscNames bool, destKind constants.Desti
 	return false
 }
 
-func EscapeName(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
-	var dialect Dialect
-
+func dialectFor(destKind constants.DestinationKind, uppercaseEscNames bool) Dialect {
 	switch destKind {
 	case constants.BigQuery:
-		dialect = BigQueryDialect{}
+		return BigQueryDialect{}
 	case constants.Snowflake:
-		dialect = SnowflakeDialect{UppercaseEscNames: uppercaseEscNames}
+		return SnowflakeDialect{UppercaseEscNames: uppercaseEscNames}
 	case constants.Redshift:
-		dialect = RedshiftDialect{}
+		return RedshiftDialect{}
 	default:
-		dialect = DefaultDialect{}
+		return DefaultDialect{}
 	}
+}
 
-	return dialect.QuoteIdentifier(name)
+func EscapeName(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
+	return dialectFor(destKind, uppercaseEscNames).QuoteIdentifier(name)
 }
