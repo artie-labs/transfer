@@ -5,6 +5,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/typing"
 
@@ -72,6 +73,7 @@ func TestMergeStatementParts_SkipDelete(t *testing.T) {
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             &res.ColumnsToTypes,
 		DestKind:            constants.Redshift,
+		Dialect:             sql.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(false),
 		UppercaseEscNames:   ptr.ToBool(false),
 	}
@@ -99,6 +101,7 @@ func TestMergeStatementPartsSoftDelete(t *testing.T) {
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             &res.ColumnsToTypes,
 		DestKind:            constants.Redshift,
+		Dialect:             sql.RedshiftDialect{},
 		SoftDelete:          true,
 		UppercaseEscNames:   ptr.ToBool(false),
 		ContainsHardDeletes: ptr.ToBool(false),
@@ -139,6 +142,7 @@ func TestMergeStatementPartsSoftDeleteComposite(t *testing.T) {
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             &res.ColumnsToTypes,
 		DestKind:            constants.Redshift,
+		Dialect:             sql.RedshiftDialect{},
 		SoftDelete:          true,
 		UppercaseEscNames:   ptr.ToBool(false),
 		ContainsHardDeletes: ptr.ToBool(false),
@@ -182,6 +186,7 @@ func TestMergeStatementParts(t *testing.T) {
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             &res.ColumnsToTypes,
 		DestKind:            constants.Redshift,
+		Dialect:             sql.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
 		UppercaseEscNames:   ptr.ToBool(false),
 	}
@@ -208,6 +213,7 @@ func TestMergeStatementParts(t *testing.T) {
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             &res.ColumnsToTypes,
 		DestKind:            constants.Redshift,
+		Dialect:             sql.RedshiftDialect{},
 		IdempotentKey:       "created_at",
 		ContainsHardDeletes: ptr.ToBool(true),
 		UppercaseEscNames:   ptr.ToBool(false),
@@ -240,6 +246,7 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             &res.ColumnsToTypes,
 		DestKind:            constants.Redshift,
+		Dialect:             sql.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
 		UppercaseEscNames:   ptr.ToBool(false),
 	}
@@ -266,6 +273,7 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             &res.ColumnsToTypes,
 		DestKind:            constants.Redshift,
+		Dialect:             sql.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
 		IdempotentKey:       "created_at",
 		UppercaseEscNames:   ptr.ToBool(false),

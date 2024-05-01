@@ -5,6 +5,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/stretchr/testify/assert"
@@ -22,6 +23,7 @@ func TestMergeStatement_TempTable(t *testing.T) {
 		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("order_id", typing.Invalid), false, constants.BigQuery)},
 		Columns:           &cols,
 		DestKind:          constants.BigQuery,
+		Dialect:           sql.BigQueryDialect{},
 		SoftDelete:        false,
 		UppercaseEscNames: ptr.ToBool(false),
 	}
@@ -44,6 +46,7 @@ func TestMergeStatement_JSONKey(t *testing.T) {
 		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("order_oid", typing.Invalid), false, constants.BigQuery)},
 		Columns:           &cols,
 		DestKind:          constants.BigQuery,
+		Dialect:           sql.BigQueryDialect{},
 		SoftDelete:        false,
 		UppercaseEscNames: ptr.ToBool(false),
 	}

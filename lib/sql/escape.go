@@ -5,9 +5,17 @@ import (
 )
 
 func EscapeNameIfNecessary(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
+	// TODO: Switch all calls of [EscapeNameIfNecessary] to [EscapeNameIfNecessaryUsingDialect] and kill this.
 	var dialect = dialectFor(destKind, uppercaseEscNames)
 
 	if destKind != constants.S3 && dialect.NeedsEscaping(name) {
+		return dialect.QuoteIdentifier(name)
+	}
+	return name
+}
+
+func EscapeNameIfNecessaryUsingDialect(name string, dialect Dialect) string {
+	if dialect.NeedsEscaping(name) {
 		return dialect.QuoteIdentifier(name)
 	}
 	return name
