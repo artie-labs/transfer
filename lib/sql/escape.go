@@ -4,9 +4,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
-// symbolsToEscape are additional keywords that we need to escape
-var symbolsToEscape = []string{":"}
-
 func EscapeNameIfNecessary(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
 	var dialect = dialectFor(destKind, uppercaseEscNames)
 

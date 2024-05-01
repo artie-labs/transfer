@@ -45,6 +45,9 @@ type SnowflakeDialect struct {
 	UppercaseEscNames bool
 }
 
+// symbolsToEscape are additional keywords that we need to escape
+var symbolsToEscape = []string{":"}
+
 func (sd SnowflakeDialect) NeedsEscaping(name string) bool {
 	if sd.UppercaseEscNames {
 		// If uppercaseEscNames is true then we will escape all identifiers that do not start with the Artie priefix.
