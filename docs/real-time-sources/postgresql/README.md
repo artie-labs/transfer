@@ -141,12 +141,6 @@ PostgreSQL Watcher is available to all Artie Cloud customers using PostgreSQL as
 
 #### Self-hosted notes:
 
-{% hint style="info" %}
-These considerations are automatically handled for you if Artie Transfer is running a Debezium connector for you.&#x20;
-
-_We are also actively working on reducing the amount of considerations required to support every possible configuration._&#x20;
-{% endhint %}
-
 * Debezium will automatically create a replication slot for you.
 * `value.converter` must be set to `org.apache.kafka.connect.json.JsonConverter`
 * `value.converter.schemas.enable` must be set to `true`
