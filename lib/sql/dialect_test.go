@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDefaultDialect_QuoteIdentifier(t *testing.T) {
+func TestMSSQLDialect_QuoteIdentifier(t *testing.T) {
 	dialect := MSSQLDialect{}
 	assert.Equal(t, `"foo"`, dialect.QuoteIdentifier("foo"))
 	assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("FOO"))
