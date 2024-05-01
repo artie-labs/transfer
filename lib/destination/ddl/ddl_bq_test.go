@@ -9,8 +9,6 @@ import (
 	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/lib/config"
 
-	"github.com/artie-labs/transfer/lib/ptr"
-
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/stretchr/testify/assert"
@@ -61,7 +59,6 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 			ColumnOp:               constants.Delete,
 			ContainOtherOperations: true,
 			CdcTime:                ts,
-			UppercaseEscNames:      ptr.ToBool(false),
 			Mode:                   config.Replication,
 		}
 
@@ -84,7 +81,6 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 			ColumnOp:               constants.Delete,
 			ContainOtherOperations: true,
 			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
-			UppercaseEscNames:      ptr.ToBool(false),
 			Mode:                   config.Replication,
 		}
 
@@ -134,14 +130,13 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 	tc := d.bigQueryStore.GetConfigMap().TableConfig(tableID)
 	for name, kind := range newCols {
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:               d.bigQueryStore,
-			Tc:                tc,
-			TableID:           tableID,
-			CreateTable:       tc.CreateTable(),
-			ColumnOp:          constants.Add,
-			CdcTime:           ts,
-			UppercaseEscNames: ptr.ToBool(false),
-			Mode:              config.Replication,
+			Dwh:         d.bigQueryStore,
+			Tc:          tc,
+			TableID:     tableID,
+			CreateTable: tc.CreateTable(),
+			ColumnOp:    constants.Add,
+			CdcTime:     ts,
+			Mode:        config.Replication,
 		}
 
 		col := columns.NewColumn(name, kind)
@@ -196,14 +191,13 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 		// BQ returning the same error because the column already exists.
 		d.fakeBigQueryStore.ExecReturnsOnCall(0, sqlResult, errors.New("Column already exists: _string at [1:39]"))
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:               d.bigQueryStore,
-			Tc:                tc,
-			TableID:           tableID,
-			CreateTable:       tc.CreateTable(),
-			ColumnOp:          constants.Add,
-			CdcTime:           ts,
-			UppercaseEscNames: ptr.ToBool(false),
-			Mode:              config.Replication,
+			Dwh:         d.bigQueryStore,
+			Tc:          tc,
+			TableID:     tableID,
+			CreateTable: tc.CreateTable(),
+			ColumnOp:    constants.Add,
+			CdcTime:     ts,
+			Mode:        config.Replication,
 		}
 
 		assert.NoError(d.T(), alterTableArgs.AlterTable(column))
@@ -250,14 +244,13 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfig(tableID).ReadOnlyColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfig(tableID).ReadOnlyColumnsToDelete())
 	for _, column := range cols.GetColumns() {
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:               d.bigQueryStore,
-			Tc:                tc,
-			TableID:           tableID,
-			CreateTable:       tc.CreateTable(),
-			ColumnOp:          constants.Delete,
-			CdcTime:           ts,
-			UppercaseEscNames: ptr.ToBool(false),
-			Mode:              config.Replication,
+			Dwh:         d.bigQueryStore,
+			Tc:          tc,
+			TableID:     tableID,
+			CreateTable: tc.CreateTable(),
+			ColumnOp:    constants.Delete,
+			CdcTime:     ts,
+			Mode:        config.Replication,
 		}
 		assert.NoError(d.T(), alterTableArgs.AlterTable(column))
 	}
@@ -268,14 +261,13 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 	// Now try to delete again and with an increased TS. It should now be all deleted.
 	for _, column := range cols.GetColumns() {
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:               d.bigQueryStore,
-			Tc:                tc,
-			TableID:           tableID,
-			CreateTable:       tc.CreateTable(),
-			ColumnOp:          constants.Delete,
-			CdcTime:           ts.Add(2 * constants.DeletionConfidencePadding),
-			UppercaseEscNames: ptr.ToBool(false),
-			Mode:              config.Replication,
+			Dwh:         d.bigQueryStore,
+			Tc:          tc,
+			TableID:     tableID,
+			CreateTable: tc.CreateTable(),
+			ColumnOp:    constants.Delete,
+			CdcTime:     ts.Add(2 * constants.DeletionConfidencePadding),
+			Mode:        config.Replication,
 		}
 
 		assert.NoError(d.T(), alterTableArgs.AlterTable(column))

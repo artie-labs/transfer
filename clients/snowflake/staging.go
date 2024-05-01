@@ -12,7 +12,6 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/values"
@@ -49,14 +48,13 @@ func castColValStaging(colVal any, colKind columns.Column, additionalDateFmts []
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
-			Dwh:               s,
-			Tc:                tableConfig,
-			TableID:           tempTableID,
-			CreateTable:       true,
-			TemporaryTable:    true,
-			ColumnOp:          constants.Add,
-			UppercaseEscNames: ptr.ToBool(s.ShouldUppercaseEscapedNames()),
-			Mode:              tableData.Mode(),
+			Dwh:            s,
+			Tc:             tableConfig,
+			TableID:        tempTableID,
+			CreateTable:    true,
+			TemporaryTable: true,
+			ColumnOp:       constants.Add,
+			Mode:           tableData.Mode(),
 		}
 
 		if err := tempAlterTableArgs.AlterTable(tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {

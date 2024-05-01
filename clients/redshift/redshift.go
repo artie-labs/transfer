@@ -50,10 +50,6 @@ func (s *Store) Dialect() sql.Dialect {
 	return sql.RedshiftDialect{}
 }
 
-func (s *Store) ShouldUppercaseEscapedNames() bool {
-	return false
-}
-
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	const (
 		describeNameCol        = "column_name"

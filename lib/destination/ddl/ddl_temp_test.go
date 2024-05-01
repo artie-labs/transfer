@@ -7,8 +7,6 @@ import (
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/config"
 
-	"github.com/artie-labs/transfer/lib/ptr"
-
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -20,10 +18,9 @@ import (
 
 func (d *DDLTestSuite) TestValidate_AlterTableArgs() {
 	a := &ddl.AlterTableArgs{
-		ColumnOp:          constants.Delete,
-		CreateTable:       true,
-		UppercaseEscNames: ptr.ToBool(false),
-		Mode:              config.Replication,
+		ColumnOp:    constants.Delete,
+		CreateTable: true,
+		Mode:        config.Replication,
 	}
 
 	assert.Contains(d.T(), a.Validate().Error(), "incompatible operation - cannot drop columns and create table at the same time")
@@ -39,15 +36,14 @@ func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	snowflakeTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 	args := ddl.AlterTableArgs{
-		Dwh:               d.snowflakeStagesStore,
-		Tc:                snowflakeTc,
-		TableID:           tableID,
-		CreateTable:       true,
-		TemporaryTable:    true,
-		ColumnOp:          constants.Add,
-		CdcTime:           time.Time{},
-		UppercaseEscNames: ptr.ToBool(true),
-		Mode:              config.Replication,
+		Dwh:            d.snowflakeStagesStore,
+		Tc:             snowflakeTc,
+		TableID:        tableID,
+		CreateTable:    true,
+		TemporaryTable: true,
+		ColumnOp:       constants.Add,
+		CdcTime:        time.Time{},
+		Mode:           config.Replication,
 	}
 
 	// No columns.
@@ -74,15 +70,14 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 		d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 		sflkStageTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 		args := ddl.AlterTableArgs{
-			Dwh:               d.snowflakeStagesStore,
-			Tc:                sflkStageTc,
-			TableID:           tableID,
-			CreateTable:       true,
-			TemporaryTable:    true,
-			ColumnOp:          constants.Add,
-			CdcTime:           time.Time{},
-			UppercaseEscNames: ptr.ToBool(true),
-			Mode:              config.Replication,
+			Dwh:            d.snowflakeStagesStore,
+			Tc:             sflkStageTc,
+			TableID:        tableID,
+			CreateTable:    true,
+			TemporaryTable: true,
+			ColumnOp:       constants.Add,
+			CdcTime:        time.Time{},
+			Mode:           config.Replication,
 		}
 
 		assert.NoError(d.T(), args.AlterTable(columns.NewColumn("foo", typing.String), columns.NewColumn("bar", typing.Float), columns.NewColumn("start", typing.String)))
@@ -100,15 +95,14 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 		d.bigQueryStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 		bqTc := d.bigQueryStore.GetConfigMap().TableConfig(tableID)
 		args := ddl.AlterTableArgs{
-			Dwh:               d.bigQueryStore,
-			Tc:                bqTc,
-			TableID:           tableID,
-			CreateTable:       true,
-			TemporaryTable:    true,
-			ColumnOp:          constants.Add,
-			CdcTime:           time.Time{},
-			UppercaseEscNames: ptr.ToBool(false),
-			Mode:              config.Replication,
+			Dwh:            d.bigQueryStore,
+			Tc:             bqTc,
+			TableID:        tableID,
+			CreateTable:    true,
+			TemporaryTable: true,
+			ColumnOp:       constants.Add,
+			CdcTime:        time.Time{},
+			Mode:           config.Replication,
 		}
 
 		assert.NoError(d.T(), args.AlterTable(columns.NewColumn("foo", typing.String), columns.NewColumn("bar", typing.Float), columns.NewColumn("select", typing.String)))

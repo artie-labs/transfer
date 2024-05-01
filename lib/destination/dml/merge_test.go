@@ -10,7 +10,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -60,15 +59,14 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 	dialect := sql.SnowflakeDialect{UppercaseEscNames: true}
 	for _, idempotentKey := range []string{"", "updated_at"} {
 		mergeArg := MergeArgument{
-			TableID:           MockTableIdentifier{fqTable},
-			SubQuery:          subQuery,
-			IdempotentKey:     idempotentKey,
-			PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), dialect)},
-			Columns:           &_cols,
-			DestKind:          constants.Snowflake,
-			Dialect:           dialect,
-			SoftDelete:        true,
-			UppercaseEscNames: ptr.ToBool(true),
+			TableID:       MockTableIdentifier{fqTable},
+			SubQuery:      subQuery,
+			IdempotentKey: idempotentKey,
+			PrimaryKeys:   []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), dialect)},
+			Columns:       &_cols,
+			DestKind:      constants.Snowflake,
+			Dialect:       dialect,
+			SoftDelete:    true,
 		}
 
 		mergeSQL, err := mergeArg.GetStatement()
@@ -111,15 +109,14 @@ func TestMergeStatement(t *testing.T) {
 
 	dialect := sql.SnowflakeDialect{UppercaseEscNames: true}
 	mergeArg := MergeArgument{
-		TableID:           MockTableIdentifier{fqTable},
-		SubQuery:          subQuery,
-		IdempotentKey:     "",
-		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), dialect)},
-		Columns:           &_cols,
-		DestKind:          constants.Snowflake,
-		Dialect:           dialect,
-		SoftDelete:        false,
-		UppercaseEscNames: ptr.ToBool(true),
+		TableID:       MockTableIdentifier{fqTable},
+		SubQuery:      subQuery,
+		IdempotentKey: "",
+		PrimaryKeys:   []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), dialect)},
+		Columns:       &_cols,
+		DestKind:      constants.Snowflake,
+		Dialect:       dialect,
+		SoftDelete:    false,
 	}
 
 	mergeSQL, err := mergeArg.GetStatement()
@@ -161,15 +158,14 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 
 	dialect := sql.SnowflakeDialect{UppercaseEscNames: true}
 	mergeArg := MergeArgument{
-		TableID:           MockTableIdentifier{fqTable},
-		SubQuery:          subQuery,
-		IdempotentKey:     "updated_at",
-		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), dialect)},
-		Columns:           &_cols,
-		DestKind:          constants.Snowflake,
-		Dialect:           dialect,
-		SoftDelete:        false,
-		UppercaseEscNames: ptr.ToBool(true),
+		TableID:       MockTableIdentifier{fqTable},
+		SubQuery:      subQuery,
+		IdempotentKey: "updated_at",
+		PrimaryKeys:   []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), dialect)},
+		Columns:       &_cols,
+		DestKind:      constants.Snowflake,
+		Dialect:       dialect,
+		SoftDelete:    false,
 	}
 
 	mergeSQL, err := mergeArg.GetStatement()
@@ -212,11 +208,10 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 			columns.NewWrapper(columns.NewColumn("id", typing.Invalid), dialect),
 			columns.NewWrapper(columns.NewColumn("another_id", typing.Invalid), dialect),
 		},
-		Columns:           &_cols,
-		DestKind:          constants.Snowflake,
-		Dialect:           dialect,
-		SoftDelete:        false,
-		UppercaseEscNames: ptr.ToBool(true),
+		Columns:    &_cols,
+		DestKind:   constants.Snowflake,
+		Dialect:    dialect,
+		SoftDelete: false,
 	}
 
 	mergeSQL, err := mergeArg.GetStatement()
@@ -263,11 +258,10 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 			columns.NewWrapper(columns.NewColumn("id", typing.Invalid), dialect),
 			columns.NewWrapper(columns.NewColumn("group", typing.Invalid), dialect),
 		},
-		Columns:           &_cols,
-		DestKind:          constants.Snowflake,
-		Dialect:           dialect,
-		SoftDelete:        false,
-		UppercaseEscNames: ptr.ToBool(true),
+		Columns:    &_cols,
+		DestKind:   constants.Snowflake,
+		Dialect:    dialect,
+		SoftDelete: false,
 	}
 
 	mergeSQL, err := mergeArg.GetStatement()
