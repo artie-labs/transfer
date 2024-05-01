@@ -4,7 +4,10 @@ import (
 	"fmt"
 
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/sql"
 )
+
+var dialect = sql.BigQueryDialect{}
 
 type TableIdentifier struct {
 	projectID string
@@ -39,5 +42,9 @@ func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
 func (ti TableIdentifier) FullyQualifiedName() string {
 	// The fully qualified name for BigQuery is: project_id.dataset.tableName.
 	// We are escaping the project_id, dataset, and table because there could be special characters.
-	return fmt.Sprintf("`%s`.`%s`.`%s`", ti.projectID, ti.dataset, ti.table)
+	return fmt.Sprintf("%s.%s.%s",
+		dialect.QuoteIdentifier(ti.projectID),
+		dialect.QuoteIdentifier(ti.dataset),
+		dialect.QuoteIdentifier(ti.table),
+	)
 }

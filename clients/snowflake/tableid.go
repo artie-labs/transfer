@@ -3,10 +3,11 @@ package snowflake
 import (
 	"fmt"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/sql"
 )
+
+var dialect = sql.SnowflakeDialect{UppercaseEscNames: true}
 
 type TableIdentifier struct {
 	database string
@@ -39,10 +40,5 @@ func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
 }
 
 func (ti TableIdentifier) FullyQualifiedName() string {
-	return fmt.Sprintf(
-		"%s.%s.%s",
-		ti.database,
-		ti.schema,
-		sql.EscapeName(ti.table, true, constants.Snowflake),
-	)
+	return fmt.Sprintf("%s.%s.%s", ti.database, ti.schema, dialect.QuoteIdentifier(ti.table))
 }

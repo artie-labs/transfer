@@ -1,7 +1,6 @@
 package sql
 
 import (
-	"fmt"
 	"log/slog"
 	"slices"
 	"strconv"
@@ -56,25 +55,18 @@ func NeedsEscaping(name string, uppercaseEscNames bool, destKind constants.Desti
 }
 
 func EscapeName(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
-	if destKind == constants.Snowflake {
-		if uppercaseEscNames {
-			name = strings.ToUpper(name)
-		} else {
-			slog.Warn("Escaped Snowflake identifier is not being uppercased",
-				slog.String("name", name),
-				slog.Bool("uppercaseEscapedNames", uppercaseEscNames),
-			)
-		}
-	} else if destKind == constants.Redshift {
-		// Preserve the existing behavior of Redshift identifiers being lowercased due to not being quoted.
-		name = strings.ToLower(name)
+	var dialect Dialect
+
+	switch destKind {
+	case constants.BigQuery:
+		dialect = BigQueryDialect{}
+	case constants.Snowflake:
+		dialect = SnowflakeDialect{UppercaseEscNames: uppercaseEscNames}
+	case constants.Redshift:
+		dialect = RedshiftDialect{}
+	default:
+		dialect = DefaultDialect{}
 	}
 
-	if destKind == constants.BigQuery {
-		// BigQuery needs backticks to escape.
-		return fmt.Sprintf("`%s`", name)
-	} else {
-		// Everything else uses quotes.
-		return fmt.Sprintf(`"%s"`, name)
-	}
+	return dialect.QuoteIdentifier(name)
 }
