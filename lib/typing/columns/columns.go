@@ -84,8 +84,6 @@ func (c *Column) RawName() string {
 }
 
 // Name will give you c.name and escape it if necessary.
-// Plus we will escape it if the column name is part of the reserved words from destinations.
-// If so, it'll change from `start` => `"start"` as suggested by Snowflake.
 func (c *Column) Name(dialect sql.Dialect) string {
 	return sql.EscapeNameIfNecessary(c.name, dialect)
 }
