@@ -8,6 +8,7 @@ import (
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -128,7 +129,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
 	for idx, col := range cols {
-		if col == constants.DeleteColumnMarker {
+		if col == sql.EscapeNameIfNecessary(constants.DeleteColumnMarker, *m.UppercaseEscNames, m.DestKind) {
 			cols = append(cols[:idx], cols[idx+1:]...)
 			removed = true
 			break
@@ -251,7 +252,7 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
 	for idx, col := range cols {
-		if col == constants.DeleteColumnMarker {
+		if col == sql.EscapeNameIfNecessary(constants.DeleteColumnMarker, *m.UppercaseEscNames, m.DestKind) {
 			cols = append(cols[:idx], cols[idx+1:]...)
 			removed = true
 			break
@@ -321,7 +322,7 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
 	for idx, col := range cols {
-		if col == constants.DeleteColumnMarker {
+		if col == sql.EscapeNameIfNecessary(constants.DeleteColumnMarker, *m.UppercaseEscNames, m.DestKind) {
 			cols = append(cols[:idx], cols[idx+1:]...)
 			removed = true
 			break
