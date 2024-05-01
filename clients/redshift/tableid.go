@@ -3,10 +3,11 @@ package redshift
 import (
 	"fmt"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/sql"
 )
+
+var dialect = sql.RedshiftDialect{}
 
 type TableIdentifier struct {
 	schema string
@@ -32,9 +33,5 @@ func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
 func (ti TableIdentifier) FullyQualifiedName() string {
 	// Redshift is Postgres compatible, so when establishing a connection, we'll specify a database.
 	// Thus, we only need to specify schema and table name here.
-	return fmt.Sprintf(
-		"%s.%s",
-		ti.schema,
-		sql.EscapeName(ti.table, false, constants.Redshift),
-	)
+	return fmt.Sprintf("%s.%s", ti.schema, dialect.QuoteIdentifier(ti.table))
 }

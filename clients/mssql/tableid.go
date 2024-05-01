@@ -3,10 +3,11 @@ package mssql
 import (
 	"fmt"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/sql"
 )
+
+var dialect = sql.DefaultDialect{}
 
 type TableIdentifier struct {
 	schema string
@@ -30,9 +31,5 @@ func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
 }
 
 func (ti TableIdentifier) FullyQualifiedName() string {
-	return fmt.Sprintf(
-		"%s.%s",
-		ti.schema,
-		sql.EscapeName(ti.table, false, constants.MSSQL),
-	)
+	return fmt.Sprintf("%s.%s", ti.schema, dialect.QuoteIdentifier(ti.table))
 }
