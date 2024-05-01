@@ -115,6 +115,10 @@ func (s *Store) Label() constants.DestinationKind {
 	return constants.BigQuery
 }
 
+func (s *Store) Dialect() sql.Dialect {
+	return sql.BigQueryDialect{}
+}
+
 func (s *Store) ShouldUppercaseEscapedNames() bool {
 	return false
 }
@@ -151,12 +155,12 @@ func (s *Store) putTable(ctx context.Context, tableID types.TableIdentifier, row
 func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
 	var primaryKeysEscaped []string
 	for _, pk := range primaryKeys {
-		primaryKeysEscaped = append(primaryKeysEscaped, sql.EscapeNameIfNecessary(pk, s.ShouldUppercaseEscapedNames(), s.Label()))
+		primaryKeysEscaped = append(primaryKeysEscaped, s.Dialect().QuoteIdentifier(pk))
 	}
 
 	orderColsToIterate := primaryKeysEscaped
 	if topicConfig.IncludeArtieUpdatedAt {
-		orderColsToIterate = append(orderColsToIterate, sql.EscapeNameIfNecessary(constants.UpdateColumnMarker, s.ShouldUppercaseEscapedNames(), s.Label()))
+		orderColsToIterate = append(orderColsToIterate, s.Dialect().QuoteIdentifier(constants.UpdateColumnMarker))
 	}
 
 	var orderByCols []string

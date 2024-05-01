@@ -77,6 +77,10 @@ func (s *Store) Label() constants.DestinationKind {
 	return constants.Snowflake
 }
 
+func (s *Store) Dialect() sql.Dialect {
+	return sql.SnowflakeDialect{UppercaseEscNames: s.ShouldUppercaseEscapedNames()}
+}
+
 func (s *Store) ShouldUppercaseEscapedNames() bool {
 	return s.config.SharedDestinationConfig.UppercaseEscapedNames
 }
