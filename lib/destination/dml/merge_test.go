@@ -11,6 +11,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -64,6 +65,7 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 			PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, constants.Snowflake)},
 			Columns:           &_cols,
 			DestKind:          constants.Snowflake,
+			Dialect:           sql.SnowflakeDialect{UppercaseEscNames: false},
 			SoftDelete:        true,
 			UppercaseEscNames: ptr.ToBool(false),
 		}
@@ -113,6 +115,7 @@ func TestMergeStatement(t *testing.T) {
 		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), true, constants.Snowflake)},
 		Columns:           &_cols,
 		DestKind:          constants.Snowflake,
+		Dialect:           sql.SnowflakeDialect{UppercaseEscNames: true},
 		SoftDelete:        false,
 		UppercaseEscNames: ptr.ToBool(true),
 	}
@@ -161,6 +164,7 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, constants.Snowflake)},
 		Columns:           &_cols,
 		DestKind:          constants.Snowflake,
+		Dialect:           sql.SnowflakeDialect{UppercaseEscNames: false},
 		SoftDelete:        false,
 		UppercaseEscNames: ptr.ToBool(false),
 	}
@@ -206,6 +210,7 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 		},
 		Columns:           &_cols,
 		DestKind:          constants.Snowflake,
+		Dialect:           sql.SnowflakeDialect{UppercaseEscNames: false},
 		SoftDelete:        false,
 		UppercaseEscNames: ptr.ToBool(false),
 	}
@@ -255,6 +260,7 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 		},
 		Columns:           &_cols,
 		DestKind:          constants.Snowflake,
+		Dialect:           sql.SnowflakeDialect{UppercaseEscNames: true},
 		SoftDelete:        false,
 		UppercaseEscNames: ptr.ToBool(true),
 	}

@@ -31,6 +31,7 @@ type MergeArgument struct {
 	// where we do not issue a DELETE statement if there are no hard deletes in the batch
 	ContainsHardDeletes *bool
 	UppercaseEscNames   *bool
+	Dialect             sql.Dialect
 }
 
 func (m *MergeArgument) Valid() error {
@@ -60,6 +61,10 @@ func (m *MergeArgument) Valid() error {
 
 	if !constants.IsValidDestination(m.DestKind) {
 		return fmt.Errorf("invalid destination: %s", m.DestKind)
+	}
+
+	if m.Dialect == nil {
+		return fmt.Errorf("dialect cannot be nil")
 	}
 
 	return nil
@@ -129,7 +134,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
 	for idx, col := range cols {
-		if col == sql.EscapeNameIfNecessary(constants.DeleteColumnMarker, *m.UppercaseEscNames, m.DestKind) {
+		if col == sql.EscapeNameIfNecessaryUsingDialect(constants.DeleteColumnMarker, m.Dialect) {
 			cols = append(cols[:idx], cols[idx+1:]...)
 			removed = true
 			break
@@ -252,7 +257,7 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
 	for idx, col := range cols {
-		if col == sql.EscapeNameIfNecessary(constants.DeleteColumnMarker, *m.UppercaseEscNames, m.DestKind) {
+		if col == sql.EscapeNameIfNecessaryUsingDialect(constants.DeleteColumnMarker, m.Dialect) {
 			cols = append(cols[:idx], cols[idx+1:]...)
 			removed = true
 			break
@@ -322,7 +327,7 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
 	for idx, col := range cols {
-		if col == sql.EscapeNameIfNecessary(constants.DeleteColumnMarker, *m.UppercaseEscNames, m.DestKind) {
+		if col == sql.EscapeNameIfNecessaryUsingDialect(constants.DeleteColumnMarker, m.Dialect) {
 			cols = append(cols[:idx], cols[idx+1:]...)
 			removed = true
 			break

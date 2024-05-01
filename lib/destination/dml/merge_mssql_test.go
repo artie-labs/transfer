@@ -8,6 +8,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/stretchr/testify/assert"
@@ -47,6 +48,7 @@ func Test_GetMSSQLStatement(t *testing.T) {
 		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, constants.MSSQL)},
 		Columns:           &_cols,
 		DestKind:          constants.MSSQL,
+		Dialect:           sql.DefaultDialect{},
 		SoftDelete:        false,
 		UppercaseEscNames: ptr.ToBool(false),
 	}
