@@ -93,10 +93,18 @@ func TestParseExtendedDateTime_Timestamp(t *testing.T) {
 }
 
 func TestParseExtendedDateTime(t *testing.T) {
-	dateString := "27/12/82"
-	extTime, err := ParseExtendedDateTime(dateString, []string{"02/01/06"})
-	assert.NoError(t, err)
-	assert.Equal(t, "27/12/82", extTime.String(""))
+	{
+		dateString := "27/12/82"
+		extTime, err := ParseExtendedDateTime(dateString, []string{"02/01/06"})
+		assert.NoError(t, err)
+		assert.Equal(t, "27/12/82", extTime.String(""))
+	}
+	{
+		dtString := "Mon Jan 02 15:04:05.69944 -0700 2006"
+		ts, err := ParseExtendedDateTime(dtString, nil)
+		assert.NoError(t, err)
+		assert.NotEqual(t, ts.String(""), dtString)
+	}
 }
 
 func TestTimeLayout(t *testing.T) {
