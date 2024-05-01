@@ -2,6 +2,7 @@ package ddl_test
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -284,7 +285,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 			ContainOtherOperations: true,
 			ColumnOp:               constants.Delete,
 			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
-			UppercaseEscNames:      ptr.ToBool(false),
+			UppercaseEscNames:      ptr.ToBool(true),
 			Mode:                   config.Replication,
 		}
 
@@ -339,7 +340,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 		execQuery, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(0)
 		var found bool
 		for key := range allColsMap {
-			if execQuery == fmt.Sprintf("ALTER TABLE %s drop COLUMN %s", snowflakeName, key) {
+			if execQuery == fmt.Sprintf(`ALTER TABLE %s drop COLUMN "%s"`, snowflakeName, strings.ToUpper(key)) {
 				found = true
 			}
 		}

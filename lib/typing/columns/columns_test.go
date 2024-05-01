@@ -486,7 +486,7 @@ func TestColumnsUpdateQuery(t *testing.T) {
 			name:           "string and toast",
 			columns:        stringAndToastCols,
 			destKind:       constants.Snowflake,
-			expectedString: "foo= CASE WHEN COALESCE(cc.foo != '__debezium_unavailable_value', true) THEN cc.foo ELSE c.foo END,bar=cc.bar",
+			expectedString: `"FOO"= CASE WHEN COALESCE(cc."FOO" != '__debezium_unavailable_value', true) THEN cc."FOO" ELSE c."FOO" END,"BAR"=cc."BAR"`,
 		},
 		{
 			name:           "struct, string and toast string",
@@ -519,7 +519,7 @@ func TestColumnsUpdateQuery(t *testing.T) {
 	}
 
 	for _, _testCase := range testCases {
-		actualQuery := _testCase.columns.UpdateQuery(_testCase.destKind, false, _testCase.skipDeleteCol)
+		actualQuery := _testCase.columns.UpdateQuery(_testCase.destKind, _testCase.destKind == constants.Snowflake, _testCase.skipDeleteCol)
 		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
 	}
 }

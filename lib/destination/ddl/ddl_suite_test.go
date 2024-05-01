@@ -29,10 +29,6 @@ type DDLTestSuite struct {
 }
 
 func (d *DDLTestSuite) SetupTest() {
-	cfg := config.Config{
-		Redshift: &config.Redshift{},
-	}
-
 	d.bigQueryCfg = config.Config{
 		BigQuery: &config.BigQuery{
 			ProjectID: "artie-project",
@@ -48,12 +44,21 @@ func (d *DDLTestSuite) SetupTest() {
 
 	d.fakeSnowflakeStagesStore = &mocks.FakeStore{}
 	snowflakeStagesStore := db.Store(d.fakeSnowflakeStagesStore)
-	d.snowflakeStagesStore, err = snowflake.LoadSnowflake(cfg, &snowflakeStagesStore)
+	snowflakeCfg := config.Config{
+		Snowflake: &config.Snowflake{},
+		SharedDestinationConfig: config.SharedDestinationConfig{
+			UppercaseEscapedNames: true,
+		},
+	}
+	d.snowflakeStagesStore, err = snowflake.LoadSnowflake(snowflakeCfg, &snowflakeStagesStore)
 	assert.NoError(d.T(), err)
 
 	d.fakeRedshiftStore = &mocks.FakeStore{}
 	redshiftStore := db.Store(d.fakeRedshiftStore)
-	d.redshiftStore, err = redshift.LoadRedshift(cfg, &redshiftStore)
+	redshiftCfg := config.Config{
+		Redshift: &config.Redshift{},
+	}
+	d.redshiftStore, err = redshift.LoadRedshift(redshiftCfg, &redshiftStore)
 	assert.NoError(d.T(), err)
 }
 
