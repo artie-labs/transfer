@@ -23,10 +23,7 @@ func EscapeNameIfNecessary(name string, uppercaseEscNames bool, destKind constan
 func NeedsEscaping(name string, uppercaseEscNames bool, destKind constants.DestinationKind) bool {
 	switch destKind {
 	case constants.BigQuery, constants.MSSQL, constants.Redshift:
-		// TODO: Escape names that start with [constants.ArtiePrefix].
-		if !strings.HasPrefix(name, constants.ArtiePrefix) {
-			return true
-		}
+		return true
 	case constants.S3:
 		return false
 	case constants.Snowflake:
@@ -34,13 +31,16 @@ func NeedsEscaping(name string, uppercaseEscNames bool, destKind constants.Desti
 			// If uppercaseEscNames is true then we will escape all identifiers that do not start with the Artie priefix.
 			// Since they will be uppercased afer they are escaped then they will result in the same value as if we
 			// we were to use them in a query without any escaping at all.
-			// TODO: Escape names that start with [constants.ArtiePrefix].
-			if !strings.HasPrefix(name, constants.ArtiePrefix) {
-				return true
-			}
+			return true
 		} else {
 			if slices.Contains(constants.ReservedKeywords, name) {
 				return true
+			}
+			// If it does not contain any reserved words, does it contain any symbols that need to be escaped?
+			for _, symbol := range symbolsToEscape {
+				if strings.Contains(name, symbol) {
+					return true
+				}
 			}
 			// If it still doesn't need to be escaped, we should check if it's a number.
 			if _, err := strconv.Atoi(name); err == nil {
@@ -50,13 +50,6 @@ func NeedsEscaping(name string, uppercaseEscNames bool, destKind constants.Desti
 	default:
 		slog.Error("Unsupported destination kind", slog.String("destKind", string(destKind)))
 		return true
-	}
-
-	// If it does not contain any reserved words, does it contain any symbols that need to be escaped?
-	for _, symbol := range symbolsToEscape {
-		if strings.Contains(name, symbol) {
-			return true
-		}
 	}
 
 	return false
