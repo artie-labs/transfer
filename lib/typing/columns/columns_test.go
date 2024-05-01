@@ -481,45 +481,39 @@ func TestColumnsUpdateQuery(t *testing.T) {
 		{
 			name:           "happy path",
 			columns:        happyPathCols,
-			destKind:       constants.Redshift,
 			dialect:        sql.RedshiftDialect{},
 			expectedString: `"foo"=cc."foo","bar"=cc."bar"`,
 		},
 		{
 			name:           "string and toast",
 			columns:        stringAndToastCols,
-			destKind:       constants.Snowflake,
 			dialect:        sql.SnowflakeDialect{UppercaseEscNames: true},
 			expectedString: `"FOO"= CASE WHEN COALESCE(cc."FOO" != '__debezium_unavailable_value', true) THEN cc."FOO" ELSE c."FOO" END,"BAR"=cc."BAR"`,
 		},
 		{
 			name:           "struct, string and toast string",
 			columns:        lastCaseColTypes,
-			destKind:       constants.Redshift,
 			dialect:        sql.RedshiftDialect{},
 			expectedString: `"a1"= CASE WHEN COALESCE(cc."a1" != JSON_PARSE('{"key":"__debezium_unavailable_value"}'), true) THEN cc."a1" ELSE c."a1" END,"b2"= CASE WHEN COALESCE(cc."b2" != '__debezium_unavailable_value', true) THEN cc."b2" ELSE c."b2" END,"c3"=cc."c3"`,
 		},
 		{
 			name:           "struct, string and toast string (bigquery)",
 			columns:        lastCaseColTypes,
-			destKind:       constants.BigQuery,
 			dialect:        sql.BigQueryDialect{},
 			expectedString: "`a1`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`a1`) != '{\"key\":\"__debezium_unavailable_value\"}', true) THEN cc.`a1` ELSE c.`a1` END,`b2`= CASE WHEN COALESCE(cc.`b2` != '__debezium_unavailable_value', true) THEN cc.`b2` ELSE c.`b2` END,`c3`=cc.`c3`",
 		},
 		{
-			name:     "struct, string and toast string (bigquery) w/ reserved keywords",
-			columns:  lastCaseEscapeTypes,
-			destKind: constants.BigQuery,
-			dialect:  sql.BigQueryDialect{},
+			name:    "struct, string and toast string (bigquery) w/ reserved keywords",
+			columns: lastCaseEscapeTypes,
+			dialect: sql.BigQueryDialect{},
 			expectedString: fmt.Sprintf("`a1`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`a1`) != '%s', true) THEN cc.`a1` ELSE c.`a1` END,`b2`= CASE WHEN COALESCE(cc.`b2` != '__debezium_unavailable_value', true) THEN cc.`b2` ELSE c.`b2` END,`c3`=cc.`c3`,%s,%s",
 				key, fmt.Sprintf("`start`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`start`) != '%s', true) THEN cc.`start` ELSE c.`start` END", key), "`select`=cc.`select`"),
 			skipDeleteCol: true,
 		},
 		{
-			name:     "struct, string and toast string (bigquery) w/ reserved keywords",
-			columns:  lastCaseEscapeTypes,
-			destKind: constants.BigQuery,
-			dialect:  sql.BigQueryDialect{},
+			name:    "struct, string and toast string (bigquery) w/ reserved keywords",
+			columns: lastCaseEscapeTypes,
+			dialect: sql.BigQueryDialect{},
 			expectedString: fmt.Sprintf("`a1`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`a1`) != '%s', true) THEN cc.`a1` ELSE c.`a1` END,`b2`= CASE WHEN COALESCE(cc.`b2` != '__debezium_unavailable_value', true) THEN cc.`b2` ELSE c.`b2` END,`c3`=cc.`c3`,%s,%s",
 				key, fmt.Sprintf("`start`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`start`) != '%s', true) THEN cc.`start` ELSE c.`start` END", key), "`select`=cc.`select`,`__artie_delete`=cc.`__artie_delete`"),
 			skipDeleteCol: false,
@@ -527,7 +521,7 @@ func TestColumnsUpdateQuery(t *testing.T) {
 	}
 
 	for _, _testCase := range testCases {
-		actualQuery := _testCase.columns.UpdateQuery(_testCase.destKind, _testCase.dialect, _testCase.skipDeleteCol)
+		actualQuery := _testCase.columns.UpdateQuery(_testCase.dialect, _testCase.skipDeleteCol)
 		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
 	}
 }
