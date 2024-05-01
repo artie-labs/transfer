@@ -61,7 +61,7 @@ func (d *DDLTestSuite) Test_CreateTable() {
 			TableID:           dwhTc._tableID,
 			CreateTable:       dwhTc._tableConfig.CreateTable(),
 			ColumnOp:          constants.Add,
-			UppercaseEscNames: ptr.ToBool(true),
+			UppercaseEscNames: ptr.ToBool(true), // Will be ignored by BigQuery
 			Mode:              config.Replication,
 		}
 
