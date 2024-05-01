@@ -15,6 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
@@ -43,6 +44,10 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 
 func (s *Store) Label() constants.DestinationKind {
 	return constants.Redshift
+}
+
+func (s *Store) Dialect() sql.Dialect {
+	return sql.RedshiftDialect{}
 }
 
 func (s *Store) ShouldUppercaseEscapedNames() bool {

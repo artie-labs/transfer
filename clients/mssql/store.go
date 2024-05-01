@@ -13,6 +13,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
 )
 
 type Store struct {
@@ -32,6 +33,10 @@ func getSchema(schema string) string {
 
 func (s *Store) Label() constants.DestinationKind {
 	return constants.MSSQL
+}
+
+func (s *Store) Dialect() sql.Dialect {
+	return sql.DefaultDialect{}
 }
 
 func (s *Store) ShouldUppercaseEscapedNames() bool {

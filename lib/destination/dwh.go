@@ -7,10 +7,12 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
+	sqllib "github.com/artie-labs/transfer/lib/sql"
 )
 
 type DataWarehouse interface {
 	Label() constants.DestinationKind
+	Dialect() sqllib.Dialect
 	Merge(tableData *optimization.TableData) error
 	Append(tableData *optimization.TableData) error
 	Dedupe(tableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error
