@@ -65,16 +65,16 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 			PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, constants.Snowflake)},
 			Columns:           &_cols,
 			DestKind:          constants.Snowflake,
-			Dialect:           sql.SnowflakeDialect{UppercaseEscNames: false},
+			Dialect:           sql.SnowflakeDialect{UppercaseEscNames: true},
 			SoftDelete:        true,
-			UppercaseEscNames: ptr.ToBool(false),
+			UppercaseEscNames: ptr.ToBool(true),
 		}
 
 		mergeSQL, err := mergeArg.GetStatement()
 		assert.NoError(t, err)
 		assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
 		// Soft deletion flag being passed.
-		assert.Contains(t, mergeSQL, fmt.Sprintf("%s=cc.%s", constants.DeleteColumnMarker, constants.DeleteColumnMarker), mergeSQL)
+		assert.Contains(t, mergeSQL, `"__ARTIE_DELETE"=cc."__ARTIE_DELETE"`, mergeSQL)
 
 		assert.Equal(t, len(idempotentKey) > 0, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")))
 	}
@@ -164,9 +164,9 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, constants.Snowflake)},
 		Columns:           &_cols,
 		DestKind:          constants.Snowflake,
-		Dialect:           sql.SnowflakeDialect{UppercaseEscNames: false},
+		Dialect:           sql.SnowflakeDialect{UppercaseEscNames: true},
 		SoftDelete:        false,
-		UppercaseEscNames: ptr.ToBool(false),
+		UppercaseEscNames: ptr.ToBool(true),
 	}
 
 	mergeSQL, err := mergeArg.GetStatement()
@@ -210,9 +210,9 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 		},
 		Columns:           &_cols,
 		DestKind:          constants.Snowflake,
-		Dialect:           sql.SnowflakeDialect{UppercaseEscNames: false},
+		Dialect:           sql.SnowflakeDialect{UppercaseEscNames: true},
 		SoftDelete:        false,
-		UppercaseEscNames: ptr.ToBool(false),
+		UppercaseEscNames: ptr.ToBool(true),
 	}
 
 	mergeSQL, err := mergeArg.GetStatement()
