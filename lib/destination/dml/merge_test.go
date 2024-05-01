@@ -62,7 +62,7 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 			TableID:           MockTableIdentifier{fqTable},
 			SubQuery:          subQuery,
 			IdempotentKey:     idempotentKey,
-			PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, constants.Snowflake)},
+			PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), true, constants.Snowflake)},
 			Columns:           &_cols,
 			DestKind:          constants.Snowflake,
 			Dialect:           sql.SnowflakeDialect{UppercaseEscNames: true},
@@ -161,7 +161,7 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 		TableID:           MockTableIdentifier{fqTable},
 		SubQuery:          subQuery,
 		IdempotentKey:     "updated_at",
-		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, constants.Snowflake)},
+		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), true, constants.Snowflake)},
 		Columns:           &_cols,
 		DestKind:          constants.Snowflake,
 		Dialect:           sql.SnowflakeDialect{UppercaseEscNames: true},
@@ -205,8 +205,8 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 		SubQuery:      subQuery,
 		IdempotentKey: "updated_at",
 		PrimaryKeys: []columns.Wrapper{
-			columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, constants.Snowflake),
-			columns.NewWrapper(columns.NewColumn("another_id", typing.Invalid), false, constants.Snowflake),
+			columns.NewWrapper(columns.NewColumn("id", typing.Invalid), true, constants.Snowflake),
+			columns.NewWrapper(columns.NewColumn("another_id", typing.Invalid), true, constants.Snowflake),
 		},
 		Columns:           &_cols,
 		DestKind:          constants.Snowflake,
@@ -219,7 +219,7 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
 	assert.Contains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at"), fmt.Sprintf("Idempotency key: %s", mergeSQL))
-	assert.Contains(t, mergeSQL, "cc ON c.id = cc.id and c.another_id = cc.another_id", mergeSQL)
+	assert.Contains(t, mergeSQL, `cc ON c."ID" = cc."ID" and c."ANOTHER_ID" = cc."ANOTHER_ID"`, mergeSQL)
 }
 
 func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
