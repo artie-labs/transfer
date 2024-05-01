@@ -223,7 +223,7 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
 	assert.Contains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at"), fmt.Sprintf("Idempotency key: %s", mergeSQL))
-	assert.Contains(t, mergeSQL, "cc ON c.id = cc.id and c.another_id = cc.another_id", mergeSQL)
+	assert.Contains(t, mergeSQL, `cc ON c."ID" = cc."ID" and c."ANOTHER_ID" = cc."ANOTHER_ID"`, mergeSQL)
 }
 
 func TestMergeStatementEscapePrimaryKeys(t *testing.T) {

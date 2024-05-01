@@ -52,7 +52,7 @@ func (d *DDLTestSuite) Test_CreateTable() {
 			_dwh:           d.snowflakeStagesStore,
 			_tableConfig:   snowflakeStagesTc,
 			_fakeStore:     d.fakeSnowflakeStagesStore,
-			_expectedQuery: fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (name string)", snowflakeTableID.FullyQualifiedName()),
+			_expectedQuery: fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s ("NAME" string)`, snowflakeTableID.FullyQualifiedName()),
 		},
 	} {
 		alterTableArgs := ddl.AlterTableArgs{
@@ -61,7 +61,7 @@ func (d *DDLTestSuite) Test_CreateTable() {
 			TableID:           dwhTc._tableID,
 			CreateTable:       dwhTc._tableConfig.CreateTable(),
 			ColumnOp:          constants.Add,
-			UppercaseEscNames: ptr.ToBool(false),
+			UppercaseEscNames: ptr.ToBool(true),
 			Mode:              config.Replication,
 		}
 
@@ -102,17 +102,17 @@ func (d *DDLTestSuite) TestCreateTable() {
 		{
 			name:          "happy path",
 			cols:          happyPathCols,
-			expectedQuery: `CREATE TABLE IF NOT EXISTS demo.public."EXPERIMENTS" (user_id string)`,
+			expectedQuery: `CREATE TABLE IF NOT EXISTS demo.public."EXPERIMENTS" ("USER_ID" string)`,
 		},
 		{
 			name:          "happy path + enabled",
 			cols:          twoCols,
-			expectedQuery: `CREATE TABLE IF NOT EXISTS demo.public."EXPERIMENTS" (user_id string,enabled boolean)`,
+			expectedQuery: `CREATE TABLE IF NOT EXISTS demo.public."EXPERIMENTS" ("USER_ID" string,"ENABLED" boolean)`,
 		},
 		{
 			name:          "complex table creation",
 			cols:          bunchOfCols,
-			expectedQuery: `CREATE TABLE IF NOT EXISTS demo.public."EXPERIMENTS" (user_id string,enabled_boolean boolean,array array,struct variant)`,
+			expectedQuery: `CREATE TABLE IF NOT EXISTS demo.public."EXPERIMENTS" ("USER_ID" string,"ENABLED_BOOLEAN" boolean,"ARRAY" array,"STRUCT" variant)`,
 		},
 	}
 
@@ -128,7 +128,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 			CreateTable:       tc.CreateTable(),
 			ColumnOp:          constants.Add,
 			CdcTime:           time.Now().UTC(),
-			UppercaseEscNames: ptr.ToBool(false),
+			UppercaseEscNames: ptr.ToBool(true),
 			Mode:              config.Replication,
 		}
 
