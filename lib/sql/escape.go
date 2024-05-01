@@ -36,6 +36,12 @@ func NeedsEscaping(name string, uppercaseEscNames bool, destKind constants.Desti
 			if slices.Contains(constants.ReservedKeywords, name) {
 				return true
 			}
+			// If it does not contain any reserved words, does it contain any symbols that need to be escaped?
+			for _, symbol := range symbolsToEscape {
+				if strings.Contains(name, symbol) {
+					return true
+				}
+			}
 			// If it still doesn't need to be escaped, we should check if it's a number.
 			if _, err := strconv.Atoi(name); err == nil {
 				return true
@@ -44,13 +50,6 @@ func NeedsEscaping(name string, uppercaseEscNames bool, destKind constants.Desti
 	default:
 		slog.Error("Unsupported destination kind", slog.String("destKind", string(destKind)))
 		return true
-	}
-
-	// If it does not contain any reserved words, does it contain any symbols that need to be escaped?
-	for _, symbol := range symbolsToEscape {
-		if strings.Contains(name, symbol) {
-			return true
-		}
 	}
 
 	return false
