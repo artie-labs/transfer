@@ -9,27 +9,35 @@ import (
 
 func TestNeedsEscaping(t *testing.T) {
 	// BigQuery:
-	assert.True(t, NeedsEscaping("select", constants.BigQuery))       // name that is reserved
-	assert.True(t, NeedsEscaping("foo", constants.BigQuery))          // name that is not reserved
-	assert.False(t, NeedsEscaping("__artie_foo", constants.BigQuery)) // Artie prefix
-	assert.True(t, NeedsEscaping("__artie_foo:bar", constants.MSSQL)) // Artie prefix + symbol
+	assert.True(t, NeedsEscaping("select", false, constants.BigQuery))       // name that is reserved
+	assert.True(t, NeedsEscaping("foo", false, constants.BigQuery))          // name that is not reserved
+	assert.False(t, NeedsEscaping("__artie_foo", false, constants.BigQuery)) // Artie prefix
+	assert.True(t, NeedsEscaping("__artie_foo:bar", false, constants.MSSQL)) // Artie prefix + symbol
 
 	// MS SQL:
-	assert.True(t, NeedsEscaping("select", constants.MSSQL))          // name that is reserved
-	assert.True(t, NeedsEscaping("foo", constants.MSSQL))             // name that is not reserved
-	assert.False(t, NeedsEscaping("__artie_foo", constants.MSSQL))    // Artie prefix
-	assert.True(t, NeedsEscaping("__artie_foo:bar", constants.MSSQL)) // Artie prefix + symbol
+	assert.True(t, NeedsEscaping("select", false, constants.MSSQL))          // name that is reserved
+	assert.True(t, NeedsEscaping("foo", false, constants.MSSQL))             // name that is not reserved
+	assert.False(t, NeedsEscaping("__artie_foo", false, constants.MSSQL))    // Artie prefix
+	assert.True(t, NeedsEscaping("__artie_foo:bar", false, constants.MSSQL)) // Artie prefix + symbol
 
 	// Redshift:
-	assert.True(t, NeedsEscaping("select", constants.Redshift))          // name that is reserved
-	assert.True(t, NeedsEscaping("truncatecolumns", constants.Redshift)) // name that is reserved for Redshift
-	assert.False(t, NeedsEscaping("foo", constants.Redshift))            // name that is not reserved
-	assert.False(t, NeedsEscaping("__artie_foo", constants.Redshift))    // Artie prefix
+	assert.True(t, NeedsEscaping("select", false, constants.Redshift))          // name that is reserved
+	assert.True(t, NeedsEscaping("truncatecolumns", false, constants.Redshift)) // name that is reserved for Redshift
+	assert.True(t, NeedsEscaping("foo", false, constants.Redshift))             // name that is not reserved
+	assert.False(t, NeedsEscaping("__artie_foo", false, constants.Redshift))    // Artie prefix
+	assert.True(t, NeedsEscaping("__artie_foo:bar", false, constants.Redshift)) // Artie prefix + symbol
 
-	// Snowflake:
-	assert.True(t, NeedsEscaping("select", constants.Snowflake))       // name that is reserved
-	assert.False(t, NeedsEscaping("foo", constants.Snowflake))         // name that is not reserved
-	assert.False(t, NeedsEscaping("__artie_foo", constants.Snowflake)) // Artie prefix
+	// Snowflake (uppercaseEscNames = false):
+	assert.True(t, NeedsEscaping("select", false, constants.Snowflake))          // name that is reserved
+	assert.False(t, NeedsEscaping("foo", false, constants.Snowflake))            // name that is not reserved
+	assert.False(t, NeedsEscaping("__artie_foo", false, constants.Snowflake))    // Artie prefix
+	assert.True(t, NeedsEscaping("__artie_foo:bar", false, constants.Snowflake)) // Artie prefix + symbol
+
+	// Snowflake (uppercaseEscNames = true):
+	assert.True(t, NeedsEscaping("select", true, constants.Snowflake))          // name that is reserved
+	assert.True(t, NeedsEscaping("foo", true, constants.Snowflake))             // name that is not reserved
+	assert.False(t, NeedsEscaping("__artie_foo", true, constants.Snowflake))    // Artie prefix
+	assert.True(t, NeedsEscaping("__artie_foo:bar", true, constants.Snowflake)) // Artie prefix + symbol
 }
 
 func TestEscapeNameIfNecessary(t *testing.T) {
@@ -54,56 +62,56 @@ func TestEscapeNameIfNecessary(t *testing.T) {
 			destKind:                 constants.Snowflake,
 			nameToEscape:             "hello",
 			expectedName:             `hello`,
-			expectedNameWhenUpperCfg: "hello",
+			expectedNameWhenUpperCfg: `"HELLO"`,
 		},
 		{
 			name:                     "redshift",
 			destKind:                 constants.Redshift,
 			nameToEscape:             "order",
 			expectedName:             `"order"`,
-			expectedNameWhenUpperCfg: `"ORDER"`,
+			expectedNameWhenUpperCfg: `"order"`,
 		},
 		{
 			name:                     "redshift #2",
 			destKind:                 constants.Redshift,
 			nameToEscape:             "hello",
-			expectedName:             `hello`,
-			expectedNameWhenUpperCfg: "hello",
+			expectedName:             `"hello"`,
+			expectedNameWhenUpperCfg: `"hello"`,
 		},
 		{
 			name:                     "bigquery",
 			destKind:                 constants.BigQuery,
 			nameToEscape:             "order",
 			expectedName:             "`order`",
-			expectedNameWhenUpperCfg: "`ORDER`",
+			expectedNameWhenUpperCfg: "`order`",
 		},
 		{
 			name:                     "bigquery, #2",
 			destKind:                 constants.BigQuery,
 			nameToEscape:             "hello",
 			expectedName:             "`hello`",
-			expectedNameWhenUpperCfg: "`HELLO`",
+			expectedNameWhenUpperCfg: "`hello`",
 		},
 		{
 			name:                     "redshift, #1 (delta)",
 			destKind:                 constants.Redshift,
 			nameToEscape:             "delta",
 			expectedName:             `"delta"`,
-			expectedNameWhenUpperCfg: `"DELTA"`,
+			expectedNameWhenUpperCfg: `"delta"`,
 		},
 		{
 			name:                     "snowflake, #1 (delta)",
 			destKind:                 constants.Snowflake,
 			nameToEscape:             "delta",
 			expectedName:             `delta`,
-			expectedNameWhenUpperCfg: `delta`,
+			expectedNameWhenUpperCfg: `"DELTA"`,
 		},
 		{
 			name:                     "redshift, symbols",
 			destKind:                 constants.Redshift,
 			nameToEscape:             "receivedat:__",
 			expectedName:             `"receivedat:__"`,
-			expectedNameWhenUpperCfg: `"RECEIVEDAT:__"`,
+			expectedNameWhenUpperCfg: `"receivedat:__"`,
 		},
 		{
 			name:                     "redshift, numbers",

@@ -14,26 +14,41 @@ import (
 var symbolsToEscape = []string{":"}
 
 func EscapeNameIfNecessary(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
-	if NeedsEscaping(name, destKind) {
+	if NeedsEscaping(name, uppercaseEscNames, destKind) {
 		return EscapeName(name, uppercaseEscNames, destKind)
 	}
 	return name
 }
 
-func NeedsEscaping(name string, destKind constants.DestinationKind) bool {
-	var reservedKeywords []string
-	if destKind == constants.Redshift {
-		reservedKeywords = constants.RedshiftReservedKeywords
-	} else if destKind == constants.MSSQL || destKind == constants.BigQuery {
+func NeedsEscaping(name string, uppercaseEscNames bool, destKind constants.DestinationKind) bool {
+	switch destKind {
+	case constants.BigQuery, constants.MSSQL, constants.Redshift:
 		// TODO: Escape names that start with [constants.ArtiePrefix].
 		if !strings.HasPrefix(name, constants.ArtiePrefix) {
 			return true
 		}
-	} else {
-		reservedKeywords = constants.ReservedKeywords
-	}
-
-	if slices.Contains(reservedKeywords, name) {
+	case constants.S3:
+		return false
+	case constants.Snowflake:
+		if uppercaseEscNames {
+			// If uppercaseEscNames is true then we will escape all identifiers that do not start with the Artie priefix.
+			// Since they will be uppercased afer they are escaped then they will result in the same value as if we
+			// we were to use them in a query without any escaping at all.
+			// TODO: Escape names that start with [constants.ArtiePrefix].
+			if !strings.HasPrefix(name, constants.ArtiePrefix) {
+				return true
+			}
+		} else {
+			if slices.Contains(constants.ReservedKeywords, name) {
+				return true
+			}
+			// If it still doesn't need to be escaped, we should check if it's a number.
+			if _, err := strconv.Atoi(name); err == nil {
+				return true
+			}
+		}
+	default:
+		slog.Error("Unsupported destination kind", slog.String("destKind", string(destKind)))
 		return true
 	}
 
@@ -44,31 +59,29 @@ func NeedsEscaping(name string, destKind constants.DestinationKind) bool {
 		}
 	}
 
-	// If it still doesn't need to be escaped, we should check if it's a number.
-	if _, err := strconv.Atoi(name); err == nil {
-		return true
-	}
-
 	return false
 }
 
 func EscapeName(name string, uppercaseEscNames bool, destKind constants.DestinationKind) string {
-	if uppercaseEscNames {
-		name = strings.ToUpper(name)
-	} else {
-		if destKind == constants.Snowflake {
+	if destKind == constants.Snowflake {
+		if uppercaseEscNames {
+			name = strings.ToUpper(name)
+		} else {
 			slog.Warn("Escaped Snowflake identifier is not being uppercased",
 				slog.String("name", name),
 				slog.Bool("uppercaseEscapedNames", uppercaseEscNames),
 			)
 		}
+	} else if destKind == constants.Redshift {
+		// Preserve the existing behavior of Redshift identifiers being lowercased due to not being quoted.
+		name = strings.ToLower(name)
 	}
 
 	if destKind == constants.BigQuery {
 		// BigQuery needs backticks to escape.
 		return fmt.Sprintf("`%s`", name)
 	} else {
-		// Snowflake uses quotes.
+		// Everything else uses quotes.
 		return fmt.Sprintf(`"%s"`, name)
 	}
 }
