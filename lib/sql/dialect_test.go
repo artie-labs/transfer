@@ -24,7 +24,7 @@ func TestRedshiftDialect_QuoteIdentifier(t *testing.T) {
 	assert.Equal(t, `"foo"`, dialect.QuoteIdentifier("FOO"))
 }
 
-func TestSnowflakeDialect_legacyNeedsEscaping(t *testing.T) {
+func TestSnowflakeDialect_LegacyNeedsEscaping(t *testing.T) {
 	dialect := SnowflakeDialect{}
 	assert.True(t, dialect.legacyNeedsEscaping("select"))          // name that is reserved
 	assert.False(t, dialect.legacyNeedsEscaping("foo"))            // name that is not reserved
