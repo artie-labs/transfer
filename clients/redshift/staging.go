@@ -15,20 +15,21 @@ import (
 	"github.com/artie-labs/transfer/lib/s3lib"
 )
 
-func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, _ types.AdditionalSettings, _ bool) error {
-	// Redshift always creates a temporary table.
-	tempAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:            s,
-		Tc:             tableConfig,
-		TableID:        tempTableID,
-		CreateTable:    true,
-		TemporaryTable: true,
-		ColumnOp:       constants.Add,
-		Mode:           tableData.Mode(),
-	}
+func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
+	if createTempTable {
+		tempAlterTableArgs := ddl.AlterTableArgs{
+			Dwh:            s,
+			Tc:             tableConfig,
+			TableID:        tempTableID,
+			CreateTable:    true,
+			TemporaryTable: true,
+			ColumnOp:       constants.Add,
+			Mode:           tableData.Mode(),
+		}
 
-	if err := tempAlterTableArgs.AlterTable(tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
-		return fmt.Errorf("failed to create temp table: %w", err)
+		if err := tempAlterTableArgs.AlterTable(tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
+			return fmt.Errorf("failed to create temp table: %w", err)
+		}
 	}
 
 	fp, err := s.loadTemporaryTable(tableData, tempTableID)

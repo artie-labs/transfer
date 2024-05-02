@@ -11,22 +11,27 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, opts types.AppendOpts) error {
+func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, opts types.AdditionalSettings) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
 
-	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	tableConfig, err := dwh.GetTableConfig(tableData)
 	if err != nil {
 		return fmt.Errorf("failed to get table config: %w", err)
 	}
 
 	// We don't care about srcKeysMissing because we don't drop columns when we append.
-	_, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
-		tableData.TopicConfig().SoftDelete, tableData.TopicConfig().IncludeArtieUpdatedAt,
-		tableData.TopicConfig().IncludeDatabaseUpdatedAt, tableData.Mode())
+	_, targetKeysMissing := columns.Diff(
+		tableData.ReadOnlyInMemoryCols(),
+		tableConfig.Columns(),
+		tableData.TopicConfig().SoftDelete,
+		tableData.TopicConfig().IncludeArtieUpdatedAt,
+		tableData.TopicConfig().IncludeDatabaseUpdatedAt,
+		tableData.Mode(),
+	)
 
+	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         dwh,
 		Tc:          tableConfig,
@@ -46,9 +51,11 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, op
 		return fmt.Errorf("failed to merge columns from destination: %w", err)
 	}
 
-	additionalSettings := types.AdditionalSettings{
-		AdditionalCopyClause: opts.AdditionalCopyClause,
-	}
-
-	return dwh.PrepareTemporaryTable(tableData, tableConfig, opts.TempTableID, additionalSettings, false)
+	return dwh.PrepareTemporaryTable(
+		tableData,
+		tableConfig,
+		tableID,
+		opts,
+		false,
+	)
 }

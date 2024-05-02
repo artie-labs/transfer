@@ -30,6 +30,19 @@ type Store struct {
 	db.Store
 }
 
+func (s *Store) Append(tableData *optimization.TableData) error {
+	return shared.Append(s, tableData, types.AdditionalSettings{})
+}
+
+func (s *Store) Merge(tableData *optimization.TableData) error {
+	return shared.Merge(s, tableData, s.config, types.MergeOpts{
+		UseMergeParts: true,
+		// We are adding SELECT DISTINCT here for the temporary table as an extra guardrail.
+		// Redshift does not enforce any row uniqueness and there could be potential LOAD errors which will cause duplicate rows to arise.
+		SubQueryDedupe: true,
+	})
+}
+
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
 	return NewTableIdentifier(topicConfig.Schema, table)
 }
