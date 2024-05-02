@@ -25,10 +25,8 @@ func (s *Store) Append(tableData *optimization.TableData) error {
 			}
 		}
 
-		tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 		// TODO: For history mode - in the future, we could also have a separate stage name for history mode so we can enable parallel processing.
-		err = shared.Append(s, tableData, types.AppendOpts{
-			TempTableID:          tableID,
+		err = shared.Append(s, tableData, types.AdditionalSettings{
 			AdditionalCopyClause: `FILE_FORMAT = (TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE) PURGE = TRUE`,
 		})
 	}
