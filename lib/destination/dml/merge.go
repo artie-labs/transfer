@@ -66,13 +66,10 @@ func (m *MergeArgument) Valid() error {
 	return nil
 }
 
-func removeDeleteColumnMarker(columns []string) ([]string, error) {
+func removeDeleteColumnMarker(columns []string) ([]string, bool) {
 	origLength := len(columns)
 	columns = slices.DeleteFunc(columns, func(col string) bool { return col == constants.DeleteColumnMarker })
-	if len(columns) == origLength {
-		return nil, errors.New("artie delete flag doesn't exist")
-	}
-	return columns, nil
+	return columns, len(columns) != origLength
 }
 
 func (m *MergeArgument) GetParts() ([]string, error) {
@@ -137,10 +134,10 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
-	var err error
-	columns, err = removeDeleteColumnMarker(columns)
-	if err != nil {
-		return nil, err
+	var removed bool
+	columns, removed = removeDeleteColumnMarker(columns)
+	if !removed {
+		return nil, errors.New("artie delete flag doesn't exist")
 	}
 
 	var pks []string
@@ -253,10 +250,10 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
-	var err error
-	columns, err = removeDeleteColumnMarker(columns)
-	if err != nil {
-		return "", err
+	var removed bool
+	columns, removed = removeDeleteColumnMarker(columns)
+	if !removed {
+		return "", errors.New("artie delete flag doesn't exist")
 	}
 
 	return fmt.Sprintf(`
@@ -316,10 +313,10 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
-	var err error
-	columns, err = removeDeleteColumnMarker(columns)
-	if err != nil {
-		return "", err
+	var removed bool
+	columns, removed = removeDeleteColumnMarker(columns)
+	if !removed {
+		return "", errors.New("artie delete flag doesn't exist")
 	}
 
 	return fmt.Sprintf(`

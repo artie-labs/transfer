@@ -34,30 +34,33 @@ func (m MockTableIdentifier) FullyQualifiedName() string {
 
 func TestRemoveDeleteColumnMarker(t *testing.T) {
 	{
-		_, err := removeDeleteColumnMarker([]string{})
-		assert.ErrorContains(t, err, "artie delete flag doesn't exis")
+		columns, removed := removeDeleteColumnMarker([]string{})
+		assert.Empty(t, columns)
+		assert.False(t, removed)
 	}
 	{
-		_, err := removeDeleteColumnMarker([]string{"a"})
-		assert.ErrorContains(t, err, "artie delete flag doesn't exis")
+		columns, removed := removeDeleteColumnMarker([]string{"a"})
+		assert.Equal(t, []string{"a"}, columns)
+		assert.False(t, removed)
 	}
 	{
-		_, err := removeDeleteColumnMarker([]string{"a", "b"})
-		assert.ErrorContains(t, err, "artie delete flag doesn't exis")
+		columns, removed := removeDeleteColumnMarker([]string{"a", "b"})
+		assert.Equal(t, []string{"a", "b"}, columns)
+		assert.False(t, removed)
 	}
 	{
-		columns, err := removeDeleteColumnMarker([]string{constants.DeleteColumnMarker})
-		assert.NoError(t, err)
+		columns, removed := removeDeleteColumnMarker([]string{constants.DeleteColumnMarker})
+		assert.True(t, removed)
 		assert.Empty(t, columns)
 	}
 	{
-		columns, err := removeDeleteColumnMarker([]string{"a", constants.DeleteColumnMarker, "b"})
-		assert.NoError(t, err)
+		columns, removed := removeDeleteColumnMarker([]string{"a", constants.DeleteColumnMarker, "b"})
+		assert.True(t, removed)
 		assert.Equal(t, []string{"a", "b"}, columns)
 	}
 	{
-		columns, err := removeDeleteColumnMarker([]string{"a", constants.DeleteColumnMarker, "b", constants.DeleteColumnMarker, "c"})
-		assert.NoError(t, err)
+		columns, removed := removeDeleteColumnMarker([]string{"a", constants.DeleteColumnMarker, "b", constants.DeleteColumnMarker, "c"})
+		assert.True(t, removed)
 		assert.Equal(t, []string{"a", "b", "c"}, columns)
 	}
 }
