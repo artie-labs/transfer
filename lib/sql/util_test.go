@@ -38,3 +38,8 @@ func TestQuoteLiteral(t *testing.T) {
 		assert.Equal(t, testCase.expected, QuoteLiteral(testCase.colVal), testCase.name)
 	}
 }
+
+func TestQuoteIdentifiers(t *testing.T) {
+	assert.Equal(t, []string{}, QuoteIdentifiers([]string{}, BigQueryDialect{}))
+	assert.Equal(t, []string{"`a`", "`b`", "`c`"}, QuoteIdentifiers([]string{"a", "b", "c"}, BigQueryDialect{}))
+}
