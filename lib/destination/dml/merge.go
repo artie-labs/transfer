@@ -3,6 +3,7 @@ package dml
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/array"
@@ -128,14 +129,13 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
-	for idx, col := range cols {
+	cols = slices.DeleteFunc(cols, func(col string) bool {
 		if col == constants.DeleteColumnMarker {
-			cols = append(cols[:idx], cols[idx+1:]...)
 			removed = true
-			break
+			return true
 		}
-	}
-
+		return false
+	})
 	if !removed {
 		return nil, errors.New("artie delete flag doesn't exist")
 	}
@@ -251,14 +251,13 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
-	for idx, col := range cols {
+	cols = slices.DeleteFunc(cols, func(col string) bool {
 		if col == constants.DeleteColumnMarker {
-			cols = append(cols[:idx], cols[idx+1:]...)
 			removed = true
-			break
+			return true
 		}
-	}
-
+		return false
+	})
 	if !removed {
 		return "", errors.New("artie delete flag doesn't exist")
 	}
@@ -321,14 +320,13 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
-	for idx, col := range cols {
+	cols = slices.DeleteFunc(cols, func(col string) bool {
 		if col == constants.DeleteColumnMarker {
-			cols = append(cols[:idx], cols[idx+1:]...)
 			removed = true
-			break
+			return true
 		}
-	}
-
+		return false
+	})
 	if !removed {
 		return "", errors.New("artie delete flag doesn't exist")
 	}
