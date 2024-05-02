@@ -42,7 +42,7 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 	for i := 0; i < len(cols); i++ {
 		execQuery, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(i)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN %s %s", `shop.public."COMPLEX_COLUMNS"`,
-			cols[i].Name(d.snowflakeStagesStore.Dialect()),
+			cols[i].EscapedName(d.snowflakeStagesStore.Dialect()),
 			typing.KindToDWHType(cols[i].KindDetails, d.snowflakeStagesStore.Label(), false)), execQuery)
 	}
 
@@ -172,7 +172,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 
 		execArg, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(i)
 		assert.Equal(d.T(), execArg, fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", `shop.public."USERS"`, constants.Delete,
-			cols[i].Name(d.snowflakeStagesStore.Dialect())))
+			cols[i].EscapedName(d.snowflakeStagesStore.Dialect())))
 	}
 }
 

@@ -170,8 +170,8 @@ func TestColumn_Name(t *testing.T) {
 
 		assert.Equal(t, testCase.expectedName, col.RawName(), testCase.colName)
 
-		assert.Equal(t, testCase.expectedNameEsc, col.Name(sql.SnowflakeDialect{}), testCase.colName)
-		assert.Equal(t, testCase.expectedNameEscBq, col.Name(sql.BigQueryDialect{}), testCase.colName)
+		assert.Equal(t, testCase.expectedNameEsc, col.EscapedName(sql.SnowflakeDialect{}), testCase.colName)
+		assert.Equal(t, testCase.expectedNameEscBq, col.EscapedName(sql.BigQueryDialect{}), testCase.colName)
 	}
 }
 

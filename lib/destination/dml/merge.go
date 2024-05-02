@@ -94,7 +94,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 	var equalitySQLParts []string
 	for _, primaryKey := range m.PrimaryKeys {
 		// We'll need to escape the primary key as well.
-		equalitySQL := fmt.Sprintf("c.%s = cc.%s", primaryKey.Name(m.Dialect), primaryKey.Name(m.Dialect))
+		equalitySQL := fmt.Sprintf("c.%s = cc.%s", primaryKey.EscapedName(m.Dialect), primaryKey.EscapedName(m.Dialect))
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
@@ -115,7 +115,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 				// LEFT JOIN table on pk(s)
 				m.TableID.FullyQualifiedName(), strings.Join(equalitySQLParts, " and "),
 				// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
-				m.PrimaryKeys[0].Name(m.Dialect)),
+				m.PrimaryKeys[0].EscapedName(m.Dialect)),
 			// UPDATE
 			fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s;`,
 				// UPDATE table set col1 = cc. col1
@@ -142,7 +142,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 
 	var pks []string
 	for _, pk := range m.PrimaryKeys {
-		pks = append(pks, pk.Name(m.Dialect))
+		pks = append(pks, pk.EscapedName(m.Dialect))
 	}
 
 	parts := []string{
@@ -159,7 +159,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 			// LEFT JOIN table on pk(s)
 			m.TableID.FullyQualifiedName(), strings.Join(equalitySQLParts, " and "),
 			// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
-			m.PrimaryKeys[0].Name(m.Dialect)),
+			m.PrimaryKeys[0].EscapedName(m.Dialect)),
 		// UPDATE
 		fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s AND COALESCE(cc.%s, false) = false;`,
 			// UPDATE table set col1 = cc. col1
@@ -207,7 +207,7 @@ func (m *MergeArgument) GetStatement() (string, error) {
 	var equalitySQLParts []string
 	for _, primaryKey := range m.PrimaryKeys {
 		// We'll need to escape the primary key as well.
-		equalitySQL := fmt.Sprintf("c.%s = cc.%s", primaryKey.Name(m.Dialect), primaryKey.Name(m.Dialect))
+		equalitySQL := fmt.Sprintf("c.%s = cc.%s", primaryKey.EscapedName(m.Dialect), primaryKey.EscapedName(m.Dialect))
 		pkCol, isOk := m.Columns.GetColumn(primaryKey.RawName())
 		if !isOk {
 			return "", fmt.Errorf("column: %s does not exist in columnToType: %v", primaryKey.RawName(), m.Columns)
@@ -215,7 +215,7 @@ func (m *MergeArgument) GetStatement() (string, error) {
 
 		if m.DestKind == constants.BigQuery && pkCol.KindDetails.Kind == typing.Struct.Kind {
 			// BigQuery requires special casting to compare two JSON objects.
-			equalitySQL = fmt.Sprintf("TO_JSON_STRING(c.%s) = TO_JSON_STRING(cc.%s)", primaryKey.Name(m.Dialect), primaryKey.Name(m.Dialect))
+			equalitySQL = fmt.Sprintf("TO_JSON_STRING(c.%s) = TO_JSON_STRING(cc.%s)", primaryKey.EscapedName(m.Dialect), primaryKey.EscapedName(m.Dialect))
 		}
 
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
@@ -295,7 +295,7 @@ func (m *MergeArgument) GetMSSQLStatement() (string, error) {
 	var equalitySQLParts []string
 	for _, primaryKey := range m.PrimaryKeys {
 		// We'll need to escape the primary key as well.
-		equalitySQL := fmt.Sprintf("c.%s = cc.%s", primaryKey.Name(m.Dialect), primaryKey.Name(m.Dialect))
+		equalitySQL := fmt.Sprintf("c.%s = cc.%s", primaryKey.EscapedName(m.Dialect), primaryKey.EscapedName(m.Dialect))
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
