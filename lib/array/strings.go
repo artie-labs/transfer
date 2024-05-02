@@ -47,7 +47,7 @@ func InterfaceToArrayString(val any, recastAsArray bool) ([]string, error) {
 
 			vals = append(vals, string(bytes))
 		} else {
-			vals = append(vals, stringutil.Wrap(value, true))
+			vals = append(vals, stringutil.EscapeBackslashes(fmt.Sprint(value)))
 		}
 	}
 
