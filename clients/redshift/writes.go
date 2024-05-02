@@ -1,8 +1,6 @@
 package redshift
 
 import (
-	"fmt"
-
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -10,18 +8,7 @@ import (
 
 func (s *Store) Append(tableData *optimization.TableData) error {
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-
-	// Redshift is slightly different, we'll load and create the temporary table via shared.Append
-	// Then, we'll invoke `ALTER TABLE target APPEND FROM staging` to combine the diffs.
-	temporaryTableID := shared.TempTableID(tableID, tableData.TempTableSuffix())
-	if err := shared.Append(s, tableData, types.AppendOpts{TempTableID: temporaryTableID}); err != nil {
-		return err
-	}
-
-	_, err := s.Exec(
-		fmt.Sprintf(`ALTER TABLE %s APPEND FROM %s;`, tableID.FullyQualifiedName(), temporaryTableID.FullyQualifiedName()),
-	)
-	return err
+	return shared.Append(s, tableData, types.AppendOpts{TempTableID: tableID})
 }
 
 func (s *Store) Merge(tableData *optimization.TableData) error {
