@@ -99,17 +99,17 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	cols := m.Columns.GetColumnsToUpdate()
+	columns := m.Columns.GetColumnsToUpdate()
 
 	if m.SoftDelete {
 		return []string{
 			// INSERT
 			fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
 				// insert into target (col1, col2, col3)
-				m.TableID.FullyQualifiedName(), strings.Join(sql.QuoteIdentifiers(cols, m.Dialect), ","),
+				m.TableID.FullyQualifiedName(), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
 				// SELECT cc.col1, cc.col2, ... FROM staging as CC
 				array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-					Vals:      sql.QuoteIdentifiers(cols, m.Dialect),
+					Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
 					Separator: ",",
 					Prefix:    "cc.",
 				}), m.SubQuery,
@@ -129,7 +129,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
-	cols = slices.DeleteFunc(cols, func(col string) bool {
+	columns = slices.DeleteFunc(columns, func(col string) bool {
 		if col == constants.DeleteColumnMarker {
 			removed = true
 			return true
@@ -149,10 +149,10 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		// INSERT
 		fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
 			// insert into target (col1, col2, col3)
-			m.TableID.FullyQualifiedName(), strings.Join(sql.QuoteIdentifiers(cols, m.Dialect), ","),
+			m.TableID.FullyQualifiedName(), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
 			// SELECT cc.col1, cc.col2, ... FROM staging as CC
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      sql.QuoteIdentifiers(cols, m.Dialect),
+				Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
 				Separator: ",",
 				Prefix:    "cc.",
 			}), m.SubQuery,
@@ -230,7 +230,7 @@ func (m *MergeArgument) GetStatement() (string, error) {
 		equalitySQLParts = append(equalitySQLParts, m.AdditionalEqualityStrings...)
 	}
 
-	cols := m.Columns.GetColumnsToUpdate()
+	columns := m.Columns.GetColumnsToUpdate()
 
 	if m.SoftDelete {
 		return fmt.Sprintf(`
@@ -241,9 +241,9 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 			// Update + Soft Deletion
 			idempotentClause, m.Columns.UpdateQuery(m.Dialect, false),
 			// Insert
-			constants.DeleteColumnMarker, strings.Join(sql.QuoteIdentifiers(cols, m.Dialect), ","),
+			constants.DeleteColumnMarker, strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      sql.QuoteIdentifiers(cols, m.Dialect),
+				Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
 				Separator: ",",
 				Prefix:    "cc.",
 			})), nil
@@ -251,7 +251,7 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
-	cols = slices.DeleteFunc(cols, func(col string) bool {
+	columns = slices.DeleteFunc(columns, func(col string) bool {
 		if col == constants.DeleteColumnMarker {
 			removed = true
 			return true
@@ -273,9 +273,9 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 		// Update
 		constants.DeleteColumnMarker, idempotentClause, m.Columns.UpdateQuery(m.Dialect, true),
 		// Insert
-		constants.DeleteColumnMarker, strings.Join(sql.QuoteIdentifiers(cols, m.Dialect), ","),
+		constants.DeleteColumnMarker, strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      sql.QuoteIdentifiers(cols, m.Dialect),
+			Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
 			Separator: ",",
 			Prefix:    "cc.",
 		})), nil
@@ -298,7 +298,7 @@ func (m *MergeArgument) GetMSSQLStatement() (string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	cols := m.Columns.GetColumnsToUpdate()
+	columns := m.Columns.GetColumnsToUpdate()
 
 	if m.SoftDelete {
 		return fmt.Sprintf(`
@@ -310,9 +310,9 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 			// Update + Soft Deletion
 			idempotentClause, m.Columns.UpdateQuery(m.Dialect, false),
 			// Insert
-			constants.DeleteColumnMarker, strings.Join(sql.QuoteIdentifiers(cols, m.Dialect), ","),
+			constants.DeleteColumnMarker, strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      sql.QuoteIdentifiers(cols, m.Dialect),
+				Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
 				Separator: ",",
 				Prefix:    "cc.",
 			})), nil
@@ -320,7 +320,7 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
-	cols = slices.DeleteFunc(cols, func(col string) bool {
+	columns = slices.DeleteFunc(columns, func(col string) bool {
 		if col == constants.DeleteColumnMarker {
 			removed = true
 			return true
@@ -343,9 +343,9 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
 		// Update
 		constants.DeleteColumnMarker, idempotentClause, m.Columns.UpdateQuery(m.Dialect, true),
 		// Insert
-		constants.DeleteColumnMarker, strings.Join(sql.QuoteIdentifiers(cols, m.Dialect), ","),
+		constants.DeleteColumnMarker, strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      sql.QuoteIdentifiers(cols, m.Dialect),
+			Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
 			Separator: ",",
 			Prefix:    "cc.",
 		})), nil
