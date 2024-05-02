@@ -8,13 +8,12 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
 type Dialect interface {
 	NeedsEscaping(identifier string) bool // TODO: Remove this when we escape everything
 	QuoteIdentifier(identifier string) string
-	EscapeStruct(value any) string
+	EscapeStruct(value string) string
 }
 
 type BigQueryDialect struct{}
@@ -26,8 +25,8 @@ func (BigQueryDialect) QuoteIdentifier(identifier string) string {
 	return fmt.Sprintf("`%s`", identifier)
 }
 
-func (BigQueryDialect) EscapeStruct(value any) string {
-	return "JSON" + stringutil.Wrap(value, false)
+func (BigQueryDialect) EscapeStruct(value string) string {
+	return "JSON" + QuoteLiteral(value)
 }
 
 type MSSQLDialect struct{}
@@ -38,7 +37,7 @@ func (MSSQLDialect) QuoteIdentifier(identifier string) string {
 	return fmt.Sprintf(`"%s"`, identifier)
 }
 
-func (MSSQLDialect) EscapeStruct(value any) string {
+func (MSSQLDialect) EscapeStruct(value string) string {
 	panic("not implemented") // We don't currently support backfills for MS SQL.
 }
 
@@ -51,8 +50,8 @@ func (rd RedshiftDialect) QuoteIdentifier(identifier string) string {
 	return fmt.Sprintf(`"%s"`, strings.ToLower(identifier))
 }
 
-func (RedshiftDialect) EscapeStruct(value any) string {
-	return fmt.Sprintf("JSON_PARSE(%s)", stringutil.Wrap(value, false))
+func (RedshiftDialect) EscapeStruct(value string) string {
+	return fmt.Sprintf("JSON_PARSE(%s)", QuoteLiteral(value))
 }
 
 type SnowflakeDialect struct {
@@ -90,6 +89,6 @@ func (sd SnowflakeDialect) QuoteIdentifier(identifier string) string {
 	return fmt.Sprintf(`"%s"`, identifier)
 }
 
-func (SnowflakeDialect) EscapeStruct(value any) string {
-	return stringutil.Wrap(value, false)
+func (SnowflakeDialect) EscapeStruct(value string) string {
+	return QuoteLiteral(value)
 }

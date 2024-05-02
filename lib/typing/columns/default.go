@@ -7,7 +7,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
 
-	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
@@ -23,7 +22,7 @@ func (c *Column) DefaultValue(dialect sql.Dialect, additionalDateFmts []string) 
 
 	switch c.KindDetails.Kind {
 	case typing.Struct.Kind, typing.Array.Kind:
-		return dialect.EscapeStruct(c.defaultValue), nil
+		return dialect.EscapeStruct(fmt.Sprint(c.defaultValue)), nil
 	case typing.ETime.Kind:
 		if c.KindDetails.ExtendedTimeDetails == nil {
 			return nil, fmt.Errorf("column kind details for extended time is nil")
@@ -36,9 +35,9 @@ func (c *Column) DefaultValue(dialect sql.Dialect, additionalDateFmts []string) 
 
 		switch c.KindDetails.ExtendedTimeDetails.Type {
 		case ext.TimeKindType:
-			return stringutil.Wrap(extTime.String(ext.PostgresTimeFormatNoTZ), false), nil
+			return sql.QuoteLiteral(extTime.String(ext.PostgresTimeFormatNoTZ)), nil
 		default:
-			return stringutil.Wrap(extTime.String(c.KindDetails.ExtendedTimeDetails.Format), false), nil
+			return sql.QuoteLiteral(extTime.String(c.KindDetails.ExtendedTimeDetails.Format)), nil
 		}
 	case typing.EDecimal.Kind:
 		val, isOk := c.defaultValue.(*decimal.Decimal)
@@ -48,7 +47,7 @@ func (c *Column) DefaultValue(dialect sql.Dialect, additionalDateFmts []string) 
 
 		return val.Value(), nil
 	case typing.String.Kind:
-		return stringutil.Wrap(c.defaultValue, false), nil
+		return sql.QuoteLiteral(fmt.Sprint(c.defaultValue)), nil
 	}
 
 	return c.defaultValue, nil
