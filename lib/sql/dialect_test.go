@@ -38,6 +38,8 @@ func TestSnowflakeDialect_QuoteIdentifier(t *testing.T) {
 		dialect := SnowflakeDialect{LegacyMode: false}
 		assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("foo"))
 		assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("FOO"))
+		assert.Equal(t, `"SELECT"`, dialect.QuoteIdentifier("select"))
+		assert.Equal(t, `"GROUP"`, dialect.QuoteIdentifier("group"))
 	}
 	{
 		// Legacy mode:
