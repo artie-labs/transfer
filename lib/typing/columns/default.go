@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
 
@@ -21,19 +22,19 @@ func (c *Column) RawDefaultValue() any {
 	return c.defaultValue
 }
 
-func (c *Column) DefaultValue(args *DefaultValueArgs, additionalDateFmts []string) (any, error) {
-	if args == nil || !args.Escape || c.defaultValue == nil {
+func (c *Column) DefaultValue(dialect sql.Dialect, additionalDateFmts []string) (any, error) {
+	if c.defaultValue == nil {
 		return c.defaultValue, nil
 	}
 
 	switch c.KindDetails.Kind {
 	case typing.Struct.Kind, typing.Array.Kind:
-		switch args.DestKind {
-		case constants.BigQuery:
+		switch dialect.(type) {
+		case sql.BigQueryDialect:
 			return "JSON" + stringutil.Wrap(c.defaultValue, false), nil
-		case constants.Redshift:
+		case sql.RedshiftDialect:
 			return fmt.Sprintf("JSON_PARSE(%s)", stringutil.Wrap(c.defaultValue, false)), nil
-		case constants.Snowflake:
+		case sql.SnowflakeDialect:
 			return stringutil.Wrap(c.defaultValue, false), nil
 		}
 	case typing.ETime.Kind:

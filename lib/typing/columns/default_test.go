@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
 
@@ -13,6 +13,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
+
+var dialects = []sql.Dialect{
+	sql.BigQueryDialect{},
+	sql.MSSQLDialect{},
+	sql.RedshiftDialect{},
+	sql.SnowflakeDialect{UppercaseEscNames: true},
+}
 
 func TestColumn_DefaultValue(t *testing.T) {
 	birthday := time.Date(2022, time.September, 6, 3, 19, 24, 942000000, time.UTC)
@@ -32,9 +39,9 @@ func TestColumn_DefaultValue(t *testing.T) {
 	testCases := []struct {
 		name                       string
 		col                        *Column
-		args                       *DefaultValueArgs
+		dialect                    sql.Dialect
 		expectedValue              any
-		destKindToExpectedValueMap map[constants.DestinationKind]any
+		destKindToExpectedValueMap map[sql.Dialect]any
 	}{
 		{
 			name: "default value = nil",
@@ -42,36 +49,13 @@ func TestColumn_DefaultValue(t *testing.T) {
 				KindDetails:  typing.String,
 				defaultValue: nil,
 			},
-			args: &DefaultValueArgs{
-				Escape: true,
-			},
 			expectedValue: nil,
-		},
-		{
-			name: "escaped args (nil)",
-			col: &Column{
-				KindDetails:  typing.String,
-				defaultValue: "abcdef",
-			},
-			expectedValue: "abcdef",
-		},
-		{
-			name: "escaped args (escaped = false)",
-			col: &Column{
-				KindDetails:  typing.String,
-				defaultValue: "abcdef",
-			},
-			args:          &DefaultValueArgs{},
-			expectedValue: "abcdef",
 		},
 		{
 			name: "string",
 			col: &Column{
 				KindDetails:  typing.String,
 				defaultValue: "abcdef",
-			},
-			args: &DefaultValueArgs{
-				Escape: true,
 			},
 			expectedValue: "'abcdef'",
 		},
@@ -81,14 +65,11 @@ func TestColumn_DefaultValue(t *testing.T) {
 				KindDetails:  typing.Struct,
 				defaultValue: "{}",
 			},
-			args: &DefaultValueArgs{
-				Escape: true,
-			},
 			expectedValue: `{}`,
-			destKindToExpectedValueMap: map[constants.DestinationKind]any{
-				constants.BigQuery:  "JSON'{}'",
-				constants.Redshift:  `JSON_PARSE('{}')`,
-				constants.Snowflake: `'{}'`,
+			destKindToExpectedValueMap: map[sql.Dialect]any{
+				dialects[0]: "JSON'{}'",
+				dialects[2]: `JSON_PARSE('{}')`,
+				dialects[3]: `'{}'`,
 			},
 		},
 		{
@@ -97,14 +78,11 @@ func TestColumn_DefaultValue(t *testing.T) {
 				KindDetails:  typing.Struct,
 				defaultValue: "{\"age\": 0, \"membership_level\": \"standard\"}",
 			},
-			args: &DefaultValueArgs{
-				Escape: true,
-			},
 			expectedValue: "{\"age\": 0, \"membership_level\": \"standard\"}",
-			destKindToExpectedValueMap: map[constants.DestinationKind]any{
-				constants.BigQuery:  "JSON'{\"age\": 0, \"membership_level\": \"standard\"}'",
-				constants.Redshift:  "JSON_PARSE('{\"age\": 0, \"membership_level\": \"standard\"}')",
-				constants.Snowflake: "'{\"age\": 0, \"membership_level\": \"standard\"}'",
+			destKindToExpectedValueMap: map[sql.Dialect]any{
+				dialects[0]: "JSON'{\"age\": 0, \"membership_level\": \"standard\"}'",
+				dialects[2]: "JSON_PARSE('{\"age\": 0, \"membership_level\": \"standard\"}')",
+				dialects[3]: "'{\"age\": 0, \"membership_level\": \"standard\"}'",
 			},
 		},
 		{
@@ -112,9 +90,6 @@ func TestColumn_DefaultValue(t *testing.T) {
 			col: &Column{
 				KindDetails:  dateKind,
 				defaultValue: birthdayExtDateTime,
-			},
-			args: &DefaultValueArgs{
-				Escape: true,
 			},
 			expectedValue: "'2022-09-06'",
 		},
@@ -124,9 +99,6 @@ func TestColumn_DefaultValue(t *testing.T) {
 				KindDetails:  timeKind,
 				defaultValue: birthdayExtDateTime,
 			},
-			args: &DefaultValueArgs{
-				Escape: true,
-			},
 			expectedValue: "'03:19:24.942'",
 		},
 		{
@@ -135,29 +107,22 @@ func TestColumn_DefaultValue(t *testing.T) {
 				KindDetails:  dateTimeKind,
 				defaultValue: birthdayExtDateTime,
 			},
-			args: &DefaultValueArgs{
-				Escape: true,
-			},
 			expectedValue: "'2022-09-06T03:19:24.942Z'",
 		},
 	}
 
 	for _, testCase := range testCases {
-		for _, validDest := range constants.ValidDestinations {
-			if testCase.args != nil {
-				testCase.args.DestKind = validDest
-			}
-
-			actualValue, actualErr := testCase.col.DefaultValue(testCase.args, nil)
-			assert.NoError(t, actualErr, fmt.Sprintf("%s %s", testCase.name, validDest))
+		for _, dialect := range dialects {
+			actualValue, actualErr := testCase.col.DefaultValue(dialect, nil)
+			assert.NoError(t, actualErr, fmt.Sprintf("%s %s", testCase.name, dialect))
 
 			expectedValue := testCase.expectedValue
-			if potentialValue, isOk := testCase.destKindToExpectedValueMap[validDest]; isOk {
+			if potentialValue, isOk := testCase.destKindToExpectedValueMap[dialect]; isOk {
 				// Not everything requires a destination specific value, so only use this if necessary.
 				expectedValue = potentialValue
 			}
 
-			assert.Equal(t, expectedValue, actualValue, fmt.Sprintf("%s %s", testCase.name, validDest))
+			assert.Equal(t, expectedValue, actualValue, fmt.Sprintf("%s %s", testCase.name, dialect))
 		}
 	}
 }
