@@ -30,7 +30,11 @@ func (c *Column) DefaultValue(dialect sql.Dialect, additionalDateFmts []string) 
 			return fmt.Sprintf("JSON_PARSE(%s)", stringutil.Wrap(c.defaultValue, false)), nil
 		case sql.SnowflakeDialect:
 			return stringutil.Wrap(c.defaultValue, false), nil
+		default:
+			// Note that we don't currently support backfills for MS SQL.
+			return nil, fmt.Errorf("not implemented for %v dialect", dialect)
 		}
+
 	case typing.ETime.Kind:
 		if c.KindDetails.ExtendedTimeDetails == nil {
 			return nil, fmt.Errorf("column kind details for extended time is nil")

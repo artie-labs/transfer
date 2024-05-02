@@ -16,7 +16,6 @@ import (
 
 var dialects = []sql.Dialect{
 	sql.BigQueryDialect{},
-	sql.MSSQLDialect{},
 	sql.RedshiftDialect{},
 	sql.SnowflakeDialect{UppercaseEscNames: true},
 }
@@ -68,8 +67,8 @@ func TestColumn_DefaultValue(t *testing.T) {
 			expectedValue: `{}`,
 			destKindToExpectedValueMap: map[sql.Dialect]any{
 				dialects[0]: "JSON'{}'",
-				dialects[2]: `JSON_PARSE('{}')`,
-				dialects[3]: `'{}'`,
+				dialects[1]: `JSON_PARSE('{}')`,
+				dialects[2]: `'{}'`,
 			},
 		},
 		{
@@ -81,8 +80,8 @@ func TestColumn_DefaultValue(t *testing.T) {
 			expectedValue: "{\"age\": 0, \"membership_level\": \"standard\"}",
 			destKindToExpectedValueMap: map[sql.Dialect]any{
 				dialects[0]: "JSON'{\"age\": 0, \"membership_level\": \"standard\"}'",
-				dialects[2]: "JSON_PARSE('{\"age\": 0, \"membership_level\": \"standard\"}')",
-				dialects[3]: "'{\"age\": 0, \"membership_level\": \"standard\"}'",
+				dialects[1]: "JSON_PARSE('{\"age\": 0, \"membership_level\": \"standard\"}')",
+				dialects[2]: "'{\"age\": 0, \"membership_level\": \"standard\"}'",
 			},
 		},
 		{
