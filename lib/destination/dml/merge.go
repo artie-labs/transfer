@@ -67,15 +67,9 @@ func (m *MergeArgument) Valid() error {
 }
 
 func removeDeleteColumnMarker(columns []string) ([]string, error) {
-	var removed bool
-	columns = slices.DeleteFunc(columns, func(col string) bool {
-		if col == constants.DeleteColumnMarker {
-			removed = true
-			return true
-		}
-		return false
-	})
-	if !removed {
+	origLength := len(columns)
+	columns = slices.DeleteFunc(columns, func(col string) bool { return col == constants.DeleteColumnMarker })
+	if len(columns) == origLength {
 		return nil, errors.New("artie delete flag doesn't exist")
 	}
 	return columns, nil
