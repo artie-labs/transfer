@@ -5,18 +5,16 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
-
-	"github.com/stretchr/testify/assert"
-
+	sqllib "github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
-
 	"github.com/artie-labs/transfer/lib/typing/columns"
-
-	"github.com/artie-labs/transfer/lib/destination/types"
 )
 
 func TestGetTableCfgArgs_ShouldParseComment(t *testing.T) {
@@ -58,6 +56,7 @@ func TestGetTableCfgArgs_ShouldParseComment(t *testing.T) {
 type MockDWH struct{}
 
 func (MockDWH) Label() constants.DestinationKind               { panic("not implemented") }
+func (MockDWH) Dialect() sqllib.Dialect                        { panic("not implemented") }
 func (MockDWH) Merge(tableData *optimization.TableData) error  { panic("not implemented") }
 func (MockDWH) Append(tableData *optimization.TableData) error { panic("not implemented") }
 func (MockDWH) Dedupe(tableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
@@ -76,7 +75,6 @@ func (MockDWH) PrepareTemporaryTable(tableData *optimization.TableData, tableCon
 func (MockDWH) IdentifierFor(topicConfig kafkalib.TopicConfig, name string) types.TableIdentifier {
 	panic("not implemented")
 }
-func (MockDWH) ShouldUppercaseEscapedNames() bool { return true }
 
 type MockTableIdentifier struct{ fqName string }
 

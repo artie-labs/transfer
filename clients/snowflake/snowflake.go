@@ -15,9 +15,8 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
-	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 const maxRetries = 10
@@ -78,8 +77,8 @@ func (s *Store) Label() constants.DestinationKind {
 	return constants.Snowflake
 }
 
-func (s *Store) ShouldUppercaseEscapedNames() bool {
-	return true
+func (s *Store) Dialect() sql.Dialect {
+	return sql.SnowflakeDialect{}
 }
 
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
@@ -131,13 +130,12 @@ func (s *Store) reestablishConnection() error {
 func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
 	var primaryKeysEscaped []string
 	for _, pk := range primaryKeys {
-		pkCol := columns.NewColumn(pk, typing.Invalid)
-		primaryKeysEscaped = append(primaryKeysEscaped, pkCol.Name(s.ShouldUppercaseEscapedNames(), s.Label()))
+		primaryKeysEscaped = append(primaryKeysEscaped, sql.EscapeNameIfNecessary(pk, s.Dialect()))
 	}
 
 	orderColsToIterate := primaryKeysEscaped
 	if topicConfig.IncludeArtieUpdatedAt {
-		orderColsToIterate = append(orderColsToIterate, constants.UpdateColumnMarker)
+		orderColsToIterate = append(orderColsToIterate, sql.EscapeNameIfNecessary(constants.UpdateColumnMarker, s.Dialect()))
 	}
 
 	var orderByCols []string

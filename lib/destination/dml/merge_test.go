@@ -10,7 +10,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
-	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -56,23 +56,24 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 	_cols.AddColumn(columns.NewColumn("id", typing.String))
 	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
+	dialect := sql.SnowflakeDialect{UppercaseEscNames: true}
 	for _, idempotentKey := range []string{"", "updated_at"} {
 		mergeArg := MergeArgument{
-			TableID:           MockTableIdentifier{fqTable},
-			SubQuery:          subQuery,
-			IdempotentKey:     idempotentKey,
-			PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, constants.Snowflake)},
-			Columns:           &_cols,
-			DestKind:          constants.Snowflake,
-			SoftDelete:        true,
-			UppercaseEscNames: ptr.ToBool(false),
+			TableID:       MockTableIdentifier{fqTable},
+			SubQuery:      subQuery,
+			IdempotentKey: idempotentKey,
+			PrimaryKeys:   []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), dialect)},
+			Columns:       &_cols,
+			DestKind:      constants.Snowflake,
+			Dialect:       dialect,
+			SoftDelete:    true,
 		}
 
 		mergeSQL, err := mergeArg.GetStatement()
 		assert.NoError(t, err)
 		assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
 		// Soft deletion flag being passed.
-		assert.Contains(t, mergeSQL, fmt.Sprintf("%s=cc.%s", constants.DeleteColumnMarker, constants.DeleteColumnMarker), mergeSQL)
+		assert.Contains(t, mergeSQL, `"__ARTIE_DELETE"=cc."__ARTIE_DELETE"`, mergeSQL)
 
 		assert.Equal(t, len(idempotentKey) > 0, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")))
 	}
@@ -106,29 +107,30 @@ func TestMergeStatement(t *testing.T) {
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
+	dialect := sql.SnowflakeDialect{UppercaseEscNames: true}
 	mergeArg := MergeArgument{
-		TableID:           MockTableIdentifier{fqTable},
-		SubQuery:          subQuery,
-		IdempotentKey:     "",
-		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), true, constants.Snowflake)},
-		Columns:           &_cols,
-		DestKind:          constants.Snowflake,
-		SoftDelete:        false,
-		UppercaseEscNames: ptr.ToBool(true),
+		TableID:       MockTableIdentifier{fqTable},
+		SubQuery:      subQuery,
+		IdempotentKey: "",
+		PrimaryKeys:   []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), dialect)},
+		Columns:       &_cols,
+		DestKind:      constants.Snowflake,
+		Dialect:       dialect,
+		SoftDelete:    false,
 	}
 
 	mergeSQL, err := mergeArg.GetStatement()
 	assert.NoError(t, err)
 	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
-	assert.NotContains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at"), fmt.Sprintf("Idempotency key: %s", mergeSQL))
+	assert.NotContains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", `"UPDATED_AT"`, `"UPDATED_AT"`), fmt.Sprintf("Idempotency key: %s", mergeSQL))
 	// Check primary keys clause
-	assert.Contains(t, mergeSQL, "AS cc ON c.id = cc.id", mergeSQL)
+	assert.Contains(t, mergeSQL, `AS cc ON c."ID" = cc."ID"`, mergeSQL)
 
 	// Check setting for update
-	assert.Contains(t, mergeSQL, `SET id=cc.id,bar=cc.bar,updated_at=cc.updated_at,"START"=cc."START"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `SET "ID"=cc."ID","BAR"=cc."BAR","UPDATED_AT"=cc."UPDATED_AT","START"=cc."START"`, mergeSQL)
 	// Check for INSERT
-	assert.Contains(t, mergeSQL, `id,bar,updated_at,"START"`, mergeSQL)
-	assert.Contains(t, mergeSQL, `cc.id,cc.bar,cc.updated_at,cc."START"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `"ID","BAR","UPDATED_AT","START"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `cc."ID",cc."BAR",cc."UPDATED_AT",cc."START"`, mergeSQL)
 }
 
 func TestMergeStatementIdempotentKey(t *testing.T) {
@@ -154,15 +156,16 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 	_cols.AddColumn(columns.NewColumn("id", typing.String))
 	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
+	dialect := sql.SnowflakeDialect{UppercaseEscNames: true}
 	mergeArg := MergeArgument{
-		TableID:           MockTableIdentifier{fqTable},
-		SubQuery:          subQuery,
-		IdempotentKey:     "updated_at",
-		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, constants.Snowflake)},
-		Columns:           &_cols,
-		DestKind:          constants.Snowflake,
-		SoftDelete:        false,
-		UppercaseEscNames: ptr.ToBool(false),
+		TableID:       MockTableIdentifier{fqTable},
+		SubQuery:      subQuery,
+		IdempotentKey: "updated_at",
+		PrimaryKeys:   []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), dialect)},
+		Columns:       &_cols,
+		DestKind:      constants.Snowflake,
+		Dialect:       dialect,
+		SoftDelete:    false,
 	}
 
 	mergeSQL, err := mergeArg.GetStatement()
@@ -196,25 +199,26 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 	_cols.AddColumn(columns.NewColumn("another_id", typing.String))
 	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
+	dialect := sql.SnowflakeDialect{UppercaseEscNames: true}
 	mergeArg := MergeArgument{
 		TableID:       MockTableIdentifier{fqTable},
 		SubQuery:      subQuery,
 		IdempotentKey: "updated_at",
 		PrimaryKeys: []columns.Wrapper{
-			columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, constants.Snowflake),
-			columns.NewWrapper(columns.NewColumn("another_id", typing.Invalid), false, constants.Snowflake),
+			columns.NewWrapper(columns.NewColumn("id", typing.Invalid), dialect),
+			columns.NewWrapper(columns.NewColumn("another_id", typing.Invalid), dialect),
 		},
-		Columns:           &_cols,
-		DestKind:          constants.Snowflake,
-		SoftDelete:        false,
-		UppercaseEscNames: ptr.ToBool(false),
+		Columns:    &_cols,
+		DestKind:   constants.Snowflake,
+		Dialect:    dialect,
+		SoftDelete: false,
 	}
 
 	mergeSQL, err := mergeArg.GetStatement()
 	assert.NoError(t, err)
 	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
 	assert.Contains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at"), fmt.Sprintf("Idempotency key: %s", mergeSQL))
-	assert.Contains(t, mergeSQL, "cc ON c.id = cc.id and c.another_id = cc.another_id", mergeSQL)
+	assert.Contains(t, mergeSQL, `cc ON c."ID" = cc."ID" and c."ANOTHER_ID" = cc."ANOTHER_ID"`, mergeSQL)
 }
 
 func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
@@ -245,29 +249,30 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
+	dialect := sql.SnowflakeDialect{UppercaseEscNames: true}
 	mergeArg := MergeArgument{
 		TableID:       MockTableIdentifier{fqTable},
 		SubQuery:      subQuery,
 		IdempotentKey: "",
 		PrimaryKeys: []columns.Wrapper{
-			columns.NewWrapper(columns.NewColumn("id", typing.Invalid), true, constants.Snowflake),
-			columns.NewWrapper(columns.NewColumn("group", typing.Invalid), true, constants.Snowflake),
+			columns.NewWrapper(columns.NewColumn("id", typing.Invalid), dialect),
+			columns.NewWrapper(columns.NewColumn("group", typing.Invalid), dialect),
 		},
-		Columns:           &_cols,
-		DestKind:          constants.Snowflake,
-		SoftDelete:        false,
-		UppercaseEscNames: ptr.ToBool(true),
+		Columns:    &_cols,
+		DestKind:   constants.Snowflake,
+		Dialect:    dialect,
+		SoftDelete: false,
 	}
 
 	mergeSQL, err := mergeArg.GetStatement()
 	assert.NoError(t, err)
 	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
-	assert.NotContains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at"), fmt.Sprintf("Idempotency key: %s", mergeSQL))
+	assert.NotContains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", `"UPDATED_AT"`, `"UPDATED_AT"`), fmt.Sprintf("Idempotency key: %s", mergeSQL))
 	// Check primary keys clause
-	assert.Contains(t, mergeSQL, `AS cc ON c.id = cc.id and c."GROUP" = cc."GROUP"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `AS cc ON c."ID" = cc."ID" and c."GROUP" = cc."GROUP"`, mergeSQL)
 	// Check setting for update
-	assert.Contains(t, mergeSQL, `SET id=cc.id,"GROUP"=cc."GROUP",updated_at=cc.updated_at,"START"=cc."START"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `SET "ID"=cc."ID","GROUP"=cc."GROUP","UPDATED_AT"=cc."UPDATED_AT","START"=cc."START"`, mergeSQL)
 	// Check for INSERT
-	assert.Contains(t, mergeSQL, `id,"GROUP",updated_at,"START"`, mergeSQL)
-	assert.Contains(t, mergeSQL, `cc.id,cc."GROUP",cc.updated_at,cc."START"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `"ID","GROUP","UPDATED_AT","START"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `cc."ID",cc."GROUP",cc."UPDATED_AT",cc."START"`, mergeSQL)
 }

@@ -4,21 +4,18 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/config"
-
-	"github.com/artie-labs/transfer/lib/ptr"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/stretchr/testify/assert"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 func (d *DDLTestSuite) Test_CreateTable() {
@@ -52,17 +49,16 @@ func (d *DDLTestSuite) Test_CreateTable() {
 			_dwh:           d.snowflakeStagesStore,
 			_tableConfig:   snowflakeStagesTc,
 			_fakeStore:     d.fakeSnowflakeStagesStore,
-			_expectedQuery: fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (name string)", snowflakeTableID.FullyQualifiedName()),
+			_expectedQuery: fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s ("NAME" string)`, snowflakeTableID.FullyQualifiedName()),
 		},
 	} {
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:               dwhTc._dwh,
-			Tc:                dwhTc._tableConfig,
-			TableID:           dwhTc._tableID,
-			CreateTable:       dwhTc._tableConfig.CreateTable(),
-			ColumnOp:          constants.Add,
-			UppercaseEscNames: ptr.ToBool(false),
-			Mode:              config.Replication,
+			Dwh:         dwhTc._dwh,
+			Tc:          dwhTc._tableConfig,
+			TableID:     dwhTc._tableID,
+			CreateTable: dwhTc._tableConfig.CreateTable(),
+			ColumnOp:    constants.Add,
+			Mode:        config.Replication,
 		}
 
 		assert.NoError(d.T(), alterTableArgs.AlterTable(columns.NewColumn("name", typing.String)))
@@ -102,17 +98,17 @@ func (d *DDLTestSuite) TestCreateTable() {
 		{
 			name:          "happy path",
 			cols:          happyPathCols,
-			expectedQuery: `CREATE TABLE IF NOT EXISTS demo.public."EXPERIMENTS" (user_id string)`,
+			expectedQuery: `CREATE TABLE IF NOT EXISTS demo.public."EXPERIMENTS" ("USER_ID" string)`,
 		},
 		{
 			name:          "happy path + enabled",
 			cols:          twoCols,
-			expectedQuery: `CREATE TABLE IF NOT EXISTS demo.public."EXPERIMENTS" (user_id string,enabled boolean)`,
+			expectedQuery: `CREATE TABLE IF NOT EXISTS demo.public."EXPERIMENTS" ("USER_ID" string,"ENABLED" boolean)`,
 		},
 		{
 			name:          "complex table creation",
 			cols:          bunchOfCols,
-			expectedQuery: `CREATE TABLE IF NOT EXISTS demo.public."EXPERIMENTS" (user_id string,enabled_boolean boolean,array array,struct variant)`,
+			expectedQuery: `CREATE TABLE IF NOT EXISTS demo.public."EXPERIMENTS" ("USER_ID" string,"ENABLED_BOOLEAN" boolean,"ARRAY" array,"STRUCT" variant)`,
 		},
 	}
 
@@ -122,14 +118,13 @@ func (d *DDLTestSuite) TestCreateTable() {
 		tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:               d.snowflakeStagesStore,
-			Tc:                tc,
-			TableID:           tableID,
-			CreateTable:       tc.CreateTable(),
-			ColumnOp:          constants.Add,
-			CdcTime:           time.Now().UTC(),
-			UppercaseEscNames: ptr.ToBool(false),
-			Mode:              config.Replication,
+			Dwh:         d.snowflakeStagesStore,
+			Tc:          tc,
+			TableID:     tableID,
+			CreateTable: tc.CreateTable(),
+			ColumnOp:    constants.Add,
+			CdcTime:     time.Now().UTC(),
+			Mode:        config.Replication,
 		}
 
 		assert.NoError(d.T(), alterTableArgs.AlterTable(testCase.cols...), testCase.name)

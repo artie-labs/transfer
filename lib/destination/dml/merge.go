@@ -8,6 +8,7 @@ import (
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -29,7 +30,7 @@ type MergeArgument struct {
 	// ContainsHardDeletes is only used for Redshift and MergeStatementParts,
 	// where we do not issue a DELETE statement if there are no hard deletes in the batch
 	ContainsHardDeletes *bool
-	UppercaseEscNames   *bool
+	Dialect             sql.Dialect
 }
 
 func (m *MergeArgument) Valid() error {
@@ -53,12 +54,12 @@ func (m *MergeArgument) Valid() error {
 		return fmt.Errorf("subQuery cannot be empty")
 	}
 
-	if m.UppercaseEscNames == nil {
-		return fmt.Errorf("uppercaseEscNames cannot be nil")
-	}
-
 	if !constants.IsValidDestination(m.DestKind) {
 		return fmt.Errorf("invalid destination: %s", m.DestKind)
+	}
+
+	if m.Dialect == nil {
+		return fmt.Errorf("dialect cannot be nil")
 	}
 
 	return nil
@@ -97,7 +98,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	cols := m.Columns.GetEscapedColumnsToUpdate(*m.UppercaseEscNames, m.DestKind)
+	cols := m.Columns.GetEscapedColumnsToUpdate(m.Dialect)
 
 	if m.SoftDelete {
 		return []string{
@@ -118,7 +119,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 			// UPDATE
 			fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s;`,
 				// UPDATE table set col1 = cc. col1
-				m.TableID.FullyQualifiedName(), m.Columns.UpdateQuery(m.DestKind, *m.UppercaseEscNames, false),
+				m.TableID.FullyQualifiedName(), m.Columns.UpdateQuery(m.Dialect, false),
 				// FROM table (temp) WHERE join on PK(s)
 				m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause,
 			),
@@ -128,7 +129,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
 	for idx, col := range cols {
-		if col == constants.DeleteColumnMarker {
+		if col == sql.EscapeNameIfNecessary(constants.DeleteColumnMarker, m.Dialect) {
 			cols = append(cols[:idx], cols[idx+1:]...)
 			removed = true
 			break
@@ -162,7 +163,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		// UPDATE
 		fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s AND COALESCE(cc.%s, false) = false;`,
 			// UPDATE table set col1 = cc. col1
-			m.TableID.FullyQualifiedName(), m.Columns.UpdateQuery(m.DestKind, *m.UppercaseEscNames, true),
+			m.TableID.FullyQualifiedName(), m.Columns.UpdateQuery(m.Dialect, true),
 			// FROM staging WHERE join on PK(s)
 			m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause, constants.DeleteColumnMarker,
 		),
@@ -229,7 +230,7 @@ func (m *MergeArgument) GetStatement() (string, error) {
 		equalitySQLParts = append(equalitySQLParts, m.AdditionalEqualityStrings...)
 	}
 
-	cols := m.Columns.GetEscapedColumnsToUpdate(*m.UppercaseEscNames, m.DestKind)
+	cols := m.Columns.GetEscapedColumnsToUpdate(m.Dialect)
 
 	if m.SoftDelete {
 		return fmt.Sprintf(`
@@ -238,7 +239,7 @@ WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
 			m.TableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, m.Columns.UpdateQuery(m.DestKind, *m.UppercaseEscNames, false),
+			idempotentClause, m.Columns.UpdateQuery(m.Dialect, false),
 			// Insert
 			constants.DeleteColumnMarker, strings.Join(cols, ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -251,7 +252,7 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
 	for idx, col := range cols {
-		if col == constants.DeleteColumnMarker {
+		if col == sql.EscapeNameIfNecessary(constants.DeleteColumnMarker, m.Dialect) {
 			cols = append(cols[:idx], cols[idx+1:]...)
 			removed = true
 			break
@@ -271,7 +272,7 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update
-		constants.DeleteColumnMarker, idempotentClause, m.Columns.UpdateQuery(m.DestKind, *m.UppercaseEscNames, true),
+		constants.DeleteColumnMarker, idempotentClause, m.Columns.UpdateQuery(m.Dialect, true),
 		// Insert
 		constants.DeleteColumnMarker, strings.Join(cols, ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -298,7 +299,7 @@ func (m *MergeArgument) GetMSSQLStatement() (string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	cols := m.Columns.GetEscapedColumnsToUpdate(*m.UppercaseEscNames, m.DestKind)
+	cols := m.Columns.GetEscapedColumnsToUpdate(m.Dialect)
 
 	if m.SoftDelete {
 		return fmt.Sprintf(`
@@ -308,7 +309,7 @@ WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 			m.TableID.FullyQualifiedName(), m.SubQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, m.Columns.UpdateQuery(m.DestKind, *m.UppercaseEscNames, false),
+			idempotentClause, m.Columns.UpdateQuery(m.Dialect, false),
 			// Insert
 			constants.DeleteColumnMarker, strings.Join(cols, ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -321,7 +322,7 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
 	for idx, col := range cols {
-		if col == constants.DeleteColumnMarker {
+		if col == sql.EscapeNameIfNecessary(constants.DeleteColumnMarker, m.Dialect) {
 			cols = append(cols[:idx], cols[idx+1:]...)
 			removed = true
 			break
@@ -342,7 +343,7 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
 		// Delete
 		constants.DeleteColumnMarker,
 		// Update
-		constants.DeleteColumnMarker, idempotentClause, m.Columns.UpdateQuery(m.DestKind, *m.UppercaseEscNames, true),
+		constants.DeleteColumnMarker, idempotentClause, m.Columns.UpdateQuery(m.Dialect, true),
 		// Insert
 		constants.DeleteColumnMarker, strings.Join(cols, ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{

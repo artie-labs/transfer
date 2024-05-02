@@ -44,7 +44,6 @@ type AlterTableArgs struct {
 	TableID                types.TableIdentifier
 	CreateTable            bool
 	TemporaryTable         bool
-	UppercaseEscNames      *bool
 
 	ColumnOp constants.ColumnOperation
 	Mode     config.Mode
@@ -67,10 +66,6 @@ func (a AlterTableArgs) Validate() error {
 		if !a.CreateTable {
 			return fmt.Errorf("incompatible operation - we should not be altering temporary tables, only create")
 		}
-	}
-
-	if a.UppercaseEscNames == nil {
-		return fmt.Errorf("uppercaseEscNames cannot be nil")
 	}
 
 	return nil
@@ -104,7 +99,7 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 		mutateCol = append(mutateCol, col)
 		switch a.ColumnOp {
 		case constants.Add:
-			colName := col.Name(*a.UppercaseEscNames, a.Dwh.Label())
+			colName := col.Name(a.Dwh.Dialect())
 
 			if col.PrimaryKey() && a.Mode != config.History {
 				// Don't create a PK for history mode because it's append-only, so the primary key should not be enforced.
@@ -113,7 +108,7 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 
 			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, colName, typing.KindToDWHType(col.KindDetails, a.Dwh.Label(), col.PrimaryKey())))
 		case constants.Delete:
-			colSQLParts = append(colSQLParts, col.Name(*a.UppercaseEscNames, a.Dwh.Label()))
+			colSQLParts = append(colSQLParts, col.Name(a.Dwh.Dialect()))
 		}
 	}
 

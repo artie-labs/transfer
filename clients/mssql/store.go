@@ -13,6 +13,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
 )
 
 type Store struct {
@@ -34,8 +35,8 @@ func (s *Store) Label() constants.DestinationKind {
 	return constants.MSSQL
 }
 
-func (s *Store) ShouldUppercaseEscapedNames() bool {
-	return false
+func (s *Store) Dialect() sql.Dialect {
+	return sql.MSSQLDialect{}
 }
 
 func (s *Store) Merge(tableData *optimization.TableData) error {
