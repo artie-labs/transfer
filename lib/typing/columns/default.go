@@ -3,7 +3,6 @@ package columns
 import (
 	"fmt"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -12,11 +11,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
-
-type DefaultValueArgs struct {
-	Escape   bool
-	DestKind constants.DestinationKind
-}
 
 func (c *Column) RawDefaultValue() any {
 	return c.defaultValue
