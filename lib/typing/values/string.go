@@ -56,7 +56,7 @@ func ToString(colVal any, colKind columns.Column, additionalDateFmts []string) (
 			return string(colValBytes), nil
 		}
 
-		return stringutil.Wrap(colVal, true), nil
+		return stringutil.EscapeBackslashes(fmt.Sprint(colVal)), nil
 	case typing.Struct.Kind:
 		if colKind.KindDetails == typing.Struct {
 			if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {

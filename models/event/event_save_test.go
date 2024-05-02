@@ -48,7 +48,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	// Check the in-memory DB columns.
 	var found int
 	for _, col := range optimization.ReadOnlyInMemoryCols().GetColumns() {
-		if col.RawName() == expectedLowerCol || col.RawName() == anotherLowerCol {
+		if col.Name() == expectedLowerCol || col.Name() == anotherLowerCol {
 			found += 1
 		}
 
@@ -183,16 +183,16 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	td := e.db.GetOrCreateTableData("non_existent")
 	var prevKey string
 	for _, col := range td.ReadOnlyInMemoryCols().GetColumns() {
-		if col.RawName() == constants.DeleteColumnMarker {
+		if col.Name() == constants.DeleteColumnMarker {
 			continue
 		}
 
 		if prevKey == "" {
-			prevKey = col.RawName()
+			prevKey = col.Name()
 			continue
 		}
 
-		currentKeyParsed, err := strconv.Atoi(col.RawName())
+		currentKeyParsed, err := strconv.Atoi(col.Name())
 		assert.NoError(e.T(), err)
 
 		prevKeyParsed, err := strconv.Atoi(prevKey)
@@ -206,7 +206,7 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	evt.Columns.AddColumn(columns.NewColumn("foo", typing.Invalid))
 	var index int
 	for idx, col := range evt.Columns.GetColumns() {
-		if col.RawName() == "foo" {
+		if col.Name() == "foo" {
 			index = idx
 		}
 	}

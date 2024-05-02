@@ -7,7 +7,7 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 )
 
-var dialect = sql.DefaultDialect{}
+var dialect = sql.MSSQLDialect{}
 
 type TableIdentifier struct {
 	schema string

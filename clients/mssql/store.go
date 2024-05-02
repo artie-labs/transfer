@@ -36,11 +36,7 @@ func (s *Store) Label() constants.DestinationKind {
 }
 
 func (s *Store) Dialect() sql.Dialect {
-	return sql.DefaultDialect{}
-}
-
-func (s *Store) ShouldUppercaseEscapedNames() bool {
-	return false
+	return sql.MSSQLDialect{}
 }
 
 func (s *Store) Merge(tableData *optimization.TableData) error {
@@ -48,8 +44,7 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 }
 
 func (s *Store) Append(tableData *optimization.TableData) error {
-	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	return shared.Append(s, tableData, types.AppendOpts{TempTableID: tableID})
+	return shared.Append(s, tableData, types.AdditionalSettings{})
 }
 
 // specificIdentifierFor returns a MS SQL [TableIdentifier] for a [TopicConfig] + table name.

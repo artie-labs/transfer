@@ -5,19 +5,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/artie-labs/transfer/clients/snowflake"
-	"github.com/artie-labs/transfer/lib/config"
-
-	"github.com/artie-labs/transfer/lib/ptr"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/clients/snowflake"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
@@ -34,20 +30,19 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 
 	alterTableArgs := ddl.AlterTableArgs{
-		Dwh:               d.snowflakeStagesStore,
-		Tc:                tc,
-		TableID:           tableID,
-		ColumnOp:          constants.Add,
-		CdcTime:           time.Now().UTC(),
-		UppercaseEscNames: ptr.ToBool(false),
-		Mode:              config.Replication,
+		Dwh:      d.snowflakeStagesStore,
+		Tc:       tc,
+		TableID:  tableID,
+		ColumnOp: constants.Add,
+		CdcTime:  time.Now().UTC(),
+		Mode:     config.Replication,
 	}
 
 	assert.NoError(d.T(), alterTableArgs.AlterTable(cols...))
 	for i := 0; i < len(cols); i++ {
 		execQuery, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(i)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN %s %s", `shop.public."COMPLEX_COLUMNS"`,
-			cols[i].Name(false, d.snowflakeStagesStore.Label()),
+			d.snowflakeStagesStore.Dialect().QuoteIdentifier(cols[i].Name()),
 			typing.KindToDWHType(cols[i].KindDetails, d.snowflakeStagesStore.Label(), false)), execQuery)
 	}
 
@@ -68,13 +63,12 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 
 	d.fakeSnowflakeStagesStore.ExecReturns(nil, errors.New("column 'order_name' already exists"))
 	alterTableArgs := ddl.AlterTableArgs{
-		Dwh:               d.snowflakeStagesStore,
-		Tc:                tc,
-		TableID:           tableID,
-		ColumnOp:          constants.Add,
-		CdcTime:           time.Now().UTC(),
-		UppercaseEscNames: ptr.ToBool(false),
-		Mode:              config.Replication,
+		Dwh:      d.snowflakeStagesStore,
+		Tc:       tc,
+		TableID:  tableID,
+		ColumnOp: constants.Add,
+		CdcTime:  time.Now().UTC(),
+		Mode:     config.Replication,
 	}
 
 	assert.NoError(d.T(), alterTableArgs.AlterTable(cols...))
@@ -98,13 +92,12 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 
 	alterTableArgs := ddl.AlterTableArgs{
-		Dwh:               d.snowflakeStagesStore,
-		Tc:                tc,
-		TableID:           tableID,
-		ColumnOp:          constants.Add,
-		CdcTime:           time.Now().UTC(),
-		UppercaseEscNames: ptr.ToBool(false),
-		Mode:              config.Replication,
+		Dwh:      d.snowflakeStagesStore,
+		Tc:       tc,
+		TableID:  tableID,
+		ColumnOp: constants.Add,
+		CdcTime:  time.Now().UTC(),
+		Mode:     config.Replication,
 	}
 
 	assert.NoError(d.T(), alterTableArgs.AlterTable(cols...))
@@ -115,15 +108,15 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 	for _, column := range tableConfig.Columns().GetColumns() {
 		var found bool
 		for _, expCol := range cols {
-			if found = column.RawName() == expCol.RawName(); found {
-				assert.Equal(d.T(), column.KindDetails, expCol.KindDetails, fmt.Sprintf("wrong col kind, col: %s", column.RawName()))
+			if found = column.Name() == expCol.Name(); found {
+				assert.Equal(d.T(), column.KindDetails, expCol.KindDetails, fmt.Sprintf("wrong col kind, col: %s", column.Name()))
 				break
 			}
 		}
 
 		assert.True(d.T(), found,
 			fmt.Sprintf("Col not found: %s, actual list: %v, expected list: %v",
-				column.RawName(), tableConfig.Columns(), cols))
+				column.Name(), tableConfig.Columns(), cols))
 	}
 }
 
@@ -146,7 +139,6 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 		ContainOtherOperations: true,
 		ColumnOp:               constants.Delete,
 		CdcTime:                time.Now().UTC(),
-		UppercaseEscNames:      ptr.ToBool(false),
 		Mode:                   config.Replication,
 	}
 
@@ -158,7 +150,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	for col := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, expCol := range cols {
-			if found = col == expCol.RawName(); found {
+			if found = col == expCol.Name(); found {
 				break
 			}
 		}
@@ -169,7 +161,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	}
 
 	for i := 0; i < len(cols); i++ {
-		colToActuallyDelete := cols[i].RawName()
+		colToActuallyDelete := cols[i].Name()
 		// Now let's check the timestamp
 		assert.True(d.T(), tableConfig.ReadOnlyColumnsToDelete()[colToActuallyDelete].After(time.Now()))
 		// Now let's actually try to dial the time back, and it should actually try to delete.
@@ -180,7 +172,8 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 
 		execArg, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(i)
 		assert.Equal(d.T(), execArg, fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", `shop.public."USERS"`, constants.Delete,
-			cols[i].Name(false, d.snowflakeStagesStore.Label())))
+			d.snowflakeStagesStore.Dialect().QuoteIdentifier(cols[i].Name()),
+		))
 	}
 }
 
@@ -211,7 +204,6 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 		ColumnOp:               constants.Delete,
 		ContainOtherOperations: true,
 		CdcTime:                time.Now(),
-		UppercaseEscNames:      ptr.ToBool(false),
 		Mode:                   config.Replication,
 	}
 
@@ -223,7 +215,7 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 	for col := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, expCol := range cols {
-			if found = col == expCol.RawName(); found {
+			if found = col == expCol.Name(); found {
 				break
 			}
 		}

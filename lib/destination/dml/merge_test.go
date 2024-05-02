@@ -10,7 +10,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -31,6 +30,39 @@ func (m MockTableIdentifier) WithTable(_ string) types.TableIdentifier {
 
 func (m MockTableIdentifier) FullyQualifiedName() string {
 	return m.fqName
+}
+
+func TestRemoveDeleteColumnMarker(t *testing.T) {
+	{
+		columns, removed := removeDeleteColumnMarker([]string{})
+		assert.Empty(t, columns)
+		assert.False(t, removed)
+	}
+	{
+		columns, removed := removeDeleteColumnMarker([]string{"a"})
+		assert.Equal(t, []string{"a"}, columns)
+		assert.False(t, removed)
+	}
+	{
+		columns, removed := removeDeleteColumnMarker([]string{"a", "b"})
+		assert.Equal(t, []string{"a", "b"}, columns)
+		assert.False(t, removed)
+	}
+	{
+		columns, removed := removeDeleteColumnMarker([]string{constants.DeleteColumnMarker})
+		assert.True(t, removed)
+		assert.Empty(t, columns)
+	}
+	{
+		columns, removed := removeDeleteColumnMarker([]string{"a", constants.DeleteColumnMarker, "b"})
+		assert.True(t, removed)
+		assert.Equal(t, []string{"a", "b"}, columns)
+	}
+	{
+		columns, removed := removeDeleteColumnMarker([]string{"a", constants.DeleteColumnMarker, "b", constants.DeleteColumnMarker, "c"})
+		assert.True(t, removed)
+		assert.Equal(t, []string{"a", "b", "c"}, columns)
+	}
 }
 
 func TestMergeStatementSoftDelete(t *testing.T) {
@@ -59,15 +91,14 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 
 	for _, idempotentKey := range []string{"", "updated_at"} {
 		mergeArg := MergeArgument{
-			TableID:           MockTableIdentifier{fqTable},
-			SubQuery:          subQuery,
-			IdempotentKey:     idempotentKey,
-			PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, constants.Snowflake)},
-			Columns:           &_cols,
-			DestKind:          constants.Snowflake,
-			Dialect:           sql.SnowflakeDialect{UppercaseEscNames: true},
-			SoftDelete:        true,
-			UppercaseEscNames: ptr.ToBool(true),
+			TableID:       MockTableIdentifier{fqTable},
+			SubQuery:      subQuery,
+			IdempotentKey: idempotentKey,
+			PrimaryKeys:   []columns.Column{columns.NewColumn("id", typing.Invalid)},
+			Columns:       &_cols,
+			DestKind:      constants.Snowflake,
+			Dialect:       sql.SnowflakeDialect{},
+			SoftDelete:    true,
 		}
 
 		mergeSQL, err := mergeArg.GetStatement()
@@ -109,15 +140,14 @@ func TestMergeStatement(t *testing.T) {
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
 	mergeArg := MergeArgument{
-		TableID:           MockTableIdentifier{fqTable},
-		SubQuery:          subQuery,
-		IdempotentKey:     "",
-		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), true, constants.Snowflake)},
-		Columns:           &_cols,
-		DestKind:          constants.Snowflake,
-		Dialect:           sql.SnowflakeDialect{UppercaseEscNames: true},
-		SoftDelete:        false,
-		UppercaseEscNames: ptr.ToBool(true),
+		TableID:       MockTableIdentifier{fqTable},
+		SubQuery:      subQuery,
+		IdempotentKey: "",
+		PrimaryKeys:   []columns.Column{columns.NewColumn("id", typing.Invalid)},
+		Columns:       &_cols,
+		DestKind:      constants.Snowflake,
+		Dialect:       sql.SnowflakeDialect{},
+		SoftDelete:    false,
 	}
 
 	mergeSQL, err := mergeArg.GetStatement()
@@ -158,15 +188,14 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	mergeArg := MergeArgument{
-		TableID:           MockTableIdentifier{fqTable},
-		SubQuery:          subQuery,
-		IdempotentKey:     "updated_at",
-		PrimaryKeys:       []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, constants.Snowflake)},
-		Columns:           &_cols,
-		DestKind:          constants.Snowflake,
-		Dialect:           sql.SnowflakeDialect{UppercaseEscNames: true},
-		SoftDelete:        false,
-		UppercaseEscNames: ptr.ToBool(true),
+		TableID:       MockTableIdentifier{fqTable},
+		SubQuery:      subQuery,
+		IdempotentKey: "updated_at",
+		PrimaryKeys:   []columns.Column{columns.NewColumn("id", typing.Invalid)},
+		Columns:       &_cols,
+		DestKind:      constants.Snowflake,
+		Dialect:       sql.SnowflakeDialect{},
+		SoftDelete:    false,
 	}
 
 	mergeSQL, err := mergeArg.GetStatement()
@@ -204,22 +233,21 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 		TableID:       MockTableIdentifier{fqTable},
 		SubQuery:      subQuery,
 		IdempotentKey: "updated_at",
-		PrimaryKeys: []columns.Wrapper{
-			columns.NewWrapper(columns.NewColumn("id", typing.Invalid), false, constants.Snowflake),
-			columns.NewWrapper(columns.NewColumn("another_id", typing.Invalid), false, constants.Snowflake),
+		PrimaryKeys: []columns.Column{
+			columns.NewColumn("id", typing.Invalid),
+			columns.NewColumn("another_id", typing.Invalid),
 		},
-		Columns:           &_cols,
-		DestKind:          constants.Snowflake,
-		Dialect:           sql.SnowflakeDialect{UppercaseEscNames: true},
-		SoftDelete:        false,
-		UppercaseEscNames: ptr.ToBool(true),
+		Columns:    &_cols,
+		DestKind:   constants.Snowflake,
+		Dialect:    sql.SnowflakeDialect{},
+		SoftDelete: false,
 	}
 
 	mergeSQL, err := mergeArg.GetStatement()
 	assert.NoError(t, err)
 	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
 	assert.Contains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at"), fmt.Sprintf("Idempotency key: %s", mergeSQL))
-	assert.Contains(t, mergeSQL, "cc ON c.id = cc.id and c.another_id = cc.another_id", mergeSQL)
+	assert.Contains(t, mergeSQL, `cc ON c."ID" = cc."ID" and c."ANOTHER_ID" = cc."ANOTHER_ID"`, mergeSQL)
 }
 
 func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
@@ -254,15 +282,14 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 		TableID:       MockTableIdentifier{fqTable},
 		SubQuery:      subQuery,
 		IdempotentKey: "",
-		PrimaryKeys: []columns.Wrapper{
-			columns.NewWrapper(columns.NewColumn("id", typing.Invalid), true, constants.Snowflake),
-			columns.NewWrapper(columns.NewColumn("group", typing.Invalid), true, constants.Snowflake),
+		PrimaryKeys: []columns.Column{
+			columns.NewColumn("id", typing.Invalid),
+			columns.NewColumn("group", typing.Invalid),
 		},
-		Columns:           &_cols,
-		DestKind:          constants.Snowflake,
-		Dialect:           sql.SnowflakeDialect{UppercaseEscNames: true},
-		SoftDelete:        false,
-		UppercaseEscNames: ptr.ToBool(true),
+		Columns:    &_cols,
+		DestKind:   constants.Snowflake,
+		Dialect:    sql.SnowflakeDialect{},
+		SoftDelete: false,
 	}
 
 	mergeSQL, err := mergeArg.GetStatement()

@@ -353,7 +353,7 @@ func (m *MySQLTestSuite) TestGetEventFromBytes() {
 
 	col, isOk := cols.GetColumn("abcdef")
 	assert.True(m.T(), isOk)
-	assert.Equal(m.T(), "abcdef", col.RawName())
+	assert.Equal(m.T(), "abcdef", col.Name())
 	for key := range evtData {
 		if strings.Contains(key, constants.ArtiePrefix) {
 			continue
@@ -361,6 +361,6 @@ func (m *MySQLTestSuite) TestGetEventFromBytes() {
 
 		col, isOk = cols.GetColumn(strings.ToLower(key))
 		assert.Equal(m.T(), true, isOk, key)
-		assert.Equal(m.T(), typing.Invalid, col.KindDetails, fmt.Sprintf("colName: %v, evtData key: %v", col.RawName(), key))
+		assert.Equal(m.T(), typing.Invalid, col.KindDetails, fmt.Sprintf("colName: %v, evtData key: %v", col.Name(), key))
 	}
 }

@@ -35,14 +35,13 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 
 	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	createAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:               dwh,
-		Tc:                tableConfig,
-		TableID:           tableID,
-		CreateTable:       tableConfig.CreateTable(),
-		ColumnOp:          constants.Add,
-		CdcTime:           tableData.LatestCDCTs,
-		UppercaseEscNames: ptr.ToBool(dwh.ShouldUppercaseEscapedNames()),
-		Mode:              tableData.Mode(),
+		Dwh:         dwh,
+		Tc:          tableConfig,
+		TableID:     tableID,
+		CreateTable: tableConfig.CreateTable(),
+		ColumnOp:    constants.Add,
+		CdcTime:     tableData.LatestCDCTs,
+		Mode:        tableData.Mode(),
 	}
 
 	// Columns that are missing in DWH, but exist in our CDC stream.
@@ -60,7 +59,6 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		ColumnOp:               constants.Delete,
 		ContainOtherOperations: tableData.ContainOtherOperations(),
 		CdcTime:                tableData.LatestCDCTs,
-		UppercaseEscNames:      ptr.ToBool(dwh.ShouldUppercaseEscapedNames()),
 		Mode:                   tableData.Mode(),
 	}
 
@@ -95,7 +93,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		for attempts := 0; attempts < backfillMaxRetries; attempts++ {
 			backfillErr = BackfillColumn(cfg, dwh, col, tableID)
 			if backfillErr == nil {
-				tableConfig.Columns().UpsertColumn(col.RawName(), columns.UpsertColumnArg{
+				tableConfig.Columns().UpsertColumn(col.Name(), columns.UpsertColumnArg{
 					Backfilled: ptr.ToBool(true),
 				})
 				break
@@ -112,7 +110,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		}
 
 		if backfillErr != nil {
-			return fmt.Errorf("failed to backfill col: %s, default value: %v, err: %w", col.RawName(), col.RawDefaultValue(), backfillErr)
+			return fmt.Errorf("failed to backfill col: %s, default value: %v, err: %w", col.Name(), col.RawDefaultValue(), backfillErr)
 		}
 	}
 
@@ -125,12 +123,11 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		TableID:             tableID,
 		SubQuery:            subQuery,
 		IdempotentKey:       tableData.TopicConfig().IdempotentKey,
-		PrimaryKeys:         tableData.PrimaryKeys(dwh.ShouldUppercaseEscapedNames(), dwh.Label()),
+		PrimaryKeys:         tableData.PrimaryKeys(),
 		Columns:             tableData.ReadOnlyInMemoryCols(),
 		SoftDelete:          tableData.TopicConfig().SoftDelete,
 		DestKind:            dwh.Label(),
 		Dialect:             dwh.Dialect(),
-		UppercaseEscNames:   ptr.ToBool(dwh.ShouldUppercaseEscapedNames()),
 		ContainsHardDeletes: ptr.ToBool(tableData.ContainsHardDeletes()),
 	}
 

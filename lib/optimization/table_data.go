@@ -66,10 +66,10 @@ func (t *TableData) ContainOtherOperations() bool {
 	return t.containOtherOperations
 }
 
-func (t *TableData) PrimaryKeys(uppercaseEscNames bool, destKind constants.DestinationKind) []columns.Wrapper {
-	var pks []columns.Wrapper
+func (t *TableData) PrimaryKeys() []columns.Column {
+	var pks []columns.Column
 	for _, pk := range t.primaryKeys {
-		pks = append(pks, columns.NewWrapper(columns.NewColumn(pk, typing.Invalid), uppercaseEscNames, destKind))
+		pks = append(pks, columns.NewColumn(pk, typing.Invalid))
 	}
 
 	return pks
@@ -257,9 +257,9 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) erro
 		var foundColumn columns.Column
 		var found bool
 		for _, destCol := range destCols {
-			if destCol.RawName() == strings.ToLower(inMemoryCol.RawName()) {
+			if destCol.Name() == strings.ToLower(inMemoryCol.Name()) {
 				if destCol.KindDetails.Kind == typing.Invalid.Kind {
-					return fmt.Errorf("column %q is invalid", destCol.RawName())
+					return fmt.Errorf("column %q is invalid", destCol.Name())
 				}
 
 				foundColumn = destCol

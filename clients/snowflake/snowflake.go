@@ -78,11 +78,7 @@ func (s *Store) Label() constants.DestinationKind {
 }
 
 func (s *Store) Dialect() sql.Dialect {
-	return sql.SnowflakeDialect{UppercaseEscNames: s.ShouldUppercaseEscapedNames()}
-}
-
-func (s *Store) ShouldUppercaseEscapedNames() bool {
-	return s.config.SharedDestinationConfig.UppercaseEscapedNames
+	return sql.SnowflakeDialect{LegacyMode: !s.config.SharedDestinationConfig.UppercaseEscapedNames}
 }
 
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
@@ -132,14 +128,11 @@ func (s *Store) reestablishConnection() error {
 }
 
 func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
-	var primaryKeysEscaped []string
-	for _, pk := range primaryKeys {
-		primaryKeysEscaped = append(primaryKeysEscaped, sql.EscapeNameIfNecessaryUsingDialect(pk, s.Dialect()))
-	}
+	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, s.Dialect())
 
 	orderColsToIterate := primaryKeysEscaped
 	if topicConfig.IncludeArtieUpdatedAt {
-		orderColsToIterate = append(orderColsToIterate, sql.EscapeNameIfNecessaryUsingDialect(constants.UpdateColumnMarker, s.Dialect()))
+		orderColsToIterate = append(orderColsToIterate, s.Dialect().QuoteIdentifier(constants.UpdateColumnMarker))
 	}
 
 	var orderByCols []string

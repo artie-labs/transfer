@@ -79,15 +79,8 @@ func (c *Column) ShouldBackfill() bool {
 	return c.defaultValue != nil && !c.backfilled
 }
 
-func (c *Column) RawName() string {
+func (c *Column) Name() string {
 	return c.name
-}
-
-// Name will give you c.name
-// Plus we will escape it if the column name is part of the reserved words from destinations.
-// If so, it'll change from `start` => `"start"` as suggested by Snowflake.
-func (c *Column) Name(uppercaseEscNames bool, destKind constants.DestinationKind) string {
-	return sql.EscapeNameIfNecessary(c.name, uppercaseEscNames, destKind)
 }
 
 type Columns struct {
@@ -190,29 +183,7 @@ func (c *Columns) GetColumnsToUpdate() []string {
 			continue
 		}
 
-		cols = append(cols, col.RawName())
-	}
-
-	return cols
-}
-
-// GetEscapedColumnsToUpdate will filter all the `Invalid` columns so that we do not update it.
-// It will escape the returned columns.
-func (c *Columns) GetEscapedColumnsToUpdate(uppercaseEscNames bool, destKind constants.DestinationKind) []string {
-	if c == nil {
-		return []string{}
-	}
-
-	c.RLock()
-	defer c.RUnlock()
-
-	var cols []string
-	for _, col := range c.columns {
-		if col.KindDetails == typing.Invalid {
-			continue
-		}
-
-		cols = append(cols, col.Name(uppercaseEscNames, destKind))
+		cols = append(cols, col.Name())
 	}
 
 	return cols
@@ -257,7 +228,7 @@ func (c *Columns) DeleteColumn(name string) {
 }
 
 // UpdateQuery will parse the columns and then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email
-func (c *Columns) UpdateQuery(destKind constants.DestinationKind, uppercaseEscNames bool, skipDeleteCol bool) string {
+func (c *Columns) UpdateQuery(dialect sql.Dialect, skipDeleteCol bool) string {
 	var cols []string
 	for _, column := range c.GetColumns() {
 		if column.ShouldSkip() {
@@ -265,16 +236,16 @@ func (c *Columns) UpdateQuery(destKind constants.DestinationKind, uppercaseEscNa
 		}
 
 		// skipDeleteCol is useful because we don't want to copy the deleted column over to the source table if we're doing a hard row delete.
-		if skipDeleteCol && column.RawName() == constants.DeleteColumnMarker {
+		if skipDeleteCol && column.Name() == constants.DeleteColumnMarker {
 			continue
 		}
 
-		colName := column.Name(uppercaseEscNames, destKind)
+		colName := dialect.QuoteIdentifier(column.Name())
 		if column.ToastColumn {
 			if column.KindDetails == typing.Struct {
-				cols = append(cols, processToastStructCol(colName, destKind))
+				cols = append(cols, processToastStructCol(colName, dialect))
 			} else {
-				cols = append(cols, processToastCol(colName, destKind))
+				cols = append(cols, processToastCol(colName, dialect))
 			}
 
 		} else {
@@ -286,16 +257,16 @@ func (c *Columns) UpdateQuery(destKind constants.DestinationKind, uppercaseEscNa
 	return strings.Join(cols, ",")
 }
 
-func processToastStructCol(colName string, destKind constants.DestinationKind) string {
-	switch destKind {
-	case constants.BigQuery:
+func processToastStructCol(colName string, dialect sql.Dialect) string {
+	switch dialect.(type) {
+	case sql.BigQueryDialect:
 		return fmt.Sprintf(`%s= CASE WHEN COALESCE(TO_JSON_STRING(cc.%s) != '{"key":"%s"}', true) THEN cc.%s ELSE c.%s END`,
 			colName, colName, constants.ToastUnavailableValuePlaceholder,
 			colName, colName)
-	case constants.Redshift:
+	case sql.RedshiftDialect:
 		return fmt.Sprintf(`%s= CASE WHEN COALESCE(cc.%s != JSON_PARSE('{"key":"%s"}'), true) THEN cc.%s ELSE c.%s END`,
 			colName, colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
-	case constants.MSSQL:
+	case sql.MSSQLDialect:
 		// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
 		return fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s, {}) != {'key': '%s'} THEN cc.%s ELSE c.%s END",
 			colName, colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
@@ -306,8 +277,8 @@ func processToastStructCol(colName string, destKind constants.DestinationKind) s
 	}
 }
 
-func processToastCol(colName string, destKind constants.DestinationKind) string {
-	if destKind == constants.MSSQL {
+func processToastCol(colName string, dialect sql.Dialect) string {
+	if _, ok := dialect.(sql.MSSQLDialect); ok {
 		// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
 		return fmt.Sprintf("%s= CASE WHEN COALESCE(cc.%s, '') != '%s' THEN cc.%s ELSE c.%s END", colName, colName,
 			constants.ToastUnavailableValuePlaceholder, colName, colName)

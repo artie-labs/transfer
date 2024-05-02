@@ -25,12 +25,12 @@ func BackfillColumn(cfg config.Config, dwh destination.DataWarehouse, column col
 	}
 
 	additionalDateFmts := cfg.SharedTransferConfig.TypingSettings.AdditionalDateFormats
-	defaultVal, err := column.DefaultValue(&columns.DefaultValueArgs{Escape: true, DestKind: dwh.Label()}, additionalDateFmts)
+	defaultVal, err := column.DefaultValue(dwh.Dialect(), additionalDateFmts)
 	if err != nil {
 		return fmt.Errorf("failed to escape default value: %w", err)
 	}
 
-	escapedCol := column.Name(dwh.ShouldUppercaseEscapedNames(), dwh.Label())
+	escapedCol := dwh.Dialect().QuoteIdentifier(column.Name())
 
 	// TODO: This is added because `default` is not technically a column that requires escaping, but it is required when it's in the where clause.
 	// Once we escape everything by default, we can remove this patch of code.
@@ -45,7 +45,7 @@ func BackfillColumn(cfg config.Config, dwh destination.DataWarehouse, column col
 		tableID.FullyQualifiedName(), escapedCol, defaultVal, additionalEscapedCol,
 	)
 	slog.Info("Backfilling column",
-		slog.String("colName", column.RawName()),
+		slog.String("colName", column.Name()),
 		slog.String("query", query),
 		slog.String("table", tableID.FullyQualifiedName()),
 	)

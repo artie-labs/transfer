@@ -25,7 +25,7 @@ func TestMergeStatementPartsValidation(t *testing.T) {
 }
 
 type result struct {
-	PrimaryKeys    []columns.Wrapper
+	PrimaryKeys    []columns.Column
 	ColumnsToTypes columns.Columns
 }
 
@@ -47,11 +47,11 @@ func getBasicColumnsForTest(compositeKey bool) result {
 	cols.AddColumn(textToastCol)
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
-	var pks []columns.Wrapper
-	pks = append(pks, columns.NewWrapper(idCol, false, constants.Redshift))
+	var pks []columns.Column
+	pks = append(pks, idCol)
 
 	if compositeKey {
-		pks = append(pks, columns.NewWrapper(emailCol, false, constants.Redshift))
+		pks = append(pks, emailCol)
 	}
 
 	return result{
@@ -75,7 +75,6 @@ func TestMergeStatementParts_SkipDelete(t *testing.T) {
 		DestKind:            constants.Redshift,
 		Dialect:             sql.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(false),
-		UppercaseEscNames:   ptr.ToBool(false),
 	}
 
 	parts, err := mergeArg.GetParts()
@@ -103,7 +102,6 @@ func TestMergeStatementPartsSoftDelete(t *testing.T) {
 		DestKind:            constants.Redshift,
 		Dialect:             sql.RedshiftDialect{},
 		SoftDelete:          true,
-		UppercaseEscNames:   ptr.ToBool(false),
 		ContainsHardDeletes: ptr.ToBool(false),
 	}
 
@@ -144,7 +142,6 @@ func TestMergeStatementPartsSoftDeleteComposite(t *testing.T) {
 		DestKind:            constants.Redshift,
 		Dialect:             sql.RedshiftDialect{},
 		SoftDelete:          true,
-		UppercaseEscNames:   ptr.ToBool(false),
 		ContainsHardDeletes: ptr.ToBool(false),
 	}
 
@@ -188,7 +185,6 @@ func TestMergeStatementParts(t *testing.T) {
 		DestKind:            constants.Redshift,
 		Dialect:             sql.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
-		UppercaseEscNames:   ptr.ToBool(false),
 	}
 
 	parts, err := mergeArg.GetParts()
@@ -216,7 +212,6 @@ func TestMergeStatementParts(t *testing.T) {
 		Dialect:             sql.RedshiftDialect{},
 		IdempotentKey:       "created_at",
 		ContainsHardDeletes: ptr.ToBool(true),
-		UppercaseEscNames:   ptr.ToBool(false),
 	}
 
 	parts, err = mergeArg.GetParts()
@@ -248,7 +243,6 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 		DestKind:            constants.Redshift,
 		Dialect:             sql.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
-		UppercaseEscNames:   ptr.ToBool(false),
 	}
 
 	parts, err := mergeArg.GetParts()
@@ -276,7 +270,6 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 		Dialect:             sql.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
 		IdempotentKey:       "created_at",
-		UppercaseEscNames:   ptr.ToBool(false),
 	}
 
 	parts, err = mergeArg.GetParts()
