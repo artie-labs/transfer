@@ -93,7 +93,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		for attempts := 0; attempts < backfillMaxRetries; attempts++ {
 			backfillErr = BackfillColumn(cfg, dwh, col, tableID)
 			if backfillErr == nil {
-				tableConfig.Columns().UpsertColumn(col.RawName(), columns.UpsertColumnArg{
+				tableConfig.Columns().UpsertColumn(col.Name(), columns.UpsertColumnArg{
 					Backfilled: ptr.ToBool(true),
 				})
 				break
@@ -110,7 +110,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		}
 
 		if backfillErr != nil {
-			return fmt.Errorf("failed to backfill col: %s, default value: %v, err: %w", col.RawName(), col.RawDefaultValue(), backfillErr)
+			return fmt.Errorf("failed to backfill col: %s, default value: %v, err: %w", col.Name(), col.RawDefaultValue(), backfillErr)
 		}
 	}
 

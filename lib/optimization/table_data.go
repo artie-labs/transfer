@@ -257,9 +257,9 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) erro
 		var foundColumn columns.Column
 		var found bool
 		for _, destCol := range destCols {
-			if destCol.RawName() == strings.ToLower(inMemoryCol.RawName()) {
+			if destCol.Name() == strings.ToLower(inMemoryCol.Name()) {
 				if destCol.KindDetails.Kind == typing.Invalid.Kind {
-					return fmt.Errorf("column %q is invalid", destCol.RawName())
+					return fmt.Errorf("column %q is invalid", destCol.Name())
 				}
 
 				foundColumn = destCol

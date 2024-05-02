@@ -79,7 +79,7 @@ func (c *Column) ShouldBackfill() bool {
 	return c.defaultValue != nil && !c.backfilled
 }
 
-func (c *Column) RawName() string {
+func (c *Column) Name() string {
 	return c.name
 }
 
@@ -187,7 +187,7 @@ func (c *Columns) GetColumnsToUpdate() []string {
 			continue
 		}
 
-		cols = append(cols, col.RawName())
+		cols = append(cols, col.Name())
 	}
 
 	return cols
@@ -240,7 +240,7 @@ func (c *Columns) UpdateQuery(dialect sql.Dialect, skipDeleteCol bool) string {
 		}
 
 		// skipDeleteCol is useful because we don't want to copy the deleted column over to the source table if we're doing a hard row delete.
-		if skipDeleteCol && column.RawName() == constants.DeleteColumnMarker {
+		if skipDeleteCol && column.Name() == constants.DeleteColumnMarker {
 			continue
 		}
 

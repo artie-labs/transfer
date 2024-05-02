@@ -208,9 +208,9 @@ func (m *MergeArgument) GetStatement() (string, error) {
 	for _, primaryKey := range m.PrimaryKeys {
 		// We'll need to escape the primary key as well.
 		equalitySQL := fmt.Sprintf("c.%s = cc.%s", primaryKey.EscapedName(m.Dialect), primaryKey.EscapedName(m.Dialect))
-		pkCol, isOk := m.Columns.GetColumn(primaryKey.RawName())
+		pkCol, isOk := m.Columns.GetColumn(primaryKey.Name())
 		if !isOk {
-			return "", fmt.Errorf("column: %s does not exist in columnToType: %v", primaryKey.RawName(), m.Columns)
+			return "", fmt.Errorf("column: %s does not exist in columnToType: %v", primaryKey.Name(), m.Columns)
 		}
 
 		if m.DestKind == constants.BigQuery && pkCol.KindDetails.Kind == typing.Struct.Kind {
