@@ -83,10 +83,6 @@ func (c *Column) Name() string {
 	return c.name
 }
 
-func (c *Column) EscapedName(dialect sql.Dialect) string {
-	return dialect.QuoteIdentifier(c.name)
-}
-
 type Columns struct {
 	columns []Column
 	sync.RWMutex
@@ -244,7 +240,7 @@ func (c *Columns) UpdateQuery(dialect sql.Dialect, skipDeleteCol bool) string {
 			continue
 		}
 
-		colName := column.EscapedName(dialect)
+		colName := dialect.QuoteIdentifier(column.Name())
 		if column.ToastColumn {
 			if column.KindDetails == typing.Struct {
 				cols = append(cols, processToastStructCol(colName, dialect))
