@@ -39,8 +39,7 @@ func (MSSQLDialect) QuoteIdentifier(identifier string) string {
 }
 
 func (MSSQLDialect) EscapeStruct(value any) string {
-	// Note that we don't currently support backfills for MS SQL.
-	panic("not implemented")
+	panic("not implemented") // We don't currently support backfills for MS SQL.
 }
 
 type RedshiftDialect struct{}
