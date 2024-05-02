@@ -24,39 +24,29 @@ func TestRedshiftDialect_QuoteIdentifier(t *testing.T) {
 	assert.Equal(t, `"foo"`, dialect.QuoteIdentifier("FOO"))
 }
 
-func TestSnowflakeDialect_NeedsEscaping(t *testing.T) {
-	{
-		// UppercaseEscNames enabled:
-		dialect := SnowflakeDialect{UppercaseEscNames: true}
-
-		assert.True(t, dialect.NeedsEscaping("select"))          // name that is reserved
-		assert.True(t, dialect.NeedsEscaping("foo"))             // name that is not reserved
-		assert.True(t, dialect.NeedsEscaping("__artie_foo"))     // Artie prefix
-		assert.True(t, dialect.NeedsEscaping("__artie_foo:bar")) // Artie prefix + symbol
-	}
-
-	{
-		// UppercaseEscNames disabled:
-		dialect := SnowflakeDialect{UppercaseEscNames: false}
-
-		assert.True(t, dialect.NeedsEscaping("select"))          // name that is reserved
-		assert.False(t, dialect.NeedsEscaping("foo"))            // name that is not reserved
-		assert.False(t, dialect.NeedsEscaping("__artie_foo"))    // Artie prefix
-		assert.True(t, dialect.NeedsEscaping("__artie_foo:bar")) // Artie prefix + symbol
-	}
+func TestSnowflakeDialect_legacyNeedsEscaping(t *testing.T) {
+	dialect := SnowflakeDialect{}
+	assert.True(t, dialect.legacyNeedsEscaping("select"))          // name that is reserved
+	assert.False(t, dialect.legacyNeedsEscaping("foo"))            // name that is not reserved
+	assert.False(t, dialect.legacyNeedsEscaping("__artie_foo"))    // Artie prefix
+	assert.True(t, dialect.legacyNeedsEscaping("__artie_foo:bar")) // Artie prefix + symbol
 }
 
 func TestSnowflakeDialect_QuoteIdentifier(t *testing.T) {
 	{
-		// UppercaseEscNames enabled:
-		dialect := SnowflakeDialect{UppercaseEscNames: true}
+		// New mode:
+		dialect := SnowflakeDialect{LegacyMode: false}
 		assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("foo"))
 		assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("FOO"))
 	}
 	{
-		// UppercaseEscNames disabled:
-		dialect := SnowflakeDialect{UppercaseEscNames: false}
-		assert.Equal(t, `"foo"`, dialect.QuoteIdentifier("foo"))
+		// Legacy mode:
+		dialect := SnowflakeDialect{LegacyMode: true}
+		assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("foo"))
 		assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("FOO"))
+		assert.Equal(t, `"select"`, dialect.QuoteIdentifier("select")) // Reserved name
+		assert.Equal(t, `"order"`, dialect.QuoteIdentifier("order"))   // Reserved name
+		assert.Equal(t, `"group"`, dialect.QuoteIdentifier("group"))   // Reserved name
+		assert.Equal(t, `"start"`, dialect.QuoteIdentifier("start"))   // Reserved name
 	}
 }

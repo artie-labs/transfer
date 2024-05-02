@@ -85,7 +85,7 @@ func (c *Column) RawName() string {
 
 // Name will give you c.name and escape it if necessary.
 func (c *Column) Name(dialect sql.Dialect) string {
-	return sql.EscapeNameIfNecessary(c.name, dialect)
+	return dialect.QuoteIdentifier(c.name)
 }
 
 type Columns struct {
