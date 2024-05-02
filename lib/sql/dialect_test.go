@@ -24,15 +24,6 @@ func TestRedshiftDialect_QuoteIdentifier(t *testing.T) {
 	assert.Equal(t, `"foo"`, dialect.QuoteIdentifier("FOO"))
 }
 
-func TestSnowflakeDialect_NeedsEscaping(t *testing.T) {
-	dialect := SnowflakeDialect{}
-
-	assert.True(t, dialect.NeedsEscaping("select"))          // name that is reserved
-	assert.True(t, dialect.NeedsEscaping("foo"))             // name that is not reserved
-	assert.True(t, dialect.NeedsEscaping("__artie_foo"))     // Artie prefix
-	assert.True(t, dialect.NeedsEscaping("__artie_foo:bar")) // Artie prefix + symbol
-}
-
 func TestSnowflakeDialect_QuoteIdentifier(t *testing.T) {
 	dialect := SnowflakeDialect{}
 	assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("foo"))
