@@ -41,7 +41,7 @@ func TestWrapper_Complete(t *testing.T) {
 
 	for _, testCase := range testCases {
 		// Snowflake escape
-		w := NewWrapper(NewColumn(testCase.name, typing.Invalid), sql.SnowflakeDialect{UppercaseEscNames: true})
+		w := NewWrapper(NewColumn(testCase.name, typing.Invalid), sql.SnowflakeDialect{})
 
 		assert.Equal(t, testCase.expectedEscapedName, w.EscapedName(), testCase.name)
 		assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
@@ -53,7 +53,7 @@ func TestWrapper_Complete(t *testing.T) {
 		assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
 
 		{
-			w = NewWrapper(NewColumn(testCase.name, typing.Invalid), sql.SnowflakeDialect{UppercaseEscNames: true})
+			w = NewWrapper(NewColumn(testCase.name, typing.Invalid), sql.SnowflakeDialect{})
 			assert.Equal(t, testCase.expectedRawName, w.RawName(), testCase.name)
 		}
 		{

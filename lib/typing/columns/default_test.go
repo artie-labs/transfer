@@ -17,7 +17,7 @@ import (
 var dialects = []sql.Dialect{
 	sql.BigQueryDialect{},
 	sql.RedshiftDialect{},
-	sql.SnowflakeDialect{UppercaseEscNames: true},
+	sql.SnowflakeDialect{},
 }
 
 func TestColumn_DefaultValue(t *testing.T) {
