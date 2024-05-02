@@ -25,7 +25,6 @@ func TestRedshiftDialect_QuoteIdentifier(t *testing.T) {
 }
 
 func TestSnowflakeDialect_NeedsEscaping(t *testing.T) {
-	// UppercaseEscNames enabled:
 	dialect := SnowflakeDialect{}
 
 	assert.True(t, dialect.NeedsEscaping("select"))          // name that is reserved
@@ -35,7 +34,6 @@ func TestSnowflakeDialect_NeedsEscaping(t *testing.T) {
 }
 
 func TestSnowflakeDialect_QuoteIdentifier(t *testing.T) {
-	// UppercaseEscNames enabled:
 	dialect := SnowflakeDialect{}
 	assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("foo"))
 	assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("FOO"))
