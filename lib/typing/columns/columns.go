@@ -83,7 +83,6 @@ func (c *Column) RawName() string {
 	return c.name
 }
 
-// EscapedName will give you c.name and escape it if necessary.
 func (c *Column) EscapedName(dialect sql.Dialect) string {
 	return dialect.QuoteIdentifier(c.name)
 }
