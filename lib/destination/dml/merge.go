@@ -14,21 +14,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func removeDeleteColumnMarker(columns []string) ([]string, error) {
-	var removed bool
-	columns = slices.DeleteFunc(columns, func(col string) bool {
-		if col == constants.DeleteColumnMarker {
-			removed = true
-			return true
-		}
-		return false
-	})
-	if !removed {
-		return nil, errors.New("artie delete flag doesn't exist")
-	}
-	return columns, nil
-}
-
 type MergeArgument struct {
 	TableID       types.TableIdentifier
 	SubQuery      string
@@ -79,6 +64,21 @@ func (m *MergeArgument) Valid() error {
 	}
 
 	return nil
+}
+
+func removeDeleteColumnMarker(columns []string) ([]string, error) {
+	var removed bool
+	columns = slices.DeleteFunc(columns, func(col string) bool {
+		if col == constants.DeleteColumnMarker {
+			removed = true
+			return true
+		}
+		return false
+	})
+	if !removed {
+		return nil, errors.New("artie delete flag doesn't exist")
+	}
+	return columns, nil
 }
 
 func (m *MergeArgument) GetParts() ([]string, error) {
