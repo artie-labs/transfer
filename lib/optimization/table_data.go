@@ -10,7 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/size"
-	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -67,10 +66,10 @@ func (t *TableData) ContainOtherOperations() bool {
 	return t.containOtherOperations
 }
 
-func (t *TableData) PrimaryKeys(dialect sql.Dialect) []columns.Wrapper {
-	var pks []columns.Wrapper
+func (t *TableData) PrimaryKeys() []columns.Column {
+	var pks []columns.Column
 	for _, pk := range t.primaryKeys {
-		pks = append(pks, columns.NewWrapper(columns.NewColumn(pk, typing.Invalid), dialect))
+		pks = append(pks, columns.NewColumn(pk, typing.Invalid))
 	}
 
 	return pks

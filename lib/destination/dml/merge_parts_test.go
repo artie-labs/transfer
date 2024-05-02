@@ -25,7 +25,7 @@ func TestMergeStatementPartsValidation(t *testing.T) {
 }
 
 type result struct {
-	PrimaryKeys    []columns.Wrapper
+	PrimaryKeys    []columns.Column
 	ColumnsToTypes columns.Columns
 }
 
@@ -47,11 +47,11 @@ func getBasicColumnsForTest(compositeKey bool) result {
 	cols.AddColumn(textToastCol)
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
-	var pks []columns.Wrapper
-	pks = append(pks, columns.NewWrapper(idCol, sql.MSSQLDialect{}))
+	var pks []columns.Column
+	pks = append(pks, idCol)
 
 	if compositeKey {
-		pks = append(pks, columns.NewWrapper(emailCol, sql.MSSQLDialect{}))
+		pks = append(pks, emailCol)
 	}
 
 	return result{
