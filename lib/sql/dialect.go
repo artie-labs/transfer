@@ -2,12 +2,8 @@ package sql
 
 import (
 	"fmt"
-	"log/slog"
-	"slices"
-	"strconv"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
@@ -55,39 +51,14 @@ func (RedshiftDialect) EscapeStruct(value any) string {
 	return fmt.Sprintf("JSON_PARSE(%s)", stringutil.Wrap(value, false))
 }
 
-type SnowflakeDialect struct {
-	UppercaseEscNames bool
-}
+type SnowflakeDialect struct{}
 
 func (sd SnowflakeDialect) NeedsEscaping(name string) bool {
-	if sd.UppercaseEscNames {
-		// If uppercaseEscNames is true then we will escape all identifiers that do not start with the Artie priefix.
-		// Since they will be uppercased afer they are escaped then they will result in the same value as if we
-		// we were to use them in a query without any escaping at all.
-		return true
-	} else {
-		if slices.Contains(constants.ReservedKeywords, name) || strings.Contains(name, ":") {
-			return true
-		}
-		// If it still doesn't need to be escaped, we should check if it's a number.
-		if _, err := strconv.Atoi(name); err == nil {
-			return true
-		}
-		return false
-	}
+	return true
 }
 
 func (sd SnowflakeDialect) QuoteIdentifier(identifier string) string {
-	if sd.UppercaseEscNames {
-		identifier = strings.ToUpper(identifier)
-	} else {
-		slog.Warn("Escaped Snowflake identifier is not being uppercased",
-			slog.String("name", identifier),
-			slog.Bool("uppercaseEscapedNames", sd.UppercaseEscNames),
-		)
-	}
-
-	return fmt.Sprintf(`"%s"`, identifier)
+	return fmt.Sprintf(`"%s"`, strings.ToUpper(identifier))
 }
 
 func (SnowflakeDialect) EscapeStruct(value any) string {

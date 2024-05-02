@@ -25,38 +25,18 @@ func TestRedshiftDialect_QuoteIdentifier(t *testing.T) {
 }
 
 func TestSnowflakeDialect_NeedsEscaping(t *testing.T) {
-	{
-		// UppercaseEscNames enabled:
-		dialect := SnowflakeDialect{UppercaseEscNames: true}
+	// UppercaseEscNames enabled:
+	dialect := SnowflakeDialect{}
 
-		assert.True(t, dialect.NeedsEscaping("select"))          // name that is reserved
-		assert.True(t, dialect.NeedsEscaping("foo"))             // name that is not reserved
-		assert.True(t, dialect.NeedsEscaping("__artie_foo"))     // Artie prefix
-		assert.True(t, dialect.NeedsEscaping("__artie_foo:bar")) // Artie prefix + symbol
-	}
-
-	{
-		// UppercaseEscNames disabled:
-		dialect := SnowflakeDialect{UppercaseEscNames: false}
-
-		assert.True(t, dialect.NeedsEscaping("select"))          // name that is reserved
-		assert.False(t, dialect.NeedsEscaping("foo"))            // name that is not reserved
-		assert.False(t, dialect.NeedsEscaping("__artie_foo"))    // Artie prefix
-		assert.True(t, dialect.NeedsEscaping("__artie_foo:bar")) // Artie prefix + symbol
-	}
+	assert.True(t, dialect.NeedsEscaping("select"))          // name that is reserved
+	assert.True(t, dialect.NeedsEscaping("foo"))             // name that is not reserved
+	assert.True(t, dialect.NeedsEscaping("__artie_foo"))     // Artie prefix
+	assert.True(t, dialect.NeedsEscaping("__artie_foo:bar")) // Artie prefix + symbol
 }
 
 func TestSnowflakeDialect_QuoteIdentifier(t *testing.T) {
-	{
-		// UppercaseEscNames enabled:
-		dialect := SnowflakeDialect{UppercaseEscNames: true}
-		assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("foo"))
-		assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("FOO"))
-	}
-	{
-		// UppercaseEscNames disabled:
-		dialect := SnowflakeDialect{UppercaseEscNames: false}
-		assert.Equal(t, `"foo"`, dialect.QuoteIdentifier("foo"))
-		assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("FOO"))
-	}
+	// UppercaseEscNames enabled:
+	dialect := SnowflakeDialect{}
+	assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("foo"))
+	assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("FOO"))
 }

@@ -56,7 +56,7 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 	_cols.AddColumn(columns.NewColumn("id", typing.String))
 	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
-	dialect := sql.SnowflakeDialect{UppercaseEscNames: true}
+	dialect := sql.SnowflakeDialect{}
 	for _, idempotentKey := range []string{"", "updated_at"} {
 		mergeArg := MergeArgument{
 			TableID:       MockTableIdentifier{fqTable},
@@ -107,7 +107,7 @@ func TestMergeStatement(t *testing.T) {
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
-	dialect := sql.SnowflakeDialect{UppercaseEscNames: true}
+	dialect := sql.SnowflakeDialect{}
 	mergeArg := MergeArgument{
 		TableID:       MockTableIdentifier{fqTable},
 		SubQuery:      subQuery,
@@ -156,7 +156,7 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 	_cols.AddColumn(columns.NewColumn("id", typing.String))
 	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
-	dialect := sql.SnowflakeDialect{UppercaseEscNames: true}
+	dialect := sql.SnowflakeDialect{}
 	mergeArg := MergeArgument{
 		TableID:       MockTableIdentifier{fqTable},
 		SubQuery:      subQuery,
@@ -199,7 +199,7 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 	_cols.AddColumn(columns.NewColumn("another_id", typing.String))
 	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
-	dialect := sql.SnowflakeDialect{UppercaseEscNames: true}
+	dialect := sql.SnowflakeDialect{}
 	mergeArg := MergeArgument{
 		TableID:       MockTableIdentifier{fqTable},
 		SubQuery:      subQuery,
@@ -249,7 +249,7 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
-	dialect := sql.SnowflakeDialect{UppercaseEscNames: true}
+	dialect := sql.SnowflakeDialect{}
 	mergeArg := MergeArgument{
 		TableID:       MockTableIdentifier{fqTable},
 		SubQuery:      subQuery,

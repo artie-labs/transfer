@@ -7,7 +7,7 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 )
 
-var dialect = sql.SnowflakeDialect{UppercaseEscNames: true}
+var dialect = sql.SnowflakeDialect{}
 
 type TableIdentifier struct {
 	database string

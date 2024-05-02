@@ -79,14 +79,14 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 		{
 			name:        "col that has default value that needs to be backfilled",
 			col:         needsBackfillCol,
-			backfillSQL: `UPDATE db.public."TABLENAME" SET foo = true WHERE foo IS NULL;`,
-			commentSQL:  `COMMENT ON COLUMN db.public."TABLENAME".foo IS '{"backfilled": true}';`,
+			backfillSQL: `UPDATE db.public."TABLENAME" SET "FOO" = true WHERE "FOO" IS NULL;`,
+			commentSQL:  `COMMENT ON COLUMN db.public."TABLENAME"."FOO" IS '{"backfilled": true}';`,
 		},
 		{
 			name:        "default col that has default value that needs to be backfilled",
 			col:         needsBackfillColDefault,
-			backfillSQL: `UPDATE db.public."TABLENAME" SET default = true WHERE "DEFAULT" IS NULL;`,
-			commentSQL:  `COMMENT ON COLUMN db.public."TABLENAME".default IS '{"backfilled": true}';`,
+			backfillSQL: `UPDATE db.public."TABLENAME" SET "DEFAULT" = true WHERE "DEFAULT" IS NULL;`,
+			commentSQL:  `COMMENT ON COLUMN db.public."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`,
 		},
 	}
 
@@ -147,7 +147,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 		createQuery, _ := s.fakeStageStore.ExecArgsForCall(0)
 
 		prefixQuery := fmt.Sprintf(
-			`CREATE TABLE IF NOT EXISTS %s (user_id string,first_name string,last_name string,dusty string) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`, tempTableName)
+			`CREATE TABLE IF NOT EXISTS %s ("USER_ID" string,"FIRST_NAME" string,"LAST_NAME" string,"DUSTY" string) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`, tempTableName)
 		containsPrefix := strings.HasPrefix(createQuery, prefixQuery)
 		assert.True(s.T(), containsPrefix, fmt.Sprintf("createQuery:%v, prefixQuery:%s", createQuery, prefixQuery))
 		resourceName := addPrefixToTableName(tempTableID, "%")
@@ -157,7 +157,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 		assert.Contains(s.T(), putQuery, fmt.Sprintf("@%s AUTO_COMPRESS=TRUE", resourceName))
 		// Third call is a COPY INTO
 		copyQuery, _ := s.fakeStageStore.ExecArgsForCall(2)
-		assert.Equal(s.T(), fmt.Sprintf(`COPY INTO %s (user_id,first_name,last_name,dusty) FROM (SELECT $1,$2,$3,$4 FROM @%s)`,
+		assert.Equal(s.T(), fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s)`,
 			tempTableName, resourceName), copyQuery)
 	}
 	{
