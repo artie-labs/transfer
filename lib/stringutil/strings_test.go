@@ -69,13 +69,11 @@ func TestOverride(t *testing.T) {
 }
 
 func TestEscapeBackslashes(t *testing.T) {
-	type _testCase struct {
+	testCases := []struct {
 		name           string
 		colVal         string
 		expectedString string
-	}
-
-	testCases := []_testCase{
+	}{
 		{
 			name:           "string",
 			colVal:         "hello",
