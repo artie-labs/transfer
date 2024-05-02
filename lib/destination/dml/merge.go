@@ -14,6 +14,21 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+func removeDeleteColumnMarker(columns []string) ([]string, error) {
+	var removed bool
+	columns = slices.DeleteFunc(columns, func(col string) bool {
+		if col == constants.DeleteColumnMarker {
+			removed = true
+			return true
+		}
+		return false
+	})
+	if !removed {
+		return nil, errors.New("artie delete flag doesn't exist")
+	}
+	return columns, nil
+}
+
 type MergeArgument struct {
 	TableID       types.TableIdentifier
 	SubQuery      string
@@ -128,16 +143,10 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
-	var removed bool
-	columns = slices.DeleteFunc(columns, func(col string) bool {
-		if col == constants.DeleteColumnMarker {
-			removed = true
-			return true
-		}
-		return false
-	})
-	if !removed {
-		return nil, errors.New("artie delete flag doesn't exist")
+	var err error
+	columns, err = removeDeleteColumnMarker(columns)
+	if err != nil {
+		return nil, err
 	}
 
 	var pks []string
@@ -250,16 +259,10 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
-	var removed bool
-	columns = slices.DeleteFunc(columns, func(col string) bool {
-		if col == constants.DeleteColumnMarker {
-			removed = true
-			return true
-		}
-		return false
-	})
-	if !removed {
-		return "", errors.New("artie delete flag doesn't exist")
+	var err error
+	columns, err = removeDeleteColumnMarker(columns)
+	if err != nil {
+		return "", err
 	}
 
 	return fmt.Sprintf(`
@@ -319,16 +322,10 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
-	var removed bool
-	columns = slices.DeleteFunc(columns, func(col string) bool {
-		if col == constants.DeleteColumnMarker {
-			removed = true
-			return true
-		}
-		return false
-	})
-	if !removed {
-		return "", errors.New("artie delete flag doesn't exist")
+	var err error
+	columns, err = removeDeleteColumnMarker(columns)
+	if err != nil {
+		return "", err
 	}
 
 	return fmt.Sprintf(`

@@ -15,6 +15,36 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+func TestRemoveDeleteColumnMarker(t *testing.T) {
+	{
+		_, err := removeDeleteColumnMarker([]string{})
+		assert.ErrorContains(t, err, "artie delete flag doesn't exis")
+	}
+	{
+		_, err := removeDeleteColumnMarker([]string{"a"})
+		assert.ErrorContains(t, err, "artie delete flag doesn't exis")
+	}
+	{
+		_, err := removeDeleteColumnMarker([]string{"a", "b"})
+		assert.ErrorContains(t, err, "artie delete flag doesn't exis")
+	}
+	{
+		columns, err := removeDeleteColumnMarker([]string{constants.DeleteColumnMarker})
+		assert.NoError(t, err)
+		assert.Empty(t, columns)
+	}
+	{
+		columns, err := removeDeleteColumnMarker([]string{"a", constants.DeleteColumnMarker, "b"})
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"a", "b"}, columns)
+	}
+	{
+		columns, err := removeDeleteColumnMarker([]string{"a", constants.DeleteColumnMarker, "b", constants.DeleteColumnMarker, "c"})
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"a", "b", "c"}, columns)
+	}
+}
+
 // Have to mock a [types.TableIdentifier] otherwise we get circular imports.
 type MockTableIdentifier struct {
 	fqName string
