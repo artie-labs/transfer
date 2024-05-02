@@ -31,7 +31,7 @@ func BenchmarkGetApproxSize_WideTable(b *testing.B) {
 			"favorite_fruits":    []string{"strawberry", "kiwi", "oranges"},
 			"random":             false,
 			"team":               []string{"charlie", "jacqueline"},
-			"email":              "robin@artie.so",
+			"email":              "robin@example.com",
 			"favorite_languages": []string{"go", "sql"},
 			"favorite_databases": []string{"postgres", "bigtable"},
 			"created_at":         time.Now(),

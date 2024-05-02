@@ -142,7 +142,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 	"schema": {},
 	"payload": {
 		"before": null,
-		"after": "{\"_id\": {\"$numberLong\": \"1003\"},\"first_name\": \"Robin\",\"last_name\": \"Tang\",\"email\": \"robin@artie.so\", \"nested\": {\"object\": \"foo\"}}",
+		"after": "{\"_id\": {\"$numberLong\": \"1003\"},\"first_name\": \"Robin\",\"last_name\": \"Tang\",\"email\": \"robin@example.com\", \"nested\": {\"object\": \"foo\"}}",
 		"patch": null,
 		"filter": null,
 		"updateDescription": null,
@@ -176,7 +176,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 	assert.Equal(p.T(), evtData["_id"], 1003)
 	assert.Equal(p.T(), evtData["first_name"], "Robin")
 	assert.Equal(p.T(), evtData["last_name"], "Tang")
-	assert.Equal(p.T(), evtData["email"], "robin@artie.so")
+	assert.Equal(p.T(), evtData["email"], "robin@example.com")
 
 	evtDataWithIncludedAt, err := evt.GetData(map[string]any{"_id": 1003}, &kafkalib.TopicConfig{})
 	assert.NoError(p.T(), err)
