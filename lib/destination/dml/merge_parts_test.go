@@ -86,7 +86,7 @@ func TestMergeStatementParts_SkipDelete(t *testing.T) {
 		parts[0])
 
 	assert.Equal(t,
-		`UPDATE public.tableName as c SET "id"=cc."id","email"=cc."email","first_name"=cc."first_name","last_name"=cc."last_name","created_at"=cc."created_at","toast_text"= CASE WHEN COALESCE(cc."toast_text" != '__debezium_unavailable_value', true) THEN cc."toast_text" ELSE c."toast_text" END FROM public.tableName__temp as cc WHERE c."id" = cc."id" AND COALESCE(cc.__artie_delete, false) = false;`,
+		`UPDATE public.tableName as c SET "id"=cc."id","email"=cc."email","first_name"=cc."first_name","last_name"=cc."last_name","created_at"=cc."created_at","toast_text"= CASE WHEN COALESCE(cc."toast_text" != '__debezium_unavailable_value', true) THEN cc."toast_text" ELSE c."toast_text" END FROM public.tableName__temp as cc WHERE c."id" = cc."id" AND COALESCE(cc."__artie_delete", false) = false;`,
 		parts[1])
 }
 
@@ -196,11 +196,11 @@ func TestMergeStatementParts(t *testing.T) {
 		parts[0])
 
 	assert.Equal(t,
-		`UPDATE public.tableName as c SET "id"=cc."id","email"=cc."email","first_name"=cc."first_name","last_name"=cc."last_name","created_at"=cc."created_at","toast_text"= CASE WHEN COALESCE(cc."toast_text" != '__debezium_unavailable_value', true) THEN cc."toast_text" ELSE c."toast_text" END FROM public.tableName__temp as cc WHERE c."id" = cc."id" AND COALESCE(cc.__artie_delete, false) = false;`,
+		`UPDATE public.tableName as c SET "id"=cc."id","email"=cc."email","first_name"=cc."first_name","last_name"=cc."last_name","created_at"=cc."created_at","toast_text"= CASE WHEN COALESCE(cc."toast_text" != '__debezium_unavailable_value', true) THEN cc."toast_text" ELSE c."toast_text" END FROM public.tableName__temp as cc WHERE c."id" = cc."id" AND COALESCE(cc."__artie_delete", false) = false;`,
 		parts[1])
 
 	assert.Equal(t,
-		`DELETE FROM public.tableName WHERE ("id") IN (SELECT cc."id" FROM public.tableName__temp as cc WHERE cc.__artie_delete = true);`,
+		`DELETE FROM public.tableName WHERE ("id") IN (SELECT cc."id" FROM public.tableName__temp as cc WHERE cc."__artie_delete" = true);`,
 		parts[2])
 
 	mergeArg = &MergeArgument{
@@ -223,11 +223,11 @@ func TestMergeStatementParts(t *testing.T) {
 		parts[0])
 
 	assert.Equal(t,
-		`UPDATE public.tableName as c SET "id"=cc."id","email"=cc."email","first_name"=cc."first_name","last_name"=cc."last_name","created_at"=cc."created_at","toast_text"= CASE WHEN COALESCE(cc."toast_text" != '__debezium_unavailable_value', true) THEN cc."toast_text" ELSE c."toast_text" END FROM public.tableName__temp as cc WHERE c."id" = cc."id" AND cc.created_at >= c.created_at AND COALESCE(cc.__artie_delete, false) = false;`,
+		`UPDATE public.tableName as c SET "id"=cc."id","email"=cc."email","first_name"=cc."first_name","last_name"=cc."last_name","created_at"=cc."created_at","toast_text"= CASE WHEN COALESCE(cc."toast_text" != '__debezium_unavailable_value', true) THEN cc."toast_text" ELSE c."toast_text" END FROM public.tableName__temp as cc WHERE c."id" = cc."id" AND cc.created_at >= c.created_at AND COALESCE(cc."__artie_delete", false) = false;`,
 		parts[1])
 
 	assert.Equal(t,
-		`DELETE FROM public.tableName WHERE ("id") IN (SELECT cc."id" FROM public.tableName__temp as cc WHERE cc.__artie_delete = true);`,
+		`DELETE FROM public.tableName WHERE ("id") IN (SELECT cc."id" FROM public.tableName__temp as cc WHERE cc."__artie_delete" = true);`,
 		parts[2])
 }
 
@@ -254,11 +254,11 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 		parts[0])
 
 	assert.Equal(t,
-		`UPDATE public.tableName as c SET "id"=cc."id","email"=cc."email","first_name"=cc."first_name","last_name"=cc."last_name","created_at"=cc."created_at","toast_text"= CASE WHEN COALESCE(cc."toast_text" != '__debezium_unavailable_value', true) THEN cc."toast_text" ELSE c."toast_text" END FROM public.tableName__temp as cc WHERE c."id" = cc."id" and c."email" = cc."email" AND COALESCE(cc.__artie_delete, false) = false;`,
+		`UPDATE public.tableName as c SET "id"=cc."id","email"=cc."email","first_name"=cc."first_name","last_name"=cc."last_name","created_at"=cc."created_at","toast_text"= CASE WHEN COALESCE(cc."toast_text" != '__debezium_unavailable_value', true) THEN cc."toast_text" ELSE c."toast_text" END FROM public.tableName__temp as cc WHERE c."id" = cc."id" and c."email" = cc."email" AND COALESCE(cc."__artie_delete", false) = false;`,
 		parts[1])
 
 	assert.Equal(t,
-		`DELETE FROM public.tableName WHERE ("id","email") IN (SELECT cc."id",cc."email" FROM public.tableName__temp as cc WHERE cc.__artie_delete = true);`,
+		`DELETE FROM public.tableName WHERE ("id","email") IN (SELECT cc."id",cc."email" FROM public.tableName__temp as cc WHERE cc."__artie_delete" = true);`,
 		parts[2])
 
 	mergeArg = &MergeArgument{
@@ -281,10 +281,10 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 		parts[0])
 
 	assert.Equal(t,
-		`UPDATE public.tableName as c SET "id"=cc."id","email"=cc."email","first_name"=cc."first_name","last_name"=cc."last_name","created_at"=cc."created_at","toast_text"= CASE WHEN COALESCE(cc."toast_text" != '__debezium_unavailable_value', true) THEN cc."toast_text" ELSE c."toast_text" END FROM public.tableName__temp as cc WHERE c."id" = cc."id" and c."email" = cc."email" AND cc.created_at >= c.created_at AND COALESCE(cc.__artie_delete, false) = false;`,
+		`UPDATE public.tableName as c SET "id"=cc."id","email"=cc."email","first_name"=cc."first_name","last_name"=cc."last_name","created_at"=cc."created_at","toast_text"= CASE WHEN COALESCE(cc."toast_text" != '__debezium_unavailable_value', true) THEN cc."toast_text" ELSE c."toast_text" END FROM public.tableName__temp as cc WHERE c."id" = cc."id" and c."email" = cc."email" AND cc.created_at >= c.created_at AND COALESCE(cc."__artie_delete", false) = false;`,
 		parts[1])
 
 	assert.Equal(t,
-		`DELETE FROM public.tableName WHERE ("id","email") IN (SELECT cc."id",cc."email" FROM public.tableName__temp as cc WHERE cc.__artie_delete = true);`,
+		`DELETE FROM public.tableName WHERE ("id","email") IN (SELECT cc."id",cc."email" FROM public.tableName__temp as cc WHERE cc."__artie_delete" = true);`,
 		parts[2])
 }
