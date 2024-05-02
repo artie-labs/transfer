@@ -16,7 +16,6 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, op
 		return nil
 	}
 
-	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	tableConfig, err := dwh.GetTableConfig(tableData)
 	if err != nil {
 		return fmt.Errorf("failed to get table config: %w", err)
@@ -32,6 +31,7 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, op
 		tableData.Mode(),
 	)
 
+	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	createAlterTableArgs := ddl.AlterTableArgs{
 		Dwh:         dwh,
 		Tc:          tableConfig,
@@ -51,9 +51,13 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, op
 		return fmt.Errorf("failed to merge columns from destination: %w", err)
 	}
 
-	additionalSettings := types.AdditionalSettings{
-		AdditionalCopyClause: opts.AdditionalCopyClause,
-	}
-
-	return dwh.PrepareTemporaryTable(tableData, tableConfig, opts.TempTableID, additionalSettings, false)
+	return dwh.PrepareTemporaryTable(
+		tableData,
+		tableConfig,
+		tableID,
+		types.AdditionalSettings{
+			AdditionalCopyClause: opts.AdditionalCopyClause,
+		},
+		false,
+	)
 }
