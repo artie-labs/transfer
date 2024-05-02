@@ -83,8 +83,7 @@ func (c *Column) RawName() string {
 	return c.name
 }
 
-// Name will give you c.name and escape it if necessary.
-func (c *Column) Name(dialect sql.Dialect) string {
+func (c *Column) EscapedName(dialect sql.Dialect) string {
 	return dialect.QuoteIdentifier(c.name)
 }
 
@@ -245,7 +244,7 @@ func (c *Columns) UpdateQuery(dialect sql.Dialect, skipDeleteCol bool) string {
 			continue
 		}
 
-		colName := column.Name(dialect)
+		colName := column.EscapedName(dialect)
 		if column.ToastColumn {
 			if column.KindDetails == typing.Struct {
 				cols = append(cols, processToastStructCol(colName, dialect))
