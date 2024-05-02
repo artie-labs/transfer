@@ -3,6 +3,7 @@ package dml
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/array"
@@ -65,6 +66,12 @@ func (m *MergeArgument) Valid() error {
 	return nil
 }
 
+func removeDeleteColumnMarker(columns []string) ([]string, bool) {
+	origLength := len(columns)
+	columns = slices.DeleteFunc(columns, func(col string) bool { return col == constants.DeleteColumnMarker })
+	return columns, len(columns) != origLength
+}
+
 func (m *MergeArgument) GetParts() ([]string, error) {
 	if err := m.Valid(); err != nil {
 		return nil, err
@@ -98,17 +105,17 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	cols := m.Columns.GetEscapedColumnsToUpdate(m.Dialect)
+	columns := m.Columns.GetColumnsToUpdate()
 
 	if m.SoftDelete {
 		return []string{
 			// INSERT
 			fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
 				// insert into target (col1, col2, col3)
-				m.TableID.FullyQualifiedName(), strings.Join(cols, ","),
+				m.TableID.FullyQualifiedName(), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
 				// SELECT cc.col1, cc.col2, ... FROM staging as CC
 				array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-					Vals:      cols,
+					Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
 					Separator: ",",
 					Prefix:    "cc.",
 				}), m.SubQuery,
@@ -128,14 +135,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
-	for idx, col := range cols {
-		if col == m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker) {
-			cols = append(cols[:idx], cols[idx+1:]...)
-			removed = true
-			break
-		}
-	}
-
+	columns, removed = removeDeleteColumnMarker(columns)
 	if !removed {
 		return nil, errors.New("artie delete flag doesn't exist")
 	}
@@ -149,10 +149,10 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		// INSERT
 		fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
 			// insert into target (col1, col2, col3)
-			m.TableID.FullyQualifiedName(), strings.Join(cols, ","),
+			m.TableID.FullyQualifiedName(), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
 			// SELECT cc.col1, cc.col2, ... FROM staging as CC
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      cols,
+				Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
 				Separator: ",",
 				Prefix:    "cc.",
 			}), m.SubQuery,
@@ -230,7 +230,7 @@ func (m *MergeArgument) GetStatement() (string, error) {
 		equalitySQLParts = append(equalitySQLParts, m.AdditionalEqualityStrings...)
 	}
 
-	cols := m.Columns.GetEscapedColumnsToUpdate(m.Dialect)
+	columns := m.Columns.GetColumnsToUpdate()
 
 	if m.SoftDelete {
 		return fmt.Sprintf(`
@@ -241,9 +241,9 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 			// Update + Soft Deletion
 			idempotentClause, m.Columns.UpdateQuery(m.Dialect, false),
 			// Insert
-			constants.DeleteColumnMarker, strings.Join(cols, ","),
+			constants.DeleteColumnMarker, strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      cols,
+				Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
 				Separator: ",",
 				Prefix:    "cc.",
 			})), nil
@@ -251,14 +251,7 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
-	for idx, col := range cols {
-		if col == m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker) {
-			cols = append(cols[:idx], cols[idx+1:]...)
-			removed = true
-			break
-		}
-	}
-
+	columns, removed = removeDeleteColumnMarker(columns)
 	if !removed {
 		return "", errors.New("artie delete flag doesn't exist")
 	}
@@ -274,9 +267,9 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 		// Update
 		constants.DeleteColumnMarker, idempotentClause, m.Columns.UpdateQuery(m.Dialect, true),
 		// Insert
-		constants.DeleteColumnMarker, strings.Join(cols, ","),
+		constants.DeleteColumnMarker, strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      cols,
+			Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
 			Separator: ",",
 			Prefix:    "cc.",
 		})), nil
@@ -299,7 +292,7 @@ func (m *MergeArgument) GetMSSQLStatement() (string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	cols := m.Columns.GetEscapedColumnsToUpdate(m.Dialect)
+	columns := m.Columns.GetColumnsToUpdate()
 
 	if m.SoftDelete {
 		return fmt.Sprintf(`
@@ -311,9 +304,9 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 			// Update + Soft Deletion
 			idempotentClause, m.Columns.UpdateQuery(m.Dialect, false),
 			// Insert
-			constants.DeleteColumnMarker, strings.Join(cols, ","),
+			constants.DeleteColumnMarker, strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      cols,
+				Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
 				Separator: ",",
 				Prefix:    "cc.",
 			})), nil
@@ -321,14 +314,7 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 
 	// We also need to remove __artie flags since it does not exist in the destination table
 	var removed bool
-	for idx, col := range cols {
-		if col == m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker) {
-			cols = append(cols[:idx], cols[idx+1:]...)
-			removed = true
-			break
-		}
-	}
-
+	columns, removed = removeDeleteColumnMarker(columns)
 	if !removed {
 		return "", errors.New("artie delete flag doesn't exist")
 	}
@@ -345,9 +331,9 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
 		// Update
 		constants.DeleteColumnMarker, idempotentClause, m.Columns.UpdateQuery(m.Dialect, true),
 		// Insert
-		constants.DeleteColumnMarker, strings.Join(cols, ","),
+		constants.DeleteColumnMarker, strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      cols,
+			Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
 			Separator: ",",
 			Prefix:    "cc.",
 		})), nil

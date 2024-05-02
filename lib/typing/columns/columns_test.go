@@ -229,64 +229,6 @@ func TestColumns_GetColumnsToUpdate(t *testing.T) {
 	}
 }
 
-func TestColumns_GetEscapedColumnsToUpdate(t *testing.T) {
-	type _testCase struct {
-		name              string
-		cols              []Column
-		expectedColsEsc   []string
-		expectedColsEscBq []string
-	}
-
-	var (
-		happyPathCols = []Column{
-			{
-				name:        "hi",
-				KindDetails: typing.String,
-			},
-			{
-				name:        "bye",
-				KindDetails: typing.String,
-			},
-			{
-				name:        "start",
-				KindDetails: typing.String,
-			},
-		}
-	)
-
-	extraCols := happyPathCols
-	for i := 0; i < 100; i++ {
-		extraCols = append(extraCols, Column{
-			name:        fmt.Sprintf("hello_%v", i),
-			KindDetails: typing.Invalid,
-		})
-	}
-
-	testCases := []_testCase{
-		{
-			name:              "happy path",
-			cols:              happyPathCols,
-			expectedColsEsc:   []string{`"HI"`, `"BYE"`, `"START"`},
-			expectedColsEscBq: []string{"`hi`", "`bye`", "`start`"},
-		},
-		{
-			name:              "happy path + extra col",
-			cols:              extraCols,
-			expectedColsEsc:   []string{`"HI"`, `"BYE"`, `"START"`},
-			expectedColsEscBq: []string{"`hi`", "`bye`", "`start`"},
-		},
-	}
-
-	for _, testCase := range testCases {
-		cols := &Columns{
-			columns: testCase.cols,
-		}
-
-		assert.Equal(t, testCase.expectedColsEsc, cols.GetEscapedColumnsToUpdate(sql.SnowflakeDialect{}), testCase.name)
-		assert.Equal(t, testCase.expectedColsEscBq, cols.GetEscapedColumnsToUpdate(sql.BigQueryDialect{}), testCase.name)
-	}
-}
-
 func TestColumns_UpsertColumns(t *testing.T) {
 	keys := []string{"a", "b", "c", "d", "e"}
 	var cols Columns
