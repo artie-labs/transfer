@@ -22,7 +22,7 @@ func (c *Column) DefaultValue(dialect sql.Dialect, additionalDateFmts []string) 
 
 	switch c.KindDetails.Kind {
 	case typing.Struct.Kind, typing.Array.Kind:
-		return dialect.EscapeStruct(c.defaultValue), nil
+		return dialect.EscapeStruct(fmt.Sprint(c.defaultValue)), nil
 	case typing.ETime.Kind:
 		if c.KindDetails.ExtendedTimeDetails == nil {
 			return nil, fmt.Errorf("column kind details for extended time is nil")
