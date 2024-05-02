@@ -25,7 +25,12 @@ func (s *SnowflakeTestSuite) ResetStore() {
 	s.fakeStageStore = &mocks.FakeStore{}
 	stageStore := db.Store(s.fakeStageStore)
 	var err error
-	s.stageStore, err = LoadSnowflake(config.Config{}, &stageStore)
+	s.stageStore, err = LoadSnowflake(config.Config{
+		Snowflake: &config.Snowflake{},
+		SharedDestinationConfig: config.SharedDestinationConfig{
+			UppercaseEscapedNames: true,
+		},
+	}, &stageStore)
 	assert.NoError(s.T(), err)
 }
 
