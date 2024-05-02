@@ -108,15 +108,15 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 	for _, column := range tableConfig.Columns().GetColumns() {
 		var found bool
 		for _, expCol := range cols {
-			if found = column.RawName() == expCol.RawName(); found {
-				assert.Equal(d.T(), column.KindDetails, expCol.KindDetails, fmt.Sprintf("wrong col kind, col: %s", column.RawName()))
+			if found = column.Name() == expCol.Name(); found {
+				assert.Equal(d.T(), column.KindDetails, expCol.KindDetails, fmt.Sprintf("wrong col kind, col: %s", column.Name()))
 				break
 			}
 		}
 
 		assert.True(d.T(), found,
 			fmt.Sprintf("Col not found: %s, actual list: %v, expected list: %v",
-				column.RawName(), tableConfig.Columns(), cols))
+				column.Name(), tableConfig.Columns(), cols))
 	}
 }
 
@@ -150,7 +150,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	for col := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, expCol := range cols {
-			if found = col == expCol.RawName(); found {
+			if found = col == expCol.Name(); found {
 				break
 			}
 		}
@@ -161,7 +161,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	}
 
 	for i := 0; i < len(cols); i++ {
-		colToActuallyDelete := cols[i].RawName()
+		colToActuallyDelete := cols[i].Name()
 		// Now let's check the timestamp
 		assert.True(d.T(), tableConfig.ReadOnlyColumnsToDelete()[colToActuallyDelete].After(time.Now()))
 		// Now let's actually try to dial the time back, and it should actually try to delete.
@@ -214,7 +214,7 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 	for col := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, expCol := range cols {
-			if found = col == expCol.RawName(); found {
+			if found = col == expCol.Name(); found {
 				break
 			}
 		}

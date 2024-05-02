@@ -91,7 +91,7 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 		}
 
 		if a.ColumnOp == constants.Delete {
-			if !a.Tc.ShouldDeleteColumn(col.RawName(), a.CdcTime, a.ContainOtherOperations) {
+			if !a.Tc.ShouldDeleteColumn(col.Name(), a.CdcTime, a.ContainOtherOperations) {
 				continue
 			}
 		}

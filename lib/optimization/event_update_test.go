@@ -74,16 +74,16 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 
 		// Testing backfill
 		for _, inMemoryCol := range tableData.inMemoryColumns.GetColumns() {
-			assert.False(t, inMemoryCol.Backfilled(), inMemoryCol.RawName())
+			assert.False(t, inMemoryCol.Backfilled(), inMemoryCol.Name())
 		}
 		backfilledCol := columns.NewColumn("bool_backfill", typing.Boolean)
 		backfilledCol.SetBackfilled(true)
 		assert.NoError(t, tableData.MergeColumnsFromDestination(backfilledCol))
 		for _, inMemoryCol := range tableData.inMemoryColumns.GetColumns() {
-			if inMemoryCol.RawName() == backfilledCol.RawName() {
-				assert.True(t, inMemoryCol.Backfilled(), inMemoryCol.RawName())
+			if inMemoryCol.Name() == backfilledCol.Name() {
+				assert.True(t, inMemoryCol.Backfilled(), inMemoryCol.Name())
 			} else {
-				assert.False(t, inMemoryCol.Backfilled(), inMemoryCol.RawName())
+				assert.False(t, inMemoryCol.Backfilled(), inMemoryCol.Name())
 			}
 		}
 
