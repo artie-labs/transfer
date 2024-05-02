@@ -194,28 +194,6 @@ func (c *Columns) GetColumnsToUpdate() []string {
 	return cols
 }
 
-// GetEscapedColumnsToUpdate will filter all the `Invalid` columns so that we do not update it.
-// It will escape the returned columns.
-func (c *Columns) GetEscapedColumnsToUpdate(dialect sql.Dialect) []string {
-	if c == nil {
-		return []string{}
-	}
-
-	c.RLock()
-	defer c.RUnlock()
-
-	var cols []string
-	for _, col := range c.columns {
-		if col.KindDetails == typing.Invalid {
-			continue
-		}
-
-		cols = append(cols, col.Name(dialect))
-	}
-
-	return cols
-}
-
 func (c *Columns) GetColumns() []Column {
 	if c == nil {
 		return []Column{}
