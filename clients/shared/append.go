@@ -11,7 +11,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, opts types.AppendOpts) error {
+func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, opts types.AdditionalSettings) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
@@ -51,15 +51,11 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, op
 		return fmt.Errorf("failed to merge columns from destination: %w", err)
 	}
 
-	additionalSettings := types.AdditionalSettings{
-		AdditionalCopyClause: opts.AdditionalCopyClause,
-	}
-
 	return dwh.PrepareTemporaryTable(
 		tableData,
 		tableConfig,
 		tableID,
-		additionalSettings,
+		opts,
 		false,
 	)
 }

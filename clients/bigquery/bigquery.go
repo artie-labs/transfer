@@ -42,7 +42,7 @@ type Store struct {
 }
 
 func (s *Store) Append(tableData *optimization.TableData) error {
-	return shared.Append(s, tableData, types.AppendOpts{})
+	return shared.Append(s, tableData, types.AdditionalSettings{})
 }
 
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {

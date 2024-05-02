@@ -43,10 +43,6 @@ type AdditionalSettings struct {
 	AdditionalCopyClause string
 }
 
-type AppendOpts struct {
-	AdditionalCopyClause string
-}
-
 type TableIdentifier interface {
 	Table() string
 	WithTable(table string) TableIdentifier

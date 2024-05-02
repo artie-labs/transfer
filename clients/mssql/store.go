@@ -44,7 +44,7 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 }
 
 func (s *Store) Append(tableData *optimization.TableData) error {
-	return shared.Append(s, tableData, types.AppendOpts{})
+	return shared.Append(s, tableData, types.AdditionalSettings{})
 }
 
 // specificIdentifierFor returns a MS SQL [TableIdentifier] for a [TopicConfig] + table name.
