@@ -44,9 +44,10 @@ func TestSnowflakeDialect_QuoteIdentifier(t *testing.T) {
 		dialect := SnowflakeDialect{LegacyMode: true}
 		assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("foo"))
 		assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("FOO"))
-		assert.Equal(t, `"select"`, dialect.QuoteIdentifier("select")) // Reserved name
-		assert.Equal(t, `"order"`, dialect.QuoteIdentifier("order"))   // Reserved name
-		assert.Equal(t, `"group"`, dialect.QuoteIdentifier("group"))   // Reserved name
-		assert.Equal(t, `"start"`, dialect.QuoteIdentifier("start"))   // Reserved name
+		assert.Equal(t, `"abc:def"`, dialect.QuoteIdentifier("abc:def")) // Symbol
+		assert.Equal(t, `"select"`, dialect.QuoteIdentifier("select"))   // Reserved name
+		assert.Equal(t, `"order"`, dialect.QuoteIdentifier("order"))     // Reserved name
+		assert.Equal(t, `"group"`, dialect.QuoteIdentifier("group"))     // Reserved name
+		assert.Equal(t, `"start"`, dialect.QuoteIdentifier("start"))     // Reserved name
 	}
 }
