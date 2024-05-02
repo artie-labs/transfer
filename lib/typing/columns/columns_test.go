@@ -132,49 +132,6 @@ func TestColumn_ShouldBackfill(t *testing.T) {
 	}
 }
 
-func TestColumn_Name(t *testing.T) {
-	type _testCase struct {
-		colName      string
-		expectedName string
-		// Snowflake
-		expectedNameEsc string
-		// BigQuery
-		expectedNameEscBq string
-	}
-
-	testCases := []_testCase{
-		{
-			colName:           "start",
-			expectedName:      "start",
-			expectedNameEsc:   `"START"`, // since this is a reserved word.
-			expectedNameEscBq: "`start`", // BQ escapes via backticks.
-		},
-		{
-			colName:           "foo",
-			expectedName:      "foo",
-			expectedNameEsc:   `"FOO"`,
-			expectedNameEscBq: "`foo`",
-		},
-		{
-			colName:           "bar",
-			expectedName:      "bar",
-			expectedNameEsc:   `"BAR"`,
-			expectedNameEscBq: "`bar`",
-		},
-	}
-
-	for _, testCase := range testCases {
-		col := &Column{
-			name: testCase.colName,
-		}
-
-		assert.Equal(t, testCase.expectedName, col.RawName(), testCase.colName)
-
-		assert.Equal(t, testCase.expectedNameEsc, col.Name(sql.SnowflakeDialect{}), testCase.colName)
-		assert.Equal(t, testCase.expectedNameEscBq, col.Name(sql.BigQueryDialect{}), testCase.colName)
-	}
-}
-
 func TestColumns_GetColumnsToUpdate(t *testing.T) {
 	type _testCase struct {
 		name         string
@@ -226,64 +183,6 @@ func TestColumns_GetColumnsToUpdate(t *testing.T) {
 		}
 
 		assert.Equal(t, testCase.expectedCols, cols.GetColumnsToUpdate(), testCase.name)
-	}
-}
-
-func TestColumns_GetEscapedColumnsToUpdate(t *testing.T) {
-	type _testCase struct {
-		name              string
-		cols              []Column
-		expectedColsEsc   []string
-		expectedColsEscBq []string
-	}
-
-	var (
-		happyPathCols = []Column{
-			{
-				name:        "hi",
-				KindDetails: typing.String,
-			},
-			{
-				name:        "bye",
-				KindDetails: typing.String,
-			},
-			{
-				name:        "start",
-				KindDetails: typing.String,
-			},
-		}
-	)
-
-	extraCols := happyPathCols
-	for i := 0; i < 100; i++ {
-		extraCols = append(extraCols, Column{
-			name:        fmt.Sprintf("hello_%v", i),
-			KindDetails: typing.Invalid,
-		})
-	}
-
-	testCases := []_testCase{
-		{
-			name:              "happy path",
-			cols:              happyPathCols,
-			expectedColsEsc:   []string{`"HI"`, `"BYE"`, `"START"`},
-			expectedColsEscBq: []string{"`hi`", "`bye`", "`start`"},
-		},
-		{
-			name:              "happy path + extra col",
-			cols:              extraCols,
-			expectedColsEsc:   []string{`"HI"`, `"BYE"`, `"START"`},
-			expectedColsEscBq: []string{"`hi`", "`bye`", "`start`"},
-		},
-	}
-
-	for _, testCase := range testCases {
-		cols := &Columns{
-			columns: testCase.cols,
-		}
-
-		assert.Equal(t, testCase.expectedColsEsc, cols.GetEscapedColumnsToUpdate(sql.SnowflakeDialect{}), testCase.name)
-		assert.Equal(t, testCase.expectedColsEscBq, cols.GetEscapedColumnsToUpdate(sql.BigQueryDialect{}), testCase.name)
 	}
 }
 

@@ -13,3 +13,11 @@ import (
 func QuoteLiteral(value string) string {
 	return fmt.Sprintf("'%s'", strings.ReplaceAll(stringutil.EscapeBackslashes(value), "'", `\'`))
 }
+
+func QuoteIdentifiers(identifiers []string, dialect Dialect) []string {
+	result := make([]string, len(identifiers))
+	for i, identifier := range identifiers {
+		result[i] = dialect.QuoteIdentifier(identifier)
+	}
+	return result
+}

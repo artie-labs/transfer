@@ -79,13 +79,8 @@ func (c *Column) ShouldBackfill() bool {
 	return c.defaultValue != nil && !c.backfilled
 }
 
-func (c *Column) RawName() string {
+func (c *Column) Name() string {
 	return c.name
-}
-
-// Name will give you c.name and escape it if necessary.
-func (c *Column) Name(dialect sql.Dialect) string {
-	return dialect.QuoteIdentifier(c.name)
 }
 
 type Columns struct {
@@ -188,29 +183,7 @@ func (c *Columns) GetColumnsToUpdate() []string {
 			continue
 		}
 
-		cols = append(cols, col.RawName())
-	}
-
-	return cols
-}
-
-// GetEscapedColumnsToUpdate will filter all the `Invalid` columns so that we do not update it.
-// It will escape the returned columns.
-func (c *Columns) GetEscapedColumnsToUpdate(dialect sql.Dialect) []string {
-	if c == nil {
-		return []string{}
-	}
-
-	c.RLock()
-	defer c.RUnlock()
-
-	var cols []string
-	for _, col := range c.columns {
-		if col.KindDetails == typing.Invalid {
-			continue
-		}
-
-		cols = append(cols, col.Name(dialect))
+		cols = append(cols, col.Name())
 	}
 
 	return cols
@@ -263,11 +236,11 @@ func (c *Columns) UpdateQuery(dialect sql.Dialect, skipDeleteCol bool) string {
 		}
 
 		// skipDeleteCol is useful because we don't want to copy the deleted column over to the source table if we're doing a hard row delete.
-		if skipDeleteCol && column.RawName() == constants.DeleteColumnMarker {
+		if skipDeleteCol && column.Name() == constants.DeleteColumnMarker {
 			continue
 		}
 
-		colName := column.Name(dialect)
+		colName := dialect.QuoteIdentifier(column.Name())
 		if column.ToastColumn {
 			if column.KindDetails == typing.Struct {
 				cols = append(cols, processToastStructCol(colName, dialect))

@@ -226,7 +226,7 @@ func TestDiffDeterministic(t *testing.T) {
 
 		var key string
 		for _, targetKeyMissing := range targetKeysMissing {
-			key += targetKeyMissing.RawName()
+			key += targetKeyMissing.Name()
 		}
 
 		retMap[key] = false

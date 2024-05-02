@@ -44,7 +44,7 @@ func Test_GetMSSQLStatement(t *testing.T) {
 		TableID:       MockTableIdentifier{fqTable},
 		SubQuery:      subQuery,
 		IdempotentKey: "",
-		PrimaryKeys:   []columns.Wrapper{columns.NewWrapper(columns.NewColumn("id", typing.Invalid), sql.MSSQLDialect{})},
+		PrimaryKeys:   []columns.Column{columns.NewColumn("id", typing.Invalid)},
 		Columns:       &_cols,
 		DestKind:      constants.MSSQL,
 		Dialect:       sql.MSSQLDialect{},
