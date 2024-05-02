@@ -15,6 +15,23 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+// Have to mock a [types.TableIdentifier] otherwise we get circular imports.
+type MockTableIdentifier struct {
+	fqName string
+}
+
+func (m MockTableIdentifier) Table() string {
+	panic("not implemented")
+}
+
+func (m MockTableIdentifier) WithTable(_ string) types.TableIdentifier {
+	panic("not implemented")
+}
+
+func (m MockTableIdentifier) FullyQualifiedName() string {
+	return m.fqName
+}
+
 func TestRemoveDeleteColumnMarker(t *testing.T) {
 	{
 		_, err := removeDeleteColumnMarker([]string{})
@@ -43,23 +60,6 @@ func TestRemoveDeleteColumnMarker(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, []string{"a", "b", "c"}, columns)
 	}
-}
-
-// Have to mock a [types.TableIdentifier] otherwise we get circular imports.
-type MockTableIdentifier struct {
-	fqName string
-}
-
-func (m MockTableIdentifier) Table() string {
-	panic("not implemented")
-}
-
-func (m MockTableIdentifier) WithTable(_ string) types.TableIdentifier {
-	panic("not implemented")
-}
-
-func (m MockTableIdentifier) FullyQualifiedName() string {
-	return m.fqName
 }
 
 func TestMergeStatementSoftDelete(t *testing.T) {
