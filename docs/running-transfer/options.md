@@ -156,10 +156,6 @@ By default, Artie Transfer will only create the column within the destination if
 **Type:** Boolean\
 **Optional:** Yes
 
-### Shared destination config
-
-<table><thead><tr><th width="423.3333333333333">Key</th><th width="99" align="center">Optional</th><th>Description</th></tr></thead><tbody><tr><td><code>sharedDestinationConfig.uppercaseEscapedNames</code></td><td align="center">Y</td><td>Defaults to <code>false</code>. <br><br>By enabling <a data-footnote-ref href="#user-content-fn-1">t</a>his, the escaped value will be in upper case for both table and column names.</td></tr></tbody></table>
-
 ### Snowflake
 
 Please see: [snowflake.md](../real-time-destinations/snowflake.md "mention") on how to gather these values.
@@ -209,5 +205,3 @@ The `AWS_SECRET_ACCESS_KEY` for the service account.\
 Overview of Telemetry can be found here: [Broken link](broken-reference "mention").
 
 <table><thead><tr><th width="429">Key</th><th width="95" align="center">Type</th><th width="102" align="center">Optional</th><th>Description</th></tr></thead><tbody><tr><td><code>telemetry.metrics</code></td><td align="center">Object</td><td align="center">Y</td><td>Parent object. See below.</td></tr><tr><td><code>telemetry.metrics.provider</code></td><td align="center">String</td><td align="center">Y</td><td>Provider to export metrics to. Transfer currently only supports: <code>datadog</code>.</td></tr><tr><td><code>telemetry.metrics.settings</code></td><td align="center">Object</td><td align="center">Y</td><td>Additional settings block, see below</td></tr><tr><td><code>telemetry.metrics.settings.tags</code></td><td align="center">Array</td><td align="center">Y</td><td>Tags that will appear for every metrics like: <code>env:production</code>, <code>company:foo</code></td></tr><tr><td><code>telemetry.metrics.settings.namespace</code></td><td align="center">String</td><td align="center">Y</td><td>Optional namespace prefix for metrics. Defaults to <code>transfer.</code> if none is provided.</td></tr><tr><td><code>telemetry.metrics.settings.addr</code></td><td align="center">String</td><td align="center">Y</td><td>Address for where the statsD agent is running. Defaults to <code>127.0.0.1:8125</code> if none is provided.</td></tr><tr><td><code>telemetry.metrics.settings.sampling</code></td><td align="center">Number</td><td align="center">Y</td><td>Percentage of data to send. Provide a number between 0 and 1. Defaults to <code>1</code> if none is provided. Refer to <a href="https://docs.datadoghq.com/metrics/custom_metrics/dogstatsd_metrics_submission/#sample-rates">this</a> for additional information.</td></tr></tbody></table>
-
-[^1]: 
