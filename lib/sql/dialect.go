@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
 type Dialect interface {
@@ -27,7 +26,7 @@ func (BigQueryDialect) QuoteIdentifier(identifier string) string {
 }
 
 func (BigQueryDialect) EscapeStruct(value any) string {
-	return "JSON" + stringutil.Wrap(value, false)
+	return "JSON" + QuoteLiteral(fmt.Sprint(value))
 }
 
 type MSSQLDialect struct{}
@@ -52,7 +51,7 @@ func (rd RedshiftDialect) QuoteIdentifier(identifier string) string {
 }
 
 func (RedshiftDialect) EscapeStruct(value any) string {
-	return fmt.Sprintf("JSON_PARSE(%s)", stringutil.Wrap(value, false))
+	return fmt.Sprintf("JSON_PARSE(%s)", QuoteLiteral(fmt.Sprint(value)))
 }
 
 type SnowflakeDialect struct {
@@ -91,5 +90,5 @@ func (sd SnowflakeDialect) QuoteIdentifier(identifier string) string {
 }
 
 func (SnowflakeDialect) EscapeStruct(value any) string {
-	return stringutil.Wrap(value, false)
+	return QuoteLiteral(fmt.Sprint(value))
 }

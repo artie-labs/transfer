@@ -1,7 +1,6 @@
 package stringutil
 
 import (
-	"fmt"
 	"math/rand"
 	"strings"
 )
@@ -26,16 +25,8 @@ func Override(vals ...string) string {
 	return retVal
 }
 
-func Wrap(colVal any, noQuotes bool) string {
-	colVal = strings.ReplaceAll(fmt.Sprint(colVal), `\`, `\\`)
-	// The normal string escape is to do for O'Reilly is O\\'Reilly, but Snowflake escapes via \'
-	if noQuotes {
-		return fmt.Sprint(colVal)
-	}
-
-	// When there is quote wrapping `foo -> 'foo'`, we'll need to escape `'` so the value compiles.
-	// However, if there are no quote wrapping, we should not need to escape.
-	return fmt.Sprintf("'%s'", strings.ReplaceAll(fmt.Sprint(colVal), "'", `\'`))
+func EscapeBackslashes(value string) string {
+	return strings.ReplaceAll(value, `\`, `\\`)
 }
 
 func Empty(vals ...string) bool {

@@ -68,11 +68,10 @@ func TestOverride(t *testing.T) {
 	}
 }
 
-func TestWrap(t *testing.T) {
+func TestEscapeBackslashes(t *testing.T) {
 	type _testCase struct {
 		name           string
-		colVal         any
-		noQuotes       bool
+		colVal         string
 		expectedString string
 	}
 
@@ -80,57 +79,27 @@ func TestWrap(t *testing.T) {
 		{
 			name:           "string",
 			colVal:         "hello",
-			expectedString: "'hello'",
-		},
-		{
-			name:           "string (no quotes)",
-			colVal:         "hello",
-			noQuotes:       true,
 			expectedString: "hello",
 		},
 		{
-			name:           "string (no quotes)",
+			name:           "string",
 			colVal:         "bobby o'reilly",
-			noQuotes:       true,
 			expectedString: "bobby o'reilly",
-		},
-		{
-			name:           "string that requires escaping",
-			colVal:         "bobby o'reilly",
-			expectedString: `'bobby o\'reilly'`,
-		},
-		{
-			name:           "string that requires escaping (no quotes)",
-			colVal:         "bobby o'reilly",
-			expectedString: `bobby o'reilly`,
-			noQuotes:       true,
 		},
 		{
 			name:           "string with line breaks",
 			colVal:         "line1 \n line 2",
-			expectedString: "'line1 \n line 2'",
-		},
-		{
-			name:           "string with line breaks (no quotes)",
-			colVal:         "line1 \n line 2",
 			expectedString: "line1 \n line 2",
-			noQuotes:       true,
 		},
 		{
 			name:           "string with existing backslash",
 			colVal:         `hello \ there \ hh`,
-			expectedString: `'hello \\ there \\ hh'`,
-		},
-		{
-			name:           "string with existing backslash (no quotes)",
-			colVal:         `hello \ there \ hh`,
 			expectedString: `hello \\ there \\ hh`,
-			noQuotes:       true,
 		},
 	}
 
 	for _, testCase := range testCases {
-		assert.Equal(t, testCase.expectedString, Wrap(testCase.colVal, testCase.noQuotes), testCase.name)
+		assert.Equal(t, testCase.expectedString, EscapeBackslashes(testCase.colVal), testCase.name)
 	}
 }
 
