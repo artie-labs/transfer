@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -52,14 +51,7 @@ type SnowflakeDialect struct {
 }
 
 func (sd SnowflakeDialect) legacyNeedsEscaping(name string) bool {
-	if slices.Contains(constants.ReservedKeywords, name) || strings.Contains(name, ":") {
-		return true
-	}
-	// If it still doesn't need to be escaped, we should check if it's a number.
-	if _, err := strconv.Atoi(name); err == nil {
-		return true
-	}
-	return false
+	return slices.Contains(constants.ReservedKeywords, name) || strings.Contains(name, ":")
 }
 
 func (sd SnowflakeDialect) QuoteIdentifier(identifier string) string {
