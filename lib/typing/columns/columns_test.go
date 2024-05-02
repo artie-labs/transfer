@@ -163,6 +163,8 @@ func TestColumn_Name(t *testing.T) {
 		},
 	}
 
+	snowflakeDialect := sql.SnowflakeDialect{}
+	bqDialect := sql.BigQueryDialect{}
 	for _, testCase := range testCases {
 		col := &Column{
 			name: testCase.colName,
@@ -170,8 +172,8 @@ func TestColumn_Name(t *testing.T) {
 
 		assert.Equal(t, testCase.expectedName, col.Name(), testCase.colName)
 
-		assert.Equal(t, testCase.expectedNameEsc, col.EscapedName(sql.SnowflakeDialect{}), testCase.colName)
-		assert.Equal(t, testCase.expectedNameEscBq, col.EscapedName(sql.BigQueryDialect{}), testCase.colName)
+		assert.Equal(t, testCase.expectedNameEsc, snowflakeDialect.QuoteIdentifier(col.Name()), testCase.colName)
+		assert.Equal(t, testCase.expectedNameEscBq, bqDialect.QuoteIdentifier(col.Name()), testCase.colName)
 	}
 }
 
