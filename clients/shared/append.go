@@ -51,13 +51,15 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, op
 		return fmt.Errorf("failed to merge columns from destination: %w", err)
 	}
 
+	additionalSettings := types.AdditionalSettings{
+		AdditionalCopyClause: opts.AdditionalCopyClause,
+	}
+
 	return dwh.PrepareTemporaryTable(
 		tableData,
 		tableConfig,
 		tableID,
-		types.AdditionalSettings{
-			AdditionalCopyClause: opts.AdditionalCopyClause,
-		},
+		additionalSettings,
 		false,
 	)
 }
