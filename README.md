@@ -2,12 +2,12 @@
   <img height="150px" src="https://github.com/artie-labs/transfer/assets/4412200/238df0c7-6087-4ddc-b83b-24638212af6a"/>
   <h3>Artie Transfer</h3>
   <p><b>⚡️ Blazing fast data replication between OLTP and OLAP databases ⚡️</b></p>
-  <a href="https://artie.so/slack"><img src="https://img.shields.io/badge/slack-@artie-blue.svg?logo=slack"/></a>
-  <a href="https://docs.artie.so/running-transfer/overview"><img src="https://user-images.githubusercontent.com/4412200/226736695-6b8b9abd-c227-41c7-89a1-805a04c90d08.png"/></a>
+  <a href="https://artie.com/slack"><img src="https://img.shields.io/badge/slack-@artie-blue.svg?logo=slack"/></a>
+  <a href="https://docs.artie.com/running-transfer/overview"><img src="https://user-images.githubusercontent.com/4412200/226736695-6b8b9abd-c227-41c7-89a1-805a04c90d08.png"/></a>
   <a href="https://github.com/artie-labs/transfer/blob/master/LICENSE.txt"><img src="https://user-images.githubusercontent.com/4412200/201544613-a7197bc4-8b61-4fc5-bf09-68ee10133fd7.svg"/></a>
   <img src="https://github.com/artie-labs/transfer/actions/workflows/gha-go-test.yml/badge.svg"/>
   <br/>
-  <b><a target="_blank" href="https://artie.so" >Learn more »</a></b>
+  <b><a target="_blank" href="https://artie.com" >Learn more »</a></b>
 </div>
 <br/>
 
@@ -51,7 +51,7 @@ To run Artie Transfer's stack locally, please refer to the [examples folder](htt
 
 ## <a name="getting-started"></a>Getting started
 
-[Getting started guide](https://docs.artie.so/running-transfer/overview)
+[Getting started guide](https://docs.artie.com/running-transfer/overview)
 
 ## What is currently supported?
 Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Currently Transfer supports:
@@ -60,14 +60,14 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
   - Kafka (default)
   - Google Pub/Sub
 
-- [Destinations](https://docs.artie.so/real-time-destinations/overview):
+- [Destinations](https://docs.artie.com/real-time-destinations/overview):
     - Snowflake
     - BigQuery
     - Redshift
     - Microsoft SQL Server
     - S3
 
-- [Sources](https://docs.artie.so/real-time-sources/overview):
+- [Sources](https://docs.artie.com/real-time-sources/overview):
     - MongoDB
     - DocumentDB
     - PostgreSQL
@@ -77,15 +77,15 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
 _If the database you are using is not on the list, feel free to file for a [feature request](https://github.com/artie-labs/transfer/issues/new)._
 
 ## Configuration File
-* [Artie Transfer configuration file guide](https://docs.artie.so/running-transfer/options)
-* [Examples of configuration files](https://docs.artie.so/running-transfer/examples)
+* [Artie Transfer configuration file guide](https://docs.artie.com/running-transfer/options)
+* [Examples of configuration files](https://docs.artie.com/running-transfer/examples)
 
 ## Telemetry
 
-[Artie Transfer's telemetry guide](https://docs.artie.so/telemetry/overview)
+[Artie Transfer's telemetry guide](https://docs.artie.com/telemetry/overview)
 
 ## Tests
-Transfer is written in Go and uses [counterfeiter](https://github.com/maxbrunsfeld/counterfeiter) to mock. 
+Transfer is written in Go and uses [counterfeiter](https://github.com/maxbrunsfeld/counterfeiter) to mock.
 To run the tests, run the following commands:
 
 ```sh
