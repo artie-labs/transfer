@@ -32,6 +32,39 @@ func (m MockTableIdentifier) FullyQualifiedName() string {
 	return m.fqName
 }
 
+func TestRemoveDeleteColumnMarker(t *testing.T) {
+	{
+		columns, removed := removeDeleteColumnMarker([]string{})
+		assert.Empty(t, columns)
+		assert.False(t, removed)
+	}
+	{
+		columns, removed := removeDeleteColumnMarker([]string{"a"})
+		assert.Equal(t, []string{"a"}, columns)
+		assert.False(t, removed)
+	}
+	{
+		columns, removed := removeDeleteColumnMarker([]string{"a", "b"})
+		assert.Equal(t, []string{"a", "b"}, columns)
+		assert.False(t, removed)
+	}
+	{
+		columns, removed := removeDeleteColumnMarker([]string{constants.DeleteColumnMarker})
+		assert.True(t, removed)
+		assert.Empty(t, columns)
+	}
+	{
+		columns, removed := removeDeleteColumnMarker([]string{"a", constants.DeleteColumnMarker, "b"})
+		assert.True(t, removed)
+		assert.Equal(t, []string{"a", "b"}, columns)
+	}
+	{
+		columns, removed := removeDeleteColumnMarker([]string{"a", constants.DeleteColumnMarker, "b", constants.DeleteColumnMarker, "c"})
+		assert.True(t, removed)
+		assert.Equal(t, []string{"a", "b", "c"}, columns)
+	}
+}
+
 func TestMergeStatementSoftDelete(t *testing.T) {
 	// No idempotent key
 	fqTable := "database.schema.table"
