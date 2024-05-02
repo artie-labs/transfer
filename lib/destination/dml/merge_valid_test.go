@@ -13,8 +13,8 @@ import (
 )
 
 func TestMergeArgument_Valid(t *testing.T) {
-	primaryKeys := []columns.Wrapper{
-		columns.NewWrapper(columns.NewColumn("id", typing.Integer), sql.SnowflakeDialect{}),
+	primaryKeys := []columns.Column{
+		columns.NewColumn("id", typing.Integer),
 	}
 
 	var cols columns.Columns
