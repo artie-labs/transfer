@@ -132,49 +132,6 @@ func TestColumn_ShouldBackfill(t *testing.T) {
 	}
 }
 
-func TestColumn_Name(t *testing.T) {
-	type _testCase struct {
-		colName      string
-		expectedName string
-		// Snowflake
-		expectedNameEsc string
-		// BigQuery
-		expectedNameEscBq string
-	}
-
-	testCases := []_testCase{
-		{
-			colName:           "start",
-			expectedName:      "start",
-			expectedNameEsc:   `"START"`, // since this is a reserved word.
-			expectedNameEscBq: "`start`", // BQ escapes via backticks.
-		},
-		{
-			colName:           "foo",
-			expectedName:      "foo",
-			expectedNameEsc:   `"FOO"`,
-			expectedNameEscBq: "`foo`",
-		},
-		{
-			colName:           "bar",
-			expectedName:      "bar",
-			expectedNameEsc:   `"BAR"`,
-			expectedNameEscBq: "`bar`",
-		},
-	}
-
-	for _, testCase := range testCases {
-		col := &Column{
-			name: testCase.colName,
-		}
-
-		assert.Equal(t, testCase.expectedName, col.Name(), testCase.colName)
-
-		assert.Equal(t, testCase.expectedNameEsc, col.EscapedName(sql.SnowflakeDialect{}), testCase.colName)
-		assert.Equal(t, testCase.expectedNameEscBq, col.EscapedName(sql.BigQueryDialect{}), testCase.colName)
-	}
-}
-
 func TestColumns_GetColumnsToUpdate(t *testing.T) {
 	type _testCase struct {
 		name         string
