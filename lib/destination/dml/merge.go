@@ -87,6 +87,19 @@ func (m *MergeArgument) buildRedshiftInsertQuery(columns []columns.Column, equal
 	)
 }
 
+func (m *MergeArgument) buildRedshiftDeleteQuery() string {
+	return fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s as cc WHERE cc.%s = true);`,
+		// DELETE from table where (pk_1, pk_2)
+		m.TableID.FullyQualifiedName(), strings.Join(quoteColumns(m.PrimaryKeys, m.Dialect), ","),
+		// IN (cc.pk_1, cc.pk_2) FROM staging
+		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
+			Vals:      quoteColumns(m.PrimaryKeys, m.Dialect),
+			Separator: ",",
+			Prefix:    "cc.",
+		}), m.SubQuery, m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker),
+	)
+}
+
 func (m *MergeArgument) GetParts() ([]string, error) {
 	if err := m.Valid(); err != nil {
 		return nil, err
@@ -154,18 +167,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 	}
 
 	if *m.ContainsHardDeletes {
-		parts = append(parts,
-			// DELETE
-			fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s as cc WHERE cc.%s = true);`,
-				// DELETE from table where (pk_1, pk_2)
-				m.TableID.FullyQualifiedName(), strings.Join(quoteColumns(m.PrimaryKeys, m.Dialect), ","),
-				// IN (cc.pk_1, cc.pk_2) FROM staging
-				array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-					Vals:      quoteColumns(m.PrimaryKeys, m.Dialect),
-					Separator: ",",
-					Prefix:    "cc.",
-				}), m.SubQuery, m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker),
-			))
+		parts = append(parts, m.buildRedshiftDeleteQuery())
 	}
 
 	return parts, nil
