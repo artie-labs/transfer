@@ -24,7 +24,7 @@ type MergeArgument struct {
 	AdditionalEqualityStrings []string
 
 	// Columns will need to be escaped
-	Columns *columns.Columns
+	Columns []columns.Column
 
 	DestKind   constants.DestinationKind
 	SoftDelete bool
@@ -43,8 +43,13 @@ func (m *MergeArgument) Valid() error {
 		return fmt.Errorf("merge argument does not contain primary keys")
 	}
 
-	if len(m.Columns.ValidColumns()) == 0 {
+	if len(m.Columns) == 0 {
 		return fmt.Errorf("columns cannot be empty")
+	}
+	for _, column := range m.Columns {
+		if column.ShouldSkip() {
+			return fmt.Errorf("column %q is invalid and should be skipped", column.Name())
+		}
 	}
 
 	if m.TableID == nil {
@@ -123,16 +128,14 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	columns := m.Columns.ValidColumns()
-
 	if m.SoftDelete {
 		return []string{
 			// INSERT
-			m.buildInsertQuery(columns, equalitySQLParts),
+			m.buildInsertQuery(m.Columns, equalitySQLParts),
 			// UPDATE
 			fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s;`,
 				// UPDATE table set col1 = cc. col1
-				m.TableID.FullyQualifiedName(), buildColumnsUpdateFragment(columns, m.Dialect),
+				m.TableID.FullyQualifiedName(), buildColumnsUpdateFragment(m.Columns, m.Dialect),
 				// FROM table (temp) WHERE join on PK(s)
 				m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause,
 			),
@@ -140,8 +143,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
-	var removed bool
-	columns, removed = removeDeleteColumnMarker(columns)
+	columns, removed := removeDeleteColumnMarker(m.Columns)
 	if !removed {
 		return nil, errors.New("artie delete flag doesn't exist")
 	}
@@ -222,8 +224,6 @@ func (m *MergeArgument) GetStatement() (string, error) {
 		equalitySQLParts = append(equalitySQLParts, m.AdditionalEqualityStrings...)
 	}
 
-	columns := m.Columns.ValidColumns()
-
 	if m.SoftDelete {
 		return fmt.Sprintf(`
 MERGE INTO %s c USING %s AS cc ON %s
@@ -231,19 +231,18 @@ WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
 			m.TableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, buildColumnsUpdateFragment(columns, m.Dialect),
+			idempotentClause, buildColumnsUpdateFragment(m.Columns, m.Dialect),
 			// Insert
-			m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(quoteColumns(columns, m.Dialect), ","),
+			m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(quoteColumns(m.Columns, m.Dialect), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      quoteColumns(columns, m.Dialect),
+				Vals:      quoteColumns(m.Columns, m.Dialect),
 				Separator: ",",
 				Prefix:    "cc.",
 			})), nil
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
-	var removed bool
-	columns, removed = removeDeleteColumnMarker(columns)
+	columns, removed := removeDeleteColumnMarker(m.Columns)
 	if !removed {
 		return "", errors.New("artie delete flag doesn't exist")
 	}
@@ -285,8 +284,6 @@ func (m *MergeArgument) GetMSSQLStatement() (string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	columns := m.Columns.ValidColumns()
-
 	if m.SoftDelete {
 		return fmt.Sprintf(`
 MERGE INTO %s c
@@ -295,19 +292,18 @@ WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 			m.TableID.FullyQualifiedName(), m.SubQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, buildColumnsUpdateFragment(columns, m.Dialect),
+			idempotentClause, buildColumnsUpdateFragment(m.Columns, m.Dialect),
 			// Insert
-			m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(quoteColumns(columns, m.Dialect), ","),
+			m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(quoteColumns(m.Columns, m.Dialect), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      quoteColumns(columns, m.Dialect),
+				Vals:      quoteColumns(m.Columns, m.Dialect),
 				Separator: ",",
 				Prefix:    "cc.",
 			})), nil
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
-	var removed bool
-	columns, removed = removeDeleteColumnMarker(columns)
+	columns, removed := removeDeleteColumnMarker(m.Columns)
 	if !removed {
 		return "", errors.New("artie delete flag doesn't exist")
 	}
