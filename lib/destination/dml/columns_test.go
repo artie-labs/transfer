@@ -20,6 +20,44 @@ func TestQuoteColumns(t *testing.T) {
 	assert.Equal(t, []string{`"A"`, `"B"`}, quoteColumns(cols, sql.SnowflakeDialect{}))
 }
 
+func TestRemoveDeleteColumnMarker(t *testing.T) {
+	col1 := columns.NewColumn("a", typing.Invalid)
+	col2 := columns.NewColumn("b", typing.Invalid)
+	col3 := columns.NewColumn("c", typing.Invalid)
+	deleteColumnMarkerCol := columns.NewColumn(constants.DeleteColumnMarker, typing.Invalid)
+
+	{
+		result, removed := removeDeleteColumnMarker([]columns.Column{})
+		assert.Empty(t, result)
+		assert.False(t, removed)
+	}
+	{
+		result, removed := removeDeleteColumnMarker([]columns.Column{col1})
+		assert.Equal(t, []columns.Column{col1}, result)
+		assert.False(t, removed)
+	}
+	{
+		result, removed := removeDeleteColumnMarker([]columns.Column{col1, col2})
+		assert.Equal(t, []columns.Column{col1, col2}, result)
+		assert.False(t, removed)
+	}
+	{
+		result, removed := removeDeleteColumnMarker([]columns.Column{deleteColumnMarkerCol})
+		assert.True(t, removed)
+		assert.Empty(t, result)
+	}
+	{
+		result, removed := removeDeleteColumnMarker([]columns.Column{col1, deleteColumnMarkerCol, col2})
+		assert.True(t, removed)
+		assert.Equal(t, []columns.Column{col1, col2}, result)
+	}
+	{
+		result, removed := removeDeleteColumnMarker([]columns.Column{col1, deleteColumnMarkerCol, col2, deleteColumnMarkerCol, col3})
+		assert.True(t, removed)
+		assert.Equal(t, []columns.Column{col1, col2, col3}, result)
+	}
+}
+
 func TestBuildColumnsUpdateFragment(t *testing.T) {
 	type testCase struct {
 		name           string
