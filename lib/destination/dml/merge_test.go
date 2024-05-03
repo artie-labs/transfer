@@ -307,7 +307,7 @@ func TestMergeArgument_BuildRedshiftUpdateQuery(t *testing.T) {
 	}
 
 	{
-		// Soft deletes enabled:
+		// Soft delete enabled:
 		mergeArg := MergeArgument{
 			TableID:     MockTableIdentifier{"{TABLE_ID}"},
 			SubQuery:    "{SUB_QUERY}",
@@ -322,7 +322,7 @@ func TestMergeArgument_BuildRedshiftUpdateQuery(t *testing.T) {
 		)
 	}
 	{
-		// Soft deletes disabled:
+		// Soft delete disabled:
 		mergeArg := MergeArgument{
 			TableID:     MockTableIdentifier{"{TABLE_ID}"},
 			SubQuery:    "{SUB_QUERY}",
