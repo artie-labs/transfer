@@ -19,6 +19,7 @@ func quoteColumns(cols []columns.Column, dialect sql.Dialect) []string {
 }
 
 // buildColumnsUpdateFragment will parse the columns and then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email
+// NOTE: This should only be used with valid columns.
 func buildColumnsUpdateFragment(columns []columns.Column, dialect sql.Dialect, skipDeleteCol bool) string {
 	var cols []string
 	for _, column := range columns {
