@@ -72,6 +72,23 @@ func removeDeleteColumnMarker(columns []string) ([]string, bool) {
 	return columns, len(columns) != origLength
 }
 
+func (m *MergeArgument) buildInsertQuery(columns, equalitySQLParts []string) string {
+	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
+		// insert into target (col1, col2, col3)
+		m.TableID.FullyQualifiedName(), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
+		// SELECT cc.col1, cc.col2, ... FROM staging as CC
+		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
+			Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
+			Separator: ",",
+			Prefix:    "cc.",
+		}), m.SubQuery,
+		// LEFT JOIN table on pk(s)
+		m.TableID.FullyQualifiedName(), strings.Join(equalitySQLParts, " and "),
+		// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
+		m.Dialect.QuoteIdentifier(m.PrimaryKeys[0].Name()),
+	)
+}
+
 func (m *MergeArgument) GetParts() ([]string, error) {
 	if err := m.Valid(); err != nil {
 		return nil, err
@@ -111,20 +128,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 	if m.SoftDelete {
 		return []string{
 			// INSERT
-			fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
-				// insert into target (col1, col2, col3)
-				m.TableID.FullyQualifiedName(), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
-				// SELECT cc.col1, cc.col2, ... FROM staging as CC
-				array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-					Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
-					Separator: ",",
-					Prefix:    "cc.",
-				}), m.SubQuery,
-				// LEFT JOIN table on pk(s)
-				m.TableID.FullyQualifiedName(), strings.Join(equalitySQLParts, " and "),
-				// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
-				m.Dialect.QuoteIdentifier(m.PrimaryKeys[0].Name()),
-			),
+			m.buildInsertQuery(columns, equalitySQLParts),
 			// UPDATE
 			fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s;`,
 				// UPDATE table set col1 = cc. col1
@@ -149,20 +153,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 
 	parts := []string{
 		// INSERT
-		fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
-			// insert into target (col1, col2, col3)
-			m.TableID.FullyQualifiedName(), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
-			// SELECT cc.col1, cc.col2, ... FROM staging as CC
-			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
-				Separator: ",",
-				Prefix:    "cc.",
-			}), m.SubQuery,
-			// LEFT JOIN table on pk(s)
-			m.TableID.FullyQualifiedName(), strings.Join(equalitySQLParts, " and "),
-			// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
-			m.Dialect.QuoteIdentifier(m.PrimaryKeys[0].Name()),
-		),
+		m.buildInsertQuery(columns, equalitySQLParts),
 		// UPDATE
 		fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s AND COALESCE(cc.%s, false) = false;`,
 			// UPDATE table set col1 = cc. col1
