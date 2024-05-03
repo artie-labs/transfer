@@ -166,6 +166,7 @@ func (c *Columns) GetColumn(name string) (Column, bool) {
 
 // GetColumnsToUpdate will filter all the `Invalid` columns so that we do not update it.
 // This is used mostly for the SQL MERGE queries.
+// TODO: Replace all uses of [GetColumnsToUpdate] with [ValidColumns]
 func (c *Columns) GetColumnsToUpdate() []string {
 	if c == nil {
 		return []string{}
@@ -183,6 +184,27 @@ func (c *Columns) GetColumnsToUpdate() []string {
 		cols = append(cols, col.Name())
 	}
 
+	return cols
+}
+
+// ValidColumns will filter all the `Invalid` columns so that we do not update them.
+// This is used mostly for the SQL MERGE queries.
+func (c *Columns) ValidColumns() []Column {
+	if c == nil {
+		return []Column{}
+	}
+
+	c.RLock()
+	defer c.RUnlock()
+
+	var cols []Column
+	for _, col := range c.columns {
+		if col.KindDetails == typing.Invalid {
+			continue
+		}
+
+		cols = append(cols, col)
+	}
 	return cols
 }
 
