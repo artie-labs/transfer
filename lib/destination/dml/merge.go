@@ -204,12 +204,8 @@ func (m *MergeArgument) GetStatement() (string, error) {
 		quotedPrimaryKey := m.Dialect.QuoteIdentifier(primaryKey.Name())
 
 		equalitySQL := fmt.Sprintf("c.%s = cc.%s", quotedPrimaryKey, quotedPrimaryKey)
-		pkCol, isOk := m.Columns.GetColumn(primaryKey.Name())
-		if !isOk {
-			return "", fmt.Errorf("column: %s does not exist in columnToType: %v", primaryKey.Name(), m.Columns)
-		}
 
-		if m.DestKind == constants.BigQuery && pkCol.KindDetails.Kind == typing.Struct.Kind {
+		if m.DestKind == constants.BigQuery && primaryKey.KindDetails.Kind == typing.Struct.Kind {
 			// BigQuery requires special casting to compare two JSON objects.
 			equalitySQL = fmt.Sprintf("TO_JSON_STRING(c.%s) = TO_JSON_STRING(cc.%s)", quotedPrimaryKey, quotedPrimaryKey)
 		}
