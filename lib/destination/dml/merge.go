@@ -98,36 +98,29 @@ func (m *MergeArgument) buildRedshiftInsertQuery(columns []columns.Column) strin
 	)
 }
 
-func (m *MergeArgument) buildRedshiftSoftDeleteUpdateQuery(columns []columns.Column) string {
-	// We also need to do staged table's idempotency key is GTE target table's idempotency key
-	// This is because Snowflake does not respect NS granularity.
-	var idempotentClause string
-	if m.IdempotentKey != "" {
-		idempotentClause = fmt.Sprintf(" AND cc.%s >= c.%s", m.IdempotentKey, m.IdempotentKey)
-	}
+func (m *MergeArgument) buildRedshiftUpdateQuery(columns []columns.Column, softDeletes bool) string {
+	stringBuilder := strings.Builder{}
 
-	return fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s;`,
-		// UPDATE table set col1 = cc. col1
-		m.TableID.FullyQualifiedName(), buildColumnsUpdateFragment(columns, m.Dialect),
-		// FROM table (temp) WHERE join on PK(s)
-		m.SubQuery, strings.Join(m.redshiftEqualitySQLParts(), " and "), idempotentClause,
-	)
-}
-
-func (m *MergeArgument) buildRedshiftUpdateQuery(columns []columns.Column) string {
-	// We also need to do staged table's idempotency key is GTE target table's idempotency key
-	// This is because Snowflake does not respect NS granularity.
-	var idempotentClause string
-	if m.IdempotentKey != "" {
-		idempotentClause = fmt.Sprintf(" AND cc.%s >= c.%s", m.IdempotentKey, m.IdempotentKey)
-	}
-
-	return fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s AND COALESCE(cc.%s, false) = false;`,
+	stringBuilder.WriteString(fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s`,
 		// UPDATE table set col1 = cc. col1
 		m.TableID.FullyQualifiedName(), buildColumnsUpdateFragment(columns, m.Dialect),
 		// FROM staging WHERE join on PK(s)
-		m.SubQuery, strings.Join(m.redshiftEqualitySQLParts(), " and "), idempotentClause, m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker),
-	)
+		m.SubQuery, strings.Join(m.redshiftEqualitySQLParts(), " and "),
+	))
+
+	if m.IdempotentKey != "" {
+		// We also need to do staged table's idempotency key is GTE target table's idempotency key
+		// This is because Snowflake does not respect NS granularity.
+		stringBuilder.WriteString(fmt.Sprintf(" AND cc.%s >= c.%s", m.IdempotentKey, m.IdempotentKey))
+	}
+
+	if !softDeletes {
+		stringBuilder.WriteString(fmt.Sprintf(" AND COALESCE(cc.%s, false) = false", m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker)))
+	}
+
+	stringBuilder.WriteString(";")
+
+	return stringBuilder.String()
 }
 
 func (m *MergeArgument) buildRedshiftDeleteQuery() string {
@@ -165,7 +158,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 	if m.SoftDelete {
 		return []string{
 			m.buildRedshiftInsertQuery(m.Columns),
-			m.buildRedshiftSoftDeleteUpdateQuery(m.Columns),
+			m.buildRedshiftUpdateQuery(m.Columns, true),
 		}, nil
 	}
 
@@ -177,7 +170,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 
 	parts := []string{
 		m.buildRedshiftInsertQuery(columns),
-		m.buildRedshiftUpdateQuery(columns),
+		m.buildRedshiftUpdateQuery(columns, false),
 	}
 
 	if *m.ContainsHardDeletes {

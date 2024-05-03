@@ -299,25 +299,6 @@ func TestMergeArgument_BuildRedshiftInsertQuery(t *testing.T) {
 	)
 }
 
-func TestMergeArgument_BuildRedshiftSoftDeleteUpdateQuery(t *testing.T) {
-	cols := []columns.Column{
-		columns.NewColumn("col1", typing.Invalid),
-		columns.NewColumn("col2", typing.Invalid),
-		columns.NewColumn("col3", typing.Invalid),
-	}
-
-	mergeArg := MergeArgument{
-		TableID:     MockTableIdentifier{"{TABLE_ID}"},
-		SubQuery:    "{SUB_QUERY}",
-		PrimaryKeys: []columns.Column{cols[0], cols[2]},
-		Dialect:     sql.SnowflakeDialect{},
-	}
-	assert.Equal(t,
-		`UPDATE {TABLE_ID} as c SET "COL1"=cc."COL1","COL2"=cc."COL2","COL3"=cc."COL3" FROM {SUB_QUERY} as cc WHERE c."COL1" = cc."COL1" and c."COL3" = cc."COL3";`,
-		mergeArg.buildRedshiftSoftDeleteUpdateQuery(cols),
-	)
-}
-
 func TestMergeArgument_BuildRedshiftUpdateQuery(t *testing.T) {
 	cols := []columns.Column{
 		columns.NewColumn("col1", typing.Invalid),
@@ -331,9 +312,14 @@ func TestMergeArgument_BuildRedshiftUpdateQuery(t *testing.T) {
 		PrimaryKeys: []columns.Column{cols[0], cols[2]},
 		Dialect:     sql.SnowflakeDialect{},
 	}
+
+	assert.Equal(t,
+		`UPDATE {TABLE_ID} as c SET "COL1"=cc."COL1","COL2"=cc."COL2","COL3"=cc."COL3" FROM {SUB_QUERY} as cc WHERE c."COL1" = cc."COL1" and c."COL3" = cc."COL3";`,
+		mergeArg.buildRedshiftUpdateQuery(cols, true),
+	)
 	assert.Equal(t,
 		`UPDATE {TABLE_ID} as c SET "COL1"=cc."COL1","COL2"=cc."COL2","COL3"=cc."COL3" FROM {SUB_QUERY} as cc WHERE c."COL1" = cc."COL1" and c."COL3" = cc."COL3" AND COALESCE(cc."__ARTIE_DELETE", false) = false;`,
-		mergeArg.buildRedshiftUpdateQuery(cols),
+		mergeArg.buildRedshiftUpdateQuery(cols, false),
 	)
 }
 
