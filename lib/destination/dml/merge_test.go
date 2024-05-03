@@ -284,7 +284,7 @@ func TestMergeArgument_RedshiftEqualitySQLParts(t *testing.T) {
 		PrimaryKeys: []columns.Column{cols[0], columns.NewColumn("othercol", typing.Invalid)},
 		Dialect:     sql.SnowflakeDialect{},
 	}
-	assert.Equal(t, []string{}, mergeArg.redshiftEqualitySQLParts())
+	assert.Equal(t, []string{`c."COL1" = cc."COL1"`, `c."OTHERCOL" = cc."OTHERCOL"`}, mergeArg.redshiftEqualitySQLParts())
 }
 
 func TestMergeArgument_BuildRedshiftInsertQuery(t *testing.T) {
