@@ -33,15 +33,16 @@ func TestMergeStatement_TempTable(t *testing.T) {
 }
 
 func TestMergeStatement_JSONKey(t *testing.T) {
+	orderOIDCol := columns.NewColumn("order_oid", typing.Struct)
 	var cols columns.Columns
-	cols.AddColumn(columns.NewColumn("order_oid", typing.Struct))
+	cols.AddColumn(orderOIDCol)
 	cols.AddColumn(columns.NewColumn("name", typing.String))
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	mergeArg := &MergeArgument{
 		TableID:     MockTableIdentifier{"customers.orders"},
 		SubQuery:    "customers.orders_tmp",
-		PrimaryKeys: []columns.Column{columns.NewColumn("order_oid", typing.Invalid)},
+		PrimaryKeys: []columns.Column{orderOIDCol},
 		Columns:     &cols,
 		DestKind:    constants.BigQuery,
 		Dialect:     sql.BigQueryDialect{},
