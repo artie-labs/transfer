@@ -128,7 +128,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 			// UPDATE
 			fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s;`,
 				// UPDATE table set col1 = cc. col1
-				m.TableID.FullyQualifiedName(), buildColumnsUpdateFragment(m.Columns, m.Dialect, false),
+				m.TableID.FullyQualifiedName(), buildColumnsUpdateFragment(m.Columns.GetColumns(), m.Dialect, false),
 				// FROM table (temp) WHERE join on PK(s)
 				m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause,
 			),
@@ -166,7 +166,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		// UPDATE
 		fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s AND COALESCE(cc.%s, false) = false;`,
 			// UPDATE table set col1 = cc. col1
-			m.TableID.FullyQualifiedName(), buildColumnsUpdateFragment(m.Columns, m.Dialect, true),
+			m.TableID.FullyQualifiedName(), buildColumnsUpdateFragment(m.Columns.GetColumns(), m.Dialect, true),
 			// FROM staging WHERE join on PK(s)
 			m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause, m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker),
 		),
@@ -244,7 +244,7 @@ WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
 			m.TableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, buildColumnsUpdateFragment(m.Columns, m.Dialect, false),
+			idempotentClause, buildColumnsUpdateFragment(m.Columns.GetColumns(), m.Dialect, false),
 			// Insert
 			m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -270,7 +270,7 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 		// Delete
 		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker),
 		// Update
-		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, buildColumnsUpdateFragment(m.Columns, m.Dialect, true),
+		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, buildColumnsUpdateFragment(m.Columns.GetColumns(), m.Dialect, true),
 		// Insert
 		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -308,7 +308,7 @@ WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 			m.TableID.FullyQualifiedName(), m.SubQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, buildColumnsUpdateFragment(m.Columns, m.Dialect, false),
+			idempotentClause, buildColumnsUpdateFragment(m.Columns.GetColumns(), m.Dialect, false),
 			// Insert
 			m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -335,7 +335,7 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
 		// Delete
 		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker),
 		// Update
-		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, buildColumnsUpdateFragment(m.Columns, m.Dialect, true),
+		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, buildColumnsUpdateFragment(m.Columns.GetColumns(), m.Dialect, true),
 		// Insert
 		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
