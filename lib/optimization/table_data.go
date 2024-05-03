@@ -66,13 +66,8 @@ func (t *TableData) ContainOtherOperations() bool {
 	return t.containOtherOperations
 }
 
-func (t *TableData) PrimaryKeys() []columns.Column {
-	var pks []columns.Column
-	for _, pk := range t.primaryKeys {
-		pks = append(pks, columns.NewColumn(pk, typing.Invalid))
-	}
-
-	return pks
+func (t *TableData) PrimaryKeys() []string {
+	return t.primaryKeys
 }
 
 func (t *TableData) Name() string {
