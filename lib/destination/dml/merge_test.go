@@ -33,35 +33,40 @@ func (m MockTableIdentifier) FullyQualifiedName() string {
 }
 
 func TestRemoveDeleteColumnMarker(t *testing.T) {
+	col1 := columns.NewColumn("a", typing.Invalid)
+	col2 := columns.NewColumn("b", typing.Invalid)
+	col3 := columns.NewColumn("c", typing.Invalid)
+	deleteColumnMarkerCol := columns.NewColumn(constants.DeleteColumnMarker, typing.Invalid)
+
 	{
-		columns, removed := removeDeleteColumnMarker([]string{})
-		assert.Empty(t, columns)
+		result, removed := removeDeleteColumnMarker([]columns.Column{})
+		assert.Empty(t, result)
 		assert.False(t, removed)
 	}
 	{
-		columns, removed := removeDeleteColumnMarker([]string{"a"})
-		assert.Equal(t, []string{"a"}, columns)
+		result, removed := removeDeleteColumnMarker([]columns.Column{col1})
+		assert.Equal(t, []columns.Column{col1}, result)
 		assert.False(t, removed)
 	}
 	{
-		columns, removed := removeDeleteColumnMarker([]string{"a", "b"})
-		assert.Equal(t, []string{"a", "b"}, columns)
+		result, removed := removeDeleteColumnMarker([]columns.Column{col1, col2})
+		assert.Equal(t, []columns.Column{col1, col2}, result)
 		assert.False(t, removed)
 	}
 	{
-		columns, removed := removeDeleteColumnMarker([]string{constants.DeleteColumnMarker})
+		result, removed := removeDeleteColumnMarker([]columns.Column{deleteColumnMarkerCol})
 		assert.True(t, removed)
-		assert.Empty(t, columns)
+		assert.Empty(t, result)
 	}
 	{
-		columns, removed := removeDeleteColumnMarker([]string{"a", constants.DeleteColumnMarker, "b"})
+		result, removed := removeDeleteColumnMarker([]columns.Column{col1, deleteColumnMarkerCol, col2})
 		assert.True(t, removed)
-		assert.Equal(t, []string{"a", "b"}, columns)
+		assert.Equal(t, []columns.Column{col1, col2}, result)
 	}
 	{
-		columns, removed := removeDeleteColumnMarker([]string{"a", constants.DeleteColumnMarker, "b", constants.DeleteColumnMarker, "c"})
+		result, removed := removeDeleteColumnMarker([]columns.Column{col1, deleteColumnMarkerCol, col2, deleteColumnMarkerCol, col3})
 		assert.True(t, removed)
-		assert.Equal(t, []string{"a", "b", "c"}, columns)
+		assert.Equal(t, []columns.Column{col1, col2, col3}, result)
 	}
 }
 
@@ -306,17 +311,19 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 }
 
 func TestBuildInsertQuery(t *testing.T) {
+	cols := []columns.Column{
+		columns.NewColumn("col1", typing.Invalid),
+		columns.NewColumn("col2", typing.Invalid),
+	}
+
 	mergeArg := MergeArgument{
-		TableID:  MockTableIdentifier{"{TABLE_ID}"},
-		SubQuery: "{SUB_QUERY}",
-		PrimaryKeys: []columns.Column{
-			columns.NewColumn("col1", typing.Invalid),
-			columns.NewColumn("othercol", typing.Invalid),
-		},
-		Dialect: sql.SnowflakeDialect{},
+		TableID:     MockTableIdentifier{"{TABLE_ID}"},
+		SubQuery:    "{SUB_QUERY}",
+		PrimaryKeys: []columns.Column{cols[0], columns.NewColumn("othercol", typing.Invalid)},
+		Dialect:     sql.SnowflakeDialect{},
 	}
 	assert.Equal(t,
 		`INSERT INTO {TABLE_ID} ("COL1","COL2") SELECT cc."COL1",cc."COL2" FROM {SUB_QUERY} as cc LEFT JOIN {TABLE_ID} as c on {EQUALITY_PART_1} and {EQUALITY_PART_2} WHERE c."COL1" IS NULL;`,
-		mergeArg.buildInsertQuery([]string{"col1", "col2"}, []string{"{EQUALITY_PART_1}", "{EQUALITY_PART_2}"}),
+		mergeArg.buildInsertQuery(cols, []string{"{EQUALITY_PART_1}", "{EQUALITY_PART_2}"}),
 	)
 }

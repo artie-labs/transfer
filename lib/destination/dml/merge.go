@@ -66,19 +66,19 @@ func (m *MergeArgument) Valid() error {
 	return nil
 }
 
-func removeDeleteColumnMarker(columns []string) ([]string, bool) {
-	origLength := len(columns)
-	columns = slices.DeleteFunc(columns, func(col string) bool { return col == constants.DeleteColumnMarker })
-	return columns, len(columns) != origLength
+func removeDeleteColumnMarker(cols []columns.Column) ([]columns.Column, bool) {
+	origLength := len(cols)
+	cols = slices.DeleteFunc(cols, func(col columns.Column) bool { return col.Name() == constants.DeleteColumnMarker })
+	return cols, len(cols) != origLength
 }
 
-func (m *MergeArgument) buildInsertQuery(columns, equalitySQLParts []string) string {
+func (m *MergeArgument) buildInsertQuery(columns []columns.Column, equalitySQLParts []string) string {
 	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
 		// insert into target (col1, col2, col3)
-		m.TableID.FullyQualifiedName(), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
+		m.TableID.FullyQualifiedName(), strings.Join(quoteColumns(columns, m.Dialect), ","),
 		// SELECT cc.col1, cc.col2, ... FROM staging as CC
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
+			Vals:      quoteColumns(columns, m.Dialect),
 			Separator: ",",
 			Prefix:    "cc.",
 		}), m.SubQuery,
@@ -123,7 +123,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	columns := m.Columns.GetColumnsToUpdate()
+	columns := m.Columns.ValidColumns()
 
 	if m.SoftDelete {
 		return []string{
@@ -226,7 +226,7 @@ func (m *MergeArgument) GetStatement() (string, error) {
 		equalitySQLParts = append(equalitySQLParts, m.AdditionalEqualityStrings...)
 	}
 
-	columns := m.Columns.GetColumnsToUpdate()
+	columns := m.Columns.ValidColumns()
 
 	if m.SoftDelete {
 		return fmt.Sprintf(`
@@ -237,9 +237,9 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 			// Update + Soft Deletion
 			idempotentClause, buildColumnsUpdateFragment(m.Columns.GetColumns(), m.Dialect, false),
 			// Insert
-			m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
+			m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(quoteColumns(columns, m.Dialect), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
+				Vals:      quoteColumns(columns, m.Dialect),
 				Separator: ",",
 				Prefix:    "cc.",
 			})), nil
@@ -263,9 +263,9 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 		// Update
 		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, buildColumnsUpdateFragment(m.Columns.GetColumns(), m.Dialect, true),
 		// Insert
-		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
+		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(quoteColumns(columns, m.Dialect), ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
+			Vals:      quoteColumns(columns, m.Dialect),
 			Separator: ",",
 			Prefix:    "cc.",
 		})), nil
@@ -289,7 +289,7 @@ func (m *MergeArgument) GetMSSQLStatement() (string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	columns := m.Columns.GetColumnsToUpdate()
+	columns := m.Columns.ValidColumns()
 
 	if m.SoftDelete {
 		return fmt.Sprintf(`
@@ -301,9 +301,9 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 			// Update + Soft Deletion
 			idempotentClause, buildColumnsUpdateFragment(m.Columns.GetColumns(), m.Dialect, false),
 			// Insert
-			m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
+			m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(quoteColumns(columns, m.Dialect), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
+				Vals:      quoteColumns(columns, m.Dialect),
 				Separator: ",",
 				Prefix:    "cc.",
 			})), nil
@@ -328,9 +328,9 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
 		// Update
 		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, buildColumnsUpdateFragment(m.Columns.GetColumns(), m.Dialect, true),
 		// Insert
-		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
+		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(quoteColumns(columns, m.Dialect), ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
+			Vals:      quoteColumns(columns, m.Dialect),
 			Separator: ",",
 			Prefix:    "cc.",
 		})), nil
