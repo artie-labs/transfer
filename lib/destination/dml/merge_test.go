@@ -306,8 +306,6 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 }
 
 func TestBuildInsertQuery(t *testing.T) {
-	cols := []string{"col1", "col2", constants.DeleteColumnMarker}
-
 	mergeArg := MergeArgument{
 		TableID:  MockTableIdentifier{"{TABLE_ID}"},
 		SubQuery: "{SUB_QUERY}",
@@ -318,7 +316,7 @@ func TestBuildInsertQuery(t *testing.T) {
 		Dialect: sql.SnowflakeDialect{},
 	}
 	assert.Equal(t,
-		`INSERT INTO {TABLE_ID} ("COL1","COL2","__ARTIE_DELETE") SELECT cc."COL1",cc."COL2",cc."__ARTIE_DELETE" FROM {SUB_QUERY} as cc LEFT JOIN {TABLE_ID} as c on {EQUALITY_PART_1} and {EQUALITY_PART_2} WHERE c."COL1" IS NULL;`,
-		mergeArg.buildInsertQuery(cols, []string{"{EQUALITY_PART_1}", "{EQUALITY_PART_2}"}),
+		`INSERT INTO {TABLE_ID} ("COL1","COL2") SELECT cc."COL1",cc."COL2" FROM {SUB_QUERY} as cc LEFT JOIN {TABLE_ID} as c on {EQUALITY_PART_1} and {EQUALITY_PART_2} WHERE c."COL1" IS NULL;`,
+		mergeArg.buildInsertQuery([]string{"col1", "col2"}, []string{"{EQUALITY_PART_1}", "{EQUALITY_PART_2}"}),
 	)
 }
