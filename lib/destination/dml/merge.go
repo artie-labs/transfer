@@ -98,7 +98,7 @@ func (m *MergeArgument) buildRedshiftInsertQuery(columns []columns.Column) strin
 	)
 }
 
-func (m *MergeArgument) buildRedshiftUpdateQuery(columns []columns.Column, softDeletes bool) string {
+func (m *MergeArgument) buildRedshiftUpdateQuery(columns []columns.Column, softDelete bool) string {
 	stringBuilder := strings.Builder{}
 
 	stringBuilder.WriteString(fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s`,
@@ -114,7 +114,7 @@ func (m *MergeArgument) buildRedshiftUpdateQuery(columns []columns.Column, softD
 		stringBuilder.WriteString(fmt.Sprintf(" AND cc.%s >= c.%s", m.IdempotentKey, m.IdempotentKey))
 	}
 
-	if !softDeletes {
+	if !softDelete {
 		stringBuilder.WriteString(fmt.Sprintf(" AND COALESCE(cc.%s, false) = false", m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker)))
 	}
 
