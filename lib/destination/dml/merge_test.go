@@ -324,6 +324,6 @@ func TestBuildInsertQuery(t *testing.T) {
 	}
 	assert.Equal(t,
 		`INSERT INTO {TABLE_ID} ("COL1","COL2") SELECT cc."COL1",cc."COL2" FROM {SUB_QUERY} as cc LEFT JOIN {TABLE_ID} as c on {EQUALITY_PART_1} and {EQUALITY_PART_2} WHERE c."COL1" IS NULL;`,
-		mergeArg.buildInsertQuery(cols, []string{"{EQUALITY_PART_1}", "{EQUALITY_PART_2}"}),
+		mergeArg.buildRedshiftInsertQuery(cols, []string{"{EQUALITY_PART_1}", "{EQUALITY_PART_2}"}),
 	)
 }
