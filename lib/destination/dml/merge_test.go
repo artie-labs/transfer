@@ -315,8 +315,7 @@ func TestBuildInsertQuery(t *testing.T) {
 			columns.NewColumn("col1", typing.Invalid),
 			columns.NewColumn("col2", typing.Invalid),
 		},
-		DestKind: constants.Snowflake,
-		Dialect:  sql.SnowflakeDialect{},
+		Dialect: sql.SnowflakeDialect{},
 	}
 	assert.Equal(t,
 		`INSERT INTO {TABLE_ID} ("COL1","COL2","COL3","__ARTIE_DELETE") SELECT cc."COL1",cc."COL2",cc."COL3",cc."__ARTIE_DELETE" FROM {SUB_QUERY} as cc LEFT JOIN {TABLE_ID} as c on {EQUALITY_PART_1} and {EQUALITY_PART_2} WHERE c."COL1" IS NULL;`,
