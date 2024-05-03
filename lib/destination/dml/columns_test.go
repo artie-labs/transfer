@@ -11,6 +11,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestQuoteColumns(t *testing.T) {
+	assert.Equal(t, []string{}, quoteColumns(nil, sql.BigQueryDialect{}))
+	assert.Equal(t, []string{}, quoteColumns(nil, sql.SnowflakeDialect{}))
+
+	cols := []columns.Column{columns.NewColumn("a", typing.Invalid), columns.NewColumn("b", typing.Invalid)}
+	assert.Equal(t, []string{"`a`", "`b`"}, quoteColumns(cols, sql.BigQueryDialect{}))
+	assert.Equal(t, []string{`"A"`, `"B"`}, quoteColumns(cols, sql.SnowflakeDialect{}))
+}
+
 func TestBuildColumnsUpdateFragment(t *testing.T) {
 	type testCase struct {
 		name           string
