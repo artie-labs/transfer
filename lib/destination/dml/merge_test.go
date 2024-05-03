@@ -272,7 +272,22 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 	assert.Contains(t, mergeSQL, `cc."ID",cc."GROUP",cc."UPDATED_AT",cc."START"`, mergeSQL)
 }
 
-func TestBuildRedshiftInsertQuery(t *testing.T) {
+func TestMergeArgument_RedshiftEqualitySQLParts(t *testing.T) {
+	cols := []columns.Column{
+		columns.NewColumn("col1", typing.Invalid),
+		columns.NewColumn("col2", typing.Invalid),
+	}
+
+	mergeArg := MergeArgument{
+		TableID:     MockTableIdentifier{"{TABLE_ID}"},
+		SubQuery:    "{SUB_QUERY}",
+		PrimaryKeys: []columns.Column{cols[0], columns.NewColumn("othercol", typing.Invalid)},
+		Dialect:     sql.SnowflakeDialect{},
+	}
+	assert.Equal(t, []string{}, mergeArg.redshiftEqualitySQLParts())
+}
+
+func TestMergeArgument_BuildRedshiftInsertQuery(t *testing.T) {
 	cols := []columns.Column{
 		columns.NewColumn("col1", typing.Invalid),
 		columns.NewColumn("col2", typing.Invalid),
@@ -285,12 +300,12 @@ func TestBuildRedshiftInsertQuery(t *testing.T) {
 		Dialect:     sql.SnowflakeDialect{},
 	}
 	assert.Equal(t,
-		`INSERT INTO {TABLE_ID} ("COL1","COL2") SELECT cc."COL1",cc."COL2" FROM {SUB_QUERY} as cc LEFT JOIN {TABLE_ID} as c on {EQUALITY_PART_1} and {EQUALITY_PART_2} WHERE c."COL1" IS NULL;`,
-		mergeArg.buildRedshiftInsertQuery(cols, []string{"{EQUALITY_PART_1}", "{EQUALITY_PART_2}"}),
+		`INSERT INTO {TABLE_ID} ("COL1","COL2") SELECT cc."COL1",cc."COL2" FROM {SUB_QUERY} as cc LEFT JOIN {TABLE_ID} as c on c."COL1" = cc."COL1" and c."OTHERCOL" = cc."OTHERCOL" WHERE c."COL1" IS NULL;`,
+		mergeArg.buildRedshiftInsertQuery(cols),
 	)
 }
 
-func TestBuildRedshiftDeleteQuery(t *testing.T) {
+func TestMergeArgument_BuildRedshiftDeleteQuery(t *testing.T) {
 	cols := []columns.Column{
 		columns.NewColumn("col1", typing.Invalid),
 		columns.NewColumn("col2", typing.Invalid),
