@@ -273,18 +273,11 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 }
 
 func TestMergeArgument_RedshiftEqualitySQLParts(t *testing.T) {
-	cols := []columns.Column{
-		columns.NewColumn("col1", typing.Invalid),
-		columns.NewColumn("col2", typing.Invalid),
-	}
-
 	mergeArg := MergeArgument{
-		TableID:     MockTableIdentifier{"{TABLE_ID}"},
-		SubQuery:    "{SUB_QUERY}",
-		PrimaryKeys: []columns.Column{cols[0], columns.NewColumn("othercol", typing.Invalid)},
+		PrimaryKeys: []columns.Column{columns.NewColumn("col1", typing.Invalid), columns.NewColumn("col2", typing.Invalid)},
 		Dialect:     sql.SnowflakeDialect{},
 	}
-	assert.Equal(t, []string{`c."COL1" = cc."COL1"`, `c."OTHERCOL" = cc."OTHERCOL"`}, mergeArg.redshiftEqualitySQLParts())
+	assert.Equal(t, []string{`c."COL1" = cc."COL1"`, `c."COL2" = cc."COL2"`}, mergeArg.redshiftEqualitySQLParts())
 }
 
 func TestMergeArgument_BuildRedshiftInsertQuery(t *testing.T) {
