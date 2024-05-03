@@ -20,14 +20,9 @@ func quoteColumns(cols []columns.Column, dialect sql.Dialect) []string {
 
 // buildColumnsUpdateFragment will parse the columns and then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email
 // NOTE: This should only be used with valid columns.
-func buildColumnsUpdateFragment(columns []columns.Column, dialect sql.Dialect, skipDeleteCol bool) string {
+func buildColumnsUpdateFragment(columns []columns.Column, dialect sql.Dialect) string {
 	var cols []string
 	for _, column := range columns {
-		// skipDeleteCol is useful because we don't want to copy the deleted column over to the source table if we're doing a hard row delete.
-		if skipDeleteCol && column.Name() == constants.DeleteColumnMarker {
-			continue
-		}
-
 		colName := dialect.QuoteIdentifier(column.Name())
 		if column.ToastColumn {
 			var colValue string
