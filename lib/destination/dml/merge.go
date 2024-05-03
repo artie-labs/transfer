@@ -98,6 +98,38 @@ func (m *MergeArgument) buildRedshiftInsertQuery(columns []columns.Column) strin
 	)
 }
 
+func (m *MergeArgument) buildRedshiftSoftDeleteUpdateQuery(columns []columns.Column) string {
+	// We also need to do staged table's idempotency key is GTE target table's idempotency key
+	// This is because Snowflake does not respect NS granularity.
+	var idempotentClause string
+	if m.IdempotentKey != "" {
+		idempotentClause = fmt.Sprintf(" AND cc.%s >= c.%s", m.IdempotentKey, m.IdempotentKey)
+	}
+
+	return fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s;`,
+		// UPDATE table set col1 = cc. col1
+		m.TableID.FullyQualifiedName(), buildColumnsUpdateFragment(columns, m.Dialect),
+		// FROM table (temp) WHERE join on PK(s)
+		m.SubQuery, strings.Join(m.redshiftEqualitySQLParts(), " and "), idempotentClause,
+	)
+}
+
+func (m *MergeArgument) buildRedshiftUpdateQuery(columns []columns.Column) string {
+	// We also need to do staged table's idempotency key is GTE target table's idempotency key
+	// This is because Snowflake does not respect NS granularity.
+	var idempotentClause string
+	if m.IdempotentKey != "" {
+		idempotentClause = fmt.Sprintf(" AND cc.%s >= c.%s", m.IdempotentKey, m.IdempotentKey)
+	}
+
+	return fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s AND COALESCE(cc.%s, false) = false;`,
+		// UPDATE table set col1 = cc. col1
+		m.TableID.FullyQualifiedName(), buildColumnsUpdateFragment(columns, m.Dialect),
+		// FROM staging WHERE join on PK(s)
+		m.SubQuery, strings.Join(m.redshiftEqualitySQLParts(), " and "), idempotentClause, m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker),
+	)
+}
+
 func (m *MergeArgument) buildRedshiftDeleteQuery() string {
 	return fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s as cc WHERE cc.%s = true);`,
 		// DELETE from table where (pk_1, pk_2)
@@ -130,24 +162,10 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
 	// However, there may be edge cases where folks end up restoring deleted rows (which will contain the same PK).
 
-	// We also need to do staged table's idempotency key is GTE target table's idempotency key
-	// This is because Snowflake does not respect NS granularity.
-	var idempotentClause string
-	if m.IdempotentKey != "" {
-		idempotentClause = fmt.Sprintf(" AND cc.%s >= c.%s", m.IdempotentKey, m.IdempotentKey)
-	}
-
 	if m.SoftDelete {
 		return []string{
-			// INSERT
 			m.buildRedshiftInsertQuery(m.Columns),
-			// UPDATE
-			fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s;`,
-				// UPDATE table set col1 = cc. col1
-				m.TableID.FullyQualifiedName(), buildColumnsUpdateFragment(m.Columns, m.Dialect),
-				// FROM table (temp) WHERE join on PK(s)
-				m.SubQuery, strings.Join(m.redshiftEqualitySQLParts(), " and "), idempotentClause,
-			),
+			m.buildRedshiftSoftDeleteUpdateQuery(m.Columns),
 		}, nil
 	}
 
@@ -158,15 +176,8 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 	}
 
 	parts := []string{
-		// INSERT
 		m.buildRedshiftInsertQuery(columns),
-		// UPDATE
-		fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s AND COALESCE(cc.%s, false) = false;`,
-			// UPDATE table set col1 = cc. col1
-			m.TableID.FullyQualifiedName(), buildColumnsUpdateFragment(columns, m.Dialect),
-			// FROM staging WHERE join on PK(s)
-			m.SubQuery, strings.Join(m.redshiftEqualitySQLParts(), " and "), idempotentClause, m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker),
-		),
+		m.buildRedshiftUpdateQuery(columns),
 	}
 
 	if *m.ContainsHardDeletes {
