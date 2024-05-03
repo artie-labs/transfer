@@ -10,8 +10,8 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-// UpdateQuery will parse the columns and then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email
-func UpdateQuery(c *columns.Columns, dialect sql.Dialect, skipDeleteCol bool) string {
+// buildColumnsUpdateFragment will parse the columns and then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email
+func buildColumnsUpdateFragment(c *columns.Columns, dialect sql.Dialect, skipDeleteCol bool) string {
 	var cols []string
 	for _, column := range c.GetColumns() {
 		if column.ShouldSkip() {

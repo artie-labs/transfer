@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestUpdateQuery(t *testing.T) {
+func TestBuildColumnsUpdateFragment(t *testing.T) {
 	type testCase struct {
 		name           string
 		columns        columns.Columns
@@ -128,7 +128,7 @@ func TestUpdateQuery(t *testing.T) {
 	}
 
 	for _, _testCase := range testCases {
-		actualQuery := UpdateQuery(&_testCase.columns, _testCase.dialect, _testCase.skipDeleteCol)
+		actualQuery := buildColumnsUpdateFragment(&_testCase.columns, _testCase.dialect, _testCase.skipDeleteCol)
 		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
 	}
 }
