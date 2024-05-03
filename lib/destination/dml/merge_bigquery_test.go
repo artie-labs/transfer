@@ -20,7 +20,7 @@ func TestMergeStatement_TempTable(t *testing.T) {
 		TableID:     MockTableIdentifier{"customers.orders"},
 		SubQuery:    "customers.orders_tmp",
 		PrimaryKeys: []columns.Column{columns.NewColumn("order_id", typing.Invalid)},
-		Columns:     &cols,
+		Columns:     cols.ValidColumns(),
 		DestKind:    constants.BigQuery,
 		Dialect:     sql.BigQueryDialect{},
 		SoftDelete:  false,
@@ -33,16 +33,17 @@ func TestMergeStatement_TempTable(t *testing.T) {
 }
 
 func TestMergeStatement_JSONKey(t *testing.T) {
+	orderOIDCol := columns.NewColumn("order_oid", typing.Struct)
 	var cols columns.Columns
-	cols.AddColumn(columns.NewColumn("order_oid", typing.Struct))
+	cols.AddColumn(orderOIDCol)
 	cols.AddColumn(columns.NewColumn("name", typing.String))
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	mergeArg := &MergeArgument{
 		TableID:     MockTableIdentifier{"customers.orders"},
 		SubQuery:    "customers.orders_tmp",
-		PrimaryKeys: []columns.Column{columns.NewColumn("order_oid", typing.Invalid)},
-		Columns:     &cols,
+		PrimaryKeys: []columns.Column{orderOIDCol},
+		Columns:     cols.ValidColumns(),
 		DestKind:    constants.BigQuery,
 		Dialect:     sql.BigQueryDialect{},
 		SoftDelete:  false,

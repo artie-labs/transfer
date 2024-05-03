@@ -2,11 +2,10 @@ package columns
 
 import (
 	"fmt"
+	"slices"
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/ptr"
-	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
 )
@@ -186,6 +185,52 @@ func TestColumns_GetColumnsToUpdate(t *testing.T) {
 	}
 }
 
+func TestColumns_ValidColumns(t *testing.T) {
+	var happyPathCols = []Column{
+		{
+			name:        "hi",
+			KindDetails: typing.String,
+		},
+		{
+			name:        "bye",
+			KindDetails: typing.String,
+		},
+		{
+			name:        "start",
+			KindDetails: typing.String,
+		},
+	}
+
+	extraCols := happyPathCols
+	for i := 0; i < 100; i++ {
+		extraCols = append(extraCols, Column{
+			name:        fmt.Sprintf("hello_%v", i),
+			KindDetails: typing.Invalid,
+		})
+	}
+
+	testCases := []struct {
+		name         string
+		cols         []Column
+		expectedCols []Column
+	}{
+		{
+			name:         "happy path",
+			cols:         happyPathCols,
+			expectedCols: slices.Clone(happyPathCols),
+		},
+		{
+			name:         "happy path + extra col",
+			cols:         extraCols,
+			expectedCols: slices.Clone(happyPathCols),
+		},
+	}
+
+	for _, testCase := range testCases {
+		assert.Equal(t, testCase.expectedCols, (&Columns{columns: testCase.cols}).ValidColumns(), testCase.name)
+	}
+}
+
 func TestColumns_UpsertColumns(t *testing.T) {
 	keys := []string{"a", "b", "c", "d", "e"}
 	var cols Columns
@@ -289,137 +334,4 @@ func TestColumns_Mutation(t *testing.T) {
 	assert.Equal(t, len(cols.GetColumns()), 1)
 	cols.DeleteColumn("bar")
 	assert.Equal(t, len(cols.GetColumns()), 0)
-}
-
-func TestColumnsUpdateQuery(t *testing.T) {
-	type testCase struct {
-		name           string
-		columns        Columns
-		expectedString string
-		dialect        sql.Dialect
-		skipDeleteCol  bool
-	}
-
-	fooBarCols := []string{"foo", "bar"}
-
-	var (
-		happyPathCols       Columns
-		stringAndToastCols  Columns
-		lastCaseColTypes    Columns
-		lastCaseEscapeTypes Columns
-	)
-	for _, col := range fooBarCols {
-		happyPathCols.AddColumn(Column{
-			name:        col,
-			KindDetails: typing.String,
-			ToastColumn: false,
-		})
-	}
-	for _, col := range fooBarCols {
-		var toastCol bool
-		if col == "foo" {
-			toastCol = true
-		}
-
-		stringAndToastCols.AddColumn(Column{
-			name:        col,
-			KindDetails: typing.String,
-			ToastColumn: toastCol,
-		})
-	}
-
-	lastCaseCols := []string{"a1", "b2", "c3"}
-	for _, lastCaseCol := range lastCaseCols {
-		kd := typing.String
-		var toast bool
-		// a1 - struct + toast, b2 - string + toast, c3 = regular string.
-		if lastCaseCol == "a1" {
-			kd = typing.Struct
-			toast = true
-		} else if lastCaseCol == "b2" {
-			toast = true
-		}
-
-		lastCaseColTypes.AddColumn(Column{
-			name:        lastCaseCol,
-			KindDetails: kd,
-			ToastColumn: toast,
-		})
-	}
-
-	lastCaseColsEsc := []string{"a1", "b2", "c3", "start", "select"}
-	for _, lastCaseColEsc := range lastCaseColsEsc {
-		kd := typing.String
-		var toast bool
-		// a1 - struct + toast, b2 - string + toast, c3 = regular string.
-		if lastCaseColEsc == "a1" {
-			kd = typing.Struct
-			toast = true
-		} else if lastCaseColEsc == "b2" {
-			toast = true
-		} else if lastCaseColEsc == "start" {
-			kd = typing.Struct
-			toast = true
-		}
-
-		lastCaseEscapeTypes.AddColumn(Column{
-			name:        lastCaseColEsc,
-			KindDetails: kd,
-			ToastColumn: toast,
-		})
-	}
-
-	lastCaseEscapeTypes.AddColumn(Column{
-		name:        constants.DeleteColumnMarker,
-		KindDetails: typing.Boolean,
-	})
-
-	key := `{"key":"__debezium_unavailable_value"}`
-	testCases := []testCase{
-		{
-			name:           "happy path",
-			columns:        happyPathCols,
-			dialect:        sql.RedshiftDialect{},
-			expectedString: `"foo"=cc."foo","bar"=cc."bar"`,
-		},
-		{
-			name:           "string and toast",
-			columns:        stringAndToastCols,
-			dialect:        sql.SnowflakeDialect{},
-			expectedString: `"FOO"= CASE WHEN COALESCE(cc."FOO" != '__debezium_unavailable_value', true) THEN cc."FOO" ELSE c."FOO" END,"BAR"=cc."BAR"`,
-		},
-		{
-			name:           "struct, string and toast string",
-			columns:        lastCaseColTypes,
-			dialect:        sql.RedshiftDialect{},
-			expectedString: `"a1"= CASE WHEN COALESCE(cc."a1" != JSON_PARSE('{"key":"__debezium_unavailable_value"}'), true) THEN cc."a1" ELSE c."a1" END,"b2"= CASE WHEN COALESCE(cc."b2" != '__debezium_unavailable_value', true) THEN cc."b2" ELSE c."b2" END,"c3"=cc."c3"`,
-		},
-		{
-			name:           "struct, string and toast string (bigquery)",
-			columns:        lastCaseColTypes,
-			dialect:        sql.BigQueryDialect{},
-			expectedString: "`a1`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`a1`) != '{\"key\":\"__debezium_unavailable_value\"}', true) THEN cc.`a1` ELSE c.`a1` END,`b2`= CASE WHEN COALESCE(cc.`b2` != '__debezium_unavailable_value', true) THEN cc.`b2` ELSE c.`b2` END,`c3`=cc.`c3`",
-		},
-		{
-			name:    "struct, string and toast string (bigquery) w/ reserved keywords",
-			columns: lastCaseEscapeTypes,
-			dialect: sql.BigQueryDialect{},
-			expectedString: fmt.Sprintf("`a1`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`a1`) != '%s', true) THEN cc.`a1` ELSE c.`a1` END,`b2`= CASE WHEN COALESCE(cc.`b2` != '__debezium_unavailable_value', true) THEN cc.`b2` ELSE c.`b2` END,`c3`=cc.`c3`,%s,%s",
-				key, fmt.Sprintf("`start`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`start`) != '%s', true) THEN cc.`start` ELSE c.`start` END", key), "`select`=cc.`select`"),
-			skipDeleteCol: true,
-		},
-		{
-			name:    "struct, string and toast string (bigquery) w/ reserved keywords",
-			columns: lastCaseEscapeTypes,
-			dialect: sql.BigQueryDialect{},
-			expectedString: fmt.Sprintf("`a1`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`a1`) != '%s', true) THEN cc.`a1` ELSE c.`a1` END,`b2`= CASE WHEN COALESCE(cc.`b2` != '__debezium_unavailable_value', true) THEN cc.`b2` ELSE c.`b2` END,`c3`=cc.`c3`,%s,%s",
-				key, fmt.Sprintf("`start`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`start`) != '%s', true) THEN cc.`start` ELSE c.`start` END", key), "`select`=cc.`select`,`__artie_delete`=cc.`__artie_delete`"),
-			skipDeleteCol: false,
-		},
-	}
-
-	for _, _testCase := range testCases {
-		actualQuery := _testCase.columns.UpdateQuery(_testCase.dialect, _testCase.skipDeleteCol)
-		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
-	}
 }

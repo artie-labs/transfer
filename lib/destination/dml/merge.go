@@ -3,7 +3,6 @@ package dml
 import (
 	"errors"
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/array"
@@ -24,7 +23,7 @@ type MergeArgument struct {
 	AdditionalEqualityStrings []string
 
 	// Columns will need to be escaped
-	Columns *columns.Columns
+	Columns []columns.Column
 
 	DestKind   constants.DestinationKind
 	SoftDelete bool
@@ -43,8 +42,13 @@ func (m *MergeArgument) Valid() error {
 		return fmt.Errorf("merge argument does not contain primary keys")
 	}
 
-	if len(m.Columns.GetColumns()) == 0 {
+	if len(m.Columns) == 0 {
 		return fmt.Errorf("columns cannot be empty")
+	}
+	for _, column := range m.Columns {
+		if column.ShouldSkip() {
+			return fmt.Errorf("column %q is invalid and should be skipped", column.Name())
+		}
 	}
 
 	if m.TableID == nil {
@@ -66,10 +70,34 @@ func (m *MergeArgument) Valid() error {
 	return nil
 }
 
-func removeDeleteColumnMarker(columns []string) ([]string, bool) {
-	origLength := len(columns)
-	columns = slices.DeleteFunc(columns, func(col string) bool { return col == constants.DeleteColumnMarker })
-	return columns, len(columns) != origLength
+func (m *MergeArgument) buildRedshiftInsertQuery(columns []columns.Column, equalitySQLParts []string) string {
+	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
+		// insert into target (col1, col2, col3)
+		m.TableID.FullyQualifiedName(), strings.Join(quoteColumns(columns, m.Dialect), ","),
+		// SELECT cc.col1, cc.col2, ... FROM staging as CC
+		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
+			Vals:      quoteColumns(columns, m.Dialect),
+			Separator: ",",
+			Prefix:    "cc.",
+		}), m.SubQuery,
+		// LEFT JOIN table on pk(s)
+		m.TableID.FullyQualifiedName(), strings.Join(equalitySQLParts, " and "),
+		// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
+		m.Dialect.QuoteIdentifier(m.PrimaryKeys[0].Name()),
+	)
+}
+
+func (m *MergeArgument) buildRedshiftDeleteQuery() string {
+	return fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s as cc WHERE cc.%s = true);`,
+		// DELETE from table where (pk_1, pk_2)
+		m.TableID.FullyQualifiedName(), strings.Join(quoteColumns(m.PrimaryKeys, m.Dialect), ","),
+		// IN (cc.pk_1, cc.pk_2) FROM staging
+		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
+			Vals:      quoteColumns(m.PrimaryKeys, m.Dialect),
+			Separator: ",",
+			Prefix:    "cc.",
+		}), m.SubQuery, m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker),
+	)
 }
 
 func (m *MergeArgument) GetParts() ([]string, error) {
@@ -106,29 +134,14 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	columns := m.Columns.GetColumnsToUpdate()
-
 	if m.SoftDelete {
 		return []string{
 			// INSERT
-			fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
-				// insert into target (col1, col2, col3)
-				m.TableID.FullyQualifiedName(), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
-				// SELECT cc.col1, cc.col2, ... FROM staging as CC
-				array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-					Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
-					Separator: ",",
-					Prefix:    "cc.",
-				}), m.SubQuery,
-				// LEFT JOIN table on pk(s)
-				m.TableID.FullyQualifiedName(), strings.Join(equalitySQLParts, " and "),
-				// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
-				m.Dialect.QuoteIdentifier(m.PrimaryKeys[0].Name()),
-			),
+			m.buildRedshiftInsertQuery(m.Columns, equalitySQLParts),
 			// UPDATE
 			fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s;`,
 				// UPDATE table set col1 = cc. col1
-				m.TableID.FullyQualifiedName(), m.Columns.UpdateQuery(m.Dialect, false),
+				m.TableID.FullyQualifiedName(), buildColumnsUpdateFragment(m.Columns, m.Dialect),
 				// FROM table (temp) WHERE join on PK(s)
 				m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause,
 			),
@@ -136,55 +149,25 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
-	var removed bool
-	columns, removed = removeDeleteColumnMarker(columns)
+	columns, removed := removeDeleteColumnMarker(m.Columns)
 	if !removed {
 		return nil, errors.New("artie delete flag doesn't exist")
 	}
 
-	var pks []string
-	for _, pk := range m.PrimaryKeys {
-		pks = append(pks, m.Dialect.QuoteIdentifier(pk.Name()))
-	}
-
 	parts := []string{
 		// INSERT
-		fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
-			// insert into target (col1, col2, col3)
-			m.TableID.FullyQualifiedName(), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
-			// SELECT cc.col1, cc.col2, ... FROM staging as CC
-			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
-				Separator: ",",
-				Prefix:    "cc.",
-			}), m.SubQuery,
-			// LEFT JOIN table on pk(s)
-			m.TableID.FullyQualifiedName(), strings.Join(equalitySQLParts, " and "),
-			// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
-			m.Dialect.QuoteIdentifier(m.PrimaryKeys[0].Name()),
-		),
+		m.buildRedshiftInsertQuery(columns, equalitySQLParts),
 		// UPDATE
 		fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s AND COALESCE(cc.%s, false) = false;`,
 			// UPDATE table set col1 = cc. col1
-			m.TableID.FullyQualifiedName(), m.Columns.UpdateQuery(m.Dialect, true),
+			m.TableID.FullyQualifiedName(), buildColumnsUpdateFragment(columns, m.Dialect),
 			// FROM staging WHERE join on PK(s)
 			m.SubQuery, strings.Join(equalitySQLParts, " and "), idempotentClause, m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker),
 		),
 	}
 
 	if *m.ContainsHardDeletes {
-		parts = append(parts,
-			// DELETE
-			fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s as cc WHERE cc.%s = true);`,
-				// DELETE from table where (pk_1, pk_2)
-				m.TableID.FullyQualifiedName(), strings.Join(pks, ","),
-				// IN (cc.pk_1, cc.pk_2) FROM staging
-				array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-					Vals:      pks,
-					Separator: ",",
-					Prefix:    "cc.",
-				}), m.SubQuery, m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker),
-			))
+		parts = append(parts, m.buildRedshiftDeleteQuery())
 	}
 
 	return parts, nil
@@ -213,12 +196,8 @@ func (m *MergeArgument) GetStatement() (string, error) {
 		quotedPrimaryKey := m.Dialect.QuoteIdentifier(primaryKey.Name())
 
 		equalitySQL := fmt.Sprintf("c.%s = cc.%s", quotedPrimaryKey, quotedPrimaryKey)
-		pkCol, isOk := m.Columns.GetColumn(primaryKey.Name())
-		if !isOk {
-			return "", fmt.Errorf("column: %s does not exist in columnToType: %v", primaryKey.Name(), m.Columns)
-		}
 
-		if m.DestKind == constants.BigQuery && pkCol.KindDetails.Kind == typing.Struct.Kind {
+		if m.DestKind == constants.BigQuery && primaryKey.KindDetails.Kind == typing.Struct.Kind {
 			// BigQuery requires special casting to compare two JSON objects.
 			equalitySQL = fmt.Sprintf("TO_JSON_STRING(c.%s) = TO_JSON_STRING(cc.%s)", quotedPrimaryKey, quotedPrimaryKey)
 		}
@@ -235,8 +214,6 @@ func (m *MergeArgument) GetStatement() (string, error) {
 		equalitySQLParts = append(equalitySQLParts, m.AdditionalEqualityStrings...)
 	}
 
-	columns := m.Columns.GetColumnsToUpdate()
-
 	if m.SoftDelete {
 		return fmt.Sprintf(`
 MERGE INTO %s c USING %s AS cc ON %s
@@ -244,19 +221,18 @@ WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
 			m.TableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, m.Columns.UpdateQuery(m.Dialect, false),
+			idempotentClause, buildColumnsUpdateFragment(m.Columns, m.Dialect),
 			// Insert
-			m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
+			m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(quoteColumns(m.Columns, m.Dialect), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
+				Vals:      quoteColumns(m.Columns, m.Dialect),
 				Separator: ",",
 				Prefix:    "cc.",
 			})), nil
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
-	var removed bool
-	columns, removed = removeDeleteColumnMarker(columns)
+	columns, removed := removeDeleteColumnMarker(m.Columns)
 	if !removed {
 		return "", errors.New("artie delete flag doesn't exist")
 	}
@@ -270,11 +246,11 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 		// Delete
 		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker),
 		// Update
-		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, m.Columns.UpdateQuery(m.Dialect, true),
+		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, buildColumnsUpdateFragment(columns, m.Dialect),
 		// Insert
-		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
+		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(quoteColumns(columns, m.Dialect), ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
+			Vals:      quoteColumns(columns, m.Dialect),
 			Separator: ",",
 			Prefix:    "cc.",
 		})), nil
@@ -298,8 +274,6 @@ func (m *MergeArgument) GetMSSQLStatement() (string, error) {
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
 
-	columns := m.Columns.GetColumnsToUpdate()
-
 	if m.SoftDelete {
 		return fmt.Sprintf(`
 MERGE INTO %s c
@@ -308,19 +282,18 @@ WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 			m.TableID.FullyQualifiedName(), m.SubQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, m.Columns.UpdateQuery(m.Dialect, false),
+			idempotentClause, buildColumnsUpdateFragment(m.Columns, m.Dialect),
 			// Insert
-			m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
+			m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(quoteColumns(m.Columns, m.Dialect), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
+				Vals:      quoteColumns(m.Columns, m.Dialect),
 				Separator: ",",
 				Prefix:    "cc.",
 			})), nil
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
-	var removed bool
-	columns, removed = removeDeleteColumnMarker(columns)
+	columns, removed := removeDeleteColumnMarker(m.Columns)
 	if !removed {
 		return "", errors.New("artie delete flag doesn't exist")
 	}
@@ -335,11 +308,11 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
 		// Delete
 		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker),
 		// Update
-		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, m.Columns.UpdateQuery(m.Dialect, true),
+		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, buildColumnsUpdateFragment(columns, m.Dialect),
 		// Insert
-		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteIdentifiers(columns, m.Dialect), ","),
+		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(quoteColumns(columns, m.Dialect), ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      sql.QuoteIdentifiers(columns, m.Dialect),
+			Vals:      quoteColumns(columns, m.Dialect),
 			Separator: ",",
 			Prefix:    "cc.",
 		})), nil
