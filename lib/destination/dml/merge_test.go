@@ -310,7 +310,7 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 	assert.Contains(t, mergeSQL, `cc."ID",cc."GROUP",cc."UPDATED_AT",cc."START"`, mergeSQL)
 }
 
-func TestBuildInsertQuery(t *testing.T) {
+func TestBuildRedshiftInsertQuery(t *testing.T) {
 	cols := []columns.Column{
 		columns.NewColumn("col1", typing.Invalid),
 		columns.NewColumn("col2", typing.Invalid),
@@ -325,5 +325,24 @@ func TestBuildInsertQuery(t *testing.T) {
 	assert.Equal(t,
 		`INSERT INTO {TABLE_ID} ("COL1","COL2") SELECT cc."COL1",cc."COL2" FROM {SUB_QUERY} as cc LEFT JOIN {TABLE_ID} as c on {EQUALITY_PART_1} and {EQUALITY_PART_2} WHERE c."COL1" IS NULL;`,
 		mergeArg.buildRedshiftInsertQuery(cols, []string{"{EQUALITY_PART_1}", "{EQUALITY_PART_2}"}),
+	)
+}
+
+func TestBuildRedshiftDeleteQuery(t *testing.T) {
+	cols := []columns.Column{
+		columns.NewColumn("col1", typing.Invalid),
+		columns.NewColumn("col2", typing.Invalid),
+		columns.NewColumn("col3", typing.Invalid),
+	}
+
+	mergeArg := MergeArgument{
+		TableID:     MockTableIdentifier{"{TABLE_ID}"},
+		SubQuery:    "{SUB_QUERY}",
+		PrimaryKeys: []columns.Column{cols[0], cols[1]},
+		Dialect:     sql.SnowflakeDialect{},
+	}
+	assert.Equal(t,
+		`DELETE FROM {TABLE_ID} WHERE ("COL1","COL2") IN (SELECT cc."COL1",cc."COL2" FROM {SUB_QUERY} as cc WHERE cc."__ARTIE_DELETE" = true);`,
+		mergeArg.buildRedshiftDeleteQuery(),
 	)
 }
