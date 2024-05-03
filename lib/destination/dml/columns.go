@@ -22,10 +22,6 @@ func quoteColumns(cols []columns.Column, dialect sql.Dialect) []string {
 func buildColumnsUpdateFragment(columns []columns.Column, dialect sql.Dialect, skipDeleteCol bool) string {
 	var cols []string
 	for _, column := range columns {
-		if column.ShouldSkip() {
-			continue
-		}
-
 		// skipDeleteCol is useful because we don't want to copy the deleted column over to the source table if we're doing a hard row delete.
 		if skipDeleteCol && column.Name() == constants.DeleteColumnMarker {
 			continue
