@@ -14,7 +14,7 @@ import (
 func TestBuildColumnsUpdateFragment(t *testing.T) {
 	type testCase struct {
 		name           string
-		columns        columns.Columns
+		columns        []columns.Column
 		expectedString string
 		dialect        sql.Dialect
 		skipDeleteCol  bool
@@ -23,15 +23,15 @@ func TestBuildColumnsUpdateFragment(t *testing.T) {
 	fooBarCols := []string{"foo", "bar"}
 
 	var (
-		happyPathCols       columns.Columns
-		stringAndToastCols  columns.Columns
-		lastCaseColTypes    columns.Columns
-		lastCaseEscapeTypes columns.Columns
+		happyPathCols       []columns.Column
+		stringAndToastCols  []columns.Column
+		lastCaseColTypes    []columns.Column
+		lastCaseEscapeTypes []columns.Column
 	)
 	for _, col := range fooBarCols {
 		column := columns.NewColumn(col, typing.String)
 		column.ToastColumn = false
-		happyPathCols.AddColumn(column)
+		happyPathCols = append(happyPathCols, column)
 	}
 	for _, col := range fooBarCols {
 		var toastCol bool
@@ -41,7 +41,7 @@ func TestBuildColumnsUpdateFragment(t *testing.T) {
 
 		column := columns.NewColumn(col, typing.String)
 		column.ToastColumn = toastCol
-		stringAndToastCols.AddColumn(column)
+		stringAndToastCols = append(stringAndToastCols, column)
 	}
 
 	lastCaseCols := []string{"a1", "b2", "c3"}
@@ -58,7 +58,7 @@ func TestBuildColumnsUpdateFragment(t *testing.T) {
 
 		column := columns.NewColumn(lastCaseCol, kd)
 		column.ToastColumn = toast
-		lastCaseColTypes.AddColumn(column)
+		lastCaseColTypes = append(lastCaseColTypes, column)
 	}
 
 	lastCaseColsEsc := []string{"a1", "b2", "c3", "start", "select"}
@@ -78,10 +78,10 @@ func TestBuildColumnsUpdateFragment(t *testing.T) {
 
 		column := columns.NewColumn(lastCaseColEsc, kd)
 		column.ToastColumn = toast
-		lastCaseEscapeTypes.AddColumn(column)
+		lastCaseEscapeTypes = append(lastCaseEscapeTypes, column)
 	}
 
-	lastCaseEscapeTypes.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
+	lastCaseEscapeTypes = append(lastCaseEscapeTypes, columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	key := `{"key":"__debezium_unavailable_value"}`
 	testCases := []testCase{
@@ -128,7 +128,7 @@ func TestBuildColumnsUpdateFragment(t *testing.T) {
 	}
 
 	for _, _testCase := range testCases {
-		actualQuery := buildColumnsUpdateFragment(&_testCase.columns, _testCase.dialect, _testCase.skipDeleteCol)
+		actualQuery := buildColumnsUpdateFragment(_testCase.columns, _testCase.dialect, _testCase.skipDeleteCol)
 		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
 	}
 }

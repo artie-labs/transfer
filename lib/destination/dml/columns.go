@@ -11,9 +11,9 @@ import (
 )
 
 // buildColumnsUpdateFragment will parse the columns and then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email
-func buildColumnsUpdateFragment(c *columns.Columns, dialect sql.Dialect, skipDeleteCol bool) string {
+func buildColumnsUpdateFragment(columns []columns.Column, dialect sql.Dialect, skipDeleteCol bool) string {
 	var cols []string
-	for _, column := range c.GetColumns() {
+	for _, column := range columns {
 		if column.ShouldSkip() {
 			continue
 		}
