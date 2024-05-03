@@ -26,7 +26,6 @@ func TestBuildColumnsUpdateFragment(t *testing.T) {
 		columns        []columns.Column
 		expectedString string
 		dialect        sql.Dialect
-		skipDeleteCol  bool
 	}
 
 	fooBarCols := []string{"foo", "bar"}
