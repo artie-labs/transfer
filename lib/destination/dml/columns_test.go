@@ -26,7 +26,6 @@ func TestBuildColumnsUpdateFragment(t *testing.T) {
 		columns        []columns.Column
 		expectedString string
 		dialect        sql.Dialect
-		skipDeleteCol  bool
 	}
 
 	fooBarCols := []string{"foo", "bar"}
@@ -123,21 +122,12 @@ func TestBuildColumnsUpdateFragment(t *testing.T) {
 			columns: lastCaseEscapeTypes,
 			dialect: sql.BigQueryDialect{},
 			expectedString: fmt.Sprintf("`a1`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`a1`) != '%s', true) THEN cc.`a1` ELSE c.`a1` END,`b2`= CASE WHEN COALESCE(cc.`b2` != '__debezium_unavailable_value', true) THEN cc.`b2` ELSE c.`b2` END,`c3`=cc.`c3`,%s,%s",
-				key, fmt.Sprintf("`start`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`start`) != '%s', true) THEN cc.`start` ELSE c.`start` END", key), "`select`=cc.`select`"),
-			skipDeleteCol: true,
-		},
-		{
-			name:    "struct, string and toast string (bigquery) w/ reserved keywords",
-			columns: lastCaseEscapeTypes,
-			dialect: sql.BigQueryDialect{},
-			expectedString: fmt.Sprintf("`a1`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`a1`) != '%s', true) THEN cc.`a1` ELSE c.`a1` END,`b2`= CASE WHEN COALESCE(cc.`b2` != '__debezium_unavailable_value', true) THEN cc.`b2` ELSE c.`b2` END,`c3`=cc.`c3`,%s,%s",
 				key, fmt.Sprintf("`start`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`start`) != '%s', true) THEN cc.`start` ELSE c.`start` END", key), "`select`=cc.`select`,`__artie_delete`=cc.`__artie_delete`"),
-			skipDeleteCol: false,
 		},
 	}
 
 	for _, _testCase := range testCases {
-		actualQuery := buildColumnsUpdateFragment(_testCase.columns, _testCase.dialect, _testCase.skipDeleteCol)
+		actualQuery := buildColumnsUpdateFragment(_testCase.columns, _testCase.dialect)
 		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
 	}
 }
