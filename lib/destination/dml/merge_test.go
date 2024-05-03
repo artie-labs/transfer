@@ -284,16 +284,17 @@ func TestMergeArgument_BuildRedshiftInsertQuery(t *testing.T) {
 	cols := []columns.Column{
 		columns.NewColumn("col1", typing.Invalid),
 		columns.NewColumn("col2", typing.Invalid),
+		columns.NewColumn("col3", typing.Invalid),
 	}
 
 	mergeArg := MergeArgument{
 		TableID:     MockTableIdentifier{"{TABLE_ID}"},
 		SubQuery:    "{SUB_QUERY}",
-		PrimaryKeys: []columns.Column{cols[0], columns.NewColumn("othercol", typing.Invalid)},
+		PrimaryKeys: []columns.Column{cols[0], cols[2]},
 		Dialect:     sql.SnowflakeDialect{},
 	}
 	assert.Equal(t,
-		`INSERT INTO {TABLE_ID} ("COL1","COL2") SELECT cc."COL1",cc."COL2" FROM {SUB_QUERY} as cc LEFT JOIN {TABLE_ID} as c on c."COL1" = cc."COL1" and c."OTHERCOL" = cc."OTHERCOL" WHERE c."COL1" IS NULL;`,
+		`INSERT INTO {TABLE_ID} ("COL1","COL2","COL3") SELECT cc."COL1",cc."COL2",cc."COL3" FROM {SUB_QUERY} as cc LEFT JOIN {TABLE_ID} as c on c."COL1" = cc."COL1" and c."COL3" = cc."COL3" WHERE c."COL1" IS NULL;`,
 		mergeArg.buildRedshiftInsertQuery(cols),
 	)
 }
