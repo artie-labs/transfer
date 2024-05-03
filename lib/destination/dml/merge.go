@@ -3,7 +3,6 @@ package dml
 import (
 	"errors"
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/array"
@@ -69,12 +68,6 @@ func (m *MergeArgument) Valid() error {
 	}
 
 	return nil
-}
-
-func removeDeleteColumnMarker(cols []columns.Column) ([]columns.Column, bool) {
-	origLength := len(cols)
-	cols = slices.DeleteFunc(cols, func(col columns.Column) bool { return col.Name() == constants.DeleteColumnMarker })
-	return cols, len(cols) != origLength
 }
 
 func (m *MergeArgument) buildRedshiftInsertQuery(columns []columns.Column, equalitySQLParts []string) string {
