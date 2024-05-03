@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestColumnsUpdateQuery(t *testing.T) {
+func TestUpdateQuery(t *testing.T) {
 	type testCase struct {
 		name           string
 		columns        columns.Columns
