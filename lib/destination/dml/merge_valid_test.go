@@ -3,7 +3,6 @@ package dml
 import (
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/typing"
@@ -17,10 +16,11 @@ func TestMergeArgument_Valid(t *testing.T) {
 		columns.NewColumn("id", typing.Integer),
 	}
 
-	var cols columns.Columns
-	cols.AddColumn(columns.NewColumn("id", typing.Integer))
-	cols.AddColumn(columns.NewColumn("firstName", typing.String))
-	cols.AddColumn(columns.NewColumn("lastName", typing.String))
+	cols := []columns.Column{
+		columns.NewColumn("id", typing.Integer),
+		columns.NewColumn("firstName", typing.String),
+		columns.NewColumn("lastName", typing.String),
+	}
 
 	testCases := []struct {
 		name        string
@@ -47,7 +47,7 @@ func TestMergeArgument_Valid(t *testing.T) {
 			name: "pks, cols, colsTpTypes exists but no subquery or tableID",
 			mergeArg: &MergeArgument{
 				PrimaryKeys: primaryKeys,
-				Columns:     &cols,
+				Columns:     cols,
 			},
 			expectedErr: "tableID cannot be nil",
 		},
@@ -55,7 +55,7 @@ func TestMergeArgument_Valid(t *testing.T) {
 			name: "pks, cols, colsTpTypes, subquery exists but no tableID",
 			mergeArg: &MergeArgument{
 				PrimaryKeys: primaryKeys,
-				Columns:     &cols,
+				Columns:     cols,
 				SubQuery:    "schema.tableName",
 			},
 			expectedErr: "tableID cannot be nil",
@@ -64,29 +64,18 @@ func TestMergeArgument_Valid(t *testing.T) {
 			name: "pks, cols, colsTpTypes, tableID exists but no subquery",
 			mergeArg: &MergeArgument{
 				PrimaryKeys: primaryKeys,
-				Columns:     &cols,
+				Columns:     cols,
 				TableID:     MockTableIdentifier{"schema.tableName"},
 			},
 			expectedErr: "subQuery cannot be empty",
 		},
 		{
-			name: "missing dest kind",
-			mergeArg: &MergeArgument{
-				PrimaryKeys: primaryKeys,
-				Columns:     &cols,
-				SubQuery:    "schema.tableName",
-				TableID:     MockTableIdentifier{"schema.tableName"},
-			},
-			expectedErr: "invalid destination",
-		},
-		{
 			name: "missing dialect kind",
 			mergeArg: &MergeArgument{
 				PrimaryKeys: primaryKeys,
-				Columns:     &cols,
+				Columns:     cols,
 				SubQuery:    "schema.tableName",
 				TableID:     MockTableIdentifier{"schema.tableName"},
-				DestKind:    constants.BigQuery,
 			},
 			expectedErr: "dialect cannot be nil",
 		},
@@ -94,12 +83,22 @@ func TestMergeArgument_Valid(t *testing.T) {
 			name: "everything exists",
 			mergeArg: &MergeArgument{
 				PrimaryKeys: primaryKeys,
-				Columns:     &cols,
+				Columns:     cols,
 				SubQuery:    "schema.tableName",
 				TableID:     MockTableIdentifier{"schema.tableName"},
-				DestKind:    constants.BigQuery,
 				Dialect:     sql.BigQueryDialect{},
 			},
+		},
+		{
+			name: "invalid column",
+			mergeArg: &MergeArgument{
+				PrimaryKeys: primaryKeys,
+				Columns:     []columns.Column{columns.NewColumn("id", typing.Invalid)},
+				SubQuery:    "schema.tableName",
+				TableID:     MockTableIdentifier{"schema.tableName"},
+				Dialect:     sql.BigQueryDialect{},
+			},
+			expectedErr: `column "id" is invalid and should be skipped`,
 		},
 	}
 

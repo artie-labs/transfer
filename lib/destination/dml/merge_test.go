@@ -32,39 +32,6 @@ func (m MockTableIdentifier) FullyQualifiedName() string {
 	return m.fqName
 }
 
-func TestRemoveDeleteColumnMarker(t *testing.T) {
-	{
-		columns, removed := removeDeleteColumnMarker([]string{})
-		assert.Empty(t, columns)
-		assert.False(t, removed)
-	}
-	{
-		columns, removed := removeDeleteColumnMarker([]string{"a"})
-		assert.Equal(t, []string{"a"}, columns)
-		assert.False(t, removed)
-	}
-	{
-		columns, removed := removeDeleteColumnMarker([]string{"a", "b"})
-		assert.Equal(t, []string{"a", "b"}, columns)
-		assert.False(t, removed)
-	}
-	{
-		columns, removed := removeDeleteColumnMarker([]string{constants.DeleteColumnMarker})
-		assert.True(t, removed)
-		assert.Empty(t, columns)
-	}
-	{
-		columns, removed := removeDeleteColumnMarker([]string{"a", constants.DeleteColumnMarker, "b"})
-		assert.True(t, removed)
-		assert.Equal(t, []string{"a", "b"}, columns)
-	}
-	{
-		columns, removed := removeDeleteColumnMarker([]string{"a", constants.DeleteColumnMarker, "b", constants.DeleteColumnMarker, "c"})
-		assert.True(t, removed)
-		assert.Equal(t, []string{"a", "b", "c"}, columns)
-	}
-}
-
 func TestMergeStatementSoftDelete(t *testing.T) {
 	// No idempotent key
 	fqTable := "database.schema.table"
@@ -95,8 +62,7 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 			SubQuery:      subQuery,
 			IdempotentKey: idempotentKey,
 			PrimaryKeys:   []columns.Column{columns.NewColumn("id", typing.Invalid)},
-			Columns:       &_cols,
-			DestKind:      constants.Snowflake,
+			Columns:       _cols.ValidColumns(),
 			Dialect:       sql.SnowflakeDialect{},
 			SoftDelete:    true,
 		}
@@ -144,8 +110,7 @@ func TestMergeStatement(t *testing.T) {
 		SubQuery:      subQuery,
 		IdempotentKey: "",
 		PrimaryKeys:   []columns.Column{columns.NewColumn("id", typing.Invalid)},
-		Columns:       &_cols,
-		DestKind:      constants.Snowflake,
+		Columns:       _cols.ValidColumns(),
 		Dialect:       sql.SnowflakeDialect{},
 		SoftDelete:    false,
 	}
@@ -192,8 +157,7 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 		SubQuery:      subQuery,
 		IdempotentKey: "updated_at",
 		PrimaryKeys:   []columns.Column{columns.NewColumn("id", typing.Invalid)},
-		Columns:       &_cols,
-		DestKind:      constants.Snowflake,
+		Columns:       _cols.ValidColumns(),
 		Dialect:       sql.SnowflakeDialect{},
 		SoftDelete:    false,
 	}
@@ -237,8 +201,7 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 			columns.NewColumn("id", typing.Invalid),
 			columns.NewColumn("another_id", typing.Invalid),
 		},
-		Columns:    &_cols,
-		DestKind:   constants.Snowflake,
+		Columns:    _cols.ValidColumns(),
 		Dialect:    sql.SnowflakeDialect{},
 		SoftDelete: false,
 	}
@@ -286,8 +249,7 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 			columns.NewColumn("id", typing.Invalid),
 			columns.NewColumn("group", typing.Invalid),
 		},
-		Columns:    &_cols,
-		DestKind:   constants.Snowflake,
+		Columns:    _cols.ValidColumns(),
 		Dialect:    sql.SnowflakeDialect{},
 		SoftDelete: false,
 	}
@@ -303,4 +265,100 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 	// Check for INSERT
 	assert.Contains(t, mergeSQL, `"ID","GROUP","UPDATED_AT","START"`, mergeSQL)
 	assert.Contains(t, mergeSQL, `cc."ID",cc."GROUP",cc."UPDATED_AT",cc."START"`, mergeSQL)
+}
+
+func TestMergeArgument_RedshiftEqualitySQLParts(t *testing.T) {
+	mergeArg := MergeArgument{
+		PrimaryKeys: []columns.Column{columns.NewColumn("col1", typing.Invalid), columns.NewColumn("col2", typing.Invalid)},
+		Dialect:     sql.RedshiftDialect{},
+	}
+	assert.Equal(t, []string{`c."col1" = cc."col1"`, `c."col2" = cc."col2"`}, mergeArg.redshiftEqualitySQLParts())
+}
+
+func TestMergeArgument_BuildRedshiftInsertQuery(t *testing.T) {
+	cols := []columns.Column{
+		columns.NewColumn("col1", typing.Invalid),
+		columns.NewColumn("col2", typing.Invalid),
+		columns.NewColumn("col3", typing.Invalid),
+	}
+
+	mergeArg := MergeArgument{
+		TableID:     MockTableIdentifier{"{TABLE_ID}"},
+		SubQuery:    "{SUB_QUERY}",
+		PrimaryKeys: []columns.Column{cols[0], cols[2]},
+		Dialect:     sql.RedshiftDialect{},
+	}
+	assert.Equal(t,
+		`INSERT INTO {TABLE_ID} ("col1","col2","col3") SELECT cc."col1",cc."col2",cc."col3" FROM {SUB_QUERY} AS cc LEFT JOIN {TABLE_ID} AS c ON c."col1" = cc."col1" AND c."col3" = cc."col3" WHERE c."col1" IS NULL;`,
+		mergeArg.buildRedshiftInsertQuery(cols),
+	)
+}
+
+func TestMergeArgument_BuildRedshiftUpdateQuery(t *testing.T) {
+	testCases := []struct {
+		name          string
+		softDelete    bool
+		idempotentKey string
+		expected      string
+	}{
+		{
+			name:       "soft delete enabled",
+			softDelete: true,
+			expected:   `UPDATE {TABLE_ID} AS c SET "col1"=cc."col1","col2"=cc."col2","col3"=cc."col3" FROM {SUB_QUERY} AS cc WHERE c."col1" = cc."col1" AND c."col3" = cc."col3";`,
+		},
+		{
+			name:          "soft delete enabled + idempotent key",
+			softDelete:    true,
+			idempotentKey: "{ID_KEY}",
+			expected:      `UPDATE {TABLE_ID} AS c SET "col1"=cc."col1","col2"=cc."col2","col3"=cc."col3" FROM {SUB_QUERY} AS cc WHERE c."col1" = cc."col1" AND c."col3" = cc."col3" AND cc.{ID_KEY} >= c.{ID_KEY};`,
+		},
+		{
+			name:       "soft delete disabled",
+			softDelete: false,
+			expected:   `UPDATE {TABLE_ID} AS c SET "col1"=cc."col1","col2"=cc."col2","col3"=cc."col3" FROM {SUB_QUERY} AS cc WHERE c."col1" = cc."col1" AND c."col3" = cc."col3" AND COALESCE(cc."__artie_delete", false) = false;`,
+		},
+		{
+			name:          "soft delete disabled + idempotent key",
+			softDelete:    false,
+			idempotentKey: "{ID_KEY}",
+			expected:      `UPDATE {TABLE_ID} AS c SET "col1"=cc."col1","col2"=cc."col2","col3"=cc."col3" FROM {SUB_QUERY} AS cc WHERE c."col1" = cc."col1" AND c."col3" = cc."col3" AND cc.{ID_KEY} >= c.{ID_KEY} AND COALESCE(cc."__artie_delete", false) = false;`,
+		},
+	}
+
+	cols := []columns.Column{
+		columns.NewColumn("col1", typing.Invalid),
+		columns.NewColumn("col2", typing.Invalid),
+		columns.NewColumn("col3", typing.Invalid),
+	}
+
+	for _, testCase := range testCases {
+		mergeArg := MergeArgument{
+			TableID:       MockTableIdentifier{"{TABLE_ID}"},
+			SubQuery:      "{SUB_QUERY}",
+			PrimaryKeys:   []columns.Column{cols[0], cols[2]},
+			Dialect:       sql.RedshiftDialect{},
+			SoftDelete:    testCase.softDelete,
+			IdempotentKey: testCase.idempotentKey,
+		}
+		assert.Equal(t, testCase.expected, mergeArg.buildRedshiftUpdateQuery(cols), testCase.name)
+	}
+}
+
+func TestMergeArgument_BuildRedshiftDeleteQuery(t *testing.T) {
+	cols := []columns.Column{
+		columns.NewColumn("col1", typing.Invalid),
+		columns.NewColumn("col2", typing.Invalid),
+		columns.NewColumn("col3", typing.Invalid),
+	}
+
+	mergeArg := MergeArgument{
+		TableID:     MockTableIdentifier{"{TABLE_ID}"},
+		SubQuery:    "{SUB_QUERY}",
+		PrimaryKeys: []columns.Column{cols[0], cols[1]},
+		Dialect:     sql.RedshiftDialect{},
+	}
+	assert.Equal(t,
+		`DELETE FROM {TABLE_ID} WHERE ("col1","col2") IN (SELECT cc."col1",cc."col2" FROM {SUB_QUERY} AS cc WHERE cc."__artie_delete" = true);`,
+		mergeArg.buildRedshiftDeleteQuery(),
+	)
 }

@@ -119,14 +119,24 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		subQuery = fmt.Sprintf(`( SELECT DISTINCT * FROM %s )`, temporaryTableName)
 	}
 
+	cols := tableData.ReadOnlyInMemoryCols()
+
+	var primaryKeys []columns.Column
+	for _, primaryKey := range tableData.PrimaryKeys() {
+		column, ok := cols.GetColumn(primaryKey)
+		if !ok {
+			return fmt.Errorf("column for primary key %q does not exist", primaryKey)
+		}
+		primaryKeys = append(primaryKeys, column)
+	}
+
 	mergeArg := dml.MergeArgument{
 		TableID:             tableID,
 		SubQuery:            subQuery,
 		IdempotentKey:       tableData.TopicConfig().IdempotentKey,
-		PrimaryKeys:         tableData.PrimaryKeys(),
-		Columns:             tableData.ReadOnlyInMemoryCols(),
+		PrimaryKeys:         primaryKeys,
+		Columns:             cols.ValidColumns(),
 		SoftDelete:          tableData.TopicConfig().SoftDelete,
-		DestKind:            dwh.Label(),
 		Dialect:             dwh.Dialect(),
 		ContainsHardDeletes: ptr.ToBool(tableData.ContainsHardDeletes()),
 	}
@@ -135,8 +145,8 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		mergeArg.AdditionalEqualityStrings = opts.AdditionalEqualityStrings
 	}
 
-	if opts.UseMergeParts {
-		mergeParts, err := mergeArg.GetParts()
+	if dwh.Label() == constants.Redshift {
+		mergeParts, err := mergeArg.GetRedshiftStatements()
 		if err != nil {
 			return fmt.Errorf("failed to generate merge statement: %w", err)
 		}
