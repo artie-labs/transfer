@@ -21,7 +21,6 @@ func TestMergeStatement_TempTable(t *testing.T) {
 		SubQuery:    "customers.orders_tmp",
 		PrimaryKeys: []columns.Column{columns.NewColumn("order_id", typing.Invalid)},
 		Columns:     cols.ValidColumns(),
-		DestKind:    constants.BigQuery,
 		Dialect:     sql.BigQueryDialect{},
 		SoftDelete:  false,
 	}
@@ -44,7 +43,6 @@ func TestMergeStatement_JSONKey(t *testing.T) {
 		SubQuery:    "customers.orders_tmp",
 		PrimaryKeys: []columns.Column{orderOIDCol},
 		Columns:     cols.ValidColumns(),
-		DestKind:    constants.BigQuery,
 		Dialect:     sql.BigQueryDialect{},
 		SoftDelete:  false,
 	}
