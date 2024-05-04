@@ -25,7 +25,6 @@ type MergeArgument struct {
 	// Columns will need to be escaped
 	Columns []columns.Column
 
-	DestKind   constants.DestinationKind
 	SoftDelete bool
 	// ContainsHardDeletes is only used for Redshift and MergeStatementParts,
 	// where we do not issue a DELETE statement if there are no hard deletes in the batch
@@ -57,10 +56,6 @@ func (m *MergeArgument) Valid() error {
 
 	if m.SubQuery == "" {
 		return fmt.Errorf("subQuery cannot be empty")
-	}
-
-	if !constants.IsValidDestination(m.DestKind) {
-		return fmt.Errorf("invalid destination: %s", m.DestKind)
 	}
 
 	if m.Dialect == nil {
@@ -101,8 +96,6 @@ func (m *MergeArgument) buildRedshiftInsertQuery(columns []columns.Column) strin
 func (m *MergeArgument) buildRedshiftUpdateQuery(columns []columns.Column) string {
 	clauses := m.redshiftEqualitySQLParts()
 
-	// We also need to do staged table's idempotency key is GTE target table's idempotency key
-	// This is because Snowflake does not respect NS granularity.
 	if m.IdempotentKey != "" {
 		clauses = append(clauses, fmt.Sprintf("cc.%s >= c.%s", m.IdempotentKey, m.IdempotentKey))
 	}
@@ -137,8 +130,8 @@ func (m *MergeArgument) GetRedshiftStatements() ([]string, error) {
 		return nil, err
 	}
 
-	if m.DestKind != constants.Redshift {
-		return nil, fmt.Errorf("err - this is meant for redshift only")
+	if _, ok := m.Dialect.(sql.RedshiftDialect); !ok {
+		return nil, fmt.Errorf("this is meant for Redshift only")
 	}
 
 	// ContainsHardDeletes is only used for Redshift, so we'll validate it now
@@ -193,6 +186,8 @@ func (m *MergeArgument) GetStatement() (string, error) {
 		idempotentClause = fmt.Sprintf("AND cc.%s >= c.%s ", m.IdempotentKey, m.IdempotentKey)
 	}
 
+	_, isBigQuery := m.Dialect.(sql.BigQueryDialect)
+
 	var equalitySQLParts []string
 	for _, primaryKey := range m.PrimaryKeys {
 		// We'll need to escape the primary key as well.
@@ -200,7 +195,7 @@ func (m *MergeArgument) GetStatement() (string, error) {
 
 		equalitySQL := fmt.Sprintf("c.%s = cc.%s", quotedPrimaryKey, quotedPrimaryKey)
 
-		if m.DestKind == constants.BigQuery && primaryKey.KindDetails.Kind == typing.Struct.Kind {
+		if isBigQuery && primaryKey.KindDetails.Kind == typing.Struct.Kind {
 			// BigQuery requires special casting to compare two JSON objects.
 			equalitySQL = fmt.Sprintf("TO_JSON_STRING(c.%s) = TO_JSON_STRING(cc.%s)", quotedPrimaryKey, quotedPrimaryKey)
 		}
@@ -209,7 +204,7 @@ func (m *MergeArgument) GetStatement() (string, error) {
 	}
 
 	subQuery := fmt.Sprintf("( %s )", m.SubQuery)
-	if m.DestKind == constants.BigQuery {
+	if isBigQuery {
 		subQuery = m.SubQuery
 	}
 

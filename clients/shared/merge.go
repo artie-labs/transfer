@@ -137,7 +137,6 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		PrimaryKeys:         primaryKeys,
 		Columns:             cols.ValidColumns(),
 		SoftDelete:          tableData.TopicConfig().SoftDelete,
-		DestKind:            dwh.Label(),
 		Dialect:             dwh.Dialect(),
 		ContainsHardDeletes: ptr.ToBool(tableData.ContainsHardDeletes()),
 	}

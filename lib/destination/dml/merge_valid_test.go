@@ -3,7 +3,6 @@ package dml
 import (
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/typing"
@@ -71,23 +70,12 @@ func TestMergeArgument_Valid(t *testing.T) {
 			expectedErr: "subQuery cannot be empty",
 		},
 		{
-			name: "missing dest kind",
-			mergeArg: &MergeArgument{
-				PrimaryKeys: primaryKeys,
-				Columns:     cols,
-				SubQuery:    "schema.tableName",
-				TableID:     MockTableIdentifier{"schema.tableName"},
-			},
-			expectedErr: "invalid destination",
-		},
-		{
 			name: "missing dialect kind",
 			mergeArg: &MergeArgument{
 				PrimaryKeys: primaryKeys,
 				Columns:     cols,
 				SubQuery:    "schema.tableName",
 				TableID:     MockTableIdentifier{"schema.tableName"},
-				DestKind:    constants.BigQuery,
 			},
 			expectedErr: "dialect cannot be nil",
 		},
@@ -98,7 +86,6 @@ func TestMergeArgument_Valid(t *testing.T) {
 				Columns:     cols,
 				SubQuery:    "schema.tableName",
 				TableID:     MockTableIdentifier{"schema.tableName"},
-				DestKind:    constants.BigQuery,
 				Dialect:     sql.BigQueryDialect{},
 			},
 		},
@@ -109,7 +96,6 @@ func TestMergeArgument_Valid(t *testing.T) {
 				Columns:     []columns.Column{columns.NewColumn("id", typing.Invalid)},
 				SubQuery:    "schema.tableName",
 				TableID:     MockTableIdentifier{"schema.tableName"},
-				DestKind:    constants.BigQuery,
 				Dialect:     sql.BigQueryDialect{},
 			},
 			expectedErr: `column "id" is invalid and should be skipped`,

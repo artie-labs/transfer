@@ -15,8 +15,8 @@ import (
 
 func TestMergeArgument_GetRedshiftStatements_Validation(t *testing.T) {
 	for _, arg := range []*MergeArgument{
-		{DestKind: constants.Snowflake},
-		{DestKind: constants.BigQuery},
+		{Dialect: sql.SnowflakeDialect{}},
+		{Dialect: sql.BigQueryDialect{}},
 	} {
 		parts, err := arg.GetRedshiftStatements()
 		assert.ErrorContains(t, err, "merge argument does not contain primary keys")
@@ -72,7 +72,6 @@ func TestMergeArgument_GetRedshiftStatements_SkipDelete(t *testing.T) {
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.ColumnsToTypes.ValidColumns(),
-		DestKind:            constants.Redshift,
 		Dialect:             sql.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(false),
 	}
@@ -99,7 +98,6 @@ func TestMergeArgument_GetRedshiftStatements_SoftDelete(t *testing.T) {
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.ColumnsToTypes.ValidColumns(),
-		DestKind:            constants.Redshift,
 		Dialect:             sql.RedshiftDialect{},
 		SoftDelete:          true,
 		ContainsHardDeletes: ptr.ToBool(false),
@@ -139,7 +137,6 @@ func TestMergeArgument_GetRedshiftStatements_SoftDeleteComposite(t *testing.T) {
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.ColumnsToTypes.ValidColumns(),
-		DestKind:            constants.Redshift,
 		Dialect:             sql.RedshiftDialect{},
 		SoftDelete:          true,
 		ContainsHardDeletes: ptr.ToBool(false),
@@ -182,7 +179,6 @@ func TestMergeArgument_GetRedshiftStatements(t *testing.T) {
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.ColumnsToTypes.ValidColumns(),
-		DestKind:            constants.Redshift,
 		Dialect:             sql.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
 	}
@@ -208,7 +204,6 @@ func TestMergeArgument_GetRedshiftStatements(t *testing.T) {
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.ColumnsToTypes.ValidColumns(),
-		DestKind:            constants.Redshift,
 		Dialect:             sql.RedshiftDialect{},
 		IdempotentKey:       "created_at",
 		ContainsHardDeletes: ptr.ToBool(true),
@@ -240,7 +235,6 @@ func TestMergeArgument_GetRedshiftStatements_CompositeKey(t *testing.T) {
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.ColumnsToTypes.ValidColumns(),
-		DestKind:            constants.Redshift,
 		Dialect:             sql.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
 	}
@@ -266,7 +260,6 @@ func TestMergeArgument_GetRedshiftStatements_CompositeKey(t *testing.T) {
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.ColumnsToTypes.ValidColumns(),
-		DestKind:            constants.Redshift,
 		Dialect:             sql.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
 		IdempotentKey:       "created_at",
