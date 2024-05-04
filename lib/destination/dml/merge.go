@@ -82,7 +82,7 @@ func (m *MergeArgument) redshiftEqualitySQLParts() []string {
 }
 
 func (m *MergeArgument) buildRedshiftInsertQuery(columns []columns.Column) string {
-	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s as cc LEFT JOIN %s as c on %s WHERE c.%s IS NULL;`,
+	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s AS cc LEFT JOIN %s AS c ON %s WHERE c.%s IS NULL;`,
 		// insert into target (col1, col2, col3)
 		m.TableID.FullyQualifiedName(), strings.Join(quoteColumns(columns, m.Dialect), ","),
 		// SELECT cc.col1, cc.col2, ... FROM staging as CC
@@ -92,35 +92,35 @@ func (m *MergeArgument) buildRedshiftInsertQuery(columns []columns.Column) strin
 			Prefix:    "cc.",
 		}), m.SubQuery,
 		// LEFT JOIN table on pk(s)
-		m.TableID.FullyQualifiedName(), strings.Join(m.redshiftEqualitySQLParts(), " and "),
+		m.TableID.FullyQualifiedName(), strings.Join(m.redshiftEqualitySQLParts(), " AND "),
 		// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
 		m.Dialect.QuoteIdentifier(m.PrimaryKeys[0].Name()),
 	)
 }
 
 func (m *MergeArgument) buildRedshiftUpdateQuery(columns []columns.Column) string {
+	clauses := m.redshiftEqualitySQLParts()
+
 	// We also need to do staged table's idempotency key is GTE target table's idempotency key
 	// This is because Snowflake does not respect NS granularity.
-	var idempotentClause string
 	if m.IdempotentKey != "" {
-		idempotentClause = fmt.Sprintf(" AND cc.%s >= c.%s", m.IdempotentKey, m.IdempotentKey)
+		clauses = append(clauses, fmt.Sprintf("cc.%s >= c.%s", m.IdempotentKey, m.IdempotentKey))
 	}
 
-	var deleteColumnMarkerClause string
 	if !m.SoftDelete {
-		deleteColumnMarkerClause = fmt.Sprintf(" AND COALESCE(cc.%s, false) = false", m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker))
+		clauses = append(clauses, fmt.Sprintf("COALESCE(cc.%s, false) = false", m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker)))
 	}
 
-	return fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s%s;`,
+	return fmt.Sprintf(`UPDATE %s AS c SET %s FROM %s AS cc WHERE %s;`,
 		// UPDATE table set col1 = cc. col1
 		m.TableID.FullyQualifiedName(), buildColumnsUpdateFragment(columns, m.Dialect),
 		// FROM staging WHERE join on PK(s)
-		m.SubQuery, strings.Join(m.redshiftEqualitySQLParts(), " and "), idempotentClause, deleteColumnMarkerClause,
+		m.SubQuery, strings.Join(clauses, " AND "),
 	)
 }
 
 func (m *MergeArgument) buildRedshiftDeleteQuery() string {
-	return fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s as cc WHERE cc.%s = true);`,
+	return fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s AS cc WHERE cc.%s = true);`,
 		// DELETE from table where (pk_1, pk_2)
 		m.TableID.FullyQualifiedName(), strings.Join(quoteColumns(m.PrimaryKeys, m.Dialect), ","),
 		// IN (cc.pk_1, cc.pk_2) FROM staging
