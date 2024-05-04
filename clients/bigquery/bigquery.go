@@ -122,6 +122,10 @@ func (s *Store) Dialect() sql.Dialect {
 	return sql.BigQueryDialect{}
 }
 
+func (s *Store) AdditionalDateFormats() []string {
+	return s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
+}
+
 func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 	client, err := bigquery.NewClient(ctx, s.config.BigQuery.ProjectID)
 	if err != nil {

@@ -23,6 +23,7 @@ type DataWarehouse interface {
 	// Helper functions for merge
 	IsRetryableError(err error) bool
 	IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier
+	AdditionalDateFormats() []string
 	GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error)
 	PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error
 }
