@@ -32,17 +32,9 @@ func BackfillColumn(cfg config.Config, dwh destination.DataWarehouse, column col
 
 	escapedCol := dwh.Dialect().QuoteIdentifier(column.Name())
 
-	// TODO: This is added because `default` is not technically a column that requires escaping, but it is required when it's in the where clause.
-	// Once we escape everything by default, we can remove this patch of code.
-	additionalEscapedCol := escapedCol
-	if additionalEscapedCol == "default" && dwh.Label() == constants.Snowflake {
-		// It should be uppercase because Snowflake's default column is uppercase and since it's not a reserved column name, it uses the default setting.
-		additionalEscapedCol = `"DEFAULT"`
-	}
-
 	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
 		// UPDATE table SET col = default_val WHERE col IS NULL
-		tableID.FullyQualifiedName(), escapedCol, defaultVal, additionalEscapedCol,
+		tableID.FullyQualifiedName(), escapedCol, defaultVal, escapedCol,
 	)
 	slog.Info("Backfilling column",
 		slog.String("colName", column.Name()),
