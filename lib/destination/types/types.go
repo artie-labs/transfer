@@ -33,7 +33,6 @@ func (d *DwhToTablesConfigMap) AddTableToConfig(tableID TableIdentifier, config 
 }
 
 type MergeOpts struct {
-	UseMergeParts             bool
 	SubQueryDedupe            bool
 	AdditionalEqualityStrings []string
 	RetryColBackfill          bool

@@ -46,7 +46,6 @@ func Test_GetMSSQLStatement(t *testing.T) {
 		IdempotentKey: "",
 		PrimaryKeys:   []columns.Column{columns.NewColumn("id", typing.Invalid)},
 		Columns:       _cols.ValidColumns(),
-		DestKind:      constants.MSSQL,
 		Dialect:       sql.MSSQLDialect{},
 		SoftDelete:    false,
 	}

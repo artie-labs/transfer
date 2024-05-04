@@ -136,7 +136,6 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 		PrimaryKeys:         primaryKeys,
 		Columns:             cols.ValidColumns(),
 		SoftDelete:          tableData.TopicConfig().SoftDelete,
-		DestKind:            dwh.Label(),
 		Dialect:             dwh.Dialect(),
 		ContainsHardDeletes: ptr.ToBool(tableData.ContainsHardDeletes()),
 	}
@@ -145,8 +144,8 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 		mergeArg.AdditionalEqualityStrings = opts.AdditionalEqualityStrings
 	}
 
-	if opts.UseMergeParts {
-		mergeParts, err := mergeArg.GetParts()
+	if dwh.Label() == constants.Redshift {
+		mergeParts, err := mergeArg.GetRedshiftStatements()
 		if err != nil {
 			return fmt.Errorf("failed to generate merge statement: %w", err)
 		}

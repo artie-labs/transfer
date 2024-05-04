@@ -13,12 +13,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMergeStatementPartsValidation(t *testing.T) {
+func TestMergeArgument_GetRedshiftStatements_Validation(t *testing.T) {
 	for _, arg := range []*MergeArgument{
-		{DestKind: constants.Snowflake},
-		{DestKind: constants.BigQuery},
+		{Dialect: sql.SnowflakeDialect{}},
+		{Dialect: sql.BigQueryDialect{}},
 	} {
-		parts, err := arg.GetParts()
+		parts, err := arg.GetRedshiftStatements()
 		assert.ErrorContains(t, err, "merge argument does not contain primary keys")
 		assert.Nil(t, parts)
 	}
@@ -60,7 +60,7 @@ func getBasicColumnsForTest(compositeKey bool) result {
 	}
 }
 
-func TestMergeStatementParts_SkipDelete(t *testing.T) {
+func TestMergeArgument_GetRedshiftStatements_SkipDelete(t *testing.T) {
 	// Biggest difference with this test are:
 	// 1. We are not saving `__artie_deleted` column
 	// 2. There are 3 SQL queries (INSERT, UPDATE and DELETE)
@@ -72,12 +72,11 @@ func TestMergeStatementParts_SkipDelete(t *testing.T) {
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.ColumnsToTypes.ValidColumns(),
-		DestKind:            constants.Redshift,
 		Dialect:             sql.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(false),
 	}
 
-	parts, err := mergeArg.GetParts()
+	parts, err := mergeArg.GetRedshiftStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(parts))
 
@@ -90,7 +89,7 @@ func TestMergeStatementParts_SkipDelete(t *testing.T) {
 		parts[1])
 }
 
-func TestMergeStatementPartsSoftDelete(t *testing.T) {
+func TestMergeArgument_GetRedshiftStatements_SoftDelete(t *testing.T) {
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(false)
@@ -99,13 +98,12 @@ func TestMergeStatementPartsSoftDelete(t *testing.T) {
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.ColumnsToTypes.ValidColumns(),
-		DestKind:            constants.Redshift,
 		Dialect:             sql.RedshiftDialect{},
 		SoftDelete:          true,
 		ContainsHardDeletes: ptr.ToBool(false),
 	}
 
-	parts, err := mergeArg.GetParts()
+	parts, err := mergeArg.GetRedshiftStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(parts))
 
@@ -117,7 +115,7 @@ func TestMergeStatementPartsSoftDelete(t *testing.T) {
 		parts[1])
 
 	mergeArg.IdempotentKey = "created_at"
-	parts, err = mergeArg.GetParts()
+	parts, err = mergeArg.GetRedshiftStatements()
 	assert.NoError(t, err)
 
 	// Parts[0] for insertion should be identical
@@ -130,7 +128,7 @@ func TestMergeStatementPartsSoftDelete(t *testing.T) {
 		parts[1])
 }
 
-func TestMergeStatementPartsSoftDeleteComposite(t *testing.T) {
+func TestMergeArgument_GetRedshiftStatements_SoftDeleteComposite(t *testing.T) {
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(true)
@@ -139,13 +137,12 @@ func TestMergeStatementPartsSoftDeleteComposite(t *testing.T) {
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.ColumnsToTypes.ValidColumns(),
-		DestKind:            constants.Redshift,
 		Dialect:             sql.RedshiftDialect{},
 		SoftDelete:          true,
 		ContainsHardDeletes: ptr.ToBool(false),
 	}
 
-	parts, err := mergeArg.GetParts()
+	parts, err := mergeArg.GetRedshiftStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(parts))
 
@@ -157,7 +154,7 @@ func TestMergeStatementPartsSoftDeleteComposite(t *testing.T) {
 		parts[1])
 
 	mergeArg.IdempotentKey = "created_at"
-	parts, err = mergeArg.GetParts()
+	parts, err = mergeArg.GetRedshiftStatements()
 	assert.NoError(t, err)
 
 	// Parts[0] for insertion should be identical
@@ -170,7 +167,7 @@ func TestMergeStatementPartsSoftDeleteComposite(t *testing.T) {
 		parts[1])
 }
 
-func TestMergeStatementParts(t *testing.T) {
+func TestMergeArgument_GetRedshiftStatements(t *testing.T) {
 	// Biggest difference with this test are:
 	// 1. We are not saving `__artie_deleted` column
 	// 2. There are 3 SQL queries (INSERT, UPDATE and DELETE)
@@ -182,12 +179,11 @@ func TestMergeStatementParts(t *testing.T) {
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.ColumnsToTypes.ValidColumns(),
-		DestKind:            constants.Redshift,
 		Dialect:             sql.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
 	}
 
-	parts, err := mergeArg.GetParts()
+	parts, err := mergeArg.GetRedshiftStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(parts))
 
@@ -208,13 +204,12 @@ func TestMergeStatementParts(t *testing.T) {
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.ColumnsToTypes.ValidColumns(),
-		DestKind:            constants.Redshift,
 		Dialect:             sql.RedshiftDialect{},
 		IdempotentKey:       "created_at",
 		ContainsHardDeletes: ptr.ToBool(true),
 	}
 
-	parts, err = mergeArg.GetParts()
+	parts, err = mergeArg.GetRedshiftStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(parts))
 
@@ -231,7 +226,7 @@ func TestMergeStatementParts(t *testing.T) {
 		parts[2])
 }
 
-func TestMergeStatementPartsCompositeKey(t *testing.T) {
+func TestMergeArgument_GetRedshiftStatements_CompositeKey(t *testing.T) {
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(true)
@@ -240,12 +235,11 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.ColumnsToTypes.ValidColumns(),
-		DestKind:            constants.Redshift,
 		Dialect:             sql.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
 	}
 
-	parts, err := mergeArg.GetParts()
+	parts, err := mergeArg.GetRedshiftStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(parts))
 
@@ -266,13 +260,12 @@ func TestMergeStatementPartsCompositeKey(t *testing.T) {
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.ColumnsToTypes.ValidColumns(),
-		DestKind:            constants.Redshift,
 		Dialect:             sql.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
 		IdempotentKey:       "created_at",
 	}
 
-	parts, err = mergeArg.GetParts()
+	parts, err = mergeArg.GetRedshiftStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(parts))
 
