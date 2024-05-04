@@ -294,7 +294,7 @@ func TestMergeArgument_BuildRedshiftInsertQuery(t *testing.T) {
 		Dialect:     sql.RedshiftDialect{},
 	}
 	assert.Equal(t,
-		`INSERT INTO {TABLE_ID} ("col1","col2","col3") SELECT cc."col1",cc."col2",cc."col3" FROM {SUB_QUERY} as cc LEFT JOIN {TABLE_ID} as c on c."col1" = cc."col1" and c."col3" = cc."col3" WHERE c."col1" IS NULL;`,
+		`INSERT INTO {TABLE_ID} ("col1","col2","col3") SELECT cc."col1",cc."col2",cc."col3" FROM {SUB_QUERY} AS cc LEFT JOIN {TABLE_ID} AS c ON c."col1" = cc."col1" AND c."col3" = cc."col3" WHERE c."col1" IS NULL;`,
 		mergeArg.buildRedshiftInsertQuery(cols),
 	)
 }
@@ -309,24 +309,24 @@ func TestMergeArgument_BuildRedshiftUpdateQuery(t *testing.T) {
 		{
 			name:       "soft delete enabled",
 			softDelete: true,
-			expected:   `UPDATE {TABLE_ID} as c SET "col1"=cc."col1","col2"=cc."col2","col3"=cc."col3" FROM {SUB_QUERY} as cc WHERE c."col1" = cc."col1" and c."col3" = cc."col3";`,
+			expected:   `UPDATE {TABLE_ID} AS c SET "col1"=cc."col1","col2"=cc."col2","col3"=cc."col3" FROM {SUB_QUERY} AS cc WHERE c."col1" = cc."col1" AND c."col3" = cc."col3";`,
 		},
 		{
 			name:          "soft delete enabled + idempotent key",
 			softDelete:    true,
 			idempotentKey: "{ID_KEY}",
-			expected:      `UPDATE {TABLE_ID} as c SET "col1"=cc."col1","col2"=cc."col2","col3"=cc."col3" FROM {SUB_QUERY} as cc WHERE c."col1" = cc."col1" and c."col3" = cc."col3" AND cc.{ID_KEY} >= c.{ID_KEY};`,
+			expected:      `UPDATE {TABLE_ID} AS c SET "col1"=cc."col1","col2"=cc."col2","col3"=cc."col3" FROM {SUB_QUERY} AS cc WHERE c."col1" = cc."col1" AND c."col3" = cc."col3" AND cc.{ID_KEY} >= c.{ID_KEY};`,
 		},
 		{
 			name:       "soft delete disabled",
 			softDelete: false,
-			expected:   `UPDATE {TABLE_ID} as c SET "col1"=cc."col1","col2"=cc."col2","col3"=cc."col3" FROM {SUB_QUERY} as cc WHERE c."col1" = cc."col1" and c."col3" = cc."col3" AND COALESCE(cc."__artie_delete", false) = false;`,
+			expected:   `UPDATE {TABLE_ID} AS c SET "col1"=cc."col1","col2"=cc."col2","col3"=cc."col3" FROM {SUB_QUERY} AS cc WHERE c."col1" = cc."col1" AND c."col3" = cc."col3" AND COALESCE(cc."__artie_delete", false) = false;`,
 		},
 		{
 			name:          "soft delete disabled + idempotent key",
 			softDelete:    false,
 			idempotentKey: "{ID_KEY}",
-			expected:      `UPDATE {TABLE_ID} as c SET "col1"=cc."col1","col2"=cc."col2","col3"=cc."col3" FROM {SUB_QUERY} as cc WHERE c."col1" = cc."col1" and c."col3" = cc."col3" AND cc.{ID_KEY} >= c.{ID_KEY} AND COALESCE(cc."__artie_delete", false) = false;`,
+			expected:      `UPDATE {TABLE_ID} AS c SET "col1"=cc."col1","col2"=cc."col2","col3"=cc."col3" FROM {SUB_QUERY} AS cc WHERE c."col1" = cc."col1" AND c."col3" = cc."col3" AND cc.{ID_KEY} >= c.{ID_KEY} AND COALESCE(cc."__artie_delete", false) = false;`,
 		},
 	}
 
@@ -363,7 +363,7 @@ func TestMergeArgument_BuildRedshiftDeleteQuery(t *testing.T) {
 		Dialect:     sql.RedshiftDialect{},
 	}
 	assert.Equal(t,
-		`DELETE FROM {TABLE_ID} WHERE ("col1","col2") IN (SELECT cc."col1",cc."col2" FROM {SUB_QUERY} as cc WHERE cc."__artie_delete" = true);`,
+		`DELETE FROM {TABLE_ID} WHERE ("col1","col2") IN (SELECT cc."col1",cc."col2" FROM {SUB_QUERY} AS cc WHERE cc."__artie_delete" = true);`,
 		mergeArg.buildRedshiftDeleteQuery(),
 	)
 }
