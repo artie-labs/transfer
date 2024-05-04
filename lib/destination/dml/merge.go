@@ -132,7 +132,7 @@ func (m *MergeArgument) buildRedshiftDeleteQuery() string {
 	)
 }
 
-func (m *MergeArgument) GetParts() ([]string, error) {
+func (m *MergeArgument) GetRedshiftStatements() ([]string, error) {
 	if err := m.Valid(); err != nil {
 		return nil, err
 	}
