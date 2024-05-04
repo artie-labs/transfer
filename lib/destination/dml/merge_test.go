@@ -275,9 +275,9 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 func TestMergeArgument_RedshiftEqualitySQLParts(t *testing.T) {
 	mergeArg := MergeArgument{
 		PrimaryKeys: []columns.Column{columns.NewColumn("col1", typing.Invalid), columns.NewColumn("col2", typing.Invalid)},
-		Dialect:     sql.SnowflakeDialect{},
+		Dialect:     sql.RedshiftDialect{},
 	}
-	assert.Equal(t, []string{`c."COL1" = cc."COL1"`, `c."COL2" = cc."COL2"`}, mergeArg.redshiftEqualitySQLParts())
+	assert.Equal(t, []string{`c."col1" = cc."col1"`, `c."col2" = cc."col2"`}, mergeArg.redshiftEqualitySQLParts())
 }
 
 func TestMergeArgument_BuildRedshiftInsertQuery(t *testing.T) {
