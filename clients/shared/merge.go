@@ -145,8 +145,8 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 		mergeArg.AdditionalEqualityStrings = opts.AdditionalEqualityStrings
 	}
 
-	if opts.UseMergeParts {
-		mergeParts, err := mergeArg.GetParts()
+	if dwh.Label() == constants.Redshift {
+		mergeParts, err := mergeArg.GetRedshiftStatements()
 		if err != nil {
 			return fmt.Errorf("failed to generate merge statement: %w", err)
 		}
