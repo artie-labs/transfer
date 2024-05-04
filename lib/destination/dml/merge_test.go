@@ -63,7 +63,6 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 			IdempotentKey: idempotentKey,
 			PrimaryKeys:   []columns.Column{columns.NewColumn("id", typing.Invalid)},
 			Columns:       _cols.ValidColumns(),
-			DestKind:      constants.Snowflake,
 			Dialect:       sql.SnowflakeDialect{},
 			SoftDelete:    true,
 		}
@@ -112,7 +111,6 @@ func TestMergeStatement(t *testing.T) {
 		IdempotentKey: "",
 		PrimaryKeys:   []columns.Column{columns.NewColumn("id", typing.Invalid)},
 		Columns:       _cols.ValidColumns(),
-		DestKind:      constants.Snowflake,
 		Dialect:       sql.SnowflakeDialect{},
 		SoftDelete:    false,
 	}
@@ -160,7 +158,6 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 		IdempotentKey: "updated_at",
 		PrimaryKeys:   []columns.Column{columns.NewColumn("id", typing.Invalid)},
 		Columns:       _cols.ValidColumns(),
-		DestKind:      constants.Snowflake,
 		Dialect:       sql.SnowflakeDialect{},
 		SoftDelete:    false,
 	}
@@ -205,7 +202,6 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 			columns.NewColumn("another_id", typing.Invalid),
 		},
 		Columns:    _cols.ValidColumns(),
-		DestKind:   constants.Snowflake,
 		Dialect:    sql.SnowflakeDialect{},
 		SoftDelete: false,
 	}
@@ -254,7 +250,6 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 			columns.NewColumn("group", typing.Invalid),
 		},
 		Columns:    _cols.ValidColumns(),
-		DestKind:   constants.Snowflake,
 		Dialect:    sql.SnowflakeDialect{},
 		SoftDelete: false,
 	}
