@@ -345,11 +345,7 @@ func TestMergeArgument_BuildRedshiftUpdateQuery(t *testing.T) {
 			SoftDelete:    testCase.softDelete,
 			IdempotentKey: testCase.idempotentKey,
 		}
-		if testCase.softDelete {
-			assert.Equal(t, testCase.expected, mergeArg.buildRedshiftSoftDeleteUpdateQuery(cols), testCase.name)
-		} else {
-			assert.Equal(t, testCase.expected, mergeArg.buildRedshiftUpdateQuery(cols), testCase.name)
-		}
+		assert.Equal(t, testCase.expected, mergeArg.buildRedshiftUpdateQuery(cols), testCase.name)
 	}
 }
 

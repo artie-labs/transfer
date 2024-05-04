@@ -98,22 +98,6 @@ func (m *MergeArgument) buildRedshiftInsertQuery(columns []columns.Column) strin
 	)
 }
 
-func (m *MergeArgument) buildRedshiftSoftDeleteUpdateQuery(columns []columns.Column) string {
-	// We also need to do staged table's idempotency key is GTE target table's idempotency key
-	// This is because Snowflake does not respect NS granularity.
-	var idempotentClause string
-	if m.IdempotentKey != "" {
-		idempotentClause = fmt.Sprintf(" AND cc.%s >= c.%s", m.IdempotentKey, m.IdempotentKey)
-	}
-
-	return fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s;`,
-		// UPDATE table set col1 = cc. col1
-		m.TableID.FullyQualifiedName(), buildColumnsUpdateFragment(columns, m.Dialect),
-		// FROM table (temp) WHERE join on PK(s)
-		m.SubQuery, strings.Join(m.redshiftEqualitySQLParts(), " and "), idempotentClause,
-	)
-}
-
 func (m *MergeArgument) buildRedshiftUpdateQuery(columns []columns.Column) string {
 	// We also need to do staged table's idempotency key is GTE target table's idempotency key
 	// This is because Snowflake does not respect NS granularity.
@@ -122,11 +106,16 @@ func (m *MergeArgument) buildRedshiftUpdateQuery(columns []columns.Column) strin
 		idempotentClause = fmt.Sprintf(" AND cc.%s >= c.%s", m.IdempotentKey, m.IdempotentKey)
 	}
 
-	return fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s AND COALESCE(cc.%s, false) = false;`,
+	var deleteColumnMarkerClause string
+	if !m.SoftDelete {
+		deleteColumnMarkerClause = fmt.Sprintf(" AND COALESCE(cc.%s, false) = false", m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker))
+	}
+
+	return fmt.Sprintf(`UPDATE %s as c SET %s FROM %s as cc WHERE %s%s%s;`,
 		// UPDATE table set col1 = cc. col1
 		m.TableID.FullyQualifiedName(), buildColumnsUpdateFragment(columns, m.Dialect),
 		// FROM staging WHERE join on PK(s)
-		m.SubQuery, strings.Join(m.redshiftEqualitySQLParts(), " and "), idempotentClause, m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker),
+		m.SubQuery, strings.Join(m.redshiftEqualitySQLParts(), " and "), idempotentClause, deleteColumnMarkerClause,
 	)
 }
 
@@ -165,7 +154,7 @@ func (m *MergeArgument) GetParts() ([]string, error) {
 	if m.SoftDelete {
 		return []string{
 			m.buildRedshiftInsertQuery(m.Columns),
-			m.buildRedshiftSoftDeleteUpdateQuery(m.Columns),
+			m.buildRedshiftUpdateQuery(m.Columns),
 		}, nil
 	}
 
