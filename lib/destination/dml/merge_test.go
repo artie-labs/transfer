@@ -315,9 +315,23 @@ func TestMergeArgument_BuildRedshiftUpdateQuery(t *testing.T) {
 			Dialect:     sql.SnowflakeDialect{},
 			SoftDelete:  true,
 		}
-
 		assert.Equal(t,
 			`UPDATE {TABLE_ID} as c SET "COL1"=cc."COL1","COL2"=cc."COL2","COL3"=cc."COL3" FROM {SUB_QUERY} as cc WHERE c."COL1" = cc."COL1" and c."COL3" = cc."COL3";`,
+			mergeArg.buildRedshiftUpdateQuery(cols),
+		)
+	}
+	{
+		// Soft delete enabled + idempotent key:
+		mergeArg := MergeArgument{
+			TableID:       MockTableIdentifier{"{TABLE_ID}"},
+			SubQuery:      "{SUB_QUERY}",
+			PrimaryKeys:   []columns.Column{cols[0], cols[2]},
+			Dialect:       sql.SnowflakeDialect{},
+			SoftDelete:    true,
+			IdempotentKey: "{ID_KEY}",
+		}
+		assert.Equal(t,
+			`UPDATE {TABLE_ID} as c SET "COL1"=cc."COL1","COL2"=cc."COL2","COL3"=cc."COL3" FROM {SUB_QUERY} as cc WHERE c."COL1" = cc."COL1" and c."COL3" = cc."COL3" AND cc.{ID_KEY} >= c.{ID_KEY};`,
 			mergeArg.buildRedshiftUpdateQuery(cols),
 		)
 	}
@@ -330,9 +344,23 @@ func TestMergeArgument_BuildRedshiftUpdateQuery(t *testing.T) {
 			Dialect:     sql.SnowflakeDialect{},
 			SoftDelete:  false,
 		}
-
 		assert.Equal(t,
 			`UPDATE {TABLE_ID} as c SET "COL1"=cc."COL1","COL2"=cc."COL2","COL3"=cc."COL3" FROM {SUB_QUERY} as cc WHERE c."COL1" = cc."COL1" and c."COL3" = cc."COL3" AND COALESCE(cc."__ARTIE_DELETE", false) = false;`,
+			mergeArg.buildRedshiftUpdateQuery(cols),
+		)
+	}
+	{
+		// Soft delete disabled + idempotent key:
+		mergeArg := MergeArgument{
+			TableID:       MockTableIdentifier{"{TABLE_ID}"},
+			SubQuery:      "{SUB_QUERY}",
+			PrimaryKeys:   []columns.Column{cols[0], cols[2]},
+			Dialect:       sql.SnowflakeDialect{},
+			SoftDelete:    false,
+			IdempotentKey: "{ID_KEY}",
+		}
+		assert.Equal(t,
+			`UPDATE {TABLE_ID} as c SET "COL1"=cc."COL1","COL2"=cc."COL2","COL3"=cc."COL3" FROM {SUB_QUERY} as cc WHERE c."COL1" = cc."COL1" and c."COL3" = cc."COL3" AND cc.{ID_KEY} >= c.{ID_KEY} AND COALESCE(cc."__ARTIE_DELETE", false) = false;`,
 			mergeArg.buildRedshiftUpdateQuery(cols),
 		)
 	}
