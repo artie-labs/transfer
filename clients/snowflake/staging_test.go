@@ -92,7 +92,7 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 
 	var count int
 	for _, testCase := range testCases {
-		err := shared.BackfillColumn(config.Config{}, s.stageStore, testCase.col, tableID)
+		err := shared.BackfillColumn(s.stageStore, testCase.col, tableID)
 		assert.NoError(s.T(), err, testCase.name)
 		if testCase.backfillSQL != "" && testCase.commentSQL != "" {
 			backfillSQL, _ := s.fakeStageStore.ExecArgsForCall(count)

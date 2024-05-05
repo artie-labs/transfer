@@ -43,7 +43,7 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 		additionalEqualityStrings = []string{mergeString}
 	}
 
-	return shared.Merge(s, tableData, s.config, types.MergeOpts{
+	return shared.Merge(s, tableData, types.MergeOpts{
 		AdditionalEqualityStrings: additionalEqualityStrings,
 		// BigQuery has DDL quotas.
 		RetryColBackfill: true,

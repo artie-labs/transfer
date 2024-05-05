@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination/types"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -13,7 +12,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func BackfillColumn(cfg config.Config, dwh destination.DataWarehouse, column columns.Column, tableID types.TableIdentifier) error {
+func BackfillColumn(dwh destination.DataWarehouse, column columns.Column, tableID types.TableIdentifier) error {
 	if !column.ShouldBackfill() {
 		// If we don't need to backfill, don't backfill.
 		return nil
@@ -24,8 +23,7 @@ func BackfillColumn(cfg config.Config, dwh destination.DataWarehouse, column col
 		return nil
 	}
 
-	additionalDateFmts := cfg.SharedTransferConfig.TypingSettings.AdditionalDateFormats
-	defaultVal, err := column.DefaultValue(dwh.Dialect(), additionalDateFmts)
+	defaultVal, err := column.DefaultValue(dwh.Dialect(), dwh.AdditionalDateFormats())
 	if err != nil {
 		return fmt.Errorf("failed to escape default value: %w", err)
 	}

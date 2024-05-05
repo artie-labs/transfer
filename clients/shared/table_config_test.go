@@ -57,6 +57,7 @@ type MockDWH struct{}
 
 func (MockDWH) Label() constants.DestinationKind               { panic("not implemented") }
 func (MockDWH) Dialect() sqllib.Dialect                        { panic("not implemented") }
+func (MockDWH) AdditionalDateFormats() []string                { panic("not implemented") }
 func (MockDWH) Merge(tableData *optimization.TableData) error  { panic("not implemented") }
 func (MockDWH) Append(tableData *optimization.TableData) error { panic("not implemented") }
 func (MockDWH) Dedupe(tableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {

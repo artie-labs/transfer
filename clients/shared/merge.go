@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
@@ -19,7 +18,7 @@ import (
 
 const backfillMaxRetries = 1000
 
-func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg config.Config, opts types.MergeOpts) error {
+func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opts types.MergeOpts) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
@@ -91,7 +90,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, cfg
 
 		var backfillErr error
 		for attempts := 0; attempts < backfillMaxRetries; attempts++ {
-			backfillErr = BackfillColumn(cfg, dwh, col, tableID)
+			backfillErr = BackfillColumn(dwh, col, tableID)
 			if backfillErr == nil {
 				tableConfig.Columns().UpsertColumn(col.Name(), columns.UpsertColumnArg{
 					Backfilled: ptr.ToBool(true),
