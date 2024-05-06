@@ -47,9 +47,5 @@ func (c Config) ValidateMSSQL() error {
 		return fmt.Errorf("invalid mssql port: %d", c.MSSQL.Port)
 	}
 
-	if c.SharedDestinationConfig.UppercaseEscapedNames {
-		return fmt.Errorf("uppercaseEscapedNames is not supported for MS SQL")
-	}
-
 	return nil
 }

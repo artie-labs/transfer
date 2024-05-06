@@ -29,11 +29,3 @@ func (b *BigQuery) DSN() string {
 
 	return dsn
 }
-
-func (c Config) ValidateBigQuery() error {
-	if c.SharedDestinationConfig.UppercaseEscapedNames {
-		return fmt.Errorf("uppercaseEscapedNames is not supported for BigQuery")
-	}
-
-	return nil
-}

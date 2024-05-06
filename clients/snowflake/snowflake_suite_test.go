@@ -27,9 +27,6 @@ func (s *SnowflakeTestSuite) ResetStore() {
 	var err error
 	s.stageStore, err = LoadSnowflake(config.Config{
 		Snowflake: &config.Snowflake{},
-		SharedDestinationConfig: config.SharedDestinationConfig{
-			UppercaseEscapedNames: true,
-		},
 	}, &stageStore)
 	assert.NoError(s.T(), err)
 }

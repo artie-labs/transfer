@@ -46,9 +46,6 @@ func (d *DDLTestSuite) SetupTest() {
 	snowflakeStagesStore := db.Store(d.fakeSnowflakeStagesStore)
 	snowflakeCfg := config.Config{
 		Snowflake: &config.Snowflake{},
-		SharedDestinationConfig: config.SharedDestinationConfig{
-			UppercaseEscapedNames: true,
-		},
 	}
 	d.snowflakeStagesStore, err = snowflake.LoadSnowflake(snowflakeCfg, &snowflakeStagesStore)
 	assert.NoError(d.T(), err)

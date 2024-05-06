@@ -78,7 +78,7 @@ func (s *Store) Label() constants.DestinationKind {
 }
 
 func (s *Store) Dialect() sql.Dialect {
-	return sql.SnowflakeDialect{LegacyMode: !s.config.SharedDestinationConfig.UppercaseEscapedNames}
+	return sql.SnowflakeDialect{}
 }
 
 func (s *Store) AdditionalDateFormats() []string {
