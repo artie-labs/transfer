@@ -17,14 +17,16 @@ var ValidPartitionBy = []string{
 	"daily",
 }
 
+// We need the JSON annotations here for our dashboard to import the settings correctly.
+
 type MergePredicates struct {
-	PartitionField string `yaml:"partitionField"`
+	PartitionField string `yaml:"partitionField" json:"partitionField"`
 }
 
 type BigQuerySettings struct {
-	PartitionType  string `yaml:"partitionType"`
-	PartitionField string `yaml:"partitionField"`
-	PartitionBy    string `yaml:"partitionBy"`
+	PartitionType  string `yaml:"partitionType" json:"partitionType"`
+	PartitionField string `yaml:"partitionField" json:"partitionField"`
+	PartitionBy    string `yaml:"partitionBy" json:"partitionBy"`
 }
 
 // GenerateMergeString this is used as an equality string for the MERGE statement.
