@@ -35,7 +35,7 @@ func (s *Store) Append(tableData *optimization.TableData) error {
 }
 
 func (s *Store) Merge(tableData *optimization.TableData) error {
-	return shared.Merge(s, tableData, s.config, types.MergeOpts{
+	return shared.Merge(s, tableData, types.MergeOpts{
 		// We are adding SELECT DISTINCT here for the temporary table as an extra guardrail.
 		// Redshift does not enforce any row uniqueness and there could be potential LOAD errors which will cause duplicate rows to arise.
 		SubQueryDedupe: true,
@@ -60,6 +60,10 @@ func (s *Store) Label() constants.DestinationKind {
 
 func (s *Store) Dialect() sql.Dialect {
 	return sql.RedshiftDialect{}
+}
+
+func (s *Store) AdditionalDateFormats() []string {
+	return s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {

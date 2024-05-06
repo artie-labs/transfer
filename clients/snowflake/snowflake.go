@@ -81,6 +81,10 @@ func (s *Store) Dialect() sql.Dialect {
 	return sql.SnowflakeDialect{}
 }
 
+func (s *Store) AdditionalDateFormats() []string {
+	return s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
+}
+
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 	if s == nil {
 		return nil
