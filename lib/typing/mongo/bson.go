@@ -126,12 +126,18 @@ func binaryEncodeValue(_ bsoncodec.EncodeContext, vw bsonrw.ValueWriter, val ref
 		return bsoncodec.ValueEncoderError{Name: "ObjectIDEncodeValue not Binary", Types: []reflect.Type{tBinary}, Received: val}
 	}
 
-	parsedUUID, err := uuid.FromBytes(s.Data)
-	if err != nil {
-		return err
+	switch s.Subtype {
+	case
+		bson.TypeBinaryUUIDOld,
+		bson.TypeBinaryUUID:
+		parsedUUID, err := uuid.FromBytes(s.Data)
+		if err != nil {
+			return err
+		}
+		return vw.WriteString(parsedUUID.String())
+	default:
+		return vw.WriteBinaryWithSubtype(s.Data, s.Subtype)
 	}
-
-	return vw.WriteString(parsedUUID.String())
 }
 
 func timestampEncodeValue(_ bsoncodec.EncodeContext, vw bsonrw.ValueWriter, val reflect.Value) error {
