@@ -1,7 +1,6 @@
 package mongo
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -77,7 +76,9 @@ func TestMarshal(t *testing.T) {
 	"test_negative_infinity_string": "-Infinity",
 	"test_negative_infinity_string1": "-Infinity123",
 	"maxValue": {"$maxKey": 1},
-	"minValue": {"$minKey": 1}
+	"minValue": {"$minKey": 1},
+	"calcDiscount": {"$code": "function() {return 0.10;}"},
+	"emailPattern": {"$regex": "@example\\.com$","$options": ""}
 }`)
 	result, err := JSONEToMap(bsonData)
 	assert.NoError(t, err)
@@ -153,7 +154,6 @@ func TestMarshal(t *testing.T) {
 
 	// 3 + 4 UUID
 	assert.Equal(t, "856e56ff-cbb0-411e-855a-98b08b875140", result["unique_id"])
-	fmt.Println("result", result)
 
 	// 5. Checksum
 	assert.Equal(t,
@@ -166,4 +166,10 @@ func TestMarshal(t *testing.T) {
 		map[string]any{"$binary": map[string]interface{}{"base64": "YWJjZGVmZ2hpamtsbW5vcA==", "subType": "06"}},
 		result["secureData"],
 	)
+
+	// Javascript
+	assert.Equal(t, map[string]any{"$code": "function() {return 0.10;}"}, result["calcDiscount"])
+
+	// Regular Expressions
+	assert.Equal(t, map[string]any{"$options": "", "$regex": `@example\.com$`}, result["emailPattern"])
 }
