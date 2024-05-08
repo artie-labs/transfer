@@ -51,3 +51,26 @@ func TestMergeStatement_JSONKey(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Contains(t, mergeSQL, "MERGE INTO customers.orders c USING customers.orders_tmp AS cc ON TO_JSON_STRING(c.`order_oid`) = TO_JSON_STRING(cc.`order_oid`)", mergeSQL)
 }
+
+func TestMergeArgument_BuildStatements_BigQuery(t *testing.T) {
+	orderOIDCol := columns.NewColumn("order_oid", typing.Struct)
+	var cols columns.Columns
+	cols.AddColumn(orderOIDCol)
+	cols.AddColumn(columns.NewColumn("name", typing.String))
+	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
+
+	mergeArg := &MergeArgument{
+		TableID:     MockTableIdentifier{"customers.orders"},
+		SubQuery:    "{SUB_QUERY}",
+		PrimaryKeys: []columns.Column{orderOIDCol},
+		Columns:     cols.ValidColumns(),
+		Dialect:     sql.BigQueryDialect{},
+		SoftDelete:  false,
+	}
+
+	mergeSQL, err := mergeArg.buildDefaultStatement()
+	assert.NoError(t, err)
+	statements, err := mergeArg.BuildStatements()
+	assert.NoError(t, err)
+	assert.Equal(t, []string{mergeSQL}, statements)
+}
