@@ -25,7 +25,7 @@ func TestMergeStatement_TempTable(t *testing.T) {
 		SoftDelete:  false,
 	}
 
-	mergeSQL, err := mergeArg.GetStatement()
+	mergeSQL, err := mergeArg.buildDefaultStatement()
 	assert.NoError(t, err)
 
 	assert.Contains(t, mergeSQL, "MERGE INTO customers.orders c USING customers.orders_tmp AS cc ON c.`order_id` = cc.`order_id`", mergeSQL)
@@ -47,7 +47,7 @@ func TestMergeStatement_JSONKey(t *testing.T) {
 		SoftDelete:  false,
 	}
 
-	mergeSQL, err := mergeArg.GetStatement()
+	mergeSQL, err := mergeArg.buildDefaultStatement()
 	assert.NoError(t, err)
 	assert.Contains(t, mergeSQL, "MERGE INTO customers.orders c USING customers.orders_tmp AS cc ON TO_JSON_STRING(c.`order_oid`) = TO_JSON_STRING(cc.`order_oid`)", mergeSQL)
 }
