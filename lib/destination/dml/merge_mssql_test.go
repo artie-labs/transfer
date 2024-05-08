@@ -70,12 +70,10 @@ func TestMergeArgument_BuildStatements_MSSQL(t *testing.T) {
 	mergeArg := MergeArgument{
 		TableID:             MockTableIdentifier{"database.schema.table"},
 		SubQuery:            "{SUB_QUERY}",
-		IdempotentKey:       "",
 		PrimaryKeys:         []columns.Column{cols[0]},
 		Columns:             cols,
 		Dialect:             sql.MSSQLDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
-		SoftDelete:          true,
 	}
 
 	statement, err := mergeArg.buildMSSQLStatement()
