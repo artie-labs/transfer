@@ -53,17 +53,16 @@ func TestMergeArgument_BuildStatements_Redshift(t *testing.T) {
 	res := getBasicColumnsForTest(false)
 	mergeArg := &MergeArgument{
 		TableID:             MockTableIdentifier{"public.tableName"},
-		SubQuery:            "public.tableName__temp",
+		SubQuery:            "{SUB_QUERY}",
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.Columns,
 		Dialect:             sql.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
-		SoftDelete:          true,
 	}
 
 	parts, err := mergeArg.buildRedshiftStatements()
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(parts))
+	assert.Equal(t, 3, len(parts))
 	parts2, err := mergeArg.BuildStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, parts, parts2)
