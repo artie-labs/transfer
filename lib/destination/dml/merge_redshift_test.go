@@ -14,8 +14,8 @@ import (
 )
 
 type result struct {
-	PrimaryKeys    []columns.Column
-	ColumnsToTypes columns.Columns
+	PrimaryKeys []columns.Column
+	Columns     []columns.Column
 }
 
 // getBasicColumnsForTest - will return you all the columns within `result` that are needed for tests.
@@ -44,9 +44,28 @@ func getBasicColumnsForTest(compositeKey bool) result {
 	}
 
 	return result{
-		PrimaryKeys:    pks,
-		ColumnsToTypes: cols,
+		PrimaryKeys: pks,
+		Columns:     cols.ValidColumns(),
 	}
+}
+
+func TestMergeArgument_BuildStatements_Redshift(t *testing.T) {
+	res := getBasicColumnsForTest(false)
+	mergeArg := &MergeArgument{
+		TableID:             MockTableIdentifier{"public.tableName"},
+		SubQuery:            "{SUB_QUERY}",
+		PrimaryKeys:         res.PrimaryKeys,
+		Columns:             res.Columns,
+		Dialect:             sql.RedshiftDialect{},
+		ContainsHardDeletes: ptr.ToBool(true),
+	}
+
+	statements, err := mergeArg.buildRedshiftStatements()
+	assert.NoError(t, err)
+	assert.Equal(t, 3, len(statements))
+	statements2, err := mergeArg.BuildStatements()
+	assert.NoError(t, err)
+	assert.Equal(t, statements, statements2)
 }
 
 func TestMergeArgument_BuildRedshiftStatements_SkipDelete(t *testing.T) {
@@ -60,7 +79,7 @@ func TestMergeArgument_BuildRedshiftStatements_SkipDelete(t *testing.T) {
 		TableID:             MockTableIdentifier{fqTableName},
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
-		Columns:             res.ColumnsToTypes.ValidColumns(),
+		Columns:             res.Columns,
 		Dialect:             sql.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(false),
 	}
@@ -86,7 +105,7 @@ func TestMergeArgument_BuildRedshiftStatements_SoftDelete(t *testing.T) {
 		TableID:             MockTableIdentifier{fqTableName},
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
-		Columns:             res.ColumnsToTypes.ValidColumns(),
+		Columns:             res.Columns,
 		Dialect:             sql.RedshiftDialect{},
 		SoftDelete:          true,
 		ContainsHardDeletes: ptr.ToBool(false),
@@ -125,7 +144,7 @@ func TestMergeArgument_BuildRedshiftStatements_SoftDeleteComposite(t *testing.T)
 		TableID:             MockTableIdentifier{fqTableName},
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
-		Columns:             res.ColumnsToTypes.ValidColumns(),
+		Columns:             res.Columns,
 		Dialect:             sql.RedshiftDialect{},
 		SoftDelete:          true,
 		ContainsHardDeletes: ptr.ToBool(false),
@@ -167,7 +186,7 @@ func TestMergeArgument_GetRedshiftStatements(t *testing.T) {
 		TableID:             MockTableIdentifier{fqTableName},
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
-		Columns:             res.ColumnsToTypes.ValidColumns(),
+		Columns:             res.Columns,
 		Dialect:             sql.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
 	}
@@ -192,7 +211,7 @@ func TestMergeArgument_GetRedshiftStatements(t *testing.T) {
 		TableID:             MockTableIdentifier{fqTableName},
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
-		Columns:             res.ColumnsToTypes.ValidColumns(),
+		Columns:             res.Columns,
 		Dialect:             sql.RedshiftDialect{},
 		IdempotentKey:       "created_at",
 		ContainsHardDeletes: ptr.ToBool(true),
@@ -223,7 +242,7 @@ func TestMergeArgument_BuildRedshiftStatements_CompositeKey(t *testing.T) {
 		TableID:             MockTableIdentifier{fqTableName},
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
-		Columns:             res.ColumnsToTypes.ValidColumns(),
+		Columns:             res.Columns,
 		Dialect:             sql.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
 	}
@@ -248,7 +267,7 @@ func TestMergeArgument_BuildRedshiftStatements_CompositeKey(t *testing.T) {
 		TableID:             MockTableIdentifier{fqTableName},
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
-		Columns:             res.ColumnsToTypes.ValidColumns(),
+		Columns:             res.Columns,
 		Dialect:             sql.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
 		IdempotentKey:       "created_at",

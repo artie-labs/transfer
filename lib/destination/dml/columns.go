@@ -21,7 +21,8 @@ func quoteColumns(cols []columns.Column, dialect sql.Dialect) []string {
 
 func removeDeleteColumnMarker(cols []columns.Column) ([]columns.Column, bool) {
 	origLength := len(cols)
-	cols = slices.DeleteFunc(cols, func(col columns.Column) bool { return col.Name() == constants.DeleteColumnMarker })
+	// Use [slices.Clone] because [slices.DeleteFunc] mutates its inputs.
+	cols = slices.DeleteFunc(slices.Clone(cols), func(col columns.Column) bool { return col.Name() == constants.DeleteColumnMarker })
 	return cols, len(cols) != origLength
 }
 

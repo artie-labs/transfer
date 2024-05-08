@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -15,19 +16,17 @@ import (
 
 func Test_BuildMSSQLStatement(t *testing.T) {
 	fqTable := "database.schema.table"
-	colToTypes := map[string]typing.KindDetails{
-		"id":                         typing.String,
-		"bar":                        typing.String,
-		"updated_at":                 typing.String,
-		"start":                      typing.String,
-		constants.DeleteColumnMarker: typing.Boolean,
-	}
 
-	// This feels a bit round about, but this is because iterating over a map is not deterministic.
-	cols := []string{"id", "bar", "updated_at", "start", constants.DeleteColumnMarker}
-	var _cols columns.Columns
-	for _, col := range cols {
-		_cols.AddColumn(columns.NewColumn(col, colToTypes[col]))
+	var _cols = []columns.Column{
+		columns.NewColumn("id", typing.String),
+		columns.NewColumn("bar", typing.String),
+		columns.NewColumn("updated_at", typing.String),
+		columns.NewColumn("start", typing.String),
+		columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean),
+	}
+	cols := make([]string, len(_cols))
+	for i, col := range _cols {
+		cols[i] = col.Name()
 	}
 
 	tableValues := []string{
@@ -45,7 +44,7 @@ func Test_BuildMSSQLStatement(t *testing.T) {
 		SubQuery:      subQuery,
 		IdempotentKey: "",
 		PrimaryKeys:   []columns.Column{columns.NewColumn("id", typing.Invalid)},
-		Columns:       _cols.ValidColumns(),
+		Columns:       _cols,
 		Dialect:       sql.MSSQLDialect{},
 		SoftDelete:    false,
 	}
@@ -60,4 +59,26 @@ func Test_BuildMSSQLStatement(t *testing.T) {
 	assert.Contains(t, mergeSQL, `SET "id"=cc."id","bar"=cc."bar","updated_at"=cc."updated_at","start"=cc."start"`, mergeSQL)
 	assert.Contains(t, mergeSQL, `id,bar,updated_at,start`, mergeSQL)
 	assert.Contains(t, mergeSQL, `cc."id",cc."bar",cc."updated_at",cc."start"`, mergeSQL)
+}
+
+func TestMergeArgument_BuildStatements_MSSQL(t *testing.T) {
+	var cols = []columns.Column{
+		columns.NewColumn("id", typing.String),
+		columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean),
+	}
+
+	mergeArg := MergeArgument{
+		TableID:             MockTableIdentifier{"database.schema.table"},
+		SubQuery:            "{SUB_QUERY}",
+		PrimaryKeys:         []columns.Column{cols[0]},
+		Columns:             cols,
+		Dialect:             sql.MSSQLDialect{},
+		ContainsHardDeletes: ptr.ToBool(true),
+	}
+
+	statement, err := mergeArg.buildMSSQLStatement()
+	assert.NoError(t, err)
+	statements, err := mergeArg.BuildStatements()
+	assert.NoError(t, err)
+	assert.Equal(t, statements, []string{statement})
 }
