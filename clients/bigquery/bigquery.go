@@ -15,6 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
+	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -203,34 +204,11 @@ func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentif
 func (s *Store) Dedupe(tableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
 	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-	var txCommitted bool
-	tx, err := s.Begin()
-	if err != nil {
-		return fmt.Errorf("failed to start a tx: %w", err)
-	}
+	dedupeQueries := s.generateDedupeQueries(tableID, stagingTableID, primaryKeys, topicConfig)
 
-	defer func() {
-		if !txCommitted {
-			if err = tx.Rollback(); err != nil {
-				slog.Warn("Failed to rollback tx", slog.Any("err", err))
-			}
-		}
+	defer func() { _ = ddl.DropTemporaryTable(s, stagingTableID.FullyQualifiedName(), false) }()
 
-		_ = ddl.DropTemporaryTable(s, stagingTableID.FullyQualifiedName(), false)
-	}()
-
-	for _, part := range s.generateDedupeQueries(tableID, stagingTableID, primaryKeys, topicConfig) {
-		if _, err = tx.Exec(part); err != nil {
-			return fmt.Errorf("failed to execute tx, query: %q, err: %w", part, err)
-		}
-	}
-
-	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit tx: %w", err)
-	}
-
-	txCommitted = true
-	return nil
+	return destination.ExecStatements(s, dedupeQueries)
 }
 
 func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {

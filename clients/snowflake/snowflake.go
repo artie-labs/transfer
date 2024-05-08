@@ -2,7 +2,6 @@ package snowflake
 
 import (
 	"fmt"
-	"log/slog"
 	"strings"
 
 	"github.com/snowflakedb/gosnowflake"
@@ -11,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
+	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -170,33 +170,9 @@ func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentif
 // Dedupe takes a table and will remove duplicates based on the primary key(s).
 // These queries are inspired and modified from: https://stackoverflow.com/a/71515946
 func (s *Store) Dedupe(tableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
-	var txCommitted bool
-	tx, err := s.Begin()
-	if err != nil {
-		return fmt.Errorf("failed to start a tx: %w", err)
-	}
-
-	defer func() {
-		if !txCommitted {
-			if err = tx.Rollback(); err != nil {
-				slog.Warn("Failed to rollback tx", slog.Any("err", err))
-			}
-		}
-	}()
-
 	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
-	for _, part := range s.generateDedupeQueries(tableID, stagingTableID, primaryKeys, topicConfig) {
-		if _, err = tx.Exec(part); err != nil {
-			return fmt.Errorf("failed to execute tx, query: %q, err: %w", part, err)
-		}
-	}
-
-	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit tx: %w", err)
-	}
-
-	txCommitted = true
-	return nil
+	dedupeQueries := s.generateDedupeQueries(tableID, stagingTableID, primaryKeys, topicConfig)
+	return destination.ExecStatements(s, dedupeQueries)
 }
 
 func LoadSnowflake(cfg config.Config, _store *db.Store) (*Store, error) {
