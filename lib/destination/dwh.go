@@ -59,7 +59,9 @@ func ExecStatements(dwh DataWarehouse, statements []string) error {
 		}
 		defer func() {
 			if !committed {
-				tx.Rollback()
+				if err = tx.Rollback(); err != nil {
+					slog.Warn("Unable to rollback", slog.Any("err", err))
+				}
 			}
 		}()
 
