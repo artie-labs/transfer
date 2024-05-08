@@ -60,12 +60,12 @@ func TestMergeArgument_BuildStatements_Redshift(t *testing.T) {
 		ContainsHardDeletes: ptr.ToBool(true),
 	}
 
-	parts, err := mergeArg.buildRedshiftStatements()
+	statements, err := mergeArg.buildRedshiftStatements()
 	assert.NoError(t, err)
-	assert.Equal(t, 3, len(parts))
-	parts2, err := mergeArg.BuildStatements()
+	assert.Equal(t, 3, len(statements))
+	statements2, err := mergeArg.BuildStatements()
 	assert.NoError(t, err)
-	assert.Equal(t, parts, parts2)
+	assert.Equal(t, statements, statements2)
 }
 
 func TestMergeArgument_BuildRedshiftStatements_SkipDelete(t *testing.T) {
