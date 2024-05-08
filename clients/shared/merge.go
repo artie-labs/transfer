@@ -144,49 +144,9 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 		mergeArg.AdditionalEqualityStrings = opts.AdditionalEqualityStrings
 	}
 
-	if dwh.Label() == constants.Redshift {
-		mergeParts, err := mergeArg.GetRedshiftStatements()
-		if err != nil {
-			return fmt.Errorf("failed to generate merge statement: %w", err)
-		}
-
-		tx, err := dwh.Begin()
-		if err != nil {
-			return fmt.Errorf("failed to start tx: %w", err)
-		}
-
-		for _, mergeQuery := range mergeParts {
-			if _, err = tx.Exec(mergeQuery); err != nil {
-				return fmt.Errorf("failed to merge, query: %v, err: %w", mergeQuery, err)
-			}
-		}
-
-		if err = tx.Commit(); err != nil {
-			return fmt.Errorf("failed to merge, parts: %v, err: %w", mergeParts, err)
-		}
-
-		return nil
-	} else if dwh.Label() == constants.MSSQL {
-		mergeQuery, err := mergeArg.GetMSSQLStatement()
-		if err != nil {
-			return fmt.Errorf("failed to generate merge statement: %w", err)
-		}
-
-		slog.Debug("Executing...", slog.String("query", mergeQuery))
-		_, err = dwh.Exec(mergeQuery)
-		if err != nil {
-			return fmt.Errorf("failed to execute merge: %w", err)
-		}
-
-		return nil
-	} else {
-		mergeQuery, err := mergeArg.GetStatement()
-		if err != nil {
-			return fmt.Errorf("failed to generate merge statement: %w", err)
-		}
-
-		slog.Debug("Executing...", slog.String("query", mergeQuery))
-		_, err = dwh.Exec(mergeQuery)
-		return err
+	mergeStatements, err := mergeArg.BuildStatements()
+	if err != nil {
+		return fmt.Errorf("failed to generate merge statements: %w", err)
 	}
+	return destination.ExecStatements(dwh, mergeStatements)
 }

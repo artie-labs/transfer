@@ -67,7 +67,7 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 			SoftDelete:    true,
 		}
 
-		mergeSQL, err := mergeArg.GetStatement()
+		mergeSQL, err := mergeArg.buildDefaultStatement()
 		assert.NoError(t, err)
 		assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
 		// Soft deletion flag being passed.
@@ -115,7 +115,7 @@ func TestMergeStatement(t *testing.T) {
 		SoftDelete:    false,
 	}
 
-	mergeSQL, err := mergeArg.GetStatement()
+	mergeSQL, err := mergeArg.buildDefaultStatement()
 	assert.NoError(t, err)
 	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
 	assert.NotContains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", `"UPDATED_AT"`, `"UPDATED_AT"`), fmt.Sprintf("Idempotency key: %s", mergeSQL))
@@ -162,7 +162,7 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 		SoftDelete:    false,
 	}
 
-	mergeSQL, err := mergeArg.GetStatement()
+	mergeSQL, err := mergeArg.buildDefaultStatement()
 	assert.NoError(t, err)
 	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
 	assert.Contains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at"), fmt.Sprintf("Idempotency key: %s", mergeSQL))
@@ -206,7 +206,7 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 		SoftDelete: false,
 	}
 
-	mergeSQL, err := mergeArg.GetStatement()
+	mergeSQL, err := mergeArg.buildDefaultStatement()
 	assert.NoError(t, err)
 	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
 	assert.Contains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at"), fmt.Sprintf("Idempotency key: %s", mergeSQL))
@@ -254,7 +254,7 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 		SoftDelete: false,
 	}
 
-	mergeSQL, err := mergeArg.GetStatement()
+	mergeSQL, err := mergeArg.buildDefaultStatement()
 	assert.NoError(t, err)
 	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
 	assert.NotContains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", `"UPDATED_AT"`, `"UPDATED_AT"`), fmt.Sprintf("Idempotency key: %s", mergeSQL))

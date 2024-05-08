@@ -18,7 +18,7 @@ func TestMergeArgument_GetRedshiftStatements_Validation(t *testing.T) {
 		{Dialect: sql.SnowflakeDialect{}},
 		{Dialect: sql.BigQueryDialect{}},
 	} {
-		parts, err := arg.GetRedshiftStatements()
+		parts, err := arg.buildRedshiftStatements()
 		assert.ErrorContains(t, err, "merge argument does not contain primary keys")
 		assert.Nil(t, parts)
 	}
@@ -76,7 +76,7 @@ func TestMergeArgument_GetRedshiftStatements_SkipDelete(t *testing.T) {
 		ContainsHardDeletes: ptr.ToBool(false),
 	}
 
-	parts, err := mergeArg.GetRedshiftStatements()
+	parts, err := mergeArg.buildRedshiftStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(parts))
 
@@ -103,7 +103,7 @@ func TestMergeArgument_GetRedshiftStatements_SoftDelete(t *testing.T) {
 		ContainsHardDeletes: ptr.ToBool(false),
 	}
 
-	parts, err := mergeArg.GetRedshiftStatements()
+	parts, err := mergeArg.buildRedshiftStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(parts))
 
@@ -115,7 +115,7 @@ func TestMergeArgument_GetRedshiftStatements_SoftDelete(t *testing.T) {
 		parts[1])
 
 	mergeArg.IdempotentKey = "created_at"
-	parts, err = mergeArg.GetRedshiftStatements()
+	parts, err = mergeArg.buildRedshiftStatements()
 	assert.NoError(t, err)
 
 	// Parts[0] for insertion should be identical
@@ -142,7 +142,7 @@ func TestMergeArgument_GetRedshiftStatements_SoftDeleteComposite(t *testing.T) {
 		ContainsHardDeletes: ptr.ToBool(false),
 	}
 
-	parts, err := mergeArg.GetRedshiftStatements()
+	parts, err := mergeArg.buildRedshiftStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(parts))
 
@@ -154,7 +154,7 @@ func TestMergeArgument_GetRedshiftStatements_SoftDeleteComposite(t *testing.T) {
 		parts[1])
 
 	mergeArg.IdempotentKey = "created_at"
-	parts, err = mergeArg.GetRedshiftStatements()
+	parts, err = mergeArg.buildRedshiftStatements()
 	assert.NoError(t, err)
 
 	// Parts[0] for insertion should be identical
@@ -183,7 +183,7 @@ func TestMergeArgument_GetRedshiftStatements(t *testing.T) {
 		ContainsHardDeletes: ptr.ToBool(true),
 	}
 
-	parts, err := mergeArg.GetRedshiftStatements()
+	parts, err := mergeArg.buildRedshiftStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(parts))
 
@@ -209,7 +209,7 @@ func TestMergeArgument_GetRedshiftStatements(t *testing.T) {
 		ContainsHardDeletes: ptr.ToBool(true),
 	}
 
-	parts, err = mergeArg.GetRedshiftStatements()
+	parts, err = mergeArg.buildRedshiftStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(parts))
 
@@ -239,7 +239,7 @@ func TestMergeArgument_GetRedshiftStatements_CompositeKey(t *testing.T) {
 		ContainsHardDeletes: ptr.ToBool(true),
 	}
 
-	parts, err := mergeArg.GetRedshiftStatements()
+	parts, err := mergeArg.buildRedshiftStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(parts))
 
@@ -265,7 +265,7 @@ func TestMergeArgument_GetRedshiftStatements_CompositeKey(t *testing.T) {
 		IdempotentKey:       "created_at",
 	}
 
-	parts, err = mergeArg.GetRedshiftStatements()
+	parts, err = mergeArg.buildRedshiftStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(parts))
 

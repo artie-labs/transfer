@@ -125,7 +125,7 @@ func (m *MergeArgument) buildRedshiftDeleteQuery() string {
 	)
 }
 
-func (m *MergeArgument) GetRedshiftStatements() ([]string, error) {
+func (m *MergeArgument) buildRedshiftStatements() ([]string, error) {
 	if err := m.Valid(); err != nil {
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func (m *MergeArgument) GetRedshiftStatements() ([]string, error) {
 	return parts, nil
 }
 
-func (m *MergeArgument) GetStatement() (string, error) {
+func (m *MergeArgument) buildDefaultStatement() (string, error) {
 	if err := m.Valid(); err != nil {
 		return "", err
 	}
@@ -254,7 +254,7 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 		})), nil
 }
 
-func (m *MergeArgument) GetMSSQLStatement() (string, error) {
+func (m *MergeArgument) buildMSSQLStatement() (string, error) {
 	if err := m.Valid(); err != nil {
 		return "", err
 	}
@@ -314,4 +314,23 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
 			Separator: ",",
 			Prefix:    "cc.",
 		})), nil
+}
+
+func (m *MergeArgument) BuildStatements() ([]string, error) {
+	switch m.Dialect.(type) {
+	case sql.RedshiftDialect:
+		return m.buildRedshiftStatements()
+	case sql.MSSQLDialect:
+		mergeQuery, err := m.buildMSSQLStatement()
+		if err != nil {
+			return nil, err
+		}
+		return []string{mergeQuery}, nil
+	default:
+		mergeQuery, err := m.buildDefaultStatement()
+		if err != nil {
+			return nil, err
+		}
+		return []string{mergeQuery}, nil
+	}
 }

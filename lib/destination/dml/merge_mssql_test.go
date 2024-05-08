@@ -50,7 +50,7 @@ func Test_GetMSSQLStatement(t *testing.T) {
 		SoftDelete:    false,
 	}
 
-	mergeSQL, err := mergeArg.GetMSSQLStatement()
+	mergeSQL, err := mergeArg.buildMSSQLStatement()
 	assert.NoError(t, err)
 	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
 	assert.NotContains(t, mergeSQL, fmt.Sprintf(`cc."%s" >= c."%s"`, "updated_at", "updated_at"), fmt.Sprintf("Idempotency key: %s", mergeSQL))
