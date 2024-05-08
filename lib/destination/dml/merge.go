@@ -126,14 +126,6 @@ func (m *MergeArgument) buildRedshiftDeleteQuery() string {
 }
 
 func (m *MergeArgument) buildRedshiftStatements() ([]string, error) {
-	if err := m.Valid(); err != nil {
-		return nil, err
-	}
-
-	if _, ok := m.Dialect.(sql.RedshiftDialect); !ok {
-		return nil, fmt.Errorf("this is meant for Redshift only")
-	}
-
 	// ContainsHardDeletes is only used for Redshift, so we'll validate it now
 	if m.ContainsHardDeletes == nil {
 		return nil, fmt.Errorf("containsHardDeletes cannot be nil")
@@ -170,10 +162,6 @@ func (m *MergeArgument) buildRedshiftStatements() ([]string, error) {
 }
 
 func (m *MergeArgument) buildDefaultStatement() (string, error) {
-	if err := m.Valid(); err != nil {
-		return "", err
-	}
-
 	// We should not need idempotency key for DELETE
 	// This is based on the assumption that the primary key would be atomically increasing or UUID based
 	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
@@ -255,10 +243,6 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 }
 
 func (m *MergeArgument) buildMSSQLStatement() (string, error) {
-	if err := m.Valid(); err != nil {
-		return "", err
-	}
-
 	var idempotentClause string
 	if m.IdempotentKey != "" {
 		idempotentClause = fmt.Sprintf("AND cc.%s >= c.%s ", m.IdempotentKey, m.IdempotentKey)
@@ -317,6 +301,10 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
 }
 
 func (m *MergeArgument) BuildStatements() ([]string, error) {
+	if err := m.Valid(); err != nil {
+		return nil, err
+	}
+
 	switch m.Dialect.(type) {
 	case sql.RedshiftDialect:
 		return m.buildRedshiftStatements()
