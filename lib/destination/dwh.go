@@ -53,10 +53,10 @@ func ExecStatements(dwh DataWarehouse, statements []string) error {
 		return nil
 	default:
 		tx, err := dwh.Begin()
-		var committed bool
 		if err != nil {
 			return fmt.Errorf("failed to start tx: %w", err)
 		}
+		var committed bool
 		defer func() {
 			if !committed {
 				if err = tx.Rollback(); err != nil {
