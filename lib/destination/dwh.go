@@ -39,7 +39,7 @@ type Baseline interface {
 }
 
 // ExecStatements executes one or more statements against a [DataWarehouse].
-// If there is more than one statement the statemetns will be executed inside of a transaction.
+// If there is more than one statement, the statements will be executed inside of a transaction.
 func ExecStatements(dwh DataWarehouse, statements []string) error {
 	switch len(statements) {
 	case 0:
