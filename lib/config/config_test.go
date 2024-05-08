@@ -143,6 +143,15 @@ bufferRows: 10
 	}
 
 	assert.Nil(t, config.Validate())
+
+	// Now let's unset Kafka.
+	config.Kafka.GroupID = ""
+	config.Kafka.BootstrapServer = ""
+	assert.ErrorContains(t, config.Validate(), "kafka group or bootstrap server is empty")
+
+	// Now if it's Reader, then it's fine.
+	config.Queue = constants.Reader
+	assert.Nil(t, config.Validate())
 }
 
 func TestOutputSourceInvalid(t *testing.T) {

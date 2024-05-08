@@ -115,7 +115,7 @@ func (k *Kafka) String() string {
 
 func (c Config) TopicConfigs() ([]*kafkalib.TopicConfig, error) {
 	switch c.Queue {
-	case constants.Kafka:
+	case constants.Kafka, constants.Reader:
 		return c.Kafka.TopicConfigs, nil
 	case constants.PubSub:
 		return c.Pubsub.TopicConfigs, nil
@@ -272,7 +272,8 @@ func (c Config) Validate() error {
 		}
 	}
 
-	if c.Queue == constants.Kafka {
+	switch c.Queue {
+	case constants.Kafka:
 		if c.Kafka == nil {
 			return fmt.Errorf("kafka config is nil")
 		}
@@ -281,9 +282,7 @@ func (c Config) Validate() error {
 		if array.Empty([]string{c.Kafka.GroupID, c.Kafka.BootstrapServer}) {
 			return fmt.Errorf("kafka group or bootstrap server is empty")
 		}
-	}
-
-	if c.Queue == constants.PubSub {
+	case constants.PubSub:
 		if c.Pubsub == nil {
 			return fmt.Errorf("pubsub config is nil")
 		}

@@ -27,7 +27,7 @@ require (
 	github.com/viant/bigquery v0.2.1-0.20230129024722-24ed6fd5555f
 	github.com/xitongsys/parquet-go v1.6.2
 	github.com/xitongsys/parquet-go-source v0.0.0-20200817004010-026bad9b25d0
-	go.mongodb.org/mongo-driver v1.11.3
+	go.mongodb.org/mongo-driver v1.15.0
 	google.golang.org/api v0.118.0
 	gopkg.in/yaml.v3 v3.0.1
 )

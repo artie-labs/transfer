@@ -1,6 +1,7 @@
 package mongo
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -30,21 +31,36 @@ func JSONEToMap(val []byte) (map[string]any, error) {
 		return "null"
 	}))
 
-	var jsonMap map[string]any
 	var bsonDoc bson.D
 	err := bson.UnmarshalExtJSON(val, false, &bsonDoc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal ext json: %w", err)
 	}
 
-	bytes, err := bson.MarshalExtJSONWithRegistry(createCustomRegistry().Build(),
-		bsonDoc, false, true)
+	buf := new(bytes.Buffer)
+	vw, err := bsonrw.NewExtJSONValueWriter(buf, false, true)
+	if err != nil {
+		return nil, err
+	}
+	enc, err := bson.NewEncoder(vw)
 	if err != nil {
 		return nil, err
 	}
 
-	err = json.Unmarshal(bytes, &jsonMap)
-	return jsonMap, err
+	if err = enc.SetRegistry(createCustomRegistry()); err != nil {
+		return nil, err
+	}
+
+	if err = enc.Encode(bsonDoc); err != nil {
+		return nil, err
+	}
+
+	var jsonMap map[string]any
+	if err = json.Unmarshal(buf.Bytes(), &jsonMap); err != nil {
+		return nil, err
+	}
+
+	return jsonMap, nil
 }
 
 var (
@@ -110,12 +126,18 @@ func binaryEncodeValue(_ bsoncodec.EncodeContext, vw bsonrw.ValueWriter, val ref
 		return bsoncodec.ValueEncoderError{Name: "ObjectIDEncodeValue not Binary", Types: []reflect.Type{tBinary}, Received: val}
 	}
 
-	parsedUUID, err := uuid.FromBytes(s.Data)
-	if err != nil {
-		return err
+	switch s.Subtype {
+	case
+		bson.TypeBinaryUUIDOld,
+		bson.TypeBinaryUUID:
+		parsedUUID, err := uuid.FromBytes(s.Data)
+		if err != nil {
+			return err
+		}
+		return vw.WriteString(parsedUUID.String())
+	default:
+		return vw.WriteBinaryWithSubtype(s.Data, s.Subtype)
 	}
-
-	return vw.WriteString(parsedUUID.String())
 }
 
 func timestampEncodeValue(_ bsoncodec.EncodeContext, vw bsonrw.ValueWriter, val reflect.Value) error {
@@ -131,17 +153,12 @@ func timestampEncodeValue(_ bsoncodec.EncodeContext, vw bsonrw.ValueWriter, val 
 	return vw.WriteString(time.Unix(int64(s.T), 0).UTC().Format(ext.ISO8601))
 }
 
-func createCustomRegistry() *bsoncodec.RegistryBuilder {
-	var primitiveCodecs bson.PrimitiveCodecs
-	rb := bsoncodec.NewRegistryBuilder()
-	bsoncodec.DefaultValueEncoders{}.RegisterDefaultEncoders(rb)
-	bsoncodec.DefaultValueDecoders{}.RegisterDefaultDecoders(rb)
-
+func createCustomRegistry() *bsoncodec.Registry {
+	rb := bson.NewRegistry()
 	rb.RegisterTypeEncoder(tDateTime, bsoncodec.ValueEncoderFunc(dateTimeEncodeValue))
 	rb.RegisterTypeEncoder(tOID, bsoncodec.ValueEncoderFunc(objectIDEncodeValue))
 	rb.RegisterTypeEncoder(tBinary, bsoncodec.ValueEncoderFunc(binaryEncodeValue))
 	rb.RegisterTypeEncoder(tDecimal, bsoncodec.ValueEncoderFunc(decimalEncodeValue))
 	rb.RegisterTypeEncoder(tTimestamp, bsoncodec.ValueEncoderFunc(timestampEncodeValue))
-	primitiveCodecs.RegisterPrimitiveCodecs(rb)
 	return rb
 }
