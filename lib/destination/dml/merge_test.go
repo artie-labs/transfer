@@ -362,3 +362,14 @@ func TestMergeArgument_BuildRedshiftDeleteQuery(t *testing.T) {
 		mergeArg.buildRedshiftDeleteQuery(),
 	)
 }
+
+func TestMergeArgument_BuildStatements_Validation(t *testing.T) {
+	for _, arg := range []*MergeArgument{
+		{Dialect: sql.SnowflakeDialect{}},
+		{Dialect: sql.BigQueryDialect{}},
+	} {
+		parts, err := arg.BuildStatements()
+		assert.ErrorContains(t, err, "merge argument does not contain primary keys")
+		assert.Nil(t, parts)
+	}
+}
