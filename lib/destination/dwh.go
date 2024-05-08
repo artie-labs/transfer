@@ -53,9 +53,15 @@ func ExecStatements(dwh DataWarehouse, statements []string) error {
 		return nil
 	default:
 		tx, err := dwh.Begin()
+		var committed bool
 		if err != nil {
 			return fmt.Errorf("failed to start tx: %w", err)
 		}
+		defer func() {
+			if !committed {
+				tx.Rollback()
+			}
+		}()
 
 		for _, statement := range statements {
 			slog.Debug("Executing...", slog.String("query", statement))
@@ -67,6 +73,7 @@ func ExecStatements(dwh DataWarehouse, statements []string) error {
 		if err = tx.Commit(); err != nil {
 			return fmt.Errorf("failed to commit statements: %v, err: %w", statements, err)
 		}
+		committed = true
 
 		return nil
 	}
