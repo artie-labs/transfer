@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_GetMSSQLStatement(t *testing.T) {
+func Test_BuildMSSQLStatement(t *testing.T) {
 	fqTable := "database.schema.table"
 	colToTypes := map[string]typing.KindDetails{
 		"id":                         typing.String,

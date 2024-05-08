@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMergeArgument_GetRedshiftStatements_Validation(t *testing.T) {
+func TestMergeArgument_BuildRedshiftStatements_Validation(t *testing.T) {
 	for _, arg := range []*MergeArgument{
 		{Dialect: sql.SnowflakeDialect{}},
 		{Dialect: sql.BigQueryDialect{}},
@@ -60,7 +60,7 @@ func getBasicColumnsForTest(compositeKey bool) result {
 	}
 }
 
-func TestMergeArgument_GetRedshiftStatements_SkipDelete(t *testing.T) {
+func TestMergeArgument_BuildRedshiftStatements_SkipDelete(t *testing.T) {
 	// Biggest difference with this test are:
 	// 1. We are not saving `__artie_deleted` column
 	// 2. There are 3 SQL queries (INSERT, UPDATE and DELETE)
@@ -89,7 +89,7 @@ func TestMergeArgument_GetRedshiftStatements_SkipDelete(t *testing.T) {
 		parts[1])
 }
 
-func TestMergeArgument_GetRedshiftStatements_SoftDelete(t *testing.T) {
+func TestMergeArgument_BuildRedshiftStatements_SoftDelete(t *testing.T) {
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(false)
@@ -128,7 +128,7 @@ func TestMergeArgument_GetRedshiftStatements_SoftDelete(t *testing.T) {
 		parts[1])
 }
 
-func TestMergeArgument_GetRedshiftStatements_SoftDeleteComposite(t *testing.T) {
+func TestMergeArgument_BuildRedshiftStatements_SoftDeleteComposite(t *testing.T) {
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(true)
@@ -226,7 +226,7 @@ func TestMergeArgument_GetRedshiftStatements(t *testing.T) {
 		parts[2])
 }
 
-func TestMergeArgument_GetRedshiftStatements_CompositeKey(t *testing.T) {
+func TestMergeArgument_BuildRedshiftStatements_CompositeKey(t *testing.T) {
 	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(true)
