@@ -2,8 +2,9 @@ package redshift
 
 import (
 	"fmt"
-	"log/slog"
 	"strings"
+
+	"github.com/artie-labs/transfer/lib/destination"
 
 	_ "github.com/lib/pq"
 
@@ -114,53 +115,68 @@ WHERE
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func (s *Store) Dedupe(tableID types.TableIdentifier, _ []string, _ kafkalib.TopicConfig) error {
-	fqTableName := tableID.FullyQualifiedName()
-	stagingTableName := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5))).FullyQualifiedName()
+func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
+	var primaryKeysEscaped []string
+	for _, pk := range primaryKeys {
+		primaryKeysEscaped = append(primaryKeysEscaped, s.Dialect().QuoteIdentifier(pk))
+	}
 
-	query := fmt.Sprintf(`
-CREATE TABLE %s AS SELECT DISTINCT * FROM %s;
-DELETE FROM %s;
-INSERT INTO %s SELECT * FROM %s;
-DROP TABLE %s;`,
-		// CREATE TABLE
-		stagingTableName,
-		// AS SELECT DISTINCT * FROM
-		fqTableName,
-		// ; DELETE FROM
-		fqTableName,
-		// ; INSERT INTO
-		fqTableName,
-		// SELECT * FROM
-		stagingTableName,
-		// ; DROP TABLE
-		stagingTableName,
-		// ;
+	orderColsToIterate := primaryKeysEscaped
+	if topicConfig.IncludeArtieUpdatedAt {
+		orderColsToIterate = append(orderColsToIterate, s.Dialect().QuoteIdentifier(constants.UpdateColumnMarker))
+	}
+
+	var orderByCols []string
+	for _, orderByCol := range orderColsToIterate {
+		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", orderByCol))
+	}
+
+	var parts []string
+	parts = append(parts,
+		fmt.Sprintf("CREATE TEMPORARY TABLE %s AS (SELECT *, ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) AS row_num FROM %s)",
+			stagingTableID.FullyQualifiedName(),
+			strings.Join(primaryKeysEscaped, ", "),
+			strings.Join(orderByCols, ", "),
+			tableID.FullyQualifiedName(),
+		),
 	)
 
-	var transactionCommitted bool
-	transaction, err := s.Begin()
-	if err != nil {
-		return fmt.Errorf("failed to start transaction: %w", err)
-	}
-	defer func() {
-		if !transactionCommitted {
-			if err := transaction.Rollback(); err != nil {
-				slog.Error("Failed to roll back transaction", slog.Any("err", err))
-			}
-		}
-	}()
+	// Only keep rows where row_num = 2, indicating the first duplicate
+	parts = append(parts,
+		fmt.Sprintf("DELETE FROM %s WHERE row_num = 1",
+			stagingTableID.FullyQualifiedName(),
+		),
+	)
 
-	if _, err = transaction.Exec(query); err != nil {
-		return fmt.Errorf("failed to execute dedupe query: %w", err)
+	var whereClauses []string
+	for _, primaryKeyEscaped := range primaryKeysEscaped {
+		whereClauses = append(whereClauses, fmt.Sprintf("t1.%s = t2.%s AND t2.row_num = 2", primaryKeyEscaped, primaryKeyEscaped))
 	}
 
-	if err = transaction.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
-	}
+	// Delete duplicates in the main table based on matches with the staging table
+	parts = append(parts,
+		fmt.Sprintf("DELETE FROM %s t1 USING %s t2 WHERE %s",
+			tableID.FullyQualifiedName(),
+			stagingTableID.FullyQualifiedName(),
+			strings.Join(whereClauses, " AND "),
+		),
+	)
 
-	transactionCommitted = true
-	return nil
+	// Insert deduplicated data back into the main table from the staging table
+	parts = append(parts,
+		fmt.Sprintf("INSERT INTO %s SELECT * FROM %s WHERE row_num = 2",
+			tableID.FullyQualifiedName(),
+			stagingTableID.FullyQualifiedName(),
+		),
+	)
+
+	return parts
+}
+
+func (s *Store) Dedupe(tableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
+	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
+	dedupeQueries := s.generateDedupeQueries(tableID, stagingTableID, primaryKeys, topicConfig)
+	return destination.ExecStatements(s, dedupeQueries)
 }
 
 func LoadRedshift(cfg config.Config, _store *db.Store) (*Store, error) {
