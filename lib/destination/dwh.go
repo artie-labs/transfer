@@ -60,7 +60,7 @@ func ExecStatements(dwh DataWarehouse, statements []string) error {
 		for _, statement := range statements {
 			slog.Debug("Executing...", slog.String("query", statement))
 			if _, err = tx.Exec(statement); err != nil {
-				return fmt.Errorf("failed execute statement: %q, err: %w", statement, err)
+				return fmt.Errorf("failed to execute statement: %q, err: %w", statement, err)
 			}
 		}
 
