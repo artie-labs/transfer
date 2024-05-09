@@ -11,6 +11,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -21,13 +22,15 @@ func (d *DDLTestSuite) TestValidate_AlterTableArgs() {
 		CreateTable: true,
 		Mode:        config.Replication,
 	}
+	assert.ErrorContains(d.T(), a.Validate(), "dialect cannot be nil")
 
-	assert.Contains(d.T(), a.Validate().Error(), "incompatible operation - cannot drop columns and create table at the same time")
+	a.Dialect = sql.BigQueryDialect{}
+	assert.ErrorContains(d.T(), a.Validate(), "incompatible operation - cannot drop columns and create table at the same time")
 
 	a.ColumnOp = constants.Add
 	a.CreateTable = false
 	a.TemporaryTable = true
-	assert.Contains(d.T(), a.Validate().Error(), "incompatible operation - we should not be altering temporary tables, only create")
+	assert.ErrorContains(d.T(), a.Validate(), "incompatible operation - we should not be altering temporary tables, only create")
 }
 
 func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {

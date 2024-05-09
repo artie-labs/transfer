@@ -52,6 +52,10 @@ type AlterTableArgs struct {
 }
 
 func (a AlterTableArgs) Validate() error {
+	if a.Dialect == nil {
+		return fmt.Errorf("dialect cannot be nil")
+	}
+
 	// You can't DROP a column and try to create a table at the same time.
 	if a.ColumnOp == constants.Delete && a.CreateTable {
 		return fmt.Errorf("incompatible operation - cannot drop columns and create table at the same time")
