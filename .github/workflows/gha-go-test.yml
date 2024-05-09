@@ -18,6 +18,8 @@ jobs:
           wget -q ${SC_URL} -O - | tar -xzf - --strip-components 1 -C /usr/local/bin staticcheck/staticcheck
           make static
       - name: Run test
-        run: make test
+        run: |
+          make generate
+          make test
       - name: Run race condition check
         run: make race
