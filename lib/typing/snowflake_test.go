@@ -1,7 +1,6 @@
 package typing
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -30,7 +29,7 @@ func TestSnowflakeTypeToKindFloats(t *testing.T) {
 		expectedFloats := []string{"FLOAT", "FLOAT4", "FLOAT8", "DOUBLE",
 			"DOUBLE PRECISION", "REAL"}
 		for _, expectedFloat := range expectedFloats {
-			kd := SnowflakeTypeToKind(strings.ToLower(expectedFloat))
+			kd := SnowflakeTypeToKind(expectedFloat)
 			assert.Equal(t, Float, kd, expectedFloat)
 		}
 	}
@@ -42,7 +41,7 @@ func TestSnowflakeTypeToKindFloats(t *testing.T) {
 	{
 		expectedNumerics := []string{"NUMERIC(38, 2)", "NUMBER(38, 2)", "DECIMAL"}
 		for _, expectedNumeric := range expectedNumerics {
-			kd := SnowflakeTypeToKind(strings.ToLower(expectedNumeric))
+			kd := SnowflakeTypeToKind(expectedNumeric)
 			assert.Equal(t, EDecimal.Kind, kd.Kind, expectedNumeric)
 		}
 	}
@@ -51,7 +50,7 @@ func TestSnowflakeTypeToKindFloats(t *testing.T) {
 func TestSnowflakeTypeToKindInteger(t *testing.T) {
 	expectedIntegers := []string{"INT", "INTEGER", "BIGINT", "SMALLINT", "TINYINT", "BYTEINT"}
 	for _, expectedInteger := range expectedIntegers {
-		kd := SnowflakeTypeToKind(strings.ToLower(expectedInteger))
+		kd := SnowflakeTypeToKind(expectedInteger)
 		assert.Equal(t, Integer, kd, expectedInteger)
 	}
 }
@@ -59,7 +58,7 @@ func TestSnowflakeTypeToKindInteger(t *testing.T) {
 func TestSnowflakeTypeToKindOther(t *testing.T) {
 	expectedStrings := []string{"VARCHAR (255)", "CHARACTER", "CHAR", "STRING", "TEXT"}
 	for _, expectedString := range expectedStrings {
-		kd := SnowflakeTypeToKind(strings.ToLower(expectedString))
+		kd := SnowflakeTypeToKind(expectedString)
 		assert.Equal(t, String, kd, expectedString)
 	}
 }
