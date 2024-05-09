@@ -18,12 +18,13 @@ func (d *DDLTestSuite) Test_DropTemporaryTableCaseSensitive() {
 		"gghh",
 	}
 
-	for _, dest := range []destination.DataWarehouse{d.bigQueryStore, d.snowflakeStagesStore} {
+	for i, dest := range []destination.DataWarehouse{d.bigQueryStore, d.snowflakeStagesStore} {
 		var fakeStore *mocks.FakeStore
-		if dest.Label() == constants.Snowflake {
-			fakeStore = d.fakeSnowflakeStagesStore
-		} else if dest.Label() == constants.BigQuery {
+		if i == 0 {
 			fakeStore = d.fakeBigQueryStore
+		} else {
+			fakeStore = d.fakeSnowflakeStagesStore
+
 		}
 
 		for tableIndex, table := range tablesToDrop {
@@ -52,11 +53,11 @@ func (d *DDLTestSuite) Test_DropTemporaryTable() {
 		assert.Equal(d.T(), 0, d.fakeSnowflakeStagesStore.ExecCallCount())
 	}
 
-	for _, _dwh := range []destination.DataWarehouse{d.bigQueryStore, d.snowflakeStagesStore} {
+	for i, _dwh := range []destination.DataWarehouse{d.bigQueryStore, d.snowflakeStagesStore} {
 		var fakeStore *mocks.FakeStore
-		if _dwh.Label() == constants.Snowflake {
+		if i == 0 {
 			fakeStore = d.fakeSnowflakeStagesStore
-		} else if _dwh.Label() == constants.BigQuery {
+		} else {
 			fakeStore = d.fakeBigQueryStore
 		}
 
@@ -88,14 +89,14 @@ func (d *DDLTestSuite) Test_DropTemporaryTable_Errors() {
 	}
 
 	randomErr := fmt.Errorf("random err")
-	for _, _dwh := range []destination.DataWarehouse{d.bigQueryStore, d.snowflakeStagesStore} {
+	for i, _dwh := range []destination.DataWarehouse{d.bigQueryStore, d.snowflakeStagesStore} {
 		var fakeStore *mocks.FakeStore
-		if _dwh.Label() == constants.Snowflake {
-			fakeStore = d.fakeSnowflakeStagesStore
-			d.fakeSnowflakeStagesStore.ExecReturns(nil, randomErr)
-		} else if _dwh.Label() == constants.BigQuery {
+		if i == 0 {
 			fakeStore = d.fakeBigQueryStore
 			d.fakeBigQueryStore.ExecReturns(nil, randomErr)
+		} else {
+			fakeStore = d.fakeSnowflakeStagesStore
+			d.fakeSnowflakeStagesStore.ExecReturns(nil, randomErr)
 		}
 
 		var count int
