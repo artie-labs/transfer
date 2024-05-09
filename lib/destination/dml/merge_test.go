@@ -20,6 +20,10 @@ type MockTableIdentifier struct {
 	fqName string
 }
 
+func (m MockTableIdentifier) EscapedTable() string {
+	panic("not implemented")
+}
+
 func (m MockTableIdentifier) Table() string {
 	panic("not implemented")
 }

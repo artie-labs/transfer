@@ -22,6 +22,10 @@ func (ti TableIdentifier) Schema() string {
 	return ti.schema
 }
 
+func (ti TableIdentifier) EscapedTable() string {
+	return dialect.QuoteIdentifier(ti.table)
+}
+
 func (ti TableIdentifier) Table() string {
 	return ti.table
 }

@@ -31,6 +31,10 @@ func (ti TableIdentifier) Dataset() string {
 	return ti.dataset
 }
 
+func (ti TableIdentifier) EscapedTable() string {
+	return dialect.QuoteIdentifier(ti.table)
+}
+
 func (ti TableIdentifier) Table() string {
 	return ti.table
 }

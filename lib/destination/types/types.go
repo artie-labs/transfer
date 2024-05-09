@@ -43,6 +43,7 @@ type AdditionalSettings struct {
 }
 
 type TableIdentifier interface {
+	EscapedTable() string
 	Table() string
 	WithTable(table string) TableIdentifier
 	FullyQualifiedName() string

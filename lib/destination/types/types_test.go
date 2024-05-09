@@ -31,6 +31,7 @@ func generateDwhTableCfg() *DwhTableConfig {
 
 type MockTableIdentifier struct{ fqName string }
 
+func (MockTableIdentifier) EscapedTable() string                   { panic("not implemented") }
 func (MockTableIdentifier) Table() string                          { panic("not implemented") }
 func (MockTableIdentifier) WithTable(table string) TableIdentifier { panic("not implemented") }
 func (m MockTableIdentifier) FullyQualifiedName() string           { return m.fqName }

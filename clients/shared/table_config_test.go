@@ -77,8 +77,10 @@ func (MockDWH) IdentifierFor(topicConfig kafkalib.TopicConfig, name string) type
 	panic("not implemented")
 }
 
+// TODO: Move this to mocks.
 type MockTableIdentifier struct{ fqName string }
 
+func (MockTableIdentifier) EscapedTable() string                         { panic("not implemented") }
 func (MockTableIdentifier) Table() string                                { panic("not implemented") }
 func (MockTableIdentifier) WithTable(table string) types.TableIdentifier { panic("not implemented") }
 func (m MockTableIdentifier) FullyQualifiedName() string                 { return m.fqName }
