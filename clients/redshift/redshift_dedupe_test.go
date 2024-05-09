@@ -16,7 +16,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 		tableID := NewTableIdentifier("public", "customers")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := r.store.generateDedupeQueries(tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{})
+		parts := generateDedupeQueries(r.store.Dialect(), tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{})
 		assert.Len(r.T(), parts, 3)
 		assert.Equal(
 			r.T(),
@@ -31,7 +31,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 		tableID := NewTableIdentifier("public", "customers")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := r.store.generateDedupeQueries(tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
+		parts := generateDedupeQueries(r.store.Dialect(), tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
 		assert.Len(r.T(), parts, 3)
 		assert.Equal(
 			r.T(),
@@ -46,7 +46,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 		tableID := NewTableIdentifier("public", "user_settings")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := r.store.generateDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{})
+		parts := generateDedupeQueries(r.store.Dialect(), tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{})
 		assert.Len(r.T(), parts, 3)
 		assert.Equal(
 			r.T(),
@@ -61,7 +61,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 		tableID := NewTableIdentifier("public", "user_settings")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := r.store.generateDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
+		parts := generateDedupeQueries(r.store.Dialect(), tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
 		assert.Len(r.T(), parts, 3)
 		assert.Equal(
 			r.T(),
