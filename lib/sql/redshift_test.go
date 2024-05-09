@@ -1,14 +1,15 @@
-package typing
+package sql
 
 import (
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/ptr"
-
 	"github.com/stretchr/testify/assert"
+
+	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func TestRedshiftTypeToKind(t *testing.T) {
+func TestRedshiftDialect_KindForDataType(t *testing.T) {
 	type rawTypeAndPrecision struct {
 		rawType   string
 		precision string
@@ -17,7 +18,7 @@ func TestRedshiftTypeToKind(t *testing.T) {
 	type _testCase struct {
 		name       string
 		rawTypes   []rawTypeAndPrecision
-		expectedKd KindDetails
+		expectedKd typing.KindDetails
 	}
 
 	testCases := []_testCase{
@@ -28,7 +29,7 @@ func TestRedshiftTypeToKind(t *testing.T) {
 				{rawType: "bigint"},
 				{rawType: "INTEGER"},
 			},
-			expectedKd: Integer,
+			expectedKd: typing.Integer,
 		},
 		{
 			name: "String w/o precision",
@@ -40,7 +41,7 @@ func TestRedshiftTypeToKind(t *testing.T) {
 					precision: "not a number",
 				},
 			},
-			expectedKd: String,
+			expectedKd: typing.String,
 		},
 		{
 			name: "String w/ precision",
@@ -50,8 +51,8 @@ func TestRedshiftTypeToKind(t *testing.T) {
 					precision: "65535",
 				},
 			},
-			expectedKd: KindDetails{
-				Kind:                    String.Kind,
+			expectedKd: typing.KindDetails{
+				Kind:                    typing.String.Kind,
 				OptionalStringPrecision: ptr.ToInt(65535),
 			},
 		},
@@ -61,7 +62,7 @@ func TestRedshiftTypeToKind(t *testing.T) {
 				{rawType: "double precision"},
 				{rawType: "DOUBLE precision"},
 			},
-			expectedKd: Float,
+			expectedKd: typing.Float,
 		},
 		{
 			name: "Time",
@@ -71,14 +72,14 @@ func TestRedshiftTypeToKind(t *testing.T) {
 				{rawType: "time without time zone"},
 				{rawType: "date"},
 			},
-			expectedKd: ETime,
+			expectedKd: typing.ETime,
 		},
 		{
 			name: "Boolean",
 			rawTypes: []rawTypeAndPrecision{
 				{rawType: "boolean"},
 			},
-			expectedKd: Boolean,
+			expectedKd: typing.Boolean,
 		},
 		{
 			name: "numeric",
@@ -86,13 +87,14 @@ func TestRedshiftTypeToKind(t *testing.T) {
 				{rawType: "numeric(5,2)"},
 				{rawType: "numeric(5,5)"},
 			},
-			expectedKd: EDecimal,
+			expectedKd: typing.EDecimal,
 		},
 	}
 
 	for _, testCase := range testCases {
 		for _, rawTypeAndPrec := range testCase.rawTypes {
-			kd := RedshiftTypeToKind(rawTypeAndPrec.rawType, rawTypeAndPrec.precision)
+			kd, err := RedshiftDialect{}.KindForDataType(rawTypeAndPrec.rawType, rawTypeAndPrec.precision)
+			assert.NoError(t, err)
 			assert.Equal(t, testCase.expectedKd.Kind, kd.Kind, testCase.name)
 
 			if kd.OptionalStringPrecision != nil {
