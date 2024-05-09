@@ -43,7 +43,7 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 		execQuery, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(i)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN %s %s", `shop.public."COMPLEX_COLUMNS"`,
 			d.snowflakeStagesStore.Dialect().QuoteIdentifier(cols[i].Name()),
-			typing.KindToSnowflake(cols[i].KindDetails)), execQuery)
+			d.snowflakeStagesStore.Dialect().DataTypeForKind(cols[i].KindDetails, false)), execQuery)
 	}
 
 	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecCallCount(), "called SFLK the same amt to create cols")

@@ -7,7 +7,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
-const defaultPrefix = "numeric"
+const DefaultPrefix = "numeric"
 
 // ParseNumeric - will prefix (since it can be NUMBER or NUMERIC) + valString in the form of:
 // * NUMERIC(p, s)

@@ -70,7 +70,7 @@ func TestParseNumeric(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		result := ParseNumeric(defaultPrefix, testCase.valString)
+		result := ParseNumeric(DefaultPrefix, testCase.valString)
 		assert.Equal(t, testCase.expectedKindDetails.Kind, result.Kind, testCase.valString)
 		if result.ExtendedDecimalDetails != nil {
 			assert.Equal(t, testCase.expectedScale, result.ExtendedDecimalDetails.Scale(), testCase.valString)
