@@ -45,7 +45,6 @@ func (SnowflakeDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) 
 	}
 
 	return kindDetails.Kind
-
 }
 
 // KindForDataType converts a Snowflake type to a KindDetails.
