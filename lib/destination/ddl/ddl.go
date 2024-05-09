@@ -124,6 +124,7 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 	fqTableName := a.TableID.FullyQualifiedName()
 
 	var err error
+	var alterStatements []string
 	if a.CreateTable {
 		var sqlQuery string
 		if a.TemporaryTable {
@@ -137,14 +138,7 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 			}
 		}
 
-		slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
-		if _, err = a.Dwh.Exec(sqlQuery); err != nil {
-			if a.Dwh.Dialect().IsColumnAlreadyExistsErr(err) {
-				err = nil
-			} else {
-				return err
-			}
-		}
+		alterStatements = []string{sqlQuery}
 	} else {
 		for _, colSQLPart := range colSQLParts {
 			var sqlQuery string
@@ -154,14 +148,17 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 			} else {
 				sqlQuery = fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTableName, a.ColumnOp, colSQLPart)
 			}
+			alterStatements = append(alterStatements, sqlQuery)
+		}
+	}
 
-			slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
-			if _, err = a.Dwh.Exec(sqlQuery); err != nil {
-				if a.Dwh.Dialect().IsColumnAlreadyExistsErr(err) {
-					err = nil
-				} else {
-					return fmt.Errorf("failed to apply ddl, sql: %v, err: %w", sqlQuery, err)
-				}
+	for _, sqlQuery := range alterStatements {
+		slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
+		if _, err = a.Dwh.Exec(sqlQuery); err != nil {
+			if a.Dwh.Dialect().IsColumnAlreadyExistsErr(err) {
+				err = nil
+			} else {
+				return fmt.Errorf("failed to apply ddl, sql: %q, err: %w", sqlQuery, err)
 			}
 		}
 	}
