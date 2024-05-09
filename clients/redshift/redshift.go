@@ -133,40 +133,36 @@ func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentif
 
 	var parts []string
 	parts = append(parts,
-		fmt.Sprintf("CREATE TEMPORARY TABLE %s AS (SELECT *, ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) AS row_num FROM %s)",
-			stagingTableID.FullyQualifiedName(),
+		// It looks funny, but we do need a WHERE clause to make the query valid.
+		fmt.Sprintf("CREATE TEMPORARY TABLE %s AS (SELECT * FROM %s WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 2)",
+			// Temporary tables may not specify a schema name
+			stagingTableID.Table(),
+			tableID.FullyQualifiedName(),
 			strings.Join(primaryKeysEscaped, ", "),
 			strings.Join(orderByCols, ", "),
-			tableID.FullyQualifiedName(),
-		),
-	)
-
-	// Only keep rows where row_num = 2, indicating the first duplicate
-	parts = append(parts,
-		fmt.Sprintf("DELETE FROM %s WHERE row_num = 1",
-			stagingTableID.FullyQualifiedName(),
 		),
 	)
 
 	var whereClauses []string
 	for _, primaryKeyEscaped := range primaryKeysEscaped {
-		whereClauses = append(whereClauses, fmt.Sprintf("t1.%s = t2.%s AND t2.row_num = 2", primaryKeyEscaped, primaryKeyEscaped))
+		// Redshift does not support table aliasing for deletes.
+		whereClauses = append(whereClauses, fmt.Sprintf("%s.%s = t2.%s", tableID.Table(), primaryKeyEscaped, primaryKeyEscaped))
 	}
 
 	// Delete duplicates in the main table based on matches with the staging table
 	parts = append(parts,
-		fmt.Sprintf("DELETE FROM %s t1 USING %s t2 WHERE %s",
+		fmt.Sprintf("DELETE FROM %s USING %s t2 WHERE %s",
 			tableID.FullyQualifiedName(),
-			stagingTableID.FullyQualifiedName(),
+			stagingTableID.Table(),
 			strings.Join(whereClauses, " AND "),
 		),
 	)
 
 	// Insert deduplicated data back into the main table from the staging table
 	parts = append(parts,
-		fmt.Sprintf("INSERT INTO %s SELECT * FROM %s WHERE row_num = 2",
+		fmt.Sprintf("INSERT INTO %s SELECT * FROM %s",
 			tableID.FullyQualifiedName(),
-			stagingTableID.FullyQualifiedName(),
+			stagingTableID.Table(),
 		),
 	)
 
