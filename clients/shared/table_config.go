@@ -10,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -59,8 +60,8 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 
 	var tableMissing bool
 	if err != nil {
-		switch g.Dwh.Label() {
-		case constants.Snowflake:
+		switch g.Dwh.Dialect().(type) {
+		case sql.SnowflakeDialect:
 			if SnowflakeTableDoesNotExistErr(err) {
 				// Swallow the error, make sure all the metadata is created
 				tableMissing = true
