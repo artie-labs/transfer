@@ -49,7 +49,7 @@ func castColValStaging(colVal any, colKind columns.Column, additionalDateFmts []
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
-			Dwh:            s,
+			Dialect:        s.Dialect(),
 			Tc:             tableConfig,
 			TableID:        tempTableID,
 			CreateTable:    true,
@@ -58,7 +58,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 			Mode:           tableData.Mode(),
 		}
 
-		if err := tempAlterTableArgs.AlterTable(tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
+		if err := tempAlterTableArgs.AlterTable(s, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
 			return fmt.Errorf("failed to create temp table: %w", err)
 		}
 	}

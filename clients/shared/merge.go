@@ -34,7 +34,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 
 	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	createAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:         dwh,
+		Dialect:     dwh.Dialect(),
 		Tc:          tableConfig,
 		TableID:     tableID,
 		CreateTable: tableConfig.CreateTable(),
@@ -44,14 +44,14 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 	}
 
 	// Columns that are missing in DWH, but exist in our CDC stream.
-	err = createAlterTableArgs.AlterTable(targetKeysMissing...)
+	err = createAlterTableArgs.AlterTable(dwh, targetKeysMissing...)
 	if err != nil {
 		return fmt.Errorf("failed to alter table: %w", err)
 	}
 
 	// Keys that exist in DWH, but not in our CDC stream.
 	deleteAlterTableArgs := ddl.AlterTableArgs{
-		Dwh:                    dwh,
+		Dialect:                dwh.Dialect(),
 		Tc:                     tableConfig,
 		TableID:                tableID,
 		CreateTable:            false,
@@ -61,7 +61,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 		Mode:                   tableData.Mode(),
 	}
 
-	if err = deleteAlterTableArgs.AlterTable(srcKeysMissing...); err != nil {
+	if err = deleteAlterTableArgs.AlterTable(dwh, srcKeysMissing...); err != nil {
 		return fmt.Errorf("failed to apply alter table: %w", err)
 	}
 
