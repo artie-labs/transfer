@@ -3,6 +3,8 @@ package dml
 import (
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/mocks"
+
 	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/typing"
@@ -65,7 +67,7 @@ func TestMergeArgument_Valid(t *testing.T) {
 			mergeArg: &MergeArgument{
 				PrimaryKeys: primaryKeys,
 				Columns:     cols,
-				TableID:     MockTableIdentifier{"schema.tableName"},
+				TableID:     &mocks.FakeTableIdentifier{},
 			},
 			expectedErr: "subQuery cannot be empty",
 		},
@@ -75,7 +77,7 @@ func TestMergeArgument_Valid(t *testing.T) {
 				PrimaryKeys: primaryKeys,
 				Columns:     cols,
 				SubQuery:    "schema.tableName",
-				TableID:     MockTableIdentifier{"schema.tableName"},
+				TableID:     &mocks.FakeTableIdentifier{},
 			},
 			expectedErr: "dialect cannot be nil",
 		},
@@ -85,7 +87,7 @@ func TestMergeArgument_Valid(t *testing.T) {
 				PrimaryKeys: primaryKeys,
 				Columns:     cols,
 				SubQuery:    "schema.tableName",
-				TableID:     MockTableIdentifier{"schema.tableName"},
+				TableID:     &mocks.FakeTableIdentifier{},
 				Dialect:     sql.BigQueryDialect{},
 			},
 		},
@@ -95,7 +97,7 @@ func TestMergeArgument_Valid(t *testing.T) {
 				PrimaryKeys: primaryKeys,
 				Columns:     []columns.Column{columns.NewColumn("id", typing.Invalid)},
 				SubQuery:    "schema.tableName",
-				TableID:     MockTableIdentifier{"schema.tableName"},
+				TableID:     &mocks.FakeTableIdentifier{},
 				Dialect:     sql.BigQueryDialect{},
 			},
 			expectedErr: `column "id" is invalid and should be skipped`,

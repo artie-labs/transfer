@@ -10,7 +10,7 @@ import (
 
 func TestBigQueryTypeToKind(t *testing.T) {
 	bqColToExpectedKind := map[string]KindDetails{
-		//// Number
+		// Number
 		"numeric":           EDecimal,
 		"numeric(5)":        Integer,
 		"numeric(5, 0)":     Integer,

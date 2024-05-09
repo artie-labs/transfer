@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -13,7 +12,6 @@ import (
 )
 
 type DataWarehouse interface {
-	Label() constants.DestinationKind
 	Dialect() sqllib.Dialect
 	Merge(tableData *optimization.TableData) error
 	Append(tableData *optimization.TableData) error
@@ -31,7 +29,6 @@ type DataWarehouse interface {
 }
 
 type Baseline interface {
-	Label() constants.DestinationKind
 	Merge(tableData *optimization.TableData) error
 	Append(tableData *optimization.TableData) error
 	IsRetryableError(err error) bool

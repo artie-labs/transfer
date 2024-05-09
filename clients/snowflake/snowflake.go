@@ -73,10 +73,6 @@ WHERE
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func (s *Store) Label() constants.DestinationKind {
-	return constants.Snowflake
-}
-
 func (s *Store) Dialect() sql.Dialect {
 	return sql.SnowflakeDialect{}
 }

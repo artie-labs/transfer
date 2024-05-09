@@ -9,32 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
-
-// Have to mock a [types.TableIdentifier] otherwise we get circular imports.
-type MockTableIdentifier struct {
-	fqName string
-}
-
-func (m MockTableIdentifier) EscapedTable() string {
-	panic("not implemented")
-}
-
-func (m MockTableIdentifier) Table() string {
-	panic("not implemented")
-}
-
-func (m MockTableIdentifier) WithTable(_ string) types.TableIdentifier {
-	panic("not implemented")
-}
-
-func (m MockTableIdentifier) FullyQualifiedName() string {
-	return m.fqName
-}
 
 func TestMergeStatementSoftDelete(t *testing.T) {
 	// No idempotent key
@@ -60,9 +39,11 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 	_cols.AddColumn(columns.NewColumn("id", typing.String))
 	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns(fqTable)
 	for _, idempotentKey := range []string{"", "updated_at"} {
 		mergeArg := MergeArgument{
-			TableID:       MockTableIdentifier{fqTable},
+			TableID:       fakeTableID,
 			SubQuery:      subQuery,
 			IdempotentKey: idempotentKey,
 			PrimaryKeys:   []columns.Column{columns.NewColumn("id", typing.Invalid)},
@@ -109,8 +90,10 @@ func TestMergeStatement(t *testing.T) {
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns(fqTable)
 	mergeArg := MergeArgument{
-		TableID:       MockTableIdentifier{fqTable},
+		TableID:       fakeTableID,
 		SubQuery:      subQuery,
 		IdempotentKey: "",
 		PrimaryKeys:   []columns.Column{columns.NewColumn("id", typing.Invalid)},
@@ -156,8 +139,10 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 	_cols.AddColumn(columns.NewColumn("id", typing.String))
 	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns(fqTable)
 	mergeArg := MergeArgument{
-		TableID:       MockTableIdentifier{fqTable},
+		TableID:       fakeTableID,
 		SubQuery:      subQuery,
 		IdempotentKey: "updated_at",
 		PrimaryKeys:   []columns.Column{columns.NewColumn("id", typing.Invalid)},
@@ -197,8 +182,10 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 	_cols.AddColumn(columns.NewColumn("another_id", typing.String))
 	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns(fqTable)
 	mergeArg := MergeArgument{
-		TableID:       MockTableIdentifier{fqTable},
+		TableID:       fakeTableID,
 		SubQuery:      subQuery,
 		IdempotentKey: "updated_at",
 		PrimaryKeys: []columns.Column{
@@ -245,8 +232,10 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns(fqTable)
 	mergeArg := MergeArgument{
-		TableID:       MockTableIdentifier{fqTable},
+		TableID:       fakeTableID,
 		SubQuery:      subQuery,
 		IdempotentKey: "",
 		PrimaryKeys: []columns.Column{
@@ -286,8 +275,10 @@ func TestMergeArgument_BuildRedshiftInsertQuery(t *testing.T) {
 		columns.NewColumn("col3", typing.Invalid),
 	}
 
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("{TABLE_ID}")
 	mergeArg := MergeArgument{
-		TableID:     MockTableIdentifier{"{TABLE_ID}"},
+		TableID:     fakeTableID,
 		SubQuery:    "{SUB_QUERY}",
 		PrimaryKeys: []columns.Column{cols[0], cols[2]},
 		Dialect:     sql.RedshiftDialect{},
@@ -335,9 +326,12 @@ func TestMergeArgument_BuildRedshiftUpdateQuery(t *testing.T) {
 		columns.NewColumn("col3", typing.Invalid),
 	}
 
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("{TABLE_ID}")
+
 	for _, testCase := range testCases {
 		mergeArg := MergeArgument{
-			TableID:       MockTableIdentifier{"{TABLE_ID}"},
+			TableID:       fakeTableID,
 			SubQuery:      "{SUB_QUERY}",
 			PrimaryKeys:   []columns.Column{cols[0], cols[2]},
 			Dialect:       sql.RedshiftDialect{},
@@ -355,8 +349,10 @@ func TestMergeArgument_BuildRedshiftDeleteQuery(t *testing.T) {
 		columns.NewColumn("col3", typing.Invalid),
 	}
 
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("{TABLE_ID}")
 	mergeArg := MergeArgument{
-		TableID:     MockTableIdentifier{"{TABLE_ID}"},
+		TableID:     fakeTableID,
 		SubQuery:    "{SUB_QUERY}",
 		PrimaryKeys: []columns.Column{cols[0], cols[1]},
 		Dialect:     sql.RedshiftDialect{},

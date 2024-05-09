@@ -115,10 +115,6 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 	return s.configMap
 }
 
-func (s *Store) Label() constants.DestinationKind {
-	return constants.BigQuery
-}
-
 func (s *Store) Dialect() sql.Dialect {
 	return sql.BigQueryDialect{}
 }

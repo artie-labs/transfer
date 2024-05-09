@@ -48,13 +48,6 @@ func TestGetTableCfgArgs_ShouldParseComment(t *testing.T) {
 	}
 }
 
-type MockTableIdentifier struct{ fqName string }
-
-func (MockTableIdentifier) EscapedTable() string                         { panic("not implemented") }
-func (MockTableIdentifier) Table() string                                { panic("not implemented") }
-func (MockTableIdentifier) WithTable(table string) types.TableIdentifier { panic("not implemented") }
-func (m MockTableIdentifier) FullyQualifiedName() string                 { return m.fqName }
-
 func TestGetTableConfig(t *testing.T) {
 	// Return early because table is found in configMap.
 	cols := &columns.Columns{}
@@ -62,15 +55,15 @@ func TestGetTableConfig(t *testing.T) {
 		cols.AddColumn(columns.NewColumn(fmt.Sprintf("col-%v", i), typing.Invalid))
 	}
 
-	tableID := MockTableIdentifier{"dusty_the_mini_aussie"}
 	dwhTableCfg := types.NewDwhTableConfig(cols, nil, false, false)
-
 	cm := &types.DwhToTablesConfigMap{}
-	cm.AddTableToConfig(tableID, dwhTableCfg)
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("dusty_the_mini_aussie")
+	cm.AddTableToConfig(fakeTableID, dwhTableCfg)
 
 	actualTableCfg, err := GetTableCfgArgs{
 		Dwh:       &mocks.FakeDataWarehouse{},
-		TableID:   tableID,
+		TableID:   fakeTableID,
 		ConfigMap: cm,
 	}.GetTableConfig()
 
