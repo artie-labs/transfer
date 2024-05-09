@@ -21,3 +21,9 @@ func TestTableIdentifier_FullyQualifiedName(t *testing.T) {
 	tableID := NewTableIdentifier("database", "schema", "table")
 	assert.Equal(t, "database.schema.table", tableID.FullyQualifiedName())
 }
+
+func TestTableIdentifier_EscapedTable(t *testing.T) {
+	// S3 doesn't escape the table name.
+	tableID := NewTableIdentifier("database", "schema", "table")
+	assert.Equal(t, "table", tableID.EscapedTable())
+}
