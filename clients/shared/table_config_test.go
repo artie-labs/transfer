@@ -4,14 +4,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/mocks"
-
-	"github.com/stretchr/testify/assert"
-
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetTableCfgArgs_ShouldParseComment(t *testing.T) {
