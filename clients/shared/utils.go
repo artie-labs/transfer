@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 
@@ -18,7 +19,7 @@ func BackfillColumn(dwh destination.DataWarehouse, column columns.Column, tableI
 		return nil
 	}
 
-	if dwh.Label() == constants.MSSQL {
+	if _, ok := dwh.Dialect().(sql.MSSQLDialect); ok {
 		// TODO: Support MSSQL column backfill
 		return nil
 	}
