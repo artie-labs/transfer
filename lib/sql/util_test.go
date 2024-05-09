@@ -43,3 +43,49 @@ func TestQuoteIdentifiers(t *testing.T) {
 	assert.Equal(t, []string{}, QuoteIdentifiers([]string{}, BigQueryDialect{}))
 	assert.Equal(t, []string{"`a`", "`b`", "`c`"}, QuoteIdentifiers([]string{"a", "b", "c"}, BigQueryDialect{}))
 }
+
+func TestParseDataTypeDefinition(t *testing.T) {
+	{
+		dataType, args, err := ParseDataTypeDefinition("number")
+		assert.NoError(t, err)
+		assert.Equal(t, "number", dataType)
+		assert.Empty(t, args)
+	}
+	{
+		dataType, args, err := ParseDataTypeDefinition("number(5,2)")
+		assert.NoError(t, err)
+		assert.Equal(t, "number", dataType)
+		assert.Equal(t, []string{"5", "2"}, args)
+	}
+	{
+		dataType, args, err := ParseDataTypeDefinition("number(5, 2)")
+		assert.NoError(t, err)
+		assert.Equal(t, "number", dataType)
+		assert.Equal(t, []string{"5", "2"}, args)
+	}
+	{
+		dataType, args, err := ParseDataTypeDefinition("VARCHAR(1234)")
+		assert.NoError(t, err)
+		assert.Equal(t, "VARCHAR", dataType)
+		assert.Equal(t, []string{"1234"}, args)
+	}
+	{
+		// Spaces:
+		dataType, args, err := ParseDataTypeDefinition("VARCHAR")
+		assert.NoError(t, err)
+		assert.Equal(t, "VARCHAR", dataType)
+		assert.Empty(t, args)
+	}
+	{
+		// Spaces + args:
+		dataType, args, err := ParseDataTypeDefinition("   VARCHAR   (   1234   )  ")
+		assert.NoError(t, err)
+		assert.Equal(t, "VARCHAR", dataType)
+		assert.Equal(t, []string{"1234"}, args)
+	}
+	{
+		// Malformed args:
+		_, _, err := ParseDataTypeDefinition("VARCHAR(1234")
+		assert.ErrorContains(t, err, "missing closing parenthesis")
+	}
+}
