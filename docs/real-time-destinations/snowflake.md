@@ -42,7 +42,7 @@ BEGIN TRANSACTION;
     SET SERVICE_PW = 'PASSWORD';
     -- NOTE: If you already have a DWH, you can use that, or create a separate one for Artie
     -- If your default DWH is a larger size, you may consider creating a dedicated one for Artie that's a smaller size
-    -- To optimize your spend. See https://docs.artie.so/configurations/real-time-destinations/snowflake#which-data-warehouse-to-use for more details.
+    -- To optimize your spend. See https://docs.artie.com/configurations/real-time-destinations/snowflake#which-data-warehouse-to-use for more details.
     SET DWH_NAME = UPPER('DWH');
     SET DB_NAME = UPPER('DB_NAME');
     SET SCHEMA_NAME = UPPER('public');
