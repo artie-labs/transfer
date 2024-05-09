@@ -31,6 +31,10 @@ func (ti TableIdentifier) Dataset() string {
 	return ti.dataset
 }
 
+func (ti TableIdentifier) EscapedTable() string {
+	return dialect.QuoteIdentifier(ti.table)
+}
+
 func (ti TableIdentifier) Table() string {
 	return ti.table
 }
@@ -45,6 +49,6 @@ func (ti TableIdentifier) FullyQualifiedName() string {
 	return fmt.Sprintf("%s.%s.%s",
 		dialect.QuoteIdentifier(ti.projectID),
 		dialect.QuoteIdentifier(ti.dataset),
-		dialect.QuoteIdentifier(ti.table),
+		ti.EscapedTable(),
 	)
 }
