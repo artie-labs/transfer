@@ -16,6 +16,7 @@ type Dialect interface {
 	KindForDataType(_type string, stringPrecision string) typing.KindDetails
 	IsColumnAlreadyExistsErr(err error) bool
 	BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string
+	BuildProcessToastStructColExpression(colName string) string
 }
 
 type BigQueryDialect struct{}
@@ -45,6 +46,12 @@ func (BigQueryDialect) IsColumnAlreadyExistsErr(err error) bool {
 func (BigQueryDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string {
 	return fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
 		fqTableName, strings.Join(colSQLParts, ","), typing.ExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)))
+}
+
+func (BigQueryDialect) BuildProcessToastStructColExpression(colName string) string {
+	return fmt.Sprintf(`CASE WHEN COALESCE(TO_JSON_STRING(cc.%s) != '{"key":"%s"}', true) THEN cc.%s ELSE c.%s END`,
+		colName, constants.ToastUnavailableValuePlaceholder,
+		colName, colName)
 }
 
 type MSSQLDialect struct{}
@@ -86,6 +93,12 @@ func (MSSQLDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts []
 	return fmt.Sprintf("CREATE TABLE %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
 }
 
+func (MSSQLDialect) BuildProcessToastStructColExpression(colName string) string {
+	// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
+	return fmt.Sprintf("CASE WHEN COALESCE(cc.%s, {}) != {'key': '%s'} THEN cc.%s ELSE c.%s END",
+		colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
+}
+
 type RedshiftDialect struct{}
 
 func (rd RedshiftDialect) QuoteIdentifier(identifier string) string {
@@ -112,6 +125,11 @@ func (RedshiftDialect) IsColumnAlreadyExistsErr(err error) bool {
 
 func (RedshiftDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string {
 	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
+}
+
+func (RedshiftDialect) BuildProcessToastStructColExpression(colName string) string {
+	return fmt.Sprintf(`CASE WHEN COALESCE(cc.%s != JSON_PARSE('{"key":"%s"}'), true) THEN cc.%s ELSE c.%s END`,
+		colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
 }
 
 type SnowflakeDialect struct{}
@@ -143,4 +161,10 @@ func (SnowflakeDialect) BuildCreateTempTableQuery(fqTableName string, colSQLPart
 	// FIELD_OPTIONALLY_ENCLOSED_BY - is needed because CSV will try to escape any values that have `"`
 	return fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`,
 		fqTableName, strings.Join(colSQLParts, ","))
+}
+
+func (SnowflakeDialect) BuildProcessToastStructColExpression(colName string) string {
+	// TODO: Change this to Snowflake and error out if the destKind isn't supported so we're explicit.
+	return fmt.Sprintf("CASE WHEN COALESCE(cc.%s != {'key': '%s'}, true) THEN cc.%s ELSE c.%s END",
+		colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
 }

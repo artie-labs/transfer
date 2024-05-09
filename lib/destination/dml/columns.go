@@ -35,7 +35,7 @@ func buildColumnsUpdateFragment(columns []columns.Column, dialect sql.Dialect) s
 		if column.ToastColumn {
 			var colValue string
 			if column.KindDetails == typing.Struct {
-				colValue = processToastStructCol(colName, dialect)
+				colValue = dialect.BuildProcessToastStructColExpression(colName)
 			} else {
 				colValue = processToastCol(colName, dialect)
 			}
@@ -47,26 +47,6 @@ func buildColumnsUpdateFragment(columns []columns.Column, dialect sql.Dialect) s
 	}
 
 	return strings.Join(cols, ",")
-}
-
-func processToastStructCol(colName string, dialect sql.Dialect) string {
-	switch dialect.(type) {
-	case sql.BigQueryDialect:
-		return fmt.Sprintf(`CASE WHEN COALESCE(TO_JSON_STRING(cc.%s) != '{"key":"%s"}', true) THEN cc.%s ELSE c.%s END`,
-			colName, constants.ToastUnavailableValuePlaceholder,
-			colName, colName)
-	case sql.RedshiftDialect:
-		return fmt.Sprintf(`CASE WHEN COALESCE(cc.%s != JSON_PARSE('{"key":"%s"}'), true) THEN cc.%s ELSE c.%s END`,
-			colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
-	case sql.MSSQLDialect:
-		// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
-		return fmt.Sprintf("CASE WHEN COALESCE(cc.%s, {}) != {'key': '%s'} THEN cc.%s ELSE c.%s END",
-			colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
-	default:
-		// TODO: Change this to Snowflake and error out if the destKind isn't supported so we're explicit.
-		return fmt.Sprintf("CASE WHEN COALESCE(cc.%s != {'key': '%s'}, true) THEN cc.%s ELSE c.%s END",
-			colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
-	}
 }
 
 func processToastCol(colName string, dialect sql.Dialect) string {
