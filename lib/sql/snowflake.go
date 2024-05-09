@@ -96,7 +96,6 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.
 		default:
 			return typing.Invalid, fmt.Errorf("expected at most one type parameters, received %d", len(parameters))
 		}
-
 	case "boolean":
 		return typing.Boolean, nil
 	case "variant", "object":
