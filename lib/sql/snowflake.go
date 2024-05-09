@@ -61,7 +61,7 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.
 		return typing.Invalid, nil
 	}
 
-	dataType, args, err := ParseDataTypeDefinition(snowflakeType)
+	dataType, parameters, err := ParseDataTypeDefinition(snowflakeType)
 	if err != nil {
 		return typing.Invalid, err
 	}
@@ -80,13 +80,13 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.
 	case "int", "integer", "bigint", "smallint", "tinyint", "byteint":
 		return typing.Integer, nil
 	case "varchar", "char", "character", "string", "text":
-		switch len(args) {
+		switch len(parameters) {
 		case 0:
 			return typing.String, nil
 		case 1:
-			precision, err := strconv.Atoi(args[0])
+			precision, err := strconv.Atoi(parameters[0])
 			if err != nil {
-				return typing.Invalid, fmt.Errorf("unable to parse type argument: %w", err)
+				return typing.Invalid, fmt.Errorf("unable to parse type parameter: %w", err)
 			}
 
 			return typing.KindDetails{
@@ -94,7 +94,7 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.
 				OptionalStringPrecision: ptr.ToInt(precision),
 			}, nil
 		default:
-			return typing.Invalid, fmt.Errorf("expected at most one type argument, received %d", len(args))
+			return typing.Invalid, fmt.Errorf("expected at most one type parameters, received %d", len(parameters))
 		}
 
 	case "boolean":
