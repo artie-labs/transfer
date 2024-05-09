@@ -127,12 +127,12 @@ func (s *Store) reestablishConnection() error {
 	return nil
 }
 
-func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
-	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, s.Dialect())
+func generateDedupeQueries(dialect sql.Dialect, tableID, stagingTableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
+	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, dialect)
 
 	orderColsToIterate := primaryKeysEscaped
 	if topicConfig.IncludeArtieUpdatedAt {
-		orderColsToIterate = append(orderColsToIterate, s.Dialect().QuoteIdentifier(constants.UpdateColumnMarker))
+		orderColsToIterate = append(orderColsToIterate, dialect.QuoteIdentifier(constants.UpdateColumnMarker))
 	}
 
 	var orderByCols []string
@@ -169,7 +169,7 @@ func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentif
 // These queries are inspired and modified from: https://stackoverflow.com/a/71515946
 func (s *Store) Dedupe(tableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
 	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
-	dedupeQueries := s.generateDedupeQueries(tableID, stagingTableID, primaryKeys, topicConfig)
+	dedupeQueries := generateDedupeQueries(s.Dialect(), tableID, stagingTableID, primaryKeys, topicConfig)
 	return destination.ExecStatements(s, dedupeQueries)
 }
 
