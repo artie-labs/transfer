@@ -56,9 +56,10 @@ func (d *DDLTestSuite) Test_DropTemporaryTable() {
 	for i, _dwh := range []destination.DataWarehouse{d.bigQueryStore, d.snowflakeStagesStore} {
 		var fakeStore *mocks.FakeStore
 		if i == 0 {
-			fakeStore = d.fakeSnowflakeStagesStore
-		} else {
 			fakeStore = d.fakeBigQueryStore
+		} else {
+			fakeStore = d.fakeSnowflakeStagesStore
+
 		}
 
 		for _, doNotDropTable := range doNotDropTables {
