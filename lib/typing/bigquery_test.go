@@ -50,7 +50,7 @@ func TestBigQueryTypeToKind(t *testing.T) {
 	}
 
 	for bqCol, expectedKind := range bqColToExpectedKind {
-		kd := BigQueryTypeToKind(strings.ToLower(bqCol))
+		kd := BigQueryTypeToKind(bqCol)
 		assert.Equal(t, expectedKind.Kind, kd.Kind, bqCol)
 	}
 }
