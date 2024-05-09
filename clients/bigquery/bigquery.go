@@ -24,7 +24,6 @@ import (
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
-	"github.com/artie-labs/transfer/lib/typing"
 )
 
 const (
@@ -169,7 +168,7 @@ func generateDedupeQueries(dialect sql.Dialect, tableID, stagingTableID types.Ta
 	parts = append(parts,
 		fmt.Sprintf(`CREATE OR REPLACE TABLE %s OPTIONS (expiration_timestamp = TIMESTAMP("%s")) AS (SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 2)`,
 			stagingTableID.FullyQualifiedName(),
-			typing.ExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)),
+			sql.BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)),
 			tableID.FullyQualifiedName(),
 			strings.Join(primaryKeysEscaped, ", "),
 			strings.Join(orderByCols, ", "),
