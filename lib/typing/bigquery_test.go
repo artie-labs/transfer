@@ -1,7 +1,6 @@
 package typing
 
-import (
-	"strings"
+import (	
 	"testing"
 	"time"
 
@@ -11,7 +10,7 @@ import (
 
 func TestBigQueryTypeToKind(t *testing.T) {
 	bqColToExpectedKind := map[string]KindDetails{
-		//// Number
+		// Number
 		"numeric":           EDecimal,
 		"numeric(5)":        Integer,
 		"numeric(5, 0)":     Integer,
@@ -50,7 +49,7 @@ func TestBigQueryTypeToKind(t *testing.T) {
 	}
 
 	for bqCol, expectedKind := range bqColToExpectedKind {
-		kd := BigQueryTypeToKind(strings.ToLower(bqCol))
+		kd := BigQueryTypeToKind(bqCol)
 		assert.Equal(t, expectedKind.Kind, kd.Kind, bqCol)
 	}
 }
