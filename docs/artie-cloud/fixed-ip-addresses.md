@@ -61,7 +61,7 @@ When you add IPs, please add both the **control plane** and your **data plane**.
 
 ### Which data plane is my account in?
 
-You can see which data plane you are in by going to [https://app.artie.so/settings](https://app.artie.so/settings) and see `Data Processing Location` under `Advanced Settings`.
+You can see which data plane you are in by going to [https://app.artie.com/settings](https://app.artie.com/settings) and see `Data Processing Location` under `Advanced Settings`.
 
 <figure><img src="../.gitbook/assets/image (44).png" alt="" width="563"><figcaption></figcaption></figure>
 
