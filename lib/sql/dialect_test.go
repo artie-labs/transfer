@@ -1,6 +1,7 @@
 package sql
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -32,7 +33,7 @@ func TestSnowflakeDialect_QuoteIdentifier(t *testing.T) {
 	assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("FOO"))
 }
 
-func Test_DataTypeForKind(t *testing.T) {
+func TestDialect_DataTypeForKind(t *testing.T) {
 	type _tc struct {
 		kd                    typing.KindDetails
 		expectedSnowflakeType string
@@ -75,5 +76,69 @@ func Test_DataTypeForKind(t *testing.T) {
 
 		assert.Equal(t, tc.expectedMSSQLType, MSSQLDialect{}.DataTypeForKind(tc.kd, false), idx)
 		assert.Equal(t, tc.expectedMSSQLTypePk, MSSQLDialect{}.DataTypeForKind(tc.kd, true), idx)
+	}
+}
+
+func TestDialect_IsColumnAlreadyExistsErr(t *testing.T) {
+	testCases := []struct {
+		name           string
+		err            error
+		dialect        Dialect
+		expectedResult bool
+	}{
+		{
+			name:           "Redshift actual error",
+			dialect:        RedshiftDialect{},
+			err:            fmt.Errorf(`ERROR: column "foo" of relation "statement" already exists [ErrorId: 1-64da9ea9]`),
+			expectedResult: true,
+		},
+		{
+			name:    "Redshift error, but irrelevant",
+			dialect: RedshiftDialect{},
+			err:     fmt.Errorf("foo"),
+		},
+		{
+			name:           "MSSQL, table already exist error",
+			dialect:        MSSQLDialect{},
+			err:            fmt.Errorf(`There is already an object named 'customers' in the database.`),
+			expectedResult: true,
+		},
+		{
+			name:           "MSSQL, column already exists error",
+			dialect:        MSSQLDialect{},
+			err:            fmt.Errorf("Column names in each table must be unique. Column name 'first_name' in table 'users' is specified more than once."),
+			expectedResult: true,
+		},
+		{
+			name:    "MSSQL, random error",
+			err:     fmt.Errorf("hello there qux"),
+			dialect: MSSQLDialect{},
+		},
+		{
+			name:           "BigQuery, column already exists error",
+			dialect:        BigQueryDialect{},
+			err:            fmt.Errorf("Column already exists"),
+			expectedResult: true,
+		},
+		{
+			name:    "BigQuery, random error",
+			dialect: BigQueryDialect{},
+			err:     fmt.Errorf("hello there qux"),
+		},
+		{
+			name:           "Snowflake, column already exists error",
+			dialect:        SnowflakeDialect{},
+			err:            fmt.Errorf("Column already exists"),
+			expectedResult: true,
+		},
+		{
+			name:    "Snowflake, random error",
+			dialect: SnowflakeDialect{},
+			err:     fmt.Errorf("hello there qux"),
+		},
+	}
+
+	for _, tc := range testCases {
+		assert.Equal(t, tc.expectedResult, tc.dialect.IsColumnAlreadyExistsErr(tc.err), tc.name)
 	}
 }

@@ -157,9 +157,9 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 
 		slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
 		if _, err = a.Dwh.Exec(sqlQuery); err != nil {
-			if ColumnAlreadyExistErr(err, a.Dwh.Label()) {
+			if a.Dwh.Dialect().IsColumnAlreadyExistsErr(err) {
 				err = nil
-			} else if err != nil {
+			} else {
 				return err
 			}
 		}
@@ -175,9 +175,9 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 
 			slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
 			if _, err = a.Dwh.Exec(sqlQuery); err != nil {
-				if ColumnAlreadyExistErr(err, a.Dwh.Label()) {
+				if a.Dwh.Dialect().IsColumnAlreadyExistsErr(err) {
 					err = nil
-				} else if err != nil {
+				} else {
 					return fmt.Errorf("failed to apply ddl, sql: %v, err: %w", sqlQuery, err)
 				}
 			}
