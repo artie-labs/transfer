@@ -126,7 +126,7 @@ func TestSnowflakeTypeNoDataLoss(t *testing.T) {
 	}
 
 	for _, kindDetail := range kindDetails {
-		kd, err := DwhTypeToKind(constants.Snowflake, kindToSnowflake(kindDetail), "")
+		kd, err := DwhTypeToKind(constants.Snowflake, KindToSnowflake(kindDetail), "")
 		assert.NoError(t, err)
 		assert.Equal(t, kindDetail, kd)
 	}

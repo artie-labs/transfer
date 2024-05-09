@@ -144,7 +144,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 		assert.NoError(d.T(), alterTableArgs.AlterTable(col))
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, d.bigQueryStore.Dialect().QuoteIdentifier(col.Name()),
-			typing.KindToDWHType(kind, d.bigQueryStore.Label(), false)), query)
+			typing.KindToBigQuery(kind)), query)
 		callIdx += 1
 	}
 
@@ -203,7 +203,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 		assert.NoError(d.T(), alterTableArgs.AlterTable(column))
 		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, d.bigQueryStore.Dialect().QuoteIdentifier(column.Name()),
-			typing.KindToDWHType(column.KindDetails, d.bigQueryStore.Label(), false)), query)
+			typing.KindToBigQuery(column.KindDetails)), query)
 		callIdx += 1
 	}
 

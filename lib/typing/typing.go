@@ -99,21 +99,6 @@ func IsJSON(str string) bool {
 	return false
 }
 
-func KindToDWHType(kd KindDetails, dwh constants.DestinationKind, isPk bool) string {
-	switch dwh {
-	case constants.Snowflake:
-		return kindToSnowflake(kd)
-	case constants.BigQuery:
-		return kindToBigQuery(kd)
-	case constants.Redshift:
-		return kindToRedshift(kd)
-	case constants.MSSQL:
-		return kindToMSSQL(kd, isPk)
-	}
-
-	return ""
-}
-
 func DwhTypeToKind(dwh constants.DestinationKind, dwhType, stringPrecision string) (KindDetails, error) {
 	dwhType = strings.ToLower(dwhType)
 	var kd KindDetails
