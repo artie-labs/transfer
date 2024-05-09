@@ -136,7 +136,7 @@ func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentif
 		// It looks funny, but we do need a WHERE clause to make the query valid.
 		fmt.Sprintf("CREATE TEMPORARY TABLE %s AS (SELECT * FROM %s WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 2)",
 			// Temporary tables may not specify a schema name
-			stagingTableID.Table(),
+			stagingTableID.EscapedTable(),
 			tableID.FullyQualifiedName(),
 			strings.Join(primaryKeysEscaped, ", "),
 			strings.Join(orderByCols, ", "),
@@ -146,14 +146,14 @@ func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentif
 	var whereClauses []string
 	for _, primaryKeyEscaped := range primaryKeysEscaped {
 		// Redshift does not support table aliasing for deletes.
-		whereClauses = append(whereClauses, fmt.Sprintf("%s.%s = t2.%s", tableID.Table(), primaryKeyEscaped, primaryKeyEscaped))
+		whereClauses = append(whereClauses, fmt.Sprintf("%s.%s = t2.%s", tableID.EscapedTable(), primaryKeyEscaped, primaryKeyEscaped))
 	}
 
 	// Delete duplicates in the main table based on matches with the staging table
 	parts = append(parts,
 		fmt.Sprintf("DELETE FROM %s USING %s t2 WHERE %s",
 			tableID.FullyQualifiedName(),
-			stagingTableID.Table(),
+			stagingTableID.EscapedTable(),
 			strings.Join(whereClauses, " AND "),
 		),
 	)
@@ -162,7 +162,7 @@ func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentif
 	parts = append(parts,
 		fmt.Sprintf("INSERT INTO %s SELECT * FROM %s",
 			tableID.FullyQualifiedName(),
-			stagingTableID.Table(),
+			stagingTableID.EscapedTable(),
 		),
 	)
 
