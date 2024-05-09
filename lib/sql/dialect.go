@@ -11,6 +11,7 @@ type Dialect interface {
 	QuoteIdentifier(identifier string) string
 	EscapeStruct(value string) string
 	DataTypeForKind(kd typing.KindDetails, isPk bool) string
+	IsColumnAlreadyExistErr(err error) bool
 }
 
 type BigQueryDialect struct{}
@@ -28,6 +29,11 @@ func (BigQueryDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
 	return typing.KindToBigQuery(kd)
 }
 
+func (BigQueryDialect) IsColumnAlreadyExistErr(err error) bool {
+	// Error ends up looking like something like this: Column already exists: _string at [1:39]
+	return strings.Contains(err.Error(), "Column already exists")
+}
+
 type MSSQLDialect struct{}
 
 func (MSSQLDialect) QuoteIdentifier(identifier string) string {
@@ -40,6 +46,23 @@ func (MSSQLDialect) EscapeStruct(value string) string {
 
 func (MSSQLDialect) DataTypeForKind(kd typing.KindDetails, isPk bool) string {
 	return typing.KindToMSSQL(kd, isPk)
+}
+
+func (MSSQLDialect) IsColumnAlreadyExistErr(err error) bool {
+	alreadyExistErrs := []string{
+		// Column names in each table must be unique. Column name 'first_name' in table 'users' is specified more than once.
+		"Column names in each table must be unique",
+		// There is already an object named 'customers' in the database.
+		"There is already an object named",
+	}
+
+	for _, alreadyExistErr := range alreadyExistErrs {
+		if alreadyExist := strings.Contains(err.Error(), alreadyExistErr); alreadyExist {
+			return alreadyExist
+		}
+	}
+
+	return false
 }
 
 type RedshiftDialect struct{}
@@ -57,6 +80,11 @@ func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
 	return typing.KindToRedshift(kd)
 }
 
+func (RedshiftDialect) IsColumnAlreadyExistErr(err error) bool {
+	// Redshift's error: ERROR: column "foo" of relation "statement" already exists
+	return strings.Contains(err.Error(), "already exists")
+}
+
 type SnowflakeDialect struct{}
 
 func (sd SnowflakeDialect) QuoteIdentifier(identifier string) string {
@@ -69,4 +97,8 @@ func (SnowflakeDialect) EscapeStruct(value string) string {
 
 func (SnowflakeDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
 	return typing.KindToSnowflake(kd)
+}
+func (SnowflakeDialect) IsColumnAlreadyExistErr(err error) bool {
+	// Snowflake doesn't have column mutations (IF NOT EXISTS)
+	return strings.Contains(err.Error(), "already exists")
 }
