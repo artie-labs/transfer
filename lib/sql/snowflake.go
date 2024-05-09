@@ -86,7 +86,7 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.
 		case 1:
 			precision, err := strconv.Atoi(parameters[0])
 			if err != nil {
-				return typing.Invalid, fmt.Errorf("unable to parse type parameter: %w", err)
+				return typing.Invalid, fmt.Errorf("unable to convert type parameter to an int: %w", err)
 			}
 
 			return typing.KindDetails{
