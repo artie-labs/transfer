@@ -71,15 +71,7 @@ func (a AlterTableArgs) Validate() error {
 	return nil
 }
 
-func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
-	if err := a.Validate(); err != nil {
-		return err
-	}
-
-	if len(cols) == 0 {
-		return nil
-	}
-
+func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []columns.Column) {
 	var mutateCol []columns.Column
 	// It's okay to combine since args.ColumnOp only takes one of: `Delete` or `Add`
 	var colSQLParts []string
@@ -123,7 +115,6 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 
 	fqTableName := a.TableID.FullyQualifiedName()
 
-	var err error
 	var alterStatements []string
 	if a.CreateTable {
 		var sqlQuery string
@@ -152,21 +143,31 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 		}
 	}
 
+	return alterStatements, mutateCol
+}
+
+func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
+	if err := a.Validate(); err != nil {
+		return err
+	}
+
+	if len(cols) == 0 {
+		return nil
+	}
+
+	alterStatements, mutateCol := a.buildStatements(cols...)
+
 	for _, sqlQuery := range alterStatements {
 		slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
-		if _, err = a.Dwh.Exec(sqlQuery); err != nil {
-			if a.Dwh.Dialect().IsColumnAlreadyExistsErr(err) {
-				err = nil
-			} else {
+		if _, err := a.Dwh.Exec(sqlQuery); err != nil {
+			if !a.Dwh.Dialect().IsColumnAlreadyExistsErr(err) {
 				return fmt.Errorf("failed to apply ddl, sql: %q, err: %w", sqlQuery, err)
 			}
 		}
 	}
 
-	if err == nil {
-		// createTable = false since it all successfully updated.
-		a.Tc.MutateInMemoryColumns(false, a.ColumnOp, mutateCol...)
-	}
+	// createTable = false since it all successfully updated.
+	a.Tc.MutateInMemoryColumns(false, a.ColumnOp, mutateCol...)
 
 	return nil
 }
