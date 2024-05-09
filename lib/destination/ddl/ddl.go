@@ -37,8 +37,8 @@ func DropTemporaryTable(dwh destination.DataWarehouse, fqTableName string, shoul
 }
 
 type AlterTableArgs struct {
-	Dwh destination.DataWarehouse
-	Tc  *types.DwhTableConfig
+	Dialect sql.Dialect
+	Tc      *types.DwhTableConfig
 	// ContainsOtherOperations - this is sourced from tableData `containOtherOperations`
 	ContainOtherOperations bool
 	TableID                types.TableIdentifier
@@ -52,6 +52,10 @@ type AlterTableArgs struct {
 }
 
 func (a AlterTableArgs) Validate() error {
+	if a.Dialect == nil {
+		return fmt.Errorf("dialect cannot be nil")
+	}
+
 	// You can't DROP a column and try to create a table at the same time.
 	if a.ColumnOp == constants.Delete && a.CreateTable {
 		return fmt.Errorf("incompatible operation - cannot drop columns and create table at the same time")
@@ -91,22 +95,22 @@ func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []col
 		mutateCol = append(mutateCol, col)
 		switch a.ColumnOp {
 		case constants.Add:
-			colName := a.Dwh.Dialect().QuoteIdentifier(col.Name())
+			colName := a.Dialect.QuoteIdentifier(col.Name())
 
 			if col.PrimaryKey() && a.Mode != config.History {
 				// Don't create a PK for history mode because it's append-only, so the primary key should not be enforced.
 				pkCols = append(pkCols, colName)
 			}
 
-			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, colName, a.Dwh.Dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey())))
+			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, colName, a.Dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey())))
 		case constants.Delete:
-			colSQLParts = append(colSQLParts, a.Dwh.Dialect().QuoteIdentifier(col.Name()))
+			colSQLParts = append(colSQLParts, a.Dialect.QuoteIdentifier(col.Name()))
 		}
 	}
 
 	if len(pkCols) > 0 {
 		pkStatement := fmt.Sprintf("PRIMARY KEY (%s)", strings.Join(pkCols, ", "))
-		if _, ok := a.Dwh.Dialect().(sql.BigQueryDialect); ok {
+		if _, ok := a.Dialect.(sql.BigQueryDialect); ok {
 			pkStatement += " NOT ENFORCED"
 		}
 
@@ -119,9 +123,9 @@ func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []col
 	if a.CreateTable {
 		var sqlQuery string
 		if a.TemporaryTable {
-			sqlQuery = a.Dwh.Dialect().BuildCreateTempTableQuery(fqTableName, colSQLParts)
+			sqlQuery = a.Dialect.BuildCreateTempTableQuery(fqTableName, colSQLParts)
 		} else {
-			if _, ok := a.Dwh.Dialect().(sql.MSSQLDialect); ok {
+			if _, ok := a.Dialect.(sql.MSSQLDialect); ok {
 				// MSSQL doesn't support IF NOT EXISTS
 				sqlQuery = fmt.Sprintf("CREATE TABLE %s (%s)", fqTableName, strings.Join(colSQLParts, ","))
 			} else {
@@ -133,7 +137,7 @@ func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []col
 	} else {
 		for _, colSQLPart := range colSQLParts {
 			var sqlQuery string
-			if _, ok := a.Dwh.Dialect().(sql.MSSQLDialect); ok {
+			if _, ok := a.Dialect.(sql.MSSQLDialect); ok {
 				// MSSQL doesn't support the COLUMN keyword
 				sqlQuery = fmt.Sprintf("ALTER TABLE %s %s %s", fqTableName, a.ColumnOp, colSQLPart)
 			} else {
@@ -146,7 +150,7 @@ func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []col
 	return alterStatements, mutateCol
 }
 
-func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
+func (a AlterTableArgs) AlterTable(dwh destination.DataWarehouse, cols ...columns.Column) error {
 	if err := a.Validate(); err != nil {
 		return err
 	}
@@ -159,8 +163,8 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 
 	for _, sqlQuery := range alterStatements {
 		slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
-		if _, err := a.Dwh.Exec(sqlQuery); err != nil {
-			if !a.Dwh.Dialect().IsColumnAlreadyExistsErr(err) {
+		if _, err := dwh.Exec(sqlQuery); err != nil {
+			if !a.Dialect.IsColumnAlreadyExistsErr(err) {
 				return fmt.Errorf("failed to apply ddl, sql: %q, err: %w", sqlQuery, err)
 			}
 		}

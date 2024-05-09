@@ -53,7 +53,7 @@ func (d *DDLTestSuite) Test_CreateTable() {
 		},
 	} {
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:         dwhTc._dwh,
+			Dialect:     dwhTc._dwh.Dialect(),
 			Tc:          dwhTc._tableConfig,
 			TableID:     dwhTc._tableID,
 			CreateTable: dwhTc._tableConfig.CreateTable(),
@@ -61,7 +61,7 @@ func (d *DDLTestSuite) Test_CreateTable() {
 			Mode:        config.Replication,
 		}
 
-		assert.NoError(d.T(), alterTableArgs.AlterTable(columns.NewColumn("name", typing.String)))
+		assert.NoError(d.T(), alterTableArgs.AlterTable(dwhTc._dwh, columns.NewColumn("name", typing.String)))
 		assert.Equal(d.T(), 1, dwhTc._fakeStore.ExecCallCount())
 
 		query, _ := dwhTc._fakeStore.ExecArgsForCall(0)
@@ -118,7 +118,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 		tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 
 		alterTableArgs := ddl.AlterTableArgs{
-			Dwh:         d.snowflakeStagesStore,
+			Dialect:     d.snowflakeStagesStore.Dialect(),
 			Tc:          tc,
 			TableID:     tableID,
 			CreateTable: tc.CreateTable(),
@@ -127,7 +127,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 			Mode:        config.Replication,
 		}
 
-		assert.NoError(d.T(), alterTableArgs.AlterTable(testCase.cols...), testCase.name)
+		assert.NoError(d.T(), alterTableArgs.AlterTable(d.snowflakeStagesStore, testCase.cols...), testCase.name)
 
 		execQuery, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(index)
 		assert.Equal(d.T(), testCase.expectedQuery, execQuery, testCase.name)

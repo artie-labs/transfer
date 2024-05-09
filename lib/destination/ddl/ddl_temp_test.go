@@ -11,6 +11,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -21,13 +22,15 @@ func (d *DDLTestSuite) TestValidate_AlterTableArgs() {
 		CreateTable: true,
 		Mode:        config.Replication,
 	}
+	assert.ErrorContains(d.T(), a.Validate(), "dialect cannot be nil")
 
-	assert.Contains(d.T(), a.Validate().Error(), "incompatible operation - cannot drop columns and create table at the same time")
+	a.Dialect = sql.BigQueryDialect{}
+	assert.ErrorContains(d.T(), a.Validate(), "incompatible operation - cannot drop columns and create table at the same time")
 
 	a.ColumnOp = constants.Add
 	a.CreateTable = false
 	a.TemporaryTable = true
-	assert.Contains(d.T(), a.Validate().Error(), "incompatible operation - we should not be altering temporary tables, only create")
+	assert.ErrorContains(d.T(), a.Validate(), "incompatible operation - we should not be altering temporary tables, only create")
 }
 
 func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
@@ -35,7 +38,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	snowflakeTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 	args := ddl.AlterTableArgs{
-		Dwh:            d.snowflakeStagesStore,
+		Dialect:        d.snowflakeStagesStore.Dialect(),
 		Tc:             snowflakeTc,
 		TableID:        tableID,
 		CreateTable:    true,
@@ -46,19 +49,19 @@ func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 	}
 
 	// No columns.
-	assert.NoError(d.T(), args.AlterTable())
+	assert.NoError(d.T(), args.AlterTable(d.snowflakeStagesStore))
 
 	args.ColumnOp = constants.Delete
-	assert.ErrorContains(d.T(), args.AlterTable(), "incompatible operation - cannot drop columns and create table at the same time")
+	assert.ErrorContains(d.T(), args.AlterTable(d.snowflakeStagesStore), "incompatible operation - cannot drop columns and create table at the same time")
 
 	// Change it to SFLK + Stage
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 	snowflakeStagesTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
-	args.Dwh = d.snowflakeStagesStore
+	args.Dialect = d.snowflakeStagesStore.Dialect()
 	args.Tc = snowflakeStagesTc
 	args.CreateTable = false
 
-	assert.ErrorContains(d.T(), args.AlterTable(), "incompatible operation - we should not be altering temporary tables, only create")
+	assert.ErrorContains(d.T(), args.AlterTable(d.snowflakeStagesStore), "incompatible operation - we should not be altering temporary tables, only create")
 }
 
 func (d *DDLTestSuite) TestCreateTemporaryTable() {
@@ -69,7 +72,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 		d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 		sflkStageTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
 		args := ddl.AlterTableArgs{
-			Dwh:            d.snowflakeStagesStore,
+			Dialect:        d.snowflakeStagesStore.Dialect(),
 			Tc:             sflkStageTc,
 			TableID:        tableID,
 			CreateTable:    true,
@@ -79,7 +82,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 			Mode:           config.Replication,
 		}
 
-		assert.NoError(d.T(), args.AlterTable(columns.NewColumn("foo", typing.String), columns.NewColumn("bar", typing.Float), columns.NewColumn("start", typing.String)))
+		assert.NoError(d.T(), args.AlterTable(d.snowflakeStagesStore, columns.NewColumn("foo", typing.String), columns.NewColumn("bar", typing.Float), columns.NewColumn("start", typing.String)))
 		assert.Equal(d.T(), 1, d.fakeSnowflakeStagesStore.ExecCallCount())
 		query, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(0)
 
@@ -94,7 +97,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 		d.bigQueryStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 		bqTc := d.bigQueryStore.GetConfigMap().TableConfig(tableID)
 		args := ddl.AlterTableArgs{
-			Dwh:            d.bigQueryStore,
+			Dialect:        d.bigQueryStore.Dialect(),
 			Tc:             bqTc,
 			TableID:        tableID,
 			CreateTable:    true,
@@ -104,7 +107,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 			Mode:           config.Replication,
 		}
 
-		assert.NoError(d.T(), args.AlterTable(columns.NewColumn("foo", typing.String), columns.NewColumn("bar", typing.Float), columns.NewColumn("select", typing.String)))
+		assert.NoError(d.T(), args.AlterTable(d.bigQueryStore, columns.NewColumn("foo", typing.String), columns.NewColumn("bar", typing.Float), columns.NewColumn("select", typing.String)))
 		assert.Equal(d.T(), 1, d.fakeBigQueryStore.ExecCallCount())
 		bqQuery, _ := d.fakeBigQueryStore.ExecArgsForCall(0)
 		// Cutting off the expiration_timestamp since it's time based.
