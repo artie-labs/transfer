@@ -79,7 +79,7 @@ func TestDialect_DataTypeForKind(t *testing.T) {
 	}
 }
 
-func TestDialect_IsColumnAlreadyExistErrs(t *testing.T) {
+func TestDialect_IsColumnAlreadyExistsErr(t *testing.T) {
 	testCases := []struct {
 		name           string
 		err            error
