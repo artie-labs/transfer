@@ -32,16 +32,24 @@ func (BigQueryDialect) EscapeStruct(value string) string {
 }
 
 func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) string {
+	// Doesn't look like we need to do any special type mapping.
 	switch kindDetails.Kind {
 	case typing.Float.Kind:
 		return "float64"
 	case typing.Array.Kind:
+		// This is because BigQuery requires typing within the element of an array
+		// IMO, a string type is the least controversial data type (others being bool, number, struct).
+		// With String, we can always type cast the child elements.
+		// BQ does this because 2d+ arrays are not allowed. See: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#array_type
 		return "array<string>"
 	case typing.Struct.Kind:
+		// Struct is a tighter version of JSON that requires type casting like Struct<int64>
 		return "json"
 	case typing.ETime.Kind:
 		switch kindDetails.ExtendedTimeDetails.Type {
 		case ext.DateTimeKindType:
+			// https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#datetime_type
+			// We should be using TIMESTAMP since it's an absolute point in time.
 			return "timestamp"
 		case ext.DateKindType:
 			return "date"
@@ -51,34 +59,47 @@ func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) s
 	case typing.EDecimal.Kind:
 		return kindDetails.ExtendedDecimalDetails.BigQueryKind()
 	}
+
 	return kindDetails.Kind
 }
 
 func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindDetails, error) {
 	rawBqType = strings.ToLower(rawBqType)
+
 	bqType := rawBqType
 	if len(bqType) == 0 {
 		return typing.Invalid, nil
 	}
+
 	idxStop := len(bqType)
+	// Trim STRING (10) to String
 	if idx := strings.Index(bqType, "("); idx > 0 {
 		idxStop = idx
 	}
+
 	bqType = bqType[:idxStop]
+
+	// Trim Struct<k type> to Struct
 	idxStop = len(bqType)
 	if idx := strings.Index(bqType, "<"); idx > 0 {
 		idxStop = idx
 	}
+
+	// Geography, geometry date, time, varbinary, binary are currently not supported.
 	switch strings.TrimSpace(bqType[:idxStop]) {
 	case "numeric":
 		if rawBqType == "numeric" || rawBqType == "bignumeric" {
+			// This is a specific thing to BigQuery
+			// A `NUMERIC` type without precision or scale specified is NUMERIC(38, 9)
 			return typing.EDecimal, nil
 		}
+
 		return typing.ParseNumeric(typing.DefaultPrefix, rawBqType), nil
 	case "bignumeric":
 		if rawBqType == "bignumeric" {
 			return typing.EDecimal, nil
 		}
+
 		return typing.ParseNumeric("bignumeric", rawBqType), nil
 	case "decimal", "float", "float64", "bigdecimal":
 		return typing.Float, nil
@@ -89,6 +110,7 @@ func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindD
 	case "bool", "boolean":
 		return typing.Boolean, nil
 	case "struct", "json", "record":
+		// Record is a legacy BQ object that maps to a JSON.
 		return typing.Struct, nil
 	case "array":
 		return typing.Array, nil
