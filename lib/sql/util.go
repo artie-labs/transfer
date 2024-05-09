@@ -35,8 +35,8 @@ func ParseDataTypeDefinition(value string) (string, []string, error) {
 		}
 
 		parameters := strings.Split(value[idx+1:len(value)-1], ",")
-		for i, arg := range parameters {
-			parameters[i] = strings.TrimSpace(arg)
+		for i, parameter := range parameters {
+			parameters[i] = strings.TrimSpace(parameter)
 		}
 		return strings.TrimSpace(value[:idx]), parameters, nil
 	}
