@@ -78,7 +78,7 @@ func TestParseDataTypeDefinition(t *testing.T) {
 	}
 	{
 		// Spaces + args:
-		dataType, args, err := ParseDataTypeDefinition("   VARCHAR   (1234)  ")
+		dataType, args, err := ParseDataTypeDefinition("   VARCHAR   (   1234   )  ")
 		assert.NoError(t, err)
 		assert.Equal(t, "VARCHAR", dataType)
 		assert.Equal(t, []string{"1234"}, args)
