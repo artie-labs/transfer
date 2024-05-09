@@ -9,7 +9,9 @@ import (
 
 const StreamingTimeFormat = "15:04:05"
 
-func bigQueryTypeToKind(rawBqType string) KindDetails {
+func BigQueryTypeToKind(rawBqType string) KindDetails {
+	rawBqType = strings.ToLower(rawBqType)
+
 	bqType := rawBqType
 	if len(bqType) == 0 {
 		return Invalid
