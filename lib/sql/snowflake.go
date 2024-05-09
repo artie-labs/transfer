@@ -67,7 +67,7 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.
 	}
 
 	// Geography, geometry date, time, varbinary, binary are currently not supported.
-	switch strings.TrimSpace(dataType) {
+	switch dataType {
 	case "number":
 		return typing.ParseNumeric("number", snowflakeType), nil
 	case "numeric":
