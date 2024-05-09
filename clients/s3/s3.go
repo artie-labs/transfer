@@ -21,7 +21,6 @@ import (
 	"github.com/xitongsys/parquet-go/parquet"
 
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/parquetutil"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -44,10 +43,6 @@ func (s *Store) Validate() error {
 	}
 
 	return nil
-}
-
-func (s *Store) Label() constants.DestinationKind {
-	return constants.S3
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
