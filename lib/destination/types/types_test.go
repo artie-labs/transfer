@@ -29,6 +29,7 @@ func generateDwhTableCfg() *DwhTableConfig {
 	}
 }
 
+// TODO: Rip this out by moving `TableIdentifier` to a separate package since it'll have a cyclical dependency.
 type MockTableIdentifier struct{ fqName string }
 
 func (MockTableIdentifier) Table() string                          { panic("not implemented") }
