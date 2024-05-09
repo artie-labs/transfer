@@ -14,12 +14,11 @@ jobs:
         env:
           SC_VERSION: 2023.1.7
         run: |
+          make generate
           SC_URL="https://github.com/dominikh/go-tools/releases/download/$SC_VERSION/staticcheck_linux_amd64.tar.gz"
           wget -q ${SC_URL} -O - | tar -xzf - --strip-components 1 -C /usr/local/bin staticcheck/staticcheck
           make static
       - name: Run test
-        run: |
-          make generate
-          make test
+        run: make test
       - name: Run race condition check
         run: make race
