@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -16,8 +17,11 @@ func TestMergeStatement_TempTable(t *testing.T) {
 	cols.AddColumn(columns.NewColumn("name", typing.String))
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("customers.orders")
+
 	mergeArg := &MergeArgument{
-		TableID:     MockTableIdentifier{"customers.orders"},
+		TableID:     fakeTableID,
 		SubQuery:    "customers.orders_tmp",
 		PrimaryKeys: []columns.Column{columns.NewColumn("order_id", typing.Invalid)},
 		Columns:     cols.ValidColumns(),
@@ -38,8 +42,11 @@ func TestMergeStatement_JSONKey(t *testing.T) {
 	cols.AddColumn(columns.NewColumn("name", typing.String))
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("customers.orders")
+
 	mergeArg := &MergeArgument{
-		TableID:     MockTableIdentifier{"customers.orders"},
+		TableID:     fakeTableID,
 		SubQuery:    "customers.orders_tmp",
 		PrimaryKeys: []columns.Column{orderOIDCol},
 		Columns:     cols.ValidColumns(),
@@ -60,7 +67,7 @@ func TestMergeArgument_BuildStatements_BigQuery(t *testing.T) {
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	mergeArg := &MergeArgument{
-		TableID:     MockTableIdentifier{"customers.orders"},
+		TableID:     &mocks.FakeTableIdentifier{},
 		SubQuery:    "{SUB_QUERY}",
 		PrimaryKeys: []columns.Column{orderOIDCol},
 		Columns:     cols.ValidColumns(),
