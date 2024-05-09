@@ -23,8 +23,8 @@ func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
 	return typing.KindToRedshift(kd)
 }
 
-func (RedshiftDialect) KindForDataType(_type string, stringPrecision string) typing.KindDetails {
-	return typing.RedshiftTypeToKind(_type, stringPrecision)
+func (RedshiftDialect) KindForDataType(_type string, stringPrecision string) (typing.KindDetails, error) {
+	return typing.RedshiftTypeToKind(_type, stringPrecision), nil
 }
 
 func (RedshiftDialect) IsColumnAlreadyExistsErr(err error) bool {

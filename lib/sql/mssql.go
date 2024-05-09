@@ -22,8 +22,8 @@ func (MSSQLDialect) DataTypeForKind(kd typing.KindDetails, isPk bool) string {
 	return typing.KindToMSSQL(kd, isPk)
 }
 
-func (MSSQLDialect) KindForDataType(_type string, stringPrecision string) typing.KindDetails {
-	return typing.MSSQLTypeToKind(_type, stringPrecision)
+func (MSSQLDialect) KindForDataType(_type string, stringPrecision string) (typing.KindDetails, error) {
+	return typing.MSSQLTypeToKind(_type, stringPrecision), nil
 }
 
 func (MSSQLDialect) IsColumnAlreadyExistsErr(err error) bool {

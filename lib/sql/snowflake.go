@@ -49,50 +49,50 @@ func (SnowflakeDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) 
 
 // KindForDataType converts a Snowflake type to a KindDetails.
 // Following this spec: https://docs.snowflake.com/en/sql-reference/intro-summary-data-types.html
-func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) typing.KindDetails {
+func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.KindDetails, error) {
 	snowflakeType = strings.ToLower(snowflakeType)
 
 	// We need to strip away the variable
 	// For example, a Column can look like: TEXT, or Number(38, 0) or VARCHAR(255).
 	// We need to strip out all the content from ( ... )
 	if len(snowflakeType) == 0 {
-		return typing.Invalid
+		return typing.Invalid, nil
 	}
 
-	idxStop := len(snowflakeType)
-	if idx := strings.Index(snowflakeType, "("); idx > 0 {
-		idxStop = idx
+	dataType, _, err := ParseDataTypeDefinition(snowflakeType)
+	if err != nil {
+		return typing.Invalid, err
 	}
 
 	// Geography, geometry date, time, varbinary, binary are currently not supported.
-	switch strings.TrimSpace(snowflakeType[:idxStop]) {
+	switch strings.TrimSpace(dataType) {
 	case "number":
-		return typing.ParseNumeric("number", snowflakeType)
+		return typing.ParseNumeric("number", snowflakeType), nil
 	case "numeric":
-		return typing.ParseNumeric(typing.DefaultPrefix, snowflakeType)
+		return typing.ParseNumeric(typing.DefaultPrefix, snowflakeType), nil
 	case "decimal":
-		return typing.EDecimal
+		return typing.EDecimal, nil
 	case "float", "float4",
 		"float8", "double", "double precision", "real":
-		return typing.Float
+		return typing.Float, nil
 	case "int", "integer", "bigint", "smallint", "tinyint", "byteint":
-		return typing.Integer
+		return typing.Integer, nil
 	case "varchar", "char", "character", "string", "text":
-		return typing.String
+		return typing.String, nil
 	case "boolean":
-		return typing.Boolean
+		return typing.Boolean, nil
 	case "variant", "object":
-		return typing.Struct
+		return typing.Struct, nil
 	case "array":
-		return typing.Array
+		return typing.Array, nil
 	case "datetime", "timestamp", "timestamp_ltz", "timestamp_ntz", "timestamp_tz":
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)
+		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType), nil
 	case "time":
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
+		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType), nil
 	case "date":
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType)
+		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType), nil
 	default:
-		return typing.Invalid
+		return typing.Invalid, nil
 	}
 }
 
