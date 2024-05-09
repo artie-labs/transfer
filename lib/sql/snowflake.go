@@ -48,9 +48,9 @@ func (SnowflakeDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) 
 
 }
 
+// KindForDataType converts a Snowflake type to a KindDetails.
+// Following this spec: https://docs.snowflake.com/en/sql-reference/intro-summary-data-types.html
 func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) typing.KindDetails {
-	// snowflakeTypeToKind - Converts a Snowflake type to a KindDetails.
-	// Following this spec: https://docs.snowflake.com/en/sql-reference/intro-summary-data-types.html
 	snowflakeType = strings.ToLower(snowflakeType)
 
 	// We need to strip away the variable
