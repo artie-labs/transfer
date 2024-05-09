@@ -115,10 +115,6 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 	return s.configMap
 }
 
-func (s *Store) Label() constants.DestinationKind {
-	return constants.BigQuery
-}
-
 func (s *Store) Dialect() sql.Dialect {
 	return sql.BigQueryDialect{}
 }
@@ -157,10 +153,7 @@ func (s *Store) putTable(ctx context.Context, tableID types.TableIdentifier, row
 }
 
 func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
-	var primaryKeysEscaped []string
-	for _, pk := range primaryKeys {
-		primaryKeysEscaped = append(primaryKeysEscaped, s.Dialect().QuoteIdentifier(pk))
-	}
+	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, s.Dialect())
 
 	orderColsToIterate := primaryKeysEscaped
 	if topicConfig.IncludeArtieUpdatedAt {

@@ -23,3 +23,11 @@ func TestTableIdentifier_FullyQualifiedName(t *testing.T) {
 	// Table name that is a reserved word:
 	assert.Equal(t, `database.schema."TABLE"`, NewTableIdentifier("database", "schema", "table").FullyQualifiedName())
 }
+
+func TestTableIdentifier_EscapedTable(t *testing.T) {
+	// Table name that is not a reserved word:
+	assert.Equal(t, `"FOO"`, NewTableIdentifier("database", "schema", "foo").EscapedTable())
+
+	// Table name that is a reserved word:
+	assert.Equal(t, `"TABLE"`, NewTableIdentifier("database", "schema", "table").EscapedTable())
+}

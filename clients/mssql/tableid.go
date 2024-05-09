@@ -22,6 +22,10 @@ func (ti TableIdentifier) Schema() string {
 	return ti.schema
 }
 
+func (ti TableIdentifier) EscapedTable() string {
+	return dialect.QuoteIdentifier(ti.table)
+}
+
 func (ti TableIdentifier) Table() string {
 	return ti.table
 }
@@ -31,5 +35,5 @@ func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
 }
 
 func (ti TableIdentifier) FullyQualifiedName() string {
-	return fmt.Sprintf("%s.%s", ti.schema, dialect.QuoteIdentifier(ti.table))
+	return fmt.Sprintf("%s.%s", ti.schema, ti.EscapedTable())
 }

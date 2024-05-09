@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/mocks"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -15,7 +17,6 @@ import (
 )
 
 func Test_BuildMSSQLStatement(t *testing.T) {
-	fqTable := "database.schema.table"
 
 	var _cols = []columns.Column{
 		columns.NewColumn("id", typing.String),
@@ -39,8 +40,11 @@ func Test_BuildMSSQLStatement(t *testing.T) {
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
+	fqTable := "database.schema.table"
+	fakeID := &mocks.FakeTableIdentifier{}
+	fakeID.FullyQualifiedNameReturns(fqTable)
 	mergeArg := MergeArgument{
-		TableID:       MockTableIdentifier{fqTable},
+		TableID:       fakeID,
 		SubQuery:      subQuery,
 		IdempotentKey: "",
 		PrimaryKeys:   []columns.Column{columns.NewColumn("id", typing.Invalid)},
@@ -68,7 +72,7 @@ func TestMergeArgument_BuildStatements_MSSQL(t *testing.T) {
 	}
 
 	mergeArg := MergeArgument{
-		TableID:             MockTableIdentifier{"database.schema.table"},
+		TableID:             &mocks.FakeTableIdentifier{},
 		SubQuery:            "{SUB_QUERY}",
 		PrimaryKeys:         []columns.Column{cols[0]},
 		Columns:             cols,

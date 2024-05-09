@@ -2,7 +2,6 @@ package redshift
 
 import (
 	"fmt"
-	"log/slog"
 	"strings"
 
 	_ "github.com/lib/pq"
@@ -11,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
+	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -52,10 +52,6 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 	}
 
 	return s.configMap
-}
-
-func (s *Store) Label() constants.DestinationKind {
-	return constants.Redshift
 }
 
 func (s *Store) Dialect() sql.Dialect {
@@ -114,53 +110,61 @@ WHERE
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func (s *Store) Dedupe(tableID types.TableIdentifier, _ []string, _ kafkalib.TopicConfig) error {
-	fqTableName := tableID.FullyQualifiedName()
-	stagingTableName := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5))).FullyQualifiedName()
+func generateDedupeQueries(dialect sql.Dialect, tableID, stagingTableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
+	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, dialect)
 
-	query := fmt.Sprintf(`
-CREATE TABLE %s AS SELECT DISTINCT * FROM %s;
-DELETE FROM %s;
-INSERT INTO %s SELECT * FROM %s;
-DROP TABLE %s;`,
-		// CREATE TABLE
-		stagingTableName,
-		// AS SELECT DISTINCT * FROM
-		fqTableName,
-		// ; DELETE FROM
-		fqTableName,
-		// ; INSERT INTO
-		fqTableName,
-		// SELECT * FROM
-		stagingTableName,
-		// ; DROP TABLE
-		stagingTableName,
-		// ;
+	orderColsToIterate := primaryKeysEscaped
+	if topicConfig.IncludeArtieUpdatedAt {
+		orderColsToIterate = append(orderColsToIterate, dialect.QuoteIdentifier(constants.UpdateColumnMarker))
+	}
+
+	var orderByCols []string
+	for _, orderByCol := range orderColsToIterate {
+		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", orderByCol))
+	}
+
+	var parts []string
+	parts = append(parts,
+		// It looks funny, but we do need a WHERE clause to make the query valid.
+		fmt.Sprintf("CREATE TEMPORARY TABLE %s AS (SELECT * FROM %s WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 2)",
+			// Temporary tables may not specify a schema name
+			stagingTableID.EscapedTable(),
+			tableID.FullyQualifiedName(),
+			strings.Join(primaryKeysEscaped, ", "),
+			strings.Join(orderByCols, ", "),
+		),
 	)
 
-	var transactionCommitted bool
-	transaction, err := s.Begin()
-	if err != nil {
-		return fmt.Errorf("failed to start transaction: %w", err)
-	}
-	defer func() {
-		if !transactionCommitted {
-			if err := transaction.Rollback(); err != nil {
-				slog.Error("Failed to roll back transaction", slog.Any("err", err))
-			}
-		}
-	}()
-
-	if _, err = transaction.Exec(query); err != nil {
-		return fmt.Errorf("failed to execute dedupe query: %w", err)
+	var whereClauses []string
+	for _, primaryKeyEscaped := range primaryKeysEscaped {
+		// Redshift does not support table aliasing for deletes.
+		whereClauses = append(whereClauses, fmt.Sprintf("%s.%s = t2.%s", tableID.EscapedTable(), primaryKeyEscaped, primaryKeyEscaped))
 	}
 
-	if err = transaction.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
-	}
+	// Delete duplicates in the main table based on matches with the staging table
+	parts = append(parts,
+		fmt.Sprintf("DELETE FROM %s USING %s t2 WHERE %s",
+			tableID.FullyQualifiedName(),
+			stagingTableID.EscapedTable(),
+			strings.Join(whereClauses, " AND "),
+		),
+	)
 
-	transactionCommitted = true
-	return nil
+	// Insert deduplicated data back into the main table from the staging table
+	parts = append(parts,
+		fmt.Sprintf("INSERT INTO %s SELECT * FROM %s",
+			tableID.FullyQualifiedName(),
+			stagingTableID.EscapedTable(),
+		),
+	)
+
+	return parts
+}
+
+func (s *Store) Dedupe(tableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
+	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
+	dedupeQueries := generateDedupeQueries(s.Dialect(), tableID, stagingTableID, primaryKeys, topicConfig)
+	return destination.ExecStatements(s, dedupeQueries)
 }
 
 func LoadRedshift(cfg config.Config, _store *db.Store) (*Store, error) {

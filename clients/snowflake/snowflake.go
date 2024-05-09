@@ -73,10 +73,6 @@ WHERE
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func (s *Store) Label() constants.DestinationKind {
-	return constants.Snowflake
-}
-
 func (s *Store) Dialect() sql.Dialect {
 	return sql.SnowflakeDialect{}
 }
@@ -157,11 +153,13 @@ func (s *Store) generateDedupeQueries(tableID, stagingTableID types.TableIdentif
 		whereClauses = append(whereClauses, fmt.Sprintf("t1.%s = t2.%s", primaryKeyEscaped, primaryKeyEscaped))
 	}
 
-	parts = append(parts, fmt.Sprintf("DELETE FROM %s t1 USING %s t2 WHERE %s",
-		tableID.FullyQualifiedName(),
-		stagingTableID.FullyQualifiedName(),
-		strings.Join(whereClauses, " AND "),
-	))
+	parts = append(parts,
+		fmt.Sprintf("DELETE FROM %s t1 USING %s t2 WHERE %s",
+			tableID.FullyQualifiedName(),
+			stagingTableID.FullyQualifiedName(),
+			strings.Join(whereClauses, " AND "),
+		),
+	)
 
 	parts = append(parts, fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName()))
 	return parts
