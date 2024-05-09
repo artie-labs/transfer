@@ -62,7 +62,6 @@ func (MSSQLDialect) DataTypeForKind(kindDetails typing.KindDetails, isPk bool) s
 }
 
 func (MSSQLDialect) KindForDataType(rawType string, stringPrecision string) (typing.KindDetails, error) {
-
 	rawType = strings.ToLower(rawType)
 	if strings.HasPrefix(rawType, "numeric") {
 		return typing.ParseNumeric(typing.DefaultPrefix, rawType), nil
