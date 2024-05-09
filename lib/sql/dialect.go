@@ -11,6 +11,7 @@ type Dialect interface {
 	QuoteIdentifier(identifier string) string
 	EscapeStruct(value string) string
 	DataTypeForKind(kd typing.KindDetails, isPk bool) string
+	KindForDataType(_type string, stringPrecision string) typing.KindDetails
 	IsColumnAlreadyExistsErr(err error) bool
 }
 
@@ -27,6 +28,10 @@ func (BigQueryDialect) EscapeStruct(value string) string {
 
 func (BigQueryDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
 	return typing.KindToBigQuery(kd)
+}
+
+func (BigQueryDialect) KindForDataType(_type string, _ string) typing.KindDetails {
+	return typing.BigQueryTypeToKind(_type)
 }
 
 func (BigQueryDialect) IsColumnAlreadyExistsErr(err error) bool {
@@ -46,6 +51,10 @@ func (MSSQLDialect) EscapeStruct(value string) string {
 
 func (MSSQLDialect) DataTypeForKind(kd typing.KindDetails, isPk bool) string {
 	return typing.KindToMSSQL(kd, isPk)
+}
+
+func (MSSQLDialect) KindForDataType(_type string, stringPrecision string) typing.KindDetails {
+	return typing.MSSQLTypeToKind(_type, stringPrecision)
 }
 
 func (MSSQLDialect) IsColumnAlreadyExistsErr(err error) bool {
@@ -80,6 +89,10 @@ func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
 	return typing.KindToRedshift(kd)
 }
 
+func (RedshiftDialect) KindForDataType(_type string, stringPrecision string) typing.KindDetails {
+	return typing.RedshiftTypeToKind(_type, stringPrecision)
+}
+
 func (RedshiftDialect) IsColumnAlreadyExistsErr(err error) bool {
 	// Redshift's error: ERROR: column "foo" of relation "statement" already exists
 	return strings.Contains(err.Error(), "already exists")
@@ -98,6 +111,11 @@ func (SnowflakeDialect) EscapeStruct(value string) string {
 func (SnowflakeDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
 	return typing.KindToSnowflake(kd)
 }
+
+func (SnowflakeDialect) KindForDataType(_type string, _ string) typing.KindDetails {
+	return typing.SnowflakeTypeToKind(_type)
+}
+
 func (SnowflakeDialect) IsColumnAlreadyExistsErr(err error) bool {
 	// Snowflake doesn't have column mutations (IF NOT EXISTS)
 	return strings.Contains(err.Error(), "already exists")

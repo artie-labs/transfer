@@ -2,10 +2,8 @@ package typing
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
@@ -97,26 +95,4 @@ func IsJSON(str string) bool {
 	}
 
 	return false
-}
-
-func DwhTypeToKind(dwh constants.DestinationKind, dwhType, stringPrecision string) (KindDetails, error) {
-	dwhType = strings.ToLower(dwhType)
-	var kd KindDetails
-	switch dwh {
-	case constants.Snowflake:
-		kd = snowflakeTypeToKind(dwhType)
-	case constants.BigQuery:
-		kd = bigQueryTypeToKind(dwhType)
-	case constants.Redshift:
-		kd = redshiftTypeToKind(dwhType, stringPrecision)
-	case constants.MSSQL:
-		kd = mssqlTypeToKind(dwhType, stringPrecision)
-	default:
-		return Invalid, fmt.Errorf("unexpected dwh kind, label: %v", dwh)
-	}
-
-	if kd.Kind == Invalid.Kind {
-		return Invalid, fmt.Errorf("unable to map type: %q to dwh type", dwhType)
-	}
-	return kd, nil
 }
