@@ -68,9 +68,9 @@ This Data Processing Addendum (“**DPA**”) amends and forms part of the writt
 
 5. **Subprocessing**
 
-5.1 Customer agrees that Artie may use the third-party suppliers listed on its website at [https://docs.artie.so/legal/subprocessors](https://docs.artie.so/legal/subprocessors) to Process Personal Data on its behalf for the provision of the services under the Agreement (each a “**Subprocessor**”).
+5.1 Customer agrees that Artie may use the third-party suppliers listed on its website at [https://docs.artie.so/legal/subprocessors](https://docs.artie.so/legal/subprocessors)[ ](https://docs.artie.com/legal/subprocessors) to Process Personal Data on its behalf for the provision of the services under the Agreement (each a “**Subprocessor**”).
 
-5.2 Artie will maintain a list of Subprocessors and will provide at least 10 days’ prior notice of the addition or removal of any subprocessor, which may be given by posting detail of such addition or removal at the following URL: [https://docs.artie.so/legal/subprocessors](https://docs.artie.so/legal/subprocessors). If Customer objects to the appointment of such Subprocessor within ten (10) days, it may terminate the portion of the services that cannot be provided without such Subprocessor on written notice to Artie that includes Customer’s legitimate and documented grounds for non-approval.
+5.2 Artie will maintain a list of Subprocessors and will provide at least 10 days’ prior notice of the addition or removal of any subprocessor, which may be given by posting detail of such addition or removal at the following URL: [https://docs.artie.com/legal/subprocessors](https://docs.artie.com/legal/subprocessors). If Customer objects to the appointment of such Subprocessor within ten (10) days, it may terminate the portion of the services that cannot be provided without such Subprocessor on written notice to Artie that includes Customer’s legitimate and documented grounds for non-approval.
 
 5.3 Artie will ensure that any Subprocessors to which it transfers Personal Data enter into written agreements with Artie requiring that the Subprocessor abide by terms substantially similar to those contained in this DPA.
 
