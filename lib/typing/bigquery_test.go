@@ -1,11 +1,9 @@
 package typing
 
 import (
-	"fmt"
+	"strings"
 	"testing"
 	"time"
-
-	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
@@ -52,13 +50,7 @@ func TestBigQueryTypeToKind(t *testing.T) {
 	}
 
 	for bqCol, expectedKind := range bqColToExpectedKind {
-		kd, err := DwhTypeToKind(constants.BigQuery, bqCol, "")
-		if expectedKind.Kind == Invalid.Kind {
-			assert.ErrorContains(t, err, fmt.Sprintf("unable to map type: %q to dwh type", bqCol))
-		} else {
-			assert.NoError(t, err)
-		}
-
+		kd := BigQueryTypeToKind(strings.ToLower(bqCol))
 		assert.Equal(t, expectedKind.Kind, kd.Kind, bqCol)
 	}
 }
@@ -74,8 +66,7 @@ func TestBigQueryTypeNoDataLoss(t *testing.T) {
 	}
 
 	for _, kindDetail := range kindDetails {
-		kd, err := DwhTypeToKind(constants.BigQuery, KindToBigQuery(kindDetail), "")
-		assert.NoError(t, err)
+		kd := BigQueryTypeToKind(KindToBigQuery(kindDetail))
 		assert.Equal(t, kindDetail, kd)
 	}
 }

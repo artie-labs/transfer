@@ -15,6 +15,14 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+func dwhTypeToKind(dialect sql.Dialect, dwhType, stringPrecision string) (typing.KindDetails, error) {
+	kd := dialect.KindForDataType(dwhType, stringPrecision)
+	if kd.Kind == typing.Invalid.Kind {
+		return typing.Invalid, fmt.Errorf("unable to map type: %q to dwh type", dwhType)
+	}
+	return kd, nil
+}
+
 type GetTableCfgArgs struct {
 	Dwh       destination.DataWarehouse
 	TableID   types.TableIdentifier
@@ -60,17 +68,17 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 
 	var tableMissing bool
 	if err != nil {
-		switch g.Dwh.Dialect().(type) {
-		case sql.SnowflakeDialect:
+		switch g.Dwh.Label() {
+		case constants.Snowflake:
 			if SnowflakeTableDoesNotExistErr(err) {
 				// Swallow the error, make sure all the metadata is created
 				tableMissing = true
 				err = nil
 			} else {
-				return nil, fmt.Errorf("failed to query %T, err: %w, query: %v", g.Dwh, err, g.Query)
+				return nil, fmt.Errorf("failed to query %v, err: %w, query: %v", g.Dwh.Label(), err, g.Query)
 			}
 		default:
-			return nil, fmt.Errorf("failed to query %T, err: %w", g.Dwh, err)
+			return nil, fmt.Errorf("failed to query %v, err: %w", g.Dwh.Label(), err)
 		}
 	}
 
@@ -106,7 +114,7 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 			row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
 		}
 
-		kindDetails, err := typing.DwhTypeToKind(g.Dwh.Label(), row[g.ColumnTypeLabel], row[constants.StrPrecisionCol])
+		kindDetails, err := dwhTypeToKind(g.Dwh.Dialect(), row[g.ColumnTypeLabel], row[constants.StrPrecisionCol])
 		if err != nil {
 			return nil, fmt.Errorf("failed to get kind details: %w", err)
 		}
