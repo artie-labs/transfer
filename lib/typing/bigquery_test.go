@@ -1,7 +1,6 @@
 package typing
 
-import (
-	"strings"
+import (	
 	"testing"
 	"time"
 
