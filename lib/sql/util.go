@@ -27,6 +27,8 @@ func QuoteIdentifiers(identifiers []string, dialect Dialect) []string {
 // "VARCHAR(1234)" -> "VARCHAR", {"1234"}
 // "NUERMIC(5, 1)" -> "NUMERIC", {"5", "1"}
 func ParseDataTypeDefinition(value string) (string, []string, error) {
+	value = strings.TrimSpace(value)
+
 	if idx := strings.Index(value, "("); idx > 0 {
 		if value[len(value)-1] != ')' {
 			return "", nil, fmt.Errorf("missing closing parenthesis")
