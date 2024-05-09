@@ -160,9 +160,7 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 	for _, sqlQuery := range alterStatements {
 		slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
 		if _, err := a.Dwh.Exec(sqlQuery); err != nil {
-			if a.Dwh.Dialect().IsColumnAlreadyExistsErr(err) {
-				err = nil
-			} else {
+			if !a.Dwh.Dialect().IsColumnAlreadyExistsErr(err) {
 				return fmt.Errorf("failed to apply ddl, sql: %q, err: %w", sqlQuery, err)
 			}
 		}
