@@ -2,10 +2,12 @@ package sql
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type RedshiftDialect struct{}
@@ -20,11 +22,82 @@ func (RedshiftDialect) EscapeStruct(value string) string {
 }
 
 func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
-	return typing.KindToRedshift(kd)
+	switch kd.Kind {
+	case typing.Integer.Kind:
+		// int4 is 2^31, whereas int8 is 2^63.
+		// we're using a larger data type to not have an integer overflow.
+		return "INT8"
+	case typing.Struct.Kind:
+		return "SUPER"
+	case typing.Array.Kind:
+		// Redshift does not have a built-in JSON type (which means we'll cast STRUCT and ARRAY kinds as TEXT).
+		// As a result, Artie will store this in JSON string and customers will need to extract this data out via SQL.
+		// Columns that are automatically created by Artie are created as VARCHAR(MAX).
+		// Rationale: https://github.com/artie-labs/transfer/pull/173
+		return "VARCHAR(MAX)"
+	case typing.String.Kind:
+		if kd.OptionalStringPrecision != nil {
+			return fmt.Sprintf("VARCHAR(%d)", *kd.OptionalStringPrecision)
+		}
+
+		return "VARCHAR(MAX)"
+	case typing.Boolean.Kind:
+		// We need to append `NULL` to let Redshift know that NULL is an acceptable data type.
+		return "BOOLEAN NULL"
+	case typing.ETime.Kind:
+		switch kd.ExtendedTimeDetails.Type {
+		case ext.DateTimeKindType:
+			return "timestamp with time zone"
+		case ext.DateKindType:
+			return "date"
+		case ext.TimeKindType:
+			return "time"
+		}
+	case typing.EDecimal.Kind:
+		return kd.ExtendedDecimalDetails.RedshiftKind()
+	}
+
+	return kd.Kind
 }
 
-func (RedshiftDialect) KindForDataType(_type string, stringPrecision string) (typing.KindDetails, error) {
-	return typing.RedshiftTypeToKind(_type, stringPrecision), nil
+func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (typing.KindDetails, error) {
+	rawType = strings.ToLower(rawType)
+	// TODO: Check if there are any missing Redshift data types.
+	if strings.HasPrefix(rawType, "numeric") {
+		return typing.ParseNumeric(typing.DefaultPrefix, rawType), nil
+	}
+
+	if strings.Contains(rawType, "character varying") {
+		var strPrecision *int
+		precision, err := strconv.Atoi(stringPrecision)
+		if err == nil {
+			strPrecision = &precision
+		}
+
+		return typing.KindDetails{
+			Kind:                    typing.String.Kind,
+			OptionalStringPrecision: strPrecision,
+		}, nil
+	}
+
+	switch rawType {
+	case "super":
+		return typing.Struct, nil
+	case "smallint", "integer", "bigint":
+		return typing.Integer, nil
+	case "double precision":
+		return typing.Float, nil
+	case "timestamp with time zone", "timestamp without time zone":
+		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType), nil
+	case "time without time zone":
+		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType), nil
+	case "date":
+		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType), nil
+	case "boolean":
+		return typing.Boolean, nil
+	}
+
+	return typing.Invalid, nil
 }
 
 func (RedshiftDialect) IsColumnAlreadyExistsErr(err error) bool {
