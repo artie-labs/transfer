@@ -15,14 +15,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func dwhTypeToKind(dialect sql.Dialect, dwhType, stringPrecision string) (typing.KindDetails, error) {
-	kd := dialect.KindForDataType(dwhType, stringPrecision)
-	if kd.Kind == typing.Invalid.Kind {
-		return typing.Invalid, fmt.Errorf("unable to map type: %q to dwh type", dwhType)
-	}
-	return kd, nil
-}
-
 type GetTableCfgArgs struct {
 	Dwh       destination.DataWarehouse
 	TableID   types.TableIdentifier
@@ -114,9 +106,9 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 			row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
 		}
 
-		kindDetails, err := dwhTypeToKind(g.Dwh.Dialect(), row[g.ColumnTypeLabel], row[constants.StrPrecisionCol])
-		if err != nil {
-			return nil, fmt.Errorf("failed to get kind details: %w", err)
+		kindDetails := g.Dwh.Dialect().KindForDataType(row[g.ColumnTypeLabel], row[constants.StrPrecisionCol])
+		if kindDetails.Kind == typing.Invalid.Kind {
+			return nil, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", row[g.ColumnTypeLabel])
 		}
 
 		col := columns.NewColumn(row[g.ColumnNameLabel], kindDetails)
