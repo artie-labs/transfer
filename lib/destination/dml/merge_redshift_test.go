@@ -3,6 +3,8 @@ package dml
 import (
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/mocks"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -52,7 +54,7 @@ func getBasicColumnsForTest(compositeKey bool) result {
 func TestMergeArgument_BuildStatements_Redshift(t *testing.T) {
 	res := getBasicColumnsForTest(false)
 	mergeArg := &MergeArgument{
-		TableID:             MockTableIdentifier{"public.tableName"},
+		TableID:             &mocks.FakeTableIdentifier{},
 		SubQuery:            "{SUB_QUERY}",
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.Columns,
@@ -72,11 +74,13 @@ func TestMergeArgument_BuildRedshiftStatements_SkipDelete(t *testing.T) {
 	// Biggest difference with this test are:
 	// 1. We are not saving `__artie_deleted` column
 	// 2. There are 3 SQL queries (INSERT, UPDATE and DELETE)
-	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(false)
+
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("public.tableName")
 	mergeArg := &MergeArgument{
-		TableID:             MockTableIdentifier{fqTableName},
+		TableID:             fakeTableID,
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.Columns,
@@ -98,11 +102,13 @@ func TestMergeArgument_BuildRedshiftStatements_SkipDelete(t *testing.T) {
 }
 
 func TestMergeArgument_BuildRedshiftStatements_SoftDelete(t *testing.T) {
-	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(false)
+
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("public.tableName")
 	mergeArg := &MergeArgument{
-		TableID:             MockTableIdentifier{fqTableName},
+		TableID:             fakeTableID,
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.Columns,
@@ -137,11 +143,12 @@ func TestMergeArgument_BuildRedshiftStatements_SoftDelete(t *testing.T) {
 }
 
 func TestMergeArgument_BuildRedshiftStatements_SoftDeleteComposite(t *testing.T) {
-	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(true)
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("public.tableName")
 	mergeArg := &MergeArgument{
-		TableID:             MockTableIdentifier{fqTableName},
+		TableID:             fakeTableID,
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.Columns,
@@ -179,11 +186,12 @@ func TestMergeArgument_GetRedshiftStatements(t *testing.T) {
 	// Biggest difference with this test are:
 	// 1. We are not saving `__artie_deleted` column
 	// 2. There are 3 SQL queries (INSERT, UPDATE and DELETE)
-	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(false)
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("public.tableName")
 	mergeArg := &MergeArgument{
-		TableID:             MockTableIdentifier{fqTableName},
+		TableID:             fakeTableID,
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.Columns,
@@ -208,7 +216,7 @@ func TestMergeArgument_GetRedshiftStatements(t *testing.T) {
 		parts[2])
 
 	mergeArg = &MergeArgument{
-		TableID:             MockTableIdentifier{fqTableName},
+		TableID:             fakeTableID,
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.Columns,
@@ -235,11 +243,12 @@ func TestMergeArgument_GetRedshiftStatements(t *testing.T) {
 }
 
 func TestMergeArgument_BuildRedshiftStatements_CompositeKey(t *testing.T) {
-	fqTableName := "public.tableName"
 	tempTableName := "public.tableName__temp"
 	res := getBasicColumnsForTest(true)
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("public.tableName")
 	mergeArg := &MergeArgument{
-		TableID:             MockTableIdentifier{fqTableName},
+		TableID:             fakeTableID,
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.Columns,
@@ -264,7 +273,7 @@ func TestMergeArgument_BuildRedshiftStatements_CompositeKey(t *testing.T) {
 		parts[2])
 
 	mergeArg = &MergeArgument{
-		TableID:             MockTableIdentifier{fqTableName},
+		TableID:             fakeTableID,
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.Columns,
