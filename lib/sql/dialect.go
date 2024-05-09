@@ -3,7 +3,9 @@ package sql
 import (
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
@@ -13,6 +15,7 @@ type Dialect interface {
 	DataTypeForKind(kd typing.KindDetails, isPk bool) string
 	KindForDataType(_type string, stringPrecision string) typing.KindDetails
 	IsColumnAlreadyExistsErr(err error) bool
+	BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string
 }
 
 type BigQueryDialect struct{}
@@ -37,6 +40,11 @@ func (BigQueryDialect) KindForDataType(_type string, _ string) typing.KindDetail
 func (BigQueryDialect) IsColumnAlreadyExistsErr(err error) bool {
 	// Error ends up looking like something like this: Column already exists: _string at [1:39]
 	return strings.Contains(err.Error(), "Column already exists")
+}
+
+func (BigQueryDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string {
+	return fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
+		fqTableName, strings.Join(colSQLParts, ","), typing.ExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)))
 }
 
 type MSSQLDialect struct{}
@@ -74,6 +82,10 @@ func (MSSQLDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return false
 }
 
+func (MSSQLDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string {
+	return fmt.Sprintf("CREATE TABLE %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
+}
+
 type RedshiftDialect struct{}
 
 func (rd RedshiftDialect) QuoteIdentifier(identifier string) string {
@@ -98,6 +110,10 @@ func (RedshiftDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return strings.Contains(err.Error(), "already exists")
 }
 
+func (RedshiftDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string {
+	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
+}
+
 type SnowflakeDialect struct{}
 
 func (sd SnowflakeDialect) QuoteIdentifier(identifier string) string {
@@ -119,4 +135,12 @@ func (SnowflakeDialect) KindForDataType(_type string, _ string) typing.KindDetai
 func (SnowflakeDialect) IsColumnAlreadyExistsErr(err error) bool {
 	// Snowflake doesn't have column mutations (IF NOT EXISTS)
 	return strings.Contains(err.Error(), "already exists")
+}
+
+func (SnowflakeDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string {
+	// TEMPORARY Table syntax - https://docs.snowflake.com/en/sql-reference/sql/create-table
+	// PURGE syntax - https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#purging-files-after-loading
+	// FIELD_OPTIONALLY_ENCLOSED_BY - is needed because CSV will try to escape any values that have `"`
+	return fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`,
+		fqTableName, strings.Join(colSQLParts, ","))
 }
