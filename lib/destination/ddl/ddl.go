@@ -14,7 +14,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
-	"github.com/artie-labs/transfer/lib/typing"
 )
 
 // DropTemporaryTable - this will drop the temporary table from Snowflake w/ stages and BigQuery
@@ -129,24 +128,7 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 	if a.CreateTable {
 		var sqlQuery string
 		if a.TemporaryTable {
-			switch a.Dwh.Dialect().(type) {
-			case sql.MSSQLDialect:
-				sqlQuery = fmt.Sprintf("CREATE TABLE %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
-			case sql.RedshiftDialect:
-				sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
-			case sql.BigQueryDialect:
-				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
-					fqTableName, strings.Join(colSQLParts, ","), typing.ExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)))
-			// Not enabled for constants.Snowflake yet
-			case sql.SnowflakeDialect:
-				// TEMPORARY Table syntax - https://docs.snowflake.com/en/sql-reference/sql/create-table
-				// PURGE syntax - https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#purging-files-after-loading
-				// FIELD_OPTIONALLY_ENCLOSED_BY - is needed because CSV will try to escape any values that have `"`
-				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`,
-					fqTableName, strings.Join(colSQLParts, ","))
-			default:
-				return fmt.Errorf("unexpected dialect: %T trying to create a temporary table", a.Dwh.Dialect())
-			}
+			sqlQuery = a.Dwh.Dialect().BuildCreateTempTableQuery(fqTableName, colSQLParts)
 		} else {
 			if _, ok := a.Dwh.Dialect().(sql.MSSQLDialect); ok {
 				// MSSQL doesn't support IF NOT EXISTS
