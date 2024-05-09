@@ -2,7 +2,7 @@
 
 Last updated: July 9, 2023
 
-This notice is to inform visitors on how Artie Technologies Inc. (“_**Artie**_”) collects, use, and process the personal information we collect about you in the course of business on Artie’s website; artie.so and within our product dashboard, app.artie.so (“_**Websites**_”).\
+This notice is to inform visitors on how Artie Technologies Inc. (“_**Artie**_”) collects, use, and process the personal information we collect about you in the course of business on Artie’s website; artie.com and within our product dashboard, app.artie.com (“_**Websites**_”).\
 \
 If you have any concerns or questions related to our usage of your personal data, please contact us at [privacy@artie.so](mailto:privacy@artie.so), this is also linked at the bottom of our privacy notice.
 
