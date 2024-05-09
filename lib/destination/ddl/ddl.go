@@ -144,7 +144,7 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`,
 					fqTableName, strings.Join(colSQLParts, ","))
 			default:
-				return fmt.Errorf("unexpected dwh: %v trying to create a temporary table", a.Dwh.Label())
+				return fmt.Errorf("unexpected dialect: %T trying to create a temporary table", a.Dwh.Dialect())
 			}
 		} else {
 			if _, ok := a.Dwh.Dialect().(sql.MSSQLDialect); ok {

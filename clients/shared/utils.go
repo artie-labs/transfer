@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -45,7 +44,7 @@ func BackfillColumn(dwh destination.DataWarehouse, column columns.Column, tableI
 	}
 
 	query = fmt.Sprintf(`COMMENT ON COLUMN %s.%s IS '%v';`, tableID.FullyQualifiedName(), escapedCol, `{"backfilled": true}`)
-	if dwh.Label() == constants.BigQuery {
+	if _, ok := dwh.Dialect().(sql.BigQueryDialect); ok {
 		query = fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET OPTIONS (description=`%s`);",
 			// ALTER TABLE table ALTER COLUMN col set OPTIONS (description=...)
 			tableID.FullyQualifiedName(), escapedCol, `{"backfilled": true}`,
