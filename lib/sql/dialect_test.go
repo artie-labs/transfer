@@ -33,7 +33,7 @@ func TestSnowflakeDialect_QuoteIdentifier(t *testing.T) {
 	assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("FOO"))
 }
 
-func Test_DataTypeForKind(t *testing.T) {
+func TestDialect_DataTypeForKind(t *testing.T) {
 	type _tc struct {
 		kd                    typing.KindDetails
 		expectedSnowflakeType string
@@ -79,7 +79,7 @@ func Test_DataTypeForKind(t *testing.T) {
 	}
 }
 
-func TestIsColumnAlreadyExistErr(t *testing.T) {
+func TestDialect_IsColumnAlreadyExistErrs(t *testing.T) {
 	testCases := []struct {
 		name           string
 		err            error
@@ -139,6 +139,6 @@ func TestIsColumnAlreadyExistErr(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		assert.Equal(t, tc.expectedResult, tc.dialect.IsColumnAlreadyExistErr(tc.err), tc.name)
+		assert.Equal(t, tc.expectedResult, tc.dialect.IsColumnAlreadyExistsErr(tc.err), tc.name)
 	}
 }
