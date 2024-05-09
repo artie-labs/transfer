@@ -31,8 +31,8 @@ func (BigQueryDialect) EscapeStruct(value string) string {
 	return "JSON" + QuoteLiteral(value)
 }
 
-func (BigQueryDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
-	switch kd.Kind {
+func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) string {
+	switch kindDetails.Kind {
 	case typing.Float.Kind:
 		return "float64"
 	case typing.Array.Kind:
@@ -40,7 +40,7 @@ func (BigQueryDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
 	case typing.Struct.Kind:
 		return "json"
 	case typing.ETime.Kind:
-		switch kd.ExtendedTimeDetails.Type {
+		switch kindDetails.ExtendedTimeDetails.Type {
 		case ext.DateTimeKindType:
 			return "timestamp"
 		case ext.DateKindType:
@@ -49,13 +49,12 @@ func (BigQueryDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
 			return "time"
 		}
 	case typing.EDecimal.Kind:
-		return kd.ExtendedDecimalDetails.BigQueryKind()
+		return kindDetails.ExtendedDecimalDetails.BigQueryKind()
 	}
-	return kd.Kind
+	return kindDetails.Kind
 }
 
-func (BigQueryDialect) KindForDataType(_type string, _ string) (typing.KindDetails, error) {
-	var rawBqType string = _type
+func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindDetails, error) {
 	rawBqType = strings.ToLower(rawBqType)
 	bqType := rawBqType
 	if len(bqType) == 0 {
