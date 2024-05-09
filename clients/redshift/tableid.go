@@ -37,5 +37,5 @@ func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
 func (ti TableIdentifier) FullyQualifiedName() string {
 	// Redshift is Postgres compatible, so when establishing a connection, we'll specify a database.
 	// Thus, we only need to specify schema and table name here.
-	return fmt.Sprintf("%s.%s", ti.schema, dialect.QuoteIdentifier(ti.table))
+	return fmt.Sprintf("%s.%s", ti.schema, ti.EscapedTable())
 }

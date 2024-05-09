@@ -25,6 +25,7 @@ func (ti TableIdentifier) Schema() string {
 }
 
 func (ti TableIdentifier) EscapedTable() string {
+	// S3 doesn't require escaping
 	return ti.table
 }
 
@@ -37,6 +38,5 @@ func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
 }
 
 func (ti TableIdentifier) FullyQualifiedName() string {
-	// S3 should be db.schema.tableName, but we don't need to escape, since it's not a SQL db.
-	return fmt.Sprintf("%s.%s.%s", ti.database, ti.schema, ti.table)
+	return fmt.Sprintf("%s.%s.%s", ti.database, ti.schema, ti.EscapedTable())
 }

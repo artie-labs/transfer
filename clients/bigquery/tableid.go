@@ -49,6 +49,6 @@ func (ti TableIdentifier) FullyQualifiedName() string {
 	return fmt.Sprintf("%s.%s.%s",
 		dialect.QuoteIdentifier(ti.projectID),
 		dialect.QuoteIdentifier(ti.dataset),
-		dialect.QuoteIdentifier(ti.table),
+		ti.EscapedTable(),
 	)
 }

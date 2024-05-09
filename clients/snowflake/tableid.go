@@ -44,5 +44,5 @@ func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
 }
 
 func (ti TableIdentifier) FullyQualifiedName() string {
-	return fmt.Sprintf("%s.%s.%s", ti.database, ti.schema, dialect.QuoteIdentifier(ti.table))
+	return fmt.Sprintf("%s.%s.%s", ti.database, ti.schema, ti.EscapedTable())
 }
