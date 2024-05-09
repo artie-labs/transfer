@@ -2,9 +2,11 @@ package sql
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
@@ -59,7 +61,7 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.
 		return typing.Invalid, nil
 	}
 
-	dataType, _, err := ParseDataTypeDefinition(snowflakeType)
+	dataType, args, err := ParseDataTypeDefinition(snowflakeType)
 	if err != nil {
 		return typing.Invalid, err
 	}
@@ -78,7 +80,23 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.
 	case "int", "integer", "bigint", "smallint", "tinyint", "byteint":
 		return typing.Integer, nil
 	case "varchar", "char", "character", "string", "text":
-		return typing.String, nil
+		switch len(args) {
+		case 0:
+			return typing.String, nil
+		case 1:
+			precision, err := strconv.Atoi(args[0])
+			if err != nil {
+				return typing.Invalid, fmt.Errorf("unable to parse type argument: %w", err)
+			}
+
+			return typing.KindDetails{
+				Kind:                    typing.String.Kind,
+				OptionalStringPrecision: ptr.ToInt(precision),
+			}, nil
+		default:
+			return typing.Invalid, fmt.Errorf("expected at most one type argument, received %d", len(args))
+		}
+
 	case "boolean":
 		return typing.Boolean, nil
 	case "variant", "object":

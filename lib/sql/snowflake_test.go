@@ -63,11 +63,18 @@ func TestSnowflakeDialect_KindForDataType_Integer(t *testing.T) {
 }
 
 func TestSnowflakeDialect_KindForDataType_Other(t *testing.T) {
-	expectedStrings := []string{"VARCHAR (255)", "CHARACTER", "CHAR", "STRING", "TEXT"}
+	expectedStrings := []string{"CHARACTER", "CHAR", "STRING", "TEXT"}
 	for _, expectedString := range expectedStrings {
 		kd, err := SnowflakeDialect{}.KindForDataType(expectedString, "")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.String, kd, expectedString)
+	}
+
+	{
+		kd, err := SnowflakeDialect{}.KindForDataType("VARCHAR (255)", "")
+		assert.NoError(t, err)
+		assert.Equal(t, typing.String.Kind, kd.Kind)
+		assert.Equal(t, 255, *kd.OptionalStringPrecision)
 	}
 }
 
