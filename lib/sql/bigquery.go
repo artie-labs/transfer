@@ -37,3 +37,9 @@ func (BigQueryDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts
 	return fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
 		fqTableName, strings.Join(colSQLParts, ","), typing.ExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)))
 }
+
+func (BigQueryDialect) BuildProcessToastStructColExpression(colName string) string {
+	return fmt.Sprintf(`CASE WHEN COALESCE(TO_JSON_STRING(cc.%s) != '{"key":"%s"}', true) THEN cc.%s ELSE c.%s END`,
+		colName, constants.ToastUnavailableValuePlaceholder,
+		colName, colName)
+}

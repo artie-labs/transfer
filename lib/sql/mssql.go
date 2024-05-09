@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
@@ -44,4 +45,10 @@ func (MSSQLDialect) IsColumnAlreadyExistsErr(err error) bool {
 
 func (MSSQLDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string {
 	return fmt.Sprintf("CREATE TABLE %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
+}
+
+func (MSSQLDialect) BuildProcessToastStructColExpression(colName string) string {
+	// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
+	return fmt.Sprintf("CASE WHEN COALESCE(cc.%s, {}) != {'key': '%s'} THEN cc.%s ELSE c.%s END",
+		colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
 }

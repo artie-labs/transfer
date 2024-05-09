@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
@@ -33,4 +34,9 @@ func (RedshiftDialect) IsColumnAlreadyExistsErr(err error) bool {
 
 func (RedshiftDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string {
 	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
+}
+
+func (RedshiftDialect) BuildProcessToastStructColExpression(colName string) string {
+	return fmt.Sprintf(`CASE WHEN COALESCE(cc.%s != JSON_PARSE('{"key":"%s"}'), true) THEN cc.%s ELSE c.%s END`,
+		colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
 }

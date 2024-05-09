@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
@@ -36,4 +37,10 @@ func (SnowflakeDialect) BuildCreateTempTableQuery(fqTableName string, colSQLPart
 	// FIELD_OPTIONALLY_ENCLOSED_BY - is needed because CSV will try to escape any values that have `"`
 	return fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`,
 		fqTableName, strings.Join(colSQLParts, ","))
+}
+
+func (SnowflakeDialect) BuildProcessToastStructColExpression(colName string) string {
+	// TODO: Change this to Snowflake and error out if the destKind isn't supported so we're explicit.
+	return fmt.Sprintf("CASE WHEN COALESCE(cc.%s != {'key': '%s'}, true) THEN cc.%s ELSE c.%s END",
+		colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
 }
