@@ -6,6 +6,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type SnowflakeDialect struct{}
@@ -18,12 +19,81 @@ func (SnowflakeDialect) EscapeStruct(value string) string {
 	return QuoteLiteral(value)
 }
 
-func (SnowflakeDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
-	return typing.KindToSnowflake(kd)
+func (SnowflakeDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) string {
+	switch kindDetails.Kind {
+	case typing.Struct.Kind:
+		// Snowflake doesn't recognize struct.
+		// Must be either OBJECT or VARIANT. However, VARIANT is more versatile.
+		return "variant"
+	case typing.Boolean.Kind:
+		return "boolean"
+	case typing.ETime.Kind:
+		switch kindDetails.ExtendedTimeDetails.Type {
+		case ext.DateTimeKindType:
+			// We are not using `TIMESTAMP_NTZ` because Snowflake does not join on this data very well.
+			// It ends up trying to parse this data into a TIMESTAMP_TZ and messes with the join order.
+			// Specifically, if my location is in SF, it'll try to parse TIMESTAMP_NTZ into PST then into UTC.
+			// When it was already stored as UTC.
+			return "timestamp_tz"
+		case ext.DateKindType:
+			return "date"
+		case ext.TimeKindType:
+			return "time"
+		}
+	case typing.EDecimal.Kind:
+		return kindDetails.ExtendedDecimalDetails.SnowflakeKind()
+	}
+
+	return kindDetails.Kind
 }
 
-func (SnowflakeDialect) KindForDataType(_type string, _ string) typing.KindDetails {
-	return typing.SnowflakeTypeToKind(_type)
+// KindForDataType converts a Snowflake type to a KindDetails.
+// Following this spec: https://docs.snowflake.com/en/sql-reference/intro-summary-data-types.html
+func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) typing.KindDetails {
+	snowflakeType = strings.ToLower(snowflakeType)
+
+	// We need to strip away the variable
+	// For example, a Column can look like: TEXT, or Number(38, 0) or VARCHAR(255).
+	// We need to strip out all the content from ( ... )
+	if len(snowflakeType) == 0 {
+		return typing.Invalid
+	}
+
+	idxStop := len(snowflakeType)
+	if idx := strings.Index(snowflakeType, "("); idx > 0 {
+		idxStop = idx
+	}
+
+	// Geography, geometry date, time, varbinary, binary are currently not supported.
+	switch strings.TrimSpace(snowflakeType[:idxStop]) {
+	case "number":
+		return typing.ParseNumeric("number", snowflakeType)
+	case "numeric":
+		return typing.ParseNumeric(typing.DefaultPrefix, snowflakeType)
+	case "decimal":
+		return typing.EDecimal
+	case "float", "float4",
+		"float8", "double", "double precision", "real":
+		return typing.Float
+	case "int", "integer", "bigint", "smallint", "tinyint", "byteint":
+		return typing.Integer
+	case "varchar", "char", "character", "string", "text":
+		return typing.String
+	case "boolean":
+		return typing.Boolean
+	case "variant", "object":
+		return typing.Struct
+	case "array":
+		return typing.Array
+	case "datetime", "timestamp", "timestamp_ltz", "timestamp_ntz", "timestamp_tz":
+		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)
+	case "time":
+		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
+	case "date":
+		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType)
+	default:
+		return typing.Invalid
+	}
 }
 
 func (SnowflakeDialect) IsColumnAlreadyExistsErr(err error) bool {

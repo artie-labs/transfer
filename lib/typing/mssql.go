@@ -12,7 +12,7 @@ func MSSQLTypeToKind(rawType string, stringPrecision string) KindDetails {
 	rawType = strings.ToLower(rawType)
 
 	if strings.HasPrefix(rawType, "numeric") {
-		return ParseNumeric(defaultPrefix, rawType)
+		return ParseNumeric(DefaultPrefix, rawType)
 	}
 
 	switch rawType {

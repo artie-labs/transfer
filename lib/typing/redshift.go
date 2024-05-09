@@ -12,7 +12,7 @@ func RedshiftTypeToKind(rawType string, stringPrecision string) KindDetails {
 	rawType = strings.ToLower(rawType)
 	// TODO: Check if there are any missing Redshift data types.
 	if strings.HasPrefix(rawType, "numeric") {
-		return ParseNumeric(defaultPrefix, rawType)
+		return ParseNumeric(DefaultPrefix, rawType)
 	}
 
 	if strings.Contains(rawType, "character varying") {

@@ -40,7 +40,7 @@ func BigQueryTypeToKind(rawBqType string) KindDetails {
 			return EDecimal
 		}
 
-		return ParseNumeric(defaultPrefix, rawBqType)
+		return ParseNumeric(DefaultPrefix, rawBqType)
 	case "bignumeric":
 		if rawBqType == "bignumeric" {
 			return EDecimal
