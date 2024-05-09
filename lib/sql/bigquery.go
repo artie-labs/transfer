@@ -24,8 +24,8 @@ func (BigQueryDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
 	return typing.KindToBigQuery(kd)
 }
 
-func (BigQueryDialect) KindForDataType(_type string, _ string) typing.KindDetails {
-	return typing.BigQueryTypeToKind(_type)
+func (BigQueryDialect) KindForDataType(_type string, _ string) (typing.KindDetails, error) {
+	return typing.BigQueryTypeToKind(_type), nil
 }
 
 func (BigQueryDialect) IsColumnAlreadyExistsErr(err error) bool {

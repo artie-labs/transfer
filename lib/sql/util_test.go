@@ -46,45 +46,45 @@ func TestQuoteIdentifiers(t *testing.T) {
 
 func TestParseDataTypeDefinition(t *testing.T) {
 	{
-		dataType, args, err := ParseDataTypeDefinition("number")
+		dataType, parameters, err := ParseDataTypeDefinition("number")
 		assert.NoError(t, err)
 		assert.Equal(t, "number", dataType)
-		assert.Empty(t, args)
+		assert.Empty(t, parameters)
 	}
 	{
-		dataType, args, err := ParseDataTypeDefinition("number(5,2)")
+		dataType, parameters, err := ParseDataTypeDefinition("number(5,2)")
 		assert.NoError(t, err)
 		assert.Equal(t, "number", dataType)
-		assert.Equal(t, []string{"5", "2"}, args)
+		assert.Equal(t, []string{"5", "2"}, parameters)
 	}
 	{
-		dataType, args, err := ParseDataTypeDefinition("number(5, 2)")
+		dataType, parameters, err := ParseDataTypeDefinition("number(5, 2)")
 		assert.NoError(t, err)
 		assert.Equal(t, "number", dataType)
-		assert.Equal(t, []string{"5", "2"}, args)
+		assert.Equal(t, []string{"5", "2"}, parameters)
 	}
 	{
-		dataType, args, err := ParseDataTypeDefinition("VARCHAR(1234)")
+		dataType, parameters, err := ParseDataTypeDefinition("VARCHAR(1234)")
 		assert.NoError(t, err)
 		assert.Equal(t, "VARCHAR", dataType)
-		assert.Equal(t, []string{"1234"}, args)
+		assert.Equal(t, []string{"1234"}, parameters)
 	}
 	{
 		// Spaces:
-		dataType, args, err := ParseDataTypeDefinition("VARCHAR")
+		dataType, parameters, err := ParseDataTypeDefinition("VARCHAR")
 		assert.NoError(t, err)
 		assert.Equal(t, "VARCHAR", dataType)
-		assert.Empty(t, args)
+		assert.Empty(t, parameters)
 	}
 	{
-		// Spaces + args:
-		dataType, args, err := ParseDataTypeDefinition("   VARCHAR   (   1234   )  ")
+		// Spaces + parameters:
+		dataType, parameters, err := ParseDataTypeDefinition("   VARCHAR   (   1234   )  ")
 		assert.NoError(t, err)
 		assert.Equal(t, "VARCHAR", dataType)
-		assert.Equal(t, []string{"1234"}, args)
+		assert.Equal(t, []string{"1234"}, parameters)
 	}
 	{
-		// Malformed args:
+		// Malformed parameters:
 		_, _, err := ParseDataTypeDefinition("VARCHAR(1234")
 		assert.ErrorContains(t, err, "missing closing parenthesis")
 	}

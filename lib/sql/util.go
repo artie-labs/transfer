@@ -22,7 +22,7 @@ func QuoteIdentifiers(identifiers []string, dialect Dialect) []string {
 	return result
 }
 
-// ParseDataTypeDefinition parses a column type definition returning the type and arguments.
+// ParseDataTypeDefinition parses a column type definition returning the type and parameters.
 // "TEXT" -> "TEXT", {}
 // "VARCHAR(1234)" -> "VARCHAR", {"1234"}
 // "NUERMIC(5, 1)" -> "NUMERIC", {"5", "1"}
@@ -34,11 +34,11 @@ func ParseDataTypeDefinition(value string) (string, []string, error) {
 			return "", nil, fmt.Errorf("missing closing parenthesis")
 		}
 
-		args := strings.Split(value[idx+1:len(value)-1], ",")
-		for i, arg := range args {
-			args[i] = strings.TrimSpace(arg)
+		parameters := strings.Split(value[idx+1:len(value)-1], ",")
+		for i, parameter := range parameters {
+			parameters[i] = strings.TrimSpace(parameter)
 		}
-		return strings.TrimSpace(value[:idx]), args, nil
+		return strings.TrimSpace(value[:idx]), parameters, nil
 	}
 	return value, nil, nil
 }
