@@ -107,7 +107,7 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 				pkCols = append(pkCols, colName)
 			}
 
-			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, colName, typing.KindToDWHType(col.KindDetails, a.Dwh.Label(), col.PrimaryKey())))
+			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, colName, a.Dwh.Dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey())))
 		case constants.Delete:
 			colSQLParts = append(colSQLParts, a.Dwh.Dialect().QuoteIdentifier(col.Name()))
 		}
