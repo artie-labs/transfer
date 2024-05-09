@@ -13,7 +13,6 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
-	"github.com/artie-labs/transfer/lib/typing"
 )
 
 func TestGenerateDedupeQueries(t *testing.T) {
@@ -28,7 +27,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 			t,
 			fmt.Sprintf("CREATE OR REPLACE TABLE %s OPTIONS (expiration_timestamp = TIMESTAMP(%s)) AS (SELECT * FROM `project12`.`public`.`customers` QUALIFY ROW_NUMBER() OVER (PARTITION BY `id` ORDER BY `id` ASC) = 2)",
 				stagingTableID.FullyQualifiedName(),
-				fmt.Sprintf(`"%s"`, typing.ExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL))),
+				fmt.Sprintf(`"%s"`, sql.BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL))),
 			),
 			parts[0],
 		)
@@ -46,7 +45,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 			t,
 			fmt.Sprintf("CREATE OR REPLACE TABLE %s OPTIONS (expiration_timestamp = TIMESTAMP(%s)) AS (SELECT * FROM `project12`.`public`.`customers` QUALIFY ROW_NUMBER() OVER (PARTITION BY `id` ORDER BY `id` ASC, `__artie_updated_at` ASC) = 2)",
 				stagingTableID.FullyQualifiedName(),
-				fmt.Sprintf(`"%s"`, typing.ExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL))),
+				fmt.Sprintf(`"%s"`, sql.BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL))),
 			),
 			parts[0],
 		)
@@ -64,7 +63,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 			t,
 			fmt.Sprintf("CREATE OR REPLACE TABLE %s OPTIONS (expiration_timestamp = TIMESTAMP(%s)) AS (SELECT * FROM `project123`.`public`.`user_settings` QUALIFY ROW_NUMBER() OVER (PARTITION BY `user_id`, `settings` ORDER BY `user_id` ASC, `settings` ASC) = 2)",
 				stagingTableID.FullyQualifiedName(),
-				fmt.Sprintf(`"%s"`, typing.ExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL))),
+				fmt.Sprintf(`"%s"`, sql.BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL))),
 			),
 			parts[0],
 		)
@@ -82,7 +81,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 			t,
 			fmt.Sprintf("CREATE OR REPLACE TABLE %s OPTIONS (expiration_timestamp = TIMESTAMP(%s)) AS (SELECT * FROM `project123`.`public`.`user_settings` QUALIFY ROW_NUMBER() OVER (PARTITION BY `user_id`, `settings` ORDER BY `user_id` ASC, `settings` ASC, `__artie_updated_at` ASC) = 2)",
 				stagingTableID.FullyQualifiedName(),
-				fmt.Sprintf(`"%s"`, typing.ExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL))),
+				fmt.Sprintf(`"%s"`, sql.BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL))),
 			),
 			parts[0],
 		)

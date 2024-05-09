@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -54,7 +55,7 @@ func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string)
 
 			return extTime.String(ext.PostgresDateFormat), nil
 		case ext.TimeKindType:
-			return extTime.String(typing.StreamingTimeFormat), nil
+			return extTime.String(sql.BQStreamingTimeFormat), nil
 		}
 	case typing.Struct.Kind:
 		if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
