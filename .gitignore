@@ -1,7 +1,9 @@
 # GoReleaser
 dist/*
 
-*.mock.go
+# Ignore mocks
+**/*.mock.go
+
 .envrc-personal
 
 # Terraform stuff
