@@ -1,4 +1,4 @@
-package types
+package types_test
 
 import (
 	"math/rand"
@@ -6,6 +6,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/destination/types"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
@@ -15,33 +17,33 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func (t *TypesTestSuite) TestDwhTableConfig_ShouldDeleteColumn() {
+func TestDwhTableConfig_ShouldDeleteColumn(t *testing.T) {
 	// Test 3 different possibilities:
 	// 1. DropDeletedColumns = false, so don't delete.
-	dwhTableConfig := NewDwhTableConfig(&columns.Columns{}, nil, false, false)
+	dwhTableConfig := types.NewDwhTableConfig(&columns.Columns{}, nil, false, false)
 	for i := 0; i < 100; i++ {
 		results := dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC(), true)
-		assert.False(t.T(), results)
-		assert.Equal(t.T(), len(dwhTableConfig.ReadOnlyColumnsToDelete()), 0)
+		assert.False(t, results)
+		assert.Equal(t, len(dwhTableConfig.ReadOnlyColumnsToDelete()), 0)
 	}
 
 	// 2. DropDeletedColumns = true and ContainsOtherOperations = false, so don't delete
-	dwhTableConfig = NewDwhTableConfig(&columns.Columns{}, nil, false, true)
+	dwhTableConfig = types.NewDwhTableConfig(&columns.Columns{}, nil, false, true)
 	for i := 0; i < 100; i++ {
 		results := dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC(), false)
-		assert.False(t.T(), results)
-		assert.Equal(t.T(), len(dwhTableConfig.ReadOnlyColumnsToDelete()), 0)
+		assert.False(t, results)
+		assert.Equal(t, len(dwhTableConfig.ReadOnlyColumnsToDelete()), 0)
 	}
 
 	// 3. DropDeletedColumns = true and ContainsOtherOperations = true, now check CDC time to delete.
-	dwhTableConfig = NewDwhTableConfig(&columns.Columns{}, nil, false, true)
+	dwhTableConfig = types.NewDwhTableConfig(&columns.Columns{}, nil, false, true)
 	for i := 0; i < 100; i++ {
 		results := dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC(), true)
-		assert.False(t.T(), results)
-		assert.Equal(t.T(), len(dwhTableConfig.ReadOnlyColumnsToDelete()), 1)
+		assert.False(t, results)
+		assert.Equal(t, len(dwhTableConfig.ReadOnlyColumnsToDelete()), 1)
 	}
 
-	assert.True(t.T(), dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC().Add(2*constants.DeletionConfidencePadding), true))
+	assert.True(t, dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC().Add(2*constants.DeletionConfidencePadding), true))
 }
 
 // TestDwhTableConfig_ColumnsConcurrency this file is meant to test the concurrency methods of .Columns()
@@ -52,12 +54,12 @@ func TestDwhTableConfig_ColumnsConcurrency(t *testing.T) {
 	cols.AddColumn(columns.NewColumn("bar", typing.String))
 	cols.AddColumn(columns.NewColumn("boolean", typing.Boolean))
 
-	dwhTableCfg := NewDwhTableConfig(&cols, nil, false, false)
+	dwhTableCfg := types.NewDwhTableConfig(&cols, nil, false, false)
 
 	var wg sync.WaitGroup
 	for i := 0; i < 5; i++ {
 		wg.Add(1)
-		go func(tableCfg *DwhTableConfig) {
+		go func(tableCfg *types.DwhTableConfig) {
 			defer wg.Done()
 			for j := 0; j < 100; j++ {
 				assert.Equal(t, 3, len(tableCfg.Columns().GetColumns()), tableCfg.Columns().GetColumns())
@@ -75,13 +77,13 @@ func TestDwhTableConfig_ColumnsConcurrency(t *testing.T) {
 	wg.Wait()
 }
 
-func (t *TypesTestSuite) TestDwhTableConfig_MutateInMemoryColumns() {
-	tc := NewDwhTableConfig(&columns.Columns{}, nil, false, false)
+func TestDwhTableConfig_MutateInMemoryColumns(t *testing.T) {
+	tc := types.NewDwhTableConfig(&columns.Columns{}, nil, false, false)
 	for _, col := range []string{"a", "b", "c", "d", "e"} {
 		tc.MutateInMemoryColumns(false, constants.Add, columns.NewColumn(col, typing.String))
 	}
 
-	assert.Equal(t.T(), 5, len(tc.columns.GetColumns()))
+	assert.Len(t, tc.Columns().GetColumns(), 5)
 	var wg sync.WaitGroup
 	for _, addCol := range []string{"aa", "bb", "cc", "dd", "ee", "ff"} {
 		wg.Add(1)
@@ -100,16 +102,16 @@ func (t *TypesTestSuite) TestDwhTableConfig_MutateInMemoryColumns() {
 	}
 
 	wg.Wait()
-	assert.Equal(t.T(), 6, len(tc.columns.GetColumns()))
+	assert.Len(t, tc.Columns().GetColumns(), 6)
 }
 
-func (t *TypesTestSuite) TestDwhTableConfig_ReadOnlyColumnsToDelete() {
+func TestDwhTableConfig_ReadOnlyColumnsToDelete(t *testing.T) {
 	colsToDelete := make(map[string]time.Time)
 	for _, colToDelete := range []string{"a", "b", "c", "d"} {
 		colsToDelete[colToDelete] = time.Now()
 	}
 
-	tc := NewDwhTableConfig(nil, colsToDelete, false, false)
+	tc := types.NewDwhTableConfig(nil, colsToDelete, false, false)
 	var wg sync.WaitGroup
 	for i := 0; i < 100; i++ {
 		wg.Add(1)
@@ -117,13 +119,13 @@ func (t *TypesTestSuite) TestDwhTableConfig_ReadOnlyColumnsToDelete() {
 			time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
 			defer wg.Done()
 			actualColsToDelete := tc.ReadOnlyColumnsToDelete()
-			assert.Equal(t.T(), colsToDelete, actualColsToDelete)
+			assert.Equal(t, colsToDelete, actualColsToDelete)
 		}()
 	}
 	wg.Wait()
 }
 
-func (t *TypesTestSuite) TestAuditColumnsToDelete() {
+func TestAuditColumnsToDelete(t *testing.T) {
 	type _tc struct {
 		colsToDelete       []string
 		dropDeletedCols    bool
@@ -155,7 +157,7 @@ func (t *TypesTestSuite) TestAuditColumnsToDelete() {
 			colsToDelete[colToDelete] = time.Now()
 		}
 
-		dwhTc := NewDwhTableConfig(nil, colsToDelete, false, tc.dropDeletedCols)
+		dwhTc := types.NewDwhTableConfig(nil, colsToDelete, false, tc.dropDeletedCols)
 		var cols []columns.Column
 		for _, colToDelete := range tc.colsToDelete {
 			cols = append(cols, columns.NewColumn(colToDelete, typing.String))
@@ -172,6 +174,6 @@ func (t *TypesTestSuite) TestAuditColumnsToDelete() {
 		}
 
 		sort.Strings(actualCols)
-		assert.Equal(t.T(), tc.expectedColsRemain, actualCols, idx)
+		assert.Equal(t, tc.expectedColsRemain, actualCols, idx)
 	}
 }

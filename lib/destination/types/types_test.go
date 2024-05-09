@@ -1,18 +1,21 @@
-package types
+package types_test
+
+// We are using a different pkg name because we are importing `mocks.TableIdentifier`, doing so will avoid a cyclical dependency.
 
 import (
 	"math/rand"
 	"sync"
+	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
-	"github.com/stretchr/testify/assert"
-
+	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/stretchr/testify/assert"
 )
 
-func generateDwhTableCfg() *DwhTableConfig {
+func generateDwhTableCfg() *types.DwhTableConfig {
 	cols := &columns.Columns{}
 	colsToDelete := make(map[string]time.Time)
 	for _, col := range []string{"foo", "bar", "abc", "xyz"} {
@@ -23,34 +26,23 @@ func generateDwhTableCfg() *DwhTableConfig {
 		cols.AddColumn(columns.NewColumn(col, typing.String))
 	}
 
-	return &DwhTableConfig{
-		columns:         cols,
-		columnsToDelete: colsToDelete,
-	}
+	return types.NewDwhTableConfig(cols, colsToDelete, false, false)
 }
 
-// TODO: Rip this out by moving `TableIdentifier` to a separate package since it'll have a cyclical dependency.
-type MockTableIdentifier struct{ fqName string }
-
-func (MockTableIdentifier) Table() string                          { panic("not implemented") }
-func (MockTableIdentifier) WithTable(table string) TableIdentifier { panic("not implemented") }
-func (m MockTableIdentifier) FullyQualifiedName() string           { return m.fqName }
-
-func (t *TypesTestSuite) TestDwhToTablesConfigMap_TableConfigBasic() {
-	dwh := &DwhToTablesConfigMap{}
+func TestDwhToTablesConfigMap_TableConfigBasic(t *testing.T) {
+	dwh := &types.DwhToTablesConfigMap{}
 	dwhTableConfig := generateDwhTableCfg()
-
-	tableID := MockTableIdentifier{"database.schema.tableName"}
-	dwh.AddTableToConfig(tableID, dwhTableConfig)
-	assert.Equal(t.T(), *dwhTableConfig, *dwh.TableConfig(tableID))
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	dwh.AddTableToConfig(fakeTableID, dwhTableConfig)
+	assert.Equal(t, *dwhTableConfig, *dwh.TableConfig(fakeTableID))
 }
 
 // TestDwhToTablesConfigMap_Concurrency - has a bunch of concurrent go-routines that are rapidly adding and reading from the tableConfig.
-func (t *TypesTestSuite) TestDwhToTablesConfigMap_Concurrency() {
-	dwh := &DwhToTablesConfigMap{}
-	tableID := MockTableIdentifier{"db.schema.table"}
+func TestDwhToTablesConfigMap_Concurrency(t *testing.T) {
+	dwh := &types.DwhToTablesConfigMap{}
+	fakeTableID := &mocks.FakeTableIdentifier{}
 	dwhTableCfg := generateDwhTableCfg()
-	dwh.AddTableToConfig(tableID, dwhTableCfg)
+	dwh.AddTableToConfig(fakeTableID, dwhTableCfg)
 	var wg sync.WaitGroup
 	// Write
 	wg.Add(1)
@@ -58,7 +50,7 @@ func (t *TypesTestSuite) TestDwhToTablesConfigMap_Concurrency() {
 		defer wg.Done()
 		for i := 0; i < 1000; i++ {
 			time.Sleep(time.Duration(rand.Intn(10)) * time.Millisecond)
-			dwh.AddTableToConfig(tableID, dwhTableCfg)
+			dwh.AddTableToConfig(fakeTableID, dwhTableCfg)
 		}
 	}()
 
@@ -68,7 +60,7 @@ func (t *TypesTestSuite) TestDwhToTablesConfigMap_Concurrency() {
 		defer wg.Done()
 		for i := 0; i < 1000; i++ {
 			time.Sleep(time.Duration(rand.Intn(10)) * time.Millisecond)
-			assert.Equal(t.T(), *dwhTableCfg, *dwh.TableConfig(tableID))
+			assert.Equal(t, *dwhTableCfg, *dwh.TableConfig(fakeTableID))
 		}
 
 	}()
