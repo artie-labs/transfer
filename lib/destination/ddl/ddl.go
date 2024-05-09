@@ -170,10 +170,6 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 		}
 	}
 
-	if len(alterStatements) == 0 {
-		return fmt.Errorf("alter statements is empty")
-	}
-
 	for _, sqlQuery := range alterStatements {
 		slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
 		if _, err = a.Dwh.Exec(sqlQuery); err != nil {
