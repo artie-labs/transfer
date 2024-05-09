@@ -89,6 +89,11 @@ func TestSnowflakeTypeToKindComplex(t *testing.T) {
 	}
 }
 
+func TestSnowflakeTypeToKindErrors(t *testing.T) {
+	assert.Equal(t, Invalid, SnowflakeTypeToKind(""))
+	assert.Equal(t, Invalid, SnowflakeTypeToKind("abc123"))
+}
+
 func TestSnowflakeTypeNoDataLoss(t *testing.T) {
 	kindDetails := []KindDetails{
 		NewKindDetailsFromTemplate(ETime, ext.DateTimeKindType),
