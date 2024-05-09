@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
@@ -106,7 +107,7 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 				pkCols = append(pkCols, colName)
 			}
 
-			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, colName, typing.KindToDWHType(col.KindDetails, a.Dwh.Label(), col.PrimaryKey())))
+			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, colName, a.Dwh.Dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey())))
 		case constants.Delete:
 			colSQLParts = append(colSQLParts, a.Dwh.Dialect().QuoteIdentifier(col.Name()))
 		}
@@ -114,7 +115,7 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 
 	if len(pkCols) > 0 {
 		pkStatement := fmt.Sprintf("PRIMARY KEY (%s)", strings.Join(pkCols, ", "))
-		if a.Dwh.Label() == constants.BigQuery {
+		if _, ok := a.Dwh.Dialect().(sql.BigQueryDialect); ok {
 			pkStatement += " NOT ENFORCED"
 		}
 
@@ -127,26 +128,26 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 	if a.CreateTable {
 		var sqlQuery string
 		if a.TemporaryTable {
-			switch a.Dwh.Label() {
-			case constants.MSSQL:
+			switch a.Dwh.Dialect().(type) {
+			case sql.MSSQLDialect:
 				sqlQuery = fmt.Sprintf("CREATE TABLE %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
-			case constants.Redshift:
+			case sql.RedshiftDialect:
 				sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
-			case constants.BigQuery:
+			case sql.BigQueryDialect:
 				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
 					fqTableName, strings.Join(colSQLParts, ","), typing.ExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)))
 			// Not enabled for constants.Snowflake yet
-			case constants.Snowflake:
+			case sql.SnowflakeDialect:
 				// TEMPORARY Table syntax - https://docs.snowflake.com/en/sql-reference/sql/create-table
 				// PURGE syntax - https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#purging-files-after-loading
 				// FIELD_OPTIONALLY_ENCLOSED_BY - is needed because CSV will try to escape any values that have `"`
 				sqlQuery = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`,
 					fqTableName, strings.Join(colSQLParts, ","))
 			default:
-				return fmt.Errorf("unexpected dwh: %v trying to create a temporary table", a.Dwh.Label())
+				return fmt.Errorf("unexpected dialect: %T trying to create a temporary table", a.Dwh.Dialect())
 			}
 		} else {
-			if a.Dwh.Label() == constants.MSSQL {
+			if _, ok := a.Dwh.Dialect().(sql.MSSQLDialect); ok {
 				// MSSQL doesn't support IF NOT EXISTS
 				sqlQuery = fmt.Sprintf("CREATE TABLE %s (%s)", fqTableName, strings.Join(colSQLParts, ","))
 			} else {
@@ -156,16 +157,16 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 
 		slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
 		if _, err = a.Dwh.Exec(sqlQuery); err != nil {
-			if ColumnAlreadyExistErr(err, a.Dwh.Label()) {
+			if a.Dwh.Dialect().IsColumnAlreadyExistsErr(err) {
 				err = nil
-			} else if err != nil {
+			} else {
 				return err
 			}
 		}
 	} else {
 		for _, colSQLPart := range colSQLParts {
 			var sqlQuery string
-			if a.Dwh.Label() == constants.MSSQL {
+			if _, ok := a.Dwh.Dialect().(sql.MSSQLDialect); ok {
 				// MSSQL doesn't support the COLUMN keyword
 				sqlQuery = fmt.Sprintf("ALTER TABLE %s %s %s", fqTableName, a.ColumnOp, colSQLPart)
 			} else {
@@ -174,9 +175,9 @@ func (a AlterTableArgs) AlterTable(cols ...columns.Column) error {
 
 			slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
 			if _, err = a.Dwh.Exec(sqlQuery); err != nil {
-				if ColumnAlreadyExistErr(err, a.Dwh.Label()) {
+				if a.Dwh.Dialect().IsColumnAlreadyExistsErr(err) {
 					err = nil
-				} else if err != nil {
+				} else {
 					return fmt.Errorf("failed to apply ddl, sql: %v, err: %w", sqlQuery, err)
 				}
 			}

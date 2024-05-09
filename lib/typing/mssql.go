@@ -60,7 +60,7 @@ func mssqlTypeToKind(rawType string, stringPrecision string) KindDetails {
 	return Invalid
 }
 
-func kindToMSSQL(kd KindDetails, isPk bool) string {
+func KindToMSSQL(kd KindDetails, isPk bool) string {
 	// Primary keys cannot exceed 900 chars in length.
 	// https://learn.microsoft.com/en-us/sql/relational-databases/tables/primary-and-foreign-key-constraints?view=sql-server-ver16#PKeys
 	const maxVarCharLengthForPrimaryKey = 900

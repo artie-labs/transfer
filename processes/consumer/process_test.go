@@ -10,36 +10,13 @@ import (
 	"github.com/artie-labs/transfer/lib/cdc/mongo"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
 )
-
-type MockDestination struct{}
-
-func (m MockDestination) Label() constants.DestinationKind {
-	return "mock"
-}
-
-func (m MockDestination) Merge(tableData *optimization.TableData) error {
-	return fmt.Errorf("should not be called")
-}
-
-func (m MockDestination) Append(tableData *optimization.TableData) error {
-	return fmt.Errorf("should not be called")
-}
-
-func (m MockDestination) IsRetryableError(err error) bool {
-	return false
-}
-
-func (m MockDestination) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
-	panic("not used")
-}
 
 func TestProcessMessageFailures(t *testing.T) {
 	cfg := config.Config{
@@ -66,12 +43,12 @@ func TestProcessMessageFailures(t *testing.T) {
 		GroupID: "foo",
 	}
 
-	tableName, err := args.process(ctx, cfg, memDB, MockDestination{}, metrics.NullMetricsProvider{})
+	tableName, err := args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
 	assert.ErrorContains(t, err, "failed to process, topicConfig is nil", err.Error())
 	assert.Empty(t, tableName)
 
 	args.TopicToConfigFormatMap = NewTcFmtMap()
-	tableName, err = args.process(ctx, cfg, memDB, MockDestination{}, metrics.NullMetricsProvider{})
+	tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
 	assert.ErrorContains(t, err, "failed to get topic", err.Error())
 	assert.Equal(t, 0, len(memDB.TableData()))
 	assert.Empty(t, tableName)
@@ -106,7 +83,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	tcFmt, isOk := tcFmtMap.GetTopicFmt(msg.Topic())
 	assert.True(t, isOk)
 
-	tableName, err = args.process(ctx, cfg, memDB, MockDestination{}, metrics.NullMetricsProvider{})
+	tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
 	assert.ErrorContains(t, err, fmt.Sprintf("format: %s is not supported", tcFmt.tc.CDCKeyFormat), err.Error())
 	assert.ErrorContains(t, err, "cannot unmarshall key", err.Error())
 	assert.Equal(t, 0, len(memDB.TableData()))
@@ -200,7 +177,7 @@ func TestProcessMessageFailures(t *testing.T) {
 			TopicToConfigFormatMap: tcFmtMap,
 		}
 
-		tableName, err = args.process(ctx, cfg, memDB, MockDestination{}, metrics.NullMetricsProvider{})
+		tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
 		assert.NoError(t, err)
 		assert.Equal(t, table, tableName)
 
@@ -229,7 +206,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		TopicToConfigFormatMap: tcFmtMap,
 	}
 
-	tableName, err = args.process(ctx, cfg, memDB, MockDestination{}, metrics.NullMetricsProvider{})
+	tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
 	assert.ErrorContains(t, err, "cannot unmarshall event: failed to unmarshal json: invalid character 'o' in literal")
 	assert.Empty(t, tableName)
 	assert.True(t, td.NumberOfRows() > 0)
@@ -369,7 +346,7 @@ func TestProcessMessageSkip(t *testing.T) {
 		td := memoryDB.GetOrCreateTableData(table)
 		assert.Equal(t, 0, int(td.NumberOfRows()))
 
-		tableName, err := args.process(ctx, cfg, memDB, MockDestination{}, metrics.NullMetricsProvider{})
+		tableName, err := args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
 		assert.NoError(t, err)
 		assert.Equal(t, table, tableName)
 		// Because it got skipped.

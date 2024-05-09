@@ -10,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -59,17 +60,17 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 
 	var tableMissing bool
 	if err != nil {
-		switch g.Dwh.Label() {
-		case constants.Snowflake:
+		switch g.Dwh.Dialect().(type) {
+		case sql.SnowflakeDialect:
 			if SnowflakeTableDoesNotExistErr(err) {
 				// Swallow the error, make sure all the metadata is created
 				tableMissing = true
 				err = nil
 			} else {
-				return nil, fmt.Errorf("failed to query %v, err: %w, query: %v", g.Dwh.Label(), err, g.Query)
+				return nil, fmt.Errorf("failed to query %T, err: %w, query: %v", g.Dwh, err, g.Query)
 			}
 		default:
-			return nil, fmt.Errorf("failed to query %v, err: %w", g.Dwh.Label(), err)
+			return nil, fmt.Errorf("failed to query %T, err: %w", g.Dwh, err)
 		}
 	}
 
