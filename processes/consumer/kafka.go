@@ -16,6 +16,7 @@ import (
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
+	"github.com/artie-labs/transfer/lib/jitter"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
@@ -89,7 +90,11 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 	}
 
 	var wg sync.WaitGroup
-	for _, topic := range topics {
+	for num, topic := range topics {
+		// It is recommended to not try to establish a connection all at the same time, which may overwhelm the Kafka cluster.
+		sleepDur := jitter.Jitter(100, 3000, num)
+		time.Sleep(sleepDur * time.Millisecond)
+
 		wg.Add(1)
 		go func(topic string) {
 			defer wg.Done()
