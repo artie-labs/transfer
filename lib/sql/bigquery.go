@@ -64,43 +64,30 @@ func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) s
 }
 
 func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindDetails, error) {
-	rawBqType = strings.ToLower(rawBqType)
-
-	bqType := rawBqType
-	if len(bqType) == 0 {
+	if len(rawBqType) == 0 {
 		return typing.Invalid, nil
 	}
 
-	idxStop := len(bqType)
-	// Trim STRING (10) to String
-	if idx := strings.Index(bqType, "("); idx > 0 {
-		idxStop = idx
+	bqType, parameters, err := ParseDataTypeDefinition(strings.ToLower(rawBqType))
+	if err != nil {
+		return typing.Invalid, err
 	}
 
-	bqType = bqType[:idxStop]
-
 	// Trim Struct<k type> to Struct
-	idxStop = len(bqType)
+	idxStop := len(bqType)
 	if idx := strings.Index(bqType, "<"); idx > 0 {
 		idxStop = idx
 	}
 
 	// Geography, geometry date, time, varbinary, binary are currently not supported.
 	switch strings.TrimSpace(bqType[:idxStop]) {
-	case "numeric":
-		if rawBqType == "numeric" || rawBqType == "bignumeric" {
+	case "numeric", "bignumeric":
+		if len(parameters) == 0 {
 			// This is a specific thing to BigQuery
 			// A `NUMERIC` type without precision or scale specified is NUMERIC(38, 9)
 			return typing.EDecimal, nil
 		}
-
-		return typing.ParseNumeric(typing.DefaultPrefix, rawBqType), nil
-	case "bignumeric":
-		if rawBqType == "bignumeric" {
-			return typing.EDecimal, nil
-		}
-
-		return typing.ParseNumeric("bignumeric", rawBqType), nil
+		return typing.ParseNumeric(parameters), nil
 	case "decimal", "float", "float64", "bigdecimal":
 		return typing.Float, nil
 	case "int", "integer", "int64":

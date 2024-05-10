@@ -7,19 +7,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
-const DefaultPrefix = "numeric"
-
-// ParseNumeric - will prefix (since it can be NUMBER or NUMERIC) + valString in the form of:
-// * NUMERIC(p, s)
-// * NUMERIC(p)
-func ParseNumeric(prefix, valString string) KindDetails {
-	if !strings.HasPrefix(valString, prefix) {
-		return Invalid
-	}
-
-	valString = strings.TrimPrefix(valString, prefix+"(")
-	valString = strings.TrimSuffix(valString, ")")
-	parts := strings.Split(valString, ",")
+func ParseNumeric(parts []string) KindDetails {
 	if len(parts) == 0 || len(parts) > 2 {
 		return Invalid
 	}

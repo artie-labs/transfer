@@ -52,26 +52,22 @@ func (SnowflakeDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) 
 // KindForDataType converts a Snowflake type to a KindDetails.
 // Following this spec: https://docs.snowflake.com/en/sql-reference/intro-summary-data-types.html
 func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.KindDetails, error) {
-	snowflakeType = strings.ToLower(snowflakeType)
-
-	// We need to strip away the variable
-	// For example, a Column can look like: TEXT, or Number(38, 0) or VARCHAR(255).
-	// We need to strip out all the content from ( ... )
 	if len(snowflakeType) == 0 {
 		return typing.Invalid, nil
 	}
 
-	dataType, parameters, err := ParseDataTypeDefinition(snowflakeType)
+	// We need to strip away the variable
+	// For example, a Column can look like: TEXT, or Number(38, 0) or VARCHAR(255).
+	// We need to strip out all the content from ( ... )
+	dataType, parameters, err := ParseDataTypeDefinition(strings.ToLower(snowflakeType))
 	if err != nil {
 		return typing.Invalid, err
 	}
 
 	// Geography, geometry date, time, varbinary, binary are currently not supported.
 	switch dataType {
-	case "number":
-		return typing.ParseNumeric("number", snowflakeType), nil
-	case "numeric":
-		return typing.ParseNumeric(typing.DefaultPrefix, snowflakeType), nil
+	case "number", "numeric":
+		return typing.ParseNumeric(parameters), nil
 	case "decimal":
 		return typing.EDecimal, nil
 	case "float", "float4",
