@@ -18,12 +18,23 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
-func replaceExceededValues(colVal string, colKind columns.Column) string {
+func replaceExceededValues(colVal string, kindDetails typing.KindDetails) string {
 	// https://community.snowflake.com/s/article/Max-LOB-size-exceeded
 	const maxLobLength = 16777216
-	if colKind.KindDetails.Kind == typing.Struct.Kind {
+
+	switch kindDetails.Kind {
+	case typing.Struct.Kind:
 		if len(colVal) > maxLobLength {
 			return fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker)
+		}
+	case typing.String.Kind:
+		maxLength := maxLobLength
+		if kindDetails.OptionalStringPrecision != nil {
+			maxLength = *kindDetails.OptionalStringPrecision
+		}
+
+		if len(colVal) > maxLength {
+			return constants.ExceededValueMarker
 		}
 	}
 
@@ -43,7 +54,7 @@ func castColValStaging(colVal any, colKind columns.Column, additionalDateFmts []
 		return "", err
 	}
 
-	return replaceExceededValues(value, colKind), nil
+	return replaceExceededValues(value, colKind.KindDetails), nil
 }
 
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
