@@ -1,4 +1,4 @@
-package sql
+package dialect
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
@@ -188,4 +189,9 @@ func TestRedshiftDialect_BuildAlterColumnQuery(t *testing.T) {
 		"ALTER TABLE {TABLE} drop COLUMN {SQL_PART}",
 		RedshiftDialect{}.BuildAlterColumnQuery("{TABLE}", constants.Delete, "{SQL_PART}"),
 	)
+}
+
+func TestQuoteIdentifiers(t *testing.T) {
+	assert.Equal(t, []string{}, sql.QuoteIdentifiers([]string{}, RedshiftDialect{}))
+	assert.Equal(t, []string{`"a"`, `"b"`, `"c"`}, sql.QuoteIdentifiers([]string{"a", "b", "c"}, RedshiftDialect{}))
 }

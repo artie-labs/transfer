@@ -3,11 +3,11 @@ package redshift
 import (
 	"fmt"
 
+	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/lib/destination/types"
-	"github.com/artie-labs/transfer/lib/sql"
 )
 
-var dialect = sql.RedshiftDialect{}
+var _dialect = dialect.RedshiftDialect{}
 
 type TableIdentifier struct {
 	schema string
@@ -23,7 +23,7 @@ func (ti TableIdentifier) Schema() string {
 }
 
 func (ti TableIdentifier) EscapedTable() string {
-	return dialect.QuoteIdentifier(ti.table)
+	return _dialect.QuoteIdentifier(ti.table)
 }
 
 func (ti TableIdentifier) Table() string {

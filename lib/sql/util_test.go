@@ -39,11 +39,6 @@ func TestQuoteLiteral(t *testing.T) {
 	}
 }
 
-func TestQuoteIdentifiers(t *testing.T) {
-	assert.Equal(t, []string{}, QuoteIdentifiers([]string{}, RedshiftDialect{}))
-	assert.Equal(t, []string{`"a"`, `"b"`, `"c"`}, QuoteIdentifiers([]string{"a", "b", "c"}, RedshiftDialect{}))
-}
-
 func TestParseDataTypeDefinition(t *testing.T) {
 	{
 		dataType, parameters, err := ParseDataTypeDefinition("number")

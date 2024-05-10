@@ -3,11 +3,11 @@ package dml
 import (
 	"testing"
 
+	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/lib/mocks"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/ptr"
-	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/typing"
 
@@ -58,7 +58,7 @@ func TestMergeArgument_BuildStatements_Redshift(t *testing.T) {
 		SubQuery:            "{SUB_QUERY}",
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.Columns,
-		Dialect:             sql.RedshiftDialect{},
+		Dialect:             dialect.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
 	}
 
@@ -84,7 +84,7 @@ func TestMergeArgument_BuildRedshiftStatements_SkipDelete(t *testing.T) {
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.Columns,
-		Dialect:             sql.RedshiftDialect{},
+		Dialect:             dialect.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(false),
 	}
 
@@ -112,7 +112,7 @@ func TestMergeArgument_BuildRedshiftStatements_SoftDelete(t *testing.T) {
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.Columns,
-		Dialect:             sql.RedshiftDialect{},
+		Dialect:             dialect.RedshiftDialect{},
 		SoftDelete:          true,
 		ContainsHardDeletes: ptr.ToBool(false),
 	}
@@ -152,7 +152,7 @@ func TestMergeArgument_BuildRedshiftStatements_SoftDeleteComposite(t *testing.T)
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.Columns,
-		Dialect:             sql.RedshiftDialect{},
+		Dialect:             dialect.RedshiftDialect{},
 		SoftDelete:          true,
 		ContainsHardDeletes: ptr.ToBool(false),
 	}
@@ -195,7 +195,7 @@ func TestMergeArgument_GetRedshiftStatements(t *testing.T) {
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.Columns,
-		Dialect:             sql.RedshiftDialect{},
+		Dialect:             dialect.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
 	}
 
@@ -220,7 +220,7 @@ func TestMergeArgument_GetRedshiftStatements(t *testing.T) {
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.Columns,
-		Dialect:             sql.RedshiftDialect{},
+		Dialect:             dialect.RedshiftDialect{},
 		IdempotentKey:       "created_at",
 		ContainsHardDeletes: ptr.ToBool(true),
 	}
@@ -252,7 +252,7 @@ func TestMergeArgument_BuildRedshiftStatements_CompositeKey(t *testing.T) {
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.Columns,
-		Dialect:             sql.RedshiftDialect{},
+		Dialect:             dialect.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
 	}
 
@@ -277,7 +277,7 @@ func TestMergeArgument_BuildRedshiftStatements_CompositeKey(t *testing.T) {
 		SubQuery:            tempTableName,
 		PrimaryKeys:         res.PrimaryKeys,
 		Columns:             res.Columns,
-		Dialect:             sql.RedshiftDialect{},
+		Dialect:             dialect.RedshiftDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
 		IdempotentKey:       "created_at",
 	}

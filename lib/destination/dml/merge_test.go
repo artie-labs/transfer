@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
+	redshiftDialect "github.com/artie-labs/transfer/clients/redshift/dialect"
 	snowflakeDialect "github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
-	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -265,7 +265,7 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 func TestMergeArgument_RedshiftEqualitySQLParts(t *testing.T) {
 	mergeArg := MergeArgument{
 		PrimaryKeys: []columns.Column{columns.NewColumn("col1", typing.Invalid), columns.NewColumn("col2", typing.Invalid)},
-		Dialect:     sql.RedshiftDialect{},
+		Dialect:     redshiftDialect.RedshiftDialect{},
 	}
 	assert.Equal(t, []string{`c."col1" = cc."col1"`, `c."col2" = cc."col2"`}, mergeArg.redshiftEqualitySQLParts())
 }
@@ -283,7 +283,7 @@ func TestMergeArgument_BuildRedshiftInsertQuery(t *testing.T) {
 		TableID:     fakeTableID,
 		SubQuery:    "{SUB_QUERY}",
 		PrimaryKeys: []columns.Column{cols[0], cols[2]},
-		Dialect:     sql.RedshiftDialect{},
+		Dialect:     redshiftDialect.RedshiftDialect{},
 	}
 	assert.Equal(t,
 		`INSERT INTO {TABLE_ID} ("col1","col2","col3") SELECT cc."col1",cc."col2",cc."col3" FROM {SUB_QUERY} AS cc LEFT JOIN {TABLE_ID} AS c ON c."col1" = cc."col1" AND c."col3" = cc."col3" WHERE c."col1" IS NULL;`,
@@ -336,7 +336,7 @@ func TestMergeArgument_BuildRedshiftUpdateQuery(t *testing.T) {
 			TableID:       fakeTableID,
 			SubQuery:      "{SUB_QUERY}",
 			PrimaryKeys:   []columns.Column{cols[0], cols[2]},
-			Dialect:       sql.RedshiftDialect{},
+			Dialect:       redshiftDialect.RedshiftDialect{},
 			SoftDelete:    testCase.softDelete,
 			IdempotentKey: testCase.idempotentKey,
 		}
@@ -357,7 +357,7 @@ func TestMergeArgument_BuildRedshiftDeleteQuery(t *testing.T) {
 		TableID:     fakeTableID,
 		SubQuery:    "{SUB_QUERY}",
 		PrimaryKeys: []columns.Column{cols[0], cols[1]},
-		Dialect:     sql.RedshiftDialect{},
+		Dialect:     redshiftDialect.RedshiftDialect{},
 	}
 	assert.Equal(t,
 		`DELETE FROM {TABLE_ID} WHERE ("col1","col2") IN (SELECT cc."col1",cc."col2" FROM {SUB_QUERY} AS cc WHERE cc."__artie_delete" = true);`,

@@ -1,4 +1,4 @@
-package sql
+package dialect
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
@@ -18,7 +19,7 @@ func (rd RedshiftDialect) QuoteIdentifier(identifier string) string {
 }
 
 func (RedshiftDialect) EscapeStruct(value string) string {
-	return fmt.Sprintf("JSON_PARSE(%s)", QuoteLiteral(value))
+	return fmt.Sprintf("JSON_PARSE(%s)", sql.QuoteLiteral(value))
 }
 
 func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
@@ -64,7 +65,7 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 	rawType = strings.ToLower(rawType)
 	// TODO: Check if there are any missing Redshift data types.
 	if strings.HasPrefix(rawType, "numeric") {
-		_, parameters, err := ParseDataTypeDefinition(rawType)
+		_, parameters, err := sql.ParseDataTypeDefinition(rawType)
 		if err != nil {
 			return typing.Invalid, err
 		}
