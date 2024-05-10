@@ -2,6 +2,7 @@ package kafkalib
 
 import (
 	"context"
+	"errors"
 
 	"github.com/segmentio/kafka-go"
 )
@@ -22,6 +23,15 @@ func NewReader(config kafka.ReaderConfig) *Reader {
 		Reader: kafka.NewReader(config),
 		config: config,
 	}
+}
+
+func ShouldReload(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	// [27] Rebalance In Progress: the coordinator has begun rebalancing the group, the client should rejoin the group
+	return errors.Is(err, kafka.RebalanceInProgress)
 }
 
 func (r *Reader) Reload() error {
