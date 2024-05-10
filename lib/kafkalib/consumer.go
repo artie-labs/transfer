@@ -35,9 +35,8 @@ func ShouldReload(err error) bool {
 	return errors.Is(err, kafka.RebalanceInProgress)
 }
 
-func (r *Reader) Reload() error {
+func (r *Reader) Reload() {
 	// Close, then reload.
 	_ = r.Close()
 	r.Reader = kafka.NewReader(r.config)
-	return nil
 }

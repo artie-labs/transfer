@@ -107,12 +107,12 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 				kafkaMsg, err := kafkaConsumer.FetchMessage(ctx)
 				if err != nil {
 					if kafkalib.ShouldReload(err) {
-						if err = kafkaConsumer.Reload(); err != nil {
-							logger.Fatal("Failed to reload kafka consumer", slog.Any("err", err))
-						}
+						slog.Warn("Kafka reader needs to be reloaded", slog.Any("err", err))
+						kafkaConsumer.Reload()
+					} else {
+						slog.With(artie.KafkaMsgLogFields(kafkaMsg)...).Warn("Failed to read kafka message", slog.Any("err", err))
 					}
 
-					slog.With(artie.KafkaMsgLogFields(kafkaMsg)...).Warn("Failed to read kafka message", slog.Any("err", err))
 					time.Sleep(500 * time.Millisecond)
 					continue
 				}
