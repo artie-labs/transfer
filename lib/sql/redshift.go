@@ -113,7 +113,8 @@ func (RedshiftDialect) IsTableDoesNotExistErr(err error) bool {
 	return false
 }
 
-func (RedshiftDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string {
+func (RedshiftDialect) BuildCreateTableQuery(fqTableName string, _ bool, colSQLParts []string) string {
+	// Redshift uses the same syntax for temporary and permanant tables.
 	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
 }
 

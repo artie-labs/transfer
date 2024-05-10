@@ -1,13 +1,49 @@
 package sql
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestMSSQLDialect_QuoteIdentifier(t *testing.T) {
+	dialect := MSSQLDialect{}
+	assert.Equal(t, `"foo"`, dialect.QuoteIdentifier("foo"))
+	assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("FOO"))
+}
+
+func TestMSSQLDialect_DataTypeForKind(t *testing.T) {
+	tcs := []struct {
+		kd typing.KindDetails
+		// MSSQL is sensitive based on primary key
+		expected     string
+		expectedIsPk string
+	}{
+		{
+			kd:           typing.String,
+			expected:     "VARCHAR(MAX)",
+			expectedIsPk: "VARCHAR(900)",
+		},
+		{
+			kd: typing.KindDetails{
+				Kind:                    typing.String.Kind,
+				OptionalStringPrecision: ptr.ToInt(12345),
+			},
+			expected:     "VARCHAR(12345)",
+			expectedIsPk: "VARCHAR(900)",
+		},
+	}
+
+	for idx, tc := range tcs {
+		assert.Equal(t, tc.expected, MSSQLDialect{}.DataTypeForKind(tc.kd, false), idx)
+		assert.Equal(t, tc.expectedIsPk, MSSQLDialect{}.DataTypeForKind(tc.kd, true), idx)
+	}
+}
 
 func TestMSSQLDialect_KindForDataType(t *testing.T) {
 	dialect := MSSQLDialect{}
@@ -54,6 +90,47 @@ func TestMSSQLDialect_KindForDataType(t *testing.T) {
 		assert.Equal(t, typing.String.Kind, kd.Kind)
 		assert.Equal(t, 5, *kd.OptionalStringPrecision)
 	}
+}
+
+func TestMSSQLDialect_IsColumnAlreadyExistsErr(t *testing.T) {
+	testCases := []struct {
+		name           string
+		err            error
+		expectedResult bool
+	}{
+		{
+			name:           "MSSQL, table already exist error",
+			err:            fmt.Errorf(`There is already an object named 'customers' in the database.`),
+			expectedResult: true,
+		},
+		{
+			name:           "MSSQL, column already exists error",
+			err:            fmt.Errorf("Column names in each table must be unique. Column name 'first_name' in table 'users' is specified more than once."),
+			expectedResult: true,
+		},
+		{
+			name: "MSSQL, random error",
+			err:  fmt.Errorf("hello there qux"),
+		},
+	}
+
+	for _, tc := range testCases {
+		assert.Equal(t, tc.expectedResult, MSSQLDialect{}.IsColumnAlreadyExistsErr(tc.err), tc.name)
+	}
+}
+
+
+func TestMSSQLDialect_BuildCreateTableQuery(t *testing.T) {
+	// Temporary:
+	assert.Equal(t,
+		`CREATE TABLE {TABLE} ({PART_1},{PART_2});`,
+		MSSQLDialect{}.BuildCreateTableQuery("{TABLE}", true, []string{"{PART_1}", "{PART_2}"}),
+	)
+	// Not temporary:
+	assert.Equal(t,
+		`CREATE TABLE {TABLE} ({PART_1},{PART_2});`,
+		MSSQLDialect{}.BuildCreateTableQuery("{TABLE}", false, []string{"{PART_1}", "{PART_2}"}),
+	)
 }
 
 func TestMSSQLDialect_BuildAlterColumnQuery(t *testing.T) {

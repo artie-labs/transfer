@@ -5,10 +5,41 @@ import (
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestSnowflakeDialect_QuoteIdentifier(t *testing.T) {
+	dialect := SnowflakeDialect{}
+	assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("foo"))
+	assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("FOO"))
+}
+
+func TestSnowflakeDialect_DataTypeForKind(t *testing.T) {
+	tcs := []struct {
+		kd       typing.KindDetails
+		expected string
+	}{
+		{
+			kd:       typing.String,
+			expected: "string",
+		},
+		{
+			kd: typing.KindDetails{
+				Kind:                    typing.String.Kind,
+				OptionalStringPrecision: ptr.ToInt(12345),
+			},
+			expected: "string",
+		},
+	}
+
+	for idx, tc := range tcs {
+		assert.Equal(t, tc.expected, SnowflakeDialect{}.DataTypeForKind(tc.kd, true), idx)
+		assert.Equal(t, tc.expected, SnowflakeDialect{}.DataTypeForKind(tc.kd, false), idx)
+	}
+}
 
 func TestSnowflakeDialect_KindForDataType_Number(t *testing.T) {
 	{
@@ -151,6 +182,28 @@ func TestSnowflakeDialect_KindForDataType_NoDataLoss(t *testing.T) {
 	}
 }
 
+func TestSnowflakeDialect_IsColumnAlreadyExistsErr(t *testing.T) {
+	testCases := []struct {
+		name           string
+		err            error
+		expectedResult bool
+	}{
+		{
+			name:           "Snowflake, column already exists error",
+			err:            fmt.Errorf("Column already exists"),
+			expectedResult: true,
+		},
+		{
+			name: "Snowflake, random error",
+			err:  fmt.Errorf("hello there qux"),
+		},
+	}
+
+	for _, tc := range testCases {
+		assert.Equal(t, tc.expectedResult, SnowflakeDialect{}.IsColumnAlreadyExistsErr(tc.err), tc.name)
+	}
+}
+
 func TestSnowflakeDialect_IsTableDoesNotExistErr(t *testing.T) {
 	errToExpectation := map[error]bool{
 		nil: false,
@@ -161,6 +214,19 @@ func TestSnowflakeDialect_IsTableDoesNotExistErr(t *testing.T) {
 	for err, expectation := range errToExpectation {
 		assert.Equal(t, SnowflakeDialect{}.IsTableDoesNotExistErr(err), expectation, err)
 	}
+}
+
+func TestSnowflakeDialect_BuildCreateTableQuery(t *testing.T) {
+	// Temporary:
+	assert.Equal(t,
+		`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1},{PART_2}) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`,
+		SnowflakeDialect{}.BuildCreateTableQuery("{TABLE}", true, []string{"{PART_1}", "{PART_2}"}),
+	)
+	// Not temporary:
+	assert.Equal(t,
+		`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1},{PART_2})`,
+		SnowflakeDialect{}.BuildCreateTableQuery("{TABLE}", false, []string{"{PART_1}", "{PART_2}"}),
+	)
 }
 
 func TestSnowflakeDialect_BuildAlterColumnQuery(t *testing.T) {
