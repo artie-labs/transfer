@@ -38,6 +38,12 @@ func TestParseNumeric(t *testing.T) {
 			expectedKindDetails: Invalid,
 		},
 		{
+			parameters:          []string{"5", " 2"},
+			expectedKindDetails: EDecimal,
+			expectedPrecision:   ptr.ToInt(5),
+			expectedScale:       2,
+		},
+		{
 			parameters:          []string{"5", "2"},
 			expectedKindDetails: EDecimal,
 			expectedPrecision:   ptr.ToInt(5),
