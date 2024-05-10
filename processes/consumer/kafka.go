@@ -101,12 +101,19 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 				Brokers: cfg.Kafka.BootstrapServers(),
 			}
 
-			kafkaConsumer := kafka.NewReader(kafkaCfg)
+			kafkaConsumer := kafkalib.NewReader(kafkaCfg)
 			topicToConsumer.Add(topic, kafkaConsumer)
 			for {
 				kafkaMsg, err := kafkaConsumer.FetchMessage(ctx)
 				if err != nil {
-					slog.With(artie.KafkaMsgLogFields(kafkaMsg)...).Warn("Failed to read kafka message", slog.Any("err", err))
+					if kafkalib.ShouldReload(err) {
+						slog.Warn("Kafka reader needs to be reloaded", slog.Any("err", err))
+						kafkaConsumer.Reload()
+					} else {
+						slog.With(artie.KafkaMsgLogFields(kafkaMsg)...).Warn("Failed to read kafka message", slog.Any("err", err))
+					}
+
+					time.Sleep(500 * time.Millisecond)
 					continue
 				}
 
