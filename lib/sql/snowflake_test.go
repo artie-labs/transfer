@@ -44,12 +44,23 @@ func TestSnowflakeDialect_KindForDataType_Floats(t *testing.T) {
 		assert.Equal(t, typing.Invalid, kd)
 	}
 	{
-		expectedNumerics := []string{"NUMERIC(38, 2)", "NUMBER(38, 2)", "DECIMAL"}
-		for _, expectedNumeric := range expectedNumerics {
-			kd, err := SnowflakeDialect{}.KindForDataType(expectedNumeric, "")
-			assert.NoError(t, err)
-			assert.Equal(t, typing.EDecimal.Kind, kd.Kind, expectedNumeric)
-		}
+		kd, err := SnowflakeDialect{}.KindForDataType("NUMERIC(38, 2)", "")
+		assert.NoError(t, err)
+		assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
+		assert.Equal(t, 38, *kd.ExtendedDecimalDetails.Precision())
+		assert.Equal(t, 2, kd.ExtendedDecimalDetails.Scale())
+	}
+	{
+		kd, err := SnowflakeDialect{}.KindForDataType("NUMBER(38, 2)", "")
+		assert.NoError(t, err)
+		assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
+		assert.Equal(t, 38, *kd.ExtendedDecimalDetails.Precision())
+		assert.Equal(t, 2, kd.ExtendedDecimalDetails.Scale())
+	}
+	{
+		kd, err := SnowflakeDialect{}.KindForDataType("DECIMAL", "")
+		assert.NoError(t, err)
+		assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
 	}
 }
 

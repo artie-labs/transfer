@@ -10,6 +10,8 @@ import (
 )
 
 func TestRedshiftDialect_KindForDataType(t *testing.T) {
+	dialect := RedshiftDialect{}
+
 	type rawTypeAndPrecision struct {
 		rawType   string
 		precision string
@@ -93,7 +95,7 @@ func TestRedshiftDialect_KindForDataType(t *testing.T) {
 
 	for _, testCase := range testCases {
 		for _, rawTypeAndPrec := range testCase.rawTypes {
-			kd, err := RedshiftDialect{}.KindForDataType(rawTypeAndPrec.rawType, rawTypeAndPrec.precision)
+			kd, err := dialect.KindForDataType(rawTypeAndPrec.rawType, rawTypeAndPrec.precision)
 			assert.NoError(t, err)
 			assert.Equal(t, testCase.expectedKd.Kind, kd.Kind, testCase.name)
 
@@ -103,5 +105,13 @@ func TestRedshiftDialect_KindForDataType(t *testing.T) {
 				assert.Nil(t, kd.OptionalStringPrecision, testCase.name)
 			}
 		}
+	}
+
+	{
+		kd, err := dialect.KindForDataType("numeric(5,2)", "")
+		assert.NoError(t, err)
+		assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
+		assert.Equal(t, 5, *kd.ExtendedDecimalDetails.Precision())
+		assert.Equal(t, 2, kd.ExtendedDecimalDetails.Scale())
 	}
 }
