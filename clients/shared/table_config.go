@@ -65,7 +65,7 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 			tableMissing = true
 			err = nil
 		} else {
-			return nil, fmt.Errorf("failed to query %T, query: %q, err: %w", g.Dwh, g.Query, err)
+			return nil, fmt.Errorf("failed to query %T, err: %w, query: %q", g.Dwh, err, g.Query)
 		}
 	}
 
