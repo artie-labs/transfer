@@ -109,8 +109,6 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.
 	}
 }
 
-func (SnowflakeDialect) SupportsColumnKeyword() bool { return true }
-
 func (SnowflakeDialect) IsColumnAlreadyExistsErr(err error) bool {
 	// Snowflake doesn't have column mutations (IF NOT EXISTS)
 	return strings.Contains(err.Error(), "already exists")
@@ -132,6 +130,10 @@ func (SnowflakeDialect) BuildCreateTempTableQuery(fqTableName string, colSQLPart
 	// FIELD_OPTIONALLY_ENCLOSED_BY - is needed because CSV will try to escape any values that have `"`
 	return fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`,
 		fqTableName, strings.Join(colSQLParts, ","))
+}
+
+func (SnowflakeDialect) BuildAlterColumnQuery(fqTableName string, columnOp constants.ColumnOperation, colSQLPart string) string {
+	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTableName, columnOp, colSQLPart)
 }
 
 func (SnowflakeDialect) BuildProcessToastStructColExpression(colName string) string {

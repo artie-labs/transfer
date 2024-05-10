@@ -104,8 +104,6 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 	return typing.Invalid, nil
 }
 
-func (RedshiftDialect) SupportsColumnKeyword() bool { return true }
-
 func (RedshiftDialect) IsColumnAlreadyExistsErr(err error) bool {
 	// Redshift's error: ERROR: column "foo" of relation "statement" already exists
 	return strings.Contains(err.Error(), "already exists")
@@ -117,6 +115,10 @@ func (RedshiftDialect) IsTableDoesNotExistErr(err error) bool {
 
 func (RedshiftDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string {
 	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
+}
+
+func (RedshiftDialect) BuildAlterColumnQuery(fqTableName string, columnOp constants.ColumnOperation, colSQLPart string) string {
+	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTableName, columnOp, colSQLPart)
 }
 
 func (RedshiftDialect) BuildProcessToastStructColExpression(colName string) string {

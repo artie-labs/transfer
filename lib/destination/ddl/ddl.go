@@ -136,7 +136,7 @@ func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []col
 		alterStatements = []string{sqlQuery}
 	} else {
 		for _, colSQLPart := range colSQLParts {
-			alterStatements = append(alterStatements, sql.BuildAlterColumnQuery(a.Dialect, fqTableName, a.ColumnOp, colSQLPart))
+			alterStatements = append(alterStatements, a.Dialect.BuildAlterColumnQuery(fqTableName, a.ColumnOp, colSQLPart))
 		}
 	}
 

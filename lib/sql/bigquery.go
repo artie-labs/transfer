@@ -112,8 +112,6 @@ func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindD
 	}
 }
 
-func (BigQueryDialect) SupportsColumnKeyword() bool { return true }
-
 func (BigQueryDialect) IsColumnAlreadyExistsErr(err error) bool {
 	// Error ends up looking like something like this: Column already exists: _string at [1:39]
 	return strings.Contains(err.Error(), "Column already exists")
@@ -126,6 +124,10 @@ func (BigQueryDialect) IsTableDoesNotExistErr(err error) bool {
 func (BigQueryDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string {
 	return fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
 		fqTableName, strings.Join(colSQLParts, ","), BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)))
+}
+
+func (BigQueryDialect) BuildAlterColumnQuery(fqTableName string, columnOp constants.ColumnOperation, colSQLPart string) string {
+	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTableName, columnOp, colSQLPart)
 }
 
 func (BigQueryDialect) BuildProcessToastStructColExpression(colName string) string {

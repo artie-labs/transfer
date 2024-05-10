@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 )
@@ -114,4 +115,11 @@ func TestRedshiftDialect_KindForDataType(t *testing.T) {
 		assert.Equal(t, 5, *kd.ExtendedDecimalDetails.Precision())
 		assert.Equal(t, 2, kd.ExtendedDecimalDetails.Scale())
 	}
+}
+
+func TestRedshiftDialect_BuildAlterColumnQuery(t *testing.T) {
+	assert.Equal(t,
+		"ALTER TABLE {TABLE} drop COLUMN {SQL_PART}",
+		RedshiftDialect{}.BuildAlterColumnQuery("{TABLE}", constants.Delete, "{SQL_PART}"),
+	)
 }
