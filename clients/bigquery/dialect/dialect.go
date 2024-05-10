@@ -1,4 +1,4 @@
-package sql
+package dialect
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
@@ -28,7 +29,7 @@ func (BigQueryDialect) QuoteIdentifier(identifier string) string {
 }
 
 func (BigQueryDialect) EscapeStruct(value string) string {
-	return "JSON" + QuoteLiteral(value)
+	return "JSON" + sql.QuoteLiteral(value)
 }
 
 func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) string {
@@ -68,7 +69,7 @@ func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindD
 		return typing.Invalid, nil
 	}
 
-	bqType, parameters, err := ParseDataTypeDefinition(strings.ToLower(rawBqType))
+	bqType, parameters, err := sql.ParseDataTypeDefinition(strings.ToLower(rawBqType))
 	if err != nil {
 		return typing.Invalid, err
 	}

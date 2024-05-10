@@ -3,11 +3,11 @@ package bigquery
 import (
 	"fmt"
 
+	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/lib/destination/types"
-	"github.com/artie-labs/transfer/lib/sql"
 )
 
-var dialect = sql.BigQueryDialect{}
+var _dialect = dialect.BigQueryDialect{}
 
 type TableIdentifier struct {
 	projectID string
@@ -32,7 +32,7 @@ func (ti TableIdentifier) Dataset() string {
 }
 
 func (ti TableIdentifier) EscapedTable() string {
-	return dialect.QuoteIdentifier(ti.table)
+	return _dialect.QuoteIdentifier(ti.table)
 }
 
 func (ti TableIdentifier) Table() string {
@@ -47,8 +47,8 @@ func (ti TableIdentifier) FullyQualifiedName() string {
 	// The fully qualified name for BigQuery is: project_id.dataset.tableName.
 	// We are escaping the project_id, dataset, and table because there could be special characters.
 	return fmt.Sprintf("%s.%s.%s",
-		dialect.QuoteIdentifier(ti.projectID),
-		dialect.QuoteIdentifier(ti.dataset),
+		_dialect.QuoteIdentifier(ti.projectID),
+		_dialect.QuoteIdentifier(ti.dataset),
 		ti.EscapedTable(),
 	)
 }

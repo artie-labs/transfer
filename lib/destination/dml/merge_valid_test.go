@@ -3,14 +3,12 @@ package dml
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
+	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/lib/mocks"
-
-	"github.com/artie-labs/transfer/lib/sql"
-
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestMergeArgument_Valid(t *testing.T) {
@@ -88,7 +86,7 @@ func TestMergeArgument_Valid(t *testing.T) {
 				Columns:     cols,
 				SubQuery:    "schema.tableName",
 				TableID:     &mocks.FakeTableIdentifier{},
-				Dialect:     sql.BigQueryDialect{},
+				Dialect:     bigQueryDialect.BigQueryDialect{},
 			},
 		},
 		{
@@ -98,7 +96,7 @@ func TestMergeArgument_Valid(t *testing.T) {
 				Columns:     []columns.Column{columns.NewColumn("id", typing.Invalid)},
 				SubQuery:    "schema.tableName",
 				TableID:     &mocks.FakeTableIdentifier{},
-				Dialect:     sql.BigQueryDialect{},
+				Dialect:     bigQueryDialect.BigQueryDialect{},
 			},
 			expectedErr: `column "id" is invalid and should be skipped`,
 		},

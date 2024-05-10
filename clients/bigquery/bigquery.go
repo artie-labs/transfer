@@ -11,6 +11,7 @@ import (
 	"cloud.google.com/go/bigquery"
 	_ "github.com/viant/bigquery"
 
+	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -115,7 +116,7 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 }
 
 func (s *Store) Dialect() sql.Dialect {
-	return sql.BigQueryDialect{}
+	return dialect.BigQueryDialect{}
 }
 
 func (s *Store) AdditionalDateFormats() []string {
@@ -151,12 +152,12 @@ func (s *Store) putTable(ctx context.Context, tableID types.TableIdentifier, row
 	return nil
 }
 
-func generateDedupeQueries(dialect sql.Dialect, tableID, stagingTableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
-	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, dialect)
+func generateDedupeQueries(_dialect sql.Dialect, tableID, stagingTableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
+	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, _dialect)
 
 	orderColsToIterate := primaryKeysEscaped
 	if topicConfig.IncludeArtieUpdatedAt {
-		orderColsToIterate = append(orderColsToIterate, dialect.QuoteIdentifier(constants.UpdateColumnMarker))
+		orderColsToIterate = append(orderColsToIterate, _dialect.QuoteIdentifier(constants.UpdateColumnMarker))
 	}
 
 	var orderByCols []string
@@ -168,7 +169,7 @@ func generateDedupeQueries(dialect sql.Dialect, tableID, stagingTableID types.Ta
 	parts = append(parts,
 		fmt.Sprintf(`CREATE OR REPLACE TABLE %s OPTIONS (expiration_timestamp = TIMESTAMP("%s")) AS (SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 2)`,
 			stagingTableID.FullyQualifiedName(),
-			sql.BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)),
+			dialect.BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)),
 			tableID.FullyQualifiedName(),
 			strings.Join(primaryKeysEscaped, ", "),
 			strings.Join(orderByCols, ", "),

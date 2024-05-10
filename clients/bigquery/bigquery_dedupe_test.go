@@ -8,10 +8,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
@@ -21,13 +21,13 @@ func TestGenerateDedupeQueries(t *testing.T) {
 		tableID := NewTableIdentifier("project12", "public", "customers")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := generateDedupeQueries(sql.BigQueryDialect{}, tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{})
+		parts := generateDedupeQueries(dialect.BigQueryDialect{}, tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{})
 		assert.Len(t, parts, 3)
 		assert.Equal(
 			t,
 			fmt.Sprintf("CREATE OR REPLACE TABLE %s OPTIONS (expiration_timestamp = TIMESTAMP(%s)) AS (SELECT * FROM `project12`.`public`.`customers` QUALIFY ROW_NUMBER() OVER (PARTITION BY `id` ORDER BY `id` ASC) = 2)",
 				stagingTableID.FullyQualifiedName(),
-				fmt.Sprintf(`"%s"`, sql.BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL))),
+				fmt.Sprintf(`"%s"`, dialect.BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL))),
 			),
 			parts[0],
 		)
@@ -39,13 +39,13 @@ func TestGenerateDedupeQueries(t *testing.T) {
 		tableID := NewTableIdentifier("project12", "public", "customers")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := generateDedupeQueries(sql.BigQueryDialect{}, tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
+		parts := generateDedupeQueries(dialect.BigQueryDialect{}, tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
 		assert.Len(t, parts, 3)
 		assert.Equal(
 			t,
 			fmt.Sprintf("CREATE OR REPLACE TABLE %s OPTIONS (expiration_timestamp = TIMESTAMP(%s)) AS (SELECT * FROM `project12`.`public`.`customers` QUALIFY ROW_NUMBER() OVER (PARTITION BY `id` ORDER BY `id` ASC, `__artie_updated_at` ASC) = 2)",
 				stagingTableID.FullyQualifiedName(),
-				fmt.Sprintf(`"%s"`, sql.BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL))),
+				fmt.Sprintf(`"%s"`, dialect.BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL))),
 			),
 			parts[0],
 		)
@@ -57,13 +57,13 @@ func TestGenerateDedupeQueries(t *testing.T) {
 		tableID := NewTableIdentifier("project123", "public", "user_settings")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := generateDedupeQueries(sql.BigQueryDialect{}, tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{})
+		parts := generateDedupeQueries(dialect.BigQueryDialect{}, tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{})
 		assert.Len(t, parts, 3)
 		assert.Equal(
 			t,
 			fmt.Sprintf("CREATE OR REPLACE TABLE %s OPTIONS (expiration_timestamp = TIMESTAMP(%s)) AS (SELECT * FROM `project123`.`public`.`user_settings` QUALIFY ROW_NUMBER() OVER (PARTITION BY `user_id`, `settings` ORDER BY `user_id` ASC, `settings` ASC) = 2)",
 				stagingTableID.FullyQualifiedName(),
-				fmt.Sprintf(`"%s"`, sql.BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL))),
+				fmt.Sprintf(`"%s"`, dialect.BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL))),
 			),
 			parts[0],
 		)
@@ -75,13 +75,13 @@ func TestGenerateDedupeQueries(t *testing.T) {
 		tableID := NewTableIdentifier("project123", "public", "user_settings")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := generateDedupeQueries(sql.BigQueryDialect{}, tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
+		parts := generateDedupeQueries(dialect.BigQueryDialect{}, tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
 		assert.Len(t, parts, 3)
 		assert.Equal(
 			t,
 			fmt.Sprintf("CREATE OR REPLACE TABLE %s OPTIONS (expiration_timestamp = TIMESTAMP(%s)) AS (SELECT * FROM `project123`.`public`.`user_settings` QUALIFY ROW_NUMBER() OVER (PARTITION BY `user_id`, `settings` ORDER BY `user_id` ASC, `settings` ASC, `__artie_updated_at` ASC) = 2)",
 				stagingTableID.FullyQualifiedName(),
-				fmt.Sprintf(`"%s"`, sql.BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL))),
+				fmt.Sprintf(`"%s"`, dialect.BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL))),
 			),
 			parts[0],
 		)
