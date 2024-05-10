@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/sql"
 )
 
-func TempTableID(tableID types.TableIdentifier, suffix string) types.TableIdentifier {
+func TempTableID(tableID sql.TableIdentifier, suffix string) sql.TableIdentifier {
 	tempTable := fmt.Sprintf(
 		"%s_%s_%s_%d",
 		tableID.Table(),

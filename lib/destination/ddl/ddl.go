@@ -41,7 +41,7 @@ type AlterTableArgs struct {
 	Tc      *types.DwhTableConfig
 	// ContainsOtherOperations - this is sourced from tableData `containOtherOperations`
 	ContainOtherOperations bool
-	TableID                types.TableIdentifier
+	TableID                sql.TableIdentifier
 	CreateTable            bool
 	TemporaryTable         bool
 
