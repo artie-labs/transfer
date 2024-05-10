@@ -7,11 +7,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
-const DefaultPrefix = "numeric"
-
-// ParseNumeric - will prefix (since it can be NUMBER or NUMERIC) + valString in the form of:
-// * NUMERIC(p, s)
-// * NUMERIC(p)
 func ParseNumeric(parameters []string) KindDetails {
 	if len(parameters) == 0 || len(parameters) > 2 {
 		return Invalid
