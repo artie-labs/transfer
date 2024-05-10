@@ -14,6 +14,7 @@ type Dialect interface {
 	KindForDataType(_type string, stringPrecision string) (typing.KindDetails, error)
 	SupportsColumnKeyword() bool
 	IsColumnAlreadyExistsErr(err error) bool
+	IsTableDoesNotExistErr(err error) bool
 	BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string
 	BuildProcessToastStructColExpression(colName string) string
 }

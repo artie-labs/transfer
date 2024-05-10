@@ -119,6 +119,10 @@ func (BigQueryDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return strings.Contains(err.Error(), "Column already exists")
 }
 
+func (BigQueryDialect) IsTableDoesNotExistErr(err error) bool {
+	return false
+}
+
 func (BigQueryDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string {
 	return fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
 		fqTableName, strings.Join(colSQLParts, ","), BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)))

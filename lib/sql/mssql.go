@@ -143,6 +143,10 @@ func (MSSQLDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return false
 }
 
+func (MSSQLDialect) IsTableDoesNotExistErr(err error) bool {
+	return false
+}
+
 func (MSSQLDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string {
 	return fmt.Sprintf("CREATE TABLE %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
 }

@@ -111,6 +111,10 @@ func (RedshiftDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return strings.Contains(err.Error(), "already exists")
 }
 
+func (RedshiftDialect) IsTableDoesNotExistErr(err error) bool {
+	return false
+}
+
 func (RedshiftDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string {
 	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
 }
