@@ -60,7 +60,7 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 	var tableMissing bool
 	if err != nil {
 		if g.Dwh.Dialect().IsTableDoesNotExistErr(err) {
-			// This branch is currently only used by snowflake.
+			// This branch is currently only used by Snowflake.
 			// Swallow the error, make sure all the metadata is created
 			tableMissing = true
 			err = nil
