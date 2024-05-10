@@ -121,9 +121,18 @@ func (BigQueryDialect) IsTableDoesNotExistErr(err error) bool {
 	return false
 }
 
-func (BigQueryDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string {
-	return fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (%s) OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
-		fqTableName, strings.Join(colSQLParts, ","), BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)))
+func (BigQueryDialect) BuildCreateTableQuery(fqTableName string, temporary bool, colSQLParts []string) string {
+	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", fqTableName, strings.Join(colSQLParts, ","))
+
+	if temporary {
+		return fmt.Sprintf(
+			`%s OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
+			query,
+			BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)),
+		)
+	} else {
+		return query
+	}
 }
 
 func (BigQueryDialect) BuildAlterColumnQuery(fqTableName string, columnOp constants.ColumnOperation, colSQLPart string) string {

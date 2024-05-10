@@ -119,6 +119,20 @@ func TestMSSQLDialect_IsColumnAlreadyExistsErr(t *testing.T) {
 	}
 }
 
+
+func TestMSSQLDialect_BuildCreateTableQuery(t *testing.T) {
+	// Temporary:
+	assert.Equal(t,
+		`CREATE TABLE {TABLE} ({PART_1},{PART_2});`,
+		MSSQLDialect{}.BuildCreateTableQuery("{TABLE}", true, []string{"{PART_1}", "{PART_2}"}),
+	)
+	// Not temporary:
+	assert.Equal(t,
+		`CREATE TABLE {TABLE} ({PART_1},{PART_2});`,
+		MSSQLDialect{}.BuildCreateTableQuery("{TABLE}", false, []string{"{PART_1}", "{PART_2}"}),
+	)
+}
+
 func TestMSSQLDialect_BuildAlterColumnQuery(t *testing.T) {
 	assert.Equal(t,
 		"ALTER TABLE {TABLE} drop {SQL_PART}",

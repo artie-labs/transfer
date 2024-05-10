@@ -12,7 +12,7 @@ type Dialect interface {
 	KindForDataType(_type string, stringPrecision string) (typing.KindDetails, error)
 	IsColumnAlreadyExistsErr(err error) bool
 	IsTableDoesNotExistErr(err error) bool
-	BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string
+	BuildCreateTableQuery(fqTableName string, temporary bool, colSQLParts []string) string
 	BuildAlterColumnQuery(fqTableName string, columnOp constants.ColumnOperation, colSQLPart string) string
 	BuildProcessToastStructColExpression(colName string) string
 }

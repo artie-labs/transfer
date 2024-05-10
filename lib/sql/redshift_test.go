@@ -170,6 +170,19 @@ func TestRedshifgDialect_IsColumnAlreadyExistsErr(t *testing.T) {
 	}
 }
 
+func TestRedshiftDialect_BuildCreateTableQuery(t *testing.T) {
+	// Temporary:
+	assert.Equal(t,
+		`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1},{PART_2});`,
+		RedshiftDialect{}.BuildCreateTableQuery("{TABLE}", true, []string{"{PART_1}", "{PART_2}"}),
+	)
+	// Not temporary:
+	assert.Equal(t,
+		`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1},{PART_2});`,
+		RedshiftDialect{}.BuildCreateTableQuery("{TABLE}", false, []string{"{PART_1}", "{PART_2}"}),
+	)
+}
+
 func TestRedshiftDialect_BuildAlterColumnQuery(t *testing.T) {
 	assert.Equal(t,
 		"ALTER TABLE {TABLE} drop COLUMN {SQL_PART}",
