@@ -10,7 +10,7 @@ import (
 	awsCfg "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2"
-	"github.com/segmentio/kafka-go/sasl/plain"
+	"github.com/segmentio/kafka-go/sasl/scram"
 
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc/format"
@@ -67,14 +67,14 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 		dialer.TLS = &tls.Config{}
 	}
 
-	// If username or password is set, then let's enable PLAIN.
-	// By default, we will support no auth (local testing) and PLAIN SASL.
+	// If username and password are provided, we'll use SCRAM w/ SHA512.
 	if cfg.Kafka.Username != "" {
-		dialer.SASLMechanism = plain.Mechanism{
-			Username: cfg.Kafka.Username,
-			Password: cfg.Kafka.Password,
+		mechanism, err := scram.Mechanism(scram.SHA512, cfg.Kafka.Username, cfg.Kafka.Password)
+		if err != nil {
+			logger.Panic("Failed to create SCRAM mechanism", slog.Any("err", err))
 		}
 
+		dialer.SASLMechanism = mechanism
 		dialer.TLS = &tls.Config{}
 	}
 
