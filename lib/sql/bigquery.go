@@ -112,6 +112,8 @@ func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindD
 	}
 }
 
+func (BigQueryDialect) SupportsColumnKeyword() bool { return true }
+
 func (BigQueryDialect) IsColumnAlreadyExistsErr(err error) bool {
 	// Error ends up looking like something like this: Column already exists: _string at [1:39]
 	return strings.Contains(err.Error(), "Column already exists")

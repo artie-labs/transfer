@@ -109,6 +109,8 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.
 	}
 }
 
+func (SnowflakeDialect) SupportsColumnKeyword() bool { return true }
+
 func (SnowflakeDialect) IsColumnAlreadyExistsErr(err error) bool {
 	// Snowflake doesn't have column mutations (IF NOT EXISTS)
 	return strings.Contains(err.Error(), "already exists")

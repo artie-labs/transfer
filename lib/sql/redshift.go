@@ -104,6 +104,8 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 	return typing.Invalid, nil
 }
 
+func (RedshiftDialect) SupportsColumnKeyword() bool { return true }
+
 func (RedshiftDialect) IsColumnAlreadyExistsErr(err error) bool {
 	// Redshift's error: ERROR: column "foo" of relation "statement" already exists
 	return strings.Contains(err.Error(), "already exists")

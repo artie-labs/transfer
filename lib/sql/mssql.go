@@ -124,6 +124,8 @@ func (MSSQLDialect) KindForDataType(rawType string, stringPrecision string) (typ
 	return typing.Invalid, nil
 }
 
+func (MSSQLDialect) SupportsColumnKeyword() bool { return false }
+
 func (MSSQLDialect) IsColumnAlreadyExistsErr(err error) bool {
 	alreadyExistErrs := []string{
 		// Column names in each table must be unique. Column name 'first_name' in table 'users' is specified more than once.
