@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	snowflakeDialect "github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config/constants"

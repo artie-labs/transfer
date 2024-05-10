@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
-  snowflakeDialect "github.com/artie-labs/transfer/clients/snowflake/dialect"
+	snowflakeDialect "github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
