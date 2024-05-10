@@ -148,3 +148,16 @@ func TestSnowflakeTypeNoDataLoss(t *testing.T) {
 		assert.Equal(t, kindDetail, kd)
 	}
 }
+
+func TestSnowflakeDialect_BuildCreateTableQuery(t *testing.T) {
+	// Temporary:
+	assert.Equal(t,
+		`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1},{PART_2}) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`,
+		SnowflakeDialect{}.BuildCreateTableQuery("{TABLE}", true, []string{"{PART_1}", "{PART_2}"}),
+	)
+	// Not temporary:
+	assert.Equal(t,
+		`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1},{PART_2})`,
+		SnowflakeDialect{}.BuildCreateTableQuery("{TABLE}", false, []string{"{PART_1}", "{PART_2}"}),
+	)
+}

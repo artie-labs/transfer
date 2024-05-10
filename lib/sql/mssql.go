@@ -142,11 +142,8 @@ func (MSSQLDialect) IsColumnAlreadyExistsErr(err error) bool {
 }
 
 func (MSSQLDialect) BuildCreateTableQuery(fqTableName string, temporary bool, colSQLParts []string) string {
-	if temporary {
-		return fmt.Sprintf("CREATE TABLE %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
-	} else {
-		return fmt.Sprintf("CREATE TABLE %s (%s)", fqTableName, strings.Join(colSQLParts, ","))
-	}
+	// MS SQL uses the same syntax for temporary and permanant tables.
+	return fmt.Sprintf("CREATE TABLE %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
 }
 
 func (MSSQLDialect) BuildProcessToastStructColExpression(colName string) string {

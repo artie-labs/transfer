@@ -54,3 +54,16 @@ func TestMSSQLDialect_KindForDataType(t *testing.T) {
 		assert.Equal(t, 5, *kd.OptionalStringPrecision)
 	}
 }
+
+func TestMSSQLDialect_BuildCreateTableQuery(t *testing.T) {
+	// Temporary:
+	assert.Equal(t,
+		`CREATE TABLE {TABLE} ({PART_1},{PART_2});`,
+		MSSQLDialect{}.BuildCreateTableQuery("{TABLE}", true, []string{"{PART_1}", "{PART_2}"}),
+	)
+	// Not temporary:
+	assert.Equal(t,
+		`CREATE TABLE {TABLE} ({PART_1},{PART_2});`,
+		MSSQLDialect{}.BuildCreateTableQuery("{TABLE}", false, []string{"{PART_1}", "{PART_2}"}),
+	)
+}
