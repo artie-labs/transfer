@@ -114,6 +114,16 @@ func (SnowflakeDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return strings.Contains(err.Error(), "already exists")
 }
 
+// IsTableDoesNotExistErr will check if the resulting error message looks like this
+// Table 'DATABASE.SCHEMA.TABLE' does not exist or not authorized. (resulting error message from DESC table)
+func (SnowflakeDialect) IsTableDoesNotExistErr(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return strings.Contains(err.Error(), "does not exist or not authorized")
+}
+
 func (SnowflakeDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string {
 	// TEMPORARY Table syntax - https://docs.snowflake.com/en/sql-reference/sql/create-table
 	// PURGE syntax - https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#purging-files-after-loading
