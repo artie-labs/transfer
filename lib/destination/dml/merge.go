@@ -7,6 +7,7 @@ import (
 
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
+	redshiftDialect "github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -308,7 +309,7 @@ func (m *MergeArgument) BuildStatements() ([]string, error) {
 	}
 
 	switch m.Dialect.(type) {
-	case sql.RedshiftDialect:
+	case redshiftDialect.RedshiftDialect:
 		return m.buildRedshiftStatements()
 	case mssqlDialect.MSSQLDialect:
 		mergeQuery, err := m.buildMSSQLStatement()

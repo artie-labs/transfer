@@ -6,6 +6,7 @@ import (
 
 	_ "github.com/lib/pq"
 
+	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -55,7 +56,7 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 }
 
 func (s *Store) Dialect() sql.Dialect {
-	return sql.RedshiftDialect{}
+	return dialect.RedshiftDialect{}
 }
 
 func (s *Store) AdditionalDateFormats() []string {

@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
+	redshiftDialect "github.com/artie-labs/transfer/clients/redshift/dialect"
 	snowflakeDialect "github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -16,7 +17,7 @@ import (
 
 var dialects = []sql.Dialect{
 	bigQueryDialect.BigQueryDialect{},
-	sql.RedshiftDialect{},
+	redshiftDialect.RedshiftDialect{},
 	snowflakeDialect.SnowflakeDialect{},
 }
 
