@@ -91,6 +91,7 @@ func TestMSSQLDialect_KindForDataType(t *testing.T) {
 		assert.Equal(t, 5, *kd.OptionalStringPrecision)
 	}
 }
+
 func TestMSSQLDialect_IsColumnAlreadyExistsErr(t *testing.T) {
 	testCases := []struct {
 		name           string
