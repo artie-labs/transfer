@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"log/slog"
+	"strings"
 	"sync"
 	"time"
 
@@ -101,12 +102,19 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 				Brokers: cfg.Kafka.BootstrapServers(),
 			}
 
-			kafkaConsumer := kafka.NewReader(kafkaCfg)
+			kafkaConsumer := kafkalib.NewReader(kafkaCfg)
 			topicToConsumer.Add(topic, kafkaConsumer)
 			for {
 				kafkaMsg, err := kafkaConsumer.FetchMessage(ctx)
 				if err != nil {
+					if strings.Contains(err.Error(), "the client should rejoin the group") {
+						if err = kafkaConsumer.Reload(); err != nil {
+							logger.Fatal("Failed to reload kafka consumer", slog.Any("err", err))
+						}
+					}
+
 					slog.With(artie.KafkaMsgLogFields(kafkaMsg)...).Warn("Failed to read kafka message", slog.Any("err", err))
+					time.Sleep(500 * time.Millisecond)
 					continue
 				}
 
