@@ -13,7 +13,6 @@ import (
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
-	"github.com/artie-labs/transfer/lib/jitter"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
@@ -67,7 +66,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 		dialer.TLS = &tls.Config{}
 	}
 
-	// If username and password are provided, we'll use SHA512.
+	// If username and password are provided, we'll use SCRAM w/ SHA512.
 	if cfg.Kafka.Username != "" {
 		mechanism, err := scram.Mechanism(scram.SHA512, cfg.Kafka.Username, cfg.Kafka.Password)
 		if err != nil {
@@ -90,9 +89,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 	}
 
 	var wg sync.WaitGroup
-	for num, topic := range topics {
-		// It is recommended to not try to establish a connection all at the same time, which may overwhelm the Kafka cluster.
-		time.Sleep(jitter.Jitter(100, 3000, num))
+	for _, topic := range topics {
 		wg.Add(1)
 		go func(topic string) {
 			defer wg.Done()
@@ -131,8 +128,6 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 					GroupID:                kafkaConsumer.Config().GroupID,
 					TopicToConfigFormatMap: tcFmtMap,
 				}
-
-				continue
 
 				tableName, processErr := args.process(ctx, cfg, inMemDB, dest, metricsClient)
 				msg.EmitIngestionLag(metricsClient, cfg.Mode, kafkaConsumer.Config().GroupID, tableName)
