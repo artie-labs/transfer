@@ -92,9 +92,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 	var wg sync.WaitGroup
 	for num, topic := range topics {
 		// It is recommended to not try to establish a connection all at the same time, which may overwhelm the Kafka cluster.
-		sleepDur := jitter.Jitter(100, 3000, num)
-		time.Sleep(sleepDur * time.Millisecond)
-
+		time.Sleep(jitter.Jitter(100, 3000, num) * time.Millisecond)
 		wg.Add(1)
 		go func(topic string) {
 			defer wg.Done()
