@@ -141,7 +141,7 @@ func (MSSQLDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return false
 }
 
-func (MSSQLDialect) BuildCreateTableQuery(fqTableName string, temporary bool, colSQLParts []string) string {
+func (MSSQLDialect) BuildCreateTableQuery(fqTableName string, _ bool, colSQLParts []string) string {
 	// MS SQL uses the same syntax for temporary and permanant tables.
 	return fmt.Sprintf("CREATE TABLE %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
 }
