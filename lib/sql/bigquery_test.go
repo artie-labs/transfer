@@ -10,6 +10,8 @@ import (
 )
 
 func TestBigQueryDialect_KindForDataType(t *testing.T) {
+	dialect := BigQueryDialect{}
+
 	bqColToExpectedKind := map[string]typing.KindDetails{
 		// Number
 		"numeric":           typing.EDecimal,
@@ -44,15 +46,35 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 		"time":      typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
 		"date":      typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType),
 		//Invalid
-		"foo":    typing.Invalid,
-		"foofoo": typing.Invalid,
-		"":       typing.Invalid,
+		"foo":            typing.Invalid,
+		"foofoo":         typing.Invalid,
+		"":               typing.Invalid,
+		"numeric(1,2,3)": typing.Invalid,
 	}
 
 	for bqCol, expectedKind := range bqColToExpectedKind {
-		kd, err := BigQueryDialect{}.KindForDataType(bqCol, "")
+		kd, err := dialect.KindForDataType(bqCol, "")
 		assert.NoError(t, err)
 		assert.Equal(t, expectedKind.Kind, kd.Kind, bqCol)
+	}
+
+	{
+		_, err := dialect.KindForDataType("numeric(5", "")
+		assert.ErrorContains(t, err, "missing closing parenthesis")
+	}
+	{
+		kd, err := dialect.KindForDataType("numeric(5, 2)", "")
+		assert.NoError(t, err)
+		assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
+		assert.Equal(t, 5, *kd.ExtendedDecimalDetails.Precision())
+		assert.Equal(t, 2, kd.ExtendedDecimalDetails.Scale())
+	}
+	{
+		kd, err := dialect.KindForDataType("bignumeric(5, 2)", "")
+		assert.NoError(t, err)
+		assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
+		assert.Equal(t, 5, *kd.ExtendedDecimalDetails.Precision())
+		assert.Equal(t, 2, kd.ExtendedDecimalDetails.Scale())
 	}
 }
 
