@@ -1,6 +1,7 @@
 package sql
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,6 +10,36 @@ import (
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 )
+
+func TestRedshiftDialect_QuoteIdentifier(t *testing.T) {
+	dialect := RedshiftDialect{}
+	assert.Equal(t, `"foo"`, dialect.QuoteIdentifier("foo"))
+	assert.Equal(t, `"foo"`, dialect.QuoteIdentifier("FOO"))
+}
+
+func TestRedshiftDialect_DataTypeForKind(t *testing.T) {
+	tcs := []struct {
+		kd       typing.KindDetails
+		expected string
+	}{
+		{
+			kd:       typing.String,
+			expected: "VARCHAR(MAX)",
+		},
+		{
+			kd: typing.KindDetails{
+				Kind:                    typing.String.Kind,
+				OptionalStringPrecision: ptr.ToInt(12345),
+			},
+			expected: "VARCHAR(12345)",
+		},
+	}
+
+	for idx, tc := range tcs {
+		assert.Equal(t, tc.expected, RedshiftDialect{}.DataTypeForKind(tc.kd, true), idx)
+		assert.Equal(t, tc.expected, RedshiftDialect{}.DataTypeForKind(tc.kd, false), idx)
+	}
+}
 
 func TestRedshiftDialect_KindForDataType(t *testing.T) {
 	dialect := RedshiftDialect{}
@@ -114,6 +145,28 @@ func TestRedshiftDialect_KindForDataType(t *testing.T) {
 		assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
 		assert.Equal(t, 5, *kd.ExtendedDecimalDetails.Precision())
 		assert.Equal(t, 2, kd.ExtendedDecimalDetails.Scale())
+	}
+}
+
+func TestRedshifgDialect_IsColumnAlreadyExistsErr(t *testing.T) {
+	testCases := []struct {
+		name           string
+		err            error
+		expectedResult bool
+	}{
+		{
+			name:           "Redshift actual error",
+			err:            fmt.Errorf(`ERROR: column "foo" of relation "statement" already exists [ErrorId: 1-64da9ea9]`),
+			expectedResult: true,
+		},
+		{
+			name: "Redshift error, but irrelevant",
+			err:  fmt.Errorf("foo"),
+		},
+	}
+
+	for _, tc := range testCases {
+		assert.Equal(t, tc.expectedResult, RedshiftDialect{}.IsColumnAlreadyExistsErr(tc.err), tc.name)
 	}
 }
 
