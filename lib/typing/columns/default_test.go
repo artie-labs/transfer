@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/clients/snowflake/dialect"
+	snowflakeDialect "github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -18,7 +18,7 @@ import (
 var dialects = []sql.Dialect{
 	sql.BigQueryDialect{},
 	sql.RedshiftDialect{},
-	dialect.SnowflakeDialect{},
+	snowflakeDialect.SnowflakeDialect{},
 }
 
 func TestColumn_DefaultValue(t *testing.T) {
