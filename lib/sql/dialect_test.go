@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
@@ -141,4 +142,17 @@ func TestDialect_IsColumnAlreadyExistsErr(t *testing.T) {
 	for _, tc := range testCases {
 		assert.Equal(t, tc.expectedResult, tc.dialect.IsColumnAlreadyExistsErr(tc.err), tc.name)
 	}
+}
+
+func TestBuildAlterColumnQuery(t *testing.T) {
+	// Snowflake:
+	assert.Equal(t,
+		"ALTER TABLE {TABLE} drop COLUMN {SQL_PART}",
+		BuildAlterColumnQuery(SnowflakeDialect{}, "{TABLE}", constants.Delete, "{SQL_PART}"),
+	)
+	// MS SQL:
+	assert.Equal(t,
+		"ALTER TABLE {TABLE} drop {SQL_PART}",
+		BuildAlterColumnQuery(MSSQLDialect{}, "{TABLE}", constants.Delete, "{SQL_PART}"),
+	)
 }
