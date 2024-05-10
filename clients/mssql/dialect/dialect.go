@@ -1,4 +1,4 @@
-package sql
+package dialect
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
@@ -70,7 +71,7 @@ func (MSSQLDialect) KindForDataType(rawType string, stringPrecision string) (typ
 	rawType = strings.ToLower(rawType)
 
 	if strings.HasPrefix(rawType, "numeric") {
-		_, parameters, err := ParseDataTypeDefinition(rawType)
+		_, parameters, err := sql.ParseDataTypeDefinition(rawType)
 		if err != nil {
 			return typing.Invalid, err
 		}

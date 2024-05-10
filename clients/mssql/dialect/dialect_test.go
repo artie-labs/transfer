@@ -1,4 +1,4 @@
-package sql
+package dialect
 
 import (
 	"fmt"
@@ -118,7 +118,6 @@ func TestMSSQLDialect_IsColumnAlreadyExistsErr(t *testing.T) {
 		assert.Equal(t, tc.expectedResult, MSSQLDialect{}.IsColumnAlreadyExistsErr(tc.err), tc.name)
 	}
 }
-
 
 func TestMSSQLDialect_BuildCreateTableQuery(t *testing.T) {
 	// Temporary:
