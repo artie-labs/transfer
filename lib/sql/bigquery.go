@@ -64,13 +64,11 @@ func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) s
 }
 
 func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindDetails, error) {
-	rawBqType = strings.ToLower(rawBqType)
-
 	if len(rawBqType) == 0 {
 		return typing.Invalid, nil
 	}
 
-	bqType, parameters, err := ParseDataTypeDefinition(rawBqType)
+	bqType, parameters, err := ParseDataTypeDefinition(strings.ToLower(rawBqType))
 	if err != nil {
 		return typing.Invalid, err
 	}
