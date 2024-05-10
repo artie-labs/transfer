@@ -64,7 +64,11 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 	rawType = strings.ToLower(rawType)
 	// TODO: Check if there are any missing Redshift data types.
 	if strings.HasPrefix(rawType, "numeric") {
-		return typing.ParseNumeric(typing.DefaultPrefix, rawType), nil
+		_, parameters, err := ParseDataTypeDefinition(rawType)
+		if err != nil {
+			return typing.Invalid, err
+		}
+		return typing.ParseNumeric(parameters), nil
 	}
 
 	if strings.Contains(rawType, "character varying") {

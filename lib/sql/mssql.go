@@ -70,7 +70,11 @@ func (MSSQLDialect) KindForDataType(rawType string, stringPrecision string) (typ
 	rawType = strings.ToLower(rawType)
 
 	if strings.HasPrefix(rawType, "numeric") {
-		return typing.ParseNumeric(typing.DefaultPrefix, rawType), nil
+		_, parameters, err := ParseDataTypeDefinition(rawType)
+		if err != nil {
+			return typing.Invalid, err
+		}
+		return typing.ParseNumeric(parameters), nil
 	}
 
 	switch rawType {

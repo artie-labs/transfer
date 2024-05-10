@@ -12,20 +12,13 @@ const DefaultPrefix = "numeric"
 // ParseNumeric - will prefix (since it can be NUMBER or NUMERIC) + valString in the form of:
 // * NUMERIC(p, s)
 // * NUMERIC(p)
-func ParseNumeric(prefix, valString string) KindDetails {
-	if !strings.HasPrefix(valString, prefix) {
-		return Invalid
-	}
-
-	valString = strings.TrimPrefix(valString, prefix+"(")
-	valString = strings.TrimSuffix(valString, ")")
-	parts := strings.Split(valString, ",")
-	if len(parts) == 0 || len(parts) > 2 {
+func ParseNumeric(parameters []string) KindDetails {
+	if len(parameters) == 0 || len(parameters) > 2 {
 		return Invalid
 	}
 
 	var parsedNumbers []int
-	for _, part := range parts {
+	for _, part := range parameters {
 		parsedNumber, err := strconv.Atoi(strings.TrimSpace(part))
 		if err != nil {
 			return Invalid
