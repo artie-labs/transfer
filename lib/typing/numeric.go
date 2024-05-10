@@ -7,14 +7,14 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
-func ParseNumeric(parameters []string) KindDetails {
-	if len(parameters) == 0 || len(parameters) > 2 {
+func ParseNumeric(parts []string) KindDetails {
+	if len(parts) == 0 || len(parts) > 2 {
 		return Invalid
 	}
 
 	var parsedNumbers []int
-	for _, parameter := range parameters {
-		parsedNumber, err := strconv.Atoi(strings.TrimSpace(parameter))
+	for _, part := range parts {
+		parsedNumber, err := strconv.Atoi(strings.TrimSpace(part))
 		if err != nil {
 			return Invalid
 		}
