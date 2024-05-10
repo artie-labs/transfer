@@ -146,13 +146,13 @@ func (MSSQLDialect) IsTableDoesNotExistErr(err error) bool {
 }
 
 func (MSSQLDialect) BuildCreateTableQuery(fqTableName string, _ bool, colSQLParts []string) string {
-	// MS SQL uses the same syntax for temporary and permanant tables.
-	// MSSQL doesn't support IF NOT EXISTS
+	// Microsoft SQL Server uses the same syntax for temporary and permanant tables.
+	// Microsoft SQL Server doesn't support IF NOT EXISTS
 	return fmt.Sprintf("CREATE TABLE %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
 }
 
 func (MSSQLDialect) BuildAlterColumnQuery(fqTableName string, columnOp constants.ColumnOperation, colSQLPart string) string {
-	// MSSQL doesn't support the COLUMN keyword
+	// Microsoft SQL Server doesn't support the COLUMN keyword
 	return fmt.Sprintf("ALTER TABLE %s %s %s", fqTableName, columnOp, colSQLPart)
 }
 
