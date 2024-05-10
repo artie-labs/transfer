@@ -121,8 +121,7 @@ func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []col
 
 	var alterStatements []string
 	if a.CreateTable {
-		var sqlQuery = a.Dialect.BuildCreateTableQuery(fqTableName, a.TemporaryTable, colSQLParts)
-		alterStatements = []string{sqlQuery}
+		alterStatements = []string{a.Dialect.BuildCreateTableQuery(fqTableName, a.TemporaryTable, colSQLParts)}
 	} else {
 		for _, colSQLPart := range colSQLParts {
 			var sqlQuery string
