@@ -5,10 +5,41 @@ import (
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestSnowflakeDialect_QuoteIdentifier(t *testing.T) {
+	dialect := SnowflakeDialect{}
+	assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("foo"))
+	assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("FOO"))
+}
+
+func TestSnowflakeDialect_DataTypeForKind(t *testing.T) {
+	tcs := []struct {
+		kd       typing.KindDetails
+		expected string
+	}{
+		{
+			kd:       typing.String,
+			expected: "string",
+		},
+		{
+			kd: typing.KindDetails{
+				Kind:                    typing.String.Kind,
+				OptionalStringPrecision: ptr.ToInt(12345),
+			},
+			expected: "string",
+		},
+	}
+
+	for idx, tc := range tcs {
+		assert.Equal(t, tc.expected, SnowflakeDialect{}.DataTypeForKind(tc.kd, true), idx)
+		assert.Equal(t, tc.expected, SnowflakeDialect{}.DataTypeForKind(tc.kd, false), idx)
+	}
+}
 
 func TestSnowflakeDialect_KindForDataType_Number(t *testing.T) {
 	{
@@ -148,6 +179,28 @@ func TestSnowflakeDialect_KindForDataType_NoDataLoss(t *testing.T) {
 		kd, err := SnowflakeDialect{}.KindForDataType(SnowflakeDialect{}.DataTypeForKind(kindDetail, false), "")
 		assert.NoError(t, err)
 		assert.Equal(t, kindDetail, kd)
+	}
+}
+
+func TestSnowflakeDialect_IsColumnAlreadyExistsErr(t *testing.T) {
+	testCases := []struct {
+		name           string
+		err            error
+		expectedResult bool
+	}{
+		{
+			name:           "Snowflake, column already exists error",
+			err:            fmt.Errorf("Column already exists"),
+			expectedResult: true,
+		},
+		{
+			name: "Snowflake, random error",
+			err:  fmt.Errorf("hello there qux"),
+		},
+	}
+
+	for _, tc := range testCases {
+		assert.Equal(t, tc.expectedResult, SnowflakeDialect{}.IsColumnAlreadyExistsErr(tc.err), tc.name)
 	}
 }
 
