@@ -7,6 +7,7 @@ import (
 	"github.com/snowflakedb/gosnowflake"
 
 	"github.com/artie-labs/transfer/clients/shared"
+	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
@@ -74,7 +75,7 @@ WHERE
 }
 
 func (s *Store) Dialect() sql.Dialect {
-	return sql.SnowflakeDialect{}
+	return dialect.SnowflakeDialect{}
 }
 
 func (s *Store) AdditionalDateFormats() []string {

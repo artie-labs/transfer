@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -48,7 +49,7 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 			IdempotentKey: idempotentKey,
 			PrimaryKeys:   []columns.Column{columns.NewColumn("id", typing.Invalid)},
 			Columns:       _cols.ValidColumns(),
-			Dialect:       sql.SnowflakeDialect{},
+			Dialect:       dialect.SnowflakeDialect{},
 			SoftDelete:    true,
 		}
 
@@ -98,7 +99,7 @@ func TestMergeStatement(t *testing.T) {
 		IdempotentKey: "",
 		PrimaryKeys:   []columns.Column{columns.NewColumn("id", typing.Invalid)},
 		Columns:       _cols.ValidColumns(),
-		Dialect:       sql.SnowflakeDialect{},
+		Dialect:       dialect.SnowflakeDialect{},
 		SoftDelete:    false,
 	}
 
@@ -147,7 +148,7 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 		IdempotentKey: "updated_at",
 		PrimaryKeys:   []columns.Column{columns.NewColumn("id", typing.Invalid)},
 		Columns:       _cols.ValidColumns(),
-		Dialect:       sql.SnowflakeDialect{},
+		Dialect:       dialect.SnowflakeDialect{},
 		SoftDelete:    false,
 	}
 
@@ -193,7 +194,7 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 			columns.NewColumn("another_id", typing.Invalid),
 		},
 		Columns:    _cols.ValidColumns(),
-		Dialect:    sql.SnowflakeDialect{},
+		Dialect:    dialect.SnowflakeDialect{},
 		SoftDelete: false,
 	}
 
@@ -243,7 +244,7 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 			columns.NewColumn("group", typing.Invalid),
 		},
 		Columns:    _cols.ValidColumns(),
-		Dialect:    sql.SnowflakeDialect{},
+		Dialect:    dialect.SnowflakeDialect{},
 		SoftDelete: false,
 	}
 
@@ -365,7 +366,7 @@ func TestMergeArgument_BuildRedshiftDeleteQuery(t *testing.T) {
 
 func TestMergeArgument_BuildStatements_Validation(t *testing.T) {
 	for _, arg := range []*MergeArgument{
-		{Dialect: sql.SnowflakeDialect{}},
+		{Dialect: dialect.SnowflakeDialect{}},
 		{Dialect: sql.BigQueryDialect{}},
 	} {
 		parts, err := arg.BuildStatements()
