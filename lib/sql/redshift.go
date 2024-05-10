@@ -117,6 +117,10 @@ func (RedshiftDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts
 	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
 }
 
+func (RedshiftDialect) BuildAlterColumnQuery(fqTableName string, columnOp constants.ColumnOperation, colSQLPart string) string {
+	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTableName, columnOp, colSQLPart)
+}
+
 func (RedshiftDialect) BuildProcessToastStructColExpression(colName string) string {
 	return fmt.Sprintf(`CASE WHEN COALESCE(cc.%s != JSON_PARSE('{"key":"%s"}'), true) THEN cc.%s ELSE c.%s END`,
 		colName, constants.ToastUnavailableValuePlaceholder, colName, colName)

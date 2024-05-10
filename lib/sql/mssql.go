@@ -149,6 +149,11 @@ func (MSSQLDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts []
 	return fmt.Sprintf("CREATE TABLE %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
 }
 
+func (MSSQLDialect) BuildAlterColumnQuery(fqTableName string, columnOp constants.ColumnOperation, colSQLPart string) string {
+	// MSSQL doesn't support the COLUMN keyword
+	return fmt.Sprintf("ALTER TABLE %s %s %s", fqTableName, columnOp, colSQLPart)
+}
+
 func (MSSQLDialect) BuildProcessToastStructColExpression(colName string) string {
 	// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
 	return fmt.Sprintf("CASE WHEN COALESCE(cc.%s, {}) != {'key': '%s'} THEN cc.%s ELSE c.%s END",

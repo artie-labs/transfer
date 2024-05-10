@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
@@ -160,4 +161,11 @@ func TestSnowflakeDialect_IsTableDoesNotExistErr(t *testing.T) {
 	for err, expectation := range errToExpectation {
 		assert.Equal(t, SnowflakeDialect{}.IsTableDoesNotExistErr(err), expectation, err)
 	}
+}
+
+func TestSnowflakeDialect_BuildAlterColumnQuery(t *testing.T) {
+	assert.Equal(t,
+		"ALTER TABLE {TABLE} drop COLUMN {SQL_PART}",
+		SnowflakeDialect{}.BuildAlterColumnQuery("{TABLE}", constants.Delete, "{SQL_PART}"),
+	)
 }

@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
@@ -114,4 +115,11 @@ func TestBQExpiresDate(t *testing.T) {
 		_, err := fromExpiresDateStringToTime(badString)
 		assert.ErrorContains(t, err, "cannot parse", badString)
 	}
+}
+
+func TestBigQueryDialect_BuildAlterColumnQuery(t *testing.T) {
+	assert.Equal(t,
+		"ALTER TABLE {TABLE} drop COLUMN {SQL_PART}",
+		BigQueryDialect{}.BuildAlterColumnQuery("{TABLE}", constants.Delete, "{SQL_PART}"),
+	)
 }

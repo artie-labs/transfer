@@ -1,6 +1,7 @@
 package sql
 
 import (
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
@@ -12,5 +13,6 @@ type Dialect interface {
 	IsColumnAlreadyExistsErr(err error) bool
 	IsTableDoesNotExistErr(err error) bool
 	BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string
+	BuildAlterColumnQuery(fqTableName string, columnOp constants.ColumnOperation, colSQLPart string) string
 	BuildProcessToastStructColExpression(colName string) string
 }

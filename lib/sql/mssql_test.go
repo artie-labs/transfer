@@ -3,6 +3,7 @@ package sql
 import (
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
@@ -53,4 +54,11 @@ func TestMSSQLDialect_KindForDataType(t *testing.T) {
 		assert.Equal(t, typing.String.Kind, kd.Kind)
 		assert.Equal(t, 5, *kd.OptionalStringPrecision)
 	}
+}
+
+func TestMSSQLDialect_BuildAlterColumnQuery(t *testing.T) {
+	assert.Equal(t,
+		"ALTER TABLE {TABLE} drop {SQL_PART}",
+		MSSQLDialect{}.BuildAlterColumnQuery("{TABLE}", constants.Delete, "{SQL_PART}"),
+	)
 }

@@ -136,14 +136,7 @@ func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []col
 		alterStatements = []string{sqlQuery}
 	} else {
 		for _, colSQLPart := range colSQLParts {
-			var sqlQuery string
-			if _, ok := a.Dialect.(sql.MSSQLDialect); ok {
-				// MSSQL doesn't support the COLUMN keyword
-				sqlQuery = fmt.Sprintf("ALTER TABLE %s %s %s", fqTableName, a.ColumnOp, colSQLPart)
-			} else {
-				sqlQuery = fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTableName, a.ColumnOp, colSQLPart)
-			}
-			alterStatements = append(alterStatements, sqlQuery)
+			alterStatements = append(alterStatements, a.Dialect.BuildAlterColumnQuery(fqTableName, a.ColumnOp, colSQLPart))
 		}
 	}
 

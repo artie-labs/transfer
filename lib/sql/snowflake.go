@@ -132,6 +132,10 @@ func (SnowflakeDialect) BuildCreateTempTableQuery(fqTableName string, colSQLPart
 		fqTableName, strings.Join(colSQLParts, ","))
 }
 
+func (SnowflakeDialect) BuildAlterColumnQuery(fqTableName string, columnOp constants.ColumnOperation, colSQLPart string) string {
+	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTableName, columnOp, colSQLPart)
+}
+
 func (SnowflakeDialect) BuildProcessToastStructColExpression(colName string) string {
 	// TODO: Change this to Snowflake and error out if the destKind isn't supported so we're explicit.
 	return fmt.Sprintf("CASE WHEN COALESCE(cc.%s != {'key': '%s'}, true) THEN cc.%s ELSE c.%s END",
