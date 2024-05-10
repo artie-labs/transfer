@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"log/slog"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -106,14 +107,15 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 			for {
 				kafkaMsg, err := kafkaConsumer.FetchMessage(ctx)
 				if err != nil {
+					sleepDuration := time.Duration(rand.Intn(5)) * time.Second
 					if kafkalib.ShouldReload(err) {
-						slog.Warn("Kafka reader needs to be reloaded", slog.Any("err", err))
+						slog.Warn("Kafka reader needs to be reloaded", slog.Any("err", err), slog.Any("sleepDuration", sleepDuration))
 						kafkaConsumer.Reload()
 					} else {
-						slog.With(artie.KafkaMsgLogFields(kafkaMsg)...).Warn("Failed to read kafka message", slog.Any("err", err))
+						slog.With(artie.KafkaMsgLogFields(kafkaMsg)...).Warn("Failed to read kafka message", slog.Any("err", err), slog.Any("sleepDuration", sleepDuration))
 					}
 
-					time.Sleep(500 * time.Millisecond)
+					time.Sleep(sleepDuration)
 					continue
 				}
 
