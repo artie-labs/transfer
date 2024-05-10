@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
@@ -126,5 +127,12 @@ func TestBigQueryDialect_BuildCreateTableQuery(t *testing.T) {
 	assert.Equal(t,
 		`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1},{PART_2})`,
 		BigQueryDialect{}.BuildCreateTableQuery("{TABLE}", false, []string{"{PART_1}", "{PART_2}"}),
+	)
+}
+
+func TestBigQueryDialect_BuildAlterColumnQuery(t *testing.T) {
+	assert.Equal(t,
+		"ALTER TABLE {TABLE} drop COLUMN {SQL_PART}",
+		BigQueryDialect{}.BuildAlterColumnQuery("{TABLE}", constants.Delete, "{SQL_PART}"),
 	)
 }

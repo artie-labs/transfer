@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 )
@@ -126,5 +127,12 @@ func TestRedshiftDialect_BuildCreateTableQuery(t *testing.T) {
 	assert.Equal(t,
 		`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1},{PART_2});`,
 		RedshiftDialect{}.BuildCreateTableQuery("{TABLE}", false, []string{"{PART_1}", "{PART_2}"}),
+	)
+}
+
+func TestRedshiftDialect_BuildAlterColumnQuery(t *testing.T) {
+	assert.Equal(t,
+		"ALTER TABLE {TABLE} drop COLUMN {SQL_PART}",
+		RedshiftDialect{}.BuildAlterColumnQuery("{TABLE}", constants.Delete, "{SQL_PART}"),
 	)
 }

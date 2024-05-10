@@ -117,6 +117,10 @@ func (BigQueryDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return strings.Contains(err.Error(), "Column already exists")
 }
 
+func (BigQueryDialect) IsTableDoesNotExistErr(err error) bool {
+	return false
+}
+
 func (BigQueryDialect) BuildCreateTableQuery(fqTableName string, temporary bool, colSQLParts []string) string {
 	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", fqTableName, strings.Join(colSQLParts, ","))
 
@@ -129,6 +133,10 @@ func (BigQueryDialect) BuildCreateTableQuery(fqTableName string, temporary bool,
 	} else {
 		return query
 	}
+}
+
+func (BigQueryDialect) BuildAlterColumnQuery(fqTableName string, columnOp constants.ColumnOperation, colSQLPart string) string {
+	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTableName, columnOp, colSQLPart)
 }
 
 func (BigQueryDialect) BuildProcessToastStructColExpression(colName string) string {

@@ -1,8 +1,10 @@
 package sql
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
@@ -132,7 +134,7 @@ func TestSnowflakeDialect_KindForDataType_Errors(t *testing.T) {
 	}
 }
 
-func TestSnowflakeTypeNoDataLoss(t *testing.T) {
+func TestSnowflakeDialect_KindForDataType_NoDataLoss(t *testing.T) {
 	kindDetails := []typing.KindDetails{
 		typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
@@ -149,6 +151,18 @@ func TestSnowflakeTypeNoDataLoss(t *testing.T) {
 	}
 }
 
+func TestSnowflakeDialect_IsTableDoesNotExistErr(t *testing.T) {
+	errToExpectation := map[error]bool{
+		nil: false,
+		fmt.Errorf("Table 'DATABASE.SCHEMA.TABLE' does not exist or not authorized"): true,
+		fmt.Errorf("hi this is super random"):                                        false,
+	}
+
+	for err, expectation := range errToExpectation {
+		assert.Equal(t, SnowflakeDialect{}.IsTableDoesNotExistErr(err), expectation, err)
+	}
+}
+
 func TestSnowflakeDialect_BuildCreateTableQuery(t *testing.T) {
 	// Temporary:
 	assert.Equal(t,
@@ -159,5 +173,12 @@ func TestSnowflakeDialect_BuildCreateTableQuery(t *testing.T) {
 	assert.Equal(t,
 		`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1},{PART_2})`,
 		SnowflakeDialect{}.BuildCreateTableQuery("{TABLE}", false, []string{"{PART_1}", "{PART_2}"}),
+	)
+}
+
+func TestSnowflakeDialect_BuildAlterColumnQuery(t *testing.T) {
+	assert.Equal(t,
+		"ALTER TABLE {TABLE} drop COLUMN {SQL_PART}",
+		SnowflakeDialect{}.BuildAlterColumnQuery("{TABLE}", constants.Delete, "{SQL_PART}"),
 	)
 }

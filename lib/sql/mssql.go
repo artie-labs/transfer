@@ -141,10 +141,19 @@ func (MSSQLDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return false
 }
 
+func (MSSQLDialect) IsTableDoesNotExistErr(err error) bool {
+	return false
+}
+
 func (MSSQLDialect) BuildCreateTableQuery(fqTableName string, _ bool, colSQLParts []string) string {
 	// MS SQL uses the same syntax for temporary and permanant tables.
 	// MSSQL doesn't support IF NOT EXISTS
 	return fmt.Sprintf("CREATE TABLE %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
+}
+
+func (MSSQLDialect) BuildAlterColumnQuery(fqTableName string, columnOp constants.ColumnOperation, colSQLPart string) string {
+	// MSSQL doesn't support the COLUMN keyword
+	return fmt.Sprintf("ALTER TABLE %s %s %s", fqTableName, columnOp, colSQLPart)
 }
 
 func (MSSQLDialect) BuildProcessToastStructColExpression(colName string) string {

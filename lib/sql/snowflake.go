@@ -114,6 +114,16 @@ func (SnowflakeDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return strings.Contains(err.Error(), "already exists")
 }
 
+// IsTableDoesNotExistErr will check if the resulting error message looks like this
+// Table 'DATABASE.SCHEMA.TABLE' does not exist or not authorized. (resulting error message from DESC table)
+func (SnowflakeDialect) IsTableDoesNotExistErr(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return strings.Contains(err.Error(), "does not exist or not authorized")
+}
+
 func (SnowflakeDialect) BuildCreateTableQuery(fqTableName string, temporary bool, colSQLParts []string) string {
 	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", fqTableName, strings.Join(colSQLParts, ","))
 
@@ -125,6 +135,10 @@ func (SnowflakeDialect) BuildCreateTableQuery(fqTableName string, temporary bool
 	} else {
 		return query
 	}
+}
+
+func (SnowflakeDialect) BuildAlterColumnQuery(fqTableName string, columnOp constants.ColumnOperation, colSQLPart string) string {
+	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTableName, columnOp, colSQLPart)
 }
 
 func (SnowflakeDialect) BuildProcessToastStructColExpression(colName string) string {
