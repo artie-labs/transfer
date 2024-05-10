@@ -21,8 +21,9 @@ func (MSSQLDialect) EscapeStruct(value string) string {
 }
 
 func (MSSQLDialect) DataTypeForKind(kindDetails typing.KindDetails, isPk bool) string {
-	const maxVarCharLengthForPrimaryKey = 900 // Primary keys cannot exceed 900 chars in length.
+	// Primary keys cannot exceed 900 chars in length.
 	// https://learn.microsoft.com/en-us/sql/relational-databases/tables/primary-and-foreign-key-constraints?view=sql-server-ver16#PKeys
+	const maxVarCharLengthForPrimaryKey = 900
 
 	switch kindDetails.Kind {
 	case typing.Float.Kind:
@@ -37,17 +38,21 @@ func (MSSQLDialect) DataTypeForKind(kindDetails typing.KindDetails, isPk bool) s
 			if isPk {
 				precision = min(maxVarCharLengthForPrimaryKey, precision)
 			}
+
 			return fmt.Sprintf("VARCHAR(%d)", precision)
 		}
+
 		if isPk {
 			return fmt.Sprintf("VARCHAR(%d)", maxVarCharLengthForPrimaryKey)
 		}
+
 		return "VARCHAR(MAX)"
 	case typing.Boolean.Kind:
 		return "BIT"
 	case typing.ETime.Kind:
 		switch kindDetails.ExtendedTimeDetails.Type {
 		case ext.DateTimeKindType:
+			// Using datetime2 because it's the recommendation, and it provides more precision: https://stackoverflow.com/a/1884088
 			return "datetime2"
 		case ext.DateKindType:
 			return "date"
@@ -57,30 +62,50 @@ func (MSSQLDialect) DataTypeForKind(kindDetails typing.KindDetails, isPk bool) s
 	case typing.EDecimal.Kind:
 		return kindDetails.ExtendedDecimalDetails.MsSQLKind()
 	}
+
 	return kindDetails.Kind
 }
 
 func (MSSQLDialect) KindForDataType(rawType string, stringPrecision string) (typing.KindDetails, error) {
 	rawType = strings.ToLower(rawType)
+
 	if strings.HasPrefix(rawType, "numeric") {
 		return typing.ParseNumeric(typing.DefaultPrefix, rawType), nil
 	}
+
 	switch rawType {
-	case "char", "varchar", "nchar", "nvarchar", "ntext":
+	case
+		"char",
+		"varchar",
+		"nchar",
+		"nvarchar",
+		"ntext":
 		var strPrecision *int
 		precision, err := strconv.Atoi(stringPrecision)
 		if err == nil {
 			strPrecision = &precision
 		}
+
+		// precision of -1 means it's MAX.
 		if precision == -1 {
 			strPrecision = nil
 		}
-		return typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: strPrecision}, nil
-	case "smallint", "tinyint", "bigint", "int":
+
+		return typing.KindDetails{
+			Kind:                    typing.String.Kind,
+			OptionalStringPrecision: strPrecision,
+		}, nil
+	case
+		"smallint",
+		"tinyint",
+		"bigint",
+		"int":
 		return typing.Integer, nil
 	case "float", "real":
 		return typing.Float, nil
-	case "datetime", "datetime2":
+	case
+		"datetime",
+		"datetime2":
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType), nil
 	case "time":
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType), nil
@@ -91,6 +116,7 @@ func (MSSQLDialect) KindForDataType(rawType string, stringPrecision string) (typ
 	case "text":
 		return typing.String, nil
 	}
+
 	return typing.Invalid, nil
 }
 
