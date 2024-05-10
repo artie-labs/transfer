@@ -3,8 +3,8 @@ package consumer
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"log/slog"
-	"strings"
 	"sync"
 	"time"
 
@@ -107,7 +107,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 			for {
 				kafkaMsg, err := kafkaConsumer.FetchMessage(ctx)
 				if err != nil {
-					if strings.Contains(err.Error(), "the client should rejoin the group") {
+					if errors.Is(err, kafka.RebalanceInProgress) {
 						if err = kafkaConsumer.Reload(); err != nil {
 							logger.Fatal("Failed to reload kafka consumer", slog.Any("err", err))
 						}
