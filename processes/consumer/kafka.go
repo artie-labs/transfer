@@ -7,19 +7,20 @@ import (
 	"sync"
 	"time"
 
-	awsCfg "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/segmentio/kafka-go"
-	"github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2"
-	"github.com/segmentio/kafka-go/sasl/plain"
+	"github.com/segmentio/kafka-go/sasl/scram"
 
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
+	"github.com/artie-labs/transfer/lib/jitter"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/artie-labs/transfer/models"
+	awsCfg "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/segmentio/kafka-go"
+	"github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2"
 )
 
 var topicToConsumer *TopicToConsumer
@@ -66,14 +67,14 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 		dialer.TLS = &tls.Config{}
 	}
 
-	// If username or password is set, then let's enable PLAIN.
-	// By default, we will support no auth (local testing) and PLAIN SASL.
+	// If username and password are provided, we'll use SHA512.
 	if cfg.Kafka.Username != "" {
-		dialer.SASLMechanism = plain.Mechanism{
-			Username: cfg.Kafka.Username,
-			Password: cfg.Kafka.Password,
+		mechanism, err := scram.Mechanism(scram.SHA512, cfg.Kafka.Username, cfg.Kafka.Password)
+		if err != nil {
+			logger.Panic("Failed to create SCRAM mechanism", slog.Any("err", err))
 		}
 
+		dialer.SASLMechanism = mechanism
 		dialer.TLS = &tls.Config{}
 	}
 
@@ -89,7 +90,9 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 	}
 
 	var wg sync.WaitGroup
-	for _, topic := range topics {
+	for num, topic := range topics {
+		// It is recommended to not try to establish a connection all at the same time, which may overwhelm the Kafka cluster.
+		time.Sleep(jitter.Jitter(100, 3000, num))
 		wg.Add(1)
 		go func(topic string) {
 			defer wg.Done()
@@ -128,6 +131,8 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 					GroupID:                kafkaConsumer.Config().GroupID,
 					TopicToConfigFormatMap: tcFmtMap,
 				}
+
+				continue
 
 				tableName, processErr := args.process(ctx, cfg, inMemDB, dest, metricsClient)
 				msg.EmitIngestionLag(metricsClient, cfg.Mode, kafkaConsumer.Config().GroupID, tableName)
