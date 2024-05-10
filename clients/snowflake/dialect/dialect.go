@@ -1,4 +1,4 @@
-package sql
+package dialect
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
@@ -18,7 +19,7 @@ func (sd SnowflakeDialect) QuoteIdentifier(identifier string) string {
 }
 
 func (SnowflakeDialect) EscapeStruct(value string) string {
-	return QuoteLiteral(value)
+	return sql.QuoteLiteral(value)
 }
 
 func (SnowflakeDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) string {
@@ -59,7 +60,7 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.
 	// We need to strip away the variable
 	// For example, a Column can look like: TEXT, or Number(38, 0) or VARCHAR(255).
 	// We need to strip out all the content from ( ... )
-	dataType, parameters, err := ParseDataTypeDefinition(strings.ToLower(snowflakeType))
+	dataType, parameters, err := sql.ParseDataTypeDefinition(strings.ToLower(snowflakeType))
 	if err != nil {
 		return typing.Invalid, err
 	}

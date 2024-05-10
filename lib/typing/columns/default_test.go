@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
+	snowflakeDialect "github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -16,7 +17,7 @@ import (
 var dialects = []sql.Dialect{
 	bigQueryDialect.BigQueryDialect{},
 	sql.RedshiftDialect{},
-	sql.SnowflakeDialect{},
+	snowflakeDialect.SnowflakeDialect{},
 }
 
 func TestColumn_DefaultValue(t *testing.T) {

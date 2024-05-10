@@ -3,11 +3,11 @@ package snowflake
 import (
 	"fmt"
 
+	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/destination/types"
-	"github.com/artie-labs/transfer/lib/sql"
 )
 
-var dialect = sql.SnowflakeDialect{}
+var _dialect = dialect.SnowflakeDialect{}
 
 type TableIdentifier struct {
 	database string
@@ -32,7 +32,7 @@ func (ti TableIdentifier) Schema() string {
 }
 
 func (ti TableIdentifier) EscapedTable() string {
-	return dialect.QuoteIdentifier(ti.table)
+	return _dialect.QuoteIdentifier(ti.table)
 }
 
 func (ti TableIdentifier) Table() string {
