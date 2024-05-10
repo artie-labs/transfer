@@ -13,8 +13,8 @@ func ParseNumeric(parameters []string) KindDetails {
 	}
 
 	var parsedNumbers []int
-	for _, part := range parameters {
-		parsedNumber, err := strconv.Atoi(strings.TrimSpace(part))
+	for _, parameter := range parameters {
+		parsedNumber, err := strconv.Atoi(strings.TrimSpace(parameter))
 		if err != nil {
 			return Invalid
 		}
