@@ -5,17 +5,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/sql"
-
-	"github.com/artie-labs/transfer/lib/typing/ext"
-
-	"github.com/artie-labs/transfer/lib/typing"
-
 	"github.com/stretchr/testify/assert"
+
+	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
+	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 var dialects = []sql.Dialect{
-	sql.BigQueryDialect{},
+	bigQueryDialect.BigQueryDialect{},
 	sql.RedshiftDialect{},
 	sql.SnowflakeDialect{},
 }

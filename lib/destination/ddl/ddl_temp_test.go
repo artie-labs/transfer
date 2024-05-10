@@ -6,12 +6,12 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/clients/bigquery"
+	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
-	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -24,7 +24,7 @@ func (d *DDLTestSuite) TestValidate_AlterTableArgs() {
 	}
 	assert.ErrorContains(d.T(), a.Validate(), "dialect cannot be nil")
 
-	a.Dialect = sql.BigQueryDialect{}
+	a.Dialect = bigQueryDialect.BigQueryDialect{}
 	assert.ErrorContains(d.T(), a.Validate(), "incompatible operation - cannot drop columns and create table at the same time")
 
 	a.ColumnOp = constants.Add
