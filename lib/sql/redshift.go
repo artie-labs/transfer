@@ -109,8 +109,12 @@ func (RedshiftDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return strings.Contains(err.Error(), "already exists")
 }
 
-func (RedshiftDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string {
-	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
+func (RedshiftDialect) BuildCreateTableQuery(fqTableName string, temporary bool, colSQLParts []string) string {
+	if temporary {
+		return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
+	} else {
+		return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", fqTableName, strings.Join(colSQLParts, ","))
+	}
 }
 
 func (RedshiftDialect) BuildProcessToastStructColExpression(colName string) string {

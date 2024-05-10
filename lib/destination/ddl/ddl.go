@@ -121,18 +121,7 @@ func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []col
 
 	var alterStatements []string
 	if a.CreateTable {
-		var sqlQuery string
-		if a.TemporaryTable {
-			sqlQuery = a.Dialect.BuildCreateTempTableQuery(fqTableName, colSQLParts)
-		} else {
-			if _, ok := a.Dialect.(sql.MSSQLDialect); ok {
-				// MSSQL doesn't support IF NOT EXISTS
-				sqlQuery = fmt.Sprintf("CREATE TABLE %s (%s)", fqTableName, strings.Join(colSQLParts, ","))
-			} else {
-				sqlQuery = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", fqTableName, strings.Join(colSQLParts, ","))
-			}
-		}
-
+		var sqlQuery = a.Dialect.BuildCreateTableQuery(fqTableName, a.TemporaryTable, colSQLParts)
 		alterStatements = []string{sqlQuery}
 	} else {
 		for _, colSQLPart := range colSQLParts {

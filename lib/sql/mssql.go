@@ -141,8 +141,12 @@ func (MSSQLDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return false
 }
 
-func (MSSQLDialect) BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string {
-	return fmt.Sprintf("CREATE TABLE %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
+func (MSSQLDialect) BuildCreateTableQuery(fqTableName string, temporary bool, colSQLParts []string) string {
+	if temporary {
+		return fmt.Sprintf("CREATE TABLE %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
+	} else {
+		return fmt.Sprintf("CREATE TABLE %s (%s)", fqTableName, strings.Join(colSQLParts, ","))
+	}
 }
 
 func (MSSQLDialect) BuildProcessToastStructColExpression(colName string) string {

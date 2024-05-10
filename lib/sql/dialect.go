@@ -10,6 +10,6 @@ type Dialect interface {
 	DataTypeForKind(kd typing.KindDetails, isPk bool) string
 	KindForDataType(_type string, stringPrecision string) (typing.KindDetails, error)
 	IsColumnAlreadyExistsErr(err error) bool
-	BuildCreateTempTableQuery(fqTableName string, colSQLParts []string) string
+	BuildCreateTableQuery(fqTableName string, temporary bool, colSQLParts []string) string
 	BuildProcessToastStructColExpression(colName string) string
 }
