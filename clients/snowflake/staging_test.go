@@ -23,8 +23,10 @@ import (
 )
 
 func (s *SnowflakeTestSuite) TestReplaceExceededValues() {
-	// String + OptionalStringPrecision not set:
+	// String + OptionalStringPrecision not set + equal to max LOB length:
 	assert.Equal(s.T(), strings.Repeat("a", 16777216), replaceExceededValues(strings.Repeat("a", 16777216), typing.String))
+	// String + OptionalStringPrecision not set + greater than max LOB length:
+	assert.Equal(s.T(), constants.ExceededValueMarker, replaceExceededValues(strings.Repeat("a", 16777217), typing.String))
 	// String + OptionalStringPrecision set + equal to OptionalStringPrecision:
 	assert.Equal(s.T(),
 		strings.Repeat("a", 100),

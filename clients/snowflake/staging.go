@@ -28,10 +28,14 @@ func replaceExceededValues(colVal string, kindDetails typing.KindDetails) string
 			return fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker)
 		}
 	case typing.String.Kind:
-		if kindDetails.OptionalStringPrecision != nil && len(colVal) > *kindDetails.OptionalStringPrecision {
-			return constants.ExceededValueMarker
+		maxLength := maxLobLength
+		if kindDetails.OptionalStringPrecision != nil {
+			maxLength = *kindDetails.OptionalStringPrecision
 		}
 
+		if len(colVal) > maxLength {
+			return constants.ExceededValueMarker
+		}
 	}
 
 	return colVal
