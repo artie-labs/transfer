@@ -30,6 +30,7 @@ func ShouldReload(err error) bool {
 		return false
 	}
 
+	// Kafka Segment Go doesn't handle reloading the client: https://github.com/segmentio/kafka-go/issues/833
 	// [27] Rebalance In Progress: the coordinator has begun rebalancing the group, the client should rejoin the group
 	return errors.Is(err, kafka.RebalanceInProgress)
 }
