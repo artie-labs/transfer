@@ -84,19 +84,12 @@ func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindD
 
 	// Geography, geometry date, time, varbinary, binary are currently not supported.
 	switch strings.TrimSpace(bqType) {
-	case "numeric":
+	case "numeric", "bignumeric":
 		if len(parameters) == 0 {
 			// This is a specific thing to BigQuery
 			// A `NUMERIC` type without precision or scale specified is NUMERIC(38, 9)
 			return typing.EDecimal, nil
 		}
-
-		return typing.ParseNumeric(parameters), nil
-	case "bignumeric":
-		if rawBqType == "bignumeric" {
-			return typing.EDecimal, nil
-		}
-
 		return typing.ParseNumeric(parameters), nil
 	case "decimal", "float", "float64", "bigdecimal":
 		return typing.Float, nil
