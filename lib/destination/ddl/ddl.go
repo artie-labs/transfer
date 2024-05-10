@@ -6,14 +6,13 @@ import (
 	"strings"
 	"time"
 
+	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/sql"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 // DropTemporaryTable - this will drop the temporary table from Snowflake w/ stages and BigQuery
@@ -110,7 +109,7 @@ func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []col
 
 	if len(pkCols) > 0 {
 		pkStatement := fmt.Sprintf("PRIMARY KEY (%s)", strings.Join(pkCols, ", "))
-		if _, ok := a.Dialect.(sql.BigQueryDialect); ok {
+		if _, ok := a.Dialect.(bigQueryDialect.BigQueryDialect); ok {
 			pkStatement += " NOT ENFORCED"
 		}
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -174,7 +175,7 @@ func (m *MergeArgument) buildDefaultStatement() (string, error) {
 		idempotentClause = fmt.Sprintf("AND cc.%s >= c.%s ", m.IdempotentKey, m.IdempotentKey)
 	}
 
-	_, isBigQuery := m.Dialect.(sql.BigQueryDialect)
+	_, isBigQuery := m.Dialect.(dialect.BigQueryDialect)
 
 	var equalitySQLParts []string
 	for _, primaryKey := range m.PrimaryKeys {

@@ -4,16 +4,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/sql"
-	"github.com/artie-labs/transfer/lib/typing/decimal"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
+	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/typing/ext"
-
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string) (any, error) {
@@ -55,7 +52,7 @@ func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string)
 
 			return extTime.String(ext.PostgresDateFormat), nil
 		case ext.TimeKindType:
-			return extTime.String(sql.BQStreamingTimeFormat), nil
+			return extTime.String(dialect.BQStreamingTimeFormat), nil
 		}
 	case typing.Struct.Kind:
 		if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {

@@ -3,9 +3,9 @@ package dml
 import (
 	"testing"
 
+	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
-	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +25,7 @@ func TestMergeStatement_TempTable(t *testing.T) {
 		SubQuery:    "customers.orders_tmp",
 		PrimaryKeys: []columns.Column{columns.NewColumn("order_id", typing.Invalid)},
 		Columns:     cols.ValidColumns(),
-		Dialect:     sql.BigQueryDialect{},
+		Dialect:     bigQueryDialect.BigQueryDialect{},
 		SoftDelete:  false,
 	}
 
@@ -50,7 +50,7 @@ func TestMergeStatement_JSONKey(t *testing.T) {
 		SubQuery:    "customers.orders_tmp",
 		PrimaryKeys: []columns.Column{orderOIDCol},
 		Columns:     cols.ValidColumns(),
-		Dialect:     sql.BigQueryDialect{},
+		Dialect:     bigQueryDialect.BigQueryDialect{},
 		SoftDelete:  false,
 	}
 
@@ -71,7 +71,7 @@ func TestMergeArgument_BuildStatements_BigQuery(t *testing.T) {
 		SubQuery:    "{SUB_QUERY}",
 		PrimaryKeys: []columns.Column{orderOIDCol},
 		Columns:     cols.ValidColumns(),
-		Dialect:     sql.BigQueryDialect{},
+		Dialect:     bigQueryDialect.BigQueryDialect{},
 		SoftDelete:  false,
 	}
 

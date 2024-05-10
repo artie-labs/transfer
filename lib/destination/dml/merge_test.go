@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	snowflakeDialect "github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
@@ -367,7 +368,7 @@ func TestMergeArgument_BuildRedshiftDeleteQuery(t *testing.T) {
 func TestMergeArgument_BuildStatements_Validation(t *testing.T) {
 	for _, arg := range []*MergeArgument{
 		{Dialect: snowflakeDialect.SnowflakeDialect{}},
-		{Dialect: sql.BigQueryDialect{}},
+		{Dialect: bigQueryDialect.BigQueryDialect{}},
 	} {
 		parts, err := arg.BuildStatements()
 		assert.ErrorContains(t, err, "merge argument does not contain primary keys")
