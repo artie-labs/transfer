@@ -5,6 +5,7 @@ import (
 
 	_ "github.com/microsoft/go-mssqldb"
 
+	"github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/db"
@@ -31,7 +32,7 @@ func getSchema(schema string) string {
 }
 
 func (s *Store) Dialect() sql.Dialect {
-	return sql.MSSQLDialect{}
+	return dialect.MSSQLDialect{}
 }
 
 func (s *Store) AdditionalDateFormats() []string {

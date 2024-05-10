@@ -6,11 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/mocks"
-
+	"github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/ptr"
-	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/stretchr/testify/assert"
@@ -49,7 +48,7 @@ func Test_BuildMSSQLStatement(t *testing.T) {
 		IdempotentKey: "",
 		PrimaryKeys:   []columns.Column{columns.NewColumn("id", typing.Invalid)},
 		Columns:       _cols,
-		Dialect:       sql.MSSQLDialect{},
+		Dialect:       dialect.MSSQLDialect{},
 		SoftDelete:    false,
 	}
 
@@ -76,7 +75,7 @@ func TestMergeArgument_BuildStatements_MSSQL(t *testing.T) {
 		SubQuery:            "{SUB_QUERY}",
 		PrimaryKeys:         []columns.Column{cols[0]},
 		Columns:             cols,
-		Dialect:             sql.MSSQLDialect{},
+		Dialect:             dialect.MSSQLDialect{},
 		ContainsHardDeletes: ptr.ToBool(true),
 	}
 

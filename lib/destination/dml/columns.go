@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 
+	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -50,7 +51,7 @@ func buildColumnsUpdateFragment(columns []columns.Column, dialect sql.Dialect) s
 }
 
 func processToastCol(colName string, dialect sql.Dialect) string {
-	if _, ok := dialect.(sql.MSSQLDialect); ok {
+	if _, ok := dialect.(mssqlDialect.MSSQLDialect); ok {
 		// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
 		return fmt.Sprintf("CASE WHEN COALESCE(cc.%s, '') != '%s' THEN cc.%s ELSE c.%s END", colName,
 			constants.ToastUnavailableValuePlaceholder, colName, colName)

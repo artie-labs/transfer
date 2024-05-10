@@ -5,9 +5,9 @@ import (
 	"log/slog"
 
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
+	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
-	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
@@ -17,7 +17,7 @@ func BackfillColumn(dwh destination.DataWarehouse, column columns.Column, tableI
 		return nil
 	}
 
-	if _, ok := dwh.Dialect().(sql.MSSQLDialect); ok {
+	if _, ok := dwh.Dialect().(mssqlDialect.MSSQLDialect); ok {
 		// TODO: Support MSSQL column backfill
 		return nil
 	}
