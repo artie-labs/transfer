@@ -80,10 +80,9 @@ func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindD
 	if idx := strings.Index(bqType, "<"); idx > 0 {
 		idxStop = idx
 	}
-	bqType = bqType[:idxStop]
 
 	// Geography, geometry date, time, varbinary, binary are currently not supported.
-	switch strings.TrimSpace(bqType) {
+	switch strings.TrimSpace(bqType[:idxStop]) {
 	case "numeric", "bignumeric":
 		if len(parameters) == 0 {
 			// This is a specific thing to BigQuery
