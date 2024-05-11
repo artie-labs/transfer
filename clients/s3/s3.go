@@ -8,9 +8,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/stringutil"
 
@@ -45,7 +45,7 @@ func (s *Store) Validate() error {
 	return nil
 }
 
-func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
+func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
 	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
 

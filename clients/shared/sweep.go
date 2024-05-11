@@ -30,7 +30,7 @@ func Sweep(dwh destination.DataWarehouse, topicConfigs []*kafkalib.TopicConfig, 
 			}
 
 			if ddl.ShouldDeleteFromName(tableName) {
-				// TODO: Rewrite this to pass a [types.TableIdentifiers] to [DropTemporaryTable]
+				// TODO: Rewrite this to pass a [sql.TableIdentifiers] to [DropTemporaryTable]
 				err = ddl.DropTemporaryTable(dwh, fmt.Sprintf("%s.%s.%s", dbAndSchemaPair.Database, tableSchema, tableName), true)
 				if err != nil {
 					return err

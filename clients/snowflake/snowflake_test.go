@@ -9,6 +9,7 @@ import (
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
@@ -22,7 +23,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func (s *SnowflakeTestSuite) identifierFor(tableData *optimization.TableData) types.TableIdentifier {
+func (s *SnowflakeTestSuite) identifierFor(tableData *optimization.TableData) sql.TableIdentifier {
 	return s.stageStore.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 }
 

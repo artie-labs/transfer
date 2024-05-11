@@ -14,6 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/mocks"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -26,7 +27,7 @@ func (d *DDLTestSuite) Test_CreateTable() {
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(snowflakeTableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
 
 	type dwhToTableConfig struct {
-		_tableID       types.TableIdentifier
+		_tableID       sql.TableIdentifier
 		_dwh           destination.DataWarehouse
 		_tableConfig   *types.DwhTableConfig
 		_fakeStore     *mocks.FakeStore

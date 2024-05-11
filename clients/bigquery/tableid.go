@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
-	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/sql"
 )
 
 var _dialect = dialect.BigQueryDialect{}
@@ -39,7 +39,7 @@ func (ti TableIdentifier) Table() string {
 	return ti.table
 }
 
-func (ti TableIdentifier) WithTable(table string) types.TableIdentifier {
+func (ti TableIdentifier) WithTable(table string) sql.TableIdentifier {
 	return NewTableIdentifier(ti.projectID, ti.dataset, table)
 }
 

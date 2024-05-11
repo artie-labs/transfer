@@ -43,7 +43,7 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 	})
 }
 
-func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
+func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
 	return NewTableIdentifier(topicConfig.Schema, table)
 }
 
@@ -111,7 +111,7 @@ WHERE
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func generateDedupeQueries(dialect sql.Dialect, tableID, stagingTableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
+func generateDedupeQueries(dialect sql.Dialect, tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, dialect)
 
 	orderColsToIterate := primaryKeysEscaped
@@ -162,7 +162,7 @@ func generateDedupeQueries(dialect sql.Dialect, tableID, stagingTableID types.Ta
 	return parts
 }
 
-func (s *Store) Dedupe(tableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
+func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
 	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 	dedupeQueries := generateDedupeQueries(s.Dialect(), tableID, stagingTableID, primaryKeys, topicConfig)
 	return destination.ExecStatements(s, dedupeQueries)

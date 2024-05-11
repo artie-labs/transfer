@@ -10,14 +10,13 @@ import (
 	redshiftDialect "github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 type MergeArgument struct {
-	TableID       types.TableIdentifier
+	TableID       sql.TableIdentifier
 	SubQuery      string
 	IdempotentKey string
 	PrimaryKeys   []columns.Column

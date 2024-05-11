@@ -13,9 +13,10 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/s3lib"
+	"github.com/artie-labs/transfer/lib/sql"
 )
 
-func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
 			Dialect:        s.Dialect(),
@@ -71,7 +72,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	return nil
 }
 
-func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID types.TableIdentifier) (string, error) {
+func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID sql.TableIdentifier) (string, error) {
 	filePath := fmt.Sprintf("/tmp/%s.csv.gz", newTableID.FullyQualifiedName())
 	file, err := os.Create(filePath)
 	if err != nil {

@@ -7,11 +7,11 @@ import (
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/lib/destination"
-	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func BackfillColumn(dwh destination.DataWarehouse, column columns.Column, tableID types.TableIdentifier) error {
+func BackfillColumn(dwh destination.DataWarehouse, column columns.Column, tableID sql.TableIdentifier) error {
 	if !column.ShouldBackfill() {
 		// If we don't need to backfill, don't backfill.
 		return nil
