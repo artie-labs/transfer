@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -185,8 +186,11 @@ func TestBigQueryDialect_BuildCreateTableQuery(t *testing.T) {
 }
 
 func TestBigQueryDialect_BuildAlterColumnQuery(t *testing.T) {
+	fakeTableID := mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
+
 	assert.Equal(t,
 		"ALTER TABLE {TABLE} drop COLUMN {SQL_PART}",
-		BigQueryDialect{}.BuildAlterColumnQuery("{TABLE}", constants.Delete, "{SQL_PART}"),
+		BigQueryDialect{}.BuildAlterColumnQuery(&fakeTableID, constants.Delete, "{SQL_PART}"),
 	)
 }

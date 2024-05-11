@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -133,8 +134,11 @@ func TestMSSQLDialect_BuildCreateTableQuery(t *testing.T) {
 }
 
 func TestMSSQLDialect_BuildAlterColumnQuery(t *testing.T) {
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
+
 	assert.Equal(t,
 		"ALTER TABLE {TABLE} drop {SQL_PART}",
-		MSSQLDialect{}.BuildAlterColumnQuery("{TABLE}", constants.Delete, "{SQL_PART}"),
+		MSSQLDialect{}.BuildAlterColumnQuery(fakeTableID, constants.Delete, "{SQL_PART}"),
 	)
 }

@@ -137,8 +137,8 @@ func (BigQueryDialect) BuildCreateTableQuery(fqTableName string, temporary bool,
 	}
 }
 
-func (BigQueryDialect) BuildAlterColumnQuery(fqTableName string, columnOp constants.ColumnOperation, colSQLPart string) string {
-	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTableName, columnOp, colSQLPart)
+func (BigQueryDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string {
+	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 
 func (BigQueryDialect) BuildProcessToastStructColExpression(colName string) string {

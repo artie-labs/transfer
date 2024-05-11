@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -230,8 +231,11 @@ func TestSnowflakeDialect_BuildCreateTableQuery(t *testing.T) {
 }
 
 func TestSnowflakeDialect_BuildAlterColumnQuery(t *testing.T) {
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
+
 	assert.Equal(t,
 		"ALTER TABLE {TABLE} drop COLUMN {SQL_PART}",
-		SnowflakeDialect{}.BuildAlterColumnQuery("{TABLE}", constants.Delete, "{SQL_PART}"),
+		SnowflakeDialect{}.BuildAlterColumnQuery(fakeTableID, constants.Delete, "{SQL_PART}"),
 	)
 }

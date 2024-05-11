@@ -120,8 +120,8 @@ func (RedshiftDialect) BuildCreateTableQuery(fqTableName string, _ bool, colSQLP
 	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
 }
 
-func (RedshiftDialect) BuildAlterColumnQuery(fqTableName string, columnOp constants.ColumnOperation, colSQLPart string) string {
-	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTableName, columnOp, colSQLPart)
+func (RedshiftDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string {
+	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 
 func (RedshiftDialect) BuildProcessToastStructColExpression(colName string) string {

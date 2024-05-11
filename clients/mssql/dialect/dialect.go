@@ -153,9 +153,9 @@ func (MSSQLDialect) BuildCreateTableQuery(fqTableName string, _ bool, colSQLPart
 	return fmt.Sprintf("CREATE TABLE %s (%s);", fqTableName, strings.Join(colSQLParts, ","))
 }
 
-func (MSSQLDialect) BuildAlterColumnQuery(fqTableName string, columnOp constants.ColumnOperation, colSQLPart string) string {
+func (MSSQLDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string {
 	// Microsoft SQL Server doesn't support the COLUMN keyword
-	return fmt.Sprintf("ALTER TABLE %s %s %s", fqTableName, columnOp, colSQLPart)
+	return fmt.Sprintf("ALTER TABLE %s %s %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 
 func (MSSQLDialect) BuildProcessToastStructColExpression(colName string) string {
