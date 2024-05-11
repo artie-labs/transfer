@@ -154,7 +154,7 @@ func (s *Store) putTable(ctx context.Context, tableID sql.TableIdentifier, rows 
 func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
 	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-	dedupeQueries := dialect.BigQueryDialect{}.BuildDedupeQueries(tableID, stagingTableID, primaryKeys, topicConfig)
+	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, topicConfig)
 
 	defer func() { _ = ddl.DropTemporaryTable(s, stagingTableID.FullyQualifiedName(), false) }()
 
