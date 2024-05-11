@@ -46,7 +46,7 @@ func (s *Store) Append(tableData *optimization.TableData) error {
 	return shared.Append(s, tableData, types.AdditionalSettings{})
 }
 
-func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
 			Dialect:        s.Dialect(),
@@ -87,7 +87,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	return s.putTable(context.Background(), tempTableID, rows)
 }
 
-func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
+func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
 	return NewTableIdentifier(s.config.BigQuery.ProjectID, topicConfig.Database, table)
 }
 
@@ -132,7 +132,7 @@ func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 	return client
 }
 
-func (s *Store) putTable(ctx context.Context, tableID types.TableIdentifier, rows []*Row) error {
+func (s *Store) putTable(ctx context.Context, tableID sql.TableIdentifier, rows []*Row) error {
 	bqTableID, ok := tableID.(TableIdentifier)
 	if !ok {
 		return fmt.Errorf("unable to cast tableID to BigQuery TableIdentifier")
@@ -152,7 +152,7 @@ func (s *Store) putTable(ctx context.Context, tableID types.TableIdentifier, row
 	return nil
 }
 
-func generateDedupeQueries(_dialect sql.Dialect, tableID, stagingTableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
+func generateDedupeQueries(_dialect sql.Dialect, tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, _dialect)
 
 	orderColsToIterate := primaryKeysEscaped
@@ -194,7 +194,7 @@ func generateDedupeQueries(_dialect sql.Dialect, tableID, stagingTableID types.T
 	return parts
 }
 
-func (s *Store) Dedupe(tableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
+func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
 	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
 	dedupeQueries := generateDedupeQueries(s.Dialect(), tableID, stagingTableID, primaryKeys, topicConfig)

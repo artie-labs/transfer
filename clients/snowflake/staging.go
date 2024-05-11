@@ -57,7 +57,7 @@ func castColValStaging(colVal any, colKind columns.Column, additionalDateFmts []
 	return replaceExceededValues(value, colKind.KindDetails), nil
 }
 
-func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID types.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
 			Dialect:        s.Dialect(),
@@ -109,7 +109,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	return nil
 }
 
-func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID types.TableIdentifier) (string, error) {
+func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (string, error) {
 	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv", newTableID.FullyQualifiedName()))
 	file, err := os.Create(fp)
 	if err != nil {

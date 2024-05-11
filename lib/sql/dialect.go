@@ -5,6 +5,13 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
+type TableIdentifier interface {
+	EscapedTable() string
+	Table() string
+	WithTable(table string) TableIdentifier
+	FullyQualifiedName() string
+}
+
 type Dialect interface {
 	QuoteIdentifier(identifier string) string
 	EscapeStruct(value string) string

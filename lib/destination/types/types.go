@@ -2,6 +2,8 @@ package types
 
 import (
 	"sync"
+
+	"github.com/artie-labs/transfer/lib/sql"
 )
 
 type DwhToTablesConfigMap struct {
@@ -9,7 +11,7 @@ type DwhToTablesConfigMap struct {
 	sync.RWMutex
 }
 
-func (d *DwhToTablesConfigMap) TableConfig(tableID TableIdentifier) *DwhTableConfig {
+func (d *DwhToTablesConfigMap) TableConfig(tableID sql.TableIdentifier) *DwhTableConfig {
 	d.RLock()
 	defer d.RUnlock()
 
@@ -21,7 +23,7 @@ func (d *DwhToTablesConfigMap) TableConfig(tableID TableIdentifier) *DwhTableCon
 	return tableConfig
 }
 
-func (d *DwhToTablesConfigMap) AddTableToConfig(tableID TableIdentifier, config *DwhTableConfig) {
+func (d *DwhToTablesConfigMap) AddTableToConfig(tableID sql.TableIdentifier, config *DwhTableConfig) {
 	d.Lock()
 	defer d.Unlock()
 
@@ -40,11 +42,4 @@ type MergeOpts struct {
 
 type AdditionalSettings struct {
 	AdditionalCopyClause string
-}
-
-type TableIdentifier interface {
-	EscapedTable() string
-	Table() string
-	WithTable(table string) TableIdentifier
-	FullyQualifiedName() string
 }

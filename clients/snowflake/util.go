@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 // addPrefixToTableName will take a [types.TableIdentifier] and add a prefix in front of the table.
 // This is necessary for `PUT` commands.
-func addPrefixToTableName(tableID types.TableIdentifier, prefix string) string {
+func addPrefixToTableName(tableID sql.TableIdentifier, prefix string) string {
 	return tableID.WithTable(prefix + tableID.Table()).FullyQualifiedName()
 }
 

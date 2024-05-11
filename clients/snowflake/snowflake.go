@@ -36,7 +36,7 @@ const (
 	describeCommentCol = "comment"
 )
 
-func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
+func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
 	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
 
@@ -128,7 +128,7 @@ func (s *Store) reestablishConnection() error {
 	return nil
 }
 
-func generateDedupeQueries(dialect sql.Dialect, tableID, stagingTableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
+func generateDedupeQueries(dialect sql.Dialect, tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, dialect)
 
 	orderColsToIterate := primaryKeysEscaped
@@ -168,7 +168,7 @@ func generateDedupeQueries(dialect sql.Dialect, tableID, stagingTableID types.Ta
 
 // Dedupe takes a table and will remove duplicates based on the primary key(s).
 // These queries are inspired and modified from: https://stackoverflow.com/a/71515946
-func (s *Store) Dedupe(tableID types.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
+func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
 	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 	dedupeQueries := generateDedupeQueries(s.Dialect(), tableID, stagingTableID, primaryKeys, topicConfig)
 	return destination.ExecStatements(s, dedupeQueries)

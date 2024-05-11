@@ -53,7 +53,7 @@ func (s *Store) specificIdentifierFor(topicConfig kafkalib.TopicConfig, table st
 }
 
 // IdentifierFor returns a generic [types.TableIdentifier] interface for a [TopicConfig] + table name.
-func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) types.TableIdentifier {
+func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
 	return s.specificIdentifierFor(topicConfig, table)
 }
 
@@ -70,7 +70,7 @@ func (s *Store) Sweep() error {
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func (s *Store) Dedupe(_ types.TableIdentifier, _ []string, _ kafkalib.TopicConfig) error {
+func (s *Store) Dedupe(_ sql.TableIdentifier, _ []string, _ kafkalib.TopicConfig) error {
 	return nil // dedupe is not necessary for MS SQL
 }
 
