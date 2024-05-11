@@ -52,7 +52,7 @@ func (s *Store) specificIdentifierFor(topicConfig kafkalib.TopicConfig, table st
 	return NewTableIdentifier(getSchema(topicConfig.Schema), table)
 }
 
-// IdentifierFor returns a generic [types.TableIdentifier] interface for a [TopicConfig] + table name.
+// IdentifierFor returns a generic [sql.TableIdentifier] interface for a [TopicConfig] + table name.
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
 	return s.specificIdentifierFor(topicConfig, table)
 }
