@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -146,4 +147,42 @@ func (SnowflakeDialect) BuildProcessToastStructColExpression(colName string) str
 	// TODO: Change this to Snowflake and error out if the destKind isn't supported so we're explicit.
 	return fmt.Sprintf("CASE WHEN COALESCE(cc.%s != {'key': '%s'}, true) THEN cc.%s ELSE c.%s END",
 		colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
+}
+
+func (sd SnowflakeDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
+	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, sd)
+
+	orderColsToIterate := primaryKeysEscaped
+	if topicConfig.IncludeArtieUpdatedAt {
+		orderColsToIterate = append(orderColsToIterate, sd.QuoteIdentifier(constants.UpdateColumnMarker))
+	}
+
+	var orderByCols []string
+	for _, pk := range orderColsToIterate {
+		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", pk))
+	}
+
+	var parts []string
+	parts = append(parts, fmt.Sprintf("CREATE OR REPLACE TRANSIENT TABLE %s AS (SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 2)",
+		stagingTableID.FullyQualifiedName(),
+		tableID.FullyQualifiedName(),
+		strings.Join(primaryKeysEscaped, ", "),
+		strings.Join(orderByCols, ", "),
+	))
+
+	var whereClauses []string
+	for _, primaryKeyEscaped := range primaryKeysEscaped {
+		whereClauses = append(whereClauses, fmt.Sprintf("t1.%s = t2.%s", primaryKeyEscaped, primaryKeyEscaped))
+	}
+
+	parts = append(parts,
+		fmt.Sprintf("DELETE FROM %s t1 USING %s t2 WHERE %s",
+			tableID.FullyQualifiedName(),
+			stagingTableID.FullyQualifiedName(),
+			strings.Join(whereClauses, " AND "),
+		),
+	)
+
+	parts = append(parts, fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName()))
+	return parts
 }

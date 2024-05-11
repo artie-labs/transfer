@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/stringutil"
@@ -16,7 +17,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 		tableID := NewTableIdentifier("public", "customers")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := generateDedupeQueries(r.store.Dialect(), tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{})
+		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{})
 		assert.Len(r.T(), parts, 3)
 		assert.Equal(
 			r.T(),
@@ -31,7 +32,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 		tableID := NewTableIdentifier("public", "customers")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := generateDedupeQueries(r.store.Dialect(), tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
+		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
 		assert.Len(r.T(), parts, 3)
 		assert.Equal(
 			r.T(),
@@ -46,7 +47,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 		tableID := NewTableIdentifier("public", "user_settings")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := generateDedupeQueries(r.store.Dialect(), tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{})
+		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{})
 		assert.Len(r.T(), parts, 3)
 		assert.Equal(
 			r.T(),
@@ -61,7 +62,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 		tableID := NewTableIdentifier("public", "user_settings")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := generateDedupeQueries(r.store.Dialect(), tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
+		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
 		assert.Len(r.T(), parts, 3)
 		assert.Equal(
 			r.T(),

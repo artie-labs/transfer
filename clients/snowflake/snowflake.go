@@ -128,49 +128,11 @@ func (s *Store) reestablishConnection() error {
 	return nil
 }
 
-func generateDedupeQueries(dialect sql.Dialect, tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
-	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, dialect)
-
-	orderColsToIterate := primaryKeysEscaped
-	if topicConfig.IncludeArtieUpdatedAt {
-		orderColsToIterate = append(orderColsToIterate, dialect.QuoteIdentifier(constants.UpdateColumnMarker))
-	}
-
-	var orderByCols []string
-	for _, pk := range orderColsToIterate {
-		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", pk))
-	}
-
-	var parts []string
-	parts = append(parts, fmt.Sprintf("CREATE OR REPLACE TRANSIENT TABLE %s AS (SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 2)",
-		stagingTableID.FullyQualifiedName(),
-		tableID.FullyQualifiedName(),
-		strings.Join(primaryKeysEscaped, ", "),
-		strings.Join(orderByCols, ", "),
-	))
-
-	var whereClauses []string
-	for _, primaryKeyEscaped := range primaryKeysEscaped {
-		whereClauses = append(whereClauses, fmt.Sprintf("t1.%s = t2.%s", primaryKeyEscaped, primaryKeyEscaped))
-	}
-
-	parts = append(parts,
-		fmt.Sprintf("DELETE FROM %s t1 USING %s t2 WHERE %s",
-			tableID.FullyQualifiedName(),
-			stagingTableID.FullyQualifiedName(),
-			strings.Join(whereClauses, " AND "),
-		),
-	)
-
-	parts = append(parts, fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName()))
-	return parts
-}
-
 // Dedupe takes a table and will remove duplicates based on the primary key(s).
 // These queries are inspired and modified from: https://stackoverflow.com/a/71515946
 func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
 	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
-	dedupeQueries := generateDedupeQueries(s.Dialect(), tableID, stagingTableID, primaryKeys, topicConfig)
+	dedupeQueries := dialect.SnowflakeDialect{}.BuildDedupeQueries(tableID, stagingTableID, primaryKeys, topicConfig)
 	return destination.ExecStatements(s, dedupeQueries)
 }
 

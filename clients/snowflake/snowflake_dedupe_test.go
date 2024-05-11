@@ -18,7 +18,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 		tableID := NewTableIdentifier("db", "public", "customers")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := generateDedupeQueries(dialect.SnowflakeDialect{}, tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{})
+		parts := dialect.SnowflakeDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{})
 		assert.Len(t, parts, 3)
 		assert.Equal(
 			t,
@@ -33,7 +33,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 		tableID := NewTableIdentifier("db", "public", "customers")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := generateDedupeQueries(dialect.SnowflakeDialect{}, tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
+		parts := dialect.SnowflakeDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
 		assert.Len(t, parts, 3)
 		assert.Equal(
 			t,
@@ -48,7 +48,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 		tableID := NewTableIdentifier("db", "public", "user_settings")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := generateDedupeQueries(dialect.SnowflakeDialect{}, tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{})
+		parts := dialect.SnowflakeDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{})
 		assert.Len(t, parts, 3)
 		assert.Equal(
 			t,
@@ -63,7 +63,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 		tableID := NewTableIdentifier("db", "public", "user_settings")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := generateDedupeQueries(dialect.SnowflakeDialect{}, tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
+		parts := dialect.SnowflakeDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
 		assert.Len(t, parts, 3)
 		assert.Equal(
 			t,

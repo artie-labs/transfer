@@ -147,12 +147,12 @@ func (BigQueryDialect) BuildProcessToastStructColExpression(colName string) stri
 		colName, colName)
 }
 
-func (b BigQueryDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
-	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, b)
+func (bd BigQueryDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
+	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, bd)
 
 	orderColsToIterate := primaryKeysEscaped
 	if topicConfig.IncludeArtieUpdatedAt {
-		orderColsToIterate = append(orderColsToIterate, b.QuoteIdentifier(constants.UpdateColumnMarker))
+		orderColsToIterate = append(orderColsToIterate, bd.QuoteIdentifier(constants.UpdateColumnMarker))
 	}
 
 	var orderByCols []string

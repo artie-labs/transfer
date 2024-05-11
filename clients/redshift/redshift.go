@@ -111,60 +111,9 @@ WHERE
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func generateDedupeQueries(dialect sql.Dialect, tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
-	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, dialect)
-
-	orderColsToIterate := primaryKeysEscaped
-	if topicConfig.IncludeArtieUpdatedAt {
-		orderColsToIterate = append(orderColsToIterate, dialect.QuoteIdentifier(constants.UpdateColumnMarker))
-	}
-
-	var orderByCols []string
-	for _, orderByCol := range orderColsToIterate {
-		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", orderByCol))
-	}
-
-	var parts []string
-	parts = append(parts,
-		// It looks funny, but we do need a WHERE clause to make the query valid.
-		fmt.Sprintf("CREATE TEMPORARY TABLE %s AS (SELECT * FROM %s WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 2)",
-			// Temporary tables may not specify a schema name
-			stagingTableID.EscapedTable(),
-			tableID.FullyQualifiedName(),
-			strings.Join(primaryKeysEscaped, ", "),
-			strings.Join(orderByCols, ", "),
-		),
-	)
-
-	var whereClauses []string
-	for _, primaryKeyEscaped := range primaryKeysEscaped {
-		// Redshift does not support table aliasing for deletes.
-		whereClauses = append(whereClauses, fmt.Sprintf("%s.%s = t2.%s", tableID.EscapedTable(), primaryKeyEscaped, primaryKeyEscaped))
-	}
-
-	// Delete duplicates in the main table based on matches with the staging table
-	parts = append(parts,
-		fmt.Sprintf("DELETE FROM %s USING %s t2 WHERE %s",
-			tableID.FullyQualifiedName(),
-			stagingTableID.EscapedTable(),
-			strings.Join(whereClauses, " AND "),
-		),
-	)
-
-	// Insert deduplicated data back into the main table from the staging table
-	parts = append(parts,
-		fmt.Sprintf("INSERT INTO %s SELECT * FROM %s",
-			tableID.FullyQualifiedName(),
-			stagingTableID.EscapedTable(),
-		),
-	)
-
-	return parts
-}
-
 func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
 	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
-	dedupeQueries := generateDedupeQueries(s.Dialect(), tableID, stagingTableID, primaryKeys, topicConfig)
+	dedupeQueries := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, primaryKeys, topicConfig)
 	return destination.ExecStatements(s, dedupeQueries)
 }
 

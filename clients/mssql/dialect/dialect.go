@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -161,4 +162,8 @@ func (MSSQLDialect) BuildProcessToastStructColExpression(colName string) string 
 	// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
 	return fmt.Sprintf("CASE WHEN COALESCE(cc.%s, {}) != {'key': '%s'} THEN cc.%s ELSE c.%s END",
 		colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
+}
+
+func (MSSQLDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
+	panic("not implemented") // We don't currently support deduping for MS SQL.
 }

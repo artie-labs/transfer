@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -126,4 +127,55 @@ func (RedshiftDialect) BuildAlterColumnQuery(fqTableName string, columnOp consta
 func (RedshiftDialect) BuildProcessToastStructColExpression(colName string) string {
 	return fmt.Sprintf(`CASE WHEN COALESCE(cc.%s != JSON_PARSE('{"key":"%s"}'), true) THEN cc.%s ELSE c.%s END`,
 		colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
+}
+
+func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
+	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, rd)
+
+	orderColsToIterate := primaryKeysEscaped
+	if topicConfig.IncludeArtieUpdatedAt {
+		orderColsToIterate = append(orderColsToIterate, rd.QuoteIdentifier(constants.UpdateColumnMarker))
+	}
+
+	var orderByCols []string
+	for _, orderByCol := range orderColsToIterate {
+		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", orderByCol))
+	}
+
+	var parts []string
+	parts = append(parts,
+		// It looks funny, but we do need a WHERE clause to make the query valid.
+		fmt.Sprintf("CREATE TEMPORARY TABLE %s AS (SELECT * FROM %s WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 2)",
+			// Temporary tables may not specify a schema name
+			stagingTableID.EscapedTable(),
+			tableID.FullyQualifiedName(),
+			strings.Join(primaryKeysEscaped, ", "),
+			strings.Join(orderByCols, ", "),
+		),
+	)
+
+	var whereClauses []string
+	for _, primaryKeyEscaped := range primaryKeysEscaped {
+		// Redshift does not support table aliasing for deletes.
+		whereClauses = append(whereClauses, fmt.Sprintf("%s.%s = t2.%s", tableID.EscapedTable(), primaryKeyEscaped, primaryKeyEscaped))
+	}
+
+	// Delete duplicates in the main table based on matches with the staging table
+	parts = append(parts,
+		fmt.Sprintf("DELETE FROM %s USING %s t2 WHERE %s",
+			tableID.FullyQualifiedName(),
+			stagingTableID.EscapedTable(),
+			strings.Join(whereClauses, " AND "),
+		),
+	)
+
+	// Insert deduplicated data back into the main table from the staging table
+	parts = append(parts,
+		fmt.Sprintf("INSERT INTO %s SELECT * FROM %s",
+			tableID.FullyQualifiedName(),
+			stagingTableID.EscapedTable(),
+		),
+	)
+
+	return parts
 }
