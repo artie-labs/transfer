@@ -186,11 +186,11 @@ func TestBigQueryDialect_BuildCreateTableQuery(t *testing.T) {
 }
 
 func TestBigQueryDialect_BuildAlterColumnQuery(t *testing.T) {
-	fakeTableID := mocks.FakeTableIdentifier{}
+	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
 
 	assert.Equal(t,
 		"ALTER TABLE {TABLE} drop COLUMN {SQL_PART}",
-		BigQueryDialect{}.BuildAlterColumnQuery(&fakeTableID, constants.Delete, "{SQL_PART}"),
+		BigQueryDialect{}.BuildAlterColumnQuery(fakeTableID, constants.Delete, "{SQL_PART}"),
 	)
 }
