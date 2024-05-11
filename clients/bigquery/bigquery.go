@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"os"
 	"strings"
-	"time"
 
 	"cloud.google.com/go/bigquery"
 	_ "github.com/viant/bigquery"
@@ -152,52 +151,10 @@ func (s *Store) putTable(ctx context.Context, tableID sql.TableIdentifier, rows 
 	return nil
 }
 
-func generateDedupeQueries(_dialect sql.Dialect, tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
-	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, _dialect)
-
-	orderColsToIterate := primaryKeysEscaped
-	if topicConfig.IncludeArtieUpdatedAt {
-		orderColsToIterate = append(orderColsToIterate, _dialect.QuoteIdentifier(constants.UpdateColumnMarker))
-	}
-
-	var orderByCols []string
-	for _, orderByCol := range orderColsToIterate {
-		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", orderByCol))
-	}
-
-	var parts []string
-	parts = append(parts,
-		fmt.Sprintf(`CREATE OR REPLACE TABLE %s OPTIONS (expiration_timestamp = TIMESTAMP("%s")) AS (SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 2)`,
-			stagingTableID.FullyQualifiedName(),
-			dialect.BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)),
-			tableID.FullyQualifiedName(),
-			strings.Join(primaryKeysEscaped, ", "),
-			strings.Join(orderByCols, ", "),
-		),
-	)
-
-	var whereClauses []string
-	for _, primaryKeyEscaped := range primaryKeysEscaped {
-		whereClauses = append(whereClauses, fmt.Sprintf("t1.%s = t2.%s", primaryKeyEscaped, primaryKeyEscaped))
-	}
-
-	// https://cloud.google.com/bigquery/docs/reference/standard-sql/dml-syntax#delete_with_subquery
-	parts = append(parts,
-		fmt.Sprintf("DELETE FROM %s t1 WHERE EXISTS (SELECT * FROM %s t2 WHERE %s)",
-			tableID.FullyQualifiedName(),
-			stagingTableID.FullyQualifiedName(),
-			strings.Join(whereClauses, " AND "),
-		),
-	)
-
-	parts = append(parts, fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName()))
-	return parts
-}
-
 func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
 	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-	dedupeQueries := generateDedupeQueries(s.Dialect(), tableID, stagingTableID, primaryKeys, topicConfig)
+	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, topicConfig)
 
 	defer func() { _ = ddl.DropTemporaryTable(s, stagingTableID.FullyQualifiedName(), false) }()
 

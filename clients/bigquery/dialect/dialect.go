@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -144,4 +145,46 @@ func (BigQueryDialect) BuildProcessToastStructColExpression(colName string) stri
 	return fmt.Sprintf(`CASE WHEN COALESCE(TO_JSON_STRING(cc.%s) != '{"key":"%s"}', true) THEN cc.%s ELSE c.%s END`,
 		colName, constants.ToastUnavailableValuePlaceholder,
 		colName, colName)
+}
+
+func (bd BigQueryDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
+	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, bd)
+
+	orderColsToIterate := primaryKeysEscaped
+	if topicConfig.IncludeArtieUpdatedAt {
+		orderColsToIterate = append(orderColsToIterate, bd.QuoteIdentifier(constants.UpdateColumnMarker))
+	}
+
+	var orderByCols []string
+	for _, orderByCol := range orderColsToIterate {
+		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", orderByCol))
+	}
+
+	var parts []string
+	parts = append(parts,
+		fmt.Sprintf(`CREATE OR REPLACE TABLE %s OPTIONS (expiration_timestamp = TIMESTAMP("%s")) AS (SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 2)`,
+			stagingTableID.FullyQualifiedName(),
+			BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)),
+			tableID.FullyQualifiedName(),
+			strings.Join(primaryKeysEscaped, ", "),
+			strings.Join(orderByCols, ", "),
+		),
+	)
+
+	var whereClauses []string
+	for _, primaryKeyEscaped := range primaryKeysEscaped {
+		whereClauses = append(whereClauses, fmt.Sprintf("t1.%s = t2.%s", primaryKeyEscaped, primaryKeyEscaped))
+	}
+
+	// https://cloud.google.com/bigquery/docs/reference/standard-sql/dml-syntax#delete_with_subquery
+	parts = append(parts,
+		fmt.Sprintf("DELETE FROM %s t1 WHERE EXISTS (SELECT * FROM %s t2 WHERE %s)",
+			tableID.FullyQualifiedName(),
+			stagingTableID.FullyQualifiedName(),
+			strings.Join(whereClauses, " AND "),
+		),
+	)
+
+	parts = append(parts, fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName()))
+	return parts
 }
