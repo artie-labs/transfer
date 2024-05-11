@@ -126,8 +126,8 @@ func (SnowflakeDialect) IsTableDoesNotExistErr(err error) bool {
 	return strings.Contains(err.Error(), "does not exist or not authorized")
 }
 
-func (SnowflakeDialect) BuildCreateTableQuery(fqTableName string, temporary bool, colSQLParts []string) string {
-	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", fqTableName, strings.Join(colSQLParts, ","))
+func (SnowflakeDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, colSQLParts []string) string {
+	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
 
 	if temporary {
 		// TEMPORARY Table syntax - https://docs.snowflake.com/en/sql-reference/sql/create-table
@@ -139,8 +139,8 @@ func (SnowflakeDialect) BuildCreateTableQuery(fqTableName string, temporary bool
 	}
 }
 
-func (SnowflakeDialect) BuildAlterColumnQuery(fqTableName string, columnOp constants.ColumnOperation, colSQLPart string) string {
-	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", fqTableName, columnOp, colSQLPart)
+func (SnowflakeDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string {
+	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 
 func (SnowflakeDialect) BuildProcessToastStructColExpression(colName string) string {

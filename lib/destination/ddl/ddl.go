@@ -116,14 +116,12 @@ func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []col
 		colSQLParts = append(colSQLParts, pkStatement)
 	}
 
-	fqTableName := a.TableID.FullyQualifiedName()
-
 	var alterStatements []string
 	if a.CreateTable {
-		alterStatements = []string{a.Dialect.BuildCreateTableQuery(fqTableName, a.TemporaryTable, colSQLParts)}
+		alterStatements = []string{a.Dialect.BuildCreateTableQuery(a.TableID, a.TemporaryTable, colSQLParts)}
 	} else {
 		for _, colSQLPart := range colSQLParts {
-			alterStatements = append(alterStatements, a.Dialect.BuildAlterColumnQuery(fqTableName, a.ColumnOp, colSQLPart))
+			alterStatements = append(alterStatements, a.Dialect.BuildAlterColumnQuery(a.TableID, a.ColumnOp, colSQLPart))
 		}
 	}
 

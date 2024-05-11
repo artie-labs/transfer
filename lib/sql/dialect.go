@@ -20,8 +20,8 @@ type Dialect interface {
 	KindForDataType(_type string, stringPrecision string) (typing.KindDetails, error)
 	IsColumnAlreadyExistsErr(err error) bool
 	IsTableDoesNotExistErr(err error) bool
-	BuildCreateTableQuery(fqTableName string, temporary bool, colSQLParts []string) string
-	BuildAlterColumnQuery(fqTableName string, columnOp constants.ColumnOperation, colSQLPart string) string
+	BuildCreateTableQuery(tableID TableIdentifier, temporary bool, colSQLParts []string) string
+	BuildAlterColumnQuery(tableID TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string
 	BuildProcessToastStructColExpression(colName string) string
 	BuildDedupeQueries(tableID, stagingTableID TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string
 }
