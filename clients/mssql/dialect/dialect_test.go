@@ -121,15 +121,18 @@ func TestMSSQLDialect_IsColumnAlreadyExistsErr(t *testing.T) {
 }
 
 func TestMSSQLDialect_BuildCreateTableQuery(t *testing.T) {
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
+
 	// Temporary:
 	assert.Equal(t,
 		`CREATE TABLE {TABLE} ({PART_1},{PART_2});`,
-		MSSQLDialect{}.BuildCreateTableQuery("{TABLE}", true, []string{"{PART_1}", "{PART_2}"}),
+		MSSQLDialect{}.BuildCreateTableQuery(fakeTableID, true, []string{"{PART_1}", "{PART_2}"}),
 	)
 	// Not temporary:
 	assert.Equal(t,
 		`CREATE TABLE {TABLE} ({PART_1},{PART_2});`,
-		MSSQLDialect{}.BuildCreateTableQuery("{TABLE}", false, []string{"{PART_1}", "{PART_2}"}),
+		MSSQLDialect{}.BuildCreateTableQuery(fakeTableID, false, []string{"{PART_1}", "{PART_2}"}),
 	)
 }
 

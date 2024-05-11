@@ -173,15 +173,18 @@ func TestRedshifgDialect_IsColumnAlreadyExistsErr(t *testing.T) {
 }
 
 func TestRedshiftDialect_BuildCreateTableQuery(t *testing.T) {
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
+
 	// Temporary:
 	assert.Equal(t,
 		`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1},{PART_2});`,
-		RedshiftDialect{}.BuildCreateTableQuery("{TABLE}", true, []string{"{PART_1}", "{PART_2}"}),
+		RedshiftDialect{}.BuildCreateTableQuery(fakeTableID, true, []string{"{PART_1}", "{PART_2}"}),
 	)
 	// Not temporary:
 	assert.Equal(t,
 		`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1},{PART_2});`,
-		RedshiftDialect{}.BuildCreateTableQuery("{TABLE}", false, []string{"{PART_1}", "{PART_2}"}),
+		RedshiftDialect{}.BuildCreateTableQuery(fakeTableID, false, []string{"{PART_1}", "{PART_2}"}),
 	)
 }
 
