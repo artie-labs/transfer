@@ -74,23 +74,7 @@ We support both MongoDB SRV format or standard connection string.
 
 ### Supported types
 
-_Types are sourced from the_ [_MongoDB extended JSON specification_](https://github.com/mongodb/specifications/blob/master/source/extended-json.rst#canonical-extended-json-example)_._
-
-* Array
-* Binary
-* Array
-* Boolean
-* ObjectID
-* Int32
-* Int64
-* Double
-* Decimal128
-* Code
-* CodeWScope
-* RegEx
-* Datetime
-* Timestamp
-* String
+Artie supports every MongoDB data type 🙂
 
 ## Running it yourself
 
