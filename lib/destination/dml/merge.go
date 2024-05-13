@@ -163,7 +163,7 @@ func (m *MergeArgument) buildRedshiftStatements() ([]string, error) {
 	return parts, nil
 }
 
-func (m *MergeArgument) buildDefaultStatement() (string, error) {
+func (m *MergeArgument) buildDefaultStatements() ([]string, error) {
 	// We should not need idempotency key for DELETE
 	// This is based on the assumption that the primary key would be atomically increasing or UUID based
 	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
@@ -203,7 +203,7 @@ func (m *MergeArgument) buildDefaultStatement() (string, error) {
 	}
 
 	if m.SoftDelete {
-		return fmt.Sprintf(`
+		return []string{fmt.Sprintf(`
 MERGE INTO %s c USING %s AS cc ON %s
 WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
@@ -216,16 +216,16 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 				Vals:      columns.QuoteColumns(m.Columns, m.Dialect),
 				Separator: ",",
 				Prefix:    "cc.",
-			})), nil
+			}))}, nil
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
 	cols, removed := columns.RemoveDeleteColumnMarker(m.Columns)
 	if !removed {
-		return "", errors.New("artie delete flag doesn't exist")
+		return []string{}, errors.New("artie delete flag doesn't exist")
 	}
 
-	return fmt.Sprintf(`
+	return []string{fmt.Sprintf(`
 MERGE INTO %s c USING %s AS cc ON %s
 WHEN MATCHED AND cc.%s THEN DELETE
 WHEN MATCHED AND IFNULL(cc.%s, false) = false %sTHEN UPDATE SET %s
@@ -241,7 +241,7 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 			Vals:      columns.QuoteColumns(cols, m.Dialect),
 			Separator: ",",
 			Prefix:    "cc.",
-		})), nil
+		}))}, nil
 }
 
 func (m *MergeArgument) BuildStatements() ([]string, error) {
@@ -264,10 +264,6 @@ func (m *MergeArgument) BuildStatements() ([]string, error) {
 			m.ContainsHardDeletes,
 		)
 	default:
-		mergeQuery, err := m.buildDefaultStatement()
-		if err != nil {
-			return nil, err
-		}
-		return []string{mergeQuery}, nil
+		return m.buildDefaultStatements()
 	}
 }
