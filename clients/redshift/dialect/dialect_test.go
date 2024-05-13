@@ -213,24 +213,14 @@ func TestBuildProcessToastStructColExpression(t *testing.T) {
 }
 
 func TestBuildColumnsUpdateFragment(t *testing.T) {
-	type testCase struct {
-		name           string
-		columns        []columns.Column
-		expectedString string
-	}
-
-	fooBarCols := []string{"foo", "bar"}
-
-	var (
-		happyPathCols    []columns.Column
-		lastCaseColTypes []columns.Column
-	)
-	for _, col := range fooBarCols {
+	var happyPathCols []columns.Column
+	for _, col := range []string{"foo", "bar"} {
 		column := columns.NewColumn(col, typing.String)
 		column.ToastColumn = false
 		happyPathCols = append(happyPathCols, column)
 	}
 
+	var lastCaseColTypes []columns.Column
 	lastCaseCols := []string{"a1", "b2", "c3"}
 	for _, lastCaseCol := range lastCaseCols {
 		kd := typing.String
@@ -248,7 +238,11 @@ func TestBuildColumnsUpdateFragment(t *testing.T) {
 		lastCaseColTypes = append(lastCaseColTypes, column)
 	}
 
-	testCases := []testCase{
+	testCases := []struct {
+		name           string
+		columns        []columns.Column
+		expectedString string
+	}{
 		{
 			name:           "happy path",
 			columns:        happyPathCols,
