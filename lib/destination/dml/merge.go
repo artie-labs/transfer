@@ -244,78 +244,25 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 		})), nil
 }
 
-func (m *MergeArgument) buildMSSQLStatement() (string, error) {
-	var idempotentClause string
-	if m.IdempotentKey != "" {
-		idempotentClause = fmt.Sprintf("AND cc.%s >= c.%s ", m.IdempotentKey, m.IdempotentKey)
-	}
-
-	var equalitySQLParts []string
-	for _, primaryKey := range m.PrimaryKeys {
-		// We'll need to escape the primary key as well.
-		quotedPrimaryKey := m.Dialect.QuoteIdentifier(primaryKey.Name())
-		equalitySQL := fmt.Sprintf("c.%s = cc.%s", quotedPrimaryKey, quotedPrimaryKey)
-		equalitySQLParts = append(equalitySQLParts, equalitySQL)
-	}
-
-	if m.SoftDelete {
-		return fmt.Sprintf(`
-MERGE INTO %s c
-USING %s AS cc ON %s
-WHEN MATCHED %sTHEN UPDATE SET %s
-WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
-			m.TableID.FullyQualifiedName(), m.SubQuery, strings.Join(equalitySQLParts, " and "),
-			// Update + Soft Deletion
-			idempotentClause, columns.BuildColumnsUpdateFragment(m.Columns, m.Dialect),
-			// Insert
-			m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(columns.QuoteColumns(m.Columns, m.Dialect), ","),
-			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      columns.QuoteColumns(m.Columns, m.Dialect),
-				Separator: ",",
-				Prefix:    "cc.",
-			})), nil
-	}
-
-	// We also need to remove __artie flags since it does not exist in the destination table
-	cols, removed := columns.RemoveDeleteColumnMarker(m.Columns)
-	if !removed {
-		return "", errors.New("artie delete flag doesn't exist")
-	}
-
-	return fmt.Sprintf(`
-MERGE INTO %s c
-USING %s AS cc ON %s
-WHEN MATCHED AND cc.%s = 1 THEN DELETE
-WHEN MATCHED AND COALESCE(cc.%s, 0) = 0 %sTHEN UPDATE SET %s
-WHEN NOT MATCHED AND COALESCE(cc.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
-		m.TableID.FullyQualifiedName(), m.SubQuery, strings.Join(equalitySQLParts, " and "),
-		// Delete
-		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker),
-		// Update
-		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, columns.BuildColumnsUpdateFragment(cols, m.Dialect),
-		// Insert
-		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(columns.QuoteColumns(cols, m.Dialect), ","),
-		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      columns.QuoteColumns(cols, m.Dialect),
-			Separator: ",",
-			Prefix:    "cc.",
-		})), nil
-}
-
 func (m *MergeArgument) BuildStatements() ([]string, error) {
 	if err := m.Valid(); err != nil {
 		return nil, err
 	}
 
-	switch m.Dialect.(type) {
+	switch specificDialect := m.Dialect.(type) {
 	case redshiftDialect.RedshiftDialect:
 		return m.buildRedshiftStatements()
 	case mssqlDialect.MSSQLDialect:
-		mergeQuery, err := m.buildMSSQLStatement()
-		if err != nil {
-			return nil, err
-		}
-		return []string{mergeQuery}, nil
+		return specificDialect.BuildMergeQueries(
+			m.TableID,
+			m.SubQuery,
+			m.IdempotentKey,
+			m.PrimaryKeys,
+			m.AdditionalEqualityStrings,
+			m.Columns,
+			m.SoftDelete,
+			m.ContainsHardDeletes,
+		)
 	default:
 		mergeQuery, err := m.buildDefaultStatement()
 		if err != nil {

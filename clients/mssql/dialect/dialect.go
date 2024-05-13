@@ -1,14 +1,17 @@
 package dialect
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
@@ -172,4 +175,71 @@ func (MSSQLDialect) BuildProcessToastStructColExpression(colName string) string 
 
 func (MSSQLDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
 	panic("not implemented") // We don't currently support deduping for MS SQL.
+}
+
+func (md MSSQLDialect) BuildMergeQueries(
+	tableID sql.TableIdentifier,
+	subQuery string,
+	idempotentKey string,
+	primaryKeys []columns.Column,
+	additionalEqualityStrings []string,
+	cols []columns.Column,
+	softDelete bool,
+	containsHardDeletes *bool,
+) ([]string, error) {
+	var idempotentClause string
+	if idempotentKey != "" {
+		idempotentClause = fmt.Sprintf("AND cc.%s >= c.%s ", idempotentKey, idempotentKey)
+	}
+
+	var equalitySQLParts []string
+	for _, primaryKey := range primaryKeys {
+		// We'll need to escape the primary key as well.
+		quotedPrimaryKey := md.QuoteIdentifier(primaryKey.Name())
+		equalitySQL := fmt.Sprintf("c.%s = cc.%s", quotedPrimaryKey, quotedPrimaryKey)
+		equalitySQLParts = append(equalitySQLParts, equalitySQL)
+	}
+
+	if softDelete {
+		return []string{fmt.Sprintf(`
+MERGE INTO %s c
+USING %s AS cc ON %s
+WHEN MATCHED %sTHEN UPDATE SET %s
+WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
+			tableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " and "),
+			// Update + Soft Deletion
+			idempotentClause, columns.BuildColumnsUpdateFragment(cols, md),
+			// Insert
+			md.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(columns.QuoteColumns(cols, md), ","),
+			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
+				Vals:      columns.QuoteColumns(cols, md),
+				Separator: ",",
+				Prefix:    "cc.",
+			}))}, nil
+	}
+
+	// We also need to remove __artie flags since it does not exist in the destination table
+	cols, removed := columns.RemoveDeleteColumnMarker(cols)
+	if !removed {
+		return nil, errors.New("artie delete flag doesn't exist")
+	}
+
+	return []string{fmt.Sprintf(`
+MERGE INTO %s c
+USING %s AS cc ON %s
+WHEN MATCHED AND cc.%s = 1 THEN DELETE
+WHEN MATCHED AND COALESCE(cc.%s, 0) = 0 %sTHEN UPDATE SET %s
+WHEN NOT MATCHED AND COALESCE(cc.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
+		tableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " and "),
+		// Delete
+		md.QuoteIdentifier(constants.DeleteColumnMarker),
+		// Update
+		md.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, columns.BuildColumnsUpdateFragment(cols, md),
+		// Insert
+		md.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(columns.QuoteColumns(cols, md), ","),
+		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
+			Vals:      columns.QuoteColumns(cols, md),
+			Separator: ",",
+			Prefix:    "cc.",
+		}))}, nil
 }
