@@ -205,7 +205,7 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 	assert.False(p.T(), evt.DeletePayload())
 }
 
-func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
+func (p *MongoTestSuite) TestMongoDBEventCustomerBefore_NoData() {
 	payload := `
 {
 	"schema": {},
@@ -235,27 +235,89 @@ func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 	}
 }
 `
-
 	evt, err := p.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
 	assert.NoError(p.T(), err)
-	evtData, err := evt.GetData(map[string]any{"_id": 1003}, &kafkalib.TopicConfig{})
-	assert.NoError(p.T(), err)
-	assert.Equal(p.T(), "customers123", evt.GetTableName())
-	_, isOk := evtData[constants.UpdateColumnMarker]
-	assert.False(p.T(), isOk)
-	assert.Equal(p.T(), evtData["_id"], 1003)
-	assert.Equal(p.T(), evtData[constants.DeleteColumnMarker], true)
-	assert.Equal(p.T(), evt.GetExecutionTime(),
-		time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
-	assert.Equal(p.T(), true, evt.DeletePayload())
+	{
+		// Making sure the `before` payload is set.
+		evtData, err := evt.GetData(map[string]any{"_id": 1003}, &kafkalib.TopicConfig{})
+		assert.NoError(p.T(), err)
+		assert.Equal(p.T(), "customers123", evt.GetTableName())
 
-	evtData, err = evt.GetData(map[string]any{"_id": 1003}, &kafkalib.TopicConfig{
-		IncludeArtieUpdatedAt: true,
-	})
-	assert.NoError(p.T(), err)
-	_, isOk = evtData[constants.UpdateColumnMarker]
-	assert.True(p.T(), isOk)
+		_, isOk := evtData[constants.UpdateColumnMarker]
+		assert.False(p.T(), isOk)
 
+		_, isOk = evtData[constants.DeleteColumnMarker]
+		assert.True(p.T(), isOk)
+
+		assert.Equal(p.T(), evt.GetExecutionTime(), time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
+		assert.Equal(p.T(), true, evt.DeletePayload())
+	}
+}
+
+func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
+	payload := `
+{
+	"schema": {},
+	"payload": {
+		"before": "{\"_id\": {\"$numberLong\": \"1003\"},\"first_name\": \"Robin\",\"last_name\": \"Tang\",\"email\": \"robin@example.com\", \"nested\": {\"object\": \"foo\"}}",
+		"after": null,
+		"patch": null,
+		"filter": null,
+		"updateDescription": null,
+		"source": {
+			"version": "2.0.0.Final",
+			"connector": "mongodb",
+			"name": "dbserver1",
+			"ts_ms": 1668753321000,
+			"snapshot": "true",
+			"db": "inventory",
+			"sequence": null,
+			"rs": "rs0",
+			"collection": "customers123",
+			"ord": 29,
+			"lsid": null,
+			"txnNumber": null
+		},
+		"op": "d",
+		"ts_ms": 1668753329387,
+		"transaction": null
+	}
+}
+`
+	evt, err := p.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
+	assert.NoError(p.T(), err)
+	{
+		// Making sure the `before` payload is set.
+		evtData, err := evt.GetData(map[string]any{"_id": 1003}, &kafkalib.TopicConfig{})
+		assert.NoError(p.T(), err)
+		assert.Equal(p.T(), "customers123", evt.GetTableName())
+
+		_, isOk := evtData[constants.UpdateColumnMarker]
+		assert.False(p.T(), isOk)
+
+		expectedKeyToVal := map[string]any{
+			"_id":                        1003,
+			constants.DeleteColumnMarker: true,
+			"first_name":                 "Robin",
+			"email":                      "robin@example.com",
+		}
+
+		for expectedKey, expectedVal := range expectedKeyToVal {
+			assert.Equal(p.T(), expectedVal, evtData[expectedKey], expectedKey)
+		}
+
+		assert.Equal(p.T(), evt.GetExecutionTime(), time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
+		assert.Equal(p.T(), true, evt.DeletePayload())
+	}
+	{
+		// Check `__artie_updated_at` is included
+		evtData, err := evt.GetData(map[string]any{"_id": 1003}, &kafkalib.TopicConfig{
+			IncludeArtieUpdatedAt: true,
+		})
+		assert.NoError(p.T(), err)
+		_, isOk := evtData[constants.UpdateColumnMarker]
+		assert.True(p.T(), isOk)
+	}
 }
 
 func (p *MongoTestSuite) TestGetEventFromBytesTombstone() {
