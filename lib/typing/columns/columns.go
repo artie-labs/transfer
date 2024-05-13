@@ -248,7 +248,7 @@ func (c *Columns) DeleteColumn(name string) {
 	}
 }
 
-// RemoveDeleteColumnMarker removes the deleted column marker from a slice (if present) and returns whether or not it was removed.
+// RemoveDeleteColumnMarker removes the deleted column marker from a slice (if present) returning a new slice and whether or not it was removed.
 func RemoveDeleteColumnMarker(cols []Column) ([]Column, bool) {
 	origLength := len(cols)
 	// Use [slices.Clone] because [slices.DeleteFunc] mutates its inputs.
