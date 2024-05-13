@@ -11,6 +11,7 @@ import (
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 func TestRedshiftDialect_QuoteIdentifier(t *testing.T) {
@@ -209,4 +210,53 @@ func TestBuildProcessToastColExpression(t *testing.T) {
 
 func TestBuildProcessToastStructColExpression(t *testing.T) {
 	assert.Equal(t, `CASE WHEN COALESCE(cc.foo != JSON_PARSE('{"key":"__debezium_unavailable_value"}'), true) THEN cc.foo ELSE c.foo END`, RedshiftDialect{}.BuildProcessToastStructColExpression("foo"))
+}
+
+func TestBuildColumnsUpdateFragment(t *testing.T) {
+	var happyPathCols []columns.Column
+	for _, col := range []string{"foo", "bar"} {
+		column := columns.NewColumn(col, typing.String)
+		column.ToastColumn = false
+		happyPathCols = append(happyPathCols, column)
+	}
+
+	var lastCaseColTypes []columns.Column
+	lastCaseCols := []string{"a1", "b2", "c3"}
+	for _, lastCaseCol := range lastCaseCols {
+		kd := typing.String
+		var toast bool
+		// a1 - struct + toast, b2 - string + toast, c3 = regular string.
+		if lastCaseCol == "a1" {
+			kd = typing.Struct
+			toast = true
+		} else if lastCaseCol == "b2" {
+			toast = true
+		}
+
+		column := columns.NewColumn(lastCaseCol, kd)
+		column.ToastColumn = toast
+		lastCaseColTypes = append(lastCaseColTypes, column)
+	}
+
+	testCases := []struct {
+		name           string
+		columns        []columns.Column
+		expectedString string
+	}{
+		{
+			name:           "happy path",
+			columns:        happyPathCols,
+			expectedString: `"foo"=cc."foo","bar"=cc."bar"`,
+		},
+		{
+			name:           "struct, string and toast string",
+			columns:        lastCaseColTypes,
+			expectedString: `"a1"= CASE WHEN COALESCE(cc."a1" != JSON_PARSE('{"key":"__debezium_unavailable_value"}'), true) THEN cc."a1" ELSE c."a1" END,"b2"= CASE WHEN COALESCE(cc."b2" != '__debezium_unavailable_value', true) THEN cc."b2" ELSE c."b2" END,"c3"=cc."c3"`,
+		},
+	}
+
+	for _, _testCase := range testCases {
+		actualQuery := columns.BuildColumnsUpdateFragment(_testCase.columns, RedshiftDialect{})
+		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
+	}
 }

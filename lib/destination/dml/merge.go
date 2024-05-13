@@ -108,7 +108,7 @@ func (m *MergeArgument) buildRedshiftUpdateQuery(cols []columns.Column) string {
 
 	return fmt.Sprintf(`UPDATE %s AS c SET %s FROM %s AS cc WHERE %s;`,
 		// UPDATE table set col1 = cc. col1
-		m.TableID.FullyQualifiedName(), buildColumnsUpdateFragment(cols, m.Dialect),
+		m.TableID.FullyQualifiedName(), columns.BuildColumnsUpdateFragment(cols, m.Dialect),
 		// FROM staging WHERE join on PK(s)
 		m.SubQuery, strings.Join(clauses, " AND "),
 	)
@@ -209,7 +209,7 @@ WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
 			m.TableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, buildColumnsUpdateFragment(m.Columns, m.Dialect),
+			idempotentClause, columns.BuildColumnsUpdateFragment(m.Columns, m.Dialect),
 			// Insert
 			m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(columns.QuoteColumns(m.Columns, m.Dialect), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -234,7 +234,7 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 		// Delete
 		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker),
 		// Update
-		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, buildColumnsUpdateFragment(cols, m.Dialect),
+		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, columns.BuildColumnsUpdateFragment(cols, m.Dialect),
 		// Insert
 		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(columns.QuoteColumns(cols, m.Dialect), ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -266,7 +266,7 @@ WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 			m.TableID.FullyQualifiedName(), m.SubQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, buildColumnsUpdateFragment(m.Columns, m.Dialect),
+			idempotentClause, columns.BuildColumnsUpdateFragment(m.Columns, m.Dialect),
 			// Insert
 			m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(columns.QuoteColumns(m.Columns, m.Dialect), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -292,7 +292,7 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
 		// Delete
 		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker),
 		// Update
-		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, buildColumnsUpdateFragment(cols, m.Dialect),
+		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, columns.BuildColumnsUpdateFragment(cols, m.Dialect),
 		// Insert
 		m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(columns.QuoteColumns(cols, m.Dialect), ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{

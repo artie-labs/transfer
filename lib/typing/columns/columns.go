@@ -1,6 +1,7 @@
 package columns
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 	"sync"
@@ -263,4 +264,27 @@ func RemoveDeleteColumnMarker(cols []Column) ([]Column, bool) {
 	// Use [slices.Clone] because [slices.DeleteFunc] mutates its inputs.
 	cols = slices.DeleteFunc(slices.Clone(cols), func(col Column) bool { return col.Name() == constants.DeleteColumnMarker })
 	return cols, len(cols) != origLength
+}
+
+// buildColumnsUpdateFragment will parse the columns and then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email
+// NOTE: This should only be used with valid columns.
+func BuildColumnsUpdateFragment(columns []Column, dialect sql.Dialect) string {
+	var cols []string
+	for _, column := range columns {
+		colName := dialect.QuoteIdentifier(column.Name())
+		if column.ToastColumn {
+			var colValue string
+			if column.KindDetails == typing.Struct {
+				colValue = dialect.BuildProcessToastStructColExpression(colName)
+			} else {
+				colValue = dialect.BuildProcessToastColExpression(colName)
+			}
+			cols = append(cols, fmt.Sprintf("%s= %s", colName, colValue))
+		} else {
+			// This is to make it look like: objCol = cc.objCol
+			cols = append(cols, fmt.Sprintf("%s=cc.%s", colName, colName))
+		}
+	}
+
+	return strings.Join(cols, ",")
 }
