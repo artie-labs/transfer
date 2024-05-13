@@ -155,11 +155,10 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 		// And we need to reconstruct the data bit since it will be empty.
 		// We _can_ rely on *before* since even without running replicate identity, it will still copy over
 		// the PK. We can explore simplifying this interface in the future by leveraging before.
-
-		if len(s.Payload.beforeMap) == 0 {
-			retMap = make(map[string]any)
-		} else {
+		if len(s.Payload.beforeMap) > 0 {
 			retMap = s.Payload.beforeMap
+		} else {
+			retMap = make(map[string]any)
 		}
 
 		retMap[constants.DeleteColumnMarker] = true
