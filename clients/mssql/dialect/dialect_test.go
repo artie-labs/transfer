@@ -145,3 +145,11 @@ func TestMSSQLDialect_BuildAlterColumnQuery(t *testing.T) {
 		MSSQLDialect{}.BuildAlterColumnQuery(fakeTableID, constants.Delete, "{SQL_PART}"),
 	)
 }
+
+func TestBuildProcessToastColExpression(t *testing.T) {
+	assert.Equal(t, `CASE WHEN COALESCE(cc.bar, '') != '__debezium_unavailable_value' THEN cc.bar ELSE c.bar END`, MSSQLDialect{}.BuildProcessToastColExpression("bar"))
+}
+
+func TestBuildProcessToastStructColExpression(t *testing.T) {
+	assert.Equal(t, `CASE WHEN COALESCE(cc.foo, {}) != {'key': '__debezium_unavailable_value'} THEN cc.foo ELSE c.foo END`, MSSQLDialect{}.BuildProcessToastStructColExpression("foo"))
+}
