@@ -2,7 +2,6 @@ package dml
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 
 	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
@@ -18,13 +17,6 @@ func quoteColumns(cols []columns.Column, dialect sql.Dialect) []string {
 		result[i] = dialect.QuoteIdentifier(col.Name())
 	}
 	return result
-}
-
-func removeDeleteColumnMarker(cols []columns.Column) ([]columns.Column, bool) {
-	origLength := len(cols)
-	// Use [slices.Clone] because [slices.DeleteFunc] mutates its inputs.
-	cols = slices.DeleteFunc(slices.Clone(cols), func(col columns.Column) bool { return col.Name() == constants.DeleteColumnMarker })
-	return cols, len(cols) != origLength
 }
 
 // buildColumnsUpdateFragment will parse the columns and then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email

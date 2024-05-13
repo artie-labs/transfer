@@ -146,7 +146,7 @@ func (m *MergeArgument) buildRedshiftStatements() ([]string, error) {
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
-	columns, removed := removeDeleteColumnMarker(m.Columns)
+	columns, removed := columns.RemoveDeleteColumnMarker(m.Columns)
 	if !removed {
 		return nil, errors.New("artie delete flag doesn't exist")
 	}
@@ -220,7 +220,7 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
-	columns, removed := removeDeleteColumnMarker(m.Columns)
+	columns, removed := columns.RemoveDeleteColumnMarker(m.Columns)
 	if !removed {
 		return "", errors.New("artie delete flag doesn't exist")
 	}
@@ -277,7 +277,7 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
-	columns, removed := removeDeleteColumnMarker(m.Columns)
+	columns, removed := columns.RemoveDeleteColumnMarker(m.Columns)
 	if !removed {
 		return "", errors.New("artie delete flag doesn't exist")
 	}
