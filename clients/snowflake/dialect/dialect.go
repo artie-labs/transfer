@@ -149,7 +149,6 @@ func (SnowflakeDialect) BuildProcessToastColExpression(colName string) string {
 }
 
 func (SnowflakeDialect) BuildProcessToastStructColExpression(colName string) string {
-	// TODO: Change this to Snowflake and error out if the destKind isn't supported so we're explicit.
 	return fmt.Sprintf("CASE WHEN COALESCE(cc.%s != {'key': '%s'}, true) THEN cc.%s ELSE c.%s END",
 		colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
 }
