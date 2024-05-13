@@ -141,6 +141,11 @@ func (BigQueryDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, column
 	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 
+func (BigQueryDialect) BuildProcessToastColExpression(colName string) string {
+	return fmt.Sprintf("CASE WHEN COALESCE(cc.%s != '%s', true) THEN cc.%s ELSE c.%s END",
+		colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
+}
+
 func (BigQueryDialect) BuildProcessToastStructColExpression(colName string) string {
 	return fmt.Sprintf(`CASE WHEN COALESCE(TO_JSON_STRING(cc.%s) != '{"key":"%s"}', true) THEN cc.%s ELSE c.%s END`,
 		colName, constants.ToastUnavailableValuePlaceholder,

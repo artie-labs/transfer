@@ -144,8 +144,8 @@ func TestBuildProcessToastStructColExpression(t *testing.T) {
 }
 
 func TestProcessToastCol(t *testing.T) {
-	assert.Equal(t, `CASE WHEN COALESCE(cc.bar != '__debezium_unavailable_value', true) THEN cc.bar ELSE c.bar END`, processToastCol("bar", redshiftDialect.RedshiftDialect{}))
-	assert.Equal(t, `CASE WHEN COALESCE(cc.bar != '__debezium_unavailable_value', true) THEN cc.bar ELSE c.bar END`, processToastCol("bar", bigQueryDialect.BigQueryDialect{}))
-	assert.Equal(t, `CASE WHEN COALESCE(cc.bar != '__debezium_unavailable_value', true) THEN cc.bar ELSE c.bar END`, processToastCol("bar", snowflakeDialect.SnowflakeDialect{}))
-	assert.Equal(t, `CASE WHEN COALESCE(cc.bar, '') != '__debezium_unavailable_value' THEN cc.bar ELSE c.bar END`, processToastCol("bar", mssqlDialect.MSSQLDialect{}))
+	assert.Equal(t, `CASE WHEN COALESCE(cc.bar != '__debezium_unavailable_value', true) THEN cc.bar ELSE c.bar END`, redshiftDialect.RedshiftDialect{}.BuildProcessToastColExpression("bar"))
+	assert.Equal(t, `CASE WHEN COALESCE(cc.bar != '__debezium_unavailable_value', true) THEN cc.bar ELSE c.bar END`, bigQueryDialect.BigQueryDialect{}.BuildProcessToastColExpression("bar"))
+	assert.Equal(t, `CASE WHEN COALESCE(cc.bar != '__debezium_unavailable_value', true) THEN cc.bar ELSE c.bar END`, snowflakeDialect.SnowflakeDialect{}.BuildProcessToastColExpression("bar"))
+	assert.Equal(t, `CASE WHEN COALESCE(cc.bar, '') != '__debezium_unavailable_value' THEN cc.bar ELSE c.bar END`, mssqlDialect.MSSQLDialect{}.BuildProcessToastColExpression("bar"))
 }

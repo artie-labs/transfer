@@ -158,6 +158,12 @@ func (MSSQLDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, columnOp 
 	return fmt.Sprintf("ALTER TABLE %s %s %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 
+func (MSSQLDialect) BuildProcessToastColExpression(colName string) string {
+	// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
+	return fmt.Sprintf("CASE WHEN COALESCE(cc.%s, '') != '%s' THEN cc.%s ELSE c.%s END", colName,
+		constants.ToastUnavailableValuePlaceholder, colName, colName)
+}
+
 func (MSSQLDialect) BuildProcessToastStructColExpression(colName string) string {
 	// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
 	return fmt.Sprintf("CASE WHEN COALESCE(cc.%s, {}) != {'key': '%s'} THEN cc.%s ELSE c.%s END",

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -30,7 +28,7 @@ func buildColumnsUpdateFragment(columns []columns.Column, dialect sql.Dialect) s
 			if column.KindDetails == typing.Struct {
 				colValue = dialect.BuildProcessToastStructColExpression(colName)
 			} else {
-				colValue = processToastCol(colName, dialect)
+				colValue = dialect.BuildProcessToastColExpression(colName)
 			}
 			cols = append(cols, fmt.Sprintf("%s= %s", colName, colValue))
 		} else {
@@ -40,15 +38,4 @@ func buildColumnsUpdateFragment(columns []columns.Column, dialect sql.Dialect) s
 	}
 
 	return strings.Join(cols, ",")
-}
-
-func processToastCol(colName string, dialect sql.Dialect) string {
-	if _, ok := dialect.(mssqlDialect.MSSQLDialect); ok {
-		// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
-		return fmt.Sprintf("CASE WHEN COALESCE(cc.%s, '') != '%s' THEN cc.%s ELSE c.%s END", colName,
-			constants.ToastUnavailableValuePlaceholder, colName, colName)
-	} else {
-		return fmt.Sprintf("CASE WHEN COALESCE(cc.%s != '%s', true) THEN cc.%s ELSE c.%s END",
-			colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
-	}
 }
