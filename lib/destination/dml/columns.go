@@ -9,14 +9,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func quoteColumns(cols []columns.Column, dialect sql.Dialect) []string {
-	result := make([]string, len(cols))
-	for i, col := range cols {
-		result[i] = dialect.QuoteIdentifier(col.Name())
-	}
-	return result
-}
-
 // buildColumnsUpdateFragment will parse the columns and then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email
 // NOTE: This should only be used with valid columns.
 func buildColumnsUpdateFragment(columns []columns.Column, dialect sql.Dialect) string {

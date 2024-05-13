@@ -15,12 +15,12 @@ import (
 )
 
 func TestQuoteColumns(t *testing.T) {
-	assert.Equal(t, []string{}, quoteColumns(nil, bigQueryDialect.BigQueryDialect{}))
-	assert.Equal(t, []string{}, quoteColumns(nil, snowflakeDialect.SnowflakeDialect{}))
+	assert.Equal(t, []string{}, columns.QuoteColumns(nil, bigQueryDialect.BigQueryDialect{}))
+	assert.Equal(t, []string{}, columns.QuoteColumns(nil, snowflakeDialect.SnowflakeDialect{}))
 
 	cols := []columns.Column{columns.NewColumn("a", typing.Invalid), columns.NewColumn("b", typing.Invalid)}
-	assert.Equal(t, []string{"`a`", "`b`"}, quoteColumns(cols, bigQueryDialect.BigQueryDialect{}))
-	assert.Equal(t, []string{`"A"`, `"B"`}, quoteColumns(cols, snowflakeDialect.SnowflakeDialect{}))
+	assert.Equal(t, []string{"`a`", "`b`"}, columns.QuoteColumns(cols, bigQueryDialect.BigQueryDialect{}))
+	assert.Equal(t, []string{`"A"`, `"B"`}, columns.QuoteColumns(cols, snowflakeDialect.SnowflakeDialect{}))
 }
 
 func TestBuildColumnsUpdateFragment(t *testing.T) {
