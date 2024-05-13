@@ -3,6 +3,7 @@ package dialect
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func TestRedshiftDialect_QuoteIdentifier(t *testing.T) {
@@ -151,7 +153,7 @@ func TestRedshiftDialect_KindForDataType(t *testing.T) {
 	}
 }
 
-func TestRedshifgDialect_IsColumnAlreadyExistsErr(t *testing.T) {
+func TestRedshiftDialect_IsColumnAlreadyExistsErr(t *testing.T) {
 	testCases := []struct {
 		name           string
 		err            error
@@ -204,11 +206,11 @@ func TestQuoteIdentifiers(t *testing.T) {
 	assert.Equal(t, []string{`"a"`, `"b"`, `"c"`}, sql.QuoteIdentifiers([]string{"a", "b", "c"}, RedshiftDialect{}))
 }
 
-func TestBuildProcessToastColExpression(t *testing.T) {
+func TestRedshiftDialect_BuildProcessToastColExpression(t *testing.T) {
 	assert.Equal(t, `CASE WHEN COALESCE(cc.bar != '__debezium_unavailable_value', true) THEN cc.bar ELSE c.bar END`, RedshiftDialect{}.BuildProcessToastColExpression("bar"))
 }
 
-func TestBuildProcessToastStructColExpression(t *testing.T) {
+func TestRedshiftDialect_BuildProcessToastStructColExpression(t *testing.T) {
 	assert.Equal(t, `CASE WHEN COALESCE(cc.foo != JSON_PARSE('{"key":"__debezium_unavailable_value"}'), true) THEN cc.foo ELSE c.foo END`, RedshiftDialect{}.BuildProcessToastStructColExpression("foo"))
 }
 
@@ -258,5 +260,72 @@ func TestBuildColumnsUpdateFragment(t *testing.T) {
 	for _, _testCase := range testCases {
 		actualQuery := columns.BuildColumnsUpdateFragment(_testCase.columns, RedshiftDialect{})
 		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
+	}
+}
+
+func TestColumn_DefaultValue(t *testing.T) {
+	dialect := RedshiftDialect{}
+
+	birthday := time.Date(2022, time.September, 6, 3, 19, 24, 942000000, time.UTC)
+	birthdayExtDateTime, err := ext.ParseExtendedDateTime(birthday.Format(ext.ISO8601), nil)
+	assert.NoError(t, err)
+
+	// date
+	dateKind := typing.ETime
+	dateKind.ExtendedTimeDetails = &ext.Date
+	// time
+	timeKind := typing.ETime
+	timeKind.ExtendedTimeDetails = &ext.Time
+	// date time
+	dateTimeKind := typing.ETime
+	dateTimeKind.ExtendedTimeDetails = &ext.DateTime
+
+	testCases := []struct {
+		name                       string
+		col                        columns.Column
+		expectedValue              any
+		destKindToExpectedValueMap map[sql.Dialect]any
+	}{
+		{
+			name:          "default value = nil",
+			col:           columns.NewColumnWithDefaultValue("", typing.String, nil),
+			expectedValue: nil,
+		},
+		{
+			name:          "string",
+			col:           columns.NewColumnWithDefaultValue("", typing.String, "abcdef"),
+			expectedValue: "'abcdef'",
+		},
+		{
+			name:          "json",
+			col:           columns.NewColumnWithDefaultValue("", typing.Struct, "{}"),
+			expectedValue: `JSON_PARSE('{}')`,
+		},
+		{
+			name:          "json w/ some values",
+			col:           columns.NewColumnWithDefaultValue("", typing.Struct, "{\"age\": 0, \"membership_level\": \"standard\"}"),
+			expectedValue: "JSON_PARSE('{\"age\": 0, \"membership_level\": \"standard\"}')",
+		},
+		{
+			name:          "date",
+			col:           columns.NewColumnWithDefaultValue("", dateKind, birthdayExtDateTime),
+			expectedValue: "'2022-09-06'",
+		},
+		{
+			name:          "time",
+			col:           columns.NewColumnWithDefaultValue("", timeKind, birthdayExtDateTime),
+			expectedValue: "'03:19:24.942'",
+		},
+		{
+			name:          "datetime",
+			col:           columns.NewColumnWithDefaultValue("", dateTimeKind, birthdayExtDateTime),
+			expectedValue: "'2022-09-06T03:19:24.942Z'",
+		},
+	}
+
+	for _, testCase := range testCases {
+		actualValue, actualErr := testCase.col.DefaultValue(dialect, nil)
+		assert.NoError(t, actualErr, testCase.name)
+		assert.Equal(t, testCase.expectedValue, actualValue, testCase.name)
 	}
 }

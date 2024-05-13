@@ -3,6 +3,7 @@ package dialect
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
@@ -244,11 +245,11 @@ func TestSnowflakeDialect_BuildAlterColumnQuery(t *testing.T) {
 	)
 }
 
-func TestBuildProcessToastColExpression(t *testing.T) {
+func TestSnowflakeDialect_BuildProcessToastColExpression(t *testing.T) {
 	assert.Equal(t, `CASE WHEN COALESCE(cc.bar != '__debezium_unavailable_value', true) THEN cc.bar ELSE c.bar END`, SnowflakeDialect{}.BuildProcessToastColExpression("bar"))
 }
 
-func TestBuildProcessToastStructColExpression(t *testing.T) {
+func TestSnowflakeDialect_BuildProcessToastStructColExpression(t *testing.T) {
 	assert.Equal(t, `CASE WHEN COALESCE(cc.foo != {'key': '__debezium_unavailable_value'}, true) THEN cc.foo ELSE c.foo END`, SnowflakeDialect{}.BuildProcessToastStructColExpression("foo"))
 }
 
@@ -273,4 +274,70 @@ func TestBuildColumnsUpdateFragment(t *testing.T) {
 
 	actualQuery := columns.BuildColumnsUpdateFragment(stringAndToastCols, SnowflakeDialect{})
 	assert.Equal(t, `"FOO"= CASE WHEN COALESCE(cc."FOO" != '__debezium_unavailable_value', true) THEN cc."FOO" ELSE c."FOO" END,"BAR"=cc."BAR"`, actualQuery)
+}
+
+func TestColumn_DefaultValue(t *testing.T) {
+	dialect := SnowflakeDialect{}
+
+	birthday := time.Date(2022, time.September, 6, 3, 19, 24, 942000000, time.UTC)
+	birthdayExtDateTime, err := ext.ParseExtendedDateTime(birthday.Format(ext.ISO8601), nil)
+	assert.NoError(t, err)
+
+	// date
+	dateKind := typing.ETime
+	dateKind.ExtendedTimeDetails = &ext.Date
+	// time
+	timeKind := typing.ETime
+	timeKind.ExtendedTimeDetails = &ext.Time
+	// date time
+	dateTimeKind := typing.ETime
+	dateTimeKind.ExtendedTimeDetails = &ext.DateTime
+
+	testCases := []struct {
+		name          string
+		col           columns.Column
+		expectedValue any
+	}{
+		{
+			name:          "default value = nil",
+			col:           columns.NewColumnWithDefaultValue("", typing.String, nil),
+			expectedValue: nil,
+		},
+		{
+			name:          "string",
+			col:           columns.NewColumnWithDefaultValue("", typing.String, "abcdef"),
+			expectedValue: "'abcdef'",
+		},
+		{
+			name:          "json",
+			col:           columns.NewColumnWithDefaultValue("", typing.Struct, "{}"),
+			expectedValue: `'{}'`,
+		},
+		{
+			name:          "json w/ some values",
+			col:           columns.NewColumnWithDefaultValue("", typing.Struct, "{\"age\": 0, \"membership_level\": \"standard\"}"),
+			expectedValue: "'{\"age\": 0, \"membership_level\": \"standard\"}'",
+		},
+		{
+			name:          "date",
+			col:           columns.NewColumnWithDefaultValue("", dateKind, birthdayExtDateTime),
+			expectedValue: "'2022-09-06'",
+		},
+		{
+			name:          "time",
+			col:           columns.NewColumnWithDefaultValue("", timeKind, birthdayExtDateTime),
+			expectedValue: "'03:19:24.942'",
+		},
+		{
+			name:          "datetime",
+			col:           columns.NewColumnWithDefaultValue("", dateTimeKind, birthdayExtDateTime),
+			expectedValue: "'2022-09-06T03:19:24.942Z'",
+		},
+	}
+
+	for _, testCase := range testCases {
+		actualValue, actualErr := testCase.col.DefaultValue(dialect, nil)
+		assert.NoError(t, actualErr, testCase.name)
+		assert.Equal(t, testCase.expectedValue, actualValue, testCase.name)
+	}
 }
