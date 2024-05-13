@@ -8,6 +8,7 @@ import (
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
@@ -249,4 +250,21 @@ func TestBuildProcessToastColExpression(t *testing.T) {
 
 func TestBuildProcessToastStructColExpression(t *testing.T) {
 	assert.Equal(t, `CASE WHEN COALESCE(cc.foo != {'key': '__debezium_unavailable_value'}, true) THEN cc.foo ELSE c.foo END`, SnowflakeDialect{}.BuildProcessToastStructColExpression("foo"))
+}
+
+func TestBuildColumnsUpdateFragment(t *testing.T) {
+	var stringAndToastCols []columns.Column
+	for _, col := range []string{"foo", "bar"} {
+		var toastCol bool
+		if col == "foo" {
+			toastCol = true
+		}
+
+		column := columns.NewColumn(col, typing.String)
+		column.ToastColumn = toastCol
+		stringAndToastCols = append(stringAndToastCols, column)
+	}
+
+	actualQuery := columns.BuildColumnsUpdateFragment(stringAndToastCols, SnowflakeDialect{})
+	assert.Equal(t, `"FOO"= CASE WHEN COALESCE(cc."FOO" != '__debezium_unavailable_value', true) THEN cc."FOO" ELSE c."FOO" END,"BAR"=cc."BAR"`, actualQuery)
 }
