@@ -5,6 +5,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
@@ -334,4 +335,42 @@ func TestColumns_Mutation(t *testing.T) {
 	assert.Equal(t, len(cols.GetColumns()), 1)
 	cols.DeleteColumn("bar")
 	assert.Equal(t, len(cols.GetColumns()), 0)
+}
+
+func TestRemoveDeleteColumnMarker(t *testing.T) {
+	col1 := NewColumn("a", typing.Invalid)
+	col2 := NewColumn("b", typing.Invalid)
+	col3 := NewColumn("c", typing.Invalid)
+	deleteColumnMarkerCol := NewColumn(constants.DeleteColumnMarker, typing.Invalid)
+
+	{
+		result, removed := RemoveDeleteColumnMarker([]Column{})
+		assert.Empty(t, result)
+		assert.False(t, removed)
+	}
+	{
+		result, removed := RemoveDeleteColumnMarker([]Column{col1})
+		assert.Equal(t, []Column{col1}, result)
+		assert.False(t, removed)
+	}
+	{
+		result, removed := RemoveDeleteColumnMarker([]Column{col1, col2})
+		assert.Equal(t, []Column{col1, col2}, result)
+		assert.False(t, removed)
+	}
+	{
+		result, removed := RemoveDeleteColumnMarker([]Column{deleteColumnMarkerCol})
+		assert.True(t, removed)
+		assert.Empty(t, result)
+	}
+	{
+		result, removed := RemoveDeleteColumnMarker([]Column{col1, deleteColumnMarkerCol, col2})
+		assert.True(t, removed)
+		assert.Equal(t, []Column{col1, col2}, result)
+	}
+	{
+		result, removed := RemoveDeleteColumnMarker([]Column{col1, deleteColumnMarkerCol, col2, deleteColumnMarkerCol, col3})
+		assert.True(t, removed)
+		assert.Equal(t, []Column{col1, col2, col3}, result)
+	}
 }

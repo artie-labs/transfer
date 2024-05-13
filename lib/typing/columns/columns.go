@@ -1,9 +1,11 @@
 package columns
 
 import (
+	"slices"
 	"strings"
 	"sync"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 )
@@ -244,4 +246,11 @@ func (c *Columns) DeleteColumn(name string) {
 			return
 		}
 	}
+}
+
+func RemoveDeleteColumnMarker(cols []Column) ([]Column, bool) {
+	origLength := len(cols)
+	// Use [slices.Clone] because [slices.DeleteFunc] mutates its inputs.
+	cols = slices.DeleteFunc(slices.Clone(cols), func(col Column) bool { return col.Name() == constants.DeleteColumnMarker })
+	return cols, len(cols) != origLength
 }
