@@ -21,13 +21,13 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, op
 		return fmt.Errorf("failed to get table config: %w", err)
 	}
 
-	cols, _ := columns.RemoveDeleteColumnMarker(tableConfig.Columns().GetColumns())
+	srcColumns, _ := columns.RemoveDeleteColumnMarker(tableData.ReadOnlyInMemoryCols().GetColumns())
 
 	// We don't care about srcKeysMissing because we don't drop columns when we append.
 	_, targetKeysMissing := columns.Diff(
-		tableData.ReadOnlyInMemoryCols().GetColumns(),
-		cols,
-		tableData.TopicConfig().SoftDelete,
+		srcColumns,
+		tableConfig.Columns().GetColumns(),
+		false,
 		tableData.TopicConfig().IncludeArtieUpdatedAt,
 		tableData.TopicConfig().IncludeDatabaseUpdatedAt,
 		tableData.Mode(),
@@ -49,7 +49,7 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, op
 		return fmt.Errorf("failed to alter table: %w", err)
 	}
 
-	if err = tableData.MergeColumnsFromDestination(cols...); err != nil {
+	if err = tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...); err != nil {
 		return fmt.Errorf("failed to merge columns from destination: %w", err)
 	}
 
