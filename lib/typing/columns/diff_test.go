@@ -140,7 +140,7 @@ func TestDiff_VariousNils(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		actualSrcKeysMissing, actualTargKeysMissing := Diff(testCase.sourceCols.GetColumns(), testCase.targCols.GetColumns(), false, false, false, config.Replication)
+		actualSrcKeysMissing, actualTargKeysMissing := Diff(testCase.sourceCols, testCase.targCols, false, false, false, config.Replication)
 		assert.Equal(t, testCase.expectedSrcKeyLength, len(actualSrcKeysMissing), testCase.name)
 		assert.Equal(t, testCase.expectedTargKeyLength, len(actualTargKeysMissing), testCase.name)
 	}
@@ -150,7 +150,7 @@ func TestDiffBasic(t *testing.T) {
 	var source Columns
 	source.AddColumn(NewColumn("a", typing.Integer))
 
-	srcKeyMissing, targKeyMissing := Diff(source.GetColumns(), source.GetColumns(), false, false, false, config.Replication)
+	srcKeyMissing, targKeyMissing := Diff(&source, &source, false, false, false, config.Replication)
 	assert.Equal(t, len(srcKeyMissing), 0)
 	assert.Equal(t, len(targKeyMissing), 0)
 }
@@ -174,7 +174,7 @@ func TestDiffDelta1(t *testing.T) {
 		targCols.AddColumn(NewColumn(colName, kindDetails))
 	}
 
-	srcKeyMissing, targKeyMissing := Diff(sourceCols.GetColumns(), targCols.GetColumns(), false, false, false, config.Replication)
+	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targCols, false, false, false, config.Replication)
 	assert.Equal(t, len(srcKeyMissing), 2, srcKeyMissing)   // Missing aa, cc
 	assert.Equal(t, len(targKeyMissing), 2, targKeyMissing) // Missing aa, cc
 }
@@ -206,7 +206,7 @@ func TestDiffDelta2(t *testing.T) {
 		targetCols.AddColumn(NewColumn(colName, kindDetails))
 	}
 
-	srcKeyMissing, targKeyMissing := Diff(sourceCols.GetColumns(), targetCols.GetColumns(), false, false, false, config.Replication)
+	srcKeyMissing, targKeyMissing := Diff(&sourceCols, &targetCols, false, false, false, config.Replication)
 	assert.Equal(t, len(srcKeyMissing), 1, srcKeyMissing)   // Missing dd
 	assert.Equal(t, len(targKeyMissing), 3, targKeyMissing) // Missing a, c, d
 }
@@ -221,7 +221,7 @@ func TestDiffDeterministic(t *testing.T) {
 	sourceCols.AddColumn(NewColumn("name", typing.String))
 
 	for i := 0; i < 500; i++ {
-		keysMissing, targetKeysMissing := Diff(sourceCols.GetColumns(), targCols.GetColumns(), false, false, false, config.Replication)
+		keysMissing, targetKeysMissing := Diff(&sourceCols, &targCols, false, false, false, config.Replication)
 		assert.Equal(t, 0, len(keysMissing), keysMissing)
 
 		var key string
@@ -241,7 +241,7 @@ func TestCopyColMap(t *testing.T) {
 	cols.AddColumn(NewColumn("created_at", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)))
 	cols.AddColumn(NewColumn("updated_at", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)))
 
-	copiedCols := CloneColumns(cols.GetColumns())
+	copiedCols := CloneColumns(&cols)
 	assert.Equal(t, *copiedCols, cols)
 
 	//Delete a row from copiedCols
@@ -291,7 +291,7 @@ func TestCloneColumns(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		actualCols := CloneColumns(testCase.cols.GetColumns())
+		actualCols := CloneColumns(testCase.cols)
 		assert.Equal(t, *testCase.expectedCols, *actualCols, testCase.name)
 	}
 }
