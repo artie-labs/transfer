@@ -19,7 +19,7 @@ require (
 	github.com/microsoft/go-mssqldb v1.7.0
 	github.com/samber/slog-multi v1.0.2
 	github.com/samber/slog-sentry/v2 v2.4.0
-	github.com/segmentio/kafka-go v0.4.39
+	github.com/segmentio/kafka-go v0.4.40
 	github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2 v0.1.0
 	github.com/snowflakedb/gosnowflake v1.6.23-0.20230622060049-8cb65fd3db4a
 	github.com/stretchr/testify v1.9.0
@@ -110,8 +110,9 @@ require (
 	github.com/viant/scy v0.3.2-0.20220825213848-acc5c59cde78 // indirect
 	github.com/viant/toolbox v0.34.5 // indirect
 	github.com/viant/xunsafe v0.8.2 // indirect
-	github.com/xdg/scram v1.0.5 // indirect
-	github.com/xdg/stringprep v1.0.3 // indirect
+	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
+	github.com/xdg-go/scram v1.1.2 // indirect
+	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
