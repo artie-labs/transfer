@@ -197,3 +197,11 @@ func TestBigQueryDialect_BuildAlterColumnQuery(t *testing.T) {
 		BigQueryDialect{}.BuildAlterColumnQuery(fakeTableID, constants.Delete, "{SQL_PART}"),
 	)
 }
+
+func TestBuildProcessToastColExpression(t *testing.T) {
+	assert.Equal(t, `CASE WHEN COALESCE(cc.bar != '__debezium_unavailable_value', true) THEN cc.bar ELSE c.bar END`, BigQueryDialect{}.BuildProcessToastColExpression("bar"))
+}
+
+func TestBuildProcessToastStructColExpression(t *testing.T) {
+	assert.Equal(t, `CASE WHEN COALESCE(TO_JSON_STRING(cc.foo) != '{"key":"__debezium_unavailable_value"}', true) THEN cc.foo ELSE c.foo END`, BigQueryDialect{}.BuildProcessToastStructColExpression("foo"))
+}
