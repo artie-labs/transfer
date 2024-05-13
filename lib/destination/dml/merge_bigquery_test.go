@@ -29,10 +29,10 @@ func TestMergeStatement_TempTable(t *testing.T) {
 		SoftDelete:  false,
 	}
 
-	mergeSQL, err := mergeArg.buildDefaultStatement()
+	statements, err := mergeArg.buildDefaultStatements()
 	assert.NoError(t, err)
-
-	assert.Contains(t, mergeSQL, "MERGE INTO customers.orders c USING customers.orders_tmp AS cc ON c.`order_id` = cc.`order_id`", mergeSQL)
+	assert.Len(t, statements, 1)
+	assert.Contains(t, statements[0], "MERGE INTO customers.orders c USING customers.orders_tmp AS cc ON c.`order_id` = cc.`order_id`")
 }
 
 func TestMergeStatement_JSONKey(t *testing.T) {
@@ -54,9 +54,10 @@ func TestMergeStatement_JSONKey(t *testing.T) {
 		SoftDelete:  false,
 	}
 
-	mergeSQL, err := mergeArg.buildDefaultStatement()
+	statements, err := mergeArg.buildDefaultStatements()
+	assert.Len(t, statements, 1)
 	assert.NoError(t, err)
-	assert.Contains(t, mergeSQL, "MERGE INTO customers.orders c USING customers.orders_tmp AS cc ON TO_JSON_STRING(c.`order_oid`) = TO_JSON_STRING(cc.`order_oid`)", mergeSQL)
+	assert.Contains(t, statements[0], "MERGE INTO customers.orders c USING customers.orders_tmp AS cc ON TO_JSON_STRING(c.`order_oid`) = TO_JSON_STRING(cc.`order_oid`)")
 }
 
 func TestMergeArgument_BuildStatements_BigQuery(t *testing.T) {
@@ -75,9 +76,10 @@ func TestMergeArgument_BuildStatements_BigQuery(t *testing.T) {
 		SoftDelete:  false,
 	}
 
-	mergeSQL, err := mergeArg.buildDefaultStatement()
+	statements1, err := mergeArg.buildDefaultStatements()
+	assert.Len(t, statements1, 1)
 	assert.NoError(t, err)
-	statements, err := mergeArg.BuildStatements()
+	statements2, err := mergeArg.BuildStatements()
 	assert.NoError(t, err)
-	assert.Equal(t, []string{mergeSQL}, statements)
+	assert.Equal(t, statements1, statements2)
 }
