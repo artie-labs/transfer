@@ -23,7 +23,6 @@ const (
 
 	TemporaryTableTTL = 6 * time.Hour
 
-	// DBZPostgresFormat is the only supported CDC format right now
 	DBZPostgresFormat    = "debezium.postgres"
 	DBZPostgresAltFormat = "debezium.postgres.wal2json"
 	DBZMongoFormat       = "debezium.mongodb"
