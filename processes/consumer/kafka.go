@@ -110,6 +110,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 				kafkaMsg, err := kafkaConsumer.FetchMessage(ctx)
 				if err != nil {
 					slog.With(artie.KafkaMsgLogFields(kafkaMsg)...).Warn("Failed to read kafka message", slog.Any("err", err))
+					time.Sleep(500 * time.Millisecond)
 					continue
 				}
 
