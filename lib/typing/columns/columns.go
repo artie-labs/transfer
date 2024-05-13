@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 )
@@ -246,6 +247,14 @@ func (c *Columns) DeleteColumn(name string) {
 			return
 		}
 	}
+}
+
+func QuoteColumns(cols []Column, dialect sql.Dialect) []string {
+	result := make([]string, len(cols))
+	for i, col := range cols {
+		result[i] = dialect.QuoteIdentifier(col.Name())
+	}
+	return result
 }
 
 // RemoveDeleteColumnMarker removes the deleted column marker from a slice (if present) returning a new slice and whether or not it was removed.
