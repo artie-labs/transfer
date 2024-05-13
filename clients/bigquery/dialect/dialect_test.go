@@ -208,32 +208,7 @@ func TestBuildProcessToastStructColExpression(t *testing.T) {
 }
 
 func TestBuildColumnsUpdateFragment(t *testing.T) {
-	type testCase struct {
-		name           string
-		columns        []columns.Column
-		expectedString string
-	}
-
-	fooBarCols := []string{"foo", "bar"}
-
-	var (
-		lastCaseColTypes    []columns.Column
-		lastCaseEscapeTypes []columns.Column
-	)
-	for _, col := range fooBarCols {
-		column := columns.NewColumn(col, typing.String)
-		column.ToastColumn = false
-	}
-	for _, col := range fooBarCols {
-		var toastCol bool
-		if col == "foo" {
-			toastCol = true
-		}
-
-		column := columns.NewColumn(col, typing.String)
-		column.ToastColumn = toastCol
-	}
-
+	var lastCaseColTypes []columns.Column
 	lastCaseCols := []string{"a1", "b2", "c3"}
 	for _, lastCaseCol := range lastCaseCols {
 		kd := typing.String
@@ -251,6 +226,7 @@ func TestBuildColumnsUpdateFragment(t *testing.T) {
 		lastCaseColTypes = append(lastCaseColTypes, column)
 	}
 
+	var lastCaseEscapeTypes []columns.Column
 	lastCaseColsEsc := []string{"a1", "b2", "c3", "start", "select"}
 	for _, lastCaseColEsc := range lastCaseColsEsc {
 		kd := typing.String
@@ -274,7 +250,11 @@ func TestBuildColumnsUpdateFragment(t *testing.T) {
 	lastCaseEscapeTypes = append(lastCaseEscapeTypes, columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
 	key := `{"key":"__debezium_unavailable_value"}`
-	testCases := []testCase{
+	testCases := []struct {
+		name           string
+		columns        []columns.Column
+		expectedString string
+	}{
 		{
 			name:           "struct, string and toast string (bigquery)",
 			columns:        lastCaseColTypes,
