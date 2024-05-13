@@ -74,6 +74,10 @@ func (t *TableData) Name() string {
 	return t.name
 }
 
+func (t *TableData) InMemoryColumns() *columns.Columns {
+	return t.inMemoryColumns
+}
+
 func (t *TableData) SetInMemoryColumns(columns *columns.Columns) {
 	t.inMemoryColumns = columns
 }

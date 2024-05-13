@@ -21,11 +21,13 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, op
 		return fmt.Errorf("failed to get table config: %w", err)
 	}
 
+	tableData.InMemoryColumns().DeleteColumn(constants.DeleteColumnMarker)
+
 	// We don't care about srcKeysMissing because we don't drop columns when we append.
 	_, targetKeysMissing := columns.Diff(
 		tableData.ReadOnlyInMemoryCols(),
 		tableConfig.Columns(),
-		tableData.TopicConfig().SoftDelete,
+		false,
 		tableData.TopicConfig().IncludeArtieUpdatedAt,
 		tableData.TopicConfig().IncludeDatabaseUpdatedAt,
 		tableData.Mode(),
