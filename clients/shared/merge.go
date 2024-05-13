@@ -28,7 +28,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 		return fmt.Errorf("failed to get table config: %w", err)
 	}
 
-	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
+	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols().GetColumns(), tableConfig.Columns().GetColumns(),
 		tableData.TopicConfig().SoftDelete, tableData.TopicConfig().IncludeArtieUpdatedAt,
 		tableData.TopicConfig().IncludeDatabaseUpdatedAt, tableData.Mode())
 
