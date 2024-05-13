@@ -182,10 +182,10 @@ func (md MSSQLDialect) BuildMergeQueries(
 	subQuery string,
 	idempotentKey string,
 	primaryKeys []columns.Column,
-	additionalEqualityStrings []string,
+	_ []string,
 	cols []columns.Column,
 	softDelete bool,
-	containsHardDeletes *bool,
+	_ *bool,
 ) ([]string, error) {
 	var idempotentClause string
 	if idempotentKey != "" {
