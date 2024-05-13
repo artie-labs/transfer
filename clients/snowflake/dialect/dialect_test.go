@@ -252,6 +252,12 @@ func TestBuildProcessToastStructColExpression(t *testing.T) {
 	assert.Equal(t, `CASE WHEN COALESCE(cc.foo != {'key': '__debezium_unavailable_value'}, true) THEN cc.foo ELSE c.foo END`, SnowflakeDialect{}.BuildProcessToastStructColExpression("foo"))
 }
 
+func TestQuoteColumns(t *testing.T) {
+	assert.Equal(t, []string{}, columns.QuoteColumns(nil, SnowflakeDialect{}))
+	cols := []columns.Column{columns.NewColumn("a", typing.Invalid), columns.NewColumn("b", typing.Invalid)}
+	assert.Equal(t, []string{`"A"`, `"B"`}, columns.QuoteColumns(cols, SnowflakeDialect{}))
+}
+
 func TestBuildColumnsUpdateFragment(t *testing.T) {
 	var stringAndToastCols []columns.Column
 	for _, col := range []string{"foo", "bar"} {

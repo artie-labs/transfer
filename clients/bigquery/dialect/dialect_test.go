@@ -207,6 +207,12 @@ func TestBuildProcessToastStructColExpression(t *testing.T) {
 	assert.Equal(t, `CASE WHEN COALESCE(TO_JSON_STRING(cc.foo) != '{"key":"__debezium_unavailable_value"}', true) THEN cc.foo ELSE c.foo END`, BigQueryDialect{}.BuildProcessToastStructColExpression("foo"))
 }
 
+func TestQuoteColumns(t *testing.T) {
+	assert.Equal(t, []string{}, columns.QuoteColumns(nil, BigQueryDialect{}))
+	cols := []columns.Column{columns.NewColumn("a", typing.Invalid), columns.NewColumn("b", typing.Invalid)}
+	assert.Equal(t, []string{"`a`", "`b`"}, columns.QuoteColumns(cols, BigQueryDialect{}))
+}
+
 func TestBuildColumnsUpdateFragment(t *testing.T) {
 	var lastCaseColTypes []columns.Column
 	lastCaseCols := []string{"a1", "b2", "c3"}
