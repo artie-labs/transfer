@@ -68,7 +68,7 @@ func TestMergeArgument_BuildStatements_Redshift(t *testing.T) {
 		nil,
 		res.Columns,
 		false,
-		ptr.ToBool(true),
+		true,
 	)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(statements))

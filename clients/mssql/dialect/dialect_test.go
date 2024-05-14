@@ -200,7 +200,7 @@ func TestMSSQLDialect_BuildMergeQueries(t *testing.T) {
 		[]string{},
 		_cols,
 		false,
-		nil,
+		false,
 	)
 	assert.Len(t, queries, 1)
 	mergeSQL := queries[0]

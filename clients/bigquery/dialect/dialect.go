@@ -207,7 +207,7 @@ func (bd BigQueryDialect) BuildMergeQueries(
 	additionalEqualityStrings []string,
 	cols []columns.Column,
 	softDelete bool,
-	_ *bool,
+	_ bool,
 ) ([]string, error) {
 	// We should not need idempotency key for DELETE
 	// This is based on the assumption that the primary key would be atomically increasing or UUID based
