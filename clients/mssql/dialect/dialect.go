@@ -15,6 +15,11 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
+const (
+	stagingAlias = "cc"
+	targetAlias  = "c"
+)
+
 type MSSQLDialect struct{}
 
 func (MSSQLDialect) QuoteIdentifier(identifier string) string {
@@ -189,7 +194,7 @@ func (md MSSQLDialect) BuildMergeQueries(
 		idempotentClause = fmt.Sprintf("AND cc.%s >= c.%s ", idempotentKey, idempotentKey)
 	}
 
-	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, "c", "cc", sql.Equal, md)
+	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, targetAlias, stagingAlias, sql.Equal, md)
 
 	if softDelete {
 		return []string{fmt.Sprintf(`
