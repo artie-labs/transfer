@@ -234,7 +234,7 @@ func (sd SnowflakeDialect) BuildMergeQueries(
 MERGE INTO %s c USING %s AS cc ON %s
 WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
-			tableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " and "),
+			tableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " AND "),
 			// Update + Soft Deletion
 			idempotentClause, sql.BuildColumnsUpdateFragment(cols, sd),
 			// Insert
@@ -257,7 +257,7 @@ MERGE INTO %s c USING %s AS cc ON %s
 WHEN MATCHED AND cc.%s THEN DELETE
 WHEN MATCHED AND IFNULL(cc.%s, false) = false %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
-		tableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " and "),
+		tableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " AND "),
 		// Delete
 		sd.QuoteIdentifier(constants.DeleteColumnMarker),
 		// Update

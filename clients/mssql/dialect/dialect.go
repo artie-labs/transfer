@@ -203,7 +203,7 @@ MERGE INTO %s c
 USING %s AS cc ON %s
 WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
-			tableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " and "),
+			tableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " AND "),
 			// Update + Soft Deletion
 			idempotentClause, sql.BuildColumnsUpdateFragment(cols, md),
 			// Insert
@@ -227,7 +227,7 @@ USING %s AS cc ON %s
 WHEN MATCHED AND cc.%s = 1 THEN DELETE
 WHEN MATCHED AND COALESCE(cc.%s, 0) = 0 %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(cc.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
-		tableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " and "),
+		tableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " AND "),
 		// Delete
 		md.QuoteIdentifier(constants.DeleteColumnMarker),
 		// Update
