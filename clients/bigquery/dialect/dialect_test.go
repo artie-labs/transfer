@@ -288,3 +288,52 @@ func TestBuildColumnsUpdateFragment(t *testing.T) {
 		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
 	}
 }
+
+func TestBigQueryDialect_BuildMergeQueries_TempTable(t *testing.T) {
+	var cols columns.Columns
+	cols.AddColumn(columns.NewColumn("order_id", typing.Integer))
+	cols.AddColumn(columns.NewColumn("name", typing.String))
+	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
+
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("customers.orders")
+
+	statements, err := BigQueryDialect{}.BuildMergeQueries(
+		fakeTableID,
+		"customers.orders_tmp",
+		"",
+		[]columns.Column{columns.NewColumn("order_id", typing.Invalid)},
+		nil,
+		cols.ValidColumns(),
+		false,
+		nil,
+	)
+	assert.NoError(t, err)
+	assert.Len(t, statements, 1)
+	assert.Contains(t, statements[0], "MERGE INTO customers.orders c USING customers.orders_tmp AS cc ON c.`order_id` = cc.`order_id`")
+}
+
+func TestBigQueryDialect_BuildMergeQueries_JSONKey(t *testing.T) {
+	orderOIDCol := columns.NewColumn("order_oid", typing.Struct)
+	var cols columns.Columns
+	cols.AddColumn(orderOIDCol)
+	cols.AddColumn(columns.NewColumn("name", typing.String))
+	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
+
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("customers.orders")
+
+	statements, err := BigQueryDialect{}.BuildMergeQueries(
+		fakeTableID,
+		"customers.orders_tmp",
+		"",
+		[]columns.Column{orderOIDCol},
+		nil,
+		cols.ValidColumns(),
+		false,
+		nil,
+	)
+	assert.Len(t, statements, 1)
+	assert.NoError(t, err)
+	assert.Contains(t, statements[0], "MERGE INTO customers.orders c USING customers.orders_tmp AS cc ON TO_JSON_STRING(c.`order_oid`) = TO_JSON_STRING(cc.`order_oid`)")
+}
