@@ -22,7 +22,8 @@ func BuildColumnsUpdateFragment(columns []columns.Column, dialect Dialect) strin
 	for _, column := range columns {
 		colName := dialect.QuoteIdentifier(column.Name())
 		if column.ToastColumn {
-			cols = append(cols, fmt.Sprintf("%s= %s", colName, dialect.BuildProcessToastColExpression(column)))
+			cols = append(cols, fmt.Sprintf("%s= CASE WHEN %s THEN cc.%s ELSE c.%s END",
+				colName, dialect.BuildIsToastColExpression(column), colName, colName))
 		} else {
 			// This is to make it look like: objCol = cc.objCol
 			cols = append(cols, fmt.Sprintf("%s=cc.%s", colName, colName))

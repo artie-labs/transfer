@@ -247,14 +247,14 @@ func TestSnowflakeDialect_BuildAlterColumnQuery(t *testing.T) {
 	)
 }
 
-func TestSnowflakeDialect_BuildProcessToastColExpression(t *testing.T) {
+func TestSnowflakeDialect_BuildIsToastColExpression(t *testing.T) {
 	assert.Equal(t,
-		`CASE WHEN COALESCE(cc."BAR" != '__debezium_unavailable_value', true) THEN cc."BAR" ELSE c."BAR" END`,
-		SnowflakeDialect{}.BuildProcessToastColExpression(columns.NewColumn("bar", typing.Invalid)),
+		`COALESCE(cc."BAR" != '__debezium_unavailable_value', true)`,
+		SnowflakeDialect{}.BuildIsToastColExpression(columns.NewColumn("bar", typing.Invalid)),
 	)
 	assert.Equal(t,
-		`CASE WHEN COALESCE(cc."FOO" != {'key': '__debezium_unavailable_value'}, true) THEN cc."FOO" ELSE c."FOO" END`,
-		SnowflakeDialect{}.BuildProcessToastColExpression(columns.NewColumn("foo", typing.Struct)),
+		`COALESCE(cc."FOO" != {'key': '__debezium_unavailable_value'}, true)`,
+		SnowflakeDialect{}.BuildIsToastColExpression(columns.NewColumn("foo", typing.Struct)),
 	)
 }
 
