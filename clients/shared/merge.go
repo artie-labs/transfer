@@ -116,6 +116,9 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 	if opts.SubQueryDedupe {
 		subQuery = fmt.Sprintf(`( SELECT DISTINCT * FROM %s )`, temporaryTableName)
 	}
+	if subQuery == "" {
+		return fmt.Errorf("subQuery cannot be empty")
+	}
 
 	cols := tableData.ReadOnlyInMemoryCols()
 
@@ -139,10 +142,6 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 		if column.ShouldSkip() {
 			return fmt.Errorf("column %q is invalid and should be skipped", column.Name())
 		}
-	}
-
-	if subQuery == "" {
-		return fmt.Errorf("subQuery cannot be empty")
 	}
 
 	mergeStatements, err := dwh.Dialect().BuildMergeQueries(
