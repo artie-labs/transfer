@@ -109,7 +109,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 		}
 
 		if backfillErr != nil {
-			return fmt.Errorf("failed to backfill col: %s, default value: %v, err: %w", col.Name(), col.RawDefaultValue(), backfillErr)
+			return fmt.Errorf("failed to backfill col: %s, default value: %v, err: %w", col.Name(), col.DefaultValue(), backfillErr)
 		}
 	}
 
