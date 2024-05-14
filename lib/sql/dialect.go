@@ -26,4 +26,14 @@ type Dialect interface {
 	BuildProcessToastColExpression(column columns.Column) string
 	BuildProcessToastStructColExpression(column columns.Column) string
 	BuildDedupeQueries(tableID, stagingTableID TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string
+	BuildMergeQueries(
+		tableID TableIdentifier,
+		subQuery string,
+		idempotentKey string,
+		primaryKeys []columns.Column,
+		additionalEqualityStrings []string,
+		cols []columns.Column,
+		softDelete bool,
+		containsHardDeletes *bool,
+	) ([]string, error)
 }
