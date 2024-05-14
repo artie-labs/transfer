@@ -24,7 +24,6 @@ type Dialect interface {
 	BuildCreateTableQuery(tableID TableIdentifier, temporary bool, colSQLParts []string) string
 	BuildAlterColumnQuery(tableID TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string
 	BuildProcessToastColExpression(column columns.Column) string
-	BuildProcessToastStructColExpression(column columns.Column) string
 	BuildDedupeQueries(tableID, stagingTableID TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string
 	BuildMergeQueries(
 		tableID TableIdentifier,
