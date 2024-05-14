@@ -256,7 +256,7 @@ func TestBuildColumnsUpdateFragment(t *testing.T) {
 	}
 
 	for _, _testCase := range testCases {
-		actualQuery := columns.BuildColumnsUpdateFragment(_testCase.columns, RedshiftDialect{})
+		actualQuery := sql.BuildColumnsUpdateFragment(_testCase.columns, RedshiftDialect{})
 		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
 	}
 }
