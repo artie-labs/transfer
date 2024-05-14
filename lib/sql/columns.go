@@ -25,9 +25,9 @@ func BuildColumnsUpdateFragment(columns []columns.Column, dialect Dialect) strin
 		if column.ToastColumn {
 			var colValue string
 			if column.KindDetails == typing.Struct {
-				colValue = dialect.BuildProcessToastStructColExpression(colName)
+				colValue = dialect.BuildProcessToastStructColExpression(column)
 			} else {
-				colValue = dialect.BuildProcessToastColExpression(colName)
+				colValue = dialect.BuildProcessToastColExpression(column)
 			}
 			cols = append(cols, fmt.Sprintf("%s= %s", colName, colValue))
 		} else {
