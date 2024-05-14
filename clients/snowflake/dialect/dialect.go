@@ -214,14 +214,7 @@ func (sd SnowflakeDialect) BuildMergeQueries(
 		idempotentClause = fmt.Sprintf("AND cc.%s >= c.%s ", idempotentKey, idempotentKey)
 	}
 
-	var equalitySQLParts []string
-	for _, primaryKey := range primaryKeys {
-		// We'll need to escape the primary key as well.
-		quotedPrimaryKey := sd.QuoteIdentifier(primaryKey.Name())
-
-		equalitySQL := fmt.Sprintf("c.%s = cc.%s", quotedPrimaryKey, quotedPrimaryKey)
-		equalitySQLParts = append(equalitySQLParts, equalitySQL)
-	}
+	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, "c", "cc", sql.Equal, sd)
 
 	subQuery = fmt.Sprintf("( %s )", subQuery)
 
