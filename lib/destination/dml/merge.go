@@ -68,25 +68,6 @@ func (m *MergeArgument) Valid() error {
 	return nil
 }
 
-func (m *MergeArgument) buildRedshiftUpdateQuery(cols []columns.Column) string {
-	clauses := redshiftDialect.RedshiftDialect{}.EqualitySQLParts(m.PrimaryKeys)
-
-	if m.IdempotentKey != "" {
-		clauses = append(clauses, fmt.Sprintf("cc.%s >= c.%s", m.IdempotentKey, m.IdempotentKey))
-	}
-
-	if !m.SoftDelete {
-		clauses = append(clauses, fmt.Sprintf("COALESCE(cc.%s, false) = false", m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker)))
-	}
-
-	return fmt.Sprintf(`UPDATE %s AS c SET %s FROM %s AS cc WHERE %s;`,
-		// UPDATE table set col1 = cc. col1
-		m.TableID.FullyQualifiedName(), columns.BuildColumnsUpdateFragment(cols, m.Dialect),
-		// FROM staging WHERE join on PK(s)
-		m.SubQuery, strings.Join(clauses, " AND "),
-	)
-}
-
 func (m *MergeArgument) buildRedshiftStatements() ([]string, error) {
 	// ContainsHardDeletes is only used for Redshift, so we'll validate it now
 	if m.ContainsHardDeletes == nil {
@@ -101,7 +82,7 @@ func (m *MergeArgument) buildRedshiftStatements() ([]string, error) {
 	if m.SoftDelete {
 		return []string{
 			redshiftDialect.RedshiftDialect{}.BuildMergeInsertQuery(m.TableID, m.SubQuery, m.PrimaryKeys, m.Columns),
-			m.buildRedshiftUpdateQuery(m.Columns),
+			redshiftDialect.RedshiftDialect{}.BuildMergeUpdateQuery(m.TableID, m.SubQuery, m.PrimaryKeys, m.Columns, m.IdempotentKey, m.SoftDelete),
 		}, nil
 	}
 
@@ -113,7 +94,7 @@ func (m *MergeArgument) buildRedshiftStatements() ([]string, error) {
 
 	parts := []string{
 		redshiftDialect.RedshiftDialect{}.BuildMergeInsertQuery(m.TableID, m.SubQuery, m.PrimaryKeys, columns),
-		m.buildRedshiftUpdateQuery(columns),
+		redshiftDialect.RedshiftDialect{}.BuildMergeUpdateQuery(m.TableID, m.SubQuery, m.PrimaryKeys, columns, m.IdempotentKey, m.SoftDelete),
 	}
 
 	if *m.ContainsHardDeletes {

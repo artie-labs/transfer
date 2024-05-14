@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
-	redshiftDialect "github.com/artie-labs/transfer/clients/redshift/dialect"
 	snowflakeDialect "github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
@@ -270,59 +269,6 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 	// Check for INSERT
 	assert.Contains(t, mergeSQL, `"ID","GROUP","UPDATED_AT","START"`, mergeSQL)
 	assert.Contains(t, mergeSQL, `cc."ID",cc."GROUP",cc."UPDATED_AT",cc."START"`, mergeSQL)
-}
-
-func TestMergeArgument_BuildRedshiftUpdateQuery(t *testing.T) {
-	testCases := []struct {
-		name          string
-		softDelete    bool
-		idempotentKey string
-		expected      string
-	}{
-		{
-			name:       "soft delete enabled",
-			softDelete: true,
-			expected:   `UPDATE {TABLE_ID} AS c SET "col1"=cc."col1","col2"=cc."col2","col3"=cc."col3" FROM {SUB_QUERY} AS cc WHERE c."col1" = cc."col1" AND c."col3" = cc."col3";`,
-		},
-		{
-			name:          "soft delete enabled + idempotent key",
-			softDelete:    true,
-			idempotentKey: "{ID_KEY}",
-			expected:      `UPDATE {TABLE_ID} AS c SET "col1"=cc."col1","col2"=cc."col2","col3"=cc."col3" FROM {SUB_QUERY} AS cc WHERE c."col1" = cc."col1" AND c."col3" = cc."col3" AND cc.{ID_KEY} >= c.{ID_KEY};`,
-		},
-		{
-			name:       "soft delete disabled",
-			softDelete: false,
-			expected:   `UPDATE {TABLE_ID} AS c SET "col1"=cc."col1","col2"=cc."col2","col3"=cc."col3" FROM {SUB_QUERY} AS cc WHERE c."col1" = cc."col1" AND c."col3" = cc."col3" AND COALESCE(cc."__artie_delete", false) = false;`,
-		},
-		{
-			name:          "soft delete disabled + idempotent key",
-			softDelete:    false,
-			idempotentKey: "{ID_KEY}",
-			expected:      `UPDATE {TABLE_ID} AS c SET "col1"=cc."col1","col2"=cc."col2","col3"=cc."col3" FROM {SUB_QUERY} AS cc WHERE c."col1" = cc."col1" AND c."col3" = cc."col3" AND cc.{ID_KEY} >= c.{ID_KEY} AND COALESCE(cc."__artie_delete", false) = false;`,
-		},
-	}
-
-	cols := []columns.Column{
-		columns.NewColumn("col1", typing.Invalid),
-		columns.NewColumn("col2", typing.Invalid),
-		columns.NewColumn("col3", typing.Invalid),
-	}
-
-	fakeTableID := &mocks.FakeTableIdentifier{}
-	fakeTableID.FullyQualifiedNameReturns("{TABLE_ID}")
-
-	for _, testCase := range testCases {
-		mergeArg := MergeArgument{
-			TableID:       fakeTableID,
-			SubQuery:      "{SUB_QUERY}",
-			PrimaryKeys:   []columns.Column{cols[0], cols[2]},
-			Dialect:       redshiftDialect.RedshiftDialect{},
-			SoftDelete:    testCase.softDelete,
-			IdempotentKey: testCase.idempotentKey,
-		}
-		assert.Equal(t, testCase.expected, mergeArg.buildRedshiftUpdateQuery(cols), testCase.name)
-	}
 }
 
 func TestMergeArgument_BuildStatements_Validation(t *testing.T) {
