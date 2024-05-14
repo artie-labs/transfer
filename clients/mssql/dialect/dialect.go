@@ -166,13 +166,13 @@ func (MSSQLDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, columnOp 
 	return fmt.Sprintf("ALTER TABLE %s %s %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 
-func (md MSSQLDialect) BuildIsNotToastValueExpression(column columns.Column) string {
+func (md MSSQLDialect) BuildIsNotToastValueExpression(tableAlias string, column columns.Column) string {
 	colName := md.QuoteIdentifier(column.Name())
 	// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
 	if column.KindDetails == typing.Struct {
-		return fmt.Sprintf("COALESCE(cc.%s, {}) != {'key': '%s'}", colName, constants.ToastUnavailableValuePlaceholder)
+		return fmt.Sprintf("COALESCE(%s.%s, {}) != {'key': '%s'}", tableAlias, colName, constants.ToastUnavailableValuePlaceholder)
 	}
-	return fmt.Sprintf("COALESCE(cc.%s, '') != '%s'", colName, constants.ToastUnavailableValuePlaceholder)
+	return fmt.Sprintf("COALESCE(%s.%s, '') != '%s'", tableAlias, colName, constants.ToastUnavailableValuePlaceholder)
 }
 
 func (MSSQLDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
@@ -204,7 +204,7 @@ WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(cc.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 			tableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " AND "),
 			// Update + Soft Deletion
-			idempotentClause, sql.BuildColumnsUpdateFragment(cols, md),
+			idempotentClause, sql.BuildColumnsUpdateFragment(cols, stagingAlias, targetAlias, md),
 			// Insert
 			md.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, md), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -230,7 +230,7 @@ WHEN NOT MATCHED AND COALESCE(cc.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
 		// Delete
 		md.QuoteIdentifier(constants.DeleteColumnMarker),
 		// Update
-		md.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, md),
+		md.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, stagingAlias, targetAlias, md),
 		// Insert
 		md.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, md), ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{

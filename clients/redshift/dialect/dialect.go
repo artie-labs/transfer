@@ -132,13 +132,13 @@ func (RedshiftDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, column
 	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 
-func (rd RedshiftDialect) BuildIsNotToastValueExpression(column columns.Column) string {
+func (rd RedshiftDialect) BuildIsNotToastValueExpression(tableAlias string, column columns.Column) string {
 	colName := rd.QuoteIdentifier(column.Name())
 	if column.KindDetails == typing.Struct {
 		return fmt.Sprintf(`COALESCE(%s.%s != JSON_PARSE('{"key":"%s"}'), true)`,
-			stagingAlias, colName, constants.ToastUnavailableValuePlaceholder)
+			tableAlias, colName, constants.ToastUnavailableValuePlaceholder)
 	}
-	return fmt.Sprintf("COALESCE(%s.%s != '%s', true)", stagingAlias, colName, constants.ToastUnavailableValuePlaceholder)
+	return fmt.Sprintf("COALESCE(%s.%s != '%s', true)", tableAlias, colName, constants.ToastUnavailableValuePlaceholder)
 }
 
 func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
@@ -235,7 +235,7 @@ func (rd RedshiftDialect) buildMergeUpdateQuery(
 
 	return fmt.Sprintf(`UPDATE %s AS %s SET %s FROM %s AS %s WHERE %s;`,
 		// UPDATE table set col1 = cc. col1
-		tableID.FullyQualifiedName(), targetAlias, sql.BuildColumnsUpdateFragment(cols, rd),
+		tableID.FullyQualifiedName(), targetAlias, sql.BuildColumnsUpdateFragment(cols, stagingAlias, targetAlias, rd),
 		// FROM staging WHERE join on PK(s)
 		subQuery, stagingAlias, strings.Join(clauses, " AND "),
 	)
