@@ -60,7 +60,16 @@ func TestMergeArgument_BuildStatements_Redshift(t *testing.T) {
 		ContainsHardDeletes: ptr.ToBool(true),
 	}
 
-	statements, err := mergeArg.buildRedshiftStatements()
+	statements, err := dialect.RedshiftDialect{}.BuildMergeQueries(
+		&mocks.FakeTableIdentifier{},
+		"{SUB_QUERY}",
+		"",
+		res.PrimaryKeys,
+		nil,
+		res.Columns,
+		false,
+		ptr.ToBool(true),
+	)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(statements))
 	statements2, err := mergeArg.BuildStatements()
@@ -86,7 +95,7 @@ func TestMergeArgument_BuildRedshiftStatements_SkipDelete(t *testing.T) {
 		ContainsHardDeletes: ptr.ToBool(false),
 	}
 
-	parts, err := mergeArg.buildRedshiftStatements()
+	parts, err := mergeArg.BuildStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(parts))
 
@@ -115,7 +124,7 @@ func TestMergeArgument_BuildRedshiftStatements_SoftDelete(t *testing.T) {
 		ContainsHardDeletes: ptr.ToBool(false),
 	}
 
-	parts, err := mergeArg.buildRedshiftStatements()
+	parts, err := mergeArg.BuildStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(parts))
 
@@ -127,7 +136,7 @@ func TestMergeArgument_BuildRedshiftStatements_SoftDelete(t *testing.T) {
 		parts[1])
 
 	mergeArg.IdempotentKey = "created_at"
-	parts, err = mergeArg.buildRedshiftStatements()
+	parts, err = mergeArg.BuildStatements()
 	assert.NoError(t, err)
 
 	// Parts[0] for insertion should be identical
@@ -155,7 +164,7 @@ func TestMergeArgument_BuildRedshiftStatements_SoftDeleteComposite(t *testing.T)
 		ContainsHardDeletes: ptr.ToBool(false),
 	}
 
-	parts, err := mergeArg.buildRedshiftStatements()
+	parts, err := mergeArg.BuildStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(parts))
 
@@ -167,7 +176,7 @@ func TestMergeArgument_BuildRedshiftStatements_SoftDeleteComposite(t *testing.T)
 		parts[1])
 
 	mergeArg.IdempotentKey = "created_at"
-	parts, err = mergeArg.buildRedshiftStatements()
+	parts, err = mergeArg.BuildStatements()
 	assert.NoError(t, err)
 
 	// Parts[0] for insertion should be identical
@@ -197,7 +206,7 @@ func TestMergeArgument_GetRedshiftStatements(t *testing.T) {
 		ContainsHardDeletes: ptr.ToBool(true),
 	}
 
-	parts, err := mergeArg.buildRedshiftStatements()
+	parts, err := mergeArg.BuildStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(parts))
 
@@ -223,7 +232,7 @@ func TestMergeArgument_GetRedshiftStatements(t *testing.T) {
 		ContainsHardDeletes: ptr.ToBool(true),
 	}
 
-	parts, err = mergeArg.buildRedshiftStatements()
+	parts, err = mergeArg.BuildStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(parts))
 
@@ -254,7 +263,7 @@ func TestMergeArgument_BuildRedshiftStatements_CompositeKey(t *testing.T) {
 		ContainsHardDeletes: ptr.ToBool(true),
 	}
 
-	parts, err := mergeArg.buildRedshiftStatements()
+	parts, err := mergeArg.BuildStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(parts))
 
@@ -280,7 +289,7 @@ func TestMergeArgument_BuildRedshiftStatements_CompositeKey(t *testing.T) {
 		IdempotentKey:       "created_at",
 	}
 
-	parts, err = mergeArg.buildRedshiftStatements()
+	parts, err = mergeArg.BuildStatements()
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(parts))
 

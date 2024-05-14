@@ -348,7 +348,7 @@ func TestRedshiftDialect_BuildMergeInsertQuery(t *testing.T) {
 	fakeTableID.FullyQualifiedNameReturns("{TABLE_ID}")
 	assert.Equal(t,
 		`INSERT INTO {TABLE_ID} ("col1","col2","col3") SELECT cc."col1",cc."col2",cc."col3" FROM {SUB_QUERY} AS cc LEFT JOIN {TABLE_ID} AS c ON c."col1" = cc."col1" AND c."col3" = cc."col3" WHERE c."col1" IS NULL;`,
-		RedshiftDialect{}.BuildMergeInsertQuery(fakeTableID, "{SUB_QUERY}", []columns.Column{cols[0], cols[2]}, cols),
+		RedshiftDialect{}.buildMergeInsertQuery(fakeTableID, "{SUB_QUERY}", []columns.Column{cols[0], cols[2]}, cols),
 	)
 }
 
@@ -393,7 +393,7 @@ func TestRedshiftDialect_BuildMergeUpdateQuery(t *testing.T) {
 	fakeTableID.FullyQualifiedNameReturns("{TABLE_ID}")
 
 	for _, testCase := range testCases {
-		actual := RedshiftDialect{}.BuildMergeUpdateQuery(
+		actual := RedshiftDialect{}.buildMergeUpdateQuery(
 			fakeTableID,
 			"{SUB_QUERY}",
 			[]columns.Column{cols[0], cols[2]},
@@ -416,7 +416,7 @@ func TestRedshiftDialect_BuildMergeDeleteQuery(t *testing.T) {
 	fakeTableID.FullyQualifiedNameReturns("{TABLE_ID}")
 	assert.Equal(t,
 		`DELETE FROM {TABLE_ID} WHERE ("col1","col2") IN (SELECT cc."col1",cc."col2" FROM {SUB_QUERY} AS cc WHERE cc."__artie_delete" = true);`,
-		RedshiftDialect{}.BuildMergeDeleteQuery(
+		RedshiftDialect{}.buildMergeDeleteQuery(
 			fakeTableID,
 			"{SUB_QUERY}",
 			[]columns.Column{cols[0], cols[1]},
