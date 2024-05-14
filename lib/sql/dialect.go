@@ -31,7 +31,7 @@ type Dialect interface {
 		subQuery string,
 		idempotentKey string,
 		primaryKeys []columns.Column,
-		// additionalEqualityStrings is used for handling BigQuery partitioned table merges
+		// additionalEqualityStrings is used for handling BigQuery & Snowflake partitioned table merges
 		additionalEqualityStrings []string,
 		cols []columns.Column,
 		softDelete bool,
