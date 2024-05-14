@@ -187,7 +187,7 @@ func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableId
 	return parts
 }
 
-func (rd RedshiftDialect) EqualitySQLParts(primaryKeys []columns.Column) []string {
+func (rd RedshiftDialect) equalitySQLParts(primaryKeys []columns.Column) []string {
 	var equalitySQLParts []string
 	for _, primaryKey := range primaryKeys {
 		// We'll need to escape the primary key as well.
@@ -214,7 +214,7 @@ func (rd RedshiftDialect) BuildMergeInsertQuery(
 			Prefix:    "cc.",
 		}), subQuery,
 		// LEFT JOIN table on pk(s)
-		tableID.FullyQualifiedName(), strings.Join(rd.EqualitySQLParts(primaryKeys), " AND "),
+		tableID.FullyQualifiedName(), strings.Join(rd.equalitySQLParts(primaryKeys), " AND "),
 		// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
 		rd.QuoteIdentifier(primaryKeys[0].Name()),
 	)
@@ -228,7 +228,7 @@ func (rd RedshiftDialect) BuildMergeUpdateQuery(
 	idempotentKey string,
 	softDelete bool,
 ) string {
-	clauses := rd.EqualitySQLParts(primaryKeys)
+	clauses := rd.equalitySQLParts(primaryKeys)
 
 	if idempotentKey != "" {
 		clauses = append(clauses, fmt.Sprintf("cc.%s >= c.%s", idempotentKey, idempotentKey))

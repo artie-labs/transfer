@@ -333,7 +333,7 @@ func TestColumn_DefaultValue(t *testing.T) {
 func TestRedshiftDialect_EqualitySQLParts(t *testing.T) {
 	assert.Equal(t,
 		[]string{`c."col1" = cc."col1"`, `c."col2" = cc."col2"`},
-		RedshiftDialect{}.EqualitySQLParts([]columns.Column{columns.NewColumn("col1", typing.Invalid), columns.NewColumn("col2", typing.Invalid)}),
+		RedshiftDialect{}.equalitySQLParts([]columns.Column{columns.NewColumn("col1", typing.Invalid), columns.NewColumn("col2", typing.Invalid)}),
 	)
 }
 
