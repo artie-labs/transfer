@@ -5,10 +5,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
@@ -183,4 +185,17 @@ func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableId
 	)
 
 	return parts
+}
+
+func (rd RedshiftDialect) BuildMergeDeleteQuery(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column) string {
+	return fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s AS cc WHERE cc.%s = true);`,
+		// DELETE from table where (pk_1, pk_2)
+		tableID.FullyQualifiedName(), strings.Join(columns.QuoteColumns(primaryKeys, rd), ","),
+		// IN (cc.pk_1, cc.pk_2) FROM staging
+		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
+			Vals:      columns.QuoteColumns(primaryKeys, rd),
+			Separator: ",",
+			Prefix:    "cc.",
+		}), subQuery, rd.QuoteIdentifier(constants.DeleteColumnMarker),
+	)
 }

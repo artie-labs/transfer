@@ -329,3 +329,22 @@ func TestColumn_DefaultValue(t *testing.T) {
 		assert.Equal(t, testCase.expectedValue, actualValue, testCase.name)
 	}
 }
+
+func TestRedshiftDialect_BuildMergeDeleteQuery(t *testing.T) {
+	cols := []columns.Column{
+		columns.NewColumn("col1", typing.Invalid),
+		columns.NewColumn("col2", typing.Invalid),
+		columns.NewColumn("col3", typing.Invalid),
+	}
+
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("{TABLE_ID}")
+	assert.Equal(t,
+		`DELETE FROM {TABLE_ID} WHERE ("col1","col2") IN (SELECT cc."col1",cc."col2" FROM {SUB_QUERY} AS cc WHERE cc."__artie_delete" = true);`,
+		RedshiftDialect{}.BuildMergeDeleteQuery(
+			fakeTableID,
+			"{SUB_QUERY}",
+			[]columns.Column{cols[0], cols[1]},
+		),
+	)
+}

@@ -354,27 +354,6 @@ func TestMergeArgument_BuildRedshiftUpdateQuery(t *testing.T) {
 	}
 }
 
-func TestMergeArgument_BuildRedshiftDeleteQuery(t *testing.T) {
-	cols := []columns.Column{
-		columns.NewColumn("col1", typing.Invalid),
-		columns.NewColumn("col2", typing.Invalid),
-		columns.NewColumn("col3", typing.Invalid),
-	}
-
-	fakeTableID := &mocks.FakeTableIdentifier{}
-	fakeTableID.FullyQualifiedNameReturns("{TABLE_ID}")
-	mergeArg := MergeArgument{
-		TableID:     fakeTableID,
-		SubQuery:    "{SUB_QUERY}",
-		PrimaryKeys: []columns.Column{cols[0], cols[1]},
-		Dialect:     redshiftDialect.RedshiftDialect{},
-	}
-	assert.Equal(t,
-		`DELETE FROM {TABLE_ID} WHERE ("col1","col2") IN (SELECT cc."col1",cc."col2" FROM {SUB_QUERY} AS cc WHERE cc."__artie_delete" = true);`,
-		mergeArg.buildRedshiftDeleteQuery(),
-	)
-}
-
 func TestMergeArgument_BuildStatements_Validation(t *testing.T) {
 	for _, arg := range []*MergeArgument{
 		{Dialect: snowflakeDialect.SnowflakeDialect{}},
