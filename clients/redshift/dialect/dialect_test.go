@@ -428,7 +428,6 @@ func TestRedshiftDialect_BuildMergeQueries_SkipDelete(t *testing.T) {
 	assert.Equal(t,
 		`UPDATE public.tableName AS c SET "id"=cc."id","email"=cc."email","first_name"=cc."first_name","last_name"=cc."last_name","created_at"=cc."created_at","toast_text"= CASE WHEN COALESCE(cc."toast_text" != '__debezium_unavailable_value', true) THEN cc."toast_text" ELSE c."toast_text" END FROM public.tableName__temp AS cc WHERE c."id" = cc."id" AND COALESCE(cc."__artie_delete", false) = false;`,
 		parts[1])
-
 }
 
 func TestRedshiftDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
