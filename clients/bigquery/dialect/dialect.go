@@ -219,7 +219,7 @@ func (bd BigQueryDialect) BuildMergeQueries(
 	// This is because Snowflake does not respect NS granularity.
 	var idempotentClause string
 	if idempotentKey != "" {
-		idempotentClause = fmt.Sprintf("AND cc.%s >= c.%s ", idempotentKey, idempotentKey)
+		idempotentClause = fmt.Sprintf("AND %s.%s >= %s.%s ", stagingAlias, idempotentKey, targetAlias, idempotentKey)
 	}
 
 	var equalitySQLParts []string
@@ -243,18 +243,18 @@ func (bd BigQueryDialect) BuildMergeQueries(
 
 	if softDelete {
 		return []string{fmt.Sprintf(`
-MERGE INTO %s c USING %s AS cc ON %s
+MERGE INTO %s %s USING %s AS %s ON %s
 WHEN MATCHED %sTHEN UPDATE SET %s
-WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
-			tableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " AND "),
+WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
+			tableID.FullyQualifiedName(), targetAlias, subQuery, stagingAlias, strings.Join(equalitySQLParts, " AND "),
 			// Update + Soft Deletion
 			idempotentClause, sql.BuildColumnsUpdateFragment(cols, stagingAlias, targetAlias, bd),
 			// Insert
-			bd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, bd), ","),
+			stagingAlias, bd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, bd), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
 				Vals:      sql.QuoteColumns(cols, bd),
 				Separator: ",",
-				Prefix:    "cc.",
+				Prefix:    stagingAlias + ".",
 			}))}, nil
 	}
 
