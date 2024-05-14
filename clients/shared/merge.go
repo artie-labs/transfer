@@ -141,10 +141,6 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 		}
 	}
 
-	if tableID == nil {
-		return fmt.Errorf("tableID cannot be nil")
-	}
-
 	if subQuery == "" {
 		return fmt.Errorf("subQuery cannot be empty")
 	}
