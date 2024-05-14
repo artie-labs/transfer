@@ -149,14 +149,14 @@ func TestMSSQLDialect_BuildAlterColumnQuery(t *testing.T) {
 	)
 }
 
-func TestMSSQLDialect_BuildProcessToastColExpression(t *testing.T) {
+func TestMSSQLDialect_BuildIsNotToastValueExpression(t *testing.T) {
 	assert.Equal(t,
-		`CASE WHEN COALESCE(cc."bar", '') != '__debezium_unavailable_value' THEN cc."bar" ELSE c."bar" END`,
-		MSSQLDialect{}.BuildProcessToastColExpression(columns.NewColumn("bar", typing.Invalid)),
+		`COALESCE(cc."bar", '') != '__debezium_unavailable_value'`,
+		MSSQLDialect{}.BuildIsNotToastValueExpression(columns.NewColumn("bar", typing.Invalid)),
 	)
 	assert.Equal(t,
-		`CASE WHEN COALESCE(cc."foo", {}) != {'key': '__debezium_unavailable_value'} THEN cc."foo" ELSE c."foo" END`,
-		MSSQLDialect{}.BuildProcessToastColExpression(columns.NewColumn("foo", typing.Struct)),
+		`COALESCE(cc."foo", {}) != {'key': '__debezium_unavailable_value'}`,
+		MSSQLDialect{}.BuildIsNotToastValueExpression(columns.NewColumn("foo", typing.Struct)),
 	)
 }
 

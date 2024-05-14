@@ -127,14 +127,13 @@ func (RedshiftDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, column
 	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 
-func (rd RedshiftDialect) BuildProcessToastColExpression(column columns.Column) string {
+func (rd RedshiftDialect) BuildIsNotToastValueExpression(column columns.Column) string {
 	colName := rd.QuoteIdentifier(column.Name())
 	if column.KindDetails == typing.Struct {
-		return fmt.Sprintf(`CASE WHEN COALESCE(cc.%s != JSON_PARSE('{"key":"%s"}'), true) THEN cc.%s ELSE c.%s END`,
-			colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
+		return fmt.Sprintf(`COALESCE(cc.%s != JSON_PARSE('{"key":"%s"}'), true)`,
+			colName, constants.ToastUnavailableValuePlaceholder)
 	}
-	return fmt.Sprintf("CASE WHEN COALESCE(cc.%s != '%s', true) THEN cc.%s ELSE c.%s END",
-		colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
+	return fmt.Sprintf("COALESCE(cc.%s != '%s', true)", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
 func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {

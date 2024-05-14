@@ -161,15 +161,13 @@ func (MSSQLDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, columnOp 
 	return fmt.Sprintf("ALTER TABLE %s %s %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 
-func (md MSSQLDialect) BuildProcessToastColExpression(column columns.Column) string {
+func (md MSSQLDialect) BuildIsNotToastValueExpression(column columns.Column) string {
 	colName := md.QuoteIdentifier(column.Name())
 	// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
 	if column.KindDetails == typing.Struct {
-		return fmt.Sprintf("CASE WHEN COALESCE(cc.%s, {}) != {'key': '%s'} THEN cc.%s ELSE c.%s END",
-			colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
+		return fmt.Sprintf("COALESCE(cc.%s, {}) != {'key': '%s'}", colName, constants.ToastUnavailableValuePlaceholder)
 	}
-	return fmt.Sprintf("CASE WHEN COALESCE(cc.%s, '') != '%s' THEN cc.%s ELSE c.%s END", colName,
-		constants.ToastUnavailableValuePlaceholder, colName, colName)
+	return fmt.Sprintf("COALESCE(cc.%s, '') != '%s'", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
 func (MSSQLDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {

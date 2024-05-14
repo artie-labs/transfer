@@ -204,14 +204,14 @@ func TestQuoteIdentifiers(t *testing.T) {
 	assert.Equal(t, []string{`"a"`, `"b"`, `"c"`}, sql.QuoteIdentifiers([]string{"a", "b", "c"}, RedshiftDialect{}))
 }
 
-func TestRedshiftDialect_BuildProcessToastColExpression(t *testing.T) {
+func TestRedshiftDialect_BuildIsNotToastValueExpression(t *testing.T) {
 	assert.Equal(t,
-		`CASE WHEN COALESCE(cc."bar" != '__debezium_unavailable_value', true) THEN cc."bar" ELSE c."bar" END`,
-		RedshiftDialect{}.BuildProcessToastColExpression(columns.NewColumn("bar", typing.Invalid)),
+		`COALESCE(cc."bar" != '__debezium_unavailable_value', true)`,
+		RedshiftDialect{}.BuildIsNotToastValueExpression(columns.NewColumn("bar", typing.Invalid)),
 	)
 	assert.Equal(t,
-		`CASE WHEN COALESCE(cc."foo" != JSON_PARSE('{"key":"__debezium_unavailable_value"}'), true) THEN cc."foo" ELSE c."foo" END`,
-		RedshiftDialect{}.BuildProcessToastColExpression(columns.NewColumn("foo", typing.Struct)),
+		`COALESCE(cc."foo" != JSON_PARSE('{"key":"__debezium_unavailable_value"}'), true)`,
+		RedshiftDialect{}.BuildIsNotToastValueExpression(columns.NewColumn("foo", typing.Struct)),
 	)
 }
 

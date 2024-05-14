@@ -200,14 +200,14 @@ func TestBigQueryDialect_BuildAlterColumnQuery(t *testing.T) {
 	)
 }
 
-func TestBigQueryDialect_BuildProcessToastColExpression(t *testing.T) {
+func TestBigQueryDialect_BuildIsNotToastValueExpression(t *testing.T) {
 	assert.Equal(t,
-		"CASE WHEN COALESCE(cc.`bar` != '__debezium_unavailable_value', true) THEN cc.`bar` ELSE c.`bar` END",
-		BigQueryDialect{}.BuildProcessToastColExpression(columns.NewColumn("bar", typing.Invalid)),
+		"COALESCE(cc.`bar` != '__debezium_unavailable_value', true)",
+		BigQueryDialect{}.BuildIsNotToastValueExpression(columns.NewColumn("bar", typing.Invalid)),
 	)
 	assert.Equal(t,
-		"CASE WHEN COALESCE(TO_JSON_STRING(cc.`foo`) != '{\"key\":\"__debezium_unavailable_value\"}', true) THEN cc.`foo` ELSE c.`foo` END",
-		BigQueryDialect{}.BuildProcessToastColExpression(columns.NewColumn("foo", typing.Struct)),
+		"COALESCE(TO_JSON_STRING(cc.`foo`) != '{\"key\":\"__debezium_unavailable_value\"}', true)",
+		BigQueryDialect{}.BuildIsNotToastValueExpression(columns.NewColumn("foo", typing.Struct)),
 	)
 }
 

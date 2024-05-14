@@ -144,15 +144,13 @@ func (BigQueryDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, column
 	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 
-func (bd BigQueryDialect) BuildProcessToastColExpression(column columns.Column) string {
+func (bd BigQueryDialect) BuildIsNotToastValueExpression(column columns.Column) string {
 	colName := bd.QuoteIdentifier(column.Name())
 	if column.KindDetails == typing.Struct {
-		return fmt.Sprintf(`CASE WHEN COALESCE(TO_JSON_STRING(cc.%s) != '{"key":"%s"}', true) THEN cc.%s ELSE c.%s END`,
-			colName, constants.ToastUnavailableValuePlaceholder,
-			colName, colName)
+		return fmt.Sprintf(`COALESCE(TO_JSON_STRING(cc.%s) != '{"key":"%s"}', true)`,
+			colName, constants.ToastUnavailableValuePlaceholder)
 	}
-	return fmt.Sprintf("CASE WHEN COALESCE(cc.%s != '%s', true) THEN cc.%s ELSE c.%s END",
-		colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
+	return fmt.Sprintf("COALESCE(cc.%s != '%s', true)", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
 func (bd BigQueryDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
