@@ -16,6 +16,11 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
+const (
+	srcAlias  = "cc"
+	destAlias = "c"
+)
+
 type SnowflakeDialect struct{}
 
 func (sd SnowflakeDialect) QuoteIdentifier(identifier string) string {
@@ -214,7 +219,7 @@ func (sd SnowflakeDialect) BuildMergeQueries(
 		idempotentClause = fmt.Sprintf("AND cc.%s >= c.%s ", idempotentKey, idempotentKey)
 	}
 
-	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, "c", "cc", sql.Equal, sd)
+	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, destAlias, srcAlias, sql.Equal, sd)
 
 	subQuery = fmt.Sprintf("( %s )", subQuery)
 

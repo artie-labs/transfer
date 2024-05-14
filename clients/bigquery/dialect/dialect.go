@@ -15,9 +15,14 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-const BQStreamingTimeFormat = "15:04:05"
+const (
+	srcAlias  = "cc"
+	destAlias = "c"
 
-const bqLayout = "2006-01-02 15:04:05 MST"
+	BQStreamingTimeFormat = "15:04:05"
+
+	bqLayout = "2006-01-02 15:04:05 MST"
+)
 
 func BQExpiresDate(time time.Time) string {
 	// BigQuery expects the timestamp to look in this format: 2023-01-01 00:00:00 UTC
@@ -222,7 +227,7 @@ func (bd BigQueryDialect) BuildMergeQueries(
 		// We'll need to escape the primary key as well.
 		quotedPrimaryKey := bd.QuoteIdentifier(primaryKey.Name())
 
-		equalitySQL := sql.BuildColumnComparison(primaryKey, "c", "cc", sql.Equal, bd)
+		equalitySQL := sql.BuildColumnComparison(primaryKey, destAlias, srcAlias, sql.Equal, bd)
 
 		if primaryKey.KindDetails.Kind == typing.Struct.Kind {
 			// BigQuery requires special casting to compare two JSON objects.
