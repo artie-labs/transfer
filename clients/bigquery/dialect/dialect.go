@@ -1,14 +1,17 @@
 package dialect
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
@@ -192,4 +195,87 @@ func (bd BigQueryDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableId
 
 	parts = append(parts, fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName()))
 	return parts
+}
+
+func (bd BigQueryDialect) BuildMergeQueries(
+	tableID sql.TableIdentifier,
+	subQuery string,
+	idempotentKey string,
+	primaryKeys []columns.Column,
+	additionalEqualityStrings []string,
+	cols []columns.Column,
+	softDelete bool,
+	_ *bool,
+) ([]string, error) {
+	// We should not need idempotency key for DELETE
+	// This is based on the assumption that the primary key would be atomically increasing or UUID based
+	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
+	// However, there may be edge cases where folks end up restoring deleted rows (which will contain the same PK).
+
+	// We also need to do staged table's idempotency key is GTE target table's idempotency key
+	// This is because Snowflake does not respect NS granularity.
+	var idempotentClause string
+	if idempotentKey != "" {
+		idempotentClause = fmt.Sprintf("AND cc.%s >= c.%s ", idempotentKey, idempotentKey)
+	}
+
+	var equalitySQLParts []string
+	for _, primaryKey := range primaryKeys {
+		// We'll need to escape the primary key as well.
+		quotedPrimaryKey := bd.QuoteIdentifier(primaryKey.Name())
+
+		equalitySQL := fmt.Sprintf("c.%s = cc.%s", quotedPrimaryKey, quotedPrimaryKey)
+
+		if primaryKey.KindDetails.Kind == typing.Struct.Kind {
+			// BigQuery requires special casting to compare two JSON objects.
+			equalitySQL = fmt.Sprintf("TO_JSON_STRING(c.%s) = TO_JSON_STRING(cc.%s)", quotedPrimaryKey, quotedPrimaryKey)
+		}
+
+		equalitySQLParts = append(equalitySQLParts, equalitySQL)
+	}
+
+	if len(additionalEqualityStrings) > 0 {
+		equalitySQLParts = append(equalitySQLParts, additionalEqualityStrings...)
+	}
+
+	if softDelete {
+		return []string{fmt.Sprintf(`
+MERGE INTO %s c USING %s AS cc ON %s
+WHEN MATCHED %sTHEN UPDATE SET %s
+WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
+			tableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " and "),
+			// Update + Soft Deletion
+			idempotentClause, columns.BuildColumnsUpdateFragment(cols, bd),
+			// Insert
+			bd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(columns.QuoteColumns(cols, bd), ","),
+			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
+				Vals:      columns.QuoteColumns(cols, bd),
+				Separator: ",",
+				Prefix:    "cc.",
+			}))}, nil
+	}
+
+	// We also need to remove __artie flags since it does not exist in the destination table
+	cols, removed := columns.RemoveDeleteColumnMarker(cols)
+	if !removed {
+		return []string{}, errors.New("artie delete flag doesn't exist")
+	}
+
+	return []string{fmt.Sprintf(`
+MERGE INTO %s c USING %s AS cc ON %s
+WHEN MATCHED AND cc.%s THEN DELETE
+WHEN MATCHED AND IFNULL(cc.%s, false) = false %sTHEN UPDATE SET %s
+WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
+		tableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " and "),
+		// Delete
+		bd.QuoteIdentifier(constants.DeleteColumnMarker),
+		// Update
+		bd.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, columns.BuildColumnsUpdateFragment(cols, bd),
+		// Insert
+		bd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(columns.QuoteColumns(cols, bd), ","),
+		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
+			Vals:      columns.QuoteColumns(cols, bd),
+			Separator: ",",
+			Prefix:    "cc.",
+		}))}, nil
 }

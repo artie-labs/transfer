@@ -209,6 +209,17 @@ func (m *MergeArgument) BuildStatements() ([]string, error) {
 	}
 
 	switch specificDialect := m.Dialect.(type) {
+	case bigQueryDialect.BigQueryDialect:
+		return specificDialect.BuildMergeQueries(
+			m.TableID,
+			m.SubQuery,
+			m.IdempotentKey,
+			m.PrimaryKeys,
+			m.AdditionalEqualityStrings,
+			m.Columns,
+			m.SoftDelete,
+			m.ContainsHardDeletes,
+		)
 	case redshiftDialect.RedshiftDialect:
 		return m.buildRedshiftStatements()
 	case mssqlDialect.MSSQLDialect:
