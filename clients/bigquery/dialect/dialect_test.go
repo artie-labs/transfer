@@ -212,10 +212,11 @@ func TestBigQueryDialect_BuildIsNotToastValueExpression(t *testing.T) {
 }
 
 func TestBigQueryDialect_BuildMergeQueries_TempTable(t *testing.T) {
-	var cols columns.Columns
-	cols.AddColumn(columns.NewColumn("order_id", typing.Integer))
-	cols.AddColumn(columns.NewColumn("name", typing.String))
-	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
+	var cols = []columns.Column{
+		columns.NewColumn("order_id", typing.Integer),
+		columns.NewColumn("name", typing.String),
+		columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean),
+	}
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns("customers.orders")
@@ -224,9 +225,9 @@ func TestBigQueryDialect_BuildMergeQueries_TempTable(t *testing.T) {
 		fakeTableID,
 		"customers.orders_tmp",
 		"",
-		[]columns.Column{columns.NewColumn("order_id", typing.Invalid)},
+		[]columns.Column{cols[0]},
 		nil,
-		cols.ValidColumns(),
+		cols,
 		false,
 		false,
 	)
@@ -237,6 +238,64 @@ func TestBigQueryDialect_BuildMergeQueries_TempTable(t *testing.T) {
 		"WHEN MATCHED AND cc.`__artie_delete` THEN DELETE",
 		"WHEN MATCHED AND IFNULL(cc.`__artie_delete`, false) = false THEN UPDATE SET `order_id`=cc.`order_id`,`name`=cc.`name`",
 		"WHEN NOT MATCHED AND IFNULL(cc.`__artie_delete`, false) = false THEN INSERT (`order_id`,`name`) VALUES (cc.`order_id`,cc.`name`);"},
+		strings.Split(strings.TrimSpace(statements[0]), "\n"))
+}
+
+func TestBigQueryDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
+	var cols = []columns.Column{
+		columns.NewColumn("order_id", typing.Integer),
+		columns.NewColumn("name", typing.String),
+		columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean),
+	}
+
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("customers.orders")
+
+	statements, err := BigQueryDialect{}.BuildMergeQueries(
+		fakeTableID,
+		"{SUB_QUERY}",
+		"",
+		[]columns.Column{cols[0]},
+		nil,
+		cols,
+		true,
+		false,
+	)
+	assert.NoError(t, err)
+	assert.Len(t, statements, 1)
+	assert.Equal(t, []string{
+		"MERGE INTO customers.orders c USING {SUB_QUERY} AS cc ON c.`order_id` = cc.`order_id`",
+		"WHEN MATCHED THEN UPDATE SET `order_id`=cc.`order_id`,`name`=cc.`name`,`__artie_delete`=cc.`__artie_delete`",
+		"WHEN NOT MATCHED AND IFNULL(cc.`__artie_delete`, false) = false THEN INSERT (`order_id`,`name`,`__artie_delete`) VALUES (cc.`order_id`,cc.`name`,cc.`__artie_delete`);"},
+		strings.Split(strings.TrimSpace(statements[0]), "\n"))
+}
+
+func TestBigQueryDialect_BuildMergeQueries_IdempotentKey(t *testing.T) {
+	var cols = []columns.Column{
+		columns.NewColumn("order_id", typing.Integer),
+		columns.NewColumn("name", typing.String),
+		columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean),
+	}
+
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("customers.orders")
+
+	statements, err := BigQueryDialect{}.BuildMergeQueries(
+		fakeTableID,
+		"{SUB_QUERY}",
+		"idempotent_key",
+		[]columns.Column{cols[0]},
+		nil,
+		cols,
+		true,
+		false,
+	)
+	assert.NoError(t, err)
+	assert.Len(t, statements, 1)
+	assert.Equal(t, []string{
+		"MERGE INTO customers.orders c USING {SUB_QUERY} AS cc ON c.`order_id` = cc.`order_id`",
+		"WHEN MATCHED AND cc.idempotent_key >= c.idempotent_key THEN UPDATE SET `order_id`=cc.`order_id`,`name`=cc.`name`,`__artie_delete`=cc.`__artie_delete`",
+		"WHEN NOT MATCHED AND IFNULL(cc.`__artie_delete`, false) = false THEN INSERT (`order_id`,`name`,`__artie_delete`) VALUES (cc.`order_id`,cc.`name`,cc.`__artie_delete`);"},
 		strings.Split(strings.TrimSpace(statements[0]), "\n"))
 }
 
