@@ -54,7 +54,7 @@ func TestMergeStatementSoftDelete(t *testing.T) {
 			SoftDelete:    true,
 		}
 
-		statements, err := mergeArg.buildDefaultStatements()
+		statements, err := mergeArg.BuildStatements()
 		assert.Len(t, statements, 1)
 		mergeSQL := statements[0]
 		assert.NoError(t, err)
@@ -106,7 +106,7 @@ func TestMergeStatement(t *testing.T) {
 		SoftDelete:    false,
 	}
 
-	statements, err := mergeArg.buildDefaultStatements()
+	statements, err := mergeArg.BuildStatements()
 	assert.Len(t, statements, 1)
 	mergeSQL := statements[0]
 	assert.NoError(t, err)
@@ -157,7 +157,7 @@ func TestMergeStatementIdempotentKey(t *testing.T) {
 		SoftDelete:    false,
 	}
 
-	statements, err := mergeArg.buildDefaultStatements()
+	statements, err := mergeArg.BuildStatements()
 	assert.Len(t, statements, 1)
 	mergeSQL := statements[0]
 	assert.NoError(t, err)
@@ -205,7 +205,7 @@ func TestMergeStatementCompositeKey(t *testing.T) {
 		SoftDelete: false,
 	}
 
-	statements, err := mergeArg.buildDefaultStatements()
+	statements, err := mergeArg.BuildStatements()
 	assert.Len(t, statements, 1)
 	mergeSQL := statements[0]
 	assert.NoError(t, err)
@@ -257,7 +257,7 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 		SoftDelete: false,
 	}
 
-	statements, err := mergeArg.buildDefaultStatements()
+	statements, err := mergeArg.BuildStatements()
 	assert.Len(t, statements, 1)
 	mergeSQL := statements[0]
 	assert.NoError(t, err)
