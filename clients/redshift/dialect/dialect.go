@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	srcAlias  = "cc"
-	destAlias = "c"
+	stagingAlias = "cc"
+	targetAlias  = "c"
 )
 
 type RedshiftDialect struct{}
@@ -208,7 +208,7 @@ func (rd RedshiftDialect) buildMergeInsertQuery(
 			Prefix:    "cc.",
 		}), subQuery,
 		// LEFT JOIN table on pk(s)
-		tableID.FullyQualifiedName(), strings.Join(sql.BuildColumnComparisons(primaryKeys, destAlias, srcAlias, sql.Equal, rd), " AND "),
+		tableID.FullyQualifiedName(), strings.Join(sql.BuildColumnComparisons(primaryKeys, targetAlias, stagingAlias, sql.Equal, rd), " AND "),
 		// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
 		rd.QuoteIdentifier(primaryKeys[0].Name()),
 	)

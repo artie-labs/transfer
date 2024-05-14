@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	srcAlias  = "cc"
-	destAlias = "c"
+	stagingAlias = "cc"
+	targetAlias  = "c"
 
 	BQStreamingTimeFormat = "15:04:05"
 
@@ -227,7 +227,7 @@ func (bd BigQueryDialect) BuildMergeQueries(
 		// We'll need to escape the primary key as well.
 		quotedPrimaryKey := bd.QuoteIdentifier(primaryKey.Name())
 
-		equalitySQL := sql.BuildColumnComparison(primaryKey, destAlias, srcAlias, sql.Equal, bd)
+		equalitySQL := sql.BuildColumnComparison(primaryKey, targetAlias, stagingAlias, sql.Equal, bd)
 
 		if primaryKey.KindDetails.Kind == typing.Struct.Kind {
 			// BigQuery requires special casting to compare two JSON objects.

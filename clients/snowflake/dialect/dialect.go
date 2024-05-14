@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	srcAlias  = "cc"
-	destAlias = "c"
+	stagingAlias = "cc"
+	targetAlias  = "c"
 )
 
 type SnowflakeDialect struct{}
@@ -219,7 +219,7 @@ func (sd SnowflakeDialect) BuildMergeQueries(
 		idempotentClause = fmt.Sprintf("AND cc.%s >= c.%s ", idempotentKey, idempotentKey)
 	}
 
-	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, destAlias, srcAlias, sql.Equal, sd)
+	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, targetAlias, stagingAlias, sql.Equal, sd)
 
 	subQuery = fmt.Sprintf("( %s )", subQuery)
 
