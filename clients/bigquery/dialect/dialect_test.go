@@ -9,7 +9,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/ptr"
-	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -210,79 +209,6 @@ func TestBigQueryDialect_BuildIsNotToastValueExpression(t *testing.T) {
 		"COALESCE(TO_JSON_STRING(cc.`foo`) != '{\"key\":\"__debezium_unavailable_value\"}', true)",
 		BigQueryDialect{}.BuildIsNotToastValueExpression("cc", columns.NewColumn("foo", typing.Struct)),
 	)
-}
-
-func TestQuoteColumns(t *testing.T) {
-	assert.Equal(t, []string{}, sql.QuoteColumns(nil, BigQueryDialect{}))
-	cols := []columns.Column{columns.NewColumn("a", typing.Invalid), columns.NewColumn("b", typing.Invalid)}
-	assert.Equal(t, []string{"`a`", "`b`"}, sql.QuoteColumns(cols, BigQueryDialect{}))
-}
-
-func TestBuildColumnsUpdateFragment(t *testing.T) {
-	var lastCaseColTypes []columns.Column
-	lastCaseCols := []string{"a1", "b2", "c3"}
-	for _, lastCaseCol := range lastCaseCols {
-		kd := typing.String
-		var toast bool
-		// a1 - struct + toast, b2 - string + toast, c3 = regular string.
-		if lastCaseCol == "a1" {
-			kd = typing.Struct
-			toast = true
-		} else if lastCaseCol == "b2" {
-			toast = true
-		}
-
-		column := columns.NewColumn(lastCaseCol, kd)
-		column.ToastColumn = toast
-		lastCaseColTypes = append(lastCaseColTypes, column)
-	}
-
-	var lastCaseEscapeTypes []columns.Column
-	lastCaseColsEsc := []string{"a1", "b2", "c3", "start", "select"}
-	for _, lastCaseColEsc := range lastCaseColsEsc {
-		kd := typing.String
-		var toast bool
-		// a1 - struct + toast, b2 - string + toast, c3 = regular string.
-		if lastCaseColEsc == "a1" {
-			kd = typing.Struct
-			toast = true
-		} else if lastCaseColEsc == "b2" {
-			toast = true
-		} else if lastCaseColEsc == "start" {
-			kd = typing.Struct
-			toast = true
-		}
-
-		column := columns.NewColumn(lastCaseColEsc, kd)
-		column.ToastColumn = toast
-		lastCaseEscapeTypes = append(lastCaseEscapeTypes, column)
-	}
-
-	lastCaseEscapeTypes = append(lastCaseEscapeTypes, columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
-
-	key := `{"key":"__debezium_unavailable_value"}`
-	testCases := []struct {
-		name           string
-		columns        []columns.Column
-		expectedString string
-	}{
-		{
-			name:           "struct, string and toast string (bigquery)",
-			columns:        lastCaseColTypes,
-			expectedString: "`a1`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`a1`) != '{\"key\":\"__debezium_unavailable_value\"}', true) THEN cc.`a1` ELSE c.`a1` END,`b2`= CASE WHEN COALESCE(cc.`b2` != '__debezium_unavailable_value', true) THEN cc.`b2` ELSE c.`b2` END,`c3`=cc.`c3`",
-		},
-		{
-			name:    "struct, string and toast string (bigquery) w/ reserved keywords",
-			columns: lastCaseEscapeTypes,
-			expectedString: fmt.Sprintf("`a1`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`a1`) != '%s', true) THEN cc.`a1` ELSE c.`a1` END,`b2`= CASE WHEN COALESCE(cc.`b2` != '__debezium_unavailable_value', true) THEN cc.`b2` ELSE c.`b2` END,`c3`=cc.`c3`,%s,%s",
-				key, fmt.Sprintf("`start`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`start`) != '%s', true) THEN cc.`start` ELSE c.`start` END", key), "`select`=cc.`select`,`__artie_delete`=cc.`__artie_delete`"),
-		},
-	}
-
-	for _, _testCase := range testCases {
-		actualQuery := sql.BuildColumnsUpdateFragment(_testCase.columns, "cc", "c", BigQueryDialect{})
-		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
-	}
 }
 
 func TestBigQueryDialect_BuildMergeQueries_TempTable(t *testing.T) {

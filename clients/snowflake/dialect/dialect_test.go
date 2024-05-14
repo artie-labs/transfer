@@ -9,7 +9,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/ptr"
-	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -256,29 +255,6 @@ func TestSnowflakeDialect_BuildIsNotToastValueExpression(t *testing.T) {
 		`COALESCE(cc."FOO" != {'key': '__debezium_unavailable_value'}, true)`,
 		SnowflakeDialect{}.BuildIsNotToastValueExpression("cc", columns.NewColumn("foo", typing.Struct)),
 	)
-}
-
-func TestQuoteColumns(t *testing.T) {
-	assert.Equal(t, []string{}, sql.QuoteColumns(nil, SnowflakeDialect{}))
-	cols := []columns.Column{columns.NewColumn("a", typing.Invalid), columns.NewColumn("b", typing.Invalid)}
-	assert.Equal(t, []string{`"A"`, `"B"`}, sql.QuoteColumns(cols, SnowflakeDialect{}))
-}
-
-func TestBuildColumnsUpdateFragment(t *testing.T) {
-	var stringAndToastCols []columns.Column
-	for _, col := range []string{"foo", "bar"} {
-		var toastCol bool
-		if col == "foo" {
-			toastCol = true
-		}
-
-		column := columns.NewColumn(col, typing.String)
-		column.ToastColumn = toastCol
-		stringAndToastCols = append(stringAndToastCols, column)
-	}
-
-	actualQuery := sql.BuildColumnsUpdateFragment(stringAndToastCols, "cc", "c", SnowflakeDialect{})
-	assert.Equal(t, `"FOO"= CASE WHEN COALESCE(cc."FOO" != '__debezium_unavailable_value', true) THEN cc."FOO" ELSE c."FOO" END,"BAR"=cc."BAR"`, actualQuery)
 }
 
 func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
