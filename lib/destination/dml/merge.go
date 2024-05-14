@@ -1,7 +1,6 @@
 package dml
 
 import (
-	"errors"
 	"fmt"
 
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
