@@ -8,8 +8,49 @@ import (
 	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
+
+func DefaultValue(c columns.Column, dialect sql.Dialect, additionalDateFmts []string) (any, error) {
+	if c.RawDefaultValue() == nil {
+		return c.RawDefaultValue(), nil
+	}
+
+	switch c.KindDetails.Kind {
+	case typing.Struct.Kind, typing.Array.Kind:
+		return dialect.EscapeStruct(fmt.Sprint(c.RawDefaultValue())), nil
+	case typing.ETime.Kind:
+		if c.KindDetails.ExtendedTimeDetails == nil {
+			return nil, fmt.Errorf("column kind details for extended time is nil")
+		}
+
+		extTime, err := ext.ParseFromInterface(c.RawDefaultValue(), additionalDateFmts)
+		if err != nil {
+			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", c.RawDefaultValue(), err)
+		}
+
+		switch c.KindDetails.ExtendedTimeDetails.Type {
+		case ext.TimeKindType:
+			return sql.QuoteLiteral(extTime.String(ext.PostgresTimeFormatNoTZ)), nil
+		default:
+			return sql.QuoteLiteral(extTime.String(c.KindDetails.ExtendedTimeDetails.Format)), nil
+		}
+	case typing.EDecimal.Kind:
+		val, isOk := c.RawDefaultValue().(*decimal.Decimal)
+		if !isOk {
+			return nil, fmt.Errorf("colVal is not type *decimal.Decimal")
+		}
+
+		return val.Value(), nil
+	case typing.String.Kind:
+		return sql.QuoteLiteral(fmt.Sprint(c.RawDefaultValue())), nil
+	}
+
+	return c.RawDefaultValue(), nil
+}
 
 func BackfillColumn(dwh destination.DataWarehouse, column columns.Column, tableID sql.TableIdentifier) error {
 	if !column.ShouldBackfill() {
@@ -22,7 +63,7 @@ func BackfillColumn(dwh destination.DataWarehouse, column columns.Column, tableI
 		return nil
 	}
 
-	defaultVal, err := column.DefaultValue(dwh.Dialect(), dwh.AdditionalDateFormats())
+	defaultVal, err := DefaultValue(column, dwh.Dialect(), dwh.AdditionalDateFormats())
 	if err != nil {
 		return fmt.Errorf("failed to escape default value: %w", err)
 	}

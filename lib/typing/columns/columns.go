@@ -91,6 +91,10 @@ func (c *Column) Name() string {
 	return c.name
 }
 
+func (c *Column) RawDefaultValue() any {
+	return c.defaultValue
+}
+
 type Columns struct {
 	columns []Column
 	sync.RWMutex
