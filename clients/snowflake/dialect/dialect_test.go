@@ -2,7 +2,9 @@ package dialect
 
 import (
 	"fmt"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
@@ -282,4 +284,258 @@ func TestBuildColumnsUpdateFragment(t *testing.T) {
 
 	actualQuery := sql.BuildColumnsUpdateFragment(stringAndToastCols, SnowflakeDialect{})
 	assert.Equal(t, `"FOO"= CASE WHEN COALESCE(cc."FOO" != '__debezium_unavailable_value', true) THEN cc."FOO" ELSE c."FOO" END,"BAR"=cc."BAR"`, actualQuery)
+}
+
+func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
+	// No idempotent key
+	fqTable := "database.schema.table"
+	cols := []string{
+		"id",
+		"bar",
+		"updated_at",
+		constants.DeleteColumnMarker,
+	}
+
+	tableValues := []string{
+		fmt.Sprintf("('%s', '%s', '%v', false)", "1", "456", time.Now().Round(0).Format(time.RFC3339)),
+		fmt.Sprintf("('%s', '%s', '%v', true)", "2", "bb", time.Now().Round(0).Format(time.RFC3339)), // Delete row 2.
+		fmt.Sprintf("('%s', '%s', '%v', false)", "3", "dd", time.Now().Round(0).Format(time.RFC3339)),
+	}
+
+	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
+	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
+		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
+
+	var _cols columns.Columns
+	_cols.AddColumn(columns.NewColumn("id", typing.String))
+	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
+
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns(fqTable)
+	for _, idempotentKey := range []string{"", "updated_at"} {
+		statements, err := SnowflakeDialect{}.BuildMergeQueries(
+			fakeTableID,
+			subQuery,
+			idempotentKey,
+			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
+			nil,
+			_cols.ValidColumns(),
+			true,
+			nil,
+		)
+		assert.Len(t, statements, 1)
+		mergeSQL := statements[0]
+		assert.NoError(t, err)
+		assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
+		// Soft deletion flag being passed.
+		assert.Contains(t, mergeSQL, `"__ARTIE_DELETE"=cc."__ARTIE_DELETE"`, mergeSQL)
+
+		assert.Equal(t, len(idempotentKey) > 0, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")))
+	}
+}
+
+func TestSnowflakeDialect_BuildMergeQueries(t *testing.T) {
+	// No idempotent key
+	fqTable := "database.schema.table"
+	colToTypes := map[string]typing.KindDetails{
+		"id":                         typing.String,
+		"bar":                        typing.String,
+		"updated_at":                 typing.String,
+		"start":                      typing.String,
+		constants.DeleteColumnMarker: typing.Boolean,
+	}
+
+	// This feels a bit round about, but this is because iterating over a map is not deterministic.
+	cols := []string{"id", "bar", "updated_at", "start", constants.DeleteColumnMarker}
+	var _cols columns.Columns
+	for _, col := range cols {
+		_cols.AddColumn(columns.NewColumn(col, colToTypes[col]))
+	}
+
+	tableValues := []string{
+		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "1", "456", "foo", time.Now().Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "2", "bb", "bar", time.Now().Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "3", "dd", "world", time.Now().Round(0).UTC()),
+	}
+
+	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
+	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
+		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
+
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns(fqTable)
+
+	statements, err := SnowflakeDialect{}.BuildMergeQueries(
+		fakeTableID,
+		subQuery,
+		"",
+		[]columns.Column{columns.NewColumn("id", typing.Invalid)},
+		nil,
+		_cols.ValidColumns(),
+		false,
+		nil,
+	)
+	assert.Len(t, statements, 1)
+	mergeSQL := statements[0]
+	assert.NoError(t, err)
+	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
+	assert.NotContains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", `"UPDATED_AT"`, `"UPDATED_AT"`), fmt.Sprintf("Idempotency key: %s", mergeSQL))
+	// Check primary keys clause
+	assert.Contains(t, mergeSQL, `AS cc ON c."ID" = cc."ID"`, mergeSQL)
+
+	// Check setting for update
+	assert.Contains(t, mergeSQL, `SET "ID"=cc."ID","BAR"=cc."BAR","UPDATED_AT"=cc."UPDATED_AT","START"=cc."START"`, mergeSQL)
+	// Check for INSERT
+	assert.Contains(t, mergeSQL, `"ID","BAR","UPDATED_AT","START"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `cc."ID",cc."BAR",cc."UPDATED_AT",cc."START"`, mergeSQL)
+}
+
+func TestSnowflakeDialect_BuildMergeQueries_IdempotentKey(t *testing.T) {
+	fqTable := "database.schema.table"
+	cols := []string{
+		"id",
+		"bar",
+		"updated_at",
+		constants.DeleteColumnMarker,
+	}
+
+	tableValues := []string{
+		fmt.Sprintf("('%s', '%s', '%v', false)", "1", "456", time.Now().Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%v', false)", "2", "bb", time.Now().Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%v', false)", "3", "dd", time.Now().Round(0).UTC()),
+	}
+
+	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
+	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
+		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
+
+	var _cols columns.Columns
+	_cols.AddColumn(columns.NewColumn("id", typing.String))
+	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
+
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns(fqTable)
+
+	statements, err := SnowflakeDialect{}.BuildMergeQueries(
+		fakeTableID,
+		subQuery,
+		"updated_at",
+		[]columns.Column{columns.NewColumn("id", typing.Invalid)},
+		nil,
+		_cols.ValidColumns(),
+		false,
+		nil,
+	)
+	assert.Len(t, statements, 1)
+	mergeSQL := statements[0]
+	assert.NoError(t, err)
+	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
+	assert.Contains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at"), fmt.Sprintf("Idempotency key: %s", mergeSQL))
+}
+
+func TestSnowflakeDialect_BuildMergeQueries_CompositeKey(t *testing.T) {
+	fqTable := "database.schema.table"
+	cols := []string{
+		"id",
+		"another_id",
+		"bar",
+		"updated_at",
+		constants.DeleteColumnMarker,
+	}
+
+	tableValues := []string{
+		fmt.Sprintf("('%s', '%s', '%s', '%v', false)", "1", "3", "456", time.Now().Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%s', '%v', false)", "2", "2", "bb", time.Now().Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%s', '%v', false)", "3", "1", "dd", time.Now().Round(0).UTC()),
+	}
+
+	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
+	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
+		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
+
+	var _cols columns.Columns
+	_cols.AddColumn(columns.NewColumn("id", typing.String))
+	_cols.AddColumn(columns.NewColumn("another_id", typing.String))
+	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
+
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns(fqTable)
+
+	statements, err := SnowflakeDialect{}.BuildMergeQueries(
+		fakeTableID,
+		subQuery,
+		"updated_at",
+		[]columns.Column{
+			columns.NewColumn("id", typing.Invalid),
+			columns.NewColumn("another_id", typing.Invalid),
+		},
+		nil,
+		_cols.ValidColumns(),
+		false,
+		nil,
+	)
+	assert.Len(t, statements, 1)
+	mergeSQL := statements[0]
+	assert.NoError(t, err)
+	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
+	assert.Contains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at"), fmt.Sprintf("Idempotency key: %s", mergeSQL))
+	assert.Contains(t, mergeSQL, `cc ON c."ID" = cc."ID" and c."ANOTHER_ID" = cc."ANOTHER_ID"`, mergeSQL)
+}
+
+func TestSnowflakeDialect_BuildMergeQueries_EscapePrimaryKeys(t *testing.T) {
+	// No idempotent key
+	fqTable := "database.schema.table"
+	colToTypes := map[string]typing.KindDetails{
+		"id":                         typing.String,
+		"group":                      typing.String,
+		"updated_at":                 typing.String,
+		"start":                      typing.String,
+		constants.DeleteColumnMarker: typing.Boolean,
+	}
+
+	// This feels a bit round about, but this is because iterating over a map is not deterministic.
+	cols := []string{"id", "group", "updated_at", "start", constants.DeleteColumnMarker}
+	var _cols columns.Columns
+	for _, col := range cols {
+		_cols.AddColumn(columns.NewColumn(col, colToTypes[col]))
+	}
+
+	tableValues := []string{
+		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "1", "456", "foo", time.Now().Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "2", "bb", "bar", time.Now().Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "3", "dd", "world", time.Now().Round(0).UTC()),
+	}
+
+	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
+	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
+		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
+
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns(fqTable)
+
+	statements, err := SnowflakeDialect{}.BuildMergeQueries(
+		fakeTableID,
+		subQuery,
+		"",
+		[]columns.Column{
+			columns.NewColumn("id", typing.Invalid),
+			columns.NewColumn("group", typing.Invalid),
+		},
+		nil,
+		_cols.ValidColumns(),
+		false,
+		nil,
+	)
+	assert.Len(t, statements, 1)
+	mergeSQL := statements[0]
+	assert.NoError(t, err)
+	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
+	assert.NotContains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", `"UPDATED_AT"`, `"UPDATED_AT"`), fmt.Sprintf("Idempotency key: %s", mergeSQL))
+	// Check primary keys clause
+	assert.Contains(t, mergeSQL, `AS cc ON c."ID" = cc."ID" and c."GROUP" = cc."GROUP"`, mergeSQL)
+	// Check setting for update
+	assert.Contains(t, mergeSQL, `SET "ID"=cc."ID","GROUP"=cc."GROUP","UPDATED_AT"=cc."UPDATED_AT","START"=cc."START"`, mergeSQL)
+	// Check for INSERT
+	assert.Contains(t, mergeSQL, `"ID","GROUP","UPDATED_AT","START"`, mergeSQL)
+	assert.Contains(t, mergeSQL, `cc."ID",cc."GROUP",cc."UPDATED_AT",cc."START"`, mergeSQL)
 }
