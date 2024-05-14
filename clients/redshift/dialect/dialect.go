@@ -270,13 +270,8 @@ func (rd RedshiftDialect) BuildMergeQueries(
 	_ []string,
 	cols []columns.Column,
 	softDelete bool,
-	containsHardDeletes *bool,
+	containsHardDeletes bool,
 ) ([]string, error) {
-	// ContainsHardDeletes is only used for Redshift, so we'll validate it now
-	if containsHardDeletes == nil {
-		return nil, fmt.Errorf("containsHardDeletes cannot be nil")
-	}
-
 	// We should not need idempotency key for DELETE
 	// This is based on the assumption that the primary key would be atomically increasing or UUID based
 	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
@@ -300,7 +295,7 @@ func (rd RedshiftDialect) BuildMergeQueries(
 		rd.buildMergeUpdateQuery(tableID, subQuery, primaryKeys, cols, idempotentKey, softDelete),
 	}
 
-	if *containsHardDeletes {
+	if containsHardDeletes {
 		parts = append(parts, rd.buildMergeDeleteQuery(tableID, subQuery, primaryKeys))
 	}
 
