@@ -238,11 +238,11 @@ WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
 			tableID.FullyQualifiedName(), subQuery, strings.Join(equalitySQLParts, " and "),
 			// Update + Soft Deletion
-			idempotentClause, columns.BuildColumnsUpdateFragment(cols, sd),
+			idempotentClause, sql.BuildColumnsUpdateFragment(cols, sd),
 			// Insert
-			sd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(columns.QuoteColumns(cols, sd), ","),
+			sd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, sd), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      columns.QuoteColumns(cols, sd),
+				Vals:      sql.QuoteColumns(cols, sd),
 				Separator: ",",
 				Prefix:    "cc.",
 			}))}, nil
@@ -263,11 +263,11 @@ WHEN NOT MATCHED AND IFNULL(cc.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 		// Delete
 		sd.QuoteIdentifier(constants.DeleteColumnMarker),
 		// Update
-		sd.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, columns.BuildColumnsUpdateFragment(cols, sd),
+		sd.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, sd),
 		// Insert
-		sd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(columns.QuoteColumns(cols, sd), ","),
+		sd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, sd), ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      columns.QuoteColumns(cols, sd),
+			Vals:      sql.QuoteColumns(cols, sd),
 			Separator: ",",
 			Prefix:    "cc.",
 		}))}, nil
