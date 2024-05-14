@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
@@ -23,13 +22,7 @@ func BuildColumnsUpdateFragment(columns []columns.Column, dialect Dialect) strin
 	for _, column := range columns {
 		colName := dialect.QuoteIdentifier(column.Name())
 		if column.ToastColumn {
-			var colValue string
-			if column.KindDetails == typing.Struct {
-				colValue = dialect.BuildProcessToastStructColExpression(column)
-			} else {
-				colValue = dialect.BuildProcessToastColExpression(column)
-			}
-			cols = append(cols, fmt.Sprintf("%s= %s", colName, colValue))
+			cols = append(cols, fmt.Sprintf("%s= %s", colName, dialect.BuildProcessToastColExpression(column)))
 		} else {
 			// This is to make it look like: objCol = cc.objCol
 			cols = append(cols, fmt.Sprintf("%s=cc.%s", colName, colName))

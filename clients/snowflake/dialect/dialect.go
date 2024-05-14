@@ -148,13 +148,11 @@ func (SnowflakeDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, colum
 
 func (sd SnowflakeDialect) BuildProcessToastColExpression(column columns.Column) string {
 	colName := sd.QuoteIdentifier(column.Name())
+	if column.KindDetails == typing.Struct {
+		return fmt.Sprintf("CASE WHEN COALESCE(cc.%s != {'key': '%s'}, true) THEN cc.%s ELSE c.%s END",
+			colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
+	}
 	return fmt.Sprintf("CASE WHEN COALESCE(cc.%s != '%s', true) THEN cc.%s ELSE c.%s END",
-		colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
-}
-
-func (sd SnowflakeDialect) BuildProcessToastStructColExpression(column columns.Column) string {
-	colName := sd.QuoteIdentifier(column.Name())
-	return fmt.Sprintf("CASE WHEN COALESCE(cc.%s != {'key': '%s'}, true) THEN cc.%s ELSE c.%s END",
 		colName, constants.ToastUnavailableValuePlaceholder, colName, colName)
 }
 

@@ -205,18 +205,13 @@ func TestQuoteIdentifiers(t *testing.T) {
 }
 
 func TestRedshiftDialect_BuildProcessToastColExpression(t *testing.T) {
-	assert.Equal(
-		t,
+	assert.Equal(t,
 		`CASE WHEN COALESCE(cc."bar" != '__debezium_unavailable_value', true) THEN cc."bar" ELSE c."bar" END`,
 		RedshiftDialect{}.BuildProcessToastColExpression(columns.NewColumn("bar", typing.Invalid)),
 	)
-}
-
-func TestRedshiftDialect_BuildProcessToastStructColExpression(t *testing.T) {
-	assert.Equal(
-		t,
+	assert.Equal(t,
 		`CASE WHEN COALESCE(cc."foo" != JSON_PARSE('{"key":"__debezium_unavailable_value"}'), true) THEN cc."foo" ELSE c."foo" END`,
-		RedshiftDialect{}.BuildProcessToastStructColExpression(columns.NewColumn("foo", typing.Invalid)),
+		RedshiftDialect{}.BuildProcessToastColExpression(columns.NewColumn("foo", typing.Struct)),
 	)
 }
 
