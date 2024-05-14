@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	srcAlias  = "cc"
-	destAlias = "c"
+	stagingAlias = "cc"
+	targetAlias  = "c"
 )
 
 type MSSQLDialect struct{}
@@ -194,7 +194,7 @@ func (md MSSQLDialect) BuildMergeQueries(
 		idempotentClause = fmt.Sprintf("AND cc.%s >= c.%s ", idempotentKey, idempotentKey)
 	}
 
-	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, destAlias, srcAlias, sql.Equal, md)
+	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, targetAlias, stagingAlias, sql.Equal, md)
 
 	if softDelete {
 		return []string{fmt.Sprintf(`
