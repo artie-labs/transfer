@@ -32,3 +32,23 @@ func BuildColumnsUpdateFragment(columns []columns.Column, dialect Dialect) strin
 
 	return strings.Join(cols, ",")
 }
+
+type Operator string
+
+const (
+	Equal              Operator = "="
+	GreaterThanOrEqual Operator = ">="
+)
+
+func BuildColumnComparison(column columns.Column, table1, table2 string, operator Operator, dialect Dialect) string {
+	quotedColumnName := dialect.QuoteIdentifier(column.Name())
+	return fmt.Sprintf("%s.%s %s %s.%s", table1, quotedColumnName, operator, table2, quotedColumnName)
+}
+
+func BuildColumnComparisons(_columns []columns.Column, table1, table2 string, operator Operator, dialect Dialect) []string {
+	var result = make([]string, len(_columns))
+	for i, column := range _columns {
+		result[i] = BuildColumnComparison(column, table1, table2, operator, dialect)
+	}
+	return result
+}

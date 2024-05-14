@@ -189,13 +189,7 @@ func (md MSSQLDialect) BuildMergeQueries(
 		idempotentClause = fmt.Sprintf("AND cc.%s >= c.%s ", idempotentKey, idempotentKey)
 	}
 
-	var equalitySQLParts []string
-	for _, primaryKey := range primaryKeys {
-		// We'll need to escape the primary key as well.
-		quotedPrimaryKey := md.QuoteIdentifier(primaryKey.Name())
-		equalitySQL := fmt.Sprintf("c.%s = cc.%s", quotedPrimaryKey, quotedPrimaryKey)
-		equalitySQLParts = append(equalitySQLParts, equalitySQL)
-	}
+	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, "c", "cc", sql.Equal, md)
 
 	if softDelete {
 		return []string{fmt.Sprintf(`

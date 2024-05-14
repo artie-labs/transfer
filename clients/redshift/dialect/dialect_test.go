@@ -264,13 +264,6 @@ func TestBuildColumnsUpdateFragment(t *testing.T) {
 	}
 }
 
-func TestRedshiftDialect_EqualitySQLParts(t *testing.T) {
-	assert.Equal(t,
-		[]string{`c."col1" = cc."col1"`, `c."col2" = cc."col2"`},
-		RedshiftDialect{}.equalitySQLParts([]columns.Column{columns.NewColumn("col1", typing.Invalid), columns.NewColumn("col2", typing.Invalid)}),
-	)
-}
-
 func TestRedshiftDialect_BuildMergeInsertQuery(t *testing.T) {
 	cols := []columns.Column{
 		columns.NewColumn("col1", typing.Invalid),

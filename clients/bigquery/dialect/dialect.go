@@ -222,7 +222,7 @@ func (bd BigQueryDialect) BuildMergeQueries(
 		// We'll need to escape the primary key as well.
 		quotedPrimaryKey := bd.QuoteIdentifier(primaryKey.Name())
 
-		equalitySQL := fmt.Sprintf("c.%s = cc.%s", quotedPrimaryKey, quotedPrimaryKey)
+		equalitySQL := sql.BuildColumnComparison(primaryKey, "c", "cc", sql.Equal, bd)
 
 		if primaryKey.KindDetails.Kind == typing.Struct.Kind {
 			// BigQuery requires special casting to compare two JSON objects.
