@@ -204,14 +204,14 @@ func TestQuoteIdentifiers(t *testing.T) {
 	assert.Equal(t, []string{`"a"`, `"b"`, `"c"`}, sql.QuoteIdentifiers([]string{"a", "b", "c"}, RedshiftDialect{}))
 }
 
-func TestRedshiftDialect_BuildIsToastColExpression(t *testing.T) {
+func TestRedshiftDialect_BuildIsNotToastValueExpression(t *testing.T) {
 	assert.Equal(t,
 		`COALESCE(cc."bar" != '__debezium_unavailable_value', true)`,
-		RedshiftDialect{}.BuildIsToastColExpression(columns.NewColumn("bar", typing.Invalid)),
+		RedshiftDialect{}.BuildIsNotToastValueExpression(columns.NewColumn("bar", typing.Invalid)),
 	)
 	assert.Equal(t,
 		`COALESCE(cc."foo" != JSON_PARSE('{"key":"__debezium_unavailable_value"}'), true)`,
-		RedshiftDialect{}.BuildIsToastColExpression(columns.NewColumn("foo", typing.Struct)),
+		RedshiftDialect{}.BuildIsNotToastValueExpression(columns.NewColumn("foo", typing.Struct)),
 	)
 }
 

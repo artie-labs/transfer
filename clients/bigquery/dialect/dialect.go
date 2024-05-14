@@ -144,7 +144,7 @@ func (BigQueryDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, column
 	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 
-func (bd BigQueryDialect) BuildIsToastColExpression(column columns.Column) string {
+func (bd BigQueryDialect) BuildIsNotToastValueExpression(column columns.Column) string {
 	colName := bd.QuoteIdentifier(column.Name())
 	if column.KindDetails == typing.Struct {
 		return fmt.Sprintf(`COALESCE(TO_JSON_STRING(cc.%s) != '{"key":"%s"}', true)`,
