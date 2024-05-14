@@ -128,7 +128,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 		primaryKeys = append(primaryKeys, column)
 	}
 	if len(primaryKeys) == 0 {
-		return fmt.Errorf("primary keys is empty")
+		return fmt.Errorf("primary keys cannot be empty")
 	}
 
 	validColumns := cols.ValidColumns()
