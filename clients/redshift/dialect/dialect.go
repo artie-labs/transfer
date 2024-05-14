@@ -132,7 +132,7 @@ func (RedshiftDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, column
 	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 
-func (rd RedshiftDialect) BuildIsNotToastValueExpression(column columns.Column, tableAlias string) string {
+func (rd RedshiftDialect) BuildIsNotToastValueExpression(tableAlias string, column columns.Column) string {
 	colName := rd.QuoteIdentifier(column.Name())
 	if column.KindDetails == typing.Struct {
 		return fmt.Sprintf(`COALESCE(%s.%s != JSON_PARSE('{"key":"%s"}'), true)`,

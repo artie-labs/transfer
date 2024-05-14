@@ -23,7 +23,7 @@ func BuildColumnsUpdateFragment(columns []columns.Column, stagingAlias, targetAl
 		colName := dialect.QuoteIdentifier(column.Name())
 		if column.ToastColumn {
 			cols = append(cols, fmt.Sprintf("%s= CASE WHEN %s THEN %s.%s ELSE %s.%s END",
-				colName, dialect.BuildIsNotToastValueExpression(column, stagingAlias), stagingAlias, colName, targetAlias, colName))
+				colName, dialect.BuildIsNotToastValueExpression(stagingAlias, column), stagingAlias, colName, targetAlias, colName))
 		} else {
 			// This is to make it look like: objCol = cc.objCol
 			cols = append(cols, fmt.Sprintf("%s=%s.%s", colName, stagingAlias, colName))
