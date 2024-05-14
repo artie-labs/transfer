@@ -220,6 +220,32 @@ func (rd RedshiftDialect) BuildMergeInsertQuery(
 	)
 }
 
+func (rd RedshiftDialect) BuildMergeUpdateQuery(
+	tableID sql.TableIdentifier,
+	subQuery string,
+	primaryKeys []columns.Column,
+	cols []columns.Column,
+	idempotentKey string,
+	softDelete bool,
+) string {
+	clauses := rd.EqualitySQLParts(primaryKeys)
+
+	if idempotentKey != "" {
+		clauses = append(clauses, fmt.Sprintf("cc.%s >= c.%s", idempotentKey, idempotentKey))
+	}
+
+	if !softDelete {
+		clauses = append(clauses, fmt.Sprintf("COALESCE(cc.%s, false) = false", rd.QuoteIdentifier(constants.DeleteColumnMarker)))
+	}
+
+	return fmt.Sprintf(`UPDATE %s AS c SET %s FROM %s AS cc WHERE %s;`,
+		// UPDATE table set col1 = cc. col1
+		tableID.FullyQualifiedName(), columns.BuildColumnsUpdateFragment(cols, rd),
+		// FROM staging WHERE join on PK(s)
+		subQuery, strings.Join(clauses, " AND "),
+	)
+}
+
 func (rd RedshiftDialect) BuildMergeDeleteQuery(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column) string {
 	return fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s AS cc WHERE cc.%s = true);`,
 		// DELETE from table where (pk_1, pk_2)
