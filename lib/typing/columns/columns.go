@@ -91,7 +91,7 @@ func (c *Column) Name() string {
 	return c.name
 }
 
-func (c *Column) RawDefaultValue() any {
+func (c *Column) DefaultValue() any {
 	return c.defaultValue
 }
 
