@@ -330,6 +330,28 @@ func TestColumn_DefaultValue(t *testing.T) {
 	}
 }
 
+func TestRedshiftDialect_EqualitySQLParts(t *testing.T) {
+	assert.Equal(t,
+		[]string{`c."col1" = cc."col1"`, `c."col2" = cc."col2"`},
+		RedshiftDialect{}.EqualitySQLParts([]columns.Column{columns.NewColumn("col1", typing.Invalid), columns.NewColumn("col2", typing.Invalid)}),
+	)
+}
+
+func TestRedshiftDialect_BuildMergeInsertQuery(t *testing.T) {
+	cols := []columns.Column{
+		columns.NewColumn("col1", typing.Invalid),
+		columns.NewColumn("col2", typing.Invalid),
+		columns.NewColumn("col3", typing.Invalid),
+	}
+
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("{TABLE_ID}")
+	assert.Equal(t,
+		`INSERT INTO {TABLE_ID} ("col1","col2","col3") SELECT cc."col1",cc."col2",cc."col3" FROM {SUB_QUERY} AS cc LEFT JOIN {TABLE_ID} AS c ON c."col1" = cc."col1" AND c."col3" = cc."col3" WHERE c."col1" IS NULL;`,
+		RedshiftDialect{}.BuildMergeInsertQuery(fakeTableID, "{SUB_QUERY}", []columns.Column{cols[0], cols[2]}, cols),
+	)
+}
+
 func TestRedshiftDialect_BuildMergeDeleteQuery(t *testing.T) {
 	cols := []columns.Column{
 		columns.NewColumn("col1", typing.Invalid),

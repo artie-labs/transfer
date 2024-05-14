@@ -272,35 +272,6 @@ func TestMergeStatementEscapePrimaryKeys(t *testing.T) {
 	assert.Contains(t, mergeSQL, `cc."ID",cc."GROUP",cc."UPDATED_AT",cc."START"`, mergeSQL)
 }
 
-func TestMergeArgument_RedshiftEqualitySQLParts(t *testing.T) {
-	mergeArg := MergeArgument{
-		PrimaryKeys: []columns.Column{columns.NewColumn("col1", typing.Invalid), columns.NewColumn("col2", typing.Invalid)},
-		Dialect:     redshiftDialect.RedshiftDialect{},
-	}
-	assert.Equal(t, []string{`c."col1" = cc."col1"`, `c."col2" = cc."col2"`}, mergeArg.redshiftEqualitySQLParts())
-}
-
-func TestMergeArgument_BuildRedshiftInsertQuery(t *testing.T) {
-	cols := []columns.Column{
-		columns.NewColumn("col1", typing.Invalid),
-		columns.NewColumn("col2", typing.Invalid),
-		columns.NewColumn("col3", typing.Invalid),
-	}
-
-	fakeTableID := &mocks.FakeTableIdentifier{}
-	fakeTableID.FullyQualifiedNameReturns("{TABLE_ID}")
-	mergeArg := MergeArgument{
-		TableID:     fakeTableID,
-		SubQuery:    "{SUB_QUERY}",
-		PrimaryKeys: []columns.Column{cols[0], cols[2]},
-		Dialect:     redshiftDialect.RedshiftDialect{},
-	}
-	assert.Equal(t,
-		`INSERT INTO {TABLE_ID} ("col1","col2","col3") SELECT cc."col1",cc."col2",cc."col3" FROM {SUB_QUERY} AS cc LEFT JOIN {TABLE_ID} AS c ON c."col1" = cc."col1" AND c."col3" = cc."col3" WHERE c."col1" IS NULL;`,
-		mergeArg.buildRedshiftInsertQuery(cols),
-	)
-}
-
 func TestMergeArgument_BuildRedshiftUpdateQuery(t *testing.T) {
 	testCases := []struct {
 		name          string

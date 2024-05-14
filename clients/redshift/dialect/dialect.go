@@ -187,6 +187,39 @@ func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableId
 	return parts
 }
 
+func (rd RedshiftDialect) EqualitySQLParts(primaryKeys []columns.Column) []string {
+	var equalitySQLParts []string
+	for _, primaryKey := range primaryKeys {
+		// We'll need to escape the primary key as well.
+		quotedPrimaryKey := rd.QuoteIdentifier(primaryKey.Name())
+		equalitySQL := fmt.Sprintf("c.%s = cc.%s", quotedPrimaryKey, quotedPrimaryKey)
+		equalitySQLParts = append(equalitySQLParts, equalitySQL)
+	}
+	return equalitySQLParts
+}
+
+func (rd RedshiftDialect) BuildMergeInsertQuery(
+	tableID sql.TableIdentifier,
+	subQuery string,
+	primaryKeys []columns.Column,
+	cols []columns.Column,
+) string {
+	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s AS cc LEFT JOIN %s AS c ON %s WHERE c.%s IS NULL;`,
+		// insert into target (col1, col2, col3)
+		tableID.FullyQualifiedName(), strings.Join(columns.QuoteColumns(cols, rd), ","),
+		// SELECT cc.col1, cc.col2, ... FROM staging as CC
+		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
+			Vals:      columns.QuoteColumns(cols, rd),
+			Separator: ",",
+			Prefix:    "cc.",
+		}), subQuery,
+		// LEFT JOIN table on pk(s)
+		tableID.FullyQualifiedName(), strings.Join(rd.EqualitySQLParts(primaryKeys), " AND "),
+		// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
+		rd.QuoteIdentifier(primaryKeys[0].Name()),
+	)
+}
+
 func (rd RedshiftDialect) BuildMergeDeleteQuery(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column) string {
 	return fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s AS cc WHERE cc.%s = true);`,
 		// DELETE from table where (pk_1, pk_2)

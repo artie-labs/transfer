@@ -67,36 +67,8 @@ func (m *MergeArgument) Valid() error {
 	return nil
 }
 
-func (m *MergeArgument) redshiftEqualitySQLParts() []string {
-	var equalitySQLParts []string
-	for _, primaryKey := range m.PrimaryKeys {
-		// We'll need to escape the primary key as well.
-		quotedPrimaryKey := m.Dialect.QuoteIdentifier(primaryKey.Name())
-		equalitySQL := fmt.Sprintf("c.%s = cc.%s", quotedPrimaryKey, quotedPrimaryKey)
-		equalitySQLParts = append(equalitySQLParts, equalitySQL)
-	}
-	return equalitySQLParts
-}
-
-func (m *MergeArgument) buildRedshiftInsertQuery(cols []columns.Column) string {
-	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s AS cc LEFT JOIN %s AS c ON %s WHERE c.%s IS NULL;`,
-		// insert into target (col1, col2, col3)
-		m.TableID.FullyQualifiedName(), strings.Join(columns.QuoteColumns(cols, m.Dialect), ","),
-		// SELECT cc.col1, cc.col2, ... FROM staging as CC
-		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      columns.QuoteColumns(cols, m.Dialect),
-			Separator: ",",
-			Prefix:    "cc.",
-		}), m.SubQuery,
-		// LEFT JOIN table on pk(s)
-		m.TableID.FullyQualifiedName(), strings.Join(m.redshiftEqualitySQLParts(), " AND "),
-		// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
-		m.Dialect.QuoteIdentifier(m.PrimaryKeys[0].Name()),
-	)
-}
-
 func (m *MergeArgument) buildRedshiftUpdateQuery(cols []columns.Column) string {
-	clauses := m.redshiftEqualitySQLParts()
+	clauses := redshiftDialect.RedshiftDialect{}.EqualitySQLParts(m.PrimaryKeys)
 
 	if m.IdempotentKey != "" {
 		clauses = append(clauses, fmt.Sprintf("cc.%s >= c.%s", m.IdempotentKey, m.IdempotentKey))
@@ -127,7 +99,7 @@ func (m *MergeArgument) buildRedshiftStatements() ([]string, error) {
 
 	if m.SoftDelete {
 		return []string{
-			m.buildRedshiftInsertQuery(m.Columns),
+			redshiftDialect.RedshiftDialect{}.BuildMergeInsertQuery(m.TableID, m.SubQuery, m.PrimaryKeys, m.Columns),
 			m.buildRedshiftUpdateQuery(m.Columns),
 		}, nil
 	}
@@ -139,7 +111,7 @@ func (m *MergeArgument) buildRedshiftStatements() ([]string, error) {
 	}
 
 	parts := []string{
-		m.buildRedshiftInsertQuery(columns),
+		redshiftDialect.RedshiftDialect{}.BuildMergeInsertQuery(m.TableID, m.SubQuery, m.PrimaryKeys, columns),
 		m.buildRedshiftUpdateQuery(columns),
 	}
 
