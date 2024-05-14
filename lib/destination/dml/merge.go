@@ -114,19 +114,6 @@ func (m *MergeArgument) buildRedshiftUpdateQuery(cols []columns.Column) string {
 	)
 }
 
-func (m *MergeArgument) buildRedshiftDeleteQuery() string {
-	return fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s AS cc WHERE cc.%s = true);`,
-		// DELETE from table where (pk_1, pk_2)
-		m.TableID.FullyQualifiedName(), strings.Join(columns.QuoteColumns(m.PrimaryKeys, m.Dialect), ","),
-		// IN (cc.pk_1, cc.pk_2) FROM staging
-		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      columns.QuoteColumns(m.PrimaryKeys, m.Dialect),
-			Separator: ",",
-			Prefix:    "cc.",
-		}), m.SubQuery, m.Dialect.QuoteIdentifier(constants.DeleteColumnMarker),
-	)
-}
-
 func (m *MergeArgument) buildRedshiftStatements() ([]string, error) {
 	// ContainsHardDeletes is only used for Redshift, so we'll validate it now
 	if m.ContainsHardDeletes == nil {
@@ -157,7 +144,7 @@ func (m *MergeArgument) buildRedshiftStatements() ([]string, error) {
 	}
 
 	if *m.ContainsHardDeletes {
-		parts = append(parts, m.buildRedshiftDeleteQuery())
+		parts = append(parts, redshiftDialect.RedshiftDialect{}.BuildMergeDeleteQuery(m.TableID, m.SubQuery, m.PrimaryKeys))
 	}
 
 	return parts, nil
