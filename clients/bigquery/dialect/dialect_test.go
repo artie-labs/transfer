@@ -201,11 +201,19 @@ func TestBigQueryDialect_BuildAlterColumnQuery(t *testing.T) {
 }
 
 func TestBigQueryDialect_BuildProcessToastColExpression(t *testing.T) {
-	assert.Equal(t, `CASE WHEN COALESCE(cc.bar != '__debezium_unavailable_value', true) THEN cc.bar ELSE c.bar END`, BigQueryDialect{}.BuildProcessToastColExpression("bar"))
+	assert.Equal(
+		t,
+		"CASE WHEN COALESCE(cc.`bar` != '__debezium_unavailable_value', true) THEN cc.`bar` ELSE c.`bar` END",
+		BigQueryDialect{}.BuildProcessToastColExpression(columns.NewColumn("bar", typing.Invalid)),
+	)
 }
 
 func TestBigQueryDialect_ProcessToastStructColExpression(t *testing.T) {
-	assert.Equal(t, `CASE WHEN COALESCE(TO_JSON_STRING(cc.foo) != '{"key":"__debezium_unavailable_value"}', true) THEN cc.foo ELSE c.foo END`, BigQueryDialect{}.BuildProcessToastStructColExpression("foo"))
+	assert.Equal(
+		t,
+		"CASE WHEN COALESCE(TO_JSON_STRING(cc.`foo`) != '{\"key\":\"__debezium_unavailable_value\"}', true) THEN cc.`foo` ELSE c.`foo` END",
+		BigQueryDialect{}.BuildProcessToastStructColExpression(columns.NewColumn("foo", typing.Invalid)),
+	)
 }
 
 func TestQuoteColumns(t *testing.T) {
