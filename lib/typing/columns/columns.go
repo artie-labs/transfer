@@ -49,6 +49,13 @@ func NewColumn(name string, kd typing.KindDetails) Column {
 	}
 }
 
+// NewColumnWithDefaultValue creates a new column with a default value. Only used for testing.
+func NewColumnWithDefaultValue(name string, kd typing.KindDetails, defaultValue any) Column {
+	column := NewColumn(name, kd)
+	column.defaultValue = defaultValue
+	return column
+}
+
 func (c *Column) SetBackfilled(backfilled bool) {
 	c.backfilled = backfilled
 }
