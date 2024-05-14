@@ -187,7 +187,7 @@ func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableId
 	return parts
 }
 
-func (rd RedshiftDialect) EqualitySQLParts(primaryKeys []columns.Column) []string {
+func (rd RedshiftDialect) equalitySQLParts(primaryKeys []columns.Column) []string {
 	var equalitySQLParts []string
 	for _, primaryKey := range primaryKeys {
 		// We'll need to escape the primary key as well.
@@ -214,9 +214,35 @@ func (rd RedshiftDialect) BuildMergeInsertQuery(
 			Prefix:    "cc.",
 		}), subQuery,
 		// LEFT JOIN table on pk(s)
-		tableID.FullyQualifiedName(), strings.Join(rd.EqualitySQLParts(primaryKeys), " AND "),
+		tableID.FullyQualifiedName(), strings.Join(rd.equalitySQLParts(primaryKeys), " AND "),
 		// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
 		rd.QuoteIdentifier(primaryKeys[0].Name()),
+	)
+}
+
+func (rd RedshiftDialect) BuildMergeUpdateQuery(
+	tableID sql.TableIdentifier,
+	subQuery string,
+	primaryKeys []columns.Column,
+	cols []columns.Column,
+	idempotentKey string,
+	softDelete bool,
+) string {
+	clauses := rd.equalitySQLParts(primaryKeys)
+
+	if idempotentKey != "" {
+		clauses = append(clauses, fmt.Sprintf("cc.%s >= c.%s", idempotentKey, idempotentKey))
+	}
+
+	if !softDelete {
+		clauses = append(clauses, fmt.Sprintf("COALESCE(cc.%s, false) = false", rd.QuoteIdentifier(constants.DeleteColumnMarker)))
+	}
+
+	return fmt.Sprintf(`UPDATE %s AS c SET %s FROM %s AS cc WHERE %s;`,
+		// UPDATE table set col1 = cc. col1
+		tableID.FullyQualifiedName(), columns.BuildColumnsUpdateFragment(cols, rd),
+		// FROM staging WHERE join on PK(s)
+		subQuery, strings.Join(clauses, " AND "),
 	)
 }
 
