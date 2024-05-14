@@ -306,7 +306,7 @@ func TestBigQueryDialect_BuildMergeQueries_TempTable(t *testing.T) {
 		nil,
 		cols.ValidColumns(),
 		false,
-		nil,
+		false,
 	)
 	assert.NoError(t, err)
 	assert.Len(t, statements, 1)
@@ -331,7 +331,7 @@ func TestBigQueryDialect_BuildMergeQueries_JSONKey(t *testing.T) {
 		nil,
 		cols.ValidColumns(),
 		false,
-		nil,
+		false,
 	)
 	assert.Len(t, statements, 1)
 	assert.NoError(t, err)

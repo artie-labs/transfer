@@ -152,7 +152,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 		opts.AdditionalEqualityStrings,
 		validColumns,
 		tableData.TopicConfig().SoftDelete,
-		ptr.ToBool(tableData.ContainsHardDeletes()),
+		tableData.ContainsHardDeletes(),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to generate merge statements: %w", err)

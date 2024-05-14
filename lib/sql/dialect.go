@@ -35,8 +35,7 @@ type Dialect interface {
 		additionalEqualityStrings []string,
 		cols []columns.Column,
 		softDelete bool,
-		// containsHardDeletes is only used for Redshift and MergeStatementParts,
-		// where we do not issue a DELETE statement if there are no hard deletes in the batch
-		containsHardDeletes *bool,
+		// containsHardDeletes is only used for Redshift where we do not issue a DELETE statement if there are no hard deletes in the batch
+		containsHardDeletes bool,
 	) ([]string, error)
 }

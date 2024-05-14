@@ -321,7 +321,7 @@ func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 			nil,
 			_cols.ValidColumns(),
 			true,
-			nil,
+			false,
 		)
 		assert.Len(t, statements, 1)
 		mergeSQL := statements[0]
@@ -373,7 +373,7 @@ func TestSnowflakeDialect_BuildMergeQueries(t *testing.T) {
 		nil,
 		_cols.ValidColumns(),
 		false,
-		nil,
+		false,
 	)
 	assert.Len(t, statements, 1)
 	mergeSQL := statements[0]
@@ -424,7 +424,7 @@ func TestSnowflakeDialect_BuildMergeQueries_IdempotentKey(t *testing.T) {
 		nil,
 		_cols.ValidColumns(),
 		false,
-		nil,
+		false,
 	)
 	assert.Len(t, statements, 1)
 	mergeSQL := statements[0]
@@ -472,7 +472,7 @@ func TestSnowflakeDialect_BuildMergeQueries_CompositeKey(t *testing.T) {
 		nil,
 		_cols.ValidColumns(),
 		false,
-		nil,
+		false,
 	)
 	assert.Len(t, statements, 1)
 	mergeSQL := statements[0]
@@ -524,7 +524,7 @@ func TestSnowflakeDialect_BuildMergeQueries_EscapePrimaryKeys(t *testing.T) {
 		nil,
 		_cols.ValidColumns(),
 		false,
-		nil,
+		false,
 	)
 	assert.Len(t, statements, 1)
 	mergeSQL := statements[0]
