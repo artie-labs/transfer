@@ -8,6 +8,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -208,9 +209,9 @@ func TestBigQueryDialect_ProcessToastStructColExpression(t *testing.T) {
 }
 
 func TestQuoteColumns(t *testing.T) {
-	assert.Equal(t, []string{}, columns.QuoteColumns(nil, BigQueryDialect{}))
+	assert.Equal(t, []string{}, sql.QuoteColumns(nil, BigQueryDialect{}))
 	cols := []columns.Column{columns.NewColumn("a", typing.Invalid), columns.NewColumn("b", typing.Invalid)}
-	assert.Equal(t, []string{"`a`", "`b`"}, columns.QuoteColumns(cols, BigQueryDialect{}))
+	assert.Equal(t, []string{"`a`", "`b`"}, sql.QuoteColumns(cols, BigQueryDialect{}))
 }
 
 func TestBuildColumnsUpdateFragment(t *testing.T) {
@@ -275,7 +276,7 @@ func TestBuildColumnsUpdateFragment(t *testing.T) {
 	}
 
 	for _, _testCase := range testCases {
-		actualQuery := columns.BuildColumnsUpdateFragment(_testCase.columns, BigQueryDialect{})
+		actualQuery := sql.BuildColumnsUpdateFragment(_testCase.columns, BigQueryDialect{})
 		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
 	}
 }

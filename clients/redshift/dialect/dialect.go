@@ -207,10 +207,10 @@ func (rd RedshiftDialect) buildMergeInsertQuery(
 ) string {
 	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s AS cc LEFT JOIN %s AS c ON %s WHERE c.%s IS NULL;`,
 		// insert into target (col1, col2, col3)
-		tableID.FullyQualifiedName(), strings.Join(columns.QuoteColumns(cols, rd), ","),
+		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(cols, rd), ","),
 		// SELECT cc.col1, cc.col2, ... FROM staging as CC
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      columns.QuoteColumns(cols, rd),
+			Vals:      sql.QuoteColumns(cols, rd),
 			Separator: ",",
 			Prefix:    "cc.",
 		}), subQuery,
@@ -241,7 +241,7 @@ func (rd RedshiftDialect) buildMergeUpdateQuery(
 
 	return fmt.Sprintf(`UPDATE %s AS c SET %s FROM %s AS cc WHERE %s;`,
 		// UPDATE table set col1 = cc. col1
-		tableID.FullyQualifiedName(), columns.BuildColumnsUpdateFragment(cols, rd),
+		tableID.FullyQualifiedName(), sql.BuildColumnsUpdateFragment(cols, rd),
 		// FROM staging WHERE join on PK(s)
 		subQuery, strings.Join(clauses, " AND "),
 	)
@@ -250,10 +250,10 @@ func (rd RedshiftDialect) buildMergeUpdateQuery(
 func (rd RedshiftDialect) buildMergeDeleteQuery(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column) string {
 	return fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s AS cc WHERE cc.%s = true);`,
 		// DELETE from table where (pk_1, pk_2)
-		tableID.FullyQualifiedName(), strings.Join(columns.QuoteColumns(primaryKeys, rd), ","),
+		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(primaryKeys, rd), ","),
 		// IN (cc.pk_1, cc.pk_2) FROM staging
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      columns.QuoteColumns(primaryKeys, rd),
+			Vals:      sql.QuoteColumns(primaryKeys, rd),
 			Separator: ",",
 			Prefix:    "cc.",
 		}), subQuery, rd.QuoteIdentifier(constants.DeleteColumnMarker),

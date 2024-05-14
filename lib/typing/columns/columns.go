@@ -1,13 +1,11 @@
 package columns
 
 import (
-	"fmt"
 	"slices"
 	"strings"
 	"sync"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 )
@@ -261,41 +259,10 @@ func (c *Columns) DeleteColumn(name string) {
 	}
 }
 
-func QuoteColumns(cols []Column, dialect sql.Dialect) []string {
-	result := make([]string, len(cols))
-	for i, col := range cols {
-		result[i] = dialect.QuoteIdentifier(col.Name())
-	}
-	return result
-}
-
 // RemoveDeleteColumnMarker removes the deleted column marker from a slice (if present) returning a new slice and whether or not it was removed.
 func RemoveDeleteColumnMarker(cols []Column) ([]Column, bool) {
 	origLength := len(cols)
 	// Use [slices.Clone] because [slices.DeleteFunc] mutates its inputs.
 	cols = slices.DeleteFunc(slices.Clone(cols), func(col Column) bool { return col.Name() == constants.DeleteColumnMarker })
 	return cols, len(cols) != origLength
-}
-
-// buildColumnsUpdateFragment will parse the columns and then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email
-// NOTE: This should only be used with valid columns.
-func BuildColumnsUpdateFragment(columns []Column, dialect sql.Dialect) string {
-	var cols []string
-	for _, column := range columns {
-		colName := dialect.QuoteIdentifier(column.Name())
-		if column.ToastColumn {
-			var colValue string
-			if column.KindDetails == typing.Struct {
-				colValue = dialect.BuildProcessToastStructColExpression(colName)
-			} else {
-				colValue = dialect.BuildProcessToastColExpression(colName)
-			}
-			cols = append(cols, fmt.Sprintf("%s= %s", colName, colValue))
-		} else {
-			// This is to make it look like: objCol = cc.objCol
-			cols = append(cols, fmt.Sprintf("%s=cc.%s", colName, colName))
-		}
-	}
-
-	return strings.Join(cols, ",")
 }
