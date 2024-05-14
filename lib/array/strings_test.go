@@ -117,11 +117,11 @@ func TestStringsJoinAddPrefix_ToastedColumns(t *testing.T) {
 	args := StringsJoinAddPrefixArgs{
 		Vals:      toastedCols,
 		Separator: " AND ",
-		Prefix:    "cc.",
+		Prefix:    "prefix.",
 		Suffix:    fmt.Sprintf("!='%s'", constants.ToastUnavailableValuePlaceholder),
 	}
 
-	assert.Equal(t, StringsJoinAddPrefix(args), "cc.toast_test!='__debezium_unavailable_value' AND cc.toast_test_2!='__debezium_unavailable_value'")
+	assert.Equal(t, StringsJoinAddPrefix(args), "prefix.toast_test!='__debezium_unavailable_value' AND prefix.toast_test_2!='__debezium_unavailable_value'")
 }
 
 func TestNotEmpty(t *testing.T) {

@@ -80,18 +80,18 @@ func TestBuildColumnsUpdateFragment_BigQuery(t *testing.T) {
 		{
 			name:           "struct, string and toast string (bigquery)",
 			columns:        lastCaseColTypes,
-			expectedString: "`a1`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`a1`) != '{\"key\":\"__debezium_unavailable_value\"}', true) THEN cc.`a1` ELSE c.`a1` END,`b2`= CASE WHEN COALESCE(cc.`b2` != '__debezium_unavailable_value', true) THEN cc.`b2` ELSE c.`b2` END,`c3`=cc.`c3`",
+			expectedString: "`a1`= CASE WHEN COALESCE(TO_JSON_STRING(stg.`a1`) != '{\"key\":\"__debezium_unavailable_value\"}', true) THEN stg.`a1` ELSE tgt.`a1` END,`b2`= CASE WHEN COALESCE(stg.`b2` != '__debezium_unavailable_value', true) THEN stg.`b2` ELSE tgt.`b2` END,`c3`=stg.`c3`",
 		},
 		{
 			name:    "struct, string and toast string (bigquery) w/ reserved keywords",
 			columns: lastCaseEscapeTypes,
-			expectedString: fmt.Sprintf("`a1`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`a1`) != '%s', true) THEN cc.`a1` ELSE c.`a1` END,`b2`= CASE WHEN COALESCE(cc.`b2` != '__debezium_unavailable_value', true) THEN cc.`b2` ELSE c.`b2` END,`c3`=cc.`c3`,%s,%s",
-				key, fmt.Sprintf("`start`= CASE WHEN COALESCE(TO_JSON_STRING(cc.`start`) != '%s', true) THEN cc.`start` ELSE c.`start` END", key), "`select`=cc.`select`,`__artie_delete`=cc.`__artie_delete`"),
+			expectedString: fmt.Sprintf("`a1`= CASE WHEN COALESCE(TO_JSON_STRING(stg.`a1`) != '%s', true) THEN stg.`a1` ELSE tgt.`a1` END,`b2`= CASE WHEN COALESCE(stg.`b2` != '__debezium_unavailable_value', true) THEN stg.`b2` ELSE tgt.`b2` END,`c3`=stg.`c3`,%s,%s",
+				key, fmt.Sprintf("`start`= CASE WHEN COALESCE(TO_JSON_STRING(stg.`start`) != '%s', true) THEN stg.`start` ELSE tgt.`start` END", key), "`select`=stg.`select`,`__artie_delete`=stg.`__artie_delete`"),
 		},
 	}
 
 	for _, _testCase := range testCases {
-		actualQuery := sql.BuildColumnsUpdateFragment(_testCase.columns, "cc", "c", bigqueryDialect.BigQueryDialect{})
+		actualQuery := sql.BuildColumnsUpdateFragment(_testCase.columns, "stg", "tgt", bigqueryDialect.BigQueryDialect{})
 		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
 	}
 }
@@ -130,17 +130,17 @@ func TestBuildColumnsUpdateFragment_Redshift(t *testing.T) {
 		{
 			name:           "happy path",
 			columns:        happyPathCols,
-			expectedString: `"foo"=cc."foo","bar"=cc."bar"`,
+			expectedString: `"foo"=stg."foo","bar"=stg."bar"`,
 		},
 		{
 			name:           "struct, string and toast string",
 			columns:        lastCaseColTypes,
-			expectedString: `"a1"= CASE WHEN COALESCE(cc."a1" != JSON_PARSE('{"key":"__debezium_unavailable_value"}'), true) THEN cc."a1" ELSE c."a1" END,"b2"= CASE WHEN COALESCE(cc."b2" != '__debezium_unavailable_value', true) THEN cc."b2" ELSE c."b2" END,"c3"=cc."c3"`,
+			expectedString: `"a1"= CASE WHEN COALESCE(stg."a1" != JSON_PARSE('{"key":"__debezium_unavailable_value"}'), true) THEN stg."a1" ELSE tgt."a1" END,"b2"= CASE WHEN COALESCE(stg."b2" != '__debezium_unavailable_value', true) THEN stg."b2" ELSE tgt."b2" END,"c3"=stg."c3"`,
 		},
 	}
 
 	for _, _testCase := range testCases {
-		actualQuery := sql.BuildColumnsUpdateFragment(_testCase.columns, "cc", "c", redshiftDialect.RedshiftDialect{})
+		actualQuery := sql.BuildColumnsUpdateFragment(_testCase.columns, "stg", "tgt", redshiftDialect.RedshiftDialect{})
 		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
 	}
 }
@@ -158,8 +158,8 @@ func TestBuildColumnsUpdateFragment_Snowflake(t *testing.T) {
 		stringAndToastCols = append(stringAndToastCols, column)
 	}
 
-	actualQuery := sql.BuildColumnsUpdateFragment(stringAndToastCols, "cc", "c", snowflakeDialect.SnowflakeDialect{})
-	assert.Equal(t, `"FOO"= CASE WHEN COALESCE(cc."FOO" != '__debezium_unavailable_value', true) THEN cc."FOO" ELSE c."FOO" END,"BAR"=cc."BAR"`, actualQuery)
+	actualQuery := sql.BuildColumnsUpdateFragment(stringAndToastCols, "stg", "tgt", snowflakeDialect.SnowflakeDialect{})
+	assert.Equal(t, `"FOO"= CASE WHEN COALESCE(stg."FOO" != '__debezium_unavailable_value', true) THEN stg."FOO" ELSE tgt."FOO" END,"BAR"=stg."BAR"`, actualQuery)
 }
 
 func TestBuildColumnComparison(t *testing.T) {
