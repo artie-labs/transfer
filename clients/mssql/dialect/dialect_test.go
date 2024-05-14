@@ -188,22 +188,65 @@ func TestMSSQLDialect_BuildMergeQueries(t *testing.T) {
 	fakeID := &mocks.FakeTableIdentifier{}
 	fakeID.FullyQualifiedNameReturns(fqTable)
 
-	queries, err := MSSQLDialect{}.BuildMergeQueries(
-		fakeID,
-		subQuery,
-		"",
-		[]columns.Column{columns.NewColumn("id", typing.Invalid)},
-		[]string{},
-		_cols,
-		false,
-		false,
-	)
-	assert.NoError(t, err)
-	assert.Len(t, queries, 1)
-	assert.Equal(t, `
+	{
+		queries, err := MSSQLDialect{}.BuildMergeQueries(
+			fakeID,
+			subQuery,
+			"",
+			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
+			[]string{},
+			_cols,
+			false,
+			false,
+		)
+		assert.NoError(t, err)
+		assert.Len(t, queries, 1)
+		assert.Equal(t, `
 MERGE INTO database.schema.table c
 USING SELECT id,bar,updated_at,start,__artie_delete from (values ('1', '456', 'foo', '2001-02-03 04:05:06 +0000 UTC', false),('2', 'bb', 'bar', '2001-02-03 04:05:06 +0000 UTC', false),('3', 'dd', 'world', '2001-02-03 04:05:06 +0000 UTC', false)) as _tbl(id,bar,updated_at,start,__artie_delete) AS cc ON c."id" = cc."id"
 WHEN MATCHED AND cc."__artie_delete" = 1 THEN DELETE
 WHEN MATCHED AND COALESCE(cc."__artie_delete", 0) = 0 THEN UPDATE SET "id"=cc."id","bar"=cc."bar","updated_at"=cc."updated_at","start"=cc."start"
 WHEN NOT MATCHED AND COALESCE(cc."__artie_delete", 1) = 0 THEN INSERT ("id","bar","updated_at","start") VALUES (cc."id",cc."bar",cc."updated_at",cc."start");`, queries[0])
+	}
+	{
+		// Idempotent key:
+		queries, err := MSSQLDialect{}.BuildMergeQueries(
+			fakeID,
+			"{SUB_QUERY}",
+			"idempotent_key",
+			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
+			[]string{},
+			_cols,
+			false,
+			false,
+		)
+		assert.NoError(t, err)
+		assert.Len(t, queries, 1)
+		assert.Equal(t, `
+MERGE INTO database.schema.table c
+USING {SUB_QUERY} AS cc ON c."id" = cc."id"
+WHEN MATCHED AND cc."__artie_delete" = 1 THEN DELETE
+WHEN MATCHED AND COALESCE(cc."__artie_delete", 0) = 0 AND cc.idempotent_key >= c.idempotent_key THEN UPDATE SET "id"=cc."id","bar"=cc."bar","updated_at"=cc."updated_at","start"=cc."start"
+WHEN NOT MATCHED AND COALESCE(cc."__artie_delete", 1) = 0 THEN INSERT ("id","bar","updated_at","start") VALUES (cc."id",cc."bar",cc."updated_at",cc."start");`, queries[0])
+	}
+	{
+		// Soft delete:
+		queries, err := MSSQLDialect{}.BuildMergeQueries(
+			fakeID,
+			"{SUB_QUERY}",
+			"",
+			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
+			[]string{},
+			_cols,
+			true,
+			false,
+		)
+		assert.NoError(t, err)
+		assert.Len(t, queries, 1)
+		assert.Equal(t, `
+MERGE INTO database.schema.table c
+USING {SUB_QUERY} AS cc ON c."id" = cc."id"
+WHEN MATCHED THEN UPDATE SET "id"=cc."id","bar"=cc."bar","updated_at"=cc."updated_at","start"=cc."start","__artie_delete"=cc."__artie_delete"
+WHEN NOT MATCHED AND COALESCE(cc."__artie_delete", 0) = 0 THEN INSERT ("id","bar","updated_at","start","__artie_delete") VALUES (cc."id",cc."bar",cc."updated_at",cc."start",cc."__artie_delete");`, queries[0])
+	}
 }
