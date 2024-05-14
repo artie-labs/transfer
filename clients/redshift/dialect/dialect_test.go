@@ -207,11 +207,11 @@ func TestQuoteIdentifiers(t *testing.T) {
 func TestRedshiftDialect_BuildIsNotToastValueExpression(t *testing.T) {
 	assert.Equal(t,
 		`COALESCE(cc."bar" != '__debezium_unavailable_value', true)`,
-		RedshiftDialect{}.BuildIsNotToastValueExpression(columns.NewColumn("bar", typing.Invalid)),
+		RedshiftDialect{}.BuildIsNotToastValueExpression(columns.NewColumn("bar", typing.Invalid), "cc"),
 	)
 	assert.Equal(t,
 		`COALESCE(cc."foo" != JSON_PARSE('{"key":"__debezium_unavailable_value"}'), true)`,
-		RedshiftDialect{}.BuildIsNotToastValueExpression(columns.NewColumn("foo", typing.Struct)),
+		RedshiftDialect{}.BuildIsNotToastValueExpression(columns.NewColumn("foo", typing.Struct), "cc"),
 	)
 }
 
@@ -259,7 +259,7 @@ func TestBuildColumnsUpdateFragment(t *testing.T) {
 	}
 
 	for _, _testCase := range testCases {
-		actualQuery := sql.BuildColumnsUpdateFragment(_testCase.columns, RedshiftDialect{})
+		actualQuery := sql.BuildColumnsUpdateFragment(_testCase.columns, "cc", "c", RedshiftDialect{})
 		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
 	}
 }

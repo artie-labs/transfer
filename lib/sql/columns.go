@@ -17,16 +17,16 @@ func QuoteColumns(cols []columns.Column, dialect Dialect) []string {
 
 // buildColumnsUpdateFragment will parse the columns and then returns a list of strings like: cc.first_name=c.first_name,cc.last_name=c.last_name,cc.email=c.email
 // NOTE: This should only be used with valid columns.
-func BuildColumnsUpdateFragment(columns []columns.Column, dialect Dialect) string {
+func BuildColumnsUpdateFragment(columns []columns.Column, stagingAlias, targetAlias string, dialect Dialect) string {
 	var cols []string
 	for _, column := range columns {
 		colName := dialect.QuoteIdentifier(column.Name())
 		if column.ToastColumn {
-			cols = append(cols, fmt.Sprintf("%s= CASE WHEN %s THEN cc.%s ELSE c.%s END",
-				colName, dialect.BuildIsNotToastValueExpression(column), colName, colName))
+			cols = append(cols, fmt.Sprintf("%s= CASE WHEN %s THEN %s.%s ELSE %s.%s END",
+				colName, dialect.BuildIsNotToastValueExpression(column, stagingAlias), stagingAlias, colName, targetAlias, colName))
 		} else {
 			// This is to make it look like: objCol = cc.objCol
-			cols = append(cols, fmt.Sprintf("%s=cc.%s", colName, colName))
+			cols = append(cols, fmt.Sprintf("%s=%s.%s", colName, stagingAlias, colName))
 		}
 	}
 
