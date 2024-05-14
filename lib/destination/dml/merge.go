@@ -8,6 +8,7 @@ import (
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
 	redshiftDialect "github.com/artie-labs/transfer/clients/redshift/dialect"
+	snowflakeDialect "github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -193,6 +194,17 @@ func (m *MergeArgument) BuildStatements() ([]string, error) {
 	case redshiftDialect.RedshiftDialect:
 		return m.buildRedshiftStatements()
 	case mssqlDialect.MSSQLDialect:
+		return specificDialect.BuildMergeQueries(
+			m.TableID,
+			m.SubQuery,
+			m.IdempotentKey,
+			m.PrimaryKeys,
+			m.AdditionalEqualityStrings,
+			m.Columns,
+			m.SoftDelete,
+			m.ContainsHardDeletes,
+		)
+	case snowflakeDialect.SnowflakeDialect:
 		return specificDialect.BuildMergeQueries(
 			m.TableID,
 			m.SubQuery,
