@@ -3,6 +3,10 @@ package dml
 import (
 	"fmt"
 
+	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
+	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
+	redshiftDialect "github.com/artie-labs/transfer/clients/redshift/dialect"
+	snowflakeDialect "github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -64,14 +68,52 @@ func (m *MergeArgument) BuildStatements() ([]string, error) {
 		return nil, err
 	}
 
-	return m.Dialect.BuildMergeQueries(
-		m.TableID,
-		m.SubQuery,
-		m.IdempotentKey,
-		m.PrimaryKeys,
-		m.AdditionalEqualityStrings,
-		m.Columns,
-		m.SoftDelete,
-		m.ContainsHardDeletes,
-	)
+	switch specificDialect := m.Dialect.(type) {
+	case bigQueryDialect.BigQueryDialect:
+		return specificDialect.BuildMergeQueries(
+			m.TableID,
+			m.SubQuery,
+			m.IdempotentKey,
+			m.PrimaryKeys,
+			m.AdditionalEqualityStrings,
+			m.Columns,
+			m.SoftDelete,
+			m.ContainsHardDeletes,
+		)
+	case redshiftDialect.RedshiftDialect:
+		return specificDialect.BuildMergeQueries(
+			m.TableID,
+			m.SubQuery,
+			m.IdempotentKey,
+			m.PrimaryKeys,
+			m.AdditionalEqualityStrings,
+			m.Columns,
+			m.SoftDelete,
+			m.ContainsHardDeletes,
+		)
+	case mssqlDialect.MSSQLDialect:
+		return specificDialect.BuildMergeQueries(
+			m.TableID,
+			m.SubQuery,
+			m.IdempotentKey,
+			m.PrimaryKeys,
+			m.AdditionalEqualityStrings,
+			m.Columns,
+			m.SoftDelete,
+			m.ContainsHardDeletes,
+		)
+	case snowflakeDialect.SnowflakeDialect:
+		return specificDialect.BuildMergeQueries(
+			m.TableID,
+			m.SubQuery,
+			m.IdempotentKey,
+			m.PrimaryKeys,
+			m.AdditionalEqualityStrings,
+			m.Columns,
+			m.SoftDelete,
+			m.ContainsHardDeletes,
+		)
+	default:
+		return nil, fmt.Errorf("not implemented for %T", m.Dialect)
+	}
 }
