@@ -8,7 +8,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
-	"github.com/artie-labs/transfer/lib/destination/dml"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/jitter"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -128,23 +127,38 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 		}
 		primaryKeys = append(primaryKeys, column)
 	}
-
-	mergeArg := dml.MergeArgument{
-		TableID:             tableID,
-		SubQuery:            subQuery,
-		IdempotentKey:       tableData.TopicConfig().IdempotentKey,
-		PrimaryKeys:         primaryKeys,
-		Columns:             cols.ValidColumns(),
-		SoftDelete:          tableData.TopicConfig().SoftDelete,
-		Dialect:             dwh.Dialect(),
-		ContainsHardDeletes: ptr.ToBool(tableData.ContainsHardDeletes()),
+	if len(primaryKeys) == 0 {
+		return fmt.Errorf("primary keys is empty")
 	}
 
-	if len(opts.AdditionalEqualityStrings) > 0 {
-		mergeArg.AdditionalEqualityStrings = opts.AdditionalEqualityStrings
+	validColumns := cols.ValidColumns()
+	if len(validColumns) == 0 {
+		return fmt.Errorf("columns cannot be empty")
+	}
+	for _, column := range validColumns {
+		if column.ShouldSkip() {
+			return fmt.Errorf("column %q is invalid and should be skipped", column.Name())
+		}
 	}
 
-	mergeStatements, err := mergeArg.BuildStatements()
+	if tableID == nil {
+		return fmt.Errorf("tableID cannot be nil")
+	}
+
+	if subQuery == "" {
+		return fmt.Errorf("subQuery cannot be empty")
+	}
+
+	mergeStatements, err := dwh.Dialect().BuildMergeQueries(
+		tableID,
+		subQuery,
+		tableData.TopicConfig().IdempotentKey,
+		primaryKeys,
+		opts.AdditionalEqualityStrings,
+		validColumns,
+		tableData.TopicConfig().SoftDelete,
+		ptr.ToBool(tableData.ContainsHardDeletes()),
+	)
 	if err != nil {
 		return fmt.Errorf("failed to generate merge statements: %w", err)
 	}
