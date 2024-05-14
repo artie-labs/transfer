@@ -173,10 +173,11 @@ func TestMSSQLDialect_BuildMergeQueries(t *testing.T) {
 		cols[i] = col.Name()
 	}
 
+	dateValue := time.Date(2001, 2, 3, 4, 5, 6, 0, time.UTC)
 	tableValues := []string{
-		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "1", "456", "foo", time.Now().Round(0).UTC()),
-		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "2", "bb", "bar", time.Now().Round(0).UTC()),
-		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "3", "dd", "world", time.Now().Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "1", "456", "foo", dateValue.Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "2", "bb", "bar", dateValue.Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "3", "dd", "world", dateValue.Round(0).UTC()),
 	}
 
 	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
@@ -197,15 +198,12 @@ func TestMSSQLDialect_BuildMergeQueries(t *testing.T) {
 		false,
 		false,
 	)
-	assert.Len(t, queries, 1)
-	mergeSQL := queries[0]
 	assert.NoError(t, err)
-	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
-	assert.NotContains(t, mergeSQL, fmt.Sprintf(`cc."%s" >= c."%s"`, "updated_at", "updated_at"), fmt.Sprintf("Idempotency key: %s", mergeSQL))
-	// Check primary keys clause
-	assert.Contains(t, mergeSQL, `AS cc ON c."id" = cc."id"`, mergeSQL)
-
-	assert.Contains(t, mergeSQL, `SET "id"=cc."id","bar"=cc."bar","updated_at"=cc."updated_at","start"=cc."start"`, mergeSQL)
-	assert.Contains(t, mergeSQL, `id,bar,updated_at,start`, mergeSQL)
-	assert.Contains(t, mergeSQL, `cc."id",cc."bar",cc."updated_at",cc."start"`, mergeSQL)
+	assert.Len(t, queries, 1)
+	assert.Equal(t, `
+MERGE INTO database.schema.table c
+USING SELECT id,bar,updated_at,start,__artie_delete from (values ('1', '456', 'foo', '2001-02-03 04:05:06 +0000 UTC', false),('2', 'bb', 'bar', '2001-02-03 04:05:06 +0000 UTC', false),('3', 'dd', 'world', '2001-02-03 04:05:06 +0000 UTC', false)) as _tbl(id,bar,updated_at,start,__artie_delete) AS cc ON c."id" = cc."id"
+WHEN MATCHED AND cc."__artie_delete" = 1 THEN DELETE
+WHEN MATCHED AND COALESCE(cc."__artie_delete", 0) = 0 THEN UPDATE SET "id"=cc."id","bar"=cc."bar","updated_at"=cc."updated_at","start"=cc."start"
+WHEN NOT MATCHED AND COALESCE(cc."__artie_delete", 1) = 0 THEN INSERT ("id","bar","updated_at","start") VALUES (cc."id",cc."bar",cc."updated_at",cc."start");`, queries[0])
 }

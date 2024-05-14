@@ -2,6 +2,7 @@ package dialect
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -305,7 +306,12 @@ func TestBigQueryDialect_BuildMergeQueries_TempTable(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	assert.Len(t, statements, 1)
-	assert.Contains(t, statements[0], "MERGE INTO customers.orders c USING customers.orders_tmp AS cc ON c.`order_id` = cc.`order_id`")
+	assert.Equal(t, []string{
+		"MERGE INTO customers.orders c USING customers.orders_tmp AS cc ON c.`order_id` = cc.`order_id`",
+		"WHEN MATCHED AND cc.`__artie_delete` THEN DELETE",
+		"WHEN MATCHED AND IFNULL(cc.`__artie_delete`, false) = false THEN UPDATE SET `order_id`=cc.`order_id`,`name`=cc.`name`",
+		"WHEN NOT MATCHED AND IFNULL(cc.`__artie_delete`, false) = false THEN INSERT (`order_id`,`name`) VALUES (cc.`order_id`,cc.`name`);"},
+		strings.Split(strings.TrimSpace(statements[0]), "\n"))
 }
 
 func TestBigQueryDialect_BuildMergeQueries_JSONKey(t *testing.T) {
@@ -328,7 +334,12 @@ func TestBigQueryDialect_BuildMergeQueries_JSONKey(t *testing.T) {
 		false,
 		false,
 	)
-	assert.Len(t, statements, 1)
 	assert.NoError(t, err)
-	assert.Contains(t, statements[0], "MERGE INTO customers.orders c USING customers.orders_tmp AS cc ON TO_JSON_STRING(c.`order_oid`) = TO_JSON_STRING(cc.`order_oid`)")
+	assert.Len(t, statements, 1)
+	assert.Equal(t, []string{
+		"MERGE INTO customers.orders c USING customers.orders_tmp AS cc ON TO_JSON_STRING(c.`order_oid`) = TO_JSON_STRING(cc.`order_oid`)",
+		"WHEN MATCHED AND cc.`__artie_delete` THEN DELETE",
+		"WHEN MATCHED AND IFNULL(cc.`__artie_delete`, false) = false THEN UPDATE SET `order_oid`=cc.`order_oid`,`name`=cc.`name`",
+		"WHEN NOT MATCHED AND IFNULL(cc.`__artie_delete`, false) = false THEN INSERT (`order_oid`,`name`) VALUES (cc.`order_oid`,cc.`name`);"},
+		strings.Split(strings.TrimSpace(statements[0]), "\n"))
 }

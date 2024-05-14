@@ -291,10 +291,11 @@ func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 		constants.DeleteColumnMarker,
 	}
 
+	dateValue := time.Date(2001, 2, 3, 4, 5, 6, 0, time.UTC)
 	tableValues := []string{
-		fmt.Sprintf("('%s', '%s', '%v', false)", "1", "456", time.Now().Round(0).Format(time.RFC3339)),
-		fmt.Sprintf("('%s', '%s', '%v', true)", "2", "bb", time.Now().Round(0).Format(time.RFC3339)), // Delete row 2.
-		fmt.Sprintf("('%s', '%s', '%v', false)", "3", "dd", time.Now().Round(0).Format(time.RFC3339)),
+		fmt.Sprintf("('%s', '%s', '%v', false)", "1", "456", dateValue.Round(0).Format(time.RFC3339)),
+		fmt.Sprintf("('%s', '%s', '%v', true)", "2", "bb", dateValue.Round(0).Format(time.RFC3339)), // Delete row 2.
+		fmt.Sprintf("('%s', '%s', '%v', false)", "3", "dd", dateValue.Round(0).Format(time.RFC3339)),
 	}
 
 	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
@@ -307,11 +308,12 @@ func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns(fqTable)
-	for _, idempotentKey := range []string{"", "updated_at"} {
+
+	{
 		statements, err := SnowflakeDialect{}.BuildMergeQueries(
 			fakeTableID,
 			subQuery,
-			idempotentKey,
+			"",
 			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
 			nil,
 			_cols.ValidColumns(),
@@ -319,13 +321,29 @@ func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 			false,
 		)
 		assert.Len(t, statements, 1)
-		mergeSQL := statements[0]
 		assert.NoError(t, err)
-		assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
-		// Soft deletion flag being passed.
-		assert.Contains(t, mergeSQL, `"__ARTIE_DELETE"=cc."__ARTIE_DELETE"`, mergeSQL)
-
-		assert.Equal(t, len(idempotentKey) > 0, strings.Contains(mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at")))
+		assert.Equal(t, `
+MERGE INTO database.schema.table c USING ( SELECT id,bar,updated_at,__artie_delete from (values ('1', '456', '2001-02-03T04:05:06Z', false),('2', 'bb', '2001-02-03T04:05:06Z', true),('3', 'dd', '2001-02-03T04:05:06Z', false)) as _tbl(id,bar,updated_at,__artie_delete) ) AS cc ON c."ID" = cc."ID"
+WHEN MATCHED THEN UPDATE SET "ID"=cc."ID","__ARTIE_DELETE"=cc."__ARTIE_DELETE"
+WHEN NOT MATCHED AND IFNULL(cc."__ARTIE_DELETE", false) = false THEN INSERT ("ID","__ARTIE_DELETE") VALUES (cc."ID",cc."__ARTIE_DELETE");`, statements[0])
+	}
+	{
+		statements, err := SnowflakeDialect{}.BuildMergeQueries(
+			fakeTableID,
+			subQuery,
+			"updated_at",
+			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
+			nil,
+			_cols.ValidColumns(),
+			true,
+			false,
+		)
+		assert.NoError(t, err)
+		assert.Len(t, statements, 1)
+		assert.Equal(t, `
+MERGE INTO database.schema.table c USING ( SELECT id,bar,updated_at,__artie_delete from (values ('1', '456', '2001-02-03T04:05:06Z', false),('2', 'bb', '2001-02-03T04:05:06Z', true),('3', 'dd', '2001-02-03T04:05:06Z', false)) as _tbl(id,bar,updated_at,__artie_delete) ) AS cc ON c."ID" = cc."ID"
+WHEN MATCHED AND cc.updated_at >= c.updated_at THEN UPDATE SET "ID"=cc."ID","__ARTIE_DELETE"=cc."__ARTIE_DELETE"
+WHEN NOT MATCHED AND IFNULL(cc."__ARTIE_DELETE", false) = false THEN INSERT ("ID","__ARTIE_DELETE") VALUES (cc."ID",cc."__ARTIE_DELETE");`, statements[0])
 	}
 }
 
@@ -347,10 +365,11 @@ func TestSnowflakeDialect_BuildMergeQueries(t *testing.T) {
 		_cols.AddColumn(columns.NewColumn(col, colToTypes[col]))
 	}
 
+	dateValue := time.Date(2001, 2, 3, 4, 5, 6, 0, time.UTC)
 	tableValues := []string{
-		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "1", "456", "foo", time.Now().Round(0).UTC()),
-		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "2", "bb", "bar", time.Now().Round(0).UTC()),
-		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "3", "dd", "world", time.Now().Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "1", "456", "foo", dateValue.Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "2", "bb", "bar", dateValue.Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "3", "dd", "world", dateValue.Round(0).UTC()),
 	}
 
 	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
@@ -371,18 +390,12 @@ func TestSnowflakeDialect_BuildMergeQueries(t *testing.T) {
 		false,
 	)
 	assert.Len(t, statements, 1)
-	mergeSQL := statements[0]
 	assert.NoError(t, err)
-	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
-	assert.NotContains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", `"UPDATED_AT"`, `"UPDATED_AT"`), fmt.Sprintf("Idempotency key: %s", mergeSQL))
-	// Check primary keys clause
-	assert.Contains(t, mergeSQL, `AS cc ON c."ID" = cc."ID"`, mergeSQL)
-
-	// Check setting for update
-	assert.Contains(t, mergeSQL, `SET "ID"=cc."ID","BAR"=cc."BAR","UPDATED_AT"=cc."UPDATED_AT","START"=cc."START"`, mergeSQL)
-	// Check for INSERT
-	assert.Contains(t, mergeSQL, `"ID","BAR","UPDATED_AT","START"`, mergeSQL)
-	assert.Contains(t, mergeSQL, `cc."ID",cc."BAR",cc."UPDATED_AT",cc."START"`, mergeSQL)
+	assert.Equal(t, `
+MERGE INTO database.schema.table c USING ( SELECT id,bar,updated_at,start,__artie_delete from (values ('1', '456', 'foo', '2001-02-03 04:05:06 +0000 UTC', false),('2', 'bb', 'bar', '2001-02-03 04:05:06 +0000 UTC', false),('3', 'dd', 'world', '2001-02-03 04:05:06 +0000 UTC', false)) as _tbl(id,bar,updated_at,start,__artie_delete) ) AS cc ON c."ID" = cc."ID"
+WHEN MATCHED AND cc."__ARTIE_DELETE" THEN DELETE
+WHEN MATCHED AND IFNULL(cc."__ARTIE_DELETE", false) = false THEN UPDATE SET "ID"=cc."ID","BAR"=cc."BAR","UPDATED_AT"=cc."UPDATED_AT","START"=cc."START"
+WHEN NOT MATCHED AND IFNULL(cc."__ARTIE_DELETE", false) = false THEN INSERT ("ID","BAR","UPDATED_AT","START") VALUES (cc."ID",cc."BAR",cc."UPDATED_AT",cc."START");`, statements[0])
 }
 
 func TestSnowflakeDialect_BuildMergeQueries_IdempotentKey(t *testing.T) {
@@ -394,10 +407,11 @@ func TestSnowflakeDialect_BuildMergeQueries_IdempotentKey(t *testing.T) {
 		constants.DeleteColumnMarker,
 	}
 
+	dateValue := time.Date(2001, 2, 3, 4, 5, 6, 0, time.UTC)
 	tableValues := []string{
-		fmt.Sprintf("('%s', '%s', '%v', false)", "1", "456", time.Now().Round(0).UTC()),
-		fmt.Sprintf("('%s', '%s', '%v', false)", "2", "bb", time.Now().Round(0).UTC()),
-		fmt.Sprintf("('%s', '%s', '%v', false)", "3", "dd", time.Now().Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%v', false)", "1", "456", dateValue.Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%v', false)", "2", "bb", dateValue.Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%v', false)", "3", "dd", dateValue.Round(0).UTC()),
 	}
 
 	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
@@ -422,10 +436,12 @@ func TestSnowflakeDialect_BuildMergeQueries_IdempotentKey(t *testing.T) {
 		false,
 	)
 	assert.Len(t, statements, 1)
-	mergeSQL := statements[0]
 	assert.NoError(t, err)
-	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
-	assert.Contains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at"), fmt.Sprintf("Idempotency key: %s", mergeSQL))
+	assert.Equal(t, `
+MERGE INTO database.schema.table c USING ( SELECT id,bar,updated_at,__artie_delete from (values ('1', '456', '2001-02-03 04:05:06 +0000 UTC', false),('2', 'bb', '2001-02-03 04:05:06 +0000 UTC', false),('3', 'dd', '2001-02-03 04:05:06 +0000 UTC', false)) as _tbl(id,bar,updated_at,__artie_delete) ) AS cc ON c."ID" = cc."ID"
+WHEN MATCHED AND cc."__ARTIE_DELETE" THEN DELETE
+WHEN MATCHED AND IFNULL(cc."__ARTIE_DELETE", false) = false AND cc.updated_at >= c.updated_at THEN UPDATE SET "ID"=cc."ID"
+WHEN NOT MATCHED AND IFNULL(cc."__ARTIE_DELETE", false) = false THEN INSERT ("ID") VALUES (cc."ID");`, statements[0])
 }
 
 func TestSnowflakeDialect_BuildMergeQueries_CompositeKey(t *testing.T) {
@@ -438,10 +454,11 @@ func TestSnowflakeDialect_BuildMergeQueries_CompositeKey(t *testing.T) {
 		constants.DeleteColumnMarker,
 	}
 
+	dateValue := time.Date(2001, 2, 3, 4, 5, 6, 0, time.UTC)
 	tableValues := []string{
-		fmt.Sprintf("('%s', '%s', '%s', '%v', false)", "1", "3", "456", time.Now().Round(0).UTC()),
-		fmt.Sprintf("('%s', '%s', '%s', '%v', false)", "2", "2", "bb", time.Now().Round(0).UTC()),
-		fmt.Sprintf("('%s', '%s', '%s', '%v', false)", "3", "1", "dd", time.Now().Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%s', '%v', false)", "1", "3", "456", dateValue.Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%s', '%v', false)", "2", "2", "bb", dateValue.Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%s', '%v', false)", "3", "1", "dd", dateValue.Round(0).UTC()),
 	}
 
 	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
@@ -470,11 +487,12 @@ func TestSnowflakeDialect_BuildMergeQueries_CompositeKey(t *testing.T) {
 		false,
 	)
 	assert.Len(t, statements, 1)
-	mergeSQL := statements[0]
 	assert.NoError(t, err)
-	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
-	assert.Contains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", "updated_at", "updated_at"), fmt.Sprintf("Idempotency key: %s", mergeSQL))
-	assert.Contains(t, mergeSQL, `cc ON c."ID" = cc."ID" AND c."ANOTHER_ID" = cc."ANOTHER_ID"`, mergeSQL)
+	assert.Equal(t, `
+MERGE INTO database.schema.table c USING ( SELECT id,another_id,bar,updated_at,__artie_delete from (values ('1', '3', '456', '2001-02-03 04:05:06 +0000 UTC', false),('2', '2', 'bb', '2001-02-03 04:05:06 +0000 UTC', false),('3', '1', 'dd', '2001-02-03 04:05:06 +0000 UTC', false)) as _tbl(id,another_id,bar,updated_at,__artie_delete) ) AS cc ON c."ID" = cc."ID" AND c."ANOTHER_ID" = cc."ANOTHER_ID"
+WHEN MATCHED AND cc."__ARTIE_DELETE" THEN DELETE
+WHEN MATCHED AND IFNULL(cc."__ARTIE_DELETE", false) = false AND cc.updated_at >= c.updated_at THEN UPDATE SET "ID"=cc."ID","ANOTHER_ID"=cc."ANOTHER_ID"
+WHEN NOT MATCHED AND IFNULL(cc."__ARTIE_DELETE", false) = false THEN INSERT ("ID","ANOTHER_ID") VALUES (cc."ID",cc."ANOTHER_ID");`, statements[0])
 }
 
 func TestSnowflakeDialect_BuildMergeQueries_EscapePrimaryKeys(t *testing.T) {
@@ -495,10 +513,11 @@ func TestSnowflakeDialect_BuildMergeQueries_EscapePrimaryKeys(t *testing.T) {
 		_cols.AddColumn(columns.NewColumn(col, colToTypes[col]))
 	}
 
+	dateValue := time.Date(2001, 2, 3, 4, 5, 6, 0, time.UTC)
 	tableValues := []string{
-		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "1", "456", "foo", time.Now().Round(0).UTC()),
-		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "2", "bb", "bar", time.Now().Round(0).UTC()),
-		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "3", "dd", "world", time.Now().Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "1", "456", "foo", dateValue.Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "2", "bb", "bar", dateValue.Round(0).UTC()),
+		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "3", "dd", "world", dateValue.Round(0).UTC()),
 	}
 
 	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
@@ -522,15 +541,10 @@ func TestSnowflakeDialect_BuildMergeQueries_EscapePrimaryKeys(t *testing.T) {
 		false,
 	)
 	assert.Len(t, statements, 1)
-	mergeSQL := statements[0]
 	assert.NoError(t, err)
-	assert.Contains(t, mergeSQL, fmt.Sprintf("MERGE INTO %s", fqTable), mergeSQL)
-	assert.NotContains(t, mergeSQL, fmt.Sprintf("cc.%s >= c.%s", `"UPDATED_AT"`, `"UPDATED_AT"`), fmt.Sprintf("Idempotency key: %s", mergeSQL))
-	// Check primary keys clause
-	assert.Contains(t, mergeSQL, `AS cc ON c."ID" = cc."ID" AND c."GROUP" = cc."GROUP"`, mergeSQL)
-	// Check setting for update
-	assert.Contains(t, mergeSQL, `SET "ID"=cc."ID","GROUP"=cc."GROUP","UPDATED_AT"=cc."UPDATED_AT","START"=cc."START"`, mergeSQL)
-	// Check for INSERT
-	assert.Contains(t, mergeSQL, `"ID","GROUP","UPDATED_AT","START"`, mergeSQL)
-	assert.Contains(t, mergeSQL, `cc."ID",cc."GROUP",cc."UPDATED_AT",cc."START"`, mergeSQL)
+	assert.Equal(t, `
+MERGE INTO database.schema.table c USING ( SELECT id,group,updated_at,start,__artie_delete from (values ('1', '456', 'foo', '2001-02-03 04:05:06 +0000 UTC', false),('2', 'bb', 'bar', '2001-02-03 04:05:06 +0000 UTC', false),('3', 'dd', 'world', '2001-02-03 04:05:06 +0000 UTC', false)) as _tbl(id,group,updated_at,start,__artie_delete) ) AS cc ON c."ID" = cc."ID" AND c."GROUP" = cc."GROUP"
+WHEN MATCHED AND cc."__ARTIE_DELETE" THEN DELETE
+WHEN MATCHED AND IFNULL(cc."__ARTIE_DELETE", false) = false THEN UPDATE SET "ID"=cc."ID","GROUP"=cc."GROUP","UPDATED_AT"=cc."UPDATED_AT","START"=cc."START"
+WHEN NOT MATCHED AND IFNULL(cc."__ARTIE_DELETE", false) = false THEN INSERT ("ID","GROUP","UPDATED_AT","START") VALUES (cc."ID",cc."GROUP",cc."UPDATED_AT",cc."START");`, statements[0])
 }
