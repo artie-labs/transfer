@@ -70,12 +70,12 @@ func TestSource_GetOptionalSchema(t *testing.T) {
 
 	col, isOk := cols.GetColumn("boolean_column")
 	assert.True(t, isOk)
-	assert.Equal(t, false, col.RawDefaultValue())
+	assert.Equal(t, false, col.DefaultValue())
 
 	for _, _col := range cols.GetColumns() {
 		// All the other columns do not have a default value.
 		if _col.Name() != "boolean_column" {
-			assert.Nil(t, _col.RawDefaultValue(), _col.Name())
+			assert.Nil(t, _col.DefaultValue(), _col.Name())
 		}
 	}
 }

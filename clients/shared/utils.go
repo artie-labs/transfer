@@ -15,21 +15,21 @@ import (
 )
 
 func DefaultValue(c columns.Column, dialect sql.Dialect, additionalDateFmts []string) (any, error) {
-	if c.RawDefaultValue() == nil {
-		return c.RawDefaultValue(), nil
+	if c.DefaultValue() == nil {
+		return c.DefaultValue(), nil
 	}
 
 	switch c.KindDetails.Kind {
 	case typing.Struct.Kind, typing.Array.Kind:
-		return dialect.EscapeStruct(fmt.Sprint(c.RawDefaultValue())), nil
+		return dialect.EscapeStruct(fmt.Sprint(c.DefaultValue())), nil
 	case typing.ETime.Kind:
 		if c.KindDetails.ExtendedTimeDetails == nil {
 			return nil, fmt.Errorf("column kind details for extended time is nil")
 		}
 
-		extTime, err := ext.ParseFromInterface(c.RawDefaultValue(), additionalDateFmts)
+		extTime, err := ext.ParseFromInterface(c.DefaultValue(), additionalDateFmts)
 		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", c.RawDefaultValue(), err)
+			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", c.DefaultValue(), err)
 		}
 
 		switch c.KindDetails.ExtendedTimeDetails.Type {
@@ -39,17 +39,17 @@ func DefaultValue(c columns.Column, dialect sql.Dialect, additionalDateFmts []st
 			return sql.QuoteLiteral(extTime.String(c.KindDetails.ExtendedTimeDetails.Format)), nil
 		}
 	case typing.EDecimal.Kind:
-		val, isOk := c.RawDefaultValue().(*decimal.Decimal)
+		val, isOk := c.DefaultValue().(*decimal.Decimal)
 		if !isOk {
 			return nil, fmt.Errorf("colVal is not type *decimal.Decimal")
 		}
 
 		return val.Value(), nil
 	case typing.String.Kind:
-		return sql.QuoteLiteral(fmt.Sprint(c.RawDefaultValue())), nil
+		return sql.QuoteLiteral(fmt.Sprint(c.DefaultValue())), nil
 	}
 
-	return c.RawDefaultValue(), nil
+	return c.DefaultValue(), nil
 }
 
 func BackfillColumn(dwh destination.DataWarehouse, column columns.Column, tableID sql.TableIdentifier) error {
