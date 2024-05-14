@@ -133,8 +133,7 @@ func (rd RedshiftDialect) BuildIsNotToastValueExpression(column columns.Column) 
 		return fmt.Sprintf(`COALESCE(cc.%s != JSON_PARSE('{"key":"%s"}'), true)`,
 			colName, constants.ToastUnavailableValuePlaceholder)
 	}
-	return fmt.Sprintf("COALESCE(cc.%s != '%s', true)",
-		colName, constants.ToastUnavailableValuePlaceholder)
+	return fmt.Sprintf("COALESCE(cc.%s != '%s', true)", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
 func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
