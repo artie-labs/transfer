@@ -1,6 +1,7 @@
 package dialect
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -198,7 +199,7 @@ func (rd RedshiftDialect) equalitySQLParts(primaryKeys []columns.Column) []strin
 	return equalitySQLParts
 }
 
-func (rd RedshiftDialect) BuildMergeInsertQuery(
+func (rd RedshiftDialect) buildMergeInsertQuery(
 	tableID sql.TableIdentifier,
 	subQuery string,
 	primaryKeys []columns.Column,
@@ -220,7 +221,7 @@ func (rd RedshiftDialect) BuildMergeInsertQuery(
 	)
 }
 
-func (rd RedshiftDialect) BuildMergeUpdateQuery(
+func (rd RedshiftDialect) buildMergeUpdateQuery(
 	tableID sql.TableIdentifier,
 	subQuery string,
 	primaryKeys []columns.Column,
@@ -246,7 +247,7 @@ func (rd RedshiftDialect) BuildMergeUpdateQuery(
 	)
 }
 
-func (rd RedshiftDialect) BuildMergeDeleteQuery(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column) string {
+func (rd RedshiftDialect) buildMergeDeleteQuery(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column) string {
 	return fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s AS cc WHERE cc.%s = true);`,
 		// DELETE from table where (pk_1, pk_2)
 		tableID.FullyQualifiedName(), strings.Join(columns.QuoteColumns(primaryKeys, rd), ","),
@@ -257,4 +258,49 @@ func (rd RedshiftDialect) BuildMergeDeleteQuery(tableID sql.TableIdentifier, sub
 			Prefix:    "cc.",
 		}), subQuery, rd.QuoteIdentifier(constants.DeleteColumnMarker),
 	)
+}
+
+func (rd RedshiftDialect) BuildMergeQueries(
+	tableID sql.TableIdentifier,
+	subQuery string,
+	idempotentKey string,
+	primaryKeys []columns.Column,
+	_ []string,
+	cols []columns.Column,
+	softDelete bool,
+	containsHardDeletes *bool,
+) ([]string, error) {
+	// ContainsHardDeletes is only used for Redshift, so we'll validate it now
+	if containsHardDeletes == nil {
+		return nil, fmt.Errorf("containsHardDeletes cannot be nil")
+	}
+
+	// We should not need idempotency key for DELETE
+	// This is based on the assumption that the primary key would be atomically increasing or UUID based
+	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
+	// However, there may be edge cases where folks end up restoring deleted rows (which will contain the same PK).
+
+	if softDelete {
+		return []string{
+			rd.buildMergeInsertQuery(tableID, subQuery, primaryKeys, cols),
+			rd.buildMergeUpdateQuery(tableID, subQuery, primaryKeys, cols, idempotentKey, softDelete),
+		}, nil
+	}
+
+	// We also need to remove __artie flags since it does not exist in the destination table
+	cols, removed := columns.RemoveDeleteColumnMarker(cols)
+	if !removed {
+		return nil, errors.New("artie delete flag doesn't exist")
+	}
+
+	parts := []string{
+		rd.buildMergeInsertQuery(tableID, subQuery, primaryKeys, cols),
+		rd.buildMergeUpdateQuery(tableID, subQuery, primaryKeys, cols, idempotentKey, softDelete),
+	}
+
+	if *containsHardDeletes {
+		parts = append(parts, rd.buildMergeDeleteQuery(tableID, subQuery, primaryKeys))
+	}
+
+	return parts, nil
 }
