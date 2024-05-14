@@ -151,12 +151,12 @@ func TestMSSQLDialect_BuildAlterColumnQuery(t *testing.T) {
 
 func TestMSSQLDialect_BuildIsNotToastValueExpression(t *testing.T) {
 	assert.Equal(t,
-		`COALESCE(cc."bar", '') != '__debezium_unavailable_value'`,
-		MSSQLDialect{}.BuildIsNotToastValueExpression("cc", columns.NewColumn("bar", typing.Invalid)),
+		`COALESCE(tbl."bar", '') != '__debezium_unavailable_value'`,
+		MSSQLDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("bar", typing.Invalid)),
 	)
 	assert.Equal(t,
-		`COALESCE(cc."foo", {}) != {'key': '__debezium_unavailable_value'}`,
-		MSSQLDialect{}.BuildIsNotToastValueExpression("cc", columns.NewColumn("foo", typing.Struct)),
+		`COALESCE(tbl."foo", {}) != {'key': '__debezium_unavailable_value'}`,
+		MSSQLDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("foo", typing.Struct)),
 	)
 }
 

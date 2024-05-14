@@ -200,12 +200,12 @@ func TestRedshiftDialect_BuildAlterColumnQuery(t *testing.T) {
 
 func TestRedshiftDialect_BuildIsNotToastValueExpression(t *testing.T) {
 	assert.Equal(t,
-		`COALESCE(cc."bar" != '__debezium_unavailable_value', true)`,
-		RedshiftDialect{}.BuildIsNotToastValueExpression("cc", columns.NewColumn("bar", typing.Invalid)),
+		`COALESCE(tbl."bar" != '__debezium_unavailable_value', true)`,
+		RedshiftDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("bar", typing.Invalid)),
 	)
 	assert.Equal(t,
-		`COALESCE(cc."foo" != JSON_PARSE('{"key":"__debezium_unavailable_value"}'), true)`,
-		RedshiftDialect{}.BuildIsNotToastValueExpression("cc", columns.NewColumn("foo", typing.Struct)),
+		`COALESCE(tbl."foo" != JSON_PARSE('{"key":"__debezium_unavailable_value"}'), true)`,
+		RedshiftDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("foo", typing.Struct)),
 	)
 }
 
