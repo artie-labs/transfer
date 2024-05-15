@@ -15,11 +15,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-const (
-	stagingAlias = "cc"
-	targetAlias  = "c"
-)
-
 type RedshiftDialect struct{}
 
 func (rd RedshiftDialect) QuoteIdentifier(identifier string) string {
@@ -201,16 +196,16 @@ func (rd RedshiftDialect) buildMergeInsertQuery(
 	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s AS %s LEFT JOIN %s AS %s ON %s WHERE %s.%s IS NULL;`,
 		// insert into target (col1, col2, col3)
 		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(cols, rd), ","),
-		// SELECT cc.col1, cc.col2, ... FROM staging as CC
+		// SELECT stg.col1, stg.col2, ... FROM staging as CC
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
 			Vals:      sql.QuoteColumns(cols, rd),
 			Separator: ",",
-			Prefix:    stagingAlias + ".",
-		}), subQuery, stagingAlias,
+			Prefix:    constants.StagingAlias + ".",
+		}), subQuery, constants.StagingAlias,
 		// LEFT JOIN table on pk(s)
-		tableID.FullyQualifiedName(), targetAlias, strings.Join(sql.BuildColumnComparisons(primaryKeys, targetAlias, stagingAlias, sql.Equal, rd), " AND "),
+		tableID.FullyQualifiedName(), constants.TargetAlias, strings.Join(sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, rd), " AND "),
 		// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
-		targetAlias,
+		constants.TargetAlias,
 		rd.QuoteIdentifier(primaryKeys[0].Name()),
 	)
 }
@@ -223,21 +218,21 @@ func (rd RedshiftDialect) buildMergeUpdateQuery(
 	idempotentKey string,
 	softDelete bool,
 ) string {
-	clauses := sql.BuildColumnComparisons(primaryKeys, targetAlias, stagingAlias, sql.Equal, rd)
+	clauses := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, rd)
 
 	if idempotentKey != "" {
-		clauses = append(clauses, fmt.Sprintf("%s.%s >= %s.%s", stagingAlias, idempotentKey, targetAlias, idempotentKey))
+		clauses = append(clauses, fmt.Sprintf("%s.%s >= %s.%s", constants.StagingAlias, idempotentKey, constants.TargetAlias, idempotentKey))
 	}
 
 	if !softDelete {
-		clauses = append(clauses, fmt.Sprintf("COALESCE(%s.%s, false) = false", stagingAlias, rd.QuoteIdentifier(constants.DeleteColumnMarker)))
+		clauses = append(clauses, fmt.Sprintf("COALESCE(%s.%s, false) = false", constants.StagingAlias, rd.QuoteIdentifier(constants.DeleteColumnMarker)))
 	}
 
 	return fmt.Sprintf(`UPDATE %s AS %s SET %s FROM %s AS %s WHERE %s;`,
-		// UPDATE table set col1 = cc. col1
-		tableID.FullyQualifiedName(), targetAlias, sql.BuildColumnsUpdateFragment(cols, stagingAlias, targetAlias, rd),
+		// UPDATE table set col1 = stg. col1
+		tableID.FullyQualifiedName(), constants.TargetAlias, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, rd),
 		// FROM staging WHERE join on PK(s)
-		subQuery, stagingAlias, strings.Join(clauses, " AND "),
+		subQuery, constants.StagingAlias, strings.Join(clauses, " AND "),
 	)
 }
 
@@ -245,12 +240,12 @@ func (rd RedshiftDialect) buildMergeDeleteQuery(tableID sql.TableIdentifier, sub
 	return fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s AS %s WHERE %s.%s = true);`,
 		// DELETE from table where (pk_1, pk_2)
 		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(primaryKeys, rd), ","),
-		// IN (cc.pk_1, cc.pk_2) FROM staging
+		// IN (stg.pk_1, stg.pk_2) FROM staging
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
 			Vals:      sql.QuoteColumns(primaryKeys, rd),
 			Separator: ",",
-			Prefix:    stagingAlias + ".",
-		}), subQuery, stagingAlias, stagingAlias, rd.QuoteIdentifier(constants.DeleteColumnMarker),
+			Prefix:    constants.StagingAlias + ".",
+		}), subQuery, constants.StagingAlias, constants.StagingAlias, rd.QuoteIdentifier(constants.DeleteColumnMarker),
 	)
 }
 
@@ -269,17 +264,13 @@ func (rd RedshiftDialect) BuildMergeQueries(
 	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
 	// However, there may be edge cases where folks end up restoring deleted rows (which will contain the same PK).
 
-	if softDelete {
-		return []string{
-			rd.buildMergeInsertQuery(tableID, subQuery, primaryKeys, cols),
-			rd.buildMergeUpdateQuery(tableID, subQuery, primaryKeys, cols, idempotentKey, softDelete),
-		}, nil
-	}
-
-	// We also need to remove __artie flags since it does not exist in the destination table
-	cols, removed := columns.RemoveDeleteColumnMarker(cols)
-	if !removed {
-		return nil, errors.New("artie delete flag doesn't exist")
+	if !softDelete {
+		// We also need to remove __artie flags since it does not exist in the destination table
+		var removed bool
+		cols, removed = columns.RemoveDeleteColumnMarker(cols)
+		if !removed {
+			return nil, errors.New("artie delete flag doesn't exist")
+		}
 	}
 
 	parts := []string{
@@ -287,7 +278,7 @@ func (rd RedshiftDialect) BuildMergeQueries(
 		rd.buildMergeUpdateQuery(tableID, subQuery, primaryKeys, cols, idempotentKey, softDelete),
 	}
 
-	if containsHardDeletes {
+	if !softDelete && containsHardDeletes {
 		parts = append(parts, rd.buildMergeDeleteQuery(tableID, subQuery, primaryKeys))
 	}
 

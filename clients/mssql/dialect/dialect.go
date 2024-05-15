@@ -15,11 +15,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-const (
-	stagingAlias = "cc"
-	targetAlias  = "c"
-)
-
 type MSSQLDialect struct{}
 
 func (MSSQLDialect) QuoteIdentifier(identifier string) string {
@@ -191,26 +186,29 @@ func (md MSSQLDialect) BuildMergeQueries(
 ) ([]string, error) {
 	var idempotentClause string
 	if idempotentKey != "" {
-		idempotentClause = fmt.Sprintf("AND %s.%s >= %s.%s ", stagingAlias, idempotentKey, targetAlias, idempotentKey)
+		idempotentClause = fmt.Sprintf("AND %s.%s >= %s.%s ", constants.StagingAlias, idempotentKey, constants.TargetAlias, idempotentKey)
 	}
 
-	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, targetAlias, stagingAlias, sql.Equal, md)
+	baseQuery := fmt.Sprintf(`
+MERGE INTO %s %s
+USING %s AS %s ON %s`,
+		tableID.FullyQualifiedName(), constants.TargetAlias,
+		subQuery, constants.StagingAlias,
+		strings.Join(sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, md), " AND "),
+	)
 
 	if softDelete {
-		return []string{fmt.Sprintf(`
-MERGE INTO %s %s
-USING %s AS %s ON %s
+		return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(%s.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
-			tableID.FullyQualifiedName(), targetAlias, subQuery, stagingAlias, strings.Join(equalitySQLParts, " AND "),
 			// Update + Soft Deletion
-			idempotentClause, sql.BuildColumnsUpdateFragment(cols, stagingAlias, targetAlias, md),
+			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
 			// Insert
-			stagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, md), ","),
+			constants.StagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, md), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
 				Vals:      sql.QuoteColumns(cols, md),
 				Separator: ",",
-				Prefix:    stagingAlias + ".",
+				Prefix:    constants.StagingAlias + ".",
 			}))}, nil
 	}
 
@@ -220,22 +218,19 @@ WHEN NOT MATCHED AND COALESCE(%s.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 		return nil, errors.New("artie delete flag doesn't exist")
 	}
 
-	return []string{fmt.Sprintf(`
-MERGE INTO %s %s
-USING %s AS %s ON %s
+	return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED AND %s.%s = 1 THEN DELETE
 WHEN MATCHED AND COALESCE(%s.%s, 0) = 0 %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(%s.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
-		tableID.FullyQualifiedName(), targetAlias, subQuery, stagingAlias, strings.Join(equalitySQLParts, " AND "),
 		// Delete
-		stagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker),
+		constants.StagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker),
 		// Update
-		stagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, stagingAlias, targetAlias, md),
+		constants.StagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
 		// Insert
-		stagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, md), ","),
+		constants.StagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, md), ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
 			Vals:      sql.QuoteColumns(cols, md),
 			Separator: ",",
-			Prefix:    stagingAlias + ".",
+			Prefix:    constants.StagingAlias + ".",
 		}))}, nil
 }

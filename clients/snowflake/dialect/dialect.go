@@ -16,11 +16,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-const (
-	StagingAlias = "cc"
-	TargetAlias  = "c"
-)
-
 type SnowflakeDialect struct{}
 
 func (sd SnowflakeDialect) QuoteIdentifier(identifier string) string {
@@ -216,29 +211,30 @@ func (sd SnowflakeDialect) BuildMergeQueries(
 	// This is because Snowflake does not respect NS granularity.
 	var idempotentClause string
 	if idempotentKey != "" {
-		idempotentClause = fmt.Sprintf("AND %s.%s >= %s.%s ", StagingAlias, idempotentKey, TargetAlias, idempotentKey)
+		idempotentClause = fmt.Sprintf("AND %s.%s >= %s.%s ", constants.StagingAlias, idempotentKey, constants.TargetAlias, idempotentKey)
 	}
 
-	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, TargetAlias, StagingAlias, sql.Equal, sd)
-
+	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, sd)
 	if len(additionalEqualityStrings) > 0 {
 		equalitySQLParts = append(equalitySQLParts, additionalEqualityStrings...)
 	}
+	baseQuery := fmt.Sprintf(`
+MERGE INTO %s %s USING ( %s ) AS %s ON %s`,
+		tableID.FullyQualifiedName(), constants.TargetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
+	)
 
 	if softDelete {
-		return []string{fmt.Sprintf(`
-MERGE INTO %s %s USING ( %s ) AS %s ON %s
+		return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
-			tableID.FullyQualifiedName(), TargetAlias, subQuery, StagingAlias, strings.Join(equalitySQLParts, " AND "),
 			// Update + Soft Deletion
-			idempotentClause, sql.BuildColumnsUpdateFragment(cols, StagingAlias, TargetAlias, sd),
+			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, sd),
 			// Insert
-			StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, sd), ","),
+			constants.StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, sd), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
 				Vals:      sql.QuoteColumns(cols, sd),
 				Separator: ",",
-				Prefix:    StagingAlias + ".",
+				Prefix:    constants.StagingAlias + ".",
 			}))}, nil
 	}
 
@@ -248,21 +244,19 @@ WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 		return []string{}, errors.New("artie delete flag doesn't exist")
 	}
 
-	return []string{fmt.Sprintf(`
-MERGE INTO %s %s USING ( %s ) AS %s ON %s
+	return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED AND %s.%s THEN DELETE
 WHEN MATCHED AND IFNULL(%s.%s, false) = false %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
-		tableID.FullyQualifiedName(), TargetAlias, subQuery, StagingAlias, strings.Join(equalitySQLParts, " AND "),
 		// Delete
-		StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker),
+		constants.StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker),
 		// Update
-		StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, StagingAlias, TargetAlias, sd),
+		constants.StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, sd),
 		// Insert
-		StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, sd), ","),
+		constants.StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, sd), ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
 			Vals:      sql.QuoteColumns(cols, sd),
 			Separator: ",",
-			Prefix:    StagingAlias + ".",
+			Prefix:    constants.StagingAlias + ".",
 		}))}, nil
 }
