@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
@@ -15,19 +16,26 @@ func QuoteColumns(cols []columns.Column, dialect Dialect) []string {
 	return result
 }
 
-// buildColumnsUpdateFragment will parse the columns and then returns a list of strings like: first_name=tgt.first_name,last_name=stg.last_name,email=tgt.email
+func QuoteTableAliasColumn(tableAlias constants.TableAlias, column columns.Column, dialect Dialect) string {
+	return fmt.Sprintf("%s.%s", tableAlias, dialect.QuoteIdentifier(column.Name()))
+}
+
+// BuildColumnsUpdateFragment will parse the columns and return a string like: first_name=tgt."first_name",last_name=stg."last_name",email=tgt."email"
 // NOTE: This should only be used with valid columns.
-func BuildColumnsUpdateFragment(columns []columns.Column, stagingAlias, targetAlias string, dialect Dialect) string {
+func BuildColumnsUpdateFragment(columns []columns.Column, stagingAlias, targetAlias constants.TableAlias, dialect Dialect) string {
 	var cols []string
 	for _, column := range columns {
-		colName := dialect.QuoteIdentifier(column.Name())
+		var colVal string
 		if column.ToastColumn {
-			cols = append(cols, fmt.Sprintf("%s= CASE WHEN %s THEN %s.%s ELSE %s.%s END",
-				colName, dialect.BuildIsNotToastValueExpression(stagingAlias, column), stagingAlias, colName, targetAlias, colName))
+			colVal = fmt.Sprintf(" CASE WHEN %s THEN %s ELSE %s END",
+				dialect.BuildIsNotToastValueExpression(stagingAlias, column),
+				QuoteTableAliasColumn(stagingAlias, column, dialect),
+				QuoteTableAliasColumn(targetAlias, column, dialect),
+			)
 		} else {
-			// This is to make it look like: objCol=stg.objCol
-			cols = append(cols, fmt.Sprintf("%s=%s.%s", colName, stagingAlias, colName))
+			colVal = QuoteTableAliasColumn(stagingAlias, column, dialect)
 		}
+		cols = append(cols, fmt.Sprintf("%s=%s", dialect.QuoteIdentifier(column.Name()), colVal))
 	}
 
 	return strings.Join(cols, ",")
