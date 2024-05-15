@@ -268,7 +268,7 @@ WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 		constants.StagingAlias, bd.QuoteIdentifier(constants.DeleteColumnMarker),
 		// WHEN MATCHED AND IFNULL(%s.%s, false) = false %sTHEN UPDATE SET %s
 		constants.StagingAlias, bd.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, bd),
-		// WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s),
+		// WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s)
 		constants.StagingAlias, bd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, bd), ","),
 		// VALUES (%s);
 		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, bd), ","),
