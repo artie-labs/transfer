@@ -38,7 +38,7 @@ func (s *Store) Append(tableData *optimization.TableData) error {
 }
 
 func (s *Store) additionalEqualityStrings(tableData *optimization.TableData) []string {
-	var cols = make([]columns.Column, len(tableData.TopicConfig().AdditionalMergePredicates))
+	cols := make([]columns.Column, len(tableData.TopicConfig().AdditionalMergePredicates))
 	for i, additionalMergePredicate := range tableData.TopicConfig().AdditionalMergePredicates {
 		cols[i] = columns.NewColumn(additionalMergePredicate.PartitionField, typing.Invalid)
 	}
