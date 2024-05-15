@@ -4,7 +4,6 @@ import (
 	"log/slog"
 
 	"github.com/artie-labs/transfer/clients/shared"
-	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/logger"
@@ -43,7 +42,7 @@ func (s *Store) additionalEqualityStrings(tableData *optimization.TableData) []s
 	for i, additionalMergePredicate := range tableData.TopicConfig().AdditionalMergePredicates {
 		cols[i] = columns.NewColumn(additionalMergePredicate.PartitionField, typing.Invalid)
 	}
-	return sql.BuildColumnComparisons(cols, dialect.TargetAlias, constants.StagingAlias, sql.Equal, s.Dialect())
+	return sql.BuildColumnComparisons(cols, constants.TargetAlias, constants.StagingAlias, sql.Equal, s.Dialect())
 }
 
 func (s *Store) Merge(tableData *optimization.TableData) error {
