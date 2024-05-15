@@ -23,10 +23,16 @@ const (
 
 	TemporaryTableTTL = 6 * time.Hour
 
-	DBZPostgresFormat    = "debezium.postgres"
+	DBZMongoFormat = "debezium.mongodb"
+
+	// DBZPostgresFormat - deprecated - Use `DBZRelationalFormat` instead
+	DBZPostgresFormat = "debezium.postgres"
+	// DBZPostgresAltFormat - deprecated - Use `DBZRelationalFormat` instead
 	DBZPostgresAltFormat = "debezium.postgres.wal2json"
-	DBZMongoFormat       = "debezium.mongodb"
-	DBZMySQLFormat       = "debezium.mysql"
+	// DBZMySQLFormat - deprecated - Use `DBZRelationalFormat` instead
+	DBZMySQLFormat = "debezium.mysql"
+
+	DBZRelationalFormat = "debezium.relational"
 
 	StagingAlias = "stg"
 	TargetAlias  = "c" // TODO: Rename to something more specific.
@@ -35,9 +41,7 @@ const (
 // ExporterKind is used for the Telemetry package
 type ExporterKind string
 
-const (
-	Datadog ExporterKind = "datadog"
-)
+const Datadog ExporterKind = "datadog"
 
 // ColumnOperation is a type used for DDL operations
 type ColumnOperation string
