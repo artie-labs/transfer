@@ -20,7 +20,7 @@ func QuoteTableAliasColumn(tableAlias constants.TableAlias, column columns.Colum
 	return fmt.Sprintf("%s.%s", tableAlias, dialect.QuoteIdentifier(column.Name()))
 }
 
-// buildColumnsUpdateFragment will parse the columns and then returns a list of strings like: first_name=tgt.first_name,last_name=stg.last_name,email=tgt.email
+// BuildColumnsUpdateFragment will parse the columns and then returns a string like: first_name=tgt."first_name",last_name=stg."last_name",email=tgt."email"
 // NOTE: This should only be used with valid columns.
 func BuildColumnsUpdateFragment(columns []columns.Column, stagingAlias, targetAlias constants.TableAlias, dialect Dialect) string {
 	var cols []string
