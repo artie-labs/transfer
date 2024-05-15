@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/destination/types"
+
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -64,7 +66,7 @@ func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
 	return strings.Join([]string{fqTableName, yyyyMMDDFormat}, "/")
 }
 
-func (s *Store) Append(tableData *optimization.TableData) error {
+func (s *Store) Append(tableData *optimization.TableData, _ types.DwhAppendOptions) error {
 	// There's no difference in appending or merging for S3.
 	return s.Merge(tableData)
 }

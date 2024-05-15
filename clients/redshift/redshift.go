@@ -31,8 +31,10 @@ type Store struct {
 	db.Store
 }
 
-func (s *Store) Append(tableData *optimization.TableData) error {
-	return shared.Append(s, tableData, types.AdditionalSettings{})
+func (s *Store) Append(tableData *optimization.TableData, opts types.DwhAppendOptions) error {
+	return shared.Append(s, tableData, types.AdditionalSettings{
+		DwhAppendOptions: opts,
+	})
 }
 
 func (s *Store) Merge(tableData *optimization.TableData) error {

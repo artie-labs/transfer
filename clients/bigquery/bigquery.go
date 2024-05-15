@@ -41,8 +41,10 @@ type Store struct {
 	db.Store
 }
 
-func (s *Store) Append(tableData *optimization.TableData) error {
-	return shared.Append(s, tableData, types.AdditionalSettings{})
+func (s *Store) Append(tableData *optimization.TableData, opts types.DwhAppendOptions) error {
+	return shared.Append(s, tableData, types.AdditionalSettings{
+		DwhAppendOptions: opts,
+	})
 }
 
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {

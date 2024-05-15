@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/destination/types"
+
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/stringutil"
@@ -89,7 +91,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 			action := "merge"
 			// Merge or Append depending on the mode.
 			if _tableData.Mode() == config.History {
-				err = dest.Append(_tableData.TableData)
+				err = dest.Append(_tableData.TableData, types.DwhAppendOptions{})
 				action = "append"
 			} else {
 				err = dest.Merge(_tableData.TableData)
