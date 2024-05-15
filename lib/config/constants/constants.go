@@ -38,9 +38,7 @@ const (
 // ExporterKind is used for the Telemetry package
 type ExporterKind string
 
-const (
-	Datadog ExporterKind = "datadog"
-)
+const Datadog ExporterKind = "datadog"
 
 // ColumnOperation is a type used for DDL operations
 type ColumnOperation string
