@@ -33,9 +33,6 @@ const (
 	DBZMySQLFormat = "debezium.mysql"
 
 	DBZRelationalFormat = "debezium.relational"
-
-	StagingAlias = "stg"
-	TargetAlias  = "tgt"
 )
 
 // ExporterKind is used for the Telemetry package
@@ -104,3 +101,10 @@ const (
 func IsValidS3OutputFormat(format S3OutputFormat) bool {
 	return format == ParquetFormat
 }
+
+type TableAlias = string
+
+const (
+	StagingAlias TableAlias = "stg"
+	TargetAlias  TableAlias = "tgt"
+)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
@@ -15,7 +16,7 @@ func QuoteColumns(cols []columns.Column, dialect Dialect) []string {
 	return result
 }
 
-func QuoteTableAliasColumns(tableAlias string, cols []columns.Column, dialect Dialect) []string {
+func QuoteTableAliasColumns(tableAlias constants.TableAlias, cols []columns.Column, dialect Dialect) []string {
 	result := make([]string, len(cols))
 	for i, col := range cols {
 		result[i] = fmt.Sprintf("%s.%s", tableAlias, dialect.QuoteIdentifier(col.Name()))
@@ -25,7 +26,7 @@ func QuoteTableAliasColumns(tableAlias string, cols []columns.Column, dialect Di
 
 // buildColumnsUpdateFragment will parse the columns and then returns a list of strings like: first_name=tgt.first_name,last_name=stg.last_name,email=tgt.email
 // NOTE: This should only be used with valid columns.
-func BuildColumnsUpdateFragment(columns []columns.Column, stagingAlias, targetAlias string, dialect Dialect) string {
+func BuildColumnsUpdateFragment(columns []columns.Column, stagingAlias, targetAlias constants.TableAlias, dialect Dialect) string {
 	var cols []string
 	for _, column := range columns {
 		colName := dialect.QuoteIdentifier(column.Name())
