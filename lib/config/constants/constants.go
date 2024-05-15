@@ -23,10 +23,16 @@ const (
 
 	TemporaryTableTTL = 6 * time.Hour
 
-	DBZPostgresFormat    = "debezium.postgres"
+	// DBZPostgresFormat - deprecated - Use `DBZRelationalFormat` instead
+	DBZPostgresFormat = "debezium.postgres"
+	// DBZPostgresAltFormat - deprecated - Use `DBZRelationalFormat` instead
 	DBZPostgresAltFormat = "debezium.postgres.wal2json"
-	DBZMongoFormat       = "debezium.mongodb"
-	DBZMySQLFormat       = "debezium.mysql"
+	// DBZMongoFormat - deprecated - Use `DBZRelationalFormat` instead
+	DBZMongoFormat = "debezium.mongodb"
+	// DBZMySQLFormat - deprecated - Use `DBZRelationalFormat` instead
+	DBZMySQLFormat = "debezium.mysql"
+
+	DBZRelationalFormat = "debezium.relational"
 )
 
 // ExporterKind is used for the Telemetry package

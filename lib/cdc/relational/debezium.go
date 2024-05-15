@@ -1,4 +1,4 @@
-package postgres
+package relational
 
 import (
 	"encoding/json"
@@ -28,7 +28,12 @@ func (d *Debezium) GetEventFromBytes(_ typing.Settings, bytes []byte) (cdc.Event
 }
 
 func (d *Debezium) Labels() []string {
-	return []string{constants.DBZPostgresFormat, constants.DBZPostgresAltFormat}
+	return []string{
+		constants.DBZPostgresFormat,
+		constants.DBZPostgresAltFormat,
+		constants.DBZMySQLFormat,
+		constants.DBZRelationalFormat,
+	}
 }
 
 func (d *Debezium) GetPrimaryKey(key []byte, tc *kafkalib.TopicConfig) (kvMap map[string]any, err error) {

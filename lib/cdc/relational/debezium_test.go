@@ -1,4 +1,4 @@
-package postgres
+package relational
 
 import (
 	"time"
@@ -16,32 +16,32 @@ var validTc = &kafkalib.TopicConfig{
 	CDCKeyFormat: "org.apache.kafka.connect.json.JsonConverter",
 }
 
-func (p *PostgresTestSuite) TestGetEventFromBytesTombstone() {
-	_, err := p.GetEventFromBytes(typing.Settings{}, nil)
-	assert.ErrorContains(p.T(), err, "empty message")
+func (r *RelationTestSuite) TestGetEventFromBytesTombstone() {
+	_, err := r.GetEventFromBytes(typing.Settings{}, nil)
+	assert.ErrorContains(r.T(), err, "empty message")
 }
 
-func (p *PostgresTestSuite) TestGetPrimaryKey() {
+func (r *RelationTestSuite) TestGetPrimaryKey() {
 	valString := `{"id": 47}`
-	pkMap, err := p.GetPrimaryKey([]byte(valString), validTc)
-	assert.NoError(p.T(), err)
+	pkMap, err := r.GetPrimaryKey([]byte(valString), validTc)
+	assert.NoError(r.T(), err)
 
 	val, isOk := pkMap["id"]
-	assert.True(p.T(), isOk)
-	assert.Equal(p.T(), val, float64(47))
-	assert.Equal(p.T(), err, nil)
+	assert.True(r.T(), isOk)
+	assert.Equal(r.T(), val, float64(47))
+	assert.Equal(r.T(), err, nil)
 }
 
-func (p *PostgresTestSuite) TestGetPrimaryKeyUUID() {
+func (r *RelationTestSuite) TestGetPrimaryKeyUUID() {
 	valString := `{"uuid": "ca0cefe9-45cf-44fa-a2ab-ec5e7e5522a3"}`
-	pkMap, err := p.GetPrimaryKey([]byte(valString), validTc)
+	pkMap, err := r.GetPrimaryKey([]byte(valString), validTc)
 	val, isOk := pkMap["uuid"]
-	assert.True(p.T(), isOk)
-	assert.Equal(p.T(), val, "ca0cefe9-45cf-44fa-a2ab-ec5e7e5522a3")
-	assert.Equal(p.T(), err, nil)
+	assert.True(r.T(), isOk)
+	assert.Equal(r.T(), val, "ca0cefe9-45cf-44fa-a2ab-ec5e7e5522a3")
+	assert.Equal(r.T(), err, nil)
 }
 
-func (p *PostgresTestSuite) TestPostgresEvent() {
+func (r *RelationTestSuite) TestPostgresEvent() {
 	payload := `
 {
 	"schema": {},
@@ -81,25 +81,25 @@ func (p *PostgresTestSuite) TestPostgresEvent() {
 	}
 }
 `
-	evt, err := p.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
-	assert.Nil(p.T(), err)
-	assert.False(p.T(), evt.DeletePayload())
+	evt, err := r.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
+	assert.Nil(r.T(), err)
+	assert.False(r.T(), evt.DeletePayload())
 
 	evtData, err := evt.GetData(map[string]any{"id": 59}, &kafkalib.TopicConfig{
 		IncludeDatabaseUpdatedAt: true,
 	})
-	assert.NoError(p.T(), err)
-	assert.Equal(p.T(), float64(59), evtData["id"])
-	assert.Equal(p.T(), "2022-11-16T04:01:53.308+00:00", evtData[constants.DatabaseUpdatedColumnMarker])
+	assert.NoError(r.T(), err)
+	assert.Equal(r.T(), float64(59), evtData["id"])
+	assert.Equal(r.T(), "2022-11-16T04:01:53.308+00:00", evtData[constants.DatabaseUpdatedColumnMarker])
 
-	assert.Equal(p.T(), "Barings Participation Investors", evtData["item"])
-	assert.Equal(p.T(), map[string]any{"object": "foo"}, evtData["nested"])
-	assert.Equal(p.T(), time.Date(2022, time.November, 16, 4, 1, 53, 308000000, time.UTC), evt.GetExecutionTime())
-	assert.Equal(p.T(), "orders", evt.GetTableName())
-	assert.False(p.T(), evt.DeletePayload())
+	assert.Equal(r.T(), "Barings Participation Investors", evtData["item"])
+	assert.Equal(r.T(), map[string]any{"object": "foo"}, evtData["nested"])
+	assert.Equal(r.T(), time.Date(2022, time.November, 16, 4, 1, 53, 308000000, time.UTC), evt.GetExecutionTime())
+	assert.Equal(r.T(), "orders", evt.GetTableName())
+	assert.False(r.T(), evt.DeletePayload())
 }
 
-func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
+func (r *RelationTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	payload := `
 {
 	"schema": {
@@ -187,23 +187,23 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	}
 }
 `
-	evt, err := p.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
-	assert.Nil(p.T(), err)
-	assert.False(p.T(), evt.DeletePayload())
+	evt, err := r.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
+	assert.Nil(r.T(), err)
+	assert.False(r.T(), evt.DeletePayload())
 
 	evtData, err := evt.GetData(map[string]any{"id": 1001}, &kafkalib.TopicConfig{})
-	assert.NoError(p.T(), err)
+	assert.NoError(r.T(), err)
 
 	// Testing typing.
-	assert.Equal(p.T(), evtData["id"], 1001)
-	assert.Equal(p.T(), evtData["another_id"], 333)
-	assert.Equal(p.T(), typing.ParseValue(typing.Settings{}, "another_id", evt.GetOptionalSchema(), evtData["another_id"]), typing.Integer)
+	assert.Equal(r.T(), evtData["id"], 1001)
+	assert.Equal(r.T(), evtData["another_id"], 333)
+	assert.Equal(r.T(), typing.ParseValue(typing.Settings{}, "another_id", evt.GetOptionalSchema(), evtData["another_id"]), typing.Integer)
 
-	assert.Equal(p.T(), evtData["email"], "sally.thomas@acme.com")
+	assert.Equal(r.T(), evtData["email"], "sally.thomas@acme.com")
 
 	// Datetime without TZ is emitted in microseconds which is 1000x larger than nanoseconds.
 	td := time.Date(2023, time.February, 2, 17, 51, 35, 175445*1000, time.UTC)
-	assert.Equal(p.T(), evtData["ts_no_tz1"], &ext.ExtendedTime{
+	assert.Equal(r.T(), evtData["ts_no_tz1"], &ext.ExtendedTime{
 		Time: td,
 		NestedKind: ext.NestedKind{
 			Type:   ext.DateTimeKindType,
@@ -211,7 +211,7 @@ func (p *PostgresTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 		},
 	})
 
-	assert.Equal(p.T(), time.Date(2023, time.February, 2,
+	assert.Equal(r.T(), time.Date(2023, time.February, 2,
 		17, 54, 11, 451000000, time.UTC), evt.GetExecutionTime())
-	assert.Equal(p.T(), "customers", evt.GetTableName())
+	assert.Equal(r.T(), "customers", evt.GetTableName())
 }
