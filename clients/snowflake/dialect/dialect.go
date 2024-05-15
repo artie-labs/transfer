@@ -145,7 +145,7 @@ func (SnowflakeDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, colum
 	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 
-func (sd SnowflakeDialect) BuildIsNotToastValueExpression(tableAlias string, column columns.Column) string {
+func (sd SnowflakeDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
 	colName := sd.QuoteIdentifier(column.Name())
 	if column.KindDetails == typing.Struct {
 		return fmt.Sprintf("COALESCE(%s.%s != {'key': '%s'}, true)", tableAlias, colName, constants.ToastUnavailableValuePlaceholder)

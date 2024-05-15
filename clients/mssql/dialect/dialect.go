@@ -160,7 +160,7 @@ func (MSSQLDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, columnOp 
 	return fmt.Sprintf("ALTER TABLE %s %s %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 
-func (md MSSQLDialect) BuildIsNotToastValueExpression(tableAlias string, column columns.Column) string {
+func (md MSSQLDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
 	colName := md.QuoteIdentifier(column.Name())
 	// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
 	if column.KindDetails == typing.Struct {
