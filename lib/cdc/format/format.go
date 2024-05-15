@@ -3,10 +3,9 @@ package format
 import (
 	"log/slog"
 
-	"github.com/artie-labs/transfer/lib/cdc/relational"
-
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/cdc/mongo"
+	"github.com/artie-labs/transfer/lib/cdc/relational"
 	"github.com/artie-labs/transfer/lib/logger"
 )
 
