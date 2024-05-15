@@ -1,13 +1,16 @@
 package snowflake
 
 import (
-	"fmt"
 	"log/slog"
 
 	"github.com/artie-labs/transfer/clients/shared"
+	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 func (s *Store) Append(tableData *optimization.TableData) error {
@@ -35,14 +38,11 @@ func (s *Store) Append(tableData *optimization.TableData) error {
 }
 
 func (s *Store) additionalEqualityStrings(tableData *optimization.TableData) []string {
-	var additionalEqualityStrings []string
-	if len(tableData.TopicConfig().AdditionalMergePredicates) > 0 {
-		for _, additionalMergePredicate := range tableData.TopicConfig().AdditionalMergePredicates {
-			mergePredicateCol := s.Dialect().QuoteIdentifier(additionalMergePredicate.PartitionField)
-			additionalEqualityStrings = append(additionalEqualityStrings, fmt.Sprintf("c.%s = cc.%s", mergePredicateCol, mergePredicateCol))
-		}
+	cols := make([]columns.Column, len(tableData.TopicConfig().AdditionalMergePredicates))
+	for i, additionalMergePredicate := range tableData.TopicConfig().AdditionalMergePredicates {
+		cols[i] = columns.NewColumn(additionalMergePredicate.PartitionField, typing.Invalid)
 	}
-	return additionalEqualityStrings
+	return sql.BuildColumnComparisons(cols, dialect.TargetAlias, dialect.StagingAlias, sql.Equal, s.Dialect())
 }
 
 func (s *Store) Merge(tableData *optimization.TableData) error {
