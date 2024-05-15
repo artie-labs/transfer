@@ -23,12 +23,12 @@ const (
 
 	TemporaryTableTTL = 6 * time.Hour
 
+	DBZMongoFormat = "debezium.mongodb"
+
 	// DBZPostgresFormat - deprecated - Use `DBZRelationalFormat` instead
 	DBZPostgresFormat = "debezium.postgres"
 	// DBZPostgresAltFormat - deprecated - Use `DBZRelationalFormat` instead
 	DBZPostgresAltFormat = "debezium.postgres.wal2json"
-	// DBZMongoFormat - deprecated - Use `DBZRelationalFormat` instead
-	DBZMongoFormat = "debezium.mongodb"
 	// DBZMySQLFormat - deprecated - Use `DBZRelationalFormat` instead
 	DBZMySQLFormat = "debezium.mysql"
 
