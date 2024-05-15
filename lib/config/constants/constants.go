@@ -29,7 +29,7 @@ const (
 	DBZMySQLFormat       = "debezium.mysql"
 
 	StagingAlias = "stg"
-	TargetAlias  = "c"
+	TargetAlias  = "c" // TODO: Rename to something more specific.
 )
 
 // ExporterKind is used for the Telemetry package
