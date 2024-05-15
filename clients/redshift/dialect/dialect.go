@@ -268,17 +268,13 @@ func (rd RedshiftDialect) BuildMergeQueries(
 	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
 	// However, there may be edge cases where folks end up restoring deleted rows (which will contain the same PK).
 
-	if softDelete {
-		return []string{
-			rd.buildMergeInsertQuery(tableID, subQuery, primaryKeys, cols),
-			rd.buildMergeUpdateQuery(tableID, subQuery, primaryKeys, cols, idempotentKey, softDelete),
-		}, nil
-	}
-
-	// We also need to remove __artie flags since it does not exist in the destination table
-	cols, removed := columns.RemoveDeleteColumnMarker(cols)
-	if !removed {
-		return nil, errors.New("artie delete flag doesn't exist")
+	if !softDelete {
+		// We also need to remove __artie flags since it does not exist in the destination table
+		var removed bool
+		cols, removed = columns.RemoveDeleteColumnMarker(cols)
+		if !removed {
+			return nil, errors.New("artie delete flag doesn't exist")
+		}
 	}
 
 	parts := []string{
@@ -286,7 +282,7 @@ func (rd RedshiftDialect) BuildMergeQueries(
 		rd.buildMergeUpdateQuery(tableID, subQuery, primaryKeys, cols, idempotentKey, softDelete),
 	}
 
-	if containsHardDeletes {
+	if !softDelete && containsHardDeletes {
 		parts = append(parts, rd.buildMergeDeleteQuery(tableID, subQuery, primaryKeys))
 	}
 
