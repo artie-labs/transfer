@@ -23,7 +23,7 @@ func QuoteTableAliasColumn(tableAlias constants.TableAlias, column columns.Colum
 func QuoteTableAliasColumns(tableAlias constants.TableAlias, cols []columns.Column, dialect Dialect) []string {
 	result := make([]string, len(cols))
 	for i, col := range cols {
-    result[i] = QuoteTableAliasColumn(tableAlias, col, dialect)
+		result[i] = QuoteTableAliasColumn(tableAlias, col, dialect)
 	}
 	return result
 }
