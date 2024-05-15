@@ -9,6 +9,7 @@ import (
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/kafkalib/partition"
 	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -294,6 +295,25 @@ func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
 	err := s.stageStore.Merge(tableData)
 	assert.Nil(s.T(), err)
+}
+
+func (s *SnowflakeTestSuite) TestStore_AdditionalEqualityStrings() {
+	{
+		// No additional equality strings:
+		tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
+		assert.Empty(s.T(), s.stageStore.additionalEqualityStrings(tableData))
+	}
+	{
+		// Additional equality strings:
+		topicConfig := kafkalib.TopicConfig{}
+		topicConfig.AdditionalMergePredicates = []partition.MergePredicates{
+			{PartitionField: "foo"},
+			{PartitionField: "bar"},
+		}
+		tableData := optimization.NewTableData(nil, config.Replication, nil, topicConfig, "foo")
+		actual := s.stageStore.additionalEqualityStrings(tableData)
+		assert.Equal(s.T(), []string{`c."FOO" = cc."FOO"`, `c."BAR" = cc."BAR"`}, actual)
+	}
 }
 
 func TestTempTableName(t *testing.T) {

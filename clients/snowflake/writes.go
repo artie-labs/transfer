@@ -34,6 +34,17 @@ func (s *Store) Append(tableData *optimization.TableData) error {
 	return err
 }
 
+func (s *Store) additionalEqualityStrings(tableData *optimization.TableData) []string {
+	var additionalEqualityStrings []string
+	if len(tableData.TopicConfig().AdditionalMergePredicates) > 0 {
+		for _, additionalMergePredicate := range tableData.TopicConfig().AdditionalMergePredicates {
+			mergePredicateCol := s.Dialect().QuoteIdentifier(additionalMergePredicate.PartitionField)
+			additionalEqualityStrings = append(additionalEqualityStrings, fmt.Sprintf("c.%s = cc.%s", mergePredicateCol, mergePredicateCol))
+		}
+	}
+	return additionalEqualityStrings
+}
+
 func (s *Store) Merge(tableData *optimization.TableData) error {
 	var err error
 	for i := 0; i < maxRetries; i++ {
@@ -49,16 +60,8 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 			}
 		}
 
-		var additionalEqualityStrings []string
-		if len(tableData.TopicConfig().AdditionalMergePredicates) > 0 {
-			for _, additionalMergePredicate := range tableData.TopicConfig().AdditionalMergePredicates {
-				mergePredicateCol := s.Dialect().QuoteIdentifier(additionalMergePredicate.PartitionField)
-				additionalEqualityStrings = append(additionalEqualityStrings, fmt.Sprintf("c.%s = cc.%s", mergePredicateCol, mergePredicateCol))
-			}
-		}
-
 		err = shared.Merge(s, tableData, types.MergeOpts{
-			AdditionalEqualityStrings: additionalEqualityStrings,
+			AdditionalEqualityStrings: s.additionalEqualityStrings(tableData),
 		})
 	}
 	return err
