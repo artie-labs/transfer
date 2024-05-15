@@ -234,7 +234,7 @@ func TestBigQueryDialect_BuildMergeQueries_TempTable(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, statements, 1)
 	assert.Equal(t, []string{
-		"MERGE INTO customers.orders c USING customers.orders_tmp AS stg ON c.`order_id` = stg.`order_id`",
+		"MERGE INTO customers.orders tgt USING customers.orders_tmp AS stg ON tgt.`order_id` = stg.`order_id`",
 		"WHEN MATCHED AND stg.`__artie_delete` THEN DELETE",
 		"WHEN MATCHED AND IFNULL(stg.`__artie_delete`, false) = false THEN UPDATE SET `order_id`=stg.`order_id`,`name`=stg.`name`",
 		"WHEN NOT MATCHED AND IFNULL(stg.`__artie_delete`, false) = false THEN INSERT (`order_id`,`name`) VALUES (stg.`order_id`,stg.`name`);"},
@@ -264,7 +264,7 @@ func TestBigQueryDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, statements, 1)
 	assert.Equal(t, []string{
-		"MERGE INTO customers.orders c USING {SUB_QUERY} AS stg ON c.`order_id` = stg.`order_id`",
+		"MERGE INTO customers.orders tgt USING {SUB_QUERY} AS stg ON tgt.`order_id` = stg.`order_id`",
 		"WHEN MATCHED THEN UPDATE SET `order_id`=stg.`order_id`,`name`=stg.`name`,`__artie_delete`=stg.`__artie_delete`",
 		"WHEN NOT MATCHED AND IFNULL(stg.`__artie_delete`, false) = false THEN INSERT (`order_id`,`name`,`__artie_delete`) VALUES (stg.`order_id`,stg.`name`,stg.`__artie_delete`);"},
 		strings.Split(strings.TrimSpace(statements[0]), "\n"))
@@ -293,8 +293,8 @@ func TestBigQueryDialect_BuildMergeQueries_IdempotentKey(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, statements, 1)
 	assert.Equal(t, []string{
-		"MERGE INTO customers.orders c USING {SUB_QUERY} AS stg ON c.`order_id` = stg.`order_id`",
-		"WHEN MATCHED AND stg.idempotent_key >= c.idempotent_key THEN UPDATE SET `order_id`=stg.`order_id`,`name`=stg.`name`,`__artie_delete`=stg.`__artie_delete`",
+		"MERGE INTO customers.orders tgt USING {SUB_QUERY} AS stg ON tgt.`order_id` = stg.`order_id`",
+		"WHEN MATCHED AND stg.idempotent_key >= tgt.idempotent_key THEN UPDATE SET `order_id`=stg.`order_id`,`name`=stg.`name`,`__artie_delete`=stg.`__artie_delete`",
 		"WHEN NOT MATCHED AND IFNULL(stg.`__artie_delete`, false) = false THEN INSERT (`order_id`,`name`,`__artie_delete`) VALUES (stg.`order_id`,stg.`name`,stg.`__artie_delete`);"},
 		strings.Split(strings.TrimSpace(statements[0]), "\n"))
 }
@@ -322,7 +322,7 @@ func TestBigQueryDialect_BuildMergeQueries_JSONKey(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, statements, 1)
 	assert.Equal(t, []string{
-		"MERGE INTO customers.orders c USING customers.orders_tmp AS stg ON TO_JSON_STRING(c.`order_oid`) = TO_JSON_STRING(stg.`order_oid`)",
+		"MERGE INTO customers.orders tgt USING customers.orders_tmp AS stg ON TO_JSON_STRING(tgt.`order_oid`) = TO_JSON_STRING(stg.`order_oid`)",
 		"WHEN MATCHED AND stg.`__artie_delete` THEN DELETE",
 		"WHEN MATCHED AND IFNULL(stg.`__artie_delete`, false) = false THEN UPDATE SET `order_oid`=stg.`order_oid`,`name`=stg.`name`",
 		"WHEN NOT MATCHED AND IFNULL(stg.`__artie_delete`, false) = false THEN INSERT (`order_oid`,`name`) VALUES (stg.`order_oid`,stg.`name`);"},
