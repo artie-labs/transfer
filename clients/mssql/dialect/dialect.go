@@ -15,10 +15,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-const (
-	targetAlias = "c"
-)
-
 type MSSQLDialect struct{}
 
 func (MSSQLDialect) QuoteIdentifier(identifier string) string {
@@ -190,10 +186,10 @@ func (md MSSQLDialect) BuildMergeQueries(
 ) ([]string, error) {
 	var idempotentClause string
 	if idempotentKey != "" {
-		idempotentClause = fmt.Sprintf("AND %s.%s >= %s.%s ", constants.StagingAlias, idempotentKey, targetAlias, idempotentKey)
+		idempotentClause = fmt.Sprintf("AND %s.%s >= %s.%s ", constants.StagingAlias, idempotentKey, constants.TargetAlias, idempotentKey)
 	}
 
-	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, targetAlias, constants.StagingAlias, sql.Equal, md)
+	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, md)
 
 	if softDelete {
 		return []string{fmt.Sprintf(`
@@ -201,9 +197,9 @@ MERGE INTO %s %s
 USING %s AS %s ON %s
 WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(%s.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
-			tableID.FullyQualifiedName(), targetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
+			tableID.FullyQualifiedName(), constants.TargetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
 			// Update + Soft Deletion
-			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, targetAlias, md),
+			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
 			// Insert
 			constants.StagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, md), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
@@ -225,11 +221,11 @@ USING %s AS %s ON %s
 WHEN MATCHED AND %s.%s = 1 THEN DELETE
 WHEN MATCHED AND COALESCE(%s.%s, 0) = 0 %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(%s.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
-		tableID.FullyQualifiedName(), targetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
+		tableID.FullyQualifiedName(), constants.TargetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
 		// Delete
 		constants.StagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker),
 		// Update
-		constants.StagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, targetAlias, md),
+		constants.StagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
 		// Insert
 		constants.StagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, md), ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{

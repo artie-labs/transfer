@@ -15,10 +15,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-const (
-	targetAlias = "c"
-)
-
 type RedshiftDialect struct{}
 
 func (rd RedshiftDialect) QuoteIdentifier(identifier string) string {
@@ -207,9 +203,9 @@ func (rd RedshiftDialect) buildMergeInsertQuery(
 			Prefix:    constants.StagingAlias + ".",
 		}), subQuery, constants.StagingAlias,
 		// LEFT JOIN table on pk(s)
-		tableID.FullyQualifiedName(), targetAlias, strings.Join(sql.BuildColumnComparisons(primaryKeys, targetAlias, constants.StagingAlias, sql.Equal, rd), " AND "),
+		tableID.FullyQualifiedName(), constants.TargetAlias, strings.Join(sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, rd), " AND "),
 		// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
-		targetAlias,
+		constants.TargetAlias,
 		rd.QuoteIdentifier(primaryKeys[0].Name()),
 	)
 }
@@ -222,10 +218,10 @@ func (rd RedshiftDialect) buildMergeUpdateQuery(
 	idempotentKey string,
 	softDelete bool,
 ) string {
-	clauses := sql.BuildColumnComparisons(primaryKeys, targetAlias, constants.StagingAlias, sql.Equal, rd)
+	clauses := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, rd)
 
 	if idempotentKey != "" {
-		clauses = append(clauses, fmt.Sprintf("%s.%s >= %s.%s", constants.StagingAlias, idempotentKey, targetAlias, idempotentKey))
+		clauses = append(clauses, fmt.Sprintf("%s.%s >= %s.%s", constants.StagingAlias, idempotentKey, constants.TargetAlias, idempotentKey))
 	}
 
 	if !softDelete {
@@ -234,7 +230,7 @@ func (rd RedshiftDialect) buildMergeUpdateQuery(
 
 	return fmt.Sprintf(`UPDATE %s AS %s SET %s FROM %s AS %s WHERE %s;`,
 		// UPDATE table set col1 = stg. col1
-		tableID.FullyQualifiedName(), targetAlias, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, targetAlias, rd),
+		tableID.FullyQualifiedName(), constants.TargetAlias, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, rd),
 		// FROM staging WHERE join on PK(s)
 		subQuery, constants.StagingAlias, strings.Join(clauses, " AND "),
 	)
