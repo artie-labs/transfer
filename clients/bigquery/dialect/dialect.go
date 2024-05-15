@@ -233,17 +233,19 @@ func (bd BigQueryDialect) BuildMergeQueries(
 
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
 	}
-
 	if len(additionalEqualityStrings) > 0 {
 		equalitySQLParts = append(equalitySQLParts, additionalEqualityStrings...)
 	}
 
+	baseQuery := fmt.Sprintf(`
+MERGE INTO %s %s USING %s AS %s ON %s`,
+		tableID.FullyQualifiedName(), constants.TargetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
+	)
+
 	if softDelete {
-		return []string{fmt.Sprintf(`
-MERGE INTO %s %s USING %s AS %s ON %s
+		return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
-			tableID.FullyQualifiedName(), constants.TargetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
 			// Update + Soft Deletion
 			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, bd),
 			// Insert
@@ -261,12 +263,10 @@ WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 		return []string{}, errors.New("artie delete flag doesn't exist")
 	}
 
-	return []string{fmt.Sprintf(`
-MERGE INTO %s %s USING %s AS %s ON %s
+	return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED AND %s.%s THEN DELETE
 WHEN MATCHED AND IFNULL(%s.%s, false) = false %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
-		tableID.FullyQualifiedName(), constants.TargetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
 		// Delete
 		constants.StagingAlias, bd.QuoteIdentifier(constants.DeleteColumnMarker),
 		// Update
