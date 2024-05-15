@@ -43,7 +43,7 @@ type MergeOpts struct {
 type AdditionalSettings struct {
 	AdditionalCopyClause string
 
-	// ExcludeDeletedColumn - This is used by Reader as part our initial backfill strategy.
-	// We want to include this column for customers that have enabled `softDelete`.
+	// ExcludeDeletedColumn - Reader uses this as part of the initial backfill. Customers that have soft deleted enabled should
+	// have the column `__artie_deleted` = false.
 	ShouldExcludeDeletedColumn bool
 }
