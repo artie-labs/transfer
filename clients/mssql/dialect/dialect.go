@@ -16,8 +16,7 @@ import (
 )
 
 const (
-	stagingAlias = "stg"
-	targetAlias  = "c"
+	targetAlias = "c"
 )
 
 type MSSQLDialect struct{}
@@ -191,10 +190,10 @@ func (md MSSQLDialect) BuildMergeQueries(
 ) ([]string, error) {
 	var idempotentClause string
 	if idempotentKey != "" {
-		idempotentClause = fmt.Sprintf("AND %s.%s >= %s.%s ", stagingAlias, idempotentKey, targetAlias, idempotentKey)
+		idempotentClause = fmt.Sprintf("AND %s.%s >= %s.%s ", constants.StagingAlias, idempotentKey, targetAlias, idempotentKey)
 	}
 
-	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, targetAlias, stagingAlias, sql.Equal, md)
+	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, targetAlias, constants.StagingAlias, sql.Equal, md)
 
 	if softDelete {
 		return []string{fmt.Sprintf(`
@@ -202,15 +201,15 @@ MERGE INTO %s %s
 USING %s AS %s ON %s
 WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(%s.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
-			tableID.FullyQualifiedName(), targetAlias, subQuery, stagingAlias, strings.Join(equalitySQLParts, " AND "),
+			tableID.FullyQualifiedName(), targetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
 			// Update + Soft Deletion
-			idempotentClause, sql.BuildColumnsUpdateFragment(cols, stagingAlias, targetAlias, md),
+			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, targetAlias, md),
 			// Insert
-			stagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, md), ","),
+			constants.StagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, md), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
 				Vals:      sql.QuoteColumns(cols, md),
 				Separator: ",",
-				Prefix:    stagingAlias + ".",
+				Prefix:    constants.StagingAlias + ".",
 			}))}, nil
 	}
 
@@ -226,16 +225,16 @@ USING %s AS %s ON %s
 WHEN MATCHED AND %s.%s = 1 THEN DELETE
 WHEN MATCHED AND COALESCE(%s.%s, 0) = 0 %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(%s.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
-		tableID.FullyQualifiedName(), targetAlias, subQuery, stagingAlias, strings.Join(equalitySQLParts, " AND "),
+		tableID.FullyQualifiedName(), targetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
 		// Delete
-		stagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker),
+		constants.StagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker),
 		// Update
-		stagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, stagingAlias, targetAlias, md),
+		constants.StagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, targetAlias, md),
 		// Insert
-		stagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, md), ","),
+		constants.StagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, md), ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
 			Vals:      sql.QuoteColumns(cols, md),
 			Separator: ",",
-			Prefix:    stagingAlias + ".",
+			Prefix:    constants.StagingAlias + ".",
 		}))}, nil
 }

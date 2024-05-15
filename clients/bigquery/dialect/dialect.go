@@ -16,8 +16,7 @@ import (
 )
 
 const (
-	stagingAlias = "stg"
-	targetAlias  = "c"
+	targetAlias = "c"
 
 	BQStreamingTimeFormat = "15:04:05"
 
@@ -219,7 +218,7 @@ func (bd BigQueryDialect) BuildMergeQueries(
 	// This is because Snowflake does not respect NS granularity.
 	var idempotentClause string
 	if idempotentKey != "" {
-		idempotentClause = fmt.Sprintf("AND %s.%s >= %s.%s ", stagingAlias, idempotentKey, targetAlias, idempotentKey)
+		idempotentClause = fmt.Sprintf("AND %s.%s >= %s.%s ", constants.StagingAlias, idempotentKey, targetAlias, idempotentKey)
 	}
 
 	var equalitySQLParts []string
@@ -227,11 +226,11 @@ func (bd BigQueryDialect) BuildMergeQueries(
 		// We'll need to escape the primary key as well.
 		quotedPrimaryKey := bd.QuoteIdentifier(primaryKey.Name())
 
-		equalitySQL := sql.BuildColumnComparison(primaryKey, targetAlias, stagingAlias, sql.Equal, bd)
+		equalitySQL := sql.BuildColumnComparison(primaryKey, targetAlias, constants.StagingAlias, sql.Equal, bd)
 
 		if primaryKey.KindDetails.Kind == typing.Struct.Kind {
 			// BigQuery requires special casting to compare two JSON objects.
-			equalitySQL = fmt.Sprintf("TO_JSON_STRING(%s.%s) = TO_JSON_STRING(%s.%s)", targetAlias, quotedPrimaryKey, stagingAlias, quotedPrimaryKey)
+			equalitySQL = fmt.Sprintf("TO_JSON_STRING(%s.%s) = TO_JSON_STRING(%s.%s)", targetAlias, quotedPrimaryKey, constants.StagingAlias, quotedPrimaryKey)
 		}
 
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
@@ -246,15 +245,15 @@ func (bd BigQueryDialect) BuildMergeQueries(
 MERGE INTO %s %s USING %s AS %s ON %s
 WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
-			tableID.FullyQualifiedName(), targetAlias, subQuery, stagingAlias, strings.Join(equalitySQLParts, " AND "),
+			tableID.FullyQualifiedName(), targetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
 			// Update + Soft Deletion
-			idempotentClause, sql.BuildColumnsUpdateFragment(cols, stagingAlias, targetAlias, bd),
+			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, targetAlias, bd),
 			// Insert
-			stagingAlias, bd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, bd), ","),
+			constants.StagingAlias, bd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, bd), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
 				Vals:      sql.QuoteColumns(cols, bd),
 				Separator: ",",
-				Prefix:    stagingAlias + ".",
+				Prefix:    constants.StagingAlias + ".",
 			}))}, nil
 	}
 
@@ -269,16 +268,16 @@ MERGE INTO %s %s USING %s AS %s ON %s
 WHEN MATCHED AND %s.%s THEN DELETE
 WHEN MATCHED AND IFNULL(%s.%s, false) = false %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
-		tableID.FullyQualifiedName(), targetAlias, subQuery, stagingAlias, strings.Join(equalitySQLParts, " AND "),
+		tableID.FullyQualifiedName(), targetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
 		// Delete
-		stagingAlias, bd.QuoteIdentifier(constants.DeleteColumnMarker),
+		constants.StagingAlias, bd.QuoteIdentifier(constants.DeleteColumnMarker),
 		// Update
-		stagingAlias, bd.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, stagingAlias, targetAlias, bd),
+		constants.StagingAlias, bd.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, targetAlias, bd),
 		// Insert
-		stagingAlias, bd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, bd), ","),
+		constants.StagingAlias, bd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, bd), ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
 			Vals:      sql.QuoteColumns(cols, bd),
 			Separator: ",",
-			Prefix:    stagingAlias + ".",
+			Prefix:    constants.StagingAlias + ".",
 		}))}, nil
 }
