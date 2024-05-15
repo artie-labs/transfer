@@ -26,9 +26,11 @@ const (
 
 	Timestamp            SupportedDebeziumType = "io.debezium.time.Timestamp"
 	MicroTimestamp       SupportedDebeziumType = "io.debezium.time.MicroTimestamp"
+	NanoTimestamp        SupportedDebeziumType = "io.debezium.time.NanoTimestamp"
 	Date                 SupportedDebeziumType = "io.debezium.time.Date"
 	Time                 SupportedDebeziumType = "io.debezium.time.Time"
 	MicroTime            SupportedDebeziumType = "io.debezium.time.MicroTime"
+	NanoTime             SupportedDebeziumType = "io.debezium.time.NanoTime"
 	Year                 SupportedDebeziumType = "io.debezium.time.Year"
 	TimeWithTimezone     SupportedDebeziumType = "io.debezium.time.ZonedTime"
 	DateTimeWithTimezone SupportedDebeziumType = "io.debezium.time.ZonedTimestamp"
@@ -131,8 +133,10 @@ func (f Field) ParseValue(value any) (any, error) {
 	case
 		Timestamp,
 		MicroTimestamp,
+		NanoTimestamp,
 		Date,
 		Time,
+		NanoTime,
 		MicroTime,
 		DateKafkaConnect,
 		TimeKafkaConnect,
@@ -176,6 +180,9 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ex
 	case MicroTimestamp:
 		// Represents the number of microseconds since the epoch, and does not include timezone information.
 		extTime = ext.NewExtendedTime(time.UnixMicro(val).In(time.UTC), ext.DateTimeKindType, time.RFC3339Nano)
+	case NanoTimestamp:
+		// Represents the number of nanoseconds past the epoch, and does not include timezone information.
+		extTime = ext.NewExtendedTime(time.UnixMicro(val/1_000).In(time.UTC), ext.DateTimeKindType, time.RFC3339Nano)
 	case Date, DateKafkaConnect:
 		unix := time.UnixMilli(0).In(time.UTC) // 1970-01-01
 		// Represents the number of days since the epoch.
@@ -186,6 +193,9 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ex
 	case MicroTime:
 		// Represents the number of microseconds past midnight, and does not include timezone information.
 		extTime = ext.NewExtendedTime(time.UnixMicro(val).In(time.UTC), ext.TimeKindType, "")
+	case NanoTime:
+		// Represents the number of nanoseconds past midnight, and does not include timezone information.
+		extTime = ext.NewExtendedTime(time.UnixMicro(val/1_000).In(time.UTC), ext.TimeKindType, "")
 	default:
 		return nil, fmt.Errorf("supportedType: %s, val: %v failed to be matched", supportedType, val)
 	}

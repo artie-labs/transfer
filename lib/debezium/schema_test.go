@@ -166,6 +166,13 @@ func TestField_ToKindDetails(t *testing.T) {
 			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},
 		{
+			name: "Nano Timestamp",
+			field: Field{
+				DebeziumType: NanoTimestamp,
+			},
+			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
+		},
+		{
 			name: "Date Time Kafka Connect",
 			field: Field{
 				DebeziumType: DateTimeKafkaConnect,
@@ -206,6 +213,13 @@ func TestField_ToKindDetails(t *testing.T) {
 			name: "Time Micro",
 			field: Field{
 				DebeziumType: MicroTime,
+			},
+			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
+		},
+		{
+			name: "Time Nano",
+			field: Field{
+				DebeziumType: NanoTime,
 			},
 			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
 		},
