@@ -202,8 +202,8 @@ func TestMSSQLDialect_BuildMergeQueries(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, queries, 1)
 		assert.Equal(t, `
-MERGE INTO database.schema.table c
-USING SELECT id,bar,updated_at,start,__artie_delete from (values ('1', '456', 'foo', '2001-02-03 04:05:06 +0000 UTC', false),('2', 'bb', 'bar', '2001-02-03 04:05:06 +0000 UTC', false),('3', 'dd', 'world', '2001-02-03 04:05:06 +0000 UTC', false)) as _tbl(id,bar,updated_at,start,__artie_delete) AS stg ON c."id" = stg."id"
+MERGE INTO database.schema.table tgt
+USING SELECT id,bar,updated_at,start,__artie_delete from (values ('1', '456', 'foo', '2001-02-03 04:05:06 +0000 UTC', false),('2', 'bb', 'bar', '2001-02-03 04:05:06 +0000 UTC', false),('3', 'dd', 'world', '2001-02-03 04:05:06 +0000 UTC', false)) as _tbl(id,bar,updated_at,start,__artie_delete) AS stg ON tgt."id" = stg."id"
 WHEN MATCHED AND stg."__artie_delete" = 1 THEN DELETE
 WHEN MATCHED AND COALESCE(stg."__artie_delete", 0) = 0 THEN UPDATE SET "id"=stg."id","bar"=stg."bar","updated_at"=stg."updated_at","start"=stg."start"
 WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", 1) = 0 THEN INSERT ("id","bar","updated_at","start") VALUES (stg."id",stg."bar",stg."updated_at",stg."start");`, queries[0])
@@ -223,10 +223,10 @@ WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", 1) = 0 THEN INSERT ("id","ba
 		assert.NoError(t, err)
 		assert.Len(t, queries, 1)
 		assert.Equal(t, `
-MERGE INTO database.schema.table c
-USING {SUB_QUERY} AS stg ON c."id" = stg."id"
+MERGE INTO database.schema.table tgt
+USING {SUB_QUERY} AS stg ON tgt."id" = stg."id"
 WHEN MATCHED AND stg."__artie_delete" = 1 THEN DELETE
-WHEN MATCHED AND COALESCE(stg."__artie_delete", 0) = 0 AND stg.idempotent_key >= c.idempotent_key THEN UPDATE SET "id"=stg."id","bar"=stg."bar","updated_at"=stg."updated_at","start"=stg."start"
+WHEN MATCHED AND COALESCE(stg."__artie_delete", 0) = 0 AND stg.idempotent_key >= tgt.idempotent_key THEN UPDATE SET "id"=stg."id","bar"=stg."bar","updated_at"=stg."updated_at","start"=stg."start"
 WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", 1) = 0 THEN INSERT ("id","bar","updated_at","start") VALUES (stg."id",stg."bar",stg."updated_at",stg."start");`, queries[0])
 	}
 	{
@@ -244,8 +244,8 @@ WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", 1) = 0 THEN INSERT ("id","ba
 		assert.NoError(t, err)
 		assert.Len(t, queries, 1)
 		assert.Equal(t, `
-MERGE INTO database.schema.table c
-USING {SUB_QUERY} AS stg ON c."id" = stg."id"
+MERGE INTO database.schema.table tgt
+USING {SUB_QUERY} AS stg ON tgt."id" = stg."id"
 WHEN MATCHED THEN UPDATE SET "id"=stg."id","bar"=stg."bar","updated_at"=stg."updated_at","start"=stg."start","__artie_delete"=stg."__artie_delete"
 WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", 0) = 0 THEN INSERT ("id","bar","updated_at","start","__artie_delete") VALUES (stg."id",stg."bar",stg."updated_at",stg."start",stg."__artie_delete");`, queries[0])
 	}
