@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	stagingAlias = "cc"
+	stagingAlias = "stg"
 	targetAlias  = "c"
 )
 

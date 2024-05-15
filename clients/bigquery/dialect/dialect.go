@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	stagingAlias = "cc"
+	stagingAlias = "stg"
 	targetAlias  = "c"
 
 	BQStreamingTimeFormat = "15:04:05"
