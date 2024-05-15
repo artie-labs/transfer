@@ -16,8 +16,6 @@ func QuoteColumns(cols []columns.Column, dialect Dialect) []string {
 	return result
 }
 
-
-
 func QuoteTableAliasColumn(tableAlias constants.TableAlias, column columns.Column, dialect Dialect) string {
 	return fmt.Sprintf("%s.%s", tableAlias, dialect.QuoteIdentifier(column.Name()))
 }
