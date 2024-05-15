@@ -29,6 +29,21 @@ func TestQuoteColumns(t *testing.T) {
 	}
 }
 
+func TestQuoteTableAliasColumns(t *testing.T) {
+	{
+		// BigQuery:
+		assert.Equal(t, []string{}, sql.QuoteTableAliasColumns("foo", nil, bigqueryDialect.BigQueryDialect{}))
+		cols := []columns.Column{columns.NewColumn("a", typing.Invalid), columns.NewColumn("b", typing.Invalid)}
+		assert.Equal(t, []string{"foo.`a`", "foo.`b`"}, sql.QuoteTableAliasColumns("foo", cols, bigqueryDialect.BigQueryDialect{}))
+	}
+	{
+		// Snowflake:
+		assert.Equal(t, []string{}, sql.QuoteTableAliasColumns("foo", nil, snowflakeDialect.SnowflakeDialect{}))
+		cols := []columns.Column{columns.NewColumn("a", typing.Invalid), columns.NewColumn("b", typing.Invalid)}
+		assert.Equal(t, []string{`foo."A"`, `foo."B"`}, sql.QuoteTableAliasColumns("foo", cols, snowflakeDialect.SnowflakeDialect{}))
+	}
+}
+
 func TestBuildColumnsUpdateFragment_BigQuery(t *testing.T) {
 	var lastCaseColTypes []columns.Column
 	lastCaseCols := []string{"a1", "b2", "c3"}

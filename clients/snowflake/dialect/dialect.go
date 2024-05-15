@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -231,11 +230,8 @@ WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, sd),
 			// Insert
 			constants.StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, sd), ","),
-			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      sql.QuoteColumns(cols, sd),
-				Separator: ",",
-				Prefix:    constants.StagingAlias + ".",
-			}))}, nil
+			strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, sd), ","),
+		)}, nil
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
@@ -254,9 +250,6 @@ WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 		constants.StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, sd),
 		// Insert
 		constants.StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, sd), ","),
-		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      sql.QuoteColumns(cols, sd),
-			Separator: ",",
-			Prefix:    constants.StagingAlias + ".",
-		}))}, nil
+		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, sd), ","),
+	)}, nil
 }

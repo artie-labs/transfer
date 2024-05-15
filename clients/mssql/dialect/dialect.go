@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -201,15 +200,13 @@ USING %s AS %s ON %s`,
 		return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(%s.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
-			// Update + Soft Deletion
+			// WHEN MATCHED %sTHEN UPDATE SET %s
 			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
-			// Insert
+			// WHEN NOT MATCHED AND COALESCE(%s.%s, 0) = 0 THEN INSERT (%s)
 			constants.StagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, md), ","),
-			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      sql.QuoteColumns(cols, md),
-				Separator: ",",
-				Prefix:    constants.StagingAlias + ".",
-			}))}, nil
+			// VALUES (%s);
+			strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, md), ","),
+		)}, nil
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
@@ -222,15 +219,13 @@ WHEN NOT MATCHED AND COALESCE(%s.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 WHEN MATCHED AND %s.%s = 1 THEN DELETE
 WHEN MATCHED AND COALESCE(%s.%s, 0) = 0 %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(%s.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
-		// Delete
+		// WHEN MATCHED AND %s.%s = 1 THEN DELETE
 		constants.StagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker),
-		// Update
+		// WHEN MATCHED AND COALESCE(%s.%s, 0) = 0 %sTHEN UPDATE SET %s
 		constants.StagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
-		// Insert
+		// WHEN NOT MATCHED AND COALESCE(%s.%s, 1) = 0 THEN INSERT (%s)
 		constants.StagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, md), ","),
-		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      sql.QuoteColumns(cols, md),
-			Separator: ",",
-			Prefix:    constants.StagingAlias + ".",
-		}))}, nil
+		// VALUES (%s);
+		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, md), ","),
+	)}, nil
 }

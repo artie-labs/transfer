@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -246,15 +245,13 @@ MERGE INTO %s %s USING %s AS %s ON %s`,
 		return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
-			// Update + Soft Deletion
+			// WHEN MATCHED %sTHEN UPDATE SET %s
 			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, bd),
-			// Insert
+			// WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s)
 			constants.StagingAlias, bd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, bd), ","),
-			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      sql.QuoteColumns(cols, bd),
-				Separator: ",",
-				Prefix:    constants.StagingAlias + ".",
-			}))}, nil
+			// VALUES (%s);
+			strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, bd), ","),
+		)}, nil
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
@@ -267,15 +264,13 @@ WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 WHEN MATCHED AND %s.%s THEN DELETE
 WHEN MATCHED AND IFNULL(%s.%s, false) = false %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
-		// Delete
+		// WHEN MATCHED AND %s.%s THEN DELETE
 		constants.StagingAlias, bd.QuoteIdentifier(constants.DeleteColumnMarker),
-		// Update
+		// WHEN MATCHED AND IFNULL(%s.%s, false) = false %sTHEN UPDATE SET %s
 		constants.StagingAlias, bd.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, bd),
-		// Insert
+		// WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s),
 		constants.StagingAlias, bd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, bd), ","),
-		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      sql.QuoteColumns(cols, bd),
-			Separator: ",",
-			Prefix:    constants.StagingAlias + ".",
-		}))}, nil
+		// VALUES (%s);
+		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, bd), ","),
+	)}, nil
 }
