@@ -8,27 +8,22 @@ import (
 	"os"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/destination/types"
-
-	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/ptr"
-	"github.com/artie-labs/transfer/lib/sql"
-
-	"github.com/artie-labs/transfer/lib/stringutil"
-
-	"github.com/artie-labs/transfer/lib/typing/ext"
-
-	"github.com/artie-labs/transfer/lib/s3lib"
-
+	"github.com/xitongsys/parquet-go-source/local"
 	"github.com/xitongsys/parquet-go/parquet"
+	"github.com/xitongsys/parquet-go/writer"
 
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/parquetutil"
+	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/s3lib"
+	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	"github.com/xitongsys/parquet-go-source/local"
-	"github.com/xitongsys/parquet-go/writer"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type Store struct {
