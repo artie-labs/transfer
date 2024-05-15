@@ -24,7 +24,15 @@ func TestQuoteColumns(t *testing.T) {
 	// Snowflake:
 	assert.Equal(t, []string{}, sql.QuoteColumns(nil, snowflakeDialect.SnowflakeDialect{}))
 	assert.Equal(t, []string{`"A"`, `"B"`}, sql.QuoteColumns(cols, snowflakeDialect.SnowflakeDialect{}))
+}
 
+func TestQuoteTableAliasColumn(t *testing.T) {
+	column := columns.NewColumn("col", typing.Invalid)
+
+	// BigQuery:
+	assert.Equal(t, "tbl.`col`", sql.QuoteTableAliasColumn("tbl", column, bigqueryDialect.BigQueryDialect{}))
+	// Snowflake:
+	assert.Equal(t, `tbl."COL"`, sql.QuoteTableAliasColumn("tbl", column, snowflakeDialect.SnowflakeDialect{}))
 }
 
 func TestQuoteTableAliasColumns(t *testing.T) {
