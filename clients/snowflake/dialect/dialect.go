@@ -17,8 +17,7 @@ import (
 )
 
 const (
-	StagingAlias = "cc"
-	TargetAlias  = "c"
+	TargetAlias = "c"
 )
 
 type SnowflakeDialect struct{}
@@ -216,10 +215,10 @@ func (sd SnowflakeDialect) BuildMergeQueries(
 	// This is because Snowflake does not respect NS granularity.
 	var idempotentClause string
 	if idempotentKey != "" {
-		idempotentClause = fmt.Sprintf("AND %s.%s >= %s.%s ", StagingAlias, idempotentKey, TargetAlias, idempotentKey)
+		idempotentClause = fmt.Sprintf("AND %s.%s >= %s.%s ", constants.StagingAlias, idempotentKey, TargetAlias, idempotentKey)
 	}
 
-	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, TargetAlias, StagingAlias, sql.Equal, sd)
+	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, TargetAlias, constants.StagingAlias, sql.Equal, sd)
 
 	if len(additionalEqualityStrings) > 0 {
 		equalitySQLParts = append(equalitySQLParts, additionalEqualityStrings...)
@@ -230,15 +229,15 @@ func (sd SnowflakeDialect) BuildMergeQueries(
 MERGE INTO %s %s USING ( %s ) AS %s ON %s
 WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
-			tableID.FullyQualifiedName(), TargetAlias, subQuery, StagingAlias, strings.Join(equalitySQLParts, " AND "),
+			tableID.FullyQualifiedName(), TargetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
 			// Update + Soft Deletion
-			idempotentClause, sql.BuildColumnsUpdateFragment(cols, StagingAlias, TargetAlias, sd),
+			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, TargetAlias, sd),
 			// Insert
-			StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, sd), ","),
+			constants.StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, sd), ","),
 			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
 				Vals:      sql.QuoteColumns(cols, sd),
 				Separator: ",",
-				Prefix:    StagingAlias + ".",
+				Prefix:    constants.StagingAlias + ".",
 			}))}, nil
 	}
 
@@ -253,16 +252,16 @@ MERGE INTO %s %s USING ( %s ) AS %s ON %s
 WHEN MATCHED AND %s.%s THEN DELETE
 WHEN MATCHED AND IFNULL(%s.%s, false) = false %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
-		tableID.FullyQualifiedName(), TargetAlias, subQuery, StagingAlias, strings.Join(equalitySQLParts, " AND "),
+		tableID.FullyQualifiedName(), TargetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
 		// Delete
-		StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker),
+		constants.StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker),
 		// Update
-		StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, StagingAlias, TargetAlias, sd),
+		constants.StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, TargetAlias, sd),
 		// Insert
-		StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, sd), ","),
+		constants.StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, sd), ","),
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
 			Vals:      sql.QuoteColumns(cols, sd),
 			Separator: ",",
-			Prefix:    StagingAlias + ".",
+			Prefix:    constants.StagingAlias + ".",
 		}))}, nil
 }

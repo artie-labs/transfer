@@ -27,6 +27,8 @@ const (
 	DBZPostgresAltFormat = "debezium.postgres.wal2json"
 	DBZMongoFormat       = "debezium.mongodb"
 	DBZMySQLFormat       = "debezium.mysql"
+
+	StagingAlias = "stg"
 )
 
 // ExporterKind is used for the Telemetry package

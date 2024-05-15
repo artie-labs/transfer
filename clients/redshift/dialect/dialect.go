@@ -16,8 +16,7 @@ import (
 )
 
 const (
-	stagingAlias = "cc"
-	targetAlias  = "c"
+	targetAlias = "c"
 )
 
 type RedshiftDialect struct{}
@@ -201,14 +200,14 @@ func (rd RedshiftDialect) buildMergeInsertQuery(
 	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s AS %s LEFT JOIN %s AS %s ON %s WHERE %s.%s IS NULL;`,
 		// insert into target (col1, col2, col3)
 		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(cols, rd), ","),
-		// SELECT cc.col1, cc.col2, ... FROM staging as CC
+		// SELECT stg.col1, stg.col2, ... FROM staging as CC
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
 			Vals:      sql.QuoteColumns(cols, rd),
 			Separator: ",",
-			Prefix:    stagingAlias + ".",
-		}), subQuery, stagingAlias,
+			Prefix:    constants.StagingAlias + ".",
+		}), subQuery, constants.StagingAlias,
 		// LEFT JOIN table on pk(s)
-		tableID.FullyQualifiedName(), targetAlias, strings.Join(sql.BuildColumnComparisons(primaryKeys, targetAlias, stagingAlias, sql.Equal, rd), " AND "),
+		tableID.FullyQualifiedName(), targetAlias, strings.Join(sql.BuildColumnComparisons(primaryKeys, targetAlias, constants.StagingAlias, sql.Equal, rd), " AND "),
 		// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
 		targetAlias,
 		rd.QuoteIdentifier(primaryKeys[0].Name()),
@@ -223,21 +222,21 @@ func (rd RedshiftDialect) buildMergeUpdateQuery(
 	idempotentKey string,
 	softDelete bool,
 ) string {
-	clauses := sql.BuildColumnComparisons(primaryKeys, targetAlias, stagingAlias, sql.Equal, rd)
+	clauses := sql.BuildColumnComparisons(primaryKeys, targetAlias, constants.StagingAlias, sql.Equal, rd)
 
 	if idempotentKey != "" {
-		clauses = append(clauses, fmt.Sprintf("%s.%s >= %s.%s", stagingAlias, idempotentKey, targetAlias, idempotentKey))
+		clauses = append(clauses, fmt.Sprintf("%s.%s >= %s.%s", constants.StagingAlias, idempotentKey, targetAlias, idempotentKey))
 	}
 
 	if !softDelete {
-		clauses = append(clauses, fmt.Sprintf("COALESCE(%s.%s, false) = false", stagingAlias, rd.QuoteIdentifier(constants.DeleteColumnMarker)))
+		clauses = append(clauses, fmt.Sprintf("COALESCE(%s.%s, false) = false", constants.StagingAlias, rd.QuoteIdentifier(constants.DeleteColumnMarker)))
 	}
 
 	return fmt.Sprintf(`UPDATE %s AS %s SET %s FROM %s AS %s WHERE %s;`,
-		// UPDATE table set col1 = cc. col1
-		tableID.FullyQualifiedName(), targetAlias, sql.BuildColumnsUpdateFragment(cols, stagingAlias, targetAlias, rd),
+		// UPDATE table set col1 = stg. col1
+		tableID.FullyQualifiedName(), targetAlias, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, targetAlias, rd),
 		// FROM staging WHERE join on PK(s)
-		subQuery, stagingAlias, strings.Join(clauses, " AND "),
+		subQuery, constants.StagingAlias, strings.Join(clauses, " AND "),
 	)
 }
 
@@ -245,12 +244,12 @@ func (rd RedshiftDialect) buildMergeDeleteQuery(tableID sql.TableIdentifier, sub
 	return fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s AS %s WHERE %s.%s = true);`,
 		// DELETE from table where (pk_1, pk_2)
 		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(primaryKeys, rd), ","),
-		// IN (cc.pk_1, cc.pk_2) FROM staging
+		// IN (stg.pk_1, stg.pk_2) FROM staging
 		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
 			Vals:      sql.QuoteColumns(primaryKeys, rd),
 			Separator: ",",
-			Prefix:    stagingAlias + ".",
-		}), subQuery, stagingAlias, stagingAlias, rd.QuoteIdentifier(constants.DeleteColumnMarker),
+			Prefix:    constants.StagingAlias + ".",
+		}), subQuery, constants.StagingAlias, constants.StagingAlias, rd.QuoteIdentifier(constants.DeleteColumnMarker),
 	)
 }
 

@@ -180,7 +180,7 @@ func TestMSSQLDialect_BuildMergeQueries(t *testing.T) {
 		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "3", "dd", "world", dateValue.Round(0).UTC()),
 	}
 
-	// select cc.foo, cc.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
+	// select stg.foo, stg.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
 	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
 		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
@@ -203,10 +203,10 @@ func TestMSSQLDialect_BuildMergeQueries(t *testing.T) {
 		assert.Len(t, queries, 1)
 		assert.Equal(t, `
 MERGE INTO database.schema.table c
-USING SELECT id,bar,updated_at,start,__artie_delete from (values ('1', '456', 'foo', '2001-02-03 04:05:06 +0000 UTC', false),('2', 'bb', 'bar', '2001-02-03 04:05:06 +0000 UTC', false),('3', 'dd', 'world', '2001-02-03 04:05:06 +0000 UTC', false)) as _tbl(id,bar,updated_at,start,__artie_delete) AS cc ON c."id" = cc."id"
-WHEN MATCHED AND cc."__artie_delete" = 1 THEN DELETE
-WHEN MATCHED AND COALESCE(cc."__artie_delete", 0) = 0 THEN UPDATE SET "id"=cc."id","bar"=cc."bar","updated_at"=cc."updated_at","start"=cc."start"
-WHEN NOT MATCHED AND COALESCE(cc."__artie_delete", 1) = 0 THEN INSERT ("id","bar","updated_at","start") VALUES (cc."id",cc."bar",cc."updated_at",cc."start");`, queries[0])
+USING SELECT id,bar,updated_at,start,__artie_delete from (values ('1', '456', 'foo', '2001-02-03 04:05:06 +0000 UTC', false),('2', 'bb', 'bar', '2001-02-03 04:05:06 +0000 UTC', false),('3', 'dd', 'world', '2001-02-03 04:05:06 +0000 UTC', false)) as _tbl(id,bar,updated_at,start,__artie_delete) AS stg ON c."id" = stg."id"
+WHEN MATCHED AND stg."__artie_delete" = 1 THEN DELETE
+WHEN MATCHED AND COALESCE(stg."__artie_delete", 0) = 0 THEN UPDATE SET "id"=stg."id","bar"=stg."bar","updated_at"=stg."updated_at","start"=stg."start"
+WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", 1) = 0 THEN INSERT ("id","bar","updated_at","start") VALUES (stg."id",stg."bar",stg."updated_at",stg."start");`, queries[0])
 	}
 	{
 		// Idempotent key:
@@ -224,10 +224,10 @@ WHEN NOT MATCHED AND COALESCE(cc."__artie_delete", 1) = 0 THEN INSERT ("id","bar
 		assert.Len(t, queries, 1)
 		assert.Equal(t, `
 MERGE INTO database.schema.table c
-USING {SUB_QUERY} AS cc ON c."id" = cc."id"
-WHEN MATCHED AND cc."__artie_delete" = 1 THEN DELETE
-WHEN MATCHED AND COALESCE(cc."__artie_delete", 0) = 0 AND cc.idempotent_key >= c.idempotent_key THEN UPDATE SET "id"=cc."id","bar"=cc."bar","updated_at"=cc."updated_at","start"=cc."start"
-WHEN NOT MATCHED AND COALESCE(cc."__artie_delete", 1) = 0 THEN INSERT ("id","bar","updated_at","start") VALUES (cc."id",cc."bar",cc."updated_at",cc."start");`, queries[0])
+USING {SUB_QUERY} AS stg ON c."id" = stg."id"
+WHEN MATCHED AND stg."__artie_delete" = 1 THEN DELETE
+WHEN MATCHED AND COALESCE(stg."__artie_delete", 0) = 0 AND stg.idempotent_key >= c.idempotent_key THEN UPDATE SET "id"=stg."id","bar"=stg."bar","updated_at"=stg."updated_at","start"=stg."start"
+WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", 1) = 0 THEN INSERT ("id","bar","updated_at","start") VALUES (stg."id",stg."bar",stg."updated_at",stg."start");`, queries[0])
 	}
 	{
 		// Soft delete:
@@ -245,8 +245,8 @@ WHEN NOT MATCHED AND COALESCE(cc."__artie_delete", 1) = 0 THEN INSERT ("id","bar
 		assert.Len(t, queries, 1)
 		assert.Equal(t, `
 MERGE INTO database.schema.table c
-USING {SUB_QUERY} AS cc ON c."id" = cc."id"
-WHEN MATCHED THEN UPDATE SET "id"=cc."id","bar"=cc."bar","updated_at"=cc."updated_at","start"=cc."start","__artie_delete"=cc."__artie_delete"
-WHEN NOT MATCHED AND COALESCE(cc."__artie_delete", 0) = 0 THEN INSERT ("id","bar","updated_at","start","__artie_delete") VALUES (cc."id",cc."bar",cc."updated_at",cc."start",cc."__artie_delete");`, queries[0])
+USING {SUB_QUERY} AS stg ON c."id" = stg."id"
+WHEN MATCHED THEN UPDATE SET "id"=stg."id","bar"=stg."bar","updated_at"=stg."updated_at","start"=stg."start","__artie_delete"=stg."__artie_delete"
+WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", 0) = 0 THEN INSERT ("id","bar","updated_at","start","__artie_delete") VALUES (stg."id",stg."bar",stg."updated_at",stg."start",stg."__artie_delete");`, queries[0])
 	}
 }
