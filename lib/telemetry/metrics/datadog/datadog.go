@@ -7,11 +7,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
+	"github.com/DataDog/datadog-go/v5/statsd"
 
-	"github.com/DataDog/datadog-go/statsd"
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/stringutil"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 )
 
 const (
@@ -54,13 +54,13 @@ func NewDatadogClient(settings map[string]any) (base.Client, error) {
 		slog.Info("Overriding telemetry address with env vars", slog.String("address", address))
 	}
 
-	datadogClient, err := statsd.New(address)
+	datadogClient, err := statsd.New(address,
+		statsd.WithNamespace(fmt.Sprint(maputil.GetKeyFromMap(settings, Namespace, DefaultNamespace))),
+		statsd.WithTags(getTags(maputil.GetKeyFromMap(settings, Tags, []string{}))),
+	)
 	if err != nil {
 		return nil, err
 	}
-
-	datadogClient.Namespace = fmt.Sprint(maputil.GetKeyFromMap(settings, Namespace, DefaultNamespace))
-	datadogClient.Tags = getTags(maputil.GetKeyFromMap(settings, Tags, []string{}))
 
 	return &statsClient{
 		client: datadogClient,

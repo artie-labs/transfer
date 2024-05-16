@@ -5,7 +5,7 @@ go 1.22
 require (
 	cloud.google.com/go/bigquery v1.51.2
 	cloud.google.com/go/pubsub v1.30.0
-	github.com/DataDog/datadog-go v4.8.3+incompatible
+	github.com/DataDog/datadog-go/v5 v5.5.0
 	github.com/aws/aws-sdk-go-v2 v1.18.1
 	github.com/aws/aws-sdk-go-v2/config v1.18.19
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.18
