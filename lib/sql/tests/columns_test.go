@@ -35,6 +35,13 @@ func TestQuoteTableAliasColumn(t *testing.T) {
 	assert.Equal(t, `tbl."COL"`, sql.QuoteTableAliasColumn("tbl", column, snowflakeDialect.SnowflakeDialect{}))
 }
 
+func TestQuotedDeleteColumnMarker(t *testing.T) {
+	// BigQuery:
+	assert.Equal(t, "tbl.`__artie_delete`", sql.QuotedDeleteColumnMarker("tbl", bigqueryDialect.BigQueryDialect{}))
+	// Snowflake:
+	assert.Equal(t, `tbl."__ARTIE_DELETE"`, sql.QuotedDeleteColumnMarker("tbl", snowflakeDialect.SnowflakeDialect{}))
+}
+
 func TestBuildColumnsUpdateFragment_BigQuery(t *testing.T) {
 	var lastCaseColTypes []columns.Column
 	lastCaseCols := []string{"a1", "b2", "c3"}

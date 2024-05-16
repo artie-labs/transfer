@@ -224,7 +224,7 @@ func (rd RedshiftDialect) buildMergeUpdateQuery(
 	}
 
 	if !softDelete {
-		clauses = append(clauses, fmt.Sprintf("COALESCE(%s.%s, false) = false", constants.StagingAlias, rd.QuoteIdentifier(constants.DeleteColumnMarker)))
+		clauses = append(clauses, fmt.Sprintf("COALESCE(%s, false) = false", sql.QuotedDeleteColumnMarker(constants.StagingAlias, rd)))
 	}
 
 	return fmt.Sprintf(`UPDATE %s AS %s SET %s FROM %s AS %s WHERE %s;`,
@@ -236,7 +236,7 @@ func (rd RedshiftDialect) buildMergeUpdateQuery(
 }
 
 func (rd RedshiftDialect) buildMergeDeleteQuery(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column) string {
-	return fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s AS %s WHERE %s.%s = true);`,
+	return fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s AS %s WHERE %s = true);`,
 		// DELETE from table where (pk_1, pk_2)
 		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(primaryKeys, rd), ","),
 		// IN (stg.pk_1, stg.pk_2) FROM staging
@@ -244,7 +244,7 @@ func (rd RedshiftDialect) buildMergeDeleteQuery(tableID sql.TableIdentifier, sub
 			Vals:      sql.QuoteColumns(primaryKeys, rd),
 			Separator: ",",
 			Prefix:    constants.StagingAlias + ".",
-		}), subQuery, constants.StagingAlias, constants.StagingAlias, rd.QuoteIdentifier(constants.DeleteColumnMarker),
+		}), subQuery, constants.StagingAlias, sql.QuotedDeleteColumnMarker(constants.StagingAlias, rd),
 	)
 }
 
