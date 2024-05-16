@@ -221,14 +221,13 @@ func (bd BigQueryDialect) BuildMergeQueries(
 
 	var equalitySQLParts []string
 	for _, primaryKey := range primaryKeys {
-		// We'll need to escape the primary key as well.
-		quotedPrimaryKey := bd.QuoteIdentifier(primaryKey.Name())
-
 		equalitySQL := sql.BuildColumnComparison(primaryKey, constants.TargetAlias, constants.StagingAlias, sql.Equal, bd)
 
 		if primaryKey.KindDetails.Kind == typing.Struct.Kind {
 			// BigQuery requires special casting to compare two JSON objects.
-			equalitySQL = fmt.Sprintf("TO_JSON_STRING(%s.%s) = TO_JSON_STRING(%s.%s)", constants.TargetAlias, quotedPrimaryKey, constants.StagingAlias, quotedPrimaryKey)
+			equalitySQL = fmt.Sprintf("TO_JSON_STRING(%s) = TO_JSON_STRING(%s)",
+				sql.QuoteTableAliasColumn(constants.TargetAlias, primaryKey, bd),
+				sql.QuoteTableAliasColumn(constants.StagingAlias, primaryKey, bd))
 		}
 
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
