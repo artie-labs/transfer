@@ -1,6 +1,7 @@
 package datadog
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -34,6 +35,9 @@ func TestNewDatadogClient(t *testing.T) {
 	mtr, isOk := client.(*statsClient)
 	assert.True(t, isOk)
 	assert.Equal(t, mtr.rate, 0.255, mtr.rate)
-	assert.Equal(t, mtr.client.Namespace, "dusty.", mtr.client.Namespace)
-	assert.Equal(t, mtr.client.Tags, []string{"env:production"}, mtr.client.Tags)
+
+	assert.Equal(t, "dusty.", reflect.ValueOf(*mtr.client).FieldByName("namespace").String())
+	tagsField := reflect.ValueOf(*mtr.client).FieldByName("tags")
+	assert.Equal(t, 1, tagsField.Len())
+	assert.Equal(t, "env:production", tagsField.Index(0).String())
 }
