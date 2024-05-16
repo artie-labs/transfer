@@ -54,13 +54,13 @@ func NewDatadogClient(settings map[string]any) (base.Client, error) {
 		slog.Info("Overriding telemetry address with env vars", slog.String("address", address))
 	}
 
-	datadogClient, err := statsd.New(address)
+	datadogClient, err := statsd.New(address,
+		statsd.WithNamespace(fmt.Sprint(maputil.GetKeyFromMap(settings, Namespace, DefaultNamespace))),
+		statsd.WithTags(getTags(maputil.GetKeyFromMap(settings, Tags, []string{}))),
+	)
 	if err != nil {
 		return nil, err
 	}
-
-	datadogClient.Namespace = fmt.Sprint(maputil.GetKeyFromMap(settings, Namespace, DefaultNamespace))
-	datadogClient.Tags = getTags(maputil.GetKeyFromMap(settings, Tags, []string{}))
 
 	return &statsClient{
 		client: datadogClient,
