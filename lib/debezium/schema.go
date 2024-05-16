@@ -84,11 +84,11 @@ func (f Field) ToKindDetails() typing.KindDetails {
 	// We'll first cast based on Debezium types
 	// Then, we'll fall back on the actual data types.
 	switch f.DebeziumType {
-	case Timestamp, MicroTimestamp, DateTimeKafkaConnect, DateTimeWithTimezone:
+	case Timestamp, MicroTimestamp, NanoTimestamp, DateTimeKafkaConnect, DateTimeWithTimezone:
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)
 	case Date, DateKafkaConnect:
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType)
-	case Time, MicroTime, TimeKafkaConnect, TimeWithTimezone:
+	case Time, MicroTime, NanoTime, TimeKafkaConnect, TimeWithTimezone:
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
 	case JSON, GeometryPointType, GeometryType, GeographyType:
 		return typing.Struct
