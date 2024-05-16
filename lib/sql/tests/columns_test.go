@@ -35,6 +35,18 @@ func TestQuoteTableAliasColumn(t *testing.T) {
 	assert.Equal(t, `tbl."COL"`, sql.QuoteTableAliasColumn("tbl", column, snowflakeDialect.SnowflakeDialect{}))
 }
 
+func TestQuoteTableAliasColumns(t *testing.T) {
+	cols := []columns.Column{columns.NewColumn("a", typing.Invalid), columns.NewColumn("b", typing.Invalid)}
+
+	// BigQuery:
+	assert.Equal(t, []string{}, sql.QuoteTableAliasColumns("foo", nil, bigqueryDialect.BigQueryDialect{}))
+	assert.Equal(t, []string{"foo.`a`", "foo.`b`"}, sql.QuoteTableAliasColumns("foo", cols, bigqueryDialect.BigQueryDialect{}))
+
+	// Snowflake:
+	assert.Equal(t, []string{}, sql.QuoteTableAliasColumns("foo", nil, snowflakeDialect.SnowflakeDialect{}))
+	assert.Equal(t, []string{`foo."A"`, `foo."B"`}, sql.QuoteTableAliasColumns("foo", cols, snowflakeDialect.SnowflakeDialect{}))
+}
+
 func TestQuotedDeleteColumnMarker(t *testing.T) {
 	// BigQuery:
 	assert.Equal(t, "tbl.`__artie_delete`", sql.QuotedDeleteColumnMarker("tbl", bigqueryDialect.BigQueryDialect{}))

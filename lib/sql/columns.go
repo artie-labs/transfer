@@ -21,6 +21,14 @@ func QuoteTableAliasColumn(tableAlias constants.TableAlias, column columns.Colum
 	return fmt.Sprintf("%s.%s", tableAlias, dialect.QuoteIdentifier(column.Name()))
 }
 
+func QuoteTableAliasColumns(tableAlias constants.TableAlias, cols []columns.Column, dialect Dialect) []string {
+	result := make([]string, len(cols))
+	for i, col := range cols {
+		result[i] = QuoteTableAliasColumn(tableAlias, col, dialect)
+	}
+	return result
+}
+
 func QuotedDeleteColumnMarker(tableAlias constants.TableAlias, dialect Dialect) string {
 	return QuoteTableAliasColumn(tableAlias, columns.NewColumn(constants.DeleteColumnMarker, typing.Invalid), dialect)
 }

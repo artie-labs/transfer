@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -194,17 +193,13 @@ func (rd RedshiftDialect) buildMergeInsertQuery(
 	cols []columns.Column,
 ) string {
 	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s AS %s LEFT JOIN %s AS %s ON %s WHERE %s IS NULL;`,
-		// insert into target (col1, col2, col3)
+		// INSERT INTO %s (%s)
 		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(cols, rd), ","),
-		// SELECT stg.col1, stg.col2, ... FROM staging as CC
-		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      sql.QuoteColumns(cols, rd),
-			Separator: ",",
-			Prefix:    constants.StagingAlias + ".",
-		}), subQuery, constants.StagingAlias,
-		// LEFT JOIN table on pk(s)
+		// SELECT %s FROM %s AS %s
+		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, rd), ","), subQuery, constants.StagingAlias,
+		// LEFT JOIN %s AS %s ON %s
 		tableID.FullyQualifiedName(), constants.TargetAlias, strings.Join(sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, rd), " AND "),
-		// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
+		// WHERE %s IS NULL; (we only need to specify one primary key since it's covered with equalitySQL parts)
 		sql.QuoteTableAliasColumn(constants.TargetAlias, primaryKeys[0], rd),
 	)
 }
@@ -237,14 +232,12 @@ func (rd RedshiftDialect) buildMergeUpdateQuery(
 
 func (rd RedshiftDialect) buildMergeDeleteQuery(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column) string {
 	return fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s AS %s WHERE %s = true);`,
-		// DELETE from table where (pk_1, pk_2)
+		// DELETE FROM %s WHERE (%s)
 		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(primaryKeys, rd), ","),
-		// IN (stg.pk_1, stg.pk_2) FROM staging
-		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      sql.QuoteColumns(primaryKeys, rd),
-			Separator: ",",
-			Prefix:    constants.StagingAlias + ".",
-		}), subQuery, constants.StagingAlias, sql.QuotedDeleteColumnMarker(constants.StagingAlias, rd),
+		// IN (SELECT %s FROM %s AS %s
+		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, primaryKeys, rd), ","), subQuery, constants.StagingAlias,
+		// WHERE %s = true);
+		sql.QuotedDeleteColumnMarker(constants.StagingAlias, rd),
 	)
 }
 
