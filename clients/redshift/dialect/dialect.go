@@ -236,7 +236,7 @@ func (rd RedshiftDialect) buildMergeDeleteQuery(tableID sql.TableIdentifier, sub
 		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(primaryKeys, rd), ","),
 		// IN (SELECT %s FROM %s AS %s
 		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, primaryKeys, rd), ","), subQuery, constants.StagingAlias,
-		// WHERE %s.%s = true);
+		// WHERE %s = true);
 		sql.QuotedDeleteColumnMarker(constants.StagingAlias, rd),
 	)
 }
