@@ -147,11 +147,11 @@ func (SnowflakeDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, colum
 }
 
 func (sd SnowflakeDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
-	colName := sd.QuoteIdentifier(column.Name())
+	colName := sql.QuoteTableAliasColumn(tableAlias, column, sd)
 	if column.KindDetails == typing.Struct {
-		return fmt.Sprintf("COALESCE(%s.%s != {'key': '%s'}, true)", tableAlias, colName, constants.ToastUnavailableValuePlaceholder)
+		return fmt.Sprintf("COALESCE(%s != {'key': '%s'}, true)", colName, constants.ToastUnavailableValuePlaceholder)
 	}
-	return fmt.Sprintf("COALESCE(%s.%s != '%s', true)", tableAlias, colName, constants.ToastUnavailableValuePlaceholder)
+	return fmt.Sprintf("COALESCE(%s != '%s', true)", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
 func (sd SnowflakeDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
