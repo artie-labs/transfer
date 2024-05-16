@@ -246,7 +246,7 @@ WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s);`,
 			// WHEN MATCHED %sTHEN UPDATE SET %s
 			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, bd),
-			// WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s)
+			// WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s)
 			sql.QuotedDeleteColumnMarker(constants.StagingAlias, bd), strings.Join(sql.QuoteColumns(cols, bd), ","),
 			// VALUES (%s);
 			strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, bd), ","),
