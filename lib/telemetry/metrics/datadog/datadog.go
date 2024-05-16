@@ -7,11 +7,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
-
 	"github.com/DataDog/datadog-go/v5/statsd"
+
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/stringutil"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 )
 
 const (
