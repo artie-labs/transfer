@@ -200,7 +200,7 @@ func (rd RedshiftDialect) buildMergeInsertQuery(
 		// LEFT JOIN %s AS %s ON %s
 		tableID.FullyQualifiedName(), constants.TargetAlias, strings.Join(sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, rd), " AND "),
 		// WHERE %s IS NULL; (we only need to specify one primary key since it's covered with equalitySQL parts)
-		sql.QuoteTableAliasColumn(constants.TargetAlias, primaryKeys[0], rd)
+		sql.QuoteTableAliasColumn(constants.TargetAlias, primaryKeys[0], rd),
 	)
 }
 
