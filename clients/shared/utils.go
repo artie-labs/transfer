@@ -14,42 +14,42 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func DefaultValue(c columns.Column, dialect sql.Dialect, additionalDateFmts []string) (any, error) {
-	if c.DefaultValue() == nil {
-		return c.DefaultValue(), nil
+func DefaultValue(column columns.Column, dialect sql.Dialect, additionalDateFmts []string) (any, error) {
+	if column.DefaultValue() == nil {
+		return column.DefaultValue(), nil
 	}
 
-	switch c.KindDetails.Kind {
+	switch column.KindDetails.Kind {
 	case typing.Struct.Kind, typing.Array.Kind:
-		return dialect.EscapeStruct(fmt.Sprint(c.DefaultValue())), nil
+		return dialect.EscapeStruct(fmt.Sprint(column.DefaultValue())), nil
 	case typing.ETime.Kind:
-		if c.KindDetails.ExtendedTimeDetails == nil {
+		if column.KindDetails.ExtendedTimeDetails == nil {
 			return nil, fmt.Errorf("column kind details for extended time is nil")
 		}
 
-		extTime, err := ext.ParseFromInterface(c.DefaultValue(), additionalDateFmts)
+		extTime, err := ext.ParseFromInterface(column.DefaultValue(), additionalDateFmts)
 		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", c.DefaultValue(), err)
+			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", column.DefaultValue(), err)
 		}
 
-		switch c.KindDetails.ExtendedTimeDetails.Type {
+		switch column.KindDetails.ExtendedTimeDetails.Type {
 		case ext.TimeKindType:
 			return sql.QuoteLiteral(extTime.String(ext.PostgresTimeFormatNoTZ)), nil
 		default:
-			return sql.QuoteLiteral(extTime.String(c.KindDetails.ExtendedTimeDetails.Format)), nil
+			return sql.QuoteLiteral(extTime.String(column.KindDetails.ExtendedTimeDetails.Format)), nil
 		}
 	case typing.EDecimal.Kind:
-		val, isOk := c.DefaultValue().(*decimal.Decimal)
+		val, isOk := column.DefaultValue().(*decimal.Decimal)
 		if !isOk {
 			return nil, fmt.Errorf("colVal is not type *decimal.Decimal")
 		}
 
 		return val.Value(), nil
 	case typing.String.Kind:
-		return sql.QuoteLiteral(fmt.Sprint(c.DefaultValue())), nil
+		return sql.QuoteLiteral(fmt.Sprint(column.DefaultValue())), nil
 	}
 
-	return c.DefaultValue(), nil
+	return column.DefaultValue(), nil
 }
 
 func BackfillColumn(dwh destination.DataWarehouse, column columns.Column, tableID sql.TableIdentifier) error {

@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -146,12 +145,12 @@ func (SnowflakeDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, colum
 	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 
-func (sd SnowflakeDialect) BuildIsNotToastValueExpression(tableAlias string, column columns.Column) string {
-	colName := sd.QuoteIdentifier(column.Name())
+func (sd SnowflakeDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
+	colName := sql.QuoteTableAliasColumn(tableAlias, column, sd)
 	if column.KindDetails == typing.Struct {
-		return fmt.Sprintf("COALESCE(%s.%s != {'key': '%s'}, true)", tableAlias, colName, constants.ToastUnavailableValuePlaceholder)
+		return fmt.Sprintf("COALESCE(%s != {'key': '%s'}, true)", colName, constants.ToastUnavailableValuePlaceholder)
 	}
-	return fmt.Sprintf("COALESCE(%s.%s != '%s', true)", tableAlias, colName, constants.ToastUnavailableValuePlaceholder)
+	return fmt.Sprintf("COALESCE(%s != '%s', true)", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
 func (sd SnowflakeDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
@@ -226,16 +225,13 @@ MERGE INTO %s %s USING ( %s ) AS %s ON %s`,
 	if softDelete {
 		return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED %sTHEN UPDATE SET %s
-WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
+WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s);`,
 			// Update + Soft Deletion
 			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, sd),
 			// Insert
-			constants.StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, sd), ","),
-			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      sql.QuoteColumns(cols, sd),
-				Separator: ",",
-				Prefix:    constants.StagingAlias + ".",
-			}))}, nil
+			sql.QuotedDeleteColumnMarker(constants.StagingAlias, sd), strings.Join(sql.QuoteColumns(cols, sd), ","),
+			strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, sd), ","),
+		)}, nil
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
@@ -245,18 +241,15 @@ WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 	}
 
 	return []string{baseQuery + fmt.Sprintf(`
-WHEN MATCHED AND %s.%s THEN DELETE
-WHEN MATCHED AND IFNULL(%s.%s, false) = false %sTHEN UPDATE SET %s
-WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
+WHEN MATCHED AND %s THEN DELETE
+WHEN MATCHED AND IFNULL(%s, false) = false %sTHEN UPDATE SET %s
+WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s);`,
 		// Delete
-		constants.StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker),
+		sql.QuotedDeleteColumnMarker(constants.StagingAlias, sd),
 		// Update
-		constants.StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, sd),
+		sql.QuotedDeleteColumnMarker(constants.StagingAlias, sd), idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, sd),
 		// Insert
-		constants.StagingAlias, sd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, sd), ","),
-		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      sql.QuoteColumns(cols, sd),
-			Separator: ",",
-			Prefix:    constants.StagingAlias + ".",
-		}))}, nil
+		sql.QuotedDeleteColumnMarker(constants.StagingAlias, sd), strings.Join(sql.QuoteColumns(cols, sd), ","),
+		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, sd), ","),
+	)}, nil
 }

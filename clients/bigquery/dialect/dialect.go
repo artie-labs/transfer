@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -146,13 +145,13 @@ func (BigQueryDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, column
 	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 
-func (bd BigQueryDialect) BuildIsNotToastValueExpression(tableAlias string, column columns.Column) string {
-	colName := bd.QuoteIdentifier(column.Name())
+func (bd BigQueryDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
+	colName := sql.QuoteTableAliasColumn(tableAlias, column, bd)
 	if column.KindDetails == typing.Struct {
-		return fmt.Sprintf(`COALESCE(TO_JSON_STRING(%s.%s) != '{"key":"%s"}', true)`,
-			tableAlias, colName, constants.ToastUnavailableValuePlaceholder)
+		return fmt.Sprintf(`COALESCE(TO_JSON_STRING(%s) != '{"key":"%s"}', true)`,
+			colName, constants.ToastUnavailableValuePlaceholder)
 	}
-	return fmt.Sprintf("COALESCE(%s.%s != '%s', true)", tableAlias, colName, constants.ToastUnavailableValuePlaceholder)
+	return fmt.Sprintf("COALESCE(%s != '%s', true)", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
 func (bd BigQueryDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
@@ -221,14 +220,13 @@ func (bd BigQueryDialect) BuildMergeQueries(
 
 	var equalitySQLParts []string
 	for _, primaryKey := range primaryKeys {
-		// We'll need to escape the primary key as well.
-		quotedPrimaryKey := bd.QuoteIdentifier(primaryKey.Name())
-
 		equalitySQL := sql.BuildColumnComparison(primaryKey, constants.TargetAlias, constants.StagingAlias, sql.Equal, bd)
 
 		if primaryKey.KindDetails.Kind == typing.Struct.Kind {
 			// BigQuery requires special casting to compare two JSON objects.
-			equalitySQL = fmt.Sprintf("TO_JSON_STRING(%s.%s) = TO_JSON_STRING(%s.%s)", constants.TargetAlias, quotedPrimaryKey, constants.StagingAlias, quotedPrimaryKey)
+			equalitySQL = fmt.Sprintf("TO_JSON_STRING(%s) = TO_JSON_STRING(%s)",
+				sql.QuoteTableAliasColumn(constants.TargetAlias, primaryKey, bd),
+				sql.QuoteTableAliasColumn(constants.StagingAlias, primaryKey, bd))
 		}
 
 		equalitySQLParts = append(equalitySQLParts, equalitySQL)
@@ -245,16 +243,14 @@ MERGE INTO %s %s USING %s AS %s ON %s`,
 	if softDelete {
 		return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED %sTHEN UPDATE SET %s
-WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
-			// Update + Soft Deletion
+WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s);`,
+			// WHEN MATCHED %sTHEN UPDATE SET %s
 			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, bd),
-			// Insert
-			constants.StagingAlias, bd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, bd), ","),
-			array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-				Vals:      sql.QuoteColumns(cols, bd),
-				Separator: ",",
-				Prefix:    constants.StagingAlias + ".",
-			}))}, nil
+			// WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s)
+			sql.QuotedDeleteColumnMarker(constants.StagingAlias, bd), strings.Join(sql.QuoteColumns(cols, bd), ","),
+			// VALUES (%s);
+			strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, bd), ","),
+		)}, nil
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
@@ -264,18 +260,16 @@ WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`
 	}
 
 	return []string{baseQuery + fmt.Sprintf(`
-WHEN MATCHED AND %s.%s THEN DELETE
-WHEN MATCHED AND IFNULL(%s.%s, false) = false %sTHEN UPDATE SET %s
-WHEN NOT MATCHED AND IFNULL(%s.%s, false) = false THEN INSERT (%s) VALUES (%s);`,
-		// Delete
-		constants.StagingAlias, bd.QuoteIdentifier(constants.DeleteColumnMarker),
-		// Update
-		constants.StagingAlias, bd.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, bd),
-		// Insert
-		constants.StagingAlias, bd.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, bd), ","),
-		array.StringsJoinAddPrefix(array.StringsJoinAddPrefixArgs{
-			Vals:      sql.QuoteColumns(cols, bd),
-			Separator: ",",
-			Prefix:    constants.StagingAlias + ".",
-		}))}, nil
+WHEN MATCHED AND %s THEN DELETE
+WHEN MATCHED AND IFNULL(%s, false) = false %sTHEN UPDATE SET %s
+WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s);`,
+		// WHEN MATCHED AND %s THEN DELETE
+		sql.QuotedDeleteColumnMarker(constants.StagingAlias, bd),
+		// WHEN MATCHED AND IFNULL(%s, false) = false %sTHEN UPDATE SET %s
+		sql.QuotedDeleteColumnMarker(constants.StagingAlias, bd), idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, bd),
+		// WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s)
+		sql.QuotedDeleteColumnMarker(constants.StagingAlias, bd), strings.Join(sql.QuoteColumns(cols, bd), ","),
+		// VALUES (%s);
+		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, bd), ","),
+	)}, nil
 }

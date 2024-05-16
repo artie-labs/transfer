@@ -312,7 +312,7 @@ func (s *SnowflakeTestSuite) TestStore_AdditionalEqualityStrings() {
 		}
 		tableData := optimization.NewTableData(nil, config.Replication, nil, topicConfig, "foo")
 		actual := s.stageStore.additionalEqualityStrings(tableData)
-		assert.Equal(s.T(), []string{`c."FOO" = stg."FOO"`, `c."BAR" = stg."BAR"`}, actual)
+		assert.Equal(s.T(), []string{`tgt."FOO" = stg."FOO"`, `tgt."BAR" = stg."BAR"`}, actual)
 	}
 }
 
