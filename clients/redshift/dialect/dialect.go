@@ -193,7 +193,7 @@ func (rd RedshiftDialect) buildMergeInsertQuery(
 	primaryKeys []columns.Column,
 	cols []columns.Column,
 ) string {
-	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s AS %s LEFT JOIN %s AS %s ON %s WHERE %s.%s IS NULL;`,
+	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s AS %s LEFT JOIN %s AS %s ON %s WHERE %s IS NULL;`,
 		// insert into target (col1, col2, col3)
 		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(cols, rd), ","),
 		// SELECT stg.col1, stg.col2, ... FROM staging as CC
@@ -205,8 +205,7 @@ func (rd RedshiftDialect) buildMergeInsertQuery(
 		// LEFT JOIN table on pk(s)
 		tableID.FullyQualifiedName(), constants.TargetAlias, strings.Join(sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, rd), " AND "),
 		// Where PK is NULL (we only need to specify one primary key since it's covered with equalitySQL parts)
-		constants.TargetAlias,
-		rd.QuoteIdentifier(primaryKeys[0].Name()),
+		sql.QuoteTableAliasColumn(constants.TargetAlias, primaryKeys[0], rd),
 	)
 }
 
