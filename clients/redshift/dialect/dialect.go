@@ -128,12 +128,12 @@ func (RedshiftDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, column
 }
 
 func (rd RedshiftDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
-	colName := rd.QuoteIdentifier(column.Name())
+	colName := sql.QuoteTableAliasColumn(tableAlias, column, rd)
 	if column.KindDetails == typing.Struct {
-		return fmt.Sprintf(`COALESCE(%s.%s != JSON_PARSE('{"key":"%s"}'), true)`,
-			tableAlias, colName, constants.ToastUnavailableValuePlaceholder)
+		return fmt.Sprintf(`COALESCE(%s != JSON_PARSE('{"key":"%s"}'), true)`,
+			colName, constants.ToastUnavailableValuePlaceholder)
 	}
-	return fmt.Sprintf("COALESCE(%s.%s != '%s', true)", tableAlias, colName, constants.ToastUnavailableValuePlaceholder)
+	return fmt.Sprintf("COALESCE(%s != '%s', true)", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
 func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {

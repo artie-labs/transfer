@@ -162,12 +162,12 @@ func (MSSQLDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, columnOp 
 }
 
 func (md MSSQLDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
-	colName := md.QuoteIdentifier(column.Name())
+	colName := sql.QuoteTableAliasColumn(tableAlias, column, md)
 	// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
 	if column.KindDetails == typing.Struct {
-		return fmt.Sprintf("COALESCE(%s.%s, {}) != {'key': '%s'}", tableAlias, colName, constants.ToastUnavailableValuePlaceholder)
+		return fmt.Sprintf("COALESCE(%s, {}) != {'key': '%s'}", colName, constants.ToastUnavailableValuePlaceholder)
 	}
-	return fmt.Sprintf("COALESCE(%s.%s, '') != '%s'", tableAlias, colName, constants.ToastUnavailableValuePlaceholder)
+	return fmt.Sprintf("COALESCE(%s, '') != '%s'", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
 func (MSSQLDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
