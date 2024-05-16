@@ -31,10 +31,10 @@ func TestNewDatadogClient(t *testing.T) {
 		Sampling:  0.255,
 	})
 
-	assert.NoError(t, err, err)
+	assert.NoError(t, err)
 	mtr, isOk := client.(*statsClient)
 	assert.True(t, isOk)
-	assert.Equal(t, mtr.rate, 0.255, mtr.rate)
+	assert.Equal(t, 0.255, mtr.rate)
 
 	assert.Equal(t, "dusty.", reflect.ValueOf(*mtr.client).FieldByName("namespace").String())
 	tagsField := reflect.ValueOf(*mtr.client).FieldByName("tags")
