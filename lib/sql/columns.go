@@ -53,12 +53,11 @@ const (
 	GreaterThanOrEqual Operator = ">="
 )
 
-func BuildColumnComparison(column columns.Column, table1, table2 string, operator Operator, dialect Dialect) string {
-	quotedColumnName := dialect.QuoteIdentifier(column.Name())
-	return fmt.Sprintf("%s.%s %s %s.%s", table1, quotedColumnName, operator, table2, quotedColumnName)
+func BuildColumnComparison(column columns.Column, table1, table2 constants.TableAlias, operator Operator, dialect Dialect) string {
+	return fmt.Sprintf("%s %s %s", QuoteTableAliasColumn(table1, column, dialect), operator, QuoteTableAliasColumn(table2, column, dialect))
 }
 
-func BuildColumnComparisons(_columns []columns.Column, table1, table2 string, operator Operator, dialect Dialect) []string {
+func BuildColumnComparisons(_columns []columns.Column, table1, table2 constants.TableAlias, operator Operator, dialect Dialect) []string {
 	var result = make([]string, len(_columns))
 	for i, column := range _columns {
 		result[i] = BuildColumnComparison(column, table1, table2, operator, dialect)
