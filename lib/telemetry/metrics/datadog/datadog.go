@@ -9,7 +9,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 
-	"github.com/DataDog/datadog-go/statsd"
+	"github.com/DataDog/datadog-go/v5/statsd"
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
