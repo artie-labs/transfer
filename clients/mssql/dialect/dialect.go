@@ -161,12 +161,12 @@ func (MSSQLDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, columnOp 
 }
 
 func (md MSSQLDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
-	colName := md.QuoteIdentifier(column.Name())
+	colName := sql.QuoteTableAliasColumn(tableAlias, column, md)
 	// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
 	if column.KindDetails == typing.Struct {
-		return fmt.Sprintf("COALESCE(%s.%s, {}) != {'key': '%s'}", tableAlias, colName, constants.ToastUnavailableValuePlaceholder)
+		return fmt.Sprintf("COALESCE(%s, {}) != {'key': '%s'}", colName, constants.ToastUnavailableValuePlaceholder)
 	}
-	return fmt.Sprintf("COALESCE(%s.%s, '') != '%s'", tableAlias, colName, constants.ToastUnavailableValuePlaceholder)
+	return fmt.Sprintf("COALESCE(%s, '') != '%s'", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
 func (MSSQLDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
@@ -199,11 +199,11 @@ USING %s AS %s ON %s`,
 	if softDelete {
 		return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED %sTHEN UPDATE SET %s
-WHEN NOT MATCHED AND COALESCE(%s.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
+WHEN NOT MATCHED AND COALESCE(%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 			// WHEN MATCHED %sTHEN UPDATE SET %s
 			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
-			// WHEN NOT MATCHED AND COALESCE(%s.%s, 0) = 0 THEN INSERT (%s)
-			constants.StagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, md), ","),
+			// WHEN NOT MATCHED AND COALESCE(%s, 0) = 0 THEN INSERT (%s)
+			sql.QuotedDeleteColumnMarker(constants.StagingAlias, md), strings.Join(sql.QuoteColumns(cols, md), ","),
 			// VALUES (%s);
 			strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, md), ","),
 		)}, nil
@@ -216,15 +216,15 @@ WHEN NOT MATCHED AND COALESCE(%s.%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
 	}
 
 	return []string{baseQuery + fmt.Sprintf(`
-WHEN MATCHED AND %s.%s = 1 THEN DELETE
-WHEN MATCHED AND COALESCE(%s.%s, 0) = 0 %sTHEN UPDATE SET %s
-WHEN NOT MATCHED AND COALESCE(%s.%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
-		// WHEN MATCHED AND %s.%s = 1 THEN DELETE
-		constants.StagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker),
-		// WHEN MATCHED AND COALESCE(%s.%s, 0) = 0 %sTHEN UPDATE SET %s
-		constants.StagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
-		// WHEN NOT MATCHED AND COALESCE(%s.%s, 1) = 0 THEN INSERT (%s)
-		constants.StagingAlias, md.QuoteIdentifier(constants.DeleteColumnMarker), strings.Join(sql.QuoteColumns(cols, md), ","),
+WHEN MATCHED AND %s = 1 THEN DELETE
+WHEN MATCHED AND COALESCE(%s, 0) = 0 %sTHEN UPDATE SET %s
+WHEN NOT MATCHED AND COALESCE(%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
+		// WHEN MATCHED AND %s = 1 THEN DELETE
+		sql.QuotedDeleteColumnMarker(constants.StagingAlias, md),
+		// WHEN MATCHED AND COALESCE(%s, 0) = 0 %sTHEN UPDATE SET %s
+		sql.QuotedDeleteColumnMarker(constants.StagingAlias, md), idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
+		// WHEN NOT MATCHED AND COALESCE(%s, 1) = 0 THEN INSERT (%s)
+		sql.QuotedDeleteColumnMarker(constants.StagingAlias, md), strings.Join(sql.QuoteColumns(cols, md), ","),
 		// VALUES (%s);
 		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, md), ","),
 	)}, nil

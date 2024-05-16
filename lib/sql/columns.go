@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
@@ -26,6 +27,10 @@ func QuoteTableAliasColumns(tableAlias constants.TableAlias, cols []columns.Colu
 		result[i] = QuoteTableAliasColumn(tableAlias, col, dialect)
 	}
 	return result
+}
+
+func QuotedDeleteColumnMarker(tableAlias constants.TableAlias, dialect Dialect) string {
+	return QuoteTableAliasColumn(tableAlias, columns.NewColumn(constants.DeleteColumnMarker, typing.Invalid), dialect)
 }
 
 // BuildColumnsUpdateFragment will parse the columns and return a string like: first_name=tgt."first_name",last_name=stg."last_name",email=tgt."email"
