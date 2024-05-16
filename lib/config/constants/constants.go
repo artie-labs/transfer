@@ -102,7 +102,7 @@ func IsValidS3OutputFormat(format S3OutputFormat) bool {
 	return format == ParquetFormat
 }
 
-type TableAlias = string // TODO: Remove the = when everything accepts a [TableAlias] type
+type TableAlias string
 
 const (
 	StagingAlias TableAlias = "stg"
