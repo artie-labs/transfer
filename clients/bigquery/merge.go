@@ -73,8 +73,7 @@ func generateMergeString(bqSettings *partition.BigQuerySettings, dialect sql.Dia
 					columns.NewColumn(bqSettings.PartitionField, typing.Invalid),
 					dialect,
 				),
-				strings.Join(sql.QuoteLiterals(values), ","),
-			), nil
+				strings.Join(sql.QuoteLiterals(values), ",")), nil
 		}
 	}
 
