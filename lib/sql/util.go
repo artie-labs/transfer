@@ -14,6 +14,14 @@ func QuoteLiteral(value string) string {
 	return fmt.Sprintf("'%s'", strings.ReplaceAll(stringutil.EscapeBackslashes(value), "'", `\'`))
 }
 
+func QuoteLiterals(values []string) []string {
+	result := make([]string, len(values))
+	for i, value := range values {
+		result[i] = QuoteLiteral(value)
+	}
+	return result
+}
+
 func QuoteIdentifiers(identifiers []string, dialect Dialect) []string {
 	result := make([]string, len(identifiers))
 	for i, identifier := range identifiers {

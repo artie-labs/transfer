@@ -39,6 +39,13 @@ func TestQuoteLiteral(t *testing.T) {
 	}
 }
 
+func TestQuoteLiterals(t *testing.T) {
+	assert.Empty(t, QuoteLiterals(nil))
+	assert.Empty(t, QuoteLiterals([]string{}))
+	assert.Equal(t, []string{"'a'"}, QuoteLiterals([]string{"a"}))
+	assert.Equal(t, []string{"'a'", "'b'", "'c\\'c'"}, QuoteLiterals([]string{"a", "b", "c'c"}))
+}
+
 func TestParseDataTypeDefinition(t *testing.T) {
 	{
 		dataType, parameters, err := ParseDataTypeDefinition("number")
