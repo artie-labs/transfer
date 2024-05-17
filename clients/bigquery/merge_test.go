@@ -3,6 +3,8 @@ package bigquery
 import (
 	"fmt"
 
+	bigqueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib/partition"
 
@@ -86,24 +88,26 @@ func (b *BigQueryTestSuite) TestGenerateMergeString() {
 		PartitionBy:    "daily",
 	}
 
+	dialect := bigqueryDialect.BigQueryDialect{}
+
 	{
 		// nil
-		_, err := generateMergeString(bqSettings, nil)
+		_, err := generateMergeString(bqSettings, dialect, nil)
 		assert.ErrorContains(b.T(), err, "values cannot be empty")
 
 		// empty values
-		_, err = generateMergeString(bqSettings, []string{})
+		_, err = generateMergeString(bqSettings, dialect, []string{})
 		assert.ErrorContains(b.T(), err, "values cannot be empty")
 	}
 	{
 		// Valid
-		mergeString, err := generateMergeString(bqSettings, []string{"2020-01-01"})
+		mergeString, err := generateMergeString(bqSettings, dialect, []string{"2020-01-01"})
 		assert.NoError(b.T(), err)
 		assert.Equal(b.T(), fmt.Sprintf("DATE(%s.`created_at`) IN ('2020-01-01')", constants.TargetAlias), mergeString)
 	}
 	{
 		// Valid multiple values
-		mergeString, err := generateMergeString(bqSettings, []string{"2020-01-01", "2020-01-02"})
+		mergeString, err := generateMergeString(bqSettings, dialect, []string{"2020-01-01", "2020-01-02"})
 		assert.NoError(b.T(), err)
 		assert.Equal(b.T(), fmt.Sprintf("DATE(%s.`created_at`) IN ('2020-01-01','2020-01-02')", constants.TargetAlias), mergeString)
 	}
