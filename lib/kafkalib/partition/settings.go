@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
-
 	"github.com/artie-labs/transfer/lib/array"
+	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
 var ValidPartitionTypes = []string{
