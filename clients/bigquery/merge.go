@@ -2,11 +2,11 @@ package bigquery
 
 import (
 	"fmt"
+	"strings"
 
 	"cloud.google.com/go/bigquery"
 
 	"github.com/artie-labs/transfer/clients/shared"
-	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib/partition"
@@ -73,7 +73,8 @@ func generateMergeString(bqSettings *partition.BigQuerySettings, dialect sql.Dia
 					columns.NewColumn(bqSettings.PartitionField, typing.Invalid),
 					dialect,
 				),
-				array.StringsJoinAddSingleQuotes(values)), nil
+				strings.Join(sql.QuoteLiterals(values), ","),
+			), nil
 		}
 	}
 

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"strings"
 
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
@@ -52,15 +51,6 @@ func InterfaceToArrayString(val any, recastAsArray bool) ([]string, error) {
 	}
 
 	return vals, nil
-}
-
-func StringsJoinAddSingleQuotes(values []string) string {
-	var vals []string
-	for _, value := range values {
-		vals = append(vals, fmt.Sprintf(`'%s'`, value))
-	}
-
-	return strings.Join(vals, ",")
 }
 
 // Empty will iterate over a list, if one of the item in the list is empty, it will return true
