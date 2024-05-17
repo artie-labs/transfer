@@ -1,7 +1,10 @@
 package partition
 
 import (
+	"fmt"
 	"testing"
+
+	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -93,12 +96,12 @@ func TestBigQuerySettings_GenerateMergeString(t *testing.T) {
 		{
 			name:           "valid",
 			values:         []string{"2020-01-01"},
-			expectedString: "DATE(c.created_at) IN ('2020-01-01')",
+			expectedString: fmt.Sprintf("DATE(%s.created_at) IN ('2020-01-01')", constants.TargetAlias),
 		},
 		{
 			name:           "valid multiple values",
 			values:         []string{"2020-01-01", "2020-01-02"},
-			expectedString: `DATE(c.created_at) IN ('2020-01-01','2020-01-02')`,
+			expectedString: fmt.Sprintf(`DATE(%s.created_at) IN ('2020-01-01','2020-01-02')`, constants.TargetAlias),
 		},
 	}
 
