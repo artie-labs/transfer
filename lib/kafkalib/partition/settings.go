@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
+
 	"github.com/artie-labs/transfer/lib/array"
 )
 
@@ -43,7 +45,7 @@ func (b *BigQuerySettings) GenerateMergeString(values []string) (string, error) 
 	case "time":
 		switch b.PartitionBy {
 		case "daily":
-			return fmt.Sprintf(`DATE(c.%s) IN (%s)`, b.PartitionField, array.StringsJoinAddSingleQuotes(values)), nil
+			return fmt.Sprintf(`DATE(%s.%s) IN (%s)`, constants.TargetAlias, b.PartitionField, array.StringsJoinAddSingleQuotes(values)), nil
 		}
 	}
 
