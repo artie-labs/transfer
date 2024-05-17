@@ -3,8 +3,6 @@ package partition
 import (
 	"fmt"
 	"slices"
-
-	"github.com/artie-labs/transfer/lib/array"
 )
 
 var ValidPartitionTypes = []string{
@@ -27,27 +25,6 @@ type BigQuerySettings struct {
 	PartitionType  string `yaml:"partitionType" json:"partitionType"`
 	PartitionField string `yaml:"partitionField" json:"partitionField"`
 	PartitionBy    string `yaml:"partitionBy" json:"partitionBy"`
-}
-
-// GenerateMergeString this is used as an equality string for the MERGE statement.
-func (b *BigQuerySettings) GenerateMergeString(values []string) (string, error) {
-	if err := b.Valid(); err != nil {
-		return "", fmt.Errorf("failed to validate bigQuerySettings: %w", err)
-	}
-
-	if len(values) == 0 {
-		return "", fmt.Errorf("values cannot be empty")
-	}
-
-	switch b.PartitionType {
-	case "time":
-		switch b.PartitionBy {
-		case "daily":
-			return fmt.Sprintf(`DATE(c.%s) IN (%s)`, b.PartitionField, array.StringsJoinAddSingleQuotes(values)), nil
-		}
-	}
-
-	return "", fmt.Errorf("unexpected partitionType: %s and/or partitionBy: %s", b.PartitionType, b.PartitionBy)
 }
 
 func (b *BigQuerySettings) Valid() error {
