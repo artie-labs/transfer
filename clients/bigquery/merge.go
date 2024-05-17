@@ -2,7 +2,6 @@ package bigquery
 
 import (
 	"fmt"
-	"log/slog"
 
 	"cloud.google.com/go/bigquery"
 
@@ -42,8 +41,7 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 
 		mergeString, err := generateMergeString(tableData.TopicConfig().BigQueryPartitionSettings, s.Dialect(), distinctDates)
 		if err != nil {
-			slog.Warn("Failed to generate merge string", slog.Any("err", err))
-			return err
+			return fmt.Errorf("failed to generate merge string: %w", err)
 		}
 
 		additionalEqualityStrings = []string{mergeString}
