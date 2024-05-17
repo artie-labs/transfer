@@ -1,10 +1,7 @@
 package partition
 
 import (
-	"fmt"
 	"testing"
-
-	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -73,51 +70,6 @@ func TestBigQuerySettings_Valid(t *testing.T) {
 			assert.ErrorContains(t, actualErr, testCase.expectedErr, testCase.name)
 		} else {
 			assert.NoError(t, actualErr, testCase.name)
-		}
-	}
-}
-
-func TestBigQuerySettings_GenerateMergeString(t *testing.T) {
-	testCases := []struct {
-		name           string
-		values         []string
-		expectedErr    string
-		expectedString string
-	}{
-		{
-			name:        "nil",
-			expectedErr: "values cannot be empty",
-		},
-		{
-			name:        "empty values",
-			values:      []string{},
-			expectedErr: "values cannot be empty",
-		},
-		{
-			name:           "valid",
-			values:         []string{"2020-01-01"},
-			expectedString: fmt.Sprintf("DATE(%s.created_at) IN ('2020-01-01')", constants.TargetAlias),
-		},
-		{
-			name:           "valid multiple values",
-			values:         []string{"2020-01-01", "2020-01-02"},
-			expectedString: fmt.Sprintf(`DATE(%s.created_at) IN ('2020-01-01','2020-01-02')`, constants.TargetAlias),
-		},
-	}
-
-	for _, testCase := range testCases {
-		bigquery := &BigQuerySettings{
-			PartitionType:  "time",
-			PartitionField: "created_at",
-			PartitionBy:    "daily",
-		}
-
-		actualValue, actualErr := bigquery.GenerateMergeString(testCase.values)
-		if testCase.expectedErr != "" {
-			assert.ErrorContains(t, actualErr, testCase.expectedErr, testCase.name)
-		} else {
-			assert.NoError(t, actualErr, testCase.name)
-			assert.Equal(t, testCase.expectedString, actualValue, testCase.name)
 		}
 	}
 }
