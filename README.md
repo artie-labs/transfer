@@ -61,18 +61,20 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
   - Google Pub/Sub
 
 - [Destinations](https://docs.artie.com/real-time-destinations/overview):
-    - Snowflake
     - BigQuery
-    - Redshift
     - Microsoft SQL Server
+    - Redshift
     - S3
+    - Snowflake
 
 - [Sources](https://docs.artie.com/real-time-sources/overview):
-    - MongoDB
     - DocumentDB
-    - PostgreSQL
-    - MySQL
     - DynamoDB
+    - Microsoft SQL Server
+    - MongoDB
+    - MySQL
+    - PostgreSQL
+    
 
 _If the database you are using is not on the list, feel free to file for a [feature request](https://github.com/artie-labs/transfer/issues/new)._
 
