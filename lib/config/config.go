@@ -8,7 +8,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/numbers"
@@ -279,7 +278,7 @@ func (c Config) Validate() error {
 		}
 
 		// Username and password are not required (if it's within the same VPC or connecting locally
-		if array.Empty([]string{c.Kafka.GroupID, c.Kafka.BootstrapServer}) {
+		if stringutil.Empty(c.Kafka.GroupID, c.Kafka.BootstrapServer) {
 			return fmt.Errorf("kafka group or bootstrap server is empty")
 		}
 	case constants.PubSub:
@@ -287,7 +286,7 @@ func (c Config) Validate() error {
 			return fmt.Errorf("pubsub config is nil")
 		}
 
-		if array.Empty([]string{c.Pubsub.ProjectID, c.Pubsub.PathToCredentials}) {
+		if stringutil.Empty(c.Pubsub.ProjectID, c.Pubsub.PathToCredentials) {
 			return fmt.Errorf("pubsub projectID or pathToCredentials is empty")
 		}
 	}

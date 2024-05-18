@@ -80,16 +80,3 @@ func TestToArrayString(t *testing.T) {
 	}
 
 }
-
-func TestNotEmpty(t *testing.T) {
-	notEmptyList := []string{
-		"aaa",
-		"foo",
-		"bar",
-	}
-
-	assert.False(t, Empty(notEmptyList))
-
-	notEmptyList = append(notEmptyList, "")
-	assert.True(t, Empty(notEmptyList))
-}
