@@ -17,10 +17,10 @@ func TestTableIdentifier_WithTable(t *testing.T) {
 
 func TestTableIdentifier_FullyQualifiedName(t *testing.T) {
 	// Table name that is not a reserved word:
-	assert.Equal(t, `schema."foo"`, NewTableIdentifier("schema", "foo").FullyQualifiedName())
+	assert.Equal(t, `"schema"."foo"`, NewTableIdentifier("schema", "foo").FullyQualifiedName())
 
 	// Table name that is a reserved word:
-	assert.Equal(t, `schema."table"`, NewTableIdentifier("schema", "table").FullyQualifiedName())
+	assert.Equal(t, `"schema"."table"`, NewTableIdentifier("schema", "table").FullyQualifiedName())
 }
 
 func TestTableIdentifier_EscapedTable(t *testing.T) {
