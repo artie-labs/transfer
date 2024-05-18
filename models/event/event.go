@@ -1,6 +1,7 @@
 package event
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -52,7 +53,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc *kafkalib.TopicConf
 	if err != nil {
 		return Event{}, err
 	}
-	tblName := stringutil.Override(event.GetTableName(), tc.TableName)
+	tblName := cmp.Or(tc.TableName, event.GetTableName())
 	if cfgMode == config.History {
 		if !strings.HasSuffix(tblName, constants.HistoryModeSuffix) {
 			// History mode will include a table suffix and operation column
