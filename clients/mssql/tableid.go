@@ -35,5 +35,5 @@ func (ti TableIdentifier) WithTable(table string) sql.TableIdentifier {
 }
 
 func (ti TableIdentifier) FullyQualifiedName() string {
-	return fmt.Sprintf("%s.%s", ti.schema, ti.EscapedTable())
+	return fmt.Sprintf("%s.%s", _dialect.QuoteIdentifier(ti.schema), ti.EscapedTable())
 }
