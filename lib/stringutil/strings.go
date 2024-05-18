@@ -13,18 +13,6 @@ func CapitalizeFirstLetter(s string) string {
 	return strings.ToUpper(s[:1]) + s[1:]
 }
 
-// Override - pass in a list of vals, the right most value that is not empty will override.
-func Override(vals ...string) string {
-	var retVal string
-	for _, val := range vals {
-		if val != "" {
-			retVal = val
-		}
-	}
-
-	return retVal
-}
-
 func EscapeBackslashes(value string) string {
 	return strings.ReplaceAll(value, `\`, `\\`)
 }
