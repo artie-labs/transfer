@@ -52,15 +52,3 @@ func InterfaceToArrayString(val any, recastAsArray bool) ([]string, error) {
 
 	return vals, nil
 }
-
-// Empty will iterate over a list, if one of the item in the list is empty, it will return true
-// This is useful to check the presence of a setting.
-func Empty(list []string) bool {
-	for _, v := range list {
-		if empty := v == ""; empty {
-			return true
-		}
-	}
-
-	return false
-}

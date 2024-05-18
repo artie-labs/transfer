@@ -5,8 +5,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/kafkalib/partition"
+	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
 type DatabaseSchemaPair struct {
@@ -91,7 +91,7 @@ func (t TopicConfig) String() string {
 
 func (t TopicConfig) Validate() error {
 	// IdempotentKey is optional.
-	empty := array.Empty([]string{t.Database, t.Schema, t.Topic, t.CDCFormat})
+	empty := stringutil.Empty(t.Database, t.Schema, t.Topic, t.CDCFormat)
 	if empty {
 		return fmt.Errorf("database, schema, topic or cdc format is empty")
 	}
