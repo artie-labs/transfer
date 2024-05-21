@@ -11,11 +11,11 @@ type MongoTestSuite struct {
 	*Debezium
 }
 
-func (p *MongoTestSuite) SetupTest() {
+func (m *MongoTestSuite) SetupTest() {
 	var debezium Debezium
-	p.Debezium = &debezium
+	m.Debezium = &debezium
 }
 
-func TestPostgresTestSuite(t *testing.T) {
+func TestMongoTestSuite(t *testing.T) {
 	suite.Run(t, new(MongoTestSuite))
 }

@@ -1,6 +1,7 @@
 package bigquery
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -59,11 +60,17 @@ func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string)
 			return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
 		}
 
-		colValString, isOk := colVal.(string)
-		if isOk && colValString == "" {
+		if colValString, isOk := colVal.(string); isOk && colValString == "" {
 			// Empty string is not a valid JSON object, so let's return nil.
 			return nil, nil
 		}
+
+		colValBytes, err := json.Marshal(colVal)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal colVal: %w", err)
+		}
+
+		return string(colValBytes), nil
 	case typing.Array.Kind:
 		var err error
 		arrayString, err := array.InterfaceToArrayString(colVal, true)
