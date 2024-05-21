@@ -1,6 +1,7 @@
 package event
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -8,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
@@ -53,7 +53,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc *kafkalib.TopicConf
 	if err != nil {
 		return Event{}, err
 	}
-	tblName := stringutil.Override(event.GetTableName(), tc.TableName)
+	tblName := cmp.Or(tc.TableName, event.GetTableName())
 	if cfgMode == config.History {
 		if !strings.HasSuffix(tblName, constants.HistoryModeSuffix) {
 			// History mode will include a table suffix and operation column
@@ -81,7 +81,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc *kafkalib.TopicConf
 
 func (e *Event) IsValid() bool {
 	// Does it have a PK or table set?
-	if array.Empty([]string{e.Table}) {
+	if stringutil.Empty(e.Table) {
 		return false
 	}
 
