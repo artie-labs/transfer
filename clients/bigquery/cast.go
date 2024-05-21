@@ -60,6 +60,9 @@ func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string)
 			return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
 		}
 
+		// Structs from relational and Mongo are different.
+		// MongoDB will return the native objects back such as `map[string]any{"hello": "world"}`
+		// Relational will return a string representation of the struct such as `{"hello": "world"}`
 		if colValString, isOk := colVal.(string); isOk {
 			if colValString == "" {
 				return nil, nil
