@@ -57,8 +57,14 @@ func (b *BigQueryTestSuite) TestCastColVal() {
 			expectedValue: "123",
 		},
 		{
-			name:          "struct",
+			name:          "struct w/ struct values",
 			colVal:        map[string]any{"hello": "world"},
+			colKind:       columns.Column{KindDetails: typing.Struct},
+			expectedValue: `{"hello":"world"}`,
+		},
+		{
+			name:          "struct w/ string values",
+			colVal:        `{"hello":"world"}`,
 			colKind:       columns.Column{KindDetails: typing.Struct},
 			expectedValue: `{"hello":"world"}`,
 		},

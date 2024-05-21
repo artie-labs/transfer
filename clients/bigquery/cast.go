@@ -60,9 +60,12 @@ func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string)
 			return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
 		}
 
-		if colValString, isOk := colVal.(string); isOk && colValString == "" {
-			// Empty string is not a valid JSON object, so let's return nil.
-			return nil, nil
+		if colValString, isOk := colVal.(string); isOk {
+			if colValString == "" {
+				return nil, nil
+			}
+
+			return colValString, nil
 		}
 
 		colValBytes, err := json.Marshal(colVal)
