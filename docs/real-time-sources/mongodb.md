@@ -20,11 +20,11 @@ Need help? Check out this [guide](https://www.mongodb.com/docs/manual/tutorial/c
 ## Settings required
 
 | Name                  | Description                                                                                                                                                                   | Default value |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| Connection string     | Click [here](https://www.mongodb.com/docs/manual/reference/connection-string/) to see how to retrieve this.                                                                   | No default.   |
-| Username              | Username for authentication into your database.                                                                                                                               | No default    |
-| Password              | Password for authentication into your database.                                                                                                                               | No default    |
-| Authentication source | MongoDB [authSource](https://www.mongodb.com/docs/manual/reference/connection-string/#mongodb-urioption-urioption.authSource) (which database should we authenticate against) | admin         |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-----------: |
+| Connection string     | Click [here](https://www.mongodb.com/docs/manual/reference/connection-string/) to see how to retrieve this.                                                                   |       -       |
+| Username              | Username for authentication into your database.                                                                                                                               |       -       |
+| Password              | Password for authentication into your database.                                                                                                                               |       -       |
+| Authentication source | MongoDB [authSource](https://www.mongodb.com/docs/manual/reference/connection-string/#mongodb-urioption-urioption.authSource) (which database should we authenticate against) |     admin     |
 
 ### Creating a service account
 
