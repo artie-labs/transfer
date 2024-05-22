@@ -78,7 +78,6 @@ func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string)
 
 		return string(colValBytes), nil
 	case typing.Array.Kind:
-		var err error
 		arrayString, err := array.InterfaceToArrayString(colVal, true)
 		if err != nil {
 			return nil, err
