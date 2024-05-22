@@ -56,6 +56,7 @@ func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string)
 			return extTime.String(dialect.BQStreamingTimeFormat), nil
 		}
 	case typing.Struct.Kind:
+		// TODO: See if we can improve this eval and find a better location, see: https://github.com/artie-labs/transfer/pull/697#discussion_r1609280164
 		if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
 			return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
 		}
