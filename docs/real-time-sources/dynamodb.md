@@ -1,16 +1,12 @@
 ---
 description: >-
-  We will go over how to gather all the necessary informations to enable
-  DynamoDB as a source.
+  In this page, we will go over how to retrieve all the necessary settings so we
+  can start to replicate from DynamoDB by leveraging DynamoDB streams.
 ---
 
 # DynamoDB
 
-### Introduction
-
-We will be running [Artie Reader](https://github.com/artie-labs/reader) to fetch the CDC logs from DynamoDB streams.&#x20;
-
-### Finding your DynamoDB settings
+### Settings required
 
 * DynamoDB Streams ARN
 * AWS Access Key ID

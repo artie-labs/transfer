@@ -9,15 +9,11 @@ description: >-
 
 ## Introduction
 
-We will be running Debezium to fetch CDC logs from DocumentDB by using [Change Streams](https://www.mongodb.com/docs/manual/changeStreams/) which is a more performant and reliable approach than tailing the `oplog`.&#x20;
-
 {% hint style="info" %}
 To run Artie with DocumentDB, you **must** have SSH tunnels enabled as DocumentDB only allows access within your VPC.  See [enabling-ssh-tunneling.md](../tutorials/enabling-ssh-tunneling.md "mention") for instructions!
 {% endhint %}
 
-## Finding your DocumentDB settings
-
-This is necessary so that we are able to run a Debezium deployment to subscribe to Change Events within your MongoDB cluster. To see additional configuration properties, please click [here](https://debezium.io/documentation/reference/2.0/connectors/mongodb.html#mongodb-connector-properties) to see Debezium's documentation.
+## Required settings
 
 | Name             | Description                                                                     |
 | ---------------- | ------------------------------------------------------------------------------- |

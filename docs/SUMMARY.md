@@ -10,16 +10,17 @@
 ## Real-time Sources
 
 * [Overview](real-time-sources/overview.md)
+* [DocumentDB](real-time-sources/documentdb.md)
+* [DynamoDB](real-time-sources/dynamodb.md)
+* [Microsoft SQL Server](real-time-sources/microsoft-sql-server.md)
+* [MongoDB](real-time-sources/mongodb.md)
+* [MySQL](real-time-sources/mysql.md)
+  * [Amazon RDS or Aurora](real-time-sources/mysql/amazon-rds-or-aurora.md)
 * [PostgreSQL](real-time-sources/postgresql/README.md)
   * [GCP CloudSQL](real-time-sources/postgresql/gcp-cloudsql.md)
   * [Amazon RDS](real-time-sources/postgresql/amazon-rds.md)
   * [Supabase](real-time-sources/postgresql/supabase.md)
   * [Troubleshooting](real-time-sources/postgresql/troubleshooting.md)
-* [MySQL](real-time-sources/mysql.md)
-  * [Amazon RDS or Aurora](real-time-sources/mysql/amazon-rds-or-aurora.md)
-* [MongoDB](real-time-sources/mongodb.md)
-* [DocumentDB](real-time-sources/documentdb.md)
-* [DynamoDB](real-time-sources/dynamodb.md)
 
 ## Real-time Destinations
 

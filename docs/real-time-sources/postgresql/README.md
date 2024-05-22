@@ -6,11 +6,7 @@ description: >-
 
 # PostgreSQL
 
-## Finding your PostgreSQL settings
-
-This is necessary so that we are able to run a Debezium deployment to read from your PostgreSQL server's replication slot and publish them onto Kafka. To see additional configuration properties, please click [here](https://debezium.io/documentation/reference/2.0/connectors/postgresql.html#postgresql-connector-properties) to see Debezium's documentation.
-
-We will need the following:
+## Settings required
 
 | Name                        | Description                                                                                                                                       | Default value |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |

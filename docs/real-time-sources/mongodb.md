@@ -17,9 +17,7 @@ MongoDB server **must** be in a replica set. If your deployment only has a `stan
 Need help? Check out this [guide](https://www.mongodb.com/docs/manual/tutorial/convert-standalone-to-replica-set/).
 {% endhint %}
 
-## Finding your MongoDB settings
-
-This is necessary so that we are able to run a Debezium deployment to subscribe to Change Events within your MongoDB cluster. To see additional configuration properties, please click [here](https://debezium.io/documentation/reference/2.0/connectors/mongodb.html#mongodb-connector-properties) to see Debezium's documentation.
+## Settings required
 
 | Name                  | Description                                                                                                                                                                   | Default value |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
