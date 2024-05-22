@@ -77,5 +77,5 @@ ALTER TABLE orders ADD COLUMN prefix VARCHAR(255) DEFAULT 'orders' NOT NULL;
 CREATE UNIQUE INDEX cdc_index ON dbo.orders (id, prefix);
 -- When enabling CDC, use cdc_index instead of the primary key
 EXEC sys.sp_cdc_enable_table @source_schema = 'dbo',@source_name = 'orders',
-@role_name = NULL, @index_name= 'cdc_index';
+@role_name = NULL, @index_name = 'cdc_index';
 ```
