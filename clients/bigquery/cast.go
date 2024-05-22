@@ -1,6 +1,7 @@
 package bigquery
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -55,17 +56,29 @@ func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string)
 			return extTime.String(dialect.BQStreamingTimeFormat), nil
 		}
 	case typing.Struct.Kind:
+		// TODO: See if we can improve this eval and find a better location, see: https://github.com/artie-labs/transfer/pull/697#discussion_r1609280164
 		if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
 			return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
 		}
 
-		colValString, isOk := colVal.(string)
-		if isOk && colValString == "" {
-			// Empty string is not a valid JSON object, so let's return nil.
-			return nil, nil
+		// Structs from relational and Mongo are different.
+		// MongoDB will return the native objects back such as `map[string]any{"hello": "world"}`
+		// Relational will return a string representation of the struct such as `{"hello": "world"}`
+		if colValString, isOk := colVal.(string); isOk {
+			if colValString == "" {
+				return nil, nil
+			}
+
+			return colValString, nil
 		}
+
+		colValBytes, err := json.Marshal(colVal)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal colVal: %w", err)
+		}
+
+		return string(colValBytes), nil
 	case typing.Array.Kind:
-		var err error
 		arrayString, err := array.InterfaceToArrayString(colVal, true)
 		if err != nil {
 			return nil, err

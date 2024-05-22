@@ -17,7 +17,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
-func (p *MongoTestSuite) TestGetPrimaryKey() {
+func (m *MongoTestSuite) TestGetPrimaryKey() {
 	type _tc struct {
 		name          string
 		key           []byte
@@ -53,23 +53,23 @@ func (p *MongoTestSuite) TestGetPrimaryKey() {
 	}
 
 	for _, tc := range tcs {
-		pkMap, err := p.GetPrimaryKey(tc.key, &kafkalib.TopicConfig{
+		pkMap, err := m.GetPrimaryKey(tc.key, &kafkalib.TopicConfig{
 			CDCKeyFormat: tc.keyFormat,
 		})
 
-		assert.Equal(p.T(), err, nil, tc.name)
+		assert.Equal(m.T(), err, nil, tc.name)
 
 		pkVal, isOk := pkMap["_id"]
-		assert.True(p.T(), isOk, tc.name)
-		assert.Equal(p.T(), pkVal, tc.expectedValue, tc.name)
+		assert.True(m.T(), isOk, tc.name)
+		assert.Equal(m.T(), pkVal, tc.expectedValue, tc.name)
 
 		// The `id` column should not exist anymore
 		_, isOk = pkMap["id"]
-		assert.False(p.T(), isOk)
+		assert.False(m.T(), isOk)
 	}
 }
 
-func (p *MongoTestSuite) TestSource_GetExecutionTime() {
+func (m *MongoTestSuite) TestSource_GetExecutionTime() {
 	schemaEvtPayload := &SchemaEventPayload{Payload: Payload{
 		Before:    nil,
 		After:     nil,
@@ -81,21 +81,21 @@ func (p *MongoTestSuite) TestSource_GetExecutionTime() {
 		},
 		Operation: "",
 	}}
-	assert.Equal(p.T(), time.Date(2022, time.November,
+	assert.Equal(m.T(), time.Date(2022, time.November,
 		18, 6, 35, 21, 0, time.UTC), schemaEvtPayload.GetExecutionTime())
 }
 
-func (p *MongoTestSuite) TestBsonTypes() {
+func (m *MongoTestSuite) TestBsonTypes() {
 	var tsMap map[string]any
 	bsonData := []byte(`
 {"_id": {"$numberLong": "10004"}, "order_date": {"$date": 1456012800000},"purchaser_id": {"$numberLong": "1003"},"quantity": 1,"product_id": {"$numberLong": "107"}}
 `)
 
 	err := bson.UnmarshalExtJSON(bsonData, false, &tsMap)
-	assert.NoError(p.T(), err)
+	assert.NoError(m.T(), err)
 }
 
-func (p *MongoTestSuite) TestMongoDBEventOrder() {
+func (m *MongoTestSuite) TestMongoDBEventOrder() {
 	payload := `
 {
 	"schema": {},
@@ -126,17 +126,17 @@ func (p *MongoTestSuite) TestMongoDBEventOrder() {
 }
 `
 
-	evt, err := p.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
-	assert.NoError(p.T(), err)
+	evt, err := m.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
+	assert.NoError(m.T(), err)
 
 	schemaEvt, isOk := evt.(*SchemaEventPayload)
-	assert.True(p.T(), isOk)
-	assert.Equal(p.T(), time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC), schemaEvt.GetExecutionTime())
-	assert.Equal(p.T(), "orders", schemaEvt.GetTableName())
-	assert.False(p.T(), evt.DeletePayload())
+	assert.True(m.T(), isOk)
+	assert.Equal(m.T(), time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC), schemaEvt.GetExecutionTime())
+	assert.Equal(m.T(), "orders", schemaEvt.GetTableName())
+	assert.False(m.T(), evt.DeletePayload())
 }
 
-func (p *MongoTestSuite) TestMongoDBEventCustomer() {
+func (m *MongoTestSuite) TestMongoDBEventCustomer() {
 	payload := `
 {
 	"schema": {},
@@ -167,45 +167,45 @@ func (p *MongoTestSuite) TestMongoDBEventCustomer() {
 }
 `
 
-	evt, err := p.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
-	assert.NoError(p.T(), err)
+	evt, err := m.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
+	assert.NoError(m.T(), err)
 	evtData, err := evt.GetData(map[string]any{"_id": 1003}, &kafkalib.TopicConfig{})
-	assert.NoError(p.T(), err)
+	assert.NoError(m.T(), err)
 	_, isOk := evtData[constants.UpdateColumnMarker]
-	assert.False(p.T(), isOk)
-	assert.Equal(p.T(), evtData["_id"], 1003)
-	assert.Equal(p.T(), evtData["first_name"], "Robin")
-	assert.Equal(p.T(), evtData["last_name"], "Tang")
-	assert.Equal(p.T(), evtData["email"], "robin@example.com")
+	assert.False(m.T(), isOk)
+	assert.Equal(m.T(), evtData["_id"], 1003)
+	assert.Equal(m.T(), evtData["first_name"], "Robin")
+	assert.Equal(m.T(), evtData["last_name"], "Tang")
+	assert.Equal(m.T(), evtData["email"], "robin@example.com")
 
 	evtDataWithIncludedAt, err := evt.GetData(map[string]any{"_id": 1003}, &kafkalib.TopicConfig{})
-	assert.NoError(p.T(), err)
+	assert.NoError(m.T(), err)
 	_, isOk = evtDataWithIncludedAt[constants.UpdateColumnMarker]
-	assert.False(p.T(), isOk)
+	assert.False(m.T(), isOk)
 
 	evtDataWithIncludedAt, err = evt.GetData(map[string]any{"_id": 1003}, &kafkalib.TopicConfig{
 		IncludeDatabaseUpdatedAt: true,
 		IncludeArtieUpdatedAt:    true,
 	})
-	assert.NoError(p.T(), err)
+	assert.NoError(m.T(), err)
 
-	assert.Equal(p.T(), "2022-11-18T06:35:21+00:00", evtDataWithIncludedAt[constants.DatabaseUpdatedColumnMarker])
+	assert.Equal(m.T(), "2022-11-18T06:35:21+00:00", evtDataWithIncludedAt[constants.DatabaseUpdatedColumnMarker])
 	_, err = time.Parse(ext.ISO8601, evtDataWithIncludedAt[constants.UpdateColumnMarker].(string))
-	assert.NoError(p.T(), err, evtDataWithIncludedAt[constants.UpdateColumnMarker])
+	assert.NoError(m.T(), err, evtDataWithIncludedAt[constants.UpdateColumnMarker])
 
 	var nestedData map[string]any
 	err = json.Unmarshal([]byte(evtData["nested"].(string)), &nestedData)
-	assert.NoError(p.T(), err)
+	assert.NoError(m.T(), err)
 
-	assert.Equal(p.T(), nestedData["object"], "foo")
-	assert.Equal(p.T(), evtData[constants.DeleteColumnMarker], false)
-	assert.Equal(p.T(), evt.GetExecutionTime(),
+	assert.Equal(m.T(), nestedData["object"], "foo")
+	assert.Equal(m.T(), evtData[constants.DeleteColumnMarker], false)
+	assert.Equal(m.T(), evt.GetExecutionTime(),
 		time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
-	assert.Equal(p.T(), "customers", evt.GetTableName())
-	assert.False(p.T(), evt.DeletePayload())
+	assert.Equal(m.T(), "customers", evt.GetTableName())
+	assert.False(m.T(), evt.DeletePayload())
 }
 
-func (p *MongoTestSuite) TestMongoDBEventCustomerBefore_NoData() {
+func (m *MongoTestSuite) TestMongoDBEventCustomerBefore_NoData() {
 	payload := `
 {
 	"schema": {},
@@ -235,26 +235,26 @@ func (p *MongoTestSuite) TestMongoDBEventCustomerBefore_NoData() {
 	}
 }
 `
-	evt, err := p.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
-	assert.NoError(p.T(), err)
+	evt, err := m.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
+	assert.NoError(m.T(), err)
 	{
 		// Making sure the `before` payload is set.
 		evtData, err := evt.GetData(map[string]any{"_id": 1003}, &kafkalib.TopicConfig{})
-		assert.NoError(p.T(), err)
-		assert.Equal(p.T(), "customers123", evt.GetTableName())
+		assert.NoError(m.T(), err)
+		assert.Equal(m.T(), "customers123", evt.GetTableName())
 
 		_, isOk := evtData[constants.UpdateColumnMarker]
-		assert.False(p.T(), isOk)
+		assert.False(m.T(), isOk)
 
 		_, isOk = evtData[constants.DeleteColumnMarker]
-		assert.True(p.T(), isOk)
+		assert.True(m.T(), isOk)
 
-		assert.Equal(p.T(), evt.GetExecutionTime(), time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
-		assert.Equal(p.T(), true, evt.DeletePayload())
+		assert.Equal(m.T(), evt.GetExecutionTime(), time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
+		assert.Equal(m.T(), true, evt.DeletePayload())
 	}
 }
 
-func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
+func (m *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 	payload := `
 {
 	"schema": {},
@@ -284,16 +284,16 @@ func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 	}
 }
 `
-	evt, err := p.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
-	assert.NoError(p.T(), err)
+	evt, err := m.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
+	assert.NoError(m.T(), err)
 	{
 		// Making sure the `before` payload is set.
 		evtData, err := evt.GetData(map[string]any{"_id": 1003}, &kafkalib.TopicConfig{})
-		assert.NoError(p.T(), err)
-		assert.Equal(p.T(), "customers123", evt.GetTableName())
+		assert.NoError(m.T(), err)
+		assert.Equal(m.T(), "customers123", evt.GetTableName())
 
 		_, isOk := evtData[constants.UpdateColumnMarker]
-		assert.False(p.T(), isOk)
+		assert.False(m.T(), isOk)
 
 		expectedKeyToVal := map[string]any{
 			"_id":                        1003,
@@ -303,29 +303,29 @@ func (p *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 		}
 
 		for expectedKey, expectedVal := range expectedKeyToVal {
-			assert.Equal(p.T(), expectedVal, evtData[expectedKey], expectedKey)
+			assert.Equal(m.T(), expectedVal, evtData[expectedKey], expectedKey)
 		}
 
-		assert.Equal(p.T(), evt.GetExecutionTime(), time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
-		assert.Equal(p.T(), true, evt.DeletePayload())
+		assert.Equal(m.T(), evt.GetExecutionTime(), time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
+		assert.Equal(m.T(), true, evt.DeletePayload())
 	}
 	{
 		// Check `__artie_updated_at` is included
 		evtData, err := evt.GetData(map[string]any{"_id": 1003}, &kafkalib.TopicConfig{
 			IncludeArtieUpdatedAt: true,
 		})
-		assert.NoError(p.T(), err)
+		assert.NoError(m.T(), err)
 		_, isOk := evtData[constants.UpdateColumnMarker]
-		assert.True(p.T(), isOk)
+		assert.True(m.T(), isOk)
 	}
 }
 
-func (p *MongoTestSuite) TestGetEventFromBytesTombstone() {
-	_, err := p.Debezium.GetEventFromBytes(typing.Settings{}, nil)
-	assert.ErrorContains(p.T(), err, "empty message")
+func (m *MongoTestSuite) TestGetEventFromBytesTombstone() {
+	_, err := m.Debezium.GetEventFromBytes(typing.Settings{}, nil)
+	assert.ErrorContains(m.T(), err, "empty message")
 }
 
-func (p *MongoTestSuite) TestMongoDBEventWithSchema() {
+func (m *MongoTestSuite) TestMongoDBEventWithSchema() {
 	payload := `
 {
 	"schema": {
@@ -511,19 +511,19 @@ func (p *MongoTestSuite) TestMongoDBEventWithSchema() {
 	}
 }
 `
-	evt, err := p.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
-	assert.NoError(p.T(), err)
+	evt, err := m.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
+	assert.NoError(m.T(), err)
 	schemaEvt, isOk := evt.(*SchemaEventPayload)
-	assert.True(p.T(), isOk)
-	assert.Equal(p.T(), schemaEvt.Schema.SchemaType, "struct")
-	assert.Equal(p.T(), schemaEvt.Schema.GetSchemaFromLabel(cdc.Source).Fields[0], debezium.Field{
+	assert.True(m.T(), isOk)
+	assert.Equal(m.T(), schemaEvt.Schema.SchemaType, "struct")
+	assert.Equal(m.T(), schemaEvt.Schema.GetSchemaFromLabel(cdc.Source).Fields[0], debezium.Field{
 		Optional:     false,
 		FieldName:    "version",
 		DebeziumType: "",
 		Type:         debezium.String,
 	})
-	assert.False(p.T(), evt.DeletePayload())
+	assert.False(m.T(), evt.DeletePayload())
 	cols, err := schemaEvt.GetColumns()
-	assert.NoError(p.T(), err)
-	assert.NotNil(p.T(), cols)
+	assert.NoError(m.T(), err)
+	assert.NotNil(m.T(), cols)
 }
