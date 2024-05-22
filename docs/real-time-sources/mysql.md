@@ -16,35 +16,9 @@ description: >-
 | Database Password  | Password for authentication into your database.                                                                                                | No default    |
 | Database Name      | The name of the database that you want to capture changes for.                                                                                 | No default.   |
 
-### Supported types
+## Additional
 
-* `BOOLEAN` / `BOOL`
-* `BIT(1)`
-* `TINYINT`
-* `SMALLINT[(M)]`
-* `MEDIUMINT[(M)]`
-* `INT, INTEGER[(M)]`
-* `BIGINT[(M)]`
-* `REAL[(M, D)]`
-* `FLOAT[(P)]`
-* `FLOAT(M, D)`
-* `NUMERIC[(M[,D])]`
-* `DECIMAL[M[,D])]`
-* `DOUBLE[(M, D)]`
-* `CHAR(M)`
-* `VARCHAR(M)`
-* `TINYTEXT`
-* `TEXT`
-* `MEDIUMTEXT`
-* `LONGTEXT`
-* `JSON`
-* `ENUM`
-* `SET`
-* `YEAR[(2|4)]`
-* `TIMESTAMP[(M)]`
-* `DATE`
-* `TIME[(M)]`
-* `DATETIME, DATETIME(M)`
+* [amazon-rds-or-aurora.md](mysql/amazon-rds-or-aurora.md "mention")
 
 ## Running it yourself
 
