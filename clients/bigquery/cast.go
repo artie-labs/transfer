@@ -19,10 +19,7 @@ func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string)
 		return nil, nil
 	}
 	switch colKind.KindDetails.Kind {
-	case
-		typing.Float.Kind,
-		typing.Integer.Kind,
-		typing.Boolean.Kind:
+	case typing.Float.Kind, typing.Integer.Kind, typing.Boolean.Kind:
 		return colVal, nil
 	case typing.EDecimal.Kind:
 		val, isOk := colVal.(*decimal.Decimal)
