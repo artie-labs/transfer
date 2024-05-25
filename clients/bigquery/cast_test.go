@@ -18,6 +18,12 @@ import (
 
 func (b *BigQueryTestSuite) TestCastColVal() {
 	{
+		// Strings
+		colVal, err := castColVal("hello", columns.Column{KindDetails: typing.String}, nil)
+		assert.NoError(b.T(), err)
+		assert.Equal(b.T(), "hello", colVal)
+	}
+	{
 		// Integers
 		colVal, err := castColVal(5, columns.Column{KindDetails: typing.Integer}, nil)
 		assert.NoError(b.T(), err)

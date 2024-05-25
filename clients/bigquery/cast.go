@@ -18,8 +18,9 @@ func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string)
 	if colVal == nil {
 		return nil, nil
 	}
+
 	switch colKind.KindDetails.Kind {
-	case typing.Float.Kind, typing.Integer.Kind, typing.Boolean.Kind:
+	case typing.Float.Kind, typing.Integer.Kind, typing.Boolean.Kind, typing.String.Kind:
 		return colVal, nil
 	case typing.EDecimal.Kind:
 		val, isOk := colVal.(*decimal.Decimal)
@@ -92,5 +93,5 @@ func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string)
 		return arrayString, nil
 	}
 
-	return fmt.Sprint(colVal), nil
+	return nil, fmt.Errorf("unsupported kind: %s", colKind.KindDetails.Kind)
 }
