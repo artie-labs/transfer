@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -15,6 +14,10 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
+
+func isCommentNotEmpty(comment string) bool {
+	return !(comment == "" || comment == "<nil>")
+}
 
 type GetTableCfgArgs struct {
 	Dwh       destination.DataWarehouse
@@ -29,11 +32,6 @@ type GetTableCfgArgs struct {
 	// Description of the column (used to annotate whether we need to backfill or not)
 	ColumnDescLabel    string
 	DropDeletedColumns bool
-}
-
-func shouldParseComment(comment string) bool {
-	// Don't try to parse the comment if it's empty or <nil>
-	return !(comment == "" || comment == "<nil>")
 }
 
 func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
@@ -95,7 +93,7 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 		col := columns.NewColumn(row[g.ColumnNameLabel], kindDetails)
 		comment, isOk := row[g.ColumnDescLabel]
 		if isOk {
-			if shouldParseComment(comment) {
+			if isCommentNotEmpty(comment) {
 				if _, isOk = g.Dwh.Dialect().(mssqlDialect.MSSQLDialect); isOk {
 					col.SetBackfilled(true)
 				} else {
