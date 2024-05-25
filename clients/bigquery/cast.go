@@ -3,6 +3,7 @@ package bigquery
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
@@ -93,5 +94,7 @@ func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string)
 		return arrayString, nil
 	}
 
-	return nil, fmt.Errorf("unsupported kind: %s", colKind.KindDetails.Kind)
+	// TODO: Change this to return an error once we don't see Sentry
+	slog.Error("Unexpected BigQuery Data Type", slog.Any("colKind", colKind.KindDetails.Kind), slog.Any("colVal", colVal))
+	return fmt.Sprint(colVal), nil
 }
