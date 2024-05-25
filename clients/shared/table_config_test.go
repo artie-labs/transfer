@@ -11,6 +11,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestShouldParseComment(t *testing.T) {
+	{
+		assert.False(t, shouldParseComment(""))
+		assert.False(t, shouldParseComment("<nil>"))
+	}
+	{
+		assert.True(t, shouldParseComment("foo"))
+		assert.True(t, shouldParseComment(`{"hello":"world"}`))
+	}
+}
+
 func TestGetTableConfig(t *testing.T) {
 	// Return early because table is found in configMap.
 	cols := &columns.Columns{}

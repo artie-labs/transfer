@@ -31,7 +31,7 @@ type GetTableCfgArgs struct {
 	DropDeletedColumns bool
 }
 
-func (g GetTableCfgArgs) ShouldParseComment(comment string) bool {
+func shouldParseComment(comment string) bool {
 	// Don't try to parse the comment if it's empty or <nil>
 	return !(comment == "" || comment == "<nil>")
 }
@@ -95,18 +95,18 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 		col := columns.NewColumn(row[g.ColumnNameLabel], kindDetails)
 		comment, isOk := row[g.ColumnDescLabel]
 		if isOk {
-			if _, isOk = g.Dwh.Dialect().(mssqlDialect.MSSQLDialect); isOk {
-				fmt.Println("comment", comment, fmt.Sprintf("%T", comment))
-			}
+			if shouldParseComment(comment) {
+				if _, isOk = g.Dwh.Dialect().(mssqlDialect.MSSQLDialect); isOk {
+					col.SetBackfilled(true)
+				} else {
+					// Try to parse the comment.
+					var _colComment constants.ColComment
+					if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
+						return nil, fmt.Errorf("failed to unmarshal comment: %w", err)
+					}
 
-			if g.ShouldParseComment(comment) {
-				// Try to parse the comment.
-				var _colComment constants.ColComment
-				if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
-					return nil, fmt.Errorf("failed to unmarshal comment: %w", err)
+					col.SetBackfilled(_colComment.Backfilled)
 				}
-
-				col.SetBackfilled(_colComment.Backfilled)
 			}
 		}
 
