@@ -50,7 +50,6 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		ColumnNameLabel:    describeNameCol,
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeCommentCol,
-		EmptyCommentValue:  ptr.ToString("<nil>"),
 		DropDeletedColumns: tableData.TopicConfig().DropDeletedColumns,
 	}.GetTableConfig()
 }

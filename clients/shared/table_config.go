@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log/slog"
 	"strings"
+
+	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
@@ -27,38 +28,21 @@ type GetTableCfgArgs struct {
 	ColumnTypeLabel string
 	// Description of the column (used to annotate whether we need to backfill or not)
 	ColumnDescLabel    string
-	EmptyCommentValue  *string
 	DropDeletedColumns bool
 }
 
 func (g GetTableCfgArgs) ShouldParseComment(comment string) bool {
-	if g.EmptyCommentValue != nil && comment == *g.EmptyCommentValue {
-		return false
-	}
-
-	// Snowflake and Redshift both will return `<nil>` if the comment does not exist, this will check the value.
-	// BigQuery returns ""
-	return true
+	// Don't try to parse the comment if it's empty or <nil>
+	return !(comment == "" || comment == "<nil>")
 }
 
 func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
-	// Check if it already exists in cache
-	tableConfig := g.ConfigMap.TableConfig(g.TableID)
-	if tableConfig != nil {
+	if tableConfig := g.ConfigMap.TableConfig(g.TableID); tableConfig != nil {
 		return tableConfig, nil
 	}
 
-	rows, err := g.Dwh.Query(g.Query, g.Args...)
-	defer func() {
-		if rows != nil {
-			err = rows.Close()
-			if err != nil {
-				slog.Warn("Failed to close the row", slog.Any("err", err))
-			}
-		}
-	}()
-
 	var tableMissing bool
+	rows, err := g.Dwh.Query(g.Query, g.Args...)
 	if err != nil {
 		if g.Dwh.Dialect().IsTableDoesNotExistErr(err) {
 			// This branch is currently only used by Snowflake.
@@ -72,11 +56,9 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 
 	var cols columns.Columns
 	for rows != nil && rows.Next() {
-		// figure out what columns were returned
-		// the column names will be the JSON object field keys
 		colTypes, err := rows.ColumnTypes()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to get column types: %w", err)
 		}
 
 		var columnNameList []string
@@ -89,7 +71,7 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 		}
 
 		if err = rows.Scan(values...); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to scan rows: %w", err)
 		}
 
 		row := make(map[string]string)
@@ -112,15 +94,20 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 
 		col := columns.NewColumn(row[g.ColumnNameLabel], kindDetails)
 		comment, isOk := row[g.ColumnDescLabel]
-		if isOk && g.ShouldParseComment(comment) {
-			// Try to parse the comment.
-			var _colComment constants.ColComment
-			if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal comment: %w", err)
+		if isOk {
+			if _, isOk = g.Dwh.Dialect().(mssqlDialect.MSSQLDialect); isOk {
+				fmt.Println("comment", comment, fmt.Sprintf("%T", comment))
 			}
 
-			col.SetBackfilled(_colComment.Backfilled)
+			if g.ShouldParseComment(comment) {
+				// Try to parse the comment.
+				var _colComment constants.ColComment
+				if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
+					return nil, fmt.Errorf("failed to unmarshal comment: %w", err)
+				}
 
+				col.SetBackfilled(_colComment.Backfilled)
+			}
 		}
 
 		cols.AddColumn(col)

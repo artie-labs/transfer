@@ -21,7 +21,6 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
@@ -101,7 +100,6 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		ColumnNameLabel:    describeNameCol,
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeCommentCol,
-		EmptyCommentValue:  ptr.ToString(""),
 		DropDeletedColumns: tableData.TopicConfig().DropDeletedColumns,
 	}.GetTableConfig()
 }

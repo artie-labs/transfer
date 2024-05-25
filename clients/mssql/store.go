@@ -12,7 +12,6 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 )
 
@@ -75,11 +74,10 @@ func (s *Store) Dedupe(_ sql.TableIdentifier, _ []string, _ kafkalib.TopicConfig
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	// TODO: Figure out how to leave a comment.
 	const (
 		describeNameCol        = "column_name"
 		describeTypeCol        = "data_type"
-		describeDescriptionCol = "description"
+		describeDescriptionCol = "column_default"
 	)
 
 	tableID := s.specificIdentifierFor(tableData.TopicConfig(), tableData.Name())
@@ -93,7 +91,6 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		ColumnNameLabel:    describeNameCol,
 		ColumnTypeLabel:    describeTypeCol,
 		ColumnDescLabel:    describeDescriptionCol,
-		EmptyCommentValue:  ptr.ToString("<nil>"),
 		DropDeletedColumns: tableData.TopicConfig().DropDeletedColumns,
 	}.GetTableConfig()
 }
