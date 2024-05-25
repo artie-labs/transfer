@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"log/slog"
 
-	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
-
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
+	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -59,31 +58,26 @@ func BackfillColumn(dwh destination.DataWarehouse, column columns.Column, tableI
 		return nil
 	}
 
+	if _, ok := dwh.Dialect().(mssqlDialect.MSSQLDialect); ok {
+		// TODO: Support MSSQL column backfill
+		return nil
+	}
+
 	defaultVal, err := DefaultValue(column, dwh.Dialect(), dwh.AdditionalDateFormats())
 	if err != nil {
 		return fmt.Errorf("failed to escape default value: %w", err)
 	}
 
-	slog.Info("Setting column default value",
-		slog.String("tableName", tableID.FullyQualifiedName()),
-		slog.String("colName", column.Name()),
-		slog.Any("defaultValue", defaultVal),
-	)
-
 	escapedCol := dwh.Dialect().QuoteIdentifier(column.Name())
-	if _, isMSSQL := dwh.Dialect().(mssqlDialect.MSSQLDialect); isMSSQL {
-		query := fmt.Sprintf("ALTER TABLE %s ALTER %s SET DEFAULT %v", tableID.FullyQualifiedName(), escapedCol, defaultVal)
-		_, err = dwh.Exec(query)
-		if err != nil {
-			return fmt.Errorf("failed to backfill, err: %w, query: %v", err, query)
-		}
-
-		return nil
-	}
 
 	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
 		// UPDATE table SET col = default_val WHERE col IS NULL
 		tableID.FullyQualifiedName(), escapedCol, defaultVal, escapedCol,
+	)
+	slog.Info("Backfilling column",
+		slog.String("colName", column.Name()),
+		slog.String("query", query),
+		slog.String("table", tableID.FullyQualifiedName()),
 	)
 
 	_, err = dwh.Exec(query)
