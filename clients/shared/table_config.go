@@ -15,7 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func isCommentNotEmpty(comment string) bool {
+func isCommentSet(comment string) bool {
 	return !(comment == "" || comment == "<nil>")
 }
 
@@ -91,21 +91,19 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 		}
 
 		col := columns.NewColumn(row[g.ColumnNameLabel], kindDetails)
-		comment, isOk := row[g.ColumnDescLabel]
-		if isOk {
-			if isCommentNotEmpty(comment) {
-				if _, isOk = g.Dwh.Dialect().(mssqlDialect.MSSQLDialect); isOk {
-					col.SetBackfilled(true)
-				} else {
-					// Try to parse the comment.
-					var _colComment constants.ColComment
-					if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
-						return nil, fmt.Errorf("failed to unmarshal comment: %w", err)
-					}
-
-					col.SetBackfilled(_colComment.Backfilled)
+		if comment, isOk := row[g.ColumnDescLabel]; isOk && isCommentSet(comment) {
+			if _, isOk = g.Dwh.Dialect().(mssqlDialect.MSSQLDialect); isOk {
+				col.SetBackfilled(true)
+			} else {
+				// Try to parse the comment.
+				var _colComment constants.ColComment
+				if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
+					return nil, fmt.Errorf("failed to unmarshal comment: %w", err)
 				}
+
+				col.SetBackfilled(_colComment.Backfilled)
 			}
+
 		}
 
 		cols.AddColumn(col)

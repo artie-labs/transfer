@@ -11,14 +11,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIsCommentNotEmpty(t *testing.T) {
+func TestIsCommentSet(t *testing.T) {
 	{
-		assert.False(t, isCommentNotEmpty(""))
-		assert.False(t, isCommentNotEmpty("<nil>"))
+		assert.False(t, isCommentSet(""))
+		assert.False(t, isCommentSet("<nil>"))
 	}
 	{
-		assert.True(t, isCommentNotEmpty("foo"))
-		assert.True(t, isCommentNotEmpty(`{"hello":"world"}`))
+		assert.True(t, isCommentSet("foo"))
+		assert.True(t, isCommentSet(`{"hello":"world"}`))
 	}
 }
 
