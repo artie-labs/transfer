@@ -3,6 +3,7 @@ package bigquery
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
@@ -20,6 +21,8 @@ func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string)
 	}
 
 	switch colKind.KindDetails.Kind {
+	case typing.Float.Kind, typing.Integer.Kind, typing.Boolean.Kind, typing.String.Kind:
+		return colVal, nil
 	case typing.EDecimal.Kind:
 		val, isOk := colVal.(*decimal.Decimal)
 		if !isOk {
@@ -91,5 +94,7 @@ func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string)
 		return arrayString, nil
 	}
 
+	// TODO: Change this to return an error once we don't see Sentry
+	slog.Error("Unexpected BigQuery Data Type", slog.Any("colKind", colKind.KindDetails.Kind), slog.Any("colVal", colVal))
 	return fmt.Sprint(colVal), nil
 }
