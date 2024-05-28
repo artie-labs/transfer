@@ -9,15 +9,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-// JSONEToMap will take JSONE data in bytes, parse all the custom types
-// Then from all the custom types,
+// JSONEToMap - Takes a JSON Extended string and converts it to a map[string]any
 func JSONEToMap(val []byte) (map[string]any, error) {
 	// We are escaping `NaN`, `Infinity` and `-Infinity` (literal values)
 	re := regexp.MustCompile(`\bNaN\b|"\bNaN\b"|-\bInfinity\b|"-\bInfinity\b"|\bInfinity\b|"\bInfinity\b"`)
@@ -83,7 +81,6 @@ func bsonBinaryValueToMap(value primitive.Binary) (any, error) {
 	}
 }
 
-// bsonValueToGoValue - https://www.mongodb.com/docs/manual/reference/mongodb-extended-json/
 func bsonValueToGoValue(value any) (any, error) {
 	switch v := value.(type) {
 	case primitive.DateTime:

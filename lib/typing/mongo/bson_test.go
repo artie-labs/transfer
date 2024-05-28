@@ -1,15 +1,21 @@
 package mongo
 
 import (
+	"fmt"
+	"math"
 	"testing"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/stretchr/testify/assert"
 )
 
-// TestMarshal tests every single type is listed here:
+// TestJSONEToMap tests every single type is listed here:
 // 1. https://github.com/mongodb/specifications/blob/master/source/extended-json.rst#canonical-extended-json-example
 // 2. https://www.mongodb.com/docs/manual/reference/bson-types/
-func TestMarshal(t *testing.T) {
+func TestJSONEToMap(t *testing.T) {
 	bsonData := []byte(`
 {
 	"_id": {
@@ -171,4 +177,31 @@ func TestMarshal(t *testing.T) {
 
 	// Regular Expressions
 	assert.Equal(t, map[string]any{"$options": "", "$regex": `@example\.com$`}, result["emailPattern"])
+}
+
+func TestBsonDocToMap(t *testing.T) {
+	doc := bson.D{
+		{"foo", "bar"},
+	}
+	result, err := bsonDocToMap(doc)
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]any{"foo": "bar"}, result)
+}
+
+func TestBsonValueToGoVale(t *testing.T) {
+	{
+		// Decimal128
+		decimal, err := primitive.ParseDecimal128("1337")
+		assert.NoError(t, err)
+		result, err := bsonValueToGoValue(decimal)
+		assert.NoError(t, err)
+		assert.Equal(t, float64(1337), result)
+
+		// Now a number larger than float64
+		decimal, err = primitive.ParseDecimal128(fmt.Sprint(math.MaxFloat64 + 1))
+		assert.NoError(t, err)
+		result, err = bsonValueToGoValue(decimal)
+		assert.NoError(t, err)
+		assert.Equal(t, "1.7976931348623157E+308", result)
+	}
 }
