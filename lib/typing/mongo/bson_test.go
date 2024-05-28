@@ -94,7 +94,7 @@ func TestJSONEToMap(t *testing.T) {
 	assert.Equal(t, "Robin Tang", result["full_name"])
 
 	// NumberDecimal
-	assert.Equal(t, 13.37, result["test_decimal"])
+	assert.Equal(t, "13.37", result["test_decimal"])
 	assert.Equal(t, 13.37, result["test_decimal_2"])
 
 	assert.Equal(t, int64(10004), result["_id"])
@@ -211,7 +211,7 @@ func TestBsonValueToGoVale(t *testing.T) {
 		assert.NoError(t, err)
 		result, err := bsonValueToGoValue(decimal)
 		assert.NoError(t, err)
-		assert.Equal(t, float64(1337), result)
+		assert.Equal(t, "1337", result)
 
 		// Now a number larger than float64
 		decimal = primitive.NewDecimal128(primitive.MaxDecimal128Exp, primitive.MaxDecimal128Exp)

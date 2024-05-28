@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -90,19 +89,7 @@ func bsonValueToGoValue(value any) (any, error) {
 	case primitive.Binary:
 		return bsonBinaryValueToMap(v)
 	case primitive.Decimal128:
-		valString := v.String()
-		potentialFloat, err := strconv.ParseFloat(valString, 64)
-		if err != nil {
-			return nil, err
-		}
-
-		if valString == fmt.Sprint(potentialFloat) {
-			return potentialFloat, nil
-		}
-
-		// If the string representation of the Decimal128 is not equal to the float representation
-		// then we return the string representation
-		return valString, nil
+		return v.String(), nil
 	case primitive.Timestamp:
 		return time.Unix(int64(v.T), 0).UTC().Format(ext.ISO8601), nil
 	case bson.D:
