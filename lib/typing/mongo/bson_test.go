@@ -90,14 +90,13 @@ func TestMarshal(t *testing.T) {
 	assert.Equal(t, 13.37, result["test_decimal"])
 	assert.Equal(t, 13.37, result["test_decimal_2"])
 
-	// 64-bit integer / long
-	assert.Equal(t, float64(10004), result["_id"])
-	assert.Equal(t, float64(107), result["product_id"])
-	assert.Equal(t, float64(1), result["quantity"])
+	assert.Equal(t, int64(10004), result["_id"])
+	assert.Equal(t, int64(107), result["product_id"])
+	assert.Equal(t, int32(1), result["quantity"])
 
 	// 32-bit ints
-	assert.Equal(t, float64(30), result["number_int"])
-	assert.Equal(t, float64(1337), result["test_int"])
+	assert.Equal(t, int32(30), result["number_int"])
+	assert.Equal(t, int32(1337), result["test_int"])
 
 	// Date
 	assert.Equal(t, "2016-02-21T00:00:00+00:00", result["order_date"])
@@ -137,8 +136,8 @@ func TestMarshal(t *testing.T) {
 	assert.Equal(t, "-Infinity123", result["test_negative_infinity_string1"]) // This should not be escaped.
 
 	// Min and Max Keys
-	assert.Equal(t, map[string]any{"$maxKey": float64(1)}, result["maxValue"])
-	assert.Equal(t, map[string]any{"$minKey": float64(1)}, result["minValue"])
+	assert.Equal(t, map[string]any{"$maxKey": 1}, result["maxValue"])
+	assert.Equal(t, map[string]any{"$minKey": 1}, result["minValue"])
 
 	// All the binary data types.
 	// 0. Generic Binary
@@ -172,4 +171,6 @@ func TestMarshal(t *testing.T) {
 
 	// Regular Expressions
 	assert.Equal(t, map[string]any{"$options": "", "$regex": `@example\.com$`}, result["emailPattern"])
+
+	assert.False(t, true)
 }
