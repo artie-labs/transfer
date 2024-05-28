@@ -171,6 +171,4 @@ func TestMarshal(t *testing.T) {
 
 	// Regular Expressions
 	assert.Equal(t, map[string]any{"$options": "", "$regex": `@example\.com$`}, result["emailPattern"])
-
-	assert.False(t, true)
 }
