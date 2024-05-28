@@ -189,7 +189,7 @@ func TestBsonDocToMap(t *testing.T) {
 	assert.Equal(t, map[string]any{"foo": "bar"}, result)
 }
 
-func TestBsonValueToGoVale(t *testing.T) {
+func TestBsonValueToGoValue(t *testing.T) {
 	{
 		// primitive.DateTime
 		_time := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
