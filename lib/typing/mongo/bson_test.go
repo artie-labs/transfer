@@ -2,14 +2,21 @@ package mongo
 
 import (
 	"testing"
+	"time"
+
+	"github.com/artie-labs/transfer/lib/typing/ext"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/stretchr/testify/assert"
 )
 
-// TestMarshal tests every single type is listed here:
+// TestJSONEToMap tests every single type is listed here:
 // 1. https://github.com/mongodb/specifications/blob/master/source/extended-json.rst#canonical-extended-json-example
 // 2. https://www.mongodb.com/docs/manual/reference/bson-types/
-func TestMarshal(t *testing.T) {
+func TestJSONEToMap(t *testing.T) {
 	bsonData := []byte(`
 {
 	"_id": {
@@ -87,17 +94,16 @@ func TestMarshal(t *testing.T) {
 	assert.Equal(t, "Robin Tang", result["full_name"])
 
 	// NumberDecimal
-	assert.Equal(t, 13.37, result["test_decimal"])
+	assert.Equal(t, "13.37", result["test_decimal"])
 	assert.Equal(t, 13.37, result["test_decimal_2"])
 
-	// 64-bit integer / long
-	assert.Equal(t, float64(10004), result["_id"])
-	assert.Equal(t, float64(107), result["product_id"])
-	assert.Equal(t, float64(1), result["quantity"])
+	assert.Equal(t, int64(10004), result["_id"])
+	assert.Equal(t, int64(107), result["product_id"])
+	assert.Equal(t, int32(1), result["quantity"])
 
 	// 32-bit ints
-	assert.Equal(t, float64(30), result["number_int"])
-	assert.Equal(t, float64(1337), result["test_int"])
+	assert.Equal(t, int32(30), result["number_int"])
+	assert.Equal(t, int32(1337), result["test_int"])
 
 	// Date
 	assert.Equal(t, "2016-02-21T00:00:00+00:00", result["order_date"])
@@ -137,8 +143,8 @@ func TestMarshal(t *testing.T) {
 	assert.Equal(t, "-Infinity123", result["test_negative_infinity_string1"]) // This should not be escaped.
 
 	// Min and Max Keys
-	assert.Equal(t, map[string]any{"$maxKey": float64(1)}, result["maxValue"])
-	assert.Equal(t, map[string]any{"$minKey": float64(1)}, result["minValue"])
+	assert.Equal(t, map[string]any{"$maxKey": 1}, result["maxValue"])
+	assert.Equal(t, map[string]any{"$minKey": 1}, result["minValue"])
 
 	// All the binary data types.
 	// 0. Generic Binary
@@ -172,4 +178,89 @@ func TestMarshal(t *testing.T) {
 
 	// Regular Expressions
 	assert.Equal(t, map[string]any{"$options": "", "$regex": `@example\.com$`}, result["emailPattern"])
+}
+
+func TestBsonDocToMap(t *testing.T) {
+	doc := bson.D{
+		{"foo", "bar"},
+	}
+	result, err := bsonDocToMap(doc)
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]any{"foo": "bar"}, result)
+}
+
+func TestBsonValueToGoValue(t *testing.T) {
+	{
+		// primitive.DateTime
+		_time := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+		dateTime := primitive.NewDateTimeFromTime(_time)
+		result, err := bsonValueToGoValue(dateTime)
+		assert.NoError(t, err)
+		assert.Equal(t, _time.Format(ext.ISO8601), result)
+	}
+	{
+		// primitive.ObjectID
+		objectID := primitive.NewObjectID()
+		result, err := bsonValueToGoValue(objectID)
+		assert.NoError(t, err)
+		assert.Equal(t, objectID.Hex(), result)
+	}
+	{
+		// Decimal128
+		decimal, err := primitive.ParseDecimal128("1337")
+		assert.NoError(t, err)
+		result, err := bsonValueToGoValue(decimal)
+		assert.NoError(t, err)
+		assert.Equal(t, "1337", result)
+
+		// Now a number larger than float64
+		decimal = primitive.NewDecimal128(primitive.MaxDecimal128Exp, primitive.MaxDecimal128Exp)
+		assert.NoError(t, err)
+		result, err = bsonValueToGoValue(decimal)
+		assert.NoError(t, err)
+		assert.Equal(t, "1.12728053034439069931487E-6153", result)
+	}
+	{
+		// bson.D
+		doc := bson.D{
+			{"foo", "bar"},
+		}
+		result, err := bsonValueToGoValue(doc)
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]any{"foo": "bar"}, result)
+	}
+	{
+		// bson.A
+		arr := bson.A{"foo", "bar"}
+		result, err := bsonValueToGoValue(arr)
+		assert.NoError(t, err)
+		assert.Equal(t, []any{"foo", "bar"}, result)
+	}
+	{
+		// primitive.MinKey
+		minKey := primitive.MinKey{}
+		result, err := bsonValueToGoValue(minKey)
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]any{"$minKey": 1}, result)
+	}
+	{
+		// primitive.MaxKey
+		maxKey := primitive.MaxKey{}
+		result, err := bsonValueToGoValue(maxKey)
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]any{"$maxKey": 1}, result)
+	}
+	{
+		// primitive.Javascript
+		code := primitive.JavaScript("function() {return 0.10;}")
+		result, err := bsonValueToGoValue(code)
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]any{"$code": "function() {return 0.10;}"}, result)
+	}
+	{
+		// something totally random
+		type randomDataType struct{}
+		_, err := bsonValueToGoValue(randomDataType{})
+		assert.ErrorContains(t, err, "unexpected type")
+	}
 }
