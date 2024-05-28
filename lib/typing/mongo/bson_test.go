@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"math"
 	"testing"
+	"time"
+
+	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
@@ -190,6 +193,21 @@ func TestBsonDocToMap(t *testing.T) {
 
 func TestBsonValueToGoVale(t *testing.T) {
 	{
+		// primitive.DateTime
+		_time := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+		dateTime := primitive.NewDateTimeFromTime(_time)
+		result, err := bsonValueToGoValue(dateTime)
+		assert.NoError(t, err)
+		assert.Equal(t, _time.Format(ext.ISO8601), result)
+	}
+	{
+		// primitive.ObjectID
+		objectID := primitive.NewObjectID()
+		result, err := bsonValueToGoValue(objectID)
+		assert.NoError(t, err)
+		assert.Equal(t, objectID.Hex(), result)
+	}
+	{
 		// Decimal128
 		decimal, err := primitive.ParseDecimal128("1337")
 		assert.NoError(t, err)
@@ -203,5 +221,48 @@ func TestBsonValueToGoVale(t *testing.T) {
 		result, err = bsonValueToGoValue(decimal)
 		assert.NoError(t, err)
 		assert.Equal(t, "1.7976931348623157E+308", result)
+	}
+	{
+		// bson.D
+		doc := bson.D{
+			{"foo", "bar"},
+		}
+		result, err := bsonValueToGoValue(doc)
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]any{"foo": "bar"}, result)
+	}
+	{
+		// bson.A
+		arr := bson.A{"foo", "bar"}
+		result, err := bsonValueToGoValue(arr)
+		assert.NoError(t, err)
+		assert.Equal(t, []any{"foo", "bar"}, result)
+	}
+	{
+		// primitive.MinKey
+		minKey := primitive.MinKey{}
+		result, err := bsonValueToGoValue(minKey)
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]any{"$minKey": 1}, result)
+	}
+	{
+		// primitive.MaxKey
+		maxKey := primitive.MaxKey{}
+		result, err := bsonValueToGoValue(maxKey)
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]any{"$maxKey": 1}, result)
+	}
+	{
+		// primitive.Javascript
+		code := primitive.JavaScript("function() {return 0.10;}")
+		result, err := bsonValueToGoValue(code)
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]any{"$code": "function() {return 0.10;}"}, result)
+	}
+	{
+		// something totally random
+		type randomDataType struct{}
+		_, err := bsonValueToGoValue(randomDataType{})
+		assert.ErrorContains(t, err, "unexpected type")
 	}
 }
