@@ -1,8 +1,6 @@
 package mongo
 
 import (
-	"fmt"
-	"math"
 	"testing"
 	"time"
 
@@ -216,11 +214,11 @@ func TestBsonValueToGoVale(t *testing.T) {
 		assert.Equal(t, float64(1337), result)
 
 		// Now a number larger than float64
-		decimal, err = primitive.ParseDecimal128(fmt.Sprint(math.MaxFloat64 + 1))
+		decimal = primitive.NewDecimal128(primitive.MaxDecimal128Exp, primitive.MaxDecimal128Exp)
 		assert.NoError(t, err)
 		result, err = bsonValueToGoValue(decimal)
 		assert.NoError(t, err)
-		assert.Equal(t, "1.7976931348623157E+308", result)
+		assert.Equal(t, "1.12728053034439069931487E-6153", result)
 	}
 	{
 		// bson.D
