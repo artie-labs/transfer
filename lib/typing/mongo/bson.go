@@ -34,11 +34,9 @@ func JSONEToMap(val []byte) (map[string]any, error) {
 		return nil, fmt.Errorf("failed to unmarshal ext json: %w", err)
 	}
 
-	// Directly decode bsonDoc to map[string]any
 	return bsonDocToMap(bsonDoc)
 }
 
-// Helper function to convert bson.D to map[string]any
 func bsonDocToMap(doc bson.D) (map[string]any, error) {
 	result := make(map[string]any)
 	for _, elem := range doc {
@@ -76,14 +74,14 @@ func bsonBinaryValueToMap(value primitive.Binary) (any, error) {
 		}
 
 		return parsedUUID.String(), nil
+	default:
+		return map[string]any{
+			"$binary": map[string]any{
+				"base64":  base64.StdEncoding.EncodeToString(value.Data),
+				"subType": fmt.Sprintf("%02x", value.Subtype),
+			},
+		}, nil
 	}
-
-	return map[string]any{
-		"$binary": map[string]any{
-			"base64":  base64.StdEncoding.EncodeToString(value.Data),
-			"subType": fmt.Sprintf("%02x", value.Subtype),
-		},
-	}, nil
 }
 
 // bsonValueToGoValue - https://www.mongodb.com/docs/manual/reference/mongodb-extended-json/
