@@ -77,15 +77,15 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 	tableID := s.specificIdentifierFor(tableData.TopicConfig(), tableData.Name())
 	query, args := describeTableQuery(tableID)
 	return shared.GetTableCfgArgs{
-		Dwh:                      s,
-		TableID:                  tableID,
-		ConfigMap:                s.configMap,
-		Query:                    query,
-		Args:                     args,
-		ColumnNameForName:        "column_name",
-		ColumnNameForDataType:    "data_type",
-		ColumnNameForDescription: "column_default",
-		DropDeletedColumns:       tableData.TopicConfig().DropDeletedColumns,
+		Dwh:                       s,
+		TableID:                   tableID,
+		ConfigMap:                 s.configMap,
+		Query:                     query,
+		Args:                      args,
+		ColumnNameForName:         "column_name",
+		ColumnNameForDataType:     "data_type",
+		ColumnNameForDefaultValue: "column_default",
+		DropDeletedColumns:        tableData.TopicConfig().DropDeletedColumns,
 	}.GetTableConfig()
 }
 

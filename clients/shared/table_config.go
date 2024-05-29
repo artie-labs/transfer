@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -16,6 +15,7 @@ import (
 )
 
 func isCommentSet(comment string) bool {
+	// TODO: Refactor code to emit empty string if nil as opposed to `<nil>`
 	return !(comment == "" || comment == "<nil>")
 }
 
@@ -28,9 +28,10 @@ type GetTableCfgArgs struct {
 
 	DropDeletedColumns bool
 
-	ColumnNameForName        string
-	ColumnNameForDataType    string
-	ColumnNameForDescription string
+	ColumnNameForName         string
+	ColumnNameForDataType     string
+	ColumnNameForComment      string
+	ColumnNameForDefaultValue string
 }
 
 func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
@@ -91,19 +92,18 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 		}
 
 		col := columns.NewColumn(row[g.ColumnNameForName], kindDetails)
-		if comment, isOk := row[g.ColumnNameForDescription]; isOk && isCommentSet(comment) {
-			if _, isOk = g.Dwh.Dialect().(mssqlDialect.MSSQLDialect); isOk {
-				col.SetBackfilled(true)
-			} else {
-				// Try to parse the comment.
-				var _colComment constants.ColComment
-				if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
-					return nil, fmt.Errorf("failed to unmarshal comment: %w", err)
-				}
+		if _, isOk := row[g.ColumnNameForDefaultValue]; isOk && isCommentSet(row[g.ColumnNameForDefaultValue]) {
+			col.SetBackfilled(true)
+		}
 
-				col.SetBackfilled(_colComment.Backfilled)
+		if comment, isOk := row[g.ColumnNameForComment]; isOk && isCommentSet(comment) {
+			// Try to parse the comment.
+			var _colComment constants.ColComment
+			if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal comment: %w", err)
 			}
 
+			col.SetBackfilled(_colComment.Backfilled)
 		}
 
 		cols.AddColumn(col)
