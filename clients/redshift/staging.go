@@ -63,7 +63,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	copyStmt := fmt.Sprintf(
 		`COPY %s (%s) FROM '%s' DELIMITER '\t' NULL AS '\\N' GZIP FORMAT CSV %s dateformat 'auto' timeformat 'auto';`,
 		tempTableID.FullyQualifiedName(),
-		strings.Join(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(), ","),
+		strings.Join(sql.QuoteIdentifiers(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(), s.Dialect()), ","),
 		s3Uri,
 		s.credentialsClause,
 	)
