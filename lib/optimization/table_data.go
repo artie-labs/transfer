@@ -252,7 +252,8 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) erro
 		return nil
 	}
 
-	for _, inMemoryCol := range t.inMemoryColumns.GetColumns() {
+	// Don't update invalid columns
+	for _, inMemoryCol := range t.inMemoryColumns.ValidColumns() {
 		var foundColumn columns.Column
 		var found bool
 		for _, destCol := range destCols {
