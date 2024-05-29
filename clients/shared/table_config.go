@@ -51,7 +51,7 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 	}
 
 	var cols columns.Columns
-	for rows.Next() {
+	for rows != nil && rows.Next() {
 		colTypes, err := rows.ColumnTypes()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get column types: %w", err)

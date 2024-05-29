@@ -29,13 +29,6 @@ type Store struct {
 	config    config.Config
 }
 
-const (
-	// Column names from the output of DESC table;
-	describeNameCol    = "name"
-	describeTypeCol    = "type"
-	describeCommentCol = "comment"
-)
-
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
 	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
@@ -47,9 +40,9 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		TableID:                  tableID,
 		ConfigMap:                s.configMap,
 		Query:                    fmt.Sprintf("DESC TABLE %s;", tableID.FullyQualifiedName()),
-		ColumnNameForName:        describeNameCol,
-		ColumnNameForDataType:    describeTypeCol,
-		ColumnNameForDescription: describeCommentCol,
+		ColumnNameForName:        "name",
+		ColumnNameForDataType:    "type",
+		ColumnNameForDescription: "comment",
 		DropDeletedColumns:       tableData.TopicConfig().DropDeletedColumns,
 	}.GetTableConfig()
 }

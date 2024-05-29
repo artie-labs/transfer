@@ -25,12 +25,7 @@ import (
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
-const (
-	GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
-	describeNameCol               = "column_name"
-	describeTypeCol               = "data_type"
-	describeCommentCol            = "description"
-)
+const GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
 
 type Store struct {
 	configMap *types.DwhToTablesConfigMap
@@ -97,9 +92,9 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		ConfigMap:                s.configMap,
 		Query:                    query,
 		Args:                     []any{tableData.Name()},
-		ColumnNameForName:        describeNameCol,
-		ColumnNameForDataType:    describeTypeCol,
-		ColumnNameForDescription: describeCommentCol,
+		ColumnNameForName:        "column_name",
+		ColumnNameForDataType:    "data_type",
+		ColumnNameForDescription: "description",
 		DropDeletedColumns:       tableData.TopicConfig().DropDeletedColumns,
 	}.GetTableConfig()
 }
