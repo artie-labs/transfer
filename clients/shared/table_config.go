@@ -26,10 +26,11 @@ type GetTableCfgArgs struct {
 	Query     string
 	Args      []any
 
+	DropDeletedColumns bool
+
 	ColumnNameForName        string
 	ColumnNameForDataType    string
 	ColumnNameForDescription string
-	DropDeletedColumns       bool
 }
 
 func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
