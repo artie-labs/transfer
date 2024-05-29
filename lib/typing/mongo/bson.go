@@ -1,26 +1,20 @@
 package mongo
 
 import (
-	"bytes"
-	"encoding/json"
+	"encoding/base64"
 	"fmt"
-	"reflect"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/bsoncodec"
-	"go.mongodb.org/mongo-driver/bson/bsonrw"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-// JSONEToMap will take JSONE data in bytes, parse all the custom types
-// Then from all the custom types,
+// JSONEToMap - Takes a JSON Extended string and converts it to a map[string]any
 func JSONEToMap(val []byte) (map[string]any, error) {
 	// We are escaping `NaN`, `Infinity` and `-Infinity` (literal values)
 	re := regexp.MustCompile(`\bNaN\b|"\bNaN\b"|-\bInfinity\b|"-\bInfinity\b"|\bInfinity\b|"\bInfinity\b"`)
@@ -32,133 +26,91 @@ func JSONEToMap(val []byte) (map[string]any, error) {
 	}))
 
 	var bsonDoc bson.D
-	err := bson.UnmarshalExtJSON(val, false, &bsonDoc)
-	if err != nil {
+	if err := bson.UnmarshalExtJSON(val, false, &bsonDoc); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal ext json: %w", err)
 	}
 
-	buf := new(bytes.Buffer)
-	vw, err := bsonrw.NewExtJSONValueWriter(buf, false, true)
-	if err != nil {
-		return nil, err
-	}
-	enc, err := bson.NewEncoder(vw)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = enc.SetRegistry(createCustomRegistry()); err != nil {
-		return nil, err
-	}
-
-	if err = enc.Encode(bsonDoc); err != nil {
-		return nil, err
-	}
-
-	var jsonMap map[string]any
-	if err = json.Unmarshal(buf.Bytes(), &jsonMap); err != nil {
-		return nil, err
-	}
-
-	return jsonMap, nil
+	return bsonDocToMap(bsonDoc)
 }
 
-var (
-	tDateTime  = reflect.TypeOf(primitive.DateTime(0))
-	tOID       = reflect.TypeOf(primitive.ObjectID{})
-	tBinary    = reflect.TypeOf(primitive.Binary{})
-	tDecimal   = reflect.TypeOf(primitive.Decimal128{})
-	tTimestamp = reflect.TypeOf(primitive.Timestamp{})
-)
+func bsonDocToMap(doc bson.D) (map[string]any, error) {
+	result := make(map[string]any)
+	for _, elem := range doc {
+		value, err := bsonValueToGoValue(elem.Value)
+		if err != nil {
+			return nil, err
+		}
 
-func decimalEncodeValue(_ bsoncodec.EncodeContext, vw bsonrw.ValueWriter, val reflect.Value) error {
-	if !val.IsValid() || val.Type() != tDecimal {
-		return bsoncodec.ValueEncoderError{Name: "Decimal128EncodeValue", Types: []reflect.Type{tDecimal}, Received: val}
+		result[elem.Key] = value
 	}
-
-	s, isOk := val.Interface().(primitive.Decimal128)
-	if !isOk {
-		return bsoncodec.ValueEncoderError{Name: "ObjectIDEncodeValue not objectID", Types: []reflect.Type{tOID}, Received: val}
-	}
-
-	parsedFloat, err := strconv.ParseFloat(s.String(), 64)
-	if err != nil {
-		return err
-	}
-
-	return vw.WriteDouble(parsedFloat)
+	return result, nil
 }
 
-func dateTimeEncodeValue(_ bsoncodec.EncodeContext, vw bsonrw.ValueWriter, val reflect.Value) error {
-	if !val.IsValid() || val.Type() != tDateTime {
-		return bsoncodec.ValueEncoderError{Name: "DateTimeEncodeValue", Types: []reflect.Type{tDateTime}, Received: val}
-	}
+func bsonArrayToSlice(arr bson.A) ([]any, error) {
+	result := make([]any, len(arr))
+	for i, elem := range arr {
+		value, err := bsonValueToGoValue(elem)
+		if err != nil {
+			return nil, err
+		}
 
-	ints, err := strconv.Atoi(fmt.Sprint(val))
-	if err != nil {
-		return err
+		result[i] = value
 	}
-
-	t := time.Unix(0, int64(ints)*1000000).UTC()
-	return vw.WriteString(t.Format(ext.ISO8601))
+	return result, nil
 }
 
-func objectIDEncodeValue(_ bsoncodec.EncodeContext, vw bsonrw.ValueWriter, val reflect.Value) error {
-	if !val.IsValid() || val.Type() != tOID {
-		return bsoncodec.ValueEncoderError{Name: "ObjectIDEncodeValue", Types: []reflect.Type{tOID}, Received: val}
-	}
-
-	s, isOk := val.Interface().(primitive.ObjectID)
-	if !isOk {
-		return bsoncodec.ValueEncoderError{Name: "ObjectIDEncodeValue not objectID", Types: []reflect.Type{tOID}, Received: val}
-	}
-
-	return vw.WriteString(s.Hex())
-}
-
-func binaryEncodeValue(_ bsoncodec.EncodeContext, vw bsonrw.ValueWriter, val reflect.Value) error {
-	if !val.IsValid() || val.Type() != tBinary {
-		return bsoncodec.ValueEncoderError{Name: "ObjectIDEncodeValue", Types: []reflect.Type{tBinary}, Received: val}
-	}
-
-	s, isOk := val.Interface().(primitive.Binary)
-	if !isOk {
-		return bsoncodec.ValueEncoderError{Name: "ObjectIDEncodeValue not Binary", Types: []reflect.Type{tBinary}, Received: val}
-	}
-
-	switch s.Subtype {
+func bsonBinaryValueToMap(value primitive.Binary) (any, error) {
+	switch value.Subtype {
 	case
 		bson.TypeBinaryUUIDOld,
 		bson.TypeBinaryUUID:
-		parsedUUID, err := uuid.FromBytes(s.Data)
+		parsedUUID, err := uuid.FromBytes(value.Data)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		return vw.WriteString(parsedUUID.String())
+
+		return parsedUUID.String(), nil
 	default:
-		return vw.WriteBinaryWithSubtype(s.Data, s.Subtype)
+		return map[string]any{
+			"$binary": map[string]any{
+				"base64":  base64.StdEncoding.EncodeToString(value.Data),
+				"subType": fmt.Sprintf("%02x", value.Subtype),
+			},
+		}, nil
 	}
 }
 
-func timestampEncodeValue(_ bsoncodec.EncodeContext, vw bsonrw.ValueWriter, val reflect.Value) error {
-	if !val.IsValid() || val.Type() != tTimestamp {
-		return bsoncodec.ValueEncoderError{Name: "ObjectIDEncodeValue", Types: []reflect.Type{tBinary}, Received: val}
+func bsonValueToGoValue(value any) (any, error) {
+	switch v := value.(type) {
+	case primitive.DateTime:
+		return v.Time().UTC().Format(ext.ISO8601), nil
+	case primitive.ObjectID:
+		return v.Hex(), nil
+	case primitive.Binary:
+		return bsonBinaryValueToMap(v)
+	case primitive.Decimal128:
+		// We purposefully chose a string representation here because not all systems can correctly handle Decimal128 without losing precision
+		return v.String(), nil
+	case primitive.Timestamp:
+		return time.Unix(int64(v.T), 0).UTC().Format(ext.ISO8601), nil
+	case bson.D:
+		return bsonDocToMap(v)
+	case bson.A:
+		return bsonArrayToSlice(v)
+	case primitive.MaxKey:
+		return map[string]any{"$maxKey": 1}, nil
+	case primitive.MinKey:
+		return map[string]any{"$minKey": 1}, nil
+	case primitive.JavaScript:
+		return map[string]any{"$code": string(v)}, nil
+	case
+		nil,
+		bool,
+		string,
+		int32, int64,
+		float32, float64:
+		return v, nil
+	default:
+		return nil, fmt.Errorf("unexpected type: %T, value: %v", v, v)
 	}
-
-	s, isOk := val.Interface().(primitive.Timestamp)
-	if !isOk {
-		return bsoncodec.ValueEncoderError{Name: "ObjectIDEncodeValue not Binary", Types: []reflect.Type{tBinary}, Received: val}
-	}
-
-	return vw.WriteString(time.Unix(int64(s.T), 0).UTC().Format(ext.ISO8601))
-}
-
-func createCustomRegistry() *bsoncodec.Registry {
-	rb := bson.NewRegistry()
-	rb.RegisterTypeEncoder(tDateTime, bsoncodec.ValueEncoderFunc(dateTimeEncodeValue))
-	rb.RegisterTypeEncoder(tOID, bsoncodec.ValueEncoderFunc(objectIDEncodeValue))
-	rb.RegisterTypeEncoder(tBinary, bsoncodec.ValueEncoderFunc(binaryEncodeValue))
-	rb.RegisterTypeEncoder(tDecimal, bsoncodec.ValueEncoderFunc(decimalEncodeValue))
-	rb.RegisterTypeEncoder(tTimestamp, bsoncodec.ValueEncoderFunc(timestampEncodeValue))
-	return rb
 }
