@@ -68,7 +68,6 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		s.credentialsClause,
 	)
 
-	fmt.Println("copyStmt", copyStmt)
 	if _, err = s.Exec(copyStmt); err != nil {
 		return fmt.Errorf("failed to run COPY for temporary table: %w", err)
 	}
@@ -97,7 +96,6 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate() {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			castedValue, castErr := s.CastColValStaging(value[col], colKind, additionalDateFmts)
-			fmt.Println("castedValue", castedValue, "colKind", colKind.KindDetails, "colName", colKind.Name())
 			if castErr != nil {
 				return "", castErr
 			}
