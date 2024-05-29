@@ -74,24 +74,18 @@ func (s *Store) Dedupe(_ sql.TableIdentifier, _ []string, _ kafkalib.TopicConfig
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	const (
-		describeNameCol        = "column_name"
-		describeTypeCol        = "data_type"
-		describeDescriptionCol = "column_default"
-	)
-
 	tableID := s.specificIdentifierFor(tableData.TopicConfig(), tableData.Name())
 	query, args := describeTableQuery(tableID)
 	return shared.GetTableCfgArgs{
-		Dwh:                s,
-		TableID:            tableID,
-		ConfigMap:          s.configMap,
-		Query:              query,
-		Args:               args,
-		ColumnNameLabel:    describeNameCol,
-		ColumnTypeLabel:    describeTypeCol,
-		ColumnDescLabel:    describeDescriptionCol,
-		DropDeletedColumns: tableData.TopicConfig().DropDeletedColumns,
+		Dwh:                      s,
+		TableID:                  tableID,
+		ConfigMap:                s.configMap,
+		Query:                    query,
+		Args:                     args,
+		ColumnNameForName:        "column_name",
+		ColumnNameForDataType:    "data_type",
+		ColumnNameForDescription: "column_default",
+		DropDeletedColumns:       tableData.TopicConfig().DropDeletedColumns,
 	}.GetTableConfig()
 }
 

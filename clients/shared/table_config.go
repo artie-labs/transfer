@@ -25,13 +25,11 @@ type GetTableCfgArgs struct {
 	ConfigMap *types.DwhToTablesConfigMap
 	Query     string
 	Args      []any
-	// Name of the column
-	ColumnNameLabel string
-	// Column type
-	ColumnTypeLabel string
-	// Description of the column (used to annotate whether we need to backfill or not)
-	ColumnDescLabel    string
-	DropDeletedColumns bool
+
+	ColumnNameForName        string
+	ColumnNameForDataType    string
+	ColumnNameForDescription string
+	DropDeletedColumns       bool
 }
 
 func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
@@ -53,7 +51,7 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 	}
 
 	var cols columns.Columns
-	for rows != nil && rows.Next() {
+	for rows.Next() {
 		colTypes, err := rows.ColumnTypes()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get column types: %w", err)
@@ -82,16 +80,17 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 			row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
 		}
 
-		kindDetails, err := g.Dwh.Dialect().KindForDataType(row[g.ColumnTypeLabel], row[constants.StrPrecisionCol])
+		kindDetails, err := g.Dwh.Dialect().KindForDataType(row[g.ColumnNameForDataType], row[constants.StrPrecisionCol])
 		if err != nil {
 			return nil, fmt.Errorf("failed to get kind details: %w", err)
 		}
+
 		if kindDetails.Kind == typing.Invalid.Kind {
-			return nil, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", row[g.ColumnTypeLabel])
+			return nil, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", row[g.ColumnNameForDataType])
 		}
 
-		col := columns.NewColumn(row[g.ColumnNameLabel], kindDetails)
-		if comment, isOk := row[g.ColumnDescLabel]; isOk && isCommentSet(comment) {
+		col := columns.NewColumn(row[g.ColumnNameForName], kindDetails)
+		if comment, isOk := row[g.ColumnNameForDescription]; isOk && isCommentSet(comment) {
 			if _, isOk = g.Dwh.Dialect().(mssqlDialect.MSSQLDialect); isOk {
 				col.SetBackfilled(true)
 			} else {
