@@ -93,6 +93,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate() {
 			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
 			castedValue, castErr := s.CastColValStaging(value[col], colKind, additionalDateFmts)
+			fmt.Println("castedValue", castedValue, "colKind", colKind.KindDetails, "colName", colKind.Name())
 			if castErr != nil {
 				return "", castErr
 			}
