@@ -63,8 +63,8 @@ func (s *Store) Sweep() error {
 		return err
 	}
 
-	queryFunc := func(dbAndSchemaPair kafkalib.DatabaseSchemaPair) (string, []any) {
-		return sweepQuery(getSchema(dbAndSchemaPair.Schema))
+	queryFunc := func(topicConfig kafkalib.TopicConfig) (string, []any) {
+		return sweepQuery(getSchema(topicConfig.Schema))
 	}
 
 	return shared.Sweep(s, tcs, queryFunc)

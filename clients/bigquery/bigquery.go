@@ -156,7 +156,7 @@ func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, topicC
 
 	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, topicConfig)
 
-	defer func() { _ = ddl.DropTemporaryTable(s, stagingTableID.FullyQualifiedName(), false) }()
+	defer func() { _ = ddl.DropTemporaryTable(s, stagingTableID, false) }()
 
 	return destination.ExecStatements(s, dedupeQueries)
 }

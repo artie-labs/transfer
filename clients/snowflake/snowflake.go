@@ -61,14 +61,14 @@ func (s *Store) Sweep() error {
 		return err
 	}
 
-	queryFunc := func(dbAndSchemaPair kafkalib.DatabaseSchemaPair) (string, []any) {
+	queryFunc := func(topicConfig kafkalib.TopicConfig) (string, []any) {
 		return fmt.Sprintf(`
 SELECT
     table_schema, table_name
 FROM
     %s.information_schema.tables
 WHERE
-    UPPER(table_schema) = UPPER(?) AND table_name ILIKE ?`, dbAndSchemaPair.Database), []any{dbAndSchemaPair.Schema, "%" + constants.ArtiePrefix + "%"}
+    UPPER(table_schema) = UPPER(?) AND table_name ILIKE ?`, topicConfig.Database), []any{topicConfig.Schema, "%" + constants.ArtiePrefix + "%"}
 	}
 
 	return shared.Sweep(s, tcs, queryFunc)

@@ -9,28 +9,19 @@ import (
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
-type DatabaseSchemaPair struct {
-	Database string
-	Schema   string
-}
-
-// GetUniqueDatabaseAndSchema - does not guarantee ordering.
-func GetUniqueDatabaseAndSchema(tcs []*TopicConfig) []DatabaseSchemaPair {
-	dbMap := make(map[string]DatabaseSchemaPair)
+// GetUniqueTopicConfigs - will return a list of unique TopicConfigs based on the database and schema in O(n) time.
+func GetUniqueTopicConfigs(tcs []*TopicConfig) []TopicConfig {
+	var uniqueTopicConfigs []TopicConfig
+	seenMap := make(map[string]bool)
 	for _, tc := range tcs {
 		key := fmt.Sprintf("%s###%s", tc.Database, tc.Schema)
-		dbMap[key] = DatabaseSchemaPair{
-			Database: tc.Database,
-			Schema:   tc.Schema,
+		if _, isOk := seenMap[key]; !isOk {
+			seenMap[key] = true                                  // Mark this as seen
+			uniqueTopicConfigs = append(uniqueTopicConfigs, *tc) // Now add this to the list
 		}
 	}
 
-	var pairs []DatabaseSchemaPair
-	for _, pair := range dbMap {
-		pairs = append(pairs, pair)
-	}
-
-	return pairs
+	return uniqueTopicConfigs
 }
 
 type TopicConfig struct {

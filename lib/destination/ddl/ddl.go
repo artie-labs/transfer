@@ -18,9 +18,9 @@ import (
 // DropTemporaryTable - this will drop the temporary table from Snowflake w/ stages and BigQuery
 // It has a safety check to make sure the tableName contains the `constants.ArtiePrefix` key.
 // Temporary tables look like this: database.schema.tableName__artie__RANDOM_STRING(5)_expiryUnixTs
-func DropTemporaryTable(dwh destination.DataWarehouse, fqTableName string, shouldReturnError bool) error {
-	if strings.Contains(strings.ToLower(fqTableName), constants.ArtiePrefix) {
-		sqlCommand := fmt.Sprintf("DROP TABLE IF EXISTS %s", fqTableName)
+func DropTemporaryTable(dwh destination.DataWarehouse, tableIdentifier sql.TableIdentifier, shouldReturnError bool) error {
+	if strings.Contains(tableIdentifier.Table(), constants.ArtiePrefix) {
+		sqlCommand := fmt.Sprintf("DROP TABLE IF EXISTS %s", tableIdentifier.FullyQualifiedName())
 		slog.Debug("Dropping temporary table", slog.String("sql", sqlCommand))
 		if _, err := dwh.Exec(sqlCommand); err != nil {
 			slog.Warn("Failed to drop temporary table, it will get garbage collected by the TTL...", slog.Any("err", err))
@@ -29,7 +29,7 @@ func DropTemporaryTable(dwh destination.DataWarehouse, fqTableName string, shoul
 			}
 		}
 	} else {
-		slog.Warn(fmt.Sprintf("Skipped dropping table: %s because it does not contain the artie prefix", fqTableName))
+		slog.Warn(fmt.Sprintf("Skipped dropping table: %s because it does not contain the artie prefix", tableIdentifier.FullyQualifiedName()))
 	}
 
 	return nil

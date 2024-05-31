@@ -70,14 +70,13 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 	}
 
 	temporaryTableID := TempTableID(dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name()), tableData.TempTableSuffix())
-	temporaryTableName := temporaryTableID.FullyQualifiedName()
 	if err = dwh.PrepareTemporaryTable(tableData, tableConfig, temporaryTableID, types.AdditionalSettings{}, true); err != nil {
 		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 
 	defer func() {
-		if dropErr := ddl.DropTemporaryTable(dwh, temporaryTableName, false); dropErr != nil {
-			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableName))
+		if dropErr := ddl.DropTemporaryTable(dwh, temporaryTableID, false); dropErr != nil {
+			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))
 		}
 	}()
 
@@ -112,10 +111,12 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 		}
 	}
 
+	temporaryTableName := temporaryTableID.FullyQualifiedName()
 	subQuery := temporaryTableName
 	if opts.SubQueryDedupe {
 		subQuery = fmt.Sprintf(`( SELECT DISTINCT * FROM %s )`, temporaryTableName)
 	}
+
 	if subQuery == "" {
 		return fmt.Errorf("subQuery cannot be empty")
 	}
