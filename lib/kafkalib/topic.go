@@ -15,6 +15,7 @@ type DatabaseSchemaPair struct {
 	TopicConfig TopicConfig
 }
 
+// GetUniqueTopicConfigs - will return a list of unique TopicConfigs based on the database and schema in O(n) time.
 func GetUniqueTopicConfigs(tcs []*TopicConfig) []TopicConfig {
 	var uniqueTopicConfigs []TopicConfig
 	seenMap := make(map[string]bool)
