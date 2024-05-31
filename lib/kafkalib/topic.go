@@ -18,7 +18,6 @@ func GetUniqueTopicConfigs(tcs []*TopicConfig) []TopicConfig {
 		if _, isOk := seenMap[key]; !isOk {
 			// Mark as seen
 			seenMap[key] = true
-			// Now add
 			uniqueTopicConfigs = append(uniqueTopicConfigs, *tc)
 		}
 	}
