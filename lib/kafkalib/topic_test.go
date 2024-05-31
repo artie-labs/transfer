@@ -42,6 +42,28 @@ func TestGetUniqueTopicConfigs(t *testing.T) {
 		assert.Len(t, actual, 1)
 		assert.Equal(t, *tcs[0], actual[0])
 	}
+	{
+		// 3 topic configs (2 the same)
+		tcs := []*TopicConfig{
+			{
+				Database: "db",
+				Schema:   "schema",
+			},
+			{
+				Database: "db",
+				Schema:   "schema",
+			},
+			{
+				Database: "db",
+				Schema:   "schema2",
+			},
+		}
+
+		actual := GetUniqueTopicConfigs(tcs)
+		assert.Len(t, actual, 2)
+		assert.Equal(t, *tcs[0], actual[0])
+		assert.Equal(t, *tcs[2], actual[1])
+	}
 }
 
 func TestTopicConfig_String(t *testing.T) {
