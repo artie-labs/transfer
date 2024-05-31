@@ -16,15 +16,13 @@ type DatabaseSchemaPair struct {
 }
 
 func GetUniqueTopicConfigs(tcs []*TopicConfig) []TopicConfig {
-	tcMap := make(map[string]TopicConfig)
+	var uniqueTopicConfigs []TopicConfig
+	seenMap := make(map[string]bool)
 	for _, tc := range tcs {
 		key := fmt.Sprintf("%s###%s", tc.Database, tc.Schema)
-		tcMap[key] = *tc
-	}
-
-	var uniqueTopicConfigs []TopicConfig
-	for _, topicConfig := range tcMap {
-		uniqueTopicConfigs = append(uniqueTopicConfigs, topicConfig)
+		if _, isOk := seenMap[key]; !isOk {
+			uniqueTopicConfigs = append(uniqueTopicConfigs, *tc)
+		}
 	}
 
 	return uniqueTopicConfigs
