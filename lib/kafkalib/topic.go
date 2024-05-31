@@ -9,12 +9,6 @@ import (
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
-type DatabaseSchemaPair struct {
-	Database    string
-	Schema      string
-	TopicConfig TopicConfig
-}
-
 // GetUniqueTopicConfigs - will return a list of unique TopicConfigs based on the database and schema in O(n) time.
 func GetUniqueTopicConfigs(tcs []*TopicConfig) []TopicConfig {
 	var uniqueTopicConfigs []TopicConfig
@@ -22,6 +16,9 @@ func GetUniqueTopicConfigs(tcs []*TopicConfig) []TopicConfig {
 	for _, tc := range tcs {
 		key := fmt.Sprintf("%s###%s", tc.Database, tc.Schema)
 		if _, isOk := seenMap[key]; !isOk {
+			// Mark as seen
+			seenMap[key] = true
+			// Now add
 			uniqueTopicConfigs = append(uniqueTopicConfigs, *tc)
 		}
 	}
