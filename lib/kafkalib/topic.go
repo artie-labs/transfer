@@ -16,9 +16,8 @@ func GetUniqueTopicConfigs(tcs []*TopicConfig) []TopicConfig {
 	for _, tc := range tcs {
 		key := fmt.Sprintf("%s###%s", tc.Database, tc.Schema)
 		if _, isOk := seenMap[key]; !isOk {
-			// Mark as seen
-			seenMap[key] = true
-			uniqueTopicConfigs = append(uniqueTopicConfigs, *tc)
+			seenMap[key] = true                                  // Mark this as seen
+			uniqueTopicConfigs = append(uniqueTopicConfigs, *tc) // Now add this to the list
 		}
 	}
 
