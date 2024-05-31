@@ -2,11 +2,11 @@ package ddl_test
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/stretchr/testify/assert"
 )
@@ -24,17 +24,16 @@ func (d *DDLTestSuite) Test_DropTemporaryTableCaseSensitive() {
 			fakeStore = d.fakeBigQueryStore
 		} else {
 			fakeStore = d.fakeSnowflakeStagesStore
-
 		}
 
 		for tableIndex, table := range tablesToDrop {
-			fullTableName := fmt.Sprintf("%s_%s", table, constants.ArtiePrefix)
-			_ = ddl.DropTemporaryTable(dest, fullTableName, false)
+			tableIdentifier := dest.IdentifierFor(kafkalib.TopicConfig{}, fmt.Sprintf("%s_%s", table, constants.ArtiePrefix))
+			_ = ddl.DropTemporaryTable(dest, tableIdentifier, false)
 
 			// There should be the same number of DROP table calls as the number of tables to drop.
 			assert.Equal(d.T(), tableIndex+1, fakeStore.ExecCallCount())
 			query, _ := fakeStore.ExecArgsForCall(tableIndex)
-			assert.Equal(d.T(), fmt.Sprintf("DROP TABLE IF EXISTS %s", strings.ToLower(fullTableName)), query)
+			assert.Equal(d.T(), fmt.Sprintf("DROP TABLE IF EXISTS %s", tableIdentifier.FullyQualifiedName()), query)
 		}
 	}
 }
@@ -49,7 +48,8 @@ func (d *DDLTestSuite) Test_DropTemporaryTable() {
 
 	// Should not drop since these do not have Artie prefix in the name.
 	for _, table := range doNotDropTables {
-		_ = ddl.DropTemporaryTable(d.snowflakeStagesStore, table, false)
+		tableID := d.bigQueryStore.IdentifierFor(kafkalib.TopicConfig{}, table)
+		_ = ddl.DropTemporaryTable(d.snowflakeStagesStore, tableID, false)
 		assert.Equal(d.T(), 0, d.fakeSnowflakeStagesStore.ExecCallCount())
 	}
 
@@ -63,20 +63,21 @@ func (d *DDLTestSuite) Test_DropTemporaryTable() {
 		}
 
 		for _, doNotDropTable := range doNotDropTables {
-			_ = ddl.DropTemporaryTable(_dwh, doNotDropTable, false)
+			doNotDropTableID := d.bigQueryStore.IdentifierFor(kafkalib.TopicConfig{}, doNotDropTable)
+			_ = ddl.DropTemporaryTable(_dwh, doNotDropTableID, false)
 
 			assert.Equal(d.T(), 0, fakeStore.ExecCallCount())
 		}
 
 		for index, table := range doNotDropTables {
-			fullTableName := fmt.Sprintf("%s_%s", table, constants.ArtiePrefix)
-			_ = ddl.DropTemporaryTable(_dwh, fullTableName, false)
+			fullTableID := d.bigQueryStore.IdentifierFor(kafkalib.TopicConfig{}, fmt.Sprintf("%s_%s", table, constants.ArtiePrefix))
+			_ = ddl.DropTemporaryTable(_dwh, fullTableID, false)
 
 			count := index + 1
 			assert.Equal(d.T(), count, fakeStore.ExecCallCount())
 
 			query, _ := fakeStore.ExecArgsForCall(index)
-			assert.Equal(d.T(), fmt.Sprintf("DROP TABLE IF EXISTS %s", fullTableName), query)
+			assert.Equal(d.T(), fmt.Sprintf("DROP TABLE IF EXISTS %s", fullTableID.FullyQualifiedName()), query)
 		}
 	}
 }
@@ -103,8 +104,8 @@ func (d *DDLTestSuite) Test_DropTemporaryTable_Errors() {
 		var count int
 		for _, shouldReturnErr := range []bool{true, false} {
 			for _, table := range tablesToDrop {
-				fullTableName := fmt.Sprintf("%s_%s", table, constants.ArtiePrefix)
-				err := ddl.DropTemporaryTable(_dwh, fullTableName, shouldReturnErr)
+				tableID := d.bigQueryStore.IdentifierFor(kafkalib.TopicConfig{}, fmt.Sprintf("%s_%s", table, constants.ArtiePrefix))
+				err := ddl.DropTemporaryTable(_dwh, tableID, shouldReturnErr)
 				if shouldReturnErr {
 					assert.ErrorContains(d.T(), err, randomErr.Error())
 				} else {
@@ -114,7 +115,7 @@ func (d *DDLTestSuite) Test_DropTemporaryTable_Errors() {
 				count += 1
 				assert.Equal(d.T(), count, fakeStore.ExecCallCount())
 				query, _ := fakeStore.ExecArgsForCall(count - 1)
-				assert.Equal(d.T(), fmt.Sprintf("DROP TABLE IF EXISTS %s", fullTableName), query)
+				assert.Equal(d.T(), fmt.Sprintf("DROP TABLE IF EXISTS %s", tableID.FullyQualifiedName()), query)
 			}
 		}
 

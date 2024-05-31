@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"fmt"
 	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/destination"
@@ -9,14 +8,12 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
-type GetQueryFunc func(dbAndSchemaPair kafkalib.DatabaseSchemaPair) (string, []any)
+type GetQueryFunc func(topicConfig kafkalib.TopicConfig) (string, []any)
 
 func Sweep(dwh destination.DataWarehouse, topicConfigs []*kafkalib.TopicConfig, getQueryFunc GetQueryFunc) error {
 	slog.Info("Looking to see if there are any dangling artie temporary tables to delete...")
-	// TODO: Rewrite this to use [DataWarehouse.IdentifierFor]
-	dbAndSchemaPairs := kafkalib.GetUniqueDatabaseAndSchema(topicConfigs)
-	for _, dbAndSchemaPair := range dbAndSchemaPairs {
-		query, args := getQueryFunc(dbAndSchemaPair)
+	for _, topicConfig := range kafkalib.GetUniqueTopicConfigs(topicConfigs) {
+		query, args := getQueryFunc(topicConfig)
 		rows, err := dwh.Query(query, args...)
 		if err != nil {
 			return err
@@ -30,8 +27,7 @@ func Sweep(dwh destination.DataWarehouse, topicConfigs []*kafkalib.TopicConfig, 
 			}
 
 			if ddl.ShouldDeleteFromName(tableName) {
-				// TODO: Rewrite this to pass a [sql.TableIdentifiers] to [DropTemporaryTable]
-				err = ddl.DropTemporaryTable(dwh, fmt.Sprintf("%s.%s.%s", dbAndSchemaPair.Database, tableSchema, tableName), true)
+				err = ddl.DropTemporaryTable(dwh, dwh.IdentifierFor(topicConfig, tableName), true)
 				if err != nil {
 					return err
 				}

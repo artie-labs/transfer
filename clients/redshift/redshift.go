@@ -96,7 +96,7 @@ func (s *Store) Sweep() error {
 	}
 
 	// `relkind` will filter for only ordinary tables and exclude sequences, views, etc.
-	queryFunc := func(dbAndSchemaPair kafkalib.DatabaseSchemaPair) (string, []any) {
+	queryFunc := func(topicConfig kafkalib.TopicConfig) (string, []any) {
 		return `
 SELECT
     n.nspname, c.relname
@@ -105,7 +105,7 @@ FROM
 JOIN
     PG_CATALOG.PG_NAMESPACE n ON n.oid = c.relnamespace
 WHERE
-    n.nspname = $1 AND c.relname ILIKE $2 AND c.relkind = 'r';`, []any{dbAndSchemaPair.Schema, "%" + constants.ArtiePrefix + "%"}
+    n.nspname = $1 AND c.relname ILIKE $2 AND c.relkind = 'r';`, []any{topicConfig.Schema, "%" + constants.ArtiePrefix + "%"}
 	}
 
 	return shared.Sweep(s, tcs, queryFunc)

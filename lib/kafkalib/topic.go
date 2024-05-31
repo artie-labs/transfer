@@ -10,27 +10,24 @@ import (
 )
 
 type DatabaseSchemaPair struct {
-	Database string
-	Schema   string
+	Database    string
+	Schema      string
+	TopicConfig TopicConfig
 }
 
-// GetUniqueDatabaseAndSchema - does not guarantee ordering.
-func GetUniqueDatabaseAndSchema(tcs []*TopicConfig) []DatabaseSchemaPair {
-	dbMap := make(map[string]DatabaseSchemaPair)
+func GetUniqueTopicConfigs(tcs []*TopicConfig) []TopicConfig {
+	tcMap := make(map[string]TopicConfig)
 	for _, tc := range tcs {
 		key := fmt.Sprintf("%s###%s", tc.Database, tc.Schema)
-		dbMap[key] = DatabaseSchemaPair{
-			Database: tc.Database,
-			Schema:   tc.Schema,
-		}
+		tcMap[key] = *tc
 	}
 
-	var pairs []DatabaseSchemaPair
-	for _, pair := range dbMap {
-		pairs = append(pairs, pair)
+	var uniqueTopicConfigs []TopicConfig
+	for _, topicConfig := range tcMap {
+		uniqueTopicConfigs = append(uniqueTopicConfigs, topicConfig)
 	}
 
-	return pairs
+	return uniqueTopicConfigs
 }
 
 type TopicConfig struct {
