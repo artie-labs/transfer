@@ -105,6 +105,13 @@ func TestParseExtendedDateTime(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEqual(t, ts.String(""), dtString)
 	}
+	{
+		// Edge case
+		dtString := "+275760-09-13T00:00:00.000000Z"
+		ts, err := ParseExtendedDateTime(dtString, nil)
+		assert.NoError(t, err)
+		assert.Equal(t, "0001-01-01T00:00:00+00:00", ts.String(""))
+	}
 }
 
 func TestTimeLayout(t *testing.T) {

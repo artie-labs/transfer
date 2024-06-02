@@ -2,6 +2,7 @@ package ext
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -81,6 +82,16 @@ func ParseExtendedDateTime(dtString string, additionalDateFormats []string) (*Ex
 	// If nothing fits, return the next best thing.
 	if potentialFormat != "" {
 		return NewExtendedTime(potentialTime, DateTimeKindType, potentialFormat), nil
+	}
+
+	// Last chance save, if the datetime string looks like this: YYYY-MM-DD, but YYYY exceeds 9999
+	if parts := strings.Split(dtString, "-"); len(parts) == 3 {
+		for _, part := range parts {
+			if len(part) > 4 {
+				var ts time.Time
+				return ParseExtendedDateTime(ts.Format(ISO8601), additionalDateFormats)
+			}
+		}
 	}
 
 	return nil, fmt.Errorf("dtString: %s is not supported", dtString)
