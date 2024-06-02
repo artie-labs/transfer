@@ -332,6 +332,30 @@ func TestField_ParseValue(t *testing.T) {
 			expectedErr: "failed to cast value '1712609795827000' with type 'string' to int64",
 		},
 		{
+			name: "string - datetime with timezone",
+			field: Field{
+				Type:         String,
+				DebeziumType: DateTimeWithTimezone,
+			},
+			value: "2025-09-13T00:00:00.000000Z",
+			expectedValue: &ext.ExtendedTime{
+				Time: time.Date(2025, time.September, 13, 0, 0, 0, 0, time.UTC),
+				NestedKind: ext.NestedKind{
+					Type:   ext.DateTimeKindType,
+					Format: "2006-01-02T15:04:05Z07:00",
+				},
+			},
+		},
+		{
+			name: "string - datetime with timezone (edge case)",
+			field: Field{
+				Type:         String,
+				DebeziumType: DateTimeWithTimezone,
+			},
+			value:         "+275760-09-13T00:00:00.000000Z",
+			expectedValue: nil,
+		},
+		{
 			name: "[]byte",
 			field: Field{
 				Type: Bytes,
