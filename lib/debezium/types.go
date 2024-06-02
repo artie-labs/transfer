@@ -137,6 +137,7 @@ func (f Field) ParseValue(value any) (any, error) {
 			return nil, fmt.Errorf("expected string got '%v' with type %T", value, value)
 		}
 
+		// We don't need to pass `additionalDateFormats` because this data type layout is standardized by Debezium
 		extTime, err := ext.ParseExtendedDateTime(dtString, nil)
 		if err == nil {
 			return extTime, nil
