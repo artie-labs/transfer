@@ -143,6 +143,11 @@ func (f Field) ParseValue(value any) (any, error) {
 			return extTime, nil
 		}
 
+		// Check for negative years
+		if strings.HasPrefix(dtString, "-") {
+			return nil, nil
+		}
+
 		// Check if the year exceeds 9999, or is negative
 		if parts := strings.Split(dtString, "-"); len(parts) == 3 {
 			// The purpose of this is that `dtString` can be `+275760-09-13T00:00:00.000000Z` sometimes

@@ -347,12 +347,21 @@ func TestField_ParseValue(t *testing.T) {
 			},
 		},
 		{
-			name: "string - datetime with timezone (edge case)",
+			name: "string - datetime with timezone (edge case, year exceeds 9999)",
 			field: Field{
 				Type:         String,
 				DebeziumType: DateTimeWithTimezone,
 			},
 			value:         "+275760-09-13T00:00:00.000000Z",
+			expectedValue: nil,
+		},
+		{
+			name: "string - datetime with timezone (edge case, negative years)",
+			field: Field{
+				Type:         String,
+				DebeziumType: DateTimeWithTimezone,
+			},
+			value:         "-0999-10-10T10:10:10.000000Z",
 			expectedValue: nil,
 		},
 		{
