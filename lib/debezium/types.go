@@ -148,7 +148,7 @@ func (f Field) ParseValue(value any) (any, error) {
 			return nil, nil
 		}
 
-		// Check if the year exceeds 9999, or is negative
+		// Check if the year exceeds 9999
 		if parts := strings.Split(dtString, "-"); len(parts) == 3 {
 			// The purpose of this is that `dtString` can be `+275760-09-13T00:00:00.000000Z` sometimes
 			if len(parts[0]) > 4 {
