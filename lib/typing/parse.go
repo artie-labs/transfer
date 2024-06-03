@@ -52,6 +52,7 @@ func parseValue(settings Settings, val any) KindDetails {
 		// This way, we don't penalize every string into going through this loop
 		// In the future, we can have specific layout RFCs run depending on the char
 		if strings.Contains(convertedVal, ":") || strings.Contains(convertedVal, "-") {
+			// TODO: Remove this once we natively support every single Debezium datetime type
 			extendedKind, err := ext.ParseExtendedDateTime(convertedVal, settings.AdditionalDateFormats)
 			if err == nil {
 				return KindDetails{

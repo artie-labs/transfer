@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -130,6 +131,31 @@ func (f Field) ParseValue(value any) (any, error) {
 		return f.DecodeDecimal(bytes)
 	case KafkaVariableNumericType:
 		return f.DecodeDebeziumVariableDecimal(value)
+	case DateTimeWithTimezone:
+		dtString, isOk := value.(string)
+		if !isOk {
+			return nil, fmt.Errorf("expected string got '%v' with type %T", value, value)
+		}
+
+		// We don't need to pass `additionalDateFormats` because this data type layout is standardized by Debezium
+		extTime, err := ext.ParseExtendedDateTime(dtString, nil)
+		if err == nil {
+			return extTime, nil
+		}
+
+		// Check for negative years
+		if strings.HasPrefix(dtString, "-") {
+			return nil, nil
+		}
+
+		if parts := strings.Split(dtString, "-"); len(parts) == 3 {
+			// Check if year exceeds 9999
+			if len(parts[0]) > 4 {
+				return nil, nil
+			}
+		}
+
+		return nil, fmt.Errorf("failed to parse %q, err: %w", dtString, err)
 	case
 		Timestamp,
 		MicroTimestamp,
