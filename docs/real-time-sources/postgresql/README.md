@@ -15,15 +15,7 @@ description: >-
 | <p>Username<br>Password</p> | <p>Username and Password for authentication into your database.<br><br>See below if you'd like to create a service account specific to Artie.</p> | No default    |
 | Database                    | The name of the database that you want to capture changes for.                                                                                    | No default.   |
 
-### Creating a new user
-
-{% hint style="info" %}
-**Using Amazon RDS?** RDS has its own internal permissioning model. Run this command instead of `ALTER USER REPLICATION`!
-
-`GRANT rds_replication to username;`
-{% endhint %}
-
-### Granting access
+### Creating a service account
 
 ```sql
 CREATE USER artie_transfer WITH PASSWORD 'password';
@@ -40,7 +32,10 @@ GRANT SELECT ON ALL TABLES IN SCHEMA schema_name TO artie_transfer;
 -- So you will need to create this as well.
 CREATE PUBLICATION dbz_publication FOR ALL TABLES;
 
--- Add the replication role to your user (not needed for Amazon RDS)
+-- Add the replication role to your user
+-- If you're using Amazon RDS, do this:
+GRANT rds_replication to artie_transfer;
+-- Else do this
 ALTER USER artie_transfer REPLICATION;
 ```
 
