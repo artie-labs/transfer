@@ -8,7 +8,12 @@ import (
 	"strings"
 
 	"cloud.google.com/go/bigquery"
+	"cloud.google.com/go/bigquery/storage/managedwriter"
+	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
 	_ "github.com/viant/bigquery"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/dynamicpb"
 
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
@@ -144,6 +149,14 @@ func (s *Store) putTableViaLegacyAPI(ctx context.Context, tableID TableIdentifie
 		return err
 	}
 
+	if s.config.BigQuery.UseStorageWriteAPI {
+		return s.putTableViaStorageWriteAPI(ctx, bqTableID, rows)
+	} else {
+		return s.putTableViaInsertAllAPI(ctx, bqTableID, rows)
+	}
+}
+
+func (s *Store) putTableViaInsertAllAPI(ctx context.Context, bqTableID TableIdentifier, rows []*Row) error {
 	client := s.GetClient(ctx)
 	defer client.Close()
 
@@ -153,6 +166,72 @@ func (s *Store) putTableViaLegacyAPI(ctx context.Context, tableID TableIdentifie
 		if err := inserter.Put(ctx, batch.NextChunk()); err != nil {
 			return fmt.Errorf("failed to insert rows: %w", err)
 		}
+	}
+
+	return nil
+}
+
+func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableIdentifier, rows []*Row) error {
+	client := s.GetClient(ctx)
+	defer client.Close()
+	metadata, err := client.Dataset(bqTableID.Dataset()).Table(bqTableID.Table()).Metadata(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to fetch table schema: %w", err)
+	}
+	messageDescriptor, err := schemaToMessageDescriptor(metadata.Schema)
+	if err != nil {
+		return err
+	}
+	schemaDescriptor, err := adapt.NormalizeDescriptor(*messageDescriptor)
+	if err != nil {
+		return err
+	}
+
+	managedWriterClient, err := managedwriter.NewClient(ctx, bqTableID.ProjectID())
+	if err != nil {
+		return fmt.Errorf("failed to create new managedwriter client: %w", err)
+	}
+	defer client.Close()
+
+	managedStream, err := managedWriterClient.NewManagedStream(ctx,
+		managedwriter.WithDestinationTable(
+			managedwriter.TableParentFromParts(bqTableID.ProjectID(), bqTableID.Dataset(), bqTableID.Table()),
+		),
+		managedwriter.WithType(managedwriter.DefaultStream), // TODO: Look into using other stream types
+		managedwriter.WithSchemaDescriptor(schemaDescriptor),
+		managedwriter.EnableWriteRetries(true),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create managed stream")
+	}
+	defer managedStream.Close()
+
+	encoded := make([][]byte, len(rows))
+	for i, row := range rows {
+		message := dynamicpb.NewMessage(*messageDescriptor)
+		for k, v := range row.data {
+			field := message.Descriptor().Fields().ByTextName(k)
+			if field == nil {
+				return fmt.Errorf("failed to find a field named %q", k)
+			}
+
+			message.Set(field, protoreflect.ValueOf(v))
+		}
+
+		bytes, err := proto.Marshal(message)
+		if err != nil {
+			return fmt.Errorf("failed to marshal message: %w", err)
+		}
+		encoded[i] = bytes
+	}
+
+	result, err := managedStream.AppendRows(ctx, encoded)
+	if err != nil {
+		return err
+	}
+
+	if _, err := result.GetResult(ctx); err != nil {
+		return err
 	}
 
 	return nil
@@ -199,4 +278,20 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
 		batchSize: cfg.BigQuery.BatchSize,
 		config:    cfg,
 	}, nil
+}
+
+func schemaToMessageDescriptor(schema bigquery.Schema) (*protoreflect.MessageDescriptor, error) {
+	storageSchema, err := adapt.BQSchemaToStorageTableSchema(schema)
+	if err != nil {
+		return nil, fmt.Errorf("failed to adapt BQ schema to protocol buffer schema")
+	}
+	descriptor, err := adapt.StorageSchemaToProto2Descriptor(storageSchema, "root")
+	if err != nil {
+		return nil, fmt.Errorf("failed to build protocol buffer descriptor: %w", err)
+	}
+	messageDescriptor, ok := descriptor.(protoreflect.MessageDescriptor)
+	if !ok {
+		return nil, fmt.Errorf("adapted descriptor is not a message descriptor")
+	}
+	return &messageDescriptor, nil
 }

@@ -5,11 +5,12 @@ import "fmt"
 type BigQuery struct {
 	// PathToCredentials is _optional_ if you have GOOGLE_APPLICATION_CREDENTIALS set as an env var
 	// Links to credentials: https://cloud.google.com/docs/authentication/application-default-credentials#GAC
-	PathToCredentials string `yaml:"pathToCredentials"`
-	DefaultDataset    string `yaml:"defaultDataset"`
-	ProjectID         string `yaml:"projectID"`
-	Location          string `yaml:"location"`
-	BatchSize         int    `yaml:"batchSize"`
+	PathToCredentials  string `yaml:"pathToCredentials"`
+	DefaultDataset     string `yaml:"defaultDataset"`
+	ProjectID          string `yaml:"projectID"`
+	Location           string `yaml:"location"`
+	BatchSize          int    `yaml:"batchSize"`
+	UseStorageWriteAPI bool   `yaml:"useStorageWriteAPI"`
 }
 
 func (b *BigQuery) LoadDefaultValues() {
