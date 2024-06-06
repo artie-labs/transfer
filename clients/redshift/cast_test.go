@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/ptr"
+
 	"github.com/artie-labs/transfer/lib/stringutil"
 
 	"github.com/artie-labs/transfer/lib/db"
@@ -32,6 +34,17 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 			colVal: stringutil.Random(maxRedshiftLength + 1),
 			colKind: columns.Column{
 				KindDetails: typing.String,
+			},
+			expectedResult: constants.ExceededValueMarker,
+		},
+		{
+			name:   "string (specified string precision)",
+			colVal: "hello dusty",
+			colKind: columns.Column{
+				KindDetails: typing.KindDetails{
+					Kind:                    typing.String.Kind,
+					OptionalStringPrecision: ptr.ToInt(3),
+				},
 			},
 			expectedResult: constants.ExceededValueMarker,
 		},
