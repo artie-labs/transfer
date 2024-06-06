@@ -44,6 +44,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc *kafkalib.TopicConf
 	if cols != nil {
 		for primaryKey := range pkMap {
 			cols.UpsertColumn(
+				// We need to escape the column name similar to have parity with event.GetColumns()
 				columns.EscapeName(primaryKey),
 				columns.UpsertColumnArg{
 					PrimaryKey: ptr.ToBool(true),
