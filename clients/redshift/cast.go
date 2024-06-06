@@ -16,7 +16,13 @@ const maxRedshiftLength = 65535
 func replaceExceededValues(colVal string, colKind columns.Column) string {
 	structOrString := colKind.KindDetails.Kind == typing.Struct.Kind || colKind.KindDetails.Kind == typing.String.Kind
 	if structOrString {
-		if shouldReplace := len(colVal) > maxRedshiftLength; shouldReplace {
+		maxLength := maxRedshiftLength
+		// If the customer has specified the maximum string precision, let's use that as the max length.
+		if colKind.KindDetails.OptionalStringPrecision != nil {
+			maxLength = *colKind.KindDetails.OptionalStringPrecision
+		}
+
+		if shouldReplace := len(colVal) > maxLength; shouldReplace {
 			if colKind.KindDetails.Kind == typing.Struct.Kind {
 				return fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker)
 			}
