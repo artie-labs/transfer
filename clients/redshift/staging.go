@@ -68,6 +68,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		s.credentialsClause,
 	)
 
+	slog.Info("copying data into temporary table", slog.String("copyStmt", copyStmt))
 	if _, err = s.Exec(copyStmt); err != nil {
 		return fmt.Errorf("failed to run COPY for temporary table: %w", err)
 	}
