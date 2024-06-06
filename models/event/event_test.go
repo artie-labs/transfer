@@ -118,6 +118,30 @@ func (e *EventsTestSuite) TestEvent_TableName() {
 	}
 }
 
+func (e *EventsTestSuite) TestEvent_Columns() {
+	var f fakeEvent
+	{
+		evt, err := ToMemoryEvent(f, map[string]any{"id": 123}, &kafkalib.TopicConfig{}, config.Replication)
+		assert.NoError(e.T(), err)
+
+		assert.Equal(e.T(), 1, len(evt.Columns.GetColumns()))
+		_, isOk := evt.Columns.GetColumn("id")
+		assert.True(e.T(), isOk)
+	}
+	{
+		// Now it should handle escaping column names
+		evt, err := ToMemoryEvent(f, map[string]any{"id": 123, "CAPITAL": "foo"}, &kafkalib.TopicConfig{}, config.Replication)
+		assert.NoError(e.T(), err)
+
+		assert.Equal(e.T(), 2, len(evt.Columns.GetColumns()))
+		_, isOk := evt.Columns.GetColumn("id")
+		assert.True(e.T(), isOk)
+
+		_, isOk = evt.Columns.GetColumn("capital")
+		assert.True(e.T(), isOk)
+	}
+}
+
 func (e *EventsTestSuite) TestEventPrimaryKeys() {
 	evt := &Event{
 		Table: "foo",
