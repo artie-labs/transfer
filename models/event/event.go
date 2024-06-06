@@ -43,9 +43,12 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc *kafkalib.TopicConf
 	// Now iterate over pkMap and tag each column that is a primary key
 	if cols != nil {
 		for primaryKey := range pkMap {
-			cols.UpsertColumn(primaryKey, columns.UpsertColumnArg{
-				PrimaryKey: ptr.ToBool(true),
-			})
+			cols.UpsertColumn(
+				columns.EscapeName(primaryKey),
+				columns.UpsertColumnArg{
+					PrimaryKey: ptr.ToBool(true),
+				},
+			)
 		}
 	}
 
