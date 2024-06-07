@@ -143,9 +143,7 @@ func (r *RedshiftTestSuite) TestCastColValStaging_ExceededValues() {
 	}
 
 	cfg := config.Config{
-		Redshift: &config.Redshift{
-			SkipLgCols: true,
-		},
+		Redshift: &config.Redshift{},
 	}
 
 	store := db.Store(r.fakeStore)

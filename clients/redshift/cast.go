@@ -53,9 +53,5 @@ func (s *Store) CastColValStaging(colVal any, colKind columns.Column, additional
 	}
 
 	// Checks for DDL overflow needs to be done at the end in case there are any conversions that need to be done.
-	if s.skipLgCols {
-		colValString = replaceExceededValues(colValString, colKind)
-	}
-
-	return colValString, nil
+	return replaceExceededValues(colValString, colKind), nil
 }

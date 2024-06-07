@@ -25,7 +25,6 @@ type Store struct {
 	bucket            string
 	optionalS3Prefix  string
 	configMap         *types.DwhToTablesConfigMap
-	skipLgCols        bool
 	config            config.Config
 
 	db.Store
@@ -121,9 +120,8 @@ func LoadRedshift(cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			configMap:  &types.DwhToTablesConfigMap{},
-			skipLgCols: cfg.Redshift.SkipLgCols,
-			config:     cfg,
+			configMap: &types.DwhToTablesConfigMap{},
+			config:    cfg,
 
 			Store: *_store,
 		}, nil
@@ -142,7 +140,6 @@ func LoadRedshift(cfg config.Config, _store *db.Store) (*Store, error) {
 		credentialsClause: cfg.Redshift.CredentialsClause,
 		bucket:            cfg.Redshift.Bucket,
 		optionalS3Prefix:  cfg.Redshift.OptionalS3Prefix,
-		skipLgCols:        cfg.Redshift.SkipLgCols,
 		configMap:         &types.DwhToTablesConfigMap{},
 		config:            cfg,
 

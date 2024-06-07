@@ -26,7 +26,6 @@ func (r *RedshiftTestSuite) SetupTest() {
 	var err error
 	r.store, err = LoadRedshift(cfg, &store)
 	assert.NoError(r.T(), err)
-	r.store.skipLgCols = true
 }
 
 func TestRedshiftTestSuite(t *testing.T) {
