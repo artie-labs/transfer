@@ -62,16 +62,25 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		}
 	}
 
+	bqTempTableID, ok := tempTableID.(TableIdentifier)
+	if !ok {
+		return fmt.Errorf("unable to cast tempTableID to BigQuery TableIdentifier")
+	}
+
+	// Load the data
+	return s.putTableViaLegacyAPI(context.Background(), bqTempTableID, tableData)
+}
+
+func buildLegacyRows(tableData *optimization.TableData, additionalDateFmts []string) ([]*Row, error) {
 	// Cast the data into BigQuery values
 	var rows []*Row
-	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	for _, value := range tableData.Rows() {
 		data := make(map[string]bigquery.Value)
 		for _, col := range columns {
 			colVal, err := castColVal(value[col.Name()], col, additionalDateFmts)
 			if err != nil {
-				return fmt.Errorf("failed to cast col %q: %w", col.Name(), err)
+				return nil, fmt.Errorf("failed to cast col %q: %w", col.Name(), err)
 			}
 
 			if colVal != nil {
@@ -81,9 +90,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 
 		rows = append(rows, NewRow(data))
 	}
-
-	// Load the data
-	return s.putTable(context.Background(), tempTableID, rows)
+	return rows, nil
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
@@ -131,17 +138,17 @@ func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 	return client
 }
 
-func (s *Store) putTable(ctx context.Context, tableID sql.TableIdentifier, rows []*Row) error {
-	bqTableID, ok := tableID.(TableIdentifier)
-	if !ok {
-		return fmt.Errorf("unable to cast tableID to BigQuery TableIdentifier")
+func (s *Store) putTableViaLegacyAPI(ctx context.Context, tableID TableIdentifier, tableData *optimization.TableData) error {
+	rows, err := buildLegacyRows(tableData, s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats)
+	if err != nil {
+		return err
 	}
 
 	client := s.GetClient(ctx)
 	defer client.Close()
 
 	batch := NewBatch(rows, s.batchSize)
-	inserter := client.Dataset(bqTableID.Dataset()).Table(bqTableID.Table()).Inserter()
+	inserter := client.Dataset(tableID.Dataset()).Table(tableID.Table()).Inserter()
 	for batch.HasNext() {
 		if err := inserter.Put(ctx, batch.NextChunk()); err != nil {
 			return fmt.Errorf("failed to insert rows: %w", err)
