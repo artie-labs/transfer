@@ -65,17 +65,17 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	// Cast the data into BigQuery values
 	var rows []*Row
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
+	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	for _, value := range tableData.Rows() {
 		data := make(map[string]bigquery.Value)
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate() {
-			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
-			colVal, err := castColVal(value[col], colKind, additionalDateFmts)
+		for _, col := range columns {
+			colVal, err := castColVal(value[col.Name()], col, additionalDateFmts)
 			if err != nil {
-				return fmt.Errorf("failed to cast col %s: %w", col, err)
+				return fmt.Errorf("failed to cast col %q: %w", col.Name(), err)
 			}
 
 			if colVal != nil {
-				data[col] = colVal
+				data[col.Name()] = colVal
 			}
 		}
 
