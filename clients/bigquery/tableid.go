@@ -52,7 +52,3 @@ func (ti TableIdentifier) FullyQualifiedName() string {
 		ti.EscapedTable(),
 	)
 }
-
-func (ti TableIdentifier) DestinationTable() string {
-	return fmt.Sprintf("projects/%s/datasets/%s/tables/%s", ti.projectID, ti.dataset, ti.table)
-}

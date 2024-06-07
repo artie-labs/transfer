@@ -75,7 +75,11 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	}
 
 	// Load the data
-	return s.putTableViaLegacyAPI(context.Background(), bqTempTableID, tableData)
+	if s.config.BigQuery.UseStorageWriteAPI {
+		return s.putTableViaStorageWriteAPI(context.Background(), bqTempTableID, tableData)
+	} else {
+		return s.putTableViaLegacyAPI(context.Background(), bqTempTableID, tableData)
+	}
 }
 
 func buildLegacyRows(tableData *optimization.TableData, additionalDateFmts []string) ([]*Row, error) {
@@ -151,14 +155,6 @@ func (s *Store) putTableViaLegacyAPI(ctx context.Context, tableID TableIdentifie
 		return err
 	}
 
-	if s.config.BigQuery.UseStorageWriteAPI {
-		return s.putTableViaStorageWriteAPI(ctx, bqTableID, rows)
-	} else {
-		return s.putTableViaInsertAllAPI(ctx, bqTableID, rows)
-	}
-}
-
-func (s *Store) putTableViaInsertAllAPI(ctx context.Context, bqTableID TableIdentifier, rows []*Row) error {
 	client := s.GetClient(ctx)
 	defer client.Close()
 
@@ -173,7 +169,7 @@ func (s *Store) putTableViaInsertAllAPI(ctx context.Context, bqTableID TableIden
 	return nil
 }
 
-func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableIdentifier, rows []*Row) error {
+func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableIdentifier, tableData *optimization.TableData) error {
 	// TODO: Think about whether we want to support batching in this method
 	client := s.GetClient(ctx)
 	defer client.Close()
