@@ -68,7 +68,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	}
 
 	// Load the data
-	return s.putTableViaInsertAllAPI(context.Background(), bqTempTableID, tableData)
+	return s.putTableViaLegacyAPI(context.Background(), bqTempTableID, tableData)
 }
 
 func buildLegacyRows(tableData *optimization.TableData, additionalDateFmts []string) ([]*Row, error) {
