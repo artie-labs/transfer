@@ -2,6 +2,7 @@ package bigquery
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"cloud.google.com/go/bigquery/storage/managedwriter"
 	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
 	_ "github.com/viant/bigquery"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
@@ -172,6 +174,7 @@ func (s *Store) putTableViaInsertAllAPI(ctx context.Context, bqTableID TableIden
 }
 
 func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableIdentifier, rows []*Row) error {
+	// TODO: Think about whether we want to support batching in this method
 	client := s.GetClient(ctx)
 	defer client.Close()
 	metadata, err := client.Dataset(bqTableID.Dataset()).Table(bqTableID.Table()).Metadata(ctx)
@@ -208,14 +211,9 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 
 	encoded := make([][]byte, len(rows))
 	for i, row := range rows {
-		message := dynamicpb.NewMessage(*messageDescriptor)
-		for k, v := range row.data {
-			field := message.Descriptor().Fields().ByTextName(k)
-			if field == nil {
-				return fmt.Errorf("failed to find a field named %q", k)
-			}
-
-			message.Set(field, protoreflect.ValueOf(v))
+		message, err := rowToMessage(row, *messageDescriptor)
+		if err != nil {
+			return err
 		}
 
 		bytes, err := proto.Marshal(message)
@@ -294,4 +292,50 @@ func schemaToMessageDescriptor(schema bigquery.Schema) (*protoreflect.MessageDes
 		return nil, fmt.Errorf("adapted descriptor is not a message descriptor")
 	}
 	return &messageDescriptor, nil
+}
+
+func rowToMessage(row *Row, messageDescriptor protoreflect.MessageDescriptor) (*dynamicpb.Message, error) {
+	jsonBytes, err := json.Marshal(&row.data)
+	if err != nil {
+		return nil, err
+	}
+
+	message := dynamicpb.NewMessage(messageDescriptor)
+	err = protojson.Unmarshal(jsonBytes, message)
+	if err != nil {
+		return nil, err
+	}
+
+	// for k, v := range row.data {
+	// 	field := message.Descriptor().Fields().ByTextName(k)
+	// 	if field == nil {
+	// 		return nil, fmt.Errorf("failed to find a field named %q", k)
+	// 	}
+
+	// 	fmt.Printf("%v %T %v\n", field.Kind(), v, v)
+
+	// 	switch v := v.(type) {
+	// 	// Types natively supported by [protoreflect.ValueOf]
+	// 	case nil,
+	// 		bool,
+	// 		int32,
+	// 		int64,
+	// 		float32,
+	// 		float64,
+	// 		string,
+	// 		[]byte:
+	// 		message.Set(field, protoreflect.ValueOf(v))
+	// 	// Additional types:
+	// 	case int:
+	// 		message.Set(field, protoreflect.ValueOfInt64(int64(v)))
+	// 	case []string:
+	// 		list := message.Mutable(field).List()
+	// 		for _, j := range v {
+	// 			list.Append(protoreflect.ValueOf(j))
+	// 		}
+	// 	default:
+	// 		return nil, fmt.Errorf("unable to convert %v of type %T to a proto value", v, v)
+	// 	}
+	// }
+	return message, nil
 }
