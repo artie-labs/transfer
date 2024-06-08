@@ -39,7 +39,7 @@ func TestToBytes(t *testing.T) {
 		{
 			name:        "type that isn't a string or []byte",
 			value:       map[string]any{},
-			expectedErr: "failed to base64 decode",
+			expectedErr: "failed to cast value 'map[]' with type 'map[string]interface {}",
 		},
 	}
 

@@ -3,7 +3,6 @@ package debezium
 import (
 	"encoding/base64"
 	"fmt"
-	"log/slog"
 	"strings"
 	"time"
 
@@ -51,10 +50,9 @@ const (
 	KafkaDecimalPrecisionKey = "connect.decimal.precision"
 )
 
-// toBytes attempts to convert a value of unknown type to a slice of bytes.
+// toBytes attempts to convert a value (type []byte, or string) to a slice of bytes.
 // - If value is already a slice of bytes it will be directly returned.
 // - If value is a string we will attempt to base64 decode it.
-// - If value is any other type we will convert it to a string and then attempt to base64 decode it.
 func toBytes(value any) ([]byte, error) {
 	var stringVal string
 
@@ -64,12 +62,7 @@ func toBytes(value any) ([]byte, error) {
 	case string:
 		stringVal = typedValue
 	default:
-		// TODO: Make this a hard error if we don't observe this happening.
-		slog.Error("Expected string/[]byte, falling back to fmt.Sprint(value)",
-			slog.String("type", fmt.Sprintf("%T", value)),
-			slog.Any("value", value),
-		)
-		stringVal = fmt.Sprint(value)
+		return nil, fmt.Errorf("failed to cast value '%v' with type '%T' to []byte", value, value)
 	}
 
 	data, err := base64.StdEncoding.DecodeString(stringVal)
