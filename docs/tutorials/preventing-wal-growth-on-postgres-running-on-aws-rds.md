@@ -74,8 +74,18 @@ In addition to enabling heartbeats, it is best practice to set up the following:
 * Enable storage autoscaling. The guide to enable this can be [found here](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER\_PIOPS.StorageTypes.html#USER\_PIOPS.Autoscaling).
 * Configure [max\_slot\_wal\_keep\_size](https://www.postgresql.org/docs/current/runtime-config-replication.html) to the desired size
   * The default value is -1
-  * Each file size is 64mb
-  * If you want to set this to be 1 GB, set `max_slot_wal_keep_size` to be 16
+  * Can you configure this from the RDS parameter group.
+  * When units are not specified, they are measured in megabytes.
+
+<figure><img src="../.gitbook/assets/image (45).png" alt=""><figcaption><p>Setting <code>max_slot_wal_keep_size</code> to 500MB</p></figcaption></figure>
+
+```sql
+postgres=> SHOW wal_keep_size;
+ wal_keep_size
+---------------
+ 500MB
+(1 row)
+```
 
 ### Advanced commands
 
