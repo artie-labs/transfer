@@ -81,7 +81,7 @@ In addition to enabling heartbeats, it is best practice to set up the following:
 
 ```sql
 postgres=> SHOW max_slot_wal_keep_size;
- wal_keep_size
+ max_slot_wal_keep_size
 ---------------
  500MB
 (1 row)
