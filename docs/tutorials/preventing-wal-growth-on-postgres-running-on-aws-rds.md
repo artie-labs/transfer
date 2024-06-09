@@ -80,7 +80,7 @@ In addition to enabling heartbeats, it is best practice to set up the following:
 <figure><img src="../.gitbook/assets/image (45).png" alt=""><figcaption><p>Setting <code>max_slot_wal_keep_size</code> to 500MB</p></figcaption></figure>
 
 ```sql
-postgres=> SHOW wal_keep_size;
+postgres=> SHOW max_slot_wal_keep_size;
  wal_keep_size
 ---------------
  500MB
