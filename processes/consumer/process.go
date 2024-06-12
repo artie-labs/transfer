@@ -27,7 +27,6 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	tags := map[string]string{
 		"mode":    cfg.Mode.String(),
 		"groupID": p.GroupID,
-		"topic":   p.Msg.Topic(),
 		"what":    "success",
 	}
 
