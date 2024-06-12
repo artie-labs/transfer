@@ -2,7 +2,6 @@ package bigquery
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -12,10 +11,8 @@ import (
 	"cloud.google.com/go/bigquery/storage/managedwriter"
 	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
 	_ "github.com/viant/bigquery"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/types/dynamicpb"
 
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
@@ -205,9 +202,11 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 	}
 	defer managedStream.Close()
 
+	rows := tableData.Rows()
+	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	encoded := make([][]byte, len(rows))
 	for i, row := range rows {
-		message, err := rowToMessage(row, *messageDescriptor)
+		message, err := rowToMessage(row, columns, *messageDescriptor, s.AdditionalDateFormats())
 		if err != nil {
 			return err
 		}
@@ -221,11 +220,12 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 
 	result, err := managedStream.AppendRows(ctx, encoded)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to append rows: %w", err)
 	}
 
 	if _, err := result.GetResult(ctx); err != nil {
-		return err
+		resp, err := result.FullResponse(ctx)
+		return fmt.Errorf("failed to get result (%s): %w", resp.GetError(), err)
 	}
 
 	return nil
@@ -275,9 +275,15 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
 }
 
 func schemaToMessageDescriptor(schema bigquery.Schema) (*protoreflect.MessageDescriptor, error) {
+	for _, field := range schema {
+		if field.Type == bigquery.JSONFieldType {
+			field.Type = bigquery.StringFieldType
+		}
+	}
+
 	storageSchema, err := adapt.BQSchemaToStorageTableSchema(schema)
 	if err != nil {
-		return nil, fmt.Errorf("failed to adapt BQ schema to protocol buffer schema")
+		return nil, fmt.Errorf("failed to adapt BQ schema to protocol buffer schema: %w", err)
 	}
 	descriptor, err := adapt.StorageSchemaToProto2Descriptor(storageSchema, "root")
 	if err != nil {
@@ -288,50 +294,4 @@ func schemaToMessageDescriptor(schema bigquery.Schema) (*protoreflect.MessageDes
 		return nil, fmt.Errorf("adapted descriptor is not a message descriptor")
 	}
 	return &messageDescriptor, nil
-}
-
-func rowToMessage(row *Row, messageDescriptor protoreflect.MessageDescriptor) (*dynamicpb.Message, error) {
-	jsonBytes, err := json.Marshal(&row.data)
-	if err != nil {
-		return nil, err
-	}
-
-	message := dynamicpb.NewMessage(messageDescriptor)
-	err = protojson.Unmarshal(jsonBytes, message)
-	if err != nil {
-		return nil, err
-	}
-
-	// for k, v := range row.data {
-	// 	field := message.Descriptor().Fields().ByTextName(k)
-	// 	if field == nil {
-	// 		return nil, fmt.Errorf("failed to find a field named %q", k)
-	// 	}
-
-	// 	fmt.Printf("%v %T %v\n", field.Kind(), v, v)
-
-	// 	switch v := v.(type) {
-	// 	// Types natively supported by [protoreflect.ValueOf]
-	// 	case nil,
-	// 		bool,
-	// 		int32,
-	// 		int64,
-	// 		float32,
-	// 		float64,
-	// 		string,
-	// 		[]byte:
-	// 		message.Set(field, protoreflect.ValueOf(v))
-	// 	// Additional types:
-	// 	case int:
-	// 		message.Set(field, protoreflect.ValueOfInt64(int64(v)))
-	// 	case []string:
-	// 		list := message.Mutable(field).List()
-	// 		for _, j := range v {
-	// 			list.Append(protoreflect.ValueOf(j))
-	// 		}
-	// 	default:
-	// 		return nil, fmt.Errorf("unable to convert %v of type %T to a proto value", v, v)
-	// 	}
-	// }
-	return message, nil
 }
