@@ -22,6 +22,12 @@ func (b *BigQueryTestSuite) TestCastColVal() {
 		colVal, err := castColVal("hello", columns.Column{KindDetails: typing.String}, nil)
 		assert.NoError(b.T(), err)
 		assert.Equal(b.T(), "hello", colVal)
+
+		// Decimal
+		dec := decimal.NewDecimal(ptr.ToInt(5), 2, big.NewFloat(123.45))
+		colVal, err = castColVal(dec, columns.Column{KindDetails: typing.String}, nil)
+		assert.NoError(b.T(), err)
+		assert.Equal(b.T(), "123.45", colVal)
 	}
 	{
 		// Integers
