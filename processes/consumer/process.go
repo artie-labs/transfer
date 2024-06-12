@@ -75,7 +75,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 		return evt.Table, nil
 	}
 
-	evt.EmitDatabaseLag(metricsClient, cfg.Mode, p.GroupID)
+	evt.EmitDatabaseLag(metricsClient, cfg.Mode, p.GroupID, p.Msg.Topic())
 
 	shouldFlush, flushReason, err := evt.Save(cfg, inMemDB, topicConfig.tc, p.Msg)
 	if err != nil {

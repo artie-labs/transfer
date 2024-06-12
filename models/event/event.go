@@ -84,7 +84,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc *kafkalib.TopicConf
 	}, nil
 }
 
-func (e *Event) EmitDatabaseLag(metricsClient base.Client, mode config.Mode, groupID string) {
+func (e *Event) EmitDatabaseLag(metricsClient base.Client, mode config.Mode, groupID string, topic string) {
 	if e.ExecutionTime.IsZero() {
 		// We don't want to emit a metric if the execution time is zero.
 		return
@@ -94,6 +94,7 @@ func (e *Event) EmitDatabaseLag(metricsClient base.Client, mode config.Mode, gro
 		"mode":    mode.String(),
 		"groupID": groupID,
 		"table":   e.Table,
+		"topic":   topic,
 	})
 }
 
