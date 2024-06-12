@@ -85,11 +85,9 @@ func (m *Message) EmitRowLag(metricsClient base.Client, mode config.Mode, groupI
 
 func (m *Message) EmitIngestionLag(metricsClient base.Client, mode config.Mode, groupID, table string) {
 	metricsClient.Timing("ingestion.lag", time.Since(m.PublishTime()), map[string]string{
-		"mode":      mode.String(),
-		"groupID":   groupID,
-		"topic":     m.Topic(),
-		"table":     table,
-		"partition": m.Partition(),
+		"mode":    mode.String(),
+		"groupID": groupID,
+		"table":   table,
 	})
 }
 
