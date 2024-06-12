@@ -74,7 +74,7 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
     - MongoDB
     - MySQL
     - PostgreSQL
-    
+
 
 _If the database you are using is not on the list, feel free to file for a [feature request](https://github.com/artie-labs/transfer/issues/new)._
 
@@ -101,4 +101,4 @@ Artie Transfer is released through [GoReleaser](https://goreleaser.com/), and we
 
 ## License
 
-Artie Transfer is licensed under ELv2. Please see the [LICENSE](https://github.com/artie-labs/transfer/blob/master/LICENSE.txt) file for additional information. If you have any licensing questions please email hi@artie.so.
+Artie Transfer is licensed under ELv2. Please see the [LICENSE](https://github.com/artie-labs/transfer/blob/master/LICENSE.txt) file for additional information. If you have any licensing questions please email hi@artie.com.
