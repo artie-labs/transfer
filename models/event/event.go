@@ -17,6 +17,7 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/stringutil"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/models"
@@ -81,6 +82,19 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc *kafkalib.TopicConf
 		Data:           evtData,
 		Deleted:        event.DeletePayload(),
 	}, nil
+}
+
+func (e *Event) EmitDatabaseLag(metricsClient base.Client, mode config.Mode, groupID string) {
+	if e.ExecutionTime.IsZero() {
+		// We don't want to emit a metric if the execution time is zero.
+		return
+	}
+
+	metricsClient.Timing("database.lag", time.Since(e.ExecutionTime), map[string]string{
+		"mode":    mode.String(),
+		"groupID": groupID,
+		"table":   e.Table,
+	})
 }
 
 func (e *Event) IsValid() bool {
