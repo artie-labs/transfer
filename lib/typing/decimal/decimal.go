@@ -55,6 +55,10 @@ func (d *Decimal) String() string {
 	return d.value.Text('f', d.scale)
 }
 
+func (d *Decimal) Bytes() ([]byte, error) {
+	return d.value.GobEncode()
+}
+
 func (d *Decimal) Value() any {
 	// -1 precision is used for variable scaled decimal
 	// We are opting to emit this as a STRING because the value is technically unbounded (can get to ~1 GB).

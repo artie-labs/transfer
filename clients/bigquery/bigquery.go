@@ -12,7 +12,6 @@ import (
 	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
 	_ "github.com/viant/bigquery"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
@@ -167,14 +166,13 @@ func (s *Store) putTableViaLegacyAPI(ctx context.Context, tableID TableIdentifie
 }
 
 func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableIdentifier, tableData *optimization.TableData) error {
+	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
+
 	// TODO: Think about whether we want to support batching in this method
 	client := s.GetClient(ctx)
 	defer client.Close()
-	metadata, err := client.Dataset(bqTableID.Dataset()).Table(bqTableID.Table()).Metadata(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to fetch table schema: %w", err)
-	}
-	messageDescriptor, err := schemaToMessageDescriptor(metadata.Schema)
+
+	messageDescriptor, err := columnsToMessageDescriptor(columns)
 	if err != nil {
 		return err
 	}
@@ -203,7 +201,6 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 	defer managedStream.Close()
 
 	rows := tableData.Rows()
-	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	encoded := make([][]byte, len(rows))
 	for i, row := range rows {
 		message, err := rowToMessage(row, columns, *messageDescriptor, s.AdditionalDateFormats())
@@ -272,26 +269,4 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
 		batchSize: cfg.BigQuery.BatchSize,
 		config:    cfg,
 	}, nil
-}
-
-func schemaToMessageDescriptor(schema bigquery.Schema) (*protoreflect.MessageDescriptor, error) {
-	for _, field := range schema {
-		if field.Type == bigquery.JSONFieldType {
-			field.Type = bigquery.StringFieldType
-		}
-	}
-
-	storageSchema, err := adapt.BQSchemaToStorageTableSchema(schema)
-	if err != nil {
-		return nil, fmt.Errorf("failed to adapt BQ schema to protocol buffer schema: %w", err)
-	}
-	descriptor, err := adapt.StorageSchemaToProto2Descriptor(storageSchema, "root")
-	if err != nil {
-		return nil, fmt.Errorf("failed to build protocol buffer descriptor: %w", err)
-	}
-	messageDescriptor, ok := descriptor.(protoreflect.MessageDescriptor)
-	if !ok {
-		return nil, fmt.Errorf("adapted descriptor is not a message descriptor")
-	}
-	return &messageDescriptor, nil
 }

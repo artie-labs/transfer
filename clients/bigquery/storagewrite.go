@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"cloud.google.com/go/bigquery"
+	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -13,6 +15,76 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
+
+func schemaToMessageDescriptor(schema bigquery.Schema) (*protoreflect.MessageDescriptor, error) {
+	storageSchema, err := adapt.BQSchemaToStorageTableSchema(schema)
+	if err != nil {
+		return nil, fmt.Errorf("failed to adapt BigQuery schema to protocol buffer schema: %w", err)
+	}
+	descriptor, err := adapt.StorageSchemaToProto2Descriptor(storageSchema, "root")
+	if err != nil {
+		return nil, fmt.Errorf("failed to build protocol buffer descriptor: %w", err)
+	}
+	messageDescriptor, ok := descriptor.(protoreflect.MessageDescriptor)
+	if !ok {
+		return nil, fmt.Errorf("adapted descriptor is not a message descriptor")
+	}
+	return &messageDescriptor, nil
+}
+
+func columnToFieldSchema(column columns.Column) (*bigquery.FieldSchema, error) {
+	var fieldType bigquery.FieldType
+	var repeated bool
+
+	switch column.KindDetails.Kind {
+	case typing.Boolean.Kind:
+		fieldType = bigquery.BooleanFieldType
+	case typing.Integer.Kind:
+		fieldType = bigquery.IntegerFieldType
+	case typing.Float.Kind:
+		fieldType = bigquery.FloatFieldType
+	case typing.String.Kind:
+		fieldType = bigquery.StringFieldType
+	case typing.EDecimal.Kind:
+		fieldType = bigquery.NumericFieldType
+	case typing.ETime.Kind:
+		switch column.KindDetails.ExtendedTimeDetails.Type {
+		case ext.DateKindType:
+			fieldType = bigquery.DateFieldType
+		case ext.TimeKindType:
+			fieldType = bigquery.TimeFieldType
+		case ext.DateTimeKindType:
+			fieldType = bigquery.TimestampFieldType
+		default:
+			return nil, fmt.Errorf("unsupported extended time details type: %s", column.KindDetails.ExtendedTimeDetails.Type)
+		}
+	case typing.Struct.Kind:
+		fieldType = bigquery.StringFieldType
+	case typing.Array.Kind:
+		fieldType = bigquery.StringFieldType
+		repeated = true
+	default:
+		return nil, fmt.Errorf("unsupported column kind: %s", column.KindDetails.Kind)
+	}
+
+	return &bigquery.FieldSchema{
+		Name:     column.Name(),
+		Type:     fieldType,
+		Repeated: repeated,
+	}, nil
+}
+
+func columnsToMessageDescriptor(cols []columns.Column) (*protoreflect.MessageDescriptor, error) {
+	fields := make([]*bigquery.FieldSchema, len(cols))
+	for i, col := range cols {
+		field, err := columnToFieldSchema(col)
+		if err != nil {
+			return nil, err
+		}
+		fields[i] = field
+	}
+	return schemaToMessageDescriptor(fields)
+}
 
 // From https://cloud.google.com/java/docs/reference/google-cloud-bigquerystorage/latest/com.google.cloud.bigquery.storage.v1.CivilTimeEncoder
 // And https://cloud.google.com/pubsub/docs/bigquery#date_time_int
@@ -49,7 +121,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 		case typing.Integer.Kind:
 			switch value := value.(type) {
 			case int32:
-				message.Set(field, protoreflect.ValueOfInt32(value))
+				message.Set(field, protoreflect.ValueOfInt64(int64(value)))
 			case int64:
 				message.Set(field, protoreflect.ValueOfInt64(value))
 			case int:
@@ -60,7 +132,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 		case typing.Float.Kind:
 			switch value := value.(type) {
 			case float32:
-				message.Set(field, protoreflect.ValueOfFloat32(value))
+				message.Set(field, protoreflect.ValueOfFloat64(float64(value)))
 			case float64:
 				message.Set(field, protoreflect.ValueOfFloat64(value))
 			default:
@@ -74,7 +146,11 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			}
 		case typing.EDecimal.Kind:
 			if decimalValue, ok := value.(*decimal.Decimal); ok {
-				message.Set(field, protoreflect.ValueOf(decimalValue.Value()))
+				bytes, err := decimalValue.Bytes()
+				if err != nil {
+					return nil, err
+				}
+				message.Set(field, protoreflect.ValueOfBytes(bytes))
 			} else {
 				return nil, fmt.Errorf("expected *decimal.Decimal received %T with value %v", decimalValue, decimalValue)
 			}
@@ -124,7 +200,6 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 		default:
 			return nil, fmt.Errorf("unsupported column kind: %s", column.KindDetails.Kind)
 		}
-
 	}
 	return message, nil
 }
