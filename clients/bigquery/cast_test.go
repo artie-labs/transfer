@@ -181,4 +181,10 @@ func TestEncodeStructToJSONString(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, `{"baz":1234,"foo":"bar"}`, result)
 	}
+	{
+		// Toasted map (should not happen):
+		result, err := EncodeStructToJSONString(map[string]any{"__debezium_unavailable_value": "bar", "baz": 1234})
+		assert.NoError(t, err)
+		assert.Equal(t, `{"key":"__debezium_unavailable_value"}`, result)
+	}
 }
