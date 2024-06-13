@@ -68,7 +68,11 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	}
 
 	// Load the data
-	return s.putTableViaLegacyAPI(context.Background(), bqTempTableID, tableData)
+	if s.config.BigQuery.UseStorageWriteAPI {
+		return s.putTableViaStorageWriteAPI(context.Background(), bqTempTableID, tableData)
+	} else {
+		return s.putTableViaLegacyAPI(context.Background(), bqTempTableID, tableData)
+	}
 }
 
 func buildLegacyRows(tableData *optimization.TableData, additionalDateFmts []string) ([]*Row, error) {
@@ -156,6 +160,10 @@ func (s *Store) putTableViaLegacyAPI(ctx context.Context, tableID TableIdentifie
 	}
 
 	return nil
+}
+
+func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableIdentifier, tableData *optimization.TableData) error {
+	panic("not implemented")
 }
 
 func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
