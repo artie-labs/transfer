@@ -46,7 +46,7 @@ func columnToFieldSchema(column columns.Column) (*bigquery.FieldSchema, error) {
 	case typing.String.Kind:
 		fieldType = bigquery.StringFieldType
 	case typing.EDecimal.Kind:
-		fieldType = bigquery.NumericFieldType
+		fieldType = bigquery.StringFieldType
 	case typing.ETime.Kind:
 		switch column.KindDetails.ExtendedTimeDetails.Type {
 		case ext.DateKindType:
@@ -120,12 +120,12 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			}
 		case typing.Integer.Kind:
 			switch value := value.(type) {
+			case int:
+				message.Set(field, protoreflect.ValueOfInt64(int64(value)))
 			case int32:
 				message.Set(field, protoreflect.ValueOfInt64(int64(value)))
 			case int64:
 				message.Set(field, protoreflect.ValueOfInt64(value))
-			case int:
-				message.Set(field, protoreflect.ValueOfInt64(int64(value)))
 			default:
 				return nil, fmt.Errorf("expected int/int32/int64 received %T with value %v", value, value)
 			}
@@ -139,18 +139,19 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				return nil, fmt.Errorf("expected float32/float64 recieved %T with value %v", value, value)
 			}
 		case typing.String.Kind:
-			if stringValue, ok := value.(string); ok {
-				message.Set(field, protoreflect.ValueOfString(stringValue))
-			} else {
-				return nil, fmt.Errorf("expected string received %T with value %v", value, value)
+			var stringValue string
+			switch value := value.(type) {
+			case string:
+				stringValue = value
+			case *decimal.Decimal:
+				stringValue = value.String()
+			default:
+				return nil, fmt.Errorf("expected string/decimal.Decimal received %T with value %v", value, value)
 			}
+			message.Set(field, protoreflect.ValueOfString(stringValue))
 		case typing.EDecimal.Kind:
 			if decimalValue, ok := value.(*decimal.Decimal); ok {
-				bytes, err := decimalValue.Bytes()
-				if err != nil {
-					return nil, err
-				}
-				message.Set(field, protoreflect.ValueOfBytes(bytes))
+				message.Set(field, protoreflect.ValueOfString(decimalValue.String()))
 			} else {
 				return nil, fmt.Errorf("expected *decimal.Decimal received %T with value %v", decimalValue, decimalValue)
 			}
@@ -161,7 +162,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			}
 
 			if column.KindDetails.ExtendedTimeDetails == nil {
-				return nil, fmt.Errorf("column kind details for extended time details is null")
+				return nil, fmt.Errorf("extended time details for column kind details is null")
 			}
 
 			switch column.KindDetails.ExtendedTimeDetails.Type {
