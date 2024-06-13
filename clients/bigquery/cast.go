@@ -59,28 +59,14 @@ func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string)
 			return extTime.String(dialect.BQStreamingTimeFormat), nil
 		}
 	case typing.Struct.Kind:
-		// TODO: See if we can improve this eval and find a better location, see: https://github.com/artie-labs/transfer/pull/697#discussion_r1609280164
-		if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
-			return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
-		}
-
-		// Structs from relational and Mongo are different.
-		// MongoDB will return the native objects back such as `map[string]any{"hello": "world"}`
-		// Relational will return a string representation of the struct such as `{"hello": "world"}`
-		if colValString, isOk := colVal.(string); isOk {
-			if colValString == "" {
-				return nil, nil
-			}
-
-			return colValString, nil
-		}
-
-		colValBytes, err := json.Marshal(colVal)
+		stringValue, err := EncodeStructToJSONString(colVal)
 		if err != nil {
-			return nil, fmt.Errorf("failed to marshal colVal: %w", err)
+			return nil, err
+		} else if stringValue == "" {
+			return nil, nil
+		} else {
+			return stringValue, nil
 		}
-
-		return string(colValBytes), nil
 	case typing.Array.Kind:
 		arrayString, err := array.InterfaceToArrayString(colVal, true)
 		if err != nil {
@@ -97,4 +83,28 @@ func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string)
 	// TODO: Change this to return an error once we don't see Sentry
 	slog.Error("Unexpected BigQuery Data Type", slog.Any("colKind", colKind.KindDetails.Kind), slog.Any("colVal", colVal))
 	return fmt.Sprint(colVal), nil
+}
+
+func EncodeStructToJSONString(value any) (string, error) {
+	if strings.Contains(fmt.Sprint(value), constants.ToastUnavailableValuePlaceholder) {
+		return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
+	}
+
+	// Structs from relational and Mongo are different.
+	// MongoDB will return the native objects back such as `map[string]any{"hello": "world"}`
+	// Relational will return a string representation of the struct such as `{"hello": "world"}`
+	if colValString, isOk := value.(string); isOk {
+		if colValString == "" {
+			return "", nil
+		}
+
+		return colValString, nil
+	}
+
+	colValBytes, err := json.Marshal(value)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal colVal: %w", err)
+	}
+
+	return string(colValBytes), nil
 }

@@ -10,7 +10,7 @@ type BigQuery struct {
 	ProjectID          string `yaml:"projectID"`
 	Location           string `yaml:"location"`
 	BatchSize          int    `yaml:"batchSize"`
-	UseStorageWriteAPI bool   `yaml:"useStorageWriteAPI"`
+	UseStorageWriteAPI bool   `yaml:"__useStorageWriteAPI"` // Not officially supported yet.
 }
 
 func (b *BigQuery) LoadDefaultValues() {

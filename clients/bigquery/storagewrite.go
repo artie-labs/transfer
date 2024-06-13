@@ -35,8 +35,6 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 
 		value := row[column.Name()]
 
-		fmt.Printf("%s %v %s %T %v\n", column.Name(), column.KindDetails, field.Kind(), value, value)
-
 		if value == nil {
 			continue
 		}
@@ -106,10 +104,13 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				return nil, fmt.Errorf("unsupported extended time details: %s", column.KindDetails.ExtendedTimeDetails.Type)
 			}
 		case typing.Struct.Kind:
-			if stringValue, ok := value.(string); ok {
-				message.Set(field, protoreflect.ValueOfString(stringValue))
+			stringValue, err := EncodeStructToJSONString(value)
+			if err != nil {
+				return nil, err
+			} else if stringValue == "" {
+				continue
 			} else {
-				return nil, fmt.Errorf("expected string received %T with value %v", value, value)
+				message.Set(field, protoreflect.ValueOfString(stringValue))
 			}
 		case typing.Array.Kind:
 			values, err := array.InterfaceToArrayString(value, true)
