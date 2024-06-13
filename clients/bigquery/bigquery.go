@@ -168,10 +168,6 @@ func (s *Store) putTableViaLegacyAPI(ctx context.Context, tableID TableIdentifie
 func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableIdentifier, tableData *optimization.TableData) error {
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 
-	// TODO: Think about whether we want to support batching in this method
-	client := s.GetClient(ctx)
-	defer client.Close()
-
 	messageDescriptor, err := columnsToMessageDescriptor(columns)
 	if err != nil {
 		return err
@@ -183,9 +179,9 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 
 	managedWriterClient, err := managedwriter.NewClient(ctx, bqTableID.ProjectID())
 	if err != nil {
-		return fmt.Errorf("failed to create new managedwriter client: %w", err)
+		return fmt.Errorf("failed to create managedwriter client: %w", err)
 	}
-	defer client.Close()
+	defer managedWriterClient.Close()
 
 	managedStream, err := managedWriterClient.NewManagedStream(ctx,
 		managedwriter.WithDestinationTable(
@@ -200,6 +196,7 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 	}
 	defer managedStream.Close()
 
+	// TODO: Think about whether we want to batch the rows here.
 	rows := tableData.Rows()
 	encoded := make([][]byte, len(rows))
 	for i, row := range rows {
