@@ -85,19 +85,15 @@ func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string)
 	return fmt.Sprint(colVal), nil
 }
 
+// EncodeStructToJSONString takes a struct as either a string or Go object and encodes it into a JSON string.
+// Structs from relational and Mongo are different.
+// MongoDB will return the native objects back such as `map[string]any{"hello": "world"}`
+// Relational will return a string representation of the struct such as `{"hello": "world"}`
 func EncodeStructToJSONString(value any) (string, error) {
-	if strings.Contains(fmt.Sprint(value), constants.ToastUnavailableValuePlaceholder) {
-		return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
-	}
-
-	// Structs from relational and Mongo are different.
-	// MongoDB will return the native objects back such as `map[string]any{"hello": "world"}`
-	// Relational will return a string representation of the struct such as `{"hello": "world"}`
 	if colValString, isOk := value.(string); isOk {
-		if colValString == "" {
-			return "", nil
+		if strings.Contains(colValString, constants.ToastUnavailableValuePlaceholder) {
+			return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
 		}
-
 		return colValString, nil
 	}
 
@@ -105,6 +101,5 @@ func EncodeStructToJSONString(value any) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal colVal: %w", err)
 	}
-
 	return string(colValBytes), nil
 }
