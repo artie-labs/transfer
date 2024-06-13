@@ -107,6 +107,5 @@ func EncodeStructToJSONString(value any) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal colVal: %w", err)
 	}
-
 	return string(colValBytes), nil
 }
