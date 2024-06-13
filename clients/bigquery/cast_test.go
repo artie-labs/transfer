@@ -3,6 +3,7 @@ package bigquery
 import (
 	"fmt"
 	"math/big"
+	"testing"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -158,5 +159,26 @@ func (b *BigQueryTestSuite) TestCastColVal() {
 		colVal, err = castColVal(nil, columns.Column{KindDetails: typing.Array}, nil)
 		assert.NoError(b.T(), err)
 		assert.Nil(b.T(), colVal)
+	}
+}
+
+func TestEncodeStructToJSONString(t *testing.T) {
+	{
+		// Empty string:
+		result, err := EncodeStructToJSONString("")
+		assert.NoError(t, err)
+		assert.Equal(t, "", result)
+	}
+	{
+		// Toasted string:
+		result, err := EncodeStructToJSONString("__debezium_unavailable_value")
+		assert.NoError(t, err)
+		assert.Equal(t, `{"key":"__debezium_unavailable_value"}`, result)
+	}
+	{
+		// Map:
+		result, err := EncodeStructToJSONString(map[string]any{"foo": "bar", "baz": 1234})
+		assert.NoError(t, err)
+		assert.Equal(t, `{"baz":1234,"foo":"bar"}`, result)
 	}
 }
