@@ -110,7 +110,9 @@ func EncodeStructToJSONString(value any) (string, error) {
 
 	stringValue := string(bytes)
 	if strings.Contains(stringValue, constants.ToastUnavailableValuePlaceholder) {
+		// TODO: Remove this if we don't see it in the logs.
 		slog.Error("encoded JSON value contains the toast unavailable value placeholder")
+		return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
 	}
 	return stringValue, nil
 }
