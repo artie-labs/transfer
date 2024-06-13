@@ -61,7 +61,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 			}
 
 			if args.CoolDown != nil && _tableData.ShouldSkipFlush(*args.CoolDown) {
-				slog.With(logFields...).Info("Skipping flush because we are currently in a flush cooldown")
+				slog.With(logFields...).Debug("Skipping flush because we are currently in a flush cooldown")
 				return
 			}
 
