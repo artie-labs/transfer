@@ -16,22 +16,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func schemaToMessageDescriptor(schema bigquery.Schema) (*protoreflect.MessageDescriptor, error) {
-	storageSchema, err := adapt.BQSchemaToStorageTableSchema(schema)
-	if err != nil {
-		return nil, fmt.Errorf("failed to adapt BigQuery schema to protocol buffer schema: %w", err)
-	}
-	descriptor, err := adapt.StorageSchemaToProto2Descriptor(storageSchema, "root")
-	if err != nil {
-		return nil, fmt.Errorf("failed to build protocol buffer descriptor: %w", err)
-	}
-	messageDescriptor, ok := descriptor.(protoreflect.MessageDescriptor)
-	if !ok {
-		return nil, fmt.Errorf("adapted descriptor is not a message descriptor")
-	}
-	return &messageDescriptor, nil
-}
-
 func columnToFieldSchema(column columns.Column) (*bigquery.FieldSchema, error) {
 	var fieldType bigquery.FieldType
 	var repeated bool
@@ -83,7 +67,20 @@ func columnsToMessageDescriptor(cols []columns.Column) (*protoreflect.MessageDes
 		}
 		fields[i] = field
 	}
-	return schemaToMessageDescriptor(fields)
+
+	storageSchema, err := adapt.BQSchemaToStorageTableSchema(fields)
+	if err != nil {
+		return nil, fmt.Errorf("failed to adapt BigQuery schema to storage table schema: %w", err)
+	}
+	descriptor, err := adapt.StorageSchemaToProto2Descriptor(storageSchema, "root")
+	if err != nil {
+		return nil, fmt.Errorf("failed to build proto descriptor: %w", err)
+	}
+	messageDescriptor, ok := descriptor.(protoreflect.MessageDescriptor)
+	if !ok {
+		return nil, fmt.Errorf("proto descriptor is not a message descriptor")
+	}
+	return &messageDescriptor, nil
 }
 
 // From https://cloud.google.com/java/docs/reference/google-cloud-bigquerystorage/latest/com.google.cloud.bigquery.storage.v1.CivilTimeEncoder
