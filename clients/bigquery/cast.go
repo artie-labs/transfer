@@ -105,7 +105,7 @@ func EncodeStructToJSONString(value any) (string, error) {
 
 	bytes, err := json.Marshal(value)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal colVal: %w", err)
+		return "", fmt.Errorf("failed to marshal value: %w", err)
 	}
 
 	stringValue := string(bytes)
