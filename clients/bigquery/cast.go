@@ -96,16 +96,21 @@ func castColVal(colVal any, colKind columns.Column, additionalDateFmts []string)
 // MongoDB will return the native objects back such as `map[string]any{"hello": "world"}`
 // Relational will return a string representation of the struct such as `{"hello": "world"}`
 func EncodeStructToJSONString(value any) (string, error) {
-	if colValString, isOk := value.(string); isOk {
-		if strings.Contains(colValString, constants.ToastUnavailableValuePlaceholder) {
+	if stringValue, isOk := value.(string); isOk {
+		if strings.Contains(stringValue, constants.ToastUnavailableValuePlaceholder) {
 			return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
 		}
-		return colValString, nil
+		return stringValue, nil
 	}
 
-	colValBytes, err := json.Marshal(value)
+	bytes, err := json.Marshal(value)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal colVal: %w", err)
 	}
-	return string(colValBytes), nil
+
+	stringValue := string(bytes)
+	if strings.Contains(stringValue, constants.ToastUnavailableValuePlaceholder) {
+		slog.Error("encoded JSON value contains the toast unavailable value placeholder")
+	}
+	return stringValue, nil
 }
