@@ -197,6 +197,7 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 	defer managedStream.Close()
 
 	// TODO: Think about whether we want to batch the rows here.
+	// The size of a single [AppendRows] request must be lest than 10MB.
 	rows := tableData.Rows()
 	encoded := make([][]byte, len(rows))
 	for i, row := range rows {
@@ -217,9 +218,8 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 		return fmt.Errorf("failed to append rows: %w", err)
 	}
 
-	if _, err := result.GetResult(ctx); err != nil {
-		resp, err := result.FullResponse(ctx)
-		return fmt.Errorf("failed to get result (%s): %w", resp.GetError(), err)
+	if resp, err := result.FullResponse(ctx); err != nil {
+		return fmt.Errorf("failed to get response (%s): %w", resp.GetError().String(), err)
 	}
 
 	return nil
