@@ -142,7 +142,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				if err != nil {
 					return nil, fmt.Errorf("failed to parse string to float64: %w", err)
 				}
-				message.Set(field, protoreflect.ValueOfFloat64(float64(floatValue)))
+				message.Set(field, protoreflect.ValueOfFloat64(floatValue))
 			default:
 				return nil, fmt.Errorf("expected float32/float64/int32/int64 recieved %T with value %v", value, value)
 			}
