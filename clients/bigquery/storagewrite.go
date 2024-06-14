@@ -132,8 +132,12 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				message.Set(field, protoreflect.ValueOfFloat64(float64(value)))
 			case float64:
 				message.Set(field, protoreflect.ValueOfFloat64(value))
+			case int32:
+				message.Set(field, protoreflect.ValueOfFloat64(float64(value)))
+			case int64:
+				message.Set(field, protoreflect.ValueOfFloat64(float64(value)))
 			default:
-				return nil, fmt.Errorf("expected float32/float64 recieved %T with value %v", value, value)
+				return nil, fmt.Errorf("expected float32/float64/int32/int64 recieved %T with value %v", value, value)
 			}
 		case typing.EDecimal.Kind:
 			if decimalValue, ok := value.(*decimal.Decimal); ok {
