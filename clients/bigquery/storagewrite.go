@@ -16,6 +16,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// columnToTableFieldSchema returns a [*storagepb.TableFieldSchema] suitable for transfering data of the type that the column specifies.
+// Not that the data type is not necessarily the data type that the table in the database is using.
 func columnToTableFieldSchema(column columns.Column) (*storagepb.TableFieldSchema, error) {
 	var fieldType storagepb.TableFieldSchema_Type
 	mode := storagepb.TableFieldSchema_NULLABLE
