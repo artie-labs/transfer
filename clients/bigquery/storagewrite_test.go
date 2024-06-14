@@ -70,6 +70,8 @@ func TestRowToMessage(t *testing.T) {
 		"cInt32":   "1234",
 		"cInt64":   "1234",
 		"cString":  "foo bar",
+		"cNumeric": "3.14159",
 		"cArray":   []any{"foo", "bar"},
+		"cStruct":  `{"baz":["foo","bar"]}`,
 	}, result)
 }
