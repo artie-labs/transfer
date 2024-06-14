@@ -27,16 +27,16 @@ func columnToTableFieldSchema(column columns.Column) (*storagepb.TableFieldSchem
 		fieldType = storagepb.TableFieldSchema_INT64
 	case typing.Float.Kind:
 		fieldType = storagepb.TableFieldSchema_DOUBLE
-	case typing.String.Kind:
-		fieldType = storagepb.TableFieldSchema_STRING
 	case typing.EDecimal.Kind:
+		fieldType = storagepb.TableFieldSchema_STRING
+	case typing.String.Kind:
 		fieldType = storagepb.TableFieldSchema_STRING
 	case typing.ETime.Kind:
 		switch column.KindDetails.ExtendedTimeDetails.Type {
-		case ext.DateKindType:
-			fieldType = storagepb.TableFieldSchema_DATE
 		case ext.TimeKindType:
 			fieldType = storagepb.TableFieldSchema_TIME
+		case ext.DateKindType:
+			fieldType = storagepb.TableFieldSchema_DATE
 		case ext.DateTimeKindType:
 			fieldType = storagepb.TableFieldSchema_TIMESTAMP
 		default:
@@ -132,6 +132,12 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			default:
 				return nil, fmt.Errorf("expected float32/float64 recieved %T with value %v", value, value)
 			}
+		case typing.EDecimal.Kind:
+			if decimalValue, ok := value.(*decimal.Decimal); ok {
+				message.Set(field, protoreflect.ValueOfString(decimalValue.String()))
+			} else {
+				return nil, fmt.Errorf("expected *decimal.Decimal received %T with value %v", decimalValue, decimalValue)
+			}
 		case typing.String.Kind:
 			var stringValue string
 			switch value := value.(type) {
@@ -143,12 +149,6 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				return nil, fmt.Errorf("expected string/decimal.Decimal received %T with value %v", value, value)
 			}
 			message.Set(field, protoreflect.ValueOfString(stringValue))
-		case typing.EDecimal.Kind:
-			if decimalValue, ok := value.(*decimal.Decimal); ok {
-				message.Set(field, protoreflect.ValueOfString(decimalValue.String()))
-			} else {
-				return nil, fmt.Errorf("expected *decimal.Decimal received %T with value %v", decimalValue, decimalValue)
-			}
 		case typing.ETime.Kind:
 			extTime, err := ext.ParseFromInterface(value, additionalDateFmts)
 			if err != nil {
@@ -160,11 +160,11 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			}
 
 			switch column.KindDetails.ExtendedTimeDetails.Type {
+			case ext.TimeKindType:
+				message.Set(field, protoreflect.ValueOfInt64(encodePacked64TimeMicros(extTime.Time)))
 			case ext.DateKindType:
 				daysSinceEpoch := extTime.Unix() / (60 * 60 * 24)
 				message.Set(field, protoreflect.ValueOfInt32(int32(daysSinceEpoch)))
-			case ext.TimeKindType:
-				message.Set(field, protoreflect.ValueOfInt64(encodePacked64TimeMicros(extTime.Time)))
 			case ext.DateTimeKindType:
 				ts := timestamppb.New(extTime.Time)
 				if err := ts.CheckValid(); err != nil {

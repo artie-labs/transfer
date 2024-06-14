@@ -9,6 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -35,20 +36,26 @@ func TestRowToMessage(t *testing.T) {
 		columns.NewColumn("c_float64", typing.Float),
 		columns.NewColumn("c_numeric", typing.EDecimal),
 		columns.NewColumn("c_string", typing.String),
-		columns.NewColumn("c_array", typing.Array),
+		columns.NewColumn("c_time", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)),
+		columns.NewColumn("c_date", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType)),
+		columns.NewColumn("c_datetime", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)),
 		columns.NewColumn("c_struct", typing.Struct),
+		columns.NewColumn("c_array", typing.Array),
 	}
 
 	row := map[string]any{
-		"c_bool":    true,
-		"c_int32":   int32(1234),
-		"c_int64":   int32(1234),
-		"c_float32": float32(1234.567),
-		"c_float64": float64(1234.567),
-		"c_numeric": decimal.NewDecimal(nil, 5, big.NewFloat(3.1415926)),
-		"c_string":  "foo bar",
-		"c_array":   []string{"foo", "bar"},
-		"c_struct":  map[string]any{"baz": []string{"foo", "bar"}},
+		"c_bool":     true,
+		"c_int32":    int32(1234),
+		"c_int64":    int32(1234),
+		"c_float32":  float32(1234.567),
+		"c_float64":  float64(1234.567),
+		"c_numeric":  decimal.NewDecimal(nil, 5, big.NewFloat(3.1415926)),
+		"c_string":   "foo bar",
+		"c_time":     ext.NewExtendedTime(time.Date(0, 0, 0, 4, 5, 6, 7, time.UTC), ext.TimeKindType, ""),
+		"c_date":     ext.NewExtendedTime(time.Date(2001, 2, 3, 0, 0, 0, 0, time.UTC), ext.DateKindType, ""),
+		"c_datetime": ext.NewExtendedTime(time.Date(2001, 2, 3, 4, 5, 6, 7, time.UTC), ext.DateTimeKindType, ""),
+		"c_struct":   map[string]any{"baz": []string{"foo", "bar"}},
+		"c_array":    []string{"foo", "bar"},
 	}
 
 	desc, err := columnsToMessageDescriptor(columns)
@@ -64,14 +71,17 @@ func TestRowToMessage(t *testing.T) {
 	assert.NoError(t, json.Unmarshal(bytes, &result))
 
 	assert.Equal(t, map[string]any{
-		"cBool":    true,
-		"cFloat32": 1234.5670166015625,
-		"cFloat64": 1234.567,
-		"cInt32":   "1234",
-		"cInt64":   "1234",
-		"cNumeric": "3.14159",
-		"cString":  "foo bar",
-		"cArray":   []any{"foo", "bar"},
-		"cStruct":  `{"baz":["foo","bar"]}`,
+		"cBool":     true,
+		"cFloat32":  1234.5670166015625,
+		"cFloat64":  1234.567,
+		"cInt32":    "1234",
+		"cInt64":    "1234",
+		"cNumeric":  "3.14159",
+		"cString":   "foo bar",
+		"cTime":     "17521704960",
+		"cDate":     float64(11356),
+		"cDatetime": "981173106000000",
+		"cStruct":   `{"baz":["foo","bar"]}`,
+		"cArray":    []any{"foo", "bar"},
 	}, result)
 }
