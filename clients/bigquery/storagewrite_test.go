@@ -30,6 +30,7 @@ func TestEncodePacked64TimeMicros(t *testing.T) {
 func TestRowToMessage(t *testing.T) {
 	columns := []columns.Column{
 		columns.NewColumn("c_bool", typing.Boolean),
+		columns.NewColumn("c_int", typing.Integer),
 		columns.NewColumn("c_int32", typing.Integer),
 		columns.NewColumn("c_int64", typing.Integer),
 		columns.NewColumn("c_float32", typing.Float),
@@ -45,8 +46,9 @@ func TestRowToMessage(t *testing.T) {
 
 	row := map[string]any{
 		"c_bool":     true,
+		"c_int":      int(1234),
 		"c_int32":    int32(1234),
-		"c_int64":    int32(1234),
+		"c_int64":    int64(1234),
 		"c_float32":  float32(1234.567),
 		"c_float64":  float64(1234.567),
 		"c_numeric":  decimal.NewDecimal(nil, 5, big.NewFloat(3.1415926)),
@@ -74,6 +76,7 @@ func TestRowToMessage(t *testing.T) {
 		"cBool":     true,
 		"cFloat32":  1234.5670166015625,
 		"cFloat64":  1234.567,
+		"cInt":      "1234",
 		"cInt32":    "1234",
 		"cInt64":    "1234",
 		"cNumeric":  "3.14159",
