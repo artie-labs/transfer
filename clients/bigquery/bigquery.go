@@ -196,30 +196,31 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 	}
 	defer managedStream.Close()
 
-	// TODO: Think about whether we want to batch the rows here.
-	// The size of a single [AppendRows] request must be lest than 10MB.
-	rows := tableData.Rows()
-	encoded := make([][]byte, len(rows))
-	for i, row := range rows {
-		message, err := rowToMessage(row, columns, *messageDescriptor, s.AdditionalDateFormats())
-		if err != nil {
-			return err
+	batch := NewBatch(tableData.Rows(), s.batchSize)
+	for batch.HasNext() {
+		chunk := batch.NextChunk()
+		encoded := make([][]byte, len(chunk))
+		for i, row := range chunk {
+			message, err := rowToMessage(row, columns, *messageDescriptor, s.AdditionalDateFormats())
+			if err != nil {
+				return err
+			}
+
+			bytes, err := proto.Marshal(message)
+			if err != nil {
+				return fmt.Errorf("failed to marshal message: %w", err)
+			}
+			encoded[i] = bytes
 		}
 
-		bytes, err := proto.Marshal(message)
+		result, err := managedStream.AppendRows(ctx, encoded)
 		if err != nil {
-			return fmt.Errorf("failed to marshal message: %w", err)
+			return fmt.Errorf("failed to append rows: %w", err)
 		}
-		encoded[i] = bytes
-	}
 
-	result, err := managedStream.AppendRows(ctx, encoded)
-	if err != nil {
-		return fmt.Errorf("failed to append rows: %w", err)
-	}
-
-	if resp, err := result.FullResponse(ctx); err != nil {
-		return fmt.Errorf("failed to get response (%s): %w", resp.GetError().String(), err)
+		if resp, err := result.FullResponse(ctx); err != nil {
+			return fmt.Errorf("failed to get response (%s): %w", resp.GetError().String(), err)
+		}
 	}
 
 	return nil
