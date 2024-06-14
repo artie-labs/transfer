@@ -34,6 +34,7 @@ const (
 	describeNameCol               = "column_name"
 	describeTypeCol               = "data_type"
 	describeCommentCol            = "description"
+	useStorageWriteAPI            = true
 )
 
 type Store struct {
@@ -71,7 +72,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	}
 
 	// Load the data
-	if s.config.BigQuery.UseStorageWriteAPI {
+	if useStorageWriteAPI {
 		return s.putTableViaStorageWriteAPI(context.Background(), bqTempTableID, tableData)
 	} else {
 		return s.putTableViaLegacyAPI(context.Background(), bqTempTableID, tableData)
