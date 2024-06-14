@@ -27,18 +27,6 @@ func TestEncodePacked64TimeMicros(t *testing.T) {
 }
 
 func TestRowToMessage(t *testing.T) {
-	row := map[string]any{
-		"c_bool":    true,
-		"c_int32":   int32(1234),
-		"c_int64":   int32(1234),
-		"c_float32": float32(1234.567),
-		"c_float64": float64(1234.567),
-		"c_numeric": decimal.NewDecimal(nil, 5, big.NewFloat(3.1415926)),
-		"c_string":  "foo bar",
-		"c_array":   []string{"foo", "bar"},
-		"c_struct":  map[string]any{"baz": []string{"foo", "bar"}},
-	}
-
 	columns := []columns.Column{
 		columns.NewColumn("c_bool", typing.Boolean),
 		columns.NewColumn("c_int32", typing.Integer),
@@ -49,6 +37,18 @@ func TestRowToMessage(t *testing.T) {
 		columns.NewColumn("c_string", typing.String),
 		columns.NewColumn("c_array", typing.Array),
 		columns.NewColumn("c_struct", typing.Struct),
+	}
+
+	row := map[string]any{
+		"c_bool":    true,
+		"c_int32":   int32(1234),
+		"c_int64":   int32(1234),
+		"c_float32": float32(1234.567),
+		"c_float64": float64(1234.567),
+		"c_numeric": decimal.NewDecimal(nil, 5, big.NewFloat(3.1415926)),
+		"c_string":  "foo bar",
+		"c_array":   []string{"foo", "bar"},
+		"c_struct":  map[string]any{"baz": []string{"foo", "bar"}},
 	}
 
 	desc, err := columnsToMessageDescriptor(columns)
