@@ -8,7 +8,10 @@ import (
 	"strings"
 
 	"cloud.google.com/go/bigquery"
+	"cloud.google.com/go/bigquery/storage/managedwriter"
+	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
 	_ "github.com/viant/bigquery"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
@@ -163,7 +166,64 @@ func (s *Store) putTableViaLegacyAPI(ctx context.Context, tableID TableIdentifie
 }
 
 func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableIdentifier, tableData *optimization.TableData) error {
-	panic("not implemented")
+	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
+
+	messageDescriptor, err := columnsToMessageDescriptor(columns)
+	if err != nil {
+		return err
+	}
+	schemaDescriptor, err := adapt.NormalizeDescriptor(*messageDescriptor)
+	if err != nil {
+		return err
+	}
+
+	managedWriterClient, err := managedwriter.NewClient(ctx, bqTableID.ProjectID())
+	if err != nil {
+		return fmt.Errorf("failed to create managedwriter client: %w", err)
+	}
+	defer managedWriterClient.Close()
+
+	managedStream, err := managedWriterClient.NewManagedStream(ctx,
+		managedwriter.WithDestinationTable(
+			managedwriter.TableParentFromParts(bqTableID.ProjectID(), bqTableID.Dataset(), bqTableID.Table()),
+		),
+		managedwriter.WithType(managedwriter.DefaultStream),
+		managedwriter.WithSchemaDescriptor(schemaDescriptor),
+		managedwriter.EnableWriteRetries(true),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create managed stream: %w", err)
+	}
+	defer managedStream.Close()
+
+	batch := NewBatch(tableData.Rows(), s.batchSize)
+	for batch.HasNext() {
+		chunk := batch.NextChunk()
+		encoded := make([][]byte, len(chunk))
+		for i, row := range chunk {
+			message, err := rowToMessage(row, columns, *messageDescriptor, s.AdditionalDateFormats())
+			if err != nil {
+				return fmt.Errorf("failed to convert row to message: %w", err)
+			}
+
+			bytes, err := proto.Marshal(message)
+			if err != nil {
+				return fmt.Errorf("failed to marshal message: %w", err)
+			}
+			encoded[i] = bytes
+		}
+
+		result, err := managedStream.AppendRows(ctx, encoded)
+		if err != nil {
+			return fmt.Errorf("failed to append rows: %w", err)
+		}
+
+		if resp, err := result.FullResponse(ctx); err != nil {
+			return fmt.Errorf("failed to get response (%s): %w", resp.GetError().String(), err)
+		}
+	}
+
+	return nil
 }
 
 func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
