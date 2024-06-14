@@ -192,7 +192,7 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 		managedwriter.EnableWriteRetries(true),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to create managed stream")
+		return fmt.Errorf("failed to create managed stream: %w", err)
 	}
 	defer managedStream.Close()
 
@@ -203,7 +203,7 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 		for i, row := range chunk {
 			message, err := rowToMessage(row, columns, *messageDescriptor, s.AdditionalDateFormats())
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to convert row to message: %w", err)
 			}
 
 			bytes, err := proto.Marshal(message)
