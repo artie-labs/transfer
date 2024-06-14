@@ -40,7 +40,7 @@ func columnToTableFieldSchema(column columns.Column) (*storagepb.TableFieldSchem
 		case ext.DateTimeKindType:
 			fieldType = storagepb.TableFieldSchema_TIMESTAMP
 		default:
-			return nil, fmt.Errorf("unsupported extended time details type: %s", column.KindDetails.ExtendedTimeDetails.Type)
+			return nil, fmt.Errorf("unsupported extended time details type: %q", column.KindDetails.ExtendedTimeDetails.Type)
 		}
 	case typing.Struct.Kind:
 		fieldType = storagepb.TableFieldSchema_STRING
@@ -48,7 +48,7 @@ func columnToTableFieldSchema(column columns.Column) (*storagepb.TableFieldSchem
 		fieldType = storagepb.TableFieldSchema_STRING
 		mode = storagepb.TableFieldSchema_REPEATED
 	default:
-		return nil, fmt.Errorf("unsupported column kind: %s", column.KindDetails.Kind)
+		return nil, fmt.Errorf("unsupported column kind: %q", column.KindDetails.Kind)
 	}
 
 	return &storagepb.TableFieldSchema{

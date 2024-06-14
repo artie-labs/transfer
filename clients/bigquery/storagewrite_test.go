@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/bigquery/storage/apiv1/storagepb"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -13,6 +14,76 @@ import (
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/encoding/protojson"
 )
+
+func TestColumnToTableFieldSchema(t *testing.T) {
+	{
+		// Boolean:
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.Boolean))
+		assert.NoError(t, err)
+		assert.Equal(t, "foo", fieldSchema.Name)
+		assert.Equal(t, storagepb.TableFieldSchema_NULLABLE, fieldSchema.Mode)
+		assert.Equal(t, storagepb.TableFieldSchema_BOOL, fieldSchema.Type)
+	}
+	{
+		// Integer:
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.Integer))
+		assert.NoError(t, err)
+		assert.Equal(t, storagepb.TableFieldSchema_INT64, fieldSchema.Type)
+	}
+	{
+		// Float:
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.Float))
+		assert.NoError(t, err)
+		assert.Equal(t, storagepb.TableFieldSchema_DOUBLE, fieldSchema.Type)
+	}
+	{
+		// EDecimal:
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.EDecimal))
+		assert.NoError(t, err)
+		assert.Equal(t, storagepb.TableFieldSchema_STRING, fieldSchema.Type)
+	}
+	{
+		// ETime - Time:
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)))
+		assert.NoError(t, err)
+		assert.Equal(t, storagepb.TableFieldSchema_TIME, fieldSchema.Type)
+	}
+	{
+		// ETime - Date:
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType)))
+		assert.NoError(t, err)
+		assert.Equal(t, storagepb.TableFieldSchema_DATE, fieldSchema.Type)
+	}
+	{
+		// ETime - DateTime:
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)))
+		assert.NoError(t, err)
+		assert.Equal(t, storagepb.TableFieldSchema_TIMESTAMP, fieldSchema.Type)
+	}
+	{
+		// ETime - Invalid:
+		_, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.NewKindDetailsFromTemplate(typing.ETime, "")))
+		assert.ErrorContains(t, err, "unsupported extended time details type:")
+	}
+	{
+		// Struct:
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.Struct))
+		assert.NoError(t, err)
+		assert.Equal(t, storagepb.TableFieldSchema_STRING, fieldSchema.Type)
+	}
+	{
+		// Array:
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.Array))
+		assert.NoError(t, err)
+		assert.Equal(t, storagepb.TableFieldSchema_STRING, fieldSchema.Type)
+		assert.Equal(t, storagepb.TableFieldSchema_REPEATED, fieldSchema.Mode)
+	}
+	{
+		// Invalid:
+		_, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.KindDetails{}))
+		assert.ErrorContains(t, err, "unsupported column kind: ")
+	}
+}
 
 func TestEncodePacked64TimeMicros(t *testing.T) {
 	epoch := time.Date(0, 0, 0, 0, 0, 0, 0, time.UTC)
