@@ -80,7 +80,8 @@ func columnsToMessageDescriptor(cols []columns.Column) (*protoreflect.MessageDes
 	return &messageDescriptor, nil
 }
 
-// From https://cloud.google.com/java/docs/reference/google-cloud-bigquerystorage/latest/com.google.cloud.bigquery.storage.v1.CivilTimeEncoder
+// This is a reimplementation of https://github.com/googleapis/java-bigquerystorage/blob/f79acb5cfdd12253bca1c41551c478400120d2f9/google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1/CivilTimeEncoder.java#L143
+// See https://cloud.google.com/java/docs/reference/google-cloud-bigquerystorage/latest/com.google.cloud.bigquery.storage.v1.CivilTimeEncoder
 // And https://cloud.google.com/pubsub/docs/bigquery#date_time_int
 func encodePacked64TimeMicros(value time.Time) int64 {
 	var result = int64(value.Nanosecond() / 1000)
