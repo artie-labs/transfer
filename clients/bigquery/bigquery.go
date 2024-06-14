@@ -187,7 +187,7 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 		managedwriter.WithDestinationTable(
 			managedwriter.TableParentFromParts(bqTableID.ProjectID(), bqTableID.Dataset(), bqTableID.Table()),
 		),
-		managedwriter.WithType(managedwriter.DefaultStream), // TODO: Look into using other stream types
+		managedwriter.WithType(managedwriter.DefaultStream),
 		managedwriter.WithSchemaDescriptor(schemaDescriptor),
 		managedwriter.EnableWriteRetries(true),
 	)
