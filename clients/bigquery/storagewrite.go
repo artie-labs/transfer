@@ -2,6 +2,7 @@ package bigquery
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"cloud.google.com/go/bigquery/storage/apiv1/storagepb"
@@ -132,8 +133,18 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				message.Set(field, protoreflect.ValueOfFloat64(float64(value)))
 			case float64:
 				message.Set(field, protoreflect.ValueOfFloat64(value))
+			case int32:
+				message.Set(field, protoreflect.ValueOfFloat64(float64(value)))
+			case int64:
+				message.Set(field, protoreflect.ValueOfFloat64(float64(value)))
+			case string:
+				floatValue, err := strconv.ParseFloat(value, 64)
+				if err != nil {
+					return nil, fmt.Errorf("failed to parse string to float64: %w", err)
+				}
+				message.Set(field, protoreflect.ValueOfFloat64(floatValue))
 			default:
-				return nil, fmt.Errorf("expected float32/float64 recieved %T with value %v", value, value)
+				return nil, fmt.Errorf("expected float32/float64/int32/int64/string recieved %T with value %v", value, value)
 			}
 		case typing.EDecimal.Kind:
 			if decimalValue, ok := value.(*decimal.Decimal); ok {
