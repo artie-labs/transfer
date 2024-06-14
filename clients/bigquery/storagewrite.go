@@ -172,7 +172,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				}
 				message.Set(field, protoreflect.ValueOfInt64(extTime.UnixMicro()))
 			default:
-				return nil, fmt.Errorf("unsupported extended time details: %s", column.KindDetails.ExtendedTimeDetails.Type)
+				return nil, fmt.Errorf("unsupported extended time details: %q", column.KindDetails.ExtendedTimeDetails.Type)
 			}
 		case typing.Struct.Kind:
 			stringValue, err := EncodeStructToJSONString(value)
@@ -193,7 +193,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				list.Append(protoreflect.ValueOf(value))
 			}
 		default:
-			return nil, fmt.Errorf("unsupported column kind: %s", column.KindDetails.Kind)
+			return nil, fmt.Errorf("unsupported column kind: %q", column.KindDetails.Kind)
 		}
 	}
 	return message, nil
