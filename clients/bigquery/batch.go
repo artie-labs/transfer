@@ -1,23 +1,23 @@
 package bigquery
 
-type Batch struct {
-	rows        []*Row
+type Batch[T any] struct {
+	rows        []T
 	chunkSize   int
 	iteratorIdx int
 }
 
-func NewBatch(rows []*Row, chunkSize int) *Batch {
-	return &Batch{
+func NewBatch[T any](rows []T, chunkSize int) *Batch[T] {
+	return &Batch[T]{
 		rows:      rows,
 		chunkSize: chunkSize,
 	}
 }
 
-func (b *Batch) HasNext() bool {
+func (b *Batch[T]) HasNext() bool {
 	return len(b.rows) > b.iteratorIdx
 }
 
-func (b *Batch) NextChunk() []*Row {
+func (b *Batch[T]) NextChunk() []T {
 	start := b.iteratorIdx
 	b.iteratorIdx += b.chunkSize
 	end := b.iteratorIdx
