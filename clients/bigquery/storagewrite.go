@@ -156,7 +156,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			}
 
 			if column.KindDetails.ExtendedTimeDetails == nil {
-				return nil, fmt.Errorf("extended time details for column kind details is null")
+				return nil, fmt.Errorf("extended time details for column kind details is nil")
 			}
 
 			switch column.KindDetails.ExtendedTimeDetails.Type {
