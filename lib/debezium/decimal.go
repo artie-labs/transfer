@@ -9,15 +9,22 @@ import (
 
 // EncodeDecimal is used to encode a string representation of a number to `org.apache.kafka.connect.data.Decimal`.
 func EncodeDecimal(value string, scale int) ([]byte, error) {
-	scaledValue := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
+	// TODO: Refactor scale to be uint16
+
 	bigFloatValue := new(big.Float)
 	if _, success := bigFloatValue.SetString(value); !success {
-		return nil, fmt.Errorf("unable to use '%s' as a floating-point number", value)
+		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
 	}
+
+	scaledValue := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
 	bigFloatValue.Mul(bigFloatValue, new(big.Float).SetInt(scaledValue))
 
 	// Extract the scaled integer value.
-	bigIntValue, _ := bigFloatValue.Int(nil)
+	bigIntValue := new(big.Int)
+	if _, success := bigIntValue.SetString(bigFloatValue.String(), 10); !success {
+		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
+	}
+
 	data := bigIntValue.Bytes()
 	if bigIntValue.Sign() < 0 {
 		// Convert to two's complement if the number is negative
