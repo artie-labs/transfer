@@ -33,7 +33,8 @@ const (
 	describeNameCol               = "column_name"
 	describeTypeCol               = "data_type"
 	describeCommentCol            = "description"
-	maxRequestByteSize            = 10_000_000 * .8 // Storage Write API is limited to 10 MB
+	// Storage Write API is limited to 10 MB, let's start out conservative and use 80% of that.
+	maxRequestByteSize = 10_000_000 * .8
 )
 
 type Store struct {
