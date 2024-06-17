@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"log/slog"
 	"maps"
 	"sync"
@@ -24,6 +25,12 @@ type DwhTableConfig struct {
 func NewDwhTableConfig(columns *columns.Columns, colsToDelete map[string]time.Time, createTable, dropDeletedColumns bool) *DwhTableConfig {
 	if len(colsToDelete) == 0 {
 		colsToDelete = make(map[string]time.Time)
+	}
+
+	if columns != nil {
+		for _, col := range columns.GetColumns() {
+			fmt.Println("colName", col.Name(), "colKind", col.KindDetails)
+		}
 	}
 
 	return &DwhTableConfig{

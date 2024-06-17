@@ -91,6 +91,7 @@ func buildLegacyRows(tableData *optimization.TableData, additionalDateFmts []str
 				return nil, fmt.Errorf("failed to cast col %q: %w", col.Name(), err)
 			}
 
+			fmt.Println("col.Name", col.Name(), "colKind", col.KindDetails, "colVal", colVal, fmt.Sprintf("colVal type: %T", colVal))
 			if colVal != nil {
 				data[col.Name()] = colVal
 			}

@@ -15,6 +15,8 @@ import (
 type Debezium string
 
 func (d *Debezium) GetEventFromBytes(_ typing.Settings, bytes []byte) (cdc.Event, error) {
+	fmt.Println("string", string(bytes))
+
 	var event util.SchemaEventPayload
 	if len(bytes) == 0 {
 		return nil, fmt.Errorf("empty message")
