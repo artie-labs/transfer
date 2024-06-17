@@ -2,7 +2,6 @@ package redshift
 
 import (
 	"fmt"
-	"strings"
 
 	_ "github.com/lib/pq"
 
@@ -17,7 +16,6 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
-	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
 type Store struct {
@@ -111,7 +109,7 @@ WHERE
 }
 
 func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
+	stagingTableID := shared.TempTableID(tableID)
 	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
 	return destination.ExecStatements(s, dedupeQueries)
 }

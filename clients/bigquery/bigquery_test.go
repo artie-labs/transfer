@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTempTableName(t *testing.T) {
+func TestTempTableIDWithSuffix(t *testing.T) {
 	trimTTL := func(tableName string) string {
 		lastUnderscore := strings.LastIndex(tableName, "_")
 		assert.GreaterOrEqual(t, lastUnderscore, 0)
@@ -26,6 +26,6 @@ func TestTempTableName(t *testing.T) {
 	store := &Store{config: config.Config{BigQuery: &config.BigQuery{ProjectID: "123454321"}}}
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "schema"}, "table")
 	tableID := store.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	tempTableName := shared.TempTableID(tableID, "sUfFiX").FullyQualifiedName()
+	tempTableName := shared.TempTableIDWithSuffix(tableID, "sUfFiX").FullyQualifiedName()
 	assert.Equal(t, "`123454321`.`db`.`table___artie_sUfFiX`", trimTTL(tempTableName))
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"strings"
 
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/bigquery/storage/managedwriter"
@@ -26,7 +25,6 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
-	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
 const (
@@ -181,7 +179,7 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 }
 
 func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
+	stagingTableID := shared.TempTableID(tableID)
 
 	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
 
