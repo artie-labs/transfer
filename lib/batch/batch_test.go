@@ -26,6 +26,14 @@ func TestBySize(t *testing.T) {
 		return batches, err
 	}
 
+	badYield := func(batch [][]byte) error {
+		out := make([]string, len(batch))
+		for i, bytes := range batch {
+			out[i] = string(bytes)
+		}
+		return fmt.Errorf("yield failed for %v", out)
+	}
+
 	{
 		// Empty slice:
 		batches, err := testBySize([]string{}, 10, panicEncoder)
@@ -39,18 +47,18 @@ func TestBySize(t *testing.T) {
 	}
 	{
 		// Non-empty slice + two items that are < maxSize + yield returns error.
-		err := BySize([]string{"foo", "bar"}, 10, goodEncoder, func(batch [][]byte) error { return fmt.Errorf("yield failed") })
-		assert.ErrorContains(t, err, "yield failed")
+		err := BySize([]string{"foo", "bar"}, 10, goodEncoder, badYield)
+		assert.ErrorContains(t, err, "yield failed for [foo bar]")
 	}
 	{
 		// Non-empty slice + two items that are = maxSize + yield returns error.
-		err := BySize([]string{"foo", "bar"}, 6, goodEncoder, func(batch [][]byte) error { return fmt.Errorf("yield failed") })
-		assert.ErrorContains(t, err, "yield failed")
+		err := BySize([]string{"foo", "bar"}, 6, goodEncoder, badYield)
+		assert.ErrorContains(t, err, "yield failed for [foo bar]")
 	}
 	{
 		// Non-empty slice + two items that are > maxSize + yield returns error.
-		err := BySize([]string{"foo", "bar-baz"}, 8, goodEncoder, func(batch [][]byte) error { return fmt.Errorf("yield failed") })
-		assert.ErrorContains(t, err, "yield failed")
+		err := BySize([]string{"foo", "bar-baz"}, 8, goodEncoder, badYield)
+		assert.ErrorContains(t, err, "yield failed for [foo]")
 	}
 	{
 		// Non-empty slice + item is larger than max size:
