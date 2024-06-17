@@ -24,17 +24,11 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
-const (
-	GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
-	describeNameCol               = "column_name"
-	describeTypeCol               = "data_type"
-	describeCommentCol            = "description"
-)
+const GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
 
 type Store struct {
 	configMap *types.DwhToTablesConfigMap
@@ -107,16 +101,15 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sq
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	query := fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name = ?;", tableData.TopicConfig().Database)
 	return shared.GetTableCfgArgs{
-		Dwh:                s,
-		TableID:            s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
-		ConfigMap:          s.configMap,
-		Query:              query,
-		Args:               []any{tableData.Name()},
-		ColumnNameLabel:    describeNameCol,
-		ColumnTypeLabel:    describeTypeCol,
-		ColumnDescLabel:    describeCommentCol,
-		EmptyCommentValue:  ptr.ToString(""),
-		DropDeletedColumns: tableData.TopicConfig().DropDeletedColumns,
+		Dwh:                   s,
+		TableID:               s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
+		ConfigMap:             s.configMap,
+		Query:                 query,
+		Args:                  []any{tableData.Name()},
+		ColumnNameForName:     "column_name",
+		ColumnNameForDataType: "data_type",
+		ColumnNameForComment:  "description",
+		DropDeletedColumns:    tableData.TopicConfig().DropDeletedColumns,
 	}.GetTableConfig()
 }
 
