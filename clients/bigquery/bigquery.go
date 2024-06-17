@@ -14,6 +14,7 @@ import (
 
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
+	"github.com/artie-labs/transfer/lib/batch"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
@@ -32,6 +33,7 @@ const (
 	describeNameCol               = "column_name"
 	describeTypeCol               = "data_type"
 	describeCommentCol            = "description"
+	maxRequestByteSize            = 10_000_000 * .9 // Storage Write API is limited to 10 MB
 )
 
 type Store struct {
@@ -148,24 +150,22 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 	}
 	defer managedStream.Close()
 
-	batch := NewBatch(tableData.Rows(), s.batchSize)
-	for batch.HasNext() {
-		chunk := batch.NextChunk()
-		encoded := make([][]byte, len(chunk))
-		for i, row := range chunk {
-			message, err := rowToMessage(row, columns, *messageDescriptor, s.AdditionalDateFormats())
-			if err != nil {
-				return fmt.Errorf("failed to convert row to message: %w", err)
-			}
-
-			bytes, err := proto.Marshal(message)
-			if err != nil {
-				return fmt.Errorf("failed to marshal message: %w", err)
-			}
-			encoded[i] = bytes
+	encoder := func(row map[string]any) ([]byte, error) {
+		message, err := rowToMessage(row, columns, *messageDescriptor, s.AdditionalDateFormats())
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert row to message: %w", err)
 		}
 
-		result, err := managedStream.AppendRows(ctx, encoded)
+		bytes, err := proto.Marshal(message)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal message: %w", err)
+		}
+
+		return bytes, nil
+	}
+
+	return batch.BySize(tableData.Rows(), maxRequestByteSize, encoder, func(chunk [][]byte) error {
+		result, err := managedStream.AppendRows(ctx, chunk)
 		if err != nil {
 			return fmt.Errorf("failed to append rows: %w", err)
 		}
@@ -173,9 +173,9 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 		if resp, err := result.FullResponse(ctx); err != nil {
 			return fmt.Errorf("failed to get response (%s): %w", resp.GetError().String(), err)
 		}
-	}
 
-	return nil
+		return nil
+	})
 }
 
 func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
