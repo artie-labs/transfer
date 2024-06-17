@@ -316,7 +316,7 @@ func (s *SnowflakeTestSuite) TestStore_AdditionalEqualityStrings() {
 	}
 }
 
-func TestTempTableName(t *testing.T) {
+func TestTempTableIDWithSuffix(t *testing.T) {
 	trimTTL := func(tableName string) string {
 		lastUnderscore := strings.LastIndex(tableName, "_")
 		assert.GreaterOrEqual(t, lastUnderscore, 0)
@@ -328,6 +328,6 @@ func TestTempTableName(t *testing.T) {
 
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "schema"}, "table")
 	tableID := (&Store{}).IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	tempTableName := shared.TempTableID(tableID, "sUfFiX").FullyQualifiedName()
+	tempTableName := shared.TempTableIDWithSuffix(tableID, "sUfFiX").FullyQualifiedName()
 	assert.Equal(t, `db.schema."TABLE___ARTIE_SUFFIX"`, trimTTL(tempTableName))
 }
