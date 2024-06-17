@@ -9,6 +9,8 @@ import (
 
 // EncodeDecimal is used to encode a string representation of a number to `org.apache.kafka.connect.data.Decimal`.
 func EncodeDecimal(value string, scale int) ([]byte, error) {
+	// TODO: Refactor scale to be uint16
+
 	bigFloatValue := new(big.Float)
 	if _, success := bigFloatValue.SetString(value); !success {
 		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
