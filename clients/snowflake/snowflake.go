@@ -2,7 +2,6 @@ package snowflake
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/snowflakedb/gosnowflake"
 
@@ -17,7 +16,6 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
-	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
 const maxRetries = 10
@@ -131,7 +129,7 @@ func (s *Store) reestablishConnection() error {
 // Dedupe takes a table and will remove duplicates based on the primary key(s).
 // These queries are inspired and modified from: https://stackoverflow.com/a/71515946
 func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
+	stagingTableID := shared.TempTableID(tableID)
 	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
 	return destination.ExecStatements(s, dedupeQueries)
 }
