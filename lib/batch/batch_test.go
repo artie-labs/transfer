@@ -28,7 +28,7 @@ func TestBySize(t *testing.T) {
 
 	{
 		// Empty slice:
-		batches, err := testBySize([]string{}, 0, panicEncoder)
+		batches, err := testBySize([]string{}, 10, panicEncoder)
 		assert.NoError(t, err)
 		assert.Empty(t, batches)
 	}
