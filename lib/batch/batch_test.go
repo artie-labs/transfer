@@ -21,9 +21,9 @@ func TestBySize(t *testing.T) {
 	}
 
 	testBySize := func(in []string, maxSize int, encoder func(value string) ([]byte, error)) ([][][]byte, error) {
-		out := [][][]byte{}
-		err := BySize(in, maxSize, encoder, func(batch [][]byte) error { out = append(out, batch); return nil })
-		return out, err
+		batches := [][][]byte{}
+		err := BySize(in, maxSize, encoder, func(batch [][]byte) error { batches = append(batches, batch); return nil })
+		return batches, err
 	}
 
 	{
