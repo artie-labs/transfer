@@ -316,7 +316,7 @@ func (s *SnowflakeTestSuite) TestStore_AdditionalEqualityStrings() {
 	}
 }
 
-func TempTableIDWithSuffix(t *testing.T) {
+func TestTempTableIDWithSuffix(t *testing.T) {
 	trimTTL := func(tableName string) string {
 		lastUnderscore := strings.LastIndex(tableName, "_")
 		assert.GreaterOrEqual(t, lastUnderscore, 0)
