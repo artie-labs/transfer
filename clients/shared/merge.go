@@ -111,10 +111,9 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 		}
 	}
 
-	temporaryTableName := temporaryTableID.FullyQualifiedName()
-	subQuery := temporaryTableName
+	subQuery := temporaryTableID.FullyQualifiedName()
 	if opts.SubQueryDedupe {
-		subQuery = fmt.Sprintf(`( SELECT DISTINCT * FROM %s )`, temporaryTableName)
+		subQuery = dwh.Dialect().BuildDedupeTableQuery(temporaryTableID, tableData.PrimaryKeys())
 	}
 
 	if subQuery == "" {

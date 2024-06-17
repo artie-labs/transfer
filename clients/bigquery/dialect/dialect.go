@@ -123,7 +123,7 @@ func (BigQueryDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return strings.Contains(err.Error(), "Column already exists")
 }
 
-func (BigQueryDialect) IsTableDoesNotExistErr(err error) bool {
+func (BigQueryDialect) IsTableDoesNotExistErr(_ error) bool {
 	return false
 }
 
@@ -152,6 +152,15 @@ func (bd BigQueryDialect) BuildIsNotToastValueExpression(tableAlias constants.Ta
 			colName, constants.ToastUnavailableValuePlaceholder)
 	}
 	return fmt.Sprintf("COALESCE(%s != '%s', true)", colName, constants.ToastUnavailableValuePlaceholder)
+}
+
+func (bd BigQueryDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
+	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, bd)
+	return fmt.Sprintf(`(SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 1)`,
+		tableID.FullyQualifiedName(),
+		strings.Join(primaryKeysEscaped, ", "),
+		strings.Join(primaryKeysEscaped, ", "),
+	)
 }
 
 func (bd BigQueryDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {

@@ -153,6 +153,10 @@ func (sd SnowflakeDialect) BuildIsNotToastValueExpression(tableAlias constants.T
 	return fmt.Sprintf("COALESCE(%s != '%s', true)", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
+func (SnowflakeDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
+	panic("not implemented")
+}
+
 func (sd SnowflakeDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, sd)
 

@@ -135,6 +135,10 @@ func (rd RedshiftDialect) BuildIsNotToastValueExpression(tableAlias constants.Ta
 	return fmt.Sprintf("COALESCE(%s != '%s', true)", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
+func (rd RedshiftDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, _ []string) string {
+	return fmt.Sprintf(`( SELECT DISTINCT * FROM %s )`, tableID.FullyQualifiedName())
+}
+
 func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, rd)
 
