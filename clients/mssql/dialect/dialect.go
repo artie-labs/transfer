@@ -169,7 +169,7 @@ func (md MSSQLDialect) BuildIsNotToastValueExpression(tableAlias constants.Table
 	return fmt.Sprintf("COALESCE(%s, '') != '%s'", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
-func (MSSQLDialect) GetDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
+func (MSSQLDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
 	panic("not implemented")
 }
 

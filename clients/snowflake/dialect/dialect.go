@@ -153,7 +153,7 @@ func (sd SnowflakeDialect) BuildIsNotToastValueExpression(tableAlias constants.T
 	return fmt.Sprintf("COALESCE(%s != '%s', true)", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
-func (SnowflakeDialect) GetDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
+func (SnowflakeDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
 	panic("not implemented")
 }
 

@@ -113,7 +113,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 
 	subQuery := temporaryTableID.FullyQualifiedName()
 	if opts.SubQueryDedupe {
-		subQuery = dwh.Dialect().GetDedupeTableQuery(temporaryTableID, tableData.PrimaryKeys())
+		subQuery = dwh.Dialect().BuildDedupeTableQuery(temporaryTableID, tableData.PrimaryKeys())
 	}
 
 	if subQuery == "" {

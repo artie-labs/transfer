@@ -154,7 +154,7 @@ func (bd BigQueryDialect) BuildIsNotToastValueExpression(tableAlias constants.Ta
 	return fmt.Sprintf("COALESCE(%s != '%s', true)", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
-func (bd BigQueryDialect) GetDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
+func (bd BigQueryDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, bd)
 	return fmt.Sprintf(`(SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 1)`,
 		tableID.FullyQualifiedName(),
