@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -157,11 +156,11 @@ func (SnowflakeDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, prima
 	panic("not implemented")
 }
 
-func (sd SnowflakeDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
+func (sd SnowflakeDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, sd)
 
 	orderColsToIterate := primaryKeysEscaped
-	if topicConfig.IncludeArtieUpdatedAt {
+	if includeArtieUpdatedAt {
 		orderColsToIterate = append(orderColsToIterate, sd.QuoteIdentifier(constants.UpdateColumnMarker))
 	}
 

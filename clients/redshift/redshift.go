@@ -110,9 +110,9 @@ WHERE
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
+func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
 	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
-	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, topicConfig)
+	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
 	return destination.ExecStatements(s, dedupeQueries)
 }
 

@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -173,7 +172,7 @@ func (MSSQLDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKe
 	panic("not implemented")
 }
 
-func (MSSQLDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
+func (MSSQLDialect) BuildDedupeQueries(_, _ sql.TableIdentifier, _ []string, _ bool) []string {
 	panic("not implemented") // We don't currently support deduping for MS SQL.
 }
 

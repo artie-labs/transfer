@@ -11,7 +11,6 @@ import (
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
@@ -21,7 +20,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 		tableID := NewTableIdentifier("project12", "public", "customers")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := dialect.BigQueryDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{})
+		parts := dialect.BigQueryDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, false)
 		assert.Len(t, parts, 3)
 		assert.Equal(
 			t,
@@ -39,7 +38,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 		tableID := NewTableIdentifier("project12", "public", "customers")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := dialect.BigQueryDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
+		parts := dialect.BigQueryDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, true)
 		assert.Len(t, parts, 3)
 		assert.Equal(
 			t,
@@ -57,7 +56,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 		tableID := NewTableIdentifier("project123", "public", "user_settings")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := dialect.BigQueryDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{})
+		parts := dialect.BigQueryDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, false)
 		assert.Len(t, parts, 3)
 		assert.Equal(
 			t,
@@ -75,7 +74,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 		tableID := NewTableIdentifier("project123", "public", "user_settings")
 		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
 
-		parts := dialect.BigQueryDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
+		parts := dialect.BigQueryDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, true)
 		assert.Len(t, parts, 3)
 		assert.Equal(
 			t,
