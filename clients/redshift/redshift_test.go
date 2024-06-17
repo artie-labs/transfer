@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTempTableName(t *testing.T) {
+func TempTableIDWithSuffix(t *testing.T) {
 	trimTTL := func(tableName string) string {
 		lastUnderscore := strings.LastIndex(tableName, "_")
 		assert.GreaterOrEqual(t, lastUnderscore, 0)
