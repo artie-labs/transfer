@@ -2,6 +2,7 @@ package debezium
 
 import (
 	"fmt"
+	"math"
 	"math/big"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -9,12 +10,13 @@ import (
 
 // EncodeDecimal is used to encode a string representation of a number to `org.apache.kafka.connect.data.Decimal`.
 func EncodeDecimal(value string, scale int) ([]byte, error) {
-	scaledValue := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
 	bigFloatValue := new(big.Float)
 	if _, success := bigFloatValue.SetString(value); !success {
 		return nil, fmt.Errorf("unable to use '%s' as a floating-point number", value)
 	}
-	bigFloatValue.Mul(bigFloatValue, new(big.Float).SetInt(scaledValue))
+
+	scaledValue := big.NewFloat(math.Pow(10, float64(scale)))
+	bigFloatValue.Mul(bigFloatValue, scaledValue)
 
 	// Extract the scaled integer value.
 	bigIntValue, _ := bigFloatValue.Int(nil)
