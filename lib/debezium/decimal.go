@@ -2,7 +2,6 @@ package debezium
 
 import (
 	"fmt"
-	"math"
 	"math/big"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -15,8 +14,8 @@ func EncodeDecimal(value string, scale int) ([]byte, error) {
 		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
 	}
 
-	scaledValue := big.NewFloat(math.Pow(10, float64(scale)))
-	bigFloatValue.Mul(bigFloatValue, scaledValue)
+	scaledValue := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
+	bigFloatValue.Mul(bigFloatValue, new(big.Float).SetInt(scaledValue))
 
 	// Extract the scaled integer value.
 	bigIntValue := new(big.Int)
