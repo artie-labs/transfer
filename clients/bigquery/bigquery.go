@@ -34,7 +34,6 @@ const (
 	describeNameCol               = "column_name"
 	describeTypeCol               = "data_type"
 	describeCommentCol            = "description"
-	useStorageWriteAPI            = true
 )
 
 type Store struct {
@@ -72,33 +71,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	}
 
 	// Load the data
-	if useStorageWriteAPI {
-		return s.putTableViaStorageWriteAPI(context.Background(), bqTempTableID, tableData)
-	} else {
-		return s.putTableViaLegacyAPI(context.Background(), bqTempTableID, tableData)
-	}
-}
-
-func buildLegacyRows(tableData *optimization.TableData, additionalDateFmts []string) ([]*Row, error) {
-	// Cast the data into BigQuery values
-	var rows []*Row
-	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
-	for _, value := range tableData.Rows() {
-		data := make(map[string]bigquery.Value)
-		for _, col := range columns {
-			colVal, err := castColVal(value[col.Name()], col, additionalDateFmts)
-			if err != nil {
-				return nil, fmt.Errorf("failed to cast col %q: %w", col.Name(), err)
-			}
-
-			if colVal != nil {
-				data[col.Name()] = colVal
-			}
-		}
-
-		rows = append(rows, NewRow(data))
-	}
-	return rows, nil
+	return s.putTableViaStorageWriteAPI(context.Background(), bqTempTableID, tableData)
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
@@ -144,26 +117,6 @@ func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 	}
 
 	return client
-}
-
-func (s *Store) putTableViaLegacyAPI(ctx context.Context, tableID TableIdentifier, tableData *optimization.TableData) error {
-	rows, err := buildLegacyRows(tableData, s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats)
-	if err != nil {
-		return err
-	}
-
-	client := s.GetClient(ctx)
-	defer client.Close()
-
-	batch := NewBatch(rows, s.batchSize)
-	inserter := client.Dataset(tableID.Dataset()).Table(tableID.Table()).Inserter()
-	for batch.HasNext() {
-		if err := inserter.Put(ctx, batch.NextChunk()); err != nil {
-			return fmt.Errorf("failed to insert rows: %w", err)
-		}
-	}
-
-	return nil
 }
 
 func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableIdentifier, tableData *optimization.TableData) error {
