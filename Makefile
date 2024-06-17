@@ -10,7 +10,7 @@ static:
 
 .PHONY: test
 test:
-	go test ./...
+	go test -cover ./...
 
 .PHONY: race
 race:
