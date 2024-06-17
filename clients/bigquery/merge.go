@@ -51,7 +51,8 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 		AdditionalEqualityStrings: additionalEqualityStrings,
 		// BigQuery has DDL quotas.
 		RetryColBackfill: true,
-		SubQueryDedupe:   true,
+		// We are using BigQuery's streaming API which doesn't guarantee exactly once semantics
+		SubQueryDedupe: true,
 	})
 }
 
