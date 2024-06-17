@@ -2,8 +2,8 @@ package batch
 
 import "fmt"
 
-// BatchBySize takes a slice of elements, encodes them, groups batches of bytes that sum to at most [maxSize], and then p
-// passes each of those batches to the [yield] function.
+// BySize takes a series of elements, encodes them, groups them into batches of bytes that sum to at most [maxSize], and
+// then passes each of those batches to the [yield] function.
 func BySize[T any](in []T, maxSize int, encode func(T) ([]byte, error), yield func([][]byte) error) error {
 	var buffer [][]byte
 	var currentSize int
