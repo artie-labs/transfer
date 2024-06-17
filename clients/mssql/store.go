@@ -70,7 +70,7 @@ func (s *Store) Sweep() error {
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func (s *Store) Dedupe(_ sql.TableIdentifier, _ []string, _ kafkalib.TopicConfig) error {
+func (s *Store) Dedupe(_ sql.TableIdentifier, _ []string, _ bool) error {
 	return nil // dedupe is not necessary for MS SQL
 }
 

@@ -15,7 +15,7 @@ type DataWarehouse interface {
 	Dialect() sqllib.Dialect
 	Merge(tableData *optimization.TableData) error
 	Append(tableData *optimization.TableData) error
-	Dedupe(tableID sqllib.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error
+	Dedupe(tableID sqllib.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error
 	Exec(query string, args ...any) (sql.Result, error)
 	Query(query string, args ...any) (*sql.Rows, error)
 	Begin() (*sql.Tx, error)
