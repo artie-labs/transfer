@@ -19,7 +19,11 @@ func EncodeDecimal(value string, scale int) ([]byte, error) {
 	bigFloatValue.Mul(bigFloatValue, scaledValue)
 
 	// Extract the scaled integer value.
-	bigIntValue, _ := bigFloatValue.Int(nil)
+	bigIntValue := new(big.Int)
+	if _, success := bigIntValue.SetString(bigFloatValue.String(), 10); !success {
+		return nil, fmt.Errorf("unable to use '%s' as a floating-point number", value)
+	}
+
 	data := bigIntValue.Bytes()
 	if bigIntValue.Sign() < 0 {
 		// Convert to two's complement if the number is negative
