@@ -20,9 +20,9 @@ func TestBySize(t *testing.T) {
 		return nil, fmt.Errorf("failed to encode %q", value)
 	}
 
-	testBySize := func(in []string, maxSize int, encoder func(value string) ([]byte, error)) ([][][]byte, error) {
+	testBySize := func(in []string, maxSizeBytes int, encoder func(value string) ([]byte, error)) ([][][]byte, error) {
 		batches := [][][]byte{}
-		err := BySize(in, maxSize, encoder, func(batch [][]byte) error { batches = append(batches, batch); return nil })
+		err := BySize(in, maxSizeBytes, encoder, func(batch [][]byte) error { batches = append(batches, batch); return nil })
 		return batches, err
 	}
 
@@ -46,27 +46,27 @@ func TestBySize(t *testing.T) {
 		assert.ErrorContains(t, err, `failed to encode item 0: failed to encode "foo"`)
 	}
 	{
-		// Non-empty slice + two items that are < maxSize + yield returns error.
+		// Non-empty slice + two items that are < maxSizeBytes + yield returns error.
 		err := BySize([]string{"foo", "bar"}, 10, goodEncoder, badYield)
 		assert.ErrorContains(t, err, "yield failed for [foo bar]")
 	}
 	{
-		// Non-empty slice + two items that are = maxSize + yield returns error.
+		// Non-empty slice + two items that are = maxSizeBytes + yield returns error.
 		err := BySize([]string{"foo", "bar"}, 6, goodEncoder, badYield)
 		assert.ErrorContains(t, err, "yield failed for [foo bar]")
 	}
 	{
-		// Non-empty slice + two items that are > maxSize + yield returns error.
+		// Non-empty slice + two items that are > maxSizeBytes + yield returns error.
 		err := BySize([]string{"foo", "bar-baz"}, 8, goodEncoder, badYield)
 		assert.ErrorContains(t, err, "yield failed for [foo]")
 	}
 	{
-		// Non-empty slice + item is larger than max size:
+		// Non-empty slice + item is larger than maxSizeBytes:
 		_, err := testBySize([]string{"foo", "i-am-23-characters-long", "bar"}, 20, goodEncoder)
-		assert.ErrorContains(t, err, "item 1 is larger (23 bytes) than max size (20 bytes)")
+		assert.ErrorContains(t, err, "item 1 is larger (23 bytes) than maxSizeBytes (20 bytes)")
 	}
 	{
-		// Non-empty slice + item equal to max size:
+		// Non-empty slice + item equal to maxSizeBytes:
 		batches, err := testBySize([]string{"foo", "i-am-23-characters-long", "bar"}, 23, goodEncoder)
 		assert.NoError(t, err)
 		assert.Len(t, batches, 3)

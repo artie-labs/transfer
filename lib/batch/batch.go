@@ -2,11 +2,11 @@ package batch
 
 import "fmt"
 
-// BySize takes a series of elements, encodes them, groups them into batches of bytes that sum to at most [maxSize], and
-// then passes each of those batches to the [yield] function.
-func BySize[T any](in []T, maxSize int, encode func(T) ([]byte, error), yield func([][]byte) error) error {
+// BySize takes a series of elements, encodes them, groups them into batches of bytes that sum to at most [maxSizeBytes],
+// and then passes each of those batches to the [yield] function.
+func BySize[T any](in []T, maxSizeBytes int, encode func(T) ([]byte, error), yield func([][]byte) error) error {
 	var buffer [][]byte
-	var currentSize int
+	var currentSizeBytes int
 
 	for i, item := range in {
 		bytes, err := encode(item)
@@ -14,27 +14,27 @@ func BySize[T any](in []T, maxSize int, encode func(T) ([]byte, error), yield fu
 			return fmt.Errorf("failed to encode item %d: %w", i, err)
 		}
 
-		if len(bytes) > maxSize {
-			return fmt.Errorf("item %d is larger (%d bytes) than max size (%d bytes)", i, len(bytes), maxSize)
+		if len(bytes) > maxSizeBytes {
+			return fmt.Errorf("item %d is larger (%d bytes) than maxSizeBytes (%d bytes)", i, len(bytes), maxSizeBytes)
 		}
 
-		currentSize += len(bytes)
+		currentSizeBytes += len(bytes)
 
-		if currentSize < maxSize {
+		if currentSizeBytes < maxSizeBytes {
 			buffer = append(buffer, bytes)
-		} else if currentSize == maxSize {
+		} else if currentSizeBytes == maxSizeBytes {
 			buffer = append(buffer, bytes)
 			if err := yield(buffer); err != nil {
 				return err
 			}
 			buffer = [][]byte{}
-			currentSize = 0
+			currentSizeBytes = 0
 		} else {
 			if err := yield(buffer); err != nil {
 				return err
 			}
 			buffer = [][]byte{bytes}
-			currentSize = len(bytes)
+			currentSizeBytes = len(bytes)
 		}
 	}
 
