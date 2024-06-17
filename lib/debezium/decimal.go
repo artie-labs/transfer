@@ -12,7 +12,7 @@ import (
 func EncodeDecimal(value string, scale int) ([]byte, error) {
 	bigFloatValue := new(big.Float)
 	if _, success := bigFloatValue.SetString(value); !success {
-		return nil, fmt.Errorf("unable to use '%s' as a floating-point number", value)
+		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
 	}
 
 	scaledValue := big.NewFloat(math.Pow(10, float64(scale)))
@@ -21,7 +21,7 @@ func EncodeDecimal(value string, scale int) ([]byte, error) {
 	// Extract the scaled integer value.
 	bigIntValue := new(big.Int)
 	if _, success := bigIntValue.SetString(bigFloatValue.String(), 10); !success {
-		return nil, fmt.Errorf("unable to use '%s' as a floating-point number", value)
+		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
 	}
 
 	data := bigIntValue.Bytes()
