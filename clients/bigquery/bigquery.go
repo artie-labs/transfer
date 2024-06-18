@@ -68,14 +68,14 @@ func (s *Store) Append(tableData *optimization.TableData, useTempTable bool) err
 		return fmt.Errorf("failed to append: %w", err)
 	}
 
-	if _, err = s.Exec(
-		fmt.Sprintf(`INSERT INTO %s SELECT %s FROM %s`,
-			tableID.FullyQualifiedName(),
-			strings.Join(sql.QuoteIdentifiers(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(), s.Dialect()), ","),
-			temporaryTableID.FullyQualifiedName(),
-		),
-	); err != nil {
-		return fmt.Errorf("failed to insert data into target table: %w", err)
+	query := fmt.Sprintf(`INSERT INTO %s SELECT %s FROM %s`,
+		tableID.FullyQualifiedName(),
+		strings.Join(sql.QuoteIdentifiers(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(), s.Dialect()), ","),
+		temporaryTableID.FullyQualifiedName(),
+	)
+
+	if _, err = s.Exec(query); err != nil {
+		return fmt.Errorf("failed to insert data into target table: %w, query: %q", err, query)
 	}
 
 	return nil
