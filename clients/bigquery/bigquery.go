@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"os"
 
+	"cloud.google.com/go/bigquery/storage/apiv1/storagepb"
+
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/bigquery/storage/managedwriter"
 	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
@@ -173,6 +175,24 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 		if resp, err := result.FullResponse(ctx); err != nil {
 			return fmt.Errorf("failed to get response (%s): %w", resp.GetError().String(), err)
 		}
+	}
+
+	if _, err = managedStream.Finalize(ctx); err != nil {
+		return fmt.Errorf("error during Finalize: %w", err)
+	}
+
+	req := &storagepb.BatchCommitWriteStreamsRequest{
+		Parent:       managedwriter.TableParentFromStreamName(managedStream.StreamName()),
+		WriteStreams: []string{managedStream.StreamName()},
+	}
+
+	resp, err := managedWriterClient.BatchCommitWriteStreams(ctx, req)
+	if err != nil {
+		return fmt.Errorf("failed to commit write streams: %w", err)
+	}
+
+	if len(resp.GetStreamErrors()) > 0 {
+		return fmt.Errorf("stream errors present: %v", resp.GetStreamErrors())
 	}
 
 	return nil
