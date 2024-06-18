@@ -95,7 +95,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	// COPY the CSV file (in Snowflake) into a table
 	copyCommand := fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
 		tempTableID.FullyQualifiedName(),
-		strings.Join(sql.QuoteIdentifiers(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(), s.Dialect()), ","),
+		strings.Join(sql.QuoteColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), s.Dialect()), ","),
 		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableID, "%"))
 
 	if additionalSettings.AdditionalCopyClause != "" {

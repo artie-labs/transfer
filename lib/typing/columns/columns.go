@@ -177,13 +177,6 @@ func (c *Columns) GetColumn(name string) (Column, bool) {
 	return Column{}, false
 }
 
-// GetColumnsToUpdate will filter all the `Invalid` columns so that we do not update it.
-// This is used mostly for the SQL MERGE queries.
-// TODO: Replace all uses of [GetColumnsToUpdate] with [ValidColumns]
-func (c *Columns) GetColumnsToUpdate() []string {
-	return ColumnNames(c.ValidColumns())
-}
-
 // ValidColumns will filter all the `Invalid` columns so that we do not update them.
 // This is used mostly for the SQL MERGE queries.
 func (c *Columns) ValidColumns() []Column {
