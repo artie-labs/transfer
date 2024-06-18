@@ -42,4 +42,8 @@ type MergeOpts struct {
 
 type AdditionalSettings struct {
 	AdditionalCopyClause string
+
+	// These settings are used for the `Append` method.
+	UseTempTable bool
+	TempTableID  sql.TableIdentifier
 }

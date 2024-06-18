@@ -43,7 +43,7 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 	return shared.Merge(s, tableData, types.MergeOpts{})
 }
 
-func (s *Store) Append(tableData *optimization.TableData) error {
+func (s *Store) Append(tableData *optimization.TableData, _ bool) error {
 	return shared.Append(s, tableData, types.AdditionalSettings{})
 }
 

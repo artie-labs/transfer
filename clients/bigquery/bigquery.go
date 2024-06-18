@@ -45,8 +45,35 @@ type Store struct {
 	db.Store
 }
 
-func (s *Store) Append(tableData *optimization.TableData) error {
-	return shared.Append(s, tableData, types.AdditionalSettings{})
+func (s *Store) Append(tableData *optimization.TableData, useTempTable bool) error {
+	if !useTempTable {
+		return shared.Append(s, tableData, types.AdditionalSettings{})
+	}
+
+	// We can simplify this once Google has fully rolled out the ability to execute DML on recently streamed data
+	// See: https://cloud.google.com/bigquery/docs/write-api#use_data_manipulation_language_dml_with_recently_streamed_data
+	// For now, we'll need to append this to a temporary table and then append temporary table onto the target table
+	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	temporaryTableID := shared.TempTableID(tableID)
+
+	defer func() { _ = ddl.DropTemporaryTable(s, temporaryTableID, false) }()
+
+	err := shared.Append(s, tableData, types.AdditionalSettings{
+		UseTempTable: true,
+		TempTableID:  temporaryTableID,
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to append: %w", err)
+	}
+
+	if _, err = s.Exec(
+		fmt.Sprintf(`INSERT INTO %s SELECT * FROM %s`, tableID.FullyQualifiedName(), temporaryTableID.FullyQualifiedName()),
+	); err != nil {
+		return fmt.Errorf("failed to insert data into target table: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
