@@ -202,11 +202,11 @@ USING %s AS %s ON %s`,
 	if softDelete {
 		return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED %sTHEN UPDATE SET %s
-WHEN NOT MATCHED AND COALESCE(%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
+WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
 			// WHEN MATCHED %sTHEN UPDATE SET %s
 			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
-			// WHEN NOT MATCHED AND COALESCE(%s, 0) = 0 THEN INSERT (%s)
-			sql.QuotedDeleteColumnMarker(constants.StagingAlias, md), strings.Join(sql.QuoteColumns(cols, md), ","),
+			// WHEN NOT MATCHED THEN INSERT (%s)
+			strings.Join(sql.QuoteColumns(cols, md), ","),
 			// VALUES (%s);
 			strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, md), ","),
 		)}, nil
