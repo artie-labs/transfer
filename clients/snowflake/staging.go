@@ -121,11 +121,11 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 	writer.Comma = '\t'
 
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
+	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	for _, value := range tableData.Rows() {
 		var row []string
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate() {
-			column, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
-			castedValue, castErr := castColValStaging(value[col], column, additionalDateFmts)
+		for _, col := range columns {
+			castedValue, castErr := castColValStaging(value[col.Name()], col, additionalDateFmts)
 			if castErr != nil {
 				return "", castErr
 			}

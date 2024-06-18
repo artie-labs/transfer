@@ -106,20 +106,16 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	pw.CompressionType = parquet.CompressionCodec_GZIP
+	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	for _, val := range tableData.Rows() {
 		row := make(map[string]any)
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate() {
-			colKind, isOk := tableData.ReadOnlyInMemoryCols().GetColumn(col)
-			if !isOk {
-				return fmt.Errorf("expected column: %v to exist in readOnlyInMemoryCols(...) but it does not", col)
-			}
-
-			value, err := parquetutil.ParseValue(val[col], colKind, additionalDateFmts)
+		for _, col := range columns {
+			value, err := parquetutil.ParseValue(val[col.Name()], col, additionalDateFmts)
 			if err != nil {
-				return fmt.Errorf("failed to parse value, err: %w, value: %v, column: %v", err, val[col], col)
+				return fmt.Errorf("failed to parse value, err: %w, value: %v, column: %q", err, val[col.Name()], col.Name())
 			}
 
-			row[col] = value
+			row[col.Name()] = value
 		}
 
 		rowBytes, err := json.Marshal(row)

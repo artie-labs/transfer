@@ -91,11 +91,11 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 	writer.Comma = '\t'
 
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
+	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	for _, value := range tableData.Rows() {
 		var row []string
-		for _, col := range tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate() {
-			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
-			castedValue, castErr := s.CastColValStaging(value[col], colKind, additionalDateFmts)
+		for _, col := range columns {
+			castedValue, castErr := s.CastColValStaging(value[col.Name()], col, additionalDateFmts)
 			if castErr != nil {
 				return "", castErr
 			}
