@@ -61,10 +61,15 @@ func (s *Store) Append(tableData *optimization.TableData, useTempTable bool) err
 		return fmt.Errorf("failed to append: %w", err)
 	}
 
-	_, err = s.Exec(
+	defer func() { _ = ddl.DropTemporaryTable(s, temporaryTableID, false) }()
+
+	if _, err = s.Exec(
 		fmt.Sprintf(`INSERT INTO %s SELECT * FROM %s`, tableID.FullyQualifiedName(), temporaryTableID.FullyQualifiedName()),
-	)
-	return err
+	); err != nil {
+		return fmt.Errorf("failed to insert data into target table: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
