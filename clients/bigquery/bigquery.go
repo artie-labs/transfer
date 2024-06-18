@@ -76,7 +76,7 @@ func (s *Store) Append(tableData *optimization.TableData, useTempTable bool) err
 	)
 
 	if _, err = s.Exec(query); err != nil {
-		return fmt.Errorf("failed to insert data into target table: %w, query: %q", err, query)
+		return fmt.Errorf("failed to insert data into target table: %w", err)
 	}
 
 	return nil
