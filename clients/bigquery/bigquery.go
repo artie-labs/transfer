@@ -148,8 +148,8 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 	if err != nil {
 		return fmt.Errorf("failed to create managed stream: %w", err)
 	}
-	defer managedStream.Close()
 
+	defer managedStream.Close()
 	batch := NewBatch(tableData.Rows(), s.batchSize)
 	for batch.HasNext() {
 		chunk := batch.NextChunk()
@@ -175,10 +175,6 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 		if resp, err := result.FullResponse(ctx); err != nil {
 			return fmt.Errorf("failed to get response (%s): %w", resp.GetError().String(), err)
 		}
-	}
-
-	if _, err = managedStream.Finalize(ctx); err != nil {
-		return fmt.Errorf("error during Finalize: %w", err)
 	}
 
 	req := &storagepb.BatchCommitWriteStreamsRequest{
