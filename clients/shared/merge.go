@@ -159,8 +159,6 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 		return fmt.Errorf("failed to generate merge statements: %w", err)
 	}
 
-	fmt.Println("mergeStatements", mergeStatements)
-
 	if err = destination.ExecStatements(dwh, mergeStatements); err != nil {
 		return fmt.Errorf("failed to execute merge statements: %w", err)
 	}
