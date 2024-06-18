@@ -376,7 +376,7 @@ func TestRemoveDeleteColumnMarker(t *testing.T) {
 }
 
 func TestColumnNames(t *testing.T) {
-	assert.Equal(t, []string{}, ColumnNames(nil))
+	assert.Empty(t, ColumnNames(nil))
 
 	cols := []Column{
 		NewColumn("a", typing.Invalid),
