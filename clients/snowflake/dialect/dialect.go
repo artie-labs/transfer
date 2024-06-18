@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -153,11 +152,15 @@ func (sd SnowflakeDialect) BuildIsNotToastValueExpression(tableAlias constants.T
 	return fmt.Sprintf("COALESCE(%s != '%s', true)", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
-func (sd SnowflakeDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
+func (SnowflakeDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
+	panic("not implemented")
+}
+
+func (sd SnowflakeDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, sd)
 
 	orderColsToIterate := primaryKeysEscaped
-	if topicConfig.IncludeArtieUpdatedAt {
+	if includeArtieUpdatedAt {
 		orderColsToIterate = append(orderColsToIterate, sd.QuoteIdentifier(constants.UpdateColumnMarker))
 	}
 
@@ -225,11 +228,11 @@ MERGE INTO %s %s USING ( %s ) AS %s ON %s`,
 	if softDelete {
 		return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED %sTHEN UPDATE SET %s
-WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s);`,
+WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
 			// Update + Soft Deletion
 			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, sd),
 			// Insert
-			sql.QuotedDeleteColumnMarker(constants.StagingAlias, sd), strings.Join(sql.QuoteColumns(cols, sd), ","),
+			strings.Join(sql.QuoteColumns(cols, sd), ","),
 			strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, sd), ","),
 		)}, nil
 	}

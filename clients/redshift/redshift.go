@@ -2,7 +2,6 @@ package redshift
 
 import (
 	"fmt"
-	"strings"
 
 	_ "github.com/lib/pq"
 
@@ -17,7 +16,6 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
-	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
 type Store struct {
@@ -30,7 +28,7 @@ type Store struct {
 	db.Store
 }
 
-func (s *Store) Append(tableData *optimization.TableData) error {
+func (s *Store) Append(tableData *optimization.TableData, _ bool) error {
 	return shared.Append(s, tableData, types.AdditionalSettings{})
 }
 
@@ -110,9 +108,9 @@ WHERE
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error {
-	stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
-	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, topicConfig)
+func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
+	stagingTableID := shared.TempTableID(tableID)
+	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
 	return destination.ExecStatements(s, dedupeQueries)
 }
 

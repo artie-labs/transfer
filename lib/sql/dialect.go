@@ -2,7 +2,6 @@ package sql
 
 import (
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -24,7 +23,8 @@ type Dialect interface {
 	BuildCreateTableQuery(tableID TableIdentifier, temporary bool, colSQLParts []string) string
 	BuildAlterColumnQuery(tableID TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string
 	BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string
-	BuildDedupeQueries(tableID, stagingTableID TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string
+	BuildDedupeTableQuery(tableID TableIdentifier, primaryKeys []string) string
+	BuildDedupeQueries(tableID, stagingTableID TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string
 	BuildMergeQueries(
 		tableID TableIdentifier,
 		subQuery string,

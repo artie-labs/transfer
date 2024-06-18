@@ -14,8 +14,8 @@ import (
 type DataWarehouse interface {
 	Dialect() sqllib.Dialect
 	Merge(tableData *optimization.TableData) error
-	Append(tableData *optimization.TableData) error
-	Dedupe(tableID sqllib.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) error
+	Append(tableData *optimization.TableData, useTempTable bool) error
+	Dedupe(tableID sqllib.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error
 	Exec(query string, args ...any) (sql.Result, error)
 	Query(query string, args ...any) (*sql.Rows, error)
 	Begin() (*sql.Tx, error)
@@ -30,7 +30,7 @@ type DataWarehouse interface {
 
 type Baseline interface {
 	Merge(tableData *optimization.TableData) error
-	Append(tableData *optimization.TableData) error
+	Append(tableData *optimization.TableData, useTempTable bool) error
 	IsRetryableError(err error) bool
 	IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sqllib.TableIdentifier
 }

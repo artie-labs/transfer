@@ -2,12 +2,9 @@ package redshift
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
-	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,9 +12,9 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 	{
 		// Dedupe with one primary key + no `__artie_updated_at` flag.
 		tableID := NewTableIdentifier("public", "customers")
-		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
+		stagingTableID := shared.TempTableID(tableID)
 
-		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{})
+		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, false)
 		assert.Len(r.T(), parts, 3)
 		assert.Equal(
 			r.T(),
@@ -30,9 +27,9 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 	{
 		// Dedupe with one primary key + `__artie_updated_at` flag.
 		tableID := NewTableIdentifier("public", "customers")
-		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
+		stagingTableID := shared.TempTableID(tableID)
 
-		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
+		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, true)
 		assert.Len(r.T(), parts, 3)
 		assert.Equal(
 			r.T(),
@@ -45,9 +42,9 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 	{
 		// Dedupe with composite keys + no `__artie_updated_at` flag.
 		tableID := NewTableIdentifier("public", "user_settings")
-		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
+		stagingTableID := shared.TempTableID(tableID)
 
-		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{})
+		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, false)
 		assert.Len(r.T(), parts, 3)
 		assert.Equal(
 			r.T(),
@@ -60,9 +57,9 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 	{
 		// Dedupe with composite keys + `__artie_updated_at` flag.
 		tableID := NewTableIdentifier("public", "user_settings")
-		stagingTableID := shared.TempTableID(tableID, strings.ToLower(stringutil.Random(5)))
+		stagingTableID := shared.TempTableID(tableID)
 
-		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
+		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, true)
 		assert.Len(r.T(), parts, 3)
 		assert.Equal(
 			r.T(),

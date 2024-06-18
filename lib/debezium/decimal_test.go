@@ -67,14 +67,19 @@ func TestEncodeDecimal(t *testing.T) {
 			scale: 3,
 		},
 		{
+			name:  "total",
+			value: "1.05",
+			scale: 2,
+		},
+		{
 			name:        "malformed - empty string",
 			value:       "",
-			expectedErr: "unable to use '' as a floating-point number",
+			expectedErr: `unable to use "" as a floating-point number`,
 		},
 		{
 			name:        "malformed - not a floating-point",
 			value:       "abcdefg",
-			expectedErr: "unable to use 'abcdefg' as a floating-point number",
+			expectedErr: `unable to use "abcdefg" as a floating-point number`,
 		},
 	}
 

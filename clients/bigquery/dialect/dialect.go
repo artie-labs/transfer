@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -15,8 +14,6 @@ import (
 )
 
 const (
-	BQStreamingTimeFormat = "15:04:05"
-
 	bqLayout = "2006-01-02 15:04:05 MST"
 )
 
@@ -123,7 +120,7 @@ func (BigQueryDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return strings.Contains(err.Error(), "Column already exists")
 }
 
-func (BigQueryDialect) IsTableDoesNotExistErr(err error) bool {
+func (BigQueryDialect) IsTableDoesNotExistErr(_ error) bool {
 	return false
 }
 
@@ -154,11 +151,23 @@ func (bd BigQueryDialect) BuildIsNotToastValueExpression(tableAlias constants.Ta
 	return fmt.Sprintf("COALESCE(%s != '%s', true)", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
-func (bd BigQueryDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
+func (bd BigQueryDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
+	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, bd)
+
+	// BigQuery does not like DISTINCT for JSON columns, so we wrote this instead.
+	// Error: Column foo of type JSON cannot be used in SELECT DISTINCT
+	return fmt.Sprintf(`(SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 1)`,
+		tableID.FullyQualifiedName(),
+		strings.Join(primaryKeysEscaped, ", "),
+		strings.Join(primaryKeysEscaped, ", "),
+	)
+}
+
+func (bd BigQueryDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, bd)
 
 	orderColsToIterate := primaryKeysEscaped
-	if topicConfig.IncludeArtieUpdatedAt {
+	if includeArtieUpdatedAt {
 		orderColsToIterate = append(orderColsToIterate, bd.QuoteIdentifier(constants.UpdateColumnMarker))
 	}
 
@@ -243,11 +252,11 @@ MERGE INTO %s %s USING %s AS %s ON %s`,
 	if softDelete {
 		return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED %sTHEN UPDATE SET %s
-WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s);`,
+WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
 			// WHEN MATCHED %sTHEN UPDATE SET %s
 			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, bd),
-			// WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s)
-			sql.QuotedDeleteColumnMarker(constants.StagingAlias, bd), strings.Join(sql.QuoteColumns(cols, bd), ","),
+			// WHEN NOT MATCHED THEN INSERT (%s)
+			strings.Join(sql.QuoteColumns(cols, bd), ","),
 			// VALUES (%s);
 			strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, bd), ","),
 		)}, nil

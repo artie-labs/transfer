@@ -43,7 +43,7 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 	return shared.Merge(s, tableData, types.MergeOpts{})
 }
 
-func (s *Store) Append(tableData *optimization.TableData) error {
+func (s *Store) Append(tableData *optimization.TableData, _ bool) error {
 	return shared.Append(s, tableData, types.AdditionalSettings{})
 }
 
@@ -70,7 +70,7 @@ func (s *Store) Sweep() error {
 	return shared.Sweep(s, tcs, queryFunc)
 }
 
-func (s *Store) Dedupe(_ sql.TableIdentifier, _ []string, _ kafkalib.TopicConfig) error {
+func (s *Store) Dedupe(_ sql.TableIdentifier, _ []string, _ bool) error {
 	return nil // dedupe is not necessary for MS SQL
 }
 

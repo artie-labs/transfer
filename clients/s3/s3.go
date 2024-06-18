@@ -64,7 +64,7 @@ func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
 	return strings.Join([]string{fqTableName, yyyyMMDDFormat}, "/")
 }
 
-func (s *Store) Append(tableData *optimization.TableData) error {
+func (s *Store) Append(tableData *optimization.TableData, _ bool) error {
 	// There's no difference in appending or merging for S3.
 	return s.Merge(tableData)
 }

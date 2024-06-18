@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"cloud.google.com/go/bigquery"
-
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -15,20 +13,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
-
-type Row struct {
-	data map[string]bigquery.Value
-}
-
-func NewRow(data map[string]bigquery.Value) *Row {
-	return &Row{
-		data: data,
-	}
-}
-
-func (r *Row) Save() (map[string]bigquery.Value, string, error) {
-	return r.data, bigquery.NoDedupeID, nil
-}
 
 func (s *Store) Merge(tableData *optimization.TableData) error {
 	var additionalEqualityStrings []string
@@ -51,6 +35,8 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 		AdditionalEqualityStrings: additionalEqualityStrings,
 		// BigQuery has DDL quotas.
 		RetryColBackfill: true,
+		// We are using BigQuery's streaming API which doesn't guarantee exactly once semantics
+		SubQueryDedupe: true,
 	})
 }
 

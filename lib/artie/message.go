@@ -74,22 +74,22 @@ func (m *Message) EmitRowLag(metricsClient base.Client, mode config.Mode, groupI
 		return
 	}
 
-	metricsClient.GaugeWithSample("row.lag", float64(m.KafkaMsg.HighWaterMark-m.KafkaMsg.Offset), map[string]string{
-		"mode":      mode.String(),
-		"groupID":   groupID,
-		"topic":     m.Topic(),
-		"table":     table,
-		"partition": m.Partition(),
-	}, 0.5)
+	metricsClient.GaugeWithSample(
+		"row.lag",
+		float64(m.KafkaMsg.HighWaterMark-m.KafkaMsg.Offset),
+		map[string]string{
+			"mode":    mode.String(),
+			"groupID": groupID,
+			"table":   table,
+		},
+		0.5)
 }
 
 func (m *Message) EmitIngestionLag(metricsClient base.Client, mode config.Mode, groupID, table string) {
 	metricsClient.Timing("ingestion.lag", time.Since(m.PublishTime()), map[string]string{
-		"mode":      mode.String(),
-		"groupID":   groupID,
-		"topic":     m.Topic(),
-		"table":     table,
-		"partition": m.Partition(),
+		"mode":    mode.String(),
+		"groupID": groupID,
+		"table":   table,
 	})
 }
 

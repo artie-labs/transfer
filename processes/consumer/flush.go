@@ -61,7 +61,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 			}
 
 			if args.CoolDown != nil && _tableData.ShouldSkipFlush(*args.CoolDown) {
-				slog.With(logFields...).Info("Skipping flush because we are currently in a flush cooldown")
+				slog.With(logFields...).Debug("Skipping flush because we are currently in a flush cooldown")
 				return
 			}
 
@@ -89,7 +89,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 			action := "merge"
 			// Merge or Append depending on the mode.
 			if _tableData.Mode() == config.History {
-				err = dest.Append(_tableData.TableData)
+				err = dest.Append(_tableData.TableData, false)
 				action = "append"
 			} else {
 				err = dest.Merge(_tableData.TableData)

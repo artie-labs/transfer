@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -169,7 +168,11 @@ func (md MSSQLDialect) BuildIsNotToastValueExpression(tableAlias constants.Table
 	return fmt.Sprintf("COALESCE(%s, '') != '%s'", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
-func (MSSQLDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, topicConfig kafkalib.TopicConfig) []string {
+func (MSSQLDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
+	panic("not implemented")
+}
+
+func (MSSQLDialect) BuildDedupeQueries(_, _ sql.TableIdentifier, _ []string, _ bool) []string {
 	panic("not implemented") // We don't currently support deduping for MS SQL.
 }
 
@@ -199,11 +202,11 @@ USING %s AS %s ON %s`,
 	if softDelete {
 		return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED %sTHEN UPDATE SET %s
-WHEN NOT MATCHED AND COALESCE(%s, 0) = 0 THEN INSERT (%s) VALUES (%s);`,
+WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
 			// WHEN MATCHED %sTHEN UPDATE SET %s
 			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
-			// WHEN NOT MATCHED AND COALESCE(%s, 0) = 0 THEN INSERT (%s)
-			sql.QuotedDeleteColumnMarker(constants.StagingAlias, md), strings.Join(sql.QuoteColumns(cols, md), ","),
+			// WHEN NOT MATCHED THEN INSERT (%s)
+			strings.Join(sql.QuoteColumns(cols, md), ","),
 			// VALUES (%s);
 			strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, md), ","),
 		)}, nil

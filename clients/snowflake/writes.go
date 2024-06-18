@@ -13,7 +13,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func (s *Store) Append(tableData *optimization.TableData) error {
+func (s *Store) Append(tableData *optimization.TableData, _ bool) error {
 	var err error
 	for i := 0; i < maxRetries; i++ {
 		if i > 0 {

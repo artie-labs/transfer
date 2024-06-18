@@ -69,7 +69,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 		return fmt.Errorf("failed to merge columns from destination: %w", err)
 	}
 
-	temporaryTableID := TempTableID(dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name()), tableData.TempTableSuffix())
+	temporaryTableID := TempTableIDWithSuffix(dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name()), tableData.TempTableSuffix())
 	if err = dwh.PrepareTemporaryTable(tableData, tableConfig, temporaryTableID, types.AdditionalSettings{}, true); err != nil {
 		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
@@ -111,10 +111,9 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 		}
 	}
 
-	temporaryTableName := temporaryTableID.FullyQualifiedName()
-	subQuery := temporaryTableName
+	subQuery := temporaryTableID.FullyQualifiedName()
 	if opts.SubQueryDedupe {
-		subQuery = fmt.Sprintf(`( SELECT DISTINCT * FROM %s )`, temporaryTableName)
+		subQuery = dwh.Dialect().BuildDedupeTableQuery(temporaryTableID, tableData.PrimaryKeys())
 	}
 
 	if subQuery == "" {
@@ -131,6 +130,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 		}
 		primaryKeys = append(primaryKeys, column)
 	}
+
 	if len(primaryKeys) == 0 {
 		return fmt.Errorf("primary keys cannot be empty")
 	}
