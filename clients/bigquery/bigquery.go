@@ -40,7 +40,6 @@ const (
 
 type Store struct {
 	configMap *types.DwhToTablesConfigMap
-	batchSize int
 	config    config.Config
 
 	db.Store
@@ -223,7 +222,6 @@ func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includ
 }
 
 func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
-	cfg.BigQuery.LoadDefaultValues()
 	if _store != nil {
 		// Used for tests.
 		return &Store{
@@ -250,7 +248,6 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
 	return &Store{
 		Store:     store,
 		configMap: &types.DwhToTablesConfigMap{},
-		batchSize: cfg.BigQuery.BatchSize,
 		config:    cfg,
 	}, nil
 }
