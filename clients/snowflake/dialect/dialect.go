@@ -228,11 +228,11 @@ MERGE INTO %s %s USING ( %s ) AS %s ON %s`,
 	if softDelete {
 		return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED %sTHEN UPDATE SET %s
-WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s);`,
+WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
 			// Update + Soft Deletion
 			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, sd),
 			// Insert
-			sql.QuotedDeleteColumnMarker(constants.StagingAlias, sd), strings.Join(sql.QuoteColumns(cols, sd), ","),
+			strings.Join(sql.QuoteColumns(cols, sd), ","),
 			strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, sd), ","),
 		)}, nil
 	}
