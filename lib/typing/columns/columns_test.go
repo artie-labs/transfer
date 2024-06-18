@@ -374,3 +374,14 @@ func TestRemoveDeleteColumnMarker(t *testing.T) {
 		assert.Equal(t, []Column{col1, col2, col3}, result)
 	}
 }
+
+func TestColumnNames(t *testing.T) {
+	assert.Equal(t, []string{}, ColumnNames(nil))
+
+	cols := []Column{
+		NewColumn("a", typing.Invalid),
+		NewColumn("b", typing.Invalid),
+		NewColumn("c", typing.Invalid),
+	}
+	assert.Equal(t, []string{"a", "b", "c"}, ColumnNames(cols))
+}
