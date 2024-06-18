@@ -69,8 +69,8 @@ func (s *Store) Append(tableData *optimization.TableData, useTempTable bool) err
 
 	query := fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s`,
 		tableID.FullyQualifiedName(),
-		strings.Join(sql.QuoteIdentifiers(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(), s.Dialect()), ","),
-		strings.Join(sql.QuoteIdentifiers(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(), s.Dialect()), ","),
+		strings.Join(sql.QuoteColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), s.Dialect()), ","),
+		strings.Join(sql.QuoteColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), s.Dialect()), ","),
 		temporaryTableID.FullyQualifiedName(),
 	)
 

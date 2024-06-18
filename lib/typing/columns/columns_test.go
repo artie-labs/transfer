@@ -132,60 +132,6 @@ func TestColumn_ShouldBackfill(t *testing.T) {
 	}
 }
 
-func TestColumns_GetColumnsToUpdate(t *testing.T) {
-	type _testCase struct {
-		name         string
-		cols         []Column
-		expectedCols []string
-	}
-
-	var (
-		happyPathCols = []Column{
-			{
-				name:        "hi",
-				KindDetails: typing.String,
-			},
-			{
-				name:        "bye",
-				KindDetails: typing.String,
-			},
-			{
-				name:        "start",
-				KindDetails: typing.String,
-			},
-		}
-	)
-
-	extraCols := happyPathCols
-	for i := 0; i < 100; i++ {
-		extraCols = append(extraCols, Column{
-			name:        fmt.Sprintf("hello_%v", i),
-			KindDetails: typing.Invalid,
-		})
-	}
-
-	testCases := []_testCase{
-		{
-			name:         "happy path",
-			cols:         happyPathCols,
-			expectedCols: []string{"hi", "bye", "start"},
-		},
-		{
-			name:         "happy path + extra col",
-			cols:         extraCols,
-			expectedCols: []string{"hi", "bye", "start"},
-		},
-	}
-
-	for _, testCase := range testCases {
-		cols := &Columns{
-			columns: testCase.cols,
-		}
-
-		assert.Equal(t, testCase.expectedCols, cols.GetColumnsToUpdate(), testCase.name)
-	}
-}
-
 func TestColumns_ValidColumns(t *testing.T) {
 	var happyPathCols = []Column{
 		{
