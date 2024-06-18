@@ -126,6 +126,7 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 	if err != nil {
 		return err
 	}
+
 	schemaDescriptor, err := adapt.NormalizeDescriptor(*messageDescriptor)
 	if err != nil {
 		return err
@@ -137,19 +138,20 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 	}
 	defer managedWriterClient.Close()
 
-	managedStream, err := managedWriterClient.NewManagedStream(ctx,
-		managedwriter.WithDestinationTable(
-			managedwriter.TableParentFromParts(bqTableID.ProjectID(), bqTableID.Dataset(), bqTableID.Table()),
-		),
-		managedwriter.WithType(managedwriter.PendingStream),
-		managedwriter.WithSchemaDescriptor(schemaDescriptor),
-		managedwriter.EnableWriteRetries(true),
-	)
+	pendingStream, err := managedWriterClient.CreateWriteStream(ctx, &storagepb.CreateWriteStreamRequest{
+		Parent: fmt.Sprintf("projects/%s/datasets/%s/tables/%s", bqTableID.ProjectID(), bqTableID.Dataset(), bqTableID.Table()),
+		WriteStream: &storagepb.WriteStream{
+			Type: storagepb.WriteStream_PENDING,
+		},
+	})
+
+	managedStream, err := managedWriterClient.NewManagedStream(ctx, managedwriter.WithStreamName(pendingStream.GetName()),
+		managedwriter.WithSchemaDescriptor(schemaDescriptor))
+
 	if err != nil {
 		return fmt.Errorf("failed to create managed stream: %w", err)
 	}
 
-	defer managedStream.Close()
 	batch := NewBatch(tableData.Rows(), s.batchSize)
 	for batch.HasNext() {
 		chunk := batch.NextChunk()
