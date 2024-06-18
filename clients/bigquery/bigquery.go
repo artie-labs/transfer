@@ -103,8 +103,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		return fmt.Errorf("unable to cast tempTableID to BigQuery TableIdentifier")
 	}
 
-	// Load the data
-	return s.putTableViaStorageWriteAPI(context.Background(), bqTempTableID, tableData)
+	return s.putTable(context.Background(), bqTempTableID, tableData)
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
@@ -152,7 +151,7 @@ func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 	return client
 }
 
-func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableIdentifier, tableData *optimization.TableData) error {
+func (s *Store) putTable(ctx context.Context, bqTableID TableIdentifier, tableData *optimization.TableData) error {
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 
 	messageDescriptor, err := columnsToMessageDescriptor(columns)
