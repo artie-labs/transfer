@@ -181,23 +181,7 @@ func (c *Columns) GetColumn(name string) (Column, bool) {
 // This is used mostly for the SQL MERGE queries.
 // TODO: Replace all uses of [GetColumnsToUpdate] with [ValidColumns]
 func (c *Columns) GetColumnsToUpdate() []string {
-	if c == nil {
-		return []string{}
-	}
-
-	c.RLock()
-	defer c.RUnlock()
-
-	var cols []string
-	for _, col := range c.columns {
-		if col.KindDetails == typing.Invalid {
-			continue
-		}
-
-		cols = append(cols, col.Name())
-	}
-
-	return cols
+	return ColumnNames(c.ValidColumns())
 }
 
 // ValidColumns will filter all the `Invalid` columns so that we do not update them.
@@ -265,4 +249,13 @@ func RemoveDeleteColumnMarker(cols []Column) ([]Column, bool) {
 	// Use [slices.Clone] because [slices.DeleteFunc] mutates its inputs.
 	cols = slices.DeleteFunc(slices.Clone(cols), func(col Column) bool { return col.Name() == constants.DeleteColumnMarker })
 	return cols, len(cols) != origLength
+}
+
+// ColumnNames takes a slice of [Column] and returns the names as a slice of strings.
+func ColumnNames(cols []Column) []string {
+	result := make([]string, len(cols))
+	for i, col := range cols {
+		result[i] = col.Name()
+	}
+	return result
 }
