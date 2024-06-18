@@ -51,6 +51,11 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, op
 		return fmt.Errorf("failed to merge columns from destination: %w", err)
 	}
 
+	if opts.UseTempTable {
+		// Override tableID with tempTableID if we're using a temporary table
+		tableID = opts.TempTableID
+	}
+
 	return dwh.PrepareTemporaryTable(
 		tableData,
 		tableConfig,

@@ -43,20 +43,26 @@ type Store struct {
 }
 
 func (s *Store) Append(tableData *optimization.TableData, useTempTable bool) error {
-	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-
-	// Redshift is slightly different, we'll load and create the temporary table via shared.Append
-	// Then, we'll invoke `ALTER TABLE target APPEND FROM staging` to combine the diffs.
-	temporaryTableID := shared.TempTableID(tableID)
-	if err := shared.Append(s, tableData, types.AdditionalSettings{
-		UseTempTable: true,
-		TempTableID:  temporaryTableID,
-	}); err != nil {
-		return err
+	if !useTempTable {
+		return shared.Append(s, tableData, types.AdditionalSettings{})
 	}
 
-	_, err := s.Exec(
-		fmt.Sprintf(`ALTER TABLE %s APPEND FROM %s;`, tableID.FullyQualifiedName(), temporaryTableID.FullyQualifiedName()),
+	// We can simplify this once Google has fully rolled out the ability to execute DML on recently streamed data
+	// See: https://cloud.google.com/bigquery/docs/write-api#use_data_manipulation_language_dml_with_recently_streamed_data
+	// For now, we'll need to append this to a temporary table and then append temporary table onto the target table
+	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	temporaryTableID := shared.TempTableID(tableID)
+	err := shared.Append(s, tableData, types.AdditionalSettings{
+		UseTempTable: true,
+		TempTableID:  temporaryTableID,
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to append: %w", err)
+	}
+
+	_, err = s.Exec(
+		fmt.Sprintf(`INSERT INTO %s SELECT * FROM %s`, tableID.FullyQualifiedName(), temporaryTableID.FullyQualifiedName()),
 	)
 	return err
 }
