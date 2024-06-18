@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/bigquery/storage/managedwriter"
@@ -68,7 +69,11 @@ func (s *Store) Append(tableData *optimization.TableData, useTempTable bool) err
 	}
 
 	if _, err = s.Exec(
-		fmt.Sprintf(`INSERT INTO %s SELECT * FROM %s`, tableID.FullyQualifiedName(), temporaryTableID.FullyQualifiedName()),
+		fmt.Sprintf(`INSERT INTO %s SELECT %s FROM %s`,
+			tableID.FullyQualifiedName(),
+			strings.Join(sql.QuoteIdentifiers(tableData.ReadOnlyInMemoryCols().GetColumnsToUpdate(), s.Dialect()), ","),
+			temporaryTableID.FullyQualifiedName(),
+		),
 	); err != nil {
 		return fmt.Errorf("failed to insert data into target table: %w", err)
 	}
