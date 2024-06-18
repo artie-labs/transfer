@@ -130,6 +130,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 		}
 		primaryKeys = append(primaryKeys, column)
 	}
+
 	if len(primaryKeys) == 0 {
 		return fmt.Errorf("primary keys cannot be empty")
 	}
@@ -157,6 +158,8 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 	if err != nil {
 		return fmt.Errorf("failed to generate merge statements: %w", err)
 	}
+
+	fmt.Println("mergeStatements", mergeStatements)
 
 	if err = destination.ExecStatements(dwh, mergeStatements); err != nil {
 		return fmt.Errorf("failed to execute merge statements: %w", err)
