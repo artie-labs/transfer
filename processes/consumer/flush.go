@@ -89,7 +89,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 			action := "merge"
 			// Merge or Append depending on the mode.
 			if _tableData.Mode() == config.History {
-				err = dest.Append(_tableData.TableData)
+				err = dest.Append(_tableData.TableData, false)
 				action = "append"
 			} else {
 				err = dest.Merge(_tableData.TableData)

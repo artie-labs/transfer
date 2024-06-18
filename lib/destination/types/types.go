@@ -42,4 +42,7 @@ type MergeOpts struct {
 
 type AdditionalSettings struct {
 	AdditionalCopyClause string
+
+	UseTempTable bool
+	TempTableID  sql.TableIdentifier
 }

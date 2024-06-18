@@ -42,8 +42,23 @@ type Store struct {
 	db.Store
 }
 
-func (s *Store) Append(tableData *optimization.TableData) error {
-	return shared.Append(s, tableData, types.AdditionalSettings{})
+func (s *Store) Append(tableData *optimization.TableData, useTempTable bool) error {
+	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+
+	// Redshift is slightly different, we'll load and create the temporary table via shared.Append
+	// Then, we'll invoke `ALTER TABLE target APPEND FROM staging` to combine the diffs.
+	temporaryTableID := shared.TempTableID(tableID)
+	if err := shared.Append(s, tableData, types.AdditionalSettings{
+		UseTempTable: true,
+		TempTableID:  temporaryTableID,
+	}); err != nil {
+		return err
+	}
+
+	_, err := s.Exec(
+		fmt.Sprintf(`ALTER TABLE %s APPEND FROM %s;`, tableID.FullyQualifiedName(), temporaryTableID.FullyQualifiedName()),
+	)
+	return err
 }
 
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {

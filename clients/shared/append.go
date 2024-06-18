@@ -56,6 +56,6 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, op
 		tableConfig,
 		tableID,
 		opts,
-		false,
+		opts.UseTempTable,
 	)
 }
