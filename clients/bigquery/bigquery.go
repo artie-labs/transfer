@@ -141,7 +141,7 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 		managedwriter.WithDestinationTable(
 			managedwriter.TableParentFromParts(bqTableID.ProjectID(), bqTableID.Dataset(), bqTableID.Table()),
 		),
-		managedwriter.WithType(managedwriter.DefaultStream),
+		managedwriter.WithType(managedwriter.PendingStream),
 		managedwriter.WithSchemaDescriptor(schemaDescriptor),
 		managedwriter.EnableWriteRetries(true),
 	)
@@ -175,6 +175,10 @@ func (s *Store) putTableViaStorageWriteAPI(ctx context.Context, bqTableID TableI
 		if resp, err := result.FullResponse(ctx); err != nil {
 			return fmt.Errorf("failed to get response (%s): %w", resp.GetError().String(), err)
 		}
+	}
+
+	if _, err = managedStream.Finalize(ctx); err != nil {
+		return fmt.Errorf("error during Finalize: %w", err)
 	}
 
 	req := &storagepb.BatchCommitWriteStreamsRequest{
