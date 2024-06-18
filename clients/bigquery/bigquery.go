@@ -55,6 +55,9 @@ func (s *Store) Append(tableData *optimization.TableData, useTempTable bool) err
 	// For now, we'll need to append this to a temporary table and then append temporary table onto the target table
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	temporaryTableID := shared.TempTableID(tableID)
+
+	defer func() { _ = ddl.DropTemporaryTable(s, temporaryTableID, false) }()
+
 	err := shared.Append(s, tableData, types.AdditionalSettings{
 		UseTempTable: true,
 		TempTableID:  temporaryTableID,
@@ -63,8 +66,6 @@ func (s *Store) Append(tableData *optimization.TableData, useTempTable bool) err
 	if err != nil {
 		return fmt.Errorf("failed to append: %w", err)
 	}
-
-	defer func() { _ = ddl.DropTemporaryTable(s, temporaryTableID, false) }()
 
 	if _, err = s.Exec(
 		fmt.Sprintf(`INSERT INTO %s SELECT * FROM %s`, tableID.FullyQualifiedName(), temporaryTableID.FullyQualifiedName()),
