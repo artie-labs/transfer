@@ -34,13 +34,12 @@ const (
 	describeNameCol               = "column_name"
 	describeTypeCol               = "data_type"
 	describeCommentCol            = "description"
-	// Storage Write API is limited to 10 MB, let's start out conservative and use 80% of that.
-	maxRequestByteSize = 10_000_000 * .8
+	// Storage Write API is limited to 10 MiB, subtract 50 KiB to account for request overhead.
+	maxRequestByteSize = (10 * 1024 * 1024) - (50 * 1024)
 )
 
 type Store struct {
 	configMap *types.DwhToTablesConfigMap
-	batchSize int
 	config    config.Config
 
 	db.Store
@@ -223,7 +222,6 @@ func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includ
 }
 
 func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
-	cfg.BigQuery.LoadDefaultValues()
 	if _store != nil {
 		// Used for tests.
 		return &Store{
@@ -250,7 +248,6 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
 	return &Store{
 		Store:     store,
 		configMap: &types.DwhToTablesConfigMap{},
-		batchSize: cfg.BigQuery.BatchSize,
 		config:    cfg,
 	}, nil
 }

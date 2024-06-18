@@ -9,13 +9,6 @@ type BigQuery struct {
 	DefaultDataset    string `yaml:"defaultDataset"`
 	ProjectID         string `yaml:"projectID"`
 	Location          string `yaml:"location"`
-	BatchSize         int    `yaml:"batchSize"`
-}
-
-func (b *BigQuery) LoadDefaultValues() {
-	if b.BatchSize == 0 {
-		b.BatchSize = 1000
-	}
 }
 
 // DSN - returns the notation for BigQuery following this format: bigquery://projectID/[location/]datasetID?queryString
