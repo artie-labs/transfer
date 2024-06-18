@@ -42,6 +42,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		}
 	}()
 
+	// TODO: Refactor the loop below to use the columns from [ValidColumns]
 	columns := columns.ColumnNames(tableData.ReadOnlyInMemoryCols().ValidColumns())
 	stmt, err := tx.Prepare(mssql.CopyIn(tempTableID.FullyQualifiedName(), mssql.BulkOptions{}, columns...))
 	if err != nil {
