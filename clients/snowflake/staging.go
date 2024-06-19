@@ -106,6 +106,8 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		return fmt.Errorf("failed to run copy into temporary table: %w", err)
 	}
 
+	slog.Error("pretend error", "value", copyCommand)
+
 	return nil
 }
 

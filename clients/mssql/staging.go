@@ -42,9 +42,8 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		}
 	}()
 
-	// TODO: Refactor the loop below to use the columns from [ValidColumns]
-	columns := columns.ColumnNames(tableData.ReadOnlyInMemoryCols().ValidColumns())
-	stmt, err := tx.Prepare(mssql.CopyIn(tempTableID.FullyQualifiedName(), mssql.BulkOptions{}, columns...))
+	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
+	stmt, err := tx.Prepare(mssql.CopyIn(tempTableID.FullyQualifiedName(), mssql.BulkOptions{}, columns.ColumnNames(cols)...))
 	if err != nil {
 		return fmt.Errorf("failed to prepare bulk insert: %w", err)
 	}
@@ -54,9 +53,8 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.Rows() {
 		var row []any
-		for _, col := range columns {
-			colKind, _ := tableData.ReadOnlyInMemoryCols().GetColumn(col)
-			castedValue, castErr := parseValue(value[col], colKind, additionalDateFmts)
+		for _, col := range cols {
+			castedValue, castErr := parseValue(value[col.Name()], col, additionalDateFmts)
 			if castErr != nil {
 				return castErr
 			}
