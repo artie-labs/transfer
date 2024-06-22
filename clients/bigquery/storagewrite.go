@@ -124,7 +124,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			switch value := value.(type) {
 			case int:
 				// TODO: Remove int case if we don't see the following the the logs
-				slog.Warn("Received an int instead if an int32/64 for a Integer column")
+				slog.Warn("Received an int instead for an Integer column")
 				message.Set(field, protoreflect.ValueOfInt64(int64(value)))
 			case int32:
 				message.Set(field, protoreflect.ValueOfInt64(int64(value)))
