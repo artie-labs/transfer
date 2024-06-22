@@ -197,8 +197,8 @@ func (r *RelationTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	assert.NoError(r.T(), err)
 
 	// Testing typing.
-	assert.Equal(r.T(), evtData["id"], 1001)
-	assert.Equal(r.T(), evtData["another_id"], 333)
+	assert.Equal(r.T(), evtData["id"], int64(1001))
+	assert.Equal(r.T(), evtData["another_id"], int64(333))
 	assert.Equal(r.T(), typing.ParseValue(typing.Settings{}, "another_id", evt.GetOptionalSchema(), evtData["another_id"]), typing.Integer)
 
 	assert.Equal(r.T(), evtData["email"], "sally.thomas@acme.com")
@@ -546,7 +546,7 @@ func (r *RelationTestSuite) TestGetEventFromBytes_MySQL() {
 	_, err = time.Parse(time.RFC3339, evtData[constants.UpdateColumnMarker].(string))
 	assert.NoError(r.T(), err, evtData[constants.UpdateColumnMarker])
 
-	assert.Equal(r.T(), evtData["id"], 1001)
+	assert.Equal(r.T(), evtData["id"], int64(1001))
 	assert.Equal(r.T(), evtData["first_name"], "Sally")
 	assert.Equal(r.T(), evtData["bool_test"], false)
 	cols, err := evt.GetColumns()

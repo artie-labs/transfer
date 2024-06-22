@@ -141,7 +141,7 @@ func TestGetData_TestDelete(t *testing.T) {
 	}
 
 	expectedKeyValues := map[string]any{
-		"id":                         1004,
+		"id":                         int64(1004),
 		"first_name":                 "Anne",
 		"last_name":                  "Kretchmar",
 		"email":                      "annek@noanswer.org",
@@ -234,7 +234,7 @@ func TestSchemaEventPayload_ParseAndMutateMapInPlace(t *testing.T) {
 	mapToPassIn := map[string]any{
 		"foo": "bar",
 		"abc": "def",
-		"id":  float64(123),
+		"id":  int64(123),
 	}
 
 	schemaEventPayload := SchemaEventPayload{
@@ -257,5 +257,5 @@ func TestSchemaEventPayload_ParseAndMutateMapInPlace(t *testing.T) {
 	returnedMap, err := schemaEventPayload.parseAndMutateMapInPlace(mapToPassIn, cdc.After)
 	assert.NoError(t, err)
 	assert.Equal(t, mapToPassIn, returnedMap)
-	assert.Equal(t, 123, mapToPassIn["id"])
+	assert.Equal(t, int64(123), mapToPassIn["id"])
 }

@@ -26,13 +26,13 @@ func TestSchemaEventPayload_MiscNumbers_GetData(t *testing.T) {
 
 	retMap, err := schemaEventPayload.GetData(nil, &kafkalib.TopicConfig{})
 	assert.NoError(t, err)
-	assert.Equal(t, retMap["smallint_test"], 1)
-	assert.Equal(t, retMap["smallserial_test"], 2)
-	assert.Equal(t, retMap["int_test"], 3)
-	assert.Equal(t, retMap["integer_test"], 4)
-	assert.Equal(t, retMap["serial_test"], 1)
-	assert.Equal(t, retMap["bigint_test"], 2305843009213693952)
-	assert.Equal(t, retMap["bigserial_test"], 2305843009213693952)
+	assert.Equal(t, int64(1), retMap["smallint_test"])
+	assert.Equal(t, int64(2), retMap["smallserial_test"])
+	assert.Equal(t, int64(3), retMap["int_test"])
+	assert.Equal(t, int64(4), retMap["integer_test"])
+	assert.Equal(t, int64(1), retMap["serial_test"])
+	assert.Equal(t, int64(2305843009213693952), retMap["bigint_test"])
+	assert.Equal(t, int64(2305843009213693952), retMap["bigserial_test"])
 }
 
 func TestSchemaEventPayload_Numeric_GetData(t *testing.T) {
