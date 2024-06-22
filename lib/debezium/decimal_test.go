@@ -10,7 +10,7 @@ func TestEncodeDecimal(t *testing.T) {
 	testCases := []struct {
 		name  string
 		value string
-		scale int
+		scale uint16
 
 		expectedErr string
 	}{
@@ -86,7 +86,7 @@ func TestEncodeDecimal(t *testing.T) {
 	for _, testCase := range testCases {
 		encodedValue, err := EncodeDecimal(testCase.value, testCase.scale)
 		if testCase.expectedErr == "" {
-			decodedValue := DecodeDecimal(encodedValue, nil, testCase.scale)
+			decodedValue := DecodeDecimal(encodedValue, nil, int(testCase.scale))
 			assert.Equal(t, testCase.value, decodedValue.String(), testCase.name)
 		} else {
 			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)

@@ -181,8 +181,8 @@ func (f Field) ParseValue(value any) (any, error) {
 		if !ok {
 			return nil, fmt.Errorf("expected int64 got '%v' with type %T", value, value)
 		}
-		// TODO: Returning an int to preserve existing behavior, however we should see if we can return an int64 instead.
-		return int(value), nil
+
+		return value, nil
 	}
 
 	return value, nil

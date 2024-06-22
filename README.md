@@ -3,7 +3,7 @@
   <h3>Artie Transfer</h3>
   <p><b>⚡️ Blazing fast data replication between OLTP and OLAP databases ⚡️</b></p>
   <a href="https://artie.com/slack"><img src="https://img.shields.io/badge/slack-@artie-blue.svg?logo=slack"/></a>
-  <a href="https://docs.artie.com/running-transfer/overview"><img src="https://user-images.githubusercontent.com/4412200/226736695-6b8b9abd-c227-41c7-89a1-805a04c90d08.png"/></a>
+  <a href="https://artie.com/docs/open-source/running-artie/overview"><img src="https://user-images.githubusercontent.com/4412200/226736695-6b8b9abd-c227-41c7-89a1-805a04c90d08.png"/></a>
   <a href="https://github.com/artie-labs/transfer/blob/master/LICENSE.txt"><img src="https://user-images.githubusercontent.com/4412200/201544613-a7197bc4-8b61-4fc5-bf09-68ee10133fd7.svg"/></a>
   <img src="https://github.com/artie-labs/transfer/actions/workflows/gha-go-test.yml/badge.svg"/>
   <br/>
@@ -30,11 +30,13 @@ Benefits of Artie Transfer:
 Take a look at this [guide](#getting-started) to get started!
 
 ## Architecture
+
 <div align="center">
   <img src="https://github.com/artie-labs/transfer/assets/4412200/a30a2ee1-7bdd-437c-9acb-ce6591654d18"/>
 </div>
 
 ### Pre-requisites
+
 As you can see from the architecture diagram above, Artie Transfer is a Kafka consumer and expects CDC messages to be in a particular format.
 
 The optimal set-up looks something like this:
@@ -49,25 +51,26 @@ Please see the [supported section](#what-is-currently-supported) on what sources
 
 To run Artie Transfer's stack locally, please refer to the [examples folder](https://github.com/artie-labs/transfer/tree/master/examples).
 
-## <a name="getting-started"></a>Getting started
+## Getting started
 
-[Getting started guide](https://docs.artie.com/running-transfer/overview)
+[Getting started guide](https://artie.com/docs/open-source/running-artie/overview)
 
 ## What is currently supported?
+
 Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Currently Transfer supports:
 
 - Message Queues
   - Kafka (default)
   - Google Pub/Sub
 
-- [Destinations](https://docs.artie.com/real-time-destinations/overview):
+- [Destinations](https://artie.com/docs/destinations):
     - BigQuery
     - Microsoft SQL Server
     - Redshift
     - S3
     - Snowflake
 
-- [Sources](https://docs.artie.com/real-time-sources/overview):
+- [Sources](https://artie.com/docs/sources):
     - DocumentDB
     - DynamoDB
     - Microsoft SQL Server
@@ -79,12 +82,13 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
 _If the database you are using is not on the list, feel free to file for a [feature request](https://github.com/artie-labs/transfer/issues/new)._
 
 ## Configuration File
-* [Artie Transfer configuration file guide](https://docs.artie.com/running-transfer/options)
-* [Examples of configuration files](https://docs.artie.com/running-transfer/examples)
+
+* [Artie Transfer configuration file guide](https://artie.com/docs/open-source/running-artie/options)
+* [Examples of configuration files](https://artie.com/docs/open-source/running-artie/examples)
 
 ## Telemetry
 
-[Artie Transfer's telemetry guide](https://docs.artie.com/telemetry/overview)
+[Artie Transfer's telemetry guide](https://artie.com/docs/telemetry/overview)
 
 ## Tests
 Transfer is written in Go and uses [counterfeiter](https://github.com/maxbrunsfeld/counterfeiter) to mock.

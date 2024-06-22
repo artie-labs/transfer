@@ -139,7 +139,7 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 }`))
 
 		assert.NoError(t, err)
-		assert.Equal(t, keys["id"], 1002)
+		assert.Equal(t, keys["id"], int64(1002))
 
 		// Composite key
 		compositeKeyString := `{
@@ -170,8 +170,8 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 
 		keys, err = parsePartitionKeyStruct([]byte(compositeKeyString))
 		assert.NoError(t, err)
-		assert.Equal(t, 1, keys["quarter_id"])
-		assert.Equal(t, 1, keys["student_id"])
+		assert.Equal(t, int64(1), keys["quarter_id"])
+		assert.Equal(t, int64(1), keys["student_id"])
 		assert.Equal(t, "course1", keys["course_id"])
 
 		// Normal key with Debezium change event key (SMT)
@@ -199,7 +199,7 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 
 		keys, err = parsePartitionKeyStruct([]byte(smtKey))
 		assert.NoError(t, err)
-		assert.Equal(t, 1001, keys["id"])
-		assert.Equal(t, 1, len(keys))
+		assert.Equal(t, int64(1001), keys["id"])
+		assert.Len(t, keys, 1)
 	}
 }
