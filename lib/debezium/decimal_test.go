@@ -122,6 +122,7 @@ func TestEncodeDecimal(t *testing.T) {
 	for _, testCase := range testCases {
 		actual, err := encodeDecode(testCase.value, testCase.scale)
 		if testCase.expectedErr == "" {
+			assert.NoError(t, err)
 			assert.Equal(t, testCase.value, actual, testCase.name)
 		} else {
 			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
