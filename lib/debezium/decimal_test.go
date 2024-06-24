@@ -1,6 +1,7 @@
 package debezium
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,11 +20,19 @@ func mustEncodeDecode(value string, scale uint16) string {
 	if err != nil {
 		panic(err)
 	}
-
 	return out
 }
 
 func TestEncodeDecimal(t *testing.T) {
+	// Whole numbers:
+	for i := range 100_000 {
+		strValue := fmt.Sprint(i)
+		assert.Equal(t, strValue, mustEncodeDecode(strValue, 0))
+		if i != 0 {
+			assert.Equal(t, "-"+strValue, mustEncodeDecode("-"+strValue, 0))
+		}
+	}
+
 	testCases := []struct {
 		name  string
 		value string
@@ -111,10 +120,9 @@ func TestEncodeDecimal(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		encodedValue, err := EncodeDecimal(testCase.value, testCase.scale)
+		actual, err := encodeDecode(testCase.value, testCase.scale)
 		if testCase.expectedErr == "" {
-			decodedValue := DecodeDecimal(encodedValue, nil, int(testCase.scale))
-			assert.Equal(t, testCase.value, decodedValue.String(), testCase.name)
+			assert.Equal(t, testCase.value, actual, testCase.name)
 		} else {
 			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
 		}
