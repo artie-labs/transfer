@@ -28,7 +28,7 @@ func EncodeDecimal(value string, scale uint16) ([]byte, error) {
 	if bigIntValue.Sign() < 0 {
 		// Convert to two's complement if the number is negative
 
-		if data[0] > 127 {
+		if data[0] >= 0x80 {
 			// If the first bit is already set then it is a significant bit and we need to prepend an additional byte
 			// so that the first bit can safely be used to indicate whether the number is positive or negative.
 			data = slices.Concat([]byte{0}, data)
