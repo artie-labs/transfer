@@ -2,7 +2,9 @@ package debezium
 
 import (
 	"fmt"
+	"log/slog"
 	"math/big"
+	"slices"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
@@ -17,17 +19,19 @@ func EncodeDecimal(value string, scale uint16) ([]byte, error) {
 	scaledValue := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
 	bigFloatValue.Mul(bigFloatValue, new(big.Float).SetInt(scaledValue))
 
-	// Extract the scaled integer value.
-	bigIntValue := new(big.Int)
-	if _, success := bigIntValue.SetString(bigFloatValue.String(), 10); !success {
-		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
+	if !bigFloatValue.IsInt() {
+		// Add 0.5 before calling [Int] so that the value is always rounded up.
+		bigFloatValue.Add(bigFloatValue, new(big.Float).SetFloat64(0.5*float64(bigFloatValue.Sign())))
 	}
+	bigIntValue, _ := bigFloatValue.Int(nil)
 
-	data := bigIntValue.Bytes()
+	data := bigIntValue.Bytes() // [Bytes] returns the absolute value.
+
 	if bigIntValue.Sign() < 0 {
-		// Convert to two's complement if the number is negative
-		bigIntValue = bigIntValue.Neg(bigIntValue)
-		data = bigIntValue.Bytes()
+		if data[0] > 127 {
+			// If the first bit is set then prepend an empty byte
+			data = slices.Concat([]byte{0}, data)
+		}
 
 		// Inverting bits for two's complement.
 		for i := range data {
@@ -72,16 +76,21 @@ func DecodeDecimal(data []byte, precision *int, scale int) *decimal.Decimal {
 		bigInt.SetBytes(data)
 	}
 
+	slog.Info("decoded value", "x", bigInt.String())
+
 	// Convert the big integer to a big float
 	bigFloat := new(big.Float).SetInt(bigInt)
 
-	// Compute divisor as 10^scale with big.Int's Exp, then convert to big.Float
-	scaleInt := big.NewInt(int64(scale))
-	ten := big.NewInt(10)
-	divisorInt := new(big.Int).Exp(ten, scaleInt, nil)
-	divisorFloat := new(big.Float).SetInt(divisorInt)
+	if scale > 0 {
+		// Compute divisor as 10^scale with big.Int's Exp, then convert to big.Float
+		scaleInt := big.NewInt(int64(scale))
+		ten := big.NewInt(10)
+		divisorInt := new(big.Int).Exp(ten, scaleInt, nil)
+		divisorFloat := new(big.Float).SetInt(divisorInt)
 
-	// Perform the division
-	bigFloat.Quo(bigFloat, divisorFloat)
+		// Perform the division
+		bigFloat.Quo(bigFloat, divisorFloat)
+	}
+
 	return decimal.NewDecimal(precision, scale, bigFloat)
 }
