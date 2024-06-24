@@ -30,7 +30,7 @@ func EncodeDecimal(value string, scale uint16) ([]byte, error) {
 
 		if data[0] > 127 {
 			// If the first bit is already set then it is a significant bit and we need to prepend an additional byte
-			// that will be used to indicate whether the number is positive or negative.
+			// so that the first bit can be used to indicate whether the number is positive or negative.
 			data = slices.Concat([]byte{0}, data)
 		}
 
