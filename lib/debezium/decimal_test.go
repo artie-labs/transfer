@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func encodeDecode(value string, scale uint16) (string, error) {
+func encodeAndDecodeDecimal(value string, scale uint16) (string, error) {
 	bytes, err := EncodeDecimal(value, scale)
 	if err != nil {
 		return "", err
@@ -15,8 +15,8 @@ func encodeDecode(value string, scale uint16) (string, error) {
 	return DecodeDecimal(bytes, nil, int(scale)).String(), nil
 }
 
-func mustEncodeDecode(value string, scale uint16) string {
-	out, err := encodeDecode(value, scale)
+func mustEncodeAndDecodeDecimal(value string, scale uint16) string {
+	out, err := encodeAndDecodeDecimal(value, scale)
 	if err != nil {
 		panic(err)
 	}
@@ -27,10 +27,10 @@ func TestEncodeDecimal(t *testing.T) {
 	// Whole numbers:
 	for i := range 100_000 {
 		strValue := fmt.Sprint(i)
-		assert.Equal(t, strValue, mustEncodeDecode(strValue, 0))
+		assert.Equal(t, strValue, mustEncodeAndDecodeDecimal(strValue, 0))
 		if i != 0 {
 			strValue := "-" + strValue
-			assert.Equal(t, strValue, mustEncodeDecode(strValue, 0))
+			assert.Equal(t, strValue, mustEncodeAndDecodeDecimal(strValue, 0))
 		}
 	}
 
@@ -121,7 +121,7 @@ func TestEncodeDecimal(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		actual, err := encodeDecode(testCase.value, testCase.scale)
+		actual, err := encodeAndDecodeDecimal(testCase.value, testCase.scale)
 		if testCase.expectedErr == "" {
 			assert.NoError(t, err)
 			assert.Equal(t, testCase.value, actual, testCase.name)
