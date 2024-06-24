@@ -29,7 +29,8 @@ func TestEncodeDecimal(t *testing.T) {
 		strValue := fmt.Sprint(i)
 		assert.Equal(t, strValue, mustEncodeDecode(strValue, 0))
 		if i != 0 {
-			assert.Equal(t, "-"+strValue, mustEncodeDecode("-"+strValue, 0))
+			strValue := "-" + strValue
+			assert.Equal(t, strValue, mustEncodeDecode(strValue, 0))
 		}
 	}
 
