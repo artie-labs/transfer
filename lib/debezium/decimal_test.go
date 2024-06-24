@@ -6,6 +6,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func encodeDecode(value string, scale uint16) (string, error) {
+	bytes, err := EncodeDecimal(value, scale)
+	if err != nil {
+		return "", err
+	}
+	return DecodeDecimal(bytes, nil, int(scale)).String(), nil
+}
+
+func mustEncodeDecode(value string, scale uint16) string {
+	out, err := encodeDecode(value, scale)
+	if err != nil {
+		panic(err)
+	}
+
+	return out
+}
+
 func TestEncodeDecimal(t *testing.T) {
 	testCases := []struct {
 		name  string
@@ -70,6 +87,16 @@ func TestEncodeDecimal(t *testing.T) {
 			name:  "total",
 			value: "1.05",
 			scale: 2,
+		},
+		{
+			name:  "negative number: 2^16 - 255",
+			value: "-65281",
+			scale: 0,
+		},
+		{
+			name:  "negative number: 2^16 - 1",
+			value: "-65535",
+			scale: 0,
 		},
 		{
 			name:        "malformed - empty string",
