@@ -131,17 +131,24 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 	prevRow, isOk := t.rowsData[pk]
 	if isOk {
 		prevRowSize = size.GetApproxSize(prevRow)
-		for key, val := range rowData {
-			if val == constants.ToastUnavailableValuePlaceholder {
-				// Copy it from prevRow.
-				prevVal, isOk := prevRow[key]
-				if !isOk {
-					continue
-				}
+		if delete {
+			// If the row was deleted, preserve the previous values that we have in memory
+			rowData = prevRow
+			rowData[constants.DeleteColumnMarker] = true
+		} else {
+			for key, val := range rowData {
+				if val == constants.ToastUnavailableValuePlaceholder {
+					// Copy it from prevRow.
+					prevVal, isOk := prevRow[key]
+					if !isOk {
+						continue
+					}
 
-				// If we got back a TOASTED value, we need to use the previous row.
-				rowData[key] = prevVal
+					// If we got back a TOASTED value, we need to use the previous row.
+					rowData[key] = prevVal
+				}
 			}
+
 		}
 	}
 
