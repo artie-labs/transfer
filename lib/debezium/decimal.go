@@ -91,23 +91,24 @@ func decimalWithNewExponent(decimal *apd.Decimal, newExponent int32) *apd.Decima
 
 // EncodeDecimal is used to encode a [apd.Decimal] to [org.apache.kafka.connect.data.Decimal].
 // The scale of the value (which is the negated exponent of the decimal) is returned as the second argument.
-func EncodeDecimal(decimal *apd.Decimal) ([]byte, int32, error) {
+func EncodeDecimal(decimal *apd.Decimal) ([]byte, int32) {
 	bigIntValue := decimal.Coeff.MathBigInt()
 	if decimal.Negative {
 		bigIntValue.Neg(bigIntValue)
 	}
 
-	return encodeBigInt(bigIntValue), -decimal.Exponent, nil
+	return encodeBigInt(bigIntValue), -decimal.Exponent
 }
 
 // EncodeDecimalWithScale is used to encode a [apd.Decimal] to [org.apache.kafka.connect.data.Decimal] using a specific
 // scale.
-func EncodeDecimalWithScale(decimal *apd.Decimal, scale int32) ([]byte, int32, error) {
+func EncodeDecimalWithScale(decimal *apd.Decimal, scale int32) []byte {
 	targetExponent := -scale // Negate scale since [Decimal.Exponent] is negative.
 	if decimal.Exponent != targetExponent {
 		decimal = decimalWithNewExponent(decimal, targetExponent)
 	}
-	return EncodeDecimal(decimal)
+	out, _ := EncodeDecimal(decimal)
+	return out
 }
 
 // DecodeDecimal is used to decode `org.apache.kafka.connect.data.Decimal`.
