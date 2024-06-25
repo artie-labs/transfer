@@ -8,6 +8,25 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
+// EncodeDecimal is used to encode a string representation of a number to `org.apache.kafka.connect.data.Decimal`.
+func EncodeDecimal(value string, scale uint16) ([]byte, error) {
+	bigFloatValue := new(big.Float)
+	if _, success := bigFloatValue.SetString(value); !success {
+		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
+	}
+
+	scaledValue := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
+	bigFloatValue.Mul(bigFloatValue, new(big.Float).SetInt(scaledValue))
+
+	// Extract the scaled integer value.
+	bigIntValue := new(big.Int)
+	if _, success := bigIntValue.SetString(bigFloatValue.String(), 10); !success {
+		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
+	}
+
+	return encodeBigInt(bigIntValue), nil
+}
+
 func encodeBigInt(value *big.Int) []byte {
 	data := value.Bytes() // [Bytes] returns the absolute value of the number.
 
@@ -42,25 +61,6 @@ func encodeBigInt(value *big.Int) []byte {
 		}
 	}
 	return data
-}
-
-// EncodeDecimal is used to encode a string representation of a number to `org.apache.kafka.connect.data.Decimal`.
-func EncodeDecimal(value string, scale uint16) ([]byte, error) {
-	bigFloatValue := new(big.Float)
-	if _, success := bigFloatValue.SetString(value); !success {
-		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
-	}
-
-	scaledValue := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
-	bigFloatValue.Mul(bigFloatValue, new(big.Float).SetInt(scaledValue))
-
-	// Extract the scaled integer value.
-	bigIntValue := new(big.Int)
-	if _, success := bigIntValue.SetString(bigFloatValue.String(), 10); !success {
-		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
-	}
-
-	return encodeBigInt(bigIntValue), nil
 }
 
 func decodeBigInt(data []byte) *big.Int {
