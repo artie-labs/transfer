@@ -64,6 +64,7 @@ func encodeBigInt(bigIntValue *big.Int) []byte {
 
 func decodeBigInt(data []byte) *big.Int {
 	bigInt := new(big.Int)
+
 	// If the data represents a negative number, the sign bit will be set.
 	if len(data) > 0 && data[0] >= 0x80 {
 		// To convert the data to a two's complement integer, we need to invert the bytes and add one.
