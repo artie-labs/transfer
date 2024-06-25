@@ -100,8 +100,8 @@ func EncodeDecimal(decimal *apd.Decimal) ([]byte, int32) {
 	return encodeBigInt(bigIntValue), -decimal.Exponent
 }
 
-// EncodeDecimalWithScale is used to encode a [apd.Decimal] to [org.apache.kafka.connect.data.Decimal] using a specific
-// scale.
+// EncodeDecimalWithScale is used to encode a [apd.Decimal] to [org.apache.kafka.connect.data.Decimal]
+// using a specific scale.
 func EncodeDecimalWithScale(decimal *apd.Decimal, scale int32) []byte {
 	targetExponent := -scale // Negate scale since [Decimal.Exponent] is negative.
 	if decimal.Exponent != targetExponent {
