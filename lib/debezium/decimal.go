@@ -8,24 +8,14 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
-// EncodeDecimal is used to encode a string representation of a number to `org.apache.kafka.connect.data.Decimal`.
-func EncodeDecimal(value string, scale uint16) ([]byte, error) {
-	bigFloatValue := new(big.Float)
-	if _, success := bigFloatValue.SetString(value); !success {
-		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
+func encodeBigInt(value *big.Int) []byte {
+	data := value.Bytes() // [Bytes] returns the absolute value of the number.
+
+	if len(data) == 0 {
+		return data
 	}
 
-	scaledValue := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
-	bigFloatValue.Mul(bigFloatValue, new(big.Float).SetInt(scaledValue))
-
-	// Extract the scaled integer value.
-	bigIntValue := new(big.Int)
-	if _, success := bigIntValue.SetString(bigFloatValue.String(), 10); !success {
-		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
-	}
-
-	data := bigIntValue.Bytes() // [Bytes] returns the absolute value of the number.
-	if bigIntValue.Sign() < 0 {
+	if value.Sign() < 0 {
 		// Convert to two's complement if the number is negative
 
 		if data[0] >= 0x80 {
@@ -51,15 +41,33 @@ func EncodeDecimal(value string, scale uint16) ([]byte, error) {
 		}
 	} else {
 		// For positive values, prepend a zero if the highest bit is set to ensure it's interpreted as positive.
-		if len(data) > 0 && data[0]&0x80 != 0 {
+		if data[0]&0x80 != 0 {
 			data = append([]byte{0x00}, data...)
 		}
 	}
-	return data, nil
+	return data
 }
 
-// DecodeDecimal is used to decode `org.apache.kafka.connect.data.Decimal`.
-func DecodeDecimal(data []byte, precision *int, scale int) *decimal.Decimal {
+// EncodeDecimal is used to encode a string representation of a number to `org.apache.kafka.connect.data.Decimal`.
+func EncodeDecimal(value string, scale uint16) ([]byte, error) {
+	bigFloatValue := new(big.Float)
+	if _, success := bigFloatValue.SetString(value); !success {
+		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
+	}
+
+	scaledValue := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
+	bigFloatValue.Mul(bigFloatValue, new(big.Float).SetInt(scaledValue))
+
+	// Extract the scaled integer value.
+	bigIntValue := new(big.Int)
+	if _, success := bigIntValue.SetString(bigFloatValue.String(), 10); !success {
+		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
+	}
+
+	return encodeBigInt(bigIntValue), nil
+}
+
+func decodeBigInt(data []byte) *big.Int {
 	bigInt := new(big.Int)
 
 	// If the data represents a negative number, the sign bit will be set.
@@ -76,6 +84,13 @@ func DecodeDecimal(data []byte, precision *int, scale int) *decimal.Decimal {
 	} else {
 		bigInt.SetBytes(data)
 	}
+
+	return bigInt
+}
+
+// DecodeDecimal is used to decode `org.apache.kafka.connect.data.Decimal`.
+func DecodeDecimal(data []byte, precision *int, scale int) *decimal.Decimal {
+	bigInt := decodeBigInt(data)
 
 	// Convert the big integer to a big float
 	bigFloat := new(big.Float).SetInt(bigInt)

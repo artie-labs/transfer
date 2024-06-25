@@ -2,10 +2,40 @@ package debezium
 
 import (
 	"fmt"
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestEncodeBigInt(t *testing.T) {
+	assert.Equal(t, []byte{}, encodeBigInt(big.NewInt(0)))
+	assert.Equal(t, []byte{0x01}, encodeBigInt(big.NewInt(1)))
+	assert.Equal(t, []byte{0x11}, encodeBigInt(big.NewInt(17)))
+	assert.Equal(t, []byte{0x7f}, encodeBigInt(big.NewInt(127)))
+	assert.Equal(t, []byte{0x81}, encodeBigInt(big.NewInt(-127)))
+	assert.Equal(t, []byte{0x00, 0x80}, encodeBigInt(big.NewInt(128)))
+	assert.Equal(t, []byte{0xff, 0x80}, encodeBigInt(big.NewInt(-128)))
+	assert.Equal(t, []byte{0x00, 0xff}, encodeBigInt(big.NewInt(255)))
+	assert.Equal(t, []byte{0x01, 0x00}, encodeBigInt(big.NewInt(256)))
+}
+
+func TestDecodeBigInt(t *testing.T) {
+	assert.Equal(t, big.NewInt(0), decodeBigInt([]byte{}))
+	assert.Equal(t, big.NewInt(127), decodeBigInt([]byte{0x7f}))
+	assert.Equal(t, big.NewInt(-127), decodeBigInt([]byte{0x81}))
+	assert.Equal(t, big.NewInt(128), decodeBigInt([]byte{0x00, 0x80}))
+	assert.Equal(t, big.NewInt(-128), decodeBigInt([]byte{0xff, 0x80}))
+
+	for i := range 100_000 {
+		bigInt := big.NewInt(int64(i))
+
+		assert.Equal(t, bigInt, decodeBigInt(encodeBigInt(bigInt)))
+
+		negBigInt := bigInt.Neg(bigInt)
+		assert.Equal(t, negBigInt, decodeBigInt(encodeBigInt(negBigInt)))
+	}
+}
 
 func encodeAndDecodeDecimal(value string, scale uint16) (string, error) {
 	bytes, err := EncodeDecimal(value, scale)
