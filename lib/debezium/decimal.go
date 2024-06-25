@@ -9,16 +9,21 @@ import (
 )
 
 // encodeBigInt encodes a [big.Int] into a byte slice using two's complement.
-func encodeBigInt(bigIntValue *big.Int) []byte {
-	data := bigIntValue.Bytes() // [Bytes] returns the absolute value of the number.
-	if bigIntValue.Sign() < 0 {
-		// Convert to two's complement if the number is negative
+func encodeBigInt(value *big.Int) []byte {
+	data := value.Bytes() // [Bytes] returns the absolute value of the number.
 
-		if data[0] >= 0x80 {
-			// If the first bit is already set then it is a significant bit and we need to prepend an additional byte
-			// so that the first bit can safely be used to indicate whether the number is positive or negative.
-			data = slices.Concat([]byte{0x00}, data)
-		}
+	if len(data) == 0 {
+		return data
+	}
+
+	if data[0] >= 0x80 {
+		// If the first bit is already set then it is a significant bit and we need to prepend an additional byte
+		// so that the first bit can safely be used to indicate whether the number is positive or negative.
+		data = slices.Concat([]byte{0x00}, data)
+	}
+
+	if value.Sign() < 0 {
+		// Convert to two's complement if the number is negative
 
 		// Inverting bits for two's complement.
 		for i := range data {
@@ -35,12 +40,8 @@ func encodeBigInt(bigIntValue *big.Int) []byte {
 			// https://stackoverflow.com/questions/1677957/why-byte-b-byte-0xff-is-equals-to-integer-1
 			data = append([]byte{0xff}, data...)
 		}
-	} else {
-		// For positive values, prepend a zero if the highest bit is set to ensure it's interpreted as positive.
-		if len(data) > 0 && data[0]&0x80 != 0 {
-			data = append([]byte{0x00}, data...)
-		}
 	}
+
 	return data
 }
 
