@@ -41,28 +41,12 @@ func TestDecodeBigInt(t *testing.T) {
 	}
 }
 
-func encodeAndDecodeDecimal(value string, scale uint16) (string, error) {
-	bytes, err := EncodeDecimal(value, scale)
-	if err != nil {
-		return "", err
-	}
-	return DecodeDecimal(bytes, nil, int(scale)).String(), nil
-}
-
-func mustEncodeAndDecodeDecimal(value string, scale uint16) string {
-	out, err := encodeAndDecodeDecimal(value, scale)
+func mustParseDecimal(value string) *apd.Decimal {
+	decimal, _, err := apd.NewFromString(value)
 	if err != nil {
 		panic(err)
 	}
-	return out
-}
-
-func mustParseDecimalFromString(in string) *apd.Decimal {
-	out, _, err := apd.NewFromString(in)
-	if err != nil {
-		panic(err)
-	}
-	return out
+	return decimal
 }
 
 func TestDecimalWithNewExponent(t *testing.T) {
@@ -73,19 +57,44 @@ func TestDecimalWithNewExponent(t *testing.T) {
 	assert.Equal(t, "0.0", decimalWithNewExponent(apd.New(0, 0), -1).Text('f'))
 
 	// Same exponent:
-	assert.Equal(t, "12.349", decimalWithNewExponent(mustParseDecimalFromString("12.349"), -3).Text('f'))
+	assert.Equal(t, "12.349", decimalWithNewExponent(mustParseDecimal("12.349"), -3).Text('f'))
 	// More precise exponent:
-	assert.Equal(t, "12.3490", decimalWithNewExponent(mustParseDecimalFromString("12.349"), -4).Text('f'))
-	assert.Equal(t, "12.34900", decimalWithNewExponent(mustParseDecimalFromString("12.349"), -5).Text('f'))
+	assert.Equal(t, "12.3490", decimalWithNewExponent(mustParseDecimal("12.349"), -4).Text('f'))
+	assert.Equal(t, "12.34900", decimalWithNewExponent(mustParseDecimal("12.349"), -5).Text('f'))
 	// Lest precise exponent:
 	// Extra digits should be truncated rather than rounded.
-	assert.Equal(t, "12.34", decimalWithNewExponent(mustParseDecimalFromString("12.349"), -2).Text('f'))
-	assert.Equal(t, "12.3", decimalWithNewExponent(mustParseDecimalFromString("12.349"), -1).Text('f'))
-	assert.Equal(t, "12", decimalWithNewExponent(mustParseDecimalFromString("12.349"), 0).Text('f'))
-	assert.Equal(t, "10", decimalWithNewExponent(mustParseDecimalFromString("12.349"), 1).Text('f'))
+	assert.Equal(t, "12.34", decimalWithNewExponent(mustParseDecimal("12.349"), -2).Text('f'))
+	assert.Equal(t, "12.3", decimalWithNewExponent(mustParseDecimal("12.349"), -1).Text('f'))
+	assert.Equal(t, "12", decimalWithNewExponent(mustParseDecimal("12.349"), 0).Text('f'))
+	assert.Equal(t, "10", decimalWithNewExponent(mustParseDecimal("12.349"), 1).Text('f'))
 }
 
 func TestEncodeDecimal(t *testing.T) {
+	testEncodeDecimal := func(value string, expectedScale int32) {
+		bytes, scale := EncodeDecimal(mustParseDecimal(value))
+		actual := DecodeDecimal(bytes, nil, int(scale)).String()
+		assert.Equal(t, value, actual, value)
+		assert.Equal(t, expectedScale, scale, value)
+	}
+
+	testEncodeDecimal("0", 0)
+	testEncodeDecimal("0.0", 1)
+	testEncodeDecimal("0.00", 2)
+	testEncodeDecimal("0.00000", 5)
+	testEncodeDecimal("1", 0)
+	testEncodeDecimal("1.0", 1)
+	testEncodeDecimal("-1", 0)
+	testEncodeDecimal("-1.0", 1)
+	testEncodeDecimal("145.183000000000009", 15)
+	testEncodeDecimal("-145.183000000000009", 15)
+}
+
+func TestEncodeDecimalWithScale(t *testing.T) {
+	mustEncodeAndDecodeDecimal := func(value string, scale int32) string {
+		bytes := EncodeDecimalWithScale(mustParseDecimal(value), scale)
+		return DecodeDecimal(bytes, nil, int(scale)).String()
+	}
+
 	// Whole numbers:
 	for i := range 100_000 {
 		strValue := fmt.Sprint(i)
@@ -127,9 +136,7 @@ func TestEncodeDecimal(t *testing.T) {
 	testCases := []struct {
 		name  string
 		value string
-		scale uint16
-
-		expectedErr string
+		scale int32
 	}{
 		{
 			name:  "0 scale",
@@ -208,25 +215,10 @@ func TestEncodeDecimal(t *testing.T) {
 			value: "145.183000000000000",
 			scale: 15,
 		},
-		{
-			name:        "malformed - empty string",
-			value:       "",
-			expectedErr: `unable to use "" as a floating-point number`,
-		},
-		{
-			name:        "malformed - not a floating-point",
-			value:       "abcdefg",
-			expectedErr: `unable to use "abcdefg" as a floating-point number`,
-		},
 	}
 
 	for _, testCase := range testCases {
-		actual, err := encodeAndDecodeDecimal(testCase.value, testCase.scale)
-		if testCase.expectedErr == "" {
-			assert.NoError(t, err)
-			assert.Equal(t, testCase.value, actual, testCase.name)
-		} else {
-			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
-		}
+		actual := mustEncodeAndDecodeDecimal(testCase.value, testCase.scale)
+		assert.Equal(t, testCase.value, actual, testCase.name)
 	}
 }
