@@ -24,6 +24,11 @@ func EncodeDecimal(value string, scale uint16) ([]byte, error) {
 		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
 	}
 
+	return encodeBigInt(bigIntValue), nil
+}
+
+// encodeBigInt encodes a [big.Int] into a byte slice using two's complement.
+func encodeBigInt(bigIntValue *big.Int) []byte {
 	data := bigIntValue.Bytes() // [Bytes] returns the absolute value of the number.
 	if bigIntValue.Sign() < 0 {
 		// Convert to two's complement if the number is negative
@@ -55,11 +60,11 @@ func EncodeDecimal(value string, scale uint16) ([]byte, error) {
 			data = append([]byte{0x00}, data...)
 		}
 	}
-	return data, nil
+	return data
 }
 
-// DecodeDecimal is used to decode `org.apache.kafka.connect.data.Decimal`.
-func DecodeDecimal(data []byte, precision *int, scale int) *decimal.Decimal {
+// decodeBigInt decodes a [big.Int] from a byte slice that has been encoded using two's complement.
+func decodeBigInt(data []byte) *big.Int {
 	bigInt := new(big.Int)
 
 	// If the data represents a negative number, the sign bit will be set.
@@ -77,8 +82,13 @@ func DecodeDecimal(data []byte, precision *int, scale int) *decimal.Decimal {
 		bigInt.SetBytes(data)
 	}
 
+	return bigInt
+}
+
+// DecodeDecimal is used to decode `org.apache.kafka.connect.data.Decimal`.
+func DecodeDecimal(data []byte, precision *int, scale int) *decimal.Decimal {
 	// Convert the big integer to a big float
-	bigFloat := new(big.Float).SetInt(bigInt)
+	bigFloat := new(big.Float).SetInt(decodeBigInt(data))
 
 	// Compute divisor as 10^scale with big.Int's Exp, then convert to big.Float
 	scaleInt := big.NewInt(int64(scale))
