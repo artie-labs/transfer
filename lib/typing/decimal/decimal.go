@@ -5,13 +5,14 @@ import (
 	"math/big"
 
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/cockroachdb/apd/v3"
 )
 
-// Decimal is Artie's wrapper around *big.Float which can store large numbers w/ no precision loss.
+// Decimal is Artie's wrapper around *apd.Decimal which can store large numbers w/ no precision loss.
 type Decimal struct {
 	scale     int
 	precision *int
-	value     *big.Float
+	value     *apd.Decimal
 }
 
 const (
@@ -22,7 +23,7 @@ const (
 	MaxPrecisionBeforeString = 38
 )
 
-func NewDecimal(precision *int, scale int, value *big.Float) *Decimal {
+func NewDecimal(precision *int, scale int, value *apd.Decimal) *Decimal {
 	if precision != nil {
 		if scale > *precision && *precision != -1 {
 			// Note: -1 precision means it's not specified.
@@ -48,11 +49,17 @@ func (d *Decimal) Precision() *int {
 	return d.precision
 }
 
+func (d *Decimal) asBigFloat() *big.Float {
+	out := new(big.Float)
+	out.SetString(d.value.Text('f'))
+	return out
+}
+
 // String() is used to override fmt.Sprint(val), where val type is *decimal.Decimal
 // This is particularly useful for Snowflake because we're writing all the values as STRINGS into TSV format.
 // This function guarantees backwards compatibility.
 func (d *Decimal) String() string {
-	return d.value.Text('f', d.scale)
+	return d.asBigFloat().Text('f', d.scale)
 }
 
 func (d *Decimal) Value() any {
@@ -63,7 +70,7 @@ func (d *Decimal) Value() any {
 	}
 
 	// Depending on the precision, we will want to convert value to STRING or keep as a FLOAT.
-	return d.value
+	return d.asBigFloat()
 }
 
 // SnowflakeKind - is used to determine whether a NUMERIC data type should be a STRING or NUMERIC(p, s).

@@ -112,16 +112,9 @@ func EncodeDecimal(value string, scale uint16) ([]byte, error) {
 
 // DecodeDecimal is used to decode `org.apache.kafka.connect.data.Decimal`.
 func DecodeDecimal(data []byte, precision *int, scale int) *decimal.Decimal {
-	// Convert the big integer to a big float
-	bigFloat := new(big.Float).SetInt(decodeBigInt(data))
+	bigInt := new(apd.BigInt).SetMathBigInt(decodeBigInt(data))
 
-	// Compute divisor as 10^scale with big.Int's Exp, then convert to big.Float
-	scaleInt := big.NewInt(int64(scale))
-	ten := big.NewInt(10)
-	divisorInt := new(big.Int).Exp(ten, scaleInt, nil)
-	divisorFloat := new(big.Float).SetInt(divisorInt)
+	bigDecimal := apd.NewWithBigInt(bigInt, -int32(scale)) // Negate scale since [Decimal.Exponent] is negative.
 
-	// Perform the division
-	bigFloat.Quo(bigFloat, divisorFloat)
-	return decimal.NewDecimal(precision, scale, bigFloat)
+	return decimal.NewDecimal(precision, scale, bigDecimal)
 }

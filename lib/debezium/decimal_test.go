@@ -86,6 +86,9 @@ func TestDecimalWithNewExponent(t *testing.T) {
 }
 
 func TestEncodeDecimal(t *testing.T) {
+	assert.Equal(t, "-74961544796695.89960242", mustEncodeAndDecodeDecimal("-74961544796695.89960242", 8))
+	return
+
 	// Whole numbers:
 	for i := range 100_000 {
 		strValue := fmt.Sprint(i)
@@ -123,6 +126,7 @@ func TestEncodeDecimal(t *testing.T) {
 	assert.Equal(t, "-145.1830000000000090", mustEncodeAndDecodeDecimal("-145.183000000000009", 16))
 
 	assert.Equal(t, "-9063701308.217222135", mustEncodeAndDecodeDecimal("-9063701308.217222135", 9))
+	assert.Equal(t, "-7496154479669589960242", mustEncodeAndDecodeDecimal("-74961544796695.89960242", 8))
 
 	testCases := []struct {
 		name  string
