@@ -2,6 +2,7 @@ package debezium
 
 import (
 	"fmt"
+	"math"
 	"math/big"
 	"testing"
 
@@ -28,7 +29,8 @@ func TestDecodeBigInt(t *testing.T) {
 	assert.Equal(t, big.NewInt(128), decodeBigInt([]byte{0x00, 0x80}))
 	assert.Equal(t, big.NewInt(-128), decodeBigInt([]byte{0xff, 0x80}))
 
-	for i := range 100_000 {
+	// Test all values that fit in two bytes + one more.
+	for i := range math.MaxUint16 + 2 {
 		bigInt := big.NewInt(int64(i))
 
 		assert.Equal(t, bigInt, decodeBigInt(encodeBigInt(bigInt)))
