@@ -195,6 +195,16 @@ func TestEncodeDecimal(t *testing.T) {
 			scale: 0,
 		},
 		{
+			name:  "number with a scale of 15",
+			value: "0.000022998904125",
+			scale: 15,
+		},
+		{
+			name:  "number with a scale of 15",
+			value: "145.183000000000000",
+			scale: 15,
+		},
+		{
 			name:        "malformed - empty string",
 			value:       "",
 			expectedErr: `unable to use "" as a floating-point number`,
