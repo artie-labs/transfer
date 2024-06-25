@@ -134,6 +134,9 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 		if delete {
 			// if the row was deleted, copy the previous values and just update the deleted flag
 			rowData = prevRow
+			if _, isOk := rowData[constants.DeleteColumnMarker]; !isOk {
+				rowData = map[string]any{}
+			}
 			rowData[constants.DeleteColumnMarker] = true
 		} else {
 			for key, val := range rowData {
