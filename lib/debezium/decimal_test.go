@@ -41,15 +41,20 @@ func TestDecodeBigInt(t *testing.T) {
 	}
 }
 
-func encodeAndDecodeDecimal(value string, scale uint16) (string, error) {
-	bytes, err := EncodeDecimal(value, scale)
+func encodeAndDecodeDecimal(value string, scale int32) (string, error) {
+	decimal, _, err := new(apd.Decimal).SetString(value)
+	if err != nil {
+		return "", fmt.Errorf("unable to use %q as a floating-point number: %w", value, err)
+	}
+
+	bytes, _, err := EncodeDecimalWithScale(decimal, scale)
 	if err != nil {
 		return "", err
 	}
 	return DecodeDecimal(bytes, nil, int(scale)).String(), nil
 }
 
-func mustEncodeAndDecodeDecimal(value string, scale uint16) string {
+func mustEncodeAndDecodeDecimal(value string, scale int32) string {
 	out, err := encodeAndDecodeDecimal(value, scale)
 	if err != nil {
 		panic(err)
@@ -127,9 +132,7 @@ func TestEncodeDecimal(t *testing.T) {
 	testCases := []struct {
 		name  string
 		value string
-		scale uint16
-
-		expectedErr string
+		scale int32
 	}{
 		{
 			name:  "0 scale",
@@ -208,25 +211,11 @@ func TestEncodeDecimal(t *testing.T) {
 			value: "145.183000000000000",
 			scale: 15,
 		},
-		{
-			name:        "malformed - empty string",
-			value:       "",
-			expectedErr: `unable to use "" as a floating-point number`,
-		},
-		{
-			name:        "malformed - not a floating-point",
-			value:       "abcdefg",
-			expectedErr: `unable to use "abcdefg" as a floating-point number`,
-		},
 	}
 
 	for _, testCase := range testCases {
 		actual, err := encodeAndDecodeDecimal(testCase.value, testCase.scale)
-		if testCase.expectedErr == "" {
-			assert.NoError(t, err)
-			assert.Equal(t, testCase.value, actual, testCase.name)
-		} else {
-			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
-		}
+		assert.NoError(t, err)
+		assert.Equal(t, testCase.value, actual, testCase.name)
 	}
 }

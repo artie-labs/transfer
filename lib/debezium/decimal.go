@@ -1,7 +1,6 @@
 package debezium
 
 import (
-	"fmt"
 	"math/big"
 	"slices"
 
@@ -90,24 +89,25 @@ func decimalWithNewExponent(decimal *apd.Decimal, newExponent int32) *apd.Decima
 	}
 }
 
-// EncodeDecimal is used to encode a string representation of a number to `org.apache.kafka.connect.data.Decimal`.
-func EncodeDecimal(value string, scale uint16) ([]byte, error) {
-	decimal, _, err := new(apd.Decimal).SetString(value)
-	if err != nil {
-		return nil, fmt.Errorf("unable to use %q as a floating-point number: %w", value, err)
-	}
-
-	targetExponent := -int32(scale) // Negate scale since [Decimal.Exponent] is negative.
-	if decimal.Exponent != targetExponent {
-		decimal = decimalWithNewExponent(decimal, targetExponent)
-	}
-
+// EncodeDecimal is used to encode a [apd.Decimal] to [org.apache.kafka.connect.data.Decimal].
+// The scale of the value (which is the negated exponent of the decimal) is returned as the second argument.
+func EncodeDecimal(decimal *apd.Decimal) ([]byte, int32, error) {
 	bigIntValue := decimal.Coeff.MathBigInt()
 	if decimal.Negative {
 		bigIntValue.Neg(bigIntValue)
 	}
 
-	return encodeBigInt(bigIntValue), nil
+	return encodeBigInt(bigIntValue), -decimal.Exponent, nil
+}
+
+// EncodeDecimalWithScale is used to encode a [apd.Decimal] to [org.apache.kafka.connect.data.Decimal] using a specific
+// scale.
+func EncodeDecimalWithScale(decimal *apd.Decimal, scale int32) ([]byte, int32, error) {
+	targetExponent := -scale // Negate scale since [Decimal.Exponent] is negative.
+	if decimal.Exponent != targetExponent {
+		decimal = decimalWithNewExponent(decimal, targetExponent)
+	}
+	return EncodeDecimal(decimal)
 }
 
 // DecodeDecimal is used to decode `org.apache.kafka.connect.data.Decimal`.
