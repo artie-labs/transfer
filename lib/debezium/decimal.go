@@ -1,11 +1,11 @@
 package debezium
 
 import (
-	"fmt"
 	"math/big"
 	"slices"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
+	"github.com/cockroachdb/apd/v3"
 )
 
 // encodeBigInt encodes a [big.Int] into a big-endian byte slice using two's complement.
@@ -62,30 +62,53 @@ func decodeBigInt(data []byte) *big.Int {
 	return bigInt
 }
 
-// EncodeDecimal is used to encode a string representation of a number to `org.apache.kafka.connect.data.Decimal`.
-func EncodeDecimal(value string, scale uint16) ([]byte, error) {
-	bigFloatValue := new(big.Float)
-	if _, success := bigFloatValue.SetString(value); !success {
-		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
+// decimalWithNewExponent takes a [apd.Decimal] and returns a new [apd.Decimal] with a the given exponent.
+// If the new exponent is less precise then the extra digits will be truncated.
+func decimalWithNewExponent(decimal *apd.Decimal, newExponent int32) *apd.Decimal {
+	exponentDelta := newExponent - decimal.Exponent // Exponent is negative.
+
+	if exponentDelta == 0 {
+		return new(apd.Decimal).Set(decimal)
 	}
 
-	if scale > 0 {
-		scaledValue := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
-		bigFloatValue.Mul(bigFloatValue, new(big.Float).SetInt(scaledValue))
+	coefficient := new(apd.BigInt).Set(&decimal.Coeff)
+
+	if exponentDelta < 0 {
+		multiplier := new(apd.BigInt).Exp(apd.NewBigInt(10), apd.NewBigInt(int64(-exponentDelta)), nil)
+		coefficient.Mul(coefficient, multiplier)
+	} else if exponentDelta > 0 {
+		divisor := new(apd.BigInt).Exp(apd.NewBigInt(10), apd.NewBigInt(int64(exponentDelta)), nil)
+		coefficient.Div(coefficient, divisor)
 	}
 
-	// Extract the scaled integer value.
-	bigIntValue := new(big.Int)
-	if bigFloatValue.IsInt() {
-		bigFloatValue.Int(bigIntValue)
-	} else {
-		strValue := bigFloatValue.Text('f', 0)
-		if _, success := bigIntValue.SetString(strValue, 10); !success {
-			return nil, fmt.Errorf("unable to use %q as a big.Int", strValue)
-		}
+	return &apd.Decimal{
+		Form:     decimal.Form,
+		Negative: decimal.Negative,
+		Exponent: newExponent,
+		Coeff:    *coefficient,
+	}
+}
+
+// EncodeDecimal is used to encode a [apd.Decimal] to [org.apache.kafka.connect.data.Decimal].
+// The scale of the value (which is the negated exponent of the decimal) is returned as the second argument.
+func EncodeDecimal(decimal *apd.Decimal) ([]byte, int32) {
+	bigIntValue := decimal.Coeff.MathBigInt()
+	if decimal.Negative {
+		bigIntValue.Neg(bigIntValue)
 	}
 
-	return encodeBigInt(bigIntValue), nil
+	return encodeBigInt(bigIntValue), -decimal.Exponent
+}
+
+// EncodeDecimalWithScale is used to encode a [apd.Decimal] to [org.apache.kafka.connect.data.Decimal]
+// using a specific scale.
+func EncodeDecimalWithScale(decimal *apd.Decimal, scale int32) []byte {
+	targetExponent := -scale // Negate scale since [Decimal.Exponent] is negative.
+	if decimal.Exponent != targetExponent {
+		decimal = decimalWithNewExponent(decimal, targetExponent)
+	}
+	bytes, _ := EncodeDecimal(decimal)
+	return bytes
 }
 
 // DecodeDecimal is used to decode `org.apache.kafka.connect.data.Decimal`.
