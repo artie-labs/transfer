@@ -85,10 +85,8 @@ func decodeBigInt(data []byte) *big.Int {
 
 // DecodeDecimal is used to decode `org.apache.kafka.connect.data.Decimal`.
 func DecodeDecimal(data []byte, precision *int, scale int) *decimal.Decimal {
-	bigInt := decodeBigInt(data)
-
 	// Convert the big integer to a big float
-	bigFloat := new(big.Float).SetInt(bigInt)
+	bigFloat := new(big.Float).SetInt(decodeBigInt(data))
 
 	// Compute divisor as 10^scale with big.Int's Exp, then convert to big.Float
 	scaleInt := big.NewInt(int64(scale))
