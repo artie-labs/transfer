@@ -35,11 +35,6 @@ func encodeBigInt(value *big.Int) []byte {
 		twoComplement.Add(twoComplement, big.NewInt(1))
 
 		data = twoComplement.Bytes()
-		if data[0]&0x80 == 0 {
-			// 0xff is -1 in Java
-			// https://stackoverflow.com/questions/1677957/why-byte-b-byte-0xff-is-equals-to-integer-1
-			data = append([]byte{0xff}, data...)
-		}
 	}
 
 	return data
