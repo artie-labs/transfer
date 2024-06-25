@@ -279,3 +279,21 @@ func TestTableData_InsertRowIntegrity(t *testing.T) {
 		assert.True(t, td.ContainOtherOperations())
 	}
 }
+
+func TestTableData_InsertRowSoftDelete(t *testing.T) {
+	td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{SoftDelete: true}, "foo")
+	assert.Equal(t, 0, int(td.NumberOfRows()))
+
+	td.InsertRow("123", map[string]any{"name": "dana"}, false)
+	assert.Equal(t, 1, int(td.NumberOfRows()))
+	assert.Equal(t, "dana", td.Rows()[0]["name"])
+
+	td.InsertRow("123", map[string]any{"name": "dana2"}, false)
+	assert.Equal(t, 1, int(td.NumberOfRows()))
+	assert.Equal(t, "dana2", td.Rows()[0]["name"])
+
+	td.InsertRow("123", map[string]any{}, true)
+	assert.Equal(t, 1, int(td.NumberOfRows()))
+	// The previous value should be preserved
+	assert.Equal(t, "dana2", td.Rows()[0]["name"])
+}
