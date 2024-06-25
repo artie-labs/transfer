@@ -8,25 +8,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
-// EncodeDecimal is used to encode a string representation of a number to `org.apache.kafka.connect.data.Decimal`.
-func EncodeDecimal(value string, scale uint16) ([]byte, error) {
-	bigFloatValue := new(big.Float)
-	if _, success := bigFloatValue.SetString(value); !success {
-		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
-	}
-
-	scaledValue := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
-	bigFloatValue.Mul(bigFloatValue, new(big.Float).SetInt(scaledValue))
-
-	// Extract the scaled integer value.
-	bigIntValue := new(big.Int)
-	if _, success := bigIntValue.SetString(bigFloatValue.String(), 10); !success {
-		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
-	}
-
-	return encodeBigInt(bigIntValue), nil
-}
-
 // encodeBigInt encodes a [big.Int] into a byte slice using two's complement.
 func encodeBigInt(bigIntValue *big.Int) []byte {
 	data := bigIntValue.Bytes() // [Bytes] returns the absolute value of the number.
@@ -83,6 +64,25 @@ func decodeBigInt(data []byte) *big.Int {
 	}
 
 	return bigInt
+}
+
+// EncodeDecimal is used to encode a string representation of a number to `org.apache.kafka.connect.data.Decimal`.
+func EncodeDecimal(value string, scale uint16) ([]byte, error) {
+	bigFloatValue := new(big.Float)
+	if _, success := bigFloatValue.SetString(value); !success {
+		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
+	}
+
+	scaledValue := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
+	bigFloatValue.Mul(bigFloatValue, new(big.Float).SetInt(scaledValue))
+
+	// Extract the scaled integer value.
+	bigIntValue := new(big.Int)
+	if _, success := bigIntValue.SetString(bigFloatValue.String(), 10); !success {
+		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
+	}
+
+	return encodeBigInt(bigIntValue), nil
 }
 
 // DecodeDecimal is used to decode `org.apache.kafka.connect.data.Decimal`.
