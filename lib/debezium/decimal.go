@@ -78,8 +78,9 @@ func EncodeDecimal(value string, scale uint16) ([]byte, error) {
 	if bigFloatValue.IsInt() {
 		bigFloatValue.Int(bigIntValue)
 	} else {
-		if _, success := bigIntValue.SetString(bigFloatValue.Text('f', 0), 10); !success {
-			return nil, fmt.Errorf("unable to use %q as a big.Int", bigFloatValue.String())
+		strValue := bigFloatValue.Text('f', 0)
+		if _, success := bigIntValue.SetString(strValue, 10); !success {
+			return nil, fmt.Errorf("unable to use %q as a big.Int", strValue)
 		}
 	}
 
