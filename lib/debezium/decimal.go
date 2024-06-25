@@ -11,10 +11,6 @@ import (
 func encodeBigInt(value *big.Int) []byte {
 	data := value.Bytes() // [Bytes] returns the absolute value of the number.
 
-	if len(data) == 0 {
-		return data
-	}
-
 	if value.Sign() < 0 {
 		// Convert to two's complement if the number is negative
 
@@ -41,7 +37,7 @@ func encodeBigInt(value *big.Int) []byte {
 		}
 	} else {
 		// For positive values, prepend a zero if the highest bit is set to ensure it's interpreted as positive.
-		if data[0]&0x80 != 0 {
+		if len(data) > 0 && data[0]&0x80 != 0 {
 			data = append([]byte{0x00}, data...)
 		}
 	}
