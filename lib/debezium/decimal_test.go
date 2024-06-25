@@ -67,6 +67,7 @@ func mustParseDecimalFromString(in string) *apd.Decimal {
 
 func TestDecimalWithNewExponent(t *testing.T) {
 	assert.Equal(t, "0", decimalWithNewExponent(apd.New(0, 0), 0).Text('f'))
+	assert.Equal(t, "00", decimalWithNewExponent(apd.New(0, 1), 1).Text('f'))
 	assert.Equal(t, "0", decimalWithNewExponent(apd.New(0, 100), 0).Text('f'))
 	assert.Equal(t, "00", decimalWithNewExponent(apd.New(0, 0), 1).Text('f'))
 	assert.Equal(t, "0.0", decimalWithNewExponent(apd.New(0, 0), -1).Text('f'))
