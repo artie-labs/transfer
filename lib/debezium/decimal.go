@@ -8,7 +8,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
-// encodeBigInt encodes a [big.Int] into a byte slice using two's complement.
+// encodeBigInt encodes a [big.Int] into a big-endian byte slice using two's complement.
 func encodeBigInt(value *big.Int) []byte {
 	data := value.Bytes() // [Bytes] returns the absolute value of the number.
 
@@ -17,8 +17,8 @@ func encodeBigInt(value *big.Int) []byte {
 	}
 
 	if data[0] >= 0x80 {
-		// If the first bit is already set then it is a significant bit and we need to prepend an additional byte
-		// so that the first bit can safely be used to indicate whether the number is positive or negative.
+		// If the leftmost bit is already set then it is a significant bit and we need to prepend an additional byte
+		// so that the leftmost bit can safely be used to indicate whether the number is positive or negative.
 		data = slices.Concat([]byte{0x00}, data)
 	}
 
@@ -40,7 +40,7 @@ func encodeBigInt(value *big.Int) []byte {
 	return data
 }
 
-// decodeBigInt decodes a [big.Int] from a byte slice that has been encoded using two's complement.
+// decodeBigInt decodes a [big.Int] from a big-endian byte slice that has been encoded using two's complement.
 func decodeBigInt(data []byte) *big.Int {
 	bigInt := new(big.Int)
 
