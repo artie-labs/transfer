@@ -130,18 +130,25 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 	var prevRowSize int
 	prevRow, isOk := t.rowsData[pk]
 	if isOk {
-		prevRowSize = size.GetApproxSize(prevRow)
-		for key, val := range rowData {
-			if val == constants.ToastUnavailableValuePlaceholder {
-				// Copy it from prevRow.
-				prevVal, isOk := prevRow[key]
-				if !isOk {
-					continue
-				}
+		if delete {
+			// if the row was deleted, copy the previous values and just update the deleted flag
+			rowData = prevRow
+			rowData[constants.DeleteColumnMarker] = true
+		} else {
+			prevRowSize = size.GetApproxSize(prevRow)
+			for key, val := range rowData {
+				if val == constants.ToastUnavailableValuePlaceholder {
+					// Copy it from prevRow.
+					prevVal, isOk := prevRow[key]
+					if !isOk {
+						continue
+					}
 
-				// If we got back a TOASTED value, we need to use the previous row.
-				rowData[key] = prevVal
+					// If we got back a TOASTED value, we need to use the previous row.
+					rowData[key] = prevVal
+				}
 			}
+
 		}
 	}
 
