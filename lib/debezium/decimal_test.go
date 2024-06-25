@@ -44,7 +44,7 @@ func TestDecodeBigInt(t *testing.T) {
 func mustParseDecimal(value string) *apd.Decimal {
 	decimal, _, err := apd.NewFromString(value)
 	if err != nil {
-		panic(fmt.Errorf("unable to use %q as a floating-point number: %w", value, err))
+		panic(err)
 	}
 	return decimal
 }
