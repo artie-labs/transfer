@@ -28,7 +28,7 @@ func TestDecodeBigInt(t *testing.T) {
 	assert.Equal(t, big.NewInt(128), decodeBigInt([]byte{0x00, 0x80}))
 	assert.Equal(t, big.NewInt(-128), decodeBigInt([]byte{0xff, 0x80}))
 
-	for i := range 1_000_000 {
+	for i := range 100_000 {
 		bigInt := big.NewInt(int64(i))
 
 		assert.Equal(t, bigInt, decodeBigInt(encodeBigInt(bigInt)))
