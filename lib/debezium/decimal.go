@@ -69,12 +69,14 @@ func EncodeDecimal(value string, scale uint16) ([]byte, error) {
 		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
 	}
 
-	scaledValue := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
-	bigFloatValue.Mul(bigFloatValue, new(big.Float).SetInt(scaledValue))
+	if scale > 0 {
+		scaledValue := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
+		bigFloatValue.Mul(bigFloatValue, new(big.Float).SetInt(scaledValue))
+	}
 
 	// Extract the scaled integer value.
 	bigIntValue := new(big.Int)
-	if _, success := bigIntValue.SetString(bigFloatValue.String(), 10); !success {
+	if _, success := bigIntValue.SetString(bigFloatValue.Text('f', 0), 10); !success {
 		return nil, fmt.Errorf("unable to use %q as a floating-point number", value)
 	}
 
