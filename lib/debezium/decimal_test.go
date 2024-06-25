@@ -70,23 +70,23 @@ func TestDecimalWithNewExponent(t *testing.T) {
 }
 
 func TestEncodeDecimal(t *testing.T) {
-	testValue := func(value string, expectedScale int32) {
+	testEncodeDecimal := func(value string, expectedScale int32) {
 		bytes, scale := EncodeDecimal(mustParseDecimal(value))
 		result := DecodeDecimal(bytes, nil, int(scale)).String()
 		assert.Equal(t, result, value, value)
 		assert.Equal(t, expectedScale, scale, value)
 	}
 
-	testValue("0", 0)
-	testValue("0.0", 1)
-	testValue("0.00", 2)
-	testValue("0.00000", 5)
-	testValue("1", 0)
-	testValue("1.0", 1)
-	testValue("-1", 0)
-	testValue("-1.0", 1)
-	testValue("145.183000000000009", 15)
-	testValue("-145.183000000000009", 15)
+	testEncodeDecimal("0", 0)
+	testEncodeDecimal("0.0", 1)
+	testEncodeDecimal("0.00", 2)
+	testEncodeDecimal("0.00000", 5)
+	testEncodeDecimal("1", 0)
+	testEncodeDecimal("1.0", 1)
+	testEncodeDecimal("-1", 0)
+	testEncodeDecimal("-1.0", 1)
+	testEncodeDecimal("145.183000000000009", 15)
+	testEncodeDecimal("-145.183000000000009", 15)
 }
 
 func TestEncodeDecimalWithScale(t *testing.T) {
