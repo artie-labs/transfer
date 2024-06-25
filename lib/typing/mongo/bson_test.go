@@ -71,7 +71,7 @@ func TestJSONEToMap(t *testing.T) {
 		}
 	},
 	"test_timestamp": {
-       "$timestamp": { "t": 1678929517, "i": 1 }
+	   "$timestamp": { "t": 1678929517, "i": 1 }
    	},
 	"test_nan": NaN,
 	"test_nan_string": "NaN",
