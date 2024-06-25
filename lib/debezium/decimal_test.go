@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/cockroachdb/apd/v3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -56,6 +57,32 @@ func mustEncodeAndDecodeDecimal(value string, scale uint16) string {
 	return out
 }
 
+func mustParseString(in string) *apd.Decimal {
+	out, _, err := apd.NewFromString(in)
+	if err != nil {
+		panic(err)
+	}
+	return out
+}
+
+func TestDecimalWithNewExponent(t *testing.T) {
+	assert.Equal(t, "0", decimalWithNewExponent(apd.New(0, 0), 0).Text('f'))
+	assert.Equal(t, "0", decimalWithNewExponent(apd.New(0, 100), 0).Text('f'))
+	assert.Equal(t, "00", decimalWithNewExponent(apd.New(0, 0), 1).Text('f'))
+	assert.Equal(t, "0.0", decimalWithNewExponent(apd.New(0, 0), -1).Text('f'))
+
+	// Same exponent:
+	assert.Equal(t, "12.349", decimalWithNewExponent(mustParseString("12.349"), -3).Text('f'))
+	// More precise exponent:
+	assert.Equal(t, "12.3490", decimalWithNewExponent(mustParseString("12.349"), -4).Text('f'))
+	assert.Equal(t, "12.34900", decimalWithNewExponent(mustParseString("12.349"), -5).Text('f'))
+	// Lest precise exponent:
+	// Extra digits should be truncated rather than rounded.
+	assert.Equal(t, "12.34", decimalWithNewExponent(mustParseString("12.349"), -2).Text('f'))
+	assert.Equal(t, "12.3", decimalWithNewExponent(mustParseString("12.349"), -1).Text('f'))
+	assert.Equal(t, "12", decimalWithNewExponent(mustParseString("12.349"), 0).Text('f'))
+}
+
 func TestEncodeDecimal(t *testing.T) {
 	// Whole numbers:
 	for i := range 100_000 {
@@ -66,6 +93,32 @@ func TestEncodeDecimal(t *testing.T) {
 			assert.Equal(t, strValue, mustEncodeAndDecodeDecimal(strValue, 0))
 		}
 	}
+
+	// Scale of 15 that is equal to the amount of decimal places:
+	assert.Equal(t, "145.183000000000000", mustEncodeAndDecodeDecimal("145.183000000000000", 15))
+
+	assert.Equal(t, "-145.183000000000000", mustEncodeAndDecodeDecimal("-145.183000000000000", 15))
+	// If scale is smaller than the amount of decimal places then the extra places should be truncated after rounding:
+	assert.Equal(t, "145.18300000000000", mustEncodeAndDecodeDecimal("145.183000000000000", 14))
+
+	assert.Equal(t, "-145.18300000000000", mustEncodeAndDecodeDecimal("-145.183000000000000", 14))
+	assert.Equal(t, "145.18300000000000", mustEncodeAndDecodeDecimal("145.183000000000001", 14))
+	assert.Equal(t, "-145.18300000000000", mustEncodeAndDecodeDecimal("-145.183000000000001", 14))
+	assert.Equal(t, "145.18300000000000", mustEncodeAndDecodeDecimal("145.183000000000004", 14))
+	assert.Equal(t, "-145.18300000000000", mustEncodeAndDecodeDecimal("-145.183000000000004", 14))
+	// If scale is larger than the amount of decimal places then the extra places should be padded with zeros:
+	assert.Equal(t, "145.1830000000000000", mustEncodeAndDecodeDecimal("145.183000000000000", 16))
+	assert.Equal(t, "-145.1830000000000000", mustEncodeAndDecodeDecimal("-145.183000000000000", 16))
+	assert.Equal(t, "145.1830000000000010", mustEncodeAndDecodeDecimal("145.183000000000001", 16))
+	assert.Equal(t, "-145.1830000000000010", mustEncodeAndDecodeDecimal("-145.183000000000001", 16))
+	assert.Equal(t, "145.1830000000000040", mustEncodeAndDecodeDecimal("145.183000000000004", 16))
+	assert.Equal(t, "-145.1830000000000040", mustEncodeAndDecodeDecimal("-145.183000000000004", 16))
+	assert.Equal(t, "145.1830000000000050", mustEncodeAndDecodeDecimal("145.183000000000005", 16))
+	assert.Equal(t, "-145.1830000000000050", mustEncodeAndDecodeDecimal("-145.183000000000005", 16))
+	assert.Equal(t, "145.1830000000000090", mustEncodeAndDecodeDecimal("145.183000000000009", 16))
+	assert.Equal(t, "-145.1830000000000090", mustEncodeAndDecodeDecimal("-145.183000000000009", 16))
+
+	assert.Equal(t, "-9063701308.217222135", mustEncodeAndDecodeDecimal("-9063701308.217222135", 9))
 
 	testCases := []struct {
 		name  string
@@ -140,16 +193,6 @@ func TestEncodeDecimal(t *testing.T) {
 			name:  "negative number: 2^16 - 1",
 			value: "-65535",
 			scale: 0,
-		},
-		{
-			name:  "number with a scale of 15",
-			value: "0.000022998904125",
-			scale: 15,
-		},
-		{
-			name:  "number with a scale of 15",
-			value: "145.183000000000000",
-			scale: 15,
 		},
 		{
 			name:        "malformed - empty string",
