@@ -27,10 +27,10 @@ func EncodeDecimal(value string, scale uint16) ([]byte, error) {
 	return encodeBigInt(bigIntValue), nil
 }
 
-func encodeBigInt(value *big.Int) []byte {
-	data := value.Bytes() // [Bytes] returns the absolute value of the number.
+func encodeBigInt(bigIntValue *big.Int) []byte {
+	data := bigIntValue.Bytes() // [Bytes] returns the absolute value of the number.
 
-	if value.Sign() < 0 {
+	if bigIntValue.Sign() < 0 {
 		// Convert to two's complement if the number is negative
 
 		if data[0] >= 0x80 {
