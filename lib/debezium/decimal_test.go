@@ -10,8 +10,8 @@ import (
 
 func TestEncodeBigInt(t *testing.T) {
 	assert.Equal(t, []byte{}, encodeBigInt(big.NewInt(0)))
-	assert.Equal(t, []byte{0xff}, encodeBigInt(big.NewInt(-1)))
 	assert.Equal(t, []byte{0x01}, encodeBigInt(big.NewInt(1)))
+	assert.Equal(t, []byte{0xff}, encodeBigInt(big.NewInt(-1)))
 	assert.Equal(t, []byte{0x11}, encodeBigInt(big.NewInt(17)))
 	assert.Equal(t, []byte{0x7f}, encodeBigInt(big.NewInt(127)))
 	assert.Equal(t, []byte{0x81}, encodeBigInt(big.NewInt(-127)))
