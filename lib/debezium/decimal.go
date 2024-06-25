@@ -34,7 +34,7 @@ func encodeBigInt(value *big.Int) []byte {
 		twoComplement := new(big.Int).SetBytes(data)
 		twoComplement.Add(twoComplement, big.NewInt(1))
 
-		data = twoComplement.Bytes()
+		return twoComplement.Bytes()
 	}
 
 	return data
