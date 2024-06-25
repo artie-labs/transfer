@@ -29,7 +29,6 @@ func EncodeDecimal(value string, scale uint16) ([]byte, error) {
 
 func encodeBigInt(bigIntValue *big.Int) []byte {
 	data := bigIntValue.Bytes() // [Bytes] returns the absolute value of the number.
-
 	if bigIntValue.Sign() < 0 {
 		// Convert to two's complement if the number is negative
 
@@ -65,7 +64,6 @@ func encodeBigInt(bigIntValue *big.Int) []byte {
 
 func decodeBigInt(data []byte) *big.Int {
 	bigInt := new(big.Int)
-
 	// If the data represents a negative number, the sign bit will be set.
 	if len(data) > 0 && data[0] >= 0x80 {
 		// To convert the data to a two's complement integer, we need to invert the bytes and add one.
