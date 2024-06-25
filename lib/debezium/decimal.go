@@ -27,6 +27,7 @@ func EncodeDecimal(value string, scale uint16) ([]byte, error) {
 	return encodeBigInt(bigIntValue), nil
 }
 
+// encodeBigInt encodes a [big.Int] into a byte slice using two's complement.
 func encodeBigInt(bigIntValue *big.Int) []byte {
 	data := bigIntValue.Bytes() // [Bytes] returns the absolute value of the number.
 	if bigIntValue.Sign() < 0 {
@@ -62,6 +63,7 @@ func encodeBigInt(bigIntValue *big.Int) []byte {
 	return data
 }
 
+// decodeBigInt decodes a [big.Int] from a byte slice that has been encoded using two's complement.
 func decodeBigInt(data []byte) *big.Int {
 	bigInt := new(big.Int)
 
