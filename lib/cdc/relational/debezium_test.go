@@ -340,18 +340,18 @@ func (r *RelationTestSuite) TestGetEventFromBytes_MySQL() {
 				"optional": false,
 				"field": "abcDEF"
 			}, {
-                "type": "map",
-                "keys": {
-                    "type": "string",
-                    "optional": false
-                },
-                "values": {
-                    "type": "string",
-                    "optional": true
-                },
-                "optional": false,
-                "field": "custom_fields"
-            }],
+				"type": "map",
+				"keys": {
+					"type": "string",
+					"optional": false
+				},
+				"values": {
+					"type": "string",
+					"optional": true
+				},
+				"optional": false,
+				"field": "custom_fields"
+			}],
 			"optional": true,
 			"name": "mysql1.inventory.customers.Value",
 			"field": "after"

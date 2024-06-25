@@ -91,30 +91,30 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 		// Schema
 		keys, err := parsePartitionKeyStruct([]byte(`
 {
-    "schema": {
-        "type": "struct",
-        "fields": [
-            {
-                "type": "string",
-                "optional": false,
-                "field": "id"
-            },
-            {
-                "type": "int64",
-                "optional": false,
-                "name": "io.debezium.time.Timestamp",
-                "version": 1,
-                "default": 0,
-                "field": "created_at"
-            }
-        ],
-        "optional": false,
-        "name": "b2810475-5d57-48b5-b525-7eaa208d75a0.8024ffce-67eb-472c-99e5-1d9419cdf943.public.message_consents.Key"
-    },
-    "payload": {
-        "id": "339f3f2f-f29f-4f00-869e-476122310eff",
-        "created_at": 1713229699440
-    }
+	"schema": {
+		"type": "struct",
+		"fields": [
+			{
+				"type": "string",
+				"optional": false,
+				"field": "id"
+			},
+			{
+				"type": "int64",
+				"optional": false,
+				"name": "io.debezium.time.Timestamp",
+				"version": 1,
+				"default": 0,
+				"field": "created_at"
+			}
+		],
+		"optional": false,
+		"name": "b2810475-5d57-48b5-b525-7eaa208d75a0.8024ffce-67eb-472c-99e5-1d9419cdf943.public.message_consents.Key"
+	},
+	"payload": {
+		"id": "339f3f2f-f29f-4f00-869e-476122310eff",
+		"created_at": 1713229699440
+	}
 }
 `))
 		assert.NoError(t, err)
