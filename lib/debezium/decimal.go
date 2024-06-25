@@ -107,8 +107,8 @@ func EncodeDecimalWithScale(decimal *apd.Decimal, scale int32) []byte {
 	if decimal.Exponent != targetExponent {
 		decimal = decimalWithNewExponent(decimal, targetExponent)
 	}
-	out, _ := EncodeDecimal(decimal)
-	return out
+	bytes, _ := EncodeDecimal(decimal)
+	return bytes
 }
 
 // DecodeDecimal is used to decode `org.apache.kafka.connect.data.Decimal`.
