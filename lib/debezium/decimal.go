@@ -74,6 +74,7 @@ func EncodeDecimal(value string, scale uint16) ([]byte, error) {
 		bigFloatValue.Mul(bigFloatValue, new(big.Float).SetInt(scaledValue))
 	}
 
+	// Extract the scaled integer value.
 	bigIntValue := new(big.Int)
 	if bigFloatValue.IsInt() {
 		bigFloatValue.Int(bigIntValue)
