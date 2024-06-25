@@ -132,11 +132,8 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 	if isOk {
 		prevRowSize = size.GetApproxSize(prevRow)
 		if delete {
-			// If the row was deleted, preserve the previous values if we have them in memory
+			// If the row was deleted, preserve the previous values that we have in memory
 			rowData = prevRow
-			if len(rowData) == 0 {
-				rowData = map[string]any{}
-			}
 			rowData[constants.DeleteColumnMarker] = true
 		} else {
 			for key, val := range rowData {

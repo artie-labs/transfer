@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -208,7 +209,7 @@ func TestTableData_ContainsHardDeletes(t *testing.T) {
 		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
 		assert.Equal(t, 0, int(td.NumberOfRows()))
 
-		td.InsertRow("123", nil, true)
+		td.InsertRow("123", map[string]any{"id": "123"}, true)
 		assert.Equal(t, 1, int(td.NumberOfRows()))
 
 		assert.True(t, td.ContainsHardDeletes())
@@ -218,7 +219,7 @@ func TestTableData_ContainsHardDeletes(t *testing.T) {
 		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{SoftDelete: true}, "foo")
 		assert.Equal(t, 0, int(td.NumberOfRows()))
 
-		td.InsertRow("123", nil, true)
+		td.InsertRow("123", map[string]any{"id": "123"}, true)
 		assert.Equal(t, 1, int(td.NumberOfRows()))
 		assert.False(t, td.ContainsHardDeletes())
 	}
@@ -270,12 +271,12 @@ func TestTableData_InsertRowIntegrity(t *testing.T) {
 	assert.False(t, td.ContainOtherOperations())
 
 	for i := 0; i < 100; i++ {
-		td.InsertRow("123", nil, true)
+		td.InsertRow("123", map[string]any{"id": "123"}, true)
 		assert.False(t, td.ContainOtherOperations())
 	}
 
 	for i := 0; i < 100; i++ {
-		td.InsertRow("123", nil, false)
+		td.InsertRow("123", map[string]any{"id": "123"}, false)
 		assert.True(t, td.ContainOtherOperations())
 	}
 }
@@ -284,16 +285,17 @@ func TestTableData_InsertRowSoftDelete(t *testing.T) {
 	td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{SoftDelete: true}, "foo")
 	assert.Equal(t, 0, int(td.NumberOfRows()))
 
-	td.InsertRow("123", map[string]any{"name": "dana"}, false)
+	td.InsertRow("123", map[string]any{"id": "123", "name": "dana"}, false)
 	assert.Equal(t, 1, int(td.NumberOfRows()))
 	assert.Equal(t, "dana", td.Rows()[0]["name"])
 
-	td.InsertRow("123", map[string]any{"name": "dana2"}, false)
+	td.InsertRow("123", map[string]any{"id": "123", "name": "dana2"}, false)
 	assert.Equal(t, 1, int(td.NumberOfRows()))
 	assert.Equal(t, "dana2", td.Rows()[0]["name"])
 
-	td.InsertRow("123", map[string]any{}, true)
+	td.InsertRow("123", map[string]any{"id": "123", constants.DeleteColumnMarker: true}, true)
 	assert.Equal(t, 1, int(td.NumberOfRows()))
-	// The previous value should be preserved
+	// The previous value should be preserved, along with the delete marker
 	assert.Equal(t, "dana2", td.Rows()[0]["name"])
+	assert.Equal(t, true, td.Rows()[0][constants.DeleteColumnMarker])
 }
