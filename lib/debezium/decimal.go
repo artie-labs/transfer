@@ -85,7 +85,6 @@ func EncodeDecimalWithScale(_decimal *apd.Decimal, scale int32) []byte {
 }
 
 // DecodeDecimal is used to decode [org.apache.kafka.connect.data.Decimal].
-func DecodeDecimal(data []byte, precision *int, scale int) *decimal.Decimal {
-	_decimal := apd.NewWithBigInt(new(apd.BigInt).SetMathBigInt(decodeBigInt(data)), -int32(scale))
-	return decimal.NewDecimal(precision, scale, _decimal)
+func DecodeDecimal(data []byte, scale int32) *apd.Decimal {
+	return apd.NewWithBigInt(new(apd.BigInt).SetMathBigInt(decodeBigInt(data)), -scale)
 }

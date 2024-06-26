@@ -52,7 +52,7 @@ func mustParseDecimal(value string) *apd.Decimal {
 func TestEncodeDecimal(t *testing.T) {
 	testEncodeDecimal := func(value string, expectedScale int32) {
 		bytes, scale := EncodeDecimal(mustParseDecimal(value))
-		actual := DecodeDecimal(bytes, nil, int(scale)).String()
+		actual := DecodeDecimal(bytes, scale).String()
 		assert.Equal(t, value, actual, value)
 		assert.Equal(t, expectedScale, scale, value)
 	}
@@ -72,7 +72,7 @@ func TestEncodeDecimal(t *testing.T) {
 func TestEncodeDecimalWithScale(t *testing.T) {
 	mustEncodeAndDecodeDecimal := func(value string, scale int32) string {
 		bytes := EncodeDecimalWithScale(mustParseDecimal(value), scale)
-		return DecodeDecimal(bytes, nil, int(scale)).String()
+		return DecodeDecimal(bytes, scale).String()
 	}
 
 	// Whole numbers:
