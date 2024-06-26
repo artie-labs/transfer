@@ -1,6 +1,9 @@
 package decimal
 
 import (
+	"log/slog"
+	"math/big"
+
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/cockroachdb/apd/v3"
 )
@@ -51,6 +54,22 @@ func (d *Decimal) Precision() *int {
 // This function guarantees backwards compatibility.
 func (d *Decimal) String() string {
 	return d.value.Text('f')
+}
+
+func (d *Decimal) Value() any {
+	// -1 precision is used for variable scaled decimal
+	// We are opting to emit this as a STRING because the value is technically unbounded (can get to ~1 GB).
+	if d.precision != nil && (*d.precision > MaxPrecisionBeforeString || *d.precision == -1) {
+		return d.String()
+	}
+
+	// Depending on the precision, we will want to convert value to STRING or keep as a FLOAT.
+	// TODO: [Value] is only called in one place, look into callining [String] instead.
+	if out, ok := new(big.Float).SetString(d.String()); ok {
+		return out
+	}
+	slog.Error("Failed to convert apd.Decimal to big.Float", slog.String("value", d.String()))
+	return d.String()
 }
 
 func (d *Decimal) Details() DecimalDetails {
