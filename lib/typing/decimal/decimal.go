@@ -72,5 +72,9 @@ func (d *Decimal) Value() any {
 }
 
 func (d *Decimal) Details() DecimalDetails {
-	return DecimalDetails{scale: d.Scale(), precision: d.precision}
+	var precision int32 = PrecisionNotSpecified
+	if d.precision != nil {
+		precision = *d.precision
+	}
+	return DecimalDetails{scale: d.Scale(), precision: precision}
 }

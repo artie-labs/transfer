@@ -102,14 +102,14 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 		kd, err := dialect.KindForDataType("numeric(5, 2)", "")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
-		assert.Equal(t, int32(5), *kd.ExtendedDecimalDetails.Precision())
+		assert.Equal(t, int32(5), kd.ExtendedDecimalDetails.Precision())
 		assert.Equal(t, int32(2), kd.ExtendedDecimalDetails.Scale())
 	}
 	{
 		kd, err := dialect.KindForDataType("bignumeric(5, 2)", "")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
-		assert.Equal(t, int32(5), *kd.ExtendedDecimalDetails.Precision())
+		assert.Equal(t, int32(5), kd.ExtendedDecimalDetails.Precision())
 		assert.Equal(t, int32(2), kd.ExtendedDecimalDetails.Scale())
 	}
 }

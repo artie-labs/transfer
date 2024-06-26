@@ -93,9 +93,14 @@ func (f Field) ToKindDetails() typing.KindDetails {
 	case JSON, GeometryPointType, GeometryType, GeographyType:
 		return typing.Struct
 	case KafkaDecimalType:
-		scale, precision, err := f.GetScaleAndPrecision()
+		scale, precisionPtr, err := f.GetScaleAndPrecision()
 		if err != nil {
 			return typing.Invalid
+		}
+
+		var precision int32 = decimal.PrecisionNotSpecified
+		if precisionPtr != nil {
+			precision = *precisionPtr
 		}
 
 		eDecimal := typing.EDecimal
@@ -106,7 +111,7 @@ func (f Field) ToKindDetails() typing.KindDetails {
 		// This is because scale is not specified at the column level, rather at the row level
 		// It shouldn't matter much anyway since the column type we are creating is `TEXT` to avoid boundary errors.
 		eDecimal := typing.EDecimal
-		eDecimal.ExtendedDecimalDetails = decimal.NewDecimalDetails(ptr.ToInt32(decimal.PrecisionNotSpecified), decimal.DefaultScale)
+		eDecimal.ExtendedDecimalDetails = decimal.NewDecimalDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)
 		return eDecimal
 	}
 

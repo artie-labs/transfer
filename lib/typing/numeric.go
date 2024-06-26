@@ -28,6 +28,6 @@ func ParseNumeric(parts []string) KindDetails {
 	}
 
 	eDec := EDecimal
-	eDec.ExtendedDecimalDetails = decimal.NewDecimalDetails(&parsedNumbers[0], parsedNumbers[1])
+	eDec.ExtendedDecimalDetails = decimal.NewDecimalDetails(parsedNumbers[0], parsedNumbers[1])
 	return eDec
 }

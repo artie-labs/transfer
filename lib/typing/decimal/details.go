@@ -2,24 +2,20 @@ package decimal
 
 import (
 	"fmt"
-
-	"github.com/artie-labs/transfer/lib/ptr"
 )
 
 type DecimalDetails struct {
 	scale     int32
-	precision *int32
+	precision int32
 }
 
-func NewDecimalDetails(precision *int32, scale int32) *DecimalDetails {
-	if precision != nil {
-		if scale > *precision && *precision != -1 {
-			// Note: -1 precision means it's not specified.
+func NewDecimalDetails(precision int32, scale int32) *DecimalDetails {
+	if scale > precision && precision != -1 {
+		// Note: -1 precision means it's not specified.
 
-			// This is typically not possible, but Postgres has a design flaw that allows you to do things like: NUMERIC(5, 6) which actually equates to NUMERIC(7, 6)
-			// We are setting precision to be scale + 1 to account for the leading zero for decimal numbers.
-			precision = ptr.ToInt32(scale + 1)
-		}
+		// This is typically not possible, but Postgres has a design flaw that allows you to do things like: NUMERIC(5, 6) which actually equates to NUMERIC(7, 6)
+		// We are setting precision to be scale + 1 to account for the leading zero for decimal numbers.
+		precision = scale + 1
 	}
 
 	return &DecimalDetails{
@@ -32,7 +28,7 @@ func (d DecimalDetails) Scale() int32 {
 	return d.scale
 }
 
-func (d DecimalDetails) Precision() *int32 {
+func (d DecimalDetails) Precision() int32 {
 	return d.precision
 }
 
@@ -55,9 +51,9 @@ func (d *DecimalDetails) RedshiftKind() string {
 // BigQueryKind - is inferring logic from: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#decimal_types
 func (d *DecimalDetails) BigQueryKind() string {
 	if d.isNumeric() {
-		return fmt.Sprintf("NUMERIC(%v, %v)", *d.precision, d.scale)
+		return fmt.Sprintf("NUMERIC(%v, %v)", d.precision, d.scale)
 	} else if d.isBigNumeric() {
-		return fmt.Sprintf("BIGNUMERIC(%v, %v)", *d.precision, d.scale)
+		return fmt.Sprintf("BIGNUMERIC(%v, %v)", d.precision, d.scale)
 	}
 
 	return "STRING"
