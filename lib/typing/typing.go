@@ -20,7 +20,7 @@ type Settings struct {
 type KindDetails struct {
 	Kind                   string
 	ExtendedTimeDetails    *ext.NestedKind
-	ExtendedDecimalDetails *decimal.Decimal
+	ExtendedDecimalDetails *decimal.DecimalDetails
 
 	// Optional kind details metadata
 	OptionalStringPrecision *int
