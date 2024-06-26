@@ -236,7 +236,6 @@ func (f Field) DecodeDecimal(encoded []byte) (*decimal.Decimal, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get scale and/or precision: %w", err)
 	}
-
 	_decimal := DecodeDecimal(encoded, int32(scale))
 	return decimal.NewDecimal(precision, scale, _decimal), nil
 }
@@ -261,7 +260,6 @@ func (f Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error
 	if err != nil {
 		return nil, err
 	}
-
 	_decimal := DecodeDecimal(bytes, int32(scale))
 	return decimal.NewDecimal(ptr.ToInt(decimal.PrecisionNotSpecified), scale, _decimal), nil
 }
