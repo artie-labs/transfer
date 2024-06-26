@@ -15,7 +15,7 @@ import (
 
 func TestParseValue(t *testing.T) {
 	eDecimal := typing.EDecimal
-	eDecimal.ExtendedDecimalDetails = decimal.NewDecimal(ptr.ToInt(30), 5, nil)
+	eDecimal.ExtendedDecimalDetails = decimal.NewDecimalDetails(ptr.ToInt(30), 5)
 
 	eTime := typing.ETime
 	eTime.ExtendedTimeDetails = &ext.Time

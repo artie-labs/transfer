@@ -69,9 +69,10 @@ func parseValue(settings Settings, val any) KindDetails {
 		return String
 
 	case *decimal.Decimal:
+		extendedDetails := convertedVal.Details()
 		return KindDetails{
 			Kind:                   EDecimal.Kind,
-			ExtendedDecimalDetails: convertedVal,
+			ExtendedDecimalDetails: &extendedDetails,
 		}
 	case *ext.ExtendedTime:
 		return KindDetails{
