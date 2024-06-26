@@ -18,7 +18,7 @@ func GetKeyFromMap(obj map[string]any, key string, defaultValue any) any {
 	return val
 }
 
-func GetIntegerFromMap(obj map[string]any, key string) (int, error) {
+func GetInt32FromMap(obj map[string]any, key string) (int32, error) {
 	if len(obj) == 0 {
 		return 0, fmt.Errorf("object is empty")
 	}
@@ -28,10 +28,10 @@ func GetIntegerFromMap(obj map[string]any, key string) (int, error) {
 		return 0, fmt.Errorf("key: %s does not exist in object", key)
 	}
 
-	val, err := strconv.Atoi(fmt.Sprint(valInterface))
+	val, err := strconv.ParseInt(fmt.Sprint(valInterface), 10, 32)
 	if err != nil {
 		return 0, fmt.Errorf("key: %s is not type integer: %w", key, err)
 	}
 
-	return val, nil
+	return int32(val), nil
 }

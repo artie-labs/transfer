@@ -12,14 +12,14 @@ func ParseNumeric(parts []string) KindDetails {
 		return Invalid
 	}
 
-	var parsedNumbers []int
+	var parsedNumbers []int32
 	for _, part := range parts {
-		parsedNumber, err := strconv.Atoi(strings.TrimSpace(part))
+		parsedNumber, err := strconv.ParseInt(strings.TrimSpace(part), 10, 32)
 		if err != nil {
 			return Invalid
 		}
 
-		parsedNumbers = append(parsedNumbers, parsedNumber)
+		parsedNumbers = append(parsedNumbers, int32(parsedNumber))
 	}
 
 	// If scale is 0 or not specified, then number is an int.

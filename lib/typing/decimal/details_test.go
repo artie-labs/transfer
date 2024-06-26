@@ -11,8 +11,8 @@ import (
 func TestDecimalDetailsKind(t *testing.T) {
 	type _testCase struct {
 		Name      string
-		Precision int
-		Scale     int
+		Precision int32
+		Scale     int32
 
 		ExpectedSnowflakeKind string
 		ExpectedRedshiftKind  string
@@ -70,7 +70,7 @@ func TestDecimalDetailsKind(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		d := NewDecimalDetails(ptr.ToInt(testCase.Precision), testCase.Scale)
+		d := NewDecimalDetails(ptr.ToInt32(testCase.Precision), testCase.Scale)
 		assert.Equal(t, testCase.ExpectedSnowflakeKind, d.SnowflakeKind(), testCase.Name)
 		assert.Equal(t, testCase.ExpectedRedshiftKind, d.RedshiftKind(), testCase.Name)
 		assert.Equal(t, testCase.ExpectedBigQueryKind, d.BigQueryKind(), testCase.Name)

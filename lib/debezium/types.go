@@ -246,7 +246,7 @@ func (f Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error
 		return nil, fmt.Errorf("value is not map[string]any type")
 	}
 
-	scale, err := maputil.GetIntegerFromMap(valueStruct, "scale")
+	scale, err := maputil.GetInt32FromMap(valueStruct, "scale")
 	if err != nil {
 		return nil, err
 	}
@@ -261,5 +261,5 @@ func (f Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error
 		return nil, err
 	}
 	_decimal := DecodeDecimal(bytes, int32(scale))
-	return decimal.NewDecimal(ptr.ToInt(decimal.PrecisionNotSpecified), _decimal), nil
+	return decimal.NewDecimal(ptr.ToInt32(decimal.PrecisionNotSpecified), _decimal), nil
 }

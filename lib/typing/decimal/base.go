@@ -34,7 +34,7 @@ func (d *DecimalDetails) isBigNumeric() bool {
 	return numbers.BetweenEq(max(1, d.scale), d.scale+38, *d.precision)
 }
 
-func (d *DecimalDetails) toKind(maxPrecision int, exceededKind string) string {
+func (d *DecimalDetails) toKind(maxPrecision int32, exceededKind string) string {
 	precision := maxPrecision
 	if d.precision != nil {
 		precision = *d.precision

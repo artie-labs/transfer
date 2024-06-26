@@ -61,20 +61,20 @@ type Field struct {
 	Parameters   map[string]any        `json:"parameters"`
 }
 
-func (f Field) GetScaleAndPrecision() (int, *int, error) {
-	scale, scaleErr := maputil.GetIntegerFromMap(f.Parameters, "scale")
+func (f Field) GetScaleAndPrecision() (int32, *int32, error) {
+	scale, scaleErr := maputil.GetInt32FromMap(f.Parameters, "scale")
 	if scaleErr != nil {
 		return 0, nil, scaleErr
 	}
 
-	var precisionPtr *int
+	var precisionPtr *int32
 	if _, isOk := f.Parameters[KafkaDecimalPrecisionKey]; isOk {
-		precision, precisionErr := maputil.GetIntegerFromMap(f.Parameters, KafkaDecimalPrecisionKey)
+		precision, precisionErr := maputil.GetInt32FromMap(f.Parameters, KafkaDecimalPrecisionKey)
 		if precisionErr != nil {
 			return 0, nil, precisionErr
 		}
 
-		precisionPtr = ptr.ToInt(precision)
+		precisionPtr = ptr.ToInt32(precision)
 	}
 
 	return scale, precisionPtr, nil
@@ -106,7 +106,7 @@ func (f Field) ToKindDetails() typing.KindDetails {
 		// This is because scale is not specified at the column level, rather at the row level
 		// It shouldn't matter much anyway since the column type we are creating is `TEXT` to avoid boundary errors.
 		eDecimal := typing.EDecimal
-		eDecimal.ExtendedDecimalDetails = decimal.NewDecimalDetails(ptr.ToInt(decimal.PrecisionNotSpecified), decimal.DefaultScale)
+		eDecimal.ExtendedDecimalDetails = decimal.NewDecimalDetails(ptr.ToInt32(decimal.PrecisionNotSpecified), decimal.DefaultScale)
 		return eDecimal
 	}
 

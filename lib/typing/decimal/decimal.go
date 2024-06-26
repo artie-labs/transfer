@@ -10,7 +10,7 @@ import (
 
 // Decimal is Artie's wrapper around [*apd.Decimal] which can store large numbers w/ no precision loss.
 type Decimal struct {
-	precision *int
+	precision *int32
 	value     *apd.Decimal
 }
 
@@ -22,15 +22,15 @@ const (
 	MaxPrecisionBeforeString = 38
 )
 
-func NewDecimal(precision *int, value *apd.Decimal) *Decimal {
+func NewDecimal(precision *int32, value *apd.Decimal) *Decimal {
 	if precision != nil {
-		scale := int(-value.Exponent)
+		scale := -value.Exponent
 		if scale > *precision && *precision != -1 {
 			// Note: -1 precision means it's not specified.
 
 			// This is typically not possible, but Postgres has a design flaw that allows you to do things like: NUMERIC(5, 6) which actually equates to NUMERIC(7, 6)
 			// We are setting precision to be scale + 1 to account for the leading zero for decimal numbers.
-			precision = ptr.ToInt(scale + 1)
+			precision = ptr.ToInt32(scale + 1)
 		}
 	}
 
@@ -40,11 +40,11 @@ func NewDecimal(precision *int, value *apd.Decimal) *Decimal {
 	}
 }
 
-func (d *Decimal) Scale() int {
-	return int(-d.value.Exponent)
+func (d *Decimal) Scale() int32 {
+	return -d.value.Exponent
 }
 
-func (d *Decimal) Precision() *int {
+func (d *Decimal) Precision() *int32 {
 	return d.precision
 }
 

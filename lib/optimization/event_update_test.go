@@ -42,7 +42,7 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		tableDataCols.AddColumn(columns.NewColumn("ext_dec", typing.String))
 
 		extDecimalType := typing.EDecimal
-		extDecimalType.ExtendedDecimalDetails = decimal.NewDecimalDetails(ptr.ToInt(22), 2)
+		extDecimalType.ExtendedDecimalDetails = decimal.NewDecimalDetails(ptr.ToInt32(22), 2)
 		tableDataCols.AddColumn(columns.NewColumn("ext_dec_filled", extDecimalType))
 
 		tableDataCols.AddColumn(columns.NewColumn(strCol, typing.String))
@@ -121,31 +121,31 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		assert.Equal(t, typing.String, extDecCol.KindDetails)
 
 		extDecimal := typing.EDecimal
-		extDecimal.ExtendedDecimalDetails = decimal.NewDecimalDetails(ptr.ToInt(30), 2)
+		extDecimal.ExtendedDecimalDetails = decimal.NewDecimalDetails(ptr.ToInt32(30), 2)
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_dec", extDecimal)))
 		// Now it should be ext decimal type
 		extDecCol, isOk = tableData.inMemoryColumns.GetColumn("ext_dec")
 		assert.True(t, isOk)
 		assert.Equal(t, typing.EDecimal.Kind, extDecCol.KindDetails.Kind)
 		// Check precision and scale too.
-		assert.Equal(t, 30, *extDecCol.KindDetails.ExtendedDecimalDetails.Precision())
-		assert.Equal(t, 2, extDecCol.KindDetails.ExtendedDecimalDetails.Scale())
+		assert.Equal(t, int32(30), *extDecCol.KindDetails.ExtendedDecimalDetails.Precision())
+		assert.Equal(t, int32(2), extDecCol.KindDetails.ExtendedDecimalDetails.Scale())
 
 		// Testing ext_dec_filled since it's already filled out
 		extDecColFilled, isOk := tableData.inMemoryColumns.GetColumn("ext_dec_filled")
 		assert.True(t, isOk)
 		assert.Equal(t, typing.EDecimal.Kind, extDecColFilled.KindDetails.Kind)
 		// Check precision and scale too.
-		assert.Equal(t, 22, *extDecColFilled.KindDetails.ExtendedDecimalDetails.Precision())
-		assert.Equal(t, 2, extDecColFilled.KindDetails.ExtendedDecimalDetails.Scale())
+		assert.Equal(t, int32(22), *extDecColFilled.KindDetails.ExtendedDecimalDetails.Precision())
+		assert.Equal(t, int32(2), extDecColFilled.KindDetails.ExtendedDecimalDetails.Scale())
 
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_dec_filled", extDecimal)))
 		extDecColFilled, isOk = tableData.inMemoryColumns.GetColumn("ext_dec_filled")
 		assert.True(t, isOk)
 		assert.Equal(t, typing.EDecimal.Kind, extDecColFilled.KindDetails.Kind)
 		// Check precision and scale too.
-		assert.Equal(t, 22, *extDecColFilled.KindDetails.ExtendedDecimalDetails.Precision())
-		assert.Equal(t, 2, extDecColFilled.KindDetails.ExtendedDecimalDetails.Scale())
+		assert.Equal(t, int32(22), *extDecColFilled.KindDetails.ExtendedDecimalDetails.Precision())
+		assert.Equal(t, int32(2), extDecColFilled.KindDetails.ExtendedDecimalDetails.Scale())
 	}
 	{
 		tableDataCols := &columns.Columns{}

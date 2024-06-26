@@ -27,7 +27,7 @@ func TestGetKeyFromMap(t *testing.T) {
 	assert.Equal(t, val, "robin55")
 }
 
-func TestGetIntegerFromMap(t *testing.T) {
+func TestGetInt32FromMap(t *testing.T) {
 	object := map[string]any{
 		"abc":          "123",
 		"abc (number)": 123,
@@ -41,7 +41,7 @@ func TestGetIntegerFromMap(t *testing.T) {
 		name          string
 		obj           map[string]any
 		key           string
-		expectedValue int
+		expectedValue int32
 		expectedErr   string
 	}{
 		{
@@ -89,11 +89,11 @@ func TestGetIntegerFromMap(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		value, err := GetIntegerFromMap(testCase.obj, testCase.key)
+		value, err := GetInt32FromMap(testCase.obj, testCase.key)
 		if testCase.expectedErr != "" {
 			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
 		} else {
-			assert.Equal(t, reflect.Int, reflect.TypeOf(value).Kind())
+			assert.Equal(t, reflect.Int32, reflect.TypeOf(value).Kind())
 			assert.Equal(t, testCase.expectedValue, value)
 			assert.NoError(t, err, testCase.name)
 		}

@@ -67,35 +67,35 @@ func TestGetOptionalSchema(t *testing.T) {
 				"bit_test":     typing.Boolean,
 				"numeric_test": {
 					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimalDetails(ptr.ToInt(decimal.PrecisionNotSpecified), decimal.DefaultScale),
+					ExtendedDecimalDetails: decimal.NewDecimalDetails(ptr.ToInt32(decimal.PrecisionNotSpecified), decimal.DefaultScale),
 				},
 				"numeric_5": {
 					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimalDetails(ptr.ToInt(5), 0),
+					ExtendedDecimalDetails: decimal.NewDecimalDetails(ptr.ToInt32(5), 0),
 				},
 				"numeric_5_2": {
 					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimalDetails(ptr.ToInt(5), 2),
+					ExtendedDecimalDetails: decimal.NewDecimalDetails(ptr.ToInt32(5), 2),
 				},
 				"numeric_5_6": {
 					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimalDetails(ptr.ToInt(5), 6),
+					ExtendedDecimalDetails: decimal.NewDecimalDetails(ptr.ToInt32(5), 6),
 				},
 				"numeric_5_0": {
 					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimalDetails(ptr.ToInt(5), 0),
+					ExtendedDecimalDetails: decimal.NewDecimalDetails(ptr.ToInt32(5), 0),
 				},
 				"numeric_39_0": {
 					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimalDetails(ptr.ToInt(39), 0),
+					ExtendedDecimalDetails: decimal.NewDecimalDetails(ptr.ToInt32(39), 0),
 				},
 				"numeric_39_2": {
 					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimalDetails(ptr.ToInt(39), 2),
+					ExtendedDecimalDetails: decimal.NewDecimalDetails(ptr.ToInt32(39), 2),
 				},
 				"numeric_39_6": {
 					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimalDetails(ptr.ToInt(39), 6),
+					ExtendedDecimalDetails: decimal.NewDecimalDetails(ptr.ToInt32(39), 6),
 				},
 			},
 		},

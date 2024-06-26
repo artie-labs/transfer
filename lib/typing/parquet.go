@@ -132,8 +132,8 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 				InName:        &colName,
 				Type:          ptr.ToString("BYTE_ARRAY"),
 				ConvertedType: ptr.ToString("DECIMAL"),
-				Precision:     precision,
-				Scale:         ptr.ToInt(scale),
+				Precision:     ptr.ToInt(int(*precision)),
+				Scale:         ptr.ToInt(int(scale)),
 			}.String(),
 		}, nil
 	case Boolean.Kind:
