@@ -7,18 +7,18 @@ import (
 )
 
 type DecimalDetails struct {
-	scale     int
-	precision *int
+	scale     int32
+	precision *int32
 }
 
-func NewDecimalDetails(precision *int, scale int) *DecimalDetails {
+func NewDecimalDetails(precision *int32, scale int32) *DecimalDetails {
 	if precision != nil {
 		if scale > *precision && *precision != -1 {
 			// Note: -1 precision means it's not specified.
 
 			// This is typically not possible, but Postgres has a design flaw that allows you to do things like: NUMERIC(5, 6) which actually equates to NUMERIC(7, 6)
 			// We are setting precision to be scale + 1 to account for the leading zero for decimal numbers.
-			precision = ptr.ToInt(scale + 1)
+			precision = ptr.ToInt32(scale + 1)
 		}
 	}
 
@@ -28,11 +28,11 @@ func NewDecimalDetails(precision *int, scale int) *DecimalDetails {
 	}
 }
 
-func (d DecimalDetails) Scale() int {
+func (d DecimalDetails) Scale() int32 {
 	return d.scale
 }
 
-func (d DecimalDetails) Precision() *int {
+func (d DecimalDetails) Precision() *int32 {
 	return d.precision
 }
 

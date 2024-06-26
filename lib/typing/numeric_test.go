@@ -1,6 +1,8 @@
 package typing
 
 import (
+	"fmt"
+	"math"
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -12,8 +14,8 @@ func TestParseNumeric(t *testing.T) {
 	type _testCase struct {
 		parameters          []string
 		expectedKindDetails KindDetails
-		expectedPrecision   *int // Using a pointer to int so we can differentiate between unset (nil) and set (0 included)
-		expectedScale       int
+		expectedPrecision   *int32 // Using a pointer to int32 so we can differentiate between unset (nil) and set (0 included)
+		expectedScale       int32
 	}
 
 	testCases := []_testCase{
@@ -40,32 +42,38 @@ func TestParseNumeric(t *testing.T) {
 		{
 			parameters:          []string{"5", " 2"},
 			expectedKindDetails: EDecimal,
-			expectedPrecision:   ptr.ToInt(5),
+			expectedPrecision:   ptr.ToInt32(5),
 			expectedScale:       2,
 		},
 		{
 			parameters:          []string{"5", "2"},
 			expectedKindDetails: EDecimal,
-			expectedPrecision:   ptr.ToInt(5),
+			expectedPrecision:   ptr.ToInt32(5),
 			expectedScale:       2,
 		},
 		{
 			parameters:          []string{"39", "6"},
 			expectedKindDetails: EDecimal,
-			expectedPrecision:   ptr.ToInt(39),
+			expectedPrecision:   ptr.ToInt32(39),
 			expectedScale:       6,
 		},
 		{
 			parameters:          []string{"5"},
 			expectedKindDetails: Integer,
-			expectedPrecision:   ptr.ToInt(5),
+			expectedPrecision:   ptr.ToInt32(5),
 			expectedScale:       0,
 		},
 		{
 			parameters:          []string{"5", "0"},
 			expectedKindDetails: Integer,
-			expectedPrecision:   ptr.ToInt(5),
+			expectedPrecision:   ptr.ToInt32(5),
 			expectedScale:       0,
+		},
+		{
+			parameters:          []string{fmt.Sprint(math.MaxInt32), fmt.Sprint(math.MaxInt32)},
+			expectedKindDetails: EDecimal,
+			expectedPrecision:   ptr.ToInt32(math.MaxInt32),
+			expectedScale:       math.MaxInt32,
 		},
 	}
 
@@ -80,4 +88,8 @@ func TestParseNumeric(t *testing.T) {
 			}
 		}
 	}
+
+	// Test values that are larger than [math.MaxInt32].
+	assert.Equal(t, "invalid", ParseNumeric([]string{"10", fmt.Sprint(math.MaxInt32 + 1)}).Kind)
+	assert.Equal(t, "invalid", ParseNumeric([]string{fmt.Sprint(math.MaxInt32 + 1), "10"}).Kind)
 }

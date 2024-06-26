@@ -447,9 +447,9 @@ func TestField_DecodeDecimal(t *testing.T) {
 		params  map[string]any
 
 		expectedValue         string
-		expectedPrecision     int
+		expectedPrecision     int32
 		expectNilPtrPrecision bool
-		expectedScale         int
+		expectedScale         int32
 		expectBigFloat        bool
 		expectedErr           string
 	}{
@@ -638,7 +638,7 @@ func TestField_DecodeDebeziumVariableDecimal(t *testing.T) {
 		value any
 
 		expectedValue string
-		expectedScale int
+		expectedScale int32
 		expectedErr   string
 	}
 
@@ -720,7 +720,7 @@ func TestField_DecodeDebeziumVariableDecimal(t *testing.T) {
 		// It should be a string instead.
 		_, isOk = dec.Value().(string)
 		assert.True(t, isOk, testCase.name)
-		assert.Equal(t, -1, *dec.Precision(), testCase.name)
+		assert.Equal(t, int32(-1), *dec.Precision(), testCase.name)
 		assert.Equal(t, testCase.expectedScale, dec.Scale(), testCase.name)
 		assert.Equal(t, testCase.expectedValue, dec.Value(), testCase.name)
 	}

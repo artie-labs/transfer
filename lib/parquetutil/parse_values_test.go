@@ -15,7 +15,7 @@ import (
 
 func TestParseValue(t *testing.T) {
 	eDecimal := typing.EDecimal
-	eDecimal.ExtendedDecimalDetails = decimal.NewDecimalDetails(ptr.ToInt(30), 5)
+	eDecimal.ExtendedDecimalDetails = decimal.NewDecimalDetails(ptr.ToInt32(30), 5)
 
 	eTime := typing.ETime
 	eTime.ExtendedTimeDetails = &ext.Time
@@ -66,7 +66,7 @@ func TestParseValue(t *testing.T) {
 		},
 		{
 			name:          "decimal",
-			colVal:        decimal.NewDecimal(ptr.ToInt(30), numbers.MustParseDecimal("5000.22320")),
+			colVal:        decimal.NewDecimal(ptr.ToInt32(30), numbers.MustParseDecimal("5000.22320")),
 			colKind:       columns.NewColumn("", eDecimal),
 			expectedValue: "5000.22320",
 		},

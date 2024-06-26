@@ -19,8 +19,8 @@ func TestField_GetScaleAndPrecision(t *testing.T) {
 		name              string
 		parameters        map[string]any
 		expectedErr       string
-		expectedScale     int
-		expectedPrecision *int
+		expectedScale     int32
+		expectedPrecision *int32
 	}{
 		{
 			name:        "Test Case 1: Empty Parameters",
@@ -41,7 +41,7 @@ func TestField_GetScaleAndPrecision(t *testing.T) {
 				KafkaDecimalPrecisionKey: 10,
 			},
 			expectedScale:     5,
-			expectedPrecision: ptr.ToInt(10),
+			expectedPrecision: ptr.ToInt32(10),
 		},
 		{
 			name: "Test Case 4: Invalid Scale Type",
@@ -89,10 +89,10 @@ func TestField_ToKindDetails(t *testing.T) {
 	}
 
 	eDecimal := typing.EDecimal
-	eDecimal.ExtendedDecimalDetails = decimal.NewDecimalDetails(ptr.ToInt(decimal.PrecisionNotSpecified), decimal.DefaultScale)
+	eDecimal.ExtendedDecimalDetails = decimal.NewDecimalDetails(ptr.ToInt32(decimal.PrecisionNotSpecified), decimal.DefaultScale)
 
 	kafkaDecimalType := typing.EDecimal
-	kafkaDecimalType.ExtendedDecimalDetails = decimal.NewDecimalDetails(ptr.ToInt(10), 5)
+	kafkaDecimalType.ExtendedDecimalDetails = decimal.NewDecimalDetails(ptr.ToInt32(10), 5)
 
 	tcs := []_tc{
 		{

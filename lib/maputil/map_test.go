@@ -1,6 +1,7 @@
 package maputil
 
 import (
+	"math"
 	"reflect"
 	"testing"
 
@@ -27,7 +28,7 @@ func TestGetKeyFromMap(t *testing.T) {
 	assert.Equal(t, val, "robin55")
 }
 
-func TestGetIntegerFromMap(t *testing.T) {
+func TestGetInt32FromMap(t *testing.T) {
 	object := map[string]any{
 		"abc":          "123",
 		"abc (number)": 123,
@@ -35,13 +36,15 @@ func TestGetIntegerFromMap(t *testing.T) {
 		"ghi":          "hello",
 		"123":          "-321",
 		"123 (number)": -321,
+		"maxInt32":     math.MaxInt32,
+		"int64":        math.MaxInt32 + 1,
 	}
 
 	testCases := []struct {
 		name          string
 		obj           map[string]any
 		key           string
-		expectedValue int
+		expectedValue int32
 		expectedErr   string
 	}{
 		{
@@ -86,14 +89,26 @@ func TestGetIntegerFromMap(t *testing.T) {
 			key:           "123 (number)",
 			expectedValue: -321,
 		},
+		{
+			name:          "max int32",
+			obj:           object,
+			key:           "maxInt32",
+			expectedValue: int32(math.MaxInt32),
+		},
+		{
+			name:        "int64",
+			obj:         object,
+			key:         "int64",
+			expectedErr: "value out of range",
+		},
 	}
 
 	for _, testCase := range testCases {
-		value, err := GetIntegerFromMap(testCase.obj, testCase.key)
+		value, err := GetInt32FromMap(testCase.obj, testCase.key)
 		if testCase.expectedErr != "" {
 			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
 		} else {
-			assert.Equal(t, reflect.Int, reflect.TypeOf(value).Kind())
+			assert.Equal(t, reflect.Int32, reflect.TypeOf(value).Kind())
 			assert.Equal(t, testCase.expectedValue, value)
 			assert.NoError(t, err, testCase.name)
 		}

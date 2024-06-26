@@ -145,8 +145,8 @@ func TestRedshiftDialect_KindForDataType(t *testing.T) {
 		kd, err := dialect.KindForDataType("numeric(5,2)", "")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
-		assert.Equal(t, 5, *kd.ExtendedDecimalDetails.Precision())
-		assert.Equal(t, 2, kd.ExtendedDecimalDetails.Scale())
+		assert.Equal(t, int32(5), *kd.ExtendedDecimalDetails.Precision())
+		assert.Equal(t, int32(2), kd.ExtendedDecimalDetails.Scale())
 	}
 }
 
