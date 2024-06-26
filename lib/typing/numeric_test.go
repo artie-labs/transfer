@@ -89,7 +89,7 @@ func TestParseNumeric(t *testing.T) {
 		}
 	}
 
-	// Test values that are larger than [math.MaxInt32]
+	// Test values that are larger than [math.MaxInt32].
 	assert.Equal(t, "invalid", ParseNumeric([]string{"10", fmt.Sprint(math.MaxInt32 + 1)}).Kind)
 	assert.Equal(t, "invalid", ParseNumeric([]string{fmt.Sprint(math.MaxInt32 + 1), "10"}).Kind)
 }
