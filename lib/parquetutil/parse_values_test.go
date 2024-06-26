@@ -1,9 +1,9 @@
 package parquetutil
 
 import (
-	"math/big"
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 
@@ -66,7 +66,7 @@ func TestParseValue(t *testing.T) {
 		},
 		{
 			name:          "decimal",
-			colVal:        decimal.NewDecimal(ptr.ToInt(30), 5, big.NewFloat(5000.2232)),
+			colVal:        decimal.NewDecimal(ptr.ToInt(30), numbers.MustParseDecimal("5000.22320")),
 			colKind:       columns.NewColumn("", eDecimal),
 			expectedValue: "5000.22320",
 		},

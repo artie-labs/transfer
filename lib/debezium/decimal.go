@@ -4,7 +4,6 @@ import (
 	"math/big"
 	"slices"
 
-	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/cockroachdb/apd/v3"
 )
 
@@ -89,7 +88,7 @@ func decimalWithNewExponent(decimal *apd.Decimal, newExponent int32) *apd.Decima
 	}
 }
 
-// EncodeDecimal is used to encode a [*apd.Decimal] to [org.apache.kafka.connect.data.Decimal].
+// EncodeDecimal is used to encode a [*apd.Decimal] to `org.apache.kafka.connect.data.Decimal`.
 // The scale of the value (which is the negated exponent of the decimal) is returned as the second argument.
 func EncodeDecimal(decimal *apd.Decimal) ([]byte, int32) {
 	bigIntValue := decimal.Coeff.MathBigInt()
@@ -100,7 +99,7 @@ func EncodeDecimal(decimal *apd.Decimal) ([]byte, int32) {
 	return encodeBigInt(bigIntValue), -decimal.Exponent
 }
 
-// EncodeDecimalWithScale is used to encode a [*apd.Decimal] to [org.apache.kafka.connect.data.Decimal].
+// EncodeDecimalWithScale is used to encode a [*apd.Decimal] to `org.apache.kafka.connect.data.Decimal`
 // using a specific scale.
 func EncodeDecimalWithScale(decimal *apd.Decimal, scale int32) []byte {
 	targetExponent := -scale // Negate scale since [Decimal.Exponent] is negative.
@@ -112,17 +111,7 @@ func EncodeDecimalWithScale(decimal *apd.Decimal, scale int32) []byte {
 }
 
 // DecodeDecimal is used to decode `org.apache.kafka.connect.data.Decimal`.
-func DecodeDecimal(data []byte, precision *int, scale int) *decimal.Decimal {
-	// Convert the big integer to a big float
-	bigFloat := new(big.Float).SetInt(decodeBigInt(data))
-
-	// Compute divisor as 10^scale with big.Int's Exp, then convert to big.Float
-	scaleInt := big.NewInt(int64(scale))
-	ten := big.NewInt(10)
-	divisorInt := new(big.Int).Exp(ten, scaleInt, nil)
-	divisorFloat := new(big.Float).SetInt(divisorInt)
-
-	// Perform the division
-	bigFloat.Quo(bigFloat, divisorFloat)
-	return decimal.NewDecimal(precision, scale, bigFloat)
+func DecodeDecimal(data []byte, scale int32) *apd.Decimal {
+	bigInt := new(apd.BigInt).SetMathBigInt(decodeBigInt(data))
+	return apd.NewWithBigInt(bigInt, -scale)
 }

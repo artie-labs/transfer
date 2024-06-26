@@ -65,9 +65,11 @@ func TestDecimalWithNewExponent(t *testing.T) {
 func TestEncodeDecimal(t *testing.T) {
 	testEncodeDecimal := func(value string, expectedScale int32) {
 		bytes, scale := EncodeDecimal(numbers.MustParseDecimal(value))
-		actual := DecodeDecimal(bytes, nil, int(scale)).String()
-		assert.Equal(t, value, actual, value)
 		assert.Equal(t, expectedScale, scale, value)
+
+		actual := DecodeDecimal(bytes, scale)
+		assert.Equal(t, value, actual.Text('f'), value)
+		assert.Equal(t, expectedScale, -actual.Exponent, value)
 	}
 
 	testEncodeDecimal("0", 0)
@@ -85,7 +87,7 @@ func TestEncodeDecimal(t *testing.T) {
 func TestEncodeDecimalWithScale(t *testing.T) {
 	mustEncodeAndDecodeDecimal := func(value string, scale int32) string {
 		bytes := EncodeDecimalWithScale(numbers.MustParseDecimal(value), scale)
-		return DecodeDecimal(bytes, nil, int(scale)).String()
+		return DecodeDecimal(bytes, scale).String()
 	}
 
 	// Whole numbers:
@@ -125,6 +127,7 @@ func TestEncodeDecimalWithScale(t *testing.T) {
 	assert.Equal(t, "-145.1830000000000090", mustEncodeAndDecodeDecimal("-145.183000000000009", 16))
 
 	assert.Equal(t, "-9063701308.217222135", mustEncodeAndDecodeDecimal("-9063701308.217222135", 9))
+	assert.Equal(t, "-74961544796695.89960242", mustEncodeAndDecodeDecimal("-74961544796695.89960242", 8))
 
 	testCases := []struct {
 		name  string
