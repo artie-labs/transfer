@@ -62,7 +62,7 @@ func decodeBigInt(data []byte) *big.Int {
 	return bigInt
 }
 
-// decimalWithNewExponent takes a [apd.Decimal] and returns a new [apd.Decimal] with a the given exponent.
+// decimalWithNewExponent takes a [*apd.Decimal] and returns a new [*apd.Decimal] with a the given exponent.
 // If the new exponent is less precise then the extra digits will be truncated.
 func decimalWithNewExponent(decimal *apd.Decimal, newExponent int32) *apd.Decimal {
 	exponentDelta := newExponent - decimal.Exponent // Exponent is negative.
@@ -89,7 +89,7 @@ func decimalWithNewExponent(decimal *apd.Decimal, newExponent int32) *apd.Decima
 	}
 }
 
-// EncodeDecimal is used to encode a [apd.Decimal] to [org.apache.kafka.connect.data.Decimal].
+// EncodeDecimal is used to encode a [*apd.Decimal] to [org.apache.kafka.connect.data.Decimal].
 // The scale of the value (which is the negated exponent of the decimal) is returned as the second argument.
 func EncodeDecimal(decimal *apd.Decimal) ([]byte, int32) {
 	bigIntValue := decimal.Coeff.MathBigInt()
@@ -100,7 +100,7 @@ func EncodeDecimal(decimal *apd.Decimal) ([]byte, int32) {
 	return encodeBigInt(bigIntValue), -decimal.Exponent
 }
 
-// EncodeDecimalWithScale is used to encode a [apd.Decimal] to [org.apache.kafka.connect.data.Decimal]
+// EncodeDecimalWithScale is used to encode a [*apd.Decimal] to [org.apache.kafka.connect.data.Decimal].
 // using a specific scale.
 func EncodeDecimalWithScale(decimal *apd.Decimal, scale int32) []byte {
 	targetExponent := -scale // Negate scale since [Decimal.Exponent] is negative.
