@@ -128,8 +128,7 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 	}
 
 	var prevRowSize int
-	prevRow, isOk := t.rowsData[pk]
-	if isOk {
+	if prevRow, isOk := t.rowsData[pk]; isOk {
 		prevRowSize = size.GetApproxSize(prevRow)
 		if delete {
 			// If the row was deleted, preserve the previous values that we have in memory
@@ -157,13 +156,11 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 	t.approxSize += newRowSize - prevRowSize
 	t.rowsData[pk] = rowData
 
-	if !delete && !t.containOtherOperations {
+	if !delete {
 		t.containOtherOperations = true
-	}
-
-	// If there's an actual hard delete, let's update it.
-	// We know because we have a delete operation and this topic is not configured to do soft deletes.
-	if !t.containsHardDeletes && !t.topicConfig.SoftDelete && delete {
+	} else if delete && !t.topicConfig.SoftDelete {
+		// If there's an actual hard delete, let's update it.
+		// We know because we have a delete operation and this topic is not configured to do soft deletes.
 		t.containsHardDeletes = true
 	}
 }
