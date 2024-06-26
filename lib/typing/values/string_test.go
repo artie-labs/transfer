@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/apd/v3"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -123,9 +123,7 @@ func TestToString(t *testing.T) {
 		assert.Equal(t, "123.45", val)
 
 		// Decimals
-		_decimal, _, err := apd.NewFromString("585692791691858.25")
-		assert.NoError(t, err)
-		value := decimal.NewDecimal(ptr.ToInt(38), _decimal)
+		value := decimal.NewDecimal(ptr.ToInt(38), numbers.MustParseDecimal("585692791691858.25"))
 		val, err = ToString(value, columns.Column{KindDetails: typing.EDecimal}, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, "585692791691858.25", val)
