@@ -8,7 +8,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/jsonutil"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 
 	"github.com/artie-labs/transfer/lib/maputil"
@@ -232,11 +231,17 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ex
 //   - `scale` (number of digits following decimal point)
 //   - `connect.decimal.precision` which is an optional parameter. (If -1, then it's variable and .Value() will be in STRING).
 func (f Field) DecodeDecimal(encoded []byte) (*decimal.Decimal, error) {
-	scale, precision, err := f.GetScaleAndPrecision()
+	scale, precisionPtr, err := f.GetScaleAndPrecision()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get scale and/or precision: %w", err)
 	}
 	_decimal := DecodeDecimal(encoded, int32(scale))
+
+	var precision int32 = decimal.PrecisionNotSpecified
+	if precisionPtr != nil {
+		precision = int32(*precisionPtr)
+	}
+
 	return decimal.NewDecimal(precision, _decimal), nil
 }
 
@@ -261,5 +266,5 @@ func (f Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error
 		return nil, err
 	}
 	_decimal := DecodeDecimal(bytes, int32(scale))
-	return decimal.NewDecimal(ptr.ToInt(decimal.PrecisionNotSpecified), _decimal), nil
+	return decimal.NewDecimal(decimal.PrecisionNotSpecified, _decimal), nil
 }

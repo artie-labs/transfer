@@ -22,20 +22,18 @@ const (
 	MaxPrecisionBeforeString = 38
 )
 
-func NewDecimal(precision *int, value *apd.Decimal) *Decimal {
-	if precision != nil {
-		scale := int(-value.Exponent)
-		if scale > *precision && *precision != -1 {
-			// Note: -1 precision means it's not specified.
+func NewDecimal(precision int32, value *apd.Decimal) *Decimal {
+	scale := -value.Exponent
+	if scale > precision && precision != -1 {
+		// Note: -1 precision means it's not specified.
 
-			// This is typically not possible, but Postgres has a design flaw that allows you to do things like: NUMERIC(5, 6) which actually equates to NUMERIC(7, 6)
-			// We are setting precision to be scale + 1 to account for the leading zero for decimal numbers.
-			precision = ptr.ToInt(scale + 1)
-		}
+		// This is typically not possible, but Postgres has a design flaw that allows you to do things like: NUMERIC(5, 6) which actually equates to NUMERIC(7, 6)
+		// We are setting precision to be scale + 1 to account for the leading zero for decimal numbers.
+		precision = scale + 1
 	}
 
 	return &Decimal{
-		precision: precision,
+		precision: ptr.ToInt(int(precision)),
 		value:     value,
 	}
 }
