@@ -1,6 +1,7 @@
 package maputil
 
 import (
+	"math"
 	"reflect"
 	"testing"
 
@@ -35,6 +36,8 @@ func TestGetInt32FromMap(t *testing.T) {
 		"ghi":          "hello",
 		"123":          "-321",
 		"123 (number)": -321,
+		"maxInt32":     math.MaxInt32,
+		"int64":        math.MaxInt32 + 1,
 	}
 
 	testCases := []struct {
@@ -85,6 +88,18 @@ func TestGetInt32FromMap(t *testing.T) {
 			obj:           object,
 			key:           "123 (number)",
 			expectedValue: -321,
+		},
+		{
+			name:          "max int32",
+			obj:           object,
+			key:           "maxInt32",
+			expectedValue: int32(math.MaxInt32),
+		},
+		{
+			name:        "int64",
+			obj:         object,
+			key:         "int64",
+			expectedErr: "value out of range",
 		},
 	}
 
