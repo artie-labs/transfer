@@ -66,7 +66,7 @@ func TestParseValue(t *testing.T) {
 		},
 		{
 			name:          "decimal",
-			colVal:        decimal.NewDecimal(ptr.ToInt(30), numbers.MustParseDecimal("5000.22320")),
+			colVal:        decimal.NewDecimal(30, numbers.MustParseDecimal("5000.22320")),
 			colKind:       columns.NewColumn("", eDecimal),
 			expectedValue: "5000.22320",
 		},
