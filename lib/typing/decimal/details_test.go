@@ -8,7 +8,7 @@ import (
 	"github.com/artie-labs/transfer/lib/ptr"
 )
 
-func TestDecimalKind(t *testing.T) {
+func TestDecimalDetails(t *testing.T) {
 	type _testCase struct {
 		Name      string
 		Precision int
