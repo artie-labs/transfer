@@ -125,7 +125,7 @@ func TestToString(t *testing.T) {
 		// Decimals
 		_decimal, _, err := apd.NewFromString("585692791691858.25")
 		assert.NoError(t, err)
-		value := decimal.NewDecimal(ptr.ToInt(38), 2, _decimal)
+		value := decimal.NewDecimal(ptr.ToInt(38), _decimal)
 		val, err = ToString(value, columns.Column{KindDetails: typing.EDecimal}, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, "585692791691858.25", val)

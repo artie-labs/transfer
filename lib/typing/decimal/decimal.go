@@ -1,14 +1,12 @@
 package decimal
 
 import (
-	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/cockroachdb/apd/v3"
 )
 
 // Decimal is Artie's wrapper around [apd.Decimal] which can store large numbers w/ no precision loss.
 type Decimal struct {
-	scale     int
 	precision *int
 	value     *apd.Decimal
 }
@@ -21,7 +19,9 @@ const (
 	MaxPrecisionBeforeString = 38
 )
 
-func NewDecimal(precision *int, scale int, value *apd.Decimal) *Decimal {
+func NewDecimal(precision *int, value *apd.Decimal) *Decimal {
+	scale := int(-value.Exponent)
+
 	if precision != nil {
 		if scale > *precision && *precision != -1 {
 			// Note: -1 precision means it's not specified.
@@ -33,14 +33,13 @@ func NewDecimal(precision *int, scale int, value *apd.Decimal) *Decimal {
 	}
 
 	return &Decimal{
-		scale:     scale,
 		precision: precision,
 		value:     value,
 	}
 }
 
 func (d *Decimal) Scale() int {
-	return d.scale
+	return int(-d.value.Exponent)
 }
 
 func (d *Decimal) Precision() *int {
@@ -51,14 +50,9 @@ func (d *Decimal) Precision() *int {
 // This is particularly useful for Snowflake because we're writing all the values as STRINGS into TSV format.
 // This function guarantees backwards compatibility.
 func (d *Decimal) String() string {
-	targetExponent := -int32(d.scale)
-	value := d.value
-	if value.Exponent != targetExponent {
-		value = numbers.DecimalWithNewExponent(value, targetExponent)
-	}
-	return value.Text('f')
+	return d.value.Text('f')
 }
 
 func (d *Decimal) Details() DecimalDetails {
-	return DecimalDetails{scale: d.scale, precision: d.precision}
+	return DecimalDetails{scale: d.Scale(), precision: d.precision}
 }
