@@ -25,7 +25,7 @@ const (
 func NewDecimal(precision *int32, value *apd.Decimal) *Decimal {
 	if precision != nil {
 		scale := -value.Exponent
-		if scale > *precision && *precision != -1 {
+		if scale > *precision && *precision != PrecisionNotSpecified {
 			// Note: -1 precision means it's not specified.
 
 			// This is typically not possible, but Postgres has a design flaw that allows you to do things like: NUMERIC(5, 6) which actually equates to NUMERIC(7, 6)
@@ -58,7 +58,7 @@ func (d *Decimal) String() string {
 func (d *Decimal) Value() any {
 	// -1 precision is used for variable scaled decimal
 	// We are opting to emit this as a STRING because the value is technically unbounded (can get to ~1 GB).
-	if d.precision != nil && (*d.precision > MaxPrecisionBeforeString || *d.precision == -1) {
+	if d.precision != nil && (*d.precision > MaxPrecisionBeforeString || *d.precision == PrecisionNotSpecified) {
 		return d.String()
 	}
 

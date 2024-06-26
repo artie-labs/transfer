@@ -10,7 +10,7 @@ type DecimalDetails struct {
 }
 
 func NewDecimalDetails(precision int32, scale int32) *DecimalDetails {
-	if scale > precision && precision != -1 {
+	if scale > precision && precision != PrecisionNotSpecified {
 		// Note: -1 precision means it's not specified.
 
 		// This is typically not possible, but Postgres has a design flaw that allows you to do things like: NUMERIC(5, 6) which actually equates to NUMERIC(7, 6)
