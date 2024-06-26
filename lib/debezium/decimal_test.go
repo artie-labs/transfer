@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/cockroachdb/apd/v3"
+	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -41,37 +41,9 @@ func TestDecodeBigInt(t *testing.T) {
 	}
 }
 
-func mustParseDecimal(value string) *apd.Decimal {
-	decimal, _, err := apd.NewFromString(value)
-	if err != nil {
-		panic(err)
-	}
-	return decimal
-}
-
-func TestDecimalWithNewExponent(t *testing.T) {
-	assert.Equal(t, "0", decimalWithNewExponent(apd.New(0, 0), 0).Text('f'))
-	assert.Equal(t, "00", decimalWithNewExponent(apd.New(0, 1), 1).Text('f'))
-	assert.Equal(t, "0", decimalWithNewExponent(apd.New(0, 100), 0).Text('f'))
-	assert.Equal(t, "00", decimalWithNewExponent(apd.New(0, 0), 1).Text('f'))
-	assert.Equal(t, "0.0", decimalWithNewExponent(apd.New(0, 0), -1).Text('f'))
-
-	// Same exponent:
-	assert.Equal(t, "12.349", decimalWithNewExponent(mustParseDecimal("12.349"), -3).Text('f'))
-	// More precise exponent:
-	assert.Equal(t, "12.3490", decimalWithNewExponent(mustParseDecimal("12.349"), -4).Text('f'))
-	assert.Equal(t, "12.34900", decimalWithNewExponent(mustParseDecimal("12.349"), -5).Text('f'))
-	// Lest precise exponent:
-	// Extra digits should be truncated rather than rounded.
-	assert.Equal(t, "12.34", decimalWithNewExponent(mustParseDecimal("12.349"), -2).Text('f'))
-	assert.Equal(t, "12.3", decimalWithNewExponent(mustParseDecimal("12.349"), -1).Text('f'))
-	assert.Equal(t, "12", decimalWithNewExponent(mustParseDecimal("12.349"), 0).Text('f'))
-	assert.Equal(t, "10", decimalWithNewExponent(mustParseDecimal("12.349"), 1).Text('f'))
-}
-
 func TestEncodeDecimal(t *testing.T) {
 	testEncodeDecimal := func(value string, expectedScale int32) {
-		bytes, scale := EncodeDecimal(mustParseDecimal(value))
+		bytes, scale := EncodeDecimal(numbers.MustParseDecimal(value))
 		actual := DecodeDecimal(bytes, nil, int(scale)).String()
 		assert.Equal(t, value, actual, value)
 		assert.Equal(t, expectedScale, scale, value)
@@ -91,7 +63,7 @@ func TestEncodeDecimal(t *testing.T) {
 
 func TestEncodeDecimalWithScale(t *testing.T) {
 	mustEncodeAndDecodeDecimal := func(value string, scale int32) string {
-		bytes := EncodeDecimalWithScale(mustParseDecimal(value), scale)
+		bytes := EncodeDecimalWithScale(numbers.MustParseDecimal(value), scale)
 		return DecodeDecimal(bytes, nil, int(scale)).String()
 	}
 
