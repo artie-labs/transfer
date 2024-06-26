@@ -84,14 +84,14 @@ func TestSnowflakeDialect_KindForDataType_Floats(t *testing.T) {
 		kd, err := SnowflakeDialect{}.KindForDataType("NUMERIC(38, 2)", "")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
-		assert.Equal(t, int32(38), *kd.ExtendedDecimalDetails.Precision())
+		assert.Equal(t, int32(38), kd.ExtendedDecimalDetails.Precision())
 		assert.Equal(t, int32(2), kd.ExtendedDecimalDetails.Scale())
 	}
 	{
 		kd, err := SnowflakeDialect{}.KindForDataType("NUMBER(38, 2)", "")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
-		assert.Equal(t, int32(38), *kd.ExtendedDecimalDetails.Precision())
+		assert.Equal(t, int32(38), kd.ExtendedDecimalDetails.Precision())
 		assert.Equal(t, int32(2), kd.ExtendedDecimalDetails.Scale())
 	}
 	{

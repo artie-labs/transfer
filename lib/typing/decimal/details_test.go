@@ -4,8 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/artie-labs/transfer/lib/ptr"
 )
 
 func TestDecimalDetailsKind(t *testing.T) {
@@ -70,7 +68,7 @@ func TestDecimalDetailsKind(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		d := NewDecimalDetails(ptr.ToInt32(testCase.Precision), testCase.Scale)
+		d := NewDecimalDetails(testCase.Precision, testCase.Scale)
 		assert.Equal(t, testCase.ExpectedSnowflakeKind, d.SnowflakeKind(), testCase.Name)
 		assert.Equal(t, testCase.ExpectedRedshiftKind, d.RedshiftKind(), testCase.Name)
 		assert.Equal(t, testCase.ExpectedBigQueryKind, d.BigQueryKind(), testCase.Name)

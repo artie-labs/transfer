@@ -7,7 +7,7 @@ import (
 )
 
 func (d *DecimalDetails) isNumeric() bool {
-	if d.precision == nil || *d.precision == PrecisionNotSpecified {
+	if d.precision == PrecisionNotSpecified {
 		return false
 	}
 
@@ -17,11 +17,11 @@ func (d *DecimalDetails) isNumeric() bool {
 	}
 
 	// max(1,s) <= p <= s + 29
-	return numbers.BetweenEq(max(1, d.scale), d.scale+29, *d.precision)
+	return numbers.BetweenEq(max(1, d.scale), d.scale+29, d.precision)
 }
 
 func (d *DecimalDetails) isBigNumeric() bool {
-	if d.precision == nil || *d.precision == -1 {
+	if d.precision == PrecisionNotSpecified {
 		return false
 	}
 
@@ -31,18 +31,13 @@ func (d *DecimalDetails) isBigNumeric() bool {
 	}
 
 	// max(1,s) <= p <= s + 38
-	return numbers.BetweenEq(max(1, d.scale), d.scale+38, *d.precision)
+	return numbers.BetweenEq(max(1, d.scale), d.scale+38, d.precision)
 }
 
 func (d *DecimalDetails) toKind(maxPrecision int32, exceededKind string) string {
-	precision := maxPrecision
-	if d.precision != nil {
-		precision = *d.precision
-	}
-
-	if precision > maxPrecision || precision == -1 {
+	if d.precision > maxPrecision || d.precision == PrecisionNotSpecified {
 		return exceededKind
 	}
 
-	return fmt.Sprintf("NUMERIC(%v, %v)", precision, d.scale)
+	return fmt.Sprintf("NUMERIC(%v, %v)", d.precision, d.scale)
 }

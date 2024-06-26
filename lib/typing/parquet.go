@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -113,7 +114,7 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 		}, nil
 	case EDecimal.Kind:
 		precision := k.ExtendedDecimalDetails.Precision()
-		if precision == nil || *precision == -1 {
+		if precision == decimal.PrecisionNotSpecified {
 			// This is a variable precision decimal, so we'll just treat it as a string.
 			return &Field{
 				Tag: FieldTag{
@@ -132,7 +133,7 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 				InName:        &colName,
 				Type:          ptr.ToString("BYTE_ARRAY"),
 				ConvertedType: ptr.ToString("DECIMAL"),
-				Precision:     ptr.ToInt(int(*precision)),
+				Precision:     ptr.ToInt(int(precision)),
 				Scale:         ptr.ToInt(int(scale)),
 			}.String(),
 		}, nil
