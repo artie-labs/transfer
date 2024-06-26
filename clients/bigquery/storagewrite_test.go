@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery/storage/apiv1/storagepb"
+	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
-	"github.com/cockroachdb/apd/v3"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -98,14 +98,6 @@ func TestEncodePacked64TimeMicros(t *testing.T) {
 	assert.Equal(t, int64(1<<32+1000), encodePacked64TimeMicros(epoch.Add(time.Duration(1)*time.Hour+time.Duration(1)*time.Millisecond)))
 }
 
-func mustParseDecimal(value string) *apd.Decimal {
-	decimal, _, err := apd.NewFromString(value)
-	if err != nil {
-		panic(err)
-	}
-	return decimal
-}
-
 func TestRowToMessage(t *testing.T) {
 	columns := []columns.Column{
 		columns.NewColumn("c_bool", typing.Boolean),
@@ -137,9 +129,9 @@ func TestRowToMessage(t *testing.T) {
 		"c_float_int32":    int32(1234),
 		"c_float_int64":    int64(1234),
 		"c_float_string":   "4444.55555",
-		"c_numeric":        decimal.NewDecimal(nil, mustParseDecimal("3.14159")),
+		"c_numeric":        decimal.NewDecimal(nil, numbers.MustParseDecimal("3.14159")),
 		"c_string":         "foo bar",
-		"c_string_decimal": decimal.NewDecimal(nil, mustParseDecimal("1.61803")),
+		"c_string_decimal": decimal.NewDecimal(nil, numbers.MustParseDecimal("1.61803")),
 		"c_time":           ext.NewExtendedTime(time.Date(0, 0, 0, 4, 5, 6, 7, time.UTC), ext.TimeKindType, ""),
 		"c_date":           ext.NewExtendedTime(time.Date(2001, 2, 3, 0, 0, 0, 0, time.UTC), ext.DateKindType, ""),
 		"c_datetime":       ext.NewExtendedTime(time.Date(2001, 2, 3, 4, 5, 6, 7, time.UTC), ext.DateTimeKindType, ""),
