@@ -20,14 +20,6 @@ func TestBooleanToBit(t *testing.T) {
 	assert.Equal(t, 0, BooleanToBit(false))
 }
 
-func mustParseDecimal(value string) *apd.Decimal {
-	decimal, _, err := apd.NewFromString(value)
-	if err != nil {
-		panic(err)
-	}
-	return decimal
-}
-
 func TestToString(t *testing.T) {
 	{
 		// Nil value
@@ -131,7 +123,9 @@ func TestToString(t *testing.T) {
 		assert.Equal(t, "123.45", val)
 
 		// Decimals
-		value := decimal.NewDecimal(ptr.ToInt(38), 2, mustParseDecimal("585692791691858.25"))
+		_decimal, _, err := apd.NewFromString("585692791691858.25")
+		assert.NoError(t, err)
+		value := decimal.NewDecimal(ptr.ToInt(38), 2, _decimal)
 		val, err = ToString(value, columns.Column{KindDetails: typing.EDecimal}, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, "585692791691858.25", val)

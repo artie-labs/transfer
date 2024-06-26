@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"slices"
 
-	"github.com/artie-labs/transfer/lib/typing/decimal"
+	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/cockroachdb/apd/v3"
 )
 
@@ -75,12 +75,12 @@ func EncodeDecimal(decimal *apd.Decimal) ([]byte, int32) {
 
 // EncodeDecimalWithScale is used to encode a [apd.Decimal] to [org.apache.kafka.connect.data.Decimal].
 // using a specific scale.
-func EncodeDecimalWithScale(_decimal *apd.Decimal, scale int32) []byte {
+func EncodeDecimalWithScale(decimal *apd.Decimal, scale int32) []byte {
 	targetExponent := -scale // Negate scale since [Decimal.Exponent] is negative.
-	if _decimal.Exponent != targetExponent {
-		_decimal = decimal.DecimalWithNewExponent(_decimal, targetExponent)
+	if decimal.Exponent != targetExponent {
+		decimal = numbers.DecimalWithNewExponent(decimal, targetExponent)
 	}
-	bytes, _ := EncodeDecimal(_decimal)
+	bytes, _ := EncodeDecimal(decimal)
 	return bytes
 }
 

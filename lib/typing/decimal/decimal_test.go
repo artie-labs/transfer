@@ -3,7 +3,6 @@ package decimal
 import (
 	"testing"
 
-	"github.com/cockroachdb/apd/v3"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -76,32 +75,4 @@ func TestDecimalKind(t *testing.T) {
 		assert.Equal(t, testCase.ExpectedRedshiftKind, d.RedshiftKind(), testCase.Name)
 		assert.Equal(t, testCase.ExpectedBigQueryKind, d.BigQueryKind(), testCase.Name)
 	}
-}
-
-func mustParseDecimal(value string) *apd.Decimal {
-	decimal, _, err := apd.NewFromString(value)
-	if err != nil {
-		panic(err)
-	}
-	return decimal
-}
-
-func TestDecimalWithNewExponent(t *testing.T) {
-	assert.Equal(t, "0", DecimalWithNewExponent(apd.New(0, 0), 0).Text('f'))
-	assert.Equal(t, "00", DecimalWithNewExponent(apd.New(0, 1), 1).Text('f'))
-	assert.Equal(t, "0", DecimalWithNewExponent(apd.New(0, 100), 0).Text('f'))
-	assert.Equal(t, "00", DecimalWithNewExponent(apd.New(0, 0), 1).Text('f'))
-	assert.Equal(t, "0.0", DecimalWithNewExponent(apd.New(0, 0), -1).Text('f'))
-
-	// Same exponent:
-	assert.Equal(t, "12.349", DecimalWithNewExponent(mustParseDecimal("12.349"), -3).Text('f'))
-	// More precise exponent:
-	assert.Equal(t, "12.3490", DecimalWithNewExponent(mustParseDecimal("12.349"), -4).Text('f'))
-	assert.Equal(t, "12.34900", DecimalWithNewExponent(mustParseDecimal("12.349"), -5).Text('f'))
-	// Lest precise exponent:
-	// Extra digits should be truncated rather than rounded.
-	assert.Equal(t, "12.34", DecimalWithNewExponent(mustParseDecimal("12.349"), -2).Text('f'))
-	assert.Equal(t, "12.3", DecimalWithNewExponent(mustParseDecimal("12.349"), -1).Text('f'))
-	assert.Equal(t, "12", DecimalWithNewExponent(mustParseDecimal("12.349"), 0).Text('f'))
-	assert.Equal(t, "10", DecimalWithNewExponent(mustParseDecimal("12.349"), 1).Text('f'))
 }

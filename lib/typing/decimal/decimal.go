@@ -3,6 +3,7 @@ package decimal
 import (
 	"fmt"
 
+	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/cockroachdb/apd/v3"
 )
@@ -55,13 +56,9 @@ func (d *Decimal) String() string {
 	targetExponent := -int32(d.scale)
 	value := d.value
 	if value.Exponent != targetExponent {
-		value = DecimalWithNewExponent(value, targetExponent)
+		value = numbers.DecimalWithNewExponent(value, targetExponent)
 	}
 	return value.Text('f')
-}
-
-func (d *Decimal) Value() *apd.Decimal {
-	return d.value
 }
 
 // SnowflakeKind - is used to determine whether a NUMERIC data type should be a STRING or NUMERIC(p, s).
@@ -89,31 +86,4 @@ func (d *Decimal) BigQueryKind() string {
 	}
 
 	return "STRING"
-}
-
-// DecimalWithNewExponent takes a [apd.Decimal] and returns a new [apd.Decimal] with a the given exponent.
-// If the new exponent is less precise then the extra digits will be truncated.
-func DecimalWithNewExponent(decimal *apd.Decimal, newExponent int32) *apd.Decimal {
-	exponentDelta := newExponent - decimal.Exponent // Exponent is negative.
-
-	if exponentDelta == 0 {
-		return new(apd.Decimal).Set(decimal)
-	}
-
-	coefficient := new(apd.BigInt).Set(&decimal.Coeff)
-
-	if exponentDelta < 0 {
-		multiplier := new(apd.BigInt).Exp(apd.NewBigInt(10), apd.NewBigInt(int64(-exponentDelta)), nil)
-		coefficient.Mul(coefficient, multiplier)
-	} else if exponentDelta > 0 {
-		divisor := new(apd.BigInt).Exp(apd.NewBigInt(10), apd.NewBigInt(int64(exponentDelta)), nil)
-		coefficient.Div(coefficient, divisor)
-	}
-
-	return &apd.Decimal{
-		Form:     decimal.Form,
-		Negative: decimal.Negative,
-		Exponent: newExponent,
-		Coeff:    *coefficient,
-	}
 }

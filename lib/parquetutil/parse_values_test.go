@@ -3,23 +3,15 @@ package parquetutil
 import (
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing/ext"
-	"github.com/cockroachdb/apd/v3"
 
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/stretchr/testify/assert"
 )
-
-func mustParseDecimal(value string) *apd.Decimal {
-	decimal, _, err := apd.NewFromString(value)
-	if err != nil {
-		panic(err)
-	}
-	return decimal
-}
 
 func TestParseValue(t *testing.T) {
 	eDecimal := typing.EDecimal
@@ -74,7 +66,7 @@ func TestParseValue(t *testing.T) {
 		},
 		{
 			name:          "decimal",
-			colVal:        decimal.NewDecimal(ptr.ToInt(30), 5, mustParseDecimal("5000.2232")),
+			colVal:        decimal.NewDecimal(ptr.ToInt(30), 5, numbers.MustParseDecimal("5000.2232")),
 			colKind:       columns.NewColumn("", eDecimal),
 			expectedValue: "5000.22320",
 		},
