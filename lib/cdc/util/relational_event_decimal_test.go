@@ -3,7 +3,6 @@ package util
 import (
 	"encoding/json"
 	"io"
-	"math/big"
 	"os"
 	"testing"
 
@@ -47,8 +46,8 @@ func TestSchemaEventPayload_Numeric_GetData(t *testing.T) {
 	retMap, err := schemaEventPayload.GetData(nil, &kafkalib.TopicConfig{})
 	assert.NoError(t, err)
 
-	assert.Equal(t, "123456.789", retMap["numeric_test"].(*decimal.Decimal).Value())
-	assert.Equal(t, 0, big.NewFloat(1234).Cmp(retMap["numeric_5"].(*decimal.Decimal).Value().(*big.Float)))
+	assert.Equal(t, "123456.789", retMap["numeric_test"].(*decimal.Decimal).String())
+	assert.Equal(t, "1234", retMap["numeric_5"].(*decimal.Decimal).String())
 	numericWithScaleMap := map[string]string{
 		"numeric_5_2": "568.01",
 		"numeric_5_6": "0.023456",
@@ -56,16 +55,12 @@ func TestSchemaEventPayload_Numeric_GetData(t *testing.T) {
 	}
 
 	for key, expectedValue := range numericWithScaleMap {
-		// Numeric data types that actually have scale fails when comparing *big.Float using `.Cmp`, so we are using STRING() instead.
-		_, isOk := retMap[key].(*decimal.Decimal).Value().(*big.Float)
-		assert.True(t, isOk)
-		// Now, we know the data type is *big.Float, let's check the .String() value.
 		assert.Equal(t, expectedValue, retMap[key].(*decimal.Decimal).String())
 	}
 
-	assert.Equal(t, "58569102859845154622791691858438258688", retMap["numeric_39_0"].(*decimal.Decimal).Value())
-	assert.Equal(t, "5856910285984515462279169185843825868.22", retMap["numeric_39_2"].(*decimal.Decimal).Value())
-	assert.Equal(t, "585691028598451546227958438258688.123456", retMap["numeric_39_6"].(*decimal.Decimal).Value())
+	assert.Equal(t, "58569102859845154622791691858438258688", retMap["numeric_39_0"].(*decimal.Decimal).String())
+	assert.Equal(t, "5856910285984515462279169185843825868.22", retMap["numeric_39_2"].(*decimal.Decimal).String())
+	assert.Equal(t, "585691028598451546227958438258688.123456", retMap["numeric_39_6"].(*decimal.Decimal).String())
 }
 
 func TestSchemaEventPayload_Decimal_GetData(t *testing.T) {
@@ -79,23 +74,19 @@ func TestSchemaEventPayload_Decimal_GetData(t *testing.T) {
 	assert.NoError(t, err)
 	retMap, err := schemaEventPayload.GetData(nil, &kafkalib.TopicConfig{})
 	assert.NoError(t, err)
-	assert.Equal(t, "123.45", retMap["decimal_test"].(*decimal.Decimal).Value())
+	assert.Equal(t, "123.45", retMap["decimal_test"].(*decimal.Decimal).String())
 	decimalWithScaleMap := map[string]string{
 		"decimal_test_5":   "123",
 		"decimal_test_5_2": "123.45",
 	}
 
 	for key, expectedValue := range decimalWithScaleMap {
-		// Numeric data types that actually have scale fails when comparing *big.Float using `.Cmp`, so we are using STRING() instead.
-		_, isOk := retMap[key].(*decimal.Decimal).Value().(*big.Float)
-		assert.True(t, isOk)
-		// Now, we know the data type is *big.Float, let's check the .String() value.
 		assert.Equal(t, expectedValue, retMap[key].(*decimal.Decimal).String(), key)
 	}
 
-	assert.Equal(t, "58569102859845154622791691858438258688", retMap["decimal_test_39"].(*decimal.Decimal).Value(), "decimal_test_39")
-	assert.Equal(t, "585691028598451546227916918584382586.22", retMap["decimal_test_39_2"].(*decimal.Decimal).Value(), "decimal_test_39_2")
-	assert.Equal(t, "585691028598451546227916918584388.123456", retMap["decimal_test_39_6"].(*decimal.Decimal).Value(), "decimal_test_39_6")
+	assert.Equal(t, "58569102859845154622791691858438258688", retMap["decimal_test_39"].(*decimal.Decimal).String(), "decimal_test_39")
+	assert.Equal(t, "585691028598451546227916918584382586.22", retMap["decimal_test_39_2"].(*decimal.Decimal).String(), "decimal_test_39_2")
+	assert.Equal(t, "585691028598451546227916918584388.123456", retMap["decimal_test_39_6"].(*decimal.Decimal).String(), "decimal_test_39_6")
 }
 
 func TestSchemaEventPayload_Money_GetData(t *testing.T) {
@@ -115,10 +106,6 @@ func TestSchemaEventPayload_Money_GetData(t *testing.T) {
 	}
 
 	for key, expectedValue := range decimalWithScaleMap {
-		// Numeric data types that actually have scale fails when comparing *big.Float using `.Cmp`, so we are using STRING() instead.
-		_, isOk := retMap[key].(*decimal.Decimal).Value().(*big.Float)
-		assert.True(t, isOk)
-		// Now, we know the data type is *big.Float, let's check the .String() value.
 		assert.Equal(t, expectedValue, retMap[key].(*decimal.Decimal).String(), key)
 	}
 }

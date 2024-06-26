@@ -2,8 +2,6 @@ package decimal
 
 import (
 	"fmt"
-	"log/slog"
-	"math/big"
 
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/cockroachdb/apd/v3"
@@ -62,23 +60,8 @@ func (d *Decimal) String() string {
 	return value.Text('f')
 }
 
-func (d *Decimal) Value() any {
-	stringValue := d.String()
-
-	// -1 precision is used for variable scaled decimal
-	// We are opting to emit this as a STRING because the value is technically unbounded (can get to ~1 GB).
-	if d.precision != nil && (*d.precision > MaxPrecisionBeforeString || *d.precision == -1) {
-		return stringValue
-	}
-
-	// Depending on the precision, we will want to convert value to STRING or keep as a FLOAT.
-	bigFloat, ok := new(big.Float).SetString(stringValue)
-	if !ok {
-		slog.Error("Unable to parse value to a big.Float", slog.String("value", stringValue))
-		return stringValue
-	}
-
-	return bigFloat
+func (d *Decimal) Value() *apd.Decimal {
+	return d.value
 }
 
 // SnowflakeKind - is used to determine whether a NUMERIC data type should be a STRING or NUMERIC(p, s).

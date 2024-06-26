@@ -1,7 +1,6 @@
 package debezium
 
 import (
-	"math/big"
 	"testing"
 	"time"
 
@@ -618,9 +617,6 @@ func TestField_DecodeDecimal(t *testing.T) {
 		}
 
 		assert.NoError(t, err)
-		decVal := dec.Value()
-		_, isOk := decVal.(*big.Float)
-		assert.Equal(t, testCase.expectBigFloat, isOk, testCase.name)
 		assert.Equal(t, testCase.expectedValue, dec.String(), testCase.name)
 
 		if testCase.expectNilPtrPrecision {
@@ -713,16 +709,9 @@ func TestField_DecodeDebeziumVariableDecimal(t *testing.T) {
 			continue
 		}
 
-		// It should never be a *big.Float
-		_, isOk := dec.Value().(*big.Float)
-		assert.False(t, isOk, testCase.name)
-
-		// It should be a string instead.
-		_, isOk = dec.Value().(string)
-		assert.True(t, isOk, testCase.name)
 		assert.Equal(t, -1, *dec.Precision(), testCase.name)
 		assert.Equal(t, testCase.expectedScale, dec.Scale(), testCase.name)
-		assert.Equal(t, testCase.expectedValue, dec.Value(), testCase.name)
+		assert.Equal(t, testCase.expectedValue, dec.String(), testCase.name)
 	}
 
 }

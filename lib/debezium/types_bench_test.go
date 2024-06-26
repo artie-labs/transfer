@@ -19,7 +19,7 @@ func BenchmarkDecodeDecimal_P64_S10(b *testing.B) {
 		assert.NoError(b, err)
 		dec, err := field.DecodeDecimal(bytes)
 		assert.NoError(b, err)
-		assert.Equal(b, "123456789012345678901234567890123456789012345678901234.1234567889", dec.Value())
+		assert.Equal(b, "123456789012345678901234567890123456789012345678901234.1234567890", dec.String())
 		require.NoError(b, err)
 	}
 }

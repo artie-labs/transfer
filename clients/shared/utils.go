@@ -44,7 +44,7 @@ func DefaultValue(column columns.Column, dialect sql.Dialect, additionalDateFmts
 			return nil, fmt.Errorf("colVal is not type *decimal.Decimal")
 		}
 
-		return val.Value(), nil
+		return val.String(), nil
 	case typing.String.Kind:
 		return sql.QuoteLiteral(fmt.Sprint(column.DefaultValue())), nil
 	}
