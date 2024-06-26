@@ -9,7 +9,7 @@ import (
 	"github.com/cockroachdb/apd/v3"
 )
 
-// Decimal is Artie's wrapper around *apd.Decimal) which can store large numbers w/ no precision loss.
+// Decimal is Artie's wrapper around [apd.Decimal] which can store large numbers w/ no precision loss.
 type Decimal struct {
 	scale     int
 	precision *int
