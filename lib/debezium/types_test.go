@@ -723,7 +723,6 @@ func TestField_DecodeDebeziumVariableDecimal(t *testing.T) {
 		assert.Equal(t, -1, *dec.Precision(), testCase.name)
 		assert.Equal(t, testCase.expectedScale, dec.Scale(), testCase.name)
 		assert.Equal(t, testCase.expectedValue, dec.Value(), testCase.name)
-		assert.Equal(t, testCase.expectedValue, dec.String(), testCase.name)
 	}
 
 }

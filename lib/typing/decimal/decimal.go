@@ -8,7 +8,7 @@ import (
 	"github.com/cockroachdb/apd/v3"
 )
 
-// Decimal is Artie's wrapper around [apd.Decimal] which can store large numbers w/ no precision loss.
+// Decimal is Artie's wrapper around [*apd.Decimal] which can store large numbers w/ no precision loss.
 type Decimal struct {
 	precision *int
 	value     *apd.Decimal
@@ -23,9 +23,8 @@ const (
 )
 
 func NewDecimal(precision *int, value *apd.Decimal) *Decimal {
-	scale := int(-value.Exponent)
-
 	if precision != nil {
+		scale := int(-value.Exponent)
 		if scale > *precision && *precision != -1 {
 			// Note: -1 precision means it's not specified.
 
@@ -64,7 +63,7 @@ func (d *Decimal) Value() any {
 	}
 
 	// Depending on the precision, we will want to convert value to STRING or keep as a FLOAT.
-	// TODO: [Value] is only called in one place, look into callining [String] instead.
+	// TODO: [Value] is only called in one place, look into calling [String] instead.
 	if out, ok := new(big.Float).SetString(d.String()); ok {
 		return out
 	}
