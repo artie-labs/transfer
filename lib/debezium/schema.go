@@ -98,7 +98,7 @@ func (f Field) ToKindDetails() typing.KindDetails {
 			return typing.Invalid
 		}
 
-		var precision int32 = decimal.PrecisionNotSpecified
+		precision := decimal.PrecisionNotSpecified
 		if precisionPtr != nil {
 			precision = *precisionPtr
 		}
