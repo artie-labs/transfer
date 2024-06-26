@@ -86,7 +86,7 @@ func TestEncodeDecimal(t *testing.T) {
 
 func TestEncodeDecimalWithScale(t *testing.T) {
 	mustEncodeAndDecodeDecimal := func(value string, scale int32) string {
-		bytes := EncodeDecimalWithScale(mustParseDecimal(value), scale)
+		bytes := EncodeDecimalWithScale(numbers.MustParseDecimal(value), scale)
 		return DecodeDecimal(bytes, scale).String()
 	}
 
