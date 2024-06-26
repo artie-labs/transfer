@@ -6,7 +6,7 @@ import (
 	"github.com/artie-labs/transfer/lib/numbers"
 )
 
-func (d *Decimal) isNumeric() bool {
+func (d *DecimalDetails) isNumeric() bool {
 	if d.precision == nil || *d.precision == PrecisionNotSpecified {
 		return false
 	}
@@ -20,7 +20,7 @@ func (d *Decimal) isNumeric() bool {
 	return numbers.BetweenEq(max(1, d.scale), d.scale+29, *d.precision)
 }
 
-func (d *Decimal) isBigNumeric() bool {
+func (d *DecimalDetails) isBigNumeric() bool {
 	if d.precision == nil || *d.precision == -1 {
 		return false
 	}
@@ -34,7 +34,7 @@ func (d *Decimal) isBigNumeric() bool {
 	return numbers.BetweenEq(max(1, d.scale), d.scale+38, *d.precision)
 }
 
-func (d *Decimal) toKind(maxPrecision int, exceededKind string) string {
+func (d *DecimalDetails) toKind(maxPrecision int, exceededKind string) string {
 	precision := maxPrecision
 	if d.precision != nil {
 		precision = *d.precision
