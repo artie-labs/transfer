@@ -55,7 +55,7 @@ func TestEncodeDecimal(t *testing.T) {
 		assert.Equal(t, expectedScale, scale, value)
 
 		actual := DecodeDecimal(bytes, scale)
-		assert.Equal(t, value, actual.String(), value)
+		assert.Equal(t, value, actual.Text('f'), value)
 		assert.Equal(t, expectedScale, -actual.Exponent, value)
 	}
 
