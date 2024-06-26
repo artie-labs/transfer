@@ -99,14 +99,14 @@ func (f Field) ToKindDetails() typing.KindDetails {
 		}
 
 		eDecimal := typing.EDecimal
-		eDecimal.ExtendedDecimalDetails = decimal.NewDecimal(precision, scale, nil)
+		eDecimal.ExtendedDecimalDetails = decimal.NewDecimalDetails(precision, scale)
 		return eDecimal
 	case KafkaVariableNumericType:
 		// For variable numeric types, we are defaulting to a scale of 5
 		// This is because scale is not specified at the column level, rather at the row level
 		// It shouldn't matter much anyway since the column type we are creating is `TEXT` to avoid boundary errors.
 		eDecimal := typing.EDecimal
-		eDecimal.ExtendedDecimalDetails = decimal.NewDecimal(ptr.ToInt(decimal.PrecisionNotSpecified), decimal.DefaultScale, nil)
+		eDecimal.ExtendedDecimalDetails = decimal.NewDecimalDetails(ptr.ToInt(decimal.PrecisionNotSpecified), decimal.DefaultScale)
 		return eDecimal
 	}
 

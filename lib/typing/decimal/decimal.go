@@ -1,8 +1,6 @@
 package decimal
 
 import (
-	"fmt"
-
 	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/cockroachdb/apd/v3"
@@ -61,29 +59,6 @@ func (d *Decimal) String() string {
 	return value.Text('f')
 }
 
-// SnowflakeKind - is used to determine whether a NUMERIC data type should be a STRING or NUMERIC(p, s).
-func (d *Decimal) SnowflakeKind() string {
-	return d.toKind(MaxPrecisionBeforeString, "STRING")
-}
-
-// MsSQLKind - Has the same limitation as Redshift
-// Spec: https://learn.microsoft.com/en-us/sql/t-sql/data-types/decimal-and-numeric-transact-sql?view=sql-server-ver16#arguments
-func (d *Decimal) MsSQLKind() string {
-	return d.toKind(MaxPrecisionBeforeString, "TEXT")
-}
-
-// RedshiftKind - is used to determine whether a NUMERIC data type should be a TEXT or NUMERIC(p, s).
-func (d *Decimal) RedshiftKind() string {
-	return d.toKind(MaxPrecisionBeforeString, "TEXT")
-}
-
-// BigQueryKind - is inferring logic from: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#decimal_types
-func (d *Decimal) BigQueryKind() string {
-	if d.isNumeric() {
-		return fmt.Sprintf("NUMERIC(%v, %v)", *d.precision, d.scale)
-	} else if d.isBigNumeric() {
-		return fmt.Sprintf("BIGNUMERIC(%v, %v)", *d.precision, d.scale)
-	}
-
-	return "STRING"
+func (d *Decimal) Details() DecimalDetails {
+	return DecimalDetails{scale: d.scale, precision: d.precision}
 }
