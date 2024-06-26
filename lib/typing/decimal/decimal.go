@@ -108,7 +108,7 @@ func (d *Decimal) BigQueryKind() string {
 	return "STRING"
 }
 
-// decimalWithNewExponent takes a [apd.Decimal] and returns a new [apd.Decimal] with a the given exponent.
+// DecimalWithNewExponent takes a [apd.Decimal] and returns a new [apd.Decimal] with a the given exponent.
 // If the new exponent is less precise then the extra digits will be truncated.
 func DecimalWithNewExponent(decimal *apd.Decimal, newExponent int32) *apd.Decimal {
 	exponentDelta := newExponent - decimal.Exponent // Exponent is negative.
