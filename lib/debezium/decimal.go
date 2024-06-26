@@ -4,6 +4,7 @@ import (
 	"math/big"
 	"slices"
 
+	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/cockroachdb/apd/v3"
 )
@@ -62,33 +63,6 @@ func decodeBigInt(data []byte) *big.Int {
 	return bigInt
 }
 
-// decimalWithNewExponent takes a [apd.Decimal] and returns a new [apd.Decimal] with a the given exponent.
-// If the new exponent is less precise then the extra digits will be truncated.
-func decimalWithNewExponent(decimal *apd.Decimal, newExponent int32) *apd.Decimal {
-	exponentDelta := newExponent - decimal.Exponent // Exponent is negative.
-
-	if exponentDelta == 0 {
-		return new(apd.Decimal).Set(decimal)
-	}
-
-	coefficient := new(apd.BigInt).Set(&decimal.Coeff)
-
-	if exponentDelta < 0 {
-		multiplier := new(apd.BigInt).Exp(apd.NewBigInt(10), apd.NewBigInt(int64(-exponentDelta)), nil)
-		coefficient.Mul(coefficient, multiplier)
-	} else if exponentDelta > 0 {
-		divisor := new(apd.BigInt).Exp(apd.NewBigInt(10), apd.NewBigInt(int64(exponentDelta)), nil)
-		coefficient.Div(coefficient, divisor)
-	}
-
-	return &apd.Decimal{
-		Form:     decimal.Form,
-		Negative: decimal.Negative,
-		Exponent: newExponent,
-		Coeff:    *coefficient,
-	}
-}
-
 // EncodeDecimal is used to encode a [apd.Decimal] to [org.apache.kafka.connect.data.Decimal].
 // The scale of the value (which is the negated exponent of the decimal) is returned as the second argument.
 func EncodeDecimal(decimal *apd.Decimal) ([]byte, int32) {
@@ -105,7 +79,7 @@ func EncodeDecimal(decimal *apd.Decimal) ([]byte, int32) {
 func EncodeDecimalWithScale(decimal *apd.Decimal, scale int32) []byte {
 	targetExponent := -scale // Negate scale since [Decimal.Exponent] is negative.
 	if decimal.Exponent != targetExponent {
-		decimal = decimalWithNewExponent(decimal, targetExponent)
+		decimal = numbers.DecimalWithNewExponent(decimal, targetExponent)
 	}
 	bytes, _ := EncodeDecimal(decimal)
 	return bytes
