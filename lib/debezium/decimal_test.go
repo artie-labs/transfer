@@ -52,10 +52,11 @@ func mustParseDecimal(value string) *apd.Decimal {
 func TestEncodeDecimal(t *testing.T) {
 	testEncodeDecimal := func(value string, expectedScale int32) {
 		bytes, scale := EncodeDecimal(mustParseDecimal(value))
+		assert.Equal(t, expectedScale, scale, value)
+
 		actual := DecodeDecimal(bytes, scale)
 		assert.Equal(t, value, actual.String(), value)
 		assert.Equal(t, expectedScale, -actual.Exponent, value)
-		assert.Equal(t, expectedScale, scale, value)
 	}
 
 	testEncodeDecimal("0", 0)
