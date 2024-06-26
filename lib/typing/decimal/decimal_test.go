@@ -39,6 +39,13 @@ func TestDecimal_Details(t *testing.T) {
 	assert.Equal(t, DecimalDetails{scale: 2}, NewDecimal(nil, numbers.MustParseDecimal("12345.12")).Details())
 	assert.Equal(t, DecimalDetails{scale: 3}, NewDecimal(nil, numbers.MustParseDecimal("-12345.123")).Details())
 
+	// -1 precision (PrecisionNotSpecified):
+	assert.Equal(t, DecimalDetails{scale: 0, precision: ptr.ToInt(-1)}, NewDecimal(ptr.ToInt(-1), numbers.MustParseDecimal("0")).Details())
+	assert.Equal(t, DecimalDetails{scale: 0, precision: ptr.ToInt(-1)}, NewDecimal(ptr.ToInt(-1), numbers.MustParseDecimal("12345")).Details())
+	assert.Equal(t, DecimalDetails{scale: 0, precision: ptr.ToInt(-1)}, NewDecimal(ptr.ToInt(-1), numbers.MustParseDecimal("-12")).Details())
+	assert.Equal(t, DecimalDetails{scale: 2, precision: ptr.ToInt(-1)}, NewDecimal(ptr.ToInt(-1), numbers.MustParseDecimal("12345.12")).Details())
+	assert.Equal(t, DecimalDetails{scale: 3, precision: ptr.ToInt(-1)}, NewDecimal(ptr.ToInt(-1), numbers.MustParseDecimal("-12345.123")).Details())
+
 	// 10 precision:
 	assert.Equal(t, DecimalDetails{scale: 0, precision: ptr.ToInt(10)}, NewDecimal(ptr.ToInt(10), numbers.MustParseDecimal("0")).Details())
 	assert.Equal(t, DecimalDetails{scale: 0, precision: ptr.ToInt(10)}, NewDecimal(ptr.ToInt(10), numbers.MustParseDecimal("12345")).Details())
