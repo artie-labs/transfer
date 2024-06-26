@@ -10,7 +10,7 @@ import (
 
 // Decimal is Artie's wrapper around [*apd.Decimal] which can store large numbers w/ no precision loss.
 type Decimal struct {
-	precision *int
+	precision int32
 	value     *apd.Decimal
 }
 
@@ -33,7 +33,7 @@ func NewDecimal(precision int32, value *apd.Decimal) *Decimal {
 	}
 
 	return &Decimal{
-		precision: ptr.ToInt(int(precision)),
+		precision: precision,
 		value:     value,
 	}
 }
@@ -42,7 +42,7 @@ func (d *Decimal) Scale() int {
 	return int(-d.value.Exponent)
 }
 
-func (d *Decimal) Precision() *int {
+func (d *Decimal) Precision() int32 {
 	return d.precision
 }
 
@@ -56,7 +56,7 @@ func (d *Decimal) String() string {
 func (d *Decimal) Value() any {
 	// -1 precision is used for variable scaled decimal
 	// We are opting to emit this as a STRING because the value is technically unbounded (can get to ~1 GB).
-	if d.precision != nil && (*d.precision > MaxPrecisionBeforeString || *d.precision == -1) {
+	if d.precision > MaxPrecisionBeforeString || d.precision == -1 {
 		return d.String()
 	}
 
@@ -70,5 +70,5 @@ func (d *Decimal) Value() any {
 }
 
 func (d *Decimal) Details() DecimalDetails {
-	return DecimalDetails{scale: d.Scale(), precision: d.precision}
+	return DecimalDetails{scale: d.Scale(), precision: ptr.ToInt(int(d.precision))}
 }
