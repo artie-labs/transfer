@@ -2,16 +2,18 @@ package decimal
 
 import (
 	"fmt"
+	"log/slog"
 	"math/big"
 
 	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/cockroachdb/apd/v3"
 )
 
-// Decimal is Artie's wrapper around *big.Float which can store large numbers w/ no precision loss.
+// Decimal is Artie's wrapper around *apd.Decimal) which can store large numbers w/ no precision loss.
 type Decimal struct {
 	scale     int
 	precision *int
-	value     *big.Float
+	value     *apd.Decimal
 }
 
 const (
@@ -22,7 +24,7 @@ const (
 	MaxPrecisionBeforeString = 38
 )
 
-func NewDecimal(precision *int, scale int, value *big.Float) *Decimal {
+func NewDecimal(precision *int, scale int, value *apd.Decimal) *Decimal {
 	if precision != nil {
 		if scale > *precision && *precision != -1 {
 			// Note: -1 precision means it's not specified.
@@ -52,18 +54,31 @@ func (d *Decimal) Precision() *int {
 // This is particularly useful for Snowflake because we're writing all the values as STRINGS into TSV format.
 // This function guarantees backwards compatibility.
 func (d *Decimal) String() string {
-	return d.value.Text('f', d.scale)
+	targetExponent := -int32(d.scale)
+	value := d.value
+	if value.Exponent != targetExponent {
+		value = DecimalWithNewExponent(value, targetExponent)
+	}
+	return value.Text('f')
 }
 
 func (d *Decimal) Value() any {
+	stringValue := d.String()
+
 	// -1 precision is used for variable scaled decimal
 	// We are opting to emit this as a STRING because the value is technically unbounded (can get to ~1 GB).
 	if d.precision != nil && (*d.precision > MaxPrecisionBeforeString || *d.precision == -1) {
-		return d.String()
+		return stringValue
 	}
 
 	// Depending on the precision, we will want to convert value to STRING or keep as a FLOAT.
-	return d.value
+	bigFloat, ok := new(big.Float).SetString(stringValue)
+	if !ok {
+		slog.Error("Unable to parse value to a big.Float", slog.String("value", stringValue))
+		return stringValue
+	}
+
+	return bigFloat
 }
 
 // SnowflakeKind - is used to determine whether a NUMERIC data type should be a STRING or NUMERIC(p, s).
@@ -91,4 +106,31 @@ func (d *Decimal) BigQueryKind() string {
 	}
 
 	return "STRING"
+}
+
+// decimalWithNewExponent takes a [apd.Decimal] and returns a new [apd.Decimal] with a the given exponent.
+// If the new exponent is less precise then the extra digits will be truncated.
+func DecimalWithNewExponent(decimal *apd.Decimal, newExponent int32) *apd.Decimal {
+	exponentDelta := newExponent - decimal.Exponent // Exponent is negative.
+
+	if exponentDelta == 0 {
+		return new(apd.Decimal).Set(decimal)
+	}
+
+	coefficient := new(apd.BigInt).Set(&decimal.Coeff)
+
+	if exponentDelta < 0 {
+		multiplier := new(apd.BigInt).Exp(apd.NewBigInt(10), apd.NewBigInt(int64(-exponentDelta)), nil)
+		coefficient.Mul(coefficient, multiplier)
+	} else if exponentDelta > 0 {
+		divisor := new(apd.BigInt).Exp(apd.NewBigInt(10), apd.NewBigInt(int64(exponentDelta)), nil)
+		coefficient.Div(coefficient, divisor)
+	}
+
+	return &apd.Decimal{
+		Form:     decimal.Form,
+		Negative: decimal.Negative,
+		Exponent: newExponent,
+		Coeff:    *coefficient,
+	}
 }

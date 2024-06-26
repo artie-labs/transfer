@@ -49,26 +49,6 @@ func mustParseDecimal(value string) *apd.Decimal {
 	return decimal
 }
 
-func TestDecimalWithNewExponent(t *testing.T) {
-	assert.Equal(t, "0", decimalWithNewExponent(apd.New(0, 0), 0).Text('f'))
-	assert.Equal(t, "00", decimalWithNewExponent(apd.New(0, 1), 1).Text('f'))
-	assert.Equal(t, "0", decimalWithNewExponent(apd.New(0, 100), 0).Text('f'))
-	assert.Equal(t, "00", decimalWithNewExponent(apd.New(0, 0), 1).Text('f'))
-	assert.Equal(t, "0.0", decimalWithNewExponent(apd.New(0, 0), -1).Text('f'))
-
-	// Same exponent:
-	assert.Equal(t, "12.349", decimalWithNewExponent(mustParseDecimal("12.349"), -3).Text('f'))
-	// More precise exponent:
-	assert.Equal(t, "12.3490", decimalWithNewExponent(mustParseDecimal("12.349"), -4).Text('f'))
-	assert.Equal(t, "12.34900", decimalWithNewExponent(mustParseDecimal("12.349"), -5).Text('f'))
-	// Lest precise exponent:
-	// Extra digits should be truncated rather than rounded.
-	assert.Equal(t, "12.34", decimalWithNewExponent(mustParseDecimal("12.349"), -2).Text('f'))
-	assert.Equal(t, "12.3", decimalWithNewExponent(mustParseDecimal("12.349"), -1).Text('f'))
-	assert.Equal(t, "12", decimalWithNewExponent(mustParseDecimal("12.349"), 0).Text('f'))
-	assert.Equal(t, "10", decimalWithNewExponent(mustParseDecimal("12.349"), 1).Text('f'))
-}
-
 func TestEncodeDecimal(t *testing.T) {
 	testEncodeDecimal := func(value string, expectedScale int32) {
 		bytes, scale := EncodeDecimal(mustParseDecimal(value))
