@@ -3,7 +3,7 @@ package redshift
 import (
 	"fmt"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
@@ -129,7 +129,7 @@ func LoadRedshift(cfg config.Config, _store *db.Store) (*Store, error) {
 		cfg.Redshift.Host, cfg.Redshift.Port, cfg.Redshift.Username,
 		cfg.Redshift.Password, cfg.Redshift.Database)
 
-	store, err := db.Open("postgres", connStr)
+	store, err := db.Open("pgx", connStr)
 	if err != nil {
 		return nil, err
 	}
