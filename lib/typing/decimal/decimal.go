@@ -23,14 +23,6 @@ func NewDecimal(value *apd.Decimal) *Decimal {
 	return NewDecimalWithPrecision(value, PrecisionNotSpecified)
 }
 
-func (d *Decimal) Scale() int32 {
-	return -d.value.Exponent
-}
-
-func (d *Decimal) Precision() int32 {
-	return d.precision
-}
-
 func (d *Decimal) Value() *apd.Decimal {
 	return d.value
 }
@@ -43,5 +35,5 @@ func (d *Decimal) String() string {
 }
 
 func (d *Decimal) Details() Details {
-	return NewDetails(d.precision, d.Scale())
+	return NewDetails(d.precision, -d.value.Exponent)
 }
