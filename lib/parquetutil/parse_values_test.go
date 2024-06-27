@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/numbers"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/artie-labs/transfer/lib/typing"
@@ -66,7 +65,7 @@ func TestParseValue(t *testing.T) {
 		},
 		{
 			name:          "decimal",
-			colVal:        decimal.NewDecimal(ptr.ToInt32(30), numbers.MustParseDecimal("5000.22320")),
+			colVal:        decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("5000.22320"), 30),
 			colKind:       columns.NewColumn("", eDecimal),
 			expectedValue: "5000.22320",
 		},

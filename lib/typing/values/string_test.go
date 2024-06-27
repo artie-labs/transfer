@@ -8,7 +8,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/numbers"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -123,7 +122,7 @@ func TestToString(t *testing.T) {
 		assert.Equal(t, "123.45", val)
 
 		// Decimals
-		value := decimal.NewDecimal(ptr.ToInt32(38), numbers.MustParseDecimal("585692791691858.25"))
+		value := decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("585692791691858.25"), 38)
 		val, err = ToString(value, columns.Column{KindDetails: typing.EDecimal}, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, "585692791691858.25", val)

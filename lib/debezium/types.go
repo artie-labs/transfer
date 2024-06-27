@@ -8,7 +8,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/jsonutil"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 
 	"github.com/artie-labs/transfer/lib/maputil"
@@ -237,7 +236,11 @@ func (f Field) DecodeDecimal(encoded []byte) (*decimal.Decimal, error) {
 		return nil, fmt.Errorf("failed to get scale and/or precision: %w", err)
 	}
 	_decimal := DecodeDecimal(encoded, scale)
-	return decimal.NewDecimal(precision, _decimal), nil
+	if precision == nil {
+		return decimal.NewDecimal(_decimal), nil
+	} else {
+		return decimal.NewDecimalWithPrecision(_decimal, *precision), nil
+	}
 }
 
 func (f Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error) {
@@ -260,6 +263,5 @@ func (f Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error
 	if err != nil {
 		return nil, err
 	}
-	_decimal := DecodeDecimal(bytes, scale)
-	return decimal.NewDecimal(ptr.ToInt32(decimal.PrecisionNotSpecified), _decimal), nil
+	return decimal.NewDecimal(DecodeDecimal(bytes, scale)), nil
 }
