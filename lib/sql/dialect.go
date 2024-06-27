@@ -4,6 +4,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
 type TableIdentifier interface {
@@ -20,6 +21,7 @@ type Dialect interface {
 	KindForDataType(_type string, stringPrecision string) (typing.KindDetails, error)
 	IsColumnAlreadyExistsErr(err error) bool
 	IsTableDoesNotExistErr(err error) bool
+	IncreaseNumericType(tableID TableIdentifier, column columns.Column, newDetails decimal.DecimalDetails) string
 	BuildCreateTableQuery(tableID TableIdentifier, temporary bool, colSQLParts []string) string
 	BuildAlterColumnQuery(tableID TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string
 	BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string
