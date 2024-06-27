@@ -74,15 +74,14 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 	}
 
 	if strings.Contains(rawType, "character varying") {
-		var strPrecision *int
 		precision, err := strconv.Atoi(stringPrecision)
-		if err == nil {
-			strPrecision = &precision
+		if err != nil {
+			return typing.Invalid, fmt.Errorf("failed to parse string precision: %q, err: %w", stringPrecision, err)
 		}
 
 		return typing.KindDetails{
 			Kind:                    typing.String.Kind,
-			OptionalStringPrecision: strPrecision,
+			OptionalStringPrecision: &precision,
 		}, nil
 	}
 
