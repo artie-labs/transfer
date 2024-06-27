@@ -1,7 +1,6 @@
 package debezium
 
 import (
-	"math/big"
 	"testing"
 	"time"
 
@@ -450,7 +449,6 @@ func TestField_DecodeDecimal(t *testing.T) {
 		expectedPrecision     int32
 		expectNilPtrPrecision bool
 		expectedScale         int32
-		expectBigFloat        bool
 		expectedErr           string
 	}{
 		{
@@ -482,7 +480,6 @@ func TestField_DecodeDecimal(t *testing.T) {
 			expectedValue:     "5",
 			expectedPrecision: 5,
 			expectedScale:     0,
-			expectBigFloat:    true,
 		},
 		{
 			name:    "NUMERIC(5,2)",
@@ -494,7 +491,6 @@ func TestField_DecodeDecimal(t *testing.T) {
 			expectedValue:     "578.01",
 			expectedPrecision: 5,
 			expectedScale:     2,
-			expectBigFloat:    true,
 		},
 		{
 			name:    "NUMERIC(38, 0) - small #",
@@ -503,7 +499,6 @@ func TestField_DecodeDecimal(t *testing.T) {
 				"scale":                     "0",
 				"connect.decimal.precision": "38",
 			},
-			expectBigFloat:    true,
 			expectedValue:     "567",
 			expectedPrecision: 38,
 			expectedScale:     0,
@@ -515,7 +510,6 @@ func TestField_DecodeDecimal(t *testing.T) {
 				"scale":                     "0",
 				"connect.decimal.precision": "38",
 			},
-			expectBigFloat:    true,
 			expectedValue:     "99999999999999999999999999999999999999",
 			expectedPrecision: 38,
 			expectedScale:     0,
@@ -527,7 +521,6 @@ func TestField_DecodeDecimal(t *testing.T) {
 				"scale":                     "2",
 				"connect.decimal.precision": "38",
 			},
-			expectBigFloat:    true,
 			expectedValue:     "33.21",
 			expectedPrecision: 38,
 			expectedScale:     2,
@@ -539,7 +532,6 @@ func TestField_DecodeDecimal(t *testing.T) {
 				"scale":                     "2",
 				"connect.decimal.precision": "38",
 			},
-			expectBigFloat:    true,
 			expectedValue:     "9999999999999999999999999999999999.99",
 			expectedPrecision: 38,
 			expectedScale:     2,
@@ -551,7 +543,6 @@ func TestField_DecodeDecimal(t *testing.T) {
 				"scale":                     "4",
 				"connect.decimal.precision": "38",
 			},
-			expectBigFloat:    true,
 			expectedValue:     "484.4419",
 			expectedPrecision: 38,
 			expectedScale:     4,
@@ -563,7 +554,6 @@ func TestField_DecodeDecimal(t *testing.T) {
 				"scale":                     "4",
 				"connect.decimal.precision": "38",
 			},
-			expectBigFloat:    true,
 			expectedValue:     "999999999999999999999999999999.9999",
 			expectedPrecision: 38,
 			expectedScale:     4,
@@ -596,7 +586,6 @@ func TestField_DecodeDecimal(t *testing.T) {
 			params: map[string]any{
 				"scale": "2",
 			},
-			expectBigFloat:        true,
 			expectedValue:         "123456.98",
 			expectNilPtrPrecision: true,
 			expectedScale:         2,
@@ -618,9 +607,6 @@ func TestField_DecodeDecimal(t *testing.T) {
 		}
 
 		assert.NoError(t, err)
-		decVal := dec.Value()
-		_, isOk := decVal.(*big.Float)
-		assert.Equal(t, testCase.expectBigFloat, isOk, testCase.name)
 		assert.Equal(t, testCase.expectedValue, dec.String(), testCase.name)
 
 		if testCase.expectNilPtrPrecision {
@@ -713,16 +699,9 @@ func TestField_DecodeDebeziumVariableDecimal(t *testing.T) {
 			continue
 		}
 
-		// It should never be a *big.Float
-		_, isOk := dec.Value().(*big.Float)
-		assert.False(t, isOk, testCase.name)
-
-		// It should be a string instead.
-		_, isOk = dec.Value().(string)
-		assert.True(t, isOk, testCase.name)
 		assert.Equal(t, int32(-1), *dec.Precision(), testCase.name)
 		assert.Equal(t, testCase.expectedScale, dec.Scale(), testCase.name)
-		assert.Equal(t, testCase.expectedValue, dec.Value(), testCase.name)
+		assert.Equal(t, testCase.expectedValue, dec.String(), testCase.name)
 	}
 
 }
