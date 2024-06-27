@@ -586,9 +586,9 @@ func TestField_DecodeDecimal(t *testing.T) {
 			params: map[string]any{
 				"scale": "2",
 			},
-			expectedValue:         "123456.98",
-			expectNilPtrPrecision: true,
-			expectedScale:         2,
+			expectedValue:     "123456.98",
+			expectedPrecision: -1,
+			expectedScale:     2,
 		},
 	}
 
@@ -609,11 +609,7 @@ func TestField_DecodeDecimal(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, testCase.expectedValue, dec.String(), testCase.name)
 
-		if testCase.expectNilPtrPrecision {
-			assert.Nil(t, dec.Precision(), testCase.name)
-		} else {
-			assert.Equal(t, testCase.expectedPrecision, *dec.Precision(), testCase.name)
-		}
+		assert.Equal(t, testCase.expectedPrecision, dec.Precision(), testCase.name)
 		assert.Equal(t, testCase.expectedScale, dec.Scale(), testCase.name)
 	}
 }
@@ -699,7 +695,7 @@ func TestField_DecodeDebeziumVariableDecimal(t *testing.T) {
 			continue
 		}
 
-		assert.Equal(t, int32(-1), *dec.Precision(), testCase.name)
+		assert.Equal(t, int32(-1), dec.Precision(), testCase.name)
 		assert.Equal(t, testCase.expectedScale, dec.Scale(), testCase.name)
 		assert.Equal(t, testCase.expectedValue, dec.String(), testCase.name)
 	}
