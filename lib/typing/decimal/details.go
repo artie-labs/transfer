@@ -4,12 +4,12 @@ import (
 	"fmt"
 )
 
-type DecimalDetails struct {
+type Details struct {
 	scale     int32
 	precision int32
 }
 
-func NewDecimalDetails(precision int32, scale int32) *DecimalDetails {
+func NewDecimalDetails(precision int32, scale int32) *Details {
 	if scale > precision && precision != PrecisionNotSpecified {
 		// Note: -1 precision means it's not specified.
 
@@ -18,38 +18,38 @@ func NewDecimalDetails(precision int32, scale int32) *DecimalDetails {
 		precision = scale + 1
 	}
 
-	return &DecimalDetails{
+	return &Details{
 		scale:     scale,
 		precision: precision,
 	}
 }
 
-func (d DecimalDetails) Scale() int32 {
+func (d Details) Scale() int32 {
 	return d.scale
 }
 
-func (d DecimalDetails) Precision() int32 {
+func (d Details) Precision() int32 {
 	return d.precision
 }
 
 // SnowflakeKind - is used to determine whether a NUMERIC data type should be a STRING or NUMERIC(p, s).
-func (d *DecimalDetails) SnowflakeKind() string {
+func (d Details) SnowflakeKind() string {
 	return d.toKind(MaxPrecisionBeforeString, "STRING")
 }
 
 // MsSQLKind - Has the same limitation as Redshift
 // Spec: https://learn.microsoft.com/en-us/sql/t-sql/data-types/decimal-and-numeric-transact-sql?view=sql-server-ver16#arguments
-func (d *DecimalDetails) MsSQLKind() string {
+func (d Details) MsSQLKind() string {
 	return d.toKind(MaxPrecisionBeforeString, "TEXT")
 }
 
 // RedshiftKind - is used to determine whether a NUMERIC data type should be a TEXT or NUMERIC(p, s).
-func (d *DecimalDetails) RedshiftKind() string {
+func (d Details) RedshiftKind() string {
 	return d.toKind(MaxPrecisionBeforeString, "TEXT")
 }
 
 // BigQueryKind - is inferring logic from: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#decimal_types
-func (d *DecimalDetails) BigQueryKind() string {
+func (d Details) BigQueryKind() string {
 	if d.isNumeric() {
 		return fmt.Sprintf("NUMERIC(%v, %v)", d.precision, d.scale)
 	} else if d.isBigNumeric() {
