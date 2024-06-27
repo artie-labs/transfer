@@ -27,7 +27,5 @@ func ParseNumeric(parts []string) KindDetails {
 		return Integer
 	}
 
-	eDec := EDecimal
-	eDec.ExtendedDecimalDetails = decimal.NewDecimalDetails(parsedNumbers[0], parsedNumbers[1])
-	return eDec
+	return NewDecimalDetailsFromTemplate(EDecimal, decimal.NewDetails(parsedNumbers[0], parsedNumbers[1]))
 }

@@ -64,38 +64,14 @@ func TestGetOptionalSchema(t *testing.T) {
 				"boolean_test": typing.Boolean,
 				"bool_test":    typing.Boolean,
 				"bit_test":     typing.Boolean,
-				"numeric_test": {
-					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimalDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale),
-				},
-				"numeric_5": {
-					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimalDetails(5, 0),
-				},
-				"numeric_5_2": {
-					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimalDetails(5, 2),
-				},
-				"numeric_5_6": {
-					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimalDetails(5, 6),
-				},
-				"numeric_5_0": {
-					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimalDetails(5, 0),
-				},
-				"numeric_39_0": {
-					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimalDetails(39, 0),
-				},
-				"numeric_39_2": {
-					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimalDetails(39, 2),
-				},
-				"numeric_39_6": {
-					Kind:                   typing.EDecimal.Kind,
-					ExtendedDecimalDetails: decimal.NewDecimalDetails(39, 6),
-				},
+				"numeric_test": typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)),
+				"numeric_5":    typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 0)),
+				"numeric_5_0":  typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 0)),
+				"numeric_5_2":  typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 2)),
+				"numeric_5_6":  typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 6)),
+				"numeric_39_0": typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(39, 0)),
+				"numeric_39_2": typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(39, 2)),
+				"numeric_39_6": typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(39, 6)),
 			},
 		},
 	}

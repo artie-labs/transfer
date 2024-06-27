@@ -15,13 +15,13 @@ func TestNewDecimal(t *testing.T) {
 
 func TestNewDecimalWithPrecision(t *testing.T) {
 	// Precision = -1 (PrecisionNotSpecified):
-	assert.Equal(t, DecimalDetails{scale: 2, precision: -1}, NewDecimalWithPrecision(numbers.MustParseDecimal("12.34"), PrecisionNotSpecified).Details())
+	assert.Equal(t, Details{scale: 2, precision: -1}, NewDecimalWithPrecision(numbers.MustParseDecimal("12.34"), PrecisionNotSpecified).Details())
 	// Precision = scale:
-	assert.Equal(t, DecimalDetails{scale: 2, precision: 2}, NewDecimalWithPrecision(numbers.MustParseDecimal("12.34"), 2).Details())
+	assert.Equal(t, Details{scale: 2, precision: 2}, NewDecimalWithPrecision(numbers.MustParseDecimal("12.34"), 2).Details())
 	// Precision < scale:
-	assert.Equal(t, DecimalDetails{scale: 2, precision: 3}, NewDecimalWithPrecision(numbers.MustParseDecimal("12.34"), 1).Details())
+	assert.Equal(t, Details{scale: 2, precision: 3}, NewDecimalWithPrecision(numbers.MustParseDecimal("12.34"), 1).Details())
 	// Precision > scale:
-	assert.Equal(t, DecimalDetails{scale: 2, precision: 4}, NewDecimalWithPrecision(numbers.MustParseDecimal("12.34"), 4).Details())
+	assert.Equal(t, Details{scale: 2, precision: 4}, NewDecimalWithPrecision(numbers.MustParseDecimal("12.34"), 4).Details())
 }
 
 func TestDecimal_Scale(t *testing.T) {
@@ -36,16 +36,16 @@ func TestDecimal_Scale(t *testing.T) {
 
 func TestDecimal_Details(t *testing.T) {
 	// -1 precision (PrecisionNotSpecified):
-	assert.Equal(t, DecimalDetails{scale: 0, precision: -1}, NewDecimal(numbers.MustParseDecimal("0")).Details())
-	assert.Equal(t, DecimalDetails{scale: 0, precision: -1}, NewDecimal(numbers.MustParseDecimal("12345")).Details())
-	assert.Equal(t, DecimalDetails{scale: 0, precision: -1}, NewDecimal(numbers.MustParseDecimal("-12")).Details())
-	assert.Equal(t, DecimalDetails{scale: 2, precision: -1}, NewDecimal(numbers.MustParseDecimal("12345.12")).Details())
-	assert.Equal(t, DecimalDetails{scale: 3, precision: -1}, NewDecimal(numbers.MustParseDecimal("-12345.123")).Details())
+	assert.Equal(t, Details{scale: 0, precision: -1}, NewDecimal(numbers.MustParseDecimal("0")).Details())
+	assert.Equal(t, Details{scale: 0, precision: -1}, NewDecimal(numbers.MustParseDecimal("12345")).Details())
+	assert.Equal(t, Details{scale: 0, precision: -1}, NewDecimal(numbers.MustParseDecimal("-12")).Details())
+	assert.Equal(t, Details{scale: 2, precision: -1}, NewDecimal(numbers.MustParseDecimal("12345.12")).Details())
+	assert.Equal(t, Details{scale: 3, precision: -1}, NewDecimal(numbers.MustParseDecimal("-12345.123")).Details())
 
 	// 10 precision:
-	assert.Equal(t, DecimalDetails{scale: 0, precision: 10}, NewDecimalWithPrecision(numbers.MustParseDecimal("0"), 10).Details())
-	assert.Equal(t, DecimalDetails{scale: 0, precision: 10}, NewDecimalWithPrecision(numbers.MustParseDecimal("12345"), 10).Details())
-	assert.Equal(t, DecimalDetails{scale: 0, precision: 10}, NewDecimalWithPrecision(numbers.MustParseDecimal("-12"), 10).Details())
-	assert.Equal(t, DecimalDetails{scale: 2, precision: 10}, NewDecimalWithPrecision(numbers.MustParseDecimal("12345.12"), 10).Details())
-	assert.Equal(t, DecimalDetails{scale: 3, precision: 10}, NewDecimalWithPrecision(numbers.MustParseDecimal("-12345.123"), 10).Details())
+	assert.Equal(t, Details{scale: 0, precision: 10}, NewDecimalWithPrecision(numbers.MustParseDecimal("0"), 10).Details())
+	assert.Equal(t, Details{scale: 0, precision: 10}, NewDecimalWithPrecision(numbers.MustParseDecimal("12345"), 10).Details())
+	assert.Equal(t, Details{scale: 0, precision: 10}, NewDecimalWithPrecision(numbers.MustParseDecimal("-12"), 10).Details())
+	assert.Equal(t, Details{scale: 2, precision: 10}, NewDecimalWithPrecision(numbers.MustParseDecimal("12345.12"), 10).Details())
+	assert.Equal(t, Details{scale: 3, precision: 10}, NewDecimalWithPrecision(numbers.MustParseDecimal("-12345.123"), 10).Details())
 }
