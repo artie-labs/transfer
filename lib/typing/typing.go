@@ -20,7 +20,7 @@ type Settings struct {
 type KindDetails struct {
 	Kind                   string
 	ExtendedTimeDetails    *ext.NestedKind
-	ExtendedDecimalDetails *decimal.DecimalDetails
+	ExtendedDecimalDetails *decimal.Details
 
 	// Optional kind details metadata
 	OptionalStringPrecision *int
@@ -65,6 +65,14 @@ var (
 		Kind: "extended_time",
 	}
 )
+
+func NewDecimalDetailsFromTemplate(details KindDetails, decimalDetails decimal.Details) KindDetails {
+	if details.ExtendedDecimalDetails == nil {
+		details.ExtendedDecimalDetails = &decimalDetails
+	}
+
+	return details
+}
 
 func NewKindDetailsFromTemplate(details KindDetails, extendedType ext.ExtendedTimeKindType) KindDetails {
 	if details.ExtendedTimeDetails == nil {

@@ -41,8 +41,7 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		tableDataCols.AddColumn(columns.NewColumn("ext_datetime", typing.String))
 		tableDataCols.AddColumn(columns.NewColumn("ext_dec", typing.String))
 
-		extDecimalType := typing.EDecimal
-		extDecimalType.ExtendedDecimalDetails = decimal.NewDecimalDetails(22, 2)
+		extDecimalType := typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(22, 2))
 		tableDataCols.AddColumn(columns.NewColumn("ext_dec_filled", extDecimalType))
 
 		tableDataCols.AddColumn(columns.NewColumn(strCol, typing.String))
@@ -120,8 +119,7 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		assert.True(t, isOk)
 		assert.Equal(t, typing.String, extDecCol.KindDetails)
 
-		extDecimal := typing.EDecimal
-		extDecimal.ExtendedDecimalDetails = decimal.NewDecimalDetails(30, 2)
+		extDecimal := typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(30, 2))
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_dec", extDecimal)))
 		// Now it should be ext decimal type
 		extDecCol, isOk = tableData.inMemoryColumns.GetColumn("ext_dec")
