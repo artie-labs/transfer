@@ -609,8 +609,8 @@ func TestField_DecodeDecimal(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, testCase.expectedValue, dec.String(), testCase.name)
 
-		assert.Equal(t, testCase.expectedPrecision, dec.Precision(), testCase.name)
-		assert.Equal(t, testCase.expectedScale, dec.Scale(), testCase.name)
+		assert.Equal(t, testCase.expectedPrecision, dec.Details().Precision(), testCase.name)
+		assert.Equal(t, testCase.expectedScale, dec.Details().Scale(), testCase.name)
 	}
 }
 
@@ -695,8 +695,8 @@ func TestField_DecodeDebeziumVariableDecimal(t *testing.T) {
 			continue
 		}
 
-		assert.Equal(t, int32(-1), dec.Precision(), testCase.name)
-		assert.Equal(t, testCase.expectedScale, dec.Scale(), testCase.name)
+		assert.Equal(t, int32(-1), dec.Details().Precision(), testCase.name)
+		assert.Equal(t, testCase.expectedScale, dec.Details().Scale(), testCase.name)
 		assert.Equal(t, testCase.expectedValue, dec.String(), testCase.name)
 	}
 

@@ -4,6 +4,13 @@ import (
 	"fmt"
 )
 
+const (
+	DefaultScale int32 = 5
+	// MaxPrecisionBeforeString - if the precision is greater than 38, we'll cast it as a string.
+	// This is because Snowflake and BigQuery both do not have NUMERIC data types that go beyond 38.
+	MaxPrecisionBeforeString int32 = 38
+)
+
 type Details struct {
 	scale     int32
 	precision int32
