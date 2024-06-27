@@ -66,6 +66,14 @@ var (
 	}
 )
 
+func NewDecimalDetailsFromTemplate(details KindDetails, decimalDetails decimal.Details) KindDetails {
+	if details.ExtendedDecimalDetails == nil {
+		details.ExtendedDecimalDetails = &decimalDetails
+	}
+
+	return details
+}
+
 func NewKindDetailsFromTemplate(details KindDetails, extendedType ext.ExtendedTimeKindType) KindDetails {
 	if details.ExtendedTimeDetails == nil {
 		details.ExtendedTimeDetails = &ext.NestedKind{}

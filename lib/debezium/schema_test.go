@@ -88,12 +88,8 @@ func TestField_ToKindDetails(t *testing.T) {
 		expectedKindDetails typing.KindDetails
 	}
 
-	eDecimal := typing.EDecimal
-	eDecimal.ExtendedDecimalDetails = decimal.NewDecimalDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)
-
-	kafkaDecimalType := typing.EDecimal
-	kafkaDecimalType.ExtendedDecimalDetails = decimal.NewDecimalDetails(10, 5)
-
+	eDecimal := typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale))
+	kafkaDecimalType := typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(10, 5))
 	tcs := []_tc{
 		{
 			name:                "int16",

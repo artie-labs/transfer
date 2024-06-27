@@ -9,7 +9,7 @@ type Details struct {
 	precision int32
 }
 
-func NewDecimalDetails(precision int32, scale int32) *Details {
+func NewDetails(precision int32, scale int32) Details {
 	if scale > precision && precision != PrecisionNotSpecified {
 		// Note: -1 precision means it's not specified.
 
@@ -18,7 +18,7 @@ func NewDecimalDetails(precision int32, scale int32) *Details {
 		precision = scale + 1
 	}
 
-	return &Details{
+	return Details{
 		scale:     scale,
 		precision: precision,
 	}
