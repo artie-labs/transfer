@@ -68,7 +68,7 @@ func TestDecimalDetailsKind(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		d := NewDecimalDetails(testCase.Precision, testCase.Scale)
+		d := NewDetails(testCase.Precision, testCase.Scale)
 		assert.Equal(t, testCase.ExpectedSnowflakeKind, d.SnowflakeKind(), testCase.Name)
 		assert.Equal(t, testCase.ExpectedRedshiftKind, d.RedshiftKind(), testCase.Name)
 		assert.Equal(t, testCase.ExpectedBigQueryKind, d.BigQueryKind(), testCase.Name)

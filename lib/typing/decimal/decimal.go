@@ -57,6 +57,6 @@ func (d *Decimal) String() string {
 	return d.value.Text('f')
 }
 
-func (d *Decimal) Details() DecimalDetails {
-	return DecimalDetails{scale: d.Scale(), precision: d.precision}
+func (d *Decimal) Details() Details {
+	return Details{scale: d.Scale(), precision: d.precision}
 }

@@ -103,16 +103,12 @@ func (f Field) ToKindDetails() typing.KindDetails {
 			precision = *precisionPtr
 		}
 
-		eDecimal := typing.EDecimal
-		eDecimal.ExtendedDecimalDetails = decimal.NewDecimalDetails(precision, scale)
-		return eDecimal
+		return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(precision, scale))
 	case KafkaVariableNumericType:
 		// For variable numeric types, we are defaulting to a scale of 5
 		// This is because scale is not specified at the column level, rather at the row level
 		// It shouldn't matter much anyway since the column type we are creating is `TEXT` to avoid boundary errors.
-		eDecimal := typing.EDecimal
-		eDecimal.ExtendedDecimalDetails = decimal.NewDecimalDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)
-		return eDecimal
+		return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale))
 	}
 
 	switch f.Type {
