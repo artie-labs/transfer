@@ -24,16 +24,6 @@ func TestNewDecimalWithPrecision(t *testing.T) {
 	assert.Equal(t, Details{scale: 2, precision: 4}, NewDecimalWithPrecision(numbers.MustParseDecimal("12.34"), 4).Details())
 }
 
-func TestDecimal_Scale(t *testing.T) {
-	assert.Equal(t, int32(0), NewDecimal(numbers.MustParseDecimal("0")).Scale())
-	assert.Equal(t, int32(0), NewDecimal(numbers.MustParseDecimal("12345")).Scale())
-	assert.Equal(t, int32(0), NewDecimal(numbers.MustParseDecimal("12300")).Scale())
-	assert.Equal(t, int32(1), NewDecimal(numbers.MustParseDecimal("12300.0")).Scale())
-	assert.Equal(t, int32(2), NewDecimal(numbers.MustParseDecimal("12300.00")).Scale())
-	assert.Equal(t, int32(2), NewDecimal(numbers.MustParseDecimal("12345.12")).Scale())
-	assert.Equal(t, int32(3), NewDecimal(numbers.MustParseDecimal("-12345.123")).Scale())
-}
-
 func TestDecimal_Details(t *testing.T) {
 	// -1 precision (PrecisionNotSpecified):
 	assert.Equal(t, Details{scale: 0, precision: -1}, NewDecimal(numbers.MustParseDecimal("0")).Details())
