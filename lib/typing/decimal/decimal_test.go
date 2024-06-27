@@ -9,6 +9,8 @@ import (
 
 func TestNewDecimal(t *testing.T) {
 	assert.Equal(t, "0", NewDecimal(numbers.MustParseDecimal("0")).String())
+	assert.Equal(t, "1", NewDecimal(numbers.MustParseDecimal("1")).String())
+	assert.Equal(t, "12.34", NewDecimal(numbers.MustParseDecimal("12.34")).String())
 }
 
 func TestNewDecimalWithPrecision(t *testing.T) {
