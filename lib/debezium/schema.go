@@ -61,12 +61,8 @@ type Field struct {
 	Parameters   map[string]any        `json:"parameters"`
 }
 
-func (f Field) Scale() (int32, error) {
-	return maputil.GetInt32FromMap(f.Parameters, "scale")
-}
-
 func (f Field) GetScaleAndPrecision() (int32, *int32, error) {
-	scale, scaleErr := f.Scale()
+	scale, scaleErr := maputil.GetInt32FromMap(f.Parameters, "scale")
 	if scaleErr != nil {
 		return 0, nil, scaleErr
 	}
