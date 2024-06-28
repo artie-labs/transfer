@@ -2,6 +2,7 @@ package decimal
 
 import (
 	"fmt"
+	"log/slog"
 )
 
 const (
@@ -17,6 +18,13 @@ type Details struct {
 }
 
 func NewDetails(precision int32, scale int32) Details {
+	if precision == 0 {
+		// MySQL, PostgreSQL, and SQLServer do not allow a zero precision, so this should never happen.
+		// Let's log if we observe it happening, and if we don't see it in the logs then we can use zero as the
+		// [PrecisionNotSpecified] value and change precision to a uint16.
+		slog.Error("Decimal precision is zero")
+	}
+
 	if scale > precision && precision != PrecisionNotSpecified {
 		// Note: -1 precision means it's not specified.
 

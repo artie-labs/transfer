@@ -149,7 +149,7 @@ func (MSSQLDialect) IsTableDoesNotExistErr(err error) bool {
 }
 
 func (MSSQLDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, colSQLParts []string) string {
-	// Microsoft SQL Server uses the same syntax for temporary and permanant tables.
+	// Microsoft SQL Server uses the same syntax for temporary and permanent tables.
 	// Microsoft SQL Server doesn't support IF NOT EXISTS
 	return fmt.Sprintf("CREATE TABLE %s (%s);", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
 }
