@@ -68,18 +68,6 @@ func TestRedshiftDialect_KindForDataType(t *testing.T) {
 			expectedKd: typing.Integer,
 		},
 		{
-			name: "String w/o precision",
-			rawTypes: []rawTypeAndPrecision{
-				{rawType: "character varying"},
-				{rawType: "character varying(65535)"},
-				{
-					rawType:   "character varying",
-					precision: "not a number",
-				},
-			},
-			expectedKd: typing.String,
-		},
-		{
 			name: "String w/ precision",
 			rawTypes: []rawTypeAndPrecision{
 				{

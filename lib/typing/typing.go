@@ -23,6 +23,7 @@ type KindDetails struct {
 	ExtendedDecimalDetails *decimal.Details
 
 	// Optional kind details metadata
+	// TODO: Consider changing this to an int32
 	OptionalStringPrecision *int
 }
 
