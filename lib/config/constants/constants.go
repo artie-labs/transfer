@@ -8,7 +8,7 @@ const (
 	ToastUnavailableValuePlaceholder = "__debezium_unavailable_value"
 
 	// DebeziumTopicRoutingKey - https://debezium.io/documentation/reference/stable/transformations/topic-routing.html#by-logical-table-router-key-field-name
-	// This key is added to ensure no compaction or mutation happens since multiple tables are now going into the same topic and may have overlaping key ids.
+	// This key is added to ensure no compaction or mutation happens since multiple tables are now going into the same topic and may have overlapping key ids.
 	// We will strip this out from our partition key parsing.
 	DebeziumTopicRoutingKey = "__dbz__physicalTableIdentifier"
 

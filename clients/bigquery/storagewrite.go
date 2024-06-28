@@ -21,7 +21,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// columnToTableFieldSchema returns a [*storagepb.TableFieldSchema] suitable for transfering data of the type that the column specifies.
+// columnToTableFieldSchema returns a [*storagepb.TableFieldSchema] suitable for transferring data of the type that the column specifies.
 // Not that the data type is not necessarily the data type that the table in the database is using.
 func columnToTableFieldSchema(column columns.Column) (*storagepb.TableFieldSchema, error) {
 	var fieldType storagepb.TableFieldSchema_Type
@@ -150,7 +150,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				}
 				message.Set(field, protoreflect.ValueOfFloat64(floatValue))
 			default:
-				return nil, fmt.Errorf("expected float32/float64/int32/int64/string recieved %T with value %v", value, value)
+				return nil, fmt.Errorf("expected float32/float64/int32/int64/string received %T with value %v", value, value)
 			}
 		case typing.EDecimal.Kind:
 			if decimalValue, ok := value.(*decimal.Decimal); ok {
