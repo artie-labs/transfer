@@ -70,15 +70,16 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 	}
 
 	temporaryTableID := TempTableIDWithSuffix(dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name()), tableData.TempTableSuffix())
-	if err = dwh.PrepareTemporaryTable(tableData, tableConfig, temporaryTableID, types.AdditionalSettings{}, true); err != nil {
-		return fmt.Errorf("failed to prepare temporary table: %w", err)
-	}
 
 	defer func() {
 		if dropErr := ddl.DropTemporaryTable(dwh, temporaryTableID, false); dropErr != nil {
 			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))
 		}
 	}()
+
+	if err = dwh.PrepareTemporaryTable(tableData, tableConfig, temporaryTableID, types.AdditionalSettings{}, true); err != nil {
+		return fmt.Errorf("failed to prepare temporary table: %w", err)
+	}
 
 	// Now iterate over all the in-memory cols and see which ones require a backfill.
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
