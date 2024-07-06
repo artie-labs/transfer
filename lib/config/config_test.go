@@ -22,12 +22,10 @@ func TestSharedTransferConfig(t *testing.T) {
 		validBody := `
 typingSettings:
  additionalDateFormats: ["yyyy-MM-dd1"]
- createAllColumnsIfAvailable: true
 `
 		err := yaml.Unmarshal([]byte(validBody), &sharedTransferCfg)
 		assert.NoError(t, err)
 
-		assert.True(t, sharedTransferCfg.TypingSettings.CreateAllColumnsIfAvailable)
 		assert.Equal(t, "yyyy-MM-dd1", sharedTransferCfg.TypingSettings.AdditionalDateFormats[0])
 	}
 }
@@ -372,12 +370,6 @@ snowflake:
  warehouse: %s
  region: %s
  application: %s
-
-sharedTransferConfig:
-  typingSettings:
-    createAllColumnsIfAvailable: true
-
-
 reporting:
  sentry:
   dsn: %s
@@ -396,7 +388,6 @@ reporting:
 	assert.Equal(t, bootstrapServer, config.Kafka.BootstrapServer)
 	assert.Equal(t, groupID, config.Kafka.GroupID)
 	assert.Equal(t, password, config.Kafka.Password)
-	assert.True(t, config.SharedTransferConfig.TypingSettings.CreateAllColumnsIfAvailable)
 
 	orderIdx := -1
 	customerIdx := -1

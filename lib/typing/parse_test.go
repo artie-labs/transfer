@@ -135,7 +135,6 @@ func TestOptionalSchema(t *testing.T) {
 		// Respect the schema if the value is not null.
 		assert.Equal(t, String, ParseValue(Settings{}, "created_at", optionalSchema, "2023-01-01"))
 		// Kind is invalid because `createAllColumnsIfAvailable` is not enabled.
-		assert.Equal(t, Invalid, ParseValue(Settings{}, "created_at", optionalSchema, nil))
-		assert.Equal(t, String, ParseValue(Settings{CreateAllColumnsIfAvailable: true}, "created_at", optionalSchema, nil))
+		assert.Equal(t, String, ParseValue(Settings{}, "created_at", optionalSchema, nil))
 	}
 }
