@@ -65,7 +65,6 @@ func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
 
 func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (typing.KindDetails, error) {
 	rawType = strings.ToLower(rawType)
-	// TODO: Check if there are any missing Redshift data types.
 	if strings.HasPrefix(rawType, "numeric") {
 		_, parameters, err := sql.ParseDataTypeDefinition(rawType)
 		if err != nil {
@@ -75,15 +74,14 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 	}
 
 	if strings.Contains(rawType, "character varying") {
-		var strPrecision *int
 		precision, err := strconv.Atoi(stringPrecision)
-		if err == nil {
-			strPrecision = &precision
+		if err != nil {
+			return typing.Invalid, fmt.Errorf("failed to parse string precision: %q, err: %w", stringPrecision, err)
 		}
 
 		return typing.KindDetails{
 			Kind:                    typing.String.Kind,
-			OptionalStringPrecision: strPrecision,
+			OptionalStringPrecision: &precision,
 		}, nil
 	}
 
@@ -104,7 +102,7 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 		return typing.Boolean, nil
 	}
 
-	return typing.Invalid, nil
+	return typing.Invalid, fmt.Errorf("unsupported data type: %s", rawType)
 }
 
 func (RedshiftDialect) IsColumnAlreadyExistsErr(err error) bool {
