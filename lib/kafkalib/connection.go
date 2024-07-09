@@ -73,9 +73,8 @@ func (c Connection) Dialer(ctx context.Context) (*kafka.Dialer, error) {
 		}
 
 		dialer.SASLMechanism = aws_msk_iam_v2.NewMechanism(_awsCfg)
-		if !c.disableTLS {
-			dialer.TLS = &tls.Config{}
-		}
+		// We don't need to disable TLS for AWS IAM since MSK will always enable TLS.
+		dialer.TLS = &tls.Config{}
 	case Plain:
 		// No mechanism
 	default:
