@@ -65,7 +65,6 @@ func (c Connection) Dialer(ctx context.Context) (*kafka.Dialer, error) {
 		if !c.disableTLS {
 			dialer.TLS = &tls.Config{}
 		}
-
 	case AwsMskIam:
 		_awsCfg, err := awsCfg.LoadDefaultConfig(ctx)
 		if err != nil {
