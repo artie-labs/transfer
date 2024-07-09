@@ -84,3 +84,38 @@ func (c Connection) Dialer(ctx context.Context) (*kafka.Dialer, error) {
 
 	return dialer, nil
 }
+
+func (c Connection) Transport() (*kafka.Transport, error) {
+	transport := &kafka.Transport{
+		DialTimeout: 10 * time.Second,
+	}
+
+	switch c.Mechanism() {
+	case ScramSha512:
+		mechanism, err := scram.Mechanism(scram.SHA512, c.username, c.password)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create SCRAM mechanism: %w", err)
+		}
+
+		transport.SASL = mechanism
+		if !c.disableTLS {
+			transport.TLS = &tls.Config{}
+		}
+	case AwsMskIam:
+		_awsCfg, err := awsCfg.LoadDefaultConfig(context.Background())
+		if err != nil {
+			return nil, fmt.Errorf("failed to load AWS configuration: %w", err)
+		}
+
+		transport.SASL = aws_msk_iam_v2.NewMechanism(_awsCfg)
+		if !c.disableTLS {
+			transport.TLS = &tls.Config{}
+		}
+	case Plain:
+		// No mechanism
+	default:
+		return nil, fmt.Errorf("unsupported kafka mechanism: %s", c.Mechanism())
+	}
+
+	return transport, nil
+}
