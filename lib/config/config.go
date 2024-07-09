@@ -41,10 +41,13 @@ type Kafka struct {
 	// Following kafka's spec mentioned here: https://kafka.apache.org/documentation/#producerconfigs_bootstrap.servers
 	BootstrapServer string                  `yaml:"bootstrapServer"`
 	GroupID         string                  `yaml:"groupID"`
-	Username        string                  `yaml:"username,omitempty"`
-	Password        string                  `yaml:"password,omitempty"`
-	EnableAWSMSKIAM bool                    `yaml:"enableAWSMKSIAM"`
 	TopicConfigs    []*kafkalib.TopicConfig `yaml:"topicConfigs"`
+
+	// Optional parameters
+	Username        string `yaml:"username,omitempty"`
+	Password        string `yaml:"password,omitempty"`
+	EnableAWSMSKIAM bool   `yaml:"enableAWSMKSIAM,omitempty"`
+	DisableTLS      bool   `yaml:"disableTLS,omitempty"`
 }
 
 func (k *Kafka) BootstrapServers() []string {

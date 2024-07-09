@@ -64,7 +64,9 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 		}
 
 		dialer.SASLMechanism = aws_msk_iam_v2.NewMechanism(_awsCfg)
-		dialer.TLS = &tls.Config{}
+		if !cfg.Kafka.DisableTLS {
+			dialer.TLS = &tls.Config{}
+		}
 	}
 
 	// If username and password are provided, we'll use SCRAM w/ SHA512.
@@ -75,7 +77,9 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 		}
 
 		dialer.SASLMechanism = mechanism
-		dialer.TLS = &tls.Config{}
+		if !cfg.Kafka.DisableTLS {
+			dialer.TLS = &tls.Config{}
+		}
 	}
 
 	tcFmtMap := NewTcFmtMap()
