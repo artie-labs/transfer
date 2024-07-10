@@ -127,7 +127,7 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 		for _, col := range columns {
 			castedValue, castErr := castColValStaging(value[col.Name()], col, additionalDateFmts)
 			if castErr != nil {
-				return "", castErr
+				return "", fmt.Errorf("failed to cast value: %w, row: %v", castErr, value)
 			}
 
 			row = append(row, castedValue)
