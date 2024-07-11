@@ -83,7 +83,7 @@ func (c Connection) Dialer(ctx context.Context) (*kafka.Dialer, error) {
 	return dialer, nil
 }
 
-func (c Connection) Transport() (*kafka.Transport, error) {
+func (c Connection) Transport(ctx context.Context) (*kafka.Transport, error) {
 	transport := &kafka.Transport{
 		DialTimeout: 10 * time.Second,
 	}
@@ -100,7 +100,7 @@ func (c Connection) Transport() (*kafka.Transport, error) {
 			transport.TLS = &tls.Config{}
 		}
 	case AwsMskIam:
-		_awsCfg, err := awsCfg.LoadDefaultConfig(context.Background())
+		_awsCfg, err := awsCfg.LoadDefaultConfig(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load AWS configuration: %w", err)
 		}
