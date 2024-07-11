@@ -48,7 +48,7 @@ func (c Connection) Mechanism() Mechanism {
 	return Plain
 }
 
-func (c Connection) Dialer(ctx context.Context) (*kafka.Dialer, error) {
+func (c Connection) Dialer(ctx context.Context, awsOptFns ...func(options *awsCfg.LoadOptions) error) (*kafka.Dialer, error) {
 	dialer := &kafka.Dialer{
 		Timeout:   10 * time.Second,
 		DualStack: true,
@@ -66,7 +66,7 @@ func (c Connection) Dialer(ctx context.Context) (*kafka.Dialer, error) {
 			dialer.TLS = &tls.Config{}
 		}
 	case AwsMskIam:
-		_awsCfg, err := awsCfg.LoadDefaultConfig(ctx)
+		_awsCfg, err := awsCfg.LoadDefaultConfig(ctx, awsOptFns...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load aws configuration: %w", err)
 		}
