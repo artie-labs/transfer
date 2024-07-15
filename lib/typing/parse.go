@@ -9,11 +9,6 @@ import (
 )
 
 func ParseValue(settings Settings, key string, optionalSchema map[string]KindDetails, val any) KindDetails {
-	if val == nil && !settings.CreateAllColumnsIfAvailable {
-		// If the value is nil and `createAllColumnsIfAvailable` = false, then return `Invalid
-		return Invalid
-	}
-
 	if len(optionalSchema) > 0 {
 		// If the column exists in the schema, let's early exit.
 		if kindDetail, isOk := optionalSchema[key]; isOk {
