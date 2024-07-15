@@ -25,11 +25,6 @@ func ParseValue(settings Settings, key string, optionalSchema map[string]KindDet
 		}
 	}
 
-	if val == nil {
-		// Skip parsing if the value is null and schema is not available.
-		return Invalid
-	}
-
 	return parseValue(settings, val)
 }
 

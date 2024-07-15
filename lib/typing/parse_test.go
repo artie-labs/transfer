@@ -12,7 +12,6 @@ import (
 
 func Test_ParseValue(t *testing.T) {
 	{
-
 		// Invalid
 		assert.Equal(t, ParseValue(Settings{}, "", nil, nil), Invalid)
 		assert.Equal(t, ParseValue(Settings{}, "", nil, errors.New("hello")), Invalid)
