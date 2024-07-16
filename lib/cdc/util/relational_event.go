@@ -84,11 +84,10 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 			if err != nil {
 				return nil, err
 			}
-			retMap[constants.OnlySetDeletedColumnMarker] = false
 		} else {
 			retMap = make(map[string]any)
-			retMap[constants.OnlySetDeletedColumnMarker] = true
 		}
+		retMap[constants.OnlySetDeletedColumnMarker] = true
 		// This is a delete payload, so mark it as deleted.
 		// And we need to reconstruct the data bit since it will be empty.
 		// We _can_ rely on *before* since even without running replicate identity, it will still copy over
@@ -109,6 +108,7 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 			return nil, err
 		}
 		retMap[constants.DeleteColumnMarker] = false
+		retMap[constants.OnlySetDeletedColumnMarker] = false
 	}
 
 	if tc.IncludeArtieUpdatedAt {
