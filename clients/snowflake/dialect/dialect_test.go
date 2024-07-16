@@ -330,11 +330,12 @@ func TestSnowflakeDialect_BuildMergeQueries(t *testing.T) {
 	// No idempotent key
 	fqTable := "database.schema.table"
 	_cols := buildColumns(map[string]typing.KindDetails{
-		"id":                         typing.String,
-		"bar":                        typing.String,
-		"updated_at":                 typing.String,
-		"start":                      typing.String,
-		constants.DeleteColumnMarker: typing.Boolean,
+		"id":                                 typing.String,
+		"bar":                                typing.String,
+		"updated_at":                         typing.String,
+		"start":                              typing.String,
+		constants.DeleteColumnMarker:         typing.Boolean,
+		constants.OnlySetDeletedColumnMarker: typing.Boolean,
 	})
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
@@ -362,8 +363,9 @@ WHEN NOT MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN INSERT ("B
 func TestSnowflakeDialect_BuildMergeQueries_IdempotentKey(t *testing.T) {
 	fqTable := "database.schema.table"
 	_cols := buildColumns(map[string]typing.KindDetails{
-		"id":                         typing.String,
-		constants.DeleteColumnMarker: typing.Boolean,
+		"id":                                 typing.String,
+		constants.DeleteColumnMarker:         typing.Boolean,
+		constants.OnlySetDeletedColumnMarker: typing.Boolean,
 	})
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
@@ -391,9 +393,10 @@ WHEN NOT MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN INSERT ("I
 func TestSnowflakeDialect_BuildMergeQueries_CompositeKey(t *testing.T) {
 	fqTable := "database.schema.table"
 	_cols := buildColumns(map[string]typing.KindDetails{
-		"id":                         typing.String,
-		"another_id":                 typing.String,
-		constants.DeleteColumnMarker: typing.Boolean,
+		"id":                                 typing.String,
+		"another_id":                         typing.String,
+		constants.DeleteColumnMarker:         typing.Boolean,
+		constants.OnlySetDeletedColumnMarker: typing.Boolean,
 	})
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
@@ -425,11 +428,12 @@ func TestSnowflakeDialect_BuildMergeQueries_EscapePrimaryKeys(t *testing.T) {
 	// No idempotent key
 	fqTable := "database.schema.table"
 	_cols := buildColumns(map[string]typing.KindDetails{
-		"id":                         typing.String,
-		"group":                      typing.String,
-		"updated_at":                 typing.String,
-		"start":                      typing.String,
-		constants.DeleteColumnMarker: typing.Boolean,
+		"id":                                 typing.String,
+		"group":                              typing.String,
+		"updated_at":                         typing.String,
+		"start":                              typing.String,
+		constants.DeleteColumnMarker:         typing.Boolean,
+		constants.OnlySetDeletedColumnMarker: typing.Boolean,
 	})
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
