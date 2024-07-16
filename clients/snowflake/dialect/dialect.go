@@ -225,12 +225,20 @@ MERGE INTO %s %s USING ( %s ) AS %s ON %s`,
 		tableID.FullyQualifiedName(), constants.TargetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
 	)
 
+	cols, removed := columns.RemoveOnlySetDeletedColumnMarker(cols)
+	if !removed {
+		return []string{}, errors.New("only set deleted flag doesn't exist")
+	}
+
 	if softDelete {
 		return []string{baseQuery + fmt.Sprintf(`
-WHEN MATCHED %sTHEN UPDATE SET %s
+WHEN MATCHED %sAND IFNULL(%s, false) = false THEN UPDATE SET %s
+WHEN MATCHED %sAND IFNULL(%s, false) = true THEN UPDATE SET %s
 WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
-			// Update + Soft Deletion
-			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, sd),
+			// Update + Soft Deletion when we have previous values
+			idempotentClause, sql.QuotedOnlySetDeletedColumnMarker(constants.StagingAlias, sd), sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, sd),
+			// Soft Deletion when we don't have previous values
+			idempotentClause, sql.QuotedOnlySetDeletedColumnMarker(constants.StagingAlias, sd), sql.BuildColumnsUpdateFragment([]columns.Column{columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean)}, constants.StagingAlias, constants.TargetAlias, sd),
 			// Insert
 			strings.Join(sql.QuoteColumns(cols, sd), ","),
 			strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, sd), ","),
@@ -238,7 +246,7 @@ WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
-	cols, removed := columns.RemoveDeleteColumnMarker(cols)
+	cols, removed = columns.RemoveDeleteColumnMarker(cols)
 	if !removed {
 		return []string{}, errors.New("artie delete flag doesn't exist")
 	}

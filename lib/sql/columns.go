@@ -33,6 +33,10 @@ func QuotedDeleteColumnMarker(tableAlias constants.TableAlias, dialect Dialect) 
 	return QuoteTableAliasColumn(tableAlias, columns.NewColumn(constants.DeleteColumnMarker, typing.Invalid), dialect)
 }
 
+func QuotedOnlySetDeletedColumnMarker(tableAlias constants.TableAlias, dialect Dialect) string {
+	return QuoteTableAliasColumn(tableAlias, columns.NewColumn(constants.OnlySetDeletedColumnMarker, typing.Invalid), dialect)
+}
+
 // BuildColumnsUpdateFragment will parse the columns and return a string like: first_name=tgt."first_name",last_name=stg."last_name",email=tgt."email"
 // NOTE: This should only be used with valid columns.
 func BuildColumnsUpdateFragment(columns []columns.Column, stagingAlias, targetAlias constants.TableAlias, dialect Dialect) string {

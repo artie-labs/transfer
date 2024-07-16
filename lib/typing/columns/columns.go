@@ -240,8 +240,21 @@ func (c *Columns) DeleteColumn(name string) {
 func RemoveDeleteColumnMarker(cols []Column) ([]Column, bool) {
 	origLength := len(cols)
 	// Use [slices.Clone] because [slices.DeleteFunc] mutates its inputs.
-	cols = slices.DeleteFunc(slices.Clone(cols), func(col Column) bool { return col.Name() == constants.DeleteColumnMarker })
-	return cols, len(cols) != origLength
+	cols = slices.DeleteFunc(slices.Clone(cols), func(col Column) bool {
+		return col.Name() == constants.DeleteColumnMarker
+	})
+	// TODO return an error if the lengths aren't different, instead of a boolean
+	return cols, origLength != len(cols)
+}
+
+func RemoveOnlySetDeletedColumnMarker(cols []Column) ([]Column, bool) {
+	origLength := len(cols)
+	// Use [slices.Clone] because [slices.DeleteFunc] mutates its inputs.
+	cols = slices.DeleteFunc(slices.Clone(cols), func(col Column) bool {
+		return col.Name() == constants.OnlySetDeletedColumnMarker
+	})
+	// TODO return an error if the lengths aren't different, instead of a boolean
+	return cols, origLength != len(cols)
 }
 
 // ColumnNames takes a slice of [Column] and returns the names as a slice of strings.

@@ -262,10 +262,11 @@ func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 	// No idempotent key
 	fqTable := "database.schema.table"
 	cols := map[string]typing.KindDetails{
-		"id":                         typing.String,
-		"bar":                        typing.String,
-		"updated_at":                 typing.ETime,
-		constants.DeleteColumnMarker: typing.Boolean,
+		"id":                                 typing.String,
+		"bar":                                typing.String,
+		"updated_at":                         typing.ETime,
+		constants.DeleteColumnMarker:         typing.Boolean,
+		constants.OnlySetDeletedColumnMarker: typing.Boolean,
 	}
 
 	colNames := []string{}
@@ -296,7 +297,8 @@ func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, `
 MERGE INTO database.schema.table tgt USING ( database.schema.table ) AS stg ON tgt."ID" = stg."ID"
-WHEN MATCHED THEN UPDATE SET "__ARTIE_DELETE"=stg."__ARTIE_DELETE","BAR"=stg."BAR","ID"=stg."ID","UPDATED_AT"=stg."UPDATED_AT"
+WHEN MATCHED AND IFNULL(stg."__ARTIE_ONLY_SET_DELETED", false) = false THEN UPDATE SET "__ARTIE_DELETE"=stg."__ARTIE_DELETE","BAR"=stg."BAR","ID"=stg."ID","UPDATED_AT"=stg."UPDATED_AT"
+WHEN MATCHED AND IFNULL(stg."__ARTIE_ONLY_SET_DELETED", false) = true THEN UPDATE SET "__ARTIE_DELETE"=stg."__ARTIE_DELETE"
 WHEN NOT MATCHED THEN INSERT ("__ARTIE_DELETE","BAR","ID","UPDATED_AT") VALUES (stg."__ARTIE_DELETE",stg."BAR",stg."ID",stg."UPDATED_AT");`, statements[0])
 	}
 	{
@@ -314,7 +316,8 @@ WHEN NOT MATCHED THEN INSERT ("__ARTIE_DELETE","BAR","ID","UPDATED_AT") VALUES (
 		assert.Len(t, statements, 1)
 		assert.Equal(t, `
 MERGE INTO database.schema.table tgt USING ( database.schema.table ) AS stg ON tgt."ID" = stg."ID"
-WHEN MATCHED AND stg.updated_at >= tgt.updated_at THEN UPDATE SET "__ARTIE_DELETE"=stg."__ARTIE_DELETE","BAR"=stg."BAR","ID"=stg."ID","UPDATED_AT"=stg."UPDATED_AT"
+WHEN MATCHED AND stg.updated_at >= tgt.updated_at AND IFNULL(stg."__ARTIE_ONLY_SET_DELETED", false) = false THEN UPDATE SET "__ARTIE_DELETE"=stg."__ARTIE_DELETE","BAR"=stg."BAR","ID"=stg."ID","UPDATED_AT"=stg."UPDATED_AT"
+WHEN MATCHED AND stg.updated_at >= tgt.updated_at AND IFNULL(stg."__ARTIE_ONLY_SET_DELETED", false) = true THEN UPDATE SET "__ARTIE_DELETE"=stg."__ARTIE_DELETE"
 WHEN NOT MATCHED THEN INSERT ("__ARTIE_DELETE","BAR","ID","UPDATED_AT") VALUES (stg."__ARTIE_DELETE",stg."BAR",stg."ID",stg."UPDATED_AT");`, statements[0])
 	}
 }
