@@ -2,6 +2,7 @@ package dialect
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -260,27 +261,22 @@ func TestSnowflakeDialect_BuildIsNotToastValueExpression(t *testing.T) {
 func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 	// No idempotent key
 	fqTable := "database.schema.table"
-	cols := []string{
-		"id",
-		"bar",
-		"updated_at",
-		constants.DeleteColumnMarker,
+	cols := map[string]typing.KindDetails{
+		"id":                         typing.String,
+		"bar":                        typing.String,
+		"updated_at":                 typing.ETime,
+		constants.DeleteColumnMarker: typing.Boolean,
 	}
 
-	dateValue := time.Date(2001, 2, 3, 4, 5, 6, 0, time.UTC)
-	tableValues := []string{
-		fmt.Sprintf("('%s', '%s', '%v', false)", "1", "456", dateValue.Round(0).Format(time.RFC3339)),
-		fmt.Sprintf("('%s', '%s', '%v', true)", "2", "bb", dateValue.Round(0).Format(time.RFC3339)), // Delete row 2.
-		fmt.Sprintf("('%s', '%s', '%v', false)", "3", "dd", dateValue.Round(0).Format(time.RFC3339)),
+	colNames := []string{}
+	for colName := range cols {
+		colNames = append(colNames, colName)
 	}
-
-	// select stg.foo, stg.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
-	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
-		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
-
+	sort.Strings(colNames)
 	var _cols columns.Columns
-	_cols.AddColumn(columns.NewColumn("id", typing.String))
-	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
+	for _, colName := range colNames {
+		_cols.AddColumn(columns.NewColumn(colName, cols[colName]))
+	}
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns(fqTable)
@@ -288,7 +284,7 @@ func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 	{
 		statements, err := SnowflakeDialect{}.BuildMergeQueries(
 			fakeTableID,
-			subQuery,
+			fqTable,
 			"",
 			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
 			nil,
@@ -299,14 +295,14 @@ func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 		assert.Len(t, statements, 1)
 		assert.NoError(t, err)
 		assert.Equal(t, `
-MERGE INTO database.schema.table tgt USING ( SELECT id,bar,updated_at,__artie_delete from (values ('1', '456', '2001-02-03T04:05:06Z', false),('2', 'bb', '2001-02-03T04:05:06Z', true),('3', 'dd', '2001-02-03T04:05:06Z', false)) as _tbl(id,bar,updated_at,__artie_delete) ) AS stg ON tgt."ID" = stg."ID"
-WHEN MATCHED THEN UPDATE SET "ID"=stg."ID","__ARTIE_DELETE"=stg."__ARTIE_DELETE"
-WHEN NOT MATCHED THEN INSERT ("ID","__ARTIE_DELETE") VALUES (stg."ID",stg."__ARTIE_DELETE");`, statements[0])
+MERGE INTO database.schema.table tgt USING ( database.schema.table ) AS stg ON tgt."ID" = stg."ID"
+WHEN MATCHED THEN UPDATE SET "__ARTIE_DELETE"=stg."__ARTIE_DELETE","BAR"=stg."BAR","ID"=stg."ID","UPDATED_AT"=stg."UPDATED_AT"
+WHEN NOT MATCHED THEN INSERT ("__ARTIE_DELETE","BAR","ID","UPDATED_AT") VALUES (stg."__ARTIE_DELETE",stg."BAR",stg."ID",stg."UPDATED_AT");`, statements[0])
 	}
 	{
 		statements, err := SnowflakeDialect{}.BuildMergeQueries(
 			fakeTableID,
-			subQuery,
+			fqTable,
 			"updated_at",
 			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
 			nil,
@@ -317,9 +313,9 @@ WHEN NOT MATCHED THEN INSERT ("ID","__ARTIE_DELETE") VALUES (stg."ID",stg."__ART
 		assert.NoError(t, err)
 		assert.Len(t, statements, 1)
 		assert.Equal(t, `
-MERGE INTO database.schema.table tgt USING ( SELECT id,bar,updated_at,__artie_delete from (values ('1', '456', '2001-02-03T04:05:06Z', false),('2', 'bb', '2001-02-03T04:05:06Z', true),('3', 'dd', '2001-02-03T04:05:06Z', false)) as _tbl(id,bar,updated_at,__artie_delete) ) AS stg ON tgt."ID" = stg."ID"
-WHEN MATCHED AND stg.updated_at >= tgt.updated_at THEN UPDATE SET "ID"=stg."ID","__ARTIE_DELETE"=stg."__ARTIE_DELETE"
-WHEN NOT MATCHED THEN INSERT ("ID","__ARTIE_DELETE") VALUES (stg."ID",stg."__ARTIE_DELETE");`, statements[0])
+MERGE INTO database.schema.table tgt USING ( database.schema.table ) AS stg ON tgt."ID" = stg."ID"
+WHEN MATCHED AND stg.updated_at >= tgt.updated_at THEN UPDATE SET "__ARTIE_DELETE"=stg."__ARTIE_DELETE","BAR"=stg."BAR","ID"=stg."ID","UPDATED_AT"=stg."UPDATED_AT"
+WHEN NOT MATCHED THEN INSERT ("__ARTIE_DELETE","BAR","ID","UPDATED_AT") VALUES (stg."__ARTIE_DELETE",stg."BAR",stg."ID",stg."UPDATED_AT");`, statements[0])
 	}
 }
 
