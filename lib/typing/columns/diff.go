@@ -17,6 +17,7 @@ func shouldSkipColumn(colName string, softDelete bool, includeArtieUpdatedAt boo
 	}
 
 	if colName == constants.OnlySetDeletedColumnMarker {
+		// We never want to create this column in the destination table
 		return true
 	}
 
