@@ -256,25 +256,30 @@ func TestSnowflakeDialect_BuildIsNotToastValueExpression(t *testing.T) {
 	)
 }
 
+func buildColumns(colTypesMap map[string]typing.KindDetails) *columns.Columns {
+	// first sort the column names alphabetically to ensure deterministic order
+	colNames := []string{}
+	for colName := range colTypesMap {
+		colNames = append(colNames, colName)
+	}
+	sort.Strings(colNames)
+
+	var _cols columns.Columns
+	for _, colName := range colNames {
+		_cols.AddColumn(columns.NewColumn(colName, colTypesMap[colName]))
+	}
+	return &_cols
+}
+
 func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 	// No idempotent key
 	fqTable := "database.schema.table"
-	cols := map[string]typing.KindDetails{
+	_cols := buildColumns(map[string]typing.KindDetails{
 		"id":                         typing.String,
 		"bar":                        typing.String,
 		"updated_at":                 typing.ETime,
 		constants.DeleteColumnMarker: typing.Boolean,
-	}
-
-	colNames := []string{}
-	for colName := range cols {
-		colNames = append(colNames, colName)
-	}
-	sort.Strings(colNames)
-	var _cols columns.Columns
-	for _, colName := range colNames {
-		_cols.AddColumn(columns.NewColumn(colName, cols[colName]))
-	}
+	})
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns(fqTable)
@@ -320,20 +325,13 @@ WHEN NOT MATCHED THEN INSERT ("__ARTIE_DELETE","BAR","ID","UPDATED_AT") VALUES (
 func TestSnowflakeDialect_BuildMergeQueries(t *testing.T) {
 	// No idempotent key
 	fqTable := "database.schema.table"
-	colToTypes := map[string]typing.KindDetails{
+	_cols := buildColumns(map[string]typing.KindDetails{
 		"id":                         typing.String,
 		"bar":                        typing.String,
 		"updated_at":                 typing.String,
 		"start":                      typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
-	}
-
-	// This feels a bit round about, but this is because iterating over a map is not deterministic.
-	cols := []string{"id", "bar", "updated_at", "start", constants.DeleteColumnMarker}
-	var _cols columns.Columns
-	for _, col := range cols {
-		_cols.AddColumn(columns.NewColumn(col, colToTypes[col]))
-	}
+	})
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns(fqTable)
@@ -353,22 +351,16 @@ func TestSnowflakeDialect_BuildMergeQueries(t *testing.T) {
 	assert.Equal(t, `
 MERGE INTO database.schema.table tgt USING ( database.schema.table ) AS stg ON tgt."ID" = stg."ID"
 WHEN MATCHED AND stg."__ARTIE_DELETE" THEN DELETE
-WHEN MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN UPDATE SET "ID"=stg."ID","BAR"=stg."BAR","UPDATED_AT"=stg."UPDATED_AT","START"=stg."START"
-WHEN NOT MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN INSERT ("ID","BAR","UPDATED_AT","START") VALUES (stg."ID",stg."BAR",stg."UPDATED_AT",stg."START");`, statements[0])
+WHEN MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN UPDATE SET "BAR"=stg."BAR","ID"=stg."ID","START"=stg."START","UPDATED_AT"=stg."UPDATED_AT"
+WHEN NOT MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN INSERT ("BAR","ID","START","UPDATED_AT") VALUES (stg."BAR",stg."ID",stg."START",stg."UPDATED_AT");`, statements[0])
 }
 
 func TestSnowflakeDialect_BuildMergeQueries_IdempotentKey(t *testing.T) {
 	fqTable := "database.schema.table"
-	// cols := []string{
-	// 	"id",
-	// 	"bar",
-	// 	"updated_at",
-	// 	constants.DeleteColumnMarker,
-	// }
-
-	var _cols columns.Columns
-	_cols.AddColumn(columns.NewColumn("id", typing.String))
-	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
+	_cols := buildColumns(map[string]typing.KindDetails{
+		"id":                         typing.String,
+		constants.DeleteColumnMarker: typing.Boolean,
+	})
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns(fqTable)
@@ -394,18 +386,11 @@ WHEN NOT MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN INSERT ("I
 
 func TestSnowflakeDialect_BuildMergeQueries_CompositeKey(t *testing.T) {
 	fqTable := "database.schema.table"
-	// cols := []string{
-	// 	"id",
-	// 	"another_id",
-	// 	"bar",
-	// 	"updated_at",
-	// 	constants.DeleteColumnMarker,
-	// }
-
-	var _cols columns.Columns
-	_cols.AddColumn(columns.NewColumn("id", typing.String))
-	_cols.AddColumn(columns.NewColumn("another_id", typing.String))
-	_cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
+	_cols := buildColumns(map[string]typing.KindDetails{
+		"id":                         typing.String,
+		"another_id":                 typing.String,
+		constants.DeleteColumnMarker: typing.Boolean,
+	})
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns(fqTable)
@@ -428,27 +413,20 @@ func TestSnowflakeDialect_BuildMergeQueries_CompositeKey(t *testing.T) {
 	assert.Equal(t, `
 MERGE INTO database.schema.table tgt USING ( database.schema.table ) AS stg ON tgt."ID" = stg."ID" AND tgt."ANOTHER_ID" = stg."ANOTHER_ID"
 WHEN MATCHED AND stg."__ARTIE_DELETE" THEN DELETE
-WHEN MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false AND stg.updated_at >= tgt.updated_at THEN UPDATE SET "ID"=stg."ID","ANOTHER_ID"=stg."ANOTHER_ID"
-WHEN NOT MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN INSERT ("ID","ANOTHER_ID") VALUES (stg."ID",stg."ANOTHER_ID");`, statements[0])
+WHEN MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false AND stg.updated_at >= tgt.updated_at THEN UPDATE SET "ANOTHER_ID"=stg."ANOTHER_ID","ID"=stg."ID"
+WHEN NOT MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN INSERT ("ANOTHER_ID","ID") VALUES (stg."ANOTHER_ID",stg."ID");`, statements[0])
 }
 
 func TestSnowflakeDialect_BuildMergeQueries_EscapePrimaryKeys(t *testing.T) {
 	// No idempotent key
 	fqTable := "database.schema.table"
-	colToTypes := map[string]typing.KindDetails{
+	_cols := buildColumns(map[string]typing.KindDetails{
 		"id":                         typing.String,
 		"group":                      typing.String,
 		"updated_at":                 typing.String,
 		"start":                      typing.String,
 		constants.DeleteColumnMarker: typing.Boolean,
-	}
-
-	// This feels a bit round about, but this is because iterating over a map is not deterministic.
-	cols := []string{"id", "group", "updated_at", "start", constants.DeleteColumnMarker}
-	var _cols columns.Columns
-	for _, col := range cols {
-		_cols.AddColumn(columns.NewColumn(col, colToTypes[col]))
-	}
+	})
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns(fqTable)
@@ -471,6 +449,6 @@ func TestSnowflakeDialect_BuildMergeQueries_EscapePrimaryKeys(t *testing.T) {
 	assert.Equal(t, `
 MERGE INTO database.schema.table tgt USING ( database.schema.table ) AS stg ON tgt."ID" = stg."ID" AND tgt."GROUP" = stg."GROUP"
 WHEN MATCHED AND stg."__ARTIE_DELETE" THEN DELETE
-WHEN MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN UPDATE SET "ID"=stg."ID","GROUP"=stg."GROUP","UPDATED_AT"=stg."UPDATED_AT","START"=stg."START"
-WHEN NOT MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN INSERT ("ID","GROUP","UPDATED_AT","START") VALUES (stg."ID",stg."GROUP",stg."UPDATED_AT",stg."START");`, statements[0])
+WHEN MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN UPDATE SET "GROUP"=stg."GROUP","ID"=stg."ID","START"=stg."START","UPDATED_AT"=stg."UPDATED_AT"
+WHEN NOT MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN INSERT ("GROUP","ID","START","UPDATED_AT") VALUES (stg."GROUP",stg."ID",stg."START",stg."UPDATED_AT");`, statements[0])
 }
