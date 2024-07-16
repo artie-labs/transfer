@@ -157,13 +157,15 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 		// the PK. We can explore simplifying this interface in the future by leveraging before.
 		if len(s.Payload.beforeMap) > 0 {
 			retMap = s.Payload.beforeMap
-			retMap[constants.OnlySetDeletedColumnMarker] = false
 		} else {
 			retMap = make(map[string]any)
-			retMap[constants.OnlySetDeletedColumnMarker] = true
 		}
 
 		retMap[constants.DeleteColumnMarker] = true
+		// For now, assume we only want to set the deleted column and leave other values alone.
+		// If previous values for the other columns are in memory (not flushed yet), [TableData.InsertRow] will handle
+		// filling them in and setting this to false.
+		retMap[constants.OnlySetDeletedColumnMarker] = true
 		for k, v := range pkMap {
 			retMap[k] = v
 		}
