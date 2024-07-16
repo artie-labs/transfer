@@ -257,18 +257,19 @@ func TestSnowflakeDialect_BuildIsNotToastValueExpression(t *testing.T) {
 }
 
 func buildColumns(colTypesMap map[string]typing.KindDetails) *columns.Columns {
-	// first sort the column names alphabetically to ensure deterministic order
 	colNames := []string{}
 	for colName := range colTypesMap {
 		colNames = append(colNames, colName)
 	}
+	// Sort the column names alphabetically to ensure deterministic order
 	sort.Strings(colNames)
 
-	var _cols columns.Columns
+	var cols columns.Columns
 	for _, colName := range colNames {
-		_cols.AddColumn(columns.NewColumn(colName, colTypesMap[colName]))
+		cols.AddColumn(columns.NewColumn(colName, colTypesMap[colName]))
 	}
-	return &_cols
+
+	return &cols
 }
 
 func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
