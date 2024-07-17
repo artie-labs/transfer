@@ -205,6 +205,7 @@ USING %s AS %s ON %s`,
 	}
 
 	if softDelete {
+		// TODO alter this merge query to update only the __artie_delete column if OnlySetDeleteColumnMarker is true
 		return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,

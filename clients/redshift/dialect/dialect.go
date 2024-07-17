@@ -271,6 +271,7 @@ func (rd RedshiftDialect) BuildMergeQueries(
 		}
 	}
 
+	// TODO alter the merge query to update only the __artie_delete column if softDelete is true and OnlySetDeleteColumnMarker is true
 	parts := []string{
 		rd.buildMergeInsertQuery(tableID, subQuery, primaryKeys, cols),
 		rd.buildMergeUpdateQuery(tableID, subQuery, primaryKeys, cols, idempotentKey, softDelete),
