@@ -208,8 +208,8 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				return nil, err
 			}
 			list := message.Mutable(field).List()
-			for _, value := range values {
-				list.Append(protoreflect.ValueOfString(value))
+			for _, val := range values {
+				list.Append(protoreflect.ValueOfString(val))
 			}
 		default:
 			return nil, fmt.Errorf("unsupported column kind: %q", column.KindDetails.Kind)
