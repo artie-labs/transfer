@@ -67,8 +67,9 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc *kafkalib.TopicConf
 
 		evtData[constants.OperationColumnMarker] = event.Operation()
 
-		// We don't need this either.
+		// We don't need the deletion markers either.
 		delete(evtData, constants.DeleteColumnMarker)
+		delete(evtData, constants.OnlySetDeleteColumnMarker)
 	}
 
 	return Event{

@@ -249,7 +249,13 @@ MERGE INTO %s %s USING %s AS %s ON %s`,
 		tableID.FullyQualifiedName(), constants.TargetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
 	)
 
+	cols, removed := columns.RemoveOnlySetDeleteColumnMarker(cols)
+	if !removed {
+		return []string{}, errors.New("artie only_set_delete flag doesn't exist")
+	}
+
 	if softDelete {
+		// TODO alter this merge query to update only the __artie_delete column if OnlySetDeleteColumnMarker is true
 		return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED %sTHEN UPDATE SET %s
 WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
@@ -263,7 +269,7 @@ WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
-	cols, removed := columns.RemoveDeleteColumnMarker(cols)
+	cols, removed = columns.RemoveDeleteColumnMarker(cols)
 	if !removed {
 		return []string{}, errors.New("artie delete flag doesn't exist")
 	}

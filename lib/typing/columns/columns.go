@@ -241,6 +241,17 @@ func RemoveDeleteColumnMarker(cols []Column) ([]Column, bool) {
 	origLength := len(cols)
 	// Use [slices.Clone] because [slices.DeleteFunc] mutates its inputs.
 	cols = slices.DeleteFunc(slices.Clone(cols), func(col Column) bool { return col.Name() == constants.DeleteColumnMarker })
+	// TODO return an error if the lengths aren't different, instead of a boolean
+	return cols, len(cols) != origLength
+}
+
+func RemoveOnlySetDeleteColumnMarker(cols []Column) ([]Column, bool) {
+	origLength := len(cols)
+	// Use [slices.Clone] because [slices.DeleteFunc] mutates its inputs.
+	cols = slices.DeleteFunc(slices.Clone(cols), func(col Column) bool {
+		return col.Name() == constants.OnlySetDeleteColumnMarker
+	})
+	// TODO return an error if the lengths aren't different, instead of a boolean
 	return cols, len(cols) != origLength
 }
 

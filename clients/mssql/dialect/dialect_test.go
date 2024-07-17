@@ -165,6 +165,7 @@ func TestMSSQLDialect_BuildMergeQueries(t *testing.T) {
 		columns.NewColumn("updated_at", typing.String),
 		columns.NewColumn("start", typing.String),
 		columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean),
+		columns.NewColumn(constants.OnlySetDeleteColumnMarker, typing.Boolean),
 	}
 
 	fqTable := "database.schema.table"

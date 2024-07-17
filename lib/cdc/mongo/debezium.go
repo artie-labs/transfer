@@ -162,6 +162,10 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 		}
 
 		retMap[constants.DeleteColumnMarker] = true
+		// For now, assume we only want to set the deleted column and leave other values alone.
+		// If previous values for the other columns are in memory (not flushed yet), [TableData.InsertRow] will handle
+		// filling them in and setting this to false.
+		retMap[constants.OnlySetDeleteColumnMarker] = true
 		for k, v := range pkMap {
 			retMap[k] = v
 		}
@@ -179,6 +183,7 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 		}
 
 		retMap[constants.DeleteColumnMarker] = false
+		retMap[constants.OnlySetDeleteColumnMarker] = false
 	}
 
 	if tc.IncludeArtieUpdatedAt {

@@ -92,6 +92,10 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 		// We _can_ rely on *before* since even without running replicate identity, it will still copy over
 		// the PK. We can explore simplifying this interface in the future by leveraging before.
 		retMap[constants.DeleteColumnMarker] = true
+		// For now, assume we only want to set the deleted column and leave other values alone.
+		// If previous values for the other columns are in memory (not flushed yet), [TableData.InsertRow] will handle
+		// filling them in and setting this to false.
+		retMap[constants.OnlySetDeleteColumnMarker] = true
 		for k, v := range pkMap {
 			retMap[k] = v
 		}
@@ -107,6 +111,7 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 			return nil, err
 		}
 		retMap[constants.DeleteColumnMarker] = false
+		retMap[constants.OnlySetDeleteColumnMarker] = false
 	}
 
 	if tc.IncludeArtieUpdatedAt {

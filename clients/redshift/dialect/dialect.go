@@ -257,6 +257,11 @@ func (rd RedshiftDialect) BuildMergeQueries(
 	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
 	// However, there may be edge cases where folks end up restoring deleted rows (which will contain the same PK).
 
+	cols, removed := columns.RemoveOnlySetDeleteColumnMarker(cols)
+	if !removed {
+		return []string{}, errors.New("artie only_set_delete flag doesn't exist")
+	}
+
 	if !softDelete {
 		// We also need to remove __artie flags since it does not exist in the destination table
 		var removed bool
@@ -266,6 +271,7 @@ func (rd RedshiftDialect) BuildMergeQueries(
 		}
 	}
 
+	// TODO alter the merge query to update only the __artie_delete column if softDelete is true and OnlySetDeleteColumnMarker is true
 	parts := []string{
 		rd.buildMergeInsertQuery(tableID, subQuery, primaryKeys, cols),
 		rd.buildMergeUpdateQuery(tableID, subQuery, primaryKeys, cols, idempotentKey, softDelete),

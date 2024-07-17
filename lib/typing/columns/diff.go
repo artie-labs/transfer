@@ -16,6 +16,11 @@ func shouldSkipColumn(colName string, softDelete bool, includeArtieUpdatedAt boo
 		return false
 	}
 
+	if colName == constants.OnlySetDeleteColumnMarker {
+		// We never want to create this column in the destination table
+		return true
+	}
+
 	if colName == constants.UpdateColumnMarker && includeArtieUpdatedAt {
 		// We want to keep this column if includeArtieUpdatedAt is turned on
 		return false
