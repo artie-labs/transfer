@@ -199,6 +199,7 @@ func (m *MongoTestSuite) TestMongoDBEventCustomer() {
 
 	assert.Equal(m.T(), nestedData["object"], "foo")
 	assert.Equal(m.T(), evtData[constants.DeleteColumnMarker], false)
+	assert.Equal(m.T(), evtData[constants.OnlySetDeleteColumnMarker], false)
 	assert.Equal(m.T(), evt.GetExecutionTime(),
 		time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
 	assert.Equal(m.T(), "customers", evt.GetTableName())
@@ -246,8 +247,12 @@ func (m *MongoTestSuite) TestMongoDBEventCustomerBefore_NoData() {
 		_, isOk := evtData[constants.UpdateColumnMarker]
 		assert.False(m.T(), isOk)
 
-		_, isOk = evtData[constants.DeleteColumnMarker]
+		deletionFlag, isOk := evtData[constants.DeleteColumnMarker]
 		assert.True(m.T(), isOk)
+		assert.True(m.T(), deletionFlag.(bool))
+		deletionOnlyFlag, isOk := evtData[constants.OnlySetDeleteColumnMarker]
+		assert.True(m.T(), isOk)
+		assert.True(m.T(), deletionOnlyFlag.(bool))
 
 		assert.Equal(m.T(), evt.GetExecutionTime(), time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
 		assert.Equal(m.T(), true, evt.DeletePayload())
@@ -296,10 +301,11 @@ func (m *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 		assert.False(m.T(), isOk)
 
 		expectedKeyToVal := map[string]any{
-			"_id":                        1003,
-			constants.DeleteColumnMarker: true,
-			"first_name":                 "Robin",
-			"email":                      "robin@example.com",
+			"_id":                               1003,
+			constants.DeleteColumnMarker:        true,
+			constants.OnlySetDeleteColumnMarker: true,
+			"first_name":                        "Robin",
+			"email":                             "robin@example.com",
 		}
 
 		for expectedKey, expectedVal := range expectedKeyToVal {

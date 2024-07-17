@@ -119,11 +119,15 @@ func TestGetDataTestInsert(t *testing.T) {
 	deletionFlag, isOk := evtData[constants.DeleteColumnMarker]
 	assert.True(t, isOk)
 	assert.False(t, deletionFlag.(bool))
+	deletionOnlyFlag, isOk := evtData[constants.OnlySetDeleteColumnMarker]
+	assert.True(t, isOk)
+	assert.False(t, deletionOnlyFlag.(bool))
 
 	_, isOk = evtData[constants.UpdateColumnMarker]
 	assert.False(t, isOk)
 
 	delete(evtData, constants.DeleteColumnMarker)
+	delete(evtData, constants.OnlySetDeleteColumnMarker)
 	assert.Equal(t, after, evtData)
 
 	evtData, err = schemaEventPayload.GetData(map[string]any{"pk": 1}, &kafkalib.TopicConfig{
@@ -141,11 +145,12 @@ func TestGetData_TestDelete(t *testing.T) {
 	}
 
 	expectedKeyValues := map[string]any{
-		"id":                         int64(1004),
-		"first_name":                 "Anne",
-		"last_name":                  "Kretchmar",
-		"email":                      "annek@noanswer.org",
-		constants.DeleteColumnMarker: true,
+		"id":                                int64(1004),
+		"first_name":                        "Anne",
+		"last_name":                         "Kretchmar",
+		"email":                             "annek@noanswer.org",
+		constants.DeleteColumnMarker:        true,
+		constants.OnlySetDeleteColumnMarker: true,
 	}
 
 	kvMap := map[string]any{"pk": 1004}
@@ -214,11 +219,15 @@ func TestGetDataTestUpdate(t *testing.T) {
 	deletionFlag, isOk := evtData[constants.DeleteColumnMarker]
 	assert.True(t, isOk)
 	assert.False(t, deletionFlag.(bool))
+	deletionOnlyFlag, isOk := evtData[constants.OnlySetDeleteColumnMarker]
+	assert.True(t, isOk)
+	assert.False(t, deletionOnlyFlag.(bool))
 
 	_, isOk = evtData[constants.UpdateColumnMarker]
 	assert.False(t, isOk)
 
 	delete(evtData, constants.DeleteColumnMarker)
+	delete(evtData, constants.OnlySetDeleteColumnMarker)
 	assert.Equal(t, after, evtData)
 
 	evtData, err = schemaEventPayload.GetData(kvMap, &kafkalib.TopicConfig{
