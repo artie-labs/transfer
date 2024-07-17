@@ -251,8 +251,9 @@ MERGE INTO %s %s USING %s AS %s ON %s`,
 
 	cols, removed := columns.RemoveOnlySetDeletedColumnMarker(cols)
 	if !removed {
-		return []string{}, errors.New("artie set deleted only flag doesn't exist")
+		return []string{}, errors.New("artie only_set_deleted flag doesn't exist")
 	}
+
 	if softDelete {
 		return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED %sTHEN UPDATE SET %s

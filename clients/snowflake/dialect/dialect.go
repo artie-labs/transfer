@@ -227,7 +227,7 @@ MERGE INTO %s %s USING ( %s ) AS %s ON %s`,
 
 	cols, removed := columns.RemoveOnlySetDeletedColumnMarker(cols)
 	if !removed {
-		return []string{}, errors.New("only set deleted flag doesn't exist")
+		return []string{}, errors.New("artie only_set_deleted flag doesn't exist")
 	}
 
 	if softDelete {
