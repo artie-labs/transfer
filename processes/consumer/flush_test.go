@@ -31,9 +31,10 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 				"id": fmt.Sprintf("pk-%d", i),
 			},
 			Data: map[string]any{
-				constants.DeleteColumnMarker: true,
-				"abc":                        "def",
-				"hi":                         "hello",
+				constants.DeleteColumnMarker:        true,
+				constants.OnlySetDeleteColumnMarker: true,
+				"abc":                               "def",
+				"hi":                                "hello",
 			},
 		}
 
@@ -57,10 +58,11 @@ func (f *FlushTestSuite) TestShouldFlush() {
 				"id": fmt.Sprintf("pk-%d", i),
 			},
 			Data: map[string]any{
-				constants.DeleteColumnMarker: true,
-				"pk":                         fmt.Sprintf("pk-%d", i),
-				"foo":                        "bar",
-				"cat":                        "dog",
+				constants.DeleteColumnMarker:        true,
+				constants.OnlySetDeleteColumnMarker: true,
+				"pk":                                fmt.Sprintf("pk-%d", i),
+				"foo":                               "bar",
+				"cat":                               "dog",
 			},
 		}
 

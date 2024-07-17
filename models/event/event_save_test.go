@@ -34,9 +34,10 @@ func (e *EventsTestSuite) TestSaveEvent() {
 			"id": "123",
 		},
 		Data: map[string]any{
-			constants.DeleteColumnMarker: true,
-			expectedCol:                  "dusty",
-			anotherCol:                   13.37,
+			constants.DeleteColumnMarker:        true,
+			constants.OnlySetDeleteColumnMarker: true,
+			expectedCol:                         "dusty",
+			anotherCol:                          13.37,
 		},
 	}
 
@@ -65,10 +66,11 @@ func (e *EventsTestSuite) TestSaveEvent() {
 			"id": "12344",
 		},
 		Data: map[string]any{
-			constants.DeleteColumnMarker: true,
-			expectedCol:                  "dusty",
-			anotherCol:                   13.37,
-			badColumn:                    constants.ToastUnavailableValuePlaceholder,
+			constants.DeleteColumnMarker:        true,
+			constants.OnlySetDeleteColumnMarker: true,
+			expectedCol:                         "dusty",
+			anotherCol:                          13.37,
+			badColumn:                           constants.ToastUnavailableValuePlaceholder,
 		},
 	}
 
@@ -89,10 +91,11 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 			"id": "123",
 		},
 		Data: map[string]any{
-			"id":                         "123",
-			constants.DeleteColumnMarker: true,
-			"randomCol":                  "dusty",
-			"anotherCOL":                 13.37,
+			"id":                                "123",
+			constants.DeleteColumnMarker:        true,
+			constants.OnlySetDeleteColumnMarker: true,
+			"randomCol":                         "dusty",
+			"anotherCOL":                        13.37,
 		},
 	}
 
@@ -122,13 +125,14 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 			"id": "123",
 		},
 		Data: map[string]any{
-			constants.DeleteColumnMarker: true,
-			"randomCol":                  "dusty",
-			"anotherCOL":                 13.37,
-			"created_at_date_string":     "2023-01-01",
-			"created_at_date_no_schema":  "2023-01-01",
-			"json_object_string":         `{"foo": "bar"}`,
-			"json_object_no_schema":      `{"foo": "bar"}`,
+			constants.DeleteColumnMarker:        true,
+			constants.OnlySetDeleteColumnMarker: true,
+			"randomCol":                         "dusty",
+			"anotherCOL":                        13.37,
+			"created_at_date_string":            "2023-01-01",
+			"created_at_date_no_schema":         "2023-01-01",
+			"json_object_string":                `{"foo": "bar"}`,
+			"json_object_no_schema":             `{"foo": "bar"}`,
 		},
 		OptionalSchema: map[string]typing.KindDetails{
 			// Explicitly casting this as a string.
@@ -169,8 +173,9 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 		Table:   "non_existent",
 		Columns: &cols,
 		Data: map[string]any{
-			"1":                          "123",
-			constants.DeleteColumnMarker: true,
+			"1":                                 "123",
+			constants.DeleteColumnMarker:        true,
+			constants.OnlySetDeleteColumnMarker: true,
 		},
 		PrimaryKeyMap: map[string]any{
 			"1": "123",
@@ -183,7 +188,7 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	td := e.db.GetOrCreateTableData("non_existent")
 	var prevKey string
 	for _, col := range td.ReadOnlyInMemoryCols().GetColumns() {
-		if col.Name() == constants.DeleteColumnMarker {
+		if col.Name() == constants.DeleteColumnMarker || col.Name() == constants.OnlySetDeleteColumnMarker {
 			continue
 		}
 
@@ -226,10 +231,11 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 			"id": "123",
 		},
 		Data: map[string]any{
-			constants.DeleteColumnMarker: true,
-			"randomCol":                  "dusty",
-			"anotherCOL":                 13.37,
-			"created_at_date_string":     "2023-01-01",
+			constants.DeleteColumnMarker:        true,
+			constants.OnlySetDeleteColumnMarker: true,
+			"randomCol":                         "dusty",
+			"anotherCOL":                        13.37,
+			"created_at_date_string":            "2023-01-01",
 		},
 	}
 
@@ -254,6 +260,10 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 	column, isOk = td.ReadOnlyInMemoryCols().GetColumn(constants.DeleteColumnMarker)
 	assert.True(e.T(), isOk)
 	assert.Equal(e.T(), typing.Boolean, column.KindDetails)
+
+	column, isOk = td.ReadOnlyInMemoryCols().GetColumn(constants.OnlySetDeleteColumnMarker)
+	assert.True(e.T(), isOk)
+	assert.Equal(e.T(), typing.Boolean, column.KindDetails)
 }
 
 func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
@@ -263,7 +273,8 @@ func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
 			"id": "123",
 		},
 		Data: map[string]any{
-			constants.DeleteColumnMarker: true,
+			constants.DeleteColumnMarker:        true,
+			constants.OnlySetDeleteColumnMarker: true,
 		},
 		Deleted: true,
 	}
