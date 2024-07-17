@@ -219,9 +219,9 @@ WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
-	cols, removed = columns.RemoveDeleteColumnMarker(cols)
-	if !removed {
-		return nil, errors.New("artie delete flag doesn't exist")
+	cols, err := columns.RemoveDeleteColumnMarker(cols)
+	if err != nil {
+		return nil, err
 	}
 
 	return []string{baseQuery + fmt.Sprintf(`

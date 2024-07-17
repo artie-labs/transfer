@@ -290,33 +290,30 @@ func TestRemoveDeleteColumnMarker(t *testing.T) {
 	deleteColumnMarkerCol := NewColumn(constants.DeleteColumnMarker, typing.Invalid)
 
 	{
-		result, removed := RemoveDeleteColumnMarker([]Column{})
-		assert.Empty(t, result)
-		assert.False(t, removed)
+		_, err := RemoveDeleteColumnMarker([]Column{})
+		assert.ErrorContains(t, err, "doesn't exist")
 	}
 	{
-		result, removed := RemoveDeleteColumnMarker([]Column{col1})
-		assert.Equal(t, []Column{col1}, result)
-		assert.False(t, removed)
+		_, err := RemoveDeleteColumnMarker([]Column{col1})
+		assert.ErrorContains(t, err, "doesn't exist")
 	}
 	{
-		result, removed := RemoveDeleteColumnMarker([]Column{col1, col2})
-		assert.Equal(t, []Column{col1, col2}, result)
-		assert.False(t, removed)
+		_, err := RemoveDeleteColumnMarker([]Column{col1, col2})
+		assert.ErrorContains(t, err, "doesn't exist")
 	}
 	{
-		result, removed := RemoveDeleteColumnMarker([]Column{deleteColumnMarkerCol})
-		assert.True(t, removed)
+		result, err := RemoveDeleteColumnMarker([]Column{deleteColumnMarkerCol})
+		assert.NoError(t, err)
 		assert.Empty(t, result)
 	}
 	{
-		result, removed := RemoveDeleteColumnMarker([]Column{col1, deleteColumnMarkerCol, col2})
-		assert.True(t, removed)
+		result, err := RemoveDeleteColumnMarker([]Column{col1, deleteColumnMarkerCol, col2})
+		assert.NoError(t, err)
 		assert.Equal(t, []Column{col1, col2}, result)
 	}
 	{
-		result, removed := RemoveDeleteColumnMarker([]Column{col1, deleteColumnMarkerCol, col2, deleteColumnMarkerCol, col3})
-		assert.True(t, removed)
+		result, err := RemoveDeleteColumnMarker([]Column{col1, deleteColumnMarkerCol, col2, deleteColumnMarkerCol, col3})
+		assert.NoError(t, err)
 		assert.Equal(t, []Column{col1, col2, col3}, result)
 	}
 }
