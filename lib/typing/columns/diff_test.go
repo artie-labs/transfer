@@ -37,6 +37,17 @@ func TestShouldSkipColumn(t *testing.T) {
 			expectedResult: true,
 		},
 		{
+			name:           "only_set_delete col marker should be skipped",
+			colName:        constants.OnlySetDeleteColumnMarker,
+			expectedResult: true,
+		},
+		{
+			name:           "only_set_delete col marker should be skipped even if softDelete is true",
+			colName:        constants.OnlySetDeleteColumnMarker,
+			softDelete:     true,
+			expectedResult: true,
+		},
+		{
 			name:                  "updated col marker + include updated",
 			colName:               constants.UpdateColumnMarker,
 			includeArtieUpdatedAt: true,

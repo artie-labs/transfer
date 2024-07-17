@@ -85,7 +85,7 @@ func (e *EventsTestSuite) TestEvent_IsValid() {
 		_evt := Event{
 			Table:         "foo",
 			PrimaryKeyMap: idMap,
-			Data:          map[string]any{constants.DeleteColumnMarker: true},
+			Data:          map[string]any{constants.DeleteColumnMarker: true, constants.OnlySetDeleteColumnMarker: true},
 		}
 		assert.True(e.T(), _evt.IsValid())
 	}
