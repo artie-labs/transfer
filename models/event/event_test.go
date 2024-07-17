@@ -43,7 +43,7 @@ func (f fakeEvent) GetColumns() (*columns.Columns, error) {
 }
 
 func (f fakeEvent) GetData(pkMap map[string]any, config *kafkalib.TopicConfig) (map[string]any, error) {
-	return map[string]any{constants.DeleteColumnMarker: false}, nil
+	return map[string]any{constants.DeleteColumnMarker: false, constants.OnlySetDeleteColumnMarker: false}, nil
 }
 
 func (e *EventsTestSuite) TestEvent_IsValid() {
@@ -139,6 +139,16 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 
 		_, isOk = evt.Columns.GetColumn("capital")
 		assert.True(e.T(), isOk)
+	}
+	{
+		// In history mode, the deletion column markers should be removed from the event data
+		evt, err := ToMemoryEvent(f, map[string]any{"id": 123}, &kafkalib.TopicConfig{}, config.History)
+		assert.NoError(e.T(), err)
+
+		_, isOk := evt.Data[constants.DeleteColumnMarker]
+		assert.False(e.T(), isOk)
+		_, isOk = evt.Data[constants.OnlySetDeleteColumnMarker]
+		assert.False(e.T(), isOk)
 	}
 }
 
