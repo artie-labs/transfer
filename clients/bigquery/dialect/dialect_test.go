@@ -216,6 +216,7 @@ func TestBigQueryDialect_BuildMergeQueries_TempTable(t *testing.T) {
 		columns.NewColumn("order_id", typing.Integer),
 		columns.NewColumn("name", typing.String),
 		columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean),
+		columns.NewColumn(constants.OnlySetDeletedColumnMarker, typing.Boolean),
 	}
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
@@ -246,6 +247,7 @@ func TestBigQueryDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 		columns.NewColumn("order_id", typing.Integer),
 		columns.NewColumn("name", typing.String),
 		columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean),
+		columns.NewColumn(constants.OnlySetDeletedColumnMarker, typing.Boolean),
 	}
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
@@ -275,6 +277,7 @@ func TestBigQueryDialect_BuildMergeQueries_IdempotentKey(t *testing.T) {
 		columns.NewColumn("order_id", typing.Integer),
 		columns.NewColumn("name", typing.String),
 		columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean),
+		columns.NewColumn(constants.OnlySetDeletedColumnMarker, typing.Boolean),
 	}
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
@@ -305,6 +308,7 @@ func TestBigQueryDialect_BuildMergeQueries_JSONKey(t *testing.T) {
 	cols.AddColumn(orderOIDCol)
 	cols.AddColumn(columns.NewColumn("name", typing.String))
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
+	cols.AddColumn(columns.NewColumn(constants.OnlySetDeletedColumnMarker, typing.Boolean))
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns("customers.orders")
