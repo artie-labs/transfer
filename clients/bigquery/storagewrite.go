@@ -208,8 +208,8 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				return nil, err
 			}
 			list := message.Mutable(field).List()
-			for _, value := range values {
-				list.Append(protoreflect.ValueOfString(value))
+			for _, val := range values {
+				list.Append(protoreflect.ValueOfString(val))
 			}
 		default:
 			return nil, fmt.Errorf("unsupported column kind: %q", column.KindDetails.Kind)
@@ -235,11 +235,5 @@ func encodeStructToJSONString(value any) (string, error) {
 		return "", fmt.Errorf("failed to marshal value: %w", err)
 	}
 
-	stringValue := string(bytes)
-	if strings.Contains(stringValue, constants.ToastUnavailableValuePlaceholder) {
-		// TODO: Remove this if we don't see it in the logs.
-		slog.Error("encoded JSON value contains the toast unavailable value placeholder")
-		return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
-	}
-	return stringValue, nil
+	return string(bytes), nil
 }
