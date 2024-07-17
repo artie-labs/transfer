@@ -285,17 +285,49 @@ func TestTableData_InsertRowSoftDelete(t *testing.T) {
 	td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{SoftDelete: true}, "foo")
 	assert.Equal(t, 0, int(td.NumberOfRows()))
 
-	td.InsertRow("123", map[string]any{"id": "123", "name": "dana"}, false)
+	td.InsertRow("123", map[string]any{"id": "123", "name": "dana", constants.DeleteColumnMarker: false, constants.OnlySetDeletedColumnMarker: false}, false)
 	assert.Equal(t, 1, int(td.NumberOfRows()))
 	assert.Equal(t, "dana", td.Rows()[0]["name"])
 
-	td.InsertRow("123", map[string]any{"id": "123", "name": "dana2"}, false)
+	td.InsertRow("123", map[string]any{"id": "123", "name": "dana2", constants.DeleteColumnMarker: false, constants.OnlySetDeletedColumnMarker: false}, false)
 	assert.Equal(t, 1, int(td.NumberOfRows()))
 	assert.Equal(t, "dana2", td.Rows()[0]["name"])
 
-	td.InsertRow("123", map[string]any{"id": "123", constants.DeleteColumnMarker: true}, true)
+	td.InsertRow("123", map[string]any{"id": "123", constants.DeleteColumnMarker: true, constants.OnlySetDeletedColumnMarker: true}, true)
 	assert.Equal(t, 1, int(td.NumberOfRows()))
 	// The previous value should be preserved, along with the delete marker
 	assert.Equal(t, "dana2", td.Rows()[0]["name"])
 	assert.Equal(t, true, td.Rows()[0][constants.DeleteColumnMarker])
+	// OnlySetDeletedColumnMarker should be false because we want to set the previously received values that haven't been flushed yet
+	assert.Equal(t, false, td.Rows()[0][constants.OnlySetDeletedColumnMarker])
+
+	// Ensure two deletes in a row are handled idempotently (in case the delete event is sent twice)
+	td.InsertRow("123", map[string]any{"id": "123", constants.DeleteColumnMarker: true, constants.OnlySetDeletedColumnMarker: true}, true)
+	assert.Equal(t, 1, int(td.NumberOfRows()))
+	assert.Equal(t, "dana2", td.Rows()[0]["name"])
+	assert.Equal(t, true, td.Rows()[0][constants.DeleteColumnMarker])
+	assert.Equal(t, false, td.Rows()[0][constants.OnlySetDeletedColumnMarker])
+
+	{
+		// If deleting a row we don't have in memory, OnlySetDeletedColumnMarker should stay true
+		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{SoftDelete: true}, "foo")
+		assert.Equal(t, 0, int(td.NumberOfRows()))
+		td.InsertRow("123", map[string]any{"id": "123", constants.DeleteColumnMarker: true, constants.OnlySetDeletedColumnMarker: true}, true)
+		assert.Equal(t, true, td.Rows()[0][constants.OnlySetDeletedColumnMarker])
+		// Two deletes in a row; OnlySetDeletedColumnMarker should still be true because we don't have the other values in memory
+		td.InsertRow("123", map[string]any{"id": "123", constants.DeleteColumnMarker: true, constants.OnlySetDeletedColumnMarker: true}, true)
+		assert.Equal(t, true, td.Rows()[0][constants.OnlySetDeletedColumnMarker])
+	}
+
+	{
+		// If a row is created and deleted, then another row with the same primary key is created, the previous values should not be used
+		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{SoftDelete: true}, "foo")
+		assert.Equal(t, 0, int(td.NumberOfRows()))
+		td.InsertRow("123", map[string]any{"id": "123", "name": "dana", "foo": "abc", constants.DeleteColumnMarker: false, constants.OnlySetDeletedColumnMarker: false}, false)
+		td.InsertRow("123", map[string]any{"id": "123", constants.DeleteColumnMarker: true, constants.OnlySetDeletedColumnMarker: true}, true)
+		td.InsertRow("123", map[string]any{"id": "123", "name": "dana-new", constants.DeleteColumnMarker: false, constants.OnlySetDeletedColumnMarker: false}, false)
+		assert.Equal(t, "dana-new", td.Rows()[0]["name"])
+		assert.Nil(t, td.Rows()[0]["foo"])
+		assert.Equal(t, false, td.Rows()[0][constants.DeleteColumnMarker])
+	}
 }
