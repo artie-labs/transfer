@@ -12,10 +12,16 @@ const (
 	// We will strip this out from our partition key parsing.
 	DebeziumTopicRoutingKey = "__dbz__physicalTableIdentifier"
 
-	HistoryModeSuffix           = "__history"
-	ArtiePrefix                 = "__artie"
-	DeleteColumnMarker          = ArtiePrefix + "_delete"
-	OnlySetDeleteColumnMarker   = ArtiePrefix + "_only_set_delete"
+	HistoryModeSuffix = "__history"
+	ArtiePrefix       = "__artie"
+	// DeleteColumnMarker is used to indicate that a row has been deleted. It will be
+	// included in the target table if soft deletion is enabled.
+	DeleteColumnMarker = ArtiePrefix + "_delete"
+	// OnlySetDeleteColumnMarker is used internally to indicate that only the __artie_delete column
+	// should be updated, meaning existing values should be preserved for all other columns. This is
+	// not a real column and should never be included in the target table.
+	OnlySetDeleteColumnMarker = ArtiePrefix + "_only_set_delete"
+
 	DeletionConfidencePadding   = 4 * time.Hour
 	UpdateColumnMarker          = ArtiePrefix + "_updated_at"
 	DatabaseUpdatedColumnMarker = ArtiePrefix + "_db_updated_at"
