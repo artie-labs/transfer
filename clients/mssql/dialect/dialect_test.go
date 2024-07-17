@@ -2,9 +2,7 @@ package dialect
 
 import (
 	"fmt"
-	"strings"
 	"testing"
-	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
@@ -169,21 +167,6 @@ func TestMSSQLDialect_BuildMergeQueries(t *testing.T) {
 		columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean),
 		columns.NewColumn(constants.OnlySetDeletedColumnMarker, typing.Boolean),
 	}
-	cols := make([]string, len(_cols))
-	for i, col := range _cols {
-		cols[i] = col.Name()
-	}
-
-	dateValue := time.Date(2001, 2, 3, 4, 5, 6, 0, time.UTC)
-	tableValues := []string{
-		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "1", "456", "foo", dateValue.Round(0).UTC()),
-		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "2", "bb", "bar", dateValue.Round(0).UTC()),
-		fmt.Sprintf("('%s', '%s', '%v', '%v', false)", "3", "dd", "world", dateValue.Round(0).UTC()),
-	}
-
-	// select stg.foo, stg.bar from (values (12, 34), (44, 55)) as cc(foo, bar);
-	subQuery := fmt.Sprintf("SELECT %s from (values %s) as %s(%s)",
-		strings.Join(cols, ","), strings.Join(tableValues, ","), "_tbl", strings.Join(cols, ","))
 
 	fqTable := "database.schema.table"
 	fakeID := &mocks.FakeTableIdentifier{}
@@ -192,7 +175,7 @@ func TestMSSQLDialect_BuildMergeQueries(t *testing.T) {
 	{
 		queries, err := MSSQLDialect{}.BuildMergeQueries(
 			fakeID,
-			subQuery,
+			fqTable,
 			"",
 			[]columns.Column{_cols[0]},
 			[]string{},
@@ -204,7 +187,7 @@ func TestMSSQLDialect_BuildMergeQueries(t *testing.T) {
 		assert.Len(t, queries, 1)
 		assert.Equal(t, `
 MERGE INTO database.schema.table tgt
-USING SELECT id,bar,updated_at,start,__artie_delete from (values ('1', '456', 'foo', '2001-02-03 04:05:06 +0000 UTC', false),('2', 'bb', 'bar', '2001-02-03 04:05:06 +0000 UTC', false),('3', 'dd', 'world', '2001-02-03 04:05:06 +0000 UTC', false)) as _tbl(id,bar,updated_at,start,__artie_delete) AS stg ON tgt."id" = stg."id"
+USING database.schema.table AS stg ON tgt."id" = stg."id"
 WHEN MATCHED AND stg."__artie_delete" = 1 THEN DELETE
 WHEN MATCHED AND COALESCE(stg."__artie_delete", 0) = 0 THEN UPDATE SET "id"=stg."id","bar"=stg."bar","updated_at"=stg."updated_at","start"=stg."start"
 WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", 1) = 0 THEN INSERT ("id","bar","updated_at","start") VALUES (stg."id",stg."bar",stg."updated_at",stg."start");`, queries[0])
