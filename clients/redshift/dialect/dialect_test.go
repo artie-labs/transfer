@@ -306,6 +306,7 @@ func getBasicColumnsForTest(compositeKey bool) result {
 	cols.AddColumn(columns.NewColumn("created_at", typing.ETime))
 	cols.AddColumn(textToastCol)
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
+	cols.AddColumn(columns.NewColumn(constants.OnlySetDeletedColumnMarker, typing.Boolean))
 
 	var pks []columns.Column
 	pks = append(pks, idCol)
