@@ -136,7 +136,7 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 			rowData = prevRow
 			prevRowDeleted, isOk := prevRow[constants.DeleteColumnMarker]
 			if !isOk || !prevRowDeleted.(bool) {
-				rowData[constants.OnlySetDeletedColumnMarker] = false
+				rowData[constants.OnlySetDeleteColumnMarker] = false
 			}
 			rowData[constants.DeleteColumnMarker] = true
 		} else {

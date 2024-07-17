@@ -225,9 +225,9 @@ MERGE INTO %s %s USING ( %s ) AS %s ON %s`,
 		tableID.FullyQualifiedName(), constants.TargetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
 	)
 
-	cols, removed := columns.RemoveOnlySetDeletedColumnMarker(cols)
+	cols, removed := columns.RemoveOnlySetDeleteColumnMarker(cols)
 	if !removed {
-		return []string{}, errors.New("artie only_set_deleted flag doesn't exist")
+		return []string{}, errors.New("artie only_set_delete flag doesn't exist")
 	}
 
 	if softDelete {
@@ -235,10 +235,10 @@ MERGE INTO %s %s USING ( %s ) AS %s ON %s`,
 WHEN MATCHED %sAND IFNULL(%s, false) = false THEN UPDATE SET %s
 WHEN MATCHED %sAND IFNULL(%s, false) = true THEN UPDATE SET %s
 WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
-			// Update + Soft Deletion when we have previous values
-			idempotentClause, sql.QuotedOnlySetDeletedColumnMarker(constants.StagingAlias, sd), sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, sd),
-			// Soft Deletion when we don't have previous values
-			idempotentClause, sql.QuotedOnlySetDeletedColumnMarker(constants.StagingAlias, sd), sql.BuildColumnsUpdateFragment([]columns.Column{columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean)}, constants.StagingAlias, constants.TargetAlias, sd),
+			// Update + soft deletion when we have previous values (update all columns)
+			idempotentClause, sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, sd), sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, sd),
+			// Soft deletion when we don't have previous values (only update the __artie_delete column)
+			idempotentClause, sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, sd), sql.BuildColumnsUpdateFragment([]columns.Column{columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean)}, constants.StagingAlias, constants.TargetAlias, sd),
 			// Insert
 			strings.Join(sql.QuoteColumns(cols, sd), ","),
 			strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, sd), ","),

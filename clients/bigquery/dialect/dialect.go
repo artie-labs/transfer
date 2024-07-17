@@ -249,9 +249,9 @@ MERGE INTO %s %s USING %s AS %s ON %s`,
 		tableID.FullyQualifiedName(), constants.TargetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
 	)
 
-	cols, removed := columns.RemoveOnlySetDeletedColumnMarker(cols)
+	cols, removed := columns.RemoveOnlySetDeleteColumnMarker(cols)
 	if !removed {
-		return []string{}, errors.New("artie only_set_deleted flag doesn't exist")
+		return []string{}, errors.New("artie only_set_delete flag doesn't exist")
 	}
 
 	if softDelete {

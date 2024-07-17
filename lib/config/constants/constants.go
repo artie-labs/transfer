@@ -15,7 +15,7 @@ const (
 	HistoryModeSuffix           = "__history"
 	ArtiePrefix                 = "__artie"
 	DeleteColumnMarker          = ArtiePrefix + "_delete"
-	OnlySetDeletedColumnMarker  = ArtiePrefix + "_only_set_deleted"
+	OnlySetDeleteColumnMarker   = ArtiePrefix + "_only_set_delete"
 	DeletionConfidencePadding   = 4 * time.Hour
 	UpdateColumnMarker          = ArtiePrefix + "_updated_at"
 	DatabaseUpdatedColumnMarker = ArtiePrefix + "_db_updated_at"

@@ -199,9 +199,9 @@ USING %s AS %s ON %s`,
 		strings.Join(sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, md), " AND "),
 	)
 
-	cols, removed := columns.RemoveOnlySetDeletedColumnMarker(cols)
+	cols, removed := columns.RemoveOnlySetDeleteColumnMarker(cols)
 	if !removed {
-		return []string{}, errors.New("artie only_set_deleted flag doesn't exist")
+		return []string{}, errors.New("artie only_set_delete flag doesn't exist")
 	}
 
 	if softDelete {

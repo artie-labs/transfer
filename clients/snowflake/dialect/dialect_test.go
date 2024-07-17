@@ -276,11 +276,11 @@ func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 	// No idempotent key
 	fqTable := "database.schema.table"
 	_cols := buildColumns(map[string]typing.KindDetails{
-		"id":                                 typing.String,
-		"bar":                                typing.String,
-		"updated_at":                         typing.ETime,
-		constants.DeleteColumnMarker:         typing.Boolean,
-		constants.OnlySetDeletedColumnMarker: typing.Boolean,
+		"id":                                typing.String,
+		"bar":                               typing.String,
+		"updated_at":                        typing.ETime,
+		constants.DeleteColumnMarker:        typing.Boolean,
+		constants.OnlySetDeleteColumnMarker: typing.Boolean,
 	})
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
@@ -301,8 +301,8 @@ func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, `
 MERGE INTO database.schema.table tgt USING ( database.schema.table ) AS stg ON tgt."ID" = stg."ID"
-WHEN MATCHED AND IFNULL(stg."__ARTIE_ONLY_SET_DELETED", false) = false THEN UPDATE SET "__ARTIE_DELETE"=stg."__ARTIE_DELETE","BAR"=stg."BAR","ID"=stg."ID","UPDATED_AT"=stg."UPDATED_AT"
-WHEN MATCHED AND IFNULL(stg."__ARTIE_ONLY_SET_DELETED", false) = true THEN UPDATE SET "__ARTIE_DELETE"=stg."__ARTIE_DELETE"
+WHEN MATCHED AND IFNULL(stg."__ARTIE_ONLY_SET_DELETE", false) = false THEN UPDATE SET "__ARTIE_DELETE"=stg."__ARTIE_DELETE","BAR"=stg."BAR","ID"=stg."ID","UPDATED_AT"=stg."UPDATED_AT"
+WHEN MATCHED AND IFNULL(stg."__ARTIE_ONLY_SET_DELETE", false) = true THEN UPDATE SET "__ARTIE_DELETE"=stg."__ARTIE_DELETE"
 WHEN NOT MATCHED THEN INSERT ("__ARTIE_DELETE","BAR","ID","UPDATED_AT") VALUES (stg."__ARTIE_DELETE",stg."BAR",stg."ID",stg."UPDATED_AT");`, statements[0])
 	}
 	{
@@ -320,8 +320,8 @@ WHEN NOT MATCHED THEN INSERT ("__ARTIE_DELETE","BAR","ID","UPDATED_AT") VALUES (
 		assert.Len(t, statements, 1)
 		assert.Equal(t, `
 MERGE INTO database.schema.table tgt USING ( database.schema.table ) AS stg ON tgt."ID" = stg."ID"
-WHEN MATCHED AND stg.updated_at >= tgt.updated_at AND IFNULL(stg."__ARTIE_ONLY_SET_DELETED", false) = false THEN UPDATE SET "__ARTIE_DELETE"=stg."__ARTIE_DELETE","BAR"=stg."BAR","ID"=stg."ID","UPDATED_AT"=stg."UPDATED_AT"
-WHEN MATCHED AND stg.updated_at >= tgt.updated_at AND IFNULL(stg."__ARTIE_ONLY_SET_DELETED", false) = true THEN UPDATE SET "__ARTIE_DELETE"=stg."__ARTIE_DELETE"
+WHEN MATCHED AND stg.updated_at >= tgt.updated_at AND IFNULL(stg."__ARTIE_ONLY_SET_DELETE", false) = false THEN UPDATE SET "__ARTIE_DELETE"=stg."__ARTIE_DELETE","BAR"=stg."BAR","ID"=stg."ID","UPDATED_AT"=stg."UPDATED_AT"
+WHEN MATCHED AND stg.updated_at >= tgt.updated_at AND IFNULL(stg."__ARTIE_ONLY_SET_DELETE", false) = true THEN UPDATE SET "__ARTIE_DELETE"=stg."__ARTIE_DELETE"
 WHEN NOT MATCHED THEN INSERT ("__ARTIE_DELETE","BAR","ID","UPDATED_AT") VALUES (stg."__ARTIE_DELETE",stg."BAR",stg."ID",stg."UPDATED_AT");`, statements[0])
 	}
 }
@@ -330,12 +330,12 @@ func TestSnowflakeDialect_BuildMergeQueries(t *testing.T) {
 	// No idempotent key
 	fqTable := "database.schema.table"
 	_cols := buildColumns(map[string]typing.KindDetails{
-		"id":                                 typing.String,
-		"bar":                                typing.String,
-		"updated_at":                         typing.String,
-		"start":                              typing.String,
-		constants.DeleteColumnMarker:         typing.Boolean,
-		constants.OnlySetDeletedColumnMarker: typing.Boolean,
+		"id":                                typing.String,
+		"bar":                               typing.String,
+		"updated_at":                        typing.String,
+		"start":                             typing.String,
+		constants.DeleteColumnMarker:        typing.Boolean,
+		constants.OnlySetDeleteColumnMarker: typing.Boolean,
 	})
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
@@ -363,9 +363,9 @@ WHEN NOT MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN INSERT ("B
 func TestSnowflakeDialect_BuildMergeQueries_IdempotentKey(t *testing.T) {
 	fqTable := "database.schema.table"
 	_cols := buildColumns(map[string]typing.KindDetails{
-		"id":                                 typing.String,
-		constants.DeleteColumnMarker:         typing.Boolean,
-		constants.OnlySetDeletedColumnMarker: typing.Boolean,
+		"id":                                typing.String,
+		constants.DeleteColumnMarker:        typing.Boolean,
+		constants.OnlySetDeleteColumnMarker: typing.Boolean,
 	})
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
@@ -393,10 +393,10 @@ WHEN NOT MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN INSERT ("I
 func TestSnowflakeDialect_BuildMergeQueries_CompositeKey(t *testing.T) {
 	fqTable := "database.schema.table"
 	_cols := buildColumns(map[string]typing.KindDetails{
-		"id":                                 typing.String,
-		"another_id":                         typing.String,
-		constants.DeleteColumnMarker:         typing.Boolean,
-		constants.OnlySetDeletedColumnMarker: typing.Boolean,
+		"id":                                typing.String,
+		"another_id":                        typing.String,
+		constants.DeleteColumnMarker:        typing.Boolean,
+		constants.OnlySetDeleteColumnMarker: typing.Boolean,
 	})
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
@@ -428,12 +428,12 @@ func TestSnowflakeDialect_BuildMergeQueries_EscapePrimaryKeys(t *testing.T) {
 	// No idempotent key
 	fqTable := "database.schema.table"
 	_cols := buildColumns(map[string]typing.KindDetails{
-		"id":                                 typing.String,
-		"group":                              typing.String,
-		"updated_at":                         typing.String,
-		"start":                              typing.String,
-		constants.DeleteColumnMarker:         typing.Boolean,
-		constants.OnlySetDeletedColumnMarker: typing.Boolean,
+		"id":                                typing.String,
+		"group":                             typing.String,
+		"updated_at":                        typing.String,
+		"start":                             typing.String,
+		constants.DeleteColumnMarker:        typing.Boolean,
+		constants.OnlySetDeleteColumnMarker: typing.Boolean,
 	})
 
 	fakeTableID := &mocks.FakeTableIdentifier{}

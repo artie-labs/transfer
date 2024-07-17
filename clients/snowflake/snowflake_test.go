@@ -35,11 +35,11 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	// TableData will think the column is invalid and tableConfig will think column = string
 	// Before we call merge, it should reconcile it.
 	colToKindDetailsMap := map[string]typing.KindDetails{
-		"id":                                 typing.String,
-		"first_name":                         typing.String,
-		"invalid_column":                     typing.Invalid,
-		constants.DeleteColumnMarker:         typing.Boolean,
-		constants.OnlySetDeletedColumnMarker: typing.Boolean,
+		"id":                                typing.String,
+		"first_name":                        typing.String,
+		"invalid_column":                    typing.Invalid,
+		constants.DeleteColumnMarker:        typing.Boolean,
+		constants.OnlySetDeleteColumnMarker: typing.Boolean,
 	}
 
 	var cols columns.Columns
@@ -67,10 +67,10 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	}
 
 	anotherColToKindDetailsMap := map[string]typing.KindDetails{
-		"id":                                 typing.String,
-		"first_name":                         typing.String,
-		constants.DeleteColumnMarker:         typing.Boolean,
-		constants.OnlySetDeletedColumnMarker: typing.Boolean,
+		"id":                                typing.String,
+		"first_name":                        typing.String,
+		constants.DeleteColumnMarker:        typing.Boolean,
+		constants.OnlySetDeleteColumnMarker: typing.Boolean,
 	}
 
 	var anotherCols columns.Columns
@@ -89,10 +89,10 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 
 func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 	colToKindDetailsMap := map[string]typing.KindDetails{
-		"id":                                 typing.Integer,
-		"name":                               typing.String,
-		constants.DeleteColumnMarker:         typing.Boolean,
-		constants.OnlySetDeletedColumnMarker: typing.Boolean,
+		"id":                                typing.Integer,
+		"name":                              typing.String,
+		constants.DeleteColumnMarker:        typing.Boolean,
+		constants.OnlySetDeleteColumnMarker: typing.Boolean,
 		// Add kindDetails to created_at
 		"created_at": typing.ParseValue(typing.Settings{}, "", nil, time.Now().Format(time.RFC3339Nano)),
 	}
@@ -137,10 +137,10 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 
 func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	colToKindDetailsMap := map[string]typing.KindDetails{
-		"id":                                 typing.Integer,
-		"name":                               typing.String,
-		constants.DeleteColumnMarker:         typing.Boolean,
-		constants.OnlySetDeletedColumnMarker: typing.Boolean,
+		"id":                                typing.Integer,
+		"name":                              typing.String,
+		constants.DeleteColumnMarker:        typing.Boolean,
+		constants.OnlySetDeleteColumnMarker: typing.Boolean,
 		// Add kindDetails to created_at
 		"created_at": typing.ParseValue(typing.Settings{}, "", nil, time.Now().Format(time.RFC3339Nano)),
 	}
@@ -227,10 +227,10 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	}
 
 	colToKindDetailsMap := map[string]typing.KindDetails{
-		"id":                                 typing.Integer,
-		"name":                               typing.String,
-		constants.DeleteColumnMarker:         typing.Boolean,
-		constants.OnlySetDeletedColumnMarker: typing.Boolean,
+		"id":                                typing.Integer,
+		"name":                              typing.String,
+		constants.DeleteColumnMarker:        typing.Boolean,
+		constants.OnlySetDeleteColumnMarker: typing.Boolean,
 		// Add kindDetails to created_at
 		"created_at": typing.ParseValue(typing.Settings{}, "", nil, time.Now().Format(time.RFC3339Nano)),
 	}
@@ -247,11 +247,11 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	}
 
 	snowflakeColToKindDetailsMap := map[string]typing.KindDetails{
-		"id":                                 typing.Integer,
-		"created_at":                         typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-		"name":                               typing.String,
-		constants.DeleteColumnMarker:         typing.Boolean,
-		constants.OnlySetDeletedColumnMarker: typing.Boolean,
+		"id":                                typing.Integer,
+		"created_at":                        typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
+		"name":                              typing.String,
+		constants.DeleteColumnMarker:        typing.Boolean,
+		constants.OnlySetDeleteColumnMarker: typing.Boolean,
 	}
 
 	var sflkCols columns.Columns
