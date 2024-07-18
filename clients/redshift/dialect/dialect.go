@@ -204,14 +204,14 @@ func (rd RedshiftDialect) buildMergeInsertQuery(
 	)
 }
 
-func (rd RedshiftDialect) buildMergeUpdateQuery(
+func (rd RedshiftDialect) buildMergeUpdateQueries(
 	tableID sql.TableIdentifier,
 	subQuery string,
 	primaryKeys []columns.Column,
 	cols []columns.Column,
 	idempotentKey string,
 	softDelete bool,
-) string {
+) []string {
 	clauses := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, rd)
 
 	if idempotentKey != "" {
@@ -220,14 +220,29 @@ func (rd RedshiftDialect) buildMergeUpdateQuery(
 
 	if !softDelete {
 		clauses = append(clauses, fmt.Sprintf("COALESCE(%s, false) = false", sql.QuotedDeleteColumnMarker(constants.StagingAlias, rd)))
+		return []string{fmt.Sprintf(`UPDATE %s AS %s SET %s FROM %s AS %s WHERE %s;`,
+			// UPDATE table set col1 = stg.col1, col2 = stg.col2...
+			tableID.FullyQualifiedName(), constants.TargetAlias, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, rd),
+			// FROM staging WHERE tgt.pk = stg.pk
+			subQuery, constants.StagingAlias, strings.Join(clauses, " AND "),
+		)}
 	}
 
-	return fmt.Sprintf(`UPDATE %s AS %s SET %s FROM %s AS %s WHERE %s;`,
-		// UPDATE table set col1 = stg. col1
-		tableID.FullyQualifiedName(), constants.TargetAlias, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, rd),
-		// FROM staging WHERE join on PK(s)
-		subQuery, constants.StagingAlias, strings.Join(clauses, " AND "),
-	)
+	// If soft delete is enabled, issue two updates; one to update rows where all columns should be updated,
+	// and one to update rows where only the __artie_delete column should be updated.
+	return []string{
+		fmt.Sprintf(`UPDATE %s AS %s SET %s FROM %s AS %s WHERE %s AND COALESCE(%s, false) = false;`,
+			// UPDATE table set [all columns]
+			tableID.FullyQualifiedName(), constants.TargetAlias, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, rd),
+			// FROM staging WHERE tgt.pk = stg.pk and __artie_only_set_delete = false
+			subQuery, constants.StagingAlias, strings.Join(clauses, " AND "), sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, rd),
+		),
+		fmt.Sprintf(`UPDATE %s AS %s SET %s FROM %s AS %s WHERE %s AND COALESCE(%s, false) = true;`,
+			// UPDATE table set __artie_delete = stg.__artie_delete
+			tableID.FullyQualifiedName(), constants.TargetAlias, sql.BuildColumnsUpdateFragment([]columns.Column{columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean)}, constants.StagingAlias, constants.TargetAlias, rd),
+			// FROM staging WHERE tgt.pk = stg.pk and __artie_only_set_delete = true
+			subQuery, constants.StagingAlias, strings.Join(clauses, " AND "), sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, rd),
+		)}
 }
 
 func (rd RedshiftDialect) buildMergeDeleteQuery(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column) string {
@@ -270,11 +285,8 @@ func (rd RedshiftDialect) BuildMergeQueries(
 		}
 	}
 
-	// TODO alter the merge query to update only the __artie_delete column if softDelete is true and OnlySetDeleteColumnMarker is true
-	parts := []string{
-		rd.buildMergeInsertQuery(tableID, subQuery, primaryKeys, cols),
-		rd.buildMergeUpdateQuery(tableID, subQuery, primaryKeys, cols, idempotentKey, softDelete),
-	}
+	parts := []string{rd.buildMergeInsertQuery(tableID, subQuery, primaryKeys, cols)}
+	parts = append(parts, rd.buildMergeUpdateQueries(tableID, subQuery, primaryKeys, cols, idempotentKey, softDelete)...)
 
 	if !softDelete && containsHardDeletes {
 		parts = append(parts, rd.buildMergeDeleteQuery(tableID, subQuery, primaryKeys))
