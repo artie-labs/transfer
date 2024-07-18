@@ -1,7 +1,6 @@
 package dialect
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -249,9 +248,9 @@ MERGE INTO %s %s USING %s AS %s ON %s`,
 		tableID.FullyQualifiedName(), constants.TargetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
 	)
 
-	cols, removed := columns.RemoveOnlySetDeleteColumnMarker(cols)
-	if !removed {
-		return []string{}, errors.New("artie only_set_delete flag doesn't exist")
+	cols, err := columns.RemoveOnlySetDeleteColumnMarker(cols)
+	if err != nil {
+		return []string{}, err
 	}
 
 	if softDelete {
@@ -269,9 +268,9 @@ WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
-	cols, removed = columns.RemoveDeleteColumnMarker(cols)
-	if !removed {
-		return []string{}, errors.New("artie delete flag doesn't exist")
+	cols, err = columns.RemoveDeleteColumnMarker(cols)
+	if err != nil {
+		return []string{}, err
 	}
 
 	return []string{baseQuery + fmt.Sprintf(`

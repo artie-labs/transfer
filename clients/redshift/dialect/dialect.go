@@ -1,7 +1,6 @@
 package dialect
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -257,17 +256,17 @@ func (rd RedshiftDialect) BuildMergeQueries(
 	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
 	// However, there may be edge cases where folks end up restoring deleted rows (which will contain the same PK).
 
-	cols, removed := columns.RemoveOnlySetDeleteColumnMarker(cols)
-	if !removed {
-		return []string{}, errors.New("artie only_set_delete flag doesn't exist")
+	cols, err := columns.RemoveOnlySetDeleteColumnMarker(cols)
+	if err != nil {
+		return []string{}, err
 	}
 
 	if !softDelete {
+		var err error
 		// We also need to remove __artie flags since it does not exist in the destination table
-		var removed bool
-		cols, removed = columns.RemoveDeleteColumnMarker(cols)
-		if !removed {
-			return nil, errors.New("artie delete flag doesn't exist")
+		cols, err = columns.RemoveDeleteColumnMarker(cols)
+		if err != nil {
+			return nil, err
 		}
 	}
 

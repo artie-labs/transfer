@@ -1,6 +1,7 @@
 package columns
 
 import (
+	"errors"
 	"slices"
 	"strings"
 	"sync"
@@ -236,23 +237,28 @@ func (c *Columns) DeleteColumn(name string) {
 	}
 }
 
-// RemoveDeleteColumnMarker removes the deleted column marker from a slice (if present) returning a new slice and whether or not it was removed.
-func RemoveDeleteColumnMarker(cols []Column) ([]Column, bool) {
+// RemoveDeleteColumnMarker removes the deleted column marker from a slice and returns a new slice.
+// If the marker wasn't present, it returns an error.
+func RemoveDeleteColumnMarker(cols []Column) ([]Column, error) {
 	origLength := len(cols)
 	// Use [slices.Clone] because [slices.DeleteFunc] mutates its inputs.
 	cols = slices.DeleteFunc(slices.Clone(cols), func(col Column) bool { return col.Name() == constants.DeleteColumnMarker })
-	// TODO return an error if the lengths aren't different, instead of a boolean
-	return cols, len(cols) != origLength
+	if len(cols) == origLength {
+		return []Column{}, errors.New("artie delete flag doesn't exist")
+	}
+
+	return cols, nil
 }
 
-func RemoveOnlySetDeleteColumnMarker(cols []Column) ([]Column, bool) {
+func RemoveOnlySetDeleteColumnMarker(cols []Column) ([]Column, error) {
 	origLength := len(cols)
 	// Use [slices.Clone] because [slices.DeleteFunc] mutates its inputs.
-	cols = slices.DeleteFunc(slices.Clone(cols), func(col Column) bool {
-		return col.Name() == constants.OnlySetDeleteColumnMarker
-	})
-	// TODO return an error if the lengths aren't different, instead of a boolean
-	return cols, len(cols) != origLength
+	cols = slices.DeleteFunc(slices.Clone(cols), func(col Column) bool { return col.Name() == constants.OnlySetDeleteColumnMarker })
+	if len(cols) == origLength {
+		return []Column{}, errors.New("artie only_set_delete flag doesn't exist")
+	}
+
+	return cols, nil
 }
 
 // ColumnNames takes a slice of [Column] and returns the names as a slice of strings.
