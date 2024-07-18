@@ -254,12 +254,21 @@ MERGE INTO %s %s USING %s AS %s ON %s`,
 	}
 
 	if softDelete {
-		// TODO alter this merge query to update only the __artie_delete column if OnlySetDeleteColumnMarker is true
 		return []string{baseQuery + fmt.Sprintf(`
-WHEN MATCHED %sTHEN UPDATE SET %s
+WHEN MATCHED %sAND IFNULL(%s, false) = false THEN UPDATE SET %s
+WHEN MATCHED %sAND IFNULL(%s, false) = true THEN UPDATE SET %s
 WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
-			// WHEN MATCHED %sTHEN UPDATE SET %s
-			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, bd),
+			// Updating or soft-deleting when we have the previous values (update all columns)
+			// WHEN MATCHED %sAND IFNULL(%s, false) = false
+			idempotentClause, sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, bd),
+			// THEN UPDATE SET %s
+			sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, bd),
+			// Soft deleting when we don't have the previous values (only update the __artie_delete column)
+			// WHEN MATCHED %sAND IFNULL(%s, false) = true
+			idempotentClause, sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, bd),
+			// THEN UPDATE SET %s
+			sql.BuildColumnsUpdateFragment([]columns.Column{columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean)}, constants.StagingAlias, constants.TargetAlias, bd),
+			// Inserting
 			// WHEN NOT MATCHED THEN INSERT (%s)
 			strings.Join(sql.QuoteColumns(cols, bd), ","),
 			// VALUES (%s);
