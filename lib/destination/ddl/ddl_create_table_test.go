@@ -34,8 +34,8 @@ func (d *DDLTestSuite) Test_CreateTable() {
 		_expectedQuery string
 	}
 
-	bigQueryTc := d.bigQueryStore.GetConfigMap().TableConfig(bqTableID)
-	snowflakeStagesTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(snowflakeTableID)
+	bigQueryTc := d.bigQueryStore.GetConfigMap().TableConfigCache(bqTableID)
+	snowflakeStagesTc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(snowflakeTableID)
 
 	for _, dwhTc := range []dwhToTableConfig{
 		{
@@ -116,7 +116,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 	for index, testCase := range testCases {
 		tableID := snowflake.NewTableIdentifier("demo", "public", "experiments")
 		d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
-		tc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
+		tc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
 
 		alterTableArgs := ddl.AlterTableArgs{
 			Dialect:     d.snowflakeStagesStore.Dialect(),
@@ -134,7 +134,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 		assert.Equal(d.T(), testCase.expectedQuery, execQuery, testCase.name)
 
 		// Check if the table is now marked as created where `CreateTable = false`.
-		assert.Equal(d.T(), d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID).CreateTable(),
-			false, d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID), testCase.name)
+		assert.Equal(d.T(), d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID).CreateTable(),
+			false, d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID), testCase.name)
 	}
 }

@@ -155,7 +155,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	tempTableID, tableData := generateTableData(10)
 	tempTableName := tempTableID.FullyQualifiedName()
 	s.stageStore.GetConfigMap().AddTableToConfig(tempTableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
-	sflkTc := s.stageStore.GetConfigMap().TableConfig(tempTableID)
+	sflkTc := s.stageStore.GetConfigMap().TableConfigCache(tempTableID)
 
 	{
 		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableID, types.AdditionalSettings{}, true))

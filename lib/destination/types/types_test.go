@@ -34,7 +34,7 @@ func TestDwhToTablesConfigMap_TableConfigBasic(t *testing.T) {
 	dwhTableConfig := generateDwhTableCfg()
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	dwh.AddTableToConfig(fakeTableID, dwhTableConfig)
-	assert.Equal(t, *dwhTableConfig, *dwh.TableConfig(fakeTableID))
+	assert.Equal(t, *dwhTableConfig, *dwh.TableConfigCache(fakeTableID))
 }
 
 // TestDwhToTablesConfigMap_Concurrency - has a bunch of concurrent go-routines that are rapidly adding and reading from the tableConfig.
@@ -60,7 +60,7 @@ func TestDwhToTablesConfigMap_Concurrency(t *testing.T) {
 		defer wg.Done()
 		for i := 0; i < 1000; i++ {
 			time.Sleep(time.Duration(rand.Intn(10)) * time.Millisecond)
-			assert.Equal(t, *dwhTableCfg, *dwh.TableConfig(fakeTableID))
+			assert.Equal(t, *dwhTableCfg, *dwh.TableConfigCache(fakeTableID))
 		}
 
 	}()

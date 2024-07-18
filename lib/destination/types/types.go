@@ -11,7 +11,7 @@ type DwhToTablesConfigMap struct {
 	sync.RWMutex
 }
 
-func (d *DwhToTablesConfigMap) TableConfig(tableID sql.TableIdentifier) *DwhTableConfig {
+func (d *DwhToTablesConfigMap) TableConfigCache(tableID sql.TableIdentifier) *DwhTableConfig {
 	d.RLock()
 	defer d.RUnlock()
 
