@@ -42,9 +42,7 @@ func (g GetTableCfgArgs) ShouldParseComment(comment string) bool {
 }
 
 func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
-	// Check if it already exists in cache
-	tableConfig := g.ConfigMap.TableConfig(g.TableID)
-	if tableConfig != nil {
+	if tableConfig := g.ConfigMap.TableConfigCache(g.TableID); tableConfig != nil {
 		return tableConfig, nil
 	}
 

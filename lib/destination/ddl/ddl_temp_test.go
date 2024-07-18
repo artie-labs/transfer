@@ -36,7 +36,7 @@ func (d *DDLTestSuite) TestValidate_AlterTableArgs() {
 func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 	tableID := snowflake.NewTableIdentifier("", "mock_dataset", "mock_table")
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
-	snowflakeTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
+	snowflakeTc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
 	args := ddl.AlterTableArgs{
 		Dialect:        d.snowflakeStagesStore.Dialect(),
 		Tc:             snowflakeTc,
@@ -56,7 +56,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 
 	// Change it to SFLK + Stage
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
-	snowflakeStagesTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
+	snowflakeStagesTc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
 	args.Dialect = d.snowflakeStagesStore.Dialect()
 	args.Tc = snowflakeStagesTc
 	args.CreateTable = false
@@ -70,7 +70,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 		tableID := snowflake.NewTableIdentifier("db", "schema", "tempTableName")
 
 		d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
-		sflkStageTc := d.snowflakeStagesStore.GetConfigMap().TableConfig(tableID)
+		sflkStageTc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
 		args := ddl.AlterTableArgs{
 			Dialect:        d.snowflakeStagesStore.Dialect(),
 			Tc:             sflkStageTc,
@@ -95,7 +95,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 		// BigQuery
 		tableID := bigquery.NewTableIdentifier("db", "schema", "tempTableName")
 		d.bigQueryStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
-		bqTc := d.bigQueryStore.GetConfigMap().TableConfig(tableID)
+		bqTc := d.bigQueryStore.GetConfigMap().TableConfigCache(tableID)
 		args := ddl.AlterTableArgs{
 			Dialect:        d.bigQueryStore.Dialect(),
 			Tc:             bqTc,
