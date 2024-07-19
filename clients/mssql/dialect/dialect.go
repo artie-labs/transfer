@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/ptr"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -86,10 +88,10 @@ func (MSSQLDialect) KindForDataType(rawType string, stringPrecision string) (typ
 		"nchar",
 		"nvarchar",
 		"ntext":
-		var strPrecision *int
-		precision, err := strconv.Atoi(stringPrecision)
+		var strPrecision *int32
+		precision, err := strconv.ParseInt(stringPrecision, 10, 32)
 		if err == nil {
-			strPrecision = &precision
+			strPrecision = ptr.ToInt32(int32(precision))
 		}
 
 		// precision of -1 means it's MAX.

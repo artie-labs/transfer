@@ -156,7 +156,7 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		// Testing string precision
 		stringKindWithPrecision := typing.KindDetails{
 			Kind:                    typing.String.Kind,
-			OptionalStringPrecision: ptr.ToInt(123),
+			OptionalStringPrecision: ptr.ToInt32(123),
 		}
 
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn(strCol, stringKindWithPrecision)))

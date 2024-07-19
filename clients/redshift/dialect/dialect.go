@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/ptr"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -73,14 +75,14 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 	}
 
 	if strings.Contains(rawType, "character varying") {
-		precision, err := strconv.Atoi(stringPrecision)
+		precision, err := strconv.ParseInt(stringPrecision, 10, 32)
 		if err != nil {
 			return typing.Invalid, fmt.Errorf("failed to parse string precision: %q, err: %w", stringPrecision, err)
 		}
 
 		return typing.KindDetails{
 			Kind:                    typing.String.Kind,
-			OptionalStringPrecision: &precision,
+			OptionalStringPrecision: ptr.ToInt32(int32(precision)),
 		}, nil
 	}
 

@@ -82,14 +82,14 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.
 		case 0:
 			return typing.String, nil
 		case 1:
-			precision, err := strconv.Atoi(parameters[0])
+			precision, err := strconv.ParseInt(parameters[0], 10, 32)
 			if err != nil {
 				return typing.Invalid, fmt.Errorf("unable to convert type parameter to an int: %w", err)
 			}
 
 			return typing.KindDetails{
 				Kind:                    typing.String.Kind,
-				OptionalStringPrecision: ptr.ToInt(precision),
+				OptionalStringPrecision: ptr.ToInt32(int32(precision)),
 			}, nil
 		default:
 			return typing.Invalid, fmt.Errorf("expected at most one type parameters, received %d", len(parameters))
