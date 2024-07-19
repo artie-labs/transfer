@@ -233,4 +233,25 @@ USING {SUB_QUERY} AS stg ON tgt."id" = stg."id"
 WHEN MATCHED THEN UPDATE SET "id"= CASE WHEN COALESCE(stg."__artie_only_set_delete", 0) = 0 THEN stg."id" ELSE tgt."id" END,"bar"= CASE WHEN COALESCE(stg."__artie_only_set_delete", 0) = 0 THEN stg."bar" ELSE tgt."bar" END,"updated_at"= CASE WHEN COALESCE(stg."__artie_only_set_delete", 0) = 0 THEN stg."updated_at" ELSE tgt."updated_at" END,"start"= CASE WHEN COALESCE(stg."__artie_only_set_delete", 0) = 0 THEN stg."start" ELSE tgt."start" END,"__artie_delete"=stg."__artie_delete"
 WHEN NOT MATCHED THEN INSERT ("id","bar","updated_at","start","__artie_delete") VALUES (stg."id",stg."bar",stg."updated_at",stg."start",stg."__artie_delete");`, queries[0])
 	}
+	{
+		// Soft delete with a toasted column:
+		_cols[1].ToastColumn = true
+		queries, err := MSSQLDialect{}.BuildMergeQueries(
+			fakeID,
+			"{SUB_QUERY}",
+			"",
+			[]columns.Column{_cols[0]},
+			[]string{},
+			_cols,
+			true,
+			false,
+		)
+		assert.NoError(t, err)
+		assert.Len(t, queries, 1)
+		assert.Equal(t, `
+MERGE INTO database.schema.table tgt
+USING {SUB_QUERY} AS stg ON tgt."id" = stg."id"
+WHEN MATCHED THEN UPDATE SET "id"= CASE WHEN COALESCE(stg."__artie_only_set_delete", 0) = 0 THEN stg."id" ELSE tgt."id" END,"bar"= CASE WHEN COALESCE(stg."__artie_only_set_delete", 0) = 0 THEN  CASE WHEN COALESCE(stg."bar", '') != '__debezium_unavailable_value' THEN stg."bar" ELSE tgt."bar" END ELSE tgt."bar" END,"updated_at"= CASE WHEN COALESCE(stg."__artie_only_set_delete", 0) = 0 THEN stg."updated_at" ELSE tgt."updated_at" END,"start"= CASE WHEN COALESCE(stg."__artie_only_set_delete", 0) = 0 THEN stg."start" ELSE tgt."start" END,"__artie_delete"=stg."__artie_delete"
+WHEN NOT MATCHED THEN INSERT ("id","bar","updated_at","start","__artie_delete") VALUES (stg."id",stg."bar",stg."updated_at",stg."start",stg."__artie_delete");`, queries[0])
+	}
 }
