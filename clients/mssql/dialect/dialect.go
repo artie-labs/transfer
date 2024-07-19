@@ -229,8 +229,7 @@ WHERE %s IS NULL;`,
 			),
 			fmt.Sprintf(`
 UPDATE %s SET %s
-FROM %s AS %s
-LEFT JOIN %s AS %s ON %s%s
+FROM %s AS %s LEFT JOIN %s AS %s ON %s%s
 WHERE COALESCE(%s, 0) = 0;`,
 				// UPDATE table set [all columns]
 				constants.TargetAlias, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
@@ -241,8 +240,7 @@ WHERE COALESCE(%s, 0) = 0;`,
 			),
 			fmt.Sprintf(`
 UPDATE %s SET %s
-FROM %s AS %s
-LEFT JOIN %s AS %s ON %s%s
+FROM %s AS %s LEFT JOIN %s AS %s ON %s%s
 WHERE COALESCE(%s, 0) = 1;`,
 				// UPDATE table SET __artie_delete = stg.__artie_delete
 				constants.TargetAlias, sql.BuildColumnsUpdateFragment([]columns.Column{columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean)}, constants.StagingAlias, constants.TargetAlias, md),
