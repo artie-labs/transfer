@@ -163,6 +163,6 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		foundStrCol, isOk := tableData.inMemoryColumns.GetColumn(strCol)
 		assert.True(t, isOk)
 		assert.Equal(t, typing.String.Kind, foundStrCol.KindDetails.Kind)
-		assert.Equal(t, 123, *foundStrCol.KindDetails.OptionalStringPrecision)
+		assert.Equal(t, int32(123), *foundStrCol.KindDetails.OptionalStringPrecision)
 	}
 }

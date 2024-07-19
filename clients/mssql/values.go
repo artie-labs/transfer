@@ -49,7 +49,7 @@ func parseValue(colVal any, colKind columns.Column, additionalDateFmts []string)
 		}
 
 		if colKind.KindDetails.OptionalStringPrecision != nil {
-			if len(colValString) > *colKind.KindDetails.OptionalStringPrecision {
+			if int32(len(colValString)) > *colKind.KindDetails.OptionalStringPrecision {
 				colValString = constants.ExceededValueMarker
 			}
 		}

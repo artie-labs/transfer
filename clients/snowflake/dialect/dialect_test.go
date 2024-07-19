@@ -32,7 +32,7 @@ func TestSnowflakeDialect_DataTypeForKind(t *testing.T) {
 		{
 			kd: typing.KindDetails{
 				Kind:                    typing.String.Kind,
-				OptionalStringPrecision: ptr.ToInt(12345),
+				OptionalStringPrecision: ptr.ToInt32(12345),
 			},
 			expected: "string",
 		},
@@ -121,7 +121,7 @@ func TestSnowflakeDialect_KindForDataType_Other(t *testing.T) {
 		kd, err := SnowflakeDialect{}.KindForDataType("VARCHAR (255)", "")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.String.Kind, kd.Kind)
-		assert.Equal(t, 255, *kd.OptionalStringPrecision)
+		assert.Equal(t, int32(255), *kd.OptionalStringPrecision)
 	}
 }
 

@@ -30,12 +30,12 @@ func (s *SnowflakeTestSuite) TestReplaceExceededValues() {
 	// String + OptionalStringPrecision set + equal to OptionalStringPrecision:
 	assert.Equal(s.T(),
 		strings.Repeat("a", 100),
-		replaceExceededValues(strings.Repeat("a", 100), typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: ptr.ToInt(100)}),
+		replaceExceededValues(strings.Repeat("a", 100), typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: ptr.ToInt32(100)}),
 	)
 	// String + OptionalStringPrecision set + larger than OptionalStringPrecision:
 	assert.Equal(s.T(),
 		constants.ExceededValueMarker,
-		replaceExceededValues(strings.Repeat("a", 101), typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: ptr.ToInt(100)}),
+		replaceExceededValues(strings.Repeat("a", 101), typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: ptr.ToInt32(100)}),
 	)
 }
 
