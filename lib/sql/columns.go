@@ -37,9 +37,7 @@ func GetQuotedOnlySetDeleteColumnMarker(tableAlias constants.TableAlias, dialect
 	return QuoteTableAliasColumn(tableAlias, columns.NewColumn(constants.OnlySetDeleteColumnMarker, typing.Invalid), dialect)
 }
 
-// BuildColumnsUpdateFragment will parse the columns and return a string like: first_name=tgt."first_name",last_name=stg."last_name",email=tgt."email"
-// NOTE: This should only be used with valid columns.
-func BuildColumnsUpdateFragment(columns []columns.Column, stagingAlias, targetAlias constants.TableAlias, dialect Dialect) string {
+func BuildConditionalColumnsUpdateFragment(columns []columns.Column, stagingAlias, targetAlias constants.TableAlias, dialect Dialect, condition string) string {
 	var cols []string
 	for _, column := range columns {
 		var colVal string
@@ -52,10 +50,19 @@ func BuildColumnsUpdateFragment(columns []columns.Column, stagingAlias, targetAl
 		} else {
 			colVal = QuoteTableAliasColumn(stagingAlias, column, dialect)
 		}
+		if condition != "" {
+			colVal = fmt.Sprintf(" CASE WHEN %s THEN %s ELSE %s END", condition, colVal, QuoteTableAliasColumn(targetAlias, column, dialect))
+		}
 		cols = append(cols, fmt.Sprintf("%s=%s", dialect.QuoteIdentifier(column.Name()), colVal))
 	}
 
 	return strings.Join(cols, ",")
+}
+
+// BuildColumnsUpdateFragment will parse the columns and return a string like: first_name=tgt."first_name",last_name=stg."last_name",email=tgt."email"
+// NOTE: This should only be used with valid columns.
+func BuildColumnsUpdateFragment(columns []columns.Column, stagingAlias, targetAlias constants.TableAlias, dialect Dialect) string {
+	return BuildConditionalColumnsUpdateFragment(columns, stagingAlias, targetAlias, dialect, "")
 }
 
 type Operator string

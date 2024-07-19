@@ -204,12 +204,24 @@ USING %s AS %s ON %s`,
 	}
 
 	if softDelete {
-		// TODO alter this merge query to update only the __artie_delete column if OnlySetDeleteColumnMarker is true
+		// Build conditional column values for the update clause; if __artie_only_set_delete is true, we
+		// need to preserve existing values for all columns other than __artie_delete
+		colsExceptDelete, err := columns.RemoveDeleteColumnMarker(cols)
+		if err != nil {
+			return nil, err
+		}
+
+		condition := fmt.Sprintf("COALESCE(%s, 0) = 0", sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, md))
+		conditionalCols := sql.BuildConditionalColumnsUpdateFragment(colsExceptDelete, constants.StagingAlias, constants.TargetAlias, md, condition)
+		deleteCol := sql.BuildColumnsUpdateFragment([]columns.Column{columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean)}, constants.StagingAlias, constants.TargetAlias, md)
+
 		return []string{baseQuery + fmt.Sprintf(`
-WHEN MATCHED %sTHEN UPDATE SET %s
+WHEN MATCHED %sTHEN UPDATE SET %s,%s
 WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
-			// WHEN MATCHED %sTHEN UPDATE SET %s
-			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
+			// Updating or soft-deleting
+			// WHEN MATCHED %sTHEN UPDATE SET %s,%s
+			idempotentClause, conditionalCols, deleteCol,
+			// Inserting
 			// WHEN NOT MATCHED THEN INSERT (%s)
 			strings.Join(sql.QuoteColumns(cols, md), ","),
 			// VALUES (%s);
