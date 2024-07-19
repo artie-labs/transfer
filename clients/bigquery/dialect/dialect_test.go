@@ -33,7 +33,7 @@ func TestBigQueryDialect_DataTypeForKind(t *testing.T) {
 		{
 			kd: typing.KindDetails{
 				Kind:                    typing.String.Kind,
-				OptionalStringPrecision: ptr.ToInt(12345),
+				OptionalStringPrecision: ptr.ToInt32(12345),
 			},
 			expected: "string",
 		},

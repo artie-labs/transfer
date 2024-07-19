@@ -31,7 +31,7 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 	tcs := []_tc{
 		{
 			name:   "string",
-			colVal: stringutil.Random(maxRedshiftLength + 1),
+			colVal: stringutil.Random(int(maxRedshiftLength) + 1),
 			colKind: columns.Column{
 				KindDetails: typing.String,
 			},
@@ -43,7 +43,7 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 			colKind: columns.Column{
 				KindDetails: typing.KindDetails{
 					Kind:                    typing.String.Kind,
-					OptionalStringPrecision: ptr.ToInt(3),
+					OptionalStringPrecision: ptr.ToInt32(3),
 				},
 			},
 			expectedResult: constants.ExceededValueMarker,
@@ -58,7 +58,7 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 		},
 		{
 			name:   "struct",
-			colVal: fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(maxRedshiftLength+1)),
+			colVal: fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(int(maxRedshiftLength)+1)),
 			colKind: columns.Column{
 				KindDetails: typing.Struct,
 			},
@@ -66,7 +66,7 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 		},
 		{
 			name:   "string, but the data type is a SUPER",
-			colVal: stringutil.Random(maxRedshiftLength + 1),
+			colVal: stringutil.Random(int(maxRedshiftLength) + 1),
 			colKind: columns.Column{
 				KindDetails: typing.Struct,
 			},
@@ -110,7 +110,7 @@ func (r *RedshiftTestSuite) TestCastColValStaging_ExceededValues() {
 	testCases := []_testCase{
 		{
 			name:   "string",
-			colVal: stringutil.Random(maxRedshiftLength + 1),
+			colVal: stringutil.Random(int(maxRedshiftLength) + 1),
 			colKind: columns.Column{
 				KindDetails: typing.String,
 			},
@@ -126,7 +126,7 @@ func (r *RedshiftTestSuite) TestCastColValStaging_ExceededValues() {
 		},
 		{
 			name:   "struct",
-			colVal: map[string]any{"foo": stringutil.Random(maxRedshiftLength + 1)},
+			colVal: map[string]any{"foo": stringutil.Random(int(maxRedshiftLength) + 1)},
 			colKind: columns.Column{
 				KindDetails: typing.Struct,
 			},
@@ -134,7 +134,7 @@ func (r *RedshiftTestSuite) TestCastColValStaging_ExceededValues() {
 		},
 		{
 			name:   "struct",
-			colVal: map[string]any{"foo": stringutil.Random(maxRedshiftLength + 1)},
+			colVal: map[string]any{"foo": stringutil.Random(int(maxRedshiftLength) + 1)},
 			colKind: columns.Column{
 				KindDetails: typing.Struct,
 			},
@@ -153,5 +153,4 @@ func (r *RedshiftTestSuite) TestCastColValStaging_ExceededValues() {
 	for _, testCase := range testCases {
 		evaluateTestCase(r.T(), skipLargeRowsStore, testCase)
 	}
-
 }

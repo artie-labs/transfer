@@ -34,7 +34,7 @@ func TestMSSQLDialect_DataTypeForKind(t *testing.T) {
 		{
 			kd: typing.KindDetails{
 				Kind:                    typing.String.Kind,
-				OptionalStringPrecision: ptr.ToInt(12345),
+				OptionalStringPrecision: ptr.ToInt32(12345),
 			},
 			expected:     "VARCHAR(12345)",
 			expectedIsPk: "VARCHAR(900)",
@@ -90,7 +90,7 @@ func TestMSSQLDialect_KindForDataType(t *testing.T) {
 		kd, err := dialect.KindForDataType("char", "5")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.String.Kind, kd.Kind)
-		assert.Equal(t, 5, *kd.OptionalStringPrecision)
+		assert.Equal(t, int32(5), *kd.OptionalStringPrecision)
 	}
 }
 

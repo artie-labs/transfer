@@ -9,7 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
-const maxRedshiftLength = 65535
+const maxRedshiftLength int32 = 65535
 
 // replaceExceededValues - takes `colVal` any and `colKind` columns.Column and replaces the value with an empty string if it exceeds the max length.
 // This currently only works for STRING and SUPER data types.
@@ -22,7 +22,7 @@ func replaceExceededValues(colVal string, colKind columns.Column) string {
 			maxLength = *colKind.KindDetails.OptionalStringPrecision
 		}
 
-		if shouldReplace := len(colVal) > maxLength; shouldReplace {
+		if shouldReplace := int32(len(colVal)) > maxLength; shouldReplace {
 			if colKind.KindDetails.Kind == typing.Struct.Kind {
 				return fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker)
 			}

@@ -31,7 +31,7 @@ func TestRedshiftDialect_DataTypeForKind(t *testing.T) {
 		{
 			kd: typing.KindDetails{
 				Kind:                    typing.String.Kind,
-				OptionalStringPrecision: ptr.ToInt(12345),
+				OptionalStringPrecision: ptr.ToInt32(12345),
 			},
 			expected: "VARCHAR(12345)",
 		},
@@ -77,7 +77,7 @@ func TestRedshiftDialect_KindForDataType(t *testing.T) {
 			},
 			expectedKd: typing.KindDetails{
 				Kind:                    typing.String.Kind,
-				OptionalStringPrecision: ptr.ToInt(65535),
+				OptionalStringPrecision: ptr.ToInt32(65535),
 			},
 		},
 		{

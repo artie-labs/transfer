@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -86,10 +87,10 @@ func (MSSQLDialect) KindForDataType(rawType string, stringPrecision string) (typ
 		"nchar",
 		"nvarchar",
 		"ntext":
-		var strPrecision *int
-		precision, err := strconv.Atoi(stringPrecision)
+		var strPrecision *int32
+		precision, err := strconv.ParseInt(stringPrecision, 10, 32)
 		if err == nil {
-			strPrecision = &precision
+			strPrecision = ptr.ToInt32(int32(precision))
 		}
 
 		// precision of -1 means it's MAX.
@@ -167,7 +168,7 @@ func (md MSSQLDialect) BuildIsNotToastValueExpression(tableAlias constants.Table
 	return fmt.Sprintf("COALESCE(%s, '') != '%s'", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
-func (MSSQLDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
+func (MSSQLDialect) BuildDedupeTableQuery(_ sql.TableIdentifier, _ []string) string {
 	panic("not implemented")
 }
 
