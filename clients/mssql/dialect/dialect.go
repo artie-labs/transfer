@@ -232,9 +232,9 @@ UPDATE %s SET %s
 FROM %s AS %s
 LEFT JOIN %s AS %s ON %s%s
 WHERE COALESCE(%s, 0) = 0;`,
-				// UPDATE table set col1 = stg. col1
+				// UPDATE table set [all columns]
 				constants.TargetAlias, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
-				// FROM staging WHERE join on PK(s)
+				// FROM staging AS stg LEFT JOIN target AS tgt ON tgt.pk = stg.pk
 				subQuery, constants.StagingAlias, tableID.FullyQualifiedName(), constants.TargetAlias, joinOn, idempotentClause,
 				// WHERE __artie_only_set_delete = 0
 				sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, md),
@@ -244,9 +244,9 @@ UPDATE %s SET %s
 FROM %s AS %s
 LEFT JOIN %s AS %s ON %s%s
 WHERE COALESCE(%s, 0) = 1;`,
-				// UPDATE table __artie_delete = stg.__artie_delete
+				// UPDATE table SET __artie_delete = stg.__artie_delete
 				constants.TargetAlias, sql.BuildColumnsUpdateFragment([]columns.Column{columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean)}, constants.StagingAlias, constants.TargetAlias, md),
-				// FROM staging WHERE join on PK(s)
+				// FROM staging AS stg LEFT JOIN target AS tgt ON tgt.pk = stg.pk
 				subQuery, constants.StagingAlias, tableID.FullyQualifiedName(), constants.TargetAlias, joinOn, idempotentClause,
 				// WHERE __artie_only_set_delete = 1
 				sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, md),
