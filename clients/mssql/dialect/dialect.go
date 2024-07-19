@@ -186,17 +186,18 @@ func (md MSSQLDialect) BuildMergeQueries(
 	softDelete bool,
 	_ bool,
 ) ([]string, error) {
+	// TODO remove support for idempotentKey
 	var idempotentClause string
 	if idempotentKey != "" {
 		idempotentClause = fmt.Sprintf("AND %s.%s >= %s.%s ", constants.StagingAlias, idempotentKey, constants.TargetAlias, idempotentKey)
 	}
 
+	joinOn := strings.Join(sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, md), " AND ")
 	baseQuery := fmt.Sprintf(`
 MERGE INTO %s %s
 USING %s AS %s ON %s`,
 		tableID.FullyQualifiedName(), constants.TargetAlias,
-		subQuery, constants.StagingAlias,
-		strings.Join(sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, md), " AND "),
+		subQuery, constants.StagingAlias, joinOn,
 	)
 
 	cols, err := columns.RemoveOnlySetDeleteColumnMarker(cols)
@@ -205,17 +206,30 @@ USING %s AS %s ON %s`,
 	}
 
 	if softDelete {
-		// TODO alter this merge query to update only the __artie_delete column if OnlySetDeleteColumnMarker is true
-		return []string{baseQuery + fmt.Sprintf(`
-WHEN MATCHED %sTHEN UPDATE SET %s
-WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
-			// WHEN MATCHED %sTHEN UPDATE SET %s
-			idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
-			// WHEN NOT MATCHED THEN INSERT (%s)
-			strings.Join(sql.QuoteColumns(cols, md), ","),
-			// VALUES (%s);
-			strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, md), ","),
-		)}, nil
+		// TODO alter this to update only the __artie_delete column if OnlySetDeleteColumnMarker is true
+		return []string{
+			fmt.Sprintf(`
+INSERT INTO %s (%s)
+SELECT %s FROM %s AS %s
+LEFT JOIN %s AS %s ON %s
+WHERE %s IS NULL;`,
+				// INSERT INTO %s (%s)
+				tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(cols, md), ","),
+				// SELECT %s FROM %s AS %s
+				strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, md), ","), subQuery, constants.StagingAlias,
+				// LEFT JOIN %s AS %s ON %s
+				tableID.FullyQualifiedName(), constants.TargetAlias, joinOn,
+				// WHERE %s IS NULL; (we only need to specify one primary key since it's covered with equalitySQL parts)
+				sql.QuoteTableAliasColumn(constants.TargetAlias, primaryKeys[0], md),
+			), fmt.Sprintf(`
+UPDATE %s SET %s
+FROM %s AS %s
+LEFT JOIN %s AS %s ON %s %s;`,
+				// UPDATE table set col1 = stg. col1
+				constants.TargetAlias, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
+				// FROM staging WHERE join on PK(s)
+				subQuery, constants.StagingAlias, tableID.FullyQualifiedName(), constants.TargetAlias, joinOn, idempotentClause,
+			)}, nil
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table

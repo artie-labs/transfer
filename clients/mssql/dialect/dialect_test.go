@@ -226,11 +226,15 @@ WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", 1) = 0 THEN INSERT ("id","ba
 			false,
 		)
 		assert.NoError(t, err)
-		assert.Len(t, queries, 1)
+		assert.Len(t, queries, 2)
 		assert.Equal(t, `
-MERGE INTO database.schema.table tgt
-USING {SUB_QUERY} AS stg ON tgt."id" = stg."id"
-WHEN MATCHED THEN UPDATE SET "id"=stg."id","bar"=stg."bar","updated_at"=stg."updated_at","start"=stg."start","__artie_delete"=stg."__artie_delete"
-WHEN NOT MATCHED THEN INSERT ("id","bar","updated_at","start","__artie_delete") VALUES (stg."id",stg."bar",stg."updated_at",stg."start",stg."__artie_delete");`, queries[0])
+INSERT INTO database.schema.table ("id","bar","updated_at","start","__artie_delete")
+SELECT stg."id",stg."bar",stg."updated_at",stg."start",stg."__artie_delete" FROM {SUB_QUERY} AS stg
+LEFT JOIN database.schema.table AS tgt ON tgt."id" = stg."id"
+WHERE tgt."id" IS NULL;`, queries[0])
+		assert.Equal(t, `
+UPDATE tgt SET "id"=stg."id","bar"=stg."bar","updated_at"=stg."updated_at","start"=stg."start","__artie_delete"=stg."__artie_delete"
+FROM {SUB_QUERY} AS stg
+LEFT JOIN database.schema.table AS tgt ON tgt."id" = stg."id" ;`, queries[1])
 	}
 }
