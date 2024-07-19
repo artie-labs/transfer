@@ -5,9 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/ptr"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -111,7 +110,7 @@ func (RedshiftDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return strings.Contains(err.Error(), "already exists")
 }
 
-func (RedshiftDialect) IsTableDoesNotExistErr(err error) bool {
+func (RedshiftDialect) IsTableDoesNotExistErr(_ error) bool {
 	return false
 }
 
