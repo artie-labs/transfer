@@ -51,6 +51,7 @@ func BuildConditionalColumnsUpdateFragment(columns []columns.Column, stagingAlia
 			colVal = QuoteTableAliasColumn(stagingAlias, column, dialect)
 		}
 		if condition != "" {
+			// Only update the column if the condition is true; otherwise, preserve the existing value from the target table
 			colVal = fmt.Sprintf(" CASE WHEN %s THEN %s ELSE %s END", condition, colVal, QuoteTableAliasColumn(targetAlias, column, dialect))
 		}
 		cols = append(cols, fmt.Sprintf("%s=%s", dialect.QuoteIdentifier(column.Name()), colVal))
