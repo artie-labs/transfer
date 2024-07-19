@@ -230,7 +230,7 @@ WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", 1) = 0 THEN INSERT ("id","ba
 		assert.Equal(t, `
 MERGE INTO database.schema.table tgt
 USING {SUB_QUERY} AS stg ON tgt."id" = stg."id"
-WHEN MATCHED THEN UPDATE SET "id"=stg."id","bar"=stg."bar","updated_at"=stg."updated_at","start"=stg."start","__artie_delete"=stg."__artie_delete"
+WHEN MATCHED THEN UPDATE SET "id"= CASE WHEN COALESCE(stg."__artie_only_set_delete", 0) = 0 THEN stg."id" ELSE tgt."id" END,"bar"= CASE WHEN COALESCE(stg."__artie_only_set_delete", 0) = 0 THEN stg."bar" ELSE tgt."bar" END,"updated_at"= CASE WHEN COALESCE(stg."__artie_only_set_delete", 0) = 0 THEN stg."updated_at" ELSE tgt."updated_at" END,"start"= CASE WHEN COALESCE(stg."__artie_only_set_delete", 0) = 0 THEN stg."start" ELSE tgt."start" END,"__artie_delete"=stg."__artie_delete"
 WHEN NOT MATCHED THEN INSERT ("id","bar","updated_at","start","__artie_delete") VALUES (stg."id",stg."bar",stg."updated_at",stg."start",stg."__artie_delete");`, queries[0])
 	}
 }
