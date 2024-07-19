@@ -206,7 +206,12 @@ USING %s AS %s ON %s`,
 	}
 
 	if softDelete {
-		// TODO alter this to update only the __artie_delete column if OnlySetDeleteColumnMarker is true
+		// Issue an insert statement for new rows, plus two update statements:
+		// one for rows where all columns should be updated and
+		// one for rows where only the __artie_delete column should be updated.
+		if idempotentClause != "" {
+			idempotentClause = " " + idempotentClause
+		}
 		return []string{
 			fmt.Sprintf(`
 INSERT INTO %s (%s)
@@ -221,15 +226,32 @@ WHERE %s IS NULL;`,
 				tableID.FullyQualifiedName(), constants.TargetAlias, joinOn,
 				// WHERE %s IS NULL; (we only need to specify one primary key since it's covered with equalitySQL parts)
 				sql.QuoteTableAliasColumn(constants.TargetAlias, primaryKeys[0], md),
-			), fmt.Sprintf(`
+			),
+			fmt.Sprintf(`
 UPDATE %s SET %s
 FROM %s AS %s
-LEFT JOIN %s AS %s ON %s %s;`,
+LEFT JOIN %s AS %s ON %s%s
+WHERE COALESCE(%s, 0) = 0;`,
 				// UPDATE table set col1 = stg. col1
 				constants.TargetAlias, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
 				// FROM staging WHERE join on PK(s)
 				subQuery, constants.StagingAlias, tableID.FullyQualifiedName(), constants.TargetAlias, joinOn, idempotentClause,
-			)}, nil
+				// WHERE __artie_only_set_delete = 0
+				sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, md),
+			),
+			fmt.Sprintf(`
+UPDATE %s SET %s
+FROM %s AS %s
+LEFT JOIN %s AS %s ON %s%s
+WHERE COALESCE(%s, 0) = 1;`,
+				// UPDATE table __artie_delete = stg.__artie_delete
+				constants.TargetAlias, sql.BuildColumnsUpdateFragment([]columns.Column{columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean)}, constants.StagingAlias, constants.TargetAlias, md),
+				// FROM staging WHERE join on PK(s)
+				subQuery, constants.StagingAlias, tableID.FullyQualifiedName(), constants.TargetAlias, joinOn, idempotentClause,
+				// WHERE __artie_only_set_delete = 1
+				sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, md),
+			),
+		}, nil
 	}
 
 	// We also need to remove __artie flags since it does not exist in the destination table
