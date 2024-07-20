@@ -28,7 +28,6 @@ type Dialect interface {
 	BuildMergeQueries(
 		tableID TableIdentifier,
 		subQuery string,
-		idempotentKey string,
 		primaryKeys []columns.Column,
 		// additionalEqualityStrings is used for handling BigQuery & Snowflake partitioned table merges
 		additionalEqualityStrings []string,

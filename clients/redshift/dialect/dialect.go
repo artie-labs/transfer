@@ -210,14 +210,9 @@ func (rd RedshiftDialect) buildMergeUpdateQueries(
 	subQuery string,
 	primaryKeys []columns.Column,
 	cols []columns.Column,
-	idempotentKey string,
 	softDelete bool,
 ) []string {
 	clauses := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, rd)
-
-	if idempotentKey != "" {
-		clauses = append(clauses, fmt.Sprintf("%s.%s >= %s.%s", constants.StagingAlias, idempotentKey, constants.TargetAlias, idempotentKey))
-	}
 
 	if !softDelete {
 		clauses = append(clauses, fmt.Sprintf("COALESCE(%s, false) = false", sql.QuotedDeleteColumnMarker(constants.StagingAlias, rd)))
@@ -260,18 +255,12 @@ func (rd RedshiftDialect) buildMergeDeleteQuery(tableID sql.TableIdentifier, sub
 func (rd RedshiftDialect) BuildMergeQueries(
 	tableID sql.TableIdentifier,
 	subQuery string,
-	idempotentKey string,
 	primaryKeys []columns.Column,
 	_ []string,
 	cols []columns.Column,
 	softDelete bool,
 	containsHardDeletes bool,
 ) ([]string, error) {
-	// We should not need idempotency key for DELETE
-	// This is based on the assumption that the primary key would be atomically increasing or UUID based
-	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
-	// However, there may be edge cases where folks end up restoring deleted rows (which will contain the same PK).
-
 	cols, err := columns.RemoveOnlySetDeleteColumnMarker(cols)
 	if err != nil {
 		return []string{}, err
@@ -287,7 +276,7 @@ func (rd RedshiftDialect) BuildMergeQueries(
 	}
 
 	parts := []string{rd.buildMergeInsertQuery(tableID, subQuery, primaryKeys, cols)}
-	parts = append(parts, rd.buildMergeUpdateQueries(tableID, subQuery, primaryKeys, cols, idempotentKey, softDelete)...)
+	parts = append(parts, rd.buildMergeUpdateQueries(tableID, subQuery, primaryKeys, cols, softDelete)...)
 
 	if !softDelete && containsHardDeletes {
 		parts = append(parts, rd.buildMergeDeleteQuery(tableID, subQuery, primaryKeys))

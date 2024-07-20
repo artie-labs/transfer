@@ -214,10 +214,9 @@ func TestRedshiftDialect_BuildMergeInsertQuery(t *testing.T) {
 
 func TestRedshiftDialect_BuildMergeUpdateQuery(t *testing.T) {
 	testCases := []struct {
-		name          string
-		softDelete    bool
-		idempotentKey string
-		expected      []string
+		name       string
+		softDelete bool
+		expected   []string
 	}{
 		{
 			name:       "soft delete enabled",
@@ -228,27 +227,10 @@ func TestRedshiftDialect_BuildMergeUpdateQuery(t *testing.T) {
 			},
 		},
 		{
-			name:          "soft delete enabled + idempotent key",
-			softDelete:    true,
-			idempotentKey: "{ID_KEY}",
-			expected: []string{
-				`UPDATE {TABLE_ID} AS tgt SET "col1"=stg."col1","col2"=stg."col2","col3"=stg."col3" FROM {SUB_QUERY} AS stg WHERE tgt."col1" = stg."col1" AND tgt."col3" = stg."col3" AND stg.{ID_KEY} >= tgt.{ID_KEY} AND COALESCE(stg."__artie_only_set_delete", false) = false;`,
-				`UPDATE {TABLE_ID} AS tgt SET "__artie_delete"=stg."__artie_delete" FROM {SUB_QUERY} AS stg WHERE tgt."col1" = stg."col1" AND tgt."col3" = stg."col3" AND stg.{ID_KEY} >= tgt.{ID_KEY} AND COALESCE(stg."__artie_only_set_delete", false) = true;`,
-			},
-		},
-		{
 			name:       "soft delete disabled",
 			softDelete: false,
 			expected: []string{
 				`UPDATE {TABLE_ID} AS tgt SET "col1"=stg."col1","col2"=stg."col2","col3"=stg."col3" FROM {SUB_QUERY} AS stg WHERE tgt."col1" = stg."col1" AND tgt."col3" = stg."col3" AND COALESCE(stg."__artie_delete", false) = false;`,
-			},
-		},
-		{
-			name:          "soft delete disabled + idempotent key",
-			softDelete:    false,
-			idempotentKey: "{ID_KEY}",
-			expected: []string{
-				`UPDATE {TABLE_ID} AS tgt SET "col1"=stg."col1","col2"=stg."col2","col3"=stg."col3" FROM {SUB_QUERY} AS stg WHERE tgt."col1" = stg."col1" AND tgt."col3" = stg."col3" AND stg.{ID_KEY} >= tgt.{ID_KEY} AND COALESCE(stg."__artie_delete", false) = false;`,
 			},
 		},
 	}
@@ -268,7 +250,6 @@ func TestRedshiftDialect_BuildMergeUpdateQuery(t *testing.T) {
 			"{SUB_QUERY}",
 			[]columns.Column{cols[0], cols[2]},
 			cols,
-			testCase.idempotentKey,
 			testCase.softDelete,
 		)
 		assert.Equal(t, testCase.expected, actual, testCase.name)
@@ -343,7 +324,6 @@ func TestRedshiftDialect_BuildMergeQueries_SkipDelete(t *testing.T) {
 	parts, err := RedshiftDialect{}.BuildMergeQueries(
 		fakeTableID,
 		tempTableName,
-		"",
 		res.PrimaryKeys,
 		nil,
 		res.Columns,
@@ -373,7 +353,6 @@ func TestRedshiftDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 		parts, err := RedshiftDialect{}.BuildMergeQueries(
 			fakeTableID,
 			tempTableName,
-			"",
 			res.PrimaryKeys,
 			nil,
 			res.Columns,
@@ -393,32 +372,6 @@ func TestRedshiftDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 			`UPDATE public.tableName AS tgt SET "__artie_delete"=stg."__artie_delete" FROM public.tableName__temp AS stg WHERE tgt."id" = stg."id" AND COALESCE(stg."__artie_only_set_delete", false) = true;`,
 			parts[2])
 	}
-	{
-		parts, err := RedshiftDialect{}.BuildMergeQueries(
-			fakeTableID,
-			tempTableName,
-			"created_at",
-			res.PrimaryKeys,
-			nil,
-			res.Columns,
-			true,
-			false,
-		)
-		assert.NoError(t, err)
-		assert.Equal(t, 3, len(parts))
-
-		// Parts[0] for insertion should be identical
-		assert.Equal(t,
-			`INSERT INTO public.tableName ("id","email","first_name","last_name","created_at","toast_text","__artie_delete") SELECT stg."id",stg."email",stg."first_name",stg."last_name",stg."created_at",stg."toast_text",stg."__artie_delete" FROM public.tableName__temp AS stg LEFT JOIN public.tableName AS tgt ON tgt."id" = stg."id" WHERE tgt."id" IS NULL;`,
-			parts[0])
-		// Parts[1:] where we're doing UPDATES will have idempotency key.
-		assert.Equal(t,
-			`UPDATE public.tableName AS tgt SET "id"=stg."id","email"=stg."email","first_name"=stg."first_name","last_name"=stg."last_name","created_at"=stg."created_at","toast_text"= CASE WHEN COALESCE(stg."toast_text" != '__debezium_unavailable_value', true) THEN stg."toast_text" ELSE tgt."toast_text" END,"__artie_delete"=stg."__artie_delete" FROM public.tableName__temp AS stg WHERE tgt."id" = stg."id" AND stg.created_at >= tgt.created_at AND COALESCE(stg."__artie_only_set_delete", false) = false;`,
-			parts[1])
-		assert.Equal(t,
-			`UPDATE public.tableName AS tgt SET "__artie_delete"=stg."__artie_delete" FROM public.tableName__temp AS stg WHERE tgt."id" = stg."id" AND stg.created_at >= tgt.created_at AND COALESCE(stg."__artie_only_set_delete", false) = true;`,
-			parts[2])
-	}
 }
 
 func TestRedshiftDialect_BuildMergeQueries_SoftDeleteComposite(t *testing.T) {
@@ -430,7 +383,6 @@ func TestRedshiftDialect_BuildMergeQueries_SoftDeleteComposite(t *testing.T) {
 		parts, err := RedshiftDialect{}.BuildMergeQueries(
 			fakeTableID,
 			tempTableName,
-			"",
 			res.PrimaryKeys,
 			nil,
 			res.Columns,
@@ -450,32 +402,6 @@ func TestRedshiftDialect_BuildMergeQueries_SoftDeleteComposite(t *testing.T) {
 			`UPDATE public.tableName AS tgt SET "__artie_delete"=stg."__artie_delete" FROM public.tableName__temp AS stg WHERE tgt."id" = stg."id" AND tgt."email" = stg."email" AND COALESCE(stg."__artie_only_set_delete", false) = true;`,
 			parts[2])
 	}
-	{
-		parts, err := RedshiftDialect{}.BuildMergeQueries(
-			fakeTableID,
-			tempTableName,
-			"created_at",
-			res.PrimaryKeys,
-			nil,
-			res.Columns,
-			true,
-			false,
-		)
-		assert.NoError(t, err)
-		assert.Equal(t, 3, len(parts))
-
-		// Parts[0] for insertion should be identical
-		assert.Equal(t,
-			`INSERT INTO public.tableName ("id","email","first_name","last_name","created_at","toast_text","__artie_delete") SELECT stg."id",stg."email",stg."first_name",stg."last_name",stg."created_at",stg."toast_text",stg."__artie_delete" FROM public.tableName__temp AS stg LEFT JOIN public.tableName AS tgt ON tgt."id" = stg."id" AND tgt."email" = stg."email" WHERE tgt."id" IS NULL;`,
-			parts[0])
-		// Parts[1:] where we're doing UPDATES will have idempotency key.
-		assert.Equal(t,
-			`UPDATE public.tableName AS tgt SET "id"=stg."id","email"=stg."email","first_name"=stg."first_name","last_name"=stg."last_name","created_at"=stg."created_at","toast_text"= CASE WHEN COALESCE(stg."toast_text" != '__debezium_unavailable_value', true) THEN stg."toast_text" ELSE tgt."toast_text" END,"__artie_delete"=stg."__artie_delete" FROM public.tableName__temp AS stg WHERE tgt."id" = stg."id" AND tgt."email" = stg."email" AND stg.created_at >= tgt.created_at AND COALESCE(stg."__artie_only_set_delete", false) = false;`,
-			parts[1])
-		assert.Equal(t,
-			`UPDATE public.tableName AS tgt SET "__artie_delete"=stg."__artie_delete" FROM public.tableName__temp AS stg WHERE tgt."id" = stg."id" AND tgt."email" = stg."email" AND stg.created_at >= tgt.created_at AND COALESCE(stg."__artie_only_set_delete", false) = true;`,
-			parts[2])
-	}
 }
 
 func TestRedshiftDialect_BuildMergeQueries(t *testing.T) {
@@ -490,7 +416,6 @@ func TestRedshiftDialect_BuildMergeQueries(t *testing.T) {
 		parts, err := RedshiftDialect{}.BuildMergeQueries(
 			fakeTableID,
 			tempTableName,
-			"",
 			res.PrimaryKeys,
 			nil,
 			res.Columns,
@@ -512,32 +437,6 @@ func TestRedshiftDialect_BuildMergeQueries(t *testing.T) {
 			`DELETE FROM public.tableName WHERE ("id") IN (SELECT stg."id" FROM public.tableName__temp AS stg WHERE stg."__artie_delete" = true);`,
 			parts[2])
 	}
-	{
-		parts, err := RedshiftDialect{}.BuildMergeQueries(
-			fakeTableID,
-			tempTableName,
-			"created_at",
-			res.PrimaryKeys,
-			nil,
-			res.Columns,
-			false,
-			true,
-		)
-		assert.NoError(t, err)
-		assert.Equal(t, 3, len(parts))
-
-		assert.Equal(t,
-			`INSERT INTO public.tableName ("id","email","first_name","last_name","created_at","toast_text") SELECT stg."id",stg."email",stg."first_name",stg."last_name",stg."created_at",stg."toast_text" FROM public.tableName__temp AS stg LEFT JOIN public.tableName AS tgt ON tgt."id" = stg."id" WHERE tgt."id" IS NULL;`,
-			parts[0])
-
-		assert.Equal(t,
-			`UPDATE public.tableName AS tgt SET "id"=stg."id","email"=stg."email","first_name"=stg."first_name","last_name"=stg."last_name","created_at"=stg."created_at","toast_text"= CASE WHEN COALESCE(stg."toast_text" != '__debezium_unavailable_value', true) THEN stg."toast_text" ELSE tgt."toast_text" END FROM public.tableName__temp AS stg WHERE tgt."id" = stg."id" AND stg.created_at >= tgt.created_at AND COALESCE(stg."__artie_delete", false) = false;`,
-			parts[1])
-
-		assert.Equal(t,
-			`DELETE FROM public.tableName WHERE ("id") IN (SELECT stg."id" FROM public.tableName__temp AS stg WHERE stg."__artie_delete" = true);`,
-			parts[2])
-	}
 }
 
 func TestRedshiftDialect_BuildMergeQueries_CompositeKey(t *testing.T) {
@@ -549,7 +448,6 @@ func TestRedshiftDialect_BuildMergeQueries_CompositeKey(t *testing.T) {
 		parts, err := RedshiftDialect{}.BuildMergeQueries(
 			fakeTableID,
 			tempTableName,
-			"",
 			res.PrimaryKeys,
 			nil,
 			res.Columns,
@@ -565,32 +463,6 @@ func TestRedshiftDialect_BuildMergeQueries_CompositeKey(t *testing.T) {
 
 		assert.Equal(t,
 			`UPDATE public.tableName AS tgt SET "id"=stg."id","email"=stg."email","first_name"=stg."first_name","last_name"=stg."last_name","created_at"=stg."created_at","toast_text"= CASE WHEN COALESCE(stg."toast_text" != '__debezium_unavailable_value', true) THEN stg."toast_text" ELSE tgt."toast_text" END FROM public.tableName__temp AS stg WHERE tgt."id" = stg."id" AND tgt."email" = stg."email" AND COALESCE(stg."__artie_delete", false) = false;`,
-			parts[1])
-
-		assert.Equal(t,
-			`DELETE FROM public.tableName WHERE ("id","email") IN (SELECT stg."id",stg."email" FROM public.tableName__temp AS stg WHERE stg."__artie_delete" = true);`,
-			parts[2])
-	}
-	{
-		parts, err := RedshiftDialect{}.BuildMergeQueries(
-			fakeTableID,
-			tempTableName,
-			"created_at",
-			res.PrimaryKeys,
-			nil,
-			res.Columns,
-			false,
-			true,
-		)
-		assert.NoError(t, err)
-		assert.Equal(t, 3, len(parts))
-
-		assert.Equal(t,
-			`INSERT INTO public.tableName ("id","email","first_name","last_name","created_at","toast_text") SELECT stg."id",stg."email",stg."first_name",stg."last_name",stg."created_at",stg."toast_text" FROM public.tableName__temp AS stg LEFT JOIN public.tableName AS tgt ON tgt."id" = stg."id" AND tgt."email" = stg."email" WHERE tgt."id" IS NULL;`,
-			parts[0])
-
-		assert.Equal(t,
-			`UPDATE public.tableName AS tgt SET "id"=stg."id","email"=stg."email","first_name"=stg."first_name","last_name"=stg."last_name","created_at"=stg."created_at","toast_text"= CASE WHEN COALESCE(stg."toast_text" != '__debezium_unavailable_value', true) THEN stg."toast_text" ELSE tgt."toast_text" END FROM public.tableName__temp AS stg WHERE tgt."id" = stg."id" AND tgt."email" = stg."email" AND stg.created_at >= tgt.created_at AND COALESCE(stg."__artie_delete", false) = false;`,
 			parts[1])
 
 		assert.Equal(t,

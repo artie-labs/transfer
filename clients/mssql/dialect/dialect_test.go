@@ -176,7 +176,6 @@ func TestMSSQLDialect_BuildMergeQueries(t *testing.T) {
 		queries, err := MSSQLDialect{}.BuildMergeQueries(
 			fakeID,
 			fqTable,
-			"",
 			[]columns.Column{_cols[0]},
 			[]string{},
 			_cols,
@@ -193,32 +192,10 @@ WHEN MATCHED AND COALESCE(stg."__artie_delete", 0) = 0 THEN UPDATE SET "id"=stg.
 WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", 1) = 0 THEN INSERT ("id","bar","updated_at","start") VALUES (stg."id",stg."bar",stg."updated_at",stg."start");`, queries[0])
 	}
 	{
-		// Idempotent key:
-		queries, err := MSSQLDialect{}.BuildMergeQueries(
-			fakeID,
-			"{SUB_QUERY}",
-			"idempotent_key",
-			[]columns.Column{_cols[0]},
-			[]string{},
-			_cols,
-			false,
-			false,
-		)
-		assert.NoError(t, err)
-		assert.Len(t, queries, 1)
-		assert.Equal(t, `
-MERGE INTO database.schema.table tgt
-USING {SUB_QUERY} AS stg ON tgt."id" = stg."id"
-WHEN MATCHED AND stg."__artie_delete" = 1 THEN DELETE
-WHEN MATCHED AND COALESCE(stg."__artie_delete", 0) = 0 AND stg.idempotent_key >= tgt.idempotent_key THEN UPDATE SET "id"=stg."id","bar"=stg."bar","updated_at"=stg."updated_at","start"=stg."start"
-WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", 1) = 0 THEN INSERT ("id","bar","updated_at","start") VALUES (stg."id",stg."bar",stg."updated_at",stg."start");`, queries[0])
-	}
-	{
 		// Soft delete:
 		queries, err := MSSQLDialect{}.BuildMergeQueries(
 			fakeID,
 			"{SUB_QUERY}",
-			"",
 			[]columns.Column{_cols[0]},
 			[]string{},
 			_cols,
