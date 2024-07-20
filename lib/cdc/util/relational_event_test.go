@@ -140,9 +140,7 @@ func TestGetDataTestInsert(t *testing.T) {
 }
 
 func TestGetData_TestDelete(t *testing.T) {
-	tc := &kafkalib.TopicConfig{
-		IdempotentKey: "updated_at",
-	}
+	tc := &kafkalib.TopicConfig{}
 
 	expectedKeyValues := map[string]any{
 		"id":                                int64(1004),

@@ -169,11 +169,6 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 		for k, v := range pkMap {
 			retMap[k] = v
 		}
-
-		// If idempotency key is an empty string, don't put it in the event data
-		if tc.IdempotentKey != "" {
-			retMap[tc.IdempotentKey] = s.GetExecutionTime().Format(ext.ISO8601)
-		}
 	} else {
 		retMap = s.Payload.afterMap
 		// We need this because there's an edge case with Debezium

@@ -72,7 +72,6 @@ func TestTopicConfig_String(t *testing.T) {
 		TableName:         "bbb",
 		Schema:            "ccc",
 		Topic:             "d",
-		IdempotentKey:     "e",
 		CDCFormat:         "f",
 		SkippedOperations: "d",
 	}
@@ -81,7 +80,6 @@ func TestTopicConfig_String(t *testing.T) {
 	assert.Contains(t, tc.String(), fmt.Sprintf("db=%s", tc.Database), tc.String())
 	assert.Contains(t, tc.String(), fmt.Sprintf("schema=%s", tc.Schema), tc.String())
 	assert.Contains(t, tc.String(), fmt.Sprintf("topic=%s", tc.Topic), tc.String())
-	assert.Contains(t, tc.String(), fmt.Sprintf("idempotentKey=%s", tc.IdempotentKey), tc.String())
 	assert.Contains(t, tc.String(), fmt.Sprintf("cdcFormat=%s", tc.CDCFormat), tc.String())
 	assert.Contains(t, tc.String(), fmt.Sprintf("skippedOperations=%s", tc.SkippedOperations), tc.String())
 }
