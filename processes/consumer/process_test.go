@@ -63,13 +63,12 @@ func TestProcessMessageFailures(t *testing.T) {
 	tcFmtMap := NewTcFmtMap()
 	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
 		tc: &kafkalib.TopicConfig{
-			Database:      db,
-			TableName:     table,
-			Schema:        schema,
-			Topic:         msg.Topic(),
-			IdempotentKey: "",
-			CDCFormat:     "",
-			CDCKeyFormat:  "",
+			Database:     db,
+			TableName:    table,
+			Schema:       schema,
+			Topic:        msg.Topic(),
+			CDCFormat:    "",
+			CDCKeyFormat: "",
 		},
 		Format: &mgo,
 	})
@@ -90,13 +89,12 @@ func TestProcessMessageFailures(t *testing.T) {
 	assert.Empty(t, tableName)
 
 	tc := &kafkalib.TopicConfig{
-		Database:      db,
-		TableName:     table,
-		Schema:        schema,
-		Topic:         msg.Topic(),
-		IdempotentKey: "",
-		CDCFormat:     "",
-		CDCKeyFormat:  "org.apache.kafka.connect.storage.StringConverter",
+		Database:     db,
+		TableName:    table,
+		Schema:       schema,
+		Topic:        msg.Topic(),
+		CDCFormat:    "",
+		CDCKeyFormat: "org.apache.kafka.connect.storage.StringConverter",
 	}
 	tc.Load()
 
@@ -243,13 +241,12 @@ func TestProcessMessageSkip(t *testing.T) {
 	tcFmtMap := NewTcFmtMap()
 	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
 		tc: &kafkalib.TopicConfig{
-			Database:      db,
-			TableName:     table,
-			Schema:        schema,
-			Topic:         msg.Topic(),
-			IdempotentKey: "",
-			CDCFormat:     "",
-			CDCKeyFormat:  "",
+			Database:     db,
+			TableName:    table,
+			Schema:       schema,
+			Topic:        msg.Topic(),
+			CDCFormat:    "",
+			CDCKeyFormat: "",
 		},
 		Format: &mgo,
 	})
@@ -259,7 +256,6 @@ func TestProcessMessageSkip(t *testing.T) {
 		TableName:         table,
 		Schema:            schema,
 		Topic:             msg.Topic(),
-		IdempotentKey:     "",
 		CDCFormat:         "",
 		CDCKeyFormat:      "org.apache.kafka.connect.storage.StringConverter",
 		SkippedOperations: "d",
