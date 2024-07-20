@@ -207,25 +207,12 @@ func (bd BigQueryDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableId
 func (bd BigQueryDialect) BuildMergeQueries(
 	tableID sql.TableIdentifier,
 	subQuery string,
-	idempotentKey string,
 	primaryKeys []columns.Column,
 	additionalEqualityStrings []string,
 	cols []columns.Column,
 	softDelete bool,
 	_ bool,
 ) ([]string, error) {
-	// We should not need idempotency key for DELETE
-	// This is based on the assumption that the primary key would be atomically increasing or UUID based
-	// With AI, the sequence will increment (never decrement). And UUID is there to prevent universal hash collision
-	// However, there may be edge cases where folks end up restoring deleted rows (which will contain the same PK).
-
-	// We also need to do staged table's idempotency key is GTE target table's idempotency key
-	// This is because Snowflake does not respect NS granularity.
-	var idempotentClause string
-	if idempotentKey != "" {
-		idempotentClause = fmt.Sprintf("AND %s.%s >= %s.%s ", constants.StagingAlias, idempotentKey, constants.TargetAlias, idempotentKey)
-	}
-
 	var equalitySQLParts []string
 	for _, primaryKey := range primaryKeys {
 		equalitySQL := sql.BuildColumnComparison(primaryKey, constants.TargetAlias, constants.StagingAlias, sql.Equal, bd)
@@ -255,17 +242,17 @@ MERGE INTO %s %s USING %s AS %s ON %s`,
 
 	if softDelete {
 		return []string{baseQuery + fmt.Sprintf(`
-WHEN MATCHED %sAND IFNULL(%s, false) = false THEN UPDATE SET %s
-WHEN MATCHED %sAND IFNULL(%s, false) = true THEN UPDATE SET %s
+WHEN MATCHED AND IFNULL(%s, false) = false THEN UPDATE SET %s
+WHEN MATCHED AND IFNULL(%s, false) = true THEN UPDATE SET %s
 WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
 			// Updating or soft-deleting when we have the previous values (update all columns)
-			// WHEN MATCHED %sAND IFNULL(%s, false) = false
-			idempotentClause, sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, bd),
+			// WHEN MATCHED AND IFNULL(%s, false) = false
+			sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, bd),
 			// THEN UPDATE SET %s
 			sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, bd),
 			// Soft deleting when we don't have the previous values (only update the __artie_delete column)
-			// WHEN MATCHED %sAND IFNULL(%s, false) = true
-			idempotentClause, sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, bd),
+			// WHEN MATCHED AND IFNULL(%s, false) = true
+			sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, bd),
 			// THEN UPDATE SET %s
 			sql.BuildColumnsUpdateFragment([]columns.Column{columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean)}, constants.StagingAlias, constants.TargetAlias, bd),
 			// Inserting
@@ -284,12 +271,12 @@ WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
 
 	return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED AND %s THEN DELETE
-WHEN MATCHED AND IFNULL(%s, false) = false %sTHEN UPDATE SET %s
+WHEN MATCHED AND IFNULL(%s, false) = false THEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s);`,
 		// WHEN MATCHED AND %s THEN DELETE
 		sql.QuotedDeleteColumnMarker(constants.StagingAlias, bd),
-		// WHEN MATCHED AND IFNULL(%s, false) = false %sTHEN UPDATE SET %s
-		sql.QuotedDeleteColumnMarker(constants.StagingAlias, bd), idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, bd),
+		// WHEN MATCHED AND IFNULL(%s, false) = false THEN UPDATE SET %s
+		sql.QuotedDeleteColumnMarker(constants.StagingAlias, bd), sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, bd),
 		// WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s)
 		sql.QuotedDeleteColumnMarker(constants.StagingAlias, bd), strings.Join(sql.QuoteColumns(cols, bd), ","),
 		// VALUES (%s);

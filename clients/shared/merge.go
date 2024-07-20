@@ -149,7 +149,6 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 	mergeStatements, err := dwh.Dialect().BuildMergeQueries(
 		tableID,
 		subQuery,
-		tableData.TopicConfig().IdempotentKey,
 		primaryKeys,
 		opts.AdditionalEqualityStrings,
 		validColumns,

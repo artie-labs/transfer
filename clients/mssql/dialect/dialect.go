@@ -179,19 +179,12 @@ func (MSSQLDialect) BuildDedupeQueries(_, _ sql.TableIdentifier, _ []string, _ b
 func (md MSSQLDialect) BuildMergeQueries(
 	tableID sql.TableIdentifier,
 	subQuery string,
-	idempotentKey string,
 	primaryKeys []columns.Column,
 	_ []string,
 	cols []columns.Column,
 	softDelete bool,
 	_ bool,
 ) ([]string, error) {
-	// TODO remove support for idempotentKey
-	var idempotentClause string
-	if idempotentKey != "" {
-		idempotentClause = fmt.Sprintf("AND %s.%s >= %s.%s ", constants.StagingAlias, idempotentKey, constants.TargetAlias, idempotentKey)
-	}
-
 	joinOn := strings.Join(sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, md), " AND ")
 	baseQuery := fmt.Sprintf(`
 MERGE INTO %s %s
@@ -209,9 +202,6 @@ USING %s AS %s ON %s`,
 		// Issue an insert statement for new rows, plus two update statements:
 		// one for rows where all columns should be updated and
 		// one for rows where only the __artie_delete column should be updated.
-		if idempotentClause != "" {
-			idempotentClause = " " + idempotentClause
-		}
 		return []string{
 			fmt.Sprintf(`
 INSERT INTO %s (%s)
@@ -229,23 +219,23 @@ WHERE %s IS NULL;`,
 			),
 			fmt.Sprintf(`
 UPDATE %s SET %s
-FROM %s AS %s LEFT JOIN %s AS %s ON %s%s
+FROM %s AS %s LEFT JOIN %s AS %s ON %s
 WHERE COALESCE(%s, 0) = 0;`,
 				// UPDATE table set [all columns]
 				constants.TargetAlias, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
 				// FROM staging AS stg LEFT JOIN target AS tgt ON tgt.pk = stg.pk
-				subQuery, constants.StagingAlias, tableID.FullyQualifiedName(), constants.TargetAlias, joinOn, idempotentClause,
+				subQuery, constants.StagingAlias, tableID.FullyQualifiedName(), constants.TargetAlias, joinOn,
 				// WHERE __artie_only_set_delete = 0
 				sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, md),
 			),
 			fmt.Sprintf(`
 UPDATE %s SET %s
-FROM %s AS %s LEFT JOIN %s AS %s ON %s%s
+FROM %s AS %s LEFT JOIN %s AS %s ON %s
 WHERE COALESCE(%s, 0) = 1;`,
 				// UPDATE table SET __artie_delete = stg.__artie_delete
 				constants.TargetAlias, sql.BuildColumnsUpdateFragment([]columns.Column{columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean)}, constants.StagingAlias, constants.TargetAlias, md),
 				// FROM staging AS stg LEFT JOIN target AS tgt ON tgt.pk = stg.pk
-				subQuery, constants.StagingAlias, tableID.FullyQualifiedName(), constants.TargetAlias, joinOn, idempotentClause,
+				subQuery, constants.StagingAlias, tableID.FullyQualifiedName(), constants.TargetAlias, joinOn,
 				// WHERE __artie_only_set_delete = 1
 				sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, md),
 			),
@@ -260,12 +250,12 @@ WHERE COALESCE(%s, 0) = 1;`,
 
 	return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED AND %s = 1 THEN DELETE
-WHEN MATCHED AND COALESCE(%s, 0) = 0 %sTHEN UPDATE SET %s
+WHEN MATCHED AND COALESCE(%s, 0) = 0 THEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
 		// WHEN MATCHED AND %s = 1 THEN DELETE
 		sql.QuotedDeleteColumnMarker(constants.StagingAlias, md),
-		// WHEN MATCHED AND COALESCE(%s, 0) = 0 %sTHEN UPDATE SET %s
-		sql.QuotedDeleteColumnMarker(constants.StagingAlias, md), idempotentClause, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
+		// WHEN MATCHED AND COALESCE(%s, 0) = 0 THEN UPDATE SET %s
+		sql.QuotedDeleteColumnMarker(constants.StagingAlias, md), sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
 		// WHEN NOT MATCHED AND COALESCE(%s, 1) = 0 THEN INSERT (%s)
 		sql.QuotedDeleteColumnMarker(constants.StagingAlias, md), strings.Join(sql.QuoteColumns(cols, md), ","),
 		// VALUES (%s);
