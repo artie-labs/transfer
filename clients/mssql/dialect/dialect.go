@@ -186,13 +186,6 @@ func (md MSSQLDialect) BuildMergeQueries(
 	_ bool,
 ) ([]string, error) {
 	joinOn := strings.Join(sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, md), " AND ")
-	baseQuery := fmt.Sprintf(`
-MERGE INTO %s %s
-USING %s AS %s ON %s`,
-		tableID.FullyQualifiedName(), constants.TargetAlias,
-		subQuery, constants.StagingAlias, joinOn,
-	)
-
 	cols, err := columns.RemoveOnlySetDeleteColumnMarker(cols)
 	if err != nil {
 		return []string{}, err
@@ -248,10 +241,16 @@ WHERE COALESCE(%s, 0) = 1;`,
 		return nil, err
 	}
 
-	return []string{baseQuery + fmt.Sprintf(`
+	return []string{fmt.Sprintf(`
+MERGE INTO %s %s
+USING %s AS %s ON %s
 WHEN MATCHED AND %s = 1 THEN DELETE
 WHEN MATCHED AND COALESCE(%s, 0) = 0 THEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
+		// MERGE INTO %s %s
+		tableID.FullyQualifiedName(), constants.TargetAlias,
+		// USING %s AS %s ON %s
+		subQuery, constants.StagingAlias, joinOn,
 		// WHEN MATCHED AND %s = 1 THEN DELETE
 		sql.QuotedDeleteColumnMarker(constants.StagingAlias, md),
 		// WHEN MATCHED AND COALESCE(%s, 0) = 0 THEN UPDATE SET %s
