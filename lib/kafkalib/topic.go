@@ -29,7 +29,6 @@ type TopicConfig struct {
 	TableName                string `yaml:"tableName"`
 	Schema                   string `yaml:"schema"`
 	Topic                    string `yaml:"topic"`
-	IdempotentKey            string `yaml:"idempotentKey,omitempty"`
 	CDCFormat                string `yaml:"cdcFormat"`
 	CDCKeyFormat             string `yaml:"cdcKeyFormat"`
 	DropDeletedColumns       bool   `yaml:"dropDeletedColumns"`
@@ -76,12 +75,11 @@ func (t TopicConfig) ShouldSkip(op string) bool {
 }
 
 func (t TopicConfig) String() string {
-	return fmt.Sprintf("db=%s, schema=%s, tableNameOverride=%s, topic=%s, idempotentKey=%s, cdcFormat=%s, dropDeletedColumns=%v, skippedOperations=%v",
-		t.Database, t.Schema, t.TableName, t.Topic, t.IdempotentKey, t.CDCFormat, t.DropDeletedColumns, t.SkippedOperations)
+	return fmt.Sprintf("db=%s, schema=%s, tableNameOverride=%s, topic=%s, cdcFormat=%s, dropDeletedColumns=%v, skippedOperations=%v",
+		t.Database, t.Schema, t.TableName, t.Topic, t.CDCFormat, t.DropDeletedColumns, t.SkippedOperations)
 }
 
 func (t TopicConfig) Validate() error {
-	// IdempotentKey is optional.
 	empty := stringutil.Empty(t.Database, t.Schema, t.Topic, t.CDCFormat)
 	if empty {
 		return fmt.Errorf("database, schema, topic or cdc format is empty")
