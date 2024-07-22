@@ -103,7 +103,7 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 		}
 
 		if kindDetails.Kind == typing.Invalid.Kind {
-			return nil, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", row[g.ColumnNameForDataType])
+			return nil, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", *row[g.ColumnNameForDataType])
 		}
 
 		col := columns.NewColumn(*row[g.ColumnNameForName], kindDetails)
