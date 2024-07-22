@@ -111,7 +111,7 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 		if comment, isOk := row[g.ColumnNameForComment]; isOk && *comment != "" {
 			var _colComment constants.ColComment
 			if err = json.Unmarshal([]byte(*comment), &_colComment); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal comment: %w", err)
+				return nil, fmt.Errorf("failed to unmarshal comment %q: %w", *comment, err)
 			}
 
 			col.SetBackfilled(_colComment.Backfilled)
