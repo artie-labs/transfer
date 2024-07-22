@@ -10,7 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -80,7 +79,7 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 			return nil, err
 		}
 
-		row := make(map[string]*string)
+		row := make(map[string]string)
 		for idx, val := range values {
 			interfaceVal, isOk := val.(*interface{})
 			if !isOk || interfaceVal == nil {
@@ -88,30 +87,27 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 			}
 
 			if *interfaceVal != nil {
-				row[columnNameList[idx]] = ptr.ToString(strings.ToLower(fmt.Sprint(*interfaceVal)))
+				row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
+			} else {
+				row[columnNameList[idx]] = ""
 			}
 		}
 
-		var stringPrecision string
-		if val, isOk := row[constants.StrPrecisionCol]; isOk {
-			stringPrecision = *val
-		}
-
-		kindDetails, err := g.Dwh.Dialect().KindForDataType(*row[g.ColumnNameForDataType], stringPrecision)
+		kindDetails, err := g.Dwh.Dialect().KindForDataType(row[g.ColumnNameForDataType], row[constants.StrPrecisionCol])
 		if err != nil {
 			return nil, fmt.Errorf("failed to get kind details: %w", err)
 		}
 
 		if kindDetails.Kind == typing.Invalid.Kind {
-			return nil, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", *row[g.ColumnNameForDataType])
+			return nil, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", row[g.ColumnNameForDataType])
 		}
 
-		col := columns.NewColumn(*row[g.ColumnNameForName], kindDetails)
+		col := columns.NewColumn(row[g.ColumnNameForName], kindDetails)
 		// We need to check to make sure the comment is not an empty string
-		if comment, isOk := row[g.ColumnNameForComment]; isOk && *comment != "" {
+		if comment, isOk := row[g.ColumnNameForComment]; isOk && comment != "" {
 			var _colComment constants.ColComment
-			if err = json.Unmarshal([]byte(*comment), &_colComment); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal comment %q: %w", *comment, err)
+			if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal comment %q: %w", comment, err)
 			}
 
 			col.SetBackfilled(_colComment.Backfilled)
