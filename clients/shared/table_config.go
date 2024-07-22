@@ -87,7 +87,6 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 				return nil, errors.New("invalid value")
 			}
 
-			fmt.Println("*interfaceVal*", interfaceVal, "row[columnNameList[idx]]", row[columnNameList[idx]])
 			if *interfaceVal != nil {
 				row[columnNameList[idx]] = ptr.ToString(strings.ToLower(fmt.Sprint(*interfaceVal)))
 			}
