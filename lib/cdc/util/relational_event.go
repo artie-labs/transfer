@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -35,7 +34,7 @@ type Source struct {
 }
 
 func (s *SchemaEventPayload) GetColumns() (*columns.Columns, error) {
-	fieldsObject := s.Schema.GetSchemaFromLabel(cdc.After)
+	fieldsObject := s.Schema.GetSchemaFromLabel(debezium.After)
 	if fieldsObject == nil {
 		// AFTER schema does not exist.
 		return nil, nil
@@ -80,7 +79,7 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 	if len(s.Payload.After) == 0 {
 		if len(s.Payload.Before) > 0 {
 			var err error
-			retMap, err = s.parseAndMutateMapInPlace(s.Payload.Before, cdc.Before)
+			retMap, err = s.parseAndMutateMapInPlace(s.Payload.Before, debezium.Before)
 			if err != nil {
 				return nil, err
 			}
@@ -101,7 +100,7 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 		}
 	} else {
 		var err error
-		retMap, err = s.parseAndMutateMapInPlace(s.Payload.After, cdc.After)
+		retMap, err = s.parseAndMutateMapInPlace(s.Payload.After, debezium.After)
 		if err != nil {
 			return nil, err
 		}
@@ -123,7 +122,7 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 // parseAndMutateMapInPlace will take `retMap` and `kind` (which part of the schema should we be inspecting) and then parse the values accordingly.
 // This will unpack any Debezium-specific values and convert them back into their original types.
 // NOTE: `retMap` and the returned object are the same object.
-func (s *SchemaEventPayload) parseAndMutateMapInPlace(retMap map[string]any, kind cdc.FieldLabelKind) (map[string]any, error) {
+func (s *SchemaEventPayload) parseAndMutateMapInPlace(retMap map[string]any, kind debezium.FieldLabelKind) (map[string]any, error) {
 	if schemaObject := s.Schema.GetSchemaFromLabel(kind); schemaObject != nil {
 		for _, field := range schemaObject.Fields {
 			fieldVal, isOk := retMap[field.FieldName]

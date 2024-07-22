@@ -132,7 +132,7 @@ func (s *SchemaEventPayload) GetOptionalSchema() map[string]typing.KindDetails {
 }
 
 func (s *SchemaEventPayload) GetColumns() (*columns.Columns, error) {
-	fieldsObject := s.Schema.GetSchemaFromLabel(cdc.After)
+	fieldsObject := s.Schema.GetSchemaFromLabel(debezium.After)
 	if fieldsObject == nil {
 		// AFTER schema does not exist.
 		return nil, nil
