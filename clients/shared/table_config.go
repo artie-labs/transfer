@@ -27,18 +27,7 @@ type GetTableCfgArgs struct {
 	ColumnNameForDataType string
 	// Description of the column (used to annotate whether we need to backfill or not)
 	ColumnNameForComment string
-	EmptyCommentValue    *string
 	DropDeletedColumns   bool
-}
-
-func (g GetTableCfgArgs) ShouldParseComment(comment string) bool {
-	if g.EmptyCommentValue != nil && comment == *g.EmptyCommentValue {
-		return false
-	}
-
-	// Snowflake and Redshift both will return `<nil>` if the comment does not exist, this will check the value.
-	// BigQuery returns ""
-	return true
 }
 
 func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
@@ -97,28 +86,32 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 				return nil, errors.New("invalid value")
 			}
 
-			row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
+			var value string
+			if *interfaceVal != nil {
+				value = strings.ToLower(fmt.Sprint(*interfaceVal))
+			}
+
+			row[columnNameList[idx]] = value
 		}
 
 		kindDetails, err := g.Dwh.Dialect().KindForDataType(row[g.ColumnNameForDataType], row[constants.StrPrecisionCol])
 		if err != nil {
 			return nil, fmt.Errorf("failed to get kind details: %w", err)
 		}
+
 		if kindDetails.Kind == typing.Invalid.Kind {
 			return nil, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", row[g.ColumnNameForDataType])
 		}
 
 		col := columns.NewColumn(row[g.ColumnNameForName], kindDetails)
-		comment, isOk := row[g.ColumnNameForComment]
-		if isOk && g.ShouldParseComment(comment) {
-			// Try to parse the comment.
+		// We need to check to make sure the comment is not an empty string
+		if comment, isOk := row[g.ColumnNameForComment]; isOk && comment != "" {
 			var _colComment constants.ColComment
 			if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal comment: %w", err)
+				return nil, fmt.Errorf("failed to unmarshal comment %q: %w", comment, err)
 			}
 
 			col.SetBackfilled(_colComment.Backfilled)
-
 		}
 
 		cols.AddColumn(col)
