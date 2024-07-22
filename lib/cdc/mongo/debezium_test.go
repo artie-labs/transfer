@@ -6,7 +6,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
 
-	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -522,7 +521,7 @@ func (m *MongoTestSuite) TestMongoDBEventWithSchema() {
 	schemaEvt, isOk := evt.(*SchemaEventPayload)
 	assert.True(m.T(), isOk)
 	assert.Equal(m.T(), schemaEvt.Schema.SchemaType, "struct")
-	assert.Equal(m.T(), schemaEvt.Schema.GetSchemaFromLabel(cdc.Source).Fields[0], debezium.Field{
+	assert.Equal(m.T(), schemaEvt.Schema.GetSchemaFromLabel(debezium.Source).Fields[0], debezium.Field{
 		Optional:     false,
 		FieldName:    "version",
 		DebeziumType: "",

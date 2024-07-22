@@ -1,7 +1,6 @@
 package debezium
 
 import (
-	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -14,7 +13,7 @@ type Schema struct {
 	FieldsObject []FieldsObject `json:"fields"`
 }
 
-func (s *Schema) GetSchemaFromLabel(kind cdc.FieldLabelKind) *FieldsObject {
+func (s *Schema) GetSchemaFromLabel(kind FieldLabelKind) *FieldsObject {
 	for _, fieldObject := range s.FieldsObject {
 		if fieldObject.FieldLabel == kind {
 			return &fieldObject
@@ -32,8 +31,8 @@ type FieldsObject struct {
 	Fields []Field `json:"fields"`
 
 	// Whether this block for "after", "before", exists
-	Optional   bool               `json:"optional"`
-	FieldLabel cdc.FieldLabelKind `json:"field"`
+	Optional   bool           `json:"optional"`
+	FieldLabel FieldLabelKind `json:"field"`
 }
 
 type FieldType string
