@@ -31,9 +31,6 @@ import (
 
 const (
 	GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
-	describeNameCol               = "column_name"
-	describeTypeCol               = "data_type"
-	describeCommentCol            = "description"
 	// Storage Write API is limited to 10 MiB, subtract 250 KiB to account for request overhead.
 	maxRequestByteSize = (10 * 1024 * 1024) - (250 * 1024)
 )
@@ -113,16 +110,16 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sq
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	query := fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name = ?;", tableData.TopicConfig().Database)
 	return shared.GetTableCfgArgs{
-		Dwh:                s,
-		TableID:            s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
-		ConfigMap:          s.configMap,
-		Query:              query,
-		Args:               []any{tableData.Name()},
-		ColumnNameLabel:    describeNameCol,
-		ColumnTypeLabel:    describeTypeCol,
-		ColumnDescLabel:    describeCommentCol,
-		EmptyCommentValue:  ptr.ToString(""),
-		DropDeletedColumns: tableData.TopicConfig().DropDeletedColumns,
+		Dwh:                   s,
+		TableID:               s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
+		ConfigMap:             s.configMap,
+		Query:                 query,
+		Args:                  []any{tableData.Name()},
+		ColumnNameForName:     "column_name",
+		ColumnNameForDataType: "data_type",
+		ColumnnameForComment:  "description",
+		EmptyCommentValue:     ptr.ToString(""),
+		DropDeletedColumns:    tableData.TopicConfig().DropDeletedColumns,
 	}.GetTableConfig()
 }
 
