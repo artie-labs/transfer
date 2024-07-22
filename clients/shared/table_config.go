@@ -22,13 +22,13 @@ type GetTableCfgArgs struct {
 	Query     string
 	Args      []any
 	// Name of the column
-	ColumnNameLabel string
+	ColumnNameForName string
 	// Column type
-	ColumnTypeLabel string
+	ColumnNameForDataType string
 	// Description of the column (used to annotate whether we need to backfill or not)
-	ColumnDescLabel    string
-	EmptyCommentValue  *string
-	DropDeletedColumns bool
+	ColumnNameForComment string
+	EmptyCommentValue    *string
+	DropDeletedColumns   bool
 }
 
 func (g GetTableCfgArgs) ShouldParseComment(comment string) bool {
@@ -100,16 +100,16 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 			row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
 		}
 
-		kindDetails, err := g.Dwh.Dialect().KindForDataType(row[g.ColumnTypeLabel], row[constants.StrPrecisionCol])
+		kindDetails, err := g.Dwh.Dialect().KindForDataType(row[g.ColumnNameForDataType], row[constants.StrPrecisionCol])
 		if err != nil {
 			return nil, fmt.Errorf("failed to get kind details: %w", err)
 		}
 		if kindDetails.Kind == typing.Invalid.Kind {
-			return nil, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", row[g.ColumnTypeLabel])
+			return nil, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", row[g.ColumnNameForDataType])
 		}
 
-		col := columns.NewColumn(row[g.ColumnNameLabel], kindDetails)
-		comment, isOk := row[g.ColumnDescLabel]
+		col := columns.NewColumn(row[g.ColumnNameForName], kindDetails)
+		comment, isOk := row[g.ColumnNameForComment]
 		if isOk && g.ShouldParseComment(comment) {
 			// Try to parse the comment.
 			var _colComment constants.ColComment
