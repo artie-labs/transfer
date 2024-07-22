@@ -14,7 +14,6 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 )
 
@@ -71,7 +70,6 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		ColumnNameForName:     "column_name",
 		ColumnNameForDataType: "data_type",
 		ColumnNameForComment:  "description",
-		EmptyCommentValue:     ptr.ToString("<nil>"),
 		DropDeletedColumns:    tableData.TopicConfig().DropDeletedColumns,
 	}.GetTableConfig()
 }

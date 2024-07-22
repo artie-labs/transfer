@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/ptr"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -27,18 +29,7 @@ type GetTableCfgArgs struct {
 	ColumnNameForDataType string
 	// Description of the column (used to annotate whether we need to backfill or not)
 	ColumnNameForComment string
-	EmptyCommentValue    *string
 	DropDeletedColumns   bool
-}
-
-func (g GetTableCfgArgs) ShouldParseComment(comment string) bool {
-	if g.EmptyCommentValue != nil && comment == *g.EmptyCommentValue {
-		return false
-	}
-
-	// Snowflake and Redshift both will return `<nil>` if the comment does not exist, this will check the value.
-	// BigQuery returns ""
-	return true
 }
 
 func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
@@ -90,35 +81,41 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 			return nil, err
 		}
 
-		row := make(map[string]string)
+		row := make(map[string]*string)
 		for idx, val := range values {
 			interfaceVal, isOk := val.(*interface{})
 			if !isOk || interfaceVal == nil {
 				return nil, errors.New("invalid value")
 			}
 
-			row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
+			if *interfaceVal != nil {
+				row[columnNameList[idx]] = ptr.ToString(strings.ToLower(fmt.Sprint(*interfaceVal)))
+			}
 		}
 
-		kindDetails, err := g.Dwh.Dialect().KindForDataType(row[g.ColumnNameForDataType], row[constants.StrPrecisionCol])
+		var stringPrecision string
+		if val, isOk := row[constants.StrPrecisionCol]; isOk {
+			stringPrecision = *val
+		}
+
+		kindDetails, err := g.Dwh.Dialect().KindForDataType(*row[g.ColumnNameForDataType], stringPrecision)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get kind details: %w", err)
 		}
+
 		if kindDetails.Kind == typing.Invalid.Kind {
 			return nil, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", row[g.ColumnNameForDataType])
 		}
 
-		col := columns.NewColumn(row[g.ColumnNameForName], kindDetails)
-		comment, isOk := row[g.ColumnNameForComment]
-		if isOk && g.ShouldParseComment(comment) {
+		col := columns.NewColumn(*row[g.ColumnNameForName], kindDetails)
+		if comment, isOk := row[g.ColumnNameForComment]; isOk {
 			// Try to parse the comment.
 			var _colComment constants.ColComment
-			if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
+			if err = json.Unmarshal([]byte(*comment), &_colComment); err != nil {
 				return nil, fmt.Errorf("failed to unmarshal comment: %w", err)
 			}
 
 			col.SetBackfilled(_colComment.Backfilled)
-
 		}
 
 		cols.AddColumn(col)
