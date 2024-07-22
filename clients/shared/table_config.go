@@ -7,11 +7,10 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/ptr"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -88,6 +87,7 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 				return nil, errors.New("invalid value")
 			}
 
+			fmt.Println("*interfaceVal*", interfaceVal, "row[columnNameList[idx]]", row[columnNameList[idx]])
 			if *interfaceVal != nil {
 				row[columnNameList[idx]] = ptr.ToString(strings.ToLower(fmt.Sprint(*interfaceVal)))
 			}
@@ -108,8 +108,8 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 		}
 
 		col := columns.NewColumn(*row[g.ColumnNameForName], kindDetails)
-		if comment, isOk := row[g.ColumnNameForComment]; isOk {
-			// Try to parse the comment.
+		// We need to check to make sure the comment is not an empty string
+		if comment, isOk := row[g.ColumnNameForComment]; isOk && *comment != "" {
 			var _colComment constants.ColComment
 			if err = json.Unmarshal([]byte(*comment), &_colComment); err != nil {
 				return nil, fmt.Errorf("failed to unmarshal comment: %w", err)
