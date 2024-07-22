@@ -7,8 +7,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/debezium"
 
-	"github.com/artie-labs/transfer/lib/cdc"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -256,12 +254,12 @@ func TestSchemaEventPayload_ParseAndMutateMapInPlace(t *testing.T) {
 							FieldName: "id",
 						},
 					},
-					FieldLabel: cdc.After,
+					FieldLabel: debezium.After,
 				},
 			},
 		},
 	}
-	returnedMap, err := schemaEventPayload.parseAndMutateMapInPlace(mapToPassIn, cdc.After)
+	returnedMap, err := schemaEventPayload.parseAndMutateMapInPlace(mapToPassIn, debezium.After)
 	assert.NoError(t, err)
 	assert.Equal(t, mapToPassIn, returnedMap)
 	assert.Equal(t, int64(123), mapToPassIn["id"])

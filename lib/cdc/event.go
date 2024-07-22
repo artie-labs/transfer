@@ -26,15 +26,3 @@ type Event interface {
 	// GetColumns will inspect the envelope's payload right now and return.
 	GetColumns() (*columns.Columns, error)
 }
-
-// FieldLabelKind is used when the schema is turned on. Each schema object will be labelled.
-type FieldLabelKind string
-
-const (
-	Before      FieldLabelKind = "before"
-	After       FieldLabelKind = "after"
-	Source      FieldLabelKind = "source"
-	Op          FieldLabelKind = "op"
-	TsMs        FieldLabelKind = "ts_ms"
-	Transaction FieldLabelKind = "transaction"
-)
