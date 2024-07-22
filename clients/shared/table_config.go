@@ -86,11 +86,12 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 				return nil, errors.New("invalid value")
 			}
 
+			var value string
 			if *interfaceVal != nil {
-				row[columnNameList[idx]] = strings.ToLower(fmt.Sprint(*interfaceVal))
-			} else {
-				row[columnNameList[idx]] = ""
+				value = strings.ToLower(fmt.Sprint(*interfaceVal))
 			}
+
+			row[columnNameList[idx]] = value
 		}
 
 		kindDetails, err := g.Dwh.Dialect().KindForDataType(row[g.ColumnNameForDataType], row[constants.StrPrecisionCol])
