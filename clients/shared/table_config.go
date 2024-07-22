@@ -26,7 +26,7 @@ type GetTableCfgArgs struct {
 	// Column type
 	ColumnNameForDataType string
 	// Description of the column (used to annotate whether we need to backfill or not)
-	ColumnnameForComment string
+	ColumnNameForComment string
 	EmptyCommentValue    *string
 	DropDeletedColumns   bool
 }
@@ -109,7 +109,7 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 		}
 
 		col := columns.NewColumn(row[g.ColumnNameForName], kindDetails)
-		comment, isOk := row[g.ColumnnameForComment]
+		comment, isOk := row[g.ColumnNameForComment]
 		if isOk && g.ShouldParseComment(comment) {
 			// Try to parse the comment.
 			var _colComment constants.ColComment

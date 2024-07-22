@@ -40,7 +40,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 		Query:                 fmt.Sprintf("DESC TABLE %s;", tableID.FullyQualifiedName()),
 		ColumnNameForName:     "name",
 		ColumnNameForDataType: "type",
-		ColumnnameForComment:  "comment",
+		ColumnNameForComment:  "comment",
 		EmptyCommentValue:     ptr.ToString("<nil>"),
 		DropDeletedColumns:    tableData.TopicConfig().DropDeletedColumns,
 	}.GetTableConfig()
