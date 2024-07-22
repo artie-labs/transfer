@@ -61,26 +61,16 @@ func (s *Store) AdditionalDateFormats() []string {
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	const (
-		describeNameCol        = "column_name"
-		describeTypeCol        = "data_type"
-		describeDescriptionCol = "description"
-	)
-
-	query, args := describeTableQuery(describeArgs{
-		RawTableName: tableData.Name(),
-		Schema:       tableData.TopicConfig().Schema,
-	})
-
+	query, args := describeTableQuery(tableData.TopicConfig().Schema, tableData.Name())
 	return shared.GetTableCfgArgs{
 		Dwh:                   s,
 		TableID:               s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
 		ConfigMap:             s.configMap,
 		Query:                 query,
 		Args:                  args,
-		ColumnNameForName:     describeNameCol,
-		ColumnNameForDataType: describeTypeCol,
-		ColumnnameForComment:  describeDescriptionCol,
+		ColumnNameForName:     "column_name",
+		ColumnNameForDataType: "data_type",
+		ColumnnameForComment:  "description",
 		EmptyCommentValue:     ptr.ToString("<nil>"),
 		DropDeletedColumns:    tableData.TopicConfig().DropDeletedColumns,
 	}.GetTableConfig()

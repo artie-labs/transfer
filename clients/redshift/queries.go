@@ -6,12 +6,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
-type describeArgs struct {
-	RawTableName string
-	Schema       string
-}
-
-func describeTableQuery(args describeArgs) (string, []any) {
+func describeTableQuery(schema, tableName string) (string, []any) {
 	// This query is a modified fork from: https://gist.github.com/alexanderlz/7302623
 	return fmt.Sprintf(`
 SELECT 
@@ -33,6 +28,6 @@ LEFT JOIN
 LEFT JOIN 
     PG_CATALOG.PG_DESCRIPTION d ON d.objsubid = c.ordinal_position AND d.objoid = c1.oid 
 WHERE 
-    LOWER(c.table_name) = LOWER($1) AND LOWER(c.table_schema) = LOWER($2);
-`, constants.StrPrecisionCol), []any{args.RawTableName, args.Schema}
+    LOWER(c.table_schema) = LOWER($1) AND LOWER(c.table_name) = LOWER($2);
+`, constants.StrPrecisionCol), []any{schema, tableName}
 }
