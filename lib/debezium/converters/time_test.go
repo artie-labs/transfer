@@ -43,3 +43,34 @@ func TestConvertDateTimeWithTimezone(t *testing.T) {
 		assert.Equal(t, expectedExtTime, val)
 	}
 }
+
+func TestConvertTimeWithTimezone(t *testing.T) {
+	{
+		// What Debezium would produce
+		ts, err := ConvertTimeWithTimezone("23:02:06.745116Z")
+		assert.NoError(t, err)
+		expectedTs := &ext.ExtendedTime{
+			Time: time.Date(0, 1, 1, 23, 2, 6, 745116000, time.UTC),
+			NestedKind: ext.NestedKind{
+				Type:   ext.TimeKindType,
+				Format: "15:04:05.000000Z",
+			},
+		}
+
+		assert.Equal(t, expectedTs, ts)
+	}
+	{
+		// What Reader would produce
+		ts, err := ConvertTimeWithTimezone("23:02:06.745116")
+		assert.NoError(t, err)
+		expectedTs := &ext.ExtendedTime{
+			Time: time.Date(0, 1, 1, 23, 2, 6, 745116000, time.UTC),
+			NestedKind: ext.NestedKind{
+				Type:   ext.TimeKindType,
+				Format: "15:04:05.000000",
+			},
+		}
+
+		assert.Equal(t, expectedTs, ts)
+	}
+}

@@ -3,6 +3,7 @@ package converters
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
@@ -32,4 +33,22 @@ func ConvertDateTimeWithTimezone(value any) (*ext.ExtendedTime, error) {
 	}
 
 	return nil, fmt.Errorf("failed to parse %q, err: %w", dtString, err)
+}
+
+func ConvertTimeWithTimezone(value any) (*ext.ExtendedTime, error) {
+	valString, isOk := value.(string)
+	if !isOk {
+		return nil, fmt.Errorf("expected string got '%v' with type %T", value, value)
+	}
+
+	var err error
+	var ts time.Time
+	for _, supportedTimeFormat := range ext.SupportedTimeWithTimezoneFormats {
+		ts, err = ext.ParseTimeExactMatch(supportedTimeFormat, valString)
+		if err == nil {
+			return ext.NewExtendedTime(ts, ext.TimeKindType, supportedTimeFormat), nil
+		}
+	}
+
+	return nil, fmt.Errorf("failed to parse %q: %w", valString, err)
 }

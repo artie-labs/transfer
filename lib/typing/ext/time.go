@@ -82,11 +82,3 @@ func (e *ExtendedTime) String(overrideFormat string) string {
 
 	return e.Time.Format(e.NestedKind.Format)
 }
-
-func (e *ExtendedTime) StringUTC(overrideFormat string) string {
-	if overrideFormat != "" {
-		return e.Time.In(time.UTC).Format(overrideFormat)
-	}
-
-	return e.Time.In(time.UTC).Format(e.NestedKind.Format)
-}

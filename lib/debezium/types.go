@@ -135,6 +135,8 @@ func (f Field) ParseValue(value any) (any, error) {
 		return f.DecodeDebeziumVariableDecimal(value)
 	case DateTimeWithTimezone:
 		return converters.ConvertDateTimeWithTimezone(value)
+	case TimeWithTimezone:
+		return converters.ConvertTimeWithTimezone(value)
 	case
 		Timestamp,
 		MicroTimestamp,

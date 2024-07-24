@@ -24,10 +24,25 @@ func ParseFromInterface(val any, additionalDateFormats []string) (*ExtendedTime,
 	return extendedTime, nil
 }
 
-// ParseTimeExactMatch is a wrapper around time.Parse() and will return an extra boolean to indicate if it was an exact match or not.
+// ParseTimeExactMatch - This function is the same as `ParseTimeExactMatchLegacy` with the only exception that it'll return if it was not an exact match
+func ParseTimeExactMatch(layout, potentialDateTimeString string) (time.Time, error) {
+	ts, err := time.Parse(layout, potentialDateTimeString)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	if ts.Format(layout) != potentialDateTimeString {
+		return time.Time{}, fmt.Errorf("failed to parse %q with layout %q", potentialDateTimeString, layout)
+	}
+
+	return ts, nil
+}
+
+// TODO: Remove callers from this.
+// ParseTimeExactMatchLegacy is a wrapper around time.Parse() and will return an extra boolean to indicate if it was an exact match or not.
 // Parameters: layout, potentialDateTimeString
 // Returns: time.Time object, exactLayout (boolean), error
-func ParseTimeExactMatch(layout, potentialDateTimeString string) (time.Time, bool, error) {
+func ParseTimeExactMatchLegacy(layout, potentialDateTimeString string) (time.Time, bool, error) {
 	ts, err := time.Parse(layout, potentialDateTimeString)
 	if err != nil {
 		return ts, false, err
@@ -51,7 +66,7 @@ func ParseExtendedDateTime(dtString string, additionalDateFormats []string) (*Ex
 	var potentialFormat string
 	var potentialTime time.Time
 	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
-		ts, exactMatch, err := ParseTimeExactMatch(supportedDateTimeLayout, dtString)
+		ts, exactMatch, err := ParseTimeExactMatchLegacy(supportedDateTimeLayout, dtString)
 		if err == nil {
 			potentialFormat = supportedDateTimeLayout
 			potentialTime = ts
@@ -63,18 +78,17 @@ func ParseExtendedDateTime(dtString string, additionalDateFormats []string) (*Ex
 
 	// Now check DATE formats, btw you can append nil arrays
 	for _, supportedDateFormat := range append(supportedDateFormats, additionalDateFormats...) {
-		ts, exactMatch, err := ParseTimeExactMatch(supportedDateFormat, dtString)
+		ts, exactMatch, err := ParseTimeExactMatchLegacy(supportedDateFormat, dtString)
 		if err == nil && exactMatch {
 			return NewExtendedTime(ts, DateKindType, supportedDateFormat), nil
 		}
 	}
 
 	// Now check TIME formats
-	for _, supportedTimeFormat := range supportedTimeFormats {
-		ts, exactMatch, err := ParseTimeExactMatch(supportedTimeFormat, dtString)
+	for _, supportedTimeFormat := range SupportedTimeFormatsLegacy {
+		ts, exactMatch, err := ParseTimeExactMatchLegacy(supportedTimeFormat, dtString)
 		if err == nil && exactMatch {
 			return NewExtendedTime(ts, TimeKindType, supportedTimeFormat), nil
-
 		}
 	}
 
