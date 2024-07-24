@@ -1,4 +1,4 @@
-package debezium
+package converters
 
 import (
 	"encoding/base64"
@@ -28,10 +28,10 @@ type GeometricShapes string
 
 const Point GeometricShapes = "Point"
 
-// ParseGeometry takes in a map[string]any and returns a GeoJSON string.
+// ParseGeometryPoint takes in a map[string]any and returns a GeoJSON string.
 // This function does not use WKB or SRID and leverages X, Y.
 // https://debezium.io/documentation/reference/stable/connectors/postgresql.html#:~:text=io.debezium.data.geometry.Point
-func parseGeometryPoint(value any) (string, error) {
+func ParseGeometryPoint(value any) (string, error) {
 	valMap, isOk := value.(map[string]any)
 	if !isOk {
 		return "", fmt.Errorf("value is not map[string]any type")
@@ -63,8 +63,8 @@ func parseGeometryPoint(value any) (string, error) {
 	return string(bytes), nil
 }
 
-// parseGeometry will take in an object with b64 encoded wkb and return a GeoJSON string.
-func parseGeometry(value any) (string, error) {
+// ParseGeometry will take in an object with b64 encoded wkb and return a GeoJSON string.
+func ParseGeometry(value any) (string, error) {
 	valMap, isOk := value.(map[string]any)
 	if !isOk {
 		return "", fmt.Errorf("value is not map[string]any type")
