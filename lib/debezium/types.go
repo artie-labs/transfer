@@ -5,14 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/debezium/converters"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/debezium/converters"
 	"github.com/artie-labs/transfer/lib/jsonutil"
-	"github.com/artie-labs/transfer/lib/typing/decimal"
-
 	"github.com/artie-labs/transfer/lib/maputil"
-
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
