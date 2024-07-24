@@ -186,16 +186,6 @@ func (f Field) ParseValue(value any) (any, error) {
 		return base64.StdEncoding.EncodeToString(bytes), nil
 	}
 
-	switch f.Type {
-	case Int16, Int32, Int64:
-		value, ok := value.(int64)
-		if !ok {
-			return nil, fmt.Errorf("expected int64 got '%v' with type %T", value, value)
-		}
-
-		return value, nil
-	}
-
 	return value, nil
 }
 
