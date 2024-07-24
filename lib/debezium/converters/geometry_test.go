@@ -1,4 +1,4 @@
-package debezium
+package converters
 
 import (
 	"testing"
@@ -8,7 +8,7 @@ import (
 
 func TestParseGeometryPoint(t *testing.T) {
 	{
-		geoJSONString, err := parseGeometryPoint(map[string]any{
+		geoJSONString, err := ParseGeometryPoint(map[string]any{
 			"x":    2.2945,
 			"y":    48.8584,
 			"wkb":  "AQEAAABCYOXQIlsCQHZxGw3gbUhA",
@@ -22,7 +22,7 @@ func TestParseGeometryPoint(t *testing.T) {
 
 func TestGeometryWkb(t *testing.T) {
 	{
-		geoJSONString, err := parseGeometry(map[string]any{
+		geoJSONString, err := ParseGeometry(map[string]any{
 			"wkb":  "AQEAAAAAAAAAAADwPwAAAAAAAPA/",
 			"srid": nil,
 		})

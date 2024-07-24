@@ -122,9 +122,9 @@ func (f Field) ParseValue(value any) (any, error) {
 		}
 		return jsonutil.SanitizePayload(value)
 	case GeometryType, GeographyType:
-		return parseGeometry(value)
+		return converters.ParseGeometry(value)
 	case GeometryPointType:
-		return parseGeometryPoint(value)
+		return converters.ParseGeometryPoint(value)
 	case KafkaDecimalType:
 		bytes, err := toBytes(value)
 		if err != nil {
