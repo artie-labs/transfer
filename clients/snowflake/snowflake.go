@@ -14,7 +14,6 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 )
 
@@ -86,23 +85,9 @@ func (s *Store) reestablishConnection() error {
 		return nil
 	}
 
-	cfg := &gosnowflake.Config{
-		Account:     s.config.Snowflake.AccountID,
-		User:        s.config.Snowflake.Username,
-		Password:    s.config.Snowflake.Password,
-		Warehouse:   s.config.Snowflake.Warehouse,
-		Region:      s.config.Snowflake.Region,
-		Application: s.config.Snowflake.Application,
-		Params: map[string]*string{
-			// https://docs.snowflake.com/en/sql-reference/parameters#abort-detached-query
-			"ABORT_DETACHED_QUERY": ptr.ToString("true"),
-		},
-	}
-
-	if s.config.Snowflake.Host != "" {
-		// If the host is specified
-		cfg.Host = s.config.Snowflake.Host
-		cfg.Region = ""
+	cfg, err := s.config.Snowflake.ToConfig()
+	if err != nil {
+		return fmt.Errorf("faield to get snowflake config: %w", err)
 	}
 
 	dsn, err := gosnowflake.DSN(cfg)

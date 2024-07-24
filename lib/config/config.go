@@ -94,16 +94,6 @@ type SharedTransferConfig struct {
 	TypingSettings typing.Settings `yaml:"typingSettings"`
 }
 
-type Snowflake struct {
-	AccountID   string `yaml:"account"`
-	Username    string `yaml:"username"`
-	Password    string `yaml:"password"`
-	Warehouse   string `yaml:"warehouse"`
-	Region      string `yaml:"region"`
-	Host        string `yaml:"host"`
-	Application string `yaml:"application"`
-}
-
 func (p *Pubsub) String() string {
 	return fmt.Sprintf("project_id=%s, pathToCredentials=%s", p.ProjectID, p.PathToCredentials)
 }
