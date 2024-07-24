@@ -3,8 +3,9 @@ package debezium
 import (
 	"encoding/base64"
 	"fmt"
-	"strings"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/debezium/converters"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/jsonutil"
@@ -136,30 +137,7 @@ func (f Field) ParseValue(value any) (any, error) {
 	case KafkaVariableNumericType:
 		return f.DecodeDebeziumVariableDecimal(value)
 	case DateTimeWithTimezone:
-		dtString, isOk := value.(string)
-		if !isOk {
-			return nil, fmt.Errorf("expected string got '%v' with type %T", value, value)
-		}
-
-		// We don't need to pass `additionalDateFormats` because this data type layout is standardized by Debezium
-		extTime, err := ext.ParseExtendedDateTime(dtString, nil)
-		if err == nil {
-			return extTime, nil
-		}
-
-		// Check for negative years
-		if strings.HasPrefix(dtString, "-") {
-			return nil, nil
-		}
-
-		if parts := strings.Split(dtString, "-"); len(parts) == 3 {
-			// Check if year exceeds 9999
-			if len(parts[0]) > 4 {
-				return nil, nil
-			}
-		}
-
-		return nil, fmt.Errorf("failed to parse %q, err: %w", dtString, err)
+		return converters.ConvertDateTimeWithTimezone(value)
 	case
 		Timestamp,
 		MicroTimestamp,
@@ -247,15 +225,16 @@ func (f Field) DecodeDecimal(encoded []byte) (*decimal.Decimal, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get scale and/or precision: %w", err)
 	}
+
 	_decimal := DecodeDecimal(encoded, scale)
 	if precision == nil {
 		return decimal.NewDecimal(_decimal), nil
-	} else {
-		return decimal.NewDecimalWithPrecision(_decimal, *precision), nil
 	}
+
+	return decimal.NewDecimalWithPrecision(_decimal, *precision), nil
 }
 
-func (f Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error) {
+func (Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error) {
 	valueStruct, isOk := value.(map[string]any)
 	if !isOk {
 		return nil, fmt.Errorf("value is not map[string]any type")
@@ -275,5 +254,6 @@ func (f Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error
 	if err != nil {
 		return nil, err
 	}
+
 	return decimal.NewDecimal(DecodeDecimal(bytes, scale)), nil
 }
