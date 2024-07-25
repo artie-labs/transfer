@@ -65,4 +65,10 @@ func TestConvertTimeWithTimezone(t *testing.T) {
 
 		assert.Equal(t, expectedTs, ts)
 	}
+	{
+		// Non UTC
+		ts, err := ConvertTimeWithTimezone("23:02:06.745116")
+		assert.ErrorContains(t, err, `failed to parse "23:02:06.745116"`)
+		assert.Nil(t, ts)
+	}
 }

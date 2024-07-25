@@ -25,7 +25,7 @@ func ParseFromInterface(val any, additionalDateFormats []string) (*ExtendedTime,
 	return extendedTime, nil
 }
 
-// ParseTimeExactMatch - This function is the same as `ParseTimeExactMatchLegacy` with the only exception that it'll return if it was not an exact match
+// ParseTimeExactMatch - This function is the same as `ParseTimeExactMatchLegacy` with the only exception that it'll return an error if it was not an exact match
 func ParseTimeExactMatch(layout, potentialDateTimeString string) (time.Time, error) {
 	ts, err := time.Parse(layout, potentialDateTimeString)
 	if err != nil {
