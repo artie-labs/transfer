@@ -37,16 +37,9 @@ var SupportedTimeFormatsLegacy = []string{
 }
 
 var SupportedTimeWithTimezoneFormats = []string{
-	// Debezium will emit `Z` for UTC time
 	"15:04:05Z",        // w/o fractional seconds
 	"15:04:05.000Z",    // ms
 	"15:04:05.000000Z", // microseconds
-
-	// TODO: Get Reader to be consistent with Debezium
-	// Reader will omit ts locale
-	"15:04:05",        // w/o fractional seconds
-	"15:04:05.000",    // ms
-	"15:04:05.000000", // microseconds
 }
 
 func NewUTCTime(layout string) string {
