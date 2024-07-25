@@ -2,6 +2,7 @@ package ext
 
 import (
 	"fmt"
+	"log/slog"
 	"time"
 )
 
@@ -84,10 +85,15 @@ func ParseExtendedDateTime(dtString string, additionalDateFormats []string) (*Ex
 		}
 	}
 
+	// TODO: Remove this if we don't see any Sentry.
 	// Now check TIME formats
 	for _, supportedTimeFormat := range SupportedTimeFormatsLegacy {
 		ts, exactMatch, err := ParseTimeExactMatchLegacy(supportedTimeFormat, dtString)
 		if err == nil && exactMatch {
+			slog.Error("Unexpected call to SupportedTimeFormatsLegacy",
+				slog.String("dtString", dtString),
+				slog.String("supportedTimeFormat", supportedTimeFormat),
+			)
 			return NewExtendedTime(ts, TimeKindType, supportedTimeFormat), nil
 		}
 	}
