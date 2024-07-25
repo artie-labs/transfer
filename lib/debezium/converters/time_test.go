@@ -70,5 +70,10 @@ func TestConvertTimeWithTimezone(t *testing.T) {
 		ts, err := ConvertTimeWithTimezone("23:02:06.745116")
 		assert.ErrorContains(t, err, `failed to parse "23:02:06.745116"`)
 		assert.Nil(t, ts)
+
+		// Providing timezone offset
+		ts, err = ConvertTimeWithTimezone("23:02:06.745116Z-07:00")
+		assert.ErrorContains(t, err, `failed to parse "23:02:06.745116Z-07:00": parsing time "23:02:06.745116Z-07:00": extra text: "-07:00"`)
+		assert.Nil(t, ts)
 	}
 }
