@@ -36,12 +36,6 @@ var SupportedTimeFormatsLegacy = []string{
 	AdditionalTimeFormat,
 }
 
-var SupportedTimeWithTimezoneFormats = []string{
-	"15:04:05Z",        // w/o fractional seconds
-	"15:04:05.000Z",    // ms
-	"15:04:05.000000Z", // microseconds
-}
-
 func NewUTCTime(layout string) string {
 	return time.Now().UTC().Format(layout)
 }
