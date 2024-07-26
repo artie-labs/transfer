@@ -9,6 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
+
 type DateTimeWithTimezone struct{}
 
 func (DateTimeWithTimezone) ToKindDetails() typing.KindDetails {
@@ -47,6 +48,7 @@ var SupportedTimeWithTimezoneFormats = []string{
 	"15:04:05.000Z",    // ms
 	"15:04:05.000000Z", // microseconds
 }
+
 
 type TimeWithTimezone struct{}
 
