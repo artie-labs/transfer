@@ -97,6 +97,8 @@ func (f Field) ToKindDetails() typing.KindDetails {
 		return converter.ToKindDetails()
 	}
 
+	// TODO: Deprecate this in favor of the converters
+
 	// We'll first cast based on Debezium types
 	// Then, we'll fall back on the actual data types.
 	switch f.DebeziumType {
