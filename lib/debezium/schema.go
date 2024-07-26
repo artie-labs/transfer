@@ -86,6 +86,8 @@ func (f Field) ToValueConverter() converters.ValueConverter {
 		return converters.DateTimeWithTimezone{}
 	case TimeWithTimezone:
 		return converters.TimeWithTimezone{}
+	case GeometryPointType:
+		return converters.GeometryPoint{}
 	}
 
 	return nil
