@@ -8,7 +8,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func ConvertDateTimeWithTimezone(value any) (*ext.ExtendedTime, error) {
+func ConvertDateTimeWithTimezone(value any) (any, error) {
 	dtString, isOk := value.(string)
 	if !isOk {
 		return nil, fmt.Errorf("expected string got '%v' with type %T", value, value)
@@ -41,7 +41,7 @@ var SupportedTimeWithTimezoneFormats = []string{
 	"15:04:05.000000Z", // microseconds
 }
 
-func ConvertTimeWithTimezone(value any) (*ext.ExtendedTime, error) {
+func ConvertTimeWithTimezone(value any) (any, error) {
 	valString, isOk := value.(string)
 	if !isOk {
 		return nil, fmt.Errorf("expected string got '%v' with type %T", value, value)
