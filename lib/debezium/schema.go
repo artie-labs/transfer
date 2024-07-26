@@ -108,7 +108,7 @@ func (f Field) ToKindDetails() typing.KindDetails {
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType)
 	case Time, MicroTime, NanoTime, TimeKafkaConnect:
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
-	case JSON, GeometryPointType, GeometryType, GeographyType:
+	case JSON, GeometryType, GeographyType:
 		return typing.Struct
 	case KafkaDecimalType:
 		scale, precisionPtr, err := f.GetScaleAndPrecision()

@@ -8,13 +8,15 @@ import (
 
 func TestParseGeometryPoint(t *testing.T) {
 	{
-		geoJSONString, err := ParseGeometryPoint(map[string]any{
+		geoJSON, err := GeometryPoint{}.Convert(map[string]any{
 			"x":    2.2945,
 			"y":    48.8584,
 			"wkb":  "AQEAAABCYOXQIlsCQHZxGw3gbUhA",
 			"srid": nil,
 		})
 
+		geoJSONString, isOk := geoJSON.(string)
+		assert.True(t, isOk)
 		assert.NoError(t, err)
 		assert.Equal(t, `{"type":"Feature","geometry":{"type":"Point","coordinates":[2.2945,48.8584]}}`, geoJSONString)
 	}
