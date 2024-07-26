@@ -37,16 +37,18 @@ const (
 	MicroTimestamp       SupportedDebeziumType = "io.debezium.time.MicroTimestamp"
 	NanoTimestamp        SupportedDebeziumType = "io.debezium.time.NanoTimestamp"
 	Date                 SupportedDebeziumType = "io.debezium.time.Date"
-	Time                 SupportedDebeziumType = "io.debezium.time.Time"
-	MicroTime            SupportedDebeziumType = "io.debezium.time.MicroTime"
-	NanoTime             SupportedDebeziumType = "io.debezium.time.NanoTime"
 	Year                 SupportedDebeziumType = "io.debezium.time.Year"
-	TimeWithTimezone     SupportedDebeziumType = "io.debezium.time.ZonedTime"
 	DateTimeWithTimezone SupportedDebeziumType = "io.debezium.time.ZonedTimestamp"
 	MicroDuration        SupportedDebeziumType = "io.debezium.time.MicroDuration"
 	DateKafkaConnect     SupportedDebeziumType = "org.apache.kafka.connect.data.Date"
-	TimeKafkaConnect     SupportedDebeziumType = "org.apache.kafka.connect.data.Time"
 	DateTimeKafkaConnect SupportedDebeziumType = "org.apache.kafka.connect.data.Timestamp"
+
+	// All the possible time data types
+	Time             SupportedDebeziumType = "io.debezium.time.Time"
+	MicroTime        SupportedDebeziumType = "io.debezium.time.MicroTime"
+	NanoTime         SupportedDebeziumType = "io.debezium.time.NanoTime"
+	TimeWithTimezone SupportedDebeziumType = "io.debezium.time.ZonedTime"
+	TimeKafkaConnect SupportedDebeziumType = "org.apache.kafka.connect.data.Time"
 
 	KafkaDecimalType         SupportedDebeziumType = "org.apache.kafka.connect.data.Decimal"
 	KafkaVariableNumericType SupportedDebeziumType = "io.debezium.data.VariableScaleDecimal"
@@ -135,6 +137,8 @@ func (f Field) ParseValue(value any) (any, error) {
 		return f.DecodeDebeziumVariableDecimal(value)
 	case DateTimeWithTimezone:
 		return converters.ConvertDateTimeWithTimezone(value)
+	case TimeWithTimezone:
+		return converters.ConvertTimeWithTimezone(value)
 	case
 		Timestamp,
 		MicroTimestamp,
