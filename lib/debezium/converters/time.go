@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
@@ -41,7 +42,13 @@ var SupportedTimeWithTimezoneFormats = []string{
 	"15:04:05.000000Z", // microseconds
 }
 
-func ConvertTimeWithTimezone(value any) (*ext.ExtendedTime, error) {
+type TimeWithTimezone struct{}
+
+func (TimeWithTimezone) ToKindDetails() typing.KindDetails {
+	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
+}
+
+func (TimeWithTimezone) Convert(value any) (any, error) {
 	valString, isOk := value.(string)
 	if !isOk {
 		return nil, fmt.Errorf("expected string got '%v' with type %T", value, value)

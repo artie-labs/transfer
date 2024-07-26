@@ -45,15 +45,18 @@ func TestConvertDateTimeWithTimezone(t *testing.T) {
 }
 
 func TestConvertTimeWithTimezone(t *testing.T) {
+
 	{
 		// Invalid
-		ts, err := ConvertTimeWithTimezone("23:02")
+		ts, err := TimeWithTimezone{}.Convert("23:02")
 		assert.Nil(t, ts)
 		assert.ErrorContains(t, err, `failed to parse "23:02": parsing time`)
 	}
 	{
 		// What Debezium + Reader would produce
-		ts, err := ConvertTimeWithTimezone("23:02:06.745116Z")
+		val, err := TimeWithTimezone{}.Convert("23:02:06.745116Z")
+		ts, isOk := val.(*ext.ExtendedTime)
+		assert.True(t, isOk)
 		assert.NoError(t, err)
 		expectedTs := &ext.ExtendedTime{
 			Time: time.Date(0, 1, 1, 23, 2, 6, 745116000, time.UTC),
@@ -67,12 +70,12 @@ func TestConvertTimeWithTimezone(t *testing.T) {
 	}
 	{
 		// Non UTC
-		ts, err := ConvertTimeWithTimezone("23:02:06.745116")
+		ts, err := TimeWithTimezone{}.Convert("23:02:06.745116")
 		assert.ErrorContains(t, err, `failed to parse "23:02:06.745116"`)
 		assert.Nil(t, ts)
 
 		// Providing timezone offset
-		ts, err = ConvertTimeWithTimezone("23:02:06.745116Z-07:00")
+		ts, err = TimeWithTimezone{}.Convert("23:02:06.745116Z-07:00")
 		assert.ErrorContains(t, err, `failed to parse "23:02:06.745116Z-07:00": parsing time "23:02:06.745116Z-07:00": extra text: "-07:00"`)
 		assert.Nil(t, ts)
 	}

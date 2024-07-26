@@ -117,6 +117,10 @@ func (f Field) ParseValue(value any) (any, error) {
 		}
 	}
 
+	if converter := f.ToValueConverter(); converter != nil {
+		return converter.Convert(value)
+	}
+
 	switch f.DebeziumType {
 	case JSON:
 		if value == constants.ToastUnavailableValuePlaceholder {
@@ -137,8 +141,6 @@ func (f Field) ParseValue(value any) (any, error) {
 		return f.DecodeDebeziumVariableDecimal(value)
 	case DateTimeWithTimezone:
 		return converters.ConvertDateTimeWithTimezone(value)
-	case TimeWithTimezone:
-		return converters.ConvertTimeWithTimezone(value)
 	case
 		Timestamp,
 		MicroTimestamp,
