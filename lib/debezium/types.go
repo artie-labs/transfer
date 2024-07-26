@@ -139,8 +139,6 @@ func (f Field) ParseValue(value any) (any, error) {
 		return f.DecodeDecimal(bytes)
 	case KafkaVariableNumericType:
 		return f.DecodeDebeziumVariableDecimal(value)
-	case DateTimeWithTimezone:
-		return converters.ConvertDateTimeWithTimezone(value)
 	case
 		Timestamp,
 		MicroTimestamp,

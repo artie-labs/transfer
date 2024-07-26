@@ -82,6 +82,8 @@ func (f Field) GetScaleAndPrecision() (int32, *int32, error) {
 
 func (f Field) ToValueConverter() converters.ValueConverter {
 	switch f.DebeziumType {
+	case DateTimeWithTimezone:
+		return converters.DateTimeWithTimezone{}
 	case TimeWithTimezone:
 		return converters.TimeWithTimezone{}
 	}
@@ -98,7 +100,7 @@ func (f Field) ToKindDetails() typing.KindDetails {
 	// We'll first cast based on Debezium types
 	// Then, we'll fall back on the actual data types.
 	switch f.DebeziumType {
-	case Timestamp, MicroTimestamp, NanoTimestamp, DateTimeKafkaConnect, DateTimeWithTimezone:
+	case Timestamp, MicroTimestamp, NanoTimestamp, DateTimeKafkaConnect:
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)
 	case Date, DateKafkaConnect:
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType)

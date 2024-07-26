@@ -12,25 +12,28 @@ import (
 func TestConvertDateTimeWithTimezone(t *testing.T) {
 	{
 		// Invalid data
-		_, err := ConvertDateTimeWithTimezone(123)
+		_, err := DateTimeWithTimezone{}.Convert(123)
 		assert.ErrorContains(t, err, "expected string got '123' with type int")
 	}
 	{
 		// Edge case (Year exceeds 9999)
-		val, err := ConvertDateTimeWithTimezone("+275760-09-13T00:00:00.000000Z")
+		val, err := DateTimeWithTimezone{}.Convert("+275760-09-13T00:00:00.000000Z")
 		assert.NoError(t, err)
 		assert.Nil(t, val)
 	}
 	{
 		// Edge case (Negative year)
-		val, err := ConvertDateTimeWithTimezone("-0999-10-10T10:10:10.000000Z")
+		val, err := DateTimeWithTimezone{}.Convert("-0999-10-10T10:10:10.000000Z")
 		assert.NoError(t, err)
 		assert.Nil(t, val)
 	}
 	{
 		// Valid
-		val, err := ConvertDateTimeWithTimezone("2025-09-13T00:00:00.000000Z")
+		val, err := DateTimeWithTimezone{}.Convert("2025-09-13T00:00:00.000000Z")
 		assert.NoError(t, err)
+
+		ts, isOk := val.(*ext.ExtendedTime)
+		assert.True(t, isOk)
 
 		expectedExtTime := &ext.ExtendedTime{
 			Time: time.Date(2025, time.September, 13, 0, 0, 0, 0, time.UTC),
@@ -40,12 +43,11 @@ func TestConvertDateTimeWithTimezone(t *testing.T) {
 			},
 		}
 
-		assert.Equal(t, expectedExtTime, val)
+		assert.Equal(t, expectedExtTime, ts)
 	}
 }
 
 func TestConvertTimeWithTimezone(t *testing.T) {
-
 	{
 		// Invalid
 		ts, err := TimeWithTimezone{}.Convert("23:02")

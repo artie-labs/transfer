@@ -9,7 +9,13 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func ConvertDateTimeWithTimezone(value any) (*ext.ExtendedTime, error) {
+type DateTimeWithTimezone struct{}
+
+func (DateTimeWithTimezone) ToKindDetails() typing.KindDetails {
+	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)
+}
+
+func (DateTimeWithTimezone) Convert(value any) (any, error) {
 	dtString, isOk := value.(string)
 	if !isOk {
 		return nil, fmt.Errorf("expected string got '%v' with type %T", value, value)
