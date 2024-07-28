@@ -56,7 +56,7 @@ func (s *storeWrapper) Begin() (*sql.Tx, error) {
 }
 
 func (s *storeWrapper) IsRetryableError(err error) bool {
-	return retryableError(err)
+	return isRetryableError(err)
 }
 
 func Open(driverName, dsn string) (Store, error) {
