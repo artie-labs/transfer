@@ -117,6 +117,10 @@ func (f Field) ParseValue(value any) (any, error) {
 		}
 	}
 
+	if converter := f.ToValueConverter(); converter != nil {
+		return converter.Convert(value)
+	}
+
 	switch f.DebeziumType {
 	case JSON:
 		if value == constants.ToastUnavailableValuePlaceholder {
@@ -125,8 +129,6 @@ func (f Field) ParseValue(value any) (any, error) {
 		return jsonutil.SanitizePayload(value)
 	case GeometryType, GeographyType:
 		return converters.ParseGeometry(value)
-	case GeometryPointType:
-		return converters.ParseGeometryPoint(value)
 	case KafkaDecimalType:
 		bytes, err := toBytes(value)
 		if err != nil {
@@ -135,10 +137,6 @@ func (f Field) ParseValue(value any) (any, error) {
 		return f.DecodeDecimal(bytes)
 	case KafkaVariableNumericType:
 		return f.DecodeDebeziumVariableDecimal(value)
-	case DateTimeWithTimezone:
-		return converters.ConvertDateTimeWithTimezone(value)
-	case TimeWithTimezone:
-		return converters.ConvertTimeWithTimezone(value)
 	case
 		Timestamp,
 		MicroTimestamp,

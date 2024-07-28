@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/twpayne/go-geom/encoding/ewkb"
 	"github.com/twpayne/go-geom/encoding/geojson"
 )
@@ -28,10 +29,15 @@ type GeometricShapes string
 
 const Point GeometricShapes = "Point"
 
-// ParseGeometryPoint takes in a map[string]any and returns a GeoJSON string.
-// This function does not use WKB or SRID and leverages X, Y.
+type GeometryPoint struct{}
+
+func (GeometryPoint) ToKindDetails() typing.KindDetails {
+	return typing.Struct
+}
+
+// Convert takes in a map[string]any and returns a GeoJSON string. This function does not use WKB or SRID and leverages X, Y.
 // https://debezium.io/documentation/reference/stable/connectors/postgresql.html#:~:text=io.debezium.data.geometry.Point
-func ParseGeometryPoint(value any) (string, error) {
+func (GeometryPoint) Convert(value any) (any, error) {
 	valMap, isOk := value.(map[string]any)
 	if !isOk {
 		return "", fmt.Errorf("value is not map[string]any type")

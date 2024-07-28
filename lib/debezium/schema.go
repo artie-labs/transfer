@@ -1,6 +1,7 @@
 package debezium
 
 import (
+	"github.com/artie-labs/transfer/lib/debezium/converters"
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -79,17 +80,37 @@ func (f Field) GetScaleAndPrecision() (int32, *int32, error) {
 	return scale, precisionPtr, nil
 }
 
+func (f Field) ToValueConverter() converters.ValueConverter {
+	switch f.DebeziumType {
+	case DateTimeWithTimezone:
+		return converters.DateTimeWithTimezone{}
+	case TimeWithTimezone:
+		return converters.TimeWithTimezone{}
+	case GeometryPointType:
+		return converters.GeometryPoint{}
+	}
+
+	return nil
+}
+
 func (f Field) ToKindDetails() typing.KindDetails {
+	// Prioritize converters
+	if converter := f.ToValueConverter(); converter != nil {
+		return converter.ToKindDetails()
+	}
+
+	// TODO: Deprecate this in favor of the converters
+
 	// We'll first cast based on Debezium types
 	// Then, we'll fall back on the actual data types.
 	switch f.DebeziumType {
-	case Timestamp, MicroTimestamp, NanoTimestamp, DateTimeKafkaConnect, DateTimeWithTimezone:
+	case Timestamp, MicroTimestamp, NanoTimestamp, DateTimeKafkaConnect:
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)
 	case Date, DateKafkaConnect:
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType)
-	case Time, MicroTime, NanoTime, TimeKafkaConnect, TimeWithTimezone:
+	case Time, MicroTime, NanoTime, TimeKafkaConnect:
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
-	case JSON, GeometryPointType, GeometryType, GeographyType:
+	case JSON, GeometryType, GeographyType:
 		return typing.Struct
 	case KafkaDecimalType:
 		scale, precisionPtr, err := f.GetScaleAndPrecision()
