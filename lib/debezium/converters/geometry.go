@@ -12,7 +12,7 @@ import (
 
 type GeoJSON struct {
 	Type       GeoJSONType    `json:"type"`
-	Geometry   Geometry       `json:"geometry"`
+	Geometry   GeometryJSON   `json:"geometry"`
 	Properties map[string]any `json:"properties,omitempty"`
 }
 
@@ -20,7 +20,7 @@ type GeoJSONType string
 
 const FeatureType GeoJSONType = "Feature"
 
-type Geometry struct {
+type GeometryJSON struct {
 	Type        GeometricShapes `json:"type"`
 	Coordinates any             `json:"coordinates"`
 }
@@ -55,7 +55,7 @@ func (GeometryPoint) Convert(value any) (any, error) {
 
 	geoJSON := GeoJSON{
 		Type: FeatureType,
-		Geometry: Geometry{
+		Geometry: GeometryJSON{
 			Type:        Point,
 			Coordinates: []any{x, y},
 		},
@@ -69,14 +69,14 @@ func (GeometryPoint) Convert(value any) (any, error) {
 	return string(bytes), nil
 }
 
-type Geography struct{}
+type Geometry struct{}
 
-func (Geography) ToKindDetails() typing.KindDetails {
+func (Geometry) ToKindDetails() typing.KindDetails {
 	// We will return this in GeoJSON format.
 	return typing.Struct
 }
 
-func (Geography) Convert(value any) (any, error) {
+func (Geometry) Convert(value any) (any, error) {
 	valMap, isOk := value.(map[string]any)
 	if !isOk {
 		return "", fmt.Errorf("value is not map[string]any type")

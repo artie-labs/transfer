@@ -89,7 +89,7 @@ func (f Field) ToValueConverter() converters.ValueConverter {
 	case GeometryPointType:
 		return converters.GeometryPoint{}
 	case GeographyType, GeometryType:
-		return converters.Geography{}
+		return converters.Geometry{}
 	case JSON:
 		return converters.JSON{}
 	}
