@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRetryable_Errors(t *testing.T) {
+func TestIsRetryable_Errors(t *testing.T) {
 	type _tc struct {
 		name           string
 		err            error
@@ -49,7 +49,7 @@ func TestRetryable_Errors(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		actualErr := retryableError(tc.err)
+		actualErr := isRetryableError(tc.err)
 		assert.Equal(t, tc.expectedResult, actualErr, tc.name)
 	}
 }
