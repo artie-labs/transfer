@@ -40,7 +40,7 @@ func (s *storeWrapper) Exec(query string, args ...any) (sql.Result, error) {
 		}
 
 		result, err = s.DB.Exec(query, args...)
-		if err == nil || !retryableError(err) {
+		if err == nil || !s.IsRetryableError(err) {
 			break
 		}
 	}
@@ -56,7 +56,7 @@ func (s *storeWrapper) Begin() (*sql.Tx, error) {
 }
 
 func (s *storeWrapper) IsRetryableError(err error) bool {
-	return retryableError(err)
+	return isRetryableError(err)
 }
 
 func Open(driverName, dsn string) (Store, error) {
