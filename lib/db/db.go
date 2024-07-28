@@ -40,7 +40,7 @@ func (s *storeWrapper) Exec(query string, args ...any) (sql.Result, error) {
 		}
 
 		result, err = s.DB.Exec(query, args...)
-		if err == nil || !retryableError(err) {
+		if err == nil || !s.IsRetryableError(err) {
 			break
 		}
 	}
