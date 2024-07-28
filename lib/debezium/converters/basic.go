@@ -1,6 +1,8 @@
 package converters
 
 import (
+	"fmt"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/jsonutil"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -9,11 +11,16 @@ import (
 type JSON struct{}
 
 func (JSON) Convert(value any) (any, error) {
-	if value == constants.ToastUnavailableValuePlaceholder {
+	valueString, isOk := value.(string)
+	if !isOk {
+		return nil, fmt.Errorf("expected string, got %T", value)
+	}
+
+	if valueString == constants.ToastUnavailableValuePlaceholder {
 		return value, nil
 	}
 
-	return jsonutil.SanitizePayload(value)
+	return jsonutil.SanitizePayload(valueString)
 }
 
 func (JSON) ToKindDetails() typing.KindDetails {

@@ -10,12 +10,6 @@ import (
 
 func TestSanitizePayload(t *testing.T) {
 	{
-		// Don't touch if the value isn't a string
-		val, err := SanitizePayload(123)
-		assert.ErrorContains(t, err, "expected string, got: int")
-		assert.Equal(t, 123, val)
-	}
-	{
 		// Invalid JSON string
 		_, err := SanitizePayload("hello")
 		assert.ErrorContains(t, err, "invalid character 'h' looking for beginning of value")

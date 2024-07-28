@@ -2,24 +2,18 @@ package jsonutil
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
 // SanitizePayload will take in a JSON string, and return a JSON string that has been sanitized (removed duplicate keys)
-func SanitizePayload(val any) (any, error) {
-	valString, isOk := val.(string)
-	if !isOk {
-		return val, fmt.Errorf("expected string, got: %T", val)
-	}
-
+func SanitizePayload(val string) (any, error) {
 	// There are edge cases for when this may happen
 	// Example: JSONB column in a table in Postgres where the table replica identity is set to `default` and it was a delete event.
-	if valString == "" {
+	if val == "" {
 		return "", nil
 	}
 
 	var obj any
-	if err := json.Unmarshal([]byte(valString), &obj); err != nil {
+	if err := json.Unmarshal([]byte(val), &obj); err != nil {
 		return nil, err
 	}
 
