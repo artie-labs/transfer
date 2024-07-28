@@ -88,6 +88,10 @@ func (f Field) ToValueConverter() converters.ValueConverter {
 		return converters.TimeWithTimezone{}
 	case GeometryPointType:
 		return converters.GeometryPoint{}
+	case GeographyType, GeometryType:
+		return converters.Geography{}
+	case JSON:
+		return converters.JSON{}
 	}
 
 	return nil
@@ -110,8 +114,6 @@ func (f Field) ToKindDetails() typing.KindDetails {
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType)
 	case Time, MicroTime, NanoTime, TimeKafkaConnect:
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
-	case JSON, GeometryType, GeographyType:
-		return typing.Struct
 	case KafkaDecimalType:
 		scale, precisionPtr, err := f.GetScaleAndPrecision()
 		if err != nil {

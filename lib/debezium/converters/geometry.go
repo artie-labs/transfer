@@ -69,8 +69,14 @@ func (GeometryPoint) Convert(value any) (any, error) {
 	return string(bytes), nil
 }
 
-// ParseGeometry will take in an object with b64 encoded wkb and return a GeoJSON string.
-func ParseGeometry(value any) (string, error) {
+type Geography struct{}
+
+func (Geography) ToKindDetails() typing.KindDetails {
+	// We will return this in GeoJSON format.
+	return typing.Struct
+}
+
+func (Geography) Convert(value any) (any, error) {
 	valMap, isOk := value.(map[string]any)
 	if !isOk {
 		return "", fmt.Errorf("value is not map[string]any type")

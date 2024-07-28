@@ -24,7 +24,7 @@ func TestParseGeometryPoint(t *testing.T) {
 
 func TestGeometryWkb(t *testing.T) {
 	{
-		geoJSONString, err := ParseGeometry(map[string]any{
+		geoJSONString, err := Geography{}.Convert(map[string]any{
 			"wkb":  "AQEAAAAAAAAAAADwPwAAAAAAAPA/",
 			"srid": nil,
 		})
