@@ -92,6 +92,10 @@ func (f Field) ToValueConverter() converters.ValueConverter {
 		return converters.Geometry{}
 	case JSON:
 		return converters.JSON{}
+	case Date, DateKafkaConnect:
+		return converters.Date{}
+	case Time, TimeKafkaConnect:
+		return converters.Time{}
 	}
 
 	return nil
@@ -110,9 +114,7 @@ func (f Field) ToKindDetails() typing.KindDetails {
 	switch f.DebeziumType {
 	case Timestamp, MicroTimestamp, NanoTimestamp, DateTimeKafkaConnect:
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)
-	case Date, DateKafkaConnect:
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType)
-	case Time, MicroTime, NanoTime, TimeKafkaConnect:
+	case MicroTime, NanoTime:
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
 	case KafkaDecimalType:
 		scale, precisionPtr, err := f.GetScaleAndPrecision()

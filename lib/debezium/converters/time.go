@@ -9,6 +9,22 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
+type Time struct{}
+
+func (Time) ToKindDetails() typing.KindDetails {
+	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
+}
+
+func (Time) Convert(val any) (any, error) {
+	valInt64, isOk := val.(int64)
+	if !isOk {
+		return nil, fmt.Errorf("expected int64 got '%v' with type %T", val, val)
+	}
+
+	// Represents the number of milliseconds past midnight, and does not include timezone information.
+	return ext.NewExtendedTime(time.UnixMilli(valInt64).In(time.UTC), ext.TimeKindType, ""), nil
+}
+
 type DateTimeWithTimezone struct{}
 
 func (DateTimeWithTimezone) ToKindDetails() typing.KindDetails {
