@@ -2,17 +2,10 @@ package redshift
 
 import (
 	"fmt"
-	"testing"
 
 	"github.com/artie-labs/transfer/lib/ptr"
 
 	"github.com/artie-labs/transfer/lib/stringutil"
-
-	"github.com/artie-labs/transfer/lib/db"
-
-	"github.com/artie-labs/transfer/lib/config"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 
@@ -21,136 +14,53 @@ import (
 )
 
 func (r *RedshiftTestSuite) TestReplaceExceededValues() {
-	type _tc struct {
-		name           string
-		colVal         string
-		colKind        columns.Column
-		expectedResult string
+	{
+		// Masked, reached the DDL limit
+		assert.Equal(r.T(), constants.ExceededValueMarker, replaceExceededValues(stringutil.Random(int(maxRedshiftLength)+1), typing.String))
 	}
+	{
+		// Masked, reached the string precision limit
+		stringKd := typing.KindDetails{
+			Kind:                    typing.String.Kind,
+			OptionalStringPrecision: ptr.ToInt32(3),
+		}
 
-	tcs := []_tc{
-		{
-			name:   "string",
-			colVal: stringutil.Random(int(maxRedshiftLength) + 1),
-			colKind: columns.Column{
-				KindDetails: typing.String,
-			},
-			expectedResult: constants.ExceededValueMarker,
-		},
-		{
-			name:   "string (specified string precision)",
-			colVal: "hello dusty",
-			colKind: columns.Column{
-				KindDetails: typing.KindDetails{
-					Kind:                    typing.String.Kind,
-					OptionalStringPrecision: ptr.ToInt32(3),
-				},
-			},
-			expectedResult: constants.ExceededValueMarker,
-		},
-		{
-			name:   "string - not masked",
-			colVal: "thisissuperlongbutnotlongenoughtogetmasked",
-			colKind: columns.Column{
-				KindDetails: typing.String,
-			},
-			expectedResult: "thisissuperlongbutnotlongenoughtogetmasked",
-		},
-		{
-			name:   "struct",
-			colVal: fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(int(maxRedshiftLength)+1)),
-			colKind: columns.Column{
-				KindDetails: typing.Struct,
-			},
-			expectedResult: fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker),
-		},
-		{
-			name:   "string, but the data type is a SUPER",
-			colVal: stringutil.Random(int(maxRedshiftLength) + 1),
-			colKind: columns.Column{
-				KindDetails: typing.Struct,
-			},
-			expectedResult: fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker),
-		},
-		{
-			name:   "struct - not masked",
-			colVal: `{"foo": "bar"}`,
-			colKind: columns.Column{
-				KindDetails: typing.Struct,
-			},
-			expectedResult: `{"foo": "bar"}`,
-		},
+		assert.Equal(r.T(), constants.ExceededValueMarker, replaceExceededValues("hello", stringKd))
 	}
-
-	for _, tc := range tcs {
-		assert.Equal(r.T(), tc.expectedResult, replaceExceededValues(tc.colVal, tc.colKind), tc.name)
+	{
+		// Struct and masked
+		assert.Equal(r.T(), fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker), replaceExceededValues(fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(int(maxRedshiftLength)+1)), typing.Struct))
+	}
+	{
+		// Not masked
+		assert.Equal(r.T(), `{"foo": "bar"}`, replaceExceededValues(`{"foo": "bar"}`, typing.Struct))
+		assert.Equal(r.T(), "hello world", replaceExceededValues("hello world", typing.String))
 	}
 }
 
-type _testCase struct {
-	name    string
-	colVal  any
-	colKind columns.Column
-
-	expectedString string
-	errorMessage   string
-}
-
-func evaluateTestCase(t *testing.T, store *Store, testCase _testCase) {
-	actualString, actualErr := store.CastColValStaging(testCase.colVal, testCase.colKind, nil)
-	if len(testCase.errorMessage) > 0 {
-		assert.ErrorContains(t, actualErr, testCase.errorMessage, testCase.name)
-	} else {
-		assert.NoError(t, actualErr, testCase.name)
-		assert.Equal(t, testCase.expectedString, actualString, testCase.name)
+func (r *RedshiftTestSuite) TestCastColValStaging() {
+	{
+		// Masked
+		value, err := castColValStaging(stringutil.Random(int(maxRedshiftLength)+1), typing.String, nil)
+		assert.NoError(r.T(), err)
+		assert.Equal(r.T(), constants.ExceededValueMarker, value)
 	}
-}
-
-func (r *RedshiftTestSuite) TestCastColValStaging_ExceededValues() {
-	testCases := []_testCase{
-		{
-			name:   "string",
-			colVal: stringutil.Random(int(maxRedshiftLength) + 1),
-			colKind: columns.Column{
-				KindDetails: typing.String,
-			},
-			expectedString: "__artie_exceeded_value",
-		},
-		{
-			name:   "string",
-			colVal: "thisissuperlongbutnotlongenoughtogetmasked",
-			colKind: columns.Column{
-				KindDetails: typing.String,
-			},
-			expectedString: "thisissuperlongbutnotlongenoughtogetmasked",
-		},
-		{
-			name:   "struct",
-			colVal: map[string]any{"foo": stringutil.Random(int(maxRedshiftLength) + 1)},
-			colKind: columns.Column{
-				KindDetails: typing.Struct,
-			},
-			expectedString: `{"key":"__artie_exceeded_value"}`,
-		},
-		{
-			name:   "struct",
-			colVal: map[string]any{"foo": stringutil.Random(int(maxRedshiftLength) + 1)},
-			colKind: columns.Column{
-				KindDetails: typing.Struct,
-			},
-			expectedString: `{"key":"__artie_exceeded_value"}`,
-		},
+	{
+		// Valid
+		value, err := castColValStaging("thisissuperlongbutnotlongenoughtogetmasked", typing.String, nil)
+		assert.NoError(r.T(), err)
+		assert.Equal(r.T(), "thisissuperlongbutnotlongenoughtogetmasked", value)
 	}
-
-	cfg := config.Config{
-		Redshift: &config.Redshift{},
+	{
+		// Masked struct
+		value, err := castColValStaging(fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(int(maxRedshiftLength)+1)), typing.Struct, nil)
+		assert.NoError(r.T(), err)
+		assert.Equal(r.T(), fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker), value)
 	}
-
-	store := db.Store(r.fakeStore)
-	skipLargeRowsStore, err := LoadRedshift(cfg, &store)
-	assert.NoError(r.T(), err)
-
-	for _, testCase := range testCases {
-		evaluateTestCase(r.T(), skipLargeRowsStore, testCase)
+	{
+		// Valid struct
+		value, err := castColValStaging(`{"foo": "bar"}`, typing.Struct, nil)
+		assert.NoError(r.T(), err)
+		assert.Equal(r.T(), `{"foo": "bar"}`, value)
 	}
 }
