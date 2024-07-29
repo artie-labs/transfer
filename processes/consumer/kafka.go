@@ -104,11 +104,12 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 				}
 
 				tableName, processErr := args.process(ctx, cfg, inMemDB, dest, metricsClient)
+				if processErr != nil {
+					logger.Fatal("Failed to process message", slog.Any("err", processErr))
+				}
+
 				msg.EmitIngestionLag(metricsClient, cfg.Mode, kafkaConsumer.Config().GroupID, tableName)
 				msg.EmitRowLag(metricsClient, cfg.Mode, kafkaConsumer.Config().GroupID, tableName)
-				if processErr != nil {
-					slog.With(artie.KafkaMsgLogFields(kafkaMsg)...).Warn("Skipping message...", slog.Any("err", processErr))
-				}
 			}
 		}(topic)
 	}
