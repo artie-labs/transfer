@@ -87,13 +87,6 @@ func StartSubscriber(ctx context.Context, cfg config.Config, inMemDB *models.Dat
 			for {
 				err = sub.Receive(ctx, func(_ context.Context, pubsubMsg *gcp_pubsub.Message) {
 					msg := artie.NewMessage(nil, pubsubMsg, topic)
-					logFields := []any{
-						slog.String("topic", msg.Topic()),
-						slog.String("msgID", msg.PubSub.ID),
-						slog.String("key", string(msg.Key())),
-						slog.String("value", string(msg.Value())),
-					}
-
 					args := processArgs{
 						Msg:                    msg,
 						GroupID:                subName,
