@@ -103,7 +103,7 @@ func StartSubscriber(ctx context.Context, cfg config.Config, inMemDB *models.Dat
 					tableName, processErr := args.process(ctx, cfg, inMemDB, dest, metricsClient)
 					msg.EmitIngestionLag(metricsClient, cfg.Mode, subName, tableName)
 					if processErr != nil {
-						slog.With(logFields...).Warn("Skipping message...", slog.Any("err", processErr))
+						logger.Fatal("Failed to process message", slog.Any("err", processErr))
 					}
 				})
 
