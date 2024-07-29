@@ -258,6 +258,13 @@ func TestBsonValueToGoValue(t *testing.T) {
 		assert.Equal(t, map[string]any{"$code": "function() {return 0.10;}"}, result)
 	}
 	{
+		// primitive.CodeWithScope
+		code := primitive.CodeWithScope{Code: "function() {return 0.10;}", Scope: true}
+		result, err := bsonValueToGoValue(code)
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]any{"$code": "function() {return 0.10;}", "$scope": true}, result)
+	}
+	{
 		// something totally random
 		type randomDataType struct{}
 		_, err := bsonValueToGoValue(randomDataType{})

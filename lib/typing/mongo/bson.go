@@ -103,6 +103,8 @@ func bsonValueToGoValue(value any) (any, error) {
 		return map[string]any{"$minKey": 1}, nil
 	case primitive.JavaScript:
 		return map[string]any{"$code": string(v)}, nil
+	case primitive.CodeWithScope:
+		return map[string]any{"$code": string(v.Code), "$scope": v.Scope}, nil
 	case
 		nil,
 		bool,
