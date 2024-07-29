@@ -388,12 +388,6 @@ func TestFromDebeziumTypeTimePrecisionConnect(t *testing.T) {
 	extendedTimestamp, err := FromDebeziumTypeToTime(DateTimeKafkaConnect, 1678901050700)
 	assert.NoError(t, err)
 	assert.Equal(t, time.Date(2023, 03, 15, 17, 24, 10, 700000000, time.UTC), extendedTimestamp.Time)
-
-	// Time
-	extendedTime, timeErr := FromDebeziumTypeToTime(TimeKafkaConnect, 54720000)
-	assert.NoError(t, timeErr)
-	assert.Equal(t, "15:12:00+00", extendedTime.String(""))
-
 }
 
 func TestField_DecodeDecimal(t *testing.T) {

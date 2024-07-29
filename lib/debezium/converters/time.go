@@ -17,7 +17,7 @@ func (Time) ToKindDetails() typing.KindDetails {
 
 func (Time) Convert(val any) (any, error) {
 	valInt64, isOk := val.(int64)
-	if isOk {
+	if !isOk {
 		return nil, fmt.Errorf("expected int64 got '%v' with type %T", val, val)
 	}
 
