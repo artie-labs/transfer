@@ -12,17 +12,16 @@ import (
 )
 
 type DataWarehouse interface {
+	Baseline
+
+	// SQL specific commands
 	Dialect() sqllib.Dialect
-	Merge(tableData *optimization.TableData) error
-	Append(tableData *optimization.TableData, useTempTable bool) error
 	Dedupe(tableID sqllib.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error
 	Exec(query string, args ...any) (sql.Result, error)
 	Query(query string, args ...any) (*sql.Rows, error)
 	Begin() (*sql.Tx, error)
 
 	// Helper functions for merge
-	IsRetryableError(err error) bool
-	IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sqllib.TableIdentifier
 	AdditionalDateFormats() []string
 	GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error)
 	PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sqllib.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error
