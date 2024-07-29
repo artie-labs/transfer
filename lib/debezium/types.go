@@ -131,14 +131,9 @@ func (f Field) ParseValue(value any) (any, error) {
 		Timestamp,
 		MicroTimestamp,
 		NanoTimestamp,
-		Date,
-		Time,
 		NanoTime,
 		MicroTime,
-		DateKafkaConnect,
-		TimeKafkaConnect,
 		DateTimeKafkaConnect:
-
 		int64Value, ok := value.(int64)
 		if !ok {
 			return nil, fmt.Errorf("expected int64 got '%v' with type %T", value, value)
