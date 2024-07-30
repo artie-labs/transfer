@@ -6,24 +6,20 @@ import (
 	"reflect"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-
-	"github.com/artie-labs/transfer/lib/debezium"
-
-	"github.com/artie-labs/transfer/lib/typing/ext"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/debezium"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/artie-labs/transfer/lib/typing/mongo"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Debezium string
 
-func (d *Debezium) GetEventFromBytes(typingSettings typing.Settings, bytes []byte) (cdc.Event, error) {
+func (d *Debezium) GetEventFromBytes(bytes []byte) (cdc.Event, error) {
 	var schemaEventPayload SchemaEventPayload
 	if len(bytes) == 0 {
 		return nil, fmt.Errorf("empty message")

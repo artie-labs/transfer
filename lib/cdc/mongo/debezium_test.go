@@ -8,8 +8,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
-	"github.com/artie-labs/transfer/lib/typing"
-
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/stretchr/testify/assert"
 )
@@ -113,7 +111,7 @@ func (m *MongoTestSuite) TestMongoDBEventOrder() {
 }
 `
 
-	evt, err := m.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
+	evt, err := m.Debezium.GetEventFromBytes([]byte(payload))
 	assert.NoError(m.T(), err)
 
 	schemaEvt, isOk := evt.(*SchemaEventPayload)
@@ -154,7 +152,7 @@ func (m *MongoTestSuite) TestMongoDBEventCustomer() {
 }
 `
 
-	evt, err := m.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
+	evt, err := m.Debezium.GetEventFromBytes([]byte(payload))
 	assert.NoError(m.T(), err)
 	evtData, err := evt.GetData(map[string]any{"_id": 1003}, &kafkalib.TopicConfig{})
 	assert.NoError(m.T(), err)
@@ -223,7 +221,7 @@ func (m *MongoTestSuite) TestMongoDBEventCustomerBefore_NoData() {
 	}
 }
 `
-	evt, err := m.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
+	evt, err := m.Debezium.GetEventFromBytes([]byte(payload))
 	assert.NoError(m.T(), err)
 	{
 		// Making sure the `before` payload is set.
@@ -276,7 +274,7 @@ func (m *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 	}
 }
 `
-	evt, err := m.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
+	evt, err := m.Debezium.GetEventFromBytes([]byte(payload))
 	assert.NoError(m.T(), err)
 	{
 		// Making sure the `before` payload is set.
@@ -314,7 +312,7 @@ func (m *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 }
 
 func (m *MongoTestSuite) TestGetEventFromBytesTombstone() {
-	_, err := m.Debezium.GetEventFromBytes(typing.Settings{}, nil)
+	_, err := m.Debezium.GetEventFromBytes(nil)
 	assert.ErrorContains(m.T(), err, "empty message")
 }
 
@@ -504,7 +502,7 @@ func (m *MongoTestSuite) TestMongoDBEventWithSchema() {
 	}
 }
 `
-	evt, err := m.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
+	evt, err := m.Debezium.GetEventFromBytes([]byte(payload))
 	assert.NoError(m.T(), err)
 	schemaEvt, isOk := evt.(*SchemaEventPayload)
 	assert.True(m.T(), isOk)

@@ -19,7 +19,7 @@ var validTc = &kafkalib.TopicConfig{
 }
 
 func (r *RelationTestSuite) TestGetEventFromBytesTombstone() {
-	_, err := r.GetEventFromBytes(typing.Settings{}, nil)
+	_, err := r.GetEventFromBytes(nil)
 	assert.ErrorContains(r.T(), err, "empty message")
 }
 
@@ -83,7 +83,7 @@ func (r *RelationTestSuite) TestPostgresEvent() {
 	}
 }
 `
-	evt, err := r.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
+	evt, err := r.Debezium.GetEventFromBytes([]byte(payload))
 	assert.Nil(r.T(), err)
 	assert.False(r.T(), evt.DeletePayload())
 
@@ -189,7 +189,7 @@ func (r *RelationTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	}
 }
 `
-	evt, err := r.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
+	evt, err := r.Debezium.GetEventFromBytes([]byte(payload))
 	assert.Nil(r.T(), err)
 	assert.False(r.T(), evt.DeletePayload())
 
@@ -513,7 +513,7 @@ func (r *RelationTestSuite) TestGetEventFromBytes_MySQL() {
 		"transaction": null
 	}
 }`
-	evt, err := r.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
+	evt, err := r.Debezium.GetEventFromBytes([]byte(payload))
 	assert.NoError(r.T(), err)
 	assert.Equal(r.T(), time.Date(2023, time.March, 13, 19, 19, 24, 0, time.UTC), evt.GetExecutionTime())
 	assert.Equal(r.T(), "customers", evt.GetTableName())
