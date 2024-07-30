@@ -1,6 +1,8 @@
 package mongo
 
 import (
+	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -74,10 +76,13 @@ func TestJSONEToMap(t *testing.T) {
 	   "$timestamp": { "t": 1678929517, "i": 1 }
    	},
 	"test_nan": NaN,
+	"test_nan_v2": {"$numberDouble": "NaN"},
 	"test_nan_string": "NaN",
 	"test_nan_string33": "NaNaNaNa",
 	"test_infinity": Infinity,
 	"test_infinity_string": "Infinity",
+	"test_infinity_v2": {"$numberDouble": "Infinity"},
+	"test_negative_infinity_v2": {"$numberDouble": "-Infinity"},
 	"test_infinity_string1": "Infinity123",
 	"test_negative_infinity": -Infinity,
 	"test_negative_infinity_string": "-Infinity",
@@ -96,6 +101,24 @@ func TestJSONEToMap(t *testing.T) {
 	// NumberDecimal
 	assert.Equal(t, "13.37", result["test_decimal"])
 	assert.Equal(t, 13.37, result["test_decimal_2"])
+
+	{
+		// V2 of NaN and Infinity
+		float64Val, isOk := result["test_nan_v2"].(float64)
+		assert.True(t, isOk)
+		assert.True(t, math.IsNaN(float64Val))
+
+		float64Val, isOk = result["test_infinity_v2"].(float64)
+		assert.True(t, isOk)
+		assert.True(t, math.IsInf(float64Val, 1))
+
+		float64Val, isOk = result["test_negative_infinity_v2"].(float64)
+		assert.True(t, isOk)
+		assert.True(t, math.IsInf(float64Val, -1))
+
+		fmt.Println("###", fmt.Sprintf("%.0f", float64Val))
+		assert.False(t, true)
+	}
 
 	assert.Equal(t, int64(10004), result["_id"])
 	assert.Equal(t, int64(107), result["product_id"])
