@@ -3,6 +3,8 @@ package event
 import (
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/artie-labs/transfer/lib/mocks"
@@ -31,6 +33,8 @@ func (e *EventsTestSuite) SetupTest() {
 
 	fakeEvent := &mocks.FakeEvent{}
 	fakeEvent.GetDataReturns(map[string]any{constants.DeleteColumnMarker: false, constants.OnlySetDeleteColumnMarker: false}, nil)
+	fakeEvent.GetColumnsReturns(&columns.Columns{}, nil)
+
 	e.fakeEvent = fakeEvent
 }
 
