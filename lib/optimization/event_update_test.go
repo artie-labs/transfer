@@ -25,6 +25,30 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		assert.ErrorContains(t, tableData.MergeColumnsFromDestination(invalidCol), `column "foo" is invalid`)
 	}
 	{
+		// If the in-memory column is a string and the destination column is Date
+		// We should mark the in-memory column as date and try to parse it accordingly.
+		tableDataCols := &columns.Columns{}
+		tableData := &TableData{
+			inMemoryColumns: tableDataCols,
+		}
+
+		tableData.AddInMemoryCol(columns.NewColumn("foo", typing.String))
+
+		extTime := typing.ETime
+		extTime.ExtendedTimeDetails = &ext.NestedKind{
+			Type: ext.DateKindType,
+		}
+
+		tsCol := columns.NewColumn("foo", extTime)
+		assert.NoError(t, tableData.MergeColumnsFromDestination(tsCol))
+
+		col, isOk := tableData.inMemoryColumns.GetColumn("foo")
+		assert.True(t, isOk)
+		assert.Equal(t, typing.ETime.Kind, col.KindDetails.Kind)
+		assert.Equal(t, ext.DateKindType, col.KindDetails.ExtendedTimeDetails.Type)
+		assert.Equal(t, extTime.ExtendedTimeDetails, col.KindDetails.ExtendedTimeDetails)
+	}
+	{
 		tableDataCols := &columns.Columns{}
 		tableData := &TableData{
 			inMemoryColumns: tableDataCols,

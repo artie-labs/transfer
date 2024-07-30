@@ -95,7 +95,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 	for _, value := range tableData.Rows() {
 		var row []string
 		for _, col := range columns {
-			castedValue, castErr := s.CastColValStaging(value[col.Name()], col, additionalDateFmts)
+			castedValue, castErr := castColValStaging(value[col.Name()], col.KindDetails, additionalDateFmts)
 			if castErr != nil {
 				return "", castErr
 			}

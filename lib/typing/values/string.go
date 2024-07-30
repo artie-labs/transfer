@@ -9,7 +9,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
@@ -22,27 +21,27 @@ func BooleanToBit(val bool) int {
 	}
 }
 
-func ToString(colVal any, colKind columns.Column, additionalDateFmts []string) (string, error) {
+func ToString(colVal any, colKind typing.KindDetails, additionalDateFmts []string) (string, error) {
 	if colVal == nil {
 		return "", fmt.Errorf("colVal is nil")
 	}
 
-	switch colKind.KindDetails.Kind {
+	switch colKind.Kind {
 	case typing.ETime.Kind:
 		extTime, err := ext.ParseFromInterface(colVal, additionalDateFmts)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
 
-		if colKind.KindDetails.ExtendedTimeDetails == nil {
+		if colKind.ExtendedTimeDetails == nil {
 			return "", fmt.Errorf("column kind details for extended time details is null")
 		}
 
-		if colKind.KindDetails.ExtendedTimeDetails.Type == ext.TimeKindType {
+		if colKind.ExtendedTimeDetails.Type == ext.TimeKindType {
 			return extTime.String(ext.PostgresTimeFormatNoTZ), nil
 		}
 
-		return extTime.String(colKind.KindDetails.ExtendedTimeDetails.Format), nil
+		return extTime.String(colKind.ExtendedTimeDetails.Format), nil
 	case typing.String.Kind:
 		isArray := reflect.ValueOf(colVal).Kind() == reflect.Slice
 		_, isMap := colVal.(map[string]any)
@@ -58,7 +57,7 @@ func ToString(colVal any, colKind columns.Column, additionalDateFmts []string) (
 
 		return stringutil.EscapeBackslashes(fmt.Sprint(colVal)), nil
 	case typing.Struct.Kind:
-		if colKind.KindDetails == typing.Struct {
+		if colKind == typing.Struct {
 			if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
 				colVal = map[string]any{
 					"key": constants.ToastUnavailableValuePlaceholder,
