@@ -7,3 +7,5 @@ package mocks
 //counterfeiter:generate -o=dwh.mock.go ../destination DataWarehouse
 //counterfeiter:generate -o=baseline.mock.go ../destination Baseline
 //counterfeiter:generate -o=tableid.mock.go ../sql TableIdentifier
+
+//counterfeiter:generate -o=event.mock.go ../cdc Event
