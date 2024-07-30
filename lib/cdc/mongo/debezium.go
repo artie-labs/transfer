@@ -45,8 +45,8 @@ func (d *Debezium) GetEventFromBytes(bytes []byte) (cdc.Event, error) {
 			return nil, fmt.Errorf("failed to call mongo JSONEToMap: %w", err)
 		}
 
-		// Now, we need to iterate over each key and if the value is JSON
-		// We need to parse the JSON into a string format
+		// Now, let's iterate over each key. If the value is a map, we'll need to JSON marshal it.
+		// We do this to ensure parity with how relational Debezium emits the message.
 		for key, value := range after {
 			switch value.(type) {
 			case nil, string, int, int32, int64, float32, float64, bool:
