@@ -8,12 +8,8 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
-	"github.com/artie-labs/transfer/lib/typing"
-
-	"github.com/stretchr/testify/assert"
-	"go.mongodb.org/mongo-driver/bson"
-
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/stretchr/testify/assert"
 )
 
 func (m *MongoTestSuite) TestGetPrimaryKey() {
@@ -84,16 +80,6 @@ func (m *MongoTestSuite) TestSource_GetExecutionTime() {
 		18, 6, 35, 21, 0, time.UTC), schemaEvtPayload.GetExecutionTime())
 }
 
-func (m *MongoTestSuite) TestBsonTypes() {
-	var tsMap map[string]any
-	bsonData := []byte(`
-{"_id": {"$numberLong": "10004"}, "order_date": {"$date": 1456012800000},"purchaser_id": {"$numberLong": "1003"},"quantity": 1,"product_id": {"$numberLong": "107"}}
-`)
-
-	err := bson.UnmarshalExtJSON(bsonData, false, &tsMap)
-	assert.NoError(m.T(), err)
-}
-
 func (m *MongoTestSuite) TestMongoDBEventOrder() {
 	payload := `
 {
@@ -125,7 +111,7 @@ func (m *MongoTestSuite) TestMongoDBEventOrder() {
 }
 `
 
-	evt, err := m.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
+	evt, err := m.Debezium.GetEventFromBytes([]byte(payload))
 	assert.NoError(m.T(), err)
 
 	schemaEvt, isOk := evt.(*SchemaEventPayload)
@@ -141,7 +127,7 @@ func (m *MongoTestSuite) TestMongoDBEventCustomer() {
 	"schema": {},
 	"payload": {
 		"before": null,
-		"after": "{\"_id\": {\"$numberLong\": \"1003\"},\"first_name\": \"Robin\",\"last_name\": \"Tang\",\"email\": \"robin@example.com\", \"nested\": {\"object\": \"foo\"}}",
+		"after": "{\"_id\": {\"$numberLong\": \"1003\"},\"first_name\": \"Robin\",\"last_name\": \"Tang\",\"email\": \"robin@example.com\", \"nested\": {\"object\": \"foo\"}, \"nil\": null}",
 		"patch": null,
 		"filter": null,
 		"updateDescription": null,
@@ -166,7 +152,7 @@ func (m *MongoTestSuite) TestMongoDBEventCustomer() {
 }
 `
 
-	evt, err := m.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
+	evt, err := m.Debezium.GetEventFromBytes([]byte(payload))
 	assert.NoError(m.T(), err)
 	evtData, err := evt.GetData(map[string]any{"_id": 1003}, &kafkalib.TopicConfig{})
 	assert.NoError(m.T(), err)
@@ -235,7 +221,7 @@ func (m *MongoTestSuite) TestMongoDBEventCustomerBefore_NoData() {
 	}
 }
 `
-	evt, err := m.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
+	evt, err := m.Debezium.GetEventFromBytes([]byte(payload))
 	assert.NoError(m.T(), err)
 	{
 		// Making sure the `before` payload is set.
@@ -288,7 +274,7 @@ func (m *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 	}
 }
 `
-	evt, err := m.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
+	evt, err := m.Debezium.GetEventFromBytes([]byte(payload))
 	assert.NoError(m.T(), err)
 	{
 		// Making sure the `before` payload is set.
@@ -326,7 +312,7 @@ func (m *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 }
 
 func (m *MongoTestSuite) TestGetEventFromBytesTombstone() {
-	_, err := m.Debezium.GetEventFromBytes(typing.Settings{}, nil)
+	_, err := m.Debezium.GetEventFromBytes(nil)
 	assert.ErrorContains(m.T(), err, "empty message")
 }
 
@@ -516,7 +502,7 @@ func (m *MongoTestSuite) TestMongoDBEventWithSchema() {
 	}
 }
 `
-	evt, err := m.Debezium.GetEventFromBytes(typing.Settings{}, []byte(payload))
+	evt, err := m.Debezium.GetEventFromBytes([]byte(payload))
 	assert.NoError(m.T(), err)
 	schemaEvt, isOk := evt.(*SchemaEventPayload)
 	assert.True(m.T(), isOk)

@@ -3,26 +3,23 @@ package mongo
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
-
-	"github.com/artie-labs/transfer/lib/debezium"
-
-	"github.com/artie-labs/transfer/lib/typing/ext"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/debezium"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/artie-labs/transfer/lib/typing/mongo"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Debezium string
 
-func (d *Debezium) GetEventFromBytes(typingSettings typing.Settings, bytes []byte) (cdc.Event, error) {
+func (d *Debezium) GetEventFromBytes(bytes []byte) (cdc.Event, error) {
 	var schemaEventPayload SchemaEventPayload
 	if len(bytes) == 0 {
 		return nil, fmt.Errorf("empty message")
@@ -48,16 +45,21 @@ func (d *Debezium) GetEventFromBytes(typingSettings typing.Settings, bytes []byt
 			return nil, fmt.Errorf("failed to call mongo JSONEToMap: %w", err)
 		}
 
-		// Now, we need to iterate over each key and if the value is JSON
-		// We need to parse the JSON into a string format
+		// Now, let's iterate over each key. If the value is a map, we'll need to JSON marshal it.
+		// We do this to ensure parity with how relational Debezium emits the message.
 		for key, value := range after {
-			if typing.ParseValue(typingSettings, key, nil, value) == typing.Struct {
-				valBytes, err := json.Marshal(value)
-				if err != nil {
-					return nil, fmt.Errorf("failed to marshal: %w", err)
-				}
+			switch value.(type) {
+			case nil, string, int, int32, int64, float32, float64, bool:
+				continue
+			default:
+				if reflect.TypeOf(value).Kind() == reflect.Map {
+					valBytes, err := json.Marshal(value)
+					if err != nil {
+						return nil, fmt.Errorf("failed to marshal: %w", err)
+					}
 
-				after[key] = string(valBytes)
+					after[key] = string(valBytes)
+				}
 			}
 		}
 
