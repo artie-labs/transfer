@@ -199,7 +199,11 @@ func (r *RelationTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	// Testing typing.
 	assert.Equal(r.T(), evtData["id"], int64(1001))
 	assert.Equal(r.T(), evtData["another_id"], int64(333))
-	assert.Equal(r.T(), typing.ParseValue(typing.Settings{}, "another_id", evt.GetOptionalSchema(), evtData["another_id"]), typing.Integer)
+
+	schema, err := evt.GetOptionalSchema()
+	assert.NoError(r.T(), err)
+
+	assert.Equal(r.T(), typing.ParseValue(typing.Settings{}, "another_id", schema, evtData["another_id"]), typing.Integer)
 
 	assert.Equal(r.T(), evtData["email"], "sally.thomas@acme.com")
 
@@ -518,7 +522,8 @@ func (r *RelationTestSuite) TestGetEventFromBytes_MySQL() {
 	assert.Equal(r.T(), time.Date(2023, time.March, 13, 19, 19, 24, 0, time.UTC), evt.GetExecutionTime())
 	assert.Equal(r.T(), "customers", evt.GetTableName())
 
-	schema := evt.GetOptionalSchema()
+	schema, err := evt.GetOptionalSchema()
+	assert.NoError(r.T(), err)
 	assert.Equal(r.T(), typing.Struct, schema["custom_fields"])
 
 	kvMap := map[string]any{

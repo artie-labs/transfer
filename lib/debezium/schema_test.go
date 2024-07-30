@@ -274,6 +274,9 @@ func TestField_ToKindDetails(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		assert.Equal(t, tc.expectedKindDetails, tc.field.ToKindDetails(), tc.name)
+		kd, err := tc.field.ToKindDetails()
+		assert.NoError(t, err)
+
+		assert.Equal(t, tc.expectedKindDetails, kd, tc.name)
 	}
 }

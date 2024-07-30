@@ -1,6 +1,8 @@
 package debezium
 
 import (
+	"fmt"
+
 	"github.com/artie-labs/transfer/lib/debezium/converters"
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -80,31 +82,53 @@ func (f Field) GetScaleAndPrecision() (int32, *int32, error) {
 	return scale, precisionPtr, nil
 }
 
-func (f Field) ToValueConverter() converters.ValueConverter {
+func (f Field) ToValueConverter() (converters.ValueConverter, error) {
 	switch f.DebeziumType {
 	case DateTimeWithTimezone:
-		return converters.DateTimeWithTimezone{}
+		return converters.DateTimeWithTimezone{}, nil
 	case TimeWithTimezone:
-		return converters.TimeWithTimezone{}
+		return converters.TimeWithTimezone{}, nil
 	case GeometryPointType:
-		return converters.GeometryPoint{}
+		return converters.GeometryPoint{}, nil
 	case GeographyType, GeometryType:
-		return converters.Geometry{}
+		return converters.Geometry{}, nil
 	case JSON:
-		return converters.JSON{}
+		return converters.JSON{}, nil
 	case Date, DateKafkaConnect:
-		return converters.Date{}
+		return converters.Date{}, nil
 	case Time, TimeKafkaConnect:
-		return converters.Time{}
+		return converters.Time{}, nil
+	case KafkaDecimalType:
+		scale, precisionPtr, err := f.GetScaleAndPrecision()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get scale and precision: %w", err)
+		}
+
+		precision := decimal.PrecisionNotSpecified
+		if precisionPtr != nil {
+			precision = *precisionPtr
+		}
+
+		return converters.NewDecimal(precision, scale, false), nil
+	case KafkaVariableNumericType:
+		// For variable numeric types, we are defaulting to a scale of 5
+		// This is because scale is not specified at the column level, rather at the row level
+		// It shouldn't matter much anyway since the column type we are creating is `TEXT` to avoid boundary errors.
+		return converters.NewDecimal(decimal.PrecisionNotSpecified, decimal.DefaultScale, true), nil
 	}
 
-	return nil
+	return nil, nil
 }
 
-func (f Field) ToKindDetails() typing.KindDetails {
+func (f Field) ToKindDetails() (typing.KindDetails, error) {
 	// Prioritize converters
-	if converter := f.ToValueConverter(); converter != nil {
-		return converter.ToKindDetails()
+	converter, err := f.ToValueConverter()
+	if err != nil {
+		return typing.Invalid, err
+	}
+
+	if converter != nil {
+		return converter.ToKindDetails(), nil
 	}
 
 	// TODO: Deprecate this in favor of the converters
@@ -113,44 +137,28 @@ func (f Field) ToKindDetails() typing.KindDetails {
 	// Then, we'll fall back on the actual data types.
 	switch f.DebeziumType {
 	case Timestamp, MicroTimestamp, NanoTimestamp, DateTimeKafkaConnect:
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)
+		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType), nil
 	case MicroTime, NanoTime:
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
-	case KafkaDecimalType:
-		scale, precisionPtr, err := f.GetScaleAndPrecision()
-		if err != nil {
-			return typing.Invalid
-		}
-
-		precision := decimal.PrecisionNotSpecified
-		if precisionPtr != nil {
-			precision = *precisionPtr
-		}
-
-		return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(precision, scale))
-	case KafkaVariableNumericType:
-		// For variable numeric types, we are defaulting to a scale of 5
-		// This is because scale is not specified at the column level, rather at the row level
-		// It shouldn't matter much anyway since the column type we are creating is `TEXT` to avoid boundary errors.
-		return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale))
+		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType), nil
 	}
 
 	switch f.Type {
 	case Map:
-		return typing.Struct
+		return typing.Struct, nil
 	case Int16, Int32, Int64:
-		return typing.Integer
+		return typing.Integer, nil
 	case Float, Double:
-		return typing.Float
+		return typing.Float, nil
 	case String, Bytes:
-		return typing.String
+		return typing.String, nil
 	case Struct:
-		return typing.Struct
+		return typing.Struct, nil
 	case Boolean:
-		return typing.Boolean
+		return typing.Boolean, nil
 	case Array:
-		return typing.Array
+		return typing.Array, nil
 	default:
-		return typing.Invalid
+		// TODO: Throw an error
+		return typing.Invalid, nil
 	}
 }

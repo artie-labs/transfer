@@ -34,8 +34,8 @@ func (f fakeEvent) GetTableName() string {
 	return "foo"
 }
 
-func (f fakeEvent) GetOptionalSchema() map[string]typing.KindDetails {
-	return nil
+func (f fakeEvent) GetOptionalSchema() (map[string]typing.KindDetails, error) {
+	return nil, nil
 }
 
 func (f fakeEvent) GetColumns() (*columns.Columns, error) {
