@@ -1,7 +1,6 @@
 package mongo
 
 import (
-	"fmt"
 	"math"
 	"testing"
 	"time"
@@ -47,6 +46,8 @@ func TestJSONEToMap(t *testing.T) {
 		"$binary": "hW5W/8uwQR6FWpiwi4dRQA==",
 		"$type": "04"
 	},
+	"Binary": {"$binary": {"base64": "c8edabc3f7384ca3b68dab92a91478a3", "subType": "04"}},
+	"another_unique_id_v1": {"$binary": "ITG8xP+xRcquqqw3QT5IkA==", "$type": "04"},
 	"fileChecksum": {
 		"$binary": "1B2M2Y8AsgTpgAmY7PhCfg==",
 		"$type": "05"
@@ -95,6 +96,8 @@ func TestJSONEToMap(t *testing.T) {
 	result, err := JSONEToMap(bsonData)
 	assert.NoError(t, err)
 
+	assert.Equal(t, map[string]any{"$binary": map[string]any{"base64": "c8edabc3f7384ca3b68dab92a91478a3", "subType": "04"}}, result["Binary"])
+
 	// String
 	assert.Equal(t, "Robin Tang", result["full_name"])
 
@@ -115,9 +118,6 @@ func TestJSONEToMap(t *testing.T) {
 		float64Val, isOk = result["test_negative_infinity_v2"].(float64)
 		assert.True(t, isOk)
 		assert.True(t, math.IsInf(float64Val, -1))
-
-		fmt.Println("###", fmt.Sprintf("%.0f", float64Val))
-		assert.False(t, true)
 	}
 
 	assert.Equal(t, int64(10004), result["_id"])

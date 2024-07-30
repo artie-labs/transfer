@@ -64,12 +64,17 @@ func bsonBinaryValueToMap(value primitive.Binary) (any, error) {
 	case
 		bson.TypeBinaryUUIDOld,
 		bson.TypeBinaryUUID:
-		parsedUUID, err := uuid.FromBytes(value.Data)
-		if err != nil {
-			return nil, err
+		if len(value.Data) == 16 {
+			// UUIDs must be 16 bytes
+			parsedUUID, err := uuid.FromBytes(value.Data)
+			if err != nil {
+				return nil, err
+			}
+
+			return parsedUUID.String(), nil
 		}
 
-		return parsedUUID.String(), nil
+		fallthrough
 	default:
 		return map[string]any{
 			"$binary": map[string]any{
