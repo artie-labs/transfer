@@ -3,6 +3,7 @@ package mongo
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -51,7 +52,7 @@ func (d *Debezium) GetEventFromBytes(typingSettings typing.Settings, bytes []byt
 		// Now, we need to iterate over each key and if the value is JSON
 		// We need to parse the JSON into a string format
 		for key, value := range after {
-			if typing.ParseValue(typingSettings, key, nil, value) == typing.Struct {
+			if value != nil && reflect.TypeOf(value).Kind() == reflect.Map {
 				valBytes, err := json.Marshal(value)
 				if err != nil {
 					return nil, fmt.Errorf("failed to marshal: %w", err)
