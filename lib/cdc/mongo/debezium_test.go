@@ -127,7 +127,7 @@ func (m *MongoTestSuite) TestMongoDBEventCustomer() {
 	"schema": {},
 	"payload": {
 		"before": null,
-		"after": "{\"_id\": {\"$numberLong\": \"1003\"},\"first_name\": \"Robin\",\"last_name\": \"Tang\",\"email\": \"robin@example.com\", \"nested\": {\"object\": \"foo\"}}",
+		"after": "{\"_id\": {\"$numberLong\": \"1003\"},\"first_name\": \"Robin\",\"last_name\": \"Tang\",\"email\": \"robin@example.com\", \"nested\": {\"object\": \"foo\"}, \"nil\": null}",
 		"patch": null,
 		"filter": null,
 		"updateDescription": null,

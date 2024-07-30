@@ -48,13 +48,18 @@ func (d *Debezium) GetEventFromBytes(bytes []byte) (cdc.Event, error) {
 		// Now, we need to iterate over each key and if the value is JSON
 		// We need to parse the JSON into a string format
 		for key, value := range after {
-			if value != nil && reflect.TypeOf(value).Kind() == reflect.Map {
-				valBytes, err := json.Marshal(value)
-				if err != nil {
-					return nil, fmt.Errorf("failed to marshal: %w", err)
-				}
+			switch value.(type) {
+			case nil, string, int, int32, int64, float32, float64, bool:
+				continue
+			default:
+				if reflect.TypeOf(value).Kind() == reflect.Map {
+					valBytes, err := json.Marshal(value)
+					if err != nil {
+						return nil, fmt.Errorf("failed to marshal: %w", err)
+					}
 
-				after[key] = string(valBytes)
+					after[key] = string(valBytes)
+				}
 			}
 		}
 
