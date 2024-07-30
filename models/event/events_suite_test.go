@@ -34,7 +34,7 @@ func (e *EventsTestSuite) SetupTest() {
 	fakeEvent := &mocks.FakeEvent{}
 	fakeEvent.GetDataReturns(map[string]any{constants.DeleteColumnMarker: false, constants.OnlySetDeleteColumnMarker: false}, nil)
 	fakeEvent.GetColumnsReturns(&columns.Columns{}, nil)
-
+	fakeEvent.GetTableNameReturns("foo")
 	e.fakeEvent = fakeEvent
 }
 

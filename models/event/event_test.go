@@ -59,6 +59,12 @@ func (e *EventsTestSuite) TestEvent_IsValid() {
 
 func (e *EventsTestSuite) TestEvent_TableName() {
 	{
+		// Don't pass in tableName.
+		evt, err := ToMemoryEvent(e.fakeEvent, idMap, &kafkalib.TopicConfig{}, config.Replication)
+		assert.NoError(e.T(), err)
+		assert.Equal(e.T(), e.fakeEvent.GetTableName(), evt.Table)
+	}
+	{
 		// Now pass it in, it should override.
 		evt, err := ToMemoryEvent(e.fakeEvent, idMap, &kafkalib.TopicConfig{TableName: "orders"}, config.Replication)
 		assert.NoError(e.T(), err)
