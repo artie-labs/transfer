@@ -33,8 +33,6 @@ func replaceExceededValues(colVal string, colKind typing.KindDetails) string {
 	return colVal
 }
 
-// castColValStaging - takes `colVal` any and `colKind` typing.Column and converts the value into a string value
-// This is necessary because CSV writers require values to in `string`.
 func castColValStaging(colVal any, colKind typing.KindDetails, additionalDateFmts []string) (string, error) {
 	if colVal == nil {
 		if colKind == typing.Struct {
