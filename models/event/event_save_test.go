@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/artie-labs/transfer/lib/debezium/converters"
+
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/artie"
@@ -132,12 +134,13 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 			"created_at_date_string":            "2023-01-01",
 			"created_at_date_no_schema":         "2023-01-01",
 			"json_object_string":                `{"foo": "bar"}`,
-			"json_object_no_schema":             `{"foo": "bar"}`,
+			"json_object":                       `{"foo": "bar"}`,
 		},
 		OptionalSchema: map[string]typing.KindDetails{
 			// Explicitly casting this as a string.
 			"created_at_date_string": typing.String,
 			"json_object_string":     typing.String,
+			"json_object":            converters.JSON{}.ToKindDetails(),
 		},
 	}
 
@@ -158,7 +161,7 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 	assert.True(e.T(), isOk)
 	assert.Equal(e.T(), typing.String, column.KindDetails)
 
-	column, isOk = td.ReadOnlyInMemoryCols().GetColumn("json_object_no_schema")
+	column, isOk = td.ReadOnlyInMemoryCols().GetColumn("json_object")
 	assert.True(e.T(), isOk)
 	assert.Equal(e.T(), typing.Struct, column.KindDetails)
 }

@@ -1,9 +1,6 @@
 package typing
 
 import (
-	"encoding/json"
-	"strings"
-
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
@@ -76,26 +73,4 @@ func NewKindDetailsFromTemplate(details KindDetails, extendedType ext.ExtendedTi
 
 	details.ExtendedTimeDetails.Type = extendedType
 	return details
-}
-
-// IsJSON - We also need to check if the string is a JSON string or not
-// If it could be one, it will start with { and end with }.
-// Once there, we will then check if it's a JSON string or not.
-// This is an optimization since JSON string checking is expensive.
-func IsJSON(str string) bool {
-	str = strings.TrimSpace(str)
-	if len(str) < 2 {
-		return false
-	}
-
-	valStringChars := []rune(str)
-	firstChar := string(valStringChars[0])
-	lastChar := string(valStringChars[len(valStringChars)-1])
-
-	if (firstChar == "{" && lastChar == "}") || (firstChar == "[" && lastChar == "]") {
-		var js json.RawMessage
-		return json.Unmarshal([]byte(str), &js) == nil
-	}
-
-	return false
 }

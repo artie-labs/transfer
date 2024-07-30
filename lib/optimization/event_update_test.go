@@ -49,6 +49,21 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		assert.Equal(t, extTime.ExtendedTimeDetails, col.KindDetails.ExtendedTimeDetails)
 	}
 	{
+		// If the in-memory column is a string, the destination column is JSON
+		tableDataCols := &columns.Columns{}
+		tableData := &TableData{
+			inMemoryColumns: tableDataCols,
+		}
+
+		tableData.AddInMemoryCol(columns.NewColumn("foo", typing.String))
+		structCol := columns.NewColumn("foo", typing.Struct)
+		assert.NoError(t, tableData.MergeColumnsFromDestination(structCol))
+
+		col, isOk := tableData.inMemoryColumns.GetColumn("foo")
+		assert.True(t, isOk)
+		assert.Equal(t, typing.Struct, col.KindDetails)
+	}
+	{
 		tableDataCols := &columns.Columns{}
 		tableData := &TableData{
 			inMemoryColumns: tableDataCols,
