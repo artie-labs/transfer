@@ -120,15 +120,7 @@ func bsonValueToGoValue(value any) (any, error) {
 		return v, nil
 	case float64:
 		// Check Infinity, -Infinity, NaN
-		if math.IsNaN(v) {
-			return nil, nil
-		}
-
-		if math.IsInf(v, 1) {
-			return nil, nil
-		}
-
-		if math.IsInf(v, -1) {
+		if math.IsNaN(v) || math.IsInf(v, 0) {
 			return nil, nil
 		}
 
