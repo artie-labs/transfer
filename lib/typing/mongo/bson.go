@@ -3,6 +3,7 @@ package mongo
 import (
 	"encoding/base64"
 	"fmt"
+	"math"
 	"regexp"
 	"strings"
 	"time"
@@ -64,12 +65,17 @@ func bsonBinaryValueToMap(value primitive.Binary) (any, error) {
 	case
 		bson.TypeBinaryUUIDOld,
 		bson.TypeBinaryUUID:
-		parsedUUID, err := uuid.FromBytes(value.Data)
-		if err != nil {
-			return nil, err
+		if len(value.Data) == 16 {
+			// UUIDs must be 16 bytes
+			parsedUUID, err := uuid.FromBytes(value.Data)
+			if err != nil {
+				return nil, err
+			}
+
+			return parsedUUID.String(), nil
 		}
 
-		return parsedUUID.String(), nil
+		fallthrough
 	default:
 		return map[string]any{
 			"$binary": map[string]any{
@@ -103,12 +109,20 @@ func bsonValueToGoValue(value any) (any, error) {
 		return map[string]any{"$minKey": 1}, nil
 	case primitive.JavaScript:
 		return map[string]any{"$code": string(v)}, nil
+	case primitive.CodeWithScope:
+		return map[string]any{"$code": string(v.Code), "$scope": v.Scope}, nil
 	case
 		nil,
 		bool,
 		string,
 		int32, int64,
-		float32, float64:
+		float32:
+		return v, nil
+	case float64:
+		if math.IsNaN(v) || math.IsInf(v, 0) {
+			return nil, nil
+		}
+
 		return v, nil
 	default:
 		return nil, fmt.Errorf("unexpected type: %T, value: %v", v, v)
