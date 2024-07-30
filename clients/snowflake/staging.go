@@ -14,7 +14,6 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
@@ -41,9 +40,7 @@ func replaceExceededValues(colVal string, kindDetails typing.KindDetails) string
 	return colVal
 }
 
-// castColValStaging - takes `colVal` any and `colKind` typing.Column and converts the value into a string value
-// This is necessary because CSV writers require values to in `string`.
-func castColValStaging(colVal any, colKind columns.Column, additionalDateFmts []string) (string, error) {
+func castColValStaging(colVal any, colKind typing.KindDetails, additionalDateFmts []string) (string, error) {
 	if colVal == nil {
 		// \\N needs to match NULL_IF(...) from ddl.go
 		return `\\N`, nil
@@ -54,7 +51,7 @@ func castColValStaging(colVal any, colKind columns.Column, additionalDateFmts []
 		return "", err
 	}
 
-	return replaceExceededValues(value, colKind.KindDetails), nil
+	return replaceExceededValues(value, colKind), nil
 }
 
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
@@ -125,7 +122,7 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 	for _, value := range tableData.Rows() {
 		var row []string
 		for _, col := range columns {
-			castedValue, castErr := castColValStaging(value[col.Name()], col, additionalDateFmts)
+			castedValue, castErr := castColValStaging(value[col.Name()], col.KindDetails, additionalDateFmts)
 			if castErr != nil {
 				return "", castErr
 			}
