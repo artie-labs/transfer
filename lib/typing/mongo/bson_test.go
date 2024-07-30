@@ -1,7 +1,6 @@
 package mongo
 
 import (
-	"math"
 	"testing"
 	"time"
 
@@ -107,17 +106,9 @@ func TestJSONEToMap(t *testing.T) {
 
 	{
 		// V2 of NaN and Infinity
-		float64Val, isOk := result["test_nan_v2"].(float64)
-		assert.True(t, isOk)
-		assert.True(t, math.IsNaN(float64Val))
-
-		float64Val, isOk = result["test_infinity_v2"].(float64)
-		assert.True(t, isOk)
-		assert.True(t, math.IsInf(float64Val, 1))
-
-		float64Val, isOk = result["test_negative_infinity_v2"].(float64)
-		assert.True(t, isOk)
-		assert.True(t, math.IsInf(float64Val, -1))
+		assert.Nil(t, result["test_nan_v2"])
+		assert.Nil(t, result["test_infinity_v2"])
+		assert.Nil(t, result["test_negative_infinity_v2"])
 	}
 
 	assert.Equal(t, int64(10004), result["_id"])

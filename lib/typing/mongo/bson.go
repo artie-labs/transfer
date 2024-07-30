@@ -3,6 +3,7 @@ package mongo
 import (
 	"encoding/base64"
 	"fmt"
+	"math"
 	"regexp"
 	"strings"
 	"time"
@@ -115,7 +116,22 @@ func bsonValueToGoValue(value any) (any, error) {
 		bool,
 		string,
 		int32, int64,
-		float32, float64:
+		float32:
+		return v, nil
+	case float64:
+		// Check Infinity, -Infinity, NaN
+		if math.IsNaN(v) {
+			return nil, nil
+		}
+
+		if math.IsInf(v, 1) {
+			return nil, nil
+		}
+
+		if math.IsInf(v, -1) {
+			return nil, nil
+		}
+
 		return v, nil
 	default:
 		return nil, fmt.Errorf("unexpected type: %T, value: %v", v, v)
