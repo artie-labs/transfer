@@ -54,7 +54,7 @@ func TestDecimal_Convert(t *testing.T) {
 	{
 		// Numeric (5, 0)
 		converter := NewDecimal(5, 0, false)
-		val, err := converter.Convert([]byte("BQ=="))
+		val, err := converter.Convert("BQ==")
 		assert.NoError(t, err)
 
 		dec, isOk := val.(*decimal.Decimal)
@@ -64,7 +64,7 @@ func TestDecimal_Convert(t *testing.T) {
 	{
 		// Numeric (5, 2)
 		converter := NewDecimal(5, 2, false)
-		val, err := converter.Convert([]byte("AOHJ"))
+		val, err := converter.Convert("AOHJ")
 		assert.NoError(t, err)
 
 		dec, isOk := val.(*decimal.Decimal)
@@ -74,7 +74,7 @@ func TestDecimal_Convert(t *testing.T) {
 	{
 		// Numeric (38, 0) - Small #
 		converter := NewDecimal(38, 0, false)
-		val, err := converter.Convert([]byte("Ajc="))
+		val, err := converter.Convert("Ajc=")
 		assert.NoError(t, err)
 
 		dec, isOk := val.(*decimal.Decimal)
@@ -84,7 +84,7 @@ func TestDecimal_Convert(t *testing.T) {
 	{
 		// Numeric (38, 0) - Large #
 		converter := NewDecimal(38, 0, false)
-		val, err := converter.Convert([]byte("SztMqFqGxHoJiiI//////w=="))
+		val, err := converter.Convert("SztMqFqGxHoJiiI//////w==")
 		assert.NoError(t, err)
 
 		dec, isOk := val.(*decimal.Decimal)
@@ -94,7 +94,7 @@ func TestDecimal_Convert(t *testing.T) {
 	{
 		// Numeric (38, 2) - Small #
 		converter := NewDecimal(38, 2, false)
-		val, err := converter.Convert([]byte("DPk="))
+		val, err := converter.Convert("DPk=")
 		assert.NoError(t, err)
 
 		dec, isOk := val.(*decimal.Decimal)
@@ -104,7 +104,7 @@ func TestDecimal_Convert(t *testing.T) {
 	{
 		// Numeric (38, 2) - Large #
 		converter := NewDecimal(38, 2, false)
-		val, err := converter.Convert([]byte("AMCXznvJBxWzS58P/////w=="))
+		val, err := converter.Convert("AMCXznvJBxWzS58P/////w==")
 		assert.NoError(t, err)
 
 		dec, isOk := val.(*decimal.Decimal)
@@ -114,7 +114,7 @@ func TestDecimal_Convert(t *testing.T) {
 	{
 		// Numeric (38, 4) - Small #
 		converter := NewDecimal(38, 4, false)
-		val, err := converter.Convert([]byte("SeuD"))
+		val, err := converter.Convert("SeuD")
 		assert.NoError(t, err)
 
 		dec, isOk := val.(*decimal.Decimal)
@@ -124,7 +124,7 @@ func TestDecimal_Convert(t *testing.T) {
 	{
 		// Numeric (38, 4) - Large #
 		converter := NewDecimal(38, 4, false)
-		val, err := converter.Convert([]byte("Ae0Jvq2HwDeNjmP/////"))
+		val, err := converter.Convert("Ae0Jvq2HwDeNjmP/////")
 		assert.NoError(t, err)
 
 		dec, isOk := val.(*decimal.Decimal)
@@ -134,7 +134,7 @@ func TestDecimal_Convert(t *testing.T) {
 	{
 		// Numeric (39, 4) - Small #
 		converter := NewDecimal(39, 4, false)
-		val, err := converter.Convert([]byte("AKQQ"))
+		val, err := converter.Convert("AKQQ")
 		assert.NoError(t, err)
 
 		dec, isOk := val.(*decimal.Decimal)
@@ -144,7 +144,7 @@ func TestDecimal_Convert(t *testing.T) {
 	{
 		// Numeric (39, 4) - Large #
 		converter := NewDecimal(39, 4, false)
-		val, err := converter.Convert([]byte("AuM++mE16PeIpWp/trI="))
+		val, err := converter.Convert("AuM++mE16PeIpWp/trI=")
 		assert.NoError(t, err)
 
 		dec, isOk := val.(*decimal.Decimal)
@@ -153,8 +153,8 @@ func TestDecimal_Convert(t *testing.T) {
 	}
 	{
 		// Money
-		converter := NewDecimal(19, 4, false)
-		val, err := converter.Convert([]byte("ALxhYg=="))
+		converter := NewDecimal(19, 2, false)
+		val, err := converter.Convert("ALxhYg==")
 		assert.NoError(t, err)
 
 		dec, isOk := val.(*decimal.Decimal)
