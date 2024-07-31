@@ -15,22 +15,19 @@ import (
 // - If value is already a slice of bytes it will be directly returned.
 // - If value is a string we will attempt to base64 decode it.
 func toBytes(value any) ([]byte, error) {
-	var stringVal string
-
 	switch typedValue := value.(type) {
 	case []byte:
 		return typedValue, nil
 	case string:
-		stringVal = typedValue
+		data, err := base64.StdEncoding.DecodeString(typedValue)
+		if err != nil {
+			return nil, fmt.Errorf("failed to base64 decode: %w", err)
+		}
+
+		return data, nil
 	default:
 		return nil, fmt.Errorf("failed to cast value '%v' with type '%T' to []byte", value, value)
 	}
-
-	data, err := base64.StdEncoding.DecodeString(stringVal)
-	if err != nil {
-		return nil, fmt.Errorf("failed to base64 decode: %w", err)
-	}
-	return data, nil
 }
 
 type Decimal struct {
