@@ -9,12 +9,11 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/typing"
 )
 
 type Debezium string
 
-func (d *Debezium) GetEventFromBytes(_ typing.Settings, bytes []byte) (cdc.Event, error) {
+func (d *Debezium) GetEventFromBytes(bytes []byte) (cdc.Event, error) {
 	var event util.SchemaEventPayload
 	if len(bytes) == 0 {
 		return nil, fmt.Errorf("empty message")

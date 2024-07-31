@@ -1,49 +1,15 @@
 package event
 
 import (
-	"time"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/columns"
 )
-
-type fakeEvent struct{}
 
 var idMap = map[string]any{
 	"id": 123,
-}
-
-func (f fakeEvent) Operation() string {
-	return "r"
-}
-
-func (f fakeEvent) DeletePayload() bool {
-	return false
-}
-
-func (f fakeEvent) GetExecutionTime() time.Time {
-	return time.Now()
-}
-
-func (f fakeEvent) GetTableName() string {
-	return "foo"
-}
-
-func (f fakeEvent) GetOptionalSchema() (map[string]typing.KindDetails, error) {
-	return nil, nil
-}
-
-func (f fakeEvent) GetColumns() (*columns.Columns, error) {
-	return &columns.Columns{}, nil
-}
-
-func (f fakeEvent) GetData(pkMap map[string]any, config *kafkalib.TopicConfig) (map[string]any, error) {
-	return map[string]any{constants.DeleteColumnMarker: false, constants.OnlySetDeleteColumnMarker: false}, nil
 }
 
 func (e *EventsTestSuite) TestEvent_IsValid() {
@@ -92,36 +58,34 @@ func (e *EventsTestSuite) TestEvent_IsValid() {
 }
 
 func (e *EventsTestSuite) TestEvent_TableName() {
-	var f fakeEvent
 	{
 		// Don't pass in tableName.
-		evt, err := ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{}, config.Replication)
+		evt, err := ToMemoryEvent(e.fakeEvent, idMap, &kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(e.T(), err)
-		assert.Equal(e.T(), f.GetTableName(), evt.Table)
+		assert.Equal(e.T(), e.fakeEvent.GetTableName(), evt.Table)
 	}
 	{
 		// Now pass it in, it should override.
-		evt, err := ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{TableName: "orders"}, config.Replication)
+		evt, err := ToMemoryEvent(e.fakeEvent, idMap, &kafkalib.TopicConfig{TableName: "orders"}, config.Replication)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "orders", evt.Table)
 	}
 	{
 		// Now, if it's history mode...
-		evt, err := ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{TableName: "orders"}, config.History)
+		evt, err := ToMemoryEvent(e.fakeEvent, idMap, &kafkalib.TopicConfig{TableName: "orders"}, config.History)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "orders__history", evt.Table)
 
 		// Table already has history suffix, so it won't add extra.
-		evt, err = ToMemoryEvent(f, idMap, &kafkalib.TopicConfig{TableName: "dusty__history"}, config.History)
+		evt, err = ToMemoryEvent(e.fakeEvent, idMap, &kafkalib.TopicConfig{TableName: "dusty__history"}, config.History)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "dusty__history", evt.Table)
 	}
 }
 
 func (e *EventsTestSuite) TestEvent_Columns() {
-	var f fakeEvent
 	{
-		evt, err := ToMemoryEvent(f, map[string]any{"id": 123}, &kafkalib.TopicConfig{}, config.Replication)
+		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123}, &kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(e.T(), err)
 
 		assert.Equal(e.T(), 1, len(evt.Columns.GetColumns()))
@@ -130,7 +94,7 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 	}
 	{
 		// Now it should handle escaping column names
-		evt, err := ToMemoryEvent(f, map[string]any{"id": 123, "CAPITAL": "foo"}, &kafkalib.TopicConfig{}, config.Replication)
+		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123, "CAPITAL": "foo"}, &kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(e.T(), err)
 
 		assert.Equal(e.T(), 2, len(evt.Columns.GetColumns()))
@@ -142,7 +106,7 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 	}
 	{
 		// In history mode, the deletion column markers should be removed from the event data
-		evt, err := ToMemoryEvent(f, map[string]any{"id": 123}, &kafkalib.TopicConfig{}, config.History)
+		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123}, &kafkalib.TopicConfig{}, config.History)
 		assert.NoError(e.T(), err)
 
 		_, isOk := evt.Data[constants.DeleteColumnMarker]
