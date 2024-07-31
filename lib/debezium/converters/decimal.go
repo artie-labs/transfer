@@ -61,12 +61,12 @@ func (d Decimal) Convert(val any) (any, error) {
 			return nil, err
 		}
 
-		val, isOk := valueStruct["value"]
+		value, isOk := valueStruct["value"]
 		if !isOk {
 			return nil, fmt.Errorf("encoded value does not exist")
 		}
 
-		bytes, err := toBytes(val)
+		bytes, err := toBytes(value)
 		if err != nil {
 			return nil, err
 		}
