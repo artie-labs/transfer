@@ -57,7 +57,10 @@ func TestSource_GetOptionalSchema(t *testing.T) {
 }`), &schemaEventPayload)
 
 	assert.NoError(t, err)
-	optionalSchema := schemaEventPayload.GetOptionalSchema()
+
+	optionalSchema, err := schemaEventPayload.GetOptionalSchema()
+	assert.NoError(t, err)
+
 	value, isOk := optionalSchema["last_modified"]
 	assert.True(t, isOk)
 	assert.Equal(t, value, typing.String)

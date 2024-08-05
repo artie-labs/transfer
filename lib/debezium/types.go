@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/maputil"
-	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
@@ -58,28 +56,6 @@ const (
 	KafkaDecimalPrecisionKey = "connect.decimal.precision"
 )
 
-// toBytes attempts to convert a value (type []byte, or string) to a slice of bytes.
-// - If value is already a slice of bytes it will be directly returned.
-// - If value is a string we will attempt to base64 decode it.
-func toBytes(value any) ([]byte, error) {
-	var stringVal string
-
-	switch typedValue := value.(type) {
-	case []byte:
-		return typedValue, nil
-	case string:
-		stringVal = typedValue
-	default:
-		return nil, fmt.Errorf("failed to cast value '%v' with type '%T' to []byte", value, value)
-	}
-
-	data, err := base64.StdEncoding.DecodeString(stringVal)
-	if err != nil {
-		return nil, fmt.Errorf("failed to base64 decode: %w", err)
-	}
-	return data, nil
-}
-
 // toInt64 attempts to convert a value of unknown type to a an int64.
 // - If the value is coming from Kafka it will be decoded as a float64 when it is unmarshalled from JSON.
 // - If the value is coming from reader the value will be an int16/int32/int64.
@@ -114,19 +90,16 @@ func (f Field) ParseValue(value any) (any, error) {
 		}
 	}
 
-	if converter := f.ToValueConverter(); converter != nil {
+	converter, err := f.ToValueConverter()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get value converter: %w", err)
+	}
+
+	if converter != nil {
 		return converter.Convert(value)
 	}
 
 	switch f.DebeziumType {
-	case KafkaDecimalType:
-		bytes, err := toBytes(value)
-		if err != nil {
-			return nil, err
-		}
-		return f.DecodeDecimal(bytes)
-	case KafkaVariableNumericType:
-		return f.DecodeDebeziumVariableDecimal(value)
 	case
 		Timestamp,
 		MicroTimestamp,
@@ -180,47 +153,4 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ex
 	}
 
 	return extTime, nil
-}
-
-// DecodeDecimal is used to handle `org.apache.kafka.connect.data.Decimal` where this would be emitted by Debezium when the `decimal.handling.mode` is `precise`
-// * Encoded - takes the encoded value as a slice of bytes
-// * Parameters - which contains:
-//   - `scale` (number of digits following decimal point)
-//   - `connect.decimal.precision` which is an optional parameter. (If -1, then it's variable and .Value() will be in STRING).
-func (f Field) DecodeDecimal(encoded []byte) (*decimal.Decimal, error) {
-	scale, precision, err := f.GetScaleAndPrecision()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get scale and/or precision: %w", err)
-	}
-
-	_decimal := DecodeDecimal(encoded, scale)
-	if precision == nil {
-		return decimal.NewDecimal(_decimal), nil
-	}
-
-	return decimal.NewDecimalWithPrecision(_decimal, *precision), nil
-}
-
-func (Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error) {
-	valueStruct, isOk := value.(map[string]any)
-	if !isOk {
-		return nil, fmt.Errorf("value is not map[string]any type")
-	}
-
-	scale, err := maputil.GetInt32FromMap(valueStruct, "scale")
-	if err != nil {
-		return nil, err
-	}
-
-	val, isOk := valueStruct["value"]
-	if !isOk {
-		return nil, fmt.Errorf("encoded value does not exist")
-	}
-
-	bytes, err := toBytes(val)
-	if err != nil {
-		return nil, err
-	}
-
-	return decimal.NewDecimal(DecodeDecimal(bytes, scale)), nil
 }

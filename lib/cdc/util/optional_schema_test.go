@@ -81,7 +81,9 @@ func TestGetOptionalSchema(t *testing.T) {
 		err := json.Unmarshal([]byte(tc.body), &schemaEventPayload)
 		assert.NoError(t, err, idx)
 
-		actualData := schemaEventPayload.GetOptionalSchema()
+		actualData, err := schemaEventPayload.GetOptionalSchema()
+		assert.NoError(t, err)
+
 		for actualKey, actualVal := range actualData {
 			testMsg := fmt.Sprintf("key: %s, actualKind: %s, index: %d", actualKey, actualVal.Kind, idx)
 

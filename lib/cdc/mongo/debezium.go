@@ -128,9 +128,9 @@ func (s *SchemaEventPayload) GetTableName() string {
 	return s.Payload.Source.Collection
 }
 
-func (s *SchemaEventPayload) GetOptionalSchema() map[string]typing.KindDetails {
+func (s *SchemaEventPayload) GetOptionalSchema() (map[string]typing.KindDetails, error) {
 	// MongoDB does not have a schema at the database level.
-	return nil
+	return nil, nil
 }
 
 func (s *SchemaEventPayload) GetColumns() (*columns.Columns, error) {

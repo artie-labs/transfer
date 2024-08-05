@@ -1,4 +1,4 @@
-package debezium
+package encode
 
 import (
 	"fmt"

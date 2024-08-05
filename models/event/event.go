@@ -72,12 +72,17 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc *kafkalib.TopicConf
 		delete(evtData, constants.OnlySetDeleteColumnMarker)
 	}
 
+	optionalSchema, err := event.GetOptionalSchema()
+	if err != nil {
+		return Event{}, err
+	}
+
 	return Event{
 		mode:           cfgMode,
 		Table:          tblName,
 		PrimaryKeyMap:  pkMap,
 		ExecutionTime:  event.GetExecutionTime(),
-		OptionalSchema: event.GetOptionalSchema(),
+		OptionalSchema: optionalSchema,
 		Columns:        cols,
 		Data:           evtData,
 		Deleted:        event.DeletePayload(),

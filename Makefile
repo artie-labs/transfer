@@ -41,7 +41,7 @@ bench_size:
 .PHONY: bench_typing
 bench_typing:
 	go test ./lib/typing/... -bench=Bench -benchtime=20s
-	go test ./lib/debezium -bench=Bench -benchtime=20s
+	go test ./lib/debezium/... -bench=Bench -benchtime=20s
 
 .PHONY: bench_redshift
 bench_redshift:
