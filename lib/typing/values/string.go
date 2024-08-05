@@ -57,22 +57,23 @@ func ToString(colVal any, colKind typing.KindDetails, additionalDateFmts []strin
 
 		return stringutil.EscapeBackslashes(fmt.Sprint(colVal)), nil
 	case typing.Struct.Kind:
-		if colKind == typing.Struct {
-			if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
-				colVal = map[string]any{
-					"key": constants.ToastUnavailableValuePlaceholder,
-				}
-			}
-
-			if reflect.TypeOf(colVal).Kind() != reflect.String {
-				colValBytes, err := json.Marshal(colVal)
-				if err != nil {
-					return "", err
-				}
-
-				return string(colValBytes), nil
-			}
+		if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
+			return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
 		}
+
+		isArray := reflect.ValueOf(colVal).Kind() == reflect.Slice
+		_, isMap := colVal.(map[string]any)
+		// If colVal is either an array or a JSON object, we should run JSON parse.
+		if isMap || isArray {
+			colValBytes, err := json.Marshal(colVal)
+			if err != nil {
+				return "", err
+			}
+
+			return string(colValBytes), nil
+		}
+
+		return fmt.Sprint(colVal), nil
 	case typing.Array.Kind:
 		colValBytes, err := json.Marshal(colVal)
 		if err != nil {

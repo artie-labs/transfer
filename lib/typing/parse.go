@@ -57,12 +57,7 @@ func parseValue(settings Settings, val any) KindDetails {
 			}
 		}
 
-		if IsJSON(convertedVal) {
-			return Struct
-		}
-
 		return String
-
 	case *decimal.Decimal:
 		extendedDetails := convertedVal.Details()
 		return KindDetails{
