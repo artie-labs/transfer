@@ -34,7 +34,6 @@ var SupportedDateTimeWithTimezoneFormats = []string{
 	"2006-01-02T15:04:05.00000Z",   // 5 digits
 	"2006-01-02T15:04:05.000000Z",  // 6 digits
 	"2006-01-02T15:04:05.0000000Z", // 7 digits
-
 }
 
 type DateTimeWithTimezone struct{}
