@@ -25,6 +25,17 @@ func (Time) Convert(val any) (any, error) {
 	return ext.NewExtendedTime(time.UnixMilli(valInt64).In(time.UTC), ext.TimeKindType, ""), nil
 }
 
+var SupportedDateTimeWithTimezoneFormats = []string{
+	"2006-01-02T15:04:05Z",         // w/o fractional seconds
+	"2006-01-02T15:04:05.0Z",       // 1 digit
+	"2006-01-02T15:04:05.00Z",      // 2 digits
+	"2006-01-02T15:04:05.000Z",     // 3 digits
+	"2006-01-02T15:04:05.0000Z",    // 4 digits
+	"2006-01-02T15:04:05.00000Z",   // 5 digits
+	"2006-01-02T15:04:05.000000Z",  // 6 digits
+	"2006-01-02T15:04:05.0000000Z", // 7 digits
+}
+
 type DateTimeWithTimezone struct{}
 
 func (DateTimeWithTimezone) ToKindDetails() typing.KindDetails {
@@ -32,30 +43,33 @@ func (DateTimeWithTimezone) ToKindDetails() typing.KindDetails {
 }
 
 func (DateTimeWithTimezone) Convert(value any) (any, error) {
-	dtString, isOk := value.(string)
+	valString, isOk := value.(string)
 	if !isOk {
 		return nil, fmt.Errorf("expected string got '%v' with type %T", value, value)
 	}
 
-	// We don't need to pass `additionalDateFormats` because this data type layout is standardized by Debezium
-	extTime, err := ext.ParseExtendedDateTime(dtString, nil)
-	if err == nil {
-		return extTime, nil
-	}
-
 	// Check for negative years
-	if strings.HasPrefix(dtString, "-") {
+	if strings.HasPrefix(valString, "-") {
 		return nil, nil
 	}
 
-	if parts := strings.Split(dtString, "-"); len(parts) == 3 {
+	if parts := strings.Split(valString, "-"); len(parts) == 3 {
 		// Check if year exceeds 9999
 		if len(parts[0]) > 4 {
 			return nil, nil
 		}
 	}
 
-	return nil, fmt.Errorf("failed to parse %q, err: %w", dtString, err)
+	var err error
+	var ts time.Time
+	for _, supportedFormat := range SupportedDateTimeWithTimezoneFormats {
+		ts, err = ext.ParseTimeExactMatch(supportedFormat, valString)
+		if err == nil {
+			return ext.NewExtendedTime(ts, ext.DateTimeKindType, supportedFormat), nil
+		}
+	}
+
+	return nil, fmt.Errorf("failed to parse %q, err: %w", valString, err)
 }
 
 var SupportedTimeWithTimezoneFormats = []string{

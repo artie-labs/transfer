@@ -29,21 +29,132 @@ func TestConvertDateTimeWithTimezone(t *testing.T) {
 	}
 	{
 		// Valid
-		val, err := DateTimeWithTimezone{}.Convert("2025-09-13T00:00:00.000000Z")
-		assert.NoError(t, err)
+		{
+			// No fractional seconds
+			val, err := DateTimeWithTimezone{}.Convert("2025-09-13T00:00:00Z")
+			assert.NoError(t, err)
 
-		ts, isOk := val.(*ext.ExtendedTime)
-		assert.True(t, isOk)
+			ts, isOk := val.(*ext.ExtendedTime)
+			assert.True(t, isOk)
 
-		expectedExtTime := &ext.ExtendedTime{
-			Time: time.Date(2025, time.September, 13, 0, 0, 0, 0, time.UTC),
-			NestedKind: ext.NestedKind{
-				Type:   ext.DateTimeKindType,
-				Format: "2006-01-02T15:04:05Z07:00",
-			},
+			expectedExtTime := &ext.ExtendedTime{
+				Time: time.Date(2025, time.September, 13, 0, 0, 0, 000000000, time.UTC),
+				NestedKind: ext.NestedKind{
+					Type:   ext.DateTimeKindType,
+					Format: "2006-01-02T15:04:05Z",
+				},
+			}
+
+			assert.Equal(t, expectedExtTime, ts)
 		}
+		{
+			// 1 digits
+			val, err := DateTimeWithTimezone{}.Convert("2025-09-13T00:00:00.1Z")
+			assert.NoError(t, err)
 
-		assert.Equal(t, expectedExtTime, ts)
+			ts, isOk := val.(*ext.ExtendedTime)
+			assert.True(t, isOk)
+
+			expectedExtTime := &ext.ExtendedTime{
+				Time: time.Date(2025, time.September, 13, 0, 0, 0, 100000000, time.UTC),
+				NestedKind: ext.NestedKind{
+					Type:   ext.DateTimeKindType,
+					Format: "2006-01-02T15:04:05.0Z",
+				},
+			}
+
+			assert.Equal(t, expectedExtTime, ts)
+		}
+		{
+			// 2 digits
+			val, err := DateTimeWithTimezone{}.Convert("2025-09-13T00:00:00.12Z")
+			assert.NoError(t, err)
+
+			ts, isOk := val.(*ext.ExtendedTime)
+			assert.True(t, isOk)
+
+			expectedExtTime := &ext.ExtendedTime{
+				Time: time.Date(2025, time.September, 13, 0, 0, 0, 120000000, time.UTC),
+				NestedKind: ext.NestedKind{
+					Type:   ext.DateTimeKindType,
+					Format: "2006-01-02T15:04:05.00Z",
+				},
+			}
+
+			assert.Equal(t, expectedExtTime, ts)
+		}
+		{
+			// 3 digits
+			val, err := DateTimeWithTimezone{}.Convert("2025-09-13T00:00:00.123Z")
+			assert.NoError(t, err)
+
+			ts, isOk := val.(*ext.ExtendedTime)
+			assert.True(t, isOk)
+
+			expectedExtTime := &ext.ExtendedTime{
+				Time: time.Date(2025, time.September, 13, 0, 0, 0, 123000000, time.UTC),
+				NestedKind: ext.NestedKind{
+					Type:   ext.DateTimeKindType,
+					Format: "2006-01-02T15:04:05.000Z",
+				},
+			}
+
+			assert.Equal(t, expectedExtTime, ts)
+		}
+		{
+			// 4 digits
+			val, err := DateTimeWithTimezone{}.Convert("2025-09-13T00:00:00.1234Z")
+			assert.NoError(t, err)
+
+			ts, isOk := val.(*ext.ExtendedTime)
+			assert.True(t, isOk)
+
+			expectedExtTime := &ext.ExtendedTime{
+				Time: time.Date(2025, time.September, 13, 0, 0, 0, 123400000, time.UTC),
+				NestedKind: ext.NestedKind{
+					Type:   ext.DateTimeKindType,
+					Format: "2006-01-02T15:04:05.0000Z",
+				},
+			}
+
+			assert.Equal(t, expectedExtTime, ts)
+		}
+		{
+			// 5 digits
+			val, err := DateTimeWithTimezone{}.Convert("2025-09-13T00:00:00.12345Z")
+			assert.NoError(t, err)
+
+			ts, isOk := val.(*ext.ExtendedTime)
+			assert.True(t, isOk)
+
+			expectedExtTime := &ext.ExtendedTime{
+				Time: time.Date(2025, time.September, 13, 0, 0, 0, 123450000, time.UTC),
+				NestedKind: ext.NestedKind{
+					Type:   ext.DateTimeKindType,
+					Format: "2006-01-02T15:04:05.00000Z",
+				},
+			}
+
+			assert.Equal(t, expectedExtTime, ts)
+		}
+		{
+			// 6 digits (microseconds)
+			val, err := DateTimeWithTimezone{}.Convert("2025-09-13T00:00:00.123456Z")
+			assert.NoError(t, err)
+
+			ts, isOk := val.(*ext.ExtendedTime)
+			assert.True(t, isOk)
+
+			expectedExtTime := &ext.ExtendedTime{
+				Time: time.Date(2025, time.September, 13, 0, 0, 0, 123456000, time.UTC),
+				NestedKind: ext.NestedKind{
+					Type:   ext.DateTimeKindType,
+					Format: "2006-01-02T15:04:05.000000Z",
+				},
+			}
+
+			assert.Equal(t, expectedExtTime, ts)
+		}
 	}
 }
 
