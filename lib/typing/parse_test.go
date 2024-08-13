@@ -13,31 +13,31 @@ import (
 func Test_ParseValue(t *testing.T) {
 	{
 		// Invalid
-		assert.Equal(t, ParseValue(Settings{}, "", nil, nil), Invalid)
-		assert.Equal(t, ParseValue(Settings{}, "", nil, errors.New("hello")), Invalid)
+		assert.Equal(t, ParseValue("", nil, nil), Invalid)
+		assert.Equal(t, ParseValue("", nil, errors.New("hello")), Invalid)
 	}
 	{
 		// Nil
-		assert.Equal(t, ParseValue(Settings{}, "", nil, ""), String)
-		assert.Equal(t, ParseValue(Settings{}, "", nil, "nil"), String)
-		assert.Equal(t, ParseValue(Settings{}, "", nil, nil), Invalid)
+		assert.Equal(t, ParseValue("", nil, ""), String)
+		assert.Equal(t, ParseValue("", nil, "nil"), String)
+		assert.Equal(t, ParseValue("", nil, nil), Invalid)
 	}
 	{
 		// Floats
-		assert.Equal(t, ParseValue(Settings{}, "", nil, 7.5), Float)
-		assert.Equal(t, ParseValue(Settings{}, "", nil, -7.4999999), Float)
-		assert.Equal(t, ParseValue(Settings{}, "", nil, 7.0), Float)
+		assert.Equal(t, ParseValue("", nil, 7.5), Float)
+		assert.Equal(t, ParseValue("", nil, -7.4999999), Float)
+		assert.Equal(t, ParseValue("", nil, 7.0), Float)
 	}
 	{
 		// Integers
-		assert.Equal(t, ParseValue(Settings{}, "", nil, 9), Integer)
-		assert.Equal(t, ParseValue(Settings{}, "", nil, math.MaxInt), Integer)
-		assert.Equal(t, ParseValue(Settings{}, "", nil, -1*math.MaxInt), Integer)
+		assert.Equal(t, ParseValue("", nil, 9), Integer)
+		assert.Equal(t, ParseValue("", nil, math.MaxInt), Integer)
+		assert.Equal(t, ParseValue("", nil, -1*math.MaxInt), Integer)
 	}
 	{
 		// Boolean
-		assert.Equal(t, ParseValue(Settings{}, "", nil, true), Boolean)
-		assert.Equal(t, ParseValue(Settings{}, "", nil, false), Boolean)
+		assert.Equal(t, ParseValue("", nil, true), Boolean)
+		assert.Equal(t, ParseValue("", nil, false), Boolean)
 	}
 	{
 		// Strings
@@ -48,20 +48,20 @@ func Test_ParseValue(t *testing.T) {
 		}
 
 		for _, possibleString := range possibleStrings {
-			assert.Equal(t, ParseValue(Settings{}, "", nil, possibleString), String)
+			assert.Equal(t, ParseValue("", nil, possibleString), String)
 		}
 	}
 	{
 		// Arrays
-		assert.Equal(t, ParseValue(Settings{}, "", nil, []string{"a", "b", "c"}), Array)
-		assert.Equal(t, ParseValue(Settings{}, "", nil, []any{"a", 123, "c"}), Array)
-		assert.Equal(t, ParseValue(Settings{}, "", nil, []int64{1}), Array)
-		assert.Equal(t, ParseValue(Settings{}, "", nil, []bool{false}), Array)
-		assert.Equal(t, ParseValue(Settings{}, "", nil, []any{false, true}), Array)
+		assert.Equal(t, ParseValue("", nil, []string{"a", "b", "c"}), Array)
+		assert.Equal(t, ParseValue("", nil, []any{"a", 123, "c"}), Array)
+		assert.Equal(t, ParseValue("", nil, []int64{1}), Array)
+		assert.Equal(t, ParseValue("", nil, []bool{false}), Array)
+		assert.Equal(t, ParseValue("", nil, []any{false, true}), Array)
 	}
 	{
 		// Time
-		kindDetails := ParseValue(Settings{}, "", nil, "00:18:11.13116+00")
+		kindDetails := ParseValue("", nil, "00:18:11.13116+00")
 		assert.Equal(t, ETime.Kind, kindDetails.Kind)
 		assert.Equal(t, ext.TimeKindType, kindDetails.ExtendedTimeDetails.Type)
 	}
@@ -81,7 +81,7 @@ func Test_ParseValue(t *testing.T) {
 		}
 
 		for _, possibleDate := range possibleDates {
-			assert.Equal(t, ParseValue(Settings{}, "", nil, possibleDate).ExtendedTimeDetails.Type, ext.DateTime.Type, fmt.Sprintf("Failed format, value is: %v", possibleDate))
+			assert.Equal(t, ParseValue("", nil, possibleDate).ExtendedTimeDetails.Type, ext.DateTime.Type, fmt.Sprintf("Failed format, value is: %v", possibleDate))
 
 			// Test the parseDT function as well.
 			ts, err := ext.ParseExtendedDateTime(fmt.Sprint(possibleDate), []string{})
@@ -120,7 +120,7 @@ func Test_ParseValue(t *testing.T) {
 		}
 
 		for _, randomMap := range randomMaps {
-			assert.Equal(t, ParseValue(Settings{}, "", nil, randomMap), Struct, fmt.Sprintf("Failed message is: %v", randomMap))
+			assert.Equal(t, ParseValue("", nil, randomMap), Struct, fmt.Sprintf("Failed message is: %v", randomMap))
 		}
 	}
 }
@@ -132,8 +132,8 @@ func TestOptionalSchema(t *testing.T) {
 		}
 
 		// Respect the schema if the value is not null.
-		assert.Equal(t, String, ParseValue(Settings{}, "created_at", optionalSchema, "2023-01-01"))
+		assert.Equal(t, String, ParseValue("created_at", optionalSchema, "2023-01-01"))
 		// Kind is invalid because `createAllColumnsIfAvailable` is not enabled.
-		assert.Equal(t, String, ParseValue(Settings{}, "created_at", optionalSchema, nil))
+		assert.Equal(t, String, ParseValue("created_at", optionalSchema, nil))
 	}
 }

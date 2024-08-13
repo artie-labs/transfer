@@ -7,8 +7,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-// TODO: Remove settings in a separate PR (scope is large)
-func ParseValue(_ Settings, key string, optionalSchema map[string]KindDetails, val any) KindDetails {
+func ParseValue(key string, optionalSchema map[string]KindDetails, val any) KindDetails {
 	if len(optionalSchema) > 0 {
 		// If the column exists in the schema, let's early exit.
 		if kindDetail, isOk := optionalSchema[key]; isOk {
