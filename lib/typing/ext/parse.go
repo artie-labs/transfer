@@ -3,8 +3,38 @@ package ext
 import (
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 )
+
+func ParseDate(value any, format string) (string, error) {
+	switch castedValue := value.(type) {
+	case string:
+		// Let's strip everything other than YYYY-MM-DD
+		parts := strings.Split(castedValue, "-")
+		if len(parts) < 3 {
+			return "", fmt.Errorf("failed to parse %q", castedValue)
+		}
+
+		for index, part := range parts[:3] {
+			for index > 1 {
+				parts[index] = part[:2]
+			}
+		}
+
+		strippedValue := strings.Join(parts[:3], "-")
+		ts, err := time.Parse(format, strippedValue)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse %q: %w", strippedValue, err)
+		}
+
+		return ts.Format(format), nil
+	case *ExtendedTime:
+		return castedValue.String(format), nil
+	default:
+		return "", fmt.Errorf("unsupported type: %T", value)
+	}
+}
 
 func ParseFromInterface(val any, additionalDateFormats []string) (*ExtendedTime, error) {
 	if val == nil {
