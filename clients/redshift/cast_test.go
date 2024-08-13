@@ -41,25 +41,25 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 func (r *RedshiftTestSuite) TestCastColValStaging() {
 	{
 		// Masked
-		value, err := castColValStaging(stringutil.Random(int(maxRedshiftLength)+1), typing.String, nil)
+		value, err := castColValStaging(stringutil.Random(int(maxRedshiftLength)+1), typing.String)
 		assert.NoError(r.T(), err)
 		assert.Equal(r.T(), constants.ExceededValueMarker, value)
 	}
 	{
 		// Valid
-		value, err := castColValStaging("thisissuperlongbutnotlongenoughtogetmasked", typing.String, nil)
+		value, err := castColValStaging("thisissuperlongbutnotlongenoughtogetmasked", typing.String)
 		assert.NoError(r.T(), err)
 		assert.Equal(r.T(), "thisissuperlongbutnotlongenoughtogetmasked", value)
 	}
 	{
 		// Masked struct
-		value, err := castColValStaging(fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(int(maxRedshiftLength)+1)), typing.Struct, nil)
+		value, err := castColValStaging(fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(int(maxRedshiftLength)+1)), typing.Struct)
 		assert.NoError(r.T(), err)
 		assert.Equal(r.T(), fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker), value)
 	}
 	{
 		// Valid struct
-		value, err := castColValStaging(`{"foo": "bar"}`, typing.Struct, nil)
+		value, err := castColValStaging(`{"foo": "bar"}`, typing.Struct)
 		assert.NoError(r.T(), err)
 		assert.Equal(r.T(), `{"foo": "bar"}`, value)
 	}

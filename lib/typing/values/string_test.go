@@ -22,18 +22,18 @@ func TestBooleanToBit(t *testing.T) {
 func TestToString(t *testing.T) {
 	{
 		// Nil value
-		_, err := ToString(nil, typing.KindDetails{}, nil)
+		_, err := ToString(nil, typing.KindDetails{})
 		assert.ErrorContains(t, err, "colVal is nil")
 	}
 	{
 		// ETime
-		_, err := ToString("2021-01-01T00:00:00Z", typing.ETime, nil)
+		_, err := ToString("2021-01-01T00:00:00Z", typing.ETime)
 		assert.ErrorContains(t, err, "column kind details for extended time details is null")
 
 		eTimeCol := columns.NewColumn("time", typing.ETime)
 		eTimeCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{Type: ext.TimeKindType}
 		// Using `string`
-		val, err := ToString("2021-01-01T03:52:00Z", eTimeCol.KindDetails, nil)
+		val, err := ToString("03:52:00Z", eTimeCol.KindDetails)
 		assert.NoError(t, err)
 		assert.Equal(t, "03:52:00", val)
 
@@ -43,87 +43,87 @@ func TestToString(t *testing.T) {
 		extendedTime := ext.NewExtendedTime(dustyBirthday, ext.DateTimeKindType, originalFmt)
 
 		eTimeCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{Type: ext.DateTimeKindType}
-		actualValue, err := ToString(extendedTime, eTimeCol.KindDetails, nil)
+		actualValue, err := ToString(extendedTime, eTimeCol.KindDetails)
 		assert.NoError(t, err)
 		assert.Equal(t, extendedTime.String(originalFmt), actualValue)
 	}
 	{
 		// String
 		// JSON
-		val, err := ToString(map[string]any{"foo": "bar"}, typing.String, nil)
+		val, err := ToString(map[string]any{"foo": "bar"}, typing.String)
 		assert.NoError(t, err)
 		assert.Equal(t, `{"foo":"bar"}`, val)
 
 		// Array
-		val, err = ToString([]string{"foo", "bar"}, typing.String, nil)
+		val, err = ToString([]string{"foo", "bar"}, typing.String)
 		assert.NoError(t, err)
 		assert.Equal(t, `["foo","bar"]`, val)
 
 		// Normal strings
-		val, err = ToString("foo", typing.String, nil)
+		val, err = ToString("foo", typing.String)
 		assert.NoError(t, err)
 		assert.Equal(t, "foo", val)
 	}
 	{
 		// Struct
-		val, err := ToString(map[string]any{"foo": "bar"}, typing.Struct, nil)
+		val, err := ToString(map[string]any{"foo": "bar"}, typing.Struct)
 		assert.NoError(t, err)
 		assert.Equal(t, `{"foo":"bar"}`, val)
 
-		val, err = ToString(constants.ToastUnavailableValuePlaceholder, typing.Struct, nil)
+		val, err = ToString(constants.ToastUnavailableValuePlaceholder, typing.Struct)
 		assert.NoError(t, err)
 		assert.Equal(t, `{"key":"__debezium_unavailable_value"}`, val)
 	}
 	{
 		// Array
-		val, err := ToString([]string{"foo", "bar"}, typing.Array, nil)
+		val, err := ToString([]string{"foo", "bar"}, typing.Array)
 		assert.NoError(t, err)
 		assert.Equal(t, `["foo","bar"]`, val)
 	}
 	{
 		// Integer
 		// Floats first.
-		val, err := ToString(float32(45452.999991), typing.Integer, nil)
+		val, err := ToString(float32(45452.999991), typing.Integer)
 		assert.NoError(t, err)
 		assert.Equal(t, "45453", val)
 
-		val, err = ToString(45452.999991, typing.Integer, nil)
+		val, err = ToString(45452.999991, typing.Integer)
 		assert.NoError(t, err)
 		assert.Equal(t, "45453", val)
 
 		// Integer
-		val, err = ToString(32, typing.Integer, nil)
+		val, err = ToString(32, typing.Integer)
 		assert.NoError(t, err)
 		assert.Equal(t, "32", val)
 
 		// Booleans
-		val, err = ToString(true, typing.Integer, nil)
+		val, err = ToString(true, typing.Integer)
 		assert.NoError(t, err)
 		assert.Equal(t, "1", val)
 
-		val, err = ToString(false, typing.Integer, nil)
+		val, err = ToString(false, typing.Integer)
 		assert.NoError(t, err)
 		assert.Equal(t, "0", val)
 	}
 	{
 		// Extended Decimal
 		// Floats
-		val, err := ToString(float32(123.45), typing.EDecimal, nil)
+		val, err := ToString(float32(123.45), typing.EDecimal)
 		assert.NoError(t, err)
 		assert.Equal(t, "123.45", val)
 
-		val, err = ToString(123.45, typing.EDecimal, nil)
+		val, err = ToString(123.45, typing.EDecimal)
 		assert.NoError(t, err)
 		assert.Equal(t, "123.45", val)
 
 		// String
-		val, err = ToString("123.45", typing.EDecimal, nil)
+		val, err = ToString("123.45", typing.EDecimal)
 		assert.NoError(t, err)
 		assert.Equal(t, "123.45", val)
 
 		// Decimals
 		value := decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("585692791691858.25"), 38)
-		val, err = ToString(value, typing.EDecimal, nil)
+		val, err = ToString(value, typing.EDecimal)
 		assert.NoError(t, err)
 		assert.Equal(t, "585692791691858.25", val)
 	}

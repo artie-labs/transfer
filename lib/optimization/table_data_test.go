@@ -72,7 +72,7 @@ func TestDistinctDates(t *testing.T) {
 					"ts": nil,
 				},
 			},
-			expectedErr: "col: ts is not a time column",
+			expectedErr: `col "ts" is not a time column`,
 		},
 	}
 
@@ -81,7 +81,7 @@ func TestDistinctDates(t *testing.T) {
 			rowsData: testCase.rowData,
 		}
 
-		actualValues, actualErr := td.DistinctDates("ts", nil)
+		actualValues, actualErr := td.DistinctDates("ts")
 		if testCase.expectedErr != "" {
 			assert.ErrorContains(t, actualErr, testCase.expectedErr, testCase.name)
 		} else {

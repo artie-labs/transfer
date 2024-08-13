@@ -21,20 +21,20 @@ func BooleanToBit(val bool) int {
 	}
 }
 
-func ToString(colVal any, colKind typing.KindDetails, additionalDateFmts []string) (string, error) {
+func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 	if colVal == nil {
 		return "", fmt.Errorf("colVal is nil")
 	}
 
 	switch colKind.Kind {
 	case typing.ETime.Kind:
-		extTime, err := ext.ParseFromInterface(colVal, additionalDateFmts)
-		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
-		}
-
 		if colKind.ExtendedTimeDetails == nil {
 			return "", fmt.Errorf("column kind details for extended time details is null")
+		}
+
+		extTime, err := ext.ParseFromInterface(colVal, colKind.ExtendedTimeDetails.Type)
+		if err != nil {
+			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
 
 		if colKind.ExtendedTimeDetails.Type == ext.TimeKindType {
