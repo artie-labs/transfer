@@ -2,6 +2,9 @@ package mssql
 
 import (
 	"testing"
+	"time"
+
+	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 
@@ -92,5 +95,32 @@ func TestParseValue(t *testing.T) {
 		val, err = parseValue("false", columns.NewColumn("bool", typing.Boolean))
 		assert.NoError(t, err)
 		assert.False(t, val.(bool))
+	}
+	{
+		// Extended time
+		{
+			// String
+			val, err := parseValue("2021-01-01T00:00:00Z", columns.NewColumn("time", typing.ETime))
+			assert.NoError(t, err)
+			assert.Equal(t, "2021-01-01T00:00:00Z", val)
+		}
+		{
+			// Extended time object
+			ts := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+
+			val, err := parseValue(
+				ext.NewExtendedTime(ts, ext.DateKindType, ext.ISO8601),
+				columns.NewColumn("time", typing.ETime),
+			)
+			assert.NoError(t, err)
+			assert.Equal(t, ts, val)
+		}
+		{
+			// Wrong data type
+			val, err := parseValue(123, columns.NewColumn("time", typing.ETime))
+			assert.ErrorContains(t, err, "expected colVal to be either string or *ext.ExtendedTime, type is: int")
+			assert.Nil(t, val)
+		}
+
 	}
 }

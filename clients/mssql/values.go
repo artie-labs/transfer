@@ -34,7 +34,7 @@ func parseValue(colVal any, colKind columns.Column) (any, error) {
 		case *ext.ExtendedTime:
 			return castedColVal.GetTime(), nil
 		default:
-			return nil, fmt.Errorf("expected colVal to be either string or *ext.ExtendedTime, type is: %T", colVal)
+			return nil, fmt.Errorf("expected colVal to be either string or *ext.ExtendedTime, type is: %T", castedColVal)
 		}
 	case typing.String.Kind:
 		isArray := reflect.ValueOf(colVal).Kind() == reflect.Slice
