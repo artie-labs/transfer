@@ -184,7 +184,7 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicCon
 	}
 
 	if tc.IncludeArtieUpdatedAt {
-		retMap[constants.UpdateColumnMarker] = ext.NewUTCTime(ext.ISO8601)
+		retMap[constants.UpdateColumnMarker] = ext.NewExtendedTime(time.Now().UTC(), ext.DateTimeKindType, ext.ISO8601)
 	}
 
 	if tc.IncludeDatabaseUpdatedAt {
