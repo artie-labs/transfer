@@ -15,7 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
-func parseValue(colVal any, colKind columns.Column, additionalDateFmts []string) (any, error) {
+func parseValue(colVal any, colKind columns.Column) (any, error) {
 	if colVal == nil {
 		return colVal, nil
 	}
@@ -28,12 +28,14 @@ func parseValue(colVal any, colKind columns.Column, additionalDateFmts []string)
 	colValString := fmt.Sprint(colVal)
 	switch colKind.KindDetails.Kind {
 	case typing.ETime.Kind:
-		extTime, err := ext.ParseFromInterface(colVal, additionalDateFmts)
-		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
+		switch castedColVal := colVal.(type) {
+		case string:
+			return castedColVal, nil
+		case *ext.ExtendedTime:
+			return castedColVal.GetTime(), nil
+		default:
+			return nil, fmt.Errorf("expected colVal to be either string or *ext.ExtendedTime, type is: %T", colVal)
 		}
-
-		return extTime.GetTime(), nil
 	case typing.String.Kind:
 		isArray := reflect.ValueOf(colVal).Kind() == reflect.Slice
 		_, isMap := colVal.(map[string]any)

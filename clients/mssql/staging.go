@@ -50,11 +50,10 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 
 	defer stmt.Close()
 
-	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	for _, value := range tableData.Rows() {
 		var row []any
 		for _, col := range cols {
-			castedValue, castErr := parseValue(value[col.Name()], col, additionalDateFmts)
+			castedValue, castErr := parseValue(value[col.Name()], col)
 			if castErr != nil {
 				return castErr
 			}
