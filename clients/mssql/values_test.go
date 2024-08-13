@@ -4,15 +4,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/typing/ext"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
-
 	"github.com/artie-labs/transfer/lib/ptr"
-
 	"github.com/artie-labs/transfer/lib/typing"
-
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -121,6 +117,5 @@ func TestParseValue(t *testing.T) {
 			assert.ErrorContains(t, err, "expected colVal to be either string or *ext.ExtendedTime, type is: int")
 			assert.Nil(t, val)
 		}
-
 	}
 }
