@@ -198,10 +198,10 @@ func (t *TableData) DistinctDates(colName string) ([]string, error) {
 	for _, row := range t.rowsData {
 		val, isOk := row[colName]
 		if !isOk {
-			return nil, fmt.Errorf("col: %v does not exist on row: %v", colName, row)
+			return nil, fmt.Errorf("col: %q does not exist on row: %v", colName, row)
 		}
 
-		value, err := ext.ParseDate(val, time.DateOnly)
+		value, err := ext.ParseDate(val)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse date: %w", err)
 		}

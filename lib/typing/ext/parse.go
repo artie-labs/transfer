@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func ParseDate(value any, format string) (string, error) {
+func ParseDate(value any) (string, error) {
 	switch castedValue := value.(type) {
 	case string:
 		// Let's strip everything other than YYYY-MM-DD
@@ -23,14 +23,14 @@ func ParseDate(value any, format string) (string, error) {
 		}
 
 		strippedValue := strings.Join(parts[:3], "-")
-		ts, err := time.Parse(format, strippedValue)
+		ts, err := time.Parse(time.DateOnly, strippedValue)
 		if err != nil {
 			return "", fmt.Errorf("failed to parse %q: %w", strippedValue, err)
 		}
 
-		return ts.Format(format), nil
+		return ts.Format(time.DateOnly), nil
 	case *ExtendedTime:
-		return castedValue.String(format), nil
+		return castedValue.String(time.DateOnly), nil
 	default:
 		return "", fmt.Errorf("unsupported type: %T", value)
 	}
