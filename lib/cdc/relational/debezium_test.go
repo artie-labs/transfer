@@ -92,7 +92,7 @@ func (r *RelationTestSuite) TestPostgresEvent() {
 	})
 	assert.NoError(r.T(), err)
 	assert.Equal(r.T(), float64(59), evtData["id"])
-	assert.Equal(r.T(), "2022-11-16T04:01:53.308+00:00", evtData[constants.DatabaseUpdatedColumnMarker])
+	assert.Equal(r.T(), ext.NewExtendedTime(time.Date(2022, time.November, 16, 4, 1, 53, 308000000, time.UTC), ext.DateTimeKindType, ext.ISO8601), evtData[constants.DatabaseUpdatedColumnMarker])
 
 	assert.Equal(r.T(), "Barings Participation Investors", evtData["item"])
 	assert.Equal(r.T(), map[string]any{"object": "foo"}, evtData["nested"])
@@ -541,10 +541,11 @@ func (r *RelationTestSuite) TestGetEventFromBytes_MySQL() {
 	})
 	assert.NoError(r.T(), err)
 
-	assert.Equal(r.T(), "2023-03-13T19:19:24+00:00", evtData[constants.DatabaseUpdatedColumnMarker])
+	assert.Equal(r.T(), ext.NewExtendedTime(time.Date(2023, time.March, 13, 19, 19, 24, 0, time.UTC), ext.DateTimeKindType, ext.ISO8601), evtData[constants.DatabaseUpdatedColumnMarker])
 
-	_, err = time.Parse(time.RFC3339, evtData[constants.UpdateColumnMarker].(string))
-	assert.NoError(r.T(), err, evtData[constants.UpdateColumnMarker])
+	updatedAtExtTime, isOk := evtData[constants.UpdateColumnMarker].(*ext.ExtendedTime)
+	assert.True(r.T(), isOk)
+	assert.False(r.T(), updatedAtExtTime.IsZero())
 
 	assert.Equal(r.T(), evtData["id"], int64(1001))
 	assert.Equal(r.T(), evtData["first_name"], "Sally")

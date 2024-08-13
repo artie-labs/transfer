@@ -174,9 +174,11 @@ func (m *MongoTestSuite) TestMongoDBEventCustomer() {
 	})
 	assert.NoError(m.T(), err)
 
-	assert.Equal(m.T(), "2022-11-18T06:35:21+00:00", evtDataWithIncludedAt[constants.DatabaseUpdatedColumnMarker])
-	_, err = time.Parse(ext.ISO8601, evtDataWithIncludedAt[constants.UpdateColumnMarker].(string))
-	assert.NoError(m.T(), err, evtDataWithIncludedAt[constants.UpdateColumnMarker])
+	assert.Equal(m.T(), ext.NewExtendedTime(time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC), ext.DateTimeKindType, ext.ISO8601), evtDataWithIncludedAt[constants.DatabaseUpdatedColumnMarker])
+
+	updatedExtTime, isOk := evtDataWithIncludedAt[constants.UpdateColumnMarker].(*ext.ExtendedTime)
+	assert.True(m.T(), isOk)
+	assert.False(m.T(), updatedExtTime.IsZero())
 
 	var nestedData map[string]any
 	err = json.Unmarshal([]byte(evtData["nested"].(string)), &nestedData)
