@@ -115,11 +115,12 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 
 		switch column.KindDetails.Kind {
 		case typing.Boolean.Kind:
-			if boolValue, ok := value.(bool); ok {
-				message.Set(field, protoreflect.ValueOfBool(boolValue))
-			} else {
-				return nil, fmt.Errorf("expected bool received %T with value %v", value, value)
+			boolValue, err := typing.AssertType[bool](value)
+			if err != nil {
+				return nil, err
 			}
+
+			message.Set(field, protoreflect.ValueOfBool(boolValue))
 		case typing.Integer.Kind:
 			switch value := value.(type) {
 			case int:
@@ -160,11 +161,11 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			}
 		case typing.String.Kind:
 			var stringValue string
-			switch value := value.(type) {
+			switch castedValue := value.(type) {
 			case string:
-				stringValue = value
+				stringValue = castedValue
 			case *decimal.Decimal:
-				stringValue = value.String()
+				stringValue = castedValue.String()
 			default:
 				return nil, fmt.Errorf("expected string/decimal.Decimal received %T with value %v", value, value)
 			}
