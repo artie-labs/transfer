@@ -5,9 +5,15 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
 func ShouldDeleteFromName(name string) bool {
+	if !strings.Contains(name, constants.ArtiePrefix) {
+		return false
+	}
+
 	nameParts := strings.Split(name, "_")
 	if len(nameParts) < 2 {
 		return false
