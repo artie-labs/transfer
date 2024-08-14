@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	mssql "github.com/microsoft/go-mssqldb"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -260,4 +262,14 @@ WHEN NOT MATCHED AND COALESCE(%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
 		// VALUES (%s);
 		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, md), ","),
 	)}, nil
+}
+
+func (MSSQLDialect) BuildSweepQuery(_ string, schemaName string) (string, []any) {
+	return `
+SELECT
+    TABLE_SCHEMA, TABLE_NAME
+FROM
+    INFORMATION_SCHEMA.TABLES
+WHERE
+    LOWER(TABLE_NAME) LIKE ? AND LOWER(TABLE_SCHEMA) = LOWER(?)`, []any{mssql.VarChar("%" + constants.ArtiePrefix + "%"), mssql.VarChar(schemaName)}
 }

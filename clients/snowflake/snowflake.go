@@ -3,12 +3,13 @@ package snowflake
 import (
 	"fmt"
 
+	"github.com/artie-labs/transfer/lib/typing"
+
 	"github.com/snowflakedb/gosnowflake"
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -50,17 +51,12 @@ func (s *Store) Sweep() error {
 		return err
 	}
 
-	queryFunc := func(topicConfig kafkalib.TopicConfig) (string, []any) {
-		return fmt.Sprintf(`
-SELECT
-    table_schema, table_name
-FROM
-    %s.information_schema.tables
-WHERE
-    UPPER(table_schema) = UPPER(?) AND table_name ILIKE ?`, topicConfig.Database), []any{topicConfig.Schema, "%" + constants.ArtiePrefix + "%"}
+	snowflakeDialect, err := typing.AssertType[dialect.SnowflakeDialect](s.Dialect())
+	if err != nil {
+		return err
 	}
 
-	return shared.Sweep(s, tcs, queryFunc)
+	return shared.Sweep(s, tcs, snowflakeDialect.BuildSweepQuery)
 }
 
 func (s *Store) Dialect() sql.Dialect {

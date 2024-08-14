@@ -3,12 +3,13 @@ package redshift
 import (
 	"fmt"
 
+	"github.com/artie-labs/transfer/lib/typing"
+
 	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -80,20 +81,12 @@ func (s *Store) Sweep() error {
 		return err
 	}
 
-	// `relkind` will filter for only ordinary tables and exclude sequences, views, etc.
-	queryFunc := func(topicConfig kafkalib.TopicConfig) (string, []any) {
-		return `
-SELECT
-    n.nspname, c.relname
-FROM
-    PG_CATALOG.PG_CLASS c
-JOIN
-    PG_CATALOG.PG_NAMESPACE n ON n.oid = c.relnamespace
-WHERE
-    n.nspname = $1 AND c.relname ILIKE $2 AND c.relkind = 'r';`, []any{topicConfig.Schema, "%" + constants.ArtiePrefix + "%"}
+	redshiftDialect, err := typing.AssertType[dialect.RedshiftDialect](s.Dialect())
+	if err != nil {
+		return err
 	}
 
-	return shared.Sweep(s, tcs, queryFunc)
+	return shared.Sweep(s, tcs, redshiftDialect.BuildSweepQuery)
 }
 
 func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {

@@ -250,3 +250,13 @@ WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s);`,
 		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, sd), ","),
 	)}, nil
 }
+
+func (SnowflakeDialect) BuildSweepQuery(dbName, schemaName string) (string, []any) {
+	return fmt.Sprintf(`
+SELECT
+    table_schema, table_name
+FROM
+    %s.information_schema.tables
+WHERE
+    UPPER(table_schema) = UPPER(?) AND table_name ILIKE ?`, dbName), []any{schemaName, "%" + constants.ArtiePrefix + "%"}
+}
