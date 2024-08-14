@@ -26,6 +26,7 @@ import (
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 const (
@@ -94,9 +95,9 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		}
 	}
 
-	bqTempTableID, ok := tempTableID.(TableIdentifier)
-	if !ok {
-		return fmt.Errorf("unable to cast tempTableID to BigQuery TableIdentifier")
+	bqTempTableID, err := typing.AssertType[TableIdentifier](tempTableID)
+	if err != nil {
+		return err
 	}
 
 	return s.putTable(context.Background(), bqTempTableID, tableData)

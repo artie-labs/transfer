@@ -5,15 +5,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	redshiftDialect "github.com/artie-labs/transfer/clients/redshift/dialect"
 	snowflakeDialect "github.com/artie-labs/transfer/clients/snowflake/dialect"
+	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
+	"github.com/stretchr/testify/assert"
 )
 
 var dialects = []sql.Dialect{
@@ -103,6 +104,24 @@ func TestColumn_DefaultValue(t *testing.T) {
 			}
 
 			assert.Equal(t, expectedValue, actualValue, fmt.Sprintf("%s %s", testCase.name, dialect))
+		}
+	}
+
+	{
+		// Decimal value
+		{
+			// Type *decimal.Decimal
+			decimalValue := decimal.NewDecimal(numbers.MustParseDecimal("3.14159"))
+			col := columns.NewColumnWithDefaultValue("", typing.EDecimal, decimalValue)
+			value, err := DefaultValue(col, redshiftDialect.RedshiftDialect{}, nil)
+			assert.NoError(t, err)
+			assert.Equal(t, "3.14159", value)
+		}
+		{
+			// Wrong type (string)
+			col := columns.NewColumnWithDefaultValue("", typing.EDecimal, "hello")
+			_, err := DefaultValue(col, redshiftDialect.RedshiftDialect{}, nil)
+			assert.ErrorContains(t, err, "expected type *decimal.Decimal, got string")
 		}
 	}
 }
