@@ -31,6 +31,5 @@ func ShouldDeleteFromName(name string) bool {
 		return false
 	}
 
-	ts := time.Unix(int64(unix), 0)
-	return time.Now().UTC().After(ts)
+	return time.Now().UTC().After(time.Unix(int64(unix), 0))
 }
