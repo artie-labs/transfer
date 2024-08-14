@@ -284,3 +284,16 @@ func (rd RedshiftDialect) BuildMergeQueries(
 
 	return parts, nil
 }
+
+func (RedshiftDialect) BuildSweepQuery(_ string, schemaName string) (string, []any) {
+	// `relkind` will filter for only ordinary tables and exclude sequences, views, etc.
+	return `
+SELECT
+    n.nspname, c.relname
+FROM
+    PG_CATALOG.PG_CLASS c
+JOIN
+    PG_CATALOG.PG_NAMESPACE n ON n.oid = c.relnamespace
+WHERE
+    n.nspname = $1 AND c.relname ILIKE $2 AND c.relkind = 'r';`, []any{schemaName, "%" + constants.ArtiePrefix + "%"}
+}
