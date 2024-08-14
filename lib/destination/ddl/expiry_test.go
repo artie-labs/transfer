@@ -2,6 +2,7 @@ package ddl
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -21,6 +22,8 @@ func TestShouldDeleteFromName(t *testing.T) {
 		}
 
 		for _, tblToNotDelete := range tablesToNotDrop {
+			assert.False(t, ShouldDeleteFromName(strings.ToLower(tblToNotDelete)), tblToNotDelete)
+			assert.False(t, ShouldDeleteFromName(strings.ToUpper(tblToNotDelete)), tblToNotDelete)
 			assert.False(t, ShouldDeleteFromName(tblToNotDelete), tblToNotDelete)
 		}
 	}
@@ -32,6 +35,8 @@ func TestShouldDeleteFromName(t *testing.T) {
 		}
 
 		for _, tblToDelete := range tablesToDrop {
+			assert.True(t, ShouldDeleteFromName(strings.ToLower(tblToDelete)), tblToDelete)
+			assert.True(t, ShouldDeleteFromName(strings.ToUpper(tblToDelete)), tblToDelete)
 			assert.True(t, ShouldDeleteFromName(tblToDelete), tblToDelete)
 		}
 	}

@@ -10,7 +10,7 @@ import (
 )
 
 func ShouldDeleteFromName(name string) bool {
-	if !strings.Contains(name, constants.ArtiePrefix) {
+	if !strings.Contains(strings.ToLower(name), constants.ArtiePrefix) {
 		return false
 	}
 
