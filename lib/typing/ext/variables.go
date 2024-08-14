@@ -35,7 +35,3 @@ var SupportedTimeFormatsLegacy = []string{
 	PostgresTimeFormatNoTZ,
 	AdditionalTimeFormat,
 }
-
-func NewUTCTime(layout string) string {
-	return time.Now().UTC().Format(layout)
-}
