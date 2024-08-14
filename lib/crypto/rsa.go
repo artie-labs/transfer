@@ -6,6 +6,8 @@ import (
 	"encoding/pem"
 	"fmt"
 	"os"
+
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 func LoadRSAKey(filePath string) (*rsa.PrivateKey, error) {
@@ -28,9 +30,9 @@ func ParseRSAPrivateKey(keyBytes []byte) (*rsa.PrivateKey, error) {
 		return nil, fmt.Errorf("failed to parse private key: %v", err)
 	}
 
-	rsaKey, ok := key.(*rsa.PrivateKey)
-	if !ok {
-		return nil, fmt.Errorf("not an RSA private key, rather: %T", key)
+	rsaKey, err := typing.AssertType[*rsa.PrivateKey](key)
+	if err != nil {
+		return nil, err
 	}
 
 	return rsaKey, nil

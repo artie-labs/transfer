@@ -80,10 +80,12 @@ func columnsToMessageDescriptor(cols []columns.Column) (*protoreflect.MessageDes
 	if err != nil {
 		return nil, fmt.Errorf("failed to build proto descriptor: %w", err)
 	}
-	messageDescriptor, ok := descriptor.(protoreflect.MessageDescriptor)
-	if !ok {
-		return nil, fmt.Errorf("proto descriptor is not a message descriptor")
+
+	messageDescriptor, err := typing.AssertType[protoreflect.MessageDescriptor](descriptor)
+	if err != nil {
+		return nil, err
 	}
+
 	return &messageDescriptor, nil
 }
 
@@ -154,11 +156,12 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				return nil, fmt.Errorf("expected float32/float64/int32/int64/string received %T with value %v", value, value)
 			}
 		case typing.EDecimal.Kind:
-			if decimalValue, ok := value.(*decimal.Decimal); ok {
-				message.Set(field, protoreflect.ValueOfString(decimalValue.String()))
-			} else {
-				return nil, fmt.Errorf("expected *decimal.Decimal received %T with value %v", decimalValue, decimalValue)
+			decimalValue, err := typing.AssertType[*decimal.Decimal](value)
+			if err != nil {
+				return nil, err
 			}
+
+			message.Set(field, protoreflect.ValueOfString(decimalValue.String()))
 		case typing.String.Kind:
 			var stringValue string
 			switch castedValue := value.(type) {

@@ -39,12 +39,12 @@ func DefaultValue(column columns.Column, dialect sql.Dialect, additionalDateFmts
 			return sql.QuoteLiteral(extTime.String(column.KindDetails.ExtendedTimeDetails.Format)), nil
 		}
 	case typing.EDecimal.Kind:
-		val, isOk := column.DefaultValue().(*decimal.Decimal)
-		if !isOk {
-			return nil, fmt.Errorf("colVal is not type *decimal.Decimal")
+		decimalValue, err := typing.AssertType[*decimal.Decimal](column.DefaultValue())
+		if err != nil {
+			return nil, err
 		}
 
-		return val.String(), nil
+		return decimalValue.String(), nil
 	case typing.String.Kind:
 		return sql.QuoteLiteral(fmt.Sprint(column.DefaultValue())), nil
 	}

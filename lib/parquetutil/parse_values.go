@@ -55,7 +55,6 @@ func ParseValue(colVal any, colKind columns.Column, additionalDateFmts []string)
 			}
 		}
 	case typing.Array.Kind:
-		var err error
 		arrayString, err := array.InterfaceToArrayString(colVal, true)
 		if err != nil {
 			return nil, err
@@ -67,12 +66,12 @@ func ParseValue(colVal any, colKind columns.Column, additionalDateFmts []string)
 
 		return arrayString, nil
 	case typing.EDecimal.Kind:
-		val, isOk := colVal.(*decimal.Decimal)
-		if !isOk {
-			return "", fmt.Errorf("colVal is not *decimal.Decimal type")
+		decimalValue, err := typing.AssertType[*decimal.Decimal](colVal)
+		if err != nil {
+			return nil, err
 		}
 
-		return val.String(), nil
+		return decimalValue.String(), nil
 	}
 
 	return colVal, nil

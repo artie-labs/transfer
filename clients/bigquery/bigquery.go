@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/typing"
+
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/bigquery/storage/managedwriter"
 	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
@@ -94,9 +96,9 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		}
 	}
 
-	bqTempTableID, ok := tempTableID.(TableIdentifier)
-	if !ok {
-		return fmt.Errorf("unable to cast tempTableID to BigQuery TableIdentifier")
+	bqTempTableID, err := typing.AssertType[TableIdentifier](tempTableID)
+	if err != nil {
+		return err
 	}
 
 	return s.putTable(context.Background(), bqTempTableID, tableData)
