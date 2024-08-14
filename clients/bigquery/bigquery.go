@@ -7,8 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/typing"
-
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/bigquery/storage/managedwriter"
 	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
@@ -28,6 +26,7 @@ import (
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 const (
