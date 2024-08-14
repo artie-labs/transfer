@@ -10,24 +10,24 @@ import (
 )
 
 func ShouldDeleteFromName(name string) bool {
-	// We expect the table name to be in the format of `tableName__artie_suffix_unix`
-	if !strings.Contains(strings.ToLower(name), constants.ArtiePrefix) {
+	parts := strings.Split(strings.ToLower(name), constants.ArtiePrefix)
+	if len(parts) != 2 {
 		return false
 	}
 
-	nameParts := strings.Split(name, "_")
-	if len(nameParts) < 6 {
-		slog.Warn("Table does not have enough parts to it, but contains __artie in the table name",
-			slog.String("tableName", name),
-			slog.Int("parts", len(nameParts)),
-		)
+	suffixParts := strings.Split(parts[1], "_")
+	if len(suffixParts) != 3 {
 		return false
 	}
 
-	unixString := nameParts[len(nameParts)-1]
-	unix, err := strconv.Atoi(unixString)
+	tsString := suffixParts[len(suffixParts)-1]
+	unix, err := strconv.Atoi(tsString)
 	if err != nil {
-		slog.Error("Failed to parse unix string", slog.Any("err", err), slog.String("tableName", name), slog.String("unixString", unixString))
+		slog.Error("Failed to parse unix string",
+			slog.Any("err", err),
+			slog.String("tableName", name),
+			slog.String("tsString", tsString),
+		)
 		return false
 	}
 
