@@ -3,8 +3,6 @@ package snowflake
 import (
 	"fmt"
 
-	"github.com/artie-labs/transfer/lib/typing"
-
 	"github.com/snowflakedb/gosnowflake"
 
 	"github.com/artie-labs/transfer/clients/shared"
@@ -16,6 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 const maxRetries = 10

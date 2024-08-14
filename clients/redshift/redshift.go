@@ -3,8 +3,6 @@ package redshift
 import (
 	"fmt"
 
-	"github.com/artie-labs/transfer/lib/typing"
-
 	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/artie-labs/transfer/clients/redshift/dialect"
@@ -16,6 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 type Store struct {

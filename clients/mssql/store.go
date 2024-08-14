@@ -3,8 +3,6 @@ package mssql
 import (
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/typing"
-
 	_ "github.com/microsoft/go-mssqldb"
 
 	"github.com/artie-labs/transfer/clients/mssql/dialect"
@@ -15,6 +13,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 type Store struct {
