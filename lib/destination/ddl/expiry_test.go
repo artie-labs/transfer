@@ -17,8 +17,8 @@ func TestShouldDeleteFromName(t *testing.T) {
 		tablesToNotDrop := []string{
 			"foo",
 			"transactions",
-			fmt.Sprintf("expired_tbl__artie_suffix_%d", time.Now().Add(constants.TemporaryTableTTL).Unix()),
-			fmt.Sprintf("expired_tbl__notartie_%d", time.Now().Add(-1*time.Hour).Unix()),
+			fmt.Sprintf("future_tbl___artie_suffix_%d", time.Now().Add(constants.TemporaryTableTTL).Unix()),
+			fmt.Sprintf("future_tbl___notartie_%d", time.Now().Add(-1*time.Hour).Unix()),
 		}
 
 		for _, tblToNotDelete := range tablesToNotDrop {
@@ -31,7 +31,7 @@ func TestShouldDeleteFromName(t *testing.T) {
 		// Tables that are eligible to be dropped
 		tablesToDrop := []string{
 			"transactions___ARTIE_48GJC_1723663043",
-			fmt.Sprintf("tableName_%s_suffix_%d", constants.ArtiePrefix, time.Now().Add(-1*constants.TemporaryTableTTL).Unix()),
+			fmt.Sprintf("expired_tbl_%s_suffix_%d", constants.ArtiePrefix, time.Now().Add(-1*constants.TemporaryTableTTL).Unix()),
 			fmt.Sprintf("artie_%s_suffix_%d", constants.ArtiePrefix, time.Now().Add(-1*constants.TemporaryTableTTL).Unix()),
 		}
 
