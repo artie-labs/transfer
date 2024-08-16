@@ -42,7 +42,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 	if args.SpecificTable != "" {
 		if _, ok := allTables[args.SpecificTable]; !ok {
 			// Should never happen
-			return fmt.Errorf("table %s does not exist in the in-memory database", args.SpecificTable)
+			return fmt.Errorf("table %q does not exist in the in-memory database", args.SpecificTable)
 		}
 	}
 
@@ -58,6 +58,11 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 		go func(_tableName string, _tableData *models.TableData) {
 			defer wg.Done()
 
+			if args.CoolDown != nil && _tableData.ShouldSkipFlush(*args.CoolDown) {
+				slog.Debug("Skipping flush because we are currently in a flush cooldown", slog.String("tableName", _tableName))
+				return
+			}
+
 			action := "merge"
 			if _tableData.Mode() == config.History {
 				action = "append"
@@ -70,7 +75,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 			}
 
 			err = retry.WithRetries(retryCfg, func(_ int, _ error) error {
-				return flush(ctx, args, _tableName, _tableData, action, dest, metricsClient, inMemDB)
+				return flush(ctx, args.Reason, _tableName, _tableData, action, dest, metricsClient, inMemDB)
 			})
 
 			if err != nil {
@@ -83,17 +88,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 	return nil
 }
 
-func flush(ctx context.Context, args Args, _tableName string, _tableData *models.TableData, action string, dest destination.Baseline, metricsClient base.Client, inMemDB *models.DatabaseData) error {
-	logFields := []any{
-		slog.String("action", action),
-		slog.String("tableName", _tableName),
-	}
-
-	if args.CoolDown != nil && _tableData.ShouldSkipFlush(*args.CoolDown) {
-		slog.With(logFields...).Debug("Skipping flush because we are currently in a flush cooldown")
-		return nil
-	}
-
+func flush(ctx context.Context, reason string, _tableName string, _tableData *models.TableData, action string, dest destination.Baseline, metricsClient base.Client, inMemDB *models.DatabaseData) error {
 	// Lock the tables when executing merge / append.
 	_tableData.Lock()
 	defer _tableData.Unlock()
@@ -111,15 +106,15 @@ func flush(ctx context.Context, args Args, _tableName string, _tableData *models
 		"table":    _tableName,
 		"database": _tableData.TopicConfig().Database,
 		"schema":   _tableData.TopicConfig().Schema,
-		"reason":   args.Reason,
+		"reason":   reason,
 	}
 
 	defer func() {
 		metricsClient.Timing("flush", time.Since(start), tags)
 	}()
 
-	var err error
 	// Merge or Append depending on the mode.
+	var err error
 	if _tableData.Mode() == config.History {
 		err = dest.Append(_tableData.TableData, false)
 	} else {
@@ -128,10 +123,13 @@ func flush(ctx context.Context, args Args, _tableName string, _tableData *models
 
 	if err != nil {
 		tags["what"] = "merge_fail"
-		slog.With(logFields...).Error(fmt.Sprintf("Failed to execute %s, not going to flush memory, will sleep for 3 seconds before continuing...", action), slog.Any("err", err))
-		time.Sleep(3 * time.Second)
+		slog.Error(
+			fmt.Sprintf("Failed to execute %s, not going to flush memory, will sleep for 3 seconds before continuing...", action),
+			slog.Any("err", err),
+			slog.String("tableName", _tableName),
+		)
 	} else {
-		slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), logFields...)
+		slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), slog.String("tableName", _tableName))
 		commitErr := commitOffset(ctx, _tableData.TopicConfig().Topic, _tableData.PartitionsToLastMessage)
 		if commitErr == nil {
 			inMemDB.ClearTableConfig(_tableName)
