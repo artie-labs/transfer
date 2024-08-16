@@ -74,7 +74,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 			}
 
 			err = retry.WithRetries(retryCfg, func(_ int, _ error) error {
-				return flush(ctx, dest, metricsClient, args.Reason, _tableName, _tableData, action)
+				return flush(ctx, dest, metricsClient, args.Reason, _tableName, _tableData)
 			})
 
 			if err != nil {
@@ -90,7 +90,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 	return nil
 }
 
-func flush(ctx context.Context, dest destination.Baseline, metricsClient base.Client, reason string, _tableName string, _tableData *models.TableData, action string) error {
+func flush(ctx context.Context, dest destination.Baseline, metricsClient base.Client, reason string, _tableName string, _tableData *models.TableData) error {
 	// Lock the tables when executing merge / append.
 	_tableData.Lock()
 	defer _tableData.Unlock()
@@ -125,7 +125,7 @@ func flush(ctx context.Context, dest destination.Baseline, metricsClient base.Cl
 
 	if err != nil {
 		tags["what"] = "merge_fail"
-		return fmt.Errorf("failed to %s: %w", action, err)
+		return fmt.Errorf("failed to flush: %w", err)
 	}
 
 	if err = commitOffset(ctx, _tableData.TopicConfig().Topic, _tableData.PartitionsToLastMessage); err != nil {
