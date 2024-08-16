@@ -79,6 +79,8 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 
 			if err != nil {
 				slog.Error(fmt.Sprintf("Failed to %s", action), slog.Any("err", err), slog.String("tableName", _tableName))
+			} else {
+				slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), slog.String("tableName", _tableName))
 			}
 		}(tableName, tableData)
 	}
@@ -122,24 +124,13 @@ func flush(ctx context.Context, reason string, _tableName string, _tableData *mo
 
 	if err != nil {
 		tags["what"] = "merge_fail"
-		slog.Error(
-			fmt.Sprintf("Failed to execute %s, not going to flush memory, will sleep for 3 seconds before continuing...", action),
-			slog.Any("err", err),
-			slog.String("tableName", _tableName),
-		)
-	} else {
-		slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), slog.String("tableName", _tableName))
-		commitErr := commitOffset(ctx, _tableData.TopicConfig().Topic, _tableData.PartitionsToLastMessage)
-		if commitErr == nil {
-			inMemDB.ClearTableConfig(_tableName)
-		} else {
-			tags["what"] = "commit_fail"
-			slog.Warn("Failed to commit Kafka offset",
-				slog.Any("err", commitErr),
-				slog.String("topic", _tableData.TopicConfig().Topic),
-			)
-		}
+		return fmt.Errorf("merge failed: %w", err)
 	}
 
+	if err = commitOffset(ctx, _tableData.TopicConfig().Topic, _tableData.PartitionsToLastMessage); err != nil {
+		return fmt.Errorf("failed to commit offset: %w", err)
+	}
+
+	inMemDB.ClearTableConfig(_tableName)
 	return nil
 }
