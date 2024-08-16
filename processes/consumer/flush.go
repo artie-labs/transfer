@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/retry"
+
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/stringutil"
@@ -56,69 +58,91 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 		go func(_tableName string, _tableData *models.TableData) {
 			defer wg.Done()
 
-			logFields := []any{
-				slog.String("tableName", _tableName),
-			}
-
-			if args.CoolDown != nil && _tableData.ShouldSkipFlush(*args.CoolDown) {
-				slog.With(logFields...).Debug("Skipping flush because we are currently in a flush cooldown")
-				return
-			}
-
-			// Lock the tables when executing merge / append.
-			_tableData.Lock()
-			defer _tableData.Unlock()
-			if _tableData.Empty() {
-				return
-			}
-
-			// This is added so that we have a new temporary table suffix for each merge / append.
-			_tableData.ResetTempTableSuffix()
-
-			start := time.Now()
-			tags := map[string]string{
-				"what":     "success",
-				"mode":     _tableData.Mode().String(),
-				"table":    _tableName,
-				"database": _tableData.TopicConfig().Database,
-				"schema":   _tableData.TopicConfig().Schema,
-				"reason":   args.Reason,
-			}
-
-			defer func() {
-				metricsClient.Timing("flush", time.Since(start), tags)
-			}()
-
-			var err error
 			action := "merge"
-			// Merge or Append depending on the mode.
 			if _tableData.Mode() == config.History {
-				err = dest.Append(_tableData.TableData, false)
 				action = "append"
-			} else {
-				err = dest.Merge(_tableData.TableData)
 			}
+
+			retryCfg, err := retry.NewJitterRetryConfig(100, 5_000, 5, retry.AlwaysRetry)
+			if err != nil {
+				slog.Error("Failed to create retry config", slog.Any("err", err))
+				return
+			}
+
+			err = retry.WithRetries(retryCfg, func(_ int, _ error) error {
+				return flush(ctx, args, _tableName, _tableData, action, dest, metricsClient, inMemDB)
+			})
 
 			if err != nil {
-				tags["what"] = "merge_fail"
-				slog.With(logFields...).Error(fmt.Sprintf("Failed to execute %s, not going to flush memory, will sleep for 3 seconds before continuing...", action), slog.Any("err", err))
-				time.Sleep(3 * time.Second)
-			} else {
-				slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), logFields...)
-				commitErr := commitOffset(ctx, _tableData.TopicConfig().Topic, _tableData.PartitionsToLastMessage)
-				if commitErr == nil {
-					inMemDB.ClearTableConfig(_tableName)
-				} else {
-					tags["what"] = "commit_fail"
-					slog.Warn("Failed to commit Kafka offset",
-						slog.Any("err", commitErr),
-						slog.String("topic", _tableData.TopicConfig().Topic),
-					)
-				}
+				slog.Error(fmt.Sprintf("Failed to %s", action), slog.Any("err", err), slog.String("tableName", _tableName))
 			}
 		}(tableName, tableData)
 	}
 	wg.Wait()
+
+	return nil
+}
+
+func flush(ctx context.Context, args Args, _tableName string, _tableData *models.TableData, action string, dest destination.Baseline, metricsClient base.Client, inMemDB *models.DatabaseData) error {
+	logFields := []any{
+		slog.String("action", action),
+		slog.String("tableName", _tableName),
+	}
+
+	if args.CoolDown != nil && _tableData.ShouldSkipFlush(*args.CoolDown) {
+		slog.With(logFields...).Debug("Skipping flush because we are currently in a flush cooldown")
+		return nil
+	}
+
+	// Lock the tables when executing merge / append.
+	_tableData.Lock()
+	defer _tableData.Unlock()
+	if _tableData.Empty() {
+		return nil
+	}
+
+	// This is added so that we have a new temporary table suffix for each merge / append.
+	_tableData.ResetTempTableSuffix()
+
+	start := time.Now()
+	tags := map[string]string{
+		"what":     "success",
+		"mode":     _tableData.Mode().String(),
+		"table":    _tableName,
+		"database": _tableData.TopicConfig().Database,
+		"schema":   _tableData.TopicConfig().Schema,
+		"reason":   args.Reason,
+	}
+
+	defer func() {
+		metricsClient.Timing("flush", time.Since(start), tags)
+	}()
+
+	var err error
+	// Merge or Append depending on the mode.
+	if _tableData.Mode() == config.History {
+		err = dest.Append(_tableData.TableData, false)
+	} else {
+		err = dest.Merge(_tableData.TableData)
+	}
+
+	if err != nil {
+		tags["what"] = "merge_fail"
+		slog.With(logFields...).Error(fmt.Sprintf("Failed to execute %s, not going to flush memory, will sleep for 3 seconds before continuing...", action), slog.Any("err", err))
+		time.Sleep(3 * time.Second)
+	} else {
+		slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), logFields...)
+		commitErr := commitOffset(ctx, _tableData.TopicConfig().Topic, _tableData.PartitionsToLastMessage)
+		if commitErr == nil {
+			inMemDB.ClearTableConfig(_tableName)
+		} else {
+			tags["what"] = "commit_fail"
+			slog.Warn("Failed to commit Kafka offset",
+				slog.Any("err", commitErr),
+				slog.String("topic", _tableData.TopicConfig().Topic),
+			)
+		}
+	}
 
 	return nil
 }
