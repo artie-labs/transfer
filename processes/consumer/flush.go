@@ -7,10 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/retry"
-
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
+	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/artie-labs/transfer/models"
@@ -68,7 +67,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 				action = "append"
 			}
 
-			retryCfg, err := retry.NewJitterRetryConfig(100, 15_000, 5, retry.AlwaysRetry)
+			retryCfg, err := retry.NewJitterRetryConfig(250, 15_000, 5, retry.AlwaysRetry)
 			if err != nil {
 				slog.Error("Failed to create retry config", slog.Any("err", err))
 				return
