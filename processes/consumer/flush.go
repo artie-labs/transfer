@@ -85,6 +85,10 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 				"reason":   args.Reason,
 			}
 
+			defer func() {
+				metricsClient.Timing("flush", time.Since(start), tags)
+			}()
+
 			var err error
 			action := "merge"
 			// Merge or Append depending on the mode.
@@ -97,7 +101,6 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 
 			if err != nil {
 				tags["what"] = "merge_fail"
-				tags["retryable"] = fmt.Sprint(dest.IsRetryableError(err))
 				slog.With(logFields...).Error(fmt.Sprintf("Failed to execute %s, not going to flush memory, will sleep for 3 seconds before continuing...", action), slog.Any("err", err))
 				time.Sleep(3 * time.Second)
 			} else {
@@ -107,10 +110,12 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 					inMemDB.ClearTableConfig(_tableName)
 				} else {
 					tags["what"] = "commit_fail"
-					slog.Warn("Commit error...", slog.Any("err", commitErr))
+					slog.Warn("Failed to commit Kafka offset",
+						slog.Any("err", commitErr),
+						slog.String("topic", _tableData.TopicConfig().Topic),
+					)
 				}
 			}
-			metricsClient.Timing("flush", time.Since(start), tags)
 		}(tableName, tableData)
 	}
 	wg.Wait()
