@@ -74,12 +74,13 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 			}
 
 			err = retry.WithRetries(retryCfg, func(_ int, _ error) error {
-				return flush(ctx, args.Reason, _tableName, _tableData, action, dest, metricsClient, inMemDB)
+				return flush(ctx, dest, metricsClient, args.Reason, _tableName, _tableData, action)
 			})
 
 			if err != nil {
 				slog.Error(fmt.Sprintf("Failed to %s", action), slog.Any("err", err), slog.String("tableName", _tableName))
 			} else {
+				inMemDB.ClearTableConfig(_tableName)
 				slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), slog.String("tableName", _tableName))
 			}
 		}(tableName, tableData)
@@ -89,7 +90,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 	return nil
 }
 
-func flush(ctx context.Context, reason string, _tableName string, _tableData *models.TableData, action string, dest destination.Baseline, metricsClient base.Client, inMemDB *models.DatabaseData) error {
+func flush(ctx context.Context, dest destination.Baseline, metricsClient base.Client, reason string, _tableName string, _tableData *models.TableData, action string) error {
 	// Lock the tables when executing merge / append.
 	_tableData.Lock()
 	defer _tableData.Unlock()
@@ -124,13 +125,12 @@ func flush(ctx context.Context, reason string, _tableName string, _tableData *mo
 
 	if err != nil {
 		tags["what"] = "merge_fail"
-		return fmt.Errorf("merge failed: %w", err)
+		return fmt.Errorf("failed to %s: %w", action, err)
 	}
 
 	if err = commitOffset(ctx, _tableData.TopicConfig().Topic, _tableData.PartitionsToLastMessage); err != nil {
 		return fmt.Errorf("failed to commit offset: %w", err)
 	}
 
-	inMemDB.ClearTableConfig(_tableName)
 	return nil
 }
