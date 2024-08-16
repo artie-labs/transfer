@@ -129,7 +129,8 @@ func flush(ctx context.Context, dest destination.Baseline, metricsClient base.Cl
 	}
 
 	if err = commitOffset(ctx, _tableData.TopicConfig().Topic, _tableData.PartitionsToLastMessage); err != nil {
-		return fmt.Errorf("failed to commit offset: %w", err)
+		// Failure to commit Kafka offset shouldn't force the whole flush process to retry.
+		slog.Warn("Failed to commit Kafka offset", slog.Any("err", err), slog.String("tableName", _tableName))
 	}
 
 	return nil
