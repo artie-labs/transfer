@@ -81,9 +81,6 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 			}
 
 			start := time.Now()
-			err = retry.WithRetries(retryCfg, func(_ int, _ error) error {
-				return flush(ctx, dest, _tableName, _tableData)
-			})
 
 			tags := map[string]string{
 				"what":     "success",
@@ -93,6 +90,10 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 				"schema":   _tableData.TopicConfig().Schema,
 				"reason":   args.Reason,
 			}
+
+			err = retry.WithRetries(retryCfg, func(_ int, _ error) error {
+				return flush(ctx, dest, _tableName, _tableData)
+			})
 
 			if err != nil {
 				tags["what"] = "merge_fail"
