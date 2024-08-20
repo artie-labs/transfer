@@ -75,16 +75,34 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 
 			_tableData.Lock()
 			defer _tableData.Unlock()
+
+			if _tableData.Empty() {
+				return
+			}
+
+			start := time.Now()
 			err = retry.WithRetries(retryCfg, func(_ int, _ error) error {
-				return flush(ctx, dest, metricsClient, args.Reason, _tableName, _tableData)
+				return flush(ctx, dest, _tableName, _tableData)
 			})
 
+			tags := map[string]string{
+				"what":     "success",
+				"mode":     _tableData.Mode().String(),
+				"table":    _tableName,
+				"database": _tableData.TopicConfig().Database,
+				"schema":   _tableData.TopicConfig().Schema,
+				"reason":   args.Reason,
+			}
+
 			if err != nil {
+				tags["what"] = "merge_fail"
 				slog.Error(fmt.Sprintf("Failed to %s", action), slog.Any("err", err), slog.String("tableName", _tableName))
 			} else {
 				inMemDB.ClearTableConfig(_tableName)
 				slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), slog.String("tableName", _tableName))
 			}
+
+			metricsClient.Timing("flush", time.Since(start), tags)
 		}(tableName, tableData)
 	}
 	wg.Wait()
@@ -92,27 +110,9 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 	return nil
 }
 
-func flush(ctx context.Context, dest destination.Baseline, metricsClient base.Client, reason string, _tableName string, _tableData *models.TableData) error {
-	if _tableData.Empty() {
-		return nil
-	}
-
+func flush(ctx context.Context, dest destination.Baseline, _tableName string, _tableData *models.TableData) error {
 	// This is added so that we have a new temporary table suffix for each merge / append.
 	_tableData.ResetTempTableSuffix()
-
-	start := time.Now()
-	tags := map[string]string{
-		"what":     "success",
-		"mode":     _tableData.Mode().String(),
-		"table":    _tableName,
-		"database": _tableData.TopicConfig().Database,
-		"schema":   _tableData.TopicConfig().Schema,
-		"reason":   reason,
-	}
-
-	defer func() {
-		metricsClient.Timing("flush", time.Since(start), tags)
-	}()
 
 	// Merge or Append depending on the mode.
 	var err error
@@ -123,7 +123,6 @@ func flush(ctx context.Context, dest destination.Baseline, metricsClient base.Cl
 	}
 
 	if err != nil {
-		tags["what"] = "merge_fail"
 		return fmt.Errorf("failed to flush: %w", err)
 	}
 
