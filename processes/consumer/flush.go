@@ -75,13 +75,11 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 
 			_tableData.Lock()
 			defer _tableData.Unlock()
-
 			if _tableData.Empty() {
 				return
 			}
 
 			start := time.Now()
-
 			tags := map[string]string{
 				"what":     "success",
 				"mode":     _tableData.Mode().String(),
