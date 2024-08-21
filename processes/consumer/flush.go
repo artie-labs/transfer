@@ -95,8 +95,8 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 			if err != nil {
 				slog.Error(fmt.Sprintf("Failed to %s", action), slog.Any("err", err), slog.String("tableName", _tableName))
 			} else {
-				inMemDB.ClearTableConfig(_tableName)
 				slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), slog.String("tableName", _tableName))
+				inMemDB.ClearTableConfig(_tableName)
 			}
 
 			tags["what"] = what
