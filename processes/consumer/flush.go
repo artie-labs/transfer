@@ -81,7 +81,6 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 
 			start := time.Now()
 			tags := map[string]string{
-				"what":     "success",
 				"mode":     _tableData.Mode().String(),
 				"table":    _tableName,
 				"database": _tableData.TopicConfig().Database,
@@ -89,27 +88,27 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 				"reason":   args.Reason,
 			}
 
-			err = retry.WithRetries(retryCfg, func(_ int, _ error) error {
+			what, err := retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (string, error) {
 				return flush(ctx, dest, _tableName, _tableData)
 			})
 
 			if err != nil {
-				tags["what"] = "merge_fail"
 				slog.Error(fmt.Sprintf("Failed to %s", action), slog.Any("err", err), slog.String("tableName", _tableName))
 			} else {
 				inMemDB.ClearTableConfig(_tableName)
 				slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), slog.String("tableName", _tableName))
 			}
 
+			tags["what"] = what
 			metricsClient.Timing("flush", time.Since(start), tags)
 		}(tableName, tableData)
 	}
-	wg.Wait()
 
+	wg.Wait()
 	return nil
 }
 
-func flush(ctx context.Context, dest destination.Baseline, _tableName string, _tableData *models.TableData) error {
+func flush(ctx context.Context, dest destination.Baseline, _tableName string, _tableData *models.TableData) (string, error) {
 	// This is added so that we have a new temporary table suffix for each merge / append.
 	_tableData.ResetTempTableSuffix()
 
@@ -122,13 +121,15 @@ func flush(ctx context.Context, dest destination.Baseline, _tableName string, _t
 	}
 
 	if err != nil {
-		return fmt.Errorf("failed to flush: %w", err)
+		return "merge_fail", fmt.Errorf("failed to flush: %w", err)
 	}
 
 	if err = commitOffset(ctx, _tableData.TopicConfig().Topic, _tableData.PartitionsToLastMessage); err != nil {
 		// Failure to commit Kafka offset shouldn't force the whole flush process to retry.
 		slog.Warn("Failed to commit Kafka offset", slog.Any("err", err), slog.String("tableName", _tableName))
+
+		return "commit_fail", nil
 	}
 
-	return nil
+	return "success", nil
 }
