@@ -52,8 +52,32 @@ func generateMergeString(bqSettings *partition.BigQuerySettings, dialect sql.Dia
 	switch bqSettings.PartitionType {
 	case "time":
 		switch bqSettings.PartitionBy {
-		case "daily":
-			return fmt.Sprintf(`DATE(%s) IN (%s)`,
+		case partition.Hourly:
+			return fmt.Sprintf(`EXTRACT(HOUR FROM %s) IN (%s)`,
+				sql.QuoteTableAliasColumn(
+					constants.TargetAlias,
+					columns.NewColumn(bqSettings.PartitionField, typing.Invalid),
+					dialect,
+				),
+				strings.Join(sql.QuoteLiterals(values), ",")), nil
+		case partition.Daily:
+			return fmt.Sprintf(`EXTRACT(DAY FROM %s) IN (%s)`,
+				sql.QuoteTableAliasColumn(
+					constants.TargetAlias,
+					columns.NewColumn(bqSettings.PartitionField, typing.Invalid),
+					dialect,
+				),
+				strings.Join(sql.QuoteLiterals(values), ",")), nil
+		case partition.Monthly:
+			return fmt.Sprintf(`EXTRACT(MONTH FROM %s) IN (%s)`,
+				sql.QuoteTableAliasColumn(
+					constants.TargetAlias,
+					columns.NewColumn(bqSettings.PartitionField, typing.Invalid),
+					dialect,
+				),
+				strings.Join(sql.QuoteLiterals(values), ",")), nil
+		case partition.Yearly:
+			return fmt.Sprintf(`EXTRACT(YEAR FROM %s) IN (%s)`,
 				sql.QuoteTableAliasColumn(
 					constants.TargetAlias,
 					columns.NewColumn(bqSettings.PartitionField, typing.Invalid),

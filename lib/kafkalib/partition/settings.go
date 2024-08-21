@@ -9,11 +9,16 @@ var ValidPartitionTypes = []string{
 	"time",
 }
 
-// TODO: We should be able to support different partition by fields in the future.
-// https://cloud.google.com/bigquery/docs/partitioned-tables#partition_decorators
-var ValidPartitionBy = []string{
-	"daily",
-}
+type PartitioningType string
+
+const (
+	Hourly  PartitioningType = "hourly"
+	Daily   PartitioningType = "daily"
+	Monthly PartitioningType = "monthly"
+	Yearly  PartitioningType = "yearly"
+)
+
+var ValidPartitionBy = []PartitioningType{Hourly, Daily, Monthly, Yearly}
 
 // We need the JSON annotations here for our dashboard to import the settings correctly.
 
@@ -22,9 +27,9 @@ type MergePredicates struct {
 }
 
 type BigQuerySettings struct {
-	PartitionType  string `yaml:"partitionType" json:"partitionType"`
-	PartitionField string `yaml:"partitionField" json:"partitionField"`
-	PartitionBy    string `yaml:"partitionBy" json:"partitionBy"`
+	PartitionType  string           `yaml:"partitionType" json:"partitionType"`
+	PartitionField string           `yaml:"partitionField" json:"partitionField"`
+	PartitionBy    PartitioningType `yaml:"partitionBy" json:"partitionBy"`
 }
 
 func (b *BigQuerySettings) Valid() error {
