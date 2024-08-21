@@ -66,16 +66,25 @@ func sleepIfNecessary(cfg RetryConfig, attempt int, err error) {
 
 // WithRetries runs function `f` and returns the error if one occurs.
 func WithRetries(cfg RetryConfig, f func(attempt int, err error) error) error {
+	var prevErr error
 	var err error
 	for attempt := 0; attempt < cfg.MaxAttempts(); attempt++ {
 		sleepIfNecessary(cfg, attempt, err)
 		err = f(attempt, err)
 		if err == nil {
+			if attempt > 0 {
+				// Only log if there was more than one attempt, so it's less noisy.
+				slog.Info("Retry was successful!", slog.Int("attempts", attempt), slog.Any("prevErr", prevErr))
+			}
+
 			return nil
 		} else if !cfg.IsRetryableErr(err) {
 			break
 		}
+
+		prevErr = err
 	}
+
 	return err
 }
 
