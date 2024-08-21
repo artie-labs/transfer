@@ -62,11 +62,6 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 				return
 			}
 
-			action := "merge"
-			if _tableData.Mode() == config.History {
-				action = "append"
-			}
-
 			retryCfg, err := retry.NewJitterRetryConfig(500, 30_000, 10, retry.AlwaysRetry)
 			if err != nil {
 				slog.Error("Failed to create retry config", slog.Any("err", err))
@@ -77,6 +72,11 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 			defer _tableData.Unlock()
 			if _tableData.Empty() {
 				return
+			}
+
+			action := "merge"
+			if _tableData.Mode() == config.History {
+				action = "append"
 			}
 
 			start := time.Now()
