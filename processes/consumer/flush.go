@@ -89,7 +89,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 			}
 
 			what, err := retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (string, error) {
-				return flush(ctx, dest, _tableName, _tableData)
+				return flush(ctx, dest, _tableData)
 			})
 
 			if err != nil {
@@ -108,7 +108,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 	return nil
 }
 
-func flush(ctx context.Context, dest destination.Baseline, _tableName string, _tableData *models.TableData) (string, error) {
+func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData) (string, error) {
 	// This is added so that we have a new temporary table suffix for each merge / append.
 	_tableData.ResetTempTableSuffix()
 
