@@ -18,6 +18,22 @@ const (
 	Yearly  PartitioningType = "yearly"
 )
 
+func (p PartitioningType) PartitionFormat() string {
+	switch p {
+	case Hourly:
+		return "2006-01-02 15"
+	case Daily:
+		return "2006-01-02"
+	case Monthly:
+		return "2006-01"
+	case Yearly:
+		return "2006"
+	}
+
+	return ""
+
+}
+
 var ValidPartitionBy = []PartitioningType{Hourly, Daily, Monthly, Yearly}
 
 // We need the JSON annotations here for our dashboard to import the settings correctly.

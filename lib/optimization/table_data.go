@@ -193,28 +193,32 @@ func (t *TableData) NumberOfRows() uint {
 	return uint(len(t.rowsData))
 }
 
-func (t *TableData) DistinctDates(colName string, additionalDateFmts []string) ([]string, error) {
+func (t *TableData) DistinctTimes(colName string, additionalDateFmts []string, format string) ([]string, error) {
+	if format == "" {
+		return nil, fmt.Errorf("format cannot be empty")
+	}
+
 	retMap := make(map[string]bool)
 	for _, row := range t.rowsData {
 		val, isOk := row[colName]
 		if !isOk {
-			return nil, fmt.Errorf("col: %v does not exist on row: %v", colName, row)
+			return nil, fmt.Errorf("col %q does not exist on row: %v", colName, row)
 		}
 
 		extTime, err := ext.ParseFromInterface(val, additionalDateFmts)
 		if err != nil {
-			return nil, fmt.Errorf("col: %v is not a time column, value: %v, err: %w", colName, val, err)
+			return nil, fmt.Errorf("col %q is not a time column, value: %v, err: %w", colName, val, err)
 		}
 
-		retMap[extTime.String(ext.PostgresDateFormat)] = true
+		retMap[extTime.String(format)] = true
 	}
 
-	var distinctDates []string
+	var distinctValues []string
 	for key := range retMap {
-		distinctDates = append(distinctDates, key)
+		distinctValues = append(distinctValues, key)
 	}
 
-	return distinctDates, nil
+	return distinctValues, nil
 }
 
 func (t *TableData) ResetTempTableSuffix() {

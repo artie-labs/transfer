@@ -17,13 +17,17 @@ import (
 func (s *Store) Merge(tableData *optimization.TableData) error {
 	var additionalEqualityStrings []string
 	if tableData.TopicConfig().BigQueryPartitionSettings != nil {
-		additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
-		distinctDates, err := tableData.DistinctDates(tableData.TopicConfig().BigQueryPartitionSettings.PartitionField, additionalDateFmts)
+		distinctValues, err := tableData.DistinctTimes(
+			tableData.TopicConfig().BigQueryPartitionSettings.PartitionField,
+			s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats,
+			tableData.TopicConfig().BigQueryPartitionSettings.PartitionBy.PartitionFormat(),
+		)
+
 		if err != nil {
 			return fmt.Errorf("failed to generate distinct dates: %w", err)
 		}
 
-		mergeString, err := generateMergeString(tableData.TopicConfig().BigQueryPartitionSettings, s.Dialect(), distinctDates)
+		mergeString, err := generateMergeString(tableData.TopicConfig().BigQueryPartitionSettings, s.Dialect(), distinctValues)
 		if err != nil {
 			return fmt.Errorf("failed to generate merge string: %w", err)
 		}
