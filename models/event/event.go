@@ -35,7 +35,7 @@ type Event struct {
 	mode config.Mode
 }
 
-func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc *kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
+func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
 	cols, err := event.GetColumns()
 	if err != nil {
 		return Event{}, err
@@ -132,11 +132,7 @@ func (e *Event) PrimaryKeyValue() string {
 
 // Save will save the event into our in memory event
 // It will return (flush bool, flushReason string, err error)
-func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, topicConfig *kafkalib.TopicConfig, message artie.Message) (bool, string, error) {
-	if topicConfig == nil {
-		return false, "", errors.New("topicConfig is missing")
-	}
-
+func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkalib.TopicConfig, message artie.Message) (bool, string, error) {
 	if !e.IsValid() {
 		return false, "", errors.New("event not valid")
 	}
@@ -151,7 +147,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, topicConfi
 			cols = e.Columns
 		}
 
-		td.SetTableData(optimization.NewTableData(cols, cfg.Mode, e.PrimaryKeys(), *topicConfig, e.Table))
+		td.SetTableData(optimization.NewTableData(cols, cfg.Mode, e.PrimaryKeys(), tc, e.Table))
 	} else {
 		if e.Columns != nil {
 			// Iterate over this again just in case.

@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var validTc = &kafkalib.TopicConfig{
+var validTc = kafkalib.TopicConfig{
 	CDCKeyFormat: "org.apache.kafka.connect.json.JsonConverter",
 }
 
@@ -87,9 +87,7 @@ func (r *RelationTestSuite) TestPostgresEvent() {
 	assert.Nil(r.T(), err)
 	assert.False(r.T(), evt.DeletePayload())
 
-	evtData, err := evt.GetData(map[string]any{"id": 59}, &kafkalib.TopicConfig{
-		IncludeDatabaseUpdatedAt: true,
-	})
+	evtData, err := evt.GetData(map[string]any{"id": 59}, kafkalib.TopicConfig{IncludeDatabaseUpdatedAt: true})
 	assert.NoError(r.T(), err)
 	assert.Equal(r.T(), float64(59), evtData["id"])
 	assert.Equal(r.T(), ext.NewExtendedTime(time.Date(2022, time.November, 16, 4, 1, 53, 308000000, time.UTC), ext.DateTimeKindType, ext.ISO8601), evtData[constants.DatabaseUpdatedColumnMarker])
@@ -193,7 +191,7 @@ func (r *RelationTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	assert.Nil(r.T(), err)
 	assert.False(r.T(), evt.DeletePayload())
 
-	evtData, err := evt.GetData(map[string]any{"id": 1001}, &kafkalib.TopicConfig{})
+	evtData, err := evt.GetData(map[string]any{"id": 1001}, kafkalib.TopicConfig{})
 	assert.NoError(r.T(), err)
 
 	// Testing typing.
@@ -525,7 +523,7 @@ func (r *RelationTestSuite) TestGetEventFromBytes_MySQL() {
 		"id": 1001,
 	}
 
-	evtData, err := evt.GetData(kvMap, &kafkalib.TopicConfig{})
+	evtData, err := evt.GetData(kvMap, kafkalib.TopicConfig{})
 	assert.NoError(r.T(), err)
 
 	// Should have no Artie updated or database updated fields
@@ -535,10 +533,7 @@ func (r *RelationTestSuite) TestGetEventFromBytes_MySQL() {
 	_, isOk = evtData[constants.DatabaseUpdatedColumnMarker]
 	assert.False(r.T(), isOk)
 
-	evtData, err = evt.GetData(kvMap, &kafkalib.TopicConfig{
-		IncludeDatabaseUpdatedAt: true,
-		IncludeArtieUpdatedAt:    true,
-	})
+	evtData, err = evt.GetData(kvMap, kafkalib.TopicConfig{IncludeDatabaseUpdatedAt: true, IncludeArtieUpdatedAt: true})
 	assert.NoError(r.T(), err)
 
 	assert.Equal(r.T(), ext.NewExtendedTime(time.Date(2023, time.March, 13, 19, 19, 24, 0, time.UTC), ext.DateTimeKindType, ext.ISO8601), evtData[constants.DatabaseUpdatedColumnMarker])

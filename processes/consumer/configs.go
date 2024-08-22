@@ -34,7 +34,7 @@ func (t *TcFmtMap) GetTopicFmt(topic string) (TopicConfigFormatter, bool) {
 }
 
 type TopicConfigFormatter struct {
-	tc *kafkalib.TopicConfig
+	tc kafkalib.TopicConfig
 	cdc.Format
 }
 

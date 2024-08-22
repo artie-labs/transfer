@@ -60,24 +60,24 @@ func (e *EventsTestSuite) TestEvent_IsValid() {
 func (e *EventsTestSuite) TestEvent_TableName() {
 	{
 		// Don't pass in tableName.
-		evt, err := ToMemoryEvent(e.fakeEvent, idMap, &kafkalib.TopicConfig{}, config.Replication)
+		evt, err := ToMemoryEvent(e.fakeEvent, idMap, kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), e.fakeEvent.GetTableName(), evt.Table)
 	}
 	{
 		// Now pass it in, it should override.
-		evt, err := ToMemoryEvent(e.fakeEvent, idMap, &kafkalib.TopicConfig{TableName: "orders"}, config.Replication)
+		evt, err := ToMemoryEvent(e.fakeEvent, idMap, kafkalib.TopicConfig{TableName: "orders"}, config.Replication)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "orders", evt.Table)
 	}
 	{
 		// Now, if it's history mode...
-		evt, err := ToMemoryEvent(e.fakeEvent, idMap, &kafkalib.TopicConfig{TableName: "orders"}, config.History)
+		evt, err := ToMemoryEvent(e.fakeEvent, idMap, kafkalib.TopicConfig{TableName: "orders"}, config.History)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "orders__history", evt.Table)
 
 		// Table already has history suffix, so it won't add extra.
-		evt, err = ToMemoryEvent(e.fakeEvent, idMap, &kafkalib.TopicConfig{TableName: "dusty__history"}, config.History)
+		evt, err = ToMemoryEvent(e.fakeEvent, idMap, kafkalib.TopicConfig{TableName: "dusty__history"}, config.History)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "dusty__history", evt.Table)
 	}
@@ -85,7 +85,7 @@ func (e *EventsTestSuite) TestEvent_TableName() {
 
 func (e *EventsTestSuite) TestEvent_Columns() {
 	{
-		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123}, &kafkalib.TopicConfig{}, config.Replication)
+		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(e.T(), err)
 
 		assert.Equal(e.T(), 1, len(evt.Columns.GetColumns()))
@@ -94,7 +94,7 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 	}
 	{
 		// Now it should handle escaping column names
-		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123, "CAPITAL": "foo"}, &kafkalib.TopicConfig{}, config.Replication)
+		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123, "CAPITAL": "foo"}, kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(e.T(), err)
 
 		assert.Equal(e.T(), 2, len(evt.Columns.GetColumns()))
@@ -106,7 +106,7 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 	}
 	{
 		// In history mode, the deletion column markers should be removed from the event data
-		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123}, &kafkalib.TopicConfig{}, config.History)
+		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{}, config.History)
 		assert.NoError(e.T(), err)
 
 		_, isOk := evt.Data[constants.DeleteColumnMarker]
