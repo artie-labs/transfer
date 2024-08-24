@@ -11,45 +11,27 @@ import (
 )
 
 func TestToBytes(t *testing.T) {
-	type _testCase struct {
-		name  string
-		value any
-
-		expectedValue []byte
-		expectedErr   string
+	{
+		// []byte
+		actual, err := toBytes([]byte{40, 39, 38})
+		assert.NoError(t, err)
+		assert.Equal(t, []byte{40, 39, 38}, actual)
 	}
-
-	testCases := []_testCase{
-		{
-			name:          "[]byte",
-			value:         []byte{40, 39, 38},
-			expectedValue: []byte{40, 39, 38},
-		},
-		{
-			name:          "base64 encoded string",
-			value:         "aGVsbG8gd29ybGQK",
-			expectedValue: []byte{0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x77, 0x6f, 0x72, 0x6c, 0x64, 0xa},
-		},
-		{
-			name:        "malformed string",
-			value:       "asdf$$$",
-			expectedErr: "failed to base64 decode",
-		},
-		{
-			name:        "type that isn't a string or []byte",
-			value:       map[string]any{},
-			expectedErr: "failed to cast value 'map[]' with type 'map[string]interface {}",
-		},
+	{
+		// base64 encoded string
+		actual, err := toBytes("aGVsbG8gd29ybGQK")
+		assert.NoError(t, err)
+		assert.Equal(t, []byte{0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x77, 0x6f, 0x72, 0x6c, 0x64, 0xa}, actual)
 	}
-
-	for _, testCase := range testCases {
-		actual, err := toBytes(testCase.value)
-
-		if testCase.expectedErr == "" {
-			assert.Equal(t, testCase.expectedValue, actual, testCase.name)
-		} else {
-			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
-		}
+	{
+		// malformed string
+		_, err := toBytes("asdf$$$")
+		assert.ErrorContains(t, err, "failed to base64 decode")
+	}
+	{
+		// type that is not string or []byte
+		_, err := toBytes(map[string]any{})
+		assert.ErrorContains(t, err, "failed to cast value 'map[]' with type 'map[string]interface {}' to []byte")
 	}
 }
 
