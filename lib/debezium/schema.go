@@ -96,6 +96,8 @@ func (f Field) ToValueConverter() converters.ValueConverter {
 		return converters.Date{}
 	case Time, TimeKafkaConnect:
 		return converters.Time{}
+	case UUID:
+		return converters.String{}
 	}
 
 	return nil
