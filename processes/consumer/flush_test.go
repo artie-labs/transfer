@@ -16,7 +16,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
-var topicConfig = &kafkalib.TopicConfig{
+var topicConfig = kafkalib.TopicConfig{
 	Database:  "customer",
 	TableName: "users",
 	Schema:    "public",

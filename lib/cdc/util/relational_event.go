@@ -74,7 +74,7 @@ func (s *SchemaEventPayload) GetTableName() string {
 	return s.Payload.Source.Table
 }
 
-func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicConfig) (map[string]any, error) {
+func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc kafkalib.TopicConfig) (map[string]any, error) {
 	var retMap map[string]any
 	if len(s.Payload.After) == 0 {
 		if len(s.Payload.Before) > 0 {

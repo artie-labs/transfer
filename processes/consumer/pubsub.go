@@ -68,7 +68,7 @@ func StartSubscriber(ctx context.Context, cfg config.Config, inMemDB *models.Dat
 	tcFmtMap := NewTcFmtMap()
 	for _, topicConfig := range cfg.Pubsub.TopicConfigs {
 		tcFmtMap.Add(topicConfig.Topic, TopicConfigFormatter{
-			tc:     topicConfig,
+			tc:     *topicConfig,
 			Format: format.GetFormatParser(topicConfig.CDCFormat, topicConfig.Topic),
 		})
 	}

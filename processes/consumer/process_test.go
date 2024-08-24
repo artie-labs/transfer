@@ -62,7 +62,7 @@ func TestProcessMessageFailures(t *testing.T) {
 
 	tcFmtMap := NewTcFmtMap()
 	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
-		tc: &kafkalib.TopicConfig{
+		tc: kafkalib.TopicConfig{
 			Database:     db,
 			TableName:    table,
 			Schema:       schema,
@@ -88,7 +88,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	assert.Equal(t, 0, len(memDB.TableData()))
 	assert.Empty(t, tableName)
 
-	tc := &kafkalib.TopicConfig{
+	tc := kafkalib.TopicConfig{
 		Database:     db,
 		TableName:    table,
 		Schema:       schema,
@@ -240,7 +240,7 @@ func TestProcessMessageSkip(t *testing.T) {
 
 	tcFmtMap := NewTcFmtMap()
 	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
-		tc: &kafkalib.TopicConfig{
+		tc: kafkalib.TopicConfig{
 			Database:     db,
 			TableName:    table,
 			Schema:       schema,
@@ -251,7 +251,7 @@ func TestProcessMessageSkip(t *testing.T) {
 		Format: &mgo,
 	})
 
-	tc := &kafkalib.TopicConfig{
+	tc := kafkalib.TopicConfig{
 		Database:          db,
 		TableName:         table,
 		Schema:            schema,

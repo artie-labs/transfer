@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var topicConfig = &kafkalib.TopicConfig{
+var topicConfig = kafkalib.TopicConfig{
 	Database:  "customer",
 	TableName: "users",
 	Schema:    "public",

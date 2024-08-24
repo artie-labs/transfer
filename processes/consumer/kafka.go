@@ -60,7 +60,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 	var topics []string
 	for _, topicConfig := range cfg.Kafka.TopicConfigs {
 		tcFmtMap.Add(topicConfig.Topic, TopicConfigFormatter{
-			tc:     topicConfig,
+			tc:     *topicConfig,
 			Format: format.GetFormatParser(topicConfig.CDCFormat, topicConfig.Topic),
 		})
 		topics = append(topics, topicConfig.Topic)

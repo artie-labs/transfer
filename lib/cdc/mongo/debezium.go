@@ -73,7 +73,7 @@ func (d *Debezium) Labels() []string {
 	return []string{constants.DBZMongoFormat}
 }
 
-func (d *Debezium) GetPrimaryKey(key []byte, tc *kafkalib.TopicConfig) (map[string]any, error) {
+func (d *Debezium) GetPrimaryKey(key []byte, tc kafkalib.TopicConfig) (map[string]any, error) {
 	kvMap, err := debezium.ParsePartitionKey(key, tc.CDCKeyFormat)
 	if err != nil {
 		return nil, err
@@ -150,7 +150,7 @@ func (s *SchemaEventPayload) GetColumns() (*columns.Columns, error) {
 	return &cols, nil
 }
 
-func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc *kafkalib.TopicConfig) (map[string]any, error) {
+func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc kafkalib.TopicConfig) (map[string]any, error) {
 	var retMap map[string]any
 	if len(s.Payload.afterMap) == 0 {
 		// This is a delete event, so mark it as deleted.
