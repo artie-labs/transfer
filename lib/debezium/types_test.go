@@ -536,89 +536,60 @@ func TestField_DecodeDecimal(t *testing.T) {
 }
 
 func TestField_DecodeDebeziumVariableDecimal(t *testing.T) {
-	type _testCase struct {
-		name  string
-		value any
-
-		expectedValue string
-		expectedScale int32
-		expectedErr   string
+	field := Field{DebeziumType: KafkaVariableNumericType}
+	{
+		// Test with nil value
+		_, err := field.DecodeDebeziumVariableDecimal(nil)
+		assert.ErrorContains(t, err, "value is not map[string]any type")
 	}
-
-	testCases := []_testCase{
-		{
-			name:        "empty val (nil)",
-			expectedErr: "value is not map[string]any type",
-		},
-		{
-			name:        "empty map",
-			value:       map[string]any{},
-			expectedErr: "object is empty",
-		},
-		{
-			name: "scale is not an integer",
-			value: map[string]any{
-				"scale": "foo",
-			},
-			expectedErr: "key: scale is not type integer",
-		},
-		{
-			name: "value exists (scale 3)",
-			value: map[string]any{
-				"scale": 3,
-				"value": "SOx4FQ==",
-			},
-			expectedValue: "1223456.789",
-			expectedScale: 3,
-		},
-		{
-			name: "value exists (scale 2)",
-			value: map[string]any{
-				"scale": 2,
-				"value": "MDk=",
-			},
-			expectedValue: "123.45",
-			expectedScale: 2,
-		},
-		{
-			name: "negative numbers (scale 7)",
-			value: map[string]any{
-				"scale": 7,
-				"value": "wT9Wmw==",
-			},
-			expectedValue: "-105.2813669",
-			expectedScale: 7,
-		},
-		{
-			name: "malformed base64 value",
-			value: map[string]any{
-				"scale": 7,
-				"value": "==wT9Wmw==",
-			},
-			expectedErr: "failed to base64 decode",
-		},
-		{
-			name: "[]byte value",
-			value: map[string]any{
-				"scale": 7,
-				"value": []byte{193, 63, 86, 155},
-			},
-			expectedValue: "-105.2813669",
-			expectedScale: 7,
-		},
+	{
+		// Test with empty map
+		_, err := field.DecodeDebeziumVariableDecimal(map[string]any{})
+		assert.ErrorContains(t, err, "object is empty")
 	}
-
-	for _, testCase := range testCases {
-		field := Field{}
-		dec, err := field.DecodeDebeziumVariableDecimal(testCase.value)
-		if testCase.expectedErr != "" {
-			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
-			continue
-		}
-
-		assert.Equal(t, int32(-1), dec.Details().Precision(), testCase.name)
-		assert.Equal(t, testCase.expectedScale, dec.Details().Scale(), testCase.name)
-		assert.Equal(t, testCase.expectedValue, dec.String(), testCase.name)
+	{
+		// Scale is not an integer
+		_, err := field.DecodeDebeziumVariableDecimal(map[string]any{"scale": "foo"})
+		assert.ErrorContains(t, err, "key: scale is not type integer")
 	}
-
+	{
+		// Scale 3
+		dec, err := field.DecodeDebeziumVariableDecimal(map[string]any{
+			"scale": 3,
+			"value": "SOx4FQ==",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, int32(-1), dec.Details().Precision())
+		assert.Equal(t, int32(3), dec.Details().Scale())
+		assert.Equal(t, "1223456.789", dec.String())
+	}
+	{
+		// Scale 2
+		dec, err := field.DecodeDebeziumVariableDecimal(map[string]any{"scale": 2, "value": "MDk="})
+		assert.NoError(t, err)
+		assert.Equal(t, int32(-1), dec.Details().Precision())
+		assert.Equal(t, int32(2), dec.Details().Scale())
+		assert.Equal(t, "123.45", dec.String())
+	}
+	{
+		// Scale 7 - Negative numbers
+		dec, err := field.DecodeDebeziumVariableDecimal(map[string]any{"scale": 7, "value": "wT9Wmw=="})
+		assert.NoError(t, err)
+		assert.Equal(t, int32(-1), dec.Details().Precision())
+		assert.Equal(t, int32(7), dec.Details().Scale())
+		assert.Equal(t, "-105.2813669", dec.String())
+	}
+	{
+		// Malformed b64
+		_, err := field.DecodeDebeziumVariableDecimal(map[string]any{"scale": 7, "value": "==wT9Wmw=="})
+		assert.ErrorContains(t, err, "failed to base64 decode")
+	}
+	{
+		// []byte
+		dec, err := field.DecodeDebeziumVariableDecimal(map[string]any{"scale": 7, "value": []byte{193, 63, 86, 155}})
+		assert.NoError(t, err)
+		assert.Equal(t, int32(-1), dec.Details().Precision())
+		assert.Equal(t, int32(7), dec.Details().Scale())
+		assert.Equal(t, "-105.2813669", dec.String())
+	}
 }
