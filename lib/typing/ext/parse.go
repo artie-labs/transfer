@@ -7,22 +7,21 @@ import (
 )
 
 func ParseFromInterface(val any, additionalDateFormats []string) (*ExtendedTime, error) {
-	if val == nil {
+	switch convertedVal := val.(type) {
+	case nil:
 		return nil, fmt.Errorf("val is nil")
-	}
+	case *ExtendedTime:
+		return convertedVal, nil
+	case string:
+		extendedTime, err := ParseExtendedDateTime(convertedVal, additionalDateFormats)
+		if err != nil {
+			return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", val, err)
+		}
 
-	extendedTime, isOk := val.(*ExtendedTime)
-	if isOk {
 		return extendedTime, nil
+	default:
+		return nil, fmt.Errorf("failed to parse colVal, expected type string or *ExtendedTime and got: %T", convertedVal)
 	}
-
-	var err error
-	extendedTime, err = ParseExtendedDateTime(fmt.Sprint(val), additionalDateFormats)
-	if err != nil {
-		return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", val, err)
-	}
-
-	return extendedTime, nil
 }
 
 // ParseTimeExactMatch - This function is the same as `ParseTimeExactMatchLegacy` with the only exception that it'll return an error if it was not an exact match

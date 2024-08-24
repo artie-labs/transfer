@@ -43,12 +43,12 @@ func TestParseFromInterface(t *testing.T) {
 	{
 		// True
 		_, err := ParseFromInterface(true, nil)
-		assert.ErrorContains(t, err, "true is not supported")
+		assert.ErrorContains(t, err, "failed to parse colVal, expected type string or *ExtendedTime and got: bool")
 	}
 	{
 		// False
 		_, err := ParseFromInterface(false, nil)
-		assert.ErrorContains(t, err, "false is not supported")
+		assert.ErrorContains(t, err, "failed to parse colVal, expected type string or *ExtendedTime and got: bool")
 	}
 }
 
