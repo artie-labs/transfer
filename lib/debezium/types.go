@@ -101,16 +101,13 @@ func toInt64(value any) (int64, error) {
 	return 0, fmt.Errorf("failed to cast value '%v' with type '%T' to int64", value, value)
 }
 
+// ShouldSetDefaultValue will filter out computed fields that cannot be properly set with a default value
 func (f Field) ShouldSetDefaultValue(defaultValue any) bool {
 	switch castedDefaultValue := defaultValue.(type) {
 	case nil:
 		return false
 	case *ext.ExtendedTime:
-		if castedDefaultValue.Time.IsZero() {
-			return false
-		}
-
-		return true
+		return !castedDefaultValue.Time.IsZero()
 	case string:
 		if f.DebeziumType == UUID && castedDefaultValue == uuid.Nil.String() {
 			return false
