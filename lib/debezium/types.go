@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -97,6 +99,25 @@ func toInt64(value any) (int64, error) {
 		return int64(typedValue), nil
 	}
 	return 0, fmt.Errorf("failed to cast value '%v' with type '%T' to int64", value, value)
+}
+
+func (f Field) ShouldSetDefaultValue(defaultValue any) bool {
+	switch castedDefaultValue := defaultValue.(type) {
+	case nil:
+		return false
+	case *ext.ExtendedTime:
+		if castedDefaultValue.Time.IsZero() {
+			return false
+		}
+
+		return true
+	case string:
+		if f.DebeziumType == UUID && castedDefaultValue == uuid.Nil.String() {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (f Field) ParseValue(value any) (any, error) {
