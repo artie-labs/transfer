@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/ext"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 
 	"github.com/artie-labs/transfer/lib/typing"
@@ -81,6 +83,13 @@ func TestField_ParseValue(t *testing.T) {
 		value, err := Field{}.ParseValue(nil)
 		assert.NoError(t, err)
 		assert.Nil(t, value)
+	}
+	{
+		// Bytes
+		field := Field{Type: Bytes}
+		value, err := field.ParseValue([]byte{40, 30, 20, 10})
+		assert.NoError(t, err)
+		assert.Equal(t, "KB4UCg==", value)
 	}
 	{
 		// String
@@ -221,6 +230,55 @@ func TestField_ParseValue(t *testing.T) {
 			val, err := field.ParseValue(map[string]any{"srid": 4326, "wkb": "AQEAACDmEAAAAAAAAADAXkAAAAAAAIBDwA=="})
 			assert.NoError(t, err)
 			assert.Equal(t, `{"type":"Feature","geometry":{"type":"Point","coordinates":[123,-39]},"properties":null}`, val)
+		}
+	}
+	{
+		// Timestamp
+		{
+			// Nano timestamp
+			field := Field{Type: Int64, DebeziumType: NanoTimestamp}
+			val, err := field.ParseValue(int64(1712609795827000000))
+			assert.NoError(t, err)
+
+			extTimeVal, err := typing.AssertType[*ext.ExtendedTime](val)
+			assert.NoError(t, err)
+			assert.Equal(t, &ext.ExtendedTime{
+				Time:       time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC),
+				NestedKind: ext.NestedKind{Type: ext.DateTimeKindType, Format: "2006-01-02T15:04:05.999999999Z07:00"},
+			}, extTimeVal)
+		}
+		{
+			// Micro timestamp
+			field := Field{Type: Int64, DebeziumType: MicroTimestamp}
+			{
+				// Int64
+				val, err := field.ParseValue(int64(1712609795827000))
+				assert.NoError(t, err)
+
+				extTimeVal, err := typing.AssertType[*ext.ExtendedTime](val)
+				assert.NoError(t, err)
+				assert.Equal(t, &ext.ExtendedTime{
+					Time:       time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC),
+					NestedKind: ext.NestedKind{Type: ext.DateTimeKindType, Format: "2006-01-02T15:04:05.999999999Z07:00"},
+				}, extTimeVal)
+			}
+			{
+				// Float64
+				val, err := field.ParseValue(float64(1712609795827000))
+				assert.NoError(t, err)
+
+				extTimeVal, err := typing.AssertType[*ext.ExtendedTime](val)
+				assert.NoError(t, err)
+				assert.Equal(t, &ext.ExtendedTime{
+					Time:       time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC),
+					NestedKind: ext.NestedKind{Type: ext.DateTimeKindType, Format: "2006-01-02T15:04:05.999999999Z07:00"},
+				}, extTimeVal)
+			}
+			{
+				// Invalid (string)
+				_, err := field.ParseValue("1712609795827000")
+				assert.ErrorContains(t, err, "failed to cast value '1712609795827000' with type 'string' to int64")
+			}
 		}
 	}
 }
