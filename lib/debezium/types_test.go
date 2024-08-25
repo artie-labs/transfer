@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -74,6 +76,70 @@ func TestToInt64(t *testing.T) {
 }
 
 func TestField_ParseValue(t *testing.T) {
+	{
+		// nil
+		value, err := Field{}.ParseValue(nil)
+		assert.NoError(t, err)
+		assert.Nil(t, value)
+	}
+	{
+		// String
+		value, err := Field{}.ParseValue("dusty")
+		assert.NoError(t, err)
+		assert.Equal(t, "dusty", value)
+	}
+	{
+		// Int32
+		value, err := Field{Type: Int32}.ParseValue(float64(3))
+		assert.NoError(t, err)
+		assert.Equal(t, int64(3), value)
+	}
+	{
+		// Decimal
+		field := Field{
+			DebeziumType: KafkaDecimalType,
+			Parameters:   map[string]any{"scale": "0", KafkaDecimalPrecisionKey: "5"},
+		}
+
+		{
+			// Valid
+			value, err := field.ParseValue("ew==")
+			assert.NoError(t, err)
+
+			decVal, err := typing.AssertType[*decimal.Decimal](value)
+			assert.NoError(t, err)
+			assert.Equal(t, "123", decVal.String())
+		}
+		{
+			// Malformed
+			_, err := field.ParseValue("==ew==")
+			assert.ErrorContains(t, err, "failed to base64 decode")
+		}
+		{
+			// []byte
+			value, err := field.ParseValue([]byte{123})
+			assert.NoError(t, err)
+
+			decVal, err := typing.AssertType[*decimal.Decimal](value)
+			assert.NoError(t, err)
+			assert.Equal(t, "123", decVal.String())
+		}
+	}
+	{
+		// Numeric
+		field := Field{
+			DebeziumType: KafkaDecimalType,
+			Parameters:   map[string]any{"scale": "2", KafkaDecimalPrecisionKey: "5"},
+		}
+
+		value, err := field.ParseValue("AN3h")
+		assert.NoError(t, err)
+
+		decVal, err := typing.AssertType[*decimal.Decimal](value)
+		assert.NoError(t, err)
+		assert.Equal(t, "568.01", decVal.String())
+	}
+
 	type _testCase struct {
 		name  string
 		field Field
@@ -85,75 +151,6 @@ func TestField_ParseValue(t *testing.T) {
 	}
 
 	testCases := []_testCase{
-		{
-			name:          "nil",
-			value:         nil,
-			expectedValue: nil,
-		},
-		{
-			name:          "string",
-			value:         "robin",
-			expectedValue: "robin",
-		},
-		{
-			name: "integer",
-			field: Field{
-				Type: Int32,
-			},
-			value:         float64(3),
-			expectedValue: int64(3),
-		},
-		{
-			name: "decimal",
-			field: Field{
-				DebeziumType: KafkaDecimalType,
-				Parameters: map[string]any{
-					"scale":                  "0",
-					KafkaDecimalPrecisionKey: "5",
-				},
-			},
-			value:           "ew==",
-			expectedValue:   "123",
-			expectedDecimal: true,
-		},
-		{
-			name: "decimal malformed",
-			field: Field{
-				DebeziumType: KafkaDecimalType,
-				Parameters: map[string]any{
-					"scale":                  "0",
-					KafkaDecimalPrecisionKey: "5",
-				},
-			},
-			value:       "==ew==",
-			expectedErr: "failed to base64 decode",
-		},
-		{
-			name: "decimal []byte",
-			field: Field{
-				DebeziumType: KafkaDecimalType,
-				Parameters: map[string]any{
-					"scale":                  "0",
-					KafkaDecimalPrecisionKey: "5",
-				},
-			},
-			value:           []byte{123},
-			expectedValue:   "123",
-			expectedDecimal: true,
-		},
-		{
-			name: "numeric",
-			field: Field{
-				DebeziumType: KafkaDecimalType,
-				Parameters: map[string]any{
-					"scale":                  "2",
-					KafkaDecimalPrecisionKey: "5",
-				},
-			},
-			value:           "AN3h",
-			expectedValue:   "568.01",
-			expectedDecimal: true,
-		},
 		{
 			name: "money",
 			field: Field{
