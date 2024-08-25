@@ -108,6 +108,18 @@ func TestField_ParseValue(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, constants.ToastUnavailableValuePlaceholder, val)
 		}
+		{
+			// Array
+			val, err := field.ParseValue(`[{"foo":"bar", "foo": "bar"}, {"hello":"world"}, {"dusty":"the mini aussie"}]`)
+			assert.NoError(t, err)
+			assert.Equal(t, `[{"foo":"bar"},{"hello":"world"},{"dusty":"the mini aussie"}]`, val)
+		}
+		{
+			// Array of objects
+			val, err := field.ParseValue(`[[{"foo":"bar", "foo": "bar"}], [{"hello":"world"}, {"dusty":"the mini aussie"}]]`)
+			assert.NoError(t, err)
+			assert.Equal(t, `[[{"foo":"bar"}],[{"hello":"world"},{"dusty":"the mini aussie"}]]`, val)
+		}
 	}
 	{
 		// Int32
@@ -121,9 +133,21 @@ func TestField_ParseValue(t *testing.T) {
 			DebeziumType: KafkaDecimalType,
 			Parameters:   map[string]any{"scale": "0", KafkaDecimalPrecisionKey: "5"},
 		}
-
 		{
-			// Valid
+			// Valid #1
+			_field := Field{
+				DebeziumType: KafkaDecimalType,
+				Parameters:   map[string]any{"scale": "2", KafkaDecimalPrecisionKey: "5"},
+			}
+			value, err := _field.ParseValue("AN3h")
+			assert.NoError(t, err)
+
+			decVal, err := typing.AssertType[*decimal.Decimal](value)
+			assert.NoError(t, err)
+			assert.Equal(t, "568.01", decVal.String())
+		}
+		{
+			// Valid #2
 			value, err := field.ParseValue("ew==")
 			assert.NoError(t, err)
 
@@ -145,20 +169,59 @@ func TestField_ParseValue(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, "123", decVal.String())
 		}
+		{
+			// Money
+			_moneyField := Field{DebeziumType: KafkaDecimalType, Parameters: map[string]any{"scale": 2}}
+
+			// Valid
+			val, err := _moneyField.ParseValue("ALxhYg==")
+			assert.NoError(t, err)
+
+			decVal, err := typing.AssertType[*decimal.Decimal](val)
+			assert.NoError(t, err)
+			assert.Equal(t, "123456.98", decVal.String())
+		}
+		{
+			// Variable
+			_field := Field{
+				DebeziumType: KafkaVariableNumericType,
+				Parameters:   map[string]any{"scale": 2},
+			}
+
+			// Valid #2
+			val, err := _field.ParseValue(map[string]any{"scale": 2, "value": "MDk="})
+			assert.NoError(t, err)
+
+			decVal, err := typing.AssertType[*decimal.Decimal](val)
+			assert.NoError(t, err)
+			assert.Equal(t, "123.45", decVal.String())
+		}
 	}
 	{
-		// Numeric
-		field := Field{
-			DebeziumType: KafkaDecimalType,
-			Parameters:   map[string]any{"scale": "2", KafkaDecimalPrecisionKey: "5"},
+		// Geometry
+		field := Field{DebeziumType: GeometryType}
+		{
+			// Valid (no SRID)
+			val, err := field.ParseValue(map[string]any{"srid": nil, "wkb": "AQEAAAAAAAAAAADwPwAAAAAAABRA"})
+			assert.NoError(t, err)
+			assert.Equal(t, `{"type":"Feature","geometry":{"type":"Point","coordinates":[1,5]},"properties":null}`, val)
 		}
-
-		value, err := field.ParseValue("AN3h")
-		assert.NoError(t, err)
-
-		decVal, err := typing.AssertType[*decimal.Decimal](value)
-		assert.NoError(t, err)
-		assert.Equal(t, "568.01", decVal.String())
+		{
+			// Valid (w/ SRID)
+			val, err := field.ParseValue(map[string]any{"srid": 4326, "wkb": "AQEAACDmEAAAAAAAAAAA8D8AAAAAAAAYQA=="})
+			assert.NoError(t, err)
+			assert.Equal(t, `{"type":"Feature","geometry":{"type":"Point","coordinates":[1,6]},"properties":null}`, val)
+		}
+	}
+	{
+		// Geography
+		field := Field{DebeziumType: GeographyType}
+		{
+			// Valid (w/ SRID)
+			val, err := field.ParseValue(map[string]any{"srid": 4326, "wkb": "AQEAACDmEAAAAAAAAADAXkAAAAAAAIBDwA=="})
+			assert.NoError(t, err)
+			assert.Equal(t, `{"type":"Feature","geometry":{"type":"Point","coordinates":[123,-39]},"properties":null}`, val)
+		}
 	}
 }
 
