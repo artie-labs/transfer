@@ -4,11 +4,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
+
 	"github.com/artie-labs/transfer/lib/typing"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -89,6 +89,27 @@ func TestField_ParseValue(t *testing.T) {
 		assert.Equal(t, "dusty", value)
 	}
 	{
+		// JSON
+		field := Field{Type: String, DebeziumType: JSON}
+		{
+			// Valid
+			value, err := field.ParseValue(`{"foo": "bar", "foo": "bar"}`)
+			assert.NoError(t, err)
+			assert.Equal(t, `{"foo":"bar"}`, value)
+		}
+		{
+			// Malformed
+			_, err := field.ParseValue(`i'm not json`)
+			assert.ErrorContains(t, err, "invalid character 'i' looking for beginning of value")
+		}
+		{
+			// Toast
+			val, err := field.ParseValue(constants.ToastUnavailableValuePlaceholder)
+			assert.NoError(t, err)
+			assert.Equal(t, constants.ToastUnavailableValuePlaceholder, val)
+		}
+	}
+	{
 		// Int32
 		value, err := Field{Type: Int32}.ParseValue(float64(3))
 		assert.NoError(t, err)
@@ -138,215 +159,6 @@ func TestField_ParseValue(t *testing.T) {
 		decVal, err := typing.AssertType[*decimal.Decimal](value)
 		assert.NoError(t, err)
 		assert.Equal(t, "568.01", decVal.String())
-	}
-
-	type _testCase struct {
-		name  string
-		field Field
-		value any
-
-		expectedValue   any
-		expectedDecimal bool
-		expectedErr     string
-	}
-
-	testCases := []_testCase{
-		{
-			name: "money",
-			field: Field{
-				DebeziumType: KafkaDecimalType,
-				Parameters: map[string]any{
-					"scale": "2",
-				},
-			},
-			value:           "ALxhTg==",
-			expectedValue:   "123456.78",
-			expectedDecimal: true,
-		},
-		{
-			name: "variable decimal",
-			field: Field{
-				DebeziumType: KafkaVariableNumericType,
-				Parameters: map[string]any{
-					"scale": "2",
-				},
-			},
-			value: map[string]any{
-				"scale": 2,
-				"value": "MDk=",
-			},
-			expectedValue:   "123.45",
-			expectedDecimal: true,
-		},
-		{
-			name: "geometry (no srid)",
-			field: Field{
-				DebeziumType: GeometryType,
-			},
-			value: map[string]any{
-				"srid": nil,
-				"wkb":  "AQEAAAAAAAAAAADwPwAAAAAAABRA",
-			},
-			expectedValue: `{"type":"Feature","geometry":{"type":"Point","coordinates":[1,5]},"properties":null}`,
-		},
-		{
-			name: "geometry (w/ srid)",
-			field: Field{
-				DebeziumType: GeometryType,
-			},
-			value: map[string]any{
-				"srid": 4326,
-				"wkb":  "AQEAACDmEAAAAAAAAAAA8D8AAAAAAAAYQA==",
-			},
-			expectedValue: `{"type":"Feature","geometry":{"type":"Point","coordinates":[1,6]},"properties":null}`,
-		},
-		{
-			name: "geography (w/ srid)",
-			field: Field{
-				DebeziumType: GeographyType,
-			},
-			value: map[string]any{
-				"srid": 4326,
-				"wkb":  "AQEAACDmEAAAAAAAAADAXkAAAAAAAIBDwA==",
-			},
-			expectedValue: `{"type":"Feature","geometry":{"type":"Point","coordinates":[123,-39]},"properties":null}`,
-		},
-		{
-			name: "json",
-			field: Field{
-				DebeziumType: JSON,
-			},
-			value:         `{"foo": "bar", "foo": "bar"}`,
-			expectedValue: `{"foo":"bar"}`,
-		},
-		{
-			name: "array value in JSONB",
-			field: Field{
-				DebeziumType: JSON,
-			},
-			value:         `[1,2,3]`,
-			expectedValue: `[1,2,3]`,
-		},
-		{
-			name: "array of objects in JSONB",
-			field: Field{
-				DebeziumType: JSON,
-			},
-			value:         `[{"foo":"bar", "foo": "bar"}, {"hello":"world"}, {"dusty":"the mini aussie"}]`,
-			expectedValue: `[{"foo":"bar"},{"hello":"world"},{"dusty":"the mini aussie"}]`,
-		},
-		{
-			name: "array of arrays of objects in JSONB",
-			field: Field{
-				DebeziumType: JSON,
-			},
-			value:         `[[{"foo":"bar", "foo": "bar"}], [{"hello":"world"}, {"dusty":"the mini aussie"}]]`,
-			expectedValue: `[[{"foo":"bar"}],[{"hello":"world"},{"dusty":"the mini aussie"}]]`,
-		},
-		{
-			name: "int64 nano-timestamp",
-			field: Field{
-				Type:         Int64,
-				DebeziumType: NanoTimestamp,
-			},
-			value: int64(1712609795827000000),
-			expectedValue: &ext.ExtendedTime{
-				Time: time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC),
-				NestedKind: ext.NestedKind{
-					Type:   ext.DateTimeKindType,
-					Format: "2006-01-02T15:04:05.999999999Z07:00",
-				},
-			},
-		},
-		{
-			name: "int64 micro-timestamp",
-			field: Field{
-				Type:         Int64,
-				DebeziumType: MicroTimestamp,
-			},
-			value: int64(1712609795827000),
-			expectedValue: &ext.ExtendedTime{
-				Time: time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC),
-				NestedKind: ext.NestedKind{
-					Type:   ext.DateTimeKindType,
-					Format: "2006-01-02T15:04:05.999999999Z07:00",
-				},
-			},
-		},
-		{
-			name: "float64 micro-timestamp",
-			field: Field{
-				Type:         Int64,
-				DebeziumType: MicroTimestamp,
-			},
-			value: float64(1712609795827000),
-			expectedValue: &ext.ExtendedTime{
-				Time: time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC),
-				NestedKind: ext.NestedKind{
-					Type:   ext.DateTimeKindType,
-					Format: "2006-01-02T15:04:05.999999999Z07:00",
-				},
-			},
-		},
-		{
-			name: "string micro-timestamp - should error",
-			field: Field{
-				Type:         Int64,
-				DebeziumType: MicroTimestamp,
-			},
-			value:       "1712609795827000",
-			expectedErr: "failed to cast value '1712609795827000' with type 'string' to int64",
-		},
-		{
-			name: "[]byte",
-			field: Field{
-				Type: Bytes,
-			},
-			value:         []byte{40, 30, 20, 10},
-			expectedValue: "KB4UCg==",
-		},
-		{
-			name: "string",
-			field: Field{
-				Type: String,
-			},
-			value:         "string value",
-			expectedValue: "string value",
-		},
-		{
-			name: "JSON toast",
-			field: Field{
-				Type:         String,
-				DebeziumType: JSON,
-			},
-			value:         constants.ToastUnavailableValuePlaceholder,
-			expectedValue: constants.ToastUnavailableValuePlaceholder,
-		},
-		{
-			name: "JSON malformed",
-			field: Field{
-				Type:         String,
-				DebeziumType: JSON,
-			},
-			value:       "i'm not json",
-			expectedErr: "invalid character 'i' looking for beginning of value",
-		},
-	}
-
-	for _, testCase := range testCases {
-		actualField, err := testCase.field.ParseValue(testCase.value)
-		if testCase.expectedErr != "" {
-			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
-		} else {
-			assert.NoError(t, err, testCase.name)
-			if testCase.expectedDecimal {
-				decVal, isOk := actualField.(*decimal.Decimal)
-				assert.True(t, isOk)
-				assert.Equal(t, testCase.expectedValue, decVal.String(), testCase.name)
-			} else {
-				assert.Equal(t, testCase.expectedValue, actualField, testCase.name)
-			}
-		}
 	}
 }
 
