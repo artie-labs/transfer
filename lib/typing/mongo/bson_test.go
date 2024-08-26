@@ -195,10 +195,7 @@ func TestJSONEToMap(t *testing.T) {
 }
 
 func TestBsonDocToMap(t *testing.T) {
-	doc := bson.D{
-		{"foo", "bar"},
-	}
-	result, err := bsonDocToMap(doc)
+	result, err := bsonDocToMap(bson.D{{Key: "foo", Value: "bar"}})
 	assert.NoError(t, err)
 	assert.Equal(t, map[string]any{"foo": "bar"}, result)
 }
@@ -236,10 +233,7 @@ func TestBsonValueToGoValue(t *testing.T) {
 	}
 	{
 		// bson.D
-		doc := bson.D{
-			{"foo", "bar"},
-		}
-		result, err := bsonValueToGoValue(doc)
+		result, err := bsonValueToGoValue(bson.D{{Key: "foo", Value: "bar"}})
 		assert.NoError(t, err)
 		assert.Equal(t, map[string]any{"foo": "bar"}, result)
 	}
