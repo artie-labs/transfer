@@ -26,7 +26,6 @@ func exporterKindValid(kind constants.ExporterKind) bool {
 func LoadExporter(cfg config.Config) base.Client {
 	kind := cfg.Telemetry.Metrics.Provider
 	ddSettings := cfg.Telemetry.Metrics.Settings
-
 	if !exporterKindValid(kind) {
 		slog.Info("Invalid or no exporter kind passed in, skipping...", slog.Any("exporterKind", kind))
 	}
