@@ -146,6 +146,13 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				message.Set(field, protoreflect.ValueOfFloat64(float64(value)))
 			case int64:
 				message.Set(field, protoreflect.ValueOfFloat64(float64(value)))
+			case *decimal.Decimal:
+				float, err := value.Value().Float64()
+				if err != nil {
+					return nil, fmt.Errorf("failed to convert decimal to float64: %w", err)
+				}
+
+				message.Set(field, protoreflect.ValueOfFloat64(float))
 			case string:
 				floatValue, err := strconv.ParseFloat(value, 64)
 				if err != nil {
@@ -153,7 +160,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				}
 				message.Set(field, protoreflect.ValueOfFloat64(floatValue))
 			default:
-				return nil, fmt.Errorf("expected float32/float64/int32/int64/string received %T with value %v", value, value)
+				return nil, fmt.Errorf("expected float32/float64/int32/int64/*decimal.Decimal/string received %T with value %v", value, value)
 			}
 		case typing.EDecimal.Kind:
 			decimalValue, err := typing.AssertType[*decimal.Decimal](value)
@@ -169,6 +176,8 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				stringValue = castedValue
 			case *decimal.Decimal:
 				stringValue = castedValue.String()
+			case *ext.ExtendedTime:
+				stringValue = castedValue.String("")
 			default:
 				return nil, fmt.Errorf("expected string/decimal.Decimal received %T with value %v", value, value)
 			}
