@@ -4,380 +4,278 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestToBytes(t *testing.T) {
-	type _testCase struct {
-		name  string
-		value any
-
-		expectedValue []byte
-		expectedErr   string
+	{
+		// []byte
+		actual, err := toBytes([]byte{40, 39, 38})
+		assert.NoError(t, err)
+		assert.Equal(t, []byte{40, 39, 38}, actual)
 	}
-
-	testCases := []_testCase{
-		{
-			name:          "[]byte",
-			value:         []byte{40, 39, 38},
-			expectedValue: []byte{40, 39, 38},
-		},
-		{
-			name:          "base64 encoded string",
-			value:         "aGVsbG8gd29ybGQK",
-			expectedValue: []byte{0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x77, 0x6f, 0x72, 0x6c, 0x64, 0xa},
-		},
-		{
-			name:        "malformed string",
-			value:       "asdf$$$",
-			expectedErr: "failed to base64 decode",
-		},
-		{
-			name:        "type that isn't a string or []byte",
-			value:       map[string]any{},
-			expectedErr: "failed to cast value 'map[]' with type 'map[string]interface {}",
-		},
+	{
+		// base64 encoded string
+		actual, err := toBytes("aGVsbG8gd29ybGQK")
+		assert.NoError(t, err)
+		assert.Equal(t, []byte{0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x77, 0x6f, 0x72, 0x6c, 0x64, 0xa}, actual)
 	}
-
-	for _, testCase := range testCases {
-		actual, err := toBytes(testCase.value)
-
-		if testCase.expectedErr == "" {
-			assert.Equal(t, testCase.expectedValue, actual, testCase.name)
-		} else {
-			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
-		}
+	{
+		// malformed string
+		_, err := toBytes("asdf$$$")
+		assert.ErrorContains(t, err, "failed to base64 decode")
+	}
+	{
+		// type that is not string or []byte
+		_, err := toBytes(map[string]any{})
+		assert.ErrorContains(t, err, "failed to cast value 'map[]' with type 'map[string]interface {}' to []byte")
 	}
 }
 
 func TestToInt64(t *testing.T) {
-	testCases := []struct {
-		name  string
-		value any
-
-		expectedValue int64
-		expectedErr   string
-	}{
-		{
-			name:          "int",
-			value:         int(12321),
-			expectedValue: int64(12321),
-		},
-		{
-			name:          "int16",
-			value:         int16(12321),
-			expectedValue: int64(12321),
-		},
-		{
-			name:          "int32",
-			value:         int32(12321),
-			expectedValue: int64(12321),
-		},
-		{
-			name:          "int64",
-			value:         int64(12321),
-			expectedValue: int64(12321),
-		},
-		{
-			name:          "float64",
-			value:         float64(12321),
-			expectedValue: int64(12321),
-		},
-		{
-			name:        "different type",
-			value:       map[string]any{},
-			expectedErr: "failed to cast value 'map[]' with type 'map[string]interface {}' to int64",
-		},
+	{
+		// int
+		actual, err := toInt64(12321)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(12321), actual)
 	}
-
-	for _, testCase := range testCases {
-		actual, err := toInt64(testCase.value)
-		if testCase.expectedErr == "" {
-			assert.Equal(t, testCase.expectedValue, actual, testCase.name)
-		} else {
-			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
-		}
+	{
+		// int16
+		actual, err := toInt64(int16(12321))
+		assert.NoError(t, err)
+		assert.Equal(t, int64(12321), actual)
+	}
+	{
+		// int32
+		actual, err := toInt64(int32(12321))
+		assert.NoError(t, err)
+		assert.Equal(t, int64(12321), actual)
+	}
+	{
+		// int64
+		actual, err := toInt64(int64(12321))
+		assert.NoError(t, err)
+		assert.Equal(t, int64(12321), actual)
+	}
+	{
+		// float64
+		actual, err := toInt64(float64(12321))
+		assert.NoError(t, err)
+		assert.Equal(t, int64(12321), actual)
+	}
+	{
+		// Different types
+		_, err := toInt64(map[string]any{})
+		assert.ErrorContains(t, err, "failed to cast value 'map[]' with type 'map[string]interface {}' to int64")
 	}
 }
 
 func TestField_ParseValue(t *testing.T) {
-	type _testCase struct {
-		name  string
-		field Field
-		value any
-
-		expectedValue   any
-		expectedDecimal bool
-		expectedErr     string
+	{
+		// nil
+		value, err := Field{}.ParseValue(nil)
+		assert.NoError(t, err)
+		assert.Nil(t, value)
 	}
+	{
+		// Bytes
+		field := Field{Type: Bytes}
+		value, err := field.ParseValue([]byte{40, 30, 20, 10})
+		assert.NoError(t, err)
+		assert.Equal(t, "KB4UCg==", value)
+	}
+	{
+		// String
+		value, err := Field{}.ParseValue("dusty")
+		assert.NoError(t, err)
+		assert.Equal(t, "dusty", value)
+	}
+	{
+		// JSON
+		field := Field{Type: String, DebeziumType: JSON}
+		{
+			// Valid
+			value, err := field.ParseValue(`{"foo": "bar", "foo": "bar"}`)
+			assert.NoError(t, err)
+			assert.Equal(t, `{"foo":"bar"}`, value)
+		}
+		{
+			// Malformed
+			_, err := field.ParseValue(`i'm not json`)
+			assert.ErrorContains(t, err, "invalid character 'i' looking for beginning of value")
+		}
+		{
+			// Toast
+			val, err := field.ParseValue(constants.ToastUnavailableValuePlaceholder)
+			assert.NoError(t, err)
+			assert.Equal(t, constants.ToastUnavailableValuePlaceholder, val)
+		}
+		{
+			// Array
+			val, err := field.ParseValue(`[{"foo":"bar", "foo": "bar"}, {"hello":"world"}, {"dusty":"the mini aussie"}]`)
+			assert.NoError(t, err)
+			assert.Equal(t, `[{"foo":"bar"},{"hello":"world"},{"dusty":"the mini aussie"}]`, val)
+		}
+		{
+			// Array of objects
+			val, err := field.ParseValue(`[[{"foo":"bar", "foo": "bar"}], [{"hello":"world"}, {"dusty":"the mini aussie"}]]`)
+			assert.NoError(t, err)
+			assert.Equal(t, `[[{"foo":"bar"}],[{"hello":"world"},{"dusty":"the mini aussie"}]]`, val)
+		}
+	}
+	{
+		// Int32
+		value, err := Field{Type: Int32}.ParseValue(float64(3))
+		assert.NoError(t, err)
+		assert.Equal(t, int64(3), value)
+	}
+	{
+		// Decimal
+		field := Field{
+			DebeziumType: KafkaDecimalType,
+			Parameters:   map[string]any{"scale": "0", KafkaDecimalPrecisionKey: "5"},
+		}
+		{
+			// Valid #1
+			_field := Field{
+				DebeziumType: KafkaDecimalType,
+				Parameters:   map[string]any{"scale": "2", KafkaDecimalPrecisionKey: "5"},
+			}
+			value, err := _field.ParseValue("AN3h")
+			assert.NoError(t, err)
 
-	testCases := []_testCase{
+			decVal, err := typing.AssertType[*decimal.Decimal](value)
+			assert.NoError(t, err)
+			assert.Equal(t, "568.01", decVal.String())
+		}
 		{
-			name:          "nil",
-			value:         nil,
-			expectedValue: nil,
-		},
+			// Valid #2
+			value, err := field.ParseValue("ew==")
+			assert.NoError(t, err)
+
+			decVal, err := typing.AssertType[*decimal.Decimal](value)
+			assert.NoError(t, err)
+			assert.Equal(t, "123", decVal.String())
+		}
 		{
-			name:          "string",
-			value:         "robin",
-			expectedValue: "robin",
-		},
+			// Malformed
+			_, err := field.ParseValue("==ew==")
+			assert.ErrorContains(t, err, "failed to base64 decode")
+		}
 		{
-			name: "integer",
-			field: Field{
-				Type: Int32,
-			},
-			value:         float64(3),
-			expectedValue: int64(3),
-		},
+			// []byte
+			value, err := field.ParseValue([]byte{123})
+			assert.NoError(t, err)
+
+			decVal, err := typing.AssertType[*decimal.Decimal](value)
+			assert.NoError(t, err)
+			assert.Equal(t, "123", decVal.String())
+		}
 		{
-			name: "decimal",
-			field: Field{
-				DebeziumType: KafkaDecimalType,
-				Parameters: map[string]any{
-					"scale":                  "0",
-					KafkaDecimalPrecisionKey: "5",
-				},
-			},
-			value:           "ew==",
-			expectedValue:   "123",
-			expectedDecimal: true,
-		},
+			// Money
+			_moneyField := Field{DebeziumType: KafkaDecimalType, Parameters: map[string]any{"scale": 2}}
+
+			// Valid
+			val, err := _moneyField.ParseValue("ALxhYg==")
+			assert.NoError(t, err)
+
+			decVal, err := typing.AssertType[*decimal.Decimal](val)
+			assert.NoError(t, err)
+			assert.Equal(t, "123456.98", decVal.String())
+		}
 		{
-			name: "decimal malformed",
-			field: Field{
-				DebeziumType: KafkaDecimalType,
-				Parameters: map[string]any{
-					"scale":                  "0",
-					KafkaDecimalPrecisionKey: "5",
-				},
-			},
-			value:       "==ew==",
-			expectedErr: "failed to base64 decode",
-		},
-		{
-			name: "decimal []byte",
-			field: Field{
-				DebeziumType: KafkaDecimalType,
-				Parameters: map[string]any{
-					"scale":                  "0",
-					KafkaDecimalPrecisionKey: "5",
-				},
-			},
-			value:           []byte{123},
-			expectedValue:   "123",
-			expectedDecimal: true,
-		},
-		{
-			name: "numeric",
-			field: Field{
-				DebeziumType: KafkaDecimalType,
-				Parameters: map[string]any{
-					"scale":                  "2",
-					KafkaDecimalPrecisionKey: "5",
-				},
-			},
-			value:           "AN3h",
-			expectedValue:   "568.01",
-			expectedDecimal: true,
-		},
-		{
-			name: "money",
-			field: Field{
-				DebeziumType: KafkaDecimalType,
-				Parameters: map[string]any{
-					"scale": "2",
-				},
-			},
-			value:           "ALxhTg==",
-			expectedValue:   "123456.78",
-			expectedDecimal: true,
-		},
-		{
-			name: "variable decimal",
-			field: Field{
+			// Variable
+			_field := Field{
 				DebeziumType: KafkaVariableNumericType,
-				Parameters: map[string]any{
-					"scale": "2",
-				},
-			},
-			value: map[string]any{
-				"scale": 2,
-				"value": "MDk=",
-			},
-			expectedValue:   "123.45",
-			expectedDecimal: true,
-		},
-		{
-			name: "geometry (no srid)",
-			field: Field{
-				DebeziumType: GeometryType,
-			},
-			value: map[string]any{
-				"srid": nil,
-				"wkb":  "AQEAAAAAAAAAAADwPwAAAAAAABRA",
-			},
-			expectedValue: `{"type":"Feature","geometry":{"type":"Point","coordinates":[1,5]},"properties":null}`,
-		},
-		{
-			name: "geometry (w/ srid)",
-			field: Field{
-				DebeziumType: GeometryType,
-			},
-			value: map[string]any{
-				"srid": 4326,
-				"wkb":  "AQEAACDmEAAAAAAAAAAA8D8AAAAAAAAYQA==",
-			},
-			expectedValue: `{"type":"Feature","geometry":{"type":"Point","coordinates":[1,6]},"properties":null}`,
-		},
-		{
-			name: "geography (w/ srid)",
-			field: Field{
-				DebeziumType: GeographyType,
-			},
-			value: map[string]any{
-				"srid": 4326,
-				"wkb":  "AQEAACDmEAAAAAAAAADAXkAAAAAAAIBDwA==",
-			},
-			expectedValue: `{"type":"Feature","geometry":{"type":"Point","coordinates":[123,-39]},"properties":null}`,
-		},
-		{
-			name: "json",
-			field: Field{
-				DebeziumType: JSON,
-			},
-			value:         `{"foo": "bar", "foo": "bar"}`,
-			expectedValue: `{"foo":"bar"}`,
-		},
-		{
-			name: "array value in JSONB",
-			field: Field{
-				DebeziumType: JSON,
-			},
-			value:         `[1,2,3]`,
-			expectedValue: `[1,2,3]`,
-		},
-		{
-			name: "array of objects in JSONB",
-			field: Field{
-				DebeziumType: JSON,
-			},
-			value:         `[{"foo":"bar", "foo": "bar"}, {"hello":"world"}, {"dusty":"the mini aussie"}]`,
-			expectedValue: `[{"foo":"bar"},{"hello":"world"},{"dusty":"the mini aussie"}]`,
-		},
-		{
-			name: "array of arrays of objects in JSONB",
-			field: Field{
-				DebeziumType: JSON,
-			},
-			value:         `[[{"foo":"bar", "foo": "bar"}], [{"hello":"world"}, {"dusty":"the mini aussie"}]]`,
-			expectedValue: `[[{"foo":"bar"}],[{"hello":"world"},{"dusty":"the mini aussie"}]]`,
-		},
-		{
-			name: "int64 nano-timestamp",
-			field: Field{
-				Type:         Int64,
-				DebeziumType: NanoTimestamp,
-			},
-			value: int64(1712609795827000000),
-			expectedValue: &ext.ExtendedTime{
-				Time: time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC),
-				NestedKind: ext.NestedKind{
-					Type:   ext.DateTimeKindType,
-					Format: "2006-01-02T15:04:05.999999999Z07:00",
-				},
-			},
-		},
-		{
-			name: "int64 micro-timestamp",
-			field: Field{
-				Type:         Int64,
-				DebeziumType: MicroTimestamp,
-			},
-			value: int64(1712609795827000),
-			expectedValue: &ext.ExtendedTime{
-				Time: time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC),
-				NestedKind: ext.NestedKind{
-					Type:   ext.DateTimeKindType,
-					Format: "2006-01-02T15:04:05.999999999Z07:00",
-				},
-			},
-		},
-		{
-			name: "float64 micro-timestamp",
-			field: Field{
-				Type:         Int64,
-				DebeziumType: MicroTimestamp,
-			},
-			value: float64(1712609795827000),
-			expectedValue: &ext.ExtendedTime{
-				Time: time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC),
-				NestedKind: ext.NestedKind{
-					Type:   ext.DateTimeKindType,
-					Format: "2006-01-02T15:04:05.999999999Z07:00",
-				},
-			},
-		},
-		{
-			name: "string micro-timestamp - should error",
-			field: Field{
-				Type:         Int64,
-				DebeziumType: MicroTimestamp,
-			},
-			value:       "1712609795827000",
-			expectedErr: "failed to cast value '1712609795827000' with type 'string' to int64",
-		},
-		{
-			name: "[]byte",
-			field: Field{
-				Type: Bytes,
-			},
-			value:         []byte{40, 30, 20, 10},
-			expectedValue: "KB4UCg==",
-		},
-		{
-			name: "string",
-			field: Field{
-				Type: String,
-			},
-			value:         "string value",
-			expectedValue: "string value",
-		},
-		{
-			name: "JSON toast",
-			field: Field{
-				Type:         String,
-				DebeziumType: JSON,
-			},
-			value:         constants.ToastUnavailableValuePlaceholder,
-			expectedValue: constants.ToastUnavailableValuePlaceholder,
-		},
-		{
-			name: "JSON malformed",
-			field: Field{
-				Type:         String,
-				DebeziumType: JSON,
-			},
-			value:       "i'm not json",
-			expectedErr: "invalid character 'i' looking for beginning of value",
-		},
-	}
+				Parameters:   map[string]any{"scale": 2},
+			}
 
-	for _, testCase := range testCases {
-		actualField, err := testCase.field.ParseValue(testCase.value)
-		if testCase.expectedErr != "" {
-			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
-		} else {
-			assert.NoError(t, err, testCase.name)
-			if testCase.expectedDecimal {
-				decVal, isOk := actualField.(*decimal.Decimal)
-				assert.True(t, isOk)
-				assert.Equal(t, testCase.expectedValue, decVal.String(), testCase.name)
-			} else {
-				assert.Equal(t, testCase.expectedValue, actualField, testCase.name)
+			// Valid #2
+			val, err := _field.ParseValue(map[string]any{"scale": 2, "value": "MDk="})
+			assert.NoError(t, err)
+
+			decVal, err := typing.AssertType[*decimal.Decimal](val)
+			assert.NoError(t, err)
+			assert.Equal(t, "123.45", decVal.String())
+		}
+	}
+	{
+		// Geometry
+		field := Field{DebeziumType: GeometryType}
+		{
+			// Valid (no SRID)
+			val, err := field.ParseValue(map[string]any{"srid": nil, "wkb": "AQEAAAAAAAAAAADwPwAAAAAAABRA"})
+			assert.NoError(t, err)
+			assert.Equal(t, `{"type":"Feature","geometry":{"type":"Point","coordinates":[1,5]},"properties":null}`, val)
+		}
+		{
+			// Valid (w/ SRID)
+			val, err := field.ParseValue(map[string]any{"srid": 4326, "wkb": "AQEAACDmEAAAAAAAAAAA8D8AAAAAAAAYQA=="})
+			assert.NoError(t, err)
+			assert.Equal(t, `{"type":"Feature","geometry":{"type":"Point","coordinates":[1,6]},"properties":null}`, val)
+		}
+	}
+	{
+		// Geography
+		field := Field{DebeziumType: GeographyType}
+		{
+			// Valid (w/ SRID)
+			val, err := field.ParseValue(map[string]any{"srid": 4326, "wkb": "AQEAACDmEAAAAAAAAADAXkAAAAAAAIBDwA=="})
+			assert.NoError(t, err)
+			assert.Equal(t, `{"type":"Feature","geometry":{"type":"Point","coordinates":[123,-39]},"properties":null}`, val)
+		}
+	}
+	{
+		// Timestamp
+		{
+			// Nano timestamp
+			field := Field{Type: Int64, DebeziumType: NanoTimestamp}
+			val, err := field.ParseValue(int64(1712609795827000000))
+			assert.NoError(t, err)
+
+			extTimeVal, err := typing.AssertType[*ext.ExtendedTime](val)
+			assert.NoError(t, err)
+			assert.Equal(t, &ext.ExtendedTime{
+				Time:       time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC),
+				NestedKind: ext.NestedKind{Type: ext.DateTimeKindType, Format: "2006-01-02T15:04:05.999999999Z07:00"},
+			}, extTimeVal)
+		}
+		{
+			// Micro timestamp
+			field := Field{Type: Int64, DebeziumType: MicroTimestamp}
+			{
+				// Int64
+				val, err := field.ParseValue(int64(1712609795827000))
+				assert.NoError(t, err)
+
+				extTimeVal, err := typing.AssertType[*ext.ExtendedTime](val)
+				assert.NoError(t, err)
+				assert.Equal(t, &ext.ExtendedTime{
+					Time:       time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC),
+					NestedKind: ext.NestedKind{Type: ext.DateTimeKindType, Format: "2006-01-02T15:04:05.999999999Z07:00"},
+				}, extTimeVal)
+			}
+			{
+				// Float64
+				val, err := field.ParseValue(float64(1712609795827000))
+				assert.NoError(t, err)
+
+				extTimeVal, err := typing.AssertType[*ext.ExtendedTime](val)
+				assert.NoError(t, err)
+				assert.Equal(t, &ext.ExtendedTime{
+					Time:       time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC),
+					NestedKind: ext.NestedKind{Type: ext.DateTimeKindType, Format: "2006-01-02T15:04:05.999999999Z07:00"},
+				}, extTimeVal)
+			}
+			{
+				// Invalid (string)
+				_, err := field.ParseValue("1712609795827000")
+				assert.ErrorContains(t, err, "failed to cast value '1712609795827000' with type 'string' to int64")
 			}
 		}
 	}
@@ -566,89 +464,60 @@ func TestField_DecodeDecimal(t *testing.T) {
 }
 
 func TestField_DecodeDebeziumVariableDecimal(t *testing.T) {
-	type _testCase struct {
-		name  string
-		value any
-
-		expectedValue string
-		expectedScale int32
-		expectedErr   string
+	field := Field{DebeziumType: KafkaVariableNumericType}
+	{
+		// Test with nil value
+		_, err := field.DecodeDebeziumVariableDecimal(nil)
+		assert.ErrorContains(t, err, "value is not map[string]any type")
 	}
-
-	testCases := []_testCase{
-		{
-			name:        "empty val (nil)",
-			expectedErr: "value is not map[string]any type",
-		},
-		{
-			name:        "empty map",
-			value:       map[string]any{},
-			expectedErr: "object is empty",
-		},
-		{
-			name: "scale is not an integer",
-			value: map[string]any{
-				"scale": "foo",
-			},
-			expectedErr: "key: scale is not type integer",
-		},
-		{
-			name: "value exists (scale 3)",
-			value: map[string]any{
-				"scale": 3,
-				"value": "SOx4FQ==",
-			},
-			expectedValue: "1223456.789",
-			expectedScale: 3,
-		},
-		{
-			name: "value exists (scale 2)",
-			value: map[string]any{
-				"scale": 2,
-				"value": "MDk=",
-			},
-			expectedValue: "123.45",
-			expectedScale: 2,
-		},
-		{
-			name: "negative numbers (scale 7)",
-			value: map[string]any{
-				"scale": 7,
-				"value": "wT9Wmw==",
-			},
-			expectedValue: "-105.2813669",
-			expectedScale: 7,
-		},
-		{
-			name: "malformed base64 value",
-			value: map[string]any{
-				"scale": 7,
-				"value": "==wT9Wmw==",
-			},
-			expectedErr: "failed to base64 decode",
-		},
-		{
-			name: "[]byte value",
-			value: map[string]any{
-				"scale": 7,
-				"value": []byte{193, 63, 86, 155},
-			},
-			expectedValue: "-105.2813669",
-			expectedScale: 7,
-		},
+	{
+		// Test with empty map
+		_, err := field.DecodeDebeziumVariableDecimal(map[string]any{})
+		assert.ErrorContains(t, err, "object is empty")
 	}
-
-	for _, testCase := range testCases {
-		field := Field{}
-		dec, err := field.DecodeDebeziumVariableDecimal(testCase.value)
-		if testCase.expectedErr != "" {
-			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
-			continue
-		}
-
-		assert.Equal(t, int32(-1), dec.Details().Precision(), testCase.name)
-		assert.Equal(t, testCase.expectedScale, dec.Details().Scale(), testCase.name)
-		assert.Equal(t, testCase.expectedValue, dec.String(), testCase.name)
+	{
+		// Scale is not an integer
+		_, err := field.DecodeDebeziumVariableDecimal(map[string]any{"scale": "foo"})
+		assert.ErrorContains(t, err, "key: scale is not type integer")
 	}
-
+	{
+		// Scale 3
+		dec, err := field.DecodeDebeziumVariableDecimal(map[string]any{
+			"scale": 3,
+			"value": "SOx4FQ==",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, int32(-1), dec.Details().Precision())
+		assert.Equal(t, int32(3), dec.Details().Scale())
+		assert.Equal(t, "1223456.789", dec.String())
+	}
+	{
+		// Scale 2
+		dec, err := field.DecodeDebeziumVariableDecimal(map[string]any{"scale": 2, "value": "MDk="})
+		assert.NoError(t, err)
+		assert.Equal(t, int32(-1), dec.Details().Precision())
+		assert.Equal(t, int32(2), dec.Details().Scale())
+		assert.Equal(t, "123.45", dec.String())
+	}
+	{
+		// Scale 7 - Negative numbers
+		dec, err := field.DecodeDebeziumVariableDecimal(map[string]any{"scale": 7, "value": "wT9Wmw=="})
+		assert.NoError(t, err)
+		assert.Equal(t, int32(-1), dec.Details().Precision())
+		assert.Equal(t, int32(7), dec.Details().Scale())
+		assert.Equal(t, "-105.2813669", dec.String())
+	}
+	{
+		// Malformed b64
+		_, err := field.DecodeDebeziumVariableDecimal(map[string]any{"scale": 7, "value": "==wT9Wmw=="})
+		assert.ErrorContains(t, err, "failed to base64 decode")
+	}
+	{
+		// []byte
+		dec, err := field.DecodeDebeziumVariableDecimal(map[string]any{"scale": 7, "value": []byte{193, 63, 86, 155}})
+		assert.NoError(t, err)
+		assert.Equal(t, int32(-1), dec.Details().Precision())
+		assert.Equal(t, int32(7), dec.Details().Scale())
+		assert.Equal(t, "-105.2813669", dec.String())
+	}
 }
