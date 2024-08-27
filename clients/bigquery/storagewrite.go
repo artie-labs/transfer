@@ -146,6 +146,13 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				message.Set(field, protoreflect.ValueOfFloat64(float64(value)))
 			case int64:
 				message.Set(field, protoreflect.ValueOfFloat64(float64(value)))
+			case *decimal.Decimal:
+				float, err := value.Value().Float64()
+				if err != nil {
+					return nil, fmt.Errorf("failed to convert decimal to float64: %w", err)
+				}
+
+				message.Set(field, protoreflect.ValueOfFloat64(float))
 			case string:
 				floatValue, err := strconv.ParseFloat(value, 64)
 				if err != nil {
