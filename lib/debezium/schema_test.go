@@ -271,6 +271,11 @@ func TestField_ToKindDetails(t *testing.T) {
 			},
 			expectedKindDetails: typing.Struct,
 		},
+		{
+			name:                "UUID",
+			field:               Field{DebeziumType: UUID, Type: String},
+			expectedKindDetails: typing.String,
+		},
 	}
 
 	for _, tc := range tcs {
