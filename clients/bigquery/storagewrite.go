@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/typing/converters"
+	"github.com/artie-labs/transfer/clients/bigquery/converters"
 
 	"cloud.google.com/go/bigquery/storage/apiv1/storagepb"
 	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
