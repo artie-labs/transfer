@@ -176,6 +176,8 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				stringValue = castedValue
 			case *decimal.Decimal:
 				stringValue = castedValue.String()
+			case *ext.ExtendedTime:
+				stringValue = castedValue.String("")
 			default:
 				return nil, fmt.Errorf("expected string/decimal.Decimal received %T with value %v", value, value)
 			}
