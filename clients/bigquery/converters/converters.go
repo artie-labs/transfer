@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/artie-labs/transfer/lib/typing/ext"
+
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
@@ -17,6 +19,8 @@ func (StringConverter) Convert(value any) (any, error) {
 		return castedValue.String(), nil
 	case bool:
 		return fmt.Sprint(castedValue), nil
+	case *ext.ExtendedTime:
+		return castedValue.String(""), nil
 	default:
 		return nil, fmt.Errorf("expected string/*decimal.Decimal/bool received %T with value %v", value, value)
 	}
