@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/artie-labs/transfer/lib/typing/ext"
-
 	"github.com/artie-labs/transfer/lib/typing/decimal"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type StringConverter struct{}
