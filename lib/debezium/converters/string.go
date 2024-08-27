@@ -2,9 +2,9 @@ package converters
 
 import "github.com/artie-labs/transfer/lib/typing"
 
-type String struct{}
+type StringPassthrough struct{}
 
-func (String) Convert(value any) (any, error) {
+func (StringPassthrough) Convert(value any) (any, error) {
 	castedValue, err := typing.AssertType[string](value)
 	if err != nil {
 		return nil, err
@@ -13,6 +13,6 @@ func (String) Convert(value any) (any, error) {
 	return castedValue, nil
 }
 
-func (String) ToKindDetails() typing.KindDetails {
+func (StringPassthrough) ToKindDetails() typing.KindDetails {
 	return typing.String
 }
