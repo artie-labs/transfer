@@ -160,7 +160,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				}
 				message.Set(field, protoreflect.ValueOfFloat64(floatValue))
 			default:
-				return nil, fmt.Errorf("expected float32/float64/int32/int64/string received %T with value %v", value, value)
+				return nil, fmt.Errorf("expected float32/float64/int32/int64/*decimal.Decimal/string received %T with value %v", value, value)
 			}
 		case typing.EDecimal.Kind:
 			decimalValue, err := typing.AssertType[*decimal.Decimal](value)
