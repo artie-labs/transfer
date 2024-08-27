@@ -2,6 +2,9 @@ package converters
 
 import (
 	"testing"
+	"time"
+
+	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -33,6 +36,12 @@ func TestStringConverter_Convert(t *testing.T) {
 		// Invalid
 		_, err := converter.Convert(123)
 		assert.ErrorContains(t, err, "expected string/*decimal.Decimal/bool received int with value 123")
+	}
+	{
+		// Extended time
+		val, err := converter.Convert(ext.NewExtendedTime(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), ext.DateTimeKindType, ""))
+		assert.NoError(t, err)
+		assert.Equal(t, "2021-01-01T00:00:00Z", val)
 	}
 }
 
