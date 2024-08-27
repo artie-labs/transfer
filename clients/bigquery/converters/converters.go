@@ -25,9 +25,9 @@ func (StringConverter) Convert(value any) (any, error) {
 	}
 }
 
-type IntegerConverter struct{}
+type Int64Converter struct{}
 
-func (IntegerConverter) Convert(value any) (any, error) {
+func (Int64Converter) Convert(value any) (any, error) {
 	switch castedValue := value.(type) {
 	case int:
 		return int64(castedValue), nil

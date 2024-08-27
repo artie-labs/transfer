@@ -44,8 +44,8 @@ func TestStringConverter_Convert(t *testing.T) {
 	}
 }
 
-func TestIntegerConverter_Convert(t *testing.T) {
-	converter := IntegerConverter{}
+func TestInt64Converter_Convert(t *testing.T) {
+	converter := Int64Converter{}
 	{
 		// int
 		val, err := converter.Convert(123)

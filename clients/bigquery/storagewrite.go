@@ -130,7 +130,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 
 			message.Set(field, protoreflect.ValueOfBool(castedVal))
 		case typing.Integer.Kind:
-			val, err := converters.IntegerConverter{}.Convert(value)
+			val, err := converters.Int64Converter{}.Convert(value)
 			if err != nil {
 				return nil, err
 			}
