@@ -44,9 +44,9 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 
 		col, isOk := tableData.inMemoryColumns.GetColumn("foo")
 		assert.True(t, isOk)
-		assert.Equal(t, typing.ETime.Kind, col.KindDetails.Kind)
-		assert.Equal(t, ext.DateKindType, col.KindDetails.ExtendedTimeDetails.Type)
-		assert.Equal(t, extTime.ExtendedTimeDetails, col.KindDetails.ExtendedTimeDetails)
+		assert.Equal(t, typing.ETime.Kind, col.SourceKindDetails.Kind)
+		assert.Equal(t, ext.DateKindType, col.SourceKindDetails.ExtendedTimeDetails.Type)
+		assert.Equal(t, extTime.ExtendedTimeDetails, col.SourceKindDetails.ExtendedTimeDetails)
 	}
 	{
 		tableDataCols := &columns.Columns{}
@@ -87,13 +87,13 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("numeric_test", typing.Integer)))
 		numericCol, isOk := tableData.inMemoryColumns.GetColumn("numeric_test")
 		assert.True(t, isOk)
-		assert.Equal(t, typing.EDecimal.Kind, numericCol.KindDetails.Kind, "numeric_test")
+		assert.Equal(t, typing.EDecimal.Kind, numericCol.SourceKindDetails.Kind, "numeric_test")
 
 		// Testing to make sure we're copying the kindDetails over.
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("prev_invalid", typing.String)))
 		prevInvalidCol, isOk := tableData.inMemoryColumns.GetColumn("prev_invalid")
 		assert.True(t, isOk)
-		assert.Equal(t, typing.String, prevInvalidCol.KindDetails)
+		assert.Equal(t, typing.String, prevInvalidCol.SourceKindDetails)
 
 		// Testing backfill
 		for _, inMemoryCol := range tableData.inMemoryColumns.GetColumns() {
@@ -114,8 +114,8 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		for _, extTimeDetailsCol := range []string{"ext_date", "ext_time", "ext_datetime"} {
 			col, isOk := tableData.inMemoryColumns.GetColumn(extTimeDetailsCol)
 			assert.True(t, isOk, extTimeDetailsCol)
-			assert.Equal(t, typing.String, col.KindDetails, extTimeDetailsCol)
-			assert.Nil(t, col.KindDetails.ExtendedTimeDetails, extTimeDetailsCol)
+			assert.Equal(t, typing.String, col.SourceKindDetails, extTimeDetailsCol)
+			assert.Nil(t, col.SourceKindDetails.ExtendedTimeDetails, extTimeDetailsCol)
 		}
 
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_time", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType))))
@@ -124,50 +124,50 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 
 		dateCol, isOk := tableData.inMemoryColumns.GetColumn("ext_date")
 		assert.True(t, isOk)
-		assert.NotNil(t, dateCol.KindDetails.ExtendedTimeDetails)
-		assert.Equal(t, ext.DateKindType, dateCol.KindDetails.ExtendedTimeDetails.Type)
+		assert.NotNil(t, dateCol.SourceKindDetails.ExtendedTimeDetails)
+		assert.Equal(t, ext.DateKindType, dateCol.SourceKindDetails.ExtendedTimeDetails.Type)
 
 		timeCol, isOk := tableData.inMemoryColumns.GetColumn("ext_time")
 		assert.True(t, isOk)
-		assert.NotNil(t, timeCol.KindDetails.ExtendedTimeDetails)
-		assert.Equal(t, ext.TimeKindType, timeCol.KindDetails.ExtendedTimeDetails.Type)
+		assert.NotNil(t, timeCol.SourceKindDetails.ExtendedTimeDetails)
+		assert.Equal(t, ext.TimeKindType, timeCol.SourceKindDetails.ExtendedTimeDetails.Type)
 
 		dateTimeCol, isOk := tableData.inMemoryColumns.GetColumn("ext_datetime")
 		assert.True(t, isOk)
-		assert.NotNil(t, dateTimeCol.KindDetails.ExtendedTimeDetails)
-		assert.Equal(t, ext.DateTimeKindType, dateTimeCol.KindDetails.ExtendedTimeDetails.Type)
+		assert.NotNil(t, dateTimeCol.SourceKindDetails.ExtendedTimeDetails)
+		assert.Equal(t, ext.DateTimeKindType, dateTimeCol.SourceKindDetails.ExtendedTimeDetails.Type)
 
 		// Testing extDecimalDetails
 		// Confirm that before you update, it's invalid.
 		extDecCol, isOk := tableData.inMemoryColumns.GetColumn("ext_dec")
 		assert.True(t, isOk)
-		assert.Equal(t, typing.String, extDecCol.KindDetails)
+		assert.Equal(t, typing.String, extDecCol.SourceKindDetails)
 
 		extDecimal := typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(30, 2))
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_dec", extDecimal)))
 		// Now it should be ext decimal type
 		extDecCol, isOk = tableData.inMemoryColumns.GetColumn("ext_dec")
 		assert.True(t, isOk)
-		assert.Equal(t, typing.EDecimal.Kind, extDecCol.KindDetails.Kind)
+		assert.Equal(t, typing.EDecimal.Kind, extDecCol.SourceKindDetails.Kind)
 		// Check precision and scale too.
-		assert.Equal(t, int32(30), extDecCol.KindDetails.ExtendedDecimalDetails.Precision())
-		assert.Equal(t, int32(2), extDecCol.KindDetails.ExtendedDecimalDetails.Scale())
+		assert.Equal(t, int32(30), extDecCol.SourceKindDetails.ExtendedDecimalDetails.Precision())
+		assert.Equal(t, int32(2), extDecCol.SourceKindDetails.ExtendedDecimalDetails.Scale())
 
 		// Testing ext_dec_filled since it's already filled out
 		extDecColFilled, isOk := tableData.inMemoryColumns.GetColumn("ext_dec_filled")
 		assert.True(t, isOk)
-		assert.Equal(t, typing.EDecimal.Kind, extDecColFilled.KindDetails.Kind)
+		assert.Equal(t, typing.EDecimal.Kind, extDecColFilled.SourceKindDetails.Kind)
 		// Check precision and scale too.
-		assert.Equal(t, int32(22), extDecColFilled.KindDetails.ExtendedDecimalDetails.Precision())
-		assert.Equal(t, int32(2), extDecColFilled.KindDetails.ExtendedDecimalDetails.Scale())
+		assert.Equal(t, int32(22), extDecColFilled.SourceKindDetails.ExtendedDecimalDetails.Precision())
+		assert.Equal(t, int32(2), extDecColFilled.SourceKindDetails.ExtendedDecimalDetails.Scale())
 
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_dec_filled", extDecimal)))
 		extDecColFilled, isOk = tableData.inMemoryColumns.GetColumn("ext_dec_filled")
 		assert.True(t, isOk)
-		assert.Equal(t, typing.EDecimal.Kind, extDecColFilled.KindDetails.Kind)
+		assert.Equal(t, typing.EDecimal.Kind, extDecColFilled.SourceKindDetails.Kind)
 		// Check precision and scale too.
-		assert.Equal(t, int32(22), extDecColFilled.KindDetails.ExtendedDecimalDetails.Precision())
-		assert.Equal(t, int32(2), extDecColFilled.KindDetails.ExtendedDecimalDetails.Scale())
+		assert.Equal(t, int32(22), extDecColFilled.SourceKindDetails.ExtendedDecimalDetails.Precision())
+		assert.Equal(t, int32(2), extDecColFilled.SourceKindDetails.ExtendedDecimalDetails.Scale())
 	}
 	{
 		tableDataCols := &columns.Columns{}
@@ -186,7 +186,7 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn(strCol, stringKindWithPrecision)))
 		foundStrCol, isOk := tableData.inMemoryColumns.GetColumn(strCol)
 		assert.True(t, isOk)
-		assert.Equal(t, typing.String.Kind, foundStrCol.KindDetails.Kind)
-		assert.Equal(t, int32(123), *foundStrCol.KindDetails.OptionalStringPrecision)
+		assert.Equal(t, typing.String.Kind, foundStrCol.SourceKindDetails.Kind)
+		assert.Equal(t, int32(123), *foundStrCol.SourceKindDetails.OptionalStringPrecision)
 	}
 }

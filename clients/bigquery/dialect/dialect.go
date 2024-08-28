@@ -143,7 +143,7 @@ func (BigQueryDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, column
 
 func (bd BigQueryDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
 	colName := sql.QuoteTableAliasColumn(tableAlias, column, bd)
-	if column.KindDetails == typing.Struct {
+	if column.SourceKindDetails == typing.Struct {
 		return fmt.Sprintf(`COALESCE(TO_JSON_STRING(%s) != '{"key":"%s"}', true)`,
 			colName, constants.ToastUnavailableValuePlaceholder)
 	}
@@ -217,7 +217,7 @@ func (bd BigQueryDialect) BuildMergeQueries(
 	for _, primaryKey := range primaryKeys {
 		equalitySQL := sql.BuildColumnComparison(primaryKey, constants.TargetAlias, constants.StagingAlias, sql.Equal, bd)
 
-		if primaryKey.KindDetails.Kind == typing.Struct.Kind {
+		if primaryKey.SourceKindDetails.Kind == typing.Struct.Kind {
 			// BigQuery requires special casting to compare two JSON objects.
 			equalitySQL = fmt.Sprintf("TO_JSON_STRING(%s) = TO_JSON_STRING(%s)",
 				sql.QuoteTableAliasColumn(constants.TargetAlias, primaryKey, bd),

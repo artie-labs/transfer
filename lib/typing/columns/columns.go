@@ -18,9 +18,14 @@ func EscapeName(name string) string {
 }
 
 type Column struct {
-	name        string
-	primaryKey  bool
-	KindDetails typing.KindDetails
+	name       string
+	primaryKey bool
+
+	// TODO: Start migrating usages towards [DestKindDetails]
+	// DestKindDetails - This is what the column looks like in the destination
+	DestKindDetails typing.KindDetails
+	// SourceKindDetails - This is what the column looks like from the source
+	SourceKindDetails typing.KindDetails
 	// ToastColumn indicates that the source column is a TOAST column and the value is unavailable
 	// We have stripped this out.
 	// Whenever we see the same column where there's an opposite value in `toastColumn`, we will trigger a flush
@@ -34,7 +39,7 @@ func (c *Column) PrimaryKey() bool {
 }
 
 func (c *Column) ShouldSkip() bool {
-	if c == nil || c.KindDetails.Kind == typing.Invalid.Kind {
+	if c == nil || c.SourceKindDetails.Kind == typing.Invalid.Kind {
 		return true
 	}
 
@@ -43,8 +48,8 @@ func (c *Column) ShouldSkip() bool {
 
 func NewColumn(name string, kd typing.KindDetails) Column {
 	return Column{
-		name:        name,
-		KindDetails: kd,
+		name:              name,
+		SourceKindDetails: kd,
 	}
 }
 
@@ -130,8 +135,8 @@ func (c *Columns) UpsertColumn(colName string, arg UpsertColumnArg) {
 	}
 
 	col := Column{
-		name:        colName,
-		KindDetails: typing.Invalid,
+		name:              colName,
+		SourceKindDetails: typing.Invalid,
 	}
 
 	if arg.ToastCol != nil {
@@ -190,7 +195,7 @@ func (c *Columns) ValidColumns() []Column {
 
 	var cols []Column
 	for _, col := range c.columns {
-		if col.KindDetails == typing.Invalid {
+		if col.SourceKindDetails == typing.Invalid {
 			continue
 		}
 

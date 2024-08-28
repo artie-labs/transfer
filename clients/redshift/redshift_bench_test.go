@@ -32,7 +32,7 @@ func BenchmarkMethods(b *testing.B) {
 
 func replaceExceededValuesOld(colVal any, colKind columns.Column) any {
 	colValString := fmt.Sprint(colVal)
-	switch colKind.KindDetails.Kind {
+	switch colKind.SourceKindDetails.Kind {
 	case typing.Struct.Kind:
 		if int32(len(colValString)) > maxRedshiftLength {
 			return map[string]any{
@@ -51,7 +51,7 @@ func replaceExceededValuesOld(colVal any, colKind columns.Column) any {
 func replaceExceededValuesNew(colVal any, colKind columns.Column) any {
 	colValString := fmt.Sprint(colVal)
 	colValBytes := int32(len(colValString))
-	switch colKind.KindDetails.Kind {
+	switch colKind.SourceKindDetails.Kind {
 	case typing.Struct.Kind:
 		if colValBytes > maxRedshiftLength {
 			return map[string]any{

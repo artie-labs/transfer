@@ -83,7 +83,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	err := s.stageStore.Merge(tableData)
 	_col, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("first_name")
 	assert.True(s.T(), isOk)
-	assert.Equal(s.T(), _col.KindDetails, typing.String)
+	assert.Equal(s.T(), _col.SourceKindDetails, typing.String)
 	assert.NoError(s.T(), err)
 }
 

@@ -28,7 +28,7 @@ func columnToTableFieldSchema(column columns.Column) (*storagepb.TableFieldSchem
 	var fieldType storagepb.TableFieldSchema_Type
 	mode := storagepb.TableFieldSchema_NULLABLE
 
-	switch column.KindDetails.Kind {
+	switch column.SourceKindDetails.Kind {
 	case typing.Boolean.Kind:
 		fieldType = storagepb.TableFieldSchema_BOOL
 	case typing.Integer.Kind:
@@ -40,7 +40,7 @@ func columnToTableFieldSchema(column columns.Column) (*storagepb.TableFieldSchem
 	case typing.String.Kind:
 		fieldType = storagepb.TableFieldSchema_STRING
 	case typing.ETime.Kind:
-		switch column.KindDetails.ExtendedTimeDetails.Type {
+		switch column.SourceKindDetails.ExtendedTimeDetails.Type {
 		case ext.TimeKindType:
 			fieldType = storagepb.TableFieldSchema_TIME
 		case ext.DateKindType:
@@ -48,7 +48,7 @@ func columnToTableFieldSchema(column columns.Column) (*storagepb.TableFieldSchem
 		case ext.DateTimeKindType:
 			fieldType = storagepb.TableFieldSchema_TIMESTAMP
 		default:
-			return nil, fmt.Errorf("unsupported extended time details type: %q", column.KindDetails.ExtendedTimeDetails.Type)
+			return nil, fmt.Errorf("unsupported extended time details type: %q", column.SourceKindDetails.ExtendedTimeDetails.Type)
 		}
 	case typing.Struct.Kind:
 		fieldType = storagepb.TableFieldSchema_STRING
@@ -56,7 +56,7 @@ func columnToTableFieldSchema(column columns.Column) (*storagepb.TableFieldSchem
 		fieldType = storagepb.TableFieldSchema_STRING
 		mode = storagepb.TableFieldSchema_REPEATED
 	default:
-		return nil, fmt.Errorf("unsupported column kind: %q", column.KindDetails.Kind)
+		return nil, fmt.Errorf("unsupported column kind: %q", column.SourceKindDetails.Kind)
 	}
 
 	return &storagepb.TableFieldSchema{
@@ -116,7 +116,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			continue
 		}
 
-		switch column.KindDetails.Kind {
+		switch column.SourceKindDetails.Kind {
 		case typing.Boolean.Kind:
 			val, err := converters.BooleanConverter{}.Convert(value)
 			if err != nil {
@@ -192,11 +192,11 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				return nil, fmt.Errorf("failed to cast value as time.Time, value: %v, err: %w", value, err)
 			}
 
-			if column.KindDetails.ExtendedTimeDetails == nil {
+			if column.SourceKindDetails.ExtendedTimeDetails == nil {
 				return nil, fmt.Errorf("extended time details for column kind details is nil")
 			}
 
-			switch column.KindDetails.ExtendedTimeDetails.Type {
+			switch column.SourceKindDetails.ExtendedTimeDetails.Type {
 			case ext.TimeKindType:
 				message.Set(field, protoreflect.ValueOfInt64(encodePacked64TimeMicros(extTime.Time)))
 			case ext.DateKindType:
@@ -208,7 +208,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				}
 				message.Set(field, protoreflect.ValueOfInt64(extTime.UnixMicro()))
 			default:
-				return nil, fmt.Errorf("unsupported extended time details: %q", column.KindDetails.ExtendedTimeDetails.Type)
+				return nil, fmt.Errorf("unsupported extended time details: %q", column.SourceKindDetails.ExtendedTimeDetails.Type)
 			}
 		case typing.Struct.Kind:
 			stringValue, err := encodeStructToJSONString(value)
@@ -229,7 +229,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				list.Append(protoreflect.ValueOfString(val))
 			}
 		default:
-			return nil, fmt.Errorf("unsupported column kind: %q", column.KindDetails.Kind)
+			return nil, fmt.Errorf("unsupported column kind: %q", column.SourceKindDetails.Kind)
 		}
 	}
 	return message, nil

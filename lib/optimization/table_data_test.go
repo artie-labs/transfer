@@ -145,8 +145,8 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 	extCol, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("do_not_change_format")
 	assert.True(t, isOk)
 
-	extCol.KindDetails.ExtendedTimeDetails.Format = time.RFC3339Nano
-	tableData.inMemoryColumns.UpdateColumn(columns.NewColumn(extCol.Name(), extCol.KindDetails))
+	extCol.SourceKindDetails.ExtendedTimeDetails.Format = time.RFC3339Nano
+	tableData.inMemoryColumns.UpdateColumn(columns.NewColumn(extCol.Name(), extCol.SourceKindDetails))
 
 	for name, colKindDetails := range map[string]typing.KindDetails{
 		"foo":                  typing.String,
@@ -166,18 +166,18 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 
 	col, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("CHANGE_me")
 	assert.True(t, isOk)
-	assert.Equal(t, ext.DateTime.Type, col.KindDetails.ExtendedTimeDetails.Type)
+	assert.Equal(t, ext.DateTime.Type, col.SourceKindDetails.ExtendedTimeDetails.Type)
 
 	// It went from invalid to boolean.
 	col, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("bar")
 	assert.True(t, isOk)
-	assert.Equal(t, typing.Boolean, col.KindDetails)
+	assert.Equal(t, typing.Boolean, col.SourceKindDetails)
 
 	col, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("do_not_change_format")
 	assert.True(t, isOk)
-	assert.Equal(t, col.KindDetails.Kind, typing.ETime.Kind)
-	assert.Equal(t, col.KindDetails.ExtendedTimeDetails.Type, ext.DateTimeKindType, "correctly mapped type")
-	assert.Equal(t, col.KindDetails.ExtendedTimeDetails.Format, time.RFC3339Nano, "format has been preserved")
+	assert.Equal(t, col.SourceKindDetails.Kind, typing.ETime.Kind)
+	assert.Equal(t, col.SourceKindDetails.ExtendedTimeDetails.Type, ext.DateTimeKindType, "correctly mapped type")
+	assert.Equal(t, col.SourceKindDetails.ExtendedTimeDetails.Format, time.RFC3339Nano, "format has been preserved")
 }
 
 func TestTableData_ShouldFlushRowLength(t *testing.T) {

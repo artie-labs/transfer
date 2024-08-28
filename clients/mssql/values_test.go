@@ -31,7 +31,7 @@ func TestParseValue(t *testing.T) {
 
 		// If the string precision exceeds the value, we'll need to insert an exceeded value.
 		stringCol := columns.NewColumn("foo", typing.String)
-		stringCol.KindDetails.OptionalStringPrecision = ptr.ToInt32(25)
+		stringCol.SourceKindDetails.OptionalStringPrecision = ptr.ToInt32(25)
 
 		val, err = parseValue(`abcdefabcdefabcdefabcdef113321`, stringCol, nil)
 		assert.NoError(t, err)

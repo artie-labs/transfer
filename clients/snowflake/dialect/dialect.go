@@ -51,7 +51,7 @@ func (SnowflakeDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) 
 	return kindDetails.Kind
 }
 
-// KindForDataType converts a Snowflake type to a KindDetails.
+// KindForDataType converts a Snowflake type to a SourceKindDetails.
 // Following this spec: https://docs.snowflake.com/en/sql-reference/intro-summary-data-types.html
 func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.KindDetails, error) {
 	if len(snowflakeType) == 0 {
@@ -145,7 +145,7 @@ func (SnowflakeDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, colum
 
 func (sd SnowflakeDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
 	colName := sql.QuoteTableAliasColumn(tableAlias, column, sd)
-	if column.KindDetails == typing.Struct {
+	if column.SourceKindDetails == typing.Struct {
 		return fmt.Sprintf("COALESCE(%s != {'key': '%s'}, true)", colName, constants.ToastUnavailableValuePlaceholder)
 	}
 	return fmt.Sprintf("COALESCE(%s != '%s', true)", colName, constants.ToastUnavailableValuePlaceholder)

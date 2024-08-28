@@ -559,6 +559,6 @@ func (r *RelationTestSuite) TestGetEventFromBytes_MySQL() {
 
 		col, isOk = cols.GetColumn(strings.ToLower(key))
 		assert.Equal(r.T(), true, isOk, key)
-		assert.Equal(r.T(), typing.Invalid, col.KindDetails, fmt.Sprintf("colName: %v, evtData key: %v", col.Name(), key))
+		assert.Equal(r.T(), typing.Invalid, col.SourceKindDetails, fmt.Sprintf("colName: %v, evtData key: %v", col.Name(), key))
 	}
 }

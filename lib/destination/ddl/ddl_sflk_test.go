@@ -43,7 +43,7 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 		execQuery, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(i)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN %s %s", `shop.public."COMPLEX_COLUMNS"`,
 			d.snowflakeStagesStore.Dialect().QuoteIdentifier(cols[i].Name()),
-			d.snowflakeStagesStore.Dialect().DataTypeForKind(cols[i].KindDetails, false)), execQuery)
+			d.snowflakeStagesStore.Dialect().DataTypeForKind(cols[i].SourceKindDetails, false)), execQuery)
 	}
 
 	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecCallCount(), "called SFLK the same amt to create cols")
@@ -109,7 +109,7 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 		var found bool
 		for _, expCol := range cols {
 			if found = column.Name() == expCol.Name(); found {
-				assert.Equal(d.T(), column.KindDetails, expCol.KindDetails, fmt.Sprintf("wrong col kind, col: %s", column.Name()))
+				assert.Equal(d.T(), column.SourceKindDetails, expCol.SourceKindDetails, fmt.Sprintf("wrong col kind, col: %s", column.Name()))
 				break
 			}
 		}

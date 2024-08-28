@@ -19,26 +19,26 @@ func ParseValue(colVal any, colKind columns.Column, additionalDateFmts []string)
 		return nil, nil
 	}
 
-	switch colKind.KindDetails.Kind {
+	switch colKind.SourceKindDetails.Kind {
 	case typing.ETime.Kind:
 		extTime, err := ext.ParseFromInterface(colVal, additionalDateFmts)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
 
-		if colKind.KindDetails.ExtendedTimeDetails == nil {
+		if colKind.SourceKindDetails.ExtendedTimeDetails == nil {
 			return "", fmt.Errorf("column kind details for extended time details is null")
 		}
 
-		if colKind.KindDetails.ExtendedTimeDetails.Type == ext.DateKindType || colKind.KindDetails.ExtendedTimeDetails.Type == ext.TimeKindType {
-			return extTime.Format(colKind.KindDetails.ExtendedTimeDetails.Format), nil
+		if colKind.SourceKindDetails.ExtendedTimeDetails.Type == ext.DateKindType || colKind.SourceKindDetails.ExtendedTimeDetails.Type == ext.TimeKindType {
+			return extTime.Format(colKind.SourceKindDetails.ExtendedTimeDetails.Format), nil
 		}
 
 		return extTime.Time.UnixMilli(), nil
 	case typing.String.Kind:
 		return colVal, nil
 	case typing.Struct.Kind:
-		if colKind.KindDetails == typing.Struct {
+		if colKind.SourceKindDetails == typing.Struct {
 			if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
 				colVal = map[string]any{
 					"key": constants.ToastUnavailableValuePlaceholder,

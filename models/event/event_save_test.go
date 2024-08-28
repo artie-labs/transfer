@@ -81,7 +81,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	td := e.db.GetOrCreateTableData("foo")
 	inMemCol, isOk := td.ReadOnlyInMemoryCols().GetColumn(badColumn)
 	assert.True(e.T(), isOk)
-	assert.Equal(e.T(), typing.Invalid, inMemCol.KindDetails)
+	assert.Equal(e.T(), typing.Invalid, inMemCol.SourceKindDetails)
 }
 
 func (e *EventsTestSuite) TestEvent_SaveCasing() {
@@ -148,19 +148,19 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 	td := e.db.GetOrCreateTableData("foo")
 	column, isOk := td.ReadOnlyInMemoryCols().GetColumn("created_at_date_string")
 	assert.True(e.T(), isOk)
-	assert.Equal(e.T(), typing.String, column.KindDetails)
+	assert.Equal(e.T(), typing.String, column.SourceKindDetails)
 
 	column, isOk = td.ReadOnlyInMemoryCols().GetColumn("created_at_date_no_schema")
 	assert.True(e.T(), isOk)
-	assert.Equal(e.T(), ext.Date.Type, column.KindDetails.ExtendedTimeDetails.Type)
+	assert.Equal(e.T(), ext.Date.Type, column.SourceKindDetails.ExtendedTimeDetails.Type)
 
 	column, isOk = td.ReadOnlyInMemoryCols().GetColumn("json_object_string")
 	assert.True(e.T(), isOk)
-	assert.Equal(e.T(), typing.String, column.KindDetails)
+	assert.Equal(e.T(), typing.String, column.SourceKindDetails)
 
 	column, isOk = td.ReadOnlyInMemoryCols().GetColumn("json_object_no_schema")
 	assert.True(e.T(), isOk)
-	assert.Equal(e.T(), typing.Struct, column.KindDetails)
+	assert.Equal(e.T(), typing.Struct, column.SourceKindDetails)
 }
 
 func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
@@ -247,23 +247,23 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 
 	column, isOk := td.ReadOnlyInMemoryCols().GetColumn("randomcol")
 	assert.True(e.T(), isOk)
-	assert.Equal(e.T(), typing.String, column.KindDetails)
+	assert.Equal(e.T(), typing.String, column.SourceKindDetails)
 
 	column, isOk = td.ReadOnlyInMemoryCols().GetColumn("anothercol")
 	assert.True(e.T(), isOk)
-	assert.Equal(e.T(), typing.Float, column.KindDetails)
+	assert.Equal(e.T(), typing.Float, column.SourceKindDetails)
 
 	column, isOk = td.ReadOnlyInMemoryCols().GetColumn("created_at_date_string")
 	assert.True(e.T(), isOk)
-	assert.Equal(e.T(), ext.DateKindType, column.KindDetails.ExtendedTimeDetails.Type)
+	assert.Equal(e.T(), ext.DateKindType, column.SourceKindDetails.ExtendedTimeDetails.Type)
 
 	column, isOk = td.ReadOnlyInMemoryCols().GetColumn(constants.DeleteColumnMarker)
 	assert.True(e.T(), isOk)
-	assert.Equal(e.T(), typing.Boolean, column.KindDetails)
+	assert.Equal(e.T(), typing.Boolean, column.SourceKindDetails)
 
 	column, isOk = td.ReadOnlyInMemoryCols().GetColumn(constants.OnlySetDeleteColumnMarker)
 	assert.True(e.T(), isOk)
-	assert.Equal(e.T(), typing.Boolean, column.KindDetails)
+	assert.Equal(e.T(), typing.Boolean, column.SourceKindDetails)
 }
 
 func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {

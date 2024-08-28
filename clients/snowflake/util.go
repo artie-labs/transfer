@@ -22,7 +22,7 @@ func escapeColumns(columns *columns.Columns, delimiter string) string {
 	var index int
 	for _, col := range columns.GetColumns() {
 		escapedCol := fmt.Sprintf("$%d", index+1)
-		switch col.KindDetails {
+		switch col.SourceKindDetails {
 		case typing.Invalid:
 			continue
 		case typing.Struct:

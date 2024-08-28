@@ -103,7 +103,7 @@ func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []col
 				pkCols = append(pkCols, colName)
 			}
 
-			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, colName, a.Dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey())))
+			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, colName, a.Dialect.DataTypeForKind(col.SourceKindDetails, col.PrimaryKey())))
 		case constants.Delete:
 			colSQLParts = append(colSQLParts, a.Dialect.QuoteIdentifier(col.Name()))
 		}

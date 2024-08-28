@@ -53,14 +53,14 @@ func TestColumn_ShouldSkip(t *testing.T) {
 		{
 			name: "invalid column",
 			col: &Column{
-				KindDetails: typing.Invalid,
+				SourceKindDetails: typing.Invalid,
 			},
 			expectedResult: true,
 		},
 		{
 			name: "normal column",
 			col: &Column{
-				KindDetails: typing.String,
+				SourceKindDetails: typing.String,
 			},
 		},
 	}
@@ -102,26 +102,26 @@ func TestColumn_ShouldBackfill(t *testing.T) {
 		{
 			name: "default value set but kind = invalid",
 			column: &Column{
-				name:         "id",
-				defaultValue: "dusty",
-				KindDetails:  typing.Invalid,
+				name:              "id",
+				defaultValue:      "dusty",
+				SourceKindDetails: typing.Invalid,
 			},
 		},
 		{
 			name: "default value set but backfilled",
 			column: &Column{
-				name:         "id",
-				defaultValue: "dusty",
-				backfilled:   true,
-				KindDetails:  typing.String,
+				name:              "id",
+				defaultValue:      "dusty",
+				backfilled:        true,
+				SourceKindDetails: typing.String,
 			},
 		},
 		{
 			name: "default value set and not backfilled",
 			column: &Column{
-				name:         "id",
-				defaultValue: "dusty",
-				KindDetails:  typing.String,
+				name:              "id",
+				defaultValue:      "dusty",
+				SourceKindDetails: typing.String,
 			},
 			expectShouldBackfill: true,
 		},
@@ -135,24 +135,24 @@ func TestColumn_ShouldBackfill(t *testing.T) {
 func TestColumns_ValidColumns(t *testing.T) {
 	var happyPathCols = []Column{
 		{
-			name:        "hi",
-			KindDetails: typing.String,
+			name:              "hi",
+			SourceKindDetails: typing.String,
 		},
 		{
-			name:        "bye",
-			KindDetails: typing.String,
+			name:              "bye",
+			SourceKindDetails: typing.String,
 		},
 		{
-			name:        "start",
-			KindDetails: typing.String,
+			name:              "start",
+			SourceKindDetails: typing.String,
 		},
 	}
 
 	extraCols := happyPathCols
 	for i := 0; i < 100; i++ {
 		extraCols = append(extraCols, Column{
-			name:        fmt.Sprintf("hello_%v", i),
-			KindDetails: typing.Invalid,
+			name:              fmt.Sprintf("hello_%v", i),
+			SourceKindDetails: typing.Invalid,
 		})
 	}
 
@@ -183,8 +183,8 @@ func TestColumns_UpsertColumns(t *testing.T) {
 	var cols Columns
 	for _, key := range keys {
 		cols.AddColumn(Column{
-			name:        key,
-			KindDetails: typing.String,
+			name:              key,
+			SourceKindDetails: typing.String,
 		})
 	}
 
@@ -208,7 +208,7 @@ func TestColumns_UpsertColumns(t *testing.T) {
 	zzzCol, _ := cols.GetColumn("zzz")
 	assert.False(t, zzzCol.ToastColumn)
 	assert.False(t, zzzCol.primaryKey)
-	assert.Equal(t, zzzCol.KindDetails, typing.Invalid)
+	assert.Equal(t, zzzCol.SourceKindDetails, typing.Invalid)
 
 	cols.UpsertColumn("aaa", UpsertColumnArg{
 		ToastCol:   ptr.ToBool(true),
@@ -217,7 +217,7 @@ func TestColumns_UpsertColumns(t *testing.T) {
 	aaaCol, _ := cols.GetColumn("aaa")
 	assert.True(t, aaaCol.ToastColumn)
 	assert.True(t, aaaCol.primaryKey)
-	assert.Equal(t, aaaCol.KindDetails, typing.Invalid)
+	assert.Equal(t, aaaCol.SourceKindDetails, typing.Invalid)
 
 	length := len(cols.columns)
 	for i := 0; i < 500; i++ {
@@ -239,7 +239,7 @@ func TestColumns_Add_Duplicate(t *testing.T) {
 
 func TestColumns_Mutation(t *testing.T) {
 	var cols Columns
-	colsToAdd := []Column{{name: "foo", KindDetails: typing.String, defaultValue: "bar"}, {name: "bar", KindDetails: typing.Struct}}
+	colsToAdd := []Column{{name: "foo", SourceKindDetails: typing.String, defaultValue: "bar"}, {name: "bar", SourceKindDetails: typing.Struct}}
 	// Insert
 	for _, colToAdd := range colsToAdd {
 		cols.AddColumn(colToAdd)
@@ -248,32 +248,32 @@ func TestColumns_Mutation(t *testing.T) {
 	assert.Equal(t, len(cols.GetColumns()), 2)
 	fooCol, isOk := cols.GetColumn("foo")
 	assert.True(t, isOk)
-	assert.Equal(t, typing.String, fooCol.KindDetails)
+	assert.Equal(t, typing.String, fooCol.SourceKindDetails)
 
 	barCol, isOk := cols.GetColumn("bar")
 	assert.True(t, isOk)
-	assert.Equal(t, typing.Struct, barCol.KindDetails)
+	assert.Equal(t, typing.Struct, barCol.SourceKindDetails)
 
 	// Update
 	cols.UpdateColumn(Column{
-		name:        "foo",
-		KindDetails: typing.Integer,
+		name:              "foo",
+		SourceKindDetails: typing.Integer,
 	})
 
 	cols.UpdateColumn(Column{
-		name:         "bar",
-		KindDetails:  typing.Boolean,
-		defaultValue: "123",
+		name:              "bar",
+		SourceKindDetails: typing.Boolean,
+		defaultValue:      "123",
 	})
 
 	fooCol, isOk = cols.GetColumn("foo")
 	assert.True(t, isOk)
-	assert.Equal(t, typing.Integer, fooCol.KindDetails)
+	assert.Equal(t, typing.Integer, fooCol.SourceKindDetails)
 	assert.Equal(t, nil, fooCol.defaultValue)
 
 	barCol, isOk = cols.GetColumn("bar")
 	assert.True(t, isOk)
-	assert.Equal(t, typing.Boolean, barCol.KindDetails)
+	assert.Equal(t, typing.Boolean, barCol.SourceKindDetails)
 	assert.Equal(t, "123", barCol.defaultValue)
 
 	// Delete

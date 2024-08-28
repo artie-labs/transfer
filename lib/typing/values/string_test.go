@@ -31,9 +31,9 @@ func TestToString(t *testing.T) {
 		assert.ErrorContains(t, err, "column kind details for extended time details is null")
 
 		eTimeCol := columns.NewColumn("time", typing.ETime)
-		eTimeCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{Type: ext.TimeKindType}
+		eTimeCol.SourceKindDetails.ExtendedTimeDetails = &ext.NestedKind{Type: ext.TimeKindType}
 		// Using `string`
-		val, err := ToString("2021-01-01T03:52:00Z", eTimeCol.KindDetails, nil)
+		val, err := ToString("2021-01-01T03:52:00Z", eTimeCol.SourceKindDetails, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, "03:52:00", val)
 
@@ -42,8 +42,8 @@ func TestToString(t *testing.T) {
 		originalFmt := "2006-01-02T15:04:05Z07:00"
 		extendedTime := ext.NewExtendedTime(dustyBirthday, ext.DateTimeKindType, originalFmt)
 
-		eTimeCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{Type: ext.DateTimeKindType}
-		actualValue, err := ToString(extendedTime, eTimeCol.KindDetails, nil)
+		eTimeCol.SourceKindDetails.ExtendedTimeDetails = &ext.NestedKind{Type: ext.DateTimeKindType}
+		actualValue, err := ToString(extendedTime, eTimeCol.SourceKindDetails, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, extendedTime.String(originalFmt), actualValue)
 	}

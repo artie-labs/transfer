@@ -261,7 +261,7 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) erro
 		var found bool
 		for _, destCol := range destCols {
 			if destCol.Name() == strings.ToLower(inMemoryCol.Name()) {
-				if destCol.KindDetails.Kind == typing.Invalid.Kind {
+				if destCol.SourceKindDetails.Kind == typing.Invalid.Kind {
 					return fmt.Errorf("column %q is invalid", destCol.Name())
 				}
 
@@ -275,30 +275,30 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) erro
 			// If the inMemoryColumn is decimal and foundColumn is integer, don't copy it over.
 			// This is because parsing NUMERIC(...) will return an INTEGER if there's no decimal point.
 			// However, this will wipe the precision unit from the INTEGER which may cause integer overflow.
-			shouldSkip := inMemoryCol.KindDetails.Kind == typing.EDecimal.Kind && foundColumn.KindDetails.Kind == typing.Integer.Kind
+			shouldSkip := inMemoryCol.SourceKindDetails.Kind == typing.EDecimal.Kind && foundColumn.SourceKindDetails.Kind == typing.Integer.Kind
 			if !shouldSkip {
 				// We should take `kindDetails.kind` and `backfilled` from foundCol
 				// We are not taking primaryKey and defaultValue because DWH does not have this information.
 				// Note: If our in-memory column is `Invalid`, it would get skipped during merge. However, if the column exists in
 				// the destination, we'll copy the type over. This is to make sure we don't miss batch updates where the whole column in the batch is NULL.
-				inMemoryCol.KindDetails.Kind = foundColumn.KindDetails.Kind
-				if foundColumn.KindDetails.OptionalStringPrecision != nil {
-					inMemoryCol.KindDetails.OptionalStringPrecision = foundColumn.KindDetails.OptionalStringPrecision
+				inMemoryCol.SourceKindDetails.Kind = foundColumn.SourceKindDetails.Kind
+				if foundColumn.SourceKindDetails.OptionalStringPrecision != nil {
+					inMemoryCol.SourceKindDetails.OptionalStringPrecision = foundColumn.SourceKindDetails.OptionalStringPrecision
 				}
 			}
 
 			inMemoryCol.SetBackfilled(foundColumn.Backfilled())
-			if foundColumn.KindDetails.ExtendedTimeDetails != nil {
-				if inMemoryCol.KindDetails.ExtendedTimeDetails == nil {
-					inMemoryCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{}
+			if foundColumn.SourceKindDetails.ExtendedTimeDetails != nil {
+				if inMemoryCol.SourceKindDetails.ExtendedTimeDetails == nil {
+					inMemoryCol.SourceKindDetails.ExtendedTimeDetails = &ext.NestedKind{}
 				}
 
 				// Don't have tcKind.ExtendedTimeDetails update the format since the DWH will not have that.
-				inMemoryCol.KindDetails.ExtendedTimeDetails.Type = foundColumn.KindDetails.ExtendedTimeDetails.Type
+				inMemoryCol.SourceKindDetails.ExtendedTimeDetails.Type = foundColumn.SourceKindDetails.ExtendedTimeDetails.Type
 			}
 
-			if foundColumn.KindDetails.ExtendedDecimalDetails != nil && inMemoryCol.KindDetails.ExtendedDecimalDetails == nil {
-				inMemoryCol.KindDetails.ExtendedDecimalDetails = foundColumn.KindDetails.ExtendedDecimalDetails
+			if foundColumn.SourceKindDetails.ExtendedDecimalDetails != nil && inMemoryCol.SourceKindDetails.ExtendedDecimalDetails == nil {
+				inMemoryCol.SourceKindDetails.ExtendedDecimalDetails = foundColumn.SourceKindDetails.ExtendedDecimalDetails
 			}
 
 			t.inMemoryColumns.UpdateColumn(inMemoryCol)

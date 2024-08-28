@@ -26,7 +26,7 @@ func parseValue(colVal any, colKind columns.Column, additionalDateFmts []string)
 	}
 
 	colValString := fmt.Sprint(colVal)
-	switch colKind.KindDetails.Kind {
+	switch colKind.SourceKindDetails.Kind {
 	case typing.ETime.Kind:
 		extTime, err := ext.ParseFromInterface(colVal, additionalDateFmts)
 		if err != nil {
@@ -48,15 +48,15 @@ func parseValue(colVal any, colKind columns.Column, additionalDateFmts []string)
 			colValString = string(colValBytes)
 		}
 
-		if colKind.KindDetails.OptionalStringPrecision != nil {
-			if int32(len(colValString)) > *colKind.KindDetails.OptionalStringPrecision {
+		if colKind.SourceKindDetails.OptionalStringPrecision != nil {
+			if int32(len(colValString)) > *colKind.SourceKindDetails.OptionalStringPrecision {
 				colValString = constants.ExceededValueMarker
 			}
 		}
 
 		return colValString, nil
 	case typing.Struct.Kind:
-		if colKind.KindDetails == typing.Struct {
+		if colKind.SourceKindDetails == typing.Struct {
 			if strings.Contains(colValString, constants.ToastUnavailableValuePlaceholder) {
 				colVal = map[string]any{
 					"key": constants.ToastUnavailableValuePlaceholder,

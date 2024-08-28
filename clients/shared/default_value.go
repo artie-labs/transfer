@@ -19,11 +19,11 @@ func DefaultValue(column columns.Column, dialect sql.Dialect, additionalDateFmts
 		return column.DefaultValue(), nil
 	}
 
-	switch column.KindDetails.Kind {
+	switch column.SourceKindDetails.Kind {
 	case typing.Struct.Kind, typing.Array.Kind:
 		return dialect.EscapeStruct(fmt.Sprint(column.DefaultValue())), nil
 	case typing.ETime.Kind:
-		if column.KindDetails.ExtendedTimeDetails == nil {
+		if column.SourceKindDetails.ExtendedTimeDetails == nil {
 			return nil, fmt.Errorf("column kind details for extended time is nil")
 		}
 
@@ -32,11 +32,11 @@ func DefaultValue(column columns.Column, dialect sql.Dialect, additionalDateFmts
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", column.DefaultValue(), err)
 		}
 
-		switch column.KindDetails.ExtendedTimeDetails.Type {
+		switch column.SourceKindDetails.ExtendedTimeDetails.Type {
 		case ext.TimeKindType:
 			return sql.QuoteLiteral(extTime.String(ext.PostgresTimeFormatNoTZ)), nil
 		default:
-			return sql.QuoteLiteral(extTime.String(column.KindDetails.ExtendedTimeDetails.Format)), nil
+			return sql.QuoteLiteral(extTime.String(column.SourceKindDetails.ExtendedTimeDetails.Format)), nil
 		}
 	case typing.EDecimal.Kind:
 		decimalValue, err := typing.AssertType[*decimal.Decimal](column.DefaultValue())

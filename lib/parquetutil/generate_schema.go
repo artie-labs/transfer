@@ -12,7 +12,7 @@ func GenerateJSONSchema(columns []columns.Column) (string, error) {
 	var fields []typing.Field
 	for _, column := range columns {
 		// We don't need to escape the column name here.
-		field, err := column.KindDetails.ParquetAnnotation(column.Name())
+		field, err := column.SourceKindDetails.ParquetAnnotation(column.Name())
 		if err != nil {
 			return "", err
 		}

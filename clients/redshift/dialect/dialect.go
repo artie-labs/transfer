@@ -125,7 +125,7 @@ func (RedshiftDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, column
 
 func (rd RedshiftDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
 	colName := sql.QuoteTableAliasColumn(tableAlias, column, rd)
-	if column.KindDetails == typing.Struct {
+	if column.SourceKindDetails == typing.Struct {
 		return fmt.Sprintf(`COALESCE(%s != JSON_PARSE('{"key":"%s"}'), true)`,
 			colName, constants.ToastUnavailableValuePlaceholder)
 	}

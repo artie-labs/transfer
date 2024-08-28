@@ -81,7 +81,7 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 
 	var cols []columns.Column
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
-		if col.KindDetails == typing.Invalid {
+		if col.SourceKindDetails == typing.Invalid {
 			continue
 		}
 
