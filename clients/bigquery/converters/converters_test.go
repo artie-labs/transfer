@@ -91,3 +91,56 @@ func TestBooleanConverter_Convert(t *testing.T) {
 		assert.ErrorContains(t, err, "expected bool received int with value 123")
 	}
 }
+
+func TestFloat64Converter_Convert(t *testing.T) {
+	converter := Float64Converter{}
+	{
+		// Float32
+		val, err := converter.Convert(float32(123))
+		assert.NoError(t, err)
+		assert.Equal(t, float64(123), val)
+	}
+	{
+		// Float64
+		val, err := converter.Convert(float64(123.45))
+		assert.NoError(t, err)
+		assert.Equal(t, float64(123.45), val)
+	}
+	{
+		// Int32
+		val, err := converter.Convert(int32(123))
+		assert.NoError(t, err)
+		assert.Equal(t, float64(123), val)
+	}
+	{
+		// Int64
+		val, err := converter.Convert(int64(123))
+		assert.NoError(t, err)
+		assert.Equal(t, float64(123), val)
+	}
+	{
+		// *decimal.Decimal
+		val, err := converter.Convert(decimal.NewDecimal(numbers.MustParseDecimal("123.45")))
+		assert.NoError(t, err)
+		assert.Equal(t, float64(123.45), val)
+	}
+	{
+		// String
+		{
+			// Invalid
+			_, err := converter.Convert("foo")
+			assert.Errorf(t, err, "failed to parse string")
+		}
+		{
+			// Valid
+			val, err := converter.Convert("123.45")
+			assert.NoError(t, err)
+			assert.Equal(t, float64(123.45), val)
+		}
+	}
+	{
+		// Not supported type
+		_, err := converter.Convert(true)
+		assert.ErrorContains(t, err, "failed to run float64 converter, unexpected type bool with value true")
+	}
+}

@@ -80,11 +80,11 @@ func (Float64Converter) Convert(value any) (any, error) {
 	case string:
 		floatValue, err := strconv.ParseFloat(castedVal, 64)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse string to float64: %w", err)
+			return nil, fmt.Errorf("failed to parse string %q to float64: %w", castedVal, err)
 		}
 
 		return floatValue, nil
 	default:
-		return nil, fmt.Errorf("expected float32/float64/int32/int64/*decimal.Decimal/string received %T with value %v", value, value)
+		return nil, fmt.Errorf("failed to run float64 converter, unexpected type %T with value %v", value, value)
 	}
 }
