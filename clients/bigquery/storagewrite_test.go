@@ -58,7 +58,7 @@ func TestColumnToTableFieldSchema(t *testing.T) {
 		// ETime - DateTime:
 		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)))
 		assert.NoError(t, err)
-		assert.Equal(t, storagepb.TableFieldSchema_TIMESTAMP, fieldSchema.Type)
+		assert.Equal(t, storagepb.TableFieldSchema_DATETIME, fieldSchema.Type)
 	}
 	{
 		// ETime - Invalid:
