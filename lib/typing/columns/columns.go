@@ -22,8 +22,8 @@ type Column struct {
 	primaryKey bool
 
 	// TODO: Start migrating usages towards [DestKindDetails]
-	// DestKindDetails - This is what the column looks like in the destination
-	DestKindDetails typing.KindDetails
+	// destKindDetails - This is what the column looks like in the destination
+	destKindDetails *typing.KindDetails
 	// SourceKindDetails - This is what the column looks like from the source
 	SourceKindDetails typing.KindDetails
 	// ToastColumn indicates that the source column is a TOAST column and the value is unavailable
@@ -32,6 +32,14 @@ type Column struct {
 	ToastColumn  bool
 	defaultValue any
 	backfilled   bool
+}
+
+func (c Column) DestKindDetails() typing.KindDetails {
+	if c.destKindDetails != nil {
+		return *c.destKindDetails
+	}
+
+	return c.SourceKindDetails
 }
 
 func (c *Column) PrimaryKey() bool {
