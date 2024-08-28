@@ -102,7 +102,6 @@ func encodePacked64TimeMicros(value time.Time) int64 {
 
 func rowToMessage(row map[string]any, columns []columns.Column, messageDescriptor protoreflect.MessageDescriptor, additionalDateFmts []string) (*dynamicpb.Message, error) {
 	message := dynamicpb.NewMessage(messageDescriptor)
-
 	for _, column := range columns {
 		field := message.Descriptor().Fields().ByTextName(column.Name())
 		if field == nil {
@@ -110,7 +109,6 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 		}
 
 		value := row[column.Name()]
-
 		if value == nil {
 			continue
 		}
