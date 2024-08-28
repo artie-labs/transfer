@@ -3,22 +3,23 @@ package bigquery
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"strconv"
 	"strings"
 	"time"
 
 	"cloud.google.com/go/bigquery/storage/apiv1/storagepb"
 	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/dynamicpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/artie-labs/transfer/clients/bigquery/converters"
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/types/dynamicpb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // columnToTableFieldSchema returns a [*storagepb.TableFieldSchema] suitable for transferring data of the type that the column specifies.
@@ -117,25 +118,29 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 
 		switch column.KindDetails.Kind {
 		case typing.Boolean.Kind:
-			boolValue, err := typing.AssertType[bool](value)
+			val, err := converters.BooleanConverter{}.Convert(value)
 			if err != nil {
 				return nil, err
 			}
 
-			message.Set(field, protoreflect.ValueOfBool(boolValue))
-		case typing.Integer.Kind:
-			switch value := value.(type) {
-			case int:
-				// TODO: Remove int case if we don't see the following the the logs
-				slog.Warn("Received an int for an Integer column")
-				message.Set(field, protoreflect.ValueOfInt64(int64(value)))
-			case int32:
-				message.Set(field, protoreflect.ValueOfInt64(int64(value)))
-			case int64:
-				message.Set(field, protoreflect.ValueOfInt64(value))
-			default:
-				return nil, fmt.Errorf("expected int/int32/int64 received %T with value %v", value, value)
+			castedVal, err := typing.AssertType[bool](val)
+			if err != nil {
+				return nil, err
 			}
+
+			message.Set(field, protoreflect.ValueOfBool(castedVal))
+		case typing.Integer.Kind:
+			val, err := converters.Int64Converter{}.Convert(value)
+			if err != nil {
+				return nil, err
+			}
+
+			castedValue, err := typing.AssertType[int64](val)
+			if err != nil {
+				return nil, err
+			}
+
+			message.Set(field, protoreflect.ValueOfInt64(castedValue))
 		case typing.Float.Kind:
 			switch value := value.(type) {
 			case float32:
@@ -146,6 +151,13 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				message.Set(field, protoreflect.ValueOfFloat64(float64(value)))
 			case int64:
 				message.Set(field, protoreflect.ValueOfFloat64(float64(value)))
+			case *decimal.Decimal:
+				float, err := value.Value().Float64()
+				if err != nil {
+					return nil, fmt.Errorf("failed to convert decimal to float64: %w", err)
+				}
+
+				message.Set(field, protoreflect.ValueOfFloat64(float))
 			case string:
 				floatValue, err := strconv.ParseFloat(value, 64)
 				if err != nil {
@@ -153,7 +165,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				}
 				message.Set(field, protoreflect.ValueOfFloat64(floatValue))
 			default:
-				return nil, fmt.Errorf("expected float32/float64/int32/int64/string received %T with value %v", value, value)
+				return nil, fmt.Errorf("expected float32/float64/int32/int64/*decimal.Decimal/string received %T with value %v", value, value)
 			}
 		case typing.EDecimal.Kind:
 			decimalValue, err := typing.AssertType[*decimal.Decimal](value)
@@ -163,16 +175,17 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 
 			message.Set(field, protoreflect.ValueOfString(decimalValue.String()))
 		case typing.String.Kind:
-			var stringValue string
-			switch castedValue := value.(type) {
-			case string:
-				stringValue = castedValue
-			case *decimal.Decimal:
-				stringValue = castedValue.String()
-			default:
-				return nil, fmt.Errorf("expected string/decimal.Decimal received %T with value %v", value, value)
+			val, err := converters.StringConverter{}.Convert(value)
+			if err != nil {
+				return nil, err
 			}
-			message.Set(field, protoreflect.ValueOfString(stringValue))
+
+			castedValue, err := typing.AssertType[string](val)
+			if err != nil {
+				return nil, err
+			}
+
+			message.Set(field, protoreflect.ValueOfString(castedValue))
 		case typing.ETime.Kind:
 			extTime, err := ext.ParseFromInterface(value, additionalDateFmts)
 			if err != nil {

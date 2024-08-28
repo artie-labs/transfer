@@ -36,8 +36,9 @@ func TestNewDatadogClient(t *testing.T) {
 	assert.True(t, isOk)
 	assert.Equal(t, 0.255, mtr.rate)
 
-	assert.Equal(t, "dusty.", reflect.ValueOf(*mtr.client).FieldByName("namespace").String())
-	tagsField := reflect.ValueOf(*mtr.client).FieldByName("tags")
+	clientValue := reflect.ValueOf(mtr.client).Elem()
+	assert.Equal(t, "dusty.", clientValue.FieldByName("namespace").String())
+	tagsField := clientValue.FieldByName("tags")
 	assert.Equal(t, 1, tagsField.Len())
 	assert.Equal(t, "env:production", tagsField.Index(0).String())
 }

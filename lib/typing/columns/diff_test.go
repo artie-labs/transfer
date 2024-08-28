@@ -253,11 +253,11 @@ func TestCopyColMap(t *testing.T) {
 	cols.AddColumn(NewColumn("updated_at", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)))
 
 	copiedCols := CloneColumns(&cols)
-	assert.Equal(t, *copiedCols, cols)
+	assert.Equal(t, copiedCols, &cols)
 
 	//Delete a row from copiedCols
 	copiedCols.columns = copiedCols.columns[1:]
-	assert.NotEqual(t, *copiedCols, cols)
+	assert.NotEqual(t, copiedCols, &cols)
 }
 
 func TestCloneColumns(t *testing.T) {
@@ -303,6 +303,6 @@ func TestCloneColumns(t *testing.T) {
 
 	for _, testCase := range testCases {
 		actualCols := CloneColumns(testCase.cols)
-		assert.Equal(t, *testCase.expectedCols, *actualCols, testCase.name)
+		assert.Equal(t, testCase.expectedCols, actualCols, testCase.name)
 	}
 }
