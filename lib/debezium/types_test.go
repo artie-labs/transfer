@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -29,6 +28,7 @@ func TestField_ShouldSetDefaultValue(t *testing.T) {
 		// UUID
 		field := Field{DebeziumType: UUID}
 		assert.False(t, field.ShouldSetDefaultValue(uuid.Nil.String()))
+		assert.True(t, field.ShouldSetDefaultValue(uuid.New().String()))
 	}
 	{
 		// Boolean
