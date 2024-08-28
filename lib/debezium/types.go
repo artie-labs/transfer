@@ -3,9 +3,8 @@ package debezium
 import (
 	"encoding/base64"
 	"fmt"
+	"log/slog"
 	"time"
-
-	"github.com/google/uuid"
 
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -109,9 +108,14 @@ func (f Field) ShouldSetDefaultValue(defaultValue any) bool {
 	case *ext.ExtendedTime:
 		return !castedDefaultValue.Time.IsZero()
 	case string:
-		if f.DebeziumType == UUID && castedDefaultValue == uuid.Nil.String() {
+		if f.DebeziumType == UUID && castedDefaultValue == "00000000-0000-0000-0000-000000000000" {
 			return false
 		}
+	case bool, int, int16, int32, int64, float32, float64:
+		return true
+	default:
+		// TODO: Remove this after some time.
+		slog.Info("Default value that we did not add a case for yet, we're returning true")
 	}
 
 	return true

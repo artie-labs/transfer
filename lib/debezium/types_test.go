@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -11,6 +13,47 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
+
+func TestField_ShouldSetDefaultValue(t *testing.T) {
+	{
+		// nil
+		field := Field{}
+		assert.False(t, field.ShouldSetDefaultValue(nil))
+	}
+	{
+		// String
+		field := Field{}
+		assert.True(t, field.ShouldSetDefaultValue("foo"))
+	}
+	{
+		// UUID
+		field := Field{DebeziumType: UUID}
+		assert.False(t, field.ShouldSetDefaultValue(uuid.Nil.String()))
+	}
+	{
+		// Boolean
+		field := Field{Type: Boolean}
+		assert.True(t, field.ShouldSetDefaultValue(true))
+		assert.True(t, field.ShouldSetDefaultValue(false))
+	}
+	{
+		// Numbers
+		field := Field{Type: Int32}
+		assert.True(t, field.ShouldSetDefaultValue(int32(123)))
+		assert.True(t, field.ShouldSetDefaultValue(int64(123)))
+		assert.True(t, field.ShouldSetDefaultValue(float32(123)))
+		assert.True(t, field.ShouldSetDefaultValue(float64(123)))
+	}
+	{
+		// *ext.ExtendedTime
+		field := Field{}
+		assert.True(t, field.ShouldSetDefaultValue(&ext.ExtendedTime{Time: time.Now()}))
+
+		assert.False(t, field.ShouldSetDefaultValue(&ext.ExtendedTime{}))
+		var ts time.Time
+		assert.False(t, field.ShouldSetDefaultValue(&ext.ExtendedTime{Time: ts}))
+	}
+}
 
 func TestToBytes(t *testing.T) {
 	{
