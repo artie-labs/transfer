@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -108,7 +110,7 @@ func (f Field) ShouldSetDefaultValue(defaultValue any) bool {
 	case *ext.ExtendedTime:
 		return !castedDefaultValue.Time.IsZero()
 	case string:
-		if f.DebeziumType == UUID && castedDefaultValue == "00000000-0000-0000-0000-000000000000" {
+		if f.DebeziumType == UUID && castedDefaultValue == uuid.Nil.String() {
 			return false
 		}
 	case bool, int, int16, int32, int64, float32, float64:

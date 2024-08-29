@@ -28,6 +28,7 @@ func TestField_ShouldSetDefaultValue(t *testing.T) {
 		// UUID
 		field := Field{DebeziumType: UUID}
 		assert.False(t, field.ShouldSetDefaultValue(uuid.Nil.String()))
+		assert.False(t, field.ShouldSetDefaultValue("00000000-0000-0000-0000-000000000000"))
 		assert.True(t, field.ShouldSetDefaultValue(uuid.New().String()))
 	}
 	{
