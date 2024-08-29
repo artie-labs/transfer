@@ -3,7 +3,6 @@ package bigquery
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -103,7 +102,6 @@ func encodePacked64TimeMicros(value time.Time) int64 {
 
 func rowToMessage(row map[string]any, columns []columns.Column, messageDescriptor protoreflect.MessageDescriptor, additionalDateFmts []string) (*dynamicpb.Message, error) {
 	message := dynamicpb.NewMessage(messageDescriptor)
-
 	for _, column := range columns {
 		field := message.Descriptor().Fields().ByTextName(column.Name())
 		if field == nil {
@@ -111,7 +109,6 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 		}
 
 		value := row[column.Name()]
-
 		if value == nil {
 			continue
 		}
@@ -142,31 +139,17 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 
 			message.Set(field, protoreflect.ValueOfInt64(castedValue))
 		case typing.Float.Kind:
-			switch value := value.(type) {
-			case float32:
-				message.Set(field, protoreflect.ValueOfFloat64(float64(value)))
-			case float64:
-				message.Set(field, protoreflect.ValueOfFloat64(value))
-			case int32:
-				message.Set(field, protoreflect.ValueOfFloat64(float64(value)))
-			case int64:
-				message.Set(field, protoreflect.ValueOfFloat64(float64(value)))
-			case *decimal.Decimal:
-				float, err := value.Value().Float64()
-				if err != nil {
-					return nil, fmt.Errorf("failed to convert decimal to float64: %w", err)
-				}
-
-				message.Set(field, protoreflect.ValueOfFloat64(float))
-			case string:
-				floatValue, err := strconv.ParseFloat(value, 64)
-				if err != nil {
-					return nil, fmt.Errorf("failed to parse string to float64: %w", err)
-				}
-				message.Set(field, protoreflect.ValueOfFloat64(floatValue))
-			default:
-				return nil, fmt.Errorf("expected float32/float64/int32/int64/*decimal.Decimal/string received %T with value %v", value, value)
+			val, err := converters.Float64Converter{}.Convert(value)
+			if err != nil {
+				return nil, err
 			}
+
+			castedVal, err := typing.AssertType[float64](val)
+			if err != nil {
+				return nil, err
+			}
+
+			message.Set(field, protoreflect.ValueOfFloat64(castedVal))
 		case typing.EDecimal.Kind:
 			decimalValue, err := typing.AssertType[*decimal.Decimal](value)
 			if err != nil {
