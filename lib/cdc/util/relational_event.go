@@ -49,7 +49,9 @@ func (s *SchemaEventPayload) GetColumns() (*columns.Columns, error) {
 		if parseErr != nil {
 			return nil, fmt.Errorf("failed to parse field %q for default value: %w", field.FieldName, parseErr)
 		} else {
-			col.SetDefaultValue(val)
+			if field.ShouldSetDefaultValue(val) {
+				col.SetDefaultValue(val)
+			}
 		}
 
 		cols.AddColumn(col)
