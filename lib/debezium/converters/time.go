@@ -25,6 +25,38 @@ func (Time) Convert(val any) (any, error) {
 	return ext.NewExtendedTime(time.UnixMilli(valInt64).In(time.UTC), ext.TimeKindType, ""), nil
 }
 
+type NanoTime struct{}
+
+func (NanoTime) ToKindDetails() typing.KindDetails {
+	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
+}
+
+func (t NanoTime) Convert(value any) (any, error) {
+	castedVal, err := typing.AssertType[int64](value)
+	if err != nil {
+		return nil, err
+	}
+
+	// Represents the number of nanoseconds past midnight, and does not include timezone information.
+	return ext.NewExtendedTime(time.UnixMicro(castedVal/1_000).In(time.UTC), ext.TimeKindType, ""), nil
+}
+
+type MicroTime struct{}
+
+func (MicroTime) ToKindDetails() typing.KindDetails {
+	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
+}
+
+func (t MicroTime) Convert(value any) (any, error) {
+	castedVal, err := typing.AssertType[int64](value)
+	if err != nil {
+		return nil, err
+	}
+
+	// Represents the number of microseconds past midnight, and does not include timezone information.
+	return ext.NewExtendedTime(time.UnixMicro(castedVal).In(time.UTC), ext.TimeKindType, ""), nil
+}
+
 var SupportedDateTimeWithTimezoneFormats = []string{
 	"2006-01-02T15:04:05Z",         // w/o fractional seconds
 	"2006-01-02T15:04:05.0Z",       // 1 digit
