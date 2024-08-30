@@ -171,7 +171,7 @@ func TestField_ToKindDetails(t *testing.T) {
 		{
 			name: "Date Time Kafka Connect",
 			field: Field{
-				DebeziumType: DateTimeKafkaConnect,
+				DebeziumType: TimestampKafkaConnect,
 			},
 			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
 		},

@@ -33,15 +33,15 @@ const (
 	EnumSet SupportedDebeziumType = "io.debezium.data.EnumSet"
 	UUID    SupportedDebeziumType = "io.debezium.data.Uuid"
 
-	Timestamp            SupportedDebeziumType = "io.debezium.time.Timestamp"
-	MicroTimestamp       SupportedDebeziumType = "io.debezium.time.MicroTimestamp"
-	NanoTimestamp        SupportedDebeziumType = "io.debezium.time.NanoTimestamp"
-	Date                 SupportedDebeziumType = "io.debezium.time.Date"
-	Year                 SupportedDebeziumType = "io.debezium.time.Year"
-	DateTimeWithTimezone SupportedDebeziumType = "io.debezium.time.ZonedTimestamp"
-	MicroDuration        SupportedDebeziumType = "io.debezium.time.MicroDuration"
-	DateKafkaConnect     SupportedDebeziumType = "org.apache.kafka.connect.data.Date"
-	DateTimeKafkaConnect SupportedDebeziumType = "org.apache.kafka.connect.data.Timestamp"
+	MicroTimestamp        SupportedDebeziumType = "io.debezium.time.MicroTimestamp"
+	NanoTimestamp         SupportedDebeziumType = "io.debezium.time.NanoTimestamp"
+	Date                  SupportedDebeziumType = "io.debezium.time.Date"
+	Year                  SupportedDebeziumType = "io.debezium.time.Year"
+	DateTimeWithTimezone  SupportedDebeziumType = "io.debezium.time.ZonedTimestamp"
+	MicroDuration         SupportedDebeziumType = "io.debezium.time.MicroDuration"
+	DateKafkaConnect      SupportedDebeziumType = "org.apache.kafka.connect.data.Date"
+	Timestamp             SupportedDebeziumType = "io.debezium.time.Timestamp"
+	TimestampKafkaConnect SupportedDebeziumType = "org.apache.kafka.connect.data.Timestamp"
 
 	// All the possible time data types
 	Time             SupportedDebeziumType = "io.debezium.time.Time"
@@ -152,12 +152,10 @@ func (f Field) ParseValue(value any) (any, error) {
 	case KafkaVariableNumericType:
 		return f.DecodeDebeziumVariableDecimal(value)
 	case
-		Timestamp,
 		MicroTimestamp,
 		NanoTimestamp,
 		NanoTime,
-		MicroTime,
-		DateTimeKafkaConnect:
+		MicroTime:
 		int64Value, ok := value.(int64)
 		if !ok {
 			return nil, fmt.Errorf("expected int64 got '%v' with type %T", value, value)
@@ -180,9 +178,6 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ex
 	var extTime *ext.ExtendedTime
 
 	switch supportedType {
-	case Timestamp, DateTimeKafkaConnect:
-		// Represents the number of milliseconds since the epoch, and does not include timezone information.
-		extTime = ext.NewExtendedTime(time.UnixMilli(val).In(time.UTC), ext.DateTimeKindType, time.RFC3339Nano)
 	case MicroTimestamp:
 		// Represents the number of microseconds since the epoch, and does not include timezone information.
 		extTime = ext.NewExtendedTime(time.UnixMicro(val).In(time.UTC), ext.DateTimeKindType, time.RFC3339Nano)

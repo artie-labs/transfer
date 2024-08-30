@@ -277,6 +277,15 @@ func TestField_ParseValue(t *testing.T) {
 	{
 		// Timestamp
 		{
+			// Timestamp and KafkaConnectTimestamp
+			for _, dbzType := range []SupportedDebeziumType{Timestamp, TimestampKafkaConnect} {
+				field := Field{Type: Int64, DebeziumType: dbzType}
+				value, err := field.ParseValue(int64(1_725_058_799_000))
+				assert.NoError(t, err)
+				assert.Equal(t, "2024-08-30T22:59:59.000Z", value.(*ext.ExtendedTime).String(""))
+			}
+		}
+		{
 			// Nano timestamp
 			field := Field{Type: Int64, DebeziumType: NanoTimestamp}
 			val, err := field.ParseValue(int64(1712609795827000000))
@@ -323,13 +332,6 @@ func TestField_ParseValue(t *testing.T) {
 			}
 		}
 	}
-}
-
-func TestFromDebeziumTypeTimePrecisionConnect(t *testing.T) {
-	// Timestamp
-	extendedTimestamp, err := FromDebeziumTypeToTime(DateTimeKafkaConnect, 1678901050700)
-	assert.NoError(t, err)
-	assert.Equal(t, time.Date(2023, 03, 15, 17, 24, 10, 700000000, time.UTC), extendedTimestamp.Time)
 }
 
 func TestField_DecodeDecimal(t *testing.T) {

@@ -98,6 +98,9 @@ func (f Field) ToValueConverter() converters.ValueConverter {
 		return converters.Date{}
 	case Time, TimeKafkaConnect:
 		return converters.Time{}
+	// Timestamp
+	case Timestamp, TimestampKafkaConnect:
+		return converters.Timestamp{}
 	}
 
 	return nil
@@ -114,7 +117,7 @@ func (f Field) ToKindDetails() typing.KindDetails {
 	// We'll first cast based on Debezium types
 	// Then, we'll fall back on the actual data types.
 	switch f.DebeziumType {
-	case Timestamp, MicroTimestamp, NanoTimestamp, DateTimeKafkaConnect:
+	case MicroTimestamp, NanoTimestamp:
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)
 	case MicroTime, NanoTime:
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
