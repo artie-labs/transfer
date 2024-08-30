@@ -10,7 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
 )
@@ -152,7 +151,7 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 
 	column, isOk = td.ReadOnlyInMemoryCols().GetColumn("created_at_date_no_schema")
 	assert.True(e.T(), isOk)
-	assert.Equal(e.T(), ext.Date.Type, column.KindDetails.ExtendedTimeDetails.Type)
+	assert.Equal(e.T(), typing.String, column.KindDetails)
 
 	column, isOk = td.ReadOnlyInMemoryCols().GetColumn("json_object_string")
 	assert.True(e.T(), isOk)
@@ -255,7 +254,7 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 
 	column, isOk = td.ReadOnlyInMemoryCols().GetColumn("created_at_date_string")
 	assert.True(e.T(), isOk)
-	assert.Equal(e.T(), ext.DateKindType, column.KindDetails.ExtendedTimeDetails.Type)
+	assert.Equal(e.T(), typing.String, column.KindDetails)
 
 	column, isOk = td.ReadOnlyInMemoryCols().GetColumn(constants.DeleteColumnMarker)
 	assert.True(e.T(), isOk)
