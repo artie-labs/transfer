@@ -71,7 +71,7 @@ func (s *Store) Append(tableData *optimization.TableData, _ bool) error {
 
 // Merge - will take tableData, write it into a particular file in the specified format, in these steps:
 // 1. Load a ParquetWriter from a JSON schema (auto-generated)
-// 2. Load the temporary file, under this format: s3://bucket/optionalS3Prefix/fullyQualifiedTableName/YYYY-MM-DD/{{unix_timestamp}}.parquet.gz
+// 2. Load the temporary file, under this format: s3://bucket/folderName/fullyQualifiedTableName/YYYY-MM-DD/{{unix_timestamp}}.parquet.gz
 // 3. It will then upload this to S3
 // 4. Delete the temporary file
 func (s *Store) Merge(tableData *optimization.TableData) error {
