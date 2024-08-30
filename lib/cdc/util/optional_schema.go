@@ -6,16 +6,17 @@ import (
 )
 
 func (s *SchemaEventPayload) GetOptionalSchema() map[string]typing.KindDetails {
-	if fieldsObject := s.Schema.GetSchemaFromLabel(debezium.After); fieldsObject != nil {
-		schema := make(map[string]typing.KindDetails)
-		for _, field := range fieldsObject.Fields {
-			if kd := field.ToKindDetails(); kd != typing.Invalid {
-				schema[field.FieldName] = kd
-			}
-		}
-
-		return schema
+	fieldsObject := s.Schema.GetSchemaFromLabel(debezium.After)
+	if fieldsObject == nil {
+		return nil
 	}
 
-	return nil
+	schema := make(map[string]typing.KindDetails)
+	for _, field := range fieldsObject.Fields {
+		if kd := field.ToKindDetails(); kd != typing.Invalid {
+			schema[field.FieldName] = kd
+		}
+	}
+
+	return schema
 }
