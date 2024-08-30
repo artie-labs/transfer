@@ -55,7 +55,7 @@ func (k *Kafka) BootstrapServers() []string {
 }
 
 type S3Settings struct {
-	OptionalPrefix     string                   `yaml:"optionalPrefix"`
+	FolderName         string                   `yaml:"folderName"`
 	Bucket             string                   `yaml:"bucket"`
 	AwsAccessKeyID     string                   `yaml:"awsAccessKeyID"`
 	AwsSecretAccessKey string                   `yaml:"awsSecretAccessKey"`

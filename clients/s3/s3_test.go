@@ -52,7 +52,7 @@ func TestObjectPrefix(t *testing.T) {
 				AwsSecretAccessKey: "foo",
 				AwsAccessKeyID:     "bar",
 				OutputFormat:       constants.ParquetFormat,
-				OptionalPrefix:     "foo",
+				FolderName:         "foo",
 			},
 			expectedFormat: "foo/db.public.table/2020-01-01",
 		},
