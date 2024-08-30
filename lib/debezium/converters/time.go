@@ -31,7 +31,7 @@ func (NanoTime) ToKindDetails() typing.KindDetails {
 	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
 }
 
-func (t NanoTime) Convert(value any) (any, error) {
+func (NanoTime) Convert(value any) (any, error) {
 	castedVal, err := typing.AssertType[int64](value)
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func (MicroTime) ToKindDetails() typing.KindDetails {
 	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
 }
 
-func (t MicroTime) Convert(value any) (any, error) {
+func (MicroTime) Convert(value any) (any, error) {
 	castedVal, err := typing.AssertType[int64](value)
 	if err != nil {
 		return nil, err

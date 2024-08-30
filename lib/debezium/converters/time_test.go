@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing"
+
 	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/stretchr/testify/assert"
@@ -166,6 +168,36 @@ func TestTime_Convert(t *testing.T) {
 		extTime, isOk := val.(*ext.ExtendedTime)
 		assert.True(t, isOk)
 		assert.Equal(t, "15:12:00+00", extTime.String(""))
+	}
+}
+
+func TestNanoTime_Converter(t *testing.T) {
+	assert.Equal(t, typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType), NanoTime{}.ToKindDetails())
+	{
+		// Invalid data
+		_, err := NanoTime{}.Convert("123")
+		assert.ErrorContains(t, err, "expected type int64, got string")
+	}
+	{
+		// Valid
+		val, err := NanoTime{}.Convert(int64(54720000000000))
+		assert.NoError(t, err)
+		assert.Equal(t, "15:12:00+00", val.(*ext.ExtendedTime).String(""))
+	}
+}
+
+func TestMicroTime_Converter(t *testing.T) {
+	assert.Equal(t, typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType), MicroTime{}.ToKindDetails())
+	{
+		// Invalid data
+		_, err := MicroTime{}.Convert("123")
+		assert.ErrorContains(t, err, "expected type int64, got string")
+	}
+	{
+		// Valid
+		val, err := MicroTime{}.Convert(int64(54720000000))
+		assert.NoError(t, err)
+		assert.Equal(t, "15:12:00+00", val.(*ext.ExtendedTime).String(""))
 	}
 }
 
