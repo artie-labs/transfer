@@ -3,9 +3,8 @@ package converters
 import (
 	"time"
 
-	"github.com/artie-labs/transfer/lib/typing/ext"
-
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type Timestamp struct{}
