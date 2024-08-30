@@ -119,11 +119,18 @@ func TestJSONEToMap(t *testing.T) {
 	assert.Equal(t, int32(30), result["number_int"])
 	assert.Equal(t, int32(1337), result["test_int"])
 
-	// Date
-	assert.Equal(t, "2016-02-21T00:00:00+00:00", result["order_date"])
-
-	// Timestamp
-	assert.Equal(t, "2023-03-16T01:18:37+00:00", result["test_timestamp"])
+	{
+		// Date
+		extendedTime, isOk := result["order_date"].(*ext.ExtendedTime)
+		assert.True(t, isOk)
+		assert.Equal(t, ext.NewExtendedTime(time.Date(2016, time.February, 21, 0, 0, 0, 0, time.UTC), ext.DateTimeKindType, ext.ISO8601), extendedTime)
+	}
+	{
+		// Timestamp
+		extendedTime, isOk := result["test_timestamp"]
+		assert.True(t, isOk)
+		assert.Equal(t, ext.NewExtendedTime(time.Date(2023, time.March, 16, 1, 18, 37, 0, time.UTC), ext.DateTimeKindType, ext.ISO8601), extendedTime)
+	}
 
 	// Boolean
 	assert.Equal(t, false, result["test_bool_false"])
@@ -207,7 +214,10 @@ func TestBsonValueToGoValue(t *testing.T) {
 		dateTime := primitive.NewDateTimeFromTime(_time)
 		result, err := bsonValueToGoValue(dateTime)
 		assert.NoError(t, err)
-		assert.Equal(t, _time.Format(ext.ISO8601), result)
+
+		extendedTime, isOk := result.(*ext.ExtendedTime)
+		assert.True(t, isOk)
+		assert.Equal(t, ext.NewExtendedTime(time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC), ext.DateTimeKindType, ext.ISO8601), extendedTime)
 	}
 	{
 		// primitive.ObjectID
