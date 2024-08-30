@@ -89,7 +89,9 @@ func bsonBinaryValueToMap(value primitive.Binary) (any, error) {
 func bsonValueToGoValue(value any) (any, error) {
 	switch v := value.(type) {
 	case primitive.DateTime:
-		return v.Time().UTC().Format(ext.ISO8601), nil
+		return ext.NewExtendedTime(v.Time(), ext.DateTimeKindType, ext.ISO8601), nil
+	case primitive.Timestamp:
+		return ext.NewExtendedTime(time.Unix(int64(v.T), 0).UTC(), ext.DateTimeKindType, ext.ISO8601), nil
 	case primitive.ObjectID:
 		return v.Hex(), nil
 	case primitive.Binary:
@@ -97,8 +99,6 @@ func bsonValueToGoValue(value any) (any, error) {
 	case primitive.Decimal128:
 		// We purposefully chose a string representation here because not all systems can correctly handle Decimal128 without losing precision
 		return v.String(), nil
-	case primitive.Timestamp:
-		return time.Unix(int64(v.T), 0).UTC().Format(ext.ISO8601), nil
 	case bson.D:
 		return bsonDocToMap(v)
 	case bson.A:
