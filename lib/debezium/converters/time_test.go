@@ -180,9 +180,9 @@ func TestNanoTime_Converter(t *testing.T) {
 	}
 	{
 		// Valid
-		val, err := NanoTime{}.Convert(int64(54720000000000))
+		val, err := NanoTime{}.Convert(int64(54_720_000_009_000))
 		assert.NoError(t, err)
-		assert.Equal(t, "15:12:00+00", val.(*ext.ExtendedTime).String(""))
+		assert.Equal(t, "15:12:00.000009000", val.(*ext.ExtendedTime).String(""))
 	}
 }
 
@@ -197,7 +197,7 @@ func TestMicroTime_Converter(t *testing.T) {
 		// Valid
 		val, err := MicroTime{}.Convert(int64(54720000000))
 		assert.NoError(t, err)
-		assert.Equal(t, "15:12:00+00", val.(*ext.ExtendedTime).String(""))
+		assert.Equal(t, "15:12:00.000000", val.(*ext.ExtendedTime).String(""))
 	}
 }
 

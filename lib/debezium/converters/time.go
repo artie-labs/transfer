@@ -38,7 +38,7 @@ func (NanoTime) Convert(value any) (any, error) {
 	}
 
 	// Represents the number of nanoseconds past midnight, and does not include timezone information.
-	return ext.NewExtendedTime(time.UnixMicro(castedVal/1_000).In(time.UTC), ext.TimeKindType, ""), nil
+	return ext.NewExtendedTime(time.UnixMicro(castedVal/1_000).In(time.UTC), ext.TimeKindType, "15:04:05.000000000"), nil
 }
 
 type MicroTime struct{}
@@ -54,7 +54,7 @@ func (MicroTime) Convert(value any) (any, error) {
 	}
 
 	// Represents the number of microseconds past midnight, and does not include timezone information.
-	return ext.NewExtendedTime(time.UnixMicro(castedVal).In(time.UTC), ext.TimeKindType, ""), nil
+	return ext.NewExtendedTime(time.UnixMicro(castedVal).In(time.UTC), ext.TimeKindType, "15:04:05.000000"), nil
 }
 
 var SupportedDateTimeWithTimezoneFormats = []string{
