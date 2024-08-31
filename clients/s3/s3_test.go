@@ -34,7 +34,7 @@ func TestObjectPrefix(t *testing.T) {
 			expectedErr: "failed to validate settings: s3 settings are nil",
 		},
 		{
-			name:      "valid #1 (no prefix)",
+			name:      "valid #1 (no folder)",
 			tableData: td,
 			config: &config.S3Settings{
 				Bucket:             "bucket",
@@ -45,14 +45,14 @@ func TestObjectPrefix(t *testing.T) {
 			expectedFormat: "db.public.table/2020-01-01",
 		},
 		{
-			name:      "valid #2 w/ prefix",
+			name:      "valid #2 w/ folder",
 			tableData: td,
 			config: &config.S3Settings{
 				Bucket:             "bucket",
 				AwsSecretAccessKey: "foo",
 				AwsAccessKeyID:     "bar",
 				OutputFormat:       constants.ParquetFormat,
-				OptionalPrefix:     "foo",
+				FolderName:         "foo",
 			},
 			expectedFormat: "foo/db.public.table/2020-01-01",
 		},
