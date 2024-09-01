@@ -198,21 +198,19 @@ func (r *RelationTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	assert.Equal(r.T(), evtData["id"], int64(1001))
 	assert.Equal(r.T(), evtData["another_id"], int64(333))
 	assert.Equal(r.T(), typing.ParseValue(typing.Settings{}, "another_id", evt.GetOptionalSchema(), evtData["another_id"]), typing.Integer)
-
 	assert.Equal(r.T(), evtData["email"], "sally.thomas@acme.com")
 
 	// Datetime without TZ is emitted in microseconds which is 1000x larger than nanoseconds.
-	td := time.Date(2023, time.February, 2, 17, 51, 35, 175445*1000, time.UTC)
-	assert.Equal(r.T(), evtData["ts_no_tz1"], &ext.ExtendedTime{
-		Time: td,
-		NestedKind: ext.NestedKind{
-			Type:   ext.DateTimeKindType,
-			Format: time.RFC3339Nano,
-		},
-	})
-
-	assert.Equal(r.T(), time.Date(2023, time.February, 2,
-		17, 54, 11, 451000000, time.UTC), evt.GetExecutionTime())
+	assert.Equal(
+		r.T(),
+		ext.NewExtendedTime(
+			time.Date(2023, time.February, 2, 17, 51, 35, 175445*1000, time.UTC),
+			ext.DateTimeKindType,
+			"2006-01-02T15:04:05.000000Z07:00",
+		),
+		evtData["ts_no_tz1"],
+	)
+	assert.Equal(r.T(), time.Date(2023, time.February, 2, 17, 54, 11, 451000000, time.UTC), evt.GetExecutionTime())
 	assert.Equal(r.T(), "customers", evt.GetTableName())
 }
 

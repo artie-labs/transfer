@@ -275,6 +275,23 @@ func TestField_ParseValue(t *testing.T) {
 		}
 	}
 	{
+		// Time
+		{
+			// Micro time
+			field := Field{Type: Int64, DebeziumType: MicroTime}
+			value, err := field.ParseValue(int64(54720000000))
+			assert.NoError(t, err)
+			assert.Equal(t, "15:12:00.000000", value.(*ext.ExtendedTime).String(""))
+		}
+		{
+			// Nano time
+			field := Field{Type: Int64, DebeziumType: NanoTime}
+			value, err := field.ParseValue(int64(54720000000000))
+			assert.NoError(t, err)
+			assert.Equal(t, "15:12:00.000000000", value.(*ext.ExtendedTime).String(""))
+		}
+	}
+	{
 		// Timestamp
 		{
 			// Timestamp and KafkaConnectTimestamp
@@ -303,47 +320,21 @@ func TestField_ParseValue(t *testing.T) {
 			field := Field{Type: Int64, DebeziumType: MicroTimestamp}
 			{
 				// Int64
-				val, err := field.ParseValue(int64(1712609795827000))
+				val, err := field.ParseValue(int64(1_712_609_795_827_009))
 				assert.NoError(t, err)
-
-				extTimeVal, err := typing.AssertType[*ext.ExtendedTime](val)
-				assert.NoError(t, err)
-				assert.Equal(t, &ext.ExtendedTime{
-					Time:       time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC),
-					NestedKind: ext.NestedKind{Type: ext.DateTimeKindType, Format: "2006-01-02T15:04:05.999999999Z07:00"},
-				}, extTimeVal)
+				assert.Equal(t, ext.NewExtendedTime(time.Date(2024, time.April, 8, 20, 56, 35, 827009000, time.UTC), ext.DateTimeKindType, "2006-01-02T15:04:05.000000Z07:00"), val.(*ext.ExtendedTime))
 			}
 			{
 				// Float64
-				val, err := field.ParseValue(float64(1712609795827000))
+				val, err := field.ParseValue(float64(1_712_609_795_827_001))
 				assert.NoError(t, err)
-
-				extTimeVal, err := typing.AssertType[*ext.ExtendedTime](val)
-				assert.NoError(t, err)
-				assert.Equal(t, &ext.ExtendedTime{
-					Time:       time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC),
-					NestedKind: ext.NestedKind{Type: ext.DateTimeKindType, Format: "2006-01-02T15:04:05.999999999Z07:00"},
-				}, extTimeVal)
+				assert.Equal(t, ext.NewExtendedTime(time.Date(2024, time.April, 8, 20, 56, 35, 827001000, time.UTC), ext.DateTimeKindType, "2006-01-02T15:04:05.000000Z07:00"), val.(*ext.ExtendedTime))
 			}
 			{
 				// Invalid (string)
 				_, err := field.ParseValue("1712609795827000")
 				assert.ErrorContains(t, err, "failed to cast value '1712609795827000' with type 'string' to int64")
 			}
-		}
-		{
-			// Micro time
-			field := Field{Type: Int64, DebeziumType: MicroTime}
-			value, err := field.ParseValue(int64(54720000000))
-			assert.NoError(t, err)
-			assert.Equal(t, "15:12:00.000000", value.(*ext.ExtendedTime).String(""))
-		}
-		{
-			// Nano time
-			field := Field{Type: Int64, DebeziumType: NanoTime}
-			value, err := field.ParseValue(int64(54720000000000))
-			assert.NoError(t, err)
-			assert.Equal(t, "15:12:00.000000000", value.(*ext.ExtendedTime).String(""))
 		}
 	}
 }

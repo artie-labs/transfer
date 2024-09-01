@@ -124,7 +124,7 @@ func (f Field) ToKindDetails() typing.KindDetails {
 	// We'll first cast based on Debezium types
 	// Then, we'll fall back on the actual data types.
 	switch f.DebeziumType {
-	case MicroTimestamp, NanoTimestamp:
+	case NanoTimestamp:
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)
 	case KafkaDecimalType:
 		scale, precisionPtr, err := f.GetScaleAndPrecision()
