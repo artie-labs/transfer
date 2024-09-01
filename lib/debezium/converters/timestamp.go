@@ -19,9 +19,8 @@ func (Timestamp) Convert(value any) (any, error) {
 		return nil, err
 	}
 
-	rfc339MsLayout := "2006-01-02T15:04:05.000Z07:00"
 	// Represents the number of milliseconds since the epoch, and does not include timezone information.
-	return ext.NewExtendedTime(time.UnixMilli(castedValue).In(time.UTC), ext.DateTimeKindType, rfc339MsLayout), nil
+	return ext.NewExtendedTime(time.UnixMilli(castedValue).In(time.UTC), ext.DateTimeKindType, ext.RFC339Millisecond), nil
 }
 
 type MicroTimestamp struct{}
@@ -36,9 +35,8 @@ func (MicroTimestamp) Convert(value any) (any, error) {
 		return nil, err
 	}
 
-	rfc339MicrosecondLayout := "2006-01-02T15:04:05.000000Z07:00"
 	// Represents the number of microseconds since the epoch, and does not include timezone information.
-	return ext.NewExtendedTime(time.UnixMicro(castedValue).In(time.UTC), ext.DateTimeKindType, rfc339MicrosecondLayout), nil
+	return ext.NewExtendedTime(time.UnixMicro(castedValue).In(time.UTC), ext.DateTimeKindType, ext.RFC339Microsecond), nil
 }
 
 type NanoTimestamp struct{}
@@ -53,7 +51,6 @@ func (NanoTimestamp) Convert(value any) (any, error) {
 		return nil, err
 	}
 
-	rfc339NanosecondLayout := "2006-01-02T15:04:05.000000000Z07:00"
 	// Represents the number of nanoseconds since the epoch, and does not include timezone information.
-	return ext.NewExtendedTime(time.UnixMicro(castedValue/1_000).In(time.UTC), ext.DateTimeKindType, rfc339NanosecondLayout), nil
+	return ext.NewExtendedTime(time.UnixMicro(castedValue/1_000).In(time.UTC), ext.DateTimeKindType, ext.RFC339Nanosecond), nil
 }
