@@ -184,12 +184,6 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ex
 	case NanoTimestamp:
 		// Represents the number of nanoseconds past the epoch, and does not include timezone information.
 		extTime = ext.NewExtendedTime(time.UnixMicro(val/1_000).In(time.UTC), ext.DateTimeKindType, time.RFC3339Nano)
-	case MicroTime:
-		// Represents the number of microseconds past midnight, and does not include timezone information.
-		extTime = ext.NewExtendedTime(time.UnixMicro(val).In(time.UTC), ext.TimeKindType, "")
-	case NanoTime:
-		// Represents the number of nanoseconds past midnight, and does not include timezone information.
-		extTime = ext.NewExtendedTime(time.UnixMicro(val/1_000).In(time.UTC), ext.TimeKindType, "")
 	default:
 		return nil, fmt.Errorf("supportedType: %s, val: %v failed to be matched", supportedType, val)
 	}
