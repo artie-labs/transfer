@@ -33,15 +33,15 @@ const (
 	EnumSet SupportedDebeziumType = "io.debezium.data.EnumSet"
 	UUID    SupportedDebeziumType = "io.debezium.data.Uuid"
 
-	MicroTimestamp        SupportedDebeziumType = "io.debezium.time.MicroTimestamp"
-	NanoTimestamp         SupportedDebeziumType = "io.debezium.time.NanoTimestamp"
 	Date                  SupportedDebeziumType = "io.debezium.time.Date"
-	Year                  SupportedDebeziumType = "io.debezium.time.Year"
+	DateKafkaConnect      SupportedDebeziumType = "org.apache.kafka.connect.data.Date"
 	DateTimeWithTimezone  SupportedDebeziumType = "io.debezium.time.ZonedTimestamp"
 	MicroDuration         SupportedDebeziumType = "io.debezium.time.MicroDuration"
-	DateKafkaConnect      SupportedDebeziumType = "org.apache.kafka.connect.data.Date"
+	MicroTimestamp        SupportedDebeziumType = "io.debezium.time.MicroTimestamp"
+	NanoTimestamp         SupportedDebeziumType = "io.debezium.time.NanoTimestamp"
 	Timestamp             SupportedDebeziumType = "io.debezium.time.Timestamp"
 	TimestampKafkaConnect SupportedDebeziumType = "org.apache.kafka.connect.data.Timestamp"
+	Year                  SupportedDebeziumType = "io.debezium.time.Year"
 
 	// All the possible time data types
 	Time             SupportedDebeziumType = "io.debezium.time.Time"
