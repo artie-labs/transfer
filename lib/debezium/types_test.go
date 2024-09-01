@@ -305,15 +305,9 @@ func TestField_ParseValue(t *testing.T) {
 		{
 			// Nano timestamp
 			field := Field{Type: Int64, DebeziumType: NanoTimestamp}
-			val, err := field.ParseValue(int64(1712609795827000000))
+			val, err := field.ParseValue(int64(1_712_609_795_827_000_000))
 			assert.NoError(t, err)
-
-			extTimeVal, err := typing.AssertType[*ext.ExtendedTime](val)
-			assert.NoError(t, err)
-			assert.Equal(t, &ext.ExtendedTime{
-				Time:       time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC),
-				NestedKind: ext.NestedKind{Type: ext.DateTimeKindType, Format: "2006-01-02T15:04:05.999999999Z07:00"},
-			}, extTimeVal)
+			assert.Equal(t, ext.NewExtendedTime(time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC), ext.DateTimeKindType, "2006-01-02T15:04:05.000000000Z07:00"), val.(*ext.ExtendedTime))
 		}
 		{
 			// Micro timestamp

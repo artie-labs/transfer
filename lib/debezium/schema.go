@@ -6,7 +6,6 @@ import (
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type Schema struct {
@@ -108,6 +107,8 @@ func (f Field) ToValueConverter() converters.ValueConverter {
 		return converters.Timestamp{}
 	case MicroTimestamp:
 		return converters.MicroTimestamp{}
+	case NanoTimestamp:
+		return converters.NanoTimestamp{}
 	}
 
 	return nil
@@ -124,8 +125,6 @@ func (f Field) ToKindDetails() typing.KindDetails {
 	// We'll first cast based on Debezium types
 	// Then, we'll fall back on the actual data types.
 	switch f.DebeziumType {
-	case NanoTimestamp:
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)
 	case KafkaDecimalType:
 		scale, precisionPtr, err := f.GetScaleAndPrecision()
 		if err != nil {

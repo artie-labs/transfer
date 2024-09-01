@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -154,13 +153,6 @@ func (f Field) ParseValue(value any) (any, error) {
 		return f.DecodeDecimal(bytes)
 	case KafkaVariableNumericType:
 		return f.DecodeDebeziumVariableDecimal(value)
-	case
-		NanoTimestamp:
-		int64Value, ok := value.(int64)
-		if !ok {
-			return nil, fmt.Errorf("expected int64 got '%v' with type %T", value, value)
-		}
-		return FromDebeziumTypeToTime(f.DebeziumType, int64Value)
 	}
 
 	if bytes, ok := value.([]byte); ok {
@@ -171,25 +163,6 @@ func (f Field) ParseValue(value any) (any, error) {
 	}
 
 	return value, nil
-}
-
-// FromDebeziumTypeToTime is implemented by following this spec: https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-temporal-types
-func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ext.ExtendedTime, error) {
-	var extTime *ext.ExtendedTime
-
-	switch supportedType {
-	case NanoTimestamp:
-		// Represents the number of nanoseconds past the epoch, and does not include timezone information.
-		extTime = ext.NewExtendedTime(time.UnixMicro(val/1_000).In(time.UTC), ext.DateTimeKindType, time.RFC3339Nano)
-	default:
-		return nil, fmt.Errorf("supportedType: %s, val: %v failed to be matched", supportedType, val)
-	}
-
-	if extTime != nil && !extTime.IsValid() {
-		return nil, fmt.Errorf("extTime is invalid: %v", extTime)
-	}
-
-	return extTime, nil
 }
 
 // DecodeDecimal is used to handle `org.apache.kafka.connect.data.Decimal` where this would be emitted by Debezium when the `decimal.handling.mode` is `precise`

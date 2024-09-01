@@ -40,3 +40,20 @@ func (MicroTimestamp) Convert(value any) (any, error) {
 	// Represents the number of microseconds since the epoch, and does not include timezone information.
 	return ext.NewExtendedTime(time.UnixMicro(castedValue).In(time.UTC), ext.DateTimeKindType, rfc339MicrosecondLayout), nil
 }
+
+type NanoTimestamp struct{}
+
+func (NanoTimestamp) ToKindDetails() typing.KindDetails {
+	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)
+}
+
+func (NanoTimestamp) Convert(value any) (any, error) {
+	castedValue, err := typing.AssertType[int64](value)
+	if err != nil {
+		return nil, err
+	}
+
+	rfc339NanosecondLayout := "2006-01-02T15:04:05.000000000Z07:00"
+	// Represents the number of nanoseconds since the epoch, and does not include timezone information.
+	return ext.NewExtendedTime(time.UnixMicro(castedValue/1_000).In(time.UTC), ext.DateTimeKindType, rfc339NanosecondLayout), nil
+}

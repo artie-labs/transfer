@@ -49,3 +49,24 @@ func TestMicroTimestamp_Converter(t *testing.T) {
 		assert.Equal(t, "2024-04-08T20:56:35.827123Z", converted.(*ext.ExtendedTime).String(""))
 	}
 }
+
+func TestNanoTimestamp_Converter(t *testing.T) {
+	assert.Equal(t, typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType), NanoTimestamp{}.ToKindDetails())
+	{
+		// Invalid conversion
+		_, err := NanoTimestamp{}.Convert("invalid")
+		assert.ErrorContains(t, err, "expected type int64, got string")
+	}
+	{
+		// Valid conversion
+		converted, err := NanoTimestamp{}.Convert(int64(1_712_609_795_827_001_000))
+		assert.NoError(t, err)
+		assert.Equal(t, "2024-04-08T20:56:35.827001000Z", converted.(*ext.ExtendedTime).String(""))
+	}
+	{
+		// nanos is preserved despite it being all zeroes.
+		converted, err := NanoTimestamp{}.Convert(int64(1_712_609_795_827_000_000))
+		assert.NoError(t, err)
+		assert.Equal(t, "2024-04-08T20:56:35.827000000Z", converted.(*ext.ExtendedTime).String(""))
+	}
+}
