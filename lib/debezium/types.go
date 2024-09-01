@@ -33,22 +33,25 @@ const (
 	EnumSet SupportedDebeziumType = "io.debezium.data.EnumSet"
 	UUID    SupportedDebeziumType = "io.debezium.data.Uuid"
 
-	Date                  SupportedDebeziumType = "io.debezium.time.Date"
-	DateKafkaConnect      SupportedDebeziumType = "org.apache.kafka.connect.data.Date"
-	DateTimeWithTimezone  SupportedDebeziumType = "io.debezium.time.ZonedTimestamp"
-	MicroDuration         SupportedDebeziumType = "io.debezium.time.MicroDuration"
-	MicroTimestamp        SupportedDebeziumType = "io.debezium.time.MicroTimestamp"
-	NanoTimestamp         SupportedDebeziumType = "io.debezium.time.NanoTimestamp"
-	Timestamp             SupportedDebeziumType = "io.debezium.time.Timestamp"
-	TimestampKafkaConnect SupportedDebeziumType = "org.apache.kafka.connect.data.Timestamp"
-	Year                  SupportedDebeziumType = "io.debezium.time.Year"
+	// Dates
+	Date                 SupportedDebeziumType = "io.debezium.time.Date"
+	DateKafkaConnect     SupportedDebeziumType = "org.apache.kafka.connect.data.Date"
+	DateTimeWithTimezone SupportedDebeziumType = "io.debezium.time.ZonedTimestamp"
+	MicroDuration        SupportedDebeziumType = "io.debezium.time.MicroDuration"
+	Year                 SupportedDebeziumType = "io.debezium.time.Year"
 
-	// All the possible time data types
+	// Time
 	Time             SupportedDebeziumType = "io.debezium.time.Time"
 	MicroTime        SupportedDebeziumType = "io.debezium.time.MicroTime"
 	NanoTime         SupportedDebeziumType = "io.debezium.time.NanoTime"
 	TimeWithTimezone SupportedDebeziumType = "io.debezium.time.ZonedTime"
 	TimeKafkaConnect SupportedDebeziumType = "org.apache.kafka.connect.data.Time"
+
+	// Timestamps
+	MicroTimestamp        SupportedDebeziumType = "io.debezium.time.MicroTimestamp"
+	NanoTimestamp         SupportedDebeziumType = "io.debezium.time.NanoTimestamp"
+	Timestamp             SupportedDebeziumType = "io.debezium.time.Timestamp"
+	TimestampKafkaConnect SupportedDebeziumType = "org.apache.kafka.connect.data.Timestamp"
 
 	KafkaDecimalType         SupportedDebeziumType = "org.apache.kafka.connect.data.Decimal"
 	KafkaVariableNumericType SupportedDebeziumType = "io.debezium.data.VariableScaleDecimal"
