@@ -322,6 +322,20 @@ func TestField_ParseValue(t *testing.T) {
 				assert.ErrorContains(t, err, "failed to cast value '1712609795827000' with type 'string' to int64")
 			}
 		}
+		{
+			// Micro time
+			field := Field{Type: Int64, DebeziumType: MicroTime}
+			value, err := field.ParseValue(int64(54720000000))
+			assert.NoError(t, err)
+			assert.Equal(t, "15:12:00.000000", value.(*ext.ExtendedTime).String(""))
+		}
+		{
+			// Nano time
+			field := Field{Type: Int64, DebeziumType: NanoTime}
+			value, err := field.ParseValue(int64(54720000000000))
+			assert.NoError(t, err)
+			assert.Equal(t, "15:12:00.000000000", value.(*ext.ExtendedTime).String(""))
+		}
 	}
 }
 
