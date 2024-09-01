@@ -105,7 +105,7 @@ func TestField_ToKindDetails(t *testing.T) {
 			// Variable numeric decimal
 			assert.Equal(
 				t, typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)),
-				Field{DebeziumType: KafkaVariableNumericType, Parameters: map[string]any{"scale": 5}},
+				Field{DebeziumType: KafkaVariableNumericType, Parameters: map[string]any{"scale": 5}}.ToKindDetails(),
 			)
 		}
 	}
