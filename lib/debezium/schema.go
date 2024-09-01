@@ -103,7 +103,7 @@ func (f Field) ToValueConverter() converters.ValueConverter {
 		return converters.NanoTime{}
 	case MicroTime:
 		return converters.MicroTime{}
-		// Timestamp
+	// Timestamp
 	case Timestamp, TimestampKafkaConnect:
 		return converters.Timestamp{}
 	case MicroTimestamp:
