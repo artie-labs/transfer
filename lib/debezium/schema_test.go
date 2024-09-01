@@ -148,7 +148,6 @@ func TestField_ToKindDetails(t *testing.T) {
 		// Dates
 		for _, dbzType := range []SupportedDebeziumType{Date, DateKafkaConnect} {
 			assert.Equal(t, typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType), Field{DebeziumType: dbzType}.ToKindDetails())
-
 		}
 	}
 	{
