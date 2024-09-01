@@ -106,6 +106,8 @@ func (f Field) ToValueConverter() converters.ValueConverter {
 		// Timestamp
 	case Timestamp, TimestampKafkaConnect:
 		return converters.Timestamp{}
+	case MicroTimestamp:
+		return converters.MicroTimestamp{}
 	}
 
 	return nil

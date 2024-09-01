@@ -152,10 +152,7 @@ func (f Field) ParseValue(value any) (any, error) {
 	case KafkaVariableNumericType:
 		return f.DecodeDebeziumVariableDecimal(value)
 	case
-		MicroTimestamp,
-		NanoTimestamp,
-		NanoTime,
-		MicroTime:
+		NanoTimestamp:
 		int64Value, ok := value.(int64)
 		if !ok {
 			return nil, fmt.Errorf("expected int64 got '%v' with type %T", value, value)
@@ -178,9 +175,6 @@ func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ex
 	var extTime *ext.ExtendedTime
 
 	switch supportedType {
-	case MicroTimestamp:
-		// Represents the number of microseconds since the epoch, and does not include timezone information.
-		extTime = ext.NewExtendedTime(time.UnixMicro(val).In(time.UTC), ext.DateTimeKindType, time.RFC3339Nano)
 	case NanoTimestamp:
 		// Represents the number of nanoseconds past the epoch, and does not include timezone information.
 		extTime = ext.NewExtendedTime(time.UnixMicro(val/1_000).In(time.UTC), ext.DateTimeKindType, time.RFC3339Nano)
