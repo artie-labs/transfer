@@ -11,6 +11,7 @@ import (
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func TestRedshiftDialect_QuoteIdentifier(t *testing.T) {
@@ -20,143 +21,116 @@ func TestRedshiftDialect_QuoteIdentifier(t *testing.T) {
 }
 
 func TestRedshiftDialect_DataTypeForKind(t *testing.T) {
-	tcs := []struct {
-		kd       typing.KindDetails
-		expected string
-	}{
+	{
+		// String
 		{
-			kd:       typing.String,
-			expected: "VARCHAR(MAX)",
-		},
+			assert.Equal(t, "VARCHAR(MAX)", RedshiftDialect{}.DataTypeForKind(typing.String, true))
+		}
 		{
-			kd: typing.KindDetails{
-				Kind:                    typing.String.Kind,
-				OptionalStringPrecision: ptr.ToInt32(12345),
-			},
-			expected: "VARCHAR(12345)",
-		},
-	}
-
-	for idx, tc := range tcs {
-		assert.Equal(t, tc.expected, RedshiftDialect{}.DataTypeForKind(tc.kd, true), idx)
-		assert.Equal(t, tc.expected, RedshiftDialect{}.DataTypeForKind(tc.kd, false), idx)
+			assert.Equal(t, "VARCHAR(12345)", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: ptr.ToInt32(12345)}, false))
+		}
 	}
 }
 
 func TestRedshiftDialect_KindForDataType(t *testing.T) {
 	dialect := RedshiftDialect{}
-
-	type rawTypeAndPrecision struct {
-		rawType   string
-		precision string
-	}
-
-	type _testCase struct {
-		name       string
-		rawTypes   []rawTypeAndPrecision
-		expectedKd typing.KindDetails
-	}
-
-	testCases := []_testCase{
+	{
+		// Integers
 		{
-			name: "Integer",
-			rawTypes: []rawTypeAndPrecision{
-				{rawType: "integer"},
-				{rawType: "bigint"},
-				{rawType: "INTEGER"},
-			},
-			expectedKd: typing.Integer,
-		},
-		{
-			name: "String w/ precision",
-			rawTypes: []rawTypeAndPrecision{
-				{
-					rawType:   "character varying",
-					precision: "65535",
-				},
-			},
-			expectedKd: typing.KindDetails{
-				Kind:                    typing.String.Kind,
-				OptionalStringPrecision: ptr.ToInt32(65535),
-			},
-		},
-		{
-			name: "Double Precision",
-			rawTypes: []rawTypeAndPrecision{
-				{rawType: "double precision"},
-				{rawType: "DOUBLE precision"},
-			},
-			expectedKd: typing.Float,
-		},
-		{
-			name: "Time",
-			rawTypes: []rawTypeAndPrecision{
-				{rawType: "timestamp with time zone"},
-				{rawType: "timestamp without time zone"},
-				{rawType: "time without time zone"},
-				{rawType: "date"},
-			},
-			expectedKd: typing.ETime,
-		},
-		{
-			name: "Boolean",
-			rawTypes: []rawTypeAndPrecision{
-				{rawType: "boolean"},
-			},
-			expectedKd: typing.Boolean,
-		},
-		{
-			name: "numeric",
-			rawTypes: []rawTypeAndPrecision{
-				{rawType: "numeric(5,2)"},
-				{rawType: "numeric(5,5)"},
-			},
-			expectedKd: typing.EDecimal,
-		},
-	}
-
-	for _, testCase := range testCases {
-		for _, rawTypeAndPrec := range testCase.rawTypes {
-			kd, err := dialect.KindForDataType(rawTypeAndPrec.rawType, rawTypeAndPrec.precision)
+			kd, err := dialect.KindForDataType("integer", "")
 			assert.NoError(t, err)
-			assert.Equal(t, testCase.expectedKd.Kind, kd.Kind, testCase.name)
-
-			if kd.OptionalStringPrecision != nil {
-				assert.Equal(t, *testCase.expectedKd.OptionalStringPrecision, *kd.OptionalStringPrecision, testCase.name)
-			} else {
-				assert.Nil(t, kd.OptionalStringPrecision, testCase.name)
-			}
+			assert.Equal(t, typing.Integer, kd)
+		}
+		{
+			kd, err := dialect.KindForDataType("bigint", "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Integer, kd)
+		}
+		{
+			kd, err := dialect.KindForDataType("INTEGER", "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Integer, kd)
 		}
 	}
-
 	{
-		kd, err := dialect.KindForDataType("numeric(5,2)", "")
+		// Double
+		{
+			kd, err := dialect.KindForDataType("double precision", "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Float, kd)
+		}
+		{
+			kd, err := dialect.KindForDataType("DOUBLE precision", "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Float, kd)
+		}
+	}
+	{
+		// Numeric
+		{
+			kd, err := dialect.KindForDataType("numeric(5,2)", "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
+			assert.Equal(t, int32(5), kd.ExtendedDecimalDetails.Precision())
+			assert.Equal(t, int32(2), kd.ExtendedDecimalDetails.Scale())
+		}
+		{
+			kd, err := dialect.KindForDataType("numeric(5,5)", "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
+			assert.Equal(t, int32(5), kd.ExtendedDecimalDetails.Precision())
+			assert.Equal(t, int32(5), kd.ExtendedDecimalDetails.Scale())
+		}
+	}
+	{
+		// Boolean
+		kd, err := dialect.KindForDataType("boolean", "")
 		assert.NoError(t, err)
-		assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
-		assert.Equal(t, int32(5), kd.ExtendedDecimalDetails.Precision())
-		assert.Equal(t, int32(2), kd.ExtendedDecimalDetails.Scale())
+		assert.Equal(t, typing.Boolean, kd)
+	}
+	{
+		// String with precision
+		kd, err := dialect.KindForDataType("character varying", "65535")
+		assert.NoError(t, err)
+		assert.Equal(t, typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: ptr.ToInt32(65535)}, kd)
+	}
+	{
+		// Times
+		{
+			kd, err := dialect.KindForDataType("timestamp with time zone", "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.ETime.Kind, kd.Kind)
+			assert.Equal(t, ext.DateTimeKindType, kd.ExtendedTimeDetails.Type)
+		}
+		{
+			kd, err := dialect.KindForDataType("timestamp without time zone", "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.ETime.Kind, kd.Kind)
+			assert.Equal(t, ext.DateTimeKindType, kd.ExtendedTimeDetails.Type)
+		}
+		{
+			kd, err := dialect.KindForDataType("time without time zone", "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.ETime.Kind, kd.Kind)
+			assert.Equal(t, ext.TimeKindType, kd.ExtendedTimeDetails.Type)
+		}
+		{
+			kd, err := dialect.KindForDataType("date", "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.ETime.Kind, kd.Kind)
+			assert.Equal(t, ext.DateKindType, kd.ExtendedTimeDetails.Type)
+		}
 	}
 }
 
 func TestRedshiftDialect_IsColumnAlreadyExistsErr(t *testing.T) {
-	testCases := []struct {
-		name           string
-		err            error
-		expectedResult bool
-	}{
-		{
-			name:           "Redshift actual error",
-			err:            fmt.Errorf(`ERROR: column "foo" of relation "statement" already exists [ErrorId: 1-64da9ea9]`),
-			expectedResult: true,
-		},
-		{
-			name: "Redshift error, but irrelevant",
-			err:  fmt.Errorf("foo"),
-		},
+	{
+		// Irrelevant error
+		assert.False(t, RedshiftDialect{}.IsColumnAlreadyExistsErr(fmt.Errorf("foo")))
 	}
-
-	for _, tc := range testCases {
-		assert.Equal(t, tc.expectedResult, RedshiftDialect{}.IsColumnAlreadyExistsErr(tc.err), tc.name)
+	{
+		// Actual error
+		assert.True(t, RedshiftDialect{}.IsColumnAlreadyExistsErr(fmt.Errorf(`ERROR: column "foo" of relation "statement" already exists [ErrorId: 1-64da9ea9]`)))
 	}
 }
 
