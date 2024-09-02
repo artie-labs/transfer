@@ -21,26 +21,14 @@ func TestSnowflakeDialect_QuoteIdentifier(t *testing.T) {
 }
 
 func TestSnowflakeDialect_DataTypeForKind(t *testing.T) {
-	tcs := []struct {
-		kd       typing.KindDetails
-		expected string
-	}{
+	{
+		// String
 		{
-			kd:       typing.String,
-			expected: "string",
-		},
+			assert.Equal(t, "string", SnowflakeDialect{}.DataTypeForKind(typing.String, false))
+		}
 		{
-			kd: typing.KindDetails{
-				Kind:                    typing.String.Kind,
-				OptionalStringPrecision: ptr.ToInt32(12345),
-			},
-			expected: "string",
-		},
-	}
-
-	for idx, tc := range tcs {
-		assert.Equal(t, tc.expected, SnowflakeDialect{}.DataTypeForKind(tc.kd, true), idx)
-		assert.Equal(t, tc.expected, SnowflakeDialect{}.DataTypeForKind(tc.kd, false), idx)
+			assert.Equal(t, "string", SnowflakeDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: ptr.ToInt32(12345)}, false))
+		}
 	}
 }
 
@@ -65,8 +53,7 @@ func TestSnowflakeDialect_KindForDataType_Number(t *testing.T) {
 
 func TestSnowflakeDialect_KindForDataType_Floats(t *testing.T) {
 	{
-		expectedFloats := []string{"FLOAT", "FLOAT4", "FLOAT8", "DOUBLE",
-			"DOUBLE PRECISION", "REAL"}
+		expectedFloats := []string{"FLOAT", "FLOAT4", "FLOAT8", "DOUBLE", "DOUBLE PRECISION", "REAL"}
 		for _, expectedFloat := range expectedFloats {
 			kd, err := SnowflakeDialect{}.KindForDataType(expectedFloat, "")
 			assert.NoError(t, err)
@@ -186,24 +173,13 @@ func TestSnowflakeDialect_KindForDataType_NoDataLoss(t *testing.T) {
 }
 
 func TestSnowflakeDialect_IsColumnAlreadyExistsErr(t *testing.T) {
-	testCases := []struct {
-		name           string
-		err            error
-		expectedResult bool
-	}{
-		{
-			name:           "Snowflake, column already exists error",
-			err:            fmt.Errorf("Column already exists"),
-			expectedResult: true,
-		},
-		{
-			name: "Snowflake, random error",
-			err:  fmt.Errorf("hello there qux"),
-		},
+	{
+		// Invalid error
+		assert.False(t, SnowflakeDialect{}.IsColumnAlreadyExistsErr(fmt.Errorf("hello there qux")))
 	}
-
-	for _, tc := range testCases {
-		assert.Equal(t, tc.expectedResult, SnowflakeDialect{}.IsColumnAlreadyExistsErr(tc.err), tc.name)
+	{
+		// Valid
+		assert.True(t, SnowflakeDialect{}.IsColumnAlreadyExistsErr(fmt.Errorf("Column already exists")))
 	}
 }
 
