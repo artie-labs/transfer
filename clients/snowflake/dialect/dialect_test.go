@@ -21,26 +21,14 @@ func TestSnowflakeDialect_QuoteIdentifier(t *testing.T) {
 }
 
 func TestSnowflakeDialect_DataTypeForKind(t *testing.T) {
-	tcs := []struct {
-		kd       typing.KindDetails
-		expected string
-	}{
+	{
+		// String
 		{
-			kd:       typing.String,
-			expected: "string",
-		},
+			assert.Equal(t, "string", SnowflakeDialect{}.DataTypeForKind(typing.String, false))
+		}
 		{
-			kd: typing.KindDetails{
-				Kind:                    typing.String.Kind,
-				OptionalStringPrecision: ptr.ToInt32(12345),
-			},
-			expected: "string",
-		},
-	}
-
-	for idx, tc := range tcs {
-		assert.Equal(t, tc.expected, SnowflakeDialect{}.DataTypeForKind(tc.kd, true), idx)
-		assert.Equal(t, tc.expected, SnowflakeDialect{}.DataTypeForKind(tc.kd, false), idx)
+			assert.Equal(t, "string", SnowflakeDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: ptr.ToInt32(12345)}, false))
+		}
 	}
 }
 
@@ -63,65 +51,101 @@ func TestSnowflakeDialect_KindForDataType_Number(t *testing.T) {
 	}
 }
 
-func TestSnowflakeDialect_KindForDataType_Floats(t *testing.T) {
+func TestSnowflakeDialect_KindForDataType(t *testing.T) {
 	{
-		expectedFloats := []string{"FLOAT", "FLOAT4", "FLOAT8", "DOUBLE",
-			"DOUBLE PRECISION", "REAL"}
-		for _, expectedFloat := range expectedFloats {
-			kd, err := SnowflakeDialect{}.KindForDataType(expectedFloat, "")
+		// Invalid
+		{
+			kd, err := SnowflakeDialect{}.KindForDataType("", "")
 			assert.NoError(t, err)
-			assert.Equal(t, typing.Float, kd, expectedFloat)
+			assert.Equal(t, typing.Invalid, kd)
+		}
+		{
+			kd, err := SnowflakeDialect{}.KindForDataType("abc123", "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Invalid, kd)
 		}
 	}
 	{
-		// Invalid because precision nor scale is included.
-		kd, err := SnowflakeDialect{}.KindForDataType("NUMERIC", "")
+		// Booleans
+		kd, err := SnowflakeDialect{}.KindForDataType("boolean", "")
 		assert.NoError(t, err)
-		assert.Equal(t, typing.Invalid, kd)
+		assert.Equal(t, typing.Boolean, kd)
 	}
 	{
-		kd, err := SnowflakeDialect{}.KindForDataType("NUMERIC(38, 2)", "")
-		assert.NoError(t, err)
-		assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
-		assert.Equal(t, int32(38), kd.ExtendedDecimalDetails.Precision())
-		assert.Equal(t, int32(2), kd.ExtendedDecimalDetails.Scale())
+		// Floats
+		{
+			expectedFloats := []string{"FLOAT", "FLOAT4", "FLOAT8", "DOUBLE", "DOUBLE PRECISION", "REAL"}
+			for _, expectedFloat := range expectedFloats {
+				kd, err := SnowflakeDialect{}.KindForDataType(expectedFloat, "")
+				assert.NoError(t, err)
+				assert.Equal(t, typing.Float, kd, expectedFloat)
+			}
+		}
+		{
+			// Invalid because precision nor scale is included.
+			kd, err := SnowflakeDialect{}.KindForDataType("NUMERIC", "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Invalid, kd)
+		}
+		{
+			kd, err := SnowflakeDialect{}.KindForDataType("NUMERIC(38, 2)", "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
+			assert.Equal(t, int32(38), kd.ExtendedDecimalDetails.Precision())
+			assert.Equal(t, int32(2), kd.ExtendedDecimalDetails.Scale())
+		}
+		{
+			kd, err := SnowflakeDialect{}.KindForDataType("NUMBER(38, 2)", "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
+			assert.Equal(t, int32(38), kd.ExtendedDecimalDetails.Precision())
+			assert.Equal(t, int32(2), kd.ExtendedDecimalDetails.Scale())
+		}
+		{
+			kd, err := SnowflakeDialect{}.KindForDataType("DECIMAL", "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
+		}
 	}
 	{
-		kd, err := SnowflakeDialect{}.KindForDataType("NUMBER(38, 2)", "")
-		assert.NoError(t, err)
-		assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
-		assert.Equal(t, int32(38), kd.ExtendedDecimalDetails.Precision())
-		assert.Equal(t, int32(2), kd.ExtendedDecimalDetails.Scale())
+		// Integers
+		expectedIntegers := []string{"INT", "INTEGER", "BIGINT", "SMALLINT", "TINYINT", "BYTEINT"}
+		for _, expectedInteger := range expectedIntegers {
+			kd, err := SnowflakeDialect{}.KindForDataType(expectedInteger, "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Integer, kd, expectedInteger)
+		}
 	}
 	{
-		kd, err := SnowflakeDialect{}.KindForDataType("DECIMAL", "")
-		assert.NoError(t, err)
-		assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
-	}
-}
+		// String
+		expectedStrings := []string{"CHARACTER", "CHAR", "STRING", "TEXT"}
+		for _, expectedString := range expectedStrings {
+			kd, err := SnowflakeDialect{}.KindForDataType(expectedString, "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.String, kd, expectedString)
+		}
 
-func TestSnowflakeDialect_KindForDataType_Integer(t *testing.T) {
-	expectedIntegers := []string{"INT", "INTEGER", "BIGINT", "SMALLINT", "TINYINT", "BYTEINT"}
-	for _, expectedInteger := range expectedIntegers {
-		kd, err := SnowflakeDialect{}.KindForDataType(expectedInteger, "")
-		assert.NoError(t, err)
-		assert.Equal(t, typing.Integer, kd, expectedInteger)
+		{
+			kd, err := SnowflakeDialect{}.KindForDataType("VARCHAR (255)", "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.String.Kind, kd.Kind)
+			assert.Equal(t, int32(255), *kd.OptionalStringPrecision)
+		}
 	}
-}
-
-func TestSnowflakeDialect_KindForDataType_Other(t *testing.T) {
-	expectedStrings := []string{"CHARACTER", "CHAR", "STRING", "TEXT"}
-	for _, expectedString := range expectedStrings {
-		kd, err := SnowflakeDialect{}.KindForDataType(expectedString, "")
-		assert.NoError(t, err)
-		assert.Equal(t, typing.String, kd, expectedString)
-	}
-
 	{
-		kd, err := SnowflakeDialect{}.KindForDataType("VARCHAR (255)", "")
+		// Structs
+		expectedStructs := []string{"variant", "VaRIANT", "OBJECT"}
+		for _, expectedStruct := range expectedStructs {
+			kd, err := SnowflakeDialect{}.KindForDataType(expectedStruct, "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Struct, kd, expectedStruct)
+		}
+	}
+	{
+		// Arrays
+		kd, err := SnowflakeDialect{}.KindForDataType("ARRAY", "")
 		assert.NoError(t, err)
-		assert.Equal(t, typing.String.Kind, kd.Kind)
-		assert.Equal(t, int32(255), *kd.OptionalStringPrecision)
+		assert.Equal(t, typing.Array, kd)
 	}
 }
 
@@ -131,40 +155,6 @@ func TestSnowflakeDialect_KindForDataType_DateTime(t *testing.T) {
 		kd, err := SnowflakeDialect{}.KindForDataType(expectedDateTime, "")
 		assert.NoError(t, err)
 		assert.Equal(t, ext.DateTime.Type, kd.ExtendedTimeDetails.Type, expectedDateTime)
-	}
-}
-
-func TestSnowflakeDialect_KindForDataType_Complex(t *testing.T) {
-	{
-		expectedStructs := []string{"variant", "VaRIANT", "OBJECT"}
-		for _, expectedStruct := range expectedStructs {
-			kd, err := SnowflakeDialect{}.KindForDataType(expectedStruct, "")
-			assert.NoError(t, err)
-			assert.Equal(t, typing.Struct, kd, expectedStruct)
-		}
-	}
-	{
-		kd, err := SnowflakeDialect{}.KindForDataType("boolean", "")
-		assert.NoError(t, err)
-		assert.Equal(t, typing.Boolean, kd)
-	}
-	{
-		kd, err := SnowflakeDialect{}.KindForDataType("ARRAY", "")
-		assert.NoError(t, err)
-		assert.Equal(t, typing.Array, kd)
-	}
-}
-
-func TestSnowflakeDialect_KindForDataType_Errors(t *testing.T) {
-	{
-		kd, err := SnowflakeDialect{}.KindForDataType("", "")
-		assert.NoError(t, err)
-		assert.Equal(t, typing.Invalid, kd)
-	}
-	{
-		kd, err := SnowflakeDialect{}.KindForDataType("abc123", "")
-		assert.NoError(t, err)
-		assert.Equal(t, typing.Invalid, kd)
 	}
 }
 
@@ -186,24 +176,13 @@ func TestSnowflakeDialect_KindForDataType_NoDataLoss(t *testing.T) {
 }
 
 func TestSnowflakeDialect_IsColumnAlreadyExistsErr(t *testing.T) {
-	testCases := []struct {
-		name           string
-		err            error
-		expectedResult bool
-	}{
-		{
-			name:           "Snowflake, column already exists error",
-			err:            fmt.Errorf("Column already exists"),
-			expectedResult: true,
-		},
-		{
-			name: "Snowflake, random error",
-			err:  fmt.Errorf("hello there qux"),
-		},
+	{
+		// Invalid error
+		assert.False(t, SnowflakeDialect{}.IsColumnAlreadyExistsErr(fmt.Errorf("hello there qux")))
 	}
-
-	for _, tc := range testCases {
-		assert.Equal(t, tc.expectedResult, SnowflakeDialect{}.IsColumnAlreadyExistsErr(tc.err), tc.name)
+	{
+		// Valid
+		assert.True(t, SnowflakeDialect{}.IsColumnAlreadyExistsErr(fmt.Errorf("Column already exists")))
 	}
 }
 

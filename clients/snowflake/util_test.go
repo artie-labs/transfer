@@ -12,37 +12,21 @@ import (
 
 func TestAddPrefixToTableName(t *testing.T) {
 	const prefix = "%"
-	type _testCase struct {
-		name                string
-		tableID             TableIdentifier
-		expectedFqTableName string
+	{
+		// Database, schema and table name
+		assert.Equal(t, `database.schema."%TABLENAME"`, addPrefixToTableName(NewTableIdentifier("database", "schema", "tableName"), prefix))
 	}
-
-	testCases := []_testCase{
-		{
-			name:                "happy path",
-			tableID:             NewTableIdentifier("database", "schema", "tableName"),
-			expectedFqTableName: `database.schema."%TABLENAME"`,
-		},
-		{
-			name:                "tableName only",
-			tableID:             NewTableIdentifier("", "", "orders"),
-			expectedFqTableName: `.."%ORDERS"`,
-		},
-		{
-			name:                "schema and tableName only",
-			tableID:             NewTableIdentifier("", "public", "orders"),
-			expectedFqTableName: `.public."%ORDERS"`,
-		},
-		{
-			name:                "db and tableName only",
-			tableID:             NewTableIdentifier("db", "", "tableName"),
-			expectedFqTableName: `db.."%TABLENAME"`,
-		},
+	{
+		// Table name
+		assert.Equal(t, `.."%ORDERS"`, addPrefixToTableName(NewTableIdentifier("", "", "orders"), prefix))
 	}
-
-	for _, testCase := range testCases {
-		assert.Equal(t, testCase.expectedFqTableName, addPrefixToTableName(testCase.tableID, prefix), testCase.name)
+	{
+		// Schema and table name
+		assert.Equal(t, `.public."%ORDERS"`, addPrefixToTableName(NewTableIdentifier("", "public", "orders"), prefix))
+	}
+	{
+		// Database and table name
+		assert.Equal(t, `db.."%TABLENAME"`, addPrefixToTableName(NewTableIdentifier("db", "", "tableName"), prefix))
 	}
 }
 

@@ -22,26 +22,14 @@ func TestBigQueryDialect_QuoteIdentifier(t *testing.T) {
 }
 
 func TestBigQueryDialect_DataTypeForKind(t *testing.T) {
-	tcs := []struct {
-		kd       typing.KindDetails
-		expected string
-	}{
+	{
+		// String
 		{
-			kd:       typing.String,
-			expected: "string",
-		},
+			assert.Equal(t, "string", BigQueryDialect{}.DataTypeForKind(typing.String, false))
+		}
 		{
-			kd: typing.KindDetails{
-				Kind:                    typing.String.Kind,
-				OptionalStringPrecision: ptr.ToInt32(12345),
-			},
-			expected: "string",
-		},
-	}
-
-	for idx, tc := range tcs {
-		assert.Equal(t, tc.expected, BigQueryDialect{}.DataTypeForKind(tc.kd, true), idx)
-		assert.Equal(t, tc.expected, BigQueryDialect{}.DataTypeForKind(tc.kd, false), idx)
+			assert.Equal(t, "string", BigQueryDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: ptr.ToInt32(12345)}, true))
+		}
 	}
 }
 
@@ -132,24 +120,13 @@ func TestBigQueryDialect_KindForDataType_NoDataLoss(t *testing.T) {
 }
 
 func TestBigQueryDialect_IsColumnAlreadyExistsErr(t *testing.T) {
-	testCases := []struct {
-		name           string
-		err            error
-		expectedResult bool
-	}{
-		{
-			name:           "BigQuery, column already exists error",
-			err:            fmt.Errorf("Column already exists"),
-			expectedResult: true,
-		},
-		{
-			name: "BigQuery, random error",
-			err:  fmt.Errorf("hello there qux"),
-		},
+	{
+		// Random error
+		assert.False(t, BigQueryDialect{}.IsColumnAlreadyExistsErr(fmt.Errorf("hello there qux")))
 	}
-
-	for _, tc := range testCases {
-		assert.Equal(t, tc.expectedResult, BigQueryDialect{}.IsColumnAlreadyExistsErr(tc.err), tc.name)
+	{
+		// Valid
+		assert.True(t, BigQueryDialect{}.IsColumnAlreadyExistsErr(fmt.Errorf("Column already exists")))
 	}
 }
 
@@ -162,8 +139,7 @@ func TestBQExpiresDate(t *testing.T) {
 	// Note: The format does not have ns precision because we don't need it.
 	birthday := time.Date(2022, time.September, 6, 3, 19, 24, 0, time.UTC)
 	for i := 0; i < 5; i++ {
-		tsString := BQExpiresDate(birthday)
-		ts, err := fromExpiresDateStringToTime(tsString)
+		ts, err := fromExpiresDateStringToTime(BQExpiresDate(birthday))
 		assert.NoError(t, err)
 		assert.Equal(t, birthday, ts)
 	}
