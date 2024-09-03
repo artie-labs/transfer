@@ -113,7 +113,9 @@ func (f Field) ShouldSetDefaultValue(defaultValue any) bool {
 		if f.DebeziumType == UUID && castedDefaultValue == uuid.Nil.String() {
 			return false
 		}
-	case bool, int, int16, int32, int64, float32, float64:
+
+		return true
+	case bool, int, int16, int32, int64, float32, float64, *decimal.Decimal:
 		return true
 	default:
 		// TODO: Remove this after some time.
