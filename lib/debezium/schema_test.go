@@ -3,15 +3,12 @@ package debezium
 import (
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/typing/ext"
-
-	"github.com/artie-labs/transfer/lib/typing/decimal"
-
-	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/ptr"
-
-	"github.com/stretchr/testify/assert"
+	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func TestField_GetScaleAndPrecision(t *testing.T) {
@@ -82,203 +79,77 @@ func TestField_GetScaleAndPrecision(t *testing.T) {
 }
 
 func TestField_ToKindDetails(t *testing.T) {
-	type _tc struct {
-		name                string
-		field               Field
-		expectedKindDetails typing.KindDetails
+	{
+		// Integers
+		assert.Equal(t, typing.Integer, Field{Type: Int16}.ToKindDetails())
+		assert.Equal(t, typing.Integer, Field{Type: Int32}.ToKindDetails())
+		assert.Equal(t, typing.Integer, Field{Type: Int64}.ToKindDetails())
 	}
-
-	eDecimal := typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale))
-	kafkaDecimalType := typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(10, 5))
-	tcs := []_tc{
+	{
+		// Decimals
 		{
-			name:                "int16",
-			field:               Field{Type: "int16"},
-			expectedKindDetails: typing.Integer,
-		},
+			assert.Equal(
+				t, typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(10, 5)),
+				Field{DebeziumType: KafkaDecimalType, Parameters: map[string]any{"scale": 5, KafkaDecimalPrecisionKey: 10}}.ToKindDetails(),
+			)
+		}
 		{
-			name:                "int32",
-			field:               Field{Type: "int32"},
-			expectedKindDetails: typing.Integer,
-		},
-		{
-			name:                "int64",
-			field:               Field{Type: "int64"},
-			expectedKindDetails: typing.Integer,
-		},
-		{
-			name:                "float",
-			field:               Field{Type: "float"},
-			expectedKindDetails: typing.Float,
-		},
-		{
-			name:                "double",
-			field:               Field{Type: "double"},
-			expectedKindDetails: typing.Float,
-		},
-		{
-			name:                "string",
-			field:               Field{Type: "string"},
-			expectedKindDetails: typing.String,
-		},
-		{
-			name:                "bytes",
-			field:               Field{Type: "bytes"},
-			expectedKindDetails: typing.String,
-		},
-		{
-			name:                "struct",
-			field:               Field{Type: "struct"},
-			expectedKindDetails: typing.Struct,
-		},
-		{
-			name:                "boolean",
-			field:               Field{Type: "boolean"},
-			expectedKindDetails: typing.Boolean,
-		},
-		{
-			name:                "array",
-			field:               Field{Type: "array"},
-			expectedKindDetails: typing.Array,
-		},
-		{
-			name:                "Invalid",
-			field:               Field{Type: "unknown"},
-			expectedKindDetails: typing.Invalid,
-		},
-		// Timestamp fields
-		{
-			name: "Timestamp",
-			field: Field{
-				DebeziumType: Timestamp,
-			},
-			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-		},
-		{
-			name: "Micro Timestamp",
-			field: Field{
-				DebeziumType: MicroTimestamp,
-			},
-			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-		},
-		{
-			name: "Nano Timestamp",
-			field: Field{
-				DebeziumType: NanoTimestamp,
-			},
-			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-		},
-		{
-			name: "Date Time Kafka Connect",
-			field: Field{
-				DebeziumType: TimestampKafkaConnect,
-			},
-			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-		},
-		{
-			name: "Date Time w/ TZ",
-			field: Field{
-				DebeziumType: DateTimeWithTimezone,
-			},
-			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-		},
-		// Date fields
-		{
-			name: "Date",
-			field: Field{
-				DebeziumType: Date,
-			},
-			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType),
-		},
-		{
-			name: "Date Kafka Connect",
-			field: Field{
-				DebeziumType: DateKafkaConnect,
-			},
-			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType),
-		},
-		// Time fields
-		{
-			name: "Time",
-			field: Field{
-				DebeziumType: Time,
-			},
-			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
-		},
-		{
-			name: "Time Micro",
-			field: Field{
-				DebeziumType: MicroTime,
-			},
-			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
-		},
-		{
-			name: "Time Nano",
-			field: Field{
-				DebeziumType: NanoTime,
-			},
-			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
-		},
-		{
-			name: "Time Kafka Connect",
-			field: Field{
-				DebeziumType: TimeKafkaConnect,
-			},
-			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
-		},
-		{
-			name: "Time w/ TZ",
-			field: Field{
-				DebeziumType: TimeWithTimezone,
-			},
-			expectedKindDetails: typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
-		},
-		// JSON fields
-		{
-			name: "JSON",
-			field: Field{
-				DebeziumType: JSON,
-			},
-			expectedKindDetails: typing.Struct,
-		},
-		// Decimal
-		{
-			name: "KafkaDecimalType",
-			field: Field{
-				DebeziumType: KafkaDecimalType,
-				Parameters: map[string]any{
-					"scale":                  5,
-					KafkaDecimalPrecisionKey: 10,
-				},
-			},
-			expectedKindDetails: kafkaDecimalType,
-		},
-		{
-			name: "KafkaVariableNumericType",
-			field: Field{
-				DebeziumType: KafkaVariableNumericType,
-				Parameters: map[string]any{
-					"scale": 5,
-				},
-			},
-			expectedKindDetails: eDecimal,
-		},
-		{
-			name: "Debezium Map",
-			field: Field{
-				DebeziumType: "",
-				Type:         "map",
-			},
-			expectedKindDetails: typing.Struct,
-		},
-		{
-			name:                "UUID",
-			field:               Field{DebeziumType: UUID, Type: String},
-			expectedKindDetails: typing.String,
-		},
+			// Variable numeric decimal
+			assert.Equal(
+				t, typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)),
+				Field{DebeziumType: KafkaVariableNumericType, Parameters: map[string]any{"scale": 5}}.ToKindDetails(),
+			)
+		}
 	}
+	{
+		// String
+		assert.Equal(t, typing.String, Field{Type: String}.ToKindDetails())
+	}
+	{
+		// Bytes
+		assert.Equal(t, typing.String, Field{Type: Bytes}.ToKindDetails())
+	}
+	{
+		// UUID
+		assert.Equal(t, typing.String, Field{DebeziumType: UUID, Type: String}.ToKindDetails())
+	}
+	{
+		// Structs
+		assert.Equal(t, typing.Struct, Field{Type: Struct}.ToKindDetails())
+		assert.Equal(t, typing.Struct, Field{Type: Map}.ToKindDetails())
 
-	for _, tc := range tcs {
-		assert.Equal(t, tc.expectedKindDetails, tc.field.ToKindDetails(), tc.name)
+		assert.Equal(t, typing.Struct, Field{DebeziumType: JSON}.ToKindDetails())
+	}
+	{
+		// Booleans
+		assert.Equal(t, typing.Boolean, Field{Type: Boolean}.ToKindDetails())
+	}
+	{
+		// Array
+		assert.Equal(t, typing.Array, Field{Type: Array}.ToKindDetails())
+	}
+	{
+		// Invalid
+		assert.Equal(t, typing.Invalid, Field{Type: "unknown"}.ToKindDetails())
+		assert.Equal(t, typing.Invalid, Field{Type: ""}.ToKindDetails())
+	}
+	{
+		// Timestamp
+		// Datetime (for now)
+		for _, dbzType := range []SupportedDebeziumType{Timestamp, TimestampKafkaConnect, MicroTimestamp, NanoTimestamp, DateTimeWithTimezone} {
+			assert.Equal(t, typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType), Field{DebeziumType: dbzType}.ToKindDetails())
+		}
+	}
+	{
+		// Dates
+		for _, dbzType := range []SupportedDebeziumType{Date, DateKafkaConnect} {
+			assert.Equal(t, typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType), Field{DebeziumType: dbzType}.ToKindDetails())
+		}
+	}
+	{
+		// Time
+		for _, dbzType := range []SupportedDebeziumType{Time, TimeKafkaConnect, MicroTime, NanoTime, TimeWithTimezone} {
+			assert.Equal(t, typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType), Field{DebeziumType: dbzType}.ToKindDetails())
+		}
 	}
 }
