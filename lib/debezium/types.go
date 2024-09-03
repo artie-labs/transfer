@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -33,22 +32,25 @@ const (
 	EnumSet SupportedDebeziumType = "io.debezium.data.EnumSet"
 	UUID    SupportedDebeziumType = "io.debezium.data.Uuid"
 
-	Timestamp            SupportedDebeziumType = "io.debezium.time.Timestamp"
-	MicroTimestamp       SupportedDebeziumType = "io.debezium.time.MicroTimestamp"
-	NanoTimestamp        SupportedDebeziumType = "io.debezium.time.NanoTimestamp"
+	// Dates
 	Date                 SupportedDebeziumType = "io.debezium.time.Date"
-	Year                 SupportedDebeziumType = "io.debezium.time.Year"
+	DateKafkaConnect     SupportedDebeziumType = "org.apache.kafka.connect.data.Date"
 	DateTimeWithTimezone SupportedDebeziumType = "io.debezium.time.ZonedTimestamp"
 	MicroDuration        SupportedDebeziumType = "io.debezium.time.MicroDuration"
-	DateKafkaConnect     SupportedDebeziumType = "org.apache.kafka.connect.data.Date"
-	DateTimeKafkaConnect SupportedDebeziumType = "org.apache.kafka.connect.data.Timestamp"
+	Year                 SupportedDebeziumType = "io.debezium.time.Year"
 
-	// All the possible time data types
+	// Time
 	Time             SupportedDebeziumType = "io.debezium.time.Time"
 	MicroTime        SupportedDebeziumType = "io.debezium.time.MicroTime"
 	NanoTime         SupportedDebeziumType = "io.debezium.time.NanoTime"
 	TimeWithTimezone SupportedDebeziumType = "io.debezium.time.ZonedTime"
 	TimeKafkaConnect SupportedDebeziumType = "org.apache.kafka.connect.data.Time"
+
+	// Timestamps
+	MicroTimestamp        SupportedDebeziumType = "io.debezium.time.MicroTimestamp"
+	NanoTimestamp         SupportedDebeziumType = "io.debezium.time.NanoTimestamp"
+	Timestamp             SupportedDebeziumType = "io.debezium.time.Timestamp"
+	TimestampKafkaConnect SupportedDebeziumType = "org.apache.kafka.connect.data.Timestamp"
 
 	KafkaDecimalType         SupportedDebeziumType = "org.apache.kafka.connect.data.Decimal"
 	KafkaVariableNumericType SupportedDebeziumType = "io.debezium.data.VariableScaleDecimal"
@@ -154,18 +156,6 @@ func (f Field) ParseValue(value any) (any, error) {
 		return f.DecodeDecimal(bytes)
 	case KafkaVariableNumericType:
 		return f.DecodeDebeziumVariableDecimal(value)
-	case
-		Timestamp,
-		MicroTimestamp,
-		NanoTimestamp,
-		NanoTime,
-		MicroTime,
-		DateTimeKafkaConnect:
-		int64Value, ok := value.(int64)
-		if !ok {
-			return nil, fmt.Errorf("expected int64 got '%v' with type %T", value, value)
-		}
-		return FromDebeziumTypeToTime(f.DebeziumType, int64Value)
 	}
 
 	if bytes, ok := value.([]byte); ok {
@@ -176,31 +166,6 @@ func (f Field) ParseValue(value any) (any, error) {
 	}
 
 	return value, nil
-}
-
-// FromDebeziumTypeToTime is implemented by following this spec: https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-temporal-types
-func FromDebeziumTypeToTime(supportedType SupportedDebeziumType, val int64) (*ext.ExtendedTime, error) {
-	var extTime *ext.ExtendedTime
-
-	switch supportedType {
-	case Timestamp, DateTimeKafkaConnect:
-		// Represents the number of milliseconds since the epoch, and does not include timezone information.
-		extTime = ext.NewExtendedTime(time.UnixMilli(val).In(time.UTC), ext.DateTimeKindType, time.RFC3339Nano)
-	case MicroTimestamp:
-		// Represents the number of microseconds since the epoch, and does not include timezone information.
-		extTime = ext.NewExtendedTime(time.UnixMicro(val).In(time.UTC), ext.DateTimeKindType, time.RFC3339Nano)
-	case NanoTimestamp:
-		// Represents the number of nanoseconds past the epoch, and does not include timezone information.
-		extTime = ext.NewExtendedTime(time.UnixMicro(val/1_000).In(time.UTC), ext.DateTimeKindType, time.RFC3339Nano)
-	default:
-		return nil, fmt.Errorf("supportedType: %s, val: %v failed to be matched", supportedType, val)
-	}
-
-	if extTime != nil && !extTime.IsValid() {
-		return nil, fmt.Errorf("extTime is invalid: %v", extTime)
-	}
-
-	return extTime, nil
 }
 
 // DecodeDecimal is used to handle `org.apache.kafka.connect.data.Decimal` where this would be emitted by Debezium when the `decimal.handling.mode` is `precise`
