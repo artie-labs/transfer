@@ -316,13 +316,13 @@ func TestField_ParseValue(t *testing.T) {
 				// Int64
 				val, err := field.ParseValue(int64(1_712_609_795_827_009))
 				assert.NoError(t, err)
-				assert.Equal(t, ext.NewExtendedTime(time.Date(2024, time.April, 8, 20, 56, 35, 827009000, time.UTC), ext.DateTimeKindType, ext.RFC339Microsecond), val.(*ext.ExtendedTime))
+				assert.Equal(t, ext.NewExtendedTime(time.Date(2024, time.April, 8, 20, 56, 35, 827009000, time.UTC), ext.DateTimeKindType, ext.RFC3339Microsecond), val.(*ext.ExtendedTime))
 			}
 			{
 				// Float64
 				val, err := field.ParseValue(float64(1_712_609_795_827_001))
 				assert.NoError(t, err)
-				assert.Equal(t, ext.NewExtendedTime(time.Date(2024, time.April, 8, 20, 56, 35, 827001000, time.UTC), ext.DateTimeKindType, ext.RFC339Microsecond), val.(*ext.ExtendedTime))
+				assert.Equal(t, ext.NewExtendedTime(time.Date(2024, time.April, 8, 20, 56, 35, 827001000, time.UTC), ext.DateTimeKindType, ext.RFC3339Microsecond), val.(*ext.ExtendedTime))
 			}
 			{
 				// Invalid (string)

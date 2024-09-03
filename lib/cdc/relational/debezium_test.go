@@ -205,7 +205,7 @@ func (r *RelationTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 		r.T(),
 		ext.NewExtendedTime(
 			time.Date(2023, time.February, 2, 17, 51, 35, 175445*1000, time.UTC),
-			ext.DateTimeKindType, ext.RFC339Microsecond,
+			ext.DateTimeKindType, ext.RFC3339Microsecond,
 		),
 		evtData["ts_no_tz1"],
 	)

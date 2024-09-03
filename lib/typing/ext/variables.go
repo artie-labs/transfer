@@ -36,9 +36,9 @@ var SupportedTimeFormatsLegacy = []string{
 	AdditionalTimeFormat,
 }
 
-// RFC 339 variants
+// RFC3339 variants
 const (
-	RFC339Millisecond = "2006-01-02T15:04:05.000Z07:00"
-	RFC339Microsecond = "2006-01-02T15:04:05.000000Z07:00"
-	RFC339Nanosecond  = "2006-01-02T15:04:05.000000000Z07:00"
+	RFC3339Millisecond = "2006-01-02T15:04:05.000Z07:00"
+	RFC3339Microsecond = "2006-01-02T15:04:05.000000Z07:00"
+	RFC3339Nanosecond  = "2006-01-02T15:04:05.000000000Z07:00"
 )
