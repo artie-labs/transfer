@@ -1,6 +1,8 @@
 package debezium
 
 import (
+	"log/slog"
+
 	"github.com/artie-labs/transfer/lib/debezium/converters"
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -144,6 +146,10 @@ func (f Field) ToKindDetails() typing.KindDetails {
 		return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale))
 	}
 
+	if f.DebeziumType != "" {
+		slog.Warn("Unhandled Debezium type", slog.String("type", string(f.Type)), slog.String("debeziumType", string(f.DebeziumType)))
+	}
+
 	switch f.Type {
 	case Map:
 		return typing.Struct
@@ -160,6 +166,7 @@ func (f Field) ToKindDetails() typing.KindDetails {
 	case Array:
 		return typing.Array
 	default:
+		slog.Warn("Unhandled field type", slog.String("type", string(f.Type)), slog.String("debeziumType", string(f.DebeziumType)))
 		return typing.Invalid
 	}
 }
