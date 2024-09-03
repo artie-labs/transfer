@@ -1,6 +1,8 @@
 package debezium
 
 import (
+	"log/slog"
+
 	"github.com/artie-labs/transfer/lib/debezium/converters"
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/ptr"
@@ -155,6 +157,10 @@ func (f Field) ToKindDetails() typing.KindDetails {
 	case Array:
 		return typing.Array
 	default:
+		if f.Type != "" && f.DebeziumType != "" {
+			slog.Warn("Unhandled field type", slog.String("type", string(f.Type)), slog.String("debeziumType", string(f.DebeziumType)))
+		}
+
 		return typing.Invalid
 	}
 }
