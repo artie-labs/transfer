@@ -44,9 +44,9 @@ func TestMicroTimestamp_Converter(t *testing.T) {
 	}
 	{
 		// micros is preserved despite it being all zeroes.
-		converted, err := MicroTimestamp{}.Convert(int64(1_712_609_795_827_123))
+		converted, err := MicroTimestamp{}.Convert(int64(1_712_609_795_820_000))
 		assert.NoError(t, err)
-		assert.Equal(t, "2024-04-08T20:56:35.827123Z", converted.(*ext.ExtendedTime).String(""))
+		assert.Equal(t, "2024-04-08T20:56:35.820000Z", converted.(*ext.ExtendedTime).String(""))
 	}
 }
 
