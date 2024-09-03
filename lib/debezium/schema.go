@@ -157,10 +157,7 @@ func (f Field) ToKindDetails() typing.KindDetails {
 	case Array:
 		return typing.Array
 	default:
-		if f.Type != "" || f.DebeziumType != "" {
-			slog.Warn("Unhandled field type", slog.String("type", string(f.Type)), slog.String("debeziumType", string(f.DebeziumType)))
-		}
-
+		slog.Warn("Unhandled field type", slog.String("type", string(f.Type)), slog.String("debeziumType", string(f.DebeziumType)))
 		return typing.Invalid
 	}
 }
