@@ -24,6 +24,15 @@ func ParseValue(settings Settings, key string, optionalSchema map[string]KindDet
 					slog.Warn("Schema provided for EDecimal, but no extended details found. Falling back to parsing the value.", slog.String("key", key))
 				}
 
+				if kindDetail.Kind == ETime.Kind {
+					if kindDetail.ExtendedTimeDetails != nil {
+						return kindDetail
+					}
+
+					// TODO - This shouldn't happen. Refactor this code after we have a better understanding.
+					slog.Warn("Schema provided for ETime, but no extended details found. Falling back to parsing the value.", slog.String("key", key))
+				}
+
 				// If the data type is either `ETime` or `EDecimal` and the value exists, we will not early exit
 				// We are not skipping so that we are able to get the exact layout specified at the row level to preserve:
 				// 1. Layout for time / date / timestamps
