@@ -141,6 +141,10 @@ func (f Field) ToKindDetails() typing.KindDetails {
 		return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale))
 	}
 
+	if f.DebeziumType != "" {
+		slog.Warn("Unhandled Debezium type", slog.String("type", string(f.Type)), slog.String("debeziumType", string(f.DebeziumType)))
+	}
+
 	switch f.Type {
 	case Map:
 		return typing.Struct
