@@ -86,6 +86,11 @@ func TestField_ToKindDetails(t *testing.T) {
 		assert.Equal(t, typing.Integer, Field{Type: Int64}.ToKindDetails())
 	}
 	{
+		// Floats
+		assert.Equal(t, typing.Float, Field{Type: Float}.ToKindDetails())
+		assert.Equal(t, typing.Float, Field{Type: Double}.ToKindDetails())
+	}
+	{
 		// Decimals
 		{
 			assert.Equal(
