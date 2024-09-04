@@ -124,6 +124,10 @@ func TestField_ToKindDetails(t *testing.T) {
 			// Enum
 			assert.Equal(t, typing.String, Field{DebeziumType: Enum, Type: String}.ToKindDetails())
 		}
+		{
+			// LTree
+			assert.Equal(t, typing.String, Field{DebeziumType: LTree, Type: String}.ToKindDetails())
+		}
 	}
 	{
 		// Structs
