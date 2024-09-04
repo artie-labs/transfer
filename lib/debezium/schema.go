@@ -83,8 +83,11 @@ func (f Field) GetScaleAndPrecision() (int32, *int32, error) {
 
 func (f Field) ToValueConverter() converters.ValueConverter {
 	switch f.DebeziumType {
-	case UUID, Enum:
+	// Passthrough converters
+	case UUID, LTree, Enum:
 		return converters.StringPassthrough{}
+	case Year, MicroDuration:
+		return &converters.Int64Passthrough{}
 	case DateTimeWithTimezone:
 		return converters.DateTimeWithTimezone{}
 	case TimeWithTimezone:
@@ -97,6 +100,7 @@ func (f Field) ToValueConverter() converters.ValueConverter {
 		return converters.JSON{}
 	case Date, DateKafkaConnect:
 		return converters.Date{}
+
 	// Time
 	case Time, TimeKafkaConnect:
 		return converters.Time{}

@@ -20,3 +20,17 @@ func TestJSON_Convert(t *testing.T) {
 		assert.Equal(t, `{"a":2}`, value)
 	}
 }
+
+func TestInt64Passthrough_Convert(t *testing.T) {
+	{
+		// Wrong data type
+		_, err := Int64Passthrough{}.Convert("123")
+		assert.ErrorContains(t, err, "expected type int64, got string")
+	}
+	{
+		//	Valid data type
+		value, err := Int64Passthrough{}.Convert(int64(2024))
+		assert.NoError(t, err)
+		assert.Equal(t, int64(2024), value)
+	}
+}

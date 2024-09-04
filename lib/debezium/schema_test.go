@@ -124,6 +124,10 @@ func TestField_ToKindDetails(t *testing.T) {
 			// Enum
 			assert.Equal(t, typing.String, Field{DebeziumType: Enum, Type: String}.ToKindDetails())
 		}
+		{
+			// LTree
+			assert.Equal(t, typing.String, Field{DebeziumType: LTree, Type: String}.ToKindDetails())
+		}
 	}
 	{
 		// Structs
@@ -163,5 +167,15 @@ func TestField_ToKindDetails(t *testing.T) {
 		for _, dbzType := range []SupportedDebeziumType{Time, TimeKafkaConnect, MicroTime, NanoTime, TimeWithTimezone} {
 			assert.Equal(t, typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType), Field{DebeziumType: dbzType}.ToKindDetails())
 		}
+	}
+	{
+		// Basic
+		{
+			// Int64 Passthrough
+			assert.Equal(t, typing.Integer, Field{DebeziumType: Year}.ToKindDetails())
+			assert.Equal(t, typing.Integer, Field{DebeziumType: MicroDuration}.ToKindDetails())
+		}
+
+		assert.Equal(t, typing.Struct, Field{DebeziumType: JSON}.ToKindDetails())
 	}
 }
