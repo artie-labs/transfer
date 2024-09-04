@@ -71,7 +71,7 @@ func parseValue(settings Settings, val any) KindDetails {
 			return Struct
 		}
 
-		slog.Warn("Unhandled value, we returning Invalid for this type", slog.String("type", fmt.Sprint("%T", val)), slog.Any("value", val))
+		slog.Warn("Unhandled value, we returning Invalid for this type", slog.String("type", fmt.Sprintf("%T", val)), slog.Any("value", val))
 	}
 
 	return Invalid
