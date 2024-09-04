@@ -34,8 +34,7 @@ func (Year) ToKindDetails() typing.KindDetails {
 }
 
 func (Year) Convert(value any) (any, error) {
-	_, err := typing.AssertType[int64](value)
-	if err != nil {
+	if _, err := typing.AssertType[int64](value); err != nil {
 		return nil, err
 	}
 

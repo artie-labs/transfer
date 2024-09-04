@@ -140,6 +140,21 @@ func TestField_ParseValue(t *testing.T) {
 		assert.Equal(t, "dusty", value)
 	}
 	{
+		// Year
+		{
+			// Floats (from JSON marshal), preprocessing should convert it to int64.
+			value, err := Field{Type: Int32, DebeziumType: Year}.ParseValue(2024.0)
+			assert.NoError(t, err)
+			assert.Equal(t, int64(2024), value)
+		}
+		{
+			// Int32
+			value, err := Field{Type: Int32, DebeziumType: Year}.ParseValue(int32(2024))
+			assert.NoError(t, err)
+			assert.Equal(t, int64(2024), value)
+		}
+	}
+	{
 		// JSON
 		field := Field{Type: String, DebeziumType: JSON}
 		{
