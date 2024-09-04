@@ -115,8 +115,15 @@ func TestField_ToKindDetails(t *testing.T) {
 		assert.Equal(t, typing.String, Field{Type: Bytes}.ToKindDetails())
 	}
 	{
-		// UUID
-		assert.Equal(t, typing.String, Field{DebeziumType: UUID, Type: String}.ToKindDetails())
+		// String passthrough
+		{
+			// UUID
+			assert.Equal(t, typing.String, Field{DebeziumType: UUID, Type: String}.ToKindDetails())
+		}
+		{
+			// Enum
+			assert.Equal(t, typing.String, Field{DebeziumType: Enum, Type: String}.ToKindDetails())
+		}
 	}
 	{
 		// Structs
@@ -141,7 +148,7 @@ func TestField_ToKindDetails(t *testing.T) {
 	{
 		// Timestamp
 		// Datetime (for now)
-		for _, dbzType := range []SupportedDebeziumType{Timestamp, DateTimeKafkaConnect, MicroTimestamp, NanoTimestamp, DateTimeWithTimezone} {
+		for _, dbzType := range []SupportedDebeziumType{Timestamp, TimestampKafkaConnect, MicroTimestamp, NanoTimestamp, DateTimeWithTimezone} {
 			assert.Equal(t, typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType), Field{DebeziumType: dbzType}.ToKindDetails())
 		}
 	}

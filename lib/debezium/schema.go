@@ -8,7 +8,6 @@ import (
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type Schema struct {
@@ -84,7 +83,7 @@ func (f Field) GetScaleAndPrecision() (int32, *int32, error) {
 
 func (f Field) ToValueConverter() converters.ValueConverter {
 	switch f.DebeziumType {
-	case UUID:
+	case UUID, Enum:
 		return converters.StringPassthrough{}
 	case DateTimeWithTimezone:
 		return converters.DateTimeWithTimezone{}
@@ -98,12 +97,20 @@ func (f Field) ToValueConverter() converters.ValueConverter {
 		return converters.JSON{}
 	case Date, DateKafkaConnect:
 		return converters.Date{}
+	// Time
 	case Time, TimeKafkaConnect:
 		return converters.Time{}
 	case NanoTime:
 		return converters.NanoTime{}
 	case MicroTime:
 		return converters.MicroTime{}
+	// Timestamp
+	case Timestamp, TimestampKafkaConnect:
+		return converters.Timestamp{}
+	case MicroTimestamp:
+		return converters.MicroTimestamp{}
+	case NanoTimestamp:
+		return converters.NanoTimestamp{}
 	}
 
 	return nil
@@ -120,8 +127,6 @@ func (f Field) ToKindDetails() typing.KindDetails {
 	// We'll first cast based on Debezium types
 	// Then, we'll fall back on the actual data types.
 	switch f.DebeziumType {
-	case Timestamp, MicroTimestamp, NanoTimestamp, DateTimeKafkaConnect:
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)
 	case KafkaDecimalType:
 		scale, precisionPtr, err := f.GetScaleAndPrecision()
 		if err != nil {
