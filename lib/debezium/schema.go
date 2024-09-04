@@ -83,7 +83,7 @@ func (f Field) GetScaleAndPrecision() (int32, *int32, error) {
 
 func (f Field) ToValueConverter() converters.ValueConverter {
 	switch f.DebeziumType {
-	case UUID:
+	case UUID, Enum:
 		return converters.StringPassthrough{}
 	case DateTimeWithTimezone:
 		return converters.DateTimeWithTimezone{}
