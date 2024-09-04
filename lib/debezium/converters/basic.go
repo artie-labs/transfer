@@ -26,3 +26,17 @@ func (JSON) Convert(value any) (any, error) {
 func (JSON) ToKindDetails() typing.KindDetails {
 	return typing.Struct
 }
+
+type Year struct{}
+
+func (Year) ToKindDetails() typing.KindDetails {
+	return typing.Integer
+}
+
+func (Year) Convert(value any) (any, error) {
+	if _, err := typing.AssertType[int64](value); err != nil {
+		return nil, err
+	}
+
+	return value, nil
+}

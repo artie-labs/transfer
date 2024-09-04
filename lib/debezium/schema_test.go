@@ -168,4 +168,9 @@ func TestField_ToKindDetails(t *testing.T) {
 			assert.Equal(t, typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType), Field{DebeziumType: dbzType}.ToKindDetails())
 		}
 	}
+	{
+		// Basic
+		assert.Equal(t, typing.Integer, Field{DebeziumType: Year}.ToKindDetails())
+		assert.Equal(t, typing.Struct, Field{DebeziumType: JSON}.ToKindDetails())
+	}
 }
