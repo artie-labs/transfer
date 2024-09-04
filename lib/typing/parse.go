@@ -15,20 +15,12 @@ func ParseValue(settings Settings, key string, optionalSchema map[string]KindDet
 		if kindDetail, isOk := optionalSchema[key]; isOk {
 			// If the schema exists, use it as sot.
 			if val != nil && (kindDetail.Kind == ETime.Kind || kindDetail.Kind == EDecimal.Kind) {
-				if kindDetail.Kind == EDecimal.Kind {
-					if kindDetail.ExtendedDecimalDetails != nil {
-						return kindDetail
-					}
-
+				if kindDetail.Kind == EDecimal.Kind && kindDetail.ExtendedDecimalDetails == nil {
 					// TODO - This shouldn't happen. Refactor this code after we have a better understanding.
 					slog.Warn("Schema provided for EDecimal, but no extended details found. Falling back to parsing the value.", slog.String("key", key))
 				}
 
-				if kindDetail.Kind == ETime.Kind {
-					if kindDetail.ExtendedTimeDetails != nil {
-						return kindDetail
-					}
-
+				if kindDetail.Kind == ETime.Kind && kindDetail.ExtendedTimeDetails == nil {
 					// TODO - This shouldn't happen. Refactor this code after we have a better understanding.
 					slog.Warn("Schema provided for ETime, but no extended details found. Falling back to parsing the value.", slog.String("key", key))
 				}
