@@ -97,6 +97,8 @@ func (f Field) ToValueConverter() converters.ValueConverter {
 		return converters.JSON{}
 	case Date, DateKafkaConnect:
 		return converters.Date{}
+	case Year:
+		return &converters.Year{}
 	// Time
 	case Time, TimeKafkaConnect:
 		return converters.Time{}
