@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/artie-labs/transfer/lib/debezium/converters"
-	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -144,8 +143,6 @@ func (f Field) ParseValue(value any) (any, error) {
 		}
 
 		return f.DecodeDecimal(castedBytes)
-	case KafkaVariableNumericType:
-		return f.DecodeDebeziumVariableDecimal(value)
 	}
 
 	if bytes, ok := value.([]byte); ok {
@@ -175,33 +172,4 @@ func (f Field) DecodeDecimal(encoded []byte) (*decimal.Decimal, error) {
 	}
 
 	return decimal.NewDecimalWithPrecision(_decimal, *precision), nil
-}
-
-func (Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error) {
-	valueStruct, isOk := value.(map[string]any)
-	if !isOk {
-		return nil, fmt.Errorf("value is not map[string]any type")
-	}
-
-	scale, err := maputil.GetInt32FromMap(valueStruct, "scale")
-	if err != nil {
-		return nil, err
-	}
-
-	val, isOk := valueStruct["value"]
-	if !isOk {
-		return nil, fmt.Errorf("encoded value does not exist")
-	}
-
-	bytes, err := converters.Bytes{}.Convert(val)
-	if err != nil {
-		return nil, err
-	}
-
-	castedBytes, err := typing.AssertType[[]byte](bytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return decimal.NewDecimal(converters.DecodeDecimal(castedBytes, scale)), nil
 }

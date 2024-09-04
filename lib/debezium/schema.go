@@ -100,7 +100,9 @@ func (f Field) ToValueConverter() converters.ValueConverter {
 		return converters.JSON{}
 	case Date, DateKafkaConnect:
 		return converters.Date{}
-
+	// Decimal
+	case KafkaVariableNumericType:
+		return converters.NewVariableDecimal()
 	// Time
 	case Time, TimeKafkaConnect:
 		return converters.Time{}
@@ -143,11 +145,6 @@ func (f Field) ToKindDetails() typing.KindDetails {
 		}
 
 		return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(precision, scale))
-	case KafkaVariableNumericType:
-		// For variable numeric types, we are defaulting to a scale of 5
-		// This is because scale is not specified at the column level, rather at the row level
-		// It shouldn't matter much anyway since the column type we are creating is `TEXT` to avoid boundary errors.
-		return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale))
 	}
 
 	if f.DebeziumType != "" {
