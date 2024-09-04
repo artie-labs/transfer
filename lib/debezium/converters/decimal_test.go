@@ -87,6 +87,7 @@ func TestVariableDecimal_Convert(t *testing.T) {
 			"scale": 3,
 			"value": "SOx4FQ==",
 		})
+		assert.NoError(t, err)
 
 		castedValue, err := typing.AssertType[*decimal.Decimal](dec)
 		assert.NoError(t, err)
