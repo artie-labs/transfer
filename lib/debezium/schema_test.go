@@ -115,8 +115,15 @@ func TestField_ToKindDetails(t *testing.T) {
 		assert.Equal(t, typing.String, Field{Type: Bytes}.ToKindDetails())
 	}
 	{
-		// UUID
-		assert.Equal(t, typing.String, Field{DebeziumType: UUID, Type: String}.ToKindDetails())
+		// String passthrough
+		{
+			// UUID
+			assert.Equal(t, typing.String, Field{DebeziumType: UUID, Type: String}.ToKindDetails())
+		}
+		{
+			// Enum
+			assert.Equal(t, typing.String, Field{DebeziumType: Enum, Type: String}.ToKindDetails())
+		}
 	}
 	{
 		// Structs
