@@ -1,7 +1,9 @@
 package typing
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -98,4 +100,26 @@ func IsJSON(str string) bool {
 	}
 
 	return false
+}
+
+// ToBytes attempts to convert a value (type []byte, or string) to a slice of bytes.
+// - If value is already a slice of bytes it will be directly returned.
+// - If value is a string we will attempt to base64 decode it.
+func ToBytes(value any) ([]byte, error) {
+	var stringVal string
+
+	switch typedValue := value.(type) {
+	case []byte:
+		return typedValue, nil
+	case string:
+		stringVal = typedValue
+	default:
+		return nil, fmt.Errorf("failed to cast value '%v' with type '%T' to []byte", value, value)
+	}
+
+	data, err := base64.StdEncoding.DecodeString(stringVal)
+	if err != nil {
+		return nil, fmt.Errorf("failed to base64 decode: %w", err)
+	}
+	return data, nil
 }

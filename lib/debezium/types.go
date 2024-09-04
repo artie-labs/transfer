@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/artie-labs/transfer/lib/typing"
+
 	"github.com/google/uuid"
 
 	"github.com/artie-labs/transfer/lib/maputil"
@@ -62,28 +64,6 @@ const (
 
 	KafkaDecimalPrecisionKey = "connect.decimal.precision"
 )
-
-// toBytes attempts to convert a value (type []byte, or string) to a slice of bytes.
-// - If value is already a slice of bytes it will be directly returned.
-// - If value is a string we will attempt to base64 decode it.
-func toBytes(value any) ([]byte, error) {
-	var stringVal string
-
-	switch typedValue := value.(type) {
-	case []byte:
-		return typedValue, nil
-	case string:
-		stringVal = typedValue
-	default:
-		return nil, fmt.Errorf("failed to cast value '%v' with type '%T' to []byte", value, value)
-	}
-
-	data, err := base64.StdEncoding.DecodeString(stringVal)
-	if err != nil {
-		return nil, fmt.Errorf("failed to base64 decode: %w", err)
-	}
-	return data, nil
-}
 
 // toInt64 attempts to convert a value of unknown type to a an int64.
 // - If the value is coming from Kafka it will be decoded as a float64 when it is unmarshalled from JSON.
@@ -151,7 +131,7 @@ func (f Field) ParseValue(value any) (any, error) {
 
 	switch f.DebeziumType {
 	case KafkaDecimalType:
-		bytes, err := toBytes(value)
+		bytes, err := typing.ToBytes(value)
 		if err != nil {
 			return nil, err
 		}
@@ -205,7 +185,7 @@ func (Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error) 
 		return nil, fmt.Errorf("encoded value does not exist")
 	}
 
-	bytes, err := toBytes(val)
+	bytes, err := typing.ToBytes(val)
 	if err != nil {
 		return nil, err
 	}
