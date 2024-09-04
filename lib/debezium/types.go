@@ -144,8 +144,6 @@ func (f Field) ParseValue(value any) (any, error) {
 		}
 
 		return f.DecodeDecimal(castedBytes)
-	case KafkaVariableNumericType:
-		return f.DecodeDebeziumVariableDecimal(value)
 	}
 
 	if bytes, ok := value.([]byte); ok {

@@ -1,8 +1,15 @@
 package converters
 
 import (
+	"fmt"
 	"math/big"
 	"slices"
+
+	"github.com/artie-labs/transfer/lib/maputil"
+
+	"github.com/artie-labs/transfer/lib/typing"
+
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 
 	"github.com/cockroachdb/apd/v3"
 )
@@ -76,4 +83,48 @@ func EncodeDecimal(decimal *apd.Decimal) ([]byte, int32) {
 func DecodeDecimal(data []byte, scale int32) *apd.Decimal {
 	bigInt := new(apd.BigInt).SetMathBigInt(decodeBigInt(data))
 	return apd.NewWithBigInt(bigInt, -scale)
+}
+
+type VariableDecimal struct {
+	details decimal.Details
+}
+
+func (v VariableDecimal) ToKindDetails() typing.KindDetails {
+	return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, v.details)
+}
+
+func (v VariableDecimal) Convert(value any) (any, error) {
+	valueStruct, isOk := value.(map[string]any)
+	if !isOk {
+		return nil, fmt.Errorf("value is not map[string]any type")
+	}
+
+	scale, err := maputil.GetInt32FromMap(valueStruct, "scale")
+	if err != nil {
+		return nil, err
+	}
+
+	val, isOk := valueStruct["value"]
+	if !isOk {
+		return nil, fmt.Errorf("encoded value does not exist")
+	}
+
+	bytes, err := Bytes{}.Convert(val)
+	if err != nil {
+		return nil, err
+	}
+
+	castedBytes, err := typing.AssertType[[]byte](bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return decimal.NewDecimal(DecodeDecimal(castedBytes, scale)), nil
+}
+
+func NewVariableDecimal() VariableDecimal {
+	// For variable numeric types, we are defaulting to a scale of 5
+	// This is because scale is not specified at the column level, rather at the row level
+	// It shouldn't matter much anyway since the column type we are creating is `TEXT` to avoid boundary errors.
+	return VariableDecimal{details: decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)}
 }

@@ -5,6 +5,9 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
+
 	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/stretchr/testify/assert"
 )
@@ -60,4 +63,79 @@ func TestEncodeDecimal(t *testing.T) {
 	testEncodeDecimal("-1.0", 1)
 	testEncodeDecimal("145.183000000000009", 15)
 	testEncodeDecimal("-145.183000000000009", 15)
+}
+
+func TestVariableDecimal_Convert(t *testing.T) {
+	converter := NewVariableDecimal()
+	{
+		// Test with nil value
+		_, err := converter.Convert(nil)
+		assert.ErrorContains(t, err, "value is not map[string]any type")
+	}
+	{
+		// Test with empty map
+		_, err := converter.Convert(map[string]any{})
+		assert.ErrorContains(t, err, "object is empty")
+	}
+	{
+		// Scale is not an integer
+		_, err := converter.Convert(map[string]any{"scale": "foo"})
+		assert.ErrorContains(t, err, "key: scale is not type integer")
+	}
+	{
+		// Scale 3
+		dec, err := converter.Convert(map[string]any{
+			"scale": 3,
+			"value": "SOx4FQ==",
+		})
+
+		castedValue, err := typing.AssertType[*decimal.Decimal](dec)
+		assert.NoError(t, err)
+
+		assert.NoError(t, err)
+		assert.Equal(t, int32(-1), castedValue.Details().Precision())
+		assert.Equal(t, int32(3), castedValue.Details().Scale())
+		assert.Equal(t, "1223456.789", castedValue.String())
+	}
+	{
+		// Scale 2
+		dec, err := converter.Convert(map[string]any{"scale": 2, "value": "MDk="})
+		assert.NoError(t, err)
+
+		castedValue, err := typing.AssertType[*decimal.Decimal](dec)
+		assert.NoError(t, err)
+
+		assert.Equal(t, int32(-1), castedValue.Details().Precision())
+		assert.Equal(t, int32(2), castedValue.Details().Scale())
+		assert.Equal(t, "123.45", castedValue.String())
+	}
+	{
+		// Scale 7 - Negative numbers
+		dec, err := converter.Convert(map[string]any{"scale": 7, "value": "wT9Wmw=="})
+		assert.NoError(t, err)
+
+		castedValue, err := typing.AssertType[*decimal.Decimal](dec)
+		assert.NoError(t, err)
+
+		assert.Equal(t, int32(-1), castedValue.Details().Precision())
+		assert.Equal(t, int32(7), castedValue.Details().Scale())
+		assert.Equal(t, "-105.2813669", castedValue.String())
+	}
+	{
+		// Malformed b64
+		_, err := converter.Convert(map[string]any{"scale": 7, "value": "==wT9Wmw=="})
+		assert.ErrorContains(t, err, "failed to base64 decode")
+	}
+	{
+		// []byte
+		dec, err := converter.Convert(map[string]any{"scale": 7, "value": []byte{193, 63, 86, 155}})
+		assert.NoError(t, err)
+
+		castedValue, err := typing.AssertType[*decimal.Decimal](dec)
+		assert.NoError(t, err)
+
+		assert.Equal(t, int32(-1), castedValue.Details().Precision())
+		assert.Equal(t, int32(7), castedValue.Details().Scale())
+		assert.Equal(t, "-105.2813669", castedValue.String())
+	}
 }
