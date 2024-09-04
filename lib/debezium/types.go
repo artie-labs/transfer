@@ -123,7 +123,7 @@ func (f Field) ShouldSetDefaultValue(defaultValue any) bool {
 		return true
 	default:
 		// TODO: Remove this after some time.
-		slog.Info("Default value that we did not add a case for yet, we're returning true",
+		slog.Warn("Default value that we did not add a case for yet, we're returning true",
 			slog.String("type", fmt.Sprintf("%T", defaultValue)),
 			slog.Any("defaultValue", defaultValue),
 		)
