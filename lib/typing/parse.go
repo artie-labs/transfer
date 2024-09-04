@@ -1,6 +1,8 @@
 package typing
 
 import (
+	"fmt"
+	"log/slog"
 	"reflect"
 	"strings"
 
@@ -50,7 +52,6 @@ func parseValue(settings Settings, val any) KindDetails {
 		}
 
 		return String
-
 	case *decimal.Decimal:
 		extendedDetails := convertedVal.Details()
 		return KindDetails{
@@ -69,6 +70,8 @@ func parseValue(settings Settings, val any) KindDetails {
 		} else if reflect.TypeOf(val).Kind() == reflect.Map {
 			return Struct
 		}
+
+		slog.Warn("Unhandled value, we returning Invalid for this type", slog.String("type", fmt.Sprint("%T", val)), slog.Any("value", val))
 	}
 
 	return Invalid
