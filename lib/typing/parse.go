@@ -1,7 +1,6 @@
 package typing
 
 import (
-	"log/slog"
 	"reflect"
 	"strings"
 
@@ -10,30 +9,8 @@ import (
 )
 
 func ParseValue(settings Settings, key string, optionalSchema map[string]KindDetails, val any) KindDetails {
-	if len(optionalSchema) > 0 {
-		// If the column exists in the schema, let's early exit.
-		if kindDetail, isOk := optionalSchema[key]; isOk {
-			// If the schema exists, use it as sot.
-			if val != nil && (kindDetail.Kind == ETime.Kind || kindDetail.Kind == EDecimal.Kind) {
-				if kindDetail.Kind == EDecimal.Kind && kindDetail.ExtendedDecimalDetails == nil {
-					// TODO - This shouldn't happen. Refactor this code after we have a better understanding.
-					slog.Warn("Schema provided for EDecimal, but no extended details found. Falling back to parsing the value.", slog.String("key", key))
-				}
-
-				if kindDetail.Kind == ETime.Kind && kindDetail.ExtendedTimeDetails == nil {
-					// TODO - This shouldn't happen. Refactor this code after we have a better understanding.
-					slog.Warn("Schema provided for ETime, but no extended details found. Falling back to parsing the value.", slog.String("key", key))
-				}
-
-				// If the data type is either `ETime` or `EDecimal` and the value exists, we will not early exit
-				// We are not skipping so that we are able to get the exact layout specified at the row level to preserve:
-				// 1. Layout for time / date / timestamps
-				// 2. Precision and scale for numeric values
-				return parseValue(settings, val)
-			}
-
-			return kindDetail
-		}
+	if kindDetail, isOk := optionalSchema[key]; isOk {
+		return kindDetail
 	}
 
 	return parseValue(settings, val)

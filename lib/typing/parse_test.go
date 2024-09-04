@@ -12,6 +12,15 @@ import (
 
 func Test_ParseValue(t *testing.T) {
 	{
+		// Optional schema exists, so we are using it
+		optionalSchema := map[string]KindDetails{
+			"created_at": String,
+		}
+		for _, val := range []any{"2023-01-01", nil} {
+			assert.Equal(t, String, ParseValue(Settings{}, "created_at", optionalSchema, val))
+		}
+	}
+	{
 		// Invalid
 		assert.Equal(t, ParseValue(Settings{}, "", nil, nil), Invalid)
 		assert.Equal(t, ParseValue(Settings{}, "", nil, errors.New("hello")), Invalid)
@@ -122,18 +131,5 @@ func Test_ParseValue(t *testing.T) {
 		for _, randomMap := range randomMaps {
 			assert.Equal(t, ParseValue(Settings{}, "", nil, randomMap), Struct, fmt.Sprintf("Failed message is: %v", randomMap))
 		}
-	}
-}
-
-func TestOptionalSchema(t *testing.T) {
-	{
-		optionalSchema := map[string]KindDetails{
-			"created_at": String,
-		}
-
-		// Respect the schema if the value is not null.
-		assert.Equal(t, String, ParseValue(Settings{}, "created_at", optionalSchema, "2023-01-01"))
-		// Kind is invalid because `createAllColumnsIfAvailable` is not enabled.
-		assert.Equal(t, String, ParseValue(Settings{}, "created_at", optionalSchema, nil))
 	}
 }
