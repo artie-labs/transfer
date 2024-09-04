@@ -197,12 +197,14 @@ func TestField_ParseValue(t *testing.T) {
 		// Decimal
 		field := Field{
 			DebeziumType: KafkaDecimalType,
+			Type:         Bytes,
 			Parameters:   map[string]any{"scale": "0", KafkaDecimalPrecisionKey: "5"},
 		}
 		{
 			// Valid #1
 			_field := Field{
 				DebeziumType: KafkaDecimalType,
+				Type:         Bytes,
 				Parameters:   map[string]any{"scale": "2", KafkaDecimalPrecisionKey: "5"},
 			}
 			value, err := _field.ParseValue("AN3h")
@@ -237,7 +239,7 @@ func TestField_ParseValue(t *testing.T) {
 		}
 		{
 			// Money
-			_moneyField := Field{DebeziumType: KafkaDecimalType, Parameters: map[string]any{"scale": 2}}
+			_moneyField := Field{DebeziumType: KafkaDecimalType, Type: Bytes, Parameters: map[string]any{"scale": 2}}
 
 			// Valid
 			val, err := _moneyField.ParseValue("ALxhYg==")
