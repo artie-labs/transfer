@@ -32,6 +32,7 @@ const (
 	Enum    SupportedDebeziumType = "io.debezium.data.Enum"
 	EnumSet SupportedDebeziumType = "io.debezium.data.EnumSet"
 	UUID    SupportedDebeziumType = "io.debezium.data.Uuid"
+	LTree   SupportedDebeziumType = "io.debezium.data.Ltree"
 
 	// Dates
 	Date                 SupportedDebeziumType = "io.debezium.time.Date"
