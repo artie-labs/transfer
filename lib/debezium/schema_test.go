@@ -171,6 +171,8 @@ func TestField_ToKindDetails(t *testing.T) {
 	{
 		// Basic
 		assert.Equal(t, typing.Integer, Field{DebeziumType: Year}.ToKindDetails())
+		assert.Equal(t, typing.Integer, Field{DebeziumType: MicroDuration}.ToKindDetails())
+
 		assert.Equal(t, typing.Struct, Field{DebeziumType: JSON}.ToKindDetails())
 	}
 }

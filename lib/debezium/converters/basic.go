@@ -27,13 +27,13 @@ func (JSON) ToKindDetails() typing.KindDetails {
 	return typing.Struct
 }
 
-type Year struct{}
+type Int64Passthrough struct{}
 
-func (Year) ToKindDetails() typing.KindDetails {
+func (Int64Passthrough) ToKindDetails() typing.KindDetails {
 	return typing.Integer
 }
 
-func (Year) Convert(value any) (any, error) {
+func (Int64Passthrough) Convert(value any) (any, error) {
 	if _, err := typing.AssertType[int64](value); err != nil {
 		return nil, err
 	}
