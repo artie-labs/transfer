@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/debezium/converters"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -53,31 +54,6 @@ func TestField_ShouldSetDefaultValue(t *testing.T) {
 		assert.False(t, field.ShouldSetDefaultValue(&ext.ExtendedTime{}))
 		var ts time.Time
 		assert.False(t, field.ShouldSetDefaultValue(&ext.ExtendedTime{Time: ts}))
-	}
-}
-
-func TestToBytes(t *testing.T) {
-	{
-		// []byte
-		actual, err := toBytes([]byte{40, 39, 38})
-		assert.NoError(t, err)
-		assert.Equal(t, []byte{40, 39, 38}, actual)
-	}
-	{
-		// base64 encoded string
-		actual, err := toBytes("aGVsbG8gd29ybGQK")
-		assert.NoError(t, err)
-		assert.Equal(t, []byte{0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x77, 0x6f, 0x72, 0x6c, 0x64, 0xa}, actual)
-	}
-	{
-		// malformed string
-		_, err := toBytes("asdf$$$")
-		assert.ErrorContains(t, err, "failed to base64 decode")
-	}
-	{
-		// type that is not string or []byte
-		_, err := toBytes(map[string]any{})
-		assert.ErrorContains(t, err, "failed to cast value 'map[]' with type 'map[string]interface {}' to []byte")
 	}
 }
 
@@ -508,10 +484,10 @@ func TestField_DecodeDecimal(t *testing.T) {
 			Parameters: testCase.params,
 		}
 
-		bytes, err := toBytes(testCase.encoded)
+		bytes, err := converters.Bytes{}.Convert(testCase.encoded)
 		assert.NoError(t, err)
 
-		dec, err := field.DecodeDecimal(bytes)
+		dec, err := field.DecodeDecimal(bytes.([]byte))
 		if testCase.expectedErr != "" {
 			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
 			continue

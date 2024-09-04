@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/artie-labs/transfer/lib/debezium/converters"
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -64,28 +65,6 @@ const (
 
 	KafkaDecimalPrecisionKey = "connect.decimal.precision"
 )
-
-// toBytes attempts to convert a value (type []byte, or string) to a slice of bytes.
-// - If value is already a slice of bytes it will be directly returned.
-// - If value is a string we will attempt to base64 decode it.
-func toBytes(value any) ([]byte, error) {
-	var stringVal string
-
-	switch typedValue := value.(type) {
-	case []byte:
-		return typedValue, nil
-	case string:
-		stringVal = typedValue
-	default:
-		return nil, fmt.Errorf("failed to cast value '%v' with type '%T' to []byte", value, value)
-	}
-
-	data, err := base64.StdEncoding.DecodeString(stringVal)
-	if err != nil {
-		return nil, fmt.Errorf("failed to base64 decode: %w", err)
-	}
-	return data, nil
-}
 
 // toInt64 attempts to convert a value of unknown type to a an int64.
 // - If the value is coming from Kafka it will be decoded as a float64 when it is unmarshalled from JSON.
@@ -147,7 +126,7 @@ func (f Field) ParseValue(value any) (any, error) {
 		}
 	case Bytes:
 		var err error
-		value, err = toBytes(value)
+		value, err = converters.Bytes{}.Convert(value)
 		if err != nil {
 			return nil, err
 		}
@@ -190,7 +169,7 @@ func (f Field) DecodeDecimal(encoded []byte) (*decimal.Decimal, error) {
 		return nil, fmt.Errorf("failed to get scale and/or precision: %w", err)
 	}
 
-	_decimal := DecodeDecimal(encoded, scale)
+	_decimal := converters.DecodeDecimal(encoded, scale)
 	if precision == nil {
 		return decimal.NewDecimal(_decimal), nil
 	}
@@ -214,10 +193,15 @@ func (Field) DecodeDebeziumVariableDecimal(value any) (*decimal.Decimal, error) 
 		return nil, fmt.Errorf("encoded value does not exist")
 	}
 
-	bytes, err := toBytes(val)
+	bytes, err := converters.Bytes{}.Convert(val)
 	if err != nil {
 		return nil, err
 	}
 
-	return decimal.NewDecimal(DecodeDecimal(bytes, scale)), nil
+	castedBytes, err := typing.AssertType[[]byte](bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return decimal.NewDecimal(converters.DecodeDecimal(castedBytes, scale)), nil
 }

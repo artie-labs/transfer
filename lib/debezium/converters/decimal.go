@@ -1,4 +1,4 @@
-package debezium
+package converters
 
 import (
 	"math/big"
