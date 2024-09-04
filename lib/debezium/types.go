@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/artie-labs/transfer/lib/maputil"
-	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
@@ -153,18 +152,16 @@ func (f Field) ParseValue(value any) (any, error) {
 		}
 	}
 
-	if converter := f.ToValueConverter(); converter != nil {
+	converter, err := f.ToValueConverter()
+	if err != nil {
+		return nil, err
+	}
+
+	if converter != nil {
 		return converter.Convert(value)
 	}
 
 	switch f.DebeziumType {
-	case KafkaDecimalType:
-		castedBytes, err := typing.AssertType[[]byte](value)
-		if err != nil {
-			return nil, err
-		}
-
-		return f.DecodeDecimal(castedBytes)
 	case KafkaVariableNumericType:
 		return f.DecodeDebeziumVariableDecimal(value)
 	}
