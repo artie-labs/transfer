@@ -6,11 +6,8 @@ import (
 	"slices"
 
 	"github.com/artie-labs/transfer/lib/maputil"
-
 	"github.com/artie-labs/transfer/lib/typing"
-
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-
 	"github.com/cockroachdb/apd/v3"
 )
 
