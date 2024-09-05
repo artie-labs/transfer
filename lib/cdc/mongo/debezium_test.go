@@ -175,7 +175,7 @@ func (m *MongoTestSuite) TestMongoDBEventCustomer() {
 
 	updatedExtTime, isOk := evtDataWithIncludedAt[constants.UpdateColumnMarker].(*ext.ExtendedTime)
 	assert.True(m.T(), isOk)
-	assert.False(m.T(), updatedExtTime.IsZero())
+	assert.False(m.T(), updatedExtTime.GetTime().IsZero())
 
 	var nestedData map[string]any
 	err = json.Unmarshal([]byte(evtData["nested"].(string)), &nestedData)

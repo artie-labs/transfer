@@ -537,7 +537,7 @@ func (r *RelationTestSuite) TestGetEventFromBytes_MySQL() {
 
 	updatedAtExtTime, isOk := evtData[constants.UpdateColumnMarker].(*ext.ExtendedTime)
 	assert.True(r.T(), isOk)
-	assert.False(r.T(), updatedAtExtTime.IsZero())
+	assert.False(r.T(), updatedAtExtTime.GetTime().IsZero())
 
 	assert.Equal(r.T(), evtData["id"], int64(1001))
 	assert.Equal(r.T(), evtData["first_name"], "Sally")

@@ -90,7 +90,7 @@ func (f Field) ShouldSetDefaultValue(defaultValue any) bool {
 	case nil:
 		return false
 	case *ext.ExtendedTime:
-		return !castedDefaultValue.Time.IsZero()
+		return !castedDefaultValue.GetTime().IsZero()
 	case string:
 		if f.DebeziumType == UUID && castedDefaultValue == uuid.Nil.String() {
 			return false

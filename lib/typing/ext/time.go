@@ -1,8 +1,6 @@
 package ext
 
-import (
-	"time"
-)
+import "time"
 
 type ExtendedTimeKindType string
 
@@ -37,8 +35,8 @@ var (
 // ExtendedTime is created because Golang's time.Time does not allow us to explicitly cast values as a date, or time
 // and only allows timestamp expressions.
 type ExtendedTime struct {
-	time.Time
-	NestedKind NestedKind
+	ts         time.Time
+	nestedKind NestedKind
 }
 
 func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat string) *ExtendedTime {
@@ -54,8 +52,8 @@ func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat 
 	}
 
 	return &ExtendedTime{
-		Time: t,
-		NestedKind: NestedKind{
+		ts: t,
+		nestedKind: NestedKind{
 			Type:   kindType,
 			Format: originalFormat,
 		},
@@ -63,13 +61,17 @@ func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat 
 }
 
 func (e *ExtendedTime) GetTime() time.Time {
-	return e.Time
+	return e.ts
+}
+
+func (e *ExtendedTime) GetNestedKind() NestedKind {
+	return e.nestedKind
 }
 
 func (e *ExtendedTime) String(overrideFormat string) string {
 	if overrideFormat != "" {
-		return e.Time.Format(overrideFormat)
+		return e.ts.Format(overrideFormat)
 	}
 
-	return e.Time.Format(e.NestedKind.Format)
+	return e.ts.Format(e.nestedKind.Format)
 }
