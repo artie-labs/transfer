@@ -14,10 +14,6 @@ func ParseValue(_ Settings, key string, optionalSchema map[string]KindDetails, v
 		return kindDetail
 	}
 
-	return parseValue(val)
-}
-
-func parseValue(val any) KindDetails {
 	switch convertedVal := val.(type) {
 	case nil:
 		return Invalid
