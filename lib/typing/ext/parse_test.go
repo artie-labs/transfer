@@ -8,33 +8,19 @@ import (
 )
 
 func TestParseFromInterface(t *testing.T) {
-	var vals []any
-	vals = append(vals, &ExtendedTime{
-		Time: time.Now().UTC(),
-		NestedKind: NestedKind{
-			Type:   DateKindType,
-			Format: PostgresDateFormat,
-		},
-	}, &ExtendedTime{
-		Time: time.Now().UTC(),
-		NestedKind: NestedKind{
-			Type:   DateTimeKindType,
-			Format: ISO8601,
-		},
-	}, &ExtendedTime{
-		Time: time.Now().UTC(),
-		NestedKind: NestedKind{
-			Type:   TimeKindType,
-			Format: PostgresTimeFormat,
-		},
-	})
+	{
+		// Extended time
+		var vals []any
+		vals = append(vals, NewExtendedTime(time.Now().UTC(), DateKindType, PostgresDateFormat))
+		vals = append(vals, NewExtendedTime(time.Now().UTC(), DateTimeKindType, ISO8601))
+		vals = append(vals, NewExtendedTime(time.Now().UTC(), TimeKindType, PostgresTimeFormat))
 
-	for _, val := range vals {
-		extTime, err := ParseFromInterface(val, nil)
-		assert.NoError(t, err)
-		assert.Equal(t, val, extTime)
+		for _, val := range vals {
+			extTime, err := ParseFromInterface(val, nil)
+			assert.NoError(t, err)
+			assert.Equal(t, val, extTime)
+		}
 	}
-
 	{
 		// Nil
 		_, err := ParseFromInterface(nil, nil)
@@ -57,7 +43,7 @@ func TestParseFromInterfaceDateTime(t *testing.T) {
 	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
 		et, err := ParseFromInterface(now.Format(supportedDateTimeLayout), nil)
 		assert.NoError(t, err)
-		assert.Equal(t, et.NestedKind.Type, DateTimeKindType)
+		assert.Equal(t, DateTimeKindType, et.GetNestedKind().Type)
 		assert.Equal(t, et.String(""), now.Format(supportedDateTimeLayout))
 	}
 }
@@ -67,7 +53,7 @@ func TestParseFromInterfaceTime(t *testing.T) {
 	for _, supportedTimeFormat := range SupportedTimeFormatsLegacy {
 		et, err := ParseFromInterface(now.Format(supportedTimeFormat), nil)
 		assert.NoError(t, err)
-		assert.Equal(t, et.NestedKind.Type, TimeKindType)
+		assert.Equal(t, TimeKindType, et.GetNestedKind().Type)
 		// Without passing an override format, this should return the same preserved dt format.
 		assert.Equal(t, et.String(""), now.Format(supportedTimeFormat))
 	}
@@ -78,7 +64,7 @@ func TestParseFromInterfaceDate(t *testing.T) {
 	for _, supportedDateFormat := range supportedDateFormats {
 		et, err := ParseFromInterface(now.Format(supportedDateFormat), nil)
 		assert.NoError(t, err)
-		assert.Equal(t, et.NestedKind.Type, DateKindType)
+		assert.Equal(t, DateKindType, et.GetNestedKind().Type)
 
 		// Without passing an override format, this should return the same preserved dt format.
 		assert.Equal(t, et.String(""), now.Format(supportedDateFormat))

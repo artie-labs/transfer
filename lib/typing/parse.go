@@ -40,9 +40,10 @@ func ParseValue(key string, optionalSchema map[string]KindDetails, val any) Kind
 			ExtendedDecimalDetails: &extendedDetails,
 		}
 	case *ext.ExtendedTime:
+		nestedKind := convertedVal.GetNestedKind()
 		return KindDetails{
 			Kind:                ETime.Kind,
-			ExtendedTimeDetails: &convertedVal.NestedKind,
+			ExtendedTimeDetails: &nestedKind,
 		}
 	default:
 		// Check if the val is one of our custom-types

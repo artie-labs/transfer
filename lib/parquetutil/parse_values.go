@@ -31,10 +31,10 @@ func ParseValue(colVal any, colKind columns.Column, additionalDateFmts []string)
 		}
 
 		if colKind.KindDetails.ExtendedTimeDetails.Type == ext.DateKindType || colKind.KindDetails.ExtendedTimeDetails.Type == ext.TimeKindType {
-			return extTime.Format(colKind.KindDetails.ExtendedTimeDetails.Format), nil
+			return extTime.String(colKind.KindDetails.ExtendedTimeDetails.Format), nil
 		}
 
-		return extTime.Time.UnixMilli(), nil
+		return extTime.GetTime().UnixMilli(), nil
 	case typing.String.Kind:
 		return colVal, nil
 	case typing.Struct.Kind:

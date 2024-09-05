@@ -181,15 +181,15 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 
 			switch column.KindDetails.ExtendedTimeDetails.Type {
 			case ext.TimeKindType:
-				message.Set(field, protoreflect.ValueOfInt64(encodePacked64TimeMicros(extTime.Time)))
+				message.Set(field, protoreflect.ValueOfInt64(encodePacked64TimeMicros(extTime.GetTime())))
 			case ext.DateKindType:
-				daysSinceEpoch := extTime.Unix() / (60 * 60 * 24)
+				daysSinceEpoch := extTime.GetTime().Unix() / (60 * 60 * 24)
 				message.Set(field, protoreflect.ValueOfInt32(int32(daysSinceEpoch)))
 			case ext.DateTimeKindType:
-				if err := timestamppb.New(extTime.Time).CheckValid(); err != nil {
+				if err := timestamppb.New(extTime.GetTime()).CheckValid(); err != nil {
 					return nil, err
 				}
-				message.Set(field, protoreflect.ValueOfInt64(extTime.UnixMicro()))
+				message.Set(field, protoreflect.ValueOfInt64(extTime.GetTime().UnixMicro()))
 			default:
 				return nil, fmt.Errorf("unsupported extended time details: %q", column.KindDetails.ExtendedTimeDetails.Type)
 			}
