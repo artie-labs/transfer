@@ -70,12 +70,7 @@ func BackfillColumn(dwh destination.DataWarehouse, column columns.Column, tableI
 
 	escapedCol := dwh.Dialect().QuoteIdentifier(column.Name())
 	query := fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %v;", tableID.FullyQualifiedName(), escapedCol, defaultVal)
-	slog.Info("Backfilling column",
-		slog.String("colName", column.Name()),
-		slog.String("query", query),
-		slog.String("table", tableID.FullyQualifiedName()),
-	)
-
+	slog.Info("Setting default value to column", slog.String("colName", column.Name()), slog.String("query", query), slog.String("table", tableID.FullyQualifiedName())
 	if _, err = dwh.Exec(query); err != nil {
 		return fmt.Errorf("failed to backfill, err: %w, query: %v", err, query)
 	}
