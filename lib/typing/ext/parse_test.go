@@ -8,17 +8,19 @@ import (
 )
 
 func TestParseFromInterface(t *testing.T) {
-	var vals []any
-	vals = append(vals, NewExtendedTime(time.Now().UTC(), DateKindType, PostgresDateFormat))
-	vals = append(vals, NewExtendedTime(time.Now().UTC(), DateTimeKindType, ISO8601))
-	vals = append(vals, NewExtendedTime(time.Now().UTC(), TimeKindType, PostgresTimeFormat))
+	{
+		// Extended time
+		var vals []any
+		vals = append(vals, NewExtendedTime(time.Now().UTC(), DateKindType, PostgresDateFormat))
+		vals = append(vals, NewExtendedTime(time.Now().UTC(), DateTimeKindType, ISO8601))
+		vals = append(vals, NewExtendedTime(time.Now().UTC(), TimeKindType, PostgresTimeFormat))
 
-	for _, val := range vals {
-		extTime, err := ParseFromInterface(val, nil)
-		assert.NoError(t, err)
-		assert.Equal(t, val, extTime)
+		for _, val := range vals {
+			extTime, err := ParseFromInterface(val, nil)
+			assert.NoError(t, err)
+			assert.Equal(t, val, extTime)
+		}
 	}
-
 	{
 		// Nil
 		_, err := ParseFromInterface(nil, nil)
