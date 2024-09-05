@@ -157,8 +157,6 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 		}
 	}
 
-	typingSettings := cfg.SharedTransferConfig.TypingSettings
-
 	// Table columns
 	inMemoryColumns := td.ReadOnlyInMemoryCols()
 	// Update col if necessary
@@ -199,14 +197,14 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 			retrievedColumn, isOk := inMemoryColumns.GetColumn(newColName)
 			if !isOk {
 				// This would only happen if the columns did not get passed in initially.
-				inMemoryColumns.AddColumn(columns.NewColumn(newColName, typing.ParseValue(typingSettings, _col, e.OptionalSchema, val)))
+				inMemoryColumns.AddColumn(columns.NewColumn(newColName, typing.ParseValue(_col, e.OptionalSchema, val)))
 			} else {
 				if retrievedColumn.KindDetails == typing.Invalid {
 					// If colType is Invalid, let's see if we can update it to a better type
 					// If everything is nil, we don't need to add a column
 					// However, it's important to create a column even if it's nil.
 					// This is because we don't want to think that it's okay to drop a column in DWH
-					if kindDetails := typing.ParseValue(typingSettings, _col, e.OptionalSchema, val); kindDetails.Kind != typing.Invalid.Kind {
+					if kindDetails := typing.ParseValue(_col, e.OptionalSchema, val); kindDetails.Kind != typing.Invalid.Kind {
 						retrievedColumn.KindDetails = kindDetails
 						inMemoryColumns.UpdateColumn(retrievedColumn)
 					}
