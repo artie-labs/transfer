@@ -1,6 +1,7 @@
 package debezium
 
 import (
+	"fmt"
 	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/debezium/converters"
@@ -81,62 +82,30 @@ func (f Field) GetScaleAndPrecision() (int32, *int32, error) {
 	return scale, precisionPtr, nil
 }
 
-func (f Field) ToValueConverter() converters.ValueConverter {
+func (f Field) ToValueConverter() (converters.ValueConverter, error) {
 	switch f.DebeziumType {
 	// Passthrough converters
 	case UUID, LTree, Enum:
-		return converters.StringPassthrough{}
+		return converters.StringPassthrough{}, nil
 	case Year, MicroDuration:
-		return &converters.Int64Passthrough{}
+		return &converters.Int64Passthrough{}, nil
 	case DateTimeWithTimezone:
-		return converters.DateTimeWithTimezone{}
+		return converters.DateTimeWithTimezone{}, nil
 	case TimeWithTimezone:
-		return converters.TimeWithTimezone{}
+		return converters.TimeWithTimezone{}, nil
 	case GeometryPointType:
-		return converters.GeometryPoint{}
+		return converters.GeometryPoint{}, nil
 	case GeographyType, GeometryType:
-		return converters.Geometry{}
+		return converters.Geometry{}, nil
 	case JSON:
-		return converters.JSON{}
+		return converters.JSON{}, nil
 	case Date, DateKafkaConnect:
-		return converters.Date{}
+		return converters.Date{}, nil
 	// Decimal
-	case KafkaVariableNumericType:
-		return converters.NewVariableDecimal()
-	// Time
-	case Time, TimeKafkaConnect:
-		return converters.Time{}
-	case NanoTime:
-		return converters.NanoTime{}
-	case MicroTime:
-		return converters.MicroTime{}
-	// Timestamp
-	case Timestamp, TimestampKafkaConnect:
-		return converters.Timestamp{}
-	case MicroTimestamp:
-		return converters.MicroTimestamp{}
-	case NanoTimestamp:
-		return converters.NanoTimestamp{}
-	}
-
-	return nil
-}
-
-func (f Field) ToKindDetails() typing.KindDetails {
-	// Prioritize converters
-	if converter := f.ToValueConverter(); converter != nil {
-		return converter.ToKindDetails()
-	}
-
-	// TODO: Deprecate this in favor of the converters
-
-	// We'll first cast based on Debezium types
-	// Then, we'll fall back on the actual data types.
-	switch f.DebeziumType {
 	case KafkaDecimalType:
 		scale, precisionPtr, err := f.GetScaleAndPrecision()
 		if err != nil {
-			return typing.Invalid
+			return nil, fmt.Errorf("failed to get scale and precision: %w", err)
 		}
 
 		precision := decimal.PrecisionNotSpecified
@@ -144,7 +113,37 @@ func (f Field) ToKindDetails() typing.KindDetails {
 			precision = *precisionPtr
 		}
 
-		return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(precision, scale))
+		return converters.NewDecimal(decimal.NewDetails(precision, scale)), nil
+	case KafkaVariableNumericType:
+		return converters.NewVariableDecimal(), nil
+	// Time
+	case Time, TimeKafkaConnect:
+		return converters.Time{}, nil
+	case NanoTime:
+		return converters.NanoTime{}, nil
+	case MicroTime:
+		return converters.MicroTime{}, nil
+	// Timestamp
+	case Timestamp, TimestampKafkaConnect:
+		return converters.Timestamp{}, nil
+	case MicroTimestamp:
+		return converters.MicroTimestamp{}, nil
+	case NanoTimestamp:
+		return converters.NanoTimestamp{}, nil
+	}
+
+	return nil, nil
+}
+
+func (f Field) ToKindDetails() (typing.KindDetails, error) {
+	// Prioritize converters
+	converter, err := f.ToValueConverter()
+	if err != nil {
+		return typing.Invalid, err
+	}
+
+	if converter != nil {
+		return converter.ToKindDetails(), nil
 	}
 
 	if f.DebeziumType != "" {
@@ -153,21 +152,21 @@ func (f Field) ToKindDetails() typing.KindDetails {
 
 	switch f.Type {
 	case Map:
-		return typing.Struct
+		return typing.Struct, nil
 	case Int16, Int32, Int64:
-		return typing.Integer
+		return typing.Integer, nil
 	case Float, Double:
-		return typing.Float
+		return typing.Float, nil
 	case String, Bytes:
-		return typing.String
+		return typing.String, nil
 	case Struct:
-		return typing.Struct
+		return typing.Struct, nil
 	case Boolean:
-		return typing.Boolean
+		return typing.Boolean, nil
 	case Array:
-		return typing.Array
+		return typing.Array, nil
 	default:
 		slog.Warn("Unhandled field type", slog.String("type", string(f.Type)), slog.String("debeziumType", string(f.DebeziumType)))
-		return typing.Invalid
+		return typing.Invalid, nil
 	}
 }

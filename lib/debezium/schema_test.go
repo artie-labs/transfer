@@ -81,29 +81,52 @@ func TestField_GetScaleAndPrecision(t *testing.T) {
 func TestField_ToKindDetails(t *testing.T) {
 	{
 		// Integers
-		assert.Equal(t, typing.Integer, Field{Type: Int16}.ToKindDetails())
-		assert.Equal(t, typing.Integer, Field{Type: Int32}.ToKindDetails())
-		assert.Equal(t, typing.Integer, Field{Type: Int64}.ToKindDetails())
+		{
+			// Int16
+			kd, err := Field{Type: Int16}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Integer, kd)
+		}
+		{
+			// Int32
+			kd, err := Field{Type: Int32}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Integer, kd)
+		}
+		{
+			// Int64
+			kd, err := Field{Type: Int64}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Integer, kd)
+		}
 	}
 	{
 		// Floats
-		assert.Equal(t, typing.Float, Field{Type: Float}.ToKindDetails())
-		assert.Equal(t, typing.Float, Field{Type: Double}.ToKindDetails())
+		{
+			// Float
+			kd, err := Field{Type: Float}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Float, kd)
+		}
+		{
+			// Double
+			kd, err := Field{Type: Double}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Float, kd)
+		}
 	}
 	{
 		// Decimals
 		{
-			assert.Equal(
-				t, typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(10, 5)),
-				Field{DebeziumType: KafkaDecimalType, Parameters: map[string]any{"scale": 5, KafkaDecimalPrecisionKey: 10}}.ToKindDetails(),
-			)
+			kd, err := Field{DebeziumType: KafkaDecimalType, Parameters: map[string]any{"scale": 5, KafkaDecimalPrecisionKey: 10}}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(10, 5)), kd)
 		}
 		{
 			// Variable numeric decimal
-			assert.Equal(
-				t, typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)),
-				Field{DebeziumType: KafkaVariableNumericType, Parameters: map[string]any{"scale": 5}}.ToKindDetails(),
-			)
+			kd, err := Field{DebeziumType: KafkaVariableNumericType, Parameters: map[string]any{"scale": 5}}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)), kd)
 		}
 	}
 	{
@@ -172,7 +195,9 @@ func TestField_ToKindDetails(t *testing.T) {
 		// Basic
 		{
 			// Int64 Passthrough
-			assert.Equal(t, typing.Integer, Field{DebeziumType: Year}.ToKindDetails())
+			kd, err :=
+
+				assert.Equal(t, typing.Integer, Field{DebeziumType: Year}.ToKindDetails())
 			assert.Equal(t, typing.Integer, Field{DebeziumType: MicroDuration}.ToKindDetails())
 		}
 
