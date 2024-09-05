@@ -413,4 +413,62 @@ func TestField_Decimal_ParseValue(t *testing.T) {
 		assert.Equal(t, int32(38), value.(*decimal.Decimal).Details().Precision())
 		assert.Equal(t, int32(0), value.(*decimal.Decimal).Details().Scale())
 	}
+	{
+		// Numeric (38, 2) - Small number
+		field := Field{DebeziumType: KafkaDecimalType, Parameters: map[string]any{"scale": "2", "connect.decimal.precision": "38"}}
+		converter, err := field.ToValueConverter()
+		assert.NoError(t, err)
+
+		bytes, err := converters.Bytes{}.Convert("DPk=")
+		assert.NoError(t, err)
+
+		value, err := converter.Convert(bytes)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "33.21", value.(*decimal.Decimal).String())
+		assert.Equal(t, int32(38), value.(*decimal.Decimal).Details().Precision())
+		assert.Equal(t, int32(2), value.(*decimal.Decimal).Details().Scale())
+	}
+	{
+		// Numeric (38, 2) - Large number
+		field := Field{DebeziumType: KafkaDecimalType, Parameters: map[string]any{"scale": "2", "connect.decimal.precision": "38"}}
+		converter, err := field.ToValueConverter()
+		assert.NoError(t, err)
+
+		bytes, err := converters.Bytes{}.Convert("AMCXznvJBxWzS58P/////w==")
+		assert.NoError(t, err)
+
+		value, err := converter.Convert(bytes)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "9999999999999999999999999999999999.99", value.(*decimal.Decimal).String())
+		assert.Equal(t, int32(38), value.(*decimal.Decimal).Details().Precision())
+		assert.Equal(t, int32(2), value.(*decimal.Decimal).Details().Scale())
+	}
+	{
+		// Money
+		/*
+				{
+				name:    "MONEY",
+				encoded: "ALxhYg==",
+				params: map[string]any{
+					"scale": "2",
+				},
+				expectedValue:     "123456.98",
+				expectedPrecision: -1,
+				expectedScale:     2,
+			},
+		*/
+
+		field := Field{DebeziumType: KafkaDecimalType, Parameters: map[string]any{"scale": "2"}}
+		converter, err := field.ToValueConverter()
+		assert.NoError(t, err)
+
+		bytes, err := converters.Bytes{}.Convert("ALxhYg==")
+		assert.NoError(t, err)
+
+		value, err := converter.Convert(bytes)
+		assert.NoError(t, err)
+
+	}
 }
