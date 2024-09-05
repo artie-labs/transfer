@@ -26,6 +26,12 @@ type Store struct {
 	config    config.Config
 }
 
+func (s *Store) SupportDefaultValue() bool {
+	// Snowflake does not support adding or changing column default values
+	// https://docs.snowflake.com/en/sql-reference/sql/alter-table-column#alter-table-alter-column
+	return false
+}
+
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
 	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }

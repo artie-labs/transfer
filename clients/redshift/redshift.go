@@ -27,6 +27,10 @@ type Store struct {
 	db.Store
 }
 
+func (s *Store) SupportDefaultValue() bool {
+	return true
+}
+
 func (s *Store) Append(tableData *optimization.TableData, _ bool) error {
 	return shared.Append(s, tableData, types.AdditionalSettings{})
 }

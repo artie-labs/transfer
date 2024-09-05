@@ -31,6 +31,11 @@ func getSchema(schema string) string {
 	return schema
 }
 
+func (s *Store) SupportDefaultValue() bool {
+	// TODO: Support it.
+	return false
+}
+
 func (s *Store) Dialect() sql.Dialect {
 	return dialect.MSSQLDialect{}
 }

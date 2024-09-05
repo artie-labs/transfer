@@ -42,6 +42,10 @@ type Store struct {
 	db.Store
 }
 
+func (s *Store) SupportDefaultValue() bool {
+	return true
+}
+
 func (s *Store) Append(tableData *optimization.TableData, useTempTable bool) error {
 	if !useTempTable {
 		return shared.Append(s, tableData, types.AdditionalSettings{})

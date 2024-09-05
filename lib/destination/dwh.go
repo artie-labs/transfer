@@ -14,6 +14,8 @@ import (
 type DataWarehouse interface {
 	Baseline
 
+	SupportDefaultValue() bool
+
 	// SQL specific commands
 	Dialect() sqllib.Dialect
 	Dedupe(tableID sqllib.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error
