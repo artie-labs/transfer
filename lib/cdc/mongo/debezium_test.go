@@ -303,7 +303,10 @@ func (m *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 		// Check `__artie_updated_at` is included
 		evtData, err := evt.GetData(map[string]any{"_id": 1003}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
 		assert.NoError(m.T(), err)
-		_, isOk := evtData[constants.UpdateColumnMarker]
+
+		updatedAt, isOk := evtData[constants.UpdateColumnMarker]
+		assert.True(m.T(), isOk)
+		_, isOk = updatedAt.(*ext.ExtendedTime)
 		assert.True(m.T(), isOk)
 	}
 }
