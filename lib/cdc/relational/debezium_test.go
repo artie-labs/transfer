@@ -197,7 +197,7 @@ func (r *RelationTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	// Testing typing.
 	assert.Equal(r.T(), evtData["id"], int64(1001))
 	assert.Equal(r.T(), evtData["another_id"], int64(333))
-	assert.Equal(r.T(), typing.ParseValue(typing.Settings{}, "another_id", evt.GetOptionalSchema(), evtData["another_id"]), typing.Integer)
+	assert.Equal(r.T(), typing.ParseValue("another_id", evt.GetOptionalSchema(), evtData["another_id"]), typing.Integer)
 	assert.Equal(r.T(), evtData["email"], "sally.thomas@acme.com")
 
 	// Datetime without TZ is emitted in microseconds which is 1000x larger than nanoseconds.

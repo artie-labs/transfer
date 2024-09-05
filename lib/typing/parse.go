@@ -9,7 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func ParseValue(_ Settings, key string, optionalSchema map[string]KindDetails, val any) KindDetails {
+func ParseValue(key string, optionalSchema map[string]KindDetails, val any) KindDetails {
 	if kindDetail, isOk := optionalSchema[key]; isOk {
 		return kindDetail
 	}
