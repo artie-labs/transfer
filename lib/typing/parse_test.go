@@ -6,7 +6,6 @@ import (
 	"math"
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -69,38 +68,9 @@ func Test_ParseValue(t *testing.T) {
 		assert.Equal(t, ParseValue(Settings{}, "", nil, []any{false, true}), Array)
 	}
 	{
-		// Time
+		// Time in string w/ no schema
 		kindDetails := ParseValue(Settings{}, "", nil, "00:18:11.13116+00")
-		assert.Equal(t, ETime.Kind, kindDetails.Kind)
-		assert.Equal(t, ext.TimeKindType, kindDetails.ExtendedTimeDetails.Type)
-	}
-	{
-		// Date layouts from Go's time.Time library
-		possibleDates := []any{
-			"01/02 03:04:05PM '06 -0700", // The reference time, in numerical order.
-			"Mon Jan 2 15:04:05 2006",
-			"Mon Jan 2 15:04:05 MST 2006",
-			"Mon Jan 02 15:04:05 -0700 2006",
-			"02 Jan 06 15:04 MST",
-			"02 Jan 06 15:04 -0700", // RFC822 with numeric zone
-			"Monday, 02-Jan-06 15:04:05 MST",
-			"Mon, 02 Jan 2006 15:04:05 MST",
-			"Mon, 02 Jan 2006 15:04:05 -0700", // RFC1123 with numeric zone
-			"2019-10-12T14:20:50.52+07:00",
-		}
-
-		for _, possibleDate := range possibleDates {
-			assert.Equal(t, ParseValue(Settings{}, "", nil, possibleDate).ExtendedTimeDetails.Type, ext.DateTime.Type, fmt.Sprintf("Failed format, value is: %v", possibleDate))
-
-			// Test the parseDT function as well.
-			ts, err := ext.ParseExtendedDateTime(fmt.Sprint(possibleDate), []string{})
-			assert.NoError(t, err, err)
-			assert.False(t, ts.IsZero(), ts)
-		}
-
-		ts, err := ext.ParseExtendedDateTime("random", []string{})
-		assert.ErrorContains(t, err, "dtString: random is not supported")
-		assert.Nil(t, ts)
+		assert.Equal(t, String, kindDetails)
 	}
 	{
 		// Maps
