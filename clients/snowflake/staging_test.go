@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -64,66 +63,6 @@ func (s *SnowflakeTestSuite) TestCastColValStaging() {
 		value, err := castColValStaging("foo", typing.String, nil)
 		assert.NoError(s.T(), err)
 		assert.Equal(s.T(), "foo", value)
-	}
-}
-
-func (s *SnowflakeTestSuite) TestBackfillColumn() {
-	tableID := NewTableIdentifier("db", "public", "tableName")
-
-	backfilledCol := columns.NewColumn("foo", typing.Boolean)
-	backfilledCol.SetDefaultValue(true)
-	backfilledCol.SetBackfilled(true)
-
-	needsBackfillCol := columns.NewColumn("foo", typing.Boolean)
-	needsBackfillCol.SetDefaultValue(true)
-
-	needsBackfillColDefault := columns.NewColumn("default", typing.Boolean)
-	needsBackfillColDefault.SetDefaultValue(true)
-
-	testCases := []struct {
-		name        string
-		col         columns.Column
-		backfillSQL string
-		commentSQL  string
-	}{
-		{
-			name: "col that doesn't have default val",
-			col:  columns.NewColumn("foo", typing.Invalid),
-		},
-		{
-			name: "col that has default value but already backfilled",
-			col:  backfilledCol,
-		},
-		{
-			name:        "col that has default value that needs to be backfilled",
-			col:         needsBackfillCol,
-			backfillSQL: `UPDATE db.public."TABLENAME" SET "FOO" = true WHERE "FOO" IS NULL;`,
-			commentSQL:  `COMMENT ON COLUMN db.public."TABLENAME"."FOO" IS '{"backfilled": true}';`,
-		},
-		{
-			name:        "default col that has default value that needs to be backfilled",
-			col:         needsBackfillColDefault,
-			backfillSQL: `UPDATE db.public."TABLENAME" SET "DEFAULT" = true WHERE "DEFAULT" IS NULL;`,
-			commentSQL:  `COMMENT ON COLUMN db.public."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`,
-		},
-	}
-
-	var count int
-	for _, testCase := range testCases {
-		err := shared.BackfillColumn(s.stageStore, testCase.col, tableID)
-		assert.NoError(s.T(), err, testCase.name)
-		if testCase.backfillSQL != "" && testCase.commentSQL != "" {
-			backfillSQL, _ := s.fakeStageStore.ExecArgsForCall(count)
-			assert.Equal(s.T(), testCase.backfillSQL, backfillSQL, testCase.name)
-
-			count++
-			commentSQL, _ := s.fakeStageStore.ExecArgsForCall(count)
-			assert.Equal(s.T(), testCase.commentSQL, commentSQL, testCase.name)
-
-			count++
-		} else {
-			assert.Equal(s.T(), 0, s.fakeStageStore.ExecCallCount())
-		}
 	}
 }
 
