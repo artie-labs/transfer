@@ -470,5 +470,8 @@ func TestField_Decimal_ParseValue(t *testing.T) {
 		value, err := converter.Convert(bytes)
 		assert.NoError(t, err)
 
+		assert.Equal(t, "123456.98", value.(*decimal.Decimal).String())
+		assert.Equal(t, int32(-1), value.(*decimal.Decimal).Details().Precision())
+		assert.Equal(t, int32(2), value.(*decimal.Decimal).Details().Scale())
 	}
 }
