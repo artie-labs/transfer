@@ -104,10 +104,20 @@ func TestField_ParseValue(t *testing.T) {
 	}
 	{
 		// Bytes
-		field := Field{Type: Bytes}
-		value, err := field.ParseValue([]byte{40, 30, 20, 10})
-		assert.NoError(t, err)
-		assert.Equal(t, "KB4UCg==", value)
+		{
+			// Bytes
+			field := Field{Type: Bytes}
+			value, err := field.ParseValue([]byte{40, 30, 20, 10})
+			assert.NoError(t, err)
+			assert.Equal(t, "KB4UCg==", value)
+		}
+		{
+			// Bits
+			field := Field{DebeziumType: Bits, Type: Bytes}
+			value, err := field.ParseValue([]byte{40, 30, 20, 10})
+			assert.NoError(t, err)
+			assert.Equal(t, "KB4UCg==", value)
+		}
 	}
 	{
 		// String

@@ -27,11 +27,16 @@ const (
 type SupportedDebeziumType string
 
 const (
-	JSON    SupportedDebeziumType = "io.debezium.data.Json"
-	Enum    SupportedDebeziumType = "io.debezium.data.Enum"
-	EnumSet SupportedDebeziumType = "io.debezium.data.EnumSet"
-	UUID    SupportedDebeziumType = "io.debezium.data.Uuid"
-	LTree   SupportedDebeziumType = "io.debezium.data.Ltree"
+	JSON     SupportedDebeziumType = "io.debezium.data.Json"
+	Enum     SupportedDebeziumType = "io.debezium.data.Enum"
+	EnumSet  SupportedDebeziumType = "io.debezium.data.EnumSet"
+	UUID     SupportedDebeziumType = "io.debezium.data.Uuid"
+	LTree    SupportedDebeziumType = "io.debezium.data.Ltree"
+	Interval SupportedDebeziumType = "io.debezium.time.Interval"
+	XML      SupportedDebeziumType = "io.debezium.data.Xml"
+
+	// Bytes
+	Bits SupportedDebeziumType = "io.debezium.data.Bits"
 
 	// Dates
 	Date                 SupportedDebeziumType = "io.debezium.time.Date"
