@@ -540,9 +540,9 @@ func (r *RelationTestSuite) TestGetEventFromBytes_MySQL() {
 	assert.True(r.T(), isOk)
 	assert.False(r.T(), updatedAtExtTime.GetTime().IsZero())
 
-	assert.Equal(r.T(), evtData["id"], int64(1001))
-	assert.Equal(r.T(), evtData["first_name"], "Sally")
-	assert.Equal(r.T(), evtData["bool_test"], false)
+	assert.Equal(r.T(), int64(1001), evtData["id"])
+	assert.Equal(r.T(), "Sally", evtData["first_name"])
+	assert.Equal(r.T(), false, evtData["bool_test"])
 	cols, err := evt.GetColumns()
 	assert.NoError(r.T(), err)
 	assert.NotNil(r.T(), cols)
