@@ -100,6 +100,8 @@ func ParseExtendedDateTime(dtString string, additionalDateFormats []string) (*Ex
 
 	// If nothing fits, return the next best thing.
 	if potentialFormat != "" {
+		// TODO: Remove this if we don't see any logs.
+		slog.Warn("Failed to find exact match for dtString, returning next best thing", slog.String("dtString", dtString), slog.String("potentialFormat", potentialFormat))
 		return NewExtendedTime(potentialTime, DateTimeKindType, potentialFormat), nil
 	}
 

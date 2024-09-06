@@ -162,6 +162,12 @@ func TestField_ToKindDetails(t *testing.T) {
 			assert.Equal(t, typing.String, kd)
 		}
 		{
+			// Enum Set
+			kd, err := Field{DebeziumType: EnumSet, Type: String}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.String, kd)
+		}
+		{
 			// LTree
 			kd, err := Field{DebeziumType: LTree, Type: String}.ToKindDetails()
 			assert.NoError(t, err)
