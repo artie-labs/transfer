@@ -68,11 +68,15 @@ func TestParseNumeric(t *testing.T) {
 		// Integer
 		{
 			result := ParseNumeric([]string{"5"})
-			assert.Equal(t, Integer, result)
+			assert.Equal(t, EDecimal.Kind, result.Kind)
+			assert.Equal(t, int32(5), result.ExtendedDecimalDetails.Precision())
+			assert.Equal(t, int32(0), result.ExtendedDecimalDetails.Scale())
 		}
 		{
 			result := ParseNumeric([]string{"5", "0"})
-			assert.Equal(t, Integer, result)
+			assert.Equal(t, EDecimal.Kind, result.Kind)
+			assert.Equal(t, int32(5), result.ExtendedDecimalDetails.Precision())
+			assert.Equal(t, int32(0), result.ExtendedDecimalDetails.Scale())
 		}
 	}
 }
