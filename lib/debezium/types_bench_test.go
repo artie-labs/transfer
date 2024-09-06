@@ -65,7 +65,6 @@ func BenchmarkDecodeDecimal_P5_S2(b *testing.B) {
 
 		dec, err := converter.Convert(bytes.([]byte))
 		assert.NoError(b, err)
-
 		assert.Equal(b, "578.01", dec.(*decimal.Decimal).String())
 	}
 }
