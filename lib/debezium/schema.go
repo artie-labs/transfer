@@ -168,7 +168,6 @@ func (f Field) ToKindDetails() (typing.KindDetails, error) {
 	case Array:
 		return typing.Array, nil
 	default:
-		slog.Warn("Unhandled field type", slog.String("type", string(f.Type)), slog.String("debeziumType", string(f.DebeziumType)))
 		return typing.Invalid, fmt.Errorf("unhandled field type %q", f.Type)
 	}
 }
