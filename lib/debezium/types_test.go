@@ -326,177 +326,138 @@ func TestField_ParseValue(t *testing.T) {
 	}
 }
 
-func TestField_DecodeDecimal(t *testing.T) {
-	testCases := []struct {
-		name    string
-		encoded string
-		params  map[string]any
-
-		expectedValue         string
-		expectedPrecision     int32
-		expectNilPtrPrecision bool
-		expectedScale         int32
-		expectedErr           string
-	}{
+func TestField_Decimal_ParseValue(t *testing.T) {
+	{
+		// Invalid
 		{
-			name:        "No scale (nil map)",
-			expectedErr: "object is empty",
-		},
+			// Empty object
+			field := Field{DebeziumType: KafkaDecimalType}
+			_, err := field.ToValueConverter()
+			assert.ErrorContains(t, err, "object is empty")
+		}
 		{
-			name: "No scale (not provided)",
-			params: map[string]any{
-				"connect.decimal.precision": "5",
-			},
-			expectedErr: "key: scale does not exist in object",
-		},
+			// Missing scale
+			field := Field{DebeziumType: KafkaDecimalType, Parameters: map[string]any{"connect.decimal.precision": "5"}}
+			_, err := field.ToValueConverter()
+			assert.ErrorContains(t, err, "key: scale does not exist in object")
+		}
 		{
-			name: "Precision is not an integer",
-			params: map[string]any{
-				"scale":                     "2",
-				"connect.decimal.precision": "abc",
-			},
-			expectedErr: "key: connect.decimal.precision is not type integer",
-		},
-		{
-			name:    "NUMERIC(5,0)",
-			encoded: "BQ==",
-			params: map[string]any{
-				"scale":                     "0",
-				"connect.decimal.precision": "5",
-			},
-			expectedValue:     "5",
-			expectedPrecision: 5,
-			expectedScale:     0,
-		},
-		{
-			name:    "NUMERIC(5,2)",
-			encoded: "AOHJ",
-			params: map[string]any{
-				"scale":                     "2",
-				"connect.decimal.precision": "5",
-			},
-			expectedValue:     "578.01",
-			expectedPrecision: 5,
-			expectedScale:     2,
-		},
-		{
-			name:    "NUMERIC(38, 0) - small #",
-			encoded: "Ajc=",
-			params: map[string]any{
-				"scale":                     "0",
-				"connect.decimal.precision": "38",
-			},
-			expectedValue:     "567",
-			expectedPrecision: 38,
-			expectedScale:     0,
-		},
-		{
-			name:    "NUMERIC(38, 0) - large #",
-			encoded: "SztMqFqGxHoJiiI//////w==",
-			params: map[string]any{
-				"scale":                     "0",
-				"connect.decimal.precision": "38",
-			},
-			expectedValue:     "99999999999999999999999999999999999999",
-			expectedPrecision: 38,
-			expectedScale:     0,
-		},
-		{
-			name:    "NUMERIC(38, 2) - small #",
-			encoded: "DPk=",
-			params: map[string]any{
-				"scale":                     "2",
-				"connect.decimal.precision": "38",
-			},
-			expectedValue:     "33.21",
-			expectedPrecision: 38,
-			expectedScale:     2,
-		},
-		{
-			name:    "NUMERIC(38, 2) - large #",
-			encoded: "AMCXznvJBxWzS58P/////w==",
-			params: map[string]any{
-				"scale":                     "2",
-				"connect.decimal.precision": "38",
-			},
-			expectedValue:     "9999999999999999999999999999999999.99",
-			expectedPrecision: 38,
-			expectedScale:     2,
-		},
-		{
-			name:    "NUMERIC(38, 4) - small #",
-			encoded: "SeuD",
-			params: map[string]any{
-				"scale":                     "4",
-				"connect.decimal.precision": "38",
-			},
-			expectedValue:     "484.4419",
-			expectedPrecision: 38,
-			expectedScale:     4,
-		},
-		{
-			name:    "NUMERIC(38, 4) - large #",
-			encoded: "Ae0Jvq2HwDeNjmP/////",
-			params: map[string]any{
-				"scale":                     "4",
-				"connect.decimal.precision": "38",
-			},
-			expectedValue:     "999999999999999999999999999999.9999",
-			expectedPrecision: 38,
-			expectedScale:     4,
-		},
-		{
-			name:    "NUMERIC(39,4) - small #",
-			encoded: "AKQQ",
-			params: map[string]any{
-				"scale":                     "4",
-				"connect.decimal.precision": "39",
-			},
-			expectedValue:     "4.2000",
-			expectedPrecision: 39,
-			expectedScale:     4,
-		},
-		{
-			name:    "NUMERIC(39,4) - large # ",
-			encoded: "AuM++mE16PeIpWp/trI=",
-			params: map[string]any{
-				"scale":                     "4",
-				"connect.decimal.precision": "39",
-			},
-			expectedValue:     "5856910285916918584382586878.1234",
-			expectedPrecision: 39,
-			expectedScale:     4,
-		},
-		{
-			name:    "MONEY",
-			encoded: "ALxhYg==",
-			params: map[string]any{
-				"scale": "2",
-			},
-			expectedValue:     "123456.98",
-			expectedPrecision: -1,
-			expectedScale:     2,
-		},
+			// Precision is not a number
+			field := Field{DebeziumType: KafkaDecimalType, Parameters: map[string]any{"scale": "2", "connect.decimal.precision": "abc"}}
+			_, err := field.ToValueConverter()
+			assert.ErrorContains(t, err, "key: connect.decimal.precision is not type integer")
+		}
 	}
-
-	for _, testCase := range testCases {
-		field := Field{
-			Parameters: testCase.params,
-		}
-
-		bytes, err := converters.Bytes{}.Convert(testCase.encoded)
+	{
+		// Numeric(5, 0)
+		field := Field{DebeziumType: KafkaDecimalType, Parameters: map[string]any{"scale": "0", "connect.decimal.precision": "5"}}
+		converter, err := field.ToValueConverter()
 		assert.NoError(t, err)
 
-		dec, err := field.DecodeDecimal(bytes.([]byte))
-		if testCase.expectedErr != "" {
-			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
-			continue
-		}
-
+		bytes, err := converters.Bytes{}.Convert("BQ==")
 		assert.NoError(t, err)
-		assert.Equal(t, testCase.expectedValue, dec.String(), testCase.name)
 
-		assert.Equal(t, testCase.expectedPrecision, dec.Details().Precision(), testCase.name)
-		assert.Equal(t, testCase.expectedScale, dec.Details().Scale(), testCase.name)
+		value, err := converter.Convert(bytes)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "5", value.(*decimal.Decimal).String())
+		assert.Equal(t, int32(5), value.(*decimal.Decimal).Details().Precision())
+		assert.Equal(t, int32(0), value.(*decimal.Decimal).Details().Scale())
+	}
+	{
+		// Numeric(5, 2)
+		field := Field{DebeziumType: KafkaDecimalType, Parameters: map[string]any{"scale": "2", "connect.decimal.precision": "5"}}
+		converter, err := field.ToValueConverter()
+		assert.NoError(t, err)
+
+		bytes, err := converters.Bytes{}.Convert("AOHJ")
+		assert.NoError(t, err)
+
+		value, err := converter.Convert(bytes)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "578.01", value.(*decimal.Decimal).String())
+		assert.Equal(t, int32(5), value.(*decimal.Decimal).Details().Precision())
+		assert.Equal(t, int32(2), value.(*decimal.Decimal).Details().Scale())
+	}
+	{
+		// Numeric(38, 0) - Small number
+		field := Field{DebeziumType: KafkaDecimalType, Parameters: map[string]any{"scale": "0", "connect.decimal.precision": "38"}}
+		converter, err := field.ToValueConverter()
+		assert.NoError(t, err)
+
+		bytes, err := converters.Bytes{}.Convert("Ajc=")
+		assert.NoError(t, err)
+
+		value, err := converter.Convert(bytes)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "567", value.(*decimal.Decimal).String())
+		assert.Equal(t, int32(38), value.(*decimal.Decimal).Details().Precision())
+		assert.Equal(t, int32(0), value.(*decimal.Decimal).Details().Scale())
+	}
+	{
+		// Numeric(38, 0) - Large number
+		field := Field{DebeziumType: KafkaDecimalType, Parameters: map[string]any{"scale": "0", "connect.decimal.precision": "38"}}
+		converter, err := field.ToValueConverter()
+		assert.NoError(t, err)
+
+		bytes, err := converters.Bytes{}.Convert("SztMqFqGxHoJiiI//////w==")
+		assert.NoError(t, err)
+
+		value, err := converter.Convert(bytes)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "99999999999999999999999999999999999999", value.(*decimal.Decimal).String())
+		assert.Equal(t, int32(38), value.(*decimal.Decimal).Details().Precision())
+		assert.Equal(t, int32(0), value.(*decimal.Decimal).Details().Scale())
+	}
+	{
+		// Numeric (38, 2) - Small number
+		field := Field{DebeziumType: KafkaDecimalType, Parameters: map[string]any{"scale": "2", "connect.decimal.precision": "38"}}
+		converter, err := field.ToValueConverter()
+		assert.NoError(t, err)
+
+		bytes, err := converters.Bytes{}.Convert("DPk=")
+		assert.NoError(t, err)
+
+		value, err := converter.Convert(bytes)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "33.21", value.(*decimal.Decimal).String())
+		assert.Equal(t, int32(38), value.(*decimal.Decimal).Details().Precision())
+		assert.Equal(t, int32(2), value.(*decimal.Decimal).Details().Scale())
+	}
+	{
+		// Numeric (38, 2) - Large number
+		field := Field{DebeziumType: KafkaDecimalType, Parameters: map[string]any{"scale": "2", "connect.decimal.precision": "38"}}
+		converter, err := field.ToValueConverter()
+		assert.NoError(t, err)
+
+		bytes, err := converters.Bytes{}.Convert("AMCXznvJBxWzS58P/////w==")
+		assert.NoError(t, err)
+
+		value, err := converter.Convert(bytes)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "9999999999999999999999999999999999.99", value.(*decimal.Decimal).String())
+		assert.Equal(t, int32(38), value.(*decimal.Decimal).Details().Precision())
+		assert.Equal(t, int32(2), value.(*decimal.Decimal).Details().Scale())
+	}
+	{
+		// Money
+		field := Field{DebeziumType: KafkaDecimalType, Parameters: map[string]any{"scale": "2"}}
+		converter, err := field.ToValueConverter()
+		assert.NoError(t, err)
+
+		bytes, err := converters.Bytes{}.Convert("ALxhYg==")
+		assert.NoError(t, err)
+
+		value, err := converter.Convert(bytes)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "123456.98", value.(*decimal.Decimal).String())
+		assert.Equal(t, int32(-1), value.(*decimal.Decimal).Details().Precision())
+		assert.Equal(t, int32(2), value.(*decimal.Decimal).Details().Scale())
 	}
 }

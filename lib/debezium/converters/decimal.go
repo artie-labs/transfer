@@ -125,3 +125,24 @@ func NewVariableDecimal() VariableDecimal {
 	// It shouldn't matter much anyway since the column type we are creating is `TEXT` to avoid boundary errors.
 	return VariableDecimal{details: decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)}
 }
+
+type Decimal struct {
+	details decimal.Details
+}
+
+func NewDecimal(details decimal.Details) Decimal {
+	return Decimal{details: details}
+}
+
+func (d Decimal) ToKindDetails() typing.KindDetails {
+	return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, d.details)
+}
+
+func (d Decimal) Convert(value any) (any, error) {
+	castedBytes, err := typing.AssertType[[]byte](value)
+	if err != nil {
+		return nil, err
+	}
+
+	return decimal.NewDecimalWithPrecision(DecodeDecimal(castedBytes, d.details.Scale()), d.details.Precision()), nil
+}
