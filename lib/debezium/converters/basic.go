@@ -42,14 +42,14 @@ func (Int64Passthrough) Convert(value any) (any, error) {
 	return value, nil
 }
 
-type Bit struct{}
+type Base64 struct{}
 
-func (Bit) ToKindDetails() typing.KindDetails {
+func (Base64) ToKindDetails() typing.KindDetails {
 	// We're returning this back as a base64 encoded string.
 	return typing.String
 }
 
-func (Bit) Convert(value any) (any, error) {
+func (Base64) Convert(value any) (any, error) {
 	castedValue, err := typing.AssertType[[]byte](value)
 	if err != nil {
 		return nil, err

@@ -37,7 +37,7 @@ const (
 	XML      SupportedDebeziumType = "io.debezium.data.Xml"
 
 	// Bytes
-	Bit SupportedDebeziumType = "io.debezium.data.Bits"
+	Bits SupportedDebeziumType = "io.debezium.data.Bits"
 
 	// Dates
 	Date                 SupportedDebeziumType = "io.debezium.time.Date"

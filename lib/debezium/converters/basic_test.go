@@ -35,15 +35,15 @@ func TestInt64Passthrough_Convert(t *testing.T) {
 	}
 }
 
-func TestBit_Convert(t *testing.T) {
+func TestBase64_Convert(t *testing.T) {
 	{
 		// Wrong data type
-		_, err := Bit{}.Convert("123")
+		_, err := Base64{}.Convert("123")
 		assert.ErrorContains(t, err, "expected type []uint8, got string")
 	}
 	{
 		// Valid data type
-		value, err := Bit{}.Convert([]byte("2024"))
+		value, err := Base64{}.Convert([]byte("2024"))
 		assert.NoError(t, err)
 		assert.Equal(t, "MjAyNA==", value)
 	}

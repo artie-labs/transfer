@@ -88,8 +88,8 @@ func (f Field) ToValueConverter() converters.ValueConverter {
 		return converters.StringPassthrough{}
 	case Year, MicroDuration:
 		return &converters.Int64Passthrough{}
-	case Bit:
-		return converters.Bit{}
+	case Bits:
+		return converters.Base64{}
 	case DateTimeWithTimezone:
 		return converters.DateTimeWithTimezone{}
 	case TimeWithTimezone:
