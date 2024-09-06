@@ -81,113 +81,189 @@ func TestField_GetScaleAndPrecision(t *testing.T) {
 func TestField_ToKindDetails(t *testing.T) {
 	{
 		// Bytes
-		assert.Equal(t, typing.String, Field{Type: Bytes}.ToKindDetails())
+		kd, err := Field{Type: Bytes}.ToKindDetails()
+		assert.NoError(t, err)
+		assert.Equal(t, typing.String, kd)
 	}
 	{
 		// Integers
-		assert.Equal(t, typing.Integer, Field{Type: Int16}.ToKindDetails())
-		assert.Equal(t, typing.Integer, Field{Type: Int32}.ToKindDetails())
-		assert.Equal(t, typing.Integer, Field{Type: Int64}.ToKindDetails())
+		{
+			// Int16
+			kd, err := Field{Type: Int16}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Integer, kd)
+		}
+		{
+			// Int32
+			kd, err := Field{Type: Int32}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Integer, kd)
+		}
+		{
+			// Int64
+			kd, err := Field{Type: Int64}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Integer, kd)
+		}
 	}
 	{
 		// Floats
-		assert.Equal(t, typing.Float, Field{Type: Float}.ToKindDetails())
-		assert.Equal(t, typing.Float, Field{Type: Double}.ToKindDetails())
+		{
+			// Float
+			kd, err := Field{Type: Float}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Float, kd)
+		}
+		{
+			// Double
+			kd, err := Field{Type: Double}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Float, kd)
+		}
 	}
 	{
 		// Decimals
 		{
-			assert.Equal(
-				t, typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(10, 5)),
-				Field{DebeziumType: KafkaDecimalType, Parameters: map[string]any{"scale": 5, KafkaDecimalPrecisionKey: 10}}.ToKindDetails(),
-			)
+			kd, err := Field{DebeziumType: KafkaDecimalType, Parameters: map[string]any{"scale": 5, KafkaDecimalPrecisionKey: 10}}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(10, 5)), kd)
 		}
 		{
 			// Variable numeric decimal
-			assert.Equal(
-				t, typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)),
-				Field{DebeziumType: KafkaVariableNumericType, Parameters: map[string]any{"scale": 5}}.ToKindDetails(),
-			)
+			kd, err := Field{DebeziumType: KafkaVariableNumericType, Parameters: map[string]any{"scale": 5}}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)), kd)
 		}
 	}
 	{
 		// String
-		assert.Equal(t, typing.String, Field{Type: String}.ToKindDetails())
+		kd, err := Field{Type: String}.ToKindDetails()
+		assert.NoError(t, err)
+		assert.Equal(t, typing.String, kd)
 	}
 	{
 		// Bytes
-		assert.Equal(t, typing.String, Field{Type: Bytes}.ToKindDetails())
+		kd, err := Field{Type: Bytes}.ToKindDetails()
+		assert.NoError(t, err)
+		assert.Equal(t, typing.String, kd)
 	}
 	{
 		// String passthrough
 		{
 			// UUID
-			assert.Equal(t, typing.String, Field{DebeziumType: UUID, Type: String}.ToKindDetails())
+			kd, err := Field{DebeziumType: UUID, Type: String}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.String, kd)
 		}
 		{
 			// Enum
-			assert.Equal(t, typing.String, Field{DebeziumType: Enum, Type: String}.ToKindDetails())
+			kd, err := Field{DebeziumType: Enum, Type: String}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.String, kd)
 		}
 		{
 			// LTree
-			assert.Equal(t, typing.String, Field{DebeziumType: LTree, Type: String}.ToKindDetails())
+			kd, err := Field{DebeziumType: LTree, Type: String}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.String, kd)
 		}
 		{
 			// Interval
-			assert.Equal(t, typing.String, Field{DebeziumType: Interval, Type: String}.ToKindDetails())
+			kd, err := Field{DebeziumType: Interval, Type: String}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.String, kd)
 		}
 		{
 			// XML
-			assert.Equal(t, typing.String, Field{DebeziumType: XML, Type: String}.ToKindDetails())
+			kd, err := Field{DebeziumType: XML, Type: String}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.String, kd)
 		}
 	}
 	{
 		// Structs
-		assert.Equal(t, typing.Struct, Field{Type: Struct}.ToKindDetails())
-		assert.Equal(t, typing.Struct, Field{Type: Map}.ToKindDetails())
-
-		assert.Equal(t, typing.Struct, Field{DebeziumType: JSON}.ToKindDetails())
+		{
+			// Struct
+			kd, err := Field{Type: Struct}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Struct, kd)
+		}
+		{
+			// Map
+			kd, err := Field{Type: Map}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Struct, kd)
+		}
+		{
+			// JSON
+			kd, err := Field{DebeziumType: JSON}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Struct, kd)
+		}
 	}
 	{
 		// Booleans
-		assert.Equal(t, typing.Boolean, Field{Type: Boolean}.ToKindDetails())
+		kd, err := Field{Type: Boolean}.ToKindDetails()
+		assert.NoError(t, err)
+		assert.Equal(t, typing.Boolean, kd)
 	}
 	{
 		// Array
-		assert.Equal(t, typing.Array, Field{Type: Array}.ToKindDetails())
+		kd, err := Field{Type: Array}.ToKindDetails()
+		assert.NoError(t, err)
+		assert.Equal(t, typing.Array, kd)
 	}
 	{
 		// Invalid
-		assert.Equal(t, typing.Invalid, Field{Type: "unknown"}.ToKindDetails())
-		assert.Equal(t, typing.Invalid, Field{Type: ""}.ToKindDetails())
+		kd, err := Field{Type: "unknown"}.ToKindDetails()
+		assert.ErrorContains(t, err, `unhandled field type "unknown"`)
+		assert.Equal(t, typing.Invalid, kd)
+
+		kd, err = Field{Type: ""}.ToKindDetails()
+		assert.ErrorContains(t, err, `unhandled field type ""`)
+		assert.Equal(t, typing.Invalid, kd)
 	}
 	{
 		// Timestamp
 		// Datetime (for now)
 		for _, dbzType := range []SupportedDebeziumType{Timestamp, TimestampKafkaConnect, MicroTimestamp, NanoTimestamp, DateTimeWithTimezone} {
-			assert.Equal(t, typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType), Field{DebeziumType: dbzType}.ToKindDetails())
+			kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType), kd)
 		}
 	}
 	{
 		// Dates
 		for _, dbzType := range []SupportedDebeziumType{Date, DateKafkaConnect} {
-			assert.Equal(t, typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType), Field{DebeziumType: dbzType}.ToKindDetails())
+			kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType), kd)
 		}
 	}
 	{
 		// Time
 		for _, dbzType := range []SupportedDebeziumType{Time, TimeKafkaConnect, MicroTime, NanoTime, TimeWithTimezone} {
-			assert.Equal(t, typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType), Field{DebeziumType: dbzType}.ToKindDetails())
+			kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType), kd)
 		}
 	}
 	{
 		// Basic
 		{
 			// Int64 Passthrough
-			assert.Equal(t, typing.Integer, Field{DebeziumType: Year}.ToKindDetails())
-			assert.Equal(t, typing.Integer, Field{DebeziumType: MicroDuration}.ToKindDetails())
+			{
+				// Year
+				kd, err := Field{DebeziumType: Year}.ToKindDetails()
+				assert.NoError(t, err)
+				assert.Equal(t, typing.Integer, kd)
+			}
+			{
+				// MicroDuration
+				kd, err := Field{DebeziumType: MicroDuration}.ToKindDetails()
+				assert.NoError(t, err)
+				assert.Equal(t, typing.Integer, kd)
+			}
 		}
-
-		assert.Equal(t, typing.Struct, Field{DebeziumType: JSON}.ToKindDetails())
 	}
 }

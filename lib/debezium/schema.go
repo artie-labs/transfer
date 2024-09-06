@@ -1,6 +1,7 @@
 package debezium
 
 import (
+	"fmt"
 	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/debezium/converters"
@@ -140,35 +141,33 @@ func (f Field) ToValueConverter() (converters.ValueConverter, error) {
 	}
 }
 
-func (f Field) ToKindDetails() typing.KindDetails {
+func (f Field) ToKindDetails() (typing.KindDetails, error) {
 	// Prioritize converters
 	converter, err := f.ToValueConverter()
 	if err != nil {
-		// TODO: Return an actual error instead.
-		return typing.Invalid
+		return typing.Invalid, err
 	}
 
 	if converter != nil {
-		return converter.ToKindDetails()
+		return converter.ToKindDetails(), nil
 	}
 
 	switch f.Type {
 	case Map:
-		return typing.Struct
+		return typing.Struct, nil
 	case Int16, Int32, Int64:
-		return typing.Integer
+		return typing.Integer, nil
 	case Float, Double:
-		return typing.Float
+		return typing.Float, nil
 	case String, Bytes:
-		return typing.String
+		return typing.String, nil
 	case Struct:
-		return typing.Struct
+		return typing.Struct, nil
 	case Boolean:
-		return typing.Boolean
+		return typing.Boolean, nil
 	case Array:
-		return typing.Array
+		return typing.Array, nil
 	default:
-		slog.Warn("Unhandled field type", slog.String("type", string(f.Type)), slog.String("debeziumType", string(f.DebeziumType)))
-		return typing.Invalid
+		return typing.Invalid, fmt.Errorf("unhandled field type %q", f.Type)
 	}
 }
