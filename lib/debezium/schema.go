@@ -129,9 +129,13 @@ func (f Field) ToValueConverter() (converters.ValueConverter, error) {
 		return converters.MicroTimestamp{}, nil
 	case NanoTimestamp:
 		return converters.NanoTimestamp{}, nil
-	}
+	default:
+		if f.DebeziumType != "" {
+			slog.Warn("Unhandled Debezium type", slog.String("type", string(f.Type)), slog.String("debeziumType", string(f.DebeziumType)))
+		}
 
-	return nil, nil
+		return nil, nil
+	}
 }
 
 func (f Field) ToKindDetails() typing.KindDetails {
@@ -144,10 +148,6 @@ func (f Field) ToKindDetails() typing.KindDetails {
 
 	if converter != nil {
 		return converter.ToKindDetails()
-	}
-
-	if f.DebeziumType != "" {
-		slog.Warn("Unhandled Debezium type", slog.String("type", string(f.Type)), slog.String("debeziumType", string(f.DebeziumType)))
 	}
 
 	switch f.Type {
