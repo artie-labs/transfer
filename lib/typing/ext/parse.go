@@ -2,7 +2,6 @@ package ext
 
 import (
 	"fmt"
-	"log/slog"
 	"time"
 )
 
@@ -39,19 +38,6 @@ func ParseTimeExactMatch(layout, timeString string) (time.Time, error) {
 	return ts, nil
 }
 
-// TODO: Remove callers from this.
-// ParseTimeExactMatchLegacy is a wrapper around time.Parse() and will return an extra boolean to indicate if it was an exact match or not.
-// Parameters: layout, potentialDateTimeString
-// Returns: time.Time object, exactLayout (boolean), error
-func ParseTimeExactMatchLegacy(layout, potentialDateTimeString string) (time.Time, bool, error) {
-	ts, err := time.Parse(layout, potentialDateTimeString)
-	if err != nil {
-		return ts, false, err
-	}
-
-	return ts, ts.Format(layout) == potentialDateTimeString, nil
-}
-
 // ParseExtendedDateTime  will take a string and check if the string is of the following types:
 // - Timestamp w/ timezone
 // - Timestamp w/o timezone
@@ -62,25 +48,16 @@ func ParseTimeExactMatchLegacy(layout, potentialDateTimeString string) (time.Tim
 // 1) Precision loss in translation
 // 2) Original format preservation (with tz locale).
 // If it cannot find it, then it will give you the next best thing.
-func ParseExtendedDateTime(dtString string, additionalDateFormats []string) (*ExtendedTime, error) {
-	// Check all the timestamp formats
-	var potentialFormat string
-	var potentialTime time.Time
+func ParseExtendedDateTime(val string, additionalDateFormats []string) (*ExtendedTime, error) {
 	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
-		ts, exactMatch, err := ParseTimeExactMatchLegacy(supportedDateTimeLayout, dtString)
-		if err == nil {
-			potentialFormat = supportedDateTimeLayout
-			potentialTime = ts
-			if exactMatch {
-				return NewExtendedTime(ts, DateTimeKindType, supportedDateTimeLayout), nil
-			}
+		if ts, err := ParseTimeExactMatch(supportedDateTimeLayout, val); err == nil {
+			return NewExtendedTime(ts, DateTimeKindType, supportedDateTimeLayout), nil
 		}
 	}
 
 	// Now check DATE formats, btw you can append nil arrays
 	for _, supportedDateFormat := range append(supportedDateFormats, additionalDateFormats...) {
-		ts, exactMatch, err := ParseTimeExactMatchLegacy(supportedDateFormat, dtString)
-		if err == nil && exactMatch {
+		if ts, err := ParseTimeExactMatch(supportedDateFormat, val); err == nil {
 			return NewExtendedTime(ts, DateKindType, supportedDateFormat), nil
 		}
 	}
@@ -88,22 +65,10 @@ func ParseExtendedDateTime(dtString string, additionalDateFormats []string) (*Ex
 	// TODO: Remove this if we don't see any Sentry.
 	// Now check TIME formats
 	for _, supportedTimeFormat := range SupportedTimeFormatsLegacy {
-		ts, exactMatch, err := ParseTimeExactMatchLegacy(supportedTimeFormat, dtString)
-		if err == nil && exactMatch {
-			slog.Error("Unexpected call to SupportedTimeFormatsLegacy",
-				slog.String("dtString", dtString),
-				slog.String("supportedTimeFormat", supportedTimeFormat),
-			)
+		if ts, err := ParseTimeExactMatch(supportedTimeFormat, val); err == nil {
 			return NewExtendedTime(ts, TimeKindType, supportedTimeFormat), nil
 		}
 	}
 
-	// If nothing fits, return the next best thing.
-	if potentialFormat != "" {
-		// TODO: Remove this if we don't see any logs.
-		slog.Warn("Failed to find exact match for dtString, returning next best thing", slog.String("dtString", dtString), slog.String("potentialFormat", potentialFormat))
-		return NewExtendedTime(potentialTime, DateTimeKindType, potentialFormat), nil
-	}
-
-	return nil, fmt.Errorf("dtString: %s is not supported", dtString)
+	return nil, fmt.Errorf("unsupported value: %q", val)
 }
