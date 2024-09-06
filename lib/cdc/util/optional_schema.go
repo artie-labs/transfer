@@ -5,18 +5,21 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (s *SchemaEventPayload) GetOptionalSchema() map[string]typing.KindDetails {
+func (s *SchemaEventPayload) GetOptionalSchema() (map[string]typing.KindDetails, error) {
 	fieldsObject := s.Schema.GetSchemaFromLabel(debezium.After)
 	if fieldsObject == nil {
-		return nil
+		return nil, nil
 	}
 
 	schema := make(map[string]typing.KindDetails)
 	for _, field := range fieldsObject.Fields {
-		if kd := field.ToKindDetails(); kd != typing.Invalid {
-			schema[field.FieldName] = kd
+		kd, err := field.ToKindDetails()
+		if err != nil {
+			return nil, err
 		}
+
+		schema[field.FieldName] = kd
 	}
 
-	return schema
+	return schema, nil
 }

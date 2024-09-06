@@ -197,7 +197,10 @@ func (r *RelationTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	// Testing typing.
 	assert.Equal(r.T(), evtData["id"], int64(1001))
 	assert.Equal(r.T(), evtData["another_id"], int64(333))
-	assert.Equal(r.T(), typing.ParseValue("another_id", evt.GetOptionalSchema(), evtData["another_id"]), typing.Integer)
+
+	optionalSchema, err := evt.GetOptionalSchema()
+	assert.NoError(r.T(), err)
+	assert.Equal(r.T(), typing.ParseValue("another_id", optionalSchema, evtData["another_id"]), typing.Integer)
 	assert.Equal(r.T(), evtData["email"], "sally.thomas@acme.com")
 
 	// Datetime without TZ is emitted in microseconds which is 1000x larger than nanoseconds.
@@ -513,13 +516,11 @@ func (r *RelationTestSuite) TestGetEventFromBytes_MySQL() {
 	assert.Equal(r.T(), time.Date(2023, time.March, 13, 19, 19, 24, 0, time.UTC), evt.GetExecutionTime())
 	assert.Equal(r.T(), "customers", evt.GetTableName())
 
-	schema := evt.GetOptionalSchema()
+	schema, err := evt.GetOptionalSchema()
+	assert.NoError(r.T(), err)
 	assert.Equal(r.T(), typing.Struct, schema["custom_fields"])
 
-	kvMap := map[string]any{
-		"id": 1001,
-	}
-
+	kvMap := map[string]any{"id": 1001}
 	evtData, err := evt.GetData(kvMap, kafkalib.TopicConfig{})
 	assert.NoError(r.T(), err)
 
