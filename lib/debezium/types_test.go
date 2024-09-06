@@ -447,19 +447,6 @@ func TestField_Decimal_ParseValue(t *testing.T) {
 	}
 	{
 		// Money
-		/*
-				{
-				name:    "MONEY",
-				encoded: "ALxhYg==",
-				params: map[string]any{
-					"scale": "2",
-				},
-				expectedValue:     "123456.98",
-				expectedPrecision: -1,
-				expectedScale:     2,
-			},
-		*/
-
 		field := Field{DebeziumType: KafkaDecimalType, Parameters: map[string]any{"scale": "2"}}
 		converter, err := field.ToValueConverter()
 		assert.NoError(t, err)
