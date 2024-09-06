@@ -49,6 +49,7 @@ func ParseTimeExactMatch(layout, value string) (time.Time, error) {
 // 2) Original format preservation (with tz locale).
 // If it cannot find it, then it will give you the next best thing.
 func ParseExtendedDateTime(val string, additionalDateFormats []string) (*ExtendedTime, error) {
+	// TODO: ExtendedTimeKindType so we can selectively parse.
 	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
 		if ts, err := ParseTimeExactMatch(supportedDateTimeLayout, val); err == nil {
 			return NewExtendedTime(ts, DateTimeKindType, supportedDateTimeLayout), nil
@@ -62,7 +63,6 @@ func ParseExtendedDateTime(val string, additionalDateFormats []string) (*Extende
 		}
 	}
 
-	// TODO: Remove this if we don't see any Sentry.
 	// Now check TIME formats
 	for _, supportedTimeFormat := range SupportedTimeFormatsLegacy {
 		if ts, err := ParseTimeExactMatch(supportedTimeFormat, val); err == nil {
