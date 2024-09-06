@@ -3,12 +3,11 @@ package debezium
 import (
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/typing/decimal"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	dbzConverters "github.com/artie-labs/transfer/lib/debezium/converters"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
 func BenchmarkDecodeDecimal_P64_S10(b *testing.B) {
