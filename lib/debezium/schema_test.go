@@ -80,6 +80,10 @@ func TestField_GetScaleAndPrecision(t *testing.T) {
 
 func TestField_ToKindDetails(t *testing.T) {
 	{
+		// Bytes
+		assert.Equal(t, typing.String, Field{Type: Bytes}.ToKindDetails())
+	}
+	{
 		// Integers
 		assert.Equal(t, typing.Integer, Field{Type: Int16}.ToKindDetails())
 		assert.Equal(t, typing.Integer, Field{Type: Int32}.ToKindDetails())
@@ -127,6 +131,14 @@ func TestField_ToKindDetails(t *testing.T) {
 		{
 			// LTree
 			assert.Equal(t, typing.String, Field{DebeziumType: LTree, Type: String}.ToKindDetails())
+		}
+		{
+			// Interval
+			assert.Equal(t, typing.String, Field{DebeziumType: Interval, Type: String}.ToKindDetails())
+		}
+		{
+			// XML
+			assert.Equal(t, typing.String, Field{DebeziumType: XML, Type: String}.ToKindDetails())
 		}
 	}
 	{

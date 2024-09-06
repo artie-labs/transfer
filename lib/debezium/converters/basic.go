@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"encoding/base64"
 	"fmt"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -39,4 +40,20 @@ func (Int64Passthrough) Convert(value any) (any, error) {
 	}
 
 	return value, nil
+}
+
+type Bit struct{}
+
+func (Bit) ToKindDetails() typing.KindDetails {
+	// We're returning this back as a base64 encoded string.
+	return typing.String
+}
+
+func (Bit) Convert(value any) (any, error) {
+	castedValue, err := typing.AssertType[[]byte](value)
+	if err != nil {
+		return nil, err
+	}
+
+	return base64.StdEncoding.EncodeToString(castedValue), nil
 }

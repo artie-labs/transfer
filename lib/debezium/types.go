@@ -28,11 +28,16 @@ const (
 type SupportedDebeziumType string
 
 const (
-	JSON    SupportedDebeziumType = "io.debezium.data.Json"
-	Enum    SupportedDebeziumType = "io.debezium.data.Enum"
-	EnumSet SupportedDebeziumType = "io.debezium.data.EnumSet"
-	UUID    SupportedDebeziumType = "io.debezium.data.Uuid"
-	LTree   SupportedDebeziumType = "io.debezium.data.Ltree"
+	JSON     SupportedDebeziumType = "io.debezium.data.Json"
+	Enum     SupportedDebeziumType = "io.debezium.data.Enum"
+	EnumSet  SupportedDebeziumType = "io.debezium.data.EnumSet"
+	UUID     SupportedDebeziumType = "io.debezium.data.Uuid"
+	LTree    SupportedDebeziumType = "io.debezium.data.Ltree"
+	Interval SupportedDebeziumType = "io.debezium.time.Interval"
+	XML      SupportedDebeziumType = "io.debezium.data.Xml"
+
+	// Bytes
+	Bit SupportedDebeziumType = "io.debezium.data.Bits"
 
 	// Dates
 	Date                 SupportedDebeziumType = "io.debezium.time.Date"
@@ -54,6 +59,7 @@ const (
 	Timestamp             SupportedDebeziumType = "io.debezium.time.Timestamp"
 	TimestampKafkaConnect SupportedDebeziumType = "org.apache.kafka.connect.data.Timestamp"
 
+	// Decimals
 	KafkaDecimalType         SupportedDebeziumType = "org.apache.kafka.connect.data.Decimal"
 	KafkaVariableNumericType SupportedDebeziumType = "io.debezium.data.VariableScaleDecimal"
 
