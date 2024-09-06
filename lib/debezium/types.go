@@ -90,7 +90,17 @@ func (f Field) ShouldSetDefaultValue(defaultValue any) bool {
 	case nil:
 		return false
 	case *ext.ExtendedTime:
-		return !castedDefaultValue.GetTime().IsZero()
+		// Most of Debezium's time types uses Unix time, so we can check for zero value by comparing it to be zero.
+		if castedDefaultValue.GetTime().Unix() == 0 {
+			return false
+		}
+
+		// If time value did not get set, it will return true for [IsZero]
+		if castedDefaultValue.GetTime().IsZero() {
+			return false
+		}
+
+		return true
 	case string:
 		if f.DebeziumType == UUID && castedDefaultValue == uuid.Nil.String() {
 			return false
