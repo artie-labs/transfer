@@ -23,7 +23,7 @@ func ParseFromInterface(val any, additionalDateFormats []string) (*ExtendedTime,
 	}
 }
 
-// ParseTimeExactMatch - This function is the same as `ParseTimeExactMatchLegacy` with the only exception that it'll return an error if it was not an exact match
+// ParseTimeExactMatch -will return an error if it was not an exact match.
 // We need this function because things may parse correctly but actually truncate precision
 func ParseTimeExactMatch(layout, value string) (time.Time, error) {
 	ts, err := time.Parse(layout, value)
