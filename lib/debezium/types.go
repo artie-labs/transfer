@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/artie-labs/transfer/lib/debezium/converters"
-	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
@@ -147,18 +146,13 @@ func (f Field) ParseValue(value any) (any, error) {
 		}
 	}
 
-	if converter := f.ToValueConverter(); converter != nil {
-		return converter.Convert(value)
+	converter, err := f.ToValueConverter()
+	if err != nil {
+		return nil, err
 	}
 
-	switch f.DebeziumType {
-	case KafkaDecimalType:
-		castedBytes, err := typing.AssertType[[]byte](value)
-		if err != nil {
-			return nil, err
-		}
-
-		return f.DecodeDecimal(castedBytes)
+	if converter != nil {
+		return converter.Convert(value)
 	}
 
 	if bytes, ok := value.([]byte); ok {
@@ -169,23 +163,4 @@ func (f Field) ParseValue(value any) (any, error) {
 	}
 
 	return value, nil
-}
-
-// DecodeDecimal is used to handle `org.apache.kafka.connect.data.Decimal` where this would be emitted by Debezium when the `decimal.handling.mode` is `precise`
-// * Encoded - takes the encoded value as a slice of bytes
-// * Parameters - which contains:
-//   - `scale` (number of digits following decimal point)
-//   - `connect.decimal.precision` which is an optional parameter. (If -1, then it's variable and .Value() will be in STRING).
-func (f Field) DecodeDecimal(encoded []byte) (*decimal.Decimal, error) {
-	scale, precision, err := f.GetScaleAndPrecision()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get scale and/or precision: %w", err)
-	}
-
-	_decimal := converters.DecodeDecimal(encoded, scale)
-	if precision == nil {
-		return decimal.NewDecimal(_decimal), nil
-	}
-
-	return decimal.NewDecimalWithPrecision(_decimal, *precision), nil
 }
