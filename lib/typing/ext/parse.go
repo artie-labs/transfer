@@ -23,7 +23,7 @@ func ParseFromInterface(val any, additionalDateFormats []string) (*ExtendedTime,
 	}
 }
 
-// ParseTimeExactMatch -will return an error if it was not an exact match.
+// ParseTimeExactMatch will return an error if it was not an exact match.
 // We need this function because things may parse correctly but actually truncate precision
 func ParseTimeExactMatch(layout, value string) (time.Time, error) {
 	ts, err := time.Parse(layout, value)
@@ -38,7 +38,7 @@ func ParseTimeExactMatch(layout, value string) (time.Time, error) {
 	return ts, nil
 }
 
-// ParseExtendedDateTime  will take a string and check if the string is of the following types:
+// ParseExtendedDateTime will take a string and check if the string is of the following types:
 // - Timestamp w/ timezone
 // - Timestamp w/o timezone
 // - Date
