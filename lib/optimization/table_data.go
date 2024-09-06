@@ -272,6 +272,7 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) erro
 		}
 
 		if found {
+			// TODO: Address below by having destination columns return NUMERIC(p, 0) if it's an integer.
 			// If the inMemoryColumn is decimal and foundColumn is integer, don't copy it over.
 			// This is because parsing NUMERIC(...) will return an INTEGER if there's no decimal point.
 			// However, this will wipe the precision unit from the INTEGER which may cause integer overflow.
