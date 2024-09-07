@@ -55,7 +55,7 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sq
 func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	fqTableName := tableID.FullyQualifiedName()
-	yyyyMMDDFormat := tableData.LatestCDCTs.Format(ext.PostgresDateFormat)
+	yyyyMMDDFormat := tableData.LatestCDCTs.FOrmat(ext.PostgresDateFormat)
 
 	if len(s.config.S3.FolderName) > 0 {
 		return strings.Join([]string{s.config.S3.FolderName, fqTableName, yyyyMMDDFormat}, "/")
