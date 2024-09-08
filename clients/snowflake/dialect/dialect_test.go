@@ -34,11 +34,36 @@ func TestSnowflakeDialect_DataTypeForKind(t *testing.T) {
 
 func TestSnowflakeDialect_KindForDataType_Number(t *testing.T) {
 	{
-		expectedIntegers := []string{"number(38, 0)", "number(2, 0)", "number(3, 0)"}
-		for _, expectedInteger := range expectedIntegers {
-			kd, err := SnowflakeDialect{}.KindForDataType(expectedInteger, "")
+		// Integers
+		{
+			// number(38, 0)
+			kd, err := SnowflakeDialect{}.KindForDataType("number(38, 0)", "")
 			assert.NoError(t, err)
-			assert.Equal(t, typing.Integer, kd, expectedInteger)
+
+			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
+			assert.Equal(t, int32(38), kd.ExtendedDecimalDetails.Precision())
+			assert.Equal(t, int32(0), kd.ExtendedDecimalDetails.Scale())
+			assert.Equal(t, "NUMERIC(38, 0)", kd.ExtendedDecimalDetails.SnowflakeKind())
+		}
+		{
+			// number(2, 0)
+			kd, err := SnowflakeDialect{}.KindForDataType("number(2, 0)", "")
+			assert.NoError(t, err)
+
+			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
+			assert.Equal(t, int32(2), kd.ExtendedDecimalDetails.Precision())
+			assert.Equal(t, int32(0), kd.ExtendedDecimalDetails.Scale())
+			assert.Equal(t, "NUMERIC(2, 0)", kd.ExtendedDecimalDetails.SnowflakeKind())
+		}
+		{
+			// number(3, 0)
+			kd, err := SnowflakeDialect{}.KindForDataType("number(3, 0)", "")
+			assert.NoError(t, err)
+
+			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
+			assert.Equal(t, int32(3), kd.ExtendedDecimalDetails.Precision())
+			assert.Equal(t, int32(0), kd.ExtendedDecimalDetails.Scale())
+			assert.Equal(t, "NUMERIC(3, 0)", kd.ExtendedDecimalDetails.SnowflakeKind())
 		}
 	}
 	{
