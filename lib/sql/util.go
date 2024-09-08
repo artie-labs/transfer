@@ -33,7 +33,7 @@ func QuoteIdentifiers(identifiers []string, dialect Dialect) []string {
 // ParseDataTypeDefinition parses a column type definition returning the type and parameters.
 // "TEXT" -> "TEXT", {}
 // "VARCHAR(1234)" -> "VARCHAR", {"1234"}
-// "NUERMIC(5, 1)" -> "NUMERIC", {"5", "1"}
+// "NUMERIC(5, 1)" -> "NUMERIC", {"5", "1"}
 func ParseDataTypeDefinition(value string) (string, []string, error) {
 	value = strings.TrimSpace(value)
 

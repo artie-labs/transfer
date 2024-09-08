@@ -2,6 +2,7 @@ package optimization
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -272,11 +273,14 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) erro
 		}
 
 		if found {
+			// TODO: Simplify this whole logic
 			// If the inMemoryColumn is decimal and foundColumn is integer, don't copy it over.
 			// This is because parsing NUMERIC(...) will return an INTEGER if there's no decimal point.
 			// However, this will wipe the precision unit from the INTEGER which may cause integer overflow.
 			shouldSkip := inMemoryCol.KindDetails.Kind == typing.EDecimal.Kind && foundColumn.KindDetails.Kind == typing.Integer.Kind
-			if !shouldSkip {
+			if shouldSkip {
+				slog.Info("Skipping column", slog.String("column", inMemoryCol.Name()), slog.String("inMemoryKind", inMemoryCol.KindDetails.Kind), slog.String("foundKind", foundColumn.KindDetails.Kind))
+			} else {
 				// We should take `kindDetails.kind` and `backfilled` from foundCol
 				// We are not taking primaryKey and defaultValue because DWH does not have this information.
 				// Note: If our in-memory column is `Invalid`, it would get skipped during merge. However, if the column exists in
