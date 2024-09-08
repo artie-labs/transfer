@@ -14,7 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func DefaultValue(column columns.Column, dialect sql.Dialect, additionalDateFmts []string) (any, error) {
+func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 	if column.DefaultValue() == nil {
 		return column.DefaultValue(), nil
 	}
@@ -27,7 +27,7 @@ func DefaultValue(column columns.Column, dialect sql.Dialect, additionalDateFmts
 			return nil, fmt.Errorf("column kind details for extended time is nil")
 		}
 
-		extTime, err := ext.ParseFromInterface(column.DefaultValue(), additionalDateFmts)
+		extTime, err := ext.ParseFromInterface(column.DefaultValue())
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", column.DefaultValue(), err)
 		}
@@ -63,7 +63,7 @@ func BackfillColumn(dwh destination.DataWarehouse, column columns.Column, tableI
 		return nil
 	}
 
-	defaultVal, err := DefaultValue(column, dwh.Dialect(), dwh.AdditionalDateFormats())
+	defaultVal, err := DefaultValue(column, dwh.Dialect())
 	if err != nil {
 		return fmt.Errorf("failed to escape default value: %w", err)
 	}

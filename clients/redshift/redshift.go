@@ -55,10 +55,6 @@ func (s *Store) Dialect() sql.Dialect {
 	return dialect.RedshiftDialect{}
 }
 
-func (s *Store) AdditionalDateFormats() []string {
-	return s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
-}
-
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
 	query, args := describeTableQuery(tableData.TopicConfig().Schema, tableData.Name())
 	return shared.GetTableCfgArgs{

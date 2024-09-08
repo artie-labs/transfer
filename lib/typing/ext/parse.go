@@ -6,14 +6,14 @@ import (
 	"time"
 )
 
-func ParseFromInterface(val any, additionalDateFormats []string) (*ExtendedTime, error) {
+func ParseFromInterface(val any) (*ExtendedTime, error) {
 	switch convertedVal := val.(type) {
 	case nil:
 		return nil, fmt.Errorf("val is nil")
 	case *ExtendedTime:
 		return convertedVal, nil
 	case string:
-		extendedTime, err := ParseExtendedDateTime(convertedVal, additionalDateFormats)
+		extendedTime, err := ParseExtendedDateTime(convertedVal)
 		if err != nil {
 			return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", val, err)
 		}
@@ -62,7 +62,7 @@ func ParseTimeExactMatchLegacy(layout, potentialDateTimeString string) (time.Tim
 // 1) Precision loss in translation
 // 2) Original format preservation (with tz locale).
 // If it cannot find it, then it will give you the next best thing.
-func ParseExtendedDateTime(dtString string, additionalDateFormats []string) (*ExtendedTime, error) {
+func ParseExtendedDateTime(dtString string) (*ExtendedTime, error) {
 	// Check all the timestamp formats
 	var potentialFormat string
 	var potentialTime time.Time
@@ -78,7 +78,7 @@ func ParseExtendedDateTime(dtString string, additionalDateFormats []string) (*Ex
 	}
 
 	// Now check DATE formats, btw you can append nil arrays
-	for _, supportedDateFormat := range append(supportedDateFormats, additionalDateFormats...) {
+	for _, supportedDateFormat := range supportedDateFormats {
 		ts, exactMatch, err := ParseTimeExactMatchLegacy(supportedDateFormat, dtString)
 		if err == nil && exactMatch {
 			return NewExtendedTime(ts, DateKindType, supportedDateFormat), nil

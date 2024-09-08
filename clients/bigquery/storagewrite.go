@@ -100,7 +100,7 @@ func encodePacked64TimeMicros(value time.Time) int64 {
 	return result
 }
 
-func rowToMessage(row map[string]any, columns []columns.Column, messageDescriptor protoreflect.MessageDescriptor, additionalDateFmts []string) (*dynamicpb.Message, error) {
+func rowToMessage(row map[string]any, columns []columns.Column, messageDescriptor protoreflect.MessageDescriptor) (*dynamicpb.Message, error) {
 	message := dynamicpb.NewMessage(messageDescriptor)
 	for _, column := range columns {
 		field := message.Descriptor().Fields().ByTextName(column.Name())
@@ -170,7 +170,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 
 			message.Set(field, protoreflect.ValueOfString(castedValue))
 		case typing.ETime.Kind:
-			extTime, err := ext.ParseFromInterface(value, additionalDateFmts)
+			extTime, err := ext.ParseFromInterface(value)
 			if err != nil {
 				return nil, fmt.Errorf("failed to cast value as time.Time, value: %v, err: %w", value, err)
 			}
