@@ -12,7 +12,6 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/stringutil"
-	"github.com/artie-labs/transfer/lib/typing"
 )
 
 const (
@@ -90,10 +89,6 @@ type Redshift struct {
 	CredentialsClause string `yaml:"credentialsClause"`
 }
 
-type SharedTransferConfig struct {
-	TypingSettings typing.Settings `yaml:"typingSettings"`
-}
-
 func (p *Pubsub) String() string {
 	return fmt.Sprintf("project_id=%s, pathToCredentials=%s", p.ProjectID, p.PathToCredentials)
 }
@@ -139,9 +134,6 @@ type Config struct {
 	// Supported message queues
 	Pubsub *Pubsub `yaml:"pubsub,omitempty"`
 	Kafka  *Kafka  `yaml:"kafka,omitempty"`
-
-	// Shared Transfer settings
-	SharedTransferConfig SharedTransferConfig `yaml:"sharedTransferConfig"`
 
 	// Supported destinations
 	MSSQL     *MSSQL      `yaml:"mssql,omitempty"`
