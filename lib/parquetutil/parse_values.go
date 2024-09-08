@@ -14,14 +14,14 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func ParseValue(colVal any, colKind columns.Column, additionalDateFmts []string) (any, error) {
+func ParseValue(colVal any, colKind columns.Column) (any, error) {
 	if colVal == nil {
 		return nil, nil
 	}
 
 	switch colKind.KindDetails.Kind {
 	case typing.ETime.Kind:
-		extTime, err := ext.ParseFromInterface(colVal, additionalDateFmts)
+		extTime, err := ext.ParseFromInterface(colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}

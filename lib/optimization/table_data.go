@@ -193,7 +193,7 @@ func (t *TableData) NumberOfRows() uint {
 	return uint(len(t.rowsData))
 }
 
-func (t *TableData) DistinctDates(colName string, additionalDateFmts []string) ([]string, error) {
+func (t *TableData) DistinctDates(colName string) ([]string, error) {
 	retMap := make(map[string]bool)
 	for _, row := range t.rowsData {
 		val, isOk := row[colName]
@@ -201,7 +201,7 @@ func (t *TableData) DistinctDates(colName string, additionalDateFmts []string) (
 			return nil, fmt.Errorf("col: %v does not exist on row: %v", colName, row)
 		}
 
-		extTime, err := ext.ParseFromInterface(val, additionalDateFmts)
+		extTime, err := ext.ParseFromInterface(val)
 		if err != nil {
 			return nil, fmt.Errorf("col: %v is not a time column, value: %v, err: %w", colName, val, err)
 		}

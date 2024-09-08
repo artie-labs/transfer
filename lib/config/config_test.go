@@ -11,24 +11,9 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"gopkg.in/yaml.v3"
 
 	"github.com/stretchr/testify/assert"
 )
-
-func TestSharedTransferConfig(t *testing.T) {
-	{
-		var sharedTransferCfg SharedTransferConfig
-		validBody := `
-typingSettings:
- additionalDateFormats: ["yyyy-MM-dd1"]
-`
-		err := yaml.Unmarshal([]byte(validBody), &sharedTransferCfg)
-		assert.NoError(t, err)
-
-		assert.Equal(t, "yyyy-MM-dd1", sharedTransferCfg.TypingSettings.AdditionalDateFormats[0])
-	}
-}
 
 const (
 	validKafkaTopic = `

@@ -40,13 +40,13 @@ func replaceExceededValues(colVal string, kindDetails typing.KindDetails) string
 	return colVal
 }
 
-func castColValStaging(colVal any, colKind typing.KindDetails, additionalDateFmts []string) (string, error) {
+func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
 	if colVal == nil {
 		// \\N needs to match NULL_IF(...) from ddl.go
 		return `\\N`, nil
 	}
 
-	value, err := values.ToString(colVal, colKind, additionalDateFmts)
+	value, err := values.ToString(colVal, colKind)
 	if err != nil {
 		return "", err
 	}
@@ -117,12 +117,11 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 	writer := csv.NewWriter(file)
 	writer.Comma = '\t'
 
-	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	for _, value := range tableData.Rows() {
 		var row []string
 		for _, col := range columns {
-			castedValue, castErr := castColValStaging(value[col.Name()], col.KindDetails, additionalDateFmts)
+			castedValue, castErr := castColValStaging(value[col.Name()], col.KindDetails)
 			if castErr != nil {
 				return "", castErr
 			}

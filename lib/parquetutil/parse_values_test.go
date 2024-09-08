@@ -89,7 +89,7 @@ func TestParseValue(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		actualValue, actualErr := ParseValue(tc.colVal, tc.colKind, nil)
+		actualValue, actualErr := ParseValue(tc.colVal, tc.colKind)
 		assert.NoError(t, actualErr, tc.name)
 		assert.Equal(t, tc.expectedValue, actualValue, tc.name)
 	}

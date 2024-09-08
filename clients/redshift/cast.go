@@ -31,7 +31,7 @@ func replaceExceededValues(colVal string, colKind typing.KindDetails) string {
 	return colVal
 }
 
-func castColValStaging(colVal any, colKind typing.KindDetails, additionalDateFmts []string) (string, error) {
+func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
 	if colVal == nil {
 		if colKind == typing.Struct {
 			// Returning empty here because if it's a struct, it will go through JSON PARSE and JSON_PARSE("") = null
@@ -42,7 +42,7 @@ func castColValStaging(colVal any, colKind typing.KindDetails, additionalDateFmt
 		return `\N`, nil
 	}
 
-	colValString, err := values.ToString(colVal, colKind, additionalDateFmts)
+	colValString, err := values.ToString(colVal, colKind)
 	if err != nil {
 		return "", err
 	}

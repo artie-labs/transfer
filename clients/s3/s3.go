@@ -104,13 +104,12 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 		return fmt.Errorf("failed to instantiate parquet writer: %w", err)
 	}
 
-	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	pw.CompressionType = parquet.CompressionCodec_GZIP
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	for _, val := range tableData.Rows() {
 		row := make(map[string]any)
 		for _, col := range columns {
-			value, err := parquetutil.ParseValue(val[col.Name()], col, additionalDateFmts)
+			value, err := parquetutil.ParseValue(val[col.Name()], col)
 			if err != nil {
 				return fmt.Errorf("failed to parse value, err: %w, value: %v, column: %q", err, val[col.Name()], col.Name())
 			}
