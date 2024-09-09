@@ -142,7 +142,7 @@ func TestRowToMessage(t *testing.T) {
 	desc, err := columnsToMessageDescriptor(columns)
 	assert.NoError(t, err)
 
-	message, err := rowToMessage(row, columns, *desc, []string{})
+	message, err := rowToMessage(row, columns, *desc)
 	assert.NoError(t, err)
 
 	bytes, err := protojson.Marshal(message)

@@ -90,12 +90,11 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 	writer := csv.NewWriter(gzipWriter) // Create a CSV writer on top of the gzip writer
 	writer.Comma = '\t'
 
-	additionalDateFmts := s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	for _, value := range tableData.Rows() {
 		var row []string
 		for _, col := range columns {
-			castedValue, castErr := castColValStaging(value[col.Name()], col.KindDetails, additionalDateFmts)
+			castedValue, castErr := castColValStaging(value[col.Name()], col.KindDetails)
 			if castErr != nil {
 				return "", castErr
 			}

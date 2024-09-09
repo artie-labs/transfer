@@ -22,7 +22,6 @@ type DataWarehouse interface {
 	Begin() (*sql.Tx, error)
 
 	// Helper functions for merge
-	AdditionalDateFormats() []string
 	GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error)
 	PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sqllib.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error
 }

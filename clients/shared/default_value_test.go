@@ -25,7 +25,7 @@ var dialects = []sql.Dialect{
 
 func TestColumn_DefaultValue(t *testing.T) {
 	birthday := time.Date(2022, time.September, 6, 3, 19, 24, 942000000, time.UTC)
-	birthdayExtDateTime, err := ext.ParseExtendedDateTime(birthday.Format(ext.ISO8601), nil)
+	birthdayExtDateTime, err := ext.ParseExtendedDateTime(birthday.Format(ext.ISO8601))
 	assert.NoError(t, err)
 
 	// date
@@ -94,7 +94,7 @@ func TestColumn_DefaultValue(t *testing.T) {
 
 	for _, testCase := range testCases {
 		for _, dialect := range dialects {
-			actualValue, actualErr := DefaultValue(testCase.col, dialect, nil)
+			actualValue, actualErr := DefaultValue(testCase.col, dialect)
 			assert.NoError(t, actualErr, fmt.Sprintf("%s %s", testCase.name, dialect))
 
 			expectedValue := testCase.expectedValue
@@ -113,14 +113,14 @@ func TestColumn_DefaultValue(t *testing.T) {
 			// Type *decimal.Decimal
 			decimalValue := decimal.NewDecimal(numbers.MustParseDecimal("3.14159"))
 			col := columns.NewColumnWithDefaultValue("", typing.EDecimal, decimalValue)
-			value, err := DefaultValue(col, redshiftDialect.RedshiftDialect{}, nil)
+			value, err := DefaultValue(col, redshiftDialect.RedshiftDialect{})
 			assert.NoError(t, err)
 			assert.Equal(t, "3.14159", value)
 		}
 		{
 			// Wrong type (string)
 			col := columns.NewColumnWithDefaultValue("", typing.EDecimal, "hello")
-			_, err := DefaultValue(col, redshiftDialect.RedshiftDialect{}, nil)
+			_, err := DefaultValue(col, redshiftDialect.RedshiftDialect{})
 			assert.ErrorContains(t, err, "expected type *decimal.Decimal, got string")
 		}
 	}

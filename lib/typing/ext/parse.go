@@ -5,14 +5,14 @@ import (
 	"time"
 )
 
-func ParseFromInterface(val any, additionalDateFormats []string) (*ExtendedTime, error) {
+func ParseFromInterface(val any) (*ExtendedTime, error) {
 	switch convertedVal := val.(type) {
 	case nil:
 		return nil, fmt.Errorf("val is nil")
 	case *ExtendedTime:
 		return convertedVal, nil
 	case string:
-		extendedTime, err := ParseExtendedDateTime(convertedVal, additionalDateFormats)
+		extendedTime, err := ParseExtendedDateTime(convertedVal)
 		if err != nil {
 			return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", val, err)
 		}
@@ -38,17 +38,7 @@ func ParseTimeExactMatch(layout, value string) (time.Time, error) {
 	return ts, nil
 }
 
-// ParseExtendedDateTime will take a string and check if the string is of the following types:
-// - Timestamp w/ timezone
-// - Timestamp w/o timezone
-// - Date
-// - Time w/ timezone
-// - Time w/o timezone
-// It will attempt to find the exact layout that parses without precision loss in the form of `ExtendedTime` object which is built to solve:
-// 1) Precision loss in translation
-// 2) Original format preservation (with tz locale).
-// If it cannot find it, then it will give you the next best thing.
-func ParseExtendedDateTime(val string, additionalDateFormats []string) (*ExtendedTime, error) {
+func ParseExtendedDateTime(val string) (*ExtendedTime, error) {
 	// TODO: ExtendedTimeKindType so we can selectively parse.
 	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
 		if ts, err := ParseTimeExactMatch(supportedDateTimeLayout, val); err == nil {
@@ -57,7 +47,7 @@ func ParseExtendedDateTime(val string, additionalDateFormats []string) (*Extende
 	}
 
 	// Now check DATE formats, btw you can append nil arrays
-	for _, supportedDateFormat := range append(supportedDateFormats, additionalDateFormats...) {
+	for _, supportedDateFormat := range supportedDateFormats {
 		if ts, err := ParseTimeExactMatch(supportedDateFormat, val); err == nil {
 			return NewExtendedTime(ts, DateKindType, supportedDateFormat), nil
 		}

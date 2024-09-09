@@ -134,10 +134,6 @@ func (s *Store) Dialect() sql.Dialect {
 	return dialect.BigQueryDialect{}
 }
 
-func (s *Store) AdditionalDateFormats() []string {
-	return s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
-}
-
 func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 	client, err := bigquery.NewClient(ctx, s.config.BigQuery.ProjectID)
 	if err != nil {
@@ -179,7 +175,7 @@ func (s *Store) putTable(ctx context.Context, bqTableID TableIdentifier, tableDa
 	defer managedStream.Close()
 
 	encoder := func(row map[string]any) ([]byte, error) {
-		message, err := rowToMessage(row, columns, *messageDescriptor, s.AdditionalDateFormats())
+		message, err := rowToMessage(row, columns, *messageDescriptor)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert row to message: %w", err)
 		}

@@ -8,10 +8,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-type Settings struct {
-	AdditionalDateFormats []string `yaml:"additionalDateFormats"`
-}
-
 type KindDetails struct {
 	Kind                   string
 	ExtendedTimeDetails    *ext.NestedKind

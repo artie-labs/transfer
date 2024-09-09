@@ -35,10 +35,6 @@ func (s *Store) Dialect() sql.Dialect {
 	return dialect.MSSQLDialect{}
 }
 
-func (s *Store) AdditionalDateFormats() []string {
-	return s.config.SharedTransferConfig.TypingSettings.AdditionalDateFormats
-}
-
 func (s *Store) Merge(tableData *optimization.TableData) error {
 	return shared.Merge(s, tableData, types.MergeOpts{})
 }
