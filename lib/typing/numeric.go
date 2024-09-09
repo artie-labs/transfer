@@ -24,7 +24,7 @@ func ParseNumeric(parts []string) KindDetails {
 
 	// If scale is 0 or not specified, then number is an int.
 	if len(parsedNumbers) == 1 || parsedNumbers[1] == 0 {
-		return Integer
+		return NewDecimalDetailsFromTemplate(EDecimal, decimal.NewDetails(parsedNumbers[0], 0))
 	}
 
 	return NewDecimalDetailsFromTemplate(EDecimal, decimal.NewDetails(parsedNumbers[0], parsedNumbers[1]))
