@@ -92,7 +92,7 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 		switch castedColVal := colVal.(type) {
 		// It's okay if it's not a *decimal.Decimal, so long as it's a float or string.
 		// By having the flexibility of handling both *decimal.Decimal and float64/float32/string values within the same batch will increase our ability for data digestion.
-		case float64, float32:
+		case int64, int32, float64, float32:
 			return fmt.Sprint(castedColVal), nil
 		case string:
 			return castedColVal, nil
