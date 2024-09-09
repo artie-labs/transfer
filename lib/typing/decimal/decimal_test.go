@@ -1,6 +1,7 @@
 package decimal
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/numbers"
@@ -38,4 +39,28 @@ func TestDecimal_Details(t *testing.T) {
 	assert.Equal(t, Details{scale: 0, precision: 10}, NewDecimalWithPrecision(numbers.MustParseDecimal("-12"), 10).Details())
 	assert.Equal(t, Details{scale: 2, precision: 10}, NewDecimalWithPrecision(numbers.MustParseDecimal("12345.12"), 10).Details())
 	assert.Equal(t, Details{scale: 3, precision: 10}, NewDecimalWithPrecision(numbers.MustParseDecimal("-12345.123"), 10).Details())
+}
+
+func TestMarshalJSON(t *testing.T) {
+	{
+		// Zero
+		bytes, err := NewDecimal(numbers.MustParseDecimal("0")).MarshalJSON()
+		assert.NoError(t, err)
+		assert.Equal(t, `"0"`, string(bytes))
+	}
+	{
+		// As a nested object
+		type Object struct {
+			Decimal *Decimal `json:"decimal"`
+			Foo     string   `json:"foo"`
+		}
+
+		var obj Object
+		obj.Decimal = NewDecimal(numbers.MustParseDecimal("0"))
+		obj.Foo = "bar"
+
+		bytes, err := json.Marshal(obj)
+		assert.NoError(t, err)
+		assert.Equal(t, `{"decimal":"0","foo":"bar"}`, string(bytes))
+	}
 }

@@ -1,6 +1,8 @@
 package decimal
 
 import (
+	"encoding/json"
+
 	"github.com/cockroachdb/apd/v3"
 )
 
@@ -10,6 +12,10 @@ const PrecisionNotSpecified int32 = -1
 type Decimal struct {
 	precision int32
 	value     *apd.Decimal
+}
+
+func (d Decimal) MarshalJSON() ([]byte, error) {
+	return json.Marshal(d.String())
 }
 
 func NewDecimalWithPrecision(value *apd.Decimal, precision int32) *Decimal {

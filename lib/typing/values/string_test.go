@@ -107,24 +107,41 @@ func TestToString(t *testing.T) {
 	}
 	{
 		// Extended Decimal
-		// Floats
-		val, err := ToString(float32(123.45), typing.EDecimal)
-		assert.NoError(t, err)
-		assert.Equal(t, "123.45", val)
-
-		val, err = ToString(123.45, typing.EDecimal)
-		assert.NoError(t, err)
-		assert.Equal(t, "123.45", val)
-
-		// String
-		val, err = ToString("123.45", typing.EDecimal)
-		assert.NoError(t, err)
-		assert.Equal(t, "123.45", val)
-
-		// Decimals
-		value := decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("585692791691858.25"), 38)
-		val, err = ToString(value, typing.EDecimal)
-		assert.NoError(t, err)
-		assert.Equal(t, "585692791691858.25", val)
+		{
+			// Float32
+			val, err := ToString(float32(123.45), typing.EDecimal)
+			assert.NoError(t, err)
+			assert.Equal(t, "123.45", val)
+		}
+		{
+			// Float64
+			val, err := ToString(123.45, typing.EDecimal)
+			assert.NoError(t, err)
+			assert.Equal(t, "123.45", val)
+		}
+		{
+			// String
+			val, err := ToString("123.45", typing.EDecimal)
+			assert.NoError(t, err)
+			assert.Equal(t, "123.45", val)
+		}
+		{
+			// Decimal
+			val, err := ToString(decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("585692791691858.25"), 38), typing.EDecimal)
+			assert.NoError(t, err)
+			assert.Equal(t, "585692791691858.25", val)
+		}
+		{
+			// Int32
+			val, err := ToString(int32(123), typing.EDecimal)
+			assert.NoError(t, err)
+			assert.Equal(t, "123", val)
+		}
+		{
+			// Int64
+			val, err := ToString(int64(123), typing.EDecimal)
+			assert.NoError(t, err)
+			assert.Equal(t, "123", val)
+		}
 	}
 }

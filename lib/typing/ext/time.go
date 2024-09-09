@@ -1,6 +1,9 @@
 package ext
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type ExtendedTimeKindType string
 
@@ -37,6 +40,10 @@ var (
 type ExtendedTime struct {
 	ts         time.Time
 	nestedKind NestedKind
+}
+
+func (e ExtendedTime) MarshalJSON() ([]byte, error) {
+	return json.Marshal(e.String(""))
 }
 
 func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat string) *ExtendedTime {
