@@ -23,8 +23,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/parquetutil"
-	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/xitongsys/parquet-go-source/local"
 	"github.com/xitongsys/parquet-go/writer"
 )
@@ -79,15 +77,7 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 		return nil
 	}
 
-	var cols []columns.Column
-	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
-		if col.KindDetails == typing.Invalid {
-			continue
-		}
-
-		cols = append(cols, col)
-	}
-
+	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	schema, err := parquetutil.GenerateJSONSchema(cols)
 	if err != nil {
 		return fmt.Errorf("failed to generate parquet schema: %w", err)
@@ -105,10 +95,9 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 	}
 
 	pw.CompressionType = parquet.CompressionCodec_GZIP
-	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	for _, val := range tableData.Rows() {
 		row := make(map[string]any)
-		for _, col := range columns {
+		for _, col := range cols {
 			value, err := parquetutil.ParseValue(val[col.Name()], col)
 			if err != nil {
 				return fmt.Errorf("failed to parse value, err: %w, value: %v, column: %q", err, val[col.Name()], col.Name())

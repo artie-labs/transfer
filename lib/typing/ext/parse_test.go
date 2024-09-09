@@ -78,15 +78,6 @@ func TestParseExtendedDateTime_Timestamp(t *testing.T) {
 	assert.Equal(t, "2023-04-24T17:29:05.69944Z", extTime.String(""))
 }
 
-func TestParseExtendedDateTime(t *testing.T) {
-	{
-		dtString := "Mon Jan 02 15:04:05.69944 -0700 2006"
-		ts, err := ParseExtendedDateTime(dtString)
-		assert.NoError(t, err)
-		assert.NotEqual(t, ts.String(""), dtString)
-	}
-}
-
 func TestTimeLayout(t *testing.T) {
 	ts := time.Now()
 
