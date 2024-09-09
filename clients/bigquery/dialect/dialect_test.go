@@ -35,12 +35,34 @@ func TestBigQueryDialect_DataTypeForKind(t *testing.T) {
 
 func TestBigQueryDialect_KindForDataType(t *testing.T) {
 	dialect := BigQueryDialect{}
+	{
+		// Numeric
+		{
+			// Numeric(5)
+			kd, err := dialect.KindForDataType("NUMERIC(5)", "")
+			assert.NoError(t, err)
+
+			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
+			assert.Equal(t, int32(5), kd.ExtendedDecimalDetails.Precision())
+			assert.Equal(t, int32(0), kd.ExtendedDecimalDetails.Scale())
+			assert.Equal(t, "NUMERIC(5, 0)", kd.ExtendedDecimalDetails.BigQueryKind())
+
+		}
+		{
+			// Numeric(5, 0)
+			kd, err := dialect.KindForDataType("NUMERIC(5, 0)", "")
+			assert.NoError(t, err)
+
+			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
+			assert.Equal(t, int32(5), kd.ExtendedDecimalDetails.Precision())
+			assert.Equal(t, int32(0), kd.ExtendedDecimalDetails.Scale())
+			assert.Equal(t, "NUMERIC(5, 0)", kd.ExtendedDecimalDetails.BigQueryKind())
+		}
+	}
 
 	bqColToExpectedKind := map[string]typing.KindDetails{
 		// Number
 		"numeric":           typing.EDecimal,
-		"numeric(5)":        typing.Integer,
-		"numeric(5, 0)":     typing.Integer,
 		"numeric(5, 2)":     typing.EDecimal,
 		"numeric(8, 6)":     typing.EDecimal,
 		"bignumeric(38, 2)": typing.EDecimal,
