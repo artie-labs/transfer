@@ -100,7 +100,7 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 			return castedColVal.String(), nil
 		}
 
-		return "", fmt.Errorf("colVal is not *decimal.Decimal type, type is: %T", colVal)
+		return "", fmt.Errorf("unexpected colVal type: %T", colVal)
 	}
 
 	return fmt.Sprint(colVal), nil
