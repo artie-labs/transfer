@@ -279,7 +279,7 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) erro
 			// However, this will wipe the precision unit from the INTEGER which may cause integer overflow.
 			shouldSkip := inMemoryCol.KindDetails.Kind == typing.EDecimal.Kind && foundColumn.KindDetails.Kind == typing.Integer.Kind
 			if shouldSkip {
-				slog.Info("Skipping column", slog.String("column", inMemoryCol.Name()), slog.String("inMemoryKind", inMemoryCol.KindDetails.Kind), slog.String("foundKind", foundColumn.KindDetails.Kind))
+				slog.Warn("Skipping column", slog.String("column", inMemoryCol.Name()), slog.String("inMemoryKind", inMemoryCol.KindDetails.Kind), slog.String("foundKind", foundColumn.KindDetails.Kind))
 			} else {
 				// We should take `kindDetails.kind` and `backfilled` from foundCol
 				// We are not taking primaryKey and defaultValue because DWH does not have this information.
