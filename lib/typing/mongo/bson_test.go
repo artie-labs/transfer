@@ -107,15 +107,16 @@ func TestJSONEToMap(t *testing.T) {
 	}
 	{
 		// Numbers
-		// NumberDecimal
 		assert.Equal(t, "13.37", result["test_decimal"])
 		assert.Equal(t, 13.37, result["test_decimal_2"])
 		assert.Equal(t, int64(10004), result["_id"])
 		assert.Equal(t, int64(107), result["product_id"])
-		assert.Equal(t, int32(1), result["quantity"])
-		// 32-bit ints
-		assert.Equal(t, int32(30), result["number_int"])
-		assert.Equal(t, int32(1337), result["test_int"])
+		{
+			// int32
+			assert.Equal(t, int32(1), result["quantity"])
+			assert.Equal(t, int32(30), result["number_int"])
+			assert.Equal(t, int32(1337), result["test_int"])
+		}
 	}
 	{
 		// V2 of NaN and Infinity
@@ -150,7 +151,6 @@ func TestJSONEToMap(t *testing.T) {
 	}
 	{
 		// Nested object
-
 		value, err := json.Marshal(result["test_nested_object"])
 		assert.NoError(t, err)
 		assert.Equal(t, `{"a":{"b":{"c":"hello"}},"super_nested":{"foo":"bar","test_timestamp":"2023-03-16T01:18:37+00:00"},"test_timestamp":"2023-03-16T01:18:37+00:00"}`, string(value))
