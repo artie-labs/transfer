@@ -174,7 +174,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				return nil, fmt.Errorf("extended time details for column kind details is nil")
 			}
 
-			extTime, err := ext.ParseFromInterfaceNew(value, column.KindDetails.ExtendedTimeDetails.Type)
+			extTime, err := ext.ParseFromInterface(value, column.KindDetails.ExtendedTimeDetails.Type)
 			if err != nil {
 				return nil, fmt.Errorf("failed to cast value as time.Time, value: %v, err: %w", value, err)
 			}

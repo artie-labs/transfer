@@ -20,14 +20,14 @@ func ParseTimeExactMatch(layout, value string) (time.Time, error) {
 	return ts, nil
 }
 
-func ParseFromInterfaceNew(val any, kindType ExtendedTimeKindType) (*ExtendedTime, error) {
+func ParseFromInterface(val any, kindType ExtendedTimeKindType) (*ExtendedTime, error) {
 	switch convertedVal := val.(type) {
 	case nil:
 		return nil, fmt.Errorf("val is nil")
 	case *ExtendedTime:
 		return convertedVal, nil
 	case string:
-		extendedTime, err := ParseExtendedDateTimeNew(convertedVal, kindType)
+		extendedTime, err := ParseExtendedDateTime(convertedVal, kindType)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse colVal: %q, err: %w", val, err)
 		}
@@ -38,7 +38,7 @@ func ParseFromInterfaceNew(val any, kindType ExtendedTimeKindType) (*ExtendedTim
 	}
 }
 
-func ParseExtendedDateTimeNew(val string, kindType ExtendedTimeKindType) (*ExtendedTime, error) {
+func ParseExtendedDateTime(val string, kindType ExtendedTimeKindType) (*ExtendedTime, error) {
 	switch kindType {
 	case DateTimeKindType:
 		return parseDateTime(val)

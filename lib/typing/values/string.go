@@ -32,7 +32,7 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 			return "", fmt.Errorf("column kind details for extended time details is null")
 		}
 
-		extTime, err := ext.ParseFromInterfaceNew(colVal, colKind.ExtendedTimeDetails.Type)
+		extTime, err := ext.ParseFromInterface(colVal, colKind.ExtendedTimeDetails.Type)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}

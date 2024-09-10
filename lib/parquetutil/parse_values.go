@@ -25,7 +25,7 @@ func ParseValue(colVal any, colKind columns.Column) (any, error) {
 			return "", fmt.Errorf("column kind details for extended time details is not set")
 		}
 
-		extTime, err := ext.ParseFromInterfaceNew(colVal, colKind.KindDetails.ExtendedTimeDetails.Type)
+		extTime, err := ext.ParseFromInterface(colVal, colKind.KindDetails.ExtendedTimeDetails.Type)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
