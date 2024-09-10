@@ -73,7 +73,7 @@ func ParseFromInterfaceNew(val any, kindType ExtendedTimeKindType) (*ExtendedTim
 	case string:
 		extendedTime, err := ParseExtendedDateTimeNew(convertedVal, kindType)
 		if err != nil {
-			return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", val, err)
+			return nil, fmt.Errorf("failed to parse colVal: %q, err: %w", val, err)
 		}
 
 		return extendedTime, nil
