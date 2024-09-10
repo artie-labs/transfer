@@ -21,13 +21,13 @@ func ParseValue(colVal any, colKind columns.Column) (any, error) {
 
 	switch colKind.KindDetails.Kind {
 	case typing.ETime.Kind:
-		extTime, err := ext.ParseFromInterface(colVal)
-		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
+		if colKind.KindDetails.ExtendedTimeDetails == nil {
+			return "", fmt.Errorf("column kind details for extended time details is not set")
 		}
 
-		if colKind.KindDetails.ExtendedTimeDetails == nil {
-			return "", fmt.Errorf("column kind details for extended time details is null")
+		extTime, err := ext.ParseFromInterfaceNew(colVal, colKind.KindDetails.ExtendedTimeDetails.Type)
+		if err != nil {
+			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
 
 		if colKind.KindDetails.ExtendedTimeDetails.Type == ext.DateKindType || colKind.KindDetails.ExtendedTimeDetails.Type == ext.TimeKindType {
