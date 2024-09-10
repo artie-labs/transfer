@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// TODO: Deprecate
 func ParseFromInterface(val any) (*ExtendedTime, error) {
 	switch convertedVal := val.(type) {
 	case nil:
@@ -38,8 +39,8 @@ func ParseTimeExactMatch(layout, value string) (time.Time, error) {
 	return ts, nil
 }
 
+// TODO: Deprecate
 func ParseExtendedDateTime(val string) (*ExtendedTime, error) {
-	// TODO: ExtendedTimeKindType so we can selectively parse.
 	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
 		if ts, err := ParseTimeExactMatch(supportedDateTimeLayout, val); err == nil {
 			return NewExtendedTime(ts, DateTimeKindType, supportedDateTimeLayout), nil
@@ -61,4 +62,83 @@ func ParseExtendedDateTime(val string) (*ExtendedTime, error) {
 	}
 
 	return nil, fmt.Errorf("unsupported value: %q", val)
+}
+
+func ParseFromInterfaceNew(val any, kindType ExtendedTimeKindType) (*ExtendedTime, error) {
+	switch convertedVal := val.(type) {
+	case nil:
+		return nil, fmt.Errorf("val is nil")
+	case *ExtendedTime:
+		return convertedVal, nil
+	case string:
+		extendedTime, err := ParseExtendedDateTimeNew(convertedVal, kindType)
+		if err != nil {
+			return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", val, err)
+		}
+
+		return extendedTime, nil
+	default:
+		return nil, fmt.Errorf("failed to parse colVal, expected type string or *ExtendedTime and got: %T", convertedVal)
+	}
+}
+
+func ParseExtendedDateTimeNew(val string, kindType ExtendedTimeKindType) (*ExtendedTime, error) {
+	switch kindType {
+	case DateTimeKindType:
+		return parseDateTime(val)
+	case DateKindType:
+		// Try date first
+		if et, err := parseDate(val); err == nil {
+			return et, nil
+		}
+
+		// If that doesn't work, try timestamp
+		if et, err := parseDateTime(val); err == nil {
+			et.nestedKind = Date
+			return et, nil
+		}
+	case TimeKindType:
+		// Try time first
+		if et, err := parseTime(val); err == nil {
+			return et, nil
+		}
+
+		// If that doesn't work, try timestamp
+		if et, err := parseDateTime(val); err == nil {
+			et.nestedKind = Time
+			return et, nil
+		}
+	}
+
+	return nil, fmt.Errorf("unsupported value: %q, kindType: %q", val, kindType)
+}
+
+func parseDateTime(value string) (*ExtendedTime, error) {
+	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
+		if ts, err := ParseTimeExactMatch(supportedDateTimeLayout, value); err == nil {
+			return NewExtendedTime(ts, DateTimeKindType, supportedDateTimeLayout), nil
+		}
+	}
+
+	return nil, fmt.Errorf("unsupported value: %q", value)
+}
+
+func parseDate(value string) (*ExtendedTime, error) {
+	for _, supportedDateFormat := range supportedDateFormats {
+		if ts, err := ParseTimeExactMatch(supportedDateFormat, value); err == nil {
+			return NewExtendedTime(ts, DateKindType, supportedDateFormat), nil
+		}
+	}
+
+	return nil, fmt.Errorf("unsupported value: %q", value)
+}
+
+func parseTime(value string) (*ExtendedTime, error) {
+	for _, supportedTimeFormat := range SupportedTimeFormatsLegacy {
+		if ts, err := ParseTimeExactMatch(supportedTimeFormat, value); err == nil {
+			return NewExtendedTime(ts, TimeKindType, supportedTimeFormat), nil
+		}
+	}
+
+	return nil, fmt.Errorf("unsupported value: %q", value)
 }
