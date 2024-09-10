@@ -64,20 +64,14 @@ func TestJSONEToMap(t *testing.T) {
 	"test_null": null,
 	"test_list": [1.0,2.0,3.0,4.0,"hello"],
 	"test_nested_object": {
-		"a": {
-			"b": {
-				"c": "hello"
-			}
-		},
+		"a": {"b": {"c": "hello"}},
 		"test_timestamp": {"$timestamp": { "t": 1678929517, "i": 1 }},
 		"super_nested": {
 			"test_timestamp": {"$timestamp": { "t": 1678929517, "i": 1 }},
 			"foo": "bar"
 		}
 	},
-	"test_timestamp": {
-	   "$timestamp": { "t": 1678929517, "i": 1 }
-   	},
+	"test_timestamp": {"$timestamp": { "t": 1678929517, "i": 1 }},
 	"test_nan": NaN,
 	"test_nan_v2": {"$numberDouble": "NaN"},
 	"test_nan_string": "NaN",
