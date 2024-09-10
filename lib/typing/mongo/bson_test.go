@@ -6,12 +6,9 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
-
-	"go.mongodb.org/mongo-driver/bson"
-
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // TestJSONEToMap tests every single type is listed here:
@@ -100,7 +97,6 @@ func TestJSONEToMap(t *testing.T) {
 }`)
 	result, err := JSONEToMap(bsonData)
 	assert.NoError(t, err)
-
 	{
 		// String
 		assert.Equal(t, "Robin Tang", result["full_name"])
