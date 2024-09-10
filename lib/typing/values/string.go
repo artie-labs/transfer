@@ -28,8 +28,8 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 
 	switch colKind.Kind {
 	case typing.ETime.Kind:
-		if colKind.ExtendedTimeDetails == nil {
-			return "", fmt.Errorf("column kind details for extended time details is null")
+		if err := colKind.EnsureExtendedTimeDetails(); err != nil {
+			return "", err
 		}
 
 		extTime, err := ext.ParseFromInterface(colVal, colKind.ExtendedTimeDetails.Type)

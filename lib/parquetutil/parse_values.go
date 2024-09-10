@@ -21,8 +21,8 @@ func ParseValue(colVal any, colKind columns.Column) (any, error) {
 
 	switch colKind.KindDetails.Kind {
 	case typing.ETime.Kind:
-		if colKind.KindDetails.ExtendedTimeDetails == nil {
-			return "", fmt.Errorf("column kind details for extended time details is not set")
+		if err := colKind.KindDetails.EnsureExtendedTimeDetails(); err != nil {
+			return "", err
 		}
 
 		extTime, err := ext.ParseFromInterface(colVal, colKind.KindDetails.ExtendedTimeDetails.Type)
