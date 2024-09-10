@@ -27,25 +27,31 @@ func TestToString(t *testing.T) {
 	}
 	{
 		// ETime
-		_, err := ToString("2021-01-01T00:00:00Z", typing.ETime)
-		assert.ErrorContains(t, err, "column kind details for extended time details is null")
+		{
+			// Error
+			_, err := ToString("2021-01-01T00:00:00Z", typing.ETime)
+			assert.ErrorContains(t, err, "extended time details is not set")
+		}
+		{
+			eTimeCol := columns.NewColumn("time", typing.ETime)
+			eTimeCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{Type: ext.TimeKindType}
+			{
+				// Using `string`
+				val, err := ToString("2021-01-01T03:52:00Z", eTimeCol.KindDetails)
+				assert.NoError(t, err)
+				assert.Equal(t, "03:52:00", val)
+			}
+			{
+				// Using `*ExtendedTime`
+				dustyBirthday := time.Date(2019, time.December, 31, 0, 0, 0, 0, time.UTC)
+				extendedTime := ext.NewExtendedTime(dustyBirthday, ext.DateTimeKindType, "2006-01-02T15:04:05Z07:00")
 
-		eTimeCol := columns.NewColumn("time", typing.ETime)
-		eTimeCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{Type: ext.TimeKindType}
-		// Using `string`
-		val, err := ToString("2021-01-01T03:52:00Z", eTimeCol.KindDetails)
-		assert.NoError(t, err)
-		assert.Equal(t, "03:52:00", val)
-
-		// Using `*ExtendedTime`
-		dustyBirthday := time.Date(2019, time.December, 31, 0, 0, 0, 0, time.UTC)
-		originalFmt := "2006-01-02T15:04:05Z07:00"
-		extendedTime := ext.NewExtendedTime(dustyBirthday, ext.DateTimeKindType, originalFmt)
-
-		eTimeCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{Type: ext.DateTimeKindType}
-		actualValue, err := ToString(extendedTime, eTimeCol.KindDetails)
-		assert.NoError(t, err)
-		assert.Equal(t, extendedTime.String(originalFmt), actualValue)
+				eTimeCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{Type: ext.DateTimeKindType}
+				actualValue, err := ToString(extendedTime, eTimeCol.KindDetails)
+				assert.NoError(t, err)
+				assert.Equal(t, extendedTime.String(""), actualValue)
+			}
+		}
 	}
 	{
 		// String
