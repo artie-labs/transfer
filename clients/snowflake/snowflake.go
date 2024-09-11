@@ -78,7 +78,7 @@ func (s *Store) reestablishConnection() error {
 
 	cfg, err := s.config.Snowflake.ToConfig()
 	if err != nil {
-		return fmt.Errorf("faield to get snowflake config: %w", err)
+		return fmt.Errorf("failed to get snowflake config: %w", err)
 	}
 
 	dsn, err := gosnowflake.DSN(cfg)
