@@ -106,7 +106,6 @@ func TestColumn_DefaultValue(t *testing.T) {
 			assert.Equal(t, expectedValue, actualValue, fmt.Sprintf("%s %s", testCase.name, dialect))
 		}
 	}
-
 	{
 		// Decimal value
 		{
@@ -116,6 +115,13 @@ func TestColumn_DefaultValue(t *testing.T) {
 			value, err := DefaultValue(col, redshiftDialect.RedshiftDialect{})
 			assert.NoError(t, err)
 			assert.Equal(t, "3.14159", value)
+		}
+		{
+			// Type int64
+			col := columns.NewColumnWithDefaultValue("", typing.EDecimal, int64(123))
+			value, err := DefaultValue(col, redshiftDialect.RedshiftDialect{})
+			assert.NoError(t, err)
+			assert.Equal(t, "123", value)
 		}
 		{
 			// Wrong type (string)

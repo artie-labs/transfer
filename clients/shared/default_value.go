@@ -39,6 +39,11 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 			return sql.QuoteLiteral(extTime.String(column.KindDetails.ExtendedTimeDetails.Format)), nil
 		}
 	case typing.EDecimal.Kind:
+		int64Value, err := typing.AssertType[int64](column.DefaultValue())
+		if err == nil {
+			return fmt.Sprint(int64Value), nil
+		}
+
 		decimalValue, err := typing.AssertType[*decimal.Decimal](column.DefaultValue())
 		if err != nil {
 			return nil, err
