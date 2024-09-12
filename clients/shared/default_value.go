@@ -40,9 +40,9 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 		}
 	case typing.EDecimal.Kind:
 		if column.KindDetails.ExtendedDecimalDetails.Scale() == 0 {
-			int64Value, err := typing.AssertType[int64](column.DefaultValue())
-			if err == nil {
-				return fmt.Sprint(int64Value), nil
+			switch column.DefaultValue().(type) {
+			case int, int8, int16, int32, int64:
+				return fmt.Sprint(column.DefaultValue()), nil
 			}
 		}
 
