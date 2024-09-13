@@ -16,9 +16,9 @@ func TestConnection_Mechanism(t *testing.T) {
 		c := NewConnection(false, false, "username", "password")
 		assert.Equal(t, ScramSha512, c.Mechanism())
 
-		// AWS MSK IAM is enabled, but SCRAM is preferred
+		// Username and password are set but AWS IAM is enabled
 		c = NewConnection(true, false, "username", "password")
-		assert.Equal(t, ScramSha512, c.Mechanism())
+		assert.Equal(t, AwsMskIam, c.Mechanism())
 	}
 	{
 		c := NewConnection(true, false, "", "")

@@ -37,12 +37,12 @@ func NewConnection(enableAWSMSKIAM bool, disableTLS bool, username, password str
 }
 
 func (c Connection) Mechanism() Mechanism {
-	if c.username != "" && c.password != "" {
-		return ScramSha512
-	}
-
 	if c.enableAWSMSKIAM {
 		return AwsMskIam
+	}
+
+	if c.username != "" && c.password != "" {
+		return ScramSha512
 	}
 
 	return Plain
