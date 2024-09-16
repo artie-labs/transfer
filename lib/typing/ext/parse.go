@@ -38,29 +38,29 @@ func ParseFromInterface(val any, kindType ExtendedTimeKindType) (*ExtendedTime, 
 	}
 }
 
-func ParseExtendedDateTime(val string, kindType ExtendedTimeKindType) (*ExtendedTime, error) {
+func ParseExtendedDateTime(value string, kindType ExtendedTimeKindType) (*ExtendedTime, error) {
 	switch kindType {
 	case DateTimeKindType:
-		return parseDateTime(val)
+		return parseDateTime(value)
 	case DateKindType:
 		// Try date first
-		if et, err := parseDate(val); err == nil {
+		if et, err := parseDate(value); err == nil {
 			return et, nil
 		}
 
 		// If that doesn't work, try timestamp
-		if et, err := parseDateTime(val); err == nil {
+		if et, err := parseDateTime(value); err == nil {
 			et.nestedKind = Date
 			return et, nil
 		}
 	case TimeKindType:
 		// Try time first
-		if et, err := parseTime(val); err == nil {
+		if et, err := parseTime(value); err == nil {
 			return et, nil
 		}
 
 		// If that doesn't work, try timestamp
-		if et, err := parseDateTime(val); err == nil {
+		if et, err := parseDateTime(value); err == nil {
 			et.nestedKind = Time
 			return et, nil
 		}
