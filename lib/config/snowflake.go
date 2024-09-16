@@ -30,8 +30,12 @@ func (s Snowflake) ToConfig() (*gosnowflake.Config, error) {
 		Region:      s.Region,
 		Application: s.Application,
 		Params: map[string]*string{
+			// This parameter will cancel in-progress queries if connectivity is lost.
 			// https://docs.snowflake.com/en/sql-reference/parameters#abort-detached-query
 			"ABORT_DETACHED_QUERY": ptr.ToString("true"),
+			// This parameter must be set to prevent the auth token from expiring after 4 hours.
+			// https://docs.snowflake.com/en/user-guide/session-policies#considerations
+			"CLIENT_SESSION_KEEP_ALIVE": ptr.ToString("true"),
 		},
 	}
 
