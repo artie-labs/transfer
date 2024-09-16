@@ -106,20 +106,26 @@ func TestColumn_DefaultValue(t *testing.T) {
 			assert.Equal(t, expectedValue, actualValue, fmt.Sprintf("%s %s", testCase.name, dialect))
 		}
 	}
-
 	{
 		// Decimal value
 		{
 			// Type *decimal.Decimal
 			decimalValue := decimal.NewDecimal(numbers.MustParseDecimal("3.14159"))
-			col := columns.NewColumnWithDefaultValue("", typing.EDecimal, decimalValue)
+			col := columns.NewColumnWithDefaultValue("", typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(7, 5)), decimalValue)
 			value, err := DefaultValue(col, redshiftDialect.RedshiftDialect{})
 			assert.NoError(t, err)
 			assert.Equal(t, "3.14159", value)
 		}
 		{
+			// Type int64
+			col := columns.NewColumnWithDefaultValue("", typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 0)), int64(123))
+			value, err := DefaultValue(col, redshiftDialect.RedshiftDialect{})
+			assert.NoError(t, err)
+			assert.Equal(t, "123", value)
+		}
+		{
 			// Wrong type (string)
-			col := columns.NewColumnWithDefaultValue("", typing.EDecimal, "hello")
+			col := columns.NewColumnWithDefaultValue("", typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(7, 5)), "hello")
 			_, err := DefaultValue(col, redshiftDialect.RedshiftDialect{})
 			assert.ErrorContains(t, err, "expected type *decimal.Decimal, got string")
 		}
