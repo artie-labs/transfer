@@ -2,6 +2,7 @@ package typing
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -15,6 +16,14 @@ type KindDetails struct {
 
 	// Optional kind details metadata
 	OptionalStringPrecision *int32
+}
+
+func (k *KindDetails) EnsureExtendedTimeDetails() error {
+	if k.ExtendedTimeDetails == nil {
+		return fmt.Errorf("extended time details is not set")
+	}
+
+	return nil
 }
 
 // Summarized this from Snowflake + Reflect.

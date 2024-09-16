@@ -28,13 +28,13 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 
 	switch colKind.Kind {
 	case typing.ETime.Kind:
-		extTime, err := ext.ParseFromInterface(colVal)
-		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
+		if err := colKind.EnsureExtendedTimeDetails(); err != nil {
+			return "", err
 		}
 
-		if colKind.ExtendedTimeDetails == nil {
-			return "", fmt.Errorf("column kind details for extended time details is null")
+		extTime, err := ext.ParseFromInterface(colVal, colKind.ExtendedTimeDetails.Type)
+		if err != nil {
+			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
 
 		if colKind.ExtendedTimeDetails.Type == ext.TimeKindType {

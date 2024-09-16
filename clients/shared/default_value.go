@@ -23,11 +23,11 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 	case typing.Struct.Kind, typing.Array.Kind:
 		return dialect.EscapeStruct(fmt.Sprint(column.DefaultValue())), nil
 	case typing.ETime.Kind:
-		if column.KindDetails.ExtendedTimeDetails == nil {
-			return nil, fmt.Errorf("column kind details for extended time is nil")
+		if err := column.KindDetails.EnsureExtendedTimeDetails(); err != nil {
+			return nil, err
 		}
 
-		extTime, err := ext.ParseFromInterface(column.DefaultValue())
+		extTime, err := ext.ParseFromInterface(column.DefaultValue(), column.KindDetails.ExtendedTimeDetails.Type)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", column.DefaultValue(), err)
 		}

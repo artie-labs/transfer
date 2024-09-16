@@ -170,13 +170,13 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 
 			message.Set(field, protoreflect.ValueOfString(castedValue))
 		case typing.ETime.Kind:
-			extTime, err := ext.ParseFromInterface(value)
-			if err != nil {
-				return nil, fmt.Errorf("failed to cast value as time.Time, value: %v, err: %w", value, err)
+			if err := column.KindDetails.EnsureExtendedTimeDetails(); err != nil {
+				return nil, err
 			}
 
-			if column.KindDetails.ExtendedTimeDetails == nil {
-				return nil, fmt.Errorf("extended time details for column kind details is nil")
+			extTime, err := ext.ParseFromInterface(value, column.KindDetails.ExtendedTimeDetails.Type)
+			if err != nil {
+				return nil, fmt.Errorf("failed to cast value as time.Time, value: %v, err: %w", value, err)
 			}
 
 			switch column.KindDetails.ExtendedTimeDetails.Type {
