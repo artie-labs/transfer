@@ -66,7 +66,7 @@ func ParseExtendedDateTime(value string, kindType ExtendedTimeKindType) (*Extend
 		}
 	}
 
-	return nil, fmt.Errorf("unsupported value: %q, kindType: %q", val, kindType)
+	return nil, fmt.Errorf("unsupported value: %q, kindType: %q", value, kindType)
 }
 
 func parseDateTime(value string) (*ExtendedTime, error) {
