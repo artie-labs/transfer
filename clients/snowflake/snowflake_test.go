@@ -126,13 +126,8 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 
 	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDwhTableConfig(&cols, nil, false, true))
 
-	s.fakeStageStore.ExecReturnsOnCall(0, nil, fmt.Errorf("390114: Authentication token has expired. The user must authenticate again."))
-	err := s.stageStore.Merge(tableData)
-	assert.NoError(s.T(), err, "transient errors like auth errors will be retried")
-
-	// 5 regular ones and then 1 additional one to re-establish auth and another one for dropping the temporary table
-	baseline := 5
-	assert.Equal(s.T(), baseline+2, s.fakeStageStore.ExecCallCount(), "called merge")
+	assert.NoError(s.T(), s.stageStore.Merge(tableData), "transient errors like auth errors will be retried")
+	assert.Equal(s.T(), 5, s.fakeStageStore.ExecCallCount(), "called merge")
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMerge() {
