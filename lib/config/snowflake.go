@@ -4,8 +4,7 @@ import (
 	"fmt"
 
 	"github.com/artie-labs/transfer/lib/crypto"
-
-	"github.com/artie-labs/transfer/lib/ptr"
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/snowflakedb/gosnowflake"
 )
 
@@ -32,10 +31,10 @@ func (s Snowflake) ToConfig() (*gosnowflake.Config, error) {
 		Params: map[string]*string{
 			// This parameter will cancel in-progress queries if connectivity is lost.
 			// https://docs.snowflake.com/en/sql-reference/parameters#abort-detached-query
-			"ABORT_DETACHED_QUERY": ptr.ToString("true"),
+			"ABORT_DETACHED_QUERY": typing.ToPtr("true"),
 			// This parameter must be set to prevent the auth token from expiring after 4 hours.
 			// https://docs.snowflake.com/en/user-guide/session-policies#considerations
-			"CLIENT_SESSION_KEEP_ALIVE": ptr.ToString("true"),
+			"CLIENT_SESSION_KEEP_ALIVE": typing.ToPtr("true"),
 		},
 	}
 

@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -38,7 +37,7 @@ func TestField_GetScaleAndPrecision(t *testing.T) {
 				KafkaDecimalPrecisionKey: 10,
 			},
 			expectedScale:     5,
-			expectedPrecision: ptr.ToInt32(10),
+			expectedPrecision: typing.ToPtr(int32(10)),
 		},
 		{
 			name: "Test Case 4: Invalid Scale Type",
