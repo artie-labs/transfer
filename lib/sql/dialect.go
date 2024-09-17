@@ -6,6 +6,15 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+type DefaultValueStrategy int
+
+const (
+	// Backfill - use backfill strategy for default values
+	Backfill DefaultValueStrategy = iota
+	// Native - set default values directly into the destination
+	Native
+)
+
 type TableIdentifier interface {
 	EscapedTable() string
 	Table() string
@@ -36,4 +45,7 @@ type Dialect interface {
 		// containsHardDeletes is only used for Redshift where we do not issue a DELETE statement if there are no hard deletes in the batch
 		containsHardDeletes bool,
 	) ([]string, error)
+
+	// Default values
+	GetDefaultValueStrategy() DefaultValueStrategy
 }

@@ -43,8 +43,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 	}
 
 	// Columns that are missing in DWH, but exist in our CDC stream.
-	err = createAlterTableArgs.AlterTable(dwh, targetKeysMissing...)
-	if err != nil {
+	if err = createAlterTableArgs.AlterTable(dwh, targetKeysMissing...); err != nil {
 		return fmt.Errorf("failed to alter table: %w", err)
 	}
 
