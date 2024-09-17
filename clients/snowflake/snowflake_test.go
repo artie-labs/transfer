@@ -126,8 +126,8 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 
 	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDwhTableConfig(&cols, nil, false, true))
 
-	assert.NoError(s.T(), s.stageStore.Merge(tableData), "transient errors like auth errors will be retried")
-	assert.Equal(s.T(), 5, s.fakeStageStore.ExecCallCount(), "called merge")
+	assert.NoError(s.T(), s.stageStore.Merge(tableData))
+	assert.Equal(s.T(), 5, s.fakeStageStore.ExecCallCount())
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMerge() {
