@@ -95,8 +95,7 @@ func BackfillColumn(dwh destination.DataWarehouse, column columns.Column, tableI
 		}
 
 		_, err = dwh.Exec(query)
-		return nil
-
+		return err
 	case sql.Native:
 		// TODO: Support native strat
 		return nil
