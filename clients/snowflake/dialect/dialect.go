@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -89,7 +88,7 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.
 
 			return typing.KindDetails{
 				Kind:                    typing.String.Kind,
-				OptionalStringPrecision: ptr.ToInt32(int32(precision)),
+				OptionalStringPrecision: typing.ToPtr(int32(precision)),
 			}, nil
 		default:
 			return typing.Invalid, fmt.Errorf("expected at most one type parameters, received %d", len(parameters))

@@ -5,8 +5,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 
-	"github.com/artie-labs/transfer/lib/ptr"
-
 	"github.com/artie-labs/transfer/lib/typing"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -31,7 +29,7 @@ func TestParseValue(t *testing.T) {
 
 		// If the string precision exceeds the value, we'll need to insert an exceeded value.
 		stringCol := columns.NewColumn("foo", typing.String)
-		stringCol.KindDetails.OptionalStringPrecision = ptr.ToInt32(25)
+		stringCol.KindDetails.OptionalStringPrecision = typing.ToPtr(int32(25))
 
 		val, err = parseValue(`abcdefabcdefabcdefabcdef113321`, stringCol)
 		assert.NoError(t, err)

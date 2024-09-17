@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -81,7 +80,7 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 
 		return typing.KindDetails{
 			Kind:                    typing.String.Kind,
-			OptionalStringPrecision: ptr.ToInt32(int32(precision)),
+			OptionalStringPrecision: typing.ToPtr(int32(precision)),
 		}, nil
 	}
 

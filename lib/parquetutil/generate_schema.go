@@ -3,7 +3,6 @@ package parquetutil
 import (
 	"encoding/json"
 
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -20,13 +19,12 @@ func GenerateJSONSchema(columns []columns.Column) (string, error) {
 		fields = append(fields, *field)
 	}
 
-	schemaBytes, err := json.Marshal(typing.Field{
-		Tag: typing.FieldTag{
-			Name:           "parquet-go-root",
-			RepetitionType: ptr.ToString("REQUIRED"),
-		}.String(),
-		Fields: fields,
-	})
+	schemaBytes, err := json.Marshal(
+		typing.Field{
+			Tag:    typing.FieldTag{Name: "parquet-go-root", RepetitionType: typing.ToPtr("REQUIRED")}.String(),
+			Fields: fields,
+		},
+	)
 
 	if err != nil {
 		return "", err
