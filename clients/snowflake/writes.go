@@ -17,6 +17,7 @@ func (s *Store) Append(tableData *optimization.TableData, _ bool) error {
 	var err error
 	for i := 0; i < maxRetries; i++ {
 		if i > 0 {
+			// TODO: remove
 			if IsAuthExpiredError(err) {
 				slog.Warn("Authentication has expired, will reload the Snowflake store and retry appending", slog.Any("err", err))
 				if connErr := s.reestablishConnection(); connErr != nil {
@@ -49,6 +50,7 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 	var err error
 	for i := 0; i < maxRetries; i++ {
 		if i > 0 {
+			// TODO: Remove
 			if IsAuthExpiredError(err) {
 				slog.Warn("Authentication has expired, will reload the Snowflake store and retry merging", slog.Any("err", err))
 				if connErr := s.reestablishConnection(); connErr != nil {
