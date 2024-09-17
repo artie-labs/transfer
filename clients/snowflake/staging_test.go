@@ -9,7 +9,6 @@ import (
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -30,12 +29,12 @@ func (s *SnowflakeTestSuite) TestReplaceExceededValues() {
 	// String + OptionalStringPrecision set + equal to OptionalStringPrecision:
 	assert.Equal(s.T(),
 		strings.Repeat("a", 100),
-		replaceExceededValues(strings.Repeat("a", 100), typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: ptr.ToInt32(100)}),
+		replaceExceededValues(strings.Repeat("a", 100), typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(100))}),
 	)
 	// String + OptionalStringPrecision set + larger than OptionalStringPrecision:
 	assert.Equal(s.T(),
 		constants.ExceededValueMarker,
-		replaceExceededValues(strings.Repeat("a", 101), typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: ptr.ToInt32(100)}),
+		replaceExceededValues(strings.Repeat("a", 101), typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(100))}),
 	)
 }
 

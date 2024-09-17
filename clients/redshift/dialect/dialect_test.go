@@ -8,7 +8,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -27,7 +26,7 @@ func TestRedshiftDialect_DataTypeForKind(t *testing.T) {
 			assert.Equal(t, "VARCHAR(MAX)", RedshiftDialect{}.DataTypeForKind(typing.String, true))
 		}
 		{
-			assert.Equal(t, "VARCHAR(12345)", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: ptr.ToInt32(12345)}, false))
+			assert.Equal(t, "VARCHAR(12345)", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(12345))}, false))
 		}
 	}
 }
@@ -92,7 +91,7 @@ func TestRedshiftDialect_KindForDataType(t *testing.T) {
 		// String with precision
 		kd, err := dialect.KindForDataType("character varying", "65535")
 		assert.NoError(t, err)
-		assert.Equal(t, typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: ptr.ToInt32(65535)}, kd)
+		assert.Equal(t, typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(65535))}, kd)
 	}
 	{
 		// Times

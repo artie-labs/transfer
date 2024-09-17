@@ -6,8 +6,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
-
-	"github.com/artie-labs/transfer/lib/ptr"
 )
 
 type FieldTag struct {
@@ -87,8 +85,8 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 			Tag: FieldTag{
 				Name:          colName,
 				InName:        &colName,
-				Type:          ptr.ToString("BYTE_ARRAY"),
-				ConvertedType: ptr.ToString("UTF8"),
+				Type:          ToPtr("BYTE_ARRAY"),
+				ConvertedType: ToPtr("UTF8"),
 			}.String(),
 		}, nil
 	}
@@ -99,7 +97,7 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 			Tag: FieldTag{
 				Name:   colName,
 				InName: &colName,
-				Type:   ptr.ToString("FLOAT"),
+				Type:   ToPtr("FLOAT"),
 			}.String(),
 		}, nil
 	case Integer.Kind, ETime.Kind:
@@ -109,7 +107,7 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 			Tag: FieldTag{
 				Name:   colName,
 				InName: &colName,
-				Type:   ptr.ToString("INT64"),
+				Type:   ToPtr("INT64"),
 			}.String(),
 		}, nil
 	case EDecimal.Kind:
@@ -120,8 +118,8 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 				Tag: FieldTag{
 					Name:          colName,
 					InName:        &colName,
-					Type:          ptr.ToString("BYTE_ARRAY"),
-					ConvertedType: ptr.ToString("UTF8"),
+					Type:          ToPtr("BYTE_ARRAY"),
+					ConvertedType: ToPtr("UTF8"),
 				}.String(),
 			}, nil
 		}
@@ -131,10 +129,10 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 			Tag: FieldTag{
 				Name:          colName,
 				InName:        &colName,
-				Type:          ptr.ToString("BYTE_ARRAY"),
-				ConvertedType: ptr.ToString("DECIMAL"),
-				Precision:     ptr.ToInt(int(precision)),
-				Scale:         ptr.ToInt(int(scale)),
+				Type:          ToPtr("BYTE_ARRAY"),
+				ConvertedType: ToPtr("DECIMAL"),
+				Precision:     ToPtr(int(precision)),
+				Scale:         ToPtr(int(scale)),
 			}.String(),
 		}, nil
 	case Boolean.Kind:
@@ -142,7 +140,7 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 			Tag: FieldTag{
 				Name:   colName,
 				InName: &colName,
-				Type:   ptr.ToString("BOOLEAN"),
+				Type:   ToPtr("BOOLEAN"),
 			}.String(),
 		}, nil
 	case Array.Kind:
@@ -150,16 +148,16 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 			Tag: FieldTag{
 				Name:           colName,
 				InName:         &colName,
-				Type:           ptr.ToString("LIST"),
-				RepetitionType: ptr.ToString("REQUIRED"),
+				Type:           ToPtr("LIST"),
+				RepetitionType: ToPtr("REQUIRED"),
 			}.String(),
 			Fields: []Field{
 				{
 					Tag: FieldTag{
 						Name:           "element",
-						Type:           ptr.ToString("BYTE_ARRAY"),
-						ConvertedType:  ptr.ToString("UTF8"),
-						RepetitionType: ptr.ToString("REQUIRED"),
+						Type:           ToPtr("BYTE_ARRAY"),
+						ConvertedType:  ToPtr("UTF8"),
+						RepetitionType: ToPtr("REQUIRED"),
 					}.String(),
 				},
 			},

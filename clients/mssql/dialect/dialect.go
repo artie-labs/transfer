@@ -8,7 +8,6 @@ import (
 	mssql "github.com/microsoft/go-mssqldb"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -92,7 +91,7 @@ func (MSSQLDialect) KindForDataType(rawType string, stringPrecision string) (typ
 		var strPrecision *int32
 		precision, err := strconv.ParseInt(stringPrecision, 10, 32)
 		if err == nil {
-			strPrecision = ptr.ToInt32(int32(precision))
+			strPrecision = typing.ToPtr(int32(precision))
 		}
 
 		// precision of -1 means it's MAX.

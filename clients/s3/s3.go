@@ -8,8 +8,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/typing"
+
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/artie-labs/transfer/lib/stringutil"
@@ -135,8 +136,8 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 		Bucket:                     s.config.S3.Bucket,
 		OptionalS3Prefix:           s.ObjectPrefix(tableData),
 		FilePath:                   fp,
-		OverrideAWSAccessKeyID:     ptr.ToString(s.config.S3.AwsAccessKeyID),
-		OverrideAWSAccessKeySecret: ptr.ToString(s.config.S3.AwsSecretAccessKey),
+		OverrideAWSAccessKeyID:     typing.ToPtr(s.config.S3.AwsAccessKeyID),
+		OverrideAWSAccessKeySecret: typing.ToPtr(s.config.S3.AwsSecretAccessKey),
 	}); err != nil {
 		return fmt.Errorf("failed to upload file to s3: %w", err)
 	}

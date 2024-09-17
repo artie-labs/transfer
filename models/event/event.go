@@ -15,7 +15,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -47,7 +46,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 				// We need to escape the column name similar to have parity with event.GetColumns()
 				columns.EscapeName(primaryKey),
 				columns.UpsertColumnArg{
-					PrimaryKey: ptr.ToBool(true),
+					PrimaryKey: typing.ToPtr(true),
 				},
 			)
 		}
@@ -196,7 +195,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 
 		if toastedCol {
 			inMemoryColumns.UpsertColumn(newColName, columns.UpsertColumnArg{
-				ToastCol: ptr.ToBool(true),
+				ToastCol: typing.ToPtr(true),
 			})
 		} else {
 			retrievedColumn, isOk := inMemoryColumns.GetColumn(newColName)
