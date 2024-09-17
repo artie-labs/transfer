@@ -90,7 +90,7 @@ func parseDate(value string) (*ExtendedTime, error) {
 }
 
 func parseTime(value string) (*ExtendedTime, error) {
-	for _, supportedTimeFormat := range SupportedTimeFormatsLegacy {
+	for _, supportedTimeFormat := range SupportedTimeFormats {
 		if ts, err := ParseTimeExactMatch(supportedTimeFormat, value); err == nil {
 			return NewExtendedTime(ts, TimeKindType, supportedTimeFormat), nil
 		}
