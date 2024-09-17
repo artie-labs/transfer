@@ -19,7 +19,6 @@ import (
 
 type Store struct {
 	db.Store
-	testDB    bool // Used for testing
 	configMap *types.DwhToTablesConfigMap
 	config    config.Config
 }
@@ -80,7 +79,6 @@ func LoadSnowflake(cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			testDB:    true,
 			configMap: &types.DwhToTablesConfigMap{},
 			config:    cfg,
 			Store:     *_store,
