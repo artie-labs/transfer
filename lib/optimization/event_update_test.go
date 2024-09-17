@@ -3,7 +3,6 @@ package optimization
 import (
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -180,7 +179,7 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		// Testing string precision
 		stringKindWithPrecision := typing.KindDetails{
 			Kind:                    typing.String.Kind,
-			OptionalStringPrecision: ptr.ToInt32(123),
+			OptionalStringPrecision: typing.ToPtr(int32(123)),
 		}
 
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn(strCol, stringKindWithPrecision)))

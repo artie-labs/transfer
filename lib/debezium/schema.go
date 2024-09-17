@@ -6,7 +6,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/debezium/converters"
 	"github.com/artie-labs/transfer/lib/maputil"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
@@ -76,7 +75,7 @@ func (f Field) GetScaleAndPrecision() (int32, *int32, error) {
 			return 0, nil, precisionErr
 		}
 
-		precisionPtr = ptr.ToInt32(precision)
+		precisionPtr = typing.ToPtr(int32(precision))
 	}
 
 	return scale, precisionPtr, nil

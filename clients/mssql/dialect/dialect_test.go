@@ -6,7 +6,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -34,7 +33,7 @@ func TestMSSQLDialect_DataTypeForKind(t *testing.T) {
 		{
 			kd: typing.KindDetails{
 				Kind:                    typing.String.Kind,
-				OptionalStringPrecision: ptr.ToInt32(12345),
+				OptionalStringPrecision: typing.ToPtr(int32(12345)),
 			},
 			expected:     "VARCHAR(12345)",
 			expectedIsPk: "VARCHAR(900)",

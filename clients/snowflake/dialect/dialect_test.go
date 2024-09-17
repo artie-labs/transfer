@@ -7,7 +7,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
-	"github.com/artie-labs/transfer/lib/ptr"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -27,7 +26,7 @@ func TestSnowflakeDialect_DataTypeForKind(t *testing.T) {
 			assert.Equal(t, "string", SnowflakeDialect{}.DataTypeForKind(typing.String, false))
 		}
 		{
-			assert.Equal(t, "string", SnowflakeDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: ptr.ToInt32(12345)}, false))
+			assert.Equal(t, "string", SnowflakeDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(12345))}, false))
 		}
 	}
 }
