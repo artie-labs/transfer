@@ -50,7 +50,7 @@ func TestParseFromInterfaceDateTime(t *testing.T) {
 
 func TestParseFromInterfaceTime(t *testing.T) {
 	now := time.Now()
-	for _, supportedTimeFormat := range SupportedTimeFormatsLegacy {
+	for _, supportedTimeFormat := range SupportedTimeFormats {
 		et, err := ParseFromInterface(now.Format(supportedTimeFormat), TimeKindType)
 		assert.NoError(t, err)
 		assert.Equal(t, TimeKindType, et.GetNestedKind().Type)
@@ -81,7 +81,7 @@ func TestParseExtendedDateTime_Timestamp(t *testing.T) {
 func TestTimeLayout(t *testing.T) {
 	ts := time.Now()
 
-	for _, supportedFormat := range SupportedTimeFormatsLegacy {
+	for _, supportedFormat := range SupportedTimeFormats {
 		parsedTsString := ts.Format(supportedFormat)
 		extTime, err := ParseExtendedDateTime(parsedTsString, TimeKindType)
 		assert.NoError(t, err)
