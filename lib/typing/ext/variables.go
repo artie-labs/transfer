@@ -29,7 +29,7 @@ var supportedDateFormats = []string{
 	PostgresDateFormat,
 }
 
-var SupportedTimeFormatsLegacy = []string{
+var SupportedTimeFormats = []string{
 	PostgresTimeFormat,
 	PostgresTimeFormatNoTZ,
 	AdditionalTimeFormat,
