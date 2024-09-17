@@ -5,10 +5,9 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/typing"
-
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/processes/consumer"
 )
