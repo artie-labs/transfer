@@ -17,11 +17,8 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-const maxRetries = 10
-
 type Store struct {
 	db.Store
-	testDB    bool // Used for testing
 	configMap *types.DwhToTablesConfigMap
 	config    config.Config
 }
@@ -70,30 +67,6 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 	return s.configMap
 }
 
-func (s *Store) reestablishConnection() error {
-	if s.testDB {
-		// Don't actually re-establish for tests.
-		return nil
-	}
-
-	cfg, err := s.config.Snowflake.ToConfig()
-	if err != nil {
-		return fmt.Errorf("failed to get snowflake config: %w", err)
-	}
-
-	dsn, err := gosnowflake.DSN(cfg)
-	if err != nil {
-		return fmt.Errorf("failed to get Snowflake DSN: %w", err)
-	}
-
-	store, err := db.Open("snowflake", dsn)
-	if err != nil {
-		return err
-	}
-	s.Store = store
-	return nil
-}
-
 // Dedupe takes a table and will remove duplicates based on the primary key(s).
 // These queries are inspired and modified from: https://stackoverflow.com/a/71515946
 func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
@@ -106,21 +79,30 @@ func LoadSnowflake(cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			testDB:    true,
 			configMap: &types.DwhToTablesConfigMap{},
 			config:    cfg,
-
-			Store: *_store,
+			Store:     *_store,
 		}, nil
 	}
 
-	s := &Store{
-		configMap: &types.DwhToTablesConfigMap{},
-		config:    cfg,
+	snowflakeCfg, err := cfg.Snowflake.ToConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Snowflake config: %w", err)
 	}
 
-	if err := s.reestablishConnection(); err != nil {
+	dsn, err := gosnowflake.DSN(snowflakeCfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Snowflake DSN: %w", err)
+	}
+
+	store, err := db.Open("snowflake", dsn)
+	if err != nil {
 		return nil, err
 	}
-	return s, nil
+
+	return &Store{
+		configMap: &types.DwhToTablesConfigMap{},
+		config:    cfg,
+		Store:     store,
+	}, nil
 }

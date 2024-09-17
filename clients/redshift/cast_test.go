@@ -3,8 +3,6 @@ package redshift
 import (
 	"fmt"
 
-	"github.com/artie-labs/transfer/lib/ptr"
-
 	"github.com/artie-labs/transfer/lib/stringutil"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -22,7 +20,7 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 		// Masked, reached the string precision limit
 		stringKd := typing.KindDetails{
 			Kind:                    typing.String.Kind,
-			OptionalStringPrecision: ptr.ToInt32(3),
+			OptionalStringPrecision: typing.ToPtr(int32(3)),
 		}
 
 		assert.Equal(r.T(), constants.ExceededValueMarker, replaceExceededValues("hello", stringKd))
