@@ -5,7 +5,6 @@ import (
 	"log/slog"
 
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
-	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -60,44 +59,48 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 }
 
 func BackfillColumn(dwh destination.DataWarehouse, column columns.Column, tableID sql.TableIdentifier) error {
-	if !column.ShouldBackfill() {
-		// If we don't need to backfill, don't backfill.
-		return nil
-	}
+	switch dwh.Dialect().GetDefaultValueStrategy() {
+	case sql.Backfill:
+		if !column.ShouldBackfill() {
+			// If we don't need to backfill, don't backfill.
+			return nil
+		}
 
-	if _, ok := dwh.Dialect().(mssqlDialect.MSSQLDialect); ok {
-		// TODO: Support MSSQL column backfill
-		return nil
-	}
+		defaultVal, err := DefaultValue(column, dwh.Dialect())
+		if err != nil {
+			return fmt.Errorf("failed to escape default value: %w", err)
+		}
 
-	defaultVal, err := DefaultValue(column, dwh.Dialect())
-	if err != nil {
-		return fmt.Errorf("failed to escape default value: %w", err)
-	}
-
-	escapedCol := dwh.Dialect().QuoteIdentifier(column.Name())
-	query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
-		// UPDATE table SET col = default_val WHERE col IS NULL
-		tableID.FullyQualifiedName(), escapedCol, defaultVal, escapedCol,
-	)
-	slog.Info("Backfilling column",
-		slog.String("colName", column.Name()),
-		slog.String("query", query),
-		slog.String("table", tableID.FullyQualifiedName()),
-	)
-
-	if _, err = dwh.Exec(query); err != nil {
-		return fmt.Errorf("failed to backfill, err: %w, query: %v", err, query)
-	}
-
-	query = fmt.Sprintf(`COMMENT ON COLUMN %s.%s IS '%v';`, tableID.FullyQualifiedName(), escapedCol, `{"backfilled": true}`)
-	if _, ok := dwh.Dialect().(bigQueryDialect.BigQueryDialect); ok {
-		query = fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET OPTIONS (description=`%s`);",
-			// ALTER TABLE table ALTER COLUMN col set OPTIONS (description=...)
-			tableID.FullyQualifiedName(), escapedCol, `{"backfilled": true}`,
+		escapedCol := dwh.Dialect().QuoteIdentifier(column.Name())
+		query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
+			// UPDATE table SET col = default_val WHERE col IS NULL
+			tableID.FullyQualifiedName(), escapedCol, defaultVal, escapedCol,
 		)
-	}
+		slog.Info("Backfilling column",
+			slog.String("colName", column.Name()),
+			slog.String("query", query),
+			slog.String("table", tableID.FullyQualifiedName()),
+		)
 
-	_, err = dwh.Exec(query)
-	return err
+		if _, err = dwh.Exec(query); err != nil {
+			return fmt.Errorf("failed to backfill, err: %w, query: %v", err, query)
+		}
+
+		query = fmt.Sprintf(`COMMENT ON COLUMN %s.%s IS '%v';`, tableID.FullyQualifiedName(), escapedCol, `{"backfilled": true}`)
+		if _, ok := dwh.Dialect().(bigQueryDialect.BigQueryDialect); ok {
+			query = fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET OPTIONS (description=`%s`);",
+				// ALTER TABLE table ALTER COLUMN col set OPTIONS (description=...)
+				tableID.FullyQualifiedName(), escapedCol, `{"backfilled": true}`,
+			)
+		}
+
+		_, err = dwh.Exec(query)
+		return nil
+
+	case sql.Native:
+		// TODO: Support native strat
+		return nil
+	default:
+		return fmt.Errorf("unknown default value strategy: %q", dwh.Dialect().GetDefaultValueStrategy())
+	}
 }
