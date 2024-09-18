@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/maputil"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -79,7 +81,7 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 			return nil, err
 		}
 
-		row := make(map[string]string)
+		row := maputil.NewOrderedMap[string](false)
 		for idx, val := range values {
 			interfaceVal, isOk := val.(*interface{})
 			if !isOk || interfaceVal == nil {
@@ -91,21 +93,36 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 				value = strings.ToLower(fmt.Sprint(*interfaceVal))
 			}
 
-			row[columnNameList[idx]] = value
+			row.Add(columnNameList[idx], value)
 		}
 
-		kindDetails, err := g.Dwh.Dialect().KindForDataType(row[g.ColumnNameForDataType], row[constants.StrPrecisionCol])
+		dataTypeCol, isOk := row.Get(g.ColumnNameForDataType)
+		if !isOk {
+			return nil, fmt.Errorf("failed to get column %q", g.ColumnNameForDataType)
+		}
+
+		stringPrecisionColumn, _ := row.Get(constants.StrPrecisionCol) // Column is optional
+		kindDetails, err := g.Dwh.Dialect().KindForDataType(dataTypeCol, stringPrecisionColumn)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get kind details: %w", err)
 		}
 
 		if kindDetails.Kind == typing.Invalid.Kind {
-			return nil, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", row[g.ColumnNameForDataType])
+			return nil, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", dataTypeCol)
 		}
 
-		col := columns.NewColumn(row[g.ColumnNameForName], kindDetails)
+		columnName, isOk := row.Get(g.ColumnNameForName)
+		if !isOk {
+			return nil, fmt.Errorf("failed to get column %q", g.ColumnNameForName)
+		}
+
+		if !isOk {
+			return nil, fmt.Errorf("failed to get column %q", g.ColumnNameForComment)
+		}
+
+		col := columns.NewColumn(columnName, kindDetails)
 		// We need to check to make sure the comment is not an empty string
-		if comment, isOk := row[g.ColumnNameForComment]; isOk && comment != "" {
+		if comment, isOk := row.Get(g.ColumnNameForComment); isOk && comment != "" {
 			var _colComment constants.ColComment
 			if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
 				return nil, fmt.Errorf("failed to unmarshal comment %q: %w", comment, err)
