@@ -72,7 +72,6 @@ func (s *Store) Dedupe(_ sql.TableIdentifier, _ []string, _ bool) error {
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	// TODO: Figure out how to leave a comment.
 	tableID := s.specificIdentifierFor(tableData.TopicConfig(), tableData.Name())
 	query, args := describeTableQuery(tableID)
 	return shared.GetTableCfgArgs{

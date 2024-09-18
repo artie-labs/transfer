@@ -26,7 +26,8 @@ type Column struct {
 	// Whenever we see the same column where there's an opposite value in `toastColumn`, we will trigger a flush
 	ToastColumn  bool
 	defaultValue any
-	backfilled   bool
+	// TODO: Instead of using a boolean, we should be setting the value at some point.
+	backfilled bool
 }
 
 func (c *Column) PrimaryKey() bool {

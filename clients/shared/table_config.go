@@ -15,6 +15,8 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+// TODO: Simplify this function
+
 type GetTableCfgArgs struct {
 	Dwh       destination.DataWarehouse
 	TableID   sql.TableIdentifier
@@ -104,14 +106,24 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 		}
 
 		col := columns.NewColumn(row[g.ColumnNameForName], kindDetails)
-		// We need to check to make sure the comment is not an empty string
-		if comment, isOk := row[g.ColumnNameForComment]; isOk && comment != "" {
-			var _colComment constants.ColComment
-			if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal comment %q: %w", comment, err)
-			}
+		strategy := g.Dwh.Dialect().GetDefaultValueStrategy()
+		switch strategy {
+		case sql.Backfill:
+			// We need to check to make sure the comment is not an empty string
+			if comment, isOk := row[g.ColumnNameForComment]; isOk && comment != "" {
+				var _colComment constants.ColComment
+				if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
+					return nil, fmt.Errorf("failed to unmarshal comment %q: %w", comment, err)
+				}
 
-			col.SetBackfilled(_colComment.Backfilled)
+				col.SetBackfilled(_colComment.Backfilled)
+			}
+		case sql.Native:
+			if value, isOk := row["default_value"]; isOk && value != "" {
+				col.SetBackfilled(true)
+			}
+		default:
+			return nil, fmt.Errorf("unknown default value strategy: %q", strategy)
 		}
 
 		cols.AddColumn(col)
