@@ -119,7 +119,7 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 				col.SetBackfilled(_colComment.Backfilled)
 			}
 		case sql.Native:
-			if _, isOk := row["default_value"]; isOk {
+			if value, isOk := row["default_value"]; isOk && value != "" {
 				col.SetBackfilled(true)
 			}
 		default:
