@@ -15,6 +15,8 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+// TODO: Simplify this function
+
 type GetTableCfgArgs struct {
 	Dwh       destination.DataWarehouse
 	TableID   sql.TableIdentifier
