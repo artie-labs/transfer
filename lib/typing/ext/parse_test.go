@@ -1,7 +1,6 @@
 package ext
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -40,7 +39,7 @@ func TestParseFromInterface(t *testing.T) {
 	{
 		value, err := ParseFromInterface("2024-09-19T16:05:18.630Z", TimestampTzKindType)
 		assert.NoError(t, err)
-		fmt.Println("value", value)
+		assert.Equal(t, "2024-09-19T16:05:18.630Z", value.String(""))
 	}
 }
 
