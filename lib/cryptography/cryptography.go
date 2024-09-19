@@ -1,14 +1,26 @@
-package crypto
+package cryptography
 
 import (
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
+	"encoding/hex"
 	"encoding/pem"
 	"fmt"
 	"os"
 
 	"github.com/artie-labs/transfer/lib/typing"
 )
+
+func HashValue(value any) any {
+	if value == nil {
+		return nil
+	}
+
+	hash := sha256.New()
+	hash.Write([]byte(fmt.Sprint(value)))
+	return hex.EncodeToString(hash.Sum(nil))
+}
 
 func LoadRSAKey(filePath string) (*rsa.PrivateKey, error) {
 	keyBytes, err := os.ReadFile(filePath)
