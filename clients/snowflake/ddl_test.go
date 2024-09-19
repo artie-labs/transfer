@@ -29,7 +29,7 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
 		"name":        typing.String,
-		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
+		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType),
 	} {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
@@ -58,7 +58,7 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
 		"name":        typing.String,
-		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
+		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType),
 	} {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
@@ -97,7 +97,7 @@ func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
 		"name":        typing.String,
-		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
+		"created_at":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType),
 	} {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}

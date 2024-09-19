@@ -99,13 +99,13 @@ func TestRedshiftDialect_KindForDataType(t *testing.T) {
 			kd, err := dialect.KindForDataType("timestamp with time zone", "")
 			assert.NoError(t, err)
 			assert.Equal(t, typing.ETime.Kind, kd.Kind)
-			assert.Equal(t, ext.DateTimeKindType, kd.ExtendedTimeDetails.Type)
+			assert.Equal(t, ext.TimestampTzKindType, kd.ExtendedTimeDetails.Type)
 		}
 		{
 			kd, err := dialect.KindForDataType("timestamp without time zone", "")
 			assert.NoError(t, err)
 			assert.Equal(t, typing.ETime.Kind, kd.Kind)
-			assert.Equal(t, ext.DateTimeKindType, kd.ExtendedTimeDetails.Type)
+			assert.Equal(t, ext.TimestampTzKindType, kd.ExtendedTimeDetails.Type)
 		}
 		{
 			kd, err := dialect.KindForDataType("time without time zone", "")

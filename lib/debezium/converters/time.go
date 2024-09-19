@@ -71,7 +71,7 @@ var SupportedDateTimeWithTimezoneFormats = []string{
 type DateTimeWithTimezone struct{}
 
 func (DateTimeWithTimezone) ToKindDetails() typing.KindDetails {
-	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType)
+	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)
 }
 
 func (DateTimeWithTimezone) Convert(value any) (any, error) {
@@ -97,7 +97,7 @@ func (DateTimeWithTimezone) Convert(value any) (any, error) {
 	for _, supportedFormat := range SupportedDateTimeWithTimezoneFormats {
 		ts, err = ext.ParseTimeExactMatch(supportedFormat, valString)
 		if err == nil {
-			return ext.NewExtendedTime(ts, ext.DateTimeKindType, supportedFormat), nil
+			return ext.NewExtendedTime(ts, ext.TimestampTzKindType, supportedFormat), nil
 		}
 	}
 

@@ -49,11 +49,11 @@ func TestField_ShouldSetDefaultValue(t *testing.T) {
 	{
 		// *ext.ExtendedTime
 		field := Field{}
-		assert.True(t, field.ShouldSetDefaultValue(ext.NewExtendedTime(time.Now(), ext.DateTimeKindType, ext.RFC3339Millisecond)))
+		assert.True(t, field.ShouldSetDefaultValue(ext.NewExtendedTime(time.Now(), ext.TimestampTzKindType, ext.RFC3339Millisecond)))
 
 		assert.False(t, field.ShouldSetDefaultValue(&ext.ExtendedTime{}))
 		var ts time.Time
-		assert.False(t, field.ShouldSetDefaultValue(ext.NewExtendedTime(ts, ext.DateTimeKindType, ext.RFC3339Millisecond)))
+		assert.False(t, field.ShouldSetDefaultValue(ext.NewExtendedTime(ts, ext.TimestampTzKindType, ext.RFC3339Millisecond)))
 	}
 }
 
@@ -310,7 +310,7 @@ func TestField_ParseValue(t *testing.T) {
 			field := Field{Type: Int64, DebeziumType: NanoTimestamp}
 			val, err := field.ParseValue(int64(1_712_609_795_827_000_000))
 			assert.NoError(t, err)
-			assert.Equal(t, ext.NewExtendedTime(time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC), ext.DateTimeKindType, "2006-01-02T15:04:05.000000000Z07:00"), val.(*ext.ExtendedTime))
+			assert.Equal(t, ext.NewExtendedTime(time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC), ext.TimestampTzKindType, "2006-01-02T15:04:05.000000000Z07:00"), val.(*ext.ExtendedTime))
 		}
 		{
 			// Micro timestamp
@@ -319,13 +319,13 @@ func TestField_ParseValue(t *testing.T) {
 				// Int64
 				val, err := field.ParseValue(int64(1_712_609_795_827_009))
 				assert.NoError(t, err)
-				assert.Equal(t, ext.NewExtendedTime(time.Date(2024, time.April, 8, 20, 56, 35, 827009000, time.UTC), ext.DateTimeKindType, ext.RFC3339Microsecond), val.(*ext.ExtendedTime))
+				assert.Equal(t, ext.NewExtendedTime(time.Date(2024, time.April, 8, 20, 56, 35, 827009000, time.UTC), ext.TimestampTzKindType, ext.RFC3339Microsecond), val.(*ext.ExtendedTime))
 			}
 			{
 				// Float64
 				val, err := field.ParseValue(float64(1_712_609_795_827_001))
 				assert.NoError(t, err)
-				assert.Equal(t, ext.NewExtendedTime(time.Date(2024, time.April, 8, 20, 56, 35, 827001000, time.UTC), ext.DateTimeKindType, ext.RFC3339Microsecond), val.(*ext.ExtendedTime))
+				assert.Equal(t, ext.NewExtendedTime(time.Date(2024, time.April, 8, 20, 56, 35, 827001000, time.UTC), ext.TimestampTzKindType, ext.RFC3339Microsecond), val.(*ext.ExtendedTime))
 			}
 			{
 				// Invalid (string)
