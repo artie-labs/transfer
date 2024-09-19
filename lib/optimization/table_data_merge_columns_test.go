@@ -42,7 +42,6 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 	{
 		tableDataCols := &columns.Columns{}
 		tableData := &TableData{inMemoryColumns: tableDataCols}
-
 		{
 			// In-memory column is NUMERIC and destination column is an INTEGER
 			tableDataCols.AddColumn(columns.NewColumn("numeric_test", typing.EDecimal))
@@ -52,9 +51,39 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 			assert.True(t, isOk)
 			assert.Equal(t, typing.Integer.Kind, numericCol.KindDetails.Kind)
 		}
+		{
+			// Boolean column that has been backfilled
+			tableDataCols.AddColumn(columns.NewColumn("bool_backfill", typing.Boolean))
+			backfilledCol := columns.NewColumn("bool_backfill", typing.Boolean)
+			backfilledCol.SetBackfilled(true)
+
+			// Backfill was not set
+			column, isOk := tableData.inMemoryColumns.GetColumn("bool_backfill")
+			assert.True(t, isOk)
+			assert.False(t, column.Backfilled())
+
+			assert.NoError(t, tableData.MergeColumnsFromDestination(backfilledCol))
+			// Backfill is set after merge.
+			column, isOk = tableData.inMemoryColumns.GetColumn("bool_backfill")
+			assert.True(t, isOk)
+			assert.True(t, column.Backfilled())
+		}
+		{
+			// Non-existent columns should not be copied over.
+			nonExistentTableCols := []string{"dusty", "the", "mini", "aussie"}
+			var nonExistentCols []columns.Column
+			for _, nonExistentTableCol := range nonExistentTableCols {
+				nonExistentCols = append(nonExistentCols, columns.NewColumn(nonExistentTableCol, typing.String))
+			}
+
+			assert.NoError(t, tableData.MergeColumnsFromDestination(nonExistentCols...))
+			for _, nonExistentTableCol := range nonExistentTableCols {
+				_, isOk := tableData.inMemoryColumns.GetColumn(nonExistentTableCol)
+				assert.False(t, isOk, nonExistentTableCol)
+			}
+		}
 
 		tableDataCols.AddColumn(columns.NewColumn("name", typing.String))
-		tableDataCols.AddColumn(columns.NewColumn("bool_backfill", typing.Boolean))
 		tableDataCols.AddColumn(columns.NewColumn("prev_invalid", typing.Invalid))
 
 		// Casting these as STRING so tableColumn via this f(x) will set it correctly.
@@ -65,42 +94,13 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 
 		extDecimalType := typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(22, 2))
 		tableDataCols.AddColumn(columns.NewColumn("ext_dec_filled", extDecimalType))
-
 		tableDataCols.AddColumn(columns.NewColumn(strCol, typing.String))
-
-		nonExistentTableCols := []string{"dusty", "the", "mini", "aussie"}
-		var nonExistentCols []columns.Column
-		for _, nonExistentTableCol := range nonExistentTableCols {
-			nonExistentCols = append(nonExistentCols, columns.NewColumn(nonExistentTableCol, typing.String))
-		}
-
-		// Testing to make sure we don't copy over non-existent columns
-		assert.NoError(t, tableData.MergeColumnsFromDestination(nonExistentCols...))
-		for _, nonExistentTableCol := range nonExistentTableCols {
-			_, isOk := tableData.inMemoryColumns.GetColumn(nonExistentTableCol)
-			assert.False(t, isOk, nonExistentTableCol)
-		}
 
 		// Testing to make sure we're copying the kindDetails over.
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("prev_invalid", typing.String)))
 		prevInvalidCol, isOk := tableData.inMemoryColumns.GetColumn("prev_invalid")
 		assert.True(t, isOk)
 		assert.Equal(t, typing.String, prevInvalidCol.KindDetails)
-
-		// Testing backfill
-		for _, inMemoryCol := range tableData.inMemoryColumns.GetColumns() {
-			assert.False(t, inMemoryCol.Backfilled(), inMemoryCol.Name())
-		}
-		backfilledCol := columns.NewColumn("bool_backfill", typing.Boolean)
-		backfilledCol.SetBackfilled(true)
-		assert.NoError(t, tableData.MergeColumnsFromDestination(backfilledCol))
-		for _, inMemoryCol := range tableData.inMemoryColumns.GetColumns() {
-			if inMemoryCol.Name() == backfilledCol.Name() {
-				assert.True(t, inMemoryCol.Backfilled(), inMemoryCol.Name())
-			} else {
-				assert.False(t, inMemoryCol.Backfilled(), inMemoryCol.Name())
-			}
-		}
 
 		// Testing extTimeDetails
 		for _, extTimeDetailsCol := range []string{"ext_date", "ext_time", "ext_datetime"} {
