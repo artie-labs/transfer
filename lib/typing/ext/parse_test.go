@@ -12,28 +12,28 @@ func TestParseFromInterface(t *testing.T) {
 		// Extended time
 		var vals []any
 		vals = append(vals, NewExtendedTime(time.Now().UTC(), DateKindType, PostgresDateFormat))
-		vals = append(vals, NewExtendedTime(time.Now().UTC(), DateTimeKindType, ISO8601))
+		vals = append(vals, NewExtendedTime(time.Now().UTC(), TimestampTzKindType, ISO8601))
 		vals = append(vals, NewExtendedTime(time.Now().UTC(), TimeKindType, PostgresTimeFormat))
 
 		for _, val := range vals {
-			extTime, err := ParseFromInterface(val, DateTimeKindType)
+			extTime, err := ParseFromInterface(val, TimestampTzKindType)
 			assert.NoError(t, err)
 			assert.Equal(t, val, extTime)
 		}
 	}
 	{
 		// Nil
-		_, err := ParseFromInterface(nil, DateTimeKindType)
+		_, err := ParseFromInterface(nil, TimestampTzKindType)
 		assert.ErrorContains(t, err, "val is nil")
 	}
 	{
 		// True
-		_, err := ParseFromInterface(true, DateTimeKindType)
+		_, err := ParseFromInterface(true, TimestampTzKindType)
 		assert.ErrorContains(t, err, "failed to parse colVal, expected type string or *ExtendedTime and got: bool")
 	}
 	{
 		// False
-		_, err := ParseFromInterface(false, DateTimeKindType)
+		_, err := ParseFromInterface(false, TimestampTzKindType)
 		assert.ErrorContains(t, err, "failed to parse colVal, expected type string or *ExtendedTime and got: bool")
 	}
 }
@@ -41,9 +41,9 @@ func TestParseFromInterface(t *testing.T) {
 func TestParseFromInterfaceDateTime(t *testing.T) {
 	now := time.Now().In(time.UTC)
 	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
-		et, err := ParseFromInterface(now.Format(supportedDateTimeLayout), DateTimeKindType)
+		et, err := ParseFromInterface(now.Format(supportedDateTimeLayout), TimestampTzKindType)
 		assert.NoError(t, err)
-		assert.Equal(t, DateTimeKindType, et.GetNestedKind().Type)
+		assert.Equal(t, TimestampTzKindType, et.GetNestedKind().Type)
 		assert.Equal(t, et.String(""), now.Format(supportedDateTimeLayout))
 	}
 }
@@ -73,7 +73,7 @@ func TestParseFromInterfaceDate(t *testing.T) {
 
 func TestParseExtendedDateTime_Timestamp(t *testing.T) {
 	tsString := "2023-04-24T17:29:05.69944Z"
-	extTime, err := ParseExtendedDateTime(tsString, DateTimeKindType)
+	extTime, err := ParseExtendedDateTime(tsString, TimestampTzKindType)
 	assert.NoError(t, err)
 	assert.Equal(t, "2023-04-24T17:29:05.69944Z", extTime.String(""))
 }

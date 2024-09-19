@@ -90,7 +90,7 @@ func (r *RelationTestSuite) TestPostgresEvent() {
 	evtData, err := evt.GetData(map[string]any{"id": 59}, kafkalib.TopicConfig{IncludeDatabaseUpdatedAt: true})
 	assert.NoError(r.T(), err)
 	assert.Equal(r.T(), float64(59), evtData["id"])
-	assert.Equal(r.T(), ext.NewExtendedTime(time.Date(2022, time.November, 16, 4, 1, 53, 308000000, time.UTC), ext.DateTimeKindType, ext.ISO8601), evtData[constants.DatabaseUpdatedColumnMarker])
+	assert.Equal(r.T(), ext.NewExtendedTime(time.Date(2022, time.November, 16, 4, 1, 53, 308000000, time.UTC), ext.TimestampTzKindType, ext.ISO8601), evtData[constants.DatabaseUpdatedColumnMarker])
 
 	assert.Equal(r.T(), "Barings Participation Investors", evtData["item"])
 	assert.Equal(r.T(), map[string]any{"object": "foo"}, evtData["nested"])
@@ -208,7 +208,7 @@ func (r *RelationTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 		r.T(),
 		ext.NewExtendedTime(
 			time.Date(2023, time.February, 2, 17, 51, 35, 175445*1000, time.UTC),
-			ext.DateTimeKindType, ext.RFC3339Microsecond,
+			ext.TimestampTzKindType, ext.RFC3339Microsecond,
 		),
 		evtData["ts_no_tz1"],
 	)
@@ -534,7 +534,7 @@ func (r *RelationTestSuite) TestGetEventFromBytes_MySQL() {
 	evtData, err = evt.GetData(kvMap, kafkalib.TopicConfig{IncludeDatabaseUpdatedAt: true, IncludeArtieUpdatedAt: true})
 	assert.NoError(r.T(), err)
 
-	assert.Equal(r.T(), ext.NewExtendedTime(time.Date(2023, time.March, 13, 19, 19, 24, 0, time.UTC), ext.DateTimeKindType, ext.ISO8601), evtData[constants.DatabaseUpdatedColumnMarker])
+	assert.Equal(r.T(), ext.NewExtendedTime(time.Date(2023, time.March, 13, 19, 19, 24, 0, time.UTC), ext.TimestampTzKindType, ext.ISO8601), evtData[constants.DatabaseUpdatedColumnMarker])
 
 	updatedAtExtTime, isOk := evtData[constants.UpdateColumnMarker].(*ext.ExtendedTime)
 	assert.True(r.T(), isOk)

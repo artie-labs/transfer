@@ -22,7 +22,7 @@ func TestParseValue(t *testing.T) {
 	eDate.ExtendedTimeDetails = &ext.Date
 
 	eDateTime := typing.ETime
-	eDateTime.ExtendedTimeDetails = &ext.DateTime
+	eDateTime.ExtendedTimeDetails = &ext.TimestampTz
 
 	testCases := []struct {
 		name    string

@@ -9,7 +9,7 @@ import (
 )
 
 func TestExtendedTime_MarshalJSON(t *testing.T) {
-	extTime := NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456000, time.UTC), DateTimeKindType, RFC3339Millisecond)
+	extTime := NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456000, time.UTC), TimestampTzKindType, RFC3339Millisecond)
 
 	{
 		// Single value

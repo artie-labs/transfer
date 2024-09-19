@@ -64,8 +64,8 @@ func TestMSSQLDialect_KindForDataType(t *testing.T) {
 		"bit":       typing.Boolean,
 		"date":      typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType),
 		"time":      typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
-		"datetime":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
-		"datetime2": typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType),
+		"datetime":  typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType),
+		"datetime2": typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType),
 	}
 
 	for col, expectedKind := range colToExpectedKind {
