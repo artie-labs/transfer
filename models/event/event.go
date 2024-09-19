@@ -13,6 +13,7 @@ import (
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/stringutil"
@@ -32,6 +33,16 @@ type Event struct {
 	Deleted        bool
 
 	mode config.Mode
+}
+
+func hashData(data map[string]any, tc kafkalib.TopicConfig) map[string]any {
+	for _, columnToHash := range tc.ColumnsToHash {
+		if value, isOk := data[columnToHash]; isOk {
+			data[columnToHash] = cryptography.HashValue(value)
+		}
+	}
+
+	return data
 }
 
 func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
@@ -83,7 +94,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		ExecutionTime:  event.GetExecutionTime(),
 		OptionalSchema: optionalSchema,
 		Columns:        cols,
-		Data:           evtData,
+		Data:           hashData(evtData, tc),
 		Deleted:        event.DeletePayload(),
 	}, nil
 }
