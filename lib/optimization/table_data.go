@@ -2,7 +2,6 @@ package optimization
 
 import (
 	"fmt"
-	"log/slog"
 	"strings"
 	"time"
 
@@ -273,34 +272,27 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) erro
 		}
 
 		if found {
-			// TODO: Simplify this whole logic
-			// If the inMemoryColumn is decimal and foundColumn is integer, don't copy it over.
-			// This is because parsing NUMERIC(...) will return an INTEGER if there's no decimal point.
-			// However, this will wipe the precision unit from the INTEGER which may cause integer overflow.
-			shouldSkip := inMemoryCol.KindDetails.Kind == typing.EDecimal.Kind && foundColumn.KindDetails.Kind == typing.Integer.Kind
-			if shouldSkip {
-				slog.Warn("Skipping column", slog.String("column", inMemoryCol.Name()), slog.String("inMemoryKind", inMemoryCol.KindDetails.Kind), slog.String("foundKind", foundColumn.KindDetails.Kind))
-			} else {
-				// We should take `kindDetails.kind` and `backfilled` from foundCol
-				// We are not taking primaryKey and defaultValue because DWH does not have this information.
-				// Note: If our in-memory column is `Invalid`, it would get skipped during merge. However, if the column exists in
-				// the destination, we'll copy the type over. This is to make sure we don't miss batch updates where the whole column in the batch is NULL.
-				inMemoryCol.KindDetails.Kind = foundColumn.KindDetails.Kind
-				if foundColumn.KindDetails.OptionalStringPrecision != nil {
-					inMemoryCol.KindDetails.OptionalStringPrecision = foundColumn.KindDetails.OptionalStringPrecision
-				}
+			inMemoryCol.KindDetails.Kind = foundColumn.KindDetails.Kind
+
+			// Copy over backfilled
+			inMemoryCol.SetBackfilled(foundColumn.Backfilled())
+
+			// Copy over string precision, if it exists
+			if foundColumn.KindDetails.OptionalStringPrecision != nil {
+				inMemoryCol.KindDetails.OptionalStringPrecision = foundColumn.KindDetails.OptionalStringPrecision
 			}
 
-			inMemoryCol.SetBackfilled(foundColumn.Backfilled())
+			// Copy over the time details
 			if foundColumn.KindDetails.ExtendedTimeDetails != nil {
 				if inMemoryCol.KindDetails.ExtendedTimeDetails == nil {
 					inMemoryCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{}
 				}
 
-				// Don't have tcKind.ExtendedTimeDetails update the format since the DWH will not have that.
+				// Just copy over the type since the format wouldn't be present in the destination
 				inMemoryCol.KindDetails.ExtendedTimeDetails.Type = foundColumn.KindDetails.ExtendedTimeDetails.Type
 			}
 
+			// Copy over the decimal details
 			if foundColumn.KindDetails.ExtendedDecimalDetails != nil && inMemoryCol.KindDetails.ExtendedDecimalDetails == nil {
 				inMemoryCol.KindDetails.ExtendedDecimalDetails = foundColumn.KindDetails.ExtendedDecimalDetails
 			}
