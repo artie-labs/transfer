@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	"github.com/artie-labs/transfer/lib/crypto"
+	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/snowflakedb/gosnowflake"
 )
@@ -39,7 +39,7 @@ func (s Snowflake) ToConfig() (*gosnowflake.Config, error) {
 	}
 
 	if s.PathToPrivateKey != "" {
-		key, err := crypto.LoadRSAKey(s.PathToPrivateKey)
+		key, err := cryptography.LoadRSAKey(s.PathToPrivateKey)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load private key: %w", err)
 		}
