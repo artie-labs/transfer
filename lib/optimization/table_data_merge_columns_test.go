@@ -82,10 +82,17 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 				assert.False(t, isOk, nonExistentTableCol)
 			}
 		}
+		{
+			// In-memory column was invalid, but the destination column is valid
+			tableDataCols.AddColumn(columns.NewColumn("invalid_test", typing.Invalid))
+			assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("invalid_test", typing.String)))
+
+			invalidCol, isOk := tableData.inMemoryColumns.GetColumn("invalid_test")
+			assert.True(t, isOk)
+			assert.Equal(t, typing.String.Kind, invalidCol.KindDetails.Kind)
+		}
 
 		tableDataCols.AddColumn(columns.NewColumn("name", typing.String))
-		tableDataCols.AddColumn(columns.NewColumn("prev_invalid", typing.Invalid))
-
 		// Casting these as STRING so tableColumn via this f(x) will set it correctly.
 		tableDataCols.AddColumn(columns.NewColumn("ext_date", typing.String))
 		tableDataCols.AddColumn(columns.NewColumn("ext_time", typing.String))
@@ -95,12 +102,6 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		extDecimalType := typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(22, 2))
 		tableDataCols.AddColumn(columns.NewColumn("ext_dec_filled", extDecimalType))
 		tableDataCols.AddColumn(columns.NewColumn(strCol, typing.String))
-
-		// Testing to make sure we're copying the kindDetails over.
-		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("prev_invalid", typing.String)))
-		prevInvalidCol, isOk := tableData.inMemoryColumns.GetColumn("prev_invalid")
-		assert.True(t, isOk)
-		assert.Equal(t, typing.String, prevInvalidCol.KindDetails)
 
 		// Testing extTimeDetails
 		for _, extTimeDetailsCol := range []string{"ext_date", "ext_time", "ext_datetime"} {
@@ -165,7 +166,6 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		// String (precision being copied over)
 		tableDataCols := &columns.Columns{}
 		tableData := &TableData{inMemoryColumns: tableDataCols}
-
 		tableDataCols.AddColumn(columns.NewColumn(strCol, typing.String))
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn(strCol,
 			typing.KindDetails{
