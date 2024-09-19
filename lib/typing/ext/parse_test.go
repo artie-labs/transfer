@@ -37,10 +37,25 @@ func TestParseFromInterface(t *testing.T) {
 		assert.ErrorContains(t, err, "failed to parse colVal, expected type string or *ExtendedTime and got: bool")
 	}
 	{
+		// String - RFC3339MillisecondUTC
 		value, err := ParseFromInterface("2024-09-19T16:05:18.630Z", TimestampTzKindType)
 		assert.NoError(t, err)
 		assert.Equal(t, "2024-09-19T16:05:18.630Z", value.String(""))
 		assert.Equal(t, RFC3339MillisecondUTC, value.nestedKind.Format)
+	}
+	{
+		// String - RFC3339MicrosecondUTC
+		value, err := ParseFromInterface("2024-09-19T16:05:18.630000Z", TimestampTzKindType)
+		assert.NoError(t, err)
+		assert.Equal(t, "2024-09-19T16:05:18.630000Z", value.String(""))
+		assert.Equal(t, RFC3339MicrosecondUTC, value.nestedKind.Format)
+	}
+	{
+		// String - RFC3339NanosecondUTC
+		value, err := ParseFromInterface("2024-09-19T16:05:18.630000000Z", TimestampTzKindType)
+		assert.NoError(t, err)
+		assert.Equal(t, "2024-09-19T16:05:18.630000000Z", value.String(""))
+		assert.Equal(t, RFC3339NanosecondUTC, value.nestedKind.Format)
 	}
 }
 

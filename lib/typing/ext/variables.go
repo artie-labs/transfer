@@ -11,8 +11,16 @@ const (
 )
 
 var supportedDateTimeLayouts = []string{
+	// UTC
 	RFC3339MillisecondUTC,
+	RFC3339MicrosecondUTC,
+	RFC3339NanosecondUTC,
+	// RFC 3339
+	RFC3339Millisecond,
+	RFC3339Microsecond,
+	RFC3339Nanosecond,
 	time.RFC3339Nano,
+	// Others
 	ISO8601,
 	time.Layout,
 	time.ANSIC,
@@ -39,6 +47,8 @@ var SupportedTimeFormats = []string{
 // RFC3339 variants
 const (
 	RFC3339MillisecondUTC = "2006-01-02T15:04:05.000Z"
+	RFC3339MicrosecondUTC = "2006-01-02T15:04:05.000000Z"
+	RFC3339NanosecondUTC  = "2006-01-02T15:04:05.000000000Z"
 	RFC3339Millisecond    = "2006-01-02T15:04:05.000Z07:00"
 	RFC3339Microsecond    = "2006-01-02T15:04:05.000000Z07:00"
 	RFC3339Nanosecond     = "2006-01-02T15:04:05.000000000Z07:00"
