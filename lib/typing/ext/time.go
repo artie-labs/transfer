@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+// TODO: This package should have a concept of default formats for each type.
+
 type ExtendedTimeKindType string
 
 const (
