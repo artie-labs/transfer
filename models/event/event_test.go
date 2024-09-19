@@ -52,54 +52,26 @@ func (e *EventsTestSuite) TestEvent_IsValid() {
 	}
 }
 
-func (e *EventsTestSuite) TestEvent_HashData() {
+func (e *EventsTestSuite) TestHashData() {
 	{
 		// No columns to hash
-		event := Event{
-			Data: map[string]any{
-				"foo": "bar",
-				"abc": "def",
-			},
-		}
-
-		event.hashData(kafkalib.TopicConfig{})
-		assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, event.Data)
+		data := hashData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{})
+		assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, data)
 	}
 	{
 		// There's a column to hash, but the event does not have any data
-		event := Event{
-			Data: map[string]any{
-				"foo": "bar",
-				"abc": "def",
-			},
-		}
-
-		event.hashData(kafkalib.TopicConfig{ColumnsToHash: []string{"super duper"}})
-		assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, event.Data)
+		data := hashData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToHash: []string{"super duper"}})
+		assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, data)
 	}
 	{
 		// Hash the column foo (value is set)
-		event := Event{
-			Data: map[string]any{
-				"foo": "bar",
-				"abc": "def",
-			},
-		}
-
-		event.hashData(kafkalib.TopicConfig{ColumnsToHash: []string{"foo"}})
-		assert.Equal(e.T(), map[string]any{"foo": "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9", "abc": "def"}, event.Data)
+		data := hashData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToHash: []string{"foo"}})
+		assert.Equal(e.T(), map[string]any{"foo": "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9", "abc": "def"}, data)
 	}
 	{
 		// Hash the column foo (value is nil)
-		event := Event{
-			Data: map[string]any{
-				"foo": nil,
-				"abc": "def",
-			},
-		}
-
-		event.hashData(kafkalib.TopicConfig{ColumnsToHash: []string{"foo"}})
-		assert.Equal(e.T(), map[string]any{"foo": nil, "abc": "def"}, event.Data)
+		data := hashData(map[string]any{"foo": nil, "abc": "def"}, kafkalib.TopicConfig{ColumnsToHash: []string{"foo"}})
+		assert.Equal(e.T(), map[string]any{"foo": nil, "abc": "def"}, data)
 	}
 }
 
