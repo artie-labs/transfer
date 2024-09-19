@@ -12,6 +12,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
+// HashValue - Hashes a value using SHA256
 func HashValue(value any) any {
 	if value == nil {
 		return nil
