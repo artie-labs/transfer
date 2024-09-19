@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/cryptography"
+
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
@@ -134,12 +136,25 @@ func (e *Event) PrimaryKeyValue() string {
 	return key
 }
 
+func (e *Event) hashData(tc kafkalib.TopicConfig) {
+	for _, columnToHash := range tc.ColumnsToHash {
+		if value, isOk := e.Data[columnToHash]; isOk {
+			e.Data[columnToHash] = cryptography.HashValue(value)
+		}
+	}
+
+	return
+}
+
 // Save will save the event into our in memory event
 // It will return (flush bool, flushReason string, err error)
 func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkalib.TopicConfig, message artie.Message) (bool, string, error) {
 	if !e.IsValid() {
 		return false, "", errors.New("event not valid")
 	}
+
+	// Are there any columns that need to be hashed?
+	e.hashData(tc)
 
 	// Does the table exist?
 	td := inMemDB.GetOrCreateTableData(e.Table)
