@@ -1,6 +1,7 @@
 package ext
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -35,6 +36,11 @@ func TestParseFromInterface(t *testing.T) {
 		// False
 		_, err := ParseFromInterface(false, TimestampTzKindType)
 		assert.ErrorContains(t, err, "failed to parse colVal, expected type string or *ExtendedTime and got: bool")
+	}
+	{
+		value, err := ParseFromInterface("2024-09-19T16:05:18.630Z", TimestampTzKindType)
+		assert.NoError(t, err)
+		fmt.Println("value", value)
 	}
 }
 

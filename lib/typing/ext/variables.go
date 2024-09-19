@@ -12,6 +12,8 @@ const (
 
 var supportedDateTimeLayouts = []string{
 	time.RFC3339Nano,
+	// TODO: This should be pulled into `TIMESTAMP_NTZ`
+	"2006-01-02T15:04:05.000Z", // RFC 3339 without timezone
 	ISO8601,
 	time.Layout,
 	time.ANSIC,
