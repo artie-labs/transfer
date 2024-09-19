@@ -14,16 +14,11 @@ var idMap = map[string]any{
 
 func (e *EventsTestSuite) TestEvent_IsValid() {
 	{
-		_evt := Event{
-			Table: "foo",
-		}
+		_evt := Event{Table: "foo"}
 		assert.False(e.T(), _evt.IsValid())
 	}
 	{
-		_evt := Event{
-			Table:         "foo",
-			PrimaryKeyMap: idMap,
-		}
+		_evt := Event{Table: "foo", PrimaryKeyMap: idMap}
 		assert.False(e.T(), _evt.IsValid())
 	}
 	{
@@ -55,6 +50,58 @@ func (e *EventsTestSuite) TestEvent_IsValid() {
 		}
 		assert.True(e.T(), _evt.IsValid())
 	}
+}
+
+func (e *EventsTestSuite) TestEvent_HashData() {
+	{
+		// No columns to hash
+		event := Event{
+			Data: map[string]any{
+				"foo": "bar",
+				"abc": "def",
+			},
+		}
+
+		event.hashData(kafkalib.TopicConfig{})
+		assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, event.Data)
+	}
+	{
+		// There's a column to hash, but the event does not have any data
+		event := Event{
+			Data: map[string]any{
+				"foo": "bar",
+				"abc": "def",
+			},
+		}
+
+		event.hashData(kafkalib.TopicConfig{ColumnsToHash: []string{"super duper"}})
+		assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, event.Data)
+	}
+	{
+		// Hash the column foo (value is set)
+		event := Event{
+			Data: map[string]any{
+				"foo": "bar",
+				"abc": "def",
+			},
+		}
+
+		event.hashData(kafkalib.TopicConfig{ColumnsToHash: []string{"foo"}})
+		assert.Equal(e.T(), map[string]any{"foo": "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9", "abc": "def"}, event.Data)
+	}
+	{
+		// Hash the column foo (value is nil)
+		event := Event{
+			Data: map[string]any{
+				"foo": nil,
+				"abc": "def",
+			},
+		}
+
+		event.hashData(kafkalib.TopicConfig{ColumnsToHash: []string{"foo"}})
+		assert.Equal(e.T(), map[string]any{"foo": nil, "abc": "def"}, event.Data)
+	}
+
 }
 
 func (e *EventsTestSuite) TestEvent_TableName() {
