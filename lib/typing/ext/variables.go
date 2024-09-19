@@ -11,9 +11,8 @@ const (
 )
 
 var supportedDateTimeLayouts = []string{
+	RFC3339MillisecondUTC,
 	time.RFC3339Nano,
-	// TODO: This should be pulled into `TIMESTAMP_NTZ`
-	"2006-01-02T15:04:05.000Z", // RFC 3339 without timezone
 	ISO8601,
 	time.Layout,
 	time.ANSIC,
@@ -39,7 +38,8 @@ var SupportedTimeFormats = []string{
 
 // RFC3339 variants
 const (
-	RFC3339Millisecond = "2006-01-02T15:04:05.000Z07:00"
-	RFC3339Microsecond = "2006-01-02T15:04:05.000000Z07:00"
-	RFC3339Nanosecond  = "2006-01-02T15:04:05.000000000Z07:00"
+	RFC3339MillisecondUTC = "2006-01-02T15:04:05.000Z"
+	RFC3339Millisecond    = "2006-01-02T15:04:05.000Z07:00"
+	RFC3339Microsecond    = "2006-01-02T15:04:05.000000Z07:00"
+	RFC3339Nanosecond     = "2006-01-02T15:04:05.000000000Z07:00"
 )

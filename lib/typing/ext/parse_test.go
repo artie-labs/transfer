@@ -40,6 +40,7 @@ func TestParseFromInterface(t *testing.T) {
 		value, err := ParseFromInterface("2024-09-19T16:05:18.630Z", TimestampTzKindType)
 		assert.NoError(t, err)
 		assert.Equal(t, "2024-09-19T16:05:18.630Z", value.String(""))
+		assert.Equal(t, RFC3339MillisecondUTC, value.nestedKind.Format)
 	}
 }
 
