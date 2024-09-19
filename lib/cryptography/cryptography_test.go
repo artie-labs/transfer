@@ -28,9 +28,6 @@ func TestHashValue(t *testing.T) {
 }
 
 func BenchmarkHashValue(b *testing.B) {
-	// Define a sample value to hash
-
-	// Run the benchmark
 	for i := 0; i < b.N; i++ {
 		assert.Equal(b, "b9a40320d82075681b2500e38160538e5e912bd8f49c03e87367fe82c1fa35d2", HashValue("dusty the mini aussie"))
 	}
