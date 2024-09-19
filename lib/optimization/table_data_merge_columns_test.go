@@ -106,7 +106,7 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_time", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType))))
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_date", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType))))
-		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_datetime", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateTimeKindType))))
+		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_datetime", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType))))
 
 		dateCol, isOk := tableData.inMemoryColumns.GetColumn("ext_date")
 		assert.True(t, isOk)
@@ -121,7 +121,7 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		dateTimeCol, isOk := tableData.inMemoryColumns.GetColumn("ext_datetime")
 		assert.True(t, isOk)
 		assert.NotNil(t, dateTimeCol.KindDetails.ExtendedTimeDetails)
-		assert.Equal(t, ext.DateTimeKindType, dateTimeCol.KindDetails.ExtendedTimeDetails.Type)
+		assert.Equal(t, ext.TimestampTzKindType, dateTimeCol.KindDetails.ExtendedTimeDetails.Type)
 
 		// Testing extDecimalDetails
 		// Confirm that before you update, it's invalid.

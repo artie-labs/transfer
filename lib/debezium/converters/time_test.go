@@ -39,7 +39,7 @@ func TestConvertDateTimeWithTimezone(t *testing.T) {
 			ts, isOk := val.(*ext.ExtendedTime)
 			assert.True(t, isOk)
 
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 000000000, time.UTC), ext.DateTimeKindType, "2006-01-02T15:04:05Z")
+			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 000000000, time.UTC), ext.TimestampTzKindType, "2006-01-02T15:04:05Z")
 			assert.Equal(t, expectedExtTime, ts)
 		}
 		{
@@ -50,7 +50,7 @@ func TestConvertDateTimeWithTimezone(t *testing.T) {
 			ts, isOk := val.(*ext.ExtendedTime)
 			assert.True(t, isOk)
 
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 100000000, time.UTC), ext.DateTimeKindType, "2006-01-02T15:04:05.0Z")
+			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 100000000, time.UTC), ext.TimestampTzKindType, "2006-01-02T15:04:05.0Z")
 			assert.Equal(t, expectedExtTime, ts)
 		}
 		{
@@ -61,7 +61,7 @@ func TestConvertDateTimeWithTimezone(t *testing.T) {
 			ts, isOk := val.(*ext.ExtendedTime)
 			assert.True(t, isOk)
 
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 120000000, time.UTC), ext.DateTimeKindType, "2006-01-02T15:04:05.00Z")
+			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 120000000, time.UTC), ext.TimestampTzKindType, "2006-01-02T15:04:05.00Z")
 			assert.Equal(t, expectedExtTime, ts)
 		}
 		{
@@ -72,7 +72,7 @@ func TestConvertDateTimeWithTimezone(t *testing.T) {
 			ts, isOk := val.(*ext.ExtendedTime)
 			assert.True(t, isOk)
 
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123000000, time.UTC), ext.DateTimeKindType, "2006-01-02T15:04:05.000Z")
+			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123000000, time.UTC), ext.TimestampTzKindType, "2006-01-02T15:04:05.000Z")
 			assert.Equal(t, expectedExtTime, ts)
 		}
 		{
@@ -83,7 +83,7 @@ func TestConvertDateTimeWithTimezone(t *testing.T) {
 			ts, isOk := val.(*ext.ExtendedTime)
 			assert.True(t, isOk)
 
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123400000, time.UTC), ext.DateTimeKindType, "2006-01-02T15:04:05.0000Z")
+			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123400000, time.UTC), ext.TimestampTzKindType, "2006-01-02T15:04:05.0000Z")
 			assert.Equal(t, expectedExtTime, ts)
 		}
 		{
@@ -94,7 +94,7 @@ func TestConvertDateTimeWithTimezone(t *testing.T) {
 			ts, isOk := val.(*ext.ExtendedTime)
 			assert.True(t, isOk)
 
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123450000, time.UTC), ext.DateTimeKindType, "2006-01-02T15:04:05.00000Z")
+			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123450000, time.UTC), ext.TimestampTzKindType, "2006-01-02T15:04:05.00000Z")
 			assert.Equal(t, expectedExtTime, ts)
 		}
 		{
@@ -105,7 +105,7 @@ func TestConvertDateTimeWithTimezone(t *testing.T) {
 			ts, isOk := val.(*ext.ExtendedTime)
 			assert.True(t, isOk)
 
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456000, time.UTC), ext.DateTimeKindType, "2006-01-02T15:04:05.000000Z")
+			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456000, time.UTC), ext.TimestampTzKindType, "2006-01-02T15:04:05.000000Z")
 			assert.Equal(t, expectedExtTime, ts)
 		}
 	}
