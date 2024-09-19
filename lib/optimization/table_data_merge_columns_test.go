@@ -10,21 +10,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const strCol = "string"
-
 func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
+	const strCol = "string"
+	tableDataCols := &columns.Columns{}
+	tableData := &TableData{inMemoryColumns: tableDataCols}
 	{
 		// Trying to merge an invalid destination column
-		tableDataCols := &columns.Columns{}
-		tableData := &TableData{inMemoryColumns: tableDataCols}
 		tableData.AddInMemoryCol(columns.NewColumn("foo", typing.String))
 		invalidCol := columns.NewColumn("foo", typing.Invalid)
 		assert.ErrorContains(t, tableData.MergeColumnsFromDestination(invalidCol), `column "foo" is invalid`)
 	}
 	{
 		// In-memory column is a string and the destination column is a Date
-		tableDataCols := &columns.Columns{}
-		tableData := &TableData{inMemoryColumns: tableDataCols}
 		tableData.AddInMemoryCol(columns.NewColumn("foo", typing.String))
 
 		extTime := typing.ETime
@@ -40,59 +37,55 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		assert.Equal(t, "", updatedColumn.KindDetails.ExtendedTimeDetails.Format)
 	}
 	{
-		tableDataCols := &columns.Columns{}
-		tableData := &TableData{inMemoryColumns: tableDataCols}
-		{
-			// In-memory column is NUMERIC and destination column is an INTEGER
-			tableDataCols.AddColumn(columns.NewColumn("numeric_test", typing.EDecimal))
-			assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("numeric_test", typing.Integer)))
+		// In-memory column is NUMERIC and destination column is an INTEGER
+		tableDataCols.AddColumn(columns.NewColumn("numeric_test", typing.EDecimal))
+		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("numeric_test", typing.Integer)))
 
-			numericCol, isOk := tableData.inMemoryColumns.GetColumn("numeric_test")
-			assert.True(t, isOk)
-			assert.Equal(t, typing.Integer.Kind, numericCol.KindDetails.Kind)
-		}
-		{
-			// Boolean column that has been backfilled
-			tableDataCols.AddColumn(columns.NewColumn("bool_backfill", typing.Boolean))
-			backfilledCol := columns.NewColumn("bool_backfill", typing.Boolean)
-			backfilledCol.SetBackfilled(true)
+		numericCol, isOk := tableData.inMemoryColumns.GetColumn("numeric_test")
+		assert.True(t, isOk)
+		assert.Equal(t, typing.Integer.Kind, numericCol.KindDetails.Kind)
+	}
+	{
+		// Boolean column that has been backfilled
+		tableDataCols.AddColumn(columns.NewColumn("bool_backfill", typing.Boolean))
+		backfilledCol := columns.NewColumn("bool_backfill", typing.Boolean)
+		backfilledCol.SetBackfilled(true)
 
-			// Backfill was not set
-			column, isOk := tableData.inMemoryColumns.GetColumn("bool_backfill")
-			assert.True(t, isOk)
-			assert.False(t, column.Backfilled())
+		// Backfill was not set
+		column, isOk := tableData.inMemoryColumns.GetColumn("bool_backfill")
+		assert.True(t, isOk)
+		assert.False(t, column.Backfilled())
 
-			assert.NoError(t, tableData.MergeColumnsFromDestination(backfilledCol))
-			// Backfill is set after merge.
-			column, isOk = tableData.inMemoryColumns.GetColumn("bool_backfill")
-			assert.True(t, isOk)
-			assert.True(t, column.Backfilled())
-		}
-		{
-			// Non-existent columns should not be copied over.
-			nonExistentTableCols := []string{"dusty", "the", "mini", "aussie"}
-			var nonExistentCols []columns.Column
-			for _, nonExistentTableCol := range nonExistentTableCols {
-				nonExistentCols = append(nonExistentCols, columns.NewColumn(nonExistentTableCol, typing.String))
-			}
-
-			assert.NoError(t, tableData.MergeColumnsFromDestination(nonExistentCols...))
-			for _, nonExistentTableCol := range nonExistentTableCols {
-				_, isOk := tableData.inMemoryColumns.GetColumn(nonExistentTableCol)
-				assert.False(t, isOk, nonExistentTableCol)
-			}
-		}
-		{
-			// In-memory column was invalid, but the destination column is valid
-			tableDataCols.AddColumn(columns.NewColumn("invalid_test", typing.Invalid))
-			assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("invalid_test", typing.String)))
-
-			invalidCol, isOk := tableData.inMemoryColumns.GetColumn("invalid_test")
-			assert.True(t, isOk)
-			assert.Equal(t, typing.String.Kind, invalidCol.KindDetails.Kind)
+		assert.NoError(t, tableData.MergeColumnsFromDestination(backfilledCol))
+		// Backfill is set after merge.
+		column, isOk = tableData.inMemoryColumns.GetColumn("bool_backfill")
+		assert.True(t, isOk)
+		assert.True(t, column.Backfilled())
+	}
+	{
+		// Non-existent columns should not be copied over.
+		nonExistentTableCols := []string{"dusty", "the", "mini", "aussie"}
+		var nonExistentCols []columns.Column
+		for _, nonExistentTableCol := range nonExistentTableCols {
+			nonExistentCols = append(nonExistentCols, columns.NewColumn(nonExistentTableCol, typing.String))
 		}
 
-		tableDataCols.AddColumn(columns.NewColumn("name", typing.String))
+		assert.NoError(t, tableData.MergeColumnsFromDestination(nonExistentCols...))
+		for _, nonExistentTableCol := range nonExistentTableCols {
+			_, isOk := tableData.inMemoryColumns.GetColumn(nonExistentTableCol)
+			assert.False(t, isOk, nonExistentTableCol)
+		}
+	}
+	{
+		// In-memory column was invalid, but the destination column is valid
+		tableDataCols.AddColumn(columns.NewColumn("invalid_test", typing.Invalid))
+		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("invalid_test", typing.String)))
+
+		invalidCol, isOk := tableData.inMemoryColumns.GetColumn("invalid_test")
+		assert.True(t, isOk)
+		assert.Equal(t, typing.String.Kind, invalidCol.KindDetails.Kind)
+	}
+	{
 		// Casting these as STRING so tableColumn via this f(x) will set it correctly.
 		tableDataCols.AddColumn(columns.NewColumn("ext_date", typing.String))
 		tableDataCols.AddColumn(columns.NewColumn("ext_time", typing.String))
@@ -164,8 +157,6 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 	}
 	{
 		// String (precision being copied over)
-		tableDataCols := &columns.Columns{}
-		tableData := &TableData{inMemoryColumns: tableDataCols}
 		tableDataCols.AddColumn(columns.NewColumn(strCol, typing.String))
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn(strCol,
 			typing.KindDetails{
