@@ -101,7 +101,6 @@ func (e *EventsTestSuite) TestEvent_HashData() {
 		event.hashData(kafkalib.TopicConfig{ColumnsToHash: []string{"foo"}})
 		assert.Equal(e.T(), map[string]any{"foo": nil, "abc": "def"}, event.Data)
 	}
-
 }
 
 func (e *EventsTestSuite) TestEvent_TableName() {
