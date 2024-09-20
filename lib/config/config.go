@@ -107,7 +107,7 @@ func (c Config) TopicConfigs() ([]*kafkalib.TopicConfig, error) {
 		return c.Pubsub.TopicConfigs, nil
 	}
 
-	return nil, fmt.Errorf("unsupported queue: %v", c.Queue)
+	return nil, fmt.Errorf("unsupported queue: %q", c.Queue)
 }
 
 type Mode string
@@ -200,7 +200,7 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 
 func (c Config) ValidateRedshift() error {
 	if c.Output != constants.Redshift {
-		return fmt.Errorf("output is not Redshift, output: %v", c.Output)
+		return fmt.Errorf("output is not Redshift, output: %q", c.Output)
 	}
 
 	if c.Redshift == nil {
@@ -224,7 +224,7 @@ func (c Config) ValidateRedshift() error {
 // The actual output source (like Snowflake) and CDC parser will be loaded and checked by other funcs.
 func (c Config) Validate() error {
 	if c.FlushSizeKb <= 0 {
-		return fmt.Errorf("flush size pool has to be a positive number, current value: %v", c.FlushSizeKb)
+		return fmt.Errorf("flush size pool has to be a positive number, current value: %d", c.FlushSizeKb)
 	}
 
 	if !numbers.BetweenEq(FlushIntervalSecondsMin, FlushIntervalSecondsMax, c.FlushIntervalSeconds) {
