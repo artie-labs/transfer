@@ -11,21 +11,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConvertDateTimeWithTimezone(t *testing.T) {
+func TestZonedTimestamp_Convert(t *testing.T) {
 	{
 		// Invalid data
-		_, err := DateTimeWithTimezone{}.Convert(123)
+		_, err := ZonedTimestamp{}.Convert(123)
 		assert.ErrorContains(t, err, "expected string got '123' with type int")
 	}
 	{
 		// Edge case (Year exceeds 9999)
-		val, err := DateTimeWithTimezone{}.Convert("+275760-09-13T00:00:00.000000Z")
+		val, err := ZonedTimestamp{}.Convert("+275760-09-13T00:00:00.000000Z")
 		assert.NoError(t, err)
 		assert.Nil(t, val)
 	}
 	{
 		// Edge case (Negative year)
-		val, err := DateTimeWithTimezone{}.Convert("-0999-10-10T10:10:10.000000Z")
+		val, err := ZonedTimestamp{}.Convert("-0999-10-10T10:10:10.000000Z")
 		assert.NoError(t, err)
 		assert.Nil(t, val)
 	}
@@ -33,7 +33,7 @@ func TestConvertDateTimeWithTimezone(t *testing.T) {
 		// Valid
 		{
 			// No fractional seconds
-			val, err := DateTimeWithTimezone{}.Convert("2025-09-13T00:00:00Z")
+			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00Z")
 			assert.NoError(t, err)
 
 			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 000000000, time.UTC), ext.TimestampTzKindType, "2006-01-02T15:04:05Z")
@@ -41,7 +41,7 @@ func TestConvertDateTimeWithTimezone(t *testing.T) {
 		}
 		{
 			// 1 digits
-			val, err := DateTimeWithTimezone{}.Convert("2025-09-13T00:00:00.1Z")
+			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.1Z")
 			assert.NoError(t, err)
 
 			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 100000000, time.UTC), ext.TimestampTzKindType, "2006-01-02T15:04:05.0Z")
@@ -49,7 +49,7 @@ func TestConvertDateTimeWithTimezone(t *testing.T) {
 		}
 		{
 			// 2 digits
-			val, err := DateTimeWithTimezone{}.Convert("2025-09-13T00:00:00.12Z")
+			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.12Z")
 			assert.NoError(t, err)
 
 			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 120000000, time.UTC), ext.TimestampTzKindType, "2006-01-02T15:04:05.00Z")
@@ -57,7 +57,7 @@ func TestConvertDateTimeWithTimezone(t *testing.T) {
 		}
 		{
 			// 3 digits
-			val, err := DateTimeWithTimezone{}.Convert("2025-09-13T00:00:00.123Z")
+			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.123Z")
 			assert.NoError(t, err)
 
 			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123000000, time.UTC), ext.TimestampTzKindType, "2006-01-02T15:04:05.000Z")
@@ -65,7 +65,7 @@ func TestConvertDateTimeWithTimezone(t *testing.T) {
 		}
 		{
 			// 4 digits
-			val, err := DateTimeWithTimezone{}.Convert("2025-09-13T00:00:00.1234Z")
+			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.1234Z")
 			assert.NoError(t, err)
 
 			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123400000, time.UTC), ext.TimestampTzKindType, "2006-01-02T15:04:05.0000Z")
@@ -73,7 +73,7 @@ func TestConvertDateTimeWithTimezone(t *testing.T) {
 		}
 		{
 			// 5 digits
-			val, err := DateTimeWithTimezone{}.Convert("2025-09-13T00:00:00.12345Z")
+			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.12345Z")
 			assert.NoError(t, err)
 
 			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123450000, time.UTC), ext.TimestampTzKindType, "2006-01-02T15:04:05.00000Z")
@@ -81,7 +81,7 @@ func TestConvertDateTimeWithTimezone(t *testing.T) {
 		}
 		{
 			// 6 digits (microseconds)
-			val, err := DateTimeWithTimezone{}.Convert("2025-09-13T00:00:00.123456Z")
+			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.123456Z")
 			assert.NoError(t, err)
 
 			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456000, time.UTC), ext.TimestampTzKindType, "2006-01-02T15:04:05.000000Z")
@@ -89,7 +89,7 @@ func TestConvertDateTimeWithTimezone(t *testing.T) {
 		}
 		{
 			// 7 digits
-			val, err := DateTimeWithTimezone{}.Convert("2025-09-13T00:00:00.1234567Z")
+			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.1234567Z")
 			assert.NoError(t, err)
 
 			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456700, time.UTC), ext.TimestampTzKindType, "2006-01-02T15:04:05.0000000Z")
@@ -97,7 +97,7 @@ func TestConvertDateTimeWithTimezone(t *testing.T) {
 		}
 		{
 			// 8 digits
-			val, err := DateTimeWithTimezone{}.Convert("2025-09-13T00:00:00.12345678Z")
+			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.12345678Z")
 			assert.NoError(t, err)
 
 			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456780, time.UTC), ext.TimestampTzKindType, "2006-01-02T15:04:05.00000000Z")
@@ -105,7 +105,7 @@ func TestConvertDateTimeWithTimezone(t *testing.T) {
 		}
 		{
 			// 9 digits (nanoseconds)
-			val, err := DateTimeWithTimezone{}.Convert("2025-09-13T00:00:00.123456789Z")
+			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.123456789Z")
 			assert.NoError(t, err)
 
 			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456789, time.UTC), ext.TimestampTzKindType, "2006-01-02T15:04:05.000000000Z")

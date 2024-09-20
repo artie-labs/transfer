@@ -70,13 +70,13 @@ var SupportedDateTimeWithTimezoneFormats = []string{
 	"2006-01-02T15:04:05.000000000Z", // 9 digits
 }
 
-type DateTimeWithTimezone struct{}
+type ZonedTimestamp struct{}
 
-func (DateTimeWithTimezone) ToKindDetails() typing.KindDetails {
+func (ZonedTimestamp) ToKindDetails() typing.KindDetails {
 	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)
 }
 
-func (DateTimeWithTimezone) Convert(value any) (any, error) {
+func (ZonedTimestamp) Convert(value any) (any, error) {
 	valString, isOk := value.(string)
 	if !isOk {
 		return nil, fmt.Errorf("expected string got '%v' with type %T", value, value)

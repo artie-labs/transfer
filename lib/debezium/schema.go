@@ -90,8 +90,8 @@ func (f Field) ToValueConverter() (converters.ValueConverter, error) {
 		return &converters.Int64Passthrough{}, nil
 	case Bits:
 		return converters.Base64{}, nil
-	case DateTimeWithTimezone:
-		return converters.DateTimeWithTimezone{}, nil
+	case ZonedTimestamp:
+		return converters.ZonedTimestamp{}, nil
 	case TimeWithTimezone:
 		return converters.TimeWithTimezone{}, nil
 	case GeometryPointType:
