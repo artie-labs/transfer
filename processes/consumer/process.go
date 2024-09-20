@@ -39,7 +39,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	topicConfig, isOk := p.TopicToConfigFormatMap.GetTopicFmt(p.Msg.Topic())
 	if !isOk {
 		tags["what"] = "failed_topic_lookup"
-		return "", fmt.Errorf("failed to get topic name: %s", p.Msg.Topic())
+		return "", fmt.Errorf("failed to get topic name: %q", p.Msg.Topic())
 	}
 
 	tags["database"] = topicConfig.tc.Database
@@ -65,7 +65,6 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	}
 	// Table name is only available after event has been cast
 	tags["table"] = evt.Table
-
 	if topicConfig.tc.ShouldSkip(_event.Operation()) {
 		// Check to see if we should skip first
 		// This way, we can emit a specific tag to be more clear
