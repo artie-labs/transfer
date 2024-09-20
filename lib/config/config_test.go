@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
@@ -457,11 +456,7 @@ bigquery:
 }
 
 func TestConfig_Validate(t *testing.T) {
-	pubsub := Pubsub{
-		ProjectID:         "foo",
-		PathToCredentials: "bar",
-	}
-
+	pubsub := Pubsub{ProjectID: "foo", PathToCredentials: "bar"}
 	cfg := Config{
 		Pubsub:               &pubsub,
 		FlushIntervalSeconds: 5,
@@ -508,48 +503,51 @@ func TestConfig_Validate(t *testing.T) {
 		cfg.BufferRows = defaultBufferPoolSize + 1
 		assert.Nil(t, cfg.Validate())
 	}
+	{
+		// Invalid flush settings
+		for i := 0; i < bufferPoolSizeMin; i++ {
+			// Reset buffer rows.
+			cfg.BufferRows = 500
+			cfg.FlushIntervalSeconds = i
+			assert.ErrorContains(t, cfg.Validate(), "flush interval is outside of our range")
 
-	// Test the various flush error settings.
-	for i := 0; i < bufferPoolSizeMin; i++ {
-		// Reset buffer rows.
-		cfg.BufferRows = 500
-		cfg.FlushIntervalSeconds = i
-		assert.ErrorContains(t, cfg.Validate(), "flush interval is outside of our range")
-
-		// Reset Flush
-		cfg.FlushIntervalSeconds = 20
-		cfg.BufferRows = uint(i)
-		assert.ErrorContains(t, cfg.Validate(), "buffer pool is too small")
+			// Reset Flush
+			cfg.FlushIntervalSeconds = 20
+			cfg.BufferRows = uint(i)
+			assert.ErrorContains(t, cfg.Validate(), "buffer pool is too small")
+		}
 	}
 
 	cfg.BufferRows = 500
 	cfg.FlushIntervalSeconds = 600
 	assert.Nil(t, cfg.Validate())
 
-	// Now that we have a valid output, let's test with S3.
-	cfg.Output = constants.S3
-	assert.ErrorContains(t, cfg.Validate(), "s3 settings are nil")
-	cfg.S3 = &S3Settings{
-		Bucket:             "foo",
-		AwsSecretAccessKey: "foo",
-		AwsAccessKeyID:     "bar",
-		OutputFormat:       constants.ParquetFormat,
+	{
+		// S3
+		cfg.Output = constants.S3
+		assert.ErrorContains(t, cfg.Validate(), "s3 settings are nil")
+		cfg.S3 = &S3Settings{
+			Bucket:             "foo",
+			AwsSecretAccessKey: "foo",
+			AwsAccessKeyID:     "bar",
+			OutputFormat:       constants.ParquetFormat,
+		}
+
+		assert.Nil(t, cfg.Validate())
 	}
+	{
+		// Now let's change to history mode and see.
+		cfg.Mode = History
+		pubsub.TopicConfigs[0].DropDeletedColumns = true
+		assert.ErrorContains(t, cfg.Validate(), "dropDeletedColumns is not supported in history mode")
 
-	assert.Nil(t, cfg.Validate())
+		pubsub.TopicConfigs[0].DropDeletedColumns = false
+		pubsub.TopicConfigs[0].IncludeDatabaseUpdatedAt = false
+		assert.ErrorContains(t, cfg.Validate(), "includeDatabaseUpdatedAt is required in history mode")
 
-	// Now let's change to history mode and see.
-	cfg.Mode = History
-	pubsub.TopicConfigs[0].DropDeletedColumns = true
-	assert.ErrorContains(t, cfg.Validate(), "dropDeletedColumns is not supported in history mode")
-
-	pubsub.TopicConfigs[0].DropDeletedColumns = false
-	pubsub.TopicConfigs[0].IncludeDatabaseUpdatedAt = false
-	assert.ErrorContains(t, cfg.Validate(), "includeDatabaseUpdatedAt is required in history mode")
-
-	pubsub.TopicConfigs[0].IncludeDatabaseUpdatedAt = true
-	assert.NoError(t, cfg.Validate())
-	// End history mode
+		pubsub.TopicConfigs[0].IncludeDatabaseUpdatedAt = true
+		assert.NoError(t, cfg.Validate())
+	}
 
 	for _, num := range []int{-500, -300, -5, 0} {
 		cfg.FlushSizeKb = num
@@ -558,18 +556,14 @@ func TestConfig_Validate(t *testing.T) {
 }
 
 func TestCfg_KafkaBootstrapServers(t *testing.T) {
-	kafka := Kafka{
-		BootstrapServer: "localhost:9092",
+	{
+		// Single broker
+		kafka := Kafka{BootstrapServer: "localhost:9092"}
+		assert.Equal(t, []string{"localhost:9092"}, kafka.BootstrapServers())
 	}
-
-	assert.Equal(t, []string{"localhost:9092"}, strings.Split(kafka.BootstrapServer, ","))
-
-	kafkaWithMultipleBrokers := Kafka{
-		BootstrapServer: "a:9092,b:9093,c:9094",
+	{
+		// Multiple brokers
+		kafkaWithMultipleBrokers := Kafka{BootstrapServer: "a:9092,b:9093,c:9094"}
+		assert.Equal(t, []string{"a:9092", "b:9093", "c:9094"}, kafkaWithMultipleBrokers.BootstrapServers())
 	}
-
-	var brokers []string
-	brokers = append(brokers, strings.Split(kafkaWithMultipleBrokers.BootstrapServer, ",")...)
-
-	assert.Equal(t, []string{"a:9092", "b:9093", "c:9094"}, brokers)
 }

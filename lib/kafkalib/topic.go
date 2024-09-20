@@ -40,6 +40,7 @@ type TopicConfig struct {
 	BigQueryPartitionSettings *partition.BigQuerySettings `yaml:"bigQueryPartitionSettings,omitempty"`
 	AdditionalMergePredicates []partition.MergePredicates `yaml:"additionalMergePredicates,omitempty"`
 	ColumnsToHash             []string                    `yaml:"columnsToHash,omitempty"`
+	PrimaryKeysOverride       []string                    `yaml:"primaryKeysOverride,omitempty"`
 
 	// Internal metadata
 	opsToSkipMap map[string]bool `yaml:"-"`
