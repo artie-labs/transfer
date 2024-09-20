@@ -58,14 +58,16 @@ func (MicroTime) Convert(value any) (any, error) {
 }
 
 var SupportedDateTimeWithTimezoneFormats = []string{
-	"2006-01-02T15:04:05Z",         // w/o fractional seconds
-	"2006-01-02T15:04:05.0Z",       // 1 digit
-	"2006-01-02T15:04:05.00Z",      // 2 digits
-	"2006-01-02T15:04:05.000Z",     // 3 digits
-	"2006-01-02T15:04:05.0000Z",    // 4 digits
-	"2006-01-02T15:04:05.00000Z",   // 5 digits
-	"2006-01-02T15:04:05.000000Z",  // 6 digits
-	"2006-01-02T15:04:05.0000000Z", // 7 digits
+	"2006-01-02T15:04:05Z",           // w/o fractional seconds
+	"2006-01-02T15:04:05.0Z",         // 1 digit
+	"2006-01-02T15:04:05.00Z",        // 2 digits
+	"2006-01-02T15:04:05.000Z",       // 3 digits
+	"2006-01-02T15:04:05.0000Z",      // 4 digits
+	"2006-01-02T15:04:05.00000Z",     // 5 digits
+	"2006-01-02T15:04:05.000000Z",    // 6 digits
+	"2006-01-02T15:04:05.0000000Z",   // 7 digits
+	"2006-01-02T15:04:05.00000000Z",  // 8 digits
+	"2006-01-02T15:04:05.000000000Z", // 9 digits
 }
 
 type DateTimeWithTimezone struct{}
