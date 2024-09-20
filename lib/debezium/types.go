@@ -39,11 +39,11 @@ const (
 	Bits SupportedDebeziumType = "io.debezium.data.Bits"
 
 	// Dates
-	Date                 SupportedDebeziumType = "io.debezium.time.Date"
-	DateKafkaConnect     SupportedDebeziumType = "org.apache.kafka.connect.data.Date"
-	DateTimeWithTimezone SupportedDebeziumType = "io.debezium.time.ZonedTimestamp"
-	MicroDuration        SupportedDebeziumType = "io.debezium.time.MicroDuration"
-	Year                 SupportedDebeziumType = "io.debezium.time.Year"
+	Date             SupportedDebeziumType = "io.debezium.time.Date"
+	DateKafkaConnect SupportedDebeziumType = "org.apache.kafka.connect.data.Date"
+	ZonedTimestamp   SupportedDebeziumType = "io.debezium.time.ZonedTimestamp"
+	MicroDuration    SupportedDebeziumType = "io.debezium.time.MicroDuration"
+	Year             SupportedDebeziumType = "io.debezium.time.Year"
 
 	// Time
 	Time             SupportedDebeziumType = "io.debezium.time.Time"
