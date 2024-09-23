@@ -12,14 +12,14 @@ var idMap = map[string]any{
 	"id": 123,
 }
 
-func (e *EventsTestSuite) TestEvent_IsValid() {
+func (e *EventsTestSuite) TestEvent_Validate() {
 	{
 		_evt := Event{Table: "foo"}
-		assert.False(e.T(), _evt.IsValid())
+		assert.ErrorContains(e.T(), _evt.Validate(), "primary key map is empty")
 	}
 	{
 		_evt := Event{Table: "foo", PrimaryKeyMap: idMap}
-		assert.False(e.T(), _evt.IsValid())
+		assert.ErrorContains(e.T(), _evt.Validate(), "event has no data")
 	}
 	{
 		_evt := Event{
@@ -30,7 +30,7 @@ func (e *EventsTestSuite) TestEvent_IsValid() {
 			},
 			mode: config.History,
 		}
-		assert.True(e.T(), _evt.IsValid())
+		assert.Nil(e.T(), _evt.Validate())
 	}
 	{
 		_evt := Event{
@@ -40,7 +40,7 @@ func (e *EventsTestSuite) TestEvent_IsValid() {
 				"foo": "bar",
 			},
 		}
-		assert.False(e.T(), _evt.IsValid())
+		assert.ErrorContains(e.T(), _evt.Validate(), "")
 	}
 	{
 		_evt := Event{
@@ -48,7 +48,7 @@ func (e *EventsTestSuite) TestEvent_IsValid() {
 			PrimaryKeyMap: idMap,
 			Data:          map[string]any{constants.DeleteColumnMarker: true, constants.OnlySetDeleteColumnMarker: true},
 		}
-		assert.True(e.T(), _evt.IsValid())
+		assert.Nil(e.T(), _evt.Validate())
 	}
 }
 
