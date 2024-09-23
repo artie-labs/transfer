@@ -2,7 +2,6 @@ package event
 
 import (
 	"cmp"
-	"errors"
 	"fmt"
 	"log/slog"
 	"sort"
@@ -99,27 +98,31 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 	}, nil
 }
 
-func (e *Event) IsValid() bool {
+func (e *Event) Validate() error {
 	// Does it have a PK or table set?
 	if stringutil.Empty(e.Table) {
-		return false
+		return fmt.Errorf("table name is empty")
 	}
 
 	if len(e.PrimaryKeyMap) == 0 {
-		return false
+		return fmt.Errorf("primary key map is empty")
 	}
 
 	if len(e.Data) == 0 {
-		return false
+		return fmt.Errorf("event has no data")
 	}
 
 	if e.mode == config.History {
 		// History mode does not have the delete column marker.
-		return true
+		return nil
 	}
+
 	// Check if delete flag exists.
-	_, isOk := e.Data[constants.DeleteColumnMarker]
-	return isOk
+	if _, isOk := e.Data[constants.DeleteColumnMarker]; !isOk {
+		return fmt.Errorf("delete column marker does not exist")
+	}
+
+	return nil
 }
 
 // PrimaryKeys is returned in a sorted manner to be safe.
@@ -148,8 +151,8 @@ func (e *Event) PrimaryKeyValue() string {
 // Save will save the event into our in memory event
 // It will return (flush bool, flushReason string, err error)
 func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkalib.TopicConfig, message artie.Message) (bool, string, error) {
-	if !e.IsValid() {
-		return false, "", errors.New("event not valid")
+	if err := e.Validate(); err != nil {
+		return false, "", fmt.Errorf("event validation failed: %w", err)
 	}
 
 	// Does the table exist?
