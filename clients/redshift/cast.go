@@ -51,8 +51,6 @@ func castColValStaging(colVal any, colKind typing.KindDetails, truncateExceededV
 		return "", err
 	}
 
-	value := replaceExceededValues(colValString, colKind, truncateExceededValue)
-
 	// Checks for DDL overflow needs to be done at the end in case there are any conversions that need to be done.
-	return value, nil
+	return replaceExceededValues(colValString, colKind, truncateExceededValue), nil
 }
