@@ -26,9 +26,17 @@ func (RedshiftDialect) EscapeStruct(value string) string {
 func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
 	switch kd.Kind {
 	case typing.Integer.Kind:
-		// int4 is 2^31, whereas int8 is 2^63.
-		// we're using a larger data type to not have an integer overflow.
-		return "INT8"
+		switch kd.OptionalIntKind {
+		case typing.SmallIntKind:
+			return "INT2"
+		case typing.IntegerKind:
+			return "INT4"
+		case typing.NotSpecifiedKind, typing.BigIntKind:
+			fallthrough
+		default:
+			// By default, we are using a larger data type to avoid the possibility of an integer overflow.
+			return "INT8"
+		}
 	case typing.Struct.Kind:
 		return "SUPER"
 	case typing.Array.Kind:
@@ -87,8 +95,21 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 	switch rawType {
 	case "super":
 		return typing.Struct, nil
-	case "smallint", "integer", "bigint":
-		return typing.Integer, nil
+	case "smallint":
+		return typing.KindDetails{
+			Kind:            typing.Integer.Kind,
+			OptionalIntKind: typing.SmallIntKind,
+		}, nil
+	case "integer":
+		return typing.KindDetails{
+			Kind:            typing.Integer.Kind,
+			OptionalIntKind: typing.IntegerKind,
+		}, nil
+	case "bigint":
+		return typing.KindDetails{
+			Kind:            typing.Integer.Kind,
+			OptionalIntKind: typing.BigIntKind,
+		}, nil
 	case "double precision":
 		return typing.Float, nil
 	case "timestamp with time zone", "timestamp without time zone":
@@ -101,7 +122,7 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 		return typing.Boolean, nil
 	}
 
-	return typing.Invalid, fmt.Errorf("unsupported data type: %s", rawType)
+	return typing.Invalid, fmt.Errorf("unsupported data type: %q", rawType)
 }
 
 func (RedshiftDialect) IsColumnAlreadyExistsErr(err error) bool {
