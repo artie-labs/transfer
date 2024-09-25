@@ -29,6 +29,31 @@ func TestRedshiftDialect_DataTypeForKind(t *testing.T) {
 			assert.Equal(t, "VARCHAR(12345)", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(12345))}, false))
 		}
 	}
+	{
+		// Integers
+		{
+			// Small int
+			assert.Equal(t, "INT2", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.SmallIntegerKind)}, false))
+		}
+		{
+			// Integer
+			assert.Equal(t, "INT4", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.IntegerKind)}, false))
+		}
+		{
+			// Big integer
+			assert.Equal(t, "INT8", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.BigIntegerKind)}, false))
+		}
+		{
+			// Not specified
+			{
+				// Literal
+				assert.Equal(t, "INT8", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.NotSpecifiedKind)}, false))
+			}
+			{
+				assert.Equal(t, "INT8", RedshiftDialect{}.DataTypeForKind(typing.Integer, false))
+			}
+		}
+	}
 }
 
 func TestRedshiftDialect_KindForDataType(t *testing.T) {
@@ -36,19 +61,30 @@ func TestRedshiftDialect_KindForDataType(t *testing.T) {
 	{
 		// Integers
 		{
-			kd, err := dialect.KindForDataType("integer", "")
+			// Small integer
+			kd, err := dialect.KindForDataType("smallint", "")
 			assert.NoError(t, err)
-			assert.Equal(t, typing.Integer, kd)
+			assert.Equal(t, typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.SmallIntegerKind)}, kd)
 		}
 		{
+			{
+				// Regular integers (upper)
+				kd, err := dialect.KindForDataType("INTEGER", "")
+				assert.NoError(t, err)
+				assert.Equal(t, typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.IntegerKind)}, kd)
+			}
+			{
+				// Regular integers (lower)
+				kd, err := dialect.KindForDataType("integer", "")
+				assert.NoError(t, err)
+				assert.Equal(t, typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.IntegerKind)}, kd)
+			}
+		}
+		{
+			// Big integer
 			kd, err := dialect.KindForDataType("bigint", "")
 			assert.NoError(t, err)
-			assert.Equal(t, typing.Integer, kd)
-		}
-		{
-			kd, err := dialect.KindForDataType("INTEGER", "")
-			assert.NoError(t, err)
-			assert.Equal(t, typing.Integer, kd)
+			assert.Equal(t, typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.BigIntegerKind)}, kd)
 		}
 	}
 	{

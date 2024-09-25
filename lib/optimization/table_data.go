@@ -282,6 +282,11 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) erro
 				inMemoryCol.KindDetails.OptionalStringPrecision = foundColumn.KindDetails.OptionalStringPrecision
 			}
 
+			// Copy over integer kind, if exists.
+			if foundColumn.KindDetails.OptionalIntegerKind != nil {
+				inMemoryCol.KindDetails.OptionalIntegerKind = foundColumn.KindDetails.OptionalIntegerKind
+			}
+
 			// Copy over the time details
 			if foundColumn.KindDetails.ExtendedTimeDetails != nil {
 				if inMemoryCol.KindDetails.ExtendedTimeDetails == nil {

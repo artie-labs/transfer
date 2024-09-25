@@ -9,6 +9,15 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
+type OptionalIntegerKind int
+
+const (
+	NotSpecifiedKind OptionalIntegerKind = iota
+	SmallIntegerKind
+	IntegerKind
+	BigIntegerKind
+)
+
 type KindDetails struct {
 	Kind                   string
 	ExtendedTimeDetails    *ext.NestedKind
@@ -16,6 +25,7 @@ type KindDetails struct {
 
 	// Optional kind details metadata
 	OptionalStringPrecision *int32
+	OptionalIntegerKind     *OptionalIntegerKind
 }
 
 func (k *KindDetails) EnsureExtendedTimeDetails() error {
@@ -26,8 +36,6 @@ func (k *KindDetails) EnsureExtendedTimeDetails() error {
 	return nil
 }
 
-// Summarized this from Snowflake + Reflect.
-// In the future, we can support Geo objects.
 var (
 	Invalid = KindDetails{
 		Kind: "invalid",
@@ -38,7 +46,8 @@ var (
 	}
 
 	Integer = KindDetails{
-		Kind: "int",
+		Kind:                "int",
+		OptionalIntegerKind: ToPtr(NotSpecifiedKind),
 	}
 
 	EDecimal = KindDetails{
