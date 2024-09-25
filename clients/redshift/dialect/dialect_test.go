@@ -74,7 +74,7 @@ func TestRedshiftDialect_KindForDataType(t *testing.T) {
 				assert.Equal(t, typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.IntegerKind)}, kd)
 			}
 			{
-				// Regular integers (small)
+				// Regular integers (lower)
 				kd, err := dialect.KindForDataType("integer", "")
 				assert.NoError(t, err)
 				assert.Equal(t, typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.IntegerKind)}, kd)
