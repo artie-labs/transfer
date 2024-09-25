@@ -26,17 +26,21 @@ func (RedshiftDialect) EscapeStruct(value string) string {
 func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
 	switch kd.Kind {
 	case typing.Integer.Kind:
-		switch kd.OptionalIntKind {
-		case typing.SmallIntegerKind:
-			return "INT2"
-		case typing.IntegerKind:
-			return "INT4"
-		case typing.NotSpecifiedKind, typing.BigIntegerKind:
-			fallthrough
-		default:
-			// By default, we are using a larger data type to avoid the possibility of an integer overflow.
-			return "INT8"
+		if kd.OptionalIntegerKind != nil {
+			switch *kd.OptionalIntegerKind {
+			case typing.SmallIntegerKind:
+				return "INT2"
+			case typing.IntegerKind:
+				return "INT4"
+			case typing.NotSpecifiedKind, typing.BigIntegerKind:
+				fallthrough
+			default:
+				// By default, we are using a larger data type to avoid the possibility of an integer overflow.
+				return "INT8"
+			}
 		}
+
+		return "INT8"
 	case typing.Struct.Kind:
 		return "SUPER"
 	case typing.Array.Kind:
@@ -97,18 +101,18 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 		return typing.Struct, nil
 	case "smallint":
 		return typing.KindDetails{
-			Kind:            typing.Integer.Kind,
-			OptionalIntKind: typing.SmallIntegerKind,
+			Kind:                typing.Integer.Kind,
+			OptionalIntegerKind: typing.ToPtr(typing.SmallIntegerKind),
 		}, nil
 	case "integer":
 		return typing.KindDetails{
-			Kind:            typing.Integer.Kind,
-			OptionalIntKind: typing.IntegerKind,
+			Kind:                typing.Integer.Kind,
+			OptionalIntegerKind: typing.ToPtr(typing.IntegerKind),
 		}, nil
 	case "bigint":
 		return typing.KindDetails{
-			Kind:            typing.Integer.Kind,
-			OptionalIntKind: typing.BigIntegerKind,
+			Kind:                typing.Integer.Kind,
+			OptionalIntegerKind: typing.ToPtr(typing.BigIntegerKind),
 		}, nil
 	case "double precision":
 		return typing.Float, nil

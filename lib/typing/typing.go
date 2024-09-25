@@ -9,10 +9,10 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-type IntKind int
+type OptionalIntegerKind int
 
 const (
-	NotSpecifiedKind = iota
+	NotSpecifiedKind OptionalIntegerKind = iota
 	SmallIntegerKind
 	IntegerKind
 	BigIntegerKind
@@ -25,7 +25,7 @@ type KindDetails struct {
 
 	// Optional kind details metadata
 	OptionalStringPrecision *int32
-	OptionalIntKind         IntKind
+	OptionalIntegerKind     *OptionalIntegerKind
 }
 
 func (k *KindDetails) EnsureExtendedTimeDetails() error {
@@ -46,8 +46,8 @@ var (
 	}
 
 	Integer = KindDetails{
-		Kind:            "int",
-		OptionalIntKind: NotSpecifiedKind,
+		Kind:                "int",
+		OptionalIntegerKind: ToPtr(NotSpecifiedKind),
 	}
 
 	EDecimal = KindDetails{
