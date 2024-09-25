@@ -6,7 +6,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/typing"
-	gosnowflake "github.com/snowflakedb/gosnowflake"
+	"github.com/snowflakedb/gosnowflake"
 )
 
 // DSN - returns the notation for BigQuery following this format: bigquery://projectID/[location/]datasetID?queryString
