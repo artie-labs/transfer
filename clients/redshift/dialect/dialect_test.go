@@ -36,19 +36,30 @@ func TestRedshiftDialect_KindForDataType(t *testing.T) {
 	{
 		// Integers
 		{
-			kd, err := dialect.KindForDataType("integer", "")
+			// Small integer
+			kd, err := dialect.KindForDataType("smallint", "")
 			assert.NoError(t, err)
-			assert.Equal(t, typing.Integer, kd)
+			assert.Equal(t, typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntKind: typing.SmallIntegerKind}, kd)
 		}
 		{
+			{
+				// Regular integers (upper)
+				kd, err := dialect.KindForDataType("INTEGER", "")
+				assert.NoError(t, err)
+				assert.Equal(t, typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntKind: typing.IntegerKind}, kd)
+			}
+			{
+				// Regular integers (small)
+				kd, err := dialect.KindForDataType("integer", "")
+				assert.NoError(t, err)
+				assert.Equal(t, typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntKind: typing.IntegerKind}, kd)
+			}
+		}
+		{
+			// Big integer
 			kd, err := dialect.KindForDataType("bigint", "")
 			assert.NoError(t, err)
-			assert.Equal(t, typing.Integer, kd)
-		}
-		{
-			kd, err := dialect.KindForDataType("INTEGER", "")
-			assert.NoError(t, err)
-			assert.Equal(t, typing.Integer, kd)
+			assert.Equal(t, typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntKind: typing.BigIntegerKind}, kd)
 		}
 	}
 	{

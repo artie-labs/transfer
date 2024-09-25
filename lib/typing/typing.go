@@ -13,9 +13,9 @@ type IntKind int
 
 const (
 	NotSpecifiedKind = iota
-	SmallIntKind
+	SmallIntegerKind
 	IntegerKind
-	BigIntKind
+	BigIntegerKind
 )
 
 type KindDetails struct {

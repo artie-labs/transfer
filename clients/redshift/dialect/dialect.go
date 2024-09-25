@@ -27,11 +27,11 @@ func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
 	switch kd.Kind {
 	case typing.Integer.Kind:
 		switch kd.OptionalIntKind {
-		case typing.SmallIntKind:
+		case typing.SmallIntegerKind:
 			return "INT2"
 		case typing.IntegerKind:
 			return "INT4"
-		case typing.NotSpecifiedKind, typing.BigIntKind:
+		case typing.NotSpecifiedKind, typing.BigIntegerKind:
 			fallthrough
 		default:
 			// By default, we are using a larger data type to avoid the possibility of an integer overflow.
@@ -98,7 +98,7 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 	case "smallint":
 		return typing.KindDetails{
 			Kind:            typing.Integer.Kind,
-			OptionalIntKind: typing.SmallIntKind,
+			OptionalIntKind: typing.SmallIntegerKind,
 		}, nil
 	case "integer":
 		return typing.KindDetails{
@@ -108,7 +108,7 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 	case "bigint":
 		return typing.KindDetails{
 			Kind:            typing.Integer.Kind,
-			OptionalIntKind: typing.BigIntKind,
+			OptionalIntKind: typing.BigIntegerKind,
 		}, nil
 	case "double precision":
 		return typing.Float, nil
