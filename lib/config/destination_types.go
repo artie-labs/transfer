@@ -2,12 +2,13 @@ package config
 
 import "github.com/artie-labs/transfer/lib/config/constants"
 
-type S3Settings struct {
-	FolderName         string                   `yaml:"folderName"`
-	Bucket             string                   `yaml:"bucket"`
-	AwsAccessKeyID     string                   `yaml:"awsAccessKeyID"`
-	AwsSecretAccessKey string                   `yaml:"awsSecretAccessKey"`
-	OutputFormat       constants.S3OutputFormat `yaml:"outputFormat"`
+type BigQuery struct {
+	// PathToCredentials is _optional_ if you have GOOGLE_APPLICATION_CREDENTIALS set as an env var
+	// Links to credentials: https://cloud.google.com/docs/authentication/application-default-credentials#GAC
+	PathToCredentials string `yaml:"pathToCredentials"`
+	DefaultDataset    string `yaml:"defaultDataset"`
+	ProjectID         string `yaml:"projectID"`
+	Location          string `yaml:"location"`
 }
 
 type MSSQL struct {
@@ -16,15 +17,6 @@ type MSSQL struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 	Database string `yaml:"database"`
-}
-
-type BigQuery struct {
-	// PathToCredentials is _optional_ if you have GOOGLE_APPLICATION_CREDENTIALS set as an env var
-	// Links to credentials: https://cloud.google.com/docs/authentication/application-default-credentials#GAC
-	PathToCredentials string `yaml:"pathToCredentials"`
-	DefaultDataset    string `yaml:"defaultDataset"`
-	ProjectID         string `yaml:"projectID"`
-	Location          string `yaml:"location"`
 }
 
 type Redshift struct {
@@ -37,6 +29,14 @@ type Redshift struct {
 	OptionalS3Prefix string `yaml:"optionalS3Prefix"`
 	// https://docs.aws.amazon.com/redshift/latest/dg/copy-parameters-authorization.html
 	CredentialsClause string `yaml:"credentialsClause"`
+}
+
+type S3Settings struct {
+	FolderName         string                   `yaml:"folderName"`
+	Bucket             string                   `yaml:"bucket"`
+	AwsAccessKeyID     string                   `yaml:"awsAccessKeyID"`
+	AwsSecretAccessKey string                   `yaml:"awsSecretAccessKey"`
+	OutputFormat       constants.S3OutputFormat `yaml:"outputFormat"`
 }
 
 type Snowflake struct {
