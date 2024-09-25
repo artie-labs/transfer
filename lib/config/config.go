@@ -24,41 +24,8 @@ const (
 	FlushIntervalSecondsMax = 6 * 60 * 60
 )
 
-type Sentry struct {
-	DSN string `yaml:"dsn"`
-}
-
-type Pubsub struct {
-	ProjectID         string                  `yaml:"projectID"`
-	TopicConfigs      []*kafkalib.TopicConfig `yaml:"topicConfigs"`
-	PathToCredentials string                  `yaml:"pathToCredentials"`
-}
-
-type Kafka struct {
-	// Comma-separated Kafka servers to port.
-	// e.g. host1:port1,host2:port2,...
-	// Following kafka's spec mentioned here: https://kafka.apache.org/documentation/#producerconfigs_bootstrap.servers
-	BootstrapServer string                  `yaml:"bootstrapServer"`
-	GroupID         string                  `yaml:"groupID"`
-	TopicConfigs    []*kafkalib.TopicConfig `yaml:"topicConfigs"`
-
-	// Optional parameters
-	Username        string `yaml:"username,omitempty"`
-	Password        string `yaml:"password,omitempty"`
-	EnableAWSMSKIAM bool   `yaml:"enableAWSMKSIAM,omitempty"`
-	DisableTLS      bool   `yaml:"disableTLS,omitempty"`
-}
-
 func (k *Kafka) BootstrapServers() []string {
 	return strings.Split(k.BootstrapServer, ",")
-}
-
-type S3Settings struct {
-	FolderName         string                   `yaml:"folderName"`
-	Bucket             string                   `yaml:"bucket"`
-	AwsAccessKeyID     string                   `yaml:"awsAccessKeyID"`
-	AwsSecretAccessKey string                   `yaml:"awsSecretAccessKey"`
-	OutputFormat       constants.S3OutputFormat `yaml:"outputFormat"`
 }
 
 func (s *S3Settings) Validate() error {
@@ -75,18 +42,6 @@ func (s *S3Settings) Validate() error {
 	}
 
 	return nil
-}
-
-type Redshift struct {
-	Host             string `yaml:"host"`
-	Port             int    `yaml:"port"`
-	Database         string `yaml:"database"`
-	Username         string `yaml:"username"`
-	Password         string `yaml:"password"`
-	Bucket           string `yaml:"bucket"`
-	OptionalS3Prefix string `yaml:"optionalS3Prefix"`
-	// https://docs.aws.amazon.com/redshift/latest/dg/copy-parameters-authorization.html
-	CredentialsClause string `yaml:"credentialsClause"`
 }
 
 func (p *Pubsub) String() string {
@@ -110,48 +65,8 @@ func (c Config) TopicConfigs() ([]*kafkalib.TopicConfig, error) {
 	return nil, fmt.Errorf("unsupported queue: %q", c.Queue)
 }
 
-type Mode string
-
-const (
-	History     Mode = "history"
-	Replication Mode = "replication"
-)
-
 func (m Mode) String() string {
 	return string(m)
-}
-
-type Config struct {
-	Mode   Mode                      `yaml:"mode"`
-	Output constants.DestinationKind `yaml:"outputSource"`
-	Queue  constants.QueueKind       `yaml:"queue"`
-
-	// Flush rules
-	FlushIntervalSeconds int  `yaml:"flushIntervalSeconds"`
-	FlushSizeKb          int  `yaml:"flushSizeKb"`
-	BufferRows           uint `yaml:"bufferRows"`
-
-	// Supported message queues
-	Pubsub *Pubsub `yaml:"pubsub,omitempty"`
-	Kafka  *Kafka  `yaml:"kafka,omitempty"`
-
-	// Supported destinations
-	MSSQL     *MSSQL      `yaml:"mssql,omitempty"`
-	BigQuery  *BigQuery   `yaml:"bigquery,omitempty"`
-	Snowflake *Snowflake  `yaml:"snowflake,omitempty"`
-	Redshift  *Redshift   `yaml:"redshift,omitempty"`
-	S3        *S3Settings `yaml:"s3,omitempty"`
-
-	Reporting struct {
-		Sentry *Sentry `yaml:"sentry"`
-	}
-
-	Telemetry struct {
-		Metrics struct {
-			Provider constants.ExporterKind `yaml:"provider"`
-			Settings map[string]any         `yaml:"settings,omitempty"`
-		}
-	}
 }
 
 func readFileToConfig(pathToConfig string) (*Config, error) {
@@ -214,6 +129,26 @@ func (c Config) ValidateRedshift() error {
 
 	if c.Redshift.Port <= 0 {
 		return fmt.Errorf("invalid Redshift port")
+	}
+
+	return nil
+}
+
+func (c Config) ValidateMSSQL() error {
+	if c.Output != constants.MSSQL {
+		return fmt.Errorf("output is not mssql, output: %v", c.Output)
+	}
+
+	if c.MSSQL == nil {
+		return fmt.Errorf("mssql config is nil")
+	}
+
+	if empty := stringutil.Empty(c.MSSQL.Host, c.MSSQL.Username, c.MSSQL.Password, c.MSSQL.Database); empty {
+		return fmt.Errorf("one of mssql settings is empty (host, username, password, database)")
+	}
+
+	if c.MSSQL.Port <= 0 {
+		return fmt.Errorf("invalid mssql port: %d", c.MSSQL.Port)
 	}
 
 	return nil
