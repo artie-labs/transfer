@@ -38,7 +38,7 @@ type Kafka struct {
 
 type SharedDestinationSettings struct {
 	// TruncateExceededValues - This will truncate exceeded values instead of replacing it with `__artie_exceeded_value`
-	TruncateExceededValues bool `json:"truncateExceededValues"`
+	TruncateExceededValues bool `yaml:"truncateExceededValues"`
 }
 
 type Config struct {
