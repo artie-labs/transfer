@@ -29,6 +29,25 @@ func TestRedshiftDialect_DataTypeForKind(t *testing.T) {
 			assert.Equal(t, "VARCHAR(12345)", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(12345))}, false))
 		}
 	}
+	{
+		// Integers
+		{
+			// Small int
+			assert.Equal(t, "INT2", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntKind: typing.SmallIntegerKind}, false))
+		}
+		{
+			// Integer
+			assert.Equal(t, "INT4", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntKind: typing.IntegerKind}, false))
+		}
+		{
+			// Big integer
+			assert.Equal(t, "INT8", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntKind: typing.BigIntegerKind}, false))
+		}
+		{
+			// Not specified
+			assert.Equal(t, "INT8", RedshiftDialect{}.DataTypeForKind(typing.Integer, false))
+		}
+	}
 }
 
 func TestRedshiftDialect_KindForDataType(t *testing.T) {
