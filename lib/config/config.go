@@ -134,6 +134,26 @@ func (c Config) ValidateRedshift() error {
 	return nil
 }
 
+func (c Config) ValidateMSSQL() error {
+	if c.Output != constants.MSSQL {
+		return fmt.Errorf("output is not mssql, output: %v", c.Output)
+	}
+
+	if c.MSSQL == nil {
+		return fmt.Errorf("mssql config is nil")
+	}
+
+	if empty := stringutil.Empty(c.MSSQL.Host, c.MSSQL.Username, c.MSSQL.Password, c.MSSQL.Database); empty {
+		return fmt.Errorf("one of mssql settings is empty (host, username, password, database)")
+	}
+
+	if c.MSSQL.Port <= 0 {
+		return fmt.Errorf("invalid mssql port: %d", c.MSSQL.Port)
+	}
+
+	return nil
+}
+
 // Validate will check the output source validity
 // It will also check if a topic exists + iterate over each topic to make sure it's valid.
 // The actual output source (like Snowflake) and CDC parser will be loaded and checked by other funcs.

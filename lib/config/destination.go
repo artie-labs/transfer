@@ -2,11 +2,38 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/snowflakedb/gosnowflake"
+	gosnowflake "github.com/snowflakedb/gosnowflake"
 )
+
+// DSN - returns the notation for BigQuery following this format: bigquery://projectID/[location/]datasetID?queryString
+// If location is passed in, we'll specify it. Else, it'll default to empty and our library will set it to US.
+func (b *BigQuery) DSN() string {
+	dsn := fmt.Sprintf("bigquery://%s/%s", b.ProjectID, b.DefaultDataset)
+
+	if b.Location != "" {
+		dsn = fmt.Sprintf("bigquery://%s/%s/%s", b.ProjectID, b.Location, b.DefaultDataset)
+	}
+
+	return dsn
+}
+
+func (m MSSQL) DSN() string {
+	query := url.Values{}
+	query.Add("database", m.Database)
+
+	u := &url.URL{
+		Scheme:   "sqlserver",
+		User:     url.UserPassword(m.Username, m.Password),
+		Host:     fmt.Sprintf("%s:%d", m.Host, m.Port),
+		RawQuery: query.Encode(),
+	}
+
+	return u.String()
+}
 
 func (s Snowflake) ToConfig() (*gosnowflake.Config, error) {
 	cfg := &gosnowflake.Config{
