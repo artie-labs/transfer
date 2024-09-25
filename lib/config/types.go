@@ -36,6 +36,11 @@ type Kafka struct {
 	DisableTLS      bool   `yaml:"disableTLS,omitempty"`
 }
 
+type SharedDestinationSettings struct {
+	// TruncateExceededValues - This will truncate exceeded values instead of replacing it with `__artie_exceeded_value`
+	TruncateExceededValues bool `json:"truncateExceededValues"`
+}
+
 type Config struct {
 	Mode   Mode                      `yaml:"mode"`
 	Output constants.DestinationKind `yaml:"outputSource"`
@@ -56,6 +61,8 @@ type Config struct {
 	Snowflake *Snowflake  `yaml:"snowflake,omitempty"`
 	Redshift  *Redshift   `yaml:"redshift,omitempty"`
 	S3        *S3Settings `yaml:"s3,omitempty"`
+
+	SharedDestinationSettings SharedDestinationSettings `yaml:"sharedDestinationSettings"`
 
 	Reporting struct {
 		Sentry *Sentry `yaml:"sentry"`
