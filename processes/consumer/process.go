@@ -64,9 +64,6 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 		return "", fmt.Errorf("cannot convert to memory event: %w", err)
 	}
 
-	// Emit event execution time.
-	evt.EmitExecutionTimeLag(metricsClient, cfg.Mode)
-
 	// Table name is only available after event has been cast
 	tags["table"] = evt.Table
 	if topicConfig.tc.ShouldSkip(_event.Operation()) {
@@ -75,6 +72,9 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 		tags["skipped"] = "yes"
 		return evt.Table, nil
 	}
+
+	// Emit execution time lag for non-skipped events.
+	evt.EmitExecutionTimeLag(metricsClient, cfg.Mode)
 
 	shouldFlush, flushReason, err := evt.Save(cfg, inMemDB, topicConfig.tc, p.Msg)
 	if err != nil {
