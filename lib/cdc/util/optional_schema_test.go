@@ -2,7 +2,6 @@ package util
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,91 +11,111 @@ import (
 )
 
 func TestGetOptionalSchema(t *testing.T) {
-	type _tc struct {
-		body     string
-		expected map[string]typing.KindDetails
+	{
+		// MySQL
+		{
+			// Insert
+			var schemaEventPayload SchemaEventPayload
+			assert.NoError(t, json.Unmarshal([]byte(MySQLInsert), &schemaEventPayload))
+
+			optionalSchema, err := schemaEventPayload.GetOptionalSchema()
+			assert.NoError(t, err)
+			assert.Equal(
+				t,
+				optionalSchema,
+				map[string]typing.KindDetails{
+					"id":         typing.Integer,
+					"first_name": typing.String,
+					"last_name":  typing.String,
+					"email":      typing.String,
+				},
+			)
+		}
+		{
+			// Update
+			var schemaEventPayload SchemaEventPayload
+			assert.NoError(t, json.Unmarshal([]byte(MySQLUpdate), &schemaEventPayload))
+
+			optionalSchema, err := schemaEventPayload.GetOptionalSchema()
+			assert.NoError(t, err)
+			assert.Equal(
+				t,
+				optionalSchema,
+				map[string]typing.KindDetails{
+					"id":         typing.Integer,
+					"first_name": typing.String,
+					"last_name":  typing.String,
+					"email":      typing.String,
+				},
+			)
+		}
+		{
+			// Delete
+			var schemaEventPayload SchemaEventPayload
+			assert.NoError(t, json.Unmarshal([]byte(MySQLDelete), &schemaEventPayload))
+
+			optionalSchema, err := schemaEventPayload.GetOptionalSchema()
+			assert.NoError(t, err)
+			assert.Equal(
+				t,
+				optionalSchema,
+				map[string]typing.KindDetails{
+					"id":         typing.Integer,
+					"first_name": typing.String,
+					"last_name":  typing.String,
+					"email":      typing.String,
+				},
+			)
+		}
 	}
-
-	tcs := []_tc{
+	{
+		// Postgres
 		{
-			body: MySQLInsert,
-			expected: map[string]typing.KindDetails{
-				"id":         typing.Integer,
-				"first_name": typing.String,
-				"last_name":  typing.String,
-				"email":      typing.String,
-			},
-		},
-		{
-			body: MySQLUpdate,
-			expected: map[string]typing.KindDetails{
-				"id":         typing.Integer,
-				"first_name": typing.String,
-				"last_name":  typing.String,
-				"email":      typing.String,
-			},
-		},
-		{
-			body: MySQLDelete,
-			expected: map[string]typing.KindDetails{
-				"id":         typing.Integer,
-				"first_name": typing.String,
-				"last_name":  typing.String,
-				"email":      typing.String,
-			},
-		},
-		{
-			body: PostgresDelete,
-			expected: map[string]typing.KindDetails{
-				"id":         typing.Integer,
-				"first_name": typing.String,
-				"last_name":  typing.String,
-				"email":      typing.String,
-			},
-		},
-		{
-			body: PostgresUpdate,
-			expected: map[string]typing.KindDetails{
-				"id":           typing.Integer,
-				"first_name":   typing.String,
-				"last_name":    typing.String,
-				"email":        typing.String,
-				"boolean_test": typing.Boolean,
-				"bool_test":    typing.Boolean,
-				"bit_test":     typing.Boolean,
-				"numeric_test": typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)),
-				"numeric_5":    typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 0)),
-				"numeric_5_0":  typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 0)),
-				"numeric_5_2":  typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 2)),
-				"numeric_5_6":  typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 6)),
-				"numeric_39_0": typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(39, 0)),
-				"numeric_39_2": typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(39, 2)),
-				"numeric_39_6": typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(39, 6)),
-			},
-		},
-	}
+			// Delete
+			var schemaEventPayload SchemaEventPayload
+			assert.NoError(t, json.Unmarshal([]byte(PostgresDelete), &schemaEventPayload))
 
-	for idx, tc := range tcs {
-		var schemaEventPayload SchemaEventPayload
-		err := json.Unmarshal([]byte(tc.body), &schemaEventPayload)
-		assert.NoError(t, err, idx)
+			optionalSchema, err := schemaEventPayload.GetOptionalSchema()
+			assert.NoError(t, err)
+			assert.Equal(
+				t,
+				optionalSchema,
+				map[string]typing.KindDetails{
+					"id":         typing.Integer,
+					"first_name": typing.String,
+					"last_name":  typing.String,
+					"email":      typing.String,
+				},
+			)
+		}
+		{
+			// Update
+			var schemaEventPayload SchemaEventPayload
+			assert.NoError(t, json.Unmarshal([]byte(PostgresUpdate), &schemaEventPayload))
 
-		actualData, err := schemaEventPayload.GetOptionalSchema()
-		assert.NoError(t, err)
-
-		for actualKey, actualVal := range actualData {
-			testMsg := fmt.Sprintf("key: %s, actualKind: %s, index: %d", actualKey, actualVal.Kind, idx)
-
-			expectedValue, isOk := tc.expected[actualKey]
-			assert.True(t, isOk, testMsg)
-			assert.Equal(t, expectedValue.Kind, actualVal.Kind, testMsg)
-			if expectedValue.ExtendedDecimalDetails != nil || actualVal.ExtendedDecimalDetails != nil {
-				assert.NotNil(t, actualVal.ExtendedDecimalDetails, testMsg)
-				assert.Equal(t, expectedValue.ExtendedDecimalDetails.Scale(), actualVal.ExtendedDecimalDetails.Scale(), testMsg)
-				assert.Equal(t, expectedValue.ExtendedDecimalDetails.Precision(), actualVal.ExtendedDecimalDetails.Precision(), testMsg)
-			} else {
-				assert.Nil(t, actualVal.ExtendedDecimalDetails, testMsg)
-			}
+			optionalSchema, err := schemaEventPayload.GetOptionalSchema()
+			assert.NoError(t, err)
+			assert.Equal(
+				t,
+				optionalSchema,
+				map[string]typing.KindDetails{
+					"id":           typing.Integer,
+					"first_name":   typing.String,
+					"last_name":    typing.String,
+					"email":        typing.String,
+					"boolean_test": typing.Boolean,
+					"bool_test":    typing.Boolean,
+					"bit_test":     typing.Boolean,
+					"numeric_test": typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)),
+					"numeric_5":    typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 0)),
+					"numeric_5_0":  typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 0)),
+					"numeric_5_2":  typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 2)),
+					"numeric_5_6":  typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 6)),
+					"numeric_39_0": typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(39, 0)),
+					"numeric_39_2": typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(39, 2)),
+					"numeric_39_6": typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(39, 6)),
+				},
+			)
 		}
 	}
 }
