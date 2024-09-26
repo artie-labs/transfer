@@ -16,6 +16,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/stringutil"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/models"
@@ -28,10 +29,11 @@ type Event struct {
 
 	OptionalSchema map[string]typing.KindDetails
 	Columns        *columns.Columns
-	ExecutionTime  time.Time // When the SQL command was executed
 	Deleted        bool
 
-	mode config.Mode
+	// When the database event was executed
+	executionTime time.Time
+	mode          config.Mode
 }
 
 func hashData(data map[string]any, tc kafkalib.TopicConfig) map[string]any {
@@ -86,16 +88,29 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		return Event{}, err
 	}
 
-	return Event{
+	_event := Event{
+		executionTime:  event.GetExecutionTime(),
 		mode:           cfgMode,
 		Table:          tblName,
 		PrimaryKeyMap:  pkMap,
-		ExecutionTime:  event.GetExecutionTime(),
 		OptionalSchema: optionalSchema,
 		Columns:        cols,
 		Data:           hashData(evtData, tc),
 		Deleted:        event.DeletePayload(),
-	}, nil
+	}
+
+	return _event, nil
+}
+
+// EmitExecutionTimeLag - This will check against the current time and the event execution time and emit the lag.
+func (e *Event) EmitExecutionTimeLag(metricsClient base.Client) {
+	metricsClient.GaugeWithSample(
+		"row.execution_time_lag",
+		float64(time.Since(e.executionTime).Milliseconds()),
+		map[string]string{
+			"mode":  e.mode.String(),
+			"table": e.Table,
+		}, 0.5)
 }
 
 func (e *Event) Validate() error {
@@ -247,7 +262,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 		td.PartitionsToLastMessage[message.Partition()] = append(td.PartitionsToLastMessage[message.Partition()], message)
 	}
 
-	td.LatestCDCTs = e.ExecutionTime
+	td.LatestCDCTs = e.executionTime
 	flush, flushReason := td.ShouldFlush(cfg)
 	return flush, flushReason, nil
 }

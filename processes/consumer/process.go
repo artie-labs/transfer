@@ -63,6 +63,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 		tags["what"] = "to_mem_event_err"
 		return "", fmt.Errorf("cannot convert to memory event: %w", err)
 	}
+
 	// Table name is only available after event has been cast
 	tags["table"] = evt.Table
 	if topicConfig.tc.ShouldSkip(_event.Operation()) {
@@ -70,6 +71,10 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 		// This way, we can emit a specific tag to be more clear
 		tags["skipped"] = "yes"
 		return evt.Table, nil
+	}
+
+	if cfg.Reporting.EmitExecutionTime {
+		evt.EmitExecutionTimeLag(metricsClient)
 	}
 
 	shouldFlush, flushReason, err := evt.Save(cfg, inMemDB, topicConfig.tc, p.Msg)

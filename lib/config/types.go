@@ -41,6 +41,11 @@ type SharedDestinationSettings struct {
 	TruncateExceededValues bool `yaml:"truncateExceededValues"`
 }
 
+type Reporting struct {
+	Sentry            *Sentry `yaml:"sentry"`
+	EmitExecutionTime bool    `yaml:"emitExecutionTime"`
+}
+
 type Config struct {
 	Mode   Mode                      `yaml:"mode"`
 	Output constants.DestinationKind `yaml:"outputSource"`
@@ -63,12 +68,8 @@ type Config struct {
 	S3        *S3Settings `yaml:"s3,omitempty"`
 
 	SharedDestinationSettings SharedDestinationSettings `yaml:"sharedDestinationSettings"`
-
-	Reporting struct {
-		Sentry *Sentry `yaml:"sentry"`
-	}
-
-	Telemetry struct {
+	Reporting                 Reporting                 `yaml:"reporting"`
+	Telemetry                 struct {
 		Metrics struct {
 			Provider constants.ExporterKind `yaml:"provider"`
 			Settings map[string]any         `yaml:"settings,omitempty"`
