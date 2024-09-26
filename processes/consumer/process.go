@@ -63,6 +63,10 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 		tags["what"] = "to_mem_event_err"
 		return "", fmt.Errorf("cannot convert to memory event: %w", err)
 	}
+
+	// Emit event execution time.
+	evt.EmitExecutionTimeLag(metricsClient, cfg.Mode)
+
 	// Table name is only available after event has been cast
 	tags["table"] = evt.Table
 	if topicConfig.tc.ShouldSkip(_event.Operation()) {

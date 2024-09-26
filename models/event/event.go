@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
+
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
@@ -87,7 +89,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		return Event{}, err
 	}
 
-	return Event{
+	_event := Event{
 		executionTime:  event.GetExecutionTime(),
 		mode:           cfgMode,
 		Table:          tblName,
@@ -96,11 +98,21 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		Columns:        cols,
 		Data:           hashData(evtData, tc),
 		Deleted:        event.DeletePayload(),
-	}, nil
+	}
+
+	return _event, nil
 }
 
-func (e *Event) GetExecutionTime() time.Time {
-	return e.executionTime
+// EmitExecutionTimeLag - This will check against the current time and the event execution time and emit the lag.
+func (e *Event) EmitExecutionTimeLag(metricsClient base.Client, mode config.Mode) {
+	metricsClient.GaugeWithSample(
+		"row.execution_time_lag",
+		float64(time.Since(e.executionTime).Milliseconds()),
+		map[string]string{
+			"mode":  mode.String(),
+			"table": e.Table,
+		},
+		0.5)
 }
 
 func (e *Event) Validate() error {
