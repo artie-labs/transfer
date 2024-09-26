@@ -31,6 +31,7 @@ type Dialect interface {
 	IsTableDoesNotExistErr(err error) bool
 	BuildCreateTableQuery(tableID TableIdentifier, temporary bool, colSQLParts []string) string
 	BuildAlterColumnQuery(tableID TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string
+	BuildIncreaseStringPrecisionQuery(tableID TableIdentifier, column columns.Column, newPrecision int32) string
 	BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string
 	BuildDedupeTableQuery(tableID TableIdentifier, primaryKeys []string) string
 	BuildDedupeQueries(tableID, stagingTableID TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string

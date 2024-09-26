@@ -195,6 +195,16 @@ func TestRedshiftDialect_BuildAlterColumnQuery(t *testing.T) {
 	)
 }
 
+func TestRedshiftDialect_BuildIncreaseStringPrecisionQuery(t *testing.T) {
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
+
+	assert.Equal(t,
+		`ALTER TABLE {TABLE} ALTER COLUMN "{column}" TYPE VARCHAR(12345)`,
+		RedshiftDialect{}.BuildIncreaseStringPrecisionQuery(fakeTableID, columns.NewColumn("{COLUMN}", typing.String), 12345),
+	)
+}
+
 func TestRedshiftDialect_BuildIsNotToastValueExpression(t *testing.T) {
 	assert.Equal(t,
 		`COALESCE(tbl."bar" != '__debezium_unavailable_value', true)`,
