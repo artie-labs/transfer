@@ -160,9 +160,8 @@ func (MSSQLDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, columnOp 
 	return fmt.Sprintf("ALTER TABLE %s %s %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 
-func (MSSQLDialect) BuildIncreaseStringPrecisionQuery(tableID sql.TableIdentifier, column columns.Column, newPrecision int32) string {
-	// TODO: Implement this
-	return ""
+func (md MSSQLDialect) BuildIncreaseStringPrecisionQuery(tableID sql.TableIdentifier, column columns.Column, newPrecision int32) string {
+	return fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s VARCHAR(%d)", tableID.FullyQualifiedName(), md.QuoteIdentifier(column.Name()), newPrecision)
 }
 
 func (md MSSQLDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {

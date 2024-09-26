@@ -146,6 +146,16 @@ func TestMSSQLDialect_BuildAlterColumnQuery(t *testing.T) {
 	)
 }
 
+func TestMSSQLDialect_BuildIncreaseStringPrecisionQuery(t *testing.T) {
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
+
+	assert.Equal(t,
+		`ALTER TABLE {TABLE} ALTER COLUMN "{COLUMN}" VARCHAR(12345)`,
+		MSSQLDialect{}.BuildIncreaseStringPrecisionQuery(fakeTableID, columns.NewColumn("{COLUMN}", typing.String), 12345),
+	)
+}
+
 func TestMSSQLDialect_BuildIsNotToastValueExpression(t *testing.T) {
 	assert.Equal(t,
 		`COALESCE(tbl."bar", '') != '__debezium_unavailable_value'`,
