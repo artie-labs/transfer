@@ -20,6 +20,7 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 		}
 		{
 			// Returns the full value since it's not a struct or string
+			// This is invalid and should not happen, but it's here to ensure we're only checking for structs and strings.
 			value := stringutil.Random(int(maxRedshiftLength + 1))
 			assert.Equal(r.T(), value, replaceExceededValues(value, typing.Integer, false))
 		}
