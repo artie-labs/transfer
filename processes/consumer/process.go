@@ -73,7 +73,6 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 		return evt.Table, nil
 	}
 
-	// Emit execution time lag for non-skipped events.
 	if cfg.Reporting.EmitExecutionTime {
 		evt.EmitExecutionTimeLag(metricsClient)
 	}
