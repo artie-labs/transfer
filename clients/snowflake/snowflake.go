@@ -56,6 +56,10 @@ func (s *Store) Sweep() error {
 }
 
 func (s *Store) Dialect() sql.Dialect {
+	return s.dialect()
+}
+
+func (s *Store) dialect() dialect.SnowflakeDialect {
 	return dialect.SnowflakeDialect{}
 }
 
