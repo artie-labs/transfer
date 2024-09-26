@@ -30,7 +30,7 @@ func TestEscapeBackslashes(t *testing.T) {
 		}
 		{
 			// Line breaks
-			assert.Equal(t, `line1 \n line 2`, EscapeBackslashes(`line1 \n line 2`))
+			assert.Equal(t, "line1 \n line 2", EscapeBackslashes("line1 \n line 2"))
 		}
 	}
 	{
