@@ -11,6 +11,35 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func (r *RedshiftTestSuite) TestCanIncreasePrecision() {
+	{
+		// Not a string
+		assert.False(r.T(), canIncreasePrecision(typing.Struct))
+	}
+	{
+		// String, but precision is not specified
+		assert.False(r.T(), canIncreasePrecision(typing.String))
+	}
+	{
+		// String, but maxed out already
+		assert.False(r.T(), canIncreasePrecision(
+			typing.KindDetails{
+				Kind:                    typing.String.Kind,
+				OptionalStringPrecision: typing.ToPtr(maxRedshiftLength),
+			}),
+		)
+	}
+	{
+		// String, precision is low and can be increased
+		assert.True(r.T(), canIncreasePrecision(
+			typing.KindDetails{
+				Kind:                    typing.String.Kind,
+				OptionalStringPrecision: typing.ToPtr(maxRedshiftLength - 1),
+			}),
+		)
+	}
+}
+
 func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 	{
 		// Irrelevant data type

@@ -10,6 +10,14 @@ import (
 
 const maxRedshiftLength int32 = 65535
 
+func canIncreasePrecision(colKind typing.KindDetails) bool {
+	if colKind.Kind == typing.String.Kind && colKind.OptionalStringPrecision != nil {
+		return maxRedshiftLength > *colKind.OptionalStringPrecision
+	}
+
+	return false
+}
+
 func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateExceededValue bool) string {
 	if colKind.Kind == typing.Struct.Kind || colKind.Kind == typing.String.Kind {
 		maxLength := maxRedshiftLength
