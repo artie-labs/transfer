@@ -19,44 +19,41 @@ func TestCapitalizeFirstLetter(t *testing.T) {
 }
 
 func TestEscapeBackslashes(t *testing.T) {
-	testCases := []struct {
-		name           string
-		colVal         string
-		expectedString string
-	}{
+	{
+		// No escape
 		{
-			name:           "string",
-			colVal:         "hello",
-			expectedString: "hello",
-		},
+			assert.Equal(t, "hello", EscapeBackslashes("hello"))
+		}
 		{
-			name:           "string",
-			colVal:         "bobby o'reilly",
-			expectedString: "bobby o'reilly",
-		},
+			// Special char
+			assert.Equal(t, `bobby o'reilly`, EscapeBackslashes(`bobby o'reilly`))
+		}
 		{
-			name:           "string with line breaks",
-			colVal:         "line1 \n line 2",
-			expectedString: "line1 \n line 2",
-		},
-		{
-			name:           "string with existing backslash",
-			colVal:         `hello \ there \ hh`,
-			expectedString: `hello \\ there \\ hh`,
-		},
+			// Line breaks
+			assert.Equal(t, "line1 \n line 2", EscapeBackslashes("line1 \n line 2"))
+		}
 	}
+	{
+		// Escape
+		{
+			// Backslash
+			assert.Equal(t, `hello \\ there \\ hh`, EscapeBackslashes(`hello \ there \ hh`))
 
-	for _, testCase := range testCases {
-		assert.Equal(t, testCase.expectedString, EscapeBackslashes(testCase.colVal), testCase.name)
+		}
 	}
 }
 
 func TestEmpty(t *testing.T) {
-	assert.False(t, Empty("hi", "there", "artie", "transfer"))
-	assert.False(t, Empty("dusty"))
-
-	assert.True(t, Empty("robin", "jacqueline", "charlie", ""))
-	assert.True(t, Empty(""))
+	{
+		// No empty
+		assert.False(t, Empty("hi", "there", "artie", "transfer"))
+		assert.False(t, Empty("dusty"))
+	}
+	{
+		// Empty
+		assert.True(t, Empty("robin", "jacqueline", "charlie", ""))
+		assert.True(t, Empty(""))
+	}
 }
 
 func TestEscapeSpaces(t *testing.T) {
