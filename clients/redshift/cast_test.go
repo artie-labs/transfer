@@ -13,6 +13,10 @@ import (
 
 func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 	{
+		// Irrelevant data type
+		assert.Equal(r.T(), "123", replaceExceededValues("123", typing.Integer, false))
+	}
+	{
 		// Exceeded
 		{
 			// String
