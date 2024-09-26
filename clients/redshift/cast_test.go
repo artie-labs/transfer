@@ -14,7 +14,15 @@ import (
 func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 	{
 		// Irrelevant data type
-		assert.Equal(r.T(), "123", replaceExceededValues("123", typing.Integer, false))
+		{
+			// Integer
+			assert.Equal(r.T(), "123", replaceExceededValues("123", typing.Integer, false))
+		}
+		{
+			// Returns the full value since it's not a struct or string
+			value := stringutil.Random(int(maxRedshiftLength + 1))
+			assert.Equal(r.T(), value, replaceExceededValues(value, typing.Integer, false))
+		}
 	}
 	{
 		// Exceeded
