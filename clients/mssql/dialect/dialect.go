@@ -161,6 +161,7 @@ func (MSSQLDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, columnOp 
 }
 
 func (MSSQLDialect) BuildIncreaseStringPrecisionQuery(tableID sql.TableIdentifier, column columns.Column, newPrecision int32) string {
+	// TODO: Implement this
 	return ""
 }
 
