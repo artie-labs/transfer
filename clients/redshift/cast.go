@@ -10,6 +10,7 @@ import (
 
 const maxRedshiftLength int32 = 65535
 
+// canIncreasePrecision - returns true if column is a string, precision is specified and value length is less than [maxRedshiftLength]
 func canIncreasePrecision(colKind typing.KindDetails, valueLength int32) bool {
 	if colKind.Kind == typing.String.Kind && colKind.OptionalStringPrecision != nil {
 		return maxRedshiftLength > *colKind.OptionalStringPrecision && valueLength <= maxRedshiftLength
