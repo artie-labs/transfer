@@ -94,7 +94,8 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 	for _, value := range tableData.Rows() {
 		var row []string
 		for _, col := range columns {
-			castedValue, shouldIncreaseColumn, castErr := castColValStaging(
+			// TODO: Implement
+			castedValue, _, castErr := castColValStaging(
 				value[col.Name()],
 				col.KindDetails,
 				s.config.SharedDestinationSettings.TruncateExceededValues,
@@ -102,10 +103,6 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 			)
 			if castErr != nil {
 				return "", castErr
-			}
-
-			if shouldIncreaseColumn {
-				s.dialect().BuildIncreaseStringPrecisionQuery()
 			}
 
 			row = append(row, castedValue)
