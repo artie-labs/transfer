@@ -45,13 +45,13 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 		// Irrelevant data type
 		{
 			// Integer
-			assert.Equal(r.T(), "123", replaceExceededValues("123", typing.Integer, false))
+			assert.Equal(r.T(), "123", replaceExceededValues("123", typing.Integer, false, false))
 		}
 		{
 			// Returns the full value since it's not a struct or string
 			// This is invalid and should not happen, but it's here to ensure we're only checking for structs and strings.
 			value := stringutil.Random(int(maxRedshiftLength + 1))
-			assert.Equal(r.T(), value, replaceExceededValues(value, typing.Integer, false))
+			assert.Equal(r.T(), value, replaceExceededValues(value, typing.Integer, false, false))
 		}
 	}
 	{
@@ -59,44 +59,44 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 		{
 			// String
 			{
-				// TruncateExceededValue = false
-				assert.Equal(r.T(), constants.ExceededValueMarker, replaceExceededValues(stringutil.Random(int(maxRedshiftLength)+1), typing.String, false))
+				// TruncateExceededValue = false, IncreaseStringPrecision = false
+				assert.Equal(r.T(), constants.ExceededValueMarker, replaceExceededValues(stringutil.Random(int(maxRedshiftLength)+1), typing.String, false, false))
 			}
 			{
-				// TruncateExceededValue = false, string precision specified
+				// TruncateExceededValue = false, string precision specified, IncreaseStringPrecision = false
 				stringKd := typing.KindDetails{
 					Kind:                    typing.String.Kind,
 					OptionalStringPrecision: typing.ToPtr(int32(3)),
 				}
 
-				assert.Equal(r.T(), constants.ExceededValueMarker, replaceExceededValues("hello", stringKd, false))
+				assert.Equal(r.T(), constants.ExceededValueMarker, replaceExceededValues("hello", stringKd, false, false))
 			}
 			{
-				// TruncateExceededValue = true
+				// TruncateExceededValue = true, IncreaseStringPrecision = false
 				superLongString := stringutil.Random(int(maxRedshiftLength) + 1)
-				assert.Equal(r.T(), superLongString[:maxRedshiftLength], replaceExceededValues(superLongString, typing.String, true))
+				assert.Equal(r.T(), superLongString[:maxRedshiftLength], replaceExceededValues(superLongString, typing.String, true, false))
 			}
 			{
-				// TruncateExceededValue = true, string precision specified
+				// TruncateExceededValue = true, string precision specified, IncreaseStringPrecision = false
 				stringKd := typing.KindDetails{
 					Kind:                    typing.String.Kind,
 					OptionalStringPrecision: typing.ToPtr(int32(3)),
 				}
 
-				assert.Equal(r.T(), "hel", replaceExceededValues("hello", stringKd, true))
+				assert.Equal(r.T(), "hel", replaceExceededValues("hello", stringKd, true, false))
 			}
 		}
 		{
 			// Struct and masked
-			assert.Equal(r.T(), fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker), replaceExceededValues(fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(int(maxRedshiftLength)+1)), typing.Struct, false))
+			assert.Equal(r.T(), fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker), replaceExceededValues(fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(int(maxRedshiftLength)+1)), typing.Struct, false, false))
 		}
 	}
 	{
 		// Valid
 		{
 			// Not masked
-			assert.Equal(r.T(), `{"foo": "bar"}`, replaceExceededValues(`{"foo": "bar"}`, typing.Struct, false))
-			assert.Equal(r.T(), "hello world", replaceExceededValues("hello world", typing.String, false))
+			assert.Equal(r.T(), `{"foo": "bar"}`, replaceExceededValues(`{"foo": "bar"}`, typing.Struct, false, false))
+			assert.Equal(r.T(), "hello world", replaceExceededValues("hello world", typing.String, false, false))
 		}
 	}
 }
@@ -107,22 +107,45 @@ func (r *RedshiftTestSuite) TestCastColValStaging() {
 		{
 			// String
 			{
-				// TruncateExceededValue = false
-				value, err := castColValStaging(stringutil.Random(int(maxRedshiftLength)+1), typing.String, false)
+				// TruncateExceededValue = false, IncreaseStringPrecision = false
+				value, err := castColValStaging(stringutil.Random(int(maxRedshiftLength)+1), typing.String, false, false)
 				assert.NoError(r.T(), err)
 				assert.Equal(r.T(), constants.ExceededValueMarker, value)
 			}
 			{
-				// TruncateExceededValue = true
+				// TruncateExceededValue = true, IncreaseStringPrecision = false
 				value := stringutil.Random(int(maxRedshiftLength) + 1)
-				value, err := castColValStaging(value, typing.String, true)
+				value, err := castColValStaging(value, typing.String, true, false)
+				assert.NoError(r.T(), err)
+				assert.Equal(r.T(), value[:maxRedshiftLength], value)
+			}
+			{
+				// TruncateExceededValue = false, IncreaseStringPrecision = true
+				stringKd := typing.KindDetails{
+					Kind:                    typing.String.Kind,
+					OptionalStringPrecision: typing.ToPtr(int32(3)),
+				}
+
+				value, err := castColValStaging("hello", stringKd, false, true)
+				assert.NoError(r.T(), err)
+				assert.Equal(r.T(), "hello", value)
+			}
+			{
+				value := stringutil.Random(int(maxRedshiftLength) + 1)
+				// TruncateExceededValue = true, IncreaseStringPrecision = true
+				stringKd := typing.KindDetails{
+					Kind:                    typing.String.Kind,
+					OptionalStringPrecision: typing.ToPtr(int32(3)),
+				}
+
+				value, err := castColValStaging(value, stringKd, true, true)
 				assert.NoError(r.T(), err)
 				assert.Equal(r.T(), value[:maxRedshiftLength], value)
 			}
 		}
 		{
 			// Masked struct
-			value, err := castColValStaging(fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(int(maxRedshiftLength)+1)), typing.Struct, false)
+			value, err := castColValStaging(fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(int(maxRedshiftLength)+1)), typing.Struct, false, false)
 			assert.NoError(r.T(), err)
 			assert.Equal(r.T(), fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker), value)
 		}
@@ -131,13 +154,13 @@ func (r *RedshiftTestSuite) TestCastColValStaging() {
 		// Not exceeded
 		{
 			// Valid string
-			value, err := castColValStaging("thisissuperlongbutnotlongenoughtogetmasked", typing.String, false)
+			value, err := castColValStaging("thisissuperlongbutnotlongenoughtogetmasked", typing.String, false, false)
 			assert.NoError(r.T(), err)
 			assert.Equal(r.T(), "thisissuperlongbutnotlongenoughtogetmasked", value)
 		}
 		{
 			// Valid struct
-			value, err := castColValStaging(`{"foo": "bar"}`, typing.Struct, false)
+			value, err := castColValStaging(`{"foo": "bar"}`, typing.Struct, false, false)
 			assert.NoError(r.T(), err)
 			assert.Equal(r.T(), `{"foo": "bar"}`, value)
 		}

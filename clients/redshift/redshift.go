@@ -52,6 +52,10 @@ func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
 }
 
 func (s *Store) Dialect() sql.Dialect {
+	return s.dialect()
+}
+
+func (s *Store) dialect() dialect.RedshiftDialect {
 	return dialect.RedshiftDialect{}
 }
 

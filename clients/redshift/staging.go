@@ -94,9 +94,18 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 	for _, value := range tableData.Rows() {
 		var row []string
 		for _, col := range columns {
-			castedValue, castErr := castColValStaging(value[col.Name()], col.KindDetails, s.config.SharedDestinationSettings.TruncateExceededValues)
+			castedValue, shouldIncreaseColumn, castErr := castColValStaging(
+				value[col.Name()],
+				col.KindDetails,
+				s.config.SharedDestinationSettings.TruncateExceededValues,
+				s.config.SharedDestinationSettings.IncreaseStringPrecision,
+			)
 			if castErr != nil {
 				return "", castErr
+			}
+
+			if shouldIncreaseColumn {
+				s.dialect().BuildIncreaseStringPrecisionQuery()
 			}
 
 			row = append(row, castedValue)
