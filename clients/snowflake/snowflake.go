@@ -14,7 +14,6 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
-	"github.com/artie-labs/transfer/lib/typing"
 )
 
 type Store struct {
@@ -47,12 +46,7 @@ func (s *Store) Sweep() error {
 		return err
 	}
 
-	snowflakeDialect, err := typing.AssertType[dialect.SnowflakeDialect](s.Dialect())
-	if err != nil {
-		return err
-	}
-
-	return shared.Sweep(s, tcs, snowflakeDialect.BuildSweepQuery)
+	return shared.Sweep(s, tcs, s.dialect().BuildSweepQuery)
 }
 
 func (s *Store) Dialect() sql.Dialect {
