@@ -74,7 +74,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	}
 
 	// Emit execution time lag for non-skipped events.
-	evt.EmitExecutionTimeLag(metricsClient, cfg.Mode)
+	evt.EmitExecutionTimeLag(metricsClient)
 	shouldFlush, flushReason, err := evt.Save(cfg, inMemDB, topicConfig.tc, p.Msg)
 	if err != nil {
 		tags["what"] = "save_fail"

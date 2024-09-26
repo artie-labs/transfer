@@ -103,15 +103,14 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 }
 
 // EmitExecutionTimeLag - This will check against the current time and the event execution time and emit the lag.
-func (e *Event) EmitExecutionTimeLag(metricsClient base.Client, mode config.Mode) {
+func (e *Event) EmitExecutionTimeLag(metricsClient base.Client) {
 	metricsClient.GaugeWithSample(
 		"row.execution_time_lag",
 		float64(time.Since(e.executionTime).Milliseconds()),
 		map[string]string{
-			"mode":  mode.String(),
+			"mode":  e.mode.String(),
 			"table": e.Table,
-		},
-		0.5)
+		}, 0.5)
 }
 
 func (e *Event) Validate() error {
