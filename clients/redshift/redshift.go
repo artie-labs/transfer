@@ -14,7 +14,6 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
-	"github.com/artie-labs/transfer/lib/typing"
 )
 
 type Store struct {
@@ -80,12 +79,7 @@ func (s *Store) Sweep() error {
 		return err
 	}
 
-	redshiftDialect, err := typing.AssertType[dialect.RedshiftDialect](s.Dialect())
-	if err != nil {
-		return err
-	}
-
-	return shared.Sweep(s, tcs, redshiftDialect.BuildSweepQuery)
+	return shared.Sweep(s, tcs, s.dialect().BuildSweepQuery)
 }
 
 func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
