@@ -10,9 +10,8 @@ import (
 
 const maxRedshiftLength int32 = 65535
 
-func replaceExceededValues(colVal string, colKind typing.KindDetails) string {
-	structOrString := colKind.Kind == typing.Struct.Kind || colKind.Kind == typing.String.Kind
-	if structOrString {
+func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateExceededValue bool) string {
+	if colKind.Kind == typing.Struct.Kind || colKind.Kind == typing.String.Kind {
 		maxLength := maxRedshiftLength
 		// If the customer has specified the maximum string precision, let's use that as the max length.
 		if colKind.OptionalStringPrecision != nil {
@@ -24,14 +23,18 @@ func replaceExceededValues(colVal string, colKind typing.KindDetails) string {
 				return fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker)
 			}
 
-			return constants.ExceededValueMarker
+			if truncateExceededValue {
+				return colVal[:maxLength]
+			} else {
+				return constants.ExceededValueMarker
+			}
 		}
 	}
 
 	return colVal
 }
 
-func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
+func castColValStaging(colVal any, colKind typing.KindDetails, truncateExceededValue bool) (string, error) {
 	if colVal == nil {
 		if colKind == typing.Struct {
 			// Returning empty here because if it's a struct, it will go through JSON PARSE and JSON_PARSE("") = null
@@ -48,5 +51,5 @@ func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
 	}
 
 	// Checks for DDL overflow needs to be done at the end in case there are any conversions that need to be done.
-	return replaceExceededValues(colValString, colKind), nil
+	return replaceExceededValues(colValString, colKind, truncateExceededValue), nil
 }
