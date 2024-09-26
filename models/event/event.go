@@ -28,10 +28,11 @@ type Event struct {
 
 	OptionalSchema map[string]typing.KindDetails
 	Columns        *columns.Columns
-	ExecutionTime  time.Time // When the SQL command was executed
 	Deleted        bool
 
-	mode config.Mode
+	// When the database event was executed
+	executionTime time.Time
+	mode          config.Mode
 }
 
 func hashData(data map[string]any, tc kafkalib.TopicConfig) map[string]any {
@@ -87,15 +88,19 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 	}
 
 	return Event{
+		executionTime:  event.GetExecutionTime(),
 		mode:           cfgMode,
 		Table:          tblName,
 		PrimaryKeyMap:  pkMap,
-		ExecutionTime:  event.GetExecutionTime(),
 		OptionalSchema: optionalSchema,
 		Columns:        cols,
 		Data:           hashData(evtData, tc),
 		Deleted:        event.DeletePayload(),
 	}, nil
+}
+
+func (e *Event) GetExecutionTime() time.Time {
+	return e.executionTime
 }
 
 func (e *Event) Validate() error {
@@ -247,7 +252,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 		td.PartitionsToLastMessage[message.Partition()] = append(td.PartitionsToLastMessage[message.Partition()], message)
 	}
 
-	td.LatestCDCTs = e.ExecutionTime
+	td.LatestCDCTs = e.executionTime
 	flush, flushReason := td.ShouldFlush(cfg)
 	return flush, flushReason, nil
 }
