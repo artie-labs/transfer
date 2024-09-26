@@ -76,7 +76,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 		}
 	}()
 
-	if err = dwh.PrepareTemporaryTable(tableData, tableConfig, temporaryTableID, types.AdditionalSettings{}, true); err != nil {
+	if err = dwh.PrepareTemporaryTable(tableData, tableConfig, temporaryTableID, tableID, types.AdditionalSettings{}, true); err != nil {
 		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 

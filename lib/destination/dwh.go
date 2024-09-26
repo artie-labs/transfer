@@ -23,7 +23,7 @@ type DataWarehouse interface {
 
 	// Helper functions for merge
 	GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error)
-	PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sqllib.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error
+	PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sqllib.TableIdentifier, parentTableID sqllib.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error
 }
 
 type Baseline interface {

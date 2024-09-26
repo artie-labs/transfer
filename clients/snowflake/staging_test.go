@@ -157,7 +157,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	sflkTc := s.stageStore.GetConfigMap().TableConfigCache(tempTableID)
 
 	{
-		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableID, types.AdditionalSettings{}, true))
+		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, true))
 		assert.Equal(s.T(), 3, s.fakeStageStore.ExecCallCount())
 
 		// First call is to create the temp table
@@ -179,7 +179,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	}
 	{
 		// Don't create the temporary table.
-		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableID, types.AdditionalSettings{}, false))
+		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, false))
 		assert.Equal(s.T(), 5, s.fakeStageStore.ExecCallCount())
 	}
 
