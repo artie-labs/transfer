@@ -39,6 +39,8 @@ type Kafka struct {
 type SharedDestinationSettings struct {
 	// TruncateExceededValues - This will truncate exceeded values instead of replacing it with `__artie_exceeded_value`
 	TruncateExceededValues bool `yaml:"truncateExceededValues"`
+	// IncreaseStringPrecision - This will increase the string precision to the maximum allowed by the destination.
+	IncreaseStringPrecision bool `yaml:"increaseStringPrecision"`
 }
 
 type Config struct {
