@@ -158,7 +158,7 @@ func (m *MongoTestSuite) TestMongoDBEventCustomer() {
 	assert.NoError(m.T(), err)
 	_, isOk := evtData[constants.UpdateColumnMarker]
 	assert.False(m.T(), isOk)
-	assert.Equal(m.T(), evtData["_id"], 1003)
+	assert.Equal(m.T(), evtData["_id"], int64(1003))
 	assert.Equal(m.T(), evtData["first_name"], "Robin")
 	assert.Equal(m.T(), evtData["last_name"], "Tang")
 	assert.Equal(m.T(), evtData["email"], "robin@example.com")

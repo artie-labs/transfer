@@ -160,11 +160,9 @@ func TestProcessMessageFailures(t *testing.T) {
 }`,
 	}
 
-	idx := 0
 	memoryDB := memDB
 	for _, val := range vals {
-		idx += 1
-		msg.KafkaMsg.Key = []byte(fmt.Sprintf("Struct{id=%v}", idx))
+		msg.KafkaMsg.Key = []byte(fmt.Sprintf("Struct{id=%v}", 1004))
 		if val != "" {
 			msg.KafkaMsg.Value = []byte(val)
 		}
@@ -181,14 +179,14 @@ func TestProcessMessageFailures(t *testing.T) {
 
 		td := memoryDB.GetOrCreateTableData(table)
 		// Check that there are corresponding row(s) in the memory DB
-		assert.Len(t, td.Rows(), idx)
+		assert.Len(t, td.Rows(), 1)
 	}
 
 	td := memoryDB.GetOrCreateTableData(table)
 
 	var rowData map[string]any
 	for _, row := range td.Rows() {
-		if row["_id"] == "1" {
+		if row["_id"] == int64(1004) {
 			rowData = row
 		}
 	}
