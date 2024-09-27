@@ -67,21 +67,19 @@ const (
 type DestinationKind string
 
 const (
-	Snowflake DestinationKind = "snowflake"
-	Test      DestinationKind = "test"
 	BigQuery  DestinationKind = "bigquery"
+	MSSQL     DestinationKind = "mssql"
 	Redshift  DestinationKind = "redshift"
 	S3        DestinationKind = "s3"
-	MSSQL     DestinationKind = "mssql"
+	Snowflake DestinationKind = "snowflake"
 )
 
 var ValidDestinations = []DestinationKind{
 	BigQuery,
-	Snowflake,
+	MSSQL,
 	Redshift,
 	S3,
-	MSSQL,
-	Test,
+	Snowflake,
 }
 
 func IsValidDestination(destination DestinationKind) bool {
