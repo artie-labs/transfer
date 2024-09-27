@@ -11,9 +11,9 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
-type Debezium string
+type Debezium struct{}
 
-func (d *Debezium) GetEventFromBytes(bytes []byte) (cdc.Event, error) {
+func (Debezium) GetEventFromBytes(bytes []byte) (cdc.Event, error) {
 	var event util.SchemaEventPayload
 	if len(bytes) == 0 {
 		return nil, fmt.Errorf("empty message")
@@ -26,7 +26,7 @@ func (d *Debezium) GetEventFromBytes(bytes []byte) (cdc.Event, error) {
 	return &event, nil
 }
 
-func (d *Debezium) Labels() []string {
+func (Debezium) Labels() []string {
 	return []string{
 		constants.DBZPostgresFormat,
 		constants.DBZPostgresAltFormat,
@@ -35,6 +35,6 @@ func (d *Debezium) Labels() []string {
 	}
 }
 
-func (d *Debezium) GetPrimaryKey(key []byte, tc kafkalib.TopicConfig) (map[string]any, error) {
+func (Debezium) GetPrimaryKey(key []byte, tc kafkalib.TopicConfig) (map[string]any, error) {
 	return debezium.ParsePartitionKey(key, tc.CDCKeyFormat)
 }

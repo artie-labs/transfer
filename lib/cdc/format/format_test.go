@@ -7,13 +7,30 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/lib/cdc/mongo"
+	"github.com/artie-labs/transfer/lib/cdc/relational"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 func TestGetFormatParser(t *testing.T) {
-	validFormats := []string{constants.DBZPostgresAltFormat, constants.DBZPostgresFormat, constants.DBZMongoFormat}
-	for _, validFormat := range validFormats {
-		assert.NotNil(t, GetFormatParser(validFormat, "topicA"))
+	{
+		// Relational
+		for _, format := range []string{constants.DBZPostgresAltFormat, constants.DBZPostgresFormat} {
+			formatParser := GetFormatParser(format, "topicA")
+			assert.NotNil(t, formatParser)
+
+			_, err := typing.AssertType[relational.Debezium](formatParser)
+			assert.NoError(t, err)
+		}
+	}
+	{
+		// Mongo
+		formatParser := GetFormatParser(constants.DBZMongoFormat, "topicA")
+		assert.NotNil(t, formatParser)
+
+		_, err := typing.AssertType[mongo.Debezium](formatParser)
+		assert.NoError(t, err)
 	}
 }
 
