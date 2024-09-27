@@ -18,9 +18,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-type Debezium string
+type Debezium struct{}
 
-func (d *Debezium) GetEventFromBytes(bytes []byte) (cdc.Event, error) {
+func (Debezium) GetEventFromBytes(bytes []byte) (cdc.Event, error) {
 	var schemaEventPayload SchemaEventPayload
 	if len(bytes) == 0 {
 		return nil, fmt.Errorf("empty message")
@@ -70,11 +70,11 @@ func (d *Debezium) GetEventFromBytes(bytes []byte) (cdc.Event, error) {
 	return &schemaEventPayload, nil
 }
 
-func (d *Debezium) Labels() []string {
+func (Debezium) Labels() []string {
 	return []string{constants.DBZMongoFormat}
 }
 
-func (d *Debezium) GetPrimaryKey(key []byte, tc kafkalib.TopicConfig) (map[string]any, error) {
+func (Debezium) GetPrimaryKey(key []byte, tc kafkalib.TopicConfig) (map[string]any, error) {
 	kvMap, err := debezium.ParsePartitionKey(key, tc.CDCKeyFormat)
 	if err != nil {
 		return nil, err

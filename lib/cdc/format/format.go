@@ -9,13 +9,8 @@ import (
 	"github.com/artie-labs/transfer/lib/logger"
 )
 
-var (
-	r relational.Debezium
-	m mongo.Debezium
-)
-
 func GetFormatParser(label, topic string) cdc.Format {
-	for _, validFormat := range []cdc.Format{&r, &m} {
+	for _, validFormat := range []cdc.Format{relational.Debezium{}, mongo.Debezium{}} {
 		for _, fmtLabel := range validFormat.Labels() {
 			if fmtLabel == label {
 				slog.Info("Loaded CDC Format parser...",
