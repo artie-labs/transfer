@@ -67,13 +67,15 @@ const (
 type DestinationKind string
 
 const (
-	BigQuery  DestinationKind = "bigquery"
-	MSSQL     DestinationKind = "mssql"
-	Redshift  DestinationKind = "redshift"
-	S3        DestinationKind = "s3"
-	Snowflake DestinationKind = "snowflake"
+	BigQuery   DestinationKind = "bigquery"
+	Databricks DestinationKind = "databricks"
+	MSSQL      DestinationKind = "mssql"
+	Redshift   DestinationKind = "redshift"
+	S3         DestinationKind = "s3"
+	Snowflake  DestinationKind = "snowflake"
 )
 
+// TODO: Add Databricks here when it's live.
 var ValidDestinations = []DestinationKind{
 	BigQuery,
 	MSSQL,
