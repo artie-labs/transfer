@@ -173,6 +173,16 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc kafkalib.TopicConf
 		}
 	} else {
 		retMap = s.Payload.afterMap
+		// TODO: Remove this code.
+		for key, value := range pkMap {
+			retData, isOk := retMap[key]
+			if !isOk {
+				return nil, fmt.Errorf("key %q not found in data", key)
+			} else if retData != value {
+				return nil, fmt.Errorf("value mismatch for key %q: expected %v, got %v", key, retData, value)
+			}
+		}
+
 		retMap[constants.DeleteColumnMarker] = false
 		retMap[constants.OnlySetDeleteColumnMarker] = false
 	}

@@ -134,7 +134,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	},
 	"payload": {
 		"before": null,
-		"after": "{\"_id\": {\"$numberLong\": \"1004\"},\"first_name\": \"Anne\",\"last_name\": \"Kretchmar\",\"email\": \"annek@noanswer.org\"}",
+		"after": "{\"_id\": \"1004\"},\"first_name\": \"Anne\",\"last_name\": \"Kretchmar\",\"email\": \"annek@noanswer.org\"}",
 		"patch": null,
 		"filter": null,
 		"updateDescription": null,
@@ -177,7 +177,7 @@ func TestProcessMessageFailures(t *testing.T) {
 
 	var rowData map[string]any
 	for _, row := range td.Rows() {
-		if row["_id"] == int64(1004) {
+		if row["_id"] == "1004" {
 			rowData = row
 		}
 	}
