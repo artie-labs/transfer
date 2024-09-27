@@ -3,7 +3,6 @@ package mongo
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"reflect"
 	"time"
 
@@ -21,11 +20,11 @@ import (
 type Debezium struct{}
 
 func (Debezium) GetEventFromBytes(bytes []byte) (cdc.Event, error) {
-	var schemaEventPayload SchemaEventPayload
 	if len(bytes) == 0 {
 		return nil, fmt.Errorf("empty message")
 	}
 
+	var schemaEventPayload SchemaEventPayload
 	if err := json.Unmarshal(bytes, &schemaEventPayload); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal json: %w", err)
 	}
@@ -174,18 +173,14 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc kafkalib.TopicConf
 		}
 	} else {
 		retMap = s.Payload.afterMap
-		// We need this because there's an edge case with Debezium
-		// Where _id gets rewritten as id in the partition key.
+		// TODO: Remove this code.
 		for key, value := range pkMap {
 			retData, isOk := retMap[key]
 			if !isOk {
-				slog.Warn("key not found in retMap", slog.String("key", key), slog.Any("retData", retData))
+				return nil, fmt.Errorf("key %q not found in data", key)
 			} else if retData != value {
-				slog.Warn("value mismatch", slog.String("key", key), slog.Any("value", value), slog.Any("retData", retData))
+				return nil, fmt.Errorf("value mismatch for key %q: expected %v, got %v", key, retData, value)
 			}
-
-			// TODO: Preserve behavior.
-			retMap[key] = value
 		}
 
 		retMap[constants.DeleteColumnMarker] = false

@@ -104,8 +104,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		Format: &mgo,
 	})
 
-	vals := []string{
-		`{
+	val := `{
 	"schema": {
 		"type": "struct",
 		"fields": [{
@@ -135,7 +134,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	},
 	"payload": {
 		"before": null,
-		"after": "{\"_id\": {\"$numberLong\": \"1004\"},\"first_name\": \"Anne\",\"last_name\": \"Kretchmar\",\"email\": \"annek@noanswer.org\"}",
+		"after": "{\"_id\": \"1004\"},\"first_name\": \"Anne\",\"last_name\": \"Kretchmar\",\"email\": \"annek@noanswer.org\"}",
 		"patch": null,
 		"filter": null,
 		"updateDescription": null,
@@ -157,47 +156,11 @@ func TestProcessMessageFailures(t *testing.T) {
 		"ts_ms": 1668753329387,
 		"transaction": null
 	}
-}`,
-	}
+}`
 
-	idx := 0
 	memoryDB := memDB
-	for _, val := range vals {
-		idx += 1
-		msg.KafkaMsg.Key = []byte(fmt.Sprintf("Struct{id=%v}", idx))
-		if val != "" {
-			msg.KafkaMsg.Value = []byte(val)
-		}
-
-		args = processArgs{
-			Msg:                    msg,
-			GroupID:                "foo",
-			TopicToConfigFormatMap: tcFmtMap,
-		}
-
-		tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
-		assert.NoError(t, err)
-		assert.Equal(t, table, tableName)
-
-		td := memoryDB.GetOrCreateTableData(table)
-		// Check that there are corresponding row(s) in the memory DB
-		assert.Len(t, td.Rows(), idx)
-	}
-
-	td := memoryDB.GetOrCreateTableData(table)
-
-	var rowData map[string]any
-	for _, row := range td.Rows() {
-		if row["_id"] == "1" {
-			rowData = row
-		}
-	}
-
-	val, isOk := rowData[constants.DeleteColumnMarker]
-	assert.True(t, isOk)
-	assert.False(t, val.(bool))
-
-	msg.KafkaMsg.Value = []byte("not a json object")
+	msg.KafkaMsg.Key = []byte(fmt.Sprintf("Struct{id=%v}", 1004))
+	msg.KafkaMsg.Value = []byte(val)
 	args = processArgs{
 		Msg:                    msg,
 		GroupID:                "foo",
@@ -205,9 +168,37 @@ func TestProcessMessageFailures(t *testing.T) {
 	}
 
 	tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
-	assert.ErrorContains(t, err, "cannot unmarshall event: failed to unmarshal json: invalid character 'o' in literal")
-	assert.Empty(t, tableName)
-	assert.True(t, td.NumberOfRows() > 0)
+	assert.NoError(t, err)
+	assert.Equal(t, table, tableName)
+
+	td := memoryDB.GetOrCreateTableData(table)
+	// Check that there are corresponding row(s) in the memory DB
+	assert.Len(t, td.Rows(), 1)
+
+	var rowData map[string]any
+	for _, row := range td.Rows() {
+		if row["_id"] == "1004" {
+			rowData = row
+		}
+	}
+	{
+		rowValue, isOk := rowData[constants.DeleteColumnMarker]
+		assert.True(t, isOk)
+		assert.False(t, rowValue.(bool))
+	}
+	{
+		msg.KafkaMsg.Value = []byte("not a json object")
+		args = processArgs{
+			Msg:                    msg,
+			GroupID:                "foo",
+			TopicToConfigFormatMap: tcFmtMap,
+		}
+
+		tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
+		assert.ErrorContains(t, err, "cannot unmarshall event: failed to unmarshal json: invalid character 'o' in literal")
+		assert.Empty(t, tableName)
+		assert.True(t, td.NumberOfRows() > 0)
+	}
 }
 
 func TestProcessMessageSkip(t *testing.T) {
