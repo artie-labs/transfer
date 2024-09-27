@@ -3,9 +3,8 @@ package utils
 import (
 	"fmt"
 
-	"github.com/artie-labs/transfer/clients/databricks"
-
 	"github.com/artie-labs/transfer/clients/bigquery"
+	"github.com/artie-labs/transfer/clients/databricks"
 	"github.com/artie-labs/transfer/clients/mssql"
 	"github.com/artie-labs/transfer/clients/redshift"
 	"github.com/artie-labs/transfer/clients/s3"
@@ -66,12 +65,13 @@ func LoadDataWarehouse(cfg config.Config, store *db.Store) (destination.DataWare
 		}
 		return s, nil
 	case constants.Databricks:
-		store, err := databricks.LoadStore(cfg)
+		_store, err := databricks.LoadStore(cfg)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load Databricks: %w", err)
 		}
 
-		return store, nil
+		// TODO: Sweep
+		return _store, nil
 	}
 
 	return nil, fmt.Errorf("invalid data warehouse output source specified: %q", cfg.Output)
