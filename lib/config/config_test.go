@@ -141,10 +141,7 @@ func TestConfig_Validate_ErrorTopicConfigInvalid(t *testing.T) {
 
 	defer file.Close()
 
-	_, err = io.WriteString(file,
-		`
-outputSource: test
-`)
+	_, err = io.WriteString(file, `outputSource: snowflake`)
 	assert.Nil(t, err)
 
 	config, err := readFileToConfig(randomFile)
@@ -179,10 +176,7 @@ func TestConfig_Validate_ErrorKafkaInvalid(t *testing.T) {
 
 	defer file.Close()
 
-	_, err = io.WriteString(file,
-		`
-outputSource: test
-`)
+	_, err = io.WriteString(file, `outputSource: snowflake`)
 	assert.Nil(t, err)
 
 	config, err := readFileToConfig(randomFile)
