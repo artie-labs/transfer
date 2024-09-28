@@ -1,8 +1,6 @@
 package config
 
-import (
-	"github.com/artie-labs/transfer/lib/config/constants"
-)
+import "github.com/artie-labs/transfer/lib/config/constants"
 
 type BigQuery struct {
 	// PathToCredentials is _optional_ if you have GOOGLE_APPLICATION_CREDENTIALS set as an env var

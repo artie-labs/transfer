@@ -19,7 +19,7 @@ func (d DatabricksDialect) QuoteIdentifier(identifier string) string {
 }
 
 func (d DatabricksDialect) EscapeStruct(value string) string {
-	return strings.ReplaceAll(value, "`", "``")
+	panic("not implemented") // We don't currently support backfills for Databricks.
 }
 
 func (d DatabricksDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
@@ -56,7 +56,7 @@ func (d DatabricksDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string
 }
 
 func (d DatabricksDialect) KindForDataType(_type string, _ string) (typing.KindDetails, error) {
-	// Implement the reverse mapping from Databricks data types to KindDetails
+	// TODO: Finish
 	switch strings.ToUpper(_type) {
 	case "STRING":
 		return typing.String, nil
@@ -164,5 +164,5 @@ WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s);`,
 }
 
 func (d DatabricksDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {
-	return sql.Backfill
+	return sql.Native
 }
