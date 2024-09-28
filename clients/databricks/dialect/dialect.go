@@ -73,9 +73,8 @@ func (d DatabricksDialect) KindForDataType(_type string, _ string) (typing.KindD
 	return typing.KindDetails{}, fmt.Errorf("unsupported data type: %q", _type)
 }
 
-func (d DatabricksDialect) IsColumnAlreadyExistsErr(err error) bool {
-	// Implement the logic to check if the error is a "column already exists" error
-	return strings.Contains(err.Error(), "already exists")
+func (d DatabricksDialect) IsColumnAlreadyExistsErr(_ error) bool {
+	return false
 }
 
 func (d DatabricksDialect) IsTableDoesNotExistErr(err error) bool {
