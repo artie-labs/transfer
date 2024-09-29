@@ -1,6 +1,7 @@
 package databricks
 
 import (
+	"github.com/artie-labs/transfer/clients/databricks/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/db"
@@ -24,11 +25,11 @@ func (s Store) Append(tableData *optimization.TableData, useTempTable bool) erro
 }
 
 func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
-	//return NewTableIdentifier(topicConfig.Schema, table)
+	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
 
 func (s Store) Dialect() sql.Dialect {
-	//return dialect.DatabricksDialect{}
+	return dialect.DatabricksDialect{}
 }
 
 func (s Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
