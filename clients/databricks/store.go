@@ -33,27 +33,28 @@ func (s Store) Dialect() sql.Dialect {
 }
 
 func (s Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	//return shared.Dedupe(s, tableID, primaryKeys, includeArtieUpdatedAt)
+	panic("not implemented")
 }
 
 func (s Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	panic("not implemented")
+	//tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	//query, args := describeTableQuery(tableID)
-	return shared.GetTableCfgArgs{
-		Dwh:                   s,
-		TableID:               tableID,
-		ConfigMap:             s.configMap,
-		Query:                 query,
-		Args:                  args,
-		ColumnNameForName:     "column_name",
-		ColumnNameForDataType: "data_type",
-		ColumnNameForComment:  "description",
-		DropDeletedColumns:    tableData.TopicConfig().DropDeletedColumns,
-	}.GetTableConfig()
+	//return shared.GetTableCfgArgs{
+	//	Dwh:                   s,
+	//	TableID:               tableID,
+	//	ConfigMap:             s.configMap,
+	//	Query:                 query,
+	//	Args:                  args,
+	//	ColumnNameForName:     "column_name",
+	//	ColumnNameForDataType: "data_type",
+	//	ColumnNameForComment:  "description",
+	//	DropDeletedColumns:    tableData.TopicConfig().DropDeletedColumns,
+	//}.GetTableConfig()
 }
 
 func (s Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, parentTableID sql.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
-	//return shared.PrepareTemporaryTable(s, tableData, tableConfig, tempTableID, parentTableID, additionalSettings, createTempTable)
+	panic("not implemented")
 }
 
 func LoadStore(cfg config.Config) (Store, error) {
