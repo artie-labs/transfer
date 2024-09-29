@@ -94,7 +94,7 @@ func (d DatabricksDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, co
 }
 
 func (d DatabricksDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
-	return fmt.Sprintf("%s.%s IS NOT NULL", tableAlias, column.Name)
+	return fmt.Sprintf("%s.%s IS NOT NULL", tableAlias, column.Name())
 }
 
 func (d DatabricksDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
