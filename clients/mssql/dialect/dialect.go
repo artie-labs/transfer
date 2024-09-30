@@ -78,7 +78,7 @@ func (MSSQLDialect) KindForDataType(rawType string, stringPrecision string) (typ
 		if err != nil {
 			return typing.Invalid, err
 		}
-		return typing.ParseNumeric(parameters), nil
+		return typing.ParseNumeric(parameters)
 	}
 
 	switch rawType {

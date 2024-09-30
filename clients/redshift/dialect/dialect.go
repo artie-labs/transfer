@@ -81,7 +81,7 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 		if err != nil {
 			return typing.Invalid, err
 		}
-		return typing.ParseNumeric(parameters), nil
+		return typing.ParseNumeric(parameters)
 	}
 
 	if strings.Contains(rawType, "character varying") {

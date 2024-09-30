@@ -12,11 +12,13 @@ func TestParseNumeric(t *testing.T) {
 	{
 		// Invalid
 		{
-			result := ParseNumeric([]string{})
+			result, err := ParseNumeric([]string{})
+			assert.ErrorContains(t, err, "invalid number of parts: 0")
 			assert.Equal(t, Invalid, result)
 		}
 		{
-			result := ParseNumeric([]string{"5", "a"})
+			result, err := ParseNumeric([]string{"5", "a"})
+			assert.ErrorContains(t, err, `failed to parse number, part "a"`)
 			assert.Equal(t, Invalid, result)
 		}
 		{
