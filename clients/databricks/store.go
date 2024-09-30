@@ -177,7 +177,6 @@ func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, newTab
 }
 
 func LoadStore(cfg config.Config) (Store, error) {
-	fmt.Println("cfg.Databricks.DSN()", cfg.Databricks.DSN())
 	store, err := db.Open("databricks", cfg.Databricks.DSN())
 	if err != nil {
 		return Store{}, err
