@@ -55,7 +55,7 @@ func (d Details) SnowflakeKind() string {
 // DatabricksKind - is used to determine whether a NUMERIC data type should be a STRING or NUMERIC(p, s).
 // Ref: https://docs.databricks.com/en/sql/language-manual/data-types/decimal-type.html
 func (d Details) DatabricksKind() string {
-	return d.toKind(MaxPrecisionBeforeString, "STRING")
+	return d.toDecimalKind(MaxPrecisionBeforeString, "STRING")
 }
 
 // MsSQLKind - Has the same limitation as Redshift

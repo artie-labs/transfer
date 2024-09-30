@@ -9,7 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, isPk bool) string {
+func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) string {
 	switch kindDetails.Kind {
 	case typing.Float.Kind:
 		return "DOUBLE"
