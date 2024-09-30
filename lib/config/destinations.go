@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -78,11 +79,11 @@ func (d Databricks) DSN() string {
 	query.Add("catalog", d.CatalogName)
 	query.Add("schema", d.SchemaName)
 	u := &url.URL{
-		Scheme:   "databricks",
+		Path:     "/sql/1.0/warehouses/cab738c29ff77d72",
 		User:     url.UserPassword("token", d.PersonalAccessToken),
 		Host:     fmt.Sprintf("%s:%d", d.Host, d.Port),
 		RawQuery: query.Encode(),
 	}
 
-	return u.String()
+	return strings.TrimPrefix(u.String(), "//")
 }

@@ -1,6 +1,10 @@
 package databricks
 
 import (
+	"fmt"
+
+	_ "github.com/databricks/databricks-sql-go"
+
 	"github.com/artie-labs/transfer/clients/databricks/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
@@ -58,6 +62,7 @@ func (s Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCon
 }
 
 func LoadStore(cfg config.Config) (Store, error) {
+	fmt.Println("cfg.Databricks.DSN()", cfg.Databricks.DSN())
 	store, err := db.Open("databricks", cfg.Databricks.DSN())
 	if err != nil {
 		return Store{}, err
