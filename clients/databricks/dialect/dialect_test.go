@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -62,5 +62,19 @@ func TestDatabricksDialect_BuildCreateTableQuery(t *testing.T) {
 			`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1}, {PART_2})`,
 			DatabricksDialect{}.BuildCreateTableQuery(fakeTableID, false, []string{"{PART_1}", "{PART_2}"}),
 		)
+	}
+}
+
+func TestDatabricksDialect_BuildAlterColumnQuery(t *testing.T) {
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
+
+	{
+		// DROP
+		assert.Equal(t, "ALTER TABLE {TABLE} drop COLUMN {SQL_PART}", DatabricksDialect{}.BuildAlterColumnQuery(fakeTableID, constants.Delete, "{SQL_PART}"))
+	}
+	{
+		// Add
+		assert.Equal(t, "ALTER TABLE {TABLE} add COLUMN {SQL_PART} {DATA_TYPE}", DatabricksDialect{}.BuildAlterColumnQuery(fakeTableID, constants.Add, "{SQL_PART} {DATA_TYPE}"))
 	}
 }
