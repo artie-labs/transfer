@@ -74,12 +74,15 @@ func (s Snowflake) ToConfig() (*gosnowflake.Config, error) {
 }
 
 func (d Databricks) DSN() string {
-	return fmt.Sprintf("%s://%s:%s@%s:%d/%s",
-		d.Protocol,
-		url.QueryEscape(d.Username),
-		url.QueryEscape(d.Password),
-		d.Host,
-		d.Port,
-		d.Database,
-	)
+	query := url.Values{}
+	query.Add("catalog", d.CatalogName)
+	query.Add("schema", d.SchemaName)
+	u := &url.URL{
+		Scheme:   "databricks",
+		User:     url.UserPassword("token", d.PersonalAccessToken),
+		Host:     fmt.Sprintf("%s:%d", d.Host, d.Port),
+		RawQuery: query.Encode(),
+	}
+
+	return u.String()
 }

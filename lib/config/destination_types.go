@@ -53,10 +53,11 @@ type Snowflake struct {
 }
 
 type Databricks struct {
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	Database string `yaml:"database"`
-	Protocol string `yaml:"protocol"`
+	Host                string `yaml:"host"`
+	Port                int    `yaml:"port"`
+	PersonalAccessToken string `yaml:"personalAccessToken"`
+	Database            string `yaml:"database"`
+	Protocol            string `yaml:"protocol"`
+	CatalogName         string `yaml:"catalogName"`
+	SchemaName          string `yaml:"schemaName"`
 }

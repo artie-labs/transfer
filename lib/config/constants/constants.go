@@ -77,6 +77,7 @@ const (
 
 // TODO: Add Databricks here when it's live.
 var ValidDestinations = []DestinationKind{
+	Databricks,
 	BigQuery,
 	MSSQL,
 	Redshift,
