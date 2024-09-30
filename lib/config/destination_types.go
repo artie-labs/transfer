@@ -11,6 +11,14 @@ type BigQuery struct {
 	Location          string `yaml:"location"`
 }
 
+type Databricks struct {
+	Host                string `yaml:"host"`
+	HttpPath            string `json:"httpPath"`
+	Port                int    `yaml:"port"`
+	Catalog             string `yaml:"catalog"`
+	PersonalAccessToken string `yaml:"personalAccessToken"`
+}
+
 type MSSQL struct {
 	Host     string `yaml:"host"`
 	Port     int    `yaml:"port"`
