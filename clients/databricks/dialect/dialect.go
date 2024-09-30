@@ -67,6 +67,8 @@ func (d DatabricksDialect) KindForDataType(_type string, _ string) (typing.KindD
 		return typing.Boolean, nil
 	case "VARIANT":
 		return typing.Struct, nil
+	case "TIMESTAMP":
+		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType), nil
 	}
 
 	return typing.KindDetails{}, fmt.Errorf("unsupported data type: %q", _type)
@@ -81,11 +83,7 @@ func (DatabricksDialect) IsTableDoesNotExistErr(err error) bool {
 }
 
 func (d DatabricksDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, colSQLParts []string) string {
-	temp := ""
-	if temporary {
-		temp = "TEMPORARY "
-	}
-	return fmt.Sprintf("CREATE %sTABLE %s (%s)", temp, tableID.FullyQualifiedName(), strings.Join(colSQLParts, ", "))
+	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ", "))
 }
 
 func (d DatabricksDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string {

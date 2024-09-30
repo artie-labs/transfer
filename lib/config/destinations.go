@@ -77,7 +77,6 @@ func (s Snowflake) ToConfig() (*gosnowflake.Config, error) {
 func (d Databricks) DSN() string {
 	query := url.Values{}
 	query.Add("catalog", d.CatalogName)
-	query.Add("schema", d.SchemaName)
 	u := &url.URL{
 		Path:     "/sql/1.0/warehouses/cab738c29ff77d72",
 		User:     url.UserPassword("token", d.PersonalAccessToken),

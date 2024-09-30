@@ -59,5 +59,4 @@ type Databricks struct {
 	Database            string `yaml:"database"`
 	Protocol            string `yaml:"protocol"`
 	CatalogName         string `yaml:"catalogName"`
-	SchemaName          string `yaml:"schemaName"`
 }
