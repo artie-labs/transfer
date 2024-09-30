@@ -1,8 +1,10 @@
 package config
 
 import (
+	"cmp"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -71,4 +73,17 @@ func (s Snowflake) ToConfig() (*gosnowflake.Config, error) {
 	}
 
 	return cfg, nil
+}
+
+func (d Databricks) DSN() string {
+	query := url.Values{}
+	query.Add("catalog", d.Catalog)
+	u := &url.URL{
+		Path:     d.HttpPath,
+		User:     url.UserPassword("token", d.PersonalAccessToken),
+		Host:     fmt.Sprintf("%s:%d", d.Host, cmp.Or(d.Port, 443)),
+		RawQuery: query.Encode(),
+	}
+
+	return strings.TrimPrefix(u.String(), "//")
 }
