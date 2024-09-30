@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log/slog"
@@ -16,6 +17,7 @@ const (
 
 type Store interface {
 	Exec(query string, args ...any) (sql.Result, error)
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	Query(query string, args ...any) (*sql.Rows, error)
 	Begin() (*sql.Tx, error)
 	IsRetryableError(err error) bool
@@ -23,6 +25,28 @@ type Store interface {
 
 type storeWrapper struct {
 	*sql.DB
+}
+
+func (s *storeWrapper) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	var result sql.Result
+	var err error
+	for attempts := 0; attempts < maxAttempts; attempts++ {
+		if attempts > 0 {
+			sleepDuration := jitter.Jitter(sleepBaseMs, jitter.DefaultMaxMs, attempts-1)
+			slog.Warn("Failed to execute the query, retrying...",
+				slog.Any("err", err),
+				slog.Duration("sleep", sleepDuration),
+				slog.Int("attempts", attempts),
+			)
+			time.Sleep(sleepDuration)
+		}
+
+		result, err = s.DB.ExecContext(ctx, query, args...)
+		if err == nil || !s.IsRetryableError(err) {
+			break
+		}
+	}
+	return result, err
 }
 
 func (s *storeWrapper) Exec(query string, args ...any) (sql.Result, error) {
