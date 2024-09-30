@@ -58,6 +58,8 @@ func (d DatabricksDialect) BuildMergeQueries(
 	softDelete bool,
 	_ bool,
 ) ([]string, error) {
+	// TODO: Add tests.
+
 	// Build the base equality condition for the MERGE query
 	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, d)
 	if len(additionalEqualityStrings) > 0 {
