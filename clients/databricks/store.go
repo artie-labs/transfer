@@ -17,7 +17,12 @@ import (
 
 type Store struct {
 	db.Store
-	cfg config.Config
+	cfg       config.Config
+	configMap *types.DwhToTablesConfigMap
+}
+
+func describeTableQuery(tableID TableIdentifier) (string, []any) {
+	return fmt.Sprintf("DESCRIBE TABLE %s.%s.%s", tableID.Database(), tableID.Schema(), tableID.Table()), nil
 }
 
 func (s Store) Merge(tableData *optimization.TableData) error {
@@ -41,20 +46,19 @@ func (s Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, include
 }
 
 func (s Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	panic("not implemented")
-	//tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	//query, args := describeTableQuery(tableID)
-	//return shared.GetTableCfgArgs{
-	//	Dwh:                   s,
-	//	TableID:               tableID,
-	//	ConfigMap:             s.configMap,
-	//	Query:                 query,
-	//	Args:                  args,
-	//	ColumnNameForName:     "column_name",
-	//	ColumnNameForDataType: "data_type",
-	//	ColumnNameForComment:  "description",
-	//	DropDeletedColumns:    tableData.TopicConfig().DropDeletedColumns,
-	//}.GetTableConfig()
+	tableID := NewTableIdentifier(tableData.TopicConfig().Database, tableData.TopicConfig().Schema, tableData.Name())
+	query, args := describeTableQuery(tableID)
+	return shared.GetTableCfgArgs{
+		Dwh:                   s,
+		TableID:               tableID,
+		ConfigMap:             s.configMap,
+		Query:                 query,
+		Args:                  args,
+		ColumnNameForName:     "column_name",
+		ColumnNameForDataType: "data_type",
+		ColumnNameForComment:  "description",
+		DropDeletedColumns:    tableData.TopicConfig().DropDeletedColumns,
+	}.GetTableConfig()
 }
 
 func (s Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, parentTableID sql.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
@@ -68,7 +72,8 @@ func LoadStore(cfg config.Config) (Store, error) {
 		return Store{}, err
 	}
 	return Store{
-		Store: store,
-		cfg:   cfg,
+		Store:     store,
+		cfg:       cfg,
+		configMap: &types.DwhToTablesConfigMap{},
 	}, nil
 }

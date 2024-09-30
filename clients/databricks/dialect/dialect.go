@@ -76,9 +76,8 @@ func (d DatabricksDialect) IsColumnAlreadyExistsErr(_ error) bool {
 	return false
 }
 
-func (d DatabricksDialect) IsTableDoesNotExistErr(err error) bool {
-	// Implement the logic to check if the error is a "table does not exist" error
-	return strings.Contains(err.Error(), "does not exist")
+func (DatabricksDialect) IsTableDoesNotExistErr(err error) bool {
+	return strings.Contains(err.Error(), "[TABLE_OR_VIEW_NOT_FOUND]")
 }
 
 func (d DatabricksDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, colSQLParts []string) string {
