@@ -46,7 +46,7 @@ func (DatabricksDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, prim
 }
 
 func (DatabricksDialect) BuildDedupeQueries(_, _ sql.TableIdentifier, _ []string, _ bool) []string {
-	panic("not implemented") // We don't currently support deduping for MS SQL.
+	panic("not implemented")
 }
 
 func (d DatabricksDialect) BuildMergeQueries(
