@@ -8,21 +8,21 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/destination/ddl"
-	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/values"
+	_ "github.com/databricks/databricks-sql-go"
+	"github.com/databricks/databricks-sql-go/driverctx"
 
 	"github.com/artie-labs/transfer/clients/databricks/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
+	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
-	_ "github.com/databricks/databricks-sql-go"
-	driverctx "github.com/databricks/databricks-sql-go/driverctx"
+	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
 type Store struct {
@@ -122,7 +122,6 @@ func (s Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCon
 func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
 	// TODO: Test null values
 	if colVal == nil {
-		// \\N needs to match NULL_IF(...) from ddl.go
 		return `\\N`, nil
 	}
 
