@@ -27,7 +27,6 @@ import (
 
 type Store struct {
 	db.Store
-	volume    string
 	cfg       config.Config
 	configMap *types.DwhToTablesConfigMap
 }
@@ -104,7 +103,13 @@ func (s Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCon
 
 	// Upload the local file to DBFS
 	ctx := driverctx.NewContextWithStagingInfo(context.Background(), []string{"/var"})
-	dbfsFilePath := fmt.Sprintf("dbfs:/Volumes/%s/%s.csv", s.volume, tempTableID.Table())
+
+	castedTempTableID, isOk := tempTableID.(TableIdentifier)
+	if !isOk {
+		return fmt.Errorf("failed to cast temp table ID to TableIdentifier")
+	}
+
+	dbfsFilePath := fmt.Sprintf("dbfs:/Volumes/%s/%s.csv", castedTempTableID.Database(), castedTempTableID.Table())
 	putCommand := fmt.Sprintf("PUT '%s' INTO '%s' OVERWRITE", fp, dbfsFilePath)
 	if _, err = s.ExecContext(ctx, putCommand); err != nil {
 		return fmt.Errorf("failed to run PUT INTO for temporary table: %w", err)
@@ -173,7 +178,6 @@ func LoadStore(cfg config.Config) (Store, error) {
 	return Store{
 		Store:     store,
 		cfg:       cfg,
-		volume:    cfg.Databricks.Volume,
 		configMap: &types.DwhToTablesConfigMap{},
 	}, nil
 }

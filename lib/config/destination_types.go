@@ -17,7 +17,6 @@ type Databricks struct {
 	Port                int    `yaml:"port"`
 	Catalog             string `yaml:"catalog"`
 	PersonalAccessToken string `yaml:"personalAccessToken"`
-	Volume              string `yaml:"volume"`
 }
 
 type MSSQL struct {
