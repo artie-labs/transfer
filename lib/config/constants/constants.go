@@ -67,7 +67,9 @@ const (
 type DestinationKind string
 
 const (
-	BigQuery   DestinationKind = "bigquery"
+	BigQuery DestinationKind = "bigquery"
+	// Databricks is currently experimental.
+	// TODO: Remove flag when it's ready for Production.
 	Databricks DestinationKind = "databricks"
 	MSSQL      DestinationKind = "mssql"
 	Redshift   DestinationKind = "redshift"

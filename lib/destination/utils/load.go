@@ -3,9 +3,8 @@ package utils
 import (
 	"fmt"
 
-	"github.com/artie-labs/transfer/clients/databricks"
-
 	"github.com/artie-labs/transfer/clients/bigquery"
+	"github.com/artie-labs/transfer/clients/databricks"
 	"github.com/artie-labs/transfer/clients/mssql"
 	"github.com/artie-labs/transfer/clients/redshift"
 	"github.com/artie-labs/transfer/clients/s3"
