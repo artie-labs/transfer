@@ -3,6 +3,8 @@ package utils
 import (
 	"fmt"
 
+	"github.com/artie-labs/transfer/clients/databricks"
+
 	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/clients/mssql"
 	"github.com/artie-labs/transfer/clients/redshift"
@@ -45,6 +47,8 @@ func LoadDataWarehouse(cfg config.Config, store *db.Store) (destination.DataWare
 		return s, nil
 	case constants.BigQuery:
 		return bigquery.LoadBigQuery(cfg, store)
+	case constants.Databricks:
+		return databricks.LoadStore(cfg)
 	case constants.MSSQL:
 		s, err := mssql.LoadStore(cfg)
 		if err != nil {

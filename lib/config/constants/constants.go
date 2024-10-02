@@ -78,6 +78,7 @@ const (
 // TODO: Add Databricks to this list once it's ready
 var ValidDestinations = []DestinationKind{
 	BigQuery,
+	Databricks,
 	MSSQL,
 	Redshift,
 	S3,
