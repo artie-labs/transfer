@@ -27,6 +27,7 @@ import (
 
 type Store struct {
 	db.Store
+	volume    string
 	cfg       config.Config
 	configMap *types.DwhToTablesConfigMap
 }
@@ -109,14 +110,15 @@ func (s Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCon
 		return fmt.Errorf("failed to cast temp table ID to TableIdentifier")
 	}
 
-	dbfsFilePath := fmt.Sprintf("dbfs:/Volumes/%s/%s.csv", castedTempTableID.Database(), castedTempTableID.Table())
+	dbfsFilePath := fmt.Sprintf("dbfs:/Volumes/%s/%s/%s/%s.csv", castedTempTableID.Database(), castedTempTableID.Schema(), s.volume, castedTempTableID.Table())
 	putCommand := fmt.Sprintf("PUT '%s' INTO '%s' OVERWRITE", fp, dbfsFilePath)
 	if _, err = s.ExecContext(ctx, putCommand); err != nil {
 		return fmt.Errorf("failed to run PUT INTO for temporary table: %w", err)
 	}
 
 	// Copy file from DBFS -> table via COPY INTO, ref: https://docs.databricks.com/en/sql/language-manual/delta-copy-into.html
-	copyCommand := fmt.Sprintf(`COPY INTO %s BY POSITION FROM '%s' FILEFORMAT = CSV FORMAT_OPTIONS ('delimiter' = '\t', 'header' = 'false', 'nullValue' = '\\N')`, tempTableID.FullyQualifiedName(), dbfsFilePath)
+	// We'll need \\\\N here because we need to string escape.
+	copyCommand := fmt.Sprintf(`COPY INTO %s BY POSITION FROM '%s' FILEFORMAT = CSV FORMAT_OPTIONS ('delimiter' = '\t', 'header' = 'false', 'nullValue' = '\\\\N')`, tempTableID.FullyQualifiedName(), dbfsFilePath)
 	if _, err = s.ExecContext(ctx, copyCommand); err != nil {
 		return fmt.Errorf("failed to run COPY INTO for temporary table: %w", err)
 	}
@@ -125,7 +127,6 @@ func (s Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCon
 }
 
 func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
-	// TODO: Test null values
 	if colVal == nil {
 		return `\\N`, nil
 	}
@@ -178,6 +179,7 @@ func LoadStore(cfg config.Config) (Store, error) {
 	return Store{
 		Store:     store,
 		cfg:       cfg,
+		volume:    cfg.Databricks.Volume,
 		configMap: &types.DwhToTablesConfigMap{},
 	}, nil
 }
