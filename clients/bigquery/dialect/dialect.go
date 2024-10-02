@@ -110,7 +110,7 @@ func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindD
 	case "date":
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType), nil
 	default:
-		return typing.Invalid, nil
+		return typing.Invalid, fmt.Errorf("unexpected data type: %q", rawBqType)
 	}
 }
 
