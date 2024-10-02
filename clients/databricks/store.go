@@ -32,12 +32,7 @@ type Store struct {
 }
 
 func describeTableQuery(tableID TableIdentifier) (string, []any) {
-	_dialect := dialect.DatabricksDialect{}
-	return fmt.Sprintf("DESCRIBE TABLE %s.%s.%s",
-		_dialect.QuoteIdentifier(tableID.Database()),
-		_dialect.QuoteIdentifier(tableID.Schema()),
-		_dialect.QuoteIdentifier(tableID.Table()),
-	), nil
+	return fmt.Sprintf("DESCRIBE TABLE %s", tableID.FullyQualifiedName()), nil
 }
 
 func (s Store) Merge(tableData *optimization.TableData) error {
@@ -77,6 +72,8 @@ func (s Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTabl
 }
 
 func (s Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
+	// TODO: Update PrepareTemporaryTable interface to include context
+
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
 			Dialect:        s.Dialect(),
@@ -111,10 +108,9 @@ func (s Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCon
 		return fmt.Errorf("failed to cast tempTableID to TableIdentifier")
 	}
 
-	dbfsFilePath := fmt.Sprintf("dbfs:/Volumes/%s/%s/vol_test/%s.csv", castedTempTableID.Database(), castedTempTableID.Schema(), tempTableID.Table())
-
 	ctx := driverctx.NewContextWithStagingInfo(context.Background(), []string{"/var"})
 
+	dbfsFilePath := fmt.Sprintf("dbfs:/Volumes/%s/%s/vol_test/%s.csv", castedTempTableID.Database(), castedTempTableID.Schema(), tempTableID.Table())
 	// Use the PUT INTO command to upload the file to Databricks
 	putCommand := fmt.Sprintf("PUT '%s' INTO '%s' OVERWRITE", fp, dbfsFilePath)
 	if _, err = s.ExecContext(ctx, putCommand); err != nil {
@@ -122,7 +118,8 @@ func (s Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCon
 	}
 
 	// Use the COPY INTO command to load the data into the temporary table
-	copyCommand := fmt.Sprintf("COPY INTO %s BY POSITION FROM '%s' FILEFORMAT = CSV FORMAT_OPTIONS ('delimiter' = '\t', 'header' = 'false')", tempTableID.FullyQualifiedName(), dbfsFilePath)
+	// Ref: https://docs.databricks.com/en/sql/language-manual/delta-copy-into.html
+	copyCommand := fmt.Sprintf(`COPY INTO %s BY POSITION FROM '%s' FILEFORMAT = CSV FORMAT_OPTIONS ('delimiter' = '\t', 'header' = 'false', 'nullValue' = '\\N')`, tempTableID.FullyQualifiedName(), dbfsFilePath)
 	if _, err = s.ExecContext(ctx, copyCommand); err != nil {
 		return fmt.Errorf("failed to run COPY INTO for temporary table: %w", err)
 	}
@@ -131,6 +128,7 @@ func (s Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCon
 }
 
 func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
+	// TODO: Test null values
 	if colVal == nil {
 		// \\N needs to match NULL_IF(...) from ddl.go
 		return `\\N`, nil
