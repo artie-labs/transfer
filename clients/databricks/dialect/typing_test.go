@@ -20,7 +20,7 @@ func TestDatabricksDialect_DataTypeForKind(t *testing.T) {
 	}
 	{
 		// Variant
-		assert.Equal(t, "VARIANT", DatabricksDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Struct.Kind}, false))
+		assert.Equal(t, "STRING", DatabricksDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Struct.Kind}, false))
 	}
 	{
 		// Array
@@ -157,12 +157,12 @@ func TestDatabricksDialect_KindForDataType(t *testing.T) {
 		// Variant
 		kd, err := DatabricksDialect{}.KindForDataType("VARIANT", "")
 		assert.NoError(t, err)
-		assert.Equal(t, typing.KindDetails{Kind: typing.Struct.Kind}, kd)
+		assert.Equal(t, typing.KindDetails{Kind: typing.String.Kind}, kd)
 	}
 	{
 		// Object
 		kd, err := DatabricksDialect{}.KindForDataType("OBJECT", "")
 		assert.NoError(t, err)
-		assert.Equal(t, typing.KindDetails{Kind: typing.Struct.Kind}, kd)
+		assert.Equal(t, typing.KindDetails{Kind: typing.String.Kind}, kd)
 	}
 }
