@@ -55,7 +55,7 @@ func (s Store) Dialect() sql.Dialect {
 func (s Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
 	stagingTableID := shared.TempTableID(tableID)
 	defer func() {
-		// Drop the temporary table once we're done with the dedupe.
+		// Drop the staging table once we're done with the dedupe.
 		_ = ddl.DropTemporaryTable(s, stagingTableID, false)
 	}()
 
