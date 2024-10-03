@@ -62,29 +62,26 @@ func (d DatabricksDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableI
 		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", pk))
 	}
 
-	var parts []string
-	parts = append(parts, fmt.Sprintf("CREATE OR REPLACE TEMP VIEW %s AS SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) as row_num FROM %s) WHERE row_num = 2",
-		stagingTableID.FullyQualifiedName(),
-		strings.Join(primaryKeysEscaped, ", "),
-		strings.Join(orderByCols, ", "),
-		tableID.FullyQualifiedName(),
-	))
+	tempViewQuery := fmt.Sprintf(`
+        CREATE TABLE %s AS
+        SELECT *
+        FROM %s
+        QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 2
+    `, stagingTableID.FullyQualifiedName(), tableID.FullyQualifiedName(), strings.Join(primaryKeysEscaped, ", "), strings.Join(orderByCols, ", "))
 
 	var whereClauses []string
 	for _, primaryKeyEscaped := range primaryKeysEscaped {
 		whereClauses = append(whereClauses, fmt.Sprintf("t1.%s = t2.%s", primaryKeyEscaped, primaryKeyEscaped))
 	}
 
-	parts = append(parts,
-		fmt.Sprintf("DELETE FROM %s t1 USING %s t2 WHERE %s",
-			tableID.FullyQualifiedName(),
-			stagingTableID.FullyQualifiedName(),
-			strings.Join(whereClauses, " AND "),
-		),
+	deleteQuery := fmt.Sprintf("DELETE FROM %s t1 WHERE EXISTS (SELECT * FROM %s t2 WHERE %s)",
+		tableID.FullyQualifiedName(),
+		stagingTableID.FullyQualifiedName(),
+		strings.Join(whereClauses, " AND "),
 	)
-
-	parts = append(parts, fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName()))
-	return parts
+	// Insert deduplicated rows back into the original table
+	insertQuery := fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName())
+	return []string{tempViewQuery, deleteQuery, insertQuery}
 }
 
 func (d DatabricksDialect) BuildMergeQueries(
