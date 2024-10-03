@@ -51,7 +51,6 @@ func (DatabricksDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, prim
 
 func (d DatabricksDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, d)
-
 	orderColsToIterate := primaryKeysEscaped
 	if includeArtieUpdatedAt {
 		orderColsToIterate = append(orderColsToIterate, d.QuoteIdentifier(constants.UpdateColumnMarker))
