@@ -65,6 +65,7 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
 
 - [Destinations](https://artie.com/docs/destinations):
     - BigQuery
+    - Databricks
     - Microsoft SQL Server
     - Redshift
     - S3
