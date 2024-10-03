@@ -62,7 +62,7 @@ func (d DatabricksDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableI
 		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", pk))
 	}
 
-	tempViewQuery := fmt.Sprintf(`
+	stagingTableQuery := fmt.Sprintf(`
         CREATE TABLE %s AS
         SELECT *
         FROM %s
@@ -79,9 +79,9 @@ func (d DatabricksDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableI
 		stagingTableID.FullyQualifiedName(),
 		strings.Join(whereClauses, " AND "),
 	)
-	// Insert deduplicated rows back into the original table
+
 	insertQuery := fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName())
-	return []string{tempViewQuery, deleteQuery, insertQuery}
+	return []string{stagingTableQuery, deleteQuery, insertQuery}
 }
 
 func (d DatabricksDialect) BuildMergeQueries(
