@@ -87,17 +87,40 @@ func TestDatabricksDialect_BuildDedupeQueries(t *testing.T) {
 	fakeStagingTableID := &mocks.FakeTableIdentifier{}
 	fakeStagingTableID.FullyQualifiedNameReturns("{STAGING}")
 
-	queries := dialect.BuildDedupeQueries(fakeTableID, fakeStagingTableID, []string{"id"}, true)
-	assert.Len(t, queries, 3)
+	{
+		// includeArtieUpdatedAt = true
+		queries := dialect.BuildDedupeQueries(fakeTableID, fakeStagingTableID, []string{"id"}, true)
+		assert.Len(t, queries, 3)
+		assert.Equal(t,
+			fmt.Sprintf("CREATE TABLE {STAGING} AS SELECT * FROM {TARGET} QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s ASC, %s ASC) = 2",
+				dialect.QuoteIdentifier("id"),
+				dialect.QuoteIdentifier("id"),
+				dialect.QuoteIdentifier(constants.UpdateColumnMarker),
+			),
+			queries[0])
+		assert.Equal(t,
+			fmt.Sprintf("DELETE FROM {TARGET} t1 WHERE EXISTS (SELECT * FROM {STAGING} t2 WHERE t1.%s = t2.%s)",
+				dialect.QuoteIdentifier("id"),
+				dialect.QuoteIdentifier("id"),
+			),
+			queries[1])
+		assert.Equal(t, "INSERT INTO {TARGET} SELECT * FROM {STAGING}", queries[2])
+	}
+	{
+		// includeArtieUpdatedAt = false
+		queries := dialect.BuildDedupeQueries(fakeTableID, fakeStagingTableID, []string{"id"}, false)
+		assert.Len(t, queries, 3)
+		assert.Equal(t,
+			fmt.Sprintf("CREATE TABLE {STAGING} AS SELECT * FROM {TARGET} QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s ASC) = 2",
+				dialect.QuoteIdentifier("id"),
+				dialect.QuoteIdentifier("id")),
+			queries[0])
+		assert.Equal(t,
+			fmt.Sprintf("DELETE FROM {TARGET} t1 WHERE EXISTS (SELECT * FROM {STAGING} t2 WHERE t1.%s = t2.%s)",
+				dialect.QuoteIdentifier("id"),
+				dialect.QuoteIdentifier("id")),
+			queries[1])
+		assert.Equal(t, "INSERT INTO {TARGET} SELECT * FROM {STAGING}", queries[2])
+	}
 
-	expectedTempViewQuery := `
-        CREATE TABLE {STAGING} AS
-        SELECT *
-        FROM {TARGET}
-        QUALIFY ROW_NUMBER() OVER (PARTITION BY ` + dialect.QuoteIdentifier("id") + ` ORDER BY ` + dialect.QuoteIdentifier("id") + ` ASC, ` + dialect.QuoteIdentifier("__artie_updated_at") + ` ASC) = 2
-    `
-
-	assert.Equal(t, expectedTempViewQuery, queries[0])
-	assert.Equal(t, "DELETE FROM {TARGET} t1 WHERE EXISTS (SELECT * FROM {STAGING} t2 WHERE t1."+dialect.QuoteIdentifier("id")+" = t2."+dialect.QuoteIdentifier("id")+")", queries[1])
-	assert.Equal(t, "INSERT INTO {TARGET} SELECT * FROM {STAGING}", queries[2])
 }

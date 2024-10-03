@@ -62,12 +62,12 @@ func (d DatabricksDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableI
 		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", pk))
 	}
 
-	stagingTableQuery := fmt.Sprintf(`
-        CREATE TABLE %s AS
-        SELECT *
-        FROM %s
-        QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 2
-    `, stagingTableID.FullyQualifiedName(), tableID.FullyQualifiedName(), strings.Join(primaryKeysEscaped, ", "), strings.Join(orderByCols, ", "))
+	stagingTableQuery := fmt.Sprintf(`CREATE TABLE %s AS SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 2`,
+		stagingTableID.FullyQualifiedName(),
+		tableID.FullyQualifiedName(),
+		strings.Join(primaryKeysEscaped, ", "),
+		strings.Join(orderByCols, ", "),
+	)
 
 	var whereClauses []string
 	for _, primaryKeyEscaped := range primaryKeysEscaped {
