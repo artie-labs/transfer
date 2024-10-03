@@ -78,3 +78,26 @@ func TestDatabricksDialect_BuildAlterColumnQuery(t *testing.T) {
 		assert.Equal(t, "ALTER TABLE {TABLE} add COLUMN {SQL_PART} {DATA_TYPE}", DatabricksDialect{}.BuildAlterColumnQuery(fakeTableID, constants.Add, "{SQL_PART} {DATA_TYPE}"))
 	}
 }
+
+func TestDatabricksDialect_BuildDedupeQueries(t *testing.T) {
+	dialect := DatabricksDialect{}
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("{TARGET}")
+
+	fakeStagingTableID := &mocks.FakeTableIdentifier{}
+	fakeStagingTableID.FullyQualifiedNameReturns("{STAGING}")
+
+	queries := dialect.BuildDedupeQueries(fakeTableID, fakeStagingTableID, []string{"id"}, true)
+	assert.Len(t, queries, 3)
+
+	expectedTempViewQuery := `
+        CREATE TABLE {STAGING} AS
+        SELECT *
+        FROM {TARGET}
+        QUALIFY ROW_NUMBER() OVER (PARTITION BY ` + dialect.QuoteIdentifier("id") + ` ORDER BY ` + dialect.QuoteIdentifier("id") + ` ASC, ` + dialect.QuoteIdentifier("__artie_updated_at") + ` ASC) = 2
+    `
+
+	assert.Equal(t, expectedTempViewQuery, queries[0])
+	assert.Equal(t, "DELETE FROM {TARGET} t1 WHERE EXISTS (SELECT * FROM {STAGING} t2 WHERE t1."+dialect.QuoteIdentifier("id")+" = t2."+dialect.QuoteIdentifier("id")+")", queries[1])
+	assert.Equal(t, "INSERT INTO {TARGET} SELECT * FROM {STAGING}", queries[2])
+}
