@@ -20,9 +20,7 @@ jobs:
           make static
       - name: Run vet
         run: make vet
-      - name: Run tests
-        run: make test
-      - name: Run race condition check
+      - name: Run tests + race condition check
         run: make race
       - name: Check Go files are properly formatted
         run: test -z $(gofmt -l .)
