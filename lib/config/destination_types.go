@@ -13,10 +13,11 @@ type BigQuery struct {
 
 type Databricks struct {
 	Host                string `yaml:"host"`
-	HttpPath            string `json:"httpPath"`
+	HttpPath            string `yaml:"httpPath"`
 	Port                int    `yaml:"port"`
 	Catalog             string `yaml:"catalog"`
 	PersonalAccessToken string `yaml:"personalAccessToken"`
+	Volume              string `yaml:"volume"`
 }
 
 type MSSQL struct {
