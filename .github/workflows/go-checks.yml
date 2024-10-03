@@ -16,6 +16,9 @@ jobs:
       - name: Install dependencies
         run: go mod download
 
+      - name: Generage mocks
+        run: make generate
+
       - name: Run vet
         run: make vet
 
@@ -23,7 +26,6 @@ jobs:
         env:
           SC_VERSION: "2024.1.1"
         run: |
-          make generate
           SC_URL="https://github.com/dominikh/go-tools/releases/download/$SC_VERSION/staticcheck_linux_amd64.tar.gz"
           wget -q ${SC_URL} -O - | tar -xzf - --strip-components 1 -C /usr/local/bin staticcheck/staticcheck
           make static
