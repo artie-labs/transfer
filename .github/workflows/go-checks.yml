@@ -16,7 +16,7 @@ jobs:
       - name: Install dependencies
         run: go mod download
 
-      - name: Generage mocks
+      - name: Generate mocks
         run: make generate
 
       - name: Run vet
