@@ -7,6 +7,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
+// TODO: This function should return an error
 func ParseNumeric(parts []string) KindDetails {
 	if len(parts) == 0 || len(parts) > 2 {
 		return Invalid
