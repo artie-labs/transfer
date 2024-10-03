@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/artie-labs/transfer/lib/destination"
+
 	_ "github.com/databricks/databricks-sql-go"
 	"github.com/databricks/databricks-sql-go/driverctx"
 
@@ -53,7 +55,9 @@ func (s Store) Dialect() sql.Dialect {
 }
 
 func (s Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	panic("not implemented")
+	stagingTableID := shared.TempTableID(tableID)
+	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
+	return destination.ExecStatements(s, dedupeQueries)
 }
 
 func (s Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {

@@ -49,8 +49,42 @@ func (DatabricksDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, prim
 	panic("not implemented")
 }
 
-func (DatabricksDialect) BuildDedupeQueries(_, _ sql.TableIdentifier, _ []string, _ bool) []string {
-	panic("not implemented")
+func (d DatabricksDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
+	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, d)
+
+	orderColsToIterate := primaryKeysEscaped
+	if includeArtieUpdatedAt {
+		orderColsToIterate = append(orderColsToIterate, d.QuoteIdentifier(constants.UpdateColumnMarker))
+	}
+
+	var orderByCols []string
+	for _, pk := range orderColsToIterate {
+		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", pk))
+	}
+
+	var parts []string
+	parts = append(parts, fmt.Sprintf("CREATE OR REPLACE TEMP VIEW %s AS SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) as row_num FROM %s) WHERE row_num = 2",
+		stagingTableID.FullyQualifiedName(),
+		strings.Join(primaryKeysEscaped, ", "),
+		strings.Join(orderByCols, ", "),
+		tableID.FullyQualifiedName(),
+	))
+
+	var whereClauses []string
+	for _, primaryKeyEscaped := range primaryKeysEscaped {
+		whereClauses = append(whereClauses, fmt.Sprintf("t1.%s = t2.%s", primaryKeyEscaped, primaryKeyEscaped))
+	}
+
+	parts = append(parts,
+		fmt.Sprintf("DELETE FROM %s t1 USING %s t2 WHERE %s",
+			tableID.FullyQualifiedName(),
+			stagingTableID.FullyQualifiedName(),
+			strings.Join(whereClauses, " AND "),
+		),
+	)
+
+	parts = append(parts, fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName()))
+	return parts
 }
 
 func (d DatabricksDialect) BuildMergeQueries(
