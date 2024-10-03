@@ -3,8 +3,7 @@ name: Go checks
 on: [push]
 
 jobs:
-  test:
-    name: Go checks
+  test:    
     runs-on: ubuntu-24.04
     
     steps:
