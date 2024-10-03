@@ -37,8 +37,8 @@ func (DatabricksDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, colu
 	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 
-func (DatabricksDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
-	colName := sql.QuoteTableAliasColumn(tableAlias, column, sd)
+func (d DatabricksDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
+	colName := sql.QuoteTableAliasColumn(tableAlias, column, d)
 	if column.KindDetails == typing.Struct {
 		return fmt.Sprintf("COALESCE(%s != {'key': '%s'}, true)", colName, constants.ToastUnavailableValuePlaceholder)
 	}

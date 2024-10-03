@@ -16,7 +16,7 @@ func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool)
 	case typing.Integer.Kind:
 		return "BIGINT"
 	case typing.Struct.Kind:
-		return "VARIANT"
+		return "STRING"
 	case typing.Array.Kind:
 		// Databricks requires arrays to be typed. As such, we're going to use an array of strings.
 		return "ARRAY<string>"
@@ -56,7 +56,7 @@ func (DatabricksDialect) KindForDataType(rawType string, _ string) (typing.KindD
 	}
 
 	switch rawType {
-	case "string", "binary":
+	case "string", "binary", "variant", "object":
 		return typing.String, nil
 	case "bigint":
 		return typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.BigIntegerKind)}, nil
@@ -74,8 +74,6 @@ func (DatabricksDialect) KindForDataType(rawType string, _ string) (typing.KindD
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType), nil
 	case "timestamp_ntz":
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType), nil
-	case "variant", "object":
-		return typing.Struct, nil
 	}
 
 	return typing.Invalid, fmt.Errorf("unsupported data type: %q", rawType)
