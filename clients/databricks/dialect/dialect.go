@@ -38,7 +38,11 @@ func (DatabricksDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, colu
 }
 
 func (DatabricksDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
-	panic("not implemented")
+	colName := sql.QuoteTableAliasColumn(tableAlias, column, sd)
+	if column.KindDetails == typing.Struct {
+		return fmt.Sprintf("COALESCE(%s != {'key': '%s'}, true)", colName, constants.ToastUnavailableValuePlaceholder)
+	}
+	return fmt.Sprintf("COALESCE(%s != '%s', true)", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
 func (DatabricksDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
