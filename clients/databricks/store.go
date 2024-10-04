@@ -189,6 +189,7 @@ func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, newTab
 }
 
 func (s Store) SweepTemporaryTables() error {
+	// TODO: We should also remove old volumes
 	tcs, err := s.cfg.TopicConfigs()
 	if err != nil {
 		return err
