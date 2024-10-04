@@ -17,6 +17,7 @@ type DataWarehouse interface {
 	// SQL specific commands
 	Dialect() sqllib.Dialect
 	Dedupe(tableID sqllib.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error
+	SweepTemporaryTables() error
 	Exec(query string, args ...any) (sql.Result, error)
 	Query(query string, args ...any) (*sql.Rows, error)
 	Begin() (*sql.Tx, error)
