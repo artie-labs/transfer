@@ -53,7 +53,20 @@ func (s Store) Dialect() sql.Dialect {
 }
 
 func (s Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	panic("not implemented")
+	stagingTableID := shared.TempTableID(tableID)
+	defer func() {
+		// Drop the staging table once we're done with the dedupe.
+		_ = ddl.DropTemporaryTable(s, stagingTableID, false)
+	}()
+
+	for _, query := range s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt) {
+		// Databricks doesn't support transactions, so we can't wrap this in a transaction.
+		if _, err := s.Exec(query); err != nil {
+			return fmt.Errorf("failed to execute query: %w", err)
+		}
+	}
+
+	return nil
 }
 
 func (s Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
@@ -176,6 +189,7 @@ func LoadStore(cfg config.Config) (Store, error) {
 	if err != nil {
 		return Store{}, err
 	}
+
 	return Store{
 		Store:     store,
 		cfg:       cfg,

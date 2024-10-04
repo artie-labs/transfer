@@ -37,16 +37,50 @@ func (DatabricksDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, colu
 	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 
-func (DatabricksDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
-	panic("not implemented")
+func (d DatabricksDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
+	colName := sql.QuoteTableAliasColumn(tableAlias, column, d)
+	if column.KindDetails == typing.Struct {
+		return fmt.Sprintf("COALESCE(%s != {'key': '%s'}, true)", colName, constants.ToastUnavailableValuePlaceholder)
+	}
+	return fmt.Sprintf("COALESCE(%s != '%s', true)", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
 func (DatabricksDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
 	panic("not implemented")
 }
 
-func (DatabricksDialect) BuildDedupeQueries(_, _ sql.TableIdentifier, _ []string, _ bool) []string {
-	panic("not implemented")
+func (d DatabricksDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
+	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, d)
+	orderColsToIterate := primaryKeysEscaped
+	if includeArtieUpdatedAt {
+		orderColsToIterate = append(orderColsToIterate, d.QuoteIdentifier(constants.UpdateColumnMarker))
+	}
+
+	var orderByCols []string
+	for _, pk := range orderColsToIterate {
+		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", pk))
+	}
+
+	stagingTableQuery := fmt.Sprintf(`CREATE TABLE %s AS SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 2`,
+		stagingTableID.FullyQualifiedName(),
+		tableID.FullyQualifiedName(),
+		strings.Join(primaryKeysEscaped, ", "),
+		strings.Join(orderByCols, ", "),
+	)
+
+	var whereClauses []string
+	for _, primaryKeyEscaped := range primaryKeysEscaped {
+		whereClauses = append(whereClauses, fmt.Sprintf("t1.%s = t2.%s", primaryKeyEscaped, primaryKeyEscaped))
+	}
+
+	deleteQuery := fmt.Sprintf("DELETE FROM %s t1 WHERE EXISTS (SELECT * FROM %s t2 WHERE %s)",
+		tableID.FullyQualifiedName(),
+		stagingTableID.FullyQualifiedName(),
+		strings.Join(whereClauses, " AND "),
+	)
+
+	insertQuery := fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName())
+	return []string{stagingTableQuery, deleteQuery, insertQuery}
 }
 
 func (d DatabricksDialect) BuildMergeQueries(
