@@ -49,6 +49,10 @@ func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql
 }
 
 func (s Store) Dialect() sql.Dialect {
+	return s.dialect()
+}
+
+func (s Store) dialect() dialect.DatabricksDialect {
 	return dialect.DatabricksDialect{}
 }
 
@@ -185,8 +189,12 @@ func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, newTab
 }
 
 func (s Store) SweepTemporaryTables() error {
-	// TODO
-	return nil
+	tcs, err := s.cfg.TopicConfigs()
+	if err != nil {
+		return err
+	}
+
+	return shared.Sweep(s, tcs, s.dialect().BuildSweepQuery)
 }
 
 func LoadStore(cfg config.Config) (Store, error) {
