@@ -155,6 +155,14 @@ WHERE
     UPPER(table_schema) = UPPER(:p_schema) AND table_name ILIKE :p_artie_prefix`, d.QuoteIdentifier(dbName)), []any{dbsql.Parameter{Name: "p_schema", Value: schemaName}, dbsql.Parameter{Name: "p_artie_prefix", Value: "%" + constants.ArtiePrefix + "%"}}
 }
 
+func (d DatabricksDialect) BuildSweepFilesFromVolumesQuery(dbName, schemaName, volumeName string) string {
+	return fmt.Sprintf("LIST '/Volumes/%s/%s/%s", dbName, schemaName, volumeName)
+}
+
+func (d DatabricksDialect) BuildRemoveFileFromVolumeQuery(filePath string) string {
+	return fmt.Sprintf("REMOVE '%s", filePath)
+}
+
 func (d DatabricksDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {
 	return sql.Native
 }

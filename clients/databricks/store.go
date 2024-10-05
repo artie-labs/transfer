@@ -37,6 +37,7 @@ func describeTableQuery(tableID TableIdentifier) (string, []any) {
 }
 
 func (s Store) Merge(tableData *optimization.TableData) error {
+	// TODO: Once the merge is done, we should delete the file from the volume.
 	return shared.Merge(s, tableData, types.MergeOpts{})
 }
 
@@ -189,13 +190,35 @@ func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, newTab
 }
 
 func (s Store) SweepTemporaryTables() error {
-	// TODO: We should also remove old volumes
+	// Remove the temporary tables
 	tcs, err := s.cfg.TopicConfigs()
 	if err != nil {
 		return err
 	}
 
-	return shared.Sweep(s, tcs, s.dialect().BuildSweepQuery)
+	if err = shared.Sweep(s, tcs, s.dialect().BuildSweepQuery); err != nil {
+		return fmt.Errorf("failed to sweep temporary tables: %w", err)
+	}
+
+	// Remove the temporary files from volumes
+	for _, tc := range tcs {
+		rows, err := s.Query(s.dialect().BuildSweepFilesFromVolumesQuery(tc.Database, tc.Schema, s.volume))
+		if err != nil {
+			return fmt.Errorf("failed to sweep files from volumes: %w", err)
+		}
+
+		for rows.Next() {
+			var filePath string
+			if err = rows.Scan(&filePath); err != nil {
+				return fmt.Errorf("failed to scan file path: %w", err)
+			}
+
+			if err = os.RemoveAll(filePath); err != nil {
+				return fmt.Errorf("failed to remove file: %w", err)
+			}
+		}
+
+	}
 }
 
 func LoadStore(cfg config.Config) (Store, error) {
