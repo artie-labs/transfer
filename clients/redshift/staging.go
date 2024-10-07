@@ -105,6 +105,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 				return "", err
 			}
 
+			// TODO: Do something about result.NewLength
 			row = append(row, result.Value)
 		}
 
