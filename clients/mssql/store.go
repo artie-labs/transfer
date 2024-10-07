@@ -1,6 +1,7 @@
 package mssql
 
 import (
+	"context"
 	"strings"
 
 	_ "github.com/microsoft/go-mssqldb"
@@ -56,7 +57,7 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sq
 	return s.specificIdentifierFor(topicConfig, table)
 }
 
-func (s *Store) SweepTemporaryTables() error {
+func (s *Store) SweepTemporaryTables(_ context.Context) error {
 	tcs, err := s.config.TopicConfigs()
 	if err != nil {
 		return err

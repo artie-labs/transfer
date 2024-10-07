@@ -189,14 +189,13 @@ func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, newTab
 	return fp, writer.Error()
 }
 
-func (s Store) SweepTemporaryTables() error {
-	// TODO: Update interface to include context
-	ctx := driverctx.NewContextWithStagingInfo(context.Background(), []string{"/var"})
+func (s Store) SweepTemporaryTables(ctx context.Context) error {
 	tcs, err := s.cfg.TopicConfigs()
 	if err != nil {
 		return err
 	}
 
+	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var"})
 	// Remove the temporary files from volumes
 	for _, tc := range tcs {
 		rows, err := s.Query(s.dialect().BuildSweepFilesFromVolumesQuery(tc.Database, tc.Schema, s.volume))

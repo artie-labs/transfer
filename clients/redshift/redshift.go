@@ -1,6 +1,7 @@
 package redshift
 
 import (
+	"context"
 	"fmt"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -73,7 +74,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 	}.GetTableConfig()
 }
 
-func (s *Store) SweepTemporaryTables() error {
+func (s *Store) SweepTemporaryTables(_ context.Context) error {
 	tcs, err := s.config.TopicConfigs()
 	if err != nil {
 		return err
