@@ -26,8 +26,8 @@ func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateEx
 		}
 
 		colValLength := int32(len(colVal))
-		// If [expandStringPrecision] is enabled and the value is greater than the maximum length, but less than the maximum Redshift length.
-		if expandStringPrecision && colValLength > maxLength && colValLength < maxRedshiftLength {
+		// If [expandStringPrecision] is enabled and the value is greater than the maximum length, and lte Redshift's max length.
+		if expandStringPrecision && colValLength > maxLength && colValLength <= maxRedshiftLength {
 			return Result{Value: colVal, NewLength: colValLength}
 		}
 
