@@ -156,7 +156,7 @@ WHERE
 }
 
 func (d DatabricksDialect) BuildSweepFilesFromVolumesQuery(dbName, schemaName, volumeName string) string {
-	return fmt.Sprintf("LIST '/Volumes/%s/%s/%s", dbName, schemaName, volumeName)
+	return fmt.Sprintf("LIST '/Volumes/%s/%s/%s'", dbName, schemaName, volumeName)
 }
 
 func (d DatabricksDialect) BuildRemoveFileFromVolumeQuery(filePath string) string {

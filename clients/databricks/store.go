@@ -197,24 +197,32 @@ func (s Store) SweepTemporaryTables() error {
 
 	// Remove the temporary files from volumes
 	for _, tc := range tcs {
+		fmt.Println("s.dialect().BuildSweepFilesFromVolumesQuery(tc.Database, tc.Schema, s.volume)", s.dialect().BuildSweepFilesFromVolumesQuery(tc.Database, tc.Schema, s.volume))
 		rows, err := s.Query(s.dialect().BuildSweepFilesFromVolumesQuery(tc.Database, tc.Schema, s.volume))
 		if err != nil {
 			return fmt.Errorf("failed to sweep files from volumes: %w", err)
 		}
 
-		for rows.Next() {
-			var filePath string
-			if err = rows.Scan(&filePath); err != nil {
-				return fmt.Errorf("failed to scan file path: %w", err)
-			}
-
-			if err = os.RemoveAll(filePath); err != nil {
-				return fmt.Errorf("failed to remove file: %w", err)
-			}
+		volumes, err := sql.RowsToObjects(rows)
+		if err != nil {
+			return fmt.Errorf("failed to convert rows to objects: %w", err)
 		}
 
+		for _, volume := range volumes {
+			vol, err := NewVolume(volume)
+			if err != nil {
+				return err
+			}
+
+			if vol.ShouldDelete() {
+				if _, err = s.Exec(s.dialect().BuildRemoveFileFromVolumeQuery(vol.Path())); err != nil {
+					return fmt.Errorf("failed to delete volume: %w", err)
+				}
+			}
+		}
 	}
 
+	// Delete the temporary tables
 	return shared.Sweep(s, tcs, s.dialect().BuildSweepQuery)
 }
 
