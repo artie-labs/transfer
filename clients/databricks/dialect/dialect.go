@@ -160,7 +160,7 @@ func (d DatabricksDialect) BuildSweepFilesFromVolumesQuery(dbName, schemaName, v
 }
 
 func (d DatabricksDialect) BuildRemoveFileFromVolumeQuery(filePath string) string {
-	return fmt.Sprintf("REMOVE '%s", filePath)
+	return fmt.Sprintf("REMOVE '%s'", filePath)
 }
 
 func (d DatabricksDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {
