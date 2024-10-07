@@ -10,7 +10,7 @@ import (
 
 const maxRedshiftLength int32 = 65535
 
-func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateExceededValue bool) string {
+func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateExceededValue bool, expandStringPrecision bool) string {
 	if colKind.Kind == typing.Struct.Kind || colKind.Kind == typing.String.Kind {
 		maxLength := maxRedshiftLength
 		// If the customer has specified the maximum string precision, let's use that as the max length.
@@ -34,7 +34,7 @@ func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateEx
 	return colVal
 }
 
-func castColValStaging(colVal any, colKind typing.KindDetails, truncateExceededValue bool) (string, error) {
+func castColValStaging(colVal any, colKind typing.KindDetails, truncateExceededValue bool, expandStringPrecision bool) (string, error) {
 	if colVal == nil {
 		if colKind == typing.Struct {
 			// Returning empty here because if it's a struct, it will go through JSON PARSE and JSON_PARSE("") = null
@@ -51,5 +51,5 @@ func castColValStaging(colVal any, colKind typing.KindDetails, truncateExceededV
 	}
 
 	// Checks for DDL overflow needs to be done at the end in case there are any conversions that need to be done.
-	return replaceExceededValues(colValString, colKind, truncateExceededValue), nil
+	return replaceExceededValues(colValString, colKind, truncateExceededValue, expandStringPrecision), nil
 }
