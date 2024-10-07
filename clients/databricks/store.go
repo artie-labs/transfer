@@ -190,14 +190,9 @@ func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, newTab
 }
 
 func (s Store) SweepTemporaryTables() error {
-	// Remove the temporary tables
 	tcs, err := s.cfg.TopicConfigs()
 	if err != nil {
 		return err
-	}
-
-	if err = shared.Sweep(s, tcs, s.dialect().BuildSweepQuery); err != nil {
-		return fmt.Errorf("failed to sweep temporary tables: %w", err)
 	}
 
 	// Remove the temporary files from volumes
@@ -219,6 +214,8 @@ func (s Store) SweepTemporaryTables() error {
 		}
 
 	}
+
+	return shared.Sweep(s, tcs, s.dialect().BuildSweepQuery)
 }
 
 func LoadStore(cfg config.Config) (Store, error) {
