@@ -94,12 +94,12 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 	for _, value := range tableData.Rows() {
 		var row []string
 		for _, col := range columns {
-			castedValue, castErr := castColValStaging(value[col.Name()], col.KindDetails, s.config.SharedDestinationSettings.TruncateExceededValues, s.config.SharedDestinationSettings.ExpandStringPrecision)
-			if castErr != nil {
-				return "", castErr
+			result, err := castColValStaging(value[col.Name()], col.KindDetails, s.config.SharedDestinationSettings.TruncateExceededValues, s.config.SharedDestinationSettings.ExpandStringPrecision)
+			if err != nil {
+				return "", err
 			}
 
-			row = append(row, castedValue)
+			row = append(row, result.Value)
 		}
 
 		if err = writer.Write(row); err != nil {
