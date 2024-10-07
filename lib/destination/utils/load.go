@@ -36,36 +36,15 @@ func LoadBaseline(cfg config.Config) (destination.Baseline, error) {
 func LoadDataWarehouse(cfg config.Config, store *db.Store) (destination.DataWarehouse, error) {
 	switch cfg.Output {
 	case constants.Snowflake:
-		s, err := snowflake.LoadSnowflake(cfg, store)
-		if err != nil {
-			return nil, err
-		}
-		if err = s.Sweep(); err != nil {
-			return nil, fmt.Errorf("failed to clean up Snowflake: %w", err)
-		}
-		return s, nil
+		return snowflake.LoadSnowflake(cfg, store)
 	case constants.BigQuery:
 		return bigquery.LoadBigQuery(cfg, store)
 	case constants.Databricks:
 		return databricks.LoadStore(cfg)
 	case constants.MSSQL:
-		s, err := mssql.LoadStore(cfg)
-		if err != nil {
-			return nil, err
-		}
-		if err = s.Sweep(); err != nil {
-			return nil, fmt.Errorf("failed to clean up MS SQL: %w", err)
-		}
-		return s, nil
+		return mssql.LoadStore(cfg)
 	case constants.Redshift:
-		s, err := redshift.LoadRedshift(cfg, store)
-		if err != nil {
-			return nil, err
-		}
-		if err = s.Sweep(); err != nil {
-			return nil, fmt.Errorf("failed to clean up Redshift: %w", err)
-		}
-		return s, nil
+		return redshift.LoadRedshift(cfg, store)
 	}
 
 	return nil, fmt.Errorf("invalid data warehouse output source specified: %q", cfg.Output)

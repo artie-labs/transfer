@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	dbsql "github.com/databricks/databricks-sql-go"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -141,6 +143,16 @@ WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s);`,
 		strings.Join(sql.QuoteColumns(cols, d), ","),
 		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, d), ","),
 	)}, nil
+}
+
+func (d DatabricksDialect) BuildSweepQuery(dbName, schemaName string) (string, []any) {
+	return fmt.Sprintf(`
+SELECT
+    table_schema, table_name
+FROM
+    %s.information_schema.tables
+WHERE
+    UPPER(table_schema) = UPPER(:p_schema) AND table_name ILIKE :p_artie_prefix`, d.QuoteIdentifier(dbName)), []any{dbsql.Parameter{Name: "p_schema", Value: schemaName}, dbsql.Parameter{Name: "p_artie_prefix", Value: "%" + constants.ArtiePrefix + "%"}}
 }
 
 func (d DatabricksDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {

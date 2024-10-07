@@ -40,7 +40,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 	}.GetTableConfig()
 }
 
-func (s *Store) Sweep() error {
+func (s *Store) SweepTemporaryTables() error {
 	tcs, err := s.config.TopicConfigs()
 	if err != nil {
 		return err

@@ -62,7 +62,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 				return
 			}
 
-			retryCfg, err := retry.NewJitterRetryConfig(500, 30_000, 10, retry.AlwaysRetry)
+			retryCfg, err := retry.NewJitterRetryConfig(1_000, 30_000, 15, retry.AlwaysRetry)
 			if err != nil {
 				slog.Error("Failed to create retry config", slog.Any("err", err))
 				return

@@ -56,7 +56,7 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sq
 	return s.specificIdentifierFor(topicConfig, table)
 }
 
-func (s *Store) Sweep() error {
+func (s *Store) SweepTemporaryTables() error {
 	tcs, err := s.config.TopicConfigs()
 	if err != nil {
 		return err
