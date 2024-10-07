@@ -100,6 +100,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 				s.config.SharedDestinationSettings.TruncateExceededValues,
 				s.config.SharedDestinationSettings.ExpandStringPrecision,
 			)
+
 			if err != nil {
 				return "", err
 			}
