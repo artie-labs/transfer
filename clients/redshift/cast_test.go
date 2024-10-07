@@ -93,6 +93,53 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 			}
 		}
 	}
+	{
+		// expandStringPrecision = true
+		{
+			// Irrelevant data type
+			{
+				// Integer
+				result := replaceExceededValues("123", typing.Integer, false, true)
+				assert.Equal(r.T(), "123", result.Value)
+				assert.Zero(r.T(), result.NewLength)
+			}
+			{
+				// Returns the full value since it's not a struct or string
+				// This is invalid and should not happen, but it's here to ensure we're only checking for structs and strings.
+				value := stringutil.Random(int(maxRedshiftLength + 1))
+				result := replaceExceededValues(value, typing.Integer, false, true)
+				assert.Equal(r.T(), value, result.Value)
+				assert.Zero(r.T(), result.NewLength)
+			}
+		}
+		{
+			// Exceeded the column string precision but not Redshift's max length
+			{
+				stringKd := typing.KindDetails{
+					Kind:                    typing.String.Kind,
+					OptionalStringPrecision: typing.ToPtr(int32(3)),
+				}
+
+				result := replaceExceededValues("hello", stringKd, true, true)
+				assert.Equal(r.T(), "hello", result.Value)
+				assert.Equal(r.T(), int32(5), result.NewLength)
+			}
+		}
+		{
+			// Exceeded both column and Redshift precision, so the value got replaced with an exceeded placeholder.
+			{
+				stringKd := typing.KindDetails{
+					Kind:                    typing.String.Kind,
+					OptionalStringPrecision: typing.ToPtr(maxRedshiftLength),
+				}
+
+				superLongString := stringutil.Random(int(maxRedshiftLength) + 1)
+				result := replaceExceededValues(superLongString, stringKd, false, true)
+				assert.Equal(r.T(), constants.ExceededValueMarker, result.Value)
+				assert.Zero(r.T(), result.NewLength)
+			}
+		}
+	}
 }
 
 func (r *RedshiftTestSuite) TestCastColValStaging() {
