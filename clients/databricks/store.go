@@ -184,6 +184,11 @@ func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, newTab
 	return fp, writer.Error()
 }
 
+func (s Store) SweepTemporaryTables() error {
+	// TODO
+	return nil
+}
+
 func LoadStore(cfg config.Config) (Store, error) {
 	store, err := db.Open("databricks", cfg.Databricks.DSN())
 	if err != nil {

@@ -39,8 +39,6 @@ func main() {
 	)
 
 	ctx := context.Background()
-
-	// Loading telemetry
 	metricsClient := metrics.LoadExporter(settings.Config)
 	var dest destination.Baseline
 	if utils.IsOutputBaseline(settings.Config) {
@@ -49,10 +47,16 @@ func main() {
 			logger.Fatal("Unable to load baseline destination", slog.Any("err", err))
 		}
 	} else {
-		dest, err = utils.LoadDataWarehouse(settings.Config, nil)
+		dwh, err := utils.LoadDataWarehouse(settings.Config, nil)
 		if err != nil {
 			logger.Fatal("Unable to load data warehouse destination", slog.Any("err", err))
 		}
+
+		if err = dwh.SweepTemporaryTables(); err != nil {
+			logger.Fatal("Failed to clean up temporary tables", slog.Any("err", err))
+		}
+
+		dest = dwh
 	}
 
 	inMemDB := models.NewMemoryDB()
