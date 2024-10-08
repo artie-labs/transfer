@@ -37,7 +37,6 @@ func describeTableQuery(tableID TableIdentifier) (string, []any) {
 }
 
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
-	O
 	return shared.Merge(ctx, s, tableData, types.MergeOpts{})
 }
 
