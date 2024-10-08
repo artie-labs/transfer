@@ -1,6 +1,7 @@
 package snowflake
 
 import (
+	"context"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -9,15 +10,13 @@ import (
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
-	"github.com/artie-labs/transfer/lib/destination/types"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -157,7 +156,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	sflkTc := s.stageStore.GetConfigMap().TableConfigCache(tempTableID)
 
 	{
-		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, true))
+		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(context.Background(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, true))
 		assert.Equal(s.T(), 3, s.fakeStageStore.ExecCallCount())
 
 		// First call is to create the temp table
@@ -179,7 +178,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	}
 	{
 		// Don't create the temporary table.
-		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, false))
+		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(context.Background(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, false))
 		assert.Equal(s.T(), 5, s.fakeStageStore.ExecCallCount())
 	}
 
