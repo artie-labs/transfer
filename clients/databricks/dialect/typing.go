@@ -48,7 +48,7 @@ func (DatabricksDialect) KindForDataType(rawType string, _ string) (typing.KindD
 		if err != nil {
 			return typing.Invalid, err
 		}
-		return typing.ParseNumeric(parameters), nil
+		return typing.ParseNumeric(parameters)
 	}
 
 	if strings.HasPrefix(rawType, "array") {
