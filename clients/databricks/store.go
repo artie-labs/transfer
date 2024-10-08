@@ -119,7 +119,7 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 	}()
 
 	// Upload the local file to DBFS
-	ctx = driverctx.NewContextWithStagingInfo(context.Background(), []string{"/var"})
+	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var"})
 
 	castedTempTableID, isOk := tempTableID.(TableIdentifier)
 	if !isOk {
