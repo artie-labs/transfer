@@ -1,6 +1,7 @@
 package mssql
 
 import (
+	"context"
 	"strings"
 
 	_ "github.com/microsoft/go-mssqldb"
@@ -38,12 +39,12 @@ func (s *Store) dialect() dialect.MSSQLDialect {
 	return dialect.MSSQLDialect{}
 }
 
-func (s *Store) Merge(tableData *optimization.TableData) error {
-	return shared.Merge(s, tableData, types.MergeOpts{})
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
+	return shared.Merge(ctx, s, tableData, types.MergeOpts{})
 }
 
-func (s *Store) Append(tableData *optimization.TableData, _ bool) error {
-	return shared.Append(s, tableData, types.AdditionalSettings{})
+func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {
+	return shared.Append(ctx, s, tableData, types.AdditionalSettings{})
 }
 
 // specificIdentifierFor returns a MS SQL [TableIdentifier] for a [TopicConfig] + table name.

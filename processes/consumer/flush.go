@@ -115,9 +115,9 @@ func flush(ctx context.Context, dest destination.Baseline, _tableData *models.Ta
 	// Merge or Append depending on the mode.
 	var err error
 	if _tableData.Mode() == config.History {
-		err = dest.Append(_tableData.TableData, false)
+		err = dest.Append(ctx, _tableData.TableData, false)
 	} else {
-		err = dest.Merge(_tableData.TableData)
+		err = dest.Merge(ctx, _tableData.TableData)
 	}
 
 	if err != nil {
