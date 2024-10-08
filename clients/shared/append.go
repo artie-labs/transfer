@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -11,7 +12,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, opts types.AdditionalSettings) error {
+func Append(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, opts types.AdditionalSettings) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
@@ -58,6 +59,7 @@ func Append(dwh destination.DataWarehouse, tableData *optimization.TableData, op
 	}
 
 	return dwh.PrepareTemporaryTable(
+		ctx,
 		tableData,
 		tableConfig,
 		tempTableID,

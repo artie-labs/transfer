@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"time"
@@ -17,7 +18,7 @@ import (
 
 const backfillMaxRetries = 1000
 
-func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opts types.MergeOpts) error {
+func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, opts types.MergeOpts) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
@@ -75,7 +76,7 @@ func Merge(dwh destination.DataWarehouse, tableData *optimization.TableData, opt
 		}
 	}()
 
-	if err = dwh.PrepareTemporaryTable(tableData, tableConfig, temporaryTableID, tableID, types.AdditionalSettings{}, true); err != nil {
+	if err = dwh.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID, tableID, types.AdditionalSettings{}, true); err != nil {
 		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 

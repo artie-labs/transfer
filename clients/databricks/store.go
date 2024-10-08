@@ -36,13 +36,13 @@ func describeTableQuery(tableID TableIdentifier) (string, []any) {
 	return fmt.Sprintf("DESCRIBE TABLE %s", tableID.FullyQualifiedName()), nil
 }
 
-func (s Store) Merge(tableData *optimization.TableData) error {
+func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
 	// TODO: Once the merge is done, we should delete the file from the volume.
-	return shared.Merge(s, tableData, types.MergeOpts{})
+	return shared.Merge(ctx, s, tableData, types.MergeOpts{})
 }
 
-func (s Store) Append(tableData *optimization.TableData, useTempTable bool) error {
-	return shared.Append(s, tableData, types.AdditionalSettings{UseTempTable: useTempTable})
+func (s Store) Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error {
+	return shared.Append(ctx, s, tableData, types.AdditionalSettings{UseTempTable: useTempTable})
 }
 
 func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
@@ -90,8 +90,7 @@ func (s Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTabl
 	}.GetTableConfig()
 }
 
-func (s Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
-	// TODO: Update PrepareTemporaryTable interface to include context
+func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
 			Dialect:        s.Dialect(),
@@ -121,7 +120,7 @@ func (s Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCon
 	}()
 
 	// Upload the local file to DBFS
-	ctx := driverctx.NewContextWithStagingInfo(context.Background(), []string{"/var"})
+	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var"})
 
 	castedTempTableID, isOk := tempTableID.(TableIdentifier)
 	if !isOk {
