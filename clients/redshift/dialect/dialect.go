@@ -309,6 +309,10 @@ func (rd RedshiftDialect) BuildMergeQueries(
 	return parts, nil
 }
 
+func (rd RedshiftDialect) BuildIncreaseStringPrecisionQuery(tableID sql.TableIdentifier, column columns.Column, newPrecision int32) string {
+	return fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s TYPE VARCHAR(%d)", tableID.FullyQualifiedName(), rd.QuoteIdentifier(column.Name()), newPrecision)
+}
+
 func (RedshiftDialect) BuildSweepQuery(_ string, schemaName string) (string, []any) {
 	// `relkind` will filter for only ordinary tables and exclude sequences, views, etc.
 	return `
