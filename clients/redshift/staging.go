@@ -11,13 +11,21 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
+
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/s3lib"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
+	fp, err := s.loadTemporaryTable(tableData, tempTableID)
+	if err != nil {
+		return fmt.Errorf("failed to load temporary table: %w", err)
+	}
+
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
 			Dialect:        s.Dialect(),
@@ -32,11 +40,6 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		if err := tempAlterTableArgs.AlterTable(s, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
 			return fmt.Errorf("failed to create temp table: %w", err)
 		}
-	}
-
-	fp, err := s.loadTemporaryTable(tableData, tempTableID)
-	if err != nil {
-		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
 
 	defer func() {
@@ -90,10 +93,11 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 	writer := csv.NewWriter(gzipWriter) // Create a CSV writer on top of the gzip writer
 	writer.Comma = '\t'
 
-	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
+	_columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
+	columnToNewLengthMap := make(map[string]int32)
 	for _, value := range tableData.Rows() {
 		var row []string
-		for _, col := range columns {
+		for _, col := range _columns {
 			result, err := castColValStaging(
 				value[col.Name()],
 				col.KindDetails,
@@ -105,7 +109,13 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 				return "", err
 			}
 
-			// TODO: Do something about result.NewLength
+			if result.NewLength > 0 {
+				_newLength, isOk := columnToNewLengthMap[col.Name()]
+				if !isOk || result.NewLength > _newLength {
+					// Update the new length if it's greater than the current one.
+					columnToNewLengthMap[col.Name()] = result.NewLength
+				}
+			}
 			row = append(row, result.Value)
 		}
 
@@ -117,6 +127,12 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 	writer.Flush()
 	if err = writer.Error(); err != nil {
 		return "", fmt.Errorf("failed to flush csv writer: %w", err)
+	}
+
+	for colName, newLength := range columnToNewLengthMap {
+		tableData.InMemoryColumns().UpsertColumn(colName, columns.UpsertColumnArg{
+			StringPrecision: typing.ToPtr(newLength),
+		})
 	}
 
 	return filePath, nil
