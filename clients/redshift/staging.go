@@ -11,7 +11,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
-
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/s3lib"
@@ -86,13 +85,11 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 	}
 
 	defer file.Close()
+	gzipWriter := gzip.NewWriter(file)
+	defer gzipWriter.Close()
 
-	gzipWriter := gzip.NewWriter(file) // Create a new gzip writer
-	defer gzipWriter.Close()           // Ensure to close the gzip writer after writing
-
-	writer := csv.NewWriter(gzipWriter) // Create a CSV writer on top of the gzip writer
+	writer := csv.NewWriter(gzipWriter)
 	writer.Comma = '\t'
-
 	_columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	columnToNewLengthMap := make(map[string]int32)
 	for _, value := range tableData.Rows() {
