@@ -108,7 +108,7 @@ func TestSnowflakeDialect_KindForDataType(t *testing.T) {
 		{
 			// Invalid because precision nor scale is included.
 			kd, err := SnowflakeDialect{}.KindForDataType("NUMERIC", "")
-			assert.NoError(t, err)
+			assert.ErrorContains(t, err, "invalid number of parts: 0")
 			assert.Equal(t, typing.Invalid, kd)
 		}
 		{
