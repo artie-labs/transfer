@@ -79,11 +79,10 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 
 	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDwhTableConfig(&anotherCols, nil, false, true))
 
-	err := s.stageStore.Merge(context.Background(), tableData)
+	assert.NoError(s.T(), s.stageStore.Merge(context.Background(), tableData))
 	_col, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("first_name")
 	assert.True(s.T(), isOk)
 	assert.Equal(s.T(), _col.KindDetails, typing.String)
-	assert.NoError(s.T(), err)
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
@@ -124,7 +123,6 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 	}
 
 	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDwhTableConfig(&cols, nil, false, true))
-
 	assert.NoError(s.T(), s.stageStore.Merge(context.Background(), tableData))
 	assert.Equal(s.T(), 5, s.fakeStageStore.ExecCallCount())
 }
