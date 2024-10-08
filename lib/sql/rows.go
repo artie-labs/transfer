@@ -1,6 +1,9 @@
 package sql
 
-import "database/sql"
+import (
+	"database/sql"
+	"fmt"
+)
 
 func RowsToObjects(rows *sql.Rows) ([]map[string]any, error) {
 	defer rows.Close()
@@ -28,6 +31,10 @@ func RowsToObjects(rows *sql.Rows) ([]map[string]any, error) {
 		}
 
 		objects = append(objects, object)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate over rows: %w", err)
 	}
 
 	return objects, nil
