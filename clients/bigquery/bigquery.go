@@ -42,9 +42,9 @@ type Store struct {
 	db.Store
 }
 
-func (s *Store) Append(tableData *optimization.TableData, useTempTable bool) error {
+func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error {
 	if !useTempTable {
-		return shared.Append(s, tableData, types.AdditionalSettings{})
+		return shared.Append(ctx, s, tableData, types.AdditionalSettings{})
 	}
 
 	// We can simplify this once Google has fully rolled out the ability to execute DML on recently streamed data
@@ -55,7 +55,7 @@ func (s *Store) Append(tableData *optimization.TableData, useTempTable bool) err
 
 	defer func() { _ = ddl.DropTemporaryTable(s, temporaryTableID, false) }()
 
-	err := shared.Append(s, tableData, types.AdditionalSettings{
+	err := shared.Append(ctx, s, tableData, types.AdditionalSettings{
 		UseTempTable: true,
 		TempTableID:  temporaryTableID,
 	})
@@ -78,7 +78,7 @@ func (s *Store) Append(tableData *optimization.TableData, useTempTable bool) err
 	return nil
 }
 
-func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
 			Dialect:        s.Dialect(),
@@ -100,7 +100,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		return err
 	}
 
-	return s.putTable(context.Background(), bqTempTableID, tableData)
+	return s.putTable(ctx, bqTempTableID, tableData)
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {

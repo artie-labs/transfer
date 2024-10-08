@@ -1,6 +1,7 @@
 package snowflake
 
 import (
+	"context"
 	"encoding/csv"
 	"fmt"
 	"log/slog"
@@ -54,7 +55,7 @@ func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
 	return replaceExceededValues(value, colKind), nil
 }
 
-func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(_ context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
 			Dialect:        s.Dialect(),

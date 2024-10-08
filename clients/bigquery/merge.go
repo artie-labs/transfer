@@ -1,6 +1,7 @@
 package bigquery
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -14,7 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func (s *Store) Merge(tableData *optimization.TableData) error {
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
 	var additionalEqualityStrings []string
 	if tableData.TopicConfig().BigQueryPartitionSettings != nil {
 		distinctDates, err := tableData.DistinctDates(tableData.TopicConfig().BigQueryPartitionSettings.PartitionField)
@@ -30,7 +31,7 @@ func (s *Store) Merge(tableData *optimization.TableData) error {
 		additionalEqualityStrings = []string{mergeString}
 	}
 
-	return shared.Merge(s, tableData, types.MergeOpts{
+	return shared.Merge(ctx, s, tableData, types.MergeOpts{
 		AdditionalEqualityStrings: additionalEqualityStrings,
 		// BigQuery has DDL quotas.
 		RetryColBackfill: true,
