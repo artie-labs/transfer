@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -35,8 +34,8 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		})
 	}
 
-	if len(queries) > 0 {
-		if err = destination.ExecStatements(s, queries); err != nil {
+	for _, query := range queries {
+		if _, err = s.Exec(query); err != nil {
 			return fmt.Errorf("failed to increase string precision for table %q: %w", parentTableID.FullyQualifiedName(), err)
 		}
 	}
