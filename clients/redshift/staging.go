@@ -35,8 +35,10 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 		})
 	}
 
-	if err = destination.ExecStatements(s, queries); err != nil {
-		return fmt.Errorf("failed to increase string precision for table %q: %w", parentTableID.FullyQualifiedName(), err)
+	if len(queries) > 0 {
+		if err = destination.ExecStatements(s, queries); err != nil {
+			return fmt.Errorf("failed to increase string precision for table %q: %w", parentTableID.FullyQualifiedName(), err)
+		}
 	}
 
 	if createTempTable {
