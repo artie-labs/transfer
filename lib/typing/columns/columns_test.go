@@ -192,38 +192,47 @@ func TestColumns_UpsertColumns(t *testing.T) {
 		assert.False(t, col.ToastColumn)
 	}
 
-	// Now selectively update only a, b
-	for _, key := range []string{"a", "b"} {
-		cols.UpsertColumn(key, UpsertColumnArg{
-			ToastCol: typing.ToPtr(true),
+	{
+		// Now update a and b to be toast columns
+		for _, key := range []string{"a", "b"} {
+			cols.UpsertColumn(key, UpsertColumnArg{
+				ToastCol: typing.ToPtr(true),
+			})
+
+			// Now inspect.
+			col, _ := cols.GetColumn(key)
+			assert.True(t, col.ToastColumn)
+		}
+	}
+	{
+		// Create a new column zzz
+		cols.UpsertColumn("zzz", UpsertColumnArg{})
+		zzzCol, _ := cols.GetColumn("zzz")
+		assert.False(t, zzzCol.ToastColumn)
+		assert.False(t, zzzCol.primaryKey)
+		assert.Equal(t, zzzCol.KindDetails, typing.Invalid)
+	}
+	{
+		// Create a new column aaa
+		cols.UpsertColumn("aaa", UpsertColumnArg{
+			ToastCol:   typing.ToPtr(true),
+			PrimaryKey: typing.ToPtr(true),
 		})
+		aaaCol, _ := cols.GetColumn("aaa")
+		assert.True(t, aaaCol.ToastColumn)
+		assert.True(t, aaaCol.primaryKey)
+		assert.Equal(t, aaaCol.KindDetails, typing.Invalid)
 
-		// Now inspect.
-		col, _ := cols.GetColumn(key)
-		assert.True(t, col.ToastColumn)
 	}
+	{
+		// Try adding a column with no name, it should not be added.
+		length := len(cols.columns)
+		for i := 0; i < 500; i++ {
+			cols.UpsertColumn("", UpsertColumnArg{})
+		}
 
-	cols.UpsertColumn("zzz", UpsertColumnArg{})
-	zzzCol, _ := cols.GetColumn("zzz")
-	assert.False(t, zzzCol.ToastColumn)
-	assert.False(t, zzzCol.primaryKey)
-	assert.Equal(t, zzzCol.KindDetails, typing.Invalid)
-
-	cols.UpsertColumn("aaa", UpsertColumnArg{
-		ToastCol:   typing.ToPtr(true),
-		PrimaryKey: typing.ToPtr(true),
-	})
-	aaaCol, _ := cols.GetColumn("aaa")
-	assert.True(t, aaaCol.ToastColumn)
-	assert.True(t, aaaCol.primaryKey)
-	assert.Equal(t, aaaCol.KindDetails, typing.Invalid)
-
-	length := len(cols.columns)
-	for i := 0; i < 500; i++ {
-		cols.UpsertColumn("", UpsertColumnArg{})
+		assert.Equal(t, length, len(cols.columns))
 	}
-
-	assert.Equal(t, length, len(cols.columns))
 }
 
 func TestColumns_Add_Duplicate(t *testing.T) {
