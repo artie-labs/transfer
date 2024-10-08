@@ -17,7 +17,7 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 )
 
-func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
 			Dialect:        s.Dialect(),
@@ -47,7 +47,7 @@ func (s *Store) PrepareTemporaryTable(tableData *optimization.TableData, tableCo
 	}()
 
 	// Load fp into s3, get S3 URI and pass it down.
-	s3Uri, err := s3lib.UploadLocalFileToS3(context.Background(), s3lib.UploadArgs{
+	s3Uri, err := s3lib.UploadLocalFileToS3(ctx, s3lib.UploadArgs{
 		OptionalS3Prefix: s.optionalS3Prefix,
 		Bucket:           s.bucket,
 		FilePath:         fp,

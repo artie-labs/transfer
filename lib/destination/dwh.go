@@ -1,6 +1,7 @@
 package destination
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log/slog"
@@ -24,12 +25,12 @@ type DataWarehouse interface {
 
 	// Helper functions for merge
 	GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error)
-	PrepareTemporaryTable(tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sqllib.TableIdentifier, parentTableID sqllib.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error
+	PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sqllib.TableIdentifier, parentTableID sqllib.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error
 }
 
 type Baseline interface {
-	Merge(tableData *optimization.TableData) error
-	Append(tableData *optimization.TableData, useTempTable bool) error
+	Merge(ctx context.Context, tableData *optimization.TableData) error
+	Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error
 	IsRetryableError(err error) bool
 	IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sqllib.TableIdentifier
 }
