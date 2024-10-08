@@ -34,10 +34,7 @@ func NewVolume(volumeRow map[string]any) (Volume, error) {
 		return Volume{}, fmt.Errorf("volume path is not a string")
 	}
 
-	return Volume{
-		name: volName,
-		path: path,
-	}, nil
+	return Volume{name: volName, path: path}, nil
 }
 
 func (v Volume) ShouldDelete() bool {
