@@ -131,7 +131,7 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 	}
 
 	defer func() {
-		if _, err = s.Exec(s.dialect().BuildRemoveFileFromVolumeQuery(file.FilePath())); err != nil {
+		if _, err = s.ExecContext(ctx, s.dialect().BuildRemoveFileFromVolumeQuery(file.FilePath())); err != nil {
 			slog.Warn("Failed to delete file from volume, it will be garbage collected later",
 				slog.Any("err", err),
 				slog.String("filePath", file.FilePath()),
