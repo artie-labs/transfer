@@ -212,7 +212,7 @@ func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includ
 	return destination.ExecStatements(s, dedupeQueries)
 }
 
-func (s *Store) SweepTemporaryTables() error {
+func (s *Store) SweepTemporaryTables(_ context.Context) error {
 	// BigQuery doesn't need to sweep temporary tables, since they support setting TTL on temporary tables.
 	return nil
 }

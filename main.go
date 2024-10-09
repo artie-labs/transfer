@@ -52,7 +52,7 @@ func main() {
 			logger.Fatal("Unable to load data warehouse destination", slog.Any("err", err))
 		}
 
-		if err = dwh.SweepTemporaryTables(); err != nil {
+		if err = dwh.SweepTemporaryTables(ctx); err != nil {
 			logger.Fatal("Failed to clean up temporary tables", slog.Any("err", err))
 		}
 
