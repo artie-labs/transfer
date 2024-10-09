@@ -16,7 +16,7 @@ func RowsToObjects(rows *sql.Rows) ([]map[string]any, error) {
 	var objects []map[string]any
 	for rows.Next() {
 		row := make([]any, len(columns))
-		rowPointers := make([]interface{}, len(columns))
+		rowPointers := make([]any, len(columns))
 		for i := range row {
 			rowPointers[i] = &row[i]
 		}
