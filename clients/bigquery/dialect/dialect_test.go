@@ -37,6 +37,12 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 	{
 		// Numeric
 		{
+			// Invalid
+			kd, err := dialect.KindForDataType("numeric(1,2,3)", "")
+			assert.ErrorContains(t, err, "invalid number of parts: 3")
+			assert.Equal(t, typing.Invalid, kd)
+		}
+		{
 			// Numeric(5)
 			kd, err := dialect.KindForDataType("NUMERIC(5)", "")
 			assert.NoError(t, err)
@@ -91,10 +97,9 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 		"time":      typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
 		"date":      typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType),
 		//Invalid
-		"foo":            typing.Invalid,
-		"foofoo":         typing.Invalid,
-		"":               typing.Invalid,
-		"numeric(1,2,3)": typing.Invalid,
+		"foo":    typing.Invalid,
+		"foofoo": typing.Invalid,
+		"":       typing.Invalid,
 	}
 
 	for bqCol, expectedKind := range bqColToExpectedKind {
