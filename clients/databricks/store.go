@@ -37,7 +37,6 @@ func describeTableQuery(tableID TableIdentifier) (string, []any) {
 }
 
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
-	// TODO: Once the merge is done, we should delete the file from the volume.
 	return shared.Merge(ctx, s, tableData, types.MergeOpts{})
 }
 
@@ -119,23 +118,30 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 		}
 	}()
 
-	// Upload the local file to DBFS
 	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var"})
-
 	castedTempTableID, isOk := tempTableID.(TableIdentifier)
 	if !isOk {
 		return fmt.Errorf("failed to cast temp table ID to TableIdentifier")
 	}
 
-	dbfsFilePath := fmt.Sprintf("dbfs:/Volumes/%s/%s/%s/%s.csv", castedTempTableID.Database(), castedTempTableID.Schema(), s.volume, castedTempTableID.Table())
-	putCommand := fmt.Sprintf("PUT '%s' INTO '%s' OVERWRITE", fp, dbfsFilePath)
+	file := NewFileFromTableID(castedTempTableID, s.volume)
+	putCommand := fmt.Sprintf("PUT '%s' INTO '%s' OVERWRITE", fp, file.DBFSFilePath())
 	if _, err = s.ExecContext(ctx, putCommand); err != nil {
 		return fmt.Errorf("failed to run PUT INTO for temporary table: %w", err)
 	}
 
+	defer func() {
+		if _, err = s.Exec(s.dialect().BuildRemoveFileFromVolumeQuery(file.FilePath())); err != nil {
+			slog.Warn("Failed to delete file from volume, it will be garbage collected later",
+				slog.Any("err", err),
+				slog.String("filePath", file.FilePath()),
+			)
+		}
+	}()
+
 	// Copy file from DBFS -> table via COPY INTO, ref: https://docs.databricks.com/en/sql/language-manual/delta-copy-into.html
 	// We'll need \\\\N here because we need to string escape.
-	copyCommand := fmt.Sprintf(`COPY INTO %s BY POSITION FROM '%s' FILEFORMAT = CSV FORMAT_OPTIONS ('delimiter' = '\t', 'header' = 'false', 'nullValue' = '\\\\N')`, tempTableID.FullyQualifiedName(), dbfsFilePath)
+	copyCommand := fmt.Sprintf(`COPY INTO %s BY POSITION FROM '%s' FILEFORMAT = CSV FORMAT_OPTIONS ('delimiter' = '\t', 'header' = 'false', 'nullValue' = '\\\\N')`, tempTableID.FullyQualifiedName(), file.DBFSFilePath())
 	if _, err = s.ExecContext(ctx, copyCommand); err != nil {
 		return fmt.Errorf("failed to run COPY INTO for temporary table: %w", err)
 	}
@@ -202,20 +208,20 @@ func (s Store) SweepTemporaryTables(ctx context.Context) error {
 			return fmt.Errorf("failed to sweep files from volumes: %w", err)
 		}
 
-		volumes, err := sql.RowsToObjects(rows)
+		files, err := sql.RowsToObjects(rows)
 		if err != nil {
 			return fmt.Errorf("failed to convert rows to objects: %w", err)
 		}
 
-		for _, volume := range volumes {
-			vol, err := NewVolume(volume)
+		for _, _file := range files {
+			file, err := NewFile(_file)
 			if err != nil {
 				return err
 			}
 
-			if vol.ShouldDelete() {
-				if _, err = s.ExecContext(ctx, s.dialect().BuildRemoveFileFromVolumeQuery(vol.Path())); err != nil {
-					return fmt.Errorf("failed to delete volume: %w", err)
+			if file.ShouldDelete() {
+				if _, err = s.ExecContext(ctx, s.dialect().BuildRemoveFileFromVolumeQuery(file.FilePath())); err != nil {
+					return fmt.Errorf("failed to delete file: %w", err)
 				}
 			}
 		}
