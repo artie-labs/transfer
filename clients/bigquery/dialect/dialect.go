@@ -89,7 +89,7 @@ func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindD
 			// A `NUMERIC` type without precision or scale specified is NUMERIC(38, 9)
 			return typing.EDecimal, nil
 		}
-		return typing.ParseNumeric(parameters), nil
+		return typing.ParseNumeric(parameters)
 	case "decimal", "float", "float64", "bigdecimal":
 		return typing.Float, nil
 	case "int", "integer", "int64":
