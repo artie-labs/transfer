@@ -70,7 +70,6 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 	}
 
 	temporaryTableID := TempTableIDWithSuffix(dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name()), tableData.TempTableSuffix())
-
 	defer func() {
 		if dropErr := ddl.DropTemporaryTable(dwh, temporaryTableID, false); dropErr != nil {
 			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))

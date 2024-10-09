@@ -37,6 +37,7 @@ func describeTableQuery(tableID TableIdentifier) (string, []any) {
 }
 
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
+	// TODO: Once the merge is done, we should delete the file from the volume.
 	return shared.Merge(ctx, s, tableData, types.MergeOpts{})
 }
 
@@ -187,13 +188,40 @@ func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, newTab
 	return fp, writer.Error()
 }
 
-func (s Store) SweepTemporaryTables() error {
-	// TODO: We should also remove old volumes
+func (s Store) SweepTemporaryTables(ctx context.Context) error {
 	tcs, err := s.cfg.TopicConfigs()
 	if err != nil {
 		return err
 	}
 
+	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var"})
+	// Remove the temporary files from volumes
+	for _, tc := range tcs {
+		rows, err := s.Query(s.dialect().BuildSweepFilesFromVolumesQuery(tc.Database, tc.Schema, s.volume))
+		if err != nil {
+			return fmt.Errorf("failed to sweep files from volumes: %w", err)
+		}
+
+		volumes, err := sql.RowsToObjects(rows)
+		if err != nil {
+			return fmt.Errorf("failed to convert rows to objects: %w", err)
+		}
+
+		for _, volume := range volumes {
+			vol, err := NewVolume(volume)
+			if err != nil {
+				return err
+			}
+
+			if vol.ShouldDelete() {
+				if _, err = s.ExecContext(ctx, s.dialect().BuildRemoveFileFromVolumeQuery(vol.Path())); err != nil {
+					return fmt.Errorf("failed to delete volume: %w", err)
+				}
+			}
+		}
+	}
+
+	// Delete the temporary tables
 	return shared.Sweep(s, tcs, s.dialect().BuildSweepQuery)
 }
 
