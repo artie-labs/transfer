@@ -101,9 +101,10 @@ type Columns struct {
 }
 
 type UpsertColumnArg struct {
-	ToastCol   *bool
-	PrimaryKey *bool
-	Backfilled *bool
+	ToastCol        *bool
+	PrimaryKey      *bool
+	Backfilled      *bool
+	StringPrecision *int32
 }
 
 // UpsertColumn - just a wrapper around UpdateColumn and AddColumn
@@ -124,6 +125,10 @@ func (c *Columns) UpsertColumn(colName string, arg UpsertColumnArg) {
 
 		if arg.Backfilled != nil {
 			col.backfilled = *arg.Backfilled
+		}
+
+		if arg.StringPrecision != nil {
+			col.KindDetails.OptionalStringPrecision = arg.StringPrecision
 		}
 
 		c.UpdateColumn(col)

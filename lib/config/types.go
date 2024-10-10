@@ -39,9 +39,9 @@ type Kafka struct {
 type SharedDestinationSettings struct {
 	// TruncateExceededValues - This will truncate exceeded values instead of replacing it with `__artie_exceeded_value`
 	TruncateExceededValues bool `yaml:"truncateExceededValues"`
-	// TODO: Update the yaml annotation once it's supported.
-	// ExpandStringPrecision - This will expand the string precision based on the values that come in, if the destination supports it.
-	ExpandStringPrecision bool `yaml:"_expandStringPrecision"`
+	// ExpandStringPrecision - This will expand the string precision if the incoming data has a higher precision than the destination table.
+	// This is only supported by Redshift at the moment.
+	ExpandStringPrecision bool `yaml:"expandStringPrecision"`
 }
 
 type Reporting struct {
