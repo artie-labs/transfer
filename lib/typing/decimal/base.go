@@ -39,7 +39,7 @@ func (d Details) toKind(maxPrecision int32, exceededKind string) string {
 		return exceededKind
 	}
 
-	return fmt.Sprintf("NUMERIC(%v, %v)", d.precision, d.scale)
+	return fmt.Sprintf("NUMERIC(%d, %d)", d.precision, d.scale)
 }
 
 func (d Details) toDecimalKind(maxPrecision int32, exceededKind string) string {
