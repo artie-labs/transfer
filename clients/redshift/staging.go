@@ -25,19 +25,15 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
 
-	var queries []string
 	for colName, newValue := range colToNewLengthMap {
 		// Generate queries and then update the [tableConfig] with the new string precision.
-		queries = append(queries, s.dialect().BuildIncreaseStringPrecisionQuery(parentTableID, colName, newValue))
+		if _, err = s.Exec(s.dialect().BuildIncreaseStringPrecisionQuery(parentTableID, colName, newValue)); err != nil {
+			return fmt.Errorf("failed to increase string precision for table %q: %w", parentTableID.FullyQualifiedName(), err)
+		}
+
 		tableConfig.Columns().UpsertColumn(colName, columns.UpsertColumnArg{
 			StringPrecision: typing.ToPtr(newValue),
 		})
-	}
-
-	for _, query := range queries {
-		if _, err = s.Exec(query); err != nil {
-			return fmt.Errorf("failed to increase string precision for table %q: %w", parentTableID.FullyQualifiedName(), err)
-		}
 	}
 
 	if createTempTable {
