@@ -33,11 +33,9 @@ func (SnowflakeDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) 
 	case typing.ETime.Kind:
 		switch kindDetails.ExtendedTimeDetails.Type {
 		case ext.TimestampTzKindType:
-			// We are not using `TIMESTAMP_NTZ` because Snowflake does not join on this data very well.
-			// It ends up trying to parse this data into a TIMESTAMP_TZ and messes with the join order.
-			// Specifically, if my location is in SF, it'll try to parse TIMESTAMP_NTZ into PST then into UTC.
-			// When it was already stored as UTC.
 			return "timestamp_tz"
+		case ext.TimestampNTZKindType:
+			return "timestamp_ntz"
 		case ext.DateKindType:
 			return "date"
 		case ext.TimeKindType:
@@ -99,8 +97,12 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.
 		return typing.Struct, nil
 	case "array":
 		return typing.Array, nil
-	case "datetime", "timestamp", "timestamp_ltz", "timestamp_ntz", "timestamp_tz":
+	case "timestamp", "timestamp_ltz", "timestamp_tz":
+		// TODO: "timestamp" is not a Snowflake data type.
+		// We should remove it later.
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType), nil
+	case "datetime", "timestamp_ntz":
+		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampNTZKindType), nil
 	case "time":
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType), nil
 	case "date":
