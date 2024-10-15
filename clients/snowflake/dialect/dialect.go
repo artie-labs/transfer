@@ -97,11 +97,9 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.
 		return typing.Struct, nil
 	case "array":
 		return typing.Array, nil
-	case "timestamp", "timestamp_ltz", "timestamp_tz":
-		// TODO: "timestamp" is not a Snowflake data type.
-		// We should remove it later.
+	case "timestamp_ltz", "timestamp_tz":
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType), nil
-	case "datetime", "timestamp_ntz":
+	case "timestamp", "datetime", "timestamp_ntz":
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampNTZKindType), nil
 	case "time":
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType), nil
