@@ -174,11 +174,23 @@ func TestSnowflakeDialect_KindForDataType(t *testing.T) {
 }
 
 func TestSnowflakeDialect_KindForDataType_DateTime(t *testing.T) {
-	expectedDateTimes := []string{"DATETIME", "TIMESTAMP", "TIMESTAMP_LTZ", "TIMESTAMP_NTZ(9)", "TIMESTAMP_TZ"}
-	for _, expectedDateTime := range expectedDateTimes {
-		kd, err := SnowflakeDialect{}.KindForDataType(expectedDateTime, "")
-		assert.NoError(t, err)
-		assert.Equal(t, ext.TimestampTz.Type, kd.ExtendedTimeDetails.Type, expectedDateTime)
+	{
+		// Timestamp with time zone
+		expectedDateTimes := []string{"TIMESTAMP", "TIMESTAMP_LTZ", "TIMESTAMP_TZ"}
+		for _, expectedDateTime := range expectedDateTimes {
+			kd, err := SnowflakeDialect{}.KindForDataType(expectedDateTime, "")
+			assert.NoError(t, err)
+			assert.Equal(t, ext.TimestampTz.Type, kd.ExtendedTimeDetails.Type, expectedDateTime)
+		}
+	}
+	{
+		// Timestamp without time zone
+		expectedDateTimes := []string{"DATETIME", "TIMESTAMP_NTZ(9)"}
+		for _, expectedDateTime := range expectedDateTimes {
+			kd, err := SnowflakeDialect{}.KindForDataType(expectedDateTime, "")
+			assert.NoError(t, err)
+			assert.Equal(t, ext.TimestampNTZ.Type, kd.ExtendedTimeDetails.Type, expectedDateTime)
+		}
 	}
 }
 

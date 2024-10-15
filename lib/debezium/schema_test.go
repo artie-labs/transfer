@@ -229,12 +229,19 @@ func TestField_ToKindDetails(t *testing.T) {
 		assert.Equal(t, typing.Invalid, kd)
 	}
 	{
-		// Timestamp
-		// Datetime (for now)
-		for _, dbzType := range []SupportedDebeziumType{Timestamp, TimestampKafkaConnect, MicroTimestamp, NanoTimestamp, ZonedTimestamp} {
+		// Timestamp with timezone
+		for _, dbzType := range []SupportedDebeziumType{ZonedTimestamp} {
 			kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
 			assert.NoError(t, err)
 			assert.Equal(t, typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType), kd)
+		}
+	}
+	{
+		// Timestamp without timezone
+		for _, dbzType := range []SupportedDebeziumType{Timestamp, TimestampKafkaConnect, MicroTimestamp, NanoTimestamp} {
+			kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampNTZKindType), kd)
 		}
 	}
 	{
