@@ -10,7 +10,7 @@ import (
 type Timestamp struct{}
 
 func (Timestamp) ToKindDetails() typing.KindDetails {
-	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)
+	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampNTZKindType)
 }
 
 func (Timestamp) Convert(value any) (any, error) {
@@ -20,13 +20,13 @@ func (Timestamp) Convert(value any) (any, error) {
 	}
 
 	// Represents the number of milliseconds since the epoch, and does not include timezone information.
-	return ext.NewExtendedTime(time.UnixMilli(castedValue).In(time.UTC), ext.TimestampTzKindType, ext.RFC3339Millisecond), nil
+	return ext.NewExtendedTime(time.UnixMilli(castedValue).In(time.UTC), ext.TimestampNTZKindType, ext.RFC3339MillisecondNoTZ), nil
 }
 
 type MicroTimestamp struct{}
 
 func (MicroTimestamp) ToKindDetails() typing.KindDetails {
-	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)
+	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampNTZKindType)
 }
 
 func (MicroTimestamp) Convert(value any) (any, error) {
@@ -36,13 +36,13 @@ func (MicroTimestamp) Convert(value any) (any, error) {
 	}
 
 	// Represents the number of microseconds since the epoch, and does not include timezone information.
-	return ext.NewExtendedTime(time.UnixMicro(castedValue).In(time.UTC), ext.TimestampTzKindType, ext.RFC3339Microsecond), nil
+	return ext.NewExtendedTime(time.UnixMicro(castedValue).In(time.UTC), ext.TimestampNTZKindType, ext.RFC3339MicrosecondNoTZ), nil
 }
 
 type NanoTimestamp struct{}
 
 func (NanoTimestamp) ToKindDetails() typing.KindDetails {
-	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)
+	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampNTZKindType)
 }
 
 func (NanoTimestamp) Convert(value any) (any, error) {
@@ -52,5 +52,5 @@ func (NanoTimestamp) Convert(value any) (any, error) {
 	}
 
 	// Represents the number of nanoseconds since the epoch, and does not include timezone information.
-	return ext.NewExtendedTime(time.UnixMicro(castedValue/1_000).In(time.UTC), ext.TimestampTzKindType, ext.RFC3339Nanosecond), nil
+	return ext.NewExtendedTime(time.UnixMicro(castedValue/1_000).In(time.UTC), ext.TimestampNTZKindType, ext.RFC3339NanosecondNoTZ), nil
 }

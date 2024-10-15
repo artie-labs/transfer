@@ -10,9 +10,10 @@ import (
 type ExtendedTimeKindType string
 
 const (
-	TimestampTzKindType ExtendedTimeKindType = "timestamp_tz"
-	DateKindType        ExtendedTimeKindType = "date"
-	TimeKindType        ExtendedTimeKindType = "time"
+	TimestampTzKindType  ExtendedTimeKindType = "timestamp_tz"
+	TimestampNTZKindType ExtendedTimeKindType = "timestamp_ntz"
+	DateKindType         ExtendedTimeKindType = "date"
+	TimeKindType         ExtendedTimeKindType = "time"
 )
 
 type NestedKind struct {
@@ -21,6 +22,11 @@ type NestedKind struct {
 }
 
 var (
+	TimestampNTZ = NestedKind{
+		Type:   TimestampNTZKindType,
+		Format: RFC3339NanosecondNoTZ,
+	}
+
 	TimestampTz = NestedKind{
 		Type:   TimestampTzKindType,
 		Format: time.RFC3339Nano,
@@ -53,6 +59,8 @@ func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat 
 		switch kindType {
 		case TimestampTzKindType:
 			originalFormat = TimestampTz.Format
+		case TimestampNTZKindType:
+			originalFormat = TimestampNTZ.Format
 		case DateKindType:
 			originalFormat = Date.Format
 		case TimeKindType:
