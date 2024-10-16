@@ -90,9 +90,14 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		for attempts := 0; attempts < backfillMaxRetries; attempts++ {
 			backfillErr = BackfillColumn(dwh, col, tableID)
 			if backfillErr == nil {
-				tableConfig.Columns().UpsertColumn(col.Name(), columns.UpsertColumnArg{
+				err = tableConfig.Columns().UpsertColumn(col.Name(), columns.UpsertColumnArg{
 					Backfilled: typing.ToPtr(true),
 				})
+
+				if err != nil {
+					return fmt.Errorf("failed to update column backfilled status: %w", err)
+				}
+
 				break
 			}
 

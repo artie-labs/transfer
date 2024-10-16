@@ -2,6 +2,7 @@ package columns
 
 import (
 	"errors"
+	"fmt"
 	"slices"
 	"strings"
 	"sync"
@@ -108,9 +109,9 @@ type UpsertColumnArg struct {
 
 // UpsertColumn - just a wrapper around UpdateColumn and AddColumn
 // If it doesn't find a column, it'll add one where the kind = Invalid.
-func (c *Columns) UpsertColumn(colName string, arg UpsertColumnArg) {
+func (c *Columns) UpsertColumn(colName string, arg UpsertColumnArg) error {
 	if colName == "" {
-		return
+		return fmt.Errorf("column name is empty")
 	}
 
 	if col, isOk := c.GetColumn(colName); isOk {
@@ -127,7 +128,7 @@ func (c *Columns) UpsertColumn(colName string, arg UpsertColumnArg) {
 		}
 
 		c.UpdateColumn(col)
-		return
+		return nil
 	}
 
 	col := Column{
@@ -148,6 +149,7 @@ func (c *Columns) UpsertColumn(colName string, arg UpsertColumnArg) {
 	}
 
 	c.AddColumn(col)
+	return nil
 }
 
 func (c *Columns) AddColumn(col Column) {
