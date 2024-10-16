@@ -152,7 +152,9 @@ func (s *SchemaEventPayload) GetColumns() (*columns.Columns, error) {
 
 func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc kafkalib.TopicConfig) (map[string]any, error) {
 	var retMap map[string]any
-	if len(s.Payload.afterMap) == 0 {
+
+	switch s.Operation() {
+	case "d":
 		// This is a delete event, so mark it as deleted.
 		// And we need to reconstruct the data bit since it will be empty.
 		// We _can_ rely on *before* since even without running replicate identity, it will still copy over
@@ -171,7 +173,7 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc kafkalib.TopicConf
 		for k, v := range pkMap {
 			retMap[k] = v
 		}
-	} else {
+	case "r", "u", "c":
 		retMap = s.Payload.afterMap
 		// TODO: Remove this code.
 		for key, value := range pkMap {
@@ -185,6 +187,8 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc kafkalib.TopicConf
 
 		retMap[constants.DeleteColumnMarker] = false
 		retMap[constants.OnlySetDeleteColumnMarker] = false
+	default:
+		return nil, fmt.Errorf("unknown operation: %q", s.Operation())
 	}
 
 	if tc.IncludeArtieUpdatedAt {
