@@ -128,27 +128,27 @@ func (c *Columns) UpsertColumn(colName string, arg UpsertColumnArg) error {
 		}
 
 		c.UpdateColumn(col)
-		return nil
+	} else {
+		_col := Column{
+			name:        colName,
+			KindDetails: typing.Invalid,
+		}
+
+		if arg.ToastCol != nil {
+			_col.ToastColumn = *arg.ToastCol
+		}
+
+		if arg.PrimaryKey != nil {
+			_col.primaryKey = *arg.PrimaryKey
+		}
+
+		if arg.Backfilled != nil {
+			_col.backfilled = *arg.Backfilled
+		}
+
+		c.AddColumn(_col)
 	}
 
-	col := Column{
-		name:        colName,
-		KindDetails: typing.Invalid,
-	}
-
-	if arg.ToastCol != nil {
-		col.ToastColumn = *arg.ToastCol
-	}
-
-	if arg.PrimaryKey != nil {
-		col.primaryKey = *arg.PrimaryKey
-	}
-
-	if arg.Backfilled != nil {
-		col.backfilled = *arg.Backfilled
-	}
-
-	c.AddColumn(col)
 	return nil
 }
 
