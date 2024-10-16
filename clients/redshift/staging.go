@@ -26,17 +26,17 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	for colName, newValue := range colToNewLengthMap {
-		// Generate queries and then update the [tableConfig] with the new string precision.
-		if _, err = s.Exec(s.dialect().BuildIncreaseStringPrecisionQuery(parentTableID, colName, newValue)); err != nil {
-			return fmt.Errorf("failed to increase string precision for table %q: %w", parentTableID.FullyQualifiedName(), err)
-		}
-
+		// Try to upsert columns first. If this fails, we won't need to update the destination table.
 		err = tableConfig.Columns().UpsertColumn(colName, columns.UpsertColumnArg{
 			StringPrecision: typing.ToPtr(newValue),
 		})
 
 		if err != nil {
 			return fmt.Errorf("failed to update table config with new string precision: %w", err)
+		}
+
+		if _, err = s.Exec(s.dialect().BuildIncreaseStringPrecisionQuery(parentTableID, colName, newValue)); err != nil {
+			return fmt.Errorf("failed to increase string precision for table %q: %w", parentTableID.FullyQualifiedName(), err)
 		}
 	}
 
