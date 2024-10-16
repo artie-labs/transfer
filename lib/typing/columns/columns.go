@@ -2,6 +2,7 @@ package columns
 
 import (
 	"errors"
+	"fmt"
 	"slices"
 	"strings"
 	"sync"
@@ -108,9 +109,9 @@ type UpsertColumnArg struct {
 
 // UpsertColumn - just a wrapper around UpdateColumn and AddColumn
 // If it doesn't find a column, it'll add one where the kind = Invalid.
-func (c *Columns) UpsertColumn(colName string, arg UpsertColumnArg) {
+func (c *Columns) UpsertColumn(colName string, arg UpsertColumnArg) error {
 	if colName == "" {
-		return
+		return fmt.Errorf("column name is empty")
 	}
 
 	if col, isOk := c.GetColumn(colName); isOk {
@@ -127,27 +128,28 @@ func (c *Columns) UpsertColumn(colName string, arg UpsertColumnArg) {
 		}
 
 		c.UpdateColumn(col)
-		return
+	} else {
+		_col := Column{
+			name:        colName,
+			KindDetails: typing.Invalid,
+		}
+
+		if arg.ToastCol != nil {
+			_col.ToastColumn = *arg.ToastCol
+		}
+
+		if arg.PrimaryKey != nil {
+			_col.primaryKey = *arg.PrimaryKey
+		}
+
+		if arg.Backfilled != nil {
+			_col.backfilled = *arg.Backfilled
+		}
+
+		c.AddColumn(_col)
 	}
 
-	col := Column{
-		name:        colName,
-		KindDetails: typing.Invalid,
-	}
-
-	if arg.ToastCol != nil {
-		col.ToastColumn = *arg.ToastCol
-	}
-
-	if arg.PrimaryKey != nil {
-		col.primaryKey = *arg.PrimaryKey
-	}
-
-	if arg.Backfilled != nil {
-		col.backfilled = *arg.Backfilled
-	}
-
-	c.AddColumn(col)
+	return nil
 }
 
 func (c *Columns) AddColumn(col Column) {

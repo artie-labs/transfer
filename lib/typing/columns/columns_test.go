@@ -194,36 +194,33 @@ func TestColumns_UpsertColumns(t *testing.T) {
 
 	// Now selectively update only a, b
 	for _, key := range []string{"a", "b"} {
-		cols.UpsertColumn(key, UpsertColumnArg{
+		assert.NoError(t, cols.UpsertColumn(key, UpsertColumnArg{
 			ToastCol: typing.ToPtr(true),
-		})
+		}))
 
 		// Now inspect.
 		col, _ := cols.GetColumn(key)
 		assert.True(t, col.ToastColumn)
 	}
-
-	cols.UpsertColumn("zzz", UpsertColumnArg{})
-	zzzCol, _ := cols.GetColumn("zzz")
-	assert.False(t, zzzCol.ToastColumn)
-	assert.False(t, zzzCol.primaryKey)
-	assert.Equal(t, zzzCol.KindDetails, typing.Invalid)
-
-	cols.UpsertColumn("aaa", UpsertColumnArg{
-		ToastCol:   typing.ToPtr(true),
-		PrimaryKey: typing.ToPtr(true),
-	})
-	aaaCol, _ := cols.GetColumn("aaa")
-	assert.True(t, aaaCol.ToastColumn)
-	assert.True(t, aaaCol.primaryKey)
-	assert.Equal(t, aaaCol.KindDetails, typing.Invalid)
-
-	length := len(cols.columns)
-	for i := 0; i < 500; i++ {
-		cols.UpsertColumn("", UpsertColumnArg{})
+	{
+		assert.NoError(t, cols.UpsertColumn("zzz", UpsertColumnArg{}))
+		zzzCol, _ := cols.GetColumn("zzz")
+		assert.False(t, zzzCol.ToastColumn)
+		assert.False(t, zzzCol.primaryKey)
+		assert.Equal(t, zzzCol.KindDetails, typing.Invalid)
 	}
+	{
+		assert.NoError(t, cols.UpsertColumn("aaa", UpsertColumnArg{
+			ToastCol:   typing.ToPtr(true),
+			PrimaryKey: typing.ToPtr(true),
+		}))
 
-	assert.Equal(t, length, len(cols.columns))
+		aaaCol, _ := cols.GetColumn("aaa")
+		assert.True(t, aaaCol.ToastColumn)
+		assert.True(t, aaaCol.primaryKey)
+		assert.Equal(t, aaaCol.KindDetails, typing.Invalid)
+	}
+	assert.ErrorContains(t, cols.UpsertColumn("", UpsertColumnArg{}), "column name is empty")
 }
 
 func TestColumns_Add_Duplicate(t *testing.T) {
