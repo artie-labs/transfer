@@ -1,6 +1,7 @@
 package ext
 
 import (
+	"cmp"
 	"encoding/json"
 	"time"
 )
@@ -86,9 +87,6 @@ func (e *ExtendedTime) GetNestedKind() NestedKind {
 }
 
 func (e *ExtendedTime) String(overrideFormat string) string {
-	if overrideFormat != "" {
-		return e.ts.Format(overrideFormat)
-	}
-
-	return e.ts.Format(e.nestedKind.Format)
+	format := cmp.Or(overrideFormat, e.nestedKind.Format)
+	return e.ts.Format(format)
 }
