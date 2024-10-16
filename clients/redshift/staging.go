@@ -31,9 +31,13 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 			return fmt.Errorf("failed to increase string precision for table %q: %w", parentTableID.FullyQualifiedName(), err)
 		}
 
-		tableConfig.Columns().UpsertColumn(colName, columns.UpsertColumnArg{
+		err = tableConfig.Columns().UpsertColumn(colName, columns.UpsertColumnArg{
 			StringPrecision: typing.ToPtr(newValue),
 		})
+
+		if err != nil {
+			return fmt.Errorf("failed to update table config with new string precision: %w", err)
+		}
 	}
 
 	if createTempTable {
