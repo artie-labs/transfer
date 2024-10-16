@@ -15,9 +15,31 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/s3lib"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, parentTableID sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
+	fp, colToNewLengthMap, err := s.loadTemporaryTable(tableData, tempTableID)
+	if err != nil {
+		return fmt.Errorf("failed to load temporary table: %w", err)
+	}
+
+	for colName, newValue := range colToNewLengthMap {
+		// Try to upsert columns first. If this fails, we won't need to update the destination table.
+		err = tableConfig.Columns().UpsertColumn(colName, columns.UpsertColumnArg{
+			StringPrecision: typing.ToPtr(newValue),
+		})
+
+		if err != nil {
+			return fmt.Errorf("failed to update table config with new string precision: %w", err)
+		}
+
+		if _, err = s.Exec(s.dialect().BuildIncreaseStringPrecisionQuery(parentTableID, colName, newValue)); err != nil {
+			return fmt.Errorf("failed to increase string precision for table %q: %w", parentTableID.FullyQualifiedName(), err)
+		}
+	}
+
 	if createTempTable {
 		tempAlterTableArgs := ddl.AlterTableArgs{
 			Dialect:        s.Dialect(),
@@ -29,14 +51,9 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 			Mode:           tableData.Mode(),
 		}
 
-		if err := tempAlterTableArgs.AlterTable(s, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
+		if err = tempAlterTableArgs.AlterTable(s, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
 			return fmt.Errorf("failed to create temp table: %w", err)
 		}
-	}
-
-	fp, err := s.loadTemporaryTable(tableData, tempTableID)
-	if err != nil {
-		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
 
 	defer func() {
@@ -54,7 +71,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to upload %s to s3: %w", fp, err)
+		return fmt.Errorf("failed to upload %q to s3: %w", fp, err)
 	}
 
 	// COPY table_name FROM '/path/to/local/file' DELIMITER '\t' NULL '\\N' FORMAT csv;
@@ -75,25 +92,24 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	return nil
 }
 
-func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID sql.TableIdentifier) (string, error) {
+func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID sql.TableIdentifier) (string, map[string]int32, error) {
 	filePath := fmt.Sprintf("/tmp/%s.csv.gz", newTableID.FullyQualifiedName())
 	file, err := os.Create(filePath)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	defer file.Close()
+	gzipWriter := gzip.NewWriter(file)
+	defer gzipWriter.Close()
 
-	gzipWriter := gzip.NewWriter(file) // Create a new gzip writer
-	defer gzipWriter.Close()           // Ensure to close the gzip writer after writing
-
-	writer := csv.NewWriter(gzipWriter) // Create a CSV writer on top of the gzip writer
+	writer := csv.NewWriter(gzipWriter)
 	writer.Comma = '\t'
-
-	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
+	_columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
+	columnToNewLengthMap := make(map[string]int32)
 	for _, value := range tableData.Rows() {
 		var row []string
-		for _, col := range columns {
+		for _, col := range _columns {
 			result, err := castColValStaging(
 				value[col.Name()],
 				col.KindDetails,
@@ -102,22 +118,35 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 			)
 
 			if err != nil {
-				return "", err
+				return "", nil, err
 			}
 
-			// TODO: Do something about result.NewLength
+			if result.NewLength > 0 {
+				_newLength, isOk := columnToNewLengthMap[col.Name()]
+				if !isOk || result.NewLength > _newLength {
+					// Update the new length if it's greater than the current one.
+					columnToNewLengthMap[col.Name()] = result.NewLength
+				}
+			}
 			row = append(row, result.Value)
 		}
 
 		if err = writer.Write(row); err != nil {
-			return "", fmt.Errorf("failed to write to csv: %w", err)
+			return "", nil, fmt.Errorf("failed to write to csv: %w", err)
 		}
 	}
 
 	writer.Flush()
 	if err = writer.Error(); err != nil {
-		return "", fmt.Errorf("failed to flush csv writer: %w", err)
+		return "", nil, fmt.Errorf("failed to flush csv writer: %w", err)
 	}
 
-	return filePath, nil
+	// This will update the staging columns with the new string precision.
+	for colName, newLength := range columnToNewLengthMap {
+		tableData.InMemoryColumns().UpsertColumn(colName, columns.UpsertColumnArg{
+			StringPrecision: typing.ToPtr(newLength),
+		})
+	}
+
+	return filePath, columnToNewLengthMap, nil
 }

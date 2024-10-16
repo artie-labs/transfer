@@ -339,3 +339,12 @@ func TestRedshiftDialect_BuildMergeQueries_CompositeKey(t *testing.T) {
 			parts[2])
 	}
 }
+
+func TestRedshiftDialect_BuildIncreaseStringPrecisionQuery(t *testing.T) {
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("{PUBLIC}.{TABLE}")
+	assert.Equal(t,
+		`ALTER TABLE {PUBLIC}.{TABLE} ALTER COLUMN "bar" TYPE VARCHAR(5)`,
+		RedshiftDialect{}.BuildIncreaseStringPrecisionQuery(fakeTableID, "bar", 5),
+	)
+}
