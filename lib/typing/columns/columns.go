@@ -129,6 +129,15 @@ func (c *Columns) UpsertColumn(colName string, arg UpsertColumnArg) error {
 		}
 
 		if arg.StringPrecision != nil {
+			var currentPrecision int32
+			if col.KindDetails.OptionalStringPrecision != nil {
+				currentPrecision = *col.KindDetails.OptionalStringPrecision
+			}
+
+			if currentPrecision > *arg.StringPrecision {
+				return fmt.Errorf("cannot decrease string precision from %d to %d", currentPrecision, *arg.StringPrecision)
+			}
+
 			col.KindDetails.OptionalStringPrecision = arg.StringPrecision
 		}
 
@@ -149,6 +158,10 @@ func (c *Columns) UpsertColumn(colName string, arg UpsertColumnArg) error {
 
 		if arg.Backfilled != nil {
 			_col.backfilled = *arg.Backfilled
+		}
+
+		if arg.StringPrecision != nil {
+			_col.KindDetails.OptionalStringPrecision = arg.StringPrecision
 		}
 
 		c.AddColumn(_col)

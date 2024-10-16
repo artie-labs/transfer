@@ -192,9 +192,9 @@ func TestColumns_UpsertColumns(t *testing.T) {
 	{
 		// Now update a and b to be toast columns
 		for _, key := range []string{"a", "b"} {
-			cols.UpsertColumn(key, UpsertColumnArg{
+			assert.NoError(t, cols.UpsertColumn(key, UpsertColumnArg{
 				ToastCol: typing.ToPtr(true),
-			})
+			}))
 
 			// Now inspect.
 			col, _ := cols.GetColumn(key)
@@ -202,19 +202,70 @@ func TestColumns_UpsertColumns(t *testing.T) {
 		}
 	}
 	{
-		// Play with string precision
-		cols.UpsertColumn("string_precision_a", UpsertColumnArg{})
+		// Increase string precision
+		{
+			// Valid - Current column does not have string precision set
+			assert.NoError(t, cols.UpsertColumn("string_precision_a", UpsertColumnArg{}))
 
-		colA, _ := cols.GetColumn("string_precision_a")
-		assert.Nil(t, colA.KindDetails.OptionalStringPrecision)
+			colA, _ := cols.GetColumn("string_precision_a")
+			assert.Nil(t, colA.KindDetails.OptionalStringPrecision)
 
-		cols.UpsertColumn("string_precision_a", UpsertColumnArg{StringPrecision: typing.ToPtr(int32(55))})
-		colA, _ = cols.GetColumn("string_precision_a")
-		assert.Equal(t, int32(55), *colA.KindDetails.OptionalStringPrecision)
+			assert.NoError(t,
+				cols.UpsertColumn("string_precision_a",
+					UpsertColumnArg{
+						StringPrecision: typing.ToPtr(int32(55)),
+					},
+				),
+			)
+			colA, _ = cols.GetColumn("string_precision_a")
+			assert.Equal(t, int32(55), *colA.KindDetails.OptionalStringPrecision)
+		}
+		{
+			// Valid - Current column does have string precision set (but it's less)
+			assert.NoError(t,
+				cols.UpsertColumn("string_precision_b",
+					UpsertColumnArg{
+						StringPrecision: typing.ToPtr(int32(5)),
+					},
+				),
+			)
+
+			colB, _ := cols.GetColumn("string_precision_b")
+			assert.Equal(t, int32(5), *colB.KindDetails.OptionalStringPrecision)
+			assert.NoError(t,
+				cols.UpsertColumn("string_precision_b",
+					UpsertColumnArg{
+						StringPrecision: typing.ToPtr(int32(100)),
+					},
+				),
+			)
+
+			colB, _ = cols.GetColumn("string_precision_b")
+			assert.Equal(t, int32(100), *colB.KindDetails.OptionalStringPrecision)
+		}
+		{
+			// Invalid - Cannot decrease string precision
+			assert.NoError(t,
+				cols.UpsertColumn("string_precision_b",
+					UpsertColumnArg{
+						StringPrecision: typing.ToPtr(int32(500)),
+					},
+				),
+			)
+
+			assert.ErrorContains(t,
+				cols.UpsertColumn("string_precision_b",
+					UpsertColumnArg{
+						StringPrecision: typing.ToPtr(int32(100)),
+					},
+				),
+				"cannot decrease string precision from 500 to 100",
+			)
+		}
 	}
 	{
 		// Create a new column zzz
-		cols.UpsertColumn("zzz", UpsertColumnArg{})
+		assert.NoError(t, cols.UpsertColumn("zzz", UpsertColumnArg{}))
 		zzzCol, _ := cols.GetColumn("zzz")
 		assert.False(t, zzzCol.ToastColumn)
 		assert.False(t, zzzCol.primaryKey)
@@ -222,10 +273,10 @@ func TestColumns_UpsertColumns(t *testing.T) {
 	}
 	{
 		// Create a new column aaa
-		cols.UpsertColumn("aaa", UpsertColumnArg{
+		assert.NoError(t, cols.UpsertColumn("aaa", UpsertColumnArg{
 			ToastCol:   typing.ToPtr(true),
 			PrimaryKey: typing.ToPtr(true),
-		})
+		}))
 		aaaCol, _ := cols.GetColumn("aaa")
 		assert.True(t, aaaCol.ToastColumn)
 		assert.True(t, aaaCol.primaryKey)
