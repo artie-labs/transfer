@@ -54,13 +54,17 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 	// Now iterate over pkMap and tag each column that is a primary key
 	if cols != nil {
 		for primaryKey := range pkMap {
-			cols.UpsertColumn(
+			err = cols.UpsertColumn(
 				// We need to escape the column name similar to have parity with event.GetColumns()
 				columns.EscapeName(primaryKey),
 				columns.UpsertColumnArg{
 					PrimaryKey: typing.ToPtr(true),
 				},
 			)
+
+			if err != nil {
+				return Event{}, fmt.Errorf("failed to upsert column: %w", err)
+			}
 		}
 	}
 
@@ -223,9 +227,13 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 		}
 
 		if toastedCol {
-			inMemoryColumns.UpsertColumn(newColName, columns.UpsertColumnArg{
+			err := inMemoryColumns.UpsertColumn(newColName, columns.UpsertColumnArg{
 				ToastCol: typing.ToPtr(true),
 			})
+
+			if err != nil {
+				return false, "", fmt.Errorf("failed to upsert column: %w", err)
+			}
 		} else {
 			retrievedColumn, isOk := inMemoryColumns.GetColumn(newColName)
 			if !isOk {
