@@ -44,25 +44,25 @@ func TestColumnToTableFieldSchema(t *testing.T) {
 	}
 	{
 		// ETime - Time:
-		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)))
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType)))
 		assert.NoError(t, err)
 		assert.Equal(t, storagepb.TableFieldSchema_TIME, fieldSchema.Type)
 	}
 	{
 		// ETime - Date:
-		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType)))
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType)))
 		assert.NoError(t, err)
 		assert.Equal(t, storagepb.TableFieldSchema_DATE, fieldSchema.Type)
 	}
 	{
 		// ETime - TimestampTz:
-		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)))
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)))
 		assert.NoError(t, err)
 		assert.Equal(t, storagepb.TableFieldSchema_TIMESTAMP, fieldSchema.Type)
 	}
 	{
 		// ETime - Invalid:
-		_, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.NewKindDetailsFromTemplate(typing.ETime, "")))
+		_, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.NewTimeDetailsFromTemplate(typing.ETime, "")))
 		assert.ErrorContains(t, err, "unsupported extended time details type:")
 	}
 	{
@@ -112,9 +112,9 @@ func TestRowToMessage(t *testing.T) {
 		columns.NewColumn("c_numeric", typing.EDecimal),
 		columns.NewColumn("c_string", typing.String),
 		columns.NewColumn("c_string_decimal", typing.String),
-		columns.NewColumn("c_time", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)),
-		columns.NewColumn("c_date", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType)),
-		columns.NewColumn("c_datetime", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)),
+		columns.NewColumn("c_time", typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType)),
+		columns.NewColumn("c_date", typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType)),
+		columns.NewColumn("c_datetime", typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)),
 		columns.NewColumn("c_struct", typing.Struct),
 		columns.NewColumn("c_array", typing.Array),
 	}

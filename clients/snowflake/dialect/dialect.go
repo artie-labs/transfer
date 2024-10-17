@@ -100,11 +100,11 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.
 	case "array":
 		return typing.Array, nil
 	case "datetime", "timestamp", "timestamp_ltz", "timestamp_ntz", "timestamp_tz":
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType), nil
+		return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
 	case "time":
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType), nil
+		return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType, "")
 	case "date":
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType), nil
+		return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType, "")
 	default:
 		return typing.Invalid, nil
 	}

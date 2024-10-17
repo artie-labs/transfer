@@ -104,11 +104,11 @@ func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindD
 	case "array":
 		return typing.Array, nil
 	case "datetime", "timestamp":
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType), nil
+		return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
 	case "time":
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType), nil
+		return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType, "")
 	case "date":
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType), nil
+		return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType, "")
 	default:
 		return typing.Invalid, nil
 	}

@@ -184,9 +184,9 @@ func TestSnowflakeDialect_KindForDataType_DateTime(t *testing.T) {
 
 func TestSnowflakeDialect_KindForDataType_NoDataLoss(t *testing.T) {
 	kindDetails := []typing.KindDetails{
-		typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType),
-		typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
-		typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType),
+		typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType),
+		typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType),
+		typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType),
 		typing.String,
 		typing.Boolean,
 		typing.Struct,

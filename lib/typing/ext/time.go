@@ -1,7 +1,9 @@
 package ext
 
 import (
+	"cmp"
 	"encoding/json"
+	"fmt"
 	"time"
 )
 
@@ -14,6 +16,22 @@ const (
 	DateKindType        ExtendedTimeKindType = "date"
 	TimeKindType        ExtendedTimeKindType = "time"
 )
+
+func NewExtendedTimeDetails(extendedType ExtendedTimeKindType, format string) (NestedKind, error) {
+	var defaultFormat string
+	switch extendedType {
+	case TimestampTzKindType:
+		defaultFormat = TimestampTz.Format
+	case DateKindType:
+		defaultFormat = Date.Format
+	case TimeKindType:
+		defaultFormat = Time.Format
+	default:
+		return NestedKind{}, fmt.Errorf("unsupported extended time kind type: %q", extendedType)
+	}
+
+	return NestedKind{Type: extendedType, Format: cmp.Or(format, defaultFormat)}, nil
+}
 
 type NestedKind struct {
 	Type   ExtendedTimeKindType

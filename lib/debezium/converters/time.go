@@ -12,7 +12,7 @@ import (
 type Time struct{}
 
 func (Time) ToKindDetails() typing.KindDetails {
-	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
+	return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType)
 }
 
 func (Time) Convert(val any) (any, error) {
@@ -28,7 +28,7 @@ func (Time) Convert(val any) (any, error) {
 type NanoTime struct{}
 
 func (NanoTime) ToKindDetails() typing.KindDetails {
-	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
+	return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType)
 }
 
 func (NanoTime) Convert(value any) (any, error) {
@@ -44,7 +44,7 @@ func (NanoTime) Convert(value any) (any, error) {
 type MicroTime struct{}
 
 func (MicroTime) ToKindDetails() typing.KindDetails {
-	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
+	return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType)
 }
 
 func (MicroTime) Convert(value any) (any, error) {
@@ -73,7 +73,7 @@ var SupportedDateTimeWithTimezoneFormats = []string{
 type ZonedTimestamp struct{}
 
 func (ZonedTimestamp) ToKindDetails() typing.KindDetails {
-	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)
+	return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)
 }
 
 func (ZonedTimestamp) Convert(value any) (any, error) {
@@ -115,7 +115,7 @@ var SupportedTimeWithTimezoneFormats = []string{
 type TimeWithTimezone struct{}
 
 func (TimeWithTimezone) ToKindDetails() typing.KindDetails {
-	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType)
+	return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType)
 }
 
 func (TimeWithTimezone) Convert(value any) (any, error) {

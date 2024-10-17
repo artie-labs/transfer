@@ -240,7 +240,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 	snowflakeColToKindDetailsMap := map[string]typing.KindDetails{
 		"id":                                typing.Integer,
-		"created_at":                        typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType),
+		"created_at":                        typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType),
 		"name":                              typing.String,
 		constants.DeleteColumnMarker:        typing.Boolean,
 		constants.OnlySetDeleteColumnMarker: typing.Boolean,

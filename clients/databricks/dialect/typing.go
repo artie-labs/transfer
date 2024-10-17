@@ -63,7 +63,7 @@ func (DatabricksDialect) KindForDataType(rawType string, _ string) (typing.KindD
 	case "boolean":
 		return typing.Boolean, nil
 	case "date":
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType), nil
+		return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType, "")
 	case "double", "float":
 		return typing.Float, nil
 	case "int":
@@ -71,9 +71,9 @@ func (DatabricksDialect) KindForDataType(rawType string, _ string) (typing.KindD
 	case "smallint", "tinyint":
 		return typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.SmallIntegerKind)}, nil
 	case "timestamp":
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType), nil
+		return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
 	case "timestamp_ntz":
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType), nil
+		return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
 	}
 
 	return typing.Invalid, fmt.Errorf("unsupported data type: %q", rawType)
