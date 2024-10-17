@@ -23,13 +23,16 @@ import (
 func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 	tableID := NewTableIdentifier("coffee_shop", "public", "orders")
 
+	_timestampTZ, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
+	assert.NoError(s.T(), err)
+
 	var cols columns.Columns
 	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":          typing.Integer,
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
 		"name":        typing.String,
-		"created_at":  typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType),
+		"created_at":  _timestampTZ,
 	} {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
@@ -52,13 +55,17 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 
 func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 	tableID := NewTableIdentifier("coffee_shop", "orders", "public")
+
+	_timestampTZ, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
+	assert.NoError(s.T(), err)
+
 	var cols columns.Columns
 	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":          typing.Integer,
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
 		"name":        typing.String,
-		"created_at":  typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType),
+		"created_at":  _timestampTZ,
 	} {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
@@ -91,13 +98,16 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 }
 
 func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
+	_timestampTZ, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
+	assert.NoError(s.T(), err)
+
 	var cols columns.Columns
 	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":          typing.Integer,
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
 		"name":        typing.String,
-		"created_at":  typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType),
+		"created_at":  _timestampTZ,
 	} {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}

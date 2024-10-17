@@ -72,7 +72,7 @@ func TestColumnToTableFieldSchema(t *testing.T) {
 	{
 		// ETime - Invalid:
 		_, err := typing.NewTimeDetailsFromTemplate(typing.ETime, "", "")
-		assert.ErrorContains(t, err, "unsupported extended time details type:")
+		assert.ErrorContains(t, err, "unsupported extended time kind type:")
 	}
 	{
 		// Struct:

@@ -231,18 +231,37 @@ func TestField_ToKindDetails(t *testing.T) {
 	{
 		// Timestamp
 		// Datetime (for now)
-		for _, dbzType := range []SupportedDebeziumType{Timestamp, TimestampKafkaConnect, MicroTimestamp, NanoTimestamp, ZonedTimestamp} {
-			kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
-			assert.NoError(t, err)
-			assert.Equal(t, typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType), kd)
+		{
+			for _, dbzType := range []SupportedDebeziumType{MicroTimestamp, NanoTimestamp, ZonedTimestamp} {
+				kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
+				assert.NoError(t, err)
+
+				_timestampTZ, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
+				assert.NoError(t, err)
+				assert.Equal(t, _timestampTZ, kd)
+			}
 		}
+		{
+			for _, dbzType := range []SupportedDebeziumType{Timestamp, TimestampKafkaConnect} {
+				kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
+				assert.NoError(t, err)
+
+				_timestampTZ, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
+				assert.NoError(t, err)
+				assert.Equal(t, _timestampTZ, kd)
+			}
+		}
+
 	}
 	{
 		// Dates
 		for _, dbzType := range []SupportedDebeziumType{Date, DateKafkaConnect} {
 			kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
 			assert.NoError(t, err)
-			assert.Equal(t, typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType), kd)
+
+			_date, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType, "")
+			assert.NoError(t, err)
+			assert.Equal(t, _date, kd)
 		}
 	}
 	{
@@ -250,7 +269,10 @@ func TestField_ToKindDetails(t *testing.T) {
 		for _, dbzType := range []SupportedDebeziumType{Time, TimeKafkaConnect, MicroTime, NanoTime, TimeWithTimezone} {
 			kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
 			assert.NoError(t, err)
-			assert.Equal(t, typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType), kd)
+
+			_time, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType, "")
+			assert.NoError(t, err)
+			assert.Equal(t, _time, kd)
 		}
 	}
 	{

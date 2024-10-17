@@ -9,7 +9,13 @@ import (
 )
 
 func TestTimestamp_Converter(t *testing.T) {
-	assert.Equal(t, typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType), Timestamp{}.ToKindDetails())
+	_timestampTZ, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
+	assert.NoError(t, err)
+
+	kd, err := Timestamp{}.ToKindDetails()
+	assert.NoError(t, err)
+
+	assert.Equal(t, _timestampTZ, kd)
 	{
 		// Invalid conversion
 		_, err := Timestamp{}.Convert("invalid")
@@ -30,7 +36,13 @@ func TestTimestamp_Converter(t *testing.T) {
 }
 
 func TestMicroTimestamp_Converter(t *testing.T) {
-	assert.Equal(t, typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType), MicroTimestamp{}.ToKindDetails())
+	_timestampTZ, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
+	assert.NoError(t, err)
+
+	kd, err := MicroTimestamp{}.ToKindDetails()
+	assert.NoError(t, err)
+
+	assert.Equal(t, _timestampTZ, kd)
 	{
 		// Invalid conversion
 		_, err := MicroTimestamp{}.Convert("invalid")
@@ -51,7 +63,13 @@ func TestMicroTimestamp_Converter(t *testing.T) {
 }
 
 func TestNanoTimestamp_Converter(t *testing.T) {
-	assert.Equal(t, typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType), NanoTimestamp{}.ToKindDetails())
+	_timestampTZ, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
+	assert.NoError(t, err)
+
+	kd, err := NanoTimestamp{}.ToKindDetails()
+	assert.NoError(t, err)
+
+	assert.Equal(t, _timestampTZ, kd)
 	{
 		// Invalid conversion
 		_, err := NanoTimestamp{}.Convert("invalid")

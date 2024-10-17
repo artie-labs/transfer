@@ -50,8 +50,11 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 }
 
 func (d *DDLTestSuite) TestAlterIdempotency() {
+	_timestampTZ, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
+	assert.NoError(d.T(), err)
+
 	cols := []columns.Column{
-		columns.NewColumn("created_at", typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)),
+		columns.NewColumn("created_at", _timestampTZ),
 		columns.NewColumn("id", typing.Integer),
 		columns.NewColumn("order_name", typing.String),
 		columns.NewColumn("start", typing.String),
@@ -80,8 +83,11 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 
 func (d *DDLTestSuite) TestAlterTableAdd() {
 	// Test adding a bunch of columns
+	_timestampTZ, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
+	assert.NoError(d.T(), err)
+
 	cols := []columns.Column{
-		columns.NewColumn("created_at", typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)),
+		columns.NewColumn("created_at", _timestampTZ),
 		columns.NewColumn("id", typing.Integer),
 		columns.NewColumn("order_name", typing.String),
 		columns.NewColumn("start", typing.String),
@@ -122,8 +128,11 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 
 func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	// Test adding a bunch of columns
+	_timestampTZ, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
+	assert.NoError(d.T(), err)
+
 	cols := []columns.Column{
-		columns.NewColumn("created_at", typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)),
+		columns.NewColumn("created_at", _timestampTZ),
 		columns.NewColumn("id", typing.Integer),
 		columns.NewColumn("name", typing.String),
 		columns.NewColumn("start", typing.String),
@@ -179,8 +188,11 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 
 func (d *DDLTestSuite) TestAlterTableDelete() {
 	// Test adding a bunch of columns
+	_timestampTZ, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
+	assert.NoError(d.T(), err)
+
 	cols := []columns.Column{
-		columns.NewColumn("created_at", typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)),
+		columns.NewColumn("created_at", _timestampTZ),
 		columns.NewColumn("id", typing.Integer),
 		columns.NewColumn("name", typing.String),
 		columns.NewColumn("col_to_delete", typing.String),

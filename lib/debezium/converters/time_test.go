@@ -4,11 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/typing"
-
-	"github.com/artie-labs/transfer/lib/typing/ext"
-
 	"github.com/stretchr/testify/assert"
+
+	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func TestZonedTimestamp_Convert(t *testing.T) {
@@ -126,7 +125,13 @@ func TestTime_Convert(t *testing.T) {
 }
 
 func TestNanoTime_Converter(t *testing.T) {
-	assert.Equal(t, typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType), NanoTime{}.ToKindDetails())
+	_time, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType, "")
+	assert.NoError(t, err)
+
+	kd, err := NanoTime{}.ToKindDetails()
+	assert.NoError(t, err)
+
+	assert.Equal(t, _time, kd)
 	{
 		// Invalid data
 		_, err := NanoTime{}.Convert("123")
@@ -141,7 +146,13 @@ func TestNanoTime_Converter(t *testing.T) {
 }
 
 func TestMicroTime_Converter(t *testing.T) {
-	assert.Equal(t, typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType), MicroTime{}.ToKindDetails())
+	_time, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType, "")
+	assert.NoError(t, err)
+
+	kd, err := MicroTime{}.ToKindDetails()
+	assert.NoError(t, err)
+
+	assert.Equal(t, _time, kd)
 	{
 		// Invalid data
 		_, err := MicroTime{}.Convert("123")
