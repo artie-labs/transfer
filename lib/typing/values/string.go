@@ -40,7 +40,6 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 		if colKind.ExtendedTimeDetails.Type == ext.TimeKindType {
 			return extTime.String(ext.PostgresTimeFormatNoTZ), nil
 		}
-
 		return extTime.String(colKind.ExtendedTimeDetails.Format), nil
 	case typing.String.Kind:
 		isArray := reflect.ValueOf(colVal).Kind() == reflect.Slice

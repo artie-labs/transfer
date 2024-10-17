@@ -44,12 +44,17 @@ var SupportedTimeFormats = []string{
 	AdditionalTimeFormat,
 }
 
+const TimezoneOffsetFormat = "Z07:00"
+
 // RFC3339 variants
 const (
-	RFC3339MillisecondUTC = "2006-01-02T15:04:05.000Z"
-	RFC3339MicrosecondUTC = "2006-01-02T15:04:05.000000Z"
-	RFC3339NanosecondUTC  = "2006-01-02T15:04:05.000000000Z"
-	RFC3339Millisecond    = "2006-01-02T15:04:05.000Z07:00"
-	RFC3339Microsecond    = "2006-01-02T15:04:05.000000Z07:00"
-	RFC3339Nanosecond     = "2006-01-02T15:04:05.000000000Z07:00"
+	RFC3339MillisecondUTC  = "2006-01-02T15:04:05.000Z"
+	RFC3339MicrosecondUTC  = "2006-01-02T15:04:05.000000Z"
+	RFC3339NanosecondUTC   = "2006-01-02T15:04:05.000000000Z"
+	RFC3339Millisecond     = "2006-01-02T15:04:05.000" + TimezoneOffsetFormat
+	RFC3339MillisecondNoTZ = "2006-01-02T15:04:05.000"
+	RFC3339Microsecond     = "2006-01-02T15:04:05.000000" + TimezoneOffsetFormat
+	RFC3339MicrosecondNoTZ = "2006-01-02T15:04:05.000000"
+	RFC3339Nanosecond      = "2006-01-02T15:04:05.000000000" + TimezoneOffsetFormat
+	RFC3339NanosecondNoTZ  = "2006-01-02T15:04:05.000000000"
 )

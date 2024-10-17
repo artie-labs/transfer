@@ -10,6 +10,33 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestTableData_UpdateInMemoryColumnsFromDestination_Tz(t *testing.T) {
+	{
+		// In memory and destination columns are both timestamp_tz
+		tableData := &TableData{inMemoryColumns: &columns.Columns{}}
+		tableData.AddInMemoryCol(columns.NewColumn("foo", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)))
+
+		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("foo", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType))))
+		updatedColumn, isOk := tableData.inMemoryColumns.GetColumn("foo")
+		assert.True(t, isOk)
+		assert.Equal(t, ext.TimestampTzKindType, updatedColumn.KindDetails.ExtendedTimeDetails.Type)
+	}
+	{
+		// In memory is timestamp_ntz and destination is timestamp_tz
+		tableData := &TableData{inMemoryColumns: &columns.Columns{}}
+		kd := typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampNTZKindType)
+		kd.ExtendedTimeDetails.Format = ext.RFC3339MillisecondNoTZ
+		tableData.AddInMemoryCol(columns.NewColumn("foo", kd))
+
+		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("foo", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType))))
+		updatedColumn, isOk := tableData.inMemoryColumns.GetColumn("foo")
+		assert.True(t, isOk)
+		assert.Equal(t, ext.TimestampTzKindType, updatedColumn.KindDetails.ExtendedTimeDetails.Type)
+		assert.Equal(t, ext.RFC3339Millisecond, updatedColumn.KindDetails.ExtendedTimeDetails.Format)
+	}
+
+}
+
 func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 	const strCol = "string"
 	tableDataCols := &columns.Columns{}

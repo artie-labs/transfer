@@ -9,48 +9,60 @@ import (
 
 type Timestamp struct{}
 
-func (Timestamp) ToKindDetails() typing.KindDetails {
-	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)
+func (Timestamp) layout() string {
+	return ext.RFC3339MillisecondNoTZ
 }
 
-func (Timestamp) Convert(value any) (any, error) {
+func (t Timestamp) ToKindDetails() typing.KindDetails {
+	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, t.layout())
+}
+
+func (t Timestamp) Convert(value any) (any, error) {
 	castedValue, err := typing.AssertType[int64](value)
 	if err != nil {
 		return nil, err
 	}
 
 	// Represents the number of milliseconds since the epoch, and does not include timezone information.
-	return ext.NewExtendedTime(time.UnixMilli(castedValue).In(time.UTC), ext.TimestampTzKindType, ext.RFC3339Millisecond), nil
+	return ext.NewExtendedTime(time.UnixMilli(castedValue).In(time.UTC), ext.TimestampNTZKindType, t.layout()), nil
 }
 
 type MicroTimestamp struct{}
 
-func (MicroTimestamp) ToKindDetails() typing.KindDetails {
-	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)
+func (MicroTimestamp) layout() string {
+	return ext.RFC3339MicrosecondNoTZ
 }
 
-func (MicroTimestamp) Convert(value any) (any, error) {
+func (mt MicroTimestamp) ToKindDetails() typing.KindDetails {
+	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, mt.layout())
+}
+
+func (mt MicroTimestamp) Convert(value any) (any, error) {
 	castedValue, err := typing.AssertType[int64](value)
 	if err != nil {
 		return nil, err
 	}
 
 	// Represents the number of microseconds since the epoch, and does not include timezone information.
-	return ext.NewExtendedTime(time.UnixMicro(castedValue).In(time.UTC), ext.TimestampTzKindType, ext.RFC3339Microsecond), nil
+	return ext.NewExtendedTime(time.UnixMicro(castedValue).In(time.UTC), ext.TimestampNTZKindType, mt.layout()), nil
 }
 
 type NanoTimestamp struct{}
 
-func (NanoTimestamp) ToKindDetails() typing.KindDetails {
-	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)
+func (nt NanoTimestamp) ToKindDetails() typing.KindDetails {
+	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, nt.layout())
 }
 
-func (NanoTimestamp) Convert(value any) (any, error) {
+func (NanoTimestamp) layout() string {
+	return ext.RFC3339NanosecondNoTZ
+}
+
+func (nt NanoTimestamp) Convert(value any) (any, error) {
 	castedValue, err := typing.AssertType[int64](value)
 	if err != nil {
 		return nil, err
 	}
 
 	// Represents the number of nanoseconds since the epoch, and does not include timezone information.
-	return ext.NewExtendedTime(time.UnixMicro(castedValue/1_000).In(time.UTC), ext.TimestampTzKindType, ext.RFC3339Nanosecond), nil
+	return ext.NewExtendedTime(time.UnixMicro(castedValue/1_000).In(time.UTC), ext.TimestampNTZKindType, nt.layout()), nil
 }

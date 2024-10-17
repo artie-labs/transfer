@@ -293,8 +293,16 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) erro
 					inMemoryCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{}
 				}
 
+				// If the column in the destination is a timestamp_tz and the in-memory column is a timestamp_ntz, we should update the layout to contain timezone locale.
+				if foundColumn.KindDetails.ExtendedTimeDetails.Type == ext.TimestampTzKindType && inMemoryCol.KindDetails.ExtendedTimeDetails.Type == ext.TimestampNTZKindType {
+					if inMemoryCol.KindDetails.ExtendedTimeDetails.Format != "" {
+						inMemoryCol.KindDetails.ExtendedTimeDetails.Format += ext.TimezoneOffsetFormat
+					}
+				}
+
 				// Just copy over the type since the format wouldn't be present in the destination
 				inMemoryCol.KindDetails.ExtendedTimeDetails.Type = foundColumn.KindDetails.ExtendedTimeDetails.Type
+
 			}
 
 			// Copy over the decimal details

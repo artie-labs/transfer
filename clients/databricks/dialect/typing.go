@@ -27,8 +27,11 @@ func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool)
 	case typing.ETime.Kind:
 		switch kindDetails.ExtendedTimeDetails.Type {
 		case ext.TimestampTzKindType:
-			// Using datetime2 because it's the recommendation, and it provides more precision: https://stackoverflow.com/a/1884088
 			return "TIMESTAMP"
+		case ext.TimestampNTZKindType:
+			// This is currently in public preview, to use this, the customer will need to enable [timestampNtz] in their delta tables.
+			// Ref: https://docs.databricks.com/en/sql/language-manual/data-types/timestamp-ntz-type.html
+			return "TIMESTAMP_NTZ"
 		case ext.DateKindType:
 			return "DATE"
 		case ext.TimeKindType:
@@ -73,7 +76,7 @@ func (DatabricksDialect) KindForDataType(rawType string, _ string) (typing.KindD
 	case "timestamp":
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType), nil
 	case "timestamp_ntz":
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType), nil
+		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampNTZKindType), nil
 	}
 
 	return typing.Invalid, fmt.Errorf("unsupported data type: %q", rawType)

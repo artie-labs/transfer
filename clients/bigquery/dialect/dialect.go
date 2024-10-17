@@ -53,6 +53,8 @@ func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) s
 			// https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#datetime_type
 			// We should be using TIMESTAMP since it's an absolute point in time.
 			return "timestamp"
+		case ext.TimestampNTZKindType:
+			return "datetime"
 		case ext.DateKindType:
 			return "date"
 		case ext.TimeKindType:
@@ -103,8 +105,10 @@ func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindD
 		return typing.Struct, nil
 	case "array":
 		return typing.Array, nil
-	case "datetime", "timestamp":
+	case "timestamp":
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType), nil
+	case "datetime":
+		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampNTZKindType), nil
 	case "time":
 		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType), nil
 	case "date":
