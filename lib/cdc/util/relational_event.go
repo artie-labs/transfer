@@ -108,6 +108,8 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc kafkalib.TopicConf
 		}
 		retMap[constants.DeleteColumnMarker] = false
 		retMap[constants.OnlySetDeleteColumnMarker] = false
+	default:
+		return nil, fmt.Errorf("unknown operation %q", s.Operation())
 	}
 
 	if tc.IncludeArtieUpdatedAt {
