@@ -24,8 +24,8 @@ func (JSON) Convert(value any) (any, error) {
 	return jsonutil.SanitizePayload(valueString)
 }
 
-func (JSON) ToKindDetails() typing.KindDetails {
-	return typing.Struct
+func (JSON) ToKindDetails() (typing.KindDetails, error) {
+	return typing.Struct, nil
 }
 
 type Int64Passthrough struct{}

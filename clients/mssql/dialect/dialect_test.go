@@ -49,6 +49,18 @@ func TestMSSQLDialect_DataTypeForKind(t *testing.T) {
 func TestMSSQLDialect_KindForDataType(t *testing.T) {
 	dialect := MSSQLDialect{}
 
+	_date, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType, "")
+	assert.NoError(t, err)
+
+	_time, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType, "")
+	assert.NoError(t, err)
+
+	_datetime, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
+	assert.NoError(t, err)
+
+	_datetime2, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
+	assert.NoError(t, err)
+
 	colToExpectedKind := map[string]typing.KindDetails{
 		"char":      typing.String,
 		"varchar":   typing.String,
@@ -62,10 +74,10 @@ func TestMSSQLDialect_KindForDataType(t *testing.T) {
 		"float":     typing.Float,
 		"real":      typing.Float,
 		"bit":       typing.Boolean,
-		"date":      typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType),
-		"time":      typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType),
-		"datetime":  typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType),
-		"datetime2": typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType),
+		"date":      _date,
+		"time":      _time,
+		"datetime":  _datetime,
+		"datetime2": _datetime2,
 	}
 
 	for col, expectedKind := range colToExpectedKind {

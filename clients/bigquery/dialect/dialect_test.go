@@ -65,6 +65,18 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 		}
 	}
 
+	_datetime, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
+	assert.NoError(t, err)
+
+	_timestamp, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
+	assert.NoError(t, err)
+
+	_time, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType, "")
+	assert.NoError(t, err)
+
+	_date, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType, "")
+	assert.NoError(t, err)
+
 	bqColToExpectedKind := map[string]typing.KindDetails{
 		// Number
 		"numeric":           typing.EDecimal,
@@ -92,10 +104,10 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 		"record":             typing.Struct,
 		"json":               typing.Struct,
 		// Datetime
-		"datetime":  typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType),
-		"timestamp": typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType),
-		"time":      typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType),
-		"date":      typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType),
+		"datetime":  _datetime,
+		"timestamp": _timestamp,
+		"time":      _time,
+		"date":      _date,
 		//Invalid
 		"foo":    typing.Invalid,
 		"foofoo": typing.Invalid,
@@ -129,10 +141,19 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 }
 
 func TestBigQueryDialect_KindForDataType_NoDataLoss(t *testing.T) {
+	_timestampTZ, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
+	assert.NoError(t, err)
+
+	_time, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType, "")
+	assert.NoError(t, err)
+
+	_date, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType, "")
+	assert.NoError(t, err)
+
 	kindDetails := []typing.KindDetails{
-		typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType),
-		typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType),
-		typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType),
+		_timestampTZ,
+		_time,
+		_date,
 		typing.String,
 		typing.Boolean,
 		typing.Struct,

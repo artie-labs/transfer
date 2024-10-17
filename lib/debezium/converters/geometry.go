@@ -71,9 +71,9 @@ func (GeometryPoint) Convert(value any) (any, error) {
 
 type Geometry struct{}
 
-func (Geometry) ToKindDetails() typing.KindDetails {
+func (Geometry) ToKindDetails() (typing.KindDetails, error) {
 	// We will return this in GeoJSON format.
-	return typing.Struct
+	return typing.Struct, nil
 }
 
 func (Geometry) Convert(value any) (any, error) {
