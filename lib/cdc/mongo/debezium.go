@@ -192,11 +192,11 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc kafkalib.TopicConf
 	}
 
 	if tc.IncludeArtieUpdatedAt {
-		retMap[constants.UpdateColumnMarker] = ext.NewExtendedTime(time.Now().UTC(), ext.TimestampTzKindType, ext.ISO8601)
+		retMap[constants.UpdateColumnMarker] = ext.NewExtendedTime(time.Now().UTC(), ext.TimestampTZKindType, ext.ISO8601)
 	}
 
 	if tc.IncludeDatabaseUpdatedAt {
-		retMap[constants.DatabaseUpdatedColumnMarker] = ext.NewExtendedTime(s.GetExecutionTime(), ext.TimestampTzKindType, ext.ISO8601)
+		retMap[constants.DatabaseUpdatedColumnMarker] = ext.NewExtendedTime(s.GetExecutionTime(), ext.TimestampTZKindType, ext.ISO8601)
 	}
 
 	return retMap, nil

@@ -11,7 +11,7 @@ import (
 type Date struct{}
 
 func (Date) ToKindDetails() typing.KindDetails {
-	return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType)
+	return typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, "")
 }
 
 func (Date) Convert(value any) (any, error) {

@@ -180,7 +180,7 @@ func TestSnowflakeDialect_KindForDataType_DateTime(t *testing.T) {
 		for _, expectedDateTime := range expectedDateTimes {
 			kd, err := SnowflakeDialect{}.KindForDataType(expectedDateTime, "")
 			assert.NoError(t, err)
-			assert.Equal(t, ext.TimestampTz.Type, kd.ExtendedTimeDetails.Type, expectedDateTime)
+			assert.Equal(t, ext.TimestampTZ.Type, kd.ExtendedTimeDetails.Type, expectedDateTime)
 		}
 	}
 	{
@@ -196,9 +196,9 @@ func TestSnowflakeDialect_KindForDataType_DateTime(t *testing.T) {
 
 func TestSnowflakeDialect_KindForDataType_NoDataLoss(t *testing.T) {
 	kindDetails := []typing.KindDetails{
-		typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType),
-		typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType),
-		typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType),
+		typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
+		typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""),
+		typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, ""),
 		typing.String,
 		typing.Boolean,
 		typing.Struct,

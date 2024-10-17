@@ -44,7 +44,7 @@ func columnToTableFieldSchema(column columns.Column) (*storagepb.TableFieldSchem
 			fieldType = storagepb.TableFieldSchema_TIME
 		case ext.DateKindType:
 			fieldType = storagepb.TableFieldSchema_DATE
-		case ext.TimestampTzKindType:
+		case ext.TimestampTZKindType:
 			fieldType = storagepb.TableFieldSchema_TIMESTAMP
 		default:
 			return nil, fmt.Errorf("unsupported extended time details type: %q", column.KindDetails.ExtendedTimeDetails.Type)
@@ -185,7 +185,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			case ext.DateKindType:
 				daysSinceEpoch := extTime.GetTime().Unix() / (60 * 60 * 24)
 				message.Set(field, protoreflect.ValueOfInt32(int32(daysSinceEpoch)))
-			case ext.TimestampTzKindType:
+			case ext.TimestampTZKindType:
 				if err := timestamppb.New(extTime.GetTime()).CheckValid(); err != nil {
 					return nil, err
 				}

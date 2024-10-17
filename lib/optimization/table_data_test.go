@@ -133,7 +133,7 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 		"FOO":                  typing.String,
 		"bar":                  typing.Invalid,
 		"CHANGE_me":            typing.String,
-		"do_not_change_format": typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType),
+		"do_not_change_format": typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, ""),
 	} {
 		_cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
@@ -150,9 +150,9 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 
 	for name, colKindDetails := range map[string]typing.KindDetails{
 		"foo":                  typing.String,
-		"change_me":            typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType),
+		"change_me":            typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
 		"bar":                  typing.Boolean,
-		"do_not_change_format": typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType),
+		"do_not_change_format": typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
 	} {
 		tableData.MergeColumnsFromDestination(columns.NewColumn(name, colKindDetails))
 	}
@@ -166,7 +166,7 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 
 	col, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("CHANGE_me")
 	assert.True(t, isOk)
-	assert.Equal(t, ext.TimestampTz.Type, col.KindDetails.ExtendedTimeDetails.Type)
+	assert.Equal(t, ext.TimestampTZ.Type, col.KindDetails.ExtendedTimeDetails.Type)
 
 	// It went from invalid to boolean.
 	col, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("bar")
@@ -176,7 +176,7 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 	col, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("do_not_change_format")
 	assert.True(t, isOk)
 	assert.Equal(t, col.KindDetails.Kind, typing.ETime.Kind)
-	assert.Equal(t, col.KindDetails.ExtendedTimeDetails.Type, ext.TimestampTzKindType, "correctly mapped type")
+	assert.Equal(t, col.KindDetails.ExtendedTimeDetails.Type, ext.TimestampTZKindType, "correctly mapped type")
 	assert.Equal(t, col.KindDetails.ExtendedTimeDetails.Format, time.RFC3339Nano, "format has been preserved")
 }
 
