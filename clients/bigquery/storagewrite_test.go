@@ -44,25 +44,34 @@ func TestColumnToTableFieldSchema(t *testing.T) {
 	}
 	{
 		// ETime - Time:
-		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType)))
+		_time, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType, "")
+		assert.NoError(t, err)
+
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", _time))
 		assert.NoError(t, err)
 		assert.Equal(t, storagepb.TableFieldSchema_TIME, fieldSchema.Type)
 	}
 	{
 		// ETime - Date:
-		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType)))
+		_date, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType, "")
+		assert.NoError(t, err)
+
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", _date))
 		assert.NoError(t, err)
 		assert.Equal(t, storagepb.TableFieldSchema_DATE, fieldSchema.Type)
 	}
 	{
 		// ETime - TimestampTz:
-		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)))
+		_timestampTZ, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
+		assert.NoError(t, err)
+
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", _timestampTZ))
 		assert.NoError(t, err)
 		assert.Equal(t, storagepb.TableFieldSchema_TIMESTAMP, fieldSchema.Type)
 	}
 	{
 		// ETime - Invalid:
-		_, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.NewTimeDetailsFromTemplate(typing.ETime, "")))
+		_, err := typing.NewTimeDetailsFromTemplate(typing.ETime, "", "")
 		assert.ErrorContains(t, err, "unsupported extended time details type:")
 	}
 	{
@@ -99,6 +108,15 @@ func TestEncodePacked64TimeMicros(t *testing.T) {
 }
 
 func TestRowToMessage(t *testing.T) {
+	_time, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType, "")
+	assert.NoError(t, err)
+
+	_date, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType, "")
+	assert.NoError(t, err)
+
+	_timestampTZ, err := typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
+	assert.NoError(t, err)
+
 	columns := []columns.Column{
 		columns.NewColumn("c_bool", typing.Boolean),
 		columns.NewColumn("c_int", typing.Integer),
@@ -112,9 +130,9 @@ func TestRowToMessage(t *testing.T) {
 		columns.NewColumn("c_numeric", typing.EDecimal),
 		columns.NewColumn("c_string", typing.String),
 		columns.NewColumn("c_string_decimal", typing.String),
-		columns.NewColumn("c_time", typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType)),
-		columns.NewColumn("c_date", typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType)),
-		columns.NewColumn("c_datetime", typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)),
+		columns.NewColumn("c_time", _time),
+		columns.NewColumn("c_date", _date),
+		columns.NewColumn("c_datetime", _timestampTZ),
 		columns.NewColumn("c_struct", typing.Struct),
 		columns.NewColumn("c_array", typing.Array),
 	}

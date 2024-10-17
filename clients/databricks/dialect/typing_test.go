@@ -115,7 +115,14 @@ func TestDatabricksDialect_KindForDataType(t *testing.T) {
 		// Date
 		kd, err := DatabricksDialect{}.KindForDataType("DATE", "")
 		assert.NoError(t, err)
-		assert.Equal(t, typing.KindDetails{Kind: typing.ETime.Kind, ExtendedTimeDetails: &ext.NestedKind{Type: ext.DateKindType}}, kd)
+		assert.Equal(t,
+			typing.KindDetails{
+				Kind: typing.ETime.Kind,
+				ExtendedTimeDetails: &ext.NestedKind{
+					Type:   ext.DateKindType,
+					Format: ext.PostgresDateFormat,
+				},
+			}, kd)
 	}
 	{
 		// Double
