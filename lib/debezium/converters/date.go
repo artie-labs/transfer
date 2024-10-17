@@ -10,8 +10,8 @@ import (
 
 type Date struct{}
 
-func (Date) ToKindDetails() typing.KindDetails {
-	return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType)
+func (Date) ToKindDetails() (typing.KindDetails, error) {
+	return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType, "")
 }
 
 func (Date) Convert(value any) (any, error) {

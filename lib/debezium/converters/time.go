@@ -11,8 +11,8 @@ import (
 
 type Time struct{}
 
-func (Time) ToKindDetails() typing.KindDetails {
-	return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType)
+func (Time) ToKindDetails() (typing.KindDetails, error) {
+	return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType, "")
 }
 
 func (Time) Convert(val any) (any, error) {
@@ -27,34 +27,42 @@ func (Time) Convert(val any) (any, error) {
 
 type NanoTime struct{}
 
-func (NanoTime) ToKindDetails() typing.KindDetails {
-	return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType)
+func (NanoTime) layout() string {
+	return "15:04:05.000000000"
 }
 
-func (NanoTime) Convert(value any) (any, error) {
+func (n NanoTime) ToKindDetails() (typing.KindDetails, error) {
+	return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType, n.layout())
+}
+
+func (n NanoTime) Convert(value any) (any, error) {
 	castedVal, err := typing.AssertType[int64](value)
 	if err != nil {
 		return nil, err
 	}
 
 	// Represents the number of nanoseconds past midnight, and does not include timezone information.
-	return ext.NewExtendedTime(time.UnixMicro(castedVal/1_000).In(time.UTC), ext.TimeKindType, "15:04:05.000000000"), nil
+	return ext.NewExtendedTime(time.UnixMicro(castedVal/1_000).In(time.UTC), ext.TimeKindType, n.layout()), nil
 }
 
 type MicroTime struct{}
 
-func (MicroTime) ToKindDetails() typing.KindDetails {
-	return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType)
+func (MicroTime) layout() string {
+	return "15:04:05.000000"
 }
 
-func (MicroTime) Convert(value any) (any, error) {
+func (m MicroTime) ToKindDetails() (typing.KindDetails, error) {
+	return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType, m.layout())
+}
+
+func (m MicroTime) Convert(value any) (any, error) {
 	castedVal, err := typing.AssertType[int64](value)
 	if err != nil {
 		return nil, err
 	}
 
 	// Represents the number of microseconds past midnight, and does not include timezone information.
-	return ext.NewExtendedTime(time.UnixMicro(castedVal).In(time.UTC), ext.TimeKindType, "15:04:05.000000"), nil
+	return ext.NewExtendedTime(time.UnixMicro(castedVal).In(time.UTC), ext.TimeKindType, m.layout()), nil
 }
 
 var SupportedDateTimeWithTimezoneFormats = []string{
@@ -72,8 +80,8 @@ var SupportedDateTimeWithTimezoneFormats = []string{
 
 type ZonedTimestamp struct{}
 
-func (ZonedTimestamp) ToKindDetails() typing.KindDetails {
-	return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)
+func (ZonedTimestamp) ToKindDetails() (typing.KindDetails, error) {
+	return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
 }
 
 func (ZonedTimestamp) Convert(value any) (any, error) {
@@ -114,8 +122,8 @@ var SupportedTimeWithTimezoneFormats = []string{
 
 type TimeWithTimezone struct{}
 
-func (TimeWithTimezone) ToKindDetails() typing.KindDetails {
-	return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType)
+func (TimeWithTimezone) ToKindDetails() (typing.KindDetails, error) {
+	return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType, "")
 }
 
 func (TimeWithTimezone) Convert(value any) (any, error) {

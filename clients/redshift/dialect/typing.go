@@ -104,11 +104,11 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 	case "double precision":
 		return typing.Float, nil
 	case "timestamp with time zone", "timestamp without time zone":
-		return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType), nil
+		return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType, "")
 	case "time without time zone":
-		return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType), nil
+		return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.TimeKindType, "")
 	case "date":
-		return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType), nil
+		return typing.NewTimeDetailsFromTemplate(typing.ETime, ext.DateKindType, "")
 	case "boolean":
 		return typing.Boolean, nil
 	}
