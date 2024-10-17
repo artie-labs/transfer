@@ -83,13 +83,14 @@ func NewDecimalDetailsFromTemplate(details KindDetails, decimalDetails decimal.D
 	return details
 }
 
-func NewKindDetailsFromTemplate(details KindDetails, extendedType ext.ExtendedTimeKindType) KindDetails {
-	if details.ExtendedTimeDetails == nil {
-		details.ExtendedTimeDetails = &ext.NestedKind{}
+func NewTimeDetailsFromTemplate(details KindDetails, extendedType ext.ExtendedTimeKindType, format string) (KindDetails, error) {
+	nestedKind, err := ext.NewExtendedTimeDetails(extendedType, format)
+	if err != nil {
+		return Invalid, err
 	}
 
-	details.ExtendedTimeDetails.Type = extendedType
-	return details
+	details.ExtendedTimeDetails = &nestedKind
+	return details, nil
 }
 
 // IsJSON - We also need to check if the string is a JSON string or not

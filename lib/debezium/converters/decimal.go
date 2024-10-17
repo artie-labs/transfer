@@ -86,8 +86,8 @@ type VariableDecimal struct {
 	details decimal.Details
 }
 
-func (v VariableDecimal) ToKindDetails() typing.KindDetails {
-	return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, v.details)
+func (v VariableDecimal) ToKindDetails() (typing.KindDetails, error) {
+	return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, v.details), nil
 }
 
 func (v VariableDecimal) Convert(value any) (any, error) {
@@ -134,8 +134,8 @@ func NewDecimal(details decimal.Details) Decimal {
 	return Decimal{details: details}
 }
 
-func (d Decimal) ToKindDetails() typing.KindDetails {
-	return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, d.details)
+func (d Decimal) ToKindDetails() (typing.KindDetails, error) {
+	return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, d.details), nil
 }
 
 func (d Decimal) Convert(value any) (any, error) {

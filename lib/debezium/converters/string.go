@@ -13,6 +13,6 @@ func (StringPassthrough) Convert(value any) (any, error) {
 	return castedValue, nil
 }
 
-func (StringPassthrough) ToKindDetails() typing.KindDetails {
-	return typing.String
+func (StringPassthrough) ToKindDetails() (typing.KindDetails, error) {
+	return typing.String, nil
 }
