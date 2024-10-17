@@ -40,7 +40,7 @@ func ParseFromInterface(val any, kindType ExtendedTimeKindType) (*ExtendedTime, 
 
 func ParseExtendedDateTime(value string, kindType ExtendedTimeKindType) (*ExtendedTime, error) {
 	switch kindType {
-	case TimestampTzKindType:
+	case TimestampTZKindType:
 		return parseDateTime(value)
 	case DateKindType:
 		// Try date first
@@ -72,7 +72,7 @@ func ParseExtendedDateTime(value string, kindType ExtendedTimeKindType) (*Extend
 func parseDateTime(value string) (*ExtendedTime, error) {
 	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
 		if ts, err := ParseTimeExactMatch(supportedDateTimeLayout, value); err == nil {
-			return NewExtendedTime(ts, TimestampTzKindType, supportedDateTimeLayout), nil
+			return NewExtendedTime(ts, TimestampTZKindType, supportedDateTimeLayout), nil
 		}
 	}
 

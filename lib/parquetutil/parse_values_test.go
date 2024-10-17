@@ -74,7 +74,7 @@ func TestParseValue(t *testing.T) {
 	{
 		// Timestamp TZ
 		eDateTime := typing.ETime
-		eDateTime.ExtendedTimeDetails = &ext.TimestampTz
+		eDateTime.ExtendedTimeDetails = &ext.TimestampTZ
 		value, err := ParseValue("2023-04-24T17:29:05.69944Z", columns.NewColumn("", eDateTime))
 		assert.NoError(t, err)
 		assert.Equal(t, int64(1682357345699), value)

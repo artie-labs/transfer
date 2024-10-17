@@ -14,24 +14,24 @@ func TestTableData_UpdateInMemoryColumnsFromDestination_Tz(t *testing.T) {
 	{
 		// In memory and destination columns are both timestamp_tz
 		tableData := &TableData{inMemoryColumns: &columns.Columns{}}
-		tableData.AddInMemoryCol(columns.NewColumn("foo", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)))
+		tableData.AddInMemoryCol(columns.NewColumn("foo", typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")))
 
-		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("foo", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType))))
+		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("foo", typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""))))
 		updatedColumn, isOk := tableData.inMemoryColumns.GetColumn("foo")
 		assert.True(t, isOk)
-		assert.Equal(t, ext.TimestampTzKindType, updatedColumn.KindDetails.ExtendedTimeDetails.Type)
+		assert.Equal(t, ext.TimestampTZKindType, updatedColumn.KindDetails.ExtendedTimeDetails.Type)
 	}
 	{
 		// In memory is timestamp_ntz and destination is timestamp_tz
 		tableData := &TableData{inMemoryColumns: &columns.Columns{}}
-		kd := typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampNTZKindType)
+		kd := typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, "")
 		kd.ExtendedTimeDetails.Format = ext.RFC3339MillisecondNoTZ
 		tableData.AddInMemoryCol(columns.NewColumn("foo", kd))
 
-		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("foo", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType))))
+		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("foo", typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""))))
 		updatedColumn, isOk := tableData.inMemoryColumns.GetColumn("foo")
 		assert.True(t, isOk)
-		assert.Equal(t, ext.TimestampTzKindType, updatedColumn.KindDetails.ExtendedTimeDetails.Type)
+		assert.Equal(t, ext.TimestampTZKindType, updatedColumn.KindDetails.ExtendedTimeDetails.Type)
 		assert.Equal(t, ext.RFC3339Millisecond, updatedColumn.KindDetails.ExtendedTimeDetails.Format)
 	}
 
@@ -131,9 +131,9 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 			assert.Nil(t, col.KindDetails.ExtendedTimeDetails, extTimeDetailsCol)
 		}
 
-		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_time", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType))))
-		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_date", typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType))))
-		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_datetime", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType))))
+		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_time", typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""))))
+		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_date", typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, ""))))
+		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_datetime", typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""))))
 
 		dateCol, isOk := tableData.inMemoryColumns.GetColumn("ext_date")
 		assert.True(t, isOk)
@@ -148,7 +148,7 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		dateTimeCol, isOk := tableData.inMemoryColumns.GetColumn("ext_datetime")
 		assert.True(t, isOk)
 		assert.NotNil(t, dateTimeCol.KindDetails.ExtendedTimeDetails)
-		assert.Equal(t, ext.TimestampTzKindType, dateTimeCol.KindDetails.ExtendedTimeDetails.Type)
+		assert.Equal(t, ext.TimestampTZKindType, dateTimeCol.KindDetails.ExtendedTimeDetails.Type)
 
 		// Testing extDecimalDetails
 		// Confirm that before you update, it's invalid.

@@ -84,20 +84,12 @@ func NewDecimalDetailsFromTemplate(details KindDetails, decimalDetails decimal.D
 }
 
 func NewExtendedTimeDetails(details KindDetails, extendedType ext.ExtendedTimeKindType, format string) KindDetails {
+	// TODO: If format is not set, we should use the default format
 	details.ExtendedTimeDetails = &ext.NestedKind{
 		Type:   extendedType,
 		Format: format,
 	}
 
-	return details
-}
-
-func NewKindDetailsFromTemplate(details KindDetails, extendedType ext.ExtendedTimeKindType) KindDetails {
-	if details.ExtendedTimeDetails == nil {
-		details.ExtendedTimeDetails = &ext.NestedKind{}
-	}
-
-	details.ExtendedTimeDetails.Type = extendedType
 	return details
 }
 

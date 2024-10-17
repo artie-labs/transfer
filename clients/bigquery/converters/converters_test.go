@@ -38,7 +38,7 @@ func TestStringConverter_Convert(t *testing.T) {
 	}
 	{
 		// Extended time
-		val, err := converter.Convert(ext.NewExtendedTime(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), ext.TimestampTzKindType, ""))
+		val, err := converter.Convert(ext.NewExtendedTime(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), ext.TimestampTZKindType, ""))
 		assert.NoError(t, err)
 		assert.Equal(t, "2021-01-01T00:00:00Z", val)
 	}

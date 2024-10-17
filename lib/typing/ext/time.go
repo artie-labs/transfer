@@ -11,7 +11,7 @@ import (
 type ExtendedTimeKindType string
 
 const (
-	TimestampTzKindType  ExtendedTimeKindType = "timestamp_tz"
+	TimestampTZKindType  ExtendedTimeKindType = "timestamp_tz"
 	TimestampNTZKindType ExtendedTimeKindType = "timestamp_ntz"
 	DateKindType         ExtendedTimeKindType = "date"
 	TimeKindType         ExtendedTimeKindType = "time"
@@ -28,8 +28,8 @@ var (
 		Format: RFC3339NanosecondNoTZ,
 	}
 
-	TimestampTz = NestedKind{
-		Type:   TimestampTzKindType,
+	TimestampTZ = NestedKind{
+		Type:   TimestampTZKindType,
 		Format: time.RFC3339Nano,
 	}
 
@@ -58,8 +58,8 @@ func (e ExtendedTime) MarshalJSON() ([]byte, error) {
 func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat string) *ExtendedTime {
 	if originalFormat == "" {
 		switch kindType {
-		case TimestampTzKindType:
-			originalFormat = TimestampTz.Format
+		case TimestampTZKindType:
+			originalFormat = TimestampTZ.Format
 		case TimestampNTZKindType:
 			originalFormat = TimestampNTZ.Format
 		case DateKindType:

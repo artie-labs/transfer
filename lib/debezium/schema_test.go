@@ -233,7 +233,7 @@ func TestField_ToKindDetails(t *testing.T) {
 		for _, dbzType := range []SupportedDebeziumType{ZonedTimestamp} {
 			kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
 			assert.NoError(t, err)
-			assert.Equal(t, typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType), kd)
+			assert.Equal(t, typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""), kd)
 		}
 	}
 	{
@@ -250,15 +250,28 @@ func TestField_ToKindDetails(t *testing.T) {
 		for _, dbzType := range []SupportedDebeziumType{Date, DateKafkaConnect} {
 			kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
 			assert.NoError(t, err)
-			assert.Equal(t, typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType), kd)
+			assert.Equal(t, typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, ""), kd)
 		}
 	}
 	{
 		// Time
-		for _, dbzType := range []SupportedDebeziumType{Time, TimeKafkaConnect, MicroTime, NanoTime, TimeWithTimezone} {
+		for _, dbzType := range []SupportedDebeziumType{Time, TimeKafkaConnect, TimeWithTimezone} {
 			kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
 			assert.NoError(t, err)
-			assert.Equal(t, typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType), kd)
+			assert.Equal(t, typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""), kd, dbzType)
+		}
+
+		{
+			// Micro time
+			kd, err := Field{DebeziumType: MicroTime}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "15:04:05.000000"), kd)
+		}
+		{
+			// Nano time
+			kd, err := Field{DebeziumType: NanoTime}.ToKindDetails()
+			assert.NoError(t, err)
+			assert.Equal(t, typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "15:04:05.000000000"), kd)
 		}
 	}
 	{

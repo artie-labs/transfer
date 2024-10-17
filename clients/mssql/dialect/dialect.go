@@ -55,7 +55,7 @@ func (MSSQLDialect) DataTypeForKind(kindDetails typing.KindDetails, isPk bool) s
 		return "BIT"
 	case typing.ETime.Kind:
 		switch kindDetails.ExtendedTimeDetails.Type {
-		case ext.TimestampTzKindType:
+		case ext.TimestampTZKindType:
 			return "datetimeoffset"
 		case ext.TimestampNTZKindType:
 			// Using datetime2 because it's the recommendation, and it provides more precision: https://stackoverflow.com/a/1884088
@@ -116,13 +116,13 @@ func (MSSQLDialect) KindForDataType(rawType string, stringPrecision string) (typ
 	case
 		"datetime",
 		"datetime2":
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampNTZKindType), nil
+		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, ""), nil
 	case "datetimeoffset":
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType), nil
+		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""), nil
 	case "time":
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimeKindType), nil
+		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""), nil
 	case "date":
-		return typing.NewKindDetailsFromTemplate(typing.ETime, ext.DateKindType), nil
+		return typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, ""), nil
 	case "bit":
 		return typing.Boolean, nil
 	case "text":
