@@ -77,10 +77,11 @@ func (s *SchemaEventPayload) GetTableName() string {
 }
 
 func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc kafkalib.TopicConfig) (map[string]any, error) {
+	var err error
 	var retMap map[string]any
-	if len(s.Payload.After) == 0 {
+	switch s.Operation() {
+	case "d":
 		if len(s.Payload.Before) > 0 {
-			var err error
 			retMap, err = s.parseAndMutateMapInPlace(s.Payload.Before, debezium.Before)
 			if err != nil {
 				return nil, err
@@ -100,14 +101,15 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc kafkalib.TopicConf
 		for k, v := range pkMap {
 			retMap[k] = v
 		}
-	} else {
-		var err error
+	case "r", "u", "c":
 		retMap, err = s.parseAndMutateMapInPlace(s.Payload.After, debezium.After)
 		if err != nil {
 			return nil, err
 		}
 		retMap[constants.DeleteColumnMarker] = false
 		retMap[constants.OnlySetDeleteColumnMarker] = false
+	default:
+		return nil, fmt.Errorf("unknown operation %q", s.Operation())
 	}
 
 	if tc.IncludeArtieUpdatedAt {
