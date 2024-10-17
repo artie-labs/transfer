@@ -31,8 +31,8 @@ const Point GeometricShapes = "Point"
 
 type GeometryPoint struct{}
 
-func (GeometryPoint) ToKindDetails() typing.KindDetails {
-	return typing.Struct
+func (GeometryPoint) ToKindDetails() (typing.KindDetails, error) {
+	return typing.Struct, nil
 }
 
 // Convert takes in a map[string]any and returns a GeoJSON string. This function does not use WKB or SRID and leverages X, Y.

@@ -75,7 +75,7 @@ func (f Field) GetScaleAndPrecision() (int32, *int32, error) {
 			return 0, nil, precisionErr
 		}
 
-		precisionPtr = typing.ToPtr(int32(precision))
+		precisionPtr = typing.ToPtr(precision)
 	}
 
 	return scale, precisionPtr, nil
@@ -148,7 +148,7 @@ func (f Field) ToKindDetails() (typing.KindDetails, error) {
 	}
 
 	if converter != nil {
-		return converter.ToKindDetails(), nil
+		return converter.ToKindDetails()
 	}
 
 	switch f.Type {

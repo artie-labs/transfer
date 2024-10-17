@@ -30,8 +30,8 @@ func (JSON) ToKindDetails() typing.KindDetails {
 
 type Int64Passthrough struct{}
 
-func (Int64Passthrough) ToKindDetails() typing.KindDetails {
-	return typing.Integer
+func (Int64Passthrough) ToKindDetails() (typing.KindDetails, error) {
+	return typing.Integer, nil
 }
 
 func (Int64Passthrough) Convert(value any) (any, error) {
@@ -44,9 +44,9 @@ func (Int64Passthrough) Convert(value any) (any, error) {
 
 type Base64 struct{}
 
-func (Base64) ToKindDetails() typing.KindDetails {
+func (Base64) ToKindDetails() (typing.KindDetails, error) {
 	// We're returning this back as a base64 encoded string.
-	return typing.String
+	return typing.String, nil
 }
 
 func (Base64) Convert(value any) (any, error) {
