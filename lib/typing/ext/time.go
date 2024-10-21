@@ -37,11 +37,6 @@ type NestedKind struct {
 }
 
 var (
-	TimestampNTZ = NestedKind{
-		Type:   TimestampNTZKindType,
-		Format: RFC3339NanosecondNoTZ,
-	}
-
 	TimestampTZ = NestedKind{
 		Type:   TimestampTZKindType,
 		Format: time.RFC3339Nano,
@@ -72,7 +67,7 @@ func (e ExtendedTime) MarshalJSON() ([]byte, error) {
 
 // TODO: Have this return an error instead of nil
 func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat string) *ExtendedTime {
-	format, err := kindType.defaultLayout()
+	defaultLayout, err := kindType.defaultLayout()
 	if err != nil {
 		return nil
 	}
@@ -81,7 +76,7 @@ func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat 
 		ts: t,
 		nestedKind: NestedKind{
 			Type:   kindType,
-			Format: cmp.Or(originalFormat, format),
+			Format: cmp.Or(originalFormat, defaultLayout),
 		},
 	}
 }
