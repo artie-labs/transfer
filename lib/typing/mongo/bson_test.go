@@ -144,7 +144,7 @@ func TestJSONEToMap(t *testing.T) {
 		// Nested object
 		value, err := json.Marshal(result["test_nested_object"])
 		assert.NoError(t, err)
-		assert.Equal(t, `{"a":{"b":{"c":"hello"}},"super_nested":{"foo":"bar","test_timestamp":"2023-03-16T01:18:37+00:00"},"test_timestamp":"2023-03-16T01:18:37+00:00"}`, string(value))
+		assert.Equal(t, `{"a":{"b":{"c":"hello"}},"super_nested":{"foo":"bar","test_timestamp":"2023-03-16T01:18:37Z"},"test_timestamp":"2023-03-16T01:18:37Z"}`, string(value))
 	}
 	{
 		// NaN
