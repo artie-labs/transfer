@@ -42,18 +42,6 @@ Take a look at this [guide](#getting-started) to get started!
   <img src="https://github.com/artie-labs/transfer/assets/4412200/a30a2ee1-7bdd-437c-9acb-ce6591654d18"/>
 </div>
 
-### Pre-requisites
-
-As you can see from the architecture diagram above, Artie Transfer is a Kafka consumer and expects CDC messages to be in a particular format.
-
-The optimal set-up looks something like this:
-* [Debezium](https://github.com/debezium/debezium) or [Artie Reader](https://github.com/artie-labs/reader) depending on the source
-* Kafka
-  * One Kafka topic per table, such that you can toggle the number of partitions based on throughput.
-  * The partition key should be the primary key for the table to avoid out-of-order writes at the row level.
-
-Please see the [supported section](#what-is-currently-supported) on what sources and destinations are supported.
-
 ## Examples
 
 To run Artie Transfer's stack locally, please refer to the [examples folder](https://github.com/artie-labs/transfer/tree/master/examples).
