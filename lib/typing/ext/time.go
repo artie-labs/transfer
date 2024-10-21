@@ -3,10 +3,9 @@ package ext
 import (
 	"cmp"
 	"encoding/json"
+	"fmt"
 	"time"
 )
-
-// TODO: This package should have a concept of default formats for each type.
 
 type ExtendedTimeKindType string
 
@@ -16,6 +15,21 @@ const (
 	DateKindType         ExtendedTimeKindType = "date"
 	TimeKindType         ExtendedTimeKindType = "time"
 )
+
+func (e ExtendedTimeKindType) defaultLayout() (string, error) {
+	switch e {
+	case TimestampTZKindType:
+		return time.RFC3339Nano, nil
+	case TimestampNTZKindType:
+		return RFC3339NanosecondNoTZ, nil
+	case DateKindType:
+		return PostgresDateFormat, nil
+	case TimeKindType:
+		return PostgresTimeFormat, nil
+	default:
+		return "", fmt.Errorf("unknown kind type: %q", e)
+	}
+}
 
 type NestedKind struct {
 	Type   ExtendedTimeKindType
@@ -55,25 +69,18 @@ func (e ExtendedTime) MarshalJSON() ([]byte, error) {
 	return json.Marshal(e.String(""))
 }
 
+// TODO: Have this return an error instead of nil
 func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat string) *ExtendedTime {
-	if originalFormat == "" {
-		switch kindType {
-		case TimestampTZKindType:
-			originalFormat = TimestampTZ.Format
-		case TimestampNTZKindType:
-			originalFormat = TimestampNTZ.Format
-		case DateKindType:
-			originalFormat = Date.Format
-		case TimeKindType:
-			originalFormat = Time.Format
-		}
+	format, err := kindType.defaultLayout()
+	if err != nil {
+		return nil
 	}
 
 	return &ExtendedTime{
 		ts: t,
 		nestedKind: NestedKind{
 			Type:   kindType,
-			Format: originalFormat,
+			Format: cmp.Or(originalFormat, format),
 		},
 	}
 }
