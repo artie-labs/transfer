@@ -11,18 +11,22 @@ import (
 
 type Time struct{}
 
-func (Time) ToKindDetails() typing.KindDetails {
-	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "")
+func (Time) layout() string {
+	return "15:04:05.000"
 }
 
-func (Time) Convert(val any) (any, error) {
+func (t Time) ToKindDetails() typing.KindDetails {
+	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, t.layout())
+}
+
+func (t Time) Convert(val any) (any, error) {
 	valInt64, isOk := val.(int64)
 	if !isOk {
 		return nil, fmt.Errorf("expected int64 got '%v' with type %T", val, val)
 	}
 
 	// Represents the number of milliseconds past midnight, and does not include timezone information.
-	return ext.NewExtendedTime(time.UnixMilli(valInt64).In(time.UTC), ext.TimeKindType, ""), nil
+	return ext.NewExtendedTime(time.UnixMilli(valInt64).In(time.UTC), ext.TimeKindType, t.layout()), nil
 }
 
 type NanoTime struct{}
