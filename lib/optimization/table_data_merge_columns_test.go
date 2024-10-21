@@ -24,9 +24,12 @@ func TestTableData_UpdateInMemoryColumnsFromDestination_Tz(t *testing.T) {
 	{
 		// In memory is timestamp_ntz and destination is timestamp_tz
 		tableData := &TableData{inMemoryColumns: &columns.Columns{}}
-		kd := typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, "")
-		kd.ExtendedTimeDetails.Format = ext.RFC3339MillisecondNoTZ
-		tableData.AddInMemoryCol(columns.NewColumn("foo", kd))
+		tableData.AddInMemoryCol(
+			columns.NewColumn(
+				"foo",
+				typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, ext.RFC3339MillisecondNoTZ),
+			),
+		)
 
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("foo", typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""))))
 		updatedColumn, isOk := tableData.inMemoryColumns.GetColumn("foo")
