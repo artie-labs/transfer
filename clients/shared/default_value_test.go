@@ -25,7 +25,7 @@ var dialects = []sql.Dialect{
 
 func TestColumn_DefaultValue(t *testing.T) {
 	birthday := time.Date(2022, time.September, 6, 3, 19, 24, 942000000, time.UTC)
-	birthdayExtDateTime, err := ext.ParseExtendedDateTime(birthday.Format(ext.ISO8601), ext.TimestampTzKindType)
+	birthdayExtDateTime, err := ext.ParseExtendedDateTime(birthday.Format(ext.ISO8601), ext.TimestampTZKindType)
 	assert.NoError(t, err)
 
 	// date
@@ -36,7 +36,7 @@ func TestColumn_DefaultValue(t *testing.T) {
 	timeKind.ExtendedTimeDetails = &ext.Time
 	// date time
 	dateTimeKind := typing.ETime
-	dateTimeKind.ExtendedTimeDetails = &ext.TimestampTz
+	dateTimeKind.ExtendedTimeDetails = &ext.TimestampTZ
 
 	testCases := []struct {
 		name                       string

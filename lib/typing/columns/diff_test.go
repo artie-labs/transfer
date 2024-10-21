@@ -249,8 +249,8 @@ func TestDiffDeterministic(t *testing.T) {
 func TestCopyColMap(t *testing.T) {
 	var cols Columns
 	cols.AddColumn(NewColumn("hello", typing.String))
-	cols.AddColumn(NewColumn("created_at", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)))
-	cols.AddColumn(NewColumn("updated_at", typing.NewKindDetailsFromTemplate(typing.ETime, ext.TimestampTzKindType)))
+	cols.AddColumn(NewColumn("created_at", typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")))
+	cols.AddColumn(NewColumn("updated_at", typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")))
 
 	copiedCols := CloneColumns(&cols)
 	assert.Equal(t, copiedCols, &cols)
