@@ -36,7 +36,7 @@ func BenchmarkLargeMapLengthQuery_WithMassiveValues(b *testing.B) {
 
 func BenchmarkParseValueIntegerArtie(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		ParseValue("", nil, 45456312)
+		MustParseValue("", nil, 45456312)
 	}
 }
 
@@ -48,7 +48,7 @@ func BenchmarkParseValueIntegerGo(b *testing.B) {
 
 func BenchmarkParseValueBooleanArtie(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		ParseValue("", nil, true)
+		MustParseValue("", nil, true)
 	}
 }
 
@@ -60,7 +60,7 @@ func BenchmarkParseValueBooleanGo(b *testing.B) {
 
 func BenchmarkParseValueFloatArtie(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		ParseValue("", nil, 7.44)
+		MustParseValue("", nil, 7.44)
 	}
 }
 
