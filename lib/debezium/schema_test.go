@@ -255,10 +255,12 @@ func TestField_ToKindDetails(t *testing.T) {
 	}
 	{
 		{
-			// Time with timezone
-			kd, err := Field{DebeziumType: TimeWithTimezone}.ToKindDetails()
-			assert.NoError(t, err)
-			assert.Equal(t, typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""), kd)
+			// Time with time zone
+			for _, dbzType := range []SupportedDebeziumType{TimeWithTimezone} {
+				kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
+				assert.NoError(t, err)
+				assert.Equal(t, typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "15:04:05.999999Z"), kd, dbzType)
+			}
 		}
 		{
 			// Time
