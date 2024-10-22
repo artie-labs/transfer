@@ -32,83 +32,93 @@ func TestZonedTimestamp_Convert(t *testing.T) {
 		// Valid
 		{
 			// No fractional seconds
-			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00Z")
+			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:12Z")
 			assert.NoError(t, err)
 
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 000000000, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05Z")
+			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 12, 000000000, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.999999999Z")
 			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
+			assert.Equal(t, "2025-09-13T00:00:12Z", val.(*ext.ExtendedTime).String(""))
 		}
 		{
 			// 1 digits
 			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.1Z")
 			assert.NoError(t, err)
 
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 100000000, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.0Z")
+			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 100000000, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.999999999Z")
 			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
+			assert.Equal(t, "2025-09-13T00:00:00.1Z", val.(*ext.ExtendedTime).String(""))
 		}
 		{
 			// 2 digits
 			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.12Z")
 			assert.NoError(t, err)
 
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 120000000, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.00Z")
+			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 120000000, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.999999999Z")
 			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
+			assert.Equal(t, "2025-09-13T00:00:00.12Z", val.(*ext.ExtendedTime).String(""))
 		}
 		{
 			// 3 digits
 			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.123Z")
 			assert.NoError(t, err)
 
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123000000, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.000Z")
+			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123000000, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.999999999Z")
 			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
+			assert.Equal(t, "2025-09-13T00:00:00.123Z", val.(*ext.ExtendedTime).String(""))
 		}
 		{
 			// 4 digits
 			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.1234Z")
 			assert.NoError(t, err)
 
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123400000, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.0000Z")
+			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123400000, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.999999999Z")
 			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
+			assert.Equal(t, "2025-09-13T00:00:00.1234Z", val.(*ext.ExtendedTime).String(""))
 		}
 		{
 			// 5 digits
 			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.12345Z")
 			assert.NoError(t, err)
 
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123450000, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.00000Z")
+			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123450000, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.999999999Z")
 			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
+			assert.Equal(t, "2025-09-13T00:00:00.12345Z", val.(*ext.ExtendedTime).String(""))
 		}
 		{
 			// 6 digits (microseconds)
 			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.123456Z")
 			assert.NoError(t, err)
 
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456000, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.000000Z")
+			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456000, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.999999999Z")
 			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
+			assert.Equal(t, "2025-09-13T00:00:00.123456Z", val.(*ext.ExtendedTime).String(""))
 		}
 		{
 			// 7 digits
 			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.1234567Z")
 			assert.NoError(t, err)
 
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456700, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.0000000Z")
+			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456700, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.999999999Z")
 			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
+			assert.Equal(t, "2025-09-13T00:00:00.1234567Z", val.(*ext.ExtendedTime).String(""))
 		}
 		{
 			// 8 digits
 			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.12345678Z")
 			assert.NoError(t, err)
 
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456780, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.00000000Z")
+			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456780, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.999999999Z")
 			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
+			assert.Equal(t, "2025-09-13T00:00:00.12345678Z", val.(*ext.ExtendedTime).String(""))
 		}
 		{
 			// 9 digits (nanoseconds)
 			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.123456789Z")
 			assert.NoError(t, err)
 
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456789, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.000000000Z")
+			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456789, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.999999999Z")
 			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
+			assert.Equal(t, "2025-09-13T00:00:00.123456789Z", val.(*ext.ExtendedTime).String(""))
 		}
 	}
 }
