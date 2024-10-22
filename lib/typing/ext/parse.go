@@ -50,7 +50,12 @@ func ParseExtendedDateTime(value string, kindType ExtendedTimeKindType) (*Extend
 
 		// If that doesn't work, try timestamp
 		if et, err := parseDateTime(value); err == nil {
-			et.nestedKind = Date
+			nestedKind, err := NewNestedKind(DateKindType, "")
+			if err != nil {
+				return nil, err
+			}
+
+			et.nestedKind = nestedKind
 			return et, nil
 		}
 	case TimeKindType:
@@ -61,7 +66,12 @@ func ParseExtendedDateTime(value string, kindType ExtendedTimeKindType) (*Extend
 
 		// If that doesn't work, try timestamp
 		if et, err := parseDateTime(value); err == nil {
-			et.nestedKind = Time
+			nestedKind, err := NewNestedKind(TimeKindType, "")
+			if err != nil {
+				return nil, err
+			}
+
+			et.nestedKind = nestedKind
 			return et, nil
 		}
 	}

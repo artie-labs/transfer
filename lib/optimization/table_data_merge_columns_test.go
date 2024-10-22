@@ -55,7 +55,10 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		tableData.AddInMemoryCol(columns.NewColumn("foo", typing.String))
 
 		extTime := typing.ETime
-		extTime.ExtendedTimeDetails = &ext.Date
+		nestedKind, err := ext.NewNestedKind(ext.DateKindType, "")
+		assert.NoError(t, err)
+
+		extTime.ExtendedTimeDetails = &nestedKind
 		tsCol := columns.NewColumn("foo", extTime)
 		assert.NoError(t, tableData.MergeColumnsFromDestination(tsCol))
 

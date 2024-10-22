@@ -15,7 +15,7 @@ func TestExtendedTime_MarshalJSON(t *testing.T) {
 		// Single value
 		bytes, err := json.Marshal(extTime)
 		assert.NoError(t, err)
-		assert.Equal(t, `"2025-09-13T00:00:00.123Z"`, string(bytes))
+		assert.Equal(t, `"2025-09-13T00:00:00.123456Z"`, string(bytes))
 	}
 	{
 		// As a nested object
@@ -30,6 +30,6 @@ func TestExtendedTime_MarshalJSON(t *testing.T) {
 
 		bytes, err := json.Marshal(obj)
 		assert.NoError(t, err)
-		assert.Equal(t, `{"extendedTime":"2025-09-13T00:00:00.123Z","foo":"bar"}`, string(bytes))
+		assert.Equal(t, `{"extendedTime":"2025-09-13T00:00:00.123456Z","foo":"bar"}`, string(bytes))
 	}
 }

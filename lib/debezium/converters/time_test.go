@@ -125,12 +125,20 @@ func TestZonedTimestamp_Convert(t *testing.T) {
 
 func TestTime_Convert(t *testing.T) {
 	{
+		val, err := Time{}.Convert(int64(54720321))
+		assert.NoError(t, err)
+
+		extTime, isOk := val.(*ext.ExtendedTime)
+		assert.True(t, isOk)
+		assert.Equal(t, "15:12:00.321", extTime.String(""))
+	}
+	{
 		val, err := Time{}.Convert(int64(54720000))
 		assert.NoError(t, err)
 
 		extTime, isOk := val.(*ext.ExtendedTime)
 		assert.True(t, isOk)
-		assert.Equal(t, "15:12:00+00", extTime.String(""))
+		assert.Equal(t, "15:12:00.000", extTime.String(""))
 	}
 }
 

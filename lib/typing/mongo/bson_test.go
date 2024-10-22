@@ -125,6 +125,7 @@ func TestJSONEToMap(t *testing.T) {
 		extendedTime, isOk := result["test_timestamp"]
 		assert.True(t, isOk)
 		assert.Equal(t, ext.NewExtendedTime(time.Date(2023, time.March, 16, 1, 18, 37, 0, time.UTC), ext.TimestampTZKindType, ext.ISO8601), extendedTime)
+		assert.Equal(t, "2023-03-16T01:18:37+00:00", extendedTime.(*ext.ExtendedTime).String(""))
 	}
 	{
 		// Boolean
@@ -143,7 +144,7 @@ func TestJSONEToMap(t *testing.T) {
 		// Nested object
 		value, err := json.Marshal(result["test_nested_object"])
 		assert.NoError(t, err)
-		assert.Equal(t, `{"a":{"b":{"c":"hello"}},"super_nested":{"foo":"bar","test_timestamp":"2023-03-16T01:18:37+00:00"},"test_timestamp":"2023-03-16T01:18:37+00:00"}`, string(value))
+		assert.Equal(t, `{"a":{"b":{"c":"hello"}},"super_nested":{"foo":"bar","test_timestamp":"2023-03-16T01:18:37Z"},"test_timestamp":"2023-03-16T01:18:37Z"}`, string(value))
 	}
 	{
 		// NaN
@@ -222,6 +223,7 @@ func TestBsonValueToGoValue(t *testing.T) {
 		extendedTime, isOk := result.(*ext.ExtendedTime)
 		assert.True(t, isOk)
 		assert.Equal(t, ext.NewExtendedTime(time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC), ext.TimestampTZKindType, ext.ISO8601), extendedTime)
+		assert.Equal(t, "2021-01-01T00:00:00+00:00", extendedTime.String(""))
 	}
 	{
 		// primitive.ObjectID

@@ -254,13 +254,20 @@ func TestField_ToKindDetails(t *testing.T) {
 		}
 	}
 	{
-		// Time
-		for _, dbzType := range []SupportedDebeziumType{Time, TimeKafkaConnect, TimeWithTimezone} {
-			kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
+		{
+			// Time with timezone
+			kd, err := Field{DebeziumType: TimeWithTimezone}.ToKindDetails()
 			assert.NoError(t, err)
-			assert.Equal(t, typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""), kd, dbzType)
+			assert.Equal(t, typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""), kd)
 		}
-
+		{
+			// Time
+			for _, dbzType := range []SupportedDebeziumType{Time, TimeKafkaConnect} {
+				kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
+				assert.NoError(t, err)
+				assert.Equal(t, typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "15:04:05.000"), kd, dbzType)
+			}
+		}
 		{
 			// Micro time
 			kd, err := Field{DebeziumType: MicroTime}.ToKindDetails()
