@@ -69,26 +69,17 @@ func (m MicroTime) Convert(value any) (any, error) {
 	return ext.NewExtendedTime(time.UnixMicro(castedVal).In(time.UTC), ext.TimeKindType, m.layout()), nil
 }
 
-var SupportedDateTimeWithTimezoneFormats = []string{
-	"2006-01-02T15:04:05Z",           // w/o fractional seconds
-	"2006-01-02T15:04:05.0Z",         // 1 digit
-	"2006-01-02T15:04:05.00Z",        // 2 digits
-	"2006-01-02T15:04:05.000Z",       // 3 digits
-	"2006-01-02T15:04:05.0000Z",      // 4 digits
-	"2006-01-02T15:04:05.00000Z",     // 5 digits
-	"2006-01-02T15:04:05.000000Z",    // 6 digits
-	"2006-01-02T15:04:05.0000000Z",   // 7 digits
-	"2006-01-02T15:04:05.00000000Z",  // 8 digits
-	"2006-01-02T15:04:05.000000000Z", // 9 digits
-}
-
 type ZonedTimestamp struct{}
 
-func (ZonedTimestamp) ToKindDetails() typing.KindDetails {
-	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")
+func (ZonedTimestamp) layout() string {
+	return "2006-01-02T15:04:05.999999999Z"
 }
 
-func (ZonedTimestamp) Convert(value any) (any, error) {
+func (z ZonedTimestamp) ToKindDetails() typing.KindDetails {
+	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, z.layout())
+}
+
+func (z ZonedTimestamp) Convert(value any) (any, error) {
 	valString, isOk := value.(string)
 	if !isOk {
 		return nil, fmt.Errorf("expected string got '%v' with type %T", value, value)
@@ -106,16 +97,12 @@ func (ZonedTimestamp) Convert(value any) (any, error) {
 		}
 	}
 
-	var err error
-	var ts time.Time
-	for _, supportedFormat := range SupportedDateTimeWithTimezoneFormats {
-		ts, err = ext.ParseTimeExactMatch(supportedFormat, valString)
-		if err == nil {
-			return ext.NewExtendedTime(ts, ext.TimestampTZKindType, supportedFormat), nil
-		}
+	_time, err := time.Parse(z.layout(), valString)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse %q: %w", valString, err)
 	}
 
-	return nil, fmt.Errorf("failed to parse %q, err: %w", valString, err)
+	return ext.NewExtendedTime(_time, ext.TimestampTZKindType, z.layout()), nil
 }
 
 type TimeWithTimezone struct{}
