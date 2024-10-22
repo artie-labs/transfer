@@ -52,7 +52,7 @@ type ExtendedTime struct {
 	nestedKind NestedKind
 }
 
-// MarshalJSON is a custom JSON marshaller for ExtendedTime. This is only by MongoDB where we are recursively parsing a nested object.
+// MarshalJSON is a custom JSON marshaller for ExtendedTime.
 func (e ExtendedTime) MarshalJSON() ([]byte, error) {
 	return json.Marshal(e.ts)
 }
