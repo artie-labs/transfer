@@ -88,7 +88,7 @@ func TestParseFromInterfaceDate(t *testing.T) {
 
 func TestParseExtendedDateTime_Timestamp(t *testing.T) {
 	tsString := "2023-04-24T17:29:05.69944Z"
-	extTime, err := ParseExtendedDateTime(tsString, TimestampTZKindType)
+	extTime, err := ParseDateTime(tsString, TimestampTZKindType)
 	assert.NoError(t, err)
 	assert.Equal(t, "2023-04-24T17:29:05.69944Z", extTime.Format(time.RFC3339Nano))
 }
@@ -98,7 +98,7 @@ func TestTimeLayout(t *testing.T) {
 
 	for _, supportedFormat := range SupportedTimeFormats {
 		parsedTsString := ts.Format(supportedFormat)
-		extTime, err := ParseExtendedDateTime(parsedTsString, TimeKindType)
+		extTime, err := ParseDateTime(parsedTsString, TimeKindType)
 		assert.NoError(t, err)
 		assert.Equal(t, parsedTsString, extTime.Format(supportedFormat))
 	}

@@ -29,7 +29,7 @@ func ParseFromInterface(val any, kindType ExtendedTimeKindType) (time.Time, erro
 	case *ExtendedTime:
 		return convertedVal.GetTime(), nil
 	case string:
-		ts, err := ParseExtendedDateTime(convertedVal, kindType)
+		ts, err := ParseDateTime(convertedVal, kindType)
 		if err != nil {
 			return time.Time{}, fmt.Errorf("failed to parse colVal: %q, err: %w", val, err)
 		}
@@ -40,7 +40,8 @@ func ParseFromInterface(val any, kindType ExtendedTimeKindType) (time.Time, erro
 	}
 }
 
-func ParseExtendedDateTime(value string, kindType ExtendedTimeKindType) (time.Time, error) {
+func ParseDateTime(value string, kindType ExtendedTimeKindType) (time.Time, error) {
+	// TODO: Support TimestampNTZKindType
 	switch kindType {
 	case TimestampTZKindType:
 		return parseDateTime(value)
