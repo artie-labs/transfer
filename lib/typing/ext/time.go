@@ -2,11 +2,9 @@ package ext
 
 import (
 	"cmp"
-	"encoding/json"
+	"fmt"
 	"time"
 )
-
-// TODO: This package should have a concept of default formats for each type.
 
 type ExtendedTimeKindType string
 
@@ -17,32 +15,34 @@ const (
 	TimeKindType         ExtendedTimeKindType = "time"
 )
 
+func (e ExtendedTimeKindType) defaultLayout() (string, error) {
+	switch e {
+	case TimestampTZKindType:
+		return time.RFC3339Nano, nil
+	case TimestampNTZKindType:
+		return RFC3339NanosecondNoTZ, nil
+	case DateKindType:
+		return PostgresDateFormat, nil
+	case TimeKindType:
+		return PostgresTimeFormat, nil
+	default:
+		return "", fmt.Errorf("unknown kind type: %q", e)
+	}
+}
+
 type NestedKind struct {
 	Type   ExtendedTimeKindType
 	Format string
 }
 
-var (
-	TimestampNTZ = NestedKind{
-		Type:   TimestampNTZKindType,
-		Format: RFC3339NanosecondNoTZ,
+func NewNestedKind(kindType ExtendedTimeKindType, optionalFormat string) (NestedKind, error) {
+	defaultLayout, err := kindType.defaultLayout()
+	if err != nil {
+		return NestedKind{}, err
 	}
 
-	TimestampTZ = NestedKind{
-		Type:   TimestampTZKindType,
-		Format: time.RFC3339Nano,
-	}
-
-	Date = NestedKind{
-		Type:   DateKindType,
-		Format: PostgresDateFormat,
-	}
-
-	Time = NestedKind{
-		Type:   TimeKindType,
-		Format: PostgresTimeFormat,
-	}
-)
+	return NestedKind{Type: kindType, Format: cmp.Or(optionalFormat, defaultLayout)}, nil
+}
 
 // ExtendedTime is created because Golang's time.Time does not allow us to explicitly cast values as a date, or time
 // and only allows timestamp expressions.
@@ -51,29 +51,25 @@ type ExtendedTime struct {
 	nestedKind NestedKind
 }
 
+// MarshalJSON is a custom JSON marshaller for ExtendedTime.
+// This is only used for nested MongoDB objects where there may be nested DateTime values.
 func (e ExtendedTime) MarshalJSON() ([]byte, error) {
-	return json.Marshal(e.String(""))
+	// This is consistent with how MongoDB's Go driver marshals time.Time
+	return e.ts.UTC().MarshalJSON()
 }
 
+// TODO: Have this return an error instead of nil
 func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat string) *ExtendedTime {
-	if originalFormat == "" {
-		switch kindType {
-		case TimestampTZKindType:
-			originalFormat = TimestampTZ.Format
-		case TimestampNTZKindType:
-			originalFormat = TimestampNTZ.Format
-		case DateKindType:
-			originalFormat = Date.Format
-		case TimeKindType:
-			originalFormat = Time.Format
-		}
+	defaultLayout, err := kindType.defaultLayout()
+	if err != nil {
+		return nil
 	}
 
 	return &ExtendedTime{
 		ts: t,
 		nestedKind: NestedKind{
 			Type:   kindType,
-			Format: originalFormat,
+			Format: cmp.Or(originalFormat, defaultLayout),
 		},
 	}
 }

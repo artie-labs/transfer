@@ -58,7 +58,10 @@ func TestParseValue(t *testing.T) {
 	{
 		// Time
 		eTime := typing.ETime
-		eTime.ExtendedTimeDetails = &ext.Time
+		nestedKind, err := ext.NewNestedKind(ext.TimeKindType, "")
+		assert.NoError(t, err)
+
+		eTime.ExtendedTimeDetails = &nestedKind
 		value, err := ParseValue("03:15:00", columns.NewColumn("", eTime))
 		assert.NoError(t, err)
 		assert.Equal(t, "03:15:00+00", value)
@@ -66,7 +69,10 @@ func TestParseValue(t *testing.T) {
 	{
 		// Date
 		eDate := typing.ETime
-		eDate.ExtendedTimeDetails = &ext.Date
+		nestedKind, err := ext.NewNestedKind(ext.DateKindType, "")
+		assert.NoError(t, err)
+
+		eDate.ExtendedTimeDetails = &nestedKind
 		value, err := ParseValue("2022-12-25", columns.NewColumn("", eDate))
 		assert.NoError(t, err)
 		assert.Equal(t, "2022-12-25", value)
@@ -74,7 +80,10 @@ func TestParseValue(t *testing.T) {
 	{
 		// Timestamp TZ
 		eDateTime := typing.ETime
-		eDateTime.ExtendedTimeDetails = &ext.TimestampTZ
+		nestedKind, err := ext.NewNestedKind(ext.TimestampTZKindType, "")
+		assert.NoError(t, err)
+
+		eDateTime.ExtendedTimeDetails = &nestedKind
 		value, err := ParseValue("2023-04-24T17:29:05.69944Z", columns.NewColumn("", eDateTime))
 		assert.NoError(t, err)
 		assert.Equal(t, int64(1682357345699), value)
