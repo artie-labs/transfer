@@ -2,7 +2,6 @@ package ext
 
 import (
 	"cmp"
-	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -54,7 +53,8 @@ type ExtendedTime struct {
 
 // MarshalJSON is a custom JSON marshaller for ExtendedTime.
 func (e ExtendedTime) MarshalJSON() ([]byte, error) {
-	return json.Marshal(e.ts)
+	// This is consistent with how MongoDB's Go driver marshals time.Time
+	return e.ts.UTC().MarshalJSON()
 }
 
 // TODO: Have this return an error instead of nil
