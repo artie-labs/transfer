@@ -157,9 +157,21 @@ func TestMicroTime_Converter(t *testing.T) {
 func TestConvertTimeWithTimezone(t *testing.T) {
 	{
 		// Invalid
-		ts, err := TimeWithTimezone{}.Convert("23:02")
-		assert.Nil(t, ts)
-		assert.ErrorContains(t, err, `failed to parse "23:02": parsing time`)
+		{
+			// Malformed
+			_, err := TimeWithTimezone{}.Convert("23:02")
+			assert.ErrorContains(t, err, `failed to parse "23:02": parsing time`)
+		}
+		{
+			// Non UTC
+			_, err := TimeWithTimezone{}.Convert("23:02:06.745116")
+			assert.ErrorContains(t, err, `failed to parse "23:02:06.745116"`)
+		}
+		{
+			// Providing timezone offset
+			_, err := TimeWithTimezone{}.Convert("23:02:06.745116Z-07:00")
+			assert.ErrorContains(t, err, `failed to parse "23:02:06.745116Z-07:00": parsing time "23:02:06.745116Z-07:00": extra text: "-07:00"`)
+		}
 	}
 	{
 		// What Debezium + Reader would produce (microsecond precision)
@@ -187,16 +199,5 @@ func TestConvertTimeWithTimezone(t *testing.T) {
 		expectedTs := ext.NewExtendedTime(time.Date(0, 1, 1, 23, 2, 6, 0, time.UTC), ext.TimeKindType, "15:04:05.999999Z")
 		assert.Equal(t, expectedTs, val.(*ext.ExtendedTime))
 		assert.Equal(t, "23:02:06Z", val.(*ext.ExtendedTime).String(""))
-	}
-	{
-		// Non UTC
-		ts, err := TimeWithTimezone{}.Convert("23:02:06.745116")
-		assert.ErrorContains(t, err, `failed to parse "23:02:06.745116"`)
-		assert.Nil(t, ts)
-
-		// Providing timezone offset
-		ts, err = TimeWithTimezone{}.Convert("23:02:06.745116Z-07:00")
-		assert.ErrorContains(t, err, `failed to parse "23:02:06.745116Z-07:00": parsing time "23:02:06.745116Z-07:00": extra text: "-07:00"`)
-		assert.Nil(t, ts)
 	}
 }
