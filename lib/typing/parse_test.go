@@ -1,7 +1,6 @@
 package typing
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"testing"
@@ -11,16 +10,26 @@ import (
 
 func Test_ParseValue(t *testing.T) {
 	{
+		// Invalid
+		{
+			// Unknown data type
+			type Dusty struct{}
+			var dusty Dusty
+			_, err := ParseValue("dusty", nil, dusty)
+			assert.ErrorContains(t, err, "unknown type: typing.Dusty, value: {}")
+		}
+		{
+			// Another unknown data type
+			_, err := ParseValue("", nil, fmt.Errorf("hello there"))
+			assert.ErrorContains(t, err, "unknown type: *errors.errorString, value: hello there")
+		}
+	}
+	{
 		// Optional schema exists, so we are using it
 		optionalSchema := map[string]KindDetails{"created_at": String}
 		for _, val := range []any{"2023-01-01", nil} {
 			assert.Equal(t, String, MustParseValue("created_at", optionalSchema, val))
 		}
-	}
-	{
-		// Invalid
-		assert.Equal(t, MustParseValue("", nil, nil), Invalid)
-		assert.Equal(t, MustParseValue("", nil, errors.New("hello")), Invalid)
 	}
 	{
 		// Nil
