@@ -52,6 +52,7 @@ type ExtendedTime struct {
 }
 
 // MarshalJSON is a custom JSON marshaller for ExtendedTime.
+// This is only used for nested MongoDB objects where there may be nested DateTime values.
 func (e ExtendedTime) MarshalJSON() ([]byte, error) {
 	// This is consistent with how MongoDB's Go driver marshals time.Time
 	return e.ts.UTC().MarshalJSON()
