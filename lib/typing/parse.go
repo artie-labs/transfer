@@ -63,5 +63,5 @@ func ParseValue(key string, optionalSchema map[string]KindDetails, val any) (Kin
 		}
 	}
 
-	return Invalid, fmt.Errorf("unknown type: %T", val)
+	return Invalid, fmt.Errorf("unknown type: %T, value: %v", val, val)
 }
