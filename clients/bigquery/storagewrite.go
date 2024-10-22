@@ -174,22 +174,22 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				return nil, err
 			}
 
-			extTime, err := ext.ParseFromInterface(value, column.KindDetails.ExtendedTimeDetails.Type)
+			_time, err := ext.ParseFromInterface(value, column.KindDetails.ExtendedTimeDetails.Type)
 			if err != nil {
 				return nil, fmt.Errorf("failed to cast value as time.Time, value: %v, err: %w", value, err)
 			}
 
 			switch column.KindDetails.ExtendedTimeDetails.Type {
 			case ext.TimeKindType:
-				message.Set(field, protoreflect.ValueOfInt64(encodePacked64TimeMicros(extTime.GetTime())))
+				message.Set(field, protoreflect.ValueOfInt64(encodePacked64TimeMicros(_time)))
 			case ext.DateKindType:
-				daysSinceEpoch := extTime.GetTime().Unix() / (60 * 60 * 24)
+				daysSinceEpoch := _time.Unix() / (60 * 60 * 24)
 				message.Set(field, protoreflect.ValueOfInt32(int32(daysSinceEpoch)))
 			case ext.TimestampTZKindType:
-				if err := timestamppb.New(extTime.GetTime()).CheckValid(); err != nil {
+				if err := timestamppb.New(_time).CheckValid(); err != nil {
 					return nil, err
 				}
-				message.Set(field, protoreflect.ValueOfInt64(extTime.GetTime().UnixMicro()))
+				message.Set(field, protoreflect.ValueOfInt64(_time.UnixMicro()))
 			default:
 				return nil, fmt.Errorf("unsupported extended time details: %q", column.KindDetails.ExtendedTimeDetails.Type)
 			}

@@ -32,12 +32,12 @@ func parseValue(colVal any, colKind columns.Column) (any, error) {
 			return "", err
 		}
 
-		extTime, err := ext.ParseFromInterface(colVal, colKind.KindDetails.ExtendedTimeDetails.Type)
+		_time, err := ext.ParseFromInterface(colVal, colKind.KindDetails.ExtendedTimeDetails.Type)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
 
-		return extTime.GetTime(), nil
+		return _time, nil
 	case typing.String.Kind:
 		isArray := reflect.ValueOf(colVal).Kind() == reflect.Slice
 		_, isMap := colVal.(map[string]any)

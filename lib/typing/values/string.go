@@ -32,15 +32,15 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 			return "", err
 		}
 
-		extTime, err := ext.ParseFromInterface(colVal, colKind.ExtendedTimeDetails.Type)
+		_time, err := ext.ParseFromInterface(colVal, colKind.ExtendedTimeDetails.Type)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
 
 		if colKind.ExtendedTimeDetails.Type == ext.TimeKindType {
-			return extTime.String(ext.PostgresTimeFormatNoTZ), nil
+			return _time.Format(ext.PostgresTimeFormatNoTZ), nil
 		}
-		return extTime.String(colKind.ExtendedTimeDetails.Format), nil
+		return _time.Format(colKind.ExtendedTimeDetails.Format), nil
 	case typing.String.Kind:
 		isArray := reflect.ValueOf(colVal).Kind() == reflect.Slice
 		_, isMap := colVal.(map[string]any)
