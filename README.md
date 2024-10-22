@@ -3,7 +3,7 @@
  <img
       align="center"
       alt="Artie Transfer"
-      src="https://github.com/user-attachments/assets/1438aee9-614a-463e-9018-edc14931de8c"
+      src="https://github.com/user-attachments/assets/9aa54907-af10-433b-8659-c868d4479f79"
       style="width:100%;"
     />
 </h1>
