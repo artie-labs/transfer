@@ -36,17 +36,16 @@ type NestedKind struct {
 	Format string
 }
 
+func NewNestedKind(kindType ExtendedTimeKindType, optionalFormat string) (NestedKind, error) {
+	defaultLayout, err := kindType.defaultLayout()
+	if err != nil {
+		return NestedKind{}, err
+	}
+
+	return NestedKind{Type: kindType, Format: cmp.Or(optionalFormat, defaultLayout)}, nil
+}
+
 var (
-	TimestampTZ = NestedKind{
-		Type:   TimestampTZKindType,
-		Format: time.RFC3339Nano,
-	}
-
-	Date = NestedKind{
-		Type:   DateKindType,
-		Format: PostgresDateFormat,
-	}
-
 	Time = NestedKind{
 		Type:   TimeKindType,
 		Format: PostgresTimeFormat,

@@ -166,7 +166,7 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 
 	col, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("CHANGE_me")
 	assert.True(t, isOk)
-	assert.Equal(t, ext.TimestampTZ.Type, col.KindDetails.ExtendedTimeDetails.Type)
+	assert.Equal(t, ext.TimestampTZKindType, col.KindDetails.ExtendedTimeDetails.Type)
 
 	// It went from invalid to boolean.
 	col, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("bar")
