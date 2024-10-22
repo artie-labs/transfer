@@ -168,7 +168,7 @@ func TestConvertTimeWithTimezone(t *testing.T) {
 		assert.True(t, isOk)
 		assert.NoError(t, err)
 
-		expectedTs := ext.NewExtendedTime(time.Date(0, 1, 1, 23, 2, 6, 745116000, time.UTC), ext.TimeKindType, "15:04:05.000000Z")
+		expectedTs := ext.NewExtendedTime(time.Date(0, 1, 1, 23, 2, 6, 745116000, time.UTC), ext.TimeKindType, "15:04:05.999999Z")
 		assert.Equal(t, expectedTs, ts)
 	}
 	{
