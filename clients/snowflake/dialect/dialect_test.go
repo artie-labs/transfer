@@ -2,7 +2,7 @@ package dialect
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -277,7 +277,7 @@ func buildColumns(colTypesMap map[string]typing.KindDetails) *columns.Columns {
 		colNames = append(colNames, colName)
 	}
 	// Sort the column names alphabetically to ensure deterministic order
-	sort.Strings(colNames)
+	slices.Sort(colNames)
 
 	var cols columns.Columns
 	for _, colName := range colNames {

@@ -2,7 +2,7 @@ package optimization
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 	"testing"
 	"time"
 
@@ -98,8 +98,8 @@ func slicesEqualUnordered(s1, s2 []string) bool {
 		return false
 	}
 
-	sort.Strings(s1)
-	sort.Strings(s2)
+	slices.Sort(s1)
+	slices.Sort(s2)
 
 	for i, v := range s1 {
 		if v != s2[i] {

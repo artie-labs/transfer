@@ -4,7 +4,7 @@ import (
 	"cmp"
 	"fmt"
 	"log/slog"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -153,7 +153,7 @@ func (e *Event) PrimaryKeys() []string {
 		keys = append(keys, key)
 	}
 
-	sort.Strings(keys)
+	slices.Sort(keys)
 	return keys
 }
 

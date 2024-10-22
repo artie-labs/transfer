@@ -2,7 +2,7 @@ package types_test
 
 import (
 	"math/rand"
-	"sort"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -173,7 +173,7 @@ func TestAuditColumnsToDelete(t *testing.T) {
 			actualCols = []string{}
 		}
 
-		sort.Strings(actualCols)
+		slices.Sort(actualCols)
 		assert.Equal(t, tc.expectedColsRemain, actualCols, idx)
 	}
 }
