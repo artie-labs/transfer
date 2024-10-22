@@ -30,13 +30,21 @@ func TestColumn_DefaultValue(t *testing.T) {
 
 	// date
 	dateKind := typing.ETime
-	dateKind.ExtendedTimeDetails = &ext.Date
+	dateNestedKind, err := ext.NewNestedKind(ext.DateKindType, "")
+	assert.NoError(t, err)
+	dateKind.ExtendedTimeDetails = &dateNestedKind
+
 	// time
 	timeKind := typing.ETime
-	timeKind.ExtendedTimeDetails = &ext.Time
+	timeNestedKind, err := ext.NewNestedKind(ext.TimeKindType, "")
+	assert.NoError(t, err)
+	timeKind.ExtendedTimeDetails = &timeNestedKind
+
 	// date time
 	dateTimeKind := typing.ETime
-	dateTimeKind.ExtendedTimeDetails = &ext.TimestampTZ
+	dateTimeNestedKind, err := ext.NewNestedKind(ext.TimestampTZKindType, "")
+	assert.NoError(t, err)
+	dateTimeKind.ExtendedTimeDetails = &dateTimeNestedKind
 
 	testCases := []struct {
 		name                       string
