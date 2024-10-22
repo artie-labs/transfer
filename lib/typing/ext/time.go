@@ -45,13 +45,6 @@ func NewNestedKind(kindType ExtendedTimeKindType, optionalFormat string) (Nested
 	return NestedKind{Type: kindType, Format: cmp.Or(optionalFormat, defaultLayout)}, nil
 }
 
-var (
-	Time = NestedKind{
-		Type:   TimeKindType,
-		Format: PostgresTimeFormat,
-	}
-)
-
 // ExtendedTime is created because Golang's time.Time does not allow us to explicitly cast values as a date, or time
 // and only allows timestamp expressions.
 type ExtendedTime struct {
