@@ -83,11 +83,42 @@ func TestParseFromInterfaceDate(t *testing.T) {
 	}
 }
 
-func TestParseExtendedDateTime_Timestamp(t *testing.T) {
+func TestParseExtendedDateTime_TimestampTZ(t *testing.T) {
 	tsString := "2023-04-24T17:29:05.69944Z"
 	extTime, err := ParseDateTime(tsString, TimestampTZKindType)
 	assert.NoError(t, err)
-	assert.Equal(t, "2023-04-24T17:29:05.69944Z", extTime.Format(time.RFC3339Nano))
+	assert.Equal(t, tsString, extTime.Format(time.RFC3339Nano))
+}
+
+func TestParseExtendedDateTime_TimestampNTZ(t *testing.T) {
+	{
+		// No fractional seconds
+		tsString := "2023-04-24T17:29:05"
+		extTime, err := ParseDateTime(tsString, TimestampNTZKindType)
+		assert.NoError(t, err)
+		assert.Equal(t, tsString, extTime.Format(RFC3339NoTZ))
+	}
+	{
+		// ms
+		tsString := "2023-04-24T17:29:05.123"
+		extTime, err := ParseDateTime(tsString, TimestampNTZKindType)
+		assert.NoError(t, err)
+		assert.Equal(t, tsString, extTime.Format(RFC3339NoTZ))
+	}
+	{
+		// microseconds
+		tsString := "2023-04-24T17:29:05.123456"
+		extTime, err := ParseDateTime(tsString, TimestampNTZKindType)
+		assert.NoError(t, err)
+		assert.Equal(t, tsString, extTime.Format(RFC3339NoTZ))
+	}
+	{
+		// ns
+		tsString := "2023-04-24T17:29:05.123456789"
+		extTime, err := ParseDateTime(tsString, TimestampNTZKindType)
+		assert.NoError(t, err)
+		assert.Equal(t, tsString, extTime.Format(RFC3339NoTZ))
+	}
 }
 
 func TestTimeLayout(t *testing.T) {
