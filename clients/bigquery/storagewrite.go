@@ -158,7 +158,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 
 			message.Set(field, protoreflect.ValueOfString(decimalValue.String()))
 		case typing.String.Kind:
-			val, err := converters.StringConverter{}.Convert(value)
+			val, err := converters.NewStringConverter(column.KindDetails).Convert(value)
 			if err != nil {
 				return nil, err
 			}

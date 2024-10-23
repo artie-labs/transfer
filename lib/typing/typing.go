@@ -33,6 +33,10 @@ func (k *KindDetails) EnsureExtendedTimeDetails() error {
 		return fmt.Errorf("extended time details is not set")
 	}
 
+	if k.ExtendedTimeDetails.Format == "" {
+		return fmt.Errorf("extended time details format is not set")
+	}
+
 	return nil
 }
 

@@ -81,8 +81,3 @@ func (e *ExtendedTime) GetTime() time.Time {
 func (e *ExtendedTime) GetNestedKind() NestedKind {
 	return e.nestedKind
 }
-
-func (e *ExtendedTime) String(overrideFormat string) string {
-	format := cmp.Or(overrideFormat, e.nestedKind.Format)
-	return e.ts.Format(format)
-}
