@@ -13,8 +13,8 @@ func (Timestamp) layout() string {
 	return ext.RFC3339MillisecondNoTZ
 }
 
-func (t Timestamp) ToKindDetails() typing.KindDetails {
-	return typing.OldNewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, t.layout())
+func (t Timestamp) ToKindDetails() (typing.KindDetails, error) {
+	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, t.layout())
 }
 
 func (t Timestamp) Convert(value any) (any, error) {
@@ -33,8 +33,8 @@ func (MicroTimestamp) layout() string {
 	return ext.RFC3339MicrosecondNoTZ
 }
 
-func (mt MicroTimestamp) ToKindDetails() typing.KindDetails {
-	return typing.OldNewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, mt.layout())
+func (mt MicroTimestamp) ToKindDetails() (typing.KindDetails, error) {
+	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, mt.layout())
 }
 
 func (mt MicroTimestamp) Convert(value any) (any, error) {
@@ -49,8 +49,8 @@ func (mt MicroTimestamp) Convert(value any) (any, error) {
 
 type NanoTimestamp struct{}
 
-func (nt NanoTimestamp) ToKindDetails() typing.KindDetails {
-	return typing.OldNewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, nt.layout())
+func (nt NanoTimestamp) ToKindDetails() (typing.KindDetails, error) {
+	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, nt.layout())
 }
 
 func (NanoTimestamp) layout() string {

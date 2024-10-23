@@ -15,8 +15,8 @@ func (Time) layout() string {
 	return "15:04:05.000"
 }
 
-func (t Time) ToKindDetails() typing.KindDetails {
-	return typing.OldNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, t.layout())
+func (t Time) ToKindDetails() (typing.KindDetails, error) {
+	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, t.layout())
 }
 
 func (t Time) Convert(val any) (any, error) {
@@ -35,8 +35,8 @@ func (NanoTime) layout() string {
 	return "15:04:05.000000000"
 }
 
-func (n NanoTime) ToKindDetails() typing.KindDetails {
-	return typing.OldNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, n.layout())
+func (n NanoTime) ToKindDetails() (typing.KindDetails, error) {
+	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, n.layout())
 }
 
 func (n NanoTime) Convert(value any) (any, error) {
@@ -55,8 +55,8 @@ func (MicroTime) layout() string {
 	return "15:04:05.000000"
 }
 
-func (m MicroTime) ToKindDetails() typing.KindDetails {
-	return typing.OldNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, m.layout())
+func (m MicroTime) ToKindDetails() (typing.KindDetails, error) {
+	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, m.layout())
 }
 
 func (m MicroTime) Convert(value any) (any, error) {
@@ -75,8 +75,8 @@ func (ZonedTimestamp) layout() string {
 	return "2006-01-02T15:04:05.999999999Z"
 }
 
-func (z ZonedTimestamp) ToKindDetails() typing.KindDetails {
-	return typing.OldNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, z.layout())
+func (z ZonedTimestamp) ToKindDetails() (typing.KindDetails, error) {
+	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, z.layout())
 }
 
 func (z ZonedTimestamp) Convert(value any) (any, error) {
@@ -111,8 +111,8 @@ func (t TimeWithTimezone) layout() string {
 	return "15:04:05.999999Z"
 }
 
-func (t TimeWithTimezone) ToKindDetails() typing.KindDetails {
-	return typing.OldNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, t.layout())
+func (t TimeWithTimezone) ToKindDetails() (typing.KindDetails, error) {
+	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, t.layout())
 }
 
 func (t TimeWithTimezone) Convert(value any) (any, error) {
