@@ -20,7 +20,7 @@ func TestDate_Convert(t *testing.T) {
 
 		extTime, isOk := val.(*ext.ExtendedTime)
 		assert.True(t, isOk)
-		assert.Equal(t, "2023-02-13", extTime.String(""))
+		assert.Equal(t, "2023-02-13", extTime.GetTime().Format(Date{}.layout()))
 	}
 	{
 		val, err := Date{}.Convert(int64(19429))
@@ -28,6 +28,6 @@ func TestDate_Convert(t *testing.T) {
 
 		extTime, isOk := val.(*ext.ExtendedTime)
 		assert.True(t, isOk)
-		assert.Equal(t, "2023-03-13", extTime.String(""))
+		assert.Equal(t, "2023-03-13", extTime.GetTime().Format(Date{}.layout()))
 	}
 }

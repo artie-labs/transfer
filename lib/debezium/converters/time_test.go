@@ -37,7 +37,7 @@ func TestZonedTimestamp_Convert(t *testing.T) {
 
 			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 12, 000000000, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.999999999Z")
 			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
-			assert.Equal(t, "2025-09-13T00:00:12Z", val.(*ext.ExtendedTime).String(""))
+			assert.Equal(t, "2025-09-13T00:00:12Z", val.(*ext.ExtendedTime).GetTime().Format(ZonedTimestamp{}.layout()))
 		}
 		{
 			// 1 digits
@@ -46,7 +46,7 @@ func TestZonedTimestamp_Convert(t *testing.T) {
 
 			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 100000000, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.999999999Z")
 			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
-			assert.Equal(t, "2025-09-13T00:00:00.1Z", val.(*ext.ExtendedTime).String(""))
+			assert.Equal(t, "2025-09-13T00:00:00.1Z", val.(*ext.ExtendedTime).GetTime().Format(ZonedTimestamp{}.layout()))
 		}
 		{
 			// 2 digits
@@ -55,7 +55,7 @@ func TestZonedTimestamp_Convert(t *testing.T) {
 
 			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 120000000, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.999999999Z")
 			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
-			assert.Equal(t, "2025-09-13T00:00:00.12Z", val.(*ext.ExtendedTime).String(""))
+			assert.Equal(t, "2025-09-13T00:00:00.12Z", val.(*ext.ExtendedTime).GetTime().Format(ZonedTimestamp{}.layout()))
 		}
 		{
 			// 3 digits
@@ -64,7 +64,7 @@ func TestZonedTimestamp_Convert(t *testing.T) {
 
 			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123000000, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.999999999Z")
 			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
-			assert.Equal(t, "2025-09-13T00:00:00.123Z", val.(*ext.ExtendedTime).String(""))
+			assert.Equal(t, "2025-09-13T00:00:00.123Z", val.(*ext.ExtendedTime).GetTime().Format(ZonedTimestamp{}.layout()))
 		}
 		{
 			// 4 digits
@@ -73,7 +73,7 @@ func TestZonedTimestamp_Convert(t *testing.T) {
 
 			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123400000, time.UTC), ext.TimestampTZKindType, "2006-01-02T15:04:05.999999999Z")
 			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
-			assert.Equal(t, "2025-09-13T00:00:00.1234Z", val.(*ext.ExtendedTime).String(""))
+			assert.Equal(t, "2025-09-13T00:00:00.1234Z", val.(*ext.ExtendedTime).GetTime().Format(ZonedTimestamp{}.layout()))
 		}
 		{
 			// 5 digits
