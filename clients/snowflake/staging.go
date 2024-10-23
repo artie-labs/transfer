@@ -49,6 +49,7 @@ func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
 
 	value, err := values.ToString(colVal, colKind)
 	if err != nil {
+		fmt.Println("colKind", colKind, "extendedTimeDetails", *colKind.ExtendedTimeDetails, "colVal", colVal, fmt.Sprintf("type: %T", colVal))
 		return "", err
 	}
 
@@ -124,6 +125,7 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 		for _, col := range columns {
 			castedValue, castErr := castColValStaging(value[col.Name()], col.KindDetails)
 			if castErr != nil {
+				fmt.Println("col.Name()", col.Name())
 				return "", castErr
 			}
 

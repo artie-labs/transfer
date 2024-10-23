@@ -33,8 +33,7 @@ func TestToString(t *testing.T) {
 			assert.ErrorContains(t, err, "extended time details is not set")
 		}
 		{
-			eTimeCol := columns.NewColumn("time", typing.ETime)
-			eTimeCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{Type: ext.TimeKindType}
+			eTimeCol := columns.NewColumn("time", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""))
 			{
 				// Using [string]
 				val, err := ToString("2021-01-01T03:52:00Z", eTimeCol.KindDetails)
