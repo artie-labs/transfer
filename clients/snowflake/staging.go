@@ -119,18 +119,18 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 	writer.Comma = '\t'
 
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
-	for _, value := range tableData.Rows() {
-		var row []string
+	for _, row := range tableData.Rows() {
+		var csvRow []string
 		for _, col := range columns {
-			castedValue, castErr := castColValStaging(value[col.Name()], col.KindDetails)
+			castedValue, castErr := castColValStaging(row[col.Name()], col.KindDetails)
 			if castErr != nil {
-				return "", castErr
+				return "", fmt.Errorf("failed to cast value '%v': %w", row[col.Name()], castErr)
 			}
 
-			row = append(row, castedValue)
+			csvRow = append(csvRow, castedValue)
 		}
 
-		if err = writer.Write(row); err != nil {
+		if err = writer.Write(csvRow); err != nil {
 			return "", fmt.Errorf("failed to write to csv: %w", err)
 		}
 	}
