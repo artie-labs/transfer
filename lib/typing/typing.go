@@ -103,16 +103,6 @@ func NewExtendedTimeDetails(details KindDetails, extendedType ext.ExtendedTimeKi
 	return details, nil
 }
 
-func OldNewExtendedTimeDetails(details KindDetails, extendedType ext.ExtendedTimeKindType, format string) KindDetails {
-	// TODO: If format is not set, we should use the default format
-	details.ExtendedTimeDetails = &ext.NestedKind{
-		Type:   extendedType,
-		Format: format,
-	}
-
-	return details
-}
-
 // IsJSON - We also need to check if the string is a JSON string or not
 // If it could be one, it will start with { and end with }.
 // Once there, we will then check if it's a JSON string or not.
