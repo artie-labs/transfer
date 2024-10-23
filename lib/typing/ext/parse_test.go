@@ -10,15 +10,15 @@ import (
 func TestParseFromInterface(t *testing.T) {
 	{
 		// Extended time
-		var vals []any
+		var vals []*ExtendedTime
 		vals = append(vals, NewExtendedTime(time.Now().UTC(), DateKindType, PostgresDateFormat))
 		vals = append(vals, NewExtendedTime(time.Now().UTC(), TimestampTZKindType, ISO8601))
 		vals = append(vals, NewExtendedTime(time.Now().UTC(), TimeKindType, PostgresTimeFormat))
 
 		for _, val := range vals {
-			extTime, err := ParseFromInterface(val, TimestampTZKindType)
+			_time, err := ParseFromInterface(val, TimestampTZKindType)
 			assert.NoError(t, err)
-			assert.Equal(t, val.(*ExtendedTime).GetTime(), extTime)
+			assert.Equal(t, val.GetTime(), _time)
 		}
 	}
 	{
@@ -70,7 +70,6 @@ func TestParseFromInterfaceTime(t *testing.T) {
 	for _, supportedTimeFormat := range SupportedTimeFormats {
 		_time, err := ParseFromInterface(now.Format(supportedTimeFormat), TimeKindType)
 		assert.NoError(t, err)
-		// Without passing an override format, this should return the same preserved dt format.
 		assert.Equal(t, _time.Format(supportedTimeFormat), now.Format(supportedTimeFormat))
 	}
 }
@@ -80,8 +79,6 @@ func TestParseFromInterfaceDate(t *testing.T) {
 	for _, supportedDateFormat := range supportedDateFormats {
 		_time, err := ParseFromInterface(now.Format(supportedDateFormat), DateKindType)
 		assert.NoError(t, err)
-
-		// Without passing an override format, this should return the same preserved dt format.
 		assert.Equal(t, _time.Format(supportedDateFormat), now.Format(supportedDateFormat))
 	}
 }
