@@ -250,7 +250,7 @@ func TestField_ToKindDetails(t *testing.T) {
 		for _, dbzType := range []SupportedDebeziumType{Date, DateKafkaConnect} {
 			kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
 			assert.NoError(t, err)
-			assert.Equal(t, typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, ""), kd)
+			assert.Equal(t, typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, ext.PostgresDateFormat), kd)
 		}
 	}
 	{
