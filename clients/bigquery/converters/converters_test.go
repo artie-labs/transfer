@@ -38,13 +38,13 @@ func TestStringConverter_Convert(t *testing.T) {
 	}
 	{
 		// Extended time
-		nestedKind, err := ext.NewNestedKind(ext.TimestampTZKindType, "")
-		assert.NoError(t, err)
-
-		kd := typing.String
-		kd.ExtendedTimeDetails = &nestedKind
-
-		val, err := NewStringConverter(kd).Convert(ext.NewExtendedTime(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), ext.TimestampTZKindType, ""))
+		val, err := NewStringConverter(typing.MustNewExtendedTimeDetails(typing.String, ext.TimestampTZKindType, "")).Convert(
+			ext.NewExtendedTime(
+				time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+				ext.TimestampTZKindType,
+				"",
+			),
+		)
 		assert.NoError(t, err)
 		assert.Equal(t, "2021-01-01T00:00:00Z", val)
 	}
