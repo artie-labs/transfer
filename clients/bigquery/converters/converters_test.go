@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/numbers"
@@ -12,33 +14,38 @@ import (
 )
 
 func TestStringConverter_Convert(t *testing.T) {
-	converter := StringConverter{}
 	{
 		// String
-		val, err := converter.Convert("foo")
+		val, err := NewStringConverter(typing.String).Convert("foo")
 		assert.NoError(t, err)
 		assert.Equal(t, "foo", val)
 	}
 	{
 		// Decimal
-		val, err := converter.Convert(decimal.NewDecimal(numbers.MustParseDecimal("123")))
+		val, err := NewStringConverter(typing.EDecimal).Convert(decimal.NewDecimal(numbers.MustParseDecimal("123")))
 		assert.NoError(t, err)
 		assert.Equal(t, "123", val)
 	}
 	{
 		// Boolean
-		val, err := converter.Convert(true)
+		val, err := NewStringConverter(typing.Boolean).Convert(true)
 		assert.NoError(t, err)
 		assert.Equal(t, "true", val)
 	}
 	{
 		// Invalid
-		_, err := converter.Convert(123)
+		_, err := NewStringConverter(typing.Integer).Convert(123)
 		assert.ErrorContains(t, err, "expected string/*decimal.Decimal/bool received int with value 123")
 	}
 	{
 		// Extended time
-		val, err := converter.Convert(ext.NewExtendedTime(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), ext.TimestampTZKindType, ""))
+		nestedKind, err := ext.NewNestedKind(ext.TimestampTZKindType, "")
+		assert.NoError(t, err)
+
+		kd := typing.String
+		kd.ExtendedTimeDetails = &nestedKind
+
+		val, err := NewStringConverter(kd).Convert(ext.NewExtendedTime(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), ext.TimestampTZKindType, ""))
 		assert.NoError(t, err)
 		assert.Equal(t, "2021-01-01T00:00:00Z", val)
 	}

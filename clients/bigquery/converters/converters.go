@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/artie-labs/transfer/lib/typing"
-
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
