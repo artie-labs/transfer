@@ -233,7 +233,7 @@ func TestField_ToKindDetails(t *testing.T) {
 		for _, dbzType := range []SupportedDebeziumType{ZonedTimestamp} {
 			kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
 			assert.NoError(t, err)
-			assert.Equal(t, typing.OldNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "2006-01-02T15:04:05.999999999Z"), kd)
+			assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "2006-01-02T15:04:05.999999999Z"), kd)
 		}
 	}
 	{
@@ -250,7 +250,7 @@ func TestField_ToKindDetails(t *testing.T) {
 		for _, dbzType := range []SupportedDebeziumType{Date, DateKafkaConnect} {
 			kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
 			assert.NoError(t, err)
-			assert.Equal(t, typing.OldNewExtendedTimeDetails(typing.ETime, ext.DateKindType, ext.PostgresDateFormat), kd)
+			assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.DateKindType, ext.PostgresDateFormat), kd)
 		}
 	}
 	{
@@ -259,7 +259,7 @@ func TestField_ToKindDetails(t *testing.T) {
 			for _, dbzType := range []SupportedDebeziumType{TimeWithTimezone} {
 				kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
 				assert.NoError(t, err)
-				assert.Equal(t, typing.OldNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "15:04:05.999999Z"), kd, dbzType)
+				assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "15:04:05.999999Z"), kd, dbzType)
 			}
 		}
 		{
@@ -267,20 +267,20 @@ func TestField_ToKindDetails(t *testing.T) {
 			for _, dbzType := range []SupportedDebeziumType{Time, TimeKafkaConnect} {
 				kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
 				assert.NoError(t, err)
-				assert.Equal(t, typing.OldNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "15:04:05.000"), kd, dbzType)
+				assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "15:04:05.000"), kd, dbzType)
 			}
 		}
 		{
 			// Micro time
 			kd, err := Field{DebeziumType: MicroTime}.ToKindDetails()
 			assert.NoError(t, err)
-			assert.Equal(t, typing.OldNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "15:04:05.000000"), kd)
+			assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "15:04:05.000000"), kd)
 		}
 		{
 			// Nano time
 			kd, err := Field{DebeziumType: NanoTime}.ToKindDetails()
 			assert.NoError(t, err)
-			assert.Equal(t, typing.OldNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "15:04:05.000000000"), kd)
+			assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "15:04:05.000000000"), kd)
 		}
 	}
 	{
