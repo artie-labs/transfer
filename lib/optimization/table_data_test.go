@@ -133,7 +133,7 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 		"FOO":                  typing.String,
 		"bar":                  typing.Invalid,
 		"CHANGE_me":            typing.String,
-		"do_not_change_format": typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, ""),
+		"do_not_change_format": typing.MustNewExtendedTimeDetails(typing.ETime, ext.DateKindType, ""),
 	} {
 		_cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
@@ -150,9 +150,9 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 
 	for name, colKindDetails := range map[string]typing.KindDetails{
 		"foo":                  typing.String,
-		"change_me":            typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
+		"change_me":            typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
 		"bar":                  typing.Boolean,
-		"do_not_change_format": typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
+		"do_not_change_format": typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
 	} {
 		tableData.MergeColumnsFromDestination(columns.NewColumn(name, colKindDetails))
 	}

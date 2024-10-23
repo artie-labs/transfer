@@ -9,7 +9,7 @@ import (
 )
 
 func TestTimestamp_Converter(t *testing.T) {
-	assert.Equal(t, typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, ext.RFC3339MillisecondNoTZ), Timestamp{}.ToKindDetails())
+	assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, ext.RFC3339MillisecondNoTZ), Timestamp{}.ToKindDetails())
 	{
 		// Invalid conversion
 		_, err := Timestamp{}.Convert("invalid")
@@ -30,7 +30,7 @@ func TestTimestamp_Converter(t *testing.T) {
 }
 
 func TestMicroTimestamp_Converter(t *testing.T) {
-	assert.Equal(t, typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, ext.RFC3339MicrosecondNoTZ), MicroTimestamp{}.ToKindDetails())
+	assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, ext.RFC3339MicrosecondNoTZ), MicroTimestamp{}.ToKindDetails())
 	{
 		// Invalid conversion
 		_, err := MicroTimestamp{}.Convert("invalid")
@@ -51,7 +51,7 @@ func TestMicroTimestamp_Converter(t *testing.T) {
 }
 
 func TestNanoTimestamp_Converter(t *testing.T) {
-	assert.Equal(t, typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, ext.RFC3339NanosecondNoTZ), NanoTimestamp{}.ToKindDetails())
+	assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, ext.RFC3339NanosecondNoTZ), NanoTimestamp{}.ToKindDetails())
 	{
 		// Invalid conversion
 		_, err := NanoTimestamp{}.Convert("invalid")

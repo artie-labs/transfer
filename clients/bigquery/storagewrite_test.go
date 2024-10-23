@@ -44,26 +44,29 @@ func TestColumnToTableFieldSchema(t *testing.T) {
 	}
 	{
 		// ETime - Time:
-		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "")))
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "")))
 		assert.NoError(t, err)
 		assert.Equal(t, storagepb.TableFieldSchema_TIME, fieldSchema.Type)
 	}
 	{
 		// ETime - Date:
-		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, "")))
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.MustNewExtendedTimeDetails(typing.ETime, ext.DateKindType, "")))
 		assert.NoError(t, err)
 		assert.Equal(t, storagepb.TableFieldSchema_DATE, fieldSchema.Type)
 	}
 	{
 		// ETime - TimestampTZ:
-		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")))
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")))
 		assert.NoError(t, err)
 		assert.Equal(t, storagepb.TableFieldSchema_TIMESTAMP, fieldSchema.Type)
 	}
 	{
 		// ETime - Invalid:
-		_, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.NewExtendedTimeDetails(typing.ETime, "", "")))
-		assert.ErrorContains(t, err, "unsupported extended time details type:")
+		nestedKind, err := typing.NewExtendedTimeDetails(typing.ETime, "", "")
+		assert.ErrorContains(t, err, "unknown kind type")
+
+		_, err = columnToTableFieldSchema(columns.NewColumn("foo", nestedKind))
+		assert.ErrorContains(t, err, `unsupported column kind: "invalid"`)
 	}
 	{
 		// Struct:
@@ -112,9 +115,9 @@ func TestRowToMessage(t *testing.T) {
 		columns.NewColumn("c_numeric", typing.EDecimal),
 		columns.NewColumn("c_string", typing.String),
 		columns.NewColumn("c_string_decimal", typing.String),
-		columns.NewColumn("c_time", typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "")),
-		columns.NewColumn("c_date", typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, "")),
-		columns.NewColumn("c_datetime", typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")),
+		columns.NewColumn("c_time", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "")),
+		columns.NewColumn("c_date", typing.MustNewExtendedTimeDetails(typing.ETime, ext.DateKindType, "")),
+		columns.NewColumn("c_datetime", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")),
 		columns.NewColumn("c_struct", typing.Struct),
 		columns.NewColumn("c_array", typing.Array),
 	}

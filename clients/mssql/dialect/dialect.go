@@ -116,13 +116,13 @@ func (MSSQLDialect) KindForDataType(rawType string, stringPrecision string) (typ
 	case
 		"datetime",
 		"datetime2":
-		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, ""), nil
+		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, "")
 	case "datetimeoffset":
-		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""), nil
+		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")
 	case "time":
-		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""), nil
+		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "")
 	case "date":
-		return typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, ""), nil
+		return typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, "")
 	case "bit":
 		return typing.Boolean, nil
 	case "text":
