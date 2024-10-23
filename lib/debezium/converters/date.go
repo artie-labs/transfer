@@ -15,7 +15,7 @@ func (Date) layout() string {
 }
 
 func (d Date) ToKindDetails() typing.KindDetails {
-	return typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, d.layout())
+	return typing.OldNewExtendedTimeDetails(typing.ETime, ext.DateKindType, d.layout())
 }
 
 func (d Date) Convert(value any) (any, error) {

@@ -16,7 +16,7 @@ func (Time) layout() string {
 }
 
 func (t Time) ToKindDetails() typing.KindDetails {
-	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, t.layout())
+	return typing.OldNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, t.layout())
 }
 
 func (t Time) Convert(val any) (any, error) {
@@ -36,7 +36,7 @@ func (NanoTime) layout() string {
 }
 
 func (n NanoTime) ToKindDetails() typing.KindDetails {
-	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, n.layout())
+	return typing.OldNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, n.layout())
 }
 
 func (n NanoTime) Convert(value any) (any, error) {
@@ -56,7 +56,7 @@ func (MicroTime) layout() string {
 }
 
 func (m MicroTime) ToKindDetails() typing.KindDetails {
-	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, m.layout())
+	return typing.OldNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, m.layout())
 }
 
 func (m MicroTime) Convert(value any) (any, error) {
@@ -76,7 +76,7 @@ func (ZonedTimestamp) layout() string {
 }
 
 func (z ZonedTimestamp) ToKindDetails() typing.KindDetails {
-	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, z.layout())
+	return typing.OldNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, z.layout())
 }
 
 func (z ZonedTimestamp) Convert(value any) (any, error) {
@@ -112,7 +112,7 @@ func (t TimeWithTimezone) layout() string {
 }
 
 func (t TimeWithTimezone) ToKindDetails() typing.KindDetails {
-	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, t.layout())
+	return typing.OldNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, t.layout())
 }
 
 func (t TimeWithTimezone) Convert(value any) (any, error) {

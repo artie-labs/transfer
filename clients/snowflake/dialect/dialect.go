@@ -98,13 +98,13 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.
 	case "array":
 		return typing.Array, nil
 	case "timestamp_ltz", "timestamp_tz":
-		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""), nil
+		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")
 	case "timestamp", "datetime", "timestamp_ntz":
-		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, ""), nil
+		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, "")
 	case "time":
-		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""), nil
+		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "")
 	case "date":
-		return typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, ""), nil
+		return typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, "")
 	default:
 		return typing.Invalid, nil
 	}
