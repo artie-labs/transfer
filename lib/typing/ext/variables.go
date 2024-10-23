@@ -48,6 +48,7 @@ const TimezoneOffsetFormat = "Z07:00"
 
 // RFC3339 variants
 const (
+	RFC3339NoTZ            = "2006-01-02T15:04:05.999999999"
 	RFC3339MillisecondUTC  = "2006-01-02T15:04:05.000Z"
 	RFC3339MicrosecondUTC  = "2006-01-02T15:04:05.000000Z"
 	RFC3339NanosecondUTC   = "2006-01-02T15:04:05.000000000Z"
