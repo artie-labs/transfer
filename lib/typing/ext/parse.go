@@ -20,91 +20,82 @@ func ParseTimeExactMatch(layout, value string) (time.Time, error) {
 	return ts, nil
 }
 
-func ParseFromInterface(val any, kindType ExtendedTimeKindType) (*ExtendedTime, error) {
+func ParseFromInterface(val any, kindType ExtendedTimeKindType) (time.Time, error) {
 	switch convertedVal := val.(type) {
 	case nil:
-		return nil, fmt.Errorf("val is nil")
-	case *ExtendedTime:
+		return time.Time{}, fmt.Errorf("val is nil")
+	case time.Time:
 		return convertedVal, nil
+	case *ExtendedTime:
+		return convertedVal.GetTime(), nil
 	case string:
-		extendedTime, err := ParseExtendedDateTime(convertedVal, kindType)
+		ts, err := ParseDateTime(convertedVal, kindType)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse colVal: %q, err: %w", val, err)
+			return time.Time{}, fmt.Errorf("failed to parse colVal: %q, err: %w", val, err)
 		}
 
-		return extendedTime, nil
+		return ts, nil
 	default:
-		return nil, fmt.Errorf("failed to parse colVal, expected type string or *ExtendedTime and got: %T", convertedVal)
+		return time.Time{}, fmt.Errorf("failed to parse colVal, expected type string or *ExtendedTime and got: %T", convertedVal)
 	}
 }
 
-func ParseExtendedDateTime(value string, kindType ExtendedTimeKindType) (*ExtendedTime, error) {
+func ParseDateTime(value string, kindType ExtendedTimeKindType) (time.Time, error) {
+	// TODO: Support TimestampNTZKindType
 	switch kindType {
 	case TimestampTZKindType:
 		return parseDateTime(value)
 	case DateKindType:
 		// Try date first
-		if et, err := parseDate(value); err == nil {
-			return et, nil
+		if ts, err := parseDate(value); err == nil {
+			return ts, nil
 		}
 
 		// If that doesn't work, try timestamp
-		if et, err := parseDateTime(value); err == nil {
-			nestedKind, err := NewNestedKind(DateKindType, "")
-			if err != nil {
-				return nil, err
-			}
-
-			et.nestedKind = nestedKind
-			return et, nil
+		if ts, err := parseDateTime(value); err == nil {
+			return ts, nil
 		}
 	case TimeKindType:
 		// Try time first
-		if et, err := parseTime(value); err == nil {
-			return et, nil
+		if ts, err := parseTime(value); err == nil {
+			return ts, nil
 		}
 
 		// If that doesn't work, try timestamp
-		if et, err := parseDateTime(value); err == nil {
-			nestedKind, err := NewNestedKind(TimeKindType, "")
-			if err != nil {
-				return nil, err
-			}
-
-			et.nestedKind = nestedKind
-			return et, nil
+		if ts, err := parseDateTime(value); err == nil {
+			return ts, nil
 		}
 	}
 
-	return nil, fmt.Errorf("unsupported value: %q, kindType: %q", value, kindType)
+	return time.Time{}, fmt.Errorf("unsupported value: %q, kindType: %q", value, kindType)
 }
 
-func parseDateTime(value string) (*ExtendedTime, error) {
+func parseDateTime(value string) (time.Time, error) {
 	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
 		if ts, err := ParseTimeExactMatch(supportedDateTimeLayout, value); err == nil {
-			return NewExtendedTime(ts, TimestampTZKindType, supportedDateTimeLayout), nil
+			return ts, nil
 		}
 	}
 
-	return nil, fmt.Errorf("unsupported value: %q", value)
+	return time.Time{}, fmt.Errorf("unsupported value: %q", value)
 }
 
-func parseDate(value string) (*ExtendedTime, error) {
+func parseDate(value string) (time.Time, error) {
 	for _, supportedDateFormat := range supportedDateFormats {
 		if ts, err := ParseTimeExactMatch(supportedDateFormat, value); err == nil {
-			return NewExtendedTime(ts, DateKindType, supportedDateFormat), nil
+			return ts, nil
 		}
 	}
 
-	return nil, fmt.Errorf("unsupported value: %q", value)
+	return time.Time{}, fmt.Errorf("unsupported value: %q", value)
 }
 
-func parseTime(value string) (*ExtendedTime, error) {
+func parseTime(value string) (time.Time, error) {
 	for _, supportedTimeFormat := range SupportedTimeFormats {
 		if ts, err := ParseTimeExactMatch(supportedTimeFormat, value); err == nil {
-			return NewExtendedTime(ts, TimeKindType, supportedTimeFormat), nil
+			return ts, nil
 		}
 	}
 
-	return nil, fmt.Errorf("unsupported value: %q", value)
+	return time.Time{}, fmt.Errorf("unsupported value: %q", value)
 }

@@ -201,12 +201,12 @@ func (t *TableData) DistinctDates(colName string) ([]string, error) {
 			return nil, fmt.Errorf("col: %v does not exist on row: %v", colName, row)
 		}
 
-		extTime, err := ext.ParseFromInterface(val, ext.DateKindType)
+		_time, err := ext.ParseFromInterface(val, ext.DateKindType)
 		if err != nil {
 			return nil, fmt.Errorf("col: %v is not a time column, value: %v, err: %w", colName, val, err)
 		}
 
-		retMap[extTime.String(ext.PostgresDateFormat)] = true
+		retMap[_time.Format(ext.PostgresDateFormat)] = true
 	}
 
 	var distinctDates []string

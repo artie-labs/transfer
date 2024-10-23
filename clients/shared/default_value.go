@@ -26,16 +26,16 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 			return nil, err
 		}
 
-		extTime, err := ext.ParseFromInterface(column.DefaultValue(), column.KindDetails.ExtendedTimeDetails.Type)
+		_time, err := ext.ParseFromInterface(column.DefaultValue(), column.KindDetails.ExtendedTimeDetails.Type)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", column.DefaultValue(), err)
 		}
 
 		switch column.KindDetails.ExtendedTimeDetails.Type {
 		case ext.TimeKindType:
-			return sql.QuoteLiteral(extTime.String(ext.PostgresTimeFormatNoTZ)), nil
+			return sql.QuoteLiteral(_time.Format(ext.PostgresTimeFormatNoTZ)), nil
 		default:
-			return sql.QuoteLiteral(extTime.String(column.KindDetails.ExtendedTimeDetails.Format)), nil
+			return sql.QuoteLiteral(_time.Format(column.KindDetails.ExtendedTimeDetails.Format)), nil
 		}
 	case typing.EDecimal.Kind:
 		if column.KindDetails.ExtendedDecimalDetails.Scale() == 0 {

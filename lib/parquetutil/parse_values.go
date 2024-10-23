@@ -25,16 +25,16 @@ func ParseValue(colVal any, colKind columns.Column) (any, error) {
 			return "", err
 		}
 
-		extTime, err := ext.ParseFromInterface(colVal, colKind.KindDetails.ExtendedTimeDetails.Type)
+		_time, err := ext.ParseFromInterface(colVal, colKind.KindDetails.ExtendedTimeDetails.Type)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
 
 		if colKind.KindDetails.ExtendedTimeDetails.Type == ext.DateKindType || colKind.KindDetails.ExtendedTimeDetails.Type == ext.TimeKindType {
-			return extTime.String(colKind.KindDetails.ExtendedTimeDetails.Format), nil
+			return _time.Format(colKind.KindDetails.ExtendedTimeDetails.Format), nil
 		}
 
-		return extTime.GetTime().UnixMilli(), nil
+		return _time.UnixMilli(), nil
 	case typing.String.Kind:
 		return colVal, nil
 	case typing.Struct.Kind:

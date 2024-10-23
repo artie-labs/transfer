@@ -10,15 +10,15 @@ import (
 func TestParseFromInterface(t *testing.T) {
 	{
 		// Extended time
-		var vals []any
+		var vals []*ExtendedTime
 		vals = append(vals, NewExtendedTime(time.Now().UTC(), DateKindType, PostgresDateFormat))
 		vals = append(vals, NewExtendedTime(time.Now().UTC(), TimestampTZKindType, ISO8601))
 		vals = append(vals, NewExtendedTime(time.Now().UTC(), TimeKindType, PostgresTimeFormat))
 
 		for _, val := range vals {
-			extTime, err := ParseFromInterface(val, TimestampTZKindType)
+			_time, err := ParseFromInterface(val, TimestampTZKindType)
 			assert.NoError(t, err)
-			assert.Equal(t, val, extTime)
+			assert.Equal(t, val.GetTime(), _time)
 		}
 	}
 	{
@@ -40,63 +40,54 @@ func TestParseFromInterface(t *testing.T) {
 		// String - RFC3339MillisecondUTC
 		value, err := ParseFromInterface("2024-09-19T16:05:18.630Z", TimestampTZKindType)
 		assert.NoError(t, err)
-		assert.Equal(t, "2024-09-19T16:05:18.630Z", value.String(""))
-		assert.Equal(t, RFC3339MillisecondUTC, value.nestedKind.Format)
+		assert.Equal(t, "2024-09-19T16:05:18.630Z", value.Format(RFC3339MillisecondUTC))
 	}
 	{
 		// String - RFC3339MicrosecondUTC
 		value, err := ParseFromInterface("2024-09-19T16:05:18.630000Z", TimestampTZKindType)
 		assert.NoError(t, err)
-		assert.Equal(t, "2024-09-19T16:05:18.630000Z", value.String(""))
-		assert.Equal(t, RFC3339MicrosecondUTC, value.nestedKind.Format)
+		assert.Equal(t, "2024-09-19T16:05:18.630000Z", value.Format(RFC3339MicrosecondUTC))
 	}
 	{
 		// String - RFC3339NanosecondUTC
 		value, err := ParseFromInterface("2024-09-19T16:05:18.630000000Z", TimestampTZKindType)
 		assert.NoError(t, err)
-		assert.Equal(t, "2024-09-19T16:05:18.630000000Z", value.String(""))
-		assert.Equal(t, RFC3339NanosecondUTC, value.nestedKind.Format)
+		assert.Equal(t, "2024-09-19T16:05:18.630000000Z", value.Format(RFC3339NanosecondUTC))
 	}
 }
 
 func TestParseFromInterfaceDateTime(t *testing.T) {
 	now := time.Now().In(time.UTC)
 	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
-		et, err := ParseFromInterface(now.Format(supportedDateTimeLayout), TimestampTZKindType)
+		_time, err := ParseFromInterface(now.Format(supportedDateTimeLayout), TimestampTZKindType)
 		assert.NoError(t, err)
-		assert.Equal(t, TimestampTZKindType, et.GetNestedKind().Type)
-		assert.Equal(t, et.String(""), now.Format(supportedDateTimeLayout))
+		assert.Equal(t, _time.Format(supportedDateTimeLayout), now.Format(supportedDateTimeLayout))
 	}
 }
 
 func TestParseFromInterfaceTime(t *testing.T) {
 	now := time.Now()
 	for _, supportedTimeFormat := range SupportedTimeFormats {
-		et, err := ParseFromInterface(now.Format(supportedTimeFormat), TimeKindType)
+		_time, err := ParseFromInterface(now.Format(supportedTimeFormat), TimeKindType)
 		assert.NoError(t, err)
-		assert.Equal(t, TimeKindType, et.GetNestedKind().Type)
-		// Without passing an override format, this should return the same preserved dt format.
-		assert.Equal(t, et.String(""), now.Format(supportedTimeFormat))
+		assert.Equal(t, _time.Format(supportedTimeFormat), now.Format(supportedTimeFormat))
 	}
 }
 
 func TestParseFromInterfaceDate(t *testing.T) {
 	now := time.Now()
 	for _, supportedDateFormat := range supportedDateFormats {
-		et, err := ParseFromInterface(now.Format(supportedDateFormat), DateKindType)
+		_time, err := ParseFromInterface(now.Format(supportedDateFormat), DateKindType)
 		assert.NoError(t, err)
-		assert.Equal(t, DateKindType, et.GetNestedKind().Type)
-
-		// Without passing an override format, this should return the same preserved dt format.
-		assert.Equal(t, et.String(""), now.Format(supportedDateFormat))
+		assert.Equal(t, _time.Format(supportedDateFormat), now.Format(supportedDateFormat))
 	}
 }
 
 func TestParseExtendedDateTime_Timestamp(t *testing.T) {
 	tsString := "2023-04-24T17:29:05.69944Z"
-	extTime, err := ParseExtendedDateTime(tsString, TimestampTZKindType)
+	extTime, err := ParseDateTime(tsString, TimestampTZKindType)
 	assert.NoError(t, err)
-	assert.Equal(t, "2023-04-24T17:29:05.69944Z", extTime.String(""))
+	assert.Equal(t, "2023-04-24T17:29:05.69944Z", extTime.Format(time.RFC3339Nano))
 }
 
 func TestTimeLayout(t *testing.T) {
@@ -104,8 +95,8 @@ func TestTimeLayout(t *testing.T) {
 
 	for _, supportedFormat := range SupportedTimeFormats {
 		parsedTsString := ts.Format(supportedFormat)
-		extTime, err := ParseExtendedDateTime(parsedTsString, TimeKindType)
+		extTime, err := ParseDateTime(parsedTsString, TimeKindType)
 		assert.NoError(t, err)
-		assert.Equal(t, parsedTsString, extTime.String(""))
+		assert.Equal(t, parsedTsString, extTime.Format(supportedFormat))
 	}
 }
