@@ -148,7 +148,7 @@ func (f Field) ToKindDetails() (typing.KindDetails, error) {
 	}
 
 	if converter != nil {
-		return converter.ToKindDetails(), nil
+		return converter.ToKindDetails()
 	}
 
 	switch f.Type {

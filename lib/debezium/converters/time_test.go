@@ -143,7 +143,9 @@ func TestTime_Convert(t *testing.T) {
 }
 
 func TestNanoTime_Converter(t *testing.T) {
-	assert.Equal(t, typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, NanoTime{}.layout()), NanoTime{}.ToKindDetails())
+	kd, err := NanoTime{}.ToKindDetails()
+	assert.NoError(t, err)
+	assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, NanoTime{}.layout()), kd)
 	{
 		// Invalid data
 		_, err := NanoTime{}.Convert("123")
@@ -158,7 +160,9 @@ func TestNanoTime_Converter(t *testing.T) {
 }
 
 func TestMicroTime_Converter(t *testing.T) {
-	assert.Equal(t, typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, MicroTime{}.layout()), MicroTime{}.ToKindDetails())
+	kd, err := MicroTime{}.ToKindDetails()
+	assert.NoError(t, err)
+	assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, MicroTime{}.layout()), kd)
 	{
 		// Invalid data
 		_, err := MicroTime{}.Convert("123")

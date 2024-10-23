@@ -15,7 +15,7 @@ func (Time) layout() string {
 	return "15:04:05.000"
 }
 
-func (t Time) ToKindDetails() typing.KindDetails {
+func (t Time) ToKindDetails() (typing.KindDetails, error) {
 	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, t.layout())
 }
 
@@ -35,7 +35,7 @@ func (NanoTime) layout() string {
 	return "15:04:05.000000000"
 }
 
-func (n NanoTime) ToKindDetails() typing.KindDetails {
+func (n NanoTime) ToKindDetails() (typing.KindDetails, error) {
 	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, n.layout())
 }
 
@@ -55,7 +55,7 @@ func (MicroTime) layout() string {
 	return "15:04:05.000000"
 }
 
-func (m MicroTime) ToKindDetails() typing.KindDetails {
+func (m MicroTime) ToKindDetails() (typing.KindDetails, error) {
 	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, m.layout())
 }
 
@@ -75,7 +75,7 @@ func (ZonedTimestamp) layout() string {
 	return "2006-01-02T15:04:05.999999999Z"
 }
 
-func (z ZonedTimestamp) ToKindDetails() typing.KindDetails {
+func (z ZonedTimestamp) ToKindDetails() (typing.KindDetails, error) {
 	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, z.layout())
 }
 
@@ -111,7 +111,7 @@ func (t TimeWithTimezone) layout() string {
 	return "15:04:05.999999Z"
 }
 
-func (t TimeWithTimezone) ToKindDetails() typing.KindDetails {
+func (t TimeWithTimezone) ToKindDetails() (typing.KindDetails, error) {
 	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, t.layout())
 }
 

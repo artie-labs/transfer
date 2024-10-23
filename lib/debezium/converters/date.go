@@ -14,7 +14,7 @@ func (Date) layout() string {
 	return ext.PostgresDateFormat
 }
 
-func (d Date) ToKindDetails() typing.KindDetails {
+func (d Date) ToKindDetails() (typing.KindDetails, error) {
 	return typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, d.layout())
 }
 

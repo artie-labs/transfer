@@ -92,10 +92,10 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 		"record":             typing.Struct,
 		"json":               typing.Struct,
 		// Datetime
-		"datetime":  typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
-		"timestamp": typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
-		"time":      typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""),
-		"date":      typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, ""),
+		"datetime":  typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
+		"timestamp": typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
+		"time":      typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""),
+		"date":      typing.MustNewExtendedTimeDetails(typing.ETime, ext.DateKindType, ""),
 		//Invalid
 		"foo":    typing.Invalid,
 		"foofoo": typing.Invalid,
@@ -130,9 +130,9 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 
 func TestBigQueryDialect_KindForDataType_NoDataLoss(t *testing.T) {
 	kindDetails := []typing.KindDetails{
-		typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
-		typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""),
-		typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, ""),
+		typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
+		typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""),
+		typing.MustNewExtendedTimeDetails(typing.ETime, ext.DateKindType, ""),
 		typing.String,
 		typing.Boolean,
 		typing.Struct,

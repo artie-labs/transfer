@@ -87,14 +87,24 @@ func NewDecimalDetailsFromTemplate(details KindDetails, decimalDetails decimal.D
 	return details
 }
 
-func NewExtendedTimeDetails(details KindDetails, extendedType ext.ExtendedTimeKindType, format string) KindDetails {
-	// TODO: If format is not set, we should use the default format
-	details.ExtendedTimeDetails = &ext.NestedKind{
-		Type:   extendedType,
-		Format: format,
+// MustNewExtendedTimeDetails - calls NewExtendedTimeDetails and panics if there is an error returned. This is used for tests.
+func MustNewExtendedTimeDetails(details KindDetails, extendedType ext.ExtendedTimeKindType, optionalFormat string) KindDetails {
+	nestedKind, err := NewExtendedTimeDetails(details, extendedType, optionalFormat)
+	if err != nil {
+		panic(err)
 	}
 
-	return details
+	return nestedKind
+}
+
+func NewExtendedTimeDetails(details KindDetails, extendedType ext.ExtendedTimeKindType, optionalFormat string) (KindDetails, error) {
+	nestedKind, err := ext.NewNestedKind(extendedType, optionalFormat)
+	if err != nil {
+		return Invalid, err
+	}
+
+	details.ExtendedTimeDetails = &nestedKind
+	return details, nil
 }
 
 // IsJSON - We also need to check if the string is a JSON string or not
