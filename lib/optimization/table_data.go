@@ -273,6 +273,7 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) erro
 		}
 
 		if found {
+			// TODO: Move this whole block into a function and add unit-tests.
 			inMemoryCol.KindDetails.Kind = foundColumn.KindDetails.Kind
 			// Copy over backfilled
 			inMemoryCol.SetBackfilled(foundColumn.Backfilled())
