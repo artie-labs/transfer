@@ -130,7 +130,7 @@ func TestTime_Convert(t *testing.T) {
 
 		extTime, isOk := val.(*ext.ExtendedTime)
 		assert.True(t, isOk)
-		assert.Equal(t, "15:12:00.321", extTime.String(""))
+		assert.Equal(t, "15:12:00.321", extTime.GetTime().Format(Time{}.layout()))
 	}
 	{
 		val, err := Time{}.Convert(int64(54720000))
@@ -138,7 +138,7 @@ func TestTime_Convert(t *testing.T) {
 
 		extTime, isOk := val.(*ext.ExtendedTime)
 		assert.True(t, isOk)
-		assert.Equal(t, "15:12:00.000", extTime.String(""))
+		assert.Equal(t, "15:12:00.000", extTime.GetTime().Format(Time{}.layout()))
 	}
 }
 
@@ -153,7 +153,7 @@ func TestNanoTime_Converter(t *testing.T) {
 		// Valid
 		val, err := NanoTime{}.Convert(int64(54_720_000_009_000))
 		assert.NoError(t, err)
-		assert.Equal(t, "15:12:00.000009000", val.(*ext.ExtendedTime).String(""))
+		assert.Equal(t, "15:12:00.000009000", val.(*ext.ExtendedTime).GetTime().Format(NanoTime{}.layout()))
 	}
 }
 
@@ -168,7 +168,7 @@ func TestMicroTime_Converter(t *testing.T) {
 		// Valid
 		val, err := MicroTime{}.Convert(int64(54720000000))
 		assert.NoError(t, err)
-		assert.Equal(t, "15:12:00.000000", val.(*ext.ExtendedTime).String(""))
+		assert.Equal(t, "15:12:00.000000", val.(*ext.ExtendedTime).GetTime().Format(MicroTime{}.layout()))
 	}
 }
 
@@ -196,26 +196,26 @@ func TestConvertTimeWithTimezone(t *testing.T) {
 		val, err := TimeWithTimezone{}.Convert("23:02:06.745116Z")
 		assert.NoError(t, err)
 
-		expectedTs := ext.NewExtendedTime(time.Date(0, 1, 1, 23, 2, 6, 745116000, time.UTC), ext.TimeKindType, "15:04:05.999999Z")
+		expectedTs := ext.NewExtendedTime(time.Date(0, 1, 1, 23, 2, 6, 745116000, time.UTC), ext.TimeKindType, TimeWithTimezone{}.layout())
 		assert.Equal(t, expectedTs, val.(*ext.ExtendedTime))
-		assert.Equal(t, "23:02:06.745116Z", val.(*ext.ExtendedTime).String(""))
+		assert.Equal(t, "23:02:06.745116Z", val.(*ext.ExtendedTime).GetTime().Format(TimeWithTimezone{}.layout()))
 	}
 	{
 		// ms precision
 		val, err := TimeWithTimezone{}.Convert("23:02:06.745Z")
 		assert.NoError(t, err)
 
-		expectedTs := ext.NewExtendedTime(time.Date(0, 1, 1, 23, 2, 6, 745000000, time.UTC), ext.TimeKindType, "15:04:05.999999Z")
+		expectedTs := ext.NewExtendedTime(time.Date(0, 1, 1, 23, 2, 6, 745000000, time.UTC), ext.TimeKindType, TimeWithTimezone{}.layout())
 		assert.Equal(t, expectedTs, val.(*ext.ExtendedTime))
-		assert.Equal(t, "23:02:06.745Z", val.(*ext.ExtendedTime).String(""))
+		assert.Equal(t, "23:02:06.745Z", val.(*ext.ExtendedTime).GetTime().Format(TimeWithTimezone{}.layout()))
 	}
 	{
 		// no fractional seconds
 		val, err := TimeWithTimezone{}.Convert("23:02:06Z")
 		assert.NoError(t, err)
 
-		expectedTs := ext.NewExtendedTime(time.Date(0, 1, 1, 23, 2, 6, 0, time.UTC), ext.TimeKindType, "15:04:05.999999Z")
+		expectedTs := ext.NewExtendedTime(time.Date(0, 1, 1, 23, 2, 6, 0, time.UTC), ext.TimeKindType, TimeWithTimezone{}.layout())
 		assert.Equal(t, expectedTs, val.(*ext.ExtendedTime))
-		assert.Equal(t, "23:02:06Z", val.(*ext.ExtendedTime).String(""))
+		assert.Equal(t, "23:02:06Z", val.(*ext.ExtendedTime).GetTime().Format(TimeWithTimezone{}.layout()))
 	}
 }
