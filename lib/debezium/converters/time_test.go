@@ -120,6 +120,16 @@ func TestZonedTimestamp_Convert(t *testing.T) {
 			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
 			assert.Equal(t, "2025-09-13T00:00:00.123456789Z", val.(*ext.ExtendedTime).GetTime().Format(ZonedTimestamp{}.layout()))
 		}
+		{
+			// Testing timezone offset
+			ts := "2025-09-13T00:00:00.123456789+07:00"
+			val, err := ZonedTimestamp{}.Convert(ts)
+			assert.NoError(t, err)
+
+			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456789, time.FixedZone("", 7*60*60)), ext.TimestampTZKindType, ext.RFC3339)
+			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
+			assert.Equal(t, ts, val.(*ext.ExtendedTime).GetTime().Format(ZonedTimestamp{}.layout()))
+		}
 	}
 }
 
