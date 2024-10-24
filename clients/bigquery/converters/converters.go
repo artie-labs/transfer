@@ -23,7 +23,7 @@ func (s StringConverter) Convert(value any) (any, error) {
 		return castedValue, nil
 	case *decimal.Decimal:
 		return castedValue.String(), nil
-	case bool:
+	case bool, int64:
 		return fmt.Sprint(castedValue), nil
 	case *ext.ExtendedTime:
 		if err := s.kd.EnsureExtendedTimeDetails(); err != nil {
@@ -32,7 +32,7 @@ func (s StringConverter) Convert(value any) (any, error) {
 
 		return castedValue.GetTime().Format(s.kd.ExtendedTimeDetails.Format), nil
 	default:
-		return nil, fmt.Errorf("expected string/*decimal.Decimal/bool received %T with value %v", value, value)
+		return nil, fmt.Errorf("expected string/*decimal.Decimal/bool/int64 received %T with value %v", value, value)
 	}
 }
 
