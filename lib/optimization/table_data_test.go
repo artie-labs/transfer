@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/typing/decimal"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -15,6 +13,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
@@ -380,6 +379,14 @@ func TestMergeColumn(t *testing.T) {
 			col := mergeColumn(timestampNTZColumn, timestampTZColumn)
 			assert.Equal(t, ext.TimestampTZKindType, col.KindDetails.ExtendedTimeDetails.Type)
 			assert.Equal(t, "2006-01-02T15:04:05.999999999Z07:00", col.KindDetails.ExtendedTimeDetails.Format)
+		}
+		{
+			// Copy the dest column format if in-mem column format is empty.
+			inMemoryColumn := columns.NewColumn("foo", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""))
+			// Clearing the format
+			inMemoryColumn.KindDetails.ExtendedTimeDetails.Format = ""
+			destinationColumn := columns.NewColumn("foo", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""))
+			assert.Equal(t, destinationColumn.KindDetails.ExtendedTimeDetails.Format, mergeColumn(inMemoryColumn, destinationColumn).KindDetails.ExtendedTimeDetails.Format)
 		}
 	}
 }
