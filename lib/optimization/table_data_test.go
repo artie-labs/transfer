@@ -6,14 +6,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestDistinctDates(t *testing.T) {
@@ -329,5 +330,63 @@ func TestTableData_InsertRowSoftDelete(t *testing.T) {
 		assert.Equal(t, "dana-new", td.Rows()[0]["name"])
 		assert.Nil(t, td.Rows()[0]["foo"])
 		assert.Equal(t, false, td.Rows()[0][constants.DeleteColumnMarker])
+	}
+}
+
+func TestMergeColumn(t *testing.T) {
+	{
+		// Make sure it copies the kind over
+		col := mergeColumn(columns.NewColumn("foo", typing.String), columns.NewColumn("foo", typing.Boolean))
+		assert.Equal(t, typing.Boolean, col.KindDetails)
+	}
+	{
+		// Make sure it copies the backfill over
+		backfilledCol := columns.NewColumn("foo", typing.String)
+		backfilledCol.SetBackfilled(true)
+		cols := mergeColumn(columns.NewColumn("foo", typing.String), backfilledCol)
+		assert.True(t, cols.Backfilled())
+	}
+	{
+		// Make sure the string precision gets copied over
+		columnWithStringPrecision := columns.NewColumn("foo", typing.String)
+		columnWithStringPrecision.KindDetails.OptionalStringPrecision = typing.ToPtr(int32(5))
+		col := mergeColumn(columns.NewColumn("foo", typing.String), columnWithStringPrecision)
+		assert.Equal(t, int32(5), *col.KindDetails.OptionalStringPrecision)
+	}
+	{
+		// Integer kind gets copied over
+		intCol := columns.NewColumn("foo", typing.Integer)
+		intCol.KindDetails.OptionalIntegerKind = typing.ToPtr(typing.SmallIntegerKind)
+		col := mergeColumn(columns.NewColumn("foo", typing.String), intCol)
+		assert.Equal(t, typing.SmallIntegerKind, *col.KindDetails.OptionalIntegerKind)
+	}
+	{
+		// Decimal details get copied over
+		decimalCol := columns.NewColumn("foo", typing.EDecimal)
+		details := decimal.NewDetails(5, 2)
+		decimalCol.KindDetails.ExtendedDecimalDetails = &details
+
+		col := mergeColumn(columns.NewColumn("foo", typing.String), decimalCol)
+		assert.Equal(t, details, *col.KindDetails.ExtendedDecimalDetails)
+	}
+	{
+		// Time details get copied over
+		{
+			// Testing for backwards compatibility
+			// in-memory column is TimestampNTZ, destination column is TimestampTZ
+			timestampNTZColumn := columns.NewColumn("foo", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, ""))
+			timestampTZColumn := columns.NewColumn("foo", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""))
+			col := mergeColumn(timestampNTZColumn, timestampTZColumn)
+			assert.Equal(t, ext.TimestampTZKindType, col.KindDetails.ExtendedTimeDetails.Type)
+			assert.Equal(t, "2006-01-02T15:04:05.999999999Z07:00", col.KindDetails.ExtendedTimeDetails.Format)
+		}
+		{
+			// Copy the dest column format if in-mem column format is empty.
+			inMemoryColumn := columns.NewColumn("foo", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""))
+			// Clearing the format
+			inMemoryColumn.KindDetails.ExtendedTimeDetails.Format = ""
+			destinationColumn := columns.NewColumn("foo", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""))
+			assert.Equal(t, destinationColumn.KindDetails.ExtendedTimeDetails.Format, mergeColumn(inMemoryColumn, destinationColumn).KindDetails.ExtendedTimeDetails.Format)
+		}
 	}
 }
