@@ -133,7 +133,7 @@ func encodePacked64DatetimeSeconds(dateTime time.Time) int64 {
 
 // // This is a reimplementation of https://github.com/googleapis/java-bigquerystorage/blob/f79acb5cfdd12253bca1c41551c478400120d2f9/google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1/CivilTimeEncoder.java#L248
 func encodePacked64DatetimeMicros(dateTime time.Time) int64 {
-	return (encodePacked64DatetimeSeconds(dateTime) << MICRO_LENGTH) | int64(dateTime.Nanosecond()/1_000)
+	return encodePacked64DatetimeSeconds(dateTime)<<MICRO_LENGTH | int64(dateTime.Nanosecond()/1_000)
 }
 
 func rowToMessage(row map[string]any, columns []columns.Column, messageDescriptor protoreflect.MessageDescriptor) (*dynamicpb.Message, error) {
