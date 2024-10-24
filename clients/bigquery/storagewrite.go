@@ -223,8 +223,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				}
 				message.Set(field, protoreflect.ValueOfInt64(_time.UnixMicro()))
 			case ext.TimestampNTZKindType:
-				_value := encodePacked64DatetimeMicros(_time)
-				message.Set(field, protoreflect.ValueOfInt64(_value))
+				message.Set(field, protoreflect.ValueOfInt64(encodePacked64DatetimeMicros(_time)))
 			default:
 				return nil, fmt.Errorf("unsupported extended time details: %q", column.KindDetails.ExtendedTimeDetails.Type)
 			}
