@@ -101,6 +101,16 @@ func TestEncodePacked64TimeMicros(t *testing.T) {
 	assert.Equal(t, int64(1<<32+1000), encodePacked64TimeMicros(epoch.Add(time.Duration(1)*time.Hour+time.Duration(1)*time.Millisecond)))
 }
 
+func TestEncodePacked32TimeSeconds(t *testing.T) {
+	epoch := time.Date(0, 0, 0, 0, 0, 0, 0, time.UTC)
+
+	assert.Equal(t, int32(0), encodePacked32TimeSeconds(epoch))
+	assert.Equal(t, int32(1), encodePacked32TimeSeconds(epoch.Add(time.Duration(1)*time.Second)))
+	assert.Equal(t, int32(1<<6), encodePacked32TimeSeconds(epoch.Add(time.Duration(1)*time.Minute)))
+	assert.Equal(t, int32(1<<12), encodePacked32TimeSeconds(epoch.Add(time.Duration(1)*time.Hour)))
+	assert.Equal(t, int32(1<<12+1), encodePacked32TimeSeconds(epoch.Add(time.Duration(1)*time.Hour+time.Duration(1)*time.Second)))
+}
+
 func TestRowToMessage(t *testing.T) {
 	columns := []columns.Column{
 		columns.NewColumn("c_bool", typing.Boolean),

@@ -110,11 +110,11 @@ func encodePacked64TimeMicros(value time.Time) int64 {
 }
 
 // This is a reimplementation of https://github.com/googleapis/java-bigquerystorage/blob/f79acb5cfdd12253bca1c41551c478400120d2f9/google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1/CivilTimeEncoder.java#L92
-func encodePacked32TimeSeconds(t time.Time) int {
-	var bitFieldTimeSeconds int
-	bitFieldTimeSeconds |= t.Hour() << hourShift
-	bitFieldTimeSeconds |= t.Minute() << minuteShift
-	bitFieldTimeSeconds |= t.Second() << secondShift
+func encodePacked32TimeSeconds(t time.Time) int32 {
+	var bitFieldTimeSeconds int32
+	bitFieldTimeSeconds |= int32(t.Hour()) << hourShift
+	bitFieldTimeSeconds |= int32(t.Minute()) << minuteShift
+	bitFieldTimeSeconds |= int32(t.Second()) << secondShift
 	return bitFieldTimeSeconds
 }
 
