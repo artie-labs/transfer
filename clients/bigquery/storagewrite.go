@@ -93,47 +93,44 @@ func columnsToMessageDescriptor(cols []columns.Column) (*protoreflect.MessageDes
 }
 
 const (
-	NANO_SHIFT   = 0
-	MICRO_SHIFT  = 0
-	SECOND_SHIFT = 0
-	MINUTE_SHIFT = 6
-	HOUR_SHIFT   = 12
-	DAY_SHIFT    = 17
-	MONTH_SHIFT  = 22
-	YEAR_SHIFT   = 26
-	NANO_LENGTH  = 30
-	MICRO_LENGTH = 20
+	microLength = 20
+	secondShift = 0
+	minuteShift = 6
+	hourShift   = 12
+	dayShift    = 17
+	monthShift  = 22
+	yearShift   = 26
 )
 
 // This is a reimplementation of https://github.com/googleapis/java-bigquerystorage/blob/f79acb5cfdd12253bca1c41551c478400120d2f9/google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1/CivilTimeEncoder.java#L143
 // See https://cloud.google.com/java/docs/reference/google-cloud-bigquerystorage/latest/com.google.cloud.bigquery.storage.v1.CivilTimeEncoder
 // And https://cloud.google.com/pubsub/docs/bigquery#date_time_int
 func encodePacked64TimeMicros(value time.Time) int64 {
-	return int64(encodePacked32TimeSeconds(value))<<MICRO_LENGTH | int64(value.Nanosecond()/1000)
+	return int64(encodePacked32TimeSeconds(value))<<microLength | int64(value.Nanosecond()/1000)
 }
 
 // This is a reimplementation of https://github.com/googleapis/java-bigquerystorage/blob/f79acb5cfdd12253bca1c41551c478400120d2f9/google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1/CivilTimeEncoder.java#L92
 func encodePacked32TimeSeconds(t time.Time) int {
 	var bitFieldTimeSeconds int
-	bitFieldTimeSeconds |= t.Hour() << HOUR_SHIFT
-	bitFieldTimeSeconds |= t.Minute() << MINUTE_SHIFT
-	bitFieldTimeSeconds |= t.Second() << SECOND_SHIFT
+	bitFieldTimeSeconds |= t.Hour() << hourShift
+	bitFieldTimeSeconds |= t.Minute() << minuteShift
+	bitFieldTimeSeconds |= t.Second() << secondShift
 	return bitFieldTimeSeconds
 }
 
 // // This is a reimplementation of https://github.com/googleapis/java-bigquerystorage/blob/f79acb5cfdd12253bca1c41551c478400120d2f9/google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1/CivilTimeEncoder.java#L187
 func encodePacked64DatetimeSeconds(dateTime time.Time) int64 {
 	var bitFieldDatetimeSeconds int64
-	bitFieldDatetimeSeconds |= int64(dateTime.Year() << YEAR_SHIFT)
-	bitFieldDatetimeSeconds |= int64(dateTime.Month() << MONTH_SHIFT)
-	bitFieldDatetimeSeconds |= int64(dateTime.Day() << DAY_SHIFT)
+	bitFieldDatetimeSeconds |= int64(dateTime.Year() << yearShift)
+	bitFieldDatetimeSeconds |= int64(dateTime.Month() << monthShift)
+	bitFieldDatetimeSeconds |= int64(dateTime.Day() << dayShift)
 	bitFieldDatetimeSeconds |= int64(encodePacked32TimeSeconds(dateTime.UTC()))
 	return bitFieldDatetimeSeconds
 }
 
 // // This is a reimplementation of https://github.com/googleapis/java-bigquerystorage/blob/f79acb5cfdd12253bca1c41551c478400120d2f9/google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1/CivilTimeEncoder.java#L248
 func encodePacked64DatetimeMicros(dateTime time.Time) int64 {
-	return encodePacked64DatetimeSeconds(dateTime)<<MICRO_LENGTH | int64(dateTime.Nanosecond()/1_000)
+	return encodePacked64DatetimeSeconds(dateTime)<<microLength | int64(dateTime.Nanosecond()/1_000)
 }
 
 func rowToMessage(row map[string]any, columns []columns.Column, messageDescriptor protoreflect.MessageDescriptor) (*dynamicpb.Message, error) {
