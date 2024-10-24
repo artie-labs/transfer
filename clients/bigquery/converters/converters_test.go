@@ -48,6 +48,14 @@ func TestStringConverter_Convert(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "2021-01-01T00:00:00Z", val)
 	}
+	{
+		// time.Time
+		val, err := NewStringConverter(typing.MustNewExtendedTimeDetails(typing.String, ext.TimestampTZKindType, "")).Convert(
+			time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+		)
+		assert.NoError(t, err)
+		assert.Equal(t, "2021-01-01T00:00:00Z", val)
+	}
 }
 
 func TestInt64Converter_Convert(t *testing.T) {

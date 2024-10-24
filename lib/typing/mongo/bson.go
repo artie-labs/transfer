@@ -11,8 +11,6 @@ import (
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 // JSONEToMap - Takes a JSON Extended string and converts it to a map[string]any
@@ -89,9 +87,9 @@ func bsonBinaryValueToMap(value primitive.Binary) (any, error) {
 func bsonValueToGoValue(value any) (any, error) {
 	switch v := value.(type) {
 	case primitive.DateTime:
-		return ext.NewExtendedTime(v.Time().UTC(), ext.TimestampTZKindType, ext.ISO8601), nil
+		return v.Time().UTC(), nil
 	case primitive.Timestamp:
-		return ext.NewExtendedTime(time.Unix(int64(v.T), 0).UTC(), ext.TimestampTZKindType, ext.ISO8601), nil
+		return time.Unix(int64(v.T), 0).UTC(), nil
 	case primitive.ObjectID:
 		return v.Hex(), nil
 	case primitive.Binary:

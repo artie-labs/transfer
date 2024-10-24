@@ -3,6 +3,7 @@ package typing
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -48,12 +49,10 @@ func ParseValue(key string, optionalSchema map[string]KindDetails, val any) (Kin
 			Kind:                   EDecimal.Kind,
 			ExtendedDecimalDetails: &extendedDetails,
 		}, nil
-	case *ext.ExtendedTime:
-		nestedKind := convertedVal.GetNestedKind()
-		return KindDetails{
-			Kind:                ETime.Kind,
-			ExtendedTimeDetails: &nestedKind,
-		}, nil
+	case time.Time:
+		// time.Time should only appear for bson.Timestamp and bson.DateTime
+		// All other sources will have an optional schema
+		return NewExtendedTimeDetails(ETime, ext.TimestampTZKindType, "")
 	default:
 		// Check if the val is one of our custom-types
 		if reflect.TypeOf(val).Kind() == reflect.Slice {
