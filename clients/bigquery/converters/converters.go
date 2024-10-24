@@ -4,13 +4,20 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-type StringConverter struct{}
+type StringConverter struct {
+	kd typing.KindDetails
+}
 
-func (StringConverter) Convert(value any) (any, error) {
+func NewStringConverter(kd typing.KindDetails) StringConverter {
+	return StringConverter{kd: kd}
+}
+
+func (s StringConverter) Convert(value any) (any, error) {
 	switch castedValue := value.(type) {
 	case string:
 		return castedValue, nil
@@ -19,7 +26,11 @@ func (StringConverter) Convert(value any) (any, error) {
 	case bool:
 		return fmt.Sprint(castedValue), nil
 	case *ext.ExtendedTime:
-		return castedValue.String(""), nil
+		if err := s.kd.EnsureExtendedTimeDetails(); err != nil {
+			return nil, err
+		}
+
+		return castedValue.GetTime().Format(s.kd.ExtendedTimeDetails.Format), nil
 	default:
 		return nil, fmt.Errorf("expected string/*decimal.Decimal/bool received %T with value %v", value, value)
 	}

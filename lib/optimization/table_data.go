@@ -1,6 +1,7 @@
 package optimization
 
 import (
+	"cmp"
 	"fmt"
 	"strings"
 	"time"
@@ -272,8 +273,8 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) erro
 		}
 
 		if found {
+			// TODO: Move this whole block into a function and add unit-tests.
 			inMemoryCol.KindDetails.Kind = foundColumn.KindDetails.Kind
-
 			// Copy over backfilled
 			inMemoryCol.SetBackfilled(foundColumn.Backfilled())
 
@@ -300,8 +301,10 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) erro
 					}
 				}
 
-				// Just copy over the type since the format wouldn't be present in the destination
+				// Copy over the type
 				inMemoryCol.KindDetails.ExtendedTimeDetails.Type = foundColumn.KindDetails.ExtendedTimeDetails.Type
+				// If the in-memory column has no format, we should use the format from the destination.
+				inMemoryCol.KindDetails.ExtendedTimeDetails.Format = cmp.Or(inMemoryCol.KindDetails.ExtendedTimeDetails.Format, foundColumn.KindDetails.ExtendedTimeDetails.Format)
 
 			}
 

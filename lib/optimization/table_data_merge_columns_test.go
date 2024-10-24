@@ -66,8 +66,8 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		assert.True(t, isOk)
 		assert.Equal(t, typing.ETime.Kind, updatedColumn.KindDetails.Kind)
 		assert.Equal(t, ext.DateKindType, updatedColumn.KindDetails.ExtendedTimeDetails.Type)
-		// Format is not copied over.
-		assert.Equal(t, "", updatedColumn.KindDetails.ExtendedTimeDetails.Format)
+		// Format is copied over.
+		assert.Equal(t, ext.PostgresDateFormat, updatedColumn.KindDetails.ExtendedTimeDetails.Format)
 	}
 	{
 		// In-memory column is NUMERIC and destination column is an INTEGER
