@@ -117,7 +117,7 @@ func encodePacked32TimeSeconds(t time.Time) int32 {
 	return bitFieldTimeSeconds
 }
 
-// // This is a reimplementation of https://github.com/googleapis/java-bigquerystorage/blob/f79acb5cfdd12253bca1c41551c478400120d2f9/google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1/CivilTimeEncoder.java#L187
+// This is a reimplementation of https://github.com/googleapis/java-bigquerystorage/blob/f79acb5cfdd12253bca1c41551c478400120d2f9/google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1/CivilTimeEncoder.java#L187
 func encodePacked64DatetimeSeconds(dateTime time.Time) int64 {
 	var bitFieldDatetimeSeconds int64
 	bitFieldDatetimeSeconds |= int64(dateTime.Year() << yearShift)
@@ -127,7 +127,7 @@ func encodePacked64DatetimeSeconds(dateTime time.Time) int64 {
 	return bitFieldDatetimeSeconds
 }
 
-// // This is a reimplementation of https://github.com/googleapis/java-bigquerystorage/blob/f79acb5cfdd12253bca1c41551c478400120d2f9/google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1/CivilTimeEncoder.java#L248
+// This is a reimplementation of https://github.com/googleapis/java-bigquerystorage/blob/f79acb5cfdd12253bca1c41551c478400120d2f9/google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1/CivilTimeEncoder.java#L248
 func encodePacked64DatetimeMicros(dateTime time.Time) int64 {
 	return encodePacked64DatetimeSeconds(dateTime)<<microLength | int64(dateTime.Nanosecond()/1_000)
 }
