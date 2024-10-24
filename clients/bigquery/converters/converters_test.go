@@ -32,6 +32,12 @@ func TestStringConverter_Convert(t *testing.T) {
 		assert.Equal(t, "true", val)
 	}
 	{
+		// int64
+		val, err := NewStringConverter(typing.Integer).Convert(int64(123))
+		assert.NoError(t, err)
+		assert.Equal(t, "123", val)
+	}
+	{
 		// Invalid
 		_, err := NewStringConverter(typing.Integer).Convert(123)
 		assert.ErrorContains(t, err, "expected string/*decimal.Decimal/bool received int with value 123")
