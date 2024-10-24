@@ -187,8 +187,8 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			case ext.DateKindType:
 				daysSinceEpoch := _time.Unix() / (60 * 60 * 24)
 				message.Set(field, protoreflect.ValueOfInt32(int32(daysSinceEpoch)))
-			case ext.TimestampTZKindType:
-				if err := timestamppb.New(_time).CheckValid(); err != nil {
+			case ext.TimestampTZKindType, ext.TimestampNTZKindType:
+				if err = timestamppb.New(_time).CheckValid(); err != nil {
 					return nil, err
 				}
 				message.Set(field, protoreflect.ValueOfInt64(_time.UnixMicro()))
