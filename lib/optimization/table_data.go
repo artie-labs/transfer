@@ -282,7 +282,6 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) erro
 
 // mergeColumn - This function will merge the in-memory column with the destination column.
 func mergeColumn(inMemoryCol columns.Column, destCol columns.Column) columns.Column {
-	// Copy over the kind
 	inMemoryCol.KindDetails.Kind = destCol.KindDetails.Kind
 	// Copy over backfilled
 	inMemoryCol.SetBackfilled(destCol.Backfilled())
@@ -295,11 +294,6 @@ func mergeColumn(inMemoryCol columns.Column, destCol columns.Column) columns.Col
 	// Copy over integer kind, if exists.
 	if destCol.KindDetails.OptionalIntegerKind != nil {
 		inMemoryCol.KindDetails.OptionalIntegerKind = destCol.KindDetails.OptionalIntegerKind
-	}
-
-	// Copy over the decimal details
-	if destCol.KindDetails.ExtendedDecimalDetails != nil && inMemoryCol.KindDetails.ExtendedDecimalDetails == nil {
-		inMemoryCol.KindDetails.ExtendedDecimalDetails = destCol.KindDetails.ExtendedDecimalDetails
 	}
 
 	// Copy over the time details
@@ -320,6 +314,11 @@ func mergeColumn(inMemoryCol columns.Column, destCol columns.Column) columns.Col
 		// If the in-memory column has no format, we should use the format from the destination.
 		inMemoryCol.KindDetails.ExtendedTimeDetails.Format = cmp.Or(inMemoryCol.KindDetails.ExtendedTimeDetails.Format, destCol.KindDetails.ExtendedTimeDetails.Format)
 
+	}
+
+	// Copy over the decimal details
+	if destCol.KindDetails.ExtendedDecimalDetails != nil && inMemoryCol.KindDetails.ExtendedDecimalDetails == nil {
+		inMemoryCol.KindDetails.ExtendedDecimalDetails = destCol.KindDetails.ExtendedDecimalDetails
 	}
 
 	return inMemoryCol
