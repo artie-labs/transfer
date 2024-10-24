@@ -111,6 +111,48 @@ func TestEncodePacked32TimeSeconds(t *testing.T) {
 	assert.Equal(t, int32(1<<12+1), encodePacked32TimeSeconds(epoch.Add(time.Duration(1)*time.Hour+time.Duration(1)*time.Second)))
 }
 
+func TestEncodePacked64DatetimeSeconds(t *testing.T) {
+	_ts := time.Date(2024, 10, 24, 13, 1, 2, 3000000, time.UTC)
+	_expected := 2024<<26 + 10<<22 + 24<<17 + int64(encodePacked32TimeSeconds(_ts))
+
+	// Time
+	assert.Equal(t, _expected, encodePacked64DatetimeSeconds(_ts))
+	assert.Equal(t, _expected+1<<0, encodePacked64DatetimeSeconds(_ts.Add(time.Duration(1)*time.Second)))
+	assert.Equal(t, _expected+1<<6, encodePacked64DatetimeSeconds(_ts.Add(time.Duration(1)*time.Minute)))
+	assert.Equal(t, _expected+1<<12, encodePacked64DatetimeSeconds(_ts.Add(time.Duration(1)*time.Hour)))
+	assert.Equal(t, _expected+1<<12+1<<0, encodePacked64DatetimeSeconds(_ts.Add(time.Duration(1)*time.Hour+time.Duration(1)*time.Second)))
+
+	// Day
+	assert.Equal(t, _expected+1<<17, encodePacked64DatetimeSeconds(_ts.Add(time.Duration(24)*time.Hour)))
+	// Month
+	assert.Equal(t, _expected+1<<22, encodePacked64DatetimeSeconds(_ts.AddDate(0, 1, 0)))
+	// Year
+	assert.Equal(t, _expected+1<<26, encodePacked64DatetimeSeconds(_ts.AddDate(1, 0, 0)))
+	// Month and year
+	assert.Equal(t, _expected+1<<22+1<<26, encodePacked64DatetimeSeconds(_ts.AddDate(1, 1, 0)))
+}
+
+func TestEncodePacked64DatetimeMicros(t *testing.T) {
+	_ts := time.Date(2024, 10, 24, 13, 1, 2, 123456789, time.UTC)
+	_expected := encodePacked64DatetimeSeconds(_ts)<<20 | int64(_ts.Nanosecond()/1000)
+
+	// Time
+	assert.Equal(t, _expected, encodePacked64DatetimeMicros(_ts))
+	assert.Equal(t, _expected+1<<(0+20), encodePacked64DatetimeMicros(_ts.Add(time.Duration(1)*time.Second)))
+	assert.Equal(t, _expected+1<<(6+20), encodePacked64DatetimeMicros(_ts.Add(time.Duration(1)*time.Minute)))
+	assert.Equal(t, _expected+1<<(12+20), encodePacked64DatetimeMicros(_ts.Add(time.Duration(1)*time.Hour)))
+	assert.Equal(t, _expected+1<<(12+20)+1<<(0+20), encodePacked64DatetimeMicros(_ts.Add(time.Duration(1)*time.Hour+time.Duration(1)*time.Second)))
+
+	// Day
+	assert.Equal(t, _expected+1<<(17+20), encodePacked64DatetimeMicros(_ts.Add(time.Duration(24)*time.Hour)))
+	// Month
+	assert.Equal(t, _expected+1<<(22+20), encodePacked64DatetimeMicros(_ts.AddDate(0, 1, 0)))
+	// Year
+	assert.Equal(t, _expected+1<<(26+20), encodePacked64DatetimeMicros(_ts.AddDate(1, 0, 0)))
+	// Month and year
+	assert.Equal(t, _expected+1<<(26+20)+1<<(22+20), encodePacked64DatetimeMicros(_ts.AddDate(1, 1, 0)))
+}
+
 func TestRowToMessage(t *testing.T) {
 	columns := []columns.Column{
 		columns.NewColumn("c_bool", typing.Boolean),
