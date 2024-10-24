@@ -102,6 +102,30 @@ func encodePacked64TimeMicros(value time.Time) int64 {
 	return result
 }
 
+// This is a reimplementation of https://github.com/googleapis/java-bigquerystorage/blob/f79acb5cfdd12253bca1c41551c478400120d2f9/google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1/CivilTimeEncoder.java#L92
+func encodePacked32TimeSeconds(t time.Time) int {
+	bitFieldTimeSeconds := 0x0
+	bitFieldTimeSeconds |= t.Hour() << 12
+	bitFieldTimeSeconds |= t.Minute() << 6
+	bitFieldTimeSeconds |= t.Second() << 0
+	return bitFieldTimeSeconds
+}
+
+// This is a reimplementation of https://github.com/googleapis/java-bigquerystorage/blob/f79acb5cfdd12253bca1c41551c478400120d2f9/google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1/CivilTimeEncoder.java#L187
+func encodePacked64DatetimeSeconds(dateTime time.Time) int64 {
+	var bitFieldDatetimeSeconds int64
+	bitFieldDatetimeSeconds |= int64(dateTime.Year()) << 26
+	bitFieldDatetimeSeconds |= int64(dateTime.Month()) << 22
+	bitFieldDatetimeSeconds |= int64(dateTime.Day()) << 17
+	bitFieldDatetimeSeconds |= int64(encodePacked32TimeSeconds(dateTime))
+	return bitFieldDatetimeSeconds
+}
+
+// This is a reimplementation of https://github.com/googleapis/java-bigquerystorage/blob/f79acb5cfdd12253bca1c41551c478400120d2f9/google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1/CivilTimeEncoder.java#L248
+func encodePacked64DatetimeMicros(dateTime time.Time) int64 {
+	return (encodePacked64DatetimeSeconds(dateTime) << 20) | (dateTime.UnixMicro())
+}
+
 func rowToMessage(row map[string]any, columns []columns.Column, messageDescriptor protoreflect.MessageDescriptor) (*dynamicpb.Message, error) {
 	message := dynamicpb.NewMessage(messageDescriptor)
 	for _, column := range columns {
@@ -193,8 +217,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				}
 				message.Set(field, protoreflect.ValueOfInt64(_time.UnixMicro()))
 			case ext.TimestampNTZKindType:
-				civilLayout := "2006-01-02 15:04:05.999999"
-				message.Set(field, protoreflect.ValueOfString(_time.Format(civilLayout)))
+				message.Set(field, protoreflect.ValueOfInt64(encodePacked64DatetimeMicros(_time)))
 			default:
 				return nil, fmt.Errorf("unsupported extended time details: %q", column.KindDetails.ExtendedTimeDetails.Type)
 			}
