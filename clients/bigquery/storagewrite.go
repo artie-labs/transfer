@@ -46,6 +46,8 @@ func columnToTableFieldSchema(column columns.Column) (*storagepb.TableFieldSchem
 			fieldType = storagepb.TableFieldSchema_DATE
 		case ext.TimestampTZKindType:
 			fieldType = storagepb.TableFieldSchema_TIMESTAMP
+		case ext.TimestampNTZKindType:
+			fieldType = storagepb.TableFieldSchema_DATETIME
 		default:
 			return nil, fmt.Errorf("unsupported extended time details type: %q", column.KindDetails.ExtendedTimeDetails.Type)
 		}
