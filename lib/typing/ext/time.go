@@ -47,8 +47,7 @@ func NewNestedKind(kindType ExtendedTimeKindType, optionalFormat string) (Nested
 // ExtendedTime is created because Golang's time.Time does not allow us to explicitly cast values as a date, or time
 // and only allows timestamp expressions.
 type ExtendedTime struct {
-	ts         time.Time
-	nestedKind NestedKind
+	ts time.Time
 }
 
 // MarshalJSON is a custom JSON marshaller for ExtendedTime.
@@ -58,26 +57,12 @@ func (e ExtendedTime) MarshalJSON() ([]byte, error) {
 	return e.ts.UTC().MarshalJSON()
 }
 
-// TODO: Have this return an error instead of nil
 func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat string) *ExtendedTime {
-	defaultLayout, err := kindType.defaultLayout()
-	if err != nil {
-		return nil
-	}
-
 	return &ExtendedTime{
 		ts: t,
-		nestedKind: NestedKind{
-			Type:   kindType,
-			Format: cmp.Or(originalFormat, defaultLayout),
-		},
 	}
 }
 
 func (e *ExtendedTime) GetTime() time.Time {
 	return e.ts
-}
-
-func (e *ExtendedTime) GetNestedKind() NestedKind {
-	return e.nestedKind
 }
