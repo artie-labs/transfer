@@ -3,6 +3,7 @@ package bigquery
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -217,7 +218,9 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				}
 				message.Set(field, protoreflect.ValueOfInt64(_time.UnixMicro()))
 			case ext.TimestampNTZKindType:
-				message.Set(field, protoreflect.ValueOfInt64(encodePacked64DatetimeMicros(_time)))
+				_value := encodePacked64DatetimeMicros(_time)
+				slog.Info("### Encoded time ###", slog.Int64("value", _value), slog.Any("time", _time))
+				message.Set(field, protoreflect.ValueOfInt64(_value))
 			default:
 				return nil, fmt.Errorf("unsupported extended time details: %q", column.KindDetails.ExtendedTimeDetails.Type)
 			}
