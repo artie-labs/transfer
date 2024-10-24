@@ -40,19 +40,19 @@ func TestParseFromInterface(t *testing.T) {
 		// String - RFC3339MillisecondUTC
 		value, err := ParseFromInterface("2024-09-19T16:05:18.630Z", TimestampTZKindType)
 		assert.NoError(t, err)
-		assert.Equal(t, "2024-09-19T16:05:18.630Z", value.Format(RFC3339MillisecondUTC))
+		assert.Equal(t, "2024-09-19T16:05:18.630Z", value.Format(RFC3339Millisecond))
 	}
 	{
 		// String - RFC3339MicrosecondUTC
 		value, err := ParseFromInterface("2024-09-19T16:05:18.630000Z", TimestampTZKindType)
 		assert.NoError(t, err)
-		assert.Equal(t, "2024-09-19T16:05:18.630000Z", value.Format(RFC3339MicrosecondUTC))
+		assert.Equal(t, "2024-09-19T16:05:18.630000Z", value.Format(RFC3339Microsecond))
 	}
 	{
 		// String - RFC3339NanosecondUTC
 		value, err := ParseFromInterface("2024-09-19T16:05:18.630000000Z", TimestampTZKindType)
 		assert.NoError(t, err)
-		assert.Equal(t, "2024-09-19T16:05:18.630000000Z", value.Format(RFC3339NanosecondUTC))
+		assert.Equal(t, "2024-09-19T16:05:18.630000000Z", value.Format(RFC3339Nanosecond))
 	}
 }
 
