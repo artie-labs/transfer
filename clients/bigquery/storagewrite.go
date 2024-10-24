@@ -46,6 +46,8 @@ func columnToTableFieldSchema(column columns.Column) (*storagepb.TableFieldSchem
 			fieldType = storagepb.TableFieldSchema_DATE
 		case ext.TimestampTZKindType:
 			fieldType = storagepb.TableFieldSchema_TIMESTAMP
+		case ext.TimestampNTZKindType:
+			fieldType = storagepb.TableFieldSchema_DATETIME
 		default:
 			return nil, fmt.Errorf("unsupported extended time details type: %q", column.KindDetails.ExtendedTimeDetails.Type)
 		}
@@ -89,15 +91,45 @@ func columnsToMessageDescriptor(cols []columns.Column) (*protoreflect.MessageDes
 	return &messageDescriptor, nil
 }
 
+const (
+	microLength = 20
+	secondShift = 0
+	minuteShift = 6
+	hourShift   = 12
+	dayShift    = 17
+	monthShift  = 22
+	yearShift   = 26
+)
+
 // This is a reimplementation of https://github.com/googleapis/java-bigquerystorage/blob/f79acb5cfdd12253bca1c41551c478400120d2f9/google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1/CivilTimeEncoder.java#L143
 // See https://cloud.google.com/java/docs/reference/google-cloud-bigquerystorage/latest/com.google.cloud.bigquery.storage.v1.CivilTimeEncoder
 // And https://cloud.google.com/pubsub/docs/bigquery#date_time_int
 func encodePacked64TimeMicros(value time.Time) int64 {
-	var result = int64(value.Nanosecond() / 1000)
-	result |= int64(value.Second()) << 20
-	result |= int64(value.Minute()) << 26
-	result |= int64(value.Hour()) << 32
-	return result
+	return int64(encodePacked32TimeSeconds(value))<<microLength | int64(value.Nanosecond()/1000)
+}
+
+// This is a reimplementation of https://github.com/googleapis/java-bigquerystorage/blob/f79acb5cfdd12253bca1c41551c478400120d2f9/google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1/CivilTimeEncoder.java#L92
+func encodePacked32TimeSeconds(t time.Time) int32 {
+	var bitFieldTimeSeconds int32
+	bitFieldTimeSeconds |= int32(t.Hour()) << hourShift
+	bitFieldTimeSeconds |= int32(t.Minute()) << minuteShift
+	bitFieldTimeSeconds |= int32(t.Second()) << secondShift
+	return bitFieldTimeSeconds
+}
+
+// This is a reimplementation of https://github.com/googleapis/java-bigquerystorage/blob/f79acb5cfdd12253bca1c41551c478400120d2f9/google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1/CivilTimeEncoder.java#L187
+func encodePacked64DatetimeSeconds(dateTime time.Time) int64 {
+	var bitFieldDatetimeSeconds int64
+	bitFieldDatetimeSeconds |= int64(dateTime.Year() << yearShift)
+	bitFieldDatetimeSeconds |= int64(dateTime.Month() << monthShift)
+	bitFieldDatetimeSeconds |= int64(dateTime.Day() << dayShift)
+	bitFieldDatetimeSeconds |= int64(encodePacked32TimeSeconds(dateTime.UTC()))
+	return bitFieldDatetimeSeconds
+}
+
+// This is a reimplementation of https://github.com/googleapis/java-bigquerystorage/blob/f79acb5cfdd12253bca1c41551c478400120d2f9/google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1/CivilTimeEncoder.java#L248
+func encodePacked64DatetimeMicros(dateTime time.Time) int64 {
+	return encodePacked64DatetimeSeconds(dateTime)<<microLength | int64(dateTime.Nanosecond()/1000)
 }
 
 func rowToMessage(row map[string]any, columns []columns.Column, messageDescriptor protoreflect.MessageDescriptor) (*dynamicpb.Message, error) {
@@ -186,10 +218,12 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				daysSinceEpoch := _time.Unix() / (60 * 60 * 24)
 				message.Set(field, protoreflect.ValueOfInt32(int32(daysSinceEpoch)))
 			case ext.TimestampTZKindType:
-				if err := timestamppb.New(_time).CheckValid(); err != nil {
+				if err = timestamppb.New(_time).CheckValid(); err != nil {
 					return nil, err
 				}
 				message.Set(field, protoreflect.ValueOfInt64(_time.UnixMicro()))
+			case ext.TimestampNTZKindType:
+				message.Set(field, protoreflect.ValueOfInt64(encodePacked64DatetimeMicros(_time)))
 			default:
 				return nil, fmt.Errorf("unsupported extended time details: %q", column.KindDetails.ExtendedTimeDetails.Type)
 			}
