@@ -72,7 +72,7 @@ func (m MicroTime) Convert(value any) (any, error) {
 type ZonedTimestamp struct{}
 
 func (ZonedTimestamp) layout() string {
-	return "2006-01-02T15:04:05.999999999Z"
+	return ext.RFC3339
 }
 
 func (z ZonedTimestamp) ToKindDetails() (typing.KindDetails, error) {
@@ -108,7 +108,7 @@ func (z ZonedTimestamp) Convert(value any) (any, error) {
 type TimeWithTimezone struct{}
 
 func (t TimeWithTimezone) layout() string {
-	return "15:04:05.999999Z"
+	return "15:04:05.999999" + ext.TimezoneOffsetFormat
 }
 
 func (t TimeWithTimezone) ToKindDetails() (typing.KindDetails, error) {
