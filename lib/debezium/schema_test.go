@@ -2,6 +2,7 @@ package debezium
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -232,7 +233,7 @@ func TestField_ToKindDetails(t *testing.T) {
 		// Timestamp with timezone
 		kd, err := Field{DebeziumType: ZonedTimestamp}.ToKindDetails()
 		assert.NoError(t, err)
-		assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ext.RFC3339), kd)
+		assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, time.RFC3339Nano), kd)
 	}
 	{
 		// Timestamp without timezone

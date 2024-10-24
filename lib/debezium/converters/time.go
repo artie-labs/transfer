@@ -72,7 +72,7 @@ func (m MicroTime) Convert(value any) (any, error) {
 type ZonedTimestamp struct{}
 
 func (ZonedTimestamp) layout() string {
-	return ext.RFC3339
+	return time.RFC3339Nano
 }
 
 func (z ZonedTimestamp) ToKindDetails() (typing.KindDetails, error) {
