@@ -273,49 +273,54 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) erro
 		}
 
 		if found {
-			// TODO: Move this whole block into a function and add unit-tests.
-			inMemoryCol.KindDetails.Kind = foundColumn.KindDetails.Kind
-			// Copy over backfilled
-			inMemoryCol.SetBackfilled(foundColumn.Backfilled())
-
-			// Copy over string precision, if it exists
-			if foundColumn.KindDetails.OptionalStringPrecision != nil {
-				inMemoryCol.KindDetails.OptionalStringPrecision = foundColumn.KindDetails.OptionalStringPrecision
-			}
-
-			// Copy over integer kind, if exists.
-			if foundColumn.KindDetails.OptionalIntegerKind != nil {
-				inMemoryCol.KindDetails.OptionalIntegerKind = foundColumn.KindDetails.OptionalIntegerKind
-			}
-
-			// Copy over the time details
-			if foundColumn.KindDetails.ExtendedTimeDetails != nil {
-				if inMemoryCol.KindDetails.ExtendedTimeDetails == nil {
-					inMemoryCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{}
-				}
-
-				// If the column in the destination is a timestamp_tz and the in-memory column is a timestamp_ntz, we should update the layout to contain timezone locale.
-				if foundColumn.KindDetails.ExtendedTimeDetails.Type == ext.TimestampTZKindType && inMemoryCol.KindDetails.ExtendedTimeDetails.Type == ext.TimestampNTZKindType {
-					if inMemoryCol.KindDetails.ExtendedTimeDetails.Format != "" {
-						inMemoryCol.KindDetails.ExtendedTimeDetails.Format += ext.TimezoneOffsetFormat
-					}
-				}
-
-				// Copy over the type
-				inMemoryCol.KindDetails.ExtendedTimeDetails.Type = foundColumn.KindDetails.ExtendedTimeDetails.Type
-				// If the in-memory column has no format, we should use the format from the destination.
-				inMemoryCol.KindDetails.ExtendedTimeDetails.Format = cmp.Or(inMemoryCol.KindDetails.ExtendedTimeDetails.Format, foundColumn.KindDetails.ExtendedTimeDetails.Format)
-
-			}
-
-			// Copy over the decimal details
-			if foundColumn.KindDetails.ExtendedDecimalDetails != nil && inMemoryCol.KindDetails.ExtendedDecimalDetails == nil {
-				inMemoryCol.KindDetails.ExtendedDecimalDetails = foundColumn.KindDetails.ExtendedDecimalDetails
-			}
-
-			t.inMemoryColumns.UpdateColumn(inMemoryCol)
+			t.inMemoryColumns.UpdateColumn(mergeColumn(inMemoryCol, foundColumn))
 		}
 	}
 
 	return nil
+}
+
+// mergeColumn - This function will merge the in-memory column with the destination column.
+func mergeColumn(inMemoryCol columns.Column, destCol columns.Column) columns.Column {
+	// Copy over the kind
+	inMemoryCol.KindDetails.Kind = destCol.KindDetails.Kind
+	// Copy over backfilled
+	inMemoryCol.SetBackfilled(destCol.Backfilled())
+
+	// Copy over string precision, if it exists
+	if destCol.KindDetails.OptionalStringPrecision != nil {
+		inMemoryCol.KindDetails.OptionalStringPrecision = destCol.KindDetails.OptionalStringPrecision
+	}
+
+	// Copy over integer kind, if exists.
+	if destCol.KindDetails.OptionalIntegerKind != nil {
+		inMemoryCol.KindDetails.OptionalIntegerKind = destCol.KindDetails.OptionalIntegerKind
+	}
+
+	// Copy over the decimal details
+	if destCol.KindDetails.ExtendedDecimalDetails != nil && inMemoryCol.KindDetails.ExtendedDecimalDetails == nil {
+		inMemoryCol.KindDetails.ExtendedDecimalDetails = destCol.KindDetails.ExtendedDecimalDetails
+	}
+
+	// Copy over the time details
+	if destCol.KindDetails.ExtendedTimeDetails != nil {
+		if inMemoryCol.KindDetails.ExtendedTimeDetails == nil {
+			inMemoryCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{}
+		}
+
+		// If the column in the destination is a timestamp_tz and the in-memory column is a timestamp_ntz, we should update the layout to contain timezone locale.
+		if destCol.KindDetails.ExtendedTimeDetails.Type == ext.TimestampTZKindType && inMemoryCol.KindDetails.ExtendedTimeDetails.Type == ext.TimestampNTZKindType {
+			if inMemoryCol.KindDetails.ExtendedTimeDetails.Format != "" {
+				inMemoryCol.KindDetails.ExtendedTimeDetails.Format += ext.TimezoneOffsetFormat
+			}
+		}
+
+		// Copy over the type
+		inMemoryCol.KindDetails.ExtendedTimeDetails.Type = destCol.KindDetails.ExtendedTimeDetails.Type
+		// If the in-memory column has no format, we should use the format from the destination.
+		inMemoryCol.KindDetails.ExtendedTimeDetails.Format = cmp.Or(inMemoryCol.KindDetails.ExtendedTimeDetails.Format, destCol.KindDetails.ExtendedTimeDetails.Format)
+
+	}
+
+	return inMemoryCol
 }
