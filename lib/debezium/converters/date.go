@@ -15,7 +15,7 @@ func (Date) layout() string {
 }
 
 func (d Date) ToKindDetails() (typing.KindDetails, error) {
-	return typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, d.layout())
+	return typing.Date, nil
 }
 
 func (d Date) Convert(value any) (any, error) {
@@ -25,5 +25,5 @@ func (d Date) Convert(value any) (any, error) {
 	}
 
 	// Represents the number of days since the epoch.
-	return ext.NewExtendedTime(time.UnixMilli(0).In(time.UTC).AddDate(0, 0, int(valueInt64)), ext.DateKindType, d.layout()), nil
+	return time.UnixMilli(0).In(time.UTC).AddDate(0, 0, int(valueInt64)), nil
 }

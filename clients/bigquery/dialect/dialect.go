@@ -47,6 +47,8 @@ func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) s
 	case typing.Struct.Kind:
 		// Struct is a tighter version of JSON that requires type casting like Struct<int64>
 		return "json"
+	case typing.Date.Kind:
+		return "date"
 	case typing.ETime.Kind:
 		switch kindDetails.ExtendedTimeDetails.Type {
 		case ext.TimestampTZKindType:
@@ -55,8 +57,6 @@ func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) s
 			return "timestamp"
 		case ext.TimestampNTZKindType:
 			return "datetime"
-		case ext.DateKindType:
-			return "date"
 		case ext.TimeKindType:
 			return "time"
 		}
@@ -112,7 +112,7 @@ func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindD
 	case "time":
 		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "")
 	case "date":
-		return typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, "")
+		return typing.Date, nil
 	default:
 		return typing.Invalid, nil
 	}

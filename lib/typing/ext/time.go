@@ -21,8 +21,6 @@ func (e ExtendedTimeKindType) defaultLayout() (string, error) {
 		return time.RFC3339Nano, nil
 	case TimestampNTZKindType:
 		return RFC3339NoTZ, nil
-	case DateKindType:
-		return PostgresDateFormat, nil
 	case TimeKindType:
 		return PostgresTimeFormat, nil
 	default:

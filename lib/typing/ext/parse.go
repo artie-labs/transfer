@@ -20,6 +20,19 @@ func ParseTimeExactMatch(layout, value string) (time.Time, error) {
 	return ts, nil
 }
 
+func ParseDateFromInterface(val any) (time.Time, error) {
+	switch convertedVal := val.(type) {
+	case time.Time:
+		return convertedVal, nil
+	case *ExtendedTime:
+		return convertedVal.GetTime(), nil
+	case string:
+		return parseDate(convertedVal)
+	default:
+		return time.Time{}, fmt.Errorf("unsupported type: %T", convertedVal)
+	}
+}
+
 func ParseFromInterface(val any, kindType ExtendedTimeKindType) (time.Time, error) {
 	switch convertedVal := val.(type) {
 	case nil:
@@ -46,16 +59,6 @@ func ParseDateTime(value string, kindType ExtendedTimeKindType) (time.Time, erro
 		return parseTimestampNTZ(value)
 	case TimestampTZKindType:
 		return parseTimestampTZ(value)
-	case DateKindType:
-		// Try date first
-		if ts, err := parseDate(value); err == nil {
-			return ts, nil
-		}
-
-		// If that doesn't work, try timestamp
-		if ts, err := parseTimestampTZ(value); err == nil {
-			return ts, nil
-		}
 	case TimeKindType:
 		// Try time first
 		if ts, err := parseTime(value); err == nil {
@@ -95,6 +98,11 @@ func parseDate(value string) (time.Time, error) {
 		if ts, err := ParseTimeExactMatch(supportedDateFormat, value); err == nil {
 			return ts, nil
 		}
+	}
+
+	// If that doesn't work, try timestamp
+	if ts, err := parseTimestampTZ(value); err == nil {
+		return ts, nil
 	}
 
 	return time.Time{}, fmt.Errorf("unsupported value: %q", value)

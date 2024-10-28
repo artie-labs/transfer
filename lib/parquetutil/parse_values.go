@@ -20,6 +20,13 @@ func ParseValue(colVal any, colKind columns.Column) (any, error) {
 	}
 
 	switch colKind.KindDetails.Kind {
+	case typing.Date.Kind:
+		_time, err := ext.ParseDateFromInterface(colVal)
+		if err != nil {
+			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
+		}
+
+		return _time.Format(ext.PostgresDateFormat), nil
 	case typing.ETime.Kind:
 		if err := colKind.KindDetails.EnsureExtendedTimeDetails(); err != nil {
 			return "", err
@@ -30,7 +37,7 @@ func ParseValue(colVal any, colKind columns.Column) (any, error) {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
 
-		if colKind.KindDetails.ExtendedTimeDetails.Type == ext.DateKindType || colKind.KindDetails.ExtendedTimeDetails.Type == ext.TimeKindType {
+		if colKind.KindDetails.ExtendedTimeDetails.Type == ext.TimeKindType {
 			return _time.Format(colKind.KindDetails.ExtendedTimeDetails.Format), nil
 		}
 

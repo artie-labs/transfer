@@ -62,7 +62,7 @@ func TestMSSQLDialect_KindForDataType(t *testing.T) {
 		"float":     typing.Float,
 		"real":      typing.Float,
 		"bit":       typing.Boolean,
-		"date":      typing.MustNewExtendedTimeDetails(typing.ETime, ext.DateKindType, ""),
+		"date":      typing.Date,
 		"time":      typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""),
 		"datetime":  typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
 		"datetime2": typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),

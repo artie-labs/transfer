@@ -152,8 +152,7 @@ func TestRedshiftDialect_KindForDataType(t *testing.T) {
 		{
 			kd, err := dialect.KindForDataType("date", "")
 			assert.NoError(t, err)
-			assert.Equal(t, typing.ETime.Kind, kd.Kind)
-			assert.Equal(t, ext.DateKindType, kd.ExtendedTimeDetails.Type)
+			assert.Equal(t, typing.Date, kd)
 		}
 	}
 }

@@ -74,6 +74,11 @@ var (
 		Kind: "string",
 	}
 
+	// Time data types
+	Date = KindDetails{
+		Kind: "date",
+	}
+
 	ETime = KindDetails{
 		Kind: "extended_time",
 	}

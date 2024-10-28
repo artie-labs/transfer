@@ -28,12 +28,6 @@ func TestColumn_DefaultValue(t *testing.T) {
 	birthdayDateTime, err := ext.ParseDateTime(birthday.Format(ext.ISO8601), ext.TimestampTZKindType)
 	assert.NoError(t, err)
 
-	// date
-	dateKind := typing.ETime
-	dateNestedKind, err := ext.NewNestedKind(ext.DateKindType, "")
-	assert.NoError(t, err)
-	dateKind.ExtendedTimeDetails = &dateNestedKind
-
 	// time
 	timeKind := typing.ETime
 	timeNestedKind, err := ext.NewNestedKind(ext.TimeKindType, "")
@@ -85,7 +79,7 @@ func TestColumn_DefaultValue(t *testing.T) {
 		},
 		{
 			name:          "date",
-			col:           columns.NewColumnWithDefaultValue("", dateKind, birthdayDateTime),
+			col:           columns.NewColumnWithDefaultValue("", typing.Date, birthdayDateTime),
 			expectedValue: "'2022-09-06'",
 		},
 		{

@@ -70,11 +70,14 @@ type Field struct {
 
 func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 	var stringKind bool
-	if k.ExtendedTimeDetails != nil {
-		// If it's a date or time, it should be a STRING annotation.
-		if k.ExtendedTimeDetails.Type == ext.DateKindType || k.ExtendedTimeDetails.Type == ext.TimeKindType {
-			stringKind = true
-		}
+
+	// If it's a date or time, it should be a STRING annotation.
+	if k.Kind == Date.Kind {
+		stringKind = true
+	}
+
+	if k.ExtendedTimeDetails != nil && k.ExtendedTimeDetails.Type == ext.TimeKindType {
+		stringKind = true
 	}
 
 	if k.Kind == String.Kind || k.Kind == Struct.Kind || stringKind {
