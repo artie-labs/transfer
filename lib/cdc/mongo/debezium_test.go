@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/typing/ext"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -179,11 +177,11 @@ func (m *MongoTestSuite) TestMongoDBEventCustomer() {
 	evtDataWithIncludedAt, err = evt.GetData(map[string]any{"_id": int64(1003)}, kafkalib.TopicConfig{IncludeDatabaseUpdatedAt: true, IncludeArtieUpdatedAt: true})
 	assert.NoError(m.T(), err)
 
-	assert.Equal(m.T(), ext.NewExtendedTime(time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC), ext.TimestampTZKindType, ext.ISO8601), evtDataWithIncludedAt[constants.DatabaseUpdatedColumnMarker])
+	assert.Equal(m.T(), time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC), evtDataWithIncludedAt[constants.DatabaseUpdatedColumnMarker])
 
-	updatedExtTime, isOk := evtDataWithIncludedAt[constants.UpdateColumnMarker].(*ext.ExtendedTime)
+	updatedTime, isOk := evtDataWithIncludedAt[constants.UpdateColumnMarker].(time.Time)
 	assert.True(m.T(), isOk)
-	assert.False(m.T(), updatedExtTime.GetTime().IsZero())
+	assert.False(m.T(), updatedTime.IsZero())
 
 	var nestedData map[string]any
 	err = json.Unmarshal([]byte(evtData["nested"].(string)), &nestedData)
@@ -314,7 +312,7 @@ func (m *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 
 		updatedAt, isOk := evtData[constants.UpdateColumnMarker]
 		assert.True(m.T(), isOk)
-		_, isOk = updatedAt.(*ext.ExtendedTime)
+		_, isOk = updatedAt.(time.Time)
 		assert.True(m.T(), isOk)
 	}
 }
