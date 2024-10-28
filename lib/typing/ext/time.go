@@ -11,7 +11,6 @@ type ExtendedTimeKindType string
 const (
 	TimestampTZKindType  ExtendedTimeKindType = "timestamp_tz"
 	TimestampNTZKindType ExtendedTimeKindType = "timestamp_ntz"
-	DateKindType         ExtendedTimeKindType = "date"
 	TimeKindType         ExtendedTimeKindType = "time"
 )
 

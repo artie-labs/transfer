@@ -2,8 +2,7 @@ package converters
 
 import (
 	"testing"
-
-	"github.com/artie-labs/transfer/lib/typing/ext"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -18,16 +17,16 @@ func TestDate_Convert(t *testing.T) {
 		val, err := Date{}.Convert(int64(19401))
 		assert.NoError(t, err)
 
-		extTime, isOk := val.(*ext.ExtendedTime)
+		date, isOk := val.(time.Time)
 		assert.True(t, isOk)
-		assert.Equal(t, "2023-02-13", extTime.GetTime().Format(Date{}.layout()))
+		assert.Equal(t, "2023-02-13", date.Format(Date{}.layout()))
 	}
 	{
 		val, err := Date{}.Convert(int64(19429))
 		assert.NoError(t, err)
 
-		extTime, isOk := val.(*ext.ExtendedTime)
+		date, isOk := val.(time.Time)
 		assert.True(t, isOk)
-		assert.Equal(t, "2023-03-13", extTime.GetTime().Format(Date{}.layout()))
+		assert.Equal(t, "2023-03-13", date.Format(Date{}.layout()))
 	}
 }

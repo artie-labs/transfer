@@ -134,7 +134,7 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 		"FOO":                  typing.String,
 		"bar":                  typing.Invalid,
 		"CHANGE_me":            typing.String,
-		"do_not_change_format": typing.MustNewExtendedTimeDetails(typing.ETime, ext.DateKindType, ""),
+		"do_not_change_format": typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
 	} {
 		_cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
@@ -155,7 +155,7 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 		"bar":                  typing.Boolean,
 		"do_not_change_format": typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
 	} {
-		tableData.MergeColumnsFromDestination(columns.NewColumn(name, colKindDetails))
+		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn(name, colKindDetails)))
 	}
 
 	// It's saved back in the original format.

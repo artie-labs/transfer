@@ -21,6 +21,13 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 	switch column.KindDetails.Kind {
 	case typing.Struct.Kind, typing.Array.Kind:
 		return dialect.EscapeStruct(fmt.Sprint(column.DefaultValue())), nil
+	case typing.Date.Kind:
+		_time, err := ext.ParseDateFromInterface(column.DefaultValue())
+		if err != nil {
+			return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", column.DefaultValue(), err)
+		}
+
+		return sql.QuoteLiteral(_time.Format(ext.PostgresDateFormat)), nil
 	case typing.ETime.Kind:
 		if err := column.KindDetails.EnsureExtendedTimeDetails(); err != nil {
 			return nil, err

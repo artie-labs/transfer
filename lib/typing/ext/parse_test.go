@@ -11,7 +11,7 @@ func TestParseFromInterface(t *testing.T) {
 	{
 		// Extended time
 		var vals []*ExtendedTime
-		vals = append(vals, NewExtendedTime(time.Now().UTC(), DateKindType, PostgresDateFormat))
+		vals = append(vals, NewExtendedTime(time.Now().UTC(), TimestampNTZKindType, RFC3339NoTZ))
 		vals = append(vals, NewExtendedTime(time.Now().UTC(), TimestampTZKindType, ISO8601))
 		vals = append(vals, NewExtendedTime(time.Now().UTC(), TimeKindType, PostgresTimeFormat))
 
@@ -74,10 +74,10 @@ func TestParseFromInterfaceTime(t *testing.T) {
 	}
 }
 
-func TestParseFromInterfaceDate(t *testing.T) {
+func TestParseDateFromInterface(t *testing.T) {
 	now := time.Now()
 	for _, supportedDateFormat := range supportedDateFormats {
-		_time, err := ParseFromInterface(now.Format(supportedDateFormat), DateKindType)
+		_time, err := ParseDateFromInterface(now.Format(supportedDateFormat))
 		assert.NoError(t, err)
 		assert.Equal(t, _time.Format(supportedDateFormat), now.Format(supportedDateFormat))
 	}
