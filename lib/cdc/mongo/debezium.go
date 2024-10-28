@@ -12,7 +12,6 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/artie-labs/transfer/lib/typing/mongo"
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -192,11 +191,11 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc kafkalib.TopicConf
 	}
 
 	if tc.IncludeArtieUpdatedAt {
-		retMap[constants.UpdateColumnMarker] = ext.NewExtendedTime(time.Now().UTC(), ext.TimestampTZKindType, ext.ISO8601)
+		retMap[constants.UpdateColumnMarker] = time.Now().UTC()
 	}
 
 	if tc.IncludeDatabaseUpdatedAt {
-		retMap[constants.DatabaseUpdatedColumnMarker] = ext.NewExtendedTime(s.GetExecutionTime(), ext.TimestampTZKindType, ext.ISO8601)
+		retMap[constants.DatabaseUpdatedColumnMarker] = s.GetExecutionTime().UTC()
 	}
 
 	return retMap, nil
