@@ -3,6 +3,7 @@ package typing
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -48,6 +49,8 @@ func ParseValue(key string, optionalSchema map[string]KindDetails, val any) (Kin
 			Kind:                   EDecimal.Kind,
 			ExtendedDecimalDetails: &extendedDetails,
 		}, nil
+	case time.Time:
+		return NewExtendedTimeDetails(ETime, ext.TimestampTZKindType, "")
 	case *ext.ExtendedTime:
 		nestedKind := convertedVal.GetNestedKind()
 		return KindDetails{

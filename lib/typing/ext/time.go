@@ -3,6 +3,7 @@ package ext
 import (
 	"cmp"
 	"fmt"
+	"log/slog"
 	"time"
 )
 
@@ -51,7 +52,9 @@ type ExtendedTime struct {
 // MarshalJSON is a custom JSON marshaller for ExtendedTime.
 // This is only used for nested MongoDB objects where there may be nested DateTime values.
 func (e ExtendedTime) MarshalJSON() ([]byte, error) {
-	// This is consistent with how MongoDB's Go driver marshals time.Time
+	// Delete this function once we delete [ExtendedTime].
+	// This should not be happening anymore since MongoDB is now using [time.Time]
+	slog.Error("Unexpected call to MarshalJSON()", slog.Any("ts", e.ts), slog.String("nestedKindType", string(e.nestedKind.Type)))
 	return e.ts.UTC().MarshalJSON()
 }
 
