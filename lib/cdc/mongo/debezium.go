@@ -178,7 +178,11 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc kafkalib.TopicConf
 
 		if _, isOk := retMap["ts"]; !isOk {
 			slog.Info("ts not found in data, adding it", slog.String("table", s.GetTableName()))
-			objectID := retMap["_id"].(primitive.ObjectID)
+			objectID, err := primitive.ObjectIDFromHex(retMap["_id"].(string))
+			if err != nil {
+				panic(fmt.Sprintf("failed to parse ObjectID: %v", err))
+			}
+
 			retMap["ts"] = objectID.Timestamp()
 		}
 	case "r", "u", "c":
