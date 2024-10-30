@@ -3,8 +3,11 @@ package mongo
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"reflect"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -171,6 +174,12 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc kafkalib.TopicConf
 		retMap[constants.OnlySetDeleteColumnMarker] = true
 		for k, v := range pkMap {
 			retMap[k] = v
+		}
+
+		if _, isOk := retMap["ts"]; !isOk {
+			slog.Info("ts not found in data, adding it", slog.String("table", s.GetTableName()))
+			objectID := retMap["_id"].(primitive.ObjectID)
+			retMap["ts"] = objectID.Timestamp()
 		}
 	case "r", "u", "c":
 		retMap = s.Payload.afterMap
