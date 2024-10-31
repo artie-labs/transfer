@@ -20,7 +20,7 @@ import (
 func TestDwhTableConfig_ShouldDeleteColumn(t *testing.T) {
 	// Test 3 different possibilities:
 	// 1. DropDeletedColumns = false, so don't delete.
-	dwhTableConfig := types.NewDwhTableConfig(&columns.Columns{}, false, false)
+	dwhTableConfig := types.NewDwhTableConfig(nil, false)
 	for i := 0; i < 100; i++ {
 		results := dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC(), true)
 		assert.False(t, results)
@@ -28,7 +28,7 @@ func TestDwhTableConfig_ShouldDeleteColumn(t *testing.T) {
 	}
 
 	// 2. DropDeletedColumns = true and ContainsOtherOperations = false, so don't delete
-	dwhTableConfig = types.NewDwhTableConfig(&columns.Columns{}, false, true)
+	dwhTableConfig = types.NewDwhTableConfig(nil, true)
 	for i := 0; i < 100; i++ {
 		results := dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC(), false)
 		assert.False(t, results)
@@ -36,7 +36,7 @@ func TestDwhTableConfig_ShouldDeleteColumn(t *testing.T) {
 	}
 
 	// 3. DropDeletedColumns = true and ContainsOtherOperations = true, now check CDC time to delete.
-	dwhTableConfig = types.NewDwhTableConfig(&columns.Columns{}, false, true)
+	dwhTableConfig = types.NewDwhTableConfig(nil, true)
 	for i := 0; i < 100; i++ {
 		results := dwhTableConfig.ShouldDeleteColumn("hello", time.Now().UTC(), true)
 		assert.False(t, results)
@@ -49,12 +49,12 @@ func TestDwhTableConfig_ShouldDeleteColumn(t *testing.T) {
 // TestDwhTableConfig_ColumnsConcurrency this file is meant to test the concurrency methods of .Columns()
 // In this test, we spin up 5 parallel Go-routines each making 100 calls to .Columns() and assert the validity of the data.
 func TestDwhTableConfig_ColumnsConcurrency(t *testing.T) {
-	var cols columns.Columns
-	cols.AddColumn(columns.NewColumn("foo", typing.Struct))
-	cols.AddColumn(columns.NewColumn("bar", typing.String))
-	cols.AddColumn(columns.NewColumn("boolean", typing.Boolean))
+	var cols []columns.Column
+	cols = append(cols, columns.NewColumn("foo", typing.Struct))
+	cols = append(cols, columns.NewColumn("bar", typing.String))
+	cols = append(cols, columns.NewColumn("boolean", typing.Boolean))
 
-	dwhTableCfg := types.NewDwhTableConfig(&cols, false, false)
+	dwhTableCfg := types.NewDwhTableConfig(cols, false)
 
 	var wg sync.WaitGroup
 	for i := 0; i < 5; i++ {
@@ -78,7 +78,7 @@ func TestDwhTableConfig_ColumnsConcurrency(t *testing.T) {
 }
 
 func TestDwhTableConfig_MutateInMemoryColumns(t *testing.T) {
-	tc := types.NewDwhTableConfig(&columns.Columns{}, false, false)
+	tc := types.NewDwhTableConfig(nil, false)
 	for _, col := range []string{"a", "b", "c", "d", "e"} {
 		tc.MutateInMemoryColumns(false, constants.Add, columns.NewColumn(col, typing.String))
 	}
@@ -106,7 +106,7 @@ func TestDwhTableConfig_MutateInMemoryColumns(t *testing.T) {
 }
 
 func TestDwhTableConfig_ReadOnlyColumnsToDelete(t *testing.T) {
-	tc := types.NewDwhTableConfig(nil, false, false)
+	tc := types.NewDwhTableConfig(nil, false)
 	colsToDelete := make(map[string]time.Time)
 	for _, colToDelete := range []string{"a", "b", "c", "d"} {
 		colsToDelete[colToDelete] = time.Now()
@@ -154,7 +154,7 @@ func TestAuditColumnsToDelete(t *testing.T) {
 	}
 
 	for idx, tc := range tcs {
-		dwhTc := types.NewDwhTableConfig(nil, false, tc.dropDeletedCols)
+		dwhTc := types.NewDwhTableConfig(nil, tc.dropDeletedCols)
 		colsToDelete := make(map[string]time.Time)
 		for _, colToDelete := range colsToDeleteList {
 			colsToDelete[colToDelete] = time.Now()

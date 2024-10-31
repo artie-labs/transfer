@@ -21,11 +21,11 @@ type DwhTableConfig struct {
 	sync.RWMutex
 }
 
-func NewDwhTableConfig(columns *columns.Columns, createTable, dropDeletedColumns bool) *DwhTableConfig {
+func NewDwhTableConfig(cols []columns.Column, dropDeletedColumns bool) *DwhTableConfig {
 	return &DwhTableConfig{
-		columns:            columns,
+		columns:            columns.NewColumns(cols),
 		columnsToDelete:    make(map[string]time.Time),
-		createTable:        createTable,
+		createTable:        len(cols) == 0,
 		dropDeletedColumns: dropDeletedColumns,
 	}
 }

@@ -101,6 +101,12 @@ type Columns struct {
 	sync.RWMutex
 }
 
+func NewColumns(columns []Column) *Columns {
+	return &Columns{
+		columns: columns,
+	}
+}
+
 type UpsertColumnArg struct {
 	ToastCol        *bool
 	PrimaryKey      *bool

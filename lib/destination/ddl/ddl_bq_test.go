@@ -43,7 +43,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	tableID := d.bigQueryStore.IdentifierFor(td.TopicConfig(), td.Name())
 	fqName := tableID.FullyQualifiedName()
 	originalColumnLength := len(cols.GetColumns())
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&cols, false, true))
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(cols.GetColumns(), true))
 	tc := d.bigQueryStore.GetConfigMap().TableConfigCache(tableID)
 
 	// Prior to deletion, there should be no colsToDelete
@@ -119,7 +119,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 		existingCols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&existingCols, false, true))
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(existingCols.GetColumns(), true))
 	// Prior to adding, there should be no colsToDelete
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).ReadOnlyColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).ReadOnlyColumnsToDelete())
 	assert.Equal(d.T(), len(existingCols.GetColumns()), len(d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).Columns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).Columns())
@@ -177,7 +177,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 		existingCols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&existingCols, false, true))
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(existingCols.GetColumns(), true))
 	// Prior to adding, there should be no colsToDelete
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).ReadOnlyColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).ReadOnlyColumnsToDelete())
 	assert.Equal(d.T(), len(existingCols.GetColumns()), len(d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).Columns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).Columns())
@@ -235,7 +235,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 
 	tableID := d.bigQueryStore.IdentifierFor(td.TopicConfig(), td.Name())
 	originalColumnLength := len(columnNameToKindDetailsMap)
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&cols, false, false))
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(cols.GetColumns(), false))
 	tc := d.bigQueryStore.GetConfigMap().TableConfigCache(tableID)
 
 	// Prior to deletion, there should be no colsToDelete

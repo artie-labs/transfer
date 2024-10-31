@@ -72,12 +72,12 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		constants.OnlySetDeleteColumnMarker: typing.Boolean,
 	}
 
-	var anotherCols columns.Columns
+	var anotherCols []columns.Column
 	for colName, kindDetails := range anotherColToKindDetailsMap {
-		anotherCols.AddColumn(columns.NewColumn(colName, kindDetails))
+		anotherCols = append(anotherCols, columns.NewColumn(colName, kindDetails))
 	}
 
-	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDwhTableConfig(&anotherCols, false, true))
+	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDwhTableConfig(anotherCols, true))
 
 	assert.NoError(s.T(), s.stageStore.Merge(context.Background(), tableData))
 	_col, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("first_name")
@@ -122,7 +122,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		tableData.InsertRow(pk, row, false)
 	}
 
-	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDwhTableConfig(&cols, false, true))
+	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDwhTableConfig(cols.GetColumns(), true))
 	assert.NoError(s.T(), s.stageStore.Merge(context.Background(), tableData))
 	assert.Equal(s.T(), 5, s.fakeStageStore.ExecCallCount())
 }
@@ -170,7 +170,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 
 	tableID := s.identifierFor(tableData)
 	fqName := tableID.FullyQualifiedName()
-	s.stageStore.configMap.AddTableToConfig(tableID, types.NewDwhTableConfig(&cols, false, true))
+	s.stageStore.configMap.AddTableToConfig(tableID, types.NewDwhTableConfig(cols.GetColumns(), true))
 	err := s.stageStore.Merge(context.Background(), tableData)
 	assert.Nil(s.T(), err)
 	s.fakeStageStore.ExecReturns(nil, nil)
@@ -252,7 +252,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	}
 
 	sflkCols.AddColumn(columns.NewColumn("new", typing.String))
-	_config := types.NewDwhTableConfig(&sflkCols, false, true)
+	_config := types.NewDwhTableConfig(sflkCols.GetColumns(), true)
 	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), _config)
 
 	assert.NoError(s.T(), s.stageStore.Merge(context.Background(), tableData))
