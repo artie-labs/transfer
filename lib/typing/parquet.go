@@ -104,7 +104,6 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 			}.String(),
 		}, nil
 	case Integer.Kind, ETime.Kind:
-
 		// Parquet doesn't have native time types, so we are using int64 and casting the value as UNIX ts.
 		return &Field{
 			Tag: FieldTag{
