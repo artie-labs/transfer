@@ -53,21 +53,12 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 	{
 		// In-memory column is a string and the destination column is a Date
 		tableData.AddInMemoryCol(columns.NewColumn("foo", typing.String))
-
-		extTime := typing.ETime
-		nestedKind, err := ext.NewNestedKind(ext.DateKindType, "")
-		assert.NoError(t, err)
-
-		extTime.ExtendedTimeDetails = &nestedKind
-		tsCol := columns.NewColumn("foo", extTime)
+		tsCol := columns.NewColumn("foo", typing.Date)
 		assert.NoError(t, tableData.MergeColumnsFromDestination(tsCol))
 
 		updatedColumn, isOk := tableData.inMemoryColumns.GetColumn("foo")
 		assert.True(t, isOk)
-		assert.Equal(t, typing.ETime.Kind, updatedColumn.KindDetails.Kind)
-		assert.Equal(t, ext.DateKindType, updatedColumn.KindDetails.ExtendedTimeDetails.Type)
-		// Format is copied over.
-		assert.Equal(t, ext.PostgresDateFormat, updatedColumn.KindDetails.ExtendedTimeDetails.Format)
+		assert.Equal(t, typing.Date, updatedColumn.KindDetails)
 	}
 	{
 		// In-memory column is NUMERIC and destination column is an INTEGER
@@ -138,13 +129,12 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		}
 
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_time", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""))))
-		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_date", typing.MustNewExtendedTimeDetails(typing.ETime, ext.DateKindType, ""))))
+		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_date", typing.Date)))
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_datetime", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""))))
 
 		dateCol, isOk := tableData.inMemoryColumns.GetColumn("ext_date")
 		assert.True(t, isOk)
-		assert.NotNil(t, dateCol.KindDetails.ExtendedTimeDetails)
-		assert.Equal(t, ext.DateKindType, dateCol.KindDetails.ExtendedTimeDetails.Type)
+		assert.Equal(t, typing.Date, dateCol.KindDetails)
 
 		timeCol, isOk := tableData.inMemoryColumns.GetColumn("ext_time")
 		assert.True(t, isOk)

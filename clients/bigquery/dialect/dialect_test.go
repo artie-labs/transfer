@@ -95,7 +95,7 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 		"datetime":  typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
 		"timestamp": typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
 		"time":      typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""),
-		"date":      typing.MustNewExtendedTimeDetails(typing.ETime, ext.DateKindType, ""),
+		"date":      typing.Date,
 		//Invalid
 		"foo":    typing.Invalid,
 		"foofoo": typing.Invalid,
@@ -132,7 +132,7 @@ func TestBigQueryDialect_KindForDataType_NoDataLoss(t *testing.T) {
 	kindDetails := []typing.KindDetails{
 		typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
 		typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""),
-		typing.MustNewExtendedTimeDetails(typing.ETime, ext.DateKindType, ""),
+		typing.Date,
 		typing.String,
 		typing.Boolean,
 		typing.Struct,

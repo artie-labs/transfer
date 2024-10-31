@@ -30,14 +30,14 @@ func (SnowflakeDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) 
 		return "variant"
 	case typing.Boolean.Kind:
 		return "boolean"
+	case typing.Date.Kind:
+		return "date"
 	case typing.ETime.Kind:
 		switch kindDetails.ExtendedTimeDetails.Type {
 		case ext.TimestampTZKindType:
 			return "timestamp_tz"
 		case ext.TimestampNTZKindType:
 			return "timestamp_ntz"
-		case ext.DateKindType:
-			return "date"
 		case ext.TimeKindType:
 			return "time"
 		}
@@ -104,7 +104,7 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.
 	case "time":
 		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "")
 	case "date":
-		return typing.NewExtendedTimeDetails(typing.ETime, ext.DateKindType, "")
+		return typing.Date, nil
 	default:
 		return typing.Invalid, nil
 	}

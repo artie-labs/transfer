@@ -68,12 +68,7 @@ func TestParseValue(t *testing.T) {
 	}
 	{
 		// Date
-		eDate := typing.ETime
-		nestedKind, err := ext.NewNestedKind(ext.DateKindType, "")
-		assert.NoError(t, err)
-
-		eDate.ExtendedTimeDetails = &nestedKind
-		value, err := ParseValue("2022-12-25", columns.NewColumn("", eDate))
+		value, err := ParseValue("2022-12-25", columns.NewColumn("", typing.Date))
 		assert.NoError(t, err)
 		assert.Equal(t, "2022-12-25", value)
 	}

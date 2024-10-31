@@ -38,12 +38,12 @@ func columnToTableFieldSchema(column columns.Column) (*storagepb.TableFieldSchem
 		fieldType = storagepb.TableFieldSchema_STRING
 	case typing.String.Kind:
 		fieldType = storagepb.TableFieldSchema_STRING
+	case typing.Date.Kind:
+		fieldType = storagepb.TableFieldSchema_DATE
 	case typing.ETime.Kind:
 		switch column.KindDetails.ExtendedTimeDetails.Type {
 		case ext.TimeKindType:
 			fieldType = storagepb.TableFieldSchema_TIME
-		case ext.DateKindType:
-			fieldType = storagepb.TableFieldSchema_DATE
 		case ext.TimestampTZKindType:
 			fieldType = storagepb.TableFieldSchema_TIMESTAMP
 		case ext.TimestampNTZKindType:
@@ -201,6 +201,14 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			}
 
 			message.Set(field, protoreflect.ValueOfString(castedValue))
+		case typing.Date.Kind:
+			_time, err := ext.ParseDateFromInterface(value)
+			if err != nil {
+				return nil, fmt.Errorf("failed to cast value as time.Time, value: '%v', err: %w", value, err)
+			}
+
+			daysSinceEpoch := _time.Unix() / (60 * 60 * 24)
+			message.Set(field, protoreflect.ValueOfInt32(int32(daysSinceEpoch)))
 		case typing.ETime.Kind:
 			if err := column.KindDetails.EnsureExtendedTimeDetails(); err != nil {
 				return nil, err
@@ -214,9 +222,6 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			switch column.KindDetails.ExtendedTimeDetails.Type {
 			case ext.TimeKindType:
 				message.Set(field, protoreflect.ValueOfInt64(encodePacked64TimeMicros(_time)))
-			case ext.DateKindType:
-				daysSinceEpoch := _time.Unix() / (60 * 60 * 24)
-				message.Set(field, protoreflect.ValueOfInt32(int32(daysSinceEpoch)))
 			case ext.TimestampTZKindType:
 				if err = timestamppb.New(_time).CheckValid(); err != nil {
 					return nil, err

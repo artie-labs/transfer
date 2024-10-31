@@ -38,7 +38,7 @@ func TestDatabricksDialect_DataTypeForKind(t *testing.T) {
 		// Times
 		{
 			// Date
-			assert.Equal(t, "DATE", DatabricksDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.ETime.Kind, ExtendedTimeDetails: &ext.NestedKind{Type: ext.DateKindType}}, false))
+			assert.Equal(t, "DATE", DatabricksDialect{}.DataTypeForKind(typing.Date, false))
 		}
 		{
 			// Timestamp
@@ -115,7 +115,7 @@ func TestDatabricksDialect_KindForDataType(t *testing.T) {
 		// Date
 		kd, err := DatabricksDialect{}.KindForDataType("DATE", "")
 		assert.NoError(t, err)
-		assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.DateKindType, ""), kd)
+		assert.Equal(t, typing.Date, kd)
 	}
 	{
 		// Double
