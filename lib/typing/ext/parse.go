@@ -81,8 +81,6 @@ func ParseFromInterface(val any, kindType ExtendedTimeKindType) (time.Time, erro
 
 func ParseDateTime(value string, kindType ExtendedTimeKindType) (time.Time, error) {
 	switch kindType {
-	case TimestampTZKindType:
-		return parseTimestampTZ(value)
 	case TimeKindType:
 		// Try time first
 		if ts, err := parseTime(value); err == nil {

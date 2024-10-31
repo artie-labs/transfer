@@ -30,10 +30,10 @@ func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool)
 		// This is currently in public preview, to use this, the customer will need to enable [timestampNtz] in their delta tables.
 		// Ref: https://docs.databricks.com/en/sql/language-manual/data-types/timestamp-ntz-type.html
 		return "TIMESTAMP_NTZ"
+	case typing.TimestampTZ.Kind:
+		return "TIMESTAMP"
 	case typing.ETime.Kind:
 		switch kindDetails.ExtendedTimeDetails.Type {
-		case ext.TimestampTZKindType:
-			return "TIMESTAMP"
 		case ext.TimeKindType:
 			return "STRING"
 		}
@@ -74,7 +74,7 @@ func (DatabricksDialect) KindForDataType(rawType string, _ string) (typing.KindD
 	case "smallint", "tinyint":
 		return typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.SmallIntegerKind)}, nil
 	case "timestamp":
-		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")
+		return typing.TimestampTZ, nil
 	case "timestamp_ntz":
 		return typing.TimestampNTZ, nil
 	}
