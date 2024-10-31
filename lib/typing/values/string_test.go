@@ -26,6 +26,21 @@ func TestToString(t *testing.T) {
 		assert.ErrorContains(t, err, "colVal is nil")
 	}
 	{
+		// Date
+		{
+			// time.Time
+			value, err := ToString(time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC), typing.Date)
+			assert.NoError(t, err)
+			assert.Equal(t, "2021-01-01", value)
+		}
+		{
+			// String
+			value, err := ToString("2021-01-01", typing.Date)
+			assert.NoError(t, err)
+			assert.Equal(t, "2021-01-01", value)
+		}
+	}
+	{
 		// ETime
 		{
 			// Error

@@ -2,6 +2,9 @@ package mssql
 
 import (
 	"testing"
+	"time"
+
+	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 
@@ -16,6 +19,21 @@ func TestParseValue(t *testing.T) {
 		val, err := parseValue(nil, columns.Column{})
 		assert.NoError(t, err)
 		assert.Nil(t, val)
+	}
+	{
+		// Date
+		{
+			// String
+			val, err := parseValue("2021-01-01", columns.NewColumn("date", typing.Date))
+			assert.NoError(t, err)
+			assert.Equal(t, "2021-01-01", val.(time.Time).Format(ext.PostgresDateFormat))
+		}
+		{
+			// time.Time
+			val, err := parseValue(time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC), columns.NewColumn("date", typing.Date))
+			assert.NoError(t, err)
+			assert.Equal(t, "2021-01-01", val.(time.Time).Format(ext.PostgresDateFormat))
+		}
 	}
 	{
 		val, err := parseValue("string value", columns.NewColumn("foo", typing.String))
