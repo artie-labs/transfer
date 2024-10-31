@@ -151,7 +151,7 @@ func TestDatabricksDialect_KindForDataType(t *testing.T) {
 		// Timestamp NTZ
 		kd, err := DatabricksDialect{}.KindForDataType("TIMESTAMP_NTZ", "")
 		assert.NoError(t, err)
-		assert.Equal(t, typing.TimestampNTZ.Kind, kd)
+		assert.Equal(t, typing.TimestampNTZ, kd)
 	}
 	{
 		// Variant

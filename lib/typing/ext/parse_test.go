@@ -11,10 +11,8 @@ func TestParseFromInterface(t *testing.T) {
 	{
 		// Extended time
 		var vals []*ExtendedTime
-		vals = append(vals, NewExtendedTime(time.Now().UTC(), TimestampNTZKindType, RFC3339NoTZ))
 		vals = append(vals, NewExtendedTime(time.Now().UTC(), TimestampTZKindType, ISO8601))
 		vals = append(vals, NewExtendedTime(time.Now().UTC(), TimeKindType, PostgresTimeFormat))
-
 		for _, val := range vals {
 			_time, err := ParseFromInterface(val, TimestampTZKindType)
 			assert.NoError(t, err)
@@ -90,34 +88,34 @@ func TestParseExtendedDateTime_TimestampTZ(t *testing.T) {
 	assert.Equal(t, tsString, extTime.Format(time.RFC3339Nano))
 }
 
-func TestParseExtendedDateTime_TimestampNTZ(t *testing.T) {
+func TestParseTimestampNTZFromInterface(t *testing.T) {
 	{
 		// No fractional seconds
 		tsString := "2023-04-24T17:29:05"
-		extTime, err := ParseDateTime(tsString, TimestampNTZKindType)
+		ts, err := ParseTimestampNTZFromInterface(tsString)
 		assert.NoError(t, err)
-		assert.Equal(t, tsString, extTime.Format(RFC3339NoTZ))
+		assert.Equal(t, tsString, ts.Format(RFC3339NoTZ))
 	}
 	{
 		// ms
 		tsString := "2023-04-24T17:29:05.123"
-		extTime, err := ParseDateTime(tsString, TimestampNTZKindType)
+		ts, err := ParseTimestampNTZFromInterface(tsString)
 		assert.NoError(t, err)
-		assert.Equal(t, tsString, extTime.Format(RFC3339NoTZ))
+		assert.Equal(t, tsString, ts.Format(RFC3339NoTZ))
 	}
 	{
 		// microseconds
 		tsString := "2023-04-24T17:29:05.123456"
-		extTime, err := ParseDateTime(tsString, TimestampNTZKindType)
+		ts, err := ParseTimestampNTZFromInterface(tsString)
 		assert.NoError(t, err)
-		assert.Equal(t, tsString, extTime.Format(RFC3339NoTZ))
+		assert.Equal(t, tsString, ts.Format(RFC3339NoTZ))
 	}
 	{
 		// ns
 		tsString := "2023-04-24T17:29:05.123456789"
-		extTime, err := ParseDateTime(tsString, TimestampNTZKindType)
+		ts, err := ParseTimestampNTZFromInterface(tsString)
 		assert.NoError(t, err)
-		assert.Equal(t, tsString, extTime.Format(RFC3339NoTZ))
+		assert.Equal(t, tsString, ts.Format(RFC3339NoTZ))
 	}
 }
 
