@@ -30,8 +30,8 @@ type GetTableCfgArgs struct {
 	DropDeletedColumns   bool
 }
 
-func (g GetTableCfgArgs) parseColumns(rows []map[string]any) (*columns.Columns, error) {
-	cols := &columns.Columns{}
+func (g GetTableCfgArgs) parseColumns(rows []map[string]any) ([]columns.Column, error) {
+	var cols []columns.Column
 	for _, row := range rows {
 		dataType, err := maputil.GetStringFromMap(row, g.ColumnNameForDataType)
 		if err != nil {
@@ -87,7 +87,7 @@ func (g GetTableCfgArgs) parseColumns(rows []map[string]any) (*columns.Columns, 
 			return nil, fmt.Errorf("unknown default value strategy: %q", strategy)
 		}
 
-		cols.AddColumn(col)
+		cols = append(cols, col)
 	}
 
 	return cols, nil
@@ -111,20 +111,24 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 		}
 	}
 
-	cols := &columns.Columns{}
+	var cols columns.Columns
 	if sqlRows != nil {
 		rows, err := sql.RowsToObjects(sqlRows)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert rows to objects: %w", err)
 		}
 
-		cols, err = g.parseColumns(rows)
+		_cols, err := g.parseColumns(rows)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse columns: %w", err)
 		}
+
+		for _, col := range _cols {
+			cols.AddColumn(col)
+		}
 	}
 
-	tableCfg := types.NewDwhTableConfig(cols, nil, tableMissing, g.DropDeletedColumns)
+	tableCfg := types.NewDwhTableConfig(&cols, nil, tableMissing, g.DropDeletedColumns)
 	g.ConfigMap.AddTableToConfig(g.TableID, tableCfg)
 	return tableCfg, nil
 }
