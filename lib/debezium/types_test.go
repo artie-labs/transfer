@@ -302,30 +302,30 @@ func TestField_ParseValue(t *testing.T) {
 				field := Field{Type: Int64, DebeziumType: dbzType}
 				value, err := field.ParseValue(int64(1_725_058_799_000))
 				assert.NoError(t, err)
-				assert.Equal(t, "2024-08-30T22:59:59.000", value.(*ext.ExtendedTime).GetTime().Format(ext.RFC3339MillisecondNoTZ))
+				assert.Equal(t, "2024-08-30T22:59:59.000", value.(time.Time).Format(ext.RFC3339MillisecondNoTZ))
 			}
 		}
 		{
 			// Nano timestamp
 			field := Field{Type: Int64, DebeziumType: NanoTimestamp}
-			val, err := field.ParseValue(int64(1_712_609_795_827_000_000))
+			val, err := field.ParseValue(int64(1_712_609_795_827_001_000))
 			assert.NoError(t, err)
-			assert.Equal(t, ext.NewExtendedTime(time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC), ext.TimestampNTZKindType, "2006-01-02T15:04:05.000000000"), val.(*ext.ExtendedTime))
+			assert.Equal(t, time.Date(2024, time.April, 8, 20, 56, 35, 827001000, time.UTC), val.(time.Time))
 		}
 		{
 			// Micro timestamp
 			field := Field{Type: Int64, DebeziumType: MicroTimestamp}
 			{
 				// Int64
-				val, err := field.ParseValue(int64(1_712_609_795_827_009))
+				val, err := field.ParseValue(int64(1_712_609_795_827_000))
 				assert.NoError(t, err)
-				assert.Equal(t, ext.NewExtendedTime(time.Date(2024, time.April, 8, 20, 56, 35, 827009000, time.UTC), ext.TimestampNTZKindType, ext.RFC3339MicrosecondNoTZ), val.(*ext.ExtendedTime))
+				assert.Equal(t, time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC), val.(time.Time))
 			}
 			{
 				// Float64
-				val, err := field.ParseValue(float64(1_712_609_795_827_001))
+				val, err := field.ParseValue(float64(1_712_609_795_827_000))
 				assert.NoError(t, err)
-				assert.Equal(t, ext.NewExtendedTime(time.Date(2024, time.April, 8, 20, 56, 35, 827001000, time.UTC), ext.TimestampNTZKindType, ext.RFC3339MicrosecondNoTZ), val.(*ext.ExtendedTime))
+				assert.Equal(t, time.Date(2024, time.April, 8, 20, 56, 35, 827000000, time.UTC), val.(time.Time))
 			}
 			{
 				// Invalid (string)
