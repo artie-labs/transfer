@@ -8,6 +8,10 @@ import (
 
 	"cloud.google.com/go/bigquery/storage/apiv1/storagepb"
 	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/dynamicpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/artie-labs/transfer/clients/bigquery/converters"
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -15,8 +19,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 // columnToTableFieldSchema returns a [*storagepb.TableFieldSchema] suitable for transferring data of the type that the column specifies.
@@ -218,6 +220,10 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			_time, err := ext.ParseTimestampTZFromInterface(value)
 			if err != nil {
 				return nil, fmt.Errorf("failed to cast value as time.Time, value: '%v', err: %w", value, err)
+			}
+
+			if err = timestamppb.New(_time).CheckValid(); err != nil {
+				return nil, err
 			}
 
 			message.Set(field, protoreflect.ValueOfInt64(_time.UnixMicro()))
