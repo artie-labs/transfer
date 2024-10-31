@@ -3,6 +3,7 @@ package converters
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -25,6 +26,15 @@ func (s StringConverter) Convert(value any) (any, error) {
 		return castedValue.String(), nil
 	case bool, int64:
 		return fmt.Sprint(castedValue), nil
+	case time.Time:
+		switch s.kd {
+		case typing.Date:
+			return castedValue.Format(ext.PostgresDateFormat), nil
+		case typing.TimestampNTZ:
+			return castedValue.Format(ext.RFC3339NoTZ), nil
+		default:
+			return nil, fmt.Errorf("unexpected kind details: %T", s.kd)
+		}
 	case *ext.ExtendedTime:
 		if err := s.kd.EnsureExtendedTimeDetails(); err != nil {
 			return nil, err

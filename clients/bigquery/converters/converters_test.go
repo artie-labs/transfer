@@ -43,6 +43,18 @@ func TestStringConverter_Convert(t *testing.T) {
 		assert.ErrorContains(t, err, "expected string/*decimal.Decimal/bool/int64 received int with value 123")
 	}
 	{
+		// Date
+		val, err := NewStringConverter(typing.Date).Convert(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC))
+		assert.NoError(t, err)
+		assert.Equal(t, "2021-01-01", val)
+	}
+	{
+		// Timestamp NTZ
+		val, err := NewStringConverter(typing.TimestampNTZ).Convert(time.Date(2021, 1, 1, 9, 10, 12, 400_123_991, time.UTC))
+		assert.NoError(t, err)
+		assert.Equal(t, "2021-01-01T09:10:12.400123991", val)
+	}
+	{
 		// Extended time
 		val, err := NewStringConverter(typing.MustNewExtendedTimeDetails(typing.String, ext.TimestampTZKindType, "")).Convert(
 			ext.NewExtendedTime(
