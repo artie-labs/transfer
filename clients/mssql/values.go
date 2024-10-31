@@ -27,6 +27,13 @@ func parseValue(colVal any, colKind columns.Column) (any, error) {
 
 	colValString := fmt.Sprint(colVal)
 	switch colKind.KindDetails.Kind {
+	case typing.Date.Kind:
+		_time, err := ext.ParseDateFromInterface(colVal)
+		if err != nil {
+			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", colVal, err)
+		}
+
+		return _time, nil
 	case typing.ETime.Kind:
 		if err := colKind.KindDetails.EnsureExtendedTimeDetails(); err != nil {
 			return "", err
