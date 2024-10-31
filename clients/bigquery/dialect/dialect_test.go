@@ -96,7 +96,7 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 		"timestamp": typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
 		"time":      typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""),
 		"date":      typing.Date,
-		//Invalid
+		// Invalid
 		"foo":    typing.Invalid,
 		"foofoo": typing.Invalid,
 		"":       typing.Invalid,

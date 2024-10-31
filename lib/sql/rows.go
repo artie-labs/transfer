@@ -6,6 +6,10 @@ import (
 )
 
 func RowsToObjects(rows *sql.Rows) ([]map[string]any, error) {
+	if rows == nil {
+		return []map[string]any{}, nil
+	}
+
 	defer rows.Close()
 
 	columns, err := rows.Columns()
