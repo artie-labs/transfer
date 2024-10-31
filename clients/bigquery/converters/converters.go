@@ -42,7 +42,7 @@ func (s StringConverter) Convert(value any) (any, error) {
 
 		return castedValue.GetTime().Format(s.kd.ExtendedTimeDetails.Format), nil
 	default:
-		return nil, fmt.Errorf("expected string/*decimal.Decimal/bool/int64 received %T with value %v", value, value)
+		return nil, fmt.Errorf("unexpected data type: %T with value: %v", value, value)
 	}
 }
 

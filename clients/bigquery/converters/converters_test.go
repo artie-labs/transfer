@@ -40,7 +40,7 @@ func TestStringConverter_Convert(t *testing.T) {
 	{
 		// Invalid
 		_, err := NewStringConverter(typing.Integer).Convert(123)
-		assert.ErrorContains(t, err, "expected string/*decimal.Decimal/bool/int64 received int with value 123")
+		assert.ErrorContains(t, err, "unexpected data type: int with value: 123")
 	}
 	{
 		// time.Time
