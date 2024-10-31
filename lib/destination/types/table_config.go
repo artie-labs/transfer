@@ -21,17 +21,21 @@ type DwhTableConfig struct {
 	sync.RWMutex
 }
 
-func NewDwhTableConfig(columns *columns.Columns, colsToDelete map[string]time.Time, createTable, dropDeletedColumns bool) *DwhTableConfig {
-	if len(colsToDelete) == 0 {
-		colsToDelete = make(map[string]time.Time)
-	}
-
+func NewDwhTableConfig(columns *columns.Columns, createTable, dropDeletedColumns bool) *DwhTableConfig {
 	return &DwhTableConfig{
 		columns:            columns,
-		columnsToDelete:    colsToDelete,
+		columnsToDelete:    make(map[string]time.Time),
 		createTable:        createTable,
 		dropDeletedColumns: dropDeletedColumns,
 	}
+}
+
+// SetColumnsToDelete - This is used by tests only
+func (d *DwhTableConfig) SetColumnsToDelete(cols map[string]time.Time) {
+	d.Lock()
+	defer d.Unlock()
+
+	d.columnsToDelete = cols
 }
 
 func (d *DwhTableConfig) CreateTable() bool {

@@ -26,7 +26,7 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 	}
 
 	tableID := snowflake.NewTableIdentifier("shop", "public", "complex_columns")
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, false, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
 
 	alterTableArgs := ddl.AlterTableArgs{
@@ -58,7 +58,7 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 	}
 
 	tableID := snowflake.NewTableIdentifier("shop", "public", "orders")
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, false, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
 
 	d.fakeSnowflakeStagesStore.ExecReturns(nil, errors.New("column 'order_name' already exists"))
@@ -88,7 +88,7 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 	}
 
 	tableID := snowflake.NewTableIdentifier("shop", "public", "orders")
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, false, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
 
 	alterTableArgs := ddl.AlterTableArgs{
@@ -130,7 +130,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	}
 
 	tableID := snowflake.NewTableIdentifier("shop", "public", "users")
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, false, true))
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, false, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
 	alterTableArgs := ddl.AlterTableArgs{
 		Dialect:                d.snowflakeStagesStore.Dialect(),
@@ -190,11 +190,14 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 
 	tableID := snowflake.NewTableIdentifier("shop", "public", "users1")
 
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, map[string]time.Time{
+	tableCfg := types.NewDwhTableConfig(&columns.Columns{}, false, true)
+	tableCfg.SetColumnsToDelete(map[string]time.Time{
 		"col_to_delete": time.Now().Add(-2 * constants.DeletionConfidencePadding),
 		"answers":       time.Now().Add(-2 * constants.DeletionConfidencePadding),
 		"start":         time.Now().Add(-2 * constants.DeletionConfidencePadding),
-	}, false, true))
+	})
+
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, tableCfg)
 
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
 	alterTableArgs := ddl.AlterTableArgs{

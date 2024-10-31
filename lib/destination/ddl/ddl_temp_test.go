@@ -35,7 +35,7 @@ func (d *DDLTestSuite) TestValidate_AlterTableArgs() {
 
 func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 	tableID := snowflake.NewTableIdentifier("", "mock_dataset", "mock_table")
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, true, true))
 	snowflakeTc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
 	args := ddl.AlterTableArgs{
 		Dialect:        d.snowflakeStagesStore.Dialect(),
@@ -55,7 +55,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 	assert.ErrorContains(d.T(), args.AlterTable(d.snowflakeStagesStore), "incompatible operation - cannot drop columns and create table at the same time")
 
 	// Change it to SFLK + Stage
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, true, true))
 	snowflakeStagesTc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
 	args.Dialect = d.snowflakeStagesStore.Dialect()
 	args.Tc = snowflakeStagesTc
@@ -69,7 +69,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 		// Snowflake Stage
 		tableID := snowflake.NewTableIdentifier("db", "schema", "tempTableName")
 
-		d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
+		d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, true, true))
 		sflkStageTc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
 		args := ddl.AlterTableArgs{
 			Dialect:        d.snowflakeStagesStore.Dialect(),
@@ -94,7 +94,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 	{
 		// BigQuery
 		tableID := bigquery.NewTableIdentifier("db", "schema", "tempTableName")
-		d.bigQueryStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
+		d.bigQueryStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, true, true))
 		bqTc := d.bigQueryStore.GetConfigMap().TableConfigCache(tableID)
 		args := ddl.AlterTableArgs{
 			Dialect:        d.bigQueryStore.Dialect(),
