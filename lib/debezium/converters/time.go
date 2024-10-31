@@ -71,12 +71,8 @@ func (m MicroTime) Convert(value any) (any, error) {
 
 type ZonedTimestamp struct{}
 
-func (ZonedTimestamp) layout() string {
-	return time.RFC3339Nano
-}
-
 func (z ZonedTimestamp) ToKindDetails() (typing.KindDetails, error) {
-	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, z.layout())
+	return typing.TimestampTZ, nil
 }
 
 func (z ZonedTimestamp) Convert(value any) (any, error) {
@@ -97,12 +93,12 @@ func (z ZonedTimestamp) Convert(value any) (any, error) {
 		}
 	}
 
-	_time, err := time.Parse(z.layout(), valString)
+	_time, err := time.Parse(time.RFC3339Nano, valString)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse %q: %w", valString, err)
 	}
 
-	return ext.NewExtendedTime(_time, ext.TimestampTZKindType, z.layout()), nil
+	return _time, nil
 }
 
 type TimeWithTimezone struct{}

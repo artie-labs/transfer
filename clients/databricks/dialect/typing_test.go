@@ -42,11 +42,11 @@ func TestDatabricksDialect_DataTypeForKind(t *testing.T) {
 		}
 		{
 			// Timestamp
-			assert.Equal(t, "TIMESTAMP", DatabricksDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.ETime.Kind, ExtendedTimeDetails: &ext.NestedKind{Type: ext.TimestampTZKindType}}, false))
+			assert.Equal(t, "TIMESTAMP", DatabricksDialect{}.DataTypeForKind(typing.TimestampTZ, false))
 		}
 		{
 			// Timestamp (w/o timezone)
-			assert.Equal(t, "TIMESTAMP", DatabricksDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.ETime.Kind, ExtendedTimeDetails: &ext.NestedKind{Type: ext.TimestampTZKindType}}, false))
+			assert.Equal(t, "TIMESTAMP_NTZ", DatabricksDialect{}.DataTypeForKind(typing.TimestampNTZ, false))
 		}
 		{
 			// Time
@@ -145,7 +145,7 @@ func TestDatabricksDialect_KindForDataType(t *testing.T) {
 		// Timestamp
 		kd, err := DatabricksDialect{}.KindForDataType("TIMESTAMP", "")
 		assert.NoError(t, err)
-		assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""), kd)
+		assert.Equal(t, typing.TimestampTZ, kd)
 	}
 	{
 		// Timestamp NTZ
