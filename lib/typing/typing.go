@@ -83,6 +83,10 @@ var (
 		Kind: "timestamp_ntz",
 	}
 
+	TimestampTZ = KindDetails{
+		Kind: "timestamp_tz",
+	}
+
 	ETime = KindDetails{
 		Kind: "extended_time",
 	}
