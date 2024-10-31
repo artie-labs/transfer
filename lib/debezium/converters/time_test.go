@@ -34,28 +34,22 @@ func TestZonedTimestamp_Convert(t *testing.T) {
 			// No fractional seconds
 			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:12Z")
 			assert.NoError(t, err)
-
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 12, 000000000, time.UTC), ext.TimestampTZKindType, time.RFC3339Nano)
-			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
-			assert.Equal(t, "2025-09-13T00:00:12Z", val.(*ext.ExtendedTime).GetTime().Format(ZonedTimestamp{}.layout()))
+			assert.Equal(t, time.Date(2025, time.September, 13, 0, 0, 12, 000000000, time.UTC), val.(time.Time))
+			assert.Equal(t, "2025-09-13T00:00:12Z", val.(time.Time).Format(time.RFC3339Nano))
 		}
 		{
 			// 1 digits
 			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.1Z")
 			assert.NoError(t, err)
-
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 100000000, time.UTC), ext.TimestampTZKindType, time.RFC3339Nano)
-			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
-			assert.Equal(t, "2025-09-13T00:00:00.1Z", val.(*ext.ExtendedTime).GetTime().Format(ZonedTimestamp{}.layout()))
+			assert.Equal(t, time.Date(2025, time.September, 13, 0, 0, 0, 100000000, time.UTC), val.(time.Time))
+			assert.Equal(t, "2025-09-13T00:00:00.1Z", val.(time.Time).Format(time.RFC3339Nano))
 		}
 		{
 			// 2 digits
 			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.12Z")
 			assert.NoError(t, err)
-
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 120000000, time.UTC), ext.TimestampTZKindType, time.RFC3339Nano)
-			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
-			assert.Equal(t, "2025-09-13T00:00:00.12Z", val.(*ext.ExtendedTime).GetTime().Format(ZonedTimestamp{}.layout()))
+			assert.Equal(t, time.Date(2025, time.September, 13, 0, 0, 0, 120000000, time.UTC), val.(time.Time))
+			assert.Equal(t, "2025-09-13T00:00:00.12Z", val.(time.Time).Format(time.RFC3339Nano))
 		}
 		{
 			// 3 digits
@@ -64,71 +58,57 @@ func TestZonedTimestamp_Convert(t *testing.T) {
 
 			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123000000, time.UTC), ext.TimestampTZKindType, time.RFC3339Nano)
 			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
-			assert.Equal(t, "2025-09-13T00:00:00.123Z", val.(*ext.ExtendedTime).GetTime().Format(ZonedTimestamp{}.layout()))
+			assert.Equal(t, "2025-09-13T00:00:00.123Z", val.(time.Time).Format(time.RFC3339Nano))
 		}
 		{
 			// 4 digits
 			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.1234Z")
 			assert.NoError(t, err)
-
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123400000, time.UTC), ext.TimestampTZKindType, time.RFC3339Nano)
-			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
-			assert.Equal(t, "2025-09-13T00:00:00.1234Z", val.(*ext.ExtendedTime).GetTime().Format(ZonedTimestamp{}.layout()))
+			assert.Equal(t, time.Date(2025, time.September, 13, 0, 0, 0, 123400000, time.UTC), val.(time.Time))
+			assert.Equal(t, "2025-09-13T00:00:00.1234Z", val.(time.Time).Format(time.RFC3339Nano))
 		}
 		{
 			// 5 digits
 			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.12345Z")
 			assert.NoError(t, err)
-
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123450000, time.UTC), ext.TimestampTZKindType, time.RFC3339Nano)
-			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
-			assert.Equal(t, "2025-09-13T00:00:00.12345Z", val.(*ext.ExtendedTime).GetTime().Format(ZonedTimestamp{}.layout()))
+			assert.Equal(t, time.Date(2025, time.September, 13, 0, 0, 0, 123450000, time.UTC), val.(time.Time))
+			assert.Equal(t, "2025-09-13T00:00:00.12345Z", val.(time.Time).Format(time.RFC3339Nano))
 		}
 		{
 			// 6 digits (microseconds)
 			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.123456Z")
 			assert.NoError(t, err)
-
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456000, time.UTC), ext.TimestampTZKindType, time.RFC3339Nano)
-			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
-			assert.Equal(t, "2025-09-13T00:00:00.123456Z", val.(*ext.ExtendedTime).GetTime().Format(ZonedTimestamp{}.layout()))
+			assert.Equal(t, time.Date(2025, time.September, 13, 0, 0, 0, 123456000, time.UTC), val.(time.Time))
+			assert.Equal(t, "2025-09-13T00:00:00.123456Z", val.(time.Time).Format(time.RFC3339Nano))
 		}
 		{
 			// 7 digits
 			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.1234567Z")
 			assert.NoError(t, err)
-
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456700, time.UTC), ext.TimestampTZKindType, time.RFC3339Nano)
-			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
-			assert.Equal(t, "2025-09-13T00:00:00.1234567Z", val.(*ext.ExtendedTime).GetTime().Format(ZonedTimestamp{}.layout()))
+			assert.Equal(t, time.Date(2025, time.September, 13, 0, 0, 0, 123456700, time.UTC), val.(time.Time))
+			assert.Equal(t, "2025-09-13T00:00:00.1234567Z", val.(time.Time).Format(time.RFC3339Nano))
 		}
 		{
 			// 8 digits
 			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.12345678Z")
 			assert.NoError(t, err)
-
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456780, time.UTC), ext.TimestampTZKindType, time.RFC3339Nano)
-			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
-			assert.Equal(t, "2025-09-13T00:00:00.12345678Z", val.(*ext.ExtendedTime).GetTime().Format(ZonedTimestamp{}.layout()))
+			assert.Equal(t, time.Date(2025, time.September, 13, 0, 0, 0, 123456780, time.UTC), val.(time.Time))
+			assert.Equal(t, "2025-09-13T00:00:00.12345678Z", val.(time.Time).Format(time.RFC3339Nano))
 		}
 		{
 			// 9 digits (nanoseconds)
 			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:00.123456789Z")
 			assert.NoError(t, err)
-
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456789, time.UTC), ext.TimestampTZKindType, time.RFC3339Nano)
-			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
-			assert.Equal(t, "2025-09-13T00:00:00.123456789Z", val.(*ext.ExtendedTime).GetTime().Format(ZonedTimestamp{}.layout()))
+			assert.Equal(t, time.Date(2025, time.September, 13, 0, 0, 0, 123456789, time.UTC), val.(time.Time))
+			assert.Equal(t, "2025-09-13T00:00:00.123456789Z", val.(time.Time).Format(time.RFC3339Nano))
 		}
 		{
 			// Testing timezone offset
-			ts := "2025-09-13T00:00:00.123456789+07:00"
-			val, err := ZonedTimestamp{}.Convert(ts)
+			valueString := "2025-09-13T00:00:00.123456789+07:00"
+			val, err := ZonedTimestamp{}.Convert(valueString)
 			assert.NoError(t, err)
-
-			expectedExtTime := ext.NewExtendedTime(time.Date(2025, time.September, 13, 0, 0, 0, 123456789, time.FixedZone("", 7*60*60)), ext.TimestampTZKindType, time.RFC3339Nano)
-			assert.Equal(t, expectedExtTime, val.(*ext.ExtendedTime))
-			assert.Equal(t, ts, val.(*ext.ExtendedTime).GetTime().Format(ZonedTimestamp{}.layout()))
+			assert.Equal(t, time.Date(2025, time.September, 13, 0, 0, 0, 123456789, time.FixedZone("", 7*60*60)), val.(time.Time))
+			assert.Equal(t, valueString, val.(time.Time).Format(time.RFC3339Nano))
 		}
 	}
 }

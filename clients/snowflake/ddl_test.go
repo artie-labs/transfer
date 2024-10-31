@@ -13,7 +13,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/stretchr/testify/assert"
 
@@ -29,7 +28,7 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
 		"name":        typing.String,
-		"created_at":  typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
+		"created_at":  typing.TimestampTZ,
 	} {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
@@ -58,7 +57,7 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
 		"name":        typing.String,
-		"created_at":  typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
+		"created_at":  typing.TimestampTZ,
 	} {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
@@ -97,7 +96,7 @@ func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
 		"name":        typing.String,
-		"created_at":  typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
+		"created_at":  typing.TimestampTZ,
 	} {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
