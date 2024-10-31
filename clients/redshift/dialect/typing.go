@@ -47,12 +47,12 @@ func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
 		return "BOOLEAN NULL"
 	case typing.Date.Kind:
 		return "DATE"
+	case typing.TimestampNTZ.Kind:
+		return "TIMESTAMP WITHOUT TIME ZONE"
 	case typing.ETime.Kind:
 		switch kd.ExtendedTimeDetails.Type {
 		case ext.TimestampTZKindType:
 			return "timestamp with time zone"
-		case ext.TimestampNTZKindType:
-			return "timestamp without time zone"
 		case ext.TimeKindType:
 			return "time"
 		}
@@ -106,7 +106,7 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 	case "double precision":
 		return typing.Float, nil
 	case "timestamp", "timestamp without time zone":
-		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, "")
+		return typing.TimestampNTZ, nil
 	case "timestamp with time zone":
 		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")
 	case "time without time zone":

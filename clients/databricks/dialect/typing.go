@@ -26,14 +26,14 @@ func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool)
 		return "BOOLEAN"
 	case typing.Date.Kind:
 		return "DATE"
+	case typing.TimestampNTZ.Kind:
+		// This is currently in public preview, to use this, the customer will need to enable [timestampNtz] in their delta tables.
+		// Ref: https://docs.databricks.com/en/sql/language-manual/data-types/timestamp-ntz-type.html
+		return "TIMESTAMP_NTZ"
 	case typing.ETime.Kind:
 		switch kindDetails.ExtendedTimeDetails.Type {
 		case ext.TimestampTZKindType:
 			return "TIMESTAMP"
-		case ext.TimestampNTZKindType:
-			// This is currently in public preview, to use this, the customer will need to enable [timestampNtz] in their delta tables.
-			// Ref: https://docs.databricks.com/en/sql/language-manual/data-types/timestamp-ntz-type.html
-			return "TIMESTAMP_NTZ"
 		case ext.TimeKindType:
 			return "STRING"
 		}
@@ -76,7 +76,7 @@ func (DatabricksDialect) KindForDataType(rawType string, _ string) (typing.KindD
 	case "timestamp":
 		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")
 	case "timestamp_ntz":
-		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, "")
+		return typing.TimestampNTZ, nil
 	}
 
 	return typing.Invalid, fmt.Errorf("unsupported data type: %q", rawType)

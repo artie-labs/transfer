@@ -9,12 +9,8 @@ import (
 
 type Timestamp struct{}
 
-func (Timestamp) layout() string {
-	return ext.RFC3339MillisecondNoTZ
-}
-
 func (t Timestamp) ToKindDetails() (typing.KindDetails, error) {
-	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, t.layout())
+	return typing.TimestampNTZ, nil
 }
 
 func (t Timestamp) Convert(value any) (any, error) {
@@ -24,7 +20,7 @@ func (t Timestamp) Convert(value any) (any, error) {
 	}
 
 	// Represents the number of milliseconds since the epoch, and does not include timezone information.
-	return ext.NewExtendedTime(time.UnixMilli(castedValue).In(time.UTC), ext.TimestampNTZKindType, t.layout()), nil
+	return time.UnixMilli(castedValue).In(time.UTC), nil
 }
 
 type MicroTimestamp struct{}
@@ -34,7 +30,7 @@ func (MicroTimestamp) layout() string {
 }
 
 func (mt MicroTimestamp) ToKindDetails() (typing.KindDetails, error) {
-	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, mt.layout())
+	return typing.TimestampNTZ, nil
 }
 
 func (mt MicroTimestamp) Convert(value any) (any, error) {

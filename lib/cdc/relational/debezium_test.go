@@ -206,10 +206,7 @@ func (r *RelationTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	// Datetime without TZ is emitted in microseconds which is 1000x larger than nanoseconds.
 	assert.Equal(
 		r.T(),
-		ext.NewExtendedTime(
-			time.Date(2023, time.February, 2, 17, 51, 35, 175445*1000, time.UTC),
-			ext.TimestampNTZKindType, ext.RFC3339MicrosecondNoTZ,
-		),
+		time.Date(2023, time.February, 2, 17, 51, 35, 175445*1000, time.UTC),
 		evtData["ts_no_tz1"],
 	)
 	assert.Equal(r.T(), time.Date(2023, time.February, 2, 17, 54, 11, 451000000, time.UTC), evt.GetExecutionTime())

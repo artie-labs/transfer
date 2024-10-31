@@ -2,6 +2,7 @@ package converters
 
 import (
 	"testing"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -11,7 +12,7 @@ import (
 func TestTimestamp_Converter(t *testing.T) {
 	kd, err := Timestamp{}.ToKindDetails()
 	assert.NoError(t, err)
-	assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, ext.RFC3339MillisecondNoTZ), kd)
+	assert.Equal(t, typing.TimestampNTZ, kd)
 	{
 		// Invalid conversion
 		_, err := Timestamp{}.Convert("invalid")
@@ -21,13 +22,7 @@ func TestTimestamp_Converter(t *testing.T) {
 		// Valid conversion
 		converted, err := Timestamp{}.Convert(int64(1_725_058_799_089))
 		assert.NoError(t, err)
-		assert.Equal(t, "2024-08-30T22:59:59.089", converted.(*ext.ExtendedTime).GetTime().Format(Timestamp{}.layout()))
-	}
-	{
-		// ms is preserved despite it being all zeroes.
-		converted, err := Timestamp{}.Convert(int64(1_725_058_799_000))
-		assert.NoError(t, err)
-		assert.Equal(t, "2024-08-30T22:59:59.000", converted.(*ext.ExtendedTime).GetTime().Format(Timestamp{}.layout()))
+		assert.Equal(t, "2024-08-30T22:59:59.089", converted.(time.Time).Format(ext.RFC3339NoTZ))
 	}
 }
 
