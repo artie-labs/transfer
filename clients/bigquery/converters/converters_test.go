@@ -40,7 +40,27 @@ func TestStringConverter_Convert(t *testing.T) {
 	{
 		// Invalid
 		_, err := NewStringConverter(typing.Integer).Convert(123)
-		assert.ErrorContains(t, err, "expected string/*decimal.Decimal/bool/int64 received int with value 123")
+		assert.ErrorContains(t, err, "unexpected data type: int with value: 123")
+	}
+	{
+		// time.Time
+		{
+			// Date
+			val, err := NewStringConverter(typing.Date).Convert(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC))
+			assert.NoError(t, err)
+			assert.Equal(t, "2021-01-01", val)
+		}
+		{
+			// Timestamp NTZ
+			val, err := NewStringConverter(typing.TimestampNTZ).Convert(time.Date(2021, 1, 1, 9, 10, 12, 400_123_991, time.UTC))
+			assert.NoError(t, err)
+			assert.Equal(t, "2021-01-01T09:10:12.400123991", val)
+		}
+		{
+			// Invalid
+			_, err := NewStringConverter(typing.String).Convert(time.Date(2021, 1, 1, 9, 10, 12, 400_123_991, time.UTC))
+			assert.ErrorContains(t, err, `unexpected kind details: "string"`)
+		}
 	}
 	{
 		// Extended time
