@@ -55,6 +55,14 @@ func TestField_ShouldSetDefaultValue(t *testing.T) {
 		var ts time.Time
 		assert.False(t, field.ShouldSetDefaultValue(ext.NewExtendedTime(ts, ext.TimestampTZKindType, ext.RFC3339Millisecond)))
 	}
+	{
+		// time.Time
+		field := Field{}
+		assert.True(t, field.ShouldSetDefaultValue(time.Now()))
+
+		assert.False(t, field.ShouldSetDefaultValue(time.Time{}))
+		assert.False(t, field.ShouldSetDefaultValue(time.Unix(0, 0)))
+	}
 }
 
 func TestToInt64(t *testing.T) {
