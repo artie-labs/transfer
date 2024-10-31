@@ -10,8 +10,7 @@ import (
 type ExtendedTimeKindType string
 
 const (
-	TimestampTZKindType ExtendedTimeKindType = "timestamp_tz"
-	TimeKindType        ExtendedTimeKindType = "time"
+	TimeKindType ExtendedTimeKindType = "time"
 )
 
 func (e ExtendedTimeKindType) defaultLayout() (string, error) {

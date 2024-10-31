@@ -45,20 +45,29 @@ func TestParseTimestampTZFromInterface(t *testing.T) {
 		assert.ErrorContains(t, err, "val is nil")
 	}
 	{
-		// True
-		_, err := ParseTimestampTZFromInterface(true)
-		assert.ErrorContains(t, err, "failed to parse colVal, expected type string or *ExtendedTime and got: bool")
+		// Boolean
+		{
+			// True
+			_, err := ParseTimestampTZFromInterface(true)
+			assert.ErrorContains(t, err, "unsupported type: bool")
+		}
+		{
+			// False
+			_, err := ParseTimestampTZFromInterface(false)
+			assert.ErrorContains(t, err, "unsupported type: bool")
+		}
 	}
 	{
-		// False
-		_, err := ParseTimestampTZFromInterface(false)
-		assert.ErrorContains(t, err, "failed to parse colVal, expected type string or *ExtendedTime and got: bool")
+		// time.Time
+		value, err := ParseTimestampTZFromInterface(time.Date(2024, 9, 19, 16, 5, 18, 123_456_789, time.UTC))
+		assert.NoError(t, err)
+		assert.Equal(t, "2024-09-19T16:05:18.123456789Z", value.Format(time.RFC3339Nano))
 	}
 	{
 		// String - RFC3339MillisecondUTC
-		value, err := ParseTimestampTZFromInterface("2024-09-19T16:05:18.630Z")
+		value, err := ParseTimestampTZFromInterface("2024-09-19T16:05:18.631Z")
 		assert.NoError(t, err)
-		assert.Equal(t, "2024-09-19T16:05:18.630Z", value.Format(time.RFC3339Nano))
+		assert.Equal(t, "2024-09-19T16:05:18.631Z", value.Format(time.RFC3339Nano))
 	}
 	{
 		// String - RFC3339MicrosecondUTC

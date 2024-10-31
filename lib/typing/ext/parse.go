@@ -48,6 +48,8 @@ func ParseTimestampNTZFromInterface(val any) (time.Time, error) {
 
 func ParseTimestampTZFromInterface(val any) (time.Time, error) {
 	switch convertedVal := val.(type) {
+	case nil:
+		return time.Time{}, fmt.Errorf("val is nil")
 	case time.Time:
 		return convertedVal, nil
 	case *ExtendedTime:
