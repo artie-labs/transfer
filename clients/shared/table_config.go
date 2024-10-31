@@ -30,34 +30,8 @@ type GetTableCfgArgs struct {
 	DropDeletedColumns   bool
 }
 
-func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
-	if tableConfig := g.ConfigMap.TableConfigCache(g.TableID); tableConfig != nil {
-		return tableConfig, nil
-	}
-
-	var tableMissing bool
-	sqlRows, err := g.Dwh.Query(g.Query, g.Args...)
-	if err != nil {
-		if g.Dwh.Dialect().IsTableDoesNotExistErr(err) {
-			// This branch is currently only used by Snowflake.
-			// Swallow the error, make sure all the metadata is created
-			tableMissing = true
-			err = nil
-		} else {
-			return nil, fmt.Errorf("failed to query %T, err: %w, query: %q", g.Dwh, err, g.Query)
-		}
-	}
-
-	rows, err := sql.RowsToObjects(sqlRows)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert rows to objects: %w", err)
-	}
-
-	if len(rows) == 0 {
-		tableMissing = true
-	}
-
-	var cols columns.Columns
+func (g GetTableCfgArgs) parseColumns(rows []map[string]any) (*columns.Columns, error) {
+	cols := &columns.Columns{}
 	for _, row := range rows {
 		dataType, err := maputil.GetStringFromMap(row, g.ColumnNameForDataType)
 		if err != nil {
@@ -116,7 +90,41 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 		cols.AddColumn(col)
 	}
 
-	tableCfg := types.NewDwhTableConfig(&cols, nil, tableMissing, g.DropDeletedColumns)
+	return cols, nil
+}
+
+func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
+	if tableConfig := g.ConfigMap.TableConfigCache(g.TableID); tableConfig != nil {
+		return tableConfig, nil
+	}
+
+	var tableMissing bool
+	sqlRows, err := g.Dwh.Query(g.Query, g.Args...)
+	if err != nil {
+		if g.Dwh.Dialect().IsTableDoesNotExistErr(err) {
+			// This branch is currently only used by Snowflake.
+			// Swallow the error, make sure all the metadata is created
+			tableMissing = true
+			err = nil
+		} else {
+			return nil, fmt.Errorf("failed to query %T, err: %w, query: %q", g.Dwh, err, g.Query)
+		}
+	}
+
+	cols := &columns.Columns{}
+	if sqlRows != nil {
+		rows, err := sql.RowsToObjects(sqlRows)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert rows to objects: %w", err)
+		}
+
+		cols, err = g.parseColumns(rows)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse columns: %w", err)
+		}
+	}
+
+	tableCfg := types.NewDwhTableConfig(cols, nil, tableMissing, g.DropDeletedColumns)
 	g.ConfigMap.AddTableToConfig(g.TableID, tableCfg)
 	return tableCfg, nil
 }
