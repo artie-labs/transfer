@@ -33,7 +33,7 @@ func (s StringConverter) Convert(value any) (any, error) {
 		case typing.TimestampNTZ:
 			return castedValue.Format(ext.RFC3339NoTZ), nil
 		case typing.TimestampTZ:
-			return castedValue.Format(time.RFC3339), nil
+			return castedValue.Format(time.RFC3339Nano), nil
 		default:
 			return nil, fmt.Errorf("unexpected kind details: %q", s.kd.Kind)
 		}
