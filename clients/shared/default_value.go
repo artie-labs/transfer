@@ -28,6 +28,13 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 		}
 
 		return sql.QuoteLiteral(_time.Format(ext.PostgresDateFormat)), nil
+	case typing.TimestampNTZ.Kind:
+		_time, err := ext.ParseTimestampNTZFromInterface(column.DefaultValue())
+		if err != nil {
+			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", column.DefaultValue(), err)
+		}
+
+		return sql.QuoteLiteral(_time.Format(ext.RFC3339NoTZ)), nil
 	case typing.ETime.Kind:
 		if err := column.KindDetails.EnsureExtendedTimeDetails(); err != nil {
 			return nil, err

@@ -33,6 +33,19 @@ func ParseDateFromInterface(val any) (time.Time, error) {
 	}
 }
 
+func ParseTimestampNTZFromInterface(val any) (time.Time, error) {
+	switch convertedVal := val.(type) {
+	case time.Time:
+		return convertedVal, nil
+	case *ExtendedTime:
+		return convertedVal.GetTime(), nil
+	case string:
+		return parseTimestampNTZ(convertedVal)
+	default:
+		return time.Time{}, fmt.Errorf("unsupported type: %T", convertedVal)
+	}
+}
+
 func ParseFromInterface(val any, kindType ExtendedTimeKindType) (time.Time, error) {
 	switch convertedVal := val.(type) {
 	case nil:
@@ -55,8 +68,6 @@ func ParseFromInterface(val any, kindType ExtendedTimeKindType) (time.Time, erro
 
 func ParseDateTime(value string, kindType ExtendedTimeKindType) (time.Time, error) {
 	switch kindType {
-	case TimestampNTZKindType:
-		return parseTimestampNTZ(value)
 	case TimestampTZKindType:
 		return parseTimestampTZ(value)
 	case TimeKindType:

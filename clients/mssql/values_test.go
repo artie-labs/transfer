@@ -34,6 +34,21 @@ func TestParseValue(t *testing.T) {
 		}
 	}
 	{
+		// Timestamp NTZ
+		{
+			// String
+			val, err := parseValue("2021-01-04T09:32:00", columns.NewColumn("timestamp_ntz", typing.TimestampNTZ))
+			assert.NoError(t, err)
+			assert.Equal(t, time.Date(2021, time.January, 4, 9, 32, 0, 0, time.UTC), val.(time.Time))
+		}
+		{
+			// time.Time
+			val, err := parseValue(time.Date(2021, time.January, 4, 9, 32, 0, 0, time.UTC), columns.NewColumn("timestamp_ntz", typing.TimestampNTZ))
+			assert.NoError(t, err)
+			assert.Equal(t, time.Date(2021, time.January, 4, 9, 32, 0, 0, time.UTC), val.(time.Time))
+		}
+	}
+	{
 		val, err := parseValue("string value", columns.NewColumn("foo", typing.String))
 		assert.NoError(t, err)
 		assert.Equal(t, "string value", val)

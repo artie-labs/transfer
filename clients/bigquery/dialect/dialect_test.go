@@ -92,7 +92,7 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 		"record":             typing.Struct,
 		"json":               typing.Struct,
 		// Datetime
-		"datetime":  typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
+		"datetime":  typing.TimestampNTZ,
 		"timestamp": typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
 		"time":      typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""),
 		"date":      typing.Date,

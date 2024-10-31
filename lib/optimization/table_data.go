@@ -302,13 +302,6 @@ func mergeColumn(inMemoryCol columns.Column, destCol columns.Column) columns.Col
 			inMemoryCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{}
 		}
 
-		// If the column in the destination is a timestamp_tz and the in-memory column is a timestamp_ntz, we should update the layout to contain timezone locale.
-		if destCol.KindDetails.ExtendedTimeDetails.Type == ext.TimestampTZKindType && inMemoryCol.KindDetails.ExtendedTimeDetails.Type == ext.TimestampNTZKindType {
-			if inMemoryCol.KindDetails.ExtendedTimeDetails.Format != "" {
-				inMemoryCol.KindDetails.ExtendedTimeDetails.Format += ext.TimezoneOffsetFormat
-			}
-		}
-
 		// Copy over the type
 		inMemoryCol.KindDetails.ExtendedTimeDetails.Type = destCol.KindDetails.ExtendedTimeDetails.Type
 		// If the in-memory column has no format, we should use the format from the destination.

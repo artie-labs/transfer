@@ -83,6 +83,11 @@ func TestColumn_DefaultValue(t *testing.T) {
 			expectedValue: "'2022-09-06'",
 		},
 		{
+			name:          "timestamp_ntz",
+			col:           columns.NewColumnWithDefaultValue("", typing.TimestampNTZ, birthdayDateTime),
+			expectedValue: "'2022-09-06T03:19:24.942'",
+		},
+		{
 			name:          "time",
 			col:           columns.NewColumnWithDefaultValue("", timeKind, birthdayDateTime),
 			expectedValue: "'03:19:24.942'",
