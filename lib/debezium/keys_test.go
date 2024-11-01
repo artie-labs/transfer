@@ -4,8 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/typing/ext"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -119,7 +117,7 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 `))
 		assert.NoError(t, err)
 		assert.Equal(t, "339f3f2f-f29f-4f00-869e-476122310eff", keys["id"])
-		assert.Equal(t, time.Date(2024, 4, 16, 1, 8, 19, 440000000, time.UTC), keys["created_at"].(*ext.ExtendedTime).GetTime())
+		assert.Equal(t, time.Date(2024, 4, 16, 1, 8, 19, 440000000, time.UTC), keys["created_at"].(time.Time))
 
 		keys, err = parsePartitionKeyStruct([]byte(`{
 	"schema": {

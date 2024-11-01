@@ -68,7 +68,6 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 	{
 		// Snowflake Stage
 		tableID := snowflake.NewTableIdentifier("db", "schema", "tempTableName")
-
 		d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(nil, true))
 		sflkStageTc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
 		args := ddl.AlterTableArgs{

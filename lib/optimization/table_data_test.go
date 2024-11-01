@@ -374,7 +374,7 @@ func TestMergeColumn(t *testing.T) {
 		{
 			// Testing for backwards compatibility
 			// in-memory column is TimestampNTZ, destination column is TimestampTZ
-			timestampNTZColumn := columns.NewColumn("foo", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, ""))
+			timestampNTZColumn := columns.NewColumn("foo", typing.TimestampNTZ)
 			timestampTZColumn := columns.NewColumn("foo", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""))
 			col := mergeColumn(timestampNTZColumn, timestampTZColumn)
 			assert.Equal(t, ext.TimestampTZKindType, col.KindDetails.ExtendedTimeDetails.Type)

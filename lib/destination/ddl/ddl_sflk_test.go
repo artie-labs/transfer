@@ -189,7 +189,6 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 	}
 
 	tableID := snowflake.NewTableIdentifier("shop", "public", "users1")
-
 	tableCfg := types.NewDwhTableConfig(nil, true)
 	tableCfg.SetColumnsToDelete(map[string]time.Time{
 		"col_to_delete": time.Now().Add(-2 * constants.DeletionConfidencePadding),

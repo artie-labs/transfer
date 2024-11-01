@@ -240,8 +240,7 @@ func TestField_ToKindDetails(t *testing.T) {
 		for _, dbzType := range []SupportedDebeziumType{Timestamp, TimestampKafkaConnect, MicroTimestamp, NanoTimestamp} {
 			kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
 			assert.NoError(t, err)
-			assert.Equal(t, ext.TimestampNTZKindType, kd.ExtendedTimeDetails.Type)
-			assert.Equal(t, typing.ETime.Kind, kd.Kind)
+			assert.Equal(t, typing.TimestampNTZ, kd)
 		}
 	}
 	{

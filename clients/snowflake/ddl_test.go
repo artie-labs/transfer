@@ -31,7 +31,6 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 	}
 
 	s.stageStore.configMap.AddTableToConfig(tableID, types.NewDwhTableConfig(cols, true))
-
 	nameCol := columns.NewColumn("name", typing.String)
 	tc := s.stageStore.configMap.TableConfigCache(tableID)
 

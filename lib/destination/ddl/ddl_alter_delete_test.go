@@ -200,6 +200,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	redshiftTc = d.redshiftStore.GetConfigMap().TableConfigCache(redshiftTableID)
 
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(snowflakeTableID, types.NewDwhTableConfig(cols.GetColumns(), true))
+
 	snowflakeTc = d.snowflakeStagesStore.GetConfigMap().TableConfigCache(snowflakeTableID)
 
 	// Prior to deletion, there should be no colsToDelete

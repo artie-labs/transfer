@@ -41,6 +41,21 @@ func TestToString(t *testing.T) {
 		}
 	}
 	{
+		// Timestamp NTZ
+		{
+			// time.Time
+			value, err := ToString(time.Date(2021, time.January, 1, 17, 33, 4, 150_001_123, time.UTC), typing.TimestampNTZ)
+			assert.NoError(t, err)
+			assert.Equal(t, "2021-01-01T17:33:04.150001123", value)
+		}
+		{
+			// String
+			value, err := ToString("2021-01-01T17:33:04.150001123", typing.TimestampNTZ)
+			assert.NoError(t, err)
+			assert.Equal(t, time.Date(2021, time.January, 1, 17, 33, 4, 150_001_123, time.UTC).Format(ext.RFC3339NoTZ), value)
+		}
+	}
+	{
 		// ETime
 		{
 			// Error
