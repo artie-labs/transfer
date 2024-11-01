@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParseDateFromInterface(t *testing.T) {
+func TestParseDateFromAny(t *testing.T) {
 	now := time.Now()
 	for _, supportedDateFormat := range supportedDateFormats {
 		_time, err := ParseDateFromAny(now.Format(supportedDateFormat))
@@ -16,7 +16,7 @@ func TestParseDateFromInterface(t *testing.T) {
 	}
 }
 
-func TestParseTimeFromInterface(t *testing.T) {
+func TestParseTimeFromAny(t *testing.T) {
 	now := time.Now()
 	{
 		// String
@@ -34,7 +34,7 @@ func TestParseTimeFromInterface(t *testing.T) {
 	}
 }
 
-func TestParseTimestampTZFromInterface(t *testing.T) {
+func TestParseTimestampTZFromAny(t *testing.T) {
 	{
 		// Nil
 		_, err := ParseTimestampTZFromAny(nil)
@@ -79,7 +79,7 @@ func TestParseTimestampTZFromInterface(t *testing.T) {
 	}
 }
 
-func TestParseTimestampNTZFromInterface(t *testing.T) {
+func TestParseTimestampNTZFromAny(t *testing.T) {
 	{
 		// No fractional seconds
 		tsString := "2023-04-24T17:29:05"
