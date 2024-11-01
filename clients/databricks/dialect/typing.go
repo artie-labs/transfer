@@ -6,7 +6,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) string {
@@ -26,17 +25,14 @@ func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool)
 		return "BOOLEAN"
 	case typing.Date.Kind:
 		return "DATE"
+	case typing.Time.Kind:
+		return "STRING"
 	case typing.TimestampNTZ.Kind:
 		// This is currently in public preview, to use this, the customer will need to enable [timestampNtz] in their delta tables.
 		// Ref: https://docs.databricks.com/en/sql/language-manual/data-types/timestamp-ntz-type.html
 		return "TIMESTAMP_NTZ"
 	case typing.TimestampTZ.Kind:
 		return "TIMESTAMP"
-	case typing.ETime.Kind:
-		switch kindDetails.ExtendedTimeDetails.Type {
-		case ext.TimeKindType:
-			return "STRING"
-		}
 	case typing.EDecimal.Kind:
 		return kindDetails.ExtendedDecimalDetails.DatabricksKind()
 	}

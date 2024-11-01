@@ -133,7 +133,7 @@ func TestTime_Convert(t *testing.T) {
 func TestNanoTime_Converter(t *testing.T) {
 	kd, err := NanoTime{}.ToKindDetails()
 	assert.NoError(t, err)
-	assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, NanoTime{}.layout()), kd)
+	assert.Equal(t, typing.Time, kd)
 	{
 		// Invalid data
 		_, err := NanoTime{}.Convert("123")
@@ -143,7 +143,7 @@ func TestNanoTime_Converter(t *testing.T) {
 		// Valid
 		val, err := NanoTime{}.Convert(int64(54_720_000_009_000))
 		assert.NoError(t, err)
-		assert.Equal(t, "15:12:00.000009000", val.(*ext.ExtendedTime).GetTime().Format(NanoTime{}.layout()))
+		assert.Equal(t, "15:12:00.000009000", val.(time.Time).GetTime().Format(NanoTime{}.layout()))
 	}
 }
 

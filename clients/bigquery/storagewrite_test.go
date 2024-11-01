@@ -10,7 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -43,8 +42,8 @@ func TestColumnToTableFieldSchema(t *testing.T) {
 		assert.Equal(t, storagepb.TableFieldSchema_STRING, fieldSchema.Type)
 	}
 	{
-		// ETime - Time:
-		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "")))
+		// Time
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.Time))
 		assert.NoError(t, err)
 		assert.Equal(t, storagepb.TableFieldSchema_TIME, fieldSchema.Type)
 	}
@@ -173,7 +172,7 @@ func TestRowToMessage(t *testing.T) {
 		columns.NewColumn("c_numeric", typing.EDecimal),
 		columns.NewColumn("c_string", typing.String),
 		columns.NewColumn("c_string_decimal", typing.String),
-		columns.NewColumn("c_time", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "")),
+		columns.NewColumn("c_time", typing.Time),
 		columns.NewColumn("c_timestamp", typing.TimestampTZ),
 		columns.NewColumn("c_date", typing.Date),
 		columns.NewColumn("c_datetime", typing.TimestampNTZ),
@@ -194,7 +193,7 @@ func TestRowToMessage(t *testing.T) {
 		"c_numeric":        decimal.NewDecimal(numbers.MustParseDecimal("3.14159")),
 		"c_string":         "foo bar",
 		"c_string_decimal": decimal.NewDecimal(numbers.MustParseDecimal("1.61803")),
-		"c_time":           ext.NewExtendedTime(time.Date(0, 0, 0, 4, 5, 6, 7, time.UTC), ext.TimeKindType, ""),
+		"c_time":           time.Date(0, 0, 0, 4, 5, 6, 7, time.UTC),
 		"c_timestamp":      time.Date(2001, 2, 3, 4, 5, 6, 7, time.UTC),
 		"c_date":           time.Date(2001, 2, 3, 0, 0, 0, 0, time.UTC),
 		"c_datetime":       time.Date(2001, 2, 3, 4, 5, 6, 7, time.UTC),
