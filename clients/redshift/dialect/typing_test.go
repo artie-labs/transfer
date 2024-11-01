@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -47,7 +46,7 @@ func TestRedshiftDialect_DataTypeForKind(t *testing.T) {
 		// Timestamps
 		{
 			// With timezone
-			assert.Equal(t, "timestamp with time zone", RedshiftDialect{}.DataTypeForKind(typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""), false))
+			assert.Equal(t, "TIMESTAMP WITH TIME ZONE", RedshiftDialect{}.DataTypeForKind(typing.TimestampTZ, false))
 		}
 		{
 			// Without timezone
@@ -132,23 +131,25 @@ func TestRedshiftDialect_KindForDataType(t *testing.T) {
 	{
 		// Times
 		{
+			// TimestampTZ
 			kd, err := dialect.KindForDataType("timestamp with time zone", "")
 			assert.NoError(t, err)
-			assert.Equal(t, typing.ETime.Kind, kd.Kind)
-			assert.Equal(t, ext.TimestampTZKindType, kd.ExtendedTimeDetails.Type)
+			assert.Equal(t, typing.TimestampTZ, kd)
 		}
 		{
+			// TimestampNTZ
 			kd, err := dialect.KindForDataType("timestamp without time zone", "")
 			assert.NoError(t, err)
 			assert.Equal(t, typing.TimestampNTZ, kd)
 		}
 		{
+			// Time
 			kd, err := dialect.KindForDataType("time without time zone", "")
 			assert.NoError(t, err)
-			assert.Equal(t, typing.ETime.Kind, kd.Kind)
-			assert.Equal(t, ext.TimeKindType, kd.ExtendedTimeDetails.Type)
+			assert.Equal(t, typing.Time, kd)
 		}
 		{
+			// Date
 			kd, err := dialect.KindForDataType("date", "")
 			assert.NoError(t, err)
 			assert.Equal(t, typing.Date, kd)

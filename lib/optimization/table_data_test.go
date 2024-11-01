@@ -14,7 +14,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func TestDistinctDates(t *testing.T) {
@@ -31,7 +30,7 @@ func TestDistinctDates(t *testing.T) {
 			name: "one date",
 			rowData: map[string]map[string]any{
 				"1": {
-					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
+					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(time.RFC3339Nano),
 				},
 			},
 			expectedDatesString: []string{"2020-01-01"},
@@ -40,10 +39,10 @@ func TestDistinctDates(t *testing.T) {
 			name: "two dates",
 			rowData: map[string]map[string]any{
 				"1": {
-					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
+					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(time.RFC3339Nano),
 				},
 				"2": {
-					"ts": time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
+					"ts": time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC).Format(time.RFC3339Nano),
 				},
 			},
 			expectedDatesString: []string{"2020-01-01", "2020-01-02"},
@@ -52,13 +51,13 @@ func TestDistinctDates(t *testing.T) {
 			name: "3 dates, 2 unique",
 			rowData: map[string]map[string]any{
 				"1": {
-					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
+					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(time.RFC3339Nano),
 				},
 				"1_duplicate": {
-					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
+					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(time.RFC3339Nano),
 				},
 				"2": {
-					"ts": time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
+					"ts": time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC).Format(time.RFC3339Nano),
 				},
 			},
 			expectedDatesString: []string{"2020-01-01", "2020-01-02"},
@@ -67,7 +66,7 @@ func TestDistinctDates(t *testing.T) {
 			name: "two dates, one is nil",
 			rowData: map[string]map[string]any{
 				"1": {
-					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
+					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(time.RFC3339Nano),
 				},
 				"2": {
 					"ts": nil,
@@ -131,10 +130,9 @@ func TestTableData_ReadOnlyInMemoryCols(t *testing.T) {
 func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 	var _cols columns.Columns
 	for colName, colKind := range map[string]typing.KindDetails{
-		"FOO":                  typing.String,
-		"bar":                  typing.Invalid,
-		"CHANGE_me":            typing.String,
-		"do_not_change_format": typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
+		"FOO":       typing.String,
+		"bar":       typing.Invalid,
+		"CHANGE_me": typing.String,
 	} {
 		_cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
@@ -143,23 +141,16 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 		inMemoryColumns: &_cols,
 	}
 
-	extCol, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("do_not_change_format")
-	assert.True(t, isOk)
-
-	extCol.KindDetails.ExtendedTimeDetails.Format = time.RFC3339Nano
-	tableData.inMemoryColumns.UpdateColumn(columns.NewColumn(extCol.Name(), extCol.KindDetails))
-
 	for name, colKindDetails := range map[string]typing.KindDetails{
-		"foo":                  typing.String,
-		"change_me":            typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
-		"bar":                  typing.Boolean,
-		"do_not_change_format": typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
+		"foo":       typing.String,
+		"change_me": typing.TimestampTZ,
+		"bar":       typing.Boolean,
 	} {
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn(name, colKindDetails)))
 	}
 
 	// It's saved back in the original format.
-	_, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("foo")
+	_, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("foo")
 	assert.False(t, isOk)
 
 	_, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("FOO")
@@ -167,18 +158,12 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 
 	col, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("CHANGE_me")
 	assert.True(t, isOk)
-	assert.Equal(t, ext.TimestampTZKindType, col.KindDetails.ExtendedTimeDetails.Type)
+	assert.Equal(t, typing.TimestampTZ, col.KindDetails)
 
 	// It went from invalid to boolean.
 	col, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("bar")
 	assert.True(t, isOk)
 	assert.Equal(t, typing.Boolean, col.KindDetails)
-
-	col, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("do_not_change_format")
-	assert.True(t, isOk)
-	assert.Equal(t, col.KindDetails.Kind, typing.ETime.Kind)
-	assert.Equal(t, col.KindDetails.ExtendedTimeDetails.Type, ext.TimestampTZKindType, "correctly mapped type")
-	assert.Equal(t, col.KindDetails.ExtendedTimeDetails.Format, time.RFC3339Nano, "format has been preserved")
 }
 
 func TestTableData_ShouldFlushRowLength(t *testing.T) {
@@ -375,18 +360,9 @@ func TestMergeColumn(t *testing.T) {
 			// Testing for backwards compatibility
 			// in-memory column is TimestampNTZ, destination column is TimestampTZ
 			timestampNTZColumn := columns.NewColumn("foo", typing.TimestampNTZ)
-			timestampTZColumn := columns.NewColumn("foo", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""))
+			timestampTZColumn := columns.NewColumn("foo", typing.TimestampTZ)
 			col := mergeColumn(timestampNTZColumn, timestampTZColumn)
-			assert.Equal(t, ext.TimestampTZKindType, col.KindDetails.ExtendedTimeDetails.Type)
-			assert.Equal(t, "2006-01-02T15:04:05.999999999Z07:00", col.KindDetails.ExtendedTimeDetails.Format)
-		}
-		{
-			// Copy the dest column format if in-mem column format is empty.
-			inMemoryColumn := columns.NewColumn("foo", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""))
-			// Clearing the format
-			inMemoryColumn.KindDetails.ExtendedTimeDetails.Format = ""
-			destinationColumn := columns.NewColumn("foo", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""))
-			assert.Equal(t, destinationColumn.KindDetails.ExtendedTimeDetails.Format, mergeColumn(inMemoryColumn, destinationColumn).KindDetails.ExtendedTimeDetails.Format)
+			assert.Equal(t, typing.TimestampTZ, col.KindDetails)
 		}
 	}
 }

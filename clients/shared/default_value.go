@@ -3,6 +3,7 @@ package shared
 import (
 	"fmt"
 	"log/slog"
+	"time"
 
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/lib/destination"
@@ -28,6 +29,13 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 		}
 
 		return sql.QuoteLiteral(_time.Format(ext.PostgresDateFormat)), nil
+	case typing.Time.Kind:
+		_time, err := ext.ParseTimeFromInterface(column.DefaultValue())
+		if err != nil {
+			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", column.DefaultValue(), err)
+		}
+
+		return sql.QuoteLiteral(_time.Format(ext.PostgresTimeFormatNoTZ)), nil
 	case typing.TimestampNTZ.Kind:
 		_time, err := ext.ParseTimestampNTZFromInterface(column.DefaultValue())
 		if err != nil {
@@ -35,22 +43,13 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 		}
 
 		return sql.QuoteLiteral(_time.Format(ext.RFC3339NoTZ)), nil
-	case typing.ETime.Kind:
-		if err := column.KindDetails.EnsureExtendedTimeDetails(); err != nil {
-			return nil, err
-		}
-
-		_time, err := ext.ParseFromInterface(column.DefaultValue(), column.KindDetails.ExtendedTimeDetails.Type)
+	case typing.TimestampTZ.Kind:
+		_time, err := ext.ParseTimestampTZFromInterface(column.DefaultValue())
 		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", column.DefaultValue(), err)
+			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", column.DefaultValue(), err)
 		}
 
-		switch column.KindDetails.ExtendedTimeDetails.Type {
-		case ext.TimeKindType:
-			return sql.QuoteLiteral(_time.Format(ext.PostgresTimeFormatNoTZ)), nil
-		default:
-			return sql.QuoteLiteral(_time.Format(column.KindDetails.ExtendedTimeDetails.Format)), nil
-		}
+		return sql.QuoteLiteral(_time.Format(time.RFC3339Nano)), nil
 	case typing.EDecimal.Kind:
 		if column.KindDetails.ExtendedDecimalDetails.Scale() == 0 {
 			switch column.DefaultValue().(type) {

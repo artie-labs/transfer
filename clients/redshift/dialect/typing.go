@@ -7,7 +7,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
@@ -47,15 +46,12 @@ func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
 		return "BOOLEAN NULL"
 	case typing.Date.Kind:
 		return "DATE"
+	case typing.Time.Kind:
+		return "TIME"
 	case typing.TimestampNTZ.Kind:
 		return "TIMESTAMP WITHOUT TIME ZONE"
-	case typing.ETime.Kind:
-		switch kd.ExtendedTimeDetails.Type {
-		case ext.TimestampTZKindType:
-			return "timestamp with time zone"
-		case ext.TimeKindType:
-			return "time"
-		}
+	case typing.TimestampTZ.Kind:
+		return "TIMESTAMP WITH TIME ZONE"
 	case typing.EDecimal.Kind:
 		return kd.ExtendedDecimalDetails.RedshiftKind()
 	}
@@ -108,9 +104,9 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 	case "timestamp", "timestamp without time zone":
 		return typing.TimestampNTZ, nil
 	case "timestamp with time zone":
-		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")
+		return typing.TimestampTZ, nil
 	case "time without time zone":
-		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "")
+		return typing.Time, nil
 	case "date":
 		return typing.Date, nil
 	case "boolean":

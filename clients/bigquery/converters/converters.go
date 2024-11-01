@@ -30,17 +30,15 @@ func (s StringConverter) Convert(value any) (any, error) {
 		switch s.kd {
 		case typing.Date:
 			return castedValue.Format(ext.PostgresDateFormat), nil
+		case typing.Time:
+			return castedValue.Format(ext.PostgresTimeFormat), nil
 		case typing.TimestampNTZ:
 			return castedValue.Format(ext.RFC3339NoTZ), nil
+		case typing.TimestampTZ:
+			return castedValue.Format(time.RFC3339Nano), nil
 		default:
 			return nil, fmt.Errorf("unexpected kind details: %q", s.kd.Kind)
 		}
-	case *ext.ExtendedTime:
-		if err := s.kd.EnsureExtendedTimeDetails(); err != nil {
-			return nil, err
-		}
-
-		return castedValue.GetTime().Format(s.kd.ExtendedTimeDetails.Format), nil
 	default:
 		return nil, fmt.Errorf("unexpected data type: %T with value: %v", value, value)
 	}

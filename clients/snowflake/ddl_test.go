@@ -13,7 +13,6 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
@@ -25,7 +24,7 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
 		"name":        typing.String,
-		"created_at":  typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
+		"created_at":  typing.TimestampTZ,
 	} {
 		cols = append(cols, columns.NewColumn(colName, kindDetails))
 	}
@@ -51,7 +50,7 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
 		"name":        typing.String,
-		"created_at":  typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
+		"created_at":  typing.TimestampTZ,
 	} {
 		cols = append(cols, columns.NewColumn(colName, kindDetails))
 	}
@@ -90,7 +89,7 @@ func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
 		"customer_id": typing.Integer,
 		"price":       typing.Float,
 		"name":        typing.String,
-		"created_at":  typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
+		"created_at":  typing.TimestampTZ,
 	} {
 		cols = append(cols, columns.NewColumn(colName, kindDetails))
 	}

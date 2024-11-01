@@ -14,7 +14,6 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func (d *DDLTestSuite) TestAlterComplexObjects() {
@@ -51,7 +50,7 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 
 func (d *DDLTestSuite) TestAlterIdempotency() {
 	cols := []columns.Column{
-		columns.NewColumn("created_at", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")),
+		columns.NewColumn("created_at", typing.TimestampTZ),
 		columns.NewColumn("id", typing.Integer),
 		columns.NewColumn("order_name", typing.String),
 		columns.NewColumn("start", typing.String),
@@ -81,7 +80,7 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 func (d *DDLTestSuite) TestAlterTableAdd() {
 	// Test adding a bunch of columns
 	cols := []columns.Column{
-		columns.NewColumn("created_at", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")),
+		columns.NewColumn("created_at", typing.TimestampTZ),
 		columns.NewColumn("id", typing.Integer),
 		columns.NewColumn("order_name", typing.String),
 		columns.NewColumn("start", typing.String),
@@ -123,7 +122,7 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	// Test adding a bunch of columns
 	cols := []columns.Column{
-		columns.NewColumn("created_at", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")),
+		columns.NewColumn("created_at", typing.TimestampTZ),
 		columns.NewColumn("id", typing.Integer),
 		columns.NewColumn("name", typing.String),
 		columns.NewColumn("start", typing.String),
@@ -180,7 +179,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 func (d *DDLTestSuite) TestAlterTableDelete() {
 	// Test adding a bunch of columns
 	cols := []columns.Column{
-		columns.NewColumn("created_at", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")),
+		columns.NewColumn("created_at", typing.TimestampTZ),
 		columns.NewColumn("id", typing.Integer),
 		columns.NewColumn("name", typing.String),
 		columns.NewColumn("col_to_delete", typing.String),

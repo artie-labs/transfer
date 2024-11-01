@@ -13,7 +13,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,21 +24,6 @@ var dialects = []sql.Dialect{
 
 func TestColumn_DefaultValue(t *testing.T) {
 	birthday := time.Date(2022, time.September, 6, 3, 19, 24, 942000000, time.UTC)
-	birthdayDateTime, err := ext.ParseDateTime(birthday.Format(ext.ISO8601), ext.TimestampTZKindType)
-	assert.NoError(t, err)
-
-	// time
-	timeKind := typing.ETime
-	timeNestedKind, err := ext.NewNestedKind(ext.TimeKindType, "")
-	assert.NoError(t, err)
-	timeKind.ExtendedTimeDetails = &timeNestedKind
-
-	// date time
-	dateTimeKind := typing.ETime
-	dateTimeNestedKind, err := ext.NewNestedKind(ext.TimestampTZKindType, "")
-	assert.NoError(t, err)
-	dateTimeKind.ExtendedTimeDetails = &dateTimeNestedKind
-
 	testCases := []struct {
 		name                       string
 		col                        columns.Column
@@ -79,22 +63,22 @@ func TestColumn_DefaultValue(t *testing.T) {
 		},
 		{
 			name:          "date",
-			col:           columns.NewColumnWithDefaultValue("", typing.Date, birthdayDateTime),
+			col:           columns.NewColumnWithDefaultValue("", typing.Date, birthday),
 			expectedValue: "'2022-09-06'",
 		},
 		{
 			name:          "timestamp_ntz",
-			col:           columns.NewColumnWithDefaultValue("", typing.TimestampNTZ, birthdayDateTime),
+			col:           columns.NewColumnWithDefaultValue("", typing.TimestampNTZ, birthday),
 			expectedValue: "'2022-09-06T03:19:24.942'",
 		},
 		{
 			name:          "time",
-			col:           columns.NewColumnWithDefaultValue("", timeKind, birthdayDateTime),
+			col:           columns.NewColumnWithDefaultValue("", typing.Time, birthday),
 			expectedValue: "'03:19:24.942'",
 		},
 		{
-			name:          "datetime",
-			col:           columns.NewColumnWithDefaultValue("", dateTimeKind, birthdayDateTime),
+			name:          "timestamp_tz",
+			col:           columns.NewColumnWithDefaultValue("", typing.TimestampTZ, birthday),
 			expectedValue: "'2022-09-06T03:19:24.942Z'",
 		},
 	}

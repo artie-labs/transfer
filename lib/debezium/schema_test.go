@@ -2,13 +2,11 @@ package debezium
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func TestField_GetScaleAndPrecision(t *testing.T) {
@@ -233,7 +231,7 @@ func TestField_ToKindDetails(t *testing.T) {
 		// Timestamp with timezone
 		kd, err := Field{DebeziumType: ZonedTimestamp}.ToKindDetails()
 		assert.NoError(t, err)
-		assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, time.RFC3339Nano), kd)
+		assert.Equal(t, typing.TimestampTZ, kd)
 	}
 	{
 		// Timestamp without timezone
@@ -252,33 +250,11 @@ func TestField_ToKindDetails(t *testing.T) {
 		}
 	}
 	{
-		{
-			// Time with time zone
-			for _, dbzType := range []SupportedDebeziumType{TimeWithTimezone} {
-				kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
-				assert.NoError(t, err)
-				assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "15:04:05.999999"+ext.TimezoneOffsetFormat), kd, dbzType)
-			}
-		}
-		{
-			// Time
-			for _, dbzType := range []SupportedDebeziumType{Time, TimeKafkaConnect} {
-				kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
-				assert.NoError(t, err)
-				assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "15:04:05.000"), kd, dbzType)
-			}
-		}
-		{
-			// Micro time
-			kd, err := Field{DebeziumType: MicroTime}.ToKindDetails()
+		// Time
+		for _, dbzType := range []SupportedDebeziumType{Time, TimeKafkaConnect, TimeWithTimezone, MicroTime, NanoTime} {
+			kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
 			assert.NoError(t, err)
-			assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "15:04:05.000000"), kd)
-		}
-		{
-			// Nano time
-			kd, err := Field{DebeziumType: NanoTime}.ToKindDetails()
-			assert.NoError(t, err)
-			assert.Equal(t, typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "15:04:05.000000000"), kd)
+			assert.Equal(t, typing.Time, kd)
 		}
 	}
 	{

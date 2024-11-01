@@ -9,7 +9,6 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type SnowflakeDialect struct{}
@@ -32,15 +31,12 @@ func (SnowflakeDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) 
 		return "boolean"
 	case typing.Date.Kind:
 		return "date"
+	case typing.Time.Kind:
+		return "time"
 	case typing.TimestampNTZ.Kind:
 		return "timestamp_ntz"
-	case typing.ETime.Kind:
-		switch kindDetails.ExtendedTimeDetails.Type {
-		case ext.TimestampTZKindType:
-			return "timestamp_tz"
-		case ext.TimeKindType:
-			return "time"
-		}
+	case typing.TimestampTZ.Kind:
+		return "timestamp_tz"
 	case typing.EDecimal.Kind:
 		return kindDetails.ExtendedDecimalDetails.SnowflakeKind()
 	}
@@ -98,11 +94,11 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.
 	case "array":
 		return typing.Array, nil
 	case "timestamp_ltz", "timestamp_tz":
-		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")
+		return typing.TimestampTZ, nil
 	case "timestamp", "datetime", "timestamp_ntz":
 		return typing.TimestampNTZ, nil
 	case "time":
-		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "")
+		return typing.Time, nil
 	case "date":
 		return typing.Date, nil
 	default:

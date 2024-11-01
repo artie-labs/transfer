@@ -9,7 +9,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/typing"
 
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -249,8 +248,8 @@ func TestDiffDeterministic(t *testing.T) {
 func TestCopyColMap(t *testing.T) {
 	var cols Columns
 	cols.AddColumn(NewColumn("hello", typing.String))
-	cols.AddColumn(NewColumn("created_at", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")))
-	cols.AddColumn(NewColumn("updated_at", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")))
+	cols.AddColumn(NewColumn("created_at", typing.TimestampTZ))
+	cols.AddColumn(NewColumn("updated_at", typing.TimestampTZ))
 
 	copiedCols := CloneColumns(&cols)
 	assert.Equal(t, copiedCols, &cols)

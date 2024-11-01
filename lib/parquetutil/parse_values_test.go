@@ -7,7 +7,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -57,14 +56,9 @@ func TestParseValue(t *testing.T) {
 	}
 	{
 		// Time
-		eTime := typing.ETime
-		nestedKind, err := ext.NewNestedKind(ext.TimeKindType, "")
+		value, err := ParseValue("03:15:00", columns.NewColumn("", typing.Time))
 		assert.NoError(t, err)
-
-		eTime.ExtendedTimeDetails = &nestedKind
-		value, err := ParseValue("03:15:00", columns.NewColumn("", eTime))
-		assert.NoError(t, err)
-		assert.Equal(t, "03:15:00+00", value)
+		assert.Equal(t, "03:15:00Z", value)
 	}
 	{
 		// Date
@@ -74,12 +68,7 @@ func TestParseValue(t *testing.T) {
 	}
 	{
 		// Timestamp TZ
-		eDateTime := typing.ETime
-		nestedKind, err := ext.NewNestedKind(ext.TimestampTZKindType, "")
-		assert.NoError(t, err)
-
-		eDateTime.ExtendedTimeDetails = &nestedKind
-		value, err := ParseValue("2023-04-24T17:29:05.69944Z", columns.NewColumn("", eDateTime))
+		value, err := ParseValue("2023-04-24T17:29:05.69944Z", columns.NewColumn("", typing.TimestampTZ))
 		assert.NoError(t, err)
 		assert.Equal(t, int64(1682357345699), value)
 	}

@@ -10,7 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -43,8 +42,8 @@ func TestColumnToTableFieldSchema(t *testing.T) {
 		assert.Equal(t, storagepb.TableFieldSchema_STRING, fieldSchema.Type)
 	}
 	{
-		// ETime - Time:
-		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "")))
+		// Time
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.Time))
 		assert.NoError(t, err)
 		assert.Equal(t, storagepb.TableFieldSchema_TIME, fieldSchema.Type)
 	}
@@ -55,18 +54,16 @@ func TestColumnToTableFieldSchema(t *testing.T) {
 		assert.Equal(t, storagepb.TableFieldSchema_DATE, fieldSchema.Type)
 	}
 	{
-		// ETime - TimestampTZ:
-		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")))
+		// Datetime (TimestampNTZ)
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.TimestampNTZ))
 		assert.NoError(t, err)
-		assert.Equal(t, storagepb.TableFieldSchema_TIMESTAMP, fieldSchema.Type)
+		assert.Equal(t, storagepb.TableFieldSchema_DATETIME, fieldSchema.Type)
 	}
 	{
-		// ETime - Invalid:
-		nestedKind, err := typing.NewExtendedTimeDetails(typing.ETime, "", "")
-		assert.ErrorContains(t, err, "unknown kind type")
-
-		_, err = columnToTableFieldSchema(columns.NewColumn("foo", nestedKind))
-		assert.ErrorContains(t, err, `unsupported column kind: "invalid"`)
+		// Timestamp (TimestampTZ)
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.TimestampTZ))
+		assert.NoError(t, err)
+		assert.Equal(t, storagepb.TableFieldSchema_TIMESTAMP, fieldSchema.Type)
 	}
 	{
 		// Struct:
@@ -167,8 +164,8 @@ func TestRowToMessage(t *testing.T) {
 		columns.NewColumn("c_numeric", typing.EDecimal),
 		columns.NewColumn("c_string", typing.String),
 		columns.NewColumn("c_string_decimal", typing.String),
-		columns.NewColumn("c_time", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "")),
-		columns.NewColumn("c_timestamp", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")),
+		columns.NewColumn("c_time", typing.Time),
+		columns.NewColumn("c_timestamp", typing.TimestampTZ),
 		columns.NewColumn("c_date", typing.Date),
 		columns.NewColumn("c_datetime", typing.TimestampNTZ),
 		columns.NewColumn("c_struct", typing.Struct),
@@ -188,8 +185,8 @@ func TestRowToMessage(t *testing.T) {
 		"c_numeric":        decimal.NewDecimal(numbers.MustParseDecimal("3.14159")),
 		"c_string":         "foo bar",
 		"c_string_decimal": decimal.NewDecimal(numbers.MustParseDecimal("1.61803")),
-		"c_time":           ext.NewExtendedTime(time.Date(0, 0, 0, 4, 5, 6, 7, time.UTC), ext.TimeKindType, ""),
-		"c_timestamp":      ext.NewExtendedTime(time.Date(2001, 2, 3, 4, 5, 6, 7, time.UTC), ext.TimestampTZKindType, ""),
+		"c_time":           time.Date(0, 0, 0, 4, 5, 6, 7, time.UTC),
+		"c_timestamp":      time.Date(2001, 2, 3, 4, 5, 6, 7, time.UTC),
 		"c_date":           time.Date(2001, 2, 3, 0, 0, 0, 0, time.UTC),
 		"c_datetime":       time.Date(2001, 2, 3, 4, 5, 6, 7, time.UTC),
 		"c_struct":         map[string]any{"baz": []string{"foo", "bar"}},

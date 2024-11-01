@@ -9,7 +9,6 @@ import (
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -180,7 +179,7 @@ func TestSnowflakeDialect_KindForDataType_DateTime(t *testing.T) {
 		for _, expectedDateTime := range expectedDateTimes {
 			kd, err := SnowflakeDialect{}.KindForDataType(expectedDateTime, "")
 			assert.NoError(t, err)
-			assert.Equal(t, ext.TimestampTZKindType, kd.ExtendedTimeDetails.Type, expectedDateTime)
+			assert.Equal(t, typing.TimestampTZ, kd, expectedDateTime)
 		}
 	}
 	{
@@ -196,8 +195,8 @@ func TestSnowflakeDialect_KindForDataType_DateTime(t *testing.T) {
 
 func TestSnowflakeDialect_KindForDataType_NoDataLoss(t *testing.T) {
 	kindDetails := []typing.KindDetails{
-		typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
-		typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""),
+		typing.TimestampTZ,
+		typing.Time,
 		typing.Date,
 		typing.String,
 		typing.Boolean,

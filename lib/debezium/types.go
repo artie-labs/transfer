@@ -10,7 +10,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/debezium/converters"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 // FieldLabelKind is used when the schema is turned on. Each schema object will be labelled.
@@ -111,8 +110,6 @@ func (f Field) ShouldSetDefaultValue(defaultValue any) bool {
 		return false
 	case time.Time:
 		return isTimeSet(castedDefaultValue)
-	case *ext.ExtendedTime:
-		return isTimeSet(castedDefaultValue.GetTime())
 	case string:
 		if f.DebeziumType == UUID && castedDefaultValue == uuid.Nil.String() {
 			return false

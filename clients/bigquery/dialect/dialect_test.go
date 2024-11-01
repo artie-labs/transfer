@@ -10,7 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -93,8 +92,8 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 		"json":               typing.Struct,
 		// Datetime
 		"datetime":  typing.TimestampNTZ,
-		"timestamp": typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
-		"time":      typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""),
+		"timestamp": typing.TimestampTZ,
+		"time":      typing.Time,
 		"date":      typing.Date,
 		//Invalid
 		"foo":    typing.Invalid,
@@ -130,8 +129,8 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 
 func TestBigQueryDialect_KindForDataType_NoDataLoss(t *testing.T) {
 	kindDetails := []typing.KindDetails{
-		typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
-		typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""),
+		typing.TimestampTZ,
+		typing.Time,
 		typing.Date,
 		typing.String,
 		typing.Boolean,

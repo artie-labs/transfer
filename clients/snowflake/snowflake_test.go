@@ -20,7 +20,6 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func (s *SnowflakeTestSuite) identifierFor(tableData *optimization.TableData) sql.TableIdentifier {
@@ -224,7 +223,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		constants.DeleteColumnMarker:        typing.Boolean,
 		constants.OnlySetDeleteColumnMarker: typing.Boolean,
 		// Add kindDetails to created_at
-		"created_at": typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
+		"created_at": typing.TimestampTZ,
 	}
 
 	var cols columns.Columns
@@ -240,7 +239,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 	snowflakeColToKindDetailsMap := map[string]typing.KindDetails{
 		"id":                                typing.Integer,
-		"created_at":                        typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, ""),
+		"created_at":                        typing.TimestampTZ,
 		"name":                              typing.String,
 		constants.DeleteColumnMarker:        typing.Boolean,
 		constants.OnlySetDeleteColumnMarker: typing.Boolean,
@@ -273,7 +272,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 		inMemColumns := tableData.ReadOnlyInMemoryCols()
 		// Since sflkColumns overwrote the format, let's set it correctly again.
-		inMemColumns.UpdateColumn(columns.NewColumn("created_at", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, time.RFC3339Nano)))
+		inMemColumns.UpdateColumn(columns.NewColumn("created_at", typing.TimestampTZ))
 		tableData.SetInMemoryColumns(inMemColumns)
 		break
 	}
