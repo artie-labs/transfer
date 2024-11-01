@@ -31,6 +31,19 @@ func ParseDateFromInterface(val any) (time.Time, error) {
 	}
 }
 
+func ParseTimeFromInterface(val any) (time.Time, error) {
+	switch convertedVal := val.(type) {
+	case nil:
+		return time.Time{}, fmt.Errorf("val is nil")
+	case time.Time:
+		return convertedVal, nil
+	case string:
+		return parseTime(convertedVal)
+	default:
+		return time.Time{}, fmt.Errorf("unsupported type: %T", convertedVal)
+	}
+}
+
 func ParseTimestampNTZFromInterface(val any) (time.Time, error) {
 	switch convertedVal := val.(type) {
 	case time.Time:
@@ -50,19 +63,6 @@ func ParseTimestampTZFromInterface(val any) (time.Time, error) {
 		return convertedVal, nil
 	case string:
 		return parseTimestampTZ(convertedVal)
-	default:
-		return time.Time{}, fmt.Errorf("unsupported type: %T", convertedVal)
-	}
-}
-
-func ParseTimeFromInterface(val any) (time.Time, error) {
-	switch convertedVal := val.(type) {
-	case nil:
-		return time.Time{}, fmt.Errorf("val is nil")
-	case time.Time:
-		return convertedVal, nil
-	case string:
-		return parseTime(convertedVal)
 	default:
 		return time.Time{}, fmt.Errorf("unsupported type: %T", convertedVal)
 	}

@@ -188,18 +188,15 @@ func TestConvertTimeWithTimezone(t *testing.T) {
 		// ms precision
 		val, err := TimeWithTimezone{}.Convert("23:02:06.745Z")
 		assert.NoError(t, err)
-
-		expectedTs := ext.NewExtendedTime(time.Date(0, 1, 1, 23, 2, 6, 745000000, time.UTC), ext.TimeKindType, TimeWithTimezone{}.layout())
-		assert.Equal(t, expectedTs, val.(*ext.ExtendedTime))
-		assert.Equal(t, "23:02:06.745Z", val.(*ext.ExtendedTime).GetTime().Format(TimeWithTimezone{}.layout()))
+		assert.Equal(t, time.Date(0, 1, 1, 23, 2, 6, 745000000, time.UTC), val.(time.Time))
+		assert.Equal(t, "23:02:06.745Z", val.(time.Time).Format(TimeWithTimezone{}.layout()))
 	}
 	{
 		// no fractional seconds
 		val, err := TimeWithTimezone{}.Convert("23:02:06Z")
 		assert.NoError(t, err)
 
-		expectedTs := ext.NewExtendedTime(time.Date(0, 1, 1, 23, 2, 6, 0, time.UTC), ext.TimeKindType, TimeWithTimezone{}.layout())
-		assert.Equal(t, expectedTs, val.(*ext.ExtendedTime))
-		assert.Equal(t, "23:02:06Z", val.(*ext.ExtendedTime).GetTime().Format(TimeWithTimezone{}.layout()))
+		assert.Equal(t, time.Date(0, 1, 1, 23, 2, 6, 0, time.UTC), val.(time.Time))
+		assert.Equal(t, "23:02:06Z", val.(time.Time).Format(TimeWithTimezone{}.layout()))
 	}
 }

@@ -47,14 +47,6 @@ func TestField_ShouldSetDefaultValue(t *testing.T) {
 		assert.True(t, field.ShouldSetDefaultValue(float64(123)))
 	}
 	{
-		// *ext.ExtendedTime
-		field := Field{}
-		assert.True(t, field.ShouldSetDefaultValue(ext.NewExtendedTime(time.Now(), ext.TimeKindType, "")))
-		assert.False(t, field.ShouldSetDefaultValue(&ext.ExtendedTime{}))
-		var ts time.Time
-		assert.False(t, field.ShouldSetDefaultValue(ext.NewExtendedTime(ts, ext.TimeKindType, "")))
-	}
-	{
 		// time.Time
 		field := Field{}
 		assert.True(t, field.ShouldSetDefaultValue(time.Now()))

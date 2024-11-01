@@ -1,7 +1,6 @@
 package ext
 
 import (
-	"cmp"
 	"fmt"
 	"log/slog"
 	"time"
@@ -41,22 +40,6 @@ func (e ExtendedTime) MarshalJSON() ([]byte, error) {
 	// This should not be happening anymore since MongoDB is now using [time.Time]
 	slog.Error("Unexpected call to MarshalJSON()", slog.Any("ts", e.ts), slog.String("nestedKindType", string(e.nestedKind.Type)))
 	return e.ts.UTC().MarshalJSON()
-}
-
-// TODO: Have this return an error instead of nil
-func NewExtendedTime(t time.Time, kindType ExtendedTimeKindType, originalFormat string) *ExtendedTime {
-	defaultLayout, err := kindType.defaultLayout()
-	if err != nil {
-		return nil
-	}
-
-	return &ExtendedTime{
-		ts: t,
-		nestedKind: NestedKind{
-			Type:   kindType,
-			Format: cmp.Or(originalFormat, defaultLayout),
-		},
-	}
 }
 
 func (e *ExtendedTime) GetTime() time.Time {
