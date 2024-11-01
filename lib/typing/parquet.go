@@ -85,10 +85,6 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 				ConvertedType: ToPtr("UTF8"),
 			}.String(),
 		}, nil
-
-	}
-
-	switch k.Kind {
 	case Float.Kind:
 		return &Field{
 			Tag: FieldTag{
