@@ -205,7 +205,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			daysSinceEpoch := _time.Unix() / (60 * 60 * 24)
 			message.Set(field, protoreflect.ValueOfInt32(int32(daysSinceEpoch)))
 		case typing.Time.Kind:
-			_time, err := ext.ParseTimeFromInterface(value)
+			_time, err := ext.ParseTimeFromAny(value)
 			if err != nil {
 				return nil, fmt.Errorf("failed to cast value as time.Time, value: '%v', err: %w", value, err)
 			}

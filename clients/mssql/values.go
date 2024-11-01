@@ -35,7 +35,7 @@ func parseValue(colVal any, colKind columns.Column) (any, error) {
 
 		return _time, nil
 	case typing.Time.Kind:
-		_time, err := ext.ParseTimeFromInterface(colVal)
+		_time, err := ext.ParseTimeFromAny(colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", colVal, err)
 		}

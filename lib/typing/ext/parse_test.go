@@ -21,14 +21,14 @@ func TestParseTimeFromInterface(t *testing.T) {
 	{
 		// String
 		for _, supportedTimeFormat := range SupportedTimeFormats {
-			_time, err := ParseTimeFromInterface(now.Format(supportedTimeFormat))
+			_time, err := ParseTimeFromAny(now.Format(supportedTimeFormat))
 			assert.NoError(t, err)
 			assert.Equal(t, _time.Format(supportedTimeFormat), now.Format(supportedTimeFormat))
 		}
 	}
 	{
 		// time.Time
-		_time, err := ParseTimeFromInterface(now)
+		_time, err := ParseTimeFromAny(now)
 		assert.NoError(t, err)
 		assert.Equal(t, now, _time)
 	}

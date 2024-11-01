@@ -33,7 +33,7 @@ func ParseDateFromAny(val any) (time.Time, error) {
 	}
 }
 
-func ParseTimeFromInterface(val any) (time.Time, error) {
+func ParseTimeFromAny(val any) (time.Time, error) {
 	switch convertedVal := val.(type) {
 	case nil:
 		return time.Time{}, fmt.Errorf("val is nil")

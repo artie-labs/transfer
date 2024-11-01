@@ -30,7 +30,7 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 
 		return sql.QuoteLiteral(_time.Format(ext.PostgresDateFormat)), nil
 	case typing.Time.Kind:
-		_time, err := ext.ParseTimeFromInterface(column.DefaultValue())
+		_time, err := ext.ParseTimeFromAny(column.DefaultValue())
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", column.DefaultValue(), err)
 		}
