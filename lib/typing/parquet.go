@@ -154,7 +154,7 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 				},
 			},
 		}, nil
+	default:
+		return nil, fmt.Errorf("unsupported kind: %q", k.Kind)
 	}
-
-	return nil, nil
 }
