@@ -197,7 +197,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 
 			message.Set(field, protoreflect.ValueOfString(castedValue))
 		case typing.Date.Kind:
-			_time, err := ext.ParseDateFromInterface(value)
+			_time, err := ext.ParseDateFromAny(value)
 			if err != nil {
 				return nil, fmt.Errorf("failed to cast value as time.Time, value: '%v', err: %w", value, err)
 			}

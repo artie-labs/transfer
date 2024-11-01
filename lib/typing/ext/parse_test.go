@@ -10,7 +10,7 @@ import (
 func TestParseDateFromInterface(t *testing.T) {
 	now := time.Now()
 	for _, supportedDateFormat := range supportedDateFormats {
-		_time, err := ParseDateFromInterface(now.Format(supportedDateFormat))
+		_time, err := ParseDateFromAny(now.Format(supportedDateFormat))
 		assert.NoError(t, err)
 		assert.Equal(t, _time.Format(supportedDateFormat), now.Format(supportedDateFormat))
 	}

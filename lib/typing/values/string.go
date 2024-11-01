@@ -29,7 +29,7 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 
 	switch colKind.Kind {
 	case typing.Date.Kind:
-		_time, err := ext.ParseDateFromInterface(colVal)
+		_time, err := ext.ParseDateFromAny(colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", colVal, err)
 		}

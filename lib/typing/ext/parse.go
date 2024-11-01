@@ -20,7 +20,7 @@ func ParseTimeExactMatch(layout, value string) (time.Time, error) {
 	return ts, nil
 }
 
-func ParseDateFromInterface(val any) (time.Time, error) {
+func ParseDateFromAny(val any) (time.Time, error) {
 	switch convertedVal := val.(type) {
 	case nil:
 		return time.Time{}, fmt.Errorf("val is nil")

@@ -23,7 +23,7 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 	case typing.Struct.Kind, typing.Array.Kind:
 		return dialect.EscapeStruct(fmt.Sprint(column.DefaultValue())), nil
 	case typing.Date.Kind:
-		_time, err := ext.ParseDateFromInterface(column.DefaultValue())
+		_time, err := ext.ParseDateFromAny(column.DefaultValue())
 		if err != nil {
 			return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", column.DefaultValue(), err)
 		}
