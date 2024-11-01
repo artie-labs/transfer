@@ -18,7 +18,7 @@ import (
 func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 	tableID := NewTableIdentifier("coffee_shop", "public", "orders")
 
-	var cols columns.Columns
+	var cols []columns.Column
 	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":          typing.Integer,
 		"customer_id": typing.Integer,
@@ -26,11 +26,10 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 		"name":        typing.String,
 		"created_at":  typing.TimestampTZ,
 	} {
-		cols.AddColumn(columns.NewColumn(colName, kindDetails))
+		cols = append(cols, columns.NewColumn(colName, kindDetails))
 	}
 
-	s.stageStore.configMap.AddTableToConfig(tableID, types.NewDwhTableConfig(&cols, false, true))
-
+	s.stageStore.configMap.AddTableToConfig(tableID, types.NewDwhTableConfig(cols, true))
 	nameCol := columns.NewColumn("name", typing.String)
 	tc := s.stageStore.configMap.TableConfigCache(tableID)
 
@@ -45,7 +44,7 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 
 func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 	tableID := NewTableIdentifier("coffee_shop", "orders", "public")
-	var cols columns.Columns
+	var cols []columns.Column
 	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":          typing.Integer,
 		"customer_id": typing.Integer,
@@ -53,10 +52,10 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 		"name":        typing.String,
 		"created_at":  typing.TimestampTZ,
 	} {
-		cols.AddColumn(columns.NewColumn(colName, kindDetails))
+		cols = append(cols, columns.NewColumn(colName, kindDetails))
 	}
 
-	config := types.NewDwhTableConfig(&cols, false, true)
+	config := types.NewDwhTableConfig(cols, true)
 	s.stageStore.configMap.AddTableToConfig(tableID, config)
 
 	nameCol := columns.NewColumn("name", typing.String)
@@ -84,7 +83,7 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 }
 
 func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
-	var cols columns.Columns
+	var cols []columns.Column
 	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":          typing.Integer,
 		"customer_id": typing.Integer,
@@ -92,10 +91,10 @@ func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
 		"name":        typing.String,
 		"created_at":  typing.TimestampTZ,
 	} {
-		cols.AddColumn(columns.NewColumn(colName, kindDetails))
+		cols = append(cols, columns.NewColumn(colName, kindDetails))
 	}
 
-	tc := types.NewDwhTableConfig(&cols, false, false)
+	tc := types.NewDwhTableConfig(cols, false)
 	tc.SetColumnsToDelete(map[string]time.Time{"customer_id": time.Now()})
 
 	assert.Equal(s.T(), len(tc.ReadOnlyColumnsToDelete()), 1)

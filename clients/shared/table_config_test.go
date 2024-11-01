@@ -13,16 +13,16 @@ import (
 
 func TestGetTableConfig(t *testing.T) {
 	// Return early because table is found in configMap.
-	cols := &columns.Columns{}
+	var cols []columns.Column
 	for i := range 100 {
-		cols.AddColumn(columns.NewColumn(fmt.Sprintf("col-%v", i), typing.Invalid))
+		cols = append(cols, columns.NewColumn(fmt.Sprintf("col-%v", i), typing.Invalid))
 	}
 
 	cm := &types.DwhToTablesConfigMap{}
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns("dusty_the_mini_aussie")
 
-	tableCfg := types.NewDwhTableConfig(cols, false, false)
+	tableCfg := types.NewDwhTableConfig(cols, false)
 	cm.AddTableToConfig(fakeTableID, tableCfg)
 
 	actualTableCfg, err := GetTableCfgArgs{

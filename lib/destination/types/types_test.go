@@ -16,12 +16,12 @@ import (
 )
 
 func generateDwhTableCfg() *types.DwhTableConfig {
-	cols := &columns.Columns{}
+	var cols []columns.Column
 	for _, col := range []string{"a", "b", "c", "d"} {
-		cols.AddColumn(columns.NewColumn(col, typing.String))
+		cols = append(cols, columns.NewColumn(col, typing.String))
 	}
 
-	tableCfg := types.NewDwhTableConfig(cols, false, false)
+	tableCfg := types.NewDwhTableConfig(cols, false)
 	colsToDelete := make(map[string]time.Time)
 	for _, col := range []string{"foo", "bar", "abc", "xyz"} {
 		colsToDelete[col] = time.Now()

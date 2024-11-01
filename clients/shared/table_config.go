@@ -47,19 +47,17 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 		}
 	}()
 
-	var tableMissing bool
 	if err != nil {
 		if g.Dwh.Dialect().IsTableDoesNotExistErr(err) {
 			// This branch is currently only used by Snowflake.
 			// Swallow the error, make sure all the metadata is created
-			tableMissing = true
 			err = nil
 		} else {
 			return nil, fmt.Errorf("failed to query %T, err: %w, query: %q", g.Dwh, err, g.Query)
 		}
 	}
 
-	var cols columns.Columns
+	var cols []columns.Column
 	for rows != nil && rows.Next() {
 		// figure out what columns were returned
 		// the column names will be the JSON object field keys
@@ -126,15 +124,10 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 			return nil, fmt.Errorf("unknown default value strategy: %q", strategy)
 		}
 
-		cols.AddColumn(col)
+		cols = append(cols, col)
 	}
 
-	// Do it this way via rows.Next() because that will move the iterator and cause us to miss a column.
-	if len(cols.GetColumns()) == 0 {
-		tableMissing = true
-	}
-
-	tableCfg := types.NewDwhTableConfig(&cols, tableMissing, g.DropDeletedColumns)
+	tableCfg := types.NewDwhTableConfig(cols, g.DropDeletedColumns)
 	g.ConfigMap.AddTableToConfig(g.TableID, tableCfg)
 	return tableCfg, nil
 }
