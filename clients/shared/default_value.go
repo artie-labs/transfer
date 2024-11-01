@@ -3,6 +3,7 @@ package shared
 import (
 	"fmt"
 	"log/slog"
+	"time"
 
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/lib/destination"
@@ -35,6 +36,13 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 		}
 
 		return sql.QuoteLiteral(_time.Format(ext.RFC3339NoTZ)), nil
+	case typing.TimestampTZ.Kind:
+		_time, err := ext.ParseTimestampTZFromInterface(column.DefaultValue())
+		if err != nil {
+			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", column.DefaultValue(), err)
+		}
+
+		return sql.QuoteLiteral(_time.Format(time.RFC3339Nano)), nil
 	case typing.ETime.Kind:
 		if err := column.KindDetails.EnsureExtendedTimeDetails(); err != nil {
 			return nil, err

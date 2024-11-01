@@ -57,22 +57,28 @@ func TestStringConverter_Convert(t *testing.T) {
 			assert.Equal(t, "2021-01-01T09:10:12.400123991", val)
 		}
 		{
+			// Timestamp TZ
+			val, err := NewStringConverter(typing.TimestampTZ).Convert(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC))
+			assert.NoError(t, err)
+			assert.Equal(t, "2021-01-01T00:00:00Z", val)
+		}
+		{
 			// Invalid
 			_, err := NewStringConverter(typing.String).Convert(time.Date(2021, 1, 1, 9, 10, 12, 400_123_991, time.UTC))
 			assert.ErrorContains(t, err, `unexpected kind details: "string"`)
 		}
 	}
 	{
-		// Extended time
-		val, err := NewStringConverter(typing.MustNewExtendedTimeDetails(typing.String, ext.TimestampTZKindType, "")).Convert(
+		// Extended Time
+		val, err := NewStringConverter(typing.MustNewExtendedTimeDetails(typing.String, ext.TimeKindType, "")).Convert(
 			ext.NewExtendedTime(
-				time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
-				ext.TimestampTZKindType,
+				time.Date(2021, 1, 1, 9, 10, 11, 123_456_789, time.UTC),
+				ext.TimeKindType,
 				"",
 			),
 		)
 		assert.NoError(t, err)
-		assert.Equal(t, "2021-01-01T00:00:00Z", val)
+		assert.Equal(t, "09:10:11.123456+00", val)
 	}
 }
 

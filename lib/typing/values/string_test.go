@@ -56,6 +56,21 @@ func TestToString(t *testing.T) {
 		}
 	}
 	{
+		// Timestamp TZ
+		{
+			// time.Time
+			value, err := ToString(time.Date(2019, time.December, 31, 1, 2, 33, 400_999_991, time.UTC), typing.TimestampTZ)
+			assert.NoError(t, err)
+			assert.Equal(t, "2019-12-31T01:02:33.400999991Z", value)
+		}
+		{
+			// String
+			value, err := ToString("2019-12-31T01:02:33.400999991Z", typing.TimestampTZ)
+			assert.NoError(t, err)
+			assert.Equal(t, time.Date(2019, time.December, 31, 1, 2, 33, 400_999_991, time.UTC).Format(time.RFC3339Nano), value)
+		}
+	}
+	{
 		// ETime
 		{
 			// Error
@@ -72,17 +87,11 @@ func TestToString(t *testing.T) {
 			}
 			{
 				// Using [*ExtendedTime]
-				format := "2006-01-02T15:04:05Z07:00"
-				dustyBirthday := time.Date(2019, time.December, 31, 0, 0, 0, 0, time.UTC)
-				extendedTime := ext.NewExtendedTime(dustyBirthday, ext.TimestampTZKindType, format)
-
-				nestedKind, err := ext.NewNestedKind(ext.TimestampTZKindType, format)
-				assert.NoError(t, err)
-
-				eTimeCol.KindDetails.ExtendedTimeDetails = &nestedKind
+				dustyBirthday := time.Date(2019, time.December, 31, 9, 27, 22, 0, time.UTC)
+				extendedTime := ext.NewExtendedTime(dustyBirthday, ext.TimeKindType, "")
 				actualValue, err := ToString(extendedTime, eTimeCol.KindDetails)
 				assert.NoError(t, err)
-				assert.Equal(t, extendedTime.GetTime().Format(format), actualValue)
+				assert.Equal(t, "09:27:22", actualValue)
 			}
 		}
 	}

@@ -55,8 +55,14 @@ func TestColumnToTableFieldSchema(t *testing.T) {
 		assert.Equal(t, storagepb.TableFieldSchema_DATE, fieldSchema.Type)
 	}
 	{
-		// ETime - TimestampTZ:
-		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")))
+		// Datetime (TimestampNTZ)
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.TimestampNTZ))
+		assert.NoError(t, err)
+		assert.Equal(t, storagepb.TableFieldSchema_DATETIME, fieldSchema.Type)
+	}
+	{
+		// Timestamp (TimestampTZ)
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.TimestampTZ))
 		assert.NoError(t, err)
 		assert.Equal(t, storagepb.TableFieldSchema_TIMESTAMP, fieldSchema.Type)
 	}
@@ -168,7 +174,7 @@ func TestRowToMessage(t *testing.T) {
 		columns.NewColumn("c_string", typing.String),
 		columns.NewColumn("c_string_decimal", typing.String),
 		columns.NewColumn("c_time", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "")),
-		columns.NewColumn("c_timestamp", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampTZKindType, "")),
+		columns.NewColumn("c_timestamp", typing.TimestampTZ),
 		columns.NewColumn("c_date", typing.Date),
 		columns.NewColumn("c_datetime", typing.TimestampNTZ),
 		columns.NewColumn("c_struct", typing.Struct),
@@ -189,7 +195,7 @@ func TestRowToMessage(t *testing.T) {
 		"c_string":         "foo bar",
 		"c_string_decimal": decimal.NewDecimal(numbers.MustParseDecimal("1.61803")),
 		"c_time":           ext.NewExtendedTime(time.Date(0, 0, 0, 4, 5, 6, 7, time.UTC), ext.TimeKindType, ""),
-		"c_timestamp":      ext.NewExtendedTime(time.Date(2001, 2, 3, 4, 5, 6, 7, time.UTC), ext.TimestampTZKindType, ""),
+		"c_timestamp":      time.Date(2001, 2, 3, 4, 5, 6, 7, time.UTC),
 		"c_date":           time.Date(2001, 2, 3, 0, 0, 0, 0, time.UTC),
 		"c_datetime":       time.Date(2001, 2, 3, 4, 5, 6, 7, time.UTC),
 		"c_struct":         map[string]any{"baz": []string{"foo", "bar"}},

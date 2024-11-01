@@ -10,14 +10,11 @@ import (
 type ExtendedTimeKindType string
 
 const (
-	TimestampTZKindType ExtendedTimeKindType = "timestamp_tz"
-	TimeKindType        ExtendedTimeKindType = "time"
+	TimeKindType ExtendedTimeKindType = "time"
 )
 
 func (e ExtendedTimeKindType) defaultLayout() (string, error) {
 	switch e {
-	case TimestampTZKindType:
-		return time.RFC3339Nano, nil
 	case TimeKindType:
 		return PostgresTimeFormat, nil
 	default:

@@ -9,8 +9,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/ext"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -90,7 +88,7 @@ func (r *RelationTestSuite) TestPostgresEvent() {
 	evtData, err := evt.GetData(map[string]any{"id": 59}, kafkalib.TopicConfig{IncludeDatabaseUpdatedAt: true})
 	assert.NoError(r.T(), err)
 	assert.Equal(r.T(), float64(59), evtData["id"])
-	assert.Equal(r.T(), ext.NewExtendedTime(time.Date(2022, time.November, 16, 4, 1, 53, 308000000, time.UTC), ext.TimestampTZKindType, ext.ISO8601), evtData[constants.DatabaseUpdatedColumnMarker])
+	assert.Equal(r.T(), time.Date(2022, time.November, 16, 4, 1, 53, 308000000, time.UTC), evtData[constants.DatabaseUpdatedColumnMarker])
 
 	assert.Equal(r.T(), "Barings Participation Investors", evtData["item"])
 	assert.Equal(r.T(), map[string]any{"object": "foo"}, evtData["nested"])
@@ -531,11 +529,8 @@ func (r *RelationTestSuite) TestGetEventFromBytes_MySQL() {
 	evtData, err = evt.GetData(kvMap, kafkalib.TopicConfig{IncludeDatabaseUpdatedAt: true, IncludeArtieUpdatedAt: true})
 	assert.NoError(r.T(), err)
 
-	assert.Equal(r.T(), ext.NewExtendedTime(time.Date(2023, time.March, 13, 19, 19, 24, 0, time.UTC), ext.TimestampTZKindType, ext.ISO8601), evtData[constants.DatabaseUpdatedColumnMarker])
-
-	updatedAtExtTime, isOk := evtData[constants.UpdateColumnMarker].(*ext.ExtendedTime)
-	assert.True(r.T(), isOk)
-	assert.False(r.T(), updatedAtExtTime.GetTime().IsZero())
+	assert.Equal(r.T(), time.Date(2023, time.March, 13, 19, 19, 24, 0, time.UTC), evtData[constants.DatabaseUpdatedColumnMarker])
+	assert.False(r.T(), evtData[constants.UpdateColumnMarker].(time.Time).IsZero())
 
 	assert.Equal(r.T(), int64(1001), evtData["id"])
 	assert.Equal(r.T(), "Sally", evtData["first_name"])

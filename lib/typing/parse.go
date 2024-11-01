@@ -50,7 +50,7 @@ func ParseValue(key string, optionalSchema map[string]KindDetails, val any) (Kin
 			ExtendedDecimalDetails: &extendedDetails,
 		}, nil
 	case time.Time:
-		return NewExtendedTimeDetails(ETime, ext.TimestampTZKindType, "")
+		return TimestampTZ, nil
 	case *ext.ExtendedTime:
 		nestedKind := convertedVal.GetNestedKind()
 		return KindDetails{

@@ -42,12 +42,12 @@ func columnToTableFieldSchema(column columns.Column) (*storagepb.TableFieldSchem
 		fieldType = storagepb.TableFieldSchema_DATE
 	case typing.TimestampNTZ.Kind:
 		fieldType = storagepb.TableFieldSchema_DATETIME
+	case typing.TimestampTZ.Kind:
+		fieldType = storagepb.TableFieldSchema_TIMESTAMP
 	case typing.ETime.Kind:
 		switch column.KindDetails.ExtendedTimeDetails.Type {
 		case ext.TimeKindType:
 			fieldType = storagepb.TableFieldSchema_TIME
-		case ext.TimestampTZKindType:
-			fieldType = storagepb.TableFieldSchema_TIMESTAMP
 		default:
 			return nil, fmt.Errorf("unsupported extended time details type: %q", column.KindDetails.ExtendedTimeDetails.Type)
 		}
@@ -216,6 +216,17 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			}
 
 			message.Set(field, protoreflect.ValueOfInt64(encodePacked64DatetimeMicros(_time)))
+		case typing.TimestampTZ.Kind:
+			_time, err := ext.ParseTimestampTZFromInterface(value)
+			if err != nil {
+				return nil, fmt.Errorf("failed to cast value as time.Time, value: '%v', err: %w", value, err)
+			}
+
+			if err = timestamppb.New(_time).CheckValid(); err != nil {
+				return nil, err
+			}
+
+			message.Set(field, protoreflect.ValueOfInt64(_time.UnixMicro()))
 		case typing.ETime.Kind:
 			if err := column.KindDetails.EnsureExtendedTimeDetails(); err != nil {
 				return nil, err
@@ -229,11 +240,6 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			switch column.KindDetails.ExtendedTimeDetails.Type {
 			case ext.TimeKindType:
 				message.Set(field, protoreflect.ValueOfInt64(encodePacked64TimeMicros(_time)))
-			case ext.TimestampTZKindType:
-				if err = timestamppb.New(_time).CheckValid(); err != nil {
-					return nil, err
-				}
-				message.Set(field, protoreflect.ValueOfInt64(_time.UnixMicro()))
 			default:
 				return nil, fmt.Errorf("unsupported extended time details: %q", column.KindDetails.ExtendedTimeDetails.Type)
 			}

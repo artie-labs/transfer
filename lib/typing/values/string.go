@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/stringutil"
@@ -41,6 +42,13 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 		}
 
 		return _time.Format(ext.RFC3339NoTZ), nil
+	case typing.TimestampTZ.Kind:
+		_time, err := ext.ParseTimestampTZFromInterface(colVal)
+		if err != nil {
+			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", colVal, err)
+		}
+
+		return _time.Format(time.RFC3339Nano), nil
 	case typing.ETime.Kind:
 		if err := colKind.EnsureExtendedTimeDetails(); err != nil {
 			return "", err

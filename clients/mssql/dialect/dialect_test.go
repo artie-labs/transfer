@@ -66,7 +66,7 @@ func TestMSSQLDialect_KindForDataType(t *testing.T) {
 		"time":           typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""),
 		"datetime":       typing.TimestampNTZ,
 		"datetime2":      typing.TimestampNTZ,
-		"datetimeoffset": typing.ETime,
+		"datetimeoffset": typing.TimestampTZ,
 	}
 
 	for col, expectedKind := range colToExpectedKind {
