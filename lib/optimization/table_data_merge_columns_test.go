@@ -112,7 +112,6 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		extDecimalType := typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(22, 2))
 		tableDataCols.AddColumn(columns.NewColumn("ext_dec_filled", extDecimalType))
 		tableDataCols.AddColumn(columns.NewColumn(strCol, typing.String))
-
 		{
 			// Testing converting from string to various time data types
 			{
