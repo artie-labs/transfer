@@ -105,5 +105,10 @@ func (t TimeWithTimezone) Convert(value any) (any, error) {
 		return nil, fmt.Errorf("expected string got '%v' with type %T", value, value)
 	}
 
-	return time.Parse(t.layout(), val)
+	ts, err := time.Parse(t.layout(), val)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse %q: %w", val, err)
+	}
+
+	return ts, nil
 }

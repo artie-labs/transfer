@@ -58,7 +58,7 @@ func TestParseValue(t *testing.T) {
 		// Time
 		value, err := ParseValue("03:15:00", columns.NewColumn("", typing.Time))
 		assert.NoError(t, err)
-		assert.Equal(t, "03:15:00+00", value)
+		assert.Equal(t, "03:15:00Z", value)
 	}
 	{
 		// Date

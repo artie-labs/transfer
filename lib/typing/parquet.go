@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type FieldTag struct {
@@ -69,18 +68,12 @@ type Field struct {
 }
 
 func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
-	var stringKind bool
-
-	// If it's a date or time, it should be a STRING annotation.
-	if k.Kind == Date.Kind {
-		stringKind = true
-	}
-
-	if k.ExtendedTimeDetails != nil && k.ExtendedTimeDetails.Type == ext.TimeKindType {
-		stringKind = true
-	}
-
-	if k.Kind == String.Kind || k.Kind == Struct.Kind || stringKind {
+	switch k.Kind {
+	case
+		String.Kind,
+		Struct.Kind,
+		Date.Kind,
+		Time.Kind:
 		// We could go further with struct, but it's very possible that it has inconsistent column headers across all the rows.
 		// It's much safer to just treat this as a string. When we do bring this data out into another destination,
 		// then just parse it as a JSON string, into a VARIANT column.
@@ -92,6 +85,7 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 				ConvertedType: ToPtr("UTF8"),
 			}.String(),
 		}, nil
+
 	}
 
 	switch k.Kind {

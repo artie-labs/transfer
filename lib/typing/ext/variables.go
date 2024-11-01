@@ -5,7 +5,7 @@ import "time"
 const (
 	ISO8601                = "2006-01-02T15:04:05.999-07:00"
 	PostgresDateFormat     = "2006-01-02"
-	PostgresTimeFormat     = "15:04:05.999999-07" // microsecond precision
+	PostgresTimeFormat     = PostgresTimeFormatNoTZ + TimezoneOffsetFormat
 	AdditionalTimeFormat   = "15:04:05.999999Z07"
 	PostgresTimeFormatNoTZ = "15:04:05.999999" // microsecond precision, used because certain destinations do not like `Time` types to specify tz locale
 )

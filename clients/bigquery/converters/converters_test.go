@@ -53,7 +53,7 @@ func TestStringConverter_Convert(t *testing.T) {
 			// Time
 			val, err := NewStringConverter(typing.Time).Convert(time.Date(2021, 1, 1, 9, 10, 11, 123_456_789, time.UTC))
 			assert.NoError(t, err)
-			assert.Equal(t, "09:10:11.123456+00", val)
+			assert.Equal(t, "09:10:11.123456Z", val)
 		}
 		{
 			// Timestamp NTZ
