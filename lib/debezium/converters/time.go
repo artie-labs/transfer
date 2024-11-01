@@ -11,12 +11,8 @@ import (
 
 type Time struct{}
 
-func (Time) layout() string {
-	return "15:04:05.000"
-}
-
 func (t Time) ToKindDetails() (typing.KindDetails, error) {
-	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, t.layout())
+	return typing.Time, nil
 }
 
 func (t Time) Convert(val any) (any, error) {
@@ -26,17 +22,13 @@ func (t Time) Convert(val any) (any, error) {
 	}
 
 	// Represents the number of milliseconds past midnight, and does not include timezone information.
-	return ext.NewExtendedTime(time.UnixMilli(valInt64).In(time.UTC), ext.TimeKindType, t.layout()), nil
+	return time.UnixMilli(valInt64).In(time.UTC), nil
 }
 
 type NanoTime struct{}
 
-func (NanoTime) layout() string {
-	return "15:04:05.000000000"
-}
-
 func (n NanoTime) ToKindDetails() (typing.KindDetails, error) {
-	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, n.layout())
+	return typing.Time, nil
 }
 
 func (n NanoTime) Convert(value any) (any, error) {
@@ -46,17 +38,13 @@ func (n NanoTime) Convert(value any) (any, error) {
 	}
 
 	// Represents the number of nanoseconds past midnight, and does not include timezone information.
-	return ext.NewExtendedTime(time.UnixMicro(castedVal/1_000).In(time.UTC), ext.TimeKindType, n.layout()), nil
+	return time.UnixMicro(castedVal / 1_000).In(time.UTC), nil
 }
 
 type MicroTime struct{}
 
-func (MicroTime) layout() string {
-	return "15:04:05.000000"
-}
-
 func (m MicroTime) ToKindDetails() (typing.KindDetails, error) {
-	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, m.layout())
+	return typing.Time, nil
 }
 
 func (m MicroTime) Convert(value any) (any, error) {
@@ -66,7 +54,7 @@ func (m MicroTime) Convert(value any) (any, error) {
 	}
 
 	// Represents the number of microseconds past midnight, and does not include timezone information.
-	return ext.NewExtendedTime(time.UnixMicro(castedVal).In(time.UTC), ext.TimeKindType, m.layout()), nil
+	return time.UnixMicro(castedVal).In(time.UTC), nil
 }
 
 type ZonedTimestamp struct{}
@@ -108,19 +96,14 @@ func (t TimeWithTimezone) layout() string {
 }
 
 func (t TimeWithTimezone) ToKindDetails() (typing.KindDetails, error) {
-	return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, t.layout())
+	return typing.Time, nil
 }
 
 func (t TimeWithTimezone) Convert(value any) (any, error) {
-	valString, isOk := value.(string)
+	val, isOk := value.(string)
 	if !isOk {
 		return nil, fmt.Errorf("expected string got '%v' with type %T", value, value)
 	}
 
-	ts, err := time.Parse(t.layout(), valString)
-	if err == nil {
-		return ext.NewExtendedTime(ts, ext.TimeKindType, t.layout()), nil
-	}
-
-	return nil, fmt.Errorf("failed to parse %q: %w", valString, err)
+	return time.Parse(t.layout(), val)
 }

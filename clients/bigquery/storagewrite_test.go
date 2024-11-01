@@ -66,14 +66,6 @@ func TestColumnToTableFieldSchema(t *testing.T) {
 		assert.Equal(t, storagepb.TableFieldSchema_TIMESTAMP, fieldSchema.Type)
 	}
 	{
-		// ETime - Invalid:
-		nestedKind, err := typing.NewExtendedTimeDetails(typing.ETime, "", "")
-		assert.ErrorContains(t, err, "unknown kind type")
-
-		_, err = columnToTableFieldSchema(columns.NewColumn("foo", nestedKind))
-		assert.ErrorContains(t, err, `unsupported column kind: "invalid"`)
-	}
-	{
 		// Struct:
 		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.Struct))
 		assert.NoError(t, err)

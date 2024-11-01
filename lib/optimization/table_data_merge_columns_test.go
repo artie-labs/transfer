@@ -126,7 +126,7 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 			assert.Nil(t, col.KindDetails.ExtendedTimeDetails, extTimeDetailsCol)
 		}
 
-		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_time", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""))))
+		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_time", typing.Time)))
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_date", typing.Date)))
 
 		dateCol, isOk := tableData.inMemoryColumns.GetColumn("ext_date")

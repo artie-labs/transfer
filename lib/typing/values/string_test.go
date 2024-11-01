@@ -4,12 +4,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/columns"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
@@ -41,6 +42,30 @@ func TestToString(t *testing.T) {
 		}
 	}
 	{
+		// Time
+		{
+			// Error
+			_, err := ToString("2021-01-01T00:00:00Z", typing.ETime)
+			assert.ErrorContains(t, err, "extended time details is not set")
+		}
+		{
+			// Valid
+			timeCol := columns.NewColumn("time", typing.Time)
+			{
+				// String
+				val, err := ToString("2021-01-01T03:52:00Z", timeCol.KindDetails)
+				assert.NoError(t, err)
+				assert.Equal(t, "03:52:00", val)
+			}
+			{
+				// time.Time
+				actualValue, err := ToString(time.Date(2019, time.December, 31, 9, 27, 22, 0, time.UTC), timeCol.KindDetails)
+				assert.NoError(t, err)
+				assert.Equal(t, "09:27:22", actualValue)
+			}
+		}
+	}
+	{
 		// Timestamp NTZ
 		{
 			// time.Time
@@ -68,31 +93,6 @@ func TestToString(t *testing.T) {
 			value, err := ToString("2019-12-31T01:02:33.400999991Z", typing.TimestampTZ)
 			assert.NoError(t, err)
 			assert.Equal(t, time.Date(2019, time.December, 31, 1, 2, 33, 400_999_991, time.UTC).Format(time.RFC3339Nano), value)
-		}
-	}
-	{
-		// ETime
-		{
-			// Error
-			_, err := ToString("2021-01-01T00:00:00Z", typing.ETime)
-			assert.ErrorContains(t, err, "extended time details is not set")
-		}
-		{
-			eTimeCol := columns.NewColumn("time", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""))
-			{
-				// Using [string]
-				val, err := ToString("2021-01-01T03:52:00Z", eTimeCol.KindDetails)
-				assert.NoError(t, err)
-				assert.Equal(t, "03:52:00", val)
-			}
-			{
-				// Using [*ExtendedTime]
-				dustyBirthday := time.Date(2019, time.December, 31, 9, 27, 22, 0, time.UTC)
-				extendedTime := ext.NewExtendedTime(dustyBirthday, ext.TimeKindType, "")
-				actualValue, err := ToString(extendedTime, eTimeCol.KindDetails)
-				assert.NoError(t, err)
-				assert.Equal(t, "09:27:22", actualValue)
-			}
 		}
 	}
 	{

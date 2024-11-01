@@ -102,7 +102,7 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string, _ string) (typing.
 	case "timestamp", "datetime", "timestamp_ntz":
 		return typing.TimestampNTZ, nil
 	case "time":
-		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "")
+		return typing.Time, nil
 	case "date":
 		return typing.Date, nil
 	default:
