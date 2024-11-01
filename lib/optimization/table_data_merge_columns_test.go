@@ -27,7 +27,7 @@ func TestTableData_UpdateInMemoryColumnsFromDestination_Tz(t *testing.T) {
 		tableData.AddInMemoryCol(
 			columns.NewColumn(
 				"foo",
-				typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimestampNTZKindType, ext.RFC3339MillisecondNoTZ),
+				typing.TimestampNTZ,
 			),
 		)
 
@@ -35,7 +35,7 @@ func TestTableData_UpdateInMemoryColumnsFromDestination_Tz(t *testing.T) {
 		updatedColumn, isOk := tableData.inMemoryColumns.GetColumn("foo")
 		assert.True(t, isOk)
 		assert.Equal(t, ext.TimestampTZKindType, updatedColumn.KindDetails.ExtendedTimeDetails.Type)
-		assert.Equal(t, ext.RFC3339Millisecond, updatedColumn.KindDetails.ExtendedTimeDetails.Format)
+		assert.Equal(t, "2006-01-02T15:04:05.999999999Z07:00", updatedColumn.KindDetails.ExtendedTimeDetails.Format)
 	}
 
 }

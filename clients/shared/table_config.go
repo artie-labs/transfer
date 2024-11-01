@@ -128,7 +128,7 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 		}
 	}
 
-	tableCfg := types.NewDwhTableConfig(&cols, nil, tableMissing, g.DropDeletedColumns)
+	tableCfg := types.NewDwhTableConfig(&cols, tableMissing, g.DropDeletedColumns)
 	g.ConfigMap.AddTableToConfig(g.TableID, tableCfg)
 	return tableCfg, nil
 }
