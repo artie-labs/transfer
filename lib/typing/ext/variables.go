@@ -3,10 +3,8 @@ package ext
 import "time"
 
 const (
-	ISO8601                = "2006-01-02T15:04:05.999-07:00"
 	PostgresDateFormat     = "2006-01-02"
 	PostgresTimeFormat     = PostgresTimeFormatNoTZ + TimezoneOffsetFormat
-	AdditionalTimeFormat   = "15:04:05.999999Z07"
 	PostgresTimeFormatNoTZ = "15:04:05.999999" // microsecond precision, used because certain destinations do not like `Time` types to specify tz locale
 )
 
@@ -18,7 +16,6 @@ var supportedDateTimeLayouts = []string{
 	RFC3339Nanosecond,
 	time.RFC3339Nano,
 	// Others
-	ISO8601,
 	time.Layout,
 	time.ANSIC,
 	time.UnixDate,
@@ -38,7 +35,6 @@ var supportedDateFormats = []string{
 var SupportedTimeFormats = []string{
 	PostgresTimeFormat,
 	PostgresTimeFormatNoTZ,
-	AdditionalTimeFormat,
 }
 
 const TimezoneOffsetFormat = "Z07:00"

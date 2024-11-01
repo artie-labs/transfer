@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -125,7 +124,7 @@ func TestJSONEToMap(t *testing.T) {
 		ts, isOk := result["test_timestamp"]
 		assert.True(t, isOk)
 		assert.Equal(t, time.Date(2023, time.March, 16, 1, 18, 37, 0, time.UTC), ts)
-		assert.Equal(t, "2023-03-16T01:18:37+00:00", ts.(time.Time).Format(ext.ISO8601))
+		assert.Equal(t, "2023-03-16T01:18:37Z", ts.(time.Time).Format(time.RFC3339Nano))
 	}
 	{
 		// Boolean
@@ -223,7 +222,7 @@ func TestBsonValueToGoValue(t *testing.T) {
 		ts, isOk := result.(time.Time)
 		assert.True(t, isOk)
 		assert.Equal(t, time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC), ts)
-		assert.Equal(t, "2021-01-01T00:00:00+00:00", ts.Format(ext.ISO8601))
+		assert.Equal(t, "2021-01-01T00:00:00Z", ts.Format(time.RFC3339Nano))
 	}
 	{
 		// primitive.ObjectID
