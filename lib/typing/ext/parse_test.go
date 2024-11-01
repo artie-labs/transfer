@@ -109,14 +109,3 @@ func TestParseTimestampNTZFromInterface(t *testing.T) {
 		assert.Equal(t, tsString, ts.Format(RFC3339NoTZ))
 	}
 }
-
-func TestTimeLayout(t *testing.T) {
-	ts := time.Now()
-
-	for _, supportedFormat := range SupportedTimeFormats {
-		parsedTsString := ts.Format(supportedFormat)
-		extTime, err := ParseDateTime(parsedTsString, TimeKindType)
-		assert.NoError(t, err)
-		assert.Equal(t, parsedTsString, extTime.Format(supportedFormat))
-	}
-}

@@ -35,6 +35,13 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 		}
 
 		return _time.Format(ext.PostgresDateFormat), nil
+	case typing.Time.Kind:
+		_time, err := ext.ParseTimeFromInterface(colVal)
+		if err != nil {
+			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", colVal, err)
+		}
+
+		return _time.Format(ext.PostgresTimeFormatNoTZ), nil
 	case typing.TimestampNTZ.Kind:
 		_time, err := ext.ParseTimestampNTZFromInterface(colVal)
 		if err != nil {
@@ -49,20 +56,6 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 		}
 
 		return _time.Format(time.RFC3339Nano), nil
-	case typing.ETime.Kind:
-		if err := colKind.EnsureExtendedTimeDetails(); err != nil {
-			return "", err
-		}
-
-		_time, err := ext.ParseFromInterface(colVal, colKind.ExtendedTimeDetails.Type)
-		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", colVal, err)
-		}
-
-		if colKind.ExtendedTimeDetails.Type == ext.TimeKindType {
-			return _time.Format(ext.PostgresTimeFormatNoTZ), nil
-		}
-		return _time.Format(colKind.ExtendedTimeDetails.Format), nil
 	case typing.String.Kind:
 		isArray := reflect.ValueOf(colVal).Kind() == reflect.Slice
 		_, isMap := colVal.(map[string]any)

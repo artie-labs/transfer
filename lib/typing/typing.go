@@ -2,11 +2,9 @@ package typing
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type OptionalIntegerKind int
@@ -20,24 +18,11 @@ const (
 
 type KindDetails struct {
 	Kind                   string
-	ExtendedTimeDetails    *ext.NestedKind
 	ExtendedDecimalDetails *decimal.Details
 
 	// Optional kind details metadata
 	OptionalStringPrecision *int32
 	OptionalIntegerKind     *OptionalIntegerKind
-}
-
-func (k *KindDetails) EnsureExtendedTimeDetails() error {
-	if k.ExtendedTimeDetails == nil {
-		return fmt.Errorf("extended time details is not set")
-	}
-
-	if k.ExtendedTimeDetails.Format == "" {
-		return fmt.Errorf("extended time details format is not set")
-	}
-
-	return nil
 }
 
 var (

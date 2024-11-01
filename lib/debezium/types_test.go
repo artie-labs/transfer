@@ -283,14 +283,14 @@ func TestField_ParseValue(t *testing.T) {
 			field := Field{Type: Int64, DebeziumType: MicroTime}
 			value, err := field.ParseValue(int64(54720000000))
 			assert.NoError(t, err)
-			assert.Equal(t, "15:12:00.000000", value.(*ext.ExtendedTime).GetTime().Format("15:04:05.000000"))
+			assert.Equal(t, "15:12:00.000000", value.(time.Time).Format("15:04:05.000000"))
 		}
 		{
 			// Nano time
 			field := Field{Type: Int64, DebeziumType: NanoTime}
 			value, err := field.ParseValue(int64(54720000000000))
 			assert.NoError(t, err)
-			assert.Equal(t, "15:12:00.000000000", value.(*ext.ExtendedTime).GetTime().Format("15:04:05.000000000"))
+			assert.Equal(t, "15:12:00.000000000", value.(time.Time).Format("15:04:05.000000000"))
 		}
 	}
 	{

@@ -4,8 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -44,22 +42,16 @@ func TestToString(t *testing.T) {
 	{
 		// Time
 		{
-			// Error
-			_, err := ToString("2021-01-01T00:00:00Z", typing.ETime)
-			assert.ErrorContains(t, err, "extended time details is not set")
-		}
-		{
 			// Valid
-			timeCol := columns.NewColumn("time", typing.Time)
 			{
 				// String
-				val, err := ToString("2021-01-01T03:52:00Z", timeCol.KindDetails)
+				val, err := ToString("2021-01-01T03:52:00Z", typing.Time)
 				assert.NoError(t, err)
 				assert.Equal(t, "03:52:00", val)
 			}
 			{
 				// time.Time
-				actualValue, err := ToString(time.Date(2019, time.December, 31, 9, 27, 22, 0, time.UTC), timeCol.KindDetails)
+				actualValue, err := ToString(time.Date(2019, time.December, 31, 9, 27, 22, 0, time.UTC), typing.Time)
 				assert.NoError(t, err)
 				assert.Equal(t, "09:27:22", actualValue)
 			}

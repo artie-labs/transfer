@@ -34,6 +34,13 @@ func parseValue(colVal any, colKind columns.Column) (any, error) {
 		}
 
 		return _time, nil
+	case typing.Time.Kind:
+		_time, err := ext.ParseTimeFromInterface(colVal)
+		if err != nil {
+			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", colVal, err)
+		}
+
+		return _time, nil
 	case typing.TimestampNTZ.Kind:
 		_time, err := ext.ParseTimestampNTZFromInterface(colVal)
 		if err != nil {
@@ -45,17 +52,6 @@ func parseValue(colVal any, colKind columns.Column) (any, error) {
 		_time, err := ext.ParseTimestampTZFromInterface(colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", colVal, err)
-		}
-
-		return _time, nil
-	case typing.ETime.Kind:
-		if err := colKind.KindDetails.EnsureExtendedTimeDetails(); err != nil {
-			return "", err
-		}
-
-		_time, err := ext.ParseFromInterface(colVal, colKind.KindDetails.ExtendedTimeDetails.Type)
-		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
 
 		return _time, nil
