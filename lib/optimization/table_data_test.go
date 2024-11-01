@@ -14,7 +14,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func TestDistinctDates(t *testing.T) {
@@ -31,7 +30,7 @@ func TestDistinctDates(t *testing.T) {
 			name: "one date",
 			rowData: map[string]map[string]any{
 				"1": {
-					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
+					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(time.RFC3339Nano),
 				},
 			},
 			expectedDatesString: []string{"2020-01-01"},
@@ -40,10 +39,10 @@ func TestDistinctDates(t *testing.T) {
 			name: "two dates",
 			rowData: map[string]map[string]any{
 				"1": {
-					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
+					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(time.RFC3339Nano),
 				},
 				"2": {
-					"ts": time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
+					"ts": time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC).Format(time.RFC3339Nano),
 				},
 			},
 			expectedDatesString: []string{"2020-01-01", "2020-01-02"},
@@ -52,13 +51,13 @@ func TestDistinctDates(t *testing.T) {
 			name: "3 dates, 2 unique",
 			rowData: map[string]map[string]any{
 				"1": {
-					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
+					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(time.RFC3339Nano),
 				},
 				"1_duplicate": {
-					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
+					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(time.RFC3339Nano),
 				},
 				"2": {
-					"ts": time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
+					"ts": time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC).Format(time.RFC3339Nano),
 				},
 			},
 			expectedDatesString: []string{"2020-01-01", "2020-01-02"},
@@ -67,7 +66,7 @@ func TestDistinctDates(t *testing.T) {
 			name: "two dates, one is nil",
 			rowData: map[string]map[string]any{
 				"1": {
-					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(ext.ISO8601),
+					"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(time.RFC3339Nano),
 				},
 				"2": {
 					"ts": nil,

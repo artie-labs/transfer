@@ -13,7 +13,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,12 +24,6 @@ var dialects = []sql.Dialect{
 
 func TestColumn_DefaultValue(t *testing.T) {
 	birthday := time.Date(2022, time.September, 6, 3, 19, 24, 942000000, time.UTC)
-
-	// time
-	timeKind := typing.ETime
-	timeNestedKind, err := ext.NewNestedKind(ext.TimeKindType, "")
-	assert.NoError(t, err)
-	timeKind.ExtendedTimeDetails = &timeNestedKind
 	testCases := []struct {
 		name                       string
 		col                        columns.Column
@@ -80,7 +73,7 @@ func TestColumn_DefaultValue(t *testing.T) {
 		},
 		{
 			name:          "time",
-			col:           columns.NewColumnWithDefaultValue("", timeKind, birthday),
+			col:           columns.NewColumnWithDefaultValue("", typing.Time, birthday),
 			expectedValue: "'03:19:24.942'",
 		},
 		{

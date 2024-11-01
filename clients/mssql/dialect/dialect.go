@@ -11,7 +11,6 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type MSSQLDialect struct{}
@@ -55,16 +54,13 @@ func (MSSQLDialect) DataTypeForKind(kindDetails typing.KindDetails, isPk bool) s
 		return "BIT"
 	case typing.Date.Kind:
 		return "DATE"
+	case typing.Time.Kind:
+		return "TIME"
 	case typing.TimestampNTZ.Kind:
 		// Using datetime2 because it's the recommendation, and it provides more precision: https://stackoverflow.com/a/1884088
 		return "datetime2"
 	case typing.TimestampTZ.Kind:
 		return "datetimeoffset"
-	case typing.ETime.Kind:
-		switch kindDetails.ExtendedTimeDetails.Type {
-		case ext.TimeKindType:
-			return "time"
-		}
 	case typing.EDecimal.Kind:
 		return kindDetails.ExtendedDecimalDetails.MsSQLKind()
 	}
@@ -120,7 +116,7 @@ func (MSSQLDialect) KindForDataType(rawType string, stringPrecision string) (typ
 	case "datetimeoffset":
 		return typing.TimestampTZ, nil
 	case "time":
-		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "")
+		return typing.Time, nil
 	case "date":
 		return typing.Date, nil
 	case "bit":

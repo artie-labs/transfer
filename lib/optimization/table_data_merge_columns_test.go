@@ -6,7 +6,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -118,32 +117,35 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 		tableDataCols.AddColumn(columns.NewColumn("ext_dec_filled", extDecimalType))
 		tableDataCols.AddColumn(columns.NewColumn(strCol, typing.String))
 
-		// Testing extTimeDetails
-		for _, extTimeDetailsCol := range []string{"ext_date", "ext_time", "string_to_timestamp_tz"} {
-			col, isOk := tableData.inMemoryColumns.GetColumn(extTimeDetailsCol)
-			assert.True(t, isOk, extTimeDetailsCol)
-			assert.Equal(t, typing.String, col.KindDetails, extTimeDetailsCol)
-			assert.Nil(t, col.KindDetails.ExtendedTimeDetails, extTimeDetailsCol)
-		}
-
-		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_time", typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""))))
-		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_date", typing.Date)))
-
-		dateCol, isOk := tableData.inMemoryColumns.GetColumn("ext_date")
-		assert.True(t, isOk)
-		assert.Equal(t, typing.Date, dateCol.KindDetails)
-
-		timeCol, isOk := tableData.inMemoryColumns.GetColumn("ext_time")
-		assert.True(t, isOk)
-		assert.NotNil(t, timeCol.KindDetails.ExtendedTimeDetails)
-		assert.Equal(t, ext.TimeKindType, timeCol.KindDetails.ExtendedTimeDetails.Type)
-
 		{
-			// Update column from string to TimestampTZ
-			assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("string_to_timestamp_tz", typing.TimestampTZ)))
-			col, isOk := tableData.inMemoryColumns.GetColumn("string_to_timestamp_tz")
-			assert.True(t, isOk)
-			assert.Equal(t, typing.TimestampTZ, col.KindDetails)
+			// Time stuff
+			for _, extTimeDetailsCol := range []string{"ext_date", "ext_time", "string_to_timestamp_tz"} {
+				col, isOk := tableData.inMemoryColumns.GetColumn(extTimeDetailsCol)
+				assert.True(t, isOk, extTimeDetailsCol)
+				assert.Equal(t, typing.String, col.KindDetails, extTimeDetailsCol)
+			}
+			{
+				// Date
+				assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_date", typing.Date)))
+				dateCol, isOk := tableData.inMemoryColumns.GetColumn("ext_date")
+				assert.True(t, isOk)
+				assert.Equal(t, typing.Date, dateCol.KindDetails)
+			}
+			{
+				// Time
+				assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_time", typing.Time)))
+				timeCol, isOk := tableData.inMemoryColumns.GetColumn("ext_time")
+				assert.True(t, isOk)
+				assert.Equal(t, typing.Time, timeCol.KindDetails)
+			}
+			{
+				// Update column from string to TimestampTZ
+				assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("string_to_timestamp_tz", typing.TimestampTZ)))
+				col, isOk := tableData.inMemoryColumns.GetColumn("string_to_timestamp_tz")
+				assert.True(t, isOk)
+				assert.Equal(t, typing.TimestampTZ, col.KindDetails)
+			}
+
 		}
 
 		// Testing extDecimalDetails

@@ -7,34 +7,30 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParseFromInterface(t *testing.T) {
-	{
-		// Extended time
-		var vals []*ExtendedTime
-		vals = append(vals, NewExtendedTime(time.Now().UTC(), TimeKindType, PostgresTimeFormat))
-		for _, val := range vals {
-			_time, err := ParseFromInterface(val, TimeKindType)
-			assert.NoError(t, err)
-			assert.Equal(t, val.GetTime(), _time)
-		}
-	}
-}
-
-func TestParseFromInterfaceTime(t *testing.T) {
-	now := time.Now()
-	for _, supportedTimeFormat := range SupportedTimeFormats {
-		_time, err := ParseFromInterface(now.Format(supportedTimeFormat), TimeKindType)
-		assert.NoError(t, err)
-		assert.Equal(t, _time.Format(supportedTimeFormat), now.Format(supportedTimeFormat))
-	}
-}
-
 func TestParseDateFromInterface(t *testing.T) {
 	now := time.Now()
 	for _, supportedDateFormat := range supportedDateFormats {
 		_time, err := ParseDateFromInterface(now.Format(supportedDateFormat))
 		assert.NoError(t, err)
 		assert.Equal(t, _time.Format(supportedDateFormat), now.Format(supportedDateFormat))
+	}
+}
+
+func TestParseTimeFromInterface(t *testing.T) {
+	now := time.Now()
+	{
+		// String
+		for _, supportedTimeFormat := range SupportedTimeFormats {
+			_time, err := ParseTimeFromInterface(now.Format(supportedTimeFormat))
+			assert.NoError(t, err)
+			assert.Equal(t, _time.Format(supportedTimeFormat), now.Format(supportedTimeFormat))
+		}
+	}
+	{
+		// time.Time
+		_time, err := ParseTimeFromInterface(now)
+		assert.NoError(t, err)
+		assert.Equal(t, now, _time)
 	}
 }
 
@@ -111,16 +107,5 @@ func TestParseTimestampNTZFromInterface(t *testing.T) {
 		ts, err := ParseTimestampNTZFromInterface(tsString)
 		assert.NoError(t, err)
 		assert.Equal(t, tsString, ts.Format(RFC3339NoTZ))
-	}
-}
-
-func TestTimeLayout(t *testing.T) {
-	ts := time.Now()
-
-	for _, supportedFormat := range SupportedTimeFormats {
-		parsedTsString := ts.Format(supportedFormat)
-		extTime, err := ParseDateTime(parsedTsString, TimeKindType)
-		assert.NoError(t, err)
-		assert.Equal(t, parsedTsString, extTime.Format(supportedFormat))
 	}
 }

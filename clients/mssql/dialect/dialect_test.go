@@ -8,7 +8,6 @@ import (
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -63,7 +62,7 @@ func TestMSSQLDialect_KindForDataType(t *testing.T) {
 		"real":           typing.Float,
 		"bit":            typing.Boolean,
 		"date":           typing.Date,
-		"time":           typing.MustNewExtendedTimeDetails(typing.ETime, ext.TimeKindType, ""),
+		"time":           typing.Time,
 		"datetime":       typing.TimestampNTZ,
 		"datetime2":      typing.TimestampNTZ,
 		"datetimeoffset": typing.TimestampTZ,

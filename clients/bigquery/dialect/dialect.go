@@ -9,7 +9,6 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 const (
@@ -49,17 +48,14 @@ func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) s
 		return "json"
 	case typing.Date.Kind:
 		return "date"
+	case typing.Time.Kind:
+		return "time"
 	case typing.TimestampNTZ.Kind:
 		return "datetime"
 	case typing.TimestampTZ.Kind:
 		// https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#datetime_type
 		// We should be using TIMESTAMP since it's an absolute point in time.
 		return "timestamp"
-	case typing.ETime.Kind:
-		switch kindDetails.ExtendedTimeDetails.Type {
-		case ext.TimeKindType:
-			return "time"
-		}
 	case typing.EDecimal.Kind:
 		return kindDetails.ExtendedDecimalDetails.BigQueryKind()
 	}
@@ -110,7 +106,7 @@ func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindD
 	case "datetime":
 		return typing.TimestampNTZ, nil
 	case "time":
-		return typing.NewExtendedTimeDetails(typing.ETime, ext.TimeKindType, "")
+		return typing.Time, nil
 	case "date":
 		return typing.Date, nil
 	default:

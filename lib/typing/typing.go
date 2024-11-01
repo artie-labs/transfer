@@ -2,11 +2,9 @@ package typing
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type OptionalIntegerKind int
@@ -20,24 +18,11 @@ const (
 
 type KindDetails struct {
 	Kind                   string
-	ExtendedTimeDetails    *ext.NestedKind
 	ExtendedDecimalDetails *decimal.Details
 
 	// Optional kind details metadata
 	OptionalStringPrecision *int32
 	OptionalIntegerKind     *OptionalIntegerKind
-}
-
-func (k *KindDetails) EnsureExtendedTimeDetails() error {
-	if k.ExtendedTimeDetails == nil {
-		return fmt.Errorf("extended time details is not set")
-	}
-
-	if k.ExtendedTimeDetails.Format == "" {
-		return fmt.Errorf("extended time details format is not set")
-	}
-
-	return nil
 }
 
 var (
@@ -79,6 +64,10 @@ var (
 		Kind: "date",
 	}
 
+	Time = KindDetails{
+		Kind: "time",
+	}
+
 	TimestampNTZ = KindDetails{
 		Kind: "timestamp_ntz",
 	}
@@ -98,26 +87,6 @@ func NewDecimalDetailsFromTemplate(details KindDetails, decimalDetails decimal.D
 	}
 
 	return details
-}
-
-// MustNewExtendedTimeDetails - calls NewExtendedTimeDetails and panics if there is an error returned. This is used for tests.
-func MustNewExtendedTimeDetails(details KindDetails, extendedType ext.ExtendedTimeKindType, optionalFormat string) KindDetails {
-	nestedKind, err := NewExtendedTimeDetails(details, extendedType, optionalFormat)
-	if err != nil {
-		panic(err)
-	}
-
-	return nestedKind
-}
-
-func NewExtendedTimeDetails(details KindDetails, extendedType ext.ExtendedTimeKindType, optionalFormat string) (KindDetails, error) {
-	nestedKind, err := ext.NewNestedKind(extendedType, optionalFormat)
-	if err != nil {
-		return Invalid, err
-	}
-
-	details.ExtendedTimeDetails = &nestedKind
-	return details, nil
 }
 
 // IsJSON - We also need to check if the string is a JSON string or not

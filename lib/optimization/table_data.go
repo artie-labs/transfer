@@ -1,7 +1,6 @@
 package optimization
 
 import (
-	"cmp"
 	"fmt"
 	"strings"
 	"time"
@@ -294,19 +293,6 @@ func mergeColumn(inMemoryCol columns.Column, destCol columns.Column) columns.Col
 	// Copy over integer kind, if exists.
 	if destCol.KindDetails.OptionalIntegerKind != nil {
 		inMemoryCol.KindDetails.OptionalIntegerKind = destCol.KindDetails.OptionalIntegerKind
-	}
-
-	// Copy over the time details
-	if destCol.KindDetails.ExtendedTimeDetails != nil {
-		if inMemoryCol.KindDetails.ExtendedTimeDetails == nil {
-			inMemoryCol.KindDetails.ExtendedTimeDetails = &ext.NestedKind{}
-		}
-
-		// Copy over the type
-		inMemoryCol.KindDetails.ExtendedTimeDetails.Type = destCol.KindDetails.ExtendedTimeDetails.Type
-		// If the in-memory column has no format, we should use the format from the destination.
-		inMemoryCol.KindDetails.ExtendedTimeDetails.Format = cmp.Or(inMemoryCol.KindDetails.ExtendedTimeDetails.Format, destCol.KindDetails.ExtendedTimeDetails.Format)
-
 	}
 
 	// Copy over the decimal details

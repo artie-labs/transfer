@@ -5,7 +5,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,7 +49,7 @@ func TestDatabricksDialect_DataTypeForKind(t *testing.T) {
 		}
 		{
 			// Time
-			assert.Equal(t, "STRING", DatabricksDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.ETime.Kind, ExtendedTimeDetails: &ext.NestedKind{Type: ext.TimeKindType}}, false))
+			assert.Equal(t, "STRING", DatabricksDialect{}.DataTypeForKind(typing.Time, false))
 		}
 	}
 	{
