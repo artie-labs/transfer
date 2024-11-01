@@ -201,7 +201,7 @@ func (t *TableData) DistinctDates(colName string) ([]string, error) {
 			return nil, fmt.Errorf("col: %v does not exist on row: %v", colName, row)
 		}
 
-		_time, err := ext.ParseDateFromInterface(val)
+		_time, err := ext.ParseDateFromAny(val)
 		if err != nil {
 			return nil, fmt.Errorf("col: %v is not a time column, value: %v, err: %w", colName, val, err)
 		}
