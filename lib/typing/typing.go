@@ -79,6 +79,10 @@ var (
 		Kind: "date",
 	}
 
+	Time = KindDetails{
+		Kind: "time",
+	}
+
 	TimestampNTZ = KindDetails{
 		Kind: "timestamp_ntz",
 	}

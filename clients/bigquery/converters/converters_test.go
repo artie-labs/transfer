@@ -9,7 +9,6 @@ import (
 	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func TestStringConverter_Convert(t *testing.T) {
@@ -51,6 +50,12 @@ func TestStringConverter_Convert(t *testing.T) {
 			assert.Equal(t, "2021-01-01", val)
 		}
 		{
+			// Time
+			val, err := NewStringConverter(typing.Time).Convert(time.Date(2021, 1, 1, 9, 10, 11, 123_456_789, time.UTC))
+			assert.NoError(t, err)
+			assert.Equal(t, "09:10:11.123456+00", val)
+		}
+		{
 			// Timestamp NTZ
 			val, err := NewStringConverter(typing.TimestampNTZ).Convert(time.Date(2021, 1, 1, 9, 10, 12, 400_123_991, time.UTC))
 			assert.NoError(t, err)
@@ -67,18 +72,6 @@ func TestStringConverter_Convert(t *testing.T) {
 			_, err := NewStringConverter(typing.String).Convert(time.Date(2021, 1, 1, 9, 10, 12, 400_123_991, time.UTC))
 			assert.ErrorContains(t, err, `unexpected kind details: "string"`)
 		}
-	}
-	{
-		// Extended Time
-		val, err := NewStringConverter(typing.MustNewExtendedTimeDetails(typing.String, ext.TimeKindType, "")).Convert(
-			ext.NewExtendedTime(
-				time.Date(2021, 1, 1, 9, 10, 11, 123_456_789, time.UTC),
-				ext.TimeKindType,
-				"",
-			),
-		)
-		assert.NoError(t, err)
-		assert.Equal(t, "09:10:11.123456+00", val)
 	}
 }
 
