@@ -37,43 +37,43 @@ func TestParseTimeFromInterface(t *testing.T) {
 func TestParseTimestampTZFromInterface(t *testing.T) {
 	{
 		// Nil
-		_, err := ParseTimestampTZFromInterface(nil)
+		_, err := ParseTimestampTZFromAny(nil)
 		assert.ErrorContains(t, err, "val is nil")
 	}
 	{
 		// Boolean
 		{
 			// True
-			_, err := ParseTimestampTZFromInterface(true)
+			_, err := ParseTimestampTZFromAny(true)
 			assert.ErrorContains(t, err, "unsupported type: bool")
 		}
 		{
 			// False
-			_, err := ParseTimestampTZFromInterface(false)
+			_, err := ParseTimestampTZFromAny(false)
 			assert.ErrorContains(t, err, "unsupported type: bool")
 		}
 	}
 	{
 		// time.Time
-		value, err := ParseTimestampTZFromInterface(time.Date(2024, 9, 19, 16, 5, 18, 123_456_789, time.UTC))
+		value, err := ParseTimestampTZFromAny(time.Date(2024, 9, 19, 16, 5, 18, 123_456_789, time.UTC))
 		assert.NoError(t, err)
 		assert.Equal(t, "2024-09-19T16:05:18.123456789Z", value.Format(time.RFC3339Nano))
 	}
 	{
 		// String - RFC3339MillisecondUTC
-		value, err := ParseTimestampTZFromInterface("2024-09-19T16:05:18.631Z")
+		value, err := ParseTimestampTZFromAny("2024-09-19T16:05:18.631Z")
 		assert.NoError(t, err)
 		assert.Equal(t, "2024-09-19T16:05:18.631Z", value.Format(time.RFC3339Nano))
 	}
 	{
 		// String - RFC3339MicrosecondUTC
-		value, err := ParseTimestampTZFromInterface("2024-09-19T16:05:18.630001Z")
+		value, err := ParseTimestampTZFromAny("2024-09-19T16:05:18.630001Z")
 		assert.NoError(t, err)
 		assert.Equal(t, "2024-09-19T16:05:18.630001Z", value.Format(time.RFC3339Nano))
 	}
 	{
 		// String - RFC3339NanosecondUTC
-		value, err := ParseTimestampTZFromInterface("2024-09-19T16:05:18.630000002Z")
+		value, err := ParseTimestampTZFromAny("2024-09-19T16:05:18.630000002Z")
 		assert.NoError(t, err)
 		assert.Equal(t, "2024-09-19T16:05:18.630000002Z", value.Format(time.RFC3339Nano))
 	}

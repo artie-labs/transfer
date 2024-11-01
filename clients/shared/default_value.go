@@ -44,7 +44,7 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 
 		return sql.QuoteLiteral(_time.Format(ext.RFC3339NoTZ)), nil
 	case typing.TimestampTZ.Kind:
-		_time, err := ext.ParseTimestampTZFromInterface(column.DefaultValue())
+		_time, err := ext.ParseTimestampTZFromAny(column.DefaultValue())
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", column.DefaultValue(), err)
 		}

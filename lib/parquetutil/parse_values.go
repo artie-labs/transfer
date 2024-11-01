@@ -42,7 +42,7 @@ func ParseValue(colVal any, colKind columns.Column) (any, error) {
 
 		return _time.UnixMilli(), nil
 	case typing.TimestampTZ.Kind:
-		_time, err := ext.ParseTimestampTZFromInterface(colVal)
+		_time, err := ext.ParseTimestampTZFromAny(colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}

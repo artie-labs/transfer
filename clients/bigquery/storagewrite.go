@@ -219,7 +219,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 
 			message.Set(field, protoreflect.ValueOfInt64(encodePacked64DatetimeMicros(_time)))
 		case typing.TimestampTZ.Kind:
-			_time, err := ext.ParseTimestampTZFromInterface(value)
+			_time, err := ext.ParseTimestampTZFromAny(value)
 			if err != nil {
 				return nil, fmt.Errorf("failed to cast value as time.Time, value: '%v', err: %w", value, err)
 			}
