@@ -43,7 +43,7 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 
 		return _time.Format(ext.PostgresTimeFormatNoTZ), nil
 	case typing.TimestampNTZ.Kind:
-		_time, err := ext.ParseTimestampNTZFromInterface(colVal)
+		_time, err := ext.ParseTimestampNTZFromAny(colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", colVal, err)
 		}

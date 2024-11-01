@@ -83,28 +83,28 @@ func TestParseTimestampNTZFromInterface(t *testing.T) {
 	{
 		// No fractional seconds
 		tsString := "2023-04-24T17:29:05"
-		ts, err := ParseTimestampNTZFromInterface(tsString)
+		ts, err := ParseTimestampNTZFromAny(tsString)
 		assert.NoError(t, err)
 		assert.Equal(t, tsString, ts.Format(RFC3339NoTZ))
 	}
 	{
 		// ms
 		tsString := "2023-04-24T17:29:05.123"
-		ts, err := ParseTimestampNTZFromInterface(tsString)
+		ts, err := ParseTimestampNTZFromAny(tsString)
 		assert.NoError(t, err)
 		assert.Equal(t, tsString, ts.Format(RFC3339NoTZ))
 	}
 	{
 		// microseconds
 		tsString := "2023-04-24T17:29:05.123456"
-		ts, err := ParseTimestampNTZFromInterface(tsString)
+		ts, err := ParseTimestampNTZFromAny(tsString)
 		assert.NoError(t, err)
 		assert.Equal(t, tsString, ts.Format(RFC3339NoTZ))
 	}
 	{
 		// ns
 		tsString := "2023-04-24T17:29:05.123456789"
-		ts, err := ParseTimestampNTZFromInterface(tsString)
+		ts, err := ParseTimestampNTZFromAny(tsString)
 		assert.NoError(t, err)
 		assert.Equal(t, tsString, ts.Format(RFC3339NoTZ))
 	}
