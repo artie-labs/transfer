@@ -108,46 +108,47 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 	}
 	{
 		// Casting these as STRING so tableColumn via this f(x) will set it correctly.
-		tableDataCols.AddColumn(columns.NewColumn("ext_date", typing.String))
-		tableDataCols.AddColumn(columns.NewColumn("ext_time", typing.String))
-		tableDataCols.AddColumn(columns.NewColumn("string_to_timestamp_tz", typing.String))
 		tableDataCols.AddColumn(columns.NewColumn("ext_dec", typing.String))
-
 		extDecimalType := typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(22, 2))
 		tableDataCols.AddColumn(columns.NewColumn("ext_dec_filled", extDecimalType))
 		tableDataCols.AddColumn(columns.NewColumn(strCol, typing.String))
 
 		{
-			// Time stuff
-			for _, extTimeDetailsCol := range []string{"ext_date", "ext_time", "string_to_timestamp_tz"} {
-				col, isOk := tableData.inMemoryColumns.GetColumn(extTimeDetailsCol)
-				assert.True(t, isOk, extTimeDetailsCol)
-				assert.Equal(t, typing.String, col.KindDetails, extTimeDetailsCol)
-			}
+			// Testing converting from string to various time data types
 			{
 				// Date
-				assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_date", typing.Date)))
-				dateCol, isOk := tableData.inMemoryColumns.GetColumn("ext_date")
+				cols := &columns.Columns{}
+				cols.AddColumn(columns.NewColumn("date_column", typing.String))
+				td := &TableData{inMemoryColumns: cols}
+
+				assert.NoError(t, td.MergeColumnsFromDestination(columns.NewColumn("date_column", typing.Date)))
+				col, isOk := td.inMemoryColumns.GetColumn("date_column")
 				assert.True(t, isOk)
-				assert.Equal(t, typing.Date, dateCol.KindDetails)
+				assert.Equal(t, typing.Date, col.KindDetails)
 			}
 			{
 				// Time
-				assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("ext_time", typing.Time)))
-				timeCol, isOk := tableData.inMemoryColumns.GetColumn("ext_time")
+				cols := &columns.Columns{}
+				cols.AddColumn(columns.NewColumn("time_column", typing.String))
+				td := &TableData{inMemoryColumns: cols}
+
+				assert.NoError(t, td.MergeColumnsFromDestination(columns.NewColumn("time_column", typing.Time)))
+				col, isOk := td.inMemoryColumns.GetColumn("time_column")
 				assert.True(t, isOk)
-				assert.Equal(t, typing.Time, timeCol.KindDetails)
+				assert.Equal(t, typing.Time, col.KindDetails)
 			}
 			{
-				// Update column from string to TimestampTZ
-				assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("string_to_timestamp_tz", typing.TimestampTZ)))
-				col, isOk := tableData.inMemoryColumns.GetColumn("string_to_timestamp_tz")
+				// Timestamp TZ
+				cols := &columns.Columns{}
+				cols.AddColumn(columns.NewColumn("timestamp_tz_column", typing.String))
+				td := &TableData{inMemoryColumns: cols}
+
+				assert.NoError(t, td.MergeColumnsFromDestination(columns.NewColumn("timestamp_tz_column", typing.TimestampTZ)))
+				col, isOk := td.inMemoryColumns.GetColumn("timestamp_tz_column")
 				assert.True(t, isOk)
 				assert.Equal(t, typing.TimestampTZ, col.KindDetails)
 			}
-
 		}
-
 		// Testing extDecimalDetails
 		// Confirm that before you update, it's invalid.
 		extDecCol, isOk := tableData.inMemoryColumns.GetColumn("ext_dec")
