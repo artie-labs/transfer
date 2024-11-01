@@ -113,12 +113,12 @@ func TestZonedTimestamp_Convert(t *testing.T) {
 
 func TestTime_Convert(t *testing.T) {
 	{
-		val, err := Time{}.Convert(int64(54720321))
+		val, err := Time{}.Convert(int64(54_720_321))
 		assert.NoError(t, err)
 		assert.Equal(t, "15:12:00.321", val.(time.Time).Format(ext.PostgresTimeFormatNoTZ))
 	}
 	{
-		val, err := Time{}.Convert(int64(54720123))
+		val, err := Time{}.Convert(int64(54_720_123))
 		assert.NoError(t, err)
 		assert.Equal(t, "15:12:00.123", val.(time.Time).Format(ext.PostgresTimeFormatNoTZ))
 	}
@@ -181,14 +181,14 @@ func TestConvertTimeWithTimezone(t *testing.T) {
 		// What Debezium + Reader would produce (microsecond precision)
 		val, err := TimeWithTimezone{}.Convert("23:02:06.745116Z")
 		assert.NoError(t, err)
-		assert.Equal(t, time.Date(0, 1, 1, 23, 2, 6, 745116000, time.UTC), val.(time.Time))
+		assert.Equal(t, time.Date(0, 1, 1, 23, 2, 6, 745_116_000, time.UTC), val.(time.Time))
 		assert.Equal(t, "23:02:06.745116Z", val.(time.Time).Format(ext.PostgresTimeFormat))
 	}
 	{
 		// ms precision
 		val, err := TimeWithTimezone{}.Convert("23:02:06.745Z")
 		assert.NoError(t, err)
-		assert.Equal(t, time.Date(0, 1, 1, 23, 2, 6, 745000000, time.UTC), val.(time.Time))
+		assert.Equal(t, time.Date(0, 1, 1, 23, 2, 6, 745_000_000, time.UTC), val.(time.Time))
 		assert.Equal(t, "23:02:06.745Z", val.(time.Time).Format(TimeWithTimezone{}.layout()))
 	}
 	{

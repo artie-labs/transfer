@@ -55,7 +55,7 @@ func (MSSQLDialect) DataTypeForKind(kindDetails typing.KindDetails, isPk bool) s
 	case typing.Date.Kind:
 		return "DATE"
 	case typing.Time.Kind:
-		return "time"
+		return "TIME"
 	case typing.TimestampNTZ.Kind:
 		// Using datetime2 because it's the recommendation, and it provides more precision: https://stackoverflow.com/a/1884088
 		return "datetime2"
