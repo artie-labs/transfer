@@ -20,7 +20,7 @@ func ParseTimeExactMatch(layout, value string) (time.Time, error) {
 	return ts, nil
 }
 
-func ParseDateFromInterface(val any) (time.Time, error) {
+func ParseDateFromAny(val any) (time.Time, error) {
 	switch convertedVal := val.(type) {
 	case nil:
 		return time.Time{}, fmt.Errorf("val is nil")
@@ -33,7 +33,7 @@ func ParseDateFromInterface(val any) (time.Time, error) {
 	}
 }
 
-func ParseTimeFromInterface(val any) (time.Time, error) {
+func ParseTimeFromAny(val any) (time.Time, error) {
 	switch convertedVal := val.(type) {
 	case nil:
 		return time.Time{}, fmt.Errorf("val is nil")
@@ -46,7 +46,7 @@ func ParseTimeFromInterface(val any) (time.Time, error) {
 	}
 }
 
-func ParseTimestampNTZFromInterface(val any) (time.Time, error) {
+func ParseTimestampNTZFromAny(val any) (time.Time, error) {
 	switch convertedVal := val.(type) {
 	case nil:
 		return time.Time{}, fmt.Errorf("val is nil")
@@ -59,7 +59,7 @@ func ParseTimestampNTZFromInterface(val any) (time.Time, error) {
 	}
 }
 
-func ParseTimestampTZFromInterface(val any) (time.Time, error) {
+func ParseTimestampTZFromAny(val any) (time.Time, error) {
 	switch convertedVal := val.(type) {
 	case nil:
 		return time.Time{}, fmt.Errorf("val is nil")

@@ -23,28 +23,28 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 	case typing.Struct.Kind, typing.Array.Kind:
 		return dialect.EscapeStruct(fmt.Sprint(column.DefaultValue())), nil
 	case typing.Date.Kind:
-		_time, err := ext.ParseDateFromInterface(column.DefaultValue())
+		_time, err := ext.ParseDateFromAny(column.DefaultValue())
 		if err != nil {
 			return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", column.DefaultValue(), err)
 		}
 
 		return sql.QuoteLiteral(_time.Format(ext.PostgresDateFormat)), nil
 	case typing.Time.Kind:
-		_time, err := ext.ParseTimeFromInterface(column.DefaultValue())
+		_time, err := ext.ParseTimeFromAny(column.DefaultValue())
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", column.DefaultValue(), err)
 		}
 
 		return sql.QuoteLiteral(_time.Format(ext.PostgresTimeFormatNoTZ)), nil
 	case typing.TimestampNTZ.Kind:
-		_time, err := ext.ParseTimestampNTZFromInterface(column.DefaultValue())
+		_time, err := ext.ParseTimestampNTZFromAny(column.DefaultValue())
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", column.DefaultValue(), err)
 		}
 
 		return sql.QuoteLiteral(_time.Format(ext.RFC3339NoTZ)), nil
 	case typing.TimestampTZ.Kind:
-		_time, err := ext.ParseTimestampTZFromInterface(column.DefaultValue())
+		_time, err := ext.ParseTimestampTZFromAny(column.DefaultValue())
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", column.DefaultValue(), err)
 		}

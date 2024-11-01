@@ -29,28 +29,28 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 
 	switch colKind.Kind {
 	case typing.Date.Kind:
-		_time, err := ext.ParseDateFromInterface(colVal)
+		_time, err := ext.ParseDateFromAny(colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", colVal, err)
 		}
 
 		return _time.Format(ext.PostgresDateFormat), nil
 	case typing.Time.Kind:
-		_time, err := ext.ParseTimeFromInterface(colVal)
+		_time, err := ext.ParseTimeFromAny(colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", colVal, err)
 		}
 
 		return _time.Format(ext.PostgresTimeFormatNoTZ), nil
 	case typing.TimestampNTZ.Kind:
-		_time, err := ext.ParseTimestampNTZFromInterface(colVal)
+		_time, err := ext.ParseTimestampNTZFromAny(colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", colVal, err)
 		}
 
 		return _time.Format(ext.RFC3339NoTZ), nil
 	case typing.TimestampTZ.Kind:
-		_time, err := ext.ParseTimestampTZFromInterface(colVal)
+		_time, err := ext.ParseTimestampTZFromAny(colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", colVal, err)
 		}
