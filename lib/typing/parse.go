@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 // MustParseValue - panics if the value cannot be parsed. This is used only for tests.
@@ -51,12 +50,6 @@ func ParseValue(key string, optionalSchema map[string]KindDetails, val any) (Kin
 		}, nil
 	case time.Time:
 		return TimestampTZ, nil
-	case *ext.ExtendedTime:
-		nestedKind := convertedVal.GetNestedKind()
-		return KindDetails{
-			Kind:                ETime.Kind,
-			ExtendedTimeDetails: &nestedKind,
-		}, nil
 	default:
 		// Check if the val is one of our custom-types
 		if reflect.TypeOf(val).Kind() == reflect.Slice {
