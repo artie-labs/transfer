@@ -4,19 +4,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/config"
-
-	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/optimization"
-
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
-	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/destination/types"
-
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
@@ -33,9 +29,7 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
-	config := types.NewDwhTableConfig(&cols, nil, false, true)
-
-	s.stageStore.configMap.AddTableToConfig(tableID, config)
+	s.stageStore.configMap.AddTableToConfig(tableID, types.NewDwhTableConfig(&cols, false, true))
 
 	nameCol := columns.NewColumn("name", typing.String)
 	tc := s.stageStore.configMap.TableConfigCache(tableID)
@@ -62,7 +56,7 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
-	config := types.NewDwhTableConfig(&cols, nil, false, true)
+	config := types.NewDwhTableConfig(&cols, false, true)
 	s.stageStore.configMap.AddTableToConfig(tableID, config)
 
 	nameCol := columns.NewColumn("name", typing.String)
@@ -101,9 +95,8 @@ func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
-	tc := types.NewDwhTableConfig(&cols, map[string]time.Time{
-		"customer_id": time.Now(),
-	}, false, false)
+	tc := types.NewDwhTableConfig(&cols, false, false)
+	tc.SetColumnsToDelete(map[string]time.Time{"customer_id": time.Now()})
 
 	assert.Equal(s.T(), len(tc.ReadOnlyColumnsToDelete()), 1)
 	assert.False(s.T(), tc.ShouldDeleteColumn("customer_id",

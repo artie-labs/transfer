@@ -21,10 +21,10 @@ import (
 
 func (d *DDLTestSuite) Test_CreateTable() {
 	bqTableID := bigquery.NewTableIdentifier("", "mock_dataset", "mock_table")
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(bqTableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(bqTableID, types.NewDwhTableConfig(&columns.Columns{}, true, true))
 
 	snowflakeTableID := snowflake.NewTableIdentifier("", "mock_dataset", "mock_table")
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(snowflakeTableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(snowflakeTableID, types.NewDwhTableConfig(&columns.Columns{}, true, true))
 
 	type dwhToTableConfig struct {
 		_tableID       sql.TableIdentifier
@@ -115,7 +115,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 
 	for index, testCase := range testCases {
 		tableID := snowflake.NewTableIdentifier("demo", "public", "experiments")
-		d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, nil, true, true))
+		d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(&columns.Columns{}, true, true))
 		tc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
 
 		alterTableArgs := ddl.AlterTableArgs{
