@@ -124,7 +124,7 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 	{
 		// Invalid
 		kd, err := dialect.KindForDataType("", "")
-		assert.ErrorContains(t, err, "empty data type")
+		assert.ErrorContains(t, err, `unsupported data type: ""`)
 		assert.Equal(t, typing.Invalid, kd)
 	}
 	{
