@@ -6,10 +6,6 @@ import (
 )
 
 func GetKeyFromMap(obj map[string]any, key string, defaultValue any) any {
-	if len(obj) == 0 {
-		return defaultValue
-	}
-
 	val, isOk := obj[key]
 	if !isOk {
 		return defaultValue
@@ -44,12 +40,12 @@ func GetTypeFromMap[T any](obj map[string]any, key string) (T, error) {
 
 	valInterface, isOk := obj[key]
 	if !isOk {
-		return zero, fmt.Errorf("key: %s does not exist in object", key)
+		return zero, fmt.Errorf("key: %q does not exist in object", key)
 	}
 
 	val, isOk := valInterface.(T)
 	if !isOk {
-		return zero, fmt.Errorf("key: %s is not type %T", key, valInterface)
+		return zero, fmt.Errorf("expected key %q to be type string, got %T", key, valInterface)
 	}
 
 	return val, nil

@@ -9,23 +9,28 @@ import (
 )
 
 func TestGetKeyFromMap(t *testing.T) {
-	var obj map[string]any
-	val := GetKeyFromMap(obj, "invalid", "dusty the mini aussie")
-	assert.Equal(t, val, "dusty the mini aussie")
-
-	obj = make(map[string]any)
-	val = GetKeyFromMap(obj, "invalid", "dusty the mini aussie")
-	assert.Equal(t, val, "dusty the mini aussie")
-
-	obj["foo"] = "bar"
-	val = GetKeyFromMap(obj, "foo", "robin")
-	assert.Equal(t, val, "bar")
-
-	val = GetKeyFromMap(obj, "foo#1", "robin")
-	assert.Equal(t, val, "robin")
-
-	val = GetKeyFromMap(nil, "foo#1", "robin55")
-	assert.Equal(t, val, "robin55")
+	{
+		// nil map, should return default value
+		val := GetKeyFromMap(nil, "invalid", "dusty the mini aussie")
+		assert.Equal(t, val, "dusty the mini aussie")
+	}
+	{
+		// empty map, should return default value
+		val := GetKeyFromMap(map[string]any{}, "invalid", "dusty the mini aussie")
+		assert.Equal(t, val, "dusty the mini aussie")
+	}
+	{
+		// key exists
+		obj := map[string]any{"foo": "bar"}
+		val := GetKeyFromMap(obj, "foo", "dusty")
+		assert.Equal(t, val, "bar")
+	}
+	{
+		// key doesn't exist, should return default value
+		obj := map[string]any{"foo": "bar"}
+		val := GetKeyFromMap(obj, "foo#1", "dusty")
+		assert.Equal(t, val, "dusty")
+	}
 }
 
 func TestGetInt32FromMap(t *testing.T) {
@@ -112,5 +117,35 @@ func TestGetInt32FromMap(t *testing.T) {
 			assert.Equal(t, testCase.expectedValue, value)
 			assert.NoError(t, err, testCase.name)
 		}
+	}
+}
+
+func TestGetTypeFromMapWithDefault(t *testing.T) {
+	{
+		// nil map, should return default value
+		val, err := GetTypeFromMapWithDefault[string](nil, "invalid", "dusty the mini aussie")
+		assert.Equal(t, val, "dusty the mini aussie")
+		assert.NoError(t, err)
+	}
+	{
+		// map is not empty, but key does not exist
+		obj := map[string]any{"foo": "bar"}
+		val, err := GetTypeFromMapWithDefault[string](obj, "foo#1", "dusty")
+		assert.Equal(t, val, "dusty")
+		assert.NoError(t, err)
+	}
+	{
+		// key exists, but not type string
+		obj := map[string]any{"foo": 123}
+		val, err := GetTypeFromMapWithDefault[string](obj, "foo", "dusty")
+		assert.Equal(t, val, "")
+		assert.ErrorContains(t, err, `expected key "foo" to be type string, got int`)
+	}
+	{
+		// key exists, type string
+		obj := map[string]any{"foo": "bar"}
+		val, err := GetTypeFromMapWithDefault[string](obj, "foo", "dusty")
+		assert.Equal(t, val, "bar")
+		assert.NoError(t, err)
 	}
 }
