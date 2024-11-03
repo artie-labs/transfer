@@ -2,14 +2,12 @@ package shared
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"log/slog"
-	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -37,16 +35,7 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 		return tableConfig, nil
 	}
 
-	rows, err := g.Dwh.Query(g.Query, g.Args...)
-	defer func() {
-		if rows != nil {
-			err = rows.Close()
-			if err != nil {
-				slog.Warn("Failed to close the row", slog.Any("err", err))
-			}
-		}
-	}()
-
+	sqlRows, err := g.Dwh.Query(g.Query, g.Args...)
 	if err != nil {
 		if g.Dwh.Dialect().IsTableDoesNotExistErr(err) {
 			// This branch is currently only used by Snowflake.
@@ -58,76 +47,76 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 	}
 
 	var cols []columns.Column
-	for rows != nil && rows.Next() {
-		// figure out what columns were returned
-		// the column names will be the JSON object field keys
-		colTypes, err := rows.ColumnTypes()
+	if sqlRows != nil {
+		rows, err := sql.RowsToObjects(sqlRows)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to convert rows to objects: %w", err)
 		}
 
-		var columnNameList []string
-		// Scan needs an array of pointers to the values it is setting
-		// This creates the object and sets the values correctly
-		values := make([]interface{}, len(colTypes))
-		for idx, column := range colTypes {
-			values[idx] = new(interface{})
-			columnNameList = append(columnNameList, strings.ToLower(column.Name()))
-		}
-
-		if err = rows.Scan(values...); err != nil {
-			return nil, err
-		}
-
-		row := make(map[string]string)
-		for idx, val := range values {
-			interfaceVal, isOk := val.(*interface{})
-			if !isOk || interfaceVal == nil {
-				return nil, errors.New("invalid value")
+		for _, row := range rows {
+			col, err := g.parseRow(row)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse row: %w", err)
 			}
 
-			var value string
-			if *interfaceVal != nil {
-				value = strings.ToLower(fmt.Sprint(*interfaceVal))
-			}
-
-			row[columnNameList[idx]] = value
+			cols = append(cols, col)
 		}
-
-		kindDetails, err := g.Dwh.Dialect().KindForDataType(row[g.ColumnNameForDataType], row[constants.StrPrecisionCol])
-		if err != nil {
-			return nil, fmt.Errorf("failed to get kind details: %w", err)
-		}
-
-		if kindDetails.Kind == typing.Invalid.Kind {
-			return nil, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", row[g.ColumnNameForDataType])
-		}
-
-		col := columns.NewColumn(row[g.ColumnNameForName], kindDetails)
-		strategy := g.Dwh.Dialect().GetDefaultValueStrategy()
-		switch strategy {
-		case sql.Backfill:
-			// We need to check to make sure the comment is not an empty string
-			if comment, isOk := row[g.ColumnNameForComment]; isOk && comment != "" {
-				var _colComment constants.ColComment
-				if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
-					return nil, fmt.Errorf("failed to unmarshal comment %q: %w", comment, err)
-				}
-
-				col.SetBackfilled(_colComment.Backfilled)
-			}
-		case sql.Native:
-			if value, isOk := row["default_value"]; isOk && value != "" {
-				col.SetBackfilled(true)
-			}
-		default:
-			return nil, fmt.Errorf("unknown default value strategy: %q", strategy)
-		}
-
-		cols = append(cols, col)
 	}
 
 	tableCfg := types.NewDwhTableConfig(cols, g.DropDeletedColumns)
 	g.ConfigMap.AddTableToConfig(g.TableID, tableCfg)
 	return tableCfg, nil
+}
+
+func (g GetTableCfgArgs) parseRow(row map[string]any) (columns.Column, error) {
+	dataTypeName, err := maputil.GetTypeFromMap[string](row, g.ColumnNameForDataType)
+	if err != nil {
+		return columns.Column{}, fmt.Errorf("failed to parse column name for data type: %w", err)
+	}
+
+	colName, err := maputil.GetTypeFromMap[string](row, g.ColumnNameForName)
+	if err != nil {
+		return columns.Column{}, fmt.Errorf("failed to parse column name: %w", err)
+	}
+
+	stringPrecision, err := maputil.GetTypeFromMapWithDefault[string](row, constants.StrPrecisionCol, "")
+	if err != nil {
+		return columns.Column{}, fmt.Errorf("failed to parse string precision: %w", err)
+	}
+
+	kindDetails, err := g.Dwh.Dialect().KindForDataType(dataTypeName, stringPrecision)
+	if err != nil {
+		return columns.Column{}, fmt.Errorf("failed to get kind details: %w", err)
+	}
+
+	if kindDetails.Kind == typing.Invalid.Kind {
+		return columns.Column{}, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", dataTypeName)
+	}
+
+	col := columns.NewColumn(colName, kindDetails)
+	strategy := g.Dwh.Dialect().GetDefaultValueStrategy()
+	switch strategy {
+	case sql.Backfill:
+		comment, err := maputil.GetTypeFromMapWithDefault[string](row, g.ColumnNameForComment, "")
+		if err != nil {
+			return columns.Column{}, fmt.Errorf("failed to parse column name for comment: %w", err)
+		}
+
+		if comment != "" {
+			var _colComment constants.ColComment
+			if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
+				return columns.Column{}, fmt.Errorf("failed to unmarshal comment %q: %w", comment, err)
+			}
+
+			col.SetBackfilled(_colComment.Backfilled)
+		}
+	case sql.Native:
+		if value, isOk := row["default_value"]; isOk && value != "" {
+			col.SetBackfilled(true)
+		}
+	default:
+		return columns.Column{}, fmt.Errorf("unknown default value strategy: %q", strategy)
+	}
+
+	return col, nil
 }

@@ -35,3 +35,31 @@ func GetInt32FromMap(obj map[string]any, key string) (int32, error) {
 
 	return int32(val), nil
 }
+
+func GetTypeFromMap[T any](obj map[string]any, key string) (T, error) {
+	var zero T
+	if len(obj) == 0 {
+		return zero, fmt.Errorf("object is empty")
+	}
+
+	valInterface, isOk := obj[key]
+	if !isOk {
+		return zero, fmt.Errorf("key: %s does not exist in object", key)
+	}
+
+	val, isOk := valInterface.(T)
+	if !isOk {
+		return zero, fmt.Errorf("key: %s is not type %T", key, valInterface)
+	}
+
+	return val, nil
+}
+
+func GetTypeFromMapWithDefault[T any](obj map[string]any, key string, defaultValue T) (T, error) {
+	if _, isOk := obj[key]; !isOk {
+		// If the value doesn't exist, then return default
+		return defaultValue, nil
+	}
+
+	return GetTypeFromMap[T](obj, key)
+}
