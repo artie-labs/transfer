@@ -65,7 +65,7 @@ func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) s
 
 func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindDetails, error) {
 	if len(rawBqType) == 0 {
-		return typing.Invalid, nil
+		return typing.Invalid, fmt.Errorf("empty data type")
 	}
 
 	bqType, parameters, err := sql.ParseDataTypeDefinition(strings.ToLower(rawBqType))

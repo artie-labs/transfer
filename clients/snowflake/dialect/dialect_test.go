@@ -79,12 +79,12 @@ func TestSnowflakeDialect_KindForDataType(t *testing.T) {
 		// Invalid
 		{
 			kd, err := SnowflakeDialect{}.KindForDataType("", "")
-			assert.NoError(t, err)
+			assert.ErrorContains(t, err, "empty data type")
 			assert.Equal(t, typing.Invalid, kd)
 		}
 		{
 			kd, err := SnowflakeDialect{}.KindForDataType("abc123", "")
-			assert.NoError(t, err)
+			assert.ErrorContains(t, err, `unsupported data type: "abc123"`)
 			assert.Equal(t, typing.Invalid, kd)
 		}
 	}

@@ -95,10 +95,6 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 		"timestamp": typing.TimestampTZ,
 		"time":      typing.Time,
 		"date":      typing.Date,
-		//Invalid
-		"foo":    typing.Invalid,
-		"foofoo": typing.Invalid,
-		"":       typing.Invalid,
 	}
 
 	for bqCol, expectedKind := range bqColToExpectedKind {
@@ -124,6 +120,18 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 		assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
 		assert.Equal(t, int32(5), kd.ExtendedDecimalDetails.Precision())
 		assert.Equal(t, int32(2), kd.ExtendedDecimalDetails.Scale())
+	}
+	{
+		// Invalid
+		kd, err := dialect.KindForDataType("", "")
+		assert.ErrorContains(t, err, "empty data type")
+		assert.Equal(t, typing.Invalid, kd)
+	}
+	{
+		// Invalid
+		kd, err := dialect.KindForDataType("foo", "")
+		assert.ErrorContains(t, err, `unsupported data type: "foo"`)
+		assert.Equal(t, typing.Invalid, kd)
 	}
 }
 
