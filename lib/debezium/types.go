@@ -89,27 +89,23 @@ func toInt64(value any) (int64, error) {
 	return 0, fmt.Errorf("failed to cast value '%v' with type '%T' to int64", value, value)
 }
 
-func isTimeSet(ts time.Time) bool {
-	// Most of Debezium's time types uses Unix time, so we can check for zero value by comparing it to be zero.
-	if ts.Unix() == 0 {
-		return false
-	}
-
-	// If time value did not get set, it will return true for [IsZero]
-	if ts.IsZero() {
-		return false
-	}
-
-	return true
-}
-
 // ShouldSetDefaultValue will filter out computed fields that cannot be properly set with a default value
 func (f Field) ShouldSetDefaultValue(defaultValue any) bool {
 	switch castedDefaultValue := defaultValue.(type) {
 	case nil:
 		return false
 	case time.Time:
-		return isTimeSet(castedDefaultValue)
+		// Most of Debezium's time types uses Unix time, so we can check for zero value by comparing it to be zero.
+		if castedDefaultValue.Unix() == 0 {
+			return false
+		}
+
+		// If time value did not get set, it will return true for [IsZero]
+		if castedDefaultValue.IsZero() {
+			return false
+		}
+
+		return true
 	case string:
 		if f.DebeziumType == UUID && castedDefaultValue == uuid.Nil.String() {
 			return false
