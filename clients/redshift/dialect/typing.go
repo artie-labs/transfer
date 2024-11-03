@@ -111,7 +111,7 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 		return typing.Date, nil
 	case "boolean":
 		return typing.Boolean, nil
+	default:
+		return typing.Invalid, fmt.Errorf("unsupported data type: %q", rawType)
 	}
-
-	return typing.Invalid, fmt.Errorf("unsupported data type: %q", rawType)
 }

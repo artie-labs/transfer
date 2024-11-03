@@ -123,9 +123,9 @@ func (MSSQLDialect) KindForDataType(rawType string, stringPrecision string) (typ
 		return typing.Boolean, nil
 	case "text":
 		return typing.String, nil
+	default:
+		return typing.Invalid, fmt.Errorf("unsupported data type: %q", rawType)
 	}
-
-	return typing.Invalid, nil
 }
 
 func (MSSQLDialect) IsColumnAlreadyExistsErr(err error) bool {
