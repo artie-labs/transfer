@@ -11,8 +11,8 @@ import (
 
 type Time struct{}
 
-func (t Time) ToKindDetails() (typing.KindDetails, error) {
-	return typing.Time, nil
+func (t Time) ToKindDetails() typing.KindDetails {
+	return typing.Time
 }
 
 func (t Time) Convert(val any) (any, error) {
@@ -27,8 +27,8 @@ func (t Time) Convert(val any) (any, error) {
 
 type NanoTime struct{}
 
-func (n NanoTime) ToKindDetails() (typing.KindDetails, error) {
-	return typing.Time, nil
+func (n NanoTime) ToKindDetails() typing.KindDetails {
+	return typing.Time
 }
 
 func (n NanoTime) Convert(value any) (any, error) {
@@ -43,8 +43,8 @@ func (n NanoTime) Convert(value any) (any, error) {
 
 type MicroTime struct{}
 
-func (m MicroTime) ToKindDetails() (typing.KindDetails, error) {
-	return typing.Time, nil
+func (m MicroTime) ToKindDetails() typing.KindDetails {
+	return typing.Time
 }
 
 func (m MicroTime) Convert(value any) (any, error) {
@@ -59,8 +59,8 @@ func (m MicroTime) Convert(value any) (any, error) {
 
 type ZonedTimestamp struct{}
 
-func (z ZonedTimestamp) ToKindDetails() (typing.KindDetails, error) {
-	return typing.TimestampTZ, nil
+func (z ZonedTimestamp) ToKindDetails() typing.KindDetails {
+	return typing.TimestampTZ
 }
 
 func (z ZonedTimestamp) Convert(value any) (any, error) {
@@ -95,8 +95,8 @@ func (t TimeWithTimezone) layout() string {
 	return "15:04:05.999999" + ext.TimezoneOffsetFormat
 }
 
-func (t TimeWithTimezone) ToKindDetails() (typing.KindDetails, error) {
-	return typing.Time, nil
+func (t TimeWithTimezone) ToKindDetails() typing.KindDetails {
+	return typing.Time
 }
 
 func (t TimeWithTimezone) Convert(value any) (any, error) {

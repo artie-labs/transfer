@@ -14,8 +14,8 @@ func (Date) layout() string {
 	return ext.PostgresDateFormat
 }
 
-func (d Date) ToKindDetails() (typing.KindDetails, error) {
-	return typing.Date, nil
+func (d Date) ToKindDetails() typing.KindDetails {
+	return typing.Date
 }
 
 func (d Date) Convert(value any) (any, error) {

@@ -10,12 +10,10 @@ import (
 )
 
 func TestTimestamp_Converter(t *testing.T) {
-	kd, err := Timestamp{}.ToKindDetails()
-	assert.NoError(t, err)
-	assert.Equal(t, typing.TimestampNTZ, kd)
+	assert.Equal(t, typing.TimestampNTZ, Timestamp{}.ToKindDetails())
 	{
 		// Invalid conversion
-		_, err = Timestamp{}.Convert("invalid")
+		_, err := Timestamp{}.Convert("invalid")
 		assert.ErrorContains(t, err, "expected type int64, got string")
 	}
 	{
@@ -27,12 +25,10 @@ func TestTimestamp_Converter(t *testing.T) {
 }
 
 func TestMicroTimestamp_Converter(t *testing.T) {
-	kd, err := MicroTimestamp{}.ToKindDetails()
-	assert.NoError(t, err)
-	assert.Equal(t, typing.TimestampNTZ, kd)
+	assert.Equal(t, typing.TimestampNTZ, MicroTimestamp{}.ToKindDetails())
 	{
 		// Invalid conversion
-		_, err = MicroTimestamp{}.Convert("invalid")
+		_, err := MicroTimestamp{}.Convert("invalid")
 		assert.ErrorContains(t, err, "expected type int64, got string")
 	}
 	{
@@ -44,12 +40,10 @@ func TestMicroTimestamp_Converter(t *testing.T) {
 }
 
 func TestNanoTimestamp_Converter(t *testing.T) {
-	kd, err := NanoTimestamp{}.ToKindDetails()
-	assert.NoError(t, err)
-	assert.Equal(t, typing.TimestampNTZ, kd)
+	assert.Equal(t, typing.TimestampNTZ, NanoTimestamp{}.ToKindDetails())
 	{
 		// Invalid conversion
-		_, err = NanoTimestamp{}.Convert("invalid")
+		_, err := NanoTimestamp{}.Convert("invalid")
 		assert.ErrorContains(t, err, "expected type int64, got string")
 	}
 	{
