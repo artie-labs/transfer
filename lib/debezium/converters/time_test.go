@@ -125,12 +125,10 @@ func TestTime_Convert(t *testing.T) {
 }
 
 func TestNanoTime_Converter(t *testing.T) {
-	kd, err := NanoTime{}.ToKindDetails()
-	assert.NoError(t, err)
-	assert.Equal(t, typing.Time, kd)
+	assert.Equal(t, typing.Time, NanoTime{}.ToKindDetails())
 	{
 		// Invalid data
-		_, err = NanoTime{}.Convert("123")
+		_, err := NanoTime{}.Convert("123")
 		assert.ErrorContains(t, err, "expected type int64, got string")
 	}
 	{
@@ -142,9 +140,7 @@ func TestNanoTime_Converter(t *testing.T) {
 }
 
 func TestMicroTime_Converter(t *testing.T) {
-	kd, err := MicroTime{}.ToKindDetails()
-	assert.NoError(t, err)
-	assert.Equal(t, typing.Time, kd)
+	assert.Equal(t, typing.Time, MicroTime{}.ToKindDetails())
 	{
 		// Invalid data
 		_, err := MicroTime{}.Convert("123")
