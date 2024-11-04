@@ -29,6 +29,12 @@ func TestZonedTimestamp_Convert(t *testing.T) {
 		assert.Nil(t, val)
 	}
 	{
+		// Edge case (Year is 0)
+		val, err := ZonedTimestamp{}.Convert("0000-10-10T10:10:10.000000Z")
+		assert.NoError(t, err)
+		assert.Nil(t, val)
+	}
+	{
 		// Valid
 		{
 			// No fractional seconds
