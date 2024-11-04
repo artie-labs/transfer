@@ -64,10 +64,6 @@ func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) s
 }
 
 func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindDetails, error) {
-	if len(rawBqType) == 0 {
-		return typing.Invalid, nil
-	}
-
 	bqType, parameters, err := sql.ParseDataTypeDefinition(strings.ToLower(rawBqType))
 	if err != nil {
 		return typing.Invalid, err
@@ -110,7 +106,7 @@ func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindD
 	case "date":
 		return typing.Date, nil
 	default:
-		return typing.Invalid, nil
+		return typing.Invalid, fmt.Errorf("unsupported data type: %q", rawBqType)
 	}
 }
 

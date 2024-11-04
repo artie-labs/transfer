@@ -73,7 +73,7 @@ func (DatabricksDialect) KindForDataType(rawType string, _ string) (typing.KindD
 		return typing.TimestampTZ, nil
 	case "timestamp_ntz":
 		return typing.TimestampNTZ, nil
+	default:
+		return typing.Invalid, fmt.Errorf("unsupported data type: %q", rawType)
 	}
-
-	return typing.Invalid, fmt.Errorf("unsupported data type: %q", rawType)
 }
