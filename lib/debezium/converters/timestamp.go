@@ -8,8 +8,8 @@ import (
 
 type Timestamp struct{}
 
-func (t Timestamp) ToKindDetails() (typing.KindDetails, error) {
-	return typing.TimestampNTZ, nil
+func (t Timestamp) ToKindDetails() typing.KindDetails {
+	return typing.TimestampNTZ
 }
 
 func (t Timestamp) Convert(value any) (any, error) {
@@ -24,8 +24,8 @@ func (t Timestamp) Convert(value any) (any, error) {
 
 type MicroTimestamp struct{}
 
-func (mt MicroTimestamp) ToKindDetails() (typing.KindDetails, error) {
-	return typing.TimestampNTZ, nil
+func (mt MicroTimestamp) ToKindDetails() typing.KindDetails {
+	return typing.TimestampNTZ
 }
 
 func (mt MicroTimestamp) Convert(value any) (any, error) {
@@ -40,8 +40,8 @@ func (mt MicroTimestamp) Convert(value any) (any, error) {
 
 type NanoTimestamp struct{}
 
-func (nt NanoTimestamp) ToKindDetails() (typing.KindDetails, error) {
-	return typing.TimestampNTZ, nil
+func (nt NanoTimestamp) ToKindDetails() typing.KindDetails {
+	return typing.TimestampNTZ
 }
 
 func (nt NanoTimestamp) Convert(value any) (any, error) {
