@@ -7,6 +7,31 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type key struct {
+	foo string
+}
+
+func (k key) Key() string {
+	return k.foo
+}
+
+func TestHasKeyFunction(t *testing.T) {
+	{
+		// False
+		type noKey struct{}
+		var _noKey noKey
+		_, isOk := hasKeyFunction[noKey](_noKey)
+		assert.False(t, isOk)
+	}
+	{
+		// True
+		_key := key{foo: "bar"}
+		castedKey, isOk := hasKeyFunction[key](_key)
+		assert.True(t, isOk)
+		assert.Equal(t, "bar", castedKey.Key())
+	}
+}
+
 func TestBySize(t *testing.T) {
 	goodEncoder := func(value string) ([]byte, error) {
 		return []byte(value), nil

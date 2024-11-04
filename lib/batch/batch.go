@@ -9,7 +9,7 @@ type KeyFunction interface {
 	Key() string
 }
 
-func checkHasKeyFunction[T any](item T) (KeyFunction, bool) {
+func hasKeyFunction[T any](item T) (KeyFunction, bool) {
 	if castedItem, isOk := any(item).(KeyFunction); isOk {
 		return castedItem, isOk
 	}
@@ -34,7 +34,7 @@ func BySize[T any](in []T, maxSizeBytes int, failIfExceedMaxSizeBytes bool, enco
 				return fmt.Errorf("item %d is larger (%d bytes) than maxSizeBytes (%d bytes)", i, len(bytes), maxSizeBytes)
 			} else {
 				logFields := []any{slog.Int("index", i), slog.Int("bytes", len(bytes))}
-				if stringItem, isOk := checkHasKeyFunction[T](item); isOk {
+				if stringItem, isOk := hasKeyFunction[T](item); isOk {
 					logFields = append(logFields, slog.String("key", stringItem.Key()))
 				}
 
