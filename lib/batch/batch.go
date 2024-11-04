@@ -19,18 +19,17 @@ func BySize[T any](in []T, maxSizeBytes int, encode func(T) ([]byte, error), yie
 		}
 
 		currentSizeBytes += len(bytes)
-
 		if currentSizeBytes < maxSizeBytes {
 			buffer = append(buffer, bytes)
 		} else if currentSizeBytes == maxSizeBytes {
 			buffer = append(buffer, bytes)
-			if err := yield(buffer); err != nil {
+			if err = yield(buffer); err != nil {
 				return err
 			}
 			buffer = [][]byte{}
 			currentSizeBytes = 0
 		} else {
-			if err := yield(buffer); err != nil {
+			if err = yield(buffer); err != nil {
 				return err
 			}
 			buffer = [][]byte{bytes}
