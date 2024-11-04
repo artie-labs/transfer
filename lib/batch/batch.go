@@ -19,7 +19,7 @@ func hasKeyFunction[T any](item T) (KeyFunction, bool) {
 
 // BySize takes a series of elements [in], encodes them using [encode], groups them into batches of bytes that sum to at
 // most [maxSizeBytes], and then passes each batch to the [yield] function.
-func BySize[T any](in []T, maxSizeBytes int, failIfExceedMaxSizeBytes bool, encode func(T) ([]byte, error), yield func([][]byte) error) error {
+func BySize[T any](in []T, maxSizeBytes int, failIfRowExceedsMaxSizeBytes bool, encode func(T) ([]byte, error), yield func([][]byte) error) error {
 	var buffer [][]byte
 	var currentSizeBytes int
 
@@ -30,7 +30,7 @@ func BySize[T any](in []T, maxSizeBytes int, failIfExceedMaxSizeBytes bool, enco
 		}
 
 		if len(bytes) > maxSizeBytes {
-			if failIfExceedMaxSizeBytes {
+			if failIfRowExceedsMaxSizeBytes {
 				return fmt.Errorf("item %d is larger (%d bytes) than maxSizeBytes (%d bytes)", i, len(bytes), maxSizeBytes)
 			} else {
 				logFields := []any{slog.Int("index", i), slog.Int("bytes", len(bytes))}
