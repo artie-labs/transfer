@@ -5,6 +5,6 @@ import (
 )
 
 type ValueConverter interface {
-	ToKindDetails() (typing.KindDetails, error)
+	ToKindDetails() typing.KindDetails
 	Convert(value any) (any, error)
 }

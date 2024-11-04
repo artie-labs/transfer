@@ -24,14 +24,14 @@ func (JSON) Convert(value any) (any, error) {
 	return jsonutil.SanitizePayload(valueString)
 }
 
-func (JSON) ToKindDetails() (typing.KindDetails, error) {
-	return typing.Struct, nil
+func (JSON) ToKindDetails() typing.KindDetails {
+	return typing.Struct
 }
 
 type Int64Passthrough struct{}
 
-func (Int64Passthrough) ToKindDetails() (typing.KindDetails, error) {
-	return typing.Integer, nil
+func (Int64Passthrough) ToKindDetails() typing.KindDetails {
+	return typing.Integer
 }
 
 func (Int64Passthrough) Convert(value any) (any, error) {
@@ -44,9 +44,9 @@ func (Int64Passthrough) Convert(value any) (any, error) {
 
 type Base64 struct{}
 
-func (Base64) ToKindDetails() (typing.KindDetails, error) {
+func (Base64) ToKindDetails() typing.KindDetails {
 	// We're returning this back as a base64 encoded string.
-	return typing.String, nil
+	return typing.String
 }
 
 func (Base64) Convert(value any) (any, error) {
