@@ -103,7 +103,7 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 	}
 	{
 		// Integers
-		for _, intKind := range []string{"int", "integer", "int64"} {
+		for _, intKind := range []string{"int", "integer", "inT64"} {
 			kd, err := dialect.KindForDataType(intKind, "")
 			assert.NoError(t, err)
 			assert.Equal(t, typing.Integer, kd, intKind)
