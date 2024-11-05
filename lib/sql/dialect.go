@@ -29,11 +29,12 @@ type Dialect interface {
 	KindForDataType(_type string, stringPrecision string) (typing.KindDetails, error)
 	IsColumnAlreadyExistsErr(err error) bool
 	IsTableDoesNotExistErr(err error) bool
-	BuildCreateTableQuery(tableID TableIdentifier, temporary bool, colSQLParts []string) string
 	BuildAlterColumnQuery(tableID TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string
-	BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string
-	BuildDedupeTableQuery(tableID TableIdentifier, primaryKeys []string) string
+	BuildCreateTableQuery(tableID TableIdentifier, temporary bool, colSQLParts []string) string
 	BuildDedupeQueries(tableID, stagingTableID TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string
+	BuildDedupeTableQuery(tableID TableIdentifier, primaryKeys []string) string
+	BuildDescribeTableQuery(tableID TableIdentifier) (string, []any)
+	BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string
 	BuildMergeQueries(
 		tableID TableIdentifier,
 		subQuery string,

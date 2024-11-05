@@ -21,8 +21,6 @@ type GetTableCfgArgs struct {
 	Dwh       destination.DataWarehouse
 	TableID   sql.TableIdentifier
 	ConfigMap *types.DwhToTablesConfigMap
-	Query     string
-	Args      []any
 	// Name of the column
 	ColumnNameForName string
 	// Column type
@@ -37,7 +35,8 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 		return tableConfig, nil
 	}
 
-	rows, err := g.Dwh.Query(g.Query, g.Args...)
+	query, args := g.Dwh.Dialect().BuildDescribeTableQuery(g.TableID)
+	rows, err := g.Dwh.Query(query, args...)
 	defer func() {
 		if rows != nil {
 			err = rows.Close()
@@ -53,7 +52,7 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 			// Swallow the error, make sure all the metadata is created
 			err = nil
 		} else {
-			return nil, fmt.Errorf("failed to query %T, err: %w, query: %q", g.Dwh, err, g.Query)
+			return nil, fmt.Errorf("failed to query %T, err: %w, query: %q", g.Dwh, err, query)
 		}
 	}
 
