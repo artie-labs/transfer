@@ -3,6 +3,8 @@ package maputil
 import (
 	"fmt"
 	"strconv"
+
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 func GetKeyFromMap(obj map[string]any, key string, defaultValue any) any {
@@ -34,4 +36,13 @@ func GetInt32FromMap(obj map[string]any, key string) (int32, error) {
 	}
 
 	return int32(val), nil
+}
+
+func GetStringFromMap(obj map[string]any, key string) (string, error) {
+	value, isOk := obj[key]
+	if !isOk {
+		return "", fmt.Errorf("key: %q does not exist in object", key)
+	}
+
+	return typing.AssertType[string](value)
 }

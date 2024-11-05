@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/artie-labs/transfer/clients/databricks/dialect"
+	"github.com/artie-labs/transfer/lib/maputil"
 
+	"github.com/artie-labs/transfer/clients/databricks/dialect"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
-	"github.com/artie-labs/transfer/lib/typing"
 )
 
 type File struct {
@@ -17,27 +17,17 @@ type File struct {
 }
 
 func NewFile(fileRow map[string]any) (File, error) {
-	_volName, isOk := fileRow["name"]
-	if !isOk {
-		return File{}, fmt.Errorf("name is missing")
-	}
-
-	volName, err := typing.AssertType[string](_volName)
+	name, err := maputil.GetStringFromMap(fileRow, "name")
 	if err != nil {
-		return File{}, fmt.Errorf("name is not a string")
+		return File{}, err
 	}
 
-	_path, isOk := fileRow["path"]
-	if !isOk {
-		return File{}, fmt.Errorf("path is missing")
-	}
-
-	path, err := typing.AssertType[string](_path)
+	fp, err := maputil.GetStringFromMap(fileRow, "path")
 	if err != nil {
-		return File{}, fmt.Errorf("path is not a string")
+		return File{}, err
 	}
 
-	return File{name: volName, fp: path}, nil
+	return File{name: name, fp: fp}, nil
 }
 
 func NewFileFromTableID(tableID dialect.TableIdentifier, volume string) File {
@@ -46,7 +36,6 @@ func NewFileFromTableID(tableID dialect.TableIdentifier, volume string) File {
 		name: name,
 		fp:   fmt.Sprintf("/Volumes/%s/%s/%s/%s", tableID.Database(), tableID.Schema(), volume, name),
 	}
-
 }
 
 func (f File) ShouldDelete() bool {
