@@ -25,4 +25,21 @@ func TestKindDetails_ParquetAnnotation(t *testing.T) {
 			)
 		}
 	}
+	{
+		// Integers
+		for _, kd := range []KindDetails{Integer, TimestampTZ, TimestampNTZ} {
+			field, err := kd.ParquetAnnotation("foo")
+			assert.NoError(t, err)
+			assert.Equal(t,
+				Field{
+					Tag: FieldTag{
+						Name:   "foo",
+						InName: ToPtr("foo"),
+						Type:   ToPtr("INT64"),
+					}.String(),
+				},
+				*field,
+			)
+		}
+	}
 }
