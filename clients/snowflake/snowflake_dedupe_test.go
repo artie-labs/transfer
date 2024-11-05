@@ -12,7 +12,7 @@ import (
 func TestGenerateDedupeQueries(t *testing.T) {
 	{
 		// Dedupe with one primary key + no `__artie_updated_at` flag.
-		tableID := NewTableIdentifier("db", "public", "customers")
+		tableID := dialect.NewTableIdentifier("db", "public", "customers")
 		stagingTableID := shared.TempTableID(tableID)
 
 		parts := dialect.SnowflakeDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, false)
@@ -27,7 +27,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 	}
 	{
 		// Dedupe with one primary key + `__artie_updated_at` flag.
-		tableID := NewTableIdentifier("db", "public", "customers")
+		tableID := dialect.NewTableIdentifier("db", "public", "customers")
 		stagingTableID := shared.TempTableID(tableID)
 
 		parts := dialect.SnowflakeDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, true)
@@ -42,7 +42,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 	}
 	{
 		// Dedupe with composite keys + no `__artie_updated_at` flag.
-		tableID := NewTableIdentifier("db", "public", "user_settings")
+		tableID := dialect.NewTableIdentifier("db", "public", "user_settings")
 		stagingTableID := shared.TempTableID(tableID)
 
 		parts := dialect.SnowflakeDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, false)
@@ -57,7 +57,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 	}
 	{
 		// Dedupe with composite keys + `__artie_updated_at` flag.
-		tableID := NewTableIdentifier("db", "public", "user_settings")
+		tableID := dialect.NewTableIdentifier("db", "public", "user_settings")
 		stagingTableID := shared.TempTableID(tableID)
 
 		parts := dialect.SnowflakeDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, true)

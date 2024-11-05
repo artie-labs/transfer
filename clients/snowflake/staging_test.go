@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/artie-labs/transfer/clients/snowflake/dialect"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/clients/shared"
@@ -67,7 +69,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging() {
 }
 
 func (s *SnowflakeTestSuite) TestBackfillColumn() {
-	tableID := NewTableIdentifier("db", "public", "tableName")
+	tableID := dialect.NewTableIdentifier("db", "public", "tableName")
 
 	backfilledCol := columns.NewColumn("foo", typing.Boolean)
 	backfilledCol.SetDefaultValue(true)
@@ -127,7 +129,7 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 }
 
 // generateTableData - returns tableName and tableData
-func generateTableData(rows int) (TableIdentifier, *optimization.TableData) {
+func generateTableData(rows int) (dialect.TableIdentifier, *optimization.TableData) {
 	randomTableName := fmt.Sprintf("temp_%s_%s", constants.ArtiePrefix, stringutil.Random(10))
 	cols := &columns.Columns{}
 	for _, col := range []string{"user_id", "first_name", "last_name", "dusty"} {
@@ -147,7 +149,7 @@ func generateTableData(rows int) (TableIdentifier, *optimization.TableData) {
 		td.InsertRow(key, rowData, false)
 	}
 
-	return NewTableIdentifier("database", "schema", randomTableName), td
+	return dialect.NewTableIdentifier("database", "schema", randomTableName), td
 }
 
 func (s *SnowflakeTestSuite) TestPrepareTempTable() {

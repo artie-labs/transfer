@@ -3,11 +3,11 @@ package ddl_test
 import (
 	"time"
 
+	"github.com/artie-labs/transfer/clients/snowflake/dialect"
+
 	"github.com/stretchr/testify/assert"
 
-	"github.com/artie-labs/transfer/clients/bigquery"
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
-	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
@@ -34,7 +34,7 @@ func (d *DDLTestSuite) TestValidate_AlterTableArgs() {
 }
 
 func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
-	tableID := snowflake.NewTableIdentifier("", "mock_dataset", "mock_table")
+	tableID := dialect.NewTableIdentifier("", "mock_dataset", "mock_table")
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(nil, true))
 	snowflakeTc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
 	args := ddl.AlterTableArgs{
@@ -67,7 +67,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 func (d *DDLTestSuite) TestCreateTemporaryTable() {
 	{
 		// Snowflake Stage
-		tableID := snowflake.NewTableIdentifier("db", "schema", "tempTableName")
+		tableID := dialect.NewTableIdentifier("db", "schema", "tempTableName")
 		d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(nil, true))
 		sflkStageTc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
 		args := ddl.AlterTableArgs{
@@ -92,7 +92,7 @@ func (d *DDLTestSuite) TestCreateTemporaryTable() {
 	}
 	{
 		// BigQuery
-		tableID := bigquery.NewTableIdentifier("db", "schema", "tempTableName")
+		tableID := bigQueryDialect.NewTableIdentifier("db", "schema", "tempTableName")
 		d.bigQueryStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(nil, true))
 		bqTc := d.bigQueryStore.GetConfigMap().TableConfigCache(tableID)
 		args := ddl.AlterTableArgs{

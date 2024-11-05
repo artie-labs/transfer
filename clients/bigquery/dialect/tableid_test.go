@@ -1,4 +1,4 @@
-package bigquery
+package dialect
 
 import (
 	"testing"

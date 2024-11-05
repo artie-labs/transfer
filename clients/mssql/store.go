@@ -48,8 +48,8 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _
 }
 
 // specificIdentifierFor returns a MS SQL [TableIdentifier] for a [TopicConfig] + table name.
-func (s *Store) specificIdentifierFor(topicConfig kafkalib.TopicConfig, table string) TableIdentifier {
-	return NewTableIdentifier(getSchema(topicConfig.Schema), table)
+func (s *Store) specificIdentifierFor(topicConfig kafkalib.TopicConfig, table string) dialect.TableIdentifier {
+	return dialect.NewTableIdentifier(getSchema(topicConfig.Schema), table)
 }
 
 // IdentifierFor returns a generic [sql.TableIdentifier] interface for a [TopicConfig] + table name.
@@ -71,14 +71,10 @@ func (s *Store) Dedupe(_ sql.TableIdentifier, _ []string, _ bool) error {
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	tableID := s.specificIdentifierFor(tableData.TopicConfig(), tableData.Name())
-	query, args := describeTableQuery(tableID)
 	return shared.GetTableCfgArgs{
 		Dwh:                   s,
-		TableID:               tableID,
+		TableID:               s.specificIdentifierFor(tableData.TopicConfig(), tableData.Name()),
 		ConfigMap:             s.configMap,
-		Query:                 query,
-		Args:                  args,
 		ColumnNameForName:     "column_name",
 		ColumnNameForDataType: "data_type",
 		ColumnNameForComment:  "description",

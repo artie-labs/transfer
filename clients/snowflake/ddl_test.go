@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/clients/snowflake/dialect"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -16,7 +18,7 @@ import (
 )
 
 func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
-	tableID := NewTableIdentifier("coffee_shop", "public", "orders")
+	tableID := dialect.NewTableIdentifier("coffee_shop", "public", "orders")
 
 	var cols []columns.Column
 	for colName, kindDetails := range map[string]typing.KindDetails{
@@ -43,7 +45,7 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 }
 
 func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
-	tableID := NewTableIdentifier("coffee_shop", "orders", "public")
+	tableID := dialect.NewTableIdentifier("coffee_shop", "orders", "public")
 	var cols []columns.Column
 	for colName, kindDetails := range map[string]typing.KindDetails{
 		"id":          typing.Integer,

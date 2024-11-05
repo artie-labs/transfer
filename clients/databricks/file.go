@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/artie-labs/transfer/clients/databricks/dialect"
+
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/typing"
 )
@@ -38,7 +40,7 @@ func NewFile(fileRow map[string]any) (File, error) {
 	return File{name: volName, fp: path}, nil
 }
 
-func NewFileFromTableID(tableID TableIdentifier, volume string) File {
+func NewFileFromTableID(tableID dialect.TableIdentifier, volume string) File {
 	name := fmt.Sprintf("%s.csv", tableID.Table())
 	return File{
 		name: name,

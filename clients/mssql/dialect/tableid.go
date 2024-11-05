@@ -1,13 +1,12 @@
-package mssql
+package dialect
 
 import (
 	"fmt"
 
-	"github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/lib/sql"
 )
 
-var _dialect = dialect.MSSQLDialect{}
+var _dialect = MSSQLDialect{}
 
 type TableIdentifier struct {
 	schema string

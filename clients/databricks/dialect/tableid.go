@@ -1,13 +1,12 @@
-package databricks
+package dialect
 
 import (
 	"fmt"
 
-	"github.com/artie-labs/transfer/clients/databricks/dialect"
 	"github.com/artie-labs/transfer/lib/sql"
 )
 
-var _dialect = dialect.DatabricksDialect{}
+var _dialect = DatabricksDialect{}
 
 type TableIdentifier struct {
 	database string

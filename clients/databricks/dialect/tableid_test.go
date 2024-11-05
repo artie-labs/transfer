@@ -1,4 +1,4 @@
-package databricks
+package dialect
 
 import (
 	"testing"

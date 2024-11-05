@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/clients/bigquery/dialect"
+
 	"github.com/stretchr/testify/assert"
 
-	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
@@ -96,7 +97,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 }
 
 func (d *DDLTestSuite) TestAlterTableAddColumns() {
-	tableID := bigquery.NewTableIdentifier("", "mock_dataset", "add_cols")
+	tableID := dialect.NewTableIdentifier("", "mock_dataset", "add_cols")
 	fqName := tableID.FullyQualifiedName()
 	ts := time.Now()
 	existingColNameToKindDetailsMap := map[string]typing.KindDetails{
@@ -162,7 +163,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 }
 
 func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
-	tableID := bigquery.NewTableIdentifier("", "mock_dataset", "add_cols")
+	tableID := dialect.NewTableIdentifier("", "mock_dataset", "add_cols")
 	fqName := tableID.FullyQualifiedName()
 	ts := time.Now()
 	existingColNameToKindDetailsMap := map[string]typing.KindDetails{

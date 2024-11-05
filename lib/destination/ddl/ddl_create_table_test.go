@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"time"
 
+	dialect2 "github.com/artie-labs/transfer/clients/snowflake/dialect"
+
+	"github.com/artie-labs/transfer/clients/bigquery/dialect"
+
 	"github.com/stretchr/testify/assert"
 
-	"github.com/artie-labs/transfer/clients/bigquery"
-	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
@@ -20,10 +22,10 @@ import (
 )
 
 func (d *DDLTestSuite) Test_CreateTable() {
-	bqTableID := bigquery.NewTableIdentifier("", "mock_dataset", "mock_table")
+	bqTableID := dialect.NewTableIdentifier("", "mock_dataset", "mock_table")
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(bqTableID, types.NewDwhTableConfig(nil, true))
 
-	snowflakeTableID := snowflake.NewTableIdentifier("", "mock_dataset", "mock_table")
+	snowflakeTableID := dialect2.NewTableIdentifier("", "mock_dataset", "mock_table")
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(snowflakeTableID, types.NewDwhTableConfig(nil, true))
 
 	type dwhToTableConfig struct {
@@ -114,7 +116,7 @@ func (d *DDLTestSuite) TestCreateTable() {
 	}
 
 	for index, testCase := range testCases {
-		tableID := snowflake.NewTableIdentifier("demo", "public", "experiments")
+		tableID := dialect2.NewTableIdentifier("demo", "public", "experiments")
 		d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(nil, true))
 		tc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
 

@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/clients/databricks/dialect"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/stretchr/testify/assert"
 )
@@ -67,6 +69,6 @@ func TestFile_ShouldDelete(t *testing.T) {
 }
 
 func TestFile_DBFSFilePath(t *testing.T) {
-	file := NewFileFromTableID(NewTableIdentifier("{DB}", "{SCHEMA}", "{TABLE}"), "{VOLUME}")
+	file := NewFileFromTableID(dialect.NewTableIdentifier("{DB}", "{SCHEMA}", "{TABLE}"), "{VOLUME}")
 	assert.Equal(t, "dbfs:/Volumes/{DB}/{SCHEMA}/{VOLUME}/{TABLE}.csv", file.DBFSFilePath())
 }
