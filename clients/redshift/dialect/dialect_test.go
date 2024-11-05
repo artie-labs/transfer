@@ -163,7 +163,7 @@ func getBasicColumnsForTest(compositeKey bool) result {
 	cols.AddColumn(emailCol)
 	cols.AddColumn(columns.NewColumn("first_name", typing.String))
 	cols.AddColumn(columns.NewColumn("last_name", typing.String))
-	cols.AddColumn(columns.NewColumn("created_at", typing.ETime))
+	cols.AddColumn(columns.NewColumn("created_at", typing.TimestampNTZ))
 	cols.AddColumn(textToastCol)
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 	cols.AddColumn(columns.NewColumn(constants.OnlySetDeleteColumnMarker, typing.Boolean))

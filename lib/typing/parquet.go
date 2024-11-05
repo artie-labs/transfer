@@ -93,7 +93,7 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 				Type:   ToPtr("FLOAT"),
 			}.String(),
 		}, nil
-	case Integer.Kind, ETime.Kind:
+	case Integer.Kind, TimestampNTZ.Kind, TimestampTZ.Kind:
 		// Parquet doesn't have native time types, so we are using int64 and casting the value as UNIX ts.
 		return &Field{
 			Tag: FieldTag{
