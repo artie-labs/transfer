@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/artie-labs/transfer/clients/snowflake/dialect"
-
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"

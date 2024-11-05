@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/clients/databricks/dialect"
-
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/artie-labs/transfer/clients/databricks/dialect"
+	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
 func TestNewFile(t *testing.T) {

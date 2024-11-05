@@ -3,11 +3,10 @@ package ddl_test
 import (
 	"time"
 
-	"github.com/artie-labs/transfer/clients/snowflake/dialect"
-
 	"github.com/stretchr/testify/assert"
 
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
+	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"

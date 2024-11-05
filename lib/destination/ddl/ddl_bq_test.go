@@ -6,10 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/artie-labs/transfer/clients/bigquery/dialect"
-
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
