@@ -225,7 +225,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			}
 
 			if err = timestamppb.New(_time).CheckValid(); err != nil {
-				return nil, err
+				return nil, fmt.Errorf("column: %q, value: %q is not a valid timestamp: %w", column.Name(), _time.String(), err)
 			}
 
 			message.Set(field, protoreflect.ValueOfInt64(_time.UnixMicro()))

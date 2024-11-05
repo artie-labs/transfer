@@ -79,6 +79,10 @@ func (z ZonedTimestamp) Convert(value any) (any, error) {
 		if len(parts[0]) > 4 {
 			return nil, nil
 		}
+
+		if parts[0] == "0000" {
+			return nil, nil
+		}
 	}
 
 	_time, err := time.Parse(time.RFC3339Nano, valString)
