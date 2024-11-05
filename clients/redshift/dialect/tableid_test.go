@@ -1,4 +1,4 @@
-package redshift
+package dialect
 
 import (
 	"testing"

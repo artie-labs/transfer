@@ -39,7 +39,12 @@ func (RedshiftDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, column
 	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 
-func (RedshiftDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []any) {
+func (RedshiftDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []any, error) {
+	redshiftTableID, err := typing.AssertType[TableIdentifier](tableID)
+	if err != nil {
+		return "", nil, err
+	}
+
 	// This query is a modified fork from: https://gist.github.com/alexanderlz/7302623
 	return fmt.Sprintf(`
 SELECT 
@@ -62,7 +67,7 @@ LEFT JOIN
     PG_CATALOG.PG_DESCRIPTION d ON d.objsubid = c.ordinal_position AND d.objoid = c1.oid 
 WHERE 
     LOWER(c.table_schema) = LOWER($1) AND LOWER(c.table_name) = LOWER($2);
-`, constants.StrPrecisionCol), []any{tableID.sc, tableName}
+`, constants.StrPrecisionCol), []any{redshiftTableID.Schema(), redshiftTableID.Table()}, nil
 }
 
 func (rd RedshiftDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {

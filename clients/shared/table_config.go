@@ -35,7 +35,11 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 		return tableConfig, nil
 	}
 
-	query, args := g.Dwh.Dialect().BuildDescribeTableQuery(g.TableID)
+	query, args, err := g.Dwh.Dialect().BuildDescribeTableQuery(g.TableID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate describe table query: %w", err)
+	}
+
 	rows, err := g.Dwh.Query(query, args...)
 	defer func() {
 		if rows != nil {

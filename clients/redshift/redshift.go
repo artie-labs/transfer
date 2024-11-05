@@ -40,7 +40,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
-	return NewTableIdentifier(topicConfig.Schema, table)
+	return dialect.NewTableIdentifier(topicConfig.Schema, table)
 }
 
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {

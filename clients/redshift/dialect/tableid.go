@@ -1,13 +1,12 @@
-package redshift
+package dialect
 
 import (
 	"fmt"
 
-	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/lib/sql"
 )
 
-var _dialect = dialect.RedshiftDialect{}
+var _dialect = RedshiftDialect{}
 
 type TableIdentifier struct {
 	schema string

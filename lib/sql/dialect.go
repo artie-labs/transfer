@@ -33,7 +33,7 @@ type Dialect interface {
 	BuildCreateTableQuery(tableID TableIdentifier, temporary bool, colSQLParts []string) string
 	BuildDedupeQueries(tableID, stagingTableID TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string
 	BuildDedupeTableQuery(tableID TableIdentifier, primaryKeys []string) string
-	BuildDescribeTableQuery(tableID TableIdentifier) (string, []any)
+	BuildDescribeTableQuery(tableID TableIdentifier) (string, []any, error)
 	BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string
 	BuildMergeQueries(
 		tableID TableIdentifier,
