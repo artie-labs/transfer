@@ -75,10 +75,6 @@ var (
 	TimestampTZ = KindDetails{
 		Kind: "timestamp_tz",
 	}
-
-	ETime = KindDetails{
-		Kind: "extended_time",
-	}
 )
 
 func NewDecimalDetailsFromTemplate(details KindDetails, decimalDetails decimal.Details) KindDetails {
