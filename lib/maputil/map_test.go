@@ -114,3 +114,34 @@ func TestGetInt32FromMap(t *testing.T) {
 		}
 	}
 }
+
+func TestGetStringFromMap(t *testing.T) {
+	{
+		// Not valid (key doesn't exist)
+		{
+			// Key does not exist
+			object := map[string]any{"abc": 123}
+			_, err := GetStringFromMap(object, "foo")
+			assert.ErrorContains(t, err, `key: "foo" does not exist in object`)
+		}
+		{
+			// nil map
+			_, err := GetStringFromMap(nil, "foo")
+			assert.ErrorContains(t, err, `key: "foo" does not exist in object`)
+		}
+		{
+			// Not type string
+			object := map[string]any{"abc": 123}
+			_, err := GetStringFromMap(object, "abc")
+			assert.ErrorContains(t, err, "expected type string, got int")
+		}
+	}
+	{
+		// Valid
+		object := map[string]any{"abc": "123"}
+		value, err := GetStringFromMap(object, "abc")
+		assert.NoError(t, err)
+		assert.Equal(t, "123", value)
+	}
+
+}

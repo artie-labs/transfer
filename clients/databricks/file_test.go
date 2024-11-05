@@ -18,22 +18,22 @@ func TestNewFile(t *testing.T) {
 		{
 			// Missing name
 			_, err := NewFile(map[string]any{"path": "path"})
-			assert.ErrorContains(t, err, "name is missing")
+			assert.ErrorContains(t, err, `key: "name" does not exist in object`)
 		}
 		{
 			// Name isn't string
 			_, err := NewFile(map[string]any{"name": 1, "path": "path"})
-			assert.ErrorContains(t, err, "name is not a string")
+			assert.ErrorContains(t, err, `expected type string, got int`)
 		}
 		{
 			// Missing path
 			_, err := NewFile(map[string]any{"name": "name"})
-			assert.ErrorContains(t, err, "path is missing")
+			assert.ErrorContains(t, err, `key: "path" does not exist in object`)
 		}
 		{
 			// Path isn't string
 			_, err := NewFile(map[string]any{"name": "name", "path": 1})
-			assert.ErrorContains(t, err, "path is not a string")
+			assert.ErrorContains(t, err, "expected type string, got int")
 		}
 	}
 	{
