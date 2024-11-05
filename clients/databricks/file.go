@@ -5,10 +5,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/maputil"
-
 	"github.com/artie-labs/transfer/clients/databricks/dialect"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
+	"github.com/artie-labs/transfer/lib/maputil"
 )
 
 type File struct {
