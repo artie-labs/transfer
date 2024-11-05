@@ -150,7 +150,7 @@ func TestDatabricksDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 	_cols := buildColumns(map[string]typing.KindDetails{
 		"id":                                typing.String,
 		"bar":                               typing.String,
-		"updated_at":                        typing.ETime,
+		"updated_at":                        typing.TimestampTZ,
 		constants.DeleteColumnMarker:        typing.Boolean,
 		constants.OnlySetDeleteColumnMarker: typing.Boolean,
 	})
