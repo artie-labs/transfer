@@ -91,18 +91,13 @@ func NewDecimalDetailsFromTemplate(details KindDetails, decimalDetails decimal.D
 // This is an optimization since JSON string checking is expensive.
 func IsJSON(str string) bool {
 	str = strings.TrimSpace(str)
-	if len(str) < 2 {
+	if len(str) == 0 {
 		return false
 	}
 
-	valStringChars := []rune(str)
-	firstChar := string(valStringChars[0])
-	lastChar := string(valStringChars[len(valStringChars)-1])
-
-	if (firstChar == "{" && lastChar == "}") || (firstChar == "[" && lastChar == "]") {
-		var js json.RawMessage
-		return json.Unmarshal([]byte(str), &js) == nil
+	firstChar := str[0]
+	if firstChar != '{' && firstChar != '[' {
+		return false
 	}
-
-	return false
+	return json.Valid([]byte(str))
 }
