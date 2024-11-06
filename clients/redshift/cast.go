@@ -23,8 +23,7 @@ const (
 func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateExceededValue bool, expandStringPrecision bool) Result {
 	switch colKind.Kind {
 	case typing.Struct.Kind:
-		// If the value is a JSON object, we are then subjected to [maxSuperLength]
-		// Else, we'll default to [maxRedshiftLength]
+		// If the value is a JSON object, we will use [maxSuperLength], else we will use [maxStringLength]
 		// Ref: https://docs.aws.amazon.com/redshift/latest/dg/limitations-super.html
 		if typing.IsJSON(colVal) {
 			if len(colVal) > maxSuperLength {
