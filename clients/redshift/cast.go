@@ -15,16 +15,29 @@ type Result struct {
 	NewLength int32
 }
 
-const maxRedshiftLength int32 = 65535
+const (
+	maxRedshiftLength int32 = 65535
+	maxSuperLength          = 16 * 1024 * 1024
+)
 
 func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateExceededValue bool, expandStringPrecision bool) Result {
-	if colKind.Kind == typing.Struct.Kind || colKind.Kind == typing.String.Kind {
-		maxLength := maxRedshiftLength
-		// If the customer has specified the maximum string precision, let's use that as the max length.
-		if colKind.OptionalStringPrecision != nil {
-			maxLength = *colKind.OptionalStringPrecision
+	switch colKind.Kind {
+	case typing.Struct.Kind:
+		// If the value is a JSON object, we are then subjected to [maxSuperLength]
+		// Else, we'll default to [maxRedshiftLength]
+		// Ref: https://docs.aws.amazon.com/redshift/latest/dg/limitations-super.html
+		if typing.IsJSON(colVal) {
+			if len(colVal) > maxSuperLength {
+				return Result{Value: fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker)}
+			}
+
+			return Result{Value: colVal}
 		}
 
+		// Try again, but use [typing.String] instead.
+		return replaceExceededValues(colVal, typing.String, truncateExceededValue, expandStringPrecision)
+	case typing.String.Kind:
+		maxLength := typing.DefaultValueFromPtr[int32](colKind.OptionalStringPrecision, maxRedshiftLength)
 		colValLength := int32(len(colVal))
 		// If [expandStringPrecision] is enabled and the value is greater than the maximum length, and lte Redshift's max length.
 		if expandStringPrecision && colValLength > maxLength && colValLength <= maxRedshiftLength {
@@ -32,10 +45,6 @@ func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateEx
 		}
 
 		if shouldReplace := colValLength > maxLength; shouldReplace {
-			if colKind.Kind == typing.Struct.Kind {
-				return Result{Value: fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker)}
-			}
-
 			if truncateExceededValue {
 				return Result{Value: colVal[:maxLength]}
 			} else {
@@ -63,6 +72,8 @@ func castColValStaging(colVal any, colKind typing.KindDetails, truncateExceededV
 		return Result{}, err
 	}
 
+	return Result{Value: colValString}, nil
+
 	// Checks for DDL overflow needs to be done at the end in case there are any conversions that need to be done.
-	return replaceExceededValues(colValString, colKind, truncateExceededValue, expandStringPrecision), nil
+	//return replaceExceededValues(colValString, colKind, truncateExceededValue, expandStringPrecision), nil
 }
