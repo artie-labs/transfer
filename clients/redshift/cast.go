@@ -16,8 +16,8 @@ type Result struct {
 }
 
 const (
-	maxRedshiftLength int32 = 65535
-	maxSuperLength          = 16 * 1024 * 1024
+	maxStringLength int32 = 65535
+	maxSuperLength        = 16 * 1024 * 1024
 )
 
 func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateExceededValue bool, expandStringPrecision bool) Result {
@@ -37,10 +37,10 @@ func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateEx
 		// Try again, but use [typing.String] instead.
 		return replaceExceededValues(colVal, typing.String, truncateExceededValue, expandStringPrecision)
 	case typing.String.Kind:
-		maxLength := typing.DefaultValueFromPtr[int32](colKind.OptionalStringPrecision, maxRedshiftLength)
+		maxLength := typing.DefaultValueFromPtr[int32](colKind.OptionalStringPrecision, maxStringLength)
 		colValLength := int32(len(colVal))
 		// If [expandStringPrecision] is enabled and the value is greater than the maximum length, and lte Redshift's max length.
-		if expandStringPrecision && colValLength > maxLength && colValLength <= maxRedshiftLength {
+		if expandStringPrecision && colValLength > maxLength && colValLength <= maxStringLength {
 			return Result{Value: colVal, NewLength: colValLength}
 		}
 
@@ -72,8 +72,6 @@ func castColValStaging(colVal any, colKind typing.KindDetails, truncateExceededV
 		return Result{}, err
 	}
 
-	return Result{Value: colValString}, nil
-
 	// Checks for DDL overflow needs to be done at the end in case there are any conversions that need to be done.
-	//return replaceExceededValues(colValString, colKind, truncateExceededValue, expandStringPrecision), nil
+	return replaceExceededValues(colValString, colKind, truncateExceededValue, expandStringPrecision), nil
 }
