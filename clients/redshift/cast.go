@@ -15,27 +15,35 @@ type Result struct {
 	NewLength int32
 }
 
-const maxRedshiftLength int32 = 65535
+const (
+	maxStringLength int32 = 65535
+	maxSuperLength        = 16 * 1024 * 1024
+)
 
 func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateExceededValue bool, expandStringPrecision bool) Result {
-	if colKind.Kind == typing.Struct.Kind || colKind.Kind == typing.String.Kind {
-		maxLength := maxRedshiftLength
-		// If the customer has specified the maximum string precision, let's use that as the max length.
-		if colKind.OptionalStringPrecision != nil {
-			maxLength = *colKind.OptionalStringPrecision
+	switch colKind.Kind {
+	case typing.Struct.Kind:
+		// If the value is a JSON object, we will use [maxSuperLength], else we will use [maxStringLength]
+		// Ref: https://docs.aws.amazon.com/redshift/latest/dg/limitations-super.html
+		if typing.IsJSON(colVal) {
+			if len(colVal) > maxSuperLength {
+				return Result{Value: fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker)}
+			}
+
+			return Result{Value: colVal}
 		}
 
+		// Try again, but use [typing.String] instead.
+		return replaceExceededValues(colVal, typing.String, truncateExceededValue, expandStringPrecision)
+	case typing.String.Kind:
+		maxLength := typing.DefaultValueFromPtr[int32](colKind.OptionalStringPrecision, maxStringLength)
 		colValLength := int32(len(colVal))
 		// If [expandStringPrecision] is enabled and the value is greater than the maximum length, and lte Redshift's max length.
-		if expandStringPrecision && colValLength > maxLength && colValLength <= maxRedshiftLength {
+		if expandStringPrecision && colValLength > maxLength && colValLength <= maxStringLength {
 			return Result{Value: colVal, NewLength: colValLength}
 		}
 
 		if shouldReplace := colValLength > maxLength; shouldReplace {
-			if colKind.Kind == typing.Struct.Kind {
-				return Result{Value: fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker)}
-			}
-
 			if truncateExceededValue {
 				return Result{Value: colVal[:maxLength]}
 			} else {

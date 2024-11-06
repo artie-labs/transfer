@@ -34,13 +34,13 @@ func replaceExceededValuesOld(colVal any, colKind columns.Column) any {
 	colValString := fmt.Sprint(colVal)
 	switch colKind.KindDetails.Kind {
 	case typing.Struct.Kind:
-		if int32(len(colValString)) > maxRedshiftLength {
+		if int32(len(colValString)) > maxStringLength {
 			return map[string]any{
 				"key": constants.ExceededValueMarker,
 			}
 		}
 	case typing.String.Kind:
-		if int32(len(colValString)) > maxRedshiftLength {
+		if int32(len(colValString)) > maxStringLength {
 			return constants.ExceededValueMarker
 		}
 	}
@@ -53,13 +53,13 @@ func replaceExceededValuesNew(colVal any, colKind columns.Column) any {
 	colValBytes := int32(len(colValString))
 	switch colKind.KindDetails.Kind {
 	case typing.Struct.Kind:
-		if colValBytes > maxRedshiftLength {
+		if colValBytes > maxStringLength {
 			return map[string]any{
 				"key": constants.ExceededValueMarker,
 			}
 		}
 	case typing.String.Kind:
-		if colValBytes > maxRedshiftLength {
+		if colValBytes > maxStringLength {
 			return constants.ExceededValueMarker
 		}
 	}
