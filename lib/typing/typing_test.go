@@ -17,6 +17,8 @@ func Test_IsJSON(t *testing.T) {
 			"",
 			"foo",
 			"  ",
+			"{",
+			"[",
 			"12345",
 		}
 
