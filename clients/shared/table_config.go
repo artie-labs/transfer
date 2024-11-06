@@ -97,34 +97,9 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 			row[columnNameList[idx]] = value
 		}
 
-		kindDetails, err := g.Dwh.Dialect().KindForDataType(row[g.ColumnNameForDataType], row[constants.StrPrecisionCol])
+		col, err := g.buildColumnFromRow(row)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get kind details: %w", err)
-		}
-
-		if kindDetails.Kind == typing.Invalid.Kind {
-			return nil, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", row[g.ColumnNameForDataType])
-		}
-
-		col := columns.NewColumn(row[g.ColumnNameForName], kindDetails)
-		strategy := g.Dwh.Dialect().GetDefaultValueStrategy()
-		switch strategy {
-		case sql.Backfill:
-			// We need to check to make sure the comment is not an empty string
-			if comment, isOk := row[g.ColumnNameForComment]; isOk && comment != "" {
-				var _colComment constants.ColComment
-				if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
-					return nil, fmt.Errorf("failed to unmarshal comment %q: %w", comment, err)
-				}
-
-				col.SetBackfilled(_colComment.Backfilled)
-			}
-		case sql.Native:
-			if value, isOk := row["default_value"]; isOk && value != "" {
-				col.SetBackfilled(true)
-			}
-		default:
-			return nil, fmt.Errorf("unknown default value strategy: %q", strategy)
+			return nil, fmt.Errorf("failed to build column from row: %w", err)
 		}
 
 		cols = append(cols, col)
@@ -133,4 +108,38 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 	tableCfg := types.NewDwhTableConfig(cols, g.DropDeletedColumns)
 	g.ConfigMap.AddTableToConfig(g.TableID, tableCfg)
 	return tableCfg, nil
+}
+
+func (g GetTableCfgArgs) buildColumnFromRow(row map[string]string) (columns.Column, error) {
+	kindDetails, err := g.Dwh.Dialect().KindForDataType(row[g.ColumnNameForDataType], row[constants.StrPrecisionCol])
+	if err != nil {
+		return columns.Column{}, fmt.Errorf("failed to get kind details: %w", err)
+	}
+
+	if kindDetails.Kind == typing.Invalid.Kind {
+		return columns.Column{}, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", row[g.ColumnNameForDataType])
+	}
+
+	col := columns.NewColumn(row[g.ColumnNameForName], kindDetails)
+	strategy := g.Dwh.Dialect().GetDefaultValueStrategy()
+	switch strategy {
+	case sql.Backfill:
+		// We need to check to make sure the comment is not an empty string
+		if comment, isOk := row[g.ColumnNameForComment]; isOk && comment != "" {
+			var _colComment constants.ColComment
+			if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
+				return columns.Column{}, fmt.Errorf("failed to unmarshal comment %q: %w", comment, err)
+			}
+
+			col.SetBackfilled(_colComment.Backfilled)
+		}
+	case sql.Native:
+		if value, isOk := row["default_value"]; isOk && value != "" {
+			col.SetBackfilled(true)
+		}
+	default:
+		return columns.Column{}, fmt.Errorf("unknown default value strategy: %q", strategy)
+	}
+
+	return col, nil
 }
