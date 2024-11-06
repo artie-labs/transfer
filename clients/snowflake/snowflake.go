@@ -24,16 +24,14 @@ type Store struct {
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
-	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
+	return dialect.NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	return shared.GetTableCfgArgs{
 		Dwh:                   s,
-		TableID:               tableID,
+		TableID:               s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
 		ConfigMap:             s.configMap,
-		Query:                 fmt.Sprintf("DESC TABLE %s;", tableID.FullyQualifiedName()),
 		ColumnNameForName:     "name",
 		ColumnNameForDataType: "type",
 		ColumnNameForComment:  "comment",

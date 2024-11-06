@@ -95,7 +95,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		}
 	}
 
-	bqTempTableID, err := typing.AssertType[TableIdentifier](tempTableID)
+	bqTempTableID, err := typing.AssertType[dialect.TableIdentifier](tempTableID)
 	if err != nil {
 		return err
 	}
@@ -104,17 +104,14 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
-	return NewTableIdentifier(s.config.BigQuery.ProjectID, topicConfig.Database, table)
+	return dialect.NewTableIdentifier(s.config.BigQuery.ProjectID, topicConfig.Database, table)
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	query := fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name = ?;", tableData.TopicConfig().Database)
 	return shared.GetTableCfgArgs{
 		Dwh:                   s,
 		TableID:               s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
 		ConfigMap:             s.configMap,
-		Query:                 query,
-		Args:                  []any{tableData.Name()},
 		ColumnNameForName:     "column_name",
 		ColumnNameForDataType: "data_type",
 		ColumnNameForComment:  "description",
@@ -143,7 +140,7 @@ func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 	return client
 }
 
-func (s *Store) putTable(ctx context.Context, bqTableID TableIdentifier, tableData *optimization.TableData) error {
+func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier, tableData *optimization.TableData) error {
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 
 	messageDescriptor, err := columnsToMessageDescriptor(columns)

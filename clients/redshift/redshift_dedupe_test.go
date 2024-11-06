@@ -11,7 +11,7 @@ import (
 func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 	{
 		// Dedupe with one primary key + no `__artie_updated_at` flag.
-		tableID := NewTableIdentifier("public", "customers")
+		tableID := dialect.NewTableIdentifier("public", "customers")
 		stagingTableID := shared.TempTableID(tableID)
 
 		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, false)
@@ -26,7 +26,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 	}
 	{
 		// Dedupe with one primary key + `__artie_updated_at` flag.
-		tableID := NewTableIdentifier("public", "customers")
+		tableID := dialect.NewTableIdentifier("public", "customers")
 		stagingTableID := shared.TempTableID(tableID)
 
 		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, true)
@@ -41,7 +41,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 	}
 	{
 		// Dedupe with composite keys + no `__artie_updated_at` flag.
-		tableID := NewTableIdentifier("public", "user_settings")
+		tableID := dialect.NewTableIdentifier("public", "user_settings")
 		stagingTableID := shared.TempTableID(tableID)
 
 		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, false)
@@ -56,7 +56,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 	}
 	{
 		// Dedupe with composite keys + `__artie_updated_at` flag.
-		tableID := NewTableIdentifier("public", "user_settings")
+		tableID := dialect.NewTableIdentifier("public", "user_settings")
 		stagingTableID := shared.TempTableID(tableID)
 
 		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, true)

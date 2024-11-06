@@ -32,10 +32,6 @@ type Store struct {
 	configMap *types.DwhToTablesConfigMap
 }
 
-func describeTableQuery(tableID TableIdentifier) (string, []any) {
-	return fmt.Sprintf("DESCRIBE TABLE %s", tableID.FullyQualifiedName()), nil
-}
-
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
 	return shared.Merge(ctx, s, tableData, types.MergeOpts{})
 }
@@ -45,7 +41,7 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 }
 
 func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
-	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
+	return dialect.NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
 
 func (s Store) Dialect() sql.Dialect {
@@ -74,14 +70,10 @@ func (s Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, include
 }
 
 func (s Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	tableID := NewTableIdentifier(tableData.TopicConfig().Database, tableData.TopicConfig().Schema, tableData.Name())
-	query, args := describeTableQuery(tableID)
 	return shared.GetTableCfgArgs{
 		Dwh:                   s,
-		TableID:               tableID,
+		TableID:               dialect.NewTableIdentifier(tableData.TopicConfig().Database, tableData.TopicConfig().Schema, tableData.Name()),
 		ConfigMap:             s.configMap,
-		Query:                 query,
-		Args:                  args,
 		ColumnNameForName:     "col_name",
 		ColumnNameForDataType: "data_type",
 		ColumnNameForComment:  "comment",
@@ -119,7 +111,7 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 	}()
 
 	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var"})
-	castedTempTableID, isOk := tempTableID.(TableIdentifier)
+	castedTempTableID, isOk := tempTableID.(dialect.TableIdentifier)
 	if !isOk {
 		return fmt.Errorf("failed to cast temp table ID to TableIdentifier")
 	}

@@ -40,7 +40,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
-	return NewTableIdentifier(topicConfig.Schema, table)
+	return dialect.NewTableIdentifier(topicConfig.Schema, table)
 }
 
 func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
@@ -60,13 +60,10 @@ func (s *Store) dialect() dialect.RedshiftDialect {
 }
 
 func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
-	query, args := describeTableQuery(tableData.TopicConfig().Schema, tableData.Name())
 	return shared.GetTableCfgArgs{
 		Dwh:                   s,
 		TableID:               s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
 		ConfigMap:             s.configMap,
-		Query:                 query,
-		Args:                  args,
 		ColumnNameForName:     "column_name",
 		ColumnNameForDataType: "data_type",
 		ColumnNameForComment:  "description",

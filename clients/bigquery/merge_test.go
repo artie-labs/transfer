@@ -15,7 +15,7 @@ import (
 )
 
 func (b *BigQueryTestSuite) TestBackfillColumn() {
-	tableID := NewTableIdentifier("db", "public", "tableName")
+	tableID := bigqueryDialect.NewTableIdentifier("db", "public", "tableName")
 	type _testCase struct {
 		name        string
 		col         columns.Column

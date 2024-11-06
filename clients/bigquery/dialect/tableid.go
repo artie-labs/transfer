@@ -1,13 +1,12 @@
-package bigquery
+package dialect
 
 import (
 	"fmt"
 
-	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/lib/sql"
 )
 
-var _dialect = dialect.BigQueryDialect{}
+var _dialect = BigQueryDialect{}
 
 type TableIdentifier struct {
 	projectID string

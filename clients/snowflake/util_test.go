@@ -3,30 +3,30 @@ package snowflake
 import (
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
-	"github.com/artie-labs/transfer/lib/typing"
-
 	"github.com/stretchr/testify/assert"
+
+	"github.com/artie-labs/transfer/clients/snowflake/dialect"
+	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 func TestAddPrefixToTableName(t *testing.T) {
 	const prefix = "%"
 	{
 		// Database, schema and table name
-		assert.Equal(t, `database.schema."%TABLENAME"`, addPrefixToTableName(NewTableIdentifier("database", "schema", "tableName"), prefix))
+		assert.Equal(t, `database.schema."%TABLENAME"`, addPrefixToTableName(dialect.NewTableIdentifier("database", "schema", "tableName"), prefix))
 	}
 	{
 		// Table name
-		assert.Equal(t, `.."%ORDERS"`, addPrefixToTableName(NewTableIdentifier("", "", "orders"), prefix))
+		assert.Equal(t, `.."%ORDERS"`, addPrefixToTableName(dialect.NewTableIdentifier("", "", "orders"), prefix))
 	}
 	{
 		// Schema and table name
-		assert.Equal(t, `.public."%ORDERS"`, addPrefixToTableName(NewTableIdentifier("", "public", "orders"), prefix))
+		assert.Equal(t, `.public."%ORDERS"`, addPrefixToTableName(dialect.NewTableIdentifier("", "public", "orders"), prefix))
 	}
 	{
 		// Database and table name
-		assert.Equal(t, `db.."%TABLENAME"`, addPrefixToTableName(NewTableIdentifier("db", "", "tableName"), prefix))
+		assert.Equal(t, `db.."%TABLENAME"`, addPrefixToTableName(dialect.NewTableIdentifier("db", "", "tableName"), prefix))
 	}
 }
 
