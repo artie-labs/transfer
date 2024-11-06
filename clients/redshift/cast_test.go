@@ -23,7 +23,7 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 			{
 				// Returns the full value since it's not a struct or string
 				// This is invalid and should not happen, but it's here to ensure we're only checking for structs and strings.
-				value := stringutil.Random(int(maxRedshiftLength + 1))
+				value := stringutil.Random(int(maxStringLength + 1))
 				result := replaceExceededValues(value, typing.Integer, false, false)
 				assert.Equal(r.T(), value, result.Value)
 				assert.Zero(r.T(), result.NewLength)
@@ -35,7 +35,7 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 				// String
 				{
 					// TruncateExceededValue = false
-					result := replaceExceededValues(stringutil.Random(int(maxRedshiftLength)+1), typing.String, false, false)
+					result := replaceExceededValues(stringutil.Random(int(maxStringLength)+1), typing.String, false, false)
 					assert.Equal(r.T(), constants.ExceededValueMarker, result.Value)
 					assert.Zero(r.T(), result.NewLength)
 				}
@@ -52,9 +52,9 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 				}
 				{
 					// TruncateExceededValue = true
-					superLongString := stringutil.Random(int(maxRedshiftLength) + 1)
+					superLongString := stringutil.Random(int(maxStringLength) + 1)
 					result := replaceExceededValues(superLongString, typing.String, true, false)
-					assert.Equal(r.T(), superLongString[:maxRedshiftLength], result.Value)
+					assert.Equal(r.T(), superLongString[:maxStringLength], result.Value)
 					assert.Zero(r.T(), result.NewLength)
 				}
 				{
@@ -70,10 +70,25 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 				}
 			}
 			{
-				// Struct and masked
-				result := replaceExceededValues(fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(int(maxRedshiftLength)+1)), typing.Struct, false, false)
-				assert.Equal(r.T(), fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker), result.Value)
-				assert.Zero(r.T(), result.NewLength)
+				// Super
+				{
+					// Masked (data type is a JSON object)
+					result := replaceExceededValues(fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(int(maxSuperLength)+1)), typing.Struct, false, false)
+					assert.Equal(r.T(), fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker), result.Value)
+					assert.Zero(r.T(), result.NewLength)
+				}
+				{
+					// Masked (data type is an array)
+					result := replaceExceededValues(fmt.Sprintf(`["%s"]`, stringutil.Random(int(maxSuperLength)+1)), typing.Struct, false, false)
+					assert.Equal(r.T(), fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker), result.Value)
+					assert.Zero(r.T(), result.NewLength)
+				}
+				{
+					// Masked (data type is a string)
+					result := replaceExceededValues(stringutil.Random(int(maxStringLength)+1), typing.String, false, false)
+					assert.Equal(r.T(), constants.ExceededValueMarker, result.Value)
+					assert.Zero(r.T(), result.NewLength)
+				}
 			}
 		}
 		{
@@ -81,14 +96,40 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 			{
 				// Not masked
 				{
-					result := replaceExceededValues(`{"foo": "bar"}`, typing.Struct, false, false)
-					assert.Equal(r.T(), `{"foo": "bar"}`, result.Value)
-					assert.Zero(r.T(), result.NewLength)
+					// String
+					{
+						result := replaceExceededValues(`{"foo": "bar"}`, typing.Struct, false, false)
+						assert.Equal(r.T(), `{"foo": "bar"}`, result.Value)
+						assert.Zero(r.T(), result.NewLength)
+					}
+					{
+						result := replaceExceededValues("hello world", typing.String, false, false)
+						assert.Equal(r.T(), "hello world", result.Value)
+						assert.Zero(r.T(), result.NewLength)
+					}
 				}
 				{
-					result := replaceExceededValues("hello world", typing.String, false, false)
-					assert.Equal(r.T(), "hello world", result.Value)
-					assert.Zero(r.T(), result.NewLength)
+					// SUPER
+					{
+						// Value is a struct
+						value := fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(int(maxSuperLength)-11))
+						result := replaceExceededValues(value, typing.Struct, false, false)
+						assert.Equal(r.T(), value, result.Value)
+						assert.Zero(r.T(), result.NewLength)
+					}
+					{
+						// Value is an array
+						value := fmt.Sprintf(`["%s"]`, stringutil.Random(int(maxSuperLength)-11))
+						result := replaceExceededValues(value, typing.Struct, false, false)
+						assert.Equal(r.T(), value, result.Value)
+						assert.Zero(r.T(), result.NewLength)
+					}
+					{
+						// Value is a string
+						result := replaceExceededValues("hello world", typing.Struct, false, false)
+						assert.Equal(r.T(), "hello world", result.Value)
+						assert.Zero(r.T(), result.NewLength)
+					}
 				}
 			}
 		}
@@ -106,7 +147,7 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 			{
 				// Returns the full value since it's not a struct or string
 				// This is invalid and should not happen, but it's here to ensure we're only checking for structs and strings.
-				value := stringutil.Random(int(maxRedshiftLength + 1))
+				value := stringutil.Random(int(maxStringLength + 1))
 				result := replaceExceededValues(value, typing.Integer, false, true)
 				assert.Equal(r.T(), value, result.Value)
 				assert.Zero(r.T(), result.NewLength)
@@ -130,10 +171,10 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 			{
 				stringKd := typing.KindDetails{
 					Kind:                    typing.String.Kind,
-					OptionalStringPrecision: typing.ToPtr(maxRedshiftLength),
+					OptionalStringPrecision: typing.ToPtr(maxStringLength),
 				}
 
-				superLongString := stringutil.Random(int(maxRedshiftLength) + 1)
+				superLongString := stringutil.Random(int(maxStringLength) + 1)
 				result := replaceExceededValues(superLongString, stringKd, false, true)
 				assert.Equal(r.T(), constants.ExceededValueMarker, result.Value)
 				assert.Zero(r.T(), result.NewLength)
