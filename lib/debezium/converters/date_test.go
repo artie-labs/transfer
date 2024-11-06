@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/ext"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,7 +21,7 @@ func TestDate_Convert(t *testing.T) {
 
 		date, isOk := val.(time.Time)
 		assert.True(t, isOk)
-		assert.Equal(t, "2023-02-13", date.Format(Date{}.layout()))
+		assert.Equal(t, "2023-02-13", date.Format(ext.PostgresDateFormat))
 	}
 	{
 		val, err := Date{}.Convert(int64(19429))
@@ -27,6 +29,6 @@ func TestDate_Convert(t *testing.T) {
 
 		date, isOk := val.(time.Time)
 		assert.True(t, isOk)
-		assert.Equal(t, "2023-03-13", date.Format(Date{}.layout()))
+		assert.Equal(t, "2023-03-13", date.Format(ext.PostgresDateFormat))
 	}
 }

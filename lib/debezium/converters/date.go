@@ -5,14 +5,9 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type Date struct{}
-
-func (Date) layout() string {
-	return ext.PostgresDateFormat
-}
 
 func (d Date) ToKindDetails() typing.KindDetails {
 	return typing.Date
