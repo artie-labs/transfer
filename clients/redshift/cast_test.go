@@ -89,7 +89,6 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 					assert.Equal(r.T(), constants.ExceededValueMarker, result.Value)
 					assert.Zero(r.T(), result.NewLength)
 				}
-
 			}
 		}
 		{
@@ -123,6 +122,12 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 						value := fmt.Sprintf(`["%s"]`, stringutil.Random(int(maxSuperLength)-11))
 						result := replaceExceededValues(value, typing.Struct, false, false)
 						assert.Equal(r.T(), value, result.Value)
+						assert.Zero(r.T(), result.NewLength)
+					}
+					{
+						// Value is a string
+						result := replaceExceededValues("hello world", typing.Struct, false, false)
+						assert.Equal(r.T(), "hello world", result.Value)
 						assert.Zero(r.T(), result.NewLength)
 					}
 				}
