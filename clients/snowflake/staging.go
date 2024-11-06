@@ -21,18 +21,13 @@ import (
 func replaceExceededValues(colVal string, kindDetails typing.KindDetails) string {
 	// https://community.snowflake.com/s/article/Max-LOB-size-exceeded
 	const maxLobLength int32 = 16777216
-
 	switch kindDetails.Kind {
 	case typing.Struct.Kind:
 		if int32(len(colVal)) > maxLobLength {
 			return fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker)
 		}
 	case typing.String.Kind:
-		maxLength := maxLobLength
-		if kindDetails.OptionalStringPrecision != nil {
-			maxLength = *kindDetails.OptionalStringPrecision
-		}
-
+		maxLength := typing.DefaultValueFromPtr[int32](kindDetails.OptionalStringPrecision, maxLobLength)
 		if int32(len(colVal)) > maxLength {
 			return constants.ExceededValueMarker
 		}
