@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"math/rand"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -20,6 +22,19 @@ import (
 )
 
 func main() {
+	// This is used to prevent all the instances from starting at the same time and causing a thundering herd problem
+	if value := os.Getenv("MAX_INIT_SLEEP_SECONDS"); value != "" {
+		castedValue, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			logger.Fatal("Failed to parse sleep duration", slog.Any("err", err), slog.String("value", value))
+		}
+
+		randomSleepSeconds := rand.Int63n(castedValue)
+		duration := time.Duration(randomSleepSeconds) * time.Second
+		slog.Info("Sleeping for", slog.String("duration", duration.String()))
+		time.Sleep(duration)
+	}
+
 	// Parse args into settings
 	settings, err := config.LoadSettings(os.Args, true)
 	if err != nil {
