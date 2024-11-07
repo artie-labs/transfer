@@ -3,11 +3,9 @@ package converters
 import (
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
@@ -20,34 +18,7 @@ func NewStringConverter(kd typing.KindDetails) StringConverter {
 }
 
 func (s StringConverter) Convert(value any) (any, error) {
-	// TODO: This should use values.ToString().
-	switch castedValue := value.(type) {
-	case string:
-		return castedValue, nil
-	case *decimal.Decimal:
-		return castedValue.String(), nil
-	case bool, int64:
-		return fmt.Sprint(castedValue), nil
-	case float32:
-		return values.Float32ToString(castedValue), nil
-	case float64:
-		return values.Float64ToString(castedValue), nil
-	case time.Time:
-		switch s.kd {
-		case typing.Date:
-			return castedValue.Format(ext.PostgresDateFormat), nil
-		case typing.Time:
-			return castedValue.Format(ext.PostgresTimeFormat), nil
-		case typing.TimestampNTZ:
-			return castedValue.Format(ext.RFC3339NoTZ), nil
-		case typing.TimestampTZ:
-			return castedValue.Format(time.RFC3339Nano), nil
-		default:
-			return nil, fmt.Errorf("unexpected kind details: %q", s.kd.Kind)
-		}
-	default:
-		return nil, fmt.Errorf("unexpected data type: %T with value: %v", value, value)
-	}
+	return values.ToString(value, s.kd)
 }
 
 type Int64Converter struct{}
