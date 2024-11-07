@@ -22,6 +22,18 @@ import (
 )
 
 func main() {
+	// Parse args into settings
+	settings, err := config.LoadSettings(os.Args, true)
+	if err != nil {
+		logger.Fatal("Failed to initialize config", slog.Any("err", err))
+	}
+
+	// Initialize default logger
+	_logger, cleanUpHandlers := logger.NewLogger(settings.VerboseLogging, settings.Config.Reporting.Sentry)
+	slog.SetDefault(_logger)
+
+	defer cleanUpHandlers()
+
 	// This is used to prevent all the instances from starting at the same time and causing a thundering herd problem
 	if value := os.Getenv("MAX_INIT_SLEEP_SECONDS"); value != "" {
 		castedValue, err := strconv.ParseInt(value, 10, 64)
@@ -38,18 +50,6 @@ func main() {
 		slog.Info(fmt.Sprintf("Sleeping for %s before any data processing to prevent overwhelming Kafka", duration.String()))
 		time.Sleep(duration)
 	}
-
-	// Parse args into settings
-	settings, err := config.LoadSettings(os.Args, true)
-	if err != nil {
-		logger.Fatal("Failed to initialize config", slog.Any("err", err))
-	}
-
-	// Initialize default logger
-	_logger, cleanUpHandlers := logger.NewLogger(settings.VerboseLogging, settings.Config.Reporting.Sentry)
-	slog.SetDefault(_logger)
-
-	defer cleanUpHandlers()
 
 	slog.Info("Config is loaded",
 		slog.Int("flushIntervalSeconds", settings.Config.FlushIntervalSeconds),
