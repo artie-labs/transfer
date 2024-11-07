@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"math"
 	"testing"
 	"time"
 
@@ -35,6 +36,33 @@ func TestStringConverter_Convert(t *testing.T) {
 		val, err := NewStringConverter(typing.Integer).Convert(int64(123))
 		assert.NoError(t, err)
 		assert.Equal(t, "123", val)
+	}
+	{
+		// float64
+		{
+			// 123.45
+			val, err := NewStringConverter(typing.Float).Convert(float64(123.45))
+			assert.NoError(t, err)
+			assert.Equal(t, "123.45", val)
+		}
+		{
+			// 123.123456789
+			val, err := NewStringConverter(typing.Float).Convert(float64(123.123456789))
+			assert.NoError(t, err)
+			assert.Equal(t, "123.123456789", val)
+		}
+		{
+			// Max float64 value
+			val, err := NewStringConverter(typing.Float).Convert(math.MaxFloat64)
+			assert.NoError(t, err)
+			assert.Equal(t, "179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", val)
+		}
+		{
+			// Min float64 value
+			val, err := NewStringConverter(typing.Float).Convert(math.SmallestNonzeroFloat64)
+			assert.NoError(t, err)
+			assert.Equal(t, "0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005", val)
+		}
 	}
 	{
 		// Invalid
