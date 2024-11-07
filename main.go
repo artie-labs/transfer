@@ -35,7 +35,7 @@ func main() {
 		}
 
 		duration := time.Duration(randomSeconds) * time.Second
-		slog.Info("Sleeping for", slog.String("duration", duration.String()))
+		slog.Info(fmt.Sprintf("Sleeping for %s before any data processing to prevent overwhelming Kafka", duration.String()))
 		time.Sleep(duration)
 	}
 
