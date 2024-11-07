@@ -20,6 +20,7 @@ func NewStringConverter(kd typing.KindDetails) StringConverter {
 }
 
 func (s StringConverter) Convert(value any) (any, error) {
+	// TODO: This should use values.ToString().
 	switch castedValue := value.(type) {
 	case string:
 		return castedValue, nil
