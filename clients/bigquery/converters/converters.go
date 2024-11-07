@@ -8,6 +8,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
+	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
 type StringConverter struct {
@@ -19,6 +20,7 @@ func NewStringConverter(kd typing.KindDetails) StringConverter {
 }
 
 func (s StringConverter) Convert(value any) (any, error) {
+	// TODO: This should use values.ToString().
 	switch castedValue := value.(type) {
 	case string:
 		return castedValue, nil
@@ -26,8 +28,10 @@ func (s StringConverter) Convert(value any) (any, error) {
 		return castedValue.String(), nil
 	case bool, int64:
 		return fmt.Sprint(castedValue), nil
+	case float32:
+		return values.Float32ToString(castedValue), nil
 	case float64:
-		return strconv.FormatFloat(castedValue, 'f', -1, 64), nil
+		return values.Float64ToString(castedValue), nil
 	case time.Time:
 		switch s.kd {
 		case typing.Date:

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -13,6 +14,14 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
+
+func Float64ToString(value float64) string {
+	return strconv.FormatFloat(value, 'f', -1, 64)
+}
+
+func Float32ToString(value float32) string {
+	return strconv.FormatFloat(float64(value), 'f', -1, 32)
+}
 
 func BooleanToBit(val bool) int {
 	if val {
@@ -96,9 +105,10 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 		return string(colValBytes), nil
 	case typing.Integer.Kind:
 		switch parsedVal := colVal.(type) {
-		case float64, float32:
-			// This will remove trailing zeros and print the float value as an integer, no scientific numbers.
-			return fmt.Sprintf("%.0f", colVal), nil
+		case float32:
+			return Float32ToString(parsedVal), nil
+		case float64:
+			return Float64ToString(parsedVal), nil
 		case bool:
 			return fmt.Sprint(BooleanToBit(parsedVal)), nil
 		}
