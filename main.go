@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"math/rand"
 	"os"
 	"strconv"
 	"sync"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/utils"
 	"github.com/artie-labs/transfer/lib/logger"
@@ -29,8 +29,12 @@ func main() {
 			logger.Fatal("Failed to parse sleep duration", slog.Any("err", err), slog.String("value", value))
 		}
 
-		randomSleepSeconds := rand.Int63n(castedValue)
-		duration := time.Duration(randomSleepSeconds) * time.Second
+		randomSeconds, err := cryptography.RandomInt64n(castedValue)
+		if err != nil {
+			logger.Fatal("Failed to generate random number", slog.Any("err", err))
+		}
+
+		duration := time.Duration(randomSeconds) * time.Second
 		slog.Info("Sleeping for", slog.String("duration", duration.String()))
 		time.Sleep(duration)
 	}
