@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/utils"
 	"github.com/artie-labs/transfer/lib/logger"
@@ -31,6 +33,23 @@ func main() {
 	slog.SetDefault(_logger)
 
 	defer cleanUpHandlers()
+
+	// This is used to prevent all the instances from starting at the same time and causing a thundering herd problem
+	if value := os.Getenv("MAX_INIT_SLEEP_SECONDS"); value != "" {
+		castedValue, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			logger.Fatal("Failed to parse sleep duration", slog.Any("err", err), slog.String("value", value))
+		}
+
+		randomSeconds, err := cryptography.RandomInt64n(castedValue)
+		if err != nil {
+			logger.Fatal("Failed to generate random number", slog.Any("err", err))
+		}
+
+		duration := time.Duration(randomSeconds) * time.Second
+		slog.Info(fmt.Sprintf("Sleeping for %s before any data processing to prevent overwhelming Kafka", duration.String()))
+		time.Sleep(duration)
+	}
 
 	slog.Info("Config is loaded",
 		slog.Int("flushIntervalSeconds", settings.Config.FlushIntervalSeconds),

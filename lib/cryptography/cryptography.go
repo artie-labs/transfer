@@ -1,12 +1,14 @@
 package cryptography
 
 import (
+	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
+	"math/big"
 	"os"
 
 	"github.com/artie-labs/transfer/lib/typing"
@@ -49,4 +51,13 @@ func ParseRSAPrivateKey(keyBytes []byte) (*rsa.PrivateKey, error) {
 	}
 
 	return rsaKey, nil
+}
+
+func RandomInt64n(n int64) (int64, error) {
+	randN, err := rand.Int(rand.Reader, big.NewInt(n))
+	if err != nil {
+		return 0, fmt.Errorf("failed to generate random number: %w", err)
+	}
+
+	return randN.Int64(), nil
 }
