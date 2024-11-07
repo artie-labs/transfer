@@ -26,6 +26,8 @@ func (s StringConverter) Convert(value any) (any, error) {
 		return castedValue.String(), nil
 	case bool, int64:
 		return fmt.Sprint(castedValue), nil
+	case float64:
+		return strconv.FormatFloat(castedValue, 'f', -1, 64), nil
 	case time.Time:
 		switch s.kd {
 		case typing.Date:
