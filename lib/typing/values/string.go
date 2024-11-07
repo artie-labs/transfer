@@ -103,6 +103,13 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 		}
 
 		return string(colValBytes), nil
+	case typing.Float.Kind:
+		switch parsedVal := colVal.(type) {
+		case float32:
+			return Float32ToString(parsedVal), nil
+		case float64:
+			return Float64ToString(parsedVal), nil
+		}
 	case typing.Integer.Kind:
 		switch parsedVal := colVal.(type) {
 		case float32:

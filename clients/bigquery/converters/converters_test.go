@@ -32,10 +32,19 @@ func TestStringConverter_Convert(t *testing.T) {
 		assert.Equal(t, "true", val)
 	}
 	{
-		// int64
-		val, err := NewStringConverter(typing.Integer).Convert(int64(123))
-		assert.NoError(t, err)
-		assert.Equal(t, "123", val)
+		// Integer column
+		{
+			// int64 value
+			val, err := NewStringConverter(typing.Integer).Convert(int64(123))
+			assert.NoError(t, err)
+			assert.Equal(t, "123", val)
+		}
+		{
+			// int value
+			val, err := NewStringConverter(typing.Integer).Convert(123)
+			assert.NoError(t, err)
+			assert.Equal(t, "123", val)
+		}
 	}
 	{
 		// float64
@@ -65,11 +74,6 @@ func TestStringConverter_Convert(t *testing.T) {
 		}
 	}
 	{
-		// Invalid
-		_, err := NewStringConverter(typing.Integer).Convert(123)
-		assert.ErrorContains(t, err, "unexpected data type: int with value: 123")
-	}
-	{
 		// time.Time
 		{
 			// Date
@@ -81,7 +85,7 @@ func TestStringConverter_Convert(t *testing.T) {
 			// Time
 			val, err := NewStringConverter(typing.Time).Convert(time.Date(2021, 1, 1, 9, 10, 11, 123_456_789, time.UTC))
 			assert.NoError(t, err)
-			assert.Equal(t, "09:10:11.123456Z", val)
+			assert.Equal(t, "09:10:11.123456", val)
 		}
 		{
 			// Timestamp NTZ
@@ -97,8 +101,10 @@ func TestStringConverter_Convert(t *testing.T) {
 		}
 		{
 			// Invalid
-			_, err := NewStringConverter(typing.String).Convert(time.Date(2021, 1, 1, 9, 10, 12, 400_123_991, time.UTC))
-			assert.ErrorContains(t, err, `unexpected kind details: "string"`)
+			ts := time.Date(2021, 1, 1, 9, 10, 12, 400_123_991, time.UTC)
+			val, err := NewStringConverter(typing.String).Convert(ts)
+			assert.NoError(t, err)
+			assert.Equal(t, ts.String(), val)
 		}
 	}
 }
