@@ -12,7 +12,7 @@ import (
 
 func TestShouldCreatePrimaryKey(t *testing.T) {
 	pk := columns.NewColumn("foo", typing.String)
-	pk.SetPrimaryKey(true)
+	pk.SetPrimaryKeyForTest(true)
 	{
 		// Primary key check
 		{

@@ -72,8 +72,7 @@ func (c *Column) ToLowerName() {
 	c.name = strings.ToLower(c.name)
 }
 
-// SetPrimaryKey is used for tests only.
-func (c *Column) SetPrimaryKey(primaryKey bool) {
+func (c *Column) SetPrimaryKeyForTest(primaryKey bool) {
 	c.primaryKey = primaryKey
 }
 
