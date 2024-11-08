@@ -3,13 +3,46 @@ package ddl_test
 import (
 	"fmt"
 
+	"github.com/stretchr/testify/assert"
+
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/mocks"
-	"github.com/stretchr/testify/assert"
+	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
+
+func (d *DDLTestSuite) TestShouldCreatePrimaryKey() {
+	pk := columns.NewColumn("foo", typing.String)
+	pk.SetPrimaryKey(true)
+	{
+		// Primary key check
+		{
+			// Column is not a primary key
+			col := columns.NewColumn("foo", typing.String)
+			assert.False(d.T(), ddl.ShouldCreatePrimaryKey(col, config.Replication, true))
+		}
+		{
+			// Column is a primary key
+			assert.True(d.T(), ddl.ShouldCreatePrimaryKey(pk, config.Replication, true))
+		}
+	}
+	{
+		// False because it's history mode
+		assert.False(d.T(), ddl.ShouldCreatePrimaryKey(pk, config.History, true))
+	}
+	{
+		// False because it's not a create table operation
+		assert.False(d.T(), ddl.ShouldCreatePrimaryKey(pk, config.Replication, false))
+	}
+	{
+		// True because it's a primary key, replication mode, and create table operation
+		assert.True(d.T(), ddl.ShouldCreatePrimaryKey(pk, config.Replication, true))
+	}
+}
 
 func (d *DDLTestSuite) Test_DropTemporaryTableCaseSensitive() {
 	tablesToDrop := []string{

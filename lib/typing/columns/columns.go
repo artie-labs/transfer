@@ -64,13 +64,17 @@ func (c *Column) SetBackfilled(backfilled bool) {
 func (c *Column) Backfilled() bool {
 	return c.backfilled
 }
-
 func (c *Column) SetDefaultValue(value any) {
 	c.defaultValue = value
 }
 
 func (c *Column) ToLowerName() {
 	c.name = strings.ToLower(c.name)
+}
+
+// SetPrimaryKey is used for tests only.
+func (c *Column) SetPrimaryKey(primaryKey bool) {
+	c.primaryKey = primaryKey
 }
 
 func (c *Column) ShouldBackfill() bool {

@@ -76,17 +76,18 @@ func (a AlterTableArgs) Validate() error {
 	return nil
 }
 
-func (a AlterTableArgs) shouldCreatePrimaryKey(col columns.Column) bool {
+func ShouldCreatePrimaryKey(col columns.Column, mode config.Mode, createTable bool) bool {
 	if !col.PrimaryKey() {
 		return false
 	}
 
-	if a.Mode == config.History {
+	if mode == config.History {
+		// Don't create primary keys for history tables since it's append only
 		return false
 	}
 
 	// If the table already exists, we should not try to create a primary key.
-	return a.CreateTable
+	return createTable
 }
 
 func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []columns.Column) {
@@ -110,7 +111,7 @@ func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []col
 		switch a.ColumnOp {
 		case constants.Add:
 			colName := a.Dialect.QuoteIdentifier(col.Name())
-			if a.shouldCreatePrimaryKey(col) {
+			if ShouldCreatePrimaryKey(col, a.Mode, a.CreateTable) {
 				pkCols = append(pkCols, colName)
 			}
 
@@ -151,7 +152,6 @@ func (a AlterTableArgs) AlterTable(dwh destination.DataWarehouse, cols ...column
 	}
 
 	alterStatements, mutateCol := a.buildStatements(cols...)
-
 	for _, sqlQuery := range alterStatements {
 		slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
 		if _, err := dwh.Exec(sqlQuery); err != nil {
