@@ -76,6 +76,19 @@ func (a AlterTableArgs) Validate() error {
 	return nil
 }
 
+func (a AlterTableArgs) shouldCreatePrimaryKey(col columns.Column) bool {
+	if !col.PrimaryKey() {
+		return false
+	}
+
+	if a.Mode == config.History {
+		return false
+	}
+
+	// If the table already exists, we should not try to create a primary key.
+	return a.CreateTable
+}
+
 func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []columns.Column) {
 	var mutateCol []columns.Column
 	// It's okay to combine since args.ColumnOp only takes one of: `Delete` or `Add`
@@ -97,13 +110,11 @@ func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []col
 		switch a.ColumnOp {
 		case constants.Add:
 			colName := a.Dialect.QuoteIdentifier(col.Name())
-
-			if col.PrimaryKey() && a.Mode != config.History {
-				// Don't create a PK for history mode because it's append-only, so the primary key should not be enforced.
+			if a.shouldCreatePrimaryKey(col) {
 				pkCols = append(pkCols, colName)
 			}
 
-			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, colName, a.Dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey())))
+			colSQLParts = append(colSQLParts, fmt.Sprintf("%s %s", colName, a.Dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey())))
 		case constants.Delete:
 			colSQLParts = append(colSQLParts, a.Dialect.QuoteIdentifier(col.Name()))
 		}
