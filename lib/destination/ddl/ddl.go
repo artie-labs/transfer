@@ -77,17 +77,7 @@ func (a AlterTableArgs) Validate() error {
 }
 
 func shouldCreatePrimaryKey(col columns.Column, mode config.Mode, createTable bool) bool {
-	if !col.PrimaryKey() {
-		return false
-	}
-
-	if mode == config.History {
-		// Don't create primary keys for history tables since it's append only
-		return false
-	}
-
-	// If the table already exists, we should not try to create a primary key.
-	return createTable
+	return col.PrimaryKey() && mode == config.Replication && createTable
 }
 
 func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []columns.Column) {

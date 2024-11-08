@@ -27,6 +27,7 @@ func TestShouldCreatePrimaryKey(t *testing.T) {
 	}
 	{
 		// False because it's history mode
+		// It should be false because we are appending rows to this table.
 		assert.False(t, shouldCreatePrimaryKey(pk, config.History, true))
 	}
 	{
