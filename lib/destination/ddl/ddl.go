@@ -76,7 +76,7 @@ func (a AlterTableArgs) Validate() error {
 	return nil
 }
 
-func ShouldCreatePrimaryKey(col columns.Column, mode config.Mode, createTable bool) bool {
+func shouldCreatePrimaryKey(col columns.Column, mode config.Mode, createTable bool) bool {
 	if !col.PrimaryKey() {
 		return false
 	}
@@ -111,7 +111,7 @@ func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []col
 		switch a.ColumnOp {
 		case constants.Add:
 			colName := a.Dialect.QuoteIdentifier(col.Name())
-			if ShouldCreatePrimaryKey(col, a.Mode, a.CreateTable) {
+			if shouldCreatePrimaryKey(col, a.Mode, a.CreateTable) {
 				pkCols = append(pkCols, colName)
 			}
 
