@@ -76,6 +76,10 @@ func (a AlterTableArgs) Validate() error {
 	return nil
 }
 
+func shouldCreatePrimaryKey(col columns.Column, mode config.Mode, createTable bool) bool {
+	return col.PrimaryKey() && mode == config.Replication && createTable
+}
+
 func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []columns.Column) {
 	var mutateCol []columns.Column
 	// It's okay to combine since args.ColumnOp only takes one of: `Delete` or `Add`
@@ -97,13 +101,11 @@ func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []col
 		switch a.ColumnOp {
 		case constants.Add:
 			colName := a.Dialect.QuoteIdentifier(col.Name())
-
-			if col.PrimaryKey() && a.Mode != config.History {
-				// Don't create a PK for history mode because it's append-only, so the primary key should not be enforced.
+			if shouldCreatePrimaryKey(col, a.Mode, a.CreateTable) {
 				pkCols = append(pkCols, colName)
 			}
 
-			colSQLParts = append(colSQLParts, fmt.Sprintf(`%s %s`, colName, a.Dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey())))
+			colSQLParts = append(colSQLParts, fmt.Sprintf("%s %s", colName, a.Dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey())))
 		case constants.Delete:
 			colSQLParts = append(colSQLParts, a.Dialect.QuoteIdentifier(col.Name()))
 		}
@@ -140,7 +142,6 @@ func (a AlterTableArgs) AlterTable(dwh destination.DataWarehouse, cols ...column
 	}
 
 	alterStatements, mutateCol := a.buildStatements(cols...)
-
 	for _, sqlQuery := range alterStatements {
 		slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
 		if _, err := dwh.Exec(sqlQuery); err != nil {
