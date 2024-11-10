@@ -5,10 +5,48 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	bqDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
+
+func TestAlterTableArgs_Validate(t *testing.T) {
+	{
+		// Invalid
+		a := AlterTableArgs{
+			ColumnOp:    constants.Delete,
+			CreateTable: true,
+			Mode:        config.Replication,
+		}
+		{
+			// Dialect isn't specified
+			assert.ErrorContains(t, a.Validate(), "dialect cannot be nil")
+		}
+		{
+			a.Dialect = bqDialect.BigQueryDialect{}
+			assert.ErrorContains(t, a.Validate(), "incompatible operation - cannot drop columns and create table at the same time")
+		}
+		{
+			a.CreateTable = false
+			a.TemporaryTable = true
+			assert.ErrorContains(t, a.Validate(), "incompatible operation - we should not be altering temporary tables, only create")
+		}
+	}
+	{
+		// Valid
+		a := AlterTableArgs{
+			ColumnOp:       constants.Add,
+			CreateTable:    true,
+			TemporaryTable: true,
+			Mode:           config.Replication,
+			Dialect:        bqDialect.BigQueryDialect{},
+		}
+
+		assert.NoError(t, a.Validate())
+	}
+}
 
 func TestShouldCreatePrimaryKey(t *testing.T) {
 	pk := columns.NewColumn("foo", typing.String)
