@@ -21,9 +21,9 @@ type TableData struct {
 	inMemoryColumns *columns.Columns // list of columns
 
 	// rowsData is used for replication
-	rowsData map[string]map[string]any // pk -> { col -> val }
+	rowsData map[string]Row
 	// rows is used for history mode, since it's append only.
-	rows []map[string]any
+	rows []Row
 
 	primaryKeys []string
 
@@ -107,7 +107,7 @@ func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKey
 	return &TableData{
 		mode:            mode,
 		inMemoryColumns: inMemoryColumns,
-		rowsData:        map[string]map[string]any{},
+		rowsData:        map[string]Row{},
 		primaryKeys:     primaryKeys,
 		topicConfig:     topicConfig,
 		// temporaryTableSuffix is being set in `ResetTempTableSuffix`
@@ -122,7 +122,7 @@ func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKey
 // With this, we are able to reduce the latency by 500x+ on a 5k row table. See event_bench_test.go vs. size_bench_test.go
 func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 	if t.mode == config.History {
-		t.rows = append(t.rows, rowData)
+		t.rows = append(t.rows, NewRow(pk, rowData))
 		t.approxSize += size.GetApproxSize(rowData)
 		return
 	}
@@ -132,13 +132,13 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 		prevRowSize = size.GetApproxSize(prevRow)
 		if delete {
 			// If the row was deleted, preserve the previous values that we have in memory
-			rowData = prevRow
+			rowData = prevRow.data
 			rowData[constants.DeleteColumnMarker] = true
 		} else {
 			for key, val := range rowData {
 				if val == constants.ToastUnavailableValuePlaceholder {
 					// Copy it from prevRow.
-					prevVal, isOk := prevRow[key]
+					prevVal, isOk := prevRow.data[key]
 					if !isOk {
 						continue
 					}
@@ -154,7 +154,7 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 	newRowSize := size.GetApproxSize(rowData)
 	// If prevRow doesn't exist, it'll be 0, which is a no-op.
 	t.approxSize += newRowSize - prevRowSize
-	t.rowsData[pk] = rowData
+	t.rowsData[pk] = NewRow(pk, rowData)
 
 	if !delete {
 		t.containOtherOperations = true
@@ -166,9 +166,8 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 }
 
 // Rows returns a read only slice of tableData's rows or rowsData depending on mode
-func (t *TableData) Rows() []map[string]any {
-	var rows []map[string]any
-
+func (t *TableData) Rows() []Row {
+	var rows []Row
 	if t.Mode() == config.History {
 		// History mode, the data is stored under `rows`
 		rows = append(rows, t.rows...)
@@ -194,23 +193,23 @@ func (t *TableData) NumberOfRows() uint {
 }
 
 func (t *TableData) DistinctDates(colName string) ([]string, error) {
-	retMap := make(map[string]bool)
+	daysMap := make(map[string]bool)
 	for _, row := range t.rowsData {
-		val, isOk := row[colName]
+		val, isOk := row.data[colName]
 		if !isOk {
-			return nil, fmt.Errorf("col: %v does not exist on row: %v", colName, row)
+			return nil, fmt.Errorf("col %q does not exist on row: %v", colName, row)
 		}
 
 		_time, err := ext.ParseDateFromAny(val)
 		if err != nil {
-			return nil, fmt.Errorf("col: %v is not a time column, value: %v, err: %w", colName, val, err)
+			return nil, fmt.Errorf("col %q is not a time column, value: %v, err: %w", colName, val, err)
 		}
 
-		retMap[_time.Format(ext.PostgresDateFormat)] = true
+		daysMap[_time.Format(ext.PostgresDateFormat)] = true
 	}
 
 	var distinctDates []string
-	for key := range retMap {
+	for key := range daysMap {
 		distinctDates = append(distinctDates, key)
 	}
 
