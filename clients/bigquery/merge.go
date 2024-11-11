@@ -49,35 +49,22 @@ func generateMergeString(bqSettings *partition.BigQuerySettings, dialect sql.Dia
 		return "", fmt.Errorf("values cannot be empty")
 	}
 
-	switch bqSettings.PartitionType {
-	case "time":
-		switch bqSettings.PartitionBy {
-		case partition.Daily:
-			return fmt.Sprintf(`DATE(%s) IN (%s)`,
-				sql.QuoteTableAliasColumn(
-					constants.TargetAlias,
-					columns.NewColumn(bqSettings.PartitionField, typing.Invalid),
-					dialect,
-				),
-				strings.Join(sql.QuoteLiterals(values), ",")), nil
-		case partition.Hourly, partition.Monthly, partition.Yearly:
-			part, err := bqSettings.PartitionBy.Part()
-			if err != nil {
-				return "", fmt.Errorf("failed to get part: %w", err)
-			}
-
-			return fmt.Sprintf(`EXTRACT(%s FROM %s) IN (%s)`,
-				part,
-				sql.QuoteTableAliasColumn(
-					constants.TargetAlias,
-					columns.NewColumn(bqSettings.PartitionField, typing.Invalid),
-					dialect,
-				),
-				strings.Join(sql.QuoteLiterals(values), ",")), nil
-		default:
-			return "", fmt.Errorf("unexpected partition by: %q", bqSettings.PartitionBy)
-		}
+	if bqSettings.PartitionType != "time" {
+		return "", fmt.Errorf("unexpected partitionType: %q", bqSettings.PartitionType)
 	}
 
-	return "", fmt.Errorf("unexpected partitionType: %s and/or partitionBy: %s", bqSettings.PartitionType, bqSettings.PartitionBy)
+	part, err := bqSettings.PartitionBy.Part()
+	if err != nil {
+		return "", fmt.Errorf("failed to get part: %w", err)
+	}
+
+	query := fmt.Sprintf(`EXTRACT(%s FROM %s) IN (%s)`,
+		part,
+		sql.QuoteTableAliasColumn(
+			constants.TargetAlias,
+			columns.NewColumn(bqSettings.PartitionField, typing.Invalid),
+			dialect,
+		),
+		strings.Join(sql.QuoteLiterals(values), ","))
+	return query, nil
 }

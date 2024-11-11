@@ -89,26 +89,38 @@ func (b *BigQueryTestSuite) TestGenerateMergeString() {
 	}
 
 	dialect := bigqueryDialect.BigQueryDialect{}
+	{
+		// Hourly
+	}
+	{
+		// Daily partitioning
+		{
+			// nil
+			_, err := generateMergeString(bqSettings, dialect, nil)
+			assert.ErrorContains(b.T(), err, "values cannot be empty")
 
+			// empty values
+			_, err = generateMergeString(bqSettings, dialect, []string{})
+			assert.ErrorContains(b.T(), err, "values cannot be empty")
+		}
+		{
+			// Valid
+			mergeString, err := generateMergeString(bqSettings, dialect, []string{"2020-01-01"})
+			assert.NoError(b.T(), err)
+			assert.Equal(b.T(), fmt.Sprintf("DATE(%s.`created_at`) IN ('2020-01-01')", constants.TargetAlias), mergeString)
+		}
+		{
+			// Valid multiple values
+			mergeString, err := generateMergeString(bqSettings, dialect, []string{"2020-01-01", "2020-01-02"})
+			assert.NoError(b.T(), err)
+			assert.Equal(b.T(), fmt.Sprintf("DATE(%s.`created_at`) IN ('2020-01-01','2020-01-02')", constants.TargetAlias), mergeString)
+		}
+	}
 	{
-		// nil
-		_, err := generateMergeString(bqSettings, dialect, nil)
-		assert.ErrorContains(b.T(), err, "values cannot be empty")
+		// Monthly partitioning
+	}
+	{
+		// Yearly partitioning
+	}
 
-		// empty values
-		_, err = generateMergeString(bqSettings, dialect, []string{})
-		assert.ErrorContains(b.T(), err, "values cannot be empty")
-	}
-	{
-		// Valid
-		mergeString, err := generateMergeString(bqSettings, dialect, []string{"2020-01-01"})
-		assert.NoError(b.T(), err)
-		assert.Equal(b.T(), fmt.Sprintf("DATE(%s.`created_at`) IN ('2020-01-01')", constants.TargetAlias), mergeString)
-	}
-	{
-		// Valid multiple values
-		mergeString, err := generateMergeString(bqSettings, dialect, []string{"2020-01-01", "2020-01-02"})
-		assert.NoError(b.T(), err)
-		assert.Equal(b.T(), fmt.Sprintf("DATE(%s.`created_at`) IN ('2020-01-01','2020-01-02')", constants.TargetAlias), mergeString)
-	}
 }

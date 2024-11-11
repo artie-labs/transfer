@@ -12,7 +12,6 @@ var ValidPartitionTypes = []string{
 type ByGranularity string
 
 const (
-	Hourly  ByGranularity = "hourly"
 	Daily   ByGranularity = "daily"
 	Monthly ByGranularity = "monthly"
 	Yearly  ByGranularity = "yearly"
@@ -21,10 +20,8 @@ const (
 func (b ByGranularity) Part() (string, error) {
 	// https://cloud.google.com/bigquery/docs/reference/standard-sql/timestamp_functions#extract
 	switch b {
-	case Hourly:
-		return "HOUR", nil
 	case Daily:
-		return "DAY", nil
+		return "DATE", nil
 	case Monthly:
 		return "MONTH", nil
 	case Yearly:
@@ -35,7 +32,6 @@ func (b ByGranularity) Part() (string, error) {
 }
 
 var ValidPartitionBy = []ByGranularity{
-	Hourly,
 	Daily,
 	Monthly,
 	Yearly,
