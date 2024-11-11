@@ -9,10 +9,32 @@ var ValidPartitionTypes = []string{
 	"time",
 }
 
-// TODO: We should be able to support different partition by fields in the future.
-// https://cloud.google.com/bigquery/docs/partitioned-tables#partition_decorators
-var ValidPartitionBy = []string{
-	"daily",
+type ByGranularity string
+
+const (
+	Daily   ByGranularity = "daily"
+	Monthly ByGranularity = "monthly"
+	Yearly  ByGranularity = "yearly"
+)
+
+func (b ByGranularity) Part() (string, error) {
+	// https://cloud.google.com/bigquery/docs/reference/standard-sql/timestamp_functions#extract
+	switch b {
+	case Daily:
+		return "DATE", nil
+	case Monthly:
+		return "MONTH", nil
+	case Yearly:
+		return "YEAR", nil
+	default:
+		return "", fmt.Errorf("unexpected partition by: %q", b)
+	}
+}
+
+var ValidPartitionBy = []ByGranularity{
+	Daily,
+	Monthly,
+	Yearly,
 }
 
 // We need the JSON annotations here for our dashboard to import the settings correctly.
@@ -22,9 +44,9 @@ type MergePredicates struct {
 }
 
 type BigQuerySettings struct {
-	PartitionType  string `yaml:"partitionType" json:"partitionType"`
-	PartitionField string `yaml:"partitionField" json:"partitionField"`
-	PartitionBy    string `yaml:"partitionBy" json:"partitionBy"`
+	PartitionType  string        `yaml:"partitionType" json:"partitionType"`
+	PartitionField string        `yaml:"partitionField" json:"partitionField"`
+	PartitionBy    ByGranularity `yaml:"partitionBy" json:"partitionBy"`
 }
 
 func (b *BigQuerySettings) Valid() error {

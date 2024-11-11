@@ -18,12 +18,12 @@ import (
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
 	var additionalEqualityStrings []string
 	if tableData.TopicConfig().BigQueryPartitionSettings != nil {
-		distinctDates, err := tableData.DistinctDates(tableData.TopicConfig().BigQueryPartitionSettings.PartitionField)
+		distinctValues, err := tableData.DistinctDates(tableData.TopicConfig().BigQueryPartitionSettings.PartitionField)
 		if err != nil {
 			return fmt.Errorf("failed to generate distinct dates: %w", err)
 		}
 
-		mergeString, err := generateMergeString(tableData.TopicConfig().BigQueryPartitionSettings, s.Dialect(), distinctDates)
+		mergeString, err := generateMergeString(tableData.TopicConfig().BigQueryPartitionSettings, s.Dialect(), distinctValues)
 		if err != nil {
 			return fmt.Errorf("failed to generate merge string: %w", err)
 		}
@@ -49,19 +49,22 @@ func generateMergeString(bqSettings *partition.BigQuerySettings, dialect sql.Dia
 		return "", fmt.Errorf("values cannot be empty")
 	}
 
-	switch bqSettings.PartitionType {
-	case "time":
-		switch bqSettings.PartitionBy {
-		case "daily":
-			return fmt.Sprintf(`DATE(%s) IN (%s)`,
-				sql.QuoteTableAliasColumn(
-					constants.TargetAlias,
-					columns.NewColumn(bqSettings.PartitionField, typing.Invalid),
-					dialect,
-				),
-				strings.Join(sql.QuoteLiterals(values), ",")), nil
-		}
+	if bqSettings.PartitionType != "time" {
+		return "", fmt.Errorf("unexpected partitionType: %q", bqSettings.PartitionType)
 	}
 
-	return "", fmt.Errorf("unexpected partitionType: %s and/or partitionBy: %s", bqSettings.PartitionType, bqSettings.PartitionBy)
+	part, err := bqSettings.PartitionBy.Part()
+	if err != nil {
+		return "", fmt.Errorf("failed to get part: %w", err)
+	}
+
+	query := fmt.Sprintf(`EXTRACT(%s FROM %s) IN (%s)`,
+		part,
+		sql.QuoteTableAliasColumn(
+			constants.TargetAlias,
+			columns.NewColumn(bqSettings.PartitionField, typing.Invalid),
+			dialect,
+		),
+		strings.Join(sql.QuoteLiterals(values), ","))
+	return query, nil
 }
