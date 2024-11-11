@@ -85,7 +85,7 @@ func (b *BigQueryTestSuite) TestGenerateMergeString() {
 	bqSettings := &partition.BigQuerySettings{
 		PartitionType:  "time",
 		PartitionField: "created_at",
-		PartitionBy:    "daily",
+		PartitionBy:    partition.Daily,
 	}
 
 	dialect := bigqueryDialect.BigQueryDialect{}

@@ -61,8 +61,19 @@ func generateMergeString(bqSettings *partition.BigQuerySettings, dialect sql.Dia
 				),
 				strings.Join(sql.QuoteLiterals(values), ",")), nil
 		case partition.Hourly, partition.Monthly, partition.Yearly:
-			// TODO
-			return "", nil
+			part, err := bqSettings.PartitionBy.Part()
+			if err != nil {
+				return "", fmt.Errorf("failed to get part: %w", err)
+			}
+
+			return fmt.Sprintf(`EXTRACT(%s FROM %s) IN (%s)`,
+				part,
+				sql.QuoteTableAliasColumn(
+					constants.TargetAlias,
+					columns.NewColumn(bqSettings.PartitionField, typing.Invalid),
+					dialect,
+				),
+				strings.Join(sql.QuoteLiterals(values), ",")), nil
 		default:
 			return "", fmt.Errorf("unexpected partition by: %q", bqSettings.PartitionBy)
 		}
