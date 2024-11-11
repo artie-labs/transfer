@@ -82,11 +82,6 @@ func (f Field) GetScaleAndPrecision() (int32, *int32, error) {
 }
 
 func (f Field) ToValueConverter() (converters.ValueConverter, error) {
-	switch f.Type {
-	case Double, Float:
-		return converters.Float64{}, nil
-	}
-
 	switch f.DebeziumType {
 	// Passthrough converters
 	case UUID, LTree, Enum, EnumSet, Interval, XML:
@@ -139,6 +134,11 @@ func (f Field) ToValueConverter() (converters.ValueConverter, error) {
 	default:
 		if f.DebeziumType != "" {
 			slog.Warn("Unhandled Debezium type", slog.String("type", string(f.Type)), slog.String("debeziumType", string(f.DebeziumType)))
+		}
+
+		switch f.Type {
+		case Double, Float:
+			return converters.Float64{}, nil
 		}
 
 		return nil, nil
