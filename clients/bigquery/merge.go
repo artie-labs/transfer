@@ -18,12 +18,12 @@ import (
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
 	var additionalEqualityStrings []string
 	if tableData.TopicConfig().BigQueryPartitionSettings != nil {
-		distinctDates, err := tableData.DistinctDates(tableData.TopicConfig().BigQueryPartitionSettings.PartitionField)
+		distinctValues, err := tableData.DistinctDates(tableData.TopicConfig().BigQueryPartitionSettings.PartitionField)
 		if err != nil {
 			return fmt.Errorf("failed to generate distinct dates: %w", err)
 		}
 
-		mergeString, err := generateMergeString(tableData.TopicConfig().BigQueryPartitionSettings, s.Dialect(), distinctDates)
+		mergeString, err := generateMergeString(tableData.TopicConfig().BigQueryPartitionSettings, s.Dialect(), distinctValues)
 		if err != nil {
 			return fmt.Errorf("failed to generate merge string: %w", err)
 		}
@@ -52,7 +52,7 @@ func generateMergeString(bqSettings *partition.BigQuerySettings, dialect sql.Dia
 	switch bqSettings.PartitionType {
 	case "time":
 		switch bqSettings.PartitionBy {
-		case "daily":
+		case partition.Daily:
 			return fmt.Sprintf(`DATE(%s) IN (%s)`,
 				sql.QuoteTableAliasColumn(
 					constants.TargetAlias,
@@ -60,6 +60,11 @@ func generateMergeString(bqSettings *partition.BigQuerySettings, dialect sql.Dia
 					dialect,
 				),
 				strings.Join(sql.QuoteLiterals(values), ",")), nil
+		case partition.Hourly, partition.Monthly, partition.Yearly:
+			// TODO
+			return "", nil
+		default:
+			return "", fmt.Errorf("unexpected partition by: %q", bqSettings.PartitionBy)
 		}
 	}
 
