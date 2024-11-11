@@ -57,3 +57,32 @@ func (Base64) Convert(value any) (any, error) {
 
 	return base64.StdEncoding.EncodeToString(castedValue), nil
 }
+
+type Float64 struct{}
+
+func (Float64) ToKindDetails() typing.KindDetails {
+	return typing.Float
+}
+
+func (Float64) Convert(value any) (any, error) {
+	switch castedValue := value.(type) {
+	case int:
+		return float64(castedValue), nil
+	case int64:
+		return float64(castedValue), nil
+	case int32:
+		return float64(castedValue), nil
+	case float32:
+		return float64(castedValue), nil
+	case float64:
+		return castedValue, nil
+	case string:
+		if castedValue == "NaN" {
+			return nil, nil
+		}
+
+		return nil, fmt.Errorf("expected float64, got string")
+	default:
+		return nil, fmt.Errorf("unexpected type %T", value)
+	}
+}

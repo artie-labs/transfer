@@ -82,6 +82,11 @@ func (f Field) GetScaleAndPrecision() (int32, *int32, error) {
 }
 
 func (f Field) ToValueConverter() (converters.ValueConverter, error) {
+	switch f.Type {
+	case Double, Float:
+		return converters.Float64{}, nil
+	}
+
 	switch f.DebeziumType {
 	// Passthrough converters
 	case UUID, LTree, Enum, EnumSet, Interval, XML:
@@ -156,8 +161,6 @@ func (f Field) ToKindDetails() (typing.KindDetails, error) {
 		return typing.Struct, nil
 	case Int16, Int32, Int64:
 		return typing.Integer, nil
-	case Float, Double:
-		return typing.Float, nil
 	case String, Bytes:
 		return typing.String, nil
 	case Struct:
