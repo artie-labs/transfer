@@ -81,7 +81,7 @@ func (Float64) Convert(value any) (any, error) {
 			return nil, nil
 		}
 
-		return nil, fmt.Errorf("expected float64, got string")
+		return nil, fmt.Errorf("unexpected type %T, with value %q", value, castedValue)
 	default:
 		return nil, fmt.Errorf("unexpected type %T", value)
 	}
