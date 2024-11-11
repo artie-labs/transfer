@@ -58,6 +58,7 @@ func (Base64) Convert(value any) (any, error) {
 	return base64.StdEncoding.EncodeToString(castedValue), nil
 }
 
+// Float64 converter is used when Debezium's double.handling.mode is set to double.
 type Float64 struct{}
 
 func (Float64) ToKindDetails() typing.KindDetails {
