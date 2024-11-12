@@ -13,7 +13,6 @@ import (
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type TableData struct {
@@ -173,8 +172,8 @@ func (t *TableData) Rows() []map[string]any {
 		// History mode, the data is stored under `rows`
 		rows = append(rows, t.rows...)
 	} else {
-		for _, v := range t.rowsData {
-			rows = append(rows, v)
+		for _, row := range t.rowsData {
+			rows = append(rows, row)
 		}
 	}
 
@@ -191,30 +190,6 @@ func (t *TableData) NumberOfRows() uint {
 	}
 
 	return uint(len(t.rowsData))
-}
-
-func (t *TableData) DistinctDates(colName string) ([]string, error) {
-	retMap := make(map[string]bool)
-	for _, row := range t.rowsData {
-		val, isOk := row[colName]
-		if !isOk {
-			return nil, fmt.Errorf("col: %v does not exist on row: %v", colName, row)
-		}
-
-		_time, err := ext.ParseDateFromAny(val)
-		if err != nil {
-			return nil, fmt.Errorf("col: %v is not a time column, value: %v, err: %w", colName, val, err)
-		}
-
-		retMap[_time.Format(ext.PostgresDateFormat)] = true
-	}
-
-	var distinctDates []string
-	for key := range retMap {
-		distinctDates = append(distinctDates, key)
-	}
-
-	return distinctDates, nil
 }
 
 func (t *TableData) ResetTempTableSuffix() {

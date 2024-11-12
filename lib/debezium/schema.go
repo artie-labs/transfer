@@ -136,6 +136,11 @@ func (f Field) ToValueConverter() (converters.ValueConverter, error) {
 			slog.Warn("Unhandled Debezium type", slog.String("type", string(f.Type)), slog.String("debeziumType", string(f.DebeziumType)))
 		}
 
+		switch f.Type {
+		case Double, Float:
+			return converters.Float64{}, nil
+		}
+
 		return nil, nil
 	}
 }
@@ -156,8 +161,6 @@ func (f Field) ToKindDetails() (typing.KindDetails, error) {
 		return typing.Struct, nil
 	case Int16, Int32, Int64:
 		return typing.Integer, nil
-	case Float, Double:
-		return typing.Float, nil
 	case String, Bytes:
 		return typing.String, nil
 	case Struct:

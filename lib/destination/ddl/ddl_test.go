@@ -5,9 +5,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
+	bqDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -64,7 +65,7 @@ func TestBuildCreateTableSQL(t *testing.T) {
 				// With primary key
 				pk := columns.NewColumn("pk", typing.String)
 				pk.SetPrimaryKeyForTest(true)
-				sql, err := BuildCreateTableSQL(bigQueryDialect.BigQueryDialect{}, bigQueryDialect.NewTableIdentifier("projectID", "dataset", "table"), false, config.Replication, []columns.Column{
+				sql, err := BuildCreateTableSQL(bqDialect.BigQueryDialect{}, bqDialect.NewTableIdentifier("projectID", "dataset", "table"), false, config.Replication, []columns.Column{
 					pk,
 					columns.NewColumn("bar", typing.String),
 				})
@@ -73,7 +74,42 @@ func TestBuildCreateTableSQL(t *testing.T) {
 			}
 		}
 	}
+}
 
+func TestAlterTableArgs_Validate(t *testing.T) {
+	{
+		// Invalid
+		a := AlterTableArgs{
+			ColumnOp:    constants.Delete,
+			CreateTable: true,
+			Mode:        config.Replication,
+		}
+		{
+			// Dialect isn't specified
+			assert.ErrorContains(t, a.Validate(), "dialect cannot be nil")
+		}
+		{
+			a.Dialect = bqDialect.BigQueryDialect{}
+			assert.ErrorContains(t, a.Validate(), "incompatible operation - cannot drop columns and create table at the same time")
+		}
+		{
+			a.CreateTable = false
+			a.TemporaryTable = true
+			assert.ErrorContains(t, a.Validate(), "incompatible operation - we should not be altering temporary tables, only create")
+		}
+	}
+	{
+		// Valid
+		a := AlterTableArgs{
+			ColumnOp:       constants.Add,
+			CreateTable:    true,
+			TemporaryTable: true,
+			Mode:           config.Replication,
+			Dialect:        bqDialect.BigQueryDialect{},
+		}
+
+		assert.NoError(t, a.Validate())
+	}
 }
 
 func TestShouldCreatePrimaryKey(t *testing.T) {
