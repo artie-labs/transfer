@@ -2,6 +2,8 @@ package bigquery
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
@@ -22,10 +24,5 @@ func buildDistinctDates(colName string, rows []map[string]any) ([]string, error)
 		dateMap[_time.Format(ext.PostgresDateFormat)] = true
 	}
 
-	var distinctDates []string
-	for key := range dateMap {
-		distinctDates = append(distinctDates, key)
-	}
-
-	return distinctDates, nil
+	return slices.Collect(maps.Keys(dateMap)), nil
 }
