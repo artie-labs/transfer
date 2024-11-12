@@ -6,7 +6,6 @@ import (
 
 	mssql "github.com/microsoft/go-mssqldb"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -14,19 +13,14 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func (s *Store) PrepareTemporaryTable(_ context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(_ context.Context, tableData *optimization.TableData, _ *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
-		tempAlterTableArgs := ddl.AlterTableArgs{
-			Dialect:        s.Dialect(),
-			Tc:             tableConfig,
-			TableID:        tempTableID,
-			CreateTable:    true,
-			TemporaryTable: true,
-			ColumnOp:       constants.Add,
-			Mode:           tableData.Mode(),
+		query, err := ddl.BuildCreateTableSQL(s.Dialect(), tempTableID, true, tableData.Mode(), tableData.ReadOnlyInMemoryCols().GetColumns())
+		if err != nil {
+			return fmt.Errorf("failed to build create table query: %w", err)
 		}
 
-		if err := tempAlterTableArgs.AlterTable(s, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
+		if _, err = s.Exec(query); err != nil {
 			return fmt.Errorf("failed to create temp table: %w", err)
 		}
 	}
