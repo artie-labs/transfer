@@ -3,12 +3,10 @@ package ddl
 import (
 	"testing"
 
-	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
-
-	"github.com/artie-labs/transfer/clients/redshift/dialect"
-
 	"github.com/stretchr/testify/assert"
 
+	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
+	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
