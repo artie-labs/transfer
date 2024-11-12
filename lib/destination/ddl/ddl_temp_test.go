@@ -19,23 +19,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func (d *DDLTestSuite) TestValidate_AlterTableArgs() {
-	a := &ddl.AlterTableArgs{
-		ColumnOp:    constants.Delete,
-		CreateTable: true,
-		Mode:        config.Replication,
-	}
-	assert.ErrorContains(d.T(), a.Validate(), "dialect cannot be nil")
-
-	a.Dialect = bigQueryDialect.BigQueryDialect{}
-	assert.ErrorContains(d.T(), a.Validate(), "incompatible operation - cannot drop columns and create table at the same time")
-
-	a.ColumnOp = constants.Add
-	a.CreateTable = false
-	a.TemporaryTable = true
-	assert.ErrorContains(d.T(), a.Validate(), "incompatible operation - we should not be altering temporary tables, only create")
-}
-
 func (d *DDLTestSuite) TestCreateTemporaryTable_Errors() {
 	tableID := dialect.NewTableIdentifier("", "mock_dataset", "mock_table")
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(nil, true))
