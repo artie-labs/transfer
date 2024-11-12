@@ -1,6 +1,7 @@
 package bigquery
 
 import (
+	"slices"
 	"testing"
 	"time"
 
@@ -38,7 +39,7 @@ func TestDistinctDates(t *testing.T) {
 			{"ts": time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC).Format(time.RFC3339Nano)},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, []string{"2020-01-01", "2020-01-02"}, dates)
+		equalLists(t, []string{"2020-01-01", "2020-01-02"}, dates)
 	}
 	{
 		// Three days, two unique
@@ -48,6 +49,13 @@ func TestDistinctDates(t *testing.T) {
 			{"ts": time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC).Format(time.RFC3339Nano)},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, []string{"2020-01-01", "2020-01-02"}, dates)
+		equalLists(t, []string{"2020-01-01", "2020-01-02"}, dates)
 	}
+}
+
+func equalLists(t *testing.T, list1 []string, list2 []string) {
+	// Sort the two lists prior to comparison
+	slices.Sort(list1)
+	slices.Sort(list2)
+	assert.Equal(t, list1, list2)
 }
