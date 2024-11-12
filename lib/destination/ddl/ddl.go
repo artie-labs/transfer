@@ -15,6 +15,38 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+func BuildCreateTableSQL(dialect sql.Dialect, tableIdentifier sql.TableIdentifier, temporaryTable bool, mode config.Mode, columns []columns.Column) (string, error) {
+	if len(columns) == 0 {
+		return "", fmt.Errorf("no columns provided")
+	}
+
+	var parts []string
+	var primaryKeys []string
+	for _, col := range columns {
+		if col.ShouldSkip() {
+			continue
+		}
+
+		colName := dialect.QuoteIdentifier(col.Name())
+		if shouldCreatePrimaryKey(col, mode, true) {
+			primaryKeys = append(primaryKeys, colName)
+		}
+
+		parts = append(parts, fmt.Sprintf("%s %s", colName, dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey())))
+	}
+
+	if len(primaryKeys) > 0 {
+		pkStatement := fmt.Sprintf("PRIMARY KEY (%s)", strings.Join(primaryKeys, ", "))
+		if _, ok := dialect.(bigQueryDialect.BigQueryDialect); ok {
+			pkStatement += " NOT ENFORCED"
+		}
+
+		parts = append(parts, pkStatement)
+	}
+
+	return dialect.BuildCreateTableQuery(tableIdentifier, temporaryTable, parts), nil
+}
+
 // DropTemporaryTable - this will drop the temporary table from Snowflake w/ stages and BigQuery
 // It has a safety check to make sure the tableName contains the `constants.ArtiePrefix` key.
 // Temporary tables look like this: database.schema.tableName__artie__RANDOM_STRING(5)_expiryUnixTs
