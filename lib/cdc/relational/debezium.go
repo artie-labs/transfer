@@ -14,11 +14,11 @@ import (
 type Debezium struct{}
 
 func (Debezium) GetEventFromBytes(bytes []byte) (cdc.Event, error) {
-	var event util.SchemaEventPayload
 	if len(bytes) == 0 {
 		return nil, fmt.Errorf("empty message")
 	}
 
+	var event util.SchemaEventPayload
 	if err := json.Unmarshal(bytes, &event); err != nil {
 		return nil, err
 	}

@@ -469,4 +469,15 @@ func TestField_Decimal_ParseValue(t *testing.T) {
 		assert.Equal(t, int32(-1), value.(*decimal.Decimal).Details().Precision())
 		assert.Equal(t, int32(2), value.(*decimal.Decimal).Details().Scale())
 	}
+	{
+		// Float
+		field := Field{Type: Double}
+		converter, err := field.ToValueConverter()
+		assert.NoError(t, err)
+		assert.Equal(t, typing.Float, converter.ToKindDetails())
+
+		value, err := converter.Convert(123.45)
+		assert.NoError(t, err)
+		assert.Equal(t, 123.45, value.(float64))
+	}
 }

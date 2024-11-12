@@ -48,3 +48,40 @@ func TestBase64_Convert(t *testing.T) {
 		assert.Equal(t, "MjAyNA==", value)
 	}
 }
+
+func TestFloat64_Convert(t *testing.T) {
+	{
+		// Invalid
+		{
+			// Wrong data type
+			_, err := Float64{}.Convert("123")
+			assert.ErrorContains(t, err, `unexpected type string, with value "123"`)
+		}
+		{
+			// Another wrong data type
+			_, err := Float64{}.Convert(false)
+			assert.ErrorContains(t, err, "unexpected type bool")
+		}
+	}
+	{
+		// Valid
+		{
+			// int
+			value, err := Float64{}.Convert(123)
+			assert.NoError(t, err)
+			assert.Equal(t, float64(123), value)
+		}
+		{
+			// NaN
+			value, err := Float64{}.Convert("NaN")
+			assert.NoError(t, err)
+			assert.Nil(t, value)
+		}
+		{
+			// Float
+			value, err := Float64{}.Convert(123.45)
+			assert.NoError(t, err)
+			assert.Equal(t, 123.45, value)
+		}
+	}
+}
