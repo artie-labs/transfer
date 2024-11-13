@@ -45,7 +45,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 			return fmt.Errorf("failed to build create table query: %w", err)
 		}
 
-		if _, err = s.Exec(query); err != nil {
+		if _, err = s.ExecContext(ctx, query); err != nil {
 			return fmt.Errorf("failed to create temp table: %w", err)
 		}
 	}
