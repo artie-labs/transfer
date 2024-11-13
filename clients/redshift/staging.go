@@ -42,7 +42,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	if createTempTable {
 		query, err := ddl.BuildCreateTableSQL(s.Dialect(), tempTableID, true, tableData.Mode(), tableData.ReadOnlyInMemoryCols().GetColumns())
 		if err != nil {
-			return fmt.Errorf("failed to build create table query: %w", err)
+			return fmt.Errorf("failed to build create table sql: %w", err)
 		}
 
 		if _, err = s.ExecContext(ctx, query); err != nil {
