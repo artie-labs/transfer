@@ -50,19 +50,14 @@ func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
 	return replaceExceededValues(value, colKind), nil
 }
 
-func (s *Store) PrepareTemporaryTable(_ context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(_ context.Context, tableData *optimization.TableData, _ *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
-		tempAlterTableArgs := ddl.AlterTableArgs{
-			Dialect:        s.Dialect(),
-			Tc:             tableConfig,
-			TableID:        tempTableID,
-			CreateTable:    true,
-			TemporaryTable: true,
-			ColumnOp:       constants.Add,
-			Mode:           tableData.Mode(),
+		query, err := ddl.BuildCreateTableSQL(s.Dialect(), tempTableID, true, tableData.Mode(), tableData.ReadOnlyInMemoryCols().GetColumns())
+		if err != nil {
+			return fmt.Errorf("failed to build create table sql: %w", err)
 		}
 
-		if err := tempAlterTableArgs.AlterTable(s, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
+		if _, err = s.Exec(query); err != nil {
 			return fmt.Errorf("failed to create temp table: %w", err)
 		}
 	}
