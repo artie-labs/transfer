@@ -123,7 +123,8 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 
 	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDwhTableConfig(cols.GetColumns(), true))
 	assert.NoError(s.T(), s.stageStore.Merge(context.Background(), tableData))
-	assert.Equal(s.T(), 5, s.fakeStageStore.ExecCallCount())
+	assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
+	assert.Equal(s.T(), 1, s.fakeStageStore.ExecContextCallCount())
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMerge() {
@@ -165,8 +166,6 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		tableData.InsertRow(pk, row, false)
 	}
 
-	var idx int
-
 	tableID := s.identifierFor(tableData)
 	fqName := tableID.FullyQualifiedName()
 	s.stageStore.configMap.AddTableToConfig(tableID, types.NewDwhTableConfig(cols.GetColumns(), true))
@@ -174,27 +173,28 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	assert.Nil(s.T(), err)
 	s.fakeStageStore.ExecReturns(nil, nil)
 	// CREATE TABLE IF NOT EXISTS customer.public.orders___artie_Mwv9YADmRy (id int,name string,__artie_delete boolean,created_at timestamp_tz) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE) COMMENT='expires:2023-06-27 11:54:03 UTC'
-	createQuery, _ := s.fakeStageStore.ExecArgsForCall(idx)
+	_, createQuery, _ := s.fakeStageStore.ExecContextArgsForCall(0)
 	assert.Contains(s.T(), createQuery, `customer.public."ORDERS___ARTIE_`, fmt.Sprintf("query: %v, destKind: %v", createQuery, constants.Snowflake))
 
 	// PUT file:///tmp/customer.public.orders___artie_Mwv9YADmRy.csv @customer.public.%orders___artie_Mwv9YADmRy AUTO_COMPRESS=TRUE
-	putQuery, _ := s.fakeStageStore.ExecArgsForCall(idx + 1)
+	putQuery, _ := s.fakeStageStore.ExecArgsForCall(0)
 	assert.Contains(s.T(), putQuery, "PUT file://")
 
 	// COPY INTO customer.public.orders___artie_Mwv9YADmRy (id,name,__artie_delete,created_at) FROM (SELECT $1,$2,$3,$4 FROM @customer.public.%orders___artie_Mwv9YADmRy
-	copyQuery, _ := s.fakeStageStore.ExecArgsForCall(idx + 2)
+	copyQuery, _ := s.fakeStageStore.ExecArgsForCall(1)
 	assert.Contains(s.T(), copyQuery, `COPY INTO customer.public."ORDERS___ARTIE_`, fmt.Sprintf("query: %v, destKind: %v", copyQuery, constants.Snowflake))
 	assert.Contains(s.T(), copyQuery, fmt.Sprintf("FROM %s", "@customer.public.\"%ORDERS___ARTIE_"), fmt.Sprintf("query: %v, destKind: %v", copyQuery, constants.Snowflake))
 
-	mergeQuery, _ := s.fakeStageStore.ExecArgsForCall(idx + 3)
+	mergeQuery, _ := s.fakeStageStore.ExecArgsForCall(2)
 	assert.Contains(s.T(), mergeQuery, fmt.Sprintf("MERGE INTO %s", fqName), fmt.Sprintf("query: %v, destKind: %v", mergeQuery, constants.Snowflake))
 
 	// Drop a table now.
-	dropQuery, _ := s.fakeStageStore.ExecArgsForCall(idx + 4)
+	dropQuery, _ := s.fakeStageStore.ExecArgsForCall(3)
 	assert.Contains(s.T(), dropQuery, `DROP TABLE IF EXISTS customer.public."ORDERS___ARTIE_`,
 		fmt.Sprintf("query: %v, destKind: %v", dropQuery, constants.Snowflake))
 
-	assert.Equal(s.T(), 5, s.fakeStageStore.ExecCallCount(), "called merge")
+	assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
+	assert.Equal(s.T(), 1, s.fakeStageStore.ExecContextCallCount())
 }
 
 // TestExecuteMergeDeletionFlagRemoval is going to run execute merge twice.
@@ -256,7 +256,8 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 	assert.NoError(s.T(), s.stageStore.Merge(context.Background(), tableData))
 	s.fakeStageStore.ExecReturns(nil, nil)
-	assert.Equal(s.T(), s.fakeStageStore.ExecCallCount(), 5, "called merge")
+	assert.Equal(s.T(), s.fakeStageStore.ExecCallCount(), 4)
+	assert.Equal(s.T(), s.fakeStageStore.ExecContextCallCount(), 1)
 
 	// Check the temp deletion table now.
 	assert.Equal(s.T(), len(s.stageStore.configMap.TableConfigCache(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()), 1,
@@ -279,7 +280,8 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 	assert.NoError(s.T(), s.stageStore.Merge(context.Background(), tableData))
 	s.fakeStageStore.ExecReturns(nil, nil)
-	assert.Equal(s.T(), s.fakeStageStore.ExecCallCount(), 10, "called merge again")
+	assert.Equal(s.T(), s.fakeStageStore.ExecCallCount(), 8)
+	assert.Equal(s.T(), s.fakeStageStore.ExecContextCallCount(), 2)
 
 	// Caught up now, so columns should be 0.
 	assert.Equal(s.T(), len(s.stageStore.configMap.TableConfigCache(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()), 0,
