@@ -256,8 +256,8 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 	assert.NoError(s.T(), s.stageStore.Merge(context.Background(), tableData))
 	s.fakeStageStore.ExecReturns(nil, nil)
-	assert.Equal(s.T(), s.fakeStageStore.ExecCallCount(), 4)
-	assert.Equal(s.T(), s.fakeStageStore.ExecContextCallCount(), 1)
+	assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
+	assert.Equal(s.T(), 1, s.fakeStageStore.ExecContextCallCount())
 
 	// Check the temp deletion table now.
 	assert.Equal(s.T(), len(s.stageStore.configMap.TableConfigCache(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()), 1,
@@ -280,12 +280,11 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 	assert.NoError(s.T(), s.stageStore.Merge(context.Background(), tableData))
 	s.fakeStageStore.ExecReturns(nil, nil)
-	assert.Equal(s.T(), s.fakeStageStore.ExecCallCount(), 8)
-	assert.Equal(s.T(), s.fakeStageStore.ExecContextCallCount(), 2)
+	assert.Equal(s.T(), 8, s.fakeStageStore.ExecCallCount())
+	assert.Equal(s.T(), 2, s.fakeStageStore.ExecContextCallCount())
 
 	// Caught up now, so columns should be 0.
-	assert.Equal(s.T(), len(s.stageStore.configMap.TableConfigCache(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()), 0,
-		s.stageStore.configMap.TableConfigCache(s.identifierFor(tableData)).ReadOnlyColumnsToDelete())
+	assert.Len(s.T(), s.stageStore.configMap.TableConfigCache(s.identifierFor(tableData)).ReadOnlyColumnsToDelete(), 0)
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
