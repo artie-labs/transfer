@@ -50,25 +50,25 @@ func Diff(columnsInSource []Column, columnsInDestination []Column, softDelete bo
 		}
 	}
 
-	var targetColumnsMissing Columns
+	var targetColumnsMissing []Column
 	for _, col := range src.All() {
 		if shouldSkipColumn(col.Name(), softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode) {
 			continue
 		}
 
-		targetColumnsMissing.AddColumn(col)
+		targetColumnsMissing = append(targetColumnsMissing, col)
 	}
 
-	var sourceColumnsMissing Columns
+	var sourceColumnsMissing []Column
 	for _, col := range targ.All() {
 		if shouldSkipColumn(col.Name(), softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode) {
 			continue
 		}
 
-		sourceColumnsMissing.AddColumn(col)
+		sourceColumnsMissing = append(sourceColumnsMissing, col)
 	}
 
-	return sourceColumnsMissing.GetColumns(), targetColumnsMissing.GetColumns()
+	return sourceColumnsMissing, targetColumnsMissing
 }
 
 func buildColumnsMap(cols []Column) *maputil.OrderedMap[Column] {
