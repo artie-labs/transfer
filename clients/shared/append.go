@@ -24,8 +24,8 @@ func Append(ctx context.Context, dwh destination.DataWarehouse, tableData *optim
 
 	// We don't care about srcKeysMissing because we don't drop columns when we append.
 	_, targetKeysMissing := columns.Diff(
-		tableData.ReadOnlyInMemoryCols(),
-		tableConfig.Columns(),
+		tableData.ReadOnlyInMemoryCols().GetColumns(),
+		tableConfig.Columns().GetColumns(),
 		tableData.TopicConfig().SoftDelete,
 		tableData.TopicConfig().IncludeArtieUpdatedAt,
 		tableData.TopicConfig().IncludeDatabaseUpdatedAt,
