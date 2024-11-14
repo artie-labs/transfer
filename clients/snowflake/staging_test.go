@@ -8,11 +8,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/artie-labs/transfer/clients/snowflake/dialect"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/clients/shared"
+	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -160,10 +159,11 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 
 	{
 		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(context.Background(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, true))
-		assert.Equal(s.T(), 3, s.fakeStageStore.ExecCallCount())
+		assert.Equal(s.T(), 2, s.fakeStageStore.ExecCallCount())
+		assert.Equal(s.T(), 1, s.fakeStageStore.ExecContextCallCount())
 
 		// First call is to create the temp table
-		createQuery, _ := s.fakeStageStore.ExecArgsForCall(0)
+		_, createQuery, _ := s.fakeStageStore.ExecContextArgsForCall(0)
 
 		prefixQuery := fmt.Sprintf(
 			`CREATE TABLE IF NOT EXISTS %s ("USER_ID" string,"FIRST_NAME" string,"LAST_NAME" string,"DUSTY" string) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`, tempTableName)
@@ -171,20 +171,20 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 		assert.True(s.T(), containsPrefix, fmt.Sprintf("createQuery:%v, prefixQuery:%s", createQuery, prefixQuery))
 		resourceName := addPrefixToTableName(tempTableID, "%")
 		// Second call is a PUT
-		putQuery, _ := s.fakeStageStore.ExecArgsForCall(1)
+		putQuery, _ := s.fakeStageStore.ExecArgsForCall(0)
 		assert.Contains(s.T(), putQuery, "PUT file://", putQuery)
 		assert.Contains(s.T(), putQuery, fmt.Sprintf("@%s AUTO_COMPRESS=TRUE", resourceName))
 		// Third call is a COPY INTO
-		copyQuery, _ := s.fakeStageStore.ExecArgsForCall(2)
+		copyQuery, _ := s.fakeStageStore.ExecArgsForCall(1)
 		assert.Equal(s.T(), fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s)`,
 			tempTableName, resourceName), copyQuery)
 	}
 	{
 		// Don't create the temporary table.
 		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(context.Background(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, false))
-		assert.Equal(s.T(), 5, s.fakeStageStore.ExecCallCount())
+		assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
+		assert.Equal(s.T(), 1, s.fakeStageStore.ExecContextCallCount())
 	}
-
 }
 
 func (s *SnowflakeTestSuite) TestLoadTemporaryTable() {
