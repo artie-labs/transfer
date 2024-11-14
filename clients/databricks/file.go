@@ -16,12 +16,12 @@ type File struct {
 }
 
 func NewFile(fileRow map[string]any) (File, error) {
-	name, err := maputil.GetStringFromMap(fileRow, "name")
+	name, err := maputil.GetTypeFromMap[string](fileRow, "name")
 	if err != nil {
 		return File{}, err
 	}
 
-	fp, err := maputil.GetStringFromMap(fileRow, "path")
+	fp, err := maputil.GetTypeFromMap[string](fileRow, "path")
 	if err != nil {
 		return File{}, err
 	}
