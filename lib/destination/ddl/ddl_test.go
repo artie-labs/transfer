@@ -92,20 +92,14 @@ func TestAlterTableArgs_Validate(t *testing.T) {
 			a.Dialect = bqDialect.BigQueryDialect{}
 			assert.ErrorContains(t, a.Validate(), "incompatible operation - cannot drop columns and create table at the same time")
 		}
-		{
-			a.CreateTable = false
-			a.TemporaryTable = true
-			assert.ErrorContains(t, a.Validate(), "incompatible operation - we should not be altering temporary tables, only create")
-		}
 	}
 	{
 		// Valid
 		a := AlterTableArgs{
-			ColumnOp:       constants.Add,
-			CreateTable:    true,
-			TemporaryTable: true,
-			Mode:           config.Replication,
-			Dialect:        bqDialect.BigQueryDialect{},
+			ColumnOp:    constants.Add,
+			CreateTable: true,
+			Mode:        config.Replication,
+			Dialect:     bqDialect.BigQueryDialect{},
 		}
 
 		assert.NoError(t, a.Validate())
