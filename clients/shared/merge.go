@@ -43,7 +43,7 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 			return fmt.Errorf("failed to create table: %w", err)
 		}
 	} else {
-		createAlterTableArgs := ddl.AlterTableArgs{
+		alterTableArgs := ddl.AlterTableArgs{
 			Dialect:  dwh.Dialect(),
 			Tc:       tableConfig,
 			TableID:  tableID,
@@ -53,7 +53,7 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		}
 
 		// Columns that are missing in DWH, but exist in our CDC stream.
-		if err = createAlterTableArgs.AlterTable(dwh, targetKeysMissing...); err != nil {
+		if err = alterTableArgs.AlterTable(dwh, targetKeysMissing...); err != nil {
 			return fmt.Errorf("failed to alter table: %w", err)
 		}
 	}

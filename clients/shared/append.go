@@ -39,7 +39,7 @@ func Append(ctx context.Context, dwh destination.DataWarehouse, tableData *optim
 			return fmt.Errorf("failed to create table: %w", err)
 		}
 	} else {
-		createAlterTableArgs := ddl.AlterTableArgs{
+		alterTableArgs := ddl.AlterTableArgs{
 			Dialect:  dwh.Dialect(),
 			Tc:       tableConfig,
 			TableID:  tableID,
@@ -49,7 +49,7 @@ func Append(ctx context.Context, dwh destination.DataWarehouse, tableData *optim
 		}
 
 		// Keys that exist in CDC stream, but not in DWH
-		if err = createAlterTableArgs.AlterTable(dwh, targetKeysMissing...); err != nil {
+		if err = alterTableArgs.AlterTable(dwh, targetKeysMissing...); err != nil {
 			return fmt.Errorf("failed to alter table: %w", err)
 		}
 
