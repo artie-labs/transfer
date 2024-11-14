@@ -13,15 +13,14 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 )
 
-func CreateTable(_ context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tc *types.DwhTableConfig, tableID sql.TableIdentifier, tempTable bool) error {
+func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tc *types.DwhTableConfig, tableID sql.TableIdentifier, tempTable bool) error {
 	query, err := ddl.BuildCreateTableSQL(dwh.Dialect(), tableID, tempTable, tableData.Mode(), tableData.ReadOnlyInMemoryCols().GetColumns())
 	if err != nil {
 		return fmt.Errorf("failed to build create table sql: %w", err)
 	}
 
 	slog.Info("[DDL] Executing query", slog.String("query", query))
-	// TODO: Use ExecContext
-	if _, err = dwh.Exec(query); err != nil {
+	if _, err = dwh.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("failed to create temp table: %w", err)
 	}
 
