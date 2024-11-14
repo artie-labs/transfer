@@ -63,9 +63,13 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _
 	return s.Merge(ctx, tableData)
 }
 
+func buildTemporaryFilePath(tableData *optimization.TableData) string {
+	return fmt.Sprintf("/tmp/%d_%s.parquet", tableData.LatestCDCTs.UnixMilli(), stringutil.Random(4))
+}
+
 // Merge - will take tableData, write it into a particular file in the specified format, in these steps:
 // 1. Load a ParquetWriter from a JSON schema (auto-generated)
-// 2. Load the temporary file, under this format: s3://bucket/folderName/fullyQualifiedTableName/YYYY-MM-DD/{{unix_timestamp}}.parquet.gz
+// 2. Load the temporary file, under this format: s3://bucket/folderName/fullyQualifiedTableName/YYYY-MM-DD/{{unix_timestamp}}.parquet
 // 3. It will then upload this to S3
 // 4. Delete the temporary file
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
@@ -79,7 +83,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return fmt.Errorf("failed to generate parquet schema: %w", err)
 	}
 
-	fp := fmt.Sprintf("/tmp/%v_%s.parquet.gz", tableData.LatestCDCTs.UnixMilli(), stringutil.Random(4))
+	fp := buildTemporaryFilePath(tableData)
 	fw, err := local.NewLocalFileWriter(fp)
 	if err != nil {
 		return fmt.Errorf("failed to create a local parquet file: %w", err)
