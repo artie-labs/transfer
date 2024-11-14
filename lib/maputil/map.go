@@ -38,11 +38,12 @@ func GetInt32FromMap(obj map[string]any, key string) (int32, error) {
 	return int32(val), nil
 }
 
-func GetStringFromMap(obj map[string]any, key string) (string, error) {
+func GetTypeFromMap[T any](obj map[string]any, key string) (T, error) {
 	value, isOk := obj[key]
 	if !isOk {
-		return "", fmt.Errorf("key: %q does not exist in object", key)
+		var zero T
+		return zero, fmt.Errorf("key: %q does not exist in object", key)
 	}
 
-	return typing.AssertType[string](value)
+	return typing.AssertType[T](value)
 }
