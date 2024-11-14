@@ -43,17 +43,11 @@ func shouldSkipColumn(colName string, softDelete bool, includeArtieUpdatedAt boo
 func Diff(columnsInSource []Column, columnsInDestination []Column, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, mode config.Mode) ([]Column, []Column) {
 	src := buildColumnsMap(columnsInSource)
 	targ := buildColumnsMap(columnsInDestination)
-	var colNamesToRemove []string
 	for _, colName := range src.Keys() {
 		if _, isOk := targ.Get(colName); isOk {
-			colNamesToRemove = append(colNamesToRemove, colName)
+			targ.Remove(colName)
+			src.Remove(colName)
 		}
-	}
-
-	// We cannot delete inside a for-loop that is iterating over src.GetColumns() because we are messing up the array order.
-	for _, colName := range colNamesToRemove {
-		src.Remove(colName)
-		targ.Remove(colName)
 	}
 
 	var targetColumnsMissing Columns
