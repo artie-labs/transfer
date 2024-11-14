@@ -76,12 +76,9 @@ type AlterTableArgs struct {
 	ContainOtherOperations bool
 	TableID                sql.TableIdentifier
 	CreateTable            bool
-	TemporaryTable         bool
-
-	ColumnOp constants.ColumnOperation
-	Mode     config.Mode
-
-	CdcTime time.Time
+	ColumnOp               constants.ColumnOperation
+	Mode                   config.Mode
+	CdcTime                time.Time
 }
 
 func (a AlterTableArgs) Validate() error {
@@ -96,13 +93,6 @@ func (a AlterTableArgs) Validate() error {
 
 	if !(a.Mode == config.History || a.Mode == config.Replication) {
 		return fmt.Errorf("unexpected mode: %s", a.Mode.String())
-	}
-
-	// Temporary tables should only be created, not altered.
-	if a.TemporaryTable {
-		if !a.CreateTable {
-			return fmt.Errorf("incompatible operation - we should not be altering temporary tables, only create")
-		}
 	}
 
 	return nil
@@ -154,7 +144,7 @@ func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []col
 
 	var alterStatements []string
 	if a.CreateTable {
-		alterStatements = []string{a.Dialect.BuildCreateTableQuery(a.TableID, a.TemporaryTable, colSQLParts)}
+		alterStatements = []string{a.Dialect.BuildCreateTableQuery(a.TableID, false, colSQLParts)}
 	} else {
 		for _, colSQLPart := range colSQLParts {
 			alterStatements = append(alterStatements, a.Dialect.BuildAlterColumnQuery(a.TableID, a.ColumnOp, colSQLPart))
