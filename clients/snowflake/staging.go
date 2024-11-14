@@ -9,8 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/artie-labs/transfer/clients/shared"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -50,15 +51,10 @@ func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
 	return replaceExceededValues(value, colKind), nil
 }
 
-func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, _ *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
-		query, err := ddl.BuildCreateTableSQL(s.Dialect(), tempTableID, true, tableData.Mode(), tableData.ReadOnlyInMemoryCols().GetColumns())
-		if err != nil {
-			return fmt.Errorf("failed to build create table sql: %w", err)
-		}
-
-		if _, err = s.ExecContext(ctx, query); err != nil {
-			return fmt.Errorf("failed to create temp table: %w", err)
+		if err := shared.CreateTable(ctx, s, tableData, dwh, tempTableID, true); err != nil {
+			return err
 		}
 	}
 

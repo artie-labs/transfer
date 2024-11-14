@@ -7,8 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
-
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/bigquery/storage/managedwriter"
 	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
@@ -81,18 +79,9 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, u
 
 func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
-		query, err := ddl.BuildCreateTableSQL(s.Dialect(), tempTableID, true, tableData.Mode(), tableData.ReadOnlyInMemoryCols().GetColumns())
-		if err != nil {
-			return fmt.Errorf("failed to build create table sql: %w", err)
+		if err := shared.CreateTable(ctx, s, tableData, dwh, tempTableID, true); err != nil {
+			return err
 		}
-
-		slog.Info("[DDL] Executing query", slog.String("query", query))
-		if _, err = s.ExecContext(ctx, query); err != nil {
-			return fmt.Errorf("failed to create temp table: %w", err)
-		}
-
-		// Update cache with the new columns that we've added.
-		dwh.MutateInMemoryColumns(true, constants.Add, tableData.ReadOnlyInMemoryCols().GetColumns()...)
 	}
 
 	bqTempTableID, err := typing.AssertType[dialect.TableIdentifier](tempTableID)
