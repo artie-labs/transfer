@@ -61,7 +61,7 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 	case typing.TimestampTZ.Kind:
 		_time, err := ext.ParseTimestampTZFromAny(colVal)
 		if err != nil {
-			return "", fmt.Errorf("parseTimestampTZFromAny failed colVal: '%v', err: %w", colVal, err)
+			return "", fmt.Errorf("failed to cast colVal as timestampTZ, colVal: '%v', err: %w", colVal, err)
 		}
 
 		return _time.Format(time.RFC3339Nano), nil
