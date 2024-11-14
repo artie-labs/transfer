@@ -28,9 +28,14 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		return fmt.Errorf("failed to get table config: %w", err)
 	}
 
-	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
-		tableData.TopicConfig().SoftDelete, tableData.TopicConfig().IncludeArtieUpdatedAt,
-		tableData.TopicConfig().IncludeDatabaseUpdatedAt, tableData.Mode())
+	srcKeysMissing, targetKeysMissing := columns.Diff(
+		tableData.ReadOnlyInMemoryCols().GetColumns(),
+		tableConfig.Columns().GetColumns(),
+		tableData.TopicConfig().SoftDelete,
+		tableData.TopicConfig().IncludeArtieUpdatedAt,
+		tableData.TopicConfig().IncludeDatabaseUpdatedAt,
+		tableData.Mode(),
+	)
 
 	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	createAlterTableArgs := ddl.AlterTableArgs{
