@@ -281,7 +281,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	assert.NoError(s.T(), s.stageStore.Merge(context.Background(), tableData))
 	s.fakeStageStore.ExecReturns(nil, nil)
 	assert.Equal(s.T(), 8, s.fakeStageStore.ExecCallCount())
-	assert.Equal(s.T(), 2, s.fakeStageStore.ExecContextCallCount())
+	assert.Equal(s.T(), 3, s.fakeStageStore.ExecContextCallCount())
 
 	// Caught up now, so columns should be 0.
 	assert.Len(s.T(), s.stageStore.configMap.TableConfigCache(s.identifierFor(tableData)).ReadOnlyColumnsToDelete(), 0)

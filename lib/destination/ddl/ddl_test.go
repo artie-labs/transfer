@@ -80,26 +80,20 @@ func TestAlterTableArgs_Validate(t *testing.T) {
 	{
 		// Invalid
 		a := AlterTableArgs{
-			ColumnOp:    constants.Delete,
-			CreateTable: true,
-			Mode:        config.Replication,
+			ColumnOp: constants.Delete,
+			Mode:     config.Replication,
 		}
 		{
 			// Dialect isn't specified
 			assert.ErrorContains(t, a.Validate(), "dialect cannot be nil")
 		}
-		{
-			a.Dialect = bqDialect.BigQueryDialect{}
-			assert.ErrorContains(t, a.Validate(), "incompatible operation - cannot drop columns and create table at the same time")
-		}
 	}
 	{
 		// Valid
 		a := AlterTableArgs{
-			ColumnOp:    constants.Add,
-			CreateTable: true,
-			Mode:        config.Replication,
-			Dialect:     bqDialect.BigQueryDialect{},
+			ColumnOp: constants.Add,
+			Mode:     config.Replication,
+			Dialect:  bqDialect.BigQueryDialect{},
 		}
 
 		assert.NoError(t, a.Validate())
