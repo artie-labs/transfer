@@ -98,60 +98,45 @@ func TestShouldSkipColumn(t *testing.T) {
 	}
 }
 
-func TestDiffDelta1(t *testing.T) {
-	var sourceCols Columns
-	var targCols Columns
-	for colName, kindDetails := range map[string]typing.KindDetails{
-		"a": typing.String,
-		"b": typing.Boolean,
-		"c": typing.Struct,
-	} {
-		sourceCols.AddColumn(NewColumn(colName, kindDetails))
+func TestDiff(t *testing.T) {
+	{
+		// The same columns
+		columns := []Column{NewColumn("a", typing.String), NewColumn("b", typing.Boolean)}
+		sourceKeysMissing, targKeysMissing := Diff(columns, columns, false, false, false, config.Replication)
+		assert.Len(t, sourceKeysMissing, 0)
+		assert.Len(t, targKeysMissing, 0)
 	}
+	{
+		// Source column has an extra column
+		sourceCols := []Column{NewColumn("a", typing.String), NewColumn("b", typing.Boolean)}
+		targCols := []Column{NewColumn("a", typing.String)}
 
-	for colName, kindDetails := range map[string]typing.KindDetails{
-		"aa": typing.String,
-		"b":  typing.Boolean,
-		"cc": typing.String,
-	} {
-		targCols.AddColumn(NewColumn(colName, kindDetails))
+		sourceKeysMissing, targKeysMissing := Diff(sourceCols, targCols, false, false, false, config.Replication)
+		assert.Len(t, sourceKeysMissing, 0)
+		assert.Len(t, targKeysMissing, 1)
+		assert.Equal(t, targKeysMissing[0], NewColumn("b", typing.Boolean))
 	}
+	{
+		// Destination has an extra column
+		sourceCols := []Column{NewColumn("a", typing.String)}
+		targCols := []Column{NewColumn("a", typing.String), NewColumn("b", typing.Boolean)}
 
-	srcKeyMissing, targKeyMissing := Diff(sourceCols.GetColumns(), targCols.GetColumns(), false, false, false, config.Replication)
-	assert.Equal(t, len(srcKeyMissing), 2, srcKeyMissing)   // Missing aa, cc
-	assert.Equal(t, len(targKeyMissing), 2, targKeyMissing) // Missing aa, cc
-}
-
-func TestDiffDelta2(t *testing.T) {
-	var sourceCols Columns
-	var targetCols Columns
-
-	for colName, kindDetails := range map[string]typing.KindDetails{
-		"a":  typing.String,
-		"aa": typing.String,
-		"b":  typing.Boolean,
-		"c":  typing.Struct,
-		"d":  typing.String,
-		"CC": typing.String,
-		"cC": typing.String,
-		"Cc": typing.String,
-	} {
-		sourceCols.AddColumn(NewColumn(colName, kindDetails))
+		sourceKeysMissing, targKeysMissing := Diff(sourceCols, targCols, false, false, false, config.Replication)
+		assert.Len(t, sourceKeysMissing, 1)
+		assert.Equal(t, sourceKeysMissing[0], NewColumn("b", typing.Boolean))
+		assert.Len(t, targKeysMissing, 0)
 	}
+	{
+		// Source and destination both have different columns
+		sourceCols := []Column{NewColumn("a", typing.String), NewColumn("b", typing.Boolean)}
+		targCols := []Column{NewColumn("c", typing.String), NewColumn("d", typing.Boolean)}
 
-	for colName, kindDetails := range map[string]typing.KindDetails{
-		"aa": typing.String,
-		"b":  typing.Boolean,
-		"cc": typing.String,
-		"CC": typing.String,
-		"dd": typing.String,
-	} {
-		targetCols.AddColumn(NewColumn(colName, kindDetails))
+		sourceKeysMissing, targKeysMissing := Diff(sourceCols, targCols, false, false, false, config.Replication)
+		assert.Len(t, sourceKeysMissing, 2)
+		assert.Equal(t, sourceKeysMissing, targCols)
+		assert.Len(t, targKeysMissing, 2)
+		assert.Equal(t, targKeysMissing, sourceCols)
 	}
-
-	srcKeyMissing, targKeyMissing := Diff(sourceCols.GetColumns(), targetCols.GetColumns(), false, false, false, config.Replication)
-	assert.Equal(t, len(srcKeyMissing), 1, srcKeyMissing)   // Missing dd
-	assert.Equal(t, len(targKeyMissing), 3, targKeyMissing) // Missing a, c, d
 }
 
 func TestBuildColumnsMap(t *testing.T) {
