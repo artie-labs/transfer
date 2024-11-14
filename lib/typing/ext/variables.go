@@ -10,12 +10,13 @@ const (
 
 var supportedDateTimeLayouts = []string{
 	// RFC 3339
+	time.RFC3339,
 	time.RFC3339Nano,
 	RFC3339Millisecond,
 	RFC3339Microsecond,
 	RFC3339Nanosecond,
-	time.RFC3339Nano,
 	// Others
+	"2006-01-02T15:04:05.999999999-07:00",
 	time.Layout,
 	time.ANSIC,
 	time.UnixDate,
@@ -25,7 +26,6 @@ var supportedDateTimeLayouts = []string{
 	time.RFC850,
 	time.RFC1123,
 	time.RFC1123Z,
-	time.RFC3339,
 }
 
 var supportedDateFormats = []string{
