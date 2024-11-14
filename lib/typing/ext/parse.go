@@ -101,12 +101,9 @@ func ParseTimestampTZFromAny(val any) (time.Time, error) {
 
 func parseTimestampTZ(value string) (time.Time, error) {
 	for _, supportedDateTimeLayout := range supportedDateTimeLayouts {
-		ts, err := ParseTimeExactMatch(supportedDateTimeLayout, value)
-		if err == nil {
+		if ts, err := ParseTimeExactMatch(supportedDateTimeLayout, value); err == nil {
 			return ts, nil
 		}
-
-		fmt.Println("err", err, "value", value)
 	}
 
 	return time.Time{}, fmt.Errorf("unsupported value: %q", value)
