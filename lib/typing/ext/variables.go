@@ -16,6 +16,7 @@ var supportedDateTimeLayouts = []string{
 	RFC3339Nanosecond,
 	time.RFC3339Nano,
 	// Others
+	"2006-01-02T15:04:05.999999999-07:00",
 	time.Layout,
 	time.ANSIC,
 	time.UnixDate,

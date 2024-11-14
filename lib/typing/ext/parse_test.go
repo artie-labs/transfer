@@ -77,6 +77,12 @@ func TestParseTimestampTZFromAny(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "2024-09-19T16:05:18.630000002Z", value.Format(time.RFC3339Nano))
 	}
+	{
+		// Another string variant
+		value, err := ParseTimestampTZFromAny("2023-07-20T11:01:33.159+00:00")
+		assert.NoError(t, err)
+		assert.Equal(t, "2023-07-20T11:01:33.159Z", value.Format(time.RFC3339Nano))
+	}
 }
 
 func TestParseTimestampNTZFromAny(t *testing.T) {
