@@ -28,17 +28,6 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		return fmt.Errorf("failed to get table config: %w", err)
 	}
 
-	fmt.Println("### tableData.ReadOnlyInMemoryCols() ###")
-	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
-		fmt.Println(">>", col.Name(), col.KindDetails.Kind)
-	}
-	fmt.Println("### End ###")
-	fmt.Println("### table.tableConfig.Columns() ###")
-	for _, col := range tableConfig.Columns().GetColumns() {
-		fmt.Println(">>", col.Name(), col.KindDetails.Kind)
-	}
-	fmt.Println("### End ###")
-
 	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
 		tableData.TopicConfig().SoftDelete, tableData.TopicConfig().IncludeArtieUpdatedAt,
 		tableData.TopicConfig().IncludeDatabaseUpdatedAt, tableData.Mode())

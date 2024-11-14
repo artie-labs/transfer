@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
+
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/bigquery/storage/managedwriter"
 	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
@@ -90,7 +92,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		}
 
 		// Update cache with the new columns that we've added.
-		//dwh.MutateInMemoryColumns(true, constants.Add, tableData.ReadOnlyInMemoryCols().GetColumns()...)
+		dwh.MutateInMemoryColumns(true, constants.Add, tableData.ReadOnlyInMemoryCols().GetColumns()...)
 	}
 
 	bqTempTableID, err := typing.AssertType[dialect.TableIdentifier](tempTableID)
