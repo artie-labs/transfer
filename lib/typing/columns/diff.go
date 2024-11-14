@@ -3,11 +3,9 @@ package columns
 import (
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/maputil"
-
 	"github.com/artie-labs/transfer/lib/config"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/maputil"
 )
 
 // shouldSkipColumn takes the `colName` and `softDelete` and will return whether we should skip this column when calculating the diff.
