@@ -189,7 +189,7 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 
 	tableID := dialect.NewTableIdentifier("shop", "public", "users1")
 	tableCfg := types.NewDwhTableConfig(nil, true)
-	tableCfg.SetColumnsToDelete(map[string]time.Time{
+	tableCfg.SetColumnsToDeleteForTest(map[string]time.Time{
 		"col_to_delete": time.Now().Add(-2 * constants.DeletionConfidencePadding),
 		"answers":       time.Now().Add(-2 * constants.DeletionConfidencePadding),
 		"start":         time.Now().Add(-2 * constants.DeletionConfidencePadding),

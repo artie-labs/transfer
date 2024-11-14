@@ -83,26 +83,6 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 	assert.Equal(s.T(), allowed, true, "should now be allowed to delete")
 }
 
-func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
-	var cols []columns.Column
-	for colName, kindDetails := range map[string]typing.KindDetails{
-		"id":          typing.Integer,
-		"customer_id": typing.Integer,
-		"price":       typing.Float,
-		"name":        typing.String,
-		"created_at":  typing.TimestampTZ,
-	} {
-		cols = append(cols, columns.NewColumn(colName, kindDetails))
-	}
-
-	tc := types.NewDwhTableConfig(cols, false)
-	tc.SetColumnsToDelete(map[string]time.Time{"customer_id": time.Now()})
-
-	assert.Equal(s.T(), len(tc.ReadOnlyColumnsToDelete()), 1)
-	assert.False(s.T(), tc.ShouldDeleteColumn("customer_id",
-		time.Now().Add(24*time.Hour), false))
-}
-
 func (s *SnowflakeTestSuite) TestGetTableConfig() {
 	// If the table does not exist, snowflakeTableConfig should say so.
 	fqName := "customers.public.orders22"

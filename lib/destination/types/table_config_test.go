@@ -114,7 +114,7 @@ func TestDwhTableConfig_ReadOnlyColumnsToDelete(t *testing.T) {
 		colsToDelete[colToDelete] = time.Now()
 	}
 
-	tc.SetColumnsToDelete(colsToDelete)
+	tc.SetColumnsToDeleteForTest(colsToDelete)
 
 	var wg sync.WaitGroup
 	for i := 0; i < 100; i++ {
@@ -162,7 +162,7 @@ func TestAuditColumnsToDelete(t *testing.T) {
 			colsToDelete[colToDelete] = time.Now()
 		}
 
-		dwhTc.SetColumnsToDelete(colsToDelete)
+		dwhTc.SetColumnsToDeleteForTest(colsToDelete)
 
 		var cols []columns.Column
 		for _, colToDelete := range tc.colsToDelete {
@@ -181,5 +181,38 @@ func TestAuditColumnsToDelete(t *testing.T) {
 
 		slices.Sort(actualCols)
 		assert.Equal(t, tc.expectedColsRemain, actualCols, idx)
+	}
+}
+
+func TestShouldDeleteColumns(t *testing.T) {
+	{
+		// dropDeletedColumns = true
+		tc := types.NewDwhTableConfig([]columns.Column{columns.NewColumn("customer_id", typing.Integer)}, true)
+		tc.SetColumnsToDeleteForTest(map[string]time.Time{"customer_id": time.Now()})
+		assert.Len(t, tc.ReadOnlyColumnsToDelete(), 1)
+		{
+			// False
+			{
+				// containsOtherOperations = false
+				assert.False(t, tc.ShouldDeleteColumn("customer_id", time.Now().Add(24*time.Hour), false))
+			}
+			{
+				// containsOtherOperations = true, however the cdc time is in the past
+				assert.False(t, tc.ShouldDeleteColumn("customer_id", time.Now().Add(-1*24*time.Hour), false))
+			}
+		}
+		{
+			// True - containsOtherOperations = true
+			assert.True(t, tc.ShouldDeleteColumn("customer_id", time.Now().Add(24*time.Hour), true))
+		}
+	}
+	{
+		// dropDeletedColumns = false
+		tc := types.NewDwhTableConfig([]columns.Column{columns.NewColumn("customer_id", typing.Integer)}, false)
+		tc.SetColumnsToDeleteForTest(map[string]time.Time{"customer_id": time.Now()})
+		assert.Len(t, tc.ReadOnlyColumnsToDelete(), 1)
+		for _, val := range []bool{true, false} {
+			assert.False(t, tc.ShouldDeleteColumn("customer_id", time.Now().Add(24*time.Hour), val))
+		}
 	}
 }

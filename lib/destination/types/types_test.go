@@ -27,7 +27,7 @@ func generateDwhTableCfg() *types.DwhTableConfig {
 		colsToDelete[col] = time.Now()
 	}
 
-	tableCfg.SetColumnsToDelete(colsToDelete)
+	tableCfg.SetColumnsToDeleteForTest(colsToDelete)
 	return tableCfg
 }
 

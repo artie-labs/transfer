@@ -30,8 +30,7 @@ func NewDwhTableConfig(cols []columns.Column, dropDeletedColumns bool) *DwhTable
 	}
 }
 
-// SetColumnsToDelete - This is used by tests only
-func (d *DwhTableConfig) SetColumnsToDelete(cols map[string]time.Time) {
+func (d *DwhTableConfig) SetColumnsToDeleteForTest(cols map[string]time.Time) {
 	d.Lock()
 	defer d.Unlock()
 
