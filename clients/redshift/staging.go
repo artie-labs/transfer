@@ -9,7 +9,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -41,17 +40,12 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	if createTempTable {
-		tempAlterTableArgs := ddl.AlterTableArgs{
-			Dialect:        s.Dialect(),
-			Tc:             tableConfig,
-			TableID:        tempTableID,
-			CreateTable:    true,
-			TemporaryTable: true,
-			ColumnOp:       constants.Add,
-			Mode:           tableData.Mode(),
+		query, err := ddl.BuildCreateTableSQL(s.Dialect(), tempTableID, true, tableData.Mode(), tableData.ReadOnlyInMemoryCols().GetColumns())
+		if err != nil {
+			return fmt.Errorf("failed to build create table sql: %w", err)
 		}
 
-		if err = tempAlterTableArgs.AlterTable(s, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
+		if _, err = s.ExecContext(ctx, query); err != nil {
 			return fmt.Errorf("failed to create temp table: %w", err)
 		}
 	}

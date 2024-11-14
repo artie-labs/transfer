@@ -14,7 +14,6 @@ import (
 	"github.com/artie-labs/transfer/clients/databricks/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -81,19 +80,14 @@ func (s Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTabl
 	}.GetTableConfig()
 }
 
-func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
+func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, _ *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
-		tempAlterTableArgs := ddl.AlterTableArgs{
-			Dialect:        s.Dialect(),
-			Tc:             tableConfig,
-			TableID:        tempTableID,
-			CreateTable:    true,
-			TemporaryTable: true,
-			ColumnOp:       constants.Add,
-			Mode:           tableData.Mode(),
+		query, err := ddl.BuildCreateTableSQL(s.Dialect(), tempTableID, true, tableData.Mode(), tableData.ReadOnlyInMemoryCols().GetColumns())
+		if err != nil {
+			return fmt.Errorf("failed to build create table sql: %w", err)
 		}
 
-		if err := tempAlterTableArgs.AlterTable(s, tableData.ReadOnlyInMemoryCols().GetColumns()...); err != nil {
+		if _, err = s.ExecContext(ctx, query); err != nil {
 			return fmt.Errorf("failed to create temp table: %w", err)
 		}
 	}
