@@ -14,7 +14,6 @@ var supportedDateTimeLayouts = []string{
 	RFC3339Millisecond,
 	RFC3339Microsecond,
 	RFC3339Nanosecond,
-	time.RFC3339Nano,
 	// Others
 	"2006-01-02T15:04:05.999999999-07:00",
 	time.Layout,
