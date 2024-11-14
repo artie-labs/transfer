@@ -33,19 +33,26 @@ func Append(ctx context.Context, dwh destination.DataWarehouse, tableData *optim
 	)
 
 	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	createAlterTableArgs := ddl.AlterTableArgs{
-		Dialect:     dwh.Dialect(),
-		Tc:          tableConfig,
-		TableID:     tableID,
-		CreateTable: tableConfig.CreateTable(),
-		ColumnOp:    constants.Add,
-		CdcTime:     tableData.LatestCDCTs,
-		Mode:        tableData.Mode(),
-	}
 
-	// Keys that exist in CDC stream, but not in DWH
-	if err = createAlterTableArgs.AlterTable(dwh, targetKeysMissing...); err != nil {
-		return fmt.Errorf("failed to alter table: %w", err)
+	if tableConfig.CreateTable() {
+		if err = CreateTable(ctx, dwh, tableData, tableConfig, tableID, false); err != nil {
+			return fmt.Errorf("failed to create table: %w", err)
+		}
+	} else {
+		createAlterTableArgs := ddl.AlterTableArgs{
+			Dialect:  dwh.Dialect(),
+			Tc:       tableConfig,
+			TableID:  tableID,
+			ColumnOp: constants.Add,
+			CdcTime:  tableData.LatestCDCTs,
+			Mode:     tableData.Mode(),
+		}
+
+		// Keys that exist in CDC stream, but not in DWH
+		if err = createAlterTableArgs.AlterTable(dwh, targetKeysMissing...); err != nil {
+			return fmt.Errorf("failed to alter table: %w", err)
+		}
+
 	}
 
 	if err = tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...); err != nil {

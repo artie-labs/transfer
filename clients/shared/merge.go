@@ -33,19 +33,25 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		tableData.TopicConfig().IncludeDatabaseUpdatedAt, tableData.Mode())
 
 	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	createAlterTableArgs := ddl.AlterTableArgs{
-		Dialect:     dwh.Dialect(),
-		Tc:          tableConfig,
-		TableID:     tableID,
-		CreateTable: tableConfig.CreateTable(),
-		ColumnOp:    constants.Add,
-		CdcTime:     tableData.LatestCDCTs,
-		Mode:        tableData.Mode(),
-	}
 
-	// Columns that are missing in DWH, but exist in our CDC stream.
-	if err = createAlterTableArgs.AlterTable(dwh, targetKeysMissing...); err != nil {
-		return fmt.Errorf("failed to alter table: %w", err)
+	if tableConfig.CreateTable() {
+		if err = CreateTable(ctx, dwh, tableData, tableConfig, tableID, false); err != nil {
+			return fmt.Errorf("failed to create table: %w", err)
+		}
+	} else {
+		createAlterTableArgs := ddl.AlterTableArgs{
+			Dialect:  dwh.Dialect(),
+			Tc:       tableConfig,
+			TableID:  tableID,
+			ColumnOp: constants.Add,
+			CdcTime:  tableData.LatestCDCTs,
+			Mode:     tableData.Mode(),
+		}
+
+		// Columns that are missing in DWH, but exist in our CDC stream.
+		if err = createAlterTableArgs.AlterTable(dwh, targetKeysMissing...); err != nil {
+			return fmt.Errorf("failed to alter table: %w", err)
+		}
 	}
 
 	// Keys that exist in DWH, but not in our CDC stream.
@@ -53,7 +59,6 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		Dialect:                dwh.Dialect(),
 		Tc:                     tableConfig,
 		TableID:                tableID,
-		CreateTable:            false,
 		ColumnOp:               constants.Delete,
 		ContainOtherOperations: tableData.ContainOtherOperations(),
 		CdcTime:                tableData.LatestCDCTs,
