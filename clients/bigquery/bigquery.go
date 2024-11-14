@@ -77,7 +77,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, u
 	return nil
 }
 
-func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, _ *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		query, err := ddl.BuildCreateTableSQL(s.Dialect(), tempTableID, true, tableData.Mode(), tableData.ReadOnlyInMemoryCols().GetColumns())
 		if err != nil {
@@ -88,6 +88,9 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		if _, err = s.ExecContext(ctx, query); err != nil {
 			return fmt.Errorf("failed to create temp table: %w", err)
 		}
+
+		// Update cache with the new columns that we've added.
+		//dwh.MutateInMemoryColumns(true, constants.Add, tableData.ReadOnlyInMemoryCols().GetColumns()...)
 	}
 
 	bqTempTableID, err := typing.AssertType[dialect.TableIdentifier](tempTableID)
