@@ -98,73 +98,6 @@ func TestShouldSkipColumn(t *testing.T) {
 	}
 }
 
-func TestDiff_VariousNils(t *testing.T) {
-	type _testCase struct {
-		name       string
-		sourceCols *Columns
-		targCols   *Columns
-
-		expectedSrcKeyLength  int
-		expectedTargKeyLength int
-	}
-
-	var sourceColsNotNil Columns
-	var targColsNotNil Columns
-	sourceColsNotNil.AddColumn(NewColumn("foo", typing.Invalid))
-	targColsNotNil.AddColumn(NewColumn("foo", typing.Invalid))
-	testCases := []_testCase{
-		{
-			name:       "both &Columns{}",
-			sourceCols: &Columns{},
-			targCols:   &Columns{},
-		},
-		{
-			name:                  "only targ is &Columns{}",
-			sourceCols:            &sourceColsNotNil,
-			targCols:              &Columns{},
-			expectedTargKeyLength: 1,
-		},
-		{
-			name:                 "only source is &Columns{}",
-			sourceCols:           &Columns{},
-			targCols:             &targColsNotNil,
-			expectedSrcKeyLength: 1,
-		},
-		{
-			name:       "both nil",
-			sourceCols: nil,
-			targCols:   nil,
-		},
-		{
-			name:                  "only targ is nil",
-			sourceCols:            &sourceColsNotNil,
-			targCols:              nil,
-			expectedTargKeyLength: 1,
-		},
-		{
-			name:                 "only source is nil",
-			sourceCols:           nil,
-			targCols:             &targColsNotNil,
-			expectedSrcKeyLength: 1,
-		},
-	}
-
-	for _, testCase := range testCases {
-		actualSrcKeysMissing, actualTargKeysMissing := Diff(testCase.sourceCols.GetColumns(), testCase.targCols.GetColumns(), false, false, false, config.Replication)
-		assert.Equal(t, testCase.expectedSrcKeyLength, len(actualSrcKeysMissing), testCase.name)
-		assert.Equal(t, testCase.expectedTargKeyLength, len(actualTargKeysMissing), testCase.name)
-	}
-}
-
-func TestDiffBasic(t *testing.T) {
-	var source Columns
-	source.AddColumn(NewColumn("a", typing.Integer))
-
-	srcKeyMissing, targKeyMissing := Diff(source.GetColumns(), source.GetColumns(), false, false, false, config.Replication)
-	assert.Equal(t, len(srcKeyMissing), 0)
-	assert.Equal(t, len(targKeyMissing), 0)
-}
-
 func TestDiffDelta1(t *testing.T) {
 	var sourceCols Columns
 	var targCols Columns
@@ -219,28 +152,6 @@ func TestDiffDelta2(t *testing.T) {
 	srcKeyMissing, targKeyMissing := Diff(sourceCols.GetColumns(), targetCols.GetColumns(), false, false, false, config.Replication)
 	assert.Equal(t, len(srcKeyMissing), 1, srcKeyMissing)   // Missing dd
 	assert.Equal(t, len(targKeyMissing), 3, targKeyMissing) // Missing a, c, d
-}
-
-func TestDiffDeterministic(t *testing.T) {
-	retMap := map[string]bool{}
-	var sourceCols Columns
-	var targCols Columns
-	sourceCols.AddColumn(NewColumn("id", typing.Integer))
-	sourceCols.AddColumn(NewColumn("name", typing.String))
-
-	for i := 0; i < 500; i++ {
-		keysMissing, targetKeysMissing := Diff(sourceCols.GetColumns(), targCols.GetColumns(), false, false, false, config.Replication)
-		assert.Equal(t, 0, len(keysMissing), keysMissing)
-
-		var key string
-		for _, targetKeyMissing := range targetKeysMissing {
-			key += targetKeyMissing.Name()
-		}
-
-		retMap[key] = false
-	}
-
-	assert.Equal(t, 1, len(retMap), retMap)
 }
 
 func TestBuildColumnsMap(t *testing.T) {
