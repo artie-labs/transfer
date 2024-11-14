@@ -10,6 +10,7 @@ const (
 
 var supportedDateTimeLayouts = []string{
 	// RFC 3339
+	time.RFC3339,
 	time.RFC3339Nano,
 	RFC3339Millisecond,
 	RFC3339Microsecond,
@@ -25,7 +26,6 @@ var supportedDateTimeLayouts = []string{
 	time.RFC850,
 	time.RFC1123,
 	time.RFC1123Z,
-	time.RFC3339,
 }
 
 var supportedDateFormats = []string{
