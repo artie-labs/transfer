@@ -159,7 +159,7 @@ func (a AlterTableArgs) AlterTable(dwh destination.DataWarehouse, cols ...column
 	}
 
 	// createTable = false since it all successfully updated.
-	a.Tc.MutateInMemoryColumns(false, a.ColumnOp, mutateCol...)
+	a.Tc.MutateInMemoryColumns(a.ColumnOp, mutateCol...)
 
 	return nil
 }

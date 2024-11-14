@@ -60,7 +60,7 @@ func (d *DwhTableConfig) Columns() *columns.Columns {
 	return d.columns
 }
 
-func (d *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp constants.ColumnOperation, cols ...columns.Column) {
+func (d *DwhTableConfig) MutateInMemoryColumns(columnOp constants.ColumnOperation, cols ...columns.Column) {
 	d.Lock()
 	defer d.Unlock()
 	switch columnOp {
@@ -71,7 +71,8 @@ func (d *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp consta
 			delete(d.columnsToDelete, col.Name())
 		}
 
-		d.createTable = createTable
+		// If we're adding columns, then the table should have either been created or already exists.
+		d.createTable = false
 	case constants.Delete:
 		for _, col := range cols {
 			// Delete from the permissions and in-memory table
