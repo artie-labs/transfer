@@ -12,7 +12,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -173,43 +172,12 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	assert.Len(d.T(), snowflakeTc.ReadOnlyColumnsToDelete(), originalColumnLength)
 
 	for _, column := range cols.GetColumns() {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:                d.snowflakeStagesStore.Dialect(),
-			Tc:                     snowflakeTc,
-			TableID:                snowflakeTableID,
-			ContainOtherOperations: true,
-			ColumnOp:               constants.Delete,
-			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
-			Mode:                   config.Replication,
-		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.snowflakeStagesStore, column))
-
+		// Snowflake
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.snowflakeStagesStore, snowflakeTc, snowflakeTableID, []columns.Column{column}, ts.Add(2*constants.DeletionConfidencePadding), true))
 		// BigQuery
-		alterTableArgs = ddl.AlterTableArgs{
-			Dialect:                d.bigQueryStore.Dialect(),
-			Tc:                     bqTc,
-			TableID:                bqTableID,
-			ContainOtherOperations: true,
-			ColumnOp:               constants.Delete,
-			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
-			Mode:                   config.Replication,
-		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.bigQueryStore, column))
-
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.bigQueryStore, bqTc, bqTableID, []columns.Column{column}, ts.Add(2*constants.DeletionConfidencePadding), true))
 		// Redshift
-		alterTableArgs = ddl.AlterTableArgs{
-			Dialect:                d.redshiftStore.Dialect(),
-			Tc:                     redshiftTc,
-			TableID:                redshiftTableID,
-			ContainOtherOperations: true,
-			ColumnOp:               constants.Delete,
-			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
-			Mode:                   config.Replication,
-		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.redshiftStore, column))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.redshiftStore, redshiftTc, redshiftTableID, []columns.Column{column}, ts.Add(2*constants.DeletionConfidencePadding), true))
 	}
 
 	// Everything has been deleted.
