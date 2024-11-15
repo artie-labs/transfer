@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
-	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -38,20 +36,9 @@ func Append(ctx context.Context, dwh destination.DataWarehouse, tableData *optim
 			return fmt.Errorf("failed to create table: %w", err)
 		}
 	} else {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:  dwh.Dialect(),
-			Tc:       tableConfig,
-			TableID:  tableID,
-			ColumnOp: constants.Add,
-			CdcTime:  tableData.LatestCDCTs,
-			Mode:     tableData.Mode(),
-		}
-
-		// Keys that exist in CDC stream, but not in DWH
-		if err = alterTableArgs.AlterTable(dwh, targetKeysMissing...); err != nil {
+		if err = AlterTableAddColumns(ctx, dwh, tableConfig, tableID, targetKeysMissing); err != nil {
 			return fmt.Errorf("failed to alter table: %w", err)
 		}
-
 	}
 
 	if err = tableData.MergeColumnsFromDestination(tableConfig.GetColumns()...); err != nil {

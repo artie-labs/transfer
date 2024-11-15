@@ -76,6 +76,48 @@ func TestBuildCreateTableSQL(t *testing.T) {
 	}
 }
 
+func TestBuildAlterTableAddColumns(t *testing.T) {
+	{
+		// No columns
+		sqlParts, err := BuildAlterTableAddColumns(nil, nil, []columns.Column{})
+		assert.NoError(t, err)
+		assert.Empty(t, sqlParts)
+	}
+	{
+		// One column to add
+		col := columns.NewColumn("dusty", typing.String)
+		sqlParts, err := BuildAlterTableAddColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), []columns.Column{col})
+		assert.NoError(t, err)
+		assert.Len(t, sqlParts, 1)
+		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "dusty" VARCHAR(MAX)`, sqlParts[0])
+	}
+	{
+		// Two columns, one invalid, it will error.
+		col := columns.NewColumn("dusty", typing.String)
+		_, err := BuildAlterTableAddColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"),
+			[]columns.Column{
+				col,
+				columns.NewColumn("invalid", typing.Invalid),
+			},
+		)
+
+		assert.ErrorContains(t, err, `received an invalid column "invalid"`)
+	}
+	{
+		// Three columns to add
+		col1 := columns.NewColumn("aussie", typing.String)
+		col2 := columns.NewColumn("doge", typing.String)
+		col3 := columns.NewColumn("age", typing.Integer)
+
+		sqlParts, err := BuildAlterTableAddColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), []columns.Column{col1, col2, col3})
+		assert.NoError(t, err)
+		assert.Len(t, sqlParts, 3)
+		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "aussie" VARCHAR(MAX)`, sqlParts[0])
+		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "doge" VARCHAR(MAX)`, sqlParts[1])
+		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "age" INT8`, sqlParts[2])
+	}
+}
+
 func TestAlterTableArgs_Validate(t *testing.T) {
 	{
 		// Invalid

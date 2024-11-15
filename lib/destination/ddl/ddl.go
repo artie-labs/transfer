@@ -69,6 +69,20 @@ func DropTemporaryTable(dwh destination.DataWarehouse, tableIdentifier sql.Table
 	return nil
 }
 
+func BuildAlterTableAddColumns(dialect sql.Dialect, tableID sql.TableIdentifier, cols []columns.Column) ([]string, error) {
+	var parts []string
+	for _, col := range cols {
+		if col.ShouldSkip() {
+			return nil, fmt.Errorf("received an invalid column %q", col.Name())
+		}
+
+		sqlPart := fmt.Sprintf("%s %s", dialect.QuoteIdentifier(col.Name()), dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey()))
+		parts = append(parts, dialect.BuildAlterColumnQuery(tableID, constants.Add, sqlPart))
+	}
+
+	return parts, nil
+}
+
 type AlterTableArgs struct {
 	Dialect sql.Dialect
 	Tc      *types.DwhTableConfig

@@ -11,6 +11,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tc *types.DwhTableConfig, tableID sql.TableIdentifier, tempTable bool) error {
@@ -26,5 +27,37 @@ func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *
 
 	// Update cache with the new columns that we've added.
 	tc.MutateInMemoryColumns(constants.Add, tableData.ReadOnlyInMemoryCols().GetColumns()...)
+	return nil
+}
+
+func AlterTableAddColumns(ctx context.Context, dwh destination.DataWarehouse, tc *types.DwhTableConfig, tableID sql.TableIdentifier, cols []columns.Column) error {
+	if len(cols) == 0 {
+		return nil
+	}
+
+	var colsToAdd []columns.Column
+	for _, col := range cols {
+		if col.ShouldSkip() {
+			continue
+		}
+
+		colsToAdd = append(colsToAdd, col)
+	}
+
+	sqlParts, err := ddl.BuildAlterTableAddColumns(dwh.Dialect(), tableID, colsToAdd)
+	if err != nil {
+		return fmt.Errorf("failed to build alter table add columns: %w", err)
+	}
+
+	for _, sqlPart := range sqlParts {
+		slog.Info("[DDL] Executing query", slog.String("query", sqlPart))
+		if _, err = dwh.ExecContext(ctx, sqlPart); err != nil {
+			if !dwh.Dialect().IsColumnAlreadyExistsErr(err) {
+				return fmt.Errorf("failed to alter table: %w", err)
+			}
+		}
+	}
+
+	tc.MutateInMemoryColumns(constants.Add, colsToAdd...)
 	return nil
 }
