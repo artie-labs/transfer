@@ -26,7 +26,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 
 	for colName, newValue := range colToNewLengthMap {
 		// Try to upsert columns first. If this fails, we won't need to update the destination table.
-		err = tableConfig.UpsertColumn(colName, columns.UpsertColumnArg{
+		err = tableConfig.UpsertColumn(colName, types.UpsertColumnArg{
 			StringPrecision: typing.ToPtr(newValue),
 		})
 

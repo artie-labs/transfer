@@ -71,6 +71,14 @@ func (o *OrderedMap[T]) Keys() []string {
 	return slices.Clone(o.keys)
 }
 
+func (o *OrderedMap[T]) Values() []T {
+	var values []T
+	for _, key := range o.keys {
+		values = append(values, o.data[key])
+	}
+	return values
+}
+
 // All returns an in-order iterator over key-value pairs.
 func (o *OrderedMap[T]) All() iter.Seq2[string, T] {
 	return func(yield func(string, T) bool) {

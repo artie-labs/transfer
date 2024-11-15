@@ -1,10 +1,15 @@
 package types
 
 import (
+	"fmt"
 	"log/slog"
 	"maps"
 	"sync"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/typing"
+
+	"github.com/artie-labs/transfer/lib/maputil"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -12,7 +17,7 @@ import (
 
 type DwhTableConfig struct {
 	// Making these private variables to avoid concurrent R/W panics.
-	columns         *columns.Columns
+	columns         *maputil.OrderedMap[columns.Column]
 	columnsToDelete map[string]time.Time // column --> when to delete
 	createTable     bool
 
@@ -23,7 +28,7 @@ type DwhTableConfig struct {
 
 func NewDwhTableConfig(cols []columns.Column, dropDeletedColumns bool) *DwhTableConfig {
 	return &DwhTableConfig{
-		columns:            columns.NewColumns(cols),
+		columns:            maputil.NewOrderedMap[columns.Column](true),
 		columnsToDelete:    make(map[string]time.Time),
 		createTable:        len(cols) == 0,
 		dropDeletedColumns: dropDeletedColumns,
@@ -56,21 +61,49 @@ func (d *DwhTableConfig) GetColumns() []columns.Column {
 	d.RLock()
 	defer d.RUnlock()
 
-	return d.columns.GetColumns()
+	return d.columns.Values()
 }
 
-func (d *DwhTableConfig) UpdateColumn(col columns.Column) {
+func (d *DwhTableConfig) UpdateColumn(updateCol columns.Column) {
 	d.Lock()
 	defer d.Unlock()
 
-	d.columns.UpdateColumn(col)
+	if _, isOk := d.columns.Get(updateCol.Name()); isOk {
+		d.columns.Add(updateCol.Name(), updateCol)
+	}
+
+	return
 }
 
-func (d *DwhTableConfig) UpsertColumn(colName string, arg columns.UpsertColumnArg) error {
+type UpsertColumnArg struct {
+	Backfilled      *bool
+	StringPrecision *int32
+}
+
+func (d *DwhTableConfig) UpsertColumn(colName string, arg UpsertColumnArg) error {
 	d.Lock()
 	defer d.Unlock()
 
-	return d.columns.UpsertColumn(colName, arg)
+	col, isOk := d.columns.Get(colName)
+	if !isOk {
+		col = columns.NewColumn(colName, typing.Invalid)
+	}
+
+	if arg.StringPrecision != nil {
+		currentPrecision := typing.DefaultValueFromPtr[int32](col.KindDetails.OptionalStringPrecision, 0)
+		if currentPrecision > *arg.StringPrecision {
+			return fmt.Errorf("cannot decrease string precision from %d to %d", currentPrecision, *arg.StringPrecision)
+		}
+
+		col.KindDetails.OptionalStringPrecision = arg.StringPrecision
+	}
+
+	if arg.Backfilled != nil {
+		col.SetBackfilled(*arg.Backfilled)
+	}
+
+	d.columns.Add(colName, col)
+	return nil
 }
 
 func (d *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp constants.ColumnOperation, cols ...columns.Column) {
@@ -79,7 +112,7 @@ func (d *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp consta
 	switch columnOp {
 	case constants.Add:
 		for _, col := range cols {
-			d.columns.AddColumn(col)
+			d.columns.Add(col.Name(), col)
 			// Delete from the permissions table, if exists.
 			delete(d.columnsToDelete, col.Name())
 		}
@@ -88,7 +121,7 @@ func (d *DwhTableConfig) MutateInMemoryColumns(createTable bool, columnOp consta
 	case constants.Delete:
 		for _, col := range cols {
 			// Delete from the permissions and in-memory table
-			d.columns.DeleteColumn(col.Name())
+			d.columns.Remove(col.Name())
 			delete(d.columnsToDelete, col.Name())
 		}
 	}
