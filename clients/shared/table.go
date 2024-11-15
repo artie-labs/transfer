@@ -35,7 +35,7 @@ func AlterTableAddColumns(ctx context.Context, dwh destination.DataWarehouse, tc
 		return nil
 	}
 
-	sqlParts := ddl.BuildAlterTableAddColumns(dwh.Dialect(), tableID, columns)
+	sqlParts, addedCols := ddl.BuildAlterTableAddColumns(dwh.Dialect(), tableID, columns)
 	for _, sqlPart := range sqlParts {
 		slog.Info("[DDL] Executing query", slog.String("query", sqlPart))
 		if _, err := dwh.ExecContext(ctx, sqlPart); err != nil {
@@ -45,6 +45,6 @@ func AlterTableAddColumns(ctx context.Context, dwh destination.DataWarehouse, tc
 		}
 	}
 
-	tc.MutateInMemoryColumns(constants.Add, columns...)
+	tc.MutateInMemoryColumns(constants.Add, addedCols...)
 	return nil
 }
