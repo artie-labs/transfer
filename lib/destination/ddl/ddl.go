@@ -75,7 +75,6 @@ type AlterTableArgs struct {
 	// ContainsOtherOperations - this is sourced from tableData `containOtherOperations`
 	ContainOtherOperations bool
 	TableID                sql.TableIdentifier
-	CreateTable            bool
 	ColumnOp               constants.ColumnOperation
 	Mode                   config.Mode
 	CdcTime                time.Time
@@ -84,11 +83,6 @@ type AlterTableArgs struct {
 func (a AlterTableArgs) Validate() error {
 	if a.Dialect == nil {
 		return fmt.Errorf("dialect cannot be nil")
-	}
-
-	// You can't DROP a column and try to create a table at the same time.
-	if a.ColumnOp == constants.Delete && a.CreateTable {
-		return fmt.Errorf("incompatible operation - cannot drop columns and create table at the same time")
 	}
 
 	if !(a.Mode == config.History || a.Mode == config.Replication) {
@@ -106,7 +100,6 @@ func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []col
 	var mutateCol []columns.Column
 	// It's okay to combine since args.ColumnOp only takes one of: `Delete` or `Add`
 	var colSQLParts []string
-	var pkCols []string
 	for _, col := range cols {
 		if col.ShouldSkip() {
 			// Let's not modify the table if the column kind is invalid
@@ -122,33 +115,15 @@ func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []col
 		mutateCol = append(mutateCol, col)
 		switch a.ColumnOp {
 		case constants.Add:
-			colName := a.Dialect.QuoteIdentifier(col.Name())
-			if shouldCreatePrimaryKey(col, a.Mode, a.CreateTable) {
-				pkCols = append(pkCols, colName)
-			}
-
-			colSQLParts = append(colSQLParts, fmt.Sprintf("%s %s", colName, a.Dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey())))
+			colSQLParts = append(colSQLParts, fmt.Sprintf("%s %s", a.Dialect.QuoteIdentifier(col.Name()), a.Dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey())))
 		case constants.Delete:
 			colSQLParts = append(colSQLParts, a.Dialect.QuoteIdentifier(col.Name()))
 		}
 	}
 
-	if len(pkCols) > 0 {
-		pkStatement := fmt.Sprintf("PRIMARY KEY (%s)", strings.Join(pkCols, ", "))
-		if _, ok := a.Dialect.(bigQueryDialect.BigQueryDialect); ok {
-			pkStatement += " NOT ENFORCED"
-		}
-
-		colSQLParts = append(colSQLParts, pkStatement)
-	}
-
 	var alterStatements []string
-	if a.CreateTable {
-		alterStatements = []string{a.Dialect.BuildCreateTableQuery(a.TableID, false, colSQLParts)}
-	} else {
-		for _, colSQLPart := range colSQLParts {
-			alterStatements = append(alterStatements, a.Dialect.BuildAlterColumnQuery(a.TableID, a.ColumnOp, colSQLPart))
-		}
+	for _, colSQLPart := range colSQLParts {
+		alterStatements = append(alterStatements, a.Dialect.BuildAlterColumnQuery(a.TableID, a.ColumnOp, colSQLPart))
 	}
 
 	return alterStatements, mutateCol
