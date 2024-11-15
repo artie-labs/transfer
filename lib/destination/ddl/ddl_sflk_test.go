@@ -7,14 +7,11 @@ import (
 	"slices"
 	"time"
 
-	"github.com/artie-labs/transfer/clients/shared"
-
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -31,25 +28,15 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 	tableID := dialect.NewTableIdentifier("shop", "public", "complex_columns")
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(nil, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
-
-	alterTableArgs := ddl.AlterTableArgs{
-		Dialect:  d.snowflakeStagesStore.Dialect(),
-		Tc:       tc,
-		TableID:  tableID,
-		ColumnOp: constants.Add,
-		CdcTime:  time.Now().UTC(),
-		Mode:     config.Replication,
-	}
-
-	assert.NoError(d.T(), alterTableArgs.AlterTable(d.snowflakeStagesStore, cols...))
+	assert.NoError(d.T(), shared.AlterTableAddColumns(context.Background(), d.snowflakeStagesStore, tc, tableID, cols))
 	for i := 0; i < len(cols); i++ {
-		execQuery, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(i)
+		_, execQuery, _ := d.fakeSnowflakeStagesStore.ExecContextArgsForCall(i)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN %s %s", `shop.public."COMPLEX_COLUMNS"`,
 			d.snowflakeStagesStore.Dialect().QuoteIdentifier(cols[i].Name()),
 			d.snowflakeStagesStore.Dialect().DataTypeForKind(cols[i].KindDetails, false)), execQuery)
 	}
 
-	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecCallCount(), "called SFLK the same amt to create cols")
+	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecContextCallCount(), "called SFLK the same amt to create cols")
 }
 
 func (d *DDLTestSuite) TestAlterIdempotency() {
@@ -65,20 +52,12 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
 
 	d.fakeSnowflakeStagesStore.ExecReturns(nil, errors.New("column 'order_name' already exists"))
-	alterTableArgs := ddl.AlterTableArgs{
-		Dialect:  d.snowflakeStagesStore.Dialect(),
-		Tc:       tc,
-		TableID:  tableID,
-		ColumnOp: constants.Add,
-		CdcTime:  time.Now().UTC(),
-		Mode:     config.Replication,
-	}
 
-	assert.NoError(d.T(), alterTableArgs.AlterTable(d.snowflakeStagesStore, cols...))
-	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecCallCount(), "called SFLK the same amt to create cols")
+	assert.NoError(d.T(), shared.AlterTableAddColumns(context.Background(), d.snowflakeStagesStore, tc, tableID, cols))
+	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecContextCallCount(), "called SFLK the same amt to create cols")
 
-	d.fakeSnowflakeStagesStore.ExecReturns(nil, errors.New("table does not exist"))
-	assert.ErrorContains(d.T(), alterTableArgs.AlterTable(d.snowflakeStagesStore, cols...), "failed to apply ddl")
+	d.fakeSnowflakeStagesStore.ExecContextReturns(nil, errors.New("table does not exist"))
+	assert.ErrorContains(d.T(), shared.AlterTableAddColumns(context.Background(), d.snowflakeStagesStore, tc, tableID, cols), `failed to alter table: table does not exist`)
 }
 
 func (d *DDLTestSuite) TestAlterTableAdd() {
@@ -94,17 +73,8 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(nil, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
 
-	alterTableArgs := ddl.AlterTableArgs{
-		Dialect:  d.snowflakeStagesStore.Dialect(),
-		Tc:       tc,
-		TableID:  tableID,
-		ColumnOp: constants.Add,
-		CdcTime:  time.Now().UTC(),
-		Mode:     config.Replication,
-	}
-
-	assert.NoError(d.T(), alterTableArgs.AlterTable(d.snowflakeStagesStore, cols...))
-	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecCallCount(), "called SFLK the same amt to create cols")
+	assert.NoError(d.T(), shared.AlterTableAddColumns(context.Background(), d.snowflakeStagesStore, tc, tableID, cols))
+	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecContextCallCount(), "called SFLK the same amt to create cols")
 
 	// Check the table config
 	tableConfig := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
@@ -133,17 +103,8 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	tableID := dialect.NewTableIdentifier("shop", "public", "users")
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(nil, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
-	alterTableArgs := ddl.AlterTableArgs{
-		Dialect:                d.snowflakeStagesStore.Dialect(),
-		Tc:                     tc,
-		TableID:                tableID,
-		ContainOtherOperations: true,
-		ColumnOp:               constants.Delete,
-		CdcTime:                time.Now().UTC(),
-		Mode:                   config.Replication,
-	}
 
-	assert.NoError(d.T(), alterTableArgs.AlterTable(d.snowflakeStagesStore, cols...))
+	assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.snowflakeStagesStore, tc, tableID, cols, time.Now().UTC(), true))
 	assert.Equal(d.T(), 0, d.fakeSnowflakeStagesStore.ExecCallCount(), "tried to delete, but not yet.")
 
 	// Check the table config
@@ -168,10 +129,10 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 		// Now let's actually try to dial the time back, and it should actually try to delete.
 		tableConfig.AddColumnsToDelete(colToActuallyDelete, time.Now().Add(-1*time.Hour))
 
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.snowflakeStagesStore, cols...))
-		assert.Equal(d.T(), i+1, d.fakeSnowflakeStagesStore.ExecCallCount(), "tried to delete one column")
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.snowflakeStagesStore, tc, tableID, cols, time.Now().UTC(), true))
+		assert.Equal(d.T(), i+1, d.fakeSnowflakeStagesStore.ExecContextCallCount(), "tried to delete one column")
 
-		execArg, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(i)
+		_, execArg, _ := d.fakeSnowflakeStagesStore.ExecContextArgsForCall(i)
 		assert.Equal(d.T(), execArg, fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", `shop.public."USERS"`, constants.Delete,
 			d.snowflakeStagesStore.Dialect().QuoteIdentifier(cols[i].Name()),
 		))
