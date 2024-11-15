@@ -1,9 +1,13 @@
 package ddl_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
+
+	"github.com/artie-labs/transfer/clients/shared"
 
 	"github.com/stretchr/testify/assert"
 
@@ -187,40 +191,41 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 
 	tableID := dialect.NewTableIdentifier("shop", "public", "users1")
 	tableCfg := types.NewDwhTableConfig(nil, true)
-	tableCfg.SetColumnsToDelete(map[string]time.Time{
+
+	colsToDeleteMap := map[string]time.Time{
 		"col_to_delete": time.Now().Add(-2 * constants.DeletionConfidencePadding),
 		"answers":       time.Now().Add(-2 * constants.DeletionConfidencePadding),
 		"start":         time.Now().Add(-2 * constants.DeletionConfidencePadding),
-	})
+	}
+	tableCfg.SetColumnsToDelete(colsToDeleteMap)
 
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, tableCfg)
 
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
-	alterTableArgs := ddl.AlterTableArgs{
-		Dialect:                d.snowflakeStagesStore.Dialect(),
-		Tc:                     tc,
-		TableID:                tableID,
-		ColumnOp:               constants.Delete,
-		ContainOtherOperations: true,
-		CdcTime:                time.Now(),
-		Mode:                   config.Replication,
+
+	{
+		// containsOtherOperations = false
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.snowflakeStagesStore, tc, tableID, cols, time.Now(), false))
+		// Nothing got deleted
+		assert.Equal(d.T(), 0, d.fakeSnowflakeStagesStore.ExecContextCallCount())
+		assert.Equal(d.T(), colsToDeleteMap, tc.ReadOnlyColumnsToDelete())
 	}
+	{
+		// containsOtherOperations = true
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.snowflakeStagesStore, tc, tableID, cols, time.Now(), true))
+		assert.Equal(d.T(), 3, d.fakeSnowflakeStagesStore.ExecContextCallCount())
 
-	assert.NoError(d.T(), alterTableArgs.AlterTable(d.snowflakeStagesStore, cols...))
-	assert.Equal(d.T(), 3, d.fakeSnowflakeStagesStore.ExecCallCount(), "tried to delete, but not yet.")
+		// Check the table config
+		tableConfig := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
 
-	// Check the table config
-	tableConfig := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
-	for col := range tableConfig.ReadOnlyColumnsToDelete() {
-		var found bool
-		for _, expCol := range cols {
-			if found = col == expCol.Name(); found {
-				break
-			}
+		var colsToDelete []string
+		for col := range tableConfig.ReadOnlyColumnsToDelete() {
+			colsToDelete = append(colsToDelete, col)
 		}
 
-		assert.True(d.T(), found,
-			fmt.Sprintf("Col not found: %s, actual list: %v, expected list: %v",
-				col, tableConfig.ReadOnlyColumnsToDelete(), cols))
+		// Cols that should have been deleted, have been. The rest are still there the reserve.
+		assert.Len(d.T(), colsToDelete, 3)
+		slices.Sort(colsToDelete)
+		assert.Equal(d.T(), []string{"created_at", "id", "name"}, colsToDelete)
 	}
 }

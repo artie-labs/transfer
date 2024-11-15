@@ -102,18 +102,6 @@ type AlterTableArgs struct {
 	CdcTime                time.Time
 }
 
-func (a AlterTableArgs) Validate() error {
-	if a.Dialect == nil {
-		return fmt.Errorf("dialect cannot be nil")
-	}
-
-	if !(a.Mode == config.History || a.Mode == config.Replication) {
-		return fmt.Errorf("unexpected mode: %s", a.Mode.String())
-	}
-
-	return nil
-}
-
 func shouldCreatePrimaryKey(col columns.Column, mode config.Mode, createTable bool) bool {
 	return col.PrimaryKey() && mode == config.Replication && createTable
 }
@@ -152,10 +140,6 @@ func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []col
 }
 
 func (a AlterTableArgs) AlterTable(dwh destination.DataWarehouse, cols ...columns.Column) error {
-	if err := a.Validate(); err != nil {
-		return err
-	}
-
 	if len(cols) == 0 {
 		return nil
 	}
