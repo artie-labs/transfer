@@ -89,6 +89,17 @@ func TestBuildAlterTableAddColumns(t *testing.T) {
 		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "dusty" VARCHAR(MAX)`, sqlParts[0])
 	}
 	{
+		// Two columns, it skips the invalid column
+		sqlParts := BuildAlterTableAddColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"),
+			[]columns.Column{
+				columns.NewColumn("dusty", typing.String),
+				columns.NewColumn("invalid", typing.Invalid),
+			},
+		)
+		assert.Len(t, sqlParts, 1)
+		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "dusty" VARCHAR(MAX)`, sqlParts[0])
+	}
+	{
 		// Three columns to add
 		sqlParts := BuildAlterTableAddColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"),
 			[]columns.Column{
