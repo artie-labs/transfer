@@ -64,14 +64,14 @@ func TestDwhTableConfig_ColumnsConcurrency(t *testing.T) {
 		go func(tableCfg *types.DwhTableConfig) {
 			defer wg.Done()
 			for j := 0; j < 100; j++ {
-				assert.Equal(t, 3, len(tableCfg.Columns().GetColumns()), tableCfg.Columns().GetColumns())
-
+				assert.Len(t, tableCfg.GetColumns(), 3)
 				kindDetails := typing.Integer
 				if (j % 2) == 0 {
 					kindDetails = typing.Array
 				}
+
 				tableCfg.Columns().UpdateColumn(columns.NewColumn("foo", kindDetails))
-				assert.Equal(t, 3, len(tableCfg.Columns().GetColumns()), tableCfg.Columns().GetColumns())
+				assert.Len(t, tableCfg.GetColumns(), 3)
 			}
 		}(dwhTableCfg)
 	}
@@ -85,7 +85,7 @@ func TestDwhTableConfig_MutateInMemoryColumns(t *testing.T) {
 		tc.MutateInMemoryColumns(false, constants.Add, columns.NewColumn(col, typing.String))
 	}
 
-	assert.Len(t, tc.Columns().GetColumns(), 5)
+	assert.Len(t, tc.GetColumns(), 5)
 	var wg sync.WaitGroup
 	for _, addCol := range []string{"aa", "bb", "cc", "dd", "ee", "ff"} {
 		wg.Add(1)
@@ -104,7 +104,7 @@ func TestDwhTableConfig_MutateInMemoryColumns(t *testing.T) {
 	}
 
 	wg.Wait()
-	assert.Len(t, tc.Columns().GetColumns(), 6)
+	assert.Len(t, tc.GetColumns(), 6)
 }
 
 func TestDwhTableConfig_ReadOnlyColumnsToDelete(t *testing.T) {

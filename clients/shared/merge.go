@@ -30,7 +30,7 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 
 	srcKeysMissing, targetKeysMissing := columns.Diff(
 		tableData.ReadOnlyInMemoryCols().GetColumns(),
-		tableConfig.Columns().GetColumns(),
+		tableConfig.GetColumns(),
 		tableData.TopicConfig().SoftDelete,
 		tableData.TopicConfig().IncludeArtieUpdatedAt,
 		tableData.TopicConfig().IncludeDatabaseUpdatedAt,
@@ -70,7 +70,7 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 	}
 
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
-	if err = tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...); err != nil {
+	if err = tableData.MergeColumnsFromDestination(tableConfig.GetColumns()...); err != nil {
 		return fmt.Errorf("failed to merge columns from destination: %w", err)
 	}
 

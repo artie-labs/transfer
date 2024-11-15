@@ -52,6 +52,13 @@ func (d *DwhTableConfig) DropDeletedColumns() bool {
 	return d.dropDeletedColumns
 }
 
+func (d *DwhTableConfig) GetColumns() []columns.Column {
+	d.RLock()
+	defer d.RUnlock()
+
+	return d.columns.GetColumns()
+}
+
 func (d *DwhTableConfig) Columns() *columns.Columns {
 	if d == nil {
 		return nil
