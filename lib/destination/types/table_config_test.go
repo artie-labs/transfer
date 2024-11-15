@@ -85,7 +85,7 @@ func TestDwhTableConfig_MutateInMemoryColumns(t *testing.T) {
 		tc.MutateInMemoryColumns(false, constants.Add, columns.NewColumn(col, typing.String))
 	}
 
-	assert.Len(t, tc.Columns().GetColumns(), 5)
+	assert.Len(t, tc.GetColumns(), 5)
 	var wg sync.WaitGroup
 	for _, addCol := range []string{"aa", "bb", "cc", "dd", "ee", "ff"} {
 		wg.Add(1)
@@ -104,7 +104,7 @@ func TestDwhTableConfig_MutateInMemoryColumns(t *testing.T) {
 	}
 
 	wg.Wait()
-	assert.Len(t, tc.Columns().GetColumns(), 6)
+	assert.Len(t, tc.GetColumns(), 6)
 }
 
 func TestDwhTableConfig_ReadOnlyColumnsToDelete(t *testing.T) {
