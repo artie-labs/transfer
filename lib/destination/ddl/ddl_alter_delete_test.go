@@ -74,7 +74,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	// Never actually deleted.
 	assert.Equal(d.T(), 0, len(snowflakeTc.ReadOnlyColumnsToDelete()), snowflakeTc.ReadOnlyColumnsToDelete())
-	assert.Equal(d.T(), originalColumnLength, len(snowflakeTc.Columns().GetColumns()), snowflakeTc.Columns().GetColumns())
+	assert.Len(d.T(), snowflakeTc.GetColumns(), originalColumnLength)
 
 	// BigQuery
 	for _, column := range cols.GetColumns() {
@@ -94,7 +94,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	// Never actually deleted.
 	assert.Equal(d.T(), 0, len(bqTc.ReadOnlyColumnsToDelete()), bqTc.ReadOnlyColumnsToDelete())
-	assert.Equal(d.T(), originalColumnLength, len(bqTc.Columns().GetColumns()), bqTc.Columns().GetColumns())
+	assert.Len(d.T(), bqTc.GetColumns(), originalColumnLength)
 
 	// Redshift
 	for _, column := range cols.GetColumns() {
@@ -113,7 +113,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	// Never actually deleted.
 	assert.Equal(d.T(), 0, len(redshiftTc.ReadOnlyColumnsToDelete()), redshiftTc.ReadOnlyColumnsToDelete())
-	assert.Equal(d.T(), originalColumnLength, len(redshiftTc.Columns().GetColumns()), redshiftTc.Columns().GetColumns())
+	assert.Len(d.T(), redshiftTc.GetColumns(), originalColumnLength)
 
 	// 2. DropDeletedColumns = true, ContainOtherOperations = false, don't delete ever
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(bqTableID, types.NewDwhTableConfig(cols.GetColumns(), true))
@@ -146,7 +146,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	// Never actually deleted.
 	assert.Equal(d.T(), 0, len(snowflakeTc.ReadOnlyColumnsToDelete()), snowflakeTc.ReadOnlyColumnsToDelete())
-	assert.Equal(d.T(), originalColumnLength, len(snowflakeTc.Columns().GetColumns()), snowflakeTc.Columns().GetColumns())
+	assert.Len(d.T(), snowflakeTc.GetColumns(), originalColumnLength)
 
 	// BigQuery
 	for _, column := range cols.GetColumns() {
@@ -165,7 +165,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	// Never actually deleted.
 	assert.Equal(d.T(), 0, len(bqTc.ReadOnlyColumnsToDelete()), bqTc.ReadOnlyColumnsToDelete())
-	assert.Equal(d.T(), originalColumnLength, len(bqTc.Columns().GetColumns()), bqTc.Columns().GetColumns())
+	assert.Len(d.T(), bqTc.GetColumns(), originalColumnLength)
 
 	// Redshift
 	for _, column := range cols.GetColumns() {
@@ -184,7 +184,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	// Never actually deleted.
 	assert.Equal(d.T(), 0, len(redshiftTc.ReadOnlyColumnsToDelete()), redshiftTc.ReadOnlyColumnsToDelete())
-	assert.Equal(d.T(), originalColumnLength, len(redshiftTc.Columns().GetColumns()), redshiftTc.Columns().GetColumns())
+	assert.Len(d.T(), redshiftTc.GetColumns(), originalColumnLength)
 
 	// 3. DropDeletedColumns = true, ContainOtherOperations = true, drop based on timestamp.
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(bqTableID, types.NewDwhTableConfig(cols.GetColumns(), true))
@@ -249,13 +249,13 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	}
 
 	// Nothing has been deleted, but it is all added to the permissions table.
-	assert.Equal(d.T(), originalColumnLength, len(bqTc.Columns().GetColumns()), bqTc.Columns().GetColumns())
-	assert.Equal(d.T(), originalColumnLength, len(redshiftTc.Columns().GetColumns()), redshiftTc.Columns().GetColumns())
-	assert.Equal(d.T(), originalColumnLength, len(snowflakeTc.Columns().GetColumns()), snowflakeTc.Columns().GetColumns())
+	assert.Len(d.T(), bqTc.GetColumns(), originalColumnLength)
+	assert.Len(d.T(), redshiftTc.GetColumns(), originalColumnLength)
+	assert.Len(d.T(), snowflakeTc.GetColumns(), originalColumnLength)
 
-	assert.Equal(d.T(), originalColumnLength, len(bqTc.ReadOnlyColumnsToDelete()), bqTc.ReadOnlyColumnsToDelete())
-	assert.Equal(d.T(), originalColumnLength, len(redshiftTc.ReadOnlyColumnsToDelete()), redshiftTc.ReadOnlyColumnsToDelete())
-	assert.Equal(d.T(), originalColumnLength, len(snowflakeTc.ReadOnlyColumnsToDelete()), snowflakeTc.ReadOnlyColumnsToDelete())
+	assert.Len(d.T(), bqTc.ReadOnlyColumnsToDelete(), originalColumnLength)
+	assert.Len(d.T(), redshiftTc.ReadOnlyColumnsToDelete(), originalColumnLength)
+	assert.Len(d.T(), snowflakeTc.ReadOnlyColumnsToDelete(), originalColumnLength)
 
 	for _, column := range cols.GetColumns() {
 		alterTableArgs := ddl.AlterTableArgs{
@@ -298,14 +298,13 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	}
 
 	// Everything has been deleted.
-	assert.Equal(d.T(), 0, len(snowflakeTc.Columns().GetColumns()), snowflakeTc.Columns().GetColumns())
-	assert.Equal(d.T(), 0, len(bqTc.Columns().GetColumns()), bqTc.Columns().GetColumns())
-	assert.Equal(d.T(), 0, len(redshiftTc.Columns().GetColumns()), redshiftTc.Columns().GetColumns())
+	assert.Empty(d.T(), snowflakeTc.GetColumns())
+	assert.Empty(d.T(), bqTc.GetColumns())
+	assert.Empty(d.T(), redshiftTc.GetColumns())
 
-	assert.Equal(d.T(), 0, len(snowflakeTc.ReadOnlyColumnsToDelete()), snowflakeTc.ReadOnlyColumnsToDelete())
-	assert.Equal(d.T(), 0, len(bqTc.ReadOnlyColumnsToDelete()), bqTc.ReadOnlyColumnsToDelete())
-	assert.Equal(d.T(), 0, len(redshiftTc.ReadOnlyColumnsToDelete()), redshiftTc.ReadOnlyColumnsToDelete())
-
+	assert.Empty(d.T(), snowflakeTc.ReadOnlyColumnsToDelete())
+	assert.Empty(d.T(), bqTc.ReadOnlyColumnsToDelete())
+	assert.Empty(d.T(), redshiftTc.ReadOnlyColumnsToDelete())
 	allColsMap := make(map[string]bool, len(allCols))
 	for _, allCol := range allCols {
 		allColsMap[allCol] = true
