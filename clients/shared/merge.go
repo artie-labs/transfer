@@ -28,9 +28,14 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		return fmt.Errorf("failed to get table config: %w", err)
 	}
 
-	srcKeysMissing, targetKeysMissing := columns.Diff(tableData.ReadOnlyInMemoryCols(), tableConfig.Columns(),
-		tableData.TopicConfig().SoftDelete, tableData.TopicConfig().IncludeArtieUpdatedAt,
-		tableData.TopicConfig().IncludeDatabaseUpdatedAt, tableData.Mode())
+	srcKeysMissing, targetKeysMissing := columns.Diff(
+		tableData.ReadOnlyInMemoryCols().GetColumns(),
+		tableConfig.GetColumns(),
+		tableData.TopicConfig().SoftDelete,
+		tableData.TopicConfig().IncludeArtieUpdatedAt,
+		tableData.TopicConfig().IncludeDatabaseUpdatedAt,
+		tableData.Mode(),
+	)
 
 	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	if tableConfig.CreateTable() {
@@ -38,7 +43,7 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 			return fmt.Errorf("failed to create table: %w", err)
 		}
 	} else {
-		createAlterTableArgs := ddl.AlterTableArgs{
+		alterTableArgs := ddl.AlterTableArgs{
 			Dialect:  dwh.Dialect(),
 			Tc:       tableConfig,
 			TableID:  tableID,
@@ -48,7 +53,7 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		}
 
 		// Columns that are missing in DWH, but exist in our CDC stream.
-		if err = createAlterTableArgs.AlterTable(dwh, targetKeysMissing...); err != nil {
+		if err = alterTableArgs.AlterTable(dwh, targetKeysMissing...); err != nil {
 			return fmt.Errorf("failed to alter table: %w", err)
 		}
 	}
@@ -69,7 +74,7 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 	}
 
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
-	if err = tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...); err != nil {
+	if err = tableData.MergeColumnsFromDestination(tableConfig.GetColumns()...); err != nil {
 		return fmt.Errorf("failed to merge columns from destination: %w", err)
 	}
 

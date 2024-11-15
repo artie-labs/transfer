@@ -104,7 +104,7 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 
 	// Check the table config
 	tableConfig := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
-	for _, column := range tableConfig.Columns().GetColumns() {
+	for _, column := range tableConfig.GetColumns() {
 		var found bool
 		for _, expCol := range cols {
 			if found = column.Name() == expCol.Name(); found {
@@ -113,9 +113,7 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 			}
 		}
 
-		assert.True(d.T(), found,
-			fmt.Sprintf("Col not found: %s, actual list: %v, expected list: %v",
-				column.Name(), tableConfig.Columns(), cols))
+		assert.True(d.T(), found, fmt.Sprintf("Col not found: %s, actual list: %v, expected list: %v", column.Name(), tableConfig.GetColumns(), cols))
 	}
 }
 

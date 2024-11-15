@@ -100,7 +100,6 @@ func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []col
 	var mutateCol []columns.Column
 	// It's okay to combine since args.ColumnOp only takes one of: `Delete` or `Add`
 	var colSQLParts []string
-	var pkCols []string
 	for _, col := range cols {
 		if col.ShouldSkip() {
 			// Let's not modify the table if the column kind is invalid
@@ -120,15 +119,6 @@ func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []col
 		case constants.Delete:
 			colSQLParts = append(colSQLParts, a.Dialect.QuoteIdentifier(col.Name()))
 		}
-	}
-
-	if len(pkCols) > 0 {
-		pkStatement := fmt.Sprintf("PRIMARY KEY (%s)", strings.Join(pkCols, ", "))
-		if _, ok := a.Dialect.(bigQueryDialect.BigQueryDialect); ok {
-			pkStatement += " NOT ENFORCED"
-		}
-
-		colSQLParts = append(colSQLParts, pkStatement)
 	}
 
 	var alterStatements []string

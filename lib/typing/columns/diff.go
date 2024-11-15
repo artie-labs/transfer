@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/maputil"
 )
 
 // shouldSkipColumn takes the `colName` and `softDelete` and will return whether we should skip this column when calculating the diff.
@@ -40,51 +40,42 @@ func shouldSkipColumn(colName string, softDelete bool, includeArtieUpdatedAt boo
 
 // Diff - when given 2 maps, a source and target
 // It will provide a diff in the form of 2 variables
-func Diff(columnsInSource *Columns, columnsInDestination *Columns, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, mode config.Mode) ([]Column, []Column) {
-	src := CloneColumns(columnsInSource)
-	targ := CloneColumns(columnsInDestination)
-	var colsToDelete []Column
-	for _, col := range src.GetColumns() {
-		_, isOk := targ.GetColumn(col.Name())
-		if isOk {
-			colsToDelete = append(colsToDelete, col)
-
+func Diff(columnsInSource []Column, columnsInDestination []Column, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, mode config.Mode) ([]Column, []Column) {
+	src := buildColumnsMap(columnsInSource)
+	targ := buildColumnsMap(columnsInDestination)
+	for _, colName := range src.Keys() {
+		if _, isOk := targ.Get(colName); isOk {
+			targ.Remove(colName)
+			src.Remove(colName)
 		}
 	}
 
-	// We cannot delete inside a for-loop that is iterating over src.GetColumns() because we are messing up the array order.
-	for _, colToDelete := range colsToDelete {
-		src.DeleteColumn(colToDelete.Name())
-		targ.DeleteColumn(colToDelete.Name())
-	}
-
-	var targetColumnsMissing Columns
-	for _, col := range src.GetColumns() {
+	var targetColumnsMissing []Column
+	for _, col := range src.All() {
 		if shouldSkipColumn(col.Name(), softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode) {
 			continue
 		}
 
-		targetColumnsMissing.AddColumn(col)
+		targetColumnsMissing = append(targetColumnsMissing, col)
 	}
 
-	var sourceColumnsMissing Columns
-	for _, col := range targ.GetColumns() {
+	var sourceColumnsMissing []Column
+	for _, col := range targ.All() {
 		if shouldSkipColumn(col.Name(), softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode) {
 			continue
 		}
 
-		sourceColumnsMissing.AddColumn(col)
+		sourceColumnsMissing = append(sourceColumnsMissing, col)
 	}
 
-	return sourceColumnsMissing.GetColumns(), targetColumnsMissing.GetColumns()
+	return sourceColumnsMissing, targetColumnsMissing
 }
 
-func CloneColumns(cols *Columns) *Columns {
-	var newCols Columns
-	for _, col := range cols.GetColumns() {
-		col.ToLowerName()
-		newCols.AddColumn(col)
+func buildColumnsMap(cols []Column) *maputil.OrderedMap[Column] {
+	retMap := maputil.NewOrderedMap[Column](false)
+	for _, col := range cols {
+		retMap.Add(col.name, col)
 	}
 
-	return &newCols
+	return retMap
 }

@@ -116,6 +116,6 @@ func (s *SnowflakeTestSuite) TestGetTableConfig() {
 	assert.NoError(s.T(), err)
 
 	assert.True(s.T(), tableConfig.CreateTable())
-	assert.Equal(s.T(), len(tableConfig.Columns().GetColumns()), 0)
+	assert.Len(s.T(), tableConfig.GetColumns(), 0)
 	assert.False(s.T(), tableConfig.DropDeletedColumns())
 }
