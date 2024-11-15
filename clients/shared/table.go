@@ -30,21 +30,34 @@ func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *
 	return nil
 }
 
-func AlterTableAddColumns(ctx context.Context, dwh destination.DataWarehouse, tc *types.DwhTableConfig, tableID sql.TableIdentifier, columns []columns.Column) error {
-	if len(columns) == 0 {
+func AlterTableAddColumns(ctx context.Context, dwh destination.DataWarehouse, tc *types.DwhTableConfig, tableID sql.TableIdentifier, cols []columns.Column) error {
+	if len(cols) == 0 {
 		return nil
 	}
 
-	sqlParts, addedCols := ddl.BuildAlterTableAddColumns(dwh.Dialect(), tableID, columns)
+	var colsToAdd []columns.Column
+	for _, col := range cols {
+		if col.ShouldSkip() {
+			continue
+		}
+
+		colsToAdd = append(colsToAdd, col)
+	}
+
+	sqlParts, err := ddl.BuildAlterTableAddColumns(dwh.Dialect(), tableID, colsToAdd)
+	if err != nil {
+		return fmt.Errorf("failed to build alter table add columns: %w", err)
+	}
+
 	for _, sqlPart := range sqlParts {
 		slog.Info("[DDL] Executing query", slog.String("query", sqlPart))
-		if _, err := dwh.ExecContext(ctx, sqlPart); err != nil {
+		if _, err = dwh.ExecContext(ctx, sqlPart); err != nil {
 			if !dwh.Dialect().IsColumnAlreadyExistsErr(err) {
 				return fmt.Errorf("failed to alter table: %w", err)
 			}
 		}
 	}
 
-	tc.MutateInMemoryColumns(constants.Add, addedCols...)
+	tc.MutateInMemoryColumns(constants.Add, colsToAdd...)
 	return nil
 }

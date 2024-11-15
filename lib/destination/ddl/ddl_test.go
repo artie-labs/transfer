@@ -79,34 +79,29 @@ func TestBuildCreateTableSQL(t *testing.T) {
 func TestBuildAlterTableAddColumns(t *testing.T) {
 	{
 		// No columns
-		sqlParts, addedCols := BuildAlterTableAddColumns(nil, nil, []columns.Column{})
+		sqlParts, err := BuildAlterTableAddColumns(nil, nil, []columns.Column{})
+		assert.NoError(t, err)
 		assert.Empty(t, sqlParts)
-		assert.Empty(t, addedCols)
 	}
 	{
 		// One column to add
 		col := columns.NewColumn("dusty", typing.String)
-		sqlParts, addedCols := BuildAlterTableAddColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), []columns.Column{col})
+		sqlParts, err := BuildAlterTableAddColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), []columns.Column{col})
+		assert.NoError(t, err)
 		assert.Len(t, sqlParts, 1)
 		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "dusty" VARCHAR(MAX)`, sqlParts[0])
-
-		assert.Len(t, addedCols, 1)
-		assert.Equal(t, col, addedCols[0])
 	}
 	{
-		// Two columns, it skips the invalid column
+		// Two columns, one invalid, it will error.
 		col := columns.NewColumn("dusty", typing.String)
-		sqlParts, addedCols := BuildAlterTableAddColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"),
+		_, err := BuildAlterTableAddColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"),
 			[]columns.Column{
 				col,
 				columns.NewColumn("invalid", typing.Invalid),
 			},
 		)
-		assert.Len(t, sqlParts, 1)
-		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "dusty" VARCHAR(MAX)`, sqlParts[0])
 
-		assert.Len(t, addedCols, 1)
-		assert.Equal(t, col, addedCols[0])
+		assert.ErrorContains(t, err, `received an invalid column "invalid"`)
 	}
 	{
 		// Three columns to add
@@ -114,16 +109,12 @@ func TestBuildAlterTableAddColumns(t *testing.T) {
 		col2 := columns.NewColumn("doge", typing.String)
 		col3 := columns.NewColumn("age", typing.Integer)
 
-		sqlParts, addedCols := BuildAlterTableAddColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), []columns.Column{col1, col2, col3})
+		sqlParts, err := BuildAlterTableAddColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), []columns.Column{col1, col2, col3})
+		assert.NoError(t, err)
 		assert.Len(t, sqlParts, 3)
 		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "aussie" VARCHAR(MAX)`, sqlParts[0])
 		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "doge" VARCHAR(MAX)`, sqlParts[1])
 		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "age" INT8`, sqlParts[2])
-
-		assert.Len(t, addedCols, 3)
-		assert.Equal(t, col1, addedCols[0])
-		assert.Equal(t, col2, addedCols[1])
-		assert.Equal(t, col3, addedCols[2])
 	}
 }
 
