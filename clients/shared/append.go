@@ -54,7 +54,7 @@ func Append(ctx context.Context, dwh destination.DataWarehouse, tableData *optim
 
 	}
 
-	if err = tableData.MergeColumnsFromDestination(tableConfig.Columns().GetColumns()...); err != nil {
+	if err = tableData.MergeColumnsFromDestination(tableConfig.GetColumns()...); err != nil {
 		return fmt.Errorf("failed to merge columns from destination: %w", err)
 	}
 
