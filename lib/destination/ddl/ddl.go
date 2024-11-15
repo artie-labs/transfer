@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
-	"time"
 
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
-	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -89,17 +87,6 @@ func BuildAlterTableDropColumns(dialect sql.Dialect, tableID sql.TableIdentifier
 	}
 
 	return dialect.BuildAlterColumnQuery(tableID, constants.Delete, dialect.QuoteIdentifier(col.Name())), nil
-}
-
-type AlterTableArgs struct {
-	Dialect sql.Dialect
-	Tc      *types.DwhTableConfig
-	// ContainsOtherOperations - this is sourced from tableData `containOtherOperations`
-	ContainOtherOperations bool
-	TableID                sql.TableIdentifier
-	ColumnOp               constants.ColumnOperation
-	Mode                   config.Mode
-	CdcTime                time.Time
 }
 
 func shouldCreatePrimaryKey(col columns.Column, mode config.Mode, createTable bool) bool {
