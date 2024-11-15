@@ -8,7 +8,6 @@ import (
 	bqDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -115,30 +114,6 @@ func TestBuildAlterTableAddColumns(t *testing.T) {
 		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "aussie" VARCHAR(MAX)`, sqlParts[0])
 		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "doge" VARCHAR(MAX)`, sqlParts[1])
 		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "age" INT8`, sqlParts[2])
-	}
-}
-
-func TestAlterTableArgs_Validate(t *testing.T) {
-	{
-		// Invalid
-		a := AlterTableArgs{
-			ColumnOp: constants.Delete,
-			Mode:     config.Replication,
-		}
-		{
-			// Dialect isn't specified
-			assert.ErrorContains(t, a.Validate(), "dialect cannot be nil")
-		}
-	}
-	{
-		// Valid
-		a := AlterTableArgs{
-			ColumnOp: constants.Add,
-			Mode:     config.Replication,
-			Dialect:  bqDialect.BigQueryDialect{},
-		}
-
-		assert.NoError(t, a.Validate())
 	}
 }
 
