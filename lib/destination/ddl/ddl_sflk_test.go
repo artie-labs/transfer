@@ -179,7 +179,6 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 }
 
 func (d *DDLTestSuite) TestAlterTableDelete() {
-	// Test adding a bunch of columns
 	cols := []columns.Column{
 		columns.NewColumn("created_at", typing.TimestampTZ),
 		columns.NewColumn("id", typing.Integer),
@@ -191,18 +190,14 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 
 	tableID := dialect.NewTableIdentifier("shop", "public", "users1")
 	tableCfg := types.NewDwhTableConfig(nil, true)
-
 	colsToDeleteMap := map[string]time.Time{
 		"col_to_delete": time.Now().Add(-2 * constants.DeletionConfidencePadding),
 		"answers":       time.Now().Add(-2 * constants.DeletionConfidencePadding),
 		"start":         time.Now().Add(-2 * constants.DeletionConfidencePadding),
 	}
 	tableCfg.SetColumnsToDelete(colsToDeleteMap)
-
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, tableCfg)
-
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
-
 	{
 		// containsOtherOperations = false
 		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.snowflakeStagesStore, tc, tableID, cols, time.Now(), false))
