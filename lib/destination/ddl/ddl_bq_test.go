@@ -1,10 +1,13 @@
 package ddl_test
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/artie-labs/transfer/clients/shared"
 
 	"github.com/stretchr/testify/assert"
 
@@ -47,19 +50,9 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	tc := d.bigQueryStore.GetConfigMap().TableConfigCache(tableID)
 
 	// Prior to deletion, there should be no colsToDelete
-	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).ReadOnlyColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).ReadOnlyColumnsToDelete())
+	assert.Empty(d.T(), d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).ReadOnlyColumnsToDelete())
 	for _, column := range cols.GetColumns() {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:                d.bigQueryStore.Dialect(),
-			Tc:                     tc,
-			TableID:                tableID,
-			ColumnOp:               constants.Delete,
-			ContainOtherOperations: true,
-			CdcTime:                ts,
-			Mode:                   config.Replication,
-		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.bigQueryStore, column))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.bigQueryStore, tc, tableID, []columns.Column{column}, ts, true))
 	}
 
 	// Have not deleted, but tried to!
