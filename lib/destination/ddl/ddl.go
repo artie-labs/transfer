@@ -13,6 +13,10 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+func shouldCreatePrimaryKey(col columns.Column, mode config.Mode, createTable bool) bool {
+	return col.PrimaryKey() && mode == config.Replication && createTable
+}
+
 func BuildCreateTableSQL(dialect sql.Dialect, tableIdentifier sql.TableIdentifier, temporaryTable bool, mode config.Mode, columns []columns.Column) (string, error) {
 	if len(columns) == 0 {
 		return "", fmt.Errorf("no columns provided")
@@ -87,8 +91,4 @@ func BuildAlterTableDropColumns(dialect sql.Dialect, tableID sql.TableIdentifier
 	}
 
 	return dialect.BuildAlterColumnQuery(tableID, constants.Delete, dialect.QuoteIdentifier(col.Name())), nil
-}
-
-func shouldCreatePrimaryKey(col columns.Column, mode config.Mode, createTable bool) bool {
-	return col.PrimaryKey() && mode == config.Replication && createTable
 }
