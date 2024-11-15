@@ -122,21 +122,11 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	// Redshift
 	for _, column := range cols.GetColumns() {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:                d.redshiftStore.Dialect(),
-			Tc:                     redshiftTc,
-			TableID:                redshiftTableID,
-			ContainOtherOperations: false,
-			ColumnOp:               constants.Delete,
-			CdcTime:                ts,
-			Mode:                   config.Replication,
-		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.redshiftStore, column))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.redshiftStore, redshiftTc, redshiftTableID, []columns.Column{column}, ts, false))
 	}
 
 	// Never actually deleted.
-	assert.Equal(d.T(), 0, len(redshiftTc.ReadOnlyColumnsToDelete()), redshiftTc.ReadOnlyColumnsToDelete())
+	assert.Empty(d.T(), redshiftTc.ReadOnlyColumnsToDelete())
 	assert.Len(d.T(), redshiftTc.GetColumns(), originalColumnLength)
 
 	// 3. DropDeletedColumns = true, ContainOtherOperations = true, drop based on timestamp.
@@ -156,49 +146,21 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	assert.Equal(d.T(), 0, len(snowflakeTc.ReadOnlyColumnsToDelete()), snowflakeTc.ReadOnlyColumnsToDelete())
 
 	// Now, actually try to delete.
-	// Snowflake
-	for _, column := range cols.GetColumns() {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:                d.snowflakeStagesStore.Dialect(),
-			Tc:                     snowflakeTc,
-			TableID:                snowflakeTableID,
-			ContainOtherOperations: true,
-			ColumnOp:               constants.Delete,
-			CdcTime:                ts,
-			Mode:                   config.Replication,
+	{
+		// Snowflake
+		for _, column := range cols.GetColumns() {
+			assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.snowflakeStagesStore, snowflakeTc, snowflakeTableID, []columns.Column{column}, ts, true))
 		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.snowflakeStagesStore, column))
 	}
 
 	// BigQuery
 	for _, column := range cols.GetColumns() {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:                d.bigQueryStore.Dialect(),
-			Tc:                     bqTc,
-			TableID:                bqTableID,
-			ContainOtherOperations: true,
-			ColumnOp:               constants.Delete,
-			CdcTime:                ts,
-			Mode:                   config.Replication,
-		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.bigQueryStore, column))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.bigQueryStore, bqTc, bqTableID, []columns.Column{column}, ts, true))
 	}
 
 	// Redshift
 	for _, column := range cols.GetColumns() {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:                d.redshiftStore.Dialect(),
-			Tc:                     redshiftTc,
-			TableID:                redshiftTableID,
-			ContainOtherOperations: true,
-			ColumnOp:               constants.Delete,
-			CdcTime:                ts,
-			Mode:                   config.Replication,
-		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.redshiftStore, column))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.redshiftStore, redshiftTc, redshiftTableID, []columns.Column{column}, ts, true))
 	}
 
 	// Nothing has been deleted, but it is all added to the permissions table.
