@@ -258,13 +258,13 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	}
 
 	// Nothing has been deleted, but it is all added to the permissions table.
-	assert.Equal(d.T(), originalColumnLength, len(bqTc.Columns().GetColumns()), bqTc.Columns().GetColumns())
-	assert.Equal(d.T(), originalColumnLength, len(redshiftTc.Columns().GetColumns()), redshiftTc.Columns().GetColumns())
-	assert.Equal(d.T(), originalColumnLength, len(snowflakeTc.Columns().GetColumns()), snowflakeTc.Columns().GetColumns())
+	assert.Len(d.T(), bqTc.GetColumns(), originalColumnLength)
+	assert.Len(d.T(), redshiftTc.GetColumns(), originalColumnLength)
+	assert.Len(d.T(), snowflakeTc.GetColumns(), originalColumnLength)
 
-	assert.Equal(d.T(), originalColumnLength, len(bqTc.ReadOnlyColumnsToDelete()), bqTc.ReadOnlyColumnsToDelete())
-	assert.Equal(d.T(), originalColumnLength, len(redshiftTc.ReadOnlyColumnsToDelete()), redshiftTc.ReadOnlyColumnsToDelete())
-	assert.Equal(d.T(), originalColumnLength, len(snowflakeTc.ReadOnlyColumnsToDelete()), snowflakeTc.ReadOnlyColumnsToDelete())
+	assert.Len(d.T(), bqTc.ReadOnlyColumnsToDelete(), originalColumnLength)
+	assert.Len(d.T(), redshiftTc.ReadOnlyColumnsToDelete(), originalColumnLength)
+	assert.Len(d.T(), snowflakeTc.ReadOnlyColumnsToDelete(), originalColumnLength)
 
 	for _, column := range cols.GetColumns() {
 		alterTableArgs := ddl.AlterTableArgs{

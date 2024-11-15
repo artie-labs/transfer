@@ -149,7 +149,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 	// Check all the columns, make sure it's correct. (length)
 	assert.Equal(d.T(), newColsLen+existingColsLen, len(d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).Columns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).Columns())
 	// Check by iterating over the columns
-	for _, column := range d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).Columns().GetColumns() {
+	for _, column := range d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).GetColumns() {
 		existingCol, isOk := existingCols.GetColumn(column.Name())
 		if !isOk {
 			// Check new cols?
