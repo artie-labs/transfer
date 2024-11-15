@@ -116,7 +116,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	// Never actually deleted.
 	assert.Equal(d.T(), 0, len(redshiftTc.ReadOnlyColumnsToDelete()), redshiftTc.ReadOnlyColumnsToDelete())
-	assert.Equal(d.T(), originalColumnLength, len(redshiftTc.Columns().GetColumns()), redshiftTc.Columns().GetColumns())
+	assert.Len(d.T(), redshiftTc.GetColumns(), originalColumnLength)
 
 	// 2. DropDeletedColumns = true, ContainOtherOperations = false, don't delete ever
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(bqTableID, types.NewDwhTableConfig(cols.GetColumns(), true))
