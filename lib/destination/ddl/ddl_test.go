@@ -76,6 +76,35 @@ func TestBuildCreateTableSQL(t *testing.T) {
 	}
 }
 
+func TestBuildAlterTableAddColumns(t *testing.T) {
+	{
+		// No columns
+		sqlParts := BuildAlterTableAddColumns(nil, nil, []columns.Column{})
+		assert.Empty(t, sqlParts)
+	}
+	{
+		// One column to add
+		sqlParts := BuildAlterTableAddColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), []columns.Column{columns.NewColumn("dusty", typing.String)})
+		assert.Len(t, sqlParts, 1)
+		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "dusty" VARCHAR(MAX)`, sqlParts[0])
+	}
+	{
+		// Three columns to add
+		sqlParts := BuildAlterTableAddColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"),
+			[]columns.Column{
+				columns.NewColumn("aussie", typing.String),
+				columns.NewColumn("doge", typing.String),
+				columns.NewColumn("age", typing.Integer),
+			},
+		)
+
+		assert.Len(t, sqlParts, 3)
+		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "aussie" VARCHAR(MAX)`, sqlParts[0])
+		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "doge" VARCHAR(MAX)`, sqlParts[1])
+		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "age" INT8`, sqlParts[2])
+	}
+}
+
 func TestAlterTableArgs_Validate(t *testing.T) {
 	{
 		// Invalid
