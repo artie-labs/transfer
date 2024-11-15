@@ -206,9 +206,9 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 	}
 
 	// Check all the columns, make sure it's correct. (length)
-	assert.Equal(d.T(), existingColsLen, len(d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).Columns().GetColumns()), d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).Columns())
+	assert.Len(d.T(), d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).Columns().GetColumns(), existingColsLen)
 	// Check by iterating over the columns
-	for _, column := range d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).Columns().GetColumns() {
+	for _, column := range d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).GetColumns() {
 		existingCol, isOk := existingCols.GetColumn(column.Name())
 		assert.True(d.T(), isOk)
 		assert.Equal(d.T(), column.KindDetails, existingCol.KindDetails)
@@ -254,7 +254,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 	}
 
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).ReadOnlyColumnsToDelete()))
-	assert.Equal(d.T(), originalColumnLength, len(d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).Columns().GetColumns()))
+	assert.Len(d.T(), d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).Columns().GetColumns(), originalColumnLength)
 
 	// Now try to delete again and with an increased TS. It should now be all deleted.
 	for _, column := range cols.GetColumns() {
@@ -274,5 +274,5 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 
 	// Columns still exist
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).ReadOnlyColumnsToDelete()))
-	assert.Equal(d.T(), originalColumnLength, len(d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).Columns().GetColumns()))
+	assert.Len(d.T(), d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).Columns().GetColumns(), originalColumnLength)
 }

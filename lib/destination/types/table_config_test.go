@@ -64,7 +64,7 @@ func TestDwhTableConfig_ColumnsConcurrency(t *testing.T) {
 		go func(tableCfg *types.DwhTableConfig) {
 			defer wg.Done()
 			for j := 0; j < 100; j++ {
-				assert.Equal(t, 3, len(tableCfg.Columns().GetColumns()), tableCfg.Columns().GetColumns())
+				assert.Len(t, tableCfg.GetColumns(), 3)
 				kindDetails := typing.Integer
 				if (j % 2) == 0 {
 					kindDetails = typing.Array
