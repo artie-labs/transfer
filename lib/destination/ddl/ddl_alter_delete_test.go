@@ -310,13 +310,13 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	}
 
 	// Everything has been deleted.
-	assert.Len(d.T(), snowflakeTc.GetColumns(), 0)
-	assert.Len(d.T(), bqTc.GetColumns(), 0)
-	assert.Len(d.T(), redshiftTc.GetColumns(), 0)
+	assert.Empty(d.T(), snowflakeTc.GetColumns())
+	assert.Empty(d.T(), bqTc.GetColumns())
+	assert.Empty(d.T(), redshiftTc.GetColumns())
 
-	assert.Len(d.T(), snowflakeTc.ReadOnlyColumnsToDelete(), 0)
-	assert.Len(d.T(), bqTc.ReadOnlyColumnsToDelete(), 0)
-	assert.Len(d.T(), redshiftTc.ReadOnlyColumnsToDelete(), 0)
+	assert.Empty(d.T(), snowflakeTc.ReadOnlyColumnsToDelete())
+	assert.Empty(d.T(), bqTc.ReadOnlyColumnsToDelete())
+	assert.Empty(d.T(), redshiftTc.ReadOnlyColumnsToDelete())
 	allColsMap := make(map[string]bool, len(allCols))
 	for _, allCol := range allCols {
 		allColsMap[allCol] = true
