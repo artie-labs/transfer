@@ -150,7 +150,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	// Never actually deleted.
 	assert.Equal(d.T(), 0, len(snowflakeTc.ReadOnlyColumnsToDelete()), snowflakeTc.ReadOnlyColumnsToDelete())
-	assert.Equal(d.T(), originalColumnLength, len(snowflakeTc.Columns().GetColumns()), snowflakeTc.Columns().GetColumns())
+	assert.Len(d.T(), snowflakeTc.GetColumns(), originalColumnLength)
 
 	// BigQuery
 	for _, column := range cols.GetColumns() {
