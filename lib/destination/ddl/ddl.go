@@ -83,6 +83,14 @@ func BuildAlterTableAddColumns(dialect sql.Dialect, tableID sql.TableIdentifier,
 	return parts, nil
 }
 
+func BuildAlterTableDropColumns(dialect sql.Dialect, tableID sql.TableIdentifier, col columns.Column) (string, error) {
+	if col.ShouldSkip() {
+		return "", fmt.Errorf("received an invalid column %q", col.Name())
+	}
+
+	return dialect.BuildAlterColumnQuery(tableID, constants.Delete, dialect.QuoteIdentifier(col.Name())), nil
+}
+
 type AlterTableArgs struct {
 	Dialect sql.Dialect
 	Tc      *types.DwhTableConfig

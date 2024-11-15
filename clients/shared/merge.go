@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -44,25 +43,15 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		}
 	} else {
 		if err = AlterTableAddColumns(ctx, dwh, tableConfig, tableID, targetKeysMissing); err != nil {
-			return fmt.Errorf("failed to alter table: %w", err)
+			return fmt.Errorf("failed to add columns for table %q: %w", tableID.Table(), err)
 		}
 	}
 
-	// Keys that exist in DWH, but not in our CDC stream.
-	deleteAlterTableArgs := ddl.AlterTableArgs{
-		Dialect:                dwh.Dialect(),
-		Tc:                     tableConfig,
-		TableID:                tableID,
-		ColumnOp:               constants.Delete,
-		ContainOtherOperations: tableData.ContainOtherOperations(),
-		CdcTime:                tableData.LatestCDCTs,
-		Mode:                   tableData.Mode(),
+	if err = AlterTableDropColumns(ctx, dwh, tableConfig, tableID, srcKeysMissing, tableData.LatestCDCTs, tableData.ContainOtherOperations()); err != nil {
+		return fmt.Errorf("failed to drop columns for table %q: %w", tableID.Table(), err)
 	}
 
-	if err = deleteAlterTableArgs.AlterTable(dwh, srcKeysMissing...); err != nil {
-		return fmt.Errorf("failed to apply alter table: %w", err)
-	}
-
+	// TODO: Examine whether [AuditColumnsToDelete] still needs to be called.
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
 	if err = tableData.MergeColumnsFromDestination(tableConfig.GetColumns()...); err != nil {
 		return fmt.Errorf("failed to merge columns from destination: %w", err)

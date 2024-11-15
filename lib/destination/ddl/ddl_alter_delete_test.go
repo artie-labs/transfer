@@ -1,9 +1,12 @@
 package ddl_test
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/artie-labs/transfer/clients/shared"
 
 	"github.com/stretchr/testify/assert"
 
@@ -59,17 +62,8 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	// Snowflake
 	for _, column := range cols.GetColumns() {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:                d.snowflakeStagesStore.Dialect(),
-			Tc:                     snowflakeTc,
-			TableID:                snowflakeTableID,
-			ContainOtherOperations: true,
-			ColumnOp:               constants.Delete,
-			CdcTime:                ts,
-			Mode:                   config.Replication,
-		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.snowflakeStagesStore, column))
+		err := shared.AlterTableDropColumns(context.Background(), d.snowflakeStagesStore, snowflakeTc, snowflakeTableID, []columns.Column{column}, ts, true)
+		assert.NoError(d.T(), err)
 	}
 
 	// Never actually deleted.
