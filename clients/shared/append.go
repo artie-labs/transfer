@@ -33,7 +33,6 @@ func Append(ctx context.Context, dwh destination.DataWarehouse, tableData *optim
 	)
 
 	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-
 	if tableConfig.CreateTable() {
 		if err = CreateTable(ctx, dwh, tableData, tableConfig, tableID, false); err != nil {
 			return fmt.Errorf("failed to create table: %w", err)

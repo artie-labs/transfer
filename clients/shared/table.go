@@ -25,6 +25,6 @@ func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *
 	}
 
 	// Update cache with the new columns that we've added.
-	tc.MutateInMemoryColumns(false, constants.Add, tableData.ReadOnlyInMemoryCols().GetColumns()...)
+	tc.MutateInMemoryColumns(constants.Add, tableData.ReadOnlyInMemoryCols().GetColumns()...)
 	return nil
 }
