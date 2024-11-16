@@ -1,15 +1,16 @@
 package ddl_test
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -59,17 +60,8 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	// Snowflake
 	for _, column := range cols.GetColumns() {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:                d.snowflakeStagesStore.Dialect(),
-			Tc:                     snowflakeTc,
-			TableID:                snowflakeTableID,
-			ContainOtherOperations: true,
-			ColumnOp:               constants.Delete,
-			CdcTime:                ts,
-			Mode:                   config.Replication,
-		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.snowflakeStagesStore, column))
+		err := shared.AlterTableDropColumns(context.Background(), d.snowflakeStagesStore, snowflakeTc, snowflakeTableID, []columns.Column{column}, ts, true)
+		assert.NoError(d.T(), err)
 	}
 
 	// Never actually deleted.
@@ -78,18 +70,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	// BigQuery
 	for _, column := range cols.GetColumns() {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:                d.bigQueryStore.Dialect(),
-			Tc:                     bqTc,
-			TableID:                bqTableID,
-			ContainOtherOperations: true,
-			ColumnOp:               constants.Delete,
-			CdcTime:                ts,
-			Mode:                   config.Replication,
-		}
-
-		err := alterTableArgs.AlterTable(d.bigQueryStore, column)
-		assert.NoError(d.T(), err)
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.bigQueryStore, bqTc, bqTableID, []columns.Column{column}, ts, true))
 	}
 
 	// Never actually deleted.
@@ -98,17 +79,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	// Redshift
 	for _, column := range cols.GetColumns() {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:                d.redshiftStore.Dialect(),
-			Tc:                     redshiftTc,
-			TableID:                redshiftTableID,
-			ContainOtherOperations: true,
-			ColumnOp:               constants.Delete,
-			CdcTime:                ts,
-			Mode:                   config.Replication,
-		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.redshiftStore, column))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.redshiftStore, redshiftTc, redshiftTableID, []columns.Column{column}, ts, true))
 	}
 
 	// Never actually deleted.
@@ -131,17 +102,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	assert.Equal(d.T(), 0, len(snowflakeTc.ReadOnlyColumnsToDelete()), snowflakeTc.ReadOnlyColumnsToDelete())
 
 	for _, column := range cols.GetColumns() {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:                d.snowflakeStagesStore.Dialect(),
-			Tc:                     snowflakeTc,
-			TableID:                snowflakeTableID,
-			ContainOtherOperations: false,
-			ColumnOp:               constants.Delete,
-			CdcTime:                ts,
-			Mode:                   config.Replication,
-		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.snowflakeStagesStore, column))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.snowflakeStagesStore, snowflakeTc, snowflakeTableID, []columns.Column{column}, ts, false))
 	}
 
 	// Never actually deleted.
@@ -150,17 +111,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	// BigQuery
 	for _, column := range cols.GetColumns() {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:                d.bigQueryStore.Dialect(),
-			Tc:                     bqTc,
-			TableID:                bqTableID,
-			ContainOtherOperations: false,
-			ColumnOp:               constants.Delete,
-			CdcTime:                ts,
-			Mode:                   config.Replication,
-		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.bigQueryStore, column))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.bigQueryStore, bqTc, bqTableID, []columns.Column{column}, ts, false))
 	}
 
 	// Never actually deleted.
@@ -169,21 +120,11 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	// Redshift
 	for _, column := range cols.GetColumns() {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:                d.redshiftStore.Dialect(),
-			Tc:                     redshiftTc,
-			TableID:                redshiftTableID,
-			ContainOtherOperations: false,
-			ColumnOp:               constants.Delete,
-			CdcTime:                ts,
-			Mode:                   config.Replication,
-		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.redshiftStore, column))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.redshiftStore, redshiftTc, redshiftTableID, []columns.Column{column}, ts, false))
 	}
 
 	// Never actually deleted.
-	assert.Equal(d.T(), 0, len(redshiftTc.ReadOnlyColumnsToDelete()), redshiftTc.ReadOnlyColumnsToDelete())
+	assert.Empty(d.T(), redshiftTc.ReadOnlyColumnsToDelete())
 	assert.Len(d.T(), redshiftTc.GetColumns(), originalColumnLength)
 
 	// 3. DropDeletedColumns = true, ContainOtherOperations = true, drop based on timestamp.
@@ -203,49 +144,21 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	assert.Equal(d.T(), 0, len(snowflakeTc.ReadOnlyColumnsToDelete()), snowflakeTc.ReadOnlyColumnsToDelete())
 
 	// Now, actually try to delete.
-	// Snowflake
-	for _, column := range cols.GetColumns() {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:                d.snowflakeStagesStore.Dialect(),
-			Tc:                     snowflakeTc,
-			TableID:                snowflakeTableID,
-			ContainOtherOperations: true,
-			ColumnOp:               constants.Delete,
-			CdcTime:                ts,
-			Mode:                   config.Replication,
+	{
+		// Snowflake
+		for _, column := range cols.GetColumns() {
+			assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.snowflakeStagesStore, snowflakeTc, snowflakeTableID, []columns.Column{column}, ts, true))
 		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.snowflakeStagesStore, column))
 	}
 
 	// BigQuery
 	for _, column := range cols.GetColumns() {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:                d.bigQueryStore.Dialect(),
-			Tc:                     bqTc,
-			TableID:                bqTableID,
-			ContainOtherOperations: true,
-			ColumnOp:               constants.Delete,
-			CdcTime:                ts,
-			Mode:                   config.Replication,
-		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.bigQueryStore, column))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.bigQueryStore, bqTc, bqTableID, []columns.Column{column}, ts, true))
 	}
 
 	// Redshift
 	for _, column := range cols.GetColumns() {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:                d.redshiftStore.Dialect(),
-			Tc:                     redshiftTc,
-			TableID:                redshiftTableID,
-			ContainOtherOperations: true,
-			ColumnOp:               constants.Delete,
-			CdcTime:                ts,
-			Mode:                   config.Replication,
-		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.redshiftStore, column))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.redshiftStore, redshiftTc, redshiftTableID, []columns.Column{column}, ts, true))
 	}
 
 	// Nothing has been deleted, but it is all added to the permissions table.
@@ -258,43 +171,12 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	assert.Len(d.T(), snowflakeTc.ReadOnlyColumnsToDelete(), originalColumnLength)
 
 	for _, column := range cols.GetColumns() {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:                d.snowflakeStagesStore.Dialect(),
-			Tc:                     snowflakeTc,
-			TableID:                snowflakeTableID,
-			ContainOtherOperations: true,
-			ColumnOp:               constants.Delete,
-			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
-			Mode:                   config.Replication,
-		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.snowflakeStagesStore, column))
-
+		// Snowflake
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.snowflakeStagesStore, snowflakeTc, snowflakeTableID, []columns.Column{column}, ts.Add(2*constants.DeletionConfidencePadding), true))
 		// BigQuery
-		alterTableArgs = ddl.AlterTableArgs{
-			Dialect:                d.bigQueryStore.Dialect(),
-			Tc:                     bqTc,
-			TableID:                bqTableID,
-			ContainOtherOperations: true,
-			ColumnOp:               constants.Delete,
-			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
-			Mode:                   config.Replication,
-		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.bigQueryStore, column))
-
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.bigQueryStore, bqTc, bqTableID, []columns.Column{column}, ts.Add(2*constants.DeletionConfidencePadding), true))
 		// Redshift
-		alterTableArgs = ddl.AlterTableArgs{
-			Dialect:                d.redshiftStore.Dialect(),
-			Tc:                     redshiftTc,
-			TableID:                redshiftTableID,
-			ContainOtherOperations: true,
-			ColumnOp:               constants.Delete,
-			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
-			Mode:                   config.Replication,
-		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.redshiftStore, column))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.redshiftStore, redshiftTc, redshiftTableID, []columns.Column{column}, ts.Add(2*constants.DeletionConfidencePadding), true))
 	}
 
 	// Everything has been deleted.

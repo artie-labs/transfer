@@ -1,6 +1,7 @@
 package ddl_test
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -9,9 +10,9 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
+	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -47,19 +48,9 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	tc := d.bigQueryStore.GetConfigMap().TableConfigCache(tableID)
 
 	// Prior to deletion, there should be no colsToDelete
-	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).ReadOnlyColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).ReadOnlyColumnsToDelete())
+	assert.Empty(d.T(), d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).ReadOnlyColumnsToDelete())
 	for _, column := range cols.GetColumns() {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:                d.bigQueryStore.Dialect(),
-			Tc:                     tc,
-			TableID:                tableID,
-			ColumnOp:               constants.Delete,
-			ContainOtherOperations: true,
-			CdcTime:                ts,
-			Mode:                   config.Replication,
-		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.bigQueryStore, column))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.bigQueryStore, tc, tableID, []columns.Column{column}, ts, true))
 	}
 
 	// Have not deleted, but tried to!
@@ -70,18 +61,8 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	// Now try to delete again and with an increased TS. It should now be all deleted.
 	var callIdx int
 	for _, column := range cols.GetColumns() {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:                d.bigQueryStore.Dialect(),
-			Tc:                     tc,
-			TableID:                tableID,
-			ColumnOp:               constants.Delete,
-			ContainOtherOperations: true,
-			CdcTime:                ts.Add(2 * constants.DeletionConfidencePadding),
-			Mode:                   config.Replication,
-		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.bigQueryStore, column))
-		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.bigQueryStore, tc, tableID, []columns.Column{column}, ts.Add(2*constants.DeletionConfidencePadding), true))
+		_, query, _ := d.fakeBigQueryStore.ExecContextArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s drop COLUMN %s", fqName, d.bigQueryStore.Dialect().QuoteIdentifier(column.Name())), query)
 		callIdx += 1
 	}
@@ -90,13 +71,12 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).ReadOnlyColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).ReadOnlyColumnsToDelete())
 	// Columns have not been deleted yet.
 	assert.Len(d.T(), d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).GetColumns(), 0)
-	assert.Equal(d.T(), originalColumnLength, d.fakeBigQueryStore.ExecCallCount())
+	assert.Equal(d.T(), originalColumnLength, d.fakeBigQueryStore.ExecContextCallCount())
 }
 
 func (d *DDLTestSuite) TestAlterTableAddColumns() {
 	tableID := dialect.NewTableIdentifier("", "mock_dataset", "add_cols")
 	fqName := tableID.FullyQualifiedName()
-	ts := time.Now()
 	existingColNameToKindDetailsMap := map[string]typing.KindDetails{
 		"foo": typing.String,
 		"bar": typing.String,
@@ -125,19 +105,10 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 	var callIdx int
 	tc := d.bigQueryStore.GetConfigMap().TableConfigCache(tableID)
 	for name, kind := range newCols {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:  d.bigQueryStore.Dialect(),
-			Tc:       tc,
-			TableID:  tableID,
-			ColumnOp: constants.Add,
-			CdcTime:  ts,
-			Mode:     config.Replication,
-		}
-
 		col := columns.NewColumn(name, kind)
+		assert.NoError(d.T(), shared.AlterTableAddColumns(context.Background(), d.bigQueryStore, tc, tableID, []columns.Column{col}))
 
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.bigQueryStore, col))
-		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
+		_, query, _ := d.fakeBigQueryStore.ExecContextArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, d.bigQueryStore.Dialect().QuoteIdentifier(col.Name()),
 			d.bigQueryStore.Dialect().DataTypeForKind(kind, false)), query)
 		callIdx += 1
@@ -161,7 +132,6 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 	tableID := dialect.NewTableIdentifier("", "mock_dataset", "add_cols")
 	fqName := tableID.FullyQualifiedName()
-	ts := time.Now()
 	existingColNameToKindDetailsMap := map[string]typing.KindDetails{
 		"foo":   typing.String,
 		"bar":   typing.String,
@@ -184,18 +154,10 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 	for _, column := range existingCols.GetColumns() {
 		var sqlResult sql.Result
 		// BQ returning the same error because the column already exists.
-		d.fakeBigQueryStore.ExecReturnsOnCall(0, sqlResult, errors.New("Column already exists: _string at [1:39]"))
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:  d.bigQueryStore.Dialect(),
-			Tc:       tc,
-			TableID:  tableID,
-			ColumnOp: constants.Add,
-			CdcTime:  ts,
-			Mode:     config.Replication,
-		}
+		d.fakeBigQueryStore.ExecContextReturnsOnCall(0, sqlResult, errors.New("Column already exists: _string at [1:39]"))
 
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.bigQueryStore, column))
-		query, _ := d.fakeBigQueryStore.ExecArgsForCall(callIdx)
+		assert.NoError(d.T(), shared.AlterTableAddColumns(context.Background(), d.bigQueryStore, tc, tableID, []columns.Column{column}))
+		_, query, _ := d.fakeBigQueryStore.ExecContextArgsForCall(callIdx)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, d.bigQueryStore.Dialect().QuoteIdentifier(column.Name()),
 			d.bigQueryStore.Dialect().DataTypeForKind(column.KindDetails, false)), query)
 		callIdx += 1
@@ -230,43 +192,22 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 	}
 
 	tableID := d.bigQueryStore.IdentifierFor(td.TopicConfig(), td.Name())
-	originalColumnLength := len(columnNameToKindDetailsMap)
 	d.bigQueryStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(cols.GetColumns(), false))
 	tc := d.bigQueryStore.GetConfigMap().TableConfigCache(tableID)
 
 	// Prior to deletion, there should be no colsToDelete
 	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).ReadOnlyColumnsToDelete()), d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).ReadOnlyColumnsToDelete())
 	for _, column := range cols.GetColumns() {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:  d.bigQueryStore.Dialect(),
-			Tc:       tc,
-			TableID:  tableID,
-			ColumnOp: constants.Delete,
-			CdcTime:  ts,
-			Mode:     config.Replication,
-		}
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.bigQueryStore, column))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.bigQueryStore, tc, tableID, []columns.Column{column}, ts, false))
 	}
 
-	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).ReadOnlyColumnsToDelete()))
-	assert.Len(d.T(), d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).GetColumns(), originalColumnLength)
+	// Because containsOtherOperations is false, it should have never tried to delete.
+	assert.Equal(d.T(), 0, d.fakeBigQueryStore.ExecCallCount())
 
-	// Now try to delete again and with an increased TS. It should now be all deleted.
+	// Timestamp got increased, but containsOtherOperations is false, so it should not have tried to delete.
 	for _, column := range cols.GetColumns() {
-		alterTableArgs := ddl.AlterTableArgs{
-			Dialect:  d.bigQueryStore.Dialect(),
-			Tc:       tc,
-			TableID:  tableID,
-			ColumnOp: constants.Delete,
-			CdcTime:  ts.Add(2 * constants.DeletionConfidencePadding),
-			Mode:     config.Replication,
-		}
-
-		assert.NoError(d.T(), alterTableArgs.AlterTable(d.bigQueryStore, column))
-		assert.Equal(d.T(), 0, d.fakeBigQueryStore.ExecCallCount())
+		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.bigQueryStore, tc, tableID, []columns.Column{column}, ts.Add(2*constants.DeletionConfidencePadding), false))
 	}
 
-	// Columns still exist
-	assert.Equal(d.T(), 0, len(d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).ReadOnlyColumnsToDelete()))
-	assert.Len(d.T(), d.bigQueryStore.GetConfigMap().TableConfigCache(tableID).GetColumns(), originalColumnLength)
+	assert.Equal(d.T(), 0, d.fakeBigQueryStore.ExecCallCount())
 }
