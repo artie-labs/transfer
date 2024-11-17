@@ -8,10 +8,39 @@ import (
 	bqDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
+
+func TestShouldCreatePrimaryKey(t *testing.T) {
+	pk := columns.NewColumn("foo", typing.String)
+	pk.SetPrimaryKeyForTest(true)
+	{
+		// Primary key check
+		{
+			// Column is not a primary key
+			col := columns.NewColumn("foo", typing.String)
+			assert.False(t, shouldCreatePrimaryKey(col, config.Replication, true))
+		}
+		{
+			// Column is a primary key
+			assert.True(t, shouldCreatePrimaryKey(pk, config.Replication, true))
+		}
+	}
+	{
+		// False because it's history mode
+		// It should be false because we are appending rows to this table.
+		assert.False(t, shouldCreatePrimaryKey(pk, config.History, true))
+	}
+	{
+		// False because it's not a create table operation
+		assert.False(t, shouldCreatePrimaryKey(pk, config.Replication, false))
+	}
+	{
+		// True because it's a primary key, replication mode, and create table operation
+		assert.True(t, shouldCreatePrimaryKey(pk, config.Replication, true))
+	}
+}
 
 func TestBuildCreateTableSQL(t *testing.T) {
 	{
@@ -76,62 +105,58 @@ func TestBuildCreateTableSQL(t *testing.T) {
 	}
 }
 
-func TestAlterTableArgs_Validate(t *testing.T) {
+func TestBuildAlterTableAddColumns(t *testing.T) {
 	{
-		// Invalid
-		a := AlterTableArgs{
-			ColumnOp:    constants.Delete,
-			CreateTable: true,
-			Mode:        config.Replication,
-		}
-		{
-			// Dialect isn't specified
-			assert.ErrorContains(t, a.Validate(), "dialect cannot be nil")
-		}
-		{
-			a.Dialect = bqDialect.BigQueryDialect{}
-			assert.ErrorContains(t, a.Validate(), "incompatible operation - cannot drop columns and create table at the same time")
-		}
+		// No columns
+		sqlParts, err := BuildAlterTableAddColumns(nil, nil, []columns.Column{})
+		assert.NoError(t, err)
+		assert.Empty(t, sqlParts)
 	}
 	{
-		// Valid
-		a := AlterTableArgs{
-			ColumnOp:    constants.Add,
-			CreateTable: true,
-			Mode:        config.Replication,
-			Dialect:     bqDialect.BigQueryDialect{},
-		}
+		// One column to add
+		col := columns.NewColumn("dusty", typing.String)
+		sqlParts, err := BuildAlterTableAddColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), []columns.Column{col})
+		assert.NoError(t, err)
+		assert.Len(t, sqlParts, 1)
+		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "dusty" VARCHAR(MAX)`, sqlParts[0])
+	}
+	{
+		// Two columns, one invalid, it will error.
+		col := columns.NewColumn("dusty", typing.String)
+		_, err := BuildAlterTableAddColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"),
+			[]columns.Column{
+				col,
+				columns.NewColumn("invalid", typing.Invalid),
+			},
+		)
 
-		assert.NoError(t, a.Validate())
+		assert.ErrorContains(t, err, `received an invalid column "invalid"`)
+	}
+	{
+		// Three columns to add
+		col1 := columns.NewColumn("aussie", typing.String)
+		col2 := columns.NewColumn("doge", typing.String)
+		col3 := columns.NewColumn("age", typing.Integer)
+
+		sqlParts, err := BuildAlterTableAddColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), []columns.Column{col1, col2, col3})
+		assert.NoError(t, err)
+		assert.Len(t, sqlParts, 3)
+		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "aussie" VARCHAR(MAX)`, sqlParts[0])
+		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "doge" VARCHAR(MAX)`, sqlParts[1])
+		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "age" INT8`, sqlParts[2])
 	}
 }
 
-func TestShouldCreatePrimaryKey(t *testing.T) {
-	pk := columns.NewColumn("foo", typing.String)
-	pk.SetPrimaryKeyForTest(true)
+func TestAlterTableDropColumns(t *testing.T) {
 	{
-		// Primary key check
-		{
-			// Column is not a primary key
-			col := columns.NewColumn("foo", typing.String)
-			assert.False(t, shouldCreatePrimaryKey(col, config.Replication, true))
-		}
-		{
-			// Column is a primary key
-			assert.True(t, shouldCreatePrimaryKey(pk, config.Replication, true))
-		}
+		// Invalid column
+		_, err := BuildAlterTableDropColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), columns.NewColumn("invalid", typing.Invalid))
+		assert.ErrorContains(t, err, `received an invalid column "invalid"`)
 	}
 	{
-		// False because it's history mode
-		// It should be false because we are appending rows to this table.
-		assert.False(t, shouldCreatePrimaryKey(pk, config.History, true))
-	}
-	{
-		// False because it's not a create table operation
-		assert.False(t, shouldCreatePrimaryKey(pk, config.Replication, false))
-	}
-	{
-		// True because it's a primary key, replication mode, and create table operation
-		assert.True(t, shouldCreatePrimaryKey(pk, config.Replication, true))
+		// Valid column
+		sql, err := BuildAlterTableDropColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), columns.NewColumn("dusty", typing.String))
+		assert.NoError(t, err)
+		assert.Equal(t, `ALTER TABLE schema."table" drop COLUMN "dusty"`, sql)
 	}
 }

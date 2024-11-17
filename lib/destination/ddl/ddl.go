@@ -4,16 +4,18 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
-	"time"
 
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
-	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
+
+func shouldCreatePrimaryKey(col columns.Column, mode config.Mode, createTable bool) bool {
+	return col.PrimaryKey() && mode == config.Replication && createTable
+}
 
 func BuildCreateTableSQL(dialect sql.Dialect, tableIdentifier sql.TableIdentifier, temporaryTable bool, mode config.Mode, columns []columns.Column) (string, error) {
 	if len(columns) == 0 {
@@ -69,112 +71,24 @@ func DropTemporaryTable(dwh destination.DataWarehouse, tableIdentifier sql.Table
 	return nil
 }
 
-type AlterTableArgs struct {
-	Dialect sql.Dialect
-	Tc      *types.DwhTableConfig
-	// ContainsOtherOperations - this is sourced from tableData `containOtherOperations`
-	ContainOtherOperations bool
-	TableID                sql.TableIdentifier
-	CreateTable            bool
-	ColumnOp               constants.ColumnOperation
-	Mode                   config.Mode
-	CdcTime                time.Time
-}
-
-func (a AlterTableArgs) Validate() error {
-	if a.Dialect == nil {
-		return fmt.Errorf("dialect cannot be nil")
-	}
-
-	// You can't DROP a column and try to create a table at the same time.
-	if a.ColumnOp == constants.Delete && a.CreateTable {
-		return fmt.Errorf("incompatible operation - cannot drop columns and create table at the same time")
-	}
-
-	if !(a.Mode == config.History || a.Mode == config.Replication) {
-		return fmt.Errorf("unexpected mode: %s", a.Mode.String())
-	}
-
-	return nil
-}
-
-func shouldCreatePrimaryKey(col columns.Column, mode config.Mode, createTable bool) bool {
-	return col.PrimaryKey() && mode == config.Replication && createTable
-}
-
-func (a AlterTableArgs) buildStatements(cols ...columns.Column) ([]string, []columns.Column) {
-	var mutateCol []columns.Column
-	// It's okay to combine since args.ColumnOp only takes one of: `Delete` or `Add`
-	var colSQLParts []string
-	var pkCols []string
+func BuildAlterTableAddColumns(dialect sql.Dialect, tableID sql.TableIdentifier, cols []columns.Column) ([]string, error) {
+	var parts []string
 	for _, col := range cols {
 		if col.ShouldSkip() {
-			// Let's not modify the table if the column kind is invalid
-			continue
+			return nil, fmt.Errorf("received an invalid column %q", col.Name())
 		}
 
-		if a.ColumnOp == constants.Delete {
-			if !a.Tc.ShouldDeleteColumn(col.Name(), a.CdcTime, a.ContainOtherOperations) {
-				continue
-			}
-		}
-
-		mutateCol = append(mutateCol, col)
-		switch a.ColumnOp {
-		case constants.Add:
-			colName := a.Dialect.QuoteIdentifier(col.Name())
-			if shouldCreatePrimaryKey(col, a.Mode, a.CreateTable) {
-				pkCols = append(pkCols, colName)
-			}
-
-			colSQLParts = append(colSQLParts, fmt.Sprintf("%s %s", colName, a.Dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey())))
-		case constants.Delete:
-			colSQLParts = append(colSQLParts, a.Dialect.QuoteIdentifier(col.Name()))
-		}
+		sqlPart := fmt.Sprintf("%s %s", dialect.QuoteIdentifier(col.Name()), dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey()))
+		parts = append(parts, dialect.BuildAlterColumnQuery(tableID, constants.Add, sqlPart))
 	}
 
-	if len(pkCols) > 0 {
-		pkStatement := fmt.Sprintf("PRIMARY KEY (%s)", strings.Join(pkCols, ", "))
-		if _, ok := a.Dialect.(bigQueryDialect.BigQueryDialect); ok {
-			pkStatement += " NOT ENFORCED"
-		}
-
-		colSQLParts = append(colSQLParts, pkStatement)
-	}
-
-	var alterStatements []string
-	if a.CreateTable {
-		alterStatements = []string{a.Dialect.BuildCreateTableQuery(a.TableID, false, colSQLParts)}
-	} else {
-		for _, colSQLPart := range colSQLParts {
-			alterStatements = append(alterStatements, a.Dialect.BuildAlterColumnQuery(a.TableID, a.ColumnOp, colSQLPart))
-		}
-	}
-
-	return alterStatements, mutateCol
+	return parts, nil
 }
 
-func (a AlterTableArgs) AlterTable(dwh destination.DataWarehouse, cols ...columns.Column) error {
-	if err := a.Validate(); err != nil {
-		return err
+func BuildAlterTableDropColumns(dialect sql.Dialect, tableID sql.TableIdentifier, col columns.Column) (string, error) {
+	if col.ShouldSkip() {
+		return "", fmt.Errorf("received an invalid column %q", col.Name())
 	}
 
-	if len(cols) == 0 {
-		return nil
-	}
-
-	alterStatements, mutateCol := a.buildStatements(cols...)
-	for _, sqlQuery := range alterStatements {
-		slog.Info("DDL - executing sql", slog.String("query", sqlQuery))
-		if _, err := dwh.Exec(sqlQuery); err != nil {
-			if !a.Dialect.IsColumnAlreadyExistsErr(err) {
-				return fmt.Errorf("failed to apply ddl, sql: %q, err: %w", sqlQuery, err)
-			}
-		}
-	}
-
-	// createTable = false since it all successfully updated.
-	a.Tc.MutateInMemoryColumns(false, a.ColumnOp, mutateCol...)
-
-	return nil
+	return dialect.BuildAlterColumnQuery(tableID, constants.Delete, dialect.QuoteIdentifier(col.Name())), nil
 }
