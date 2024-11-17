@@ -57,7 +57,17 @@ func TestSnowflakeDialect_BuildCreateTableQuery(t *testing.T) {
 	)
 }
 
-func TestSnowflakeDialect_BuildAlterColumnQuery(t *testing.T) {
+func TestSnowflakeDialect_BuildAddColumnQuery(t *testing.T) {
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
+
+	assert.Equal(t,
+		"ALTER TABLE {TABLE} add COLUMN {SQL_PART}",
+		SnowflakeDialect{}.BuildAddColumnQuery(fakeTableID, "{SQL_PART}"),
+	)
+}
+
+func TestSnowflakeDialect_BuildDropColumnQuery(t *testing.T) {
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
 
