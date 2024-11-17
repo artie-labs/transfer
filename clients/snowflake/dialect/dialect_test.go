@@ -73,7 +73,7 @@ func TestSnowflakeDialect_BuildDropColumnQuery(t *testing.T) {
 
 	assert.Equal(t,
 		"ALTER TABLE {TABLE} drop COLUMN {SQL_PART}",
-		SnowflakeDialect{}.buildAlterColumnQuery(fakeTableID, constants.Delete, "{SQL_PART}"),
+		SnowflakeDialect{}.BuildDropColumnQuery(fakeTableID, "{SQL_PART}"),
 	)
 }
 
