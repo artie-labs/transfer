@@ -59,12 +59,12 @@ func (d *DwhTableConfig) GetColumns() []columns.Column {
 	return d.columns.GetColumns()
 }
 
-func (d *DwhTableConfig) Columns() *columns.Columns {
-	if d == nil {
-		return nil
-	}
+func (d *DwhTableConfig) UpdateColumn(col columns.Column) {
+	d.columns.UpdateColumn(col)
+}
 
-	return d.columns
+func (d *DwhTableConfig) UpsertColumn(colName string, arg columns.UpsertColumnArg) error {
+	return d.columns.UpsertColumn(colName, arg)
 }
 
 func (d *DwhTableConfig) MutateInMemoryColumns(columnOp constants.ColumnOperation, cols ...columns.Column) {
