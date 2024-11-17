@@ -66,13 +66,23 @@ func TestBigQueryDialect_BuildCreateTableQuery(t *testing.T) {
 	)
 }
 
-func TestBigQueryDialect_BuildAlterColumnQuery(t *testing.T) {
+func TestBigQueryDialect_BuildDropColumnQuery(t *testing.T) {
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
 
 	assert.Equal(t,
 		"ALTER TABLE {TABLE} drop COLUMN {SQL_PART}",
-		BigQueryDialect{}.buildAlterColumnQuery(fakeTableID, constants.Delete, "{SQL_PART}"),
+		BigQueryDialect{}.BuildDropColumnQuery(fakeTableID, "{SQL_PART}"),
+	)
+}
+
+func TestBigQueryDialect_BuildAddColumnQuery(t *testing.T) {
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
+
+	assert.Equal(t,
+		"ALTER TABLE {TABLE} add COLUMN {SQL_PART}",
+		BigQueryDialect{}.BuildAddColumnQuery(fakeTableID, "{SQL_PART}"),
 	)
 }
 
