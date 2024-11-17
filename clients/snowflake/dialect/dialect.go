@@ -21,8 +21,7 @@ func (SnowflakeDialect) EscapeStruct(value string) string {
 }
 
 func (SnowflakeDialect) IsColumnAlreadyExistsErr(err error) bool {
-	// Snowflake doesn't have column mutations (IF NOT EXISTS)
-	return strings.Contains(err.Error(), "already exists")
+	return false
 }
 
 // IsTableDoesNotExistErr will check if the resulting error message looks like this
@@ -52,8 +51,20 @@ func (SnowflakeDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (st
 	return fmt.Sprintf("DESC TABLE %s", tableID.FullyQualifiedName()), nil, nil
 }
 
-func (SnowflakeDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string {
-	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
+func (SnowflakeDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
+	return fmt.Sprintf("ALTER TABLE %s ADD COLUMN IF NOT EXISTS %s", tableID.FullyQualifiedName(), sqlPart)
+}
+
+func (SnowflakeDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
+	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN IF EXISTS %s", tableID.FullyQualifiedName(), sqlPart)
+}
+
+func (sd SnowflakeDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string {
+	if columnOp == constants.Add {
+		return sd.BuildAddColumnQuery(tableID, colSQLPart)
+	}
+
+	return sd.BuildDropColumnQuery(tableID, colSQLPart)
 }
 
 func (sd SnowflakeDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
