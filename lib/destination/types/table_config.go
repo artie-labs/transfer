@@ -60,16 +60,10 @@ func (d *DwhTableConfig) GetColumns() []columns.Column {
 }
 
 func (d *DwhTableConfig) UpdateColumn(col columns.Column) {
-	d.Lock()
-	defer d.Unlock()
-
 	d.columns.UpdateColumn(col)
 }
 
 func (d *DwhTableConfig) UpsertColumn(colName string, arg columns.UpsertColumnArg) error {
-	d.Lock()
-	defer d.Unlock()
-
 	return d.columns.UpsertColumn(colName, arg)
 }
 
