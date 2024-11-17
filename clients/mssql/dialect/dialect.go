@@ -72,7 +72,7 @@ func (MSSQLDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, c
 	return fmt.Sprintf("CREATE TABLE %s (%s);", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
 }
 
-func (MSSQLDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string {
+func (MSSQLDialect) buildAlterColumnQuery(tableID sql.TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string {
 	// Microsoft SQL Server doesn't support the COLUMN keyword
 	return fmt.Sprintf("ALTER TABLE %s %s %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }

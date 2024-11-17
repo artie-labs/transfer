@@ -52,7 +52,7 @@ func (SnowflakeDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (st
 	return fmt.Sprintf("DESC TABLE %s", tableID.FullyQualifiedName()), nil, nil
 }
 
-func (SnowflakeDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string {
+func (SnowflakeDialect) buildAlterColumnQuery(tableID sql.TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string {
 	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
 

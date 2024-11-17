@@ -51,7 +51,7 @@ func TestRedshiftDialect_BuildAlterColumnQuery(t *testing.T) {
 
 	assert.Equal(t,
 		"ALTER TABLE {TABLE} drop COLUMN {SQL_PART}",
-		RedshiftDialect{}.BuildAlterColumnQuery(fakeTableID, constants.Delete, "{SQL_PART}"),
+		RedshiftDialect{}.buildAlterColumnQuery(fakeTableID, constants.Delete, "{SQL_PART}"),
 	)
 }
 

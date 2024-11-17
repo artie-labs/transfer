@@ -72,7 +72,7 @@ func TestBigQueryDialect_BuildAlterColumnQuery(t *testing.T) {
 
 	assert.Equal(t,
 		"ALTER TABLE {TABLE} drop COLUMN {SQL_PART}",
-		BigQueryDialect{}.BuildAlterColumnQuery(fakeTableID, constants.Delete, "{SQL_PART}"),
+		BigQueryDialect{}.buildAlterColumnQuery(fakeTableID, constants.Delete, "{SQL_PART}"),
 	)
 }
 

@@ -66,7 +66,7 @@ func TestMSSQLDialect_BuildAlterColumnQuery(t *testing.T) {
 
 	assert.Equal(t,
 		"ALTER TABLE {TABLE} drop {SQL_PART}",
-		MSSQLDialect{}.BuildAlterColumnQuery(fakeTableID, constants.Delete, "{SQL_PART}"),
+		MSSQLDialect{}.buildAlterColumnQuery(fakeTableID, constants.Delete, "{SQL_PART}"),
 	)
 }
 
