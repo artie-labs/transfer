@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/typing"
 	mssql "github.com/microsoft/go-mssqldb"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 func (MSSQLDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []any, error) {
