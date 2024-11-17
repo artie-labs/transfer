@@ -41,34 +41,6 @@ func (BigQueryDialect) IsTableDoesNotExistErr(_ error) bool {
 	return false
 }
 
-func (BigQueryDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, colSQLParts []string) string {
-	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
-
-	if temporary {
-		return fmt.Sprintf(
-			`%s OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
-			query,
-			BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)),
-		)
-	} else {
-		return query
-	}
-}
-
-func (BigQueryDialect) buildAlterColumnQuery(tableID sql.TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string {
-	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
-}
-
-func (BigQueryDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []interface{}, error) {
-	bqTableID, err := typing.AssertType[TableIdentifier](tableID)
-	if err != nil {
-		return "", nil, err
-	}
-
-	query := fmt.Sprintf("SELECT column_name, data_type, description FROM `%s.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` WHERE table_name = ?;", bqTableID.Dataset())
-	return query, []any{bqTableID.Table()}, nil
-}
-
 func (bd BigQueryDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
 	colName := sql.QuoteTableAliasColumn(tableAlias, column, bd)
 	if column.KindDetails == typing.Struct {
