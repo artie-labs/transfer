@@ -3,10 +3,10 @@ package dialect
 import (
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/config"
-
-	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 func TestBigQueryDialect_DataTypeForKind(t *testing.T) {

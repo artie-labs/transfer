@@ -7,12 +7,11 @@ import (
 	"slices"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/config"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/typing"

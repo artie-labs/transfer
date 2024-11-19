@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config"
-
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 )

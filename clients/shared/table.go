@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
