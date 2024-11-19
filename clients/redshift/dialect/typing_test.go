@@ -3,42 +3,44 @@ package dialect
 import (
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 func TestRedshiftDialect_DataTypeForKind(t *testing.T) {
 	{
 		// String
 		{
-			assert.Equal(t, "VARCHAR(MAX)", RedshiftDialect{}.DataTypeForKind(typing.String, true))
+			assert.Equal(t, "VARCHAR(MAX)", RedshiftDialect{}.DataTypeForKind(typing.String, true, config.SharedDestinationColumnSettings{}))
 		}
 		{
-			assert.Equal(t, "VARCHAR(12345)", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(12345))}, false))
+			assert.Equal(t, "VARCHAR(12345)", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(12345))}, false, config.SharedDestinationColumnSettings{}))
 		}
 	}
 	{
 		// Integers
 		{
 			// Small int
-			assert.Equal(t, "INT2", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.SmallIntegerKind)}, false))
+			assert.Equal(t, "INT2", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.SmallIntegerKind)}, false, config.SharedDestinationColumnSettings{}))
 		}
 		{
 			// Integer
-			assert.Equal(t, "INT4", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.IntegerKind)}, false))
+			assert.Equal(t, "INT4", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.IntegerKind)}, false, config.SharedDestinationColumnSettings{}))
 		}
 		{
 			// Big integer
-			assert.Equal(t, "INT8", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.BigIntegerKind)}, false))
+			assert.Equal(t, "INT8", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.BigIntegerKind)}, false, config.SharedDestinationColumnSettings{}))
 		}
 		{
 			// Not specified
 			{
 				// Literal
-				assert.Equal(t, "INT8", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.NotSpecifiedKind)}, false))
+				assert.Equal(t, "INT8", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.NotSpecifiedKind)}, false, config.SharedDestinationColumnSettings{}))
 			}
 			{
-				assert.Equal(t, "INT8", RedshiftDialect{}.DataTypeForKind(typing.Integer, false))
+				assert.Equal(t, "INT8", RedshiftDialect{}.DataTypeForKind(typing.Integer, false, config.SharedDestinationColumnSettings{}))
 			}
 		}
 	}
@@ -46,11 +48,11 @@ func TestRedshiftDialect_DataTypeForKind(t *testing.T) {
 		// Timestamps
 		{
 			// With timezone
-			assert.Equal(t, "TIMESTAMP WITH TIME ZONE", RedshiftDialect{}.DataTypeForKind(typing.TimestampTZ, false))
+			assert.Equal(t, "TIMESTAMP WITH TIME ZONE", RedshiftDialect{}.DataTypeForKind(typing.TimestampTZ, false, config.SharedDestinationColumnSettings{}))
 		}
 		{
 			// Without timezone
-			assert.Equal(t, "TIMESTAMP WITHOUT TIME ZONE", RedshiftDialect{}.DataTypeForKind(typing.TimestampNTZ, false))
+			assert.Equal(t, "TIMESTAMP WITHOUT TIME ZONE", RedshiftDialect{}.DataTypeForKind(typing.TimestampNTZ, false, config.SharedDestinationColumnSettings{}))
 		}
 	}
 }

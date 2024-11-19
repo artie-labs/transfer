@@ -3,6 +3,7 @@ package types
 import (
 	"sync"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/sql"
 )
 
@@ -35,13 +36,15 @@ func (d *DwhToTablesConfigMap) AddTableToConfig(tableID sql.TableIdentifier, con
 }
 
 type MergeOpts struct {
-	SubQueryDedupe            bool
 	AdditionalEqualityStrings []string
+	ColumnSettings            config.SharedDestinationColumnSettings
 	RetryColBackfill          bool
+	SubQueryDedupe            bool
 }
 
 type AdditionalSettings struct {
 	AdditionalCopyClause string
+	ColumnSettings       config.SharedDestinationColumnSettings
 
 	// These settings are used for the `Append` method.
 	UseTempTable bool

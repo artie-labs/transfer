@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) string {
+func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ config.SharedDestinationColumnSettings) string {
 	switch kindDetails.Kind {
 	case typing.Float.Kind:
 		return "DOUBLE"

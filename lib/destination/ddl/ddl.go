@@ -17,7 +17,7 @@ func shouldCreatePrimaryKey(col columns.Column, mode config.Mode, createTable bo
 	return col.PrimaryKey() && mode == config.Replication && createTable
 }
 
-func BuildCreateTableSQL(dialect sql.Dialect, tableIdentifier sql.TableIdentifier, temporaryTable bool, mode config.Mode, columns []columns.Column) (string, error) {
+func BuildCreateTableSQL(settings config.SharedDestinationColumnSettings, dialect sql.Dialect, tableIdentifier sql.TableIdentifier, temporaryTable bool, mode config.Mode, columns []columns.Column) (string, error) {
 	if len(columns) == 0 {
 		return "", fmt.Errorf("no columns provided")
 	}
@@ -34,7 +34,7 @@ func BuildCreateTableSQL(dialect sql.Dialect, tableIdentifier sql.TableIdentifie
 			primaryKeys = append(primaryKeys, colName)
 		}
 
-		parts = append(parts, fmt.Sprintf("%s %s", colName, dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey())))
+		parts = append(parts, fmt.Sprintf("%s %s", colName, dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey(), settings)))
 	}
 
 	if len(primaryKeys) > 0 {
@@ -71,14 +71,14 @@ func DropTemporaryTable(dwh destination.DataWarehouse, tableIdentifier sql.Table
 	return nil
 }
 
-func BuildAlterTableAddColumns(dialect sql.Dialect, tableID sql.TableIdentifier, cols []columns.Column) ([]string, error) {
+func BuildAlterTableAddColumns(settings config.SharedDestinationColumnSettings, dialect sql.Dialect, tableID sql.TableIdentifier, cols []columns.Column) ([]string, error) {
 	var parts []string
 	for _, col := range cols {
 		if col.ShouldSkip() {
 			return nil, fmt.Errorf("received an invalid column %q", col.Name())
 		}
 
-		sqlPart := fmt.Sprintf("%s %s", dialect.QuoteIdentifier(col.Name()), dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey()))
+		sqlPart := fmt.Sprintf("%s %s", dialect.QuoteIdentifier(col.Name()), dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey(), settings))
 		parts = append(parts, dialect.BuildAddColumnQuery(tableID, sqlPart))
 	}
 

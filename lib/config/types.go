@@ -21,6 +21,7 @@ type Pubsub struct {
 	TopicConfigs      []*kafkalib.TopicConfig `yaml:"topicConfigs"`
 	PathToCredentials string                  `yaml:"pathToCredentials"`
 }
+
 type Kafka struct {
 	// Comma-separated Kafka servers to port.
 	// e.g. host1:port1,host2:port2,...
@@ -36,12 +37,18 @@ type Kafka struct {
 	DisableTLS      bool   `yaml:"disableTLS,omitempty"`
 }
 
+type SharedDestinationColumnSettings struct {
+	// BigQueryNumericForVariableNumeric - If enabled, we will use BigQuery's NUMERIC type for variable numeric types.
+	BigQueryNumericForVariableNumeric bool `yaml:"bigQueryNumericForVariableNumeric"`
+}
+
 type SharedDestinationSettings struct {
 	// TruncateExceededValues - This will truncate exceeded values instead of replacing it with `__artie_exceeded_value`
 	TruncateExceededValues bool `yaml:"truncateExceededValues"`
 	// ExpandStringPrecision - This will expand the string precision if the incoming data has a higher precision than the destination table.
 	// This is only supported by Redshift at the moment.
-	ExpandStringPrecision bool `yaml:"expandStringPrecision"`
+	ExpandStringPrecision bool                            `yaml:"expandStringPrecision"`
+	ColumnSettings        SharedDestinationColumnSettings `yaml:"columnSettings"`
 }
 
 type Reporting struct {

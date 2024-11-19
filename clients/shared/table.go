@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
@@ -15,8 +16,8 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tc *types.DwhTableConfig, tableID sql.TableIdentifier, tempTable bool) error {
-	query, err := ddl.BuildCreateTableSQL(dwh.Dialect(), tableID, tempTable, tableData.Mode(), tableData.ReadOnlyInMemoryCols().GetColumns())
+func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tc *types.DwhTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, tempTable bool) error {
+	query, err := ddl.BuildCreateTableSQL(settings, dwh.Dialect(), tableID, tempTable, tableData.Mode(), tableData.ReadOnlyInMemoryCols().GetColumns())
 	if err != nil {
 		return fmt.Errorf("failed to build create table sql: %w", err)
 	}
@@ -31,7 +32,7 @@ func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *
 	return nil
 }
 
-func AlterTableAddColumns(ctx context.Context, dwh destination.DataWarehouse, tc *types.DwhTableConfig, tableID sql.TableIdentifier, cols []columns.Column) error {
+func AlterTableAddColumns(ctx context.Context, dwh destination.DataWarehouse, tc *types.DwhTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, cols []columns.Column) error {
 	if len(cols) == 0 {
 		return nil
 	}
@@ -45,7 +46,7 @@ func AlterTableAddColumns(ctx context.Context, dwh destination.DataWarehouse, tc
 		colsToAdd = append(colsToAdd, col)
 	}
 
-	sqlParts, err := ddl.BuildAlterTableAddColumns(dwh.Dialect(), tableID, colsToAdd)
+	sqlParts, err := ddl.BuildAlterTableAddColumns(settings, dwh.Dialect(), tableID, colsToAdd)
 	if err != nil {
 		return fmt.Errorf("failed to build alter table add columns: %w", err)
 	}

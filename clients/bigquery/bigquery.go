@@ -43,7 +43,9 @@ type Store struct {
 
 func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error {
 	if !useTempTable {
-		return shared.Append(ctx, s, tableData, types.AdditionalSettings{})
+		return shared.Append(ctx, s, tableData, types.AdditionalSettings{
+			ColumnSettings: s.config.SharedDestinationSettings.ColumnSettings,
+		})
 	}
 
 	// We can simplify this once Google has fully rolled out the ability to execute DML on recently streamed data
@@ -55,8 +57,9 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, u
 	defer func() { _ = ddl.DropTemporaryTable(s, temporaryTableID, false) }()
 
 	err := shared.Append(ctx, s, tableData, types.AdditionalSettings{
-		UseTempTable: true,
-		TempTableID:  temporaryTableID,
+		ColumnSettings: s.config.SharedDestinationSettings.ColumnSettings,
+		UseTempTable:   true,
+		TempTableID:    temporaryTableID,
 	})
 
 	if err != nil {
@@ -77,9 +80,9 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, u
 	return nil
 }
 
-func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
-		if err := shared.CreateTable(ctx, s, tableData, dwh, tempTableID, true); err != nil {
+		if err := shared.CreateTable(ctx, s, tableData, dwh, opts.ColumnSettings, tempTableID, true); err != nil {
 			return err
 		}
 	}

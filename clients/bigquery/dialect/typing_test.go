@@ -3,18 +3,20 @@ package dialect
 import (
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 func TestBigQueryDialect_DataTypeForKind(t *testing.T) {
 	{
 		// String
 		{
-			assert.Equal(t, "string", BigQueryDialect{}.DataTypeForKind(typing.String, false))
+			assert.Equal(t, "string", BigQueryDialect{}.DataTypeForKind(typing.String, false, config.SharedDestinationColumnSettings{}))
 		}
 		{
-			assert.Equal(t, "string", BigQueryDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(12345))}, true))
+			assert.Equal(t, "string", BigQueryDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(12345))}, true, config.SharedDestinationColumnSettings{}))
 		}
 	}
 }
@@ -30,7 +32,7 @@ func TestBigQueryDialect_KindForDataType_NoDataLoss(t *testing.T) {
 	}
 
 	for _, kindDetail := range kindDetails {
-		kd, err := BigQueryDialect{}.KindForDataType(BigQueryDialect{}.DataTypeForKind(kindDetail, false), "")
+		kd, err := BigQueryDialect{}.KindForDataType(BigQueryDialect{}.DataTypeForKind(kindDetail, false, config.SharedDestinationColumnSettings{}), "")
 		assert.NoError(t, err)
 		assert.Equal(t, kindDetail, kd)
 	}
@@ -76,7 +78,7 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
 			assert.Equal(t, int32(5), kd.ExtendedDecimalDetails.Precision())
 			assert.Equal(t, int32(0), kd.ExtendedDecimalDetails.Scale())
-			assert.Equal(t, "NUMERIC(5, 0)", kd.ExtendedDecimalDetails.BigQueryKind())
+			assert.Equal(t, "NUMERIC(5, 0)", kd.ExtendedDecimalDetails.BigQueryKind(false))
 
 		}
 		{
@@ -87,7 +89,7 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
 			assert.Equal(t, int32(5), kd.ExtendedDecimalDetails.Precision())
 			assert.Equal(t, int32(0), kd.ExtendedDecimalDetails.Scale())
-			assert.Equal(t, "NUMERIC(5, 0)", kd.ExtendedDecimalDetails.BigQueryKind())
+			assert.Equal(t, "NUMERIC(5, 0)", kd.ExtendedDecimalDetails.BigQueryKind(false))
 		}
 		{
 			// Numeric(5, 2)

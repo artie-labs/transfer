@@ -38,11 +38,11 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 
 	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	if tableConfig.CreateTable() {
-		if err = CreateTable(ctx, dwh, tableData, tableConfig, tableID, false); err != nil {
+		if err = CreateTable(ctx, dwh, tableData, tableConfig, opts.ColumnSettings, tableID, false); err != nil {
 			return fmt.Errorf("failed to create table: %w", err)
 		}
 	} else {
-		if err = AlterTableAddColumns(ctx, dwh, tableConfig, tableID, targetKeysMissing); err != nil {
+		if err = AlterTableAddColumns(ctx, dwh, tableConfig, opts.ColumnSettings, tableID, targetKeysMissing); err != nil {
 			return fmt.Errorf("failed to add columns for table %q: %w", tableID.Table(), err)
 		}
 	}

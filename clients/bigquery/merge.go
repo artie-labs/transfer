@@ -33,6 +33,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 
 	return shared.Merge(ctx, s, tableData, types.MergeOpts{
 		AdditionalEqualityStrings: additionalEqualityStrings,
+		ColumnSettings:            s.config.SharedDestinationSettings.ColumnSettings,
 		// BigQuery has DDL quotas.
 		RetryColBackfill: true,
 		// We are using BigQuery's streaming API which doesn't guarantee exactly once semantics

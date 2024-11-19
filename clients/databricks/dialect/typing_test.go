@@ -3,64 +3,66 @@ package dialect
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestDatabricksDialect_DataTypeForKind(t *testing.T) {
 	{
 		// Float
-		assert.Equal(t, "DOUBLE", DatabricksDialect{}.DataTypeForKind(typing.Float, false))
+		assert.Equal(t, "DOUBLE", DatabricksDialect{}.DataTypeForKind(typing.Float, false, config.SharedDestinationColumnSettings{}))
 	}
 	{
 		// Integer
-		assert.Equal(t, "BIGINT", DatabricksDialect{}.DataTypeForKind(typing.Integer, false))
+		assert.Equal(t, "BIGINT", DatabricksDialect{}.DataTypeForKind(typing.Integer, false, config.SharedDestinationColumnSettings{}))
 	}
 	{
 		// Variant
-		assert.Equal(t, "STRING", DatabricksDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Struct.Kind}, false))
+		assert.Equal(t, "STRING", DatabricksDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Struct.Kind}, false, config.SharedDestinationColumnSettings{}))
 	}
 	{
 		// Array
-		assert.Equal(t, "ARRAY<string>", DatabricksDialect{}.DataTypeForKind(typing.Array, false))
+		assert.Equal(t, "ARRAY<string>", DatabricksDialect{}.DataTypeForKind(typing.Array, false, config.SharedDestinationColumnSettings{}))
 	}
 	{
 		// String
-		assert.Equal(t, "STRING", DatabricksDialect{}.DataTypeForKind(typing.String, false))
+		assert.Equal(t, "STRING", DatabricksDialect{}.DataTypeForKind(typing.String, false, config.SharedDestinationColumnSettings{}))
 	}
 	{
 		// Boolean
-		assert.Equal(t, "BOOLEAN", DatabricksDialect{}.DataTypeForKind(typing.Boolean, false))
+		assert.Equal(t, "BOOLEAN", DatabricksDialect{}.DataTypeForKind(typing.Boolean, false, config.SharedDestinationColumnSettings{}))
 	}
 	{
 		// Times
 		{
 			// Date
-			assert.Equal(t, "DATE", DatabricksDialect{}.DataTypeForKind(typing.Date, false))
+			assert.Equal(t, "DATE", DatabricksDialect{}.DataTypeForKind(typing.Date, false, config.SharedDestinationColumnSettings{}))
 		}
 		{
 			// Timestamp
-			assert.Equal(t, "TIMESTAMP", DatabricksDialect{}.DataTypeForKind(typing.TimestampTZ, false))
+			assert.Equal(t, "TIMESTAMP", DatabricksDialect{}.DataTypeForKind(typing.TimestampTZ, false, config.SharedDestinationColumnSettings{}))
 		}
 		{
 			// Timestamp (w/o timezone)
-			assert.Equal(t, "TIMESTAMP_NTZ", DatabricksDialect{}.DataTypeForKind(typing.TimestampNTZ, false))
+			assert.Equal(t, "TIMESTAMP_NTZ", DatabricksDialect{}.DataTypeForKind(typing.TimestampNTZ, false, config.SharedDestinationColumnSettings{}))
 		}
 		{
 			// Time
-			assert.Equal(t, "STRING", DatabricksDialect{}.DataTypeForKind(typing.Time, false))
+			assert.Equal(t, "STRING", DatabricksDialect{}.DataTypeForKind(typing.Time, false, config.SharedDestinationColumnSettings{}))
 		}
 	}
 	{
 		// Decimals
 		{
 			// Below 38 precision
-			assert.Equal(t, "DECIMAL(10, 2)", DatabricksDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.EDecimal.Kind, ExtendedDecimalDetails: typing.ToPtr(decimal.NewDetails(10, 2))}, false))
+			assert.Equal(t, "DECIMAL(10, 2)", DatabricksDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.EDecimal.Kind, ExtendedDecimalDetails: typing.ToPtr(decimal.NewDetails(10, 2))}, false, config.SharedDestinationColumnSettings{}))
 		}
 		{
 			// Above 38 precision
-			assert.Equal(t, "STRING", DatabricksDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.EDecimal.Kind, ExtendedDecimalDetails: typing.ToPtr(decimal.NewDetails(40, 2))}, false))
+			assert.Equal(t, "STRING", DatabricksDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.EDecimal.Kind, ExtendedDecimalDetails: typing.ToPtr(decimal.NewDetails(40, 2))}, false, config.SharedDestinationColumnSettings{}))
 		}
 	}
 }

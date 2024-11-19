@@ -5,11 +5,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (MSSQLDialect) DataTypeForKind(kindDetails typing.KindDetails, isPk bool) string {
+func (MSSQLDialect) DataTypeForKind(kindDetails typing.KindDetails, isPk bool, _ config.SharedDestinationColumnSettings) string {
 	// Primary keys cannot exceed 900 chars in length.
 	// https://learn.microsoft.com/en-us/sql/relational-databases/tables/primary-and-foreign-key-constraints?view=sql-server-ver16#PKeys
 	const maxVarCharLengthForPrimaryKey = 900

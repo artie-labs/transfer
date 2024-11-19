@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) string {
+func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, settings config.SharedDestinationColumnSettings) string {
 	// Doesn't look like we need to do any special type mapping.
 	switch kindDetails.Kind {
 	case typing.Float.Kind:
@@ -33,7 +34,7 @@ func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) s
 		// We should be using TIMESTAMP since it's an absolute point in time.
 		return "timestamp"
 	case typing.EDecimal.Kind:
-		return kindDetails.ExtendedDecimalDetails.BigQueryKind()
+		return kindDetails.ExtendedDecimalDetails.BigQueryKind(settings.BigQueryNumericForVariableNumeric)
 	}
 
 	return kindDetails.Kind
