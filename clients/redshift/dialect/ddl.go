@@ -40,11 +40,11 @@ WHERE
 `, constants.StrPrecisionCol), []any{redshiftTableID.Schema(), redshiftTableID.Table()}, nil
 }
 
-func (rd RedshiftDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
+func (RedshiftDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
 	return fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s", tableID.FullyQualifiedName(), sqlPart)
 }
 
-func (rd RedshiftDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName string) string {
+func (RedshiftDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName string) string {
 	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", tableID.FullyQualifiedName(), colName)
 }
 

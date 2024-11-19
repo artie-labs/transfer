@@ -24,16 +24,12 @@ func (BigQueryDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, tempor
 	}
 }
 
-func (bd BigQueryDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
-	return bd.buildAlterColumnQuery(tableID, constants.Add, sqlPart)
+func (BigQueryDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
+	return fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s", tableID.FullyQualifiedName(), sqlPart)
 }
 
-func (bd BigQueryDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName string) string {
-	return bd.buildAlterColumnQuery(tableID, constants.Delete, colName)
-}
-
-func (BigQueryDialect) buildAlterColumnQuery(tableID sql.TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string {
-	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
+func (BigQueryDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName string) string {
+	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", tableID.FullyQualifiedName(), colName)
 }
 
 func (BigQueryDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []interface{}, error) {
