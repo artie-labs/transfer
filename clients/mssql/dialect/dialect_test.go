@@ -65,7 +65,7 @@ func TestMSSQLDialect_BuildAddColumnQuery(t *testing.T) {
 	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
 
 	assert.Equal(t,
-		"ALTER TABLE {TABLE} add {SQL_PART}",
+		"ALTER TABLE {TABLE} ADD {SQL_PART}",
 		MSSQLDialect{}.BuildAddColumnQuery(fakeTableID, "{SQL_PART}"),
 	)
 }
@@ -75,7 +75,7 @@ func TestMSSQLDialect_BuildDropColumnQuery(t *testing.T) {
 	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
 
 	assert.Equal(t,
-		"ALTER TABLE {TABLE} drop {SQL_PART}",
+		"ALTER TABLE {TABLE} DROP {SQL_PART}",
 		MSSQLDialect{}.BuildDropColumnQuery(fakeTableID, "{SQL_PART}"),
 	)
 }
