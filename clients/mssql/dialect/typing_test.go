@@ -3,8 +3,10 @@ package dialect
 import (
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 func TestMSSQLDialect_DataTypeForKind(t *testing.T) {
@@ -30,8 +32,8 @@ func TestMSSQLDialect_DataTypeForKind(t *testing.T) {
 	}
 
 	for idx, tc := range tcs {
-		assert.Equal(t, tc.expected, MSSQLDialect{}.DataTypeForKind(tc.kd, false), idx)
-		assert.Equal(t, tc.expectedIsPk, MSSQLDialect{}.DataTypeForKind(tc.kd, true), idx)
+		assert.Equal(t, tc.expected, MSSQLDialect{}.DataTypeForKind(tc.kd, false, config.SharedDestinationColumnSettings{}), idx)
+		assert.Equal(t, tc.expectedIsPk, MSSQLDialect{}.DataTypeForKind(tc.kd, true, config.SharedDestinationColumnSettings{}), idx)
 	}
 }
 

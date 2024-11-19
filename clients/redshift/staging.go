@@ -18,7 +18,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, parentTableID sql.TableIdentifier, _ types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sql.TableIdentifier, parentTableID sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
 	fp, colToNewLengthMap, err := s.loadTemporaryTable(tableData, tempTableID)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
@@ -40,7 +40,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	if createTempTable {
-		if err = shared.CreateTable(ctx, s, tableData, tableConfig, tempTableID, true); err != nil {
+		if err = shared.CreateTable(ctx, s, tableData, tableConfig, opts.ColumnSettings, tempTableID, true); err != nil {
 			return err
 		}
 	}
