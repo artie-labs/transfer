@@ -79,7 +79,7 @@ func BuildAlterTableAddColumns(dialect sql.Dialect, tableID sql.TableIdentifier,
 		}
 
 		sqlPart := fmt.Sprintf("%s %s", dialect.QuoteIdentifier(col.Name()), dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey()))
-		parts = append(parts, dialect.BuildAlterColumnQuery(tableID, constants.Add, sqlPart))
+		parts = append(parts, dialect.BuildAddColumnQuery(tableID, sqlPart))
 	}
 
 	return parts, nil
@@ -90,5 +90,5 @@ func BuildAlterTableDropColumns(dialect sql.Dialect, tableID sql.TableIdentifier
 		return "", fmt.Errorf("received an invalid column %q", col.Name())
 	}
 
-	return dialect.BuildAlterColumnQuery(tableID, constants.Delete, dialect.QuoteIdentifier(col.Name())), nil
+	return dialect.BuildDropColumnQuery(tableID, dialect.QuoteIdentifier(col.Name())), nil
 }

@@ -70,18 +70,16 @@ func TestDatabricksDialect_BuildCreateTableQuery(t *testing.T) {
 	}
 }
 
-func TestDatabricksDialect_BuildAlterColumnQuery(t *testing.T) {
+func TestDatabricksDialect_BuildAddColumnQuery(t *testing.T) {
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
+	assert.Equal(t, "ALTER TABLE {TABLE} add COLUMN {SQL_PART} {DATA_TYPE}", DatabricksDialect{}.BuildAddColumnQuery(fakeTableID, "{SQL_PART} {DATA_TYPE}"))
+}
 
-	{
-		// DROP
-		assert.Equal(t, "ALTER TABLE {TABLE} drop COLUMN {SQL_PART}", DatabricksDialect{}.BuildAlterColumnQuery(fakeTableID, constants.Delete, "{SQL_PART}"))
-	}
-	{
-		// Add
-		assert.Equal(t, "ALTER TABLE {TABLE} add COLUMN {SQL_PART} {DATA_TYPE}", DatabricksDialect{}.BuildAlterColumnQuery(fakeTableID, constants.Add, "{SQL_PART} {DATA_TYPE}"))
-	}
+func TestDatabricksDialect_BuildDropColumnQuery(t *testing.T) {
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
+	assert.Equal(t, "ALTER TABLE {TABLE} drop COLUMN {SQL_PART}", DatabricksDialect{}.BuildDropColumnQuery(fakeTableID, "{SQL_PART}"))
 }
 
 func TestDatabricksDialect_BuildDedupeQueries(t *testing.T) {
