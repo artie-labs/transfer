@@ -5,11 +5,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (SnowflakeDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool) string {
+func (SnowflakeDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ config.SharedDestinationColumnSettings) string {
 	switch kindDetails.Kind {
 	case typing.Struct.Kind:
 		// Snowflake doesn't recognize struct.

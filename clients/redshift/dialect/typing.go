@@ -5,11 +5,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool) string {
+func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool, _ config.SharedDestinationColumnSettings) string {
 	switch kd.Kind {
 	case typing.Integer.Kind:
 		if kd.OptionalIntegerKind != nil {

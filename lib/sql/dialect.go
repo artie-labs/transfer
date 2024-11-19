@@ -1,6 +1,7 @@
 package sql
 
 import (
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -25,7 +26,7 @@ type TableIdentifier interface {
 type Dialect interface {
 	QuoteIdentifier(identifier string) string
 	EscapeStruct(value string) string
-	DataTypeForKind(kd typing.KindDetails, isPk bool) string
+	DataTypeForKind(kd typing.KindDetails, isPk bool, settings config.SharedDestinationColumnSettings) string
 	KindForDataType(_type string, stringPrecision string) (typing.KindDetails, error)
 	IsColumnAlreadyExistsErr(err error) bool
 	IsTableDoesNotExistErr(err error) bool
