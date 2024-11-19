@@ -20,6 +20,7 @@ func (d DatabricksDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlP
 func (d DatabricksDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName string) string {
 	return d.buildAlterColumnQuery(tableID, constants.Delete, colName)
 }
+
 func (DatabricksDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []any, error) {
 	return fmt.Sprintf("DESCRIBE TABLE %s", tableID.FullyQualifiedName()), nil, nil
 }

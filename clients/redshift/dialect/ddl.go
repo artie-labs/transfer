@@ -47,6 +47,7 @@ func (rd RedshiftDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPa
 func (rd RedshiftDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName string) string {
 	return rd.buildAlterColumnQuery(tableID, constants.Delete, colName)
 }
+
 func (RedshiftDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, colSQLParts []string) string {
 	// Redshift uses the same syntax for temporary and permanent tables.
 	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
