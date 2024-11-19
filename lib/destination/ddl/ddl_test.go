@@ -118,7 +118,7 @@ func TestBuildAlterTableAddColumns(t *testing.T) {
 		sqlParts, err := BuildAlterTableAddColumns(config.SharedDestinationColumnSettings{}, dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), []columns.Column{col})
 		assert.NoError(t, err)
 		assert.Len(t, sqlParts, 1)
-		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "dusty" VARCHAR(MAX)`, sqlParts[0])
+		assert.Equal(t, `ALTER TABLE schema."table" ADD COLUMN "dusty" VARCHAR(MAX)`, sqlParts[0])
 	}
 	{
 		// Two columns, one invalid, it will error.
@@ -141,9 +141,9 @@ func TestBuildAlterTableAddColumns(t *testing.T) {
 		sqlParts, err := BuildAlterTableAddColumns(config.SharedDestinationColumnSettings{}, dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), []columns.Column{col1, col2, col3})
 		assert.NoError(t, err)
 		assert.Len(t, sqlParts, 3)
-		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "aussie" VARCHAR(MAX)`, sqlParts[0])
-		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "doge" VARCHAR(MAX)`, sqlParts[1])
-		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "age" INT8`, sqlParts[2])
+		assert.Equal(t, `ALTER TABLE schema."table" ADD COLUMN "aussie" VARCHAR(MAX)`, sqlParts[0])
+		assert.Equal(t, `ALTER TABLE schema."table" ADD COLUMN "doge" VARCHAR(MAX)`, sqlParts[1])
+		assert.Equal(t, `ALTER TABLE schema."table" ADD COLUMN "age" INT8`, sqlParts[2])
 	}
 }
 
@@ -157,6 +157,6 @@ func TestAlterTableDropColumns(t *testing.T) {
 		// Valid column
 		sql, err := BuildAlterTableDropColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), columns.NewColumn("dusty", typing.String))
 		assert.NoError(t, err)
-		assert.Equal(t, `ALTER TABLE schema."table" drop COLUMN "dusty"`, sql)
+		assert.Equal(t, `ALTER TABLE schema."table" DROP COLUMN "dusty"`, sql)
 	}
 }
