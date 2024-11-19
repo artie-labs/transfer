@@ -70,7 +70,11 @@ func (d Details) RedshiftKind() string {
 }
 
 // BigQueryKind - is inferring logic from: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#decimal_types
-func (d Details) BigQueryKind() string {
+func (d Details) BigQueryKind(numericTypeForVariableNumeric bool) string {
+	if numericTypeForVariableNumeric && d.precision == PrecisionNotSpecified {
+		return "NUMERIC"
+	}
+
 	if d.isNumeric() {
 		return fmt.Sprintf("NUMERIC(%v, %v)", d.precision, d.scale)
 	} else if d.isBigNumeric() {
