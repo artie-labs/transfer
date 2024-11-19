@@ -63,7 +63,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	for _, column := range cols.GetColumns() {
 		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.bigQueryStore, tc, tableID, []columns.Column{column}, ts.Add(2*constants.DeletionConfidencePadding), true))
 		_, query, _ := d.fakeBigQueryStore.ExecContextArgsForCall(callIdx)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s drop COLUMN %s", fqName, d.bigQueryStore.Dialect().QuoteIdentifier(column.Name())), query)
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", fqName, d.bigQueryStore.Dialect().QuoteIdentifier(column.Name())), query)
 		callIdx += 1
 	}
 
@@ -109,7 +109,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 		assert.NoError(d.T(), shared.AlterTableAddColumns(context.Background(), d.bigQueryStore, tc, config.SharedDestinationColumnSettings{}, tableID, []columns.Column{col}))
 
 		_, query, _ := d.fakeBigQueryStore.ExecContextArgsForCall(callIdx)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, d.bigQueryStore.Dialect().QuoteIdentifier(col.Name()),
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s", fqName, d.bigQueryStore.Dialect().QuoteIdentifier(col.Name()),
 			d.bigQueryStore.Dialect().DataTypeForKind(kind, false, config.SharedDestinationColumnSettings{})), query)
 		callIdx += 1
 	}
@@ -158,7 +158,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 
 		assert.NoError(d.T(), shared.AlterTableAddColumns(context.Background(), d.bigQueryStore, tc, config.SharedDestinationColumnSettings{}, tableID, []columns.Column{column}))
 		_, query, _ := d.fakeBigQueryStore.ExecContextArgsForCall(callIdx)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s %s COLUMN %s %s", fqName, constants.Add, d.bigQueryStore.Dialect().QuoteIdentifier(column.Name()),
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s", fqName, d.bigQueryStore.Dialect().QuoteIdentifier(column.Name()),
 			d.bigQueryStore.Dialect().DataTypeForKind(column.KindDetails, false, config.SharedDestinationColumnSettings{})), query)
 		callIdx += 1
 	}

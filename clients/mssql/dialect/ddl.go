@@ -33,11 +33,11 @@ WHERE
     LOWER(TABLE_NAME) = LOWER(?) AND LOWER(TABLE_SCHEMA) = LOWER(?);`, []any{mssql.VarChar(mssqlTableID.Table()), mssql.VarChar(mssqlTableID.Schema())}, nil
 }
 
-func (md MSSQLDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
+func (MSSQLDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
 	return fmt.Sprintf("ALTER TABLE %s ADD %s", tableID.FullyQualifiedName(), sqlPart)
 }
 
-func (md MSSQLDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName string) string {
+func (MSSQLDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName string) string {
 	return fmt.Sprintf("ALTER TABLE %s DROP %s", tableID.FullyQualifiedName(), colName)
 }
 
