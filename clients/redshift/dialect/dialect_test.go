@@ -50,7 +50,7 @@ func TestRedshiftDialect_BuildAddColumnQuery(t *testing.T) {
 	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
 
 	assert.Equal(t,
-		"ALTER TABLE {TABLE} add COLUMN {SQL_PART}",
+		"ALTER TABLE {TABLE} ADD COLUMN {SQL_PART}",
 		RedshiftDialect{}.BuildAddColumnQuery(fakeTableID, "{SQL_PART}"),
 	)
 }
@@ -60,7 +60,7 @@ func TestRedshiftDialect_BuildDropColumnQuery(t *testing.T) {
 	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
 
 	assert.Equal(t,
-		"ALTER TABLE {TABLE} drop COLUMN {SQL_PART}",
+		"ALTER TABLE {TABLE} DROP COLUMN {SQL_PART}",
 		RedshiftDialect{}.BuildDropColumnQuery(fakeTableID, "{SQL_PART}"),
 	)
 }

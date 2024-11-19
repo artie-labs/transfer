@@ -41,18 +41,14 @@ WHERE
 }
 
 func (rd RedshiftDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
-	return rd.buildAlterColumnQuery(tableID, constants.Add, sqlPart)
+	return fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s", tableID.FullyQualifiedName(), sqlPart)
 }
 
 func (rd RedshiftDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName string) string {
-	return rd.buildAlterColumnQuery(tableID, constants.Delete, colName)
+	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", tableID.FullyQualifiedName(), colName)
 }
 
 func (RedshiftDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, colSQLParts []string) string {
 	// Redshift uses the same syntax for temporary and permanent tables.
 	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
-}
-
-func (RedshiftDialect) buildAlterColumnQuery(tableID sql.TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string {
-	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
 }
