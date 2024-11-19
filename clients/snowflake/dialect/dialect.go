@@ -35,27 +35,6 @@ func (SnowflakeDialect) IsTableDoesNotExistErr(err error) bool {
 	return strings.Contains(err.Error(), "does not exist or not authorized")
 }
 
-func (SnowflakeDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, colSQLParts []string) string {
-	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
-
-	if temporary {
-		// TEMPORARY Table syntax - https://docs.snowflake.com/en/sql-reference/sql/create-table
-		// PURGE syntax - https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#purging-files-after-loading
-		// FIELD_OPTIONALLY_ENCLOSED_BY - is needed because CSV will try to escape any values that have `"`
-		return query + ` STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`
-	} else {
-		return query
-	}
-}
-
-func (SnowflakeDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []any, error) {
-	return fmt.Sprintf("DESC TABLE %s", tableID.FullyQualifiedName()), nil, nil
-}
-
-func (SnowflakeDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string {
-	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
-}
-
 func (sd SnowflakeDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
 	colName := sql.QuoteTableAliasColumn(tableAlias, column, sd)
 	if column.KindDetails == typing.Struct {

@@ -30,46 +30,6 @@ func (RedshiftDialect) IsTableDoesNotExistErr(_ error) bool {
 	return false
 }
 
-func (RedshiftDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, colSQLParts []string) string {
-	// Redshift uses the same syntax for temporary and permanent tables.
-	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
-}
-
-func (RedshiftDialect) BuildAlterColumnQuery(tableID sql.TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string {
-	return fmt.Sprintf("ALTER TABLE %s %s COLUMN %s", tableID.FullyQualifiedName(), columnOp, colSQLPart)
-}
-
-func (RedshiftDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []any, error) {
-	redshiftTableID, err := typing.AssertType[TableIdentifier](tableID)
-	if err != nil {
-		return "", nil, err
-	}
-
-	// This query is a modified fork from: https://gist.github.com/alexanderlz/7302623
-	return fmt.Sprintf(`
-SELECT 
-    c.column_name,
-    CASE 
-        WHEN c.data_type = 'numeric' THEN 
-            'numeric(' || COALESCE(CAST(c.numeric_precision AS VARCHAR), '') || ',' || COALESCE(CAST(c.numeric_scale AS VARCHAR), '') || ')'
-        ELSE 
-            c.data_type
-    END AS data_type,
-    c.%s,
-    d.description
-FROM
-    INFORMATION_SCHEMA.COLUMNS c
-LEFT JOIN 
-    PG_CLASS c1 ON c.table_name = c1.relname 
-LEFT JOIN 
-    PG_CATALOG.PG_NAMESPACE n ON c.table_schema = n.nspname AND c1.relnamespace = n.oid 
-LEFT JOIN 
-    PG_CATALOG.PG_DESCRIPTION d ON d.objsubid = c.ordinal_position AND d.objoid = c1.oid 
-WHERE 
-    LOWER(c.table_schema) = LOWER($1) AND LOWER(c.table_name) = LOWER($2);
-`, constants.StrPrecisionCol), []any{redshiftTableID.Schema(), redshiftTableID.Table()}, nil
-}
-
 func (rd RedshiftDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
 	colName := sql.QuoteTableAliasColumn(tableAlias, column, rd)
 	if column.KindDetails == typing.Struct {

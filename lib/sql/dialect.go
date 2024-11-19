@@ -30,7 +30,6 @@ type Dialect interface {
 	KindForDataType(_type string, stringPrecision string) (typing.KindDetails, error)
 	IsColumnAlreadyExistsErr(err error) bool
 	IsTableDoesNotExistErr(err error) bool
-	BuildAlterColumnQuery(tableID TableIdentifier, columnOp constants.ColumnOperation, colSQLPart string) string
 	BuildCreateTableQuery(tableID TableIdentifier, temporary bool, colSQLParts []string) string
 	BuildDedupeQueries(tableID, stagingTableID TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string
 	BuildDedupeTableQuery(tableID TableIdentifier, primaryKeys []string) string
@@ -47,6 +46,10 @@ type Dialect interface {
 		// containsHardDeletes is only used for Redshift where we do not issue a DELETE statement if there are no hard deletes in the batch
 		containsHardDeletes bool,
 	) ([]string, error)
+
+	// DDL queries
+	BuildAddColumnQuery(tableID TableIdentifier, sqlPart string) string
+	BuildDropColumnQuery(tableID TableIdentifier, colName string) string
 
 	// Default values
 	GetDefaultValueStrategy() DefaultValueStrategy

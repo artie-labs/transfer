@@ -60,13 +60,23 @@ func TestMSSQLDialect_BuildCreateTableQuery(t *testing.T) {
 	)
 }
 
-func TestMSSQLDialect_BuildAlterColumnQuery(t *testing.T) {
+func TestMSSQLDialect_BuildAddColumnQuery(t *testing.T) {
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
+
+	assert.Equal(t,
+		"ALTER TABLE {TABLE} add {SQL_PART}",
+		MSSQLDialect{}.BuildAddColumnQuery(fakeTableID, "{SQL_PART}"),
+	)
+}
+
+func TestMSSQLDialect_BuildDropColumnQuery(t *testing.T) {
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
 
 	assert.Equal(t,
 		"ALTER TABLE {TABLE} drop {SQL_PART}",
-		MSSQLDialect{}.BuildAlterColumnQuery(fakeTableID, constants.Delete, "{SQL_PART}"),
+		MSSQLDialect{}.BuildDropColumnQuery(fakeTableID, "{SQL_PART}"),
 	)
 }
 
