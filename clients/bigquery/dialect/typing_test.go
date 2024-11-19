@@ -76,7 +76,7 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
 			assert.Equal(t, int32(5), kd.ExtendedDecimalDetails.Precision())
 			assert.Equal(t, int32(0), kd.ExtendedDecimalDetails.Scale())
-			assert.Equal(t, "NUMERIC(5, 0)", kd.ExtendedDecimalDetails.BigQueryKind())
+			assert.Equal(t, "NUMERIC(5, 0)", kd.ExtendedDecimalDetails.BigQueryKind(false))
 
 		}
 		{
@@ -87,7 +87,7 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
 			assert.Equal(t, int32(5), kd.ExtendedDecimalDetails.Precision())
 			assert.Equal(t, int32(0), kd.ExtendedDecimalDetails.Scale())
-			assert.Equal(t, "NUMERIC(5, 0)", kd.ExtendedDecimalDetails.BigQueryKind())
+			assert.Equal(t, "NUMERIC(5, 0)", kd.ExtendedDecimalDetails.BigQueryKind(false))
 		}
 		{
 			// Numeric(5, 2)

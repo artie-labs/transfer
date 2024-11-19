@@ -6,6 +6,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestDetails_BigQueryKind(t *testing.T) {
+	// Variable numeric
+	details := NewDetails(PrecisionNotSpecified, DefaultScale)
+	{
+		// numericTypeForVariableNumeric = false
+		assert.Equal(t, "STRING", details.BigQueryKind(false))
+	}
+	{
+		// numericTypeForVariableNumeric = true
+		assert.Equal(t, "NUMERIC", details.BigQueryKind(true))
+	}
+}
+
 func TestDecimalDetailsKind(t *testing.T) {
 	type _testCase struct {
 		Name      string
@@ -71,6 +84,6 @@ func TestDecimalDetailsKind(t *testing.T) {
 		d := NewDetails(testCase.Precision, testCase.Scale)
 		assert.Equal(t, testCase.ExpectedSnowflakeKind, d.SnowflakeKind(), testCase.Name)
 		assert.Equal(t, testCase.ExpectedRedshiftKind, d.RedshiftKind(), testCase.Name)
-		assert.Equal(t, testCase.ExpectedBigQueryKind, d.BigQueryKind(), testCase.Name)
+		assert.Equal(t, testCase.ExpectedBigQueryKind, d.BigQueryKind(false), testCase.Name)
 	}
 }
