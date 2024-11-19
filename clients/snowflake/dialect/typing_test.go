@@ -3,18 +3,20 @@ package dialect
 import (
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 func TestSnowflakeDialect_DataTypeForKind(t *testing.T) {
 	{
 		// String
 		{
-			assert.Equal(t, "string", SnowflakeDialect{}.DataTypeForKind(typing.String, false))
+			assert.Equal(t, "string", SnowflakeDialect{}.DataTypeForKind(typing.String, false, config.SharedDestinationColumnSettings{}))
 		}
 		{
-			assert.Equal(t, "string", SnowflakeDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(12345))}, false))
+			assert.Equal(t, "string", SnowflakeDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(12345))}, false, config.SharedDestinationColumnSettings{}))
 		}
 	}
 }
@@ -193,7 +195,7 @@ func TestSnowflakeDialect_KindForDataType_NoDataLoss(t *testing.T) {
 	}
 
 	for _, kindDetail := range kindDetails {
-		kd, err := SnowflakeDialect{}.KindForDataType(SnowflakeDialect{}.DataTypeForKind(kindDetail, false), "")
+		kd, err := SnowflakeDialect{}.KindForDataType(SnowflakeDialect{}.DataTypeForKind(kindDetail, false, config.SharedDestinationColumnSettings{}), "")
 		assert.NoError(t, err)
 		assert.Equal(t, kindDetail, kd)
 	}

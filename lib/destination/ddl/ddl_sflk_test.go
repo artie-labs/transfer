@@ -7,6 +7,8 @@ import (
 	"slices"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/clients/shared"
@@ -28,12 +30,12 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 	tableID := dialect.NewTableIdentifier("shop", "public", "complex_columns")
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(nil, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
-	assert.NoError(d.T(), shared.AlterTableAddColumns(context.Background(), d.snowflakeStagesStore, tc, tableID, cols))
+	assert.NoError(d.T(), shared.AlterTableAddColumns(context.Background(), d.snowflakeStagesStore, tc, config.SharedDestinationColumnSettings{}, tableID, cols))
 	for i := 0; i < len(cols); i++ {
 		_, execQuery, _ := d.fakeSnowflakeStagesStore.ExecContextArgsForCall(i)
 		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s add COLUMN %s %s", `shop.public."COMPLEX_COLUMNS"`,
 			d.snowflakeStagesStore.Dialect().QuoteIdentifier(cols[i].Name()),
-			d.snowflakeStagesStore.Dialect().DataTypeForKind(cols[i].KindDetails, false)), execQuery)
+			d.snowflakeStagesStore.Dialect().DataTypeForKind(cols[i].KindDetails, false, config.SharedDestinationColumnSettings{})), execQuery)
 	}
 
 	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecContextCallCount(), "called SFLK the same amt to create cols")
@@ -53,11 +55,11 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 
 	d.fakeSnowflakeStagesStore.ExecReturns(nil, errors.New("column 'order_name' already exists"))
 
-	assert.NoError(d.T(), shared.AlterTableAddColumns(context.Background(), d.snowflakeStagesStore, tc, tableID, cols))
+	assert.NoError(d.T(), shared.AlterTableAddColumns(context.Background(), d.snowflakeStagesStore, tc, config.SharedDestinationColumnSettings{}, tableID, cols))
 	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecContextCallCount(), "called SFLK the same amt to create cols")
 
 	d.fakeSnowflakeStagesStore.ExecContextReturns(nil, errors.New("table does not exist"))
-	assert.ErrorContains(d.T(), shared.AlterTableAddColumns(context.Background(), d.snowflakeStagesStore, tc, tableID, cols), `failed to alter table: table does not exist`)
+	assert.ErrorContains(d.T(), shared.AlterTableAddColumns(context.Background(), d.snowflakeStagesStore, tc, config.SharedDestinationColumnSettings{}, tableID, cols), `failed to alter table: table does not exist`)
 }
 
 func (d *DDLTestSuite) TestAlterTableAdd() {
@@ -73,7 +75,7 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDwhTableConfig(nil, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
 
-	assert.NoError(d.T(), shared.AlterTableAddColumns(context.Background(), d.snowflakeStagesStore, tc, tableID, cols))
+	assert.NoError(d.T(), shared.AlterTableAddColumns(context.Background(), d.snowflakeStagesStore, tc, config.SharedDestinationColumnSettings{}, tableID, cols))
 	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecContextCallCount(), "called SFLK the same amt to create cols")
 
 	// Check the table config

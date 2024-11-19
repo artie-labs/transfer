@@ -45,7 +45,7 @@ func TestShouldCreatePrimaryKey(t *testing.T) {
 func TestBuildCreateTableSQL(t *testing.T) {
 	{
 		// No columns provided
-		_, err := BuildCreateTableSQL(nil, nil, false, config.Replication, []columns.Column{})
+		_, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{}, nil, nil, false, config.Replication, []columns.Column{})
 		assert.ErrorContains(t, err, "no columns provided")
 	}
 	{
@@ -54,7 +54,7 @@ func TestBuildCreateTableSQL(t *testing.T) {
 			// Redshift
 			{
 				// No primary key
-				sql, err := BuildCreateTableSQL(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), false, config.Replication, []columns.Column{
+				sql, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{}, dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), false, config.Replication, []columns.Column{
 					columns.NewColumn("foo", typing.String),
 					columns.NewColumn("bar", typing.String),
 				})
@@ -65,7 +65,7 @@ func TestBuildCreateTableSQL(t *testing.T) {
 				// With primary key
 				pk := columns.NewColumn("pk", typing.String)
 				pk.SetPrimaryKeyForTest(true)
-				sql, err := BuildCreateTableSQL(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), false, config.Replication, []columns.Column{
+				sql, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{}, dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), false, config.Replication, []columns.Column{
 					pk,
 					columns.NewColumn("bar", typing.String),
 				})
@@ -79,7 +79,7 @@ func TestBuildCreateTableSQL(t *testing.T) {
 				pk2 := columns.NewColumn("pk2", typing.String)
 				pk2.SetPrimaryKeyForTest(true)
 
-				sql, err := BuildCreateTableSQL(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), false, config.Replication, []columns.Column{
+				sql, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{}, dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), false, config.Replication, []columns.Column{
 					pk1,
 					pk2,
 					columns.NewColumn("bar", typing.String),
@@ -94,7 +94,7 @@ func TestBuildCreateTableSQL(t *testing.T) {
 				// With primary key
 				pk := columns.NewColumn("pk", typing.String)
 				pk.SetPrimaryKeyForTest(true)
-				sql, err := BuildCreateTableSQL(bqDialect.BigQueryDialect{}, bqDialect.NewTableIdentifier("projectID", "dataset", "table"), false, config.Replication, []columns.Column{
+				sql, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{}, bqDialect.BigQueryDialect{}, bqDialect.NewTableIdentifier("projectID", "dataset", "table"), false, config.Replication, []columns.Column{
 					pk,
 					columns.NewColumn("bar", typing.String),
 				})
@@ -108,14 +108,14 @@ func TestBuildCreateTableSQL(t *testing.T) {
 func TestBuildAlterTableAddColumns(t *testing.T) {
 	{
 		// No columns
-		sqlParts, err := BuildAlterTableAddColumns(nil, nil, []columns.Column{})
+		sqlParts, err := BuildAlterTableAddColumns(config.SharedDestinationColumnSettings{}, nil, nil, []columns.Column{})
 		assert.NoError(t, err)
 		assert.Empty(t, sqlParts)
 	}
 	{
 		// One column to add
 		col := columns.NewColumn("dusty", typing.String)
-		sqlParts, err := BuildAlterTableAddColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), []columns.Column{col})
+		sqlParts, err := BuildAlterTableAddColumns(config.SharedDestinationColumnSettings{}, dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), []columns.Column{col})
 		assert.NoError(t, err)
 		assert.Len(t, sqlParts, 1)
 		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "dusty" VARCHAR(MAX)`, sqlParts[0])
@@ -123,7 +123,7 @@ func TestBuildAlterTableAddColumns(t *testing.T) {
 	{
 		// Two columns, one invalid, it will error.
 		col := columns.NewColumn("dusty", typing.String)
-		_, err := BuildAlterTableAddColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"),
+		_, err := BuildAlterTableAddColumns(config.SharedDestinationColumnSettings{}, dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"),
 			[]columns.Column{
 				col,
 				columns.NewColumn("invalid", typing.Invalid),
@@ -138,7 +138,7 @@ func TestBuildAlterTableAddColumns(t *testing.T) {
 		col2 := columns.NewColumn("doge", typing.String)
 		col3 := columns.NewColumn("age", typing.Integer)
 
-		sqlParts, err := BuildAlterTableAddColumns(dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), []columns.Column{col1, col2, col3})
+		sqlParts, err := BuildAlterTableAddColumns(config.SharedDestinationColumnSettings{}, dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), []columns.Column{col1, col2, col3})
 		assert.NoError(t, err)
 		assert.Len(t, sqlParts, 3)
 		assert.Equal(t, `ALTER TABLE schema."table" add COLUMN "aussie" VARCHAR(MAX)`, sqlParts[0])
