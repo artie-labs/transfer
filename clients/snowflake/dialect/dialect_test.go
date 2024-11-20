@@ -18,17 +18,6 @@ func TestSnowflakeDialect_QuoteIdentifier(t *testing.T) {
 	assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("FOO"))
 }
 
-func TestSnowflakeDialect_IsColumnAlreadyExistsErr(t *testing.T) {
-	{
-		// Invalid error
-		assert.False(t, SnowflakeDialect{}.IsColumnAlreadyExistsErr(fmt.Errorf("hello there qux")))
-	}
-	{
-		// Valid
-		assert.True(t, SnowflakeDialect{}.IsColumnAlreadyExistsErr(fmt.Errorf("Column already exists")))
-	}
-}
-
 func TestSnowflakeDialect_IsTableDoesNotExistErr(t *testing.T) {
 	errToExpectation := map[error]bool{
 		nil: false,
@@ -62,7 +51,7 @@ func TestSnowflakeDialect_BuildAddColumnQuery(t *testing.T) {
 	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
 
 	assert.Equal(t,
-		"ALTER TABLE {TABLE} add COLUMN {SQL_PART}",
+		"ALTER TABLE {TABLE} ADD COLUMN IF NOT EXISTS {SQL_PART}",
 		SnowflakeDialect{}.BuildAddColumnQuery(fakeTableID, "{SQL_PART}"),
 	)
 }
@@ -72,7 +61,7 @@ func TestSnowflakeDialect_BuildDropColumnQuery(t *testing.T) {
 	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
 
 	assert.Equal(t,
-		"ALTER TABLE {TABLE} drop COLUMN {SQL_PART}",
+		"ALTER TABLE {TABLE} DROP COLUMN IF EXISTS {SQL_PART}",
 		SnowflakeDialect{}.BuildDropColumnQuery(fakeTableID, "{SQL_PART}"),
 	)
 }
