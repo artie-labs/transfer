@@ -38,7 +38,7 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 
 	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	if tableConfig.CreateTable() {
-		if err = CreateTable(ctx, dwh, tableData, tableConfig, opts.ColumnSettings, tableID, false, tableData.ReadOnlyInMemoryCols().GetColumns()); err != nil {
+		if err = CreateTable(ctx, dwh, tableData, tableConfig, opts.ColumnSettings, tableID, false, targetKeysMissing); err != nil {
 			return fmt.Errorf("failed to create table: %w", err)
 		}
 	} else {
