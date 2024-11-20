@@ -16,8 +16,12 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tc *types.DwhTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, tempTable bool) error {
-	query, err := ddl.BuildCreateTableSQL(settings, dwh.Dialect(), tableID, tempTable, tableData.Mode(), tableData.ReadOnlyInMemoryCols().GetColumns())
+func CreateTempTable(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tc *types.DwhTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier) error {
+	return CreateTable(ctx, dwh, tableData, tc, settings, tableID, true, tableData.ReadOnlyInMemoryCols().GetColumns())
+}
+
+func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tc *types.DwhTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, tempTable bool, cols []columns.Column) error {
+	query, err := ddl.BuildCreateTableSQL(settings, dwh.Dialect(), tableID, tempTable, tableData.Mode(), cols)
 	if err != nil {
 		return fmt.Errorf("failed to build create table sql: %w", err)
 	}
@@ -28,7 +32,7 @@ func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *
 	}
 
 	// Update cache with the new columns that we've added.
-	tc.MutateInMemoryColumns(constants.Add, tableData.ReadOnlyInMemoryCols().GetColumns()...)
+	tc.MutateInMemoryColumns(constants.Add, cols...)
 	return nil
 }
 

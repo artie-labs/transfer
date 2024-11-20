@@ -15,7 +15,7 @@ import (
 
 func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
-		if err := shared.CreateTable(ctx, s, tableData, dwh, opts.ColumnSettings, tempTableID, true); err != nil {
+		if err := shared.CreateTempTable(ctx, s, tableData, dwh, opts.ColumnSettings, tempTableID); err != nil {
 			return err
 		}
 	}
