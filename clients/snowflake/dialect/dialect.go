@@ -12,7 +12,7 @@ import (
 
 type SnowflakeDialect struct{}
 
-func (sd SnowflakeDialect) QuoteIdentifier(identifier string) string {
+func (SnowflakeDialect) QuoteIdentifier(identifier string) string {
 	return fmt.Sprintf(`"%s"`, strings.ToUpper(identifier))
 }
 
@@ -20,9 +20,9 @@ func (SnowflakeDialect) EscapeStruct(value string) string {
 	return sql.QuoteLiteral(value)
 }
 
-func (SnowflakeDialect) IsColumnAlreadyExistsErr(err error) bool {
-	// Snowflake doesn't have column mutations (IF NOT EXISTS)
-	return strings.Contains(err.Error(), "already exists")
+func (SnowflakeDialect) IsColumnAlreadyExistsErr(_ error) bool {
+	// We don't need this check as Snowflake DDLs are idempotent
+	return false
 }
 
 // IsTableDoesNotExistErr will check if the resulting error message looks like this
