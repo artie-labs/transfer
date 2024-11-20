@@ -21,8 +21,8 @@ func (SnowflakeDialect) EscapeStruct(value string) string {
 }
 
 func (SnowflakeDialect) IsColumnAlreadyExistsErr(err error) bool {
-	// Snowflake doesn't have column mutations (IF NOT EXISTS)
-	return strings.Contains(err.Error(), "already exists")
+	// We should not need this as Snowflake DDL are idempotent
+	return false
 }
 
 // IsTableDoesNotExistErr will check if the resulting error message looks like this

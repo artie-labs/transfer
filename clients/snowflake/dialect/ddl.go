@@ -22,11 +22,11 @@ func (SnowflakeDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, tempo
 }
 
 func (sd SnowflakeDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
-	return sd.buildAlterColumnQuery(tableID, constants.Add, sqlPart)
+	return fmt.Sprintf("ALTER TABLE %s ADD COLUMN IF NOT EXISTS %s", tableID.FullyQualifiedName(), sqlPart)
 }
 
 func (sd SnowflakeDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName string) string {
-	return sd.buildAlterColumnQuery(tableID, constants.Delete, colName)
+	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN IF EXISTS %s", tableID.FullyQualifiedName(), colName)
 }
 
 func (SnowflakeDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []any, error) {
