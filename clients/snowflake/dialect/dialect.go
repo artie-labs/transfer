@@ -20,8 +20,8 @@ func (SnowflakeDialect) EscapeStruct(value string) string {
 	return sql.QuoteLiteral(value)
 }
 
-func (SnowflakeDialect) IsColumnAlreadyExistsErr(err error) bool {
-	// We should not need this as Snowflake DDL are idempotent
+func (SnowflakeDialect) IsColumnAlreadyExistsErr(_ error) bool {
+	// We don't need this check as Snowflake DDLs are idempotent
 	return false
 }
 
