@@ -12,7 +12,7 @@ import (
 
 type SnowflakeDialect struct{}
 
-func (sd SnowflakeDialect) QuoteIdentifier(identifier string) string {
+func (SnowflakeDialect) QuoteIdentifier(identifier string) string {
 	return fmt.Sprintf(`"%s"`, strings.ToUpper(identifier))
 }
 
