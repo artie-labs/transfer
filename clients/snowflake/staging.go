@@ -52,7 +52,7 @@ func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
 
 func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
-		if err := shared.CreateTable(ctx, s, tableData, dwh, additionalSettings.ColumnSettings, tempTableID, true); err != nil {
+		if err := shared.CreateTempTable(ctx, s, tableData, dwh, additionalSettings.ColumnSettings, tempTableID); err != nil {
 			return err
 		}
 	}
