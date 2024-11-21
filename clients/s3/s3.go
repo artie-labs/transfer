@@ -81,11 +81,6 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return fmt.Errorf("failed to generate parquet schema: %w", err)
 	}
 
-	fmt.Println("Schema data", len(schema))
-	for _, column := range schema {
-		fmt.Println("column", column)
-	}
-
 	fp := buildTemporaryFilePath(tableData)
 	fw, err := local.NewLocalFileWriter(fp)
 	if err != nil {

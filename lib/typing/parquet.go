@@ -70,15 +70,6 @@ type Field struct {
 func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 	switch k.Kind {
 	case String.Kind, Struct.Kind, Date.Kind, Time.Kind:
-		fmt.Println("tag",
-			FieldTag{
-				Name:          colName,
-				InName:        &colName,
-				Type:          ToPtr("BYTE_ARRAY"),
-				ConvertedType: ToPtr("UTF8"),
-			}.String(),
-		)
-
 		return &Field{
 			Tag: FieldTag{
 				Name:          colName,

@@ -2,7 +2,6 @@ package parquetutil
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/typing"
@@ -53,8 +52,6 @@ func GenerateJSONSchema(columns []ParquetColumn) (string, error) {
 			Fields: fields,
 		},
 	)
-
-	fmt.Println("schemaBytes", string(schemaBytes))
 
 	if err != nil {
 		return "", err
