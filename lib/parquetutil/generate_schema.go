@@ -2,6 +2,7 @@ package parquetutil
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/typing"
@@ -53,9 +54,26 @@ func GenerateJSONSchema(columns []ParquetColumn) (string, error) {
 		},
 	)
 
+	fmt.Println("schemaBytes", string(schemaBytes))
+
 	if err != nil {
 		return "", err
 	}
 
 	return string(schemaBytes), nil
+}
+
+func GenerateCSVSchema(columns []ParquetColumn) ([]string, error) {
+	var fields []string
+	for _, column := range columns {
+		// We don't need to escape the column name here.
+		field, err := column.column.KindDetails.ParquetAnnotation(column.cleanedName)
+		if err != nil {
+			return nil, err
+		}
+
+		fields = append(fields, field.Tag)
+	}
+
+	return fields, nil
 }

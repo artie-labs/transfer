@@ -26,7 +26,7 @@ func (f FieldTag) String() string {
 	}
 
 	if f.InName != nil {
-		parts = append(parts, fmt.Sprintf("inname=%s", *f.InName))
+		//parts = append(parts, fmt.Sprintf("inname=%s", *f.InName))
 	}
 
 	if f.Type != nil {
@@ -69,14 +69,16 @@ type Field struct {
 
 func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 	switch k.Kind {
-	case
-		String.Kind,
-		Struct.Kind,
-		Date.Kind,
-		Time.Kind:
-		// We could go further with struct, but it's very possible that it has inconsistent column headers across all the rows.
-		// It's much safer to just treat this as a string. When we do bring this data out into another destination,
-		// then just parse it as a JSON string, into a VARIANT column.
+	case String.Kind, Struct.Kind, Date.Kind, Time.Kind:
+		fmt.Println("tag",
+			FieldTag{
+				Name:          colName,
+				InName:        &colName,
+				Type:          ToPtr("BYTE_ARRAY"),
+				ConvertedType: ToPtr("UTF8"),
+			}.String(),
+		)
+
 		return &Field{
 			Tag: FieldTag{
 				Name:          colName,
@@ -94,7 +96,6 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 			}.String(),
 		}, nil
 	case Integer.Kind, TimestampNTZ.Kind, TimestampTZ.Kind:
-		// Parquet doesn't have native time types, so we are using int64 and casting the value as UNIX ts.
 		return &Field{
 			Tag: FieldTag{
 				Name:   colName,
@@ -105,7 +106,6 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 	case EDecimal.Kind:
 		precision := k.ExtendedDecimalDetails.Precision()
 		if precision == decimal.PrecisionNotSpecified {
-			// This is a variable precision decimal, so we'll just treat it as a string.
 			return &Field{
 				Tag: FieldTag{
 					Name:          colName,
@@ -115,13 +115,12 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 				}.String(),
 			}, nil
 		}
-
 		scale := k.ExtendedDecimalDetails.Scale()
 		return &Field{
 			Tag: FieldTag{
 				Name:          colName,
 				InName:        &colName,
-				Type:          ToPtr("BYTE_ARRAY"),
+				Type:          ToPtr("FIXED_LEN_BYTE_ARRAY"),
 				ConvertedType: ToPtr("DECIMAL"),
 				Precision:     ToPtr(int(precision)),
 				Scale:         ToPtr(int(scale)),

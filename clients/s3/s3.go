@@ -2,7 +2,6 @@ package s3
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -81,9 +80,14 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		parquetColumns = append(parquetColumns, parquetutil.NewParquetColumn(col.Name(), col))
 	}
 
-	schema, err := parquetutil.GenerateJSONSchema(parquetColumns)
+	schema, err := parquetutil.GenerateCSVSchema(parquetColumns)
 	if err != nil {
 		return fmt.Errorf("failed to generate parquet schema: %w", err)
+	}
+
+	fmt.Println("Schema data", len(schema))
+	for _, column := range schema {
+		fmt.Println("column", column)
 	}
 
 	fp := buildTemporaryFilePath(tableData)
@@ -92,29 +96,25 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return fmt.Errorf("failed to create a local parquet file: %w", err)
 	}
 
-	pw, err := writer.NewJSONWriter(schema, fw, 4)
+	pw, err := writer.NewCSVWriter(schema, fw, 4)
 	if err != nil {
 		return fmt.Errorf("failed to instantiate parquet writer: %w", err)
 	}
 
 	pw.CompressionType = parquet.CompressionCodec_GZIP
 	for _, val := range tableData.Rows() {
-		row := make(map[string]any)
+		var row []any
 		for _, parquetCol := range parquetColumns {
 			value, err := parquetutil.ParseValue(val[parquetCol.OriginalName()], parquetCol.Column())
 			if err != nil {
 				return fmt.Errorf("failed to parse value, err: %w, value: %v, column: %q", err, val[parquetCol.OriginalName()], parquetCol.CleanedName())
 			}
 
-			row[parquetCol.CleanedName()] = value
+			fmt.Println("###", parquetCol.OriginalName(), "value", value)
+			row = append(row, value)
 		}
 
-		rowBytes, err := json.Marshal(row)
-		if err != nil {
-			return fmt.Errorf("failed to marshal row: %w", err)
-		}
-
-		if err = pw.Write(string(rowBytes)); err != nil {
+		if err = pw.Write(row); err != nil {
 			return fmt.Errorf("failed to write row: %w", err)
 		}
 	}
