@@ -26,7 +26,7 @@ func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *
 		return fmt.Errorf("failed to build create table sql: %w", err)
 	}
 
-	slog.Info("[DDL] Executing query", slog.String("query", query))
+	slog.Info("[DDL] Executing query", slog.String("query", query), slog.Bool("numeric setting", settings.BigQueryNumericForVariableNumeric))
 	if _, err = dwh.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("failed to create temp table: %w", err)
 	}
