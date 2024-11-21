@@ -9,7 +9,6 @@ import (
 
 type FieldTag struct {
 	Name               string
-	InName             *string
 	Type               *string
 	ConvertedType      *string
 	ValueConvertedType *string
@@ -23,10 +22,6 @@ type FieldTag struct {
 func (f FieldTag) String() string {
 	parts := []string{
 		fmt.Sprintf("name=%s", f.Name),
-	}
-
-	if f.InName != nil {
-		parts = append(parts, fmt.Sprintf("inname=%s", *f.InName))
 	}
 
 	if f.Type != nil {
@@ -69,18 +64,10 @@ type Field struct {
 
 func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 	switch k.Kind {
-	case
-		String.Kind,
-		Struct.Kind,
-		Date.Kind,
-		Time.Kind:
-		// We could go further with struct, but it's very possible that it has inconsistent column headers across all the rows.
-		// It's much safer to just treat this as a string. When we do bring this data out into another destination,
-		// then just parse it as a JSON string, into a VARIANT column.
+	case String.Kind, Struct.Kind, Date.Kind, Time.Kind:
 		return &Field{
 			Tag: FieldTag{
 				Name:          colName,
-				InName:        &colName,
 				Type:          ToPtr("BYTE_ARRAY"),
 				ConvertedType: ToPtr("UTF8"),
 			}.String(),
@@ -88,39 +75,32 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 	case Float.Kind:
 		return &Field{
 			Tag: FieldTag{
-				Name:   colName,
-				InName: &colName,
-				Type:   ToPtr("FLOAT"),
+				Name: colName,
+				Type: ToPtr("FLOAT"),
 			}.String(),
 		}, nil
 	case Integer.Kind, TimestampNTZ.Kind, TimestampTZ.Kind:
-		// Parquet doesn't have native time types, so we are using int64 and casting the value as UNIX ts.
 		return &Field{
 			Tag: FieldTag{
-				Name:   colName,
-				InName: &colName,
-				Type:   ToPtr("INT64"),
+				Name: colName,
+				Type: ToPtr("INT64"),
 			}.String(),
 		}, nil
 	case EDecimal.Kind:
 		precision := k.ExtendedDecimalDetails.Precision()
 		if precision == decimal.PrecisionNotSpecified {
-			// This is a variable precision decimal, so we'll just treat it as a string.
 			return &Field{
 				Tag: FieldTag{
 					Name:          colName,
-					InName:        &colName,
 					Type:          ToPtr("BYTE_ARRAY"),
 					ConvertedType: ToPtr("UTF8"),
 				}.String(),
 			}, nil
 		}
-
 		scale := k.ExtendedDecimalDetails.Scale()
 		return &Field{
 			Tag: FieldTag{
 				Name:          colName,
-				InName:        &colName,
 				Type:          ToPtr("BYTE_ARRAY"),
 				ConvertedType: ToPtr("DECIMAL"),
 				Precision:     ToPtr(int(precision)),
@@ -130,16 +110,14 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 	case Boolean.Kind:
 		return &Field{
 			Tag: FieldTag{
-				Name:   colName,
-				InName: &colName,
-				Type:   ToPtr("BOOLEAN"),
+				Name: colName,
+				Type: ToPtr("BOOLEAN"),
 			}.String(),
 		}, nil
 	case Array.Kind:
 		return &Field{
 			Tag: FieldTag{
 				Name:           colName,
-				InName:         &colName,
 				Type:           ToPtr("LIST"),
 				RepetitionType: ToPtr("REQUIRED"),
 			}.String(),

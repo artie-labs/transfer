@@ -2,11 +2,11 @@ package s3
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/xitongsys/parquet-go-source/local"
 	"github.com/xitongsys/parquet-go/parquet"
@@ -49,8 +49,8 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sq
 func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	fqTableName := tableID.FullyQualifiedName()
-	yyyyMMDDFormat := tableData.LatestCDCTs.Format(ext.PostgresDateFormat)
-
+	// Adding date= prefix so that it adheres to the partitioning format for Hive.
+	yyyyMMDDFormat := fmt.Sprintf("date=%s", time.Now().Format(ext.PostgresDateFormat))
 	if len(s.config.S3.FolderName) > 0 {
 		return strings.Join([]string{s.config.S3.FolderName, fqTableName, yyyyMMDDFormat}, "/")
 	}
@@ -78,7 +78,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
-	schema, err := parquetutil.GenerateJSONSchema(cols)
+	schema, err := parquetutil.BuildCSVSchema(cols)
 	if err != nil {
 		return fmt.Errorf("failed to generate parquet schema: %w", err)
 	}
@@ -89,29 +89,24 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return fmt.Errorf("failed to create a local parquet file: %w", err)
 	}
 
-	pw, err := writer.NewJSONWriter(schema, fw, 4)
+	pw, err := writer.NewCSVWriter(schema, fw, 4)
 	if err != nil {
 		return fmt.Errorf("failed to instantiate parquet writer: %w", err)
 	}
 
 	pw.CompressionType = parquet.CompressionCodec_GZIP
 	for _, val := range tableData.Rows() {
-		row := make(map[string]any)
+		var row []any
 		for _, col := range cols {
-			value, err := parquetutil.ParseValue(val[col.Name()], col)
+			value, err := parquetutil.ParseValue(val[col.Name()], col.KindDetails)
 			if err != nil {
 				return fmt.Errorf("failed to parse value, err: %w, value: %v, column: %q", err, val[col.Name()], col.Name())
 			}
 
-			row[col.Name()] = value
+			row = append(row, value)
 		}
 
-		rowBytes, err := json.Marshal(row)
-		if err != nil {
-			return fmt.Errorf("failed to marshal row: %w", err)
-		}
-
-		if err = pw.Write(string(rowBytes)); err != nil {
+		if err = pw.Write(row); err != nil {
 			return fmt.Errorf("failed to write row: %w", err)
 		}
 	}
