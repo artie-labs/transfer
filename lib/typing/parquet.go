@@ -111,7 +111,7 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 			Tag: FieldTag{
 				Name:          colName,
 				InName:        &colName,
-				Type:          ToPtr("FIXED_LEN_BYTE_ARRAY"),
+				Type:          ToPtr("BYTE_ARRAY"),
 				ConvertedType: ToPtr("DECIMAL"),
 				Precision:     ToPtr(int(precision)),
 				Scale:         ToPtr(int(scale)),

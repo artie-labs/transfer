@@ -4,7 +4,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func GenerateCSVSchema(columns []columns.Column) ([]string, error) {
+func BuildCSVSchema(columns []columns.Column) ([]string, error) {
 	var fields []string
 	for _, column := range columns {
 		// We don't need to escape the column name here.

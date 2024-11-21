@@ -77,7 +77,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	}
 
 	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
-	schema, err := parquetutil.GenerateCSVSchema(cols)
+	schema, err := parquetutil.BuildCSVSchema(cols)
 	if err != nil {
 		return fmt.Errorf("failed to generate parquet schema: %w", err)
 	}
