@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/xitongsys/parquet-go-source/local"
 	"github.com/xitongsys/parquet-go/parquet"
@@ -48,7 +49,7 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sq
 func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	fqTableName := tableID.FullyQualifiedName()
-	yyyyMMDDFormat := fmt.Sprintf("date=%s", tableData.LatestCDCTs.Format(ext.PostgresDateFormat))
+	yyyyMMDDFormat := fmt.Sprintf("date=%s", time.Now().Format(ext.PostgresDateFormat))
 	if len(s.config.S3.FolderName) > 0 {
 		return strings.Join([]string{s.config.S3.FolderName, fqTableName, yyyyMMDDFormat}, "/")
 	}
