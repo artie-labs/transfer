@@ -9,7 +9,6 @@ import (
 
 type FieldTag struct {
 	Name               string
-	InName             *string
 	Type               *string
 	ConvertedType      *string
 	ValueConvertedType *string
@@ -23,10 +22,6 @@ type FieldTag struct {
 func (f FieldTag) String() string {
 	parts := []string{
 		fmt.Sprintf("name=%s", f.Name),
-	}
-
-	if f.InName != nil {
-		//parts = append(parts, fmt.Sprintf("inname=%s", *f.InName))
 	}
 
 	if f.Type != nil {
@@ -73,7 +68,6 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 		return &Field{
 			Tag: FieldTag{
 				Name:          colName,
-				InName:        &colName,
 				Type:          ToPtr("BYTE_ARRAY"),
 				ConvertedType: ToPtr("UTF8"),
 			}.String(),
@@ -81,17 +75,15 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 	case Float.Kind:
 		return &Field{
 			Tag: FieldTag{
-				Name:   colName,
-				InName: &colName,
-				Type:   ToPtr("FLOAT"),
+				Name: colName,
+				Type: ToPtr("FLOAT"),
 			}.String(),
 		}, nil
 	case Integer.Kind, TimestampNTZ.Kind, TimestampTZ.Kind:
 		return &Field{
 			Tag: FieldTag{
-				Name:   colName,
-				InName: &colName,
-				Type:   ToPtr("INT64"),
+				Name: colName,
+				Type: ToPtr("INT64"),
 			}.String(),
 		}, nil
 	case EDecimal.Kind:
@@ -100,7 +92,6 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 			return &Field{
 				Tag: FieldTag{
 					Name:          colName,
-					InName:        &colName,
 					Type:          ToPtr("BYTE_ARRAY"),
 					ConvertedType: ToPtr("UTF8"),
 				}.String(),
@@ -110,7 +101,6 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 		return &Field{
 			Tag: FieldTag{
 				Name:          colName,
-				InName:        &colName,
 				Type:          ToPtr("BYTE_ARRAY"),
 				ConvertedType: ToPtr("DECIMAL"),
 				Precision:     ToPtr(int(precision)),
@@ -120,16 +110,14 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 	case Boolean.Kind:
 		return &Field{
 			Tag: FieldTag{
-				Name:   colName,
-				InName: &colName,
-				Type:   ToPtr("BOOLEAN"),
+				Name: colName,
+				Type: ToPtr("BOOLEAN"),
 			}.String(),
 		}, nil
 	case Array.Kind:
 		return &Field{
 			Tag: FieldTag{
 				Name:           colName,
-				InName:         &colName,
 				Type:           ToPtr("LIST"),
 				RepetitionType: ToPtr("REQUIRED"),
 			}.String(),
