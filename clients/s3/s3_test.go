@@ -1,9 +1,12 @@
 package s3
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/typing/ext"
 
 	"github.com/stretchr/testify/assert"
 
@@ -27,7 +30,6 @@ func TestObjectPrefix(t *testing.T) {
 		Schema:    "public",
 	}, "table")
 
-	td.LatestCDCTs = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	testCases := []struct {
 		name      string
 		tableData *optimization.TableData
@@ -49,7 +51,7 @@ func TestObjectPrefix(t *testing.T) {
 				AwsAccessKeyID:     "bar",
 				OutputFormat:       constants.ParquetFormat,
 			},
-			expectedFormat: "db.public.table/2020-01-01",
+			expectedFormat: fmt.Sprintf("db.public.table/date=%s", time.Now().Format(ext.PostgresDateFormat)),
 		},
 		{
 			name:      "valid #2 w/ folder",
@@ -61,7 +63,7 @@ func TestObjectPrefix(t *testing.T) {
 				OutputFormat:       constants.ParquetFormat,
 				FolderName:         "foo",
 			},
-			expectedFormat: "foo/db.public.table/2020-01-01",
+			expectedFormat: fmt.Sprintf("foo/db.public.table/date=%s", time.Now().Format(ext.PostgresDateFormat)),
 		},
 	}
 

@@ -16,7 +16,6 @@ func TestKindDetails_ParquetAnnotation(t *testing.T) {
 				Field{
 					Tag: FieldTag{
 						Name:          "foo",
-						InName:        ToPtr("foo"),
 						Type:          ToPtr("BYTE_ARRAY"),
 						ConvertedType: ToPtr("UTF8"),
 					}.String(),
@@ -33,9 +32,8 @@ func TestKindDetails_ParquetAnnotation(t *testing.T) {
 			assert.Equal(t,
 				Field{
 					Tag: FieldTag{
-						Name:   "foo",
-						InName: ToPtr("foo"),
-						Type:   ToPtr("INT64"),
+						Name: "foo",
+						Type: ToPtr("INT64"),
 					}.String(),
 				},
 				*field,
