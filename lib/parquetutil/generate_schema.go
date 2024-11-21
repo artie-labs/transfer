@@ -38,7 +38,7 @@ func GenerateJSONSchema(columns []ParquetColumn) (string, error) {
 	var fields []typing.Field
 	for _, column := range columns {
 		// We don't need to escape the column name here.
-		field, err := column.kindDetails.ParquetAnnotation(column.cleanedName)
+		field, err := column.column.KindDetails.ParquetAnnotation(column.cleanedName)
 		if err != nil {
 			return "", err
 		}
