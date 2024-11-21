@@ -2,16 +2,43 @@ package parquetutil
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func GenerateJSONSchema(columns []columns.Column) (string, error) {
+type ParquetColumn struct {
+	originalName string
+	cleanedName  string
+	column       columns.Column
+}
+
+func (pc ParquetColumn) OriginalName() string {
+	return pc.originalName
+}
+
+func (pc ParquetColumn) CleanedName() string {
+	return pc.cleanedName
+}
+
+func (pc ParquetColumn) Column() columns.Column {
+	return pc.column
+}
+
+func NewParquetColumn(colName string, column columns.Column) ParquetColumn {
+	return ParquetColumn{
+		originalName: colName,
+		cleanedName:  strings.TrimPrefix(colName, "__"),
+		column:       column,
+	}
+}
+
+func GenerateJSONSchema(columns []ParquetColumn) (string, error) {
 	var fields []typing.Field
 	for _, column := range columns {
 		// We don't need to escape the column name here.
-		field, err := column.KindDetails.ParquetAnnotation(column.Name())
+		field, err := column.kindDetails.ParquetAnnotation(column.cleanedName)
 		if err != nil {
 			return "", err
 		}

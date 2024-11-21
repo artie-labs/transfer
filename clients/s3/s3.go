@@ -77,8 +77,12 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		return nil
 	}
 
-	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
-	schema, err := parquetutil.GenerateJSONSchema(cols)
+	var parquetColumns []parquetutil.ParquetColumn
+	for _, col := range tableData.ReadOnlyInMemoryCols().ValidColumns() {
+		parquetColumns = append(parquetColumns, parquetutil.NewParquetColumn(col.Name(), col))
+	}
+
+	schema, err := parquetutil.GenerateJSONSchema(parquetColumns)
 	if err != nil {
 		return fmt.Errorf("failed to generate parquet schema: %w", err)
 	}
@@ -97,13 +101,13 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	pw.CompressionType = parquet.CompressionCodec_GZIP
 	for _, val := range tableData.Rows() {
 		row := make(map[string]any)
-		for _, col := range cols {
-			value, err := parquetutil.ParseValue(val[col.Name()], col)
+		for _, parquetCol := range parquetColumns {
+			value, err := parquetutil.ParseValue(val[parquetCol.OriginalName()], parquetCol.Column())
 			if err != nil {
-				return fmt.Errorf("failed to parse value, err: %w, value: %v, column: %q", err, val[col.Name()], col.Name())
+				return fmt.Errorf("failed to parse value, err: %w, value: %v, column: %q", err, val[parquetCol.OriginalName()], parquetCol.CleanedName())
 			}
 
-			row[col.Name()] = value
+			row[parquetCol.CleanedName()] = value
 		}
 
 		rowBytes, err := json.Marshal(row)
