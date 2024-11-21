@@ -63,11 +63,11 @@ func GenerateJSONSchema(columns []ParquetColumn) (string, error) {
 	return string(schemaBytes), nil
 }
 
-func GenerateCSVSchema(columns []ParquetColumn) ([]string, error) {
+func GenerateCSVSchema(columns []columns.Column) ([]string, error) {
 	var fields []string
 	for _, column := range columns {
 		// We don't need to escape the column name here.
-		field, err := column.column.KindDetails.ParquetAnnotation(column.cleanedName)
+		field, err := column.KindDetails.ParquetAnnotation(column.Name())
 		if err != nil {
 			return nil, err
 		}
