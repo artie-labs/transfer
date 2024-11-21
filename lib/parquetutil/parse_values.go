@@ -9,17 +9,16 @@ import (
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func ParseValue(colVal any, colKind columns.Column) (any, error) {
+func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 	if colVal == nil {
 		return nil, nil
 	}
 
-	switch colKind.KindDetails.Kind {
+	switch colKind.Kind {
 	case typing.Date.Kind:
 		_time, err := ext.ParseDateFromAny(colVal)
 		if err != nil {
@@ -51,7 +50,7 @@ func ParseValue(colVal any, colKind columns.Column) (any, error) {
 	case typing.String.Kind:
 		return colVal, nil
 	case typing.Struct.Kind:
-		if colKind.KindDetails == typing.Struct {
+		if colKind == typing.Struct {
 			if strings.Contains(fmt.Sprint(colVal), constants.ToastUnavailableValuePlaceholder) {
 				colVal = map[string]any{
 					"key": constants.ToastUnavailableValuePlaceholder,

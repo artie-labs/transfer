@@ -98,7 +98,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 	for _, val := range tableData.Rows() {
 		var row []any
 		for _, col := range cols {
-			value, err := parquetutil.ParseValue(val[col.Name()], col)
+			value, err := parquetutil.ParseValue(val[col.Name()], col.KindDetails)
 			if err != nil {
 				return fmt.Errorf("failed to parse value, err: %w, value: %v, column: %q", err, val[col.Name()], col.Name())
 			}
