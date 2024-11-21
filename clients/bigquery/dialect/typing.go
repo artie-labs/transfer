@@ -2,7 +2,6 @@ package dialect
 
 import (
 	"fmt"
-	"log/slog"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -35,7 +34,6 @@ func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, s
 		// We should be using TIMESTAMP since it's an absolute point in time.
 		return "timestamp"
 	case typing.EDecimal.Kind:
-		slog.Info("####'", kindDetails.ExtendedDecimalDetails.Precision(), kindDetails.ExtendedDecimalDetails.Scale(), "settings", settings.BigQueryNumericForVariableNumeric)
 		return kindDetails.ExtendedDecimalDetails.BigQueryKind(settings.BigQueryNumericForVariableNumeric)
 	}
 

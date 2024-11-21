@@ -15,7 +15,7 @@ func TestDetails_BigQueryKind(t *testing.T) {
 	}
 	{
 		// numericTypeForVariableNumeric = true
-		assert.Equal(t, "NUMERIC", details.BigQueryKind(true))
+		assert.Equal(t, "BIGNUMERIC", details.BigQueryKind(true))
 	}
 }
 

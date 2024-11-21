@@ -3,7 +3,6 @@ package bigquery
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"strings"
 
 	"github.com/artie-labs/transfer/clients/shared"
@@ -32,7 +31,6 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		additionalEqualityStrings = []string{mergeString}
 	}
 
-	slog.Info("### Starting to merge", s.config.SharedDestinationSettings.ColumnSettings.BigQueryNumericForVariableNumeric)
 	return shared.Merge(ctx, s, tableData, types.MergeOpts{
 		AdditionalEqualityStrings: additionalEqualityStrings,
 		ColumnSettings:            s.config.SharedDestinationSettings.ColumnSettings,

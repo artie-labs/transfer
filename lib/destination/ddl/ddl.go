@@ -34,7 +34,6 @@ func BuildCreateTableSQL(settings config.SharedDestinationColumnSettings, dialec
 			primaryKeys = append(primaryKeys, colName)
 		}
 
-		slog.Info("settings", settings.BigQueryNumericForVariableNumeric)
 		parts = append(parts, fmt.Sprintf("%s %s", colName, dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey(), settings)))
 	}
 

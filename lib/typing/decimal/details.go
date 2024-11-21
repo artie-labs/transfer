@@ -72,7 +72,7 @@ func (d Details) RedshiftKind() string {
 // BigQueryKind - is inferring logic from: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#decimal_types
 func (d Details) BigQueryKind(numericTypeForVariableNumeric bool) string {
 	if numericTypeForVariableNumeric && d.precision == PrecisionNotSpecified {
-		return "NUMERIC"
+		return "BIGNUMERIC"
 	}
 
 	if d.isNumeric() {
