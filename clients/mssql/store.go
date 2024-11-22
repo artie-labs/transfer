@@ -84,7 +84,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 }
 
 func LoadStore(cfg config.Config) (*Store, error) {
-	store, err := db.Open("mssql", fmt.Sprintf("%s&encrypt=disable", cfg.MSSQL.DSN()))
+	store, err := db.Open("mssql", fmt.Sprintf("%s", cfg.MSSQL.DSN()))
 	if err != nil {
 		return nil, err
 	}

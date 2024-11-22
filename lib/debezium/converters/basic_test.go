@@ -3,9 +3,9 @@ package converters
 import (
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
-
 	"github.com/stretchr/testify/assert"
+
+	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
 func TestJSON_Convert(t *testing.T) {
