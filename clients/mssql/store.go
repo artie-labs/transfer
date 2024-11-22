@@ -2,7 +2,6 @@ package mssql
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	_ "github.com/microsoft/go-mssqldb"
@@ -84,7 +83,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 }
 
 func LoadStore(cfg config.Config) (*Store, error) {
-	store, err := db.Open("mssql", fmt.Sprintf("%s", cfg.MSSQL.DSN()))
+	store, err := db.Open("mssql", cfg.MSSQL.DSN())
 	if err != nil {
 		return nil, err
 	}
