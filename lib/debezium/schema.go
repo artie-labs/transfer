@@ -137,6 +137,8 @@ func (f Field) ToValueConverter() (converters.ValueConverter, error) {
 		}
 
 		switch f.Type {
+		case Array:
+			return converters.Array{}, nil
 		case Double, Float:
 			return converters.Float64{}, nil
 		}
@@ -167,8 +169,6 @@ func (f Field) ToKindDetails() (typing.KindDetails, error) {
 		return typing.Struct, nil
 	case Boolean:
 		return typing.Boolean, nil
-	case Array:
-		return typing.Array, nil
 	default:
 		return typing.Invalid, fmt.Errorf("unhandled field type %q", f.Type)
 	}

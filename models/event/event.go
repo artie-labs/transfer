@@ -224,21 +224,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 					toastedCol = true
 				}
 			}
-
-			valArray, isOk := val.([]any)
-			if isOk {
-				if len(valArray) == 1 {
-					if _, isOk = valArray[0].(string); isOk {
-						if valArray[0] == constants.ToastUnavailableValuePlaceholder {
-							val = constants.ToastUnavailableValuePlaceholder
-							toastedCol = true
-						}
-					}
-				}
-			}
 		}
-
-		fmt.Println("toastedCol", toastedCol, "val", val)
 
 		if toastedCol {
 			err := inMemoryColumns.UpsertColumn(newColName, columns.UpsertColumnArg{
