@@ -85,3 +85,18 @@ func TestFloat64_Convert(t *testing.T) {
 		}
 	}
 }
+
+func TestArray_Convert(t *testing.T) {
+	{
+		// Valid
+		value, err := Array{}.Convert([]int{1, 2, 3})
+		assert.NoError(t, err)
+		assert.Equal(t, []int{1, 2, 3}, value)
+	}
+	{
+		// Filter TOASTED value
+		value, err := Array{}.Convert([]string{"__debezium_unavailable_value"})
+		assert.NoError(t, err)
+		assert.Equal(t, "__debezium_unavailable_value", value)
+	}
+}
