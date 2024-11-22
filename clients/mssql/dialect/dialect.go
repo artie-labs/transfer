@@ -49,6 +49,7 @@ func (md MSSQLDialect) BuildIsNotToastValueExpression(tableAlias constants.Table
 	if column.KindDetails == typing.Struct {
 		return fmt.Sprintf("COALESCE(%s, {}) != {'key': '%s'}", colName, constants.ToastUnavailableValuePlaceholder)
 	}
+
 	return fmt.Sprintf("COALESCE(%s, '') != '%s'", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
