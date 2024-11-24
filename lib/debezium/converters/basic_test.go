@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/artie-labs/transfer/lib/config/constants"
 )
 
 func TestJSON_Convert(t *testing.T) {
@@ -82,6 +84,30 @@ func TestFloat64_Convert(t *testing.T) {
 			value, err := Float64{}.Convert(123.45)
 			assert.NoError(t, err)
 			assert.Equal(t, 123.45, value)
+		}
+	}
+}
+
+func TestArray_Convert(t *testing.T) {
+	{
+		// Irrelevant data type
+		value, err := Array{}.Convert([]int{1, 2, 3, 4})
+		assert.NoError(t, err)
+		assert.Equal(t, []int{1, 2, 3, 4}, value)
+	}
+	{
+		// TOASTED data
+		{
+			// As []any
+			value, err := Array{}.Convert([]any{constants.ToastUnavailableValuePlaceholder})
+			assert.NoError(t, err)
+			assert.Equal(t, constants.ToastUnavailableValuePlaceholder, value)
+		}
+		{
+			// As []string
+			value, err := Array{}.Convert([]string{constants.ToastUnavailableValuePlaceholder})
+			assert.NoError(t, err)
+			assert.Equal(t, constants.ToastUnavailableValuePlaceholder, value)
 		}
 	}
 }

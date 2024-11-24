@@ -87,3 +87,17 @@ func (Float64) Convert(value any) (any, error) {
 		return nil, fmt.Errorf("unexpected type %T", value)
 	}
 }
+
+type Array struct{}
+
+func (Array) ToKindDetails() typing.KindDetails {
+	return typing.Array
+}
+
+func (Array) Convert(value any) (any, error) {
+	if fmt.Sprint(value) == fmt.Sprintf("[%s]", constants.ToastUnavailableValuePlaceholder) {
+		return constants.ToastUnavailableValuePlaceholder, nil
+	}
+
+	return value, nil
+}
