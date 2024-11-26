@@ -12,7 +12,7 @@ import (
 
 type DwhTableConfig struct {
 	// Making these private variables to avoid concurrent R/W panics.
-	columns         *columns.Columns
+	columns         []columns.Column
 	columnsToDelete map[string]time.Time // column --> when to delete
 	createTable     bool
 
@@ -23,7 +23,7 @@ type DwhTableConfig struct {
 
 func NewDwhTableConfig(cols []columns.Column, dropDeletedColumns bool) *DwhTableConfig {
 	return &DwhTableConfig{
-		columns:            columns.NewColumns(cols),
+		columns:            cols,
 		columnsToDelete:    make(map[string]time.Time),
 		createTable:        len(cols) == 0,
 		dropDeletedColumns: dropDeletedColumns,
@@ -53,27 +53,36 @@ func (d *DwhTableConfig) DropDeletedColumns() bool {
 }
 
 func (d *DwhTableConfig) GetColumns() []columns.Column {
-	d.RLock()
-	defer d.RUnlock()
-
-	return d.columns.GetColumns()
+	return d.columns
 }
 
-func (d *DwhTableConfig) UpdateColumn(col columns.Column) {
-	d.columns.UpdateColumn(col)
+func (d *DwhTableConfig) UpdateColumnForTest(col columns.Column) {
+	cols := columns.NewColumns(d.columns)
+	cols.UpdateColumn(col)
+
+	d.columns = cols.GetColumns()
 }
 
 func (d *DwhTableConfig) UpsertColumn(colName string, arg columns.UpsertColumnArg) error {
-	return d.columns.UpsertColumn(colName, arg)
+	cols := columns.NewColumns(d.columns)
+	if err := cols.UpsertColumn(colName, arg); err != nil {
+		return err
+	}
+
+	d.columns = cols.GetColumns()
+	return nil
 }
 
 func (d *DwhTableConfig) MutateInMemoryColumns(columnOp constants.ColumnOperation, cols ...columns.Column) {
 	d.Lock()
 	defer d.Unlock()
+
+	tableCols := columns.NewColumns(d.columns)
+
 	switch columnOp {
 	case constants.Add:
 		for _, col := range cols {
-			d.columns.AddColumn(col)
+			tableCols.AddColumn(col)
 			// Delete from the permissions table, if exists.
 			delete(d.columnsToDelete, col.Name())
 		}
@@ -83,10 +92,12 @@ func (d *DwhTableConfig) MutateInMemoryColumns(columnOp constants.ColumnOperatio
 	case constants.Delete:
 		for _, col := range cols {
 			// Delete from the permissions and in-memory table
-			d.columns.DeleteColumn(col.Name())
+			tableCols.DeleteColumn(col.Name())
 			delete(d.columnsToDelete, col.Name())
 		}
 	}
+
+	d.columns = tableCols.GetColumns()
 }
 
 // AuditColumnsToDelete - will check its (*DwhTableConfig) columnsToDelete against `colsToDelete` and remove any columns that are not in `colsToDelete`.
