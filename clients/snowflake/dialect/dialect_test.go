@@ -77,20 +77,20 @@ func TestSnowflakeDialect_BuildIsNotToastValueExpression(t *testing.T) {
 	)
 }
 
-func buildColumns(colTypesMap map[string]typing.KindDetails) *columns.Columns {
-	colNames := []string{}
+func buildColumns(colTypesMap map[string]typing.KindDetails) []columns.Column {
+	var colNames []string
 	for colName := range colTypesMap {
 		colNames = append(colNames, colName)
 	}
 	// Sort the column names alphabetically to ensure deterministic order
 	slices.Sort(colNames)
 
-	var cols columns.Columns
+	var cols []columns.Column
 	for _, colName := range colNames {
-		cols.AddColumn(columns.NewColumn(colName, colTypesMap[colName]))
+		cols = append(cols, columns.NewColumn(colName, colTypesMap[colName]))
 	}
 
-	return &cols
+	return cols
 }
 
 func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
@@ -106,13 +106,20 @@ func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns(fqTable)
 
+	var validCols []columns.Column
+	for _, col := range _cols {
+		if col.IsValid() {
+			validCols = append(validCols, col)
+		}
+	}
+
 	{
 		statements, err := SnowflakeDialect{}.BuildMergeQueries(
 			fakeTableID,
 			fqTable,
 			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
 			nil,
-			_cols.ValidColumns(),
+			validCols,
 			true,
 			false,
 		)
@@ -140,12 +147,19 @@ func TestSnowflakeDialect_BuildMergeQueries(t *testing.T) {
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns(fqTable)
 
+	var validCols []columns.Column
+	for _, col := range _cols {
+		if col.IsValid() {
+			validCols = append(validCols, col)
+		}
+	}
+
 	statements, err := SnowflakeDialect{}.BuildMergeQueries(
 		fakeTableID,
 		fqTable,
 		[]columns.Column{columns.NewColumn("id", typing.Invalid)},
 		nil,
-		_cols.ValidColumns(),
+		validCols,
 		false,
 		false,
 	)
@@ -170,6 +184,13 @@ func TestSnowflakeDialect_BuildMergeQueries_CompositeKey(t *testing.T) {
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns(fqTable)
 
+	var validCols []columns.Column
+	for _, col := range _cols {
+		if col.IsValid() {
+			validCols = append(validCols, col)
+		}
+	}
+
 	statements, err := SnowflakeDialect{}.BuildMergeQueries(
 		fakeTableID,
 		fqTable,
@@ -178,7 +199,7 @@ func TestSnowflakeDialect_BuildMergeQueries_CompositeKey(t *testing.T) {
 			columns.NewColumn("another_id", typing.Invalid),
 		},
 		nil,
-		_cols.ValidColumns(),
+		validCols,
 		false,
 		false,
 	)
@@ -205,6 +226,13 @@ func TestSnowflakeDialect_BuildMergeQueries_EscapePrimaryKeys(t *testing.T) {
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns(fqTable)
 
+	var validCols []columns.Column
+	for _, col := range _cols {
+		if col.IsValid() {
+			validCols = append(validCols, col)
+		}
+	}
+
 	statements, err := SnowflakeDialect{}.BuildMergeQueries(
 		fakeTableID,
 		fqTable,
@@ -213,7 +241,7 @@ func TestSnowflakeDialect_BuildMergeQueries_EscapePrimaryKeys(t *testing.T) {
 			columns.NewColumn("group", typing.Invalid),
 		},
 		nil,
-		_cols.ValidColumns(),
+		validCols,
 		false,
 		false,
 	)

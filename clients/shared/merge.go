@@ -128,14 +128,9 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		return fmt.Errorf("primary keys cannot be empty")
 	}
 
-	validColumns := cols.ValidColumns()
+	validColumns := tableData.GetValidColumns()
 	if len(validColumns) == 0 {
 		return fmt.Errorf("columns cannot be empty")
-	}
-	for _, column := range validColumns {
-		if !column.IsValid() {
-			return fmt.Errorf("column %q is invalid and should be skipped", column.Name())
-		}
 	}
 
 	mergeStatements, err := dwh.Dialect().BuildMergeQueries(

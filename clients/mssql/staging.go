@@ -32,7 +32,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		}
 	}()
 
-	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
+	cols := tableData.GetValidColumns()
 	stmt, err := tx.Prepare(mssql.CopyIn(tempTableID.FullyQualifiedName(), mssql.BulkOptions{}, columns.ColumnNames(cols)...))
 	if err != nil {
 		return fmt.Errorf("failed to prepare bulk insert: %w", err)

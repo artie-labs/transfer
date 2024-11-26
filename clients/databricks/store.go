@@ -154,7 +154,7 @@ func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, newTab
 	writer := csv.NewWriter(file)
 	writer.Comma = '\t'
 
-	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
+	columns := tableData.GetValidColumns()
 	for _, value := range tableData.Rows() {
 		var row []string
 		for _, col := range columns {

@@ -78,7 +78,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	// COPY the CSV file (in Snowflake) into a table
 	copyCommand := fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
 		tempTableID.FullyQualifiedName(),
-		strings.Join(sql.QuoteColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), s.Dialect()), ","),
+		strings.Join(sql.QuoteColumns(tableData.GetValidColumns(), s.Dialect()), ","),
 		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableID, "%"))
 
 	if additionalSettings.AdditionalCopyClause != "" {
@@ -103,7 +103,7 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 	writer := csv.NewWriter(file)
 	writer.Comma = '\t'
 
-	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
+	columns := tableData.GetValidColumns()
 	for _, row := range tableData.Rows() {
 		var csvRow []string
 		for _, col := range columns {

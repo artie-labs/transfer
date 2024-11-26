@@ -1,8 +1,6 @@
 package columns
 
 import (
-	"fmt"
-	"slices"
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -101,52 +99,6 @@ func TestColumn_ShouldBackfill(t *testing.T) {
 
 	for _, testCase := range testCases {
 		assert.Equal(t, testCase.expectShouldBackfill, testCase.column.ShouldBackfill(), testCase.name)
-	}
-}
-
-func TestColumns_ValidColumns(t *testing.T) {
-	var happyPathCols = []Column{
-		{
-			name:        "hi",
-			KindDetails: typing.String,
-		},
-		{
-			name:        "bye",
-			KindDetails: typing.String,
-		},
-		{
-			name:        "start",
-			KindDetails: typing.String,
-		},
-	}
-
-	extraCols := happyPathCols
-	for i := 0; i < 100; i++ {
-		extraCols = append(extraCols, Column{
-			name:        fmt.Sprintf("hello_%v", i),
-			KindDetails: typing.Invalid,
-		})
-	}
-
-	testCases := []struct {
-		name         string
-		cols         []Column
-		expectedCols []Column
-	}{
-		{
-			name:         "happy path",
-			cols:         happyPathCols,
-			expectedCols: slices.Clone(happyPathCols),
-		},
-		{
-			name:         "happy path + extra col",
-			cols:         extraCols,
-			expectedCols: slices.Clone(happyPathCols),
-		},
-	}
-
-	for _, testCase := range testCases {
-		assert.Equal(t, testCase.expectedCols, (&Columns{columns: testCase.cols}).ValidColumns(), testCase.name)
 	}
 }
 

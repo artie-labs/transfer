@@ -159,11 +159,19 @@ func TestBigQueryDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 
 func TestBigQueryDialect_BuildMergeQueries_JSONKey(t *testing.T) {
 	orderOIDCol := columns.NewColumn("order_oid", typing.Struct)
-	var cols columns.Columns
-	cols.AddColumn(orderOIDCol)
-	cols.AddColumn(columns.NewColumn("name", typing.String))
-	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
-	cols.AddColumn(columns.NewColumn(constants.OnlySetDeleteColumnMarker, typing.Boolean))
+
+	var cols []columns.Column
+	cols = append(cols, orderOIDCol)
+	cols = append(cols, columns.NewColumn("name", typing.String))
+	cols = append(cols, columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
+	cols = append(cols, columns.NewColumn(constants.OnlySetDeleteColumnMarker, typing.Boolean))
+
+	var validCols []columns.Column
+	for _, col := range cols {
+		if col.IsValid() {
+			validCols = append(validCols, col)
+		}
+	}
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns("customers.orders")
@@ -173,7 +181,7 @@ func TestBigQueryDialect_BuildMergeQueries_JSONKey(t *testing.T) {
 		"customers.orders_tmp",
 		[]columns.Column{orderOIDCol},
 		nil,
-		cols.ValidColumns(),
+		validCols,
 		false,
 		false,
 	)

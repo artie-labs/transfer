@@ -204,26 +204,6 @@ func (c *Columns) GetColumn(name string) (Column, bool) {
 	return Column{}, false
 }
 
-// ValidColumns will filter all the `Invalid` columns so that we do not update them.
-// This is used mostly for the SQL MERGE queries.
-func (c *Columns) ValidColumns() []Column {
-	if c == nil {
-		return []Column{}
-	}
-
-	c.RLock()
-	defer c.RUnlock()
-
-	var cols []Column
-	for _, col := range c.columns {
-		if col.IsValid() {
-			cols = append(cols, col)
-		}
-	}
-
-	return cols
-}
-
 func (c *Columns) GetColumns() []Column {
 	if c == nil {
 		return []Column{}

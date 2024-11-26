@@ -168,15 +168,15 @@ func getBasicColumnsForTest(compositeKey bool) result {
 	textToastCol := columns.NewColumn("toast_text", typing.String)
 	textToastCol.ToastColumn = true
 
-	var cols columns.Columns
-	cols.AddColumn(idCol)
-	cols.AddColumn(emailCol)
-	cols.AddColumn(columns.NewColumn("first_name", typing.String))
-	cols.AddColumn(columns.NewColumn("last_name", typing.String))
-	cols.AddColumn(columns.NewColumn("created_at", typing.TimestampNTZ))
-	cols.AddColumn(textToastCol)
-	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
-	cols.AddColumn(columns.NewColumn(constants.OnlySetDeleteColumnMarker, typing.Boolean))
+	var cols []columns.Column
+	cols = append(cols, idCol)
+	cols = append(cols, emailCol)
+	cols = append(cols, columns.NewColumn("first_name", typing.String))
+	cols = append(cols, columns.NewColumn("last_name", typing.String))
+	cols = append(cols, columns.NewColumn("created_at", typing.TimestampNTZ))
+	cols = append(cols, textToastCol)
+	cols = append(cols, columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
+	cols = append(cols, columns.NewColumn(constants.OnlySetDeleteColumnMarker, typing.Boolean))
 
 	var pks []columns.Column
 	pks = append(pks, idCol)
@@ -185,9 +185,16 @@ func getBasicColumnsForTest(compositeKey bool) result {
 		pks = append(pks, emailCol)
 	}
 
+	var validCols []columns.Column
+	for _, col := range cols {
+		if col.IsValid() {
+			validCols = append(validCols, col)
+		}
+	}
+
 	return result{
 		PrimaryKeys: pks,
-		Columns:     cols.ValidColumns(),
+		Columns:     validCols,
 	}
 }
 

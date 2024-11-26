@@ -68,8 +68,8 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, u
 
 	query := fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s`,
 		tableID.FullyQualifiedName(),
-		strings.Join(sql.QuoteColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), s.Dialect()), ","),
-		strings.Join(sql.QuoteColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), s.Dialect()), ","),
+		strings.Join(sql.QuoteColumns(tableData.GetValidColumns(), s.Dialect()), ","),
+		strings.Join(sql.QuoteColumns(tableData.GetValidColumns(), s.Dialect()), ","),
 		temporaryTableID.FullyQualifiedName(),
 	)
 
@@ -133,7 +133,7 @@ func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 }
 
 func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier, tableData *optimization.TableData) error {
-	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
+	columns := tableData.GetValidColumns()
 
 	messageDescriptor, err := columnsToMessageDescriptor(columns)
 	if err != nil {

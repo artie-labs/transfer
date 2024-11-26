@@ -69,7 +69,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	copyStmt := fmt.Sprintf(
 		`COPY %s (%s) FROM '%s' DELIMITER '\t' NULL AS '\\N' GZIP FORMAT CSV %s dateformat 'auto' timeformat 'auto';`,
 		tempTableID.FullyQualifiedName(),
-		strings.Join(sql.QuoteColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), s.Dialect()), ","),
+		strings.Join(sql.QuoteColumns(tableData.GetValidColumns(), s.Dialect()), ","),
 		s3Uri,
 		s.credentialsClause,
 	)
@@ -94,7 +94,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 
 	writer := csv.NewWriter(gzipWriter)
 	writer.Comma = '\t'
-	_columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
+	_columns := tableData.GetValidColumns()
 	columnToNewLengthMap := make(map[string]int32)
 	for _, value := range tableData.Rows() {
 		var row []string
