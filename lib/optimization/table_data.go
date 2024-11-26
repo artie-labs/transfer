@@ -85,6 +85,17 @@ func (t *TableData) AddInMemoryCol(column columns.Column) {
 	t.inMemoryColumns.AddColumn(column)
 }
 
+func (t *TableData) GetValidColumns() []columns.Column {
+	var cols []columns.Column
+	for _, col := range t.inMemoryColumns.GetColumns() {
+		if col.IsValid() {
+			cols = append(cols, col)
+		}
+	}
+
+	return cols
+}
+
 func (t *TableData) ReadOnlyInMemoryCols() *columns.Columns {
 	if t.inMemoryColumns == nil {
 		return nil

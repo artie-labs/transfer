@@ -31,6 +31,10 @@ type Column struct {
 	backfilled bool
 }
 
+func (c Column) IsValid() bool {
+	return c.KindDetails.Kind != typing.Invalid.Kind
+}
+
 func (c *Column) PrimaryKey() bool {
 	return c.primaryKey
 }
@@ -220,12 +224,11 @@ func (c *Columns) ValidColumns() []Column {
 
 	var cols []Column
 	for _, col := range c.columns {
-		if col.KindDetails == typing.Invalid {
-			continue
+		if col.IsValid() {
+			cols = append(cols, col)
 		}
-
-		cols = append(cols, col)
 	}
+
 	return cols
 }
 
