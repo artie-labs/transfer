@@ -70,7 +70,7 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 
 	// Now iterate over all the in-memory cols and see which ones require a backfill.
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
-		if col.ShouldSkip() {
+		if !col.IsValid() {
 			continue
 		}
 
@@ -133,7 +133,7 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		return fmt.Errorf("columns cannot be empty")
 	}
 	for _, column := range validColumns {
-		if column.ShouldSkip() {
+		if !column.IsValid() {
 			return fmt.Errorf("column %q is invalid and should be skipped", column.Name())
 		}
 	}

@@ -43,7 +43,7 @@ func AlterTableAddColumns(ctx context.Context, dwh destination.DataWarehouse, tc
 
 	var colsToAdd []columns.Column
 	for _, col := range cols {
-		if col.ShouldSkip() {
+		if !col.IsValid() {
 			continue
 		}
 

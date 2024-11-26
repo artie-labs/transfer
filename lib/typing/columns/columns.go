@@ -39,14 +39,6 @@ func (c *Column) PrimaryKey() bool {
 	return c.primaryKey
 }
 
-func (c *Column) ShouldSkip() bool {
-	if c == nil || c.KindDetails.Kind == typing.Invalid.Kind {
-		return true
-	}
-
-	return false
-}
-
 func NewColumn(name string, kd typing.KindDetails) Column {
 	return Column{
 		name:        name,
@@ -86,7 +78,7 @@ func (c *Column) ShouldBackfill() bool {
 		return false
 	}
 
-	if c.ShouldSkip() {
+	if !c.IsValid() {
 		// Don't backfill
 		return false
 	}

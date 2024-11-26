@@ -25,7 +25,7 @@ func BuildCreateTableSQL(settings config.SharedDestinationColumnSettings, dialec
 	var parts []string
 	var primaryKeys []string
 	for _, col := range columns {
-		if col.ShouldSkip() {
+		if !col.IsValid() {
 			continue
 		}
 
@@ -74,7 +74,7 @@ func DropTemporaryTable(dwh destination.DataWarehouse, tableIdentifier sql.Table
 func BuildAlterTableAddColumns(settings config.SharedDestinationColumnSettings, dialect sql.Dialect, tableID sql.TableIdentifier, cols []columns.Column) ([]string, error) {
 	var parts []string
 	for _, col := range cols {
-		if col.ShouldSkip() {
+		if !col.IsValid() {
 			return nil, fmt.Errorf("received an invalid column %q", col.Name())
 		}
 
@@ -86,7 +86,7 @@ func BuildAlterTableAddColumns(settings config.SharedDestinationColumnSettings, 
 }
 
 func BuildAlterTableDropColumns(dialect sql.Dialect, tableID sql.TableIdentifier, col columns.Column) (string, error) {
-	if col.ShouldSkip() {
+	if !col.IsValid() {
 		return "", fmt.Errorf("received an invalid column %q", col.Name())
 	}
 
