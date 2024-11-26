@@ -10,6 +10,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestColumn_IsValid(t *testing.T) {
+	assert.False(t, NewColumn("foo", typing.Invalid).IsValid())
+	assert.True(t, NewColumn("foo", typing.String).IsValid())
+}
+
 func TestEscapeName(t *testing.T) {
 	type _testCase struct {
 		name         string
