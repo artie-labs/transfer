@@ -32,7 +32,7 @@ type Column struct {
 }
 
 func (c Column) IsValid() bool {
-	return c.KindDetails.Kind != typing.Invalid.Kind
+	return c.KindDetails != typing.Invalid
 }
 
 func (c *Column) PrimaryKey() bool {
