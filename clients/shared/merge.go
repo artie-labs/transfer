@@ -48,7 +48,6 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 	}
 
 	if err = AlterTableDropColumns(ctx, dwh, tableConfig, tableID, srcKeysMissing, tableData.LatestCDCTs, tableData.ContainOtherOperations()); err != nil {
-		return fmt.Errorf("failed to drop columns for table %q: %w", tableID.Table(), err)
 	}
 
 	// TODO: Examine whether [AuditColumnsToDelete] still needs to be called.
