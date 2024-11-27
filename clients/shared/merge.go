@@ -36,12 +36,6 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		tableData.Mode(),
 	)
 
-	fmt.Println("targetKeysMissing", targetKeysMissing, "srcKeysMissing", srcKeysMissing)
-
-	for _, col := range tableConfig.GetColumns() {
-		fmt.Println("col", col.Name(), "colKind", col.KindDetails, "tableName", tableData.Name())
-	}
-
 	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	if tableConfig.CreateTable() {
 		if err = CreateTable(ctx, dwh, tableData, tableConfig, opts.ColumnSettings, tableID, false, targetKeysMissing); err != nil {
@@ -60,13 +54,6 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 	// TODO: Examine whether [AuditColumnsToDelete] still needs to be called.
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
 	if err = tableData.MergeColumnsFromDestination(tableConfig.GetColumns()...); err != nil {
-		slog.Error("failed to merge columns from destination",
-			slog.Any("err", err),
-			slog.String("tableName", tableID.FullyQualifiedName()),
-			slog.Any("srcKeysMissing", srcKeysMissing),
-			slog.Any("targetKeysMissing", targetKeysMissing),
-		)
-
 		return fmt.Errorf("failed to merge columns from destination: %w for table %q", err, tableData.Name())
 	}
 
