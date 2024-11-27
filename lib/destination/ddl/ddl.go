@@ -26,7 +26,7 @@ func BuildCreateTableSQL(settings config.SharedDestinationColumnSettings, dialec
 	var primaryKeys []string
 	for _, col := range columns {
 		if col.ShouldSkip() {
-			continue
+			return "", fmt.Errorf("received an invalid column %q", col.Name())
 		}
 
 		colName := dialect.QuoteIdentifier(col.Name())

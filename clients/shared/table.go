@@ -21,7 +21,16 @@ func CreateTempTable(ctx context.Context, dwh destination.DataWarehouse, tableDa
 }
 
 func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tc *types.DwhTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, tempTable bool, cols []columns.Column) error {
-	query, err := ddl.BuildCreateTableSQL(settings, dwh.Dialect(), tableID, tempTable, tableData.Mode(), cols)
+	var colsToAdd []columns.Column
+	for _, col := range cols {
+		if col.ShouldSkip() {
+			continue
+		}
+
+		colsToAdd = append(colsToAdd, col)
+	}
+
+	query, err := ddl.BuildCreateTableSQL(settings, dwh.Dialect(), tableID, tempTable, tableData.Mode(), colsToAdd)
 	if err != nil {
 		return fmt.Errorf("failed to build create table sql: %w", err)
 	}
@@ -32,7 +41,7 @@ func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *
 	}
 
 	// Update cache with the new columns that we've added.
-	tc.MutateInMemoryColumns(constants.Add, cols...)
+	tc.MutateInMemoryColumns(constants.Add, colsToAdd...)
 	return nil
 }
 

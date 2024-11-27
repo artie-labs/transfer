@@ -36,6 +36,12 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		tableData.Mode(),
 	)
 
+	fmt.Println("targetKeysMissing", targetKeysMissing, "srcKeysMissing", srcKeysMissing)
+
+	for _, col := range tableConfig.GetColumns() {
+		fmt.Println("col", col.Name(), "colKind", col.KindDetails, "tableName", tableData.Name())
+	}
+
 	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	if tableConfig.CreateTable() {
 		if err = CreateTable(ctx, dwh, tableData, tableConfig, opts.ColumnSettings, tableID, false, targetKeysMissing); err != nil {
