@@ -86,6 +86,13 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	if _, err = s.Exec(copyCommand); err != nil {
+		// If COPY INTO failed, we should delete the file from the stage
+		// We only need to do this for non-temp tables (which would be the case for History mode) because we PURGE = TRUE will only delete the file after a successful COPY INTO
+		if !createTempTable {
+			if _, deleteErr := s.ExecContext(ctx, s.dialect().BuildRemoveAllFilesFromStage(tempTableID.FullyQualifiedName(), "")); deleteErr != nil {
+				slog.Warn("Failed to remove all files from stage", slog.Any("deleteErr", deleteErr))
+			}
+		}
 
 		return fmt.Errorf("failed to run copy into temporary table: %w", err)
 	}
