@@ -154,7 +154,7 @@ WHERE
     UPPER(table_schema) = UPPER(?) AND table_name ILIKE ?`, dbName), []any{schemaName, "%" + constants.ArtiePrefix + "%"}
 }
 
-func (SnowflakeDialect) BuildRemoveAllFilesFromStage(stageName string, path string) string {
+func (SnowflakeDialect) BuildRemoveFilesFromStage(stageName string, path string) string {
 	// https://docs.snowflake.com/en/sql-reference/sql/remove
 	return fmt.Sprintf("REMOVE @%s", filepath.Join(stageName, path))
 }

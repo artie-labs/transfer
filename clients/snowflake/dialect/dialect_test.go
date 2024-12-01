@@ -231,14 +231,14 @@ func TestSnowflakeDialect_BuildRemoveAllFilesFromStage(t *testing.T) {
 		// Stage name only, no path
 		assert.Equal(t,
 			"REMOVE @STAGE_NAME",
-			SnowflakeDialect{}.BuildRemoveAllFilesFromStage("STAGE_NAME", ""),
+			SnowflakeDialect{}.BuildRemoveFilesFromStage("STAGE_NAME", ""),
 		)
 	}
 	{
 		// Stage name and path
 		assert.Equal(t,
 			"REMOVE @STAGE_NAME/path1/subpath2",
-			SnowflakeDialect{}.BuildRemoveAllFilesFromStage("STAGE_NAME", "path1/subpath2"),
+			SnowflakeDialect{}.BuildRemoveFilesFromStage("STAGE_NAME", "path1/subpath2"),
 		)
 	}
 }
