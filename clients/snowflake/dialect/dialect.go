@@ -2,6 +2,7 @@ package dialect
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -151,4 +152,9 @@ FROM
     %s.information_schema.tables
 WHERE
     UPPER(table_schema) = UPPER(?) AND table_name ILIKE ?`, dbName), []any{schemaName, "%" + constants.ArtiePrefix + "%"}
+}
+
+func (SnowflakeDialect) BuildRemoveAllFilesFromStage(stageName string, path string) string {
+	// https://docs.snowflake.com/en/sql-reference/sql/remove
+	return fmt.Sprintf("REMOVE @%s", filepath.Join(stageName, path))
 }

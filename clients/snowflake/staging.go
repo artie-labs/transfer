@@ -86,6 +86,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	if _, err = s.Exec(copyCommand); err != nil {
+
 		return fmt.Errorf("failed to run copy into temporary table: %w", err)
 	}
 

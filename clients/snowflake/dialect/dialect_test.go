@@ -225,3 +225,20 @@ WHEN MATCHED AND stg."__ARTIE_DELETE" THEN DELETE
 WHEN MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN UPDATE SET "GROUP"=stg."GROUP","ID"=stg."ID","START"=stg."START","UPDATED_AT"=stg."UPDATED_AT"
 WHEN NOT MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN INSERT ("GROUP","ID","START","UPDATED_AT") VALUES (stg."GROUP",stg."ID",stg."START",stg."UPDATED_AT");`, statements[0])
 }
+
+func TestSnowflakeDialect_BuildRemoveAllFilesFromStage(t *testing.T) {
+	{
+		// Stage name only, no path
+		assert.Equal(t,
+			"REMOVE @STAGE_NAME",
+			SnowflakeDialect{}.BuildRemoveAllFilesFromStage("STAGE_NAME", ""),
+		)
+	}
+	{
+		// Stage name and path
+		assert.Equal(t,
+			"REMOVE @STAGE_NAME/path1/subpath2",
+			SnowflakeDialect{}.BuildRemoveAllFilesFromStage("STAGE_NAME", "path1/subpath2"),
+		)
+	}
+}
