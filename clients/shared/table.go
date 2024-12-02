@@ -16,11 +16,29 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+func getValidColumns(cols []columns.Column) []columns.Column {
+	var validCols []columns.Column
+	for _, col := range cols {
+		if col.ShouldSkip() {
+			continue
+		}
+
+		validCols = append(validCols, col)
+	}
+
+	return validCols
+}
+
 func CreateTempTable(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tc *types.DwhTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier) error {
 	return CreateTable(ctx, dwh, tableData, tc, settings, tableID, true, tableData.ReadOnlyInMemoryCols().GetColumns())
 }
 
 func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tc *types.DwhTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, tempTable bool, cols []columns.Column) error {
+	cols = getValidColumns(cols)
+	if len(cols) == 0 {
+		return nil
+	}
+
 	query, err := ddl.BuildCreateTableSQL(settings, dwh.Dialect(), tableID, tempTable, tableData.Mode(), cols)
 	if err != nil {
 		return fmt.Errorf("failed to build create table sql: %w", err)
@@ -37,20 +55,12 @@ func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *
 }
 
 func AlterTableAddColumns(ctx context.Context, dwh destination.DataWarehouse, tc *types.DwhTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, cols []columns.Column) error {
+	cols = getValidColumns(cols)
 	if len(cols) == 0 {
 		return nil
 	}
 
-	var colsToAdd []columns.Column
-	for _, col := range cols {
-		if col.ShouldSkip() {
-			continue
-		}
-
-		colsToAdd = append(colsToAdd, col)
-	}
-
-	sqlParts, err := ddl.BuildAlterTableAddColumns(settings, dwh.Dialect(), tableID, colsToAdd)
+	sqlParts, err := ddl.BuildAlterTableAddColumns(settings, dwh.Dialect(), tableID, cols)
 	if err != nil {
 		return fmt.Errorf("failed to build alter table add columns: %w", err)
 	}
@@ -64,7 +74,7 @@ func AlterTableAddColumns(ctx context.Context, dwh destination.DataWarehouse, tc
 		}
 	}
 
-	tc.MutateInMemoryColumns(constants.Add, colsToAdd...)
+	tc.MutateInMemoryColumns(constants.Add, cols...)
 	return nil
 }
 
