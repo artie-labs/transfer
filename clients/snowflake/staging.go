@@ -86,6 +86,15 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	if _, err = s.Exec(copyCommand); err != nil {
+		// For non-temp tables, we should try to delete the staging file if COPY INTO fails.
+		// This is because [PURGE = TRUE] will only delete the staging files upon a successful COPY INTO.
+		// We also only need to do this for non-temp tables because these staging files will linger, since we create a new temporary table per attempt.
+		if !createTempTable {
+			if _, deleteErr := s.ExecContext(ctx, s.dialect().BuildRemoveFilesFromStage(tempTableID.FullyQualifiedName(), "")); deleteErr != nil {
+				slog.Warn("Failed to remove all files from stage", slog.Any("deleteErr", deleteErr))
+			}
+		}
+
 		return fmt.Errorf("failed to run copy into temporary table: %w", err)
 	}
 
