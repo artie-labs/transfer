@@ -53,7 +53,6 @@ func ParsePartitionKey(key []byte, cdcKeyFormat string) (map[string]any, error) 
 		return parsePartitionKeyStruct(key)
 	case kafkalib.StringKeyFmt:
 		return parsePartitionKeyString(key)
-
 	}
 	return nil, fmt.Errorf("format: %s is not supported", cdcKeyFormat)
 }
