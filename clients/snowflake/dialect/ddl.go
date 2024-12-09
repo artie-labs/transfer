@@ -21,6 +21,14 @@ func (SnowflakeDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, tempo
 	}
 }
 
+func (SnowflakeDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
+	return "DROP TABLE IF EXISTS " + tableID.FullyQualifiedName()
+}
+
+func (SnowflakeDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
+	return "TRUNCATE TABLE IF EXISTS " + tableID.FullyQualifiedName()
+}
+
 func (SnowflakeDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
 	return fmt.Sprintf("ALTER TABLE %s ADD COLUMN IF NOT EXISTS %s", tableID.FullyQualifiedName(), sqlPart)
 }

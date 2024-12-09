@@ -60,6 +60,20 @@ func TestMSSQLDialect_BuildCreateTableQuery(t *testing.T) {
 	)
 }
 
+func TestMSSQLDialect_BuildDropTableQuery(t *testing.T) {
+	assert.Equal(t,
+		`DROP TABLE IF EXISTS "schema1"."table1"`,
+		MSSQLDialect{}.BuildDropTableQuery(NewTableIdentifier("schema1", "table1")),
+	)
+}
+
+func TestMSSQLDialect_BuildTruncateTableQuery(t *testing.T) {
+	assert.Equal(t,
+		`TRUNCATE TABLE "schema1"."table1"`,
+		MSSQLDialect{}.BuildTruncateTableQuery(NewTableIdentifier("schema1", "table1")),
+	)
+}
+
 func TestMSSQLDialect_BuildAddColumnQuery(t *testing.T) {
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns("{TABLE}")

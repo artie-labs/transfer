@@ -70,6 +70,20 @@ func TestDatabricksDialect_BuildCreateTableQuery(t *testing.T) {
 	}
 }
 
+func TestDatabricksDialect_BuildDropTableQuery(t *testing.T) {
+	assert.Equal(t,
+		"DROP TABLE IF EXISTS `project1`.`dataset2`.`table3`",
+		DatabricksDialect{}.BuildDropTableQuery(NewTableIdentifier("project1", "dataset2", "table3")),
+	)
+}
+
+func TestDatabricksDialect_BuildTruncateTableQuery(t *testing.T) {
+	assert.Equal(t,
+		"TRUNCATE TABLE `project1`.`dataset2`.`table3`",
+		DatabricksDialect{}.BuildTruncateTableQuery(NewTableIdentifier("project1", "dataset2", "table3")),
+	)
+}
+
 func TestDatabricksDialect_BuildAddColumnQuery(t *testing.T) {
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns("{TABLE}")

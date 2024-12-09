@@ -45,6 +45,20 @@ func TestRedshiftDialect_BuildCreateTableQuery(t *testing.T) {
 	)
 }
 
+func TestRedshiftDialect_BuildDropTableQuery(t *testing.T) {
+	assert.Equal(t,
+		`DROP TABLE IF EXISTS schema1."table1"`,
+		RedshiftDialect{}.BuildDropTableQuery(NewTableIdentifier("schema1", "table1")),
+	)
+}
+
+func TestRedshiftDialect_BuildTruncateTableQuery(t *testing.T) {
+	assert.Equal(t,
+		`TRUNCATE TABLE schema1."table1"`,
+		RedshiftDialect{}.BuildTruncateTableQuery(NewTableIdentifier("schema1", "table1")),
+	)
+}
+
 func TestRedshiftDialect_BuildAddColumnQuery(t *testing.T) {
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns("{TABLE}")

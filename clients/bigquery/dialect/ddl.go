@@ -24,6 +24,14 @@ func (BigQueryDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, tempor
 	}
 }
 
+func (BigQueryDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
+	return "DROP TABLE IF EXISTS " + tableID.FullyQualifiedName()
+}
+
+func (BigQueryDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
+	return "TRUNCATE TABLE " + tableID.FullyQualifiedName()
+}
+
 func (BigQueryDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
 	return fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s", tableID.FullyQualifiedName(), sqlPart)
 }

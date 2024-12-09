@@ -12,6 +12,14 @@ func (DatabricksDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bo
 	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ", "))
 }
 
+func (DatabricksDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
+	return "DROP TABLE IF EXISTS " + tableID.FullyQualifiedName()
+}
+
+func (DatabricksDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
+	return "TRUNCATE TABLE " + tableID.FullyQualifiedName()
+}
+
 func (DatabricksDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
 	return fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s", tableID.FullyQualifiedName(), sqlPart)
 }
