@@ -66,6 +66,20 @@ func TestBigQueryDialect_BuildCreateTableQuery(t *testing.T) {
 	)
 }
 
+func TestBigQueryDialect_BuildDropTableQuery(t *testing.T) {
+	assert.Equal(t,
+		"DROP TABLE IF EXISTS `project1`.`dataset2`.`table3`",
+		BigQueryDialect{}.BuildDropTableQuery(NewTableIdentifier("project1", "dataset2", "table3")),
+	)
+}
+
+func TestBigQueryDialect_BuildTruncateTableQuery(t *testing.T) {
+	assert.Equal(t,
+		"TRUNCATE TABLE `project1`.`dataset2`.`table3`",
+		BigQueryDialect{}.BuildTruncateTableQuery(NewTableIdentifier("project1", "dataset2", "table3")),
+	)
+}
+
 func TestBigQueryDialect_BuildDropColumnQuery(t *testing.T) {
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns("{TABLE}")

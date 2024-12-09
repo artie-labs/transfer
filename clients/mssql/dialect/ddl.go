@@ -46,3 +46,11 @@ func (MSSQLDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, c
 	// Microsoft SQL Server doesn't support IF NOT EXISTS
 	return fmt.Sprintf("CREATE TABLE %s (%s);", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
 }
+
+func (MSSQLDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
+	return "DROP TABLE IF EXISTS " + tableID.FullyQualifiedName()
+}
+
+func (MSSQLDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
+	return "TRUNCATE TABLE " + tableID.FullyQualifiedName()
+}

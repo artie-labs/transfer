@@ -17,25 +17,25 @@ func (RedshiftDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (str
 
 	// This query is a modified fork from: https://gist.github.com/alexanderlz/7302623
 	return fmt.Sprintf(`
-SELECT 
+SELECT
     c.column_name,
-    CASE 
-        WHEN c.data_type = 'numeric' THEN 
+    CASE
+        WHEN c.data_type = 'numeric' THEN
             'numeric(' || COALESCE(CAST(c.numeric_precision AS VARCHAR), '') || ',' || COALESCE(CAST(c.numeric_scale AS VARCHAR), '') || ')'
-        ELSE 
+        ELSE
             c.data_type
     END AS data_type,
     c.%s,
     d.description
 FROM
     INFORMATION_SCHEMA.COLUMNS c
-LEFT JOIN 
-    PG_CLASS c1 ON c.table_name = c1.relname 
-LEFT JOIN 
-    PG_CATALOG.PG_NAMESPACE n ON c.table_schema = n.nspname AND c1.relnamespace = n.oid 
-LEFT JOIN 
-    PG_CATALOG.PG_DESCRIPTION d ON d.objsubid = c.ordinal_position AND d.objoid = c1.oid 
-WHERE 
+LEFT JOIN
+    PG_CLASS c1 ON c.table_name = c1.relname
+LEFT JOIN
+    PG_CATALOG.PG_NAMESPACE n ON c.table_schema = n.nspname AND c1.relnamespace = n.oid
+LEFT JOIN
+    PG_CATALOG.PG_DESCRIPTION d ON d.objsubid = c.ordinal_position AND d.objoid = c1.oid
+WHERE
     LOWER(c.table_schema) = LOWER($1) AND LOWER(c.table_name) = LOWER($2);
 `, constants.StrPrecisionCol), []any{redshiftTableID.Schema(), redshiftTableID.Table()}, nil
 }
@@ -51,4 +51,12 @@ func (RedshiftDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName
 func (RedshiftDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, colSQLParts []string) string {
 	// Redshift uses the same syntax for temporary and permanent tables.
 	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
+}
+
+func (RedshiftDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
+	return "DROP TABLE IF EXISTS " + tableID.FullyQualifiedName()
+}
+
+func (RedshiftDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
+	return "TRUNCATE TABLE " + tableID.FullyQualifiedName()
 }

@@ -31,6 +31,8 @@ type Dialect interface {
 	IsColumnAlreadyExistsErr(err error) bool
 	IsTableDoesNotExistErr(err error) bool
 	BuildCreateTableQuery(tableID TableIdentifier, temporary bool, colSQLParts []string) string
+	BuildDropTableQuery(tableID TableIdentifier) string
+	BuildTruncateTableQuery(tableID TableIdentifier) string
 	BuildDedupeQueries(tableID, stagingTableID TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string
 	BuildDedupeTableQuery(tableID TableIdentifier, primaryKeys []string) string
 	BuildDescribeTableQuery(tableID TableIdentifier) (string, []any, error)
