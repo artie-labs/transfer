@@ -67,7 +67,7 @@ type Field struct {
 	DebeziumType SupportedDebeziumType `json:"name"`
 	Parameters   map[string]any        `json:"parameters"`
 	// [ItemsMetadata] is only populated if the literal type is an array.
-	ItemsMetadata Item `json:"items"`
+	ItemsMetadata Item `json:"items,omitempty"`
 }
 
 func (f Field) GetScaleAndPrecision() (int32, *int32, error) {
