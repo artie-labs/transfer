@@ -243,7 +243,6 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			if err != nil {
 				return nil, err
 			}
-
 			list := message.Mutable(field).List()
 			for _, val := range values {
 				list.Append(protoreflect.ValueOfString(val))
