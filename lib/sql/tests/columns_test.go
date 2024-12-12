@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"testing"
 
 	bigqueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
@@ -96,7 +95,6 @@ func TestBuildColumnsUpdateFragment_BigQuery(t *testing.T) {
 
 	lastCaseEscapeTypes = append(lastCaseEscapeTypes, columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 
-	key := `{"key":"__debezium_unavailable_value"}`
 	testCases := []struct {
 		name           string
 		columns        []columns.Column
@@ -105,13 +103,12 @@ func TestBuildColumnsUpdateFragment_BigQuery(t *testing.T) {
 		{
 			name:           "struct, string and toast string (bigquery)",
 			columns:        lastCaseColTypes,
-			expectedString: "`a1`= CASE WHEN COALESCE(TO_JSON_STRING(stg.`a1`) != '{\"key\":\"__debezium_unavailable_value\"}', true) THEN stg.`a1` ELSE tgt.`a1` END,`b2`= CASE WHEN COALESCE(stg.`b2` != '__debezium_unavailable_value', true) THEN stg.`b2` ELSE tgt.`b2` END,`c3`=stg.`c3`",
+			expectedString: "`a1`= CASE WHEN TO_JSON_STRING(stg.`a1`) NOT LIKE '%__debezium_unavailable_value%' THEN stg.`a1` ELSE tgt.`a1` END,`b2`= CASE WHEN TO_JSON_STRING(stg.`b2`) NOT LIKE '%__debezium_unavailable_value%' THEN stg.`b2` ELSE tgt.`b2` END,`c3`=stg.`c3`",
 		},
 		{
-			name:    "struct, string and toast string (bigquery) w/ reserved keywords",
-			columns: lastCaseEscapeTypes,
-			expectedString: fmt.Sprintf("`a1`= CASE WHEN COALESCE(TO_JSON_STRING(stg.`a1`) != '%s', true) THEN stg.`a1` ELSE tgt.`a1` END,`b2`= CASE WHEN COALESCE(stg.`b2` != '__debezium_unavailable_value', true) THEN stg.`b2` ELSE tgt.`b2` END,`c3`=stg.`c3`,%s,%s",
-				key, fmt.Sprintf("`start`= CASE WHEN COALESCE(TO_JSON_STRING(stg.`start`) != '%s', true) THEN stg.`start` ELSE tgt.`start` END", key), "`select`=stg.`select`,`__artie_delete`=stg.`__artie_delete`"),
+			name:           "struct, string and toast string (bigquery) w/ reserved keywords",
+			columns:        lastCaseEscapeTypes,
+			expectedString: "`a1`= CASE WHEN TO_JSON_STRING(stg.`a1`) NOT LIKE '%__debezium_unavailable_value%' THEN stg.`a1` ELSE tgt.`a1` END,`b2`= CASE WHEN TO_JSON_STRING(stg.`b2`) NOT LIKE '%__debezium_unavailable_value%' THEN stg.`b2` ELSE tgt.`b2` END,`c3`=stg.`c3`,`start`= CASE WHEN TO_JSON_STRING(stg.`start`) NOT LIKE '%__debezium_unavailable_value%' THEN stg.`start` ELSE tgt.`start` END,`select`=stg.`select`,`__artie_delete`=stg.`__artie_delete`",
 		},
 	}
 
