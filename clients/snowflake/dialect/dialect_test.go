@@ -82,11 +82,11 @@ func TestSnowflakeDialect_BuildDropColumnQuery(t *testing.T) {
 
 func TestSnowflakeDialect_BuildIsNotToastValueExpression(t *testing.T) {
 	assert.Equal(t,
-		`COALESCE(tbl."BAR" != '__debezium_unavailable_value', true)`,
+		`COALESCE(TO_VARCHAR(tbl."BAR") NOT LIKE '%__debezium_unavailable_value%', TRUE)`,
 		SnowflakeDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("bar", typing.Invalid)),
 	)
 	assert.Equal(t,
-		`COALESCE(tbl."FOO" != {'key': '__debezium_unavailable_value'}, true)`,
+		`COALESCE(TO_VARCHAR(tbl."FOO") NOT LIKE '%__debezium_unavailable_value%', TRUE)`,
 		SnowflakeDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("foo", typing.Struct)),
 	)
 }

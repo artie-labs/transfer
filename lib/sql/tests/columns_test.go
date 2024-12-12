@@ -181,7 +181,7 @@ func TestBuildColumnsUpdateFragment_Snowflake(t *testing.T) {
 	}
 
 	actualQuery := sql.BuildColumnsUpdateFragment(stringAndToastCols, "stg", "tgt", snowflakeDialect.SnowflakeDialect{})
-	assert.Equal(t, `"FOO"= CASE WHEN stg."FOO" NOT LIKE %__debezium_unavailable_value% THEN stg.\"FOO\" ELSE tgt.\"FOO\" END,\"BAR\"=stg.\"BAR\""`, actualQuery)
+	assert.Equal(t, `"FOO"= CASE WHEN COALESCE(stg."FOO" NOT LIKE '%__debezium_unavailable_value%', TRUE) THEN stg."FOO" ELSE tgt."FOO" END,"BAR"=stg."BAR"`, actualQuery)
 }
 
 func TestBuildColumnComparison(t *testing.T) {
