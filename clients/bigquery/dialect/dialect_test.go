@@ -102,11 +102,11 @@ func TestBigQueryDialect_BuildAddColumnQuery(t *testing.T) {
 
 func TestBigQueryDialect_BuildIsNotToastValueExpression(t *testing.T) {
 	assert.Equal(t,
-		"COALESCE(tbl.`bar` != '__debezium_unavailable_value', true)",
+		"TO_JSON_STRING(tbl.`bar`) NOT LIKE '%__debezium_unavailable_value%'",
 		BigQueryDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("bar", typing.Invalid)),
 	)
 	assert.Equal(t,
-		"COALESCE(TO_JSON_STRING(tbl.`foo`) != '{\"key\":\"__debezium_unavailable_value\"}', true)",
+		"TO_JSON_STRING(tbl.`foo`) NOT LIKE '%__debezium_unavailable_value%'",
 		BigQueryDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("foo", typing.Struct)),
 	)
 }
