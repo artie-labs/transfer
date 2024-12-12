@@ -96,11 +96,11 @@ func TestMSSQLDialect_BuildDropColumnQuery(t *testing.T) {
 
 func TestMSSQLDialect_BuildIsNotToastValueExpression(t *testing.T) {
 	assert.Equal(t,
-		`COALESCE(tbl."bar", '') != '__debezium_unavailable_value'`,
+		`COALESCE(tbl."bar", '') NOT LIKE '%__debezium_unavailable_value%'`,
 		MSSQLDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("bar", typing.Invalid)),
 	)
 	assert.Equal(t,
-		`COALESCE(tbl."foo", {}) != {'key': '__debezium_unavailable_value'}`,
+		`COALESCE(tbl."foo", '') NOT LIKE '%__debezium_unavailable_value%'`,
 		MSSQLDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("foo", typing.Struct)),
 	)
 }

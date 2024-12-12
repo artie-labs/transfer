@@ -106,7 +106,7 @@ func TestSnowflakeDialect_BuildIsNotToastValueExpression(t *testing.T) {
 }
 
 func buildColumns(colTypesMap map[string]typing.KindDetails) *columns.Columns {
-	colNames := []string{}
+	var colNames []string
 	for colName := range colTypesMap {
 		colNames = append(colNames, colName)
 	}
