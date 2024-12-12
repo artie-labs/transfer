@@ -157,7 +157,7 @@ func TestBuildColumnsUpdateFragment_Redshift(t *testing.T) {
 		{
 			name:           "struct, string and toast string",
 			columns:        lastCaseColTypes,
-			expectedString: `"a1"= CASE WHEN COALESCE(stg."a1" != JSON_PARSE('{"key":"__debezium_unavailable_value"}'), true) THEN stg."a1" ELSE tgt."a1" END,"b2"= CASE WHEN COALESCE(stg."b2" != '__debezium_unavailable_value', true) THEN stg."b2" ELSE tgt."b2" END,"c3"=stg."c3"`,
+			expectedString: `"a1"= CASE WHEN COALESCE(JSON_SERIALIZE(stg."a1") NOT LIKE '%__debezium_unavailable_value%', TRUE) THEN stg."a1" ELSE tgt."a1" END,"b2"= CASE WHEN COALESCE(stg."b2" NOT LIKE '%__debezium_unavailable_value%', TRUE) THEN stg."b2" ELSE tgt."b2" END,"c3"=stg."c3"`,
 		},
 	}
 
