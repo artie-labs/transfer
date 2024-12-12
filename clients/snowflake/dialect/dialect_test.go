@@ -81,14 +81,28 @@ func TestSnowflakeDialect_BuildDropColumnQuery(t *testing.T) {
 }
 
 func TestSnowflakeDialect_BuildIsNotToastValueExpression(t *testing.T) {
-	assert.Equal(t,
-		`COALESCE(tbl."BAR" != '__debezium_unavailable_value', true)`,
-		SnowflakeDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("bar", typing.Invalid)),
-	)
-	assert.Equal(t,
-		`COALESCE(tbl."FOO" != {'key': '__debezium_unavailable_value'}, true)`,
-		SnowflakeDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("foo", typing.Struct)),
-	)
+	{
+		// Unspecified data type
+		assert.Equal(t,
+			`COALESCE(TO_VARCHAR(tbl."BAR") NOT LIKE '%__debezium_unavailable_value%', TRUE)`,
+			SnowflakeDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("bar", typing.Invalid)),
+		)
+	}
+	{
+		// Structs
+		assert.Equal(t,
+			`COALESCE(TO_VARCHAR(tbl."FOO") NOT LIKE '%__debezium_unavailable_value%', TRUE)`,
+			SnowflakeDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("foo", typing.Struct)),
+		)
+	}
+	{
+		// String
+		assert.Equal(t,
+			`COALESCE(tbl."BAR" NOT LIKE '%__debezium_unavailable_value%', TRUE)`,
+			SnowflakeDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("bar", typing.String)),
+		)
+	}
+
 }
 
 func buildColumns(colTypesMap map[string]typing.KindDetails) *columns.Columns {
