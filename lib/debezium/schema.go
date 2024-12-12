@@ -66,8 +66,8 @@ type Field struct {
 	FieldName    string                `json:"field"`
 	DebeziumType SupportedDebeziumType `json:"name"`
 	Parameters   map[string]any        `json:"parameters"`
-	// [Items] is only populated if the literal type is an array.
-	Items Item `json:"items"`
+	// [ItemsMetadata] is only populated if the literal type is an array.
+	ItemsMetadata Item `json:"items"`
 }
 
 func (f Field) GetScaleAndPrecision() (int32, *int32, error) {
@@ -146,7 +146,7 @@ func (f Field) ToValueConverter() (converters.ValueConverter, error) {
 
 		switch f.Type {
 		case Array:
-			return converters.NewArray(f.Items.DebeziumType == JSON), nil
+			return converters.NewArray(f.ItemsMetadata.DebeziumType == JSON), nil
 		case Double, Float:
 			return converters.Float64{}, nil
 		}
