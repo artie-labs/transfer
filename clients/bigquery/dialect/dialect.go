@@ -43,7 +43,6 @@ func (BigQueryDialect) IsTableDoesNotExistErr(_ error) bool {
 
 func (bd BigQueryDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
 	colName := sql.QuoteTableAliasColumn(tableAlias, column, bd)
-
 	switch column.KindDetails {
 	case typing.Struct, typing.Array:
 		return fmt.Sprintf(`TO_JSON_STRING(%s) NOT LIKE '%s'`, colName, "%"+constants.ToastUnavailableValuePlaceholder+"%")

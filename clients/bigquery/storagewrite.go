@@ -244,11 +244,6 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				return nil, err
 			}
 
-			fmt.Println("Type of values", fmt.Sprintf("%T", values))
-			for _, val := range values {
-				fmt.Println("value", val)
-			}
-
 			list := message.Mutable(field).List()
 			for _, val := range values {
 				list.Append(protoreflect.ValueOfString(val))
