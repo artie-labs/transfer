@@ -46,7 +46,7 @@ func (MSSQLDialect) IsTableDoesNotExistErr(err error) bool {
 func (md MSSQLDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
 	toastedValue := "%" + constants.ToastUnavailableValuePlaceholder + "%"
 	colName := sql.QuoteTableAliasColumn(tableAlias, column, md)
-	return fmt.Sprintf("COALESCE(%s NOT LIKE '%s', TRUE)", colName, toastedValue)
+	return fmt.Sprintf("COALESCE(%s, '') NOT LIKE '%s'", colName, toastedValue)
 }
 
 func (MSSQLDialect) BuildDedupeTableQuery(_ sql.TableIdentifier, _ []string) string {
