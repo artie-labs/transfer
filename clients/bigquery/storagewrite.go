@@ -245,7 +245,11 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				return nil, err
 			}
 
-			slog.Info("values for column", slog.String("name", column.Name()), slog.Any("values", values))
+			slog.Info("### Column ###", slog.String("column", column.Name()))
+			for _, val := range values {
+				slog.Info("### Value", slog.String("val", val))
+			}
+			slog.Info("### End Column ###")
 			list := message.Mutable(field).List()
 			for _, val := range values {
 				list.Append(protoreflect.ValueOfString(val))
