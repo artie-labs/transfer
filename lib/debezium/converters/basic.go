@@ -2,6 +2,7 @@ package converters
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -88,15 +89,45 @@ func (Float64) Convert(value any) (any, error) {
 	}
 }
 
-type Array struct{}
+func NewArray(json bool) Array {
+	return Array{json: json}
+}
+
+type Array struct {
+	json bool
+}
 
 func (Array) ToKindDetails() typing.KindDetails {
 	return typing.Array
 }
 
-func (Array) Convert(value any) (any, error) {
+func (a Array) Convert(value any) (any, error) {
 	if fmt.Sprint(value) == fmt.Sprintf("[%s]", constants.ToastUnavailableValuePlaceholder) {
 		return constants.ToastUnavailableValuePlaceholder, nil
+	}
+
+	// Convert value which is an array of []interface{} to array of JSON objects.
+	if a.json {
+		// Parse the individual elements
+		elements, ok := value.([]any)
+		if !ok {
+			return nil, fmt.Errorf("expected []interface{}, got %T", value)
+		}
+
+		convertedElements := make([]any, len(elements))
+		for i, element := range elements {
+			if castedElement, ok := element.(string); ok {
+				var obj any
+				err := json.Unmarshal([]byte(castedElement), &obj)
+				if err != nil {
+					return nil, err
+				}
+
+				convertedElements[i] = obj
+			}
+		}
+
+		return convertedElements, nil
 	}
 
 	return value, nil
