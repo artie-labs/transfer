@@ -2,6 +2,7 @@ package converters
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -88,15 +89,43 @@ func (Float64) Convert(value any) (any, error) {
 	}
 }
 
-type Array struct{}
+func NewArray(json bool) Array {
+	return Array{json: json}
+}
+
+type Array struct {
+	json bool
+}
 
 func (Array) ToKindDetails() typing.KindDetails {
 	return typing.Array
 }
 
-func (Array) Convert(value any) (any, error) {
+func (a Array) Convert(value any) (any, error) {
 	if fmt.Sprint(value) == fmt.Sprintf("[%s]", constants.ToastUnavailableValuePlaceholder) {
 		return constants.ToastUnavailableValuePlaceholder, nil
+	}
+
+	if a.json {
+		// Debezium will give us a list of JSON strings. We will then need to convert them to JSON objects.
+		elements, ok := value.([]any)
+		if !ok {
+			return nil, fmt.Errorf("expected []any, got %T", value)
+		}
+
+		convertedElements := make([]any, len(elements))
+		for i, element := range elements {
+			if castedElement, ok := element.(string); ok {
+				var obj any
+				if err := json.Unmarshal([]byte(castedElement), &obj); err != nil {
+					return nil, err
+				}
+
+				convertedElements[i] = obj
+			}
+		}
+
+		return convertedElements, nil
 	}
 
 	return value, nil

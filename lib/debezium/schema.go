@@ -53,6 +53,12 @@ const (
 	Map     FieldType = "map"
 )
 
+type Item struct {
+	Type         FieldType             `json:"type"`
+	Optional     bool                  `json:"optional"`
+	DebeziumType SupportedDebeziumType `json:"name"`
+}
+
 type Field struct {
 	Type         FieldType             `json:"type"`
 	Optional     bool                  `json:"optional"`
@@ -60,6 +66,8 @@ type Field struct {
 	FieldName    string                `json:"field"`
 	DebeziumType SupportedDebeziumType `json:"name"`
 	Parameters   map[string]any        `json:"parameters"`
+	// [ItemsMetadata] is only populated if the literal type is an array.
+	ItemsMetadata Item `json:"items"`
 }
 
 func (f Field) GetScaleAndPrecision() (int32, *int32, error) {
@@ -138,7 +146,7 @@ func (f Field) ToValueConverter() (converters.ValueConverter, error) {
 
 		switch f.Type {
 		case Array:
-			return converters.Array{}, nil
+			return converters.NewArray(f.ItemsMetadata.DebeziumType == JSON), nil
 		case Double, Float:
 			return converters.Float64{}, nil
 		}

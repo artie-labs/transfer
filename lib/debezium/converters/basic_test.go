@@ -110,4 +110,11 @@ func TestArray_Convert(t *testing.T) {
 			assert.Equal(t, constants.ToastUnavailableValuePlaceholder, value)
 		}
 	}
+	{
+		// Array of JSON objects
+		value, err := NewArray(true).Convert([]any{"{\"body\": \"they are on to us\", \"sender\": \"pablo\"}"})
+		assert.NoError(t, err)
+		assert.Len(t, value.([]any), 1)
+		assert.Equal(t, map[string]any{"body": "they are on to us", "sender": "pablo"}, value.([]any)[0])
+	}
 }
