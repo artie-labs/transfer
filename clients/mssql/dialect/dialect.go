@@ -44,13 +44,9 @@ func (MSSQLDialect) IsTableDoesNotExistErr(err error) bool {
 }
 
 func (md MSSQLDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
+	toastedValue := "%" + constants.ToastUnavailableValuePlaceholder + "%"
 	colName := sql.QuoteTableAliasColumn(tableAlias, column, md)
-	// Microsoft SQL Server doesn't allow boolean expressions to be in the COALESCE statement.
-	if column.KindDetails == typing.Struct {
-		return fmt.Sprintf("COALESCE(%s, {}) != {'key': '%s'}", colName, constants.ToastUnavailableValuePlaceholder)
-	}
-
-	return fmt.Sprintf("COALESCE(%s, '') != '%s'", colName, constants.ToastUnavailableValuePlaceholder)
+	return fmt.Sprintf("COALESCE(%s NOT LIKE '%s', TRUE)", colName, toastedValue)
 }
 
 func (MSSQLDialect) BuildDedupeTableQuery(_ sql.TableIdentifier, _ []string) string {
