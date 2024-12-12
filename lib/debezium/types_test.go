@@ -173,6 +173,15 @@ func TestField_ParseValue(t *testing.T) {
 		}
 	}
 	{
+		// Array
+		field := Field{Type: Array, Items: Item{DebeziumType: JSON}}
+		value, err := field.ParseValue([]any{`{"foo": "bar", "foo": "bar"}`, `{"hello": "world"}`})
+		assert.NoError(t, err)
+		assert.Len(t, value.([]any), 2)
+		assert.Equal(t, map[string]any{"foo": "bar"}, value.([]any)[0])
+		assert.Equal(t, map[string]any{"hello": "world"}, value.([]any)[1])
+	}
+	{
 		// Int32
 		value, err := Field{Type: Int32}.ParseValue(float64(3))
 		assert.NoError(t, err)
