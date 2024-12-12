@@ -106,9 +106,8 @@ func (a Array) Convert(value any) (any, error) {
 		return constants.ToastUnavailableValuePlaceholder, nil
 	}
 
-	// Convert value which is an array of []interface{} to array of JSON objects.
 	if a.json {
-		// Parse the individual elements
+		// Debezium will give us a list of JSON strings. We will then need to convert them to JSON objects.
 		elements, ok := value.([]any)
 		if !ok {
 			return nil, fmt.Errorf("expected []interface{}, got %T", value)
@@ -118,8 +117,7 @@ func (a Array) Convert(value any) (any, error) {
 		for i, element := range elements {
 			if castedElement, ok := element.(string); ok {
 				var obj any
-				err := json.Unmarshal([]byte(castedElement), &obj)
-				if err != nil {
+				if err := json.Unmarshal([]byte(castedElement), &obj); err != nil {
 					return nil, err
 				}
 
