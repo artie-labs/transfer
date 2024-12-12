@@ -3,6 +3,7 @@ package bigquery
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -243,6 +244,8 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			if err != nil {
 				return nil, err
 			}
+
+			slog.Info("values for column", slog.String("name", column.Name()), slog.Any("values", values))
 			list := message.Mutable(field).List()
 			for _, val := range values {
 				list.Append(protoreflect.ValueOfString(val))
