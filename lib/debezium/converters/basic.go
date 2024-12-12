@@ -110,7 +110,7 @@ func (a Array) Convert(value any) (any, error) {
 		// Debezium will give us a list of JSON strings. We will then need to convert them to JSON objects.
 		elements, ok := value.([]any)
 		if !ok {
-			return nil, fmt.Errorf("expected []interface{}, got %T", value)
+			return nil, fmt.Errorf("expected []any, got %T", value)
 		}
 
 		convertedElements := make([]any, len(elements))
