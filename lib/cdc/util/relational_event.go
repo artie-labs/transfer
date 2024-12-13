@@ -28,8 +28,11 @@ type Source struct {
 	Connector string `json:"connector"`
 	TsMs      int64  `json:"ts_ms"`
 	Database  string `json:"db"`
-	Schema    string `json:"schema"`
+	Schema    string `json:"schema,omitempty"`
 	Table     string `json:"table"`
+	// MySQL specific
+	File string `json:"file,omitempty"`
+	Pos  int64  `json:"pos,omitempty"`
 }
 
 func (s *SchemaEventPayload) GetColumns() (*columns.Columns, error) {
