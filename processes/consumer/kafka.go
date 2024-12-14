@@ -103,6 +103,11 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 					TopicToConfigFormatMap: tcFmtMap,
 				}
 
+				if len(msg.Key()) == 0 {
+					slog.Warn("Message does not have a key", artie.KafkaMsgLogFields(kafkaMsg)...)
+					continue
+				}
+
 				tableName, processErr := args.process(ctx, cfg, inMemDB, dest, metricsClient)
 				if processErr != nil {
 					logger.Fatal("Failed to process message", slog.Any("err", processErr), slog.String("topic", kafkaMsg.Topic))
