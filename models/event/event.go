@@ -161,6 +161,13 @@ func (e *Event) PrimaryKeys() []string {
 func (e *Event) PrimaryKeyValue() string {
 	var key string
 	for _, pk := range e.PrimaryKeys() {
+		// Convert float64 to int64
+		value := e.PrimaryKeyMap[pk]
+		switch castedValue := value.(type) {
+		case float64:
+			e.PrimaryKeyMap[pk] = int64(castedValue)
+		}
+
 		key += fmt.Sprintf("%s=%v", pk, e.PrimaryKeyMap[pk])
 	}
 
