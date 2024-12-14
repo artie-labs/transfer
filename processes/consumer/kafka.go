@@ -103,7 +103,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 					TopicToConfigFormatMap: tcFmtMap,
 				}
 
-				if len(msg.Key()) == 0 || string(msg.Key()) == "" {
+				if len(msg.Key()) == 0 || string(msg.Key()) == `""` {
 					slog.Warn("Message does not have a key", artie.KafkaMsgLogFields(kafkaMsg)...)
 					continue
 				}
