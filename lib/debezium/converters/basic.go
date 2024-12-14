@@ -115,13 +115,16 @@ func (a Array) Convert(value any) (any, error) {
 
 		convertedElements := make([]any, len(elements))
 		for i, element := range elements {
-			if castedElement, ok := element.(string); ok {
+			switch castedElement := element.(type) {
+			case string:
 				var obj any
 				if err := json.Unmarshal([]byte(castedElement), &obj); err != nil {
 					return nil, err
 				}
 
 				convertedElements[i] = obj
+			default:
+				return nil, fmt.Errorf("expected string, got %T, value '%v'", element, element)
 			}
 		}
 
