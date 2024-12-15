@@ -155,7 +155,11 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 	// If prevRow doesn't exist, it'll be 0, which is a no-op.
 	t.approxSize += newRowSize - prevRowSize
 	t.rowsData[pk] = rowData
-	slog.Info("Inserting row", slog.String("pk", pk), slog.Any("rowData", t.rowsData[pk]))
+
+	if t.name == "trx" {
+		slog.Info("Inserting row", slog.String("pk", pk), slog.Any("rowData", t.rowsData[pk]))
+	}
+
 	if !delete {
 		t.containOtherOperations = true
 	} else if delete && !t.topicConfig.SoftDelete {
