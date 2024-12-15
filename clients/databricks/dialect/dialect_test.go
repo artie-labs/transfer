@@ -50,6 +50,30 @@ func TestDatabricksDialect_IsTableDoesNotExistErr(t *testing.T) {
 	}
 }
 
+func TestDatabricks_BuildIsNotToastValueExpression(t *testing.T) {
+	{
+		// Unspecified data type
+		assert.Equal(t,
+			"COALESCE(TO_VARCHAR(tbl.`bar`) NOT LIKE '%__debezium_unavailable_value%', TRUE)",
+			DatabricksDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("bar", typing.Invalid)),
+		)
+	}
+	{
+		// Structs
+		assert.Equal(t,
+			"COALESCE(TO_VARCHAR(tbl.`foo`) NOT LIKE '%__debezium_unavailable_value%', TRUE)",
+			DatabricksDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("foo", typing.Struct)),
+		)
+	}
+	{
+		// String
+		assert.Equal(t,
+			"COALESCE(tbl.`bar` NOT LIKE '%__debezium_unavailable_value%', TRUE)",
+			DatabricksDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("bar", typing.String)),
+		)
+	}
+}
+
 func TestDatabricksDialect_BuildCreateTableQuery(t *testing.T) {
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns("{TABLE}")
