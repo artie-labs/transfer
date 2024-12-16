@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/typing/converters"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -36,14 +38,17 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 		return "", fmt.Errorf("colVal is nil")
 	}
 
-	switch colKind.Kind {
-	case typing.Date.Kind:
-		_time, err := ext.ParseDateFromAny(colVal)
-		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as date, colVal: '%v', err: %w", colVal, err)
-		}
+	sv, err := converters.GetStringConverter(colKind)
+	if err != nil {
+		return "", fmt.Errorf("failed to get string converter: %w", err)
+	}
 
-		return _time.Format(ext.PostgresDateFormat), nil
+	// Prioritize converters
+	if sv != nil {
+		return sv.Convert(colVal)
+	}
+
+	switch colKind.Kind {
 	case typing.Time.Kind:
 		_time, err := ext.ParseTimeFromAny(colVal)
 		if err != nil {
