@@ -149,10 +149,8 @@ FORMAT_OPTIONS (
 );`,
 		// COPY INTO
 		tempTableID.FullyQualifiedName(),
-		// SELECT columns
-		strings.Join(ordinalColumns, ", "),
-		// FROM
-		file.DBFSFilePath(),
+		// SELECT columns FROM file
+		strings.Join(ordinalColumns, ", "), file.DBFSFilePath(),
 	)
 
 	if _, err = s.ExecContext(ctx, copyCommand); err != nil {
