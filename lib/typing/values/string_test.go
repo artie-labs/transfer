@@ -172,9 +172,18 @@ func TestToString(t *testing.T) {
 	}
 	{
 		// Array
-		val, err := ToString([]string{"foo", "bar"}, typing.Array)
-		assert.NoError(t, err)
-		assert.Equal(t, `["foo","bar"]`, val)
+		{
+			// Normal arrays
+			val, err := ToString([]string{"foo", "bar"}, typing.Array)
+			assert.NoError(t, err)
+			assert.Equal(t, `["foo","bar"]`, val)
+		}
+		{
+			// Toasted array
+			val, err := ToString(constants.ToastUnavailableValuePlaceholder, typing.Array)
+			assert.NoError(t, err)
+			assert.Equal(t, `["__debezium_unavailable_value"]`, val)
+		}
 	}
 	{
 		// Integer column
