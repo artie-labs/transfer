@@ -27,6 +27,7 @@ func GetStringConverter(kd typing.KindDetails) (StringConverter, error) {
 		return ArrayConverter{}, nil
 	}
 
+	// TODO: Return an error when all the types are implemented.
 	return nil, nil
 }
 

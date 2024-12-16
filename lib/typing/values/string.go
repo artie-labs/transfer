@@ -7,11 +7,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/typing/converters"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/converters"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
@@ -44,6 +43,8 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 	if sv != nil {
 		return sv.Convert(colVal)
 	}
+
+	// TODO: Move all of this into converter function
 
 	switch colKind.Kind {
 	case typing.String.Kind:
