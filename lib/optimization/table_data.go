@@ -2,6 +2,7 @@ package optimization
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -154,6 +155,10 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 	// If prevRow doesn't exist, it'll be 0, which is a no-op.
 	t.approxSize += newRowSize - prevRowSize
 	t.rowsData[pk] = rowData
+
+	if t.name == "schedule_runs" {
+		slog.Info("Inserting row", slog.String("pk", pk), slog.Any("rowsData", rowData))
+	}
 
 	if !delete {
 		t.containOtherOperations = true
