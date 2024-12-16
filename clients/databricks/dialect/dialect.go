@@ -31,11 +31,14 @@ func (DatabricksDialect) IsTableDoesNotExistErr(err error) bool {
 }
 
 func (d DatabricksDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
+	toastedValue := "%" + constants.ToastUnavailableValuePlaceholder + "%"
 	colName := sql.QuoteTableAliasColumn(tableAlias, column, d)
-	if column.KindDetails == typing.Struct {
-		return fmt.Sprintf("COALESCE(%s != {'key': '%s'}, true)", colName, constants.ToastUnavailableValuePlaceholder)
+	switch column.KindDetails {
+	case typing.String:
+		return fmt.Sprintf("COALESCE(%s NOT LIKE '%s', TRUE)", colName, toastedValue)
+	default:
+		return fmt.Sprintf("COALESCE(CAST(%s AS STRING) NOT LIKE '%s', TRUE)", colName, toastedValue)
 	}
-	return fmt.Sprintf("COALESCE(%s != '%s', true)", colName, constants.ToastUnavailableValuePlaceholder)
 }
 
 func (DatabricksDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
