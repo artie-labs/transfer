@@ -54,14 +54,14 @@ func TestDatabricks_BuildIsNotToastValueExpression(t *testing.T) {
 	{
 		// Unspecified data type
 		assert.Equal(t,
-			"COALESCE(TO_VARCHAR(tbl.`bar`) NOT LIKE '%__debezium_unavailable_value%', TRUE)",
+			"COALESCE(CAST(tbl.`bar` AS STRING) NOT LIKE '%__debezium_unavailable_value%', TRUE)",
 			DatabricksDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("bar", typing.Invalid)),
 		)
 	}
 	{
 		// Structs
 		assert.Equal(t,
-			"COALESCE(TO_VARCHAR(tbl.`foo`) NOT LIKE '%__debezium_unavailable_value%', TRUE)",
+			"COALESCE(CAST(tbl.`foo` AS STRING) NOT LIKE '%__debezium_unavailable_value%', TRUE)",
 			DatabricksDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("foo", typing.Struct)),
 		)
 	}

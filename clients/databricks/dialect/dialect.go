@@ -37,7 +37,7 @@ func (d DatabricksDialect) BuildIsNotToastValueExpression(tableAlias constants.T
 	case typing.String:
 		return fmt.Sprintf("COALESCE(%s NOT LIKE '%s', TRUE)", colName, toastedValue)
 	default:
-		return fmt.Sprintf("COALESCE(CAST (%s AS STRING) NOT LIKE '%s', TRUE)", colName, toastedValue)
+		return fmt.Sprintf("COALESCE(CAST(%s AS STRING) NOT LIKE '%s', TRUE)", colName, toastedValue)
 	}
 }
 
