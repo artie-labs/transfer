@@ -2,6 +2,7 @@ package optimization
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -154,6 +155,8 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 	// If prevRow doesn't exist, it'll be 0, which is a no-op.
 	t.approxSize += newRowSize - prevRowSize
 	t.rowsData[pk] = rowData
+
+	slog.Info("Inserted row", slog.String("pk", pk), slog.String("__artie_db_updated_at", fmt.Sprint(rowData[constants.DatabaseUpdatedColumnMarker])))
 
 	if !delete {
 		t.containOtherOperations = true

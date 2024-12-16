@@ -29,6 +29,7 @@ const (
 	ExceededValueMarker         = ArtiePrefix + "_exceeded_value"
 
 	TemporaryTableTTL = 6 * time.Hour
+	ExtraLongTTL      = 14 * 24 * time.Hour
 
 	DBZMongoFormat = "debezium.mongodb"
 
