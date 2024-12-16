@@ -97,6 +97,14 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 			}
 		}
 	case typing.Array.Kind:
+		// If the column value is TOASTED, we should return an array with the TOASTED placeholder
+		// We're doing this to make sure that the value matches the schema.
+		if stringValue, ok := colVal.(string); ok {
+			if stringValue == constants.ToastUnavailableValuePlaceholder {
+				return fmt.Sprintf(`["%s"]`, constants.ToastUnavailableValuePlaceholder), nil
+			}
+		}
+
 		colValBytes, err := json.Marshal(colVal)
 		if err != nil {
 			return "", err
