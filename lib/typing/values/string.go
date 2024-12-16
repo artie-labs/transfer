@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/converters"
 
@@ -14,7 +13,6 @@ import (
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func Float64ToString(value float64) string {
@@ -43,33 +41,11 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 		return "", fmt.Errorf("failed to get string converter: %w", err)
 	}
 
-	// Prioritize converters
 	if sv != nil {
 		return sv.Convert(colVal)
 	}
 
 	switch colKind.Kind {
-	case typing.Time.Kind:
-		_time, err := ext.ParseTimeFromAny(colVal)
-		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time, colVal: '%v', err: %w", colVal, err)
-		}
-
-		return _time.Format(ext.PostgresTimeFormatNoTZ), nil
-	case typing.TimestampNTZ.Kind:
-		_time, err := ext.ParseTimestampNTZFromAny(colVal)
-		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as timestampNTZ, colVal: '%v', err: %w", colVal, err)
-		}
-
-		return _time.Format(ext.RFC3339NoTZ), nil
-	case typing.TimestampTZ.Kind:
-		_time, err := ext.ParseTimestampTZFromAny(colVal)
-		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as timestampTZ, colVal: '%v', err: %w", colVal, err)
-		}
-
-		return _time.Format(time.RFC3339Nano), nil
 	case typing.String.Kind:
 		isArray := reflect.ValueOf(colVal).Kind() == reflect.Slice
 		_, isMap := colVal.(map[string]any)
@@ -101,13 +77,6 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 				return string(colValBytes), nil
 			}
 		}
-	case typing.Array.Kind:
-		colValBytes, err := json.Marshal(colVal)
-		if err != nil {
-			return "", err
-		}
-
-		return string(colValBytes), nil
 	case typing.Float.Kind:
 		switch parsedVal := colVal.(type) {
 		case float32:
