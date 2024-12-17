@@ -148,6 +148,7 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 	if err != nil {
 		return fmt.Errorf("failed to create managedwriter client: %w", err)
 	}
+
 	defer managedWriterClient.Close()
 
 	managedStream, err := managedWriterClient.NewManagedStream(ctx,
@@ -161,6 +162,7 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 	if err != nil {
 		return fmt.Errorf("failed to create managed stream: %w", err)
 	}
+
 	defer managedStream.Close()
 
 	encoder := func(row map[string]any) ([]byte, error) {
@@ -183,8 +185,13 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 			return fmt.Errorf("failed to append rows: %w", err)
 		}
 
-		if resp, err := result.FullResponse(ctx); err != nil {
+		resp, err := result.FullResponse(ctx)
+		if err != nil {
 			return fmt.Errorf("failed to get response (%s): %w", resp.GetError().String(), err)
+		}
+
+		if status := resp.GetError(); status != nil {
+			return fmt.Errorf("failed to append rows: %s", status.String())
 		}
 
 		return nil
