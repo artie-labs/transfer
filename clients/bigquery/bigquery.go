@@ -182,15 +182,18 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 	return batch.BySize(tableData.Rows(), maxRequestByteSize, false, encoder, func(chunk [][]byte) error {
 		result, err := managedStream.AppendRows(ctx, chunk)
 		if err != nil {
+			slog.Error("Failed to append rows", slog.Any("err", err))
 			return fmt.Errorf("failed to append rows: %w", err)
 		}
 
 		resp, err := result.FullResponse(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to get response (%s): %w", resp.GetError().String(), err)
+			slog.Error("Failed to get response", slog.Any("err", err))
+			return fmt.Errorf("failed to get response: %w", err)
 		}
 
 		if status := resp.GetError(); status != nil {
+			slog.Error("Failed to append rows", slog.String("status", status.String()))
 			return fmt.Errorf("failed to append rows: %s", status.String())
 		}
 
