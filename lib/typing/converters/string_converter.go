@@ -145,7 +145,7 @@ func (DecimalConverter) Convert(value any) (string, error) {
 		return Float32ToString(castedColVal), nil
 	case float64:
 		return Float64ToString(castedColVal), nil
-	case int64, int32:
+	case int, int8, int16, int32, int64:
 		return fmt.Sprint(castedColVal), nil
 	case string:
 		return castedColVal, nil
