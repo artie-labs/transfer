@@ -7,6 +7,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
@@ -16,6 +17,7 @@ type StringConverter interface {
 
 func GetStringConverter(kd typing.KindDetails) (StringConverter, error) {
 	switch kd.Kind {
+	// Time
 	case typing.Date.Kind:
 		return DateConverter{}, nil
 	case typing.Time.Kind:
@@ -26,6 +28,13 @@ func GetStringConverter(kd typing.KindDetails) (StringConverter, error) {
 		return TimestampTZConverter{}, nil
 	case typing.Array.Kind:
 		return ArrayConverter{}, nil
+	// Numbers
+	case typing.EDecimal.Kind:
+		return DecimalConverter{}, nil
+	case typing.Integer.Kind:
+		return IntegerConverter{}, nil
+	case typing.Float.Kind:
+		return FloatConverter{}, nil
 	}
 
 	// TODO: Return an error when all the types are implemented.
@@ -93,4 +102,55 @@ func (ArrayConverter) Convert(value any) (string, error) {
 	}
 
 	return string(colValBytes), nil
+}
+
+type IntegerConverter struct{}
+
+func (IntegerConverter) Convert(value any) (string, error) {
+	switch parsedVal := value.(type) {
+	case float32:
+		return Float32ToString(parsedVal), nil
+	case float64:
+		return Float64ToString(parsedVal), nil
+	case bool:
+		return fmt.Sprint(BooleanToBit(parsedVal)), nil
+	case int, int8, int16, int32, int64:
+		return fmt.Sprint(parsedVal), nil
+	default:
+		return "", fmt.Errorf("unexpected value: '%v', type: %T", value, value)
+	}
+}
+
+type FloatConverter struct{}
+
+func (FloatConverter) Convert(value any) (string, error) {
+	switch parsedVal := value.(type) {
+	case float32:
+		return Float32ToString(parsedVal), nil
+	case float64:
+		return Float64ToString(parsedVal), nil
+	case int, int8, int16, int32, int64:
+		return fmt.Sprint(parsedVal), nil
+	default:
+		return "", fmt.Errorf("unexpected value: '%v', type: %T", value, value)
+	}
+}
+
+type DecimalConverter struct{}
+
+func (DecimalConverter) Convert(value any) (string, error) {
+	switch castedColVal := value.(type) {
+	case float32:
+		return Float32ToString(castedColVal), nil
+	case float64:
+		return Float64ToString(castedColVal), nil
+	case int, int8, int16, int32, int64:
+		return fmt.Sprint(castedColVal), nil
+	case string:
+		return castedColVal, nil
+	case *decimal.Decimal:
+		return castedColVal.String(), nil
+	default:
+		return "", fmt.Errorf("unexpected value: '%v' type: %T", value, value)
+	}
 }

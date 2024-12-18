@@ -10,9 +10,9 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/converters"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
-	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
 func parseValue(colVal any, colKind columns.Column) (any, error) {
@@ -22,7 +22,7 @@ func parseValue(colVal any, colKind columns.Column) (any, error) {
 
 	boolVal, isOk := colVal.(bool)
 	if isOk {
-		colVal = values.BooleanToBit(boolVal)
+		colVal = converters.BooleanToBit(boolVal)
 	}
 
 	colValString := fmt.Sprint(colVal)
