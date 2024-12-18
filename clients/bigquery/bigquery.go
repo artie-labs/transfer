@@ -183,8 +183,13 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 			return fmt.Errorf("failed to append rows: %w", err)
 		}
 
-		if resp, err := result.FullResponse(ctx); err != nil {
-			return fmt.Errorf("failed to get response (%s): %w", resp.GetError().String(), err)
+		resp, err := result.FullResponse(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get response: %w", err)
+		}
+
+		if status := resp.GetError(); status != nil {
+			return fmt.Errorf("failed to append rows: %s", status.String())
 		}
 
 		return nil
