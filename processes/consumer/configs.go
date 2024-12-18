@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 
 	"github.com/artie-labs/transfer/lib/artie"
@@ -45,6 +46,8 @@ func commitOffset(ctx context.Context, topic string, partitionsToOffset map[stri
 				if err := topicToConsumer.Get(topic).CommitMessages(ctx, *msg.KafkaMsg); err != nil {
 					return err
 				}
+
+				slog.Info("Committing offset", slog.String("topic", topic), slog.Int("partition", msg.KafkaMsg.Partition), slog.Int64("offset", msg.KafkaMsg.Offset))
 			}
 
 			if msg.PubSub != nil {
