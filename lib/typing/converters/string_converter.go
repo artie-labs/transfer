@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
+
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
@@ -78,6 +80,14 @@ func (TimestampTZConverter) Convert(value any) (string, error) {
 type ArrayConverter struct{}
 
 func (ArrayConverter) Convert(value any) (string, error) {
+	// If the column value is TOASTED, we should return an array with the TOASTED placeholder
+	// We're doing this to make sure that the value matches the schema.
+	if stringValue, ok := value.(string); ok {
+		if stringValue == constants.ToastUnavailableValuePlaceholder {
+			return fmt.Sprintf(`["%s"]`, constants.ToastUnavailableValuePlaceholder), nil
+		}
+	}
+
 	colValBytes, err := json.Marshal(value)
 	if err != nil {
 		return "", err
