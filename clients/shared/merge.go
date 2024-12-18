@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/destination"
-	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/jitter"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -59,9 +58,10 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 
 	temporaryTableID := TempTableIDWithSuffix(dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name()), tableData.TempTableSuffix())
 	defer func() {
-		if dropErr := ddl.DropTemporaryTable(dwh, temporaryTableID, false); dropErr != nil {
-			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))
-		}
+		// Don't drop the temporary table.
+		//if dropErr := ddl.DropTemporaryTable(dwh, temporaryTableID, false); dropErr != nil {
+		//	slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))
+		//}
 	}()
 
 	if err = dwh.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID, tableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {

@@ -148,6 +148,7 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 	if err != nil {
 		return fmt.Errorf("failed to create managedwriter client: %w", err)
 	}
+
 	defer managedWriterClient.Close()
 
 	managedStream, err := managedWriterClient.NewManagedStream(ctx,
@@ -161,6 +162,7 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 	if err != nil {
 		return fmt.Errorf("failed to create managed stream: %w", err)
 	}
+
 	defer managedStream.Close()
 
 	encoder := func(row map[string]any) ([]byte, error) {
@@ -180,11 +182,19 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 	return batch.BySize(tableData.Rows(), maxRequestByteSize, false, encoder, func(chunk [][]byte) error {
 		result, err := managedStream.AppendRows(ctx, chunk)
 		if err != nil {
+			slog.Error("Failed to append rows", slog.Any("err", err))
 			return fmt.Errorf("failed to append rows: %w", err)
 		}
 
-		if resp, err := result.FullResponse(ctx); err != nil {
-			return fmt.Errorf("failed to get response (%s): %w", resp.GetError().String(), err)
+		resp, err := result.FullResponse(ctx)
+		if err != nil {
+			slog.Error("Failed to get response", slog.Any("err", err))
+			return fmt.Errorf("failed to get response: %w", err)
+		}
+
+		if status := resp.GetError(); status != nil {
+			slog.Error("Failed to append rows", slog.String("status", status.String()))
+			return fmt.Errorf("failed to append rows: %s", status.String())
 		}
 
 		return nil

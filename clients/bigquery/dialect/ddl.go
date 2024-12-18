@@ -17,7 +17,7 @@ func (BigQueryDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, tempor
 		return fmt.Sprintf(
 			`%s OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
 			query,
-			BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)),
+			BQExpiresDate(time.Now().UTC().Add(constants.ExtraLongTTL)),
 		)
 	} else {
 		return query
