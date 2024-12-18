@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
-
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
