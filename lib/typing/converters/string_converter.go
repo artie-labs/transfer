@@ -3,6 +3,7 @@ package converters
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -35,6 +36,8 @@ func GetStringConverter(kd typing.KindDetails) (StringConverter, error) {
 		return IntegerConverter{}, nil
 	case typing.Float.Kind:
 		return FloatConverter{}, nil
+	case typing.Struct.Kind:
+		return StructConverter{}, nil
 	}
 
 	// TODO: Return an error when all the types are implemented.
@@ -45,6 +48,7 @@ type DateConverter struct{}
 
 func (DateConverter) Convert(value any) (string, error) {
 	_time, err := ext.ParseDateFromAny(value)
+
 	if err != nil {
 		return "", fmt.Errorf("failed to cast colVal as date, colVal: '%v', err: %w", value, err)
 	}
@@ -152,5 +156,25 @@ func (DecimalConverter) Convert(value any) (string, error) {
 		return castedColVal.String(), nil
 	default:
 		return "", fmt.Errorf("unexpected value: '%v' type: %T", value, value)
+	}
+}
+
+type StructConverter struct{}
+
+func (StructConverter) Convert(value any) (string, error) {
+	if strings.Contains(fmt.Sprint(value), constants.ToastUnavailableValuePlaceholder) {
+		return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
+	}
+
+	switch castedValue := (value).(type) {
+	case string:
+		return castedValue, nil
+	default:
+		colValBytes, err := json.Marshal(value)
+		if err != nil {
+			return "", err
+		}
+
+		return string(colValBytes), nil
 	}
 }

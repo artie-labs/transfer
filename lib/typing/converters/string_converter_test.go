@@ -104,3 +104,36 @@ func TestDecimalConverter_Convert(t *testing.T) {
 		}
 	}
 }
+
+func TestStructConverter_Convert(t *testing.T) {
+	{
+		// Toast
+		val, err := StructConverter{}.Convert(constants.ToastUnavailableValuePlaceholder)
+		assert.NoError(t, err)
+		assert.Equal(t, `{"key":"__debezium_unavailable_value"}`, val)
+	}
+	{
+		// Toast object
+		val, err := StructConverter{}.Convert(`{"__debezium_unavailable_value":"__debezium_unavailable_value"}`)
+		assert.NoError(t, err)
+		assert.Equal(t, `{"key":"__debezium_unavailable_value"}`, val)
+	}
+	{
+		// Normal string
+		val, err := StructConverter{}.Convert(`{"foo":"bar"}`)
+		assert.NoError(t, err)
+		assert.Equal(t, `{"foo":"bar"}`, val)
+	}
+	{
+		// Boolean
+		val, err := StructConverter{}.Convert(true)
+		assert.NoError(t, err)
+		assert.Equal(t, "true", val)
+	}
+	{
+		// Map
+		val, err := StructConverter{}.Convert(map[string]any{"foo": "bar"})
+		assert.NoError(t, err)
+		assert.Equal(t, `{"foo":"bar"}`, val)
+	}
+}
