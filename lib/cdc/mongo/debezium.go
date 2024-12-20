@@ -73,10 +73,19 @@ func (Debezium) Labels() []string {
 }
 
 func (Debezium) GetPrimaryKey(key []byte, tc kafkalib.TopicConfig) (map[string]any, error) {
+	fmt.Println("GetPrimaryKey", "key", string(key))
+
 	kvMap, err := debezium.ParsePartitionKey(key, tc.CDCKeyFormat)
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("before kvmap", kvMap)
+	if payload, ok := kvMap["payload"]; ok {
+		kvMap = payload.(map[string]any)
+	}
+
+	fmt.Println("after kvMap", kvMap)
 
 	// This code is needed because the partition key bytes returns nested objects as a string
 	// Such that, the value looks like this: {"id":"{\"$oid\": \"640127e4beeb1ccfc821c25b\"}"}
