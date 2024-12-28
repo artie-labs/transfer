@@ -3,8 +3,12 @@ package converters
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
+	"reflect"
 	"strings"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/stringutil"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -12,12 +16,15 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-type StringConverter interface {
+type Converter interface {
 	Convert(value any) (string, error)
 }
 
-func GetStringConverter(kd typing.KindDetails) (StringConverter, error) {
+func GetStringConverter(kd typing.KindDetails) (Converter, error) {
 	switch kd.Kind {
+	// String
+	case typing.String.Kind:
+		return StringConverter{}, nil
 	// Time
 	case typing.Date.Kind:
 		return DateConverter{}, nil
@@ -38,10 +45,29 @@ func GetStringConverter(kd typing.KindDetails) (StringConverter, error) {
 		return FloatConverter{}, nil
 	case typing.Struct.Kind:
 		return StructConverter{}, nil
+	default:
+		slog.Warn("[GetStringConverter] - Unsupported type", slog.String("kind", kd.Kind))
+		return nil, nil
+	}
+}
+
+type StringConverter struct{}
+
+func (StringConverter) Convert(value any) (string, error) {
+	// TODO Simplify this function
+	isArray := reflect.ValueOf(value).Kind() == reflect.Slice
+	_, isMap := value.(map[string]any)
+	// If colVal is either an array or a JSON object, we should run JSON parse.
+	if isMap || isArray {
+		colValBytes, err := json.Marshal(value)
+		if err != nil {
+			return "", err
+		}
+
+		return string(colValBytes), nil
 	}
 
-	// TODO: Return an error when all the types are implemented.
-	return nil, nil
+	return stringutil.EscapeBackslashes(fmt.Sprint(value)), nil
 }
 
 type DateConverter struct{}
