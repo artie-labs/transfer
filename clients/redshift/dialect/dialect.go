@@ -36,7 +36,15 @@ func (rd RedshiftDialect) BuildIsNotToastValueExpression(tableAlias constants.Ta
 
 	switch column.KindDetails {
 	case typing.Struct, typing.Array:
-		return fmt.Sprintf("COALESCE(JSON_SERIALIZE(%s) NOT LIKE '%s', TRUE)", colName, toastedValue)
+		return fmt.Sprintf(`
+COALESCE(
+	CASE
+		WHEN JSON_SIZE(%s) < 500 THEN JSON_SERIALIZE(%s) NOT LIKE '%s'
+	ELSE
+		TRUE
+	END,
+	TRUE
+)`, colName, colName, toastedValue)
 	default:
 		return fmt.Sprintf(`COALESCE(%s NOT LIKE '%s', TRUE)`, colName, toastedValue)
 	}
