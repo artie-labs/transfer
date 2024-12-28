@@ -10,6 +10,26 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
+func TestBooleanConverter_Convert(t *testing.T) {
+	{
+		// Not boolean
+		_, err := BooleanConverter{}.Convert("foo")
+		assert.ErrorContains(t, err, `failed to cast colVal as boolean, colVal: 'foo', type: string`)
+	}
+	{
+		// True
+		val, err := BooleanConverter{}.Convert(true)
+		assert.NoError(t, err)
+		assert.Equal(t, "true", val)
+	}
+	{
+		// False
+		val, err := BooleanConverter{}.Convert(false)
+		assert.NoError(t, err)
+		assert.Equal(t, "false", val)
+	}
+}
+
 func TestArrayConverter_Convert(t *testing.T) {
 	// Array
 	{

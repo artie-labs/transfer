@@ -21,10 +21,12 @@ type Converter interface {
 
 func GetStringConverter(kd typing.KindDetails) (Converter, error) {
 	switch kd.Kind {
-	// String
+	// Base types
+	case typing.Boolean.Kind:
+		return BooleanConverter{}, nil
 	case typing.String.Kind:
 		return StringConverter{}, nil
-	// Time
+	// Time types
 	case typing.Date.Kind:
 		return DateConverter{}, nil
 	case typing.Time.Kind:
@@ -33,21 +35,34 @@ func GetStringConverter(kd typing.KindDetails) (Converter, error) {
 		return TimestampNTZConverter{}, nil
 	case typing.TimestampTZ.Kind:
 		return TimestampTZConverter{}, nil
+	// Array and struct types
 	case typing.Array.Kind:
 		return ArrayConverter{}, nil
-	// Numbers
+	case typing.Struct.Kind:
+		return StructConverter{}, nil
+	// Numbers types
 	case typing.EDecimal.Kind:
 		return DecimalConverter{}, nil
 	case typing.Integer.Kind:
 		return IntegerConverter{}, nil
 	case typing.Float.Kind:
 		return FloatConverter{}, nil
-	case typing.Struct.Kind:
-		return StructConverter{}, nil
+
 	default:
 		slog.Warn("[GetStringConverter] - Unsupported type", slog.String("kind", kd.Kind))
 		return nil, nil
 	}
+}
+
+type BooleanConverter struct{}
+
+func (BooleanConverter) Convert(value any) (string, error) {
+	booleanValue, isOk := value.(bool)
+	if !isOk {
+		return "", fmt.Errorf("failed to cast colVal as boolean, colVal: '%v', type: %T", value, value)
+	}
+
+	return fmt.Sprint(booleanValue), nil
 }
 
 type StringConverter struct{}
