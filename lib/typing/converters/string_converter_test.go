@@ -3,12 +3,109 @@ package converters
 import (
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/typing"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
+
+func TestGetStringConverter(t *testing.T) {
+	{
+		// Boolean
+		converter, err := GetStringConverter(typing.Boolean)
+		assert.NoError(t, err)
+		assert.IsType(t, BooleanConverter{}, converter)
+	}
+	{
+		// String
+		converter, err := GetStringConverter(typing.String)
+		assert.NoError(t, err)
+		assert.IsType(t, StringConverter{}, converter)
+	}
+	{
+		// Date
+		converter, err := GetStringConverter(typing.Date)
+		assert.NoError(t, err)
+		assert.IsType(t, DateConverter{}, converter)
+	}
+	{
+		// Time
+		converter, err := GetStringConverter(typing.Time)
+		assert.NoError(t, err)
+		assert.IsType(t, TimeConverter{}, converter)
+	}
+	{
+		// TimestampNTZ
+		converter, err := GetStringConverter(typing.TimestampNTZ)
+		assert.NoError(t, err)
+		assert.IsType(t, TimestampNTZConverter{}, converter)
+	}
+	{
+		// TimestampTZ
+		converter, err := GetStringConverter(typing.TimestampTZ)
+		assert.NoError(t, err)
+		assert.IsType(t, TimestampTZConverter{}, converter)
+	}
+	{
+		// Array
+		converter, err := GetStringConverter(typing.Array)
+		assert.NoError(t, err)
+		assert.IsType(t, ArrayConverter{}, converter)
+	}
+	{
+		// Struct
+		converter, err := GetStringConverter(typing.Struct)
+		assert.NoError(t, err)
+		assert.IsType(t, StructConverter{}, converter)
+	}
+	{
+		// EDecimal
+		converter, err := GetStringConverter(typing.EDecimal)
+		assert.NoError(t, err)
+		assert.IsType(t, DecimalConverter{}, converter)
+	}
+	{
+		// Integer
+		converter, err := GetStringConverter(typing.Integer)
+		assert.NoError(t, err)
+		assert.IsType(t, IntegerConverter{}, converter)
+	}
+	{
+		// Float
+		converter, err := GetStringConverter(typing.Float)
+		assert.NoError(t, err)
+		assert.IsType(t, FloatConverter{}, converter)
+	}
+	{
+		// Invalid
+		converter, err := GetStringConverter(typing.Invalid)
+		assert.NoError(t, err)
+		assert.Nil(t, converter)
+	}
+}
+
+func TestBooleanConverter_Convert(t *testing.T) {
+	{
+		// Not boolean
+		_, err := BooleanConverter{}.Convert("foo")
+		assert.ErrorContains(t, err, `failed to cast colVal as boolean, colVal: 'foo', type: string`)
+	}
+	{
+		// True
+		val, err := BooleanConverter{}.Convert(true)
+		assert.NoError(t, err)
+		assert.Equal(t, "true", val)
+	}
+	{
+		// False
+		val, err := BooleanConverter{}.Convert(false)
+		assert.NoError(t, err)
+		assert.Equal(t, "false", val)
+	}
+}
 
 func TestArrayConverter_Convert(t *testing.T) {
 	// Array
