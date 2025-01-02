@@ -12,6 +12,7 @@ import (
 	"cloud.google.com/go/bigquery/storage/managedwriter"
 	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
 	_ "github.com/viant/bigquery"
+	"google.golang.org/api/option"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
@@ -40,6 +41,7 @@ type Store struct {
 	auditRows bool
 	configMap *types.DwhToTablesConfigMap
 	config    config.Config
+	bqClient  *bigquery.Client
 
 	db.Store
 }
@@ -100,19 +102,18 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	if s.auditRows {
-		// We are performing an additional query because the default managed append stream does not provide offsets.
-		var tblRowCount int64
-		if err = s.QueryRow(`SELECT COUNT(*) FROM %s`, tempTableID.FullyQualifiedName()).Scan(&tblRowCount); err != nil {
-			return fmt.Errorf("failed to count rows in temporary table: %w", err)
+		resp, err := s.bqClient.Dataset(bqTempTableID.Dataset()).Table(bqTempTableID.Table()).Metadata(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get %q metadata: %w", tempTableID.FullyQualifiedName(), err)
 		}
 
-		expectedRowCount := int64(len(tableData.Rows()))
-		// TableCount could be higher since AppendRows is at least once delivery.
-		if tblRowCount >= expectedRowCount {
+		expectedRowCount := uint64(len(tableData.Rows()))
+		// [resp.NumRows] could be higher since AppendRows is at least once delivery.
+		if resp.NumRows >= expectedRowCount {
 			return nil
 		}
 
-		return fmt.Errorf("temporary table row count mismatch, expected: %d, got: %d", expectedRowCount, tblRowCount)
+		return fmt.Errorf("temporary table row count mismatch, expected: %d, got: %d", expectedRowCount, resp.NumRows)
 	}
 
 	return nil
@@ -252,10 +253,16 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
 	if credPath := cfg.BigQuery.PathToCredentials; credPath != "" {
 		// If the credPath is set, let's set it into the env var.
 		slog.Debug("Writing the path to BQ credentials to env var for google auth")
-		err := os.Setenv(GooglePathToCredentialsEnvKey, credPath)
-		if err != nil {
+		if err := os.Setenv(GooglePathToCredentialsEnvKey, credPath); err != nil {
 			return nil, fmt.Errorf("error setting env var for %q : %w", GooglePathToCredentialsEnvKey, err)
 		}
+	}
+
+	bqClient, err := bigquery.NewClient(context.Background(), cfg.BigQuery.ProjectID,
+		option.WithCredentialsFile(os.Getenv(GooglePathToCredentialsEnvKey)),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create bigquery client: %w", err)
 	}
 
 	store, err := db.Open("bigquery", cfg.BigQuery.DSN())
@@ -272,6 +279,7 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
 	}
 
 	return &Store{
+		bqClient:  bqClient,
 		auditRows: auditRows,
 		configMap: &types.DwhToTablesConfigMap{},
 		config:    cfg,
