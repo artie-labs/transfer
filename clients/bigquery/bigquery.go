@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 	"strings"
 
 	"cloud.google.com/go/bigquery"
@@ -35,6 +36,7 @@ const (
 )
 
 type Store struct {
+	auditRows bool
 	configMap *types.DwhToTablesConfigMap
 	config    config.Config
 
@@ -92,7 +94,27 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		return err
 	}
 
-	return s.putTable(ctx, bqTempTableID, tableData)
+	if err = s.putTable(ctx, bqTempTableID, tableData); err != nil {
+		return fmt.Errorf("failed to put table: %w", err)
+	}
+
+	// Check if debug mode is on
+	if s.auditRows {
+		var tableCount int64
+		if err = s.QueryRow(`SELECT COUNT(*) FROM %s`, tempTableID.FullyQualifiedName()).Scan(&tableCount); err != nil {
+			return fmt.Errorf("failed to count rows in temporary table: %w", err)
+		}
+
+		expectedRowCount := int64(len(tableData.Rows()))
+		// TableCount could be higher since AppendRows is at least once delivery.
+		if tableCount > expectedRowCount {
+			return nil
+		}
+
+		return fmt.Errorf("temporary table row count mismatch, expected: %d, got: %d", expectedRowCount, tableCount)
+	}
+
+	return nil
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
@@ -239,9 +261,20 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	var auditRows bool
+	if val := os.Getenv("BQ_AUDIT"); val != "" {
+		auditRows, err = strconv.ParseBool(val)
+		if err != nil {
+			logger.Panic("Failed to parse BQ_AUDIT", slog.Any("err", err))
+		}
+	}
+
 	return &Store{
-		Store:     store,
+		auditRows: auditRows,
 		configMap: &types.DwhToTablesConfigMap{},
 		config:    cfg,
+
+		Store: store,
 	}, nil
 }
