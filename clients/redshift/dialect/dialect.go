@@ -40,12 +40,12 @@ func (rd RedshiftDialect) BuildIsNotToastValueExpression(tableAlias constants.Ta
 		// If the value is greater than 500 characters, it's likely not going to be toasted, so we can skip the check.
 		return fmt.Sprintf(`
 COALESCE(
-	CASE
-		WHEN JSON_SIZE(%s) < 500 THEN JSON_SERIALIZE(%s) NOT LIKE '%s'
-	ELSE
-		TRUE
-	END,
-	TRUE
+    CASE
+        WHEN JSON_SIZE(%s) < 500 THEN JSON_SERIALIZE(%s) NOT LIKE '%s'
+    ELSE
+        TRUE
+    END,
+    TRUE
 )`, colName, colName, toastedValue)
 	default:
 		return fmt.Sprintf(`COALESCE(%s NOT LIKE '%s', TRUE)`, colName, toastedValue)
