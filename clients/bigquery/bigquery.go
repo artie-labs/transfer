@@ -34,7 +34,7 @@ import (
 const (
 	GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
 	// Storage Write API is limited to 10 MiB, subtract 400 KiB to account for request overhead.
-	maxRequestByteSize = (1 * 1024 * 1024) - (400 * 1024)
+	maxRequestByteSize = (10 * 1024 * 1024) - (400 * 1024)
 )
 
 type Store struct {
@@ -215,10 +215,7 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 		return bytes, nil
 	}
 
-	var count int
 	return batch.BySize(tableData.Rows(), maxRequestByteSize, false, encoder, func(chunk [][]byte) error {
-		count += 1
-		fmt.Println(fmt.Sprintf("Count %d", count))
 		result, err := managedStream.AppendRows(ctx, chunk)
 		if err != nil {
 			return fmt.Errorf("failed to append rows: %w", err)
