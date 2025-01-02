@@ -100,6 +100,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	if s.auditRows {
+		// We are performing an additional query because the default managed append stream does not provide offsets.
 		var tblRowCount int64
 		if err = s.QueryRow(`SELECT COUNT(*) FROM %s`, tempTableID.FullyQualifiedName()).Scan(&tblRowCount); err != nil {
 			return fmt.Errorf("failed to count rows in temporary table: %w", err)
@@ -111,7 +112,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 			return nil
 		}
 
-		return fmt.Errorf("temporary table row count mismatch, expected: %d, got: %d", expectedRowCount, tableCount)
+		return fmt.Errorf("temporary table row count mismatch, expected: %d, got: %d", expectedRowCount, tblRowCount)
 	}
 
 	return nil
@@ -266,7 +267,7 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
 	if val := os.Getenv("BQ_AUDIT_ROWS"); val != "" {
 		auditRows, err = strconv.ParseBool(val)
 		if err != nil {
-			logger.Panic("Failed to parse BQ_AUDIT", slog.Any("err", err))
+			logger.Panic("Failed to parse BQ_AUDIT_ROWS", slog.Any("err", err))
 		}
 	}
 
@@ -274,7 +275,6 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
 		auditRows: auditRows,
 		configMap: &types.DwhToTablesConfigMap{},
 		config:    cfg,
-
-		Store: store,
+		Store:     store,
 	}, nil
 }
