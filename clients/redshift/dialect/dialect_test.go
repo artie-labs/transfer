@@ -92,12 +92,12 @@ func TestRedshiftDialect_BuildIsNotToastValueExpression(t *testing.T) {
 		assert.Equal(t,
 			`
 COALESCE(
-	CASE
-		WHEN JSON_SIZE(tbl."foo") < 500 THEN JSON_SERIALIZE(tbl."foo") NOT LIKE '%__debezium_unavailable_value%'
-	ELSE
-		TRUE
-	END,
-	TRUE
+    CASE
+        WHEN JSON_SIZE(tbl."foo") < 500 THEN JSON_SERIALIZE(tbl."foo") NOT LIKE '%__debezium_unavailable_value%'
+    ELSE
+        TRUE
+    END,
+    TRUE
 )`, RedshiftDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("foo", typing.Struct)),
 		)
 	}
@@ -106,12 +106,12 @@ COALESCE(
 		assert.Equal(t,
 			`
 COALESCE(
-	CASE
-		WHEN JSON_SIZE(tbl."foo") < 500 THEN JSON_SERIALIZE(tbl."foo") NOT LIKE '%__debezium_unavailable_value%'
-	ELSE
-		TRUE
-	END,
-	TRUE
+    CASE
+        WHEN JSON_SIZE(tbl."foo") < 500 THEN JSON_SERIALIZE(tbl."foo") NOT LIKE '%__debezium_unavailable_value%'
+    ELSE
+        TRUE
+    END,
+    TRUE
 )`, RedshiftDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("foo", typing.Array)),
 		)
 	}

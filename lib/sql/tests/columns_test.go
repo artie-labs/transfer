@@ -159,12 +159,12 @@ func TestBuildColumnsUpdateFragment_Redshift(t *testing.T) {
 			columns: lastCaseColTypes,
 			expectedString: `"a1"= CASE WHEN 
 COALESCE(
-	CASE
-		WHEN JSON_SIZE(stg."a1") < 500 THEN JSON_SERIALIZE(stg."a1") NOT LIKE '%__debezium_unavailable_value%'
-	ELSE
-		TRUE
-	END,
-	TRUE
+    CASE
+        WHEN JSON_SIZE(stg."a1") < 500 THEN JSON_SERIALIZE(stg."a1") NOT LIKE '%__debezium_unavailable_value%'
+    ELSE
+        TRUE
+    END,
+    TRUE
 ) THEN stg."a1" ELSE tgt."a1" END,"b2"= CASE WHEN COALESCE(stg."b2" NOT LIKE '%__debezium_unavailable_value%', TRUE) THEN stg."b2" ELSE tgt."b2" END,"c3"=stg."c3"`,
 		},
 	}
