@@ -99,7 +99,6 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		return fmt.Errorf("failed to put table: %w", err)
 	}
 
-	// Check if debug mode is on
 	if s.auditRows {
 		var tblRowCount int64
 		if err = s.QueryRow(`SELECT COUNT(*) FROM %s`, tempTableID.FullyQualifiedName()).Scan(&tblRowCount); err != nil {
