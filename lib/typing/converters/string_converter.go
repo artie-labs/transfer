@@ -3,22 +3,30 @@ package converters
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
+	"reflect"
 	"strings"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-type StringConverter interface {
+type Converter interface {
 	Convert(value any) (string, error)
 }
 
-func GetStringConverter(kd typing.KindDetails) (StringConverter, error) {
+func GetStringConverter(kd typing.KindDetails) (Converter, error) {
 	switch kd.Kind {
-	// Time
+	// Base types
+	case typing.Boolean.Kind:
+		return BooleanConverter{}, nil
+	case typing.String.Kind:
+		return StringConverter{}, nil
+	// Time types
 	case typing.Date.Kind:
 		return DateConverter{}, nil
 	case typing.Time.Kind:
@@ -27,21 +35,53 @@ func GetStringConverter(kd typing.KindDetails) (StringConverter, error) {
 		return TimestampNTZConverter{}, nil
 	case typing.TimestampTZ.Kind:
 		return TimestampTZConverter{}, nil
+	// Array and struct types
 	case typing.Array.Kind:
 		return ArrayConverter{}, nil
-	// Numbers
+	case typing.Struct.Kind:
+		return StructConverter{}, nil
+	// Numbers types
 	case typing.EDecimal.Kind:
 		return DecimalConverter{}, nil
 	case typing.Integer.Kind:
 		return IntegerConverter{}, nil
 	case typing.Float.Kind:
 		return FloatConverter{}, nil
-	case typing.Struct.Kind:
-		return StructConverter{}, nil
+
+	default:
+		slog.Warn("[GetStringConverter] - Unsupported type", slog.String("kind", kd.Kind))
+		return nil, nil
+	}
+}
+
+type BooleanConverter struct{}
+
+func (BooleanConverter) Convert(value any) (string, error) {
+	booleanValue, isOk := value.(bool)
+	if !isOk {
+		return "", fmt.Errorf("failed to cast colVal as boolean, colVal: '%v', type: %T", value, value)
 	}
 
-	// TODO: Return an error when all the types are implemented.
-	return nil, nil
+	return fmt.Sprint(booleanValue), nil
+}
+
+type StringConverter struct{}
+
+func (StringConverter) Convert(value any) (string, error) {
+	// TODO Simplify this function
+	isArray := reflect.ValueOf(value).Kind() == reflect.Slice
+	_, isMap := value.(map[string]any)
+	// If colVal is either an array or a JSON object, we should run JSON parse.
+	if isMap || isArray {
+		colValBytes, err := json.Marshal(value)
+		if err != nil {
+			return "", err
+		}
+
+		return string(colValBytes), nil
+	}
+
+	return stringutil.EscapeBackslashes(fmt.Sprint(value)), nil
 }
 
 type DateConverter struct{}
