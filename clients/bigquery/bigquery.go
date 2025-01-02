@@ -36,6 +36,7 @@ const (
 )
 
 type Store struct {
+	// If [auditRows] is enabled, we will perform an additional query to ensure that the number of rows in the temporary table matches the expected number of rows.
 	auditRows bool
 	configMap *types.DwhToTablesConfigMap
 	config    config.Config
@@ -100,14 +101,14 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 
 	// Check if debug mode is on
 	if s.auditRows {
-		var tableCount int64
-		if err = s.QueryRow(`SELECT COUNT(*) FROM %s`, tempTableID.FullyQualifiedName()).Scan(&tableCount); err != nil {
+		var tblRowCount int64
+		if err = s.QueryRow(`SELECT COUNT(*) FROM %s`, tempTableID.FullyQualifiedName()).Scan(&tblRowCount); err != nil {
 			return fmt.Errorf("failed to count rows in temporary table: %w", err)
 		}
 
 		expectedRowCount := int64(len(tableData.Rows()))
 		// TableCount could be higher since AppendRows is at least once delivery.
-		if tableCount > expectedRowCount {
+		if tblRowCount >= expectedRowCount {
 			return nil
 		}
 
@@ -263,7 +264,7 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
 	}
 
 	var auditRows bool
-	if val := os.Getenv("BQ_AUDIT"); val != "" {
+	if val := os.Getenv("BQ_AUDIT_ROWS"); val != "" {
 		auditRows, err = strconv.ParseBool(val)
 		if err != nil {
 			logger.Panic("Failed to parse BQ_AUDIT", slog.Any("err", err))
