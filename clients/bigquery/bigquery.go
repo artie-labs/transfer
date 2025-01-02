@@ -1,19 +1,20 @@
 package bigquery
 
 import (
-	"cloud.google.com/go/bigquery"
-	"cloud.google.com/go/bigquery/storage/managedwriter"
-	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
 	"context"
 	"fmt"
-	_ "github.com/viant/bigquery"
-	"google.golang.org/api/option"
-	"google.golang.org/protobuf/proto"
 	"log/slog"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"cloud.google.com/go/bigquery"
+	"cloud.google.com/go/bigquery/storage/managedwriter"
+	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
+	_ "github.com/viant/bigquery"
+	"google.golang.org/api/option"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
@@ -102,13 +103,13 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	if s.auditRows {
-		return s.auditStagingTable(bqTempTableID, tableData)
+		return s.auditStagingTable(ctx, bqTempTableID, tableData)
 	}
 
 	return nil
 }
 
-func (s *Store) auditStagingTable(bqTempTableID dialect.TableIdentifier, tableData *optimization.TableData) error {
+func (s *Store) auditStagingTable(ctx context.Context, bqTempTableID dialect.TableIdentifier, tableData *optimization.TableData) error {
 	var stagingTableRowsCount uint64
 	expectedRowCount := uint64(len(tableData.Rows()))
 	// The streaming metadata does not appear right away, we'll wait up to 5s for it to appear.
@@ -116,7 +117,7 @@ func (s *Store) auditStagingTable(bqTempTableID dialect.TableIdentifier, tableDa
 		time.Sleep(500 * time.Millisecond)
 		resp, err := s.bqClient.Dataset(bqTempTableID.Dataset()).Table(bqTempTableID.Table()).Metadata(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to get %q metadata: %w", tempTableID.FullyQualifiedName(), err)
+			return fmt.Errorf("failed to get %q metadata: %w", bqTempTableID.FullyQualifiedName(), err)
 		}
 
 		if stagingTableRowsCount == 0 {
