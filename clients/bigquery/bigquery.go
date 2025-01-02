@@ -111,7 +111,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 
 func (s *Store) auditStagingTable(ctx context.Context, bqTempTableID dialect.TableIdentifier, tableData *optimization.TableData) error {
 	var stagingTableRowsCount uint64
-	expectedRowCount := uint64(len(tableData.Rows()))
+	expectedRowCount := uint64(tableData.NumberOfRows())
 	// The streaming metadata does not appear right away, we'll wait up to 5s for it to appear.
 	for i := 0; i < 10; i++ {
 		time.Sleep(500 * time.Millisecond)
