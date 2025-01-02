@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/bigquery/storage/managedwriter"
@@ -102,18 +103,32 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	if s.auditRows {
-		resp, err := s.bqClient.Dataset(bqTempTableID.Dataset()).Table(bqTempTableID.Table()).Metadata(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to get %q metadata: %w", tempTableID.FullyQualifiedName(), err)
+		var actualRowCounts uint64
+		// The streaming metadata does not appear right away, we'll wait up to 5s for it to appear.
+		for i := 0; i < 10; i++ {
+			time.Sleep(500 * time.Millisecond)
+			resp, err := s.bqClient.Dataset(bqTempTableID.Dataset()).Table(bqTempTableID.Table()).Metadata(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to get %q metadata: %w", tempTableID.FullyQualifiedName(), err)
+			}
+
+			actualRowCounts = resp.NumRows
+			if resp.StreamingBuffer != nil {
+				actualRowCounts += resp.StreamingBuffer.EstimatedRows
+			}
+
+			if actualRowCounts > 0 {
+				break
+			}
 		}
 
 		expectedRowCount := uint64(len(tableData.Rows()))
 		// [resp.NumRows] could be higher since AppendRows is at least once delivery.
-		if resp.NumRows >= expectedRowCount {
+		if actualRowCounts >= expectedRowCount {
 			return nil
 		}
 
-		return fmt.Errorf("temporary table row count mismatch, expected: %d, got: %d", expectedRowCount, resp.NumRows)
+		return fmt.Errorf("temporary table row count mismatch, expected: %d, got: %d", expectedRowCount, actualRowCounts)
 	}
 
 	return nil
