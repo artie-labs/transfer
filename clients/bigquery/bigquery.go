@@ -192,6 +192,10 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 			return fmt.Errorf("failed to append rows: %s", status.String())
 		}
 
+		if rowErrs := resp.GetRowErrors(); len(rowErrs) > 0 {
+			return fmt.Errorf("failed to append rows, encountered %d errors", len(rowErrs))
+		}
+
 		return nil
 	})
 }
