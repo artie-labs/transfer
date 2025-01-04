@@ -57,12 +57,20 @@ func GetStringConverter(kd typing.KindDetails) (Converter, error) {
 type BooleanConverter struct{}
 
 func (BooleanConverter) Convert(value any) (string, error) {
-	booleanValue, isOk := value.(bool)
-	if !isOk {
-		return "", fmt.Errorf("failed to cast colVal as boolean, colVal: '%v', type: %T", value, value)
+	switch castedValue := value.(type) {
+	case bool:
+		return fmt.Sprint(castedValue), nil
+	default:
+		// First try to cast the value into a string and see if we can parse it
+		stringValue := strings.ToLower(fmt.Sprint(value))
+		if stringValue == "0" || stringValue == "false" {
+			return "false", nil
+		} else if stringValue == "1" || stringValue == "true" {
+			return "true", nil
+		} else {
+			return "", fmt.Errorf("failed to cast colVal as boolean, colVal: '%v', type: %T", value, value)
+		}
 	}
-
-	return fmt.Sprint(booleanValue), nil
 }
 
 type StringConverter struct{}
