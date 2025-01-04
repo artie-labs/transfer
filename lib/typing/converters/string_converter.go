@@ -62,9 +62,10 @@ func (BooleanConverter) Convert(value any) (string, error) {
 		return fmt.Sprint(castedValue), nil
 	default:
 		// First try to cast the value into a string and see if we can parse it
-		if fmt.Sprint(value) == "0" {
+		stringValue := strings.ToLower(fmt.Sprint(value))
+		if stringValue == "0" || stringValue == "false" {
 			return "false", nil
-		} else if fmt.Sprint(value) == "1" {
+		} else if stringValue == "1" || stringValue == "true" {
 			return "true", nil
 		} else {
 			return "", fmt.Errorf("failed to cast colVal as boolean, colVal: '%v', type: %T", value, value)

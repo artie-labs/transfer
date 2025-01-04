@@ -95,15 +95,19 @@ func TestBooleanConverter_Convert(t *testing.T) {
 	}
 	{
 		// True
-		val, err := BooleanConverter{}.Convert(true)
-		assert.NoError(t, err)
-		assert.Equal(t, "true", val)
+		for _, possibleValue := range []any{1, true, "1", "true", "TRUE", "True"} {
+			val, err := BooleanConverter{}.Convert(possibleValue)
+			assert.NoError(t, err)
+			assert.Equal(t, "true", val)
+		}
 	}
 	{
 		// False
-		val, err := BooleanConverter{}.Convert(false)
-		assert.NoError(t, err)
-		assert.Equal(t, "false", val)
+		for _, possibleValue := range []any{0, false, "0", "false", "FALSE", "False"} {
+			val, err := BooleanConverter{}.Convert(possibleValue)
+			assert.NoError(t, err)
+			assert.Equal(t, "false", val)
+		}
 	}
 }
 
