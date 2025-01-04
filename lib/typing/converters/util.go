@@ -1,8 +1,6 @@
 package converters
 
-import (
-	"strconv"
-)
+import "strconv"
 
 func Float64ToString(value float64) string {
 	return strconv.FormatFloat(value, 'f', -1, 64)
