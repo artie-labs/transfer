@@ -160,6 +160,8 @@ func (IntegerConverter) Convert(value any) (string, error) {
 		return fmt.Sprint(BooleanToBit(parsedVal)), nil
 	case int, int8, int16, int32, int64:
 		return fmt.Sprint(parsedVal), nil
+	case *decimal.Decimal:
+		return parsedVal.String(), nil
 	default:
 		return "", fmt.Errorf("unexpected value: '%v', type: %T", value, value)
 	}
@@ -175,6 +177,8 @@ func (FloatConverter) Convert(value any) (string, error) {
 		return Float64ToString(parsedVal), nil
 	case int, int8, int16, int32, int64:
 		return fmt.Sprint(parsedVal), nil
+	case *decimal.Decimal:
+		return parsedVal.String(), nil
 	default:
 		return "", fmt.Errorf("unexpected value: '%v', type: %T", value, value)
 	}

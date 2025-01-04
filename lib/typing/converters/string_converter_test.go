@@ -142,6 +142,12 @@ func TestFloatConverter_Convert(t *testing.T) {
 		assert.Equal(t, "123.45", val)
 	}
 	{
+		// *decimal.Decimal
+		val, err := FloatConverter{}.Convert(decimal.NewDecimal(numbers.MustParseDecimal("123.45")))
+		assert.NoError(t, err)
+		assert.Equal(t, "123.45", val)
+	}
+	{
 		// Integers
 		for _, input := range []any{42, int8(42), int16(42), int32(42), int64(42), float32(42), float64(42)} {
 			val, err := FloatConverter{}.Convert(input)
@@ -159,6 +165,12 @@ func TestIntegerConverter_Convert(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, "42", parsedVal)
 		}
+	}
+	{
+		// Test decimal.Decimal
+		val, err := IntegerConverter{}.Convert(decimal.NewDecimal(numbers.MustParseDecimal("123")))
+		assert.NoError(t, err)
+		assert.Equal(t, "123", val)
 	}
 	{
 		// Booleans
