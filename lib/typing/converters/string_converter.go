@@ -61,7 +61,8 @@ func (BooleanConverter) Convert(value any) (string, error) {
 	case bool:
 		return fmt.Sprint(castedValue), nil
 	default:
-		// First try to cast the value into a string and see if we can parse it
+		// Try to cast the value into a string and see if we can parse it
+		// If not, then return an error
 		switch strings.ToLower(fmt.Sprint(value)) {
 		case "0", "false":
 			return "false", nil
