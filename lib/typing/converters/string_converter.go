@@ -62,12 +62,12 @@ func (BooleanConverter) Convert(value any) (string, error) {
 		return fmt.Sprint(castedValue), nil
 	default:
 		// First try to cast the value into a string and see if we can parse it
-		stringValue := strings.ToLower(fmt.Sprint(value))
-		if stringValue == "0" || stringValue == "false" {
+		switch strings.ToLower(fmt.Sprint(value)) {
+		case "0", "false":
 			return "false", nil
-		} else if stringValue == "1" || stringValue == "true" {
+		case "1", "true":
 			return "true", nil
-		} else {
+		default:
 			return "", fmt.Errorf("failed to cast colVal as boolean, colVal: '%v', type: %T", value, value)
 		}
 	}
