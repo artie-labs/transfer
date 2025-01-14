@@ -2,6 +2,7 @@ package kafkalib
 
 import (
 	"context"
+
 	"github.com/segmentio/kafka-go"
 )
 

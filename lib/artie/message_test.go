@@ -1,10 +1,11 @@
 package artie
 
 import (
+	"testing"
+
 	"cloud.google.com/go/pubsub"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 const keyString = "Struct{id=12}"
