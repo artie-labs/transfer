@@ -15,6 +15,7 @@ func TestMSSQLDialect_QuoteIdentifier(t *testing.T) {
 	dialect := MSSQLDialect{}
 	assert.Equal(t, `"foo"`, dialect.QuoteIdentifier("foo"))
 	assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("FOO"))
+	assert.Equal(t, `"FOO; BAD"`, dialect.QuoteIdentifier(`FOO"; BAD`))
 }
 
 func TestMSSQLDialect_IsColumnAlreadyExistsErr(t *testing.T) {
