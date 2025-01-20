@@ -26,7 +26,7 @@ func (s *SnowflakeTestSuite) TestBuildRemoveFilesFromStage() {
 	table := dialect.NewTableIdentifier("db", "schema", "table")
 
 	query := s.stageStore.dialect().BuildRemoveFilesFromStage(addPrefixToTableName(table, "%"), "")
-	assert.Equal(s.T(), `REMOVE @db.schema."%table"`, query)
+	assert.Equal(s.T(), `REMOVE @db.schema."%TABLE"`, query)
 }
 
 func (s *SnowflakeTestSuite) TestReplaceExceededValues() {
