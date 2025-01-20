@@ -22,6 +22,13 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+func (s *SnowflakeTestSuite) TestBuildRemoveFilesFromStage() {
+	table := dialect.NewTableIdentifier("db", "schema", "table")
+
+	query := s.stageStore.dialect().BuildRemoveFilesFromStage(addPrefixToTableName(table, "%"), "")
+	assert.Equal(s.T(), `REMOVE @db.schema."%table"`, query)
+}
+
 func (s *SnowflakeTestSuite) TestReplaceExceededValues() {
 	// String + OptionalStringPrecision not set + equal to max LOB length:
 	assert.Equal(s.T(), strings.Repeat("a", 16777216), replaceExceededValues(strings.Repeat("a", 16777216), typing.String))
