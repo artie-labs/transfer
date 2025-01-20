@@ -16,6 +16,7 @@ func TestRedshiftDialect_QuoteIdentifier(t *testing.T) {
 	dialect := RedshiftDialect{}
 	assert.Equal(t, `"foo"`, dialect.QuoteIdentifier("foo"))
 	assert.Equal(t, `"foo"`, dialect.QuoteIdentifier("FOO"))
+	assert.Equal(t, `"foo; bad"`, dialect.QuoteIdentifier(`FOO"; BAD`))
 }
 
 func TestRedshiftDialect_IsColumnAlreadyExistsErr(t *testing.T) {

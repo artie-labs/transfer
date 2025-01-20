@@ -14,7 +14,7 @@ import (
 type SnowflakeDialect struct{}
 
 func (SnowflakeDialect) QuoteIdentifier(identifier string) string {
-	return fmt.Sprintf(`"%s"`, strings.ToUpper(identifier))
+	return fmt.Sprintf(`"%s"`, strings.ToUpper(strings.ReplaceAll(identifier, `"`, ``)))
 }
 
 func (SnowflakeDialect) EscapeStruct(value string) string {

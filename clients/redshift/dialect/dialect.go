@@ -14,7 +14,7 @@ type RedshiftDialect struct{}
 
 func (rd RedshiftDialect) QuoteIdentifier(identifier string) string {
 	// Preserve the existing behavior of Redshift identifiers being lowercased due to not being quoted.
-	return fmt.Sprintf(`"%s"`, strings.ToLower(identifier))
+	return fmt.Sprintf(`"%s"`, strings.ToLower(strings.ReplaceAll(identifier, `"`, ``)))
 }
 
 func (RedshiftDialect) EscapeStruct(value string) string {

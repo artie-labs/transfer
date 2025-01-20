@@ -16,6 +16,7 @@ func TestSnowflakeDialect_QuoteIdentifier(t *testing.T) {
 	dialect := SnowflakeDialect{}
 	assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("foo"))
 	assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("FOO"))
+	assert.Equal(t, `"FOO; BAD"`, dialect.QuoteIdentifier(`FOO"; BAD`))
 }
 
 func TestSnowflakeDialect_IsTableDoesNotExistErr(t *testing.T) {
