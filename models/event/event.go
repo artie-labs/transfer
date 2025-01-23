@@ -199,17 +199,10 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	// Update col if necessary
 	sanitizedData := make(map[string]any)
 	for _col, val := range e.Data {
-		// TODO: Refactor this to call columns.EscapeName(...)
-		// columns need to all be normalized and lower cased.
-		newColName := strings.ToLower(_col)
-		// Columns here could contain spaces. Every destination treats spaces in a column differently.
-		// So far, Snowflake accepts them when escaped properly, however BigQuery does not accept it.
-		// Instead of making this more complicated for future destinations, we will escape the spaces by having double underscore `__`
-		// So, if customers want to retrieve spaces again, they can replace `__`.
-		var containsSpace bool
-		containsSpace, newColName = stringutil.EscapeSpaces(newColName)
-		if containsSpace {
-			// Write the message back if the column has changed.
+		newColName := columns.EscapeName(_col)
+		if newColName != _col {
+			// This means that the column name has changed.
+			// We need to update the column name in the sanitizedData map.
 			sanitizedData[newColName] = val
 		}
 
