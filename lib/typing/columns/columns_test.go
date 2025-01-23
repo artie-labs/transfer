@@ -11,30 +11,10 @@ import (
 )
 
 func TestEscapeName(t *testing.T) {
-	type _testCase struct {
-		name         string
-		expectedName string
-	}
-
-	testCases := []_testCase{
-		{
-			name:         "foo",
-			expectedName: "foo",
-		},
-		{
-			name:         "FOOO",
-			expectedName: "fooo",
-		},
-		{
-			name:         "col with spaces",
-			expectedName: "col__with__spaces",
-		},
-	}
-
-	for _, testCase := range testCases {
-		actualName := EscapeName(testCase.name)
-		assert.Equal(t, testCase.expectedName, actualName, testCase.name)
-	}
+	assert.Equal(t, "foo", EscapeName("foo"))
+	assert.Equal(t, "col_123", EscapeName("123"))
+	assert.Equal(t, "col__with__spaces", EscapeName("col with spaces"))
+	assert.Equal(t, "fooo", EscapeName("FOOO"))
 }
 
 func TestColumn_ShouldSkip(t *testing.T) {

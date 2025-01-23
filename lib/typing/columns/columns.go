@@ -15,6 +15,12 @@ import (
 // EscapeName - will lowercase columns and escape spaces.
 func EscapeName(name string) string {
 	_, name = stringutil.EscapeSpaces(strings.ToLower(name))
+
+	// Does the column name start with a number? If so, let's prefix `col_` to the column name.
+	if name[0] >= '0' && name[0] <= '9' {
+		name = "col_" + name
+	}
+
 	return name
 }
 
