@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -12,9 +13,16 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-// EscapeName - will lowercase columns and escape spaces.
 func EscapeName(name string) string {
+	// Lowercasing and escaping spaces.
 	_, name = stringutil.EscapeSpaces(strings.ToLower(name))
+
+	// Does the column name start with a number? If so, let's prefix `col_` to the column name.
+	// We're doing this most databases do not allow column names to start with a number.
+	if _, err := strconv.Atoi(string(name[0])); err == nil {
+		name = "col_" + name
+	}
+
 	return name
 }
 
