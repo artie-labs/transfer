@@ -29,6 +29,10 @@ func TestEscapeName(t *testing.T) {
 			name:         "col with spaces",
 			expectedName: "col__with__spaces",
 		},
+		{
+			name:         "1abc",
+			expectedName: "col_1abc",
+		},
 	}
 
 	for _, testCase := range testCases {
