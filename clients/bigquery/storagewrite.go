@@ -132,9 +132,15 @@ func encodePacked64DatetimeMicros(dateTime time.Time) int64 {
 func rowToMessage(row map[string]any, columns []columns.Column, messageDescriptor protoreflect.MessageDescriptor) (*dynamicpb.Message, error) {
 	message := dynamicpb.NewMessage(messageDescriptor)
 	for _, column := range columns {
-		field := message.Descriptor().Fields().ByJSONName(column.Name())
+		// JSON Field will find the column names that have numbers in them, but will fail to find columns that are prefixed with `_`.
+		jsonField := message.Descriptor().Fields().ByJSONName(column.Name())
+		field := message.Descriptor().Fields().ByTextName(column.Name())
+		if field == nil && jsonField != nil {
+			field = jsonField
+		}
+
 		if field == nil {
-			return nil, fmt.Errorf("failed to find a field named (using ByJSONName) %q", column.Name())
+			return nil, fmt.Errorf("failed to find a field named (using ByTextName and ByJSONName) %q", column.Name())
 		}
 
 		value := row[column.Name()]
