@@ -16,7 +16,6 @@ import (
 // EscapeName - will lowercase columns and escape spaces.
 func EscapeName(name string) string {
 	_, name = stringutil.EscapeSpaces(strings.ToLower(name))
-
 	// Does the column name start with a number? If so, let's prefix `col_` to the column name.
 	if _, err := strconv.Atoi(string(name[0])); err == nil {
 		name = "col_" + name
