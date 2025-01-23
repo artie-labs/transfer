@@ -3,6 +3,7 @@ package bigquery
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -55,6 +56,7 @@ func columnToTableFieldSchema(column columns.Column) (*storagepb.TableFieldSchem
 		return nil, fmt.Errorf("unsupported column kind: %q", column.KindDetails.Kind)
 	}
 
+	slog.Info("Adding column to *storagepb.TableFieldSchema", slog.String("column", column.Name()))
 	return &storagepb.TableFieldSchema{
 		Name: column.Name(),
 		Type: fieldType,
