@@ -3,6 +3,7 @@ package event
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
@@ -173,21 +174,22 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	var cols columns.Columns
 	for i := 0; i < 50; i++ {
-		cols.AddColumn(columns.NewColumn(fmt.Sprint(i), typing.Invalid))
+		cols.AddColumn(columns.NewColumn(fmt.Sprintf("col_%d", i), typing.Invalid))
 	}
 
 	evt := Event{
 		Table:   "non_existent",
 		Columns: &cols,
 		Data: map[string]any{
-			"1":                                 "123",
+			"col_1":                             "123",
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
 		},
 		PrimaryKeyMap: map[string]any{
-			"1": "123",
+			"col_1": "123",
 		},
 	}
+
 	kafkaMsg := kafka.Message{}
 	_, _, err := evt.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
 	assert.NoError(e.T(), err)
@@ -199,19 +201,21 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 			continue
 		}
 
+		columnNamePart := strings.Split(col.Name(), "_")[1]
+
 		if prevKey == "" {
-			prevKey = col.Name()
+			prevKey = columnNamePart
 			continue
 		}
 
-		currentKeyParsed, err := strconv.Atoi(col.Name())
+		currentKeyParsed, err := strconv.Atoi(columnNamePart)
 		assert.NoError(e.T(), err)
 
 		prevKeyParsed, err := strconv.Atoi(prevKey)
 		assert.NoError(e.T(), err)
 
 		// Testing ordering.
-		assert.True(e.T(), currentKeyParsed > prevKeyParsed, fmt.Sprintf("current key: %v, prevKey: %v", currentKeyParsed, prevKeyParsed))
+		assert.True(e.T(), currentKeyParsed > prevKeyParsed, fmt.Sprintf("current key: %q, prevKey: %q", currentKeyParsed, prevKeyParsed))
 	}
 
 	// Now let's add more keys.
