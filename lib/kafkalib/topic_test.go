@@ -137,3 +137,32 @@ func TestTopicConfig_Load_ShouldSkip(t *testing.T) {
 		assert.True(t, tc.ShouldSkip("d"), tc.String())
 	}
 }
+
+func TestMultiStepMergeSettings_Validate(t *testing.T) {
+	{
+		// Not enabled
+		assert.NoError(t, MultiStepMergeSettings{}.Validate())
+	}
+	{
+		// Enable, but flush size or table name is empty
+		assert.ErrorContains(t, MultiStepMergeSettings{
+			Enabled: true,
+		}.Validate(), "flush count must be greater than 0")
+	}
+	{
+		// Enable, but flush size or table name is empty
+		assert.ErrorContains(t, MultiStepMergeSettings{
+			Enabled:    true,
+			FlushCount: 1,
+			TableName:  "",
+		}.Validate(), "table name is empty")
+	}
+	{
+		// Valid
+		assert.NoError(t, MultiStepMergeSettings{
+			Enabled:    true,
+			FlushCount: 1,
+			TableName:  "test",
+		}.Validate())
+	}
+}
