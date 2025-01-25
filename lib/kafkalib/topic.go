@@ -24,6 +24,13 @@ func GetUniqueTopicConfigs(tcs []*TopicConfig) []TopicConfig {
 	return uniqueTopicConfigs
 }
 
+type MultiStepMergeSettings struct {
+	Enabled bool `yaml:"enabled"`
+	// FlushCount is the number of times we will flush to the multi-step merge table before merging into the destination table.
+	FlushCount int    `yaml:"flushCount"`
+	TableName  string `yaml:"tableName"`
+}
+
 type TopicConfig struct {
 	Database                 string `yaml:"db"`
 	TableName                string `yaml:"tableName"`
@@ -41,6 +48,7 @@ type TopicConfig struct {
 	AdditionalMergePredicates []partition.MergePredicates `yaml:"additionalMergePredicates,omitempty"`
 	ColumnsToHash             []string                    `yaml:"columnsToHash,omitempty"`
 	PrimaryKeysOverride       []string                    `yaml:"primaryKeysOverride,omitempty"`
+	MultiStepMergeSettings    *MultiStepMergeSettings     `yaml:"multiStepMergeSettings,omitempty"`
 
 	// Internal metadata
 	opsToSkipMap map[string]bool `yaml:"-"`
