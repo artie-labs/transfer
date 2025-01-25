@@ -119,5 +119,11 @@ func (t TopicConfig) Validate() error {
 		return fmt.Errorf("opsToSkipMap is nil, call Load() first")
 	}
 
+	if t.MultiStepMergeSettings != nil {
+		if err := t.MultiStepMergeSettings.Validate(); err != nil {
+			return fmt.Errorf("invalid multi-step merge settings: %w", err)
+		}
+	}
+
 	return nil
 }
