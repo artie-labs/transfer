@@ -31,6 +31,22 @@ type MultiStepMergeSettings struct {
 	TableName  string `yaml:"tableName"`
 }
 
+func (m MultiStepMergeSettings) Validate() error {
+	if !m.Enabled {
+		return nil
+	}
+
+	if m.FlushCount <= 0 {
+		return fmt.Errorf("flush count must be greater than 0")
+	}
+
+	if stringutil.Empty(m.TableName) {
+		return fmt.Errorf("table name is empty")
+	}
+
+	return nil
+}
+
 type TopicConfig struct {
 	Database                 string `yaml:"db"`
 	TableName                string `yaml:"tableName"`
