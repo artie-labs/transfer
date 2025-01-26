@@ -83,8 +83,7 @@ func filterColumns(columns []Column, softDelete bool, includeArtieUpdatedAt bool
 	return filteredColumns
 }
 
-// DiffAndFilter - when given 2 maps, a source and target
-// It will provide a diff in the form of 2 variables
+// DiffAndFilter - will diff the columns and filter out any Artie metadata columns that should not exist in the target table.
 func DiffAndFilter(columnsInSource []Column, columnsInDestination []Column, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, mode config.Mode) ([]Column, []Column) {
 	diffResult := Diff(columnsInSource, columnsInDestination)
 	return filterColumns(diffResult.SourceColumnsMissing, softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode),
