@@ -102,11 +102,8 @@ MERGE INTO %s %s USING ( %s ) AS %s ON %s`,
 	)
 
 	return []string{baseQuery + fmt.Sprintf(`
-WHEN MATCHED AND %s THEN DELETE
 WHEN MATCHED AND IFNULL(%s, false) = false THEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s);`,
-		// Delete
-		sql.QuotedDeleteColumnMarker(constants.StagingAlias, sd),
 		// Update
 		sql.QuotedDeleteColumnMarker(constants.StagingAlias, sd), sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, sd),
 		// Insert
