@@ -103,8 +103,8 @@ func TestDiff(t *testing.T) {
 		// The same columns
 		columns := []Column{NewColumn("a", typing.String), NewColumn("b", typing.Boolean)}
 		diffResult := Diff(columns, columns)
-		assert.Len(t, diffResult.SourceColumnsMissing, 0)
-		assert.Len(t, diffResult.TargetColumnsMissing, 0)
+		assert.Empty(t, diffResult.SourceColumnsMissing)
+		assert.Empty(t, diffResult.TargetColumnsMissing)
 	}
 	{
 		// Source has an extra column
@@ -113,14 +113,14 @@ func TestDiff(t *testing.T) {
 		diffResult := Diff(sourceCols, targCols)
 		assert.Len(t, diffResult.SourceColumnsMissing, 1)
 		assert.Equal(t, diffResult.SourceColumnsMissing[0], NewColumn("b", typing.Boolean))
-		assert.Len(t, diffResult.TargetColumnsMissing, 0)
+		assert.Empty(t, diffResult.TargetColumnsMissing)
 	}
 	{
 		// Destination has an extra column
 		sourceCols := []Column{NewColumn("a", typing.String)}
 		targCols := []Column{NewColumn("a", typing.String), NewColumn("b", typing.Boolean)}
 		diffResult := Diff(sourceCols, targCols)
-		assert.Len(t, diffResult.SourceColumnsMissing, 0)
+		assert.Empty(t, diffResult.SourceColumnsMissing)
 		assert.Len(t, diffResult.TargetColumnsMissing, 1)
 		assert.Equal(t, diffResult.TargetColumnsMissing[0], NewColumn("b", typing.Boolean))
 	}
