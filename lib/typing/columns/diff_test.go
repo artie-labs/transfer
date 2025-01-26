@@ -102,6 +102,44 @@ func TestDiff(t *testing.T) {
 	{
 		// The same columns
 		columns := []Column{NewColumn("a", typing.String), NewColumn("b", typing.Boolean)}
+		diffResult := Diff(columns, columns)
+		assert.Len(t, diffResult.SourceColumnsMissing, 0)
+		assert.Len(t, diffResult.TargetColumnsMissing, 0)
+	}
+	{
+		// Source has an extra column
+		sourceCols := []Column{NewColumn("a", typing.String), NewColumn("b", typing.Boolean)}
+		targCols := []Column{NewColumn("a", typing.String)}
+		diffResult := Diff(sourceCols, targCols)
+		assert.Len(t, diffResult.SourceColumnsMissing, 1)
+		assert.Equal(t, diffResult.SourceColumnsMissing[0], NewColumn("b", typing.Boolean))
+		assert.Len(t, diffResult.TargetColumnsMissing, 0)
+	}
+	{
+		// Destination has an extra column
+		sourceCols := []Column{NewColumn("a", typing.String)}
+		targCols := []Column{NewColumn("a", typing.String), NewColumn("b", typing.Boolean)}
+		diffResult := Diff(sourceCols, targCols)
+		assert.Len(t, diffResult.SourceColumnsMissing, 0)
+		assert.Len(t, diffResult.TargetColumnsMissing, 1)
+		assert.Equal(t, diffResult.TargetColumnsMissing[0], NewColumn("b", typing.Boolean))
+	}
+	{
+		// Source and destination have different columns
+		sourceCols := []Column{NewColumn("a", typing.String), NewColumn("b", typing.Boolean)}
+		targCols := []Column{NewColumn("c", typing.String), NewColumn("d", typing.Boolean)}
+		diffResult := Diff(sourceCols, targCols)
+		assert.Len(t, diffResult.SourceColumnsMissing, 2)
+		assert.Equal(t, diffResult.SourceColumnsMissing, targCols)
+		assert.Len(t, diffResult.TargetColumnsMissing, 2)
+		assert.Equal(t, diffResult.TargetColumnsMissing, sourceCols)
+	}
+}
+
+func TestDiffAndFilter(t *testing.T) {
+	{
+		// The same columns
+		columns := []Column{NewColumn("a", typing.String), NewColumn("b", typing.Boolean)}
 		sourceKeysMissing, targKeysMissing := DiffAndFilter(columns, columns, false, false, false, config.Replication)
 		assert.Len(t, sourceKeysMissing, 0)
 		assert.Len(t, targKeysMissing, 0)

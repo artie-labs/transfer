@@ -38,7 +38,12 @@ func shouldSkipColumn(colName string, softDelete bool, includeArtieUpdatedAt boo
 	return strings.Contains(colName, constants.ArtiePrefix)
 }
 
-func Diff(sourceColumns []Column, targetColumns []Column) ([]Column, []Column) {
+type DiffResults struct {
+	SourceColumnsMissing []Column
+	TargetColumnsMissing []Column
+}
+
+func Diff(sourceColumns []Column, targetColumns []Column) DiffResults {
 	src := buildColumnsMap(sourceColumns)
 	targ := buildColumnsMap(targetColumns)
 
@@ -59,7 +64,10 @@ func Diff(sourceColumns []Column, targetColumns []Column) ([]Column, []Column) {
 		sourceColumnsMissing = append(sourceColumnsMissing, col)
 	}
 
-	return sourceColumnsMissing, targetColumnsMissing
+	return DiffResults{
+		SourceColumnsMissing: sourceColumnsMissing,
+		TargetColumnsMissing: targetColumnsMissing,
+	}
 }
 
 func filterColumns(columns []Column, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, mode config.Mode) []Column {
@@ -78,9 +86,9 @@ func filterColumns(columns []Column, softDelete bool, includeArtieUpdatedAt bool
 // DiffAndFilter - when given 2 maps, a source and target
 // It will provide a diff in the form of 2 variables
 func DiffAndFilter(columnsInSource []Column, columnsInDestination []Column, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, mode config.Mode) ([]Column, []Column) {
-	sourceColumnsMissing, targetColumnsMissing := Diff(columnsInSource, columnsInDestination)
-	return filterColumns(sourceColumnsMissing, softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode),
-		filterColumns(targetColumnsMissing, softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode)
+	diffResult := Diff(columnsInSource, columnsInDestination)
+	return filterColumns(diffResult.SourceColumnsMissing, softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode),
+		filterColumns(diffResult.TargetColumnsMissing, softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode)
 }
 
 func buildColumnsMap(cols []Column) *maputil.OrderedMap[Column] {
