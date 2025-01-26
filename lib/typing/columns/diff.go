@@ -79,7 +79,8 @@ func filterColumns(columns []Column, softDelete bool, includeArtieUpdatedAt bool
 // It will provide a diff in the form of 2 variables
 func DiffAndFilter(columnsInSource []Column, columnsInDestination []Column, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, mode config.Mode) ([]Column, []Column) {
 	sourceColumnsMissing, targetColumnsMissing := Diff(columnsInSource, columnsInDestination)
-	return filterColumns(sourceColumnsMissing, softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode), filterColumns(targetColumnsMissing, softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode)
+	return filterColumns(sourceColumnsMissing, softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode),
+		filterColumns(targetColumnsMissing, softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode)
 }
 
 func buildColumnsMap(cols []Column) *maputil.OrderedMap[Column] {
