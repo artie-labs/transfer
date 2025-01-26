@@ -69,15 +69,15 @@ func (s Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, include
 	return nil
 }
 
-func (s Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
 	return shared.GetTableCfgArgs{
 		Dwh:                   s,
-		TableID:               dialect.NewTableIdentifier(tableData.TopicConfig().Database, tableData.TopicConfig().Schema, tableData.Name()),
+		TableID:               tableID,
 		ConfigMap:             s.configMap,
 		ColumnNameForName:     "col_name",
 		ColumnNameForDataType: "data_type",
 		ColumnNameForComment:  "comment",
-		DropDeletedColumns:    tableData.TopicConfig().DropDeletedColumns,
+		DropDeletedColumns:    dropDeletedColumns,
 	}.GetTableConfig()
 }
 

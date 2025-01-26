@@ -15,7 +15,8 @@ func Append(ctx context.Context, dwh destination.DataWarehouse, tableData *optim
 		return nil
 	}
 
-	tableConfig, err := dwh.GetTableConfig(tableData)
+	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	tableConfig, err := dwh.GetTableConfig(tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return fmt.Errorf("failed to get table config: %w", err)
 	}
@@ -30,7 +31,6 @@ func Append(ctx context.Context, dwh destination.DataWarehouse, tableData *optim
 		tableData.Mode(),
 	)
 
-	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	if tableConfig.CreateTable() {
 		if err = CreateTable(ctx, dwh, tableData, tableConfig, opts.ColumnSettings, tableID, false, targetKeysMissing); err != nil {
 			return fmt.Errorf("failed to create table: %w", err)

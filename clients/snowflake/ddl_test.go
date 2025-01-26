@@ -111,7 +111,7 @@ func (s *SnowflakeTestSuite) TestGetTableConfig() {
 	tableData := optimization.NewTableData(nil, config.Replication, nil,
 		kafkalib.TopicConfig{Database: "customers", Schema: "public", TableName: "orders22"}, "foo")
 
-	tableConfig, err := s.stageStore.GetTableConfig(tableData)
+	tableConfig, err := s.stageStore.GetTableConfig(s.identifierFor(tableData), tableData.TopicConfig().DropDeletedColumns)
 	assert.NotNil(s.T(), tableConfig, "config is nil")
 	assert.NoError(s.T(), err)
 

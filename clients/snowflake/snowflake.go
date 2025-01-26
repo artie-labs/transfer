@@ -13,7 +13,6 @@ import (
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 )
 
@@ -27,15 +26,15 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sq
 	return dialect.NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
 
-func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
 	return shared.GetTableCfgArgs{
 		Dwh:                   s,
-		TableID:               s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
+		TableID:               tableID,
 		ConfigMap:             s.configMap,
 		ColumnNameForName:     "name",
 		ColumnNameForDataType: "type",
 		ColumnNameForComment:  "comment",
-		DropDeletedColumns:    tableData.TopicConfig().DropDeletedColumns,
+		DropDeletedColumns:    dropDeletedColumns,
 	}.GetTableConfig()
 }
 
