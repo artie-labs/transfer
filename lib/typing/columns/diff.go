@@ -38,11 +38,10 @@ func shouldSkipColumn(colName string, softDelete bool, includeArtieUpdatedAt boo
 	return strings.Contains(colName, constants.ArtiePrefix)
 }
 
-// Diff - when given 2 maps, a source and target
-// It will provide a diff in the form of 2 variables
-func Diff(columnsInSource []Column, columnsInDestination []Column, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, mode config.Mode) ([]Column, []Column) {
-	src := buildColumnsMap(columnsInSource)
-	targ := buildColumnsMap(columnsInDestination)
+func Diff(sourceColumns []Column, targetColumns []Column) ([]Column, []Column) {
+	src := buildColumnsMap(sourceColumns)
+	targ := buildColumnsMap(targetColumns)
+
 	for _, colName := range src.Keys() {
 		if _, isOk := targ.Get(colName); isOk {
 			targ.Remove(colName)
@@ -52,23 +51,35 @@ func Diff(columnsInSource []Column, columnsInDestination []Column, softDelete bo
 
 	var targetColumnsMissing []Column
 	for _, col := range src.All() {
-		if shouldSkipColumn(col.Name(), softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode) {
-			continue
-		}
-
 		targetColumnsMissing = append(targetColumnsMissing, col)
 	}
 
 	var sourceColumnsMissing []Column
 	for _, col := range targ.All() {
-		if shouldSkipColumn(col.Name(), softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode) {
-			continue
-		}
-
 		sourceColumnsMissing = append(sourceColumnsMissing, col)
 	}
 
 	return sourceColumnsMissing, targetColumnsMissing
+}
+
+func filterColumns(columns []Column, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, mode config.Mode) []Column {
+	var filteredColumns []Column
+	for _, col := range columns {
+		if shouldSkipColumn(col.Name(), softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode) {
+			continue
+		}
+
+		filteredColumns = append(filteredColumns, col)
+	}
+
+	return filteredColumns
+}
+
+// DiffAndFilter - when given 2 maps, a source and target
+// It will provide a diff in the form of 2 variables
+func DiffAndFilter(columnsInSource []Column, columnsInDestination []Column, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, mode config.Mode) ([]Column, []Column) {
+	sourceColumnsMissing, targetColumnsMissing := Diff(columnsInSource, columnsInDestination)
+	return filterColumns(sourceColumnsMissing, softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode), filterColumns(targetColumnsMissing, softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode)
 }
 
 func buildColumnsMap(cols []Column) *maputil.OrderedMap[Column] {

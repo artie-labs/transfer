@@ -102,7 +102,7 @@ func TestDiff(t *testing.T) {
 	{
 		// The same columns
 		columns := []Column{NewColumn("a", typing.String), NewColumn("b", typing.Boolean)}
-		sourceKeysMissing, targKeysMissing := Diff(columns, columns, false, false, false, config.Replication)
+		sourceKeysMissing, targKeysMissing := DiffAndFilter(columns, columns, false, false, false, config.Replication)
 		assert.Len(t, sourceKeysMissing, 0)
 		assert.Len(t, targKeysMissing, 0)
 	}
@@ -111,7 +111,7 @@ func TestDiff(t *testing.T) {
 		sourceCols := []Column{NewColumn("a", typing.String), NewColumn("b", typing.Boolean)}
 		targCols := []Column{NewColumn("a", typing.String)}
 
-		sourceKeysMissing, targKeysMissing := Diff(sourceCols, targCols, false, false, false, config.Replication)
+		sourceKeysMissing, targKeysMissing := DiffAndFilter(sourceCols, targCols, false, false, false, config.Replication)
 		assert.Len(t, sourceKeysMissing, 0)
 		assert.Len(t, targKeysMissing, 1)
 		assert.Equal(t, targKeysMissing[0], NewColumn("b", typing.Boolean))
@@ -121,7 +121,7 @@ func TestDiff(t *testing.T) {
 		sourceCols := []Column{NewColumn("a", typing.String)}
 		targCols := []Column{NewColumn("a", typing.String), NewColumn("b", typing.Boolean)}
 
-		sourceKeysMissing, targKeysMissing := Diff(sourceCols, targCols, false, false, false, config.Replication)
+		sourceKeysMissing, targKeysMissing := DiffAndFilter(sourceCols, targCols, false, false, false, config.Replication)
 		assert.Len(t, sourceKeysMissing, 1)
 		assert.Equal(t, sourceKeysMissing[0], NewColumn("b", typing.Boolean))
 		assert.Len(t, targKeysMissing, 0)
@@ -131,7 +131,7 @@ func TestDiff(t *testing.T) {
 		sourceCols := []Column{NewColumn("a", typing.String), NewColumn("b", typing.Boolean)}
 		targCols := []Column{NewColumn("c", typing.String), NewColumn("d", typing.Boolean)}
 
-		sourceKeysMissing, targKeysMissing := Diff(sourceCols, targCols, false, false, false, config.Replication)
+		sourceKeysMissing, targKeysMissing := DiffAndFilter(sourceCols, targCols, false, false, false, config.Replication)
 		assert.Len(t, sourceKeysMissing, 2)
 		assert.Equal(t, sourceKeysMissing, targCols)
 		assert.Len(t, targKeysMissing, 2)
