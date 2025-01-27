@@ -52,4 +52,5 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 		}
 	}
 
+	return nil
 }
