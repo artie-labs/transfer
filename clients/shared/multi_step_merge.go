@@ -43,4 +43,13 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 		}
 	}
 
+	tableData.SetFlushCountRemaining(tableData.GetFlushCountRemaining() - 1)
+
+	if tableData.GetFlushCountRemaining() == 0 {
+		// We've reached the last step, so we should merge the staging table into the destination table
+		if err = Merge(ctx, dwh, tableData, opts); err != nil {
+			return fmt.Errorf("failed to merge: %w", err)
+		}
+	}
+
 }

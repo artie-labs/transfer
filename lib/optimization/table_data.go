@@ -44,8 +44,19 @@ type TableData struct {
 
 	temporaryTableSuffix string
 
+	// Multi-step merge settings
+	flushCountRemaining int
+
 	// Name of the table in the destination
 	name string
+}
+
+func (t *TableData) SetFlushCountRemaining(count int) {
+	t.flushCountRemaining = count
+}
+
+func (t *TableData) GetFlushCountRemaining() int {
+	return t.flushCountRemaining
 }
 
 func (t *TableData) WipeData() {
