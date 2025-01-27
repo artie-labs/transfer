@@ -31,8 +31,12 @@ func (Int64Converter) Convert(value any) (any, error) {
 		return int64(castedValue), nil
 	case int64:
 		return castedValue, nil
+	case float32:
+		return int64(castedValue), nil
+	case float64:
+		return int64(castedValue), nil
 	default:
-		return nil, fmt.Errorf("expected int/int32/int64 received %T with value %v", value, value)
+		return nil, fmt.Errorf("expected int/int32/int64/float32/float64 received %T with value %v", value, value)
 	}
 }
 

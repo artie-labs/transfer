@@ -130,9 +130,21 @@ func TestInt64Converter_Convert(t *testing.T) {
 		assert.Equal(t, int64(123), val)
 	}
 	{
+		// float32
+		val, err := converter.Convert(float32(123))
+		assert.NoError(t, err)
+		assert.Equal(t, int64(123), val)
+	}
+	{
+		// float64
+		val, err := converter.Convert(float64(123))
+		assert.NoError(t, err)
+		assert.Equal(t, int64(123), val)
+	}
+	{
 		// Invalid
 		_, err := converter.Convert("foo")
-		assert.ErrorContains(t, err, "expected int/int32/int64 received string with value foo")
+		assert.ErrorContains(t, err, "expected int/int32/int64/float32/float64 received string with value foo")
 	}
 }
 
