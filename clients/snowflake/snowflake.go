@@ -31,7 +31,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.Destin
 	return shared.GetTableCfgArgs{
 		Dwh:                   s,
 		TableID:               s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
-		ConfigMap:             s.configMap,
+		Cache:                 s.configMap,
 		ColumnNameForName:     "name",
 		ColumnNameForDataType: "type",
 		ColumnNameForComment:  "comment",

@@ -12,7 +12,7 @@ type DestinationTableCache struct {
 	sync.RWMutex
 }
 
-func (d *DestinationTableCache) TableConfigCache(tableID sql.TableIdentifier) *DestinationTableConfig {
+func (d *DestinationTableCache) GetTableConfig(tableID sql.TableIdentifier) *DestinationTableConfig {
 	d.RLock()
 	defer d.RUnlock()
 

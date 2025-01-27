@@ -18,9 +18,9 @@ import (
 // TODO: Simplify this function
 
 type GetTableCfgArgs struct {
-	Dwh       destination.DataWarehouse
-	TableID   sql.TableIdentifier
-	ConfigMap *types.DestinationTableCache
+	Dwh     destination.DataWarehouse
+	TableID sql.TableIdentifier
+	Cache   *types.DestinationTableCache
 	// Name of the column
 	ColumnNameForName string
 	// Column type
@@ -31,7 +31,7 @@ type GetTableCfgArgs struct {
 }
 
 func (g GetTableCfgArgs) GetTableConfig() (*types.DestinationTableConfig, error) {
-	if tableConfig := g.ConfigMap.TableConfigCache(g.TableID); tableConfig != nil {
+	if tableConfig := g.Cache.GetTableConfig(g.TableID); tableConfig != nil {
 		return tableConfig, nil
 	}
 
@@ -106,7 +106,7 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DestinationTableConfig, error)
 	}
 
 	tableCfg := types.NewDestinationTableConfig(cols, g.DropDeletedColumns)
-	g.ConfigMap.AddTableToConfig(g.TableID, tableCfg)
+	g.Cache.AddTableToConfig(g.TableID, tableCfg)
 	return tableCfg, nil
 }
 

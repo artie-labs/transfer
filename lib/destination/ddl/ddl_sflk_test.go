@@ -28,7 +28,7 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 
 	tableID := dialect.NewTableIdentifier("shop", "public", "complex_columns")
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDestinationTableConfig(nil, true))
-	tc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
+	tc := d.snowflakeStagesStore.GetConfigMap().GetTableConfig(tableID)
 	assert.NoError(d.T(), shared.AlterTableAddColumns(context.Background(), d.snowflakeStagesStore, tc, config.SharedDestinationColumnSettings{}, tableID, cols))
 	for i := 0; i < len(cols); i++ {
 		_, execQuery, _ := d.fakeSnowflakeStagesStore.ExecContextArgsForCall(i)
@@ -50,7 +50,7 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 
 	tableID := dialect.NewTableIdentifier("shop", "public", "orders")
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDestinationTableConfig(nil, true))
-	tc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
+	tc := d.snowflakeStagesStore.GetConfigMap().GetTableConfig(tableID)
 
 	d.fakeSnowflakeStagesStore.ExecReturns(nil, errors.New("column 'order_name' already exists"))
 
@@ -72,13 +72,13 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 
 	tableID := dialect.NewTableIdentifier("shop", "public", "orders")
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDestinationTableConfig(nil, true))
-	tc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
+	tc := d.snowflakeStagesStore.GetConfigMap().GetTableConfig(tableID)
 
 	assert.NoError(d.T(), shared.AlterTableAddColumns(context.Background(), d.snowflakeStagesStore, tc, config.SharedDestinationColumnSettings{}, tableID, cols))
 	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecContextCallCount(), "called SFLK the same amt to create cols")
 
 	// Check the table config
-	tableConfig := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
+	tableConfig := d.snowflakeStagesStore.GetConfigMap().GetTableConfig(tableID)
 	for _, column := range tableConfig.GetColumns() {
 		var found bool
 		for _, expCol := range cols {
@@ -103,13 +103,13 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 
 	tableID := dialect.NewTableIdentifier("shop", "public", "users")
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, types.NewDestinationTableConfig(nil, true))
-	tc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
+	tc := d.snowflakeStagesStore.GetConfigMap().GetTableConfig(tableID)
 
 	assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.snowflakeStagesStore, tc, tableID, cols, time.Now().UTC(), true))
 	assert.Equal(d.T(), 0, d.fakeSnowflakeStagesStore.ExecCallCount(), "tried to delete, but not yet.")
 
 	// Check the table config
-	tableConfig := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
+	tableConfig := d.snowflakeStagesStore.GetConfigMap().GetTableConfig(tableID)
 	for col := range tableConfig.ReadOnlyColumnsToDelete() {
 		var found bool
 		for _, expCol := range cols {
@@ -157,7 +157,7 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 	}
 	tableCfg.SetColumnsToDelete(colsToDeleteMap)
 	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(tableID, tableCfg)
-	tc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
+	tc := d.snowflakeStagesStore.GetConfigMap().GetTableConfig(tableID)
 	{
 		// containsOtherOperations = false
 		assert.NoError(d.T(), shared.AlterTableDropColumns(context.Background(), d.snowflakeStagesStore, tc, tableID, cols, time.Now(), false))
@@ -171,7 +171,7 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 		assert.Equal(d.T(), 3, d.fakeSnowflakeStagesStore.ExecContextCallCount())
 
 		// Check the table config
-		tableConfig := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(tableID)
+		tableConfig := d.snowflakeStagesStore.GetConfigMap().GetTableConfig(tableID)
 
 		var colsToDelete []string
 		for col := range tableConfig.ReadOnlyColumnsToDelete() {

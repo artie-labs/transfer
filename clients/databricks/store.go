@@ -73,7 +73,7 @@ func (s Store) GetTableConfig(tableData *optimization.TableData) (*types.Destina
 	return shared.GetTableCfgArgs{
 		Dwh:                   s,
 		TableID:               dialect.NewTableIdentifier(tableData.TopicConfig().Database, tableData.TopicConfig().Schema, tableData.Name()),
-		ConfigMap:             s.configMap,
+		Cache:                 s.configMap,
 		ColumnNameForName:     "col_name",
 		ColumnNameForDataType: "data_type",
 		ColumnNameForComment:  "comment",
