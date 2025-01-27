@@ -89,14 +89,11 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 			}
 
 			what, err := retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (string, error) {
-				return flush(ctx, dest, _tableData)
+				return flush(ctx, dest, _tableData, inMemDB, _tableName, action)
 			})
 
 			if err != nil {
 				slog.Error(fmt.Sprintf("Failed to %s", action), slog.Any("err", err), slog.String("tableName", _tableName))
-			} else {
-				slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), slog.String("tableName", _tableName))
-				inMemDB.ClearTableConfig(_tableName)
 			}
 
 			tags["what"] = what
@@ -108,7 +105,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 	return nil
 }
 
-func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData) (string, error) {
+func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData, inMemDB *models.DatabaseData, _tableName string, action string) (string, error) {
 	// This is added so that we have a new temporary table suffix for each merge / append.
 	_tableData.ResetTempTableSuffix()
 
@@ -128,5 +125,8 @@ func flush(ctx context.Context, dest destination.Baseline, _tableData *models.Ta
 		return "commit_fail", fmt.Errorf("failed to commit kafka offset: %w", err)
 	}
 
+	// Clear the in-memory database for the table upon a successful flush.
+	slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), slog.String("tableName", _tableName))
+	inMemDB.ClearTableConfig(_tableName)
 	return "success", nil
 }
