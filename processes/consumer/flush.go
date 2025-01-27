@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/retry"
@@ -121,12 +122,22 @@ func flush(ctx context.Context, dest destination.Baseline, _tableData *models.Ta
 		return "merge_fail", fmt.Errorf("failed to flush: %w", err)
 	}
 
-	if err = commitOffset(ctx, _tableData.TopicConfig().Topic, _tableData.PartitionsToLastMessage); err != nil {
-		return "commit_fail", fmt.Errorf("failed to commit kafka offset: %w", err)
+	if err := commitTransaction(ctx, _tableData.TopicConfig().Topic, _tableData.PartitionsToLastMessage, inMemDB, _tableName, action); err != nil {
+		return "commit_fail", fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return "success", nil
+}
+
+// commitTranssaction - will commit the transaction and clear the in-memory database for the table.
+func commitTransaction(ctx context.Context, topic string, partitionsToOffset map[string][]artie.Message, inMemDB *models.DatabaseData, _tableName string, action string) error {
+	if err := commitOffset(ctx, topic, partitionsToOffset); err != nil {
+		return fmt.Errorf("failed to commit kafka offset: %w", err)
 	}
 
 	// Clear the in-memory database for the table upon a successful flush.
 	slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), slog.String("tableName", _tableName))
 	inMemDB.ClearTableConfig(_tableName)
-	return "success", nil
+
+	return nil
 }
