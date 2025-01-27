@@ -15,13 +15,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func generateDwhTableCfg() *types.DwhTableConfig {
+func generateDwhTableCfg() *types.DestinationTableConfig {
 	var cols []columns.Column
 	for _, col := range []string{"a", "b", "c", "d"} {
 		cols = append(cols, columns.NewColumn(col, typing.String))
 	}
 
-	tableCfg := types.NewDwhTableConfig(cols, false)
+	tableCfg := types.NewDestinationTableConfig(cols, false)
 	colsToDelete := make(map[string]time.Time)
 	for _, col := range []string{"foo", "bar", "abc", "xyz"} {
 		colsToDelete[col] = time.Now()
@@ -32,7 +32,7 @@ func generateDwhTableCfg() *types.DwhTableConfig {
 }
 
 func TestDwhToTablesConfigMap_TableConfigBasic(t *testing.T) {
-	dwh := &types.DwhToTablesConfigMap{}
+	dwh := &types.DestinationTableCache{}
 	dwhTableConfig := generateDwhTableCfg()
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	dwh.AddTableToConfig(fakeTableID, dwhTableConfig)
@@ -41,7 +41,7 @@ func TestDwhToTablesConfigMap_TableConfigBasic(t *testing.T) {
 
 // TestDwhToTablesConfigMap_Concurrency - has a bunch of concurrent go-routines that are rapidly adding and reading from the tableConfig.
 func TestDwhToTablesConfigMap_Concurrency(t *testing.T) {
-	dwh := &types.DwhToTablesConfigMap{}
+	dwh := &types.DestinationTableCache{}
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	dwhTableCfg := generateDwhTableCfg()
 	dwh.AddTableToConfig(fakeTableID, dwhTableCfg)

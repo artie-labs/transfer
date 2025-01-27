@@ -76,7 +76,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		anotherCols = append(anotherCols, columns.NewColumn(colName, kindDetails))
 	}
 
-	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDwhTableConfig(anotherCols, true))
+	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDestinationTableConfig(anotherCols, true))
 
 	assert.NoError(s.T(), s.stageStore.Merge(context.Background(), tableData))
 	_col, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("first_name")
@@ -121,7 +121,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		tableData.InsertRow(pk, row, false)
 	}
 
-	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDwhTableConfig(cols.GetColumns(), true))
+	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDestinationTableConfig(cols.GetColumns(), true))
 	assert.NoError(s.T(), s.stageStore.Merge(context.Background(), tableData))
 	assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
 	assert.Equal(s.T(), 1, s.fakeStageStore.ExecContextCallCount())
@@ -168,7 +168,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 
 	tableID := s.identifierFor(tableData)
 	fqName := tableID.FullyQualifiedName()
-	s.stageStore.configMap.AddTableToConfig(tableID, types.NewDwhTableConfig(cols.GetColumns(), true))
+	s.stageStore.configMap.AddTableToConfig(tableID, types.NewDestinationTableConfig(cols.GetColumns(), true))
 	err := s.stageStore.Merge(context.Background(), tableData)
 	assert.Nil(s.T(), err)
 	s.fakeStageStore.ExecReturns(nil, nil)
@@ -251,7 +251,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	}
 
 	sflkCols.AddColumn(columns.NewColumn("new", typing.String))
-	_config := types.NewDwhTableConfig(sflkCols.GetColumns(), true)
+	_config := types.NewDestinationTableConfig(sflkCols.GetColumns(), true)
 	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), _config)
 
 	assert.NoError(s.T(), s.stageStore.Merge(context.Background(), tableData))

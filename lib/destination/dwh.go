@@ -25,8 +25,8 @@ type DataWarehouse interface {
 	Begin() (*sql.Tx, error)
 
 	// Helper functions for merge
-	GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error)
-	PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sqllib.TableIdentifier, parentTableID sqllib.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error
+	GetTableConfig(tableData *optimization.TableData) (*types.DestinationTableConfig, error)
+	PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tempTableID sqllib.TableIdentifier, parentTableID sqllib.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error
 }
 
 type Baseline interface {

@@ -29,11 +29,11 @@ func getValidColumns(cols []columns.Column) []columns.Column {
 	return validCols
 }
 
-func CreateTempTable(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tc *types.DwhTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier) error {
+func CreateTempTable(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tc *types.DestinationTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier) error {
 	return CreateTable(ctx, dwh, tableData, tc, settings, tableID, true, tableData.ReadOnlyInMemoryCols().GetColumns())
 }
 
-func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tc *types.DwhTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, tempTable bool, cols []columns.Column) error {
+func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tc *types.DestinationTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, tempTable bool, cols []columns.Column) error {
 	cols = getValidColumns(cols)
 	if len(cols) == 0 {
 		return nil
@@ -54,7 +54,7 @@ func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *
 	return nil
 }
 
-func AlterTableAddColumns(ctx context.Context, dwh destination.DataWarehouse, tc *types.DwhTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, cols []columns.Column) error {
+func AlterTableAddColumns(ctx context.Context, dwh destination.DataWarehouse, tc *types.DestinationTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, cols []columns.Column) error {
 	cols = getValidColumns(cols)
 	if len(cols) == 0 {
 		return nil
@@ -78,7 +78,7 @@ func AlterTableAddColumns(ctx context.Context, dwh destination.DataWarehouse, tc
 	return nil
 }
 
-func AlterTableDropColumns(ctx context.Context, dwh destination.DataWarehouse, tc *types.DwhTableConfig, tableID sql.TableIdentifier, cols []columns.Column, cdcTime time.Time, containOtherOperations bool) error {
+func AlterTableDropColumns(ctx context.Context, dwh destination.DataWarehouse, tc *types.DestinationTableConfig, tableID sql.TableIdentifier, cols []columns.Column, cdcTime time.Time, containOtherOperations bool) error {
 	if len(cols) == 0 {
 		return nil
 	}

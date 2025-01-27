@@ -40,7 +40,7 @@ const (
 type Store struct {
 	// If [auditRows] is enabled, we will perform an additional query to ensure that the number of rows in the temporary table matches the expected number of rows.
 	auditRows bool
-	configMap *types.DwhToTablesConfigMap
+	configMap *types.DestinationTableCache
 	config    config.Config
 	bqClient  *bigquery.Client
 
@@ -86,7 +86,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, u
 	return nil
 }
 
-func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		if err := shared.CreateTempTable(ctx, s, tableData, dwh, opts.ColumnSettings, tempTableID); err != nil {
 			return err
@@ -141,7 +141,7 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sq
 	return dialect.NewTableIdentifier(s.config.BigQuery.ProjectID, topicConfig.Database, table)
 }
 
-func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DestinationTableConfig, error) {
 	return shared.GetTableCfgArgs{
 		Dwh:                   s,
 		TableID:               s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
@@ -153,7 +153,7 @@ func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTab
 	}.GetTableConfig()
 }
 
-func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
+func (s *Store) GetConfigMap() *types.DestinationTableCache {
 	if s == nil {
 		return nil
 	}
@@ -263,7 +263,7 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
 		return &Store{
 			Store: *_store,
 
-			configMap: &types.DwhToTablesConfigMap{},
+			configMap: &types.DestinationTableCache{},
 			config:    cfg,
 		}, nil
 	}
@@ -299,7 +299,7 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
 	return &Store{
 		bqClient:  bqClient,
 		auditRows: auditRows,
-		configMap: &types.DwhToTablesConfigMap{},
+		configMap: &types.DestinationTableCache{},
 		config:    cfg,
 		Store:     store,
 	}, nil

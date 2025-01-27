@@ -10,7 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-type DwhTableConfig struct {
+type DestinationTableConfig struct {
 	// Making these private variables to avoid concurrent R/W panics.
 	columns         *columns.Columns
 	columnsToDelete map[string]time.Time // column --> when to delete
@@ -21,8 +21,8 @@ type DwhTableConfig struct {
 	sync.RWMutex
 }
 
-func NewDwhTableConfig(cols []columns.Column, dropDeletedColumns bool) *DwhTableConfig {
-	return &DwhTableConfig{
+func NewDestinationTableConfig(cols []columns.Column, dropDeletedColumns bool) *DestinationTableConfig {
+	return &DestinationTableConfig{
 		columns:            columns.NewColumns(cols),
 		columnsToDelete:    make(map[string]time.Time),
 		createTable:        len(cols) == 0,
@@ -31,43 +31,43 @@ func NewDwhTableConfig(cols []columns.Column, dropDeletedColumns bool) *DwhTable
 }
 
 // SetColumnsToDelete - This is used by tests only
-func (d *DwhTableConfig) SetColumnsToDelete(cols map[string]time.Time) {
+func (d *DestinationTableConfig) SetColumnsToDelete(cols map[string]time.Time) {
 	d.Lock()
 	defer d.Unlock()
 
 	d.columnsToDelete = cols
 }
 
-func (d *DwhTableConfig) CreateTable() bool {
+func (d *DestinationTableConfig) CreateTable() bool {
 	d.RLock()
 	defer d.RUnlock()
 
 	return d.createTable
 }
 
-func (d *DwhTableConfig) DropDeletedColumns() bool {
+func (d *DestinationTableConfig) DropDeletedColumns() bool {
 	d.RLock()
 	defer d.RUnlock()
 
 	return d.dropDeletedColumns
 }
 
-func (d *DwhTableConfig) GetColumns() []columns.Column {
+func (d *DestinationTableConfig) GetColumns() []columns.Column {
 	d.RLock()
 	defer d.RUnlock()
 
 	return d.columns.GetColumns()
 }
 
-func (d *DwhTableConfig) UpdateColumn(col columns.Column) {
+func (d *DestinationTableConfig) UpdateColumn(col columns.Column) {
 	d.columns.UpdateColumn(col)
 }
 
-func (d *DwhTableConfig) UpsertColumn(colName string, arg columns.UpsertColumnArg) error {
+func (d *DestinationTableConfig) UpsertColumn(colName string, arg columns.UpsertColumnArg) error {
 	return d.columns.UpsertColumn(colName, arg)
 }
 
-func (d *DwhTableConfig) MutateInMemoryColumns(columnOp constants.ColumnOperation, cols ...columns.Column) {
+func (d *DestinationTableConfig) MutateInMemoryColumns(columnOp constants.ColumnOperation, cols ...columns.Column) {
 	d.Lock()
 	defer d.Unlock()
 	switch columnOp {
@@ -91,7 +91,7 @@ func (d *DwhTableConfig) MutateInMemoryColumns(columnOp constants.ColumnOperatio
 
 // AuditColumnsToDelete - will check its (*DwhTableConfig) columnsToDelete against `colsToDelete` and remove any columns that are not in `colsToDelete`.
 // `colsToDelete` is derived from diffing the destination and source (if destination has extra columns)
-func (d *DwhTableConfig) AuditColumnsToDelete(colsToDelete []columns.Column) {
+func (d *DestinationTableConfig) AuditColumnsToDelete(colsToDelete []columns.Column) {
 	if !d.dropDeletedColumns {
 		// If `dropDeletedColumns` is false, then let's skip this.
 		return
@@ -115,13 +115,13 @@ func (d *DwhTableConfig) AuditColumnsToDelete(colsToDelete []columns.Column) {
 }
 
 // ReadOnlyColumnsToDelete returns a read only version of the columns that need to be deleted.
-func (d *DwhTableConfig) ReadOnlyColumnsToDelete() map[string]time.Time {
+func (d *DestinationTableConfig) ReadOnlyColumnsToDelete() map[string]time.Time {
 	d.RLock()
 	defer d.RUnlock()
 	return maps.Clone(d.columnsToDelete)
 }
 
-func (d *DwhTableConfig) ShouldDeleteColumn(colName string, cdcTime time.Time, containOtherOperations bool) bool {
+func (d *DestinationTableConfig) ShouldDeleteColumn(colName string, cdcTime time.Time, containOtherOperations bool) bool {
 	if d == nil {
 		// Avoid a panic and default to FALSE.
 		return false
@@ -155,7 +155,7 @@ func (d *DwhTableConfig) ShouldDeleteColumn(colName string, cdcTime time.Time, c
 	return false
 }
 
-func (d *DwhTableConfig) AddColumnsToDelete(colName string, ts time.Time) {
+func (d *DestinationTableConfig) AddColumnsToDelete(colName string, ts time.Time) {
 	d.Lock()
 	defer d.Unlock()
 

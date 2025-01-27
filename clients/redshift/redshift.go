@@ -21,7 +21,7 @@ type Store struct {
 	credentialsClause string
 	bucket            string
 	optionalS3Prefix  string
-	configMap         *types.DwhToTablesConfigMap
+	configMap         *types.DestinationTableCache
 	config            config.Config
 
 	db.Store
@@ -43,7 +43,7 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sq
 	return dialect.NewTableIdentifier(topicConfig.Schema, table)
 }
 
-func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
+func (s *Store) GetConfigMap() *types.DestinationTableCache {
 	if s == nil {
 		return nil
 	}
@@ -59,7 +59,7 @@ func (s *Store) dialect() dialect.RedshiftDialect {
 	return dialect.RedshiftDialect{}
 }
 
-func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DestinationTableConfig, error) {
 	return shared.GetTableCfgArgs{
 		Dwh:                   s,
 		TableID:               s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
@@ -90,7 +90,7 @@ func LoadRedshift(cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			configMap: &types.DwhToTablesConfigMap{},
+			configMap: &types.DestinationTableCache{},
 			config:    cfg,
 
 			Store: *_store,
@@ -110,7 +110,7 @@ func LoadRedshift(cfg config.Config, _store *db.Store) (*Store, error) {
 		credentialsClause: cfg.Redshift.CredentialsClause,
 		bucket:            cfg.Redshift.Bucket,
 		optionalS3Prefix:  cfg.Redshift.OptionalS3Prefix,
-		configMap:         &types.DwhToTablesConfigMap{},
+		configMap:         &types.DestinationTableCache{},
 		config:            cfg,
 
 		Store: store,

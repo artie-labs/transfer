@@ -19,7 +19,7 @@ import (
 
 type Store struct {
 	db.Store
-	configMap *types.DwhToTablesConfigMap
+	configMap *types.DestinationTableCache
 	config    config.Config
 }
 
@@ -27,7 +27,7 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sq
 	return dialect.NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
 
-func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DestinationTableConfig, error) {
 	return shared.GetTableCfgArgs{
 		Dwh:                   s,
 		TableID:               s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
@@ -56,7 +56,7 @@ func (s *Store) dialect() dialect.SnowflakeDialect {
 	return dialect.SnowflakeDialect{}
 }
 
-func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
+func (s *Store) GetConfigMap() *types.DestinationTableCache {
 	if s == nil {
 		return nil
 	}
@@ -76,7 +76,7 @@ func LoadSnowflake(cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			configMap: &types.DwhToTablesConfigMap{},
+			configMap: &types.DestinationTableCache{},
 			config:    cfg,
 			Store:     *_store,
 		}, nil
@@ -98,7 +98,7 @@ func LoadSnowflake(cfg config.Config, _store *db.Store) (*Store, error) {
 	}
 
 	return &Store{
-		configMap: &types.DwhToTablesConfigMap{},
+		configMap: &types.DestinationTableCache{},
 		config:    cfg,
 		Store:     store,
 	}, nil

@@ -7,16 +7,16 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 )
 
-type DwhToTablesConfigMap struct {
-	fqNameToDwhTableConfig map[string]*DwhTableConfig
+type DestinationTableCache struct {
+	fqNameToDestTableCfg map[string]*DestinationTableConfig
 	sync.RWMutex
 }
 
-func (d *DwhToTablesConfigMap) TableConfigCache(tableID sql.TableIdentifier) *DwhTableConfig {
+func (d *DestinationTableCache) TableConfigCache(tableID sql.TableIdentifier) *DestinationTableConfig {
 	d.RLock()
 	defer d.RUnlock()
 
-	tableConfig, isOk := d.fqNameToDwhTableConfig[tableID.FullyQualifiedName()]
+	tableConfig, isOk := d.fqNameToDestTableCfg[tableID.FullyQualifiedName()]
 	if !isOk {
 		return nil
 	}
@@ -24,15 +24,15 @@ func (d *DwhToTablesConfigMap) TableConfigCache(tableID sql.TableIdentifier) *Dw
 	return tableConfig
 }
 
-func (d *DwhToTablesConfigMap) AddTableToConfig(tableID sql.TableIdentifier, config *DwhTableConfig) {
+func (d *DestinationTableCache) AddTableToConfig(tableID sql.TableIdentifier, config *DestinationTableConfig) {
 	d.Lock()
 	defer d.Unlock()
 
-	if d.fqNameToDwhTableConfig == nil {
-		d.fqNameToDwhTableConfig = make(map[string]*DwhTableConfig)
+	if d.fqNameToDestTableCfg == nil {
+		d.fqNameToDestTableCfg = make(map[string]*DestinationTableConfig)
 	}
 
-	d.fqNameToDwhTableConfig[tableID.FullyQualifiedName()] = config
+	d.fqNameToDestTableCfg[tableID.FullyQualifiedName()] = config
 }
 
 type MergeOpts struct {
