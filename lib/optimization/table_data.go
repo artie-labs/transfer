@@ -48,6 +48,12 @@ type TableData struct {
 	name string
 }
 
+func (t *TableData) WipeData() {
+	t.rowsData = make(map[string]map[string]any)
+	t.rows = []map[string]any{}
+	t.approxSize = 0
+}
+
 func (t *TableData) Mode() config.Mode {
 	return t.mode
 }
