@@ -61,7 +61,6 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 	}
 	{
 		// Apply schema evolution for the MSM table
-		// We're not going to drop columns for MSM yet.
 		resp := columns.Diff(
 			tableData.ReadOnlyInMemoryCols().GetColumns(),
 			msmTableConfig.GetColumns(),
@@ -79,6 +78,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 	}
 	{
 		// Apply schema evolution for the target table
+		// TODO: Support dropping columns for the target table.
 		_, targetKeysMissing := columns.DiffAndFilter(
 			tableData.ReadOnlyInMemoryCols().GetColumns(),
 			targetTableConfig.GetColumns(),
@@ -100,13 +100,13 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 	}
 
 	if msmSettings.FirstAttempt() {
-		// If it's the first time we're doing this, we should now prepare the MSM table and be done.
-		if err = dwh.PrepareTemporaryTable(ctx, tableData, msmTableConfig, msmTableID, msmTableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, false); err != nil {
+		// If it's the first attempt, we'll just load the data directly into the MSM table.
+		if err = dwh.PrepareTemporaryTable(ctx, tableData, msmTableConfig, msmTableID, msmTableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
 			return false, fmt.Errorf("failed to prepare temporary table: %w", err)
 		}
 	} else {
-		// Now we'll want to load the staging table into the MSM table
-		// If it's the last attempt, we'll want to load the MSM table into the target table.
+		// Upon subsequent attempts, we'll want to load data into a staging table and then merge it into the MSM table.
+
 		temporaryTableID := TempTableIDWithSuffix(targetTableID, tableData.TempTableSuffix())
 		opts.UseBuildMergeQueryIntoStagingTable = true
 		if err := merge(ctx, dwh, tableData, msmTableConfig, temporaryTableID, msmTableID, opts); err != nil {
@@ -114,6 +114,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 		}
 
 		if msmSettings.LastAttempt() {
+			// If it's the last attempt, we'll want to load the MSM table into the target table.
 			opts.UseBuildMergeQueryIntoStagingTable = false
 			if err := merge(ctx, dwh, tableData, targetTableConfig, msmTableID, targetTableID, opts); err != nil {
 				return false, fmt.Errorf("failed to merge msm table into target table: %w", err)
