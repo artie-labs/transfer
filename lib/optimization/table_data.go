@@ -134,7 +134,7 @@ func (t *TableData) TopicConfig() kafkalib.TopicConfig {
 }
 
 func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKeys []string, topicConfig kafkalib.TopicConfig, name string) *TableData {
-	return &TableData{
+	td := TableData{
 		mode:            mode,
 		inMemoryColumns: inMemoryColumns,
 		rowsData:        map[string]map[string]any{},
@@ -145,6 +145,16 @@ func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKey
 		PartitionsToLastMessage: map[string][]artie.Message{},
 		name:                    name,
 	}
+
+	if multiStepMergeSettings := topicConfig.MultiStepMergeSettings; multiStepMergeSettings != nil {
+		td.multiStepMergeSettings = MultiStepMergeSettings{
+			Enabled:         multiStepMergeSettings.Enabled,
+			FlushAttempts:   0,
+			TotalFlushCount: multiStepMergeSettings.FlushCount,
+		}
+	}
+
+	return &td
 }
 
 // InsertRow creates a single entrypoint for how rows get added to TableData

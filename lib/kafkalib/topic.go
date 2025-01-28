@@ -27,8 +27,7 @@ func GetUniqueTopicConfigs(tcs []*TopicConfig) []TopicConfig {
 type MultiStepMergeSettings struct {
 	Enabled bool `yaml:"enabled"`
 	// FlushCount is the number of times we will flush to the multi-step merge table before merging into the destination table.
-	FlushCount int    `yaml:"flushCount"`
-	TableName  string `yaml:"tableName"`
+	FlushCount int `yaml:"flushCount"`
 }
 
 func (m MultiStepMergeSettings) Validate() error {
@@ -38,10 +37,6 @@ func (m MultiStepMergeSettings) Validate() error {
 
 	if m.FlushCount <= 0 {
 		return fmt.Errorf("flush count must be greater than 0")
-	}
-
-	if stringutil.Empty(m.TableName) {
-		return fmt.Errorf("table name is empty")
 	}
 
 	return nil
