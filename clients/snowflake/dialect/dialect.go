@@ -89,6 +89,7 @@ func (sd SnowflakeDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableI
 	return parts
 }
 
+// BuildMergeQueryIntoStagingTable - This is used to merge data from a staging table into a multi-step merge staging table.
 func (sd SnowflakeDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
 	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, sd)
 	if len(additionalEqualityStrings) > 0 {
@@ -102,11 +103,11 @@ MERGE INTO %s %s USING ( %s ) AS %s ON %s`,
 
 	return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED THEN UPDATE SET %s
-WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s);`,
+WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
 		// Update
 		sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, sd),
 		// Insert
-		sql.QuotedDeleteColumnMarker(constants.StagingAlias, sd), strings.Join(sql.QuoteColumns(cols, sd), ","),
+		strings.Join(sql.QuoteColumns(cols, sd), ","),
 		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, sd), ","),
 	)}
 }
