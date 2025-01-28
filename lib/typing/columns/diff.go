@@ -38,11 +38,15 @@ func shouldSkipColumn(colName string, softDelete bool, includeArtieUpdatedAt boo
 	return strings.Contains(colName, constants.ArtiePrefix)
 }
 
-// Diff - when given 2 maps, a source and target
-// It will provide a diff in the form of 2 variables
-func Diff(columnsInSource []Column, columnsInDestination []Column, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, mode config.Mode) ([]Column, []Column) {
-	src := buildColumnsMap(columnsInSource)
-	targ := buildColumnsMap(columnsInDestination)
+type DiffResults struct {
+	SourceColumnsMissing []Column
+	TargetColumnsMissing []Column
+}
+
+func Diff(sourceColumns []Column, targetColumns []Column) DiffResults {
+	src := buildColumnsMap(sourceColumns)
+	targ := buildColumnsMap(targetColumns)
+
 	for _, colName := range src.Keys() {
 		if _, isOk := targ.Get(colName); isOk {
 			targ.Remove(colName)
@@ -52,23 +56,38 @@ func Diff(columnsInSource []Column, columnsInDestination []Column, softDelete bo
 
 	var targetColumnsMissing []Column
 	for _, col := range src.All() {
-		if shouldSkipColumn(col.Name(), softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode) {
-			continue
-		}
-
 		targetColumnsMissing = append(targetColumnsMissing, col)
 	}
 
 	var sourceColumnsMissing []Column
 	for _, col := range targ.All() {
+		sourceColumnsMissing = append(sourceColumnsMissing, col)
+	}
+
+	return DiffResults{
+		SourceColumnsMissing: sourceColumnsMissing,
+		TargetColumnsMissing: targetColumnsMissing,
+	}
+}
+
+func filterColumns(columns []Column, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, mode config.Mode) []Column {
+	var filteredColumns []Column
+	for _, col := range columns {
 		if shouldSkipColumn(col.Name(), softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode) {
 			continue
 		}
 
-		sourceColumnsMissing = append(sourceColumnsMissing, col)
+		filteredColumns = append(filteredColumns, col)
 	}
 
-	return sourceColumnsMissing, targetColumnsMissing
+	return filteredColumns
+}
+
+// DiffAndFilter - will diff the columns and filter out any Artie metadata columns that should not exist in the target table.
+func DiffAndFilter(columnsInSource []Column, columnsInDestination []Column, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, mode config.Mode) ([]Column, []Column) {
+	diffResult := Diff(columnsInSource, columnsInDestination)
+	return filterColumns(diffResult.SourceColumnsMissing, softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode),
+		filterColumns(diffResult.TargetColumnsMissing, softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode)
 }
 
 func buildColumnsMap(cols []Column) *maputil.OrderedMap[Column] {

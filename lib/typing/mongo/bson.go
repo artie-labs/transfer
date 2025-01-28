@@ -87,9 +87,19 @@ func bsonBinaryValueToMap(value primitive.Binary) (any, error) {
 func bsonValueToGoValue(value any) (any, error) {
 	switch v := value.(type) {
 	case primitive.DateTime:
-		return v.Time().UTC(), nil
+		dt := v.Time().UTC()
+		if dt.Year() > 9999 {
+			return nil, nil
+		}
+
+		return dt, nil
 	case primitive.Timestamp:
-		return time.Unix(int64(v.T), 0).UTC(), nil
+		ts := time.Unix(int64(v.T), 0).UTC()
+		if ts.Year() > 9999 {
+			return nil, nil
+		}
+
+		return ts, nil
 	case primitive.ObjectID:
 		return v.Hex(), nil
 	case primitive.Binary:

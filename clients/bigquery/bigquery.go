@@ -141,15 +141,15 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sq
 	return dialect.NewTableIdentifier(s.config.BigQuery.ProjectID, topicConfig.Database, table)
 }
 
-func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
 	return shared.GetTableCfgArgs{
 		Dwh:                   s,
-		TableID:               s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
+		TableID:               tableID,
 		ConfigMap:             s.configMap,
 		ColumnNameForName:     "column_name",
 		ColumnNameForDataType: "data_type",
 		ColumnNameForComment:  "description",
-		DropDeletedColumns:    tableData.TopicConfig().DropDeletedColumns,
+		DropDeletedColumns:    dropDeletedColumns,
 	}.GetTableConfig()
 }
 

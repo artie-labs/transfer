@@ -22,12 +22,13 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		return nil
 	}
 
-	tableConfig, err := dwh.GetTableConfig(tableData)
+	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	tableConfig, err := dwh.GetTableConfig(tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return fmt.Errorf("failed to get table config: %w", err)
 	}
 
-	srcKeysMissing, targetKeysMissing := columns.Diff(
+	srcKeysMissing, targetKeysMissing := columns.DiffAndFilter(
 		tableData.ReadOnlyInMemoryCols().GetColumns(),
 		tableConfig.GetColumns(),
 		tableData.TopicConfig().SoftDelete,
@@ -36,7 +37,6 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		tableData.Mode(),
 	)
 
-	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	if tableConfig.CreateTable() {
 		if err = CreateTable(ctx, dwh, tableData, tableConfig, opts.ColumnSettings, tableID, false, targetKeysMissing); err != nil {
 			return fmt.Errorf("failed to create table: %w", err)
