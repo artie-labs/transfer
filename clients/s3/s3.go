@@ -60,7 +60,11 @@ func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
 
 func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {
 	// There's no difference in appending or merging for S3.
-	return s.Merge(ctx, tableData)
+	if _, err := s.Merge(ctx, tableData); err != nil {
+		return fmt.Errorf("failed to merge: %w", err)
+	}
+
+	return nil
 }
 
 func buildTemporaryFilePath(tableData *optimization.TableData) string {
@@ -72,26 +76,26 @@ func buildTemporaryFilePath(tableData *optimization.TableData) string {
 // 2. Load the temporary file, under this format: s3://bucket/folderName/fullyQualifiedTableName/YYYY-MM-DD/{{unix_timestamp}}.parquet
 // 3. It will then upload this to S3
 // 4. Delete the temporary file
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
 	if tableData.ShouldSkipUpdate() {
-		return nil
+		return false, nil
 	}
 
 	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	schema, err := parquetutil.BuildCSVSchema(cols)
 	if err != nil {
-		return fmt.Errorf("failed to generate parquet schema: %w", err)
+		return false, fmt.Errorf("failed to generate parquet schema: %w", err)
 	}
 
 	fp := buildTemporaryFilePath(tableData)
 	fw, err := local.NewLocalFileWriter(fp)
 	if err != nil {
-		return fmt.Errorf("failed to create a local parquet file: %w", err)
+		return false, fmt.Errorf("failed to create a local parquet file: %w", err)
 	}
 
 	pw, err := writer.NewCSVWriter(schema, fw, 4)
 	if err != nil {
-		return fmt.Errorf("failed to instantiate parquet writer: %w", err)
+		return false, fmt.Errorf("failed to instantiate parquet writer: %w", err)
 	}
 
 	pw.CompressionType = parquet.CompressionCodec_GZIP
@@ -100,23 +104,23 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		for _, col := range cols {
 			value, err := parquetutil.ParseValue(val[col.Name()], col.KindDetails)
 			if err != nil {
-				return fmt.Errorf("failed to parse value, err: %w, value: %v, column: %q", err, val[col.Name()], col.Name())
+				return false, fmt.Errorf("failed to parse value, err: %w, value: %v, column: %q", err, val[col.Name()], col.Name())
 			}
 
 			row = append(row, value)
 		}
 
 		if err = pw.Write(row); err != nil {
-			return fmt.Errorf("failed to write row: %w", err)
+			return false, fmt.Errorf("failed to write row: %w", err)
 		}
 	}
 
 	if err = pw.WriteStop(); err != nil {
-		return fmt.Errorf("failed to write stop: %w", err)
+		return false, fmt.Errorf("failed to write stop: %w", err)
 	}
 
 	if err = fw.Close(); err != nil {
-		return fmt.Errorf("failed to close filewriter: %w", err)
+		return false, fmt.Errorf("failed to close filewriter: %w", err)
 	}
 
 	defer func() {
@@ -133,10 +137,10 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		OverrideAWSAccessKeyID:     typing.ToPtr(s.config.S3.AwsAccessKeyID),
 		OverrideAWSAccessKeySecret: typing.ToPtr(s.config.S3.AwsSecretAccessKey),
 	}); err != nil {
-		return fmt.Errorf("failed to upload file to s3: %w", err)
+		return false, fmt.Errorf("failed to upload file to s3: %w", err)
 	}
 
-	return nil
+	return true, nil
 }
 
 func (s *Store) IsRetryableError(_ error) bool {

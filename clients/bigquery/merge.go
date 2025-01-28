@@ -15,23 +15,23 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
 	var additionalEqualityStrings []string
 	if tableData.TopicConfig().BigQueryPartitionSettings != nil {
 		distinctDates, err := buildDistinctDates(tableData.TopicConfig().BigQueryPartitionSettings.PartitionField, tableData.Rows())
 		if err != nil {
-			return fmt.Errorf("failed to generate distinct dates: %w", err)
+			return false, fmt.Errorf("failed to generate distinct dates: %w", err)
 		}
 
 		mergeString, err := generateMergeString(tableData.TopicConfig().BigQueryPartitionSettings, s.Dialect(), distinctDates)
 		if err != nil {
-			return fmt.Errorf("failed to generate merge string: %w", err)
+			return false, fmt.Errorf("failed to generate merge string: %w", err)
 		}
 
 		additionalEqualityStrings = []string{mergeString}
 	}
 
-	return shared.Merge(ctx, s, tableData, types.MergeOpts{
+	err := shared.Merge(ctx, s, tableData, types.MergeOpts{
 		AdditionalEqualityStrings: additionalEqualityStrings,
 		ColumnSettings:            s.config.SharedDestinationSettings.ColumnSettings,
 		// BigQuery has DDL quotas.
@@ -39,6 +39,11 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) er
 		// We are using BigQuery's streaming API which doesn't guarantee exactly once semantics
 		SubQueryDedupe: true,
 	})
+	if err != nil {
+		return false, fmt.Errorf("failed to merge: %w", err)
+	}
+
+	return true, nil
 }
 
 func generateMergeString(bqSettings *partition.BigQuerySettings, dialect sql.Dialect, values []string) (string, error) {
