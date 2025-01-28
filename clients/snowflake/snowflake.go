@@ -14,6 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 type Store struct {
@@ -26,10 +27,24 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sq
 	return dialect.NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
 
-func (s *Store) DropTable(_ context.Context, _ sql.TableIdentifier) error {
-	return fmt.Errorf("not supported")
-}
+func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
+	snowflakeTableID, err := typing.AssertType[dialect.TableIdentifier](tableID)
+	if err != nil {
+		return err
+	}
 
+	if !snowflakeTableID.AllowToDrop() {
+		return fmt.Errorf("table %q is not allowed to be dropped", tableID.FullyQualifiedName())
+	}
+
+	if _, err = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", snowflakeTableID.FullyQualifiedName())); err != nil {
+		return fmt.Errorf("failed to drop table: %w", err)
+	}
+
+	// We'll then clear it from our cache
+	s.configMap.RemoveTableFromConfig(tableID)
+	return nil
+}
 func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
 	return shared.GetTableCfgArgs{
 		Dwh:                   s,
