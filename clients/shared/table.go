@@ -30,16 +30,16 @@ func getValidColumns(cols []columns.Column) []columns.Column {
 }
 
 func CreateTempTable(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tc *types.DwhTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier) error {
-	return CreateTable(ctx, dwh, tableData, tc, settings, tableID, true, tableData.ReadOnlyInMemoryCols().GetColumns())
+	return CreateTable(ctx, dwh, tableData.Mode(), tc, settings, tableID, true, tableData.ReadOnlyInMemoryCols().GetColumns())
 }
 
-func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tc *types.DwhTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, tempTable bool, cols []columns.Column) error {
+func CreateTable(ctx context.Context, dwh destination.DataWarehouse, mode config.Mode, tc *types.DwhTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, tempTable bool, cols []columns.Column) error {
 	cols = getValidColumns(cols)
 	if len(cols) == 0 {
 		return nil
 	}
 
-	query, err := ddl.BuildCreateTableSQL(settings, dwh.Dialect(), tableID, tempTable, tableData.Mode(), cols)
+	query, err := ddl.BuildCreateTableSQL(settings, dwh.Dialect(), tableID, tempTable, mode, cols)
 	if err != nil {
 		return fmt.Errorf("failed to build create table sql: %w", err)
 	}
