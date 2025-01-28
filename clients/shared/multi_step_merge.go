@@ -106,7 +106,6 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 		}
 	} else {
 		// Upon subsequent attempts, we'll want to load data into a staging table and then merge it into the MSM table.
-
 		temporaryTableID := TempTableIDWithSuffix(targetTableID, tableData.TempTableSuffix())
 		opts.UseBuildMergeQueryIntoStagingTable = true
 		if err := merge(ctx, dwh, tableData, msmTableConfig, temporaryTableID, msmTableID, opts); err != nil {
