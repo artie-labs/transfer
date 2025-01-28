@@ -35,12 +35,16 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _
 	return shared.Append(ctx, s, tableData, types.AdditionalSettings{})
 }
 
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
-	return shared.Merge(ctx, s, tableData, types.MergeOpts{
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
+	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{
 		// We are adding SELECT DISTINCT here for the temporary table as an extra guardrail.
 		// Redshift does not enforce any row uniqueness and there could be potential LOAD errors which will cause duplicate rows to arise.
 		SubQueryDedupe: true,
-	})
+	}); err != nil {
+		return false, fmt.Errorf("failed to merge: %w", err)
+	}
+
+	return true, nil
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {

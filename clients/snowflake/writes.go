@@ -2,6 +2,7 @@ package snowflake
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -27,8 +28,14 @@ func (s *Store) additionalEqualityStrings(tableData *optimization.TableData) []s
 	return sql.BuildColumnComparisons(cols, constants.TargetAlias, constants.StagingAlias, sql.Equal, s.Dialect())
 }
 
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
-	return shared.Merge(ctx, s, tableData, types.MergeOpts{
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
+	err := shared.Merge(ctx, s, tableData, types.MergeOpts{
 		AdditionalEqualityStrings: s.additionalEqualityStrings(tableData),
 	})
+
+	if err != nil {
+		return false, fmt.Errorf("failed to merge: %w", err)
+	}
+
+	return true, nil
 }
