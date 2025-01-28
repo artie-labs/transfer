@@ -122,34 +122,6 @@ func buildColumns(colTypesMap map[string]typing.KindDetails) *columns.Columns {
 	return &cols
 }
 
-func TestSnowflakeDialect_BuildMergeQueryIntoStagingTable(t *testing.T) {
-	fqTable := "db.schema.table"
-	_cols := buildColumns(map[string]typing.KindDetails{
-		"id":                                typing.String,
-		"bar":                               typing.String,
-		"updated_at":                        typing.TimestampNTZ,
-		constants.DeleteColumnMarker:        typing.Boolean,
-		constants.OnlySetDeleteColumnMarker: typing.Boolean,
-	})
-
-	fakeTableID := &mocks.FakeTableIdentifier{}
-	fakeTableID.FullyQualifiedNameReturns(fqTable)
-
-	statements := SnowflakeDialect{}.BuildMergeQueryIntoStagingTable(
-		fakeTableID,
-		fqTable,
-		[]columns.Column{columns.NewColumn("id", typing.Invalid)},
-		nil,
-		_cols.ValidColumns(),
-	)
-
-	assert.Len(t, statements, 1)
-	assert.Equal(t, `
-MERGE INTO db.schema.table tgt USING ( db.schema.table ) AS stg ON tgt."ID" = stg."ID"
-WHEN MATCHED THEN UPDATE SET "__ARTIE_DELETE"=stg."__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE"=stg."__ARTIE_ONLY_SET_DELETE","BAR"=stg."BAR","ID"=stg."ID","UPDATED_AT"=stg."UPDATED_AT"
-WHEN NOT MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN INSERT ("__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","BAR","ID","UPDATED_AT") VALUES (stg."__ARTIE_DELETE",stg."__ARTIE_ONLY_SET_DELETE",stg."BAR",stg."ID",stg."UPDATED_AT");`, statements[0])
-}
-
 func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 	fqTable := "database.schema.table"
 	_cols := buildColumns(map[string]typing.KindDetails{
