@@ -14,44 +14,44 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, opts types.MergeOpts) error {
+func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, opts types.MergeOpts) (bool, error) {
 	if _, ok := dwh.Dialect().(dialect.SnowflakeDialect); !ok {
-		return fmt.Errorf("multi-step merge is only supported on Snowflake")
+		return false, fmt.Errorf("multi-step merge is only supported on Snowflake")
 	}
 
 	msmSettings := tableData.MultiStepMergeSettings()
 	if !msmSettings.Enabled {
-		return fmt.Errorf("multi-step merge is not enabled")
+		return false, fmt.Errorf("multi-step merge is not enabled")
 	}
 
 	if tableData.ShouldSkipUpdate() {
 		// TODO: We should support the fact that if we've written data to the msm table and there are no messages in subsequent attempts,
 		// we should merge the msm table into the target table.
-		return nil
+		return false, nil
 	}
 
 	msmTableID := dwh.IdentifierFor(tableData.TopicConfig(), fmt.Sprintf("%s_msm", tableData.Name()))
 	targetTableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	targetTableConfig, err := dwh.GetTableConfig(targetTableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
-		return fmt.Errorf("failed to get table config: %w", err)
+		return false, fmt.Errorf("failed to get table config: %w", err)
 	}
 
 	if msmSettings.FirstAttempt() {
 		// If it's the first time we are doing this, we should ensure the MSM table has been dropped.
 		if err := dwh.DropTable(ctx, msmTableID); err != nil {
-			return fmt.Errorf("failed to drop msm table: %w", err)
+			return false, fmt.Errorf("failed to drop msm table: %w", err)
 		}
 
 		// We should now align our columns against the target table.
 		if err = tableData.MergeColumnsFromDestination(targetTableConfig.GetColumns()...); err != nil {
-			return fmt.Errorf("failed to merge columns from destination: %w for table %q", err, tableData.Name())
+			return false, fmt.Errorf("failed to merge columns from destination: %w for table %q", err, tableData.Name())
 		}
 	}
 
 	msmTableConfig, err := dwh.GetTableConfig(msmTableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
-		return fmt.Errorf("failed to get table config: %w", err)
+		return false, fmt.Errorf("failed to get table config: %w", err)
 	}
 
 	{
@@ -68,11 +68,11 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 
 		if msmTableConfig.CreateTable() {
 			if err = CreateTable(ctx, dwh, tableData.Mode(), msmTableConfig, opts.ColumnSettings, msmTableID, false, targetKeysMissing); err != nil {
-				return fmt.Errorf("failed to create table: %w", err)
+				return false, fmt.Errorf("failed to create table: %w", err)
 			}
 		} else {
 			if err = AlterTableAddColumns(ctx, dwh, msmTableConfig, opts.ColumnSettings, msmTableID, targetKeysMissing); err != nil {
-				return fmt.Errorf("failed to add columns for table %q: %w", msmTableID.Table(), err)
+				return false, fmt.Errorf("failed to add columns for table %q: %w", msmTableID.Table(), err)
 			}
 		}
 	}
@@ -89,11 +89,11 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 
 		if targetTableConfig.CreateTable() {
 			if err = CreateTable(ctx, dwh, tableData.Mode(), targetTableConfig, opts.ColumnSettings, targetTableID, false, targetKeysMissing); err != nil {
-				return fmt.Errorf("failed to create table: %w", err)
+				return false, fmt.Errorf("failed to create table: %w", err)
 			}
 		} else {
 			if err = AlterTableAddColumns(ctx, dwh, targetTableConfig, opts.ColumnSettings, targetTableID, targetKeysMissing); err != nil {
-				return fmt.Errorf("failed to add columns for table %q: %w", targetTableID.Table(), err)
+				return false, fmt.Errorf("failed to add columns for table %q: %w", targetTableID.Table(), err)
 			}
 		}
 	}
@@ -101,23 +101,27 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 	if msmSettings.FirstAttempt() {
 		// If it's the first time we're doing this, we should now prepare the MSM table and be done.
 		if err = dwh.PrepareTemporaryTable(ctx, tableData, msmTableConfig, msmTableID, msmTableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
-			return fmt.Errorf("failed to prepare temporary table: %w", err)
+			return false, fmt.Errorf("failed to prepare temporary table: %w", err)
 		}
 	} else {
 		// Now we'll want to load the staging table into the MSM table
 		// If it's the last attempt, we'll want to load the MSM table into the target table.
 		if err := merge(ctx, dwh, tableData, msmTableConfig, msmTableID, opts); err != nil {
-			return fmt.Errorf("failed to merge msm table into target table: %w", err)
+			return false, fmt.Errorf("failed to merge msm table into target table: %w", err)
 		}
 
 		if msmSettings.LastAttempt() {
 			if err := merge(ctx, dwh, tableData, targetTableConfig, targetTableID, opts); err != nil {
-				return fmt.Errorf("failed to merge msm table into target table: %w", err)
+				return false, fmt.Errorf("failed to merge msm table into target table: %w", err)
 			}
+
+			// We should only commit on the last attempt.
+			return true, nil
 		}
 	}
 
-	return nil
+	tableData.UpdateMultiStepMergeAttempt()
+	return false, nil
 }
 
 func merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, targetTableID sql.TableIdentifier, opts types.MergeOpts) error {
@@ -183,5 +187,6 @@ func merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 	if err = destination.ExecStatements(dwh, mergeStatements); err != nil {
 		return fmt.Errorf("failed to execute merge statements: %w", err)
 	}
+
 	return nil
 }

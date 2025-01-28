@@ -32,7 +32,7 @@ type Store struct {
 	configMap *types.DwhToTablesConfigMap
 }
 
-func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
+func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
 	return shared.Merge(ctx, s, tableData, types.MergeOpts{})
 }
 

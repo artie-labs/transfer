@@ -44,7 +44,7 @@ func (s *Store) dialect() dialect.MSSQLDialect {
 	return dialect.MSSQLDialect{}
 }
 
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
 	return shared.Merge(ctx, s, tableData, types.MergeOpts{})
 }
 

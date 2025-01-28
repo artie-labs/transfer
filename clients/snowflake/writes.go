@@ -27,7 +27,7 @@ func (s *Store) additionalEqualityStrings(tableData *optimization.TableData) []s
 	return sql.BuildColumnComparisons(cols, constants.TargetAlias, constants.StagingAlias, sql.Equal, s.Dialect())
 }
 
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
 	return shared.Merge(ctx, s, tableData, types.MergeOpts{
 		AdditionalEqualityStrings: s.additionalEqualityStrings(tableData),
 	})

@@ -34,7 +34,7 @@ type DataWarehouse interface {
 }
 
 type Baseline interface {
-	Merge(ctx context.Context, tableData *optimization.TableData) error
+	Merge(ctx context.Context, tableData *optimization.TableData) (commitTransaction bool, err error)
 	Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error
 	IsRetryableError(err error) bool
 	IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sqllib.TableIdentifier
