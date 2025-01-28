@@ -121,6 +121,7 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 	for _, row := range tableData.Rows() {
 		var csvRow []string
 		for _, col := range columns {
+			fmt.Println("col", col.Name(), "row[col.Name()]", row[col.Name()])
 			castedValue, castErr := castColValStaging(row[col.Name()], col.KindDetails)
 			if castErr != nil {
 				return "", fmt.Errorf("failed to cast value '%v': %w", row[col.Name()], castErr)

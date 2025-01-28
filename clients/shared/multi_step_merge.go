@@ -134,6 +134,11 @@ func merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		}
 	}()
 
+	snowflakeDialect, ok := dwh.Dialect().(dialect.SnowflakeDialect)
+	if !ok {
+		return fmt.Errorf("multi-step merge is only supported on Snowflake")
+	}
+
 	if err := dwh.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID, targetTableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
 		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
@@ -141,7 +146,7 @@ func merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 	// TODO: Support column backfill
 	subQuery := temporaryTableID.FullyQualifiedName()
 	if opts.SubQueryDedupe {
-		subQuery = dwh.Dialect().BuildDedupeTableQuery(temporaryTableID, tableData.PrimaryKeys())
+		subQuery = snowflakeDialect.BuildDedupeTableQuery(temporaryTableID, tableData.PrimaryKeys())
 	}
 
 	if subQuery == "" {
@@ -173,20 +178,33 @@ func merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		}
 	}
 
-	mergeStatements, err := dwh.Dialect().BuildMergeQueries(
-		targetTableID,
-		subQuery,
-		primaryKeys,
-		opts.AdditionalEqualityStrings,
-		validColumns,
-		tableData.TopicConfig().SoftDelete,
-		tableData.ContainsHardDeletes(),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to generate merge statements: %w", err)
+	var mergeStatements []string
+	if tableData.MultiStepMergeSettings().LastAttempt() {
+		_mergeStatements, err := snowflakeDialect.BuildMergeQueries(
+			targetTableID,
+			subQuery,
+			primaryKeys,
+			opts.AdditionalEqualityStrings,
+			validColumns,
+			tableData.TopicConfig().SoftDelete,
+			tableData.ContainsHardDeletes(),
+		)
+		if err != nil {
+			return fmt.Errorf("failed to generate merge statements: %w", err)
+		}
+
+		mergeStatements = _mergeStatements
+	} else {
+		mergeStatements = snowflakeDialect.BuildMergeQueryIntoStagingTable(
+			targetTableID,
+			subQuery,
+			primaryKeys,
+			opts.AdditionalEqualityStrings,
+			validColumns,
+		)
 	}
 
-	if err = destination.ExecStatements(dwh, mergeStatements); err != nil {
+	if err := destination.ExecStatements(dwh, mergeStatements); err != nil {
 		return fmt.Errorf("failed to execute merge statements: %w", err)
 	}
 
