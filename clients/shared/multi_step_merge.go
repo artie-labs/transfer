@@ -26,7 +26,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 	}
 
 	if tableData.ShouldSkipUpdate() {
-		// TODO: We should support the fact that if we've written data to the msm table and there are no messages in subsequent attempts,
+		// TODO: We should support the fact that if we've written data to the msm table and there are no messages in subsequent flushes,
 		// we should merge the msm table into the target table.
 		return false, nil
 	}
@@ -38,7 +38,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 		return false, fmt.Errorf("failed to get table config: %w", err)
 	}
 
-	if msmSettings.FirstAttempt() {
+	if msmSettings.IsFirstCount() {
 		sflkMSMTableID, ok := msmTableID.(dialect.TableIdentifier)
 		if !ok {
 			return false, fmt.Errorf("failed to get snowflake table identifier")
@@ -99,14 +99,14 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 		}
 	}
 
-	if msmSettings.FirstAttempt() {
-		// If it's the first attempt, we'll just load the data directly into the MSM table.
+	if msmSettings.IsFirstCount() {
+		// If it's the first flush, we'll just load the data directly into the MSM table.
 		// Don't need to create the temporary table, we've already created it above.
 		if err = dwh.PrepareTemporaryTable(ctx, tableData, msmTableConfig, msmTableID, msmTableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, false); err != nil {
 			return false, fmt.Errorf("failed to prepare temporary table: %w", err)
 		}
 	} else {
-		// Upon subsequent attempts, we'll want to load data into a staging table and then merge it into the MSM table.
+		// Upon subsequent flushes, we'll want to load data into a staging table and then merge it into the MSM table.
 		temporaryTableID := TempTableIDWithSuffix(targetTableID, tableData.TempTableSuffix())
 		opts.UseBuildMergeQueryIntoStagingTable = true
 		opts.PrepareTemporaryTable = true
@@ -114,22 +114,22 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 			return false, fmt.Errorf("failed to merge msm table into target table: %w", err)
 		}
 
-		if msmSettings.LastAttempt() {
-			// If it's the last attempt, we'll want to load the MSM table into the target table.
+		if msmSettings.IsLastCount() {
+			// If it's the last flush, we'll want to load the MSM table into the target table.
 			opts.UseBuildMergeQueryIntoStagingTable = false
 			opts.PrepareTemporaryTable = false
 			if err := merge(ctx, dwh, tableData, targetTableConfig, msmTableID, targetTableID, opts); err != nil {
 				return false, fmt.Errorf("failed to merge msm table into target table: %w", err)
 			}
 
-			// We should only commit on the last attempt.
+			// We should only commit on the last flush.
 			return true, nil
 		}
 	}
 
 	tableData.WipeData()
-	tableData.IncrementMultiStepMergeAttempt()
-	slog.Info("Multi-step merge completed, updated the attempt count and wiped our in-memory database", slog.Int("updatedAttempts", tableData.MultiStepMergeSettings().FlushAttempts()))
+	tableData.IncrementMultiStepMergeFlushCount()
+	slog.Info("Multi-step merge completed, updated the flush count and wiped our in-memory database", slog.Int("flushCount", tableData.MultiStepMergeSettings().FlushCount()))
 	return false, nil
 }
 

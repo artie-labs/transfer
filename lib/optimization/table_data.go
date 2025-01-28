@@ -15,25 +15,25 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func (m MultiStepMergeSettings) FirstAttempt() bool {
-	return m.flushAttempts == 0
+func (m MultiStepMergeSettings) IsFirstCount() bool {
+	return m.flushCount == 0
 }
 
-func (m MultiStepMergeSettings) LastAttempt() bool {
-	return m.flushAttempts == m.TotalFlushCount
+func (m MultiStepMergeSettings) IsLastCount() bool {
+	return m.flushCount == m.TotalFlushCount
 }
 
-func (m MultiStepMergeSettings) FlushAttempts() int {
-	return m.flushAttempts
+func (m MultiStepMergeSettings) FlushCount() int {
+	return m.flushCount
 }
 
 func (m *MultiStepMergeSettings) Increment() {
-	m.flushAttempts++
+	m.flushCount++
 }
 
 type MultiStepMergeSettings struct {
 	Enabled         bool
-	flushAttempts   int
+	flushCount      int
 	TotalFlushCount int
 }
 
@@ -77,7 +77,7 @@ func (t *TableData) MultiStepMergeSettings() MultiStepMergeSettings {
 	return t.multiStepMergeSettings
 }
 
-func (t *TableData) IncrementMultiStepMergeAttempt() {
+func (t *TableData) IncrementMultiStepMergeFlushCount() {
 	t.multiStepMergeSettings.Increment()
 }
 
