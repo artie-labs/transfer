@@ -28,7 +28,13 @@ func (s *Store) additionalEqualityStrings(tableData *optimization.TableData) []s
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
-	return shared.Merge(ctx, s, tableData, types.MergeOpts{
+	mergeOpts := types.MergeOpts{
 		AdditionalEqualityStrings: s.additionalEqualityStrings(tableData),
-	})
+	}
+
+	if tableData.MultiStepMergeSettings().Enabled {
+		return shared.MultiStepMerge(ctx, s, tableData, mergeOpts)
+	}
+
+	return shared.Merge(ctx, s, tableData, mergeOpts)
 }
