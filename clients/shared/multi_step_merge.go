@@ -120,6 +120,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 		}
 	}
 
+	tableData.WipeData()
 	tableData.UpdateMultiStepMergeAttempt()
 	return false, nil
 }
