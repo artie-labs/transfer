@@ -109,8 +109,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 		// Upon subsequent attempts, we'll want to load data into a staging table and then merge it into the MSM table.
 		temporaryTableID := TempTableIDWithSuffix(targetTableID, tableData.TempTableSuffix())
 		opts.UseBuildMergeQueryIntoStagingTable = true
-		opts.CreateTemporaryTable = true
-		opts.SkipPreparingTemporaryTable = false
+		opts.PrepareTemporaryTable = true
 		if err := merge(ctx, dwh, tableData, msmTableConfig, temporaryTableID, msmTableID, opts); err != nil {
 			return false, fmt.Errorf("failed to merge msm table into target table: %w", err)
 		}
@@ -118,8 +117,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 		if msmSettings.LastAttempt() {
 			// If it's the last attempt, we'll want to load the MSM table into the target table.
 			opts.UseBuildMergeQueryIntoStagingTable = false
-			opts.CreateTemporaryTable = false
-			opts.SkipPreparingTemporaryTable = true
+			opts.PrepareTemporaryTable = false
 			if err := merge(ctx, dwh, tableData, targetTableConfig, msmTableID, targetTableID, opts); err != nil {
 				return false, fmt.Errorf("failed to merge msm table into target table: %w", err)
 			}
@@ -147,8 +145,8 @@ func merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		return fmt.Errorf("multi-step merge is only supported on Snowflake")
 	}
 
-	if !opts.SkipPreparingTemporaryTable {
-		if err := dwh.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID, targetTableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, opts.CreateTemporaryTable); err != nil {
+	if opts.PrepareTemporaryTable {
+		if err := dwh.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID, targetTableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
 			return fmt.Errorf("failed to prepare temporary table: %w", err)
 		}
 	}
