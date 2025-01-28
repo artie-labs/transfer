@@ -144,7 +144,7 @@ func TestMultiStepMergeSettings_Validate(t *testing.T) {
 		assert.NoError(t, MultiStepMergeSettings{}.Validate())
 	}
 	{
-		// Enable, but flush count and table name are not set
+		// Enable, but flush count is not set
 		assert.ErrorContains(t, MultiStepMergeSettings{
 			Enabled: true,
 		}.Validate(), "flush count must be greater than 0")
