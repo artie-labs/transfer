@@ -60,7 +60,8 @@ func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
 
 func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {
 	// There's no difference in appending or merging for S3.
-	return s.Merge(ctx, tableData)
+	_, err := s.Merge(ctx, tableData)
+	return err
 }
 
 func buildTemporaryFilePath(tableData *optimization.TableData) string {
