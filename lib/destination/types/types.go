@@ -49,6 +49,7 @@ type MergeOpts struct {
 	SubQueryDedupe            bool
 
 	// Multi-step merge settings
+	CreateTemporaryTable               bool
 	UseBuildMergeQueryIntoStagingTable bool
 }
 
