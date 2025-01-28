@@ -11,6 +11,12 @@ import (
 )
 
 func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, opts types.MergeOpts) error {
+	msmTableID := dwh.IdentifierFor(tableData.TopicConfig(), fmt.Sprintf("%s_msm", tableData.Name()))
+	targetTableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+
+	// If it's the first time we're running this, we should create the msm table.
+	// if it already exists, we should drop it and recreate it.
+
 	// 1. We should load the table config based on the destination table to grab the column definitions
 	// 2. The very first time we create this table, we sohuld just simply load the intermittent staging table
 	// 3. Afterwards, we'll create a staging table and merge that into the intermittent staging table
