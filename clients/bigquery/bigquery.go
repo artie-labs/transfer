@@ -47,6 +47,10 @@ type Store struct {
 	db.Store
 }
 
+func (s *Store) DropTable(_ context.Context, _ sql.TableIdentifier) error {
+	return fmt.Errorf("not supported")
+}
+
 func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error {
 	if !useTempTable {
 		return shared.Append(ctx, s, tableData, types.AdditionalSettings{
