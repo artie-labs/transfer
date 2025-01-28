@@ -16,6 +16,7 @@ import (
 )
 
 type MultiStepMergeSettings struct {
+	Enabled             bool
 	WrittenData         bool
 	FlushCount          int
 	FlushCountRemaining int
@@ -51,10 +52,14 @@ type TableData struct {
 	temporaryTableSuffix string
 
 	// Multi-step merge settings
-	multiStepMergeSettings *MultiStepMergeSettings
+	multiStepMergeSettings MultiStepMergeSettings
 
 	// Name of the table in the destination
 	name string
+}
+
+func (t *TableData) MultiStepMergeSettings() MultiStepMergeSettings {
+	return t.multiStepMergeSettings
 }
 
 func (t *TableData) WipeData() {
