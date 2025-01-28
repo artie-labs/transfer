@@ -137,3 +137,21 @@ func TestTopicConfig_Load_ShouldSkip(t *testing.T) {
 		assert.True(t, tc.ShouldSkip("d"), tc.String())
 	}
 }
+
+func TestMultiStepMergeSettings_Validate(t *testing.T) {
+	{
+		// Not enabled
+		assert.NoError(t, MultiStepMergeSettings{}.Validate())
+	}
+	{
+		// Enable, but flush count is not set
+		assert.ErrorContains(t, MultiStepMergeSettings{Enabled: true}.Validate(), "flush count must be greater than 0")
+	}
+	{
+		// Valid
+		assert.NoError(t, MultiStepMergeSettings{
+			Enabled:    true,
+			FlushCount: 1,
+		}.Validate())
+	}
+}

@@ -15,6 +15,28 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+func (m MultiStepMergeSettings) IsFirstFlush() bool {
+	return m.flushCount == 0
+}
+
+func (m MultiStepMergeSettings) IsLastFlush() bool {
+	return m.flushCount == m.TotalFlushCount
+}
+
+func (m MultiStepMergeSettings) FlushCount() int {
+	return m.flushCount
+}
+
+func (m *MultiStepMergeSettings) Increment() {
+	m.flushCount++
+}
+
+type MultiStepMergeSettings struct {
+	Enabled         bool
+	flushCount      int
+	TotalFlushCount int
+}
+
 type TableData struct {
 	mode            config.Mode
 	inMemoryColumns *columns.Columns // list of columns
@@ -44,8 +66,26 @@ type TableData struct {
 
 	temporaryTableSuffix string
 
+	// Multi-step merge settings
+	multiStepMergeSettings MultiStepMergeSettings
+
 	// Name of the table in the destination
 	name string
+}
+
+func (t *TableData) MultiStepMergeSettings() MultiStepMergeSettings {
+	return t.multiStepMergeSettings
+}
+
+func (t *TableData) IncrementMultiStepMergeFlushCount() {
+	t.multiStepMergeSettings.Increment()
+}
+
+func (t *TableData) WipeData() {
+	t.rowsData = make(map[string]map[string]any)
+	t.rows = []map[string]any{}
+	t.approxSize = 0
+	t.ResetTempTableSuffix()
 }
 
 func (t *TableData) Mode() config.Mode {
@@ -103,7 +143,7 @@ func (t *TableData) TopicConfig() kafkalib.TopicConfig {
 }
 
 func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKeys []string, topicConfig kafkalib.TopicConfig, name string) *TableData {
-	return &TableData{
+	td := TableData{
 		mode:            mode,
 		inMemoryColumns: inMemoryColumns,
 		rowsData:        map[string]map[string]any{},
@@ -114,6 +154,15 @@ func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKey
 		PartitionsToLastMessage: map[string][]artie.Message{},
 		name:                    name,
 	}
+
+	if multiStepMergeSettings := topicConfig.MultiStepMergeSettings; multiStepMergeSettings != nil {
+		td.multiStepMergeSettings = MultiStepMergeSettings{
+			Enabled:         multiStepMergeSettings.Enabled,
+			TotalFlushCount: multiStepMergeSettings.FlushCount,
+		}
+	}
+
+	return &td
 }
 
 // InsertRow creates a single entrypoint for how rows get added to TableData

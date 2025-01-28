@@ -29,13 +29,17 @@ func (s *Store) additionalEqualityStrings(tableData *optimization.TableData) []s
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
-	err := shared.Merge(ctx, s, tableData, types.MergeOpts{
+	mergeOpts := types.MergeOpts{
 		AdditionalEqualityStrings: s.additionalEqualityStrings(tableData),
-	})
-
-	if err != nil {
-		return false, fmt.Errorf("failed to merge: %w", err)
 	}
 
-	return true, nil
+	if tableData.MultiStepMergeSettings().Enabled {
+		return shared.MultiStepMerge(ctx, s, tableData, mergeOpts)
+	} else {
+		if err := shared.Merge(ctx, s, tableData, mergeOpts); err != nil {
+			return false, fmt.Errorf("failed to merge: %w", err)
+		}
+
+		return true, nil
+	}
 }
