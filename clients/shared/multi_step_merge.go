@@ -106,12 +106,13 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 	} else {
 		// Now we'll want to load the staging table into the MSM table
 		// If it's the last attempt, we'll want to load the MSM table into the target table.
-		if err := merge(ctx, dwh, tableData, msmTableConfig, msmTableID, opts); err != nil {
+		temporaryTableID := TempTableIDWithSuffix(targetTableID, tableData.TempTableSuffix())
+		if err := merge(ctx, dwh, tableData, msmTableConfig, temporaryTableID, msmTableID, opts); err != nil {
 			return false, fmt.Errorf("failed to merge msm table into target table: %w", err)
 		}
 
 		if msmSettings.LastAttempt() {
-			if err := merge(ctx, dwh, tableData, targetTableConfig, targetTableID, opts); err != nil {
+			if err := merge(ctx, dwh, tableData, targetTableConfig, msmTableID, targetTableID, opts); err != nil {
 				return false, fmt.Errorf("failed to merge msm table into target table: %w", err)
 			}
 
@@ -126,8 +127,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 	return false, nil
 }
 
-func merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, targetTableID sql.TableIdentifier, opts types.MergeOpts) error {
-	temporaryTableID := TempTableIDWithSuffix(targetTableID, tableData.TempTableSuffix())
+func merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, temporaryTableID sql.TableIdentifier, targetTableID sql.TableIdentifier, opts types.MergeOpts) error {
 	defer func() {
 		if dropErr := ddl.DropTemporaryTable(dwh, temporaryTableID, false); dropErr != nil {
 			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))

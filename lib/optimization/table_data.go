@@ -77,6 +77,7 @@ func (t *TableData) WipeData() {
 	t.rowsData = make(map[string]map[string]any)
 	t.rows = []map[string]any{}
 	t.approxSize = 0
+	t.ResetTempTableSuffix()
 }
 
 func (t *TableData) Mode() config.Mode {
