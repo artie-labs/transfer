@@ -8,6 +8,7 @@ import (
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
+	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -125,15 +126,15 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 
 	tableData.WipeData()
 	tableData.IncrementMultiStepMergeAttempt()
-	slog.Info("Multi-step merge completed, updated the attempt count and wiped our in-memory database", slog.Int("updatedAttempts", tableData.MultiStepMergeSettings().FlushAttempts))
+	slog.Info("Multi-step merge completed, updated the attempt count and wiped our in-memory database", slog.Int("updatedAttempts", tableData.MultiStepMergeSettings().FlushAttempts()))
 	return false, nil
 }
 
 func merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, temporaryTableID sql.TableIdentifier, targetTableID sql.TableIdentifier, opts types.MergeOpts) error {
 	defer func() {
-		// if dropErr := ddl.DropTemporaryTable(dwh, temporaryTableID, false); dropErr != nil {
-		// 	slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))
-		// }
+		if dropErr := ddl.DropTemporaryTable(dwh, temporaryTableID, false); dropErr != nil {
+			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))
+		}
 	}()
 
 	snowflakeDialect, ok := dwh.Dialect().(dialect.SnowflakeDialect)

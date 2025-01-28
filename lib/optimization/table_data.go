@@ -23,6 +23,10 @@ func (m MultiStepMergeSettings) LastAttempt() bool {
 	return m.flushAttempts == m.TotalFlushCount
 }
 
+func (m MultiStepMergeSettings) FlushAttempts() int {
+	return m.flushAttempts
+}
+
 func (m *MultiStepMergeSettings) Increment() {
 	m.flushAttempts++
 }
