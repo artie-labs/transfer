@@ -102,7 +102,10 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 
 	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDwhTableConfig(anotherCols, true))
 
-	assert.NoError(s.T(), s.stageStore.Merge(context.Background(), tableData))
+	commitTx, err := s.stageStore.Merge(context.Background(), tableData)
+	assert.NoError(s.T(), err)
+	assert.True(s.T(), commitTx)
+
 	_col, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("first_name")
 	assert.True(s.T(), isOk)
 	assert.Equal(s.T(), _col.KindDetails, typing.String)
@@ -146,7 +149,9 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 	}
 
 	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDwhTableConfig(cols.GetColumns(), true))
-	assert.NoError(s.T(), s.stageStore.Merge(context.Background(), tableData))
+	commitTx, err := s.stageStore.Merge(context.Background(), tableData)
+	assert.NoError(s.T(), err)
+	assert.True(s.T(), commitTx)
 	assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
 	assert.Equal(s.T(), 1, s.fakeStageStore.ExecContextCallCount())
 }
@@ -193,8 +198,9 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	tableID := s.identifierFor(tableData)
 	fqName := tableID.FullyQualifiedName()
 	s.stageStore.configMap.AddTableToConfig(tableID, types.NewDwhTableConfig(cols.GetColumns(), true))
-	err := s.stageStore.Merge(context.Background(), tableData)
-	assert.Nil(s.T(), err)
+	commitTx, err := s.stageStore.Merge(context.Background(), tableData)
+	assert.NoError(s.T(), err)
+	assert.True(s.T(), commitTx)
 	s.fakeStageStore.ExecReturns(nil, nil)
 	// CREATE TABLE IF NOT EXISTS customer.public.orders___artie_Mwv9YADmRy (id int,name string,__artie_delete boolean,created_at timestamp_tz) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE) COMMENT='expires:2023-06-27 11:54:03 UTC'
 	_, createQuery, _ := s.fakeStageStore.ExecContextArgsForCall(0)
@@ -278,7 +284,9 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	_config := types.NewDwhTableConfig(sflkCols.GetColumns(), true)
 	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), _config)
 
-	assert.NoError(s.T(), s.stageStore.Merge(context.Background(), tableData))
+	commitTx, err := s.stageStore.Merge(context.Background(), tableData)
+	assert.NoError(s.T(), err)
+	assert.True(s.T(), commitTx)
 	s.fakeStageStore.ExecReturns(nil, nil)
 	assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
 	assert.Equal(s.T(), 1, s.fakeStageStore.ExecContextCallCount())
@@ -302,7 +310,9 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		break
 	}
 
-	assert.NoError(s.T(), s.stageStore.Merge(context.Background(), tableData))
+	commitTx, err = s.stageStore.Merge(context.Background(), tableData)
+	assert.NoError(s.T(), err)
+	assert.True(s.T(), commitTx)
 	s.fakeStageStore.ExecReturns(nil, nil)
 	assert.Equal(s.T(), 8, s.fakeStageStore.ExecCallCount())
 	assert.Equal(s.T(), 2, s.fakeStageStore.ExecContextCallCount())
@@ -313,7 +323,9 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
-	assert.NoError(s.T(), s.stageStore.Merge(context.Background(), tableData))
+	commitTx, err := s.stageStore.Merge(context.Background(), tableData)
+	assert.NoError(s.T(), err)
+	assert.True(s.T(), commitTx)
 }
 
 func (s *SnowflakeTestSuite) TestStore_AdditionalEqualityStrings() {
