@@ -96,8 +96,13 @@ func (t TopicConfig) ShouldSkip(op string) bool {
 }
 
 func (t TopicConfig) String() string {
-	return fmt.Sprintf("db=%s, schema=%s, tableNameOverride=%s, topic=%s, cdcFormat=%s, dropDeletedColumns=%v, skippedOperations=%v",
-		t.Database, t.Schema, t.TableName, t.Topic, t.CDCFormat, t.DropDeletedColumns, t.SkippedOperations)
+	var msmEnabled bool
+	if t.MultiStepMergeSettings != nil {
+		msmEnabled = t.MultiStepMergeSettings.Enabled
+	}
+
+	return fmt.Sprintf("db=%s, schema=%s, tableNameOverride=%s, topic=%s, cdcFormat=%s, dropDeletedColumns=%v, skippedOperations=%v, msmEnabled=%v",
+		t.Database, t.Schema, t.TableName, t.Topic, t.CDCFormat, t.DropDeletedColumns, t.SkippedOperations, msmEnabled)
 }
 
 func (t TopicConfig) Validate() error {
