@@ -26,6 +26,10 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sq
 	return dialect.NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
 
+func (s *Store) DropTable(_ context.Context, _ sql.TableIdentifier) error {
+	return fmt.Errorf("not supported")
+}
+
 func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
 	return shared.GetTableCfgArgs{
 		Dwh:                   s,

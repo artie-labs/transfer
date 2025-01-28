@@ -2,6 +2,7 @@ package mssql
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	_ "github.com/microsoft/go-mssqldb"
@@ -29,6 +30,10 @@ func getSchema(schema string) string {
 	}
 
 	return schema
+}
+
+func (s *Store) DropTable(_ context.Context, _ sql.TableIdentifier) error {
+	return fmt.Errorf("not supported")
 }
 
 func (s *Store) Dialect() sql.Dialect {
