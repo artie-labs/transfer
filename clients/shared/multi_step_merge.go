@@ -105,7 +105,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 
 	if msmSettings.FirstAttempt() {
 		// If it's the first time we're doing this, we should now prepare the MSM table and be done.
-		if err = dwh.PrepareTemporaryTable(ctx, tableData, msmTableConfig, msmTableID, msmTableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
+		if err = dwh.PrepareTemporaryTable(ctx, tableData, msmTableConfig, msmTableID, msmTableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, false); err != nil {
 			return false, fmt.Errorf("failed to prepare temporary table: %w", err)
 		}
 	} else {
