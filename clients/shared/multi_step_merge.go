@@ -58,25 +58,20 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 	if err != nil {
 		return false, fmt.Errorf("failed to get table config: %w", err)
 	}
-
 	{
 		// Apply schema evolution for the MSM table
 		// We're not going to drop columns for MSM yet.
-		_, targetKeysMissing := columns.DiffAndFilter(
+		resp := columns.Diff(
 			tableData.ReadOnlyInMemoryCols().GetColumns(),
 			msmTableConfig.GetColumns(),
-			tableData.TopicConfig().SoftDelete,
-			tableData.TopicConfig().IncludeArtieUpdatedAt,
-			tableData.TopicConfig().IncludeDatabaseUpdatedAt,
-			tableData.Mode(),
 		)
 
 		if msmTableConfig.CreateTable() {
-			if err = CreateTable(ctx, dwh, tableData.Mode(), msmTableConfig, opts.ColumnSettings, msmTableID, false, targetKeysMissing); err != nil {
+			if err = CreateTable(ctx, dwh, tableData.Mode(), msmTableConfig, opts.ColumnSettings, msmTableID, false, resp.TargetColumnsMissing); err != nil {
 				return false, fmt.Errorf("failed to create table: %w", err)
 			}
 		} else {
-			if err = AlterTableAddColumns(ctx, dwh, msmTableConfig, opts.ColumnSettings, msmTableID, targetKeysMissing); err != nil {
+			if err = AlterTableAddColumns(ctx, dwh, msmTableConfig, opts.ColumnSettings, msmTableID, resp.TargetColumnsMissing); err != nil {
 				return false, fmt.Errorf("failed to add columns for table %q: %w", msmTableID.Table(), err)
 			}
 		}
