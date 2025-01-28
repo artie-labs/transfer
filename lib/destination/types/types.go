@@ -24,6 +24,13 @@ func (d *DwhToTablesConfigMap) TableConfigCache(tableID sql.TableIdentifier) *Dw
 	return tableConfig
 }
 
+func (d *DwhToTablesConfigMap) RemoveTableFromConfig(tableID sql.TableIdentifier) {
+	d.Lock()
+	defer d.Unlock()
+
+	delete(d.fqNameToDwhTableConfig, tableID.FullyQualifiedName())
+}
+
 func (d *DwhToTablesConfigMap) AddTableToConfig(tableID sql.TableIdentifier, config *DwhTableConfig) {
 	d.Lock()
 	defer d.Unlock()
