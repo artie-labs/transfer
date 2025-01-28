@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -30,7 +31,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 		return false, nil
 	}
 
-	msmTableID := dwh.IdentifierFor(tableData.TopicConfig(), fmt.Sprintf("%s_msm", tableData.Name()))
+	msmTableID := dwh.IdentifierFor(tableData.TopicConfig(), fmt.Sprintf("%s_%s_msm", constants.ArtiePrefix, tableData.Name()))
 	targetTableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	targetTableConfig, err := dwh.GetTableConfig(targetTableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {

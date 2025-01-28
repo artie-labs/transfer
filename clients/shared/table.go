@@ -20,7 +20,6 @@ func getValidColumns(cols []columns.Column) []columns.Column {
 	var validCols []columns.Column
 	for _, col := range cols {
 		if col.ShouldSkip() {
-			fmt.Println("skipping col", col.Name())
 			continue
 		}
 
