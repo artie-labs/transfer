@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/clients/shared"
+	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -24,6 +25,29 @@ import (
 
 func (s *SnowflakeTestSuite) identifierFor(tableData *optimization.TableData) sql.TableIdentifier {
 	return s.stageStore.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+}
+
+func (s *SnowflakeTestSuite) TestDropTable() {
+	tableData := optimization.NewTableData(nil, config.Replication, []string{"id"}, kafkalib.TopicConfig{Database: "customer", Schema: "public"}, fmt.Sprintf("%s_foo", constants.ArtiePrefix))
+	tableID := s.identifierFor(tableData)
+	{
+		// Deleting without disabling drop protection
+		assert.ErrorContains(s.T(), s.stageStore.DropTable(context.Background(), tableID), "not allowed to be dropped")
+	}
+	{
+		// Deleting with disabling drop protection
+		snowflakeTableID, ok := tableID.(dialect.TableIdentifier)
+		assert.True(s.T(), ok)
+
+		snowflakeTableID = snowflakeTableID.WithDisableDropProtection(true)
+		assert.NoError(s.T(), s.stageStore.DropTable(context.Background(), snowflakeTableID))
+
+		// Check store to see it drop
+		_, query, _ := s.fakeStageStore.ExecContextArgsForCall(0)
+		assert.Equal(s.T(), query, `DROP TABLE IF EXISTS customer.public."__ARTIE_FOO"`)
+		// Cache should be empty as well.
+		assert.Nil(s.T(), s.stageStore.configMap.TableConfigCache(snowflakeTableID))
+	}
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
