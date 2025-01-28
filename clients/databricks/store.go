@@ -33,7 +33,7 @@ type Store struct {
 }
 
 func (s Store) DropTable(_ context.Context, _ sql.TableIdentifier) error {
-	return fmt.Errorf("not implemented")
+	return fmt.Errorf("not supported")
 }
 
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {

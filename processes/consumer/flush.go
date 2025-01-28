@@ -113,7 +113,6 @@ func flush(ctx context.Context, dest destination.Baseline, _tableData *models.Ta
 	var err error
 	commitTransaction := true
 	if _tableData.Mode() == config.History {
-		// Always commit on append if it's successful
 		err = dest.Append(ctx, _tableData.TableData, false)
 	} else {
 		commitTransaction, err = dest.Merge(ctx, _tableData.TableData)
