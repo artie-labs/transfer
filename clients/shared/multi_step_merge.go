@@ -24,6 +24,12 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 		return fmt.Errorf("multi-step merge is not enabled")
 	}
 
+	if tableData.ShouldSkipUpdate() {
+		// TODO: We should support the fact that if we've written data to the msm table and there are no messages in subsequent attempts,
+		// we should merge the msm table into the target table.
+		return nil
+	}
+
 	msmTableID := dwh.IdentifierFor(tableData.TopicConfig(), fmt.Sprintf("%s_msm", tableData.Name()))
 	targetTableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	targetTableConfig, err := dwh.GetTableConfig(targetTableID, tableData.TopicConfig().DropDeletedColumns)
@@ -126,7 +132,7 @@ func merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 
-	// TODO: Support backfill
+	// TODO: Support column backfill
 	subQuery := temporaryTableID.FullyQualifiedName()
 	if opts.SubQueryDedupe {
 		subQuery = dwh.Dialect().BuildDedupeTableQuery(temporaryTableID, tableData.PrimaryKeys())
