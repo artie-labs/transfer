@@ -154,7 +154,6 @@ func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKey
 	if multiStepMergeSettings := topicConfig.MultiStepMergeSettings; multiStepMergeSettings != nil {
 		td.multiStepMergeSettings = MultiStepMergeSettings{
 			Enabled:         multiStepMergeSettings.Enabled,
-			FlushAttempts:   0,
 			TotalFlushCount: multiStepMergeSettings.FlushCount,
 		}
 	}
