@@ -67,7 +67,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 		)
 
 		if msmTableConfig.CreateTable() {
-			if err = CreateTable(ctx, dwh, tableData.Mode(), msmTableConfig, opts.ColumnSettings, msmTableID, false, resp.TargetColumnsMissing); err != nil {
+			if err = CreateTable(ctx, dwh, tableData.Mode(), msmTableConfig, opts.ColumnSettings, msmTableID, true, resp.TargetColumnsMissing); err != nil {
 				return false, fmt.Errorf("failed to create table: %w", err)
 			}
 		} else {
