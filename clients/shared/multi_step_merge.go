@@ -125,7 +125,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 	}
 
 	tableData.WipeData()
-	tableData.UpdateMultiStepMergeAttempt()
+	tableData.IncrementMultiStepMergeAttempt()
 	slog.Info("Multi-step merge completed, updated the attempt count and wiped our in-memory database", slog.Int("updatedAttempts", tableData.MultiStepMergeSettings().FlushAttempts))
 	return false, nil
 }

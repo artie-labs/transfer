@@ -69,7 +69,7 @@ func (t *TableData) MultiStepMergeSettings() MultiStepMergeSettings {
 	return t.multiStepMergeSettings
 }
 
-func (t *TableData) UpdateMultiStepMergeAttempt() {
+func (t *TableData) IncrementMultiStepMergeAttempt() {
 	t.multiStepMergeSettings.FlushAttempts++
 }
 
