@@ -32,6 +32,10 @@ type Store struct {
 	configMap *types.DwhToTablesConfigMap
 }
 
+func (s Store) DropTable(_ context.Context, _ sql.TableIdentifier) error {
+	return fmt.Errorf("not implemented")
+}
+
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
 	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}); err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
@@ -42,10 +46,6 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 
 func (s Store) Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error {
 	return shared.Append(ctx, s, tableData, types.AdditionalSettings{UseTempTable: useTempTable})
-}
-
-func (s Store) DropTable(_ context.Context, _ sql.TableIdentifier) error {
-	return fmt.Errorf("not implemented")
 }
 
 func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {

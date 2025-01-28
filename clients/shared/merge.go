@@ -154,6 +154,5 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 	if err = destination.ExecStatements(dwh, mergeStatements); err != nil {
 		return fmt.Errorf("failed to execute merge statements: %w", err)
 	}
-
 	return nil
 }
