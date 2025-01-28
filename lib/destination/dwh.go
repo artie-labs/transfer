@@ -27,6 +27,10 @@ type DataWarehouse interface {
 	// Helper functions for merge
 	GetTableConfig(tableID sqllib.TableIdentifier, dropDeletedColumns bool) (*types.DwhTableConfig, error)
 	PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sqllib.TableIdentifier, parentTableID sqllib.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error
+
+	// Helper function for multi-step merge
+	// This is only available to Snowflake for now.
+	DropTable(ctx context.Context, tableID sqllib.TableIdentifier) error
 }
 
 type Baseline interface {

@@ -12,6 +12,8 @@ type TableIdentifier struct {
 	database string
 	schema   string
 	table    string
+	// Drop protection
+	allowToDrop bool
 }
 
 func NewTableIdentifier(database, schema, table string) TableIdentifier {
@@ -44,4 +46,12 @@ func (ti TableIdentifier) WithTable(table string) sql.TableIdentifier {
 
 func (ti TableIdentifier) FullyQualifiedName() string {
 	return fmt.Sprintf("%s.%s.%s", ti.database, ti.schema, ti.EscapedTable())
+}
+
+func (ti *TableIdentifier) SetAllowToDrop(allowToDrop bool) {
+	ti.allowToDrop = allowToDrop
+}
+
+func (ti TableIdentifier) AllowToDrop() bool {
+	return ti.allowToDrop
 }
