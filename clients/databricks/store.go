@@ -40,6 +40,10 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 	return shared.Append(ctx, s, tableData, types.AdditionalSettings{UseTempTable: useTempTable})
 }
 
+func (s Store) DropTable(_ context.Context, _ sql.TableIdentifier) error {
+	return fmt.Errorf("not implemented")
+}
+
 func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
 	return dialect.NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
