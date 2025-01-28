@@ -15,6 +15,12 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+type MultiStepMergeSettings struct {
+	WrittenData         bool
+	FlushCount          int
+	FlushCountRemaining int
+}
+
 type TableData struct {
 	mode            config.Mode
 	inMemoryColumns *columns.Columns // list of columns
@@ -43,6 +49,9 @@ type TableData struct {
 	containsHardDeletes bool
 
 	temporaryTableSuffix string
+
+	// Multi-step merge settings
+	multiStepMergeSettings *MultiStepMergeSettings
 
 	// Name of the table in the destination
 	name string
