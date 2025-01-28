@@ -32,6 +32,10 @@ type Store struct {
 	configMap *types.DwhToTablesConfigMap
 }
 
+func (s Store) DropTable(_ context.Context, _ sql.TableIdentifier) error {
+	return fmt.Errorf("not supported")
+}
+
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
 	return shared.Merge(ctx, s, tableData, types.MergeOpts{})
 }
