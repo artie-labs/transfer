@@ -15,11 +15,19 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+func (m MultiStepMergeSettings) FirstAttempt() bool {
+	return m.FlushAttempts == 0
+}
+
+func (m MultiStepMergeSettings) LastAttempt() bool {
+	return m.FlushRemaining == 0
+}
+
 type MultiStepMergeSettings struct {
-	Enabled             bool
-	WrittenData         bool
-	FlushCount          int
-	FlushCountRemaining int
+	Enabled        bool
+	WrittenData    bool
+	FlushAttempts  int
+	FlushRemaining int
 }
 
 type TableData struct {

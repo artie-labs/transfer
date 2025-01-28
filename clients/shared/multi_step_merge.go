@@ -3,11 +3,14 @@ package shared
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/destination"
+	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
@@ -22,14 +25,13 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 	}
 
 	msmTableID := dwh.IdentifierFor(tableData.TopicConfig(), fmt.Sprintf("%s_msm", tableData.Name()))
-
 	targetTableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	targetTableConfig, err := dwh.GetTableConfig(targetTableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return fmt.Errorf("failed to get table config: %w", err)
 	}
 
-	if msmSettings.FlushCount == 0 {
+	if msmSettings.FirstAttempt() {
 		// If it's the first time we are doing this, we should ensure the MSM table has been dropped.
 		if err := dwh.DropTable(ctx, msmTableID); err != nil {
 			return fmt.Errorf("failed to drop msm table: %w", err)
@@ -90,12 +92,90 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 		}
 	}
 
-	if msmSettings.FlushCount == 0 {
+	if msmSettings.FirstAttempt() {
 		// If it's the first time we're doing this, we should now prepare the MSM table and be done.
 		if err = dwh.PrepareTemporaryTable(ctx, tableData, msmTableConfig, msmTableID, msmTableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
 			return fmt.Errorf("failed to prepare temporary table: %w", err)
 		}
+	} else {
+		// Now we'll want to load the staging table into the MSM table
+		// If it's the last attempt, we'll want to load the MSM table into the target table.
+		if err := merge(ctx, dwh, tableData, msmTableConfig, msmTableID, opts); err != nil {
+			return fmt.Errorf("failed to merge msm table into target table: %w", err)
+		}
+
+		if msmSettings.LastAttempt() {
+			if err := merge(ctx, dwh, tableData, targetTableConfig, targetTableID, opts); err != nil {
+				return fmt.Errorf("failed to merge msm table into target table: %w", err)
+			}
+		}
 	}
 
+	return nil
+}
+
+func merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, targetTableID sql.TableIdentifier, opts types.MergeOpts) error {
+	temporaryTableID := TempTableIDWithSuffix(targetTableID, tableData.TempTableSuffix())
+	defer func() {
+		if dropErr := ddl.DropTemporaryTable(dwh, temporaryTableID, false); dropErr != nil {
+			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))
+		}
+	}()
+
+	if err := dwh.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID, targetTableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
+		return fmt.Errorf("failed to prepare temporary table: %w", err)
+	}
+
+	// TODO: Support backfill
+	subQuery := temporaryTableID.FullyQualifiedName()
+	if opts.SubQueryDedupe {
+		subQuery = dwh.Dialect().BuildDedupeTableQuery(temporaryTableID, tableData.PrimaryKeys())
+	}
+
+	if subQuery == "" {
+		return fmt.Errorf("subQuery cannot be empty")
+	}
+
+	cols := tableData.ReadOnlyInMemoryCols()
+
+	var primaryKeys []columns.Column
+	for _, primaryKey := range tableData.PrimaryKeys() {
+		column, ok := cols.GetColumn(primaryKey)
+		if !ok {
+			return fmt.Errorf("column for primary key %q does not exist", primaryKey)
+		}
+		primaryKeys = append(primaryKeys, column)
+	}
+
+	if len(primaryKeys) == 0 {
+		return fmt.Errorf("primary keys cannot be empty")
+	}
+
+	validColumns := cols.ValidColumns()
+	if len(validColumns) == 0 {
+		return fmt.Errorf("columns cannot be empty")
+	}
+	for _, column := range validColumns {
+		if column.ShouldSkip() {
+			return fmt.Errorf("column %q is invalid and should be skipped", column.Name())
+		}
+	}
+
+	mergeStatements, err := dwh.Dialect().BuildMergeQueries(
+		targetTableID,
+		subQuery,
+		primaryKeys,
+		opts.AdditionalEqualityStrings,
+		validColumns,
+		tableData.TopicConfig().SoftDelete,
+		tableData.ContainsHardDeletes(),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to generate merge statements: %w", err)
+	}
+
+	if err = destination.ExecStatements(dwh, mergeStatements); err != nil {
+		return fmt.Errorf("failed to execute merge statements: %w", err)
+	}
 	return nil
 }
