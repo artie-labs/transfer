@@ -107,11 +107,13 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 		// Now we'll want to load the staging table into the MSM table
 		// If it's the last attempt, we'll want to load the MSM table into the target table.
 		temporaryTableID := TempTableIDWithSuffix(targetTableID, tableData.TempTableSuffix())
+		opts.UseBuildMergeQueryIntoStagingTable = true
 		if err := merge(ctx, dwh, tableData, msmTableConfig, temporaryTableID, msmTableID, opts); err != nil {
 			return false, fmt.Errorf("failed to merge msm table into target table: %w", err)
 		}
 
 		if msmSettings.LastAttempt() {
+			opts.UseBuildMergeQueryIntoStagingTable = false
 			if err := merge(ctx, dwh, tableData, targetTableConfig, msmTableID, targetTableID, opts); err != nil {
 				return false, fmt.Errorf("failed to merge msm table into target table: %w", err)
 			}
@@ -179,7 +181,15 @@ func merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 	}
 
 	var mergeStatements []string
-	if tableData.MultiStepMergeSettings().LastAttempt() {
+	if opts.UseBuildMergeQueryIntoStagingTable {
+		mergeStatements = snowflakeDialect.BuildMergeQueryIntoStagingTable(
+			targetTableID,
+			subQuery,
+			primaryKeys,
+			opts.AdditionalEqualityStrings,
+			validColumns,
+		)
+	} else {
 		_mergeStatements, err := snowflakeDialect.BuildMergeQueries(
 			targetTableID,
 			subQuery,
@@ -194,14 +204,6 @@ func merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		}
 
 		mergeStatements = _mergeStatements
-	} else {
-		mergeStatements = snowflakeDialect.BuildMergeQueryIntoStagingTable(
-			targetTableID,
-			subQuery,
-			primaryKeys,
-			opts.AdditionalEqualityStrings,
-			validColumns,
-		)
 	}
 
 	if err := destination.ExecStatements(dwh, mergeStatements); err != nil {

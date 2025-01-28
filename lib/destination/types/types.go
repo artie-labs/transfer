@@ -47,6 +47,9 @@ type MergeOpts struct {
 	ColumnSettings            config.SharedDestinationColumnSettings
 	RetryColBackfill          bool
 	SubQueryDedupe            bool
+
+	// Multi-step merge settings
+	UseBuildMergeQueryIntoStagingTable bool
 }
 
 type AdditionalSettings struct {
