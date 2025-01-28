@@ -48,8 +48,9 @@ func (ti TableIdentifier) FullyQualifiedName() string {
 	return fmt.Sprintf("%s.%s.%s", ti.database, ti.schema, ti.EscapedTable())
 }
 
-func (ti *TableIdentifier) SetAllowToDrop(allowToDrop bool) {
+func (ti TableIdentifier) WithAllowToDrop(allowToDrop bool) TableIdentifier {
 	ti.allowToDrop = allowToDrop
+	return ti
 }
 
 func (ti TableIdentifier) AllowToDrop() bool {

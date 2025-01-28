@@ -37,8 +37,7 @@ func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) erro
 		return fmt.Errorf("table %q is not allowed to be dropped", tableID.FullyQualifiedName())
 	}
 
-	_, err = s.ExecContext(ctx, "DROP TABLE IF EXISTS %s", snowflakeTableID.FullyQualifiedName())
-	if err != nil {
+	if _, err = s.ExecContext(ctx, "DROP TABLE IF EXISTS ?", snowflakeTableID.FullyQualifiedName()); err != nil {
 		return fmt.Errorf("failed to drop table: %w", err)
 	}
 
