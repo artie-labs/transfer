@@ -17,15 +17,15 @@ import (
 
 const backfillMaxRetries = 1000
 
-func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, opts types.MergeOpts) (bool, error) {
+func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, opts types.MergeOpts) error {
 	if tableData.ShouldSkipUpdate() {
-		return false, nil
+		return nil
 	}
 
 	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	tableConfig, err := dwh.GetTableConfig(tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
-		return false, fmt.Errorf("failed to get table config: %w", err)
+		return fmt.Errorf("failed to get table config: %w", err)
 	}
 
 	srcKeysMissing, targetKeysMissing := columns.DiffAndFilter(
@@ -39,22 +39,22 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 
 	if tableConfig.CreateTable() {
 		if err = CreateTable(ctx, dwh, tableData.Mode(), tableConfig, opts.ColumnSettings, tableID, false, targetKeysMissing); err != nil {
-			return false, fmt.Errorf("failed to create table: %w", err)
+			return fmt.Errorf("failed to create table: %w", err)
 		}
 	} else {
 		if err = AlterTableAddColumns(ctx, dwh, tableConfig, opts.ColumnSettings, tableID, targetKeysMissing); err != nil {
-			return false, fmt.Errorf("failed to add columns for table %q: %w", tableID.Table(), err)
+			return fmt.Errorf("failed to add columns for table %q: %w", tableID.Table(), err)
 		}
 	}
 
 	if err = AlterTableDropColumns(ctx, dwh, tableConfig, tableID, srcKeysMissing, tableData.LatestCDCTs, tableData.ContainOtherOperations()); err != nil {
-		return false, fmt.Errorf("failed to drop columns for table %q: %w", tableID.Table(), err)
+		return fmt.Errorf("failed to drop columns for table %q: %w", tableID.Table(), err)
 	}
 
 	// TODO: Examine whether [AuditColumnsToDelete] still needs to be called.
 	tableConfig.AuditColumnsToDelete(srcKeysMissing)
 	if err = tableData.MergeColumnsFromDestination(tableConfig.GetColumns()...); err != nil {
-		return false, fmt.Errorf("failed to merge columns from destination: %w for table %q", err, tableData.Name())
+		return fmt.Errorf("failed to merge columns from destination: %w for table %q", err, tableData.Name())
 	}
 
 	temporaryTableID := TempTableIDWithSuffix(dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name()), tableData.TempTableSuffix())
@@ -65,7 +65,7 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 	}()
 
 	if err = dwh.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID, tableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
-		return false, fmt.Errorf("failed to prepare temporary table: %w", err)
+		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 
 	// Now iterate over all the in-memory cols and see which ones require a backfill.
@@ -83,7 +83,7 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 				})
 
 				if err != nil {
-					return false, fmt.Errorf("failed to update column backfilled status: %w", err)
+					return fmt.Errorf("failed to update column backfilled status: %w", err)
 				}
 
 				break
@@ -100,7 +100,7 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		}
 
 		if backfillErr != nil {
-			return false, fmt.Errorf("failed to backfill col: %s, default value: %v, err: %w", col.Name(), col.DefaultValue(), backfillErr)
+			return fmt.Errorf("failed to backfill col: %s, default value: %v, err: %w", col.Name(), col.DefaultValue(), backfillErr)
 		}
 	}
 
@@ -110,7 +110,7 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 	}
 
 	if subQuery == "" {
-		return false, fmt.Errorf("subQuery cannot be empty")
+		return fmt.Errorf("subQuery cannot be empty")
 	}
 
 	cols := tableData.ReadOnlyInMemoryCols()
@@ -119,22 +119,22 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 	for _, primaryKey := range tableData.PrimaryKeys() {
 		column, ok := cols.GetColumn(primaryKey)
 		if !ok {
-			return false, fmt.Errorf("column for primary key %q does not exist", primaryKey)
+			return fmt.Errorf("column for primary key %q does not exist", primaryKey)
 		}
 		primaryKeys = append(primaryKeys, column)
 	}
 
 	if len(primaryKeys) == 0 {
-		return false, fmt.Errorf("primary keys cannot be empty")
+		return fmt.Errorf("primary keys cannot be empty")
 	}
 
 	validColumns := cols.ValidColumns()
 	if len(validColumns) == 0 {
-		return false, fmt.Errorf("columns cannot be empty")
+		return fmt.Errorf("columns cannot be empty")
 	}
 	for _, column := range validColumns {
 		if column.ShouldSkip() {
-			return false, fmt.Errorf("column %q is invalid and should be skipped", column.Name())
+			return fmt.Errorf("column %q is invalid and should be skipped", column.Name())
 		}
 	}
 
@@ -148,12 +148,12 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		tableData.ContainsHardDeletes(),
 	)
 	if err != nil {
-		return false, fmt.Errorf("failed to generate merge statements: %w", err)
+		return fmt.Errorf("failed to generate merge statements: %w", err)
 	}
 
 	if err = destination.ExecStatements(dwh, mergeStatements); err != nil {
-		return false, fmt.Errorf("failed to execute merge statements: %w", err)
+		return fmt.Errorf("failed to execute merge statements: %w", err)
 	}
 
-	return true, nil
+	return nil
 }

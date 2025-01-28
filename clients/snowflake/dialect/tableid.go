@@ -9,11 +9,10 @@ import (
 var _dialect = SnowflakeDialect{}
 
 type TableIdentifier struct {
-	database string
-	schema   string
-	table    string
-	// Drop protection
-	allowToDrop bool
+	database              string
+	schema                string
+	table                 string
+	disableDropProtection bool
 }
 
 func NewTableIdentifier(database, schema, table string) TableIdentifier {
@@ -48,11 +47,11 @@ func (ti TableIdentifier) FullyQualifiedName() string {
 	return fmt.Sprintf("%s.%s.%s", ti.database, ti.schema, ti.EscapedTable())
 }
 
-func (ti TableIdentifier) WithAllowToDrop(allowToDrop bool) TableIdentifier {
-	ti.allowToDrop = allowToDrop
+func (ti TableIdentifier) WithDisableDropProtection(disableDropProtection bool) TableIdentifier {
+	ti.disableDropProtection = disableDropProtection
 	return ti
 }
 
 func (ti TableIdentifier) AllowToDrop() bool {
-	return ti.allowToDrop
+	return ti.disableDropProtection
 }

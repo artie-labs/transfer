@@ -234,12 +234,28 @@ func TestBsonValueToGoValue(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Nil(t, result)
 		}
+		{
+			// Invalid (year is 0)
+			_time := time.Date(0, 1, 1, 0, 0, 0, 0, time.UTC)
+			dateTime := primitive.NewDateTimeFromTime(_time)
+			result, err := bsonValueToGoValue(dateTime)
+			assert.NoError(t, err)
+			assert.Nil(t, result)
+		}
 	}
 	{
 		// primitive.Timestamp
 		{
 			// Invalid (year is above 9999)
 			_time := time.Date(27017, 1, 1, 0, 0, 0, 0, time.UTC)
+			dateTime := primitive.NewDateTimeFromTime(_time)
+			result, err := bsonValueToGoValue(dateTime)
+			assert.NoError(t, err)
+			assert.Nil(t, result)
+		}
+		{
+			// Invalid (year is 0)
+			_time := time.Date(0, 1, 1, 0, 0, 0, 0, time.UTC)
 			dateTime := primitive.NewDateTimeFromTime(_time)
 			result, err := bsonValueToGoValue(dateTime)
 			assert.NoError(t, err)

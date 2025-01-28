@@ -45,7 +45,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 		}
 
 		// If it's the first time we are doing this, we should ensure the MSM table has been dropped.
-		if err := dwh.DropTable(ctx, sflkMSMTableID.WithAllowToDrop(true)); err != nil {
+		if err := dwh.DropTable(ctx, sflkMSMTableID.WithDisableDropProtection(true)); err != nil {
 			return false, fmt.Errorf("failed to drop msm table: %w", err)
 		}
 

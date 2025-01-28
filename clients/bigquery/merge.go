@@ -31,7 +31,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 		additionalEqualityStrings = []string{mergeString}
 	}
 
-	return shared.Merge(ctx, s, tableData, types.MergeOpts{
+	err := shared.Merge(ctx, s, tableData, types.MergeOpts{
 		AdditionalEqualityStrings: additionalEqualityStrings,
 		ColumnSettings:            s.config.SharedDestinationSettings.ColumnSettings,
 		// BigQuery has DDL quotas.
@@ -39,6 +39,11 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 		// We are using BigQuery's streaming API which doesn't guarantee exactly once semantics
 		SubQueryDedupe: true,
 	})
+	if err != nil {
+		return false, fmt.Errorf("failed to merge: %w", err)
+	}
+
+	return true, nil
 }
 
 func generateMergeString(bqSettings *partition.BigQuerySettings, dialect sql.Dialect, values []string) (string, error) {

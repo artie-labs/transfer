@@ -37,7 +37,7 @@ func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) erro
 		return fmt.Errorf("table %q is not allowed to be dropped", tableID.FullyQualifiedName())
 	}
 
-	if _, err = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", snowflakeTableID.FullyQualifiedName())); err != nil {
+	if _, err = s.ExecContext(ctx, s.dialect().BuildDropTableQuery(snowflakeTableID)); err != nil {
 		return fmt.Errorf("failed to drop table: %w", err)
 	}
 
@@ -45,7 +45,6 @@ func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) erro
 	s.configMap.RemoveTableFromConfig(tableID)
 	return nil
 }
-
 func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
 	return shared.GetTableCfgArgs{
 		Dwh:                   s,

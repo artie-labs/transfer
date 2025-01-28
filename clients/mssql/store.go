@@ -45,7 +45,11 @@ func (s *Store) dialect() dialect.MSSQLDialect {
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
-	return shared.Merge(ctx, s, tableData, types.MergeOpts{})
+	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}); err != nil {
+		return false, fmt.Errorf("failed to merge: %w", err)
+	}
+
+	return true, nil
 }
 
 func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {

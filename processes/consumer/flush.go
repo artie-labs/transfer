@@ -89,7 +89,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 			}
 
 			what, err := retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (string, error) {
-				return flush(ctx, dest, _tableData, inMemDB, _tableName, action)
+				return flush(ctx, dest, _tableData, tableName, action, inMemDB.ClearTableConfig)
 			})
 
 			if err != nil {
@@ -105,32 +105,33 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 	return nil
 }
 
-func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData, inMemDB *models.DatabaseData, _tableName string, action string) (string, error) {
+func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData, _tableName string, action string, clearTableConfig func(string)) (string, error) {
 	// This is added so that we have a new temporary table suffix for each merge / append.
 	_tableData.ResetTempTableSuffix()
 
 	// Merge or Append depending on the mode.
 	var err error
-	var commit bool
+	commitTransaction := true
 	if _tableData.Mode() == config.History {
 		// Always commit on append if it's successful
 		err = dest.Append(ctx, _tableData.TableData, false)
-		commit = true
 	} else {
-		commit, err = dest.Merge(ctx, _tableData.TableData)
+		commitTransaction, err = dest.Merge(ctx, _tableData.TableData)
 	}
 
 	if err != nil {
 		return "merge_fail", fmt.Errorf("failed to flush: %w", err)
 	}
 
-	if commit {
+	if commitTransaction {
 		if err = commitOffset(ctx, _tableData.TopicConfig().Topic, _tableData.PartitionsToLastMessage); err != nil {
 			return "commit_fail", fmt.Errorf("failed to commit kafka offset: %w", err)
 		}
 
 		slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), slog.String("tableName", _tableName))
-		inMemDB.ClearTableConfig(_tableName)
+		clearTableConfig(_tableName)
+	} else {
+		slog.Info(fmt.Sprintf("%s success, not committing offset yet", stringutil.CapitalizeFirstLetter(action)), slog.String("tableName", _tableName))
 	}
 
 	return "success", nil
