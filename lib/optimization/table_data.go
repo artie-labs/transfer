@@ -16,16 +16,20 @@ import (
 )
 
 func (m MultiStepMergeSettings) FirstAttempt() bool {
-	return m.FlushAttempts == 0
+	return m.flushAttempts == 0
 }
 
 func (m MultiStepMergeSettings) LastAttempt() bool {
-	return m.FlushAttempts == m.TotalFlushCount
+	return m.flushAttempts == m.TotalFlushCount
+}
+
+func (m *MultiStepMergeSettings) Increment() {
+	m.flushAttempts++
 }
 
 type MultiStepMergeSettings struct {
 	Enabled         bool
-	FlushAttempts   int
+	flushAttempts   int
 	TotalFlushCount int
 }
 
@@ -70,7 +74,7 @@ func (t *TableData) MultiStepMergeSettings() MultiStepMergeSettings {
 }
 
 func (t *TableData) IncrementMultiStepMergeAttempt() {
-	t.multiStepMergeSettings.FlushAttempts++
+	t.multiStepMergeSettings.Increment()
 }
 
 func (t *TableData) WipeData() {

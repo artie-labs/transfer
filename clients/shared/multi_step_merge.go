@@ -8,7 +8,6 @@ import (
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
-	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -132,9 +131,9 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 
 func merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, temporaryTableID sql.TableIdentifier, targetTableID sql.TableIdentifier, opts types.MergeOpts) error {
 	defer func() {
-		if dropErr := ddl.DropTemporaryTable(dwh, temporaryTableID, false); dropErr != nil {
-			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))
-		}
+		// if dropErr := ddl.DropTemporaryTable(dwh, temporaryTableID, false); dropErr != nil {
+		// 	slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))
+		// }
 	}()
 
 	snowflakeDialect, ok := dwh.Dialect().(dialect.SnowflakeDialect)
@@ -207,6 +206,7 @@ func merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		mergeStatements = _mergeStatements
 	}
 
+	fmt.Println("mergeStatements", mergeStatements)
 	if err := destination.ExecStatements(dwh, mergeStatements); err != nil {
 		return fmt.Errorf("failed to execute merge statements: %w", err)
 	}
