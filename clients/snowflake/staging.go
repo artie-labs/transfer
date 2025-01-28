@@ -113,7 +113,6 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 	writer.Comma = '\t'
 
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
-
 	for _, row := range tableData.Rows() {
 		var csvRow []string
 		for _, col := range columns {

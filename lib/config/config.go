@@ -18,7 +18,7 @@ const (
 	defaultFlushTimeSeconds = 10
 	defaultFlushSizeKb      = 25 * 1024 // 25 mb
 	defaultBufferPoolSize   = 30000
-	bufferPoolSizeMin       = 1
+	bufferPoolSizeMin       = 5
 
 	FlushIntervalSecondsMin = 5
 	FlushIntervalSecondsMax = 6 * 60 * 60
