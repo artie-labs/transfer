@@ -38,7 +38,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 		return false, fmt.Errorf("failed to get table config: %w", err)
 	}
 
-	if msmSettings.IsFirstCount() {
+	if msmSettings.IsFirstFlush() {
 		sflkMSMTableID, ok := msmTableID.(dialect.TableIdentifier)
 		if !ok {
 			return false, fmt.Errorf("failed to get snowflake table identifier")
@@ -99,7 +99,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 		}
 	}
 
-	if msmSettings.IsFirstCount() {
+	if msmSettings.IsFirstFlush() {
 		// If it's the first flush, we'll just load the data directly into the MSM table.
 		// Don't need to create the temporary table, we've already created it above.
 		if err = dwh.PrepareTemporaryTable(ctx, tableData, msmTableConfig, msmTableID, msmTableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, false); err != nil {
@@ -114,7 +114,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 			return false, fmt.Errorf("failed to merge msm table into target table: %w", err)
 		}
 
-		if msmSettings.IsLastCount() {
+		if msmSettings.IsLastFlush() {
 			// If it's the last flush, we'll want to load the MSM table into the target table.
 			opts.UseBuildMergeQueryIntoStagingTable = false
 			opts.PrepareTemporaryTable = false
