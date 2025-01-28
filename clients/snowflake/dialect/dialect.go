@@ -89,6 +89,28 @@ func (sd SnowflakeDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableI
 	return parts
 }
 
+func (sd SnowflakeDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
+	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, sd)
+	if len(additionalEqualityStrings) > 0 {
+		equalitySQLParts = append(equalitySQLParts, additionalEqualityStrings...)
+	}
+
+	baseQuery := fmt.Sprintf(`
+MERGE INTO %s %s USING ( %s ) AS %s ON %s`,
+		tableID.FullyQualifiedName(), constants.TargetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
+	)
+
+	return []string{baseQuery + fmt.Sprintf(`
+WHEN MATCHED THEN UPDATE SET %s
+WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s);`,
+		// Update
+		sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, sd),
+		// Insert
+		sql.QuotedDeleteColumnMarker(constants.StagingAlias, sd), strings.Join(sql.QuoteColumns(cols, sd), ","),
+		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, sd), ","),
+	)}
+}
+
 func (sd SnowflakeDialect) BuildMergeQueries(
 	tableID sql.TableIdentifier,
 	subQuery string,
