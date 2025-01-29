@@ -16,12 +16,6 @@ type Sentry struct {
 	DSN string `yaml:"dsn"`
 }
 
-type Pubsub struct {
-	ProjectID         string                  `yaml:"projectID"`
-	TopicConfigs      []*kafkalib.TopicConfig `yaml:"topicConfigs"`
-	PathToCredentials string                  `yaml:"pathToCredentials"`
-}
-
 type Kafka struct {
 	// Comma-separated Kafka servers to port.
 	// e.g. host1:port1,host2:port2,...
@@ -67,8 +61,7 @@ type Config struct {
 	BufferRows           uint `yaml:"bufferRows"`
 
 	// Supported message queues
-	Pubsub *Pubsub `yaml:"pubsub,omitempty"`
-	Kafka  *Kafka  `yaml:"kafka,omitempty"`
+	Kafka *Kafka `yaml:"kafka,omitempty"`
 
 	// Supported destinations
 	BigQuery   *BigQuery   `yaml:"bigquery,omitempty"`
