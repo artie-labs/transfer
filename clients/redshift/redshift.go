@@ -21,7 +21,7 @@ type Store struct {
 	credentialsClause string
 	bucket            string
 	optionalS3Prefix  string
-	configMap         *types.DwhToTablesConfigMap
+	configMap         *types.DestinationTableConfigMap
 	config            config.Config
 
 	db.Store
@@ -51,7 +51,7 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sq
 	return dialect.NewTableIdentifier(topicConfig.Schema, table)
 }
 
-func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
+func (s *Store) GetConfigMap() *types.DestinationTableConfigMap {
 	if s == nil {
 		return nil
 	}
@@ -98,7 +98,7 @@ func LoadRedshift(cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			configMap: &types.DwhToTablesConfigMap{},
+			configMap: &types.DestinationTableConfigMap{},
 			config:    cfg,
 
 			Store: *_store,
@@ -118,7 +118,7 @@ func LoadRedshift(cfg config.Config, _store *db.Store) (*Store, error) {
 		credentialsClause: cfg.Redshift.CredentialsClause,
 		bucket:            cfg.Redshift.Bucket,
 		optionalS3Prefix:  cfg.Redshift.OptionalS3Prefix,
-		configMap:         &types.DwhToTablesConfigMap{},
+		configMap:         &types.DestinationTableConfigMap{},
 		config:            cfg,
 
 		Store: store,

@@ -40,7 +40,7 @@ const (
 type Store struct {
 	// If [auditRows] is enabled, we will perform an additional query to ensure that the number of rows in the temporary table matches the expected number of rows.
 	auditRows bool
-	configMap *types.DwhToTablesConfigMap
+	configMap *types.DestinationTableConfigMap
 	config    config.Config
 	bqClient  *bigquery.Client
 
@@ -157,7 +157,7 @@ func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns b
 	}.GetTableConfig()
 }
 
-func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
+func (s *Store) GetConfigMap() *types.DestinationTableConfigMap {
 	if s == nil {
 		return nil
 	}
@@ -267,7 +267,7 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
 		return &Store{
 			Store: *_store,
 
-			configMap: &types.DwhToTablesConfigMap{},
+			configMap: &types.DestinationTableConfigMap{},
 			config:    cfg,
 		}, nil
 	}
@@ -303,7 +303,7 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
 	return &Store{
 		bqClient:  bqClient,
 		auditRows: auditRows,
-		configMap: &types.DwhToTablesConfigMap{},
+		configMap: &types.DestinationTableConfigMap{},
 		config:    cfg,
 		Store:     store,
 	}, nil

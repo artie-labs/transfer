@@ -18,12 +18,12 @@ func TestGetTableConfig(t *testing.T) {
 		cols = append(cols, columns.NewColumn(fmt.Sprintf("col-%v", i), typing.Invalid))
 	}
 
-	cm := &types.DwhToTablesConfigMap{}
+	cm := &types.DestinationTableConfigMap{}
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns("dusty_the_mini_aussie")
 
 	tableCfg := types.NewDestinationTableConfig(cols, false)
-	cm.AddTableToConfig(fakeTableID, tableCfg)
+	cm.AddTable(fakeTableID, tableCfg)
 
 	actualTableCfg, err := GetTableCfgArgs{
 		Dwh:       &mocks.FakeDataWarehouse{},

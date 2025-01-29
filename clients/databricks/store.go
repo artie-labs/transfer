@@ -29,7 +29,7 @@ type Store struct {
 	db.Store
 	volume    string
 	cfg       config.Config
-	configMap *types.DwhToTablesConfigMap
+	configMap *types.DestinationTableConfigMap
 }
 
 func (s Store) DropTable(_ context.Context, _ sql.TableIdentifier) error {
@@ -260,6 +260,6 @@ func LoadStore(cfg config.Config) (Store, error) {
 		Store:     store,
 		cfg:       cfg,
 		volume:    cfg.Databricks.Volume,
-		configMap: &types.DwhToTablesConfigMap{},
+		configMap: &types.DestinationTableConfigMap{},
 	}, nil
 }

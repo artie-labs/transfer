@@ -19,7 +19,7 @@ import (
 
 type Store struct {
 	db.Store
-	configMap *types.DwhToTablesConfigMap
+	configMap *types.DestinationTableConfigMap
 	config    config.Config
 }
 
@@ -42,7 +42,7 @@ func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) erro
 	}
 
 	// We'll then clear it from our cache
-	s.configMap.RemoveTableFromConfig(tableID)
+	s.configMap.RemoveTable(tableID)
 	return nil
 }
 func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
@@ -74,7 +74,7 @@ func (s *Store) dialect() dialect.SnowflakeDialect {
 	return dialect.SnowflakeDialect{}
 }
 
-func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
+func (s *Store) GetConfigMap() *types.DestinationTableConfigMap {
 	if s == nil {
 		return nil
 	}
@@ -94,7 +94,7 @@ func LoadSnowflake(cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			configMap: &types.DwhToTablesConfigMap{},
+			configMap: &types.DestinationTableConfigMap{},
 			config:    cfg,
 			Store:     *_store,
 		}, nil
@@ -116,7 +116,7 @@ func LoadSnowflake(cfg config.Config, _store *db.Store) (*Store, error) {
 	}
 
 	return &Store{
-		configMap: &types.DwhToTablesConfigMap{},
+		configMap: &types.DestinationTableConfigMap{},
 		config:    cfg,
 		Store:     store,
 	}, nil

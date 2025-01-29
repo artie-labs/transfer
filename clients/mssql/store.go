@@ -18,7 +18,7 @@ import (
 )
 
 type Store struct {
-	configMap *types.DwhToTablesConfigMap
+	configMap *types.DestinationTableConfigMap
 	config    config.Config
 	db.Store
 }
@@ -98,7 +98,7 @@ func LoadStore(cfg config.Config) (*Store, error) {
 	}
 	return &Store{
 		Store:     store,
-		configMap: &types.DwhToTablesConfigMap{},
+		configMap: &types.DestinationTableConfigMap{},
 		config:    cfg,
 	}, nil
 }
