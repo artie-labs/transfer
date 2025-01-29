@@ -96,7 +96,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 					continue
 				}
 
-				msg := artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)
+				msg := artie.NewMessage(&kafkaMsg, kafkaMsg.Topic)
 				args := processArgs{
 					Msg:                    msg,
 					GroupID:                kafkaConsumer.Config().GroupID,

@@ -49,10 +49,6 @@ func commitOffset(ctx context.Context, topic string, partitionsToOffset map[stri
 
 				slog.Info("Successfully committed Kafka offset", slog.String("topic", topic), slog.Int("partition", msg.KafkaMsg.Partition), slog.Int64("offset", msg.KafkaMsg.Offset))
 			}
-
-			if msg.PubSub != nil {
-				msg.PubSub.Ack()
-			}
 		}
 	}
 
