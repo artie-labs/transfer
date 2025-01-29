@@ -58,8 +58,7 @@ const (
 type QueueKind string
 
 const (
-	Kafka  QueueKind = "kafka"
-	PubSub QueueKind = "pubsub"
+	Kafka QueueKind = "kafka"
 	// Reader - This is when Reader is directly importing code from Transfer and skipping Kafka.
 	Reader QueueKind = "reader"
 )

@@ -424,39 +424,30 @@ bigquery:
 }
 
 func TestConfig_Validate(t *testing.T) {
-	pubsub := Pubsub{ProjectID: "foo", PathToCredentials: "bar"}
+	kafka := &Kafka{BootstrapServer: "foo", GroupID: "bar"}
 	cfg := Config{
-		Pubsub:               &pubsub,
+		Kafka:                kafka,
 		FlushIntervalSeconds: 5,
 		BufferRows:           500,
 	}
 
 	assert.ErrorContains(t, cfg.Validate(), "flush size pool has to be a positive number")
 	cfg.Output = constants.Snowflake
-	cfg.Queue = constants.PubSub
+	cfg.Queue = constants.Kafka
 	cfg.FlushSizeKb = 5
 	assert.ErrorContains(t, cfg.Validate(), "no topic configs")
 
 	tc := kafkalib.TopicConfig{
-		Database:  "db",
-		TableName: "table",
-		Schema:    "schema",
-		Topic:     "topic",
+		Database:     "db",
+		TableName:    "table",
+		Schema:       "schema",
+		Topic:        "topic",
+		CDCFormat:    constants.DBZPostgresAltFormat,
+		CDCKeyFormat: "org.apache.kafka.connect.json.JsonConverter",
 	}
 
 	tc.Load()
-
-	pubsub.TopicConfigs = []*kafkalib.TopicConfig{&tc}
-	pubsub.ProjectID = ""
-	assert.ErrorContains(t, cfg.Validate(), "pubsub projectID or pathToCredentials is empty")
-	pubsub.ProjectID = "foo"
-
-	assert.ErrorContains(t, cfg.Validate(), "failed to validate topic config")
-	pubsub.TopicConfigs[0].CDCFormat = constants.DBZPostgresAltFormat
-	pubsub.TopicConfigs[0].CDCKeyFormat = "org.apache.kafka.connect.json.JsonConverter"
-
-	pubsub.ProjectID = "project_id"
-	pubsub.PathToCredentials = "/tmp/abc"
+	kafka.TopicConfigs = append(kafka.TopicConfigs, &tc)
 	assert.Nil(t, cfg.Validate())
 
 	tcs, err := cfg.TopicConfigs()
@@ -506,14 +497,14 @@ func TestConfig_Validate(t *testing.T) {
 	{
 		// Now let's change to history mode and see.
 		cfg.Mode = History
-		pubsub.TopicConfigs[0].DropDeletedColumns = true
+		kafka.TopicConfigs[0].DropDeletedColumns = true
 		assert.ErrorContains(t, cfg.Validate(), "dropDeletedColumns is not supported in history mode")
 
-		pubsub.TopicConfigs[0].DropDeletedColumns = false
-		pubsub.TopicConfigs[0].IncludeDatabaseUpdatedAt = false
+		kafka.TopicConfigs[0].DropDeletedColumns = false
+		kafka.TopicConfigs[0].IncludeDatabaseUpdatedAt = false
 		assert.ErrorContains(t, cfg.Validate(), "includeDatabaseUpdatedAt is required in history mode")
 
-		pubsub.TopicConfigs[0].IncludeDatabaseUpdatedAt = true
+		kafka.TopicConfigs[0].IncludeDatabaseUpdatedAt = true
 		assert.NoError(t, cfg.Validate())
 	}
 

@@ -266,11 +266,8 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	e.Data = sanitizedData
 	td.InsertRow(e.PrimaryKeyValue(), e.Data, e.Deleted)
 	// If the message is Kafka, then we only need the latest one
-	// If it's pubsub, we will store all of them in memory. This is because GCP pub/sub REQUIRES us to ack every single message
 	if message.Kind() == artie.Kafka {
 		td.PartitionsToLastMessage[message.Partition()] = []artie.Message{message}
-	} else {
-		td.PartitionsToLastMessage[message.Partition()] = append(td.PartitionsToLastMessage[message.Partition()], message)
 	}
 
 	td.LatestCDCTs = e.executionTime
