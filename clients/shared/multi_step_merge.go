@@ -133,7 +133,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 	return false, nil
 }
 
-func merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, temporaryTableID sql.TableIdentifier, targetTableID sql.TableIdentifier, opts types.MergeOpts) error {
+func merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, temporaryTableID sql.TableIdentifier, targetTableID sql.TableIdentifier, opts types.MergeOpts) error {
 	defer func() {
 		if dropErr := ddl.DropTemporaryTable(dwh, temporaryTableID, false); dropErr != nil {
 			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))

@@ -29,7 +29,7 @@ type Store struct {
 	db.Store
 	volume    string
 	cfg       config.Config
-	configMap *types.DwhToTablesConfigMap
+	configMap *types.DestinationTableConfigMap
 }
 
 func (s Store) DropTable(_ context.Context, _ sql.TableIdentifier) error {
@@ -77,7 +77,7 @@ func (s Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, include
 	return nil
 }
 
-func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
+func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
 	return shared.GetTableCfgArgs{
 		Dwh:                   s,
 		TableID:               tableID,
@@ -89,7 +89,7 @@ func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bo
 	}.GetTableConfig()
 }
 
-func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
+func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		if err := shared.CreateTempTable(ctx, s, tableData, dwh, opts.ColumnSettings, tempTableID); err != nil {
 			return err
@@ -260,6 +260,6 @@ func LoadStore(cfg config.Config) (Store, error) {
 		Store:     store,
 		cfg:       cfg,
 		volume:    cfg.Databricks.Volume,
-		configMap: &types.DwhToTablesConfigMap{},
+		configMap: &types.DestinationTableConfigMap{},
 	}, nil
 }

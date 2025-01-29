@@ -15,36 +15,36 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func generateDwhTableCfg() *types.DwhTableConfig {
+func generateDestinationTableConfig() *types.DestinationTableConfig {
 	var cols []columns.Column
 	for _, col := range []string{"a", "b", "c", "d"} {
 		cols = append(cols, columns.NewColumn(col, typing.String))
 	}
 
-	tableCfg := types.NewDwhTableConfig(cols, false)
+	tableCfg := types.NewDestinationTableConfig(cols, false)
 	colsToDelete := make(map[string]time.Time)
 	for _, col := range []string{"foo", "bar", "abc", "xyz"} {
 		colsToDelete[col] = time.Now()
 	}
 
-	tableCfg.SetColumnsToDelete(colsToDelete)
+	tableCfg.SetColumnsToDeleteForTest(colsToDelete)
 	return tableCfg
 }
 
 func TestDwhToTablesConfigMap_TableConfigBasic(t *testing.T) {
-	dwh := &types.DwhToTablesConfigMap{}
-	dwhTableConfig := generateDwhTableCfg()
+	dwh := &types.DestinationTableConfigMap{}
+	dwhTableConfig := generateDestinationTableConfig()
 	fakeTableID := &mocks.FakeTableIdentifier{}
-	dwh.AddTableToConfig(fakeTableID, dwhTableConfig)
-	assert.Equal(t, dwhTableConfig, dwh.TableConfigCache(fakeTableID))
+	dwh.AddTable(fakeTableID, dwhTableConfig)
+	assert.Equal(t, dwhTableConfig, dwh.GetTableConfig(fakeTableID))
 }
 
 // TestDwhToTablesConfigMap_Concurrency - has a bunch of concurrent go-routines that are rapidly adding and reading from the tableConfig.
 func TestDwhToTablesConfigMap_Concurrency(t *testing.T) {
-	dwh := &types.DwhToTablesConfigMap{}
+	dwh := &types.DestinationTableConfigMap{}
 	fakeTableID := &mocks.FakeTableIdentifier{}
-	dwhTableCfg := generateDwhTableCfg()
-	dwh.AddTableToConfig(fakeTableID, dwhTableCfg)
+	dwhTableCfg := generateDestinationTableConfig()
+	dwh.AddTable(fakeTableID, dwhTableCfg)
 	var wg sync.WaitGroup
 	// Write
 	wg.Add(1)
@@ -52,7 +52,7 @@ func TestDwhToTablesConfigMap_Concurrency(t *testing.T) {
 		defer wg.Done()
 		for i := 0; i < 1000; i++ {
 			time.Sleep(time.Duration(rand.Intn(10)) * time.Millisecond)
-			dwh.AddTableToConfig(fakeTableID, dwhTableCfg)
+			dwh.AddTable(fakeTableID, dwhTableCfg)
 		}
 	}()
 
@@ -62,7 +62,7 @@ func TestDwhToTablesConfigMap_Concurrency(t *testing.T) {
 		defer wg.Done()
 		for i := 0; i < 1000; i++ {
 			time.Sleep(time.Duration(rand.Intn(10)) * time.Millisecond)
-			assert.Equal(t, dwhTableCfg, dwh.TableConfigCache(fakeTableID))
+			assert.Equal(t, dwhTableCfg, dwh.GetTableConfig(fakeTableID))
 		}
 	}()
 

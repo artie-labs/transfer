@@ -46,7 +46,7 @@ func (s *SnowflakeTestSuite) TestDropTable() {
 		_, query, _ := s.fakeStageStore.ExecContextArgsForCall(0)
 		assert.Equal(s.T(), query, `DROP TABLE IF EXISTS customer.public."__ARTIE_FOO"`)
 		// Cache should be empty as well.
-		assert.Nil(s.T(), s.stageStore.configMap.TableConfigCache(snowflakeTableID))
+		assert.Nil(s.T(), s.stageStore.configMap.GetTableConfig(snowflakeTableID))
 	}
 }
 
@@ -100,7 +100,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		anotherCols = append(anotherCols, columns.NewColumn(colName, kindDetails))
 	}
 
-	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDwhTableConfig(anotherCols, true))
+	s.stageStore.configMap.AddTable(s.identifierFor(tableData), types.NewDestinationTableConfig(anotherCols, true))
 
 	commitTx, err := s.stageStore.Merge(context.Background(), tableData)
 	assert.NoError(s.T(), err)
@@ -148,7 +148,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		tableData.InsertRow(pk, row, false)
 	}
 
-	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDwhTableConfig(cols.GetColumns(), true))
+	s.stageStore.configMap.AddTable(s.identifierFor(tableData), types.NewDestinationTableConfig(cols.GetColumns(), true))
 	commitTx, err := s.stageStore.Merge(context.Background(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
@@ -197,7 +197,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 
 	tableID := s.identifierFor(tableData)
 	fqName := tableID.FullyQualifiedName()
-	s.stageStore.configMap.AddTableToConfig(tableID, types.NewDwhTableConfig(cols.GetColumns(), true))
+	s.stageStore.configMap.AddTable(tableID, types.NewDestinationTableConfig(cols.GetColumns(), true))
 	commitTx, err := s.stageStore.Merge(context.Background(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
@@ -281,8 +281,8 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	}
 
 	sflkCols.AddColumn(columns.NewColumn("new", typing.String))
-	_config := types.NewDwhTableConfig(sflkCols.GetColumns(), true)
-	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), _config)
+	_config := types.NewDestinationTableConfig(sflkCols.GetColumns(), true)
+	s.stageStore.configMap.AddTable(s.identifierFor(tableData), _config)
 
 	commitTx, err := s.stageStore.Merge(context.Background(), tableData)
 	assert.NoError(s.T(), err)
@@ -292,10 +292,10 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	assert.Equal(s.T(), 1, s.fakeStageStore.ExecContextCallCount())
 
 	// Check the temp deletion table now.
-	assert.Equal(s.T(), len(s.stageStore.configMap.TableConfigCache(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()), 1,
-		s.stageStore.configMap.TableConfigCache(s.identifierFor(tableData)).ReadOnlyColumnsToDelete())
+	assert.Equal(s.T(), len(s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()), 1,
+		s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete())
 
-	_, isOk := s.stageStore.configMap.TableConfigCache(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()["new"]
+	_, isOk := s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()["new"]
 	assert.True(s.T(), isOk)
 
 	// Now try to execute merge where 1 of the rows have the column now
@@ -318,7 +318,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	assert.Equal(s.T(), 2, s.fakeStageStore.ExecContextCallCount())
 
 	// Caught up now, so columns should be 0.
-	assert.Len(s.T(), s.stageStore.configMap.TableConfigCache(s.identifierFor(tableData)).ReadOnlyColumnsToDelete(), 0)
+	assert.Len(s.T(), s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete(), 0)
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
