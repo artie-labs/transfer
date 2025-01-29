@@ -268,8 +268,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	// If the message is Kafka, then we only need the latest one
 	// If it's pubsub, we will store all of them in memory. This is because GCP pub/sub REQUIRES us to ack every single message
 	if message.Kind() == artie.Kafka {
-		kafkaMessage, ok := td.PartitionsToLastMessage[message.Partition()]
-		if ok {
+		if kafkaMessage, ok := td.PartitionsToLastMessage[message.Partition()]; ok {
 			// Guardrail to make sure we are not going backwards in the stream.
 			if kafkaMessage[0].KafkaMsg.Offset > message.KafkaMsg.Offset {
 				return false, "", fmt.Errorf("kafka message offset is less than the previous message offset")
