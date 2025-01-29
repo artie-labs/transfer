@@ -93,10 +93,8 @@ func main() {
 		switch settings.Config.Queue {
 		case constants.Kafka:
 			consumer.StartConsumer(ctx, settings.Config, inMemDB, dest, metricsClient)
-		case constants.PubSub:
-			consumer.StartSubscriber(ctx, settings.Config, inMemDB, dest, metricsClient)
 		default:
-			logger.Fatal(fmt.Sprintf("Message queue: %s not supported", settings.Config.Queue))
+			logger.Fatal(fmt.Sprintf("Message queue: %q not supported", settings.Config.Queue))
 		}
 	}(ctx)
 
