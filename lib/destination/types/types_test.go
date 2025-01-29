@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func generateDwhTableCfg() *types.DestinationTableConfig {
+func generateDestinationTableConfig() *types.DestinationTableConfig {
 	var cols []columns.Column
 	for _, col := range []string{"a", "b", "c", "d"} {
 		cols = append(cols, columns.NewColumn(col, typing.String))
@@ -33,7 +33,7 @@ func generateDwhTableCfg() *types.DestinationTableConfig {
 
 func TestDwhToTablesConfigMap_TableConfigBasic(t *testing.T) {
 	dwh := &types.DestinationTableConfigMap{}
-	dwhTableConfig := generateDwhTableCfg()
+	dwhTableConfig := generateDestinationTableConfig()
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	dwh.AddTable(fakeTableID, dwhTableConfig)
 	assert.Equal(t, dwhTableConfig, dwh.GetTableConfig(fakeTableID))
@@ -43,7 +43,7 @@ func TestDwhToTablesConfigMap_TableConfigBasic(t *testing.T) {
 func TestDwhToTablesConfigMap_Concurrency(t *testing.T) {
 	dwh := &types.DestinationTableConfigMap{}
 	fakeTableID := &mocks.FakeTableIdentifier{}
-	dwhTableCfg := generateDwhTableCfg()
+	dwhTableCfg := generateDestinationTableConfig()
 	dwh.AddTable(fakeTableID, dwhTableCfg)
 	var wg sync.WaitGroup
 	// Write
