@@ -15,19 +15,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func generateDwhTableCfg() *types.DwhTableConfig {
+func generateDwhTableCfg() *types.DestinationTableConfig {
 	var cols []columns.Column
 	for _, col := range []string{"a", "b", "c", "d"} {
 		cols = append(cols, columns.NewColumn(col, typing.String))
 	}
 
-	tableCfg := types.NewDwhTableConfig(cols, false)
+	tableCfg := types.NewDestinationTableConfig(cols, false)
 	colsToDelete := make(map[string]time.Time)
 	for _, col := range []string{"foo", "bar", "abc", "xyz"} {
 		colsToDelete[col] = time.Now()
 	}
 
-	tableCfg.SetColumnsToDelete(colsToDelete)
+	tableCfg.SetColumnsToDeleteForTest(colsToDelete)
 	return tableCfg
 }
 

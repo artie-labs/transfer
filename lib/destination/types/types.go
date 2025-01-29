@@ -8,11 +8,11 @@ import (
 )
 
 type DwhToTablesConfigMap struct {
-	fqNameToDwhTableConfig map[string]*DwhTableConfig
+	fqNameToDwhTableConfig map[string]*DestinationTableConfig
 	sync.RWMutex
 }
 
-func (d *DwhToTablesConfigMap) TableConfigCache(tableID sql.TableIdentifier) *DwhTableConfig {
+func (d *DwhToTablesConfigMap) TableConfigCache(tableID sql.TableIdentifier) *DestinationTableConfig {
 	d.RLock()
 	defer d.RUnlock()
 
@@ -31,12 +31,12 @@ func (d *DwhToTablesConfigMap) RemoveTableFromConfig(tableID sql.TableIdentifier
 	delete(d.fqNameToDwhTableConfig, tableID.FullyQualifiedName())
 }
 
-func (d *DwhToTablesConfigMap) AddTableToConfig(tableID sql.TableIdentifier, config *DwhTableConfig) {
+func (d *DwhToTablesConfigMap) AddTableToConfig(tableID sql.TableIdentifier, config *DestinationTableConfig) {
 	d.Lock()
 	defer d.Unlock()
 
 	if d.fqNameToDwhTableConfig == nil {
-		d.fqNameToDwhTableConfig = make(map[string]*DwhTableConfig)
+		d.fqNameToDwhTableConfig = make(map[string]*DestinationTableConfig)
 	}
 
 	d.fqNameToDwhTableConfig[tableID.FullyQualifiedName()] = config

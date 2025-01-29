@@ -22,7 +22,7 @@ func TestGetTableConfig(t *testing.T) {
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns("dusty_the_mini_aussie")
 
-	tableCfg := types.NewDwhTableConfig(cols, false)
+	tableCfg := types.NewDestinationTableConfig(cols, false)
 	cm.AddTableToConfig(fakeTableID, tableCfg)
 
 	actualTableCfg, err := GetTableCfgArgs{

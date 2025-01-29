@@ -45,13 +45,13 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	// Testing 3 scenarios here
 	// 1. DropDeletedColumns = false, ContainOtherOperations = true, don't delete ever.
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(bqTableID, types.NewDwhTableConfig(cols.GetColumns(), false))
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(bqTableID, types.NewDestinationTableConfig(cols.GetColumns(), false))
 	bqTc := d.bigQueryStore.GetConfigMap().TableConfigCache(bqTableID)
 
-	d.redshiftStore.GetConfigMap().AddTableToConfig(redshiftTableID, types.NewDwhTableConfig(cols.GetColumns(), false))
+	d.redshiftStore.GetConfigMap().AddTableToConfig(redshiftTableID, types.NewDestinationTableConfig(cols.GetColumns(), false))
 	redshiftTc := d.redshiftStore.GetConfigMap().TableConfigCache(redshiftTableID)
 
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(snowflakeTableID, types.NewDwhTableConfig(cols.GetColumns(), false))
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(snowflakeTableID, types.NewDestinationTableConfig(cols.GetColumns(), false))
 	snowflakeTc := d.snowflakeStagesStore.GetConfigMap().TableConfigCache(snowflakeTableID)
 	// Prior to deletion, there should be no colsToDelete
 	assert.Equal(d.T(), 0, len(bqTc.ReadOnlyColumnsToDelete()), bqTc.ReadOnlyColumnsToDelete())
@@ -87,13 +87,13 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	assert.Len(d.T(), redshiftTc.GetColumns(), originalColumnLength)
 
 	// 2. DropDeletedColumns = true, ContainOtherOperations = false, don't delete ever
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(bqTableID, types.NewDwhTableConfig(cols.GetColumns(), true))
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(bqTableID, types.NewDestinationTableConfig(cols.GetColumns(), true))
 	bqTc = d.bigQueryStore.GetConfigMap().TableConfigCache(bqTableID)
 
-	d.redshiftStore.GetConfigMap().AddTableToConfig(redshiftTableID, types.NewDwhTableConfig(cols.GetColumns(), true))
+	d.redshiftStore.GetConfigMap().AddTableToConfig(redshiftTableID, types.NewDestinationTableConfig(cols.GetColumns(), true))
 	redshiftTc = d.redshiftStore.GetConfigMap().TableConfigCache(redshiftTableID)
 
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(snowflakeTableID, types.NewDwhTableConfig(cols.GetColumns(), true))
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(snowflakeTableID, types.NewDestinationTableConfig(cols.GetColumns(), true))
 	snowflakeTc = d.snowflakeStagesStore.GetConfigMap().TableConfigCache(snowflakeTableID)
 
 	// Prior to deletion, there should be no colsToDelete
@@ -128,13 +128,13 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	assert.Len(d.T(), redshiftTc.GetColumns(), originalColumnLength)
 
 	// 3. DropDeletedColumns = true, ContainOtherOperations = true, drop based on timestamp.
-	d.bigQueryStore.GetConfigMap().AddTableToConfig(bqTableID, types.NewDwhTableConfig(cols.GetColumns(), true))
+	d.bigQueryStore.GetConfigMap().AddTableToConfig(bqTableID, types.NewDestinationTableConfig(cols.GetColumns(), true))
 	bqTc = d.bigQueryStore.GetConfigMap().TableConfigCache(bqTableID)
 
-	d.redshiftStore.GetConfigMap().AddTableToConfig(redshiftTableID, types.NewDwhTableConfig(cols.GetColumns(), true))
+	d.redshiftStore.GetConfigMap().AddTableToConfig(redshiftTableID, types.NewDestinationTableConfig(cols.GetColumns(), true))
 	redshiftTc = d.redshiftStore.GetConfigMap().TableConfigCache(redshiftTableID)
 
-	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(snowflakeTableID, types.NewDwhTableConfig(cols.GetColumns(), true))
+	d.snowflakeStagesStore.GetConfigMap().AddTableToConfig(snowflakeTableID, types.NewDestinationTableConfig(cols.GetColumns(), true))
 
 	snowflakeTc = d.snowflakeStagesStore.GetConfigMap().TableConfigCache(snowflakeTableID)
 

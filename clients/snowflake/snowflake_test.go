@@ -100,7 +100,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		anotherCols = append(anotherCols, columns.NewColumn(colName, kindDetails))
 	}
 
-	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDwhTableConfig(anotherCols, true))
+	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDestinationTableConfig(anotherCols, true))
 
 	commitTx, err := s.stageStore.Merge(context.Background(), tableData)
 	assert.NoError(s.T(), err)
@@ -148,7 +148,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		tableData.InsertRow(pk, row, false)
 	}
 
-	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDwhTableConfig(cols.GetColumns(), true))
+	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), types.NewDestinationTableConfig(cols.GetColumns(), true))
 	commitTx, err := s.stageStore.Merge(context.Background(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
@@ -197,7 +197,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 
 	tableID := s.identifierFor(tableData)
 	fqName := tableID.FullyQualifiedName()
-	s.stageStore.configMap.AddTableToConfig(tableID, types.NewDwhTableConfig(cols.GetColumns(), true))
+	s.stageStore.configMap.AddTableToConfig(tableID, types.NewDestinationTableConfig(cols.GetColumns(), true))
 	commitTx, err := s.stageStore.Merge(context.Background(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
@@ -281,7 +281,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	}
 
 	sflkCols.AddColumn(columns.NewColumn("new", typing.String))
-	_config := types.NewDwhTableConfig(sflkCols.GetColumns(), true)
+	_config := types.NewDestinationTableConfig(sflkCols.GetColumns(), true)
 	s.stageStore.configMap.AddTableToConfig(s.identifierFor(tableData), _config)
 
 	commitTx, err := s.stageStore.Merge(context.Background(), tableData)

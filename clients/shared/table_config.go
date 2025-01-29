@@ -30,7 +30,7 @@ type GetTableCfgArgs struct {
 	DropDeletedColumns   bool
 }
 
-func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
+func (g GetTableCfgArgs) GetTableConfig() (*types.DestinationTableConfig, error) {
 	if tableConfig := g.ConfigMap.TableConfigCache(g.TableID); tableConfig != nil {
 		return tableConfig, nil
 	}
@@ -105,7 +105,7 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 		cols = append(cols, col)
 	}
 
-	tableCfg := types.NewDwhTableConfig(cols, g.DropDeletedColumns)
+	tableCfg := types.NewDestinationTableConfig(cols, g.DropDeletedColumns)
 	g.ConfigMap.AddTableToConfig(g.TableID, tableCfg)
 	return tableCfg, nil
 }

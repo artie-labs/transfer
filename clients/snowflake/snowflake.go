@@ -45,7 +45,7 @@ func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) erro
 	s.configMap.RemoveTableFromConfig(tableID)
 	return nil
 }
-func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
+func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
 	return shared.GetTableCfgArgs{
 		Dwh:                   s,
 		TableID:               tableID,

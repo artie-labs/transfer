@@ -30,7 +30,7 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 		cols = append(cols, columns.NewColumn(colName, kindDetails))
 	}
 
-	s.stageStore.configMap.AddTableToConfig(tableID, types.NewDwhTableConfig(cols, true))
+	s.stageStore.configMap.AddTableToConfig(tableID, types.NewDestinationTableConfig(cols, true))
 	nameCol := columns.NewColumn("name", typing.String)
 	tc := s.stageStore.configMap.TableConfigCache(tableID)
 
@@ -56,7 +56,7 @@ func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
 		cols = append(cols, columns.NewColumn(colName, kindDetails))
 	}
 
-	config := types.NewDwhTableConfig(cols, true)
+	config := types.NewDestinationTableConfig(cols, true)
 	s.stageStore.configMap.AddTableToConfig(tableID, config)
 
 	nameCol := columns.NewColumn("name", typing.String)
@@ -95,8 +95,8 @@ func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
 		cols = append(cols, columns.NewColumn(colName, kindDetails))
 	}
 
-	tc := types.NewDwhTableConfig(cols, false)
-	tc.SetColumnsToDelete(map[string]time.Time{"customer_id": time.Now()})
+	tc := types.NewDestinationTableConfig(cols, false)
+	tc.SetColumnsToDeleteForTest(map[string]time.Time{"customer_id": time.Now()})
 
 	assert.Equal(s.T(), len(tc.ReadOnlyColumnsToDelete()), 1)
 	assert.False(s.T(), tc.ShouldDeleteColumn("customer_id",

@@ -79,7 +79,7 @@ func (s *Store) Dedupe(_ sql.TableIdentifier, _ []string, _ bool) error {
 	return nil // dedupe is not necessary for MS SQL
 }
 
-func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DwhTableConfig, error) {
+func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
 	return shared.GetTableCfgArgs{
 		Dwh:                   s,
 		TableID:               tableID,
