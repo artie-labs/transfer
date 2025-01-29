@@ -20,7 +20,12 @@ func ShouldDeleteFromName(name string) bool {
 		return false
 	}
 
-	unix, err := strconv.Atoi(suffixParts[2])
+	part := suffixParts[2]
+	if part == "msm" {
+		return false
+	}
+
+	unix, err := strconv.Atoi(part)
 	if err != nil {
 		slog.Error("Failed to parse unix string",
 			slog.Any("err", err),
