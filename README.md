@@ -56,7 +56,6 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
 
 - Message Queues
   - Kafka (default)
-  - Google Pub/Sub
 
 - [Destinations](https://artie.com/docs/destinations):
     - BigQuery

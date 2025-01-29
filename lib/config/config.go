@@ -190,7 +190,7 @@ func (c Config) Validate() error {
 			return fmt.Errorf("kafka config is nil")
 		}
 
-		// Username and password are not required (if it's within the same VPC or connecting locally
+		// Username and password may not be required if this is connecting to a private Kafka cluster.
 		if stringutil.Empty(c.Kafka.GroupID, c.Kafka.BootstrapServer) {
 			return fmt.Errorf("kafka group or bootstrap server is empty")
 		}
