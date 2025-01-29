@@ -267,7 +267,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	td.InsertRow(e.PrimaryKeyValue(), e.Data, e.Deleted)
 	// If the message is Kafka, then we only need the latest one
 	if message.Kind() == artie.Kafka {
-		td.PartitionsToLastMessage[message.Partition()] = []artie.Message{message}
+		td.PartitionsToLastMessage[message.Partition()] = message
 	}
 
 	td.LatestCDCTs = e.executionTime
