@@ -33,7 +33,7 @@ func LoadBaseline(cfg config.Config) (destination.Baseline, error) {
 	return nil, fmt.Errorf("invalid baseline output source specified: %q", cfg.Output)
 }
 
-func LoadDataWarehouse(cfg config.Config, store *db.Store) (destination.DataWarehouse, error) {
+func LoadDestination(cfg config.Config, store *db.Store) (destination.Destination, error) {
 	switch cfg.Output {
 	case constants.Snowflake:
 		return snowflake.LoadSnowflake(cfg, store)
@@ -47,5 +47,5 @@ func LoadDataWarehouse(cfg config.Config, store *db.Store) (destination.DataWare
 		return redshift.LoadRedshift(cfg, store)
 	}
 
-	return nil, fmt.Errorf("invalid data warehouse output source specified: %q", cfg.Output)
+	return nil, fmt.Errorf("invalid destination: %q", cfg.Output)
 }

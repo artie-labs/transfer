@@ -17,7 +17,7 @@ import (
 
 const backfillMaxRetries = 1000
 
-func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, opts types.MergeOpts) error {
+func Merge(ctx context.Context, dwh destination.Destination, tableData *optimization.TableData, opts types.MergeOpts) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}

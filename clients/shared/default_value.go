@@ -71,7 +71,7 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 	return column.DefaultValue(), nil
 }
 
-func BackfillColumn(dwh destination.DataWarehouse, column columns.Column, tableID sql.TableIdentifier) error {
+func BackfillColumn(dwh destination.Destination, column columns.Column, tableID sql.TableIdentifier) error {
 	switch dwh.Dialect().GetDefaultValueStrategy() {
 	case sql.Backfill:
 		if !column.ShouldBackfill() {

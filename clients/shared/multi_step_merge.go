@@ -15,7 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, opts types.MergeOpts) (bool, error) {
+func MultiStepMerge(ctx context.Context, dwh destination.Destination, tableData *optimization.TableData, opts types.MergeOpts) (bool, error) {
 	if _, ok := dwh.Dialect().(dialect.SnowflakeDialect); !ok {
 		return false, fmt.Errorf("multi-step merge is only supported on Snowflake")
 	}
@@ -133,7 +133,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.DataWarehouse, tableDat
 	return false, nil
 }
 
-func merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, temporaryTableID sql.TableIdentifier, targetTableID sql.TableIdentifier, opts types.MergeOpts) error {
+func merge(ctx context.Context, dwh destination.Destination, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, temporaryTableID sql.TableIdentifier, targetTableID sql.TableIdentifier, opts types.MergeOpts) error {
 	defer func() {
 		if dropErr := ddl.DropTemporaryTable(dwh, temporaryTableID, false); dropErr != nil {
 			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))

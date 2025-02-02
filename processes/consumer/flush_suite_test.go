@@ -28,7 +28,7 @@ type FlushTestSuite struct {
 	fakeConsumer *mocks.FakeConsumer
 	cfg          config.Config
 	db           *models.DatabaseData
-	dwh          destination.DataWarehouse
+	dwh          destination.Destination
 }
 
 func (f *FlushTestSuite) SetupTest() {
@@ -62,7 +62,7 @@ func (f *FlushTestSuite) SetupTest() {
 	}
 
 	var err error
-	f.dwh, err = utils.LoadDataWarehouse(f.cfg, &store)
+	f.dwh, err = utils.LoadDestination(f.cfg, &store)
 	assert.NoError(f.T(), err)
 
 	f.db = models.NewMemoryDB()

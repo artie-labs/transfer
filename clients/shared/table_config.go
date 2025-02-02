@@ -18,7 +18,7 @@ import (
 // TODO: Simplify this function
 
 type GetTableCfgArgs struct {
-	Dwh       destination.DataWarehouse
+	Dwh       destination.Destination
 	TableID   sql.TableIdentifier
 	ConfigMap *types.DestinationTableConfigMap
 	// Name of the column

@@ -66,16 +66,16 @@ func main() {
 			logger.Fatal("Unable to load baseline destination", slog.Any("err", err))
 		}
 	} else {
-		dwh, err := utils.LoadDataWarehouse(settings.Config, nil)
+		_dest, err := utils.LoadDestination(settings.Config, nil)
 		if err != nil {
-			logger.Fatal("Unable to load data warehouse destination", slog.Any("err", err))
+			logger.Fatal("Unable to load destination", slog.Any("err", err))
 		}
 
-		if err = dwh.SweepTemporaryTables(ctx); err != nil {
+		if err = _dest.SweepTemporaryTables(ctx); err != nil {
 			logger.Fatal("Failed to clean up temporary tables", slog.Any("err", err))
 		}
 
-		dest = dwh
+		dest = _dest
 	}
 
 	inMemDB := models.NewMemoryDB()
