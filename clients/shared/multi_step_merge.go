@@ -15,8 +15,8 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func MultiStepMerge(ctx context.Context, dwh destination.Destination, tableData *optimization.TableData, opts types.MergeOpts) (bool, error) {
-	if _, ok := dwh.Dialect().(dialect.SnowflakeDialect); !ok {
+func MultiStepMerge(ctx context.Context, dest destination.Destination, tableData *optimization.TableData, opts types.MergeOpts) (bool, error) {
+	if _, ok := dest.Dialect().(dialect.SnowflakeDialect); !ok {
 		return false, fmt.Errorf("multi-step merge is only supported on Snowflake")
 	}
 
@@ -31,9 +31,9 @@ func MultiStepMerge(ctx context.Context, dwh destination.Destination, tableData 
 		return false, nil
 	}
 
-	msmTableID := dwh.IdentifierFor(tableData.TopicConfig(), fmt.Sprintf("%s_%s_msm", constants.ArtiePrefix, tableData.Name()))
-	targetTableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	targetTableConfig, err := dwh.GetTableConfig(targetTableID, tableData.TopicConfig().DropDeletedColumns)
+	msmTableID := dest.IdentifierFor(tableData.TopicConfig(), fmt.Sprintf("%s_%s_msm", constants.ArtiePrefix, tableData.Name()))
+	targetTableID := dest.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	targetTableConfig, err := dest.GetTableConfig(targetTableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return false, fmt.Errorf("failed to get table config: %w", err)
 	}
@@ -45,7 +45,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.Destination, tableData 
 		}
 
 		// If it's the first time we are doing this, we should ensure the MSM table has been dropped.
-		if err := dwh.DropTable(ctx, sflkMSMTableID.WithDisableDropProtection(true)); err != nil {
+		if err := dest.DropTable(ctx, sflkMSMTableID.WithDisableDropProtection(true)); err != nil {
 			return false, fmt.Errorf("failed to drop msm table: %w", err)
 		}
 
@@ -55,7 +55,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.Destination, tableData 
 		}
 	}
 
-	msmTableConfig, err := dwh.GetTableConfig(msmTableID, tableData.TopicConfig().DropDeletedColumns)
+	msmTableConfig, err := dest.GetTableConfig(msmTableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return false, fmt.Errorf("failed to get table config: %w", err)
 	}
@@ -67,11 +67,11 @@ func MultiStepMerge(ctx context.Context, dwh destination.Destination, tableData 
 		)
 
 		if msmTableConfig.CreateTable() {
-			if err = CreateTable(ctx, dwh, tableData.Mode(), msmTableConfig, opts.ColumnSettings, msmTableID, true, resp.TargetColumnsMissing); err != nil {
+			if err = CreateTable(ctx, dest, tableData.Mode(), msmTableConfig, opts.ColumnSettings, msmTableID, true, resp.TargetColumnsMissing); err != nil {
 				return false, fmt.Errorf("failed to create table: %w", err)
 			}
 		} else {
-			if err = AlterTableAddColumns(ctx, dwh, msmTableConfig, opts.ColumnSettings, msmTableID, resp.TargetColumnsMissing); err != nil {
+			if err = AlterTableAddColumns(ctx, dest, msmTableConfig, opts.ColumnSettings, msmTableID, resp.TargetColumnsMissing); err != nil {
 				return false, fmt.Errorf("failed to add columns for table %q: %w", msmTableID.Table(), err)
 			}
 		}
@@ -89,11 +89,11 @@ func MultiStepMerge(ctx context.Context, dwh destination.Destination, tableData 
 		)
 
 		if targetTableConfig.CreateTable() {
-			if err = CreateTable(ctx, dwh, tableData.Mode(), targetTableConfig, opts.ColumnSettings, targetTableID, false, targetKeysMissing); err != nil {
+			if err = CreateTable(ctx, dest, tableData.Mode(), targetTableConfig, opts.ColumnSettings, targetTableID, false, targetKeysMissing); err != nil {
 				return false, fmt.Errorf("failed to create table: %w", err)
 			}
 		} else {
-			if err = AlterTableAddColumns(ctx, dwh, targetTableConfig, opts.ColumnSettings, targetTableID, targetKeysMissing); err != nil {
+			if err = AlterTableAddColumns(ctx, dest, targetTableConfig, opts.ColumnSettings, targetTableID, targetKeysMissing); err != nil {
 				return false, fmt.Errorf("failed to add columns for table %q: %w", targetTableID.Table(), err)
 			}
 		}
@@ -102,7 +102,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.Destination, tableData 
 	if msmSettings.IsFirstFlush() {
 		// If it's the first flush, we'll just load the data directly into the MSM table.
 		// Don't need to create the temporary table, we've already created it above.
-		if err = dwh.PrepareTemporaryTable(ctx, tableData, msmTableConfig, msmTableID, msmTableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, false); err != nil {
+		if err = dest.PrepareTemporaryTable(ctx, tableData, msmTableConfig, msmTableID, msmTableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, false); err != nil {
 			return false, fmt.Errorf("failed to prepare temporary table: %w", err)
 		}
 	} else {
@@ -110,7 +110,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.Destination, tableData 
 		temporaryTableID := TempTableIDWithSuffix(targetTableID, tableData.TempTableSuffix())
 		opts.UseBuildMergeQueryIntoStagingTable = true
 		opts.PrepareTemporaryTable = true
-		if err := merge(ctx, dwh, tableData, msmTableConfig, temporaryTableID, msmTableID, opts); err != nil {
+		if err := merge(ctx, dest, tableData, msmTableConfig, temporaryTableID, msmTableID, opts); err != nil {
 			return false, fmt.Errorf("failed to merge msm table into target table: %w", err)
 		}
 
@@ -118,7 +118,7 @@ func MultiStepMerge(ctx context.Context, dwh destination.Destination, tableData 
 			// If it's the last flush, we'll want to load the MSM table into the target table.
 			opts.UseBuildMergeQueryIntoStagingTable = false
 			opts.PrepareTemporaryTable = false
-			if err := merge(ctx, dwh, tableData, targetTableConfig, msmTableID, targetTableID, opts); err != nil {
+			if err := merge(ctx, dest, tableData, targetTableConfig, msmTableID, targetTableID, opts); err != nil {
 				return false, fmt.Errorf("failed to merge msm table into target table: %w", err)
 			}
 

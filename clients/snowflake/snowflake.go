@@ -47,7 +47,7 @@ func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) erro
 }
 func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
 	return shared.GetTableCfgArgs{
-		Dwh:                   s,
+		Destination:           s,
 		TableID:               tableID,
 		ConfigMap:             s.configMap,
 		ColumnNameForName:     "name",

@@ -79,7 +79,7 @@ func (s Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, include
 
 func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
 	return shared.GetTableCfgArgs{
-		Dwh:                   s,
+		Destination:           s,
 		TableID:               tableID,
 		ConfigMap:             s.configMap,
 		ColumnNameForName:     "col_name",
