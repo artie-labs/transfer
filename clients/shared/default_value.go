@@ -71,20 +71,20 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 	return column.DefaultValue(), nil
 }
 
-func BackfillColumn(dwh destination.Destination, column columns.Column, tableID sql.TableIdentifier) error {
-	switch dwh.Dialect().GetDefaultValueStrategy() {
+func BackfillColumn(dest destination.Destination, column columns.Column, tableID sql.TableIdentifier) error {
+	switch dest.Dialect().GetDefaultValueStrategy() {
 	case sql.Backfill:
 		if !column.ShouldBackfill() {
 			// If we don't need to backfill, don't backfill.
 			return nil
 		}
 
-		defaultVal, err := DefaultValue(column, dwh.Dialect())
+		defaultVal, err := DefaultValue(column, dest.Dialect())
 		if err != nil {
 			return fmt.Errorf("failed to escape default value: %w", err)
 		}
 
-		escapedCol := dwh.Dialect().QuoteIdentifier(column.Name())
+		escapedCol := dest.Dialect().QuoteIdentifier(column.Name())
 		query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
 			// UPDATE table SET col = default_val WHERE col IS NULL
 			tableID.FullyQualifiedName(), escapedCol, defaultVal, escapedCol,
@@ -95,24 +95,24 @@ func BackfillColumn(dwh destination.Destination, column columns.Column, tableID 
 			slog.String("table", tableID.FullyQualifiedName()),
 		)
 
-		if _, err = dwh.Exec(query); err != nil {
+		if _, err = dest.Exec(query); err != nil {
 			return fmt.Errorf("failed to backfill, err: %w, query: %v", err, query)
 		}
 
 		query = fmt.Sprintf(`COMMENT ON COLUMN %s.%s IS '%v';`, tableID.FullyQualifiedName(), escapedCol, `{"backfilled": true}`)
-		if _, ok := dwh.Dialect().(bigQueryDialect.BigQueryDialect); ok {
+		if _, ok := dest.Dialect().(bigQueryDialect.BigQueryDialect); ok {
 			query = fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET OPTIONS (description=`%s`);",
 				// ALTER TABLE table ALTER COLUMN col set OPTIONS (description=...)
 				tableID.FullyQualifiedName(), escapedCol, `{"backfilled": true}`,
 			)
 		}
 
-		_, err = dwh.Exec(query)
+		_, err = dest.Exec(query)
 		return err
 	case sql.Native:
 		// TODO: Support native strat
 		return nil
 	default:
-		return fmt.Errorf("unknown default value strategy: %q", dwh.Dialect().GetDefaultValueStrategy())
+		return fmt.Errorf("unknown default value strategy: %q", dest.Dialect().GetDefaultValueStrategy())
 	}
 }
