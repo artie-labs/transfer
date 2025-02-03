@@ -41,7 +41,7 @@ func (MSSQLDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName st
 	return fmt.Sprintf("ALTER TABLE %s DROP %s", tableID.FullyQualifiedName(), colName)
 }
 
-func (MSSQLDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, colSQLParts []string) string {
+func (MSSQLDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, colSQLParts []string, _ sql.CreateTableOpts) string {
 	// Microsoft SQL Server uses the same syntax for temporary and permanent tables.
 	// Microsoft SQL Server doesn't support IF NOT EXISTS
 	return fmt.Sprintf("CREATE TABLE %s (%s);", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))

@@ -34,6 +34,8 @@ type Kafka struct {
 type SharedDestinationColumnSettings struct {
 	// BigQueryNumericForVariableNumeric - If enabled, we will use BigQuery's NUMERIC type for variable numeric types.
 	BigQueryNumericForVariableNumeric bool `yaml:"bigQueryNumericForVariableNumeric"`
+	// BigQueryAutoCreateClusteredTables - If enabled, we will automatically create clustered tables in BigQuery.
+	BigQueryAutoCreateClusteredTables bool `yaml:"bigQueryAutoCreateClusteredTables"`
 }
 
 type SharedDestinationSettings struct {

@@ -37,7 +37,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 		// BigQuery has DDL quotas.
 		RetryColBackfill: true,
 		// We are using BigQuery's streaming API which doesn't guarantee exactly once semantics
-		SubQueryDedupe: true,
+		// SubQueryDedupe: true,
 	})
 	if err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
