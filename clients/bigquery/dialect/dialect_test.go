@@ -8,6 +8,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/stretchr/testify/assert"
@@ -57,13 +58,13 @@ func TestBigQueryDialect_BuildCreateTableQuery(t *testing.T) {
 
 	// Temporary:
 	assert.Contains(t,
-		BigQueryDialect{}.BuildCreateTableQuery(fakeTableID, true, []string{"{PART_1}", "{PART_2}"}),
+		BigQueryDialect{}.BuildCreateTableQuery(fakeTableID, true, []string{"{PART_1}", "{PART_2}"}, sql.CreateTableOpts{}),
 		`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1},{PART_2}) OPTIONS (expiration_timestamp = TIMESTAMP(`,
 	)
 	// Not temporary:
 	assert.Equal(t,
 		`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1},{PART_2})`,
-		BigQueryDialect{}.BuildCreateTableQuery(fakeTableID, false, []string{"{PART_1}", "{PART_2}"}),
+		BigQueryDialect{}.BuildCreateTableQuery(fakeTableID, false, []string{"{PART_1}", "{PART_2}"}, sql.CreateTableOpts{}),
 	)
 }
 
