@@ -12,7 +12,7 @@ import (
 	sqllib "github.com/artie-labs/transfer/lib/sql"
 )
 
-type DataWarehouse interface {
+type Destination interface {
 	Baseline
 
 	// SQL specific commands
@@ -40,21 +40,21 @@ type Baseline interface {
 	IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sqllib.TableIdentifier
 }
 
-// ExecStatements executes one or more statements against a [DataWarehouse].
+// ExecStatements executes one or more statements against a [Destination].
 // If there is more than one statement, the statements will be executed inside of a transaction.
-func ExecStatements(dwh DataWarehouse, statements []string) error {
+func ExecStatements(dest Destination, statements []string) error {
 	switch len(statements) {
 	case 0:
 		return fmt.Errorf("statements is empty")
 	case 1:
 		slog.Debug("Executing...", slog.String("query", statements[0]))
-		if _, err := dwh.Exec(statements[0]); err != nil {
+		if _, err := dest.Exec(statements[0]); err != nil {
 			return fmt.Errorf("failed to execute statement: %w", err)
 		}
 
 		return nil
 	default:
-		tx, err := dwh.Begin()
+		tx, err := dest.Begin()
 		if err != nil {
 			return fmt.Errorf("failed to start tx: %w", err)
 		}

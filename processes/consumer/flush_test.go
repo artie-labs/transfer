@@ -120,7 +120,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 		assert.Len(f.T(), td.Rows(), 5)
 	}
 
-	assert.Nil(f.T(), Flush(context.Background(), f.db, f.dwh, metrics.NullMetricsProvider{}, Args{}), "flush failed")
+	assert.Nil(f.T(), Flush(context.Background(), f.db, f.dest, metrics.NullMetricsProvider{}, Args{}), "flush failed")
 	assert.Equal(f.T(), f.fakeConsumer.CommitMessagesCallCount(), len(tableNames)) // Commit 3 times because 3 topics.
 
 	for i := 0; i < len(tableNames); i++ {
