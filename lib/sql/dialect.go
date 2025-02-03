@@ -26,8 +26,7 @@ type TableIdentifier interface {
 type CreateTableOpts struct {
 	// Used by BigQuery:
 	AutoCreateClusteredTables bool
-
-	PrimaryKeys []string
+	PrimaryKeys               []string
 }
 
 type Dialect interface {
