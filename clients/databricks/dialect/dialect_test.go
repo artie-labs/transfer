@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
@@ -83,14 +84,14 @@ func TestDatabricksDialect_BuildCreateTableQuery(t *testing.T) {
 		// Temporary
 		assert.Equal(t,
 			`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1}, {PART_2})`,
-			DatabricksDialect{}.BuildCreateTableQuery(fakeTableID, true, []string{"{PART_1}", "{PART_2}"}),
+			DatabricksDialect{}.BuildCreateTableQuery(fakeTableID, true, []string{"{PART_1}", "{PART_2}"}, sql.CreateTableOpts{}),
 		)
 	}
 	{
 		// Not temporary
 		assert.Equal(t,
 			`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1}, {PART_2})`,
-			DatabricksDialect{}.BuildCreateTableQuery(fakeTableID, false, []string{"{PART_1}", "{PART_2}"}),
+			DatabricksDialect{}.BuildCreateTableQuery(fakeTableID, false, []string{"{PART_1}", "{PART_2}"}, sql.CreateTableOpts{}),
 		)
 	}
 }

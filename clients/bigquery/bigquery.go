@@ -34,7 +34,7 @@ import (
 const (
 	GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
 	// Storage Write API is limited to 10 MiB, subtract 400 KiB to account for request overhead.
-	maxRequestByteSize = (10 * 1024 * 1024) - (400 * 1024)
+	maxRequestByteSize = (10 * 1024 * 1024) - (700 * 1024)
 )
 
 type Store struct {
