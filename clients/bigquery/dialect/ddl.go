@@ -13,7 +13,6 @@ import (
 
 func (BigQueryDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, colSQLParts []string, opts sql.CreateTableOpts) string {
 	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
-
 	if temporary {
 		return fmt.Sprintf(
 			`%s OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
