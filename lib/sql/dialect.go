@@ -23,6 +23,13 @@ type TableIdentifier interface {
 	FullyQualifiedName() string
 }
 
+type CreateTableOpts struct {
+	// Used by BigQuery:
+	AutoCreateClusteredTables bool
+
+	PrimaryKeys []string
+}
+
 type Dialect interface {
 	QuoteIdentifier(identifier string) string
 	EscapeStruct(value string) string
@@ -30,7 +37,7 @@ type Dialect interface {
 	KindForDataType(_type string, stringPrecision string) (typing.KindDetails, error)
 	IsColumnAlreadyExistsErr(err error) bool
 	IsTableDoesNotExistErr(err error) bool
-	BuildCreateTableQuery(tableID TableIdentifier, temporary bool, colSQLParts []string) string
+	BuildCreateTableQuery(tableID TableIdentifier, temporary bool, colSQLParts []string, opts CreateTableOpts) string
 	BuildDropTableQuery(tableID TableIdentifier) string
 	BuildTruncateTableQuery(tableID TableIdentifier) string
 	BuildDedupeQueries(tableID, stagingTableID TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string

@@ -2,6 +2,7 @@ package dialect
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -10,7 +11,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (BigQueryDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, colSQLParts []string) string {
+func (BigQueryDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, colSQLParts []string, opts sql.CreateTableOpts) string {
 	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
 
 	if temporary {
@@ -20,6 +21,15 @@ func (BigQueryDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, tempor
 			BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)),
 		)
 	} else {
+		if opts.AutoCreateClusteredTables {
+			// Don't handle this yet since it can only be up to 4.
+			if len(opts.PrimaryKeys) > 4 {
+				slog.Warn("Skipping auto-create clustered tables because the number of primary keys is greater than 4")
+			} else {
+				query += fmt.Sprintf("CLUSTER BY %s", strings.Join(opts.PrimaryKeys, ","))
+			}
+		}
+
 		return query
 	}
 }
