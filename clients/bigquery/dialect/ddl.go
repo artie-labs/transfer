@@ -12,7 +12,20 @@ import (
 )
 
 func (BigQueryDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, colSQLParts []string, opts sql.CreateTableOpts) string {
+	var clusterKey string
+	if opts.AutoCreateClusteredTables {
+		if len(opts.PrimaryKeys) > 4 {
+			slog.Warn("Skipping auto-create clustered tables because the number of primary keys is greater than 4")
+		} else {
+			clusterKey = fmt.Sprintf("CLUSTER BY %s", strings.Join(opts.PrimaryKeys, ","))
+		}
+	}
+
 	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
+	if clusterKey != "" {
+		query += " " + clusterKey
+	}
+
 	if temporary {
 		return fmt.Sprintf(
 			`%s OPTIONS (expiration_timestamp = TIMESTAMP("%s"))`,
@@ -20,15 +33,6 @@ func (BigQueryDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, tempor
 			BQExpiresDate(time.Now().UTC().Add(constants.TemporaryTableTTL)),
 		)
 	} else {
-		if opts.AutoCreateClusteredTables {
-			// Don't handle this yet since it can only be up to 4.
-			if len(opts.PrimaryKeys) > 4 {
-				slog.Warn("Skipping auto-create clustered tables because the number of primary keys is greater than 4")
-			} else {
-				query += fmt.Sprintf("CLUSTER BY %s", strings.Join(opts.PrimaryKeys, ","))
-			}
-		}
-
 		return query
 	}
 }
