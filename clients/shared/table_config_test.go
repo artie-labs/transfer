@@ -26,9 +26,9 @@ func TestGetTableConfig(t *testing.T) {
 	cm.AddTable(fakeTableID, tableCfg)
 
 	actualTableCfg, err := GetTableCfgArgs{
-		Dwh:       &mocks.FakeDataWarehouse{},
-		TableID:   fakeTableID,
-		ConfigMap: cm,
+		Destination: &mocks.FakeDestination{},
+		TableID:     fakeTableID,
+		ConfigMap:   cm,
 	}.GetTableConfig()
 
 	assert.NoError(t, err)

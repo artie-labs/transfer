@@ -10,13 +10,13 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func Append(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, opts types.AdditionalSettings) error {
+func Append(ctx context.Context, dest destination.Destination, tableData *optimization.TableData, opts types.AdditionalSettings) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
 
-	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	tableConfig, err := dwh.GetTableConfig(tableID, tableData.TopicConfig().DropDeletedColumns)
+	tableID := dest.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	tableConfig, err := dest.GetTableConfig(tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return fmt.Errorf("failed to get table config: %w", err)
 	}
@@ -32,11 +32,11 @@ func Append(ctx context.Context, dwh destination.DataWarehouse, tableData *optim
 	)
 
 	if tableConfig.CreateTable() {
-		if err = CreateTable(ctx, dwh, tableData.Mode(), tableConfig, opts.ColumnSettings, tableID, false, targetKeysMissing); err != nil {
+		if err = CreateTable(ctx, dest, tableData.Mode(), tableConfig, opts.ColumnSettings, tableID, false, targetKeysMissing); err != nil {
 			return fmt.Errorf("failed to create table: %w", err)
 		}
 	} else {
-		if err = AlterTableAddColumns(ctx, dwh, tableConfig, opts.ColumnSettings, tableID, targetKeysMissing); err != nil {
+		if err = AlterTableAddColumns(ctx, dest, tableConfig, opts.ColumnSettings, tableID, targetKeysMissing); err != nil {
 			return fmt.Errorf("failed to alter table: %w", err)
 		}
 	}
@@ -51,7 +51,7 @@ func Append(ctx context.Context, dwh destination.DataWarehouse, tableData *optim
 		tempTableID = opts.TempTableID
 	}
 
-	return dwh.PrepareTemporaryTable(
+	return dest.PrepareTemporaryTable(
 		ctx,
 		tableData,
 		tableConfig,
