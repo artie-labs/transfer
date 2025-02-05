@@ -38,10 +38,6 @@ type Event struct {
 	mode          config.Mode
 }
 
-func (e *Event) SetPrimaryKeysForTest(primaryKeys []string) {
-	e.primaryKeys = primaryKeys
-}
-
 func hashData(data map[string]any, tc kafkalib.TopicConfig) map[string]any {
 	for _, columnToHash := range tc.ColumnsToHash {
 		if value, isOk := data[columnToHash]; isOk {
