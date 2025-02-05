@@ -27,6 +27,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 )
@@ -92,8 +93,17 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, u
 
 func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
-		if err := shared.CreateTempTable(ctx, s, tableData, dwh, opts.ColumnSettings, tempTableID); err != nil {
-			return err
+		retryCfg, err := retry.NewJitterRetryConfig(1_000, 30_000, 15, retry.AlwaysRetry)
+		if err != nil {
+			return fmt.Errorf("failed to create retry config: %w", err)
+		}
+
+		err = retry.WithRetries(retryCfg, func(attempt int, err error) error {
+			return shared.CreateTempTable(ctx, s, tableData, dwh, opts.ColumnSettings, tempTableID)
+		})
+
+		if err != nil {
+			return fmt.Errorf("failed to create temp table: %w", err)
 		}
 	}
 
