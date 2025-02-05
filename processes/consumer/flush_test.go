@@ -5,15 +5,14 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/artie-labs/transfer/models/event"
-
-	"github.com/artie-labs/transfer/lib/artie"
-	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/lib/artie"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics"
+	"github.com/artie-labs/transfer/models/event"
 )
 
 var topicConfig = kafkalib.TopicConfig{
@@ -27,10 +26,8 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 	for i := 0; i < 5; i++ {
 		evt := event.Event{
 			Table: "foo",
-			PrimaryKeyMap: map[string]any{
-				"id": fmt.Sprintf("pk-%d", i),
-			},
 			Data: map[string]any{
+				"id":                                fmt.Sprintf("pk-%d", i),
 				constants.DeleteColumnMarker:        true,
 				constants.OnlySetDeleteColumnMarker: true,
 				"abc":                               "def",
@@ -38,6 +35,7 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 			},
 		}
 
+		evt.SetPrimaryKeysForTest([]string{"id"})
 		kafkaMsg := kafka.Message{Partition: 1, Offset: 1}
 		_, _, err := evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
 		assert.Nil(f.T(), err)
@@ -54,10 +52,8 @@ func (f *FlushTestSuite) TestShouldFlush() {
 	for i := 0; i < int(float64(f.cfg.BufferRows)*1.5); i++ {
 		evt := event.Event{
 			Table: "postgres",
-			PrimaryKeyMap: map[string]any{
-				"id": fmt.Sprintf("pk-%d", i),
-			},
 			Data: map[string]any{
+				"id":                                fmt.Sprintf("pk-%d", i),
 				constants.DeleteColumnMarker:        true,
 				constants.OnlySetDeleteColumnMarker: true,
 				"pk":                                fmt.Sprintf("pk-%d", i),
@@ -65,6 +61,8 @@ func (f *FlushTestSuite) TestShouldFlush() {
 				"cat":                               "dog",
 			},
 		}
+
+		evt.SetPrimaryKeysForTest([]string{"id"})
 
 		var err error
 		kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
@@ -92,9 +90,6 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 			for i := 0; i < 5; i++ {
 				evt := event.Event{
 					Table: tableName,
-					PrimaryKeyMap: map[string]any{
-						"id": fmt.Sprintf("pk-%d", i),
-					},
 					Data: map[string]any{
 						"id":                                fmt.Sprintf("pk-%d", i),
 						constants.DeleteColumnMarker:        true,
@@ -105,6 +100,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 					},
 				}
 
+				evt.SetPrimaryKeysForTest([]string{"id"})
 				kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
 				_, _, err := evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
 				assert.Nil(f.T(), err)

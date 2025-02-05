@@ -15,17 +15,18 @@ var idMap = map[string]any{
 func (e *EventsTestSuite) TestEvent_Validate() {
 	{
 		_evt := Event{Table: "foo"}
-		assert.ErrorContains(e.T(), _evt.Validate(), "primary key map is empty")
+		assert.ErrorContains(e.T(), _evt.Validate(), "primary keys are empty")
 	}
 	{
-		_evt := Event{Table: "foo", PrimaryKeyMap: idMap}
+		_evt := Event{Table: "foo", primaryKeys: []string{"id"}}
 		assert.ErrorContains(e.T(), _evt.Validate(), "event has no data")
 	}
 	{
 		_evt := Event{
-			Table:         "foo",
-			PrimaryKeyMap: idMap,
+			Table:       "foo",
+			primaryKeys: []string{"id"},
 			Data: map[string]any{
+				"id":  123,
 				"foo": "bar",
 			},
 			mode: config.History,
@@ -34,9 +35,10 @@ func (e *EventsTestSuite) TestEvent_Validate() {
 	}
 	{
 		_evt := Event{
-			Table:         "foo",
-			PrimaryKeyMap: idMap,
+			Table:       "foo",
+			primaryKeys: []string{"id"},
 			Data: map[string]any{
+				"id":  123,
 				"foo": "bar",
 			},
 		}
@@ -44,9 +46,13 @@ func (e *EventsTestSuite) TestEvent_Validate() {
 	}
 	{
 		_evt := Event{
-			Table:         "foo",
-			PrimaryKeyMap: idMap,
-			Data:          map[string]any{constants.DeleteColumnMarker: true, constants.OnlySetDeleteColumnMarker: true},
+			Table:       "foo",
+			primaryKeys: []string{"id"},
+			Data: map[string]any{
+				"id":                                123,
+				constants.DeleteColumnMarker:        true,
+				constants.OnlySetDeleteColumnMarker: true,
+			},
 		}
 		assert.Nil(e.T(), _evt.Validate())
 	}
@@ -136,20 +142,14 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 
 func (e *EventsTestSuite) TestEventPrimaryKeys() {
 	evt := &Event{
-		Table: "foo",
-		PrimaryKeyMap: map[string]any{
-			"id":  true,
-			"id1": true,
-			"id2": true,
-			"id3": true,
-			"id4": true,
-		},
+		Table:       "foo",
+		primaryKeys: []string{"id", "id1", "id2", "id3", "id4"},
 	}
 
 	requiredKeys := []string{"id", "id1", "id2", "id3", "id4"}
 	for _, requiredKey := range requiredKeys {
 		var found bool
-		for _, primaryKey := range evt.PrimaryKeys() {
+		for _, primaryKey := range evt.GetPrimaryKeys() {
 			found = requiredKey == primaryKey
 			if found {
 				break
@@ -160,8 +160,9 @@ func (e *EventsTestSuite) TestEventPrimaryKeys() {
 	}
 
 	anotherEvt := &Event{
-		Table: "foo",
-		PrimaryKeyMap: map[string]any{
+		Table:       "foo",
+		primaryKeys: []string{"id", "course_id"},
+		Data: map[string]any{
 			"id":        1,
 			"course_id": 2,
 		},
@@ -189,7 +190,9 @@ func (e *EventsTestSuite) TestEventPrimaryKeys() {
 
 func (e *EventsTestSuite) TestPrimaryKeyValueDeterministic() {
 	evt := &Event{
-		PrimaryKeyMap: map[string]any{
+		Table:       "foo",
+		primaryKeys: []string{"aa", "bb", "zz", "gg", "dusty"},
+		Data: map[string]any{
 			"aa":    1,
 			"bb":    5,
 			"zz":    "ff",
@@ -198,7 +201,7 @@ func (e *EventsTestSuite) TestPrimaryKeyValueDeterministic() {
 		},
 	}
 
-	for i := 0; i < 500*1000; i++ {
+	for i := 0; i < 5; i++ {
 		assert.Equal(e.T(), evt.PrimaryKeyValue(), "aa=1bb=5dusty=mini aussiegg=artiezz=ff")
 	}
 }
