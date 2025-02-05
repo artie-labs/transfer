@@ -201,7 +201,7 @@ func (e *EventsTestSuite) TestPrimaryKeyValueDeterministic() {
 		},
 	}
 
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 50_000; i++ {
 		assert.Equal(e.T(), evt.PrimaryKeyValue(), "aa=1bb=5dusty=mini aussiegg=artiezz=ff")
 	}
 }
