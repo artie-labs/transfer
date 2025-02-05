@@ -156,6 +156,9 @@ func (e *Event) Validate() error {
 	return nil
 }
 
+// GetPrimaryKeys is returned in a sorted manner to be safe.
+// We use PrimaryKeyValue() as our internal identifier within our db
+// It is critical to make sure `PrimaryKeyValue()` is a deterministic call.
 func (e *Event) GetPrimaryKeys() []string {
 	slices.Sort(e.primaryKeys)
 	return e.primaryKeys
