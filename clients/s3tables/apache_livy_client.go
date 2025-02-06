@@ -60,6 +60,7 @@ func (c *Client) newSession(kind string) error {
 
 func NewClient(url string) (Client, error) {
 	client := Client{url: url, httpClient: &http.Client{}}
+	// https://livy.incubator.apache.org/docs/latest/rest-api.html#session-kind
 	if err := client.newSession("sql"); err != nil {
 		return Client{}, err
 	}
