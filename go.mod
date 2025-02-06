@@ -11,15 +11,15 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.53.1
 	github.com/cockroachdb/apd/v3 v3.2.1
 	github.com/databricks/databricks-sql-go v1.6.1
-	github.com/getsentry/sentry-go v0.30.0
+	github.com/getsentry/sentry-go v0.31.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.6.0
-	github.com/jessevdk/go-flags v1.5.0
-	github.com/lmittmann/tint v1.0.5
+	github.com/jessevdk/go-flags v1.6.1
+	github.com/lmittmann/tint v1.0.7
 	github.com/mattn/go-isatty v0.0.20
 	github.com/microsoft/go-mssqldb v1.7.1
-	github.com/samber/slog-multi v1.2.4
-	github.com/samber/slog-sentry/v2 v2.8.0
+	github.com/samber/slog-multi v1.4.0
+	github.com/samber/slog-sentry/v2 v2.9.3
 	github.com/segmentio/kafka-go v0.4.47
 	github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2 v0.1.0
 	github.com/snowflakedb/gosnowflake v1.11.0
@@ -119,8 +119,8 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rs/zerolog v1.28.0 // indirect
-	github.com/samber/lo v1.47.0 // indirect
-	github.com/samber/slog-common v0.17.0 // indirect
+	github.com/samber/lo v1.49.1 // indirect
+	github.com/samber/slog-common v0.18.1 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/viant/afs v1.25.1 // indirect
 	github.com/viant/parsly v0.3.3-0.20240717150634-e1afaedb691b // indirect
