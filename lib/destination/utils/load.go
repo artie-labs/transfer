@@ -8,6 +8,7 @@ import (
 	"github.com/artie-labs/transfer/clients/mssql"
 	"github.com/artie-labs/transfer/clients/redshift"
 	"github.com/artie-labs/transfer/clients/s3"
+	"github.com/artie-labs/transfer/clients/s3tables"
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -16,7 +17,7 @@ import (
 )
 
 func IsOutputBaseline(cfg config.Config) bool {
-	return cfg.Output == constants.S3
+	return cfg.Output == constants.S3 || cfg.Output == constants.S3Tables
 }
 
 func LoadBaseline(cfg config.Config) (destination.Baseline, error) {
@@ -25,6 +26,13 @@ func LoadBaseline(cfg config.Config) (destination.Baseline, error) {
 		store, err := s3.LoadStore(cfg)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load S3: %w", err)
+		}
+
+		return store, nil
+	case constants.S3Tables:
+		store, err := s3tables.LoadStore(cfg)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load S3Tables: %w", err)
 		}
 
 		return store, nil
