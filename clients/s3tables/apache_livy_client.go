@@ -16,7 +16,6 @@ type Client struct {
 }
 
 func (c Client) doRequest(method, path string, body []byte) ([]byte, error) {
-	fmt.Println("c.url", c.url, "c.url+path", c.url+path)
 	req, err := http.NewRequest(method, c.url+path, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
