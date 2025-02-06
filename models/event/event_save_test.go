@@ -29,11 +29,10 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	anotherLowerCol := "dusty__the__mini__aussie"
 
 	event := Event{
-		Table: "foo",
-		PrimaryKeyMap: map[string]any{
-			"id": "123",
-		},
+		Table:       "foo",
+		primaryKeys: []string{"id"},
 		Data: map[string]any{
+			"id":                                "123",
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
 			expectedCol:                         "dusty",
@@ -61,11 +60,10 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	assert.Equal(e.T(), 2, found, optimization.ReadOnlyInMemoryCols)
 	badColumn := "other"
 	edgeCaseEvent := Event{
-		Table: "foo",
-		PrimaryKeyMap: map[string]any{
-			"id": "12344",
-		},
+		Table:       "foo",
+		primaryKeys: []string{"id"},
 		Data: map[string]any{
+			"id":                                "12344",
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
 			expectedCol:                         "dusty",
@@ -86,10 +84,8 @@ func (e *EventsTestSuite) TestSaveEvent() {
 
 func (e *EventsTestSuite) TestEvent_SaveCasing() {
 	event := Event{
-		Table: "foo",
-		PrimaryKeyMap: map[string]any{
-			"id": "123",
-		},
+		Table:       "foo",
+		primaryKeys: []string{"id"},
 		Data: map[string]any{
 			"id":                                "123",
 			constants.DeleteColumnMarker:        true,
@@ -120,11 +116,10 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 
 func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 	event := Event{
-		Table: "foo",
-		PrimaryKeyMap: map[string]any{
-			"id": "123",
-		},
+		Table:       "foo",
+		primaryKeys: []string{"id"},
 		Data: map[string]any{
+			"id":                                "123",
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
 			"randomCol":                         "dusty",
@@ -185,9 +180,7 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
 		},
-		PrimaryKeyMap: map[string]any{
-			"col_1": "123",
-		},
+		primaryKeys: []string{"col_1"},
 	}
 
 	kafkaMsg := kafka.Message{}
@@ -236,12 +229,11 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 	cols.AddColumn(columns.NewColumn("anotherCOL", typing.Invalid))
 	cols.AddColumn(columns.NewColumn("created_at_date_string", typing.Invalid))
 	event := Event{
-		Table:   "foo",
-		Columns: &cols,
-		PrimaryKeyMap: map[string]any{
-			"id": "123",
-		},
+		Table:       "foo",
+		Columns:     &cols,
+		primaryKeys: []string{"id"},
 		Data: map[string]any{
+			"id":                                "123",
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
 			"randomCol":                         "dusty",
@@ -289,11 +281,10 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 
 func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
 	event := Event{
-		Table: "foo",
-		PrimaryKeyMap: map[string]any{
-			"id": "123",
-		},
+		Table:       "foo",
+		primaryKeys: []string{"id"},
 		Data: map[string]any{
+			"id":                                "123",
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
 		},

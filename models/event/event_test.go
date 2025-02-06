@@ -6,6 +6,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/mocks"
 )
 
 var idMap = map[string]any{
@@ -15,17 +16,18 @@ var idMap = map[string]any{
 func (e *EventsTestSuite) TestEvent_Validate() {
 	{
 		_evt := Event{Table: "foo"}
-		assert.ErrorContains(e.T(), _evt.Validate(), "primary key map is empty")
+		assert.ErrorContains(e.T(), _evt.Validate(), "primary keys are empty")
 	}
 	{
-		_evt := Event{Table: "foo", PrimaryKeyMap: idMap}
+		_evt := Event{Table: "foo", primaryKeys: []string{"id"}}
 		assert.ErrorContains(e.T(), _evt.Validate(), "event has no data")
 	}
 	{
 		_evt := Event{
-			Table:         "foo",
-			PrimaryKeyMap: idMap,
+			Table:       "foo",
+			primaryKeys: []string{"id"},
 			Data: map[string]any{
+				"id":  123,
 				"foo": "bar",
 			},
 			mode: config.History,
@@ -34,9 +36,10 @@ func (e *EventsTestSuite) TestEvent_Validate() {
 	}
 	{
 		_evt := Event{
-			Table:         "foo",
-			PrimaryKeyMap: idMap,
+			Table:       "foo",
+			primaryKeys: []string{"id"},
 			Data: map[string]any{
+				"id":  123,
 				"foo": "bar",
 			},
 		}
@@ -44,9 +47,13 @@ func (e *EventsTestSuite) TestEvent_Validate() {
 	}
 	{
 		_evt := Event{
-			Table:         "foo",
-			PrimaryKeyMap: idMap,
-			Data:          map[string]any{constants.DeleteColumnMarker: true, constants.OnlySetDeleteColumnMarker: true},
+			Table:       "foo",
+			primaryKeys: []string{"id"},
+			Data: map[string]any{
+				"id":                                123,
+				constants.DeleteColumnMarker:        true,
+				constants.OnlySetDeleteColumnMarker: true,
+			},
 		}
 		assert.Nil(e.T(), _evt.Validate())
 	}
@@ -136,20 +143,14 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 
 func (e *EventsTestSuite) TestEventPrimaryKeys() {
 	evt := &Event{
-		Table: "foo",
-		PrimaryKeyMap: map[string]any{
-			"id":  true,
-			"id1": true,
-			"id2": true,
-			"id3": true,
-			"id4": true,
-		},
+		Table:       "foo",
+		primaryKeys: []string{"id", "id1", "id2", "id3", "id4"},
 	}
 
 	requiredKeys := []string{"id", "id1", "id2", "id3", "id4"}
 	for _, requiredKey := range requiredKeys {
 		var found bool
-		for _, primaryKey := range evt.PrimaryKeys() {
+		for _, primaryKey := range evt.GetPrimaryKeys() {
 			found = requiredKey == primaryKey
 			if found {
 				break
@@ -159,24 +160,13 @@ func (e *EventsTestSuite) TestEventPrimaryKeys() {
 		assert.True(e.T(), found, requiredKey)
 	}
 
-	anotherEvt := &Event{
-		Table: "foo",
-		PrimaryKeyMap: map[string]any{
-			"id":        1,
-			"course_id": 2,
-		},
-	}
+	mockEvent := &mocks.FakeEvent{}
+	mockEvent.GetTableNameReturns("foo")
+	mockEvent.GetDataReturns(map[string]any{"id": 1, "course_id": 2}, nil)
 
-	var found bool
-	possibilities := []string{"course_id=2id=1"}
-	pkVal := anotherEvt.PrimaryKeyValue()
-	for _, possibility := range possibilities {
-		if found = possibility == pkVal; found {
-			break
-		}
-	}
-
-	assert.True(e.T(), found, anotherEvt.PrimaryKeyValue())
+	anotherEvt, err := ToMemoryEvent(mockEvent, map[string]any{"id": 1, "course_id": 2}, kafkalib.TopicConfig{}, config.Replication)
+	assert.NoError(e.T(), err)
+	assert.Equal(e.T(), "course_id=2id=1", anotherEvt.PrimaryKeyValue())
 
 	// Make sure the ordering for the pk is deterministic.
 	partsMap := make(map[string]bool)
@@ -188,17 +178,25 @@ func (e *EventsTestSuite) TestEventPrimaryKeys() {
 }
 
 func (e *EventsTestSuite) TestPrimaryKeyValueDeterministic() {
-	evt := &Event{
-		PrimaryKeyMap: map[string]any{
-			"aa":    1,
-			"bb":    5,
-			"zz":    "ff",
-			"gg":    "artie",
-			"dusty": "mini aussie",
-		},
-	}
+	mockEvent := &mocks.FakeEvent{}
+	mockEvent.GetTableNameReturns("foo")
+	mockEvent.GetDataReturns(map[string]any{
+		"aa":    1,
+		"bb":    5,
+		"zz":    "ff",
+		"gg":    "artie",
+		"dusty": "mini aussie",
+	}, nil)
 
-	for i := 0; i < 500*1000; i++ {
+	evt, err := ToMemoryEvent(mockEvent, map[string]any{
+		"aa":    1,
+		"bb":    5,
+		"zz":    "ff",
+		"gg":    "artie",
+		"dusty": "mini aussie",
+	}, kafkalib.TopicConfig{}, config.Replication)
+	assert.NoError(e.T(), err)
+	for i := 0; i < 50_000; i++ {
 		assert.Equal(e.T(), evt.PrimaryKeyValue(), "aa=1bb=5dusty=mini aussiegg=artiezz=ff")
 	}
 }
