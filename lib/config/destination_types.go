@@ -48,6 +48,16 @@ type S3Settings struct {
 	OutputFormat       constants.S3OutputFormat `yaml:"outputFormat"`
 }
 
+type S3TablesSettings struct {
+	AwsAccessKeyID     string `yaml:"awsAccessKeyID"`
+	AwsSecretAccessKey string `yaml:"awsSecretAccessKey"`
+	BucketARN          string `yaml:"bucketARN"`
+	Region             string `yaml:"region"`
+
+	ApacheLivyHost string `yaml:"apacheLivyHost"`
+	ApacheLivyPort int    `yaml:"apacheLivyPort"`
+}
+
 type Snowflake struct {
 	AccountID string `yaml:"account"`
 	Username  string `yaml:"username"`
