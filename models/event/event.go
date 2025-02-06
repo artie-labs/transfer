@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"fmt"
 	"log/slog"
+	"maps"
 	"slices"
 	"strings"
 	"time"
@@ -23,13 +24,15 @@ import (
 )
 
 type Event struct {
-	Table         string
-	PrimaryKeyMap map[string]any
-	Data          map[string]any // json serialized column data
+	Table string
+	Data  map[string]any // json serialized column data
 
 	OptionalSchema map[string]typing.KindDetails
 	Columns        *columns.Columns
 	Deleted        bool
+
+	// private metadata:
+	primaryKeys []string
 
 	// When the database event was executed
 	executionTime time.Time
@@ -93,10 +96,11 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 	}
 
 	_event := Event{
-		executionTime:  event.GetExecutionTime(),
-		mode:           cfgMode,
+		executionTime: event.GetExecutionTime(),
+		mode:          cfgMode,
+		// [primaryKeys] needs to be sorted so that we have a deterministic way to identify a row in our in-memory db.
+		primaryKeys:    slices.Sorted(maps.Keys(pkMap)),
 		Table:          tblName,
-		PrimaryKeyMap:  pkMap,
 		OptionalSchema: optionalSchema,
 		Columns:        cols,
 		Data:           hashData(evtData, tc),
@@ -123,8 +127,8 @@ func (e *Event) Validate() error {
 		return fmt.Errorf("table name is empty")
 	}
 
-	if len(e.PrimaryKeyMap) == 0 {
-		return fmt.Errorf("primary key map is empty")
+	if len(e.primaryKeys) == 0 {
+		return fmt.Errorf("primary keys are empty")
 	}
 
 	if len(e.Data) == 0 {
@@ -144,24 +148,15 @@ func (e *Event) Validate() error {
 	return nil
 }
 
-// PrimaryKeys is returned in a sorted manner to be safe.
-// We use PrimaryKeyValue() as our internal identifier within our db
-// It is critical to make sure `PrimaryKeyValue()` is a deterministic call.
-func (e *Event) PrimaryKeys() []string {
-	var keys []string
-	for key := range e.PrimaryKeyMap {
-		keys = append(keys, key)
-	}
-
-	slices.Sort(keys)
-	return keys
+func (e *Event) GetPrimaryKeys() []string {
+	return e.primaryKeys
 }
 
 // PrimaryKeyValue - as per above, this needs to return a deterministic k/v string.
 func (e *Event) PrimaryKeyValue() string {
 	var key string
-	for _, pk := range e.PrimaryKeys() {
-		key += fmt.Sprintf("%s=%v", pk, e.PrimaryKeyMap[pk])
+	for _, pk := range e.GetPrimaryKeys() {
+		key += fmt.Sprintf("%s=%v", pk, e.Data[pk])
 	}
 
 	return key
@@ -184,7 +179,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 			cols = e.Columns
 		}
 
-		td.SetTableData(optimization.NewTableData(cols, cfg.Mode, e.PrimaryKeys(), tc, e.Table))
+		td.SetTableData(optimization.NewTableData(cols, cfg.Mode, e.GetPrimaryKeys(), tc, e.Table))
 	} else {
 		if e.Columns != nil {
 			// Iterate over this again just in case.
@@ -199,17 +194,10 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	// Update col if necessary
 	sanitizedData := make(map[string]any)
 	for _col, val := range e.Data {
-		// TODO: Refactor this to call columns.EscapeName(...)
-		// columns need to all be normalized and lower cased.
-		newColName := strings.ToLower(_col)
-		// Columns here could contain spaces. Every destination treats spaces in a column differently.
-		// So far, Snowflake accepts them when escaped properly, however BigQuery does not accept it.
-		// Instead of making this more complicated for future destinations, we will escape the spaces by having double underscore `__`
-		// So, if customers want to retrieve spaces again, they can replace `__`.
-		var containsSpace bool
-		containsSpace, newColName = stringutil.EscapeSpaces(newColName)
-		if containsSpace {
-			// Write the message back if the column has changed.
+		newColName := columns.EscapeName(_col)
+		if newColName != _col {
+			// This means that the column name has changed.
+			// We need to update the column name in the sanitizedData map.
 			sanitizedData[newColName] = val
 		}
 
@@ -273,11 +261,8 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	e.Data = sanitizedData
 	td.InsertRow(e.PrimaryKeyValue(), e.Data, e.Deleted)
 	// If the message is Kafka, then we only need the latest one
-	// If it's pubsub, we will store all of them in memory. This is because GCP pub/sub REQUIRES us to ack every single message
 	if message.Kind() == artie.Kafka {
-		td.PartitionsToLastMessage[message.Partition()] = []artie.Message{message}
-	} else {
-		td.PartitionsToLastMessage[message.Partition()] = append(td.PartitionsToLastMessage[message.Partition()], message)
+		td.PartitionsToLastMessage[message.Partition()] = message
 	}
 
 	td.LatestCDCTs = e.executionTime

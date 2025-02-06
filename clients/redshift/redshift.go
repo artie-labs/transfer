@@ -21,29 +21,37 @@ type Store struct {
 	credentialsClause string
 	bucket            string
 	optionalS3Prefix  string
-	configMap         *types.DwhToTablesConfigMap
+	configMap         *types.DestinationTableConfigMap
 	config            config.Config
 
 	db.Store
+}
+
+func (s *Store) DropTable(_ context.Context, _ sql.TableIdentifier) error {
+	return fmt.Errorf("not supported")
 }
 
 func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {
 	return shared.Append(ctx, s, tableData, types.AdditionalSettings{})
 }
 
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
-	return shared.Merge(ctx, s, tableData, types.MergeOpts{
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
+	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{
 		// We are adding SELECT DISTINCT here for the temporary table as an extra guardrail.
 		// Redshift does not enforce any row uniqueness and there could be potential LOAD errors which will cause duplicate rows to arise.
 		SubQueryDedupe: true,
-	})
+	}); err != nil {
+		return false, fmt.Errorf("failed to merge: %w", err)
+	}
+
+	return true, nil
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
 	return dialect.NewTableIdentifier(topicConfig.Schema, table)
 }
 
-func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
+func (s *Store) GetConfigMap() *types.DestinationTableConfigMap {
 	if s == nil {
 		return nil
 	}
@@ -59,15 +67,15 @@ func (s *Store) dialect() dialect.RedshiftDialect {
 	return dialect.RedshiftDialect{}
 }
 
-func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
 	return shared.GetTableCfgArgs{
-		Dwh:                   s,
-		TableID:               s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
+		Destination:           s,
+		TableID:               tableID,
 		ConfigMap:             s.configMap,
 		ColumnNameForName:     "column_name",
 		ColumnNameForDataType: "data_type",
 		ColumnNameForComment:  "description",
-		DropDeletedColumns:    tableData.TopicConfig().DropDeletedColumns,
+		DropDeletedColumns:    dropDeletedColumns,
 	}.GetTableConfig()
 }
 
@@ -90,7 +98,7 @@ func LoadRedshift(cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			configMap: &types.DwhToTablesConfigMap{},
+			configMap: &types.DestinationTableConfigMap{},
 			config:    cfg,
 
 			Store: *_store,
@@ -110,7 +118,7 @@ func LoadRedshift(cfg config.Config, _store *db.Store) (*Store, error) {
 		credentialsClause: cfg.Redshift.CredentialsClause,
 		bucket:            cfg.Redshift.Bucket,
 		optionalS3Prefix:  cfg.Redshift.OptionalS3Prefix,
-		configMap:         &types.DwhToTablesConfigMap{},
+		configMap:         &types.DestinationTableConfigMap{},
 		config:            cfg,
 
 		Store: store,

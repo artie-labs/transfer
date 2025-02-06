@@ -2,6 +2,7 @@ package mssql
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	_ "github.com/microsoft/go-mssqldb"
@@ -17,7 +18,7 @@ import (
 )
 
 type Store struct {
-	configMap *types.DwhToTablesConfigMap
+	configMap *types.DestinationTableConfigMap
 	config    config.Config
 	db.Store
 }
@@ -31,6 +32,10 @@ func getSchema(schema string) string {
 	return schema
 }
 
+func (s *Store) DropTable(_ context.Context, _ sql.TableIdentifier) error {
+	return fmt.Errorf("not supported")
+}
+
 func (s *Store) Dialect() sql.Dialect {
 	return s.dialect()
 }
@@ -39,8 +44,12 @@ func (s *Store) dialect() dialect.MSSQLDialect {
 	return dialect.MSSQLDialect{}
 }
 
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
-	return shared.Merge(ctx, s, tableData, types.MergeOpts{})
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
+	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}); err != nil {
+		return false, fmt.Errorf("failed to merge: %w", err)
+	}
+
+	return true, nil
 }
 
 func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {
@@ -70,15 +79,15 @@ func (s *Store) Dedupe(_ sql.TableIdentifier, _ []string, _ bool) error {
 	return nil // dedupe is not necessary for MS SQL
 }
 
-func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
 	return shared.GetTableCfgArgs{
-		Dwh:                   s,
-		TableID:               s.specificIdentifierFor(tableData.TopicConfig(), tableData.Name()),
+		Destination:           s,
+		TableID:               tableID,
 		ConfigMap:             s.configMap,
 		ColumnNameForName:     "column_name",
 		ColumnNameForDataType: "data_type",
 		ColumnNameForComment:  "description",
-		DropDeletedColumns:    tableData.TopicConfig().DropDeletedColumns,
+		DropDeletedColumns:    dropDeletedColumns,
 	}.GetTableConfig()
 }
 
@@ -89,7 +98,7 @@ func LoadStore(cfg config.Config) (*Store, error) {
 	}
 	return &Store{
 		Store:     store,
-		configMap: &types.DwhToTablesConfigMap{},
+		configMap: &types.DestinationTableConfigMap{},
 		config:    cfg,
 	}, nil
 }

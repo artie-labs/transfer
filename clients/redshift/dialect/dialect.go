@@ -14,7 +14,7 @@ type RedshiftDialect struct{}
 
 func (rd RedshiftDialect) QuoteIdentifier(identifier string) string {
 	// Preserve the existing behavior of Redshift identifiers being lowercased due to not being quoted.
-	return fmt.Sprintf(`"%s"`, strings.ToLower(identifier))
+	return fmt.Sprintf(`"%s"`, strings.ToLower(strings.ReplaceAll(identifier, `"`, ``)))
 }
 
 func (RedshiftDialect) EscapeStruct(value string) string {
@@ -36,7 +36,17 @@ func (rd RedshiftDialect) BuildIsNotToastValueExpression(tableAlias constants.Ta
 
 	switch column.KindDetails {
 	case typing.Struct, typing.Array:
-		return fmt.Sprintf("COALESCE(JSON_SERIALIZE(%s) NOT LIKE '%s', TRUE)", colName, toastedValue)
+		// We need to use JSON_SIZE to check if the column can be serialized into a VARCHAR
+		// If the value is greater than 500 characters, it's likely not going to be toasted, so we can skip the check.
+		return fmt.Sprintf(`
+COALESCE(
+    CASE
+        WHEN JSON_SIZE(%s) < 500 THEN JSON_SERIALIZE(%s) NOT LIKE '%s'
+    ELSE
+        TRUE
+    END,
+    TRUE
+)`, colName, colName, toastedValue)
 	default:
 		return fmt.Sprintf(`COALESCE(%s NOT LIKE '%s', TRUE)`, colName, toastedValue)
 	}

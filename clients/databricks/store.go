@@ -29,11 +29,19 @@ type Store struct {
 	db.Store
 	volume    string
 	cfg       config.Config
-	configMap *types.DwhToTablesConfigMap
+	configMap *types.DestinationTableConfigMap
 }
 
-func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) error {
-	return shared.Merge(ctx, s, tableData, types.MergeOpts{})
+func (s Store) DropTable(_ context.Context, _ sql.TableIdentifier) error {
+	return fmt.Errorf("not supported")
+}
+
+func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
+	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}); err != nil {
+		return false, fmt.Errorf("failed to merge: %w", err)
+	}
+
+	return true, nil
 }
 
 func (s Store) Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error {
@@ -69,19 +77,19 @@ func (s Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, include
 	return nil
 }
 
-func (s Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
 	return shared.GetTableCfgArgs{
-		Dwh:                   s,
-		TableID:               dialect.NewTableIdentifier(tableData.TopicConfig().Database, tableData.TopicConfig().Schema, tableData.Name()),
+		Destination:           s,
+		TableID:               tableID,
 		ConfigMap:             s.configMap,
 		ColumnNameForName:     "col_name",
 		ColumnNameForDataType: "data_type",
 		ColumnNameForComment:  "comment",
-		DropDeletedColumns:    tableData.TopicConfig().DropDeletedColumns,
+		DropDeletedColumns:    dropDeletedColumns,
 	}.GetTableConfig()
 }
 
-func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
+func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		if err := shared.CreateTempTable(ctx, s, tableData, dwh, opts.ColumnSettings, tempTableID); err != nil {
 			return err
@@ -252,6 +260,6 @@ func LoadStore(cfg config.Config) (Store, error) {
 		Store:     store,
 		cfg:       cfg,
 		volume:    cfg.Databricks.Volume,
-		configMap: &types.DwhToTablesConfigMap{},
+		configMap: &types.DestinationTableConfigMap{},
 	}, nil
 }

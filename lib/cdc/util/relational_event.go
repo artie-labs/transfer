@@ -31,8 +31,9 @@ type Source struct {
 	Schema    string `json:"schema,omitempty"`
 	Table     string `json:"table"`
 	// MySQL specific
-	File string `json:"file,omitempty"`
-	Pos  int64  `json:"pos,omitempty"`
+	File string  `json:"file,omitempty"`
+	Pos  int64   `json:"pos,omitempty"`
+	Gtid *string `json:"gtid,omitempty"`
 }
 
 func (s *SchemaEventPayload) GetColumns() (*columns.Columns, error) {

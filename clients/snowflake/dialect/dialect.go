@@ -14,7 +14,7 @@ import (
 type SnowflakeDialect struct{}
 
 func (SnowflakeDialect) QuoteIdentifier(identifier string) string {
-	return fmt.Sprintf(`"%s"`, strings.ToUpper(identifier))
+	return fmt.Sprintf(`"%s"`, strings.ToUpper(strings.ReplaceAll(identifier, `"`, ``)))
 }
 
 func (SnowflakeDialect) EscapeStruct(value string) string {
@@ -87,6 +87,29 @@ func (sd SnowflakeDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableI
 
 	parts = append(parts, fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName()))
 	return parts
+}
+
+// BuildMergeQueryIntoStagingTable - This is used to merge data from a staging table into a multi-step merge staging table.
+func (sd SnowflakeDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
+	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, sd)
+	if len(additionalEqualityStrings) > 0 {
+		equalitySQLParts = append(equalitySQLParts, additionalEqualityStrings...)
+	}
+
+	baseQuery := fmt.Sprintf(`
+MERGE INTO %s %s USING ( %s ) AS %s ON %s`,
+		tableID.FullyQualifiedName(), constants.TargetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
+	)
+
+	return []string{baseQuery + fmt.Sprintf(`
+WHEN MATCHED THEN UPDATE SET %s
+WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
+		// Update
+		sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, sd),
+		// Insert
+		strings.Join(sql.QuoteColumns(cols, sd), ","),
+		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, sd), ","),
+	)}
 }
 
 func (sd SnowflakeDialect) BuildMergeQueries(

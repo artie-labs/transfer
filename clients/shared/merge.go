@@ -17,17 +17,18 @@ import (
 
 const backfillMaxRetries = 1000
 
-func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, opts types.MergeOpts) error {
+func Merge(ctx context.Context, dest destination.Destination, tableData *optimization.TableData, opts types.MergeOpts) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
 
-	tableConfig, err := dwh.GetTableConfig(tableData)
+	tableID := dest.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	tableConfig, err := dest.GetTableConfig(tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return fmt.Errorf("failed to get table config: %w", err)
 	}
 
-	srcKeysMissing, targetKeysMissing := columns.Diff(
+	srcKeysMissing, targetKeysMissing := columns.DiffAndFilter(
 		tableData.ReadOnlyInMemoryCols().GetColumns(),
 		tableConfig.GetColumns(),
 		tableData.TopicConfig().SoftDelete,
@@ -36,18 +37,17 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		tableData.Mode(),
 	)
 
-	tableID := dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	if tableConfig.CreateTable() {
-		if err = CreateTable(ctx, dwh, tableData, tableConfig, opts.ColumnSettings, tableID, false, targetKeysMissing); err != nil {
+		if err = CreateTable(ctx, dest, tableData.Mode(), tableConfig, opts.ColumnSettings, tableID, false, targetKeysMissing); err != nil {
 			return fmt.Errorf("failed to create table: %w", err)
 		}
 	} else {
-		if err = AlterTableAddColumns(ctx, dwh, tableConfig, opts.ColumnSettings, tableID, targetKeysMissing); err != nil {
+		if err = AlterTableAddColumns(ctx, dest, tableConfig, opts.ColumnSettings, tableID, targetKeysMissing); err != nil {
 			return fmt.Errorf("failed to add columns for table %q: %w", tableID.Table(), err)
 		}
 	}
 
-	if err = AlterTableDropColumns(ctx, dwh, tableConfig, tableID, srcKeysMissing, tableData.LatestCDCTs, tableData.ContainOtherOperations()); err != nil {
+	if err = AlterTableDropColumns(ctx, dest, tableConfig, tableID, srcKeysMissing, tableData.LatestCDCTs, tableData.ContainOtherOperations()); err != nil {
 		return fmt.Errorf("failed to drop columns for table %q: %w", tableID.Table(), err)
 	}
 
@@ -57,14 +57,14 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		return fmt.Errorf("failed to merge columns from destination: %w for table %q", err, tableData.Name())
 	}
 
-	temporaryTableID := TempTableIDWithSuffix(dwh.IdentifierFor(tableData.TopicConfig(), tableData.Name()), tableData.TempTableSuffix())
+	temporaryTableID := TempTableIDWithSuffix(dest.IdentifierFor(tableData.TopicConfig(), tableData.Name()), tableData.TempTableSuffix())
 	defer func() {
-		if dropErr := ddl.DropTemporaryTable(dwh, temporaryTableID, false); dropErr != nil {
+		if dropErr := ddl.DropTemporaryTable(dest, temporaryTableID, false); dropErr != nil {
 			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))
 		}
 	}()
 
-	if err = dwh.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID, tableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
+	if err = dest.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID, tableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
 		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 
@@ -76,7 +76,7 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 
 		var backfillErr error
 		for attempts := 0; attempts < backfillMaxRetries; attempts++ {
-			backfillErr = BackfillColumn(dwh, col, tableID)
+			backfillErr = BackfillColumn(dest, col, tableID)
 			if backfillErr == nil {
 				err = tableConfig.UpsertColumn(col.Name(), columns.UpsertColumnArg{
 					Backfilled: typing.ToPtr(true),
@@ -89,7 +89,7 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 				break
 			}
 
-			if opts.RetryColBackfill && dwh.IsRetryableError(backfillErr) {
+			if opts.RetryColBackfill && dest.IsRetryableError(backfillErr) {
 				sleepDuration := jitter.Jitter(1500, jitter.DefaultMaxMs, attempts)
 				slog.Warn("Failed to apply backfill, retrying...", slog.Any("err", backfillErr),
 					slog.Duration("sleep", sleepDuration), slog.Int("attempts", attempts))
@@ -106,7 +106,7 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 
 	subQuery := temporaryTableID.FullyQualifiedName()
 	if opts.SubQueryDedupe {
-		subQuery = dwh.Dialect().BuildDedupeTableQuery(temporaryTableID, tableData.PrimaryKeys())
+		subQuery = dest.Dialect().BuildDedupeTableQuery(temporaryTableID, tableData.PrimaryKeys())
 	}
 
 	if subQuery == "" {
@@ -138,7 +138,7 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		}
 	}
 
-	mergeStatements, err := dwh.Dialect().BuildMergeQueries(
+	mergeStatements, err := dest.Dialect().BuildMergeQueries(
 		tableID,
 		subQuery,
 		primaryKeys,
@@ -151,7 +151,7 @@ func Merge(ctx context.Context, dwh destination.DataWarehouse, tableData *optimi
 		return fmt.Errorf("failed to generate merge statements: %w", err)
 	}
 
-	if err = destination.ExecStatements(dwh, mergeStatements); err != nil {
+	if err = destination.ExecStatements(dest, mergeStatements); err != nil {
 		return fmt.Errorf("failed to execute merge statements: %w", err)
 	}
 	return nil

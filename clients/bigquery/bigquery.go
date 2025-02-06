@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/bigquery/storage/managedwriter"
 	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
 	_ "github.com/viant/bigquery"
+	"google.golang.org/api/option"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
@@ -35,10 +38,17 @@ const (
 )
 
 type Store struct {
-	configMap *types.DwhToTablesConfigMap
+	// If [auditRows] is enabled, we will perform an additional query to ensure that the number of rows in the temporary table matches the expected number of rows.
+	auditRows bool
+	configMap *types.DestinationTableConfigMap
 	config    config.Config
+	bqClient  *bigquery.Client
 
 	db.Store
+}
+
+func (s *Store) DropTable(_ context.Context, _ sql.TableIdentifier) error {
+	return fmt.Errorf("not supported")
 }
 
 func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error {
@@ -80,7 +90,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, u
 	return nil
 }
 
-func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DwhTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		if err := shared.CreateTempTable(ctx, s, tableData, dwh, opts.ColumnSettings, tempTableID); err != nil {
 			return err
@@ -92,26 +102,62 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		return err
 	}
 
-	return s.putTable(ctx, bqTempTableID, tableData)
+	if err = s.putTable(ctx, bqTempTableID, tableData); err != nil {
+		return fmt.Errorf("failed to put table: %w", err)
+	}
+
+	if s.auditRows {
+		return s.auditStagingTable(ctx, bqTempTableID, tableData)
+	}
+
+	return nil
+}
+
+func (s *Store) auditStagingTable(ctx context.Context, bqTempTableID dialect.TableIdentifier, tableData *optimization.TableData) error {
+	var stagingTableRowsCount uint64
+	expectedRowCount := uint64(tableData.NumberOfRows())
+	// The streaming metadata does not appear right away, we'll wait up to 5s for it to appear.
+	for i := 0; i < 10; i++ {
+		time.Sleep(500 * time.Millisecond)
+		resp, err := s.bqClient.Dataset(bqTempTableID.Dataset()).Table(bqTempTableID.Table()).Metadata(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get %q metadata: %w", bqTempTableID.FullyQualifiedName(), err)
+		}
+
+		if stagingTableRowsCount == 0 {
+			stagingTableRowsCount = resp.NumRows
+		}
+
+		if resp.StreamingBuffer != nil {
+			stagingTableRowsCount += resp.StreamingBuffer.EstimatedRows
+		}
+
+		// [stagingTableRowsCount] could be higher since AppendRows is at least once delivery.
+		if stagingTableRowsCount >= expectedRowCount {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("temporary table row count mismatch, expected: %d, got: %d", expectedRowCount, stagingTableRowsCount)
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
 	return dialect.NewTableIdentifier(s.config.BigQuery.ProjectID, topicConfig.Database, table)
 }
 
-func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
 	return shared.GetTableCfgArgs{
-		Dwh:                   s,
-		TableID:               s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
+		Destination:           s,
+		TableID:               tableID,
 		ConfigMap:             s.configMap,
 		ColumnNameForName:     "column_name",
 		ColumnNameForDataType: "data_type",
 		ColumnNameForComment:  "description",
-		DropDeletedColumns:    tableData.TopicConfig().DropDeletedColumns,
+		DropDeletedColumns:    dropDeletedColumns,
 	}.GetTableConfig()
 }
 
-func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
+func (s *Store) GetConfigMap() *types.DestinationTableConfigMap {
 	if s == nil {
 		return nil
 	}
@@ -192,6 +238,10 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 			return fmt.Errorf("failed to append rows: %s", status.String())
 		}
 
+		if rowErrs := resp.GetRowErrors(); len(rowErrs) > 0 {
+			return fmt.Errorf("failed to append rows, encountered %d errors", len(rowErrs))
+		}
+
 		return nil
 	})
 }
@@ -217,7 +267,7 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
 		return &Store{
 			Store: *_store,
 
-			configMap: &types.DwhToTablesConfigMap{},
+			configMap: &types.DestinationTableConfigMap{},
 			config:    cfg,
 		}, nil
 	}
@@ -225,19 +275,36 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
 	if credPath := cfg.BigQuery.PathToCredentials; credPath != "" {
 		// If the credPath is set, let's set it into the env var.
 		slog.Debug("Writing the path to BQ credentials to env var for google auth")
-		err := os.Setenv(GooglePathToCredentialsEnvKey, credPath)
-		if err != nil {
+		if err := os.Setenv(GooglePathToCredentialsEnvKey, credPath); err != nil {
 			return nil, fmt.Errorf("error setting env var for %q : %w", GooglePathToCredentialsEnvKey, err)
 		}
+	}
+
+	bqClient, err := bigquery.NewClient(context.Background(), cfg.BigQuery.ProjectID,
+		option.WithCredentialsFile(os.Getenv(GooglePathToCredentialsEnvKey)),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create bigquery client: %w", err)
 	}
 
 	store, err := db.Open("bigquery", cfg.BigQuery.DSN())
 	if err != nil {
 		return nil, err
 	}
+
+	var auditRows bool
+	if val := os.Getenv("BQ_AUDIT_ROWS"); val != "" {
+		auditRows, err = strconv.ParseBool(val)
+		if err != nil {
+			logger.Panic("Failed to parse BQ_AUDIT_ROWS", slog.Any("err", err))
+		}
+	}
+
 	return &Store{
-		Store:     store,
-		configMap: &types.DwhToTablesConfigMap{},
+		bqClient:  bqClient,
+		auditRows: auditRows,
+		configMap: &types.DestinationTableConfigMap{},
 		config:    cfg,
+		Store:     store,
 	}, nil
 }

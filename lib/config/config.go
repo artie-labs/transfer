@@ -44,10 +44,6 @@ func (s *S3Settings) Validate() error {
 	return nil
 }
 
-func (p *Pubsub) String() string {
-	return fmt.Sprintf("project_id=%s, pathToCredentials=%s", p.ProjectID, p.PathToCredentials)
-}
-
 func (k *Kafka) String() string {
 	// Don't log credentials.
 	return fmt.Sprintf("bootstrapServer=%s, groupID=%s, user_set=%v, pass_set=%v",
@@ -58,8 +54,6 @@ func (c Config) TopicConfigs() ([]*kafkalib.TopicConfig, error) {
 	switch c.Queue {
 	case constants.Kafka, constants.Reader:
 		return c.Kafka.TopicConfigs, nil
-	case constants.PubSub:
-		return c.Pubsub.TopicConfigs, nil
 	}
 
 	return nil, fmt.Errorf("unsupported queue: %q", c.Queue)
@@ -196,17 +190,9 @@ func (c Config) Validate() error {
 			return fmt.Errorf("kafka config is nil")
 		}
 
-		// Username and password are not required (if it's within the same VPC or connecting locally
+		// Username and password may not be required if this is connecting to a private Kafka cluster.
 		if stringutil.Empty(c.Kafka.GroupID, c.Kafka.BootstrapServer) {
 			return fmt.Errorf("kafka group or bootstrap server is empty")
-		}
-	case constants.PubSub:
-		if c.Pubsub == nil {
-			return fmt.Errorf("pubsub config is nil")
-		}
-
-		if stringutil.Empty(c.Pubsub.ProjectID, c.Pubsub.PathToCredentials) {
-			return fmt.Errorf("pubsub projectID or pathToCredentials is empty")
 		}
 	}
 

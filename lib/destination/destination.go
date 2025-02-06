@@ -12,7 +12,7 @@ import (
 	sqllib "github.com/artie-labs/transfer/lib/sql"
 )
 
-type DataWarehouse interface {
+type Destination interface {
 	Baseline
 
 	// SQL specific commands
@@ -25,32 +25,36 @@ type DataWarehouse interface {
 	Begin() (*sql.Tx, error)
 
 	// Helper functions for merge
-	GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error)
-	PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DwhTableConfig, tempTableID sqllib.TableIdentifier, parentTableID sqllib.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error
+	GetTableConfig(tableID sqllib.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error)
+	PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tempTableID sqllib.TableIdentifier, parentTableID sqllib.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error
+
+	// Helper function for multi-step merge
+	// This is only available to Snowflake for now.
+	DropTable(ctx context.Context, tableID sqllib.TableIdentifier) error
 }
 
 type Baseline interface {
-	Merge(ctx context.Context, tableData *optimization.TableData) error
+	Merge(ctx context.Context, tableData *optimization.TableData) (commitTransaction bool, err error)
 	Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error
 	IsRetryableError(err error) bool
 	IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sqllib.TableIdentifier
 }
 
-// ExecStatements executes one or more statements against a [DataWarehouse].
+// ExecStatements executes one or more statements against a [Destination].
 // If there is more than one statement, the statements will be executed inside of a transaction.
-func ExecStatements(dwh DataWarehouse, statements []string) error {
+func ExecStatements(dest Destination, statements []string) error {
 	switch len(statements) {
 	case 0:
 		return fmt.Errorf("statements is empty")
 	case 1:
 		slog.Debug("Executing...", slog.String("query", statements[0]))
-		if _, err := dwh.Exec(statements[0]); err != nil {
+		if _, err := dest.Exec(statements[0]); err != nil {
 			return fmt.Errorf("failed to execute statement: %w", err)
 		}
 
 		return nil
 	default:
-		tx, err := dwh.Begin()
+		tx, err := dest.Begin()
 		if err != nil {
 			return fmt.Errorf("failed to start tx: %w", err)
 		}

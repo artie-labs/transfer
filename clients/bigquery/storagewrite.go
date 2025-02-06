@@ -144,62 +144,62 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 		case typing.Boolean.Kind:
 			val, err := converters.BooleanConverter{}.Convert(value)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to convert value for column: %q, err: %w", column.Name(), err)
 			}
 
 			castedVal, err := typing.AssertType[bool](val)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
 			}
 
 			message.Set(field, protoreflect.ValueOfBool(castedVal))
 		case typing.Integer.Kind:
 			val, err := converters.Int64Converter{}.Convert(value)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to convert value for column: %q, err: %w", column.Name(), err)
 			}
 
 			castedValue, err := typing.AssertType[int64](val)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
 			}
 
 			message.Set(field, protoreflect.ValueOfInt64(castedValue))
 		case typing.Float.Kind:
 			val, err := converters.Float64Converter{}.Convert(value)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to convert value for column: %q, err: %w", column.Name(), err)
 			}
 
 			castedVal, err := typing.AssertType[float64](val)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
 			}
 
 			message.Set(field, protoreflect.ValueOfFloat64(castedVal))
 		case typing.EDecimal.Kind:
 			decimalValue, err := typing.AssertType[*decimal.Decimal](value)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
 			}
 
 			message.Set(field, protoreflect.ValueOfString(decimalValue.String()))
 		case typing.String.Kind:
 			val, err := converters.NewStringConverter(column.KindDetails).Convert(value)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to convert value for column: %q, err: %w", column.Name(), err)
 			}
 
 			castedValue, err := typing.AssertType[string](val)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
 			}
 
 			message.Set(field, protoreflect.ValueOfString(castedValue))
 		case typing.Date.Kind:
 			_time, err := ext.ParseDateFromAny(value)
 			if err != nil {
-				return nil, fmt.Errorf("failed to cast value as time.Time, value: '%v', err: %w", value, err)
+				return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
 			}
 
 			daysSinceEpoch := _time.Unix() / (60 * 60 * 24)
@@ -207,21 +207,21 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 		case typing.Time.Kind:
 			_time, err := ext.ParseTimeFromAny(value)
 			if err != nil {
-				return nil, fmt.Errorf("failed to cast value as time.Time, value: '%v', err: %w", value, err)
+				return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
 			}
 
 			message.Set(field, protoreflect.ValueOfInt64(encodePacked64TimeMicros(_time)))
 		case typing.TimestampNTZ.Kind:
 			_time, err := ext.ParseTimestampNTZFromAny(value)
 			if err != nil {
-				return nil, fmt.Errorf("failed to cast value as time.Time, value: '%v', err: %w", value, err)
+				return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
 			}
 
 			message.Set(field, protoreflect.ValueOfInt64(encodePacked64DatetimeMicros(_time)))
 		case typing.TimestampTZ.Kind:
 			_time, err := ext.ParseTimestampTZFromAny(value)
 			if err != nil {
-				return nil, fmt.Errorf("failed to cast value as time.Time, value: '%v', err: %w", value, err)
+				return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
 			}
 
 			if err = timestamppb.New(_time).CheckValid(); err != nil {
@@ -232,7 +232,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 		case typing.Struct.Kind:
 			stringValue, err := encodeStructToJSONString(value)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to convert value for column: %q, err: %w", column.Name(), err)
 			} else if stringValue == "" {
 				continue
 			} else {
@@ -241,7 +241,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 		case typing.Array.Kind:
 			values, err := array.InterfaceToArrayString(value, true)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to convert value for column: %q, err: %w", column.Name(), err)
 			}
 			list := message.Mutable(field).List()
 			for _, val := range values {

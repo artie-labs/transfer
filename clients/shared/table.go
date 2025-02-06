@@ -29,23 +29,23 @@ func getValidColumns(cols []columns.Column) []columns.Column {
 	return validCols
 }
 
-func CreateTempTable(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tc *types.DwhTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier) error {
-	return CreateTable(ctx, dwh, tableData, tc, settings, tableID, true, tableData.ReadOnlyInMemoryCols().GetColumns())
+func CreateTempTable(ctx context.Context, dest destination.Destination, tableData *optimization.TableData, tc *types.DestinationTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier) error {
+	return CreateTable(ctx, dest, tableData.Mode(), tc, settings, tableID, true, tableData.ReadOnlyInMemoryCols().GetColumns())
 }
 
-func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *optimization.TableData, tc *types.DwhTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, tempTable bool, cols []columns.Column) error {
+func CreateTable(ctx context.Context, dest destination.Destination, mode config.Mode, tc *types.DestinationTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, tempTable bool, cols []columns.Column) error {
 	cols = getValidColumns(cols)
 	if len(cols) == 0 {
 		return nil
 	}
 
-	query, err := ddl.BuildCreateTableSQL(settings, dwh.Dialect(), tableID, tempTable, tableData.Mode(), cols)
+	query, err := ddl.BuildCreateTableSQL(settings, dest.Dialect(), tableID, tempTable, mode, cols)
 	if err != nil {
 		return fmt.Errorf("failed to build create table sql: %w", err)
 	}
 
 	slog.Info("[DDL] Executing query", slog.String("query", query))
-	if _, err = dwh.ExecContext(ctx, query); err != nil {
+	if _, err = dest.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("failed to create temp table: %w", err)
 	}
 
@@ -54,21 +54,21 @@ func CreateTable(ctx context.Context, dwh destination.DataWarehouse, tableData *
 	return nil
 }
 
-func AlterTableAddColumns(ctx context.Context, dwh destination.DataWarehouse, tc *types.DwhTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, cols []columns.Column) error {
+func AlterTableAddColumns(ctx context.Context, dest destination.Destination, tc *types.DestinationTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, cols []columns.Column) error {
 	cols = getValidColumns(cols)
 	if len(cols) == 0 {
 		return nil
 	}
 
-	sqlParts, err := ddl.BuildAlterTableAddColumns(settings, dwh.Dialect(), tableID, cols)
+	sqlParts, err := ddl.BuildAlterTableAddColumns(settings, dest.Dialect(), tableID, cols)
 	if err != nil {
 		return fmt.Errorf("failed to build alter table add columns: %w", err)
 	}
 
 	for _, sqlPart := range sqlParts {
 		slog.Info("[DDL] Executing query", slog.String("query", sqlPart))
-		if _, err = dwh.ExecContext(ctx, sqlPart); err != nil {
-			if !dwh.Dialect().IsColumnAlreadyExistsErr(err) {
+		if _, err = dest.ExecContext(ctx, sqlPart); err != nil {
+			if !dest.Dialect().IsColumnAlreadyExistsErr(err) {
 				return fmt.Errorf("failed to alter table: %w", err)
 			}
 		}
@@ -78,7 +78,7 @@ func AlterTableAddColumns(ctx context.Context, dwh destination.DataWarehouse, tc
 	return nil
 }
 
-func AlterTableDropColumns(ctx context.Context, dwh destination.DataWarehouse, tc *types.DwhTableConfig, tableID sql.TableIdentifier, cols []columns.Column, cdcTime time.Time, containOtherOperations bool) error {
+func AlterTableDropColumns(ctx context.Context, dest destination.Destination, tc *types.DestinationTableConfig, tableID sql.TableIdentifier, cols []columns.Column, cdcTime time.Time, containOtherOperations bool) error {
 	if len(cols) == 0 {
 		return nil
 	}
@@ -95,13 +95,13 @@ func AlterTableDropColumns(ctx context.Context, dwh destination.DataWarehouse, t
 	}
 
 	for _, colToDrop := range colsToDrop {
-		query, err := ddl.BuildAlterTableDropColumns(dwh.Dialect(), tableID, colToDrop)
+		query, err := ddl.BuildAlterTableDropColumns(dest.Dialect(), tableID, colToDrop)
 		if err != nil {
 			return fmt.Errorf("failed to build alter table drop columns: %w", err)
 		}
 
 		slog.Info("[DDL] Executing query", slog.String("query", query))
-		if _, err = dwh.ExecContext(ctx, query); err != nil {
+		if _, err = dest.ExecContext(ctx, query); err != nil {
 			return fmt.Errorf("failed to alter table: %w", err)
 		}
 	}

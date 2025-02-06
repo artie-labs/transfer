@@ -13,13 +13,13 @@ import (
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 type Store struct {
 	db.Store
-	configMap *types.DwhToTablesConfigMap
+	configMap *types.DestinationTableConfigMap
 	config    config.Config
 }
 
@@ -27,15 +27,33 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sq
 	return dialect.NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
 
-func (s *Store) GetTableConfig(tableData *optimization.TableData) (*types.DwhTableConfig, error) {
+func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
+	snowflakeTableID, err := typing.AssertType[dialect.TableIdentifier](tableID)
+	if err != nil {
+		return err
+	}
+
+	if !snowflakeTableID.AllowToDrop() {
+		return fmt.Errorf("table %q is not allowed to be dropped", tableID.FullyQualifiedName())
+	}
+
+	if _, err = s.ExecContext(ctx, s.dialect().BuildDropTableQuery(snowflakeTableID)); err != nil {
+		return fmt.Errorf("failed to drop table: %w", err)
+	}
+
+	// We'll then clear it from our cache
+	s.configMap.RemoveTable(tableID)
+	return nil
+}
+func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
 	return shared.GetTableCfgArgs{
-		Dwh:                   s,
-		TableID:               s.IdentifierFor(tableData.TopicConfig(), tableData.Name()),
+		Destination:           s,
+		TableID:               tableID,
 		ConfigMap:             s.configMap,
 		ColumnNameForName:     "name",
 		ColumnNameForDataType: "type",
 		ColumnNameForComment:  "comment",
-		DropDeletedColumns:    tableData.TopicConfig().DropDeletedColumns,
+		DropDeletedColumns:    dropDeletedColumns,
 	}.GetTableConfig()
 }
 
@@ -56,7 +74,7 @@ func (s *Store) dialect() dialect.SnowflakeDialect {
 	return dialect.SnowflakeDialect{}
 }
 
-func (s *Store) GetConfigMap() *types.DwhToTablesConfigMap {
+func (s *Store) GetConfigMap() *types.DestinationTableConfigMap {
 	if s == nil {
 		return nil
 	}
@@ -76,7 +94,7 @@ func LoadSnowflake(cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			configMap: &types.DwhToTablesConfigMap{},
+			configMap: &types.DestinationTableConfigMap{},
 			config:    cfg,
 			Store:     *_store,
 		}, nil
@@ -98,7 +116,7 @@ func LoadSnowflake(cfg config.Config, _store *db.Store) (*Store, error) {
 	}
 
 	return &Store{
-		configMap: &types.DwhToTablesConfigMap{},
+		configMap: &types.DestinationTableConfigMap{},
 		config:    cfg,
 		Store:     store,
 	}, nil

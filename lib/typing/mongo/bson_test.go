@@ -214,15 +214,53 @@ func TestBsonDocToMap(t *testing.T) {
 func TestBsonValueToGoValue(t *testing.T) {
 	{
 		// primitive.DateTime
-		_time := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
-		dateTime := primitive.NewDateTimeFromTime(_time)
-		result, err := bsonValueToGoValue(dateTime)
-		assert.NoError(t, err)
+		{
+			// Valid
+			_time := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+			dateTime := primitive.NewDateTimeFromTime(_time)
+			result, err := bsonValueToGoValue(dateTime)
+			assert.NoError(t, err)
 
-		ts, isOk := result.(time.Time)
-		assert.True(t, isOk)
-		assert.Equal(t, time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC), ts)
-		assert.Equal(t, "2021-01-01T00:00:00Z", ts.Format(time.RFC3339Nano))
+			ts, isOk := result.(time.Time)
+			assert.True(t, isOk)
+			assert.Equal(t, time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC), ts)
+			assert.Equal(t, "2021-01-01T00:00:00Z", ts.Format(time.RFC3339Nano))
+		}
+		{
+			// Invalid (year is above 9999)
+			_time := time.Date(27017, 1, 1, 0, 0, 0, 0, time.UTC)
+			dateTime := primitive.NewDateTimeFromTime(_time)
+			result, err := bsonValueToGoValue(dateTime)
+			assert.NoError(t, err)
+			assert.Nil(t, result)
+		}
+		{
+			// Invalid (year is 0)
+			_time := time.Date(0, 1, 1, 0, 0, 0, 0, time.UTC)
+			dateTime := primitive.NewDateTimeFromTime(_time)
+			result, err := bsonValueToGoValue(dateTime)
+			assert.NoError(t, err)
+			assert.Nil(t, result)
+		}
+	}
+	{
+		// primitive.Timestamp
+		{
+			// Invalid (year is above 9999)
+			_time := time.Date(27017, 1, 1, 0, 0, 0, 0, time.UTC)
+			dateTime := primitive.NewDateTimeFromTime(_time)
+			result, err := bsonValueToGoValue(dateTime)
+			assert.NoError(t, err)
+			assert.Nil(t, result)
+		}
+		{
+			// Invalid (year is 0)
+			_time := time.Date(0, 1, 1, 0, 0, 0, 0, time.UTC)
+			dateTime := primitive.NewDateTimeFromTime(_time)
+			result, err := bsonValueToGoValue(dateTime)
+			assert.NoError(t, err)
+			assert.Nil(t, result)
+		}
 	}
 	{
 		// primitive.ObjectID

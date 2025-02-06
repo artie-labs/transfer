@@ -3,6 +3,7 @@ package event
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
@@ -28,11 +29,10 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	anotherLowerCol := "dusty__the__mini__aussie"
 
 	event := Event{
-		Table: "foo",
-		PrimaryKeyMap: map[string]any{
-			"id": "123",
-		},
+		Table:       "foo",
+		primaryKeys: []string{"id"},
 		Data: map[string]any{
+			"id":                                "123",
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
 			expectedCol:                         "dusty",
@@ -41,7 +41,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	}
 
 	kafkaMsg := kafka.Message{}
-	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
 	assert.Nil(e.T(), err)
 
 	optimization := e.db.GetOrCreateTableData("foo")
@@ -60,11 +60,10 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	assert.Equal(e.T(), 2, found, optimization.ReadOnlyInMemoryCols)
 	badColumn := "other"
 	edgeCaseEvent := Event{
-		Table: "foo",
-		PrimaryKeyMap: map[string]any{
-			"id": "12344",
-		},
+		Table:       "foo",
+		primaryKeys: []string{"id"},
 		Data: map[string]any{
+			"id":                                "12344",
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
 			expectedCol:                         "dusty",
@@ -74,7 +73,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	}
 
 	newKafkaMsg := kafka.Message{}
-	_, _, err = edgeCaseEvent.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&newKafkaMsg, nil, newKafkaMsg.Topic))
+	_, _, err = edgeCaseEvent.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&newKafkaMsg, newKafkaMsg.Topic))
 	assert.NoError(e.T(), err)
 
 	td := e.db.GetOrCreateTableData("foo")
@@ -85,10 +84,8 @@ func (e *EventsTestSuite) TestSaveEvent() {
 
 func (e *EventsTestSuite) TestEvent_SaveCasing() {
 	event := Event{
-		Table: "foo",
-		PrimaryKeyMap: map[string]any{
-			"id": "123",
-		},
+		Table:       "foo",
+		primaryKeys: []string{"id"},
 		Data: map[string]any{
 			"id":                                "123",
 			constants.DeleteColumnMarker:        true,
@@ -99,7 +96,7 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 	}
 
 	kafkaMsg := kafka.Message{}
-	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
 	assert.Nil(e.T(), err)
 
 	td := e.db.GetOrCreateTableData("foo")
@@ -119,11 +116,10 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 
 func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 	event := Event{
-		Table: "foo",
-		PrimaryKeyMap: map[string]any{
-			"id": "123",
-		},
+		Table:       "foo",
+		primaryKeys: []string{"id"},
 		Data: map[string]any{
+			"id":                                "123",
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
 			"randomCol":                         "dusty",
@@ -141,7 +137,7 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 	}
 
 	kafkaMsg := kafka.Message{}
-	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
 	assert.Nil(e.T(), err)
 
 	td := e.db.GetOrCreateTableData("foo")
@@ -173,23 +169,22 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	var cols columns.Columns
 	for i := 0; i < 50; i++ {
-		cols.AddColumn(columns.NewColumn(fmt.Sprint(i), typing.Invalid))
+		cols.AddColumn(columns.NewColumn(fmt.Sprintf("col_%d", i), typing.Invalid))
 	}
 
 	evt := Event{
 		Table:   "non_existent",
 		Columns: &cols,
 		Data: map[string]any{
-			"1":                                 "123",
+			"col_1":                             "123",
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
 		},
-		PrimaryKeyMap: map[string]any{
-			"1": "123",
-		},
+		primaryKeys: []string{"col_1"},
 	}
+
 	kafkaMsg := kafka.Message{}
-	_, _, err := evt.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	_, _, err := evt.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
 	assert.NoError(e.T(), err)
 
 	td := e.db.GetOrCreateTableData("non_existent")
@@ -199,19 +194,21 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 			continue
 		}
 
+		columnNamePart := strings.Split(col.Name(), "_")[1]
+
 		if prevKey == "" {
-			prevKey = col.Name()
+			prevKey = columnNamePart
 			continue
 		}
 
-		currentKeyParsed, err := strconv.Atoi(col.Name())
+		currentKeyParsed, err := strconv.Atoi(columnNamePart)
 		assert.NoError(e.T(), err)
 
 		prevKeyParsed, err := strconv.Atoi(prevKey)
 		assert.NoError(e.T(), err)
 
 		// Testing ordering.
-		assert.True(e.T(), currentKeyParsed > prevKeyParsed, fmt.Sprintf("current key: %v, prevKey: %v", currentKeyParsed, prevKeyParsed))
+		assert.True(e.T(), currentKeyParsed > prevKeyParsed, fmt.Sprintf("current key: %q, prevKey: %q", currentKeyParsed, prevKeyParsed))
 	}
 
 	// Now let's add more keys.
@@ -232,12 +229,11 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 	cols.AddColumn(columns.NewColumn("anotherCOL", typing.Invalid))
 	cols.AddColumn(columns.NewColumn("created_at_date_string", typing.Invalid))
 	event := Event{
-		Table:   "foo",
-		Columns: &cols,
-		PrimaryKeyMap: map[string]any{
-			"id": "123",
-		},
+		Table:       "foo",
+		Columns:     &cols,
+		primaryKeys: []string{"id"},
 		Data: map[string]any{
+			"id":                                "123",
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
 			"randomCol":                         "dusty",
@@ -247,7 +243,7 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 	}
 
 	kafkaMsg := kafka.Message{}
-	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
 	assert.Nil(e.T(), err)
 
 	td := e.db.GetOrCreateTableData("foo")
@@ -285,11 +281,10 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 
 func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
 	event := Event{
-		Table: "foo",
-		PrimaryKeyMap: map[string]any{
-			"id": "123",
-		},
+		Table:       "foo",
+		primaryKeys: []string{"id"},
 		Data: map[string]any{
+			"id":                                "123",
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
 		},
@@ -297,12 +292,12 @@ func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
 	}
 
 	kafkaMsg := kafka.Message{}
-	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
 	assert.Nil(e.T(), err)
 	assert.False(e.T(), e.db.GetOrCreateTableData("foo").ContainOtherOperations())
 
 	event.Deleted = false
-	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
 	assert.NoError(e.T(), err)
 	assert.True(e.T(), e.db.GetOrCreateTableData("foo").ContainOtherOperations())
 }

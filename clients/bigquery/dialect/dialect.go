@@ -25,7 +25,7 @@ type BigQueryDialect struct{}
 
 func (BigQueryDialect) QuoteIdentifier(identifier string) string {
 	// BigQuery needs backticks to quote.
-	return fmt.Sprintf("`%s`", identifier)
+	return fmt.Sprintf("`%s`", strings.ReplaceAll(identifier, "`", ""))
 }
 
 func (BigQueryDialect) EscapeStruct(value string) string {

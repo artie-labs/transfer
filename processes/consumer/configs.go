@@ -39,20 +39,14 @@ type TopicConfigFormatter struct {
 	cdc.Format
 }
 
-func commitOffset(ctx context.Context, topic string, partitionsToOffset map[string][]artie.Message) error {
-	for _, msgs := range partitionsToOffset {
-		for _, msg := range msgs {
-			if msg.KafkaMsg != nil {
-				if err := topicToConsumer.Get(topic).CommitMessages(ctx, *msg.KafkaMsg); err != nil {
-					return err
-				}
-
-				slog.Info("Successfully committed Kafka offset", slog.String("topic", topic), slog.Int("partition", msg.KafkaMsg.Partition), slog.Int64("offset", msg.KafkaMsg.Offset))
+func commitOffset(ctx context.Context, topic string, partitionsToOffset map[string]artie.Message) error {
+	for _, msg := range partitionsToOffset {
+		if msg.KafkaMsg != nil {
+			if err := topicToConsumer.Get(topic).CommitMessages(ctx, *msg.KafkaMsg); err != nil {
+				return err
 			}
 
-			if msg.PubSub != nil {
-				msg.PubSub.Ack()
-			}
+			slog.Info("Successfully committed Kafka offset", slog.String("topic", topic), slog.Int("partition", msg.KafkaMsg.Partition), slog.Int64("offset", msg.KafkaMsg.Offset))
 		}
 	}
 

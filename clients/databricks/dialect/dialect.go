@@ -15,7 +15,7 @@ import (
 type DatabricksDialect struct{}
 
 func (DatabricksDialect) QuoteIdentifier(identifier string) string {
-	return fmt.Sprintf("`%s`", identifier)
+	return fmt.Sprintf("`%s`", strings.ReplaceAll(identifier, "`", ""))
 }
 
 func (DatabricksDialect) EscapeStruct(value string) string {

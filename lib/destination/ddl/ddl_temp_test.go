@@ -42,7 +42,7 @@ func (d *DDLTestSuite) Test_DropTemporaryTableCaseSensitive() {
 		"gghh",
 	}
 
-	for i, dest := range []destination.DataWarehouse{d.bigQueryStore, d.snowflakeStagesStore} {
+	for i, dest := range []destination.Destination{d.bigQueryStore, d.snowflakeStagesStore} {
 		var fakeStore *mocks.FakeStore
 		if i == 0 {
 			fakeStore = d.fakeBigQueryStore
@@ -77,7 +77,7 @@ func (d *DDLTestSuite) Test_DropTemporaryTable() {
 		assert.Equal(d.T(), 0, d.fakeSnowflakeStagesStore.ExecCallCount())
 	}
 
-	for i, _dwh := range []destination.DataWarehouse{d.bigQueryStore, d.snowflakeStagesStore} {
+	for i, _dwh := range []destination.Destination{d.bigQueryStore, d.snowflakeStagesStore} {
 		var fakeStore *mocks.FakeStore
 		if i == 0 {
 			fakeStore = d.fakeBigQueryStore
@@ -115,7 +115,7 @@ func (d *DDLTestSuite) Test_DropTemporaryTable_Errors() {
 	}
 
 	randomErr := fmt.Errorf("random err")
-	for i, _dwh := range []destination.DataWarehouse{d.bigQueryStore, d.snowflakeStagesStore} {
+	for i, _dwh := range []destination.Destination{d.bigQueryStore, d.snowflakeStagesStore} {
 		var fakeStore *mocks.FakeStore
 		if i == 0 {
 			fakeStore = d.fakeBigQueryStore

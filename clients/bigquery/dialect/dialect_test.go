@@ -17,6 +17,7 @@ func TestBigQueryDialect_QuoteIdentifier(t *testing.T) {
 	dialect := BigQueryDialect{}
 	assert.Equal(t, "`foo`", dialect.QuoteIdentifier("foo"))
 	assert.Equal(t, "`FOO`", dialect.QuoteIdentifier("FOO"))
+	assert.Equal(t, "`FOO; BAD`", dialect.QuoteIdentifier("FOO`; BAD"))
 }
 
 func TestBigQueryDialect_IsColumnAlreadyExistsErr(t *testing.T) {

@@ -4,7 +4,6 @@ go 1.23.0
 
 require (
 	cloud.google.com/go/bigquery v1.65.0
-	cloud.google.com/go/pubsub v1.45.3
 	github.com/DataDog/datadog-go/v5 v5.6.0
 	github.com/aws/aws-sdk-go-v2 v1.30.3
 	github.com/aws/aws-sdk-go-v2/config v1.27.11

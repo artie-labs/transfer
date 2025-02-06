@@ -3,21 +3,30 @@ package converters
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
+	"reflect"
+	"strings"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-type StringConverter interface {
+type Converter interface {
 	Convert(value any) (string, error)
 }
 
-func GetStringConverter(kd typing.KindDetails) (StringConverter, error) {
+func GetStringConverter(kd typing.KindDetails) (Converter, error) {
 	switch kd.Kind {
-	// Time
+	// Base types
+	case typing.Boolean.Kind:
+		return BooleanConverter{}, nil
+	case typing.String.Kind:
+		return StringConverter{}, nil
+	// Time types
 	case typing.Date.Kind:
 		return DateConverter{}, nil
 	case typing.Time.Kind:
@@ -26,25 +35,69 @@ func GetStringConverter(kd typing.KindDetails) (StringConverter, error) {
 		return TimestampNTZConverter{}, nil
 	case typing.TimestampTZ.Kind:
 		return TimestampTZConverter{}, nil
+	// Array and struct types
 	case typing.Array.Kind:
 		return ArrayConverter{}, nil
-	// Numbers
+	case typing.Struct.Kind:
+		return StructConverter{}, nil
+	// Numbers types
 	case typing.EDecimal.Kind:
 		return DecimalConverter{}, nil
 	case typing.Integer.Kind:
 		return IntegerConverter{}, nil
 	case typing.Float.Kind:
 		return FloatConverter{}, nil
+
+	default:
+		slog.Warn("[GetStringConverter] - Unsupported type", slog.String("kind", kd.Kind))
+		return nil, nil
+	}
+}
+
+type BooleanConverter struct{}
+
+func (BooleanConverter) Convert(value any) (string, error) {
+	switch castedValue := value.(type) {
+	case bool:
+		return fmt.Sprint(castedValue), nil
+	default:
+		// Try to cast the value into a string and see if we can parse it
+		// If not, then return an error
+		switch strings.ToLower(fmt.Sprint(value)) {
+		case "0", "false":
+			return "false", nil
+		case "1", "true":
+			return "true", nil
+		default:
+			return "", fmt.Errorf("failed to cast colVal as boolean, colVal: '%v', type: %T", value, value)
+		}
+	}
+}
+
+type StringConverter struct{}
+
+func (StringConverter) Convert(value any) (string, error) {
+	// TODO Simplify this function
+	isArray := reflect.ValueOf(value).Kind() == reflect.Slice
+	_, isMap := value.(map[string]any)
+	// If colVal is either an array or a JSON object, we should run JSON parse.
+	if isMap || isArray {
+		colValBytes, err := json.Marshal(value)
+		if err != nil {
+			return "", err
+		}
+
+		return string(colValBytes), nil
 	}
 
-	// TODO: Return an error when all the types are implemented.
-	return nil, nil
+	return stringutil.EscapeBackslashes(fmt.Sprint(value)), nil
 }
 
 type DateConverter struct{}
 
 func (DateConverter) Convert(value any) (string, error) {
 	_time, err := ext.ParseDateFromAny(value)
+
 	if err != nil {
 		return "", fmt.Errorf("failed to cast colVal as date, colVal: '%v', err: %w", value, err)
 	}
@@ -116,6 +169,8 @@ func (IntegerConverter) Convert(value any) (string, error) {
 		return fmt.Sprint(BooleanToBit(parsedVal)), nil
 	case int, int8, int16, int32, int64:
 		return fmt.Sprint(parsedVal), nil
+	case *decimal.Decimal:
+		return parsedVal.String(), nil
 	default:
 		return "", fmt.Errorf("unexpected value: '%v', type: %T", value, value)
 	}
@@ -131,6 +186,8 @@ func (FloatConverter) Convert(value any) (string, error) {
 		return Float64ToString(parsedVal), nil
 	case int, int8, int16, int32, int64:
 		return fmt.Sprint(parsedVal), nil
+	case *decimal.Decimal:
+		return parsedVal.String(), nil
 	default:
 		return "", fmt.Errorf("unexpected value: '%v', type: %T", value, value)
 	}
@@ -152,5 +209,25 @@ func (DecimalConverter) Convert(value any) (string, error) {
 		return castedColVal.String(), nil
 	default:
 		return "", fmt.Errorf("unexpected value: '%v' type: %T", value, value)
+	}
+}
+
+type StructConverter struct{}
+
+func (StructConverter) Convert(value any) (string, error) {
+	if strings.Contains(fmt.Sprint(value), constants.ToastUnavailableValuePlaceholder) {
+		return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
+	}
+
+	switch castedValue := (value).(type) {
+	case string:
+		return castedValue, nil
+	default:
+		colValBytes, err := json.Marshal(value)
+		if err != nil {
+			return "", err
+		}
+
+		return string(colValBytes), nil
 	}
 }

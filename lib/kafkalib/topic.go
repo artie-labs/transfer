@@ -24,6 +24,24 @@ func GetUniqueTopicConfigs(tcs []*TopicConfig) []TopicConfig {
 	return uniqueTopicConfigs
 }
 
+type MultiStepMergeSettings struct {
+	Enabled bool `yaml:"enabled"`
+	// FlushCount is the number of times we will flush to the multi-step merge table before merging into the destination table.
+	FlushCount int `yaml:"flushCount"`
+}
+
+func (m MultiStepMergeSettings) Validate() error {
+	if !m.Enabled {
+		return nil
+	}
+
+	if m.FlushCount <= 0 {
+		return fmt.Errorf("flush count must be greater than 0")
+	}
+
+	return nil
+}
+
 type TopicConfig struct {
 	Database                 string `yaml:"db"`
 	TableName                string `yaml:"tableName"`
@@ -41,6 +59,7 @@ type TopicConfig struct {
 	AdditionalMergePredicates []partition.MergePredicates `yaml:"additionalMergePredicates,omitempty"`
 	ColumnsToHash             []string                    `yaml:"columnsToHash,omitempty"`
 	PrimaryKeysOverride       []string                    `yaml:"primaryKeysOverride,omitempty"`
+	MultiStepMergeSettings    *MultiStepMergeSettings     `yaml:"multiStepMergeSettings,omitempty"`
 
 	// Internal metadata
 	opsToSkipMap map[string]bool `yaml:"-"`
@@ -77,8 +96,13 @@ func (t TopicConfig) ShouldSkip(op string) bool {
 }
 
 func (t TopicConfig) String() string {
-	return fmt.Sprintf("db=%s, schema=%s, tableNameOverride=%s, topic=%s, cdcFormat=%s, dropDeletedColumns=%v, skippedOperations=%v",
-		t.Database, t.Schema, t.TableName, t.Topic, t.CDCFormat, t.DropDeletedColumns, t.SkippedOperations)
+	var msmEnabled bool
+	if t.MultiStepMergeSettings != nil {
+		msmEnabled = t.MultiStepMergeSettings.Enabled
+	}
+
+	return fmt.Sprintf("db=%s, schema=%s, tableNameOverride=%s, topic=%s, cdcFormat=%s, dropDeletedColumns=%v, skippedOperations=%v, msmEnabled=%v",
+		t.Database, t.Schema, t.TableName, t.Topic, t.CDCFormat, t.DropDeletedColumns, t.SkippedOperations, msmEnabled)
 }
 
 func (t TopicConfig) Validate() error {
@@ -93,6 +117,12 @@ func (t TopicConfig) Validate() error {
 
 	if t.opsToSkipMap == nil {
 		return fmt.Errorf("opsToSkipMap is nil, call Load() first")
+	}
+
+	if t.MultiStepMergeSettings != nil {
+		if err := t.MultiStepMergeSettings.Validate(); err != nil {
+			return fmt.Errorf("invalid multi-step merge settings: %w", err)
+		}
 	}
 
 	return nil

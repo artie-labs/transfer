@@ -5,15 +5,16 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/artie-labs/transfer/models/event"
-
-	"github.com/artie-labs/transfer/lib/artie"
-	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/lib/artie"
+	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/mocks"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics"
+	"github.com/artie-labs/transfer/models/event"
 )
 
 var topicConfig = kafkalib.TopicConfig{
@@ -24,27 +25,31 @@ var topicConfig = kafkalib.TopicConfig{
 }
 
 func (f *FlushTestSuite) TestMemoryBasic() {
+	mockEvent := &mocks.FakeEvent{}
+	mockEvent.GetTableNameReturns("foo")
+
 	for i := 0; i < 5; i++ {
-		evt := event.Event{
-			Table: "foo",
-			PrimaryKeyMap: map[string]any{
-				"id": fmt.Sprintf("pk-%d", i),
-			},
-			Data: map[string]any{
-				constants.DeleteColumnMarker:        true,
-				constants.OnlySetDeleteColumnMarker: true,
-				"abc":                               "def",
-				"hi":                                "hello",
-			},
-		}
+		mockEvent.GetDataReturns(map[string]any{
+			"id":                                fmt.Sprintf("pk-%d", i),
+			constants.DeleteColumnMarker:        true,
+			constants.OnlySetDeleteColumnMarker: true,
+			"abc":                               "def",
+			"hi":                                "hello",
+		}, nil)
+
+		evt, err := event.ToMemoryEvent(mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, kafkalib.TopicConfig{}, config.Replication)
+		assert.NoError(f.T(), err)
 
 		kafkaMsg := kafka.Message{Partition: 1, Offset: 1}
-		_, _, err := evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+
+		_, _, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
 		assert.Nil(f.T(), err)
 
 		td := f.db.GetOrCreateTableData("foo")
 		assert.Equal(f.T(), int(td.NumberOfRows()), i+1)
 	}
+
+	assert.Equal(f.T(), uint(5), f.db.GetOrCreateTableData("foo").NumberOfRows())
 }
 
 func (f *FlushTestSuite) TestShouldFlush() {
@@ -52,23 +57,22 @@ func (f *FlushTestSuite) TestShouldFlush() {
 	var flushReason string
 
 	for i := 0; i < int(float64(f.cfg.BufferRows)*1.5); i++ {
-		evt := event.Event{
-			Table: "postgres",
-			PrimaryKeyMap: map[string]any{
-				"id": fmt.Sprintf("pk-%d", i),
-			},
-			Data: map[string]any{
-				constants.DeleteColumnMarker:        true,
-				constants.OnlySetDeleteColumnMarker: true,
-				"pk":                                fmt.Sprintf("pk-%d", i),
-				"foo":                               "bar",
-				"cat":                               "dog",
-			},
-		}
+		mockEvent := &mocks.FakeEvent{}
+		mockEvent.GetTableNameReturns("postgres")
+		mockEvent.GetDataReturns(map[string]any{
+			"id":                                fmt.Sprintf("pk-%d", i),
+			constants.DeleteColumnMarker:        true,
+			constants.OnlySetDeleteColumnMarker: true,
+			"pk":                                fmt.Sprintf("pk-%d", i),
+			"foo":                               "bar",
+			"cat":                               "dog",
+		}, nil)
 
-		var err error
+		evt, err := event.ToMemoryEvent(mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, kafkalib.TopicConfig{}, config.Replication)
+		assert.NoError(f.T(), err)
+
 		kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
-		flush, flushReason, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+		flush, flushReason, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
 		assert.Nil(f.T(), err)
 
 		if flush {
@@ -90,23 +94,22 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 		go func(tableName string) {
 			defer wg.Done()
 			for i := 0; i < 5; i++ {
-				evt := event.Event{
-					Table: tableName,
-					PrimaryKeyMap: map[string]any{
-						"id": fmt.Sprintf("pk-%d", i),
-					},
-					Data: map[string]any{
-						"id":                                fmt.Sprintf("pk-%d", i),
-						constants.DeleteColumnMarker:        true,
-						constants.OnlySetDeleteColumnMarker: true,
-						"pk":                                fmt.Sprintf("pk-%d", i),
-						"foo":                               "bar",
-						"cat":                               "dog",
-					},
-				}
+				mockEvent := &mocks.FakeEvent{}
+				mockEvent.GetTableNameReturns(tableName)
+				mockEvent.GetDataReturns(map[string]any{
+					"id":                                fmt.Sprintf("pk-%d", i),
+					constants.DeleteColumnMarker:        true,
+					constants.OnlySetDeleteColumnMarker: true,
+					"pk":                                fmt.Sprintf("pk-%d", i),
+					"foo":                               "bar",
+					"cat":                               "dog",
+				}, nil)
+
+				evt, err := event.ToMemoryEvent(mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, kafkalib.TopicConfig{}, config.Replication)
+				assert.NoError(f.T(), err)
 
 				kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
-				_, _, err := evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic))
+				_, _, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
 				assert.Nil(f.T(), err)
 			}
 		}(tableNames[idx])
@@ -120,7 +123,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 		assert.Len(f.T(), td.Rows(), 5)
 	}
 
-	assert.Nil(f.T(), Flush(context.Background(), f.db, f.dwh, metrics.NullMetricsProvider{}, Args{}), "flush failed")
+	assert.Nil(f.T(), Flush(context.Background(), f.db, f.dest, metrics.NullMetricsProvider{}, Args{}), "flush failed")
 	assert.Equal(f.T(), f.fakeConsumer.CommitMessagesCallCount(), len(tableNames)) // Commit 3 times because 3 topics.
 
 	for i := 0; i < len(tableNames); i++ {

@@ -37,7 +37,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		Time:          time.Time{},
 	}
 
-	msg := artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)
+	msg := artie.NewMessage(&kafkaMsg, kafkaMsg.Topic)
 	args := processArgs{
 		Msg:     msg,
 		GroupID: "foo",
@@ -220,7 +220,7 @@ func TestProcessMessageSkip(t *testing.T) {
 		Time:          time.Time{},
 	}
 
-	msg := artie.NewMessage(&kafkaMsg, nil, kafkaMsg.Topic)
+	msg := artie.NewMessage(&kafkaMsg, kafkaMsg.Topic)
 
 	var mgo mongo.Debezium
 	const (

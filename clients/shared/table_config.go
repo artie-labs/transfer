@@ -18,9 +18,9 @@ import (
 // TODO: Simplify this function
 
 type GetTableCfgArgs struct {
-	Dwh       destination.DataWarehouse
-	TableID   sql.TableIdentifier
-	ConfigMap *types.DwhToTablesConfigMap
+	Destination destination.Destination
+	TableID     sql.TableIdentifier
+	ConfigMap   *types.DestinationTableConfigMap
 	// Name of the column
 	ColumnNameForName string
 	// Column type
@@ -30,17 +30,17 @@ type GetTableCfgArgs struct {
 	DropDeletedColumns   bool
 }
 
-func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
-	if tableConfig := g.ConfigMap.TableConfigCache(g.TableID); tableConfig != nil {
+func (g GetTableCfgArgs) GetTableConfig() (*types.DestinationTableConfig, error) {
+	if tableConfig := g.ConfigMap.GetTableConfig(g.TableID); tableConfig != nil {
 		return tableConfig, nil
 	}
 
-	query, args, err := g.Dwh.Dialect().BuildDescribeTableQuery(g.TableID)
+	query, args, err := g.Destination.Dialect().BuildDescribeTableQuery(g.TableID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate describe table query: %w", err)
 	}
 
-	rows, err := g.Dwh.Query(query, args...)
+	rows, err := g.Destination.Query(query, args...)
 	defer func() {
 		if rows != nil {
 			err = rows.Close()
@@ -51,12 +51,12 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 	}()
 
 	if err != nil {
-		if g.Dwh.Dialect().IsTableDoesNotExistErr(err) {
+		if g.Destination.Dialect().IsTableDoesNotExistErr(err) {
 			// This branch is currently only used by Snowflake.
 			// Swallow the error, make sure all the metadata is created
 			err = nil
 		} else {
-			return nil, fmt.Errorf("failed to query %T, err: %w, query: %q", g.Dwh, err, query)
+			return nil, fmt.Errorf("failed to query %T, err: %w, query: %q", g.Destination, err, query)
 		}
 	}
 
@@ -105,13 +105,13 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DwhTableConfig, error) {
 		cols = append(cols, col)
 	}
 
-	tableCfg := types.NewDwhTableConfig(cols, g.DropDeletedColumns)
-	g.ConfigMap.AddTableToConfig(g.TableID, tableCfg)
+	tableCfg := types.NewDestinationTableConfig(cols, g.DropDeletedColumns)
+	g.ConfigMap.AddTable(g.TableID, tableCfg)
 	return tableCfg, nil
 }
 
 func (g GetTableCfgArgs) buildColumnFromRow(row map[string]string) (columns.Column, error) {
-	kindDetails, err := g.Dwh.Dialect().KindForDataType(row[g.ColumnNameForDataType], row[constants.StrPrecisionCol])
+	kindDetails, err := g.Destination.Dialect().KindForDataType(row[g.ColumnNameForDataType], row[constants.StrPrecisionCol])
 	if err != nil {
 		return columns.Column{}, fmt.Errorf("failed to get kind details: %w", err)
 	}
@@ -121,7 +121,7 @@ func (g GetTableCfgArgs) buildColumnFromRow(row map[string]string) (columns.Colu
 	}
 
 	col := columns.NewColumn(row[g.ColumnNameForName], kindDetails)
-	strategy := g.Dwh.Dialect().GetDefaultValueStrategy()
+	strategy := g.Destination.Dialect().GetDefaultValueStrategy()
 	switch strategy {
 	case sql.Backfill:
 		// We need to check to make sure the comment is not an empty string
