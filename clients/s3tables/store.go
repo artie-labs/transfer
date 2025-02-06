@@ -11,7 +11,8 @@ import (
 )
 
 type Store struct {
-	config config.Config
+	apacheLivyClient Client
+	config           config.Config
 }
 
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
@@ -31,6 +32,10 @@ func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql
 }
 
 func LoadStore(cfg config.Config) (Store, error) {
-	store := Store{config: cfg}
-	return store, nil
+	apacheLivyClient, err := NewClient(cfg.S3Tables.ApacheLivyURL)
+	if err != nil {
+		return Store{}, err
+	}
+
+	return Store{config: cfg, apacheLivyClient: apacheLivyClient}, nil
 }

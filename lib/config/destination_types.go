@@ -54,8 +54,7 @@ type S3TablesSettings struct {
 	BucketARN          string `yaml:"bucketARN"`
 	Region             string `yaml:"region"`
 
-	ApacheLivyHost string `yaml:"apacheLivyHost"`
-	ApacheLivyPort int    `yaml:"apacheLivyPort"`
+	ApacheLivyURL string `yaml:"apacheLivyHost"`
 }
 
 type Snowflake struct {
