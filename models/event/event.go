@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"fmt"
 	"log/slog"
+	"maps"
 	"slices"
 	"strings"
 	"time"
@@ -94,16 +95,11 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		return Event{}, err
 	}
 
-	var primaryKeys []string
-	for key := range pkMap {
-		primaryKeys = append(primaryKeys, key)
-	}
-
 	_event := Event{
 		executionTime: event.GetExecutionTime(),
 		mode:          cfgMode,
-		primaryKeys:   primaryKeys,
-
+		// [primaryKeys] needs to be sorted so that we have a deterministic way to identify a row in our in-memory db.
+		primaryKeys:    slices.Sorted(maps.Keys(pkMap)),
 		Table:          tblName,
 		OptionalSchema: optionalSchema,
 		Columns:        cols,
@@ -152,11 +148,7 @@ func (e *Event) Validate() error {
 	return nil
 }
 
-// GetPrimaryKeys is returned in a sorted manner to be safe.
-// We use PrimaryKeyValue() as our internal identifier within our db
-// It is critical to make sure `PrimaryKeyValue()` is a deterministic call.
 func (e *Event) GetPrimaryKeys() []string {
-	slices.Sort(e.primaryKeys)
 	return e.primaryKeys
 }
 

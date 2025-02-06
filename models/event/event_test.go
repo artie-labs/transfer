@@ -6,6 +6,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/mocks"
 )
 
 var idMap = map[string]any{
@@ -159,25 +160,13 @@ func (e *EventsTestSuite) TestEventPrimaryKeys() {
 		assert.True(e.T(), found, requiredKey)
 	}
 
-	anotherEvt := &Event{
-		Table:       "foo",
-		primaryKeys: []string{"id", "course_id"},
-		Data: map[string]any{
-			"id":        1,
-			"course_id": 2,
-		},
-	}
+	mockEvent := &mocks.FakeEvent{}
+	mockEvent.GetTableNameReturns("foo")
+	mockEvent.GetDataReturns(map[string]any{"id": 1, "course_id": 2}, nil)
 
-	var found bool
-	possibilities := []string{"course_id=2id=1"}
-	pkVal := anotherEvt.PrimaryKeyValue()
-	for _, possibility := range possibilities {
-		if found = possibility == pkVal; found {
-			break
-		}
-	}
-
-	assert.True(e.T(), found, anotherEvt.PrimaryKeyValue())
+	anotherEvt, err := ToMemoryEvent(mockEvent, map[string]any{"id": 1, "course_id": 2}, kafkalib.TopicConfig{}, config.Replication)
+	assert.NoError(e.T(), err)
+	assert.Equal(e.T(), "course_id=2id=1", anotherEvt.PrimaryKeyValue())
 
 	// Make sure the ordering for the pk is deterministic.
 	partsMap := make(map[string]bool)
@@ -189,18 +178,24 @@ func (e *EventsTestSuite) TestEventPrimaryKeys() {
 }
 
 func (e *EventsTestSuite) TestPrimaryKeyValueDeterministic() {
-	evt := &Event{
-		Table:       "foo",
-		primaryKeys: []string{"aa", "bb", "zz", "gg", "dusty"},
-		Data: map[string]any{
-			"aa":    1,
-			"bb":    5,
-			"zz":    "ff",
-			"gg":    "artie",
-			"dusty": "mini aussie",
-		},
-	}
+	mockEvent := &mocks.FakeEvent{}
+	mockEvent.GetTableNameReturns("foo")
+	mockEvent.GetDataReturns(map[string]any{
+		"aa":    1,
+		"bb":    5,
+		"zz":    "ff",
+		"gg":    "artie",
+		"dusty": "mini aussie",
+	}, nil)
 
+	evt, err := ToMemoryEvent(mockEvent, map[string]any{
+		"aa":    1,
+		"bb":    5,
+		"zz":    "ff",
+		"gg":    "artie",
+		"dusty": "mini aussie",
+	}, kafkalib.TopicConfig{}, config.Replication)
+	assert.NoError(e.T(), err)
 	for i := 0; i < 50_000; i++ {
 		assert.Equal(e.T(), evt.PrimaryKeyValue(), "aa=1bb=5dusty=mini aussiegg=artiezz=ff")
 	}
