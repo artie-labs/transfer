@@ -8,12 +8,15 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+
+	"github.com/artie-labs/transfer/lib/config"
 )
 
 type Client struct {
-	url        string
-	sessionID  int
-	httpClient *http.Client
+	url         string
+	sessionID   int
+	httpClient  *http.Client
+	sessionConf map[string]any
 }
 
 func (c Client) ExecContext(ctx context.Context, query string) error {
@@ -66,7 +69,10 @@ func (c Client) doRequest(ctx context.Context, method, path string, body []byte)
 }
 
 func (c *Client) newSession(ctx context.Context, kind string) error {
-	body, err := json.Marshal(ApacheLivyCreateSessionRequest{Kind: kind})
+	body, err := json.Marshal(ApacheLivyCreateSessionRequest{
+		Kind: kind,
+		Conf: c.sessionConf,
+	})
 	if err != nil {
 		return err
 	}
@@ -86,8 +92,20 @@ func (c *Client) newSession(ctx context.Context, kind string) error {
 	return nil
 }
 
-func NewClient(ctx context.Context, url string) (Client, error) {
-	client := Client{url: url, httpClient: &http.Client{}}
+func NewClient(ctx context.Context, cfg config.Config) (Client, error) {
+	client := Client{
+		url:        cfg.S3Tables.ApacheLivyURL,
+		httpClient: &http.Client{},
+		sessionConf: map[string]any{
+			"spark.sql.catalog.s3tablesbucket":              "org.apache.iceberg.spark.SparkCatalog",
+			"spark.sql.catalog.s3tablesbucket.catalog-impl": "software.amazon.s3tables.iceberg.S3TablesCatalog",
+			"spark.sql.catalog.s3tablesbucket.warehouse":    cfg.S3Tables.BucketARN,
+			"spark.sql.extensions":                          "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
+			"spark.hadoop.fs.s3a.access.key":                cfg.S3Tables.AwsAccessKeyID,
+			"spark.hadoop.fs.s3a.secret.key":                cfg.S3Tables.AwsSecretAccessKey,
+		},
+	}
+
 	// https://livy.incubator.apache.org/docs/latest/rest-api.html#session-kind
 	if err := client.newSession(ctx, "sql"); err != nil {
 		return Client{}, err

@@ -1,7 +1,8 @@
 package s3tables
 
 type ApacheLivyCreateSessionRequest struct {
-	Kind string `json:"kind"`
+	Kind string         `json:"kind"`
+	Conf map[string]any `json:"conf"`
 }
 
 type ApacheLivyCreateSessionResponse struct {

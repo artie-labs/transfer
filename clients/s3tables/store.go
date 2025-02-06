@@ -32,7 +32,7 @@ func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql
 }
 
 func LoadStore(cfg config.Config) (Store, error) {
-	apacheLivyClient, err := NewClient(context.Background(), cfg.S3Tables.ApacheLivyURL)
+	apacheLivyClient, err := NewClient(context.Background(), cfg)
 	if err != nil {
 		return Store{}, err
 	}
