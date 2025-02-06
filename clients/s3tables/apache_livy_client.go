@@ -8,6 +8,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/config"
 )
@@ -17,25 +18,52 @@ type Client struct {
 	sessionID   int
 	httpClient  *http.Client
 	sessionConf map[string]any
+	sessionJars []string
 }
 
 func (c Client) ExecContext(ctx context.Context, query string) error {
-	_, err := c.submitLivyStatement(ctx, query)
+	statementID, err := c.submitLivyStatement(ctx, query)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	resp, err := c.waitForStatement(ctx, statementID)
+	if err != nil {
+		return err
+	}
+
+	return resp.Error(c.sessionID)
+}
+
+func (c Client) waitForStatement(ctx context.Context, statementID int) (ApacheLivyGetStatementResponse, error) {
+	// TODO: Add a timeout
+	for {
+		time.Sleep(1 * time.Second)
+		respBytes, err := c.doRequest(ctx, "GET", fmt.Sprintf("/sessions/%d/statements/%d", c.sessionID, statementID), nil)
+		if err != nil {
+			return ApacheLivyGetStatementResponse{}, err
+		}
+
+		var resp ApacheLivyGetStatementResponse
+		if err := json.Unmarshal(respBytes, &resp); err != nil {
+			return ApacheLivyGetStatementResponse{}, err
+		}
+
+		if resp.Completed > 0 {
+			return resp, nil
+		}
+	}
 }
 
 func (c Client) submitLivyStatement(ctx context.Context, code string) (int, error) {
-	reqBody, err := json.Marshal(ApacheLivyCreateStatementRequest{Code: code})
+	reqBody, err := json.Marshal(ApacheLivyCreateStatementRequest{Code: code, Kind: "sql"})
 	if err != nil {
 		return 0, err
 	}
 
 	respBytes, err := c.doRequest(ctx, "POST", fmt.Sprintf("/sessions/%d/statements", c.sessionID), reqBody)
 	if err != nil {
+		fmt.Println("string(respBytes)", string(respBytes))
 		return 0, err
 	}
 
@@ -61,16 +89,22 @@ func (c Client) doRequest(ctx context.Context, method, path string, body []byte)
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code when creating session: %d", resp.StatusCode)
+	out, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
 	}
 
-	return io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+		return out, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	return out, nil
 }
 
 func (c *Client) newSession(ctx context.Context, kind string) error {
 	body, err := json.Marshal(ApacheLivyCreateSessionRequest{
 		Kind: kind,
+		Jars: c.sessionJars,
 		Conf: c.sessionConf,
 	})
 	if err != nil {
@@ -88,15 +122,29 @@ func (c *Client) newSession(ctx context.Context, kind string) error {
 		return err
 	}
 
+	fmt.Println("response", string(resp))
+
 	c.sessionID = createResp.ID
 	return nil
 }
 
+/*
+spark-shell \
+  --conf spark.sql.catalog.s3tablesbucket=org.apache.iceberg.spark.SparkCatalog \
+  --conf spark.sql.catalog.s3tablesbucket.catalog-impl=software.amazon.s3tables.iceberg.S3TablesCatalog \
+  --conf spark.sql.catalog.s3tablesbucket.warehouse=arn:aws:s3tables:us-west-2:xxx:bucket/test \
+  --conf spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
+
+*/
+
 func NewClient(ctx context.Context, cfg config.Config) (Client, error) {
 	client := Client{
-		url:        cfg.S3Tables.ApacheLivyURL,
-		httpClient: &http.Client{},
+		url:         cfg.S3Tables.ApacheLivyURL,
+		httpClient:  &http.Client{},
+		sessionJars: []string{"local:/opt/spark/jars/iceberg-spark-runtime-3.2_2.12-1.4.3.jar", "local:/opt/spark/jars/s3-tables-catalog-for-iceberg-0.1.4.jar"},
 		sessionConf: map[string]any{
+			// iceberg-spark-runtime-3.2_2.12-1.4.3
+			"spark.jars.packages":                           "org.apache.iceberg:iceberg-spark-runtime-3.2_2.12:1.4.3,software.amazon.s3tables:s3-tables-catalog-for-iceberg-runtime:0.1.4",
 			"spark.sql.catalog.s3tablesbucket":              "org.apache.iceberg.spark.SparkCatalog",
 			"spark.sql.catalog.s3tablesbucket.catalog-impl": "software.amazon.s3tables.iceberg.S3TablesCatalog",
 			"spark.sql.catalog.s3tablesbucket.warehouse":    cfg.S3Tables.BucketARN,
