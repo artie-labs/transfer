@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 )
 
@@ -15,6 +16,7 @@ type Client struct {
 }
 
 func (c Client) doRequest(method, path string, body []byte) ([]byte, error) {
+	fmt.Println("c.url", c.url, "c.url+path", c.url+path)
 	req, err := http.NewRequest(method, c.url+path, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
@@ -43,6 +45,7 @@ func (c *Client) newSession(kind string) error {
 
 	resp, err := c.doRequest("POST", "/sessions", body)
 	if err != nil {
+		slog.Warn("Failed to create session", slog.Any("err", err), slog.String("response", string(resp)))
 		return err
 	}
 
@@ -57,7 +60,7 @@ func (c *Client) newSession(kind string) error {
 
 func NewClient(url string) (Client, error) {
 	client := Client{url: url, httpClient: &http.Client{}}
-	if err := client.newSession("artie-transfer"); err != nil {
+	if err := client.newSession("sql"); err != nil {
 		return Client{}, err
 	}
 
