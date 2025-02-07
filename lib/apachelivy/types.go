@@ -57,7 +57,7 @@ type StatementOutput struct {
 	Data      map[string]interface{} `json:"data,omitempty"`
 	EType     string                 `json:"etype,omitempty"`
 	EValue    string                 `json:"evalue,omitempty"`
-	TrackBack []string               `json:"trackback"`
+	TraceBack []string               `json:"traceback"`
 }
 
 type GetStatementResponse struct {
@@ -71,7 +71,7 @@ type GetStatementResponse struct {
 
 func (a GetStatementResponse) Error(sessionID int) error {
 	if a.Output.Status == "error" {
-		return fmt.Errorf("statement: %d for session: %d failed: %s, stacktrace: %s", a.ID, sessionID, a.Output.EValue, strings.Join(a.Output.TrackBack, "\n"))
+		return fmt.Errorf("statement: %d for session: %d failed: %s, stacktrace: %s", a.ID, sessionID, a.Output.EValue, strings.Join(a.Output.TraceBack, "\n"))
 	}
 
 	return nil

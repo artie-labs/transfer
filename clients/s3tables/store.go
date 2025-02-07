@@ -65,6 +65,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 	// Get what the target table looks like:
 	_, err := s.GetTableConfig(tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
+		panic("hi")
 		return false, fmt.Errorf("failed to get table config: %w", err)
 	}
 
@@ -113,5 +114,5 @@ func LoadStore(cfg config.Config) (Store, error) {
 		return Store{}, err
 	}
 
-	return Store{config: cfg, apacheLivyClient: apacheLivyClient}, nil
+	return Store{config: cfg, apacheLivyClient: apacheLivyClient, cm: &types.DestinationTableConfigMap{}}, nil
 }

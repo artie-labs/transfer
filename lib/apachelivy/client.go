@@ -26,6 +26,7 @@ func (c Client) QueryContext(ctx context.Context, query string) ([]map[string]an
 	}
 
 	if _, err := c.waitForStatement(ctx, statementID); err != nil {
+		fmt.Println("err", err, "statementID", statementID, "sessionID", c.sessionID)
 		return nil, err
 	}
 
@@ -59,6 +60,11 @@ func (c Client) waitForStatement(ctx context.Context, statementID int) (GetState
 		}
 
 		if resp.Completed > 0 {
+			// Response finished, so let's see if the response is an error or not.
+			if err := resp.Error(c.sessionID); err != nil {
+				return GetStatementResponse{}, err
+			}
+
 			return resp, nil
 		}
 
