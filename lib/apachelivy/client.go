@@ -33,28 +33,29 @@ func (c Client) ExecContext(ctx context.Context, query string) error {
 	return resp.Error(c.sessionID)
 }
 
-func (c Client) waitForStatement(ctx context.Context, statementID int) (ApacheLivyGetStatementResponse, error) {
-	// TODO: Add a timeout
+func (c Client) waitForStatement(ctx context.Context, statementID int) (GetStatementResponse, error) {
 	for {
-		time.Sleep(1 * time.Second)
 		respBytes, err := c.doRequest(ctx, "GET", fmt.Sprintf("/sessions/%d/statements/%d", c.sessionID, statementID), nil)
 		if err != nil {
-			return ApacheLivyGetStatementResponse{}, err
+			return GetStatementResponse{}, err
 		}
 
-		var resp ApacheLivyGetStatementResponse
+		var resp GetStatementResponse
 		if err := json.Unmarshal(respBytes, &resp); err != nil {
-			return ApacheLivyGetStatementResponse{}, err
+			return GetStatementResponse{}, err
 		}
 
 		if resp.Completed > 0 {
 			return resp, nil
 		}
+
+		// It's not ready yet, so we're going to sleep a bit and check again.
+		time.Sleep(1 * time.Second)
 	}
 }
 
 func (c Client) submitLivyStatement(ctx context.Context, code string) (int, error) {
-	reqBody, err := json.Marshal(ApacheLivyCreateStatementRequest{Code: code, Kind: "sql"})
+	reqBody, err := json.Marshal(CreateStatementRequest{Code: code, Kind: "sql"})
 	if err != nil {
 		return 0, err
 	}
@@ -65,7 +66,7 @@ func (c Client) submitLivyStatement(ctx context.Context, code string) (int, erro
 		return 0, err
 	}
 
-	var resp ApacheLivyCreateStatementResponse
+	var resp CreateStatementResponse
 	if err := json.Unmarshal(respBytes, &resp); err != nil {
 		return 0, err
 	}
@@ -99,7 +100,7 @@ func (c Client) doRequest(ctx context.Context, method, path string, body []byte)
 }
 
 func (c *Client) newSession(ctx context.Context, kind string, blockUntilReady bool) error {
-	body, err := json.Marshal(ApacheLivyCreateSessionRequest{
+	body, err := json.Marshal(CreateSessionRequest{
 		Kind: kind,
 		Jars: c.sessionJars,
 		Conf: c.sessionConf,
@@ -114,7 +115,7 @@ func (c *Client) newSession(ctx context.Context, kind string, blockUntilReady bo
 		return err
 	}
 
-	var createResp ApacheLivyCreateSessionResponse
+	var createResp CreateSessionResponse
 	if err = json.Unmarshal(resp, &createResp); err != nil {
 		return err
 	}

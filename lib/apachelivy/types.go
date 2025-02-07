@@ -30,29 +30,29 @@ type GetSessionResponse struct {
 	Kind  string       `json:"kind"`
 }
 
-type ApacheLivyCreateSessionRequest struct {
+type CreateSessionRequest struct {
 	Kind string         `json:"kind"`
 	Jars []string       `json:"jars,omitempty"`
 	Conf map[string]any `json:"conf"`
 }
 
-type ApacheLivyCreateSessionResponse struct {
+type CreateSessionResponse struct {
 	ID    int          `json:"id"`
 	State SessionState `json:"state"`
 }
 
-type ApacheLivyCreateStatementRequest struct {
+type CreateStatementRequest struct {
 	Code string `json:"code"`
 	Kind string `json:"kind"`
 }
 
-type ApacheLivyCreateStatementResponse struct {
-	ID     int                       `json:"id"`
-	State  string                    `json:"state"`
-	Output ApacheLivyStatementOutput `json:"output"`
+type CreateStatementResponse struct {
+	ID     int             `json:"id"`
+	State  string          `json:"state"`
+	Output StatementOutput `json:"output"`
 }
 
-type ApacheLivyStatementOutput struct {
+type StatementOutput struct {
 	Status    string                 `json:"status"`
 	Data      map[string]interface{} `json:"data,omitempty"`
 	EType     string                 `json:"etype,omitempty"`
@@ -60,16 +60,16 @@ type ApacheLivyStatementOutput struct {
 	TrackBack []string               `json:"trackback"`
 }
 
-type ApacheLivyGetStatementResponse struct {
+type GetStatementResponse struct {
 	ID        int `json:"id"`
 	Code      string
-	State     string                    `json:"state"`
-	Output    ApacheLivyStatementOutput `json:"output"`
-	Started   int                       `json:"started"`
-	Completed int                       `json:"completed"`
+	State     string          `json:"state"`
+	Output    StatementOutput `json:"output"`
+	Started   int             `json:"started"`
+	Completed int             `json:"completed"`
 }
 
-func (a ApacheLivyGetStatementResponse) Error(sessionID int) error {
+func (a GetStatementResponse) Error(sessionID int) error {
 	if a.Output.Status == "error" {
 		return fmt.Errorf("statement: %d for session: %d failed: %s, stacktrace: %s", a.ID, sessionID, a.Output.EValue, strings.Join(a.Output.TrackBack, "\n"))
 	}
