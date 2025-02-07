@@ -20,6 +20,10 @@ const (
 	StateError        SessionState = "error"
 )
 
+func (s SessionState) IsReady() bool {
+	return s == StateIdle
+}
+
 type GetSessionResponse struct {
 	ID    int          `json:"id"`
 	State SessionState `json:"state"`
@@ -33,8 +37,8 @@ type ApacheLivyCreateSessionRequest struct {
 }
 
 type ApacheLivyCreateSessionResponse struct {
-	ID    int    `json:"id"`
-	State string `json:"state"` //
+	ID    int          `json:"id"`
+	State SessionState `json:"state"`
 }
 
 type ApacheLivyCreateStatementRequest struct {

@@ -86,7 +86,6 @@ func (c Client) doRequest(ctx context.Context, method, path string, body []byte)
 	}
 
 	defer resp.Body.Close()
-
 	out, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -121,7 +120,7 @@ func (c *Client) newSession(ctx context.Context, kind string, blockUntilReady bo
 	}
 
 	c.sessionID = createResp.ID
-	if blockUntilReady {
+	if blockUntilReady && !createResp.State.IsReady() {
 		if err := c.waitForSessionToBeReady(ctx); err != nil {
 			return err
 		}
