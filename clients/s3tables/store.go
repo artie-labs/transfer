@@ -6,6 +6,7 @@ import (
 	"log"
 	"log/slog"
 
+	"github.com/artie-labs/transfer/clients/s3tables/dialect"
 	"github.com/artie-labs/transfer/lib/apachelivy"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -16,6 +17,14 @@ import (
 type Store struct {
 	apacheLivyClient apachelivy.Client
 	config           config.Config
+}
+
+func (s Store) dialect() dialect.IcebergDialect {
+	return dialect.IcebergDialect{}
+}
+
+func (s Store) Dialect() sql.Dialect {
+	return s.dialect()
 }
 
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
