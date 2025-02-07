@@ -53,7 +53,8 @@ type S3TablesSettings struct {
 	AwsSecretAccessKey string `yaml:"awsSecretAccessKey"`
 	BucketARN          string `yaml:"bucketARN"`
 	Region             string `yaml:"region"`
-
+	// Bucket - This is where all the ephemeral delta files will be stored.
+	Bucket        string `yaml:"bucket"`
 	ApacheLivyURL string `yaml:"apacheLivyURL"`
 }
 

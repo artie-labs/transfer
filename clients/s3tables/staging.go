@@ -36,18 +36,24 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 		}
 	}()
 
-	// Load the CSV into a temporary view
+	// Step 1 - Upload the file to S3
+	s3URI, err := s.uploadToS3(ctx, fp)
+	if err != nil {
+		return fmt.Errorf("failed to upload to s3: %w", err)
+	}
+
+	// Step 2 - Load the CSV into a temporary view
 	command := fmt.Sprintf(`
 CREATE OR REPLACE TEMPORARY VIEW %s
 USING csv
 OPTIONS (
-  path 'file://%s',
+  path '%s',
   header 'true',
   compression 'gzip',
   nullValue '\\N',
   inferSchema 'true'
 );
-`, tempTableID.EscapedTable(), fp)
+`, tempTableID.EscapedTable(), s3URI)
 
 	fmt.Println("command", command, "fp", fp)
 	if err := s.apacheLivyClient.ExecContext(ctx, command); err != nil {

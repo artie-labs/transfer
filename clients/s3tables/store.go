@@ -13,12 +13,22 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/s3lib"
 	"github.com/artie-labs/transfer/lib/sql"
 )
 
 type Store struct {
 	apacheLivyClient apachelivy.Client
 	config           config.Config
+}
+
+func (s Store) uploadToS3(ctx context.Context, fp string) (string, error) {
+	return s3lib.UploadLocalFileToS3(ctx, s3lib.UploadArgs{
+		Bucket:                     s.config.S3Tables.Bucket,
+		FilePath:                   fp,
+		OverrideAWSAccessKeyID:     &s.config.S3Tables.AwsAccessKeyID,
+		OverrideAWSAccessKeySecret: &s.config.S3Tables.AwsSecretAccessKey,
+	})
 }
 
 func (s Store) dialect() dialect.IcebergDialect {
