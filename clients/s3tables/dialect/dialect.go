@@ -280,19 +280,11 @@ WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s)
 // If you want a “temporary” table in Spark, you typically do CREATE TEMPORARY VIEW,
 // but that is ephemeral. Iceberg does not have a direct "temp table" concept, so
 // we can no-op or add a comment.
-func (IcebergDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, colSQLParts []string) string {
-	base := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s) USING iceberg",
+func (IcebergDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, colSQLParts []string) string {
+	// Iceberg does not support temporary tables.
+	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s) USING iceberg",
 		tableID.FullyQualifiedName(),
 		strings.Join(colSQLParts, ", "))
-
-	if temporary {
-		// There is no direct analog to “temporary = true” with an Iceberg table in Spark.
-		// You might do a Spark Temporary View, but that would not be an Iceberg table.
-		// You could return the same statement or do something else like a comment:
-		return base + " -- NOTE: 'temporary' not supported in Iceberg, ignoring."
-	}
-
-	return base
 }
 
 // BuildDropTableQuery constructs a DROP TABLE statement for Iceberg in Spark.
