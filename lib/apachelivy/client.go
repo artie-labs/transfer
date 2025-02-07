@@ -19,6 +19,19 @@ type Client struct {
 	sessionJars []string
 }
 
+func (c Client) QueryContext(ctx context.Context, query string) ([]map[string]any, error) {
+	statementID, err := c.submitLivyStatement(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := c.waitForStatement(ctx, statementID); err != nil {
+		return nil, err
+	}
+
+	return nil, fmt.Errorf("not implemented")
+}
+
 func (c Client) ExecContext(ctx context.Context, query string) error {
 	statementID, err := c.submitLivyStatement(ctx, query)
 	if err != nil {

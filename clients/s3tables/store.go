@@ -32,7 +32,11 @@ func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bo
 		return tableCfg, nil
 	}
 
-	s.dialect().BuildDescribeTableQuery(tableID)
+	query, _, _ := s.dialect().BuildDescribeTableQuery(tableID)
+	_, err := s.apacheLivyClient.QueryContext(context.Background(), query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query table: %w", err)
+	}
 
 	return nil, fmt.Errorf("table config not found")
 }
@@ -58,12 +62,19 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	temporaryTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
 
+	// Get what the target table looks like:
+	_, err := s.GetTableConfig(tableID, tableData.TopicConfig().DropDeletedColumns)
+	if err != nil {
+		return false, fmt.Errorf("failed to get table config: %w", err)
+	}
+
+	// Apply column deltas
+
+	// Prepare the temporary table
 	if err := s.PrepareTemporaryTable(ctx, tableData, nil, temporaryTableID, tableID, types.AdditionalSettings{}, true); err != nil {
 		logger.Panic("failed to prepare temporary table", slog.Any("err", err))
 		return false, fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
-
-	// Now apply column deltas
 
 	// Then merge the table
 
