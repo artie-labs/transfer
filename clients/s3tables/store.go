@@ -15,6 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/s3lib"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 type Store struct {
@@ -36,7 +37,9 @@ func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bo
 	_, err := s.apacheLivyClient.QueryContext(context.Background(), query)
 	if err != nil {
 		if s.dialect().IsTableDoesNotExistErr(err) {
-			return nil, fmt.Errorf("table does not exist: %w", err)
+			tableCfg := types.NewDestinationTableConfig([]columns.Column{}, dropDeletedColumns)
+			s.cm.AddTable(tableID, tableCfg)
+			return tableCfg, nil
 		}
 
 		return nil, fmt.Errorf("failed to query table: %w", err)
