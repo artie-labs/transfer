@@ -71,7 +71,7 @@ type GetStatementResponse struct {
 
 func (a GetStatementResponse) Error(sessionID int) error {
 	if a.Output.Status == "error" {
-		return fmt.Errorf("statement: %d for session: %d failed: %s, stacktrace: %s", a.ID, sessionID, a.Output.EValue, strings.Join(a.Output.TraceBack, "\n"))
+		return fmt.Errorf("%s, stacktrace: %s for session %d, statement %d", a.Output.EValue, strings.Join(a.Output.TraceBack, "\n"), sessionID, a.ID)
 	}
 
 	return nil

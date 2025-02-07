@@ -35,6 +35,10 @@ func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bo
 	query, _, _ := s.dialect().BuildDescribeTableQuery(tableID)
 	_, err := s.apacheLivyClient.QueryContext(context.Background(), query)
 	if err != nil {
+		if s.dialect().IsTableDoesNotExistErr(err) {
+			return nil, fmt.Errorf("table does not exist: %w", err)
+		}
+
 		return nil, fmt.Errorf("failed to query table: %w", err)
 	}
 

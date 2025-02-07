@@ -41,8 +41,11 @@ func (IcebergDialect) IsColumnAlreadyExistsErr(err error) bool {
 // IsTableDoesNotExistErr checks if the error indicates table not found.
 // Adjust to your Spark environment’s actual error messages.
 func (IcebergDialect) IsTableDoesNotExistErr(err error) bool {
-	// Something like: "Table or view not found"
-	return strings.Contains(strings.ToLower(err.Error()), "table or view not found")
+	if err == nil {
+		return false
+	}
+
+	return strings.HasPrefix(err.Error(), "[TABLE_OR_VIEW_NOT_FOUND]")
 }
 
 // BuildIsNotToastValueExpression is used to ensure the column does not contain
