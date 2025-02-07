@@ -3,7 +3,6 @@ package dialect
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -330,11 +329,4 @@ func (IcebergDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (stri
 	// your code can parse. For example:
 	stmt := fmt.Sprintf("DESCRIBE TABLE %s", tableID.FullyQualifiedName())
 	return stmt, nil, nil
-}
-
-// Optional: If you need a function to emulate table expiration, you could define it as a no-op.
-func (IcebergDialect) BQExpiresDate(t time.Time) string {
-	// Iceberg doesn't do ephemeral expiration in the same sense as BigQuery.
-	// Just return an empty string or some placeholder if your code requires it.
-	return t.Format("2006-01-02 15:04:05")
 }
