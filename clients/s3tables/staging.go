@@ -41,15 +41,15 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 CREATE OR REPLACE TEMPORARY VIEW %s
 USING csv
 OPTIONS (
-  path 'file:///%s',
+  path 'file://%s',
   header 'true',
   compression 'gzip',
   nullValue '\\N',
   inferSchema 'true'
 );
-`, tempTableID.FullyQualifiedName(), fp)
+`, tempTableID.EscapedTable(), fp)
 
-	fmt.Println("command", command)
+	fmt.Println("command", command, "fp", fp)
 	if err := s.apacheLivyClient.ExecContext(ctx, command); err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}

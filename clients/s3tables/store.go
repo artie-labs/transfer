@@ -3,6 +3,7 @@ package s3tables
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/artie-labs/transfer/clients/s3tables/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
@@ -10,6 +11,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 )
@@ -32,6 +34,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 	temporaryTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
 
 	if err := s.PrepareTemporaryTable(ctx, tableData, nil, temporaryTableID, tableID, types.AdditionalSettings{}, true); err != nil {
+		logger.Panic("failed to prepare temporary table", slog.Any("err", err))
 		return false, fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 
@@ -47,7 +50,7 @@ func (s Store) IsRetryableError(_ error) bool {
 }
 
 func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
-	return nil
+	return dialect.NewTableIdentifier(topicConfig.Database, table)
 }
 
 func LoadStore(cfg config.Config) (Store, error) {
