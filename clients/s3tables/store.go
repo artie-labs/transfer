@@ -48,6 +48,10 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 		return false, fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 
+	// Now apply column deltas
+
+	// Then merge the table
+
 	return false, fmt.Errorf("not implemented")
 }
 
@@ -66,6 +70,8 @@ func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql
 func LoadStore(cfg config.Config) (Store, error) {
 	apacheLivyClient, err := apachelivy.NewClient(context.Background(), cfg.S3Tables.ApacheLivyURL,
 		map[string]any{
+			"spark.hadoop.fs.s3a.secret.key":                 cfg.S3Tables.AwsSecretAccessKey,
+			"spark.hadoop.fs.s3a.access.key":                 cfg.S3Tables.AwsAccessKeyID,
 			"spark.driver.extraJavaOptions":                  fmt.Sprintf("-Daws.accessKeyId=%s -Daws.secretAccessKey=%s", cfg.S3Tables.AwsAccessKeyID, cfg.S3Tables.AwsSecretAccessKey),
 			"spark.executor.extraJavaOptions":                fmt.Sprintf("-Daws.accessKeyId=%s -Daws.secretAccessKey=%s", cfg.S3Tables.AwsAccessKeyID, cfg.S3Tables.AwsSecretAccessKey),
 			"spark.jars.packages":                            "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.6.1,software.amazon.s3tables:s3-tables-catalog-for-iceberg-runtime:0.1.4",

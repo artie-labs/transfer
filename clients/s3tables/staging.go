@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -42,6 +43,7 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 		return fmt.Errorf("failed to upload to s3: %w", err)
 	}
 
+	s3URI = "s3a:" + strings.TrimPrefix(s3URI, "s3:")
 	// Step 2 - Load the CSV into a temporary view
 	command := fmt.Sprintf(`
 CREATE OR REPLACE TEMPORARY VIEW %s
