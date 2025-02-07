@@ -128,15 +128,6 @@ func (c *Client) newSession(ctx context.Context, kind string) error {
 	return nil
 }
 
-/*
-spark-shell \
-  --conf spark.sql.catalog.s3tablesbucket=org.apache.iceberg.spark.SparkCatalog \
-  --conf spark.sql.catalog.s3tablesbucket.catalog-impl=software.amazon.s3tables.iceberg.S3TablesCatalog \
-  --conf spark.sql.catalog.s3tablesbucket.warehouse=arn:aws:s3tables:us-west-2:xxx:bucket/test \
-  --conf spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
-
-*/
-
 func NewClient(ctx context.Context, cfg config.Config) (Client, error) {
 	client := Client{
 		url:        cfg.S3Tables.ApacheLivyURL,
