@@ -1,9 +1,30 @@
-package s3tables
+package apachelivy
 
 import (
 	"fmt"
 	"strings"
 )
+
+// SessionState - https://livy.incubator.apache.org/docs/latest/rest-api.html#:~:text=of%20key%3Dval-,Session%20State,-Value
+type SessionState string
+
+const (
+	StateNotStarted   SessionState = "not_started"
+	StateStarting     SessionState = "starting"
+	StateIdle         SessionState = "idle"
+	StateBusy         SessionState = "busy"
+	StateShuttingDown SessionState = "shutting_down"
+	StateDead         SessionState = "dead"
+	StateKilled       SessionState = "killed"
+	StateSuccess      SessionState = "success"
+	StateError        SessionState = "error"
+)
+
+type GetSessionResponse struct {
+	ID    int          `json:"id"`
+	State SessionState `json:"state"`
+	Kind  string       `json:"kind"`
+}
 
 type ApacheLivyCreateSessionRequest struct {
 	Kind string         `json:"kind"`
@@ -13,7 +34,7 @@ type ApacheLivyCreateSessionRequest struct {
 
 type ApacheLivyCreateSessionResponse struct {
 	ID    int    `json:"id"`
-	State string `json:"state"`
+	State string `json:"state"` //
 }
 
 type ApacheLivyCreateStatementRequest struct {

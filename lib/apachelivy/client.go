@@ -1,4 +1,4 @@
-package s3tables
+package apachelivy
 
 import (
 	"bytes"
@@ -9,8 +9,6 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
-
-	"github.com/artie-labs/transfer/lib/config"
 )
 
 type Client struct {
@@ -101,7 +99,7 @@ func (c Client) doRequest(ctx context.Context, method, path string, body []byte)
 	return out, nil
 }
 
-func (c *Client) newSession(ctx context.Context, kind string) error {
+func (c *Client) newSession(ctx context.Context, kind string, blockUntilReady bool) error {
 	body, err := json.Marshal(ApacheLivyCreateSessionRequest{
 		Kind: kind,
 		Jars: c.sessionJars,
@@ -122,34 +120,56 @@ func (c *Client) newSession(ctx context.Context, kind string) error {
 		return err
 	}
 
-	fmt.Println("response", string(resp))
-
 	c.sessionID = createResp.ID
+	if blockUntilReady {
+		if err := c.waitForSessionToBeReady(ctx); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
-func NewClient(ctx context.Context, cfg config.Config) (Client, error) {
+func (c Client) waitForSessionToBeReady(ctx context.Context) error {
+	for {
+		respBytes, err := c.doRequest(ctx, "GET", fmt.Sprintf("/sessions/%d", c.sessionID), nil)
+		if err != nil {
+			return err
+		}
+
+		var resp GetSessionResponse
+		if err := json.Unmarshal(respBytes, &resp); err != nil {
+			return err
+		}
+
+		switch resp.State {
+		case StateIdle:
+			return nil
+		case StateNotStarted, StateStarting:
+			slog.Info("Session not ready", slog.Any("resp", resp))
+			slog.Info("Sleeping for 1 second")
+			time.Sleep(1 * time.Second)
+		default:
+			return fmt.Errorf("session in unexpected state: %q", resp.State)
+		}
+
+		if resp.State == StateIdle {
+			return nil
+		}
+	}
+}
+
+func NewClient(ctx context.Context, url string, config map[string]any) (Client, error) {
 	client := Client{
-		url:        cfg.S3Tables.ApacheLivyURL,
-		httpClient: &http.Client{},
-		sessionConf: map[string]any{
-			"spark.driver.extraJavaOptions":                  fmt.Sprintf("-Daws.accessKeyId=%s -Daws.secretAccessKey=%s", cfg.S3Tables.AwsAccessKeyID, cfg.S3Tables.AwsSecretAccessKey),
-			"spark.executor.extraJavaOptions":                fmt.Sprintf("-Daws.accessKeyId=%s -Daws.secretAccessKey=%s", cfg.S3Tables.AwsAccessKeyID, cfg.S3Tables.AwsSecretAccessKey),
-			"spark.jars.packages":                            "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.6.1,software.amazon.s3tables:s3-tables-catalog-for-iceberg-runtime:0.1.4",
-			"spark.sql.extensions":                           "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
-			"spark.sql.catalog.s3tablesbucket":               "org.apache.iceberg.spark.SparkCatalog",
-			"spark.sql.catalog.s3tablesbucket.catalog-impl":  "software.amazon.s3tables.iceberg.S3TablesCatalog",
-			"spark.sql.catalog.s3tablesbucket.warehouse":     cfg.S3Tables.BucketARN,
-			"spark.sql.catalog.s3tablesbucket.client.region": cfg.S3Tables.Region,
-		},
+		url:         url,
+		httpClient:  &http.Client{},
+		sessionConf: config,
 	}
 
 	// https://livy.incubator.apache.org/docs/latest/rest-api.html#session-kind
-	if err := client.newSession(ctx, "sql"); err != nil {
+	if err := client.newSession(ctx, "sql", true); err != nil {
 		return Client{}, err
 	}
-
-	time.Sleep(10 * time.Second)
 
 	return client, nil
 }
