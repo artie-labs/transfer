@@ -143,14 +143,15 @@ func NewClient(ctx context.Context, cfg config.Config) (Client, error) {
 		httpClient:  &http.Client{},
 		sessionJars: []string{"local:/opt/spark/jars/iceberg-spark-runtime-3.5_2.12-1.6.1.jar", "local:/opt/spark/jars/s3-tables-catalog-for-iceberg-0.1.4.jar", "local:/opt/spark/jars/s3tables-2.30.14.jar"},
 		sessionConf: map[string]any{
+			"spark.driver.extraJavaOptions":   fmt.Sprintf("-Daws.accessKeyId=%s -Daws.secretAccessKey=%s", cfg.S3Tables.AwsAccessKeyID, cfg.S3Tables.AwsSecretAccessKey),
+			"spark.executor.extraJavaOptions": fmt.Sprintf("-Daws.accessKeyId=%s -Daws.secretAccessKey=%s", cfg.S3Tables.AwsAccessKeyID, cfg.S3Tables.AwsSecretAccessKey),
 			// iceberg-spark-runtime-3.2_2.12-1.4.3
-			"spark.jars.packages":                           "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.6.1,software.amazon.s3tables:s3-tables-catalog-for-iceberg-runtime:0.1.4",
-			"spark.sql.catalog.s3tablesbucket":              "org.apache.iceberg.spark.SparkCatalog",
-			"spark.sql.catalog.s3tablesbucket.catalog-impl": "software.amazon.s3tables.iceberg.S3TablesCatalog",
-			"spark.sql.catalog.s3tablesbucket.warehouse":    cfg.S3Tables.BucketARN,
-			"spark.sql.extensions":                          "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
-			"spark.hadoop.fs.s3a.access.key":                cfg.S3Tables.AwsAccessKeyID,
-			"spark.hadoop.fs.s3a.secret.key":                cfg.S3Tables.AwsSecretAccessKey,
+			"spark.jars.packages":                            "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.6.1,software.amazon.s3tables:s3-tables-catalog-for-iceberg-runtime:0.1.4",
+			"spark.sql.extensions":                           "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
+			"spark.sql.catalog.s3tablesbucket":               "org.apache.iceberg.spark.SparkCatalog",
+			"spark.sql.catalog.s3tablesbucket.catalog-impl":  "software.amazon.s3tables.iceberg.S3TablesCatalog",
+			"spark.sql.catalog.s3tablesbucket.warehouse":     cfg.S3Tables.BucketARN,
+			"spark.sql.catalog.s3tablesbucket.client.region": cfg.S3Tables.Region,
 		},
 	}
 
@@ -159,7 +160,7 @@ func NewClient(ctx context.Context, cfg config.Config) (Client, error) {
 		return Client{}, err
 	}
 
-	time.Sleep(3 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	return client, nil
 }
