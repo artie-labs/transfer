@@ -20,6 +20,21 @@ import (
 type Store struct {
 	apacheLivyClient apachelivy.Client
 	config           config.Config
+	cm               *types.DestinationTableConfigMap
+}
+
+func (s Store) GetConfigMap() *types.DestinationTableConfigMap {
+	return s.cm
+}
+
+func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
+	if tableCfg := s.cm.GetTableConfig(tableID); tableCfg != nil {
+		return tableCfg, nil
+	}
+
+	s.dialect().BuildDescribeTableQuery(tableID)
+
+	return nil, fmt.Errorf("table config not found")
 }
 
 func (s Store) uploadToS3(ctx context.Context, fp string) (string, error) {

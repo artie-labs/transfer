@@ -327,6 +327,5 @@ func (IcebergDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (stri
 	// But if your code expects to parse columns, dataTypes, etc. from a rowset,
 	// you might use "SHOW COLUMNS" or something custom. Return a statement that
 	// your code can parse. For example:
-	stmt := fmt.Sprintf("DESCRIBE TABLE %s", tableID.FullyQualifiedName())
-	return stmt, nil, nil
+	return fmt.Sprintf("DESCRIBE TABLE %s", tableID.FullyQualifiedName()), nil, nil
 }
