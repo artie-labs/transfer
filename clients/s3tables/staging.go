@@ -71,6 +71,8 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 
 	s3URI = "s3a:" + strings.TrimPrefix(s3URI, "s3:")
 	// Step 2 - Load the CSV into a temporary view
+
+	// CSV options: https://spark.apache.org/docs/3.5.3/sql-data-sources-csv.html
 	command := fmt.Sprintf(`
 CREATE OR REPLACE TEMPORARY VIEW %s
 USING csv
