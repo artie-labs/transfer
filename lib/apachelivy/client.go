@@ -19,18 +19,18 @@ type Client struct {
 	sessionJars []string
 }
 
-func (c Client) QueryContext(ctx context.Context, query string) ([]map[string]any, error) {
+func (c Client) QueryContext(ctx context.Context, query string) (GetStatementResponse, error) {
 	statementID, err := c.submitLivyStatement(ctx, query)
 	if err != nil {
-		return nil, err
+		return GetStatementResponse{}, err
 	}
 
-	if _, err := c.waitForStatement(ctx, statementID); err != nil {
-		fmt.Println("err", err, "statementID", statementID, "sessionID", c.sessionID)
-		return nil, err
+	response, err := c.waitForStatement(ctx, statementID)
+	if err != nil {
+		return GetStatementResponse{}, err
 	}
 
-	return nil, fmt.Errorf("not implemented")
+	return response, nil
 }
 
 func (c Client) ExecContext(ctx context.Context, query string) error {

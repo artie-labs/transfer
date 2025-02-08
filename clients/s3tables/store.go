@@ -34,9 +34,7 @@ func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bo
 		return tableCfg, nil
 	}
 
-	query, _, _ := s.dialect().BuildDescribeTableQuery(tableID)
-	// TODO: Pass context through [GetTableConfig] signature
-	_, err := s.apacheLivyClient.QueryContext(context.Background(), query)
+	cols, err := s.DescribeTable(context.Background(), tableID)
 	if err != nil {
 		if s.dialect().IsTableDoesNotExistErr(err) {
 			tableCfg := types.NewDestinationTableConfig([]columns.Column{}, dropDeletedColumns)
@@ -44,10 +42,12 @@ func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bo
 			return tableCfg, nil
 		}
 
-		return nil, fmt.Errorf("failed to query table: %w", err)
+		return nil, fmt.Errorf("failed to describe table: %w", err)
 	}
 
-	return nil, fmt.Errorf("table config not found")
+	tableCfg := types.NewDestinationTableConfig(cols, dropDeletedColumns)
+	s.cm.AddTable(tableID, tableCfg)
+	return tableCfg, nil
 }
 
 func (s Store) uploadToS3(ctx context.Context, fp string) (string, error) {
