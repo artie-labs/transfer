@@ -72,7 +72,7 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 	s3URI = "s3a:" + strings.TrimPrefix(s3URI, "s3:")
 	// Step 2 - Load the CSV into a temporary view
 	command := fmt.Sprintf(`
-CREATE OR REPLACE TEMPORARY VIEW %s
+CREATE OR REPLACE VIEW %s
 USING csv
 OPTIONS (
   path '%s',
