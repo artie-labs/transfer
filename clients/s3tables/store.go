@@ -71,6 +71,14 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	temporaryTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
 
+	query, err := s.apacheLivyClient.QueryContext(ctx, fmt.Sprintf("SELECT * FROM %s", tableID.FullyQualifiedName()))
+	if err != nil {
+		return false, fmt.Errorf("failed to query table: %w", err)
+	}
+
+	fmt.Println("query", query)
+	panic("hello")
+
 	// Get what the target table looks like:
 	tableConfig, err := s.GetTableConfig(tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
