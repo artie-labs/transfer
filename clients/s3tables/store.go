@@ -9,6 +9,7 @@ import (
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/apachelivy"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
@@ -34,6 +35,7 @@ func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bo
 	}
 
 	query, _, _ := s.dialect().BuildDescribeTableQuery(tableID)
+	// TODO: Pass context through [GetTableConfig] signature
 	_, err := s.apacheLivyClient.QueryContext(context.Background(), query)
 	if err != nil {
 		if s.dialect().IsTableDoesNotExistErr(err) {
@@ -70,13 +72,38 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 	temporaryTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
 
 	// Get what the target table looks like:
-	_, err := s.GetTableConfig(tableID, tableData.TopicConfig().DropDeletedColumns)
+	tableConfig, err := s.GetTableConfig(tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
-		panic("hi")
 		return false, fmt.Errorf("failed to get table config: %w", err)
 	}
 
 	// Apply column deltas
+	_, targetKeysMissing := columns.DiffAndFilter(
+		tableData.ReadOnlyInMemoryCols().GetColumns(),
+		tableConfig.GetColumns(),
+		tableData.TopicConfig().SoftDelete,
+		tableData.TopicConfig().IncludeArtieUpdatedAt,
+		tableData.TopicConfig().IncludeDatabaseUpdatedAt,
+		tableData.Mode(),
+	)
+
+	if tableConfig.CreateTable() {
+		if err := s.CreateTable(ctx, tableID, targetKeysMissing); err != nil {
+			return false, fmt.Errorf("failed to create table: %w", err)
+		}
+
+		tableConfig.MutateInMemoryColumns(constants.Add, targetKeysMissing...)
+	} else {
+		if err := s.AlterTable(ctx, tableID, targetKeysMissing); err != nil {
+			return false, fmt.Errorf("failed to alter table: %w", err)
+		}
+
+		tableConfig.MutateInMemoryColumns(constants.Add, targetKeysMissing...)
+	}
+
+	if err = tableData.MergeColumnsFromDestination(tableConfig.GetColumns()...); err != nil {
+		return false, fmt.Errorf("failed to merge columns from destination: %w for table %q", err, tableData.Name())
+	}
 
 	// Prepare the temporary table
 	if err := s.PrepareTemporaryTable(ctx, tableData, nil, temporaryTableID, tableID, types.AdditionalSettings{}, true); err != nil {
@@ -84,9 +111,30 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 		return false, fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 
-	// Then merge the table
+	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
 
-	return false, fmt.Errorf("not implemented")
+	var primaryKeys []columns.Column
+	for _, col := range cols {
+		if col.PrimaryKey() {
+			primaryKeys = append(primaryKeys, col)
+		}
+	}
+
+	// Then merge the table
+	queries, err := s.dialect().BuildMergeQueries(tableID, temporaryTableID.EscapedTable(), primaryKeys, nil, cols, tableData.TopicConfig().SoftDelete, tableData.ContainsHardDeletes())
+	if err != nil {
+		return false, fmt.Errorf("failed to build merge queries: %w", err)
+	}
+
+	if len(queries) != 1 {
+		return false, fmt.Errorf("expected 1 merge query, got %d", len(queries))
+	}
+
+	if err := s.apacheLivyClient.ExecContext(ctx, queries[0]); err != nil {
+		return false, fmt.Errorf("failed to execute merge query: %w", err)
+	}
+
+	return true, nil
 }
 
 func (s Store) Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error {

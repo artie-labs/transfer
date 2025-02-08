@@ -9,21 +9,38 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
-// func buildColumnSQLParts(dialect sql.Dialect, cols []columns.Column, settings config.SharedDestinationColumnSettings) []string {
-// 	colSQLParts := make([]string, 0, len(cols))
-// 	for _, col := range cols {
-// 		colSQLParts = append(colSQLParts, dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey(), settings))
-// 	}
+func (s Store) AlterTable(ctx context.Context, tableID sql.TableIdentifier, cols []columns.Column) error {
+	for _, col := range cols {
+		query := s.dialect().BuildAddColumnQuery(tableID, s.dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey(), config.SharedDestinationColumnSettings{}))
+		if err := s.apacheLivyClient.ExecContext(ctx, query); err != nil {
+			return fmt.Errorf("failed to alter table: %w", err)
+		}
+	}
 
-// 	return colSQLParts
-// }
+	return nil
+}
+
+func (s Store) CreateTable(ctx context.Context, tableID sql.TableIdentifier, cols []columns.Column) error {
+	var colParts []string
+	for _, col := range cols {
+		colParts = append(colParts, s.dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey(), config.SharedDestinationColumnSettings{}))
+	}
+
+	if err := s.apacheLivyClient.ExecContext(ctx, s.dialect().BuildCreateTableQuery(tableID, false, colParts)); err != nil {
+		return fmt.Errorf("failed to create table: %w", err)
+	}
+
+	return nil
+}
 
 func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
 	fp, err := s.writeTemporaryTableFile(tableData, tempTableID)
