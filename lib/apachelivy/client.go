@@ -81,7 +81,6 @@ func (c Client) submitLivyStatement(ctx context.Context, code string) (int, erro
 
 	respBytes, err := c.doRequest(ctx, "POST", fmt.Sprintf("/sessions/%d/statements", c.sessionID), reqBody)
 	if err != nil {
-		fmt.Println("string(respBytes)", string(respBytes))
 		return 0, err
 	}
 

@@ -87,6 +87,16 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 		tableData.Mode(),
 	)
 
+	castedTableID, ok := tableID.(dialect.TableIdentifier)
+	if !ok {
+		return false, fmt.Errorf("failed to cast table ID to dialect.TableIdentifier")
+	}
+
+	// Ensure that the namespace exists
+	if err := s.EnsureNamespaceExists(ctx, castedTableID.Namespace()); err != nil {
+		return false, fmt.Errorf("failed to ensure namespace exists: %w", err)
+	}
+
 	if tableConfig.CreateTable() {
 		if err := s.CreateTable(ctx, tableID, targetKeysMissing); err != nil {
 			return false, fmt.Errorf("failed to create table: %w", err)

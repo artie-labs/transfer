@@ -9,12 +9,13 @@ import (
 var _dialect = IcebergDialect{}
 
 type TableIdentifier struct {
+	catalog   string
 	namespace string
 	table     string
 }
 
 func NewTableIdentifier(namespace, table string) TableIdentifier {
-	return TableIdentifier{namespace: namespace, table: table}
+	return TableIdentifier{catalog: "s3tablesbucket", namespace: namespace, table: table}
 }
 
 func (ti TableIdentifier) Namespace() string {
@@ -34,5 +35,5 @@ func (ti TableIdentifier) WithTable(table string) sql.TableIdentifier {
 }
 
 func (ti TableIdentifier) FullyQualifiedName() string {
-	return fmt.Sprintf("%s.%s", _dialect.QuoteIdentifier(ti.namespace), ti.EscapedTable())
+	return fmt.Sprintf("%s.%s.%s", _dialect.QuoteIdentifier(ti.catalog), _dialect.QuoteIdentifier(ti.namespace), ti.EscapedTable())
 }

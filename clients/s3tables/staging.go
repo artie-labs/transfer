@@ -18,9 +18,17 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
+func (s Store) EnsureNamespaceExists(ctx context.Context, namespace string) error {
+	if err := s.apacheLivyClient.ExecContext(ctx, fmt.Sprintf("CREATE NAMESPACE IF NOT EXISTS `s3tablesbucket`.`%s`", namespace)); err != nil {
+		return fmt.Errorf("failed to create namespace: %w", err)
+	}
+
+	return nil
+}
 func (s Store) AlterTable(ctx context.Context, tableID sql.TableIdentifier, cols []columns.Column) error {
 	for _, col := range cols {
-		query := s.dialect().BuildAddColumnQuery(tableID, s.dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey(), config.SharedDestinationColumnSettings{}))
+		colPart := fmt.Sprintf("%s %s", col.Name(), s.dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey(), config.SharedDestinationColumnSettings{}))
+		query := s.dialect().BuildAddColumnQuery(tableID, colPart)
 		if err := s.apacheLivyClient.ExecContext(ctx, query); err != nil {
 			return fmt.Errorf("failed to alter table: %w", err)
 		}
@@ -32,7 +40,8 @@ func (s Store) AlterTable(ctx context.Context, tableID sql.TableIdentifier, cols
 func (s Store) CreateTable(ctx context.Context, tableID sql.TableIdentifier, cols []columns.Column) error {
 	var colParts []string
 	for _, col := range cols {
-		colParts = append(colParts, s.dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey(), config.SharedDestinationColumnSettings{}))
+		colPart := fmt.Sprintf("%s %s", col.Name(), s.dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey(), config.SharedDestinationColumnSettings{}))
+		colParts = append(colParts, colPart)
 	}
 
 	if err := s.apacheLivyClient.ExecContext(ctx, s.dialect().BuildCreateTableQuery(tableID, false, colParts)); err != nil {
@@ -67,7 +76,7 @@ CREATE OR REPLACE TEMPORARY VIEW %s
 USING csv
 OPTIONS (
   path '%s',
-  header 'true',
+  header 'false',
   compression 'gzip',
   nullValue '\\N',
   inferSchema 'true'

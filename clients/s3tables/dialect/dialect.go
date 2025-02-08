@@ -180,8 +180,8 @@ func (id IcebergDialect) BuildMergeQueries(
 		equalitySQLParts = append(equalitySQLParts, additionalEqualityStrings...)
 	}
 
-	mergeInto := fmt.Sprintf("MERGE INTO %s %s", tableID.FullyQualifiedName(), constants.TargetAlias)
-	usingSub := fmt.Sprintf("USING (%s) %s", subQuery, constants.StagingAlias)
+	mergeInto := fmt.Sprintf("MERGE INTO %s AS %s", tableID.FullyQualifiedName(), constants.TargetAlias)
+	usingSub := fmt.Sprintf("USING %s AS %s", subQuery, constants.StagingAlias)
 	onClause := fmt.Sprintf("ON %s", strings.Join(equalitySQLParts, " AND "))
 
 	// Possibly remove the “__artie_only_delete” or “__artie_delete” columns if your final table does not have them:
@@ -284,9 +284,11 @@ WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s)
 // we can no-op or add a comment.
 func (IcebergDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, colSQLParts []string) string {
 	// Iceberg does not support temporary tables.
-	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s) USING iceberg",
+	return fmt.Sprintf(
+		"CREATE TABLE IF NOT EXISTS %s (%s) USING iceberg TBLPROPERTIES ('format-version'='2')",
 		tableID.FullyQualifiedName(),
-		strings.Join(colSQLParts, ", "))
+		strings.Join(colSQLParts, ", "),
+	)
 }
 
 // BuildDropTableQuery constructs a DROP TABLE statement for Iceberg in Spark.
