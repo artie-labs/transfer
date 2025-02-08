@@ -53,11 +53,30 @@ type CreateStatementResponse struct {
 }
 
 type StatementOutput struct {
-	Status    string                 `json:"status"`
-	Data      map[string]interface{} `json:"data,omitempty"`
-	EType     string                 `json:"etype,omitempty"`
-	EValue    string                 `json:"evalue,omitempty"`
-	TraceBack []string               `json:"traceback"`
+	Status    string         `json:"status"`
+	Data      map[string]any `json:"data,omitempty"`
+	EType     string         `json:"etype,omitempty"`
+	EValue    string         `json:"evalue,omitempty"`
+	TraceBack []string       `json:"traceback"`
+}
+
+type DescribeSchemaResponse struct {
+	Type  string  `json:"type"`
+	Field []Field `json:"field"`
+	Data  []any   `json:"data"`
+}
+
+type FieldName string
+
+const (
+	ColumnNameField FieldName = "column_name"
+	DataTypeField   FieldName = "data_type"
+	CommentField    FieldName = "comment"
+)
+
+type Field struct {
+	Name FieldName `json:"name"`
+	Type string    `json:"type"`
 }
 
 type GetStatementResponse struct {
