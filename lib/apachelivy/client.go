@@ -185,5 +185,6 @@ func NewClient(ctx context.Context, url string, config map[string]any) (Client, 
 		return Client{}, err
 	}
 
+	slog.Info("Session has been created in Apache Livy", slog.Any("sessionID", client.sessionID))
 	return client, nil
 }
