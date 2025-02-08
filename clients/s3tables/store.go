@@ -120,6 +120,10 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 		return false, fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 
+	if _, err := s.apacheLivyClient.QueryContext(ctx, fmt.Sprintf("SELECT * FROM %s", temporaryTableID.EscapedTable())); err != nil {
+		return false, fmt.Errorf("failed to query temporary table: %w", err)
+	}
+
 	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
 
 	var primaryKeys []columns.Column

@@ -72,11 +72,12 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 	s3URI = "s3a:" + strings.TrimPrefix(s3URI, "s3:")
 	// Step 2 - Load the CSV into a temporary view
 	command := fmt.Sprintf(`
-CREATE OR REPLACE VIEW %s
+CREATE OR REPLACE TEMPORARY VIEW %s
 USING csv
 OPTIONS (
   path '%s',
-  header 'false',
+  sep '\t',
+  header 'true',
   compression 'gzip',
   nullValue '\\N',
   inferSchema 'true'
@@ -103,6 +104,15 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 	writer.Comma = '\t'
 
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
+	headers := make([]string, 0, len(columns))
+	for _, col := range columns {
+		headers = append(headers, col.Name())
+	}
+
+	if err = writer.Write(headers); err != nil {
+		return "", fmt.Errorf("failed to write headers: %w", err)
+	}
+
 	for _, row := range tableData.Rows() {
 		var csvRow []string
 		for _, col := range columns {
