@@ -9,6 +9,8 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
+// Ref: https://iceberg.apache.org/docs/latest/spark-getting-started/#iceberg-type-to-spark-type
+
 func (IcebergDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ config.SharedDestinationColumnSettings) string {
 	switch kindDetails.Kind {
 	case typing.Boolean.Kind:
@@ -56,24 +58,26 @@ func (IcebergDialect) KindForDataType(rawType string, _ string) (typing.KindDeta
 	}
 
 	switch rawType {
-	case "string", "binary", "variant", "object":
-		return typing.String, nil
-	case "bigint":
-		return typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.BigIntegerKind)}, nil
 	case "boolean":
 		return typing.Boolean, nil
-	case "date":
-		return typing.Date, nil
+	case "integer":
+		return typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.IntegerKind)}, nil
+	case "long":
+		return typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.BigIntegerKind)}, nil
 	case "double", "float":
 		return typing.Float, nil
-	case "int":
-		return typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.IntegerKind)}, nil
-	case "smallint", "tinyint":
-		return typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.SmallIntegerKind)}, nil
-	case "timestamp":
+	case "string", "binary", "uuid", "fixed":
+		return typing.String, nil
+	case "date":
+		return typing.Date, nil
+	case "timestamp with timezone":
 		return typing.TimestampTZ, nil
-	case "timestamp_ntz":
+	case "timestamp without timezone":
 		return typing.TimestampNTZ, nil
+	case "struct", "map":
+		return typing.Struct, nil
+	case "list":
+		return typing.Array, nil
 	default:
 		return typing.Invalid, fmt.Errorf("unsupported data type: %q", rawType)
 	}

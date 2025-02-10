@@ -10,7 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
-func TestDataTypeForKind(t *testing.T) {
+func TestIcebergDialect_DataTypeForKind(t *testing.T) {
 	_dialect := IcebergDialect{}
 
 	// Boolean
@@ -77,4 +77,76 @@ func TestDataTypeForKind(t *testing.T) {
 
 	// TimestampTZ
 	assert.Equal(t, "TIMESTAMP WITH TIMEZONE", _dialect.DataTypeForKind(typing.TimestampTZ, false, config.SharedDestinationColumnSettings{}))
+}
+
+func TestIcebergDialect_KindForDataType(t *testing.T) {
+	_dialect := IcebergDialect{}
+	{
+		// Boolean
+		kd, err := _dialect.KindForDataType("BOOLEAN", "")
+		assert.NoError(t, err)
+		assert.Equal(t, typing.Boolean, kd)
+	}
+	{
+		// INTEGER
+		kd, err := _dialect.KindForDataType("INTEGER", "")
+		assert.NoError(t, err)
+		assert.Equal(t, typing.Integer.Kind, kd.Kind)
+		assert.Equal(t, typing.ToPtr(typing.IntegerKind), kd.OptionalIntegerKind)
+	}
+	{
+		// LONG
+		kd, err := _dialect.KindForDataType("LONG", "")
+		assert.NoError(t, err)
+		assert.Equal(t, typing.Integer.Kind, kd.Kind)
+		assert.Equal(t, typing.ToPtr(typing.BigIntegerKind), kd.OptionalIntegerKind)
+	}
+	{
+		// Float and Double
+		for _, kind := range []string{"FLOAT", "DOUBLE"} {
+			kd, err := _dialect.KindForDataType(kind, "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Float, kd)
+		}
+	}
+	{
+		// Date
+		kd, err := _dialect.KindForDataType("DATE", "")
+		assert.NoError(t, err)
+		assert.Equal(t, typing.Date, kd)
+	}
+	{
+		// TimestampTZ
+		kd, err := _dialect.KindForDataType("TIMESTAMP WITH TIMEZONE", "")
+		assert.NoError(t, err)
+		assert.Equal(t, typing.TimestampTZ, kd)
+	}
+	{
+		// TimestampNTZ
+		kd, err := _dialect.KindForDataType("TIMESTAMP WITHOUT TIMEZONE", "")
+		assert.NoError(t, err)
+		assert.Equal(t, typing.TimestampNTZ, kd)
+	}
+	{
+		// String and other data types that map to a string.
+		for _, kind := range []string{"STRING", "BINARY"} {
+			kd, err := _dialect.KindForDataType(kind, "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.String, kd)
+		}
+	}
+	{
+		// Struct and other data types that map to a struct.
+		for _, kind := range []string{"STRUCT", "MAP"} {
+			kd, err := _dialect.KindForDataType(kind, "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Struct, kd)
+		}
+	}
+	{
+		// Array
+		kd, err := _dialect.KindForDataType("LIST", "")
+		assert.NoError(t, err)
+		assert.Equal(t, typing.Array, kd)
+	}
 }
