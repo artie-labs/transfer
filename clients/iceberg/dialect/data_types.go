@@ -1,7 +1,11 @@
 package dialect
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
@@ -42,6 +46,35 @@ func (IcebergDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ 
 }
 
 func (IcebergDialect) KindForDataType(rawType string, _ string) (typing.KindDetails, error) {
-	// TODO:
-	panic("not implemented")
+	rawType = strings.ToLower(rawType)
+	if strings.HasPrefix(rawType, "decimal") {
+		_, parameters, err := sql.ParseDataTypeDefinition(rawType)
+		if err != nil {
+			return typing.Invalid, err
+		}
+		return typing.ParseNumeric(parameters)
+	}
+
+	switch rawType {
+	case "string", "binary", "variant", "object":
+		return typing.String, nil
+	case "bigint":
+		return typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.BigIntegerKind)}, nil
+	case "boolean":
+		return typing.Boolean, nil
+	case "date":
+		return typing.Date, nil
+	case "double", "float":
+		return typing.Float, nil
+	case "int":
+		return typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.IntegerKind)}, nil
+	case "smallint", "tinyint":
+		return typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.SmallIntegerKind)}, nil
+	case "timestamp":
+		return typing.TimestampTZ, nil
+	case "timestamp_ntz":
+		return typing.TimestampNTZ, nil
+	default:
+		return typing.Invalid, fmt.Errorf("unsupported data type: %q", rawType)
+	}
 }
