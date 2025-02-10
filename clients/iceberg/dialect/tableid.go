@@ -14,8 +14,8 @@ type TableIdentifier struct {
 	table     string
 }
 
-func NewTableIdentifier(namespace, table string) TableIdentifier {
-	return TableIdentifier{catalog: "s3tablesbucket", namespace: namespace, table: table}
+func NewTableIdentifier(catalog, namespace, table string) TableIdentifier {
+	return TableIdentifier{catalog: catalog, namespace: namespace, table: table}
 }
 
 func (ti TableIdentifier) Namespace() string {
@@ -31,7 +31,7 @@ func (ti TableIdentifier) Table() string {
 }
 
 func (ti TableIdentifier) WithTable(table string) sql.TableIdentifier {
-	return NewTableIdentifier(ti.namespace, table)
+	return NewTableIdentifier(ti.catalog, ti.namespace, table)
 }
 
 func (ti TableIdentifier) FullyQualifiedName() string {

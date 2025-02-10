@@ -272,41 +272,6 @@ WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s)
 	return []string{mergeStmt}, nil
 }
 
-// --- CREATE / DROP / ALTER statements ---
-
-// BuildCreateTableQuery constructs a CREATE TABLE statement. In Spark + Iceberg,
-// typically you'd do something like:
-//
-//	CREATE TABLE IF NOT EXISTS db.iceberg_table ( ... ) USING iceberg
-//
-// If you want a “temporary” table in Spark, you typically do CREATE TEMPORARY VIEW,
-// but that is ephemeral. Iceberg does not have a direct "temp table" concept, so
-// we can no-op or add a comment.
-func (IcebergDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, colSQLParts []string) string {
-	// Iceberg does not support temporary tables.
-	return fmt.Sprintf(
-		"CREATE TABLE IF NOT EXISTS %s (%s) USING iceberg TBLPROPERTIES ('format-version'='2')",
-		tableID.FullyQualifiedName(),
-		strings.Join(colSQLParts, ", "),
-	)
-}
-
-// BuildDropTableQuery constructs a DROP TABLE statement for Iceberg in Spark.
-func (IcebergDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
-	// Spark will fail if the table does not exist, unless you specify IF EXISTS.
-	return fmt.Sprintf("DROP TABLE IF EXISTS %s", tableID.FullyQualifiedName())
-}
-
-// BuildTruncateTableQuery can be emulated with "DELETE FROM table" in Iceberg (Spark).
-// Some versions of Spark + Iceberg support TRUNCATE, but often you’d do a DML delete.
-func (IcebergDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
-	// If your Spark version supports TRUNCATE TABLE, you can do:
-	// return fmt.Sprintf("TRUNCATE TABLE %s", tableID.FullyQualifiedName())
-	//
-	// Otherwise, fallback:
-	return fmt.Sprintf("DELETE FROM %s", tableID.FullyQualifiedName())
-}
-
 // BuildAddColumnQuery adds a column to an Iceberg table in Spark, e.g.:
 //
 //	ALTER TABLE table ADD COLUMNS (colName dataType COMMENT '...')
@@ -324,13 +289,28 @@ func (IcebergDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName 
 	return fmt.Sprintf("ALTER TABLE %s DROP COLUMNS (%s)", tableID.FullyQualifiedName(), colName)
 }
 
-// BuildDescribeTableQuery demonstrates how to return a Spark DESCRIBE statement or
-// a custom query. Spark’s built-in syntax is `DESCRIBE TABLE`, but if you need
-// the schema in code, you might do something else. Adjust to your environment.
 func (IcebergDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []interface{}, error) {
-	// A typical Spark usage is just: "DESCRIBE TABLE fullyQualifiedName".
-	// But if your code expects to parse columns, dataTypes, etc. from a rowset,
-	// you might use "SHOW COLUMNS" or something custom. Return a statement that
-	// your code can parse. For example:
 	return fmt.Sprintf("DESCRIBE TABLE %s", tableID.FullyQualifiedName()), nil, nil
+}
+
+func (IcebergDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, colSQLParts []string) string {
+	// Iceberg does not support temporary tables.
+	// Format version is required: https://iceberg.apache.org/spec/#table-metadata-fields
+	return fmt.Sprintf(
+		"CREATE TABLE IF NOT EXISTS %s (%s) USING iceberg TBLPROPERTIES ('format-version'='2')",
+		// Table name
+		tableID.FullyQualifiedName(),
+		// Column definitions
+		strings.Join(colSQLParts, ", "),
+	)
+}
+
+func (IcebergDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
+	return fmt.Sprintf("DROP TABLE IF EXISTS %s", tableID.FullyQualifiedName())
+}
+
+func (IcebergDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
+	// Spark 3.3 (released in 2023) supports TRUNCATE TABLE.
+	// If we need to support an older version later, we can use DELETE FROM.
+	return fmt.Sprintf("TRUNCATE TABLE %s", tableID.FullyQualifiedName())
 }

@@ -128,10 +128,15 @@ func (g GetTableCfgArgs) buildColumnFromRow(row map[string]string) (columns.Colu
 		if comment, isOk := row[g.ColumnNameForComment]; isOk && comment != "" {
 			var _colComment constants.ColComment
 			if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
-				return columns.Column{}, fmt.Errorf("failed to unmarshal comment %q: %w", comment, err)
+				// This may happen if the company is using column comments.
+				slog.Warn("Failed to unmarshal comment, so marking it as backfilled so we don't try to overwrite it",
+					slog.Any("err", err),
+					slog.String("comment", comment),
+				)
+				col.SetBackfilled(true)
+			} else {
+				col.SetBackfilled(_colComment.Backfilled)
 			}
-
-			col.SetBackfilled(_colComment.Backfilled)
 		}
 	case sql.Native:
 		if value, isOk := row["default_value"]; isOk && value != "" {
