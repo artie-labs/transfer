@@ -7,6 +7,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
 func TestDataTypeForKind(t *testing.T) {
@@ -18,8 +19,22 @@ func TestDataTypeForKind(t *testing.T) {
 	// String
 	assert.Equal(t, "STRING", _dialect.DataTypeForKind(typing.String, false, config.SharedDestinationColumnSettings{}))
 
-	// Float
-	assert.Equal(t, "DOUBLE", _dialect.DataTypeForKind(typing.Float, false, config.SharedDestinationColumnSettings{}))
+	{
+		// Float
+		assert.Equal(t, "DOUBLE", _dialect.DataTypeForKind(typing.Float, false, config.SharedDestinationColumnSettings{}))
+
+		// EDecimal
+		{
+			// DECIMAL(5, 2)
+			kd := typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 2))
+			assert.Equal(t, "DECIMAL(5, 2)", _dialect.DataTypeForKind(kd, false, config.SharedDestinationColumnSettings{}))
+		}
+		{
+			// DECIMAL(39, 2) - Exceeds the max precision, so it will become a string.
+			kd := typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(39, 2))
+			assert.Equal(t, "STRING", _dialect.DataTypeForKind(kd, false, config.SharedDestinationColumnSettings{}))
+		}
+	}
 
 	// Array
 	assert.Equal(t, "LIST", _dialect.DataTypeForKind(typing.Array, false, config.SharedDestinationColumnSettings{}))

@@ -13,6 +13,16 @@ func (IcebergDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ 
 		return "STRING"
 	case typing.Float.Kind:
 		return "DOUBLE"
+	case typing.EDecimal.Kind:
+		return kindDetails.ExtendedDecimalDetails.IcebergKind()
+	case typing.Integer.Kind:
+		if kindDetails.OptionalIntegerKind != nil {
+			switch *kindDetails.OptionalIntegerKind {
+			case typing.SmallIntegerKind, typing.IntegerKind:
+				return "INTEGER"
+			}
+		}
+		return "LONG"
 	case typing.Array.Kind:
 		return "LIST"
 	case typing.Struct.Kind:
@@ -26,16 +36,6 @@ func (IcebergDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ 
 		return "TIMESTAMP WITHOUT TIMEZONE"
 	case typing.TimestampTZ.Kind:
 		return "TIMESTAMP WITH TIMEZONE"
-	case typing.EDecimal.Kind:
-		return kindDetails.ExtendedDecimalDetails.IcebergKind()
-	case typing.Integer.Kind:
-		if kindDetails.OptionalIntegerKind != nil {
-			switch *kindDetails.OptionalIntegerKind {
-			case typing.SmallIntegerKind, typing.IntegerKind:
-				return "INTEGER"
-			}
-		}
-		return "LONG"
 	default:
 		return kindDetails.Kind
 	}
