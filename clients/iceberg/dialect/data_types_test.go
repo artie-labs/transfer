@@ -34,6 +34,30 @@ func TestDataTypeForKind(t *testing.T) {
 			kd := typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(39, 2))
 			assert.Equal(t, "STRING", _dialect.DataTypeForKind(kd, false, config.SharedDestinationColumnSettings{}))
 		}
+
+		// Integers
+		{
+			// Not specified
+			assert.Equal(t, "LONG", _dialect.DataTypeForKind(typing.Integer, false, config.SharedDestinationColumnSettings{}))
+		}
+		{
+			// SmallIntegerKind
+			kd := typing.Integer
+			kd.OptionalIntegerKind = typing.ToPtr(typing.SmallIntegerKind)
+			assert.Equal(t, "INTEGER", _dialect.DataTypeForKind(kd, false, config.SharedDestinationColumnSettings{}))
+		}
+		{
+			// IntegerKind
+			kd := typing.Integer
+			kd.OptionalIntegerKind = typing.ToPtr(typing.IntegerKind)
+			assert.Equal(t, "INTEGER", _dialect.DataTypeForKind(kd, false, config.SharedDestinationColumnSettings{}))
+		}
+		{
+			// BigIntegerKind
+			kd := typing.Integer
+			kd.OptionalIntegerKind = typing.ToPtr(typing.BigIntegerKind)
+			assert.Equal(t, "LONG", _dialect.DataTypeForKind(kd, false, config.SharedDestinationColumnSettings{}))
+		}
 	}
 
 	// Array
