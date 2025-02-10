@@ -70,6 +70,9 @@ func (IcebergDialect) KindForDataType(rawType string, _ string) (typing.KindDeta
 		return typing.String, nil
 	case "date":
 		return typing.Date, nil
+	case "time":
+		// TODO: Need to check with Iceberg to see if this is correct.
+		return typing.Time, nil
 	case "timestamp with timezone":
 		return typing.TimestampTZ, nil
 	case "timestamp without timezone":
