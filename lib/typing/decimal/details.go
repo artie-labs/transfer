@@ -47,6 +47,10 @@ func (d Details) Precision() int32 {
 	return d.precision
 }
 
+func (d Details) IcebergKind() string {
+	return d.toKind(MaxPrecisionBeforeString, "STRING")
+}
+
 // SnowflakeKind - is used to determine whether a NUMERIC data type should be a STRING or NUMERIC(p, s).
 func (d Details) SnowflakeKind() string {
 	return d.toKind(MaxPrecisionBeforeString, "STRING")
