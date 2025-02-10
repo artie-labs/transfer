@@ -88,6 +88,13 @@ func TestIcebergDialect_KindForDataType(t *testing.T) {
 		assert.Equal(t, typing.Boolean, kd)
 	}
 	{
+		// Decimal (10, 2)
+		kd, err := _dialect.KindForDataType("DECIMAL(10, 2)", "")
+		assert.NoError(t, err)
+		assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
+		assert.Equal(t, decimal.NewDetails(10, 2), *kd.ExtendedDecimalDetails)
+	}
+	{
 		// INTEGER
 		kd, err := _dialect.KindForDataType("INTEGER", "")
 		assert.NoError(t, err)
