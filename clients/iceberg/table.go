@@ -1,4 +1,4 @@
-package s3tables
+package iceberg
 
 import (
 	"context"
