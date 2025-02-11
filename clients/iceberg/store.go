@@ -31,11 +31,16 @@ type Store struct {
 	cm               *types.DestinationTableConfigMap
 }
 
-func (s Store) DeleteTable(ctx context.Context, tableID dialect.TableIdentifier) error {
+func (s Store) DeleteTable(ctx context.Context, tableID sql.TableIdentifier) error {
+	castedTableID, ok := tableID.(dialect.TableIdentifier)
+	if !ok {
+		return fmt.Errorf("failed to cast table ID to dialect.TableIdentifier")
+	}
+
 	_, err := s.s3TablesAPI.DeleteTable(ctx, &s3tables.DeleteTableInput{
-		Namespace:      typing.ToPtr(tableID.Namespace()),
+		Namespace:      typing.ToPtr(castedTableID.Namespace()),
 		TableBucketARN: typing.ToPtr(s.config.S3Tables.BucketARN),
-		Name:           typing.ToPtr(tableID.Table()),
+		Name:           typing.ToPtr(castedTableID.Table()),
 	})
 
 	return err
@@ -85,9 +90,8 @@ func (s Store) Dialect() sql.Dialect {
 
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-
-	if err := s.apacheLivyClient.ExecContext(ctx, s.dialect().BuildDropTableQuery(tableID)); err != nil {
-		return false, fmt.Errorf("failed to drop table: %w", err)
+	if err := s.DeleteTable(ctx, tableID); err != nil {
+		return false, fmt.Errorf("failed to delete table: %w", err)
 	}
 
 	temporaryTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
@@ -223,6 +227,9 @@ func LoadStore(cfg config.Config) (Store, error) {
 		config:           cfg,
 		apacheLivyClient: apacheLivyClient,
 		cm:               &types.DestinationTableConfigMap{},
-		s3TablesAPI:      s3tables.NewFromConfig(aws.Config{Credentials: credentials.NewStaticCredentialsProvider(cfg.S3Tables.AwsAccessKeyID, cfg.S3Tables.AwsSecretAccessKey, "")}),
+		s3TablesAPI: s3tables.NewFromConfig(aws.Config{
+			Region:      cfg.S3Tables.Region,
+			Credentials: credentials.NewStaticCredentialsProvider(cfg.S3Tables.AwsAccessKeyID, cfg.S3Tables.AwsSecretAccessKey, ""),
+		}),
 	}, nil
 }
