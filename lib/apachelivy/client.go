@@ -128,8 +128,8 @@ func (c Client) doRequest(ctx context.Context, method, path string, body []byte)
 	return out, nil
 }
 
-func (c *Client) newSession(ctx context.Context, kind string, blockUntilReady bool) error {
-	body, err := json.Marshal(CreateSessionRequest{Kind: kind, Jars: c.sessionJars, Conf: c.sessionConf})
+func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilReady bool) error {
+	body, err := json.Marshal(CreateSessionRequest{Kind: string(kind), Jars: c.sessionJars, Conf: c.sessionConf})
 	if err != nil {
 		return err
 	}
@@ -189,7 +189,7 @@ func NewClient(ctx context.Context, url string, config map[string]any) (Client, 
 	}
 
 	// https://livy.incubator.apache.org/docs/latest/rest-api.html#session-kind
-	if err := client.newSession(ctx, "sql", true); err != nil {
+	if err := client.newSession(ctx, SessionKindSql, true); err != nil {
 		return Client{}, err
 	}
 

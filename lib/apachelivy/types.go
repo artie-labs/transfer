@@ -5,6 +5,16 @@ import (
 	"strings"
 )
 
+// SessionKind - https://livy.incubator.apache.org/docs/latest/rest-api.html#session-kind
+type SessionKind string
+
+const (
+	SessionKindSpark   SessionKind = "spark"
+	SessionKindPySpark SessionKind = "pyspark"
+	SessionKindSparkR  SessionKind = "sparkr"
+	SessionKindSql     SessionKind = "sql"
+)
+
 // SessionState - https://livy.incubator.apache.org/docs/latest/rest-api.html#:~:text=of%20key%3Dval-,Session%20State,-Value
 type SessionState string
 
