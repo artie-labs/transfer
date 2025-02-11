@@ -20,6 +20,8 @@ func (s Store) DescribeTable(ctx context.Context, tableID sql.TableIdentifier) (
 		return nil, fmt.Errorf("unexpected data format")
 	}
 
+	// TODO: Not implemented.
+
 	fmt.Println("out", out)
 	return nil, nil
 }

@@ -97,6 +97,8 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 		return false, fmt.Errorf("failed to get table config: %w", err)
 	}
 
+	// Let's add an existing column just to test.
+
 	// Apply column deltas
 	_, targetKeysMissing := columns.DiffAndFilter(
 		tableData.ReadOnlyInMemoryCols().GetColumns(),
