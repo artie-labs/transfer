@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3tables"
+
 	"github.com/artie-labs/transfer/clients/iceberg/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/apachelivy"
@@ -16,14 +20,25 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/s3lib"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 type Store struct {
-	s3TablesAPI      *s3tables.S3TablesAPI
+	s3TablesAPI      *s3tables.Client
 	apacheLivyClient apachelivy.Client
 	config           config.Config
 	cm               *types.DestinationTableConfigMap
+}
+
+func (s Store) DeleteTable(ctx context.Context, tableID dialect.TableIdentifier) error {
+	_, err := s.s3TablesAPI.DeleteTable(ctx, &s3tables.DeleteTableInput{
+		Namespace:      typing.ToPtr(tableID.Namespace()),
+		TableBucketARN: typing.ToPtr(s.config.S3Tables.BucketARN),
+		Name:           typing.ToPtr(tableID.Table()),
+	})
+
+	return err
 }
 
 func (s Store) GetConfigMap() *types.DestinationTableConfigMap {
@@ -204,5 +219,10 @@ func LoadStore(cfg config.Config) (Store, error) {
 		return Store{}, err
 	}
 
-	return Store{config: cfg, apacheLivyClient: apacheLivyClient, cm: &types.DestinationTableConfigMap{}}, nil
+	return Store{
+		config:           cfg,
+		apacheLivyClient: apacheLivyClient,
+		cm:               &types.DestinationTableConfigMap{},
+		s3TablesAPI:      s3tables.NewFromConfig(aws.Config{Credentials: credentials.NewStaticCredentialsProvider(cfg.S3Tables.AwsAccessKeyID, cfg.S3Tables.AwsSecretAccessKey, "")}),
+	}, nil
 }

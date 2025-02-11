@@ -9,6 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.27.11
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.26
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.53.1
+	github.com/aws/aws-sdk-go-v2/service/s3tables v1.1.2
 	github.com/cockroachdb/apd/v3 v3.2.1
 	github.com/databricks/databricks-sql-go v1.6.1
 	github.com/getsentry/sentry-go v0.31.1
