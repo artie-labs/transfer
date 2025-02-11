@@ -9,6 +9,13 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/jitter"
+)
+
+const (
+	sleepBaseMs = 1_000
+	sleepMaxMs  = 3_000
 )
 
 type Client struct {
@@ -48,6 +55,7 @@ func (c Client) ExecContext(ctx context.Context, query string) error {
 }
 
 func (c Client) waitForStatement(ctx context.Context, statementID int) (GetStatementResponse, error) {
+	var count int
 	for {
 		respBytes, err := c.doRequest(ctx, "GET", fmt.Sprintf("/sessions/%d/statements/%d", c.sessionID, statementID), nil)
 		if err != nil {
@@ -69,7 +77,10 @@ func (c Client) waitForStatement(ctx context.Context, statementID int) (GetState
 		}
 
 		// It's not ready yet, so we're going to sleep a bit and check again.
-		time.Sleep(1 * time.Second)
+		sleepTime := jitter.Jitter(sleepBaseMs, sleepMaxMs, count)
+		slog.Info("Statement is not ready yet, sleeping", slog.Duration("sleepTime", sleepTime))
+		time.Sleep(sleepTime)
+		count++
 	}
 }
 
@@ -117,12 +128,8 @@ func (c Client) doRequest(ctx context.Context, method, path string, body []byte)
 	return out, nil
 }
 
-func (c *Client) newSession(ctx context.Context, kind string, blockUntilReady bool) error {
-	body, err := json.Marshal(CreateSessionRequest{
-		Kind: kind,
-		Jars: c.sessionJars,
-		Conf: c.sessionConf,
-	})
+func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilReady bool) error {
+	body, err := json.Marshal(CreateSessionRequest{Kind: string(kind), Jars: c.sessionJars, Conf: c.sessionConf})
 	if err != nil {
 		return err
 	}

@@ -5,6 +5,16 @@ import (
 	"strings"
 )
 
+// SessionKind - https://livy.incubator.apache.org/docs/latest/rest-api.html#session-kind
+type SessionKind string
+
+const (
+	SessionKindSpark   SessionKind = "spark"
+	SessionKindPySpark SessionKind = "pyspark"
+	SessionKindSparkR  SessionKind = "sparkr"
+	SessionKindSql     SessionKind = "sql"
+)
+
 // SessionState - https://livy.incubator.apache.org/docs/latest/rest-api.html#:~:text=of%20key%3Dval-,Session%20State,-Value
 type SessionState string
 
@@ -46,20 +56,6 @@ type CreateStatementRequest struct {
 	Kind string `json:"kind"`
 }
 
-type CreateStatementResponse struct {
-	ID     int             `json:"id"`
-	State  string          `json:"state"`
-	Output StatementOutput `json:"output"`
-}
-
-type StatementOutput struct {
-	Status    string         `json:"status"`
-	Data      map[string]any `json:"data,omitempty"`
-	EType     string         `json:"etype,omitempty"`
-	EValue    string         `json:"evalue,omitempty"`
-	TraceBack []string       `json:"traceback"`
-}
-
 type DescribeSchemaResponse struct {
 	Type  string  `json:"type"`
 	Field []Field `json:"field"`
@@ -77,6 +73,20 @@ const (
 type Field struct {
 	Name FieldName `json:"name"`
 	Type string    `json:"type"`
+}
+
+type CreateStatementResponse struct {
+	ID     int             `json:"id"`
+	State  string          `json:"state"`
+	Output StatementOutput `json:"output"`
+}
+
+type StatementOutput struct {
+	Status    string         `json:"status"`
+	Data      map[string]any `json:"data,omitempty"`
+	EType     string         `json:"etype,omitempty"`
+	EValue    string         `json:"evalue,omitempty"`
+	TraceBack []string       `json:"traceback"`
 }
 
 type GetStatementResponse struct {
