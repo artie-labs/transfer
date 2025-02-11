@@ -27,9 +27,11 @@ func (IcebergDialect) EscapeStruct(value string) string {
 // IsColumnAlreadyExistsErr tries to detect if the error message indicates
 // the column already exists. Adjust to your actual Spark error messages.
 func (IcebergDialect) IsColumnAlreadyExistsErr(err error) bool {
-	// Typical Spark/AnalysisException might look like:
-	// "Cannot add column ... because it already exists"
-	return strings.Contains(strings.ToLower(err.Error()), "already exists")
+	if err == nil {
+		return false
+	}
+
+	return strings.HasPrefix(err.Error(), "[FIELDS_ALREADY_EXISTS]")
 }
 
 // IsTableDoesNotExistErr checks if the error indicates table not found.

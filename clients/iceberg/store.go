@@ -97,7 +97,12 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 		return false, fmt.Errorf("failed to get table config: %w", err)
 	}
 
-	// Let's add an existing column just to test.
+	// Let's add a new column just to test
+	if err := s.AlterTable(ctx, tableID, []columns.Column{
+		columns.NewColumn("first_name", typing.String),
+	}); err != nil {
+		return false, fmt.Errorf("failed to alter table: %w", err)
+	}
 
 	// Apply column deltas
 	_, targetKeysMissing := columns.DiffAndFilter(
