@@ -8,20 +8,20 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3tables/types"
 )
 
-// S3TablesAPI is a wrapper around the S3Tables service, the full API spec is listed here: https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations_Amazon_S3_Tables.html
-type S3TablesAPI struct {
+// Full API spec can be seen here: https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations_Amazon_S3_Tables.html
+type S3TablesAPIWrapper struct {
 	client         *s3tables.Client
 	tableBucketARN string
 }
 
-func NewS3TablesAPI(cfg aws.Config, tableBucketARN string) *S3TablesAPI {
-	return &S3TablesAPI{
+func NewS3TablesAPI(cfg aws.Config, tableBucketARN string) S3TablesAPIWrapper {
+	return S3TablesAPIWrapper{
 		client:         s3tables.NewFromConfig(cfg),
 		tableBucketARN: tableBucketARN,
 	}
 }
 
-func (s S3TablesAPI) GetNamespace(ctx context.Context, namespace string) (s3tables.GetNamespaceOutput, error) {
+func (s S3TablesAPIWrapper) GetNamespace(ctx context.Context, namespace string) (s3tables.GetNamespaceOutput, error) {
 	resp, err := s.client.GetNamespace(ctx, &s3tables.GetNamespaceInput{
 		Namespace:      aws.String(namespace),
 		TableBucketARN: aws.String(s.tableBucketARN),
@@ -34,7 +34,7 @@ func (s S3TablesAPI) GetNamespace(ctx context.Context, namespace string) (s3tabl
 	return *resp, nil
 }
 
-func (s S3TablesAPI) ListNamespaces(ctx context.Context) ([]types.NamespaceSummary, error) {
+func (s S3TablesAPIWrapper) ListNamespaces(ctx context.Context) ([]types.NamespaceSummary, error) {
 	var res []types.NamespaceSummary
 	var continuationToken *string
 
@@ -60,7 +60,7 @@ func (s S3TablesAPI) ListNamespaces(ctx context.Context) ([]types.NamespaceSumma
 	return res, nil
 }
 
-func (s S3TablesAPI) CreateNamespace(ctx context.Context, namespace string) error {
+func (s S3TablesAPIWrapper) CreateNamespace(ctx context.Context, namespace string) error {
 	_, err := s.client.CreateNamespace(ctx, &s3tables.CreateNamespaceInput{
 		// Namespace is a fixed list with one element
 		// https://docs.aws.amazon.com/AmazonS3/latest/API/API_s3TableBuckets_CreateNamespace.html#AmazonS3-s3TableBuckets_CreateNamespace-request-namespace
@@ -71,7 +71,7 @@ func (s S3TablesAPI) CreateNamespace(ctx context.Context, namespace string) erro
 	return err
 }
 
-func (s S3TablesAPI) ListTables(ctx context.Context, namespace string) ([]types.TableSummary, error) {
+func (s S3TablesAPIWrapper) ListTables(ctx context.Context, namespace string) ([]types.TableSummary, error) {
 	var tables []types.TableSummary
 	var continuationToken *string
 
@@ -97,7 +97,7 @@ func (s S3TablesAPI) ListTables(ctx context.Context, namespace string) ([]types.
 	return tables, nil
 }
 
-func (s S3TablesAPI) GetTable(ctx context.Context, namespace string, table string) (s3tables.GetTableOutput, error) {
+func (s S3TablesAPIWrapper) GetTable(ctx context.Context, namespace string, table string) (s3tables.GetTableOutput, error) {
 	resp, err := s.client.GetTable(ctx, &s3tables.GetTableInput{
 		Namespace:      aws.String(namespace),
 		Name:           aws.String(table),
@@ -111,7 +111,7 @@ func (s S3TablesAPI) GetTable(ctx context.Context, namespace string, table strin
 	return *resp, nil
 }
 
-func (s S3TablesAPI) DeleteTable(ctx context.Context, namespace string, table string) error {
+func (s S3TablesAPIWrapper) DeleteTable(ctx context.Context, namespace string, table string) error {
 	_, err := s.client.DeleteTable(ctx, &s3tables.DeleteTableInput{
 		Namespace:      aws.String(namespace),
 		Name:           aws.String(table),
