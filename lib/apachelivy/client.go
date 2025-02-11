@@ -188,7 +188,6 @@ func NewClient(ctx context.Context, url string, config map[string]any) (Client, 
 		sessionConf: config,
 	}
 
-	// https://livy.incubator.apache.org/docs/latest/rest-api.html#session-kind
 	if err := client.newSession(ctx, SessionKindSql, true); err != nil {
 		return Client{}, err
 	}
