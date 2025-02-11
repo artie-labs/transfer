@@ -156,6 +156,7 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 }
 
 func (c Client) waitForSessionToBeReady(ctx context.Context) error {
+	var count int
 	for {
 		respBytes, err := c.doRequest(ctx, "GET", fmt.Sprintf("/sessions/%d", c.sessionID), nil)
 		if err != nil {
@@ -171,9 +172,10 @@ func (c Client) waitForSessionToBeReady(ctx context.Context) error {
 		case StateIdle:
 			return nil
 		case StateNotStarted, StateStarting:
-			slog.Info("Session not ready", slog.Any("resp", resp))
-			slog.Info("Sleeping for 1 second")
-			time.Sleep(1 * time.Second)
+			sleepTime := jitter.Jitter(sleepBaseMs, sleepMaxMs, count)
+			slog.Info("Session is not ready yet, sleeping", slog.Duration("sleepTime", sleepTime))
+			time.Sleep(sleepTime)
+			count++
 		default:
 			return fmt.Errorf("session in unexpected state: %q", resp.State)
 		}
@@ -187,8 +189,7 @@ func NewClient(ctx context.Context, url string, config map[string]any) (Client, 
 		sessionConf: config,
 	}
 
-	// https://livy.incubator.apache.org/docs/latest/rest-api.html#session-kind
-	if err := client.newSession(ctx, "sql", true); err != nil {
+	if err := client.newSession(ctx, SessionKindSql, true); err != nil {
 		return Client{}, err
 	}
 
