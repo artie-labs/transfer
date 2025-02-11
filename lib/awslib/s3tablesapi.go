@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3tables/types"
 )
 
+// S3TablesAPI is a wrapper around the S3Tables service, the full API spec is listed here: https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations_Amazon_S3_Tables.html
 type S3TablesAPI struct {
 	client         *s3tables.Client
 	tableBucketARN string
