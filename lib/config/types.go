@@ -70,6 +70,7 @@ type Config struct {
 	Snowflake  *Snowflake  `yaml:"snowflake,omitempty"`
 	Redshift   *Redshift   `yaml:"redshift,omitempty"`
 	S3         *S3Settings `yaml:"s3,omitempty"`
+	Iceberg    *Iceberg    `yaml:"iceberg,omitempty"`
 
 	SharedDestinationSettings SharedDestinationSettings `yaml:"sharedDestinationSettings"`
 	Reporting                 Reporting                 `yaml:"reporting"`

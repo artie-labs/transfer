@@ -60,3 +60,19 @@ type Snowflake struct {
 	Host        string `yaml:"host"`
 	Application string `yaml:"application"`
 }
+
+type Iceberg struct {
+	ApacheLivyURL string `yaml:"apacheLivyURL"`
+
+	// Current implementation of Iceberg uses S3Tables:
+	S3Tables *S3Tables `yaml:"s3Tables,omitempty"`
+}
+
+type S3Tables struct {
+	AwsAccessKeyID     string `yaml:"awsAccessKeyID"`
+	AwsSecretAccessKey string `yaml:"awsSecretAccessKey"`
+	BucketARN          string `yaml:"bucketARN"`
+	Region             string `yaml:"region"`
+	// Bucket - This is where all the ephemeral delta files will be stored.
+	Bucket string `yaml:"bucket"`
+}
