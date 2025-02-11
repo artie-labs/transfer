@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/artie-labs/transfer/clients/s3tables/dialect"
+	"github.com/artie-labs/transfer/clients/iceberg/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/apachelivy"
 	"github.com/artie-labs/transfer/lib/config"
@@ -20,6 +20,7 @@ import (
 )
 
 type Store struct {
+	s3TablesAPI      *s3tables.S3TablesAPI
 	apacheLivyClient apachelivy.Client
 	config           config.Config
 	cm               *types.DestinationTableConfigMap
@@ -69,6 +70,11 @@ func (s Store) Dialect() sql.Dialect {
 
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+
+	if err := s.apacheLivyClient.ExecContext(ctx, s.dialect().BuildDropTableQuery(tableID)); err != nil {
+		return false, fmt.Errorf("failed to drop table: %w", err)
+	}
+
 	temporaryTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
 	// Get what the target table looks like:
 	tableConfig, err := s.GetTableConfig(tableID, tableData.TopicConfig().DropDeletedColumns)
@@ -153,6 +159,14 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 	}
 
 	fmt.Println("query", query)
+
+	describeQuery, err := s.apacheLivyClient.QueryContext(ctx, fmt.Sprintf("DESCRIBE TABLE %s", tableID.FullyQualifiedName()))
+	if err != nil {
+		return false, fmt.Errorf("failed to describe table: %w", err)
+	}
+
+	fmt.Println("describeQuery", describeQuery)
+
 	panic("hello")
 
 	return true, nil
@@ -167,7 +181,7 @@ func (s Store) IsRetryableError(_ error) bool {
 }
 
 func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
-	return dialect.NewTableIdentifier(topicConfig.Database, table)
+	return dialect.NewTableIdentifier("s3tablesbucket", topicConfig.Database, table)
 }
 
 func LoadStore(cfg config.Config) (Store, error) {

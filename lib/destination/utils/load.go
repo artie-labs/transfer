@@ -5,10 +5,10 @@ import (
 
 	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/clients/databricks"
+	"github.com/artie-labs/transfer/clients/iceberg"
 	"github.com/artie-labs/transfer/clients/mssql"
 	"github.com/artie-labs/transfer/clients/redshift"
 	"github.com/artie-labs/transfer/clients/s3"
-	"github.com/artie-labs/transfer/clients/s3tables"
 	"github.com/artie-labs/transfer/clients/snowflake"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -30,7 +30,7 @@ func LoadBaseline(cfg config.Config) (destination.Baseline, error) {
 
 		return store, nil
 	case constants.S3Tables:
-		store, err := s3tables.LoadStore(cfg)
+		store, err := iceberg.LoadStore(cfg)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load S3Tables: %w", err)
 		}

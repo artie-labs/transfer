@@ -306,7 +306,7 @@ func (IcebergDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool,
 }
 
 func (IcebergDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
-	return fmt.Sprintf("DROP TABLE IF EXISTS %s", tableID.FullyQualifiedName())
+	return fmt.Sprintf("DROP TABLE %s PURGE", tableID.FullyQualifiedName())
 }
 
 func (IcebergDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {

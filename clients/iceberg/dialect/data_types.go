@@ -30,14 +30,14 @@ func (IcebergDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ 
 		}
 		return "LONG"
 	case typing.Array.Kind:
-		return "LIST"
+		return "STRING"
 	case typing.Struct.Kind:
-		return "STRUCT"
+		return "STRING"
 	case typing.Date.Kind:
 		return "DATE"
 	case typing.Time.Kind:
 		// TODO: Check if this is okay, Iceberg has a TIME data type, but Spark does not.
-		return "TIME"
+		return "STRING"
 	case typing.TimestampNTZ.Kind:
 		return "TIMESTAMP WITHOUT TIMEZONE"
 	case typing.TimestampTZ.Kind:
