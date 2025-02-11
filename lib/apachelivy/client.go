@@ -175,10 +175,10 @@ func (c Client) waitForSessionToBeReady(ctx context.Context) error {
 			sleepTime := jitter.Jitter(sleepBaseMs, sleepMaxMs, count)
 			slog.Info("Session is not ready yet, sleeping", slog.Duration("sleepTime", sleepTime))
 			time.Sleep(sleepTime)
-			count++
 		default:
 			return fmt.Errorf("session in unexpected state: %q", resp.State)
 		}
+		count++
 	}
 }
 
