@@ -10,23 +10,17 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-// IcebergDialect implements the Dialect interface for SparkSQL + Iceberg.
 type IcebergDialect struct{}
 
 func (IcebergDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {
 	return sql.Native
 }
 
-// QuoteIdentifier uses backticks around identifiers (typical Spark/ANSI style).
 func (IcebergDialect) QuoteIdentifier(identifier string) string {
 	return fmt.Sprintf("`%s`", strings.ReplaceAll(identifier, "`", ""))
 }
 
-// EscapeStruct returns a representation of a JSON string literal in SparkSQL.
 func (IcebergDialect) EscapeStruct(value string) string {
-	// For SparkSQL, you typically can just treat it as a string literal.
-	// Optionally, you could do something like JSON '...' if you have a custom function,
-	// but by default, just make sure to escape single quotes.
 	return sql.QuoteLiteral(value)
 }
 
@@ -272,21 +266,14 @@ WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s)
 	return []string{mergeStmt}, nil
 }
 
-// BuildAddColumnQuery adds a column to an Iceberg table in Spark, e.g.:
-//
-//	ALTER TABLE table ADD COLUMNS (colName dataType COMMENT '...')
-//
-// See: https://docs.databricks.com/spark/latest/spark-sql/language-manual/ddl-alter-table.html
 func (IcebergDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
-	// `sqlPart` might look like: colName dataType
+	// https://spark.apache.org/docs/3.5.3/sql-ref-syntax-ddl-alter-table.html#add-columns
 	return fmt.Sprintf("ALTER TABLE %s ADD COLUMNS (%s)", tableID.FullyQualifiedName(), sqlPart)
 }
 
-// BuildDropColumnQuery for Iceberg in Spark:
-//
-//	ALTER TABLE table DROP COLUMNS (colName)
 func (IcebergDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName string) string {
-	return fmt.Sprintf("ALTER TABLE %s DROP COLUMNS (%s)", tableID.FullyQualifiedName(), colName)
+	// https://spark.apache.org/docs/3.5.3/sql-ref-syntax-ddl-alter-table.html#drop-columns
+	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", tableID.FullyQualifiedName(), colName)
 }
 
 func (IcebergDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []interface{}, error) {
