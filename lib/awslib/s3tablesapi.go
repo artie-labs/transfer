@@ -49,7 +49,6 @@ func (s S3TablesAPIWrapper) ListNamespaces(ctx context.Context) ([]types.Namespa
 		}
 
 		res = append(res, resp.Namespaces...)
-
 		if resp.ContinuationToken != nil {
 			continuationToken = resp.ContinuationToken
 		} else {
