@@ -1,4 +1,4 @@
-package s3lib
+package awslib
 
 import (
 	"context"
