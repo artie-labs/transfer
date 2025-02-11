@@ -16,9 +16,12 @@ func TestIcebergDialect_DataTypeForKind(t *testing.T) {
 	// Boolean
 	assert.Equal(t, "BOOLEAN", _dialect.DataTypeForKind(typing.Boolean, false, config.SharedDestinationColumnSettings{}))
 
-	// String
-	assert.Equal(t, "STRING", _dialect.DataTypeForKind(typing.String, false, config.SharedDestinationColumnSettings{}))
-
+	{
+		// String and related data types
+		for _, kd := range []typing.KindDetails{typing.String, typing.Time, typing.Array, typing.Struct} {
+			assert.Equal(t, "STRING", _dialect.DataTypeForKind(kd, false, config.SharedDestinationColumnSettings{}))
+		}
+	}
 	{
 		// Float
 		assert.Equal(t, "DOUBLE", _dialect.DataTypeForKind(typing.Float, false, config.SharedDestinationColumnSettings{}))
@@ -60,17 +63,8 @@ func TestIcebergDialect_DataTypeForKind(t *testing.T) {
 		}
 	}
 
-	// Array
-	assert.Equal(t, "LIST", _dialect.DataTypeForKind(typing.Array, false, config.SharedDestinationColumnSettings{}))
-
-	// Struct
-	assert.Equal(t, "STRUCT", _dialect.DataTypeForKind(typing.Struct, false, config.SharedDestinationColumnSettings{}))
-
 	// Date
 	assert.Equal(t, "DATE", _dialect.DataTypeForKind(typing.Date, false, config.SharedDestinationColumnSettings{}))
-
-	// Time
-	assert.Equal(t, "TIME", _dialect.DataTypeForKind(typing.Time, false, config.SharedDestinationColumnSettings{}))
 
 	// TimestampNTZ
 	assert.Equal(t, "TIMESTAMP WITHOUT TIMEZONE", _dialect.DataTypeForKind(typing.TimestampNTZ, false, config.SharedDestinationColumnSettings{}))
@@ -136,24 +130,10 @@ func TestIcebergDialect_KindForDataType(t *testing.T) {
 	}
 	{
 		// String and other data types that map to a string.
-		for _, kind := range []string{"STRING", "BINARY"} {
+		for _, kind := range []string{"STRING", "BINARY", "UUID", "FIXED"} {
 			kd, err := _dialect.KindForDataType(kind, "")
 			assert.NoError(t, err)
 			assert.Equal(t, typing.String, kd)
 		}
-	}
-	{
-		// Struct and other data types that map to a struct.
-		for _, kind := range []string{"STRUCT", "MAP"} {
-			kd, err := _dialect.KindForDataType(kind, "")
-			assert.NoError(t, err)
-			assert.Equal(t, typing.Struct, kd)
-		}
-	}
-	{
-		// Array
-		kd, err := _dialect.KindForDataType("LIST", "")
-		assert.NoError(t, err)
-		assert.Equal(t, typing.Array, kd)
 	}
 }

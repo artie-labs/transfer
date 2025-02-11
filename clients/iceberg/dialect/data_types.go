@@ -15,7 +15,11 @@ func (IcebergDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ 
 	switch kindDetails.Kind {
 	case typing.Boolean.Kind:
 		return "BOOLEAN"
-	case typing.String.Kind:
+	case
+		typing.Array.Kind,
+		typing.Struct.Kind,
+		typing.String.Kind,
+		typing.Time.Kind:
 		return "STRING"
 	case typing.Float.Kind:
 		return "DOUBLE"
@@ -29,15 +33,8 @@ func (IcebergDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ 
 			}
 		}
 		return "LONG"
-	case typing.Array.Kind:
-		return "STRING"
-	case typing.Struct.Kind:
-		return "STRING"
 	case typing.Date.Kind:
 		return "DATE"
-	case typing.Time.Kind:
-		// TODO: Check if this is okay, Iceberg has a TIME data type, but Spark does not.
-		return "STRING"
 	case typing.TimestampNTZ.Kind:
 		return "TIMESTAMP WITHOUT TIMEZONE"
 	case typing.TimestampTZ.Kind:
@@ -70,17 +67,10 @@ func (IcebergDialect) KindForDataType(rawType string, _ string) (typing.KindDeta
 		return typing.String, nil
 	case "date":
 		return typing.Date, nil
-	case "time":
-		// TODO: Need to check with Iceberg to see if this is correct.
-		return typing.Time, nil
 	case "timestamp with timezone":
 		return typing.TimestampTZ, nil
 	case "timestamp without timezone":
 		return typing.TimestampNTZ, nil
-	case "struct", "map":
-		return typing.Struct, nil
-	case "list":
-		return typing.Array, nil
 	default:
 		return typing.Invalid, fmt.Errorf("unsupported data type: %q", rawType)
 	}
