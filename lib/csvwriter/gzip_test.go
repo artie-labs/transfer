@@ -42,11 +42,8 @@ func TestGzipWriter(t *testing.T) {
 	for _, expectedRow := range rows {
 		row, err := csvReader.Read()
 		assert.NoError(t, err)
-
 		for j, expectedValue := range expectedRow {
-			if row[j] != expectedValue {
-				t.Errorf("expected %s, got %s", expectedValue, row[j])
-			}
+			assert.Equal(t, expectedValue, row[j])
 		}
 	}
 }
