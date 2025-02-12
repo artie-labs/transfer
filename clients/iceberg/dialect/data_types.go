@@ -67,9 +67,9 @@ func (IcebergDialect) KindForDataType(rawType string, _ string) (typing.KindDeta
 		return typing.String, nil
 	case "date":
 		return typing.Date, nil
-	case "timestamp with timezone":
+	case "timestamp":
 		return typing.TimestampTZ, nil
-	case "timestamp without timezone":
+	case "timestamp_ntz":
 		return typing.TimestampNTZ, nil
 	default:
 		return typing.Invalid, fmt.Errorf("unsupported data type: %q", rawType)
