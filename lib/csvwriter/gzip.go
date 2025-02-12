@@ -39,7 +39,7 @@ func (g *GzipWriter) Flush() error {
 
 func (g *GzipWriter) Close() error {
 	if err := g.gzip.Close(); err != nil {
-		// If gzip fails, we should at least try to close the file
+		// If closing the gzip writer fails, we should still try to close the file.
 		_ = g.file.Close()
 		return err
 	}
