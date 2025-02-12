@@ -90,6 +90,11 @@ func (s Store) Dialect() sql.Dialect {
 
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+
+	if err := s.DeleteTable(ctx, tableID); err != nil {
+		return false, fmt.Errorf("failed to delete table: %w", err)
+	}
+
 	temporaryTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
 	// Get what the target table looks like:
 	tableConfig, err := s.GetTableConfig(tableID, tableData.TopicConfig().DropDeletedColumns)
