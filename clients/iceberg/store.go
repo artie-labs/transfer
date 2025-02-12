@@ -73,10 +73,10 @@ func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bo
 
 func (s Store) uploadToS3(ctx context.Context, fp string) (string, error) {
 	return awslib.UploadLocalFileToS3(ctx, awslib.UploadArgs{
-		Bucket:                     s.config.S3Tables.Bucket,
+		Bucket:                     s.config.Iceberg.S3Tables.Bucket,
 		FilePath:                   fp,
-		OverrideAWSAccessKeyID:     &s.config.S3Tables.AwsAccessKeyID,
-		OverrideAWSAccessKeySecret: &s.config.S3Tables.AwsSecretAccessKey,
+		OverrideAWSAccessKeyID:     &s.config.Iceberg.S3Tables.AwsAccessKeyID,
+		OverrideAWSAccessKeySecret: &s.config.Iceberg.S3Tables.AwsSecretAccessKey,
 	})
 }
 
