@@ -1,9 +1,7 @@
 package redshift
 
 import (
-	"compress/gzip"
 	"context"
-	"encoding/csv"
 	"fmt"
 	"log/slog"
 	"os"
@@ -11,6 +9,7 @@ import (
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/awslib"
+	"github.com/artie-labs/transfer/lib/csvwriter"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -83,17 +82,11 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 
 func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID sql.TableIdentifier) (string, map[string]int32, error) {
 	filePath := fmt.Sprintf("/tmp/%s.csv.gz", newTableID.FullyQualifiedName())
-	file, err := os.Create(filePath)
+	gzipWriter, err := csvwriter.NewFilePath(filePath)
 	if err != nil {
 		return "", nil, err
 	}
 
-	defer file.Close()
-	gzipWriter := gzip.NewWriter(file)
-	defer gzipWriter.Close()
-
-	writer := csv.NewWriter(gzipWriter)
-	writer.Comma = '\t'
 	_columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	columnToNewLengthMap := make(map[string]int32)
 	for _, value := range tableData.Rows() {
@@ -120,14 +113,13 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 			row = append(row, result.Value)
 		}
 
-		if err = writer.Write(row); err != nil {
+		if err = gzipWriter.Write(row); err != nil {
 			return "", nil, fmt.Errorf("failed to write to csv: %w", err)
 		}
 	}
 
-	writer.Flush()
-	if err = writer.Error(); err != nil {
-		return "", nil, fmt.Errorf("failed to flush csv writer: %w", err)
+	if err = gzipWriter.Close(); err != nil {
+		return "", nil, fmt.Errorf("failed to close gzip writer: %w", err)
 	}
 
 	// This will update the staging columns with the new string precision.
