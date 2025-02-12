@@ -90,7 +90,7 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 	return fp, writer.Error()
 }
 
-func (s Store) prepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tempTableID sql.TableIdentifier) error {
+func (s Store) prepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tempTableID sql.TableIdentifier, createView bool) error {
 	fp, err := s.writeTemporaryTableFile(tableData, tempTableID)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
@@ -108,8 +108,13 @@ func (s Store) prepareTemporaryTable(ctx context.Context, tableData *optimizatio
 		return fmt.Errorf("failed to upload to s3: %w", err)
 	}
 
-	// Step 2 - Load the CSV into a temporary view
-	command := s.Dialect().CreateTemporaryView(tempTableID.EscapedTable(), s3URI)
+	// Step 2 - Load the CSV into a temporary view, or directly into a table depending on [createView]
+	command := s.Dialect().AppendCSVToTable(tempTableID, s3URI)
+	if createView {
+		command = s.Dialect().CreateTemporaryView(tempTableID.EscapedTable(), s3URI)
+	}
+
+	// Step 3 - Submit the command to Spark via Apache Livy
 	if err := s.apacheLivyClient.ExecContext(ctx, command); err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}

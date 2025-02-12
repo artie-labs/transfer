@@ -9,6 +9,11 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+func getCSVOptions(fp string) string {
+	// Options are sourced from: https://spark.apache.org/docs/3.5.3/sql-data-sources-csv.html
+	return fmt.Sprintf(`OPTIONS (path '%s', sep '\t', header 'true', compression 'gzip', nullValue '%s', inferSchema 'true', compression 'gzip')`, fp, constants.NullValuePlaceholder)
+}
+
 type IcebergDialect struct{}
 
 func (IcebergDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {
@@ -95,17 +100,9 @@ func (IcebergDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) strin
 }
 
 func (IcebergDialect) CreateTemporaryView(viewName string, s3Path string) string {
-	// CSV options: https://spark.apache.org/docs/3.5.3/sql-data-sources-csv.html
-	return fmt.Sprintf(`
-CREATE OR REPLACE TEMPORARY VIEW %s
-USING csv
-OPTIONS (
-  path '%s',
-  sep '\t',
-  header 'true',
-  compression 'gzip',
-  nullValue '%s',
-  inferSchema 'true',
-  compression 'gzip'
-);`, viewName, s3Path, constants.NullValuePlaceholder)
+	return fmt.Sprintf("CREATE OR REPLACE TEMPORARY VIEW %s USING csv %s;", viewName, getCSVOptions(s3Path))
+}
+
+func (IcebergDialect) AppendCSVToTable(tableID sql.TableIdentifier, s3Path string) string {
+	return fmt.Sprintf("COPY INTO %s FROM '%s' FILEFORMAT = CSV %s", tableID.FullyQualifiedName(), s3Path, getCSVOptions(s3Path))
 }
