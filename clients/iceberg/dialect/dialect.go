@@ -93,3 +93,17 @@ func (IcebergDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) strin
 	// If we need to support an older version later, we can use DELETE FROM.
 	return fmt.Sprintf("TRUNCATE TABLE %s", tableID.FullyQualifiedName())
 }
+
+func (IcebergDialect) CreateTemporaryView(viewName string, s3Path string) string {
+	return fmt.Sprintf(`
+CREATE OR REPLACE TEMPORARY VIEW %s
+USING csv
+OPTIONS (
+  path '%s',
+  sep '\t',
+  header 'true',
+  compression 'gzip',
+  nullValue '%s',
+  inferSchema 'true'
+);`, viewName, s3Path, constants.NullValuePlaceholder)
+}
