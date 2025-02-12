@@ -36,9 +36,9 @@ func (IcebergDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ 
 	case typing.Date.Kind:
 		return "DATE"
 	case typing.TimestampNTZ.Kind:
-		return "TIMESTAMP WITHOUT TIMEZONE"
+		return "TIMESTAMP_NTZ"
 	case typing.TimestampTZ.Kind:
-		return "TIMESTAMP WITH TIMEZONE"
+		return "TIMESTAMP"
 	default:
 		return kindDetails.Kind
 	}
@@ -59,7 +59,7 @@ func (IcebergDialect) KindForDataType(rawType string, _ string) (typing.KindDeta
 		return typing.Boolean, nil
 	case "integer":
 		return typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.IntegerKind)}, nil
-	case "long":
+	case "long", "bigint":
 		return typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.BigIntegerKind)}, nil
 	case "double", "float":
 		return typing.Float, nil
@@ -67,9 +67,9 @@ func (IcebergDialect) KindForDataType(rawType string, _ string) (typing.KindDeta
 		return typing.String, nil
 	case "date":
 		return typing.Date, nil
-	case "timestamp with timezone":
+	case "timestamp":
 		return typing.TimestampTZ, nil
-	case "timestamp without timezone":
+	case "timestamp_ntz":
 		return typing.TimestampNTZ, nil
 	default:
 		return typing.Invalid, fmt.Errorf("unsupported data type: %q", rawType)
