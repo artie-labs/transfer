@@ -109,10 +109,12 @@ func (s Store) prepareTemporaryTable(ctx context.Context, tableData *optimizatio
 	}
 
 	// Step 2 - Load the CSV into a temporary view, or directly into a table depending on [createView]
-	command := s.Dialect().AppendCSVToTable(tempTableID, s3URI)
+	command := s.Dialect().BuildAppendCSVToTable(tempTableID, s3URI)
 	if createView {
-		command = s.Dialect().CreateTemporaryView(tempTableID.EscapedTable(), s3URI)
+		command = s.Dialect().BuildCreateTemporaryView(tempTableID.EscapedTable(), s3URI)
 	}
+
+	fmt.Println("command", command)
 
 	// Step 3 - Submit the command to Spark via Apache Livy
 	if err := s.apacheLivyClient.ExecContext(ctx, command); err != nil {

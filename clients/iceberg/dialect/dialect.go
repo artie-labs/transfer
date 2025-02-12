@@ -99,10 +99,10 @@ func (IcebergDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) strin
 	return fmt.Sprintf("TRUNCATE TABLE %s", tableID.FullyQualifiedName())
 }
 
-func (IcebergDialect) CreateTemporaryView(viewName string, s3Path string) string {
+func (IcebergDialect) BuildCreateTemporaryView(viewName string, s3Path string) string {
 	return fmt.Sprintf("CREATE OR REPLACE TEMPORARY VIEW %s USING csv %s;", viewName, getCSVOptions(s3Path))
 }
 
-func (IcebergDialect) AppendCSVToTable(tableID sql.TableIdentifier, s3Path string) string {
+func (IcebergDialect) BuildAppendCSVToTable(tableID sql.TableIdentifier, s3Path string) string {
 	return fmt.Sprintf("COPY INTO %s FROM '%s' FILEFORMAT = CSV %s", tableID.FullyQualifiedName(), s3Path, getCSVOptions(s3Path))
 }
