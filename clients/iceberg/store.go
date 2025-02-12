@@ -143,7 +143,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 	}
 
 	// Prepare the temporary table
-	if err := s.PrepareTemporaryTable(ctx, tableData, nil, temporaryTableID, tableID, types.AdditionalSettings{}, true); err != nil {
+	if err := s.PrepareTemporaryTable(ctx, tableData, nil, temporaryTableID, true); err != nil {
 		logger.Panic("failed to prepare temporary table", slog.Any("err", err))
 		return false, fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
@@ -179,9 +179,34 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 }
 
 func (s Store) Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error {
-	return fmt.Errorf("not implemented")
-}
+	if tableData.ShouldSkipUpdate() {
+		return nil
+	}
 
+	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	tableConfig, err := s.GetTableConfig(tableID, tableData.TopicConfig().DropDeletedColumns)
+	if err != nil {
+		return fmt.Errorf("failed to get table config: %w", err)
+	}
+
+	// We don't care about srcKeysMissing because we don't drop columns when we append.
+	_, targetKeysMissing := columns.DiffAndFilter(
+		tableData.ReadOnlyInMemoryCols().GetColumns(),
+		tableConfig.GetColumns(),
+		tableData.TopicConfig().SoftDelete,
+		tableData.TopicConfig().IncludeArtieUpdatedAt,
+		tableData.TopicConfig().IncludeDatabaseUpdatedAt,
+		tableData.Mode(),
+	)
+
+	if tableConfig.CreateTable() {
+		_ = s.CreateTable(ctx, tableID, tableConfig, targetKeysMissing)
+	} else {
+		// _ = s.AlterTableAddColumns(ctx, tableConfig, tableID, targetKeysMissing)
+	}
+
+	return s.PrepareTemporaryTable(ctx, tableData, tableConfig, tableID, true)
+}
 func (s Store) IsRetryableError(_ error) bool {
 	return false
 }

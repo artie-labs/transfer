@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -37,7 +38,7 @@ func (s Store) AlterTable(ctx context.Context, tableID sql.TableIdentifier, cols
 	return nil
 }
 
-func (s Store) CreateTable(ctx context.Context, tableID sql.TableIdentifier, cols []columns.Column) error {
+func (s Store) CreateTable(ctx context.Context, tableID sql.TableIdentifier, tableConfig *types.DestinationTableConfig, cols []columns.Column) error {
 	var colParts []string
 	for _, col := range cols {
 		colPart := fmt.Sprintf("%s %s", col.Name(), s.dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey(), config.SharedDestinationColumnSettings{}))
@@ -48,10 +49,12 @@ func (s Store) CreateTable(ctx context.Context, tableID sql.TableIdentifier, col
 		return fmt.Errorf("failed to create table: %w", err)
 	}
 
+	// Now add this to our [tableConfig]
+	tableConfig.MutateInMemoryColumns(constants.Add, cols...)
 	return nil
 }
 
-func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
+func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier, createView bool) error {
 	fp, err := s.writeTemporaryTableFile(tableData, tempTableID)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
