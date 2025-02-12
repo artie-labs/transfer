@@ -39,7 +39,7 @@ func (s Store) DeleteTable(ctx context.Context, tableID sql.TableIdentifier) err
 
 	_, err := s.s3TablesAPI.DeleteTable(ctx, &s3tables.DeleteTableInput{
 		Namespace:      typing.ToPtr(castedTableID.Namespace()),
-		TableBucketARN: typing.ToPtr(s.config.S3Tables.BucketARN),
+		TableBucketARN: typing.ToPtr(s.config.Iceberg.S3Tables.BucketARN),
 		Name:           typing.ToPtr(castedTableID.Table()),
 	})
 
@@ -207,18 +207,18 @@ func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql
 }
 
 func LoadStore(cfg config.Config) (Store, error) {
-	apacheLivyClient, err := apachelivy.NewClient(context.Background(), cfg.S3Tables.ApacheLivyURL,
+	apacheLivyClient, err := apachelivy.NewClient(context.Background(), cfg.Iceberg.ApacheLivyURL,
 		map[string]any{
-			"spark.hadoop.fs.s3a.secret.key":                 cfg.S3Tables.AwsSecretAccessKey,
-			"spark.hadoop.fs.s3a.access.key":                 cfg.S3Tables.AwsAccessKeyID,
-			"spark.driver.extraJavaOptions":                  fmt.Sprintf("-Daws.accessKeyId=%s -Daws.secretAccessKey=%s", cfg.S3Tables.AwsAccessKeyID, cfg.S3Tables.AwsSecretAccessKey),
-			"spark.executor.extraJavaOptions":                fmt.Sprintf("-Daws.accessKeyId=%s -Daws.secretAccessKey=%s", cfg.S3Tables.AwsAccessKeyID, cfg.S3Tables.AwsSecretAccessKey),
+			"spark.hadoop.fs.s3a.secret.key":                 cfg.Iceberg.S3Tables.AwsSecretAccessKey,
+			"spark.hadoop.fs.s3a.access.key":                 cfg.Iceberg.S3Tables.AwsAccessKeyID,
+			"spark.driver.extraJavaOptions":                  fmt.Sprintf("-Daws.accessKeyId=%s -Daws.secretAccessKey=%s", cfg.Iceberg.S3Tables.AwsAccessKeyID, cfg.Iceberg.S3Tables.AwsSecretAccessKey),
+			"spark.executor.extraJavaOptions":                fmt.Sprintf("-Daws.accessKeyId=%s -Daws.secretAccessKey=%s", cfg.Iceberg.S3Tables.AwsAccessKeyID, cfg.Iceberg.S3Tables.AwsSecretAccessKey),
 			"spark.jars.packages":                            "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.6.1,software.amazon.s3tables:s3-tables-catalog-for-iceberg-runtime:0.1.4",
 			"spark.sql.extensions":                           "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
 			"spark.sql.catalog.s3tablesbucket":               "org.apache.iceberg.spark.SparkCatalog",
 			"spark.sql.catalog.s3tablesbucket.catalog-impl":  "software.amazon.s3tables.iceberg.S3TablesCatalog",
-			"spark.sql.catalog.s3tablesbucket.warehouse":     cfg.S3Tables.BucketARN,
-			"spark.sql.catalog.s3tablesbucket.client.region": cfg.S3Tables.Region,
+			"spark.sql.catalog.s3tablesbucket.warehouse":     cfg.Iceberg.S3Tables.BucketARN,
+			"spark.sql.catalog.s3tablesbucket.client.region": cfg.Iceberg.S3Tables.Region,
 		},
 	)
 
@@ -231,8 +231,8 @@ func LoadStore(cfg config.Config) (Store, error) {
 		apacheLivyClient: apacheLivyClient,
 		cm:               &types.DestinationTableConfigMap{},
 		s3TablesAPI: s3tables.NewFromConfig(aws.Config{
-			Region:      cfg.S3Tables.Region,
-			Credentials: credentials.NewStaticCredentialsProvider(cfg.S3Tables.AwsAccessKeyID, cfg.S3Tables.AwsSecretAccessKey, ""),
+			Region:      cfg.Iceberg.S3Tables.Region,
+			Credentials: credentials.NewStaticCredentialsProvider(cfg.Iceberg.S3Tables.AwsAccessKeyID, cfg.Iceberg.S3Tables.AwsSecretAccessKey, ""),
 		}),
 	}, nil
 }
