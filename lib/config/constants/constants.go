@@ -72,6 +72,7 @@ const (
 	Redshift   DestinationKind = "redshift"
 	S3         DestinationKind = "s3"
 	Snowflake  DestinationKind = "snowflake"
+	Iceberg    DestinationKind = "iceberg"
 )
 
 var ValidDestinations = []DestinationKind{
