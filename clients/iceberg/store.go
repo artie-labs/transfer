@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/artie-labs/transfer/clients/iceberg/dialect"
+	"github.com/artie-labs/transfer/lib/apachelivy"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -12,12 +13,17 @@ import (
 )
 
 type Store struct {
-	catalog string
+	catalog          string
+	apacheLivyClient apachelivy.Client
 }
 
 func LoadStore(cfg config.Config) (Store, error) {
 	// TODO:
 	return Store{}, nil
+}
+
+func (s Store) Dialect() dialect.IcebergDialect {
+	return dialect.IcebergDialect{}
 }
 
 func (s Store) Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error {
