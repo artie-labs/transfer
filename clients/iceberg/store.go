@@ -67,8 +67,6 @@ func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bo
 		return nil, fmt.Errorf("failed to describe table: %w", err)
 	}
 
-	fmt.Println("cols", cols)
-
 	tableCfg := types.NewDestinationTableConfig(cols, dropDeletedColumns)
 	s.cm.AddTable(tableID, tableCfg)
 	return tableCfg, nil
@@ -227,9 +225,21 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 			return fmt.Errorf("failed to prepare temporary table: %w", err)
 		}
 
+		// Query the temporary view`
+		query := fmt.Sprintf("SELECT * FROM %s", tempTableID.EscapedTable())
+		if _, err = s.apacheLivyClient.QueryContext(ctx, query); err != nil {
+			return fmt.Errorf("failed to query temporary table: %w", err)
+		}
+
 		if err = s.apacheLivyClient.ExecContext(ctx, s.dialect().BuildAppendToTable(tableID, tempTableID.EscapedTable())); err != nil {
 			return fmt.Errorf("failed to append to table: %w", err)
 		}
+	}
+
+	// Query the final table to make sure it worked.
+	query := fmt.Sprintf("SELECT * FROM %s", tableID.FullyQualifiedName())
+	if _, err = s.apacheLivyClient.QueryContext(ctx, query); err != nil {
+		return fmt.Errorf("failed to query final table: %w", err)
 	}
 
 	return nil

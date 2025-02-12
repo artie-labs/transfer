@@ -80,7 +80,7 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 }
 
 func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (string, error) {
-	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv", newTableID.FullyQualifiedName()))
+	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv.gz", newTableID.FullyQualifiedName()))
 	gzipWriter, err := csvwriter.NewGzipWriter(fp)
 	if err != nil {
 		return "", fmt.Errorf("failed to create gzip writer: %w", err)
@@ -90,8 +90,8 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	headers := make([]string, len(columns))
-	for _, col := range columns {
-		headers = append(headers, col.Name())
+	for i, col := range columns {
+		headers[i] = col.Name()
 	}
 
 	if err = gzipWriter.Write(headers); err != nil {
