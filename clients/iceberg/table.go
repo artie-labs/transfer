@@ -2,26 +2,44 @@ package iceberg
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 
+	"github.com/artie-labs/transfer/lib/apachelivy"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 func (s Store) describeTable(ctx context.Context, tableID sql.TableIdentifier) ([]columns.Column, error) {
 	query, _, _ := s.dialect().BuildDescribeTableQuery(tableID)
-	response, err := s.apacheLivyClient.QueryContext(ctx, query)
+	output, err := s.apacheLivyClient.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 
-	out, ok := response.Output.Data["application/json"]
-	if !ok {
-		return nil, fmt.Errorf("unexpected data format")
+	bytes, err := output.MarshalJSON()
+	if err != nil {
+		return nil, err
 	}
 
-	// TODO: Not implemented.
+	var resp apachelivy.GetSchemaResponse
+	if err := json.Unmarshal(bytes, &resp); err != nil {
+		return nil, err
+	}
 
-	fmt.Println("out", out)
-	return nil, nil
+	_cols, err := resp.BuildColumns()
+	if err != nil {
+		return nil, err
+	}
+
+	cols := make([]columns.Column, len(_cols))
+	for i, col := range _cols {
+		kind, err := s.dialect().KindForDataType(col.DataType, col.DataType)
+		if err != nil {
+			return nil, err
+		}
+
+		cols[i] = columns.NewColumn(col.Name, kind)
+	}
+
+	return cols, nil
 }
