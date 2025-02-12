@@ -135,7 +135,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 	}
 
 	if tableConfig.CreateTable() {
-		if err := s.CreateTable(ctx, tableID, targetKeysMissing); err != nil {
+		if err := s.CreateTable(ctx, tableID, tableConfig, targetKeysMissing); err != nil {
 			return false, fmt.Errorf("failed to create table: %w", err)
 		}
 
