@@ -264,8 +264,8 @@ WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s)
 	return []string{mergeStmt}, nil
 }
 
+// https://spark.apache.org/docs/3.5.3/sql-ref-syntax-ddl-alter-table.html#add-columns
 func (IcebergDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
-	// https://spark.apache.org/docs/3.5.3/sql-ref-syntax-ddl-alter-table.html#add-columns
 	return fmt.Sprintf("ALTER TABLE %s ADD COLUMNS (%s)", tableID.FullyQualifiedName(), sqlPart)
 }
 
@@ -290,7 +290,7 @@ func (IcebergDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool,
 }
 
 func (IcebergDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
-	return fmt.Sprintf("DROP TABLE %s PURGE", tableID.FullyQualifiedName())
+	return fmt.Sprintf("DROP TABLE IF EXISTS %s", tableID.FullyQualifiedName())
 }
 
 func (IcebergDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
