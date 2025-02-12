@@ -3,6 +3,7 @@ package iceberg
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/artie-labs/transfer/lib/apachelivy"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -20,6 +21,8 @@ func (s Store) describeTable(ctx context.Context, tableID sql.TableIdentifier) (
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("bytes", string(bytes))
 
 	var resp apachelivy.GetSchemaResponse
 	if err := json.Unmarshal(bytes, &resp); err != nil {

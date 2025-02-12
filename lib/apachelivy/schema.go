@@ -4,6 +4,7 @@ import (
 	"fmt"
 )
 
+// SparkSQL does not support primary keys.
 type Column struct {
 	Name     string
 	DataType string
@@ -11,8 +12,6 @@ type Column struct {
 }
 
 func (g GetSchemaResponse) BuildColumns() ([]Column, error) {
-	// TODO: Primary key
-
 	colNameIndex := -1
 	colTypeIndex := -1
 	colCommentIndex := -1
@@ -21,15 +20,15 @@ func (g GetSchemaResponse) BuildColumns() ([]Column, error) {
 		switch field.Name {
 		case "col_name":
 			colNameIndex = i
-		case "col_type":
+		case "data_type":
 			colTypeIndex = i
-		case "col_comment":
+		case "comment":
 			colCommentIndex = i
 		}
 	}
 
 	if colNameIndex == -1 || colTypeIndex == -1 || colCommentIndex == -1 {
-		return nil, fmt.Errorf("col_name, col_type, or col_comment not found")
+		return nil, fmt.Errorf("col_name, data_type, or comment not found")
 	}
 
 	var cols []Column

@@ -59,7 +59,7 @@ func (IcebergDialect) KindForDataType(rawType string, _ string) (typing.KindDeta
 		return typing.Boolean, nil
 	case "integer":
 		return typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.IntegerKind)}, nil
-	case "long":
+	case "long", "bigint":
 		return typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.BigIntegerKind)}, nil
 	case "double", "float":
 		return typing.Float, nil
