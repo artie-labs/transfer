@@ -175,22 +175,6 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 		return false, fmt.Errorf("failed to execute merge query: %w", err)
 	}
 
-	query, err := s.apacheLivyClient.QueryContext(ctx, fmt.Sprintf("SELECT * FROM %s", tableID.FullyQualifiedName()))
-	if err != nil {
-		return false, fmt.Errorf("failed to query table: %w", err)
-	}
-
-	fmt.Println("query", query)
-
-	describeQuery, err := s.apacheLivyClient.QueryContext(ctx, fmt.Sprintf("DESCRIBE TABLE %s", tableID.FullyQualifiedName()))
-	if err != nil {
-		return false, fmt.Errorf("failed to describe table: %w", err)
-	}
-
-	fmt.Println("describeQuery", describeQuery)
-
-	panic("hello")
-
 	return true, nil
 }
 
