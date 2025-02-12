@@ -64,13 +64,13 @@ type Config struct {
 	Kafka *Kafka `yaml:"kafka,omitempty"`
 
 	// Supported destinations
-	BigQuery   *BigQuery         `yaml:"bigquery,omitempty"`
-	Databricks *Databricks       `yaml:"databricks,omitempty"`
-	MSSQL      *MSSQL            `yaml:"mssql,omitempty"`
-	Snowflake  *Snowflake        `yaml:"snowflake,omitempty"`
-	Redshift   *Redshift         `yaml:"redshift,omitempty"`
-	S3         *S3Settings       `yaml:"s3,omitempty"`
-	S3Tables   *S3TablesSettings `yaml:"s3_tables,omitempty"`
+	BigQuery   *BigQuery   `yaml:"bigquery,omitempty"`
+	Databricks *Databricks `yaml:"databricks,omitempty"`
+	MSSQL      *MSSQL      `yaml:"mssql,omitempty"`
+	Snowflake  *Snowflake  `yaml:"snowflake,omitempty"`
+	Redshift   *Redshift   `yaml:"redshift,omitempty"`
+	S3         *S3Settings `yaml:"s3,omitempty"`
+	Iceberg    *Iceberg    `yaml:"iceberg,omitempty"`
 
 	SharedDestinationSettings SharedDestinationSettings `yaml:"sharedDestinationSettings"`
 	Reporting                 Reporting                 `yaml:"reporting"`

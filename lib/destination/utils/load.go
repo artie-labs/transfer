@@ -17,7 +17,7 @@ import (
 )
 
 func IsOutputBaseline(cfg config.Config) bool {
-	return cfg.Output == constants.S3 || cfg.Output == constants.S3Tables
+	return cfg.Output == constants.S3 || cfg.Output == constants.Iceberg
 }
 
 func LoadBaseline(cfg config.Config) (destination.Baseline, error) {
@@ -29,12 +29,11 @@ func LoadBaseline(cfg config.Config) (destination.Baseline, error) {
 		}
 
 		return store, nil
-	case constants.S3Tables:
+	case constants.Iceberg:
 		store, err := iceberg.LoadStore(cfg)
 		if err != nil {
-			return nil, fmt.Errorf("failed to load S3Tables: %w", err)
+			return nil, fmt.Errorf("failed to load Iceberg: %w", err)
 		}
-
 		return store, nil
 	}
 

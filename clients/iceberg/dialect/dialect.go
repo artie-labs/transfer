@@ -270,7 +270,6 @@ func (IcebergDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart s
 }
 
 func (IcebergDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName string) string {
-	// https://spark.apache.org/docs/3.5.3/sql-ref-syntax-ddl-alter-table.html#drop-columns
 	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", tableID.FullyQualifiedName(), colName)
 }
 
