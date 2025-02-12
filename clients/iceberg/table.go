@@ -33,7 +33,7 @@ func (s Store) describeTable(ctx context.Context, tableID sql.TableIdentifier) (
 
 	cols := make([]columns.Column, len(returnedCols))
 	for i, returnedCol := range returnedCols {
-		kind, err := s.Dialect().KindForDataType(returnedCol.DataType, returnedCol.DataType)
+		kind, err := s.Dialect().KindForDataType(returnedCol.DataType, "notused")
 		if err != nil {
 			return nil, err
 		}
