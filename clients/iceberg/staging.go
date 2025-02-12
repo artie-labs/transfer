@@ -53,7 +53,7 @@ func (s Store) CreateTable(ctx context.Context, tableID sql.TableIdentifier, tab
 	return nil
 }
 
-func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier, createView bool) error {
+func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier) error {
 	fp, err := s.writeTemporaryTableFile(tableData, tempTableID)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
@@ -71,11 +71,7 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 		return fmt.Errorf("failed to upload to s3: %w", err)
 	}
 
-	command := s.Dialect().BuildAppendCSVToTable(tempTableID, s3URI)
-	if createView {
-		command = s.Dialect().BuildCreateTemporaryView(tempTableID.EscapedTable(), s3URI)
-	}
-
+	command := s.dialect().BuildCreateTemporaryView(tempTableID.EscapedTable(), s3URI)
 	if err := s.apacheLivyClient.ExecContext(ctx, command); err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}

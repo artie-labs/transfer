@@ -153,7 +153,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 	}
 
 	// Prepare the temporary table
-	if err := s.PrepareTemporaryTable(ctx, tableData, nil, temporaryTableID, true); err != nil {
+	if err := s.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID); err != nil {
 		logger.Panic("failed to prepare temporary table", slog.Any("err", err))
 		return false, fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
@@ -194,6 +194,7 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 	}
 
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	tempTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
 	tableConfig, err := s.GetTableConfig(tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return fmt.Errorf("failed to get table config: %w", err)
@@ -220,7 +221,18 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 		return fmt.Errorf("failed to merge columns from destination: %w", err)
 	}
 
-	return s.PrepareTemporaryTable(ctx, tableData, tableConfig, tableID, false)
+	// Load the temporary view and then append the view into the target table.
+	{
+		if err = s.PrepareTemporaryTable(ctx, tableData, tableConfig, tempTableID); err != nil {
+			return fmt.Errorf("failed to prepare temporary table: %w", err)
+		}
+
+		if err = s.apacheLivyClient.ExecContext(ctx, s.dialect().BuildAppendToTable(tableID, tempTableID.EscapedTable())); err != nil {
+			return fmt.Errorf("failed to append to table: %w", err)
+		}
+	}
+
+	return nil
 }
 func (s Store) IsRetryableError(_ error) bool {
 	return false
