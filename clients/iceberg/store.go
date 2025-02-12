@@ -35,16 +35,16 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 	}
 
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	_, _ = s.GetTableConfig(tableID, tableData.TopicConfig().DropDeletedColumns)
+	_, _ = s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
 	return fmt.Errorf("not implemented")
 }
 
-func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
+func (s Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
 	if tableCfg := s.cm.GetTableConfig(tableID); tableCfg != nil {
 		return tableCfg, nil
 	}
 
-	cols, err := s.describeTable(context.Background(), tableID)
+	cols, err := s.describeTable(ctx, tableID)
 	if err != nil {
 		if s.Dialect().IsTableDoesNotExistErr(err) {
 			tableCfg := types.NewDestinationTableConfig([]columns.Column{}, dropDeletedColumns)
