@@ -39,19 +39,9 @@ func (s Store) AlterTable(ctx context.Context, tableID sql.TableIdentifier, cols
 
 func (s Store) CreateTable(ctx context.Context, tableID sql.TableIdentifier, cols []columns.Column) error {
 	var colParts []string
-	var primaryKeys []string
-
 	for _, col := range cols {
 		colPart := fmt.Sprintf("%s %s", col.Name(), s.dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey(), config.SharedDestinationColumnSettings{}))
 		colParts = append(colParts, colPart)
-
-		if col.PrimaryKey() {
-			primaryKeys = append(primaryKeys, col.Name())
-		}
-	}
-
-	if len(primaryKeys) > 0 {
-		colParts = append(colParts, fmt.Sprintf("PRIMARY KEY (%s)", strings.Join(primaryKeys, ", ")))
 	}
 
 	if err := s.apacheLivyClient.ExecContext(ctx, s.dialect().BuildCreateTableQuery(tableID, false, colParts)); err != nil {
