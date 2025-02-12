@@ -178,6 +178,7 @@ func (c Client) waitForSessionToBeReady(ctx context.Context) error {
 		default:
 			return fmt.Errorf("session in unexpected state: %q", resp.State)
 		}
+
 		count++
 	}
 }
