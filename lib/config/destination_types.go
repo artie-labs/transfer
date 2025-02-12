@@ -64,6 +64,8 @@ type Snowflake struct {
 type Iceberg struct {
 	ApacheLivyURL string `yaml:"apacheLivyURL"`
 
+	// Optional:
+	SessionJars []string `yaml:"sessionJars,omitempty"`
 	// Current implementation of Iceberg uses S3Tables:
 	S3Tables *S3Tables `yaml:"s3Tables,omitempty"`
 }

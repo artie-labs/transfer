@@ -41,7 +41,7 @@ func LoadStore(cfg config.Config) (Store, error) {
 			"spark.sql.catalog.s3tablesbucket.warehouse":     cfg.Iceberg.S3Tables.BucketARN,
 			"spark.sql.catalog.s3tablesbucket.client.region": cfg.Iceberg.S3Tables.Region,
 		},
-		[]string{},
+		cfg.Iceberg.SessionJars,
 	)
 
 	if err != nil {
