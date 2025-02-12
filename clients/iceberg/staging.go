@@ -93,7 +93,7 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 	defer gzipWriter.Close()
 
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
-	headers := make([]string, 0, len(columns))
+	headers := make([]string, len(columns))
 	for _, col := range columns {
 		headers = append(headers, col.Name())
 	}
