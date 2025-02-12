@@ -1,6 +1,7 @@
 package iceberg
 
 import (
+	"compress/gzip"
 	"context"
 	"encoding/csv"
 	"fmt"
@@ -44,17 +45,22 @@ func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
 }
 
 func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (string, error) {
-	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv", newTableID.FullyQualifiedName()))
+	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv.gz", newTableID.FullyQualifiedName()))
 	file, err := os.Create(fp)
 	if err != nil {
 		return "", err
 	}
 
 	defer file.Close()
-	writer := csv.NewWriter(file)
+
+	gzipWriter := gzip.NewWriter(file)
+	defer gzipWriter.Close()
+	writer := csv.NewWriter(gzipWriter)
 	writer.Comma = '\t'
 
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
+
+	// Write out the headers.
 	headers := make([]string, len(columns))
 	for _, col := range columns {
 		headers = append(headers, col.Name())
@@ -102,24 +108,8 @@ func (s Store) prepareTemporaryTable(ctx context.Context, tableData *optimizatio
 		return fmt.Errorf("failed to upload to s3: %w", err)
 	}
 
-	s3URI = "s3a:" + strings.TrimPrefix(s3URI, "s3:")
 	// Step 2 - Load the CSV into a temporary view
-
-	// CSV options: https://spark.apache.org/docs/3.5.3/sql-data-sources-csv.html
-	command := fmt.Sprintf(`
-CREATE OR REPLACE TEMPORARY VIEW %s
-USING csv
-OPTIONS (
-  path '%s',
-  sep '\t',
-  header 'true',
-  compression 'gzip',
-  nullValue '\\N',
-  inferSchema 'true'
-);
-`, tempTableID.EscapedTable(), s3URI)
-
-	fmt.Println("command", command, "fp", fp)
+	command := s.Dialect().CreateTemporaryView(tempTableID.EscapedTable(), s3URI)
 	if err := s.apacheLivyClient.ExecContext(ctx, command); err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}

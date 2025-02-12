@@ -2,10 +2,7 @@ package iceberg
 
 import (
 	"context"
-	"encoding/csv"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/artie-labs/transfer/clients/iceberg/dialect"
 	"github.com/artie-labs/transfer/lib/apachelivy"
@@ -82,43 +79,6 @@ func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql
 	return dialect.NewTableIdentifier(s.catalog, topicConfig.Schema, table)
 }
 
-func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (string, error) {
-	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv", newTableID.FullyQualifiedName()))
-	file, err := os.Create(fp)
-	if err != nil {
-		return "", err
-	}
-
-	defer file.Close()
-	writer := csv.NewWriter(file)
-	writer.Comma = '\t'
-
-	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
-	headers := make([]string, 0, len(columns))
-	for _, col := range columns {
-		headers = append(headers, col.Name())
-	}
-
-	if err = writer.Write(headers); err != nil {
-		return "", fmt.Errorf("failed to write headers: %w", err)
-	}
-
-	for _, row := range tableData.Rows() {
-		var csvRow []string
-		for _, col := range columns {
-			castedValue, castErr := castColValStaging(row[col.Name()], col.KindDetails)
-			if castErr != nil {
-				return "", fmt.Errorf("failed to cast value '%v': %w", row[col.Name()], castErr)
-			}
-
-			csvRow = append(csvRow, castedValue)
-		}
-
-		if err = writer.Write(csvRow); err != nil {
-			return "", fmt.Errorf("failed to write to csv: %w", err)
-		}
-	}
-
-	writer.Flush()
-	return fp, writer.Error()
+func (s Store) Dialect() dialect.IcebergDialect {
+	return dialect.IcebergDialect{}
 }
