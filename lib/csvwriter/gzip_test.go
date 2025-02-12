@@ -27,6 +27,7 @@ func TestGzipWriter(t *testing.T) {
 		assert.NoError(t, writer.Write(row))
 	}
 
+	assert.NoError(t, writer.Flush())
 	assert.NoError(t, writer.Close())
 	assert.ErrorContains(t, writer.Close(), "already closed")
 
@@ -58,7 +59,7 @@ func TestGzipWriterLargeData(t *testing.T) {
 
 	// Test with a large number of rows
 	largeRows := make([][]string, 1_000)
-	for i := 0; i < 1_000; i++ {
+	for i := range largeRows {
 		largeRows[i] = []string{fmt.Sprintf("value%d", i), fmt.Sprintf("value%d", i)}
 	}
 
@@ -66,6 +67,7 @@ func TestGzipWriterLargeData(t *testing.T) {
 		assert.NoError(t, writer.Write(row))
 	}
 
+	assert.NoError(t, writer.Flush())
 	assert.NoError(t, writer.Close())
 
 	// Verify the file contents
