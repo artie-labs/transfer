@@ -105,3 +105,19 @@ func (a GetStatementResponse) Error(sessionID int) error {
 
 	return nil
 }
+
+type GetSchemaResponse struct {
+	Schema []GetSchemaFieldResponse `json:"schema"`
+	Data   [][]string               `json:"data"`
+}
+
+type GetSchemaStructResponse struct {
+	Fields []GetSchemaFieldResponse `json:"fields"`
+}
+
+type GetSchemaFieldResponse struct {
+	Name     string         `json:"name"`
+	Type     string         `json:"type"`
+	Nullable bool           `json:"nullable"`
+	Metadata map[string]any `json:"metadata"`
+}
