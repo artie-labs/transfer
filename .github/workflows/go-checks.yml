@@ -25,7 +25,7 @@ jobs:
 
       - name: Run staticcheck
         env:
-          SC_VERSION: "2024.1.1"
+          SC_VERSION: "2025.1"
         run: |
           SC_URL="https://github.com/dominikh/go-tools/releases/download/$SC_VERSION/staticcheck_linux_amd64.tar.gz"
           wget -q ${SC_URL} -O - | tar -xzf - --strip-components 1 -C /usr/local/bin staticcheck/staticcheck
