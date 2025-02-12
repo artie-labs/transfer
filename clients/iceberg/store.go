@@ -14,6 +14,7 @@ type Store struct {
 }
 
 func LoadStore(cfg config.Config) (Store, error) {
+	// TODO:
 	return Store{}, nil
 }
 

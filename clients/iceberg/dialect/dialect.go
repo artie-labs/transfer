@@ -24,8 +24,11 @@ func (IcebergDialect) EscapeStruct(value string) string {
 }
 
 func (IcebergDialect) IsColumnAlreadyExistsErr(err error) bool {
-	// TODO
-	panic("not implemented")
+	if err == nil {
+		return false
+	}
+
+	return strings.HasPrefix(err.Error(), "[FIELDS_ALREADY_EXISTS]")
 }
 
 func (IcebergDialect) IsTableDoesNotExistErr(err error) bool {
