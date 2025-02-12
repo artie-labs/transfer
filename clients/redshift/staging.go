@@ -87,6 +87,8 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 		return "", nil, err
 	}
 
+	defer gzipWriter.Close()
+
 	_columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	columnToNewLengthMap := make(map[string]int32)
 	for _, value := range tableData.Rows() {
@@ -118,8 +120,8 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 		}
 	}
 
-	if err = gzipWriter.Close(); err != nil {
-		return "", nil, fmt.Errorf("failed to close gzip writer: %w", err)
+	if err = gzipWriter.Flush(); err != nil {
+		return "", nil, fmt.Errorf("failed to flush and close the gzip writer: %w", err)
 	}
 
 	// This will update the staging columns with the new string precision.
