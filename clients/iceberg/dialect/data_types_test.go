@@ -67,10 +67,10 @@ func TestIcebergDialect_DataTypeForKind(t *testing.T) {
 	assert.Equal(t, "DATE", _dialect.DataTypeForKind(typing.Date, false, config.SharedDestinationColumnSettings{}))
 
 	// TimestampNTZ
-	assert.Equal(t, "TIMESTAMP WITHOUT TIMEZONE", _dialect.DataTypeForKind(typing.TimestampNTZ, false, config.SharedDestinationColumnSettings{}))
+	assert.Equal(t, "TIMESTAMP_NTZ", _dialect.DataTypeForKind(typing.TimestampNTZ, false, config.SharedDestinationColumnSettings{}))
 
 	// TimestampTZ
-	assert.Equal(t, "TIMESTAMP WITH TIMEZONE", _dialect.DataTypeForKind(typing.TimestampTZ, false, config.SharedDestinationColumnSettings{}))
+	assert.Equal(t, "TIMESTAMP", _dialect.DataTypeForKind(typing.TimestampTZ, false, config.SharedDestinationColumnSettings{}))
 }
 
 func TestIcebergDialect_KindForDataType(t *testing.T) {
@@ -118,13 +118,13 @@ func TestIcebergDialect_KindForDataType(t *testing.T) {
 	}
 	{
 		// TimestampTZ
-		kd, err := _dialect.KindForDataType("TIMESTAMP WITH TIMEZONE", "")
+		kd, err := _dialect.KindForDataType("TIMESTAMP", "")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.TimestampTZ, kd)
 	}
 	{
 		// TimestampNTZ
-		kd, err := _dialect.KindForDataType("TIMESTAMP WITHOUT TIMEZONE", "")
+		kd, err := _dialect.KindForDataType("TIMESTAMP_NTZ", "")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.TimestampNTZ, kd)
 	}
