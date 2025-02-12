@@ -13,7 +13,7 @@ import (
 
 func TestGzipWriter(t *testing.T) {
 	filePath := filepath.Join(t.TempDir(), "test.csv.gz")
-	writer, err := NewFilePath(filePath)
+	writer, err := NewGzipWriter(filePath)
 	assert.NoError(t, err)
 
 	rows := [][]string{
@@ -54,7 +54,7 @@ func TestGzipWriter(t *testing.T) {
 
 func TestGzipWriterLargeData(t *testing.T) {
 	filePath := filepath.Join(t.TempDir(), "large_test.csv.gz")
-	writer, err := NewFilePath(filePath)
+	writer, err := NewGzipWriter(filePath)
 	assert.NoError(t, err)
 
 	// Test with a large number of rows

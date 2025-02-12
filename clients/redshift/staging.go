@@ -82,7 +82,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 
 func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID sql.TableIdentifier) (string, map[string]int32, error) {
 	filePath := fmt.Sprintf("/tmp/%s.csv.gz", newTableID.FullyQualifiedName())
-	gzipWriter, err := csvwriter.NewFilePath(filePath)
+	gzipWriter, err := csvwriter.NewGzipWriter(filePath)
 	if err != nil {
 		return "", nil, err
 	}

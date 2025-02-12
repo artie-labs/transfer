@@ -12,7 +12,7 @@ type GzipWriter struct {
 	writer *csv.Writer
 }
 
-func NewFilePath(fp string) (*GzipWriter, error) {
+func NewGzipWriter(fp string) (*GzipWriter, error) {
 	file, err := os.Create(fp)
 	if err != nil {
 		return nil, err
