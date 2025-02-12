@@ -215,6 +215,10 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 		// _ = s.AlterTableAddColumns(ctx, tableConfig, tableID, targetKeysMissing)
 	}
 
+	if err = tableData.MergeColumnsFromDestination(tableConfig.GetColumns()...); err != nil {
+		return fmt.Errorf("failed to merge columns from destination: %w", err)
+	}
+
 	return s.PrepareTemporaryTable(ctx, tableData, tableConfig, tableID, true)
 }
 func (s Store) IsRetryableError(_ error) bool {
