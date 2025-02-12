@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -74,19 +75,28 @@ func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bo
 }
 
 func (s Store) uploadToS3(ctx context.Context, fp string) (string, error) {
-	return awslib.UploadLocalFileToS3(ctx, awslib.UploadArgs{
+	s3URI, err := awslib.UploadLocalFileToS3(ctx, awslib.UploadArgs{
 		Bucket:                     s.config.Iceberg.S3Tables.Bucket,
 		FilePath:                   fp,
 		OverrideAWSAccessKeyID:     &s.config.Iceberg.S3Tables.AwsAccessKeyID,
 		OverrideAWSAccessKeySecret: &s.config.Iceberg.S3Tables.AwsSecretAccessKey,
 	})
+
+	if err != nil {
+		return "", fmt.Errorf("failed to upload to s3: %w", err)
+	}
+
+	// We need to change the prefix from s3:// to s3a://
+	// Ref: https://stackoverflow.com/a/33356421
+	s3URI = "s3a:" + strings.TrimPrefix(s3URI, "s3:")
+	return s3URI, nil
 }
 
 func (s Store) dialect() dialect.IcebergDialect {
 	return dialect.IcebergDialect{}
 }
 
-func (s Store) Dialect() sql.Dialect {
+func (s Store) Dialect() dialect.IcebergDialect {
 	return s.dialect()
 }
 

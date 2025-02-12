@@ -2,15 +2,14 @@ package iceberg
 
 import (
 	"context"
-	"encoding/csv"
 	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/csvwriter"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -72,24 +71,11 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 		return fmt.Errorf("failed to upload to s3: %w", err)
 	}
 
-	s3URI = "s3a:" + strings.TrimPrefix(s3URI, "s3:")
-	// Step 2 - Load the CSV into a temporary view
+	command := s.Dialect().BuildAppendCSVToTable(tempTableID, s3URI)
+	if createView {
+		command = s.Dialect().BuildCreateTemporaryView(tempTableID.EscapedTable(), s3URI)
+	}
 
-	// CSV options: https://spark.apache.org/docs/3.5.3/sql-data-sources-csv.html
-	command := fmt.Sprintf(`
-CREATE OR REPLACE TEMPORARY VIEW %s
-USING csv
-OPTIONS (
-  path '%s',
-  sep '\t',
-  header 'true',
-  compression 'gzip',
-  nullValue '\\N',
-  inferSchema 'true'
-);
-`, tempTableID.EscapedTable(), s3URI)
-
-	fmt.Println("command", command, "fp", fp)
 	if err := s.apacheLivyClient.ExecContext(ctx, command); err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
@@ -99,14 +85,12 @@ OPTIONS (
 
 func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (string, error) {
 	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv", newTableID.FullyQualifiedName()))
-	file, err := os.Create(fp)
+	gzipWriter, err := csvwriter.NewGzipWriter(fp)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create gzip writer: %w", err)
 	}
 
-	defer file.Close()
-	writer := csv.NewWriter(file)
-	writer.Comma = '\t'
+	defer gzipWriter.Close()
 
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	headers := make([]string, 0, len(columns))
@@ -114,7 +98,7 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 		headers = append(headers, col.Name())
 	}
 
-	if err = writer.Write(headers); err != nil {
+	if err = gzipWriter.Write(headers); err != nil {
 		return "", fmt.Errorf("failed to write headers: %w", err)
 	}
 
@@ -129,13 +113,16 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 			csvRow = append(csvRow, castedValue)
 		}
 
-		if err = writer.Write(csvRow); err != nil {
+		if err = gzipWriter.Write(csvRow); err != nil {
 			return "", fmt.Errorf("failed to write to csv: %w", err)
 		}
 	}
 
-	writer.Flush()
-	return fp, writer.Error()
+	if err = gzipWriter.Flush(); err != nil {
+		return "", fmt.Errorf("failed to flush gzip writer: %w", err)
+	}
+
+	return fp, nil
 }
 
 func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
