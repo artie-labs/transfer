@@ -36,9 +36,9 @@ func (IcebergDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ 
 	case typing.Date.Kind:
 		return "DATE"
 	case typing.TimestampNTZ.Kind:
-		return "TIMESTAMP WITHOUT TIMEZONE"
+		return "TIMESTAMP_NTZ"
 	case typing.TimestampTZ.Kind:
-		return "TIMESTAMP WITH TIMEZONE"
+		return "TIMESTAMP"
 	default:
 		return kindDetails.Kind
 	}
