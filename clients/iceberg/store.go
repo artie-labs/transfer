@@ -66,6 +66,8 @@ func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bo
 		return nil, fmt.Errorf("failed to describe table: %w", err)
 	}
 
+	fmt.Println("cols", cols)
+
 	tableCfg := types.NewDestinationTableConfig(cols, dropDeletedColumns)
 	s.cm.AddTable(tableID, tableCfg)
 	return tableCfg, nil
@@ -91,22 +93,15 @@ func (s Store) Dialect() sql.Dialect {
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 
-	if err := s.DeleteTable(ctx, tableID); err != nil {
-		return false, fmt.Errorf("failed to delete table: %w", err)
-	}
+	// if err := s.DeleteTable(ctx, tableID); err != nil {
+	// 	return false, fmt.Errorf("failed to delete table: %w", err)
+	// }
 
 	temporaryTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
 	// Get what the target table looks like:
 	tableConfig, err := s.GetTableConfig(tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return false, fmt.Errorf("failed to get table config: %w", err)
-	}
-
-	// Let's add a new column just to test
-	if err := s.AlterTable(ctx, tableID, []columns.Column{
-		columns.NewColumn("first_name", typing.String),
-	}); err != nil {
-		return false, fmt.Errorf("failed to alter table: %w", err)
 	}
 
 	// Apply column deltas
