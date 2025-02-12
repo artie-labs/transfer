@@ -1,6 +1,7 @@
 package apachelivy
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -90,8 +91,8 @@ type StatementOutput struct {
 }
 
 type GetStatementResponse struct {
-	ID        int `json:"id"`
-	Code      string
+	ID        int             `json:"id"`
+	Code      string          `json:"code"`
 	State     string          `json:"state"`
 	Output    StatementOutput `json:"output"`
 	Started   int             `json:"started"`
@@ -104,4 +105,33 @@ func (a GetStatementResponse) Error(sessionID int) error {
 	}
 
 	return nil
+}
+
+func (g GetStatementResponse) MarshalJSON() ([]byte, error) {
+	if g.Output.Data == nil {
+		return nil, fmt.Errorf("data is nil")
+	}
+
+	jsonData, ok := g.Output.Data["application/json"]
+	if !ok {
+		return nil, fmt.Errorf("data is not application/json")
+	}
+
+	return json.Marshal(jsonData)
+}
+
+type GetSchemaResponse struct {
+	Schema GetSchemaStructResponse `json:"schema"`
+	Data   [][]string              `json:"data"`
+}
+
+type GetSchemaStructResponse struct {
+	Fields []GetSchemaFieldResponse `json:"fields"`
+}
+
+type GetSchemaFieldResponse struct {
+	Name     string         `json:"name"`
+	Type     string         `json:"type"`
+	Nullable bool           `json:"nullable"`
+	Metadata map[string]any `json:"metadata"`
 }
