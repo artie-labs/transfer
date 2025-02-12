@@ -55,7 +55,7 @@ func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bo
 		return tableCfg, nil
 	}
 
-	cols, err := s.DescribeTable(context.Background(), tableID)
+	cols, err := s.describeTable(context.Background(), tableID)
 	if err != nil {
 		if s.dialect().IsTableDoesNotExistErr(err) {
 			tableCfg := types.NewDestinationTableConfig([]columns.Column{}, dropDeletedColumns)
