@@ -48,16 +48,6 @@ type S3Settings struct {
 	OutputFormat       constants.S3OutputFormat `yaml:"outputFormat"`
 }
 
-type S3TablesSettings struct {
-	AwsAccessKeyID     string `yaml:"awsAccessKeyID"`
-	AwsSecretAccessKey string `yaml:"awsSecretAccessKey"`
-	BucketARN          string `yaml:"bucketARN"`
-	Region             string `yaml:"region"`
-	// Bucket - This is where all the ephemeral delta files will be stored.
-	Bucket        string `yaml:"bucket"`
-	ApacheLivyURL string `yaml:"apacheLivyURL"`
-}
-
 type Snowflake struct {
 	AccountID string `yaml:"account"`
 	Username  string `yaml:"username"`

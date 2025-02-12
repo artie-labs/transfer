@@ -71,7 +71,6 @@ const (
 	MSSQL      DestinationKind = "mssql"
 	Redshift   DestinationKind = "redshift"
 	S3         DestinationKind = "s3"
-	S3Tables   DestinationKind = "s3_tables"
 	Snowflake  DestinationKind = "snowflake"
 	Iceberg    DestinationKind = "iceberg"
 )
@@ -82,7 +81,6 @@ var ValidDestinations = []DestinationKind{
 	MSSQL,
 	Redshift,
 	S3,
-	S3Tables,
 	Snowflake,
 }
 
