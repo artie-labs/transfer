@@ -220,7 +220,7 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 		return fmt.Errorf("failed to merge columns from destination: %w", err)
 	}
 
-	return s.PrepareTemporaryTable(ctx, tableData, tableConfig, tableID, true)
+	return s.PrepareTemporaryTable(ctx, tableData, tableConfig, tableID, false)
 }
 func (s Store) IsRetryableError(_ error) bool {
 	return false

@@ -12,7 +12,7 @@ import (
 
 func getCSVOptions(fp string) string {
 	// Options are sourced from: https://spark.apache.org/docs/3.5.3/sql-data-sources-csv.html
-	return fmt.Sprintf(`OPTIONS (path '%s', sep '\t', header 'true', compression 'gzip', nullValue '%s', inferSchema 'true', compression 'gzip')`, fp, constants.NullValuePlaceholder)
+	return fmt.Sprintf(`OPTIONS (path '%s', sep '\t', header 'true', compression 'gzip', nullValue '%s', inferSchema 'true')`, fp, constants.NullValuePlaceholder)
 }
 
 type IcebergDialect struct{}
