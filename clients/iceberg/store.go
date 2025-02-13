@@ -98,6 +98,27 @@ func (s Store) Dialect() dialect.IcebergDialect {
 	return s.dialect()
 }
 
+func (s Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
+	if tableCfg := s.cm.GetTableConfig(tableID); tableCfg != nil {
+		return tableCfg, nil
+	}
+
+	cols, err := s.describeTable(ctx, tableID)
+	if err != nil {
+		if s.Dialect().IsTableDoesNotExistErr(err) {
+			tableCfg := types.NewDestinationTableConfig([]columns.Column{}, dropDeletedColumns)
+			s.cm.AddTable(tableID, tableCfg)
+			return tableCfg, nil
+		}
+
+		return nil, fmt.Errorf("failed to describe table: %w", err)
+	}
+
+	tableCfg := types.NewDestinationTableConfig(cols, dropDeletedColumns)
+	s.cm.AddTable(tableID, tableCfg)
+	return tableCfg, nil
+}
+
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 

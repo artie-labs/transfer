@@ -26,19 +26,19 @@ func (s Store) describeTable(ctx context.Context, tableID sql.TableIdentifier) (
 		return nil, err
 	}
 
-	_cols, err := resp.BuildColumns()
+	returnedCols, err := resp.BuildColumns()
 	if err != nil {
 		return nil, err
 	}
 
-	cols := make([]columns.Column, len(_cols))
-	for i, col := range _cols {
-		kind, err := s.dialect().KindForDataType(col.DataType, col.DataType)
+	cols := make([]columns.Column, len(returnedCols))
+	for i, returnedCol := range returnedCols {
+		kind, err := s.Dialect().KindForDataType(returnedCol.DataType, "notused")
 		if err != nil {
 			return nil, err
 		}
 
-		cols[i] = columns.NewColumn(col.Name, kind)
+		cols[i] = columns.NewColumn(returnedCol.Name, kind)
 	}
 
 	return cols, nil

@@ -1,7 +1,6 @@
 package consumer
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -24,7 +23,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		BufferRows:           10,
 		FlushSizeKb:          900,
 	}
-	ctx := context.Background()
+	ctx := t.Context()
 	memDB := models.NewMemoryDB()
 	kafkaMsg := kafka.Message{
 		Topic:         "foo",
@@ -207,7 +206,7 @@ func TestProcessMessageSkip(t *testing.T) {
 		BufferRows:           10,
 		FlushSizeKb:          900,
 	}
-	ctx := context.Background()
+	ctx := t.Context()
 	memDB := models.NewMemoryDB()
 	kafkaMsg := kafka.Message{
 		Topic:         "foo",

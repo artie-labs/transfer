@@ -1,7 +1,6 @@
 package snowflake
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -32,7 +31,7 @@ func (s *SnowflakeTestSuite) TestDropTable() {
 	tableID := s.identifierFor(tableData)
 	{
 		// Deleting without disabling drop protection
-		assert.ErrorContains(s.T(), s.stageStore.DropTable(context.Background(), tableID), "not allowed to be dropped")
+		assert.ErrorContains(s.T(), s.stageStore.DropTable(s.T().Context(), tableID), "not allowed to be dropped")
 	}
 	{
 		// Deleting with disabling drop protection
@@ -40,7 +39,7 @@ func (s *SnowflakeTestSuite) TestDropTable() {
 		assert.True(s.T(), ok)
 
 		snowflakeTableID = snowflakeTableID.WithDisableDropProtection(true)
-		assert.NoError(s.T(), s.stageStore.DropTable(context.Background(), snowflakeTableID))
+		assert.NoError(s.T(), s.stageStore.DropTable(s.T().Context(), snowflakeTableID))
 
 		// Check store to see it drop
 		_, query, _ := s.fakeStageStore.ExecContextArgsForCall(0)
@@ -102,7 +101,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 
 	s.stageStore.configMap.AddTable(s.identifierFor(tableData), types.NewDestinationTableConfig(anotherCols, true))
 
-	commitTx, err := s.stageStore.Merge(context.Background(), tableData)
+	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
 
@@ -149,7 +148,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 	}
 
 	s.stageStore.configMap.AddTable(s.identifierFor(tableData), types.NewDestinationTableConfig(cols.GetColumns(), true))
-	commitTx, err := s.stageStore.Merge(context.Background(), tableData)
+	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
 	assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
@@ -198,7 +197,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	tableID := s.identifierFor(tableData)
 	fqName := tableID.FullyQualifiedName()
 	s.stageStore.configMap.AddTable(tableID, types.NewDestinationTableConfig(cols.GetColumns(), true))
-	commitTx, err := s.stageStore.Merge(context.Background(), tableData)
+	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
 	s.fakeStageStore.ExecReturns(nil, nil)
@@ -284,7 +283,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	_config := types.NewDestinationTableConfig(sflkCols.GetColumns(), true)
 	s.stageStore.configMap.AddTable(s.identifierFor(tableData), _config)
 
-	commitTx, err := s.stageStore.Merge(context.Background(), tableData)
+	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
 	s.fakeStageStore.ExecReturns(nil, nil)
@@ -310,7 +309,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		break
 	}
 
-	commitTx, err = s.stageStore.Merge(context.Background(), tableData)
+	commitTx, err = s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
 	s.fakeStageStore.ExecReturns(nil, nil)
@@ -323,7 +322,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
-	commitTx, err := s.stageStore.Merge(context.Background(), tableData)
+	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
 }

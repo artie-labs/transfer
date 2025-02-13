@@ -1,7 +1,6 @@
 package snowflake
 
 import (
-	"context"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -165,7 +164,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	sflkTc := s.stageStore.GetConfigMap().GetTableConfig(tempTableID)
 
 	{
-		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(context.Background(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, true))
+		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(s.T().Context(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, true))
 		assert.Equal(s.T(), 2, s.fakeStageStore.ExecCallCount())
 		assert.Equal(s.T(), 1, s.fakeStageStore.ExecContextCallCount())
 
@@ -188,7 +187,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	}
 	{
 		// Don't create the temporary table.
-		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(context.Background(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, false))
+		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(s.T().Context(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, false))
 		assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
 		assert.Equal(s.T(), 1, s.fakeStageStore.ExecContextCallCount())
 	}
