@@ -40,11 +40,8 @@ func (IcebergDialect) IsTableDoesNotExistErr(err error) bool {
 	return strings.HasPrefix(err.Error(), "[TABLE_OR_VIEW_NOT_FOUND]")
 }
 
-// BuildIsNotToastValueExpression is used to ensure the column does not contain
-// Toast/UNAVAILABLE placeholders. Adjust if you store JSON differently in Spark.
 func (id IcebergDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
 	colName := sql.QuoteTableAliasColumn(tableAlias, column, id)
-	// Spark can do a simple NOT LIKE check:
 	return fmt.Sprintf(`CAST(%s AS STRING) NOT LIKE '%s'`, colName, "%"+constants.ToastUnavailableValuePlaceholder+"%")
 }
 
