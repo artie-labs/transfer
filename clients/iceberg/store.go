@@ -5,13 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/service/s3tables"
-
 	"github.com/artie-labs/transfer/clients/iceberg/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/apachelivy"
+	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -19,12 +16,11 @@ import (
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
-	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 type Store struct {
-	s3TablesAPI      *s3tables.Client
+	s3TablesAPI      awslib.S3TablesAPIWrapper
 	apacheLivyClient apachelivy.Client
 	config           config.Config
 	cm               *types.DestinationTableConfigMap
@@ -36,13 +32,11 @@ func (s Store) DeleteTable(ctx context.Context, tableID sql.TableIdentifier) err
 		return fmt.Errorf("failed to cast table ID to dialect.TableIdentifier")
 	}
 
-	_, err := s.s3TablesAPI.DeleteTable(ctx, &s3tables.DeleteTableInput{
-		Namespace:      typing.ToPtr(castedTableID.Namespace()),
-		TableBucketARN: typing.ToPtr(s.config.Iceberg.S3Tables.BucketARN),
-		Name:           typing.ToPtr(castedTableID.Table()),
-	})
+	if err := s.s3TablesAPI.DeleteTable(ctx, castedTableID.Namespace(), castedTableID.Table()); err != nil {
+		return fmt.Errorf("failed to delete table: %w", err)
+	}
 
-	return err
+	return nil
 }
 
 func (s Store) GetConfigMap() *types.DestinationTableConfigMap {
@@ -233,9 +227,6 @@ func LoadStore(cfg config.Config) (Store, error) {
 		config:           cfg,
 		apacheLivyClient: apacheLivyClient,
 		cm:               &types.DestinationTableConfigMap{},
-		s3TablesAPI: s3tables.NewFromConfig(aws.Config{
-			Region:      cfg.Iceberg.S3Tables.Region,
-			Credentials: credentials.NewStaticCredentialsProvider(cfg.Iceberg.S3Tables.AwsAccessKeyID, cfg.Iceberg.S3Tables.AwsSecretAccessKey, ""),
-		}),
+		s3TablesAPI:      awslib.NewS3TablesAPI(cfg.Iceberg.S3Tables.Region, cfg.Iceberg.S3Tables.AwsAccessKeyID, cfg.Iceberg.S3Tables.AwsSecretAccessKey),
 	}, nil
 }
