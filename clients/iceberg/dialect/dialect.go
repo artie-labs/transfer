@@ -48,39 +48,8 @@ func (id IcebergDialect) BuildIsNotToastValueExpression(tableAlias constants.Tab
 	return fmt.Sprintf(`CAST(%s AS STRING) NOT LIKE '%s'`, colName, "%"+constants.ToastUnavailableValuePlaceholder+"%")
 }
 
-// BuildDedupeTableQuery returns a query that deduplicates rows based on
-// primary keys. For Spark + Iceberg, we can do something like a window
-// function and filter. One possible approach is to do a “SELECT …” with
-// window ordering. Spark does not allow “QUALIFY”, so we use a subselect or
-// a CTE. This is just a simplified approach.
-func (id IcebergDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
-	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, id)
-
-	// Because Spark does not support BigQuery's QUALIFY syntax,
-	// you'll often do something like:
-	//
-	//  WITH ranked AS (
-	//    SELECT *,
-	//           ROW_NUMBER() OVER (PARTITION BY pk ORDER BY pk) as rn
-	//    FROM table
-	//  )
-	//  SELECT * FROM ranked WHERE rn = 1
-	//
-	// This function returns only the subselect. It’s up to you if you want
-	// to wrap it in a CREATE TABLE AS statement or similar.
-
-	partitionBy := strings.Join(primaryKeysEscaped, ", ")
-	orderBy := strings.Join(primaryKeysEscaped, ", ")
-	subQuery := fmt.Sprintf(`SELECT *
-FROM (
-  SELECT *,
-         ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) as rn
-  FROM %s
-) AS dedup
-WHERE rn = 1
-`, partitionBy, orderBy, tableID.FullyQualifiedName())
-
-	return subQuery
+func (IcebergDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
+	panic("not implemented")
 }
 
 // BuildDedupeQueries is an example pattern to create a staging table of
