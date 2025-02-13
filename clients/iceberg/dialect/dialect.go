@@ -49,68 +49,9 @@ func (IcebergDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primary
 	panic("not implemented")
 }
 
-// BuildDedupeQueries is an example pattern to create a staging table of
-// duplicates, delete them from the main, then re-insert. The logic here
-// tries to emulate the BigQuery approach, but adapted for Spark. Adjust
-// as needed for your environment.
 func (id IcebergDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
-	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, id)
-
-	var orderByCols []string
-	orderByCols = append(orderByCols, primaryKeysEscaped...)
-	if includeArtieUpdatedAt {
-		orderByCols = append(orderByCols, id.QuoteIdentifier(constants.UpdateColumnMarker))
-	}
-
-	// 1) Create or replace staging table with duplicates (the second row by PK).
-	// For Iceberg, you can do "CREATE OR REPLACE TABLE ... USING iceberg AS ..."
-	// For Spark, “CREATE OR REPLACE TABLE” might differ depending on your Spark version.
-	// You might also have to specify TBLPROPERTIES or location. Adjust as needed.
-	createStaging := fmt.Sprintf(`CREATE OR REPLACE TABLE %s USING iceberg AS
-WITH ranked AS (
-  SELECT *,
-         ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s ASC) as rn
-  FROM %s
-)
-SELECT * FROM ranked WHERE rn = 2
-`,
-		stagingTableID.FullyQualifiedName(),
-		strings.Join(primaryKeysEscaped, ", "),
-		strings.Join(orderByCols, ", "),
-		tableID.FullyQualifiedName(),
-	)
-
-	// 2) Build a WHERE clause for the deletion from the main table
-	//    by joining on the staging data.
-	var whereClauses []string
-	for _, primaryKeyEscaped := range primaryKeysEscaped {
-		whereClauses = append(whereClauses,
-			fmt.Sprintf("t1.%s = t2.%s", primaryKeyEscaped, primaryKeyEscaped))
-	}
-
-	deleteMain := fmt.Sprintf(`
-DELETE FROM %s t1
-WHERE EXISTS (
-  SELECT 1 FROM %s t2
-  WHERE %s
-)
-`,
-		tableID.FullyQualifiedName(),
-		stagingTableID.FullyQualifiedName(),
-		strings.Join(whereClauses, " AND "))
-
-	// 3) Insert duplicates from staging back into the main table, if needed.
-	// This might be a no-op for dedup. But in the BigQuery pattern,
-	// you re-insert. Adjust your logic if you truly want a deduplicate approach.
-	insertMain := fmt.Sprintf("INSERT INTO %s SELECT * FROM %s",
-		tableID.FullyQualifiedName(),
-		stagingTableID.FullyQualifiedName())
-
-	return []string{
-		createStaging,
-		deleteMain,
-		insertMain,
-	}
+	// TODO: Implement
+	panic("not implemented")
 }
 
 func (id IcebergDialect) BuildMergeQueries(
