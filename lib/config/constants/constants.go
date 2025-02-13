@@ -83,6 +83,7 @@ var ValidDestinations = []DestinationKind{
 	Redshift,
 	S3,
 	Snowflake,
+	Iceberg,
 }
 
 func IsValidDestination(destination DestinationKind) bool {
