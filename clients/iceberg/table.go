@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/clients/iceberg/dialect"
 	"github.com/artie-labs/transfer/lib/apachelivy"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -101,5 +102,18 @@ func (s Store) AlterTableDropColumns(ctx context.Context, tableID sql.TableIdent
 	}
 
 	tableConfig.MutateInMemoryColumns(constants.Delete, colsToDrop...)
+	return nil
+}
+
+func (s Store) DeleteTable(ctx context.Context, tableID sql.TableIdentifier) error {
+	castedTableID, ok := tableID.(dialect.TableIdentifier)
+	if !ok {
+		return fmt.Errorf("failed to cast table ID to dialect.TableIdentifier")
+	}
+
+	if err := s.s3TablesAPI.DeleteTable(ctx, castedTableID.Namespace(), castedTableID.Table()); err != nil {
+		return fmt.Errorf("failed to delete table: %w", err)
+	}
+
 	return nil
 }

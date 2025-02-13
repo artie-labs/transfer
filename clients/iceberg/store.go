@@ -27,19 +27,6 @@ type Store struct {
 	cm               *types.DestinationTableConfigMap
 }
 
-func (s Store) DeleteTable(ctx context.Context, tableID sql.TableIdentifier) error {
-	castedTableID, ok := tableID.(dialect.TableIdentifier)
-	if !ok {
-		return fmt.Errorf("failed to cast table ID to dialect.TableIdentifier")
-	}
-
-	if err := s.s3TablesAPI.DeleteTable(ctx, castedTableID.Namespace(), castedTableID.Table()); err != nil {
-		return fmt.Errorf("failed to delete table: %w", err)
-	}
-
-	return nil
-}
-
 func (s Store) Dialect() dialect.IcebergDialect {
 	return dialect.IcebergDialect{}
 }
@@ -89,6 +76,17 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 	if err = s.apacheLivyClient.ExecContext(ctx, s.Dialect().BuildAppendToTable(tableID, tempTableID.EscapedTable())); err != nil {
 		return fmt.Errorf("failed to append to table: %w", err)
 	}
+
+	return nil
+}
+
+func (s Store) EnsureNamespaceExists(ctx context.Context, namespace string) error {
+	output, err := s.s3TablesAPI.GetNamespace(ctx, namespace)
+	fmt.Println("output", output, "err", err)
+
+	// if err := s.s3TablesAPI.CreateNamespace(ctx, namespace); err != nil {
+	// 	return fmt.Errorf("failed to create namespace: %w", err)
+	// }
 
 	return nil
 }
@@ -186,9 +184,10 @@ func (s Store) IsRetryableError(_ error) bool {
 }
 
 func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
-	return dialect.NewTableIdentifier(s.catalogName, topicConfig.Database, table)
+	return dialect.NewTableIdentifier(s.catalogName, topicConfig.Schema, table)
 }
 
+// TODO: Pass in context into [LoadStore]
 func LoadStore(cfg config.Config) (Store, error) {
 	apacheLivyClient, err := apachelivy.NewClient(context.Background(), cfg.Iceberg.ApacheLivyURL,
 		map[string]any{
@@ -214,11 +213,21 @@ func LoadStore(cfg config.Config) (Store, error) {
 		Credentials: credentials.NewStaticCredentialsProvider(cfg.Iceberg.S3Tables.AwsAccessKeyID, cfg.Iceberg.S3Tables.AwsSecretAccessKey, ""),
 	}
 
-	return Store{
+	// TODO: Ensure all the namespaces exist.
+
+	store := Store{
 		catalogName:      "s3tablesbucket",
 		config:           cfg,
 		apacheLivyClient: apacheLivyClient,
 		cm:               &types.DestinationTableConfigMap{},
 		s3TablesAPI:      awslib.NewS3TablesAPI(awsCfg, cfg.Iceberg.S3Tables.BucketARN),
-	}, nil
+	}
+
+	for _, tc := range cfg.Kafka.TopicConfigs {
+		if err := store.EnsureNamespaceExists(context.Background(), tc.Schema); err != nil {
+			return Store{}, fmt.Errorf("failed to ensure namespace exists: %w", err)
+		}
+	}
+
+	return store, nil
 }
