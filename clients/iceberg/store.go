@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/artie-labs/transfer/clients/iceberg/dialect"
+	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/apachelivy"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -17,6 +18,7 @@ import (
 type Store struct {
 	catalog          string
 	apacheLivyClient apachelivy.Client
+	config           config.Config
 	cm               *types.DestinationTableConfigMap
 }
 
@@ -35,8 +37,58 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 	}
 
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-	_, _ = s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
-	return fmt.Errorf("not implemented")
+	tempTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
+	tableConfig, err := s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
+	if err != nil {
+		return fmt.Errorf("failed to get table config: %w", err)
+	}
+
+	// We don't care about srcKeysMissing because we don't drop columns when we append.
+	_, targetKeysMissing := columns.DiffAndFilter(
+		tableData.ReadOnlyInMemoryCols().GetColumns(),
+		tableConfig.GetColumns(),
+		tableData.TopicConfig().SoftDelete,
+		tableData.TopicConfig().IncludeArtieUpdatedAt,
+		tableData.TopicConfig().IncludeDatabaseUpdatedAt,
+		tableData.Mode(),
+	)
+
+	if tableConfig.CreateTable() {
+		_ = s.CreateTable(ctx, tableID, tableConfig, targetKeysMissing)
+	} else {
+		// TODO: Implement this.
+		// _ = s.AlterTableAddColumns(ctx, tableConfig, tableID, targetKeysMissing)
+	}
+
+	// Infer the columns from the target table (if exists).
+	if err = tableData.MergeColumnsFromDestination(tableConfig.GetColumns()...); err != nil {
+		return fmt.Errorf("failed to merge columns from destination: %w", err)
+	}
+
+	// Load the temporary view and then append the view into the target table.
+	{
+		if err = s.PrepareTemporaryTable(ctx, tableData, tableConfig, tempTableID); err != nil {
+			return fmt.Errorf("failed to prepare temporary table: %w", err)
+		}
+
+		// Query the temporary view`
+		query := fmt.Sprintf("SELECT * FROM %s", tempTableID.EscapedTable())
+		if _, err = s.apacheLivyClient.QueryContext(ctx, query); err != nil {
+			return fmt.Errorf("failed to query temporary table: %w", err)
+		}
+
+		if err = s.apacheLivyClient.ExecContext(ctx, s.dialect().BuildAppendToTable(tableID, tempTableID.EscapedTable())); err != nil {
+			return fmt.Errorf("failed to append to table: %w", err)
+		}
+	}
+
+	// Query the final table to make sure it worked.
+	query := fmt.Sprintf("SELECT * FROM %s", tableID.FullyQualifiedName())
+	if _, err = s.apacheLivyClient.QueryContext(ctx, query); err != nil {
+		return fmt.Errorf("failed to query final table: %w", err)
+	}
+
+	return nil
 }
 
 func (s Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
@@ -64,7 +116,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 	return false, fmt.Errorf("not implemented")
 }
 
-func (s Store) IsRetryableError(err error) bool {
+func (s Store) IsRetryableError(_ error) bool {
 	return false
 }
 

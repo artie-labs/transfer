@@ -93,3 +93,16 @@ func (IcebergDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) strin
 	// If we need to support an older version later, we can use DELETE FROM.
 	return fmt.Sprintf("TRUNCATE TABLE %s", tableID.FullyQualifiedName())
 }
+
+func getCSVOptions(fp string) string {
+	// Options are sourced from: https://spark.apache.org/docs/3.5.3/sql-data-sources-csv.html
+	return fmt.Sprintf(`OPTIONS (path '%s', sep '\t', header 'true', compression 'gzip', nullValue '%s', inferSchema 'true')`, fp, constants.NullValuePlaceholder)
+}
+
+func (IcebergDialect) BuildCreateTemporaryView(viewName string, s3Path string) string {
+	return fmt.Sprintf("CREATE OR REPLACE TEMPORARY VIEW %s USING csv %s;", viewName, getCSVOptions(s3Path))
+}
+
+func (id IcebergDialect) BuildAppendToTable(tableID sql.TableIdentifier, viewName string) string {
+	return fmt.Sprintf("INSERT INTO %s TABLE %s", tableID.FullyQualifiedName(), viewName)
+}
