@@ -111,7 +111,7 @@ WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s)
 		return nil, err
 	}
 
-	deleteCondition := sql.QuotedDeleteColumnMarker(constants.StagingAlias, id)
+	deleteColumnMarker := sql.QuotedDeleteColumnMarker(constants.StagingAlias, id)
 
 	mergeStmt := fmt.Sprintf(`%s
 WHEN MATCHED AND %s THEN DELETE
@@ -120,11 +120,11 @@ WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s)
 `,
 		baseQuery,
 		// Delete
-		deleteCondition,
+		deleteColumnMarker,
 		// Update
-		deleteCondition, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, id),
+		deleteColumnMarker, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, id),
 		// Insert
-		deleteCondition, strings.Join(sql.QuoteColumns(cols, id), ","), strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, id), ","),
+		deleteColumnMarker, strings.Join(sql.QuoteColumns(cols, id), ","), strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, id), ","),
 	)
 
 	return []string{mergeStmt}, nil
