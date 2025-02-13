@@ -126,7 +126,6 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 		return false, fmt.Errorf("failed to get table config: %w", err)
 	}
 
-	// Apply column deltas
 	srcKeysMissing, targetKeysMissing := columns.DiffAndFilter(
 		tableData.ReadOnlyInMemoryCols().GetColumns(),
 		tableConfig.GetColumns(),
@@ -169,7 +168,6 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 		}
 	}
 
-	// Then merge the table
 	queries, err := s.Dialect().BuildMergeQueries(tableID, temporaryTableID.EscapedTable(), primaryKeys, nil, cols, tableData.TopicConfig().SoftDelete, tableData.ContainsHardDeletes())
 	if err != nil {
 		return false, fmt.Errorf("failed to build merge queries: %w", err)
