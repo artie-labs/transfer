@@ -113,7 +113,6 @@ WHERE EXISTS (
 	}
 }
 
-// BuildMergeQueries implements a SparkSQL MERGE into an Iceberg table.
 func (id IcebergDialect) BuildMergeQueries(
 	tableID sql.TableIdentifier,
 	subQuery string,
@@ -121,17 +120,13 @@ func (id IcebergDialect) BuildMergeQueries(
 	additionalEqualityStrings []string,
 	cols []columns.Column,
 	softDelete bool,
-	_ bool, // "mergeVariants" unused example param
+	_ bool,
 ) ([]string, error) {
 
 	// Build the ON condition
 	var equalitySQLParts []string
 	for _, pk := range primaryKeys {
-		// For JSON columns, Spark might require a cast or to_json usage to compare properly.
-		// If you store them as strings in your Iceberg table, a normal equality can suffice.
-		// Adjust as needed.
-		equalitySQLParts = append(equalitySQLParts,
-			sql.BuildColumnComparison(pk, constants.TargetAlias, constants.StagingAlias, sql.Equal, id))
+		equalitySQLParts = append(equalitySQLParts, sql.BuildColumnComparison(pk, constants.TargetAlias, constants.StagingAlias, sql.Equal, id))
 	}
 
 	if len(additionalEqualityStrings) > 0 {
