@@ -17,9 +17,12 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 )
 
 type Store struct {
+	catalogName      string
 	s3TablesAPI      awslib.S3TablesAPIWrapper
 	apacheLivyClient apachelivy.Client
 	config           config.Config
@@ -223,10 +226,16 @@ func LoadStore(cfg config.Config) (Store, error) {
 		return Store{}, err
 	}
 
+	awsCfg := aws.Config{
+		Region:      cfg.Iceberg.S3Tables.Region,
+		Credentials: credentials.NewStaticCredentialsProvider(cfg.Iceberg.S3Tables.AwsAccessKeyID, cfg.Iceberg.S3Tables.AwsSecretAccessKey, ""),
+	}
+
 	return Store{
+		catalogName:      "s3tablesbucket",
 		config:           cfg,
 		apacheLivyClient: apacheLivyClient,
 		cm:               &types.DestinationTableConfigMap{},
-		s3TablesAPI:      awslib.NewS3TablesAPI(cfg.Iceberg.S3Tables.Region, cfg.Iceberg.S3Tables.AwsAccessKeyID, cfg.Iceberg.S3Tables.AwsSecretAccessKey),
+		s3TablesAPI:      awslib.NewS3TablesAPI(awsCfg, cfg.Iceberg.S3Tables.BucketARN),
 	}, nil
 }
