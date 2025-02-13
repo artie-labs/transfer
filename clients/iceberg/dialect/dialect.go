@@ -91,11 +91,7 @@ func (id IcebergDialect) BuildMergeQueries(
 
 	var updateCols []columns.Column
 	var insertCols []columns.Column
-	// If softDelete, we only keep the marker in the schema. Otherwise we remove it.
 	if softDelete {
-		// We'll keep the __artie_delete column. But remove the only-set-delete marker
-		// (already done above). The next block is not strictly necessary if your schema
-		// includes the delete column.
 		updateCols = cols
 		insertCols = cols
 	} else {
@@ -108,42 +104,29 @@ func (id IcebergDialect) BuildMergeQueries(
 		insertCols = colsNoDelete
 	}
 
-	// Build the UPDATE SET fragment, e.g.: colA = s.colA, colB = s.colB, ...
 	updateSetFragment := sql.BuildColumnsUpdateFragment(updateCols, constants.StagingAlias, constants.TargetAlias, id)
 
 	// Build the INSERT columns and VALUES fragments
 	insertColumns := strings.Join(sql.QuoteColumns(insertCols, id), ",")
 	insertValues := strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, insertCols, id), ",")
-
-	// Construct the final MERGE statement. This example includes:
-	//  1) WHEN MATCHED AND staging.__artie_delete = true THEN DELETE
-	//  2) WHEN MATCHED AND staging.__artie_delete = false THEN UPDATE
-	//  3) WHEN NOT MATCHED AND staging.__artie_delete = false THEN INSERT
-	// If you have a “softDelete” approach, we do an UPDATE that sets __artie_delete=true instead of a physical DELETE.
-	// Adjust as needed.
 	if softDelete {
-		// Soft delete means we do not physically remove rows; we only flip a flag.
-		// We also do a separate update path for the “delete = true” scenario.
-		// The marker column is typically named constants.DeleteColumnMarker or similar.
 		mergeStmt := fmt.Sprintf(`%s
 WHEN MATCHED AND IFNULL(%s, false) = false THEN UPDATE SET %s
 WHEN MATCHED AND IFNULL(%s, false) = true THEN UPDATE SET %s
 WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s)
 `,
 			baseQuery,
+			// Update + soft deletion when we have previous values
+			sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, id), updateSetFragment,
+			// Soft deletion when we don't have previous values (only update the __artie_delete column)
 			sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, id),
-			updateSetFragment,
-			sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, id),
-			sql.BuildColumnsUpdateFragment(
-				[]columns.Column{columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean)},
-				constants.StagingAlias, constants.TargetAlias, id),
-			insertColumns,
-			insertValues,
+			sql.BuildColumnsUpdateFragment([]columns.Column{columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean)}, constants.StagingAlias, constants.TargetAlias, id),
+			// Insert
+			insertColumns, insertValues,
 		)
 		return []string{mergeStmt}, nil
 	}
 
-	// Hard delete
 	deleteCondition := sql.QuotedDeleteColumnMarker(constants.StagingAlias, id)
 
 	mergeStmt := fmt.Sprintf(`%s
@@ -152,12 +135,12 @@ WHEN MATCHED AND IFNULL(%s, false) = false THEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s)
 `,
 		baseQuery,
+		// Delete
 		deleteCondition,
-		deleteCondition,
-		updateSetFragment,
-		deleteCondition,
-		insertColumns,
-		insertValues,
+		// Update
+		deleteCondition, updateSetFragment,
+		// Insert
+		deleteCondition, insertColumns, insertValues,
 	)
 
 	return []string{mergeStmt}, nil
