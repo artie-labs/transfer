@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	NullValuePlaceholder             = `\\N`
+	NullValuePlaceholder             = "__artie_null_value"
 	ToastUnavailableValuePlaceholder = "__debezium_unavailable_value"
 
 	// DebeziumTopicRoutingKey - https://debezium.io/documentation/reference/stable/transformations/topic-routing.html#by-logical-table-router-key-field-name
