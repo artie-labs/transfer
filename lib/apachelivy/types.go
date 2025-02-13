@@ -99,6 +99,14 @@ type GetStatementResponse struct {
 	Completed int             `json:"completed"`
 }
 
+func (g GetStatementResponse) Error(sessionID int) error {
+	if g.Output.Status == "error" {
+		return fmt.Errorf("%s, stacktrace: %s for session %d, statement %d", g.Output.EValue, strings.Join(g.Output.TraceBack, "\n"), sessionID, g.ID)
+	}
+
+	return nil
+}
+
 func (g GetStatementResponse) MarshalJSON() ([]byte, error) {
 	if g.Output.Data == nil {
 		return nil, fmt.Errorf("data is nil")
@@ -110,14 +118,6 @@ func (g GetStatementResponse) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(jsonData)
-}
-
-func (g GetStatementResponse) Error(sessionID int) error {
-	if g.Output.Status == "error" {
-		return fmt.Errorf("%s, stacktrace: %s for session %d, statement %d", g.Output.EValue, strings.Join(g.Output.TraceBack, "\n"), sessionID, g.ID)
-	}
-
-	return nil
 }
 
 type GetSchemaResponse struct {
