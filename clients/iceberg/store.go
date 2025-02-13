@@ -80,7 +80,7 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 			return fmt.Errorf("failed to create table: %w", err)
 		}
 	} else {
-		if err = s.AlterTable(ctx, tableID, tableConfig, targetKeysMissing); err != nil {
+		if err = s.AlterTableAddColumns(ctx, tableID, tableConfig, targetKeysMissing); err != nil {
 			return fmt.Errorf("failed to alter table: %w", err)
 		}
 	}
@@ -154,7 +154,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 
 		tableConfig.MutateInMemoryColumns(constants.Add, targetKeysMissing...)
 	} else {
-		if err := s.AlterTable(ctx, tableID, tableConfig, targetKeysMissing); err != nil {
+		if err := s.AlterTableAddColumns(ctx, tableID, tableConfig, targetKeysMissing); err != nil {
 			return false, fmt.Errorf("failed to alter table: %w", err)
 		}
 
