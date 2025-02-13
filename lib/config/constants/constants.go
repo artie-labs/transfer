@@ -41,6 +41,8 @@ const (
 	DBZMySQLFormat = "debezium.mysql"
 
 	DBZRelationalFormat = "debezium.relational"
+
+	DefaultS3TablesPackage = "software.amazon.s3tables:s3-tables-catalog-for-iceberg-runtime:0.1.4"
 )
 
 // ExporterKind is used for the Telemetry package
