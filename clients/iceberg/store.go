@@ -42,10 +42,6 @@ func (s Store) DeleteTable(ctx context.Context, tableID sql.TableIdentifier) err
 	return nil
 }
 
-func (s Store) GetConfigMap() *types.DestinationTableConfigMap {
-	return s.cm
-}
-
 func (s Store) Dialect() dialect.IcebergDialect {
 	return dialect.IcebergDialect{}
 }
