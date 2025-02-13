@@ -81,12 +81,13 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 }
 
 func (s Store) EnsureNamespaceExists(ctx context.Context, namespace string) error {
-	output, err := s.s3TablesAPI.GetNamespace(ctx, namespace)
-	fmt.Println("output", output, "err", err)
+	if _, err := s.s3TablesAPI.GetNamespace(ctx, namespace); err != nil {
+		if awslib.IsNotFoundError(err) {
+			return s.s3TablesAPI.CreateNamespace(ctx, namespace)
+		}
 
-	// if err := s.s3TablesAPI.CreateNamespace(ctx, namespace); err != nil {
-	// 	return fmt.Errorf("failed to create namespace: %w", err)
-	// }
+		return fmt.Errorf("failed to get namespace: %w", err)
+	}
 
 	return nil
 }
@@ -213,8 +214,6 @@ func LoadStore(cfg config.Config) (Store, error) {
 		Credentials: credentials.NewStaticCredentialsProvider(cfg.Iceberg.S3Tables.AwsAccessKeyID, cfg.Iceberg.S3Tables.AwsSecretAccessKey, ""),
 	}
 
-	// TODO: Ensure all the namespaces exist.
-
 	store := Store{
 		catalogName:      "s3tablesbucket",
 		config:           cfg,
@@ -224,6 +223,7 @@ func LoadStore(cfg config.Config) (Store, error) {
 	}
 
 	for _, tc := range cfg.Kafka.TopicConfigs {
+		// TODO: Use the context passed in.
 		if err := store.EnsureNamespaceExists(context.Background(), tc.Schema); err != nil {
 			return Store{}, fmt.Errorf("failed to ensure namespace exists: %w", err)
 		}

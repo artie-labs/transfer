@@ -2,6 +2,7 @@ package awslib
 
 import (
 	"context"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3tables"
@@ -19,6 +20,16 @@ func NewS3TablesAPI(cfg aws.Config, tableBucketARN string) S3TablesAPIWrapper {
 		client:         s3tables.NewFromConfig(cfg),
 		tableBucketARN: tableBucketARN,
 	}
+}
+
+func IsNotFoundError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	// Example of an API not found error:
+	// operation error S3Tables: GetNamespace, https response error StatusCode: 404, RequestID: {{RequestID}}, NotFoundException: The specified namespace does not exist.
+	return strings.Contains(err.Error(), "https response error StatusCode: 404")
 }
 
 func (s S3TablesAPIWrapper) GetNamespace(ctx context.Context, namespace string) (s3tables.GetNamespaceOutput, error) {
