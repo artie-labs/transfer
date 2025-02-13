@@ -14,7 +14,7 @@ import (
 )
 
 func (s Store) describeTable(ctx context.Context, tableID sql.TableIdentifier) ([]columns.Column, error) {
-	query, _, _ := s.dialect().BuildDescribeTableQuery(tableID)
+	query, _, _ := s.Dialect().BuildDescribeTableQuery(tableID)
 	output, err := s.apacheLivyClient.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
