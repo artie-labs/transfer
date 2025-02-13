@@ -122,20 +122,15 @@ func (s Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, 
 
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
-
-	// if err := s.DeleteTable(ctx, tableID); err != nil {
-	// 	return false, fmt.Errorf("failed to delete table: %w", err)
-	// }
-
 	temporaryTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
-	// Get what the target table looks like:
+
 	tableConfig, err := s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return false, fmt.Errorf("failed to get table config: %w", err)
 	}
 
 	// Apply column deltas
-	_, targetKeysMissing := columns.DiffAndFilter(
+	srcKeysMissing, targetKeysMissing := columns.DiffAndFilter(
 		tableData.ReadOnlyInMemoryCols().GetColumns(),
 		tableConfig.GetColumns(),
 		tableData.TopicConfig().SoftDelete,
@@ -155,25 +150,21 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 			return false, fmt.Errorf("failed to alter table: %w", err)
 		}
 
-		tableConfig.MutateInMemoryColumns(constants.Add, targetKeysMissing...)
+		if err := s.AlterTableDropColumns(ctx, tableID, tableConfig, srcKeysMissing, tableData.LatestCDCTs, tableData.ContainOtherOperations()); err != nil {
+			return false, fmt.Errorf("failed to drop columns: %w", err)
+		}
 	}
 
 	if err = tableData.MergeColumnsFromDestination(tableConfig.GetColumns()...); err != nil {
 		return false, fmt.Errorf("failed to merge columns from destination: %w for table %q", err, tableData.Name())
 	}
 
-	// Prepare the temporary table
 	if err := s.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID); err != nil {
 		logger.Panic("failed to prepare temporary table", slog.Any("err", err))
 		return false, fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 
-	if _, err := s.apacheLivyClient.QueryContext(ctx, fmt.Sprintf("SELECT * FROM %s", temporaryTableID.EscapedTable())); err != nil {
-		return false, fmt.Errorf("failed to query temporary table: %w", err)
-	}
-
 	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
-
 	var primaryKeys []columns.Column
 	for _, col := range cols {
 		if col.PrimaryKey() {
@@ -203,7 +194,7 @@ func (s Store) IsRetryableError(_ error) bool {
 }
 
 func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
-	return dialect.NewTableIdentifier("s3tablesbucket", topicConfig.Database, table)
+	return dialect.NewTableIdentifier(s.catalogName, topicConfig.Database, table)
 }
 
 func LoadStore(cfg config.Config) (Store, error) {
