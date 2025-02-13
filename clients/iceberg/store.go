@@ -54,38 +54,27 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 	)
 
 	if tableConfig.CreateTable() {
-		_ = s.CreateTable(ctx, tableID, tableConfig, targetKeysMissing)
+		if err = s.CreateTable(ctx, tableID, tableConfig, targetKeysMissing); err != nil {
+			return fmt.Errorf("failed to create table: %w", err)
+		}
 	} else {
-		// TODO: Implement this.
-		// _ = s.AlterTableAddColumns(ctx, tableConfig, tableID, targetKeysMissing)
+		if err = s.AlterTable(ctx, tableID, tableConfig, targetKeysMissing); err != nil {
+			return fmt.Errorf("failed to alter table: %w", err)
+		}
 	}
 
-	// Infer the columns from the target table (if exists).
 	if err = tableData.MergeColumnsFromDestination(tableConfig.GetColumns()...); err != nil {
 		return fmt.Errorf("failed to merge columns from destination: %w", err)
 	}
 
-	// Load the temporary view and then append the view into the target table.
-	{
-		if err = s.PrepareTemporaryTable(ctx, tableData, tableConfig, tempTableID); err != nil {
-			return fmt.Errorf("failed to prepare temporary table: %w", err)
-		}
-
-		// Query the temporary view`
-		query := fmt.Sprintf("SELECT * FROM %s", tempTableID.EscapedTable())
-		if _, err = s.apacheLivyClient.QueryContext(ctx, query); err != nil {
-			return fmt.Errorf("failed to query temporary table: %w", err)
-		}
-
-		if err = s.apacheLivyClient.ExecContext(ctx, s.dialect().BuildAppendToTable(tableID, tempTableID.EscapedTable())); err != nil {
-			return fmt.Errorf("failed to append to table: %w", err)
-		}
+	// Load the data into a temporary view
+	if err = s.PrepareTemporaryTable(ctx, tableData, tableConfig, tempTableID); err != nil {
+		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 
-	// Query the final table to make sure it worked.
-	query := fmt.Sprintf("SELECT * FROM %s", tableID.FullyQualifiedName())
-	if _, err = s.apacheLivyClient.QueryContext(ctx, query); err != nil {
-		return fmt.Errorf("failed to query final table: %w", err)
+	// Then append the view into the target table
+	if err = s.apacheLivyClient.ExecContext(ctx, s.Dialect().BuildAppendToTable(tableID, tempTableID.EscapedTable())); err != nil {
+		return fmt.Errorf("failed to append to table: %w", err)
 	}
 
 	return nil
