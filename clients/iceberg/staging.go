@@ -103,12 +103,13 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 		}
 	}()
 
-	// Step 1 - Upload the file to S3
+	// Upload the file to S3
 	s3URI, err := s.uploadToS3(ctx, fp)
 	if err != nil {
 		return fmt.Errorf("failed to upload to s3: %w", err)
 	}
 
+	// Load the data into a temporary view
 	command := s.Dialect().BuildCreateTemporaryView(tempTableID.EscapedTable(), s3URI)
 	if err := s.apacheLivyClient.ExecContext(ctx, command); err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
