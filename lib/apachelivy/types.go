@@ -99,9 +99,9 @@ type GetStatementResponse struct {
 	Completed int             `json:"completed"`
 }
 
-func (a GetStatementResponse) Error(sessionID int) error {
-	if a.Output.Status == "error" {
-		return fmt.Errorf("%s, stacktrace: %s for session %d, statement %d", a.Output.EValue, strings.Join(a.Output.TraceBack, "\n"), sessionID, a.ID)
+func (g GetStatementResponse) Error(sessionID int) error {
+	if g.Output.Status == "error" {
+		return fmt.Errorf("%s, stacktrace: %s for session %d, statement %d", g.Output.EValue, strings.Join(g.Output.TraceBack, "\n"), sessionID, g.ID)
 	}
 
 	return nil
