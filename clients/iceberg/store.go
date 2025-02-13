@@ -51,27 +51,6 @@ func (s Store) GetConfigMap() *types.DestinationTableConfigMap {
 	return s.cm
 }
 
-func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
-	if tableCfg := s.cm.GetTableConfig(tableID); tableCfg != nil {
-		return tableCfg, nil
-	}
-
-	cols, err := s.describeTable(context.Background(), tableID)
-	if err != nil {
-		if s.dialect().IsTableDoesNotExistErr(err) {
-			tableCfg := types.NewDestinationTableConfig([]columns.Column{}, dropDeletedColumns)
-			s.cm.AddTable(tableID, tableCfg)
-			return tableCfg, nil
-		}
-
-		return nil, fmt.Errorf("failed to describe table: %w", err)
-	}
-
-	tableCfg := types.NewDestinationTableConfig(cols, dropDeletedColumns)
-	s.cm.AddTable(tableID, tableCfg)
-	return tableCfg, nil
-}
-
 func (s Store) uploadToS3(ctx context.Context, fp string) (string, error) {
 	s3URI, err := awslib.UploadLocalFileToS3(ctx, awslib.UploadArgs{
 		Bucket:                     s.config.Iceberg.S3Tables.Bucket,
@@ -128,7 +107,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 
 	temporaryTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
 	// Get what the target table looks like:
-	tableConfig, err := s.GetTableConfig(tableID, tableData.TopicConfig().DropDeletedColumns)
+	tableConfig, err := s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return false, fmt.Errorf("failed to get table config: %w", err)
 	}
@@ -214,7 +193,7 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	tempTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
-	tableConfig, err := s.GetTableConfig(tableID, tableData.TopicConfig().DropDeletedColumns)
+	tableConfig, err := s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return fmt.Errorf("failed to get table config: %w", err)
 	}
