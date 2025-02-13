@@ -261,7 +261,7 @@ func (s *Store) SweepTemporaryTables(_ context.Context) error {
 	return nil
 }
 
-func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
+func LoadBigQuery(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
@@ -280,7 +280,7 @@ func LoadBigQuery(cfg config.Config, _store *db.Store) (*Store, error) {
 		}
 	}
 
-	bqClient, err := bigquery.NewClient(context.Background(), cfg.BigQuery.ProjectID,
+	bqClient, err := bigquery.NewClient(ctx, cfg.BigQuery.ProjectID,
 		option.WithCredentialsFile(os.Getenv(GooglePathToCredentialsEnvKey)),
 	)
 	if err != nil {

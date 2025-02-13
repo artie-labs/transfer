@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/artie-labs/transfer/clients/bigquery"
@@ -40,12 +41,12 @@ func LoadBaseline(cfg config.Config) (destination.Baseline, error) {
 	return nil, fmt.Errorf("invalid baseline output source specified: %q", cfg.Output)
 }
 
-func LoadDestination(cfg config.Config, store *db.Store) (destination.Destination, error) {
+func LoadDestination(ctx context.Context, cfg config.Config, store *db.Store) (destination.Destination, error) {
 	switch cfg.Output {
 	case constants.Snowflake:
 		return snowflake.LoadSnowflake(cfg, store)
 	case constants.BigQuery:
-		return bigquery.LoadBigQuery(cfg, store)
+		return bigquery.LoadBigQuery(ctx, cfg, store)
 	case constants.Databricks:
 		return databricks.LoadStore(cfg)
 	case constants.MSSQL:
