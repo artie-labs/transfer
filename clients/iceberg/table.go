@@ -63,3 +63,20 @@ func (s Store) CreateTable(ctx context.Context, tableID sql.TableIdentifier, tab
 	tableConfig.MutateInMemoryColumns(constants.Add, cols...)
 	return nil
 }
+
+func (s Store) AlterTable(ctx context.Context, tableID sql.TableIdentifier, tableConfig *types.DestinationTableConfig, cols []columns.Column) error {
+	colSQLParts := make([]string, len(cols))
+	for i, col := range cols {
+		colSQLParts[i] = fmt.Sprintf("%s %s", col.Name(), s.Dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey(), config.SharedDestinationColumnSettings{}))
+	}
+
+	for _, part := range colSQLParts {
+		if err := s.apacheLivyClient.ExecContext(ctx, s.Dialect().BuildAddColumnQuery(tableID, part)); err != nil {
+			return fmt.Errorf("failed to alter table: %w", err)
+		}
+	}
+
+	// Now add this to our [tableConfig]
+	tableConfig.MutateInMemoryColumns(constants.Add, cols...)
+	return nil
+}
