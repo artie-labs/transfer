@@ -10,11 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func getCSVOptions(fp string) string {
-	// Options are sourced from: https://spark.apache.org/docs/3.5.3/sql-data-sources-csv.html
-	return fmt.Sprintf(`OPTIONS (path '%s', sep '\t', header 'true', compression 'gzip', nullValue '%s', inferSchema 'true')`, fp, constants.NullValuePlaceholder)
-}
-
 type IcebergDialect struct{}
 
 func (IcebergDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {
@@ -302,6 +297,11 @@ func (IcebergDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) strin
 	// Spark 3.3 (released in 2023) supports TRUNCATE TABLE.
 	// If we need to support an older version later, we can use DELETE FROM.
 	return fmt.Sprintf("TRUNCATE TABLE %s", tableID.FullyQualifiedName())
+}
+
+func getCSVOptions(fp string) string {
+	// Options are sourced from: https://spark.apache.org/docs/3.5.3/sql-data-sources-csv.html
+	return fmt.Sprintf(`OPTIONS (path '%s', sep '\t', header 'true', compression 'gzip', nullValue '%s', inferSchema 'true')`, fp, constants.NullValuePlaceholder)
 }
 
 func (IcebergDialect) BuildCreateTemporaryView(viewName string, s3Path string) string {

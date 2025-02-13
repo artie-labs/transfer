@@ -6,77 +6,47 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 
-	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/csvwriter"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
-func (s Store) EnsureNamespaceExists(ctx context.Context, namespace string) error {
-	if err := s.apacheLivyClient.ExecContext(ctx, fmt.Sprintf("CREATE NAMESPACE IF NOT EXISTS `s3tablesbucket`.`%s`", namespace)); err != nil {
-		return fmt.Errorf("failed to create namespace: %w", err)
+func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
+	if colVal == nil {
+		return constants.NullValuePlaceholder, nil
 	}
 
-	return nil
-}
-func (s Store) AlterTable(ctx context.Context, tableID sql.TableIdentifier, cols []columns.Column) error {
-	for _, col := range cols {
-		colPart := fmt.Sprintf("%s %s", col.Name(), s.dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey(), config.SharedDestinationColumnSettings{}))
-		query := s.dialect().BuildAddColumnQuery(tableID, colPart)
-		if err := s.apacheLivyClient.ExecContext(ctx, query); err != nil {
-			return fmt.Errorf("failed to alter table: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func (s Store) CreateTable(ctx context.Context, tableID sql.TableIdentifier, tableConfig *types.DestinationTableConfig, cols []columns.Column) error {
-	var colParts []string
-	for _, col := range cols {
-		colPart := fmt.Sprintf("%s %s", col.Name(), s.dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey(), config.SharedDestinationColumnSettings{}))
-		colParts = append(colParts, colPart)
-	}
-
-	if err := s.apacheLivyClient.ExecContext(ctx, s.dialect().BuildCreateTableQuery(tableID, false, colParts)); err != nil {
-		return fmt.Errorf("failed to create table: %w", err)
-	}
-
-	// Now add this to our [tableConfig]
-	tableConfig.MutateInMemoryColumns(constants.Add, cols...)
-	return nil
-}
-
-func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier) error {
-	fp, err := s.writeTemporaryTableFile(tableData, tempTableID)
+	value, err := values.ToString(colVal, colKind)
 	if err != nil {
-		return fmt.Errorf("failed to load temporary table: %w", err)
+		return "", err
 	}
 
-	defer func() {
-		if deleteErr := os.RemoveAll(fp); deleteErr != nil {
-			slog.Warn("Failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
-		}
-	}()
+	return value, nil
+}
 
-	// Step 1 - Upload the file to S3
-	s3URI, err := s.uploadToS3(ctx, fp)
+func (s Store) uploadToS3(ctx context.Context, fp string) (string, error) {
+	s3URI, err := awslib.UploadLocalFileToS3(ctx, awslib.UploadArgs{
+		Bucket:                     s.config.Iceberg.S3Tables.Bucket,
+		FilePath:                   fp,
+		OverrideAWSAccessKeyID:     &s.config.Iceberg.S3Tables.AwsAccessKeyID,
+		OverrideAWSAccessKeySecret: &s.config.Iceberg.S3Tables.AwsSecretAccessKey,
+	})
+
 	if err != nil {
-		return fmt.Errorf("failed to upload to s3: %w", err)
+		return "", fmt.Errorf("failed to upload to s3: %w", err)
 	}
 
-	command := s.dialect().BuildCreateTemporaryView(tempTableID.EscapedTable(), s3URI)
-	if err := s.apacheLivyClient.ExecContext(ctx, command); err != nil {
-		return fmt.Errorf("failed to load temporary table: %w", err)
-	}
-
-	return nil
+	// We need to change the prefix from s3:// to s3a://
+	// Ref: https://stackoverflow.com/a/33356421
+	s3URI = "s3a:" + strings.TrimPrefix(s3URI, "s3:")
+	return s3URI, nil
 }
 
 func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (string, error) {
@@ -121,16 +91,29 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 	return fp, nil
 }
 
-func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
-	if colVal == nil {
-		// TODO: What is the right way to express null?
-		return `\\N`, nil
-	}
-
-	value, err := values.ToString(colVal, colKind)
+func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier) error {
+	fp, err := s.writeTemporaryTableFile(tableData, tempTableID)
 	if err != nil {
-		return "", err
+		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
 
-	return value, nil
+	defer func() {
+		if deleteErr := os.RemoveAll(fp); deleteErr != nil {
+			slog.Warn("Failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
+		}
+	}()
+
+	// Upload the file to S3
+	s3URI, err := s.uploadToS3(ctx, fp)
+	if err != nil {
+		return fmt.Errorf("failed to upload to s3: %w", err)
+	}
+
+	// Load the data into a temporary view
+	command := s.Dialect().BuildCreateTemporaryView(tempTableID.EscapedTable(), s3URI)
+	if err := s.apacheLivyClient.ExecContext(ctx, command); err != nil {
+		return fmt.Errorf("failed to load temporary table: %w", err)
+	}
+
+	return nil
 }
