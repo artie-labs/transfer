@@ -74,9 +74,14 @@ func (id IcebergDialect) BuildMergeQueries(
 		equalitySQLParts = append(equalitySQLParts, additionalEqualityStrings...)
 	}
 
-	mergeInto := fmt.Sprintf("MERGE INTO %s AS %s", tableID.FullyQualifiedName(), constants.TargetAlias)
-	usingSub := fmt.Sprintf("USING %s AS %s", subQuery, constants.StagingAlias)
-	onClause := fmt.Sprintf("ON %s", strings.Join(equalitySQLParts, " AND "))
+	baseQuery := fmt.Sprintf("MERGE INTO %s AS %s USING %s AS %s ON %s",
+		// MERGE INTO AS
+		tableID.FullyQualifiedName(), constants.TargetAlias,
+		// USING AS
+		subQuery, constants.StagingAlias,
+		// ON
+		strings.Join(equalitySQLParts, " AND "),
+	)
 
 	// Possibly remove the “__artie_only_delete” or “__artie_delete” columns if your final table does not have them:
 	cols, err := columns.RemoveOnlySetDeleteColumnMarker(cols)
@@ -121,15 +126,11 @@ func (id IcebergDialect) BuildMergeQueries(
 		// We also do a separate update path for the “delete = true” scenario.
 		// The marker column is typically named constants.DeleteColumnMarker or similar.
 		mergeStmt := fmt.Sprintf(`%s
-%s
-%s
 WHEN MATCHED AND IFNULL(%s, false) = false THEN UPDATE SET %s
 WHEN MATCHED AND IFNULL(%s, false) = true THEN UPDATE SET %s
 WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s)
 `,
-			mergeInto,
-			usingSub,
-			onClause,
+			baseQuery,
 			sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, id),
 			updateSetFragment,
 			sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, id),
@@ -146,15 +147,11 @@ WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s)
 	deleteCondition := sql.QuotedDeleteColumnMarker(constants.StagingAlias, id)
 
 	mergeStmt := fmt.Sprintf(`%s
-%s
-%s
 WHEN MATCHED AND %s THEN DELETE
 WHEN MATCHED AND IFNULL(%s, false) = false THEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s)
 `,
-		mergeInto,
-		usingSub,
-		onClause,
+		baseQuery,
 		deleteCondition,
 		deleteCondition,
 		updateSetFragment,
