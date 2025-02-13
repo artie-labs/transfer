@@ -188,8 +188,7 @@ func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql
 	return dialect.NewTableIdentifier(s.catalogName, topicConfig.Schema, table)
 }
 
-// TODO: Pass in context into [LoadStore]
-func LoadStore(cfg config.Config) (Store, error) {
+func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 	apacheLivyClient, err := apachelivy.NewClient(context.Background(), cfg.Iceberg.ApacheLivyURL,
 		map[string]any{
 			"spark.hadoop.fs.s3a.secret.key":                 cfg.Iceberg.S3Tables.AwsSecretAccessKey,
@@ -223,8 +222,7 @@ func LoadStore(cfg config.Config) (Store, error) {
 	}
 
 	for _, tc := range cfg.Kafka.TopicConfigs {
-		// TODO: Use the context passed in.
-		if err := store.EnsureNamespaceExists(context.Background(), tc.Schema); err != nil {
+		if err := store.EnsureNamespaceExists(ctx, tc.Schema); err != nil {
 			return Store{}, fmt.Errorf("failed to ensure namespace exists: %w", err)
 		}
 	}
