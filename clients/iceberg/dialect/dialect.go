@@ -63,8 +63,6 @@ func (id IcebergDialect) BuildMergeQueries(
 	softDelete bool,
 	_ bool,
 ) ([]string, error) {
-
-	// Build the ON condition
 	var equalitySQLParts []string
 	for _, pk := range primaryKeys {
 		equalitySQLParts = append(equalitySQLParts, sql.BuildColumnComparison(pk, constants.TargetAlias, constants.StagingAlias, sql.Equal, id))
@@ -83,32 +81,11 @@ func (id IcebergDialect) BuildMergeQueries(
 		strings.Join(equalitySQLParts, " AND "),
 	)
 
-	// Possibly remove the “__artie_only_delete” or “__artie_delete” columns if your final table does not have them:
 	cols, err := columns.RemoveOnlySetDeleteColumnMarker(cols)
 	if err != nil {
 		return nil, err
 	}
 
-	var updateCols []columns.Column
-	var insertCols []columns.Column
-	if softDelete {
-		updateCols = cols
-		insertCols = cols
-	} else {
-		// Hard-delete mode: remove the delete column entirely so we do not try to update/insert it.
-		colsNoDelete, err := columns.RemoveDeleteColumnMarker(cols)
-		if err != nil {
-			return nil, err
-		}
-		updateCols = colsNoDelete
-		insertCols = colsNoDelete
-	}
-
-	updateSetFragment := sql.BuildColumnsUpdateFragment(updateCols, constants.StagingAlias, constants.TargetAlias, id)
-
-	// Build the INSERT columns and VALUES fragments
-	insertColumns := strings.Join(sql.QuoteColumns(insertCols, id), ",")
-	insertValues := strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, insertCols, id), ",")
 	if softDelete {
 		mergeStmt := fmt.Sprintf(`%s
 WHEN MATCHED AND IFNULL(%s, false) = false THEN UPDATE SET %s
@@ -117,14 +94,21 @@ WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s)
 `,
 			baseQuery,
 			// Update + soft deletion when we have previous values
-			sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, id), updateSetFragment,
+			sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, id), sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, id),
 			// Soft deletion when we don't have previous values (only update the __artie_delete column)
 			sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, id),
 			sql.BuildColumnsUpdateFragment([]columns.Column{columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean)}, constants.StagingAlias, constants.TargetAlias, id),
-			// Insert
-			insertColumns, insertValues,
+			// Insert columns
+			strings.Join(sql.QuoteColumns(cols, id), ","),
+			// Insert values
+			strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, id), ","),
 		)
 		return []string{mergeStmt}, nil
+	}
+
+	cols, err = columns.RemoveDeleteColumnMarker(cols)
+	if err != nil {
+		return nil, err
 	}
 
 	deleteCondition := sql.QuotedDeleteColumnMarker(constants.StagingAlias, id)
@@ -138,9 +122,9 @@ WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s)
 		// Delete
 		deleteCondition,
 		// Update
-		deleteCondition, updateSetFragment,
+		deleteCondition, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, id),
 		// Insert
-		deleteCondition, insertColumns, insertValues,
+		deleteCondition, strings.Join(sql.QuoteColumns(cols, id), ","), strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, id), ","),
 	)
 
 	return []string{mergeStmt}, nil
