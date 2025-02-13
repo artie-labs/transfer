@@ -122,6 +122,8 @@ WHERE COALESCE(%s, 0) = 1;`,
 		return nil, err
 	}
 
+	deleteColumnMarker := sql.QuotedDeleteColumnMarker(constants.StagingAlias, md)
+
 	return []string{fmt.Sprintf(`
 MERGE INTO %s %s
 USING %s AS %s ON %s
@@ -133,11 +135,11 @@ WHEN NOT MATCHED AND COALESCE(%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
 		// USING %s AS %s ON %s
 		subQuery, constants.StagingAlias, joinOn,
 		// WHEN MATCHED AND %s = 1 THEN DELETE
-		sql.QuotedDeleteColumnMarker(constants.StagingAlias, md),
+		deleteColumnMarker,
 		// WHEN MATCHED AND COALESCE(%s, 0) = 0 THEN UPDATE SET %s
-		sql.QuotedDeleteColumnMarker(constants.StagingAlias, md), sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
+		deleteColumnMarker, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
 		// WHEN NOT MATCHED AND COALESCE(%s, 1) = 0 THEN INSERT (%s)
-		sql.QuotedDeleteColumnMarker(constants.StagingAlias, md), strings.Join(sql.QuoteColumns(cols, md), ","),
+		deleteColumnMarker, strings.Join(sql.QuoteColumns(cols, md), ","),
 		// VALUES (%s);
 		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, md), ","),
 	)}, nil
