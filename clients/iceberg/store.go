@@ -3,7 +3,6 @@ package iceberg
 import (
 	"context"
 	"fmt"
-	"log/slog"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -13,10 +12,8 @@ import (
 	"github.com/artie-labs/transfer/lib/apachelivy"
 	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -118,9 +115,12 @@ func (s Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, 
 }
 
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
+	if tableData.ShouldSkipUpdate() {
+		return false, nil
+	}
+
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	temporaryTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
-
 	tableConfig, err := s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return false, fmt.Errorf("failed to get table config: %w", err)
@@ -139,8 +139,6 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 		if err := s.CreateTable(ctx, tableID, tableConfig, targetKeysMissing); err != nil {
 			return false, fmt.Errorf("failed to create table: %w", err)
 		}
-
-		tableConfig.MutateInMemoryColumns(constants.Add, targetKeysMissing...)
 	} else {
 		if err := s.AlterTableAddColumns(ctx, tableID, tableConfig, targetKeysMissing); err != nil {
 			return false, fmt.Errorf("failed to alter table: %w", err)
@@ -155,8 +153,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 		return false, fmt.Errorf("failed to merge columns from destination: %w for table %q", err, tableData.Name())
 	}
 
-	if err := s.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID); err != nil {
-		logger.Panic("failed to prepare temporary table", slog.Any("err", err))
+	if err = s.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID); err != nil {
 		return false, fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 
