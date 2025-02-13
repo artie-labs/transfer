@@ -66,7 +66,7 @@ func main() {
 			logger.Fatal("Unable to load baseline destination", slog.Any("err", err))
 		}
 	} else {
-		_dest, err := utils.LoadDestination(settings.Config, nil)
+		_dest, err := utils.LoadDestination(ctx, settings.Config, nil)
 		if err != nil {
 			logger.Fatal("Unable to load destination", slog.Any("err", err))
 		}

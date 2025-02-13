@@ -39,7 +39,7 @@ func (d *DDLTestSuite) SetupTest() {
 	bqStore := db.Store(d.fakeBigQueryStore)
 
 	var err error
-	d.bigQueryStore, err = bigquery.LoadBigQuery(d.bigQueryCfg, &bqStore)
+	d.bigQueryStore, err = bigquery.LoadBigQuery(d.T().Context(), d.bigQueryCfg, &bqStore)
 	assert.NoError(d.T(), err)
 
 	d.fakeSnowflakeStagesStore = &mocks.FakeStore{}

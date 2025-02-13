@@ -62,7 +62,7 @@ func (f *FlushTestSuite) SetupTest() {
 	}
 
 	var err error
-	f.dest, err = utils.LoadDestination(f.cfg, &store)
+	f.dest, err = utils.LoadDestination(f.T().Context(), f.cfg, &store)
 	assert.NoError(f.T(), err)
 
 	f.db = models.NewMemoryDB()
