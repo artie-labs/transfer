@@ -49,9 +49,57 @@ func (IcebergDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primary
 	panic("not implemented")
 }
 
-func (id IcebergDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
-	// TODO: Implement
-	panic("not implemented")
+func (id IcebergDialect) BuildDedupeQueries(
+	tableID,
+	stagingTableID sql.TableIdentifier,
+	primaryKeys []string,
+	includeArtieUpdatedAt bool,
+) []string {
+	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, id)
+
+	// If includeArtieUpdatedAt is true, we also order by `_artie_updated_at`
+	orderColsToIterate := primaryKeysEscaped
+	if includeArtieUpdatedAt {
+		orderColsToIterate = append(orderColsToIterate, id.QuoteIdentifier(constants.UpdateColumnMarker))
+	}
+
+	// Build up the ORDER BY portion
+	var orderByCols []string
+	for _, pk := range orderColsToIterate {
+		orderByCols = append(orderByCols, fmt.Sprintf("%s DESC", pk))
+	}
+
+	var parts []string
+
+	// 1) Create a temp view with row_number subquery
+	parts = append(parts, fmt.Sprintf(`
+	CREATE OR REPLACE TEMPORARY VIEW %s AS
+	SELECT *
+	FROM (
+		SELECT
+			t.*,
+			ROW_NUMBER() OVER (
+				PARTITION BY %s
+				ORDER BY %s
+			) AS rownum
+		FROM %s AS t
+	) AS sub
+	WHERE sub.rownum = 1
+	`,
+		stagingTableID.EscapedTable(),
+		strings.Join(primaryKeysEscaped, ", "),
+		strings.Join(orderByCols, ", "),
+		tableID.FullyQualifiedName(),
+	))
+
+	// Just query the temporary view
+	parts = append(parts, fmt.Sprintf("SELECT * FROM %s", stagingTableID.EscapedTable()))
+
+	// Drop the rownum column
+	parts = append(parts, fmt.Sprintf("ALTER TABLE %s DROP COLUMN rownum", stagingTableID.EscapedTable()))
+	// 2) Insert deduplicated rows back into the main table
+	parts = append(parts, fmt.Sprintf("INSERT OVERWRITE TABLE %s SELECT * FROM %s", tableID.FullyQualifiedName(), stagingTableID.EscapedTable()))
+	return parts
 }
 
 func (id IcebergDialect) BuildMergeQueries(

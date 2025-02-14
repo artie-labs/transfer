@@ -184,6 +184,18 @@ func (s Store) IsRetryableError(_ error) bool {
 	return false
 }
 
+func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
+	queries := s.Dialect().BuildDedupeQueries(tableID, shared.TempTableID(tableID), primaryKeys, includeArtieUpdatedAt)
+	for _, query := range queries {
+		fmt.Println("query", query)
+		if err := s.apacheLivyClient.ExecContext(ctx, query); err != nil {
+			return fmt.Errorf("failed to execute dedupe query: %w", err)
+		}
+	}
+
+	return nil
+}
+
 func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
 	return dialect.NewTableIdentifier(s.catalogName, topicConfig.Schema, table)
 }
