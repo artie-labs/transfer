@@ -68,8 +68,9 @@ func (id IcebergDialect) BuildDedupeQueries(
 
 	// This needs to be a separate table that we drop later because:
 	// 1. SparkSQL does not have a QUALIFY function
-	// 2. SparkSQL does not support dropping a column from a temporary view
-	// 3. Adding a temporary column to the target table for row_number() does not work as the view is just a shim on top of Spark dataframe. We ran into the ambiguous column error previously.
+	// 2. SparkSQL does not have a SELECT EXCEPT function (only Databricks Spark does)
+	// 3. SparkSQL does not support dropping a column from a temporary view
+	// 4. Adding a temporary column to the target table for row_number() does not work as the view is just a shim on top of Spark dataframe. We ran into the ambiguous column error previously.
 	var parts []string
 	parts = append(parts,
 		fmt.Sprintf(`CREATE OR REPLACE TABLE %s AS SELECT * FROM ( SELECT *, ROW_NUMBER() OVER ( PARTITION BY %s ORDER BY %s ) AS __artie_rn FROM %s) WHERE __artie_rn = 1`,
