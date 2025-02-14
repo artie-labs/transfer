@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	NullValuePlaceholder             = `\\N`
+	NullValuePlaceholder             = "__artie_null_value"
 	ToastUnavailableValuePlaceholder = "__debezium_unavailable_value"
 
 	// DebeziumTopicRoutingKey - https://debezium.io/documentation/reference/stable/transformations/topic-routing.html#by-logical-table-router-key-field-name
@@ -41,6 +41,8 @@ const (
 	DBZMySQLFormat = "debezium.mysql"
 
 	DBZRelationalFormat = "debezium.relational"
+
+	DefaultS3TablesPackage = "software.amazon.s3tables:s3-tables-catalog-for-iceberg-runtime:0.1.4"
 )
 
 // ExporterKind is used for the Telemetry package
@@ -83,6 +85,7 @@ var ValidDestinations = []DestinationKind{
 	Redshift,
 	S3,
 	Snowflake,
+	Iceberg,
 }
 
 func IsValidDestination(destination DestinationKind) bool {

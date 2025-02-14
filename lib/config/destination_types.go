@@ -1,6 +1,10 @@
 package config
 
-import "github.com/artie-labs/transfer/lib/config/constants"
+import (
+	"cmp"
+
+	"github.com/artie-labs/transfer/lib/config/constants"
+)
 
 type BigQuery struct {
 	// PathToCredentials is _optional_ if you have GOOGLE_APPLICATION_CREDENTIALS set as an env var
@@ -75,4 +79,10 @@ type S3Tables struct {
 	Region             string `yaml:"region"`
 	// Bucket - This is where all the ephemeral delta files will be stored.
 	Bucket string `yaml:"bucket"`
+	// Sourced from: https://mvnrepository.com/artifact/software.amazon.s3tables/s3-tables-catalog-for-iceberg-runtime
+	RuntimePackageOverride string `yaml:"runtimePackageOverride,omitempty"`
+}
+
+func (s S3Tables) GetRuntimePackage() string {
+	return cmp.Or(s.RuntimePackageOverride, constants.DefaultS3TablesPackage)
 }

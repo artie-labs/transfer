@@ -21,7 +21,7 @@ func IsOutputBaseline(cfg config.Config) bool {
 	return cfg.Output == constants.S3 || cfg.Output == constants.Iceberg
 }
 
-func LoadBaseline(cfg config.Config) (destination.Baseline, error) {
+func LoadBaseline(ctx context.Context, cfg config.Config) (destination.Baseline, error) {
 	switch cfg.Output {
 	case constants.S3:
 		store, err := s3.LoadStore(cfg)
@@ -31,7 +31,7 @@ func LoadBaseline(cfg config.Config) (destination.Baseline, error) {
 
 		return store, nil
 	case constants.Iceberg:
-		store, err := iceberg.LoadStore(cfg)
+		store, err := iceberg.LoadStore(ctx, cfg)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load Iceberg: %w", err)
 		}
