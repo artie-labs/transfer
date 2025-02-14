@@ -165,18 +165,18 @@ WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
 		return []string{}, err
 	}
 
-	quotedDeleteColumnMarker := sql.QuotedDeleteColumnMarker(constants.StagingAlias, bd)
+	deleteColumnMarker := sql.QuotedDeleteColumnMarker(constants.StagingAlias, bd)
 
 	return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED AND %s THEN DELETE
 WHEN MATCHED AND IFNULL(%s, false) = false THEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s);`,
 		// WHEN MATCHED AND %s THEN DELETE
-		quotedDeleteColumnMarker,
+		deleteColumnMarker,
 		// WHEN MATCHED AND IFNULL(%s, false) = false THEN UPDATE SET %s
-		quotedDeleteColumnMarker, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, bd),
+		deleteColumnMarker, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, bd),
 		// WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s)
-		quotedDeleteColumnMarker, strings.Join(sql.QuoteColumns(cols, bd), ","),
+		deleteColumnMarker, strings.Join(sql.QuoteColumns(cols, bd), ","),
 		// VALUES (%s);
 		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, bd), ","),
 	)}, nil
