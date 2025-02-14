@@ -67,7 +67,6 @@ func (id IcebergDialect) BuildDedupeQueries(
 	}
 
 	rowNumberMarker := "__artie_rn"
-
 	// This needs to be a separate table that we drop later because:
 	// 1. SparkSQL does not have a QUALIFY function
 	// 2. SparkSQL does not have a SELECT EXCEPT function (only Databricks Spark does)
