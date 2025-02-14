@@ -184,6 +184,28 @@ func (s Store) IsRetryableError(_ error) bool {
 	return false
 }
 
+func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
+	tempTableID := shared.TempTableID(tableID)
+	castedTempTableID, ok := tempTableID.(dialect.TableIdentifier)
+	if !ok {
+		return fmt.Errorf("failed to cast temp table id to dialect table identifier")
+	}
+
+	queries := s.Dialect().BuildDedupeQueries(tableID, tempTableID, primaryKeys, includeArtieUpdatedAt)
+	for _, query := range queries {
+		if err := s.apacheLivyClient.ExecContext(ctx, query); err != nil {
+			return fmt.Errorf("failed to execute dedupe query: %w", err)
+		}
+	}
+
+	// Drop table has to be outside of the function because we need to drop tables with S3Tables API.
+	if err := s.s3TablesAPI.DeleteTable(ctx, castedTempTableID.Namespace(), castedTempTableID.Table()); err != nil {
+		return fmt.Errorf("failed to delete temp table: %w", err)
+	}
+
+	return nil
+}
+
 func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
 	return dialect.NewTableIdentifier(s.catalogName, topicConfig.Schema, table)
 }
