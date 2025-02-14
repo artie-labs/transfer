@@ -6,6 +6,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
@@ -44,18 +45,89 @@ func (id IcebergDialect) BuildIsNotToastValueExpression(tableAlias constants.Tab
 	return fmt.Sprintf(`CAST(%s AS STRING) NOT LIKE '%s'`, colName, "%"+constants.ToastUnavailableValuePlaceholder+"%")
 }
 
-func (id IcebergDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
-	// We don't need this because our loading method does not incur duplicates.
+func (IcebergDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
 	panic("not implemented")
 }
 
 func (id IcebergDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
-	// TODO
+	// TODO: Implement
 	panic("not implemented")
 }
-func (id IcebergDialect) BuildMergeQueries(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column, softDelete bool, _ bool) ([]string, error) {
-	// TODO
-	panic("not implemented")
+
+func (id IcebergDialect) BuildMergeQueries(
+	tableID sql.TableIdentifier,
+	subQuery string,
+	primaryKeys []columns.Column,
+	additionalEqualityStrings []string,
+	cols []columns.Column,
+	softDelete bool,
+	_ bool,
+) ([]string, error) {
+	var equalitySQLParts []string
+	for _, pk := range primaryKeys {
+		equalitySQLParts = append(equalitySQLParts, sql.BuildColumnComparison(pk, constants.TargetAlias, constants.StagingAlias, sql.Equal, id))
+	}
+
+	if len(additionalEqualityStrings) > 0 {
+		equalitySQLParts = append(equalitySQLParts, additionalEqualityStrings...)
+	}
+
+	baseQuery := fmt.Sprintf("MERGE INTO %s AS %s USING %s AS %s ON %s",
+		// MERGE INTO AS
+		tableID.FullyQualifiedName(), constants.TargetAlias,
+		// USING AS
+		subQuery, constants.StagingAlias,
+		// ON
+		strings.Join(equalitySQLParts, " AND "),
+	)
+
+	cols, err := columns.RemoveOnlySetDeleteColumnMarker(cols)
+	if err != nil {
+		return nil, err
+	}
+
+	if softDelete {
+		mergeStmt := fmt.Sprintf(`%s
+WHEN MATCHED AND IFNULL(%s, false) = false THEN UPDATE SET %s
+WHEN MATCHED AND IFNULL(%s, false) = true THEN UPDATE SET %s
+WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s)
+`,
+			baseQuery,
+			// Update + soft deletion when we have previous values
+			sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, id), sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, id),
+			// Soft deletion when we don't have previous values (only update the __artie_delete column)
+			sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, id),
+			sql.BuildColumnsUpdateFragment([]columns.Column{columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean)}, constants.StagingAlias, constants.TargetAlias, id),
+			// Insert columns
+			strings.Join(sql.QuoteColumns(cols, id), ","),
+			// Insert values
+			strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, id), ","),
+		)
+		return []string{mergeStmt}, nil
+	}
+
+	cols, err = columns.RemoveDeleteColumnMarker(cols)
+	if err != nil {
+		return nil, err
+	}
+
+	deleteColumnMarker := sql.QuotedDeleteColumnMarker(constants.StagingAlias, id)
+
+	mergeStmt := fmt.Sprintf(`%s
+WHEN MATCHED AND %s THEN DELETE
+WHEN MATCHED AND IFNULL(%s, false) = false THEN UPDATE SET %s
+WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s)
+`,
+		baseQuery,
+		// Delete
+		deleteColumnMarker,
+		// Update
+		deleteColumnMarker, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, id),
+		// Insert
+		deleteColumnMarker, strings.Join(sql.QuoteColumns(cols, id), ","), strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, id), ","),
+	)
+
+	return []string{mergeStmt}, nil
 }
 
 // https://spark.apache.org/docs/3.5.3/sql-ref-syntax-ddl-alter-table.html#add-columns
