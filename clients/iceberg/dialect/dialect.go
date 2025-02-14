@@ -56,39 +56,29 @@ func (id IcebergDialect) BuildDedupeQueries(
 	includeArtieUpdatedAt bool,
 ) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, id)
-
-	// If includeArtieUpdatedAt is true, we also order by `_artie_updated_at`
 	orderColsToIterate := primaryKeysEscaped
 	if includeArtieUpdatedAt {
 		orderColsToIterate = append(orderColsToIterate, id.QuoteIdentifier(constants.UpdateColumnMarker))
 	}
 
-	// Build up the ORDER BY portion
 	var orderByCols []string
 	for _, pk := range orderColsToIterate {
 		orderByCols = append(orderByCols, fmt.Sprintf("%s DESC", pk))
 	}
 
+	// This needs to be a separate table that we drop later because:
+	// 1. SparkSQL does not have a QUALIFY function
+	// 2. SparkSQL does not support dropping a column from a temporary view
+	// 3. Adding a temporary column to the target table for row_number() does not work as the view is just a shim on top of Spark dataframe. We ran into the ambiguous column error previously.
 	var parts []string
-	parts = append(parts, fmt.Sprintf(`
-	CREATE OR REPLACE TABLE %s AS
-	SELECT *
-	FROM (
-		SELECT
-			*,
-			ROW_NUMBER() OVER (
-				PARTITION BY %s
-				ORDER BY %s
-			) AS __artie_rn
-		FROM %s
+	parts = append(parts,
+		fmt.Sprintf(`CREATE OR REPLACE TABLE %s AS SELECT * FROM ( SELECT *, ROW_NUMBER() OVER ( PARTITION BY %s ORDER BY %s ) AS __artie_rn FROM %s) WHERE __artie_rn = 1`,
+			stagingTableID.FullyQualifiedName(),
+			strings.Join(primaryKeysEscaped, ", "),
+			strings.Join(orderByCols, ", "),
+			tableID.FullyQualifiedName(),
+		),
 	)
-	WHERE __artie_rn = 1
-	`,
-		stagingTableID.FullyQualifiedName(),
-		strings.Join(primaryKeysEscaped, ", "),
-		strings.Join(orderByCols, ", "),
-		tableID.FullyQualifiedName(),
-	))
 
 	parts = append(parts, fmt.Sprintf("ALTER TABLE %s DROP COLUMN __artie_rn", stagingTableID.FullyQualifiedName()))
 	parts = append(parts, fmt.Sprintf("INSERT OVERWRITE %s TABLE %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName()))
