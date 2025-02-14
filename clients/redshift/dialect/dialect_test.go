@@ -408,3 +408,17 @@ func TestRedshiftDialect_BuildIncreaseStringPrecisionQuery(t *testing.T) {
 		RedshiftDialect{}.BuildIncreaseStringPrecisionQuery(fakeTableID, "bar", 5),
 	)
 }
+
+func TestRedshiftDialect_BuildCopyStatement(t *testing.T) {
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("public.tableName")
+
+	cols := []string{"id", "email", "first_name"}
+	s3URI := "{{s3_uri}}"
+	credentialsClause := "{{credentials}}"
+
+	assert.Equal(t,
+		`COPY public.tableName ("id","email","first_name") FROM '{{s3_uri}}' DELIMITER '\t' NULL AS '\\N' GZIP FORMAT CSV {{credentials}} dateformat 'auto' timeformat 'auto';`,
+		RedshiftDialect{}.BuildCopyStatement(fakeTableID, cols, s3URI, credentialsClause),
+	)
+}

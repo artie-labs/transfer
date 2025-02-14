@@ -221,3 +221,17 @@ JOIN
 WHERE
     n.nspname = $1 AND c.relname ILIKE $2 AND c.relkind = 'r';`, []any{schemaName, "%" + constants.ArtiePrefix + "%"}
 }
+
+func (rd RedshiftDialect) BuildCopyStatement(tableID sql.TableIdentifier, cols []string, s3URI string, credentialsClause string) string {
+	quotedColumns := make([]string, len(cols))
+	for i, col := range cols {
+		quotedColumns[i] = rd.QuoteIdentifier(col)
+	}
+
+	return fmt.Sprintf(`COPY %s (%s) FROM '%s' DELIMITER '\t' NULL AS '\\N' GZIP FORMAT CSV %s dateformat 'auto' timeformat 'auto';`,
+		// COPY
+		tableID.FullyQualifiedName(), strings.Join(quotedColumns, ","),
+		// File path and CSV option
+		s3URI, credentialsClause,
+	)
+}
