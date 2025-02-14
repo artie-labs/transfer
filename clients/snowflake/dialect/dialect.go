@@ -72,9 +72,6 @@ func (sd SnowflakeDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableI
 		strings.Join(orderByCols, ", "),
 	))
 
-	// Then leverage INSERT OVERWRITE
-	parts = append(parts, fmt.Sprintf("INSERT OVERWRITE TABLE %s SELECT * FROM %s", tableID.FullyQualifiedName(), stagingTableID.EscapedTable()))
-
 	var whereClauses []string
 	for _, primaryKeyEscaped := range primaryKeysEscaped {
 		whereClauses = append(whereClauses, fmt.Sprintf("t1.%s = t2.%s", primaryKeyEscaped, primaryKeyEscaped))
