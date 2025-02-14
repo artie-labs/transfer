@@ -9,6 +9,7 @@ import (
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/awslib"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/csvwriter"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -62,13 +63,11 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		return fmt.Errorf("failed to upload %q to s3: %w", fp, err)
 	}
 
-	// COPY table_name FROM '/path/to/local/file' DELIMITER '\t' NULL '\\N' FORMAT csv;
-	// Note, we need to specify `\\N` here and in `CastColVal(..)` we are only doing `\N`, this is because Redshift treats backslashes as an escape character.
-	// So, it'll convert `\N` => `\\N` during COPY.
 	copyStmt := fmt.Sprintf(
-		`COPY %s (%s) FROM '%s' DELIMITER '\t' NULL AS '\\N' GZIP FORMAT CSV %s dateformat 'auto' timeformat 'auto';`,
+		`COPY %s (%s) FROM '%s' DELIMITER '\t' NULL AS '%s' GZIP FORMAT CSV %s dateformat 'auto' timeformat 'auto';`,
 		tempTableID.FullyQualifiedName(),
 		strings.Join(sql.QuoteColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), s.Dialect()), ","),
+		constants.NullValuePlaceholder,
 		s3Uri,
 		s.credentialsClause,
 	)
