@@ -83,7 +83,6 @@ func (id IcebergDialect) BuildDedupeQueries(
 
 	parts = append(parts, fmt.Sprintf("ALTER TABLE %s DROP COLUMN __artie_rn", stagingTableID.FullyQualifiedName()))
 	parts = append(parts, fmt.Sprintf("INSERT OVERWRITE %s TABLE %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName()))
-	parts = append(parts, fmt.Sprintf("DROP TABLE %s", stagingTableID.FullyQualifiedName()))
 	return parts
 }
 
