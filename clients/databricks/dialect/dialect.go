@@ -160,3 +160,21 @@ func (d DatabricksDialect) BuildRemoveFileFromVolumeQuery(filePath string) strin
 func (d DatabricksDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {
 	return sql.Native
 }
+
+func (d DatabricksDialect) BuildCopyStatement(tableID sql.TableIdentifier, cols []string, dbfsFilePath string) string {
+	// Copy file from DBFS -> table via COPY INTO, ref: https://docs.databricks.com/en/sql/language-manual/delta-copy-into.html
+	return fmt.Sprintf(`
+COPY INTO %s BY POSITION FROM (SELECT %s FROM %s)
+FILEFORMAT = CSV
+FORMAT_OPTIONS (
+    'escape' = '"', 
+    'delimiter' = '\t', 
+    'header' = 'false', 
+    'nullValue' = '\\\\N'
+);`,
+		// COPY INTO
+		tableID.FullyQualifiedName(),
+		// SELECT columns FROM file
+		strings.Join(cols, ", "), sql.QuoteLiteral(dbfsFilePath),
+	)
+}

@@ -323,3 +323,21 @@ func TestDatabricksDialect_BuildMergeQueries_EscapePrimaryKeys(t *testing.T) {
 		},
 		strings.Split(strings.TrimSpace(statements[0]), "\n"))
 }
+
+func TestDatabricksDialect_BuildCopyStatement(t *testing.T) {
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("{{fqName}}")
+	cols := []string{"id", "group", "start", "updated_at"}
+	dbfsFilePath := "{{dbfsFilePath}}"
+
+	assert.Equal(t, `
+COPY INTO {{fqName}} BY POSITION FROM (SELECT id, group, start, updated_at FROM '{{dbfsFilePath}}')
+FILEFORMAT = CSV
+FORMAT_OPTIONS (
+    'escape' = '"', 
+    'delimiter' = '\t', 
+    'header' = 'false', 
+    'nullValue' = '\\\\N'
+);`,
+		DatabricksDialect{}.BuildCopyStatement(fakeTableID, cols, dbfsFilePath))
+}
