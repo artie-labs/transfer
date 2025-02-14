@@ -418,7 +418,7 @@ func TestRedshiftDialect_BuildCopyStatement(t *testing.T) {
 	credentialsClause := "{{credentials}}"
 
 	assert.Equal(t,
-		`COPY public.tableName ("id","email","first_name") FROM '{{s3_uri}}' DELIMITER '\t' NULL AS '\\N' GZIP FORMAT CSV {{credentials}} dateformat 'auto' timeformat 'auto';`,
+		fmt.Sprintf(`COPY public.tableName ("id","email","first_name") FROM '{{s3_uri}}' DELIMITER '\t' NULL AS '%s' GZIP FORMAT CSV {{credentials}} dateformat 'auto' timeformat 'auto';`, constants.NullValuePlaceholder),
 		RedshiftDialect{}.BuildCopyStatement(fakeTableID, cols, s3URI, credentialsClause),
 	)
 }

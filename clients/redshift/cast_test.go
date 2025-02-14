@@ -196,7 +196,7 @@ func (r *RedshiftTestSuite) TestCastColValStaging() {
 			// Not struct
 			result, err := castColValStaging(nil, typing.String, false, false)
 			assert.NoError(r.T(), err)
-			assert.Equal(r.T(), `\N`, result.Value)
+			assert.Equal(r.T(), constants.NullValuePlaceholder, result.Value)
 		}
 	}
 }
