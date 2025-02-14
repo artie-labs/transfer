@@ -228,10 +228,10 @@ func (rd RedshiftDialect) BuildCopyStatement(tableID sql.TableIdentifier, cols [
 		quotedColumns[i] = rd.QuoteIdentifier(col)
 	}
 
-	return fmt.Sprintf(`COPY %s (%s) FROM '%s' DELIMITER '\t' NULL AS '\\N' GZIP FORMAT CSV %s dateformat 'auto' timeformat 'auto';`,
+	return fmt.Sprintf(`COPY %s (%s) FROM %s DELIMITER '\t' NULL AS '\\N' GZIP FORMAT CSV %s dateformat 'auto' timeformat 'auto';`,
 		// COPY
 		tableID.FullyQualifiedName(), strings.Join(quotedColumns, ","),
 		// File path and CSV option
-		s3URI, credentialsClause,
+		sql.QuoteLiteral(s3URI), credentialsClause,
 	)
 }
