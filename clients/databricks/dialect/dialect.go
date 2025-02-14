@@ -170,11 +170,11 @@ FORMAT_OPTIONS (
     'escape' = '"', 
     'delimiter' = '\t', 
     'header' = 'false', 
-    'nullValue' = '\\\\N'
+    'nullValue' = '%s'
 );`,
 		// COPY INTO
 		tableID.FullyQualifiedName(),
 		// SELECT columns FROM file
-		strings.Join(cols, ", "), sql.QuoteLiteral(dbfsFilePath),
+		strings.Join(cols, ", "), sql.QuoteLiteral(dbfsFilePath), constants.NullValuePlaceholder,
 	)
 }

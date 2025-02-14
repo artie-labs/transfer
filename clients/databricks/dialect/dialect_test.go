@@ -330,14 +330,14 @@ func TestDatabricksDialect_BuildCopyStatement(t *testing.T) {
 	cols := []string{"id", "group", "start", "updated_at"}
 	dbfsFilePath := "{{dbfsFilePath}}"
 
-	assert.Equal(t, `
+	assert.Equal(t, fmt.Sprintf(`
 COPY INTO {{fqName}} BY POSITION FROM (SELECT id, group, start, updated_at FROM '{{dbfsFilePath}}')
 FILEFORMAT = CSV
 FORMAT_OPTIONS (
     'escape' = '"', 
     'delimiter' = '\t', 
     'header' = 'false', 
-    'nullValue' = '\\\\N'
-);`,
+    'nullValue' = '%s'
+);`, constants.NullValuePlaceholder),
 		DatabricksDialect{}.BuildCopyStatement(fakeTableID, cols, dbfsFilePath))
 }
