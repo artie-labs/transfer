@@ -70,35 +70,29 @@ func (id IcebergDialect) BuildDedupeQueries(
 	}
 
 	var parts []string
-
-	// 1) Create a temp view with row_number subquery
 	parts = append(parts, fmt.Sprintf(`
-	CREATE OR REPLACE TEMPORARY VIEW %s AS
+	CREATE OR REPLACE TABLE %s AS
 	SELECT *
 	FROM (
 		SELECT
-			t.*,
+			*,
 			ROW_NUMBER() OVER (
 				PARTITION BY %s
 				ORDER BY %s
-			) AS rownum
-		FROM %s AS t
-	) AS sub
-	WHERE sub.rownum = 1
+			) AS __artie_rn
+		FROM %s
+	)
+	WHERE __artie_rn = 1
 	`,
-		stagingTableID.EscapedTable(),
+		stagingTableID.FullyQualifiedName(),
 		strings.Join(primaryKeysEscaped, ", "),
 		strings.Join(orderByCols, ", "),
 		tableID.FullyQualifiedName(),
 	))
 
-	// Just query the temporary view
-	parts = append(parts, fmt.Sprintf("SELECT * FROM %s", stagingTableID.EscapedTable()))
-
-	// Drop the rownum column
-	parts = append(parts, fmt.Sprintf("ALTER TABLE %s DROP COLUMN rownum", stagingTableID.EscapedTable()))
-	// 2) Insert deduplicated rows back into the main table
-	parts = append(parts, fmt.Sprintf("INSERT OVERWRITE TABLE %s SELECT * FROM %s", tableID.FullyQualifiedName(), stagingTableID.EscapedTable()))
+	parts = append(parts, fmt.Sprintf("ALTER TABLE %s DROP COLUMN __artie_rn", stagingTableID.FullyQualifiedName()))
+	parts = append(parts, fmt.Sprintf("INSERT OVERWRITE %s TABLE %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName()))
+	parts = append(parts, fmt.Sprintf("DROP TABLE %s", stagingTableID.FullyQualifiedName()))
 	return parts
 }
 
