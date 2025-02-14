@@ -63,7 +63,7 @@ func castColValStaging(colVal any, colKind typing.KindDetails, truncateExceededV
 		}
 
 		// This matches the COPY clause for NULL terminator.
-		return Result{Value: `\N`}, nil
+		return Result{Value: constants.NullValuePlaceholder}, nil
 	}
 
 	colValString, err := values.ToString(colVal, colKind)

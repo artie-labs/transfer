@@ -66,9 +66,6 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		cols = append(cols, col.Name())
 	}
 
-	// COPY table_name FROM '/path/to/local/file' DELIMITER '\t' NULL '\\N' FORMAT csv;
-	// Note, we need to specify `\\N` here and in `CastColVal(..)` we are only doing `\N`, this is because Redshift treats backslashes as an escape character.
-	// So, it'll convert `\N` => `\\N` during COPY.
 	copyStmt := s.dialect().BuildCopyStatement(tempTableID, cols, s3Uri, s.credentialsClause)
 	if _, err = s.Exec(copyStmt); err != nil {
 		return fmt.Errorf("failed to run COPY for temporary table: %w", err)
