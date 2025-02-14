@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"strings"
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/awslib"
@@ -62,17 +61,15 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		return fmt.Errorf("failed to upload %q to s3: %w", fp, err)
 	}
 
+	var cols []string
+	for _, col := range tableData.ReadOnlyInMemoryCols().ValidColumns() {
+		cols = append(cols, col.Name())
+	}
+
 	// COPY table_name FROM '/path/to/local/file' DELIMITER '\t' NULL '\\N' FORMAT csv;
 	// Note, we need to specify `\\N` here and in `CastColVal(..)` we are only doing `\N`, this is because Redshift treats backslashes as an escape character.
 	// So, it'll convert `\N` => `\\N` during COPY.
-	copyStmt := fmt.Sprintf(
-		`COPY %s (%s) FROM '%s' DELIMITER '\t' NULL AS '\\N' GZIP FORMAT CSV %s dateformat 'auto' timeformat 'auto';`,
-		tempTableID.FullyQualifiedName(),
-		strings.Join(sql.QuoteColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), s.Dialect()), ","),
-		s3Uri,
-		s.credentialsClause,
-	)
-
+	copyStmt := s.dialect().BuildCopyStatement(tempTableID, cols, s3Uri, s.credentialsClause)
 	if _, err = s.Exec(copyStmt); err != nil {
 		return fmt.Errorf("failed to run COPY for temporary table: %w", err)
 	}
