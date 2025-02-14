@@ -66,6 +66,8 @@ func (id IcebergDialect) BuildDedupeQueries(
 		orderByCols = append(orderByCols, fmt.Sprintf("%s DESC", pk))
 	}
 
+	rowNumberMarker := "__artie_rn"
+
 	// This needs to be a separate table that we drop later because:
 	// 1. SparkSQL does not have a QUALIFY function
 	// 2. SparkSQL does not have a SELECT EXCEPT function (only Databricks Spark does)
@@ -73,15 +75,17 @@ func (id IcebergDialect) BuildDedupeQueries(
 	// 4. Adding a temporary column to the target table for row_number() does not work as the view is just a shim on top of Spark dataframe. We ran into the ambiguous column error previously.
 	var parts []string
 	parts = append(parts,
-		fmt.Sprintf(`CREATE OR REPLACE TABLE %s AS SELECT * FROM ( SELECT *, ROW_NUMBER() OVER ( PARTITION BY %s ORDER BY %s ) AS __artie_rn FROM %s) WHERE __artie_rn = 1`,
+		fmt.Sprintf(`CREATE OR REPLACE TABLE %s AS SELECT * FROM ( SELECT *, ROW_NUMBER() OVER ( PARTITION BY %s ORDER BY %s ) AS %s FROM %s ) WHERE %s = 1`,
 			stagingTableID.FullyQualifiedName(),
 			strings.Join(primaryKeysEscaped, ", "),
 			strings.Join(orderByCols, ", "),
+			rowNumberMarker,
 			tableID.FullyQualifiedName(),
+			rowNumberMarker,
 		),
 	)
 
-	parts = append(parts, fmt.Sprintf("ALTER TABLE %s DROP COLUMN __artie_rn", stagingTableID.FullyQualifiedName()))
+	parts = append(parts, fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", stagingTableID.FullyQualifiedName(), rowNumberMarker))
 	parts = append(parts, fmt.Sprintf("INSERT OVERWRITE %s TABLE %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName()))
 	return parts
 }
