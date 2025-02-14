@@ -123,15 +123,17 @@ WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
 		return nil, err
 	}
 
+	deleteColumnMarker := sql.QuotedDeleteColumnMarker(constants.StagingAlias, d)
+
 	// Handle the case where hard-deletes are included
 	return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED AND %s THEN DELETE
 WHEN MATCHED AND IFNULL(%s, false) = false THEN UPDATE SET %s
 WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s);`,
-		sql.QuotedDeleteColumnMarker(constants.StagingAlias, d),
-		sql.QuotedDeleteColumnMarker(constants.StagingAlias, d),
+		deleteColumnMarker,
+		deleteColumnMarker,
 		sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, d),
-		sql.QuotedDeleteColumnMarker(constants.StagingAlias, d),
+		deleteColumnMarker,
 		strings.Join(sql.QuoteColumns(cols, d), ","),
 		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, d), ","),
 	)}, nil
