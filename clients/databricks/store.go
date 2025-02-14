@@ -2,7 +2,6 @@ package databricks
 
 import (
 	"context"
-	"encoding/csv"
 	"fmt"
 	"log/slog"
 	"os"
@@ -15,6 +14,7 @@ import (
 	"github.com/artie-labs/transfer/clients/databricks/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/csvwriter"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -183,14 +183,12 @@ func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
 
 func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (string, error) {
 	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv", newTableID.FullyQualifiedName()))
-	file, err := os.Create(fp)
+	gzipWriter, err := csvwriter.NewGzipWriter(fp)
 	if err != nil {
 		return "", err
 	}
 
-	defer file.Close()
-	writer := csv.NewWriter(file)
-	writer.Comma = '\t'
+	defer gzipWriter.Close()
 
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	for _, value := range tableData.Rows() {
@@ -204,13 +202,16 @@ func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, newTab
 			row = append(row, castedValue)
 		}
 
-		if err = writer.Write(row); err != nil {
-			return "", fmt.Errorf("failed to write to csv: %w", err)
+		if err = gzipWriter.Write(row); err != nil {
+			return "", fmt.Errorf("failed to write: %w", err)
 		}
 	}
 
-	writer.Flush()
-	return fp, writer.Error()
+	if err := gzipWriter.Flush(); err != nil {
+		return "", fmt.Errorf("failed to flush gzip writer: %w", err)
+	}
+
+	return fp, nil
 }
 
 func (s Store) SweepTemporaryTables(ctx context.Context) error {
