@@ -329,7 +329,7 @@ func TestDatabricksDialect_BuildCopyIntoQuery(t *testing.T) {
 	tempTableID := &mocks.FakeTableIdentifier{}
 	tempTableID.FullyQualifiedNameReturns("{{fq_name}}")
 
-	assert.Equal(t, `
+	assert.Equal(t, fmt.Sprintf(`
 COPY INTO {{fq_name}}
 BY POSITION
 FROM (
@@ -340,6 +340,6 @@ FORMAT_OPTIONS (
     'escape' = '"',
     'delimiter' = '\t',
     'header' = 'false',
-    'nullValue' = '\\\\N'
-);`, dialect.BuildCopyIntoQuery(tempTableID, []string{"_c0", "_c1"}, "dbfs:/path/to/file.csv"))
+    'nullValue' = '%s'
+);`, constants.NullValuePlaceholder), dialect.BuildCopyIntoQuery(tempTableID, []string{"_c0", "_c1"}, "dbfs:/path/to/file.csv"))
 }
