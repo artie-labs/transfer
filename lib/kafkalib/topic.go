@@ -45,6 +45,7 @@ func (m MultiStepMergeSettings) Validate() error {
 type TopicConfig struct {
 	Database                 string `yaml:"db"`
 	TableName                string `yaml:"tableName"`
+	TableNamePrefix          string `yaml:"tableNamePrefix"`
 	Schema                   string `yaml:"schema"`
 	Topic                    string `yaml:"topic"`
 	CDCFormat                string `yaml:"cdcFormat"`

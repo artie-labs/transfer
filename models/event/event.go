@@ -76,6 +76,10 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		return Event{}, err
 	}
 	tblName := cmp.Or(tc.TableName, event.GetTableName())
+	if tc.TableNamePrefix != "" {
+		tblName = tc.TableNamePrefix + tblName
+	}
+
 	if cfgMode == config.History {
 		if !strings.HasSuffix(tblName, constants.HistoryModeSuffix) {
 			// History mode will include a table suffix and operation column
