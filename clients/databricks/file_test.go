@@ -70,5 +70,5 @@ func TestFile_ShouldDelete(t *testing.T) {
 
 func TestFile_DBFSFilePath(t *testing.T) {
 	file := NewFileFromTableID(dialect.NewTableIdentifier("{DB}", "{SCHEMA}", "{TABLE}"), "{VOLUME}")
-	assert.Equal(t, "dbfs:/Volumes/{DB}/{SCHEMA}/{VOLUME}/{TABLE}.csv", file.DBFSFilePath())
+	assert.Equal(t, "dbfs:/Volumes/{DB}/{SCHEMA}/{VOLUME}/{TABLE}.csv.gz", file.DBFSFilePath())
 }

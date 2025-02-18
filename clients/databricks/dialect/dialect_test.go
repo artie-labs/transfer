@@ -333,13 +333,14 @@ func TestDatabricksDialect_BuildCopyIntoQuery(t *testing.T) {
 COPY INTO {{fq_name}}
 BY POSITION
 FROM (
-    SELECT _c0, _c1 FROM 'dbfs:/path/to/file.csv'
+    SELECT _c0, _c1 FROM 'dbfs:/path/to/file.csv.gz'
 )
 FILEFORMAT = CSV
 FORMAT_OPTIONS (
     'escape' = '"',
     'delimiter' = '\t',
     'header' = 'false',
-    'nullValue' = '%s'
-);`, constants.NullValuePlaceholder), dialect.BuildCopyIntoQuery(tempTableID, []string{"_c0", "_c1"}, "dbfs:/path/to/file.csv"))
+    'nullValue' = '%s',
+    'compression' = 'gzip'
+);`, constants.NullValuePlaceholder), dialect.BuildCopyIntoQuery(tempTableID, []string{"_c0", "_c1"}, "dbfs:/path/to/file.csv.gz"))
 }

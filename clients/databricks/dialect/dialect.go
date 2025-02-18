@@ -175,7 +175,7 @@ FORMAT_OPTIONS (
     'delimiter' = '\t',
     'header' = 'false',
     'nullValue' = '%s',
-	'compression' = 'gzip'
+    'compression' = 'gzip'
 );`,
 		// COPY INTO
 		tempTableID.FullyQualifiedName(),
