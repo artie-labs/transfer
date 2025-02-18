@@ -191,7 +191,7 @@ func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, fileNa
 		return "", fmt.Errorf("failed to flush gzip writer: %w", err)
 	}
 
-	return fp, gzipWriter.Close()
+	return fp, nil
 }
 
 func (s Store) SweepTemporaryTables(ctx context.Context) error {
