@@ -30,11 +30,15 @@ func NewFile(fileRow map[string]any) (File, error) {
 }
 
 func NewFileFromTableID(tableID dialect.TableIdentifier, volume string) File {
-	name := fmt.Sprintf("%s.csv", tableID.Table())
+	name := fmt.Sprintf("%s.csv.gz", tableID.Table())
 	return File{
 		name: name,
 		fp:   fmt.Sprintf("/Volumes/%s/%s/%s/%s", tableID.Database(), tableID.Schema(), volume, name),
 	}
+}
+
+func (f File) Name() string {
+	return f.name
 }
 
 func (f File) ShouldDelete() bool {
