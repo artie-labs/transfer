@@ -14,6 +14,7 @@ import (
 	"github.com/artie-labs/transfer/clients/databricks/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -149,7 +150,7 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 
 func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
 	if colVal == nil {
-		return `\\N`, nil
+		return constants.NullValuePlaceholder, nil
 	}
 
 	value, err := values.ToString(colVal, colKind)
