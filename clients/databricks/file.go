@@ -37,6 +37,10 @@ func NewFileFromTableID(tableID dialect.TableIdentifier, volume string) File {
 	}
 }
 
+func (f File) Name() string {
+	return f.name
+}
+
 func (f File) ShouldDelete() bool {
 	return ddl.ShouldDeleteFromName(strings.TrimSuffix(f.name, ".csv"))
 }

@@ -96,7 +96,13 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 		}
 	}
 
-	fp, err := s.writeTemporaryTableFile(tableData, tempTableID)
+	castedTempTableID, isOk := tempTableID.(dialect.TableIdentifier)
+	if !isOk {
+		return fmt.Errorf("failed to cast temp table ID to TableIdentifier")
+	}
+
+	file := NewFileFromTableID(castedTempTableID, s.volume)
+	fp, err := s.writeTemporaryTableFile(tableData, file.Name())
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
@@ -109,12 +115,6 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 	}()
 
 	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var"})
-	castedTempTableID, isOk := tempTableID.(dialect.TableIdentifier)
-	if !isOk {
-		return fmt.Errorf("failed to cast temp table ID to TableIdentifier")
-	}
-
-	file := NewFileFromTableID(castedTempTableID, s.volume)
 	putCommand := fmt.Sprintf("PUT '%s' INTO '%s' OVERWRITE", fp, file.DBFSFilePath())
 	if _, err = s.ExecContext(ctx, putCommand); err != nil {
 		return fmt.Errorf("failed to run PUT INTO for temporary table: %w", err)
@@ -161,8 +161,8 @@ func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
 	return value, nil
 }
 
-func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (string, error) {
-	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv.gz", newTableID.FullyQualifiedName()))
+func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, fileName string) (string, error) {
+	fp := filepath.Join(os.TempDir(), fileName)
 	gzipWriter, err := csvwriter.NewGzipWriter(fp)
 	if err != nil {
 		return "", fmt.Errorf("failed to create gzip writer: %w", err)
