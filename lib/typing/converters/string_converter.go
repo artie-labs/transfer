@@ -3,7 +3,6 @@ package converters
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"reflect"
 	"strings"
 	"time"
@@ -47,10 +46,8 @@ func GetStringConverter(kd typing.KindDetails) (Converter, error) {
 		return IntegerConverter{}, nil
 	case typing.Float.Kind:
 		return FloatConverter{}, nil
-
 	default:
-		slog.Warn("[GetStringConverter] - Unsupported type", slog.String("kind", kd.Kind))
-		return nil, nil
+		return nil, fmt.Errorf("unsupported type: %q", kd.Kind)
 	}
 }
 

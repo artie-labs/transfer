@@ -82,7 +82,7 @@ func TestGetStringConverter(t *testing.T) {
 	{
 		// Invalid
 		converter, err := GetStringConverter(typing.Invalid)
-		assert.NoError(t, err)
+		assert.ErrorContains(t, err, `unsupported type: "invalid"`)
 		assert.Nil(t, converter)
 	}
 }

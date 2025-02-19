@@ -17,10 +17,5 @@ func ToString(colVal any, colKind typing.KindDetails) (string, error) {
 		return "", fmt.Errorf("failed to get string converter: %w", err)
 	}
 
-	// TODO: Simplify this block
-	if sv != nil {
-		return sv.Convert(colVal)
-	}
-
-	return fmt.Sprint(colVal), nil
+	return sv.Convert(colVal)
 }
