@@ -85,8 +85,8 @@ func BackfillColumn(dest destination.Destination, column columns.Column, tableID
 		}
 
 		escapedCol := dest.Dialect().QuoteIdentifier(column.Name())
-		query := fmt.Sprintf(`UPDATE %s SET %s = %v WHERE %s IS NULL;`,
-			// UPDATE table SET col = default_val WHERE col IS NULL
+		query := fmt.Sprintf(`UPDATE %s as t SET t.%s = %v WHERE t.%s IS NULL;`,
+			// UPDATE table as t SET t.col = default_val WHERE t.col IS NULL
 			tableID.FullyQualifiedName(), escapedCol, defaultVal, escapedCol,
 		)
 		slog.Info("Backfilling column",
