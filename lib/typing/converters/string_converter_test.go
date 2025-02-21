@@ -39,12 +39,9 @@ func TestGetStringConverter(t *testing.T) {
 	}
 	{
 		// TimestampNTZ
-		{
-			// No layout override
-			converter, err := GetStringConverter(typing.TimestampNTZ, GetStringConverterOpts{})
-			assert.NoError(t, err)
-			assert.IsType(t, TimestampNTZConverter{}, converter)
-		}
+		converter, err := GetStringConverter(typing.TimestampNTZ, GetStringConverterOpts{})
+		assert.NoError(t, err)
+		assert.IsType(t, TimestampNTZConverter{}, converter)
 	}
 	{
 		// TimestampTZ
