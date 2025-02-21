@@ -5,6 +5,8 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/converters"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
@@ -66,7 +68,12 @@ func castColValStaging(colVal any, colKind typing.KindDetails, truncateExceededV
 		return Result{Value: constants.NullValuePlaceholder}, nil
 	}
 
-	colValString, err := values.ToString(colVal, colKind)
+	// Redshift only allows up to microsecond precision: https://docs.aws.amazon.com/redshift/latest/dg/r_Datetime_types.html
+	colValString, err := values.ToStringOpts(colVal, colKind, converters.GetStringConverterOpts{
+		TimestampTZLayoutOverride:  ext.RFC3339MicroTZ,
+		TimestampNTZLayoutOverride: ext.RFC3339MicroTZNoTZ,
+	})
+
 	if err != nil {
 		return Result{}, err
 	}

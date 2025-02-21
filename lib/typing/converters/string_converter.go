@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"cmp"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -18,7 +19,12 @@ type Converter interface {
 	Convert(value any) (string, error)
 }
 
-func GetStringConverter(kd typing.KindDetails) (Converter, error) {
+type GetStringConverterOpts struct {
+	TimestampTZLayoutOverride  string
+	TimestampNTZLayoutOverride string
+}
+
+func GetStringConverter(kd typing.KindDetails, opts GetStringConverterOpts) (Converter, error) {
 	switch kd.Kind {
 	// Base types
 	case typing.Boolean.Kind:
@@ -31,9 +37,9 @@ func GetStringConverter(kd typing.KindDetails) (Converter, error) {
 	case typing.Time.Kind:
 		return TimeConverter{}, nil
 	case typing.TimestampNTZ.Kind:
-		return TimestampNTZConverter{}, nil
+		return NewTimestampNTZConverter(opts.TimestampNTZLayoutOverride), nil
 	case typing.TimestampTZ.Kind:
-		return TimestampTZConverter{}, nil
+		return NewTimestampTZConverter(opts.TimestampTZLayoutOverride), nil
 	// Array and struct types
 	case typing.Array.Kind:
 		return ArrayConverter{}, nil
@@ -113,26 +119,42 @@ func (TimeConverter) Convert(value any) (string, error) {
 	return _time.Format(ext.PostgresTimeFormatNoTZ), nil
 }
 
-type TimestampNTZConverter struct{}
+func NewTimestampNTZConverter(layoutOverride string) TimestampNTZConverter {
+	return TimestampNTZConverter{
+		layoutOverride: layoutOverride,
+	}
+}
 
-func (TimestampNTZConverter) Convert(value any) (string, error) {
+type TimestampNTZConverter struct {
+	layoutOverride string
+}
+
+func (t TimestampNTZConverter) Convert(value any) (string, error) {
 	_time, err := ext.ParseTimestampNTZFromAny(value)
 	if err != nil {
 		return "", fmt.Errorf("failed to cast colVal as timestampNTZ, colVal: '%v', err: %w", value, err)
 	}
 
-	return _time.Format(ext.RFC3339NoTZ), nil
+	return _time.Format(cmp.Or(t.layoutOverride, ext.RFC3339NoTZ)), nil
 }
 
-type TimestampTZConverter struct{}
+func NewTimestampTZConverter(layoutOverride string) TimestampTZConverter {
+	return TimestampTZConverter{
+		layoutOverride: layoutOverride,
+	}
+}
 
-func (TimestampTZConverter) Convert(value any) (string, error) {
+type TimestampTZConverter struct {
+	layoutOverride string
+}
+
+func (t TimestampTZConverter) Convert(value any) (string, error) {
 	_time, err := ext.ParseTimestampTZFromAny(value)
 	if err != nil {
 		return "", fmt.Errorf("failed to cast colVal as timestampTZ, colVal: '%v', err: %w", value, err)
 	}
 
-	return _time.Format(time.RFC3339Nano), nil
+	return _time.Format(cmp.Or(t.layoutOverride, time.RFC3339Nano)), nil
 }
 
 type ArrayConverter struct{}

@@ -9,9 +9,48 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/converters"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
+
+func TestToStringOpts(t *testing.T) {
+	{
+		// TimestampNTZ
+		{
+			// No layout override
+			val, err := ToStringOpts(time.Date(2021, time.January, 1, 0, 0, 0, 999_999_999, time.UTC), typing.TimestampNTZ, converters.GetStringConverterOpts{})
+			assert.NoError(t, err)
+			assert.Equal(t, "2021-01-01T00:00:00.999999999", val)
+		}
+		{
+			// Layout override
+			val, err := ToStringOpts(time.Date(2021, time.January, 1, 0, 0, 0, 999_999_999, time.UTC), typing.TimestampNTZ, converters.GetStringConverterOpts{
+				TimestampNTZLayoutOverride: ext.RFC3339MicrosecondNoTZ,
+			})
+			assert.NoError(t, err)
+			assert.Equal(t, "2021-01-01T00:00:00.999999", val)
+		}
+	}
+	{
+		// Timestamp
+		{
+			// No layout override
+			val, err := ToStringOpts(time.Date(2021, time.January, 1, 0, 0, 0, 999_999_999, time.UTC), typing.TimestampTZ, converters.GetStringConverterOpts{})
+			assert.NoError(t, err)
+			assert.Equal(t, "2021-01-01T00:00:00.999999999Z", val)
+		}
+		{
+			// Layout override
+			val, err := ToStringOpts(time.Date(2021, time.January, 1, 0, 0, 0, 999_999_999, time.UTC), typing.TimestampTZ, converters.GetStringConverterOpts{
+				TimestampTZLayoutOverride: ext.RFC3339Microsecond,
+			})
+			assert.NoError(t, err)
+			assert.Equal(t, "2021-01-01T00:00:00.999999Z", val)
+		}
+	}
+
+}
 
 func TestToString(t *testing.T) {
 	{
