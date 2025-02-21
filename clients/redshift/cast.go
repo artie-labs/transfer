@@ -68,7 +68,7 @@ func castColValStaging(colVal any, colKind typing.KindDetails, truncateExceededV
 		return Result{Value: constants.NullValuePlaceholder}, nil
 	}
 
-	colValString, err := values.ToString(colVal, colKind, converters.GetStringConverterOpts{
+	colValString, err := values.ToStringOpts(colVal, colKind, converters.GetStringConverterOpts{
 		TimestampTZLayoutOverride:  ext.RFC3339Microsecond,
 		TimestampNTZLayoutOverride: ext.RFC3339MicrosecondNoTZ,
 	})

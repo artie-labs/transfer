@@ -7,7 +7,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/converters"
 )
 
-func ToString(colVal any, colKind typing.KindDetails, opts converters.GetStringConverterOpts) (string, error) {
+func ToStringOpts(colVal any, colKind typing.KindDetails, opts converters.GetStringConverterOpts) (string, error) {
 	if colVal == nil {
 		return "", fmt.Errorf("colVal is nil")
 	}
@@ -18,4 +18,8 @@ func ToString(colVal any, colKind typing.KindDetails, opts converters.GetStringC
 	}
 
 	return sv.Convert(colVal)
+}
+
+func ToString(colVal any, colKind typing.KindDetails) (string, error) {
+	return ToStringOpts(colVal, colKind, converters.GetStringConverterOpts{})
 }

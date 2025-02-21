@@ -15,73 +15,76 @@ import (
 func TestGetStringConverter(t *testing.T) {
 	{
 		// Boolean
-		converter, err := GetStringConverter(typing.Boolean)
+		converter, err := GetStringConverter(typing.Boolean, GetStringConverterOpts{})
 		assert.NoError(t, err)
 		assert.IsType(t, BooleanConverter{}, converter)
 	}
 	{
 		// String
-		converter, err := GetStringConverter(typing.String)
+		converter, err := GetStringConverter(typing.String, GetStringConverterOpts{})
 		assert.NoError(t, err)
 		assert.IsType(t, StringConverter{}, converter)
 	}
 	{
 		// Date
-		converter, err := GetStringConverter(typing.Date)
+		converter, err := GetStringConverter(typing.Date, GetStringConverterOpts{})
 		assert.NoError(t, err)
 		assert.IsType(t, DateConverter{}, converter)
 	}
 	{
 		// Time
-		converter, err := GetStringConverter(typing.Time)
+		converter, err := GetStringConverter(typing.Time, GetStringConverterOpts{})
 		assert.NoError(t, err)
 		assert.IsType(t, TimeConverter{}, converter)
 	}
 	{
 		// TimestampNTZ
-		converter, err := GetStringConverter(typing.TimestampNTZ)
-		assert.NoError(t, err)
-		assert.IsType(t, TimestampNTZConverter{}, converter)
+		{
+			// No layout override
+			converter, err := GetStringConverter(typing.TimestampNTZ, GetStringConverterOpts{})
+			assert.NoError(t, err)
+			assert.IsType(t, TimestampNTZConverter{}, converter)
+		}
 	}
 	{
 		// TimestampTZ
-		converter, err := GetStringConverter(typing.TimestampTZ)
+		converter, err := GetStringConverter(typing.TimestampTZ, GetStringConverterOpts{})
 		assert.NoError(t, err)
 		assert.IsType(t, TimestampTZConverter{}, converter)
 	}
 	{
 		// Array
-		converter, err := GetStringConverter(typing.Array)
+		converter, err := GetStringConverter(typing.Array, GetStringConverterOpts{})
 		assert.NoError(t, err)
 		assert.IsType(t, ArrayConverter{}, converter)
 	}
 	{
 		// Struct
-		converter, err := GetStringConverter(typing.Struct)
+		converter, err := GetStringConverter(typing.Struct, GetStringConverterOpts{})
 		assert.NoError(t, err)
 		assert.IsType(t, StructConverter{}, converter)
 	}
 	{
 		// EDecimal
-		converter, err := GetStringConverter(typing.EDecimal)
+		converter, err := GetStringConverter(typing.EDecimal, GetStringConverterOpts{})
 		assert.NoError(t, err)
 		assert.IsType(t, DecimalConverter{}, converter)
 	}
 	{
 		// Integer
-		converter, err := GetStringConverter(typing.Integer)
+		converter, err := GetStringConverter(typing.Integer, GetStringConverterOpts{})
 		assert.NoError(t, err)
 		assert.IsType(t, IntegerConverter{}, converter)
 	}
 	{
 		// Float
-		converter, err := GetStringConverter(typing.Float)
+		converter, err := GetStringConverter(typing.Float, GetStringConverterOpts{})
 		assert.NoError(t, err)
 		assert.IsType(t, FloatConverter{}, converter)
 	}
 	{
 		// Invalid
-		converter, err := GetStringConverter(typing.Invalid)
+		converter, err := GetStringConverter(typing.Invalid, GetStringConverterOpts{})
 		assert.ErrorContains(t, err, `unsupported type: "invalid"`)
 		assert.Nil(t, converter)
 	}
