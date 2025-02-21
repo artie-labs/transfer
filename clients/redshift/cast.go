@@ -5,6 +5,8 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/converters"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
@@ -66,7 +68,11 @@ func castColValStaging(colVal any, colKind typing.KindDetails, truncateExceededV
 		return Result{Value: constants.NullValuePlaceholder}, nil
 	}
 
-	colValString, err := values.ToString(colVal, colKind)
+	colValString, err := values.ToString(colVal, colKind, converters.GetStringConverterOpts{
+		TimestampTZLayoutOverride:  ext.RFC3339Microsecond,
+		TimestampNTZLayoutOverride: ext.RFC3339MicrosecondNoTZ,
+	})
+
 	if err != nil {
 		return Result{}, err
 	}
