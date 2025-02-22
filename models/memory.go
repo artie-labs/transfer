@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -66,6 +67,8 @@ func (d *DatabaseData) GetOrCreateTableData(tableName string) *TableData {
 			Mutex: sync.Mutex{},
 		}
 		d.tableData[tableName] = table
+
+		fmt.Println("Creating table data for", tableName)
 	}
 
 	return table

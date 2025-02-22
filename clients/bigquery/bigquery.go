@@ -169,15 +169,6 @@ func (s *Store) Dialect() sql.Dialect {
 	return dialect.BigQueryDialect{}
 }
 
-func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
-	client, err := bigquery.NewClient(ctx, s.config.BigQuery.ProjectID)
-	if err != nil {
-		logger.Panic("Failed to get bigquery client", slog.Any("err", err))
-	}
-
-	return client
-}
-
 func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier, tableData *optimization.TableData) error {
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 
