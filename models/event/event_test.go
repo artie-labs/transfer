@@ -180,6 +180,20 @@ func (e *EventsTestSuite) TestEventPrimaryKeys() {
 	}
 
 	assert.Equal(e.T(), len(partsMap), 1)
+
+	// If the value doesn't exist in the event payload
+	{
+		mockEvent := &mocks.FakeEvent{}
+		mockEvent.GetTableNameReturns("foo")
+		mockEvent.GetDataReturns(map[string]any{"course_id": 2}, nil)
+
+		evt, err := ToMemoryEvent(mockEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{}, config.Replication)
+		assert.NoError(e.T(), err)
+
+		pkValue, err := evt.PrimaryKeyValue()
+		assert.ErrorContains(e.T(), err, `primary key "id" not found in data: map[course_id:2]`)
+		assert.Equal(e.T(), "", pkValue)
+	}
 }
 
 func (e *EventsTestSuite) TestPrimaryKeyValueDeterministic() {
