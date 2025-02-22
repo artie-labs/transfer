@@ -259,6 +259,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 
 	// Swap out sanitizedData <> data.
 	e.Data = sanitizedData
+	fmt.Println("e.PrimaryKeyValue()", e.PrimaryKeyValue())
 	td.InsertRow(e.PrimaryKeyValue(), e.Data, e.Deleted)
 	// If the message is Kafka, then we only need the latest one
 	if message.Kind() == artie.Kafka {
