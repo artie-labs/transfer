@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/kafkalib"
-
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 
 	"github.com/stretchr/testify/assert"
@@ -23,7 +22,7 @@ func TestSchemaEventPayload_MiscNumbers_GetData(t *testing.T) {
 	err = json.Unmarshal(bytes, &schemaEventPayload)
 	assert.NoError(t, err)
 
-	retMap, err := schemaEventPayload.GetData(nil, kafkalib.TopicConfig{})
+	retMap, err := schemaEventPayload.GetData(kafkalib.TopicConfig{})
 	assert.NoError(t, err)
 	assert.Equal(t, int64(1), retMap["smallint_test"])
 	assert.Equal(t, int64(2), retMap["smallserial_test"])
@@ -43,7 +42,7 @@ func TestSchemaEventPayload_Numeric_GetData(t *testing.T) {
 	var schemaEventPayload SchemaEventPayload
 	err = json.Unmarshal(bytes, &schemaEventPayload)
 	assert.NoError(t, err)
-	retMap, err := schemaEventPayload.GetData(nil, kafkalib.TopicConfig{})
+	retMap, err := schemaEventPayload.GetData(kafkalib.TopicConfig{})
 	assert.NoError(t, err)
 
 	assert.Equal(t, "123456.789", retMap["numeric_test"].(*decimal.Decimal).String())
@@ -72,7 +71,7 @@ func TestSchemaEventPayload_Decimal_GetData(t *testing.T) {
 	var schemaEventPayload SchemaEventPayload
 	err = json.Unmarshal(bytes, &schemaEventPayload)
 	assert.NoError(t, err)
-	retMap, err := schemaEventPayload.GetData(nil, kafkalib.TopicConfig{})
+	retMap, err := schemaEventPayload.GetData(kafkalib.TopicConfig{})
 	assert.NoError(t, err)
 	assert.Equal(t, "123.45", retMap["decimal_test"].(*decimal.Decimal).String())
 	decimalWithScaleMap := map[string]string{
@@ -98,7 +97,7 @@ func TestSchemaEventPayload_Money_GetData(t *testing.T) {
 	var schemaEventPayload SchemaEventPayload
 	err = json.Unmarshal(bytes, &schemaEventPayload)
 	assert.NoError(t, err)
-	retMap, err := schemaEventPayload.GetData(nil, kafkalib.TopicConfig{})
+	retMap, err := schemaEventPayload.GetData(kafkalib.TopicConfig{})
 	assert.NoError(t, err)
 
 	decimalWithScaleMap := map[string]string{

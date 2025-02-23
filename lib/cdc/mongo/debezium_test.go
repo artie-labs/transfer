@@ -160,7 +160,7 @@ func (m *MongoTestSuite) TestMongoDBEventCustomer() {
 `
 	evt, err := m.Debezium.GetEventFromBytes([]byte(payload))
 	assert.NoError(m.T(), err)
-	evtData, err := evt.GetData(map[string]any{"_id": int64(1003)}, kafkalib.TopicConfig{})
+	evtData, err := evt.GetData(kafkalib.TopicConfig{})
 	assert.NoError(m.T(), err)
 	_, isOk := evtData[constants.UpdateColumnMarker]
 	assert.False(m.T(), isOk)
@@ -169,12 +169,12 @@ func (m *MongoTestSuite) TestMongoDBEventCustomer() {
 	assert.Equal(m.T(), evtData["last_name"], "Tang")
 	assert.Equal(m.T(), evtData["email"], "robin@example.com")
 
-	evtDataWithIncludedAt, err := evt.GetData(map[string]any{"_id": int64(1003)}, kafkalib.TopicConfig{})
+	evtDataWithIncludedAt, err := evt.GetData(kafkalib.TopicConfig{})
 	assert.NoError(m.T(), err)
 	_, isOk = evtDataWithIncludedAt[constants.UpdateColumnMarker]
 	assert.False(m.T(), isOk)
 
-	evtDataWithIncludedAt, err = evt.GetData(map[string]any{"_id": int64(1003)}, kafkalib.TopicConfig{IncludeDatabaseUpdatedAt: true, IncludeArtieUpdatedAt: true})
+	evtDataWithIncludedAt, err = evt.GetData(kafkalib.TopicConfig{IncludeDatabaseUpdatedAt: true, IncludeArtieUpdatedAt: true})
 	assert.NoError(m.T(), err)
 
 	assert.Equal(m.T(), time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC), evtDataWithIncludedAt[constants.DatabaseUpdatedColumnMarker])
@@ -230,7 +230,7 @@ func (m *MongoTestSuite) TestMongoDBEventCustomerBefore_NoData() {
 	assert.NoError(m.T(), err)
 	{
 		// Making sure the `before` payload is set.
-		evtData, err := evt.GetData(map[string]any{"_id": 1003}, kafkalib.TopicConfig{})
+		evtData, err := evt.GetData(kafkalib.TopicConfig{})
 		assert.NoError(m.T(), err)
 		assert.Equal(m.T(), "customers123", evt.GetTableName())
 
@@ -283,7 +283,7 @@ func (m *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 	assert.NoError(m.T(), err)
 	{
 		// Making sure the `before` payload is set.
-		evtData, err := evt.GetData(map[string]any{"_id": 1003}, kafkalib.TopicConfig{})
+		evtData, err := evt.GetData(kafkalib.TopicConfig{})
 		assert.NoError(m.T(), err)
 		assert.Equal(m.T(), "customers123", evt.GetTableName())
 
@@ -291,7 +291,7 @@ func (m *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 		assert.False(m.T(), isOk)
 
 		expectedKeyToVal := map[string]any{
-			"_id":                               1003,
+			"_id":                               int64(1003),
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
 			"first_name":                        "Robin",
@@ -307,7 +307,7 @@ func (m *MongoTestSuite) TestMongoDBEventCustomerBefore() {
 	}
 	{
 		// Check `__artie_updated_at` is included
-		evtData, err := evt.GetData(map[string]any{"_id": 1003}, kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
+		evtData, err := evt.GetData(kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
 		assert.NoError(m.T(), err)
 
 		updatedAt, isOk := evtData[constants.UpdateColumnMarker]
