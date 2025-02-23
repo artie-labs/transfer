@@ -149,7 +149,7 @@ func (s *SchemaEventPayload) GetColumns() (*columns.Columns, error) {
 	return &cols, nil
 }
 
-func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc kafkalib.TopicConfig) (map[string]any, error) {
+func (s *SchemaEventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, error) {
 	var retMap map[string]any
 
 	switch s.Operation() {
@@ -169,9 +169,6 @@ func (s *SchemaEventPayload) GetData(pkMap map[string]any, tc kafkalib.TopicConf
 		// If previous values for the other columns are in memory (not flushed yet), [TableData.InsertRow] will handle
 		// filling them in and setting this to false.
 		retMap[constants.OnlySetDeleteColumnMarker] = true
-		for k, v := range pkMap {
-			retMap[k] = v
-		}
 	case "r", "u", "c":
 		retMap = s.Payload.afterMap
 		retMap[constants.DeleteColumnMarker] = false

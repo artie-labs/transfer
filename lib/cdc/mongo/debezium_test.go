@@ -123,7 +123,7 @@ func (m *MongoTestSuite) TestMongoDBEvent_DeletedRow() {
 	payload := `{"schema":{"type":"","fields":null},"payload":{"before":"{\"_id\":\"abc\"}","after":"{\"_id\":\"abc\"}","source":{"connector":"","ts_ms":1728784382733,"db":"foo","collection":"bar"},"op":"d"}}`
 	evt, err := m.Debezium.GetEventFromBytes([]byte(payload))
 	assert.NoError(m.T(), err)
-	evtData, err := evt.GetData(map[string]any{"_id": "abc"}, kafkalib.TopicConfig{})
+	evtData, err := evt.GetData(kafkalib.TopicConfig{})
 	assert.NoError(m.T(), err)
 	assert.True(m.T(), evtData[constants.DeleteColumnMarker].(bool))
 }
