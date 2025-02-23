@@ -157,7 +157,6 @@ func (e *Event) PrimaryKeyValue() (string, error) {
 	var key string
 	for _, pk := range e.GetPrimaryKeys() {
 		escapedPrimaryKey := columns.EscapeName(pk)
-
 		value, ok := e.Data[escapedPrimaryKey]
 		if !ok {
 			return "", fmt.Errorf("primary key %q not found in data: %v", escapedPrimaryKey, e.Data)
