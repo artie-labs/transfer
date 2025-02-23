@@ -25,7 +25,7 @@ func (s *SnowflakeTestSuite) TestBuildRemoveFilesFromStage() {
 	table := dialect.NewTableIdentifier("db", "schema", "table")
 
 	query := s.stageStore.dialect().BuildRemoveFilesFromStage(addPrefixToTableName(table, "%"), "")
-	assert.Equal(s.T(), `REMOVE @db.schema."%TABLE"`, query)
+	assert.Equal(s.T(), `REMOVE @"DB"."SCHEMA"."%TABLE"`, query)
 }
 
 func (s *SnowflakeTestSuite) TestReplaceExceededValues() {
@@ -103,14 +103,14 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 		{
 			name:        "col that has default value that needs to be backfilled",
 			col:         needsBackfillCol,
-			backfillSQL: `UPDATE db.public."TABLENAME" as t SET t."FOO" = true WHERE t."FOO" IS NULL;`,
-			commentSQL:  `COMMENT ON COLUMN db.public."TABLENAME"."FOO" IS '{"backfilled": true}';`,
+			backfillSQL: `UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."FOO" = true WHERE t."FOO" IS NULL;`,
+			commentSQL:  `COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."FOO" IS '{"backfilled": true}';`,
 		},
 		{
 			name:        "default col that has default value that needs to be backfilled",
 			col:         needsBackfillColDefault,
-			backfillSQL: `UPDATE db.public."TABLENAME" as t SET t."DEFAULT" = true WHERE t."DEFAULT" IS NULL;`,
-			commentSQL:  `COMMENT ON COLUMN db.public."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`,
+			backfillSQL: `UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."DEFAULT" = true WHERE t."DEFAULT" IS NULL;`,
+			commentSQL:  `COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`,
 		},
 	}
 
