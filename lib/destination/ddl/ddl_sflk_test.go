@@ -31,7 +31,7 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 	assert.NoError(d.T(), shared.AlterTableAddColumns(d.T().Context(), d.snowflakeStagesStore, tc, config.SharedDestinationColumnSettings{}, tableID, cols))
 	for i := 0; i < len(cols); i++ {
 		_, execQuery, _ := d.fakeSnowflakeStagesStore.ExecContextArgsForCall(i)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s ADD COLUMN IF NOT EXISTS %s %s", `shop.public."COMPLEX_COLUMNS"`,
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s ADD COLUMN IF NOT EXISTS %s %s", `"SHOP"."PUBLIC"."COMPLEX_COLUMNS"`,
 			d.snowflakeStagesStore.Dialect().QuoteIdentifier(cols[i].Name()),
 			d.snowflakeStagesStore.Dialect().DataTypeForKind(cols[i].KindDetails, false, config.SharedDestinationColumnSettings{})), execQuery)
 	}
@@ -133,7 +133,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 		assert.Equal(d.T(), i+1, d.fakeSnowflakeStagesStore.ExecContextCallCount(), "tried to delete one column")
 
 		_, execArg, _ := d.fakeSnowflakeStagesStore.ExecContextArgsForCall(i)
-		assert.Equal(d.T(), execArg, fmt.Sprintf("ALTER TABLE %s DROP COLUMN IF EXISTS %s", `shop.public."USERS"`, d.snowflakeStagesStore.Dialect().QuoteIdentifier(cols[i].Name())))
+		assert.Equal(d.T(), execArg, fmt.Sprintf("ALTER TABLE %s DROP COLUMN IF EXISTS %s", `"SHOP"."PUBLIC"."USERS"`, d.snowflakeStagesStore.Dialect().QuoteIdentifier(cols[i].Name())))
 	}
 }
 
