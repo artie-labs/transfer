@@ -85,7 +85,7 @@ func (r *RelationTestSuite) TestPostgresEvent() {
 	assert.Nil(r.T(), err)
 	assert.False(r.T(), evt.DeletePayload())
 
-	evtData, err := evt.GetData(map[string]any{"id": 59}, kafkalib.TopicConfig{IncludeDatabaseUpdatedAt: true})
+	evtData, err := evt.GetData(kafkalib.TopicConfig{IncludeDatabaseUpdatedAt: true})
 	assert.NoError(r.T(), err)
 	assert.Equal(r.T(), float64(59), evtData["id"])
 	assert.Equal(r.T(), time.Date(2022, time.November, 16, 4, 1, 53, 308000000, time.UTC), evtData[constants.DatabaseUpdatedColumnMarker])
@@ -189,7 +189,7 @@ func (r *RelationTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	assert.Nil(r.T(), err)
 	assert.False(r.T(), evt.DeletePayload())
 
-	evtData, err := evt.GetData(map[string]any{"id": 1001}, kafkalib.TopicConfig{})
+	evtData, err := evt.GetData(kafkalib.TopicConfig{})
 	assert.NoError(r.T(), err)
 
 	// Testing typing.
@@ -515,8 +515,7 @@ func (r *RelationTestSuite) TestGetEventFromBytes_MySQL() {
 	assert.NoError(r.T(), err)
 	assert.Equal(r.T(), typing.Struct, schema["custom_fields"])
 
-	kvMap := map[string]any{"id": 1001}
-	evtData, err := evt.GetData(kvMap, kafkalib.TopicConfig{})
+	evtData, err := evt.GetData(kafkalib.TopicConfig{})
 	assert.NoError(r.T(), err)
 
 	// Should have no Artie updated or database updated fields
@@ -526,7 +525,7 @@ func (r *RelationTestSuite) TestGetEventFromBytes_MySQL() {
 	_, isOk = evtData[constants.DatabaseUpdatedColumnMarker]
 	assert.False(r.T(), isOk)
 
-	evtData, err = evt.GetData(kvMap, kafkalib.TopicConfig{IncludeDatabaseUpdatedAt: true, IncludeArtieUpdatedAt: true})
+	evtData, err = evt.GetData(kafkalib.TopicConfig{IncludeDatabaseUpdatedAt: true, IncludeArtieUpdatedAt: true})
 	assert.NoError(r.T(), err)
 
 	assert.Equal(r.T(), time.Date(2023, time.March, 13, 19, 19, 24, 0, time.UTC), evtData[constants.DatabaseUpdatedColumnMarker])
