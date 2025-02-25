@@ -81,6 +81,7 @@ func (s S3TablesAPIWrapper) CreateNamespace(ctx context.Context, namespace strin
 	return err
 }
 
+// ListTables requires the namespace to be exact match and is case sensitive
 func (s S3TablesAPIWrapper) ListTables(ctx context.Context, namespace string) ([]types.TableSummary, error) {
 	var tables []types.TableSummary
 	var continuationToken *string
