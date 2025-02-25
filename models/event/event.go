@@ -153,13 +153,19 @@ func (e *Event) GetPrimaryKeys() []string {
 }
 
 // PrimaryKeyValue - as per above, this needs to return a deterministic k/v string.
-func (e *Event) PrimaryKeyValue() string {
+func (e *Event) PrimaryKeyValue() (string, error) {
 	var key string
 	for _, pk := range e.GetPrimaryKeys() {
-		key += fmt.Sprintf("%s=%v", pk, e.Data[pk])
+		escapedPrimaryKey := columns.EscapeName(pk)
+		value, ok := e.Data[escapedPrimaryKey]
+		if !ok {
+			return "", fmt.Errorf("primary key %q not found in data: %v", escapedPrimaryKey, e.Data)
+		}
+
+		key += fmt.Sprintf("%s=%v", escapedPrimaryKey, value)
 	}
 
-	return key
+	return key, nil
 }
 
 // Save will save the event into our in memory event
@@ -259,7 +265,13 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 
 	// Swap out sanitizedData <> data.
 	e.Data = sanitizedData
-	td.InsertRow(e.PrimaryKeyValue(), e.Data, e.Deleted)
+
+	pkValueString, err := e.PrimaryKeyValue()
+	if err != nil {
+		return false, "", fmt.Errorf("failed to retrieve primary key value: %w", err)
+	}
+
+	td.InsertRow(pkValueString, e.Data, e.Deleted)
 	// If the message is Kafka, then we only need the latest one
 	if message.Kind() == artie.Kafka {
 		td.PartitionsToLastMessage[message.Partition()] = message
