@@ -49,14 +49,14 @@ func TestSnowflakeDialect_BuildCreateTableQuery(t *testing.T) {
 
 func TestSnowflakeDialect_BuildDropTableQuery(t *testing.T) {
 	assert.Equal(t,
-		`DROP TABLE IF EXISTS database1.schema1."TABLE1"`,
+		`DROP TABLE IF EXISTS "DATABASE1"."SCHEMA1"."TABLE1"`,
 		SnowflakeDialect{}.BuildDropTableQuery(NewTableIdentifier("database1", "schema1", "table1")),
 	)
 }
 
 func TestSnowflakeDialect_BuildTruncateTableQuery(t *testing.T) {
 	assert.Equal(t,
-		`TRUNCATE TABLE IF EXISTS database1.schema1."TABLE1"`,
+		`TRUNCATE TABLE IF EXISTS "DATABASE1"."SCHEMA1"."TABLE1"`,
 		SnowflakeDialect{}.BuildTruncateTableQuery(NewTableIdentifier("database1", "schema1", "table1")),
 	)
 }

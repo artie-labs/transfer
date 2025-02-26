@@ -44,7 +44,7 @@ func (ti TableIdentifier) WithTable(table string) sql.TableIdentifier {
 }
 
 func (ti TableIdentifier) FullyQualifiedName() string {
-	return fmt.Sprintf("%s.%s.%s", ti.database, ti.schema, ti.EscapedTable())
+	return fmt.Sprintf("%s.%s.%s", _dialect.QuoteIdentifier(ti.database), _dialect.QuoteIdentifier(ti.schema), ti.EscapedTable())
 }
 
 func (ti TableIdentifier) WithDisableDropProtection(disableDropProtection bool) TableIdentifier {
