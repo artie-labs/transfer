@@ -71,7 +71,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		}
 	}
 
-	evtData, err := event.GetData(pkMap, tc)
+	evtData, err := event.GetData(tc)
 	if err != nil {
 		return Event{}, err
 	}
