@@ -23,13 +23,10 @@ jobs:
       - name: Run vet
         run: make vet
 
-      - name: Run staticcheck
-        env:
-          SC_VERSION: "2025.1"
-        run: |
-          SC_URL="https://github.com/dominikh/go-tools/releases/download/$SC_VERSION/staticcheck_linux_amd64.tar.gz"
-          wget -q ${SC_URL} -O - | tar -xzf - --strip-components 1 -C /usr/local/bin staticcheck/staticcheck
-          make static
+      - uses: dominikh/staticcheck-action@v1
+        with:
+          version: "2025.1"
+          install-go: false
 
       - name: Run tests + race condition check
         run: make race
