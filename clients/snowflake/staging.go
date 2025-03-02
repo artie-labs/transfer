@@ -38,8 +38,7 @@ func replaceExceededValues(colVal string, kindDetails typing.KindDetails) string
 
 func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
 	if colVal == nil {
-		// \\N needs to match NULL_IF(...) from ddl.go
-		return `\\N`, nil
+		return constants.NullValuePlaceholder, nil
 	}
 
 	value, err := values.ToString(colVal, colKind)
