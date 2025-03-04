@@ -158,7 +158,7 @@ func (d DatabricksDialect) BuildRemoveFileFromVolumeQuery(filePath string) strin
 }
 
 func (d DatabricksDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {
-	return sql.Native
+	return sql.None
 }
 
 func (d DatabricksDialect) BuildCopyIntoQuery(tempTableID sql.TableIdentifier, columns []string, filePath string) string {
