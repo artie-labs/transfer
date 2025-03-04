@@ -2,7 +2,10 @@ module github.com/artie-labs/transfer
 
 go 1.24.0
 
-tool honnef.co/go/tools/cmd/staticcheck
+tool (
+	github.com/maxbrunsfeld/counterfeiter/v6
+	honnef.co/go/tools/cmd/staticcheck
+)
 
 require (
 	cloud.google.com/go/bigquery v1.65.0
@@ -115,6 +118,7 @@ require (
 	github.com/lestrrat-go/jwx v1.2.30 // indirect
 	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.11.2 // indirect
 	github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 // indirect
 	github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3 // indirect
 	github.com/mtibben/percent v0.2.1 // indirect
