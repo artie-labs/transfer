@@ -14,6 +14,8 @@ const (
 	Backfill DefaultValueStrategy = iota
 	// Native - set default values directly into the destination
 	Native
+	// None - do not set default values
+	None
 )
 
 type TableIdentifier interface {

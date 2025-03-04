@@ -13,7 +13,7 @@ import (
 type IcebergDialect struct{}
 
 func (IcebergDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {
-	return sql.Native
+	return sql.None
 }
 
 func (IcebergDialect) QuoteIdentifier(identifier string) string {
