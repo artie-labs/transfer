@@ -50,7 +50,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging() {
 		// Null
 		value, err := castColValStaging(nil, typing.String)
 		assert.NoError(s.T(), err)
-		assert.Equal(s.T(), `\\N`, value)
+		assert.Equal(s.T(), constants.NullValuePlaceholder, value)
 	}
 	{
 		// Struct field
@@ -172,7 +172,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 		_, createQuery, _ := s.fakeStageStore.ExecContextArgsForCall(0)
 
 		prefixQuery := fmt.Sprintf(
-			`CREATE TABLE IF NOT EXISTS %s ("USER_ID" string,"FIRST_NAME" string,"LAST_NAME" string,"DUSTY" string) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='\\N' EMPTY_FIELD_AS_NULL=FALSE)`, tempTableName)
+			`CREATE TABLE IF NOT EXISTS %s ("USER_ID" string,"FIRST_NAME" string,"LAST_NAME" string,"DUSTY" string) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE)`, tempTableName)
 		containsPrefix := strings.HasPrefix(createQuery, prefixQuery)
 		assert.True(s.T(), containsPrefix, fmt.Sprintf("createQuery:%v, prefixQuery:%s", createQuery, prefixQuery))
 		resourceName := addPrefixToTableName(tempTableID, "%")
