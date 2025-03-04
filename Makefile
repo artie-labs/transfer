@@ -6,7 +6,7 @@ all:
 
 .PHONY: static
 static:
-	staticcheck ./...
+	go tool staticcheck ./...
 
 .PHONY: vet
 vet:
