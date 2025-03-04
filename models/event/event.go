@@ -4,8 +4,7 @@ import (
 	"cmp"
 	"fmt"
 	"log/slog"
-	"maps"
-	"slices"
+	"sort"
 	"strings"
 	"time"
 
@@ -55,11 +54,22 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		return Event{}, err
 	}
 	// Now iterate over pkMap and tag each column that is a primary key
+	var pks []string
 	if cols != nil {
-		for primaryKey := range pkMap {
+		if len(tc.PrimaryKeysOverride) > 0 {
+			for _, pk := range tc.PrimaryKeysOverride {
+				pks = append(pks, columns.EscapeName(pk))
+			}
+		} else {
+			for pk := range pkMap {
+				pks = append(pks, columns.EscapeName(pk))
+			}
+		}
+
+		for _, pk := range pks {
 			err = cols.UpsertColumn(
 				// We need to escape the column name similar to have parity with event.GetColumns()
-				columns.EscapeName(primaryKey),
+				pk,
 				columns.UpsertColumnArg{
 					PrimaryKey: typing.ToPtr(true),
 				},
@@ -95,11 +105,12 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		return Event{}, err
 	}
 
+	sort.Strings(pks)
 	_event := Event{
 		executionTime: event.GetExecutionTime(),
 		mode:          cfgMode,
 		// [primaryKeys] needs to be sorted so that we have a deterministic way to identify a row in our in-memory db.
-		primaryKeys:    slices.Sorted(maps.Keys(pkMap)),
+		primaryKeys:    pks,
 		Table:          tblName,
 		OptionalSchema: optionalSchema,
 		Columns:        cols,
