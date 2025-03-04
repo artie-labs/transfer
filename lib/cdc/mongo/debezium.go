@@ -154,14 +154,14 @@ func (s *SchemaEventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, e
 
 	switch s.Operation() {
 	case "d":
-		// If this is a MongoDB delete event, we should try to first rely on the before object
-		// If it's not set, we will then rely on the after object, which will atleast contain the primary key.
+		// This is a delete event, so mark it as deleted.
+		// And we need to reconstruct the data bit since it will be empty.
+		// We _can_ rely on *before* since even without running replicate identity, it will still copy over
+		// the PK. We can explore simplifying this interface in the future by leveraging before.
 		if len(s.Payload.beforeMap) > 0 {
 			retMap = s.Payload.beforeMap
-		} else if len(s.Payload.afterMap) > 0 {
-			retMap = s.Payload.afterMap
 		} else {
-			return nil, fmt.Errorf("no data found")
+			retMap = make(map[string]any)
 		}
 
 		retMap[constants.DeleteColumnMarker] = true
