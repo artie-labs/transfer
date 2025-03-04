@@ -215,9 +215,25 @@ func (e *EventsTestSuite) TestPrimaryKeyValueDeterministic() {
 		"dusty": "mini aussie",
 	}, kafkalib.TopicConfig{}, config.Replication)
 	assert.NoError(e.T(), err)
+
 	for i := 0; i < 50_000; i++ {
 		pkValue, err := evt.PrimaryKeyValue()
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "aa=1bb=5dusty=mini aussiegg=artiezz=ff", pkValue)
+	}
+}
+
+func (e *EventsTestSuite) TestEvent_PrimaryKeysOverride() {
+	{
+		// No primary keys override
+		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"not_id": 123}, kafkalib.TopicConfig{}, config.Replication)
+		assert.NoError(e.T(), err)
+		assert.Equal(e.T(), []string{"not_id"}, evt.GetPrimaryKeys())
+	}
+	{
+		// Specified primary keys override
+		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"not_id": 123}, kafkalib.TopicConfig{PrimaryKeysOverride: []string{"id"}}, config.Replication)
+		assert.NoError(e.T(), err)
+		assert.Equal(e.T(), []string{"id"}, evt.GetPrimaryKeys())
 	}
 }
