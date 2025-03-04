@@ -109,7 +109,7 @@ func BackfillColumn(dest destination.Destination, column columns.Column, tableID
 
 		_, err = dest.Exec(query)
 		return err
-	case sql.Native:
+	case sql.Native, sql.None:
 		// TODO: Support native strat
 		return nil
 	default:

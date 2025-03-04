@@ -142,6 +142,8 @@ func (g GetTableCfgArgs) buildColumnFromRow(row map[string]string) (columns.Colu
 		if value, isOk := row["default_value"]; isOk && value != "" {
 			col.SetBackfilled(true)
 		}
+	case sql.None:
+		// Do nothing
 	default:
 		return columns.Column{}, fmt.Errorf("unknown default value strategy: %q", strategy)
 	}
