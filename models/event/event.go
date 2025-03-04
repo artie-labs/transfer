@@ -55,17 +55,17 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 	}
 	// Now iterate over pkMap and tag each column that is a primary key
 	var pks []string
-	if cols != nil {
-		if len(tc.PrimaryKeysOverride) > 0 {
-			for _, pk := range tc.PrimaryKeysOverride {
-				pks = append(pks, columns.EscapeName(pk))
-			}
-		} else {
-			for pk := range pkMap {
-				pks = append(pks, columns.EscapeName(pk))
-			}
+	if len(tc.PrimaryKeysOverride) > 0 {
+		for _, pk := range tc.PrimaryKeysOverride {
+			pks = append(pks, columns.EscapeName(pk))
 		}
+	} else {
+		for pk := range pkMap {
+			pks = append(pks, columns.EscapeName(pk))
+		}
+	}
 
+	if cols != nil {
 		for _, pk := range pks {
 			err = cols.UpsertColumn(
 				// We need to escape the column name similar to have parity with event.GetColumns()
