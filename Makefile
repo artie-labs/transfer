@@ -26,9 +26,7 @@ clean:
 
 .PHONY: generate
 generate:
-	go get github.com/maxbrunsfeld/counterfeiter/v6
-	go generate ./...
-	go mod tidy
+	cd lib/mocks && go tool counterfeiter -generate
 .PHONY: build
 build:
 	goreleaser build --clean
