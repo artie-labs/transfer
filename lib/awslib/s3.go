@@ -16,8 +16,9 @@ type UploadArgs struct {
 	Bucket                     string
 	OptionalS3Prefix           string
 	FilePath                   string
-	OverrideAWSAccessKeyID     *string
-	OverrideAWSAccessKeySecret *string
+	OverrideAWSAccessKeyID     string
+	OverrideAWSAccessKeySecret string
+	OverrideAWSSessionToken    string
 }
 
 // UploadLocalFileToS3 - takes a filepath with the file and bucket and optional expiry
@@ -26,8 +27,8 @@ func UploadLocalFileToS3(ctx context.Context, args UploadArgs) (string, error) {
 	var cfg aws.Config
 	var err error
 
-	if args.OverrideAWSAccessKeyID != nil && args.OverrideAWSAccessKeySecret != nil {
-		creds := credentials.NewStaticCredentialsProvider(*args.OverrideAWSAccessKeyID, *args.OverrideAWSAccessKeySecret, "")
+	if args.OverrideAWSAccessKeyID != "" && args.OverrideAWSAccessKeySecret != "" {
+		creds := credentials.NewStaticCredentialsProvider(args.OverrideAWSAccessKeyID, args.OverrideAWSAccessKeySecret, args.OverrideAWSSessionToken)
 		cfg, err = config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(creds))
 	} else {
 		cfg, err = config.LoadDefaultConfig(ctx)
