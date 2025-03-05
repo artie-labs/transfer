@@ -12,10 +12,12 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.24
+          go-version-file: go.mod
 
       - name: Download dependencies
-        run: go mod download
+        run: |
+          go mod download
+          go mod tidy -diff
 
       - name: Generate mocks
         run: make generate
