@@ -9,6 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
+const expirationBuffer = 10 * time.Minute
+
 type Credentials struct {
 	// Generated:
 	awsAccessKeyID     string
@@ -68,7 +70,7 @@ func (c *Credentials) refresh(ctx context.Context) error {
 
 func (c Credentials) IsExpired() bool {
 	// 10 minute buffer
-	return c.expiresAt.Before(time.Now().Add(10 * time.Minute))
+	return c.expiresAt.Before(time.Now().Add(expirationBuffer))
 }
 
 func (c *Credentials) BuildCredentials(ctx context.Context) (credentials.StaticCredentialsProvider, error) {
