@@ -35,8 +35,8 @@ func (s Store) uploadToS3(ctx context.Context, fp string) (string, error) {
 	s3URI, err := awslib.UploadLocalFileToS3(ctx, awslib.UploadArgs{
 		Bucket:                     s.config.Iceberg.S3Tables.Bucket,
 		FilePath:                   fp,
-		OverrideAWSAccessKeyID:     &s.config.Iceberg.S3Tables.AwsAccessKeyID,
-		OverrideAWSAccessKeySecret: &s.config.Iceberg.S3Tables.AwsSecretAccessKey,
+		OverrideAWSAccessKeyID:     s.config.Iceberg.S3Tables.AwsAccessKeyID,
+		OverrideAWSAccessKeySecret: s.config.Iceberg.S3Tables.AwsSecretAccessKey,
 	})
 
 	if err != nil {
