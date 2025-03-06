@@ -27,7 +27,7 @@ jobs:
 
       - uses: dominikh/staticcheck-action@v1
         with:
-          version: "2025.1"
+          version: "2025.1.1"
           install-go: false
 
       - name: Run tests + race condition check
