@@ -52,7 +52,7 @@ func LoadDestination(ctx context.Context, cfg config.Config, store *db.Store) (d
 	case constants.MSSQL:
 		return mssql.LoadStore(cfg)
 	case constants.Redshift:
-		return redshift.LoadRedshift(cfg, store)
+		return redshift.LoadRedshift(ctx, cfg, store)
 	}
 
 	return nil, fmt.Errorf("invalid destination: %q", cfg.Output)

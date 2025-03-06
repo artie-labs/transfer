@@ -3,11 +3,13 @@ package redshift
 import (
 	"context"
 	"fmt"
+	"os"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
+	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
@@ -24,6 +26,8 @@ type Store struct {
 	configMap         *types.DestinationTableConfigMap
 	config            config.Config
 
+	// Generated:
+	_awsCredentials *awslib.Credentials
 	db.Store
 }
 
@@ -94,7 +98,7 @@ func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includ
 	return destination.ExecStatements(s, dedupeQueries)
 }
 
-func LoadRedshift(cfg config.Config, _store *db.Store) (*Store, error) {
+func LoadRedshift(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
@@ -114,7 +118,7 @@ func LoadRedshift(cfg config.Config, _store *db.Store) (*Store, error) {
 		return nil, err
 	}
 
-	return &Store{
+	s := &Store{
 		credentialsClause: cfg.Redshift.CredentialsClause,
 		bucket:            cfg.Redshift.Bucket,
 		optionalS3Prefix:  cfg.Redshift.OptionalS3Prefix,
@@ -122,5 +126,16 @@ func LoadRedshift(cfg config.Config, _store *db.Store) (*Store, error) {
 		config:            cfg,
 
 		Store: store,
-	}, nil
+	}
+
+	if cfg.Redshift.RoleARN != "" {
+		creds, err := awslib.GenerateSTSCredentials(ctx, os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), cfg.Redshift.RoleARN, "ArtieTransfer")
+		if err != nil {
+			return nil, err
+		}
+
+		s._awsCredentials = &creds
+	}
+
+	return s, nil
 }
