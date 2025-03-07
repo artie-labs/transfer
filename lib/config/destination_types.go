@@ -42,6 +42,7 @@ type Redshift struct {
 	OptionalS3Prefix string `yaml:"optionalS3Prefix"`
 	// https://docs.aws.amazon.com/redshift/latest/dg/copy-parameters-authorization.html
 	CredentialsClause string `yaml:"credentialsClause"`
+	RoleARN           string `yaml:"roleARN"`
 }
 
 type S3Settings struct {

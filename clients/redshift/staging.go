@@ -50,12 +50,25 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		}
 	}()
 
-	// Load fp into s3, get S3 URI and pass it down.
-	s3Uri, err := awslib.UploadLocalFileToS3(ctx, awslib.UploadArgs{
+	args := awslib.UploadArgs{
 		OptionalS3Prefix: s.optionalS3Prefix,
 		Bucket:           s.bucket,
 		FilePath:         fp,
-	})
+	}
+
+	if s._awsCredentials != nil {
+		creds, err := s._awsCredentials.BuildCredentials(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to build credentials: %w", err)
+		}
+
+		args.OverrideAWSAccessKeyID = creds.Value.AccessKeyID
+		args.OverrideAWSAccessKeySecret = creds.Value.SecretAccessKey
+		args.OverrideAWSSessionToken = creds.Value.SessionToken
+	}
+
+	// Load fp into s3, get S3 URI and pass it down.
+	s3Uri, err := awslib.UploadLocalFileToS3(ctx, args)
 
 	if err != nil {
 		return fmt.Errorf("failed to upload %q to s3: %w", fp, err)
@@ -66,7 +79,12 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		cols = append(cols, col.Name())
 	}
 
-	copyStmt := s.dialect().BuildCopyStatement(tempTableID, cols, s3Uri, s.credentialsClause)
+	credentialsClause, err := s.BuildCredentialsClause(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to build credentials clause: %w", err)
+	}
+
+	copyStmt := s.dialect().BuildCopyStatement(tempTableID, cols, s3Uri, credentialsClause)
 	if _, err = s.Exec(copyStmt); err != nil {
 		return fmt.Errorf("failed to run COPY for temporary table: %w", err)
 	}
