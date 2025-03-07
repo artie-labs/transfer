@@ -31,6 +31,19 @@ type Store struct {
 	db.Store
 }
 
+func (s *Store) BuildCredentialsClause(ctx context.Context) (string, error) {
+	if s._awsCredentials == nil {
+		return s.credentialsClause, nil
+	}
+
+	creds, err := s._awsCredentials.BuildCredentials(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to build credentials: %w", err)
+	}
+
+	return fmt.Sprintf(`ACCESS_KEY_ID '%s' SECRET_ACCESS_KEY '%s' SESSION_TOKEN '%s'`, creds.Value.AccessKeyID, creds.Value.SecretAccessKey, creds.Value.SessionToken), nil
+}
+
 func (s *Store) DropTable(_ context.Context, _ sql.TableIdentifier) error {
 	return fmt.Errorf("not supported")
 }

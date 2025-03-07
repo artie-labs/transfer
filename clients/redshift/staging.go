@@ -79,7 +79,12 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		cols = append(cols, col.Name())
 	}
 
-	copyStmt := s.dialect().BuildCopyStatement(tempTableID, cols, s3Uri, s.credentialsClause)
+	credentialsClause, err := s.BuildCredentialsClause(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to build credentials clause: %w", err)
+	}
+
+	copyStmt := s.dialect().BuildCopyStatement(tempTableID, cols, s3Uri, credentialsClause)
 	if _, err = s.Exec(copyStmt); err != nil {
 		return fmt.Errorf("failed to run COPY for temporary table: %w", err)
 	}
