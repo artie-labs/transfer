@@ -107,6 +107,9 @@ func TestBySize(t *testing.T) {
 			// First batch should have foo and bar
 			assert.Equal(t, [][]byte{[]byte("foo"), []byte("bar")}, batches[0])
 			assert.Equal(t, []string{"foo", "bar"}, items[0])
+			// Second batch should have i-am-20-characters--
+			assert.Equal(t, [][]byte{[]byte("i-am-20-characters--")}, batches[1])
+			assert.Equal(t, []string{"i-am-20-characters--"}, items[1])
 		}
 	}
 	{
