@@ -137,11 +137,16 @@ func LoadRedshift(ctx context.Context, cfg config.Config, _store *db.Store) (*St
 		optionalS3Prefix:  cfg.Redshift.OptionalS3Prefix,
 		configMap:         &types.DestinationTableConfigMap{},
 		config:            cfg,
-
-		Store: store,
+		Store:             store,
 	}
 
 	if cfg.Redshift.RoleARN != "" {
+		for _, requiredEnv := range []string{"AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"} {
+			if os.Getenv(requiredEnv) == "" {
+				return nil, fmt.Errorf("required environment variable %q is not set", requiredEnv)
+			}
+		}
+
 		creds, err := awslib.GenerateSTSCredentials(ctx, os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), cfg.Redshift.RoleARN, "ArtieTransfer")
 		if err != nil {
 			return nil, err
