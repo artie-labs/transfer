@@ -52,10 +52,8 @@ func (d *DDLTestSuite) SetupTest() {
 
 	d.fakeRedshiftStore = &mocks.FakeStore{}
 	redshiftStore := db.Store(d.fakeRedshiftStore)
-	redshiftCfg := config.Config{
-		Redshift: &config.Redshift{},
-	}
-	d.redshiftStore, err = redshift.LoadRedshift(redshiftCfg, &redshiftStore)
+	redshiftCfg := config.Config{Redshift: &config.Redshift{}}
+	d.redshiftStore, err = redshift.LoadRedshift(d.T().Context(), redshiftCfg, &redshiftStore)
 	assert.NoError(d.T(), err)
 }
 
