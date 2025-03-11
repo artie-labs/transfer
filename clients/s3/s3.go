@@ -135,6 +135,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 		FilePath:                   fp,
 		OverrideAWSAccessKeyID:     s.config.S3.AwsAccessKeyID,
 		OverrideAWSAccessKeySecret: s.config.S3.AwsSecretAccessKey,
+		Region:                     s.config.S3.AwsRegion,
 	}); err != nil {
 		return false, fmt.Errorf("failed to upload file to s3: %w", err)
 	}

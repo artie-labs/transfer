@@ -140,6 +140,13 @@ func LoadRedshift(ctx context.Context, cfg config.Config, _store *db.Store) (*St
 		Store:             store,
 	}
 
+	// TODO: Move this and the lower required env into a separate function
+	for _, requiredEnv := range []string{"AWS_REGION"} {
+		if os.Getenv(requiredEnv) == "" {
+			return nil, fmt.Errorf("required environment variable %q is not set", requiredEnv)
+		}
+	}
+
 	if cfg.Redshift.RoleARN != "" {
 		for _, requiredEnv := range []string{"AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"} {
 			if os.Getenv(requiredEnv) == "" {

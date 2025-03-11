@@ -54,6 +54,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		OptionalS3Prefix: s.optionalS3Prefix,
 		Bucket:           s.bucket,
 		FilePath:         fp,
+		Region:           os.Getenv("AWS_REGION"),
 	}
 
 	if s._awsCredentials != nil {
