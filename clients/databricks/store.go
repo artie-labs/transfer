@@ -114,7 +114,7 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 		}
 	}()
 
-	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var"})
+	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var", "tmp"})
 	putCommand := fmt.Sprintf("PUT '%s' INTO '%s' OVERWRITE", fp, file.DBFSFilePath())
 	if _, err = s.ExecContext(ctx, putCommand); err != nil {
 		return fmt.Errorf("failed to run PUT INTO for temporary table: %w", err)
@@ -200,7 +200,7 @@ func (s Store) SweepTemporaryTables(ctx context.Context) error {
 		return err
 	}
 
-	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var"})
+	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var", "tmp"})
 	// Remove the temporary files from volumes
 	for _, tc := range tcs {
 		rows, err := s.Query(s.dialect().BuildSweepFilesFromVolumesQuery(tc.Database, tc.Schema, s.volume))
