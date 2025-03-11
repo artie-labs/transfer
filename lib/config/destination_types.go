@@ -50,6 +50,7 @@ type S3Settings struct {
 	Bucket             string                   `yaml:"bucket"`
 	AwsAccessKeyID     string                   `yaml:"awsAccessKeyID"`
 	AwsSecretAccessKey string                   `yaml:"awsSecretAccessKey"`
+	AwsRegion          string                   `yaml:"awsRegion"`
 	OutputFormat       constants.S3OutputFormat `yaml:"outputFormat"`
 }
 
