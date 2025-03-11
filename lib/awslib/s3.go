@@ -32,7 +32,7 @@ func UploadLocalFileToS3(ctx context.Context, args UploadArgs) (string, error) {
 		creds := credentials.NewStaticCredentialsProvider(args.OverrideAWSAccessKeyID, args.OverrideAWSAccessKeySecret, args.OverrideAWSSessionToken)
 		cfg, err = config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(creds), config.WithRegion(args.Region))
 	} else {
-		cfg, err = config.LoadDefaultConfig(ctx)
+		cfg, err = config.LoadDefaultConfig(ctx, config.WithRegion(args.Region))
 	}
 
 	if err != nil {
