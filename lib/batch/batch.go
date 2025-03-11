@@ -19,8 +19,9 @@ func hasKeyFunction[T any](item T) (KeyFunction, bool) {
 
 // BySize takes a series of elements [in], encodes them using [encode], groups them into batches of bytes that sum to at
 // most [maxSizeBytes], and then passes each batch to the [yield] function.
-func BySize[T any](in []T, maxSizeBytes int, failIfRowExceedsMaxSizeBytes bool, encode func(T) ([]byte, error), yield func([][]byte) error) error {
+func BySize[T any](in []T, maxSizeBytes int, failIfRowExceedsMaxSizeBytes bool, encode func(T) ([]byte, error), yield func([][]byte, []T) error) error {
 	var buffer [][]byte
+	var rows []T
 	var currentSizeBytes int
 
 	for i, item := range in {
@@ -46,24 +47,28 @@ func BySize[T any](in []T, maxSizeBytes int, failIfRowExceedsMaxSizeBytes bool, 
 		currentSizeBytes += len(bytes)
 		if currentSizeBytes < maxSizeBytes {
 			buffer = append(buffer, bytes)
+			rows = append(rows, item)
 		} else if currentSizeBytes == maxSizeBytes {
 			buffer = append(buffer, bytes)
-			if err = yield(buffer); err != nil {
+			rows = append(rows, item)
+			if err = yield(buffer, rows); err != nil {
 				return err
 			}
 			buffer = [][]byte{}
+			rows = []T{}
 			currentSizeBytes = 0
 		} else {
-			if err = yield(buffer); err != nil {
+			if err = yield(buffer, rows); err != nil {
 				return err
 			}
 			buffer = [][]byte{bytes}
+			rows = []T{item}
 			currentSizeBytes = len(bytes)
 		}
 	}
 
 	if len(buffer) > 0 {
-		if err := yield(buffer); err != nil {
+		if err := yield(buffer, rows); err != nil {
 			return err
 		}
 	}
