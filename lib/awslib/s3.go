@@ -1,6 +1,7 @@
 package awslib
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"os"
@@ -28,11 +29,12 @@ func UploadLocalFileToS3(ctx context.Context, args UploadArgs) (string, error) {
 	var cfg aws.Config
 	var err error
 
+	awsRegion := cmp.Or(args.Region, os.Getenv("AWS_REGION"))
 	if args.OverrideAWSAccessKeyID != "" && args.OverrideAWSAccessKeySecret != "" {
 		creds := credentials.NewStaticCredentialsProvider(args.OverrideAWSAccessKeyID, args.OverrideAWSAccessKeySecret, args.OverrideAWSSessionToken)
-		cfg, err = config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(creds), config.WithRegion(args.Region))
+		cfg, err = config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(creds), config.WithRegion(awsRegion))
 	} else {
-		cfg, err = config.LoadDefaultConfig(ctx, config.WithRegion(args.Region))
+		cfg, err = config.LoadDefaultConfig(ctx, config.WithRegion(awsRegion))
 	}
 
 	if err != nil {
