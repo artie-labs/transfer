@@ -19,6 +19,7 @@ type UploadArgs struct {
 	OverrideAWSAccessKeyID     string
 	OverrideAWSAccessKeySecret string
 	OverrideAWSSessionToken    string
+	Region                     string
 }
 
 // UploadLocalFileToS3 - takes a filepath with the file and bucket and optional expiry
@@ -29,7 +30,7 @@ func UploadLocalFileToS3(ctx context.Context, args UploadArgs) (string, error) {
 
 	if args.OverrideAWSAccessKeyID != "" && args.OverrideAWSAccessKeySecret != "" {
 		creds := credentials.NewStaticCredentialsProvider(args.OverrideAWSAccessKeyID, args.OverrideAWSAccessKeySecret, args.OverrideAWSSessionToken)
-		cfg, err = config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(creds))
+		cfg, err = config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(creds), config.WithRegion(args.Region))
 	} else {
 		cfg, err = config.LoadDefaultConfig(ctx)
 	}
