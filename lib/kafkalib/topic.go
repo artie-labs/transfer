@@ -58,6 +58,7 @@ type TopicConfig struct {
 	BigQueryPartitionSettings *partition.BigQuerySettings `yaml:"bigQueryPartitionSettings,omitempty"`
 	AdditionalMergePredicates []partition.MergePredicates `yaml:"additionalMergePredicates,omitempty"`
 	ColumnsToHash             []string                    `yaml:"columnsToHash,omitempty"`
+	ColumnsToExclude          []string                    `yaml:"columnsToExclude,omitempty"`
 	PrimaryKeysOverride       []string                    `yaml:"primaryKeysOverride,omitempty"`
 	MultiStepMergeSettings    *MultiStepMergeSettings     `yaml:"multiStepMergeSettings,omitempty"`
 
