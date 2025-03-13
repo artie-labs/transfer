@@ -38,11 +38,16 @@ type Event struct {
 	mode          config.Mode
 }
 
-func hashData(data map[string]any, tc kafkalib.TopicConfig) map[string]any {
+func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any {
 	for _, columnToHash := range tc.ColumnsToHash {
 		if value, isOk := data[columnToHash]; isOk {
 			data[columnToHash] = cryptography.HashValue(value)
 		}
+	}
+
+	// Exclude certain columns
+	for _, col := range tc.ColumnsToExclude {
+		delete(data, col)
 	}
 
 	return data
@@ -112,7 +117,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		Table:          tblName,
 		OptionalSchema: optionalSchema,
 		Columns:        cols,
-		Data:           hashData(evtData, tc),
+		Data:           transformData(evtData, tc),
 		Deleted:        event.DeletePayload(),
 	}
 

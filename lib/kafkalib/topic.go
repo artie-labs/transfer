@@ -58,8 +58,10 @@ type TopicConfig struct {
 	BigQueryPartitionSettings *partition.BigQuerySettings `yaml:"bigQueryPartitionSettings,omitempty"`
 	AdditionalMergePredicates []partition.MergePredicates `yaml:"additionalMergePredicates,omitempty"`
 	ColumnsToHash             []string                    `yaml:"columnsToHash,omitempty"`
-	PrimaryKeysOverride       []string                    `yaml:"primaryKeysOverride,omitempty"`
-	MultiStepMergeSettings    *MultiStepMergeSettings     `yaml:"multiStepMergeSettings,omitempty"`
+	// [ColumnsToExclude] can be used to exclude columns from being written to the destination.
+	ColumnsToExclude       []string                `yaml:"columnsToExclude,omitempty"`
+	PrimaryKeysOverride    []string                `yaml:"primaryKeysOverride,omitempty"`
+	MultiStepMergeSettings *MultiStepMergeSettings `yaml:"multiStepMergeSettings,omitempty"`
 
 	// Internal metadata
 	opsToSkipMap map[string]bool `yaml:"-"`
