@@ -96,7 +96,6 @@ func (e *EventsTestSuite) TestTransformData() {
 			assert.Equal(e.T(), map[string]any{"abc": "def"}, data)
 		}
 	}
-
 }
 
 func (e *EventsTestSuite) TestEvent_TableName() {
