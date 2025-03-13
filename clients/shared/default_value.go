@@ -6,6 +6,7 @@ import (
 	"time"
 
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
+	redshiftDialect "github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -72,23 +73,30 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 }
 
 func BackfillColumn(dest destination.Destination, column columns.Column, tableID sql.TableIdentifier) error {
-	switch dest.Dialect().GetDefaultValueStrategy() {
+	dialect := dest.Dialect()
+	switch dialect.GetDefaultValueStrategy() {
 	case sql.Backfill:
 		if !column.ShouldBackfill() {
 			// If we don't need to backfill, don't backfill.
 			return nil
 		}
 
-		defaultVal, err := DefaultValue(column, dest.Dialect())
+		defaultVal, err := DefaultValue(column, dialect)
 		if err != nil {
 			return fmt.Errorf("failed to escape default value: %w", err)
 		}
 
-		escapedCol := dest.Dialect().QuoteIdentifier(column.Name())
+		escapedCol := dialect.QuoteIdentifier(column.Name())
 		query := fmt.Sprintf(`UPDATE %s as t SET t.%s = %v WHERE t.%s IS NULL;`,
 			// UPDATE table as t SET t.col = default_val WHERE t.col IS NULL
 			tableID.FullyQualifiedName(), escapedCol, defaultVal, escapedCol,
 		)
+
+		if rd, ok := dialect.(redshiftDialect.RedshiftDialect); ok {
+			// Redshift UPDATE does not support table aliasing nor do we need it. Redshift will not throw an ambiguous error if the table and column name are the same.
+			query = rd.BuildBackfillQuery(tableID, escapedCol, defaultVal)
+		}
+
 		slog.Info("Backfilling column",
 			slog.String("colName", column.Name()),
 			slog.String("query", query),
@@ -100,7 +108,7 @@ func BackfillColumn(dest destination.Destination, column columns.Column, tableID
 		}
 
 		query = fmt.Sprintf(`COMMENT ON COLUMN %s.%s IS '%v';`, tableID.FullyQualifiedName(), escapedCol, `{"backfilled": true}`)
-		if _, ok := dest.Dialect().(bigQueryDialect.BigQueryDialect); ok {
+		if _, ok := dialect.(bigQueryDialect.BigQueryDialect); ok {
 			query = fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET OPTIONS (description=`%s`);",
 				// ALTER TABLE table ALTER COLUMN col set OPTIONS (description=...)
 				tableID.FullyQualifiedName(), escapedCol, `{"backfilled": true}`,
