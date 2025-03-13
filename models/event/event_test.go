@@ -59,7 +59,7 @@ func (e *EventsTestSuite) TestEvent_Validate() {
 	}
 }
 
-func (e *EventsTestSuite) TestHashData() {
+func (e *EventsTestSuite) TestTransformData() {
 	{
 		// Hashing columns
 		{
