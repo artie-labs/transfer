@@ -211,24 +211,7 @@ func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql
 }
 
 func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
-	apacheLivyClient, err := apachelivy.NewClient(context.Background(), cfg.Iceberg.ApacheLivyURL,
-		map[string]any{
-			// Used by SparkSQL to interact with Hadoop S3:
-			"spark.hadoop.fs.s3a.secret.key": cfg.Iceberg.S3Tables.AwsSecretAccessKey,
-			"spark.hadoop.fs.s3a.access.key": cfg.Iceberg.S3Tables.AwsAccessKeyID,
-			// Used by SparkSQL to interact with S3 Tables:
-			"spark.driver.extraJavaOptions":   fmt.Sprintf("-Daws.accessKeyId=%s -Daws.secretAccessKey=%s", cfg.Iceberg.S3Tables.AwsAccessKeyID, cfg.Iceberg.S3Tables.AwsSecretAccessKey),
-			"spark.executor.extraJavaOptions": fmt.Sprintf("-Daws.accessKeyId=%s -Daws.secretAccessKey=%s", cfg.Iceberg.S3Tables.AwsAccessKeyID, cfg.Iceberg.S3Tables.AwsSecretAccessKey),
-			// These annotations are needed to work with S3 Tables, sourced from: https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-tables-integrating-open-source-spark.html
-			"spark.jars.packages":                            cfg.Iceberg.S3Tables.GetRuntimePackage(),
-			"spark.sql.extensions":                           "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
-			"spark.sql.catalog.s3tablesbucket":               "org.apache.iceberg.spark.SparkCatalog",
-			"spark.sql.catalog.s3tablesbucket.catalog-impl":  "software.amazon.s3tables.iceberg.S3TablesCatalog",
-			"spark.sql.catalog.s3tablesbucket.warehouse":     cfg.Iceberg.S3Tables.BucketARN,
-			"spark.sql.catalog.s3tablesbucket.client.region": cfg.Iceberg.S3Tables.Region,
-		},
-	)
-
+	apacheLivyClient, err := apachelivy.NewClient(ctx, cfg.Iceberg.ApacheLivyURL, cfg.Iceberg.S3Tables.ApacheLivyConfig())
 	if err != nil {
 		return Store{}, err
 	}
@@ -239,7 +222,7 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 	}
 
 	store := Store{
-		catalogName:      "s3tablesbucket",
+		catalogName:      cfg.Iceberg.S3Tables.CatalogName(),
 		config:           cfg,
 		apacheLivyClient: apacheLivyClient,
 		cm:               &types.DestinationTableConfigMap{},
