@@ -2,6 +2,7 @@ package config
 
 import (
 	"cmp"
+	"fmt"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 )
@@ -87,4 +88,22 @@ type S3Tables struct {
 
 func (s S3Tables) GetRuntimePackage() string {
 	return cmp.Or(s.RuntimePackageOverride, constants.DefaultS3TablesPackage)
+}
+
+func (s S3Tables) ApacheLivyConfig() map[string]any {
+	return map[string]any{
+		// Used by SparkSQL to interact with Hadoop S3:
+		"spark.hadoop.fs.s3a.secret.key": s.AwsSecretAccessKey,
+		"spark.hadoop.fs.s3a.access.key": s.AwsAccessKeyID,
+		// Used by SparkSQL to interact with S3 Tables:
+		"spark.driver.extraJavaOptions":   fmt.Sprintf("-Daws.accessKeyId=%s -Daws.secretAccessKey=%s", s.AwsAccessKeyID, s.AwsSecretAccessKey),
+		"spark.executor.extraJavaOptions": fmt.Sprintf("-Daws.accessKeyId=%s -Daws.secretAccessKey=%s", s.AwsAccessKeyID, s.AwsSecretAccessKey),
+		// These annotations are needed to work with S3 Tables, sourced from: https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-tables-integrating-open-source-spark.html
+		"spark.jars.packages":                            s.GetRuntimePackage(),
+		"spark.sql.extensions":                           "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
+		"spark.sql.catalog.s3tablesbucket":               "org.apache.iceberg.spark.SparkCatalog",
+		"spark.sql.catalog.s3tablesbucket.catalog-impl":  "software.amazon.s3tables.iceberg.S3TablesCatalog",
+		"spark.sql.catalog.s3tablesbucket.warehouse":     s.BucketARN,
+		"spark.sql.catalog.s3tablesbucket.client.region": s.Region,
+	}
 }
