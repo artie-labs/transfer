@@ -222,7 +222,7 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 	}
 
 	store := Store{
-		catalogName:      "s3tablesbucket",
+		catalogName:      cfg.Iceberg.S3Tables.CatalogName(),
 		config:           cfg,
 		apacheLivyClient: apacheLivyClient,
 		cm:               &types.DestinationTableConfigMap{},

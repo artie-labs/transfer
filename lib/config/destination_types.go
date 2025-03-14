@@ -107,3 +107,7 @@ func (s S3Tables) ApacheLivyConfig() map[string]any {
 		"spark.sql.catalog.s3tablesbucket.client.region": s.Region,
 	}
 }
+
+func (s S3Tables) CatalogName() string {
+	return "s3tablesbucket"
+}
