@@ -16,7 +16,7 @@ import (
 
 var handlersToTerminate []func()
 
-func NewLogger(verbose bool, sentryCfg *config.Sentry) (*slog.Logger, func()) {
+func NewLogger(verbose bool, sentryCfg *config.Sentry, version string) (*slog.Logger, func()) {
 	tintLogLevel := slog.LevelInfo
 	if verbose {
 		tintLogLevel = slog.LevelDebug
@@ -27,7 +27,10 @@ func NewLogger(verbose bool, sentryCfg *config.Sentry) (*slog.Logger, func()) {
 		NoColor: !isatty.IsTerminal(os.Stderr.Fd()),
 	})
 	if sentryCfg != nil && sentryCfg.DSN != "" {
-		if err := sentry.Init(sentry.ClientOptions{Dsn: sentryCfg.DSN}); err != nil {
+		if err := sentry.Init(sentry.ClientOptions{
+			Dsn:     sentryCfg.DSN,
+			Release: version,
+		}); err != nil {
 			slog.New(handler).Warn("Failed to enable Sentry output", slog.Any("err", err))
 		} else {
 			slog.New(handler).Info("Sentry logger enabled")
