@@ -21,6 +21,10 @@ import (
 	"github.com/artie-labs/transfer/processes/pool"
 )
 
+var (
+	version = "dev" // this will be set by the goreleaser configuration to appropriate value for the compiled binary.
+)
+
 func main() {
 	// Parse args into settings
 	settings, err := config.LoadSettings(os.Args, true)
@@ -29,7 +33,7 @@ func main() {
 	}
 
 	// Initialize default logger
-	_logger, cleanUpHandlers := logger.NewLogger(settings.VerboseLogging, settings.Config.Reporting.Sentry)
+	_logger, cleanUpHandlers := logger.NewLogger(settings.VerboseLogging, settings.Config.Reporting.Sentry, version)
 	slog.SetDefault(_logger)
 
 	defer cleanUpHandlers()
@@ -77,6 +81,8 @@ func main() {
 
 		dest = _dest
 	}
+
+	slog.Info("Starting...", slog.String("version", version))
 
 	inMemDB := models.NewMemoryDB()
 
