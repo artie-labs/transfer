@@ -29,7 +29,7 @@ func NewLogger(verbose bool, sentryCfg *config.Sentry, version string) (*slog.Lo
 	if sentryCfg != nil && sentryCfg.DSN != "" {
 		if err := sentry.Init(sentry.ClientOptions{
 			Dsn:     sentryCfg.DSN,
-			Release: version,
+			Release: "transfer@" + version,
 		}); err != nil {
 			slog.New(handler).Warn("Failed to enable Sentry output", slog.Any("err", err))
 		} else {
