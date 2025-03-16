@@ -141,12 +141,12 @@ func LoadRedshift(ctx context.Context, cfg config.Config, _store *db.Store) (*St
 		Store:             store,
 	}
 
-	if err := environ.MustGetEnv("AWS_REGION"); err != nil {
+	if err = environ.MustGetEnv("AWS_REGION"); err != nil {
 		return nil, err
 	}
 
 	if cfg.Redshift.RoleARN != "" {
-		if err := environ.MustGetEnv("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"); err != nil {
+		if err = environ.MustGetEnv("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"); err != nil {
 			return nil, err
 		}
 
