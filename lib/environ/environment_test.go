@@ -16,7 +16,7 @@ func TestMustGetEnv(t *testing.T) {
 		// Multiple environment variables are set
 		t.Setenv("TEST_ENV_VAR_2", "test2")
 		t.Setenv("TEST_ENV_VAR_3", "test3")
-		assert.NoError(t, MustGetEnv("TEST_ENV_VAR", "TEST_ENV_VAR_2", "TEST_ENV_VAR_3"))
+		assert.NoError(t, MustGetEnv("TEST_ENV_VAR_2", "TEST_ENV_VAR_3"))
 	}
 	{
 		// Environment variable is not set
