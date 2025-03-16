@@ -14,6 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/environ"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -140,18 +141,13 @@ func LoadRedshift(ctx context.Context, cfg config.Config, _store *db.Store) (*St
 		Store:             store,
 	}
 
-	// TODO: Move this and the lower required env into a separate function
-	for _, requiredEnv := range []string{"AWS_REGION"} {
-		if os.Getenv(requiredEnv) == "" {
-			return nil, fmt.Errorf("required environment variable %q is not set", requiredEnv)
-		}
+	if err := environ.MustGetEnv("AWS_REGION"); err != nil {
+		return nil, err
 	}
 
 	if cfg.Redshift.RoleARN != "" {
-		for _, requiredEnv := range []string{"AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"} {
-			if os.Getenv(requiredEnv) == "" {
-				return nil, fmt.Errorf("required environment variable %q is not set", requiredEnv)
-			}
+		if err := environ.MustGetEnv("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"); err != nil {
+			return nil, err
 		}
 
 		creds, err := awslib.GenerateSTSCredentials(ctx, os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), cfg.Redshift.RoleARN, "ArtieTransfer")
