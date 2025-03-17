@@ -25,7 +25,7 @@ jobs:
       - name: Run vet
         run: make vet
 
-      - uses: dominikh/staticcheck-action@v1
+      - uuses: dominikh/staticcheck-action@fe1dd0c3658873b46f8c9bb3291096a617310ca6 # v1.3.1
         with:
           version: "2025.1.1"
           install-go: false
