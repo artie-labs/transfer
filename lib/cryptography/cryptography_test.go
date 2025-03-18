@@ -32,3 +32,55 @@ func BenchmarkHashValue(b *testing.B) {
 		assert.Equal(b, "b9a40320d82075681b2500e38160538e5e912bd8f49c03e87367fe82c1fa35d2", HashValue("dusty the mini aussie"))
 	}
 }
+
+func TestAES256Encryption(t *testing.T) {
+	{
+		// Valid
+		ae, err := NewAES256Encryption("0123456789abcdef0123456789abcdef")
+		assert.NoError(t, err)
+		{
+			// Invalid: Decrypting with bad data
+			_, err = ae.Decrypt("invalid-encrypted-value")
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "failed to decrypt value")
+		}
+		{
+			// Test encryption and decryption with normal string
+			originalValue := "hello world"
+			encrypted, err := ae.Encrypt(originalValue)
+			assert.NoError(t, err)
+			assert.NotEqual(t, originalValue, encrypted)
+
+			// Decrypt
+			decrypted, err := ae.Decrypt(encrypted)
+			assert.NoError(t, err)
+			assert.Equal(t, originalValue, decrypted)
+		}
+		{
+			// Test with empty string
+			encrypted, err := ae.Encrypt("")
+			assert.NoError(t, err)
+			assert.NotEmpty(t, encrypted)
+
+			decrypted, err := ae.Decrypt(encrypted)
+			assert.NoError(t, err)
+			assert.Equal(t, "", decrypted)
+		}
+		{
+			// Test with long string
+			longString := "This is a very long string that should be properly encrypted and decrypted without any issues. It contains multiple sentences and special characters! @#$%^&*()"
+			encrypted, err := ae.Encrypt(longString)
+			assert.NoError(t, err)
+			assert.NotEqual(t, longString, encrypted)
+
+			decrypted, err := ae.Decrypt(encrypted)
+			assert.NoError(t, err)
+			assert.Equal(t, longString, decrypted)
+		}
+	}
+	{
+		// Test with invalid key length
+		_, err := NewAES256Encryption("invalid-key")
+		assert.ErrorContains(t, err, "key length must be 32 bytes")
+	}
+}

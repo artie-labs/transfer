@@ -1,6 +1,8 @@
 package cryptography
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -8,6 +10,7 @@ import (
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
+	"io"
 	"math/big"
 	"os"
 
@@ -60,4 +63,54 @@ func RandomInt64n(n int64) (int64, error) {
 	}
 
 	return randN.Int64(), nil
+}
+
+func buildCipherAEAD(key string) (cipher.AEAD, error) {
+	if len(key) != 32 {
+		return nil, fmt.Errorf("key length must be 32 bytes, got %d", len(key))
+	}
+
+	cipherBlock, err := aes.NewCipher([]byte(key))
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate cipher: %w", err)
+	}
+
+	return cipher.NewGCM(cipherBlock)
+}
+
+type AES256Encryption struct {
+	key cipher.AEAD
+}
+
+func NewAES256Encryption(key string) (AES256Encryption, error) {
+	cipherAEAD, err := buildCipherAEAD(key)
+	if err != nil {
+		return AES256Encryption{}, err
+	}
+
+	return AES256Encryption{key: cipherAEAD}, nil
+}
+
+func (ae AES256Encryption) Encrypt(value string) (string, error) {
+	nonce := make([]byte, ae.key.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return "", fmt.Errorf("failed to generate nonce: %w", err)
+	}
+
+	encrypted := ae.key.Seal(nil, nonce, []byte(value), nil)
+	return hex.EncodeToString(encrypted), nil
+}
+
+func (ae AES256Encryption) Decrypt(value string) (string, error) {
+	nonce := make([]byte, ae.key.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return "", fmt.Errorf("failed to generate nonce: %w", err)
+	}
+
+	decrypted, err := ae.key.Open(nil, nonce, []byte(value), nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to decrypt value: %w", err)
+	}
+
+	return string(decrypted), nil
 }
