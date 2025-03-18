@@ -81,5 +81,9 @@ type Config struct {
 		}
 	}
 
+	Encryption *EncryptionSettings `yaml:"encryption,omitempty"`
+}
+
+type EncryptionSettings struct {
 	EncryptionKey string `yaml:"encryptionKey"`
 }

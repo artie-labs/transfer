@@ -50,8 +50,8 @@ func LoadSettings(args []string, loadConfig bool) (*Settings, error) {
 
 		settings.Config = *config
 
-		if config.EncryptionKey != "" {
-			aes, err := cryptography.NewAES256Encryption(config.EncryptionKey)
+		if config.Encryption != nil && config.Encryption.EncryptionKey != "" {
+			aes, err := cryptography.NewAES256Encryption(config.Encryption.EncryptionKey)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create AES256Encryption: %w", err)
 			}
