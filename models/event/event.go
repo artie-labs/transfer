@@ -38,7 +38,7 @@ type Event struct {
 	mode          config.Mode
 }
 
-func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any {
+func transformData(data map[string]any, tc kafkalib.TopicConfig, aes *cryptography.AES256Encryption) (map[string]any, error) {
 	for _, columnToHash := range tc.ColumnsToHash {
 		if value, isOk := data[columnToHash]; isOk {
 			data[columnToHash] = cryptography.HashValue(value)
@@ -50,11 +50,34 @@ func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any 
 		delete(data, col)
 	}
 
-	// TODO: Implement encryption / decryption
-	return data
+	// Encryption
+	for _, col := range tc.ColumnsToEncrypt {
+		if value, isOk := data[col]; isOk {
+			encrypted, err := aes.Encrypt(fmt.Sprint(value))
+			if err != nil {
+				return nil, fmt.Errorf("failed to encrypt column %q: %w", col, err)
+			}
+
+			data[col] = encrypted
+		}
+	}
+
+	// Decryption
+	for _, col := range tc.ColumnsToDecrypt {
+		if value, isOk := data[col]; isOk {
+			decrypted, err := aes.Decrypt(fmt.Sprint(value))
+			if err != nil {
+				return nil, fmt.Errorf("failed to decrypt column %q: %w", col, err)
+			}
+
+			data[col] = decrypted
+		}
+	}
+
+	return data, nil
 }
 
-func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
+func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode, aes *cryptography.AES256Encryption) (Event, error) {
 	cols, err := event.GetColumns()
 	if err != nil {
 		return Event{}, err
@@ -110,6 +133,12 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 	}
 
 	sort.Strings(pks)
+
+	transformedData, err := transformData(evtData, tc, aes)
+	if err != nil {
+		return Event{}, err
+	}
+
 	_event := Event{
 		executionTime: event.GetExecutionTime(),
 		mode:          cfgMode,
@@ -118,7 +147,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		Table:          tblName,
 		OptionalSchema: optionalSchema,
 		Columns:        cols,
-		Data:           transformData(evtData, tc),
+		Data:           transformedData,
 		Deleted:        event.DeletePayload(),
 	}
 

@@ -3,12 +3,14 @@ package config
 import (
 	"fmt"
 
+	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/jessevdk/go-flags"
 )
 
 type Settings struct {
-	Config         Config
-	VerboseLogging bool
+	Config           Config
+	VerboseLogging   bool
+	AES256Encryption *cryptography.AES256Encryption
 }
 
 // LoadSettings will take the flags and then parse, loadConfig is optional for testing purposes.
@@ -47,6 +49,15 @@ func LoadSettings(args []string, loadConfig bool) (*Settings, error) {
 		}
 
 		settings.Config = *config
+
+		if config.EncryptionKey != "" {
+			aes, err := cryptography.NewAES256Encryption(config.EncryptionKey)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create AES256Encryption: %w", err)
+			}
+
+			settings.AES256Encryption = &aes
+		}
 	}
 
 	return settings, nil

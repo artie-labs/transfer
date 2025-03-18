@@ -7,6 +7,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/artie-labs/transfer/models"
@@ -19,7 +20,7 @@ type processArgs struct {
 	TopicToConfigFormatMap *TcFmtMap
 }
 
-func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) (string, error) {
+func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, aes *cryptography.AES256Encryption) (string, error) {
 	if p.TopicToConfigFormatMap == nil {
 		return "", fmt.Errorf("failed to process, topicConfig is nil")
 	}
@@ -58,7 +59,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	}
 
 	tags["op"] = _event.Operation()
-	evt, err := event.ToMemoryEvent(_event, pkMap, topicConfig.tc, cfg.Mode)
+	evt, err := event.ToMemoryEvent(_event, pkMap, topicConfig.tc, cfg.Mode, aes)
 	if err != nil {
 		tags["what"] = "to_mem_event_err"
 		return "", fmt.Errorf("cannot convert to memory event: %w", err)

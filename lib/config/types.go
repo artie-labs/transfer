@@ -80,4 +80,6 @@ type Config struct {
 			Settings map[string]any         `yaml:"settings,omitempty"`
 		}
 	}
+
+	EncryptionKey string `yaml:"encryptionKey"`
 }

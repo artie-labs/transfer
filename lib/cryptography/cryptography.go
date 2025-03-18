@@ -91,26 +91,22 @@ func NewAES256Encryption(key string) (AES256Encryption, error) {
 	return AES256Encryption{key: cipherAEAD}, nil
 }
 
-func (ae AES256Encryption) Encrypt(value string) (string, error) {
+func (ae AES256Encryption) Encrypt(plaintext string) (string, error) {
 	nonce := make([]byte, ae.key.NonceSize())
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
 		return "", fmt.Errorf("failed to generate nonce: %w", err)
 	}
 
-	encrypted := ae.key.Seal(nil, nonce, []byte(value), nil)
+	encrypted := ae.key.Seal(nonce, nonce, []byte(plaintext), nil)
 	return hex.EncodeToString(encrypted), nil
 }
 
-func (ae AES256Encryption) Decrypt(value string) (string, error) {
-	nonce := make([]byte, ae.key.NonceSize())
-	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		return "", fmt.Errorf("failed to generate nonce: %w", err)
-	}
-
-	decrypted, err := ae.key.Open(nil, nonce, []byte(value), nil)
+func (ae AES256Encryption) Decrypt(cipherText string) (string, error) {
+	nonceSize := ae.key.NonceSize()
+	decryptedBytes, err := ae.key.Open(nil, []byte(cipherText[:nonceSize]), []byte(cipherText[nonceSize:]), nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to decrypt value: %w", err)
 	}
 
-	return string(decrypted), nil
+	return string(decryptedBytes), nil
 }
