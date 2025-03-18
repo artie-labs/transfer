@@ -155,3 +155,44 @@ func TestMultiStepMergeSettings_Validate(t *testing.T) {
 		}.Validate())
 	}
 }
+
+func TestTopicConfig_ValidateColumns(t *testing.T) {
+	{
+		// No columns
+		assert.NoError(t, TopicConfig{}.ValidateColumns())
+	}
+	{
+		// Single column in each list - no overlap
+		tc := TopicConfig{
+			ColumnsToEncrypt: []string{"email"},
+			ColumnsToDecrypt: []string{"ssn"},
+			ColumnsToHash:    []string{"user_id"},
+			ColumnsToExclude: []string{"temp_data"},
+		}
+		assert.NoError(t, tc.ValidateColumns())
+	}
+	{
+		// Overlap between encrypt and decrypt
+		tc := TopicConfig{
+			ColumnsToEncrypt: []string{"email"},
+			ColumnsToDecrypt: []string{"email"},
+		}
+		assert.ErrorContains(t, tc.ValidateColumns(), `column "email" cannot be both "encrypted" and "decrypted"`)
+	}
+	{
+		// Overlap between hash and exclude
+		tc := TopicConfig{
+			ColumnsToHash:    []string{"user_id"},
+			ColumnsToExclude: []string{"user_id"},
+		}
+		assert.ErrorContains(t, tc.ValidateColumns(), `column "user_id" cannot be both "hashed" and "excluded"`)
+	}
+	{
+		// Multiple columns with overlap
+		tc := TopicConfig{
+			ColumnsToEncrypt: []string{"email", "phone"},
+			ColumnsToHash:    []string{"phone", "address"},
+		}
+		assert.ErrorContains(t, tc.ValidateColumns(), `column "phone" cannot be both "encrypted" and "hashed"`)
+	}
+}
