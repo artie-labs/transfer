@@ -50,10 +50,7 @@ func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any 
 		delete(data, col)
 	}
 
-	// Encrypt certain columns
-
-	// Decrypt certain columns
-
+	// TODO: Implement encryption / decryption
 	return data
 }
 
