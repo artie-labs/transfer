@@ -42,7 +42,7 @@ func TestAES256Encryption(t *testing.T) {
 			// Invalid: Decrypting with bad data
 			_, err = ae.Decrypt("invalid-encrypted-value")
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "failed to decrypt value")
+			assert.Contains(t, err.Error(), "failed to decode hex string")
 		}
 		{
 			// Test encryption and decryption with normal string

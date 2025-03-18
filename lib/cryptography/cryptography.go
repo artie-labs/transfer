@@ -101,7 +101,12 @@ func (ae AES256Encryption) Encrypt(plaintext string) (string, error) {
 	return hex.EncodeToString(encrypted), nil
 }
 
-func (ae AES256Encryption) Decrypt(cipherText string) (string, error) {
+func (ae AES256Encryption) Decrypt(hexEncodedString string) (string, error) {
+	cipherText, err := hex.DecodeString(hexEncodedString)
+	if err != nil {
+		return "", fmt.Errorf("failed to decode hex string: %w", err)
+	}
+
 	nonceSize := ae.key.NonceSize()
 	decryptedBytes, err := ae.key.Open(nil, []byte(cipherText[:nonceSize]), []byte(cipherText[nonceSize:]), nil)
 	if err != nil {
