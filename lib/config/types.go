@@ -80,4 +80,10 @@ type Config struct {
 			Settings map[string]any         `yaml:"settings,omitempty"`
 		}
 	}
+
+	Encryption *EncryptionSettings `yaml:"encryption,omitempty"`
+}
+
+type EncryptionSettings struct {
+	EncryptionKey string `yaml:"encryptionKey"`
 }
