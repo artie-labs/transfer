@@ -42,12 +42,12 @@ func TestProcessMessageFailures(t *testing.T) {
 		GroupID: "foo",
 	}
 
-	tableName, err := args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
+	tableName, err := args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{}, nil)
 	assert.ErrorContains(t, err, "failed to process, topicConfig is nil", err.Error())
 	assert.Empty(t, tableName)
 
 	args.TopicToConfigFormatMap = NewTcFmtMap()
-	tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
+	tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{}, nil)
 	assert.ErrorContains(t, err, "failed to get topic", err.Error())
 	assert.Equal(t, 0, len(memDB.TableData()))
 	assert.Empty(t, tableName)
@@ -81,7 +81,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	tcFmt, isOk := tcFmtMap.GetTopicFmt(msg.Topic())
 	assert.True(t, isOk)
 
-	tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
+	tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{}, nil)
 	assert.ErrorContains(t, err, fmt.Sprintf("format: %s is not supported", tcFmt.tc.CDCKeyFormat), err.Error())
 	assert.ErrorContains(t, err, "cannot unmarshall key", err.Error())
 	assert.Equal(t, 0, len(memDB.TableData()))
@@ -166,7 +166,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		TopicToConfigFormatMap: tcFmtMap,
 	}
 
-	tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
+	tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{}, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, table, tableName)
 
@@ -193,7 +193,7 @@ func TestProcessMessageFailures(t *testing.T) {
 			TopicToConfigFormatMap: tcFmtMap,
 		}
 
-		tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
+		tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{}, nil)
 		assert.ErrorContains(t, err, "cannot unmarshall event: failed to unmarshal json: invalid character 'o' in literal")
 		assert.Empty(t, tableName)
 		assert.True(t, td.NumberOfRows() > 0)
@@ -332,7 +332,7 @@ func TestProcessMessageSkip(t *testing.T) {
 		td := memoryDB.GetOrCreateTableData(table)
 		assert.Equal(t, 0, int(td.NumberOfRows()))
 
-		tableName, err := args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
+		tableName, err := args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{}, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, table, tableName)
 		// Because it got skipped.
