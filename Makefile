@@ -52,3 +52,9 @@ bench_redshift:
 .PHONY: bench_mongo
 bench_mongo:
 	go test ./lib/cdc/mongo -bench=Bench -benchtime=20s
+
+
+.PHONY snowflake-itest:
+snowflake-itest:
+	# This expects a config file in .personal/integration_tests/snowflake.yaml
+	go run integration_tests/snowflake/main.go --config .personal/integration_tests/snowflake.yaml
