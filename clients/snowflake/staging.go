@@ -69,10 +69,10 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	defer func() {
-		// In the case where PUT or COPY fails, we'll at least delete the temporary file.
-		if deleteErr := os.RemoveAll(fp); deleteErr != nil {
-			slog.Warn("Failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
-		}
+		// // In the case where PUT or COPY fails, we'll at least delete the temporary file.
+		// if deleteErr := os.RemoveAll(fp); deleteErr != nil {
+		// 	slog.Warn("Failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
+		// }
 	}()
 
 	// Upload the CSV file to Snowflake
