@@ -64,9 +64,8 @@ func (st *SnowflakeTest) generateTestData(numRows int) {
 }
 
 func (st *SnowflakeTest) setupTable() error {
-	dropTableID := st.tableID.WithDisableDropProtection(true)
-	if err := st.dest.DropTable(st.ctx, dropTableID); err != nil {
-		return fmt.Errorf("failed to drop table: %w", err)
+	if err := st.cleanup(st.tableID); err != nil {
+		return fmt.Errorf("failed to cleanup table: %w", err)
 	}
 
 	if err := st.dest.Append(st.ctx, st.tableData, true); err != nil {
@@ -96,15 +95,15 @@ func (st *SnowflakeTest) verifyRowCount(expected int) error {
 	return nil
 }
 
-func (st *SnowflakeTest) verifyDataContent() error {
+func (st *SnowflakeTest) verifyDataContent(rowCount int) error {
 	rows, err := st.dest.Query(fmt.Sprintf("SELECT id, name, value FROM %s ORDER BY id", st.tableID.FullyQualifiedName()))
 	if err != nil {
 		return fmt.Errorf("failed to query table data: %w", err)
 	}
 
-	for i := 0; i < 120; i++ {
+	for i := 0; i < rowCount; i++ {
 		if !rows.Next() {
-			return fmt.Errorf("expected more rows: expected 120, got %d", i)
+			return fmt.Errorf("expected more rows: expected %d, got %d", rowCount, i)
 		}
 
 		var id int
@@ -116,7 +115,6 @@ func (st *SnowflakeTest) verifyDataContent() error {
 
 		expectedName := fmt.Sprintf("test_name_%d", i)
 		expectedValue := float64(i) * 1.5
-
 		if id != i {
 			return fmt.Errorf("unexpected id: expected %d, got %d", i, id)
 		}
@@ -135,15 +133,14 @@ func (st *SnowflakeTest) verifyDataContent() error {
 	return nil
 }
 
-func (st *SnowflakeTest) cleanup() error {
-	dropTableID := st.tableID.WithDisableDropProtection(true)
+func (st *SnowflakeTest) cleanup(tableID dialect.TableIdentifier) error {
+	dropTableID := tableID.WithDisableDropProtection(true)
 	return st.dest.DropTable(st.ctx, dropTableID)
 }
 
 func (st *SnowflakeTest) Run() error {
 	st.setupColumns()
 	st.generateTestData(120)
-
 	if err := st.setupTable(); err != nil {
 		return err
 	}
@@ -152,11 +149,11 @@ func (st *SnowflakeTest) Run() error {
 		return err
 	}
 
-	if err := st.verifyDataContent(); err != nil {
+	if err := st.verifyDataContent(120); err != nil {
 		return err
 	}
 
-	return st.cleanup()
+	return st.cleanup(st.tableID)
 }
 
 func main() {
