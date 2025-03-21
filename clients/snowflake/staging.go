@@ -76,12 +76,12 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}()
 
 	// Upload the CSV file to Snowflake
-	if _, err = s.Exec(fmt.Sprintf("PUT 'file://%s' '@%s' AUTO_COMPRESS=TRUE", fp, addPrefixToTableName(tempTableID, "%"))); err != nil {
+	if _, err = s.Exec(fmt.Sprintf("PUT 'file://%s' @%s AUTO_COMPRESS=TRUE", fp, addPrefixToTableName(tempTableID, "%"))); err != nil {
 		return fmt.Errorf("failed to run PUT for temporary table: %w", err)
 	}
 
 	// COPY the CSV file (in Snowflake) into a table
-	copyCommand := fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM '@%s')",
+	copyCommand := fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
 		tempTableID.FullyQualifiedName(),
 		strings.Join(sql.QuoteColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), s.Dialect()), ","),
 		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableID, "%"))
@@ -90,7 +90,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		copyCommand += " " + additionalSettings.AdditionalCopyClause
 	}
 
-	if _, err = s.Exec(copyCommand); err != nil {
+	if _, err = s.ExecContext(ctx, copyCommand); err != nil {
 		// For non-temp tables, we should try to delete the staging file if COPY INTO fails.
 		// This is because [PURGE = TRUE] will only delete the staging files upon a successful COPY INTO.
 		// We also only need to do this for non-temp tables because these staging files will linger, since we create a new temporary table per attempt.
