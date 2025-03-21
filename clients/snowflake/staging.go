@@ -63,7 +63,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	// Write data into CSV
-	_, tempDir, err := s.writeTemporaryTableFile(tableData, snowflakeTableID)
+	fp, err := s.writeTemporaryTableFile(tableData, snowflakeTableID)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
@@ -76,15 +76,15 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}()
 
 	// Upload the CSV file to Snowflake
-	if _, err = s.Exec(fmt.Sprintf("PUT file://%s/*.csv @%s AUTO_COMPRESS=TRUE", tempDir, addPrefixToTableName(tempTableID, "%"))); err != nil {
+	if _, err = s.Exec(fmt.Sprintf("PUT 'file://%s' @~ AUTO_COMPRESS=TRUE", fp)); err != nil {
 		return fmt.Errorf("failed to run PUT for temporary table: %w", err)
 	}
 
 	// COPY the CSV file (in Snowflake) into a table
-	copyCommand := fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
+	copyCommand := fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @~)",
 		tempTableID.FullyQualifiedName(),
 		strings.Join(sql.QuoteColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), s.Dialect()), ","),
-		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableID, "%"))
+		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","))
 
 	if additionalSettings.AdditionalCopyClause != "" {
 		copyCommand += " " + additionalSettings.AdditionalCopyClause
@@ -106,16 +106,11 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	return nil
 }
 
-func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID dialect.TableIdentifier) (string, string, error) {
-	tempDir, err := os.MkdirTemp("", "artie*")
-	if err != nil {
-		return "", "", err
-	}
-
-	fp := filepath.Join(tempDir, newTableID.FileName())
+func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID dialect.TableIdentifier) (string, error) {
+	fp := filepath.Join(os.TempDir(), newTableID.FileName())
 	file, err := os.Create(fp)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
 	defer file.Close()
@@ -128,17 +123,17 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 		for _, col := range columns {
 			castedValue, castErr := castColValStaging(row[col.Name()], col.KindDetails)
 			if castErr != nil {
-				return "", "", fmt.Errorf("failed to cast value '%v': %w", row[col.Name()], castErr)
+				return "", fmt.Errorf("failed to cast value '%v': %w", row[col.Name()], castErr)
 			}
 
 			csvRow = append(csvRow, castedValue)
 		}
 
 		if err = writer.Write(csvRow); err != nil {
-			return "", "", fmt.Errorf("failed to write to csv: %w", err)
+			return "", fmt.Errorf("failed to write to csv: %w", err)
 		}
 	}
 
 	writer.Flush()
-	return fp, tempDir, writer.Error()
+	return fp, writer.Error()
 }
