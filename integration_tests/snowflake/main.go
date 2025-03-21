@@ -64,7 +64,8 @@ func (t *SnowflakeTest) generateTestData(numRows int) {
 }
 
 func (t *SnowflakeTest) setupTable() error {
-	if err := t.dest.DropTable(t.ctx, t.tableID); err != nil {
+	dropTableID := t.tableID.WithDisableDropProtection(true)
+	if err := t.dest.DropTable(t.ctx, dropTableID); err != nil {
 		return fmt.Errorf("failed to drop table: %w", err)
 	}
 
@@ -76,7 +77,7 @@ func (t *SnowflakeTest) setupTable() error {
 }
 
 func (t *SnowflakeTest) verifyRowCount(expected int) error {
-	rows, err := t.dest.Query("SELECT COUNT(*) FROM test_db.public.test_table")
+	rows, err := t.dest.Query(fmt.Sprintf("SELECT COUNT(*) FROM %s", t.tableID.FullyQualifiedName()))
 	if err != nil {
 		return fmt.Errorf("failed to query table: %w", err)
 	}
@@ -96,7 +97,7 @@ func (t *SnowflakeTest) verifyRowCount(expected int) error {
 }
 
 func (t *SnowflakeTest) verifyDataContent() error {
-	rows, err := t.dest.Query("SELECT id, name, value FROM test_db.public.test_table ORDER BY id")
+	rows, err := t.dest.Query(fmt.Sprintf("SELECT id, name, value FROM %s ORDER BY id", t.tableID.FullyQualifiedName()))
 	if err != nil {
 		return fmt.Errorf("failed to query table data: %w", err)
 	}
@@ -179,7 +180,7 @@ func main() {
 		logger.Fatal("Expected 1 topic config", slog.Int("num_configs", len(tc)))
 	}
 
-	test := NewSnowflakeTest(ctx, dest, tc[0])
+	test := NewSnowflakeTest(ctx, dest, *tc[0])
 	if err := test.Run(); err != nil {
 		logger.Fatal("Test failed", slog.Any("err", err))
 	}
