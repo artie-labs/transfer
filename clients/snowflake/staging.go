@@ -63,7 +63,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	// Write data into CSV
-	fp, err := s.writeTemporaryTableFile(tableData, snowflakeTableID)
+	_, tempDir, err := s.writeTemporaryTableFile(tableData, snowflakeTableID)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
@@ -76,7 +76,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}()
 
 	// Upload the CSV file to Snowflake
-	if _, err = s.Exec(fmt.Sprintf("PUT 'file://%s' @%s AUTO_COMPRESS=TRUE", fp, addPrefixToTableName(tempTableID, "%"))); err != nil {
+	if _, err = s.Exec(fmt.Sprintf("PUT file://%s/*.csv @%s AUTO_COMPRESS=TRUE", tempDir, addPrefixToTableName(tempTableID, "%"))); err != nil {
 		return fmt.Errorf("failed to run PUT for temporary table: %w", err)
 	}
 
@@ -106,16 +106,16 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	return nil
 }
 
-func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID dialect.TableIdentifier) (string, error) {
+func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID dialect.TableIdentifier) (string, string, error) {
 	tempDir, err := os.MkdirTemp("", "artie*")
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	fp := filepath.Join(tempDir, newTableID.FileName())
 	file, err := os.Create(fp)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	defer file.Close()
@@ -128,17 +128,17 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 		for _, col := range columns {
 			castedValue, castErr := castColValStaging(row[col.Name()], col.KindDetails)
 			if castErr != nil {
-				return "", fmt.Errorf("failed to cast value '%v': %w", row[col.Name()], castErr)
+				return "", "", fmt.Errorf("failed to cast value '%v': %w", row[col.Name()], castErr)
 			}
 
 			csvRow = append(csvRow, castedValue)
 		}
 
 		if err = writer.Write(csvRow); err != nil {
-			return "", fmt.Errorf("failed to write to csv: %w", err)
+			return "", "", fmt.Errorf("failed to write to csv: %w", err)
 		}
 	}
 
 	writer.Flush()
-	return fp, writer.Error()
+	return fp, tempDir, writer.Error()
 }
