@@ -107,7 +107,12 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 }
 
 func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID dialect.TableIdentifier) (string, error) {
-	fp := filepath.Join(os.TempDir(), newTableID.FileName())
+	tempDir, err := os.MkdirTemp("", "artie*")
+	if err != nil {
+		return "", err
+	}
+
+	fp := filepath.Join(tempDir, newTableID.FileName())
 	file, err := os.Create(fp)
 	if err != nil {
 		return "", err
