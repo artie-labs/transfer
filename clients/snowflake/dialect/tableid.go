@@ -2,6 +2,7 @@ package dialect
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/artie-labs/transfer/lib/sql"
 )
@@ -54,4 +55,8 @@ func (ti TableIdentifier) WithDisableDropProtection(disableDropProtection bool) 
 
 func (ti TableIdentifier) AllowToDrop() bool {
 	return ti.disableDropProtection
+}
+
+func (ti TableIdentifier) FileName() string {
+	return fmt.Sprintf("%s.%s.%s.csv", strings.ToUpper(ti.database), strings.ToUpper(ti.schema), strings.ToUpper(ti.table))
 }
