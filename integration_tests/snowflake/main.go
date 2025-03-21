@@ -136,7 +136,8 @@ func (t *SnowflakeTest) verifyDataContent() error {
 }
 
 func (t *SnowflakeTest) cleanup() error {
-	return t.dest.DropTable(t.ctx, t.tableID)
+	dropTableID := t.tableID.WithDisableDropProtection(true)
+	return t.dest.DropTable(t.ctx, dropTableID)
 }
 
 func (t *SnowflakeTest) Run() error {
@@ -160,7 +161,6 @@ func (t *SnowflakeTest) Run() error {
 
 func main() {
 	ctx := context.Background()
-
 	settings, err := config.LoadSettings(os.Args, true)
 	if err != nil {
 		logger.Fatal("Failed to load settings", slog.Any("err", err))
@@ -185,5 +185,5 @@ func main() {
 		logger.Fatal("Test failed", slog.Any("err", err))
 	}
 
-	slog.Info("Integration test completed successfully")
+	slog.Info("🐕 🐕 🐕 Integration test completed successfully")
 }
