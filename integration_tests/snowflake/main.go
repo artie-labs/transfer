@@ -35,7 +35,7 @@ func NewSnowflakeTest(ctx context.Context, dest destination.Destination, topicCo
 	}
 }
 
-func (t *SnowflakeTest) setupColumns() {
+func (st *SnowflakeTest) setupColumns() {
 	cols := &columns.Columns{}
 	colTypes := map[string]typing.KindDetails{
 		"id":         typing.Integer,
@@ -48,10 +48,10 @@ func (t *SnowflakeTest) setupColumns() {
 		cols.AddColumn(columns.NewColumn(colName, colType))
 	}
 
-	t.tableData = optimization.NewTableData(cols, config.Replication, []string{"id"}, t.topicConfig, t.tableID.Table())
+	st.tableData = optimization.NewTableData(cols, config.Replication, []string{"id"}, st.topicConfig, st.tableID.Table())
 }
 
-func (t *SnowflakeTest) generateTestData(numRows int) {
+func (st *SnowflakeTest) generateTestData(numRows int) {
 	for i := 0; i < numRows; i++ {
 		rowData := map[string]any{
 			"id":         i,
@@ -59,25 +59,25 @@ func (t *SnowflakeTest) generateTestData(numRows int) {
 			"created_at": time.Now().Format(time.RFC3339Nano),
 			"value":      float64(i) * 1.5,
 		}
-		t.tableData.InsertRow(fmt.Sprintf("%d", i), rowData, false)
+		st.tableData.InsertRow(fmt.Sprintf("%d", i), rowData, false)
 	}
 }
 
-func (t *SnowflakeTest) setupTable() error {
-	dropTableID := t.tableID.WithDisableDropProtection(true)
-	if err := t.dest.DropTable(t.ctx, dropTableID); err != nil {
+func (st *SnowflakeTest) setupTable() error {
+	dropTableID := st.tableID.WithDisableDropProtection(true)
+	if err := st.dest.DropTable(st.ctx, dropTableID); err != nil {
 		return fmt.Errorf("failed to drop table: %w", err)
 	}
 
-	if err := t.dest.Append(t.ctx, t.tableData, true); err != nil {
+	if err := st.dest.Append(st.ctx, st.tableData, true); err != nil {
 		return fmt.Errorf("failed to append data: %w", err)
 	}
 
 	return nil
 }
 
-func (t *SnowflakeTest) verifyRowCount(expected int) error {
-	rows, err := t.dest.Query(fmt.Sprintf("SELECT COUNT(*) FROM %s", t.tableID.FullyQualifiedName()))
+func (st *SnowflakeTest) verifyRowCount(expected int) error {
+	rows, err := st.dest.Query(fmt.Sprintf("SELECT COUNT(*) FROM %s", st.tableID.FullyQualifiedName()))
 	if err != nil {
 		return fmt.Errorf("failed to query table: %w", err)
 	}
@@ -96,8 +96,8 @@ func (t *SnowflakeTest) verifyRowCount(expected int) error {
 	return nil
 }
 
-func (t *SnowflakeTest) verifyDataContent() error {
-	rows, err := t.dest.Query(fmt.Sprintf("SELECT id, name, value FROM %s ORDER BY id", t.tableID.FullyQualifiedName()))
+func (st *SnowflakeTest) verifyDataContent() error {
+	rows, err := st.dest.Query(fmt.Sprintf("SELECT id, name, value FROM %s ORDER BY id", st.tableID.FullyQualifiedName()))
 	if err != nil {
 		return fmt.Errorf("failed to query table data: %w", err)
 	}
@@ -135,28 +135,28 @@ func (t *SnowflakeTest) verifyDataContent() error {
 	return nil
 }
 
-func (t *SnowflakeTest) cleanup() error {
-	dropTableID := t.tableID.WithDisableDropProtection(true)
-	return t.dest.DropTable(t.ctx, dropTableID)
+func (st *SnowflakeTest) cleanup() error {
+	dropTableID := st.tableID.WithDisableDropProtection(true)
+	return st.dest.DropTable(st.ctx, dropTableID)
 }
 
-func (t *SnowflakeTest) Run() error {
-	t.setupColumns()
-	t.generateTestData(120)
+func (st *SnowflakeTest) Run() error {
+	st.setupColumns()
+	st.generateTestData(120)
 
-	if err := t.setupTable(); err != nil {
+	if err := st.setupTable(); err != nil {
 		return err
 	}
 
-	if err := t.verifyRowCount(120); err != nil {
+	if err := st.verifyRowCount(120); err != nil {
 		return err
 	}
 
-	if err := t.verifyDataContent(); err != nil {
+	if err := st.verifyDataContent(); err != nil {
 		return err
 	}
 
-	return t.cleanup()
+	return st.cleanup()
 }
 
 func main() {
