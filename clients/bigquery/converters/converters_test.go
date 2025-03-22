@@ -142,6 +142,12 @@ func TestInt64Converter_Convert(t *testing.T) {
 		assert.Equal(t, int64(123), val)
 	}
 	{
+		// *decimal.Decimal
+		val, err := converter.Convert(decimal.NewDecimal(numbers.MustParseDecimal("100000000")))
+		assert.NoError(t, err)
+		assert.Equal(t, int64(100000000), val)
+	}
+	{
 		// Invalid
 		_, err := converter.Convert("foo")
 		assert.ErrorContains(t, err, "expected int/int32/int64/float32/float64 received string with value foo")
