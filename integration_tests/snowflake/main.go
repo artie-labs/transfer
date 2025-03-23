@@ -51,7 +51,7 @@ func (st *SnowflakeTest) setupColumns() {
 	st.tableData = optimization.NewTableData(cols, config.Replication, []string{"id"}, st.topicConfig, st.tableID.Table())
 }
 
-func (st *SnowflakeTest) generateTestData(numRows int) error {
+func (st *SnowflakeTest) generateTestData(numRows int, appendEvery int) error {
 	for i := 0; i < numRows; i++ {
 		rowData := map[string]any{
 			"id":         i,
@@ -139,7 +139,10 @@ func (st *SnowflakeTest) Run() error {
 	}
 
 	st.setupColumns()
-	if err := st.generateTestData(120); err != nil {
+
+	totalRows := 1000
+	appendEvery := 50
+	if err := st.generateTestData(totalRows, appendEvery); err != nil {
 		return fmt.Errorf("failed to generate test data: %w", err)
 	}
 
