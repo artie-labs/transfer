@@ -35,8 +35,10 @@ func (Int64Converter) Convert(value any) (any, error) {
 		return int64(castedValue), nil
 	case float64:
 		return int64(castedValue), nil
+	case *decimal.Decimal:
+		return castedValue.Value().Int64()
 	default:
-		return nil, fmt.Errorf("expected int/int32/int64/float32/float64 received %T with value %v", value, value)
+		return nil, fmt.Errorf("expected int/int32/int64/float32/float64/*decimal.Decimal received %T with value %v", value, value)
 	}
 }
 
