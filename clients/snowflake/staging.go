@@ -75,7 +75,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		}
 	}()
 
-	// Upload the CSV file to Snowflake
+	// Upload the CSV file to Snowflake, wrapping the file in single quotes to avoid special characters.
 	if _, err = s.Exec(fmt.Sprintf("PUT 'file://%s' @%s AUTO_COMPRESS=TRUE", fp, addPrefixToTableName(tempTableID, "%"))); err != nil {
 		return fmt.Errorf("failed to run PUT for temporary table: %w", err)
 	}
