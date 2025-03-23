@@ -52,21 +52,26 @@ func (st *SnowflakeTest) setupColumns() {
 }
 
 func (st *SnowflakeTest) generateTestData(numRows int, appendEvery int) error {
-	for i := 0; i < numRows; i++ {
-		rowData := map[string]any{
-			"id":         i,
-			"name":       fmt.Sprintf("test_name_%d", i),
-			"created_at": time.Now().Format(time.RFC3339Nano),
-			"value":      float64(i) * 1.5,
+	for i := 0; i < appendEvery; i++ {
+		for j := 0; j < numRows; j++ {
+			pkValue := i*numRows + j
+			pkValueString := fmt.Sprintf("%d", pkValue)
+			rowData := map[string]any{
+				"id":         pkValue,
+				"name":       fmt.Sprintf("test_name_%d", pkValue),
+				"created_at": time.Now().Format(time.RFC3339Nano),
+				"value":      float64(pkValue) * 1.5,
+			}
+			st.tableData.InsertRow(pkValueString, rowData, false)
 		}
-		st.tableData.InsertRow(fmt.Sprintf("%d", i), rowData, false)
+
+		if err := st.dest.Append(st.ctx, st.tableData, true); err != nil {
+			return fmt.Errorf("failed to append data: %w", err)
+		}
+
+		st.tableData.WipeData()
 	}
 
-	if err := st.dest.Append(st.ctx, st.tableData, true); err != nil {
-		return fmt.Errorf("failed to append data: %w", err)
-	}
-
-	st.tableData.WipeData()
 	return nil
 }
 
@@ -140,17 +145,17 @@ func (st *SnowflakeTest) Run() error {
 
 	st.setupColumns()
 
-	totalRows := 1000
+	appendRows := 200
 	appendEvery := 50
-	if err := st.generateTestData(totalRows, appendEvery); err != nil {
+	if err := st.generateTestData(appendRows, appendEvery); err != nil {
 		return fmt.Errorf("failed to generate test data: %w", err)
 	}
 
-	if err := st.verifyRowCount(120); err != nil {
+	if err := st.verifyRowCount(appendRows * appendEvery); err != nil {
 		return fmt.Errorf("failed to verify row count: %w", err)
 	}
 
-	if err := st.verifyDataContent(120); err != nil {
+	if err := st.verifyDataContent(appendRows * appendEvery); err != nil {
 		return fmt.Errorf("failed to verify data content: %w", err)
 	}
 
