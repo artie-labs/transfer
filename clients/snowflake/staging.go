@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/clients/shared"
+	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -56,8 +57,13 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		}
 	}
 
+	snowflakeTableID, ok := tempTableID.(dialect.TableIdentifier)
+	if !ok {
+		return fmt.Errorf("tempTableID is not type dialect.TableIdentifier, type: %T", tempTableID)
+	}
+
 	// Write data into CSV
-	fp, err := s.writeTemporaryTableFile(tableData, tempTableID)
+	fp, err := s.writeTemporaryTableFile(tableData, snowflakeTableID)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
@@ -70,7 +76,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}()
 
 	// Upload the CSV file to Snowflake
-	if _, err = s.Exec(fmt.Sprintf("PUT file://%s @%s AUTO_COMPRESS=TRUE", fp, addPrefixToTableName(tempTableID, "%"))); err != nil {
+	if _, err = s.Exec(fmt.Sprintf("PUT 'file://%s' @%s AUTO_COMPRESS=TRUE", fp, addPrefixToTableName(tempTableID, "%"))); err != nil {
 		return fmt.Errorf("failed to run PUT for temporary table: %w", err)
 	}
 
@@ -100,8 +106,8 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	return nil
 }
 
-func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (string, error) {
-	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv", newTableID.FullyQualifiedName()))
+func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID dialect.TableIdentifier) (string, error) {
+	fp := filepath.Join(os.TempDir(), newTableID.StagingFileName())
 	file, err := os.Create(fp)
 	if err != nil {
 		return "", err
