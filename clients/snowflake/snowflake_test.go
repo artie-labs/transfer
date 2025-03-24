@@ -230,7 +230,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	putQuery, _ := s.fakeStageStore.ExecArgsForCall(0)
 	assert.Contains(s.T(), putQuery, "PUT 'file://")
 
-	// COPY INTO \"CUSTOMER\".\"PUBLIC\".\"ORDERS___ARTIE_UJDK7_1742879510\" (\"__ARTIE_ONLY_SET_DELETE\",\"CREATED_AT\",\"ID\",\"NAME\",\"__ARTIE_DELETE\") FROM (SELECT $1,$2,$3,$4,$5 FROM @\"CUSTOMER\".\"PUBLIC\".\"%ORDERS___ARTIE_UJDK7_1742879510\" FILES = ('CUSTOMER.PUBLIC.ORDERS___ARTIE_UJDK7_1742879510.csv'))
+	// COPY INTO "CUSTOMER"."PUBLIC"."ORDERS___ARTIE_Mwv9YADmRy" ("ID","NAME","__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","CREATED_AT") FROM (SELECT $1,$2,$3,$4,$5 FROM @"CUSTOMER"."PUBLIC"."%orders___artie_Mwv9YADmRy" FILES = ('CUSTOMER.PUBLIC.orders___artie_Mwv9YADmRy.csv'))
 	copyQuery, _ := s.fakeStageStore.ExecArgsForCall(1)
 	expectedCopyQuery := fmt.Sprintf(`COPY INTO "CUSTOMER"."PUBLIC"."%s" ("ID","NAME","__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","CREATED_AT") FROM (SELECT $1,$2,$3,$4,$5 FROM @"CUSTOMER"."PUBLIC"."%%%s" FILES = ('CUSTOMER.PUBLIC.%s.csv'))`, tableName, tableName, tableName)
 	assert.Equal(s.T(), expectedCopyQuery, copyQuery)
