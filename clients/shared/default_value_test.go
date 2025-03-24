@@ -125,6 +125,13 @@ func TestColumn_DefaultValue(t *testing.T) {
 		assert.Equal(t, "3.14159", value)
 	}
 	{
+		// Column is a decimal, however the incoming data is an integer.
+		col := columns.NewColumnWithDefaultValue("", typing.EDecimal, int64(123))
+		value, err := DefaultValue(col, redshiftDialect.RedshiftDialect{})
+		assert.NoError(t, err)
+		assert.Equal(t, "123", value)
+	}
+	{
 		// Int64
 		col := columns.NewColumnWithDefaultValue("", typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 0)), int64(123))
 		value, err := DefaultValue(col, redshiftDialect.RedshiftDialect{})
