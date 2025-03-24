@@ -16,6 +16,7 @@ const (
 	BigIntegerKind
 )
 
+// TODO: KindDetails should store the raw data type from the target table (if exists).
 type KindDetails struct {
 	Kind                   string
 	ExtendedDecimalDetails *decimal.Details
