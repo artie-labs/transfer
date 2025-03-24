@@ -115,7 +115,8 @@ type File struct {
 }
 
 func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID dialect.TableIdentifier) (File, error) {
-	fp := filepath.Join(os.TempDir(), newTableID.StagingFileName())
+	fileName := newTableID.FullyQualifiedName()
+	fp := filepath.Join(os.TempDir(), fileName)
 	file, err := os.Create(fp)
 	if err != nil {
 		return File{}, err
@@ -143,5 +144,5 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 	}
 
 	writer.Flush()
-	return File{FilePath: fp, FileName: newTableID.StagingFileName()}, writer.Error()
+	return File{FilePath: fp, FileName: fileName}, writer.Error()
 }
