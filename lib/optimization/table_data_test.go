@@ -259,6 +259,16 @@ func TestMergeColumn(t *testing.T) {
 		assert.Equal(t, details, *col.KindDetails.ExtendedDecimalDetails)
 	}
 	{
+		// Decimal details should be removed when destination column doesn't have them
+		inMemoryCol := columns.NewColumn("foo", typing.EDecimal)
+		details := decimal.NewDetails(5, 2)
+		inMemoryCol.KindDetails.ExtendedDecimalDetails = &details
+
+		destCol := columns.NewColumn("foo", typing.EDecimal)
+		col := mergeColumn(inMemoryCol, destCol)
+		assert.Nil(t, col.KindDetails.ExtendedDecimalDetails)
+	}
+	{
 		// Time details get copied over
 		{
 			// Testing for backwards compatibility

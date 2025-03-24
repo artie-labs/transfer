@@ -323,5 +323,10 @@ func mergeColumn(inMemoryCol columns.Column, destCol columns.Column) columns.Col
 		inMemoryCol.KindDetails.ExtendedDecimalDetails = destCol.KindDetails.ExtendedDecimalDetails
 	}
 
+	// If the destination column does not have extended decimal details, we should remove it from the in-memory column as well
+	if destCol.KindDetails.ExtendedDecimalDetails == nil && inMemoryCol.KindDetails.ExtendedDecimalDetails != nil {
+		inMemoryCol.KindDetails.ExtendedDecimalDetails = nil
+	}
+
 	return inMemoryCol
 }

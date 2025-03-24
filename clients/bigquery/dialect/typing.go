@@ -34,6 +34,11 @@ func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, s
 		// We should be using TIMESTAMP since it's an absolute point in time.
 		return "timestamp"
 	case typing.EDecimal.Kind:
+		// [kindDetails.ExtendedDecimalDetails] may be nil if the target data type is a variable numeric or bignumeric.
+		if kindDetails.ExtendedDecimalDetails == nil {
+			return "numeric"
+		}
+
 		return kindDetails.ExtendedDecimalDetails.BigQueryKind(settings.BigQueryNumericForVariableNumeric)
 	}
 

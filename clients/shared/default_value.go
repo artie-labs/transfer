@@ -52,7 +52,7 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 
 		return sql.QuoteLiteral(_time.Format(time.RFC3339Nano)), nil
 	case typing.EDecimal.Kind:
-		if column.KindDetails.ExtendedDecimalDetails.Scale() == 0 {
+		if column.KindDetails.ExtendedDecimalDetails == nil || column.KindDetails.ExtendedDecimalDetails.Scale() == 0 {
 			switch column.DefaultValue().(type) {
 			case int, int8, int16, int32, int64:
 				return fmt.Sprint(column.DefaultValue()), nil
