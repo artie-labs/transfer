@@ -25,7 +25,7 @@ var dialects = []sql.Dialect{
 func TestColumn_DefaultValue(t *testing.T) {
 	birthday := time.Date(2022, time.September, 6, 3, 19, 24, 942000000, time.UTC)
 	{
-		// Testing nil default value handling across dialects
+		// nil
 		col := columns.NewColumnWithDefaultValue("", typing.String, nil)
 		for _, dialect := range dialects {
 			actualValue, actualErr := DefaultValue(col, dialect)
@@ -34,7 +34,7 @@ func TestColumn_DefaultValue(t *testing.T) {
 		}
 	}
 	{
-		// Testing string default value handling across dialects
+		// String
 		col := columns.NewColumnWithDefaultValue("", typing.String, "abcdef")
 		for _, dialect := range dialects {
 			actualValue, actualErr := DefaultValue(col, dialect)
@@ -43,7 +43,7 @@ func TestColumn_DefaultValue(t *testing.T) {
 		}
 	}
 	{
-		// Testing empty JSON default value handling across all dialects
+		// JSON (empty)
 		col := columns.NewColumnWithDefaultValue("", typing.Struct, "{}")
 		for _, dialect := range dialects {
 			actualValue, actualErr := DefaultValue(col, dialect)
@@ -61,7 +61,7 @@ func TestColumn_DefaultValue(t *testing.T) {
 		}
 	}
 	{
-		// Testing JSON with values default value handling across all dialects
+		// JSON (with values)
 		jsonStr := `{"age": 0, "membership_level": "standard"}`
 		col := columns.NewColumnWithDefaultValue("", typing.Struct, jsonStr)
 		for _, dialect := range dialects {
@@ -80,9 +80,8 @@ func TestColumn_DefaultValue(t *testing.T) {
 			assert.Equal(t, expectedValue, actualValue, fmt.Sprintf("dialect: %v", dialect))
 		}
 	}
-
 	{
-		// Testing date default value handling across all dialects
+		// DATE
 		col := columns.NewColumnWithDefaultValue("", typing.Date, birthday)
 		for _, dialect := range dialects {
 			actualValue, actualErr := DefaultValue(col, dialect)
@@ -90,9 +89,8 @@ func TestColumn_DefaultValue(t *testing.T) {
 			assert.Equal(t, "'2022-09-06'", actualValue, fmt.Sprintf("dialect: %v", dialect))
 		}
 	}
-
 	{
-		// Testing timestamp_ntz default value handling across all dialects
+		// TIMESTAMP_NTZ
 		col := columns.NewColumnWithDefaultValue("", typing.TimestampNTZ, birthday)
 		for _, dialect := range dialects {
 			actualValue, actualErr := DefaultValue(col, dialect)
@@ -101,7 +99,7 @@ func TestColumn_DefaultValue(t *testing.T) {
 		}
 	}
 	{
-		// Testing time default value handling across all dialects
+		// TIME
 		col := columns.NewColumnWithDefaultValue("", typing.Time, birthday)
 		for _, dialect := range dialects {
 			actualValue, actualErr := DefaultValue(col, dialect)
@@ -110,7 +108,7 @@ func TestColumn_DefaultValue(t *testing.T) {
 		}
 	}
 	{
-		// Testing timestamp_tz default value handling across all dialects
+		// TIMESTAMP_TZ
 		col := columns.NewColumnWithDefaultValue("", typing.TimestampTZ, birthday)
 		for _, dialect := range dialects {
 			actualValue, actualErr := DefaultValue(col, dialect)
@@ -119,27 +117,24 @@ func TestColumn_DefaultValue(t *testing.T) {
 		}
 	}
 	{
-		// Testing decimal default value handling with different types
-		{
-			// Testing decimal.Decimal type
-			decimalValue := decimal.NewDecimal(numbers.MustParseDecimal("3.14159"))
-			col := columns.NewColumnWithDefaultValue("", typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(7, 5)), decimalValue)
-			value, err := DefaultValue(col, redshiftDialect.RedshiftDialect{})
-			assert.NoError(t, err)
-			assert.Equal(t, "3.14159", value)
-		}
-		{
-			// Testing int64 type
-			col := columns.NewColumnWithDefaultValue("", typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 0)), int64(123))
-			value, err := DefaultValue(col, redshiftDialect.RedshiftDialect{})
-			assert.NoError(t, err)
-			assert.Equal(t, "123", value)
-		}
-		{
-			// Testing wrong type (string) error case
-			col := columns.NewColumnWithDefaultValue("", typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(7, 5)), "hello")
-			_, err := DefaultValue(col, redshiftDialect.RedshiftDialect{})
-			assert.ErrorContains(t, err, "expected type *decimal.Decimal, got string")
-		}
+		// decimal.Decimal
+		decimalValue := decimal.NewDecimal(numbers.MustParseDecimal("3.14159"))
+		col := columns.NewColumnWithDefaultValue("", typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(7, 5)), decimalValue)
+		value, err := DefaultValue(col, redshiftDialect.RedshiftDialect{})
+		assert.NoError(t, err)
+		assert.Equal(t, "3.14159", value)
+	}
+	{
+		// Int64
+		col := columns.NewColumnWithDefaultValue("", typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 0)), int64(123))
+		value, err := DefaultValue(col, redshiftDialect.RedshiftDialect{})
+		assert.NoError(t, err)
+		assert.Equal(t, "123", value)
+	}
+	{
+		// Wrong data type
+		col := columns.NewColumnWithDefaultValue("", typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(7, 5)), "hello")
+		_, err := DefaultValue(col, redshiftDialect.RedshiftDialect{})
+		assert.ErrorContains(t, err, "expected type *decimal.Decimal, got string")
 	}
 }
